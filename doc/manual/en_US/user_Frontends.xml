@@ -197,7 +197,7 @@
 
         <listitem>
           <para>
-            The Remmina remote desktop client can be used with VRDP.
+            You can use the Remmina remote desktop client with VRDP.
             This application is included with some Linux distributions,
             such as Debian and Ubuntu.
           </para>
@@ -403,8 +403,7 @@
         <listitem>
           <para>
             An RDP viewer on the remote client. See
-            <xref
-            linkend="rdp-viewers" /> for examples.
+            <xref linkend="rdp-viewers" /> for examples.
           </para>
         </listitem>
 
@@ -468,7 +467,7 @@
           </para>
 
 <screen>VBoxManage storagectl "Windows XP" --name "IDE Controller"
-      --add ide --controller PIIX4</screen>
+  --add ide --controller PIIX4</screen>
         </listitem>
 
         <listitem>
@@ -478,7 +477,7 @@
           </para>
 
 <screen>VBoxManage storageattach "Windows XP" --storagectl "IDE Controller"
-      --port 0 --device 0 --type hdd --medium "WinXP.vdi"</screen>
+ --port 0 --device 0 --type hdd --medium "WinXP.vdi"</screen>
         </listitem>
 
         <listitem>
@@ -489,7 +488,7 @@
           </para>
 
 <screen>VBoxManage storageattach "Windows XP" --storagectl "IDE Controller"
-      --port 0 --device 1 --type dvddrive --medium /full/path/to/iso.iso</screen>
+ --port 0 --device 1 --type dvddrive --medium /full/path/to/iso.iso</screen>
         </listitem>
 
         <listitem>
@@ -1101,7 +1100,7 @@ VBoxManage modifyvm "VM name" --vrdeproperty Client/DisableUpstreamAudio=1</scre
       &product-name; host to another, while the virtual machine is
       running. This works regardless of the host operating system that
       is running on the hosts. You can teleport virtual machines between
-      Oracle Solaris and Mac hosts, for example.
+      Oracle Solaris and Mac OS X hosts, for example.
     </para>
 
     <para>

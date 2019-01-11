@@ -316,12 +316,11 @@
       <title>Summary of 4.0 Configuration Changes</title>
 
       <para>
-        <xref linkend="table-version4-config-changes"/> gives a brief
-        overview of the configuration changes between legacy versions
-        and version 4.0 or later.
+        The following table gives a brief overview of the configuration
+        changes between legacy versions and version 4.0 or later.
       </para>
 
-      <table id="table-version4-config-changes">
+      <table id="table-version4-config-changes" tabstyle="oracle-all">
         <title>Configuration Changes in Version 4.0 or Above</title>
         <tgroup cols="3">
           <thead>
@@ -509,7 +508,7 @@
           <computeroutput>VirtualBoxVM</computeroutput>, a client
           application based on the cross-platform Qt library. When
           started without the <computeroutput>--startvm</computeroutput>
-          option, this application acts as the &product-name; manager,
+          option, this application acts as the VirtualBox Manager,
           displaying the VMs and their settings. It then communicates
           settings and state changes to
           <computeroutput>VBoxSVC</computeroutput> and also reflects
@@ -550,7 +549,7 @@
       <listitem>
         <para>
           <computeroutput>VirtualBoxVM</computeroutput>: The Qt front
-          end implementing the manager and running VMs.
+          end implementing the VirtualBox Manager and running VMs.
         </para>
       </listitem>
 
@@ -1327,9 +1326,10 @@
           If nested paging is enabled, the &product-name; hypervisor can
           also use <emphasis>large pages</emphasis> to reduce TLB usage
           and overhead. This can yield a performance improvement of up
-          to 5%. To enable this feature for a VM, you need to use the
-          <computeroutput>VBoxManage modifyvm --largepages</computeroutput>
-          command. See <xref linkend="vboxmanage-modifyvm" />.
+          to 5%. To enable this feature for a VM, you use the
+          <computeroutput>VBoxManage modifyvm
+          --largepages</computeroutput> command. See
+          <xref linkend="vboxmanage-modifyvm" />.
         </para>
 
         <para>
@@ -1348,7 +1348,7 @@
         </para>
 
         <para>
-          To enable these features for a VM, you need to use the
+          To enable these features for a VM, you use the
           <computeroutput>VBoxManage modifyvm --vtxvpid</computeroutput>
           and <computeroutput>--largepages</computeroutput> commands.
           See <xref linkend="vboxmanage-modifyvm" />.

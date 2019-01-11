@@ -89,8 +89,9 @@
           <emphasis role="bold">Windows 2000, Windows XP, Windows Server
           2003, Windows Vista, Windows Server 2008, Windows 7, Windows
           Server 2008 R2, Windows 8, Windows Server 2012, Windows 8.1,
-          Windows Server 2012 R2, Windows 10 (non-Insider Preview releases),
-          Windows Server 2016, Windows server 2019:</emphasis>
+          Windows Server 2012 R2, Windows 10 (non-Insider Preview
+          releases), Windows Server 2016, Windows Server
+          2019:</emphasis>
         </para>
 
         <itemizedlist>
@@ -527,9 +528,9 @@
     <title>Unattended Guest Installation</title>
 
     <para>
-      &product-name; is able to install a guest operating system
-      automatically. You only need to provide the installation medium
-      and a few other parameters, such as the name of the default user.
+      &product-name; can install a guest OS automatically. You only need
+      to provide the installation medium and a few other parameters,
+      such as the name of the default user.
     </para>
 
     <para>
@@ -541,8 +542,8 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Create a new VM.</emphasis> You can use
-          either of the following to do this:
+          <emphasis role="bold">Create a new VM.</emphasis> Use one of
+          the following methods:
         </para>
 
         <itemizedlist>
@@ -556,7 +557,7 @@
 
           <listitem>
             <para>
-              The <command>VBoxManage</command> command, see
+              The <command>VBoxManage createvm</command> command, see
               <xref linkend="vboxmanage-createvm" />.
             </para>
           </listitem>
@@ -564,10 +565,9 @@
         </itemizedlist>
 
         <para>
-          For the new VM, you can usually just choose the type of the
-          guest operating system and accept the default settings for
-          that operating system. The following sections in this chapter
-          describe how to change the settings for a VM.
+          For the new VM, choose the guest OS type and accept the
+          default settings for that OS. The following sections in this
+          chapter describe how to change the settings for a VM.
         </para>
       </listitem>
 
@@ -588,7 +588,7 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Start the VM.</emphasis> You can use the
+          <emphasis role="bold">Start the VM.</emphasis> Use the
           VirtualBox Manager or the <command>VBoxManage
           startvm</command> command.
         </para>
@@ -599,15 +599,18 @@
         </para>
 
         <para>
-          Note that the boot order is changed during the preparation
-          step, giving the virtual hard disk the highest priority. As
-          this disk is normally empty before an automatic installation
-          is started, the VM will instead boot from the virtual DVD
-          drive as next available boot medium and the installation will
-          start. If the virtual hard disk contains a bootable operating
-          system, then the installation will not start. The boot order
-          must be manually changed, by pressing F12 during the BIOS
-          splash screen.
+          The installation operation changes the boot device order to
+          boot the virtual hard disk first and then the virtual DVD
+          drive. If the virtual hard disk is empty prior to the
+          automatic installation, the VM boots from the virtual DVD
+          drive and begins the installation.
+        </para>
+
+        <para>
+          If the virtual hard disk contains a bootable OS, the
+          installation operation exits. In this case, change the boot
+          device order manually by pressing F12 during the BIOS splash
+          screen.
         </para>
       </listitem>
 
@@ -625,11 +628,10 @@
 
       <para>
         The following example shows how to perform an unattended guest
-        installation for an Oracle Linux virtual machine. The example
-        uses various <command>VBoxManage</command> commands to prepare
-        the guest VM. The <command>VBoxManage unattended
-        install</command> command is then used to install and configure
-        the guest operating system.
+        installation for an Oracle Linux VM. The example uses various
+        <command>VBoxManage</command> commands to prepare the guest VM.
+        The <command>VBoxManage unattended install</command> command is
+        then used to install and configure the guest OS.
       </para>
 
       <orderedlist>
@@ -651,17 +653,16 @@
 
             <listitem>
               <para>
-                The variable $VM represents the name of the VM.
+                The $VM variable represents the name of the VM.
               </para>
             </listitem>
 
             <listitem>
               <para>
                 The <command>VBoxManage list ostypes</command> command
-                lists the guest operating systems supported by
-                &product-name;, including the name used for each
-                operating system in the <command>VBoxManage</command>
-                commands.
+                lists the guest OSes supported by &product-name;,
+                including the name used for each OS in the
+                <command>VBoxManage</command> commands.
               </para>
             </listitem>
 
@@ -701,29 +702,28 @@
 --type dvddrive --medium /u01/Software/OL/OracleLinux-R7-U6-Server-x86_64-dvd.iso</screen>
 
           <para>
-            Note the following:
+            The previous commands do the following:
           </para>
 
           <itemizedlist>
 
             <listitem>
               <para>
-                A 32768 MB virtual hard disk is created.
+                Create a 32768 MB virtual hard disk.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                A SATA storage controller is created and the virtual
-                hard disk is attached.
+                Create a SATA storage controller and attach the virtual
+                hard disk.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                An IDE storage controller for a virtual DVD drive is
-                created and an Oracle Linux installation ISO is
-                attached.
+                Create an IDE storage controller for a virtual DVD drive
+                and attach an Oracle Linux installation ISO.
               </para>
             </listitem>
 
@@ -740,27 +740,27 @@
 # VBoxManage modifyvm $VM --memory 8192 --vram 128</screen>
 
           <para>
-            Note the following:
+            The previous commands do the following:
           </para>
 
           <itemizedlist>
 
             <listitem>
               <para>
-                I/O APIC is enabled for the motherboard of the VM.
+                Enable I/O APIC for the motherboard of the VM.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                The boot order for the VM is configured.
+                Configure the boot device order for the VM.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                8192 MB of RAM and 128 MB of video RAM are allocated to
-                the VM.
+                Allocate 8192 MB of RAM and 128 MB of video RAM to the
+                VM.
               </para>
             </listitem>
 
@@ -769,7 +769,7 @@
 
         <listitem>
           <para>
-            Perform an unattended install of the operating system.
+            Perform an unattended install of the OS.
           </para>
 
 <screen># VBoxManage unattended install $VM \
@@ -778,40 +778,39 @@
 --install-additions --time-zone=CET</screen>
 
           <para>
-            Note the following:
+            The previous command does the following:
           </para>
 
           <itemizedlist>
 
             <listitem>
               <para>
-                An Oracle Linux ISO is specified as the installation
-                ISO.
+                Specifies an Oracle Linux ISO as the installation ISO.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                Specify a login name, full name, and login password for
-                a default user on the guest operating system.
+                Specifies a login name, full name, and login password
+                for a default user on the guest OS.
               </para>
 
               <para>
-                The specified password is also used for the root user
-                account on the guest.
-              </para>
-            </listitem>
-
-            <listitem>
-              <para>
-                The Guest Additions are installed on the VM.
+                Note that the specified password is also used for the
+                root user account on the guest.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                The time zone for the guest operating system is set to
-                Central European Time (CET).
+                Installs the Guest Additions on the VM.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Sets the time zone for the guest OS to Central European
+                Time (CET).
               </para>
             </listitem>
 
@@ -824,21 +823,21 @@
           </para>
 
           <para>
-            This step completes the unattended install process.
+            This step completes the unattended installation process.
           </para>
 
 <screen># VBoxManage startvm $VM --type headless</screen>
 
           <para>
-            The VM is started in headless mode. The VirtualBox Manager
-            window is not displayed.
+            The VM starts in headless mode, which means that the
+            VirtualBox Manager window does not open.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            (Optional) Update the guest operating system to use the
-            latest Oracle Linux packages.
+            (Optional) Update the guest OS to use the latest Oracle
+            Linux packages.
           </para>
 
           <para>
@@ -871,7 +870,7 @@
           <emphasis role="bold">Input devices.</emphasis> By default,
           &product-name; emulates a standard PS/2 keyboard and mouse.
           These devices are supported by almost all past and present
-          operating systems.
+          OSes.
         </para>
 
         <para>
@@ -921,17 +920,16 @@
         <para>
           <emphasis role="bold">USB.</emphasis> &product-name; emulates
           three USB host controllers: xHCI, EHCI, and OHCI. While xHCI
-          handles all USB transfer speeds, only guest operating systems
-          released approximately after 2011 support xHCI. Note that for
-          Windows 7 guests, 3rd party drivers must be installed for xHCI
-          support.
+          handles all USB transfer speeds, only guest OSes released
+          approximately after 2011 support xHCI. Note that for Windows 7
+          guests, 3rd party drivers must be installed for xHCI support.
         </para>
 
         <para>
-          Older operating systems typically support OHCI and EHCI. The
-          two controllers are needed because OHCI only handles USB
-          low-speed and full-speed devices (both USB 1.x and 2.0), while
-          EHCI only handles high-speed devices (USB 2.0 only).
+          Older OSes typically support OHCI and EHCI. The two
+          controllers are needed because OHCI only handles USB low-speed
+          and full-speed devices (both USB 1.x and 2.0), while EHCI only
+          handles high-speed devices (USB 2.0 only).
         </para>
 
         <para>
@@ -983,8 +981,7 @@
             this name, &product-name; also saves the VM's configuration
             files. By changing the name, &product-name; renames these
             files as well. As a result, you can only use characters
-            which are allowed in your host operating system's file
-            names.
+            which are allowed in your host OS's file names.
           </para>
 
           <para>
@@ -997,25 +994,24 @@
         <listitem>
           <para>
             <emphasis role="bold">Type:</emphasis> The type of the guest
-            operating system for the VM. This is the same setting that
-            is specified in the <emphasis role="bold">New Virtual
-            Machine</emphasis> wizard. See
-            <xref linkend="gui-createvm" />.
+            OS for the VM. This is the same setting that is specified in
+            the <emphasis role="bold">New Virtual Machine</emphasis>
+            wizard. See <xref linkend="gui-createvm" />.
           </para>
 
           <para>
             Whereas the default settings of a newly created VM depend on
-            the selected operating system type, changing the type later
-            has no effect on VM settings. This value is purely
-            informational and decorative.
+            the selected OS type, changing the type later has no effect
+            on VM settings. This value is purely informational and
+            decorative.
           </para>
         </listitem>
 
         <listitem>
           <para>
             <emphasis role="bold">Version:</emphasis> The version of the
-            guest operating system for the VM. This is the same setting
-            that is specified in the <emphasis role="bold">New Virtual
+            guest OS for the VM. This is the same setting that is
+            specified in the <emphasis role="bold">New Virtual
             Machine</emphasis> wizard. See
             <xref linkend="gui-createvm" />.
           </para>
@@ -1049,9 +1045,9 @@
         <listitem>
           <para>
             <emphasis role="bold">Shared Clipboard:</emphasis> You can
-            select here whether the clipboard of the guest operating
-            system should be shared with that of your host. If you
-            select <emphasis role="bold">Bidirectional</emphasis>, then
+            select here whether the clipboard of the guest OS should be
+            shared with that of your host. If you select
+            <emphasis role="bold">Bidirectional</emphasis>, then
             &product-name; will always make sure that both clipboards
             contain the same data. If you select
             <emphasis role="bold">Host to Guest</emphasis> or
@@ -1193,31 +1189,30 @@
             <emphasis role="bold">Base Memory:</emphasis> Sets the
             amount of RAM that is allocated and given to the VM when it
             is running. The specified amount of memory will be requested
-            from the host operating system, so it must be available or
-            made available as free memory on the host when attempting to
-            start the VM and will not be available to the host while the
-            VM is running. This is the same setting that was specified
-            in the <emphasis role="bold">New Virtual Machine</emphasis>
-            wizard, as described in <xref linkend="gui-createvm" />.
+            from the host OS, so it must be available or made available
+            as free memory on the host when attempting to start the VM
+            and will not be available to the host while the VM is
+            running. This is the same setting that was specified in the
+            <emphasis role="bold">New Virtual Machine</emphasis> wizard,
+            as described in <xref linkend="gui-createvm" />.
           </para>
 
           <para>
             Generally, it is possible to change the memory size after
-            installing the guest operating system. But you must not
-            reduce the memory to an amount where the operating system
-            would no longer boot.
+            installing the guest OS. But you must not reduce the memory
+            to an amount where the OS would no longer boot.
           </para>
         </listitem>
 
         <listitem>
           <para>
             <emphasis role="bold">Boot Order:</emphasis> Determines the
-            order in which the guest operating system will attempt to
-            boot from the various virtual boot devices. Analogous to a
-            real PC's BIOS setting, &product-name; can tell a guest OS
-            to start from the virtual floppy, the virtual CD/DVD drive,
-            the virtual hard drive (each of these as defined by the
-            other VM settings), the network, or none of these.
+            order in which the guest OS will attempt to boot from the
+            various virtual boot devices. Analogous to a real PC's BIOS
+            setting, &product-name; can tell a guest OS to start from
+            the virtual floppy, the virtual CD/DVD drive, the virtual
+            hard drive (each of these as defined by the other VM
+            settings), the network, or none of these.
           </para>
 
           <para>
@@ -1233,17 +1228,17 @@
             <emphasis role="bold">Chipset:</emphasis> You can select
             which chipset will be presented to the virtual machine. In
             legacy versions of &product-name;, PIIX3 was the only
-            available option. For modern guest operating systems such as
-            Mac OS X, that old chipset is no longer well supported. As a
-            result, &product-name; supports an emulation of the more
-            modern ICH9 chipset, which supports PCI express, three PCI
-            buses, PCI-to-PCI bridges and Message Signaled Interrupts
-            (MSI). This enables modern operating systems to address more
-            PCI devices and no longer requires IRQ sharing. Using the
-            ICH9 chipset it is also possible to configure up to 36
-            network cards, up to 8 network adapters with PIIX3. Note
-            that the ICH9 support is experimental and not recommended
-            for guest operating systems which do not require it.
+            available option. For modern guest OSes such as Mac OS X,
+            that old chipset is no longer well supported. As a result,
+            &product-name; supports an emulation of the more modern ICH9
+            chipset, which supports PCI express, three PCI buses,
+            PCI-to-PCI bridges and Message Signaled Interrupts (MSI).
+            This enables modern OSes to address more PCI devices and no
+            longer requires IRQ sharing. Using the ICH9 chipset it is
+            also possible to configure up to 36 network cards, up to 8
+            network adapters with PIIX3. Note that the ICH9 support is
+            experimental and not recommended for guest OSes which do not
+            require it.
           </para>
         </listitem>
 
@@ -1277,33 +1272,31 @@
             Programmable Interrupt Controllers (APICs) are a newer x86
             hardware feature that have replaced old-style Programmable
             Interrupt Controllers (PICs) in recent years. With an I/O
-            APIC, operating systems can use more than 16 interrupt
-            requests (IRQs) and therefore avoid IRQ sharing for improved
-            reliability.
+            APIC, OSes can use more than 16 interrupt requests (IRQs)
+            and therefore avoid IRQ sharing for improved reliability.
           </para>
 
           <note>
             <para>
               Enabling the I/O APIC is <emphasis>required</emphasis> for
-              64-bit guest operating systems, especially Windows Vista.
-              It is also required if you want to use more than one
-              virtual CPU in a virtual machine.
+              64-bit guest OSes, especially Windows Vista. It is also
+              required if you want to use more than one virtual CPU in a
+              virtual machine.
             </para>
           </note>
 
           <para>
             However, software support for I/O APICs has been unreliable
-            with some operating systems other than Windows. Also, the
-            use of an I/O APIC slightly increases the overhead of
-            virtualization and therefore slows down the guest OS a
-            little.
+            with some OSes other than Windows. Also, the use of an I/O
+            APIC slightly increases the overhead of virtualization and
+            therefore slows down the guest OS a little.
           </para>
 
           <warning>
             <para>
-              All Windows operating systems starting with Windows 2000
-              install different kernels, depending on whether an I/O
-              APIC is available. As with ACPI, the I/O APIC therefore
+              All Windows OSes starting with Windows 2000 install
+              different kernels, depending on whether an I/O APIC is
+              available. As with ACPI, the I/O APIC therefore
               <emphasis>must not be turned off after
               installation</emphasis> of a Windows guest OS. Turning it
               on after installation will have no effect however.
@@ -1326,8 +1319,8 @@
             If selected, &product-name; will report the system time in
             UTC format to the guest instead of the local (host) time.
             This affects how the virtual real-time clock (RTC) operates
-            and may be useful for UNIX-like guest operating systems,
-            which typically expect the hardware clock to be set to UTC.
+            and may be useful for UNIX-like guest OSes, which typically
+            expect the hardware clock to be set to UTC.
           </para>
         </listitem>
 
@@ -1336,27 +1329,25 @@
       <para>
         In addition, you can turn off the <emphasis role="bold">Advanced
         Configuration and Power Interface (ACPI)</emphasis> which
-        &product-name; presents to the guest operating system by
-        default.
+        &product-name; presents to the guest OS by default.
       </para>
 
       <para>
-        ACPI is the current industry standard to allow operating systems
-        to recognize hardware, configure motherboards and other devices
-        and manage power. As all modern PCs contain this feature and
-        Windows and Linux have been supporting it for years, it is also
-        enabled by default in &product-name;. ACPI can only be turned
-        off using the command line. See
-        <xref linkend="vboxmanage-modifyvm" />.
+        ACPI is the current industry standard to allow OSes to recognize
+        hardware, configure motherboards and other devices and manage
+        power. As all modern PCs contain this feature and Windows and
+        Linux have been supporting it for years, it is also enabled by
+        default in &product-name;. ACPI can only be turned off using the
+        command line. See <xref linkend="vboxmanage-modifyvm" />.
       </para>
 
       <warning>
         <para>
-          All Windows operating systems starting with Windows 2000
-          install different kernels, depending on whether ACPI is
-          available. This means that ACPI <emphasis>must not be turned
-          off</emphasis> after installation of a Windows guest OS.
-          However, turning it on after installation will have no effect.
+          All Windows OSes starting with Windows 2000 install different
+          kernels, depending on whether ACPI is available. This means
+          that ACPI <emphasis>must not be turned off</emphasis> after
+          installation of a Windows guest OS. However, turning it on
+          after installation will have no effect.
         </para>
       </warning>
 
@@ -1376,10 +1367,10 @@
         <listitem>
           <para>
             <emphasis role="bold">Processor(s):</emphasis> Sets the
-            number of virtual CPU cores the guest operating systems can
-            see. &product-name; supports symmetrical multiprocessing
-            (SMP) and can present up to 32 virtual CPU cores to each
-            virtual machine.
+            number of virtual CPU cores the guest OSes can see.
+            &product-name; supports symmetrical multiprocessing (SMP)
+            and can present up to 32 virtual CPU cores to each virtual
+            machine.
           </para>
 
           <para>
@@ -1411,28 +1402,38 @@
           <para>
             <emphasis role="bold">Enable PAE/NX:</emphasis> Determines
             whether the PAE and NX capabilities of the host CPU will be
-            exposed to the virtual machine. To enable this feature,
-            select the <emphasis role="bold">Extended
-            Features</emphasis> check box.
+            exposed to the virtual machine.
           </para>
 
           <para>
             PAE stands for Physical Address Extension. Normally, if
-            enabled and supported by the operating system, then even a
-            32-bit x86 CPU can access more than 4 GB of RAM. This is
-            made possible by adding another 4 bits to memory addresses,
-            so that with 36 bits, up to 64 GB can be addressed. Some
-            operating systems, such as Ubuntu Server, require PAE
-            support from the CPU and cannot be run in a virtual machine
-            without it.
+            enabled and supported by the OS, then even a 32-bit x86 CPU
+            can access more than 4 GB of RAM. This is made possible by
+            adding another 4 bits to memory addresses, so that with 36
+            bits, up to 64 GB can be addressed. Some OSes, such as
+            Ubuntu Server, require PAE support from the CPU and cannot
+            be run in a virtual machine without it.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <emphasis role="bold">Enable Nested VT-x/AMD-V</emphasis>:
+            Enables nested virtualization, with passthrough of hardware
+            virtualization functions to the guest VM.
+          </para>
+
+          <para>
+            This feature is available on host systems that use an AMD
+            CPU. For Intel CPUs, the option is grayed out.
           </para>
         </listitem>
 
       </itemizedlist>
 
       <para>
-        With virtual machines running modern server operating systems,
-        &product-name; also supports CPU hot-plugging. For details, see
+        With virtual machines running modern server OSes, &product-name;
+        also supports CPU hot-plugging. For details, see
         <xref linkend="cpuhotplug" />.
       </para>
 
@@ -1454,8 +1455,8 @@
             <emphasis role="bold">Paravirtualization
             Interface:</emphasis> &product-name; provides
             paravirtualization interfaces to improve time-keeping
-            accuracy and performance of guest operating systems. The
-            options available are documented under the
+            accuracy and performance of guest OSes. The options
+            available are documented under the
             <computeroutput>paravirtprovider</computeroutput> option in
             <xref linkend="vboxmanage-modifyvm" />. For further details
             on the paravirtualization providers, see
@@ -1509,9 +1510,9 @@
         In most cases, the default settings on the
         <emphasis role="bold">Acceleration</emphasis> tab will work
         well. &product-name; selects sensible defaults, depending on the
-        operating system that you selected when you created the virtual
-        machine. In certain situations, however, you may want to change
-        the preconfigured defaults.
+        OS that you selected when you created the virtual machine. In
+        certain situations, however, you may want to change the
+        preconfigured defaults.
       </para>
 
     </sect2>
@@ -1563,10 +1564,10 @@
           <para>
             <emphasis role="bold">Monitor Count:</emphasis> With this
             setting, &product-name; can provide more than one virtual
-            monitor to a virtual machine. If a guest operating system
-            supports multiple attached monitors, &product-name; can
-            pretend that multiple virtual monitors are present. Up to
-            eight such virtual monitors are supported.
+            monitor to a virtual machine. If a guest OS supports
+            multiple attached monitors, &product-name; can pretend that
+            multiple virtual monitors are present. Up to eight such
+            virtual monitors are supported.
           </para>
 
           <para>
@@ -1630,8 +1631,10 @@
         <listitem>
           <para>
             <emphasis role="bold">Graphics Controller:</emphasis>
-            Specifies the graphics adapter type used by the VM. The
-            following options are available:
+            Specifies the graphics adapter type used by the guest VM.
+            Note that you must install the Guest Additions on the guest
+            VM to specify the VBoxSVGA or VMSVGA graphics controller.
+            The following options are available:
           </para>
 
           <itemizedlist>
@@ -1640,35 +1643,36 @@
               <para>
                 <emphasis role="bold">VBoxSVGA:</emphasis> The default
                 graphics controller for new VMs that use Linux or
-                Windows 7 or later. Requires the Guest Additions.
+                Windows 7 or later.
+              </para>
+
+              <para>
+                This graphics controller improves performance and 3D
+                support when compared to the legacy VBoxVGA option.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                <emphasis role="bold">VBoxVGA:</emphasis> Used for
-                legacy guest operating systems. This was the default
-                graphics controller in previous releases.
-              </para>
-
-              <para>
-                For Windows versions before Windows 7, this is the
-                default option. Does not require the Guest Additions.
+                <emphasis role="bold">VBoxVGA:</emphasis> Use this
+                graphics controller for legacy guest OSes. This is the
+                default graphics controller for Windows versions before
+                Windows 7.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                <emphasis role="bold">VMSVGA:</emphasis> Used to emulate
-                a VMware SVGA graphic device. Requires the Guest
-                Additions.
+                <emphasis role="bold">VMSVGA:</emphasis> Use this
+                graphics controller to emulate a VMware SVGA graphics
+                device.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                <emphasis role="bold">None:</emphasis> Do not emulate a
-                graphics adapter type.
+                <emphasis role="bold">None:</emphasis> Does not emulate
+                a graphics adapter type.
               </para>
             </listitem>
 
@@ -1713,10 +1717,6 @@
 
       <title>Recording Tab</title>
 
-      <remark>
-        Renamed to Recording tab? Check against RC version.
-      </remark>
-
       <para>
         On the <emphasis role="bold">Recording</emphasis> tab you can
         enable video and audio recording for a virtual machine and
@@ -1728,22 +1728,22 @@
 
         <listitem>
           <para>
-            <emphasis role="bold">Enable Capture:</emphasis> Select this
-            check box and select a <emphasis role="bold">Capture
+            <emphasis role="bold">Enable Recording:</emphasis> Select
+            this check box and select a <emphasis role="bold">Recording
             Mode</emphasis> option.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <emphasis role="bold">Capture Mode:</emphasis> You can
+            <emphasis role="bold">Recording Mode:</emphasis> You can
             choose to record video, audio, or both video and audio.
           </para>
 
           <para>
             Some settings on the
             <emphasis role="bold">Recording</emphasis> tab may be grayed
-            out, depending on the <emphasis role="bold">Capture
+            out, depending on the <emphasis role="bold">Recording
             Mode</emphasis> setting.
           </para>
         </listitem>
@@ -1854,9 +1854,8 @@
     </figure>
 
     <para>
-      Depending on the guest operating system type that you selected
-      when you created the VM, a new VM includes the following storage
-      devices:
+      Depending on the guest OS type that you selected when you created
+      the VM, a new VM includes the following storage devices:
     </para>
 
     <itemizedlist>
@@ -1888,10 +1887,10 @@
       the default storage layout may differ. You might then only have an
       IDE controller to which both the CD/DVD drive and the hard disks
       have been attached. This might also apply if you selected an older
-      operating system type when you created the VM. Since older
-      operating systems do not support SATA without additional drivers,
-      &product-name; will make sure that no such devices are present
-      initially. See <xref linkend="harddiskcontrollers" />.
+      OS type when you created the VM. Since older OSes do not support
+      SATA without additional drivers, &product-name; will make sure
+      that no such devices are present initially. See
+      <xref linkend="harddiskcontrollers" />.
     </para>
 
     <para>
@@ -1937,20 +1936,19 @@
 
           <listitem>
             <para>
-              You can then select to which <emphasis role="bold">device
-              slot</emphasis> of the controller the virtual disk should
-              be connected to. IDE controllers have four slots which
-              have traditionally been called primary master, primary
-              slave, secondary master, and secondary slave. By contrast,
-              SATA and SCSI controllers offer you up to 30 slots for
-              attaching virtual devices.
+              The <emphasis role="bold">device slot</emphasis> of the
+              controller that the virtual disk is connected to. IDE
+              controllers have four slots which have traditionally been
+              called primary master, primary slave, secondary master,
+              and secondary slave. By contrast, SATA and SCSI
+              controllers offer you up to 30 slots for attaching virtual
+              devices.
             </para>
           </listitem>
 
           <listitem>
             <para>
-              You can select which <emphasis role="bold">image
-              file</emphasis> to use.
+              The <emphasis role="bold">image file</emphasis> to use.
             </para>
 
             <itemizedlist>
@@ -1985,9 +1983,9 @@
                   For virtual CD/DVD drives, the image files will
                   typically be in the standard ISO format instead. Most
                   commonly, you will select this option when installing
-                  an operating system from an ISO file that you have
-                  obtained from the Internet. For example, most Linux
-                  distributions are available in this way.
+                  an OS from an ISO file that you have obtained from the
+                  Internet. For example, most Linux distributions are
+                  available in this way.
                 </para>
 
                 <para>
@@ -2002,12 +2000,11 @@
                       If you select <emphasis role="bold">Host
                       Drive</emphasis> from the list, then the physical
                       device of the host computer is connected to the
-                      VM, so that the guest operating system can read
-                      from and write to your physical device. This is,
-                      for instance, useful if you want to install
-                      Windows from a real installation CD. In this case,
-                      select your host drive from the drop-down list
-                      presented.
+                      VM, so that the guest OS can read from and write
+                      to your physical device. This is, for instance,
+                      useful if you want to install Windows from a real
+                      installation CD. In this case, select your host
+                      drive from the drop-down list presented.
                     </para>
 
                     <para>
@@ -2186,13 +2183,12 @@
     </para>
 
     <para>
-      If a virtual serial port is enabled, the guest operating system
-      sees a standard 16550A compatible UART device. Other UART types
-      can be configured using the <command>VBoxManage modifyvm</command>
-      command. Both receiving and transmitting data is supported. How
-      this virtual serial port is then connected to the host is
-      configurable, and the details depend on your host operating
-      system.
+      If a virtual serial port is enabled, the guest OS sees a standard
+      16550A compatible UART device. Other UART types can be configured
+      using the <command>VBoxManage modifyvm</command> command. Both
+      receiving and transmitting data is supported. How this virtual
+      serial port is then connected to the host is configurable, and the
+      details depend on your host OS.
     </para>
 
     <para>
@@ -2293,8 +2289,8 @@
             <para>
               <emphasis role="bold">Host Pipe:</emphasis> Configure
               &product-name; to connect the virtual serial port to a
-              software pipe on the host. This depends on your host
-              operating system, as follows:
+              software pipe on the host. This depends on your host OS,
+              as follows:
             </para>
 
             <itemizedlist>
@@ -2440,9 +2436,9 @@
       <para>
         &product-name; can enable virtual machines to access the USB
         devices on your host directly. To achieve this, &product-name;
-        presents the guest operating system with a virtual USB
-        controller. As soon as the guest system starts using a USB
-        device, it will appear as unavailable on the host.
+        presents the guest OS with a virtual USB controller. As soon as
+        the guest system starts using a USB device, it will appear as
+        unavailable on the host.
       </para>
 
       <note>
@@ -2808,11 +2804,11 @@
 
       <para>
         EFI provides two distinct video interfaces: GOP (Graphics Output
-        Protocol) and UGA (Universal Graphics Adapter). Modern operating
-        systems, such as Mac OS X, generally use GOP, while some older
-        ones still use UGA. &product-name; provides a configuration
-        option to control the graphics resolution for both interfaces,
-        making the difference mostly irrelevant for users.
+        Protocol) and UGA (Universal Graphics Adapter). Modern OSes,
+        such as Mac OS X, generally use GOP, while some older ones still
+        use UGA. &product-name; provides a configuration option to
+        control the graphics resolution for both interfaces, making the
+        difference mostly irrelevant for users.
       </para>
 
       <para>

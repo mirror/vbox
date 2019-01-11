@@ -7,6 +7,7 @@
 <chapter id="installation">
 
   <title>Installation Details</title>
+
   <para>
     As installation of &product-name; varies depending on your host
     operating system, the following sections provide installation
@@ -75,8 +76,8 @@
       <para>
         Using either way displays the installation
         <emphasis role="bold">Welcome</emphasis> dialog and enables you
-        to choose where to install &product-name;, and which components to
-        install. In addition to the &product-name; application, the
+        to choose where to install &product-name;, and which components
+        to install. In addition to the &product-name; application, the
         following components are available:
       </para>
 
@@ -86,8 +87,8 @@
           <para>
             <emphasis role="bold">USB support.</emphasis> This package
             contains special drivers for your Windows host that
-            &product-name; requires to fully support USB devices inside your
-            virtual machines.
+            &product-name; requires to fully support USB devices inside
+            your virtual machines.
           </para>
         </listitem>
 
@@ -95,19 +96,19 @@
           <para>
             <emphasis role="bold">Networking.</emphasis> This package
             contains extra networking drivers for your Windows host that
-            &product-name; needs to support Bridged Networking. This enables
-            your VM's virtual network cards to be accessed from other
-            machines on your physical network.
+            &product-name; needs to support Bridged Networking. This
+            enables your VM's virtual network cards to be accessed from
+            other machines on your physical network.
           </para>
         </listitem>
 
         <listitem>
           <para>
             <emphasis role="bold">Python support.</emphasis> This
-            package contains Python scripting support for the &product-name;
-            API, see <xref linkend="VirtualBoxAPI" />. For this to work,
-            an already working Windows Python installation on the system
-            is required.
+            package contains Python scripting support for the
+            &product-name; API, see <xref linkend="VirtualBoxAPI" />.
+            For this to work, an already working Windows Python
+            installation on the system is required.
           </para>
 
           <para>
@@ -118,8 +119,8 @@
 
           <note>
             <para>
-              Python version at least 2.6 is required. Since &product-name;
-              5.1, Python 3 is also supported.
+              Python version at least 2.6 is required. Since
+              &product-name; 5.1, Python 3 is also supported.
             </para>
           </note>
         </listitem>
@@ -150,7 +151,8 @@
 
       <para>
         Then, run either of the following commands on the extracted .MSI
-        files. This will install &product-name; only for the current user.
+        files. This will install &product-name; only for the current
+        user.
       </para>
 
 <screen>VirtualBox.exe -msiparams ALLUSERS=2</screen>
@@ -158,10 +160,11 @@
 <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi ALLUSERS=2</screen>
 
       <para>
-        If you do not want to install all features of &product-name;, you
-        can set the optional <computeroutput>ADDLOCAL</computeroutput>
-        parameter to explicitly name the features to be installed. The
-        following features are available:
+        If you do not want to install all features of &product-name;,
+        you can set the optional
+        <computeroutput>ADDLOCAL</computeroutput> parameter to
+        explicitly name the features to be installed. The following
+        features are available:
       </para>
 
       <variablelist>
@@ -336,8 +339,8 @@
           </para>
 
           <para>
-            Specifies whether or not an &product-name; icon on the desktop
-            should be created.
+            Specifies whether or not an &product-name; icon on the
+            desktop should be created.
           </para>
 
           <para>
@@ -386,8 +389,8 @@
           </para>
 
           <para>
-            Specifies whether to start &product-name; right
-            after successful installation.
+            Specifies whether to start &product-name; right after
+            successful installation.
           </para>
 
           <para>
@@ -466,8 +469,8 @@
       <title>Unattended Installation</title>
 
       <para>
-        To perform a non-interactive installation of &product-name; you can
-        use the command line version of the installer application.
+        To perform a non-interactive installation of &product-name; you
+        can use the command line version of the installer application.
       </para>
 
       <para>
@@ -530,9 +533,9 @@
           These packages are only required if you want to run the
           &product-name; graphical user interfaces. In particular,
           <computeroutput>VirtualBox</computeroutput>, the graphical
-          VirtualBox Manager, requires both Qt and SDL.
-          If you only want to run <command>VBoxHeadless</command>,
-          neither Qt nor SDL are required.
+          VirtualBox Manager, requires both Qt and SDL. If you only want
+          to run <command>VBoxHeadless</command>, neither Qt nor SDL are
+          required.
         </para>
       </note>
 
@@ -638,8 +641,8 @@
       <title>Performing the Installation</title>
 
       <para>
-        &product-name; is available in a number of package formats native to
-        various common Linux distributions. See
+        &product-name; is available in a number of package formats
+        native to various common Linux distributions. See
         <xref linkend="hostossupport"/>. In addition, there is an
         alternative generic installer (.run) which should work on most
         Linux distributions. The generic installer packages are built on
@@ -847,9 +850,10 @@ sudo tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen>
 tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen>
 
         <para>
-          The sources for &product-name;'s kernel module are provided in the
-          <computeroutput>src</computeroutput> directory. To build the
-          module, change to the directory and use the following command:
+          The sources for &product-name;'s kernel module are provided in
+          the <computeroutput>src</computeroutput> directory. To build
+          the module, change to the directory and use the following
+          command:
         </para>
 
 <screen>make</screen>
@@ -869,13 +873,14 @@ tar jxf ./install/VirtualBox.tar.bz2 -C /opt/VirtualBox</screen>
 <screen>make install</screen>
 
         <para>
-          The &product-name; kernel module needs a device node to operate.
-          The above <command>make</command> command will tell you how to
-          create the device node, depending on your Linux system. The
-          procedure is slightly different for a classical Linux setup
-          with a <computeroutput>/dev</computeroutput> directory, a
-          system with the now deprecated <command>devfs</command> and a
-          modern Linux system with <command>udev</command>.
+          The &product-name; kernel module needs a device node to
+          operate. The above <command>make</command> command will tell
+          you how to create the device node, depending on your Linux
+          system. The procedure is slightly different for a classical
+          Linux setup with a <computeroutput>/dev</computeroutput>
+          directory, a system with the now deprecated
+          <command>devfs</command> and a modern Linux system with
+          <command>udev</command>.
         </para>
 
         <para>
@@ -927,11 +932,12 @@ ln -sf /opt/VirtualBox/VBox.sh /usr/bin/VBoxHeadless</screen>
         <title>Updating and Uninstalling &product-name;</title>
 
         <para>
-          Before updating or uninstalling &product-name;, you must terminate
-          any virtual machines which are currently running and exit the
-          &product-name; or VBoxSVC applications. To update &product-name;,
-          simply run the installer of the updated version. To uninstall
-          &product-name;, run the installer as follows:
+          Before updating or uninstalling &product-name;, you must
+          terminate any virtual machines which are currently running and
+          exit the &product-name; or VBoxSVC applications. To update
+          &product-name;, simply run the installer of the updated
+          version. To uninstall &product-name;, run the installer as
+          follows:
         </para>
 
 <screen>sudo ./VirtualBox.run uninstall</screen>
@@ -1049,11 +1055,11 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
       <para>
         The Linux installers create the system user group
         <computeroutput>vboxusers</computeroutput> during installation.
-        Any system user who is going to use USB devices from &product-name;
-        guests must be a member of that group. A user can be made a
-        member of the group <computeroutput>vboxusers</computeroutput>
-        through the GUI user/group management or using the following
-        command:
+        Any system user who is going to use USB devices from
+        &product-name; guests must be a member of that group. A user can
+        be made a member of the group
+        <computeroutput>vboxusers</computeroutput> through the GUI
+        user/group management or using the following command:
       </para>
 
 <screen>sudo usermod -a -G vboxusers username</screen>
@@ -1065,8 +1071,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
       <title>Starting &product-name; on Linux</title>
 
       <para>
-        The easiest way to start a &product-name; program is by running the
-        program of your choice (<command>VirtualBox</command>,
+        The easiest way to start a &product-name; program is by running
+        the program of your choice (<command>VirtualBox</command>,
         <command>VBoxManage</command>, or
         <command>VBoxHeadless</command>) from a terminal. These are
         symbolic links to <command>VBox.sh</command> that start the
@@ -1075,8 +1081,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
 
       <para>
         The following detailed instructions should only be of interest
-        if you wish to execute &product-name; without installing it first.
-        You should start by compiling the
+        if you wish to execute &product-name; without installing it
+        first. You should start by compiling the
         <computeroutput>vboxdrv</computeroutput> kernel module and
         inserting it into the Linux kernel. &product-name; consists of a
         service daemon, <computeroutput>VBoxSVC</computeroutput>, and
@@ -1111,16 +1117,17 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
     <title>Installing on Oracle Solaris Hosts</title>
 
     <para>
-      For the specific versions of Oracle Solaris that are supported as host
-      operating systems, see <xref
+      For the specific versions of Oracle Solaris that are supported as
+      host operating systems, see <xref
     linkend="hostossupport" />.
     </para>
 
     <para>
-      If you have a previously installed instance of &product-name; on your
-      Oracle Solaris host, please uninstall it first before installing a new
-      instance. See <xref linkend="uninstall-solaris-host" /> for
-      uninstall instructions.
+      If you have a previously installed instance of &product-name; on
+      your Oracle Solaris host, please uninstall it first before
+      installing a new instance. See
+      <xref linkend="uninstall-solaris-host" /> for uninstall
+      instructions.
     </para>
 
     <sect2 id="install-solaris-performing">
@@ -1128,22 +1135,23 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
       <title>Performing the Installation</title>
 
       <para>
-        &product-name; is available as a standard Oracle Solaris package. Download
-        the &product-name; SunOS package which includes the 64-bit versions
-        of &product-name;. <emphasis>The installation must be performed as
-        root and from the global zone</emphasis> as the &product-name;
-        installer loads kernel drivers which cannot be done from
-        non-global zones. To verify which zone you are currently in,
-        execute the <command>zonename</command> command. Execute the
-        following commands:
+        &product-name; is available as a standard Oracle Solaris
+        package. Download the &product-name; SunOS package which
+        includes the 64-bit versions of &product-name;. <emphasis>The
+        installation must be performed as root and from the global
+        zone</emphasis> as the &product-name; installer loads kernel
+        drivers which cannot be done from non-global zones. To verify
+        which zone you are currently in, execute the
+        <command>zonename</command> command. Execute the following
+        commands:
       </para>
 
 <screen>gunzip -cd VirtualBox-<replaceable>version-number</replaceable>-SunOS.tar.gz | tar xvf -</screen>
 
       <para>
-        The &product-name; kernel package is no longer a separate package
-        and has been integrated into the main package. Install the
-        &product-name; package as follows:
+        The &product-name; kernel package is no longer a separate
+        package and has been integrated into the main package. Install
+        the &product-name; package as follows:
       </para>
 
 <screen>pkgadd -d VirtualBox-<replaceable>version-number</replaceable>-SunOS.pkg</screen>
@@ -1156,8 +1164,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
         script to be executed. Choose <emphasis role="bold">y</emphasis>
         and proceed, as it is essential to execute this script which
         installs the &product-name; kernel module. Following this
-        confirmation the installer will install &product-name; and execute
-        the postinstall setup script.
+        confirmation the installer will install &product-name; and
+        execute the postinstall setup script.
       </para>
 
       <para>
@@ -1184,11 +1192,12 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
       <para>
         The installer creates the system user group
         <computeroutput>vboxuser</computeroutput> during installation
-        for Oracle Solaris hosts that support the USB features required by
-        &product-name;. Any system user who is going to use USB devices from
-        &product-name; guests must be a member of this group. A user can be
-        made a member of this group through the GUI user/group
-        management or at the command line by executing as root:
+        for Oracle Solaris hosts that support the USB features required
+        by &product-name;. Any system user who is going to use USB
+        devices from &product-name; guests must be a member of this
+        group. A user can be made a member of this group through the GUI
+        user/group management or at the command line by executing as
+        root:
       </para>
 
 <screen>usermod -G vboxuser username</screen>
@@ -1206,8 +1215,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
       <title>Starting &product-name; on Oracle Solaris</title>
 
       <para>
-        The easiest way to start a &product-name; program is by running the
-        program of your choice (<command>VirtualBox</command>,
+        The easiest way to start a &product-name; program is by running
+        the program of your choice (<command>VirtualBox</command>,
         <command>VBoxManage</command>, or
         <command>VBoxHeadless</command>) from a terminal. These are
         symbolic links to <command>VBox.sh</command> that start the
@@ -1261,8 +1270,8 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
       <title>Unattended Installation</title>
 
       <para>
-        To perform a non-interactive installation of &product-name; there is
-        a response file named
+        To perform a non-interactive installation of &product-name;
+        there is a response file named
         <computeroutput>autoresponse</computeroutput>, that the
         installer will use for responses to inputs rather than ask them
         from you.
@@ -1290,10 +1299,10 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>
       <title>Configuring a Zone for Running &product-name;</title>
 
       <para>
-        Assuming that &product-name; has already been installed into your
-        zone, you need to give the zone access to &product-name;'s device
-        node. This is done by performing the following steps. Start a
-        root terminal and run the following command:
+        Assuming that &product-name; has already been installed into
+        your zone, you need to give the zone access to &product-name;'s
+        device node. This is done by performing the following steps.
+        Start a root terminal and run the following command:
       </para>
 
 <screen>zonecfg -z vboxzone</screen>
@@ -1319,11 +1328,11 @@ zonecfg:vboxzone:device&gt;end
 zonecfg:vboxzone&gt;exit</screen>
 
       <para>
-        If you are running &product-name; 2.2.0 or above on Oracle Solaris 11 or
-        above, you may also add a device for
+        If you are running &product-name; 2.2.0 or above on Oracle
+        Solaris 11 or above, you may also add a device for
         <computeroutput>/dev/vboxusbmon</computeroutput>, similar to
-        that shown above. This does not apply to Oracle Solaris 10 hosts, due
-        to lack of USB support.
+        that shown above. This does not apply to Oracle Solaris 10
+        hosts, due to lack of USB support.
       </para>
 
       <para>

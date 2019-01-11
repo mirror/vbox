@@ -1002,8 +1002,8 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             hardware virtualization is enabled, this additional setting
             enables or disables the use of the nested paging feature in
             the processor of your host system. See
-            <xref
-            linkend="hwvirt" /> and <xref linkend="sec-rec-cve-2018-3646" />.
+            <xref linkend="hwvirt" /> and
+            <xref linkend="sec-rec-cve-2018-3646" />.
           </para>
         </listitem>
 
@@ -1396,9 +1396,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             network card. See the <computeroutput>--nic</computeroutput>
             option. Use this option to specify which host-only
             networking interface the given virtual network interface
-            will use. See
-            <xref
-            linkend="network_hostonly" />.
+            will use. See <xref linkend="network_hostonly" />.
           </para>
         </listitem>
 
@@ -1409,8 +1407,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             networking has been enabled for a virtual network card. See
             the <computeroutput>--nic</computeroutput> option. Use this
             option to specify the name of the internal network. See
-            <xref
-            linkend="network_internal" />.
+            <xref linkend="network_internal" />.
           </para>
         </listitem>
 
@@ -1835,8 +1832,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
           <para>
             <computeroutput>--usb on|off</computeroutput>: Enables and
             disables the VM's virtual USB controller. See
-            <xref
-          linkend="settings-usb" />.
+            <xref linkend="settings-usb" />.
           </para>
         </listitem>
 
@@ -2021,8 +2017,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
                 <computeroutput>0</computeroutput> means port 3389, the
                 standard port for RDP. See the description for the
                 <computeroutput>--vrdeport</computeroutput> option in
-                <xref
-                linkend="vboxmanage-modifyvm-vrde" />.
+                <xref linkend="vboxmanage-modifyvm-vrde" />.
               </para>
             </listitem>
 
@@ -2034,8 +2029,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
                 connections only on the specified host network
                 interface. See the description for the
                 <computeroutput>--vrdeaddress</computeroutput> option in
-                <xref
-                linkend="vboxmanage-modifyvm-vrde" />.
+                <xref linkend="vboxmanage-modifyvm-vrde" />.
               </para>
             </listitem>
 
@@ -2320,19 +2314,22 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
             <listitem>
               <para>
-                Only IPv4: <computeroutput>--vrdeaddress "0.0.0.0"</computeroutput>
+                Only IPv4: <computeroutput>--vrdeaddress
+                "0.0.0.0"</computeroutput>
               </para>
             </listitem>
 
             <listitem>
               <para>
-                Only IPv6: <computeroutput>--vrdeaddress "::"</computeroutput>
+                Only IPv6: <computeroutput>--vrdeaddress
+                "::"</computeroutput>
               </para>
             </listitem>
 
             <listitem>
               <para>
-                Both IPv6 and IPv4: <computeroutput>--vrdeaddress ""</computeroutput>
+                Both IPv6 and IPv4: <computeroutput>--vrdeaddress
+                ""</computeroutput>
               </para>
 
               <para>
@@ -2357,8 +2354,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             <computeroutput>--vrdeauthlibrary
             default|&lt;name&gt;</computeroutput>: Specifies the library
             used for RDP authentication. See
-            <xref
-            linkend="vbox-auth" />.
+            <xref linkend="vbox-auth" />.
           </para>
         </listitem>
 
@@ -2367,8 +2363,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             <computeroutput>--vrdemulticon on|off</computeroutput>:
             Enables multiple connections to be made to the same VRDE
             server, if the server supports this feature. See
-            <xref
-            linkend="vrde-multiconnection" />.
+            <xref linkend="vrde-multiconnection" />.
           </para>
         </listitem>
 
@@ -2397,8 +2392,7 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
             <computeroutput>--vrdevideochannelquality
             &lt;percent&gt;</computeroutput>: Specifies the image
             quality for video redirection. See
-            <xref
-            linkend="vrde-videochannel" />.
+            <xref linkend="vrde-videochannel" />.
           </para>
         </listitem>
 
@@ -2755,9 +2749,9 @@ VBoxManage clonevm <replaceable>vm</replaceable> [ --basefolder <replaceable>bas
         <para>
           <option>--register</option> automatically registers the new
           clone in this &product-name; installation. You can manually
-          register the new VM later by using the <command>VMBoxManage
-          registervm</command> command. See the
-          <xref linkend="vboxmanage-registervm" /> man page.
+          register the new VM later by using the <command>VBoxManage
+          registervm</command> command. See
+          <xref linkend="vboxmanage-registervm" />.
         </para>
       </listitem>
 
@@ -2803,10 +2797,6 @@ VBoxManage clonevm <replaceable>vm</replaceable> [ --basefolder <replaceable>bas
       The <command>movevm</command> subcommand requires the name of the
       virtual machine which should be moved.
     </para>
-
-    <remark>
-      What does the --type basic setting do?
-    </remark>
 
     <para>
       Also required is the type of move operation, specified by
@@ -2957,13 +2947,14 @@ Virtual system 0:
       <listitem>
         <para>
           A virtual appliance in OVF format, including copying their
-          virtual disk images to compressed VMDK
+          virtual disk images to compressed VMDK.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          A cloud service, such as &oci;.
+          A cloud service, such as &oci;. A single VM can be exported in
+          VMDK format.
         </para>
       </listitem>
 
@@ -3036,141 +3027,154 @@ Virtual system 0:
 
       <title>Export to &oci;</title>
 
-      <note>
-        <para>
-          By default an exported image is converted into "stream vmdk"
-          to comply OCI requirement.
-        </para>
-      </note>
+      <para>
+        By default, an exported disk image is converted into stream VMDK
+        format. This ensures compatibility with &oci;.
+      </para>
 
       <para>
         List the machine that you want to export to &oci; and specify
-        output to &oci; by using the
+        the target cloud service provider by using the
         <computeroutput>--output</computeroutput> or
         <computeroutput>-o</computeroutput> option.
       </para>
 
       <para>
-        To export a VM to a cloud service such as &oci;, you must use
-        the <option>--cloud</option> option to identify the virtual
-        machine that you want to export. This option works in the same
-        way as the <option>--vsys</option> option for OVF export.
+        To export a VM to a cloud service such as &oci;, use the
+        <option>--cloud</option> option to specify the VM to export.
+        This option works in the same way as the <option>--vsys</option>
+        option for OVF export.
       </para>
 
       <para>
-        Specify the following options. Some of these are settings for
-        the VM instance and require you to enter an Oracle Cloud
-        Identifier (OCID) for a resource. OCIDs can be viewed using the
-        &oci; Console.
+        Some of the following options are settings for the VM instance.
+        As a result, you must enter an Oracle Cloud Identifier (OCID)
+        for a resource. Use the &oci; Console to view OCIDs.
       </para>
 
       <itemizedlist>
 
         <listitem>
           <para>
-            <computeroutput>--output</computeroutput>: The short name
-            for the cloud service you are exporting to. For &oci;, enter
-            <computeroutput>OCI://</computeroutput>.
+            <option>--output/-o</option>: Specifies the short name of
+            the cloud service provider to which you export. For &oci;,
+            enter <computeroutput>OCI://</computeroutput>.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--cloud &lt;number of virtual
-            system&gt;</computeroutput>: A number identifying the VM
-            that you are exporting. Numbering starts at
+            <option>--cloud</option>
+            <replaceable>number-of-virtual-system</replaceable>:
+            Specifies a number that identifies the VM that you are
+            exporting. Numbering starts at
             <computeroutput>0</computeroutput> for the first VM.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--vmname &lt;name&gt;</computeroutput>:
-            The exported VM gets this name in the cloud service.
+            <option>--vmname</option> <replaceable>name</replaceable>:
+            Specifies the name of the exported VM. This name is used as
+            the VM instance name in &oci;.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--cloudprofile &lt;cloud profile
-            name&gt;</computeroutput>: The cloud profile contains data for
-            communication with a cloud provider or service. The cloud profile contains details
-            for your &oci; account, such as your user OCID, and the fingerprint for
-            your public key. See <xref linkend="ovf-export-oci"/>.
+            <option>--cloudprofile</option>
+            <replaceable>cloud-profile-name</replaceable>: Specifies the
+            cloud profile that is used to connect to the cloud service
+            provider. The cloud profile contains your &oci; account
+            details, such as your user OCID and the fingerprint for your
+            public key. See <xref linkend="ovf-export-oci"/>.
+          </para>
+
+          <para>
+            To use a cloud profile, you must have the required
+            permissions on &oci;.
+          </para>
+
+          <remark>
+            Add xref to information about the required permissions.
+          </remark>
+        </listitem>
+
+        <listitem>
+          <para>
+            <option>--cloudshape</option>
+            <replaceable>shape</replaceable>: Specifies the shape used
+            for the VM instance. The shape defines the number of CPUs
+            and the amount of memory allocated to the VM instance. The
+            shape must be compatible with the exported image.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--cloudshape &lt;shape&gt;</computeroutput>:
-            The shape is used for the VM instance. Usually, determines the
-            number of CPUs and the amount of memory allocated to a
-            VM instance. The shape must be compatible with the exported image.
+            <option>--clouddomain</option>
+            <replaceable>domain</replaceable>: Specifies the
+            availability domain to use for the VM instance. Enter the
+            OCID for the availability domain.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--clouddomain
-            &lt;domain&gt;</computeroutput>: The availability domain
-            used for the VM instance. Enter the OCID for the
-            availability domain.
+            <option>--clouddisksize</option>
+            <replaceable>disk-size-in-GB</replaceable>: Specifies the
+            disk size used for the exported disk image in gigabytes. The
+            minimum value is 50 GB and the maximum value is 300 GB.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--clouddisksize &lt;disk
-            size&gt;</computeroutput>: The disk size used for the exported
-            image, in gigabytes. Minimum is 50GB, maximum - 300GB.
+            <option>--cloudbucket</option>
+            <replaceable>bucket-name</replaceable>: Specifies the bucket
+            in which to store the uploaded files. In &oci;, a bucket is
+            a logical container for storing objects.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--cloudbucket &lt;bucket
-            name&gt;</computeroutput>: A bucket is a kind of storage for the uploaded
-            objects. In the &oci; a bucket is used to store the uploaded files.
+            <option>--cloudocivcn</option>
+            <replaceable>OCI-vcn-ID</replaceable>: Specifies the virtual
+            cloud network (VCN) to use for the VM instance. Enter the
+            OCID for the VCN.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--cloudocivcn &lt;OCI vcn
-            id&gt;</computeroutput>: The virtual cloud network (VCN)
-            used for the VM instance. Enter the OCID for the VCN.
+            <option>--cloudocisubnet</option>
+            <replaceable>OCI-subnet-ID</replaceable>: Specifies the
+            subnet of the VCN to use for the VM instance. Enter the OCID
+            for the subnet.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--cloudocisubnet &lt;OCI subnet
-            ID&gt;</computeroutput>: The subnet of the VCN used for the
-            VM instance. Enter the OCID for the subnet.
+            <option>--cloudkeepobject true | false</option>: Specifies
+            whether to store the exported disk image in Oracle Object
+            Storage.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--cloudkeepobject
-            &lt;true/false&gt;</computeroutput>: Whether to store the
-            exported image in Oracle Object Storage or not.
+            <option>--cloudlaunchinstance true | false</option>:
+            Specifies whether to start the VM instance after the export
+            to &oci; completes.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            <computeroutput>--cloudlaunchinstance
-            &lt;true/false&gt;</computeroutput>: Whether to start the VM
-            instance after export to &oci; or not.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>
-            <computeroutput>--cloudpublicip
-            &lt;true/false&gt;</computeroutput>: Whether to enable a
-            public IP address for the VM instance or not.
+            <option>--cloudpublicip true | false</option>: Specifies
+            whether to enable a public IP address for the VM instance.
           </para>
         </listitem>
 
@@ -3181,11 +3185,16 @@ Virtual system 0:
         a VM to &oci;.
       </para>
 
-<screen>VBoxManage export "OCI_Export" --output OCI:// --cloud 0 --vmname OCI_export \
---cloudshape VM.Standard2.1 --clouddomain abcd:US-ASHBURN-AD-1 --clouddisksize 50 \
---cloudbucket test_bucket --cloudocivcn ocid1.vcn.oc1.iad.aaaa... \
---cloudpublicip true --cloudprofile "standard user" --cloudocisubnet ocid1.subnet.oc1.iad.aaaa... \
---cloudkeepobject true --cloudlaunchinstance true</screen>
+      <remark>
+        For the next release, describe exactly what this command does in
+        terms of the command line options.
+      </remark>
+
+<screen># VBoxManage export myVM --output OCI:// --cloud 0 --vmname myVM_Cloud \
+--cloudprofile "standard user" --cloudbucket myBucket \
+--cloudshape VM.Standard2.1 --clouddomain aaaa:US-ASHBURN-AD-1 --clouddisksize 50  \
+--cloudocivcn ocid1.vcn.oc1.iad.aaaa... --cloudocisubnet ocid1.subnet.oc1.iad.aaaa... \
+--cloudkeepobject true --cloudlaunchinstance true --cloudpublicip true</screen>
 
     </sect2>
 
@@ -3478,9 +3487,9 @@ Virtual system 0:
         <para>
           <computeroutput>nicproperty&lt;1-N&gt;
           &lt;paramname&gt;="paramvalue"</computeroutput>: This option,
-          in combination with <computeroutput>nicgenericdrv</computeroutput>
-          enables you to pass parameters to rarely-used
-          network backends.
+          in combination with
+          <computeroutput>nicgenericdrv</computeroutput> enables you to
+          pass parameters to rarely-used network backends.
         </para>
 
         <para>
@@ -3871,9 +3880,7 @@ Virtual system 0:
         <para>
           <computeroutput>vrdevideochannelquality
           &lt;percent&gt;</computeroutput>: Sets the image quality for
-          video redirection. See
-          <xref
-        linkend="vrde-videochannel" />.
+          video redirection. See <xref linkend="vrde-videochannel" />.
         </para>
       </listitem>
 
@@ -4228,7 +4235,7 @@ Virtual system 0:
         </para>
 
         <para>
-          For a headless encrypted VM start, use the folowing command:
+          For a headless encrypted VM start, use the following command:
         </para>
 
 <screen>
@@ -6918,7 +6925,8 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
 
           <varlistentry>
             <term>
-              <computeroutput>-E|--putenv &lt;NAME&gt;=&lt;VALUE&gt;</computeroutput>
+              <computeroutput>-E|--putenv
+              &lt;NAME&gt;=&lt;VALUE&gt;</computeroutput>
             </term>
 
             <listitem>
@@ -7195,7 +7203,8 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
 
           <varlistentry>
             <term>
-              <computeroutput>-E|--putenv &lt;NAME&gt;=&lt;VALUE&gt;</computeroutput>
+              <computeroutput>-E|--putenv
+              &lt;NAME&gt;=&lt;VALUE&gt;</computeroutput>
             </term>
 
             <listitem>
@@ -8379,11 +8388,11 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
     <para>
       Metric collection can only be enabled for started VMs. Collected
       data and collection settings for a particular VM will disappear as
-      soon as it shuts down. Use <command>VBoxManage metrics list</command>
-      subcommand to see which metrics are currently
-      available. You can also use <option>--list</option> option with
-      any subcommand that modifies metric settings to find out which
-      metrics were affected.
+      soon as it shuts down. Use the <command>VBoxManage metrics
+      list</command> subcommand to see which metrics are currently
+      available. You can also use the <option>--list</option> option
+      with any subcommand that modifies metric settings to find out
+      which metrics were affected.
     </para>
 
     <para>

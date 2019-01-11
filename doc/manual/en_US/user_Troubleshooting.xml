@@ -158,7 +158,7 @@
         For convenience, for each virtual machine, the VirtualBox
         Manager window can show these logs in a window. To access it,
         select a virtual machine from the list on the left and select
-        <emphasis role="bold">Show logs...</emphasis> from the
+        <emphasis role="bold">Show Log</emphasis> from the
         <emphasis role="bold">Machine</emphasis> menu.
       </para>
 
@@ -684,14 +684,14 @@
       </para>
 
 <screen>VBoxManage setextradata "VM name"
-      "VBoxInternal/Devices/piix3ide/0/LUN#[x]/Config/FlushInterval" [b]</screen>
+"VBoxInternal/Devices/piix3ide/0/LUN#[x]/Config/FlushInterval" [b]</screen>
 
       <para>
         For SATA disks use the following command:
       </para>
 
 <screen>VBoxManage setextradata "VM name"
-      "VBoxInternal/Devices/ahci/0/LUN#[x]/Config/FlushInterval" [b]</screen>
+"VBoxInternal/Devices/ahci/0/LUN#[x]/Config/FlushInterval" [b]</screen>
 
       <para>
         The value [x] that selects the disk for IDE is 0 for the master
@@ -1293,9 +1293,7 @@
         <listitem>
           <para>
             Download and install the latest version of 7-Zip File
-            Manager. See
-            <ulink
-          url="http//www.7-zip.org">http//www.7-zip.org</ulink>.
+            Manager.
           </para>
         </listitem>
 
@@ -1344,9 +1342,7 @@
         <listitem>
           <para>
             Download and install the latest version of 7-Zip File
-            Manager. See
-            <ulink
-              url="http//www.7-zip.org">http//www.7-zip.org</ulink>.
+            Manager.
           </para>
         </listitem>
 
@@ -1395,15 +1391,13 @@
         <listitem>
           <para>
             Download and install the latest version of 7-Zip File
-            Manager. See
-            <ulink
-          url="http//www.7-zip.org">http//www.7-zip.org</ulink>.
+            Manager.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Browse into the installation CD. for example E:\sources.
+            Browse into the installation CD. For example E:\sources.
           </para>
         </listitem>
 
@@ -1906,9 +1900,9 @@ VirtualBox</screen>
 
       <para>
         If a host-only adapter cannot be created, either with the
-        VirtualBox Manager or the <command>VBoxManage</command>
-        command, then the INF cache is probably corrupt. In this case,
-        the install log
+        VirtualBox Manager or the <command>VBoxManage</command> command,
+        then the INF cache is probably corrupt. In this case, the
+        install log
         (<computeroutput>%windir%\inf\setupapi.log</computeroutput> on
         Windows XP or
         <computeroutput>%windir%\inf\setupapi.dev.log</computeroutput>

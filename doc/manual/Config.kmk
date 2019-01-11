@@ -212,7 +212,7 @@ ifdef VBOX_XML_CATALOG
 		'<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">' \
 		'<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-accessibility-en.xml"            uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-accessibility-en.xml"/>' \
-		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-legal-notices/oracle-support-en.xml" uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-support-en.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/common/oracle-support-en.xml"                  uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/en_US/oracle-support-en.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_ChangeLogImpl.xml"                  uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_VBoxManage_CommandsOverview.xml"    uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xsl"                        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl"/>' \
@@ -243,13 +243,13 @@ ifdef VBOX_XML_ENTITIES
 		'<!ENTITY oci "Oracle Cloud Infrastructure">' \
 		'' \
 		'<!-- VBox placeholder entities -->' \
-		'<!ENTITY VBOX_PRODUCT SYSTEM "$(VBOX_PATH_MANUAL_SRC)/ent-vbox-product.xml" >' \
 		'<!ENTITY VBOX_VERSION_MAJOR "$(VBOX_VERSION_MAJOR)" >' \
 		'<!ENTITY VBOX_VERSION_MINOR "$(VBOX_VERSION_MINOR)" >' \
 		'<!ENTITY VBOX_VERSION_BUILD "$(VBOX_VERSION_MINOR)" >' \
 		'<!ENTITY VBOX_VERSION_STRING "$(VBOX_VERSION_STRING)" >' \
 		'<!ENTITY VBOX_VENDOR "$(VBOX_VENDOR)" >' \
 		'<!ENTITY VBOX_C_YEAR "$(VBOX_C_YEAR)" >' \
+		'<!ENTITY VBOX_PRODUCT '\''<trademark class="registered">Oracle</trademark> VM <trademark class="registered">VirtualBox</trademark>'\'' >' \
 		'' \
 		'<!-- Entities for OTN -->' \
 		'<!ENTITY otn-base-url "https://www.oracle.com/technetwork">' \

@@ -549,16 +549,15 @@
 
       <listitem>
         <para>
-          &product-name; may contain portions of FUSE for macOS which is governed by
-          the licenses in
+          &product-name; may contain portions of FUSE for macOS which is
+          governed by the licenses in
           <xref linkend="licOsxFuse" xrefstyle="template: %n" /> and
           <xref linkend="licLGPL" xrefstyle="template: %n"/> and
         </para>
 
         <para>
-          Copyright (c) 2011-2017 Benjamin Fleischer;
-          Copyright (c) 2011-2012 Erik Larsson
-          All rights reserved.
+          Copyright (c) 2011-2017 Benjamin Fleischer; Copyright (c)
+          2011-2012 Erik Larsson All rights reserved.
         </para>
       </listitem>
 
@@ -4785,9 +4784,10 @@ jloup@gzip.org          madler@alumni.caltech.edu</screen>
 
         <listitem>
           <para>
-            Neither the name of the copyright holder nor the names of its
-            contributors may be used to endorse or promote products derived
-            from this software without specific prior written permission.
+            Neither the name of the copyright holder nor the names of
+            its contributors may be used to endorse or promote products
+            derived from this software without specific prior written
+            permission.
           </para>
         </listitem>
 

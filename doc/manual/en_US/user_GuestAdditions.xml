@@ -1355,7 +1355,7 @@ VBoxControl sharedfolder list</screen>
           <para>
             The guest properties
             <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountDir</computeroutput>
-            and (more generic)
+            and the more generic
             <computeroutput>/VirtualBox/GuestAdd/SharedFolders/MountPrefix</computeroutput>
             can be used to override the automatic mount directory and
             prefix. See <xref linkend="guestadd-guestprops" />.
@@ -1432,7 +1432,8 @@ VBoxControl sharedfolder list</screen>
       a per-VM basis either using the <emphasis role="bold">Drag and
       Drop</emphasis> menu item in the
       <emphasis role="bold">Devices</emphasis> menu of the virtual
-      machine, as shown below, or the <command>VBoxManage</command>.
+      machine, as shown below, or the <command>VBoxManage</command>
+      command.
     </para>
 
     <figure id="fig-drag-drop-options">
@@ -1602,7 +1603,7 @@ VBoxControl sharedfolder list</screen>
         preconditions:
       </para>
 
-      <orderedlist>
+      <itemizedlist>
 
         <listitem>
           <para>
@@ -1664,14 +1665,13 @@ VBoxControl sharedfolder list</screen>
             Because 3D support is still experimental at this time, it is
             disabled by default and must be <emphasis>manually
             enabled</emphasis> in the VM settings. See
-            <xref
-            linkend="generalsettings" />.
+            <xref linkend="settings-display" />.
           </para>
 
           <note>
             <para>
-              Untrusted guest systems should not be allowed to use
-              &product-name;'s 3D acceleration features, just as
+              Untrusted guest systems should not be allowed to use the
+              3D acceleration features of &product-name;, just as
               untrusted host software should not be allowed to use 3D
               acceleration. Drivers for 3D hardware are generally too
               complex to be made properly secure and any software which
@@ -1685,7 +1685,7 @@ VBoxControl sharedfolder list</screen>
           </note>
         </listitem>
 
-      </orderedlist>
+      </itemizedlist>
 
       <para>
         To enable Aero theme support, the &product-name; WDDM video
@@ -1763,7 +1763,7 @@ VBoxControl sharedfolder list</screen>
         clip, then &product-name; will attempt to use your host's video
         acceleration hardware instead of performing overlay stretching
         and color conversion in software, which would be slow. This
-        currently works for Windows, Linux and Mac host platforms,
+        currently works for Windows, Linux and Mac OS X host platforms,
         provided that your host operating system can make use of 2D
         video acceleration in the first place.
       </para>
@@ -1773,7 +1773,7 @@ VBoxControl sharedfolder list</screen>
         preconditions:
       </para>
 
-      <orderedlist>
+      <itemizedlist>
 
         <listitem>
           <para>
@@ -1793,12 +1793,11 @@ VBoxControl sharedfolder list</screen>
             Because 2D support is still experimental at this time, it is
             disabled by default and must be <emphasis>manually
             enabled</emphasis> in the VM settings. See
-            <xref
-            linkend="generalsettings" />.
+            <xref linkend="settings-display" />.
           </para>
         </listitem>
 
-      </orderedlist>
+      </itemizedlist>
 
       <para>
         Technically, &product-name; implements this by exposing video
@@ -2036,17 +2035,21 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
       <title>Using Guest Properties to Wait on VM Events</title>
 
       <para>
-        The properties <computeroutput>/VirtualBox/HostInfo/VBoxVer</computeroutput>,
-        <computeroutput>/VirtualBox/HostInfo/VBoxVerExt</computeroutput> or
-        <computeroutput>/VirtualBox/HostInfo/VBoxRev</computeroutput> can be waited
-        on to detect that the VM state was restored from saved state or snapshot:
+        The properties
+        <computeroutput>/VirtualBox/HostInfo/VBoxVer</computeroutput>,
+        <computeroutput>/VirtualBox/HostInfo/VBoxVerExt</computeroutput>
+        or <computeroutput>/VirtualBox/HostInfo/VBoxRev</computeroutput>
+        can be waited on to detect that the VM state was restored from
+        saved state or snapshot:
       </para>
 
 <screen>$ VBoxControl guestproperty wait /VirtualBox/HostInfo/VBoxVer</screen>
 
       <para>
-        Similarly the <computeroutput>/VirtualBox/HostInfo/ResumeCounter</computeroutput>
-        can be used to detect that a VM was resumed from the paused state or saved state.
+        Similarly the
+        <computeroutput>/VirtualBox/HostInfo/ResumeCounter</computeroutput>
+        can be used to detect that a VM was resumed from the paused
+        state or saved state.
       </para>
 
     </sect2>
@@ -2060,12 +2063,8 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
     <para>
       The Guest Control File Manager is a feature of the Guest Additions
       that enables easy copying and moving of files between a guest and
-      the host system.
-    </para>
-
-    <para>
-      Other file management operations are supported, such as creating
-      new folders and renaming files or deleting files.
+      the host system. Other file management operations provide support
+      to create new folders and to rename or delete files.
     </para>
 
     <figure id="fig-guest-control-fm">
@@ -2073,7 +2072,7 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
       <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/guest-fm.png"
-            width="10cm" />
+            width="12cm" />
         </imageobject>
       </mediaobject>
     </figure>
@@ -2097,7 +2096,7 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
 
         <listitem>
           <para>
-            Display the Guest Control File Manager.
+            Open the Guest Control File Manager.
           </para>
 
           <para>
@@ -2107,8 +2106,7 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
           </para>
 
           <para>
-            The Guest Control File Manager is displayed. Files on the
-            host system are shown in the left pane.
+            The left pane shows the files on the host system.
           </para>
         </listitem>
 
@@ -2118,9 +2116,8 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
           </para>
 
           <para>
-            In the panel at the bottom of the Guest Control File
-            Manager, enter authentication credentials for a user on the
-            guest system.
+            At the bottom of the Guest Control File Manager, enter
+            authentication credentials for a user on the guest system.
           </para>
 
           <para>
@@ -2128,36 +2125,31 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
           </para>
 
           <para>
-            The guest VM file system is shown in the right pane of the
-            Guest Control File Manager.
+            The contents of the guest VM file system appears in the
+            right pane of the Guest Control File Manager.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Transfer files between the guest and the host.
+            Transfer files between the guest and the host system by
+            using the move and copy file transfer icons.
           </para>
 
           <para>
-            Use the file transfer icons to copy or move files between
-            the guest and host.
-          </para>
-
-          <para>
-            You can copy and move files from guest to host, or from host
-            to guest.
+            You can copy and move files from a guest to the host system
+            or from the host system to the guest.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Close down the Guest Control File Manager.
+            Close the Guest Control File Manager.
           </para>
 
           <para>
-            Click <emphasis role="bold">Close</emphasis>. The guest
-            session is ended and the Guest Control File Manager is
-            closed down.
+            Click <emphasis role="bold">Close</emphasis> to end the
+            guest session.
           </para>
         </listitem>
 
@@ -2431,9 +2423,7 @@ Name: /VirtualBox/GuestInfo/OS/Version, value: #59-Ubuntu SMP Thu Jan 28 01:23:0
         <para>
           Enabling Page Fusion might indirectly increase the chances for
           malicious guests to successfully attack other VMs running on
-          the same host.
-
-<!--See <xref linkend="pot-insecure"/>.-->
+          the same host. See <xref linkend="pot-insecure"/>.
         </para>
       </note>
 

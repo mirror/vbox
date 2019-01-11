@@ -1271,7 +1271,7 @@ host path or identifier</screen>
         When the webcam device is detached from the host, the emulated
         webcam device remains attached to the guest and must be manually
         detached using the <computeroutput>VBoxManage controlvm "VM
-        name" webcam detach ...</computeroutput> command.
+        name" webcam detach</computeroutput> command.
       </para>
 
     </sect2>
@@ -1285,7 +1285,7 @@ host path or identifier</screen>
         device is automatically detached from the guest only if the
         webcam is streaming video. If the emulated webcam is inactive it
         should be manually detached using the <computeroutput>VBoxManage
-        controlvm "VM name" webcam detach ...</computeroutput> command.
+        controlvm "VM name" webcam detach</computeroutput> command.
       </para>
 
       <para>
@@ -1422,12 +1422,11 @@ vga = 864</screen>
         <para>
           Raw hard disk access is for expert users only. Incorrect use
           or use of an outdated configuration can lead to
-          <emphasis
-          role="bold">total loss of data
-          </emphasis>on the physical disk. Most importantly,
-          <emphasis>do not</emphasis> attempt to boot the partition with
-          the currently running host operating system in a guest. This
-          will lead to severe data corruption.
+          <emphasis role="bold">total loss of data</emphasis> on the
+          physical disk. Most importantly, <emphasis>do not</emphasis>
+          attempt to boot the partition with the currently running host
+          operating system in a guest. This will lead to severe data
+          corruption.
         </para>
       </warning>
 
@@ -1467,7 +1466,7 @@ vga = 864</screen>
         </para>
 
 <screen>VBoxManage internalcommands createrawvmdk -filename /path/to/file.vmdk
-      -rawdisk /dev/sda</screen>
+  -rawdisk /dev/sda</screen>
 
         <para>
           This creates the image
@@ -1501,7 +1500,7 @@ vga = 864</screen>
         </para>
 
 <screen>VBoxManage storageattach WindowsXP --storagectl "IDE Controller"
-      --port 0 --device 0 --type hdd --medium /path/to/file.vmdk</screen>
+ --port 0 --device 0 --type hdd --medium /path/to/file.vmdk</screen>
 
         <para>
           When this is done the selected virtual machine will boot from
@@ -1535,7 +1534,7 @@ vga = 864</screen>
         </para>
 
 <screen>VBoxManage internalcommands createrawvmdk -filename /path/to/file.vmdk
-      -rawdisk /dev/sda -partitions 1,5</screen>
+ -rawdisk /dev/sda -partitions 1,5</screen>
 
         <para>
           The command is identical to the one for full hard disk access,
@@ -1597,7 +1596,7 @@ vga = 864</screen>
         </para>
 
 <screen>VBoxManage internalcommands createrawvmdk -filename /path/to/file.vmdk
-      -rawdisk /dev/sda -partitions 1,5 -relative</screen>
+ -rawdisk /dev/sda -partitions 1,5 -relative</screen>
 
         <para>
           When used from a virtual machine, the image will then refer
@@ -1624,7 +1623,7 @@ vga = 864</screen>
         </para>
 
 <screen>VBoxManage internalcommands createrawvmdk -filename /path/to/file.vmdk
-      -rawdisk /dev/sda -partitions 1,5 -mbr winxp.mbr</screen>
+ -rawdisk /dev/sda -partitions 1,5 -mbr winxp.mbr</screen>
 
         <para>
           The modified MBR will be stored inside the image, not on the
@@ -1747,7 +1746,7 @@ VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/I
       </para>
 
 <screen>VBoxManage storageattach ... --medium iscsi
-         --server 10.0.9.30 --target iqn.2008-12.com.sun:sampletarget --intnet</screen>
+--server 10.0.9.30 --target iqn.2008-12.com.sun:sampletarget --intnet</screen>
 
       <para>
         Compared to a regular iSCSI setup, the IP address of the target
@@ -2130,7 +2129,7 @@ VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemFamily"      "System Family"
 VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/pcbios/0/Config/DmiSystemUuid"
-                                               "9852bf98-b83c-49db-a8de-182c42c7226b"</screen>
+       "9852bf98-b83c-49db-a8de-182c42c7226b"</screen>
       </listitem>
 
       <listitem>
@@ -2245,7 +2244,7 @@ VBoxManage setextradata "VM name"
     </para>
 
 <screen>VBoxManage setextradata "VM name"
-      "VBoxInternal/Devices/acpi/0/Config/CustomTable0" "/path/to/table.bin"</screen>
+"VBoxInternal/Devices/acpi/0/Config/CustomTable0" "/path/to/table.bin"</screen>
 
     <para>
       Configuring custom ACPI tables can for example avoid the need for
@@ -2868,8 +2867,8 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
       </variablelist>
 
       <para>
-        To disable any of these VM manager customizations use the
-        following command:
+        To disable any of these VirtualBox Manager customizations use
+        the following command:
       </para>
 
 <screen>VBoxManage setextradata global GUI/Customizations</screen>
@@ -4183,12 +4182,12 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 <screen>VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=F,...."</screen>
 
       <para>
-        <xref linkend="table-host-key-customize"/> shows the possible
-        Host key actions, together with their default Host key shortcut.
-        Setting an action to None will disable that Host key action.
+        The following table shows the possible Host key actions,
+        together with their default Host key shortcut. Setting an action
+        to None will disable that Host key action.
       </para>
 
-      <table id="table-host-key-customize">
+      <table id="table-host-key-customize" tabstyle="oracle-all">
         <title>Host Key Customization</title>
         <tgroup cols="3">
           <thead>
@@ -4841,13 +4840,13 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
         is one mandatory parameter,
         <computeroutput>VBOXWEB_USER</computeroutput>, which must be set
         to the user which will later start the VMs. The parameters in
-        <xref linkend="table-websrv-config-params"/> all start with the
+        the following table all start with the
         <computeroutput>VBOXWEB_</computeroutput> prefix string. For
         example: <computeroutput>VBOXWEB_HOST</computeroutput> and
         <computeroutput>VBOXWEB_PORT</computeroutput>.
       </para>
 
-      <table id="table-websrv-config-params">
+      <table id="table-websrv-config-params" tabstyle="oracle-all">
         <title>Web Service Configuration Parameters</title>
         <tgroup cols="3">
           <thead>
@@ -5396,10 +5395,9 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
       </para>
 
       <para>
-        The parameters in
-        <xref linkend="table-vboxwatchdog-config-params"/> all start
-        with the <computeroutput>VBOXWATCHDOG_</computeroutput> prefix
-        string. For example:
+        The parameters in the following table all start with the
+        <computeroutput>VBOXWATCHDOG_</computeroutput> prefix string.
+        For example:
         <computeroutput>VBOXWATCHDOG_BALLOON_INTERVAL</computeroutput>
         and <computeroutput>VBOXWATCHDOG_LOGSIZE</computeroutput>.
         Legacy parameters such as
@@ -5407,7 +5405,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
         still be used.
       </para>
 
-      <table id="table-vboxwatchdog-config-params">
+      <table id="table-vboxwatchdog-config-params" tabstyle="oracle-all">
         <title>&product-name; Watchdog Configuration Parameters</title>
         <tgroup cols="3">
           <thead>
@@ -6639,11 +6637,11 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/IsaExts/SSE4.2 0</screen>
       Producing beeps on Linux is a very complex topic. &product-name;
       offers a collection of options, in an attempt to make this work
       deterministically and reliably on as many Linux distributions and
-      system configurations as possible. These are summarized in
-      <xref linkend="table-pcspeaker-config"/>.
+      system configurations as possible. These are summarized in the
+      following table.
     </para>
 
-    <table id="table-pcspeaker-config">
+    <table id="table-pcspeaker-config" tabstyle="oracle-all">
       <title>PC Speaker Configuration Options</title>
       <tgroup cols="3">
         <thead>
@@ -6665,8 +6663,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/IsaExts/SSE4.2 0</screen>
                 1
               </para></entry>
             <entry><para>
-                <computeroutput>/dev/input/by-path/platform-
-                pcspkr-event-spkr</computeroutput>
+                <computeroutput>/dev/input/by-path/platform-pcspkr-event-spkr</computeroutput>
               </para></entry>
             <entry><para>
                 Direct host PC speaker use.
@@ -6942,8 +6939,8 @@ $ usbip list -l
     <para>
       No configuration is required. &product-name; detects Hyper-V
       automatically and uses Hyper-V as the virtualization engine for
-      the host. The CPU icon in the VM window status bar indicates that
-      Hyper-V is being used.
+      the host system. The CPU icon in the VM window status bar
+      indicates that Hyper-V is being used.
     </para>
 
     <note>
@@ -6964,8 +6961,8 @@ $ usbip list -l
       on host systems that run AMD CPUs. This feature enables the
       passthrough of hardware virtualization functions to the guest VM.
       That means that you can install a hypervisor, such as
-      &product-name; or KVM, on an &product-name; guest. You can then
-      create and run VMs within the guest VM.
+      &product-name;, Oracle VM Server or KVM, on an &product-name;
+      guest. You can then create and run VMs within the guest VM.
     </para>
 
     <para>
@@ -6979,8 +6976,8 @@ $ usbip list -l
         <para>
           From the VirtualBox Manager, select the
           <emphasis role="bold">Enable Nested VT-x/AMD-V</emphasis>
-          check box on the <emphasis role="bold">System</emphasis> tab.
-          To disable the feature, deselect the check box.
+          check box on the <emphasis role="bold">Processor</emphasis>
+          tab. To disable the feature, deselect the check box.
         </para>
       </listitem>
 

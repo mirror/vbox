@@ -89,9 +89,8 @@
         </para>
 
         <para>
-          Even if your guest operating system has no support for SCSI or
-          SATA devices, it should always be able to see an IDE
-          controller.
+          Even if your guest OS has no support for SCSI or SATA devices,
+          it should always be able to see an IDE controller.
         </para>
 
         <para>
@@ -99,9 +98,8 @@
           hardware &product-name; should present to the virtual machine:
           PIIX3, PIIX4, or ICH6. This makes no difference in terms of
           performance, but if you import a virtual machine from another
-          virtualization product, the operating system in that machine
-          may expect a particular controller type and crash if it is not
-          found.
+          virtualization product, the OS in that machine may expect a
+          particular controller type and crash if it is not found.
         </para>
 
         <para>
@@ -135,24 +133,24 @@
         </para>
 
         <para>
-          For this reason, depending on the selected guest operating
-          system, &product-name; uses SATA as the default for newly
-          created virtual machines. One virtual SATA controller is
-          created by default, and the default disk that is created with
-          a new VM is attached to this controller.
+          For this reason, depending on the selected guest OS,
+          &product-name; uses SATA as the default for newly created
+          virtual machines. One virtual SATA controller is created by
+          default, and the default disk that is created with a new VM is
+          attached to this controller.
         </para>
 
         <warning>
           <para>
             The entire SATA controller and the virtual disks attached to
             it, including those in IDE compatibility mode, will not be
-            seen by operating systems that do not have device support
-            for AHCI. In particular, <emphasis>there is no support for
-            AHCI in Windows before Windows Vista</emphasis>. So Windows
-            XP, even SP3, will not see such disks unless you install
-            additional drivers. It is possible to switch from IDE to
-            SATA after installation by installing the SATA drivers and
-            changing the controller type in the VM
+            seen by OSes that do not have device support for AHCI. In
+            particular, <emphasis>there is no support for AHCI in
+            Windows before Windows Vista</emphasis>. So Windows XP, even
+            SP3, will not see such disks unless you install additional
+            drivers. It is possible to switch from IDE to SATA after
+            installation by installing the SATA drivers and changing the
+            controller type in the VM
             <emphasis role="bold">Settings</emphasis> dialog.
           </para>
 
@@ -168,9 +166,9 @@
           To add a SATA controller to a machine for which it has not
           been enabled by default, either because it was created by an
           earlier version of &product-name;, or because SATA is not
-          supported by default by the selected guest operating system,
-          do the following. Go to the
-          <emphasis role="bold">Storage</emphasis> page of the machine's
+          supported by default by the selected guest OS, do the
+          following. Go to the <emphasis role="bold">Storage</emphasis>
+          page of the machine's
           <emphasis role="bold">Settings</emphasis> dialog, click
           <emphasis role="bold">Add Controller</emphasis> under the
           Storage Tree box and then select <emphasis role="bold">Add
@@ -217,11 +215,11 @@
         <warning>
           <para>
             As with the other controller types, a SCSI controller will
-            only be seen by operating systems with device support for
-            it. Windows 2003 and later ships with drivers for the LSI
-            Logic controller, while Windows NT 4.0 and Windows 2000
-            ships with drivers for the BusLogic controller. Windows XP
-            ships with drivers for neither.
+            only be seen by OSes with device support for it. Windows
+            2003 and later ships with drivers for the LSI Logic
+            controller, while Windows NT 4.0 and Windows 2000 ships with
+            drivers for the BusLogic controller. Windows XP ships with
+            drivers for neither.
           </para>
         </warning>
       </listitem>
@@ -247,11 +245,11 @@
 
         <warning>
           <para>
-            As with SATA, the SAS controller will only be seen by
-            operating systems with device support for it. In particular,
-            <emphasis>there is no support for SAS in Windows before
-            Windows Vista</emphasis>. So Windows XP, even SP3, will not
-            see such disks unless you install additional drivers.
+            As with SATA, the SAS controller will only be seen by OSes
+            with device support for it. In particular, <emphasis>there
+            is no support for SAS in Windows before Windows
+            Vista</emphasis>. So Windows XP, even SP3, will not see such
+            disks unless you install additional drivers.
           </para>
         </warning>
       </listitem>
@@ -261,11 +259,10 @@
           The <emphasis role="bold">USB mass storage device
           class</emphasis> is a standard to connect external storage
           devices like hard disks or flash drives to a host through USB.
-          All major operating systems support these devices for a long
-          time and ship generic drivers making third-party drivers
-          superfluous. In particular, legacy operating systems without
-          support for SATA controllers may benefit from USB mass storage
-          devices.
+          All major OSes support these devices for a long time and ship
+          generic drivers making third-party drivers superfluous. In
+          particular, legacy OSes without support for SATA controllers
+          may benefit from USB mass storage devices.
         </para>
 
         <para>
@@ -289,15 +286,15 @@
       <listitem>
         <para>
           <emphasis role="bold">Non volatile memory express
-          (NVMe)</emphasis> is a very recent standard which emerged in
-          2011 connecting non volatile memory (NVM) directly over PCI
-          express to lift the bandwidth limitation of the previously
-          used SATA protocol for SSDs. Unlike other standards the
-          command set is very simple to achieve maximum throughput and
-          is not compatible with ATA or SCSI. Operating systems need to
-          support NVMe devices to make use of them. For example, Windows
-          8.1 added native NVMe support. For Windows 7, native support
-          was added with an update.
+          (NVMe)</emphasis> is a standard which emerged in 2011 for
+          connecting non volatile memory (NVM) directly over PCI express
+          to lift the bandwidth limitation of the previously used SATA
+          protocol for SSDs. Unlike other standards the command set is
+          very simple to achieve maximum throughput and is not
+          compatible with ATA or SCSI. OSes need to support NVMe devices
+          to make use of them. For example, Windows 8.1 added native
+          NVMe support. For Windows 7, native support was added with an
+          update.
         </para>
 
         <para>
@@ -332,35 +329,35 @@
       <listitem>
         <para>
           30 slots attached to the SATA controller, if enabled and
-          supported by the guest operating system.
+          supported by the guest OS.
         </para>
       </listitem>
 
       <listitem>
         <para>
           15 slots attached to the SCSI controller, if enabled and
-          supported by the guest operating system.
+          supported by the guest OS.
         </para>
       </listitem>
 
       <listitem>
         <para>
           Eight slots attached to the SAS controller, if enabled and
-          supported by the guest operating system.
+          supported by the guest OS.
         </para>
       </listitem>
 
       <listitem>
         <para>
           Eight slots attached to the virtual USB controller, if enabled
-          and supported by the guest operating system.
+          and supported by the guest OS.
         </para>
       </listitem>
 
       <listitem>
         <para>
           Up to 255 slots attached to the NVMe controller, if enabled
-          and supported by the guest operating system.
+          and supported by the guest OS.
         </para>
       </listitem>
 
@@ -383,9 +380,9 @@
 
     <para>
       Disk image files reside on the host system and are seen by the
-      guest systems as hard disks of a certain geometry. When a guest
-      operating system reads from or writes to a hard disk,
-      &product-name; redirects the request to the image file.
+      guest systems as hard disks of a certain geometry. When a guest OS
+      reads from or writes to a hard disk, &product-name; redirects the
+      request to the image file.
     </para>
 
     <para>
@@ -580,40 +577,46 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Copy</emphasis> a virtual hard disk, to
-          create another one. The target type can be different.
-          Available options are: VDI, VHD, or VMDK.
+          <emphasis role="bold">Copy</emphasis> a virtual hard disk to
+          create another one.
+        </para>
+
+        <para>
+          You can specify one of the following target types: VDI, VHD,
+          or VMDK.
         </para>
       </listitem>
 
       <listitem>
         <para>
           <emphasis role="bold">Move</emphasis> an image that is
-          currently in the registry. A file dialog prompts you for the
-          new image file location.
+          currently in the registry to another location.
         </para>
 
         <para>
-          When you move a disk image using the Virtual Media Manager,
-          any related &product-name; configuration files are updated
+          A file dialog prompts you for the new image file location.
+        </para>
+
+        <para>
+          When you use the Virtual Media Manager to move a disk image,
+          &product-name; updates all related configuration files
           automatically.
         </para>
 
         <note>
           <para>
-            If possible, always use the Virtual Media Manager or the
+            Always use the Virtual Media Manager or the
             <command>VBoxManage modifymedium</command> command to move a
             disk image.
           </para>
 
           <para>
-            If you move a disk image to a new location by using a file
-            management feature of the host operating system, use the
-            <computeroutput>--setlocation</computeroutput> option of the
-            <command>VBoxManage modifymedium</command> command to
-            configure the new path of the disk image on the host file
-            system. This updates the &product-name; configuration
-            automatically.
+            If you use a file management feature of the host OS to move
+            a disk image to a new location, run the <command>VBoxManage
+            modifymedium</command> <option>--setlocation</option>
+            command to configure the new path of the disk image on the
+            host file system. This command updates the &product-name;
+            configuration automatically.
           </para>
         </note>
       </listitem>
@@ -621,23 +624,23 @@
       <listitem>
         <para>
           <emphasis role="bold">Remove</emphasis> an image from the
-          registry. You can optionally delete the image file when doing
-          so.
+          registry. You can optionally delete the image file when
+          removing the image.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Release</emphasis> an image. Detach it
-          from a virtual machine, if it is currently attached to one as
-          a virtual hard disk.
+          <emphasis role="bold">Release</emphasis> an image to detach it
+          from a VM. This action only applies if the image is currently
+          attached to a VM as a virtual hard disk.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          Display and edit the
-          <emphasis role="bold">Properties</emphasis> of a disk image.
+          View and edit the <emphasis role="bold">Properties</emphasis>
+          of a disk image.
         </para>
 
         <para>
@@ -648,7 +651,7 @@
 
           <listitem>
             <para>
-              <emphasis role="bold">Type:</emphasis> Defines the
+              <emphasis role="bold">Type:</emphasis> Specifies the
               snapshot behavior of the disk. See
               <xref linkend="hdimagewrites"/>.
             </para>
@@ -656,32 +659,32 @@
 
           <listitem>
             <para>
-              <emphasis role="bold">Location:</emphasis> The location of
-              the disk image file on the host system. A file dialog
-              selector is available.
+              <emphasis role="bold">Location:</emphasis> Specifies the
+              location of the disk image file on the host system. You
+              can use a file dialog to browse for the disk image
+              location.
             </para>
           </listitem>
 
           <listitem>
             <para>
-              <emphasis role="bold">Description:</emphasis> A short
-              description of the disk image.
+              <emphasis role="bold">Description:</emphasis> Specifies a
+              short description of the disk image.
             </para>
           </listitem>
 
           <listitem>
             <para>
-              <emphasis role="bold">Size:</emphasis> The size of the
-              disk image. Use the slider to increase or decrease the
-              disk image size.
+              <emphasis role="bold">Size:</emphasis> Specifies the size
+              of the disk image. You can use the slider to increase or
+              decrease the disk image size.
             </para>
           </listitem>
 
           <listitem>
             <para>
-              <emphasis role="bold">Information:</emphasis> Further
-              details about the disk image can be added on the
-              <emphasis role="bold">Information</emphasis> tab.
+              <emphasis role="bold">Information:</emphasis> Specifies
+              detailed information about the disk image.
             </para>
           </listitem>
 
@@ -690,8 +693,8 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Refresh</emphasis> the values for the
-          displayed attributes of the currently-selected disk image.
+          <emphasis role="bold">Refresh</emphasis> the property values
+          of the selected disk image.
         </para>
       </listitem>
 
@@ -699,7 +702,7 @@
 
     <para>
       To perform these actions, highlight the medium in the Virtual
-      Media Manager. Then do either of the following:
+      Media Manager and then do one of the following:
     </para>
 
     <itemizedlist>
@@ -719,31 +722,27 @@
     </itemizedlist>
 
     <para>
-      To create a new disk image, you use the
-      <emphasis role="bold">Storage</emphasis> page in a virtual
-      machine's <emphasis role="bold">Settings</emphasis> dialog. This
-      is because disk images are by default stored in each machine's own
-      folder.
+      Use the <emphasis role="bold">Storage</emphasis> page in a VM's
+      <emphasis role="bold">Settings</emphasis> dialog to create a new
+      disk image. By default, disk images are stored in the VM's folder.
     </para>
 
     <para>
-      Hard disk image files can be copied to other host systems and
-      imported into virtual machines there. However, certain guest
-      operating systems, such as Windows 2000 and Windows XP, require
-      that the new virtual machine be set up in a similar way to the old
-      one.
+      You can copy hard disk image files to other host systems and
+      import them in to VMs from the host system. However, certain guest
+      OSes, such as Windows 2000 and Windows XP, require that you
+      configure the new VM in a similar way to the old one.
     </para>
 
     <note>
       <para>
         Do not simply make copies of virtual disk images. If you import
-        such a second copy into a virtual machine, &product-name; will
-        complain with an error, since &product-name; assigns a unique
-        identifier (UUID) to each disk image to make sure it is only
-        used once. See <xref linkend="cloningvdis" />. Also, if you want
-        to copy a virtual machine to another system, &product-name; has
-        import and export features that might be better suited for your
-        needs. See <xref linkend="ovf" />.
+        such a second copy into a VM, &product-name; issues an error
+        because &product-name; assigns a universally unique identifier
+        (UUID) to each disk image to ensure that it is only used one
+        time. See <xref linkend="cloningvdis" />. Also, if you want to
+        copy a VM to another system, use the &product-name; import and
+        export features. See <xref linkend="ovf" />.
       </para>
     </note>
 
@@ -953,13 +952,13 @@
     </para>
 
     <para>
-      Assume you have installed your guest operating system in your VM,
-      and you have taken a snapshot. Later, your VM is infected with a
-      virus and you would like to go back to the snapshot. With a normal
-      hard disk image, you simply restore the snapshot, and the earlier
-      state of your hard disk image will be restored as well and your
-      virus infection will be undone. With an immutable hard disk, all
-      it takes is to shut down and power on your VM, and the virus
+      Assume you have installed your guest OS in your VM, and you have
+      taken a snapshot. Later, your VM is infected with a virus and you
+      would like to go back to the snapshot. With a normal hard disk
+      image, you simply restore the snapshot, and the earlier state of
+      your hard disk image will be restored as well and your virus
+      infection will be undone. With an immutable hard disk, all it
+      takes is to shut down and power on your VM, and the virus
       infection will be discarded. With a write-through image however,
       you cannot easily undo the virus infection by means of
       virtualization, but will have to disinfect your virtual machine
@@ -970,8 +969,7 @@
       You might find write-through images useful if you want to preserve
       critical data irrespective of snapshots. As you can attach more
       than one image to a VM, you may want to have one immutable image
-      for the operating system and one write-through image for your data
-      files.
+      for the OS and one write-through image for your data files.
     </para>
 
   </sect1>
@@ -1085,7 +1083,7 @@
           snapshot, the following happens:
         </para>
 
-        <orderedlist>
+        <itemizedlist>
 
           <listitem>
             <para>
@@ -1120,7 +1118,7 @@
             </para>
           </listitem>
 
-        </orderedlist>
+        </itemizedlist>
 
         <para>
           If you later <emphasis>delete</emphasis> a snapshot in order
@@ -1162,16 +1160,16 @@
 
     <para>
       You can duplicate hard disk image files on the same host to
-      quickly produce a second virtual machine with the same operating
-      system setup. However, you should <emphasis>only</emphasis> make
-      copies of virtual disk images using the utility supplied with
+      quickly produce a second virtual machine with the same OS setup.
+      However, you should <emphasis>only</emphasis> make copies of
+      virtual disk images using the utility supplied with
       &product-name;. See <xref linkend="vboxmanage-clonevdi" />. This
-      is because &product-name; assigns a unique identity number (UUID)
-      to each disk image, which is also stored inside the image, and
-      &product-name; will refuse to work with two images that use the
-      same number. If you do accidentally try to reimport a disk image
-      which you copied normally, you can make a second copy using
-      &product-name;'s utility and import that instead.
+      is because &product-name; assigns a UUID to each disk image, which
+      is also stored inside the image, and &product-name; will refuse to
+      work with two images that use the same number. If you do
+      accidentally try to reimport a disk image which you copied
+      normally, you can make a second copy using the <command>VBoxManage
+      clonevm</command> command and import that instead.
     </para>
 
     <para>
@@ -1183,13 +1181,13 @@
       changed. In this case you have to adapt the disk ID in your boot
       loader script, for example
       <computeroutput>/boot/grub/menu.lst</computeroutput>. The disk ID
-      looks like this:
+      looks like the following:
     </para>
 
 <screen>scsi-SATA_VBOX_HARDDISK_VB5cfdb1e2-c251e503</screen>
 
     <para>
-      The ID for the copied image can be determined with:
+      The ID for the copied image can be determined as follows:
     </para>
 
 <screen>hdparm -i /dev/sda</screen>
@@ -1202,20 +1200,20 @@
 
     <para>
       &product-name; can optionally disable the I/O caching that the
-      host operating system would otherwise perform on disk image files.
+      host OS would otherwise perform on disk image files.
     </para>
 
     <para>
       Traditionally, &product-name; has opened disk image files as
-      normal files, which results in them being cached by the host
-      operating system like any other file. The main advantage of this
-      is speed: when the guest OS writes to disk and the host OS cache
-      uses delayed writing, the write operation can be reported as
-      completed to the guest OS quickly while the host OS can perform
-      the operation asynchronously. Also, when you start a VM a second
-      time and have enough memory available for the OS to use for
-      caching, large parts of the virtual disk may be in system memory,
-      and the VM can access the data much faster.
+      normal files, which results in them being cached by the host OS
+      like any other file. The main advantage of this is speed: when the
+      guest OS writes to disk and the host OS cache uses delayed
+      writing, the write operation can be reported as completed to the
+      guest OS quickly while the host OS can perform the operation
+      asynchronously. Also, when you start a VM a second time and have
+      enough memory available for the OS to use for caching, large parts
+      of the virtual disk may be in system memory, and the VM can access
+      the data much faster.
     </para>
 
     <para>
@@ -1259,10 +1257,10 @@
 
       <listitem>
         <para>
-          Physical memory is often wasted as guest operating systems
-          typically have their own I/O caches, which may result in the
-          data being cached twice, in both the guest and the host
-          caches, for little effect.
+          Physical memory is often wasted as guest OSes typically have
+          their own I/O caches, which may result in the data being
+          cached twice, in both the guest and the host caches, for
+          little effect.
         </para>
       </listitem>
 
@@ -1273,7 +1271,7 @@
       &product-name; uses its own small cache to buffer writes, but no
       read caching since this is typically already performed by the
       guest OS. In addition, &product-name; fully supports asynchronous
-      I/O for its virtual SATA, SCSI and SAS controllers through
+      I/O for its virtual SATA, SCSI, and SAS controllers through
       multiple I/O threads.
     </para>
 
@@ -1388,9 +1386,9 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
     <para>
       Changing between the above, or changing a medium in the host drive
       that is accessed by a machine, or changing an image file will
-      signal a medium change to the guest operating system. The guest OS
-      can then react to the change, for example by starting an
-      installation program.
+      signal a medium change to the guest OS. The guest OS can then
+      react to the change, for example by starting an installation
+      program.
     </para>
 
     <para>
@@ -1411,8 +1409,8 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
         displayed by configuration tools such as the Windows Device
         Manager, is always VBOX CD-ROM, irrespective of the current
         configuration of the virtual drive. This is to prevent hardware
-        detection from being triggered in the guest operating system
-        every time the configuration is changed.
+        detection from being triggered in the guest OS every time the
+        configuration is changed.
       </para>
     </note>
 
@@ -1489,10 +1487,10 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
 
     <para>
       &product-name; can transparently present iSCSI remote storage to a
-      virtual machine as a virtual hard disk. The guest operating system
-      will not see any difference between a virtual disk image (VDI
-      file) and an iSCSI target. To achieve this, &product-name; has an
-      integrated iSCSI initiator.
+      virtual machine as a virtual hard disk. The guest OS will not see
+      any difference between a virtual disk image (VDI file) and an
+      iSCSI target. To achieve this, &product-name; has an integrated
+      iSCSI initiator.
     </para>
 
     <para>
@@ -1501,6 +1499,228 @@ VBoxManage storageattach "VM name" --storagectl "SATA" --port 1 --device 0 --typ
       targets. To use an iSCSI target with &product-name;, you must use
       the command line. See <xref linkend="vboxmanage-storageattach" />.
     </para>
+
+  </sect1>
+
+  <sect1 id="vboximg-mount">
+
+    <title>vboximg-mount: A Utility for FUSE Mounting a Virtual Disk Image</title>
+
+    <para>
+      <command>vboximg-mount</command> is a command line utility for Mac
+      OS X hosts that provides raw access to an &product-name; virtual
+      disk image on the host system. Use this utility to mount, view,
+      and optionally modify the disk image contents.
+    </para>
+
+    <para>
+      The utility is based on Filesystem in Userspace (FUSE) technology
+      and uses the VirtualBox runtime engine. Ensure that &product-name;
+      is running on the host system.
+    </para>
+
+    <note>
+      <para>
+        When using <command>vboximg-mount</command>, ensure that the
+        following conditions apply:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            The disk image is not being used by any other systems, such
+            as by guest VMs.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            No VMs are running on the host system.
+          </para>
+        </listitem>
+
+      </itemizedlist>
+    </note>
+
+    <para>
+      Raw access using FUSE is preferred over direct loopback mounting
+      of virtual disk images, because it is snapshot aware. It can
+      selectively merge disk differencing images in an exposed virtual
+      hard disk, providing historical or up-to-date representations of
+      the virtual disk contents.
+    </para>
+
+    <para>
+      <command>vboximg-mount</command> enables you to view information
+      about registered VMs, their attached disk media, and any
+      snapshots. Also, you can view partition information for a disk
+      image.
+    </para>
+
+    <para>
+      Use the <option>--help</option> option to view information about
+      the <command>vboximg-mount</command> command usage.
+    </para>
+
+    <para>
+      When <command>vboximg-mount</command> mounts an &product-name;
+      disk image, it creates a one level deep file system at a mount
+      point that you specify. The file system includes a device node
+      that represents the synthesized disk image as a readable or
+      readable-writeable bytestream. This bytestream can be mounted
+      either by using the host OS or by using other FUSE-based file
+      systems.
+    </para>
+
+    <sect2 id="vboximg-mount-display">
+
+      <title>Viewing Detailed Information About a Virtual Disk Image</title>
+
+      <para>
+        The following examples show how to use the
+        <command>vboximg-mount</command> command to view information
+        about virtual disk images.
+      </para>
+
+      <para>
+        The following command outputs detailed information about all
+        registered VMs and associated snapshots:
+      </para>
+
+<screen>$ vboximg-mount --list --verbose
+
+    ------------------------------------------------------
+    VM Name:   "macOS High Sierra 10.13"
+    UUID:      3887d96d-831c-4187-a55a-567c504ff0e1
+    Location:  /Volumes/work/vm_guests/macOS High Sierra 10.13/macOS High Sierra 10.13.vbox
+       -----------------------
+       HDD base:   "macOS High Sierra 10.13.vdi"
+       UUID:       f9ea7173-6869-4aa9-b487-68023a655980
+       Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/macOS High Sierra 10.13.vdi
+
+         Diff 1:
+              UUID:       98c2bac9-cf37-443d-a935-4e879b70166d
+              Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/
+              Snapshots/{98c2bac9-cf37-443d-a935-4e879b70166d}.vdi
+         Diff 2:
+              UUID:       f401f381-7377-40b3-948e-3c61241b1a42
+              Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/
+              Snapshots/{f401f381-7377-40b3-948e-3c61241b1a42}.vdi
+       -----------------------
+       HDD base:   "simple_fixed_disk.vdi"
+       UUID:       ffba4d7e-1277-489d-8173-22ca7660773d
+       Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/simple_fixed_disk.vdi
+
+         Diff 1:
+              UUID:       aecab681-0d2d-468b-8682-93f79dc97a48
+              Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/
+              Snapshots/{aecab681-0d2d-468b-8682-93f79dc97a48}.vdi
+         Diff 2:
+              UUID:       70d6b34d-8422-47fa-8521-3b6929a1971c
+              Location:   /Volumes/work/vm_guests/macOS High Sierra 10.13/
+              Snapshots/{70d6b34d-8422-47fa-8521-3b6929a1971c}.vdi
+      ------------------------------------------------------
+      VM Name:   "debian"
+      UUID:      5365ab5f-470d-44c0-9863-dad532ee5905
+      Location:  /Volumes/work/vm_guests/debian/debian.vbox
+         -----------------------
+         HDD base:   "debian.vdi"
+         UUID:       96d2e92e-0d4e-46ab-a0f1-008fdbf997e7
+         Location:   /Volumes/work/vm_guests/debian/ol7.vdi
+
+            Diff 1:
+                UUID:       f9cc866a-9166-42e9-a503-bbfe9b7312e8
+                Location:   /Volumes/work/vm_guests/debian/Snapshots/
+                {f9cc866a-9166-42e9-a503-bbfe9b7312e8}.vdi</screen>
+
+      <para>
+        The following command outputs partition information about the
+        specified disk image:
+      </para>
+
+<screen>$ vboximg-mount --image=f9ea7173-6869-4aa9-b487-68023a655980 --list
+
+    Virtual disk image:
+
+       Path: /Volumes/work/vm_guests/macOS High Sierra 10.13/macOS High Sierra 10.13.vdi
+       UUID: f9ea7173-6869-4aa9-b487-68023a655980
+
+      #     Start  Sectors     Size       Offset  Type
+      1        40  409599    199.9M        20480  EFI System
+      2    409640  67453071   32.1G    209735680  Hierarchical File System Plus (HFS+)
+      3  67862712  1269535   107.8M  34745708544  Apple Boot (Recovery HD)</screen>
+
+    </sect2>
+
+    <sect2 id="vboximg-mount-steps">
+
+      <title>Mounting a Virtual Disk Image</title>
+
+      <para>
+        The following steps show how to use the
+        <command>vboximg-mount</command> command to mount a partition of
+        a virtual disk image on the host OS.
+      </para>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Create a mount point on the host OS. For example:
+          </para>
+
+<screen>$ mkdir macOS_sysdisk</screen>
+        </listitem>
+
+        <listitem>
+          <para>
+            Show partition information about the virtual disk image.
+          </para>
+
+<screen>$ vboximg-mount --image=<replaceable>uuid</replaceable> --list</screen>
+
+          <para>
+            where <replaceable>uuid</replaceable> is the UUID of the
+            disk image.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Use <command>vboximg-mount</command> to perform a FUSE mount
+            of a partition on the virtual disk image. For example:
+          </para>
+
+<screen>$ vboximg-mount --image=<replaceable>uuid</replaceable> -p 2 macos_sysdisk</screen>
+
+          <para>
+            where <replaceable>uuid</replaceable> is the UUID for the
+            disk image.
+          </para>
+
+          <para>
+            In this example, partition 2 is mounted on the
+            <computeroutput>macos_sysdisk</computeroutput> mount point.
+            The mount includes all snapshots for the disk image.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Use the host OS to mount the
+            <computeroutput>vhdd</computeroutput> device node. The
+            FUSE-mounted device node represents the virtual disk image.
+          </para>
+
+<screen>$ ls macOS_sysdisk
+   macOS High Sierra 10.13.vdi	vhdd
+$ sudo mount macos_sysdisk/vhdd /mnt</screen>
+        </listitem>
+
+      </orderedlist>
+
+    </sect2>
 
   </sect1>
 

@@ -10,12 +10,11 @@
 
 <bookinfo>
 
-    <title>&VBOX_PRODUCT;</title>
+ <title>&VBOX_PRODUCT;</title>
 
     <subtitle>User Manual</subtitle>
 
-    <edition>Version
-   &VBOX_VERSION_STRING;</edition>
+    <edition>Version &VBOX_VERSION_STRING;</edition>
 
     <corpauthor>&VBOX_VENDOR;</corpauthor>
 
@@ -30,7 +29,6 @@
     </copyright>
 
   </bookinfo>
-
 
   <xi:include href="user_Preface.xml"
     xmlns:xi="http://www.w3.org/2001/XInclude" />

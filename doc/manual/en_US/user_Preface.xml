@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+<!DOCTYPE preface PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
 "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
 [
   <!ENTITY % all.entities SYSTEM "all-entities.ent">
@@ -10,7 +10,7 @@
   <title>Preface</title>
 
   <para>
-    The <emphasis>&product-name;</emphasis> User Manual provides an
+    The <emphasis>&product-name; User Manual</emphasis> provides an
     introduction to using &product-name;. The manual provides
     information on how to install &product-name; and use it to create
     and configure virtual machines.
@@ -100,7 +100,7 @@
 <!-- Oracle Support statement -->
 
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-    href="../common/oracle-legal-notices/oracle-support-en.xml"
+    href="../common/oracle-support-en.xml"
     xpointer="xpointer(simplesect/title/following-sibling::node())" />
 
   </sect1>

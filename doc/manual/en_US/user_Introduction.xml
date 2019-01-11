@@ -15,14 +15,14 @@
   <para>
     &product-name; is a cross-platform virtualization application. What
     does that mean? For one thing, it installs on your existing Intel or
-    AMD-based computers, whether they are running Windows, Mac, Linux or
-    Oracle Solaris operating systems. Secondly, it extends the
-    capabilities of your existing computer so that it can run multiple
-    operating systems, inside multiple virtual machines, at the same
-    time. So, for example, you can run Windows and Linux on your Mac,
-    run Windows Server 2008 on your Linux server, run Linux on your
-    Windows PC, and so on, all alongside your existing applications. You
-    can install and run as many virtual machines as you like. The only
+    AMD-based computers, whether they are running Windows, Mac OS X,
+    Linux, or Oracle Solaris operating systems (OSes). Secondly, it
+    extends the capabilities of your existing computer so that it can
+    run multiple OSes, inside multiple virtual machines, at the same
+    time. As an example, you can run Windows and Linux on your Mac, run
+    Windows Server 2016 on your Linux server, run Linux on your Windows
+    PC, and so on, all alongside your existing applications. You can
+    install and run as many virtual machines as you like. The only
     practical limits are disk space and memory.
   </para>
 
@@ -34,12 +34,13 @@
   </para>
 
   <para>
-    The following screenshot shows how &product-name;, installed on a
-    Mac computer, is running Windows 8 in a virtual machine window:
+    The following screenshot shows how &product-name;, installed on an
+    Apple Mac OS X computer, is running Windows Server 2016 in a virtual
+    machine window.
   </para>
 
-  <figure id="fig-win8-intro">
-    <title>Windows 8 Virtual Machine, Displayed on a Mac OS X Host</title>
+  <figure id="fig-win2016-intro">
+    <title>Windows Server 2016 Virtual Machine, Displayed on a Mac OS X Host</title>
     <mediaobject>
       <imageobject>
         <imagedata align="center" fileref="images/vm-vista-running.png"
@@ -61,7 +62,7 @@
     You can find a summary of &product-name;'s capabilities in
     <xref linkend="features-overview" />. For existing &product-name;
     users who just want to find out what is new in this release, see the
-    <emphasis>&product-name; Release Notes</emphasis>.
+    <xref linkend="ChangeLog"/>.
   </para>
 
   <sect1 id="virt-why-useful">
@@ -79,14 +80,13 @@
         <para>
           <emphasis role="bold">Running multiple operating systems
           simultaneously.</emphasis> &product-name; enables you to run
-          more than one operating system at a time. This way, you can
-          run software written for one operating system on another, such
-          as Windows software on Linux or a Mac, without having to
-          reboot to use it. Since you can configure what kinds of
-          <emphasis>virtual</emphasis> hardware should be presented to
-          each such operating system, you can install an old operating
-          system such as DOS or OS/2 even if your real computer's
-          hardware is no longer supported by that operating system.
+          more than one OS at a time. This way, you can run software
+          written for one OS on another, such as Windows software on
+          Linux or a Mac, without having to reboot to use it. Since you
+          can configure what kinds of <emphasis>virtual</emphasis>
+          hardware should be presented to each such OS, you can install
+          an old OS such as DOS or OS/2 even if your real computer's
+          hardware is no longer supported by that OS.
         </para>
       </listitem>
 
@@ -165,10 +165,10 @@
       <listitem>
         <para>
           <emphasis role="strong">Host operating system (host
-          OS).</emphasis> This is the operating system of the physical
-          computer on which &product-name; was installed. There are
-          versions of &product-name; for Windows, Mac OS X, Linux, and
-          Oracle Solaris hosts. See <xref linkend="hostossupport" />.
+          OS).</emphasis> This is the OS of the physical computer on
+          which &product-name; was installed. There are versions of
+          &product-name; for Windows, Mac OS X, Linux, and Oracle
+          Solaris hosts. See <xref linkend="hostossupport" />.
         </para>
 
         <para>
@@ -180,17 +180,16 @@
 
       <listitem>
         <para>
-          <emphasis role="strong"> Guest operating system (guest
-          OS).</emphasis> This is the operating system that is running
-          inside the virtual machine. Theoretically, &product-name; can
-          run any x86 operating system. such as DOS, Windows, OS/2,
-          FreeBSD, and OpenBSD. But to achieve near-native performance
-          of the guest code on your machine, we had to go through a lot
-          of optimizations that are specific to certain operating
-          systems. So while your favorite operating system
+          <emphasis role="strong">Guest operating system (guest
+          OS).</emphasis> This is the OS that is running inside the
+          virtual machine. Theoretically, &product-name; can run any x86
+          OS. such as DOS, Windows, OS/2, FreeBSD, and OpenBSD. But to
+          achieve near-native performance of the guest code on your
+          machine, we had to go through a lot of optimizations that are
+          specific to certain OSes. So while your favorite OS
           <emphasis>may</emphasis> run as a guest, we officially support
           and optimize for a select few, which include the most common
-          operating systems.
+          OSes.
         </para>
 
         <para>
@@ -202,12 +201,12 @@
         <para>
           <emphasis role="strong">Virtual machine (VM).</emphasis> This
           is the special environment that &product-name; creates for
-          your guest operating system while it is running. In other
-          words, you run your guest operating system
-          <emphasis>in</emphasis> a VM. Normally, a VM will be shown as
-          a window on your computer's desktop, but depending on which of
-          the various frontends of &product-name; you use, it can be
-          displayed in full screen mode or remotely on another computer.
+          your guest OS while it is running. In other words, you run
+          your guest OS <emphasis>in</emphasis> a VM. Normally, a VM
+          will be shown as a window on your computer's desktop, but
+          depending on which of the various frontends of &product-name;
+          you use, it can be displayed in full screen mode or remotely
+          on another computer.
         </para>
 
         <para>
@@ -255,8 +254,9 @@
       <listitem>
         <para>
           <emphasis role="bold">Portability.</emphasis> &product-name;
-          runs on a large number of 32-bit and 64-bit host operating
-          systems See <xref linkend="hostossupport" />.
+          runs on a large number of 32-bit and 64-bit host OS. See
+          <xref
+          linkend="hostossupport" />.
         </para>
 
         <para>
@@ -265,8 +265,8 @@
           2</emphasis> hypervisor. Whereas a
           <emphasis>bare-metal</emphasis> or <emphasis>type 1</emphasis>
           hypervisor would run directly on the hardware, &product-name;
-          requires an existing operating system to be installed. It can
-          thus run alongside existing applications on that host.
+          requires an existing OS to be installed. It can thus run
+          alongside existing applications on that host.
         </para>
 
         <para>
@@ -274,8 +274,8 @@
           identical on all of the host platforms, and the same file and
           image formats are used. This enables you to run virtual
           machines created on one host on another host with a different
-          host operating system. For example, you can create a virtual
-          machine on Windows and then run it under Linux.
+          host OS. For example, you can create a virtual machine on
+          Windows and then run it under Linux.
         </para>
 
         <para>
@@ -373,10 +373,10 @@
               images from real machines or third-party virtual machines
               into &product-name;. With its unique <emphasis>ACPI power
               status support</emphasis>, &product-name; can even report
-              to ACPI-aware guest operating systems the power status of
-              the host. For mobile systems running on battery, the guest
-              can thus enable energy saving and notify the user of the
-              remaining power, for example in full screen modes.
+              to ACPI-aware guest OSes the power status of the host. For
+              mobile systems running on battery, the guest can thus
+              enable energy saving and notify the user of the remaining
+              power, for example in full screen modes.
             </para>
           </listitem>
 
@@ -479,10 +479,9 @@
           The VRDE does not rely on the RDP server that is built into
           Microsoft Windows. Instead, the VRDE is plugged directly into
           the virtualization layer. As a result, it works with guest
-          operating systems other than Windows, even in text mode, and
-          does not require application support in the virtual machine
-          either. The VRDE is described in detail in
-          <xref linkend="vrde" />.
+          OSes other than Windows, even in text mode, and does not
+          require application support in the virtual machine either. The
+          VRDE is described in detail in <xref linkend="vrde" />.
         </para>
 
         <para>
@@ -526,8 +525,7 @@
     <title>Supported Host Operating Systems</title>
 
     <para>
-      Currently, &product-name; runs on the following host operating
-      systems:
+      Currently, &product-name; runs on the following host OSes:
     </para>
 
     <itemizedlist>
@@ -668,7 +666,8 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">Linux hosts (64-bit).</emphasis> Includes the following:
+          <emphasis role="bold">Linux hosts (64-bit).</emphasis>
+          Includes the following:
         </para>
 
         <itemizedlist>
@@ -733,8 +732,7 @@
         </para>
 
         <para>
-          Note that Linux 2.4-based host operating systems are no longer
-          supported.
+          Note that Linux 2.4-based host OSes are no longer supported.
         </para>
       </listitem>
 
@@ -761,7 +759,7 @@
     <para>
       Note that the above list is informal. Oracle support for customers
       who have a support contract is limited to a subset of the listed
-      host operating systems. Also, any feature which is marked as
+      host OSes. Also, any feature which is marked as
       <emphasis>experimental</emphasis> is not supported. Feedback and
       suggestions about such features are welcome.
     </para>
@@ -785,12 +783,12 @@
 
     <para>
       &product-name; comes in many different packages, and installation
-      depends on your host operating system. If you have installed
-      software before, installation should be straightforward. On each
-      host platform, &product-name; uses the installation method that is
-      most common and easy to use. If you run into trouble or have
-      special requirements, see <xref linkend="installation" /> for
-      details about the various installation methods.
+      depends on your host OS. If you have installed software before,
+      installation should be straightforward. On each host platform,
+      &product-name; uses the installation method that is most common
+      and easy to use. If you run into trouble or have special
+      requirements, see <xref linkend="installation" /> for details
+      about the various installation methods.
     </para>
 
     <para>
@@ -963,18 +961,27 @@
 
     <para>
       This window is called the <emphasis role="bold">VirtualBox
-      Manager</emphasis>. On the left, you can see a pane that will
-      later list all your virtual machines. Since you have not created
-      any, the list is empty. A row of buttons above it enables you to
-      create new VMs and work on existing VMs, once you have some. The
-      pane on the right displays the properties of the virtual machine
-      currently selected, if any. Again, since you do not have any
-      machines yet, the pane displays a welcome message.
+      Manager</emphasis>. The left pane will later list all your virtual
+      machines. Since you have not yet created any virtual machines,
+      this list is empty. The <emphasis role="bold">Tools</emphasis>
+      button provides access to user tools, such as the Virtual Media
+      Manager.
     </para>
 
     <para>
-      To give you an idea what &product-name; might look like later,
-      after you have created many machines, here is another example:
+      The pane on the right displays the properties of the currently
+      selected virtual machine. Since you do not have any machines yet,
+      the pane displays a welcome message.
+    </para>
+
+    <para>
+      The buttons on the right pane are used to create and work with
+      VMs.
+    </para>
+
+    <para>
+      The following figure gives an idea of what &product-name; might
+      look like after you have created some VMs.
     </para>
 
     <figure id="fig-vbox-manager-populated">
@@ -982,7 +989,7 @@
       <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/virtualbox-main.png"
-                     width="10cm" />
+                     width="12cm" />
         </imageobject>
       </mediaobject>
     </figure>
@@ -994,9 +1001,9 @@
     <title>Creating Your First Virtual Machine</title>
 
     <para>
-      Click the <emphasis role="bold">New</emphasis> button at the top
-      of the VirtualBox Manager window. A wizard is shown, to guide you
-      through setting up a new virtual machine (VM):
+      Click <emphasis role="bold">New</emphasis> in the VirtualBox
+      Manager window. A wizard is shown, to guide you through setting up
+      a new virtual machine (VM).
     </para>
 
     <figure id="fig-new-vm-name">
@@ -1031,14 +1038,22 @@
 
       <listitem>
         <para>
+          The <emphasis role="bold">Machine Folder</emphasis> is the
+          location where VMs are stored on your computer. The default
+          folder location is shown.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
           For <emphasis role="bold">Operating System Type</emphasis>
-          select the operating system that you want to install later.
-          The supported operating systems are grouped. If you want to
-          install something very unusual that is not listed, select
+          select the OS that you want to install later. The supported
+          OSes are grouped. If you want to install something very
+          unusual that is not listed, select
           <emphasis role="bold">Other</emphasis>. Depending on your
           selection, &product-name; will enable or disable certain VM
-          settings that your guest operating system may require. This is
-          particularly important for 64-bit guests. See
+          settings that your guest OS may require. This is particularly
+          important for 64-bit guests. See
           <xref linkend="intro-64bitguests" />. It is therefore
           recommended to always set it to the correct value.
         </para>
@@ -1050,8 +1065,8 @@
           (RAM)</emphasis> that &product-name; should allocate every
           time the virtual machine is started. The amount of memory
           given here will be taken away from your host machine and
-          presented to the guest operating system, which will report
-          this size as the virtual computer's installed RAM.
+          presented to the guest OS, which will report this size as the
+          virtual computer's installed RAM.
         </para>
 
         <caution>
@@ -1082,10 +1097,9 @@
           As a rule of thumb, if you have 1 GB of RAM or more in your
           host computer, it is usually safe to allocate 512 MB to each
           VM. In any case, make sure you always have at least 256 to 512
-          MB of RAM left on your host operating system. Otherwise you
-          may cause your host OS to excessively swap out memory to your
-          hard disk, effectively bringing your host system to a
-          standstill.
+          MB of RAM left on your host OS. Otherwise you may cause your
+          host OS to excessively swap out memory to your hard disk,
+          effectively bringing your host system to a standstill.
         </para>
 
         <para>
@@ -1213,12 +1227,11 @@
         <para>
           To prevent your physical hard disk from running full,
           &product-name; limits the size of the image file. Still, it
-          needs to be large enough to hold the contents of your
-          operating system and the applications you want to install. For
-          a modern Windows or Linux guest, you will probably need
-          several gigabytes for any serious use. The limit of the image
-          file size can be changed later, see
-          <xref linkend="vboxmanage-modifyvdi"/>.
+          needs to be large enough to hold the contents of your OS and
+          the applications you want to install. For a modern Windows or
+          Linux guest, you will probably need several gigabytes for any
+          serious use. The limit of the image file size can be changed
+          later, see <xref linkend="vboxmanage-modifyvdi"/>.
         </para>
 
         <figure id="fig-new-vm-vdi">
@@ -1319,14 +1332,14 @@
         <emphasis role="bold">First Start Wizard</emphasis>, is
         displayed. This wizard helps you to select an installation
         medium. Since the VM is created empty, it would otherwise behave
-        just like a real computer with no operating system installed. It
-        will do nothing and display an error message that no bootable
-        operating system was found.
+        just like a real computer with no OS installed. It will do
+        nothing and display an error message that no bootable OS was
+        found.
       </para>
 
       <para>
         For this reason, the wizard helps you to select a medium to
-        install an operating system from.
+        install an OS from.
       </para>
 
       <itemizedlist>
@@ -1334,9 +1347,8 @@
         <listitem>
           <para>
             If you have physical CD or DVD media from which you want to
-            install your guest operating system, such as a Windows
-            installation CD or DVD, put the media into your host's CD or
-            DVD drive.
+            install your guest OS, such as a Windows installation CD or
+            DVD, put the media into your host's CD or DVD drive.
           </para>
 
           <para>
@@ -1379,7 +1391,7 @@
 
       <para>
         After completing the choices in the wizard, you will be able to
-        install your operating system.
+        install your OS.
       </para>
 
     </sect2>
@@ -1391,37 +1403,36 @@
       <para>
         &product-name; provides a virtual USB tablet device to new
         virtual machines through which mouse events are communicated to
-        the guest operating system. If you are running a modern guest
-        operating system that can handle such devices, mouse support may
-        work out of the box without the mouse being
-        <emphasis>captured</emphasis> as described below. See
-        <xref linkend="settings-motherboard" />.
+        the guest OS. If you are running a modern guest OS that can
+        handle such devices, mouse support may work out of the box
+        without the mouse being <emphasis>captured</emphasis> as
+        described below. See <xref linkend="settings-motherboard" />.
       </para>
 
       <para>
         Otherwise, if the virtual machine only sees standard PS/2 mouse
-        and keyboard devices, since the operating system in the virtual
-        machine does not know that it is not running on a real computer,
-        it expects to have exclusive control over your keyboard and
-        mouse. But unless you are running the VM in full screen mode,
-        your VM needs to share keyboard and mouse with other
-        applications and possibly other VMs on your host.
+        and keyboard devices, since the OS in the virtual machine does
+        not know that it is not running on a real computer, it expects
+        to have exclusive control over your keyboard and mouse. But
+        unless you are running the VM in full screen mode, your VM needs
+        to share keyboard and mouse with other applications and possibly
+        other VMs on your host.
       </para>
 
       <para>
-        After installing a guest operating system and before you install
-        the Guest Additions, described later, either your VM or the rest
-        of your computer can "own" the keyboard and the mouse. Both
-        cannot own the keyboard and mouse at the same time. You will see
-        a <emphasis>second</emphasis> mouse pointer which is always
+        After installing a guest OS and before you install the Guest
+        Additions, described later, either your VM or the rest of your
+        computer can "own" the keyboard and the mouse. Both cannot own
+        the keyboard and mouse at the same time. You will see a
+        <emphasis>second</emphasis> mouse pointer which is always
         confined to the limits of the VM window. You activate the VM by
         clicking inside it.
       </para>
 
       <para>
-        To return ownership of keyboard and mouse to your host operating
-        system, &product-name; reserves a special key on your keyboard:
-        the <emphasis>Host key</emphasis>. By default, this is the
+        To return ownership of keyboard and mouse to your host OS,
+        &product-name; reserves a special key on your keyboard: the
+        <emphasis>Host key</emphasis>. By default, this is the
         <emphasis>right Ctrl key</emphasis> on your keyboard. On a Mac
         host, the default Host key is the left Command key. You can
         change this default in the &product-name; Global Settings. See
@@ -1451,9 +1462,9 @@
             Your <emphasis role="bold">keyboard</emphasis> is owned by
             the VM if the VM window on your host desktop has the
             keyboard focus. If you have many windows open in your guest
-            operating system, the window that has the focus in your VM
-            is used. This means that if you want to enter text within
-            your VM, click on the title bar of your VM window first.
+            OS, the window that has the focus in your VM is used. This
+            means that if you want to enter text within your VM, click
+            on the title bar of your VM window first.
           </para>
 
           <para>
@@ -1517,27 +1528,26 @@
       <title>Typing Special Characters</title>
 
       <para>
-        Operating systems expect certain key combinations to initiate
-        certain procedures. Some of these key combinations may be
-        difficult to enter into a virtual machine, as there are three
-        candidates as to who receives keyboard input: the host operating
-        system, &product-name;, or the guest operating system. Which of
-        these three receives keypresses depends on a number of factors,
-        including the key itself.
+        OSes expect certain key combinations to initiate certain
+        procedures. Some of these key combinations may be difficult to
+        enter into a virtual machine, as there are three candidates as
+        to who receives keyboard input: the host OS, &product-name;, or
+        the guest OS. Which of these three receives keypresses depends
+        on a number of factors, including the key itself.
       </para>
 
       <itemizedlist>
 
         <listitem>
           <para>
-            Host operating systems reserve certain key combinations for
-            themselves. For example, it is impossible to enter the
+            Host OSes reserve certain key combinations for themselves.
+            For example, it is impossible to enter the
             <emphasis role="bold">Ctrl+Alt+Delete</emphasis> combination
-            if you want to reboot the guest operating system in your
-            virtual machine, because this key combination is usually
-            hard-wired into the host OS, both Windows and Linux
-            intercept this, and pressing this key combination will
-            therefore reboot your <emphasis>host</emphasis>.
+            if you want to reboot the guest OS in your virtual machine,
+            because this key combination is usually hard-wired into the
+            host OS, both Windows and Linux intercept this, and pressing
+            this key combination will therefore reboot your
+            <emphasis>host</emphasis>.
           </para>
 
           <para>
@@ -1558,14 +1568,14 @@
             where Fx is one of the function keys from F1 to F12,
             normally enables you to switch between virtual terminals. As
             with Ctrl+Alt+Delete, these combinations are intercepted by
-            the host operating system and therefore always switch
-            terminals on the <emphasis>host</emphasis>.
+            the host OS and therefore always switch terminals on the
+            <emphasis>host</emphasis>.
           </para>
 
           <para>
             If, instead, you want to send these key combinations to the
-            <emphasis>guest</emphasis> operating system in the virtual
-            machine, you will need to use one of the following methods:
+            <emphasis>guest</emphasis> OS in the virtual machine, you
+            will need to use one of the following methods:
           </para>
 
           <itemizedlist>
@@ -1655,24 +1665,31 @@
         While a virtual machine is running, you can change removable
         media in the <emphasis role="bold">Devices</emphasis> menu of
         the VM's window. Here you can select in detail what
-        &product-name; presents to your VM as a CD, DVD, or floppy.
+        &product-name; presents to your VM as a CD, DVD, or floppy
+        drive.
       </para>
 
       <para>
-        The settings are the same as would be available for the VM in
-        the <emphasis role="bold">Settings</emphasis> dialog of the
+        The settings are the same as those available for the VM in the
+        <emphasis role="bold">Settings</emphasis> dialog of the
         &product-name; main window. But as the
         <emphasis role="bold">Settings</emphasis> dialog is disabled
-        while the VM is in the Running or Saved state, this extra menu
-        saves you from having to shut down and restart the VM every time
-        you want to change media.
+        while the VM is in the Running or Saved state, the
+        <emphasis role="bold">Devices</emphasis> menu saves you from
+        having to shut down and restart the VM every time you want to
+        change media.
       </para>
 
       <para>
-        Hence, in the <emphasis role="bold">Devices</emphasis> menu,
-        &product-name; enables you to attach the host drive to the guest
-        or select a floppy or DVD image using the Disk Image Manager, as
-        described in <xref linkend="configbasics" />.
+        Using the <emphasis role="bold">Devices</emphasis> menu, you can
+        attach the host drive to the guest or select a floppy or DVD
+        image, as described in <xref linkend="settings-storage" />.
+      </para>
+
+      <para>
+        The <emphasis role="bold">Devices</emphasis> menu also includes
+        an option for creating a virtual ISO (VISO) from selected files
+        on the host.
       </para>
 
     </sect2>
@@ -1690,22 +1707,23 @@
 
         <listitem>
           <para>
-            If you have <emphasis role="bold">scale mode</emphasis>
+            If you have <emphasis role="bold">scaled mode</emphasis>
             enabled, then the virtual machine's screen will be scaled to
             the size of the window. This can be useful if you have many
             machines running and want to have a look at one of them
             while it is running in the background. Alternatively, it
             might be useful to enlarge a window if the VM's output
             screen is very small, for example because you are running an
-            old operating system in it.
+            old OS in it.
           </para>
 
           <para>
-            To enable scale mode, press the <emphasis role="bold">Host
-            key + C</emphasis>, or select <emphasis role="bold">Scale
-            mode</emphasis> from the
-            <emphasis role="bold">Machine</emphasis> menu in the VM
-            window. To leave scale mode, press the Host key + C again.
+            To enable scaled mode, press <emphasis role="bold">Host key
+            + C</emphasis>, or select <emphasis role="bold">Scaled
+            Mode</emphasis> from the
+            <emphasis role="bold">View</emphasis> menu in the VM window.
+            To leave scaled mode, press <emphasis role="bold">Host key +
+            C </emphasis>again.
           </para>
 
           <para>
@@ -1725,11 +1743,11 @@
             If you have the Guest Additions installed and they support
             automatic <emphasis role="bold">resizing</emphasis>, the
             Guest Additions will automatically adjust the screen
-            resolution of the guest operating system. For example, if
-            you are running a Windows guest with a resolution of
-            1024x768 pixels and you then resize the VM window to make it
-            100 pixels wider, the Guest Additions will change the
-            Windows display resolution to 1124x768.
+            resolution of the guest OS. For example, if you are running
+            a Windows guest with a resolution of 1024x768 pixels and you
+            then resize the VM window to make it 100 pixels wider, the
+            Guest Additions will change the Windows display resolution
+            to 1124x768.
           </para>
 
           <para>
@@ -1767,7 +1785,7 @@
         <mediaobject>
           <imageobject>
             <imagedata align="center" fileref="images/vm-close.png"
-                       width="11cm" />
+                       width="10cm" />
           </imageobject>
         </mediaobject>
       </figure>
@@ -1802,8 +1820,8 @@
             This will send an ACPI shutdown signal to the virtual
             machine, which has the same effect as if you had pressed the
             power button on a real computer. So long as the VM is
-            running a fairly modern operating system, this should
-            trigger a proper shutdown mechanism from within the VM.
+            running a fairly modern OS, this should trigger a proper
+            shutdown mechanism from within the VM.
           </para>
         </listitem>
 
@@ -1818,12 +1836,11 @@
             <para>
               This is equivalent to pulling the power plug on a real
               computer without shutting it down properly. If you start
-              the machine again after powering it off, your operating
-              system will have to reboot completely and may begin a
-              lengthy check of its virtual system disks. As a result,
-              this should not normally be done, since it can potentially
-              cause data loss or an inconsistent state of the guest
-              system on disk.
+              the machine again after powering it off, your OS will have
+              to reboot completely and may begin a lengthy check of its
+              virtual system disks. As a result, this should not
+              normally be done, since it can potentially cause data loss
+              or an inconsistent state of the guest system on disk.
             </para>
           </warning>
 
@@ -1858,14 +1875,34 @@
     <para>
       VM groups enable the user to create ad hoc groups of VMs, and to
       manage and perform functions on them collectively, as well as
-      individually. There are a number of features relating to groups.
+      individually.
     </para>
 
-    <orderedlist>
+    <para>
+      The following figure shows VM groups displayed in VirtualBox
+      Manager.
+    </para>
+
+    <figure id="fig-vm-groups">
+      <title>Groups of Virtual Machines</title>
+      <mediaobject>
+        <imageobject>
+          <imagedata align="center" fileref="images/vm-groups.png"
+            width="10cm" />
+        </imageobject>
+      </mediaobject>
+    </figure>
+
+    <para>
+      The following features are available for groups:
+    </para>
+
+    <itemizedlist>
 
       <listitem>
         <para>
-          Create a group using the GUI. Do one of the following:
+          Create a group using the VirtualBox Manager. Do one of the
+          following:
         </para>
 
         <itemizedlist>
@@ -1880,18 +1917,8 @@
             <para>
               Select multiple VMs and select
               <emphasis role="bold">Group</emphasis> from the
-              right-click menu, as shown in the following image.
+              right-click menu.
             </para>
-
-            <figure id="fig-vm-groups">
-              <title>Creating a Group of Virtual Machines</title>
-              <mediaobject>
-                <imageobject>
-                  <imagedata align="center" fileref="images/vm-groups.png"
-                 width="10cm" />
-                </imageobject>
-              </mediaobject>
-            </figure>
           </listitem>
 
         </itemizedlist>
@@ -1910,11 +1937,11 @@
               Create a group and assign a VM. For example:
             </para>
 
-<screen>VBoxManage modifyvm "Fred" --groups "/TestGroup"</screen>
+<screen>VBoxManage modifyvm "vm01" --groups "/TestGroup"</screen>
 
             <para>
               This command creates a group "TestGroup" and attaches the
-              VM "Fred" to that group.
+              VM "vm01" to that group.
             </para>
           </listitem>
 
@@ -1924,10 +1951,10 @@
               For example:
             </para>
 
-<screen>VBoxManage modifyvm "Fred" --groups ""</screen>
+<screen>VBoxManage modifyvm "vm01" --groups ""</screen>
 
             <para>
-              This command detaches all groups from the VM "Fred" and
+              This command detaches all groups from the VM "vm01" and
               deletes the empty group.
             </para>
           </listitem>
@@ -1940,11 +1967,11 @@
           Create multiple groups. For example:
         </para>
 
-<screen>VBoxManage modifyvm "Fred" --groups "/TestGroup,/TestGroup2"</screen>
+<screen>VBoxManage modifyvm "vm01" --groups "/TestGroup,/TestGroup2"</screen>
 
         <para>
           This command creates the groups "TestGroup" and "TestGroup2",
-          if they do not exist, and attaches the VM "Fred" to both of
+          if they do not exist, and attaches the VM "vm01" to both of
           them.
         </para>
       </listitem>
@@ -1954,10 +1981,10 @@
           Create nested groups, having a group hierarchy. For example:
         </para>
 
-<screen>VBoxManage modifyvm "Fred" --groups "/TestGroup/TestGroup2"</screen>
+<screen>VBoxManage modifyvm "vm01" --groups "/TestGroup/TestGroup2"</screen>
 
         <para>
-          This command attaches the VM "Fred" to the subgroup
+          This command attaches the VM "vm01" to the subgroup
           "TestGroup2" of the "TestGroup" group.
         </para>
       </listitem>
@@ -1970,7 +1997,7 @@
         </para>
       </listitem>
 
-    </orderedlist>
+    </itemizedlist>
 
   </sect1>
 
@@ -1988,9 +2015,10 @@
     </para>
 
     <para>
-      You can see the snapshots of a virtual machine by first selecting
-      a machine in the VirtualBox Manager and then clicking
-      <emphasis role="bold">Snapshots</emphasis> at the top right. Until
+      To see the snapshots of a virtual machine, click on the machine
+      name in VirtualBox Manager. Then click the
+      <emphasis role="bold">List</emphasis> icon next to the machine
+      name, and select <emphasis role="bold">Snapshots</emphasis>. Until
       you take a snapshot of the machine, the list of snapshots will be
       empty except for the <emphasis role="bold">Current
       State</emphasis> item, which represents the "now" point in the
@@ -2018,8 +2046,8 @@
 
             <listitem>
               <para>
-                If your VM is currently running, select
-                <emphasis role="bold">Take Snapshot</emphasis> from the
+                If your VM is running, select <emphasis role="bold">Take
+                Snapshot</emphasis> from the
                 <emphasis role="bold">Machine</emphasis> pull-down menu
                 of the VM window.
               </para>
@@ -2027,18 +2055,21 @@
 
             <listitem>
               <para>
-                If your VM is currently in either the Saved or the
-                Powered Off state, as displayed next to the VM in the
-                &product-name; main window, click on the
-                <emphasis role="bold">Snapshots </emphasis>tab on the
-                top right of the main window. Do one of the following:
+                If your VM is in either the Saved or the Powered Off
+                state, as displayed next to the VM name in the
+                &product-name; main window, click the
+                <emphasis role="bold">List</emphasis> icon next to the
+                machine name and select
+                <emphasis role="bold">Snapshots</emphasis>. The
+                snapshots window is shown. Do one of the following:
               </para>
 
               <itemizedlist>
 
                 <listitem>
                   <para>
-                    Click on the small camera icon.
+                    Click the <emphasis role="bold">Take</emphasis>
+                    icon.
                   </para>
                 </listitem>
 
@@ -2046,8 +2077,7 @@
                   <para>
                     Right-click on the <emphasis role="bold">Current
                     State </emphasis>item in the list and select
-                    <emphasis role="bold">Take Snapshot</emphasis> from
-                    the menu.
+                    <emphasis role="bold">Take</emphasis>.
                   </para>
                 </listitem>
 
@@ -2069,19 +2099,20 @@
           <para>
             Your new snapshot will then appear in the snapshots list.
             Underneath your new snapshot, you will see an item called
-            Current State, signifying that the current state of your VM
-            is a variation based on the snapshot you took earlier. If
-            you later take another snapshot, you will see that they will
-            be displayed in sequence, and each subsequent snapshot is
-            derived from an earlier one.
+            <emphasis role="bold">Current State</emphasis>, signifying
+            that the current state of your VM is a variation based on
+            the snapshot you took earlier. If you later take another
+            snapshot, you will see that they are displayed in sequence,
+            and that each subsequent snapshot is derived from an earlier
+            one.
           </para>
 
           <figure id="fig-snapshots-list">
-            <title>Snapshots List for a Virtual Machine</title>
+            <title>Snapshots List For a Virtual Machine</title>
             <mediaobject>
               <imageobject>
                 <imagedata align="center" fileref="images/snapshots-1.png"
-                             width="12cm" />
+                             width="10cm" />
               </imageobject>
             </mediaobject>
           </figure>
@@ -2098,12 +2129,13 @@
 
         <listitem>
           <para>
-            <emphasis role="bold">Restore a snapshot</emphasis>. You do
-            this by right-clicking on any snapshot you have taken in the
-            list of snapshots. By restoring a snapshot, you go back or
-            forward in time. The current state of the machine is lost,
-            and the machine is restored to the exact state it was in
-            when the snapshot was taken.
+            <emphasis role="bold">Restore a snapshot</emphasis>. In the
+            list of snapshots, right-click on any snapshot you have
+            taken and select <emphasis role="bold">Restore</emphasis>.
+            By restoring a snapshot, you go back or forward in time. The
+            current state of the machine is lost, and the machine is
+            restored to the exact state it was in when the snapshot was
+            taken.
           </para>
 
           <note>
@@ -2121,14 +2153,13 @@
               store your data. As write-through hard drives are
               <emphasis>not</emphasis> included in snapshots, they
               remain unaltered when a machine is reverted. See
-              <xref
-              linkend="hdimagewrites" />.
+              <xref linkend="hdimagewrites" />.
             </para>
           </note>
 
           <para>
             To avoid losing the current state when restoring a snapshot,
-            you can create a new snapshot before the restore.
+            you can create a new snapshot before the restore operation.
           </para>
 
           <para>
@@ -2147,9 +2178,9 @@
             does not affect the state of the virtual machine, but only
             releases the files on disk that &product-name; used to store
             the snapshot data, thus freeing disk space. To delete a
-            snapshot, right-click on it in the snapshots tree and select
-            <emphasis role="bold">Delete</emphasis>. Snapshots can be
-            deleted even while a machine is running.
+            snapshot, right-click on the snapshot name in the snapshots
+            tree and select <emphasis role="bold">Delete</emphasis>.
+            Snapshots can be deleted even while a machine is running.
           </para>
 
           <note>
@@ -2181,8 +2212,7 @@
 
       <para>
         Think of a snapshot as a point in time that you have preserved.
-        More formally, a snapshot consists of the following three
-        things:
+        More formally, a snapshot consists of the following:
       </para>
 
       <itemizedlist>
@@ -2218,16 +2248,16 @@
             Strictly speaking, this is only true for virtual hard disks
             in "normal" mode. You can configure disks to behave
             differently with snapshots, see
-            <xref linkend="hdimagewrites" />. Even more formally and
-            technically correct, it is not the virtual disk itself that
-            is restored when a snapshot is restored. Instead, when a
-            snapshot is taken, &product-name; creates differencing
-            images which contain only the changes since the snapshot
-            were taken, and when the snapshot is restored,
-            &product-name; throws away that differencing image, thus
-            going back to the previous state. This is both faster and
-            uses less disk space. For the details, which can be complex,
-            see <xref linkend="diffimages" />.
+            <xref linkend="hdimagewrites" />. In technical terms, it is
+            not the virtual disk itself that is restored when a snapshot
+            is restored. Instead, when a snapshot is taken,
+            &product-name; creates differencing images which contain
+            only the changes since the snapshot were taken. When the
+            snapshot is restored, &product-name; throws away that
+            differencing image, thus going back to the previous state.
+            This is both faster and uses less disk space. For the
+            details, which can be complex, see
+            <xref linkend="diffimages" />.
           </para>
 
           <para>
@@ -2274,13 +2304,12 @@
     </para>
 
     <para>
-      Clicking on the <emphasis role="bold">Settings</emphasis> button
-      in the toolbar at the top brings up a detailed window where you
-      can configure many of the properties of the selected VM. But be
-      careful. Even though it is possible to change all VM settings
-      after installing a guest operating system, certain changes might
-      prevent a guest operating system from functioning correctly if
-      done after installation.
+      Clicking on <emphasis role="bold">Settings</emphasis> displays a
+      window, where you can configure many of the properties of the
+      selected VM. But be careful when changing VM settings. It is
+      possible to change all VM settings after installing a guest OS,
+      but certain changes might prevent a guest OS from functioning
+      correctly if done after installation.
     </para>
 
     <note>
@@ -2289,9 +2318,9 @@
         while a VM is either in the Running or Saved state. This is
         because the <emphasis role="bold">Settings</emphasis> dialog
         enables you to change fundamental characteristics of the virtual
-        computer that is created for your guest operating system, and
-        this operating system may perform well when, for example, half
-        of its memory is taken away. As a result, if the
+        machine that is created for your guest OS. For example, the
+        guest OS may not perform well if half of its memory is taken
+        away. As a result, if the
         <emphasis role="bold">Settings</emphasis> button is disabled,
         shut down the current VM first.
       </para>
@@ -2302,8 +2331,9 @@
       changed for a virtual machine. The various settings that can be
       changed in the <emphasis role="bold">Settings</emphasis> window
       are described in detail in <xref linkend="BasicConcepts" />. Even
-      more parameters are available with the &product-name; command line
-      interface. See <xref linkend="vboxmanage" />.
+      more parameters are available when using the
+      <command>VBoxManage</command> command line interface. See
+      <xref linkend="vboxmanage" />.
     </para>
 
   </sect1>
@@ -2313,9 +2343,9 @@
     <title>Removing and Moving Virtual Machines</title>
 
     <para>
-      You can easily remove a virtual machine from &product-name;.
-      Alternatively, you can move the virtual machine and associated
-      files, such as a disk image, to another location on the host.
+      You can remove a VM from &product-name; or move the VM and its
+      associated files, such as disk images, to another location on the
+      host.
     </para>
 
     <itemizedlist>
@@ -2323,35 +2353,34 @@
       <listitem>
         <para>
           <emphasis role="bold">Removing a VM.</emphasis> To remove a
-          virtual machine which you no longer need, right-click on the
-          VM in the VirtualBox Manager's machine list and select
-          <emphasis role="bold">Remove</emphasis>.
+          VM, right-click on the VM in the VirtualBox Manager's machine
+          list and select <emphasis role="bold">Remove</emphasis>.
         </para>
 
         <para>
-          A confirmation dialog is displayed that enables you to select
-          whether the virtual machine should only be removed from the
-          list of machines, or whether the files associated with it
-          should also be deleted.
+          The confirmation dialog enables you to specify whether to only
+          remove the VM from the list of machines or to remove the files
+          associated with the VM.
         </para>
 
         <para>
-          The <emphasis role="bold">Remove</emphasis> menu item is
-          disabled while a VM is running.
+          Note that the <emphasis role="bold">Remove</emphasis> menu
+          item is disabled while a VM is running.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Moving a VM.</emphasis> To move a
-          virtual machine to a new location on the host, right-click on
-          the VM in the VirtualBox Manager's machine list and select
-          <emphasis role="bold">Move</emphasis>.
+          <emphasis role="bold">Moving a VM.</emphasis> To move a VM to
+          a new location on the host, right-click on the VM in the
+          VirtualBox Manager's machine list and select
+          <emphasis
+          role="bold">Move</emphasis>.
         </para>
 
         <para>
-          A file dialog prompts you to select a new location for the
-          virtual machine.
+          The file dialog prompts you to specify a new location for the
+          VM.
         </para>
 
         <para>
@@ -2360,20 +2389,20 @@
         </para>
 
         <para>
-          The <emphasis role="bold">Move</emphasis> menu item is
-          disabled while a VM is running.
+          Note that the <emphasis role="bold">Move</emphasis> menu item
+          is disabled while a VM is running.
         </para>
 
         <para>
-          You can also use the <command>VBoxManage</command> command to
-          move a VM. See <xref linkend="vboxmanage-movevm"/>.
+          You can also use the <command>VBoxManage movevm</command>
+          command to move a VM. See <xref linkend="vboxmanage-movevm"/>.
         </para>
       </listitem>
 
     </itemizedlist>
 
     <para>
-      For details of removing or moving a disk image file from
+      For information about removing or moving a disk image file from
       &product-name;, see <xref linkend="vdis"/>.
     </para>
 
@@ -2384,10 +2413,10 @@
     <title>Cloning Virtual Machines</title>
 
     <para>
-      To experiment with a VM configuration, test different guest OS
-      levels or to simply backup a VM, &product-name; can create a full
-      or a linked copy of an existing VM. This is called
-      <emphasis>cloning</emphasis> a virtual machine.
+      You can create a full copy or a linked copy of an existing VM.
+      This copy is called a <emphasis>clone</emphasis>. You might use a
+      cloned VM to experiment with a VM configuration, to test different
+      guest OS levels, or to back up a VM.
     </para>
 
     <para>
@@ -2408,58 +2437,69 @@
     <para>
       Start the wizard by clicking
       <emphasis role="bold">Clone</emphasis> in the right-click menu of
-      the VirtualBox Manager's machine list, or in the
+      the VirtualBox Manager's machine list or in the
       <emphasis role="bold">Snapshots</emphasis> view of the selected
       VM.
     </para>
 
     <para>
-      Enter a new <emphasis role="bold">Name</emphasis> for the clone.
+      Specify a new <emphasis role="bold">Name</emphasis> for the clone.
       You can choose a <emphasis role="bold">Path</emphasis> for the
-      cloned virtual machine, otherwise the default machines folder is
-      used.
+      cloned virtual machine, otherwise &product-name; uses the default
+      machines folder.
     </para>
 
     <para>
-      The <emphasis role="bold">Clone Type</emphasis> option is used to
-      specify if the clone should be linked to the source VM, or if a
-      fully independent clone should be created, as follows:
+      The <emphasis role="bold">Clone Type</emphasis> option specifies
+      whether to create a clone linked to the source VM or to create a
+      fully independent clone:
     </para>
 
     <itemizedlist>
 
       <listitem>
         <para>
-          <emphasis role="bold">Full Clone:</emphasis> In this mode, all
-          dependent disk images are copied to the new VM folder. The
-          clone can fully operate without the source VM.
+          <emphasis role="bold">Full Clone:</emphasis> Copies all
+          dependent disk images to the new VM folder. A full clone can
+          operate fully without the source VM.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Linked Clone:</emphasis> In this mode,
-          new differencing disk images are created where the parent disk
-          images are the source disk images. If you selected the current
-          state of the source VM as clone point, a new snapshot will be
-          created implicitly.
+          <emphasis role="bold">Linked Clone:</emphasis> Creates new
+          differencing disk images based on the source VM disk images.
+          If you select the current state of the source VM as the clone
+          point, &product-name; creates a new snapshot.
         </para>
       </listitem>
 
     </itemizedlist>
 
     <para>
-      The <emphasis role="bold">Snapshots</emphasis> option determines
-      what should be cloned. You can create a clone of the
-      <emphasis role="bold">Current Machine State</emphasis> only or
-      <emphasis role="bold">Everything</emphasis>. When you select
-      <emphasis role="bold">Everything</emphasis>, the current machine
-      state and additionally all snapshots are cloned. If you started
-      from a snapshot which has additional children, you can also clone
-      the <emphasis role="bold">Current Machine State and All
-      Children</emphasis>. This creates a clone starting with this
-      snapshot and includes all child snapshots.
+      The <emphasis role="bold">Snapshots</emphasis> option specifies
+      whether to create a clone of the current machine state only or of
+      everything.
     </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Everything:</emphasis> Clones the
+          current machine state and all its snapshots.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Current Machine State and All
+          Children:</emphasis>. Clones a VM snapshot and all its child
+          snapshots.
+        </para>
+      </listitem>
+
+    </itemizedlist>
 
     <para>
       The following clone options are available:
@@ -2469,53 +2509,52 @@
 
       <listitem>
         <para>
-          <emphasis role="bold">MAC Address Policy:</emphasis> Select an
-          option for retaining network card MAC addresses when cloning
-          the VM.
+          <emphasis role="bold">MAC Address Policy:</emphasis> Specifies
+          how to retain network card MAC addresses when cloning the VM.
         </para>
 
         <para>
-          For example, when you select <emphasis role="bold">Generate
-          New MAC Addresses For All Network Adapters</emphasis> every
-          network card is assigned a new MAC address during cloning.
-          This is the default setting, and is useful when both the
-          source VM and the cloned VM have to operate on the same
-          network. Other options enable you to retain existing MAC
-          addresses in the cloned VM.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <emphasis role="bold">Keep Disk Names:</emphasis> The names of
-          disk images are retained when cloning the VM.
+          For example, the <emphasis role="bold">Generate New MAC
+          Addresses For All Network Adapters</emphasis> value assigns a
+          new MAC address to each network card during cloning. This is
+          the default setting. This is the best option when both the
+          source VM and the cloned VM must operate on the same network.
+          Other values enable you to retain the existing MAC addresses
+          in the cloned VM.
         </para>
       </listitem>
 
       <listitem>
         <para>
-          <emphasis role="bold">Keep Hardware UUIDs:</emphasis> Hardware
-          UUIDs are retained when cloning the VM.
+          <emphasis role="bold">Keep Disk Names:</emphasis> Retains the
+          disk image names when cloning the VM.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <emphasis role="bold">Keep Hardware UUIDs:</emphasis> Retains
+          the hardware universally unique identifiers (UUIDs) when
+          cloning the VM.
         </para>
       </listitem>
 
     </itemizedlist>
 
     <para>
-      The clone operation itself can be a lengthy operation depending on
-      the size and count of the attached disk images. Also keep in mind
-      that every snapshot has differencing disk images attached, which
-      need to be cloned as well.
+      The duration of the clone operation depends on the size and number
+      of attached disk images. In addition, the clone operation saves
+      all the differencing disk images of a snapshot.
     </para>
 
     <para>
-      The <emphasis role="bold">Clone</emphasis> menu item is disabled
-      while a machine is running.
+      Note that the <emphasis role="bold">Clone</emphasis> menu item is
+      disabled while a machine is running.
     </para>
 
     <para>
-      To clone a VM from the command line, see
-      <xref linkend="vboxmanage-clonevm" />.
+      You can also use the <command>VBoxManage clonevm</command> command
+      to clone a VM. See <xref linkend="vboxmanage-clonevm" />.
     </para>
 
   </sect1>
@@ -2567,8 +2606,8 @@
         appliances</emphasis>. These are disk images, together with
         configuration settings that can be distributed easily. This way
         one can offer complete ready-to-use software packages, including
-        operating systems with applications, that need no configuration
-        or installation except for importing into &product-name;.
+        OSes with applications, that need no configuration or
+        installation except for importing into &product-name;.
       </para>
 
       <note>
@@ -2631,7 +2670,8 @@
       <title>Importing an Appliance in OVF Format</title>
 
       <para>
-        To import an appliance in OVF format, use the following steps.
+        The following steps show how to import an appliance in OVF
+        format.
       </para>
 
       <orderedlist>
@@ -2643,24 +2683,27 @@
 
           <para>
             &product-name; creates file type associations automatically
-            for any OVF and OVA files on your host operating system.
+            for any OVF and OVA files on your host OS.
           </para>
         </listitem>
 
         <listitem>
           <para>
             Select <emphasis role="bold">File</emphasis>,
-            <emphasis role="bold">Import Appliance</emphasis> in the
-            VirtualBox Manager window. In the displayed file dialog,
-            navigate to the file with either the
+            <emphasis
+            role="bold">Import
+            Appliance</emphasis> from the VirtualBox Manager window.
+          </para>
+
+          <para>
+            From the file dialog, go to the file with either the
             <computeroutput>.ovf</computeroutput> or the
             <computeroutput>.ova</computeroutput> file extension.
           </para>
 
           <para>
-            Click <emphasis role="bold">Import</emphasis>. The
-            <emphasis role="bold">Appliance Settings</emphasis> screen
-            is shown.
+            Click <emphasis role="bold">Import</emphasis> to open the
+            <emphasis role="bold">Appliance Settings</emphasis> screen.
           </para>
 
           <figure id="fig-import-appliance">
@@ -2674,34 +2717,36 @@
           </figure>
 
           <para>
-            This screen shows the virtual machines described in the OVF
-            or OVA file and enables you to change the virtual machine
-            settings.
+            This screen shows the VMs described in the OVF or OVA file
+            and enables you to change the VM settings.
           </para>
 
           <para>
             By default, membership of VM groups is preserved on import
             for VMs that were initially exported from &product-name;.
-            This can be changed using the <emphasis role="bold">Primary
-            Group</emphasis> setting for the VM.
+            You can change this behavior by using the
+            <emphasis
+            role="bold">Primary Group</emphasis>
+            setting for the VM.
           </para>
 
           <para>
-            The following global settings apply for all of the VMs that
-            you are importing:
+            The following global settings apply to all of the VMs that
+            you import:
           </para>
 
           <itemizedlist>
 
             <listitem>
               <para>
-                <emphasis role="bold">Base Folder:</emphasis> The
-                directory on the host where the imported VMs are stored.
+                <emphasis role="bold">Base Folder:</emphasis> Specifies
+                the directory on the host in which to store the imported
+                VMs.
               </para>
 
               <para>
-                If there are multiple VMs in an appliance, you can
-                specify a different directory for each VM by editing the
+                If an appliance has multiple VMs, you can specify a
+                different directory for each VM by editing the
                 <emphasis role="bold">Base Folder</emphasis> setting for
                 the VM.
               </para>
@@ -2709,18 +2754,19 @@
 
             <listitem>
               <para>
-                <emphasis role="bold">MAC Address Policy</emphasis>: By
-                default, MAC addresses of network cards on your VMs are
-                reinitialized before import. You can choose to preserve
-                MAC addresses on import.
+                <emphasis role="bold">MAC Address Policy:</emphasis>
+                Reinitializes the MAC addresses of network cards in your
+                VMs prior to import, by default. You can override the
+                default behavior and preserve the MAC addresses on
+                import.
               </para>
             </listitem>
 
             <listitem>
               <para>
                 <emphasis role="bold">Import Hard Drives as
-                VDI:</emphasis> By default, hard drives are imported in
-                VMDK format. This option enables import in VDI format.
+                VDI:</emphasis> Imports hard drives in the VDI format
+                rather that in the defalut VMDK format.
               </para>
             </listitem>
 
@@ -2734,27 +2780,27 @@
           </para>
 
           <para>
-            &product-name; copies the disk images and creates local
-            virtual machines with the settings described in the
+            &product-name; copies the disk images and creates local VMs
+            with the settings described on the
             <emphasis role="bold">Appliance Settings</emphasis> screen.
-            The imported VMs are shown in the list of virtual machines
-            in VirtualBox Manager.
+            The imported VMs are shown in the list of VMs in VirtualBox
+            Manager.
           </para>
 
           <para>
-            Note that since disk images tend to be big, and VMDK images
-            that come with virtual appliances are typically shipped in a
-            special compressed format that is unsuitable for being used
-            by virtual machines directly, the images are unpacked and
-            copied first, which can take a few minutes.
+            Because disk images are large, the VMDK images that are
+            included with virtual appliances are shipped in a compressed
+            format that cannot be used directly by VMs. So, the images
+            are first unpacked and copied, which might take several
+            minutes.
           </para>
         </listitem>
 
       </orderedlist>
 
       <para>
-        To import an appliance using the command line, see
-        <xref linkend="vboxmanage-import" />.
+        You can use the <command>VBoxManage import</command> command to
+        import an appliance. See <xref linkend="vboxmanage-import" />.
       </para>
 
     </sect2>
@@ -2764,7 +2810,8 @@
       <title>Exporting an Appliance in OVF Format</title>
 
       <para>
-        To export an appliance in OVF format, use the following steps.
+        The following steps show how to export an appliance in OVF
+        format.
       </para>
 
       <orderedlist>
@@ -2772,18 +2819,18 @@
         <listitem>
           <para>
             Select <emphasis role="bold">File</emphasis>,
-            <emphasis role="bold"> Export Appliance</emphasis>.
+            <emphasis role="bold"> Export Appliance</emphasis> to open
+            the <emphasis role="bold">Export Virtual
+            Appliance</emphasis> wizard.
           </para>
 
           <para>
-            The <emphasis role="bold">Export Virtual
-            Appliance</emphasis> wizard is shown. The initial window
-            enables you to combine several virtual machines into an OVF
-            appliance.
+            From the initial window, you can combine several VMs into an
+            OVF appliance.
           </para>
 
           <para>
-            Select one or more VMs to export and click
+            Select one or more VMs to export, and click
             <emphasis role="bold">Next</emphasis>.
           </para>
         </listitem>
@@ -2791,37 +2838,35 @@
         <listitem>
           <para>
             The <emphasis role="bold">Appliance Settings</emphasis>
-            screen is shown, where you can choose the following
-            settings:
+            screen enables you to select the following settings:
           </para>
 
           <itemizedlist>
 
             <listitem>
               <para>
-                <emphasis role="bold">Format:</emphasis> Select an
+                <emphasis role="bold">Format:</emphasis> Selects the
                 <emphasis role="bold">Open Virtualization
-                Format</emphasis> option for the output files.
+                Format</emphasis> value for the output files.
               </para>
 
               <para>
-                The <emphasis role="bold">&oci;</emphasis> option is
-                used for export to &oci;. See
-                <xref linkend="ovf-export-oci"/>.
+                The <emphasis role="bold">&oci;</emphasis> value exports
+                export to &oci;. See <xref linkend="ovf-export-oci"/>.
               </para>
             </listitem>
 
             <listitem>
               <para>
-                <emphasis role="bold">File:</emphasis> Select the
-                location where the exported files are to be stored.
+                <emphasis role="bold">File:</emphasis> Selects the
+                location in which to store the exported files.
               </para>
             </listitem>
 
             <listitem>
               <para>
                 <emphasis role="bold">MAC Address Policy:</emphasis>
-                Select an option for retaining network card MAC
+                Specifies whether to retain or reassign network card MAC
                 addresses on export.
               </para>
             </listitem>
@@ -2847,39 +2892,39 @@
 
         <listitem>
           <para>
-            Click <emphasis role="bold">Next</emphasis> to display the
+            Click <emphasis role="bold">Next</emphasis> to show the
             <emphasis role="bold">Virtual System Settings</emphasis>
             screen.
           </para>
 
           <para>
             You can edit settings for the virtual appliance. For
-            example, you can change the name and add product information
-            such as vendor details or license text.
+            example, you can change the name of the virtual appliance or
+            add product information, such as vendor details or license
+            text.
           </para>
 
           <para>
-            To change a setting, double-click on the required field.
+            Double-click the appropriate field to change its value.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            Click <emphasis role="bold">Export</emphasis> and the export
-            process begins. Note that this can take a while.
+            Click <emphasis role="bold">Export</emphasis> to begin the
+            export process. Note that this operation might take several
+            minutes.
           </para>
         </listitem>
 
       </orderedlist>
 
       <para>
-        To export an appliance using the command line, see
-        <xref linkend="vboxmanage-export" />.
+        You can use the <command>VBoxManage export</command> command to
+        export an appliance. See <xref linkend="vboxmanage-export" />.
       </para>
 
     </sect2>
-
-<!-- New content for 6.0 -->
 
     <sect2 id="ovf-export-oci">
 
@@ -2890,14 +2935,15 @@
       </para>
 
       <para>
-        Before you export a VM to &oci;, you need to do the following:
+        Before you can export a VM to &oci;, ensure that you perform the
+        following configuration steps:
       </para>
 
       <itemizedlist>
 
         <listitem>
           <para>
-            Generate an API signing key pair. This is used for API
+            Generate an API signing key pair that is used for API
             requests to &oci;.
           </para>
 
@@ -2915,16 +2961,16 @@
 
             <listitem>
               <para>
-                The public key of the key pair must be uploaded to the
-                cloud service.
+                Upload the public key of the key pair to the cloud
+                service.
               </para>
             </listitem>
 
           </itemizedlist>
 
           <para>
-            Instructions for creating and uploading an API signing key
-            for &oci; are at:
+            For step-by-step instructions for creating and uploading an
+            API signing key for &oci;, see:
           </para>
 
           <para>
@@ -2948,7 +2994,7 @@
 
             <listitem>
               <para>
-                Automatically, using the <emphasis role="bold">Cloud
+                Automatically by using the <emphasis role="bold">Cloud
                 Profile Manager</emphasis>. See
                 <xref linkend="ovf-cloud-profile-manager"/>.
               </para>
@@ -2956,7 +3002,7 @@
 
             <listitem>
               <para>
-                Manually, by creating an
+                Manually by creating an
                 <computeroutput>oci_config</computeroutput> file in your
                 &product-name; global configuration directory. For
                 example, this is
@@ -2967,7 +3013,7 @@
 
             <listitem>
               <para>
-                Manually, by creating a
+                Manually by creating a
                 <computeroutput>config</computeroutput> file in your
                 &oci; configuration directory. For example, this is
                 <computeroutput>$HOME/.oci/config</computeroutput> on a
@@ -2975,13 +3021,14 @@
               </para>
 
               <para>
-                This is the same file that is used by the &oci; Command
-                Line Interface.
+                This is the same file that is used by the &oci; command
+                line interface.
               </para>
 
               <para>
-                &product-name; uses this file automatically if a cloud
-                profile file is not present in your global configuration
+                &product-name; automatically uses the
+                <computeroutput>config</computeroutput> file if no cloud
+                profile file is present in your global configuration
                 directory. Alternatively, you can import this file
                 manually into the Cloud Profile Manager.
               </para>
@@ -2990,8 +3037,8 @@
           </itemizedlist>
 
           <para>
-            For information on cloud profile settings used by &oci; see
-            the following:
+            For more information about the cloud profile settings used
+            by &oci; see:
           </para>
 
           <para>
@@ -3001,15 +3048,15 @@
 
         <listitem>
           <para>
-            Ensure that the subnet used by source VMs are available in
-            the target compartment on the cloud service.
+            Ensure that the subnets that are used by source VMs are
+            available in the target compartment on the cloud service.
           </para>
         </listitem>
 
       </itemizedlist>
 
       <para>
-        To export a VM to &oci;, use the following steps.
+        Perform the following steps to export a VM to &oci;:
       </para>
 
       <orderedlist>
@@ -3017,28 +3064,21 @@
         <listitem>
           <para>
             Select <emphasis role="bold">File</emphasis>,
-            <emphasis role="bold"> Export Appliance</emphasis>.
-          </para>
-
-          <para>
-            The <emphasis role="bold">Export Virtual
-            Appliance</emphasis> wizard is shown.
+            <emphasis role="bold">Export Appliance</emphasis> to open
+            the <emphasis role="bold">Export Virtual
+            Appliance</emphasis> wizard.
           </para>
 
           <para>
             Select a VM to export and click
-            <emphasis role="bold">Next</emphasis>.
+            <emphasis role="bold">Next</emphasis> to open the
+            <emphasis role="bold">Appliance Settings</emphasis> screen.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            The <emphasis role="bold">Appliance Settings</emphasis>
-            screen is shown.
-          </para>
-
-          <para>
-            In the <emphasis role="bold">Format</emphasis> drop-down
+            From the <emphasis role="bold">Format</emphasis> drop-down
             list, select <emphasis role="bold">&oci;</emphasis>.
           </para>
 
@@ -3048,14 +3088,13 @@
           </para>
 
           <para>
-            &oci; accounts can be set up using the Cloud Profile
+            You can set up &oci; accounts by using the Cloud Profile
             Manager.
           </para>
 
           <para>
-            The window below the
-            <emphasis role="bold">Account</emphasis> field displays the
-            profile settings for your cloud account.
+            The list after the <emphasis role="bold">Account</emphasis>
+            field shows the profile settings for your cloud account.
           </para>
 
           <figure id="fig-export-appliance-oci">
@@ -3069,30 +3108,30 @@
           </figure>
 
           <para>
-            Click <emphasis role="bold">Next</emphasis>. &product-name;
-            makes an API request to the &oci; service.
+            Click <emphasis role="bold">Next</emphasis> to make an API
+            request to the &oci; service and open the
+            <emphasis
+            role="bold">Virtual System
+            Settings</emphasis> screen.
           </para>
         </listitem>
 
         <listitem>
           <para>
-            The <emphasis role="bold">Virtual System Settings</emphasis>
-            screen is shown.
+            Optionally edit settings used for the virtual machine on
+            &oci;.
           </para>
 
           <para>
-            You can edit settings used for the virtual machine on &oci;.
             For example, you can edit the Disk Size and Shape used for
             the VM instance.
           </para>
 
           <para>
             Click <emphasis role="bold">Export</emphasis> to export the
-            virtual machines to the cloud service.
+            VMs to the cloud service.
           </para>
-        </listitem>
 
-        <listitem>
           <para>
             The VMs are uploaded to &oci;.
           </para>
@@ -3102,18 +3141,24 @@
           </para>
 
           <para>
-            If the <emphasis role="bold">Launch Instance</emphasis>
-            setting was enabled on the <emphasis role="bold">Virtual
-            System Settings</emphasis> screen, the VM instance is
-            started.
+            By default, the VM instance is started after upload to
+            &oci;.
           </para>
+        </listitem>
 
+        <listitem>
           <para>
-            You can monitor the export process using the &oci; Console.
+            Monitor the export process by using the &oci; Console.
           </para>
         </listitem>
 
       </orderedlist>
+
+      <para>
+        You can also use the <command>VBoxManage export</command>
+        command to export a VM to &oci;. See
+        <xref linkend="vboxmanage-export-cloud"/>.
+      </para>
 
     </sect2>
 
@@ -3138,21 +3183,21 @@
       </figure>
 
       <para>
-        To display the Cloud Profile Manager select
+        To open the Cloud Profile Manager select
         <emphasis role="bold">File</emphasis>,
-        <emphasis role="bold">Cloud Profile Manager</emphasis> in the
+        <emphasis role="bold">Cloud Profile Manager</emphasis> from the
         VirtualBox Manager window.
       </para>
 
       <para>
-        You can use the Cloud Profile Manager to create a new cloud
-        profile automatically, or you can create a cloud profile by
-        importing settings from your &oci; configuration file into the
-        Cloud Profile Manager.
+        Use the Cloud Profile Manager to create a new cloud profile
+        automatically. Or, create a cloud profile by importing settings
+        from your &oci; configuration file into the Cloud Profile
+        Manager.
       </para>
 
       <para>
-        To create a new cloud profile, do the following:
+        Perform the following steps to create a new cloud profile:
       </para>
 
       <orderedlist>
@@ -3167,8 +3212,8 @@
 
         <listitem>
           <para>
-            Click <emphasis role="bold">Properties</emphasis> and enter
-            the following settings for the profile:
+            Click <emphasis role="bold">Properties</emphasis> and
+            specify the following property values for the profile:
           </para>
 
           <itemizedlist>
@@ -3219,8 +3264,8 @@
           </itemizedlist>
 
           <para>
-            Some of these are settings for your &oci; account. They can
-            be viewed using the &oci; Console.
+            Some of these are settings for your &oci; account, which you
+            can view from the &oci; Console.
           </para>
         </listitem>
 
@@ -3231,7 +3276,7 @@
           </para>
 
           <para>
-            Settings for your cloud profile are added to the
+            The cloud profile settings are saved in the
             <computeroutput>oci_config</computeroutput> file in your
             &product-name; global settings directory.
           </para>
@@ -3240,8 +3285,8 @@
       </orderedlist>
 
       <para>
-        To import an existing &oci; configuration file, do the
-        following:
+        Perform the following steps to import an existing &oci;
+        configuration file:
       </para>
 
       <orderedlist>
@@ -3258,19 +3303,15 @@
 
         <listitem>
           <para>
-            Click the <emphasis role="bold">Import</emphasis> icon.
-          </para>
-
-          <para>
-            A dialog prompting you to import cloud profiles from
-            external files is shown.
+            Click the <emphasis role="bold">Import</emphasis> icon to
+            open a dialog that prompts you to import cloud profiles from
+            external files.
           </para>
 
           <warning>
             <para>
-              The dialog warns you that any cloud profiles in your
-              &product-name; global settings directory will be
-              overwritten.
+              This action overwrites any cloud profiles that are in your
+              &product-name; global settings directory.
             </para>
           </warning>
         </listitem>
@@ -3281,7 +3322,7 @@
           </para>
 
           <para>
-            Settings for your cloud profile are added to the
+            Your cloud profile settings are saved to the
             <computeroutput>oci_config</computeroutput> file in your
             &product-name; global settings directory.
           </para>
@@ -3289,12 +3330,12 @@
 
         <listitem>
           <para>
-            Click <emphasis role="bold">Properties</emphasis> to display
-            settings for the cloud profile.
+            Click <emphasis role="bold">Properties</emphasis> to show
+            the cloud profile settings.
           </para>
 
           <para>
-            To change a setting, double-click on the required field.
+            Double-click on the appropriate field to change the value.
           </para>
         </listitem>
 
@@ -3343,10 +3384,9 @@
         <para>
           <emphasis role="bold">Input.</emphasis> Enables the user to
           specify the Host key. It identifies the key that toggles
-          whether the cursor is in the focus of the VM or the Host
-          operating system windows, see
-          <xref linkend="keyb_mouse_normal"/>, and which is also used to
-          trigger certain VM actions, see
+          whether the cursor is in the focus of the VM or the Host OS
+          windows, see <xref linkend="keyb_mouse_normal"/>, and which is
+          also used to trigger certain VM actions, see
           <xref linkend="specialcharacters"/>.
         </para>
       </listitem>

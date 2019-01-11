@@ -286,11 +286,11 @@
     </itemizedlist>
 
     <para>
-      <xref linkend="table-networking-modes"/> provides a quick overview
-      of the most important networking modes.
+      The following table provides an overview of the most important
+      networking modes.
     </para>
 
-    <table id="table-networking-modes">
+    <table id="table-networking-modes" tabstyle="oracle-all">
       <title>Overview of Networking Modes</title>
       <tgroup cols="6">
         <colspec align="left" />
@@ -301,7 +301,7 @@
         <colspec align="center" />
         <thead valign="middle">
           <row>
-            <entry></entry>
+            <entry><emphasis role="bold">Mode</emphasis></entry>
             <entry><para>
                 <emphasis role="bold">VM&rarr;Host</emphasis>
               </para></entry>
@@ -1469,7 +1469,7 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen>
       network performance:
     </para>
 
-    <orderedlist>
+    <itemizedlist>
 
       <listitem>
         <para>
@@ -1495,7 +1495,7 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen>
 
       <listitem>
         <para>
-          Perform a full, detailed analysis of network traffic on the
+          Perform a full detailed analysis of network traffic on the
           VM's network adaptor using a third party tool such as
           Wireshark. To do this, a promiscuous mode policy needs to be
           used on the VM's network adaptor. Use of this mode is only
@@ -1544,7 +1544,7 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen>
         </itemizedlist>
       </listitem>
 
-    </orderedlist>
+    </itemizedlist>
 
   </sect1>
 
