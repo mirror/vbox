@@ -45,6 +45,7 @@
 #include <iprt/asm-math.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
+#include <iprt/path.h>
 
 typedef enum ENMTFTPSESSIONFMT
 {
@@ -132,19 +133,22 @@ static TFTPOPTIONDESC g_TftpDesc[] =
  */
 DECLINLINE(int) tftpSecurityFilenameCheck(PNATState pData, PCTFTPSESSION pcTftpSession)
 {
-    size_t cbSessionFilename = 0;
     int rc = VINF_SUCCESS;
     AssertPtrReturn(pcTftpSession, VERR_INVALID_PARAMETER);
-    cbSessionFilename = RTStrNLen((const char *)pcTftpSession->pszFilename, TFTP_FILENAME_MAX);
-    if (   !RTStrNCmp((const char*)pcTftpSession->pszFilename, "../", 3)
-        || (pcTftpSession->pszFilename[cbSessionFilename - 1] == '/')
-        ||  RTStrStr((const char *)pcTftpSession->pszFilename, "/../"))
-        rc = VERR_FILE_NOT_FOUND;
 
     /* only allow exported prefixes */
-    if (   RT_SUCCESS(rc)
-        && !tftp_prefix)
+    if (!tftp_prefix)
         rc = VERR_INTERNAL_ERROR;
+    else
+    {
+        char *pszFullPathAbs = RTPathAbsExDup(tftp_prefix, (const char*)pcTftpSession->pszFilename);
+
+        if (   !pszFullPathAbs
+            || !RTPathStartsWith(pszFullPathAbs, tftp_prefix))
+            rc = VERR_FILE_NOT_FOUND;
+
+        RTStrFree(pszFullPathAbs);
+    }
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
