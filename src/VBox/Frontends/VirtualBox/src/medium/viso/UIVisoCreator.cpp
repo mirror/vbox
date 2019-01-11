@@ -65,6 +65,11 @@ const QString &UIVisoCreator::visoName() const
     return m_visoOptions.m_strVisoName;
 }
 
+const QStringList &UIVisoCreator::customOptions() const
+{
+    return m_visoOptions.m_customOptions;
+}
+
 void UIVisoCreator::retranslateUi()
 {
     if (m_pActionConfiguration)
@@ -227,5 +232,4 @@ void UIVisoCreator::checkVisoOptions(const VisoOptions &visoOptions)
             m_pVisoBrowser->setVisoName(visoOptions.m_strVisoName);
     }
     m_visoOptions = visoOptions;
-
 }

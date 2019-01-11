@@ -75,7 +75,10 @@ protected:
 private slots:
 
     void sltHandleCreateNewDirectory();
+    /** Handles the signal we get from the model during setData call. Restores the old name of the file object
+     *  to @p strOldName if need be. */
     void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
+    void sltHandleItemRenameAction();
     void sltHandleRemoveItems();
     void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
     void sltHandleResetAction();

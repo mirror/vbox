@@ -18,9 +18,11 @@
 /* Qt includes: */
 #include <QCheckBox>
 #include <QGridLayout>
+#include <QTextEdit>
 #include <QPushButton>
 #include <QSplitter>
 #include <QStyle>
+#include <QTextBlock>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
@@ -34,6 +36,8 @@ UIVisoConfigurationDialog::UIVisoConfigurationDialog(const VisoOptions &visoOpti
     : QIDialog(pParent)
     , m_pMainLayout(0)
     , m_pButtonBox(0)
+    , m_pVisoNameLineEdit(0)
+    , m_pCustomOptionsTextEdit(0)
     , m_visoOptions(visoOptions)
 {
     prepareObjects();
@@ -49,9 +53,22 @@ const VisoOptions &UIVisoConfigurationDialog::visoOptions() const
     return m_visoOptions;
 }
 
-void UIVisoConfigurationDialog::sltHandleVisoNameChange(const QString &strText)
+void UIVisoConfigurationDialog::accept()
 {
-    m_visoOptions.m_strVisoName = strText;
+    if (m_pVisoNameLineEdit)
+        m_visoOptions.m_strVisoName = m_pVisoNameLineEdit->text();
+
+    if (m_pCustomOptionsTextEdit)
+    {
+        QTextDocument *pDocument = m_pCustomOptionsTextEdit->document();
+        if (pDocument)
+        {
+            for(QTextBlock block = pDocument->begin(); block != pDocument->end()/*.isValid()*/; block = block.next())
+                    m_visoOptions.m_customOptions << block.text();
+        }
+    }
+
+    QIDialog::accept();
 }
 
 void UIVisoConfigurationDialog::prepareObjects()
@@ -61,23 +78,36 @@ void UIVisoConfigurationDialog::prepareObjects()
     if (!m_pMainLayout)
         return;
 
-
-    QILineEdit *pVisoNameLineEdit = new QILineEdit;
-    connect(pVisoNameLineEdit, &QILineEdit::textChanged,
-            this, &UIVisoConfigurationDialog::sltHandleVisoNameChange);
-    pVisoNameLineEdit->setText(m_visoOptions.m_strVisoName);
+    /* Name edit and and label: */
     QILabel *pVisoNameLabel = new QILabel(UIVisoCreator::tr("VISO Name:"));
-    pVisoNameLabel->setBuddy(pVisoNameLineEdit);
+    m_pVisoNameLineEdit = new QILineEdit;
+    if (pVisoNameLabel && m_pVisoNameLineEdit)
+    {
+        m_pVisoNameLineEdit->setText(m_visoOptions.m_strVisoName);
+        pVisoNameLabel->setBuddy(m_pVisoNameLineEdit);
+        m_pMainLayout->addWidget(pVisoNameLabel, 0, 0, 1, 1);
+        m_pMainLayout->addWidget(m_pVisoNameLineEdit, 0, 1, 1, 1);
+    }
 
-    m_pMainLayout->addWidget(pVisoNameLabel, 0, 0, 1, 1);
-    m_pMainLayout->addWidget(pVisoNameLineEdit, 0, 1, 1, 1);
+    /* Cutom Viso options stuff: */
+    QILabel *pCustomOptionsLabel = new QILabel(UIVisoCreator::tr("Custom VISO options:"));
+    m_pCustomOptionsTextEdit = new QTextEdit;
+    if (pCustomOptionsLabel && m_pCustomOptionsTextEdit)
+    {
+        m_pCustomOptionsTextEdit->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+        pCustomOptionsLabel->setBuddy(m_pCustomOptionsTextEdit);
+        m_pMainLayout->addWidget(pCustomOptionsLabel, 1, 0, 1, 1, Qt::AlignTop);
+        m_pMainLayout->addWidget(m_pCustomOptionsTextEdit, 1, 1, 1, 1);
+        foreach (const QString &strLine, m_visoOptions.m_customOptions)
+            m_pCustomOptionsTextEdit->append(strLine);
+    }
 
     m_pButtonBox = new QIDialogButtonBox;
     if (m_pButtonBox)
     {
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
-        m_pMainLayout->addWidget(m_pButtonBox, 1, 0, 1, 2);
+        m_pMainLayout->addWidget(m_pButtonBox, 2, 0, 1, 2);
     }
     setLayout(m_pMainLayout);
 }

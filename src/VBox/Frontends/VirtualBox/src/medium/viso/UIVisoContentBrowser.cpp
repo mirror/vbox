@@ -255,7 +255,6 @@ void UIVisoContentBrowser::retranslateUi()
     if (m_pRenameAction)
         m_pRenameAction->setToolTip(QApplication::translate("UIVisoCreator", "Rename the selected object"));
 
-
     UICustomFileSystemItem *pRootItem = rootItem();
     if (pRootItem)
     {
@@ -337,12 +336,13 @@ void UIVisoContentBrowser::removeItems(const QList<UICustomFileSystemItem*> item
     {
         if (!pItem)
             continue;
+        QString strIsoPath = pItem->data(UICustomFileSystemModelColumn_Path).toString();
+        if (strIsoPath.isEmpty())
+            continue;
+
         bool bFoundInMap = false;
         for (QMap<QString, QString>::iterator iterator = m_entryMap.begin(); iterator != m_entryMap.end(); )
         {
-            QString strIsoPath = pItem->data(UICustomFileSystemModelColumn_Path).toString();
-            if (strIsoPath.isEmpty())
-                continue;
             if (iterator.key().startsWith(strIsoPath))
             {
                 iterator = m_entryMap.erase(iterator);
@@ -464,7 +464,8 @@ void UIVisoContentBrowser::prepareObjects()
     m_pRenameAction = new QAction(this);
     if (m_pRenameAction)
     {
-        m_pVerticalToolBar->addAction(m_pRenameAction);
+        /** @todo Handle rename correctly in the m_entryMap as well and then enable this rename action. */
+        /* m_pVerticalToolBar->addAction(m_pRenameAction); */
         m_pRenameAction->setIcon(UIIconPool::iconSet(":/file_manager_rename_16px.png", ":/file_manager_rename_disabled_16px.png"));
         m_pRenameAction->setEnabled(false);
     }
@@ -506,7 +507,9 @@ void UIVisoContentBrowser::prepareConnections()
     if (m_pResetAction)
         connect(m_pResetAction, &QAction::triggered,
                 this, &UIVisoContentBrowser::sltHandleResetAction);
-
+    if (m_pRenameAction)
+        connect(m_pRenameAction, &QAction::triggered,
+                this,&UIVisoContentBrowser::sltHandleItemRenameAction);
     if (m_pTableView->selectionModel())
         connect(m_pTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
                 this, &UIVisoContentBrowser::sltHandleTableSelectionChanged);
@@ -720,6 +723,15 @@ void UIVisoContentBrowser::renameFileObject(UICustomFileSystemItem *pItem)
     m_pTableView->edit(m_pTableProxyModel->mapFromSource(m_pModel->index(pItem)));
 }
 
+void UIVisoContentBrowser::sltHandleItemRenameAction()
+{
+    QList<UICustomFileSystemItem*> selectedItems = tableSelectedItems();
+    if (selectedItems.empty())
+        return;
+    /* This is not complete. we have to modify the entries in the m_entryMap as well: */
+    renameFileObject(selectedItems.at(0));
+}
+
 void UIVisoContentBrowser::sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName)
 {
     if (!pItem || !pItem->parentItem())
@@ -739,7 +751,6 @@ void UIVisoContentBrowser::sltHandleItemRenameAttempt(UICustomFileSystemItem *pI
     }
 
     pItem->setData(UIPathOperations::mergePaths(pItem->parentItem()->path(), pItem->name()), UICustomFileSystemModelColumn_Path);
-
     if (m_pTableProxyModel)
         m_pTableProxyModel->invalidate();
 }

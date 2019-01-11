@@ -27,24 +27,26 @@
 #include "UIVisoCreatorDefs.h"
 
 /* Forward declarations: */
-class QITabWidget;
 class QGridLayout;
+class QTextEdit;
 class QIDialogButtonBox;
+class QILineEdit;
+class QITabWidget;
 
 class SHARED_LIBRARY_STUFF UIVisoConfigurationDialog : public QIDialog
 {
     Q_OBJECT;
 
 public:
-
     UIVisoConfigurationDialog(const VisoOptions &visoOptions,
                               QWidget *pParent = 0);
     ~UIVisoConfigurationDialog();
     const VisoOptions &visoOptions() const;
 
-private slots:
+public slots:
 
-    void sltHandleVisoNameChange(const QString &strText);
+    void accept() /* override */;
+
 
 private:
 
@@ -53,7 +55,10 @@ private:
 
     QGridLayout          *m_pMainLayout;
     QIDialogButtonBox    *m_pButtonBox;
+    QILineEdit           *m_pVisoNameLineEdit;
+    QTextEdit           *m_pCustomOptionsTextEdit;
     VisoOptions          m_visoOptions;
+
     friend class UIVisoCreator;
 };
 

@@ -28,9 +28,12 @@ struct VisoOptions
         :m_strVisoName("ad-hoc-viso"){}
     bool operator==(const VisoOptions &otherOptions) const
     {
-        return m_strVisoName == otherOptions.m_strVisoName;
+        return (m_strVisoName == otherOptions.m_strVisoName) &&
+            (m_customOptions == otherOptions.m_customOptions);
     }
     QString m_strVisoName;
+    /** Additions viso options to be inserted to the viso file as separate lines. */
+    QStringList m_customOptions;
 };
 
 struct BrowserOptions

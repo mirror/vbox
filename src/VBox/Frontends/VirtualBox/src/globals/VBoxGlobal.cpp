@@ -2653,6 +2653,7 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
     {
         QStringList files = pVisoCreator->entryList();
         QString strVisoName = pVisoCreator->visoName();
+
         if (files.empty() || files[0].isEmpty())
             return QUuid();
 
@@ -2687,6 +2688,10 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
                         else
                             break;
                     }
+                    /* Append custom options if any to the file: */
+                    const QStringList &customOptions = pVisoCreator->customOptions();
+                    foreach (QString strLine, customOptions)
+                        RTStrmPrintf(pStrmViso, "%s\n", strLine.toUtf8().constData());
 
                     RTStrmFlush(pStrmViso);
                     if (RT_SUCCESS(vrc))

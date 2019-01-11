@@ -54,6 +54,7 @@ public:
     ~UIVisoCreator();
     QStringList entryList() const;
     const QString &visoName() const;
+    const QStringList &customOptions() const;
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
