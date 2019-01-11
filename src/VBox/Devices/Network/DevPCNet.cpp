@@ -292,7 +292,7 @@ enum PCNET_DEVICE_TYPE
  *
  * There were also non-busmastering LANCE adapters, such as the BICC 4110-1, DEC DEPCA,
  * or NTI 16. Those are uninteresting.
- * 
+ *
  * Newer adapters based on the integrated PCnet-ISA (Am79C960) and later have a fixed
  * register layout compatible with the NE2100. However, they may still require different
  * drivers. At least two different incompatible drivers exist for PCnet-based cards:
@@ -1873,7 +1873,7 @@ static int pcnetCalcPacketLen(PPCNETSTATE pThis, unsigned cb)
 /**
  * Write data into guest receive buffers.
  */
-static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbToRecv, bool fAddFCS)
+static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbToRecv, bool fAddFCS, bool fLoopback)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
     int is_padr = 0, is_bcast = 0, is_ladr = 0;
@@ -1958,8 +1958,12 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
             memcpy(src, buf, cbToRecv);
 
             if (!fStrip) {
-                while (cbToRecv < 60)
-                    src[cbToRecv++] = 0;
+                /* In loopback mode, Runt Packed Accept is always enabled internally;
+                 * don't do any padding because guest may be looping back very short packets.
+                 */
+                if (!fLoopback)
+                    while (cbToRecv < 60)
+                        src[cbToRecv++] = 0;
 
                 if (fAddFCS)
                 {
@@ -2108,7 +2112,8 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
 
     /* see description of TXDPOLL:
      * ``transmit polling will take place following receive activities'' */
-    pcnetPollRxTx(pThis);
+    if (!fLoopback)
+        pcnetPollRxTx(pThis);
     pcnetUpdateIrq(pThis);
 }
 
@@ -2233,7 +2238,7 @@ DECLINLINE(int) pcnetXmitSendBuf(PPCNETSTATE pThis, bool fLoopback, PPDMSCATTERG
         if (HOST_IS_OWNER(CSR_CRST(pThis)))
             pcnetRdtePoll(pThis);
 
-        pcnetReceiveNoSync(pThis, pThis->abLoopBuf, pSgBuf->cbUsed, true /* fAddFCS */);
+        pcnetReceiveNoSync(pThis, pThis->abLoopBuf, pSgBuf->cbUsed, true /* fAddFCS */, fLoopback);
         pThis->Led.Actual.s.fReading = 0;
         rc = VINF_SUCCESS;
     }
@@ -4675,7 +4680,7 @@ static DECLCALLBACK(int) pcnetNetworkDown_Receive(PPDMINETWORKDOWN pInterface, c
                           && ((PCRTNETETHERHDR)pvBuf)->EtherType == RT_H2BE_U16_C(RTNET_ETHERTYPE_VLAN));
         if (cb > 70) /* unqualified guess */
             pThis->Led.Asserted.s.fReading = pThis->Led.Actual.s.fReading = 1;
-        pcnetReceiveNoSync(pThis, (const uint8_t *)pvBuf, cb, fAddFCS);
+        pcnetReceiveNoSync(pThis, (const uint8_t *)pvBuf, cb, fAddFCS, false);
         pThis->Led.Actual.s.fReading = 0;
     }
 #ifdef LOG_ENABLED
