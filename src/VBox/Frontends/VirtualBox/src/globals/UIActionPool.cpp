@@ -2279,6 +2279,12 @@ UIActionPoolManager *UIActionPool::toManager()
     return qobject_cast<UIActionPoolManager*>(this);
 }
 
+QActionGroup *UIActionPool::actionGroup(int iIndex) const
+{
+    AssertReturn(m_groupPool.contains(iIndex), 0);
+    return m_groupPool.value(iIndex);
+}
+
 bool UIActionPool::isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType enmType) const
 {
     foreach (const UIExtraDataMetaDefs::MenuType &enmRestriction, m_restrictedMenus.values())
@@ -2516,7 +2522,7 @@ void UIActionPool::prepareConnections()
 
 void UIActionPool::cleanupPool()
 {
-    /* Cleanup pool: */
+    qDeleteAll(m_groupPool);
     qDeleteAll(m_pool);
 }
 
