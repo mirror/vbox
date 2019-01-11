@@ -3023,8 +3023,6 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
      */
     if (pDrvCfg->uPreBufSizeMs != UINT32_MAX)
     {
-        if (!pDrvCfg->uPreBufSizeMs) /* Pre-buffering is set to disabled. */
-            LogRel2(("Audio: Using custom pre-buffering (disabled) for stream '%s'\n", pStream->szName));
         pCfgReq->Backend.cfPreBuf = DrvAudioHlpMilliToFrames(pDrvCfg->uPreBufSizeMs, &pCfgReq->Props);
     }
     else /* Set default pre-buffering size. */
@@ -3099,9 +3097,17 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
         LogRel2(("Audio: Period size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",
                  pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cfPeriod, &pCfgAcq->Props), pCfgAcq->Backend.cfPeriod));
 
-    if (pCfgAcq->Backend.cfPreBuf != pCfgReq->Backend.cfPreBuf)
+    if (   pCfgReq->Backend.cfPreBuf
+        && pCfgAcq->Backend.cfPreBuf != pCfgReq->Backend.cfPreBuf)
+    {
         LogRel2(("Audio: Pre-buffering size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",
                  pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cfPreBuf, &pCfgAcq->Props), pCfgAcq->Backend.cfPreBuf));
+    }
+    else
+    {
+        LogRel2(("Audio: Pre-buffering is disabled for stream '%s'\n", pStream->szName));
+        pCfgAcq->Backend.cfPreBuf = 0;
+    }
 
     /* Sanity for detecting buggy backends. */
     AssertMsgReturn(pCfgAcq->Backend.cfPeriod < pCfgAcq->Backend.cfBufferSize,
