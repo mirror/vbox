@@ -57,6 +57,9 @@
   and clear the memory. For those, the FDPT must be in the BIOS ROM area, or
   the OS will destroy it (even when it's at 0:300 in the IVT).
 
+- NetWare 2.15 has a similar restriction, the FDPT must explicitly point above
+  segment address C800 or the NetWare AT disk driver abends.
+
 - Windows NT (including XP) uses INT 13h/08h to obtain the DPT for each floppy
   drive. NT assumes a 13-byte DPT which includes the number of tracks. NT will
   refuse to read more tracks than the DPT specifies and formats as many tracks
