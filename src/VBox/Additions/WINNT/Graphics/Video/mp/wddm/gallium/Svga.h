@@ -85,12 +85,6 @@ typedef struct VBOXWDDM_EXT_VMSVGA
     /** Fifo state. */
     VMSVGAFIFO fifo;
 
-    /** Offset of the screen relative to VRAM start. */
-    uint32_t u32ScreenOffset;
-
-    /** Scanline width in bytes of the screen. */
-    uint32_t cbScreenPitch;
-
     /** For atomic hardware access. */
     KSPIN_LOCK HwSpinLock;
 
@@ -103,6 +97,12 @@ typedef struct VBOXWDDM_EXT_VMSVGA
 
     /** SVGA data access. */
     FAST_MUTEX SvgaMutex;
+
+    struct
+    {
+        uint32_t u32Offset;
+        uint32_t u32BytesPerLine;
+    } lastGMRFB;
 
     /** AVL tree for mapping sids to the original sid for shared resources. */
     AVLU32TREE SharedSidMap;
@@ -134,7 +134,8 @@ NTSTATUS SvgaScreenDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
                           int32_t xOrigin,
                           int32_t yOrigin,
                           uint32_t u32Width,
-                          uint32_t u32Height);
+                          uint32_t u32Height,
+                          bool fBlank);
 NTSTATUS SvgaScreenDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
                            uint32_t u32ScreenId);
 
@@ -207,13 +208,15 @@ NTSTATUS SvgaGenPresentVRAM(PVBOXWDDM_EXT_VMSVGA pSvga,
                             uint32_t u32Sid,
                             uint32_t u32Width,
                             uint32_t u32Height,
+                            uint32_t u32VRAMOffset,
                             void *pvDst,
                             uint32_t cbDst,
                             uint32_t *pcbOut);
 NTSTATUS SvgaPresentVRAM(PVBOXWDDM_EXT_VMSVGA pSvga,
                          uint32_t u32Sid,
                          uint32_t u32Width,
-                         uint32_t u32Height);
+                         uint32_t u32Height,
+                         uint32_t u32VRAMOffset);
 
 NTSTATUS SvgaGenSurfaceDMA(PVBOXWDDM_EXT_VMSVGA pSvga,
                            SVGAGuestImage const *pGuestImage,
@@ -241,6 +244,12 @@ NTSTATUS SvgaGenBlitScreenToGMRFB(PVBOXWDDM_EXT_VMSVGA pSvga,
                                   uint32_t cbDst,
                                   uint32_t *pcbOut);
 
+NTSTATUS SvgaBlitGMRFBToScreen(PVBOXWDDM_EXT_VMSVGA pSvga,
+                               uint32_t idDstScreen,
+                               int32_t xSrc,
+                               int32_t ySrc,
+                               RECT const *pDstRect);
+
 NTSTATUS SvgaGenBlitSurfaceToScreen(PVBOXWDDM_EXT_VMSVGA pSvga,
                                     uint32_t sid,
                                     RECT const *pSrcRect,
@@ -265,6 +274,11 @@ NTSTATUS SvgaGenDefineGMRFB(PVBOXWDDM_EXT_VMSVGA pSvga,
                             void *pvDst,
                             uint32_t cbDst,
                             uint32_t *pcbOut);
+
+NTSTATUS SvgaDefineGMRFB(PVBOXWDDM_EXT_VMSVGA pSvga,
+                         uint32_t u32Offset,
+                         uint32_t u32BytesPerLine,
+                         bool fForce);
 
 NTSTATUS SvgaGenGMRReport(PVBOXWDDM_EXT_VMSVGA pSvga,
                           uint32_t u32GmrId,

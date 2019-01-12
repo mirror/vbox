@@ -16,6 +16,7 @@
  */
 
 #include "VBoxMPGaWddm.h"
+#include "../VBoxMPVidPn.h"
 
 #include "Svga.h"
 #include "SvgaFifo.h"
@@ -471,9 +472,10 @@ NTSTATUS GaScreenDefine(PVBOXWDDM_EXT_GA pGaDevExt,
                         int32_t xOrigin,
                         int32_t yOrigin,
                         uint32_t u32Width,
-                        uint32_t u32Height)
+                        uint32_t u32Height,
+                        bool fBlank)
 {
-    return SvgaScreenDefine(pGaDevExt->hw.pSvga, u32Offset, u32ScreenId, xOrigin, yOrigin, u32Width, u32Height);
+    return SvgaScreenDefine(pGaDevExt->hw.pSvga, u32Offset, u32ScreenId, xOrigin, yOrigin, u32Width, u32Height, fBlank);
 }
 
 NTSTATUS GaScreenDestroy(PVBOXWDDM_EXT_GA pGaDevExt,
@@ -651,9 +653,10 @@ NTSTATUS GaFenceUnref(PVBOXWDDM_EXT_GA pGaDevExt,
 static NTSTATUS gaPresent(PVBOXWDDM_EXT_GA pGaDevExt,
                           uint32_t u32Sid,
                           uint32_t u32Width,
-                          uint32_t u32Height)
+                          uint32_t u32Height,
+                          uint32_t u32VRAMOffset)
 {
-    return SvgaPresentVRAM(pGaDevExt->hw.pSvga, u32Sid, u32Width, u32Height);
+    return SvgaPresentVRAM(pGaDevExt->hw.pSvga, u32Sid, u32Width, u32Height, u32VRAMOffset);
 }
 
 static int gaFenceCmp(uint32_t u32FenceA, uint32_t u32FenceB)
@@ -877,15 +880,6 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
                                               DXGK_PRESENT_DESTINATION_INDEX, pDst, pDstAlloc,
                                               pu8Target, cbTarget, &cbCmd);
             }
-            else
-            {
-                /* Define GMRFB to point to the start of VRAM. */
-                /** @todo This is a workaround for current BlitSurfaceToScreen host implementation
-                 *        expecting that GMRFB will be at the start of VRAM.
-                 */
-                Status = SvgaGenDefineGMRFB(pSvga, 0, pSvga->cbScreenPitch,
-                                            pu8Target, cbTarget, &cbCmd);
-            }
 
             if (Status == STATUS_BUFFER_OVERFLOW)
             {
@@ -1016,25 +1010,6 @@ static NTSTATUS gaPresentBlt(DXGKARG_PRESENT *pPresent,
 
         pu8Target += cbCmd;
         cbTarget -= cbCmd;
-    }
-
-    if (Status == STATUS_SUCCESS)
-    {
-        if (iSubRect == pPresent->SubRectCnt)
-        {
-            /** @todo No more rects. Have to reset the GMRFB, some code expects this. */
-            Status = SvgaGenDefineGMRFB(pSvga, 0, pSvga->cbScreenPitch,
-                                        pu8Target, cbTarget, &cbCmd);
-            if (Status == STATUS_BUFFER_OVERFLOW)
-            {
-                Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
-            }
-            else
-            {
-                pu8Target += cbCmd;
-                cbTarget -= cbCmd;
-            }
-        }
     }
 
     *pu32TargetOut = (uintptr_t)pu8Target - (uintptr_t)pu8TargetStart;
@@ -1987,7 +1962,10 @@ NTSTATUS APIENTRY GaDxgkDdiEscape(const HANDLE hAdapter,
             }
 
             VBOXDISPIFESCAPE_GAPRESENT *pGaPresent = (VBOXDISPIFESCAPE_GAPRESENT *)pEscapeHdr;
-            Status = gaPresent(pDevExt->pGa, pGaPresent->u32Sid, pGaPresent->u32Width, pGaPresent->u32Height);
+            /** @todo This always writes to the start of VRAM. This is a debug function
+             * and is not used for normal operations anymore.
+             */
+            Status = gaPresent(pDevExt->pGa, pGaPresent->u32Sid, pGaPresent->u32Width, pGaPresent->u32Height, 0);
             break;
         }
         case VBOXESC_GASURFACEDEFINE:
@@ -2103,5 +2081,178 @@ NTSTATUS APIENTRY GaDxgkDdiEscape(const HANDLE hAdapter,
             break;
     }
 
+    return Status;
+}
+
+DECLINLINE(VBOXVIDEOOFFSET) vboxWddmAddrVRAMOffset(VBOXWDDM_ADDR const *pAddr)
+{
+    return (pAddr->offVram != VBOXVIDEOOFFSET_VOID && pAddr->SegmentId) ?
+                (pAddr->SegmentId == 1 ? pAddr->offVram : 0) :
+                VBOXVIDEOOFFSET_VOID;
+}
+
+static void vboxWddmRectCopy(void *pvDst, uint32_t cbDstBytesPerPixel, uint32_t cbDstPitch,
+                             void const *pvSrc, uint32_t cbSrcBytesPerPixel, uint32_t cbSrcPitch,
+                             RECT const *pRect)
+{
+    uint8_t *pu8Dst = (uint8_t *)pvDst;
+    pu8Dst += pRect->top * cbDstPitch + pRect->left * cbDstBytesPerPixel;
+
+    uint8_t const *pu8Src = (uint8_t *)pvSrc;
+    pu8Src += pRect->top * cbSrcPitch + pRect->left * cbSrcBytesPerPixel;
+
+    uint32_t const cbLine = (pRect->right - pRect->left) * cbDstBytesPerPixel;
+    for (INT y = pRect->top; y < pRect->bottom; ++y)
+    {
+        memcpy(pu8Dst, pu8Src, cbLine);
+        pu8Dst += cbDstPitch;
+        pu8Src += cbSrcPitch;
+    }
+}
+
+static NTSTATUS gaSourceBlitToScreen(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_SOURCE *pSource, RECT const *pRect)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXWDDM_EXT_VMSVGA pSvga = pDevExt->pGa->hw.pSvga;
+
+    VBOXWDDM_TARGET_ITER Iter;
+    VBoxVidPnStTIterInit(pSource, pDevExt->aTargets, VBoxCommonFromDeviceExt(pDevExt)->cDisplays, &Iter);
+    for (PVBOXWDDM_TARGET pTarget = VBoxVidPnStTIterNext(&Iter);
+         pTarget;
+         pTarget = VBoxVidPnStTIterNext(&Iter))
+    {
+        Status = SvgaBlitGMRFBToScreen(pSvga,
+                                       pTarget->u32Id,
+                                       pRect->left,
+                                       pRect->top,
+                                       pRect);
+        AssertBreak(Status == STATUS_SUCCESS);
+    }
+
+    return Status;
+}
+
+NTSTATUS APIENTRY GaDxgkDdiPresentDisplayOnly(const HANDLE hAdapter,
+                                              const DXGKARG_PRESENT_DISPLAYONLY *pPresentDisplayOnly)
+{
+    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
+
+    LOG(("VidPnSourceId %d, pSource %p, BytesPerPixel %d, Pitch %d, Flags 0x%x, NumMoves %d, NumDirtyRects %d, pfn %p\n",
+         pPresentDisplayOnly->VidPnSourceId,
+         pPresentDisplayOnly->pSource,
+         pPresentDisplayOnly->BytesPerPixel,
+         pPresentDisplayOnly->Pitch,
+         pPresentDisplayOnly->Flags.Value,
+         pPresentDisplayOnly->NumMoves,
+         pPresentDisplayOnly->NumDirtyRects,
+         pPresentDisplayOnly->pDirtyRect,
+         pPresentDisplayOnly->pfnPresentDisplayOnlyProgress));
+
+    /*
+     * Copy the image to the corresponding VidPn source allocation.
+     */
+    PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pPresentDisplayOnly->VidPnSourceId];
+    AssertReturn(pSource->AllocData.Addr.SegmentId == 1, STATUS_SUCCESS); /* Ignore such VidPn sources. */
+
+    VBOXVIDEOOFFSET const offVRAM = vboxWddmAddrVRAMOffset(&pSource->AllocData.Addr);
+    AssertReturn(offVRAM != VBOXVIDEOOFFSET_VOID, STATUS_SUCCESS); /* Ignore such VidPn sources. */
+
+    for (ULONG i = 0; i < pPresentDisplayOnly->NumMoves; ++i)
+    {
+        RECT *pRect = &pPresentDisplayOnly->pMoves[i].DestRect;
+        vboxWddmRectCopy(pDevExt->pvVisibleVram + offVRAM,    // dst pointer
+                         pSource->AllocData.SurfDesc.bpp / 8, // dst bytes per pixel
+                         pSource->AllocData.SurfDesc.pitch,   // dst pitch
+                         pPresentDisplayOnly->pSource,        // src pointer
+                         pPresentDisplayOnly->BytesPerPixel,  // src bytes per pixel
+                         pPresentDisplayOnly->Pitch,          // src pitch
+                         pRect);
+    }
+
+    for (ULONG i = 0; i < pPresentDisplayOnly->NumDirtyRects; ++i)
+    {
+        RECT *pRect = &pPresentDisplayOnly->pDirtyRect[i];
+        if (pRect->left >= pRect->right || pRect->top >= pRect->bottom)
+        {
+            continue;
+        }
+
+        vboxWddmRectCopy(pDevExt->pvVisibleVram + offVRAM,    // dst pointer
+                         pSource->AllocData.SurfDesc.bpp / 8, // dst bytes per pixel
+                         pSource->AllocData.SurfDesc.pitch,   // dst pitch
+                         pPresentDisplayOnly->pSource,        // src pointer
+                         pPresentDisplayOnly->BytesPerPixel,  // src bytes per pixel
+                         pPresentDisplayOnly->Pitch,          // src pitch
+                         pRect);
+    }
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    if (pSource->bVisible) /// @todo Does/should this have any effect?
+    {
+        PVBOXWDDM_EXT_VMSVGA pSvga = pDevExt->pGa->hw.pSvga;
+        Status = SvgaDefineGMRFB(pSvga, (uint32_t)offVRAM, pSource->AllocData.SurfDesc.pitch, false);
+        if (Status == STATUS_SUCCESS)
+        {
+            for (ULONG i = 0; i < pPresentDisplayOnly->NumMoves; ++i)
+            {
+                RECT *pRect = &pPresentDisplayOnly->pMoves[i].DestRect;
+                Status = gaSourceBlitToScreen(pDevExt, pSource, pRect);
+                AssertBreak(Status == STATUS_SUCCESS);
+            }
+        }
+
+        if (Status == STATUS_SUCCESS)
+        {
+            for (ULONG i = 0; i < pPresentDisplayOnly->NumDirtyRects; ++i)
+            {
+                RECT *pRect = &pPresentDisplayOnly->pDirtyRect[i];
+                Status = gaSourceBlitToScreen(pDevExt, pSource, pRect);
+                AssertBreak(Status == STATUS_SUCCESS);
+            }
+        }
+    }
+
+    return Status;
+}
+
+NTSTATUS GaVidPnSourceReport(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_SOURCE *pSource)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    VBOXVIDEOOFFSET offVRAM = vboxWddmAddrVRAMOffset(&pSource->AllocData.Addr);
+    if (offVRAM == VBOXVIDEOOFFSET_VOID)
+        return STATUS_SUCCESS; /* Ignore such VidPn sources. */
+
+    VBOXWDDM_TARGET_ITER Iter;
+    VBoxVidPnStTIterInit(pSource, pDevExt->aTargets, VBoxCommonFromDeviceExt(pDevExt)->cDisplays, &Iter);
+    for (PVBOXWDDM_TARGET pTarget = VBoxVidPnStTIterNext(&Iter);
+         pTarget;
+         pTarget = VBoxVidPnStTIterNext(&Iter))
+    {
+        Status = GaScreenDefine(pDevExt->pGa,
+                                (uint32_t)offVRAM,
+                                pTarget->u32Id,
+                                pSource->VScreenPos.x, pSource->VScreenPos.y,
+                                pSource->AllocData.SurfDesc.width, pSource->AllocData.SurfDesc.height,
+                                RT_BOOL(pSource->bBlankedByPowerOff));
+        AssertBreak(Status == STATUS_SUCCESS);
+    }
+
+    return Status;
+}
+
+NTSTATUS GaVidPnSourceCheckPos(PVBOXMP_DEVEXT pDevExt, UINT iSource)
+{
+    POINT Pos = {0};
+    NTSTATUS Status = vboxWddmDisplaySettingsQueryPos(pDevExt, iSource, &Pos);
+    if (NT_SUCCESS(Status))
+    {
+        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[iSource];
+        if (memcmp(&pSource->VScreenPos, &Pos, sizeof(Pos)))
+        {
+            pSource->VScreenPos = Pos;
+            Status = GaVidPnSourceReport(pDevExt, pSource);
+        }
+    }
     return Status;
 }

@@ -5194,6 +5194,14 @@ DxgkDdiEscape(
 
                 for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
                 {
+#ifdef VBOX_WITH_MESA3D
+                    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+                    {
+                        GaVidPnSourceCheckPos(pDevExt, i);
+                        continue;
+                    }
+#endif
+
                     vboxWddmDisplaySettingsCheckPos(pDevExt, i);
                 }
                 break;
@@ -5445,6 +5453,13 @@ DxgkDdiSetVidPnSourceAddress(
     vboxVDbgBreakFv();
 
     LOGF(("ENTER, context(0x%x)", hAdapter));
+    LOG(("id %d, seg %d, addr 0x%RX64, hAllocation %p, ctx cnt %d, f 0x%x",
+         pSetVidPnSourceAddress->VidPnSourceId,
+         pSetVidPnSourceAddress->PrimarySegment,
+         pSetVidPnSourceAddress->PrimaryAddress.QuadPart,
+         pSetVidPnSourceAddress->hAllocation,
+         pSetVidPnSourceAddress->ContextCount,
+         pSetVidPnSourceAddress->Flags.Value));
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
     if ((UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays <= pSetVidPnSourceAddress->VidPnSourceId)
@@ -5453,21 +5468,17 @@ DxgkDdiSetVidPnSourceAddress(
         return STATUS_INVALID_PARAMETER;
     }
 
+#ifdef VBOX_WITH_MESA3D
+    if (pDevExt->enmHwType != VBOXVIDEO_HWTYPE_VMSVGA)
+#endif
     vboxWddmDisplaySettingsCheckPos(pDevExt, pSetVidPnSourceAddress->VidPnSourceId);
 
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceAddress->VidPnSourceId];
-#ifdef VBOX_WITH_MESA3D
-    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
-    {
-        GaScreenDefine(pDevExt->pGa, (uint32_t)pSetVidPnSourceAddress->PrimaryAddress.QuadPart,
-                       pSetVidPnSourceAddress->VidPnSourceId,
-                       pSource->VScreenPos.x, pSource->VScreenPos.y,
-                       pSource->AllocData.SurfDesc.width, pSource->AllocData.SurfDesc.height);
-        return STATUS_SUCCESS;
-    }
-#endif
 
+    /*
+     * Update the source VRAM address.
+     */
     PVBOXWDDM_ALLOCATION pAllocation;
     Assert(pSetVidPnSourceAddress->hAllocation);
     Assert(pSetVidPnSourceAddress->hAllocation || pSource->pPrimaryAllocation);
@@ -5502,6 +5513,20 @@ DxgkDdiSetVidPnSourceAddress(
 
     pSource->u8SyncState &= ~VBOXWDDM_HGSYNC_F_SYNCED_LOCATION;
 
+    /*
+     * Report the source.
+     */
+#ifdef VBOX_WITH_MESA3D
+    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+    {
+        /* Query the position of the screen to make sure it is up to date. */
+        vboxWddmDisplaySettingsQueryPos(pDevExt, pSetVidPnSourceAddress->VidPnSourceId, &pSource->VScreenPos);
+
+        GaVidPnSourceReport(pDevExt, pSource);
+        return STATUS_SUCCESS;
+    }
+#endif
+
     vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
 
     LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
@@ -5531,6 +5556,9 @@ DxgkDdiSetVidPnSourceVisibility(
         return STATUS_INVALID_PARAMETER;
     }
 
+#ifdef VBOX_WITH_MESA3D
+    if (pDevExt->enmHwType != VBOXVIDEO_HWTYPE_VMSVGA)
+#endif
     vboxWddmDisplaySettingsCheckPos(pDevExt, pSetVidPnSourceVisibility->VidPnSourceId);
 
     NTSTATUS Status = STATUS_SUCCESS;
@@ -5551,6 +5579,13 @@ DxgkDdiSetVidPnSourceVisibility(
 //            vboxWddmGhDisplayCheckSetInfoFromSource(pDevExt, pSource);
 //        }
     }
+
+#ifdef VBOX_WITH_MESA3D
+    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+    {
+        GaVidPnSourceCheckPos(pDevExt, pSetVidPnSourceVisibility->VidPnSourceId);
+    }
+#endif
 
     LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
 
@@ -5638,6 +5673,45 @@ DxgkDdiCommitVidPn(
 
         VBoxDumpSourceTargetArrays(paSources, paTargets, VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
 
+#ifdef VBOX_WITH_MESA3D
+        if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+        {
+            for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+            {
+                VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[i];
+
+                LOG(("Source [%d]: visible %d, blanked %d", i, pSource->bVisible, pSource->bBlankedByPowerOff));
+
+                /* Update positions of all screens. */
+                vboxWddmDisplaySettingsQueryPos(pDevExt, i, &pSource->VScreenPos);
+
+                GaVidPnSourceReport(pDevExt, pSource);
+            }
+
+            for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+            {
+                VBOXWDDM_TARGET *pTarget = &pDevExt->aTargets[i];
+                Assert(pTarget->u32Id == i);
+                if (pTarget->VidPnSourceId != D3DDDI_ID_UNINITIALIZED)
+                {
+                    continue;
+                }
+
+                LOG(("Target [%d]: blanked %d", i, pTarget->fBlankedByPowerOff));
+
+                if (pTarget->fBlankedByPowerOff)
+                {
+                    GaScreenDefine(pDevExt->pGa, 0, pTarget->u32Id, 0, 0, 0, 0, true);
+                }
+                else
+                {
+                    GaScreenDestroy(pDevExt->pGa, pTarget->u32Id);
+                }
+            }
+
+            break;
+        }
+#endif
         vboxWddmGhDisplayCheckSetInfo(pDevExt);
     } while (0);
 
@@ -7079,13 +7153,14 @@ DxgkDdiCreateContext(
             Assert(!pCreateContext->pPrivateDriverData);
             Assert(pCreateContext->Flags.Value <= 2); /* 2 is a GDI context in Win7 */
             pContext->enmType = VBOXWDDM_CONTEXT_TYPE_SYSTEM;
-            for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
-            {
-                vboxWddmDisplaySettingsCheckPos(pDevExt, i);
-            }
 
             if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
             {
+                for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
+                {
+                    vboxWddmDisplaySettingsCheckPos(pDevExt, i);
+                }
+
 #ifdef VBOX_WITH_CROGL
                 if (!VBOXWDDM_IS_DISPLAYONLY() && pDevExt->f3DEnabled)
                 {
@@ -7443,6 +7518,12 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
     vboxVDbgBreakFv();
 
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
+#ifdef VBOX_WITH_MESA3D
+    if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
+    {
+        return GaDxgkDdiPresentDisplayOnly(hAdapter, pPresentDisplayOnly);
+    }
+#endif
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pPresentDisplayOnly->VidPnSourceId];
     Assert(pSource->AllocData.Addr.SegmentId == 1);
     VBOXWDDM_ALLOC_DATA SrcAllocData;
@@ -7517,18 +7598,6 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
 
     if (bUpdateRectInited && pSource->bVisible)
     {
-#ifdef VBOX_WITH_MESA3D
-        if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
-        {
-            /** @todo BLIT_GMRFB_TO_SCREEN */
-            GaUpdate(pDevExt->pGa,
-                     UpdateRect.left,
-                     UpdateRect.top,
-                     UpdateRect.right - UpdateRect.left,
-                     UpdateRect.bottom - UpdateRect.top);
-        }
-        else
-#endif
         VBOXVBVA_OP_WITHLOCK(ReportDirtyRect, pDevExt, pSource, &UpdateRect);
     }
 

@@ -36,7 +36,8 @@ NTSTATUS GaScreenDefine(PVBOXWDDM_EXT_GA pGaDevExt,
                         int32_t xOrigin,
                         int32_t yOrigin,
                         uint32_t u32Width,
-                        uint32_t u32Height);
+                        uint32_t u32Height,
+                        bool fBlank);
 NTSTATUS GaScreenDestroy(PVBOXWDDM_EXT_GA pGaDevExt,
                          uint32_t u32ScreenId);
 
@@ -58,6 +59,8 @@ NTSTATUS GaUpdate(PVBOXWDDM_EXT_GA pGaDevExt,
 
 NTSTATUS APIENTRY GaDxgkDdiBuildPagingBuffer(const HANDLE hAdapter,
                                              DXGKARG_BUILDPAGINGBUFFER *pBuildPagingBuffer);
+NTSTATUS APIENTRY GaDxgkDdiPresentDisplayOnly(const HANDLE hAdapter,
+                                              const DXGKARG_PRESENT_DISPLAYONLY *pPresentDisplayOnly);
 NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
                                    DXGKARG_PRESENT *pPresent);
 NTSTATUS APIENTRY GaDxgkDdiRender(const HANDLE hContext,
@@ -85,5 +88,8 @@ DECLINLINE(bool) GaContextHwTypeIs(PVBOXWDDM_CONTEXT pContext, VBOXVIDEO_HWTYPE 
 {
     return (pContext && pContext->pDevice->pAdapter->enmHwType == enmHwType);
 }
+
+NTSTATUS GaVidPnSourceReport(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_SOURCE *pSource);
+NTSTATUS GaVidPnSourceCheckPos(PVBOXMP_DEVEXT pDevExt, UINT iSource);
 
 #endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_mp_wddm_gallium_VBoxMPGaWddm_h */

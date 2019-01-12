@@ -215,30 +215,20 @@ NTSTATUS SvgaScreenDefine(PVBOXWDDM_EXT_VMSVGA pSvga,
                           int32_t xOrigin,
                           int32_t yOrigin,
                           uint32_t u32Width,
-                          uint32_t u32Height)
+                          uint32_t u32Height,
+                          bool fBlank)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
     const uint32_t cbSubmit =   sizeof(uint32_t)
-                              + sizeof(SVGAScreenObject)
-                              + sizeof(uint32_t)
-                              + sizeof(SVGAFifoCmdDefineGMRFB);
+                              + sizeof(SVGAScreenObject);
     void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
         SvgaCmdDefineScreen(pvCmd, u32ScreenId, true,
                             xOrigin, yOrigin, u32Width, u32Height,
-                            /* fPrimary = */ false, u32Offset, /* fBlank = */ false);
-        pvCmd = (uint8_t *)pvCmd + sizeof(uint32_t) + sizeof(SVGAScreenObject);
-
-        uint32_t u32BytesPerLine = u32Width * 4;
-        /* Start at offset 0, because we use it to address entire VRAM. */
-        SvgaCmdDefineGMRFB(pvCmd, 0, u32BytesPerLine);
+                            /* fPrimary = */ false, u32Offset, fBlank);
         SvgaFifoCommit(pSvga, cbSubmit);
-
-        /* Save the screen offset. */
-        pSvga->u32ScreenOffset = u32Offset;
-        pSvga->cbScreenPitch = u32BytesPerLine;
     }
     else
     {
@@ -259,6 +249,7 @@ NTSTATUS SvgaScreenDestroy(PVBOXWDDM_EXT_VMSVGA pSvga,
     if (pvCmd)
     {
         SvgaCmdDestroyScreen(pvCmd, u32ScreenId);
+        SvgaFifoCommit(pSvga, cbSubmit);
     }
     else
     {
@@ -763,10 +754,13 @@ NTSTATUS SvgaGenPresentVRAM(PVBOXWDDM_EXT_VMSVGA pSvga,
                             uint32_t u32Sid,
                             uint32_t u32Width,
                             uint32_t u32Height,
+                            uint32_t u32VRAMOffset,
                             void *pvDst,
                             uint32_t cbDst,
                             uint32_t *pcbOut)
 {
+    RT_NOREF(pSvga);
+
     const uint32_t cbCmdSurfaceDMAToFB =   sizeof(SVGA3dCmdHeader)
                                          + sizeof(SVGA3dCmdSurfaceDMA)
                                          + sizeof(SVGA3dCopyBox)
@@ -785,7 +779,7 @@ NTSTATUS SvgaGenPresentVRAM(PVBOXWDDM_EXT_VMSVGA pSvga,
         return STATUS_BUFFER_OVERFLOW;
     }
 
-    Svga3dCmdSurfaceDMAToFB(pvDst, u32Sid, u32Width, u32Height, pSvga->u32ScreenOffset);
+    Svga3dCmdSurfaceDMAToFB(pvDst, u32Sid, u32Width, u32Height, u32VRAMOffset);
     SvgaCmdUpdate((uint8_t *)pvDst + cbCmdSurfaceDMAToFB, 0, 0, u32Width, u32Height);
 
     return STATUS_SUCCESS;
@@ -794,17 +788,18 @@ NTSTATUS SvgaGenPresentVRAM(PVBOXWDDM_EXT_VMSVGA pSvga,
 NTSTATUS SvgaPresentVRAM(PVBOXWDDM_EXT_VMSVGA pSvga,
                          uint32_t u32Sid,
                          uint32_t u32Width,
-                         uint32_t u32Height)
+                         uint32_t u32Height,
+                         uint32_t u32VRAMOffset)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
     uint32_t cbSubmit = 0;
-    SvgaGenPresentVRAM(pSvga, 0, 0, 0, NULL, 0, &cbSubmit);
+    SvgaGenPresentVRAM(pSvga, 0, 0, 0, 0, NULL, 0, &cbSubmit);
 
     void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
     if (pvCmd)
     {
-        Status = SvgaGenPresentVRAM(pSvga, u32Sid, u32Width, u32Height, pvCmd, cbSubmit, NULL);
+        Status = SvgaGenPresentVRAM(pSvga, u32Sid, u32Width, u32Height, u32VRAMOffset, pvCmd, cbSubmit, NULL);
         Assert(Status == STATUS_SUCCESS);
         SvgaFifoCommit(pSvga, cbSubmit);
     }
@@ -877,6 +872,34 @@ NTSTATUS SvgaGenBlitGMRFBToScreen(PVBOXWDDM_EXT_VMSVGA pSvga,
                              pDstRect->right, pDstRect->bottom);
 
     return STATUS_SUCCESS;
+}
+
+NTSTATUS SvgaBlitGMRFBToScreen(PVBOXWDDM_EXT_VMSVGA pSvga,
+                               uint32_t idDstScreen,
+                               int32_t xSrc,
+                               int32_t ySrc,
+                               RECT const *pDstRect)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    uint32_t cbSubmit = 0;
+    SvgaGenBlitGMRFBToScreen(pSvga, idDstScreen, xSrc, ySrc, pDstRect,
+                             NULL, 0, &cbSubmit);
+
+    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    if (pvCmd)
+    {
+        Status = SvgaGenBlitGMRFBToScreen(pSvga, idDstScreen, xSrc, ySrc, pDstRect,
+                                          pvCmd, cbSubmit, NULL);
+        Assert(Status == STATUS_SUCCESS);
+        SvgaFifoCommit(pSvga, cbSubmit);
+    }
+    else
+    {
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    return Status;
 }
 
 NTSTATUS SvgaGenBlitScreenToGMRFB(PVBOXWDDM_EXT_VMSVGA pSvga,
@@ -1020,9 +1043,20 @@ NTSTATUS SvgaGenDefineGMRFB(PVBOXWDDM_EXT_VMSVGA pSvga,
 
 NTSTATUS SvgaDefineGMRFB(PVBOXWDDM_EXT_VMSVGA pSvga,
                          uint32_t u32Offset,
-                         uint32_t u32BytesPerLine)
+                         uint32_t u32BytesPerLine,
+                         bool fForce)
 {
     NTSTATUS Status = STATUS_SUCCESS;
+
+    ExAcquireFastMutex(&pSvga->SvgaMutex);
+    if (   !fForce
+        && pSvga->lastGMRFB.u32Offset == u32Offset
+        && pSvga->lastGMRFB.u32BytesPerLine == u32BytesPerLine)
+    {
+        ExReleaseFastMutex(&pSvga->SvgaMutex);
+        return VINF_SUCCESS;
+    }
+    ExReleaseFastMutex(&pSvga->SvgaMutex);
 
     uint32_t cbSubmit = 0;
     SvgaGenDefineGMRFB(pSvga, u32Offset, u32BytesPerLine,
@@ -1039,6 +1073,14 @@ NTSTATUS SvgaDefineGMRFB(PVBOXWDDM_EXT_VMSVGA pSvga,
     else
     {
         Status = STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    if (Status == STATUS_SUCCESS)
+    {
+        ExAcquireFastMutex(&pSvga->SvgaMutex);
+        pSvga->lastGMRFB.u32Offset = u32Offset;
+        pSvga->lastGMRFB.u32BytesPerLine = u32BytesPerLine;
+        ExReleaseFastMutex(&pSvga->SvgaMutex);
     }
 
     return Status;
