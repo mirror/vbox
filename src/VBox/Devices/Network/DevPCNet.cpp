@@ -3388,6 +3388,7 @@ static void pcnetR3HardReset(PPCNETSTATE pThis)
     pThis->aBCR[BCR_LED1 ] = 0x0084;
     pThis->aBCR[BCR_LED2 ] = 0x0088;
     pThis->aBCR[BCR_LED3 ] = 0x0090;
+    /* For ISA PnP cards, BCR8 reports IRQ/DMA (e.g. 0x0035 means IRQ 3, DMA 5). */
     pThis->aBCR[BCR_FDC  ] = 0x0000;
     pThis->aBCR[BCR_BSBC ] = 0x9001;
     pThis->aBCR[BCR_EECAS] = 0x0002;
@@ -5024,7 +5025,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "Am79C973\0" "ChipType\0" "LineSpeed\0" "GCEnabled\0" "R0Enabled\0" "PrivIfEnabled\0" "LinkUpDelay\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "Am79C973\0" "ChipType\0" "Port\0" "IRQ\0" "LineSpeed\0" "GCEnabled\0" "R0Enabled\0" "PrivIfEnabled\0" "LinkUpDelay\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for pcnet device"));
 
