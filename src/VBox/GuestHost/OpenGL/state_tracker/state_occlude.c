@@ -10,6 +10,9 @@
 #include "state_internals.h"
 #include "cr_mem.h"
 
+#if !defined(IN_GUEST)
+#include "cr_unpack.h"
+#endif
 
 void
 crStateOcclusionInit(CRContext *ctx)
@@ -60,13 +63,22 @@ crStateDeleteQueriesARB(GLsizei n, const GLuint *ids)
 		return;
 	}
 
-	if (n < 0) {
-		crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
-								 "glDeleteQueriesARB(n < 0)");
-		return;
-	}
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
+    {
+        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+                     "glDeleteQueriesARB: parameter 'n' is out of range");
+        return;
+    }
 
-	for (i = 0; i < n; i++) {
+#if !defined(IN_GUEST)
+    if (!DATA_POINTER_CHECK(n * sizeof(GLuint)))
+    {
+        crError("glDeleteQueriesARB: parameter 'n' is out of range");
+        return;
+    }
+#endif
+
+    for (i = 0; i < n; i++) {
 		if (ids[i]) {
 			CROcclusionObject *q = (CROcclusionObject *)
 				crHashtableSearch(o->objects, ids[i]);

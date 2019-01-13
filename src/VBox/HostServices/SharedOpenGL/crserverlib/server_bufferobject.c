@@ -9,6 +9,7 @@
 #include "cr_mem.h"
 #include "server_dispatch.h"
 #include "server.h"
+#include "cr_unpack.h"
 
 void * SERVER_DISPATCH_APIENTRY
 crServerDispatchMapBufferARB( GLenum target, GLenum access )
@@ -50,6 +51,12 @@ crServerDispatchGenBuffersARB(GLsizei n, GLuint *buffers)
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteBuffersARB( GLsizei n, const GLuint * buffer )
 {
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint) || !DATA_POINTER_CHECK(n * sizeof(GLuint)))
+    {
+        crError("glDeleteBuffersARB: parameter 'n' is out of range");
+        return;
+    }
+
     crStateDeleteBuffersARB( n, buffer );
 }
 
