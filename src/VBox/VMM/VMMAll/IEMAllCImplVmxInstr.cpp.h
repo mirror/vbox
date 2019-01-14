@@ -2461,8 +2461,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitLoadHostState(PVMCPU pVCpu, uint32_t uExitRe
         Log(("VM-exit failed while loading host MSRs -> VMX-Abort\n"));
         return iemVmxAbort(pVCpu, VMXABORT_LOAD_HOST_MSR);
     }
-
-    return rcStrict;
+    return VINF_SUCCESS;
 }
 
 
@@ -2836,10 +2835,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     Assert(pVmcs);
 
     pVmcs->u32RoExitReason = uExitReason;
-
-    /** @todo NSTVMX: IEMGetCurrentXcpt will be VM-exit interruption info. */
-    /** @todo NSTVMX: The source event should be recorded in IDT-vectoring info
-     *        during injection. */
+    Log3(("vmexit: uExitReason=%#RX32 uExitQual=%#RX64\n", uExitReason, pVmcs->u64RoExitQual));
 
     /*
      * Save the guest state back into the VMCS.
@@ -2873,16 +2869,22 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
         iemVmxVmexitRestoreForceFlags(pVCpu);
     }
 
+    /* Restore the host (outer guest) state. */
     VBOXSTRICTRC rcStrict = iemVmxVmexitLoadHostState(pVCpu, uExitReason);
-    if (RT_FAILURE(rcStrict))
-        LogFunc(("Loading host-state failed. uExitReason=%u rc=%Rrc\n", uExitReason, VBOXSTRICTRC_VAL(rcStrict)));
+    if (RT_SUCCESS(rcStrict))
+    {
+        Assert(rcStrict == VINF_SUCCESS);
+        rcStrict = VINF_VMX_VMEXIT;
+    }
+    else
+        Log3(("vmexit: Loading host-state failed. uExitReason=%u rc=%Rrc\n", uExitReason, VBOXSTRICTRC_VAL(rcStrict)));
 
     /* We're no longer in nested-guest execution mode. */
     pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = false;
 
-    Assert(rcStrict == VINF_SUCCESS);
+    /* Revert any IEM-only nested-guest execution policy if any. */
     IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE(pVCpu, "VM-exit");
-    return VINF_VMX_VMEXIT;
+    return rcStrict;
 # endif
 }
 
@@ -4025,7 +4027,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
         if (fIsHwXcpt)
         {
             if (uVector == X86_XCPT_PF)
+            {
+                Assert(fFlags & IEM_XCPT_FLAGS_CR2);
                 uExitQual = uCr2;
+            }
             else if (uVector == X86_XCPT_DB)
             {
                 IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR6);
@@ -7086,20 +7091,20 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
 {
     /*
      * Inject events.
+     * The event that is going to be made pending for injection is not subject to VMX intercepts,
+     * thus we flag ignoring of intercepts. However, recursive exceptions if any during delivery
+     * of the current event -are- subject to intercepts, hence this flag will be flipped during
+     * the actually delivery of this event.
+     *
      * See Intel spec. 26.5 "Event Injection".
      */
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    uint32_t const uEntryIntInfo = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->u32EntryIntInfo;
-    if (VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo))
-    {
-        /*
-         * The event that is going to be made pending for injection is not subject to VMX intercepts,
-         * thus we flag ignoring of intercepts. However, recursive exceptions if any during delivery
-         * of the current event -are- subject to intercepts, hence this flag will be flipped during
-         * the actually delivery of this event.
-         */
-        pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = false;
+    uint32_t const uEntryIntInfo      = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->u32EntryIntInfo;
+    bool const     fEntryIntInfoValid = VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo);
 
+    pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = !fEntryIntInfoValid;
+    if (fEntryIntInfoValid)
+    {
         uint8_t const uType = VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo);
         if (uType == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT)
         {
@@ -7120,7 +7125,6 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
     bool const fPendingDbgXcpt = iemVmxVmentryIsPendingDebugXcpt(pVCpu, pszInstr);
     if (fPendingDbgXcpt)
     {
-        pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = true;
         uint32_t const uDbgXcptInfo = RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR, X86_XCPT_DB)
                                     | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE, VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
                                     | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID, 1);
