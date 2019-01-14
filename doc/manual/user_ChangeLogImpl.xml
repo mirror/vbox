@@ -117,6 +117,12 @@ technical terms if no non-technical ones are clear enough.
         </para>
       </listitem>
 
+      <listitem>
+        <para>
+          OS/2 shared folders: fixed write regression introduced in 6.0.0 GA.
+        </para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
