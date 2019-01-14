@@ -7021,7 +7021,7 @@ vesa_pm_end:                                 ; 0xc4514 LB 0x1
 section _DATA progbits vstart=0x4600 align=1 ; size=0x3726 class=DATA group=DGROUP
   ; disGetNextSymbol 0xc4600 LB 0x3726 -> off=0x0 cb=000000000000002e uValue=00000000000c0000 '_msg_vga_init'
 _msg_vga_init:                               ; 0xc4600 LB 0x2e
-    db  'Oracle VM VirtualBox Version 6.0.0 VGA BIOS', 00dh, 00ah, 000h
+    db  'Oracle VM VirtualBox Version 6.0.2 VGA BIOS', 00dh, 00ah, 000h
   ; disGetNextSymbol 0xc462e LB 0x36f8 -> off=0x0 cb=0000000000000080 uValue=00000000000c002e 'vga_modes'
 vga_modes:                                   ; 0xc462e LB 0x80
     db  000h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h, 001h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h
@@ -7940,7 +7940,7 @@ _vbebios_product_name:                       ; 0xc7c8e LB 0x21
     db  'Oracle VM VirtualBox VBE Adapter', 000h
   ; disGetNextSymbol 0xc7caf LB 0x77 -> off=0x0 cb=0000000000000023 uValue=00000000000c36af '_vbebios_product_revision'
 _vbebios_product_revision:                   ; 0xc7caf LB 0x23
-    db  'Oracle VM VirtualBox Version 6.0.0', 000h
+    db  'Oracle VM VirtualBox Version 6.0.2', 000h
   ; disGetNextSymbol 0xc7cd2 LB 0x54 -> off=0x0 cb=000000000000002b uValue=00000000000c36d2 '_vbebios_info_string'
 _vbebios_info_string:                        ; 0xc7cd2 LB 0x2b
     db  'VirtualBox VBE Display Adapter enabled', 00dh, 00ah, 00dh, 00ah, 000h
@@ -7998,4 +7998,4 @@ section CONST2 progbits vstart=0x7d26 align=1 ; size=0x0 class=DATA group=DGROUP
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 07eh
+    db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 07ah
