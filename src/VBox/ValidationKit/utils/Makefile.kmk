@@ -32,6 +32,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 include $(PATH_SUB_CURRENT)/TestExecServ/Makefile.kmk
 include $(PATH_SUB_CURRENT)/cpu/Makefile.kmk
+include $(PATH_SUB_CURRENT)/fs/Makefile.kmk
 include $(PATH_SUB_CURRENT)/misc/Makefile.kmk
 include $(PATH_SUB_CURRENT)/network/Makefile.kmk
 ifneq ($(KBUILD_TARGET),os2)
