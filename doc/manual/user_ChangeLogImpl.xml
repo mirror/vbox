@@ -36,7 +36,7 @@ technical terms if no non-technical ones are clear enough.
 
   <sect1>
 
-    <title>Version 6.0.2 (2019-xx-xx)</title>
+    <title>Version 6.0.2 (2019-01-15)</title>
 
     <para>
       This is a maintenance release. The following items were fixed
@@ -67,7 +67,8 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
-          User interface: implemented a new VISO creation dialog
+          User interface: implemented a new virtual optical disk creation
+          window
         </para>
       </listitem>
 
