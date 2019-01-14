@@ -106,6 +106,13 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
+          Windows guests: black screen with VBoxSVGA graphics when 3D is
+            disabled (bug #18205)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
           Linux guests: fixed building drivers on SLES 12.4 (bug #18213)
         </para>
       </listitem>
