@@ -86,7 +86,7 @@
  *
  * Always does an even number of tree iterations.
  */
-#define PROFILE_MANYTREE_FN(a_szPath, a_fnCall, a_cEstimationIterations, a_cNsTarget, a_szDesc1, a_szDesc2) \
+#define PROFILE_MANYTREE_FN(a_szPath, a_fnCall, a_cEstimationIterations, a_cNsTarget, a_szDesc) \
     do { \
         /* Estimate how many iterations we need to fill up the given timeslot: */ \
         uint64_t const nsStartEstimation = RTTimeNanoTS(); \
@@ -123,9 +123,7 @@
             } \
         } \
         uint64_t const cNsElapsed = RTTimeNanoTS() - nsStart; \
-        if (a_szDesc1 != NULL) \
-            RTTestIValueF(cNsElapsed, RTTESTUNIT_NS, a_szDesc1, cCalls); \
-        RTTestIValueF(cNsElapsed / cCalls, RTTESTUNIT_NS_PER_OCCURRENCE, a_szDesc2); \
+        RTTestIValueF(cNsElapsed / cCalls, RTTESTUNIT_NS_PER_OCCURRENCE, a_szDesc); \
     } while (0)
 
 
@@ -427,7 +425,7 @@ void fsPerfOpen(void)
 
     /* Manytree: */
     char szPath[RTPATH_MAX];
-    PROFILE_MANYTREE_FN(szPath, fsPerfOpenExistingOnceReadonly(szPath), 1, g_nsTestRun, NULL, "RTFileOpen/Close/manytree/readonly");
+    PROFILE_MANYTREE_FN(szPath, fsPerfOpenExistingOnceReadonly(szPath), 1, g_nsTestRun, "RTFileOpen/Close/manytree/readonly");
 }
 
 
@@ -533,9 +531,9 @@ void fsPerfStat(void)
     /* Manytree: */
     char szPath[RTPATH_MAX];
     PROFILE_MANYTREE_FN(szPath, RTPathQueryInfoEx(szPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK),
-                        1, g_nsTestRun, NULL, "RTPathQueryInfoEx/manytree/NOTHING");
+                        1, g_nsTestRun, "RTPathQueryInfoEx/manytree/NOTHING");
     PROFILE_MANYTREE_FN(szPath, RTPathQueryInfoEx(szPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK),
-                        1, g_nsTestRun, NULL, "RTPathQueryInfoEx/manytree/UNIX");
+                        1, g_nsTestRun, "RTPathQueryInfoEx/manytree/UNIX");
 }
 
 
@@ -573,7 +571,7 @@ void fsPerfChmod(void)
     /* Manytree: */
     char szPath[RTPATH_MAX];
     PROFILE_MANYTREE_FN(szPath, RTPathSetMode(szPath, iIteration & 1 ? fOddMode : fEvenMode), 1, g_nsTestRun,
-                        NULL, "RTPathSetMode/manytree");
+                        "RTPathSetMode/manytree");
     DO_MANYTREE_FN(szPath, RTPathSetMode(szPath, ObjInfo.Attr.fMode));
 }
 
@@ -635,7 +633,7 @@ void fsPerfUtimes(void)
     char szPath[RTPATH_MAX];
     PROFILE_MANYTREE_FN(szPath, RTPathSetTimesEx(szPath, iIteration & 1 ? &Time1 : &Time2, iIteration & 1 ? &Time2 : &Time1,
                                                  NULL, NULL, RTPATH_F_ON_LINK),
-                        1, g_nsTestRun, NULL, "RTPathSetTimesEx/manytree");
+                        1, g_nsTestRun, "RTPathSetTimesEx/manytree");
 }
 
 
@@ -683,7 +681,7 @@ void fsPerfRename(void)
                g_nsTestRun, "RTPathRename/deep");
 
     /* Manytree: */
-    PROFILE_MANYTREE_FN(szPath, fsPerfRenameMany(szPath, iIteration), 2, g_nsTestRun, NULL, "RTPathRename/manytree");
+    PROFILE_MANYTREE_FN(szPath, fsPerfRenameMany(szPath, iIteration), 2, g_nsTestRun, "RTPathRename/manytree");
 }
 
 
@@ -813,8 +811,53 @@ void vsPerfDirEnum(void)
     /*
      * Profile.
      */
-    PROFILE_FN(fsPerfEnumEmpty(), g_nsTestRun, "RTDirOpen/Read/Close empty");
+    PROFILE_FN(fsPerfEnumEmpty(),     g_nsTestRun, "RTDirOpen/Read/Close empty");
     PROFILE_FN(fsPerfEnumManyFiles(), g_nsTestRun, "RTDirOpen/Read/Close manyfiles");
+}
+
+
+void fsPerfMkDirRmDir(void)
+{
+    RTTestISub("mkdir/rmdir");
+
+    /* Non-existing directories: */
+    RTTESTI_CHECK_RC(RTDirRemove(InEmptyDir(RT_STR_TUPLE("no-such-dir"))), VERR_FILE_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirRemove(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")), 0755, 0), VERR_PATH_NOT_FOUND);
+
+    /* Already existing directories and files: */
+    RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE(".")), 0755, 0), VERR_ALREADY_EXISTS);
+    RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE("..")), 0755, 0), VERR_ALREADY_EXISTS);
+
+    /* Remove directory with subdirectories: */
+    RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE("."))), VERR_DIR_NOT_EMPTY);
+
+    /* Create a directory and remove it: */
+    RTTESTI_CHECK_RC(RTDirCreate(InDir(RT_STR_TUPLE("subdir-1")), 0755, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTDirRemove(g_szDir), VINF_SUCCESS);
+
+    /* Create a file and try remove it or create a directory with the same name: */
+    RTFILE hFile1;
+    RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file18")),
+                                     RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTDirRemove(g_szDir), VERR_NOT_A_DIRECTORY);
+    RTTESTI_CHECK_RC(RTDirCreate(g_szDir, 0755, 0), VERR_ALREADY_EXISTS);
+    RTTESTI_CHECK_RC(RTDirCreate(InDir(RT_STR_TUPLE("file18" RTPATH_SLASH_STR "subdir")), 0755, 0), VERR_PATH_NOT_FOUND);
+
+
+    /*
+     * Profile alternately creating and removing a bunch of directories.
+     */
+    for (;;)
+    {
+        /* Create a bunch: */
+
+        /* Remove the bunch: */
+
+        /* Check if we got time for another round: */
+        break;
+    }
 }
 
 
@@ -822,8 +865,16 @@ void fsPerfRm(void)
 {
     RTTestISub("rm");
 
+    /* Non-existing files. */
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("no-such-file"))), VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
+
+    /* Directories: */
+#ifdef RT_OS_WINDOWS
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))), VERR_ACCESS_DENIED);
+#else
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))), VERR_IS_A_DIRECTORY);
+#endif
 
     /* Shallow: */
     RTFILE hFile1;
@@ -1009,6 +1060,8 @@ int main(int argc, char *argv[])
                 RTTestIPrintf(RTTESTLVL_ALWAYS, "Deep  dir: %s\n", g_szDeepDir);
                 if (RT_SUCCESS(rc))
                 {
+                    //g_fManyFiles = false;
+
                     /* Do tests: */
                     if (g_fManyFiles)
                         fsPerfManyFiles();
@@ -1022,13 +1075,12 @@ int main(int argc, char *argv[])
                     fsPerfUtimes();
                     fsPerfRename();
                     vsPerfDirEnum();
-                    /// @todo fsPerfMkDir
-                    /// @todo fsPerfRmDir
+#endif
+                    fsPerfMkDirRmDir();
                     /// @todo fsPerfRead
                     /// @todo fsPerfWrite
                     /// @todo fsPerfSeek
                     /// @todo fsPerfChSize
-#endif
                     fsPerfRm(); /* must come last as it deletes manyfiles and manytree */
                 }
             }
