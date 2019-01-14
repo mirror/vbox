@@ -63,7 +63,7 @@ crStateDeleteQueriesARB(GLsizei n, const GLuint *ids)
 		return;
 	}
 
-    if (n <= 0 || n >= INT32_MAX / sizeof(GLuint))
+    if (n <= 0 || n >= (GLsizei)(INT32_MAX / sizeof(GLuint)))
     {
         crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
                      "glDeleteQueriesARB: parameter 'n' is out of range");
