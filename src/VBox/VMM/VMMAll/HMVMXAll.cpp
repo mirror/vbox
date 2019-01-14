@@ -652,7 +652,6 @@ VMM_INT_DECL(bool) HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(HMIsEnabled(pVM));
-    Assert(!CPUMIsGuestVmxEnabled(pCtx));
     Assert(   ( pVM->hm.s.vmx.fUnrestrictedGuest && !pVM->hm.s.vmx.pRealModeTSS)
            || (!pVM->hm.s.vmx.fUnrestrictedGuest && pVM->hm.s.vmx.pRealModeTSS));
 
