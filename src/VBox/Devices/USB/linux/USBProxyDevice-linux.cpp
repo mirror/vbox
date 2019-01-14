@@ -742,7 +742,7 @@ static DECLCALLBACK(void) usbProxyLinuxClose(PUSBPROXYDEV pProxyDev)
             unsigned iIf;
             for (iIf = 0; iIf < 256; iIf++)
                 usbProxyLinuxSetConnected(pProxyDev, iIf, true, true);
-            LogRel(("USB: Successfully reset device pProxyDev=%s\n", usbProxyGetName(pProxyDev)));
+            Log(("USB: Successfully reset device pProxyDev=%s\n", usbProxyGetName(pProxyDev)));
         }
         else if (errno != ENODEV)
             LogRel(("USB: Reset failed, errno=%d, pProxyDev=%s.\n", errno, usbProxyGetName(pProxyDev)));
