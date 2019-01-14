@@ -47,6 +47,13 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
+          USB: modified Linux backends to reset USB devices (previously, most
+          guest attempts to reset USB devices were ignored)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
           PCnet: fixed a regression which caused some PCnet PCI guest
           drivers to not detect the emulated hardware (bug #18286)
         </para>
