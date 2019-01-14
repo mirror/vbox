@@ -93,6 +93,12 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
+          User interface: implemented a new VISO creation dialog.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
           Linux hosts: fixed conflict between Debian and Oracle build desktop
             files (bug #18264)
         </para>
