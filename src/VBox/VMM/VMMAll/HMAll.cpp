@@ -71,7 +71,7 @@ VMMDECL(bool) HMCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
     if (   CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
-        || CPUMIsGuestVmxEnabled(pCtx))
+        || CPUMIsGuestInVmxNonRootMode(pCtx))
     {
         LogFunc(("In nested-guest mode - returning false"));
         return false;
