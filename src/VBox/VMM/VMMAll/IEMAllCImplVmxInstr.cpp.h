@@ -2248,12 +2248,12 @@ IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
     /* GDTR. */
     Assert(X86_IS_CANONICAL(pVmcs->u64HostGdtrBase.u));
     pVCpu->cpum.GstCtx.gdtr.pGdt  = pVmcs->u64HostGdtrBase.u;
-    pVCpu->cpum.GstCtx.gdtr.cbGdt = 0xfff;
+    pVCpu->cpum.GstCtx.gdtr.cbGdt = 0xffff;
 
     /* IDTR.*/
     Assert(X86_IS_CANONICAL(pVmcs->u64HostIdtrBase.u));
     pVCpu->cpum.GstCtx.idtr.pIdt  = pVmcs->u64HostIdtrBase.u;
-    pVCpu->cpum.GstCtx.idtr.cbIdt = 0xfff;
+    pVCpu->cpum.GstCtx.idtr.cbIdt = 0xffff;
 }
 
 
@@ -7129,7 +7129,7 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
                                     | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE, VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
                                     | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID, 1);
         return HMVmxEntryIntInfoInjectTrpmEvent(pVCpu, uDbgXcptInfo, 0 /* uErrCode */, pVmcs->u32EntryInstrLen,
-                                                  0 /* GCPtrFaultAddress */);
+                                                0 /* GCPtrFaultAddress */);
     }
 
     NOREF(pszInstr);
