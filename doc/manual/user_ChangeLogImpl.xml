@@ -78,6 +78,13 @@ technical terms if no non-technical ones are clear enough.
         </para>
       </listitem>
 
+      <listitem>
+        <para>
+          User interface: fixed the bug which prevented the first time wizard from
+          selecting host DVD drives. (bug #18230)
+        </para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
