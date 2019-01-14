@@ -695,6 +695,13 @@ crStateCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x
     CRASSERT(tobj);
     CRASSERT(tl);
 
+    if (tobj == NULL || tl == NULL)
+    {
+        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+                     "crStateCopyTexImage2D: invalid target: 0x%x", target);
+        return;
+    }
+
     crStateNukeMipmaps(tobj);
 
     tl->bytes = crImageSize(GL_RGBA, GL_UNSIGNED_BYTE, width, height);
