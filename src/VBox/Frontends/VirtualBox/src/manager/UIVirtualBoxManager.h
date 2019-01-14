@@ -265,6 +265,8 @@ private:
 
         /** Saves settings. */
         void saveSettings();
+        /** Cleanups connections. */
+        void cleanupConnections();
         /** Cleanups widgets. */
         void cleanupWidgets();
         /** Cleanups menu-bar. */
