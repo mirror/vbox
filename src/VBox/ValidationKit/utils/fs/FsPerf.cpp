@@ -57,7 +57,7 @@
  *
  * Always does an even number of iterations.
  */
-#define PROFILE_FN(a_fnCall, a_cNsTarget, a_szDesc1, a_szDesc2) \
+#define PROFILE_FN(a_fnCall, a_cNsTarget, a_szDesc) \
     do { \
         /* Estimate how many iterations we need to fill up the given timeslot: */ \
         uint64_t const nsStartEstimation = RTTimeNanoTS(); \
@@ -77,9 +77,7 @@
             a_fnCall; \
         } \
         uint64_t const cNsElapsed = RTTimeNanoTS() - nsStart; \
-        if (a_szDesc1 != NULL) \
-            RTTestIValueF(cNsElapsed, RTTESTUNIT_NS, a_szDesc1, cIterations); \
-        RTTestIValueF(cNsElapsed / cIterations, RTTESTUNIT_NS_PER_OCCURRENCE, a_szDesc2); \
+        RTTestIValueF(cNsElapsed / cIterations, RTTESTUNIT_NS_PER_OCCURRENCE, a_szDesc); \
     } while (0)
 
 
@@ -415,8 +413,8 @@ void fsPerfOpen(void)
     RTTESTI_CHECK_RC(RTFileOpen(&hFile, g_szDir, RTFILE_O_CREATE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VERR_ALREADY_EXISTS);
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
 
-    PROFILE_FN(fsPerfOpenExistingOnceReadonly(g_szDir),  g_nsTestRun, NULL, "RTFileOpen/Close/Readonly");
-    PROFILE_FN(fsPerfOpenExistingOnceWriteonly(g_szDir), g_nsTestRun, NULL, "RTFileOpen/Close/Writeonly");
+    PROFILE_FN(fsPerfOpenExistingOnceReadonly(g_szDir),  g_nsTestRun, "RTFileOpen/Close/Readonly");
+    PROFILE_FN(fsPerfOpenExistingOnceWriteonly(g_szDir), g_nsTestRun, "RTFileOpen/Close/Writeonly");
 
     /*
      * Profile opening in the deep directory too.
@@ -424,8 +422,8 @@ void fsPerfOpen(void)
     RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDeepDir(RT_STR_TUPLE("file1")),
                                      RTFILE_O_CREATE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
-    PROFILE_FN(fsPerfOpenExistingOnceReadonly(g_szDeepDir),  g_nsTestRun, NULL, "RTFileOpen/Close/deep/readonly");
-    PROFILE_FN(fsPerfOpenExistingOnceWriteonly(g_szDeepDir), g_nsTestRun, NULL, "RTFileOpen/Close/deep/writeonly");
+    PROFILE_FN(fsPerfOpenExistingOnceReadonly(g_szDeepDir),  g_nsTestRun, "RTFileOpen/Close/deep/readonly");
+    PROFILE_FN(fsPerfOpenExistingOnceWriteonly(g_szDeepDir), g_nsTestRun, "RTFileOpen/Close/deep/writeonly");
 
     /* Manytree: */
     char szPath[RTPATH_MAX];
@@ -440,8 +438,8 @@ void fsPerfFStat(void)
     RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file2")),
                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
     RTFSOBJINFO ObjInfo = {0};
-    PROFILE_FN(RTFileQueryInfo(hFile1, &ObjInfo,  RTFSOBJATTRADD_NOTHING), g_nsTestRun, NULL, "RTFileQueryInfo/NOTHING");
-    PROFILE_FN(RTFileQueryInfo(hFile1, &ObjInfo,  RTFSOBJATTRADD_UNIX),    g_nsTestRun, NULL, "RTFileQueryInfo/UNIX");
+    PROFILE_FN(RTFileQueryInfo(hFile1, &ObjInfo,  RTFSOBJATTRADD_NOTHING), g_nsTestRun, "RTFileQueryInfo/NOTHING");
+    PROFILE_FN(RTFileQueryInfo(hFile1, &ObjInfo,  RTFSOBJATTRADD_UNIX),    g_nsTestRun, "RTFileQueryInfo/UNIX");
 
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
 }
@@ -457,7 +455,7 @@ void fsPerfFChMod(void)
     RTTESTI_CHECK_RC(RTFileQueryInfo(hFile1, &ObjInfo,  RTFSOBJATTRADD_NOTHING), VINF_SUCCESS);
     RTFMODE const fEvenMode = (ObjInfo.Attr.fMode & ~RTFS_UNIX_ALL_ACCESS_PERMS) | RTFS_DOS_READONLY   | 0400;
     RTFMODE const fOddMode  = (ObjInfo.Attr.fMode & ~(RTFS_UNIX_ALL_ACCESS_PERMS | RTFS_DOS_READONLY)) | 0640;
-    PROFILE_FN(RTFileSetMode(hFile1, iIteration & 1 ? fOddMode : fEvenMode), g_nsTestRun, NULL, "RTFileSetMode");
+    PROFILE_FN(RTFileSetMode(hFile1, iIteration & 1 ? fOddMode : fEvenMode), g_nsTestRun, "RTFileSetMode");
 
     RTFileSetMode(hFile1, ObjInfo.Attr.fMode);
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
@@ -493,7 +491,7 @@ void fsPerfFUtimes(void)
     RTTESTI_CHECK(RTTimeSpecGetNano(&ObjInfo2.ModificationTime) == RTTimeSpecGetNano(&ObjInfo1.ModificationTime));
 
     /* Benchmark it: */
-    PROFILE_FN(RTFileSetTimes(hFile1, NULL, iIteration & 1 ? &Time1 : &Time2, NULL, NULL), g_nsTestRun, NULL, "RTFileSetTimes");
+    PROFILE_FN(RTFileSetTimes(hFile1, NULL, iIteration & 1 ? &Time1 : &Time2, NULL, NULL), g_nsTestRun, "RTFileSetTimes");
 
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
 }
@@ -517,9 +515,9 @@ void fsPerfStat(void)
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
 
     PROFILE_FN(RTPathQueryInfoEx(g_szDir, &ObjInfo,  RTFSOBJATTRADD_NOTHING,  RTPATH_F_ON_LINK), g_nsTestRun,
-               NULL, "RTPathQueryInfoEx/NOTHING");
+               "RTPathQueryInfoEx/NOTHING");
     PROFILE_FN(RTPathQueryInfoEx(g_szDir, &ObjInfo,  RTFSOBJATTRADD_UNIX,     RTPATH_F_ON_LINK), g_nsTestRun,
-               NULL, "RTPathQueryInfoEx/UNIX");
+               "RTPathQueryInfoEx/UNIX");
 
 
     /* Deep: */
@@ -528,9 +526,9 @@ void fsPerfStat(void)
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
 
     PROFILE_FN(RTPathQueryInfoEx(g_szDeepDir, &ObjInfo,  RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK), g_nsTestRun,
-               NULL, "RTPathQueryInfoEx/deep/NOTHING");
+               "RTPathQueryInfoEx/deep/NOTHING");
     PROFILE_FN(RTPathQueryInfoEx(g_szDeepDir, &ObjInfo,  RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK), g_nsTestRun,
-               NULL, "RTPathQueryInfoEx/deep/UNIX");
+               "RTPathQueryInfoEx/deep/UNIX");
 
     /* Manytree: */
     char szPath[RTPATH_MAX];
@@ -561,7 +559,7 @@ void fsPerfChmod(void)
     RTTESTI_CHECK_RC(RTPathQueryInfoEx(g_szDir, &ObjInfo,  RTFSOBJATTRADD_NOTHING,  RTPATH_F_ON_LINK), VINF_SUCCESS);
     RTFMODE const fEvenMode = (ObjInfo.Attr.fMode & ~RTFS_UNIX_ALL_ACCESS_PERMS) | RTFS_DOS_READONLY   | 0400;
     RTFMODE const fOddMode  = (ObjInfo.Attr.fMode & ~(RTFS_UNIX_ALL_ACCESS_PERMS | RTFS_DOS_READONLY)) | 0640;
-    PROFILE_FN(RTPathSetMode(g_szDir, iIteration & 1 ? fOddMode : fEvenMode), g_nsTestRun, NULL, "RTPathSetMode");
+    PROFILE_FN(RTPathSetMode(g_szDir, iIteration & 1 ? fOddMode : fEvenMode), g_nsTestRun, "RTPathSetMode");
     RTPathSetMode(g_szDir, ObjInfo.Attr.fMode);
 
     /* Deep: */
@@ -569,7 +567,7 @@ void fsPerfChmod(void)
                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
 
-    PROFILE_FN(RTPathSetMode(g_szDeepDir, iIteration & 1 ? fOddMode : fEvenMode), g_nsTestRun, NULL, "RTPathSetMode/deep");
+    PROFILE_FN(RTPathSetMode(g_szDeepDir, iIteration & 1 ? fOddMode : fEvenMode), g_nsTestRun, "RTPathSetMode/deep");
     RTPathSetMode(g_szDeepDir, ObjInfo.Attr.fMode);
 
     /* Manytree: */
@@ -622,7 +620,7 @@ void fsPerfUtimes(void)
     /* Profile shallow: */
     PROFILE_FN(RTPathSetTimesEx(g_szDir, iIteration & 1 ? &Time1 : &Time2, iIteration & 1 ? &Time2 : &Time1,
                                 NULL, NULL, RTPATH_F_ON_LINK),
-               g_nsTestRun, NULL, "RTPathSetTimesEx");
+               g_nsTestRun, "RTPathSetTimesEx");
 
     /* Deep: */
     RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDeepDir(RT_STR_TUPLE("file15")),
@@ -631,7 +629,7 @@ void fsPerfUtimes(void)
 
     PROFILE_FN(RTPathSetTimesEx(g_szDeepDir, iIteration & 1 ? &Time1 : &Time2, iIteration & 1 ? &Time2 : &Time1,
                                 NULL, NULL, RTPATH_F_ON_LINK),
-               g_nsTestRun, NULL, "RTPathSetTimesEx/deep");
+               g_nsTestRun, "RTPathSetTimesEx/deep");
 
     /* Manytree: */
     char szPath[RTPATH_MAX];
@@ -673,8 +671,7 @@ void fsPerfRename(void)
 
     /* Shallow: */
     strcat(strcpy(szPath, g_szDir), "-other");
-    PROFILE_FN(RTPathRename(iIteration & 1 ? szPath : g_szDir, iIteration & 1 ? g_szDir : szPath, 0),
-               g_nsTestRun, NULL, "RTPathRename");
+    PROFILE_FN(RTPathRename(iIteration & 1 ? szPath : g_szDir, iIteration & 1 ? g_szDir : szPath, 0), g_nsTestRun, "RTPathRename");
 
     /* Deep: */
     RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDeepDir(RT_STR_TUPLE("file15")),
@@ -683,7 +680,7 @@ void fsPerfRename(void)
 
     strcat(strcpy(szPath, g_szDeepDir), "-other");
     PROFILE_FN(RTPathRename(iIteration & 1 ? szPath : g_szDeepDir, iIteration & 1 ? g_szDeepDir : szPath, 0),
-               g_nsTestRun, NULL, "RTPathRename/deep");
+               g_nsTestRun, "RTPathRename/deep");
 
     /* Manytree: */
     PROFILE_MANYTREE_FN(szPath, fsPerfRenameMany(szPath, iIteration), 2, g_nsTestRun, NULL, "RTPathRename/manytree");
@@ -816,9 +813,8 @@ void vsPerfDirEnum(void)
     /*
      * Profile.
      */
-    PROFILE_FN(fsPerfEnumEmpty(), g_nsTestRun, NULL, "RTDirOpen/Read/Close empty");
-    PROFILE_FN(fsPerfEnumManyFiles(), g_nsTestRun, NULL, "RTDirOpen/Read/Close manyfiles");
-
+    PROFILE_FN(fsPerfEnumEmpty(), g_nsTestRun, "RTDirOpen/Read/Close empty");
+    PROFILE_FN(fsPerfEnumManyFiles(), g_nsTestRun, "RTDirOpen/Read/Close manyfiles");
 }
 
 
