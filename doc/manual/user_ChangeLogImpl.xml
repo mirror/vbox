@@ -74,14 +74,46 @@ technical terms if no non-technical ones are clear enough.
       <listitem>
         <para>
           User interface: fixed creation of desktop shortcuts for
-          starting virtual machines
+          starting virtual machines (bug #18207)
         </para>
       </listitem>
 
       <listitem>
         <para>
-          User interface: fixed the bug which prevented the first time wizard from
-          selecting host DVD drives. (bug #18230)
+          User interface: allow the first run window to selecting host drives
+            (bug #18230)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          User interface: fixed attaching empty host optical drives (bug #18223)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Linux hosts: fixed conflict between Debian and Oracle build desktop
+            files (bug #18264)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Linux hosts: VirtualBoxVM command not accessible (bug #18257)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Linux Additions: fixed building drivers on SLES 12.4 (bug #18213)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Linux Additions: fixed building shared folder driver with older
+            kernels (bug #18238)
         </para>
       </listitem>
 
