@@ -607,6 +607,38 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/UIStarter.h \
 	src/hostnetwork/UIHostNetworkDetailsWidget.h \
 	src/hostnetwork/UIHostNetworkManager.h \
+	src/manager/UIErrorPane.h \
+	src/manager/UIToolPaneGlobal.h \
+	src/manager/UIToolPaneMachine.h \
+	src/manager/UIVirtualBoxManager.h \
+	src/manager/UIVirtualBoxManagerWidget.h \
+	src/manager/UIVirtualMachineItem.h \
+	src/manager/UIWelcomePane.h \
+	src/manager/chooser/UIChooser.h \
+	src/manager/chooser/UIChooserModel.h \
+	src/manager/chooser/UIChooserView.h \
+	src/manager/chooser/UIChooserHandlerMouse.h \
+	src/manager/chooser/UIChooserHandlerKeyboard.h \
+	src/manager/chooser/UIChooserItem.h \
+	src/manager/chooser/UIChooserItemGroup.h \
+	src/manager/chooser/UIChooserItemGlobal.h \
+	src/manager/chooser/UIChooserItemMachine.h \
+	src/manager/details/UIDetails.h \
+	src/manager/details/UIDetailsContextMenu.h \
+	src/manager/details/UIDetailsModel.h \
+	src/manager/details/UIDetailsView.h \
+	src/manager/details/UIDetailsItem.h \
+	src/manager/details/UIDetailsGroup.h \
+	src/manager/details/UIDetailsSet.h \
+	src/manager/details/UIDetailsElement.h \
+	src/manager/details/UIDetailsElements.h \
+	src/manager/details/UIMachinePreview.h \
+	src/manager/tools/UITools.h \
+	src/manager/tools/UIToolsModel.h \
+	src/manager/tools/UIToolsView.h \
+	src/manager/tools/UIToolsHandlerMouse.h \
+	src/manager/tools/UIToolsHandlerKeyboard.h \
+	src/manager/tools/UIToolsItem.h \
 	src/medium/UIMediumDetailsWidget.h \
 	src/medium/UIMediumManager.h \
 	src/snapshots/UISnapshotDetailsWidget.h \
@@ -651,40 +683,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.h \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.h
-
-VirtualBox_QT_MOCHDRS += \
-	src/manager/UIErrorPane.h \
-	src/manager/UIToolPaneGlobal.h \
-	src/manager/UIToolPaneMachine.h \
-	src/manager/UIVirtualBoxManager.h \
-	src/manager/UIVirtualBoxManagerWidget.h \
-	src/manager/UIVirtualMachineItem.h \
-	src/manager/UIWelcomePane.h \
-	src/manager/chooser/UIChooser.h \
-	src/manager/chooser/UIChooserModel.h \
-	src/manager/chooser/UIChooserView.h \
-	src/manager/chooser/UIChooserHandlerMouse.h \
-	src/manager/chooser/UIChooserHandlerKeyboard.h \
-	src/manager/chooser/UIChooserItem.h \
-	src/manager/chooser/UIChooserItemGroup.h \
-	src/manager/chooser/UIChooserItemGlobal.h \
-	src/manager/chooser/UIChooserItemMachine.h \
-	src/manager/details/UIDetails.h \
-	src/manager/details/UIDetailsContextMenu.h \
-	src/manager/details/UIDetailsModel.h \
-	src/manager/details/UIDetailsView.h \
-	src/manager/details/UIDetailsItem.h \
-	src/manager/details/UIDetailsGroup.h \
-	src/manager/details/UIDetailsSet.h \
-	src/manager/details/UIDetailsElement.h \
-	src/manager/details/UIDetailsElements.h \
-	src/manager/details/UIMachinePreview.h \
-	src/manager/tools/UITools.h \
-	src/manager/tools/UIToolsModel.h \
-	src/manager/tools/UIToolsView.h \
-	src/manager/tools/UIToolsHandlerMouse.h \
-	src/manager/tools/UIToolsHandlerKeyboard.h \
-	src/manager/tools/UIToolsItem.h
 
 
 #
@@ -926,15 +924,13 @@ VBoxGlobal_QT_MOCHDRS.darwin += \
 #
 VirtualBox_QT_MOCSRCS = \
 	src/hostnetwork/UIHostNetworkManager.cpp \
+	src/manager/UIWelcomePane.cpp \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
 	src/snapshots/UISnapshotPane.cpp \
 	src/widgets/UIApplianceEditorWidget.cpp \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UITabBar.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
-
-VirtualBox_QT_MOCSRCS += \
-	src/manager/UIWelcomePane.cpp
 
 
 #
@@ -1027,6 +1023,38 @@ VirtualBox_SOURCES = \
 	src/hostnetwork/UIHostNetworkDetailsWidget.cpp \
 	src/hostnetwork/UIHostNetworkManager.cpp \
 	src/hostnetwork/UIHostNetworkUtils.cpp \
+	src/manager/UIErrorPane.cpp \
+	src/manager/UIToolPaneGlobal.cpp \
+	src/manager/UIToolPaneMachine.cpp \
+	src/manager/UIVirtualBoxManager.cpp \
+	src/manager/UIVirtualBoxManagerWidget.cpp \
+	src/manager/UIVirtualMachineItem.cpp \
+	src/manager/UIWelcomePane.cpp \
+	src/manager/chooser/UIChooser.cpp \
+	src/manager/chooser/UIChooserModel.cpp \
+	src/manager/chooser/UIChooserView.cpp \
+	src/manager/chooser/UIChooserHandlerMouse.cpp \
+	src/manager/chooser/UIChooserHandlerKeyboard.cpp \
+	src/manager/chooser/UIChooserItem.cpp \
+	src/manager/chooser/UIChooserItemGroup.cpp \
+	src/manager/chooser/UIChooserItemGlobal.cpp \
+	src/manager/chooser/UIChooserItemMachine.cpp \
+	src/manager/details/UIDetails.cpp \
+	src/manager/details/UIDetailsContextMenu.cpp \
+	src/manager/details/UIDetailsModel.cpp \
+	src/manager/details/UIDetailsView.cpp \
+	src/manager/details/UIDetailsItem.cpp \
+	src/manager/details/UIDetailsGroup.cpp \
+	src/manager/details/UIDetailsSet.cpp \
+	src/manager/details/UIDetailsElement.cpp \
+	src/manager/details/UIDetailsElements.cpp \
+	src/manager/details/UIMachinePreview.cpp \
+	src/manager/tools/UITools.cpp \
+	src/manager/tools/UIToolsModel.cpp \
+	src/manager/tools/UIToolsView.cpp \
+	src/manager/tools/UIToolsHandlerMouse.cpp \
+	src/manager/tools/UIToolsHandlerKeyboard.cpp \
+	src/manager/tools/UIToolsItem.cpp \
 	src/medium/UIMediumDetailsWidget.cpp \
 	src/medium/UIMediumManager.cpp \
 	src/snapshots/UISnapshotDetailsWidget.cpp \
@@ -1071,40 +1099,6 @@ VirtualBox_SOURCES = \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp
-
-VirtualBox_SOURCES += \
-	src/manager/UIErrorPane.cpp \
-	src/manager/UIToolPaneGlobal.cpp \
-	src/manager/UIToolPaneMachine.cpp \
-	src/manager/UIVirtualBoxManager.cpp \
-	src/manager/UIVirtualBoxManagerWidget.cpp \
-	src/manager/UIVirtualMachineItem.cpp \
-	src/manager/UIWelcomePane.cpp \
-	src/manager/chooser/UIChooser.cpp \
-	src/manager/chooser/UIChooserModel.cpp \
-	src/manager/chooser/UIChooserView.cpp \
-	src/manager/chooser/UIChooserHandlerMouse.cpp \
-	src/manager/chooser/UIChooserHandlerKeyboard.cpp \
-	src/manager/chooser/UIChooserItem.cpp \
-	src/manager/chooser/UIChooserItemGroup.cpp \
-	src/manager/chooser/UIChooserItemGlobal.cpp \
-	src/manager/chooser/UIChooserItemMachine.cpp \
-	src/manager/details/UIDetails.cpp \
-	src/manager/details/UIDetailsContextMenu.cpp \
-	src/manager/details/UIDetailsModel.cpp \
-	src/manager/details/UIDetailsView.cpp \
-	src/manager/details/UIDetailsItem.cpp \
-	src/manager/details/UIDetailsGroup.cpp \
-	src/manager/details/UIDetailsSet.cpp \
-	src/manager/details/UIDetailsElement.cpp \
-	src/manager/details/UIDetailsElements.cpp \
-	src/manager/details/UIMachinePreview.cpp \
-	src/manager/tools/UITools.cpp \
-	src/manager/tools/UIToolsModel.cpp \
-	src/manager/tools/UIToolsView.cpp \
-	src/manager/tools/UIToolsHandlerMouse.cpp \
-	src/manager/tools/UIToolsHandlerKeyboard.cpp \
-	src/manager/tools/UIToolsItem.cpp
 
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
