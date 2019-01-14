@@ -406,20 +406,12 @@ ifdef VBOX_WITH_DEBUGGER_GUI
  	MacOS/DbgPlugInDiggers.dylib
 endif
 ifdef VBOX_WITH_HARDENING
- ifndef VBOX_GUI_WITH_SHARED_LIBRARY
-  VBOX_DI_VBAPP_DYLIBS += \
-  	MacOS/VirtualBox.dylib \
-  	MacOS/VBoxNetDHCP.dylib \
-  	MacOS/VBoxNetNAT.dylib \
-  	MacOS/VBoxHeadless.dylib
- else
-  VBOX_DI_VBAPP_DYLIBS += \
-  	MacOS/VBoxGlobal.dylib \
-  	MacOS/VirtualBoxVM.dylib \
-  	MacOS/VBoxNetDHCP.dylib \
-  	MacOS/VBoxNetNAT.dylib \
-  	MacOS/VBoxHeadless.dylib
- endif
+ VBOX_DI_VBAPP_DYLIBS += \
+ 	MacOS/VBoxGlobal.dylib \
+ 	MacOS/VirtualBoxVM.dylib \
+ 	MacOS/VBoxNetDHCP.dylib \
+ 	MacOS/VBoxNetNAT.dylib \
+ 	MacOS/VBoxHeadless.dylib
 endif
 ifdef VBOX_WITH_HDDPARALLELS_INSTALL
  VBOX_DI_VBAPP_DYLIBS += \
@@ -785,15 +777,9 @@ endif
 	sudo chown -R root:admin $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root
 	sudo chmod u+s $(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/VBoxNetAdpCtl
 ifdef VBOX_WITH_HARDENING
- ifndef VBOX_GUI_WITH_SHARED_LIBRARY
-	sudo chmod u+s \
-		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetDHCP VBoxNetNAT,\
-			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/$(bin))
- else
 	sudo chmod u+s \
 		$(foreach bin,VBoxHeadless VirtualBoxVM VBoxNetDHCP VBoxNetNAT,\
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/$(bin))
- endif
 endif
 	@# Do keyword replacement in the package info and description files.
 	$(SED) \
@@ -808,13 +794,10 @@ endif
 		$(VBOX_PATH_DI_SRC)/VirtualBox/PkgBuildComponent.plist
 	@# Copy the resources.
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBox/preflight                         $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/
-if defined(VBOX_WITH_HARDENING) && !defined(VBOX_GUI_WITH_SHARED_LIBRARY)
+ifdef VBOX_WITH_HARDENING
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBox/postflight                        $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/
 else
-	$(SED)	$(if-expr !defined(VBOX_WITH_HARDENING),-e '/WITH_HARDENING/d',) \
-		$(if-expr !defined(VBOX_GUI_WITH_SHARED_LIBRARY),-e '/WITH_SHARED_LIBRARY/d',-e '/WITHOUT_SHARED_LIBRARY/d') \
-		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/postflight \
-		$(VBOX_PATH_DI_SRC)/VirtualBox/postflight
+	$(SED) -s '/WITH_HARDENING/d' -o $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/postflight $(VBOX_PATH_DI_SRC)/VirtualBox/postflight
 	$(CHMOD) 0755 $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/postflight
 endif
 	@# Build the package.
@@ -873,10 +856,8 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg: \
 	@# Generate the wrapper scripts.
 	$(APPEND) -tn  $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VirtualBox \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VirtualBox "$$@"'
-ifdef VBOX_GUI_WITH_SHARED_LIBRARY
 	$(APPEND) -tn  $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VirtualBoxVM \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VirtualBoxVM "$$@"'
-endif
 	$(APPEND) -tn  $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxManage \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxManage "$$@"'
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/local/bin/VBoxVRDP \

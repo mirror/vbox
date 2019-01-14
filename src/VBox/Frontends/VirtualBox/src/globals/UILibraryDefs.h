@@ -25,15 +25,10 @@
 #include <iprt/cdefs.h>
 
 /* Define shared library stuff: */
-#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
-# ifdef VBOX_GUI_LIBRARY
-#  define SHARED_LIBRARY_STUFF DECLEXPORT_CLASS
-# else
-#  define SHARED_LIBRARY_STUFF DECLIMPORT_CLASS
-# endif
+#ifdef VBOX_GUI_LIBRARY
+# define SHARED_LIBRARY_STUFF DECLEXPORT_CLASS
 #else
-# define SHARED_LIBRARY_STUFF
+# define SHARED_LIBRARY_STUFF DECLIMPORT_CLASS
 #endif
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UILibraryDefs_h */
-

@@ -32,11 +32,7 @@ bool UIDesktopServices::createMachineShortcut(const QString & /* strSrcFile */, 
     QFile link(strDstPath + QDir::separator() + strName + ".desktop");
     if (link.open(QFile::WriteOnly | QFile::Truncate))
     {
-#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
         const QString strVBox = QDir::toNativeSeparators(QCoreApplication::applicationDirPath() + "/" + VBOX_GUI_VMRUNNER_IMAGE);
-#else
-        const QString strVBox = QDir::toNativeSeparators(QCoreApplication::applicationFilePath());
-#endif
         QTextStream out(&link);
         out.setCodec("UTF-8");
         /* Create a link which starts VirtualBox with the machine uuid. */

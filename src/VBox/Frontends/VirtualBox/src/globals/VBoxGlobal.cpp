@@ -235,11 +235,7 @@ QString     VBoxGlobal::s_strLoadedLanguageId = vboxBuiltInLanguageName();
 QString     VBoxGlobal::s_strUserDefinedPortName = QString();
 
 /* static */
-#ifndef VBOX_GUI_WITH_SHARED_LIBRARY
-void VBoxGlobal::create()
-#else
 void VBoxGlobal::create(UIType enmType)
-#endif
 {
     /* Make sure instance is NOT created yet: */
     if (s_pInstance)
@@ -248,13 +244,8 @@ void VBoxGlobal::create(UIType enmType)
         return;
     }
 
-#ifndef VBOX_GUI_WITH_SHARED_LIBRARY
-    /* Create instance: */
-    new VBoxGlobal;
-#else
     /* Create instance: */
     new VBoxGlobal(enmType);
-#endif
     /* Prepare instance: */
     s_pInstance->prepare();
 }
@@ -279,14 +270,9 @@ void VBoxGlobal::destroy()
     delete s_pInstance;
 }
 
-#ifndef VBOX_GUI_WITH_SHARED_LIBRARY
-VBoxGlobal::VBoxGlobal()
-    : m_fValid(false)
-#else
 VBoxGlobal::VBoxGlobal(UIType enmType)
     : m_enmType(enmType)
     , m_fValid(false)
-#endif
 #ifdef VBOX_WS_MAC
     , m_enmMacOSVersion(MacOSXRelease_Old)
 #endif
@@ -4109,19 +4095,13 @@ void VBoxGlobal::prepare()
         else
             msgCenter().warnAboutUnknownOptionType(arguments.at(i));
 #endif
-#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
         if (enmOptType == OptType_VMRunner && m_enmType != UIType_RuntimeUI)
             msgCenter().warnAboutUnrelatedOptionType(arg);
-#endif
 
         i++;
     }
 
-#ifndef VBOX_GUI_WITH_SHARED_LIBRARY
-    if (startVM)
-#else
     if (m_enmType == UIType_RuntimeUI && startVM)
-#endif
     {
         /* m_fSeparateProcess makes sense only if a VM is started. */
         m_fSeparateProcess = fSeparateProcess;

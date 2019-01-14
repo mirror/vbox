@@ -41,7 +41,7 @@
 #ifdef VBOX_WITH_HARDENING
 # include <VBox/sup.h>
 #endif
-#if !defined(VBOX_WITH_HARDENING) || defined(VBOX_GUI_WITH_SHARED_LIBRARY) && !defined(VBOX_RUNTIME_UI)
+#if !defined(VBOX_WITH_HARDENING) || !defined(VBOX_RUNTIME_UI)
 # include <iprt/initterm.h>
 # ifdef VBOX_WS_MAC
 #  include <iprt/asm.h>
@@ -259,13 +259,13 @@ static void QtMessageOutput(QtMsgType type, const QMessageLogContext &context, c
 /** Shows all available command line parameters. */
 static void ShowHelp()
 {
-#if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || !defined(VBOX_RUNTIME_UI)
+#ifndef VBOX_RUNTIME_UI
     static const char s_szTitle[] = VBOX_PRODUCT " VM Selector";
 #else
     static const char s_szTitle[] = VBOX_PRODUCT " VM Runner";
 #endif
     static const char s_szUsage[] =
-#if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || defined(VBOX_RUNTIME_UI)
+#ifdef VBOX_RUNTIME_UI
         "Options:\n"
         "  --startvm <vmname|UUID>    start a VM by specifying its UUID or name\n"
         "  --separate                 start a separate VM process\n"
@@ -525,17 +525,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
 
         /* Create UI starter: */
         UIStarter::create();
-#ifndef VBOX_GUI_WITH_SHARED_LIBRARY
-        /* Create global app instance: */
-        VBoxGlobal::create();
-#else
-# ifndef VBOX_RUNTIME_UI
+#ifndef VBOX_RUNTIME_UI
         /* Create global app instance for Selector UI: */
         VBoxGlobal::create(VBoxGlobal::UIType_SelectorUI);
-# else
+#else
         /* Create global app instance for Runtime UI: */
         VBoxGlobal::create(VBoxGlobal::UIType_RuntimeUI);
-# endif
 #endif
 
         /* Simulate try-catch block: */
@@ -592,7 +587,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
     return iResultCode;
 }
 
-#if !defined(VBOX_WITH_HARDENING) || (defined(VBOX_GUI_WITH_SHARED_LIBRARY) && !defined(VBOX_RUNTIME_UI))
+#if !defined(VBOX_WITH_HARDENING) || !defined(VBOX_RUNTIME_UI)
 
 int main(int argc, char **argv, char **envp)
 {
@@ -603,7 +598,7 @@ int main(int argc, char **argv, char **envp)
 # endif /* VBOX_WS_X11 */
 
     /* Initialize VBox Runtime: */
-# if !defined(VBOX_GUI_WITH_SHARED_LIBRARY) || defined(VBOX_RUNTIME_UI)
+# ifdef VBOX_RUNTIME_UI
     /* Initialize the SUPLib as well only if we are really about to start a VM.
      * Don't do this if we are only starting the selector window or a separate VM process. */
     bool fStartVM = false;
@@ -622,9 +617,9 @@ int main(int argc, char **argv, char **envp)
     }
 
     uint32_t fFlags = fStartVM && !fSeparateProcess ? RTR3INIT_FLAGS_SUPLIB : 0;
-#else
+# else
     uint32_t fFlags = 0;
-#endif
+# endif
     int rc = RTR3InitExe(argc, &argv, fFlags);
 
     /* Initialization failed: */
@@ -686,7 +681,7 @@ int main(int argc, char **argv, char **envp)
     return TrustedMain(argc, argv, envp);
 }
 
-#endif /* !VBOX_WITH_HARDENING || (VBOX_GUI_WITH_SHARED_LIBRARY && !VBOX_RUNTIME_UI) */
+#endif /* !VBOX_WITH_HARDENING || !VBOX_RUNTIME_UI */
 
 #ifdef VBOX_WITH_HARDENING
 

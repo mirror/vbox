@@ -247,12 +247,12 @@ ifdef VBOX_WITH_QTGUI
  VBOX_LNX_STRIP_BIN += \
  	VBoxKeyboard.so \
  	VirtualBox \
- 	$(if $(VBOX_GUI_WITH_SHARED_LIBRARY),VirtualBoxVM) \
- 	$(if $(VBOX_GUI_WITH_SHARED_LIBRARY),VBoxGlobal.so) \
+ 	VirtualBoxVM \
+ 	VBoxGlobal.so \
  	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so)
  ifdef VBOX_WITH_HARDENING
   VBOX_LNX_STRIP_BIN += \
- 	$(if $(VBOX_GUI_WITH_SHARED_LIBRARY),VirtualBoxVM.so,VirtualBox.so)
+ 	VirtualBoxVM.so
  endif
  VBOX_LNX_NO_STRIP += \
  	virtualbox.desktop \

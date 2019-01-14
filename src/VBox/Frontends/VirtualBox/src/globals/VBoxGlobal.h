@@ -107,14 +107,12 @@ signals:
 
 public:
 
-#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
     /** UI types. */
     enum UIType
     {
         UIType_SelectorUI,
         UIType_RuntimeUI
     };
-#endif
 
     /** VM launch modes. */
     enum LaunchMode
@@ -135,13 +133,8 @@ public:
 
     /** Returns VBoxGlobal instance. */
     static VBoxGlobal *instance() { return s_pInstance; }
-#ifndef VBOX_GUI_WITH_SHARED_LIBRARY
-    /** Creates VBoxGlobal instance. */
-    static void create();
-#else
     /** Creates VBoxGlobal instance of passed @a enmType. */
     static void create(UIType enmType);
-#endif
     /** Destroys VBoxGlobal instance. */
     static void destroy();
 
@@ -169,10 +162,8 @@ public:
         /** Returns whether VBoxGlobal instance is properly initialized. */
         bool isValid() const { return m_fValid; }
 
-#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
         /** Returns the UI type. */
         UIType uiType() const { return m_enmType; }
-#endif
 
         /** Returns VBox version string. */
         QString vboxVersionString() const;
@@ -685,13 +676,8 @@ protected slots:
 
 private:
 
-#ifndef VBOX_GUI_WITH_SHARED_LIBRARY
-    /** Construcs global VirtualBox object. */
-    VBoxGlobal();
-#else
     /** Construcs global VirtualBox object of passed @a enmType. */
     VBoxGlobal(UIType enmType);
-#endif
 
     /** Destrucs global VirtualBox object. */
     virtual ~VBoxGlobal() /* override */;
@@ -744,10 +730,8 @@ private:
         /** Holds the tr("User Defined") port name. */
         static QString  s_strUserDefinedPortName;
 
-#ifdef VBOX_GUI_WITH_SHARED_LIBRARY
         /** Holds the UI type. */
         UIType  m_enmType;
-#endif
 
         /** Holds whether VBoxGlobal instance is properly initialized. */
         bool  m_fValid;
@@ -893,7 +877,7 @@ private:
         UIMediumEnumerator *m_pMediumEnumerator;
     /** @} */
 
-#if defined(VBOX_WS_WIN) && defined(VBOX_GUI_WITH_SHARED_LIBRARY)
+#if defined(VBOX_WS_WIN)
     /** @name ATL stuff.
      * @{ */
         /** Holds the ATL module instance (for use with VBoxGlobal shared library only).
