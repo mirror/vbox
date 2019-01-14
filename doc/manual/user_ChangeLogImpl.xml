@@ -55,7 +55,7 @@ technical terms if no non-technical ones are clear enough.
       <listitem>
         <para>
           User interface: allow the first run window to selecting host drives
-            (bug #18230)
+          (bug #18230)
         </para>
       </listitem>
 
@@ -67,7 +67,7 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
-          User interface: implemented a new VISO creation dialog.
+          User interface: implemented a new VISO creation dialog
         </para>
       </listitem>
 
@@ -88,7 +88,7 @@ technical terms if no non-technical ones are clear enough.
       <listitem>
         <para>
           Linux hosts: fixed conflict between Debian and Oracle build desktop
-            files (bug #18264)
+          files (bug #18264)
         </para>
       </listitem>
 
@@ -107,7 +107,7 @@ technical terms if no non-technical ones are clear enough.
       <listitem>
         <para>
           Windows guests: black screen with VBoxSVGA graphics when 3D is
-            disabled (bug #18205)
+          disabled (bug #18205)
         </para>
       </listitem>
 
@@ -120,13 +120,13 @@ technical terms if no non-technical ones are clear enough.
       <listitem>
         <para>
           Linux guests: fixed building shared folder driver with older
-            kernels (bug #18238)
+          kernels (bug #18238)
         </para>
       </listitem>
 
       <listitem>
         <para>
-          OS/2 shared folders: fixed write regression introduced in 6.0.0 GA.
+          OS/2 shared folders: fixed write regression introduced in 6.0.0 GA
         </para>
       </listitem>
 
