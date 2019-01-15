@@ -1140,7 +1140,7 @@ void UIGlobalSettingsInput::prepareTabMachine()
         m_pTabWidget->insertTab(UIHotKeyTableIndex_Machine, pMachineTab, QString());
 
         /* In the VM process we start by displaying the Runtime UI tab: */
-        if (VBoxGlobal::instance()->isVMConsoleProcess())
+        if (vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI)
             m_pTabWidget->setCurrentWidget(pMachineTab);
     }
 }

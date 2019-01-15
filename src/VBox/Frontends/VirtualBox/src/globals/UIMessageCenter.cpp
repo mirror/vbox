@@ -2900,7 +2900,9 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType enmType,
     QStringList confirmedMessageList;
     if (!strAutoConfirmId.isEmpty())
     {
-        const QUuid uID = vboxGlobal().isVMConsoleProcess() ? vboxGlobal().managedVMUuid() : UIExtraDataManager::GlobalID;
+        const QUuid uID = vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI
+                        ? vboxGlobal().managedVMUuid()
+                        : UIExtraDataManager::GlobalID;
         confirmedMessageList = gEDataManager->suppressedMessages(uID);
         if (   confirmedMessageList.contains(strAutoConfirmId)
             || confirmedMessageList.contains("allMessageBoxes")

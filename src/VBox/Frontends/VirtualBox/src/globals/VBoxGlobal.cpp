@@ -2238,19 +2238,22 @@ bool VBoxGlobal::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /*
     if (   comMachine.GetSessionState() == KSessionState_Locked /* precondition for CanShowConsoleWindow() */
         && comMachine.CanShowConsoleWindow())
     {
-        /* For the Selector UI: */
-        if (!isVMConsoleProcess())
+        switch (uiType())
         {
-            /* Just switch to existing VM window: */
-            return switchToMachine(comMachine);
-        }
-        /* For the Runtime UI: */
-        else
-        {
-            /* Only separate UI process can reach that place,
-             * switch to existing VM window and exit. */
-            switchToMachine(comMachine);
-            return false;
+            /* For Selector UI: */
+            case UIType_SelectorUI:
+            {
+                /* Just switch to existing VM window: */
+                return switchToMachine(comMachine);
+            }
+            /* For Runtime UI: */
+            case UIType_RuntimeUI:
+            {
+                /* Only separate UI process can reach that place.
+                 * Switch to existing VM window and exit. */
+                switchToMachine(comMachine);
+                return false;
+            }
         }
     }
 
@@ -3016,8 +3019,8 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
         AssertReturnVoid(!comSession.isNull());
         comMachine = comSession.GetMachine();
     }
-    /* Is it Selector UI call? */
-    else if (!isVMConsoleProcess())
+    /* Is this a Selector UI call? */
+    else if (uiType() == UIType_SelectorUI)
     {
         /* Open existing 'shared' session: */
         comSession = openExistingSession(comMachine.GetId());
@@ -4122,8 +4125,8 @@ void VBoxGlobal::prepare()
         m_strManagedVMId = machine.GetId();
     }
 
-    /* After initializing *m_strManagedVMId* we already know if that is VM process or not: */
-    if (!isVMConsoleProcess())
+    /* For Selector UI: */
+    if (uiType() == UIType_SelectorUI)
     {
         /* We should create separate logging file for VM selector: */
         char szLogFile[RTPATH_MAX];
@@ -4154,9 +4157,10 @@ void VBoxGlobal::prepare()
         gEDataManager->setRequestedVisualState(visualStateType, m_strManagedVMId);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    /* Setup the debugger gui if VM console process: */
-    if (isVMConsoleProcess())
+    /* For Runtime UI: */
+    if (uiType() == UIType_RuntimeUI)
     {
+        /* Setup the debugger GUI: */
         if (RTEnvExist("VBOX_GUI_NO_DEBUGGER"))
             m_fDbgEnabled = m_fDbgAutoShow =  m_fDbgAutoShowCommandLine = m_fDbgAutoShowStatistics = false;
         if (m_fDbgEnabled)
@@ -4354,8 +4358,8 @@ void VBoxGlobal::sltHandleVBoxSVCAvailabilityChange(bool fAvailable)
             /* Re-init wrappers: */
             comWrappersReinit();
 
-            /* If that is Selector UI: */
-            if (!isVMConsoleProcess())
+            /* For Selector UI: */
+            if (uiType() == UIType_SelectorUI)
             {
                 /* Recreate Main event listeners: */
                 UIVirtualBoxEventHandler::destroy();

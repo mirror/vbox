@@ -111,48 +111,41 @@ void UIStarter::sltStartUI()
 
 #ifndef VBOX_RUNTIME_UI
 
-    /* Show Selector UI: */
-    if (!vboxGlobal().isVMConsoleProcess())
+    /* Make sure Selector UI is permitted, quit if not: */
+    if (gEDataManager->guiFeatureEnabled(GUIFeatureType_NoSelector))
     {
-        /* Make sure Selector UI is permitted, quit if not: */
-        if (gEDataManager->guiFeatureEnabled(GUIFeatureType_NoSelector))
-        {
-            msgCenter().cannotStartSelector();
-            return QApplication::quit();
-        }
+        msgCenter().cannotStartSelector();
+        return QApplication::quit();
+    }
 
-        /* Create/show manager-window: */
-        UIVirtualBoxManager::create();
+    /* Create/show manager-window: */
+    UIVirtualBoxManager::create();
 
 # ifdef VBOX_BLEEDING_EDGE
-        /* Show EXPERIMENTAL BUILD warning: */
-        msgCenter().showExperimentalBuildWarning();
+    /* Show EXPERIMENTAL BUILD warning: */
+    msgCenter().showExperimentalBuildWarning();
 # else /* !VBOX_BLEEDING_EDGE */
 #  ifndef DEBUG
-        /* Show BETA warning if necessary: */
-        const QString vboxVersion(vboxGlobal().virtualBox().GetVersion());
-        if (   vboxVersion.contains("BETA")
-            && gEDataManager->preventBetaBuildWarningForVersion() != vboxVersion)
-            msgCenter().showBetaBuildWarning();
+    /* Show BETA warning if necessary: */
+    const QString vboxVersion(vboxGlobal().virtualBox().GetVersion());
+    if (   vboxVersion.contains("BETA")
+        && gEDataManager->preventBetaBuildWarningForVersion() != vboxVersion)
+        msgCenter().showBetaBuildWarning();
 #  endif /* !DEBUG */
 # endif /* !VBOX_BLEEDING_EDGE */
-    }
 
 #else /* VBOX_RUNTIME_UI */
 
-    /* Show Runtime UI: */
-    if (vboxGlobal().isVMConsoleProcess())
-    {
-        /* Make sure machine is started, quit if not: */
-        if (!UIMachine::startMachine(vboxGlobal().managedVMUuid()))
-            return QApplication::quit();
-    }
-    /* Show the error message otherwise and quit: */
-    else
+    /* Make sure Runtime UI is even possible, quit if not: */
+    if (vboxGlobal().managedVMUuid().isNull())
     {
         msgCenter().cannotStartRuntime();
         return QApplication::quit();
     }
+
+    /* Make sure machine is started, quit if not: */
+    if (!UIMachine::startMachine(vboxGlobal().managedVMUuid()))
+        return QApplication::quit();
 
 #endif /* VBOX_RUNTIME_UI */
 }
@@ -197,12 +190,8 @@ void UIStarter::sltHandleCommitDataRequest()
         return;
 
 #ifdef VBOX_RUNTIME_UI
-    /* For VM process: */
-    if (vboxGlobal().isVMConsoleProcess())
-    {
-        /* Temporary override the default close action to 'SaveState' if necessary: */
-        if (gpMachine->uisession()->defaultCloseAction() == MachineCloseAction_Invalid)
-            gpMachine->uisession()->setDefaultCloseAction(MachineCloseAction_SaveState);
-    }
+    /* Temporary override the default close action to 'SaveState' if necessary: */
+    if (gpMachine->uisession()->defaultCloseAction() == MachineCloseAction_Invalid)
+        gpMachine->uisession()->setDefaultCloseAction(MachineCloseAction_SaveState);
 #endif
 }

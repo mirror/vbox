@@ -527,8 +527,8 @@ UIUpdateManager::UIUpdateManager()
     connect(m_pQueue, &UIUpdateQueue::sigQueueFinished, this, &UIUpdateManager::sltHandleUpdateFinishing);
 
 #ifdef VBOX_WITH_UPDATE_REQUEST
-    /* Ask updater to check for the first time: */
-    if (gEDataManager->applicationUpdateEnabled() && !vboxGlobal().isVMConsoleProcess())
+    /* Ask updater to check for the first time, for Selector UI only: */
+    if (gEDataManager->applicationUpdateEnabled() && vboxGlobal().uiType() == VBoxGlobal::UIType_SelectorUI)
         QTimer::singleShot(0, this, SLOT(sltCheckIfUpdateIsNecessary()));
 #endif /* VBOX_WITH_UPDATE_REQUEST */
 }

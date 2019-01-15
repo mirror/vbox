@@ -4698,7 +4698,7 @@ void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QStri
     else
     {
         /* Current VM only: */
-        if (   vboxGlobal().isVMConsoleProcess()
+        if (   vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI
             && uMachineID == vboxGlobal().managedVMUuid())
         {
             /* HID LEDs sync state changed (allowed if not restricted)? */

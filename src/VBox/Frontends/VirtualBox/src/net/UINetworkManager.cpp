@@ -64,7 +64,7 @@ UINetworkManagerDialog *UINetworkManager::window() const
 UINetworkManagerIndicator *UINetworkManager::createIndicator() const
 {
     /* For Selector UI only: */
-    AssertReturn(!vboxGlobal().isVMConsoleProcess(), 0);
+    AssertReturn(vboxGlobal().uiType() == VBoxGlobal::UIType_SelectorUI, 0);
 
     /* Create network-manager state-indicator: */
     UINetworkManagerIndicator *pNetworkManagerIndicator = new UINetworkManagerIndicator;
