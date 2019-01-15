@@ -17430,6 +17430,10 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <source>Add selected file objects to ISO</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Custom VISO options:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWelcomePane</name>

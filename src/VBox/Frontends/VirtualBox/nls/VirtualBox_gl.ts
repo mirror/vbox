@@ -13373,6 +13373,10 @@ p, li { white-space: pre-wrap; }
         <source>Add selected file objects to ISO</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Custom VISO options:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWelcomePane</name>

@@ -16819,6 +16819,10 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <source>Add selected file objects to ISO</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Custom VISO options:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWelcomePane</name>
