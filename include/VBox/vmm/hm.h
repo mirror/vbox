@@ -155,8 +155,6 @@ VMM_INT_DECL(void)              HMVmxGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pM
  * found in CPUM.
  * @{ */
 VMM_INT_DECL(bool)              HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
-VMM_INT_DECL(int)               HMVmxEntryIntInfoInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo, uint32_t uErrCode,
-                                                                 uint32_t cbInstr, RTGCUINTPTR GCPtrFaultAddress);
 /** @} */
 
 /** @name All-context SVM helpers.
