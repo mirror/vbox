@@ -26,6 +26,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QListView>
+#include <QMenu>
 #include <QMimeData>
 #include <QSplitter>
 #include <QTableView>
@@ -153,8 +154,8 @@ bool UIVisoContentTreeProxyModel::filterAcceptsRow(int iSourceRow, const QModelI
 *   UIVisoContentBrowser implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-UIVisoContentBrowser::UIVisoContentBrowser(QWidget *pParent)
-    : QIWithRetranslateUI<UIVisoBrowserBase>(pParent)
+UIVisoContentBrowser::UIVisoContentBrowser(QWidget *pParent, QMenu *pMenu /* = 0 */)
+    : UIVisoBrowserBase(pParent, pMenu)
     , m_pTableView(0)
     , m_pModel(0)
     , m_pTableProxyModel(0)
@@ -247,11 +248,20 @@ void UIVisoContentBrowser::retranslateUi()
     if (m_pTitleLabel)
         m_pTitleLabel->setText(QApplication::translate("UIVisoCreator", "VISO content"));
     if (m_pRemoveAction)
+    {
         m_pRemoveAction->setToolTip(QApplication::translate("UIVisoCreator", "Remove selected file objects from VISO"));
+        m_pRemoveAction->setText(QApplication::translate("UIVisoCreator", "Remove"));
+    }
     if (m_pNewDirectoryAction)
+    {
         m_pNewDirectoryAction->setToolTip(QApplication::translate("UIVisoCreator", "Create a new directory under the current location"));
+        m_pNewDirectoryAction->setText(QApplication::translate("UIVisoCreator", "New Directory"));
+    }
     if (m_pResetAction)
+    {
         m_pResetAction->setToolTip(QApplication::translate("UIVisoCreator", "Reset ISO content."));
+        m_pResetAction->setText(QApplication::translate("UIVisoCreator", "Reset"));
+    }
     if (m_pRenameAction)
         m_pRenameAction->setToolTip(QApplication::translate("UIVisoCreator", "Rename the selected object"));
 
@@ -450,6 +460,8 @@ void UIVisoContentBrowser::prepareObjects()
         m_pRemoveAction->setIcon(UIIconPool::iconSetFull(":/file_manager_delete_24px.png", ":/file_manager_delete_16px.png",
                                                      ":/file_manager_delete_disabled_24px.png", ":/file_manager_delete_disabled_16px.png"));
         m_pRemoveAction->setEnabled(false);
+        if (m_pMenu)
+            m_pMenu->addAction(m_pRemoveAction);
     }
 
     m_pNewDirectoryAction = new QAction(this);
@@ -459,6 +471,8 @@ void UIVisoContentBrowser::prepareObjects()
         m_pNewDirectoryAction->setIcon(UIIconPool::iconSetFull(":/file_manager_new_directory_24px.png", ":/file_manager_new_directory_16px.png",
                                                            ":/file_manager_new_directory_disabled_24px.png", ":/file_manager_new_directory_disabled_16px.png"));
         m_pNewDirectoryAction->setEnabled(true);
+        if (m_pMenu)
+            m_pMenu->addAction(m_pNewDirectoryAction);
     }
 
     m_pRenameAction = new QAction(this);
@@ -478,6 +492,8 @@ void UIVisoContentBrowser::prepareObjects()
         m_pVerticalToolBar->addAction(m_pResetAction);
         m_pResetAction->setIcon(UIIconPool::iconSet(":/cd_remove_16px.png", ":/cd_remove_disabled_16px.png"));
         m_pResetAction->setEnabled(true);
+        if (m_pMenu)
+            m_pMenu->addAction(m_pResetAction);
     }
 
     retranslateUi();

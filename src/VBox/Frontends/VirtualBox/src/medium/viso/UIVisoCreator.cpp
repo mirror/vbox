@@ -16,10 +16,11 @@
  */
 
 /* Qt includes: */
-#include <QVBoxLayout>
+#include <QMenuBar>
 #include <QPushButton>
 #include <QSplitter>
 #include <QStyle>
+#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
@@ -32,8 +33,8 @@
 #include "UIVisoContentBrowser.h"
 
 
-UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */)
-    : QIWithRetranslateUI<QIDialog>(pParent)
+UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */, const QString& strMachineName /* = QString() */)
+    : QIWithRetranslateUI<QIMainDialog>(pParent)
     , m_pMainLayout(0)
     , m_pVerticalSplitter(0)
     , m_pHostBrowser(0)
@@ -42,8 +43,12 @@ UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */)
     , m_pToolBar(0)
     , m_pActionConfiguration(0)
     , m_pActionOptions(0)
+    , m_pCentralWidget(0)
+    , m_pMainMenu(0)
+    , m_pHostBrowserMenu(0)
+    , m_pVisoContentBrowserMenu(0)
+    , m_strMachineName(strMachineName)
 {
-
     prepareActions();
     prepareObjects();
     prepareConnections();
@@ -72,6 +77,7 @@ const QStringList &UIVisoCreator::customOptions() const
 
 void UIVisoCreator::retranslateUi()
 {
+    setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("VISO Creator")));
     if (m_pActionConfiguration)
     {
         m_pActionConfiguration->setText(tr("&Configuration..."));
@@ -84,6 +90,12 @@ void UIVisoCreator::retranslateUi()
         m_pActionOptions->setToolTip(tr("Dialog Options"));
         m_pActionOptions->setStatusTip(tr("Manage Dialog Options"));
     }
+    if (m_pMainMenu)
+        m_pMainMenu->setTitle(tr("Main Menu"));
+    if (m_pHostBrowserMenu)
+        m_pHostBrowserMenu->setTitle(tr("Host Browser"));
+    if (m_pVisoContentBrowserMenu)
+        m_pVisoContentBrowserMenu->setTitle(tr("VISO Browser"));
 }
 
 void UIVisoCreator::sltHandleAddObjectsToViso(QStringList pathList)
@@ -122,10 +134,29 @@ void UIVisoCreator::sltHandleConfigurationAction()
 
 void UIVisoCreator::prepareObjects()
 {
+    m_pCentralWidget = new QWidget;
+    if (!m_pCentralWidget)
+        return;
+    setCentralWidget(m_pCentralWidget);
+
     m_pMainLayout = new QVBoxLayout;
+        m_pCentralWidget->setLayout(m_pMainLayout);
     if (!m_pMainLayout)
         return;
 
+    QMenuBar *pMenuBar = new QMenuBar;
+
+    setMenuBar(pMenuBar);
+    if (pMenuBar)
+    {
+        m_pMainMenu = pMenuBar->addMenu(tr("Main Menu"));
+        if (m_pActionConfiguration)
+            m_pMainMenu->addAction(m_pActionConfiguration);
+        if (m_pActionOptions)
+            m_pMainMenu->addAction(m_pActionOptions);
+        m_pHostBrowserMenu = m_pMainMenu->addMenu(tr("Host Browser"));
+        m_pVisoContentBrowserMenu = m_pMainMenu->addMenu(tr("VISO Browser"));
+    }
     m_pToolBar = new UIToolBar(parentWidget());
     if (m_pToolBar)
     {
@@ -150,14 +181,14 @@ void UIVisoCreator::prepareObjects()
     m_pVerticalSplitter->setOrientation(Qt::Vertical);
     m_pVerticalSplitter->setHandleWidth(1);
 
-    m_pHostBrowser = new UIVisoHostBrowser;
+    m_pHostBrowser = new UIVisoHostBrowser(0 /* parent */, m_pHostBrowserMenu);
     if (m_pHostBrowser)
     {
         m_pVerticalSplitter->addWidget(m_pHostBrowser);
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigAddObjectsToViso,
                 this, &UIVisoCreator::sltHandleAddObjectsToViso);
     }
-    m_pVisoBrowser = new UIVisoContentBrowser;
+    m_pVisoBrowser = new UIVisoContentBrowser(0 /* parent */, m_pVisoContentBrowserMenu);
     if (m_pVisoBrowser)
     {
         m_pVerticalSplitter->addWidget(m_pVisoBrowser);
@@ -171,7 +202,6 @@ void UIVisoCreator::prepareObjects()
         m_pMainLayout->addWidget(m_pButtonBox);
     }
     retranslateUi();
-    setLayout(m_pMainLayout);
 }
 
 void UIVisoCreator::prepareConnections()

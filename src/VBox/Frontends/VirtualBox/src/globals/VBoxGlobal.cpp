@@ -2628,17 +2628,17 @@ QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType,
     return QUuid();
 }
 
-QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strFolder)
+QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strMachineName, const QString &strFolder)
 {
 
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
-    QPointer<UIVisoCreator> pVisoCreator = new UIVisoCreator(pDialogParent);
+    QPointer<UIVisoCreator> pVisoCreator = new UIVisoCreator(pDialogParent, strMachineName);
 
     if (!pVisoCreator)
         return QString();
     windowManager().registerNewParent(pVisoCreator, pDialogParent);
 
-    if (pVisoCreator->execute(true, false))
+    if (pVisoCreator->exec(false /* not application modal */))
     {
         QStringList files = pVisoCreator->entryList();
         QString strVisoName = pVisoCreator->visoName();
@@ -2956,7 +2956,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
                 if (target.type == UIMediumTarget::UIMediumTargetType_WithID)
                     uMediumID = openMediumWithFileOpenDialog(target.mediumType, windowManager().mainWindowShown(), strMachineFolder);
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)
-                    uMediumID = createVisoMediumWithVisoCreator(windowManager().mainWindowShown(), strMachineFolder);
+                    uMediumID = createVisoMediumWithVisoCreator(windowManager().mainWindowShown(), comConstMachine.GetName(), strMachineFolder);
 
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)
                     uMediumID = showCreateFloppyDiskDialog(windowManager().mainWindowShown(), comConstMachine.GetName(), strMachineFolder);

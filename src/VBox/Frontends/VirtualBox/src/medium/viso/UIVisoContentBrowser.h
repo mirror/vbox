@@ -29,7 +29,6 @@
 #include <QFileInfo>
 
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIVisoBrowserBase.h"
 
 /* COM includes: */
@@ -44,13 +43,13 @@ class UIVisoContentTreeProxyModel;
 class UICustomFileSystemItem;
 class UIVisoContentTableView;
 
-class SHARED_LIBRARY_STUFF UIVisoContentBrowser : public QIWithRetranslateUI<UIVisoBrowserBase>
+class SHARED_LIBRARY_STUFF UIVisoContentBrowser : public UIVisoBrowserBase
 {
     Q_OBJECT;
 
 public:
 
-    UIVisoContentBrowser(QWidget *pParent = 0);
+    UIVisoContentBrowser(QWidget *pParent = 0, QMenu *pMenu = 0);
     ~UIVisoContentBrowser();
     /** Adds file objests from the host file system. @p pathList consists of list of paths to there objects. */
     void addObjectsToViso(QStringList pathList);
