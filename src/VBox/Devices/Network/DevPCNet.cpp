@@ -2928,8 +2928,11 @@ static int pcnetCSRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
 
                 return rc;
             }
-        case 1:  /* IADRL */
         case 2:  /* IADRH */
+            if (PCNET_IS_ISA(pThis))
+                val &= 0x00ff;  /* Upper 8 bits ignored on ISA chips. */
+            RT_FALL_THRU();
+        case 1:  /* IADRL */
         case 8:  /* LADRF  0..15 */
         case 9:  /* LADRF 16..31 */
         case 10: /* LADRF 32..47 */
@@ -2968,6 +2971,11 @@ static int pcnetCSRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
         case 112: /* MISSC */
             if (CSR_STOP(pThis) || CSR_SPND(pThis))
                 break;
+            else
+            {
+                Log(("#%d: WRITE CSR%d, %#06x, ignoring!!\n", PCNET_INST_NR, u32RAP, val));
+                return rc;
+            }
         case 3: /* Interrupt Mask and Deferral Control */
             break;
         case 4: /* Test and Features Control */
@@ -3015,7 +3023,7 @@ static int pcnetCSRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
         case 25: /* BADRU */
             if (!CSR_STOP(pThis) && !CSR_SPND(pThis))
             {
-                Log(("#%d: WRITE CSR%d, %#06x !!\n", PCNET_INST_NR, u32RAP, val));
+                Log(("#%d: WRITE CSR%d, %#06x, ignoring!!\n", PCNET_INST_NR, u32RAP, val));
                 return rc;
             }
             if (u32RAP == 24)
