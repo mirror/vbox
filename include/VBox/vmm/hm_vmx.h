@@ -3302,7 +3302,7 @@ typedef struct
     /** 0x0 - VMX VMCS revision identifier.  */
     VMXVMCSREVID    u32VmcsRevId;
     /** 0x4 - VMX-abort indicator. */
-    uint32_t        u32VmxAbortId;
+    VMXABORT        enmVmxAbort;
     /** 0x8 - VMCS state, see VMX_V_VMCS_STATE_XXX. */
     uint8_t         fVmcsState;
     /** 0x9 - Reserved for future. */
@@ -3723,7 +3723,7 @@ typedef VMXVVMCS *PVMXVVMCS;
 typedef const VMXVVMCS *PCVMXVVMCS;
 AssertCompileSize(VMXVVMCS, X86_PAGE_4K_SIZE);
 AssertCompileMemberSize(VMXVVMCS, fVmcsState, sizeof(uint8_t));
-AssertCompileMemberOffset(VMXVVMCS, u32VmxAbortId,      0x004);
+AssertCompileMemberOffset(VMXVVMCS, enmVmxAbort,        0x004);
 AssertCompileMemberOffset(VMXVVMCS, fVmcsState,         0x008);
 AssertCompileMemberOffset(VMXVVMCS, u16Vpid,            0x028);
 AssertCompileMemberOffset(VMXVVMCS, GuestEs,            0x03e);
