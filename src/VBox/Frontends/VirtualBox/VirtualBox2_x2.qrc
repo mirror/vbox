@@ -299,6 +299,8 @@
         <file alias="virtual_screen_disabled_16px_x2.png">images/x2/virtual_screen_disabled_16px_x2.png</file>
         <file alias="vm_add_16px_x2.png">images/x2/vm_add_16px_x2.png</file>
         <file alias="vm_add_32px_x2.png">images/x2/vm_add_32px_x2.png</file>
+        <file alias="vm_add_disabled_16px_x2.png">images/x2/vm_add_disabled_16px_x2.png</file>
+        <file alias="vm_add_disabled_32px_x2.png">images/x2/vm_add_disabled_32px_x2.png</file>
         <file alias="vm_clone_16px_x2.png">images/x2/vm_clone_16px_x2.png</file>
         <file alias="vm_clone_32px_x2.png">images/x2/vm_clone_32px_x2.png</file>
         <file alias="vm_clone_disabled_16px_x2.png">images/x2/vm_clone_disabled_16px_x2.png</file>
@@ -324,6 +326,8 @@
         <file alias="vm_move_disabled_16px_x2.png">images/x2/vm_move_disabled_16px_x2.png</file>
         <file alias="vm_new_16px_x2.png">images/x2/vm_new_16px_x2.png</file>
         <file alias="vm_new_32px_x2.png">images/x2/vm_new_32px_x2.png</file>
+        <file alias="vm_new_disabled_16px_x2.png">images/x2/vm_new_disabled_16px_x2.png</file>
+        <file alias="vm_new_disabled_32px_x2.png">images/x2/vm_new_disabled_32px_x2.png</file>
         <file alias="vm_open_filemanager_16px_x2.png">images/x2/vm_open_filemanager_16px_x2.png</file>
         <file alias="vm_open_filemanager_disabled_16px_x2.png">images/x2/vm_open_filemanager_disabled_16px_x2.png</file>
         <file alias="vm_pause_16px_x2.png">images/x2/vm_pause_16px_x2.png</file>

@@ -125,6 +125,8 @@
         <file alias="expanding_collapsing_16px.png">images/expanding_collapsing_16px.png</file>
         <file alias="export_16px.png">images/export_16px.png</file>
         <file alias="export_32px.png">images/export_32px.png</file>
+        <file alias="export_disabled_16px.png">images/export_disabled_16px.png</file>
+        <file alias="export_disabled_32px.png">images/export_disabled_32px.png</file>
         <file alias="extension_pack_16px.png">images/extension_pack_16px.png</file>
         <file alias="extension_pack_24px.png">images/extension_pack_24px.png</file>
         <file alias="extension_pack_32px.png">images/extension_pack_32px.png</file>
@@ -330,6 +332,8 @@
         <file alias="ide_expand_16px.png">images/ide_expand_16px.png</file>
         <file alias="import_16px.png">images/import_16px.png</file>
         <file alias="import_32px.png">images/import_32px.png</file>
+        <file alias="import_disabled_16px.png">images/import_disabled_16px.png</file>
+        <file alias="import_disabled_32px.png">images/import_disabled_32px.png</file>
         <file alias="interface_16px.png">images/interface_16px.png</file>
         <file alias="interface_24px.png">images/interface_24px.png</file>
         <file alias="interface_32px.png">images/interface_32px.png</file>

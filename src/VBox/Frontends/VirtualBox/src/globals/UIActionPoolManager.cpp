@@ -172,7 +172,9 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowImportApplianceWizard(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/import_32px.png", ":/import_16px.png")
+        : UIActionSimple(pParent,
+                         ":/import_32px.png", ":/import_16px.png",
+                         ":/import_disabled_32px.png", ":/import_disabled_16px.png")
     {}
 
 protected:
@@ -209,7 +211,9 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorFileShowExportApplianceWizard(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/export_32px.png", ":/export_16px.png")
+        : UIActionSimple(pParent,
+                         ":/export_32px.png", ":/export_16px.png",
+                         ":/export_disabled_32px.png", ":/export_disabled_16px.png")
     {}
 
 protected:
@@ -340,7 +344,9 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorGroupPerformCreateMachine(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_new_32px.png", ":/vm_new_16px.png")
+        : UIActionSimple(pParent,
+                         ":/vm_new_32px.png", ":/vm_new_16px.png",
+                         ":/vm_new_disabled_32px.png", ":/vm_new_disabled_16px.png")
     {}
 
 protected:
@@ -376,7 +382,9 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorGroupPerformAddMachine(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_add_32px.png", ":/vm_add_16px.png")
+        : UIActionSimple(pParent,
+                         ":/vm_add_32px.png", ":/vm_add_16px.png",
+                         ":/vm_add_disabled_32px.png", ":/vm_add_disabled_16px.png")
     {}
 
 protected:
@@ -516,7 +524,9 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorMachinePerformCreate(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_new_32px.png", ":/vm_new_16px.png")
+        : UIActionSimple(pParent,
+                         ":/vm_new_32px.png", ":/vm_new_16px.png",
+                         ":/vm_new_disabled_32px.png", ":/vm_new_disabled_16px.png")
     {}
 
 protected:
@@ -552,7 +562,9 @@ public:
 
     /** Constructs action passing @a pParent to the base-class. */
     UIActionSimpleSelectorMachinePerformAdd(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/vm_add_32px.png", ":/vm_add_16px.png")
+        : UIActionSimple(pParent,
+                         ":/vm_add_32px.png", ":/vm_add_16px.png",
+                         ":/vm_add_disabled_32px.png", ":/vm_add_disabled_16px.png")
     {}
 
 protected:
