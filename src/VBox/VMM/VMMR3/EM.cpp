@@ -605,7 +605,7 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
             default:
                 AssertFailedReturn(VERR_INVALID_PARAMETER);
         }
-        LogRel(("emR3SetExecutionPolicy: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fIemExecutesAll=%RTbool\n",
+        LogRel(("EM: Execution policy set (fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fIemExecutesAll=%RTbool)\n",
                 pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->em.s.fIemExecutesAll));
     }
 
