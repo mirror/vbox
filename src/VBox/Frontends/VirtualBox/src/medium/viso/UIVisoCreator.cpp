@@ -141,7 +141,7 @@ void UIVisoCreator::prepareObjects()
 
     m_pMainLayout = new QVBoxLayout;
     m_pCentralWidget->setLayout(m_pMainLayout);
-    if (!m_pMainLayout || menuBar())
+    if (!m_pMainLayout || !menuBar())
         return;
 
     m_pMainMenu = menuBar()->addMenu(tr("Main Menu"));
