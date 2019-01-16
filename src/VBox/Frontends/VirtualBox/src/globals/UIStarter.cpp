@@ -79,8 +79,6 @@ void UIStarter::init()
     /* Listen for VBoxGlobal signals: */
     connect(&vboxGlobal(), &VBoxGlobal::sigAskToRestartUI,
             this, &UIStarter::sltRestartUI);
-    connect(&vboxGlobal(), &VBoxGlobal::sigAskToOpenURLs,
-            this, &UIStarter::sltOpenURLs);
     connect(&vboxGlobal(), &VBoxGlobal::sigAskToCommitData,
             this, &UIStarter::sltHandleCommitDataRequest);
 }
@@ -90,8 +88,6 @@ void UIStarter::deinit()
     /* Listen for VBoxGlobal signals no more: */
     disconnect(&vboxGlobal(), &VBoxGlobal::sigAskToRestartUI,
                this, &UIStarter::sltRestartUI);
-    disconnect(&vboxGlobal(), &VBoxGlobal::sigAskToOpenURLs,
-               this, &UIStarter::sltOpenURLs);
     disconnect(&vboxGlobal(), &VBoxGlobal::sigAskToCommitData,
                this, &UIStarter::sltHandleCommitDataRequest);
 }
@@ -169,17 +165,6 @@ void UIStarter::cleanup()
     /* Destroy Runtime UI: */
     if (gpMachine)
         UIMachine::destroy();
-#endif
-}
-
-void UIStarter::sltOpenURLs()
-{
-#ifndef VBOX_RUNTIME_UI
-    /* Create/show manager-window: */
-    UIVirtualBoxManager::create();
-
-    /* Ask the Manager UI to open URLs asynchronously: */
-    QMetaObject::invokeMethod(gpManager, "sltHandleOpenUrlCall", Qt::QueuedConnection);
 #endif
 }
 

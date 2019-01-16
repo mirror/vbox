@@ -63,9 +63,6 @@ private slots:
     /** Cleanups everything. */
     void cleanup();
 
-    /** Opens URLs in Selector UI. */
-    void sltOpenURLs();
-
     /** Handles commit data request. */
     void sltHandleCommitDataRequest();
 

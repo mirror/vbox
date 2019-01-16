@@ -75,12 +75,6 @@ signals:
         void sigAskToCommitData();
     /** @} */
 
-    /** @name Process arguments stuff.
-     * @{ */
-        /** Asks #UIStarter listener to open URLs. */
-        void sigAskToOpenURLs();
-    /** @} */
-
     /** @name COM stuff.
      * @{ */
         /** Asks #UIStarter listener to restart UI. */
@@ -200,6 +194,8 @@ public:
         /** Process application args. */
         bool processArgs();
 
+        /** Returns whether there are unhandled URL arguments present. */
+        bool argumentUrlsPresent() const;
         /** Takes and returns the URL argument list while clearing the source. */
         QList<QUrl> takeArgumentUrls();
 

@@ -1239,6 +1239,10 @@ void UIVirtualBoxManager::prepare()
         ::darwinLabelWindow(this, &betaLabel, true);
     }
 #endif /* VBOX_WS_MAC */
+
+    /* If there are unhandled URLs we should handle them after manager is shown: */
+    if (vboxGlobal().argumentUrlsPresent())
+        QMetaObject::invokeMethod(this, "sltHandleOpenUrlCall", Qt::QueuedConnection);
 }
 
 void UIVirtualBoxManager::prepareIcon()
