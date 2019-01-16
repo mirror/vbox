@@ -43,7 +43,7 @@ technical terms if no non-technical ones are clear enough.
     <itemizedlist>
 
       <listitem>
-        <para>dummy</para>
+        <para>Fixed: Parsing command line arguments to VirtualBox correctly (bugs #18206 and #18197)</para>
       </listitem>
 
     </itemizedlist>
