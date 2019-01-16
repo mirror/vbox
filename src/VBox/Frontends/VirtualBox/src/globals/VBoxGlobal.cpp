@@ -4095,10 +4095,6 @@ void VBoxGlobal::prepare()
             m_enmLaunchRunning = LaunchRunning_Yes;
         }
 #endif
-#ifdef RT_OS_WINDOWS /** @todo add more here, please... */
-        else
-            msgCenter().warnAboutUnknownOptionType(arguments.at(i));
-#endif
         if (enmOptType == OptType_VMRunner && m_enmType != UIType_RuntimeUI)
             msgCenter().warnAboutUnrelatedOptionType(arg);
 
