@@ -91,7 +91,7 @@ void UIVisoCreator::retranslateUi()
         m_pActionOptions->setStatusTip(tr("Manage Dialog Options"));
     }
     if (m_pMainMenu)
-        m_pMainMenu->setTitle(tr("Main Menu"));
+        m_pMainMenu->setTitle(tr("VISO"));
     if (m_pHostBrowserMenu)
         m_pHostBrowserMenu->setTitle(tr("Host Browser"));
     if (m_pVisoContentBrowserMenu)
@@ -144,7 +144,7 @@ void UIVisoCreator::prepareObjects()
     if (!m_pMainLayout || !menuBar())
         return;
 
-    m_pMainMenu = menuBar()->addMenu(tr("Main Menu"));
+    m_pMainMenu = menuBar()->addMenu(tr("VISO"));
     if (m_pActionConfiguration)
         m_pMainMenu->addAction(m_pActionConfiguration);
     if (m_pActionOptions)
