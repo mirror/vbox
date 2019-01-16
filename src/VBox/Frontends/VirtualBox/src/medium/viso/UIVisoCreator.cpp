@@ -140,23 +140,18 @@ void UIVisoCreator::prepareObjects()
     setCentralWidget(m_pCentralWidget);
 
     m_pMainLayout = new QVBoxLayout;
-        m_pCentralWidget->setLayout(m_pMainLayout);
-    if (!m_pMainLayout)
+    m_pCentralWidget->setLayout(m_pMainLayout);
+    if (!m_pMainLayout || menuBar())
         return;
 
-    QMenuBar *pMenuBar = new QMenuBar;
+    m_pMainMenu = menuBar()->addMenu(tr("Main Menu"));
+    if (m_pActionConfiguration)
+        m_pMainMenu->addAction(m_pActionConfiguration);
+    if (m_pActionOptions)
+        m_pMainMenu->addAction(m_pActionOptions);
+    m_pHostBrowserMenu = m_pMainMenu->addMenu(tr("Host Browser"));
+    m_pVisoContentBrowserMenu = m_pMainMenu->addMenu(tr("VISO Browser"));
 
-    setMenuBar(pMenuBar);
-    if (pMenuBar)
-    {
-        m_pMainMenu = pMenuBar->addMenu(tr("Main Menu"));
-        if (m_pActionConfiguration)
-            m_pMainMenu->addAction(m_pActionConfiguration);
-        if (m_pActionOptions)
-            m_pMainMenu->addAction(m_pActionOptions);
-        m_pHostBrowserMenu = m_pMainMenu->addMenu(tr("Host Browser"));
-        m_pVisoContentBrowserMenu = m_pMainMenu->addMenu(tr("VISO Browser"));
-    }
     m_pToolBar = new UIToolBar(parentWidget());
     if (m_pToolBar)
     {

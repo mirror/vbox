@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QAction>
 #include <QHeaderView>
+#include <QMenuBar>
 #include <QVBoxLayout>
 #include <QPushButton>
 
@@ -144,11 +145,13 @@ QString UIMediumSearchWidget::searchTerm() const
 
 UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName /* = QString() */,
                                    const QString &machineSettigFilePath /* = QString() */, QWidget *pParent /* = 0 */)
-    :QIWithRetranslateUI<QIDialog>(pParent)
+    :QIWithRetranslateUI<QIMainDialog>(pParent)
+    , m_pCentralWidget(0)
     , m_pMainLayout(0)
     , m_pTreeWidget(0)
     , m_enmMediumType(enmMediumType)
     , m_pButtonBox(0)
+    , m_pMainMenu(0)
     , m_pToolBar(0)
     , m_pActionAdd(0)
     , m_pActionCreate(0)
@@ -182,6 +185,9 @@ QList<QUuid> UIMediumSelector::selectedMediumIds() const
 
 void UIMediumSelector::retranslateUi()
 {
+    if (m_pMainMenu)
+        m_pMainMenu->setTitle(tr("Main Menu"));
+
     if (m_pActionAdd)
     {
         m_pActionAdd->setText(tr("&Add..."));
@@ -218,8 +224,8 @@ void UIMediumSelector::configure()
 {
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/media_manager_32px.png", ":/media_manager_16px.png"));
-    prepareActions();
     prepareWidgets();
+    prepareActions();
     prepareConnections();
 }
 
@@ -252,6 +258,10 @@ void UIMediumSelector::prepareActions()
                                                       QString(":/%1_add_16px.png").arg(strPrefix),
                                                       QString(":/%1_add_disabled_32px.png").arg(strPrefix),
                                                       QString(":/%1_add_disabled_16px.png").arg(strPrefix)));
+        if (m_pMainMenu)
+            m_pMainMenu->addAction(m_pActionAdd);
+        if (m_pToolBar)
+            m_pToolBar->addAction(m_pActionAdd);
     }
 
     /* Currently create is supported only for Floppy: */
@@ -267,6 +277,10 @@ void UIMediumSelector::prepareActions()
                                                          QString(":/%1_add_16px.png").arg(strPrefix),
                                                          QString(":/%1_add_disabled_32px.png").arg(strPrefix),
                                                          QString(":/%1_add_disabled_16px.png").arg(strPrefix)));
+        if (m_pMainMenu)
+            m_pMainMenu->addAction(m_pActionCreate);
+        if (m_pToolBar)
+            m_pToolBar->addAction(m_pActionCreate);
     }
 
 
@@ -277,6 +291,10 @@ void UIMediumSelector::prepareActions()
         if (m_pActionRefresh && m_pActionRefresh->icon().isNull())
             m_pActionRefresh->setIcon(UIIconPool::iconSetFull(":/refresh_32px.png", ":/refresh_16px.png",
                                                               ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png"));
+        if (m_pMainMenu)
+            m_pMainMenu->addAction(m_pActionRefresh);
+        if (m_pToolBar)
+            m_pToolBar->addAction(m_pActionRefresh);
     }
 }
 
@@ -409,11 +427,18 @@ void UIMediumSelector::restoreSelection(const QList<QUuid> &selectedMediums, QVe
 
 void UIMediumSelector::prepareWidgets()
 {
+    m_pCentralWidget = new QWidget;
+    if (!m_pCentralWidget)
+        return;
+    setCentralWidget(m_pCentralWidget);
+
     m_pMainLayout = new QVBoxLayout;
-    if (!m_pMainLayout)
+    m_pCentralWidget->setLayout(m_pMainLayout);
+
+    if (!m_pMainLayout || !menuBar())
         return;
 
-    setLayout(m_pMainLayout);
+    m_pMainMenu = menuBar()->addMenu(tr("Main Menu"));
 
     m_pToolBar = new UIToolBar(parentWidget());
     if (m_pToolBar)
@@ -422,14 +447,6 @@ void UIMediumSelector::prepareWidgets()
         const int iIconMetric = (int)(QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize));
         m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-        /* Add toolbar actions: */
-        if (m_pActionAdd)
-            m_pToolBar->addAction(m_pActionAdd);
-        if (m_pActionCreate)
-            m_pToolBar->addAction(m_pActionCreate);
-        if (m_pActionRefresh)
-            m_pToolBar->addAction(m_pActionRefresh);
-
         m_pMainLayout->addWidget(m_pToolBar);
     }
 

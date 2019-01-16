@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "QIDialog.h"
+#include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
 #include "UIMedium.h"
 #include "UIMediumDefs.h"
@@ -41,7 +41,7 @@ class UIToolBar;
 
 
 /** QIDialog extension providing GUI with a dialog to select an existing medium. */
-class SHARED_LIBRARY_STUFF UIMediumSelector : public QIWithRetranslateUI<QIDialog>
+class SHARED_LIBRARY_STUFF UIMediumSelector : public QIWithRetranslateUI<QIMainDialog>
 {
 
     Q_OBJECT;
@@ -104,10 +104,12 @@ private:
     void          saveDefaultForeground();
     void          selectMedium(const QUuid &uMediumID);
 
+    QWidget              *m_pCentralWidget;
     QVBoxLayout          *m_pMainLayout;
     QITreeWidget         *m_pTreeWidget;
-    UIMediumDeviceType          m_enmMediumType;
+    UIMediumDeviceType    m_enmMediumType;
     QIDialogButtonBox    *m_pButtonBox;
+    QMenu                *m_pMainMenu;
     UIToolBar            *m_pToolBar;
     QAction              *m_pActionAdd;
     QAction              *m_pActionCreate;

@@ -2729,7 +2729,7 @@ QUuid VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType 
     if (!pSelector)
         return QString();
     windowManager().registerNewParent(pSelector, pDialogParent);
-    if (pSelector->execute(true, false))
+    if (pSelector->exec(false))
     {
         QList<QUuid> selectedMediumIds = pSelector->selectedMediumIds();
         delete pSelector;
