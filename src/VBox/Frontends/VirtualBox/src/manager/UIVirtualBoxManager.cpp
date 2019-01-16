@@ -1208,6 +1208,9 @@ void UIVirtualBoxManager::prepare()
 #ifdef VBOX_WS_MAC
     /* We have to make sure that we are getting the front most process: */
     ::darwinSetFrontMostProcess();
+    /* Install global event-filter, since vmstarter.app can send us FileOpen events,
+     * see UIVirtualBoxManager::eventFilter for handler implementation. */
+    qApp->installEventFilter(this);
 #endif
 
     /* Cache medium data early if necessary: */
