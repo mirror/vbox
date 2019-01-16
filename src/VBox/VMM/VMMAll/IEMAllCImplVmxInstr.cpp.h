@@ -2159,79 +2159,48 @@ IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
         /* Limit. */
         pVCpu->cpum.GstCtx.aSRegs[iSegReg].u32Limit = 0xffffffff;
 
-        /* Base and Attributes. */
-        switch (iSegReg)
+        /* Base. */
+        pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base = 0;
+
+        /* Attributes. */
+        if (iSegReg == X86_SREG_CS)
         {
-            case X86_SREG_CS:
-            {
-                pVCpu->cpum.GstCtx.cs.u64Base = 0;
-                pVCpu->cpum.GstCtx.cs.Attr.n.u4Type        = X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ | X86_SEL_TYPE_ACCESSED;
-                pVCpu->cpum.GstCtx.ss.Attr.n.u1DescType    = 1;
-                pVCpu->cpum.GstCtx.cs.Attr.n.u2Dpl         = 0;
-                pVCpu->cpum.GstCtx.cs.Attr.n.u1Present     = 1;
-                pVCpu->cpum.GstCtx.cs.Attr.n.u1Long        = fHostInLongMode;
-                pVCpu->cpum.GstCtx.cs.Attr.n.u1DefBig      = !fHostInLongMode;
-                pVCpu->cpum.GstCtx.cs.Attr.n.u1Granularity = 1;
-                Assert(!pVCpu->cpum.GstCtx.cs.Attr.n.u1Unusable);
-                Assert(!fUnusable);
-                break;
-            }
-
-            case X86_SREG_SS:
-            case X86_SREG_ES:
-            case X86_SREG_DS:
-            {
-                pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base = 0;
-                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u4Type        = X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED;
-                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1DescType    = 1;
-                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u2Dpl         = 0;
-                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Present     = 1;
-                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1DefBig      = 1;
-                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Granularity = 1;
-                pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Unusable    = fUnusable;
-                break;
-            }
-
-            case X86_SREG_FS:
-            {
-                if (   !fUnusable
-                    ||  fHostInLongMode)
-                {
-                    Assert(X86_IS_CANONICAL(pVmcs->u64HostFsBase.u));
-                    pVCpu->cpum.GstCtx.fs.u64Base = pVmcs->u64HostFsBase.u;
-                }
-                else
-                    pVCpu->cpum.GstCtx.fs.u64Base = 0;
-                pVCpu->cpum.GstCtx.fs.Attr.n.u4Type        = X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED;
-                pVCpu->cpum.GstCtx.fs.Attr.n.u1DescType    = 1;
-                pVCpu->cpum.GstCtx.fs.Attr.n.u2Dpl         = 0;
-                pVCpu->cpum.GstCtx.fs.Attr.n.u1Present     = 1;
-                pVCpu->cpum.GstCtx.fs.Attr.n.u1DefBig      = 1;
-                pVCpu->cpum.GstCtx.fs.Attr.n.u1Granularity = 1;
-                pVCpu->cpum.GstCtx.fs.Attr.n.u1Unusable    = fUnusable;
-                break;
-            }
-
-            case X86_SREG_GS:
-            {
-                if (   !fUnusable
-                    ||  fHostInLongMode)
-                {
-                    Assert(X86_IS_CANONICAL(pVmcs->u64HostGsBase.u));
-                    pVCpu->cpum.GstCtx.gs.u64Base = pVmcs->u64HostGsBase.u;
-                }
-                else
-                    pVCpu->cpum.GstCtx.gs.u64Base = 0;
-                pVCpu->cpum.GstCtx.gs.Attr.n.u4Type        = X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED;
-                pVCpu->cpum.GstCtx.gs.Attr.n.u1DescType    = 1;
-                pVCpu->cpum.GstCtx.gs.Attr.n.u2Dpl         = 0;
-                pVCpu->cpum.GstCtx.gs.Attr.n.u1Present     = 1;
-                pVCpu->cpum.GstCtx.gs.Attr.n.u1DefBig      = 1;
-                pVCpu->cpum.GstCtx.gs.Attr.n.u1Granularity = 1;
-                pVCpu->cpum.GstCtx.gs.Attr.n.u1Unusable    = fUnusable;
-                break;
-            }
+            pVCpu->cpum.GstCtx.cs.Attr.n.u4Type        = X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ | X86_SEL_TYPE_ACCESSED;
+            pVCpu->cpum.GstCtx.ss.Attr.n.u1DescType    = 1;
+            pVCpu->cpum.GstCtx.cs.Attr.n.u2Dpl         = 0;
+            pVCpu->cpum.GstCtx.cs.Attr.n.u1Present     = 1;
+            pVCpu->cpum.GstCtx.cs.Attr.n.u1Long        = fHostInLongMode;
+            pVCpu->cpum.GstCtx.cs.Attr.n.u1DefBig      = !fHostInLongMode;
+            pVCpu->cpum.GstCtx.cs.Attr.n.u1Granularity = 1;
+            Assert(!pVCpu->cpum.GstCtx.cs.Attr.n.u1Unusable);
+            Assert(!fUnusable);
         }
+        else
+        {
+            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u4Type        = X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED;
+            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1DescType    = 1;
+            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u2Dpl         = 0;
+            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Present     = 1;
+            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1DefBig      = 1;
+            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Granularity = 1;
+            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Unusable    = fUnusable;
+        }
+    }
+
+    /* FS base. */
+    if (   !pVCpu->cpum.GstCtx.fs.Attr.n.u1Unusable
+        ||  fHostInLongMode)
+    {
+        Assert(X86_IS_CANONICAL(pVmcs->u64HostFsBase.u));
+        pVCpu->cpum.GstCtx.fs.u64Base = pVmcs->u64HostFsBase.u;
+    }
+
+    /* GS base. */
+    if (   !pVCpu->cpum.GstCtx.gs.Attr.n.u1Unusable
+        ||  fHostInLongMode)
+    {
+        Assert(X86_IS_CANONICAL(pVmcs->u64HostGsBase.u));
+        pVCpu->cpum.GstCtx.gs.u64Base = pVmcs->u64HostGsBase.u;
     }
 
     /* TR. */
