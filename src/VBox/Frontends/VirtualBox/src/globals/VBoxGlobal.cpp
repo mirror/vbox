@@ -464,7 +464,7 @@ bool VBoxGlobal::processArgs()
         /* So if the argument file exists, we add it to URL list: */
         if (   !strArg.isEmpty()
             && QFile::exists(strArg))
-            listArgUrls << QUrl::fromLocalFile(strArg);
+            listArgUrls << QUrl::fromLocalFile(QFileInfo(strArg).absoluteFilePath());
     }
 
     /* If there are file URLs: */
@@ -474,7 +474,8 @@ bool VBoxGlobal::processArgs()
         for (int i = 0; i < listArgUrls.size(); ++i)
         {
             /* Check which of them has allowed VM extensions: */
-            const QString &strFile = listArgUrls.at(i).toLocalFile();
+            const QUrl url = listArgUrls.at(i);
+            const QString strFile = url.toLocalFile();
             if (VBoxGlobal::hasAllowedExtension(strFile, VBoxFileExts))
             {
                 /* So that we could run existing VMs: */
@@ -485,7 +486,7 @@ bool VBoxGlobal::processArgs()
                     fResult = true;
                     launchMachine(comMachine);
                     /* And remove their URLs from the ULR list: */
-                    listArgUrls.removeAll(strFile);
+                    listArgUrls.removeAll(url);
                 }
             }
         }
