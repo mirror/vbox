@@ -2194,8 +2194,14 @@ IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
 
             case X86_SREG_FS:
             {
-                Assert(X86_IS_CANONICAL(pVmcs->u64HostFsBase.u));
-                pVCpu->cpum.GstCtx.fs.u64Base = !fUnusable ? pVmcs->u64HostFsBase.u : 0;
+                if (   !fUnusable
+                    ||  fHostInLongMode)
+                {
+                    Assert(X86_IS_CANONICAL(pVmcs->u64HostFsBase.u));
+                    pVCpu->cpum.GstCtx.fs.u64Base = pVmcs->u64HostFsBase.u;
+                }
+                else
+                    pVCpu->cpum.GstCtx.fs.u64Base = 0;
                 pVCpu->cpum.GstCtx.fs.Attr.n.u4Type        = X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED;
                 pVCpu->cpum.GstCtx.fs.Attr.n.u1DescType    = 1;
                 pVCpu->cpum.GstCtx.fs.Attr.n.u2Dpl         = 0;
@@ -2208,8 +2214,14 @@ IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
 
             case X86_SREG_GS:
             {
-                Assert(X86_IS_CANONICAL(pVmcs->u64HostGsBase.u));
-                pVCpu->cpum.GstCtx.gs.u64Base = !fUnusable ? pVmcs->u64HostGsBase.u : 0;
+                if (   !fUnusable
+                    ||  fHostInLongMode)
+                {
+                    Assert(X86_IS_CANONICAL(pVmcs->u64HostGsBase.u));
+                    pVCpu->cpum.GstCtx.gs.u64Base = pVmcs->u64HostGsBase.u;
+                }
+                else
+                    pVCpu->cpum.GstCtx.gs.u64Base = 0;
                 pVCpu->cpum.GstCtx.gs.Attr.n.u4Type        = X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED;
                 pVCpu->cpum.GstCtx.gs.Attr.n.u1DescType    = 1;
                 pVCpu->cpum.GstCtx.gs.Attr.n.u2Dpl         = 0;
