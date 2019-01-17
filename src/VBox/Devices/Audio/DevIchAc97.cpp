@@ -1988,7 +1988,6 @@ static uint64_t ichac97R3StreamTransferCalcNext(PAC97STATE pThis, PAC97STREAM pS
 /**
  * Updates the next transfer based on a specific amount of bytes.
  *
- * @returns IPRT status code.
  * @param   pThis               AC'97 device state.
  * @param   pStream             AC'97 stream to update.
  * @param   cbBytes             Bytes to update next transfer for.
