@@ -646,7 +646,7 @@ typedef struct PDMAUDIOSTREAMCFG
         uint32_t             cfBufferSize;
         /** Pre-buffering size (in audio frames). Frames needed in buffer before the stream becomes active (pre buffering).
          *  The bigger this value is, the more latency for the stream will occur.
-         *  0 if not set / available by the backend. */
+         *  0 if not set / available by the backend. UINT32_MAX if not defined (yet). */
         uint32_t             cfPreBuf;
     } Backend;
 } PDMAUDIOSTREAMCFG;
