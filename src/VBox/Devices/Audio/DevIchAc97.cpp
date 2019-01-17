@@ -348,21 +348,14 @@ typedef struct AC97STREAMSTATE
      *  Next for determining the next scheduling window.
      *  Can be 0 if no next transfer is scheduled. */
     uint64_t              tsTransferNext;
-    /** Total transfer size (in bytes) of a transfer period. */
-    uint32_t              cbTransferSize;
     /** Transfer chunk size (in bytes) of a transfer period. */
     uint32_t              cbTransferChunk;
-    /** How many bytes already have been processed in within
-     *  the current transfer period. */
-    uint32_t              cbTransferProcessed;
     /** The stream's timer Hz rate.
      *  This value can can be different from the device's default Hz rate,
      *  depending on the rate the stream expects (e.g. for 5.1 speaker setups).
      *  Set in R3StreamInit(). */
     uint16_t              uTimerHz;
     uint8_t               Padding3[2];
-    /** (Virtual) clock ticks per byte. */
-    uint64_t              cTicksPerByte;
     /** (Virtual) clock ticks per transfer. */
     uint64_t              cTransferTicks;
    /** Timestamp (in ns) of last stream update. */
@@ -705,6 +698,7 @@ DECLINLINE(PDMAUDIODIR)   ichac97GetDirFromSD(uint8_t uSD);
 static void               ichac97R3BDLEDumpAll(PAC97STATE pThis, uint64_t u64BDLBase, uint16_t cBDLE);
 # endif
 #endif /* IN_RING3 */
+bool                      ichac97TimerSet(PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce);
 
 static void ichac97WarmReset(PAC97STATE pThis)
 {
@@ -832,6 +826,13 @@ static void ichac97StreamUpdateSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_
     }
 }
 
+/**
+ * Writes a new value to a stream's status register (SR).
+ *
+ * @param   pThis               AC'97 device state.
+ * @param   pStream             Stream to update SR for.
+ * @param   u32Val              New value to set the stream's SR to.
+ */
 static void ichac97StreamWriteSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_t u32Val)
 {
     PAC97BMREGS pRegs = &pStream->Regs;
@@ -1505,51 +1506,38 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
 
     int rc2;
 
-    if (pStream->u8SD == AC97SOUNDSOURCE_PO_INDEX) /* Output (SDO). */
+    if (pStream->State.Cfg.enmDir == PDMAUDIODIR_OUT) /* Output (SDO). */
     {
-        /* How much (guest output) data is available at the moment for the AC'97 stream? */
-        /* Only read from the AC'97 stream at the given scheduling rate. */
-        bool fDoRead = false; /* Whether to read from the AC'97 stream or not. */
-
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         if (fInTimer)
 # endif
         {
-            uint32_t cbTransferChunk = (pStream->State.Cfg.Props.uHz / pStream->State.uTimerHz)
-                                     * DrvAudioHlpPCMPropsBytesPerFrame(&pStream->State.Cfg.Props);
-
             const uint32_t cbStreamFree = ichac97R3StreamGetFree(pStream);
             if (cbStreamFree)
             {
-                /* Do the DMA transfer. */
-                rc2 = ichac97R3StreamTransfer(pThis, pStream, RT_MIN(cbStreamFree, cbTransferChunk));
-                AssertRC(rc2);
-            }
+                Log3Func(("[SD%RU8] PICB=%zu (%RU64ms), cbFree=%zu (%RU64ms), cbTransferChunk=%zu (%RU64ms)\n",
+                          pStream->u8SD,
+                          (pStream->Regs.picb << 1), DrvAudioHlpBytesToMilli((pStream->Regs.picb << 1), &pStream->State.Cfg.Props),
+                          cbStreamFree, DrvAudioHlpBytesToMilli(cbStreamFree, &pStream->State.Cfg.Props),
+                          pStream->State.cbTransferChunk, DrvAudioHlpBytesToMilli(pStream->State.cbTransferChunk, &pStream->State.Cfg.Props)));
 
-            /* Only read from the AC'97 stream at the given scheduling rate. */
-            const uint64_t tsNowNs = RTTimeNanoTS();
-            if (tsNowNs - pStream->State.tsLastUpdateNs >= pStream->State.Cfg.Device.uSchedulingHintMs * RT_NS_1MS)
-            {
-                fDoRead = true;
-                pStream->State.tsLastUpdateNs = tsNowNs;
+                /* Do the DMA transfer. */
+                rc2 = ichac97R3StreamTransfer(pThis, pStream, RT_MIN(pStream->State.cbTransferChunk, cbStreamFree));
+                AssertRC(rc2);
+
+                pStream->State.tsLastUpdateNs = RTTimeNanoTS();
             }
         }
 
-        Log3Func(("[SD%RU8] fInTimer=%RTbool, fDoRead=%RTbool\n", pStream->u8SD, fInTimer, fDoRead));
+        Log3Func(("[SD%RU8] fInTimer=%RTbool\n", pStream->u8SD, fInTimer));
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
-        if (fDoRead)
-        {
-            rc2 = ichac97R3StreamAsyncIONotify(pThis, pStream);
-            AssertRC(rc2);
-        }
+        rc2 = ichac97R3StreamAsyncIONotify(pThis, pStream);
+        AssertRC(rc2);
 # endif
 
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         if (!fInTimer) /* In async I/O thread */
-        {
-# else
-        if (fDoRead)
         {
 # endif
             const uint32_t cbSinkWritable     = AudioMixerSinkGetWritable(pSink);
@@ -1564,8 +1552,9 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
                 rc2 = ichac97R3StreamRead(pThis, pStream, pSink, cbToReadFromStream, NULL);
                 AssertRC(rc2);
             }
+# ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO
         }
-
+#endif
         /* When running synchronously, update the associated sink here.
          * Otherwise this will be done in the async I/O thread. */
         rc2 = AudioMixerSinkUpdate(pSink);
@@ -1968,14 +1957,65 @@ static void ichac97R3MixerRemoveDrvStreams(PAC97STATE pThis, PAUDMIXSINK pMixSin
 }
 
 /**
+ * Calculates and returns the ticks for a specified amount of bytes.
+ *
+ * @returns Calculated ticks
+ * @param   pThis               AC'97 device state.
+ * @param   pStream             AC'97 stream to calculate ticks for.
+ * @param   cbBytes             Bytes to calculate ticks for.
+ */
+static uint64_t ichac97R3StreamTransferCalcNext(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbBytes)
+{
+    if (!cbBytes)
+        return 0;
+
+    AssertReturn(DrvAudioHlpPCMPropsAreValid(&pStream->State.Cfg.Props), 0);
+    const uint32_t cbFrame = DrvAudioHlpPCMPropsBytesPerFrame(&pStream->State.Cfg.Props);
+
+    AssertReturn(cbBytes % cbFrame == 0, 0);
+
+    const uint64_t cTicksPerHz    = TMTimerGetFreq((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) / pStream->State.uTimerHz;
+    const uint64_t cTicksPerByte  = cTicksPerHz / cbBytes;
+    Assert(cTicksPerByte);
+    const uint64_t cTransferTicks = cbBytes * cTicksPerByte;
+
+    LogFunc(("[SD%RU8] Timer %uHz (%RU64 ticks per Hz), cTicksPerByte=%RU64, cbBytes=%RU32 -> cTransferTicks=%RU64\n",
+             pStream->u8SD, pStream->State.uTimerHz, cTicksPerHz, cTicksPerByte, cbBytes, cTransferTicks));
+
+    return cTransferTicks;
+}
+
+/**
+ * Updates the next transfer based on a specific amount of bytes.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               AC'97 device state.
+ * @param   pStream             AC'97 stream to update.
+ * @param   cbBytes             Bytes to update next transfer for.
+ */
+static void ichac97R3StreamTransferUpdate(PAC97STATE pThis, PAC97STREAM pStream, uint32_t cbBytes)
+{
+    if (!cbBytes)
+        return;
+
+    /* Calculate the bytes we need to transfer to / from the stream's DMA per iteration.
+     * This is bound to the device's Hz rate and thus to the (virtual) timing the device expects. */
+    pStream->State.cbTransferChunk = cbBytes;
+
+    /* Update the transfer ticks. */
+    pStream->State.cTransferTicks = ichac97R3StreamTransferCalcNext(pThis, pStream, pStream->State.cbTransferChunk);
+    Assert(pStream->State.cTransferTicks); /* Paranoia. */
+}
+
+/**
  * Opens an AC'97 stream with its current mixer settings.
  *
  * This will open an AC'97 stream with 2 (stereo) channels, 16-bit samples and
  * the last set sample rate in the AC'97 mixer for this stream.
  *
  * @returns IPRT status code.
- * @param   pThis               AC'97 state.
- * @param   pStream             AC'97 Stream to open.
+ * @param   pThis               AC'97 device state.
+ * @param   pStream             AC'97 stream to open.
  */
 static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
 {
@@ -2078,45 +2118,6 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
                     if (RT_SUCCESS(rc))
                         rc = DrvAudioHlpStreamCfgCopy(&pStream->State.Cfg, &Cfg);
                 }
-
-                /*
-                 * Set up data transfer stuff.
-                 */
-#ifdef LOG_ENABLED
-                ichac97R3BDLEDumpAll(pThis, pStream->Regs.bdbar, pStream->Regs.lvi + 1);
-#endif
-                const uint32_t cbFrame = DrvAudioHlpPCMPropsBytesPerFrame(&Cfg.Props);
-
-                /* Calculate the fragment size the guest OS expects interrupt delivery at. */
-                pStream->State.cbTransferSize = 441 * 4;//pStream->u32CBL / cFragments;
-                Assert(pStream->State.cbTransferSize);
-                Assert(pStream->State.cbTransferSize % cbFrame == 0);
-
-                /* Calculate the bytes we need to transfer to / from the stream's DMA per iteration.
-                 * This is bound to the device's Hz rate and thus to the (virtual) timing the device expects. */
-                pStream->State.cbTransferChunk = (pStream->State.Cfg.Props.uHz / pStream->State.uTimerHz) * cbFrame;
-                Assert(pStream->State.cbTransferChunk);
-                Assert(pStream->State.cbTransferChunk % cbFrame== 0);
-
-                /* Make sure that the transfer chunk does not exceed the overall transfer size. */
-                if (pStream->State.cbTransferChunk > pStream->State.cbTransferSize)
-                    pStream->State.cbTransferChunk = pStream->State.cbTransferSize;
-
-                const uint64_t cTicksPerHz = TMTimerGetFreq((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD))/ pStream->State.uTimerHz;
-
-                /* Calculate the timer ticks per byte for this stream. */
-                pStream->State.cTicksPerByte = cTicksPerHz / pStream->State.cbTransferChunk;
-                Assert(pStream->State.cTicksPerByte);
-
-                /* Calculate timer ticks per transfer. */
-                pStream->State.cTransferTicks     = pStream->State.cbTransferChunk * pStream->State.cTicksPerByte;
-                Assert(pStream->State.cTransferTicks);
-
-                LogFunc(("[SD%RU8] Timer %uHz (%RU64 ticks per Hz), cTicksPerByte=%RU64, cbTransferChunk=%RU32, cTransferTicks=%RU64, " \
-                         "cbTransferSize=%RU32\n",
-                         pStream->u8SD, pStream->State.uTimerHz, cTicksPerHz, pStream->State.cTicksPerByte,
-                         pStream->State.cbTransferChunk, pStream->State.cTransferTicks, pStream->State.cbTransferSize));
-
             }
         }
         else
@@ -2655,14 +2656,18 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
 
     if (fSinkActive)
     {
-        TMTimerSet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD),
-                   TMTimerGet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) + pStream->State.cTransferTicks);
+        ichac97R3StreamTransferUpdate(pThis, pStream, pStream->Regs.picb << 1); /** @todo r=andy Assumes 16-bit samples. */
+
+        ichac97TimerSet(pThis,pStream,
+                        TMTimerGet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) + pStream->State.cTransferTicks,
+                        false /* fForce */);
     }
 
     DEVAC97_UNLOCK_BOTH(pThis, pStream->u8SD);
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
+#endif /* IN_RING3 */
 
 /**
  * Sets the virtual device timer to a new expiration time.
@@ -2682,7 +2687,7 @@ static DECLCALLBACK(void) ichac97R3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
  *
  *          Forcing a new expiration time will override the above mechanism.
  */
-bool ichac97R3TimerSet(PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce)
+bool ichac97TimerSet(PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire, bool fForce)
 {
     AssertPtrReturn(pThis, false);
     AssertPtrReturn(pStream, false);
@@ -2705,6 +2710,8 @@ bool ichac97R3TimerSet(PAC97STATE pThis, PAC97STREAM pStream, uint64_t tsExpire,
     return RT_SUCCESS(rc);
 }
 
+#ifdef IN_RING3
+
 /**
  * Transfers data of an AC'97 stream according to its usage (input / output).
  *
@@ -2723,7 +2730,16 @@ static int ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32
 {
     AssertPtrReturn(pThis,       VERR_INVALID_POINTER);
     AssertPtrReturn(pStream,     VERR_INVALID_POINTER);
-    AssertReturn(cbToProcessMax, VERR_INVALID_PARAMETER);
+
+    if (!cbToProcessMax)
+        return VINF_SUCCESS;
+
+#ifdef VBOX_STRICT
+    const unsigned cbFrame = DrvAudioHlpPCMPropsBytesPerFrame(&pStream->State.Cfg.Props);
+#endif
+
+    /* Make sure to only process an integer number of audio frames. */
+    Assert(cbToProcessMax % cbFrame == 0);
 
     ichac97R3StreamLock(pStream);
 
@@ -2769,12 +2785,6 @@ static int ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32
 
     while (cbLeft)
     {
-        if (!pRegs->bd_valid)
-        {
-            Log3Func(("Invalid buffer descriptor, fetching next one ...\n"));
-            ichac97R3StreamFetchBDLE(pThis, pStream);
-        }
-
         if (!pRegs->picb) /* Got a new buffer descriptor, that is, the position is 0? */
         {
             Log3Func(("Fresh buffer descriptor %RU8 is empty, addr=%#x, len=%#x, skipping\n",
@@ -2796,8 +2806,7 @@ static int ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32
             continue;
         }
 
-        uint32_t cbChunk = RT_MIN((uint32_t)(pRegs->picb << 1), cbLeft); /** @todo r=andy Assumes 16bit samples. */
-        Assert(cbChunk);
+        uint32_t cbChunk = cbLeft;
 
         switch (pStream->u8SD)
         {
@@ -3150,8 +3159,6 @@ PDMBOTHCBDECL(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIO
                         pRegs->sr &= ~(AC97_SR_DCH | AC97_SR_CELV);
                         pRegs->civ = pRegs->piv;
                         pRegs->piv = (pRegs->piv + 1) % AC97_MAX_BDLE;
-
-                        ichac97R3StreamFetchBDLE(pThis, pStream);
 #else
                         rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
@@ -3213,9 +3220,9 @@ PDMBOTHCBDECL(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIO
                             ichac97R3StreamEnable(pThis, pStream, true /* fEnable */);
 
                             /* Arm the timer for this stream. */
-                            int rc2 = ichac97R3TimerSet(pThis, pStream,
-                                                        TMTimerGet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) + pStream->State.cTransferTicks,
-                                                        false /* fForce */);
+                            int rc2 = ichac97TimerSet(pThis, pStream,
+                                                      TMTimerGet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) + pStream->State.cTransferTicks,
+                                                      false /* fForce */);
                             AssertRC(rc2);
                         }
                     }
@@ -3777,9 +3784,9 @@ static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
             && RT_SUCCESS(rc2))
         {
             /* Re-arm the timer for this stream. */
-            rc2 = ichac97R3TimerSet(pThis, pStream,
-                                    TMTimerGet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) + pStream->State.cTransferTicks,
-                                    false /* fForce */);
+            rc2 = ichac97TimerSet(pThis, pStream,
+                                  TMTimerGet((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) + pStream->State.cTransferTicks,
+                                  false /* fForce */);
         }
 
         AssertRC(rc2);
