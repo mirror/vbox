@@ -3408,7 +3408,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
         pHlp->pfnPrintf(pHlp, "  %sVM-exit MSR store count    = %RU32\n",    pszPrefix, pVmcs->u32ExitMsrStoreCount);
         pHlp->pfnPrintf(pHlp, "  %sVM-exit MSR load count     = %RU32\n",    pszPrefix, pVmcs->u32ExitMsrLoadCount);
         pHlp->pfnPrintf(pHlp, "  %sVM-entry MSR load count    = %RU32\n",    pszPrefix, pVmcs->u32EntryMsrLoadCount);
-        pHlp->pfnPrintf(pHlp, "  %sVM-Entry interruption info = %#RX32\n",   pszPrefix, pVmcs->u32EntryIntInfo);
+        pHlp->pfnPrintf(pHlp, "  %sVM-entry interruption info = %#RX32\n",   pszPrefix, pVmcs->u32EntryIntInfo);
         {
             uint32_t const fInfo = pVmcs->u32EntryIntInfo;
             uint8_t  const uType = VMX_ENTRY_INT_INFO_TYPE(fInfo);
@@ -3418,8 +3418,8 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
             pHlp->pfnPrintf(pHlp, "    %sNMI-unblocking-IRET        = %RTbool\n", pszPrefix, VMX_ENTRY_INT_INFO_IS_NMI_UNBLOCK_IRET(fInfo));
             pHlp->pfnPrintf(pHlp, "    %sError-code valid           = %RTbool\n", pszPrefix, VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(fInfo));
         }
-        pHlp->pfnPrintf(pHlp, "  %sVM-Entry xcpt error-code   = %#RX32\n",   pszPrefix, pVmcs->u32EntryXcptErrCode);
-        pHlp->pfnPrintf(pHlp, "  %sVM-Entry instruction len   = %u bytes\n", pszPrefix, pVmcs->u32EntryInstrLen);
+        pHlp->pfnPrintf(pHlp, "  %sVM-entry xcpt error-code   = %#RX32\n",   pszPrefix, pVmcs->u32EntryXcptErrCode);
+        pHlp->pfnPrintf(pHlp, "  %sVM-entry instruction len   = %u bytes\n", pszPrefix, pVmcs->u32EntryInstrLen);
         pHlp->pfnPrintf(pHlp, "  %sTPR threshold              = %#RX32\n",   pszPrefix, pVmcs->u32TprThreshold);
         pHlp->pfnPrintf(pHlp, "  %sPLE gap                    = %#RX32\n",   pszPrefix, pVmcs->u32PleGap);
         pHlp->pfnPrintf(pHlp, "  %sPLE window                 = %#RX32\n",   pszPrefix, pVmcs->u32PleWindow);
