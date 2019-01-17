@@ -3047,20 +3047,22 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     /*
      * Pre-buffering size
      */
-    if (pDrvCfg->uPreBufSizeMs != UINT32_MAX)
+    if (pDrvCfg->uPreBufSizeMs != UINT32_MAX) /* Anything set via global / per-VM extra-data? */
     {
         pCfgReq->Backend.cfPreBuf = DrvAudioHlpMilliToFrames(pDrvCfg->uPreBufSizeMs, &pCfgReq->Props);
         RTStrPrintf(szWhat, sizeof(szWhat), "global / per-VM");
     }
-
-    if (pCfgReq->Backend.cfPreBuf == UINT32_MAX) /* Set default pre-buffering size if nothing explicitly is set. */
+    else /* No, then either use the default or device-specific settings (if any). */
     {
-        /* For pre-buffering to finish the buffer at least must be full one time. */
-        pCfgReq->Backend.cfPreBuf = pCfgReq->Backend.cfBufferSize;
-        RTStrPrintf(szWhat, sizeof(szWhat), "default");
+        if (pCfgReq->Backend.cfPreBuf == UINT32_MAX) /* Set default pre-buffering size if nothing explicitly is set. */
+        {
+            /* For pre-buffering to finish the buffer at least must be full one time. */
+            pCfgReq->Backend.cfPreBuf = pCfgReq->Backend.cfBufferSize;
+            RTStrPrintf(szWhat, sizeof(szWhat), "default");
+        }
+        else
+            RTStrPrintf(szWhat, sizeof(szWhat), "device-specific");
     }
-    else
-        RTStrPrintf(szWhat, sizeof(szWhat), "device-specific");
 
     LogRel2(("Audio: Using %s pre-buffering size (%RU64ms, %RU32 frames) for stream '%s'\n",
              szWhat,
