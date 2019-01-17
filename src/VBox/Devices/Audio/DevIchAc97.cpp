@@ -832,6 +832,16 @@ static void ichac97StreamUpdateSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_
     }
 }
 
+static void ichac97StreamWriteSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_t u32Val)
+{
+    PAC97BMREGS pRegs = &pStream->Regs;
+
+    Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8SD, u32Val));
+
+    pRegs->sr |= u32Val & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
+    ichac97StreamUpdateSR(pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
+}
+
 #ifdef IN_RING3
 
 /**
@@ -3225,11 +3235,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIO
                 case PO_SR:
                 case MC_SR:
                 {
-                    AssertPtr(pStream);
-                    AssertPtr(pRegs);
-                    pRegs->sr |= u32Val & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
-                    ichac97StreamUpdateSR(pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
-                    Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8SD, u32Val, pRegs->sr));
+                    ichac97StreamWriteSR(pThis, pStream, u32Val);
                     break;
                 }
 
@@ -3247,12 +3253,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIO
                 case PI_SR:
                 case PO_SR:
                 case MC_SR:
-                    AssertPtr(pStream);
-                    AssertPtr(pRegs);
-                    /* Status Register */
-                    pRegs->sr |= u32Val & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
-                    ichac97StreamUpdateSR(pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
-                    Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8SD, u32Val, pRegs->sr));
+                    ichac97StreamWriteSR(pThis, pStream, u32Val);
                     break;
                 default:
                     LogRel2(("AC97: Warning: Unimplemented NABMWrite (%u byte) portIdx=%#x <- %#x\n", cbVal, uPortIdx, u32Val));
