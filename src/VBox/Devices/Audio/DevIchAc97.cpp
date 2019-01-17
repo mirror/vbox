@@ -121,10 +121,18 @@
 #define AC97_MAX_BDLE           32                  /**< Maximum number of BDLEs. */
 /** @} */
 
-/** @name Extended Audio Status and Control Register (EACS).
+/** @name Extended Audio ID Register (EAID).
  * @{ */
-#define AC97_EACS_VRA 1                 /**< Variable Rate Audio (4.2.1.1). */
-#define AC97_EACS_VRM 8                 /**< Variable Rate Mic Audio (4.2.1.1). */
+#define AC97_EAID_VRA          RT_BIT(0)            /**< Variable Rate Audio. */
+#define AC97_EAID_VRM          RT_BIT(3)            /**< Variable Rate Mic Audio. */
+#define AC97_EAID_REV0         RT_BIT(10)           /**< AC'97 revision compliance. */
+#define AC97_EAID_REV1         RT_BIT(11)           /**< AC'97 revision compliance. */
+/** @} */
+
+/** @name Extended Audio Control and Status Register (EACS).
+ * @{ */
+#define AC97_EACS_VRA          RT_BIT(0)            /**< Variable Rate Audio (4.2.1.1). */
+#define AC97_EACS_VRM          RT_BIT(3)            /**< Variable Rate Mic Audio (4.2.1.1). */
 /** @} */
 
 /** @name Baseline Audio Register Set (BARS).
@@ -2502,8 +2510,20 @@ static int ichac97R3MixerReset(PAC97STATE pThis)
     ichac97MixerSet(pThis, AC97_3D_Control              , 0x0000);
     ichac97MixerSet(pThis, AC97_Powerdown_Ctrl_Stat     , 0x000f);
 
-    ichac97MixerSet(pThis, AC97_Extended_Audio_ID       , 0x0809);
-    ichac97MixerSet(pThis, AC97_Extended_Audio_Ctrl_Stat, 0x0009);
+    /* Configure Extended Audio ID (EAID) + Control & Status (EACS) registers. */
+    uint16_t fEAID = AC97_EAID_REV1; /* Our hardware is AC'97 rev2.3 compliant. */
+    uint16_t fEACS = 0;
+#ifdef VBOX_WITH_AC97_VRA
+    fEAID |= AC97_EAID_VRA; /* Variable Rate PCM Audio capable. */
+    fEACS |= AC97_EACS_VRA; /* Ditto. */
+#endif
+#ifdef VBOX_WITH_AC97_VRM
+    fEAID |= AC97_EAID_VRM; /* Variable Rate Mic-In Audio capable. */
+    fEACS |= AC97_EACS_VRM; /* Ditto. */
+#endif
+
+    ichac97MixerSet(pThis, AC97_Extended_Audio_ID,        fEAID);
+    ichac97MixerSet(pThis, AC97_Extended_Audio_Ctrl_Stat, fEACS);
     ichac97MixerSet(pThis, AC97_PCM_Front_DAC_Rate      , 0xbb80);
     ichac97MixerSet(pThis, AC97_PCM_Surround_DAC_Rate   , 0xbb80);
     ichac97MixerSet(pThis, AC97_PCM_LFE_DAC_Rate        , 0xbb80);
@@ -3496,7 +3516,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 #endif
                     }
                     else
-                        AssertMsgFailed(("Attempt to set front DAC rate to %RU32, but VRA is not set\n", u32Val));
+                        LogRel2(("AC97: Setting Front DAC rate when VRA is not set is forbidden, ignoring\n"));
                     break;
                 case AC97_MIC_ADC_Rate:
                     if (ichac97MixerGet(pThis, AC97_Extended_Audio_Ctrl_Stat) & AC97_EACS_VRM)
@@ -3510,7 +3530,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 #endif
                     }
                     else
-                        AssertMsgFailed(("Attempt to set MIC ADC rate to %RU32, but VRM is not set\n", u32Val));
+                        LogRel2(("AC97: Setting MIC ADC rate when VRM is not set is forbidden, ignoring\n"));
                     break;
                 case AC97_PCM_LR_ADC_Rate:
                     if (ichac97MixerGet(pThis, AC97_Extended_Audio_Ctrl_Stat) & AC97_EACS_VRA)
@@ -3524,7 +3544,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 #endif
                     }
                     else
-                        AssertMsgFailed(("Attempt to set LR ADC rate to %RU32, but VRA is not set\n", u32Val));
+                        LogRel2(("AC97: Setting LR ADC rate when VRA is not set is forbidden, ignoring\n"));
                     break;
                 default:
                     LogRel2(("AC97: Warning: Unimplemented NAMWrite (%u byte) port=%#x, idx=0x%x <- %#x\n", cbVal, uPort, uPortIdx, u32Val));
@@ -4213,6 +4233,8 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
     else
         return PDMDevHlpVMSetError(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES, RT_SRC_POS,
                                    N_("AC'97 configuration error: The \"Codec\" value \"%s\" is unsupported"), szCodec);
+
+    LogRel(("AC97: Using codec '%s'\n", szCodec));
 
     /*
      * Use an own critical section for the device instead of the default
