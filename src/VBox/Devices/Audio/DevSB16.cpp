@@ -1968,6 +1968,9 @@ static int sb16CreateDrvStream(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg, PSB16D
 
     AssertMsg(pDrv->Out.pStream == NULL, ("[LUN#%RU8] Driver stream already present when it must not\n", pDrv->uLUN));
 
+    /* Disable pre-buffering for SB16; not needed for that bit of data. */
+    pCfgHost->Backend.cfPreBuf = 0;
+
     int rc = pDrv->pConnector->pfnStreamCreate(pDrv->pConnector, pCfgHost, pCfg /* pCfgGuest */, &pDrv->Out.pStream);
     if (RT_SUCCESS(rc))
     {
