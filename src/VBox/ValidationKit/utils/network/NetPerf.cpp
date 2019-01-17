@@ -226,7 +226,7 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--len",              'l', RTGETOPT_REQ_UINT32  },
     { "--nodelay",          'N', RTGETOPT_REQ_NOTHING },
     { "--mode",             'm', RTGETOPT_REQ_STRING  },
-    { "--warmpup",          'w', RTGETOPT_REQ_UINT32  },
+    { "--warmup",           'w', RTGETOPT_REQ_UINT32  },
     { "--cool-down",        'W', RTGETOPT_REQ_UINT32  },
     { "--server-stats",     'S', RTGETOPT_REQ_NOTHING },
     { "--single-client",    '1', RTGETOPT_REQ_NOTHING },
@@ -295,7 +295,7 @@ static void Usage(PRTSTREAM pStrm)
             case 'D':
                 continue; /* internal */
             case 'w':
-                pszHelp = "Warmup time, in milliseconds (default " RT_XSTR(NETPERF_DEFAULT_WARMPUP) " ms)";
+                pszHelp = "Warmup time, in milliseconds (default " RT_XSTR(NETPERF_DEFAULT_WARMUP) " ms)";
                 break;
             case 'W':
                 pszHelp = "Cool down time, in milliseconds (default " RT_XSTR(NETPERF_DEFAULT_COOL_DOWN) " ms)";
