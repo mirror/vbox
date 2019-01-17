@@ -27,6 +27,8 @@
 
 %ifndef VBOX_INCLUDED_apic_h
 %define VBOX_INCLUDED_apic_h
+%ifndef RT_WITHOUT_PRAGMA_ONCE
+%endif
 %define APIC_REG_VERSION                        0x0030
 %define APIC_REG_VERSION_GET_VER(u32)           (u32 & 0xff)
 %define APIC_REG_VERSION_GET_MAX_LVT(u32)       ((u32 & 0xff0000) >> 16)

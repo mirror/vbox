@@ -27,6 +27,8 @@
 
 %ifndef VBOX_INCLUDED_param_h
 %define VBOX_INCLUDED_param_h
+%ifndef RT_WITHOUT_PRAGMA_ONCE
+%endif
 %if ARCH_BITS == 64
  %define VBOX_MAX_ALLOC_PAGE_COUNT   (_512M / PAGE_SIZE)
 %else

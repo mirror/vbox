@@ -24,9 +24,10 @@
 ; terms and conditions of either the GPL or the CDDL or both.
 ;
 
-
 %ifndef VBOX_INCLUDED_VMMDevTesting_h
 %define VBOX_INCLUDED_VMMDevTesting_h
+%ifndef RT_WITHOUT_PRAGMA_ONCE
+%endif
 %define VMMDEV_TESTING_MMIO_BASE        0x00101000
 %define VMMDEV_TESTING_MMIO_SIZE        0x00001000
 %define VMMDEV_TESTING_MMIO_OFF_NOP         (0x000)
