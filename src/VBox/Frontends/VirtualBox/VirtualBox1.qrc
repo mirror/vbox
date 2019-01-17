@@ -258,6 +258,8 @@
         <file alias="fullscreen_on_disabled_16px.png">images/fullscreen_on_disabled_16px.png</file>
         <file alias="global_settings_16px.png">images/global_settings_16px.png</file>
         <file alias="global_settings_32px.png">images/global_settings_32px.png</file>
+        <file alias="global_settings_disabled_16px.png">images/global_settings_disabled_16px.png</file>
+        <file alias="global_settings_disabled_32px.png">images/global_settings_disabled_32px.png</file>
         <file alias="group_abstract_16px.png">images/group_abstract_16px.png</file>
         <file alias="guesttools_16px.png">images/guesttools_16px.png</file>
         <file alias="guesttools_disabled_16px.png">images/guesttools_disabled_16px.png</file>
