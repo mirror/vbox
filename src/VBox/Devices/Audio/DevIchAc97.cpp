@@ -1182,21 +1182,22 @@ static int ichac97R3StreamRead(PAC97STATE pThis, PAC97STREAM pSrcStream, PAUDMIX
     AssertReturn(cbToRead,       VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
-    int rc = VINF_SUCCESS;
-
-    uint32_t cbReadTotal = 0;
-
     PRTCIRCBUF pCircBuf = pSrcStream->State.pCircBuf;
     AssertPtr(pCircBuf);
 
     void *pvSrc;
     size_t cbSrc;
 
-    while (cbToRead)
+    int rc = VINF_SUCCESS;
+
+    uint32_t cbReadTotal = 0;
+    uint32_t cbLeft      = RT_MIN(cbToRead, (uint32_t)RTCircBufUsed(pCircBuf));
+
+    while (cbLeft)
     {
         uint32_t cbWritten = 0;
 
-        RTCircBufAcquireReadBlock(pCircBuf, cbToRead, &pvSrc, &cbSrc);
+        RTCircBufAcquireReadBlock(pCircBuf, cbLeft, &pvSrc, &cbSrc);
 
         if (cbSrc)
         {
@@ -1204,25 +1205,21 @@ static int ichac97R3StreamRead(PAC97STATE pThis, PAC97STREAM pSrcStream, PAUDMIX
                 DrvAudioHlpFileWrite(pSrcStream->Dbg.Runtime.pFileStream, pvSrc, cbSrc, 0 /* fFlags */);
 
             rc = AudioMixerSinkWrite(pDstMixSink, AUDMIXOP_COPY, pvSrc, (uint32_t)cbSrc, &cbWritten);
-            if (RT_SUCCESS(rc))
-            {
-                Assert(cbWritten <= cbSrc);
+            AssertRC(rc);
 
-                cbReadTotal += cbWritten;
-
-                Assert(cbToRead >= cbWritten);
-                cbToRead    -= cbWritten;
-            }
+            Assert(cbSrc >= cbWritten);
+            Log3Func(("[SD%RU8] %RU32/%zu bytes read\n", pSrcStream->u8SD, cbWritten, cbSrc));
         }
 
         RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
 
-        if (   !cbWritten
-            || !RTCircBufUsed(pCircBuf))
-               break;
-
         if (RT_FAILURE(rc))
             break;
+
+        Assert(cbLeft  >= cbWritten);
+        cbLeft         -= cbWritten;
+
+        cbReadTotal    += cbWritten;
     }
 
     if (pcbRead)
