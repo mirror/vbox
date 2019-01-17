@@ -491,7 +491,8 @@ void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileNam
 #endif
 
     /* Lock the action preventing cascade calls: */
-    actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance)->setEnabled(false);
+    actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance)->setProperty("opened", true);
+    updateActionsAppearance();
 
     /* Use the "safe way" to open stack of Mac OS X Sheets: */
     QWidget *pWizardParent = windowManager().realParentWindow(this);
@@ -502,9 +503,12 @@ void UIVirtualBoxManager::sltOpenImportApplianceWizard(const QString &strFileNam
         pWizard->exec();
     delete pWizard;
 
-    /// @todo Is it possible at all if event-loop unwind?
     /* Unlock the action allowing further calls: */
-    actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance)->setEnabled(true);
+    if (actionPool())
+    {
+        actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance)->setProperty("opened", QVariant());
+        updateActionsAppearance();
+    }
 }
 
 void UIVirtualBoxManager::sltOpenExportApplianceWizard()
@@ -518,7 +522,8 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
         names << items.at(i)->name();
 
     /* Lock the action preventing cascade calls: */
-    actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setEnabled(false);
+    actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setProperty("opened", true);
+    updateActionsAppearance();
 
     /* Use the "safe way" to open stack of Mac OS X Sheets: */
     QWidget *pWizardParent = windowManager().realParentWindow(this);
@@ -528,9 +533,12 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
     pWizard->exec();
     delete pWizard;
 
-    /// @todo Is it possible at all if event-loop unwind?
     /* Unlock the action allowing further calls: */
-    actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setEnabled(true);
+    if (actionPool())
+    {
+        actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setProperty("opened", QVariant());
+        updateActionsAppearance();
+    }
 }
 
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
@@ -542,21 +550,25 @@ void UIVirtualBoxManager::sltOpenExtraDataManagerWindow()
 
 void UIVirtualBoxManager::sltOpenPreferencesDialog()
 {
-    /* Remember that we handling that already: */
-    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setEnabled(false);
-
     /* Don't show the inaccessible warning
      * if the user tries to open global settings: */
     m_fFirstMediumEnumerationHandled = true;
+
+    /* Lock the action preventing cascade calls: */
+    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setProperty("opened", true);
+    updateActionsAppearance();
 
     /* Create and execute global settings window: */
     QPointer<UISettingsDialogGlobal> pDlg = new UISettingsDialogGlobal(this);
     pDlg->execute();
     delete pDlg;
 
-    /// @todo Is it possible at all if event-loop unwind?
-    /* Remember that we do NOT handling that already: */
-    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setEnabled(true);
+    /* Unlock the action allowing further calls: */
+    if (actionPool())
+    {
+        actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setProperty("opened", QVariant());
+        updateActionsAppearance();
+    }
 }
 
 void UIVirtualBoxManager::sltPerformExit()
@@ -574,6 +586,10 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
 #endif
     CVirtualBox comVBox = vboxGlobal().virtualBox();
 
+    /* Lock the action preventing cascade calls: */
+    actionPool()->action(UIActionIndexST_M_Welcome_S_Add)->setProperty("opened", true);
+    updateActionsAppearance();
+
     /* No file specified: */
     if (strTmpFile.isEmpty())
     {
@@ -588,6 +604,14 @@ void UIVirtualBoxManager::sltOpenAddMachineDialog(const QString &strFileName /* 
         if (!fileNames.isEmpty())
             strTmpFile = fileNames.at(0);
     }
+
+    /* Unlock the action allowing further calls: */
+    if (actionPool())
+    {
+        actionPool()->action(UIActionIndexST_M_Welcome_S_Add)->setProperty("opened", QVariant());
+        updateActionsAppearance();
+    }
+
     /* Nothing was chosen? */
     if (strTmpFile.isEmpty())
         return;
@@ -621,7 +645,8 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
     /* Lock the action preventing cascade calls: */
-    actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setEnabled(false);
+    actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setProperty("opened", true);
+    updateActionsAppearance();
 
     /* Process href from VM details / description: */
     if (!strCategory.isEmpty() && strCategory[0] != '#')
@@ -653,9 +678,12 @@ void UIVirtualBoxManager::sltOpenMachineSettingsDialog(QString strCategory /* = 
         delete pDlg;
     }
 
-    /// @todo Is it possible at all if event-loop unwind?
     /* Unlock the action allowing further calls: */
-    actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setEnabled(true);
+    if (actionPool())
+    {
+        actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setProperty("opened", QVariant());
+        updateActionsAppearance();
+    }
 }
 
 void UIVirtualBoxManager::sltOpenCloneMachineWizard()
@@ -663,9 +691,6 @@ void UIVirtualBoxManager::sltOpenCloneMachineWizard()
     /* Get current item: */
     UIVirtualMachineItem *pItem = currentItem();
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
-
-    /* Lock the action preventing cascade calls: */
-    actionPool()->action(UIActionIndexST_M_Machine_S_Clone)->setEnabled(false);
 
     /* Use the "safe way" to open stack of Mac OS X Sheets: */
     QWidget *pWizardParent = windowManager().realParentWindow(this);
@@ -676,10 +701,6 @@ void UIVirtualBoxManager::sltOpenCloneMachineWizard()
     pWizard->prepare();
     pWizard->exec();
     delete pWizard;
-
-    /// @todo Is it possible at all if event-loop unwind?
-    /* Unlock the action allowing further calls: */
-    actionPool()->action(UIActionIndexST_M_Machine_S_Clone)->setEnabled(true);
 }
 
 void UIVirtualBoxManager::sltPerformMachineMove()
@@ -1520,6 +1541,7 @@ void UIVirtualBoxManager::cleanupMenuBar()
 
     /* Destroy action-pool: */
     UIActionPool::destroy(m_pActionPool);
+    m_pActionPool = 0;
 }
 
 void UIVirtualBoxManager::cleanup()
@@ -1660,6 +1682,14 @@ void UIVirtualBoxManager::updateActionsAppearance()
     /* Get current items: */
     QList<UIVirtualMachineItem*> items = currentItems();
 
+    /* Enable/disable File/Application actions: */
+    actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setEnabled(isActionEnabled(UIActionIndex_M_Application_S_Preferences, items));
+    actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setEnabled(isActionEnabled(UIActionIndexST_M_File_S_ExportAppliance, items));
+    actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance)->setEnabled(isActionEnabled(UIActionIndexST_M_File_S_ImportAppliance, items));
+
+    /* Enable/disable welcome actions: */
+    actionPool()->action(UIActionIndexST_M_Welcome_S_Add)->setEnabled(isActionEnabled(UIActionIndexST_M_Welcome_S_Add, items));
+
     /* Enable/disable group actions: */
     actionPool()->action(UIActionIndexST_M_Group_S_Rename)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Rename, items));
     actionPool()->action(UIActionIndexST_M_Group_S_Remove)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_S_Remove, items));
@@ -1788,14 +1818,28 @@ void UIVirtualBoxManager::updateActionsAppearance()
 
 bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtualMachineItem*> &items)
 {
-    /* No actions enabled for empty item list: */
+    /* For known *global* action types: */
+    switch (iActionIndex)
+    {
+        case UIActionIndex_M_Application_S_Preferences:
+        case UIActionIndexST_M_File_S_ExportAppliance:
+        case UIActionIndexST_M_File_S_ImportAppliance:
+        case UIActionIndexST_M_Welcome_S_Add:
+        {
+            return !actionPool()->action(iActionIndex)->property("opened").toBool();
+        }
+        default:
+            break;
+    }
+
+    /* No *machine* actions enabled for empty item list: */
     if (items.isEmpty())
         return false;
 
     /* Get first item: */
     UIVirtualMachineItem *pItem = items.first();
 
-    /* For known action types: */
+    /* For known *machine* action types: */
     switch (iActionIndex)
     {
         case UIActionIndexST_M_Group_S_Rename:
@@ -1811,7 +1855,8 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
         }
         case UIActionIndexST_M_Machine_S_Settings:
         {
-            return !isGroupSavingInProgress() &&
+            return !actionPool()->action(iActionIndex)->property("opened").toBool() &&
+                   !isGroupSavingInProgress() &&
                    items.size() == 1 &&
                    pItem->configurationAccessLevel() != ConfigurationAccessLevel_Null &&
                    (m_pWidget->currentMachineTool() != UIToolType_Snapshots ||
