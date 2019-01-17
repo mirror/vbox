@@ -432,18 +432,22 @@ static void paStreamCbUnderflow(pa_stream *pStream, void *pvContext)
         pStrm->cUnderflows = 0;
     }
 
-# ifdef LOG_ENABLED
     pa_usec_t curLatencyUs = 0;
     pa_stream_get_latency(pStream, &curLatencyUs, NULL /* Neg */);
 
+    LogRel2(("PulseAudio: Latency now is %RU64ms\n", curLatencyUs / 1000 /* ms */));
+
+# ifdef LOG_ENABLED
     const pa_timing_info *pTInfo = pa_stream_get_timing_info(pStream);
     const pa_sample_spec *pSpec  = pa_stream_get_sample_spec(pStream);
 
     pa_usec_t curPosWritesUs = pa_bytes_to_usec(pTInfo->write_index, pSpec);
+    pa_usec_t curPosReadsUs  = pa_bytes_to_usec(pTInfo->read_index, pSpec);
     pa_usec_t curTsUs        = pa_rtclock_now() - pStrm->tsStartUs;
 
-    Log2Func(("curPosWrite=%RU64ms, curTs=%RU64ms, curDelta=%RI64ms, curLatency=%RU64ms\n",
-              curPosWritesUs / 1000, curTsUs / 1000, (((int64_t)curPosWritesUs - (int64_t)curTsUs) / 1000), curLatencyUs / 1000));
+    Log2Func(("curPosWrite=%RU64ms, curPosRead=%RU64ms, curTs=%RU64ms, curLatency=%RU64ms (%RU32Hz, %RU8 channels)\n",
+              curPosWritesUs / RT_US_1MS_64, curPosReadsUs / RT_US_1MS_64,
+              curTsUs / RT_US_1MS_64, curLatencyUs / RT_US_1MS_64, pSpec->rate, pSpec->channels));
 # endif
 }
 
