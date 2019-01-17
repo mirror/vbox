@@ -948,6 +948,8 @@ int DrvAudioHlpPCMPropsToStreamCfg(const PPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTRE
  */
 void DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg)
 {
+    AssertPtrReturnVoid(pCfg);
+
     RT_BZERO(pCfg, sizeof(PDMAUDIOSTREAMCFG));
 
     pCfg->Backend.cfPreBuf = UINT32_MAX; /* Explicitly set to "undefined". */
