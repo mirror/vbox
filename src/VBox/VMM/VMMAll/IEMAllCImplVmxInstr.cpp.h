@@ -3813,7 +3813,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitPreemptTimer(PVMCPU pVCpu)
  *
  * @returns VBox strict status code.
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   uVector         The external interrupt vector.
+ * @param   uVector         The external interrupt vector (pass 0 if the interrupt
+ *                          is still pending since we typically won't know the
+ *                          vector).
  * @param   fIntPending     Whether the external interrupt is pending or
  *                          acknowledged in the interrupt controller.
  */
@@ -3821,6 +3823,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool f
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
+    Assert(fIntPending || uVector == 0);
 
     /* The VM-exit is subject to "External interrupt exiting" is being set. */
     if (pVmcs->u32PinCtls & VMX_PIN_CTLS_EXT_INT_EXIT)

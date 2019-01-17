@@ -605,8 +605,8 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
             default:
                 AssertFailedReturn(VERR_INVALID_PARAMETER);
         }
-        LogRel(("EM: Set execution policy (fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fIemExecutesAll=%RTbool)\n",
-                pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->em.s.fIemExecutesAll));
+        Log(("EM: Set execution policy (fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fIemExecutesAll=%RTbool)\n",
+             pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->em.s.fIemExecutesAll));
     }
 
     /*
@@ -1725,12 +1725,13 @@ VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICT
 
 
 /**
- * Helper for emR3ForcedActions() for VMX interrupt-window VM-exits.
+ * Helper for emR3ForcedActions() for VMX interrupt-window VM-exit and VMX external
+ * interrupt VM-exit.
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-static int emR3VmxNstGstIntrWindowExit(PVMCPU pVCpu)
+static int emR3VmxNstGstIntrIntercept(PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     Assert(CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx));
@@ -1746,6 +1747,15 @@ static int emR3VmxNstGstIntrWindowExit(PVMCPU pVCpu)
         }
         AssertMsgFailed(("Interrupt-window Vm-exit failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
         return VINF_EM_TRIPLE_FAULT;
+    }
+    /* Handle the "external interrupt" VM-exit intercept. */
+    else if (CPUMIsGuestVmxPinCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
+    {
+        VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
+        Assert(rcStrict != VINF_PGM_CHANGE_MODE);
+        Assert(rcStrict != VINF_VMX_VMEXIT);
+        if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            return VBOXSTRICTRC_TODO(rcStrict);
     }
 #else
     RT_NOREF(pVCpu);
@@ -2214,7 +2224,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                         Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
 
                         if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
-                            rc2 = emR3VmxNstGstIntrWindowExit(pVCpu);
+                            rc2 = emR3VmxNstGstIntrIntercept(pVCpu);
                         else if (CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
                             rc2 = emR3SvmNstGstIntrIntercept(pVCpu);
                         else

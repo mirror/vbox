@@ -15800,7 +15800,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitPreemptTimer(PVMCPU pVCpu)
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   uVector         The external interrupt vector.
+ * @param   uVector         The external interrupt vector (pass 0 if the external
+ *                          interrupt is still pending).
  * @param   fIntPending     Whether the external interrupt is pending or
  *                          acknowdledged in the interrupt controller.
  * @thread  EMT(pVCpu)

@@ -1590,20 +1590,6 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
     Log(("TRPMR3InjectEvent: u8Interrupt=%d (%#x) rc=%Rrc\n", u8Interrupt, u8Interrupt, rc));
     if (RT_SUCCESS(rc))
     {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-        /* Handle the "acknowledge interrupt on exit" VM-exit intercept. */
-        if (CPUMIsGuestInVmxNonRootMode(pCtx))
-        {
-            if (   CPUMIsGuestVmxExitCtlsSet(pVCpu, pCtx, VMX_EXIT_CTLS_ACK_EXT_INT)
-                && CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
-            {
-                VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
-                Assert(rcStrict != VINF_PGM_CHANGE_MODE);
-                if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                    return VBOXSTRICTRC_TODO(rcStrict);
-            }
-        }
-#endif
         *pfInjected = true;
         if (!VM_IS_NEM_ENABLED(pVM))
         {
