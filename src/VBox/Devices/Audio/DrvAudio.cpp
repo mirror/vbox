@@ -3032,7 +3032,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
         RTStrPrintf(szWhat, sizeof(szWhat), "global / per-VM");
     }
 
-    if (!pCfgReq->Backend.cfBufferSize) /* Set default period size if nothing explicitly is set. */
+    if (!pCfgReq->Backend.cfBufferSize) /* Set default buffer size if nothing explicitly is set. */
     {
         pCfgReq->Backend.cfBufferSize = DrvAudioHlpMilliToFrames(250 /* ms */, &pCfgReq->Props);
         RTStrPrintf(szWhat, sizeof(szWhat), "default");
@@ -3053,7 +3053,7 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
         RTStrPrintf(szWhat, sizeof(szWhat), "global / per-VM");
     }
 
-    if (pCfgReq->Backend.cfPreBuf == UINT32_MAX) /* Set default period size if nothing explicitly is set. */
+    if (pCfgReq->Backend.cfPreBuf == UINT32_MAX) /* Set default pre-buffering size if nothing explicitly is set. */
     {
         /* For pre-buffering to finish the buffer at least must be full one time. */
         pCfgReq->Backend.cfPreBuf = pCfgReq->Backend.cfBufferSize;
