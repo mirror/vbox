@@ -927,8 +927,8 @@ void DrvAudioHlpPCMPropsPrint(const PPDMAUDIOPCMPROPS pProps)
  * Converts PCM properties to a audio stream configuration.
  *
  * @return  IPRT status code.
- * @param   pProps              Pointer to PCM properties to convert.
- * @param   pCfg                Pointer to audio stream configuration to store result into.
+ * @param   pProps              PCM properties to convert.
+ * @param   pCfg                Stream configuration to store result into.
  */
 int DrvAudioHlpPCMPropsToStreamCfg(const PPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
 {
@@ -944,7 +944,7 @@ int DrvAudioHlpPCMPropsToStreamCfg(const PPDMAUDIOPCMPROPS pProps, PPDMAUDIOSTRE
 /**
  * Initializes a stream configuration with its default values.
  *
- * @param   pCfg                Pointer to stream to initialize.
+ * @param   pCfg                Stream configuration to initialize.
  */
 void DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg)
 {
