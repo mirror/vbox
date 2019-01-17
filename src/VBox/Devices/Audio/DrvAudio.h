@@ -208,17 +208,22 @@ void DrvAudioHlpPCMPropsPrint(const PPDMAUDIOPCMPROPS pProps);
 int DrvAudioHlpPCMPropsToStreamCfg(const PPDMAUDIOPCMPROPS pPCMProps, PPDMAUDIOSTREAMCFG pCfg);
 /** @}  */
 
-/** @name Audio stream helper methods.
+/** @name Audio configuration helper methods.
  * @{ */
-void DrvAudioHlpStreamCfgPrint(const PPDMAUDIOSTREAMCFG pCfg);
+void DrvAudioHlpStreamCfgInit(PPDMAUDIOSTREAMCFG pCfg);
 bool DrvAudioHlpStreamCfgIsValid(const PPDMAUDIOSTREAMCFG pCfg);
 int DrvAudioHlpStreamCfgCopy(PPDMAUDIOSTREAMCFG pDstCfg, const PPDMAUDIOSTREAMCFG pSrcCfg);
 PPDMAUDIOSTREAMCFG DrvAudioHlpStreamCfgDup(const PPDMAUDIOSTREAMCFG pCfg);
 void DrvAudioHlpStreamCfgFree(PPDMAUDIOSTREAMCFG pCfg);
+void DrvAudioHlpStreamCfgPrint(const PPDMAUDIOSTREAMCFG pCfg);
+/** @}  */
+
+/** @name Audio stream command helper methods.
+ * @{ */
 const char *DrvAudioHlpStreamCmdToStr(PDMAUDIOSTREAMCMD enmCmd);
 /** @}  */
 
-/** @name Audio stream helper methods.
+/** @name Audio stream status helper methods.
  * @{ */
 bool DrvAudioHlpStreamStatusCanRead(PDMAUDIOSTREAMSTS enmStatus);
 bool DrvAudioHlpStreamStatusCanWrite(PDMAUDIOSTREAMSTS enmStatus);
