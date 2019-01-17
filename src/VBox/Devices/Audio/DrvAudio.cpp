@@ -2976,6 +2976,12 @@ static DECLCALLBACK(int) drvAudioStreamDestroy(PPDMIAUDIOCONNECTOR pInterface, P
  * @param   pStream             Audio stream to create the backend side for.
  * @param   pCfgReq             Requested audio stream configuration to use for stream creation.
  * @param   pCfgAcq             Acquired audio stream configuration returned by the backend.
+ *
+ * @note    Configuration precedence for requested audio stream configuration (first has highest priority, if set):
+ *          - per global extra-data
+ *          - per-VM extra-data
+ *          - requested configuration (by pCfgReq)
+ *          - default value
  */
 static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
                                                PPDMAUDIOSTREAM pStream, PPDMAUDIOSTREAMCFG pCfgReq, PPDMAUDIOSTREAMCFG pCfgAcq)
@@ -2994,29 +3000,49 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     /* Fill in the tweakable parameters into the requested host configuration.
      * All parameters in principle can be changed and returned by the backend via the acquired configuration. */
 
+    char szWhat[64]; /* Log where a value came from. */
+
     /*
      * Period size
      */
     if (pDrvCfg->uPeriodSizeMs)
+    {
         pCfgReq->Backend.cfPeriod = DrvAudioHlpMilliToFrames(pDrvCfg->uPeriodSizeMs, &pCfgReq->Props);
-    else /* Set default period size. */
+        RTStrPrintf(szWhat, sizeof(szWhat), "global / per-VM");
+    }
+
+    if (!pCfgReq->Backend.cfPeriod) /* Set default period size if nothing explicitly is set. */
+    {
         pCfgReq->Backend.cfPeriod = DrvAudioHlpMilliToFrames(50 /* ms */, &pCfgReq->Props);
+        RTStrPrintf(szWhat, sizeof(szWhat), "default");
+    }
+    else
+        RTStrPrintf(szWhat, sizeof(szWhat), "device-specific");
 
     LogRel2(("Audio: Using %s period size (%RU64ms, %RU32 frames) for stream '%s'\n",
-             pDrvCfg->uPeriodSizeMs ? "custom" : "default", DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfPeriod, &pCfgReq->Props),
-             pCfgReq->Backend.cfPeriod, pStream->szName));
+             szWhat,
+             DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfPeriod, &pCfgReq->Props), pCfgReq->Backend.cfPeriod, pStream->szName));
 
     /*
      * Buffer size
      */
     if (pDrvCfg->uBufferSizeMs)
+    {
         pCfgReq->Backend.cfBufferSize = DrvAudioHlpMilliToFrames(pDrvCfg->uBufferSizeMs, &pCfgReq->Props);
-    else /* Set default buffer size. */
+        RTStrPrintf(szWhat, sizeof(szWhat), "global / per-VM");
+    }
+
+    if (!pCfgReq->Backend.cfBufferSize) /* Set default period size if nothing explicitly is set. */
+    {
         pCfgReq->Backend.cfBufferSize = DrvAudioHlpMilliToFrames(250 /* ms */, &pCfgReq->Props);
+        RTStrPrintf(szWhat, sizeof(szWhat), "default");
+    }
+    else
+        RTStrPrintf(szWhat, sizeof(szWhat), "device-specific");
 
     LogRel2(("Audio: Using %s buffer size (%RU64ms, %RU32 frames) for stream '%s'\n",
-             pDrvCfg->uBufferSizeMs ? "custom" : "default", DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfBufferSize, &pCfgReq->Props),
-             pCfgReq->Backend.cfBufferSize, pStream->szName));
+             szWhat,
+             DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfBufferSize, &pCfgReq->Props), pCfgReq->Backend.cfBufferSize, pStream->szName));
 
     /*
      * Pre-buffering size
@@ -3024,16 +3050,21 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
     if (pDrvCfg->uPreBufSizeMs != UINT32_MAX)
     {
         pCfgReq->Backend.cfPreBuf = DrvAudioHlpMilliToFrames(pDrvCfg->uPreBufSizeMs, &pCfgReq->Props);
+        RTStrPrintf(szWhat, sizeof(szWhat), "global / per-VM");
     }
-    else /* Set default pre-buffering size. */
+
+    if (pCfgReq->Backend.cfPreBuf == UINT32_MAX) /* Set default period size if nothing explicitly is set. */
     {
         /* For pre-buffering to finish the buffer at least must be full one time. */
         pCfgReq->Backend.cfPreBuf = pCfgReq->Backend.cfBufferSize;
+        RTStrPrintf(szWhat, sizeof(szWhat), "default");
     }
+    else
+        RTStrPrintf(szWhat, sizeof(szWhat), "device-specific");
 
     LogRel2(("Audio: Using %s pre-buffering size (%RU64ms, %RU32 frames) for stream '%s'\n",
-             pDrvCfg->uPreBufSizeMs != UINT32_MAX ? "custom" : "default", DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfPreBuf, &pCfgReq->Props),
-             pCfgReq->Backend.cfPreBuf, pStream->szName));
+             szWhat,
+             DrvAudioHlpFramesToMilli(pCfgReq->Backend.cfPreBuf, &pCfgReq->Props), pCfgReq->Backend.cfPreBuf, pStream->szName));
 
     /*
      * Validate input.
