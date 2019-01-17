@@ -915,12 +915,12 @@ endif
 
 ifdef VBOX_WITH_FUSE_PACKING
 #
-# The OS X fuse core package.
+# The FUSE for macOS core package.
 #
 VBOX_PATH_FUSE_CORE_PKG ?= $(lastword $(sort $(wildcard $(KBUILD_DEVTOOLS_TRG)/osxfuse/v*)))/Core.pkg
 $(VBOX_PATH_PACK_TMP)/Packages/OSXFuseCore.pkg: \
 		$(VBOX_PATH_FUSE_CORE_PKG)
-	$(call MSG_TOOL,Preparing OS X Fuse core package,,,$@)
+	$(call MSG_TOOL,Preparing FUSE for macOS core package,,,$@)
 	@# Cleanup any previously failed attempts.
 	sudo rm -Rf $@
 	pkgutil --flatten $(VBOX_PATH_FUSE_CORE_PKG) $@
