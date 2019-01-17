@@ -164,20 +164,20 @@
 
 /** Enables/disables IEM-only EM execution policy in and from ring-3.   */
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix) \
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcRet) \
     do { \
         Log(("%s: Enabling IEM-only EM execution policy!\n", (a_pszLogPrefix))); \
         return EMR3SetExecutionPolicy((a_pVCpu)->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true); \
     } while (0)
 
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE(a_pVCpu, a_pszLogPrefix) \
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcRet) \
     do { \
         Log(("%s: Disabling IEM-only EM execution policy!\n", (a_pszLogPrefix))); \
-        EMR3SetExecutionPolicy((a_pVCpu)->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false); \
+        return EMR3SetExecutionPolicy((a_pVCpu)->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false); \
     } while (0)
 # else
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix)     do { return VINF_SUCCESS; } while (0)
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE(a_pVCpu, a_pszLogPrefix)        do { } while (0)
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcRet)   do { return (a_rcRet); } while (0)
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcRet)  do { return (a_rcRet); } while (0)
 # endif
 
 
@@ -1560,7 +1560,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestControlRegsMsrs(PVMCPU pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-IEM_STATIC void iemVmxVmentrySaveForceFlags(PVMCPU pVCpu)
+IEM_STATIC void iemVmxVmentrySaveNmiBlockingFF(PVMCPU pVCpu)
 {
     /* We shouldn't be called multiple times during VM-entry. */
     Assert(pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions == 0);
@@ -1601,7 +1601,7 @@ IEM_STATIC void iemVmxVmentrySaveForceFlags(PVMCPU pVCpu)
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-IEM_STATIC void iemVmxVmexitRestoreForceFlags(PVMCPU pVCpu)
+IEM_STATIC void iemVmxVmexitRestoreNmiBlockingFF(PVMCPU pVCpu)
 {
     if (pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions)
     {
@@ -2150,40 +2150,41 @@ IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
     {
         RTSEL const HostSel   = iemVmxVmcsGetHostSelReg(pVmcs, iSegReg);
         bool const  fUnusable = RT_BOOL(HostSel == 0);
+        PCPUMSELREG pSelReg   = &pVCpu->cpum.GstCtx.aSRegs[iSegReg];
 
         /* Selector. */
-        pVCpu->cpum.GstCtx.aSRegs[iSegReg].Sel      = HostSel;
-        pVCpu->cpum.GstCtx.aSRegs[iSegReg].ValidSel = HostSel;
-        pVCpu->cpum.GstCtx.aSRegs[iSegReg].fFlags   = CPUMSELREG_FLAGS_VALID;
+        pSelReg->Sel      = HostSel;
+        pSelReg->ValidSel = HostSel;
+        pSelReg->fFlags   = CPUMSELREG_FLAGS_VALID;
 
         /* Limit. */
-        pVCpu->cpum.GstCtx.aSRegs[iSegReg].u32Limit = 0xffffffff;
+        pSelReg->u32Limit = 0xffffffff;
 
         /* Base. */
-        pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base = 0;
+        pSelReg->u64Base = 0;
 
         /* Attributes. */
         if (iSegReg == X86_SREG_CS)
         {
-            pVCpu->cpum.GstCtx.cs.Attr.n.u4Type        = X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ | X86_SEL_TYPE_ACCESSED;
-            pVCpu->cpum.GstCtx.ss.Attr.n.u1DescType    = 1;
-            pVCpu->cpum.GstCtx.cs.Attr.n.u2Dpl         = 0;
-            pVCpu->cpum.GstCtx.cs.Attr.n.u1Present     = 1;
-            pVCpu->cpum.GstCtx.cs.Attr.n.u1Long        = fHostInLongMode;
-            pVCpu->cpum.GstCtx.cs.Attr.n.u1DefBig      = !fHostInLongMode;
-            pVCpu->cpum.GstCtx.cs.Attr.n.u1Granularity = 1;
-            Assert(!pVCpu->cpum.GstCtx.cs.Attr.n.u1Unusable);
+            pSelReg->Attr.n.u4Type        = X86_SEL_TYPE_CODE | X86_SEL_TYPE_READ | X86_SEL_TYPE_ACCESSED;
+            pSelReg->Attr.n.u1DescType    = 1;
+            pSelReg->Attr.n.u2Dpl         = 0;
+            pSelReg->Attr.n.u1Present     = 1;
+            pSelReg->Attr.n.u1Long        = fHostInLongMode;
+            pSelReg->Attr.n.u1DefBig      = !fHostInLongMode;
+            pSelReg->Attr.n.u1Granularity = 1;
+            Assert(!pSelReg->Attr.n.u1Unusable);
             Assert(!fUnusable);
         }
         else
         {
-            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u4Type        = X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED;
-            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1DescType    = 1;
-            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u2Dpl         = 0;
-            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Present     = 1;
-            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1DefBig      = 1;
-            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Granularity = 1;
-            pVCpu->cpum.GstCtx.aSRegs[iSegReg].Attr.n.u1Unusable    = fUnusable;
+            pSelReg->Attr.n.u4Type        = X86_SEL_TYPE_RW | X86_SEL_TYPE_ACCESSED;
+            pSelReg->Attr.n.u1DescType    = 1;
+            pSelReg->Attr.n.u2Dpl         = 0;
+            pSelReg->Attr.n.u1Present     = 1;
+            pSelReg->Attr.n.u1DefBig      = 1;
+            pSelReg->Attr.n.u1Granularity = 1;
+            pSelReg->Attr.n.u1Unusable    = fUnusable;
         }
     }
 
@@ -2218,13 +2219,11 @@ IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
     pVCpu->cpum.GstCtx.tr.Attr.n.u1DefBig      = 0;
     pVCpu->cpum.GstCtx.tr.Attr.n.u1Granularity = 0;
 
-    /* LDTR. */
+    /* LDTR (Warning! do not touch the base and limits here). */
     pVCpu->cpum.GstCtx.ldtr.Sel               = 0;
     pVCpu->cpum.GstCtx.ldtr.ValidSel          = 0;
     pVCpu->cpum.GstCtx.ldtr.fFlags            = CPUMSELREG_FLAGS_VALID;
-    pVCpu->cpum.GstCtx.ldtr.u32Limit          = 0;
-    pVCpu->cpum.GstCtx.ldtr.u64Base           = 0;
-    pVCpu->cpum.GstCtx.ldtr.Attr.n.u1Unusable = 1;
+    pVCpu->cpum.GstCtx.ldtr.Attr.u            = X86DESCATTR_UNUSABLE;
 
     /* GDTR. */
     Assert(X86_IS_CANONICAL(pVmcs->u64HostGdtrBase.u));
@@ -2815,6 +2814,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
 
+    /* Update the VM-exit reason, the other relevant data fields are expected to be updated by the caller already. */
     pVmcs->u32RoExitReason = uExitReason;
     Log3(("vmexit: uExitReason=%#RX32 uExitQual=%#RX64\n", uExitReason, pVmcs->u64RoExitQual));
 
@@ -2829,25 +2829,29 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
          * The rest of the high bits of the VM-exit reason are only relevant when the VM-exit
          * occurs in enclave mode/SMM which we don't support yet.
          *
-         * If we ever add support for it, we can pass just the lower bits, till then an assert
-         * should suffice.
+         * If we ever add support for it, we can pass just the lower bits to the functions
+         * below, till then an assert should suffice.
          */
         Assert(!RT_HI_U16(uExitReason));
 
+        /* Save the guest state into the VMCS and restore guest MSRs from the auto-store guest MSR area. */
         iemVmxVmexitSaveGuestState(pVCpu, uExitReason);
         int rc = iemVmxVmexitSaveGuestAutoMsrs(pVCpu, uExitReason);
         if (RT_SUCCESS(rc))
         { /* likely */ }
         else
-        {
-            IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE(pVCpu, "VMX-Abort");
             return iemVmxAbort(pVCpu, VMXABORT_SAVE_GUEST_MSRS);
-        }
+
+        /* Clear any saved NMI-blocking state so we don't assert on next VM-entry (if it was in effect on the previous one). */
+        pVCpu->cpum.GstCtx.hwvirt.fLocalForcedActions &= ~VMCPU_FF_BLOCK_NMIS;
     }
     else
     {
-        /* Restore force-flags that may or may not have been cleared as part of the failed VM-entry. */
-        iemVmxVmexitRestoreForceFlags(pVCpu);
+        /* Restore the NMI-blocking state if VM-entry failed due to invalid guest state or while loading MSRs. */
+        uint32_t const uExitReasonBasic = VMX_EXIT_REASON_BASIC(uExitReason);
+        if (   uExitReasonBasic == VMX_EXIT_ERR_INVALID_GUEST_STATE
+            || uExitReasonBasic == VMX_EXIT_ERR_MSR_LOAD)
+            iemVmxVmexitRestoreNmiBlockingFF(pVCpu);
     }
 
     /* Restore the host (outer guest) state. */
@@ -2863,9 +2867,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     /* We're no longer in nested-guest execution mode. */
     pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = false;
 
-    /* Revert any IEM-only nested-guest execution policy if any. */
-    IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE(pVCpu, "VM-exit");
-    return rcStrict;
+#ifdef IN_RING3
+    LogRel(("vmexit: uExitReason=%s\n", HMR3GetVmxExitName(uExitReason)));
+#endif
+
+    /* Revert any IEM-only nested-guest execution policy if it was set earlier, otherwise return rcStrict. */
+    IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE_RET(pVCpu, "VM-exit", rcStrict);
 # endif
 }
 
@@ -7247,7 +7254,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
 
     /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
+    if (pVCpu->iem.s.uCpl == 0)
+    { /* likely */ }
+    else
     {
         Log(("%s: CPL %u -> #GP(0)\n", pszInstr, pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_Cpl;
@@ -7255,7 +7264,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     }
 
     /* Current VMCS valid. */
-    if (!IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
+    if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
+    { /* likely */ }
+    else
     {
         Log(("%s: VMCS pointer %#RGp invalid -> VMFailInvalid\n", pszInstr, IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_PtrInvalid;
@@ -7334,10 +7345,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
                     /*
                      * Blocking of NMIs need to be restored if VM-entry fails due to invalid-guest state.
-                     * So we save the required force flags here (currently only VMCPU_FF_BLOCK_NMI) so we
-                     * can restore it on VM-exit when required.
+                     * So we save the the VMCPU_FF_BLOCK_NMI force-flag here so we can restore it on
+                     * VM-exit when required.
+                     * See Intel spec. 26.7 "VM-entry Failures During or After Loading Guest State"
                      */
-                    iemVmxVmentrySaveForceFlags(pVCpu);
+                    iemVmxVmentrySaveNmiBlockingFF(pVCpu);
 
                     rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
                     if (RT_SUCCESS(rc))
@@ -7399,14 +7411,16 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                 /* Setup monitor-trap flag. */
                                 iemVmxVmentrySetupMtf(pVCpu, pszInstr);
 
-                                /* Now that we've switched page tables, we can inject events if any. */
-                                iemVmxVmentryInjectEvent(pVCpu, pszInstr);
+                                /* Now that we've switched page tables, we can go ahead and inject any event. */
+                                rcStrict = iemVmxVmentryInjectEvent(pVCpu, pszInstr);
+                                if (RT_SUCCESS(rcStrict))
+                                {
+                                    /* Reschedule to IEM-only execution of the nested-guest or return VINF_SUCCESS. */
+                                    IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(pVCpu, pszInstr, VINF_SUCCESS);
+                                }
 
-                                /*
-                                 * We've successfully entered nested-guest execution at this point.
-                                 * Return after setting nested-guest EM execution policy as necessary.
-                                 */
-                                IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(pVCpu, pszInstr);
+                                Log(("%s: VM-entry event injection failed. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+                                return rcStrict;
                             }
                             return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED);
                         }
@@ -7543,7 +7557,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
     }
 
     /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
+    if (pVCpu->iem.s.uCpl == 0)
+    { /* likely */ }
+    else
     {
         Log(("vmread: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_Cpl;
@@ -7573,7 +7589,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadCommon(PVMCPU pVCpu, uint8_t cbInstr, uint64
     }
 
     /* Supported VMCS field. */
-    if (!iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
+    if (iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
+    { /* likely */ }
+    else
     {
         Log(("vmread: VMCS field %#RX64 invalid -> VMFail\n", u64FieldEnc));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmread_FieldInvalid;
@@ -7762,7 +7780,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     }
 
     /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
+    if (pVCpu->iem.s.uCpl == 0)
+    { /* likely */ }
+    else
     {
         Log(("vmwrite: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_Cpl;
@@ -7820,7 +7840,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         Assert(!pExitInfo || pExitInfo->InstrInfo.VmreadVmwrite.fIsRegOperand);
 
     /* Supported VMCS field. */
-    if (!iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
+    if (iemVmxIsVmcsFieldValid(pVCpu, u64FieldEnc))
+    { /* likely */ }
+    else
     {
         Log(("vmwrite: VMCS field %#RX64 invalid -> VMFail\n", u64FieldEnc));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmwrite_FieldInvalid;
@@ -7911,7 +7933,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
 
     /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
+    if (pVCpu->iem.s.uCpl == 0)
+    { /* likely */ }
+    else
     {
         Log(("vmclear: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmclear_Cpl;
@@ -8030,7 +8054,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrst(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
 
     /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
+    if (pVCpu->iem.s.uCpl == 0)
+    { /* likely */ }
+    else
     {
         Log(("vmptrst: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrst_Cpl;
@@ -8080,7 +8106,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
 
     /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
+    if (pVCpu->iem.s.uCpl == 0)
+    { /* likely */ }
+    else
     {
         Log(("vmptrld: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmptrld_Cpl;
@@ -8235,7 +8263,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
     if (!IEM_VMX_IS_ROOT_MODE(pVCpu))
     {
         /* CPL. */
-        if (pVCpu->iem.s.uCpl > 0)
+        if (pVCpu->iem.s.uCpl == 0)
+        { /* likely */ }
+        else
         {
             Log(("vmxon: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_Cpl;
@@ -8243,7 +8273,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmxon(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffS
         }
 
         /* A20M (A20 Masked) mode. */
-        if (!PGMPhysIsA20Enabled(pVCpu))
+        if (PGMPhysIsA20Enabled(pVCpu))
+        { /* likely */ }
+        else
         {
             Log(("vmxon: A20M mode -> #GP(0)\n"));
             pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxon_A20M;
@@ -8429,7 +8461,9 @@ IEM_CIMPL_DEF_0(iemCImpl_vmxoff)
         return iemVmxVmexitInstr(pVCpu, VMX_EXIT_VMXOFF, cbInstr);
 
     /* CPL. */
-    if (pVCpu->iem.s.uCpl > 0)
+    if (pVCpu->iem.s.uCpl == 0)
+    { /* likely */ }
+    else
     {
         Log(("vmxoff: CPL %u -> #GP(0)\n", pVCpu->iem.s.uCpl));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmxoff_Cpl;
