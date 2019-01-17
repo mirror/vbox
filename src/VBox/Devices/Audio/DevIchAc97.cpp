@@ -270,7 +270,9 @@ enum
  */
 typedef struct AC97BDLE
 {
+    /** Location of data buffer (bits 31:1). */
     uint32_t addr;
+    /** Flags (bits 31 + 30) and length (bits 15:0) of data buffer (in audio samples). */
     uint32_t ctl_len;
 } AC97BDLE;
 AssertCompileSize(AC97BDLE, 8);
@@ -763,10 +765,12 @@ static void ichac97R3StreamFetchBDLE(PAC97STATE pThis, PAC97STREAM pStream)
     pRegs->bd.ctl_len = RT_H2LE_U32(BDLE.ctl_len);
 # endif
     pRegs->picb       = pRegs->bd.ctl_len & AC97_BD_LEN_MASK;
-    LogFlowFunc(("bd %2d addr=%#x ctl=%#06x len=%#x(%d bytes)\n",
+    LogFlowFunc(("bd %2d addr=%#x ctl=%#06x len=%#x(%d bytes), bup=%RTbool, ioc=%RTbool\n",
                   pRegs->civ, pRegs->bd.addr, pRegs->bd.ctl_len >> 16,
                   pRegs->bd.ctl_len & AC97_BD_LEN_MASK,
-                 (pRegs->bd.ctl_len & AC97_BD_LEN_MASK) << 1)); /** @todo r=andy Assumes 16bit samples. */
+                 (pRegs->bd.ctl_len & AC97_BD_LEN_MASK) << 1,  /** @todo r=andy Assumes 16bit samples. */
+                  RT_BOOL(pRegs->bd.ctl_len & AC97_BD_BUP),
+                  RT_BOOL(pRegs->bd.ctl_len & AC97_BD_IOC)));
 }
 
 #endif /* IN_RING3 */
@@ -1442,13 +1446,18 @@ static void ichac97R3BDLEDumpAll(PAC97STATE pThis, uint64_t u64BDLBase, uint16_t
         AC97BDLE BDLE;
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), u64BDLBase + i * sizeof(AC97BDLE), &BDLE, sizeof(AC97BDLE));
 
+# ifndef RT_LITTLE_ENDIAN
+#  error "Please adapt the code (audio buffers are little endian)!"
+# else
         BDLE.addr    = RT_H2LE_U32(BDLE.addr & ~3);
         BDLE.ctl_len = RT_H2LE_U32(BDLE.ctl_len);
-
-        LogFunc(("\t#%03d BDLE(adr:0x%llx, size:%RU32 [%RU32 bytes])\n",
+#endif
+        LogFunc(("\t#%03d BDLE(adr:0x%llx, size:%RU32 [%RU32 bytes], bup:%RTbool, ioc:%RTbool)\n",
                   i, BDLE.addr,
                   BDLE.ctl_len & AC97_BD_LEN_MASK,
-                 (BDLE.ctl_len & AC97_BD_LEN_MASK) << 1)); /** @todo r=andy Assumes 16bit samples. */
+                 (BDLE.ctl_len & AC97_BD_LEN_MASK) << 1, /** @todo r=andy Assumes 16bit samples. */
+                  RT_BOOL(BDLE.ctl_len & AC97_BD_BUP),
+                  RT_BOOL(BDLE.ctl_len & AC97_BD_IOC)));
 
         cbBDLE += (BDLE.ctl_len & AC97_BD_LEN_MASK) << 1; /** @todo r=andy Ditto. */
     }
@@ -3191,6 +3200,9 @@ PDMBOTHCBDECL(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIO
 
                             /* Fetch the initial BDLE descriptor. */
                             ichac97R3StreamFetchBDLE(pThis, pStream);
+# ifdef LOG_ENABLED
+                            ichac97R3BDLEDumpAll(pThis, pStream->Regs.bdbar, pStream->Regs.lvi + 1);
+# endif
                             ichac97R3StreamEnable(pThis, pStream, true /* fEnable */);
 
                             /* Arm the timer for this stream. */
