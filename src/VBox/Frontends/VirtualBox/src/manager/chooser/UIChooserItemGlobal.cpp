@@ -375,14 +375,7 @@ int UIChooserItemGlobal::minimumHeightHint() const
 
 QPixmap UIChooserItemGlobal::toPixmap()
 {
-    /* Ask item to paint itself into pixmap: */
-    const QSize minimumSize = minimumSizeHint().toSize();
-    QPixmap pixmap(minimumSize);
-    QPainter painter(&pixmap);
-    QStyleOptionGraphicsItem options;
-    options.rect = QRect(QPoint(0, 0), minimumSize);
-    paint(&painter, &options);
-    return pixmap;
+    AssertFailedReturn(QPixmap());
 }
 
 bool UIChooserItemGlobal::isDropAllowed(QGraphicsSceneDragDropEvent *, DragToken) const
