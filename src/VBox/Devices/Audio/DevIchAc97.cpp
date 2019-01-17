@@ -836,7 +836,7 @@ static void ichac97StreamWriteSR(PAC97STATE pThis, PAC97STREAM pStream, uint32_t
 {
     PAC97BMREGS pRegs = &pStream->Regs;
 
-    Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8SD, u32Val));
+    Log3Func(("[SD%RU8] SR <- %#x (sr %#x)\n", pStream->u8SD, u32Val, pRegs->sr));
 
     pRegs->sr |= u32Val & ~(AC97_SR_RO_MASK | AC97_SR_WCLEAR_MASK);
     ichac97StreamUpdateSR(pThis, pStream, pRegs->sr & ~(u32Val & AC97_SR_WCLEAR_MASK));
