@@ -24,7 +24,7 @@
 #include "HMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/pdmapi.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 
 /*********************************************************************************************************************************
