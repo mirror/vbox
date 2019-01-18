@@ -921,11 +921,14 @@ void GuestDnDBase::msgQueueClear(void)
 
 int GuestDnDBase::sendCancel(void)
 {
-    int rc = GuestDnDInst()->hostCall(HOST_DND_HG_EVT_CANCEL,
-                                      0 /* cParms */, NULL /* paParms */);
+    GuestDnDMsg Msg;
+    Msg.setType(HOST_DND_CANCEL);
+    if (mDataBase.m_uProtocolVersion >= 3)
+        Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
 
-    LogFlowFunc(("Generated cancelling request, rc=%Rrc\n", rc));
-    return rc;
+    LogRel2(("DnD: Cancelling operation on guest ..."));
+
+    return GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
 }
 
 int GuestDnDBase::updateProgress(GuestDnDData *pData, GuestDnDResponse *pResp,

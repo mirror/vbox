@@ -930,46 +930,6 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
             }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
-            /*
-             * Note: This is a fire-and-forget message, as the host should
-             *       not rely on an answer from the guest side in order to
-             *       properly cancel the operation.
-             */
-            case HOST_DND_HG_EVT_CANCEL:
-            {
-                LogFlowFunc(("HOST_DND_HG_EVT_CANCEL\n"));
-
-                VBOXDNDCBEVTERRORDATA data;
-                RT_ZERO(data);
-                data.hdr.uMagic = CB_MAGIC_DND_GH_EVT_ERROR;
-
-                switch (pClient->GetProtocolVer())
-                {
-                    case 3:
-                    {
-                        /* Protocol v3+ at least requires the context ID. */
-                        if (cParms == 1)
-                            rc = HGCMSvcGetU32(&paParms[0], &data.hdr.uContextID);
-
-                        break;
-                    }
-
-                    default:
-                        break;
-                }
-
-                /* Tell the host that the guest has cancelled the operation. */
-                data.rc = VERR_CANCELLED;
-
-                DO_HOST_CALLBACK();
-
-                /* Note: If the host is not prepared for handling the cancelling reply
-                 *       from the guest, don't report this back to the guest. */
-                if (RT_FAILURE(rc))
-                    rc = VINF_SUCCESS;
-                break;
-            }
-
             default:
             {
                 /* All other messages are handled by the DnD manager. */
@@ -1068,22 +1028,19 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                 break;
             }
 
-            case HOST_DND_HG_EVT_ENTER:
-            {
-                /* Reset the message queue as a new DnD operation just began. */
-                m_pManager->Reset();
-
-                fSendToGuest = true;
-                rc = VINF_SUCCESS;
-                break;
-            }
-
-            case HOST_DND_HG_EVT_CANCEL:
+            case HOST_DND_CANCEL:
             {
                 LogFlowFunc(("Cancelling all waiting clients ...\n"));
 
                 /* Reset the message queue as the host cancelled the whole operation. */
                 m_pManager->Reset();
+
+                rc = m_pManager->AddMsg(u32Function, cParms, paParms, true /* fAppend */);
+                if (RT_FAILURE(rc))
+                {
+                    AssertMsgFailed(("Adding new message of type=%RU32 failed with rc=%Rrc\n", u32Function, rc));
+                    break;
+                }
 
                 /*
                  * Wake up all deferred clients and tell them to process
@@ -1098,7 +1055,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                     DragAndDropClient *pClient = itClient->second;
                     AssertPtr(pClient);
 
-                    int rc2 = pClient->SetDeferredMsgInfo(HOST_DND_HG_EVT_CANCEL,
+                    int rc2 = pClient->SetDeferredMsgInfo(HOST_DND_CANCEL,
                                                           /* Protocol v3+ also contains the context ID. */
                                                           pClient->GetProtocolVer() >= 3 ? 1 : 0);
                     pClient->CompleteDeferred(rc2);
@@ -1110,6 +1067,16 @@ int DragAndDropService::hostCall(uint32_t u32Function,
                 Assert(m_clientQueue.empty());
 
                 /* Tell the host that everything went well. */
+                rc = VINF_SUCCESS;
+                break;
+            }
+
+            case HOST_DND_HG_EVT_ENTER:
+            {
+                /* Reset the message queue as a new DnD operation just began. */
+                m_pManager->Reset();
+
+                fSendToGuest = true;
                 rc = VINF_SUCCESS;
                 break;
             }

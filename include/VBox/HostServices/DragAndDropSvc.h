@@ -87,6 +87,14 @@ enum eHostFn
 {
     /** The host sets a new DnD mode. */
     HOST_DND_SET_MODE                  = 100,
+    /** The host requests to cancel the current DnD operation on
+     *  the guest side. This can happen on user request on the host's
+     *  UI side or due to some host error which has happened.
+     *
+     *  Note: This is a fire-and-forget message, as the host should
+     *        not rely on an answer from the guest side in order to
+     *        properly cancel the operation. */
+    HOST_DND_CANCEL                    = 204,
 
     /*
      * Host -> Guest messages
@@ -102,14 +110,6 @@ enum eHostFn
     /** The host issues a "drop" event, meaning that the host is
      *  ready to transfer data over to the guest. */
     HOST_DND_HG_EVT_DROPPED            = 203,
-    /** The host requests to cancel the current DnD operation on
-     *  the guest side. This can happen on user request on the host's
-     *  UI side or due to some host error which has happened.
-     *
-     *  Note: This is a fire-and-forget message, as the host should
-     *        not rely on an answer from the guest side in order to
-     *        properly cancel the operation. */
-    HOST_DND_HG_EVT_CANCEL             = 204,
     /** The host sends the data header at the beginning of a (new)
      *  data transfer. */
     HOST_DND_HG_SND_DATA_HDR           = 210,

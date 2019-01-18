@@ -207,7 +207,7 @@ static int vbglR3DnDHGRecvCancel(PVBGLR3GUESTDNDCMDCTX pCtx)
     VBOXDNDHGCANCELMSG Msg;
     RT_ZERO(Msg);
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_HG_EVT_CANCEL, 1);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, HOST_DND_CANCEL, 1);
     /** @todo Context ID not used yet. */
     Msg.u.v3.uContext.SetUInt32(0);
 
@@ -533,7 +533,8 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
                     }
 
                     if (   RT_SUCCESS(rc)
-                        && uNextMsg == HOST_DND_HG_SND_FILE_DATA)
+                        && uNextMsg == HOST_DND_HG_SND_FILE_DATA
+                        && cbChunkRead)
                     {
                         uint32_t cbChunkWritten;
                         rc = objFile.Write(pvChunk, cbChunkRead, &cbChunkWritten);
@@ -569,7 +570,7 @@ static int vbglR3DnDHGRecvURIData(PVBGLR3GUESTDNDCMDCTX pCtx, PVBOXDNDSNDDATAHDR
 
                     break;
                 }
-                case HOST_DND_HG_EVT_CANCEL:
+                case HOST_DND_CANCEL:
                 {
                     rc = vbglR3DnDHGRecvCancel(pCtx);
                     if (RT_SUCCESS(rc))
@@ -1266,7 +1267,7 @@ VBGLR3DECL(int) VbglR3DnDEventGetNext(PVBGLR3GUESTDNDCMDCTX pCtx, PVBGLR3DNDEVEN
                 rc = VERR_WRONG_ORDER;
                 break;
             }
-            case HOST_DND_HG_EVT_CANCEL:
+            case HOST_DND_CANCEL:
             {
                 rc = vbglR3DnDHGRecvCancel(pCtx);
                 if (RT_SUCCESS(rc))

@@ -86,7 +86,6 @@ protected:
 
 protected:
 
-    int i_cancelOperation(void);
     int i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout);
     int i_sendDataBody(PSENDDATACTX pCtx, GuestDnDData *pData);
     int i_sendDataHeader(PSENDDATACTX pCtx, GuestDnDData *pData, GuestDnDURIData *pURIData /* = NULL */);

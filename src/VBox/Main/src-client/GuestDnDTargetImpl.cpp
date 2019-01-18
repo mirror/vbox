@@ -651,7 +651,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         if (!pTask->isOk())
         {
             delete pTask;
-            LogRel2(("DnD: Could not create SendDataTask object \n"));
+            LogRel2(("DnD: Could not create SendDataTask object\n"));
             throw hr = E_FAIL;
         }
 
@@ -685,26 +685,6 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
     LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
-}
-
-int GuestDnDTarget::i_cancelOperation(void)
-{
-    /** @todo Check for pending cancel requests. */
-
-#if 0 /** @todo Later. */
-    /* Cancel any outstanding waits for guest responses first. */
-    if (pResp)
-        pResp->notifyAboutGuestResponse();
-#endif
-
-    LogFlowFunc(("Cancelling operation, telling guest ...\n"));
-
-    GuestDnDMsg Msg;
-    Msg.setType(HOST_DND_HG_EVT_CANCEL);
-    if (mDataBase.m_uProtocolVersion >= 3)
-        Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
-
-    return GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
 }
 
 /* static */
@@ -1552,7 +1532,7 @@ HRESULT GuestDnDTarget::cancel(BOOL *aVeto)
     ReturnComNotImplemented();
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
-    int rc = i_cancelOperation();
+    int rc = GuestDnDBase::sendCancel();
 
     if (aVeto)
         *aVeto = FALSE; /** @todo */
