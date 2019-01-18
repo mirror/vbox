@@ -179,6 +179,8 @@ ifdef VBOX_WITH_WDDM
   	wddm/gallium/SvgaCmd.cpp \
   	wddm/gallium/SvgaFifo.cpp \
   	wddm/gallium/SvgaHw.cpp \
+  	wddm/gallium/VBoxMPGaFence.cpp \
+  	wddm/gallium/VBoxMPGaUtils.cpp \
   	wddm/gallium/VBoxMPGaWddm.cpp
  endif
 
