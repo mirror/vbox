@@ -1237,20 +1237,38 @@ uint32_t DrvAudioHlpBytesToFrames(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pPro
  * @return  uint64_t            Calculated time (in ms).
  * @param   cbBytes             Amount of bytes to calculate time for.
  * @param   pProps              PCM properties to calculate amount of bytes for.
+ *
+ * @note    Does rounding up the result.
  */
 uint64_t DrvAudioHlpBytesToMilli(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
-    if (!cbBytes)
-        return 0;
+    const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
 
-    const double dbBytesPerMs = (double)drvAudioHlpBytesPerSec(pProps) / (double)RT_MS_1SEC;
-    Assert(dbBytesPerMs >= 0.0f);
-    if (!dbBytesPerMs) /* Prevent division by zero. */
-        return 0;
+    uint64_t uTimeMs = ((cbBytes + cbFrame - 1) / cbFrame) * RT_MS_1SEC;
 
-    return (double)cbBytes / (double)dbBytesPerMs;
+    return (uTimeMs + pProps->uHz - 1) / pProps->uHz;
+}
+
+/**
+ * Returns the time (in us) for given byte amount and PCM properties.
+ *
+ * @return  uint64_t            Calculated time (in us).
+ * @param   cbBytes             Amount of bytes to calculate time for.
+ * @param   pProps              PCM properties to calculate amount of bytes for.
+ *
+ * @note    Does rounding up the result.
+ */
+uint64_t DrvAudioHlpBytesToMicro(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
+{
+    AssertPtrReturn(pProps, 0);
+
+    const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+
+    uint64_t uTimeUs = ((cbBytes + cbFrame - 1) / cbFrame) * RT_US_1SEC;
+
+    return (uTimeUs + pProps->uHz - 1) / pProps->uHz;
 }
 
 /**
@@ -1259,20 +1277,18 @@ uint64_t DrvAudioHlpBytesToMilli(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProp
  * @return  uint64_t            Calculated time (in ns).
  * @param   cbBytes             Amount of bytes to calculate time for.
  * @param   pProps              PCM properties to calculate amount of bytes for.
+ *
+ * @note    Does rounding up the result.
  */
 uint64_t DrvAudioHlpBytesToNano(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps)
 {
     AssertPtrReturn(pProps, 0);
 
-    if (!cbBytes)
-        return 0;
+    const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
 
-    const double dbBytesPerMs = (PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */) * pProps->uHz) / RT_NS_1SEC;
-    Assert(dbBytesPerMs >= 0.0f);
-    if (!dbBytesPerMs) /* Prevent division by zero. */
-        return 0;
+    uint64_t uTimeNs = ((cbBytes + cbFrame - 1) / cbFrame) * RT_NS_1SEC;
 
-    return cbBytes / dbBytesPerMs;
+    return (uTimeNs + pProps->uHz - 1) / pProps->uHz;
 }
 
 /**
