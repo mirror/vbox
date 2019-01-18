@@ -1589,7 +1589,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxUncondIoExit          = 1;
     EmuFeat.fVmxUseIoBitmaps          = 1;
     EmuFeat.fVmxMonitorTrapFlag       = 0;
-    EmuFeat.fVmxUseMsrBitmaps         = 0;
+    EmuFeat.fVmxUseMsrBitmaps         = 1;
     EmuFeat.fVmxMonitorExit           = 1;
     EmuFeat.fVmxPauseExit             = 1;
     EmuFeat.fVmxSecondaryExecCtls     = 1;
