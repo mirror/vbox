@@ -53,8 +53,12 @@
 # include "UIWindowMenuManager.h"
 #endif /* VBOX_WS_MAC */
 
-
-class UIMediumSearchWidget : public QWidget
+/*********************************************************************************************************************************
+*   UIMediumSearchWidget definition.                                                                                         *
+*********************************************************************************************************************************/
+/** QWidget extension providing a simple way to enter a earch term and search type for medium searching
+ *  in virtual media manager, medium selection dialog, etc. */
+class UIMediumSearchWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
@@ -69,8 +73,7 @@ public:
 
 signals:
 
-    void sigSearchTypeChanged(int newType);
-    void sigSearchTermChanged(QString searchTerm);
+    void sigPerformSearch();
 
 public:
 
@@ -78,11 +81,16 @@ public:
     SearchType searchType() const;
     QString searchTerm() const;
 
+protected:
+
+    void retranslateUi() /* override */;
+
 private:
 
     void prepareWidgets();
     QIComboBox       *m_pSearchComboxBox;
-    QLineEdit         *m_pSearchTermLineEdit;
+    QLineEdit        *m_pSearchTermLineEdit;
+    QIToolButton     *m_pSearchButton;
 };
 
 
@@ -91,9 +99,10 @@ private:
 *********************************************************************************************************************************/
 
 UIMediumSearchWidget::UIMediumSearchWidget(QWidget *pParent)
-    :QWidget(pParent)
+    :QIWithRetranslateUI<QWidget>(pParent)
     , m_pSearchComboxBox(0)
     , m_pSearchTermLineEdit(0)
+    , m_pSearchButton(0)
 {
     prepareWidgets();
 }
@@ -114,7 +123,7 @@ void UIMediumSearchWidget::prepareWidgets()
         pLayout->addWidget(m_pSearchComboxBox);
 
         connect(m_pSearchComboxBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::currentIndexChanged),
-                this, &UIMediumSearchWidget::sigSearchTypeChanged);
+                this, &UIMediumSearchWidget::sigPerformSearch);
 
     }
 
@@ -123,9 +132,18 @@ void UIMediumSearchWidget::prepareWidgets()
     {
         m_pSearchTermLineEdit->setClearButtonEnabled(true);
         pLayout->addWidget(m_pSearchTermLineEdit);
-        connect(m_pSearchTermLineEdit, &QILineEdit::textChanged,
-                this, &UIMediumSearchWidget::sigSearchTermChanged);
+        connect(m_pSearchTermLineEdit, &QILineEdit::editingFinished,
+                this, &UIMediumSearchWidget::sigPerformSearch);
     }
+
+    m_pSearchButton = new QIToolButton;
+    if (m_pSearchButton)
+    {
+        m_pSearchButton->setIcon(UIIconPool::iconSet(":/log_viewer_find_16px.png", ":/log_viewer_find_disabled_16px.png"));
+        connect(m_pSearchButton, &QIToolButton::clicked, this, &UIMediumSearchWidget::sigPerformSearch);
+        pLayout->addWidget(m_pSearchButton);
+    }
+    retranslateUi();
 }
 
 UIMediumSearchWidget::SearchType UIMediumSearchWidget::searchType() const
@@ -142,6 +160,24 @@ QString UIMediumSearchWidget::searchTerm() const
     return m_pSearchTermLineEdit->text();
 }
 
+void UIMediumSearchWidget::retranslateUi()
+{
+    if (m_pSearchComboxBox)
+    {
+        m_pSearchComboxBox->setItemText(SearchByName, UIMediumSelector::tr("Search By Name"));
+        m_pSearchComboxBox->setItemText(SearchByUUID, UIMediumSelector::tr("Search By UUID"));
+        m_pSearchComboxBox->setToolTip(UIMediumSelector::tr("Select the search type"));
+    }
+    if (m_pSearchTermLineEdit)
+        m_pSearchTermLineEdit->setToolTip("Enter the search term and press Return");
+    if (m_pSearchButton)
+        m_pSearchButton->setToolTip("Search medium with the given name or UUID");
+}
+
+
+/*********************************************************************************************************************************
+*   UIMediumSelector implementation.                                                                                         *
+*********************************************************************************************************************************/
 
 UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName /* = QString() */,
                                    const QString &machineSettigFilePath /* = QString() */, QWidget *pParent /* = 0 */)
@@ -328,10 +364,8 @@ void UIMediumSelector::prepareConnections()
 
     if (m_pSearchWidget)
     {
-        connect(m_pSearchWidget, &UIMediumSearchWidget::sigSearchTypeChanged,
-                this, &UIMediumSelector::sltHandleSearchTypeChange);
-        connect(m_pSearchWidget, &UIMediumSearchWidget::sigSearchTermChanged,
-                this, &UIMediumSelector::sltHandleSearchTermChange);
+        connect(m_pSearchWidget, &UIMediumSearchWidget::sigPerformSearch,
+                this, &UIMediumSelector::sltHandlePerformSearch);
     }
 }
 
@@ -543,15 +577,8 @@ void UIMediumSelector::sltHandleRefresh()
     vboxGlobal().startMediumEnumeration();
 }
 
-void UIMediumSelector::sltHandleSearchTypeChange(int type)
+void UIMediumSelector::sltHandlePerformSearch()
 {
-    Q_UNUSED(type);
-    performMediumSearch();
-}
-
-void UIMediumSelector::sltHandleSearchTermChange(QString searchTerm)
-{
-    Q_UNUSED(searchTerm);
     performMediumSearch();
 }
 
@@ -752,7 +779,6 @@ void UIMediumSelector::performMediumSearch()
         }
     }
 
-
     UIMediumSearchWidget::SearchType searchType =
         m_pSearchWidget->searchType();
     if (searchType >= UIMediumSearchWidget::SearchByMax)
@@ -777,6 +803,9 @@ void UIMediumSelector::performMediumSearch()
             // mark the item
             for (int j = 0; j < m_pTreeWidget->columnCount(); ++j)
                 m_mediumItemList[i]->setData(j, Qt::ForegroundRole, QBrush(QColor(255, 0, 0)));
+            QModelIndex itemIndex = m_pTreeWidget->itemIndex(m_mediumItemList[i]);
+            if (itemIndex.isValid())
+                m_pTreeWidget->scrollTo(itemIndex);
         }
     }
 }

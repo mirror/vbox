@@ -432,6 +432,11 @@ QITreeWidgetItem *QITreeWidget::childItem(int iIndex) const
     return invisibleRootItem()->child(iIndex) ? QITreeWidgetItem::toItem(invisibleRootItem()->child(iIndex)) : 0;
 }
 
+QModelIndex QITreeWidget::itemIndex(QTreeWidgetItem *pItem)
+{
+    return indexFromItem(pItem);
+}
+
 void QITreeWidget::paintEvent(QPaintEvent *pEvent)
 {
     /* Create item painter: */

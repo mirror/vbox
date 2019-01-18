@@ -85,7 +85,7 @@ signals:
     /** Notifies about tree-widget being resized from @a oldSize to @a size. */
     void resized(const QSize &size, const QSize &oldSize);
 
-public:
+ public:
 
     /** Constructs tree-widget passing @a pParent to the base-class. */
     QITreeWidget(QWidget *pParent = 0);
@@ -97,6 +97,7 @@ public:
     int childCount() const;
     /** Returns the child item with @a iIndex. */
     QITreeWidgetItem *childItem(int iIndex) const;
+    QModelIndex itemIndex(QTreeWidgetItem *pItem);
 
 protected:
 

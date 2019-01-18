@@ -68,10 +68,9 @@ private slots:
     void sltHandleMediumEnumerated();
     void sltHandleMediumEnumerationFinish();
     void sltHandleRefresh();
-    void sltHandleSearchTypeChange(int type);
-    void sltHandleSearchTermChange(QString searchTerm);
+    void sltHandlePerformSearch();
 
-private:
+ private:
 
 
     /** @name Event-handling stuff.
