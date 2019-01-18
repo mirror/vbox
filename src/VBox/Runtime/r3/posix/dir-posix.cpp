@@ -107,7 +107,7 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
                     ||  rc == EACCES)
                 {
                     rc = RTErrConvertFromErrno(rc);
-                    fVerifyIsDir = false;  /* We'll check if it's a dir ourselves since we're going to stat() anyway. */
+                    /*fVerifyIsDir = false;   We'll check if it's a dir ourselves since we're going to stat() anyway. */
                     struct stat st;
                     if (!stat(pszNativePath, &st))
                     {
@@ -124,7 +124,7 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
 #endif
 #if 0 /* Windows returns VERR_ALREADY_EXISTS, so why bother with this. */
                 if (   rc == VERR_ALREADY_EXISTS
-                    && fVerifyIsDir == true)
+                    /*&& fVerifyIsDir == true*/)
                 {
                     /*
                      * Verify that it really exists as a directory.
