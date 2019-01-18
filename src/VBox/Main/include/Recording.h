@@ -34,7 +34,7 @@ using namespace com;
 class Console;
 
 /**
- * Class for managing a capturing context.
+ * Class for managing a recording context.
  */
 class RecordingContext
 {
@@ -51,7 +51,7 @@ public:
     size_t GetStreamCount(void) const;
 
     int Create(const settings::RecordingSettings &a_Settings);
-    int Destroy(void);
+    void Destroy(void);
 
     int Start(void);
     int Stop(void);
@@ -64,7 +64,7 @@ public:
 public:
 
     bool IsFeatureEnabled(RecordingFeature_T enmFeature);
-    bool IsReady(void) const;
+    bool IsReady(void);
     bool IsReady(uint32_t uScreen, uint64_t msTimestamp);
     bool IsStarted(void);
     bool IsLimitReached(void);
@@ -78,7 +78,7 @@ protected:
     int startInternal(void);
     int stopInternal(void);
 
-    int destroyInternal(void);
+    void destroyInternal(void);
 
     RecordingStream *getStreamInternal(unsigned uScreen) const;
 

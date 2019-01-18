@@ -216,10 +216,7 @@ int RecordingContext::createInternal(const settings::RecordingSettings &a_Settin
     }
 
     if (RT_FAILURE(rc))
-    {
-        int rc2 = destroyInternal();
-        AssertRC(rc2);
-    }
+        destroyInternal();
 
     return rc;
 }
@@ -273,6 +270,8 @@ int RecordingContext::stopInternal(void)
     if (RT_SUCCESS(rc))
         rc = RTThreadWait(this->Thread, 30 * 1000 /* 10s timeout */, NULL);
 
+    lock();
+
     if (RT_SUCCESS(rc))
     {
         LogRel(("Recording: Stopped\n"));
@@ -281,6 +280,8 @@ int RecordingContext::stopInternal(void)
     else
         Log(("Recording: Failed to stop (%Rrc)\n", rc));
 
+    unlock();
+
     LogFlowThisFunc(("%Rrc\n", rc));
     return rc;
 }
@@ -288,51 +289,49 @@ int RecordingContext::stopInternal(void)
 /**
  * Destroys a recording context, internal version.
  */
-int RecordingContext::destroyInternal(void)
+void RecordingContext::destroyInternal(void)
 {
+    if (this->enmState == RECORDINGSTS_UNINITIALIZED)
+        return;
+
     int rc = stopInternal();
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturnVoid(rc);
+
+    lock();
 
     rc = RTSemEventDestroy(this->WaitEvent);
-    AssertRC(rc);
+    AssertRCReturnVoid(rc);
 
     this->WaitEvent = NIL_RTSEMEVENT;
 
-    rc = RTCritSectEnter(&this->CritSect);
-    if (RT_SUCCESS(rc))
+    RecordingStreams::iterator it = this->vecStreams.begin();
+    while (it != this->vecStreams.end())
     {
-        RecordingStreams::iterator it = this->vecStreams.begin();
-        while (it != this->vecStreams.end())
-        {
-            RecordingStream *pStream = (*it);
+        RecordingStream *pStream = (*it);
 
-            int rc2 = pStream->Uninit();
-            if (RT_SUCCESS(rc))
-                rc = rc2;
+        rc = pStream->Uninit();
+        AssertRC(rc);
 
-            delete pStream;
-            pStream = NULL;
+        delete pStream;
+        pStream = NULL;
 
-            this->vecStreams.erase(it);
-            it = this->vecStreams.begin();
+        this->vecStreams.erase(it);
+        it = this->vecStreams.begin();
+    }
 
-            delete pStream;
-            pStream = NULL;
-        }
+    /* Sanity. */
+    Assert(this->vecStreams.empty());
+    Assert(this->mapBlocksCommon.size() == 0);
 
-        /* Sanity. */
-        Assert(this->vecStreams.empty());
-        Assert(this->mapBlocksCommon.size() == 0);
+    unlock();
 
-        int rc2 = RTCritSectLeave(&this->CritSect);
-        AssertRC(rc2);
-
+    if (RTCritSectIsInitialized(&this->CritSect))
+    {
+        Assert(RTCritSectGetWaiters(&this->CritSect) == -1);
         RTCritSectDelete(&this->CritSect);
     }
 
-    LogFlowThisFunc(("%Rrc\n", rc));
-    return rc;
+    this->enmState = RECORDINGSTS_UNINITIALIZED;
 }
 
 /**
@@ -417,9 +416,9 @@ int RecordingContext::Create(const settings::RecordingSettings &a_Settings)
 /**
  * Destroys a recording context.
  */
-int RecordingContext::Destroy(void)
+void RecordingContext::Destroy(void)
 {
-    return destroyInternal();
+    destroyInternal();
 }
 
 /**
@@ -473,9 +472,15 @@ bool RecordingContext::IsFeatureEnabled(RecordingFeature_T enmFeature)
  *
  * @returns @c true if recording context is ready, @c false if not.
  */
-bool RecordingContext::IsReady(void) const
+bool RecordingContext::IsReady(void)
 {
-    return (this->enmState >= RECORDINGSTS_CREATED);
+    lock();
+
+    const bool fIsReady = this->enmState >= RECORDINGSTS_CREATED;
+
+    unlock();
+
+    return fIsReady;
 }
 
 /**
@@ -623,9 +628,9 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
     pBlock->cRefs       = this->cStreamsEnabled;
     pBlock->msTimestamp = msTimestamp;
 
-    int rc = RTCritSectEnter(&this->CritSect);
-    if (RT_FAILURE(rc))
-        return rc;
+    lock();
+
+    int rc;
 
     try
     {
@@ -639,6 +644,8 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
         }
         else
             itBlocks->second->List.push_back(pBlock);
+
+        rc = VINF_SUCCESS;
     }
     catch (const std::exception &ex)
     {
@@ -646,8 +653,7 @@ int RecordingContext::SendAudioFrame(const void *pvData, size_t cbData, uint64_t
         rc = VERR_NO_MEMORY;
     }
 
-    int rc2 = RTCritSectLeave(&this->CritSect);
-    AssertRC(rc2);
+    unlock();
 
     if (RT_SUCCESS(rc))
         rc = threadNotify();
@@ -686,23 +692,20 @@ int RecordingContext::SendVideoFrame(uint32_t uScreen, uint32_t x, uint32_t y,
     AssertReturn(uSrcHeight, VERR_INVALID_PARAMETER);
     AssertReturn(puSrcData,  VERR_INVALID_POINTER);
 
-    int rc = RTCritSectEnter(&this->CritSect);
-    AssertRC(rc);
+    lock();
 
     RecordingStream *pStream = GetStream(uScreen);
     if (!pStream)
     {
-        rc = RTCritSectLeave(&this->CritSect);
-        AssertRC(rc);
+        unlock();
 
         AssertFailed();
         return VERR_NOT_FOUND;
     }
 
-    rc = pStream->SendVideoFrame(x, y, uPixelFormat, uBPP, uBytesPerLine, uSrcWidth, uSrcHeight, puSrcData, msTimestamp);
+    int rc = pStream->SendVideoFrame(x, y, uPixelFormat, uBPP, uBytesPerLine, uSrcWidth, uSrcHeight, puSrcData, msTimestamp);
 
-    int rc2 = RTCritSectLeave(&this->CritSect);
-    AssertRC(rc2);
+    unlock();
 
     if (   RT_SUCCESS(rc)
         && rc != VINF_RECORDING_THROTTLED) /* Only signal the thread if operation was successful. */
