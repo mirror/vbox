@@ -1972,8 +1972,8 @@ static uint64_t ichac97R3StreamTransferCalcNext(PAC97STATE pThis, PAC97STREAM pS
     const uint64_t usBytes        = DrvAudioHlpBytesToMicro(cbBytes, &pStream->State.Cfg.Props);
     const uint64_t cTransferTicks = TMTimerFromMicro((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD), usBytes);
 
-    LogFunc(("[SD%RU8] Timer %uHz, cbBytes=%RU32 -> usBytes=%RU64, cTransferTicks=%RU64\n",
-             pStream->u8SD, pStream->State.uTimerHz, cbBytes, usBytes, cTransferTicks));
+    Log3Func(("[SD%RU8] Timer %uHz, cbBytes=%RU32 -> usBytes=%RU64, cTransferTicks=%RU64\n",
+              pStream->u8SD, pStream->State.uTimerHz, cbBytes, usBytes, cTransferTicks));
 
     return cTransferTicks;
 }
