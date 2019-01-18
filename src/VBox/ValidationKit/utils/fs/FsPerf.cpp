@@ -1309,7 +1309,7 @@ void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
     {
         switch (RTRandU32Ex(RTFILE_SEEK_BEGIN, RTFILE_SEEK_END))
         {
-            default: AssertFailed();
+            default: AssertFailedBreak();
             case RTFILE_SEEK_BEGIN:
                 aSeeks[i].uMethod   = RTFILE_SEEK_BEGIN;
                 aSeeks[i].rc        = VINF_SUCCESS;
