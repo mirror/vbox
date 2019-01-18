@@ -1969,18 +1969,11 @@ static uint64_t ichac97R3StreamTransferCalcNext(PAC97STATE pThis, PAC97STREAM pS
     if (!cbBytes)
         return 0;
 
-    AssertReturn(DrvAudioHlpPCMPropsAreValid(&pStream->State.Cfg.Props), 0);
-    const uint32_t cbFrame = DrvAudioHlpPCMPropsBytesPerFrame(&pStream->State.Cfg.Props);
+    const uint64_t usBytes        = DrvAudioHlpBytesToMicro(cbBytes, &pStream->State.Cfg.Props);
+    const uint64_t cTransferTicks = TMTimerFromMicro((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD), usBytes);
 
-    AssertReturn(cbBytes % cbFrame == 0, 0);
-
-    const uint64_t cTicksPerHz    = TMTimerGetFreq((pThis)->DEVAC97_CTX_SUFF_SD(pTimer, pStream->u8SD)) / pStream->State.uTimerHz;
-    const uint64_t cTicksPerByte  = cTicksPerHz / cbBytes;
-    Assert(cTicksPerByte);
-    const uint64_t cTransferTicks = cbBytes * cTicksPerByte;
-
-    LogFunc(("[SD%RU8] Timer %uHz (%RU64 ticks per Hz), cTicksPerByte=%RU64, cbBytes=%RU32 -> cTransferTicks=%RU64\n",
-             pStream->u8SD, pStream->State.uTimerHz, cTicksPerHz, cTicksPerByte, cbBytes, cTransferTicks));
+    LogFunc(("[SD%RU8] Timer %uHz, cbBytes=%RU32 -> usBytes=%RU64, cTransferTicks=%RU64\n",
+             pStream->u8SD, pStream->State.uTimerHz, cbBytes, usBytes, cTransferTicks));
 
     return cTransferTicks;
 }
