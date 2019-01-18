@@ -3268,7 +3268,7 @@ CVfrStringDB::GetVarStoreNameFormStringId (
 {
   FILE        *pInFile    = NULL;
   UINT32      NameOffset;
-  UINT32      Length;
+  INT32       Length;
   UINT8       *StringPtr;
   CHAR8       *StringName;
   CHAR16      *UnicodeString;

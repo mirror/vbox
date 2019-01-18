@@ -148,7 +148,7 @@ typedef INT32   INTN;
   #define EFIAPI __cdecl
 #endif
 
-#if __GNUC__
+#ifdef __GNUC__
   #define EFIAPI __attribute__((cdecl))
 #endif
 
