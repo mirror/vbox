@@ -442,6 +442,8 @@ class TestVm(object):
                     fRc = None; # Skip the test.
                 elif self.isViaIncompatible() and oTestDrv.isHostCpuVia():
                     fRc = None; # Skip the test.
+                elif self.isShanghaiIncompatible() and oTestDrv.isHostCpuShanghai():
+                    fRc = None; # Skip the test.
                 elif self.isP4Incompatible() and oTestDrv.isHostCpuP4():
                     fRc = None; # Skip the test.
                 else:
@@ -560,6 +562,15 @@ class TestVm(object):
         if self.aInfo[g_iKind] in ['Solaris11_64']:
             return True;
         return False;
+
+    def isShanghaiIncompatible(self):
+        """
+        Identifies VMs that doesn't work on Shanghai.
+
+        Returns True if NOT supported on Shanghai, False if it IS supported.
+        """
+        # For now treat it just like VIA, to be adjusted later
+        return self.isViaIncompatible()
 
     def isP4Incompatible(self):
         """

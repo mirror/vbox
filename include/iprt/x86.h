@@ -396,6 +396,10 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_VENDOR_VIA_EBX        0x746e6543      /* Cent */
 #define X86_CPUID_VENDOR_VIA_ECX        0x736c7561      /* auls */
 #define X86_CPUID_VENDOR_VIA_EDX        0x48727561      /* aurH */
+
+#define X86_CPUID_VENDOR_SHANGHAI_EBX   0x68532020      /*   Sh */
+#define X86_CPUID_VENDOR_SHANGHAI_ECX   0x20206961      /* ai   */
+#define X86_CPUID_VENDOR_SHANGHAI_EDX   0x68676e61      /* angh */
 /** @} */
 
 

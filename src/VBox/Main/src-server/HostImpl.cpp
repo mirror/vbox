@@ -333,7 +333,8 @@ HRESULT Host::init(VirtualBox *aParent)
 
             /* VT-x? */
             if (   ASMIsIntelCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
-                || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
+                || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
+                || ASMIsShanghaiCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
             {
                 if (    (fFeaturesEcx & X86_CPUID_FEATURE_ECX_VMX)
                      && (fFeaturesEdx & X86_CPUID_FEATURE_EDX_MSR)

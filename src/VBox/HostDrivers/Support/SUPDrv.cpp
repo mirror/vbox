@@ -4149,7 +4149,8 @@ SUPR0DECL(int) SUPR0GetVTSupport(uint32_t *pfCaps)
 
             /* Check if the vendor is Intel (or compatible). */
             if (   ASMIsIntelCpuEx(uVendorEbx, uVendorEcx, uVendorEdx)
-                || ASMIsViaCentaurCpuEx(uVendorEbx, uVendorEcx, uVendorEdx))
+                || ASMIsViaCentaurCpuEx(uVendorEbx, uVendorEcx, uVendorEdx)
+                || ASMIsShanghaiCpuEx(uVendorEbx, uVendorEcx, uVendorEdx))
             {
                 /* Check VT-x support. In addition, VirtualBox requires MSR and FXSAVE/FXRSTOR to function. */
                 if (   (fFeatEcx & X86_CPUID_FEATURE_ECX_VMX)
@@ -4197,9 +4198,9 @@ SUPR0DECL(int) SUPR0GetVTSupport(uint32_t *pfCaps)
  *
  * @remarks Must be called with preemption disabled.
  *          The caller is also expected to check that the CPU is an Intel (or
- *          VIA) CPU -and- that it supports VT-x.  Otherwise, this function
- *          might throw a \#GP fault as it tries to read/write MSRs that may not
- *          be present!
+ *          VIA/Shanghai) CPU -and- that it supports VT-x.  Otherwise, this
+ *          function might throw a \#GP fault as it tries to read/write MSRs
+ *          that may not be present!
  */
 SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
 {
@@ -4267,7 +4268,8 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
         ASMCpuId(0, &uMaxId, &uVendorEBX, &uVendorECX, &uVendorEDX);
         Assert(ASMIsValidStdRange(uMaxId));
         Assert(   ASMIsIntelCpuEx(     uVendorEBX, uVendorECX, uVendorEDX)
-               || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX));
+               || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
+               || ASMIsShanghaiCpuEx(  uVendorEBX, uVendorECX, uVendorEDX));
 #endif
         ASMCpuId(1, &uDummy, &uDummy, &fFeaturesECX, &uDummy);
         bool fSmxVmxHwSupport = false;
@@ -4372,7 +4374,7 @@ SUPR0DECL(int) SUPR0GetSvmUsability(bool fInitSvm)
  * @retval  VERR_SVM_NO_SVM
  * @retval  VERR_SVM_DISABLED
  * @retval  VERR_UNSUPPORTED_CPU if not identifiable as an AMD, Intel or VIA
- *          (centaur) CPU.
+ *          (centaur)/Shanghai CPU.
  *
  * @param   pfCaps          Where to store the capabilities.
  */
@@ -4455,7 +4457,7 @@ int VBOXCALL supdrvQueryVTCapsInternal(uint32_t *pfCaps)
  * @retval  VERR_SVM_NO_SVM
  * @retval  VERR_SVM_DISABLED
  * @retval  VERR_UNSUPPORTED_CPU if not identifiable as an AMD, Intel or VIA
- *          (centaur) CPU.
+ *          (centaur)/Shanghai CPU.
  *
  * @param   pSession        The session handle.
  * @param   pfCaps          Where to store the capabilities.

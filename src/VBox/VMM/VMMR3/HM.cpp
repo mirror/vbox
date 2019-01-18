@@ -1089,8 +1089,10 @@ static int hmR3InitFinalizeR3(PVM pVM)
 
 #undef HM_REG_COUNTER
 
-        const char *const *papszDesc = ASMIsIntelCpu() || ASMIsViaCentaurCpu() ? &g_apszVmxExitReasons[0]
-                                                                               : &g_apszSvmExitReasons[0];
+        const char *const *papszDesc =
+            ASMIsIntelCpu() || ASMIsViaCentaurCpu() || ASMIsShanghaiCpu()
+            ? &g_apszVmxExitReasons[0]
+            : &g_apszSvmExitReasons[0];
 
         /*
          * Guest Exit reason stats.

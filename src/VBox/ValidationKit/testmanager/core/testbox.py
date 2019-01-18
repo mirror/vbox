@@ -503,6 +503,9 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
                 if uMod == 0x09: return 'VIA_C3_C5XL' if TestBoxData.getCpuSteppingEx(lCpuRevision) < 8 else 'VIA_C3_C5P';
                 if uMod == 0x0a: return 'VIA_C7_C5J';
                 if uMod == 0x0f: return 'VIA_Isaiah';
+        elif sCpuVendor == '  Shanghai  ':
+            if uFam == 0x07:
+                if uMod == 0x0b: return 'Shanghai_KX-5000';
         return None;
 
     def queryCpuMicroarch(self):
@@ -543,6 +546,7 @@ class TestBoxData(ModelDataBase):  # pylint: disable=R0902
         if self.sCpuVendor == 'GenuineIntel':     return 'Intel';
         if self.sCpuVendor == 'AuthenticAMD':     return 'AMD';
         if self.sCpuVendor == 'CentaurHauls':     return 'VIA';
+        if self.sCpuVendor == '  Shanghai  ':     return 'Shanghai';
         return self.sCpuVendor;
 
 

@@ -3096,6 +3096,15 @@ class TestDriver(base.TestDriver):                                              
         sCpuDesc = self._getHostCpuDesc(fQuiet);
         return sCpuDesc.startswith("VIA") or sCpuDesc == 'CentaurHauls';
 
+    def isHostCpuShanghai(self, fQuiet = False):
+        """
+        Checks if the host CPU vendor is Shanghai (or Zhaoxin).
+
+        Returns True / False.
+        """
+        sCpuDesc = self._getHostCpuDesc(fQuiet);
+        return sCpuDesc.startswith("ZHAOXIN") or sCpuDesc.strip(' ') == 'Shanghai';
+
     def isHostCpuP4(self, fQuiet = False):
         """
         Checks if the host CPU is a Pentium 4 / Pentium D.

@@ -1402,7 +1402,8 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercallEx(PVMCPU pVCpu, PCPUMCTX pCtx, unsigne
     CPUMCPUVENDOR const enmGuestCpuVendor = (CPUMCPUVENDOR)pVM->cpum.ro.GuestFeatures.enmCpuVendor;
     if (   (   uDisOpcode == OP_VMCALL
             && (   enmGuestCpuVendor == CPUMCPUVENDOR_INTEL
-                || enmGuestCpuVendor == CPUMCPUVENDOR_VIA))
+                || enmGuestCpuVendor == CPUMCPUVENDOR_VIA
+                || enmGuestCpuVendor == CPUMCPUVENDOR_SHANGHAI))
         || (   uDisOpcode == OP_VMMCALL
             && enmGuestCpuVendor == CPUMCPUVENDOR_AMD))
         return gimHvHypercall(pVCpu, pCtx);

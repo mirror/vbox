@@ -435,6 +435,7 @@ VMM_INT_DECL(int) GIMQueryHypercallOpcodeBytes(PVM pVM, void *pvBuf, size_t cbBu
 
         case CPUMCPUVENDOR_INTEL:
         case CPUMCPUVENDOR_VIA:
+        case CPUMCPUVENDOR_SHANGHAI:
         {
             if (puDisOpcode)
                 *puDisOpcode = OP_VMCALL;

@@ -214,6 +214,8 @@ typedef struct CPUMDBENTRY
 
 #include "cpus/VIA_QuadCore_L4700_1_2_GHz.h"
 
+#include "cpus/ZHAOXIN_KaiXian_KX_U5581_1_8GHz.h"
+
 
 
 /**
@@ -303,6 +305,10 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 #endif
 #ifdef VBOX_CPUDB_AMD_Athlon_64_3200_h
     &g_Entry_AMD_Athlon_64_3200,
+#endif
+
+#ifdef VBOX_CPUDB_ZHAOXIN_KaiXian_KX_U5581_1_8GHz_h
+    &g_Entry_ZHAOXIN_KaiXian_KX_U5581_1_8GHz,
 #endif
 
 #ifdef VBOX_CPUDB_VIA_QuadCore_L4700_1_2_GHz_h

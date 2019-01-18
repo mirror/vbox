@@ -430,6 +430,19 @@ VMMR3DECL(CPUMMICROARCH) CPUMR3CpuIdDetermineMicroarchEx(CPUMCPUVENDOR enmVendor
         return kCpumMicroarch_VIA_Unknown;
     }
 
+    if (enmVendor == CPUMCPUVENDOR_SHANGHAI)
+    {
+        switch (bFamily)
+        {
+            case 6:
+            case 7:
+                return kCpumMicroarch_Shanghai_Wudaokou;
+            default:
+                break;
+        }
+        return kCpumMicroarch_Shanghai_Unknown;
+    }
+
     if (enmVendor == CPUMCPUVENDOR_CYRIX)
     {
         switch (bFamily)
@@ -588,6 +601,9 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         CASE_RET_STR(kCpumMicroarch_VIA_Isaiah);
         CASE_RET_STR(kCpumMicroarch_VIA_Unknown);
 
+        CASE_RET_STR(kCpumMicroarch_Shanghai_Wudaokou);
+        CASE_RET_STR(kCpumMicroarch_Shanghai_Unknown);
+
         CASE_RET_STR(kCpumMicroarch_Cyrix_5x86);
         CASE_RET_STR(kCpumMicroarch_Cyrix_M1);
         CASE_RET_STR(kCpumMicroarch_Cyrix_MediaGX);
@@ -618,6 +634,7 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         case kCpumMicroarch_VIA_End:
         case kCpumMicroarch_Cyrix_End:
         case kCpumMicroarch_NEC_End:
+        case kCpumMicroarch_Shanghai_End:
         case kCpumMicroarch_32BitHack:
             break;
         /* no default! */
@@ -1602,6 +1619,9 @@ VMMR3DECL(CPUMCPUVENDOR) CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uEBX,
         if (ASMIsViaCentaurCpuEx(uEBX, uECX, uEDX))
             return CPUMCPUVENDOR_VIA;
 
+        if (ASMIsShanghaiCpuEx(uEBX, uECX, uEDX))
+            return CPUMCPUVENDOR_SHANGHAI;
+
         if (   uEBX == UINT32_C(0x69727943) /* CyrixInstead */
             && uECX == UINT32_C(0x64616574)
             && uEDX == UINT32_C(0x736E4978))
@@ -1633,6 +1653,7 @@ VMMR3DECL(const char *) CPUMR3CpuVendorName(CPUMCPUVENDOR enmVendor)
         case CPUMCPUVENDOR_AMD:         return "AMD";
         case CPUMCPUVENDOR_VIA:         return "VIA";
         case CPUMCPUVENDOR_CYRIX:       return "CYRIX";
+        case CPUMCPUVENDOR_SHANGHAI:    return "SHANGHAI";
         case CPUMCPUVENDOR_UNKNOWN:     return "UNKNOWN";
 
         case CPUMCPUVENDOR_INVALID:

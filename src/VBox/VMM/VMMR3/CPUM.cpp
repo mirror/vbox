@@ -1148,7 +1148,8 @@ DECLCALLBACK(void) cpumR3InfoVmxFeatures(PVM pVM, PCDBGFINFOHLP pHlp, const char
     PCCPUMFEATURES pHostFeatures  = &pVM->cpum.s.HostFeatures;
     PCCPUMFEATURES pGuestFeatures = &pVM->cpum.s.GuestFeatures;
     if (   pHostFeatures->enmCpuVendor == CPUMCPUVENDOR_INTEL
-        || pHostFeatures->enmCpuVendor == CPUMCPUVENDOR_VIA)
+        || pHostFeatures->enmCpuVendor == CPUMCPUVENDOR_VIA
+        || pHostFeatures->enmCpuVendor == CPUMCPUVENDOR_SHANGHAI)
     {
 #define VMXFEATDUMP(a_szDesc, a_Var) \
         pHlp->pfnPrintf(pHlp, "  %s = %u (%u)\n", a_szDesc, pGuestFeatures->a_Var, pHostFeatures->a_Var)
