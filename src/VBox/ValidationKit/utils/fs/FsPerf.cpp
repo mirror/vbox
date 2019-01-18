@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * NetPerf - File System Performance Benchmark.
+ * FsPerf - File System (Shared Folders) Performance Benchmark.
  */
 
 /*
@@ -47,6 +47,7 @@
 #include <iprt/test.h>
 #include <iprt/time.h>
 #include <iprt/thread.h>
+#include <iprt/zero.h>
 
 
 /*********************************************************************************************************************************
@@ -88,6 +89,9 @@
  */
 #define PROFILE_MANYTREE_FN(a_szPath, a_fnCall, a_cEstimationIterations, a_cNsTarget, a_szDesc) \
     do { \
+        if (!g_fManyFiles) \
+            break; \
+        \
         /* Estimate how many iterations we need to fill up the given timeslot: */ \
         uint64_t const nsStartEstimation = RTTimeNanoTS(); \
         PFSPERFNAMEENTRY pCur; \
@@ -157,6 +161,48 @@ typedef struct FSPERFNAMEENTRY
 typedef FSPERFNAMEENTRY *PFSPERFNAMEENTRY;
 
 
+enum
+{
+    kCmdOpt_First = 128,
+
+    kCmdOpt_ManyFiles = kCmdOpt_First,
+    kCmdOpt_NoManyFiles,
+    kCmdOpt_Open,
+    kCmdOpt_NoOpen,
+    kCmdOpt_FStat,
+    kCmdOpt_NoFStat,
+    kCmdOpt_FChMod,
+    kCmdOpt_NoFChMod,
+    kCmdOpt_FUtimes,
+    kCmdOpt_NoFUtimes,
+    kCmdOpt_Stat,
+    kCmdOpt_NoStat,
+    kCmdOpt_ChMod,
+    kCmdOpt_NoChMod,
+    kCmdOpt_Utimes,
+    kCmdOpt_NoUtimes,
+    kCmdOpt_Rename,
+    kCmdOpt_NoRename,
+    kCmdOpt_DirEnum,
+    kCmdOpt_NoDirEnum,
+    kCmdOpt_MkRmDir,
+    kCmdOpt_NoMkRmDir,
+    kCmdOpt_StatVfs,
+    kCmdOpt_NoStatVfs,
+    kCmdOpt_Rm,
+    kCmdOpt_NoRm,
+    kCmdOpt_ChSize,
+    kCmdOpt_NoChSize,
+    kCmdOpt_Read,
+    kCmdOpt_NoRead,
+    kCmdOpt_Write,
+    kCmdOpt_NoWrite,
+    kCmdOpt_Seek,
+    kCmdOpt_NoSeek,
+
+    kCmdOpt_End
+};
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
@@ -165,6 +211,48 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 {
     { "--dir",              'd', RTGETOPT_REQ_STRING  },
     { "--seconds",          's', RTGETOPT_REQ_UINT32  },
+    { "--milliseconds",     'm', RTGETOPT_REQ_UINT64  },
+
+    { "--enable-all",       'e', RTGETOPT_REQ_NOTHING },
+    { "--disable-all",      'z', RTGETOPT_REQ_NOTHING },
+
+    { "--many-files",       kCmdOpt_ManyFiles,      RTGETOPT_REQ_NOTHING },
+    { "--no-many-files",    kCmdOpt_NoManyFiles,    RTGETOPT_REQ_NOTHING },
+
+    { "--open",             kCmdOpt_Open,           RTGETOPT_REQ_NOTHING },
+    { "--no-open",          kCmdOpt_NoOpen,         RTGETOPT_REQ_NOTHING },
+    { "--fstat",            kCmdOpt_FStat,          RTGETOPT_REQ_NOTHING },
+    { "--no-fstat",         kCmdOpt_NoFStat,        RTGETOPT_REQ_NOTHING },
+    { "--fchmod",           kCmdOpt_FChMod,         RTGETOPT_REQ_NOTHING },
+    { "--no-fchmod",        kCmdOpt_NoFChMod,       RTGETOPT_REQ_NOTHING },
+    { "--futimes",          kCmdOpt_FUtimes,        RTGETOPT_REQ_NOTHING },
+    { "--no-futimes",       kCmdOpt_NoFUtimes,      RTGETOPT_REQ_NOTHING },
+    { "--stat",             kCmdOpt_Stat,           RTGETOPT_REQ_NOTHING },
+    { "--no-stat",          kCmdOpt_NoStat,         RTGETOPT_REQ_NOTHING },
+    { "--chmod",            kCmdOpt_ChMod,          RTGETOPT_REQ_NOTHING },
+    { "--no-chmod",         kCmdOpt_NoChMod,        RTGETOPT_REQ_NOTHING },
+    { "--utimes",           kCmdOpt_Utimes,         RTGETOPT_REQ_NOTHING },
+    { "--no-utimes",        kCmdOpt_NoUtimes,       RTGETOPT_REQ_NOTHING },
+    { "--rename",           kCmdOpt_Rename,         RTGETOPT_REQ_NOTHING },
+    { "--no-rename",        kCmdOpt_NoRename,       RTGETOPT_REQ_NOTHING },
+    { "--dir-enum",         kCmdOpt_DirEnum,        RTGETOPT_REQ_NOTHING },
+    { "--no-dir-enum",      kCmdOpt_NoDirEnum,      RTGETOPT_REQ_NOTHING },
+    { "--mk-rm-dir",        kCmdOpt_MkRmDir,        RTGETOPT_REQ_NOTHING },
+    { "--no-mk-rm-dir",     kCmdOpt_NoMkRmDir,      RTGETOPT_REQ_NOTHING },
+    { "--stat-vfs",         kCmdOpt_StatVfs,        RTGETOPT_REQ_NOTHING },
+    { "--no-stat-vfs",      kCmdOpt_NoStatVfs,      RTGETOPT_REQ_NOTHING },
+    { "--rm",               kCmdOpt_Rm,             RTGETOPT_REQ_NOTHING },
+    { "--no-rm",            kCmdOpt_NoRm,           RTGETOPT_REQ_NOTHING },
+    { "--chsize",           kCmdOpt_ChSize,         RTGETOPT_REQ_NOTHING },
+    { "--no-chsize",        kCmdOpt_NoChSize,       RTGETOPT_REQ_NOTHING },
+    { "--read",             kCmdOpt_Read,           RTGETOPT_REQ_NOTHING },
+    { "--no-read",          kCmdOpt_NoRead,         RTGETOPT_REQ_NOTHING },
+    { "--write",            kCmdOpt_Write,          RTGETOPT_REQ_NOTHING },
+    { "--no-write",         kCmdOpt_NoWrite,        RTGETOPT_REQ_NOTHING },
+    { "--seek",             kCmdOpt_Seek,           RTGETOPT_REQ_NOTHING },
+    { "--no-seek",          kCmdOpt_NoSeek,         RTGETOPT_REQ_NOTHING },
+
+    { "--quiet",            'q', RTGETOPT_REQ_NOTHING },
     { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
     { "--version",          'V', RTGETOPT_REQ_NOTHING },
     { "--help",             'h', RTGETOPT_REQ_NOTHING } /* for Usage() */
@@ -172,12 +260,31 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 
 /** The test handle. */
 static RTTEST       g_hTest;
+/** The number of nanoseconds a RTTimeNanoTS call takes.
+ * This is used for adjusting loop count estimates.  */
+static uint64_t     g_nsPerNanoTSCall = 1;
 /** Verbosity level. */
 static uint32_t     g_uVerbosity = 0;
 
 /** @name Selected subtest
  * @{ */
 static bool         g_fManyFiles = true;
+static bool         g_fOpen      = true;
+static bool         g_fFStat     = true;
+static bool         g_fFChMod    = true;
+static bool         g_fFUtimes   = true;
+static bool         g_fStat      = true;
+static bool         g_fChMod     = true;
+static bool         g_fUtimes    = true;
+static bool         g_fRename    = true;
+static bool         g_fDirEnum   = true;
+static bool         g_fMkRmDir   = true;
+static bool         g_fStatVfs   = true;
+static bool         g_fRm        = true;
+static bool         g_fChSize    = true;
+static bool         g_fSeek      = true;
+static bool         g_fRead      = true;
+static bool         g_fWrite     = true;
 /** @} */
 
 /** The length of each test run. */
@@ -187,15 +294,22 @@ static uint64_t     g_nsTestRun  = RT_NS_1SEC_64 * 10;
 static uint32_t     g_cManyFiles = 10000;
 
 /** Number of files in the 'manytree' directory tree.  */
-static uint32_t     g_cManyTreeFiles  = 640 + 16*640 /*10880*/;
+static uint32_t     g_cManyTreeFiles         = 640 + 16*640 /*10880*/;
 /** Number of files per directory in the 'manytree' construct. */
-static uint32_t     g_cManyTreeFilesPerDir = 640;
+static uint32_t     g_cManyTreeFilesPerDir   = 640;
 /* Number of subdirs per directory in the 'manytree' construct. */
 static uint32_t     g_cManyTreeSubdirsPerDir = 16;
 /** The depth of the 'manytree' directory tree.  */
-static uint32_t     g_cManyTreeDepth  = 1;
+static uint32_t     g_cManyTreeDepth          = 1;
 /** List of directories in the many tree, creation order. */
 static RTLISTANCHOR g_ManyTreeHead;
+
+/** Number of configured I/O block sizes. */
+static uint32_t     g_cIoBlocks       = 8;
+/** Configured I/O block sizes. */
+static uint32_t     g_acbIoBlocks[16] = { 1, 512, 4096, 16384, 65536, _1M, _32M, _128M };
+/** The desired size of the test file we use for I/O. */
+static uint64_t     g_cbIoFile        = _512M;
 
 /** The length of g_szDir. */
 static size_t       g_cchDir;
@@ -219,6 +333,34 @@ DECLINLINE(void) fsPerfYield(void)
 {
     RTThreadYield();
     RTThreadYield();
+}
+
+
+/**
+ * Profiles the RTTimeNanoTS call, setting g_nsPerNanoTSCall.
+ */
+static void fsPerfNanoTS(void)
+{
+    fsPerfYield();
+
+    /* Make sure we start off on a changing timestamp on platforms will low time resoultion. */
+    uint64_t nsStart = RTTimeNanoTS();
+    uint64_t ns;
+    do
+        ns = RTTimeNanoTS();
+    while (ns == nsStart);
+    nsStart = ns;
+
+    /* Call it for 10 ms. */
+    uint32_t i = 0;
+    do
+    {
+        i++;
+        ns = RTTimeNanoTS();
+    }
+    while (ns - nsStart < RT_NS_10MS);
+
+    g_nsPerNanoTSCall = (ns - nsStart) / i;
 }
 
 
@@ -752,71 +894,75 @@ void vsPerfDirEnum(void)
     /*
      * The directory with many files in it.
      */
-    fDots = 0;
-    uint32_t const cBitmap  = RT_ALIGN_32(g_cManyFiles, 64);
-    void          *pvBitmap = alloca(cBitmap / 8);
-    RT_BZERO(pvBitmap, cBitmap / 8);
-    for (uint32_t i = g_cManyFiles; i < cBitmap; i++)
-        ASMBitSet(pvBitmap, i);
-
-    uint32_t cFiles = 0;
-    RTTESTI_CHECK_RC_RETV(RTDirOpen(&hDir, InDir(RT_STR_TUPLE("manyfiles"))), VINF_SUCCESS);
-    for (;;)
+    if (g_fManyFiles)
     {
-        int rc = RTDirRead(hDir, &Entry, NULL);
-        if (rc == VINF_SUCCESS)
+        fDots = 0;
+        uint32_t const cBitmap  = RT_ALIGN_32(g_cManyFiles, 64);
+        void          *pvBitmap = alloca(cBitmap / 8);
+        RT_BZERO(pvBitmap, cBitmap / 8);
+        for (uint32_t i = g_cManyFiles; i < cBitmap; i++)
+            ASMBitSet(pvBitmap, i);
+
+        uint32_t cFiles = 0;
+        RTTESTI_CHECK_RC_RETV(RTDirOpen(&hDir, InDir(RT_STR_TUPLE("manyfiles"))), VINF_SUCCESS);
+        for (;;)
         {
-            if (Entry.szName[0] == '.')
+            int rc = RTDirRead(hDir, &Entry, NULL);
+            if (rc == VINF_SUCCESS)
             {
-                if (Entry.szName[1] == '.')
+                if (Entry.szName[0] == '.')
                 {
-                    RTTESTI_CHECK(!(fDots & 2));
-                    fDots |= 2;
+                    if (Entry.szName[1] == '.')
+                    {
+                        RTTESTI_CHECK(!(fDots & 2));
+                        fDots |= 2;
+                    }
+                    else
+                    {
+                        RTTESTI_CHECK(Entry.szName[1] == '\0');
+                        RTTESTI_CHECK(!(fDots & 1));
+                        fDots |= 1;
+                    }
                 }
                 else
                 {
-                    RTTESTI_CHECK(Entry.szName[1] == '\0');
-                    RTTESTI_CHECK(!(fDots & 1));
-                    fDots |= 1;
+                    uint32_t iFile = UINT32_MAX;
+                    RTTESTI_CHECK_RC(RTStrToUInt32Full(Entry.szName, 10, &iFile), VINF_SUCCESS);
+                    if (   iFile < g_cManyFiles
+                        && !ASMBitTest(pvBitmap, iFile))
+                    {
+                        ASMBitSet(pvBitmap, iFile);
+                        cFiles++;
+                    }
+                    else
+                        RTTestFailed(g_hTest, "line %u: iFile=%u g_cManyFiles=%u\n", __LINE__, iFile, g_cManyFiles);
                 }
             }
+            else if (rc == VERR_NO_MORE_FILES)
+                break;
             else
             {
-                uint32_t iFile = UINT32_MAX;
-                RTTESTI_CHECK_RC(RTStrToUInt32Full(Entry.szName, 10, &iFile), VINF_SUCCESS);
-                if (   iFile < g_cManyFiles
-                    && !ASMBitTest(pvBitmap, iFile))
-                {
-                    ASMBitSet(pvBitmap, iFile);
-                    cFiles++;
-                }
-                else
-                    RTTestFailed(g_hTest, "line %u: iFile=%u g_cManyFiles=%u\n", __LINE__, iFile, g_cManyFiles);
+                RTTestFailed(g_hTest, "RTDirRead failed enumerating manyfiles: %Rrc\n", rc);
+                RTDirClose(hDir);
+                return;
             }
         }
-        else if (rc == VERR_NO_MORE_FILES)
-            break;
-        else
-        {
-            RTTestFailed(g_hTest, "RTDirRead failed enumerating manyfiles: %Rrc\n", rc);
-            RTDirClose(hDir);
-            return;
-        }
+        RTTESTI_CHECK_RC(RTDirClose(hDir), VINF_SUCCESS);
+        RTTESTI_CHECK(fDots == 3);
+        RTTESTI_CHECK(cFiles == g_cManyFiles);
+        RTTESTI_CHECK(ASMMemIsAllU8(pvBitmap, cBitmap / 8, 0xff));
     }
-    RTTESTI_CHECK_RC(RTDirClose(hDir), VINF_SUCCESS);
-    RTTESTI_CHECK(fDots == 3);
-    RTTESTI_CHECK(cFiles == g_cManyFiles);
-    RTTESTI_CHECK(ASMMemIsAllU8(pvBitmap, cBitmap / 8, 0xff));
 
     /*
      * Profile.
      */
-    PROFILE_FN(fsPerfEnumEmpty(),     g_nsTestRun, "RTDirOpen/Read/Close empty");
-    PROFILE_FN(fsPerfEnumManyFiles(), g_nsTestRun, "RTDirOpen/Read/Close manyfiles");
+    PROFILE_FN(fsPerfEnumEmpty(),g_nsTestRun, "RTDirOpen/Read/Close empty");
+    if (g_fManyFiles)
+        PROFILE_FN(fsPerfEnumManyFiles(), g_nsTestRun, "RTDirOpen/Read/Close manyfiles");
 }
 
 
-void fsPerfMkDirRmDir(void)
+void fsPerfMkRmDir(void)
 {
     RTTestISub("mkdir/rmdir");
 
@@ -849,15 +995,66 @@ void fsPerfMkDirRmDir(void)
     /*
      * Profile alternately creating and removing a bunch of directories.
      */
+    RTTESTI_CHECK_RC_RETV(RTDirCreate(InDir(RT_STR_TUPLE("subdir-2")), 0755, 0), VINF_SUCCESS);
+    size_t cchDir = strlen(g_szDir);
+    g_szDir[cchDir++] = RTPATH_SLASH;
+    g_szDir[cchDir++] = 's';
+
+    uint32_t cCreated = 0;
+    uint64_t nsCreate = 0;
+    uint64_t nsRemove = 0;
     for (;;)
     {
         /* Create a bunch: */
+        uint64_t nsStart = RTTimeNanoTS();
+        for (uint32_t i = 0; i < 998; i++)
+        {
+            RTStrFormatU32(&g_szDir[cchDir], sizeof(g_szDir) - cchDir, i, 10, 3, 3, RTSTR_F_ZEROPAD);
+            RTTESTI_CHECK_RC_RETV(RTDirCreate(g_szDir, 0755, 0), VINF_SUCCESS);
+        }
+        nsCreate += RTTimeNanoTS() - nsStart;
+        cCreated += 998;
 
         /* Remove the bunch: */
+        nsStart = RTTimeNanoTS();
+        for (uint32_t i = 0; i < 998; i++)
+        {
+            RTStrFormatU32(&g_szDir[cchDir], sizeof(g_szDir) - cchDir, i, 10, 3, 3, RTSTR_F_ZEROPAD);
+            RTTESTI_CHECK_RC_RETV(RTDirRemove(g_szDir), VINF_SUCCESS);
+        }
+        nsRemove = RTTimeNanoTS() - nsStart;
 
         /* Check if we got time for another round: */
-        break;
+        if (   (   nsRemove >= g_nsTestRun
+                && nsCreate >= g_nsTestRun)
+            || nsCreate + nsRemove >= g_nsTestRun * 3)
+            break;
     }
+    RTTestIValue("RTDirCreate", nsCreate / cCreated, RTTESTUNIT_NS_PER_OCCURRENCE);
+    RTTestIValue("RTDirRemove", nsRemove / cCreated, RTTESTUNIT_NS_PER_OCCURRENCE);
+}
+
+
+void fsPerfStatVfs(void)
+{
+    RTTestISub("statvfs");
+
+    g_szEmptyDir[g_cchEmptyDir] = '\0';
+    RTFOFF   cbTotal;
+    RTFOFF   cbFree;
+    uint32_t cbBlock;
+    uint32_t cbSector;
+    RTTESTI_CHECK_RC(RTFsQuerySizes(g_szEmptyDir, &cbTotal, &cbFree, &cbBlock, &cbSector), VINF_SUCCESS);
+
+    uint32_t uSerial;
+    RTTESTI_CHECK_RC(RTFsQuerySerial(g_szEmptyDir, &uSerial), VINF_SUCCESS);
+
+    RTFSPROPERTIES Props;
+    RTTESTI_CHECK_RC(RTFsQueryProperties(g_szEmptyDir, &Props), VINF_SUCCESS);
+
+    RTFSTYPE enmType;
+    RTTESTI_CHECK_RC(RTFsQueryType(g_szEmptyDir, &enmType), VINF_SUCCESS);
+
 }
 
 
@@ -919,6 +1116,412 @@ void fsPerfRm(void)
 }
 
 
+void fsPerfChSize(void)
+{
+    RTTestISub("chsize");
+
+    /*
+     * We need some free space to perform this test.
+     */
+    RTFOFF cbFree = 0;
+    RTTESTI_CHECK_RC_RETV(RTFsQuerySizes(g_szDir, NULL, &cbFree, NULL, NULL), VINF_SUCCESS);
+    if (cbFree < _1M)
+    {
+        RTTestSkipped(g_hTest, "Insufficent free space: %'RU64 bytes, requires >= 1MB", cbFree);
+        return;
+    }
+
+    /*
+     * Create a file and play around with it's size.
+     * We let the current file position follow the end position as we make changes.
+     */
+    RTFILE hFile1;
+    RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file20")),
+                                     RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE), VINF_SUCCESS);
+    uint64_t cbFile = UINT64_MAX;
+    RTTESTI_CHECK_RC(RTFileGetSize(hFile1, &cbFile), VINF_SUCCESS);
+    RTTESTI_CHECK(cbFile == 0);
+
+    uint8_t abBuf[4096];
+    static uint64_t const s_acbChanges[] =
+    {
+        1023, 1024, 1024, 1025, 8192, 11111, _1M, _8M, _8M,
+        _4M, _2M + 1, _1M - 1, 65537, 65536, 32768, 8000, 7999, 7998, 1024, 1, 0
+    };
+    uint64_t cbOld = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(s_acbChanges); i++)
+    {
+        uint64_t cbNew = s_acbChanges[i];
+        if (cbNew + _64K >= (uint64_t)cbFree)
+            continue;
+
+        RTTESTI_CHECK_RC(RTFileSetSize(hFile1, cbNew), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileGetSize(hFile1, &cbFile), VINF_SUCCESS);
+        RTTESTI_CHECK_MSG(cbFile == cbNew, ("cbFile=%#RX64 cbNew=%#RX64\n", cbFile, cbNew));
+
+        if (cbNew > cbOld)
+        {
+            /* Check that the extension is all zeroed: */
+            uint64_t cbLeft = cbNew - cbOld;
+            while (cbLeft > 0)
+            {
+                memset(abBuf, 0xff, sizeof(abBuf));
+                size_t cbToRead = sizeof(abBuf);
+                if (cbToRead > cbLeft)
+                    cbToRead = (size_t)cbLeft;
+                RTTESTI_CHECK_RC(RTFileRead(hFile1, abBuf, cbToRead, NULL), VINF_SUCCESS);
+                RTTESTI_CHECK(ASMMemIsZero(abBuf, cbToRead));
+                cbLeft -= cbToRead;
+            }
+        }
+        else
+        {
+            /* Check that reading fails with EOF because current position is now beyond the end: */
+            RTTESTI_CHECK_RC(RTFileRead(hFile1, abBuf, 1, NULL), VERR_EOF);
+
+            /* Keep current position at the end of the file: */
+            RTTESTI_CHECK_RC(RTFileSeek(hFile1, cbNew, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+        }
+        cbOld = cbNew;
+    }
+
+    /*
+     * Profile just the file setting operation itself, keeping the changes within
+     * an allocation unit to avoid needing to adjust the actual (host) FS allocation.
+     * ASSUMES allocation unit >= 512 and power of two.
+     */
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile1, _64K), VINF_SUCCESS);
+    PROFILE_FN(RTFileSetSize(hFile1, _64K - (iIteration & 255) - 128), g_nsTestRun, "RTFileSetSize/noalloc");
+
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile1, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileDelete(g_szDir), VINF_SUCCESS);
+}
+
+
+int fsPerfIoPrepFile(RTFILE hFile1, uint64_t cbFile, uint8_t **ppbFree)
+{
+    /*
+     * Seek to the end - 4K and write the last 4K.
+     * This should have the effect of filling the whole file with zeros.
+     */
+    RTTESTI_CHECK_RC_RET(RTFileSeek(hFile1, cbFile - _4K, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RC_RET(RTFileWrite(hFile1, g_abRTZero4K, _4K, NULL), VINF_SUCCESS, rcCheck);
+
+    /*
+     * Check that the space we searched across actually is zero filled.
+     */
+    RTTESTI_CHECK_RC_RET(RTFileSeek(hFile1, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS, rcCheck);
+    size_t   cbBuf = _1M;
+    uint8_t *pbBuf = *ppbFree = (uint8_t *)RTMemAlloc(cbBuf);
+    RTTESTI_CHECK_RET(pbBuf != NULL, VERR_NO_MEMORY);
+    uint64_t cbLeft = cbFile;
+    while (cbLeft > 0)
+    {
+        size_t cbToRead = cbBuf;
+        if (cbToRead > cbLeft)
+            cbToRead = (size_t)cbLeft;
+        pbBuf[cbToRead] = 0xff;
+
+        RTTESTI_CHECK_RC_RET(RTFileRead(hFile1, pbBuf, cbToRead, NULL), VINF_SUCCESS, rcCheck);
+        RTTESTI_CHECK_RET(ASMMemIsZero(pbBuf, cbToRead), VERR_MISMATCH);
+
+        cbLeft -= cbToRead;
+    }
+
+    /*
+     * Fill the file with 0xf6 and insert offset markers with 1KB intervals.
+     */
+    RTTESTI_CHECK_RC_RET(RTFileSeek(hFile1, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS, rcCheck);
+    memset(pbBuf, 0xf6, cbBuf);
+    cbLeft = cbFile;
+    uint64_t off = 0;
+    while (cbLeft > 0)
+    {
+        Assert(!(off   & (_1K - 1)));
+        Assert(!(cbBuf & (_1K - 1)));
+        for (size_t offBuf = 0; offBuf < cbBuf; offBuf += _1K, off += _1K)
+            *(uint64_t *)&pbBuf[offBuf] = off;
+
+        size_t cbToWrite = cbBuf;
+        if (cbToWrite > cbLeft)
+            cbToWrite = (size_t)cbLeft;
+
+        RTTESTI_CHECK_RC_RET(RTFileWrite(hFile1, pbBuf, cbToWrite, NULL), VINF_SUCCESS, rcCheck);
+
+        cbLeft -= cbToWrite;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
+{
+    /*
+     * Do a bunch of search tests, most which are random.
+     */
+    struct
+    {
+        int         rc;
+        uint32_t    uMethod;
+        int64_t     offSeek;
+        uint64_t    offActual;
+
+    } aSeeks[9 + 64] =
+    {
+        { VINF_SUCCESS,         RTFILE_SEEK_BEGIN,    0,                        0 },
+        { VINF_SUCCESS,         RTFILE_SEEK_CURRENT,  0,                        0 },
+        { VINF_SUCCESS,         RTFILE_SEEK_END,      0,                        cbFile },
+        { VINF_SUCCESS,         RTFILE_SEEK_CURRENT,  -4096,                    cbFile - 4096 },
+        { VINF_SUCCESS,         RTFILE_SEEK_CURRENT,  4096 - (int64_t)cbFile,   0 },
+        { VINF_SUCCESS,         RTFILE_SEEK_END,      -(int64_t)cbFile/2,       cbFile / 2 + (cbFile & 1) },
+        { VINF_SUCCESS,         RTFILE_SEEK_CURRENT,  -(int64_t)cbFile/2,       0 },
+        { VERR_NEGATIVE_SEEK,   RTFILE_SEEK_CURRENT,  -1,                       0 },
+        { VINF_SUCCESS,         RTFILE_SEEK_CURRENT,  0,                        0 },
+    };
+
+    uint64_t offActual = 0;
+    for (unsigned i = 9; i < RT_ELEMENTS(aSeeks); i++)
+    {
+        switch (RTRandU32Ex(RTFILE_SEEK_BEGIN, RTFILE_SEEK_END))
+        {
+            default: AssertFailed();
+            case RTFILE_SEEK_BEGIN:
+                aSeeks[i].uMethod   = RTFILE_SEEK_BEGIN;
+                aSeeks[i].rc        = VINF_SUCCESS;
+                aSeeks[i].offSeek   = RTRandU64Ex(0, cbFile + cbFile / 8);
+                aSeeks[i].offActual = offActual = aSeeks[i].offSeek;
+                break;
+
+            case RTFILE_SEEK_CURRENT:
+                aSeeks[i].uMethod   = RTFILE_SEEK_CURRENT;
+                aSeeks[i].rc        = VINF_SUCCESS;
+                aSeeks[i].offSeek   = (int64_t)RTRandU64Ex(0, cbFile + cbFile / 8) - (int64_t)offActual;
+                aSeeks[i].offActual = offActual += aSeeks[i].offSeek;
+                break;
+
+            case RTFILE_SEEK_END:
+                aSeeks[i].uMethod   = RTFILE_SEEK_END;
+                aSeeks[i].rc        = VINF_SUCCESS;
+                aSeeks[i].offSeek   = -(int64_t)RTRandU64Ex(0, cbFile);
+                aSeeks[i].offActual = offActual = cbFile + aSeeks[i].offSeek;
+                break;
+        }
+    }
+
+    for (unsigned iDoReadCheck = 0; iDoReadCheck < 2; iDoReadCheck++)
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(aSeeks); i++)
+        {
+            offActual = UINT64_MAX;
+            int rc = RTFileSeek(hFile1, aSeeks[i].offSeek, aSeeks[i].uMethod, &offActual);
+            if (rc != aSeeks[i].rc)
+                RTTestIFailed("Seek #%u: Expected %Rrc, got %Rrc", i, aSeeks[i].rc, rc);
+            if (RT_SUCCESS(rc) && offActual != aSeeks[i].offActual)
+                RTTestIFailed("Seek #%u: offActual %#RX64, expected %#RX64", i, offActual, aSeeks[i].offActual);
+            if (RT_SUCCESS(rc))
+            {
+                uint64_t offTell = RTFileTell(hFile1);
+                if (offTell != offActual)
+                    RTTestIFailed("Seek #%u: offActual %#RX64, RTFileTell %#RX64", i, offActual, offTell);
+            }
+
+            if (RT_SUCCESS(rc) && offActual + _2K <= cbFile && iDoReadCheck)
+            {
+                uint8_t abBuf[_2K];
+                RTTESTI_CHECK_RC(rc = RTFileRead(hFile1, abBuf, sizeof(abBuf), NULL), VINF_SUCCESS);
+                if (RT_SUCCESS(rc))
+                {
+                    size_t offMarker = (size_t)(RT_ALIGN_64(offActual, _1K) - offActual);
+                    uint64_t uMarker = *(uint64_t *)&abBuf[offMarker]; /** @todo potentially unaligned access */
+                    if (uMarker != offActual + offMarker)
+                        RTTestIFailed("Seek #%u: Invalid marker value (@ %#RX64): %#RX64, expected %#RX64",
+                                      i, offActual, uMarker, offActual + offMarker);
+
+                    RTTESTI_CHECK_RC(RTFileSeek(hFile1, -(int64_t)sizeof(abBuf), RTFILE_SEEK_CURRENT, NULL), VINF_SUCCESS);
+                }
+            }
+        }
+    }
+
+
+    /*
+     * Profile seeking relative to the beginning of the file and relative
+     * to the end.  The latter might be more expensive in a SF context.
+     */
+    PROFILE_FN(RTFileSeek(hFile1, iIteration < cbFile ? iIteration : iIteration % cbFile, RTFILE_SEEK_BEGIN, NULL),
+               g_nsTestRun, "RTFileSeek/BEGIN");
+    PROFILE_FN(RTFileSeek(hFile1, iIteration < cbFile ? -(int64_t)iIteration : -(int64_t)(iIteration % cbFile), RTFILE_SEEK_END, NULL),
+               g_nsTestRun, "RTFileSeek/END");
+
+}
+
+
+DECL_FORCE_INLINE(int) fsPerfIoReadWorker(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock, uint8_t *pbBlock,
+                                          uint64_t *poffActual, uint32_t *pcSeeks)
+{
+    /* Do we need to seek back to the start? */
+    if (*poffActual + cbBlock <= cbFile)
+    { /* likely */ }
+    else
+    {
+        RTTESTI_CHECK_RC_RET(RTFileSeek(hFile1, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS, rcCheck);
+        *pcSeeks += 1;
+        *poffActual = 0;
+    }
+
+    size_t cbActuallyRead = 0;
+    RTTESTI_CHECK_RC_RET(RTFileRead(hFile1, pbBlock, cbBlock, &cbActuallyRead), VINF_SUCCESS, rcCheck);
+    if (cbActuallyRead == cbBlock)
+    {
+        *poffActual += cbActuallyRead;
+        return VINF_SUCCESS;
+    }
+    RTTestIFailed("RTFileRead at %#RX64 returned just %#x bytes, expected %#x", *poffActual, cbActuallyRead, cbBlock);
+    *poffActual += cbActuallyRead;
+    return VERR_READ_ERROR;
+}
+
+
+void fsPerfIoRead(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock, uint8_t **ppbFree)
+{
+    RTTestISubF("read %RU32", cbBlock);
+
+    uint8_t *pbBuf = *ppbFree = (uint8_t *)RTMemPageAlloc(cbBlock);
+    if (!pbBuf)
+    {
+        RTTestSkipped(g_hTest, "insufficient (virtual) memory available");
+        return;
+    }
+
+    char szDesc[64];
+    RTStrPrintf(szDesc, sizeof(szDesc), "RTFileRead/seq/%RU32", cbBlock);
+
+    RTTESTI_CHECK_RC_RETV(RTFileSeek(hFile1, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    uint64_t offActual = 0;
+    uint32_t cSeeks    = 0;
+
+    /* Estimate how many iterations we need to fill up the given timeslot: */
+    fsPerfYield();
+    uint64_t nsStart = RTTimeNanoTS();
+    uint64_t ns;
+    do
+        ns = RTTimeNanoTS();
+    while (ns == nsStart);
+    nsStart = ns;
+
+    uint32_t iIteration = 0;
+    do
+    {
+        RTTESTI_CHECK_RC_RETV(fsPerfIoReadWorker(hFile1, cbFile, cbBlock, pbBuf, &offActual, &cSeeks), VINF_SUCCESS);
+        iIteration++;
+        ns = RTTimeNanoTS() - nsStart;
+    } while (ns < RT_NS_10MS);
+    ns /= iIteration;
+    if (ns > g_nsPerNanoTSCall)
+        ns -= g_nsPerNanoTSCall;
+    uint32_t const cIterations = g_nsTestRun / ns;
+
+    /* Do the actual profiling: */
+    cSeeks = 0;
+    fsPerfYield();
+    nsStart = RTTimeNanoTS();
+    for (iIteration = 0; iIteration < cIterations; iIteration++)
+    {
+        fsPerfIoReadWorker(hFile1, cbFile, cbBlock, pbBuf, &offActual, &cSeeks);
+    }
+    ns = RTTimeNanoTS() - nsStart;
+    RTTestIValueF(ns / iIteration,
+                  RTTESTUNIT_NS_PER_OCCURRENCE, "RTFileRead/seq/%RU32 latency", cbBlock);
+    RTTestIValueF((uint64_t)iIteration * cbBlock / ((double)ns / RT_NS_1SEC),
+                  RTTESTUNIT_BYTES_PER_SEC,     "RTFileRead/seq/%RU32 throughput", cbBlock);
+    RTTestIValueF(iIteration,
+                  RTTESTUNIT_CALLS,             "RTFileRead/seq/%RU32 calls", cbBlock);
+    RTTestIValueF((uint64_t)iIteration * cbBlock,
+                  RTTESTUNIT_BYTES,             "RTFileRead/seq/%RU32 bytes", cbBlock);
+    RTTestIValueF(cSeeks,
+                  RTTESTUNIT_OCCURRENCES,       "RTFileRead/seq/%RU32 seeks", cbBlock);
+}
+
+
+void fsPerfIoWrite(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock, uint8_t **ppbFree)
+{
+    RT_NOREF(hFile1, cbFile, cbBlock, ppbFree);
+}
+
+
+/**
+ * This does the read, write and seek tests.
+ */
+void fsPerfIo(void)
+{
+    RTTestISub("I/O");
+
+    /*
+     * Determin the size of the test file.
+     */
+    g_szDir[g_cchDir] = '\0';
+    RTFOFF cbFree = 0;
+    RTTESTI_CHECK_RC_RETV(RTFsQuerySizes(g_szDir, NULL, &cbFree, NULL, NULL), VINF_SUCCESS);
+    uint64_t cbFile = g_cbIoFile;
+    if (cbFile + _16M < (uint64_t)cbFree)
+        cbFile = RT_ALIGN_64(cbFile, _64K);
+    else
+    {
+        if (cbFree < _32M)
+        {
+            RTTestSkipped(g_hTest, "Insufficent free space: %'RU64 bytes, requires >= 32MB", cbFree);
+            return;
+        }
+        cbFile = cbFree - (cbFree > _128M ? _64M : _16M);
+        cbFile = RT_ALIGN_64(cbFile, _64K);
+        RTTestIPrintf(RTTESTLVL_ALWAYS,  "Adjusted file size to %'RU64 bytes, due to %'RU64 bytes free.\n", cbFile, cbFree);
+    }
+    if (cbFile < _64K)
+    {
+        RTTestSkipped(g_hTest, "Specified test file size too small: %'RU64 bytes, requires >= 64KB", cbFile);
+        return;
+    }
+
+    /*
+     * Create a cbFile sized test file.
+     */
+    RTFILE hFile1;
+    RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file21")),
+                                     RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE), VINF_SUCCESS);
+    uint8_t *pbFree = NULL;
+    int rc = fsPerfIoPrepFile(hFile1, cbFile, &pbFree);
+    RTMemFree(pbFree);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Do the testing & profiling.
+         */
+        if (g_fSeek)
+            fsPerfIoSeek(hFile1, cbFile);
+        if (g_fRead)
+            for (unsigned i = 0; i < g_cIoBlocks; i++)
+            {
+                pbFree = NULL;
+                fsPerfIoRead(hFile1, cbFile, g_acbIoBlocks[i], &pbFree);
+                RTMemPageFree(pbFree, g_acbIoBlocks[i]);
+            }
+        if (g_fWrite)
+            for (unsigned i = 0; i < g_cIoBlocks; i++)
+            {
+                pbFree = NULL;
+                fsPerfIoWrite(hFile1, cbFile, g_acbIoBlocks[i], &pbFree);
+                RTMemPageFree(pbFree, g_acbIoBlocks[i]);
+            }
+    }
+
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile1, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileDelete(g_szDir), VINF_SUCCESS);
+}
+
+
 static void Usage(PRTSTREAM pStrm)
 {
     char szExec[RTPATH_MAX];
@@ -927,25 +1530,42 @@ static void Usage(PRTSTREAM pStrm)
     RTStrmPrintf(pStrm, "\n");
     RTStrmPrintf(pStrm, "options: \n");
 
-
     for (unsigned i = 0; i < RT_ELEMENTS(g_aCmdOptions); i++)
     {
+        char szHelp[80];
         const char *pszHelp;
         switch (g_aCmdOptions[i].iShort)
         {
             case 'd':   pszHelp = "The directory to use for testing.  Default: CWD/fstestdir"; break;
-            case 's':   pszHelp = "Benchmark duration.  Default: 10 sec"; break;
+            case 'e':   pszHelp = "Enables all tests.   Default: -e"; break;
+            case 'z':   pszHelp = "Disables all tests.  Default: -e"; break;
+            case 's':   pszHelp = "Set benchmark duration in seconds.  Default: 10 sec"; break;
+            case 'm':   pszHelp = "Set benchmark duration in milliseconds.  Default: 10000 ms"; break;
             case 'v':   pszHelp = "More verbose execution."; break;
             case 'q':   pszHelp = "Quiet execution."; break;
             case 'h':   pszHelp = "Displays this help and exit"; break;
             case 'V':   pszHelp = "Displays the program revision"; break;
             default:
-                pszHelp = "Option undocumented";
+                if (g_aCmdOptions[i].iShort >= kCmdOpt_First)
+                {
+                    if (RTStrStartsWith(g_aCmdOptions[i].pszLong, "--no-"))
+                        RTStrPrintf(szHelp, sizeof(szHelp), "Disables the '%s' test.", g_aCmdOptions[i].pszLong + 5);
+                    else
+                        RTStrPrintf(szHelp, sizeof(szHelp), "Enables  the '%s' test.", g_aCmdOptions[i].pszLong + 2);
+                    pszHelp = szHelp;
+                }
+                else
+                    pszHelp = "Option undocumented";
                 break;
         }
-        char szOpt[256];
-        RTStrPrintf(szOpt, sizeof(szOpt), "%s, -%c", g_aCmdOptions[i].pszLong, g_aCmdOptions[i].iShort);
-        RTStrmPrintf(pStrm, "  %-20s%s\n", szOpt, pszHelp);
+        if ((unsigned)g_aCmdOptions[i].iShort < 127U)
+        {
+            char szOpt[64];
+            RTStrPrintf(szOpt, sizeof(szOpt), "%s, -%c", g_aCmdOptions[i].pszLong, g_aCmdOptions[i].iShort);
+            RTStrmPrintf(pStrm, "  %-20s%s\n", szOpt, pszHelp);
+        }
+        else
+            RTStrmPrintf(pStrm, "  %-20s%s\n", g_aCmdOptions[i].pszLong, pszHelp);
     }
 }
 
@@ -997,6 +1617,75 @@ int main(int argc, char *argv[])
                 else
                     g_nsTestRun = ValueUnion.u32 * RT_NS_1SEC_64;
                 break;
+
+            case 'm':
+                if (ValueUnion.u64 == 0)
+                    g_nsTestRun = RT_NS_1SEC_64 * 10;
+                else
+                    g_nsTestRun = ValueUnion.u64 * RT_NS_1MS;
+                break;
+
+            case 'e':
+                g_fManyFiles = true;
+                g_fOpen      = true;
+                g_fFStat     = true;
+                g_fFChMod    = true;
+                g_fFUtimes   = true;
+                g_fStat      = true;
+                g_fChMod     = true;
+                g_fUtimes    = true;
+                g_fRename    = true;
+                g_fDirEnum   = true;
+                g_fMkRmDir   = true;
+                g_fStatVfs   = true;
+                g_fRm        = true;
+                g_fChSize    = true;
+                g_fRead      = true;
+                g_fWrite     = true;
+                g_fSeek      = true;
+                break;
+
+            case 'z':
+                g_fManyFiles = false;
+                g_fOpen      = false;
+                g_fFStat     = false;
+                g_fFChMod    = false;
+                g_fFUtimes   = false;
+                g_fStat      = false;
+                g_fChMod     = false;
+                g_fUtimes    = false;
+                g_fRename    = false;
+                g_fDirEnum   = false;
+                g_fMkRmDir   = false;
+                g_fStatVfs   = false;
+                g_fRm        = false;
+                g_fChSize    = false;
+                g_fRead      = false;
+                g_fWrite     = false;
+                g_fSeek      = false;
+                break;
+
+#define CASE_OPT(a_Stem) \
+            case RT_CONCAT(kCmdOpt_,a_Stem):   RT_CONCAT(g_f,a_Stem) = true; break; \
+            case RT_CONCAT(kCmdOpt_No,a_Stem): RT_CONCAT(g_f,a_Stem) = false; break
+            CASE_OPT(ManyFiles);
+            CASE_OPT(Open);
+            CASE_OPT(FStat);
+            CASE_OPT(FChMod);
+            CASE_OPT(FUtimes);
+            CASE_OPT(Stat);
+            CASE_OPT(ChMod);
+            CASE_OPT(Utimes);
+            CASE_OPT(Rename);
+            CASE_OPT(DirEnum);
+            CASE_OPT(MkRmDir);
+            CASE_OPT(StatVfs);
+            CASE_OPT(Rm);
+            CASE_OPT(ChSize);
+            CASE_OPT(Seek);
+            CASE_OPT(Read);
+            CASE_OPT(Write);
+#undef CASE_OPT
 
             case 'q':
                 g_uVerbosity = 0;
@@ -1060,28 +1749,40 @@ int main(int argc, char *argv[])
                 RTTestIPrintf(RTTESTLVL_ALWAYS, "Deep  dir: %s\n", g_szDeepDir);
                 if (RT_SUCCESS(rc))
                 {
-                    //g_fManyFiles = false;
+                    /* Profile RTTimeNanoTS(). */
+                    fsPerfNanoTS();
 
                     /* Do tests: */
                     if (g_fManyFiles)
                         fsPerfManyFiles();
-#if 1
-                    fsPerfOpen();
-                    fsPerfFStat();
-                    fsPerfFChMod();
-                    fsPerfFUtimes();
-                    fsPerfStat();
-                    fsPerfChmod();
-                    fsPerfUtimes();
-                    fsPerfRename();
-                    vsPerfDirEnum();
-#endif
-                    fsPerfMkDirRmDir();
-                    /// @todo fsPerfRead
-                    /// @todo fsPerfWrite
-                    /// @todo fsPerfSeek
-                    /// @todo fsPerfChSize
-                    fsPerfRm(); /* must come last as it deletes manyfiles and manytree */
+                    if (g_fOpen)
+                        fsPerfOpen();
+                    if (g_fFStat)
+                        fsPerfFStat();
+                    if (g_fFChMod)
+                        fsPerfFChMod();
+                    if (g_fFUtimes)
+                        fsPerfFUtimes();
+                    if (g_fStat)
+                        fsPerfStat();
+                    if (g_fChMod)
+                        fsPerfChmod();
+                    if (g_fUtimes)
+                        fsPerfUtimes();
+                    if (g_fRename)
+                        fsPerfRename();
+                    if (g_fDirEnum)
+                        vsPerfDirEnum();
+                    if (g_fMkRmDir)
+                        fsPerfMkRmDir();
+                    if (g_fStatVfs)
+                        fsPerfStatVfs();
+                    if (g_fRm || g_fManyFiles)
+                        fsPerfRm(); /* deletes manyfiles and manytree */
+                    if (g_fChSize)
+                        fsPerfChSize();
+                    if (g_fRead || g_fWrite || g_fSeek)
+                        fsPerfIo();
                 }
             }
 
