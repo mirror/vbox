@@ -3123,7 +3123,14 @@ QString VBoxGlobal::details(const CMedium &comMedium, bool fPredictDiff, bool fU
 
 void VBoxGlobal::updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType enmMediumType, QString strMediumLocation)
 {
-       /* Remember the path of the last chosen medium: */
+    /** Don't add the medium to extra data if its name is in exclude list, m_recentMediaExcludeList: */
+    foreach (QString strExcludeName, m_recentMediaExcludeList)
+    {
+        if (strMediumLocation.contains(strExcludeName))
+            return;
+    }
+
+    /* Remember the path of the last chosen medium: */
     switch (enmMediumType)
     {
         case UIMediumDeviceType_HardDisk: gEDataManager->setRecentFolderForHardDrives(QFileInfo(strMediumLocation).absolutePath()); break;
@@ -4211,6 +4218,10 @@ void VBoxGlobal::prepare()
     /* Make sure no wrong USB mounted: */
     checkForWrongUSBMounted();
 #endif /* RT_OS_LINUX */
+
+    /* Populate the list of medium names to be excluded from the
+       recently used media extra data: */
+    m_recentMediaExcludeList << "ad-hoc.viso";
 }
 
 void VBoxGlobal::cleanup()

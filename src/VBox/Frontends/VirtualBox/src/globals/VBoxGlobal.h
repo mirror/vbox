@@ -870,6 +870,8 @@ private:
 
         /** Holds the medium enumerator. */
         UIMediumEnumerator *m_pMediumEnumerator;
+        /** List of medium names that should not appears in the recently used media extra data. */
+        QStringList         m_recentMediaExcludeList;
     /** @} */
 
 #if defined(VBOX_WS_WIN)
