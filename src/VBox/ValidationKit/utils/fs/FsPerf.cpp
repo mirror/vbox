@@ -149,6 +149,15 @@
     } while (0)
 
 
+/** @def FSPERF_VERR_PATH_NOT_FOUND
+ * Hides the fact that we only get VERR_PATH_NOT_FOUND on non-unix systems.  */
+#if defined(RT_OS_WINDOWS) //|| defined(RT_OS_OS2) - using posix APIs IIRC, so lost in translation.
+# define FSPERF_VERR_PATH_NOT_FOUND     VERR_PATH_NOT_FOUND
+#else
+# define FSPERF_VERR_PATH_NOT_FOUND     VERR_FILE_NOT_FOUND
+#endif
+
+
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
@@ -373,6 +382,7 @@ static void fsPerfNanoTS(void)
  */
 DECLINLINE(char *) InDir(const char *pszAppend, size_t cchAppend)
 {
+    Assert(g_szDir[g_cchDir - 1] == RTPATH_SLASH);
     memcpy(&g_szDir[g_cchDir], pszAppend, cchAppend);
     g_szDir[g_cchDir + cchAppend] = '\0';
     return &g_szDir[0];
@@ -388,6 +398,7 @@ DECLINLINE(char *) InDir(const char *pszAppend, size_t cchAppend)
  */
 DECLINLINE(char *) InEmptyDir(const char *pszAppend, size_t cchAppend)
 {
+    Assert(g_szEmptyDir[g_cchEmptyDir - 1] == RTPATH_SLASH);
     memcpy(&g_szEmptyDir[g_cchEmptyDir], pszAppend, cchAppend);
     g_szEmptyDir[g_cchEmptyDir + cchAppend] = '\0';
     return &g_szEmptyDir[0];
@@ -403,6 +414,7 @@ DECLINLINE(char *) InEmptyDir(const char *pszAppend, size_t cchAppend)
  */
 DECLINLINE(char *) InDeepDir(const char *pszAppend, size_t cchAppend)
 {
+    Assert(g_szDeepDir[g_cchDeepDir - 1] == RTPATH_SLASH);
     memcpy(&g_szDeepDir[g_cchDeepDir], pszAppend, cchAppend);
     g_szDeepDir[g_cchDeepDir + cchAppend] = '\0';
     return &g_szDeepDir[0];
@@ -541,7 +553,7 @@ void fsPerfOpen(void)
     RTTESTI_CHECK_RC(RTFileOpen(&hFile, InEmptyDir(RT_STR_TUPLE("no-such-file")),
                                 RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTFileOpen(&hFile, InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")),
-                                RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VERR_PATH_NOT_FOUND);
+                                RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), FSPERF_VERR_PATH_NOT_FOUND);
 
     /*
      * Create file1 and then try exclusivly creating it again.
@@ -646,7 +658,7 @@ void fsPerfStat(void)
     RTTESTI_CHECK_RC(RTPathQueryInfoEx(InEmptyDir(RT_STR_TUPLE("no-such-file")),
                                        &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK), VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTPathQueryInfoEx(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")),
-                                       &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK), VERR_PATH_NOT_FOUND);
+                                       &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK), FSPERF_VERR_PATH_NOT_FOUND);
 
     /* Shallow: */
     RTFILE hFile1;
@@ -687,7 +699,7 @@ void fsPerfChmod(void)
     RTTESTI_CHECK_RC(RTPathSetMode(InEmptyDir(RT_STR_TUPLE("no-such-file")), 0665),
                      VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTPathSetMode(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")), 0665),
-                     VERR_PATH_NOT_FOUND);
+                     FSPERF_VERR_PATH_NOT_FOUND);
 
     /* Shallow: */
     RTFILE hFile1;
@@ -732,7 +744,7 @@ void fsPerfUtimes(void)
                      VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTPathSetTimesEx(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")),
                                       NULL, &Time1, NULL, NULL, RTPATH_F_ON_LINK),
-                     VERR_PATH_NOT_FOUND);
+                     FSPERF_VERR_PATH_NOT_FOUND);
 
     /* Shallow: */
     RTFILE hFile1;
@@ -799,15 +811,15 @@ void fsPerfRename(void)
     RTTESTI_CHECK_RC(RTPathRename(InEmptyDir(RT_STR_TUPLE("no-such-file")), szPath, 0), VERR_FILE_NOT_FOUND);
     strcpy(szPath, InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "other-no-such-file")));
     RTTESTI_CHECK_RC(RTPathRename(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")), szPath, 0),
-                     VERR_PATH_NOT_FOUND);
+                     FSPERF_VERR_PATH_NOT_FOUND);
 
     RTFILE hFile1;
     RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file16")),
                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
     strcat(strcpy(szPath, g_szDir), "-no-such-dir" RTPATH_SLASH_STR "file16");
-    RTTESTI_CHECK_RC(RTPathRename(szPath, g_szDir, 0), VERR_PATH_NOT_FOUND);
-    RTTESTI_CHECK_RC(RTPathRename(g_szDir, szPath, 0), VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTPathRename(szPath, g_szDir, 0), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTPathRename(g_szDir, szPath, 0), FSPERF_VERR_PATH_NOT_FOUND);
 
     /* Shallow: */
     strcat(strcpy(szPath, g_szDir), "-other");
@@ -968,15 +980,25 @@ void fsPerfMkRmDir(void)
 
     /* Non-existing directories: */
     RTTESTI_CHECK_RC(RTDirRemove(InEmptyDir(RT_STR_TUPLE("no-such-dir"))), VERR_FILE_NOT_FOUND);
-    RTTESTI_CHECK_RC(RTDirRemove(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
-    RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")), 0755, 0), VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirRemove(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")), 0755, 0), FSPERF_VERR_PATH_NOT_FOUND);
+
+    /** @todo check what happens if non-final path component isn't a directory. unix
+     *        should return ENOTDIR and IPRT translates that to VERR_PATH_NOT_FOUND.
+     *        Curious what happens on windows. */
 
     /* Already existing directories and files: */
     RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE(".")), 0755, 0), VERR_ALREADY_EXISTS);
     RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE("..")), 0755, 0), VERR_ALREADY_EXISTS);
 
     /* Remove directory with subdirectories: */
+#if defined(RT_OS_WINDOWS)
     RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE("."))), VERR_DIR_NOT_EMPTY);
+#else
+    RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE("."))), VERR_INVALID_PARAMETER); /* EINVAL for '.' */
+#endif
+    RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE(".."))), VERR_DIR_NOT_EMPTY);
+    RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE(""))), VERR_DIR_NOT_EMPTY);
 
     /* Create a directory and remove it: */
     RTTESTI_CHECK_RC(RTDirCreate(InDir(RT_STR_TUPLE("subdir-1")), 0755, 0), VINF_SUCCESS);
@@ -990,7 +1012,6 @@ void fsPerfMkRmDir(void)
     RTTESTI_CHECK_RC(RTDirRemove(g_szDir), VERR_NOT_A_DIRECTORY);
     RTTESTI_CHECK_RC(RTDirCreate(g_szDir, 0755, 0), VERR_ALREADY_EXISTS);
     RTTESTI_CHECK_RC(RTDirCreate(InDir(RT_STR_TUPLE("file18" RTPATH_SLASH_STR "subdir")), 0755, 0), VERR_PATH_NOT_FOUND);
-
 
     /*
      * Profile alternately creating and removing a bunch of directories.
@@ -1064,14 +1085,12 @@ void fsPerfRm(void)
 
     /* Non-existing files. */
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("no-such-file"))), VERR_FILE_NOT_FOUND);
-    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
 
     /* Directories: */
-#ifdef RT_OS_WINDOWS
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))), VERR_ACCESS_DENIED);
-#else
-    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))), VERR_IS_A_DIRECTORY);
-#endif
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(".."))), VERR_ACCESS_DENIED);
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(""))), VERR_ACCESS_DENIED);
 
     /* Shallow: */
     RTFILE hFile1;
@@ -1277,7 +1296,11 @@ void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
         { VINF_SUCCESS,         RTFILE_SEEK_CURRENT,  4096 - (int64_t)cbFile,   0 },
         { VINF_SUCCESS,         RTFILE_SEEK_END,      -(int64_t)cbFile/2,       cbFile / 2 + (cbFile & 1) },
         { VINF_SUCCESS,         RTFILE_SEEK_CURRENT,  -(int64_t)cbFile/2,       0 },
+#if defined(RT_OS_WINDOWS)
         { VERR_NEGATIVE_SEEK,   RTFILE_SEEK_CURRENT,  -1,                       0 },
+#else
+        { VERR_INVALID_PARAMETER, RTFILE_SEEK_CURRENT, -1,                      0 },
+#endif
         { VINF_SUCCESS,         RTFILE_SEEK_CURRENT,  0,                        0 },
     };
 
@@ -1734,6 +1757,8 @@ int main(int argc, char *argv[])
             rc = RTDirCreate(g_szEmptyDir, 0755, 0);
             if (RT_SUCCESS(rc))
             {
+                g_szEmptyDir[g_cchEmptyDir++] = RTPATH_SLASH;
+                g_szEmptyDir[g_cchEmptyDir]   = '\0';
                 RTTestIPrintf(RTTESTLVL_ALWAYS, "Empty dir: %s\n", g_szEmptyDir);
 
                 /* Deep directory: */
