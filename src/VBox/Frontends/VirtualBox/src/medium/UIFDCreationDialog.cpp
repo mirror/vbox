@@ -210,7 +210,7 @@ void UIFDCreationDialog::accept()
 
     /* Notify VBoxGlobal about the new medium: */
     vboxGlobal().createMedium(UIMedium(newMedium, UIMediumDeviceType_Floppy, KMediumState_Created));
-    /* Notify VBoxGlobal about the new medium: */
+    /* Update the recently used media list: */
     vboxGlobal().updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType_Floppy, strMediumLocation);
 
     /* After a successful creation and initilization of the floppy disk we call base class accept
