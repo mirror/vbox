@@ -43,7 +43,13 @@ technical terms if no non-technical ones are clear enough.
     <itemizedlist>
 
       <listitem>
-        <para>Fixed: Parsing command line arguments to VirtualBox correctly (bugs #18206 and #18197)</para>
+        <para>User interface: parsing command line arguments to VirtualBox correctly
+          (bugs #18206 and #18197)</para>
+      </listitem>
+
+      <listitem>
+        <para>Audio: implemented time scheduling for the AC'97 device emulation
+          to keep audio and video in sync</para>
       </listitem>
 
     </itemizedlist>
