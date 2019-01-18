@@ -207,9 +207,9 @@ void UIVMLogViewerBookmarksPanel::retranslateUi()
 
     m_pDeleteCurrentButton->setToolTip(UIVMLogViewerWidget::tr("Delete the current bookmark"));
     m_pDeleteAllButton->setToolTip(UIVMLogViewerWidget::tr("Delete all bookmarks"));
-    m_pNextButton->setToolTip(UIVMLogViewerWidget::tr("Goto the next bookmark"));
-    m_pPreviousButton->setToolTip(UIVMLogViewerWidget::tr("Goto the previous bookmark"));
-    m_pGotoSelectedBookmark->setToolTip(UIVMLogViewerWidget::tr("Goto selected bookmark"));
+    m_pNextButton->setToolTip(UIVMLogViewerWidget::tr("Go to the next bookmark"));
+    m_pPreviousButton->setToolTip(UIVMLogViewerWidget::tr("Go to the previous bookmark"));
+    m_pGotoSelectedBookmark->setToolTip(UIVMLogViewerWidget::tr("Go to selected bookmark"));
 }
 
 void UIVMLogViewerBookmarksPanel::sltDeleteCurrentBookmark()
