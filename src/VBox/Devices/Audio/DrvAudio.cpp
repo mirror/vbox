@@ -1461,17 +1461,17 @@ static DECLCALLBACK(int) drvAudioStreamPlay(PPDMIAUDIOCONNECTOR pInterface,
                   pStream->szName, tsDeltaPlayedCapturedNs, tsDeltaPlayedCapturedNs / RT_NS_1MS_64,
                   DrvAudioHlpFramesToMilli(cfLive, &pStream->Host.Cfg.Props), uLivePercent, pStream->fThresholdReached));
 
-        /* Has the treshold been reached (e.g. are we in playing stage) and we now have no live samples to process? */
-        if (   pStream->fThresholdReached
-            && cfLive == 0)
+        if (   pStream->fThresholdReached         /* Has the treshold been reached (e.g. are we in playing stage) ... */
+            && cfLive == 0)                       /* ... and we now have no live samples to process? */
         {
-            LogRel2(("Audio: Buffer underrun for stream '%s' occurred (%RU64ms passed but only %RU64ms in buffer)\n",
-                     pStream->szName,
-                     DrvAudioHlpFramesToMilli(cfPassedReal, &pStream->Host.Cfg.Props),
-                     DrvAudioHlpFramesToMilli(cfLive, &pStream->Host.Cfg.Props)));
+            LogRel2(("Audio: Buffer underrun for stream '%s' occurred (%RU64ms passed)\n",
+                     pStream->szName, DrvAudioHlpFramesToMilli(cfPassedReal, &pStream->Host.Cfg.Props)));
 
-            /* Enter buffering stage again. */
-            pStream->fThresholdReached = false;
+            if (pStream->Host.Cfg.Backend.cfPreBuf) /* Any pre-buffering configured? */
+            {
+                /* Enter pre-buffering stage again. */
+                pStream->fThresholdReached = false;
+            }
         }
 
         bool fDoPlay      = pStream->fThresholdReached;
