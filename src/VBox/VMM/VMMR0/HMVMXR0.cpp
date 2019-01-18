@@ -228,12 +228,12 @@
         } \
         else \
         { \
-            Log4Func(("hmR0VmxCheckExitDueToVmxInstr failed. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrictTmp))); \
+            Log4Func(("hmR0VmxDecodeMemOperand failed. rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrictTmp))); \
             return rcStrictTmp; \
         } \
     } while (0)
 
-#endif  /* VBOX_WITH_NESTED_HWVIRT_VMX */
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
 /*********************************************************************************************************************************
@@ -5878,6 +5878,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptSS(PVMCPU pVCpu, uint32_t u32ErrCode)
 }
 
 
+# ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
 /**
  * Decodes the memory operand of an instruction that caused a VM-exit.
  *
@@ -6143,7 +6144,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToVmxInstr(PVMCPU pVCpu, uint32_t uExitRe
 
     return VINF_SUCCESS;
 }
-
+# endif /* !VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM */
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
