@@ -61,24 +61,41 @@
 #define PROFILE_FN(a_fnCall, a_cNsTarget, a_szDesc) \
     do { \
         /* Estimate how many iterations we need to fill up the given timeslot: */ \
-        uint64_t const nsStartEstimation = RTTimeNanoTS(); \
-        for (uint32_t iIteration = 0; iIteration < 64; iIteration++) \
+        fsPerfYield(); \
+        uint64_t nsStart = RTTimeNanoTS(); \
+        uint64_t ns; \
+        do \
+            ns = RTTimeNanoTS(); \
+        while (ns == nsStart); \
+        nsStart = ns; \
+        \
+        uint64_t iIteration = 0; \
+        do \
         { \
             RTTESTI_CHECK_RC(a_fnCall, VINF_SUCCESS); \
-        } \
-        uint64_t cNs = RTTimeNanoTS() - nsStartEstimation; \
-        cNs /= 64; \
-        uint32_t const cIterations = (((a_cNsTarget) / cNs) + 255) / 256 * 256; \
+            iIteration++; \
+            ns = RTTimeNanoTS() - nsStart; \
+        } while (ns < RT_NS_10MS || (iIteration & 1)); \
+        ns /= iIteration; \
+        if (ns > g_nsPerNanoTSCall + 32) \
+            ns -= g_nsPerNanoTSCall; \
+        \
+        uint64_t cIterations = (a_cNsTarget) / ns; \
+        if (cIterations <= 1) \
+            cIterations = 2; \
+        else if (cIterations & 1) \
+            cIterations++; \
         \
         /* Do the actual profiling: */ \
         fsPerfYield(); \
-        uint64_t const nsStart = RTTimeNanoTS(); \
-        for (uint32_t iIteration = 0; iIteration < cIterations; iIteration++) \
-        { \
-            a_fnCall; \
-        } \
-        uint64_t const cNsElapsed = RTTimeNanoTS() - nsStart; \
-        RTTestIValueF(cNsElapsed / cIterations, RTTESTUNIT_NS_PER_OCCURRENCE, a_szDesc); \
+        iIteration = 0; \
+        nsStart = RTTimeNanoTS(); \
+        for (; iIteration < cIterations; iIteration++) \
+            RTTESTI_CHECK_RC(a_fnCall, VINF_SUCCESS); \
+        ns = RTTimeNanoTS() - nsStart; \
+        RTTestIValueF(ns / cIterations, RTTESTUNIT_NS_PER_OCCURRENCE, a_szDesc); \
+        if (g_fShowDuration) \
+            RTTestIValueF(ns, RTTESTUNIT_NS, "%s duration", a_szDesc); \
     } while (0)
 
 
@@ -93,9 +110,17 @@
             break; \
         \
         /* Estimate how many iterations we need to fill up the given timeslot: */ \
-        uint64_t const nsStartEstimation = RTTimeNanoTS(); \
+        fsPerfYield(); \
+        uint64_t nsStart = RTTimeNanoTS(); \
+        uint64_t ns; \
+        do \
+            ns = RTTimeNanoTS(); \
+        while (ns == nsStart); \
+        nsStart = ns; \
+        \
         PFSPERFNAMEENTRY pCur; \
-        for (uint32_t iIteration = 0; iIteration < (a_cEstimationIterations); iIteration++) \
+        uint64_t iIteration = 0; \
+        do \
         { \
             RTListForEach(&g_ManyTreeHead, pCur, FSPERFNAMEENTRY, Entry) \
             { \
@@ -106,14 +131,24 @@
                     RTTESTI_CHECK_RC(a_fnCall, VINF_SUCCESS); \
                 } \
             } \
-        } \
-        uint64_t cNs = RTTimeNanoTS() - nsStartEstimation; \
-        uint32_t const cIterations = RT_ALIGN_32(((a_cNsTarget) + cNs - 1) / (cNs / 2), 2); \
+            iIteration++; \
+            ns = RTTimeNanoTS() - nsStart; \
+        } while (ns < RT_NS_10MS || (iIteration & 1)); \
+        ns /= iIteration; \
+        if (ns > g_nsPerNanoTSCall + 32) \
+            ns -= g_nsPerNanoTSCall; \
+        \
+        uint32_t cIterations = (a_cNsTarget) / ns; \
+        if (cIterations <= 1) \
+            cIterations = 2; \
+        else if (cIterations & 1) \
+            cIterations++; \
+        \
         /* Do the actual profiling: */ \
         fsPerfYield(); \
-        uint32_t       cCalls = 0; \
-        uint64_t const nsStart = RTTimeNanoTS(); \
-        for (uint32_t iIteration = 0; iIteration < cIterations; iIteration++) \
+        uint32_t cCalls = 0; \
+        nsStart = RTTimeNanoTS(); \
+        for (iIteration = 0; iIteration < cIterations; iIteration++) \
         { \
             RTListForEach(&g_ManyTreeHead, pCur, FSPERFNAMEENTRY, Entry) \
             { \
@@ -126,8 +161,10 @@
                 } \
             } \
         } \
-        uint64_t const cNsElapsed = RTTimeNanoTS() - nsStart; \
-        RTTestIValueF(cNsElapsed / cCalls, RTTESTUNIT_NS_PER_OCCURRENCE, a_szDesc); \
+        ns = RTTimeNanoTS() - nsStart; \
+        RTTestIValueF(ns / cCalls, RTTESTUNIT_NS_PER_OCCURRENCE, a_szDesc); \
+        if (g_fShowDuration) \
+            RTTestIValueF(ns, RTTESTUNIT_NS, "%s duration", a_szDesc); \
     } while (0)
 
 
@@ -272,6 +309,9 @@ static RTTEST       g_hTest;
 /** The number of nanoseconds a RTTimeNanoTS call takes.
  * This is used for adjusting loop count estimates.  */
 static uint64_t     g_nsPerNanoTSCall = 1;
+/** Whether or not to display the duration of each profile run.
+ * This is chiefly for verify the estimate phase.  */
+static bool         g_fShowDuration = true;
 /** Verbosity level. */
 static uint32_t     g_uVerbosity = 0;
 
@@ -297,28 +337,28 @@ static bool         g_fWrite     = true;
 /** @} */
 
 /** The length of each test run. */
-static uint64_t     g_nsTestRun  = RT_NS_1SEC_64 * 10;
+static uint64_t     g_nsTestRun                 = RT_NS_1SEC_64 * 10;
 
 /** For the 'manyfiles' subdir.  */
-static uint32_t     g_cManyFiles = 10000;
+static uint32_t     g_cManyFiles                = 10000;
 
 /** Number of files in the 'manytree' directory tree.  */
-static uint32_t     g_cManyTreeFiles         = 640 + 16*640 /*10880*/;
+static uint32_t     g_cManyTreeFiles            = 640 + 16*640 /*10880*/;
 /** Number of files per directory in the 'manytree' construct. */
-static uint32_t     g_cManyTreeFilesPerDir   = 640;
+static uint32_t     g_cManyTreeFilesPerDir      = 640;
 /* Number of subdirs per directory in the 'manytree' construct. */
-static uint32_t     g_cManyTreeSubdirsPerDir = 16;
+static uint32_t     g_cManyTreeSubdirsPerDir    = 16;
 /** The depth of the 'manytree' directory tree.  */
-static uint32_t     g_cManyTreeDepth          = 1;
+static uint32_t     g_cManyTreeDepth            = 1;
 /** List of directories in the many tree, creation order. */
 static RTLISTANCHOR g_ManyTreeHead;
 
 /** Number of configured I/O block sizes. */
-static uint32_t     g_cIoBlocks       = 8;
+static uint32_t     g_cIoBlocks                 = 8;
 /** Configured I/O block sizes. */
-static uint32_t     g_acbIoBlocks[16] = { 1, 512, 4096, 16384, 65536, _1M, _32M, _128M };
+static uint32_t     g_acbIoBlocks[16]           = { 1, 512, 4096, 16384, 65536, _1M, _32M, _128M };
 /** The desired size of the test file we use for I/O. */
-static uint64_t     g_cbIoFile        = _512M;
+static uint64_t     g_cbIoFile                  = _512M;
 
 /** The length of g_szDir. */
 static size_t       g_cchDir;
@@ -422,6 +462,50 @@ DECLINLINE(char *) InDeepDir(const char *pszAppend, size_t cchAppend)
 
 
 /**
+ * Prepares the test area.
+ * @returns VBox status code.
+ */
+static int fsPrepTestArea(void)
+{
+    /* The empty subdir and associated globals: */
+    static char s_szEmpty[] = "empty";
+    memcpy(g_szEmptyDir, g_szDir, g_cchDir);
+    memcpy(&g_szEmptyDir[g_cchDir], s_szEmpty, sizeof(s_szEmpty));
+    g_cchEmptyDir = g_cchDir + sizeof(s_szEmpty) - 1;
+    RTTESTI_CHECK_RC_RET(RTDirCreate(g_szEmptyDir, 0755, 0), VINF_SUCCESS, rcCheck);
+    g_szEmptyDir[g_cchEmptyDir++] = RTPATH_SLASH;
+    g_szEmptyDir[g_cchEmptyDir]   = '\0';
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "Empty dir: %s\n", g_szEmptyDir);
+
+    /* Deep directory: */
+    memcpy(g_szDeepDir, g_szDir, g_cchDir);
+    g_cchDeepDir = g_cchDir;
+    do
+    {
+        static char const s_szSub[] = "d" RTPATH_SLASH_STR;
+        memcpy(&g_szDeepDir[g_cchDeepDir], s_szSub, sizeof(s_szSub));
+        g_cchDeepDir += sizeof(s_szSub) - 1;
+        RTTESTI_CHECK_RC_RET( RTDirCreate(g_szDeepDir, 0755, 0), VINF_SUCCESS, rcCheck);
+    } while (g_cchDeepDir < 176);
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "Deep  dir: %s\n", g_szDeepDir);
+
+    /* Create known file in both deep and shallow dirs: */
+    RTFILE hKnownFile;
+    RTTESTI_CHECK_RC_RET(RTFileOpen(&hKnownFile, InDir(RT_STR_TUPLE("known-file")),
+                                    RTFILE_O_CREATE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE),
+                         VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RC_RET(RTFileClose(hKnownFile), VINF_SUCCESS, rcCheck);
+
+    RTTESTI_CHECK_RC_RET(RTFileOpen(&hKnownFile, InDeepDir(RT_STR_TUPLE("known-file")),
+                                    RTFILE_O_CREATE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE),
+                         VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RC_RET(RTFileClose(hKnownFile), VINF_SUCCESS, rcCheck);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Create a name list entry.
  * @returns Pointer to the entry, NULL if out of memory.
  * @param   pchName             The name.
@@ -459,25 +543,6 @@ static int fsPerfManyTreeRecursiveDirCreator(size_t cchDir, uint32_t iDepth)
 
     return VINF_SUCCESS;
 }
-
-
-DECL_FORCE_INLINE(int) fsPerfOpenExistingOnceReadonly(const char *pszFile)
-{
-    RTFILE hFile;
-    RTTESTI_CHECK_RC_RET(RTFileOpen(&hFile, pszFile, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VINF_SUCCESS, rcCheck);
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
-    return VINF_SUCCESS;
-}
-
-
-DECL_FORCE_INLINE(int) fsPerfOpenExistingOnceWriteonly(const char *pszFile)
-{
-    RTFILE hFile;
-    RTTESTI_CHECK_RC_RET(RTFileOpen(&hFile, pszFile, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS, rcCheck);
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
-    return VINF_SUCCESS;
-}
-
 
 
 void fsPerfManyFiles(void)
@@ -544,6 +609,24 @@ void fsPerfManyFiles(void)
 }
 
 
+DECL_FORCE_INLINE(int) fsPerfOpenExistingOnceReadonly(const char *pszFile)
+{
+    RTFILE hFile;
+    RTTESTI_CHECK_RC_RET(RTFileOpen(&hFile, pszFile, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    return VINF_SUCCESS;
+}
+
+
+DECL_FORCE_INLINE(int) fsPerfOpenExistingOnceWriteonly(const char *pszFile)
+{
+    RTFILE hFile;
+    RTTESTI_CHECK_RC_RET(RTFileOpen(&hFile, pszFile, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    return VINF_SUCCESS;
+}
+
+
 void fsPerfOpen(void)
 {
     RTTestISub("open");
@@ -554,6 +637,8 @@ void fsPerfOpen(void)
                                 RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTFileOpen(&hFile, InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")),
                                 RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTFileOpen(&hFile, InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file")),
+                                RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VERR_PATH_NOT_FOUND);
 
     /*
      * Create file1 and then try exclusivly creating it again.
@@ -659,6 +744,8 @@ void fsPerfStat(void)
                                        &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK), VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTPathQueryInfoEx(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")),
                                        &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTPathQueryInfoEx(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file")),
+                                       &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK), VERR_PATH_NOT_FOUND);
 
     /* Shallow: */
     RTFILE hFile1;
@@ -700,6 +787,7 @@ void fsPerfChmod(void)
                      VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTPathSetMode(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")), 0665),
                      FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTPathSetMode(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file")), 0665), VERR_PATH_NOT_FOUND);
 
     /* Shallow: */
     RTFILE hFile1;
@@ -745,6 +833,9 @@ void fsPerfUtimes(void)
     RTTESTI_CHECK_RC(RTPathSetTimesEx(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")),
                                       NULL, &Time1, NULL, NULL, RTPATH_F_ON_LINK),
                      FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTPathSetTimesEx(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file")),
+                                      NULL, &Time1, NULL, NULL, RTPATH_F_ON_LINK),
+                     VERR_PATH_NOT_FOUND);
 
     /* Shallow: */
     RTFILE hFile1;
@@ -812,6 +903,8 @@ void fsPerfRename(void)
     strcpy(szPath, InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "other-no-such-file")));
     RTTESTI_CHECK_RC(RTPathRename(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")), szPath, 0),
                      FSPERF_VERR_PATH_NOT_FOUND);
+    strcpy(szPath, InEmptyDir(RT_STR_TUPLE("other-no-such-file")));
+    RTTESTI_CHECK_RC(RTPathRename(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file")), szPath, 0), VERR_PATH_NOT_FOUND);
 
     RTFILE hFile1;
     RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file16")),
@@ -880,11 +973,16 @@ DECL_FORCE_INLINE(int) fsPerfEnumManyFiles(void)
 void vsPerfDirEnum(void)
 {
     RTTestISub("dir enum");
+    RTDIR hDir;
+
+    /* Non-existing files. */
+    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InEmptyDir(RT_STR_TUPLE("no-such-file"))), VERR_FILE_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
 
     /*
      * The empty directory.
      */
-    RTDIR hDir;
     g_szEmptyDir[g_cchEmptyDir] = '\0';
     RTTESTI_CHECK_RC_RETV(RTDirOpen(&hDir, g_szEmptyDir), VINF_SUCCESS);
 
@@ -981,7 +1079,9 @@ void fsPerfMkRmDir(void)
     /* Non-existing directories: */
     RTTESTI_CHECK_RC(RTDirRemove(InEmptyDir(RT_STR_TUPLE("no-such-dir"))), VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTDirRemove(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
     RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")), 0755, 0), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirCreate(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file")), 0755, 0), VERR_PATH_NOT_FOUND);
 
     /** @todo check what happens if non-final path component isn't a directory. unix
      *        should return ENOTDIR and IPRT translates that to VERR_PATH_NOT_FOUND.
@@ -997,7 +1097,11 @@ void fsPerfMkRmDir(void)
 #else
     RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE("."))), VERR_INVALID_PARAMETER); /* EINVAL for '.' */
 #endif
+#if defined(RT_OS_WINDOWS)
+    RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE(".."))), VERR_SHARING_VIOLATION); /* weird */
+#else
     RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE(".."))), VERR_DIR_NOT_EMPTY);
+#endif
     RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE(""))), VERR_DIR_NOT_EMPTY);
 
     /* Create a directory and remove it: */
@@ -1086,6 +1190,7 @@ void fsPerfRm(void)
     /* Non-existing files. */
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("no-such-file"))), VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTFileDelete(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
 
     /* Directories: */
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))), VERR_ACCESS_DENIED);
@@ -1142,6 +1247,7 @@ void fsPerfChSize(void)
     /*
      * We need some free space to perform this test.
      */
+    g_szDir[g_cchDir] = '\0';
     RTFOFF cbFree = 0;
     RTTESTI_CHECK_RC_RETV(RTFsQuerySizes(g_szDir, NULL, &cbFree, NULL, NULL), VINF_SUCCESS);
     if (cbFree < _1M)
@@ -1381,6 +1487,67 @@ void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
 }
 
 
+/** For fsPerfIoRead and fsPerfIoWrite. */
+#define PROFILE_IO_FN(a_szOperation, a_fnCall) \
+    do \
+    { \
+        RTTESTI_CHECK_RC_RETV(RTFileSeek(hFile1, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS); \
+        uint64_t offActual = 0; \
+        uint32_t cSeeks    = 0; \
+        \
+        /* Estimate how many iterations we need to fill up the given timeslot: */ \
+        fsPerfYield(); \
+        uint64_t nsStart = RTTimeNanoTS(); \
+        uint64_t ns; \
+        do \
+            ns = RTTimeNanoTS(); \
+        while (ns == nsStart); \
+        nsStart = ns; \
+        \
+        uint64_t iIteration = 0; \
+        do \
+        { \
+            RTTESTI_CHECK_RC(a_fnCall, VINF_SUCCESS); \
+            iIteration++; \
+            ns = RTTimeNanoTS() - nsStart; \
+        } while (ns < RT_NS_10MS); \
+        ns /= iIteration; \
+        if (ns > g_nsPerNanoTSCall + 32) \
+            ns -= g_nsPerNanoTSCall; \
+        uint64_t cIterations = g_nsTestRun / ns; \
+        \
+        /* Do the actual profiling: */ \
+        cSeeks = 0; \
+        iIteration = 0; \
+        fsPerfYield(); \
+        nsStart = RTTimeNanoTS(); \
+        for (uint32_t iAdjust = 0; iAdjust < 4; iAdjust++) \
+        { \
+            for (; iIteration < cIterations; iIteration++)\
+                RTTESTI_CHECK_RC(a_fnCall, VINF_SUCCESS); \
+            ns = RTTimeNanoTS() - nsStart;\
+            if (ns >= g_nsTestRun - (g_nsTestRun / 10)) \
+                break; \
+            cIterations += cIterations / 4; \
+            if (cIterations & 1) \
+                cIterations++; \
+            nsStart += g_nsPerNanoTSCall; \
+        } \
+        RTTestIValueF(ns / iIteration, \
+                      RTTESTUNIT_NS_PER_OCCURRENCE, a_szOperation "/seq/%RU32 latency", cbBlock); \
+        RTTestIValueF((uint64_t)iIteration * cbBlock / ((double)ns / RT_NS_1SEC), \
+                      RTTESTUNIT_BYTES_PER_SEC,     a_szOperation "/seq/%RU32 throughput", cbBlock); \
+        RTTestIValueF(iIteration, \
+                      RTTESTUNIT_CALLS,             a_szOperation "/seq/%RU32 calls", cbBlock); \
+        RTTestIValueF((uint64_t)iIteration * cbBlock, \
+                      RTTESTUNIT_BYTES,             a_szOperation "/seq/%RU32 bytes", cbBlock); \
+        RTTestIValueF(cSeeks, \
+                      RTTESTUNIT_OCCURRENCES,       a_szOperation "/seq/%RU32 seeks", cbBlock); \
+        if (g_fShowDuration) \
+            RTTestIValueF(ns, RTTESTUNIT_NS,        a_szOperation "/seq/%RU32 duration", cbBlock); \
+    } while (0)
+
+
 DECL_FORCE_INLINE(int) fsPerfIoReadWorker(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock, uint8_t *pbBlock,
                                           uint64_t *poffActual, uint32_t *pcSeeks)
 {
@@ -1407,70 +1574,60 @@ DECL_FORCE_INLINE(int) fsPerfIoReadWorker(RTFILE hFile1, uint64_t cbFile, uint32
 }
 
 
-void fsPerfIoRead(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock, uint8_t **ppbFree)
+void fsPerfIoReadBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
 {
-    RTTestISubF("read %RU32", cbBlock);
+    RTTestISubF("Sequential read %RU32", cbBlock);
 
-    uint8_t *pbBuf = *ppbFree = (uint8_t *)RTMemPageAlloc(cbBlock);
-    if (!pbBuf)
+    uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBlock);
+    if (pbBuf)
     {
+        memset(pbBuf, 0xf7, cbBlock);
+        PROFILE_IO_FN("RTFileRead", fsPerfIoReadWorker(hFile1, cbFile, cbBlock, pbBuf, &offActual, &cSeeks));
+        RTMemPageFree(pbBuf, cbBlock);
+    }
+    else
         RTTestSkipped(g_hTest, "insufficient (virtual) memory available");
-        return;
-    }
-
-    char szDesc[64];
-    RTStrPrintf(szDesc, sizeof(szDesc), "RTFileRead/seq/%RU32", cbBlock);
-
-    RTTESTI_CHECK_RC_RETV(RTFileSeek(hFile1, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
-    uint64_t offActual = 0;
-    uint32_t cSeeks    = 0;
-
-    /* Estimate how many iterations we need to fill up the given timeslot: */
-    fsPerfYield();
-    uint64_t nsStart = RTTimeNanoTS();
-    uint64_t ns;
-    do
-        ns = RTTimeNanoTS();
-    while (ns == nsStart);
-    nsStart = ns;
-
-    uint32_t iIteration = 0;
-    do
-    {
-        RTTESTI_CHECK_RC_RETV(fsPerfIoReadWorker(hFile1, cbFile, cbBlock, pbBuf, &offActual, &cSeeks), VINF_SUCCESS);
-        iIteration++;
-        ns = RTTimeNanoTS() - nsStart;
-    } while (ns < RT_NS_10MS);
-    ns /= iIteration;
-    if (ns > g_nsPerNanoTSCall)
-        ns -= g_nsPerNanoTSCall;
-    uint32_t const cIterations = g_nsTestRun / ns;
-
-    /* Do the actual profiling: */
-    cSeeks = 0;
-    fsPerfYield();
-    nsStart = RTTimeNanoTS();
-    for (iIteration = 0; iIteration < cIterations; iIteration++)
-    {
-        fsPerfIoReadWorker(hFile1, cbFile, cbBlock, pbBuf, &offActual, &cSeeks);
-    }
-    ns = RTTimeNanoTS() - nsStart;
-    RTTestIValueF(ns / iIteration,
-                  RTTESTUNIT_NS_PER_OCCURRENCE, "RTFileRead/seq/%RU32 latency", cbBlock);
-    RTTestIValueF((uint64_t)iIteration * cbBlock / ((double)ns / RT_NS_1SEC),
-                  RTTESTUNIT_BYTES_PER_SEC,     "RTFileRead/seq/%RU32 throughput", cbBlock);
-    RTTestIValueF(iIteration,
-                  RTTESTUNIT_CALLS,             "RTFileRead/seq/%RU32 calls", cbBlock);
-    RTTestIValueF((uint64_t)iIteration * cbBlock,
-                  RTTESTUNIT_BYTES,             "RTFileRead/seq/%RU32 bytes", cbBlock);
-    RTTestIValueF(cSeeks,
-                  RTTESTUNIT_OCCURRENCES,       "RTFileRead/seq/%RU32 seeks", cbBlock);
 }
 
 
-void fsPerfIoWrite(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock, uint8_t **ppbFree)
+DECL_FORCE_INLINE(int) fsPerfIoWriteWorker(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock, uint8_t *pbBlock,
+                                           uint64_t *poffActual, uint32_t *pcSeeks)
 {
-    RT_NOREF(hFile1, cbFile, cbBlock, ppbFree);
+    /* Do we need to seek back to the start? */
+    if (*poffActual + cbBlock <= cbFile)
+    { /* likely */ }
+    else
+    {
+        RTTESTI_CHECK_RC_RET(RTFileSeek(hFile1, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS, rcCheck);
+        *pcSeeks += 1;
+        *poffActual = 0;
+    }
+
+    size_t cbActuallyWritten = 0;
+    RTTESTI_CHECK_RC_RET(RTFileWrite(hFile1, pbBlock, cbBlock, &cbActuallyWritten), VINF_SUCCESS, rcCheck);
+    if (cbActuallyWritten == cbBlock)
+    {
+        *poffActual += cbActuallyWritten;
+        return VINF_SUCCESS;
+    }
+    RTTestIFailed("RTFileWrite at %#RX64 returned just %#x bytes, expected %#x", *poffActual, cbActuallyWritten, cbBlock);
+    *poffActual += cbActuallyWritten;
+    return VERR_WRITE_ERROR;
+}
+
+void fsPerfIoWriteBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
+{
+    RTTestISubF("Sequential write %RU32", cbBlock);
+
+    uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBlock);
+    if (pbBuf)
+    {
+        memset(pbBuf, 0xf7, cbBlock);
+        PROFILE_IO_FN("RTFileWrite", fsPerfIoWriteWorker(hFile1, cbFile, cbBlock, pbBuf, &offActual, &cSeeks));
+        RTMemPageFree(pbBuf, cbBlock);
+    }
+    else
+        RTTestSkipped(g_hTest, "insufficient (virtual) memory available");
 }
 
 
@@ -1524,19 +1681,15 @@ void fsPerfIo(void)
         if (g_fSeek)
             fsPerfIoSeek(hFile1, cbFile);
         if (g_fRead)
+        {
             for (unsigned i = 0; i < g_cIoBlocks; i++)
-            {
-                pbFree = NULL;
-                fsPerfIoRead(hFile1, cbFile, g_acbIoBlocks[i], &pbFree);
-                RTMemPageFree(pbFree, g_acbIoBlocks[i]);
-            }
+                fsPerfIoReadBlockSize(hFile1, cbFile, g_acbIoBlocks[i]);
+        }
         if (g_fWrite)
+        {
             for (unsigned i = 0; i < g_cIoBlocks; i++)
-            {
-                pbFree = NULL;
-                fsPerfIoWrite(hFile1, cbFile, g_acbIoBlocks[i], &pbFree);
-                RTMemPageFree(pbFree, g_acbIoBlocks[i]);
-            }
+                fsPerfIoWriteBlockSize(hFile1, cbFile, g_acbIoBlocks[i]);
+        }
     }
 
     RTTESTI_CHECK_RC(RTFileSetSize(hFile1, 0), VINF_SUCCESS);
@@ -1748,67 +1901,43 @@ int main(int argc, char *argv[])
         if (RT_SUCCESS(rc))
         {
             RTTestIPrintf(RTTESTLVL_ALWAYS, "Test  dir: %s\n", g_szDir);
-
-            /* The empty subdir and associated globals: */
-            static char s_szEmpty[] = "empty";
-            memcpy(g_szEmptyDir, g_szDir, g_cchDir);
-            memcpy(&g_szEmptyDir[g_cchDir], s_szEmpty, sizeof(s_szEmpty));
-            g_cchEmptyDir = g_cchDir + sizeof(s_szEmpty) - 1;
-            rc = RTDirCreate(g_szEmptyDir, 0755, 0);
+            rc = fsPrepTestArea();
             if (RT_SUCCESS(rc))
             {
-                g_szEmptyDir[g_cchEmptyDir++] = RTPATH_SLASH;
-                g_szEmptyDir[g_cchEmptyDir]   = '\0';
-                RTTestIPrintf(RTTESTLVL_ALWAYS, "Empty dir: %s\n", g_szEmptyDir);
+                /* Profile RTTimeNanoTS(). */
+                fsPerfNanoTS();
 
-                /* Deep directory: */
-                memcpy(g_szDeepDir, g_szDir, g_cchDir);
-                g_cchDeepDir = g_cchDir;
-                do
-                {
-                    static char const s_szSub[] = "d" RTPATH_SLASH_STR;
-                    memcpy(&g_szDeepDir[g_cchDeepDir], s_szSub, sizeof(s_szSub));
-                    g_cchDeepDir += sizeof(s_szSub) - 1;
-                    RTTESTI_CHECK_RC(rc = RTDirCreate(g_szDeepDir, 0755, 0), VINF_SUCCESS);
-                } while (RT_SUCCESS(rc) && g_cchDeepDir < 176);
-                RTTestIPrintf(RTTESTLVL_ALWAYS, "Deep  dir: %s\n", g_szDeepDir);
-                if (RT_SUCCESS(rc))
-                {
-                    /* Profile RTTimeNanoTS(). */
-                    fsPerfNanoTS();
-
-                    /* Do tests: */
-                    if (g_fManyFiles)
-                        fsPerfManyFiles();
-                    if (g_fOpen)
-                        fsPerfOpen();
-                    if (g_fFStat)
-                        fsPerfFStat();
-                    if (g_fFChMod)
-                        fsPerfFChMod();
-                    if (g_fFUtimes)
-                        fsPerfFUtimes();
-                    if (g_fStat)
-                        fsPerfStat();
-                    if (g_fChMod)
-                        fsPerfChmod();
-                    if (g_fUtimes)
-                        fsPerfUtimes();
-                    if (g_fRename)
-                        fsPerfRename();
-                    if (g_fDirEnum)
-                        vsPerfDirEnum();
-                    if (g_fMkRmDir)
-                        fsPerfMkRmDir();
-                    if (g_fStatVfs)
-                        fsPerfStatVfs();
-                    if (g_fRm || g_fManyFiles)
-                        fsPerfRm(); /* deletes manyfiles and manytree */
-                    if (g_fChSize)
-                        fsPerfChSize();
-                    if (g_fRead || g_fWrite || g_fSeek)
-                        fsPerfIo();
-                }
+                /* Do tests: */
+                if (g_fManyFiles)
+                    fsPerfManyFiles();
+                if (g_fOpen)
+                    fsPerfOpen();
+                if (g_fFStat)
+                    fsPerfFStat();
+                if (g_fFChMod)
+                    fsPerfFChMod();
+                if (g_fFUtimes)
+                    fsPerfFUtimes();
+                if (g_fStat)
+                    fsPerfStat();
+                if (g_fChMod)
+                    fsPerfChmod();
+                if (g_fUtimes)
+                    fsPerfUtimes();
+                if (g_fRename)
+                    fsPerfRename();
+                if (g_fDirEnum)
+                    vsPerfDirEnum();
+                if (g_fMkRmDir)
+                    fsPerfMkRmDir();
+                if (g_fStatVfs)
+                    fsPerfStatVfs();
+                if (g_fRm || g_fManyFiles)
+                    fsPerfRm(); /* deletes manyfiles and manytree */
+                if (g_fChSize)
+                    fsPerfChSize();
+                if (g_fRead || g_fWrite || g_fSeek)
+                    fsPerfIo();
             }
 
             /* Cleanup: */
