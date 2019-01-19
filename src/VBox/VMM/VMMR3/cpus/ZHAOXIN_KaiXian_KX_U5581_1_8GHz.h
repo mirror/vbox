@@ -19,6 +19,9 @@
 
 #ifndef VBOX_CPUDB_ZHAOXIN_KaiXian_KX_U5581_1_8GHz_h
 #define VBOX_CPUDB_ZHAOXIN_KaiXian_KX_U5581_1_8GHz_h
+#ifndef RT_WITHOUT_PRAGMA_ONCE
+# pragma once
+#endif
 
 
 #ifndef CPUM_DB_STANDALONE
