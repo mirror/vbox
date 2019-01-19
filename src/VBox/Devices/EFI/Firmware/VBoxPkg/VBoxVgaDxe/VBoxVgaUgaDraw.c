@@ -215,7 +215,7 @@ VBoxVgaUgaDrawBlt (
       Status = Private->PciIo->Mem.Read (
                                     Private->PciIo,
                                     EfiPciIoWidthUint32,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((SrcY * ScreenWidth) + SourceX) * 4,
                                     Width,
                                     BltBuffer + (DstY * Delta) + DestinationX
@@ -233,7 +233,7 @@ VBoxVgaUgaDrawBlt (
       Status = Private->PciIo->Mem.Write (
                                     Private->PciIo,
                                     EfiPciIoWidthUint32,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((DstY * ScreenWidth) + DestinationX) * 4,
                                     Width,
                                     BltBuffer + (SrcY * Delta) + SourceX
@@ -253,9 +253,9 @@ VBoxVgaUgaDrawBlt (
         Status = Private->PciIo->CopyMem (
                                     Private->PciIo,
                                     EfiPciIoWidthUint32,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((DstY * ScreenWidth) + DestinationX) * 4,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((SrcY * ScreenWidth) + SourceX) * 4,
                                     Width
                                     );
@@ -268,9 +268,9 @@ VBoxVgaUgaDrawBlt (
         Status = Private->PciIo->CopyMem (
                                     Private->PciIo,
                                     EfiPciIoWidthUint32,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((DstY * ScreenWidth) + DestinationX) * 4,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((SrcY * ScreenWidth) + SourceX) * 4,
                                     Width
                                     );
@@ -288,7 +288,7 @@ VBoxVgaUgaDrawBlt (
       Status = Private->PciIo->Mem.Write (
                                     Private->PciIo,
                                     EfiPciIoWidthFillUint32,
-                                    0,
+                                    Private->BarIndexFB,
                                     DestinationY * ScreenWidth * 4,
                                     (Width * Height),
                                     BltBuffer
@@ -300,7 +300,7 @@ VBoxVgaUgaDrawBlt (
         Private->PciIo->Mem.Write (
                               Private->PciIo,
                               EfiPciIoWidthFillUint32,
-                              0,
+                              Private->BarIndexFB,
                               ((DstY * ScreenWidth) + DestinationX) * 4,
                               Width,
                               BltBuffer

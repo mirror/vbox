@@ -311,10 +311,10 @@ VBoxVgaControllerDriverSupported (
   //
   //  if (((Pci.Hdr.Command & 0x01) == 0x01)) {
   //
-  // See if this is a VirtualBox VGA PCI controller
+  // See if this is a VirtualBox VGA or VMSVGA II PCI controller
   //
-  if (Pci.Hdr.VendorId == VBOX_VENDOR_ID) {
-    if (Pci.Hdr.DeviceId == VBOX_VGA_DEVICE_ID) {
+  if ( (Pci.Hdr.VendorId == VBOX_VENDOR_ID) && (Pci.Hdr.DeviceId == VBOX_VGA_DEVICE_ID)
+    || (Pci.Hdr.VendorId == VMSVGA_VENDOR_ID) && (Pci.Hdr.DeviceId == VMSVGA_II_DEVICE_ID)) {
 
       Status = EFI_SUCCESS;
       if (RemainingDevicePath != NULL) {
@@ -336,7 +336,6 @@ VBoxVgaControllerDriverSupported (
           }
         }
       }
-    }
   }
 
 Done:
@@ -374,6 +373,7 @@ VBoxVgaControllerDriverStart (
   BOOLEAN                         PciAttributesSaved;
   EFI_DEVICE_PATH_PROTOCOL        *ParentDevicePath;
   ACPI_ADR_DEVICE_PATH            AcpiDeviceNode;
+  PCI_TYPE00                      Pci;
 
   PciAttributesSaved = FALSE;
   //
@@ -405,6 +405,23 @@ VBoxVgaControllerDriverStart (
   if (EFI_ERROR (Status)) {
     goto Error;
   }
+
+  //
+  // Read the PCI Configuration Header from the PCI Device again to figure out the model.
+  //
+  Status = Private->PciIo->Pci.Read (
+                                   Private->PciIo,
+                                   EfiPciIoWidthUint32,
+                                   0,
+                                   sizeof (Pci) / sizeof (UINT32),
+                                   &Pci
+                                   );
+  if (EFI_ERROR (Status)) {
+    DEBUG((DEBUG_INFO, "%a:%d status:%r\n", __FILE__, __LINE__, Status));
+    goto Error;
+  }
+
+  Private->DeviceType = Pci.Hdr.DeviceId;
 
   //
   // Save original PCI attributes
@@ -487,9 +504,56 @@ VBoxVgaControllerDriverStart (
   }
 
   //
-  // Get VRAM size, needed for constructing a correct video mode list
+  // Now do some model-specific setup.
   //
-  Private->VRAMSize = ASMInU32(VBE_DISPI_IOPORT_DATA);
+  if (Private->DeviceType == VMSVGA_II_DEVICE_ID) {
+      EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR     *IOPortDesc;
+
+      // VMSVGA
+      Private->BarIndexFB = 1;
+
+      Private->PciIo->GetBarAttributes (
+                          Private->PciIo,
+                          0,    // BAR 0 is the I/O port space
+                          NULL,
+                          (VOID**) &IOPortDesc
+                          );
+      Private->IOBase = (UINT16)IOPortDesc->AddrRangeMin;
+
+      //
+      // Query the VRAM size (for proper mode filtering)
+      //
+      ASMOutU32(Private->IOBase + SVGA_INDEX_PORT, SVGA_REG_VRAM_SIZE);
+      Private->VRAMSize = ASMInU32(Private->IOBase + SVGA_VALUE_PORT);
+
+#if 0
+      // Not used because of buggy emulation(?) which is not fully compatible
+      // with the simple "legacy" VMSVGA II register interface.
+
+      // Enable the device, set initial mode
+      ASMOutU32(Private->IOBase + SVGA_INDEX_PORT, SVGA_REG_WIDTH);
+      ASMOutU32(Private->IOBase + SVGA_VALUE_PORT, 1024);
+      ASMOutU32(Private->IOBase + SVGA_INDEX_PORT, SVGA_REG_HEIGHT);
+      ASMOutU32(Private->IOBase + SVGA_VALUE_PORT, 768);
+      ASMOutU32(Private->IOBase + SVGA_INDEX_PORT, SVGA_REG_BYTES_PER_LINE);
+      ASMOutU32(Private->IOBase + SVGA_VALUE_PORT, 768 * 4);
+      ASMOutU32(Private->IOBase + SVGA_INDEX_PORT, SVGA_REG_BITS_PER_PIXEL);
+      ASMOutU32(Private->IOBase + SVGA_VALUE_PORT, 32);
+      ASMOutU32(Private->IOBase + SVGA_INDEX_PORT, SVGA_REG_CONFIG_DONE);
+      ASMOutU32(Private->IOBase + SVGA_VALUE_PORT, 1);
+
+      ASMOutU32(Private->IOBase + SVGA_INDEX_PORT, SVGA_REG_ENABLE);
+      ASMOutU32(Private->IOBase + SVGA_VALUE_PORT, SVGA_REG_ENABLE_ENABLE);
+#endif
+  } else {
+      // VBoxVGA / VBoxSVGA
+      Private->BarIndexFB = 0;
+      //
+      // Get VRAM size, needed for constructing a correct video mode list
+      //
+      Private->VRAMSize = ASMInU32(VBE_DISPI_IOPORT_DATA);
+  }
+
 
   //
   // Construct video mode list
@@ -895,7 +959,7 @@ ClearScreen (
   Private->PciIo->Mem.Write (
                         Private->PciIo,
                         EfiPciIoWidthFillUint32,
-                        0,
+                        Private->BarIndexFB,
                         0,
                           Private->ModeData[Private->CurrentMode].HorizontalResolution
                         * Private->ModeData[Private->CurrentMode].VerticalResolution,
@@ -1042,7 +1106,7 @@ GetFrameBufferInfo(IN  APPLE_FRAMEBUFFERINFO_PROTOCOL   *This,
 
     Private->PciIo->GetBarAttributes (
                         Private->PciIo,
-                        0,
+                        Private->BarIndexFB,
                         NULL,
                         (VOID**) &FrameBufDesc
                         );

@@ -78,7 +78,7 @@ VBoxVgaCompleteModeData (
 
   Private->PciIo->GetBarAttributes (
                         Private->PciIo,
-                        0,
+                        Private->BarIndexFB,
                         NULL,
                         (VOID**) &FrameBufDesc
                         );
@@ -316,7 +316,7 @@ Returns:
       Status = Private->PciIo->Mem.Read (
                                     Private->PciIo,
                                     EfiPciIoWidthUint32,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((SrcY * ScreenWidth) + SourceX) * 4,
                                     Width,
                                     BltBuffer + (DstY * Delta) + DestinationX
@@ -334,7 +334,7 @@ Returns:
       Status = Private->PciIo->Mem.Write (
                                     Private->PciIo,
                                     EfiPciIoWidthUint32,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((DstY * ScreenWidth) + DestinationX) * 4,
                                     Width,
                                     BltBuffer + (SrcY * Delta) + SourceX
@@ -354,9 +354,9 @@ Returns:
         Status = Private->PciIo->CopyMem (
                                     Private->PciIo,
                                     EfiPciIoWidthUint32,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((DstY * ScreenWidth) + DestinationX) * 4,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((SrcY * ScreenWidth) + SourceX) * 4,
                                     Width
                                     );
@@ -369,9 +369,9 @@ Returns:
         Status = Private->PciIo->CopyMem (
                                     Private->PciIo,
                                     EfiPciIoWidthUint32,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((DstY * ScreenWidth) + DestinationX) * 4,
-                                    0,
+                                    Private->BarIndexFB,
                                     ((SrcY * ScreenWidth) + SourceX) * 4,
                                     Width
                                     );
@@ -389,7 +389,7 @@ Returns:
       Status = Private->PciIo->Mem.Write (
                                     Private->PciIo,
                                     EfiPciIoWidthFillUint32,
-                                    0,
+                                    Private->BarIndexFB,
                                     DestinationY * ScreenWidth * 4,
                                     (Width * Height),
                                     BltBuffer
@@ -401,7 +401,7 @@ Returns:
         Status = Private->PciIo->Mem.Write (
                                       Private->PciIo,
                                       EfiPciIoWidthFillUint32,
-                                      0,
+                                      Private->BarIndexFB,
                                       ((DstY * ScreenWidth) + DestinationX) * 4,
                                       Width,
                                       BltBuffer

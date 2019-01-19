@@ -78,8 +78,37 @@
 //
 // VirtualBox VGA PCI Configuration Header values
 //
-#define VBOX_VENDOR_ID           0x80ee
-#define VBOX_VGA_DEVICE_ID           0xbeef
+#define VBOX_VENDOR_ID          0x80ee
+#define VBOX_VGA_DEVICE_ID      0xbeef
+
+
+//
+// VMSVGA II PCI Configuration Header values
+//
+#define VMSVGA_VENDOR_ID        0x15ad
+#define VMSVGA_II_DEVICE_ID     0x0405
+
+// Port offsets relative to BAR 0
+#define SVGA_INDEX_PORT     0
+#define SVGA_VALUE_PORT     1
+
+// SVGA_REG_ENABLE bits
+#define SVGA_REG_ENABLE_DISABLE     0
+#define SVGA_REG_ENABLE_ENABLE      1
+
+// Registers
+#define SVGA_REG_ENABLE             1
+#define SVGA_REG_WIDTH              2
+#define SVGA_REG_HEIGHT             3
+#define SVGA_REG_MAX_WIDTH          4
+#define SVGA_REG_MAX_HEIGHT         5
+#define SVGA_REG_DEPTH              6
+#define SVGA_REG_BITS_PER_PIXEL     7
+#define SVGA_REG_BYTES_PER_LINE     12
+#define SVGA_REG_FB_START           13
+#define SVGA_REG_FB_OFFSET          14
+#define SVGA_REG_VRAM_SIZE          15
+#define SVGA_REG_CONFIG_DONE        20      ///@todo: Why do we need this?
 
 //
 // VirtualBox VGA Graphical Mode Data
@@ -114,6 +143,9 @@ typedef struct {
   UINTN                                 MaxMode;
   VBOX_VGA_MODE_DATA                    *ModeData;
   BOOLEAN                               HardwareNeedsStarting;
+  UINT8                                 BarIndexFB;
+  UINT16                                DeviceType;
+  UINT16                                IOBase;
   UINT32                                VRAMSize;
 } VBOX_VGA_PRIVATE_DATA;
 
