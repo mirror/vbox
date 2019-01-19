@@ -415,7 +415,11 @@ RTR3DECL(int)  RTFileSeek(RTFILE hFile, int64_t offSeek, unsigned uMethod, uint6
 RTR3DECL(int)  RTFileRead(RTFILE hFile, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
     if (cbToRead <= 0)
+    {
+        if (pcbRead)
+            *pcbRead = 0;
         return VINF_SUCCESS;
+    }
     ULONG cbToReadAdj = (ULONG)cbToRead;
     AssertReturn(cbToReadAdj == cbToRead, VERR_NUMBER_TOO_BIG);
 
