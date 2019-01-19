@@ -313,8 +313,8 @@ VBoxVgaControllerDriverSupported (
   //
   // See if this is a VirtualBox VGA or VMSVGA II PCI controller
   //
-  if ( (Pci.Hdr.VendorId == VBOX_VENDOR_ID) && (Pci.Hdr.DeviceId == VBOX_VGA_DEVICE_ID)
-    || (Pci.Hdr.VendorId == VMSVGA_VENDOR_ID) && (Pci.Hdr.DeviceId == VMSVGA_II_DEVICE_ID)) {
+  if ( ((Pci.Hdr.VendorId == VBOX_VENDOR_ID) && (Pci.Hdr.DeviceId == VBOX_VGA_DEVICE_ID))
+    || ((Pci.Hdr.VendorId == VMSVGA_VENDOR_ID) && (Pci.Hdr.DeviceId == VMSVGA_II_DEVICE_ID))) {
 
       Status = EFI_SUCCESS;
       if (RemainingDevicePath != NULL) {
