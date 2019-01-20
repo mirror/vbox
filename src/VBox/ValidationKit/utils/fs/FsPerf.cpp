@@ -39,6 +39,7 @@
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
+#include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/rand.h>
@@ -48,6 +49,10 @@
 #include <iprt/time.h>
 #include <iprt/thread.h>
 #include <iprt/zero.h>
+
+#ifdef RT_OS_WINDOWS
+# include <iprt/nt/nt-and-windows.h>
+#endif
 
 
 /*********************************************************************************************************************************
@@ -1383,6 +1388,109 @@ int fsPerfIoPrepFile(RTFILE hFile1, uint64_t cbFile, uint8_t **ppbFree)
 }
 
 
+/**
+ * Checks the content read from the file fsPerfIoPrepFile() prepared.
+ */
+bool fsPrefCheckReadBuf(unsigned uLineNo, uint64_t off, uint8_t const *pbBuf, size_t cbBuf, uint8_t bFiller = 0xf6)
+{
+    uint32_t cMismatches = 0;
+    size_t   offBuf      = 0;
+    uint32_t offBlock    = (uint32_t)(off & (_1K - 1));
+    while (offBuf < cbBuf)
+    {
+        /*
+         * Check the offset marker:
+         */
+        if (offBlock < sizeof(uint64_t))
+        {
+            RTUINT64U uMarker;
+            uMarker.u = off + offBuf - offBlock;
+            unsigned offMarker = offBlock & (sizeof(uint64_t) - 1);
+            while (offMarker < sizeof(uint64_t) && offBuf < cbBuf)
+            {
+                if (uMarker.au8[offMarker] != pbBuf[offBuf])
+                {
+                    RTTestIFailed("%u: Mismatch at buffer/file offset %#zx/%#RX64: %#x, expected %#x",
+                                  uLineNo, offBuf, off + offBuf, pbBuf[offBuf], uMarker.au8[offMarker]);
+                    if (cMismatches++ > 32)
+                        return false;
+                }
+                offMarker++;
+                offBuf++;
+            }
+            offBlock = sizeof(uint64_t);
+        }
+
+        /*
+         * Check the filling:
+         */
+        size_t cbFilling = RT_MIN(_1K - offBlock, cbBuf - offBuf);
+        if (   cbFilling == 0
+            || ASMMemIsAllU8(&pbBuf[offBuf], cbFilling, bFiller))
+            offBuf += cbFilling;
+        else
+        {
+            /* Some mismatch, locate it/them: */
+            while (cbFilling > 0 && offBuf < cbBuf)
+            {
+                if (pbBuf[offBuf] != bFiller)
+                {
+                    RTTestIFailed("%u: Mismatch at buffer/file offset %#zx/%#RX64: %#x, expected %#04x",
+                                  uLineNo, offBuf, off + offBuf, pbBuf[offBuf], bFiller);
+                    if (cMismatches++ > 32)
+                        return false;
+                }
+                offBuf++;
+                cbFilling--;
+            }
+        }
+        offBlock = 0;
+    }
+    return cMismatches == 0;
+}
+
+
+/**
+ * Sets up write buffer with offset markers and fillers.
+ */
+void fsPrefFillWriteBuf(uint64_t off, uint8_t *pbBuf, size_t cbBuf, uint8_t bFiller = 0xf6)
+{
+    uint32_t offBlock = (uint32_t)(off & (_1K - 1));
+    while (cbBuf > 0)
+    {
+        /* The marker. */
+        if (offBlock < sizeof(uint64_t))
+        {
+            RTUINT64U uMarker;
+            uMarker.u = off + offBlock;
+            if (cbBuf > sizeof(uMarker) - offBlock)
+            {
+                memcpy(pbBuf, &uMarker.au8[offBlock], sizeof(uMarker) - offBlock);
+                pbBuf += sizeof(uMarker) - offBlock;
+                cbBuf -= sizeof(uMarker) - offBlock;
+                off   += sizeof(uMarker) - offBlock;
+            }
+            else
+            {
+                memcpy(pbBuf, &uMarker.au8[offBlock], cbBuf);
+                return;
+            }
+            offBlock = sizeof(uint64_t);
+        }
+
+        /* Do the filling. */
+        size_t cbFilling = RT_MIN(_1K - offBlock, cbBuf);
+        memset(pbBuf, bFiller, cbFilling);
+        pbBuf += cbFilling;
+        cbBuf -= cbFilling;
+        off   += cbFilling;
+
+        offBlock = 0;
+    }
+}
+
+
+
 void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
 {
     /*
@@ -1550,6 +1658,9 @@ void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
     } while (0)
 
 
+/**
+ * One RTFileRead profiling iteration.
+ */
 DECL_FORCE_INLINE(int) fsPerfIoReadWorker(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock, uint8_t *pbBlock,
                                           uint64_t *poffActual, uint32_t *pcSeeks)
 {
@@ -1578,7 +1689,7 @@ DECL_FORCE_INLINE(int) fsPerfIoReadWorker(RTFILE hFile1, uint64_t cbFile, uint32
 
 void fsPerfIoReadBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
 {
-    RTTestISubF("Sequential read %RU32", cbBlock);
+    RTTestISubF("IO - Sequential read %RU32", cbBlock);
 
     uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBlock);
     if (pbBuf)
@@ -1592,6 +1703,184 @@ void fsPerfIoReadBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
 }
 
 
+void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
+{
+    RTTestISubF("IO - RTFileRead");
+
+    /*
+     * Allocate a big buffer we can play around with.  Min size is 1MB.
+     */
+    size_t   cbBuf = cbFile < _64M ? (size_t)cbFile : _64M;
+    uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBuf);
+    while (!pbBuf)
+    {
+        cbBuf /= 2;
+        RTTESTI_CHECK_RETV(cbBuf >= _1M);
+        pbBuf = (uint8_t *)RTMemPageAlloc(_32M);
+    }
+
+#if 1
+    /*
+     * Start at the beginning and read the full buffer in random small chunks, thereby
+     * checking that unaligned buffer addresses, size and file offsets work fine.
+     */
+    struct
+    {
+        uint64_t offFile;
+        uint32_t cbMax;
+    } aRuns[] = { { 0, 127 }, { cbFile - cbBuf, UINT32_MAX }, { 0, UINT32_MAX -1 }};
+    for (uint32_t i = 0; i < RT_ELEMENTS(aRuns); i++)
+    {
+        memset(pbBuf, 0x55, cbBuf);
+        RTTESTI_CHECK_RC(RTFileSeek(hFile1, aRuns[i].offFile, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+        for (size_t offBuf = 0; offBuf < cbBuf; )
+        {
+            uint32_t const cbLeft   = (uint32_t)(cbBuf - offBuf);
+            uint32_t const cbToRead = aRuns[i].cbMax < UINT32_MAX / 2 ? RTRandU32Ex(1, aRuns[i].cbMax)
+                                    : aRuns[i].cbMax == UINT32_MAX    ? RTRandU32Ex(RT_MAX(cbLeft / 4, 1), cbLeft)
+                                    : RTRandU32Ex(cbLeft >= _8K ? _8K : 1, RT_MIN(_1M, cbLeft));
+            size_t cbActual = 0;
+            RTTESTI_CHECK_RC(RTFileRead(hFile1, &pbBuf[offBuf], cbToRead, &cbActual), VINF_SUCCESS);
+            if (cbActual == cbToRead)
+                offBuf += cbActual;
+            else
+            {
+                RTTestIFailed("Attempting to read %#x bytes at %#zx, only got %#x bytes back!\n", cbToRead, offBuf, cbActual);
+                if (cbActual)
+                    offBuf += cbActual;
+                else
+                    pbBuf[offBuf++] = 0x11;
+            }
+        }
+        fsPrefCheckReadBuf(__LINE__, aRuns[i].offFile, pbBuf, cbBuf);
+    }
+#endif
+
+    /*
+     * Test reading beyond the end of the file.
+     */
+    size_t   const acbMax[] = { cbBuf, _64K, _16K, _4K, 256 };
+    uint32_t const aoffFromEos[] =
+    {   0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 32, 63, 64, 127, 128, 255, 254, 256, 1023, 1024, 2048,
+        4092, 4093, 4094, 4095, 4096, 4097, 4098, 4099, 4100, 8192, 16384, 32767, 32768, 32769, 65535, 65536, _1M - 1
+    };
+    for (unsigned iMax = 0; iMax < RT_ELEMENTS(acbMax); iMax++)
+    {
+        size_t const cbMaxRead = acbMax[iMax];
+        for (uint32_t iOffFromEos = 0; iOffFromEos < RT_ELEMENTS(aoffFromEos); iOffFromEos++)
+        {
+            uint32_t off = aoffFromEos[iOffFromEos];
+            if (off >= cbMaxRead)
+                continue;
+            RTTESTI_CHECK_RC(RTFileSeek(hFile1, cbFile - off, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+            size_t cbActual = ~(size_t)0;
+            RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, cbMaxRead, &cbActual), VINF_SUCCESS);
+            RTTESTI_CHECK(cbActual == off);
+
+            RTTESTI_CHECK_RC(RTFileSeek(hFile1, cbFile - off, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+            cbActual = ~(size_t)0;
+            RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, off, &cbActual), VINF_SUCCESS);
+            RTTESTI_CHECK_MSG(cbActual == off, ("%#zx vs %#zx", cbActual, off));
+
+            cbActual = ~(size_t)0;
+            RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, 1, &cbActual), VINF_SUCCESS);
+            RTTESTI_CHECK(cbActual == 0);
+
+            RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, cbMaxRead, NULL), VERR_EOF);
+        }
+    }
+
+    /*
+     * Test reading beyond end of the file.
+     */
+    for (unsigned iMax = 0; iMax < RT_ELEMENTS(acbMax); iMax++)
+    {
+        size_t const cbMaxRead = acbMax[iMax];
+        for (uint32_t off = 0; off < 256; off++)
+        {
+            RTTESTI_CHECK_RC(RTFileSeek(hFile1, cbFile + off, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+            size_t cbActual = ~(size_t)0;
+            RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, cbMaxRead, &cbActual), VINF_SUCCESS);
+            RTTESTI_CHECK(cbActual == 0);
+
+            RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, cbMaxRead, NULL), VERR_EOF);
+        }
+    }
+
+    /*
+     * Do uncached access, must be page aligned.
+     */
+    uint32_t cbPage = PAGE_SIZE;
+    memset(pbBuf, 0x66, cbBuf);
+    RTTESTI_CHECK_RC(RTFileSeek(hFileNoCache, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    for (size_t offBuf = 0; offBuf < cbBuf; )
+    {
+        uint32_t const cPagesLeft   = (uint32_t)((cbBuf - offBuf) / cbPage);
+        uint32_t const cPagesToRead = RTRandU32Ex(1, cPagesLeft);
+        size_t const   cbToRead     = cPagesToRead * (size_t)cbPage;
+        size_t cbActual = 0;
+        RTTESTI_CHECK_RC(RTFileRead(hFileNoCache, &pbBuf[offBuf], cbToRead, &cbActual), VINF_SUCCESS);
+        if (cbActual == cbToRead)
+            offBuf += cbActual;
+        else
+        {
+            RTTestIFailed("Attempting to read %#zx bytes at %#zx, only got %#x bytes back!\n", cbToRead, offBuf, cbActual);
+            if (cbActual)
+                offBuf += cbActual;
+            else
+            {
+                memset(&pbBuf[offBuf], 0x11, cbPage);
+                offBuf += cbPage;
+            }
+        }
+    }
+    fsPrefCheckReadBuf(__LINE__, 0, pbBuf, cbBuf);
+
+    /*
+     * Check reading zero bytes at the end of the file.
+     * Requires native call because RTFileWrite doesn't call kernel on zero byte reads.
+     */
+    RTTESTI_CHECK_RC(RTFileSeek(hFile1, 0, RTFILE_SEEK_END, NULL), VINF_SUCCESS);
+#ifdef RT_OS_WINDOWS
+    IO_STATUS_BLOCK Ios       = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    NTSTATUS rcNt = NtReadFile((HANDLE)RTFileToNative(hFile1), NULL, NULL, NULL, &Ios, pbBuf, 0, NULL, NULL);
+    RTTESTI_CHECK_MSG(rcNt == STATUS_SUCCESS, ("rcNt=%#x", rcNt));
+    RTTESTI_CHECK(Ios.Status == STATUS_SUCCESS);
+    RTTESTI_CHECK(Ios.Information == 0);
+
+    RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+    rcNt = NtReadFile((HANDLE)RTFileToNative(hFile1), NULL, NULL, NULL, &Ios, pbBuf, 1, NULL, NULL);
+    RTTESTI_CHECK_MSG(rcNt == STATUS_END_OF_FILE, ("rcNt=%#x", rcNt));
+    RTTESTI_CHECK(Ios.Status == STATUS_END_OF_FILE);
+    RTTESTI_CHECK(Ios.Information == 0);
+#endif
+
+    /*
+     * Other OS specific stuff.
+     */
+#ifdef RT_OS_WINDOWS
+    /* Check that reading at an offset modifies the position: */
+    RTTESTI_CHECK_RC(RTFileSeek(hFile1, 0, RTFILE_SEEK_END, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK(RTFileTell(hFile1) == cbFile);
+
+    RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+    LARGE_INTEGER offNt;
+    offNt.QuadPart = cbFile / 2;
+    rcNt = NtReadFile((HANDLE)RTFileToNative(hFile1), NULL, NULL, NULL, &Ios, pbBuf, _4K, &offNt, NULL);
+    RTTESTI_CHECK_MSG(rcNt == STATUS_SUCCESS, ("rcNt=%#x", rcNt));
+    RTTESTI_CHECK(Ios.Status == STATUS_SUCCESS);
+    RTTESTI_CHECK(Ios.Information == _4K);
+    RTTESTI_CHECK(RTFileTell(hFile1) == cbFile / 2 + _4K);
+    fsPrefCheckReadBuf(__LINE__, cbFile / 2, pbBuf, _4K);
+#endif
+
+    RTMemPageFree(pbBuf, cbBuf);
+}
+
+
+/**
+ * One RTFileWrite profiling iteration.
+ */
 DECL_FORCE_INLINE(int) fsPerfIoWriteWorker(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock, uint8_t *pbBlock,
                                            uint64_t *poffActual, uint32_t *pcSeeks)
 {
@@ -1617,9 +1906,10 @@ DECL_FORCE_INLINE(int) fsPerfIoWriteWorker(RTFILE hFile1, uint64_t cbFile, uint3
     return VERR_WRITE_ERROR;
 }
 
+
 void fsPerfIoWriteBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
 {
-    RTTestISubF("Sequential write %RU32", cbBlock);
+    RTTestISubF("IO - Sequential write %RU32", cbBlock);
 
     uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBlock);
     if (pbBuf)
@@ -1630,6 +1920,145 @@ void fsPerfIoWriteBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
     }
     else
         RTTestSkipped(g_hTest, "insufficient (virtual) memory available");
+}
+
+
+void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint64_t cbFile)
+{
+    RTTestISubF("IO - RTFileWrite");
+
+    /*
+     * Allocate a big buffer we can play around with.  Min size is 1MB.
+     */
+    size_t   cbBuf = cbFile < _64M ? (size_t)cbFile : _64M;
+    uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBuf);
+    while (!pbBuf)
+    {
+        cbBuf /= 2;
+        RTTESTI_CHECK_RETV(cbBuf >= _1M);
+        pbBuf = (uint8_t *)RTMemPageAlloc(_32M);
+    }
+
+    /*
+     * Start at the beginning and write out the full buffer in random small chunks, thereby
+     * checking that unaligned buffer addresses, size and file offsets work fine.
+     */
+    struct
+    {
+        uint64_t offFile;
+        uint32_t cbMax;
+    } aRuns[] = { { 0, 127 }, { cbFile - cbBuf, UINT32_MAX }, { 0, UINT32_MAX -1 }};
+    uint8_t bFiller = 0x88;
+    for (uint32_t i = 0; i < RT_ELEMENTS(aRuns); i++, bFiller)
+    {
+        fsPrefFillWriteBuf(aRuns[i].offFile, pbBuf, cbBuf, bFiller);
+        fsPrefCheckReadBuf(__LINE__, aRuns[i].offFile, pbBuf, cbBuf, bFiller);
+
+        RTTESTI_CHECK_RC(RTFileSeek(hFile1, aRuns[i].offFile, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+        for (size_t offBuf = 0; offBuf < cbBuf; )
+        {
+            uint32_t const cbLeft    = (uint32_t)(cbBuf - offBuf);
+            uint32_t const cbToWrite = aRuns[i].cbMax < UINT32_MAX / 2 ? RTRandU32Ex(1, aRuns[i].cbMax)
+                                     : aRuns[i].cbMax == UINT32_MAX    ? RTRandU32Ex(RT_MAX(cbLeft / 4, 1), cbLeft)
+                                     : RTRandU32Ex(cbLeft >= _8K ? _8K : 1, RT_MIN(_1M, cbLeft));
+            size_t cbActual = 0;
+            RTTESTI_CHECK_RC(RTFileWrite(hFile1, &pbBuf[offBuf], cbToWrite, &cbActual), VINF_SUCCESS);
+            if (cbActual == cbToWrite)
+                offBuf += cbActual;
+            else
+            {
+                RTTestIFailed("Attempting to write %#x bytes at %#zx, only got %#x written!\n", cbToWrite, offBuf, cbActual);
+                if (cbActual)
+                    offBuf += cbActual;
+                else
+                    pbBuf[offBuf++] = 0x11;
+            }
+        }
+
+        RTTESTI_CHECK_RC(RTFileReadAt(hFile1, aRuns[i].offFile, pbBuf, cbBuf, NULL), VINF_SUCCESS);
+        fsPrefCheckReadBuf(__LINE__, aRuns[i].offFile, pbBuf, cbBuf, bFiller);
+    }
+
+
+    /*
+     * Do uncached and write-thru accesses, must be page aligned.
+     */
+    RTFILE ahFiles[2] = { hFileWriteThru, hFileNoCache };
+    for (unsigned iFile = 0; iFile < RT_ELEMENTS(ahFiles); iFile++, bFiller++)
+    {
+        fsPrefFillWriteBuf(0, pbBuf, cbBuf, bFiller);
+        fsPrefCheckReadBuf(__LINE__, 0, pbBuf, cbBuf, bFiller);
+        RTTESTI_CHECK_RC(RTFileSeek(ahFiles[iFile], 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+
+        uint32_t cbPage = PAGE_SIZE;
+        for (size_t offBuf = 0; offBuf < cbBuf; )
+        {
+            uint32_t const cPagesLeft    = (uint32_t)((cbBuf - offBuf) / cbPage);
+            uint32_t const cPagesToWrite = RTRandU32Ex(1, cPagesLeft);
+            size_t const   cbToWrite     = cPagesToWrite * (size_t)cbPage;
+            size_t cbActual = 0;
+            RTTESTI_CHECK_RC(RTFileWrite(ahFiles[iFile], &pbBuf[offBuf], cbToWrite, &cbActual), VINF_SUCCESS);
+            if (cbActual == cbToWrite)
+            {
+                RTTESTI_CHECK_RC(RTFileReadAt(hFile1, offBuf, pbBuf, cbToWrite, NULL), VINF_SUCCESS);
+                fsPrefCheckReadBuf(__LINE__, offBuf, pbBuf, cbToWrite, bFiller);
+                offBuf += cbActual;
+            }
+            else
+            {
+                RTTestIFailed("Attempting to read %#zx bytes at %#zx, only got %#x written!\n", cbToWrite, offBuf, cbActual);
+                if (cbActual)
+                    offBuf += cbActual;
+                else
+                {
+                    memset(&pbBuf[offBuf], 0x11, cbPage);
+                    offBuf += cbPage;
+                }
+            }
+        }
+
+        RTTESTI_CHECK_RC(RTFileReadAt(ahFiles[iFile], 0, pbBuf, cbBuf, NULL), VINF_SUCCESS);
+        fsPrefCheckReadBuf(__LINE__, 0, pbBuf, cbBuf, bFiller);
+    }
+
+    /*
+     * Check the behavior of writing zero bytes to the file _4K from the end
+     * using native API.  In the olden days zero sized write have been known
+     * to be used to truncate a file.
+     */
+    RTTESTI_CHECK_RC(RTFileSeek(hFile1, -_4K, RTFILE_SEEK_END, NULL), VINF_SUCCESS);
+#ifdef RT_OS_WINDOWS
+    IO_STATUS_BLOCK Ios        = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    NTSTATUS rcNt = NtWriteFile((HANDLE)RTFileToNative(hFile1), NULL, NULL, NULL, &Ios, pbBuf, 0, NULL, NULL);
+    RTTESTI_CHECK_MSG(rcNt == STATUS_SUCCESS, ("rcNt=%#x", rcNt));
+    RTTESTI_CHECK(Ios.Status == STATUS_SUCCESS);
+    RTTESTI_CHECK(Ios.Information == 0);
+
+    RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, _4K, NULL), VINF_SUCCESS);
+    fsPrefCheckReadBuf(__LINE__, cbFile - _4K, pbBuf, _4K, pbBuf[0x8]);
+#endif
+
+    /*
+     * Other OS specific stuff.
+     */
+#ifdef RT_OS_WINDOWS
+    /* Check that reading at an offset modifies the position: */
+    RTTESTI_CHECK_RC(RTFileReadAt(hFile1, cbFile / 2, pbBuf, _4K, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileSeek(hFile1, 0, RTFILE_SEEK_END, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK(RTFileTell(hFile1) == cbFile);
+
+    RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+    LARGE_INTEGER offNt;
+    offNt.QuadPart = cbFile / 2;
+    rcNt = NtWriteFile((HANDLE)RTFileToNative(hFile1), NULL, NULL, NULL, &Ios, pbBuf, _4K, &offNt, NULL);
+    RTTESTI_CHECK_MSG(rcNt == STATUS_SUCCESS, ("rcNt=%#x", rcNt));
+    RTTESTI_CHECK(Ios.Status == STATUS_SUCCESS);
+    RTTESTI_CHECK(Ios.Information == _4K);
+    RTTESTI_CHECK(RTFileTell(hFile1) == cbFile / 2 + _4K);
+#endif
+
+    RT_NOREF(hFileNoCache, hFileWriteThru);
+    RTMemPageFree(pbBuf, cbBuf);
 }
 
 
@@ -1672,6 +2101,15 @@ void fsPerfIo(void)
     RTFILE hFile1;
     RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file21")),
                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE), VINF_SUCCESS);
+    RTFILE hFileNoCache;
+    RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFileNoCache, g_szDir,
+                                     RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE | RTFILE_O_NO_CACHE),
+                          VINF_SUCCESS);
+    RTFILE hFileWriteThru;
+    RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFileWriteThru, g_szDir,
+                                     RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE | RTFILE_O_WRITE_THROUGH),
+                          VINF_SUCCESS);
+
     uint8_t *pbFree = NULL;
     int rc = fsPerfIoPrepFile(hFile1, cbFile, &pbFree);
     RTMemFree(pbFree);
@@ -1684,18 +2122,26 @@ void fsPerfIo(void)
             fsPerfIoSeek(hFile1, cbFile);
         if (g_fRead)
         {
+            fsPerfRead(hFile1, hFileNoCache, cbFile);
             for (unsigned i = 0; i < g_cIoBlocks; i++)
                 fsPerfIoReadBlockSize(hFile1, cbFile, g_acbIoBlocks[i]);
         }
+        /** @todo mmap */
+
         if (g_fWrite)
         {
+            /* This is destructive to the file content. */
+            fsPerfWrite(hFile1, hFileNoCache, hFileWriteThru, cbFile);
             for (unsigned i = 0; i < g_cIoBlocks; i++)
                 fsPerfIoWriteBlockSize(hFile1, cbFile, g_acbIoBlocks[i]);
         }
+
     }
 
     RTTESTI_CHECK_RC(RTFileSetSize(hFile1, 0), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileClose(hFileNoCache), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileClose(hFileWriteThru), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileDelete(g_szDir), VINF_SUCCESS);
 }
 
