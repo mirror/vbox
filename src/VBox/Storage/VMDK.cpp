@@ -538,7 +538,7 @@ static int vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
 static int vmdkCreateExtents(PVMDKIMAGE pImage, unsigned cExtents);
 static int vmdkFlushImage(PVMDKIMAGE pImage, PVDIOCTX pIoCtx);
 static int vmdkSetImageComment(PVMDKIMAGE pImage, const char *pszComment);
-static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete);
+static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete, bool fFlush);
 
 static DECLCALLBACK(int) vmdkAllocGrainComplete(void *pBackendData, PVDIOCTX pIoCtx,
                                                 void *pvUser, int rcReq);
@@ -3364,7 +3364,7 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
         pRegion->cRegionBlocksOrBytes = pImage->cbSize;
     }
     else
-        vmdkFreeImage(pImage, false);
+        vmdkFreeImage(pImage, false, false /*fFlush*/); /* Don't try to flush anything if opening failed. */
     return rc;
 }
 
@@ -4092,7 +4092,7 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
         vdIfProgress(pIfProgress, uPercentStart + uPercentSpan);
     }
     else
-        vmdkFreeImage(pImage, rc != VERR_ALREADY_EXISTS);
+        vmdkFreeImage(pImage, rc != VERR_ALREADY_EXISTS, false /*fFlush*/);
     return rc;
 }
 
@@ -4206,7 +4206,7 @@ static int vmdkStreamFlushGT(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
  * Internal. Free all allocated space for representing an image, and optionally
  * delete the image from disk.
  */
-static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
+static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete, bool fFlush)
 {
     int rc = VINF_SUCCESS;
 
@@ -4316,7 +4316,7 @@ static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
                 AssertRC(rc);
             }
         }
-        else if (!fDelete)
+        else if (!fDelete && fFlush)
             vmdkFlushImage(pImage, NULL);
 
         if (pImage->pExtents != NULL)
@@ -5207,7 +5207,7 @@ static DECLCALLBACK(int) vmdkProbe(const char *pszFilename, PVDINTERFACE pVDIfsD
         /** @todo speed up this test open (VD_OPEN_FLAGS_INFO) by skipping as
          * much as possible in vmdkOpenImage. */
         rc = vmdkOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
-        vmdkFreeImage(pImage, false);
+        vmdkFreeImage(pImage, false, false /*fFlush*/);
         RTMemFree(pImage);
 
         if (RT_SUCCESS(rc))
@@ -5331,7 +5331,7 @@ static DECLCALLBACK(int) vmdkCreate(const char *pszFilename, uint64_t cbSize,
                  * image is opened in read-only mode if the caller requested that. */
                 if (uOpenFlags & VD_OPEN_FLAGS_READONLY)
                 {
-                    vmdkFreeImage(pImage, false);
+                    vmdkFreeImage(pImage, false, true /*fFlush*/);
                     rc = vmdkOpenImage(pImage, uOpenFlags);
                 }
 
@@ -5494,7 +5494,7 @@ static int vmdkRenameRollback(PVMDKIMAGE pImage, PVMDKRENAMESTATE pRenameState)
          * Some extents may have been closed, close the rest. We will
          * re-open the whole thing later.
          */
-        vmdkFreeImage(pImage, false);
+        vmdkFreeImage(pImage, false, true /*fFlush*/);
     }
 
     /* Rename files back. */
@@ -5605,7 +5605,7 @@ static int vmdkRenameWorker(PVMDKIMAGE pImage, PVMDKRENAMESTATE pRenameState, co
         if (RT_SUCCESS(rc))
         {
             /* Release all old stuff. */
-            rc = vmdkFreeImage(pImage, false);
+            rc = vmdkFreeImage(pImage, false, true /*fFlush*/);
             if (RT_SUCCESS(rc))
             {
                 pRenameState->fImageFreed = true;
@@ -5678,7 +5678,7 @@ static DECLCALLBACK(int) vmdkClose(void *pBackendData, bool fDelete)
     LogFlowFunc(("pBackendData=%#p fDelete=%d\n", pBackendData, fDelete));
     PVMDKIMAGE pImage = (PVMDKIMAGE)pBackendData;
 
-    int rc = vmdkFreeImage(pImage, fDelete);
+    int rc = vmdkFreeImage(pImage, fDelete, true /*fFlush*/);
     RTMemFree(pImage);
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -6149,7 +6149,7 @@ static DECLCALLBACK(int) vmdkSetOpenFlags(void *pBackendData, unsigned uOpenFlag
         else
         {
             /* Implement this operation via reopening the image. */
-            vmdkFreeImage(pImage, false);
+            vmdkFreeImage(pImage, false, true /*fFlush*/);
             rc = vmdkOpenImage(pImage, uOpenFlags);
         }
     }
