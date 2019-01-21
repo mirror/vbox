@@ -64,9 +64,6 @@ protected:
     /** Handles the Qt hide @a pEvent. */
     void hideEvent(QHideEvent *pEvent);
 
-    /* Return the unmodified log. */
-    const QString* logString() const;
-
 private:
 
     /** Holds the reference to VM Log-Viewer this panel belongs to. */
