@@ -2152,6 +2152,7 @@ void fsPerfFSync(RTFILE hFile1, uint64_t cbFile)
 }
 
 
+#ifndef RT_OS_OS2
 /**
  * Worker for profiling msync.
  */
@@ -2169,6 +2170,7 @@ DECL_FORCE_INLINE(int) fsPerfMSyncWorker(uint8_t *pbMapping, size_t offMapping, 
         *pcbFlushed = offMapping + cbFlush;
     return VINF_SUCCESS;
 }
+#endif /* !RT_OS_OS2 */
 
 
 void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
