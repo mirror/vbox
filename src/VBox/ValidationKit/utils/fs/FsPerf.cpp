@@ -74,24 +74,24 @@
         /* Estimate how many iterations we need to fill up the given timeslot: */ \
         fsPerfYield(); \
         uint64_t nsStart = RTTimeNanoTS(); \
-        uint64_t ns; \
+        uint64_t nsPrf; \
         do \
-            ns = RTTimeNanoTS(); \
-        while (ns == nsStart); \
-        nsStart = ns; \
+            nsPrf = RTTimeNanoTS(); \
+        while (nsPrf == nsStart); \
+        nsStart = nsPrf; \
         \
         uint64_t iIteration = 0; \
         do \
         { \
             RTTESTI_CHECK_RC(a_fnCall, VINF_SUCCESS); \
             iIteration++; \
-            ns = RTTimeNanoTS() - nsStart; \
-        } while (ns < RT_NS_10MS || (iIteration & 1)); \
-        ns /= iIteration; \
-        if (ns > g_nsPerNanoTSCall + 32) \
-            ns -= g_nsPerNanoTSCall; \
+            nsPrf = RTTimeNanoTS() - nsStart; \
+        } while (nsPrf < RT_NS_10MS || (iIteration & 1)); \
+        nsPrf /= iIteration; \
+        if (nsPrf > g_nsPerNanoTSCall + 32) \
+            nsPrf -= g_nsPerNanoTSCall; \
         \
-        uint64_t cIterations = (a_cNsTarget) / ns; \
+        uint64_t cIterations = (a_cNsTarget) / nsPrf; \
         if (cIterations <= 1) \
             cIterations = 2; \
         else if (cIterations & 1) \
@@ -103,10 +103,12 @@
         nsStart = RTTimeNanoTS(); \
         for (; iIteration < cIterations; iIteration++) \
             RTTESTI_CHECK_RC(a_fnCall, VINF_SUCCESS); \
-        ns = RTTimeNanoTS() - nsStart; \
-        RTTestIValueF(ns / cIterations, RTTESTUNIT_NS_PER_OCCURRENCE, a_szDesc); \
+        nsPrf = RTTimeNanoTS() - nsStart; \
+        RTTestIValue(a_szDesc, nsPrf / cIterations, RTTESTUNIT_NS_PER_OCCURRENCE); \
         if (g_fShowDuration) \
-            RTTestIValueF(ns, RTTESTUNIT_NS, "%s duration", a_szDesc); \
+            RTTestIValueF(nsPrf, RTTESTUNIT_NS, "%s duration", a_szDesc); \
+        if (g_fShowIterations) \
+            RTTestIValueF(iIteration, RTTESTUNIT_OCCURRENCES, "%s iterations", a_szDesc); \
     } while (0)
 
 
@@ -176,6 +178,8 @@
         RTTestIValueF(ns / cCalls, RTTESTUNIT_NS_PER_OCCURRENCE, a_szDesc); \
         if (g_fShowDuration) \
             RTTestIValueF(ns, RTTESTUNIT_NS, "%s duration", a_szDesc); \
+        if (g_fShowIterations) \
+            RTTestIValueF(iIteration, RTTESTUNIT_OCCURRENCES, "%s iterations", a_szDesc); \
     } while (0)
 
 
@@ -261,6 +265,10 @@ enum
     kCmdOpt_MMap,
     kCmdOpt_NoMMap,
 
+    kCmdOpt_ShowDuration,
+    kCmdOpt_NoShowDuration,
+    kCmdOpt_ShowIterations,
+    kCmdOpt_NoShowIterations,
     kCmdOpt_End
 };
 
@@ -318,10 +326,15 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--mmap",             kCmdOpt_MMap,           RTGETOPT_REQ_NOTHING },
     { "--no-mmap",          kCmdOpt_NoMMap,         RTGETOPT_REQ_NOTHING },
 
-    { "--quiet",            'q', RTGETOPT_REQ_NOTHING },
-    { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
-    { "--version",          'V', RTGETOPT_REQ_NOTHING },
-    { "--help",             'h', RTGETOPT_REQ_NOTHING } /* for Usage() */
+    { "--show-duration",        kCmdOpt_ShowDuration,       RTGETOPT_REQ_NOTHING },
+    { "--no-show-duration",     kCmdOpt_NoShowDuration,     RTGETOPT_REQ_NOTHING },
+    { "--show-iterations",      kCmdOpt_ShowIterations,     RTGETOPT_REQ_NOTHING },
+    { "--no-show-iterations",   kCmdOpt_NoShowIterations,   RTGETOPT_REQ_NOTHING },
+
+    { "--quiet",                'q', RTGETOPT_REQ_NOTHING },
+    { "--verbose",              'v', RTGETOPT_REQ_NOTHING },
+    { "--version",              'V', RTGETOPT_REQ_NOTHING },
+    { "--help",                 'h', RTGETOPT_REQ_NOTHING } /* for Usage() */
 };
 
 /** The test handle. */
@@ -331,7 +344,10 @@ static RTTEST       g_hTest;
 static uint64_t     g_nsPerNanoTSCall = 1;
 /** Whether or not to display the duration of each profile run.
  * This is chiefly for verify the estimate phase.  */
-static bool         g_fShowDuration = true;
+static bool         g_fShowDuration = false;
+/** Whether or not to display the iteration count for each profile run.
+ * This is chiefly for verify the estimate phase.  */
+static bool         g_fShowIterations = false;
 /** Verbosity level. */
 static uint32_t     g_uVerbosity = 0;
 
@@ -2134,6 +2150,25 @@ void fsPerfFSync(RTFILE hFile1, uint64_t cbFile)
 }
 
 
+/**
+ * Worker for profiling msync.
+ */
+DECL_FORCE_INLINE(int) fsPerfMSyncWorker(uint8_t *pbMapping, size_t offMapping, size_t cbFlush, size_t *pcbFlushed)
+{
+    uint8_t *pbCur = &pbMapping[offMapping];
+    for (size_t offFlush = 0; offFlush < cbFlush; offFlush += PAGE_SIZE)
+        *(size_t volatile *)&pbCur[offFlush + 8] = cbFlush;
+# ifdef RT_OS_WINDOWS
+    RTTESTI_CHECK(FlushViewOfFile(pbCur, cbFlush));
+# else
+    RTTESTI_CHECK(msync(pbCur, cbFlush, MS_SYNC) == 0);
+# endif
+    if (*pcbFlushed < offMapping + cbFlush)
+        *pcbFlushed = offMapping + cbFlush;
+    return VINF_SUCCESS;
+}
+
+
 void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 {
     RTTestISub("mmap");
@@ -2236,25 +2271,13 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                     if (cbFlush > cbMapping)
                         continue;
 
-# if defined(RT_OS_LINUX)
-                    size_t const cFlushes = RT_MIN(cbMapping / cbFlush, 2048);
-# else
-                    size_t const cFlushes = cbMapping / cbFlush;
-# endif
-                    uint8_t     *pbCur    = pbMapping;
-                    ns = RTTimeNanoTS();
-                    for (size_t iFlush = 0; iFlush < cFlushes; iFlush++, pbCur += cbFlush)
-                    {
-                        for (size_t offFlush = 0; offFlush < cbFlush; offFlush += PAGE_SIZE)
-                            *(size_t volatile *)&pbCur[offFlush + 8] = cbFlush;
-# ifdef RT_OS_WINDOWS
-                        RTTESTI_CHECK(FlushViewOfFile(pbCur, cbFlush));
-# else
-                        RTTESTI_CHECK(msync(pbCur, cbFlush, MS_SYNC) == 0);
-# endif
-                    }
-                    ns = RTTimeNanoTS() - ns;
-                    RTTestIValueF(ns / cFlushes, RTTESTUNIT_NS_PER_OCCURRENCE,  "touch/flush/%zu", cbFlush);
+                    char szDesc[80];
+                    RTStrPrintf(szDesc, sizeof(szDesc), "touch/flush/%zu", cbFlush);
+                    size_t const cFlushes      = cbMapping / cbFlush;
+                    size_t const cbMappingUsed = cFlushes * cbFlush;
+                    size_t       cbFlushed     = 0;
+                    PROFILE_FN(fsPerfMSyncWorker(pbMapping, (iIteration * cbFlush) % cbMappingUsed, cbFlush, &cbFlushed),
+                               g_nsTestRun, szDesc);
 
                     /*
                      * Check that all the changes made it thru to the file:
@@ -2269,7 +2292,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                     if (pbBuf)
                     {
                         RTTESTI_CHECK_RC(RTFileSeek(hFileNoCache, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
-                        size_t const cbToCheck = cFlushes * cbFlush;
+                        size_t const cbToCheck = RT_MIN(cFlushes * cbFlush, cbFlushed);
                         unsigned     cErrors   = 0;
                         for (size_t offBuf = 0; cErrors < 32 && offBuf < cbToCheck; offBuf += cbBuf)
                         {
@@ -2418,6 +2441,10 @@ static void Usage(PRTSTREAM pStrm)
             case 'q':   pszHelp = "Quiet execution."; break;
             case 'h':   pszHelp = "Displays this help and exit"; break;
             case 'V':   pszHelp = "Displays the program revision"; break;
+            case kCmdOpt_ShowDuration:      pszHelp =  "Show duration of profile runs. default: --no-show-duration"; break;
+            case kCmdOpt_NoShowDuration:    pszHelp =  "Hide duration of profile runs. default: --no-show-duration"; break;
+            case kCmdOpt_ShowIterations:    pszHelp =  "Show iteration count for profile runs. default: --no-show-iterations"; break;
+            case kCmdOpt_NoShowIterations:  pszHelp =  "Hide iteration count for profile runs. default: --no-show-iterations"; break;
             default:
                 if (g_aCmdOptions[i].iShort >= kCmdOpt_First)
                 {
@@ -2480,7 +2507,11 @@ int main(int argc, char *argv[])
             case 'd':
                 rc = RTPathAbs(ValueUnion.psz, g_szDir, sizeof(g_szDir) / 2);
                 if (RT_SUCCESS(rc))
+                {
+                    RTPathEnsureTrailingSeparator(g_szDir, sizeof(g_szDir));
+                    g_cchDir = strlen(g_szDir);
                     break;
+                }
                 RTTestFailed(g_hTest, "RTPathAbs(%s) failed: %Rrc\n", ValueUnion.psz, rc);
                 return RTTestSummaryAndDestroy(g_hTest);
 
@@ -2564,6 +2595,9 @@ int main(int argc, char *argv[])
             CASE_OPT(Seek);
             CASE_OPT(FSync);
             CASE_OPT(MMap);
+
+            CASE_OPT(ShowDuration);
+            CASE_OPT(ShowIterations);
 #undef CASE_OPT
 
             case 'q':
