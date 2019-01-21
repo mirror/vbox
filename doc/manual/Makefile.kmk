@@ -823,7 +823,8 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
 
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html \
-		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html \
+        $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US))
 	$(call MSG_L1,Packing documentation $@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(REDIRECT) -C $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ -- $(VBOX_ZIP) \
