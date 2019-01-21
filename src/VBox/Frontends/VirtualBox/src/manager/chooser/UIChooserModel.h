@@ -522,6 +522,9 @@ private:
 
         /** Holds the Id of last VM created from the GUI side. */
         QUuid  m_uLastCreatedMachineId;
+
+        /** Holds the global item height hint. */
+        int  m_iGlobalItemHeightHint;
     /** @} */
 
     /** @name Group saving stuff.

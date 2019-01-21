@@ -78,6 +78,7 @@ UIChooserModel:: UIChooserModel(UIChooser *pParent)
     , m_iScrollingTokenSize(30)
     , m_fIsScrollingInProgress(false)
     , m_pLookupTimer(0)
+    , m_iGlobalItemHeightHint(-1)
 {
     /* Prepare: */
     prepare();
@@ -470,6 +471,11 @@ void UIChooserModel::indentRoot(UIChooserItem *pNewRootItem)
     m_pLeftRoot = new UIChooserItemGroup(scene(), root()->toGroupItem(), fLeftRootIsMain);
     m_pLeftRoot->setPos(0, 0);
     m_pLeftRoot->resize(root()->geometry().size());
+    if (fLeftRootIsMain)
+    {
+        foreach (UIChooserItem *pItem, m_pLeftRoot->items(UIChooserItemType_Global))
+            pItem->toGlobalItem()->setHeightHint(m_iGlobalItemHeightHint);
+    }
 
     /* Create right root: */
     m_pRightRoot = new UIChooserItemGroup(scene(), pNewRootItem->toGroupItem(), false);
@@ -505,6 +511,11 @@ void UIChooserModel::unindentRoot()
     m_pLeftRoot = new UIChooserItemGroup(scene(), m_rootStack.at(m_rootStack.size() - 2)->toGroupItem(), fLeftRootIsMain);
     m_pLeftRoot->setPos(- root()->geometry().width(), 0);
     m_pLeftRoot->resize(root()->geometry().size());
+    if (fLeftRootIsMain)
+    {
+        foreach (UIChooserItem *pItem, m_pLeftRoot->items(UIChooserItemType_Global))
+            pItem->toGlobalItem()->setHeightHint(m_iGlobalItemHeightHint);
+    }
 
     /* Create right root: */
     m_pRightRoot = new UIChooserItemGroup(scene(), root()->toGroupItem(), false);
@@ -671,6 +682,9 @@ void UIChooserModel::updateLayout()
 
 void UIChooserModel::setGlobalItemHeightHint(int iHint)
 {
+    /* Remember new hint: */
+    m_iGlobalItemHeightHint = iHint;
+
     /* Walk thrugh all the items of navigation list: */
     foreach (UIChooserItem *pItem, navigationList())
     {
@@ -680,7 +694,7 @@ void UIChooserModel::setGlobalItemHeightHint(int iHint)
             /* Apply the height hint we have: */
             UIChooserItemGlobal *pGlobalItem = pItem->toGlobalItem();
             if (pGlobalItem)
-                pGlobalItem->setHeightHint(iHint);
+                pGlobalItem->setHeightHint(m_iGlobalItemHeightHint);
         }
     }
 }
