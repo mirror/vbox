@@ -908,14 +908,14 @@ class VBoxInstallerTestDriver(TestDriverBase):
             if fRc2 is False:
                 if iRc == 3010: # ERROR_SUCCESS_REBOOT_REQUIRED
                     reporter.log('Note: Uninstaller required a reboot to complete uninstallation');
+                    reporter.addLogFile(sLogFile, 'log/uninstaller_reboot', "Verbose MSI uninstallation log file (reboot required)");
                     # Optional, don't fail.
                 else:
                     fRc = False;
-            reporter.addLogFile(sLogFile, 'log/uninstaller', "Verbose MSI uninstallation log file");
 
         self._waitForTestManagerConnectivity(30);
         if fRc is False and os.path.isfile(sLogFile):
-            reporter.addLogFile(sLogFile, 'log/uninstaller');
+            reporter.addLogFile(sLogFile, 'log/uninstaller', "Verbose MSI uninstallation log file");
 
         # Log driver service states (should ls \Driver\VBox* and \Device\VBox*).
         for sService in self.kasWindowsServices:
