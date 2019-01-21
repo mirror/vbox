@@ -68,8 +68,7 @@ VBoxUSBMon.sys
 [VBoxUSBMon_Service]
 DisplayName    = %VBoxUSBMon.SVCDESC%
 ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
-;StartType      = 3                  ; SERVICE_DEMAND_START
-StartType      = 1                  ; autostart to fix Vista problem
+StartType      = 3                  ; SERVICE_DEMAND_START
 ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
 ServiceBinary  = %12%\VBoxUSBMon.sys
 
