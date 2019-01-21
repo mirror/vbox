@@ -2229,7 +2229,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 # endif
                     }
                     ns = RTTimeNanoTS() - ns;
-                    RTTestIValueF(ns / cPages, RTTESTUNIT_NS_PER_OCCURRENCE,  "touch/flush/%zu", cbFlush);
+                    RTTestIValueF(ns / cFlushes, RTTESTUNIT_NS_PER_OCCURRENCE,  "touch/flush/%zu", cbFlush);
 
                     /*
                      * Check that all the changes made it thru to the file:
