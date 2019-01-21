@@ -33,7 +33,7 @@ class QIDialogButtonBox;
 class QILineEdit;
 class QITabWidget;
 
-class SHARED_LIBRARY_STUFF UIVisoConfigurationDialog : public QIDialog
+class UIVisoConfigurationDialog : public QIDialog
 {
     Q_OBJECT;
 

@@ -43,7 +43,7 @@ class UIVisoContentTreeProxyModel;
 class UICustomFileSystemItem;
 class UIVisoContentTableView;
 
-class SHARED_LIBRARY_STUFF UIVisoContentBrowser : public UIVisoBrowserBase
+class UIVisoContentBrowser : public UIVisoBrowserBase
 {
     Q_OBJECT;
 

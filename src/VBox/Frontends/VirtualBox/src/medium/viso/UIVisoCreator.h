@@ -45,7 +45,7 @@ class UIToolBar;
 class UIVisoHostBrowser;
 class UIVisoContentBrowser;
 
-class SHARED_LIBRARY_STUFF UIVisoCreator : public QIWithRetranslateUI<QIMainDialog>
+class UIVisoCreator : public QIWithRetranslateUI<QIMainDialog>
 {
     Q_OBJECT;
 

@@ -30,7 +30,7 @@
 class QGridLayout;
 class QIDialogButtonBox;
 
-class SHARED_LIBRARY_STUFF UIVisoCreatorOptionsDialog : public QIDialog
+class UIVisoCreatorOptionsDialog : public QIDialog
 {
     Q_OBJECT;
 

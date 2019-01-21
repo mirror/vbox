@@ -32,7 +32,7 @@
 class QItemSelection;
 class UIVisoHostBrowserModel;
 
-class SHARED_LIBRARY_STUFF UIVisoHostBrowser : public UIVisoBrowserBase
+class UIVisoHostBrowser : public UIVisoBrowserBase
 {
     Q_OBJECT;
 
