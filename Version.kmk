@@ -1,9 +1,8 @@
 # $Id$
 ## @file
-#
 # The VirtualBox version.
 #
-# This file gets included by the global Config.kmk.
+# This file gets included by the root Config.kmk.
 #
 
 #
@@ -34,3 +33,4 @@ VBOX_VERSION_PRERELEASE =
 # Force a release-type build with exactly matching Additions etc, even if
 # our numbering does not say this is a release build, by setting this non-empty.
 VBOX_RELEASE_EXACT_MATCH =
+
