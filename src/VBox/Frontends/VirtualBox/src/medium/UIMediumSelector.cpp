@@ -74,6 +74,8 @@ public:
 signals:
 
     void sigPerformSearch();
+    void sigShowNextMatchingItem();
+    void sigShowPreviousMatchingItem();
 
 public:
 
@@ -87,10 +89,11 @@ protected:
 
 private:
 
-    void prepareWidgets();
+    void              prepareWidgets();
     QIComboBox       *m_pSearchComboxBox;
     QLineEdit        *m_pSearchTermLineEdit;
-    QIToolButton     *m_pSearchButton;
+    QIToolButton     *m_pShowNextMatchButton;
+    QIToolButton     *m_pShowPreviousMatchButton;
 };
 
 
@@ -102,7 +105,8 @@ UIMediumSearchWidget::UIMediumSearchWidget(QWidget *pParent)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_pSearchComboxBox(0)
     , m_pSearchTermLineEdit(0)
-    , m_pSearchButton(0)
+    , m_pShowNextMatchButton(0)
+    , m_pShowPreviousMatchButton(0)
 {
     prepareWidgets();
 }
@@ -132,17 +136,25 @@ void UIMediumSearchWidget::prepareWidgets()
     {
         m_pSearchTermLineEdit->setClearButtonEnabled(true);
         pLayout->addWidget(m_pSearchTermLineEdit);
-        connect(m_pSearchTermLineEdit, &QILineEdit::editingFinished,
+        connect(m_pSearchTermLineEdit, &QILineEdit::textChanged,
                 this, &UIMediumSearchWidget::sigPerformSearch);
     }
 
-    m_pSearchButton = new QIToolButton;
-    if (m_pSearchButton)
+    m_pShowPreviousMatchButton = new QIToolButton;
+    if (m_pShowPreviousMatchButton)
     {
-        m_pSearchButton->setIcon(UIIconPool::iconSet(":/log_viewer_find_16px.png", ":/log_viewer_find_disabled_16px.png"));
-        connect(m_pSearchButton, &QIToolButton::clicked, this, &UIMediumSearchWidget::sigPerformSearch);
-        pLayout->addWidget(m_pSearchButton);
+        m_pShowPreviousMatchButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_backward_16px.png", ":/log_viewer_search_backward_disabled_16px.png"));
+        connect(m_pShowPreviousMatchButton, &QIToolButton::clicked, this, &UIMediumSearchWidget::sigShowPreviousMatchingItem);
+        pLayout->addWidget(m_pShowPreviousMatchButton);
     }
+    m_pShowNextMatchButton = new QIToolButton;
+    if (m_pShowNextMatchButton)
+    {
+        m_pShowNextMatchButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_forward_16px.png", ":/log_viewer_search_forward_disabled_16px.png"));
+        connect(m_pShowNextMatchButton, &QIToolButton::clicked, this, &UIMediumSearchWidget:: sigShowNextMatchingItem);
+        pLayout->addWidget(m_pShowNextMatchButton);
+    }
+
     retranslateUi();
 }
 
@@ -170,10 +182,11 @@ void UIMediumSearchWidget::retranslateUi()
     }
     if (m_pSearchTermLineEdit)
         m_pSearchTermLineEdit->setToolTip("Enter the search term and press Return");
-    if (m_pSearchButton)
-        m_pSearchButton->setToolTip("Search medium with the given name or UUID");
+    if (m_pShowPreviousMatchButton)
+        m_pShowPreviousMatchButton->setToolTip("Show the previous item matching the search term");
+    if (m_pShowNextMatchButton)
+        m_pShowNextMatchButton->setToolTip("Show the next item matching the search term");
 }
-
 
 /*********************************************************************************************************************************
 *   UIMediumSelector implementation.                                                                                         *
@@ -196,6 +209,7 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
     , m_pNotAttachedSubTreeRoot(0)
     , m_pParent(pParent)
     , m_pSearchWidget(0)
+    , m_iCurrentShownIndex(0)
     , m_strMachineSettingsFilePath(machineSettigFilePath)
     , m_strMachineName(machineName)
 {
@@ -366,6 +380,10 @@ void UIMediumSelector::prepareConnections()
     {
         connect(m_pSearchWidget, &UIMediumSearchWidget::sigPerformSearch,
                 this, &UIMediumSelector::sltHandlePerformSearch);
+        connect(m_pSearchWidget, &UIMediumSearchWidget::sigShowNextMatchingItem,
+                this, &UIMediumSelector::sltHandleShowNextMatchingItem);
+        connect(m_pSearchWidget, &UIMediumSearchWidget::sigShowPreviousMatchingItem,
+                this, &UIMediumSelector::sltHandlehowPreviousMatchingItem);
     }
 }
 
@@ -582,6 +600,25 @@ void UIMediumSelector::sltHandlePerformSearch()
     performMediumSearch();
 }
 
+void UIMediumSelector::sltHandleShowNextMatchingItem()
+{
+    if (m_mathingItemList.isEmpty())
+        return;
+
+    if (++m_iCurrentShownIndex >= m_mathingItemList.size())
+        m_iCurrentShownIndex = 0;
+    scrollToItem(m_mathingItemList[m_iCurrentShownIndex]);
+}
+
+void UIMediumSelector::sltHandlehowPreviousMatchingItem()
+{
+    if (m_mathingItemList.isEmpty())
+        return;
+    if (--m_iCurrentShownIndex < 0)
+        m_iCurrentShownIndex = m_mathingItemList.size() -1;
+    scrollToItem(m_mathingItemList[m_iCurrentShownIndex]);
+}
+
 void UIMediumSelector::selectMedium(const QUuid &uMediumID)
 {
     if (!m_pTreeWidget)
@@ -779,6 +816,9 @@ void UIMediumSelector::performMediumSearch()
         }
     }
 
+    m_mathingItemList.clear();
+    m_iCurrentShownIndex = 0;
+
     UIMediumSearchWidget::SearchType searchType =
         m_pSearchWidget->searchType();
     if (searchType >= UIMediumSearchWidget::SearchByMax)
@@ -800,14 +840,35 @@ void UIMediumSelector::performMediumSearch()
             continue;
         if (strMedium.contains(strTerm, Qt::CaseInsensitive))
         {
-            // mark the item
+            /* mark all the items by setting foregroung color to red: */
             for (int j = 0; j < m_pTreeWidget->columnCount(); ++j)
                 m_mediumItemList[i]->setData(j, Qt::ForegroundRole, QBrush(QColor(255, 0, 0)));
-            QModelIndex itemIndex = m_pTreeWidget->itemIndex(m_mediumItemList[i]);
-            if (itemIndex.isValid())
-                m_pTreeWidget->scrollTo(itemIndex);
+            m_mathingItemList.append(m_mediumItemList[i]);
         }
     }
+    if (!m_mathingItemList.isEmpty())
+        scrollToItem(m_mathingItemList[0]);
 }
+
+void UIMediumSelector::scrollToItem(UIMediumItem* pItem)
+{
+    if (!pItem)
+        return;
+
+    QModelIndex itemIndex = m_pTreeWidget->itemIndex(pItem);
+    for (int i = 0; i < m_mediumItemList.size(); ++i)
+    {
+        QFont font = m_mediumItemList[i]->font(0);
+        font.setBold(false);
+        m_mediumItemList[i]->setFont(0, font);
+    }
+    QFont font = pItem->font(0);
+    font.setBold(true);
+    pItem->setFont(0, font);
+
+    m_pTreeWidget->scrollTo(itemIndex);
+    //m_pTreeWidget->setCurrentIndex(itemIndex);
+}
+
 
 #include "UIMediumSelector.moc"

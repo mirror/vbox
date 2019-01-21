@@ -69,6 +69,8 @@ private slots:
     void sltHandleMediumEnumerationFinish();
     void sltHandleRefresh();
     void sltHandlePerformSearch();
+    void sltHandleShowNextMatchingItem();
+    void sltHandlehowPreviousMatchingItem();
 
  private:
 
@@ -102,7 +104,7 @@ private slots:
     /** Remember the default foreground brush of the tree so that we can reset tree items' foreground later */
     void          saveDefaultForeground();
     void          selectMedium(const QUuid &uMediumID);
-
+    void          scrollToItem(UIMediumItem* pItem);
     QWidget              *m_pCentralWidget;
     QVBoxLayout          *m_pMainLayout;
     QITreeWidget         *m_pTreeWidget;
@@ -119,7 +121,12 @@ private slots:
     QITreeWidgetItem     *m_pNotAttachedSubTreeRoot;
     QWidget              *m_pParent;
     UIMediumSearchWidget *m_pSearchWidget;
+    /** The list all items added to tree. kept in sync. with tree to make searching easier (faster). */
     QList<UIMediumItem*>  m_mediumItemList;
+    /** List of items that are matching to the search. */
+    QList<UIMediumItem*>  m_mathingItemList;
+    /** Index of the currently shown (scrolled) item in the m_mathingItemList. */
+    int                   m_iCurrentShownIndex;
     QBrush                m_defaultItemForeground;
     QString               m_strMachineSettingsFilePath;
     QString               m_strMachineName;
