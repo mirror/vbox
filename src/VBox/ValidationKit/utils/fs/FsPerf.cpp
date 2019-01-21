@@ -52,6 +52,12 @@
 
 #ifdef RT_OS_WINDOWS
 # include <iprt/nt/nt-and-windows.h>
+#else
+# include <errno.h>
+# include <unistd.h>
+# include <sys/fcntl.h>
+# include <sys/mman.h>
+# include <sys/types.h>
 #endif
 
 
@@ -1872,6 +1878,9 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
     RTTESTI_CHECK_MSG(rcNt == STATUS_END_OF_FILE, ("rcNt=%#x", rcNt));
     RTTESTI_CHECK(Ios.Status == STATUS_END_OF_FILE);
     RTTESTI_CHECK(Ios.Information == 0);
+#else
+    ssize_t cbRead = read((int)RTFileToNative(hFile1), pbBuf, 0);
+    RTTESTI_CHECK(cbRead == 0);
 #endif
 
     /*
@@ -2052,10 +2061,12 @@ void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint
     RTTESTI_CHECK_MSG(rcNt == STATUS_SUCCESS, ("rcNt=%#x", rcNt));
     RTTESTI_CHECK(Ios.Status == STATUS_SUCCESS);
     RTTESTI_CHECK(Ios.Information == 0);
-
+#else
+    ssize_t cbWritten = write((int)RTFileToNative(hFile1), pbBuf, 0);
+    RTTESTI_CHECK(cbWritten == 0);
+#endif
     RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, _4K, NULL), VINF_SUCCESS);
     fsPerfCheckReadBuf(__LINE__, cbFile - _4K, pbBuf, _4K, pbBuf[0x8]);
-#endif
 
     /*
      * Other OS specific stuff.
@@ -2126,7 +2137,7 @@ void fsPerfFSync(RTFILE hFile1, uint64_t cbFile)
 void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 {
     RTTestISub("mmap");
-#if defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX)
     static const char * const s_apszStates[] = { "readonly", "writecopy", "readwrite" };
     enum { kMMap_ReadOnly = 0, kMMap_WriteCopy, kMMap_ReadWrite, kMMap_End };
     for (int enmState = kMMap_ReadOnly; enmState < kMMap_End; enmState++)
@@ -2173,7 +2184,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             pbMapping = (uint8_t *)mmap(NULL, cbMapping,
                                         enmState == kMMap_ReadOnly  ? PROT_READ   : PROT_READ | PROT_WRITE,
                                         enmState == kMMap_WriteCopy ? MAP_PRIVATE : MAP_SHARED,
-                                        (int)RTFileToNative(hFile1), cbMapping);
+                                        (int)RTFileToNative(hFile1), 0);
             if ((void *)pbMapping != MAP_FAILED)
                 break;
             RTTESTI_CHECK_MSG_RETV(cbMapping > _2M, ("errno=%d", errno));
@@ -2225,7 +2236,11 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                     if (cbFlush > cbMapping)
                         continue;
 
+# if defined(RT_OS_LINUX)
+                    size_t const cFlushes = RT_MIN(cbMapping / cbFlush, 2048);
+# else
                     size_t const cFlushes = cbMapping / cbFlush;
+# endif
                     uint8_t     *pbCur    = pbMapping;
                     ns = RTTimeNanoTS();
                     for (size_t iFlush = 0; iFlush < cFlushes; iFlush++, pbCur += cbFlush)
