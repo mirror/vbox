@@ -368,6 +368,7 @@ void UIMediumSelector::prepareConnections()
     {
         connect(m_pTreeWidget, &QITreeWidget::itemSelectionChanged, this, &UIMediumSelector::sltHandleItemSelectionChanged);
         connect(m_pTreeWidget, &QITreeWidget::itemDoubleClicked, this, &UIMediumSelector::sltHandleTreeWidgetDoubleClick);
+        connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested, this, &UIMediumSelector::sltHandleTreeContextMenuRequest);
     }
 
     if (m_pButtonBox)
@@ -383,7 +384,7 @@ void UIMediumSelector::prepareConnections()
         connect(m_pSearchWidget, &UIMediumSearchWidget::sigShowNextMatchingItem,
                 this, &UIMediumSelector::sltHandleShowNextMatchingItem);
         connect(m_pSearchWidget, &UIMediumSearchWidget::sigShowPreviousMatchingItem,
-                this, &UIMediumSelector::sltHandlehowPreviousMatchingItem);
+                this, &UIMediumSelector::sltHandleShowPreviousMatchingItem);
     }
 }
 
@@ -512,6 +513,7 @@ void UIMediumSelector::prepareWidgets()
         m_pTreeWidget->setColumnCount(iColumnCount);
         m_pTreeWidget->setSortingEnabled(true);
         m_pTreeWidget->sortItems(0, Qt::AscendingOrder);
+        m_pTreeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     }
 
     m_pSearchWidget = new UIMediumSearchWidget;
@@ -610,13 +612,46 @@ void UIMediumSelector::sltHandleShowNextMatchingItem()
     scrollToItem(m_mathingItemList[m_iCurrentShownIndex]);
 }
 
-void UIMediumSelector::sltHandlehowPreviousMatchingItem()
+void UIMediumSelector::sltHandleShowPreviousMatchingItem()
 {
     if (m_mathingItemList.isEmpty())
         return;
     if (--m_iCurrentShownIndex < 0)
         m_iCurrentShownIndex = m_mathingItemList.size() -1;
     scrollToItem(m_mathingItemList[m_iCurrentShownIndex]);
+}
+
+void UIMediumSelector::sltHandleTreeContextMenuRequest(const QPoint &point)
+{
+    QWidget *pSender = qobject_cast<QWidget*>(sender());
+    if (!pSender)
+        return;
+
+    QMenu menu;
+    QAction *pExpandAll = menu.addAction(tr("Expand All"));
+    QAction *pCollapseAll = menu.addAction(tr("Collapse All"));
+
+    connect(pExpandAll, &QAction::triggered, this, &UIMediumSelector::sltHandleTreeExpandAllSignal);
+    connect(pCollapseAll, &QAction::triggered, this, &UIMediumSelector::sltHandleTreeCollapseAllSignal);
+
+    menu.exec(pSender->mapToGlobal(point));
+}
+
+void UIMediumSelector::sltHandleTreeExpandAllSignal()
+{
+    if (m_pTreeWidget)
+        m_pTreeWidget->expandAll();
+}
+
+void UIMediumSelector::sltHandleTreeCollapseAllSignal()
+{
+    if (m_pTreeWidget)
+        m_pTreeWidget->collapseAll();
+
+    if (m_pAttachedSubTreeRoot)
+        m_pTreeWidget->setExpanded(m_pTreeWidget->itemIndex(m_pAttachedSubTreeRoot), true);
+    if (m_pNotAttachedSubTreeRoot)
+        m_pTreeWidget->setExpanded(m_pTreeWidget->itemIndex(m_pNotAttachedSubTreeRoot), true);
 }
 
 void UIMediumSelector::selectMedium(const QUuid &uMediumID)

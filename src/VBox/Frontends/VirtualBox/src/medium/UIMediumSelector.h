@@ -70,7 +70,10 @@ private slots:
     void sltHandleRefresh();
     void sltHandlePerformSearch();
     void sltHandleShowNextMatchingItem();
-    void sltHandlehowPreviousMatchingItem();
+    void sltHandleShowPreviousMatchingItem();
+    void sltHandleTreeContextMenuRequest(const QPoint &point);
+    void sltHandleTreeExpandAllSignal();
+    void sltHandleTreeCollapseAllSignal();
 
  private:
 
