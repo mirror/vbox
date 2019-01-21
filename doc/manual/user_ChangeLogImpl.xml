@@ -52,6 +52,11 @@ technical terms if no non-technical ones are clear enough.
           to keep audio and video in sync</para>
       </listitem>
 
+      <listitem>
+        <para>Serial: fixed connecting to pseudo terminals on POSIX hosts
+          (6.0.0 regression; bug #18319)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
