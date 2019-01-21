@@ -734,14 +734,17 @@ void fsPerfFUtimes(void)
     RTFSOBJINFO ObjInfo1 = {0};
     RTTESTI_CHECK_RC(RTFileQueryInfo(hFile1, &ObjInfo1,  RTFSOBJATTRADD_NOTHING), VINF_SUCCESS);
     RTTESTI_CHECK((RTTimeSpecGetSeconds(&ObjInfo1.ModificationTime) >> 2) == (RTTimeSpecGetSeconds(&Time2) >> 2));
-    RTTESTI_CHECK(RTTimeSpecGetNano(&ObjInfo1.AccessTime) == RTTimeSpecGetNano(&ObjInfo0.AccessTime));
+    char sz1[RTTIME_STR_LEN], sz2[RTTIME_STR_LEN]; /* Div by 1000 here for posix impl. using timeval. */
+    RTTESTI_CHECK_MSG(RTTimeSpecGetNano(&ObjInfo1.AccessTime) / 1000 == RTTimeSpecGetNano(&ObjInfo0.AccessTime) / 1000,
+                      ("%s, expected %s", RTTimeSpecToString(&ObjInfo1.AccessTime, sz1, sizeof(sz1)),
+                       RTTimeSpecToString(&ObjInfo0.AccessTime, sz2, sizeof(sz2))));
 
     /* Modify access time: */
     RTTESTI_CHECK_RC(RTFileSetTimes(hFile1, &Time1, NULL, NULL, NULL), VINF_SUCCESS);
     RTFSOBJINFO ObjInfo2 = {0};
     RTTESTI_CHECK_RC(RTFileQueryInfo(hFile1, &ObjInfo2,  RTFSOBJATTRADD_NOTHING), VINF_SUCCESS);
     RTTESTI_CHECK((RTTimeSpecGetSeconds(&ObjInfo2.AccessTime) >> 2) == (RTTimeSpecGetSeconds(&Time1) >> 2));
-    RTTESTI_CHECK(RTTimeSpecGetNano(&ObjInfo2.ModificationTime) == RTTimeSpecGetNano(&ObjInfo1.ModificationTime));
+    RTTESTI_CHECK(RTTimeSpecGetNano(&ObjInfo2.ModificationTime) / 1000 == RTTimeSpecGetNano(&ObjInfo1.ModificationTime) / 1000);
 
     /* Benchmark it: */
     PROFILE_FN(RTFileSetTimes(hFile1, NULL, iIteration & 1 ? &Time1 : &Time2, NULL, NULL), g_nsTestRun, "RTFileSetTimes");
@@ -867,14 +870,14 @@ void fsPerfUtimes(void)
     RTFSOBJINFO ObjInfo1;
     RTTESTI_CHECK_RC(RTPathQueryInfoEx(g_szDir, &ObjInfo1,  RTFSOBJATTRADD_NOTHING,  RTPATH_F_ON_LINK), VINF_SUCCESS);
     RTTESTI_CHECK((RTTimeSpecGetSeconds(&ObjInfo1.ModificationTime) >> 2) == (RTTimeSpecGetSeconds(&Time2) >> 2));
-    RTTESTI_CHECK(RTTimeSpecGetNano(&ObjInfo1.AccessTime) == RTTimeSpecGetNano(&ObjInfo0.AccessTime));
+    RTTESTI_CHECK(RTTimeSpecGetNano(&ObjInfo1.AccessTime) / 1000 == RTTimeSpecGetNano(&ObjInfo0.AccessTime) / 1000 /* posix timeval */);
 
     /* Modify access time: */
     RTTESTI_CHECK_RC(RTPathSetTimesEx(g_szDir, &Time1, NULL, NULL, NULL, RTPATH_F_ON_LINK), VINF_SUCCESS);
     RTFSOBJINFO ObjInfo2 = {0};
     RTTESTI_CHECK_RC(RTPathQueryInfoEx(g_szDir, &ObjInfo2,  RTFSOBJATTRADD_NOTHING,  RTPATH_F_ON_LINK), VINF_SUCCESS);
     RTTESTI_CHECK((RTTimeSpecGetSeconds(&ObjInfo2.AccessTime) >> 2) == (RTTimeSpecGetSeconds(&Time1) >> 2));
-    RTTESTI_CHECK(RTTimeSpecGetNano(&ObjInfo2.ModificationTime) == RTTimeSpecGetNano(&ObjInfo1.ModificationTime));
+    RTTESTI_CHECK(RTTimeSpecGetNano(&ObjInfo2.ModificationTime) / 1000 == RTTimeSpecGetNano(&ObjInfo1.ModificationTime) / 1000 /* posix timeval */);
 
     /* Profile shallow: */
     PROFILE_FN(RTPathSetTimesEx(g_szDir, iIteration & 1 ? &Time1 : &Time2, iIteration & 1 ? &Time2 : &Time1,
@@ -1209,9 +1212,15 @@ void fsPerfRm(void)
     RTTESTI_CHECK_RC(RTFileDelete(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
 
     /* Directories: */
-    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))), VERR_ACCESS_DENIED);
+#if defined(RT_OS_WINDOWS)
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))),  VERR_ACCESS_DENIED);
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(".."))), VERR_ACCESS_DENIED);
-    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(""))), VERR_ACCESS_DENIED);
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(""))),   VERR_ACCESS_DENIED);
+#else
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))),  VERR_IS_A_DIRECTORY);
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(".."))), VERR_IS_A_DIRECTORY);
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(""))),   VERR_IS_A_DIRECTORY);
+#endif
 
     /* Shallow: */
     RTFILE hFile1;
@@ -1745,16 +1754,17 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
         for (size_t offBuf = 0; offBuf < cbBuf; )
         {
             uint32_t const cbLeft   = (uint32_t)(cbBuf - offBuf);
-            uint32_t const cbToRead = aRuns[i].cbMax < UINT32_MAX / 2 ? RTRandU32Ex(1, aRuns[i].cbMax)
+            uint32_t const cbToRead = aRuns[i].cbMax < UINT32_MAX / 2 ? RTRandU32Ex(1, RT_MIN(aRuns[i].cbMax, cbLeft))
                                     : aRuns[i].cbMax == UINT32_MAX    ? RTRandU32Ex(RT_MAX(cbLeft / 4, 1), cbLeft)
-                                    : RTRandU32Ex(cbLeft >= _8K ? _8K : 1, RT_MIN(_1M, cbLeft));
+                                    :                                   RTRandU32Ex(cbLeft >= _8K ? _8K : 1, RT_MIN(_1M, cbLeft));
             size_t cbActual = 0;
             RTTESTI_CHECK_RC(RTFileRead(hFile1, &pbBuf[offBuf], cbToRead, &cbActual), VINF_SUCCESS);
             if (cbActual == cbToRead)
                 offBuf += cbActual;
             else
             {
-                RTTestIFailed("Attempting to read %#x bytes at %#zx, only got %#x bytes back!\n", cbToRead, offBuf, cbActual);
+                RTTestIFailed("Attempting to read %#x bytes at %#zx, only got %#x bytes back! (cbLeft=%#x cbBuf=%#zx)\n",
+                              cbToRead, offBuf, cbActual, cbLeft, cbBuf);
                 if (cbActual)
                     offBuf += cbActual;
                 else
