@@ -166,6 +166,7 @@ define def_vbox_validationkit_common_files
       	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/exceptionsR3$(TMP_SUFF_EXE) \
       	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/cpu-alloc-all-mem$(TMP_SUFF_EXE) \
       	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/cpu-numa$(TMP_SUFF_EXE) \
+      	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/FsPerf$(TMP_SUFF_EXE) \
       	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/NetPerf$(TMP_SUFF_EXE) \
       	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/LoadGenerator$(TMP_SUFF_EXE) \
       	$$(VBOX_PATH_VALIDATIONKIT.$(os).$(arch))/loadgeneratorR0.r0 \
