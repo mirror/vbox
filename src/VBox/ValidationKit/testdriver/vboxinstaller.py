@@ -908,7 +908,8 @@ class VBoxInstallerTestDriver(TestDriverBase):
             if fRc2 is False:
                 if iRc == 3010: # ERROR_SUCCESS_REBOOT_REQUIRED
                     reporter.log('Note: Uninstaller required a reboot to complete uninstallation');
-                    reporter.addLogFile(sLogFile, 'log/uninstaller_reboot', "Verbose MSI uninstallation log file (reboot required)");
+                    reporter.addLogFile(sLogFile, 'log/uninstaller_reboot', \
+                                        "Verbose MSI uninstallation log file (reboot required)");
                     # Optional, don't fail.
                 else:
                     fRc = False;
