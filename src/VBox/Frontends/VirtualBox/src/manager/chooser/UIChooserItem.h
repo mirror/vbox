@@ -131,6 +131,8 @@ public:
 
         /** Returns a level of item. */
         int level() const;
+        /** Defines a @a iLevel of item. */
+        void setLevel(int iLevel);
 
         /** Shows item. */
         virtual void show();
@@ -332,6 +334,8 @@ private:
 
         /** Holds whether item is root. */
         bool  m_fRoot;
+        /** Holds the item level according to root. */
+        int   m_iLevel;
 
         /** Holds whether item is hovered. */
         bool                m_fHovered;

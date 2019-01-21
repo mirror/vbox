@@ -481,6 +481,7 @@ void UIChooserModel::indentRoot(UIChooserItem *pNewRootItem)
     m_pRightRoot = new UIChooserItemGroup(scene(), pNewRootItem->toGroupItem(), false);
     m_pRightRoot->setPos(root()->geometry().width(), 0);
     m_pRightRoot->resize(root()->geometry().size());
+    m_pRightRoot->setLevel(pNewRootItem->level() + 1);
 
     /* Indent root: */
     root()->setRoot(false);
@@ -521,6 +522,7 @@ void UIChooserModel::unindentRoot()
     m_pRightRoot = new UIChooserItemGroup(scene(), root()->toGroupItem(), false);
     m_pRightRoot->setPos(0, 0);
     m_pRightRoot->resize(root()->geometry().size());
+    m_pRightRoot->setLevel(root()->level());
 
     /* Unindent root: */
     m_pAfterSlidingFocus = root();
