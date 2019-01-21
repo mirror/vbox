@@ -2136,7 +2136,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             hSection = CreateFileMapping((HANDLE)RTFileToNative(hFile1), NULL,
                                          enmState == kMMap_ReadOnly    ? PAGE_READONLY
                                          : enmState == kMMap_WriteCopy ? PAGE_WRITECOPY : PAGE_READWRITE,
-                                         (uint32_t)(cbMapping >> 32), (uint32_t)cbMapping, NULL);
+                                         (uint32_t)((uint64_t)cbMapping >> 32), (uint32_t)cbMapping, NULL);
             DWORD dwErr1 = GetLastError();
             DWORD dwErr2 = 0;
             if (hSection != NULL)
