@@ -84,7 +84,6 @@ VIAddVersionKey "InternalName"      "${PRODUCT_OUTPUT}"
 !include "winver.nsh"         ; Function for determining Windows version
 !define REPLACEDLL_NOREGISTER ; Replace in use DLL function
 !include "ReplaceDLL.nsh"
-!include "dumplog.nsh"        ; Dump log to file function
 
 !if $%BUILD_TARGET_ARCH% == "amd64"
   !include "x64.nsh"
@@ -176,6 +175,9 @@ VIAddVersionKey "InternalName"      "${PRODUCT_OUTPUT}"
     Page instfiles
 !endif
 
+; Must come after MUI includes to have certain defines set for DumpLog
+!include "dumplog.nsh"        ; Dump log to file function
+
 ; Language files
 !include "Languages\English.nsh"
 !include "Languages\French.nsh"
@@ -201,6 +203,10 @@ InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
 RequestExecutionLevel highest
+
+; Whether to use the Unicode version of NSIS
+; Note: Using Unicode will result in the installer not working on a Windows 95/98/ME guest
+;Unicode true
 
 ; Internal parameters
 Var g_iSystemMode                       ; Current system mode (0 = Normal boot, 1 = Fail-safe boot, 2 = Fail-safe with network boot)
