@@ -191,6 +191,9 @@ private slots:
       * @{ */
         /** Handles top-level window remaps. */
         void sltHandleWindowRemapped();
+
+        /** Updates first row maximum width. */
+        void sltUpdateFirstRowMaximumWidth() { updateFirstRowMaximumWidth(); }
     /** @} */
 
 private:
