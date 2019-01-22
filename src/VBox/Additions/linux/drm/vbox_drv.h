@@ -236,8 +236,8 @@ struct vbox_connector {
 	char name[32];
 	struct vbox_crtc *vbox_crtc;
 	struct {
-		u16 width;
-		u16 height;
+		u32 width;
+		u32 height;
 		bool disconnected;
 	} mode_hint;
 };
