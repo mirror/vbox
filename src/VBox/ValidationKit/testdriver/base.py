@@ -830,11 +830,15 @@ class TestDriverBase(object): # pylint: disable=R0902
         if self.sResourcePath is None:
             if self.sHost == 'darwin':      self.sResourcePath = "/Volumes/testrsrc/";
             elif self.sHost == 'freebsd':   self.sResourcePath = "/mnt/testrsrc/";
-            elif self.sHost == 'linux':     self.sResourcePath = "/mnt/testrsrc/";
+            elif self.sHost == 'linux':
+                self.sResourcePath = "/mnt/testrsrc/";
+                if not os.path.isdir(self.sResourcePath) and utils.isRunningFromCheckout():
+                    self.sResourcePath = os.path.join(g_ksValidationKitDir, os.pardir, os.pardir, os.pardir, "testrsrc");
             elif self.sHost == 'os2':       self.sResourcePath = "T:/";
             elif self.sHost == 'solaris':   self.sResourcePath = "/mnt/testrsrc/";
             elif self.sHost == 'win':       self.sResourcePath = "T:/";
             else: raise GenError('unknown host OS "%s"' % (self.sHost));
+        assert os.path.isdir(self.sResourcePath), 'Resource path not found: self.sResourcePath="%s"' % (self.sResourcePath);
 
         # PID file for the testdriver.
         self.sPidFile = os.path.join(self.sScratchPath, 'testdriver.pid');
