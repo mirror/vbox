@@ -1287,7 +1287,8 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
     int iRightColumnIndent = iFullWidth - iMargin - 1 - m_toolsPixmap.width() / m_toolsPixmap.devicePixelRatio();
 
     /* Paint right column: */
-    if (model()->currentItem() == this)
+    if (   model()->currentItem() == this
+        || isHovered())
     {
         /* Prepare variables: */
         int iToolsPixmapX = iRightColumnIndent;
