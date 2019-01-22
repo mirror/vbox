@@ -90,6 +90,10 @@ protected:
 
         /** Handles any Qt @a pEvent. */
         virtual bool event(QEvent *pEvent) /* override */;
+        /** Handles move @a pEvent. */
+        virtual void moveEvent(QMoveEvent *pEvent) /* override */;
+        /** Handles resize @a pEvent. */
+        virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
         /** Handles show @a pEvent. */
         virtual void showEvent(QShowEvent *pEvent) /* override */;
         /** Handles first show @a pEvent. */
