@@ -46,6 +46,7 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
                                            int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isTemporary(), 0, 100)
     , UIVirtualMachineItem(machine)
+    , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
     , m_iHoverLightnessMin(0)
@@ -60,23 +61,6 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
 {
     /* Prepare: */
     prepare();
-
-    /* Add item to the parent: */
-    AssertMsg(parentItem(), ("No parent set for machine-item!"));
-    parentItem()->addItem(this, iPosition);
-    setZValue(parentItem()->zValue() + 1);
-
-    /* Configure connections: */
-    connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
-            this, &UIChooserItemMachine::sltHandleWindowRemapped);
-
-    /* Init: */
-    updatePixmaps();
-    updateName();
-    updateSnapshotName();
-
-    /* Apply language settings: */
-    retranslateUi();
 }
 
 UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
@@ -84,6 +68,7 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
                                            int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isTemporary(), 0, 100)
     , UIVirtualMachineItem(pCopyFrom->machine())
+    , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
     , m_iHoverLightnessMin(0)
@@ -98,23 +83,6 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
 {
     /* Prepare: */
     prepare();
-
-    /* Add item to the parent: */
-    AssertMsg(parentItem(), ("No parent set for machine-item!"));
-    parentItem()->addItem(this, iPosition);
-    setZValue(parentItem()->zValue() + 1);
-
-    /* Configure connections: */
-    connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
-            this, &UIChooserItemMachine::sltHandleWindowRemapped);
-
-    /* Init: */
-    updatePixmaps();
-    updateName();
-    updateSnapshotName();
-
-    /* Apply language settings: */
-    retranslateUi();
 }
 
 UIChooserItemMachine::~UIChooserItemMachine()
@@ -642,6 +610,23 @@ void UIChooserItemMachine::prepare()
     m_iMaximumNameWidth = 0;
     m_iMinimumSnapshotNameWidth = 0;
     m_iMaximumSnapshotNameWidth = 0;
+
+    /* Add item to the parent: */
+    AssertMsg(parentItem(), ("No parent set for machine-item!"));
+    parentItem()->addItem(this, m_iPosition);
+    setZValue(parentItem()->zValue() + 1);
+
+    /* Configure connections: */
+    connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
+            this, &UIChooserItemMachine::sltHandleWindowRemapped);
+
+    /* Init: */
+    updatePixmaps();
+    updateName();
+    updateSnapshotName();
+
+    /* Apply language settings: */
+    retranslateUi();
 }
 
 QVariant UIChooserItemMachine::data(int iKey) const

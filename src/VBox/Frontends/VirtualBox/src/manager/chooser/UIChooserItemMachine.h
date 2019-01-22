@@ -275,6 +275,9 @@ private:
 
     /** @name Item stuff.
       * @{ */
+        /** Holds initial item position. */
+        const int  m_iPosition;
+
         /** Holds item minimum default lightness. */
         int  m_iDefaultLightnessMin;
         /** Holds item maximum default lightness. */
