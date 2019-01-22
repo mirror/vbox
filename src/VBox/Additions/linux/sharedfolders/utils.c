@@ -852,10 +852,8 @@ int sf_init_backing_dev(struct sf_glob_info *sf_g)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
 	/* Each new shared folder map gets a new uint64_t identifier,
 	 * allocated in sequence.  We ASSUME the sequence will not wrap. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
 	static uint64_t s_u64Sequence = 0;
 	uint64_t u64CurrentSequence = ASMAtomicIncU64(&s_u64Sequence);
-#endif
 
 	sf_g->bdi.ra_pages = 0;	/* No readahead */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
