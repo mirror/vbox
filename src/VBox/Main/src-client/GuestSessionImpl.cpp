@@ -717,7 +717,7 @@ int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcG
 
     alock.release(); /* Drop the write lock before waiting. */
 
-    vrc = i_sendCommand(HOST_SESSION_CLOSE, i, paParms, VBOX_GUESTCTRL_DST_BOTH);
+    vrc = i_sendMessage(HOST_MSG_SESSION_CLOSE, i, paParms, VBOX_GUESTCTRL_DST_BOTH);
     if (RT_SUCCESS(vrc))
         vrc = i_waitForStatusChange(pEvent, GuestSessionWaitForFlag_Terminate, uTimeoutMS,
                                     NULL /* Session status */, prcGuest);
@@ -1072,7 +1072,7 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t uFlags, int
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = i_sendCommand(HOST_DIR_REMOVE, i, paParms);
+    vrc = i_sendMessage(HOST_MSG_DIR_REMOVE, i, paParms);
     if (RT_SUCCESS(vrc))
     {
         vrc = pEvent->Wait(30 * 1000);
@@ -1313,17 +1313,17 @@ int GuestSession::i_dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTR
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("sessionID=%RU32, CID=%RU32, uFunction=%RU32, pSvcCb=%p\n",
-                     mData.mSession.mID, pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
+    LogFlowThisFunc(("sessionID=%RU32, CID=%RU32, uMessage=%RU32, pSvcCb=%p\n",
+                     mData.mSession.mID, pCbCtx->uContextID, pCbCtx->uMessage, pSvcCb));
     int rc;
-    switch (pCbCtx->uFunction)
+    switch (pCbCtx->uMessage)
     {
-        case GUEST_DISCONNECTED:
+        case GUEST_MSG_DISCONNECTED:
             /** @todo Handle closing all guest objects. */
             rc = VERR_INTERNAL_ERROR;
             break;
 
-        case GUEST_SESSION_NOTIFY: /* Guest Additions >= 4.3.0. */
+        case GUEST_MSG_SESSION_NOTIFY: /* Guest Additions >= 4.3.0. */
         {
             rc = i_onSessionStatusChange(pCbCtx, pSvcCb);
             break;
@@ -1946,7 +1946,7 @@ int GuestSession::i_startSession(int *prcGuest)
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = i_sendCommand(HOST_SESSION_CREATE, i, paParms, VBOX_GUESTCTRL_DST_ROOT_SVC);
+    vrc = i_sendMessage(HOST_MSG_SESSION_CREATE, i, paParms, VBOX_GUESTCTRL_DST_ROOT_SVC);
     if (RT_SUCCESS(vrc))
     {
         vrc = i_waitForStatusChange(pEvent, GuestSessionWaitForFlag_Start,
@@ -2135,7 +2135,7 @@ int GuestSession::i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest,
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = i_sendCommand(HOST_PATH_RENAME, i, paParms);
+    vrc = i_sendMessage(HOST_MSG_PATH_RENAME, i, paParms);
     if (RT_SUCCESS(vrc))
     {
         vrc = pEvent->Wait(30 * 1000);
@@ -2176,7 +2176,7 @@ int GuestSession::i_pathUserDocuments(Utf8Str &strPath, int *prcGuest)
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = i_sendCommand(HOST_PATH_USER_DOCUMENTS, i, paParms);
+    vrc = i_sendMessage(HOST_MSG_PATH_USER_DOCUMENTS, i, paParms);
     if (RT_SUCCESS(vrc))
     {
         vrc = pEvent->Wait(30 * 1000);
@@ -2226,7 +2226,7 @@ int GuestSession::i_pathUserHome(Utf8Str &strPath, int *prcGuest)
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = i_sendCommand(HOST_PATH_USER_HOME, i, paParms);
+    vrc = i_sendMessage(HOST_MSG_PATH_USER_HOME, i, paParms);
     if (RT_SUCCESS(vrc))
     {
         vrc = pEvent->Wait(30 * 1000);
@@ -2436,7 +2436,7 @@ inline int GuestSession::i_processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *
     return VERR_NOT_FOUND;
 }
 
-int GuestSession::i_sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms,
+int GuestSession::i_sendMessage(uint32_t uMessage, uint32_t uParms, PVBOXHGCMSVCPARM paParms,
                                 uint64_t fDst /*= VBOX_GUESTCTRL_DST_SESSION*/)
 {
     LogFlowThisFuncEnter();
@@ -2449,7 +2449,7 @@ int GuestSession::i_sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSV
     VMMDev *pVMMDev = pConsole->i_getVMMDev();
     AssertPtr(pVMMDev);
 
-    LogFlowThisFunc(("uFunction=%RU32 (%s), uParms=%RU32\n", uFunction, GstCtrlHostFnName((guestControl::eHostFn)uFunction), uParms));
+    LogFlowThisFunc(("uMessage=%RU32 (%s), uParms=%RU32\n", uMessage, GstCtrlHostMsgtoStr((guestControl::eHostMsg)uMessage), uParms));
 
     /* HACK ALERT! We extend the first parameter to 64-bit and use the
                    two topmost bits for call destination information. */
@@ -2459,7 +2459,7 @@ int GuestSession::i_sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSV
     paParms[0].u.uint64 = (uint64_t)paParms[0].u.uint32 | fDst;
 
     /* Make the call. */
-    int vrc = pVMMDev->hgcmHostCall(HGCMSERVICE_NAME, uFunction, uParms, paParms);
+    int vrc = pVMMDev->hgcmHostCall(HGCMSERVICE_NAME, uMessage, uParms, paParms);
     if (RT_FAILURE(vrc))
     {
         /** @todo What to do here? */

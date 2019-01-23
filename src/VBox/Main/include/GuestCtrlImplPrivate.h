@@ -1178,7 +1178,7 @@ protected:
 
     int bindToSession(Console *pConsole, GuestSession *pSession, uint32_t uObjectID);
     int registerWaitEvent(const GuestEventTypes &lstEvents, GuestWaitEvent **ppEvent);
-    int sendCommand(uint32_t uFunction, uint32_t cParms, PVBOXHGCMSVCPARM paParms);
+    int sendMessage(uint32_t uFunction, uint32_t cParms, PVBOXHGCMSVCPARM paParms);
 
 protected:
 

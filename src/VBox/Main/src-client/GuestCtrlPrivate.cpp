@@ -812,9 +812,9 @@ int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
 
     try
     {
-        Log2Func(("uFunc=%RU32, cParms=%RU32\n", pCtxCb->uFunction, pSvcCb->mParms));
+        Log2Func(("uFunc=%RU32, cParms=%RU32\n", pCtxCb->uMessage, pSvcCb->mParms));
 
-        switch (pCtxCb->uFunction)
+        switch (pCtxCb->uMessage)
         {
             case GUEST_MSG_PROGRESS_UPDATE:
                 vrc = VINF_SUCCESS;
@@ -1412,7 +1412,7 @@ int GuestObject::registerWaitEvent(const GuestEventTypes &lstEvents,
     return GuestBase::registerWaitEventEx(mSession->i_getId(), mObjectID, lstEvents, ppEvent);
 }
 
-int GuestObject::sendCommand(uint32_t uFunction, uint32_t cParms, PVBOXHGCMSVCPARM paParms)
+int GuestObject::sendMessage(uint32_t uMessage, uint32_t cParms, PVBOXHGCMSVCPARM paParms)
 {
 #ifndef VBOX_GUESTCTRL_TEST_CASE
     ComObjPtr<Console> pConsole = mConsole;
@@ -1431,8 +1431,8 @@ int GuestObject::sendCommand(uint32_t uFunction, uint32_t cParms, PVBOXHGCMSVCPA
         paParms[0].u.uint64 = (uint64_t)paParms[0].u.uint32 | VBOX_GUESTCTRL_DST_SESSION;
 
         /* Make the call. */
-        LogFlowThisFunc(("uFunction=%RU32, cParms=%RU32\n", uFunction, cParms));
-        vrc = pVMMDev->hgcmHostCall(HGCMSERVICE_NAME, uFunction, cParms, paParms);
+        LogFlowThisFunc(("uMessage=%RU32, cParms=%RU32\n", uMessage, cParms));
+        vrc = pVMMDev->hgcmHostCall(HGCMSERVICE_NAME, uMessage, cParms, paParms);
         if (RT_FAILURE(vrc))
         {
             /** @todo What to do here? */
@@ -1442,7 +1442,7 @@ int GuestObject::sendCommand(uint32_t uFunction, uint32_t cParms, PVBOXHGCMSVCPA
     LogFlowThisFuncEnter();
 
     /* Not needed within testcases. */
-    RT_NOREF(uFunction, cParms, paParms);
+    RT_NOREF(uMessage, cParms, paParms);
     int vrc = VINF_SUCCESS;
 #endif
     return vrc;

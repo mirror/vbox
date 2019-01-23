@@ -938,7 +938,7 @@ static int vgsvcGstCtrlSessionHandleProcInput(PVBOXSERVICECTRLSESSION pSession, 
             rc = VGSvcGstCtrlProcessHandleInput(pProcess, pHostCtx, RT_BOOL(fFlags & INPUT_FLAG_EOF),
                                                 *ppvScratchBuf, RT_MIN(cbInput, *pcbScratchBuf));
             if (RT_FAILURE(rc))
-                VGSvcError("Error handling input command for PID=%RU32, rc=%Rrc\n", uPID, rc);
+                VGSvcError("Error handling input message for PID=%RU32, rc=%Rrc\n", uPID, rc);
             VGSvcGstCtrlProcessRelease(pProcess);
         }
         else
@@ -1128,88 +1128,88 @@ int VGSvcGstCtrlSessionHandler(PVBOXSERVICECTRLSESSION pSession, uint32_t uMsg, 
 
     switch (uMsg)
     {
-        case HOST_SESSION_CLOSE:
+        case HOST_MSG_SESSION_CLOSE:
             /* Shutdown (this spawn). */
             rc = VGSvcGstCtrlSessionClose(pSession);
             *pfShutdown = true; /* Shutdown in any case. */
             break;
 
-        case HOST_DIR_REMOVE:
+        case HOST_MSG_DIR_REMOVE:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleDirRemove(pSession, pHostCtx);
             break;
 
-        case HOST_EXEC_CMD:
+        case HOST_MSG_EXEC_CMD:
             rc = vgsvcGstCtrlSessionHandleProcExec(pSession, pHostCtx);
             break;
 
-        case HOST_EXEC_SET_INPUT:
+        case HOST_MSG_EXEC_SET_INPUT:
             rc = vgsvcGstCtrlSessionHandleProcInput(pSession, pHostCtx, ppvScratchBuf, pcbScratchBuf);
             break;
 
-        case HOST_EXEC_GET_OUTPUT:
+        case HOST_MSG_EXEC_GET_OUTPUT:
             rc = vgsvcGstCtrlSessionHandleProcOutput(pSession, pHostCtx);
             break;
 
-        case HOST_EXEC_TERMINATE:
+        case HOST_MSG_EXEC_TERMINATE:
             rc = vgsvcGstCtrlSessionHandleProcTerminate(pSession, pHostCtx);
             break;
 
-        case HOST_EXEC_WAIT_FOR:
+        case HOST_MSG_EXEC_WAIT_FOR:
             rc = vgsvcGstCtrlSessionHandleProcWaitFor(pSession, pHostCtx);
             break;
 
-        case HOST_FILE_OPEN:
+        case HOST_MSG_FILE_OPEN:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileOpen(pSession, pHostCtx);
             break;
 
-        case HOST_FILE_CLOSE:
+        case HOST_MSG_FILE_CLOSE:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileClose(pSession, pHostCtx);
             break;
 
-        case HOST_FILE_READ:
+        case HOST_MSG_FILE_READ:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileRead(pSession, pHostCtx, ppvScratchBuf, pcbScratchBuf);
             break;
 
-        case HOST_FILE_READ_AT:
+        case HOST_MSG_FILE_READ_AT:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileReadAt(pSession, pHostCtx, ppvScratchBuf, pcbScratchBuf);
             break;
 
-        case HOST_FILE_WRITE:
+        case HOST_MSG_FILE_WRITE:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileWrite(pSession, pHostCtx, ppvScratchBuf, pcbScratchBuf);
             break;
 
-        case HOST_FILE_WRITE_AT:
+        case HOST_MSG_FILE_WRITE_AT:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileWriteAt(pSession, pHostCtx, ppvScratchBuf, pcbScratchBuf);
             break;
 
-        case HOST_FILE_SEEK:
+        case HOST_MSG_FILE_SEEK:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileSeek(pSession, pHostCtx);
             break;
 
-        case HOST_FILE_TELL:
+        case HOST_MSG_FILE_TELL:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandleFileTell(pSession, pHostCtx);
             break;
 
-        case HOST_PATH_RENAME:
+        case HOST_MSG_PATH_RENAME:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandlePathRename(pSession, pHostCtx);
             break;
 
-        case HOST_PATH_USER_DOCUMENTS:
+        case HOST_MSG_PATH_USER_DOCUMENTS:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandlePathUserDocuments(pSession, pHostCtx);
             break;
 
-        case HOST_PATH_USER_HOME:
+        case HOST_MSG_PATH_USER_HOME:
             if (fImpersonated)
                 rc = vgsvcGstCtrlSessionHandlePathUserHome(pSession, pHostCtx);
             break;
@@ -1528,7 +1528,7 @@ static RTEXITCODE vgsvcGstCtrlSessionSpawnWorker(PVBOXSERVICECTRLSESSION pSessio
         if (RT_SUCCESS(rc))
         {
             /*
-             * Allocate a scratch buffer for commands which also send payload data with them.
+             * Allocate a scratch buffer for messages which also send payload data with them.
              * This buffer may grow if the host sends us larger chunks of data.
              */
             uint32_t cbScratchBuf = _64K;

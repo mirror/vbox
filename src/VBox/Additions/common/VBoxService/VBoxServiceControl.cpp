@@ -244,7 +244,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
     RTThreadUserSignal(RTThreadSelf());
     Assert(g_idControlSvcClient > 0);
 
-    /* Allocate a scratch buffer for commands which also send
+    /* Allocate a scratch buffer for messages which also send
      * payload data with them. */
     uint32_t cbScratchBuf = _64K; /** @todo Make buffer size configurable via guest properties/argv! */
     AssertReturn(RT_IS_POWER_OF_TWO(cbScratchBuf), VERR_INVALID_PARAMETER);
@@ -263,23 +263,23 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
         {
             cRetrievalFailed = 0; /* Reset failed retrieval count. */
             VGSvcVerbose(4, "idMsg=%RU32 (%s) (%RU32 parms) retrieved\n",
-                         idMsg, GstCtrlHostFnName((eHostFn)idMsg), ctxHost.uNumParms);
+                         idMsg, GstCtrlHostMsgtoStr((eHostMsg)idMsg), ctxHost.uNumParms);
 
             /*
              * Handle the host message.
              */
             switch (idMsg)
             {
-                case HOST_CANCEL_PENDING_WAITS:
+                case HOST_MSG_CANCEL_PENDING_WAITS:
                     VGSvcVerbose(1, "We were asked to quit ...\n");
                     break;
 
-                case HOST_SESSION_CREATE:
+                case HOST_MSG_SESSION_CREATE:
                     rc = vgsvcGstCtrlHandleSessionOpen(&ctxHost);
                     break;
 
                 /* This message is also sent to the child session process (by the host). */
-                case HOST_SESSION_CLOSE:
+                case HOST_MSG_SESSION_CLOSE:
                     rc = vgsvcGstCtrlHandleSessionClose(&ctxHost);
                     break;
 
@@ -288,7 +288,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
                     {
                         rc = VbglR3GuestCtrlMsgSkip(g_idControlSvcClient, VERR_NOT_SUPPORTED, idMsg);
                         VGSvcVerbose(1, "Skipped unexpected message idMsg=%RU32 (%s), cParms=%RU32 (rc=%Rrc)\n",
-                                     idMsg, GstCtrlHostFnName((eHostFn)idMsg), ctxHost.uNumParms, rc);
+                                     idMsg, GstCtrlHostMsgtoStr((eHostMsg)idMsg), ctxHost.uNumParms, rc);
                     }
                     else
                     {
@@ -299,7 +299,7 @@ static DECLCALLBACK(int) vgsvcGstCtrlWorker(bool volatile *pfShutdown)
             }
 
             /* Do we need to shutdown? */
-            if (idMsg == HOST_CANCEL_PENDING_WAITS)
+            if (idMsg == HOST_MSG_CANCEL_PENDING_WAITS)
                 break;
 
             /* Let's sleep for a bit and let others run ... */
@@ -560,7 +560,7 @@ VBOXSERVICE g_Control =
     "                            temporary directory.\n"
 #endif
     "    --control-interval      Specifies the interval at which to check for\n"
-    "                            new control commands. The default is 1000 ms.\n"
+    "                            new control messages. The default is 1000 ms.\n"
     ,
     /* methods */
     vgsvcGstCtrlPreInit,

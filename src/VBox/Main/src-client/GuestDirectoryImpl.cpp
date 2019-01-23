@@ -169,12 +169,12 @@ int GuestDirectory::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGU
     AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
 
     LogFlowThisFunc(("strPath=%s, uContextID=%RU32, uFunction=%RU32, pSvcCb=%p\n",
-                     mData.mOpenInfo.mPath.c_str(), pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
+                     mData.mOpenInfo.mPath.c_str(), pCbCtx->uContextID, pCbCtx->uMessage, pSvcCb));
 
     int vrc;
-    switch (pCbCtx->uFunction)
+    switch (pCbCtx->uMessage)
     {
-        case GUEST_DIR_NOTIFY:
+        case GUEST_MSG_DIR_NOTIFY:
         {
             int idx = 1; /* Current parameter index. */
             CALLBACKDATA_DIR_NOTIFY dataCb;

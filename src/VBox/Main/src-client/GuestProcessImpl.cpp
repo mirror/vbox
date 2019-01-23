@@ -415,32 +415,32 @@ int GuestProcess::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUES
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
 #ifdef DEBUG
-    LogFlowThisFunc(("uPID=%RU32, uContextID=%RU32, uFunction=%RU32, pSvcCb=%p\n",
-                     mData.mPID, pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
+    LogFlowThisFunc(("uPID=%RU32, uContextID=%RU32, uMessage=%RU32, pSvcCb=%p\n",
+                     mData.mPID, pCbCtx->uContextID, pCbCtx->uMessage, pSvcCb));
 #endif
 
     int vrc;
-    switch (pCbCtx->uFunction)
+    switch (pCbCtx->uMessage)
     {
-        case GUEST_DISCONNECTED:
+        case GUEST_MSG_DISCONNECTED:
         {
             vrc = i_onGuestDisconnected(pCbCtx, pSvcCb);
             break;
         }
 
-        case GUEST_EXEC_STATUS:
+        case GUEST_MSG_EXEC_STATUS:
         {
             vrc = i_onProcessStatusChange(pCbCtx, pSvcCb);
             break;
         }
 
-        case GUEST_EXEC_OUTPUT:
+        case GUEST_MSG_EXEC_OUTPUT:
         {
             vrc = i_onProcessOutput(pCbCtx, pSvcCb);
             break;
         }
 
-        case GUEST_EXEC_INPUT_STATUS:
+        case GUEST_MSG_EXEC_INPUT_STATUS:
         {
             vrc = i_onProcessInputStatus(pCbCtx, pSvcCb);
             break;
@@ -915,7 +915,7 @@ int GuestProcess::i_readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeout
 
         alock.release(); /* Drop the write lock before sending. */
 
-        vrc = sendCommand(HOST_EXEC_GET_OUTPUT, i, paParms);
+        vrc = sendMessage(HOST_MSG_EXEC_GET_OUTPUT, i, paParms);
     }
 
     if (RT_SUCCESS(vrc))
@@ -1131,7 +1131,7 @@ int GuestProcess::i_startProcessInner(uint32_t cMsTimeout, AutoWriteLock &rLock,
 
         rLock.release(); /* Drop the write lock before sending. */
 
-        vrc = sendCommand(HOST_EXEC_CMD, i, paParms);
+        vrc = sendMessage(HOST_MSG_EXEC_CMD, i, paParms);
         if (RT_FAILURE(vrc))
         {
             int rc2 = i_setProcessStatus(ProcessStatus_Error, vrc);
@@ -1250,7 +1250,7 @@ int GuestProcess::i_terminateProcess(uint32_t uTimeoutMS, int *prcGuest)
 
             alock.release(); /* Drop the write lock before sending. */
 
-            vrc = sendCommand(HOST_EXEC_TERMINATE, i, paParms);
+            vrc = sendMessage(HOST_MSG_EXEC_TERMINATE, i, paParms);
             if (RT_SUCCESS(vrc))
                 vrc = i_waitForStatusChange(pEvent, uTimeoutMS,
                                             NULL /* ProcessStatus */, prcGuest);
@@ -1732,7 +1732,7 @@ int GuestProcess::i_writeData(uint32_t uHandle, uint32_t uFlags,
     alock.release(); /* Drop the write lock before sending. */
 
     uint32_t cbProcessed = 0;
-    vrc = sendCommand(HOST_EXEC_SET_INPUT, i, paParms);
+    vrc = sendMessage(HOST_MSG_EXEC_SET_INPUT, i, paParms);
     if (RT_SUCCESS(vrc))
     {
         ProcessInputStatus_T inputStatus;

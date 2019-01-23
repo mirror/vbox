@@ -86,8 +86,8 @@ namespace guestControl {
  */
 typedef struct VBoxGuestCtrlHostCbCtx
 {
-    /** HGCM Function number. */
-    uint32_t uFunction;
+    /** HGCM message number. */
+    uint32_t uMessage;
     /** The context ID. */
     uint32_t uContextID;
     /** Protocol version of this guest session. Might
@@ -125,150 +125,151 @@ typedef struct VBoxGuestCtrlHostCallback
 
 
 /**
- * The service functions which are callable by host.
+ * The service messages which are callable by host.
  */
-enum eHostFn
+enum eHostMsg
 {
     /**
      * The host asks the client to cancel all pending waits and exit.
      */
-    HOST_CANCEL_PENDING_WAITS = 0,
+    HOST_MSG_CANCEL_PENDING_WAITS = 0,
     /**
      * The host wants to create a guest session.
      */
-    HOST_SESSION_CREATE = 20,
+    HOST_MSG_SESSION_CREATE = 20,
     /**
      * The host wants to close a guest session.
      */
-    HOST_SESSION_CLOSE = 21,
+    HOST_MSG_SESSION_CLOSE = 21,
     /**
      * The host wants to execute something in the guest. This can be a command line
      * or starting a program.
-     ** Note: Legacy (VBox < 4.3) command.
+     ** Note: Legacy (VBox < 4.3) message.
      */
-    HOST_EXEC_CMD = 100,
+    HOST_MSG_EXEC_CMD = 100,
     /**
      * Sends input data for stdin to a running process executed by HOST_EXEC_CMD.
-     ** Note: Legacy (VBox < 4.3) command.
+     ** Note: Legacy (VBox < 4.3) message.
      */
-    HOST_EXEC_SET_INPUT = 101,
+    HOST_MSG_EXEC_SET_INPUT = 101,
     /**
      * Gets the current status of a running process, e.g.
      * new data on stdout/stderr, process terminated etc.
-     * @note Legacy (VBox < 4.3) command.
+     * @note Legacy (VBox < 4.3) message.
      */
-    HOST_EXEC_GET_OUTPUT = 102,
+    HOST_MSG_EXEC_GET_OUTPUT = 102,
     /**
      * Terminates a running guest process.
      */
-    HOST_EXEC_TERMINATE = 110,
+    HOST_MSG_EXEC_TERMINATE = 110,
     /**
      * Waits for a certain event to happen. This can be an input, output
      * or status event.
      */
-    HOST_EXEC_WAIT_FOR = 120,
+    HOST_MSG_EXEC_WAIT_FOR = 120,
     /**
      * Opens a guest file.
      */
-    HOST_FILE_OPEN = 240,
+    HOST_MSG_FILE_OPEN = 240,
     /**
      * Closes a guest file.
      */
-    HOST_FILE_CLOSE = 241,
+    HOST_MSG_FILE_CLOSE = 241,
     /**
      * Reads from an opened guest file.
      */
-    HOST_FILE_READ = 250,
+    HOST_MSG_FILE_READ = 250,
     /**
      * Reads from an opened guest file at
      * a specified offset.
      */
-    HOST_FILE_READ_AT = 251,
+    HOST_MSG_FILE_READ_AT = 251,
     /**
      * Write to an opened guest file.
      */
-    HOST_FILE_WRITE = 260,
+    HOST_MSG_FILE_WRITE = 260,
     /**
      * Write to an opened guest file at
      * a specified offset.
      */
-    HOST_FILE_WRITE_AT = 261,
+    HOST_MSG_FILE_WRITE_AT = 261,
     /**
      * Changes the read & write position of an opened guest file.
      */
-    HOST_FILE_SEEK = 270,
+    HOST_MSG_FILE_SEEK = 270,
     /**
      * Gets the current file position of an opened guest file.
      */
-    HOST_FILE_TELL = 271,
+    HOST_MSG_FILE_TELL = 271,
     /**
      * Removes a directory on the guest.
      */
-    HOST_DIR_REMOVE = 320,
+    HOST_MSG_DIR_REMOVE = 320,
     /**
      * Renames a path on the guest.
      */
-    HOST_PATH_RENAME = 330,
+    HOST_MSG_PATH_RENAME = 330,
     /**
      * Retrieves the user's documents directory.
      */
-    HOST_PATH_USER_DOCUMENTS = 331,
+    HOST_MSG_PATH_USER_DOCUMENTS = 331,
     /**
      * Retrieves the user's home directory.
      */
-    HOST_PATH_USER_HOME = 332
+    HOST_MSG_PATH_USER_HOME = 332
 };
 
 
 /**
- * Translates a guest control host function function enum to at string.
+ * Translates a guest control host message enum to a string.
+ *
  * @returns Enum string name.
- * @param   enmFunction     The function name to translate.
+ * @param   enmMsg              The message to translate.
  */
-DECLINLINE(const char *) GstCtrlHostFnName(enum eHostFn enmFunction)
+DECLINLINE(const char *) GstCtrlHostMsgtoStr(enum eHostMsg enmMsg)
 {
-    switch (enmFunction)
+    switch (enmMsg)
     {
-        RT_CASE_RET_STR(HOST_CANCEL_PENDING_WAITS);
-        RT_CASE_RET_STR(HOST_SESSION_CREATE);
-        RT_CASE_RET_STR(HOST_SESSION_CLOSE);
-        RT_CASE_RET_STR(HOST_EXEC_CMD);
-        RT_CASE_RET_STR(HOST_EXEC_SET_INPUT);
-        RT_CASE_RET_STR(HOST_EXEC_GET_OUTPUT);
-        RT_CASE_RET_STR(HOST_EXEC_TERMINATE);
-        RT_CASE_RET_STR(HOST_EXEC_WAIT_FOR);
-        RT_CASE_RET_STR(HOST_FILE_OPEN);
-        RT_CASE_RET_STR(HOST_FILE_CLOSE);
-        RT_CASE_RET_STR(HOST_FILE_READ);
-        RT_CASE_RET_STR(HOST_FILE_READ_AT);
-        RT_CASE_RET_STR(HOST_FILE_WRITE);
-        RT_CASE_RET_STR(HOST_FILE_WRITE_AT);
-        RT_CASE_RET_STR(HOST_FILE_SEEK);
-        RT_CASE_RET_STR(HOST_FILE_TELL);
-        RT_CASE_RET_STR(HOST_DIR_REMOVE);
-        RT_CASE_RET_STR(HOST_PATH_RENAME);
-        RT_CASE_RET_STR(HOST_PATH_USER_DOCUMENTS);
-        RT_CASE_RET_STR(HOST_PATH_USER_HOME);
+        RT_CASE_RET_STR(HOST_MSG_CANCEL_PENDING_WAITS);
+        RT_CASE_RET_STR(HOST_MSG_SESSION_CREATE);
+        RT_CASE_RET_STR(HOST_MSG_SESSION_CLOSE);
+        RT_CASE_RET_STR(HOST_MSG_EXEC_CMD);
+        RT_CASE_RET_STR(HOST_MSG_EXEC_SET_INPUT);
+        RT_CASE_RET_STR(HOST_MSG_EXEC_GET_OUTPUT);
+        RT_CASE_RET_STR(HOST_MSG_EXEC_TERMINATE);
+        RT_CASE_RET_STR(HOST_MSG_EXEC_WAIT_FOR);
+        RT_CASE_RET_STR(HOST_MSG_FILE_OPEN);
+        RT_CASE_RET_STR(HOST_MSG_FILE_CLOSE);
+        RT_CASE_RET_STR(HOST_MSG_FILE_READ);
+        RT_CASE_RET_STR(HOST_MSG_FILE_READ_AT);
+        RT_CASE_RET_STR(HOST_MSG_FILE_WRITE);
+        RT_CASE_RET_STR(HOST_MSG_FILE_WRITE_AT);
+        RT_CASE_RET_STR(HOST_MSG_FILE_SEEK);
+        RT_CASE_RET_STR(HOST_MSG_FILE_TELL);
+        RT_CASE_RET_STR(HOST_MSG_DIR_REMOVE);
+        RT_CASE_RET_STR(HOST_MSG_PATH_RENAME);
+        RT_CASE_RET_STR(HOST_MSG_PATH_USER_DOCUMENTS);
+        RT_CASE_RET_STR(HOST_MSG_PATH_USER_HOME);
     }
     return "Unknown";
 }
 
 
 /**
- * The service functions which are called by guest.
+ * The service messages which are callable by the guest.
  *
- * @note The function numbers cannot be changed.  Please use the first non-zero
- *       number that's not in use when adding new functions.
+ * @note The message numbers cannot be changed.  Please use the first non-zero
+ *       number that's not in use when adding new messages.
  *
- * @note Remember to update service.cpp when adding new functions/events for
- *       Main, as it validates all incoming commands before passing them on.
+ * @note Remember to update service.cpp when adding new messages for Main,
+ *       as it validates all incoming messages before passing them on.
  */
-enum eGuestFn
+enum eGuestMsg
 {
     /** Guest waits for a new message the host wants to process on the guest side.
      * This is a blocking call and can be deferred.
      *
-     * @note This command is rather odd.  The above description isn't really
+     * @note This message is rather odd.  The above description isn't really
      *       correct.  Yes, it (1) waits for a new message and will return the
      *       mesage number and parameter count when one is available.   However, it
      *       is also (2) used to retrieve the message parameters.   For some weird
@@ -302,9 +303,9 @@ enum eGuestFn
      * detected when calling service::clientDisconnect().
      *
      * @note This is a host side notification message that has no business in this
-     *       enum.  The guest cannot use this function number, host will reject it.
+     *       enum.  The guest cannot use this message number, host will reject it.
      */
-    GUEST_DISCONNECTED = 3,
+    GUEST_MSG_DISCONNECTED = 3,
     /** Sets a message filter to only get messages which have a certain
      * context ID scheme (that is, a specific session, object etc).
      * Since VBox 4.3+.
@@ -390,9 +391,9 @@ enum eGuestFn
      *
      * This skips the current message, replying to the main backend as best it can.
      * Takes between zero and two parameters.  The first parameter is the 32-bit
-     * VBox status code to pass onto Main when skipping the command, defaults to
+     * VBox status code to pass onto Main when skipping the message, defaults to
      * VERR_NOT_SUPPORTED.  The second parameter is the 32-bit message ID of the
-     * command to skip, by default whatever is first in the queue is removed.  This
+     * message to skip, by default whatever is first in the queue is removed.  This
      * is also the case if UINT32_MAX is specified.
      *
      * @retval  VINF_SUCCESS on success.
@@ -406,7 +407,7 @@ enum eGuestFn
     /**
      * Skips the current assigned message returned by GUEST_MSG_WAIT.
      * Needed for telling the host service to not keep stale
-     * host commands in the queue.
+     * host messages in the queue.
      * @deprecated  Replaced by GUEST_MSG_SKIP.
      */
     GUEST_MSG_SKIP_OLD = 10,
@@ -432,7 +433,7 @@ enum eGuestFn
      * @retval  VERR_WRONG_PARAMETER_COUNT
      * @since   6.0
      */
-    GUEST_MAKE_ME_MASTER = 13,
+    GUEST_MSG_MAKE_ME_MASTER = 13,
     /** Prepares the starting of a session.
      *
      * VBoxService makes this call before spawning a session process (must be
@@ -454,7 +455,7 @@ enum eGuestFn
      * @retval  VERR_WRONG_PARAMETER_TYPE
      * @since   6.0
      */
-    GUEST_SESSION_PREPARE = 14,
+    GUEST_MSG_SESSION_PREPARE = 14,
     /** Cancels a prepared session.
      *
      * VBoxService makes this call to clean up after spawning a session process
@@ -469,7 +470,7 @@ enum eGuestFn
      * @retval  VERR_WRONG_PARAMETER_TYPE
      * @since   6.0
      */
-    GUEST_SESSION_CANCEL_PREPARED = 15,
+    GUEST_MSG_SESSION_CANCEL_PREPARED = 15,
     /** Accepts a prepared session.
      *
      * The session processes makes this call to accept a prepared session.  The
@@ -489,33 +490,33 @@ enum eGuestFn
      * @retval  VERR_WRONG_PARAMETER_TYPE
      * @since   6.0
      */
-    GUEST_SESSION_ACCEPT = 16,
+    GUEST_MSG_SESSION_ACCEPT = 16,
     /**
      * Guest reports back a guest session status.
      * @todo proper docs.
      */
-    GUEST_SESSION_NOTIFY = 20,
+    GUEST_MSG_SESSION_NOTIFY = 20,
     /**
      * Guest wants to close a specific guest session.
      * @todo proper docs.
      */
-    GUEST_SESSION_CLOSE = 21,
+    GUEST_MSG_SESSION_CLOSE = 21,
 
     /**
      * Guests sends output from an executed process.
      * @todo proper docs.
      */
-    GUEST_EXEC_OUTPUT = 100,
+    GUEST_MSG_EXEC_OUTPUT = 100,
     /**
      * Guest sends a status update of an executed process to the host.
      * @todo proper docs.
      */
-    GUEST_EXEC_STATUS = 101,
+    GUEST_MSG_EXEC_STATUS = 101,
     /**
      * Guests sends an input status notification to the host.
      * @todo proper docs.
      */
-    GUEST_EXEC_INPUT_STATUS = 102,
+    GUEST_MSG_EXEC_INPUT_STATUS = 102,
     /**
      * Guest notifies the host about some I/O event. This can be
      * a stdout, stderr or a stdin event. The actual event only tells
@@ -523,31 +524,32 @@ enum eGuestFn
      * transmitting the data.
      * @todo proper docs.
      */
-    GUEST_EXEC_IO_NOTIFY = 210,
+    GUEST_MSG_EXEC_IO_NOTIFY = 210,
     /**
      * Guest notifies the host about some directory event.
      * @todo proper docs.
      */
-    GUEST_DIR_NOTIFY = 230,
+    GUEST_MSG_DIR_NOTIFY = 230,
     /**
      * Guest notifies the host about some file event.
      * @todo proper docs.
      */
-    GUEST_FILE_NOTIFY = 240
+    GUEST_MSG_FILE_NOTIFY = 240
 };
 
 /**
- * Translates a guest control host function function enum to at string.
+ * Translates a guest control guest message enum to a string.
+ *
  * @returns Enum string name.
- * @param   enmFunction     The function name to translate.
+ * @param   enmMsg              The message to translate.
  */
-DECLINLINE(const char *) GstCtrlGuestFnName(enum eGuestFn enmFunction)
+DECLINLINE(const char *) GstCtrlGuestMsgToStr(enum eGuestMsg enmMsg)
 {
-    switch (enmFunction)
+    switch (enmMsg)
     {
         RT_CASE_RET_STR(GUEST_MSG_WAIT);
         RT_CASE_RET_STR(GUEST_MSG_CANCEL);
-        RT_CASE_RET_STR(GUEST_DISCONNECTED);
+        RT_CASE_RET_STR(GUEST_MSG_DISCONNECTED);
         RT_CASE_RET_STR(GUEST_MSG_FILTER_SET);
         RT_CASE_RET_STR(GUEST_MSG_FILTER_UNSET);
         RT_CASE_RET_STR(GUEST_MSG_PEEK_NOWAIT);
@@ -557,18 +559,18 @@ DECLINLINE(const char *) GstCtrlGuestFnName(enum eGuestFn enmFunction)
         RT_CASE_RET_STR(GUEST_MSG_REPLY);
         RT_CASE_RET_STR(GUEST_MSG_PROGRESS_UPDATE);
         RT_CASE_RET_STR(GUEST_MSG_SKIP);
-        RT_CASE_RET_STR(GUEST_MAKE_ME_MASTER);
-        RT_CASE_RET_STR(GUEST_SESSION_PREPARE);
-        RT_CASE_RET_STR(GUEST_SESSION_CANCEL_PREPARED);
-        RT_CASE_RET_STR(GUEST_SESSION_ACCEPT);
-        RT_CASE_RET_STR(GUEST_SESSION_NOTIFY);
-        RT_CASE_RET_STR(GUEST_SESSION_CLOSE);
-        RT_CASE_RET_STR(GUEST_EXEC_OUTPUT);
-        RT_CASE_RET_STR(GUEST_EXEC_STATUS);
-        RT_CASE_RET_STR(GUEST_EXEC_INPUT_STATUS);
-        RT_CASE_RET_STR(GUEST_EXEC_IO_NOTIFY);
-        RT_CASE_RET_STR(GUEST_DIR_NOTIFY);
-        RT_CASE_RET_STR(GUEST_FILE_NOTIFY);
+        RT_CASE_RET_STR(GUEST_MSG_MAKE_ME_MASTER);
+        RT_CASE_RET_STR(GUEST_MSG_SESSION_PREPARE);
+        RT_CASE_RET_STR(GUEST_MSG_SESSION_CANCEL_PREPARED);
+        RT_CASE_RET_STR(GUEST_MSG_SESSION_ACCEPT);
+        RT_CASE_RET_STR(GUEST_MSG_SESSION_NOTIFY);
+        RT_CASE_RET_STR(GUEST_MSG_SESSION_CLOSE);
+        RT_CASE_RET_STR(GUEST_MSG_EXEC_OUTPUT);
+        RT_CASE_RET_STR(GUEST_MSG_EXEC_STATUS);
+        RT_CASE_RET_STR(GUEST_MSG_EXEC_INPUT_STATUS);
+        RT_CASE_RET_STR(GUEST_MSG_EXEC_IO_NOTIFY);
+        RT_CASE_RET_STR(GUEST_MSG_DIR_NOTIFY);
+        RT_CASE_RET_STR(GUEST_MSG_FILE_NOTIFY);
     }
     return "Unknown";
 }
@@ -654,33 +656,29 @@ enum GUEST_FILE_SEEKTYPE
 #pragma pack (1)
 
 /**
- * Waits for a host command to arrive. The structure then contains the
+ * Waits for a host message to arrive. The structure then contains the
  * actual message type + required number of parameters needed to successfully
- * retrieve that host command (in a next round).
+ * retrieve that host message (in a next round).
  */
-typedef struct HGCMMsgCmdWaitFor
+typedef struct HGCMMsgWaitFor
 {
     VBGLIOCHGCMCALL hdr;
-    /**
-     * The returned command the host wants to
-     * run on the guest.
-     */
+    /** The returned message the host wants to run on the guest. */
     HGCMFunctionParameter msg;       /* OUT uint32_t */
     /** Number of parameters the message needs. */
     HGCMFunctionParameter num_parms; /* OUT uint32_t */
-} HGCMMsgCmdWaitFor;
+} HGCMMsgWaitFor;
 
 /**
- * Asks the guest control host service to set a command
+ * Asks the guest control host service to set a message
  * filter for this client. This filter will then only
  * deliver messages to the client which match the
  * wanted context ID (ranges).
  */
-typedef struct HGCMMsgCmdFilterSet
+typedef struct HGCMMsgFilterSet
 {
     VBGLIOCHGCMCALL hdr;
-    /** Value to filter for after filter mask
-     *  was applied. */
+    /** Value to filter for after filter mask was applied. */
     HGCMFunctionParameter value;         /* IN uint32_t */
     /** Mask to add to the current set filter. */
     HGCMFunctionParameter mask_add;      /* IN uint32_t */
@@ -688,30 +686,30 @@ typedef struct HGCMMsgCmdFilterSet
     HGCMFunctionParameter mask_remove;   /* IN uint32_t */
     /** Filter flags; currently unused. */
     HGCMFunctionParameter flags;         /* IN uint32_t */
-} HGCMMsgCmdFilterSet;
+} HGCMMsgFilterSet;
 
 /**
  * Asks the guest control host service to disable
  * a previously set message filter again.
  */
-typedef struct HGCMMsgCmdFilterUnset
+typedef struct HGCMMsgFilterUnset
 {
     VBGLIOCHGCMCALL hdr;
     /** Unset flags; currently unused. */
     HGCMFunctionParameter flags;    /* IN uint32_t */
-} HGCMMsgCmdFilterUnset;
+} HGCMMsgFilterUnset;
 
 /**
  * Asks the guest control host service to skip the
- * currently assigned host command returned by
+ * currently assigned host message returned by
  * VbglR3GuestCtrlMsgWaitFor().
  */
-typedef struct HGCMMsgCmdSkip
+typedef struct HGCMMsgSkip
 {
     VBGLIOCHGCMCALL hdr;
     /** Skip flags; currently unused. */
     HGCMFunctionParameter flags;    /* IN uint32_t */
-} HGCMMsgCmdSkip;
+} HGCMMsgSkip;
 
 /**
  * Asks the guest control host service to cancel all pending (outstanding)
@@ -722,7 +720,7 @@ typedef struct HGCMMsgCancelPendingWaits
     VBGLIOCHGCMCALL hdr;
 } HGCMMsgCancelPendingWaits;
 
-typedef struct HGCMMsgCmdReply
+typedef struct HGCMMsgReply
 {
     VBGLIOCHGCMCALL hdr;
     /** Context ID. */
@@ -733,7 +731,7 @@ typedef struct HGCMMsgCmdReply
     HGCMFunctionParameter rc;
     /** Optional payload to this reply. */
     HGCMFunctionParameter payload;
-} HGCMMsgCmdReply;
+} HGCMMsgReply;
 
 /**
  * Creates a guest session.

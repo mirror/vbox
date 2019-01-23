@@ -17,7 +17,7 @@
 
 /** @page pg_svc_guest_control   Guest Control HGCM Service
  *
- * This service acts as a proxy for handling and buffering host command requests
+ * This service acts as a proxy for handling and buffering host message requests
  * and clients on the guest. It tries to be as transparent as possible to let
  * the guest (client) and host side do their protocol handling as desired.
  *
@@ -25,21 +25,21 @@
  * - Host:   A host process (e.g. VBoxManage or another tool utilizing the Main API)
  *           which wants to control something on the guest.
  * - Client: A client (e.g. VBoxService) running inside the guest OS waiting for
- *           new host commands to perform. There can be multiple clients connected
+ *           new host messages to perform. There can be multiple clients connected
  *           to this service. A client is represented by its unique HGCM client ID.
  * - Context ID: An (almost) unique ID automatically generated on the host (Main API)
  *               to not only distinguish clients but individual requests. Because
  *               the host does not know anything about connected clients it needs
  *               an indicator which it can refer to later. This context ID gets
  *               internally bound by the service to a client which actually processes
- *               the command in order to have a relationship between client<->context ID(s).
+ *               the message in order to have a relationship between client<->context ID(s).
  *
- * The host can trigger commands which get buffered by the service (with full HGCM
+ * The host can trigger messages which get buffered by the service (with full HGCM
  * parameter info). As soon as a client connects (or is ready to do some new work)
- * it gets a buffered host command to process it. This command then will be immediately
- * removed from the command list. If there are ready clients but no new commands to be
+ * it gets a buffered host message  to process it. This message then will be immediately
+ * removed from the message list. If there are ready clients but no new messages to be
  * processed, these clients will be set into a deferred state (that is being blocked
- * to return until a new command is available).
+ * to return until a new host message is available).
  *
  * If a client needs to inform the host that something happened, it can send a
  * message to a low level HGCM callback registered in Main. This callback contains
@@ -103,32 +103,27 @@ typedef struct ClientRequest
 } ClientRequest;
 
 /**
- * Structure for holding a buffered host command which has
+ * Structure for holding a buffered host message which has
  * not been processed yet.
  *
  * @todo r=bird: It would be nice if we could decide on _one_ term for what the
  *       host passes to the guest.  We currently have:
- *          - The enum is called eHostFn, implying it's a function
- *          - The guest retrieves messages, if the eGuestFn enum is anything to
- *            go by: GUEST_MSG_GET, GUEST_MSG_CANCEL, GUEST_MSG_XXX
- *          - Here it's called a host command.
- *          - But this HostCommand structure has a mMsgType rather than command
- *            number/enum value, impliying it's a message.
+ *          - The enum is called eHostMsg, implying it's a function
  */
-typedef struct HostCommand
+typedef struct HostMsg
 {
-    /** Entry on the ClientState::m_HostCmdList list. */
+    /** Entry on the ClientState::m_HostMsgList list. */
     RTLISTNODE      m_ListEntry;
     union
     {
         /** The top two twomost bits are exploited for message destination.
          * See VBOX_GUESTCTRL_DST_XXX.  */
         uint64_t    m_idContextAndDst;
-        /** The context ID this command belongs to (extracted from the first parameter). */
+        /** The context ID this message belongs to (extracted from the first parameter). */
         uint32_t    m_idContext;
     };
     /** Dynamic structure for holding the HGCM parms */
-    uint32_t mMsgType;
+    uint32_t mType;
     /** Number of HGCM parameters. */
     uint32_t mParmCount;
     /** Array of HGCM parameters. */
@@ -136,9 +131,9 @@ typedef struct HostCommand
     /** Set if we detected the message skipping hack from r121400. */
     bool m_f60BetaHackInPlay;
 
-    HostCommand()
+    HostMsg()
         : m_idContextAndDst(0)
-        , mMsgType(UINT32_MAX)
+        , mType(UINT32_MAX)
         , mParmCount(0)
         , mpParms(NULL)
         , m_f60BetaHackInPlay(false)
@@ -147,11 +142,11 @@ typedef struct HostCommand
     }
 
     /**
-     * Releases the host command, properly deleting it if no further references.
+     * Releases the host message, properly deleting it if no further references.
      */
     void Delete(void)
     {
-        LogFlowThisFunc(("[Cmd %RU32 (%s)] destroying\n", mMsgType, GstCtrlHostFnName((eHostFn)mMsgType)));
+        LogFlowThisFunc(("[Msg %RU32 (%s)] destroying\n", mType, GstCtrlHostMsgtoStr((eHostMsg)mType)));
         Assert(m_ListEntry.pNext == NULL);
         if (mpParms)
         {
@@ -170,20 +165,20 @@ typedef struct HostCommand
 
 
     /**
-     * Initializes the command.
+     * Initializes the message.
      *
      * The specified parameters are copied and any buffers referenced by it
      * duplicated as well.
      *
      * @returns VBox status code.
-     * @param   idFunction  The host function (message) number, eHostFn.
+     * @param   idMsg       The host message number, eHostMsg.
      * @param   cParms      Number of parameters in the HGCM request.
      * @param   paParms     Array of parameters.
      */
-    int Init(uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+    int Init(uint32_t idMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     {
-        LogFlowThisFunc(("[Cmd %RU32 (%s)] Allocating cParms=%RU32, paParms=%p\n",
-                         idFunction, GstCtrlHostFnName((eHostFn)idFunction), cParms, paParms));
+        LogFlowThisFunc(("[Msg %RU32 (%s)] Allocating cParms=%RU32, paParms=%p\n",
+                         idMsg, GstCtrlHostMsgtoStr((eHostMsg)idMsg), cParms, paParms));
         Assert(mpParms == NULL);
         Assert(mParmCount == 0);
         Assert(RTListIsEmpty(&m_ListEntry));
@@ -196,7 +191,7 @@ typedef struct HostCommand
         AssertPtrReturn(paParms, VERR_INVALID_POINTER);
 
         /*
-         * The first parameter is the context ID and the command destiation mask.
+         * The first parameter is the context ID and the message destination mask.
          */
         if (paParms[0].type == VBOX_HGCM_SVC_PARM_64BIT)
         {
@@ -205,7 +200,7 @@ typedef struct HostCommand
         }
         else if (paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT)
         {
-            AssertMsgFailed(("idFunction=%u %s - caller must set dst!\n", idFunction, GstCtrlHostFnName((eHostFn)idFunction)));
+            AssertMsgFailed(("idMsg=%u %s - caller must set dst!\n", idMsg, GstCtrlHostMsgtoStr((eHostMsg)idMsg)));
             m_idContextAndDst = paParms[0].u.uint32 | VBOX_GUESTCTRL_DST_BOTH;
         }
         else
@@ -214,7 +209,7 @@ typedef struct HostCommand
         /*
          * Just make a copy of the parameters and any buffers.
          */
-        mMsgType   = idFunction;
+        mType   = idMsg;
         mParmCount = cParms;
         mpParms    = (VBOXHGCMSVCPARM *)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * mParmCount);
         AssertReturn(mpParms, VERR_NO_MEMORY);
@@ -243,8 +238,8 @@ typedef struct HostCommand
                     break;
 
                 default:
-                    AssertMsgFailedReturn(("idFunction=%u (%s) parameter #%u: type=%u\n",
-                                           idFunction, GstCtrlHostFnName((eHostFn)idFunction), i, paParms[i].type),
+                    AssertMsgFailedReturn(("idMsg=%u (%s) parameter #%u: type=%u\n",
+                                           idMsg, GstCtrlHostMsgtoStr((eHostMsg)idMsg), i, paParms[i].type),
                                           VERR_WRONG_PARAMETER_TYPE);
             }
         }
@@ -270,9 +265,9 @@ typedef struct HostCommand
     {
         Assert(cDstParms >= 2);
         if (paDstParms[0].type == VBOX_HGCM_SVC_PARM_32BIT)
-            paDstParms[0].u.uint32 = mMsgType;
+            paDstParms[0].u.uint32 = mType;
         else
-            paDstParms[0].u.uint64 = mMsgType;
+            paDstParms[0].u.uint64 = mType;
         paDstParms[1].u.uint32 = mParmCount;
 
         uint32_t i = RT_MIN(cDstParms, mParmCount + 2);
@@ -300,8 +295,8 @@ typedef struct HostCommand
      */
     int CopyTo(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms) const
     {
-        LogFlowThisFunc(("[Cmd %RU32] mParmCount=%RU32, m_idContext=%RU32 (Session %RU32)\n",
-                         mMsgType, mParmCount, m_idContext, VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(m_idContext)));
+        LogFlowThisFunc(("[Msg %RU32] mParmCount=%RU32, m_idContext=%RU32 (Session %RU32)\n",
+                         mType, mParmCount, m_idContext, VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(m_idContext)));
 
         int rc = VINF_SUCCESS;
         if (cDstParms != mParmCount)
@@ -385,18 +380,18 @@ typedef struct HostCommand
 
         int rc;
 
-        LogFlowThisFunc(("[Cmd %RU32] mParmCount=%RU32, mpParms=%p\n", mMsgType, mParmCount, mpParms));
+        LogFlowThisFunc(("[Msg %RU32] mParmCount=%RU32, mpParms=%p\n", mType, mParmCount, mpParms));
 
-        /* Does the current host command need more parameter space which
+        /* Does the current host message need more parameter space which
          * the client does not provide yet? */
         if (mParmCount > pReq->mNumParms)
         {
-            LogFlowThisFunc(("[Cmd %RU32] Requires %RU32 parms, only got %RU32 from client\n",
-                             mMsgType, mParmCount, pReq->mNumParms));
+            LogFlowThisFunc(("[Msg %RU32] Requires %RU32 parms, only got %RU32 from client\n",
+                             mType, mParmCount, pReq->mNumParms));
             /*
              * So this call apparently failed because the guest wanted to peek
              * how much parameters it has to supply in order to successfully retrieve
-             * this command. Let's tell him so!
+             * this message. Let's tell him so!
              */
             rc = VERR_TOO_MUCH_DATA;
         }
@@ -423,11 +418,11 @@ typedef struct HostCommand
     {
         AssertPtrReturn(pReq, VERR_INVALID_POINTER);
 
-        LogFlowThisFunc(("[Cmd %RU32] mParmCount=%RU32, mpParms=%p\n", mMsgType, mParmCount, mpParms));
+        LogFlowThisFunc(("[Msg %RU32] mParmCount=%RU32, mpParms=%p\n", mType, mParmCount, mpParms));
 
         if (pReq->mNumParms >= 2)
         {
-            HGCMSvcSetU32(&pReq->mParms[0], mMsgType);   /* Message ID */
+            HGCMSvcSetU32(&pReq->mParms[0], mType);   /* Message ID */
             HGCMSvcSetU32(&pReq->mParms[1], mParmCount); /* Required parameters for message */
         }
         else
@@ -437,26 +432,26 @@ typedef struct HostCommand
         /*
          * Always return VERR_TOO_MUCH_DATA data here to
          * keep it compatible with older clients and to
-         * have correct accounting (mHostRc + mHostCmdTries).
+         * have correct accounting (mHostRc + mHostMsgTries).
          */
         return VERR_TOO_MUCH_DATA;
     }
 
     /** @} */
-} HostCommand;
+} HostMsg;
 
 /**
  * Per-client structure used for book keeping/state tracking a
- * certain host command.
+ * certain host message.
  */
 typedef struct ClientContext
 {
-    /* Pointer to list node of this command. */
-    HostCommand *mpHostCmd;
+    /* Pointer to list node of this message. */
+    HostMsg *mpHostMsg;
     /** The standard constructor. */
-    ClientContext(void) : mpHostCmd(NULL) {}
+    ClientContext(void) : mpHostMsg(NULL) {}
     /** Internal constrcutor. */
-    ClientContext(HostCommand *pHostCmd) : mpHostCmd(pHostCmd) {}
+    ClientContext(HostMsg *pHostMsg) : mpHostMsg(pHostMsg) {}
 } ClientContext;
 typedef std::map< uint32_t, ClientContext > ClientContextMap;
 
@@ -466,8 +461,8 @@ typedef std::map< uint32_t, ClientContext > ClientContextMap;
 typedef struct ClientState
 {
     PVBOXHGCMSVCHELPERS     m_pSvcHelpers;
-    /** Host command list to process (HostCommand). */
-    RTLISTANCHOR            m_HostCmdList;
+    /** Host message list to process (HostMsg). */
+    RTLISTANCHOR            m_HostMsgList;
     /** The HGCM client ID. */
     uint32_t                m_idClient;
     /** The session ID for this client, UINT32_MAX if not set or master. */
@@ -481,9 +476,9 @@ typedef struct ClientState
     bool                    m_fPendingCancel;
     /** Pending client call (GUEST_MSG_PEEK_WAIT or GUEST_MSG_WAIT), zero if none pending.
      *
-     * This means the client waits for a new host command to reply and won't return
-     * from the waiting call until a new host command is available. */
-    guestControl::eGuestFn  m_enmIsPending;
+     * This means the client waits for a new host message to reply and won't return
+     * from the waiting call until a new host message is available. */
+    guestControl::eGuestMsg m_enmPendingMsg;
     /** Pending peek/wait request details. */
     ClientRequest           m_PendingReq;
 
@@ -495,12 +490,12 @@ typedef struct ClientState
         , m_fIsMaster(false)
         , m_fRestored(false)
         , m_fPendingCancel(false)
-        , m_enmIsPending((guestControl::eGuestFn)0)
-        , mHostCmdRc(VINF_SUCCESS)
-        , mHostCmdTries(0)
+        , m_enmPendingMsg((guestControl::eGuestMsg)0)
+        , mHostMsgRc(VINF_SUCCESS)
+        , mHostMsgTries(0)
         , mPeekCount(0)
     {
-        RTListInit(&m_HostCmdList);
+        RTListInit(&m_HostMsgList);
     }
 
     ClientState(PVBOXHGCMSVCHELPERS pSvcHelpers, uint32_t idClient)
@@ -510,25 +505,25 @@ typedef struct ClientState
         , m_fIsMaster(false)
         , m_fRestored(false)
         , m_fPendingCancel(false)
-        , m_enmIsPending((guestControl::eGuestFn)0)
-        , mHostCmdRc(VINF_SUCCESS)
-        , mHostCmdTries(0)
+        , m_enmPendingMsg((guestControl::eGuestMsg)0)
+        , mHostMsgRc(VINF_SUCCESS)
+        , mHostMsgTries(0)
         , mPeekCount(0)
     {
-        RTListInit(&m_HostCmdList);
+        RTListInit(&m_HostMsgList);
     }
 
     /**
-     * Used by for Service::hostProcessCommand().
+     * Used by for Service::hostProcessMessage().
      */
-    void EnqueueCommand(HostCommand *pHostCmd)
+    void EnqueueMessage(HostMsg *pHostMsg)
     {
-        AssertPtr(pHostCmd);
-        RTListAppend(&m_HostCmdList, &pHostCmd->m_ListEntry);
+        AssertPtr(pHostMsg);
+        RTListAppend(&m_HostMsgList, &pHostMsg->m_ListEntry);
     }
 
     /**
-     * Used by for Service::hostProcessCommand().
+     * Used by for Service::hostProcessMessage().
      *
      * @note This wakes up both GUEST_MSG_WAIT and GUEST_MSG_PEEK_WAIT sleepers.
      */
@@ -536,35 +531,35 @@ typedef struct ClientState
     {
         int rc = VINF_NO_CHANGE;
 
-        if (m_enmIsPending != 0)
+        if (m_enmPendingMsg != 0)
         {
             LogFlowFunc(("[Client %RU32] Waking up ...\n", m_idClient));
 
             rc = VINF_SUCCESS;
 
-            HostCommand *pFirstCmd = RTListGetFirstCpp(&m_HostCmdList, HostCommand, m_ListEntry);
-            if (pFirstCmd)
+            HostMsg *pFirstMsg = RTListGetFirstCpp(&m_HostMsgList, HostMsg, m_ListEntry);
+            if (pFirstMsg)
             {
-                LogFlowThisFunc(("[Client %RU32] Current host command is %RU32 (CID=%#RX32, cParms=%RU32)\n",
-                                 m_idClient, pFirstCmd->mMsgType, pFirstCmd->m_idContext, pFirstCmd->mParmCount));
+                LogFlowThisFunc(("[Client %RU32] Current host message is %RU32 (CID=%#RX32, cParms=%RU32)\n",
+                                 m_idClient, pFirstMsg->mType, pFirstMsg->m_idContext, pFirstMsg->mParmCount));
 
-                if (m_enmIsPending == GUEST_MSG_PEEK_WAIT)
+                if (m_enmPendingMsg == GUEST_MSG_PEEK_WAIT)
                 {
-                    pFirstCmd->setPeekReturn(m_PendingReq.mParms, m_PendingReq.mNumParms);
+                    pFirstMsg->setPeekReturn(m_PendingReq.mParms, m_PendingReq.mNumParms);
                     rc = m_pSvcHelpers->pfnCallComplete(m_PendingReq.mHandle, VINF_SUCCESS);
 
                     m_PendingReq.mHandle   = NULL;
                     m_PendingReq.mParms    = NULL;
                     m_PendingReq.mNumParms = 0;
-                    m_enmIsPending         = (guestControl::eGuestFn)0;
+                    m_enmPendingMsg         = (guestControl::eGuestMsg)0;
                 }
-                else if (m_enmIsPending == GUEST_MSG_WAIT)
-                    rc = OldRun(&m_PendingReq, pFirstCmd);
+                else if (m_enmPendingMsg == GUEST_MSG_WAIT)
+                    rc = OldRun(&m_PendingReq, pFirstMsg);
                 else
-                    AssertMsgFailed(("m_enmIsPending=%d\n", m_enmIsPending));
+                    AssertMsgFailed(("m_enmIsPending=%d\n", m_enmPendingMsg));
             }
             else
-                AssertMsgFailed(("Waking up client ID=%RU32 with no host command in queue is a bad idea\n", m_idClient));
+                AssertMsgFailed(("Waking up client ID=%RU32 with no host message in queue is a bad idea\n", m_idClient));
 
             return rc;
         }
@@ -580,15 +575,15 @@ typedef struct ClientState
     int CancelWaiting()
     {
         LogFlowFunc(("[Client %RU32] Cancelling waiting thread, isPending=%d, pendingNumParms=%RU32, m_idSession=%x\n",
-                     m_idClient, m_enmIsPending, m_PendingReq.mNumParms, m_idSession));
+                     m_idClient, m_enmPendingMsg, m_PendingReq.mNumParms, m_idSession));
 
         /*
          * The PEEK call is simple: At least two parameters, all set to zero before sleeping.
          */
         int rcComplete;
-        if (m_enmIsPending == GUEST_MSG_PEEK_WAIT)
+        if (m_enmPendingMsg == GUEST_MSG_PEEK_WAIT)
         {
-            HGCMSvcSetU32(&m_PendingReq.mParms[0], HOST_CANCEL_PENDING_WAITS);
+            HGCMSvcSetU32(&m_PendingReq.mParms[0], HOST_MSG_CANCEL_PENDING_WAITS);
             rcComplete = VINF_TRY_AGAIN;
         }
         /*
@@ -596,11 +591,11 @@ typedef struct ClientState
          * to wake up someone who is peeking and have two parameters.  If there
          * aren't two parameters, fail the call.
          */
-        else if (m_enmIsPending != 0)
+        else if (m_enmPendingMsg != 0)
         {
-            Assert(m_enmIsPending == GUEST_MSG_WAIT);
+            Assert(m_enmPendingMsg == GUEST_MSG_WAIT);
             if (m_PendingReq.mNumParms > 0)
-                HGCMSvcSetU32(&m_PendingReq.mParms[0], HOST_CANCEL_PENDING_WAITS);
+                HGCMSvcSetU32(&m_PendingReq.mParms[0], HOST_MSG_CANCEL_PENDING_WAITS);
             if (m_PendingReq.mNumParms > 1)
                 HGCMSvcSetU32(&m_PendingReq.mParms[1], 0);
             rcComplete = m_PendingReq.mNumParms == 2 ? VINF_SUCCESS : VERR_TRY_AGAIN;
@@ -619,7 +614,7 @@ typedef struct ClientState
         m_PendingReq.mHandle   = NULL;
         m_PendingReq.mParms    = NULL;
         m_PendingReq.mNumParms = 0;
-        m_enmIsPending            = (guestControl::eGuestFn)0;
+        m_enmPendingMsg            = (guestControl::eGuestMsg)0;
         m_fPendingCancel      = false;
         return VINF_SUCCESS;
     }
@@ -632,37 +627,37 @@ typedef struct ClientState
      * @{
      */
 
-    /** Last (most recent) rc after handling the host command. */
-    int mHostCmdRc;
-    /** How many GUEST_MSG_WAIT calls the client has issued to retrieve one command.
+    /** Last (most recent) rc after handling the host message. */
+    int mHostMsgRc;
+    /** How many GUEST_MSG_WAIT calls the client has issued to retrieve one message.
      *
      * This is used as a heuristic to remove a message that the client appears not
      * to be able to successfully retrieve.  */
-    uint32_t mHostCmdTries;
+    uint32_t mHostMsgTries;
     /** Number of times we've peeked at a pending message.
      *
      * This is necessary for being compatible with older Guest Additions.  In case
-     * there are commands which only have two (2) parameters and therefore would fit
+     * there are messages which only have two (2) parameters and therefore would fit
      * into the GUEST_MSG_WAIT reply immediately, we now can make sure that the
      * client first gets back the GUEST_MSG_WAIT results first.
      */
     uint32_t mPeekCount;
 
     /**
-     * Ditches the first host command and crazy GUEST_MSG_WAIT state.
+     * Ditches the first host message and crazy GUEST_MSG_WAIT state.
      *
      * @note Only used by GUEST_MSG_WAIT scenarios.
      */
-    void OldDitchFirstHostCmd()
+    void OldDitchFirstHostMsg()
     {
-        HostCommand *pFirstCmd = RTListGetFirstCpp(&m_HostCmdList, HostCommand, m_ListEntry);
-        Assert(pFirstCmd);
-        RTListNodeRemove(&pFirstCmd->m_ListEntry);
-        pFirstCmd->Delete();
+        HostMsg *pFirstMsg = RTListGetFirstCpp(&m_HostMsgList, HostMsg, m_ListEntry);
+        Assert(pFirstMsg);
+        RTListNodeRemove(&pFirstMsg->m_ListEntry);
+        pFirstMsg->Delete();
 
         /* Reset state else. */
-        mHostCmdRc    = VINF_SUCCESS;
-        mHostCmdTries = 0;
+        mHostMsgRc    = VINF_SUCCESS;
+        mHostMsgTries = 0;
         mPeekCount    = 0;
     }
 
@@ -671,59 +666,60 @@ typedef struct ClientState
      *
      * @note Only used by GUEST_MSG_WAIT scenarios.
      */
-    int OldRun(ClientRequest const *pReq, HostCommand *pHostCmd)
+    int OldRun(ClientRequest const *pReq, HostMsg *pHostMsg)
     {
         AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-        AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
-        Assert(RTListNodeIsFirst(&m_HostCmdList, &pHostCmd->m_ListEntry));
+        AssertPtrReturn(pHostMsg, VERR_INVALID_POINTER);
+        Assert(RTListNodeIsFirst(&m_HostMsgList, &pHostMsg->m_ListEntry));
 
-        LogFlowFunc(("[Client %RU32] pReq=%p, mHostCmdRc=%Rrc, mHostCmdTries=%RU32, mPeekCount=%RU32\n",
-                      m_idClient, pReq, mHostCmdRc, mHostCmdTries, mPeekCount));
+        LogFlowFunc(("[Client %RU32] pReq=%p, mHostMsgRc=%Rrc, mHostMsgTries=%RU32, mPeekCount=%RU32\n",
+                      m_idClient, pReq, mHostMsgRc, mHostMsgTries, mPeekCount));
 
-        int rc = mHostCmdRc = OldSendReply(pReq, pHostCmd);
+        int rc = mHostMsgRc = OldSendReply(pReq, pHostMsg);
 
-        LogFlowThisFunc(("[Client %RU32] Processing command %RU32 ended with rc=%Rrc\n", m_idClient, pHostCmd->mMsgType, mHostCmdRc));
+        LogFlowThisFunc(("[Client %RU32] Processing host message %RU32 ended with rc=%Rrc\n",
+                         m_idClient, pHostMsg->mType, mHostMsgRc));
 
         bool fRemove = false;
         if (RT_FAILURE(rc))
         {
-            mHostCmdTries++;
+            mHostMsgTries++;
 
             /*
              * If the client understood the message but supplied too little buffer space
              * don't send this message again and drop it after 6 unsuccessful attempts.
              *
              * Note: Due to legacy reasons this the retry counter has to be even because on
-             *       every peek there will be the actual command retrieval from the client side.
-             *       To not get the actual command if the client actually only wants to peek for
-             *       the next command, there needs to be two rounds per try, e.g. 3 rounds = 6 tries.
+             *       every peek there will be the actual message retrieval from the client side.
+             *       To not get the actual message if the client actually only wants to peek for
+             *       the next message, there needs to be two rounds per try, e.g. 3 rounds = 6 tries.
              */
             /** @todo Fix the mess stated above. GUEST_MSG_WAIT should be become GUEST_MSG_PEEK, *only*
-             *        (and every time) returning the next upcoming host command (if any, blocking). Then
+             *        (and every time) returning the next upcoming host message (if any, blocking). Then
              *        it's up to the client what to do next, either peeking again or getting the actual
-             *        host command via an own GUEST_ type message.
+             *        host message via an own GUEST_ type message.
              */
             if (   rc == VERR_TOO_MUCH_DATA
                 || rc == VERR_CANCELLED)
             {
-                if (mHostCmdTries == 6)
+                if (mHostMsgTries == 6)
                     fRemove = true;
             }
             /* Client did not understand the message or something else weird happened. Try again one
              * more time and drop it if it didn't get handled then. */
-            else if (mHostCmdTries > 1)
+            else if (mHostMsgTries > 1)
                 fRemove = true;
         }
         else
             fRemove = true; /* Everything went fine, remove it. */
 
-        LogFlowThisFunc(("[Client %RU32] Tried command %RU32 for %RU32 times, (last result=%Rrc, fRemove=%RTbool)\n",
-                         m_idClient, pHostCmd->mMsgType, mHostCmdTries, rc, fRemove));
+        LogFlowThisFunc(("[Client %RU32] Tried host message %RU32 for %RU32 times, (last result=%Rrc, fRemove=%RTbool)\n",
+                         m_idClient, pHostMsg->mType, mHostMsgTries, rc, fRemove));
 
         if (fRemove)
         {
-            Assert(RTListNodeIsFirst(&m_HostCmdList, &pHostCmd->m_ListEntry));
-            OldDitchFirstHostCmd();
+            Assert(RTListNodeIsFirst(&m_HostMsgList, &pHostMsg->m_ListEntry));
+            OldDitchFirstHostMsg();
         }
 
         LogFlowFunc(("[Client %RU32] Returned with rc=%Rrc\n", m_idClient, rc));
@@ -738,17 +734,17 @@ typedef struct ClientState
         AssertPtrReturn(pReq, VERR_INVALID_POINTER);
 
         /*
-         * If the host command list is empty, the request must wait for one to be posted.
+         * If the host message list is empty, the request must wait for one to be posted.
          */
-        HostCommand *pFirstCmd = RTListGetFirstCpp(&m_HostCmdList, HostCommand, m_ListEntry);
-        if (!pFirstCmd)
+        HostMsg *pFirstMsg = RTListGetFirstCpp(&m_HostMsgList, HostMsg, m_ListEntry);
+        if (!pFirstMsg)
         {
             if (!m_fPendingCancel)
             {
                 /* Go to sleep. */
-                ASSERT_GUEST_RETURN(m_enmIsPending == 0, VERR_WRONG_ORDER);
+                ASSERT_GUEST_RETURN(m_enmPendingMsg == 0, VERR_WRONG_ORDER);
                 m_PendingReq = *pReq;
-                m_enmIsPending  = GUEST_MSG_WAIT;
+                m_enmPendingMsg  = GUEST_MSG_WAIT;
                 LogFlowFunc(("[Client %RU32] Is now in pending mode\n", m_idClient));
                 return VINF_HGCM_ASYNC_EXECUTE;
             }
@@ -756,16 +752,16 @@ typedef struct ClientState
             /* Wait was cancelled. */
             m_fPendingCancel = false;
             if (pReq->mNumParms > 0)
-                HGCMSvcSetU32(&pReq->mParms[0], HOST_CANCEL_PENDING_WAITS);
+                HGCMSvcSetU32(&pReq->mParms[0], HOST_MSG_CANCEL_PENDING_WAITS);
             if (pReq->mNumParms > 1)
                 HGCMSvcSetU32(&pReq->mParms[1], 0);
             return pReq->mNumParms == 2 ? VINF_SUCCESS : VERR_TRY_AGAIN;
         }
 
         /*
-         * Return first host command.
+         * Return first host message.
          */
-        return OldRun(pReq, pFirstCmd);
+        return OldRun(pReq, pFirstMsg);
     }
 
     /**
@@ -773,10 +769,10 @@ typedef struct ClientState
      * @note Only used for GUEST_MSG_WAIT.
      */
     int OldSendReply(ClientRequest const *pReq,
-                     HostCommand         *pHostCmd)
+                     HostMsg         *pHostMsg)
     {
         AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-        AssertPtrReturn(pHostCmd, VERR_INVALID_POINTER);
+        AssertPtrReturn(pHostMsg, VERR_INVALID_POINTER);
 
         /* In case of VERR_CANCELLED. */
         uint32_t const cSavedPeeks = mPeekCount;
@@ -784,30 +780,30 @@ typedef struct ClientState
         int rc;
         /* If the client is in pending mode, always send back
          * the peek result first. */
-        if (m_enmIsPending)
+        if (m_enmPendingMsg)
         {
-            Assert(m_enmIsPending == GUEST_MSG_WAIT);
-            rc = pHostCmd->Peek(pReq);
+            Assert(m_enmPendingMsg == GUEST_MSG_WAIT);
+            rc = pHostMsg->Peek(pReq);
             mPeekCount++;
         }
         else
         {
             /* If this is the very first peek, make sure to *always* give back the peeking answer
-             * instead of the actual command, even if this command would fit into the current
+             * instead of the actual message, even if this message would fit into the current
              * connection buffer. */
             if (!mPeekCount)
             {
-                rc = pHostCmd->Peek(pReq);
+                rc = pHostMsg->Peek(pReq);
                 mPeekCount++;
             }
             else
             {
-                /* Try assigning the host command to the client and store the
+                /* Try assigning the host message to the client and store the
                  * result code for later use. */
-                rc = pHostCmd->Assign(pReq);
+                rc = pHostMsg->Assign(pReq);
                 if (RT_FAILURE(rc)) /* If something failed, let the client peek (again). */
                 {
-                    rc = pHostCmd->Peek(pReq);
+                    rc = pHostMsg->Peek(pReq);
                     mPeekCount++;
                 }
                 else
@@ -816,7 +812,7 @@ typedef struct ClientState
         }
 
         /* Reset pending status. */
-        m_enmIsPending = (guestControl::eGuestFn)0;
+        m_enmPendingMsg = (guestControl::eGuestMsg)0;
 
         /* In any case the client did something, so complete
          * the pending call with the result we just got. */
@@ -830,8 +826,8 @@ typedef struct ClientState
             rc = VERR_CANCELLED;
         }
 
-        LogFlowThisFunc(("[Client %RU32] Command %RU32 ended with %Rrc (mPeekCount=%RU32, pReq=%p)\n",
-                         m_idClient, pHostCmd->mMsgType, rc, mPeekCount, pReq));
+        LogFlowThisFunc(("[Client %RU32] Message %RU32 ended with %Rrc (mPeekCount=%RU32, pReq=%p)\n",
+                         m_idClient, pHostMsg->mType, rc, mPeekCount, pReq));
         return rc;
     }
 
@@ -866,25 +862,25 @@ private:
     /** Type definition for use in callback functions. */
     typedef GstCtrlService SELF;
     /** HGCM helper functions. */
-    PVBOXHGCMSVCHELPERS mpHelpers;
+    PVBOXHGCMSVCHELPERS     mpHelpers;
     /** Callback function supplied by the host for notification of updates to properties. */
-    PFNHGCMSVCEXT mpfnHostCallback;
+    PFNHGCMSVCEXT           mpfnHostCallback;
     /** User data pointer to be supplied to the host callback function. */
-    void *mpvHostData;
+    void                   *mpvHostData;
     /** Map containing all connected clients, key is HGCM client ID. */
-    ClientStateMap  m_ClientStateMap;
+    ClientStateMap          m_ClientStateMap;
     /** Session ID -> client state. */
-    ClientStateMap  m_SessionIdMap;
+    ClientStateMap          m_SessionIdMap;
     /** The current master client, NULL if none. */
-    ClientState    *m_pMasterClient;
+    ClientState            *m_pMasterClient;
     /** The master HGCM client ID, UINT32_MAX if none. */
-    uint32_t        m_idMasterClient;
+    uint32_t                m_idMasterClient;
     /** Set if we're in legacy mode (pre 6.0). */
-    bool            m_fLegacyMode;
+    bool                    m_fLegacyMode;
     /** Number of prepared sessions. */
-    uint32_t        m_cPreparedSessions;
+    uint32_t                m_cPreparedSessions;
     /** List of prepared session (GstCtrlPreparedSession). */
-    RTLISTANCHOR    m_PreparedSessions;
+    RTLISTANCHOR            m_PreparedSessions;
 
 public:
     explicit GstCtrlService(PVBOXHGCMSVCHELPERS pHelpers)
@@ -920,14 +916,14 @@ private:
     int clientSessionCancelPrepared(ClientState *pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientSessionAccept(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientSessionCloseOther(ClientState *pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int clientToMain(ClientState *pClient, uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int clientToMain(ClientState *pClient, uint32_t idMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
     int clientMsgOldGet(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientMsgOldFilterSet(ClientState *pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientMsgOldSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms);
 
-    int hostCallback(uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int hostCallback(uint32_t idMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int hostProcessMessage(uint32_t idMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(GstCtrlService);
 };
@@ -1024,21 +1020,21 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
     LogFlowFunc(("[Client %RU32] Disconnected (%zu clients total)\n", idClient, pThis->m_ClientStateMap.size()));
 
     /*
-     * Cancel all pending host commands, replying with GUEST_DISCONNECTED if final recipient.
+     * Cancel all pending host messages, replying with GUEST_DISCONNECTED if final recipient.
      */
-    HostCommand *pCurCmd, *pNextCmd;
-    RTListForEachSafeCpp(&pClient->m_HostCmdList, pCurCmd, pNextCmd, HostCommand, m_ListEntry)
+    HostMsg *pCurMsg, *pNextMsg;
+    RTListForEachSafeCpp(&pClient->m_HostMsgList, pCurMsg, pNextMsg, HostMsg, m_ListEntry)
     {
-        RTListNodeRemove(&pCurCmd->m_ListEntry);
+        RTListNodeRemove(&pCurMsg->m_ListEntry);
 
         VBOXHGCMSVCPARM Parm;
-        HGCMSvcSetU32(&Parm, pCurCmd->m_idContext);
-        int rc2 = pThis->hostCallback(GUEST_DISCONNECTED, 1, &Parm);
-        LogFlowFunc(("Cancelled host command %u (%s) with idContext=%#x -> %Rrc\n",
-                     pCurCmd->mMsgType, GstCtrlHostFnName((eHostFn)pCurCmd->mMsgType), pCurCmd->m_idContext, rc2));
+        HGCMSvcSetU32(&Parm, pCurMsg->m_idContext);
+        int rc2 = pThis->hostCallback(GUEST_MSG_DISCONNECTED, 1, &Parm);
+        LogFlowFunc(("Cancelled host message %u (%s) with idContext=%#x -> %Rrc\n",
+                     pCurMsg->mType, GstCtrlHostMsgtoStr((eHostMsg)pCurMsg->mType), pCurMsg->m_idContext, rc2));
         RT_NOREF(rc2);
 
-        pCurCmd->Delete();
+        pCurMsg->Delete();
     }
 
     /*
@@ -1078,7 +1074,7 @@ GstCtrlService::svcDisconnect(void *pvService, uint32_t idClient, void *pvClient
 /**
  * A client asks for the next message to process.
  *
- * This either fills in a pending host command into the client's parameter space
+ * This either fills in a pending host message into the client's parameter space
  * or defers the guest call until we have something from the host.
  *
  * @returns VBox status code.
@@ -1205,14 +1201,14 @@ int GstCtrlService::clientMsgPeek(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
     }
 
     /*
-     * Return information about the first command if one is pending in the list.
+     * Return information about the first message if one is pending in the list.
      */
-    HostCommand *pFirstCmd = RTListGetFirstCpp(&pClient->m_HostCmdList, HostCommand, m_ListEntry);
-    if (pFirstCmd)
+    HostMsg *pFirstMsg = RTListGetFirstCpp(&pClient->m_HostMsgList, HostMsg, m_ListEntry);
+    if (pFirstMsg)
     {
-        pFirstCmd->setPeekReturn(paParms, cParms);
+        pFirstMsg->setPeekReturn(paParms, cParms);
         LogFlowFunc(("[Client %RU32] GUEST_MSG_PEEK_XXXX -> VINF_SUCCESS (idMsg=%u (%s), cParms=%u)\n",
-                     pClient->m_idClient, pFirstCmd->mMsgType, GstCtrlHostFnName((eHostFn)pFirstCmd->mMsgType), pFirstCmd->mParmCount));
+                     pClient->m_idClient, pFirstMsg->mType, GstCtrlHostMsgtoStr((eHostMsg)pFirstMsg->mType), pFirstMsg->mParmCount));
         return VINF_SUCCESS;
     }
 
@@ -1228,12 +1224,12 @@ int GstCtrlService::clientMsgPeek(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
     /*
      * Wait for the host to queue a message for this client.
      */
-    ASSERT_GUEST_MSG_RETURN(pClient->m_enmIsPending == 0, ("Already pending! (idClient=%RU32)\n", pClient->m_idClient),
+    ASSERT_GUEST_MSG_RETURN(pClient->m_enmPendingMsg == 0, ("Already pending! (idClient=%RU32)\n", pClient->m_idClient),
                             VERR_RESOURCE_BUSY);
     pClient->m_PendingReq.mHandle   = hCall;
     pClient->m_PendingReq.mNumParms = cParms;
     pClient->m_PendingReq.mParms    = paParms;
-    pClient->m_enmIsPending         = GUEST_MSG_PEEK_WAIT;
+    pClient->m_enmPendingMsg         = GUEST_MSG_PEEK_WAIT;
     LogFlowFunc(("[Client %RU32] Is now in pending mode...\n", pClient->m_idClient));
     return VINF_HGCM_ASYNC_EXECUTE;
 }
@@ -1269,28 +1265,28 @@ int GstCtrlService::clientMsgGet(ClientState *pClient, VBOXHGCMCALLHANDLE hCall,
                                  : UINT32_MAX;
 
     /*
-     * Return information about the first command if one is pending in the list.
+     * Return information about the first message if one is pending in the list.
      */
-    HostCommand *pFirstCmd = RTListGetFirstCpp(&pClient->m_HostCmdList, HostCommand, m_ListEntry);
-    if (pFirstCmd)
+    HostMsg *pFirstMsg = RTListGetFirstCpp(&pClient->m_HostMsgList, HostMsg, m_ListEntry);
+    if (pFirstMsg)
     {
 
-        ASSERT_GUEST_MSG_RETURN(pFirstCmd->mMsgType == idMsgExpected || idMsgExpected == UINT32_MAX,
+        ASSERT_GUEST_MSG_RETURN(pFirstMsg->mType == idMsgExpected || idMsgExpected == UINT32_MAX,
                                 ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
-                                 pFirstCmd->mMsgType, GstCtrlHostFnName((eHostFn)pFirstCmd->mMsgType), pFirstCmd->mParmCount,
-                                 idMsgExpected, GstCtrlHostFnName((eHostFn)idMsgExpected), cParms),
+                                 pFirstMsg->mType, GstCtrlHostMsgtoStr((eHostMsg)pFirstMsg->mType), pFirstMsg->mParmCount,
+                                 idMsgExpected, GstCtrlHostMsgtoStr((eHostMsg)idMsgExpected), cParms),
                                 VERR_MISMATCH);
-        ASSERT_GUEST_MSG_RETURN(pFirstCmd->mParmCount == cParms,
+        ASSERT_GUEST_MSG_RETURN(pFirstMsg->mParmCount == cParms,
                                 ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
-                                 pFirstCmd->mMsgType, GstCtrlHostFnName((eHostFn)pFirstCmd->mMsgType), pFirstCmd->mParmCount,
-                                 idMsgExpected, GstCtrlHostFnName((eHostFn)idMsgExpected), cParms),
+                                 pFirstMsg->mType, GstCtrlHostMsgtoStr((eHostMsg)pFirstMsg->mType), pFirstMsg->mParmCount,
+                                 idMsgExpected, GstCtrlHostMsgtoStr((eHostMsg)idMsgExpected), cParms),
                                 VERR_WRONG_PARAMETER_COUNT);
 
         /* Check the parameter types. */
         for (uint32_t i = 0; i < cParms; i++)
-            ASSERT_GUEST_MSG_RETURN(pFirstCmd->mpParms[i].type == paParms[i].type,
-                                    ("param #%u: type %u, caller expected %u (idMsg=%u %s)\n", i, pFirstCmd->mpParms[i].type,
-                                     paParms[i].type, pFirstCmd->mMsgType, GstCtrlHostFnName((eHostFn)pFirstCmd->mMsgType)),
+            ASSERT_GUEST_MSG_RETURN(pFirstMsg->mpParms[i].type == paParms[i].type,
+                                    ("param #%u: type %u, caller expected %u (idMsg=%u %s)\n", i, pFirstMsg->mpParms[i].type,
+                                     paParms[i].type, pFirstMsg->mType, GstCtrlHostMsgtoStr((eHostMsg)pFirstMsg->mType)),
                                     VERR_WRONG_PARAMETER_TYPE);
 
         /*
@@ -1301,46 +1297,46 @@ int GstCtrlService::clientMsgGet(ClientState *pClient, VBOXHGCMCALLHANDLE hCall,
          */
         int rc = VINF_SUCCESS;
         for (uint32_t i = 0; i < cParms; i++)
-            switch (pFirstCmd->mpParms[i].type)
+            switch (pFirstMsg->mpParms[i].type)
             {
                 case VBOX_HGCM_SVC_PARM_32BIT:
-                    paParms[i].u.uint32 = pFirstCmd->mpParms[i].u.uint32;
+                    paParms[i].u.uint32 = pFirstMsg->mpParms[i].u.uint32;
                     break;
 
                 case VBOX_HGCM_SVC_PARM_64BIT:
-                    paParms[i].u.uint64 = pFirstCmd->mpParms[i].u.uint64;
+                    paParms[i].u.uint64 = pFirstMsg->mpParms[i].u.uint64;
                     break;
 
                 case VBOX_HGCM_SVC_PARM_PTR:
                 {
-                    uint32_t const cbSrc = pFirstCmd->mpParms[i].u.pointer.size;
+                    uint32_t const cbSrc = pFirstMsg->mpParms[i].u.pointer.size;
                     uint32_t const cbDst = paParms[i].u.pointer.size;
                     paParms[i].u.pointer.size = cbSrc; /** @todo Check if this is safe in other layers...
                                                         * Update: Safe, yes, but VMMDevHGCM doesn't pass it along. */
                     if (cbSrc <= cbDst)
-                        memcpy(paParms[i].u.pointer.addr, pFirstCmd->mpParms[i].u.pointer.addr, cbSrc);
+                        memcpy(paParms[i].u.pointer.addr, pFirstMsg->mpParms[i].u.pointer.addr, cbSrc);
                     else
                         rc = VERR_BUFFER_OVERFLOW;
                     break;
                 }
 
                 default:
-                    AssertMsgFailed(("#%u: %u\n", i, pFirstCmd->mpParms[i].type));
+                    AssertMsgFailed(("#%u: %u\n", i, pFirstMsg->mpParms[i].type));
                     rc = VERR_INTERNAL_ERROR;
                     break;
             }
         if (RT_SUCCESS(rc))
         {
             /*
-             * Complete the command and remove the pending message unless the
+             * Complete the message and remove the pending message unless the
              * guest raced us and cancelled this call in the meantime.
              */
             AssertPtr(mpHelpers);
             rc = mpHelpers->pfnCallComplete(hCall, rc);
             if (rc != VERR_CANCELLED)
             {
-                RTListNodeRemove(&pFirstCmd->m_ListEntry);
-                pFirstCmd->Delete();
+                RTListNodeRemove(&pFirstMsg->m_ListEntry);
+                pFirstMsg->Delete();
             }
             else
                 LogFunc(("pfnCallComplete -> %Rrc\n", rc));
@@ -1376,7 +1372,7 @@ int GstCtrlService::clientMsgCancel(ClientState *pClient, uint32_t cParms)
     /*
      * Execute.
      */
-    if (pClient->m_enmIsPending != 0)
+    if (pClient->m_enmPendingMsg != 0)
     {
         pClient->CancelWaiting();
         return VINF_SUCCESS;
@@ -1421,97 +1417,97 @@ int GstCtrlService::clientMsgSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
     /*
      * Do the job.
      */
-    HostCommand *pFirstCmd = RTListGetFirstCpp(&pClient->m_HostCmdList, HostCommand, m_ListEntry);
-    if (pFirstCmd)
+    HostMsg *pFirstMsg = RTListGetFirstCpp(&pClient->m_HostMsgList, HostMsg, m_ListEntry);
+    if (pFirstMsg)
     {
-        if (   pFirstCmd->mMsgType == idMsg
+        if (   pFirstMsg->mType == idMsg
             || idMsg == UINT32_MAX)
         {
             int rc = mpHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Remove the command from the queue.
+                 * Remove the message from the queue.
                  */
-                Assert(RTListNodeIsFirst(&pClient->m_HostCmdList, &pFirstCmd->m_ListEntry) );
-                RTListNodeRemove(&pFirstCmd->m_ListEntry);
+                Assert(RTListNodeIsFirst(&pClient->m_HostMsgList, &pFirstMsg->m_ListEntry) );
+                RTListNodeRemove(&pFirstMsg->m_ListEntry);
 
                 /*
                  * Compose a reply to the host service.
                  */
                 VBOXHGCMSVCPARM aReplyParams[5];
-                HGCMSvcSetU32(&aReplyParams[0], pFirstCmd->m_idContext);
-                switch (pFirstCmd->mMsgType)
+                HGCMSvcSetU32(&aReplyParams[0], pFirstMsg->m_idContext);
+                switch (pFirstMsg->mType)
                 {
-                    case HOST_EXEC_CMD:
+                    case HOST_MSG_EXEC_CMD:
                         HGCMSvcSetU32(&aReplyParams[1], 0);              /* pid */
                         HGCMSvcSetU32(&aReplyParams[2], PROC_STS_ERROR); /* status */
                         HGCMSvcSetU32(&aReplyParams[3], rcSkip);         /* flags / whatever */
                         HGCMSvcSetPv(&aReplyParams[4], NULL, 0);         /* data buffer */
-                        hostCallback(GUEST_EXEC_STATUS, 5, aReplyParams);
+                        hostCallback(GUEST_MSG_EXEC_STATUS, 5, aReplyParams);
                         break;
 
-                    case HOST_SESSION_CREATE:
+                    case HOST_MSG_SESSION_CREATE:
                         HGCMSvcSetU32(&aReplyParams[1], GUEST_SESSION_NOTIFYTYPE_ERROR);    /* type */
                         HGCMSvcSetU32(&aReplyParams[2], rcSkip);                            /* result */
-                        hostCallback(GUEST_SESSION_NOTIFY, 3, aReplyParams);
+                        hostCallback(GUEST_MSG_SESSION_NOTIFY, 3, aReplyParams);
                         break;
 
-                    case HOST_EXEC_SET_INPUT:
-                        HGCMSvcSetU32(&aReplyParams[1], pFirstCmd->mParmCount >= 2 ? pFirstCmd->mpParms[1].u.uint32 : 0);
+                    case HOST_MSG_EXEC_SET_INPUT:
+                        HGCMSvcSetU32(&aReplyParams[1], pFirstMsg->mParmCount >= 2 ? pFirstMsg->mpParms[1].u.uint32 : 0);
                         HGCMSvcSetU32(&aReplyParams[2], INPUT_STS_ERROR);   /* status */
                         HGCMSvcSetU32(&aReplyParams[3], rcSkip);            /* flags / whatever */
                         HGCMSvcSetU32(&aReplyParams[4], 0);                 /* bytes consumed */
-                        hostCallback(GUEST_EXEC_INPUT_STATUS, 5, aReplyParams);
+                        hostCallback(GUEST_MSG_EXEC_INPUT_STATUS, 5, aReplyParams);
                         break;
 
-                    case HOST_FILE_OPEN:
+                    case HOST_MSG_FILE_OPEN:
                         HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_OPEN); /* type*/
                         HGCMSvcSetU32(&aReplyParams[2], rcSkip);                     /* rc */
-                        HGCMSvcSetU32(&aReplyParams[3], VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pFirstCmd->m_idContext)); /* handle */
-                        hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                        HGCMSvcSetU32(&aReplyParams[3], VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pFirstMsg->m_idContext)); /* handle */
+                        hostCallback(GUEST_MSG_FILE_NOTIFY, 4, aReplyParams);
                         break;
-                    case HOST_FILE_CLOSE:
+                    case HOST_MSG_FILE_CLOSE:
                         HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_ERROR); /* type*/
                         HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
-                        hostCallback(GUEST_FILE_NOTIFY, 3, aReplyParams);
+                        hostCallback(GUEST_MSG_FILE_NOTIFY, 3, aReplyParams);
                         break;
-                    case HOST_FILE_READ:
-                    case HOST_FILE_READ_AT:
+                    case HOST_MSG_FILE_READ:
+                    case HOST_MSG_FILE_READ_AT:
                         HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_READ);  /* type */
                         HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
                         HGCMSvcSetPv(&aReplyParams[3], NULL, 0);                      /* data buffer */
-                        hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                        hostCallback(GUEST_MSG_FILE_NOTIFY, 4, aReplyParams);
                         break;
-                    case HOST_FILE_WRITE:
-                    case HOST_FILE_WRITE_AT:
+                    case HOST_MSG_FILE_WRITE:
+                    case HOST_MSG_FILE_WRITE_AT:
                         HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_WRITE); /* type */
                         HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
                         HGCMSvcSetU32(&aReplyParams[3], 0);                           /* bytes written */
-                        hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                        hostCallback(GUEST_MSG_FILE_NOTIFY, 4, aReplyParams);
                         break;
-                    case HOST_FILE_SEEK:
+                    case HOST_MSG_FILE_SEEK:
                         HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_SEEK);  /* type */
                         HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
                         HGCMSvcSetU64(&aReplyParams[3], 0);                           /* actual */
-                        hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                        hostCallback(GUEST_MSG_FILE_NOTIFY, 4, aReplyParams);
                         break;
-                    case HOST_FILE_TELL:
+                    case HOST_MSG_FILE_TELL:
                         HGCMSvcSetU32(&aReplyParams[1], GUEST_FILE_NOTIFYTYPE_TELL);  /* type */
                         HGCMSvcSetU32(&aReplyParams[2], rcSkip);                      /* rc */
                         HGCMSvcSetU64(&aReplyParams[3], 0);                           /* actual */
-                        hostCallback(GUEST_FILE_NOTIFY, 4, aReplyParams);
+                        hostCallback(GUEST_MSG_FILE_NOTIFY, 4, aReplyParams);
                         break;
 
-                    case HOST_EXEC_GET_OUTPUT: /** @todo This can't be right/work. */
-                    case HOST_EXEC_TERMINATE:  /** @todo This can't be right/work. */
-                    case HOST_EXEC_WAIT_FOR:   /** @todo This can't be right/work. */
-                    case HOST_PATH_USER_DOCUMENTS:
-                    case HOST_PATH_USER_HOME:
-                    case HOST_PATH_RENAME:
-                    case HOST_DIR_REMOVE:
+                    case HOST_MSG_EXEC_GET_OUTPUT: /** @todo This can't be right/work. */
+                    case HOST_MSG_EXEC_TERMINATE:  /** @todo This can't be right/work. */
+                    case HOST_MSG_EXEC_WAIT_FOR:   /** @todo This can't be right/work. */
+                    case HOST_MSG_PATH_USER_DOCUMENTS:
+                    case HOST_MSG_PATH_USER_HOME:
+                    case HOST_MSG_PATH_RENAME:
+                    case HOST_MSG_DIR_REMOVE:
                     default:
-                        HGCMSvcSetU32(&aReplyParams[1], pFirstCmd->mMsgType);
+                        HGCMSvcSetU32(&aReplyParams[1], pFirstMsg->mType);
                         HGCMSvcSetU32(&aReplyParams[2], (uint32_t)rcSkip);
                         HGCMSvcSetPv(&aReplyParams[3], NULL, 0);
                         hostCallback(GUEST_MSG_REPLY, 4, aReplyParams);
@@ -1519,15 +1515,15 @@ int GstCtrlService::clientMsgSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hCall
                 }
 
                 /*
-                 * Free the command.
+                 * Free the message.
                  */
-                pFirstCmd->Delete();
+                pFirstMsg->Delete();
             }
             else
                 LogFunc(("pfnCallComplete -> %Rrc\n", rc));
             return VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
         }
-        LogFunc(("Warning: GUEST_MSG_SKIP mismatch! Found %u, caller expected %u!\n", pFirstCmd->mMsgType, idMsg));
+        LogFunc(("Warning: GUEST_MSG_SKIP mismatch! Found %u, caller expected %u!\n", pFirstMsg->mType, idMsg));
         return VERR_MISMATCH;
     }
     return VERR_NOT_FOUND;
@@ -1595,7 +1591,7 @@ int GstCtrlService::clientSessionPrepare(ClientState *pClient, VBOXHGCMCALLHANDL
     m_cPreparedSessions++;
 
     /*
-     * Try complete the command.
+     * Try complete the message.
      */
     int rc = mpHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
     if (RT_SUCCESS(rc))
@@ -1785,13 +1781,13 @@ int GstCtrlService::clientSessionCloseOther(ClientState *pClient, uint32_t cParm
     ASSERT_GUEST_RETURN(pClient->m_fIsMaster || (m_fLegacyMode && pClient->m_idSession == UINT32_MAX), VERR_ACCESS_DENIED);
 
     /*
-     * Forward the command to the destiation.
+     * Forward the message to the destiation.
      * Since we modify the first parameter, we must make a copy of the parameters.
      */
     VBOXHGCMSVCPARM aParms[2];
     HGCMSvcSetU64(&aParms[0], idContext | VBOX_GUESTCTRL_DST_SESSION);
     HGCMSvcSetU32(&aParms[1], fFlags);
-    int rc = hostProcessCommand(HOST_SESSION_CLOSE, RT_ELEMENTS(aParms), aParms);
+    int rc = hostProcessMessage(HOST_MSG_SESSION_CLOSE, RT_ELEMENTS(aParms), aParms);
 
     LogFlowFunc(("Closing guest context ID=%RU32 (from client ID=%RU32) returned with rc=%Rrc\n", idContext, pClient->m_idClient, rc));
     return rc;
@@ -1870,7 +1866,7 @@ int GstCtrlService::clientMsgOldFilterSet(ClientState *pClient, uint32_t cParms,
 
 
 /**
- * For compatibility with old additions only - skip the current command w/o
+ * For compatibility with old additions only - skip the current message w/o
  * calling main code.
  *
  * Please note that we don't care if the caller cancelled the request, because
@@ -1898,31 +1894,31 @@ int GstCtrlService::clientMsgOldSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hC
      *       beta GAs, nothing else.
      *       So, we have to track whether they issued a MSG_REPLY or not.  Wonderful.
      */
-    HostCommand *pFirstCmd = RTListGetFirstCpp(&pClient->m_HostCmdList, HostCommand, m_ListEntry);
-    if (pFirstCmd)
+    HostMsg *pFirstMsg = RTListGetFirstCpp(&pClient->m_HostMsgList, HostMsg, m_ListEntry);
+    if (pFirstMsg)
     {
-        uint32_t const idMsg             = pFirstCmd->mMsgType;
-        bool const     f60BetaHackInPlay = pFirstCmd->m_f60BetaHackInPlay;
+        uint32_t const idMsg             = pFirstMsg->mType;
+        bool const     f60BetaHackInPlay = pFirstMsg->m_f60BetaHackInPlay;
         int            rc;
         if (!f60BetaHackInPlay)
             rc = clientMsgSkip(pClient, hCall, 0, NULL);
         else
         {
-            RTListNodeRemove(&pFirstCmd->m_ListEntry);
-            pFirstCmd->Delete();
+            RTListNodeRemove(&pFirstMsg->m_ListEntry);
+            pFirstMsg->Delete();
             rc = VINF_SUCCESS;
         }
 
         /* Reset legacy message wait/get state: */
         if (RT_SUCCESS(rc))
         {
-            pClient->mHostCmdRc    = VINF_SUCCESS;
-            pClient->mHostCmdTries = 0;
+            pClient->mHostMsgRc    = VINF_SUCCESS;
+            pClient->mHostMsgTries = 0;
             pClient->mPeekCount    = 0;
         }
 
         LogFlowFunc(("[Client %RU32] Legacy message skipping: Skipped %u (%s)%s!\n",
-                     pClient->m_idClient, idMsg, GstCtrlHostFnName((eHostFn)idMsg), f60BetaHackInPlay ? " hack style" : ""));
+                     pClient->m_idClient, idMsg, GstCtrlHostMsgtoStr((eHostMsg)idMsg), f60BetaHackInPlay ? " hack style" : ""));
         NOREF(idMsg);
         return rc;
     }
@@ -1938,11 +1934,11 @@ int GstCtrlService::clientMsgOldSkip(ClientState *pClient, VBOXHGCMCALLHANDLE hC
  *
  * @returns VBox status code.
  * @param   pClient         The client state.
- * @param   idFunction      Function (event) that occured.
+ * @param   idMsg           Message ID that occured.
  * @param   cParms          Number of parameters.
  * @param   paParms         Array of parameters.
  */
-int GstCtrlService::clientToMain(ClientState *pClient, uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int GstCtrlService::clientToMain(ClientState *pClient, uint32_t idMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Do input validation.  This class of messages all have a 32-bit context ID as
@@ -1957,16 +1953,16 @@ int GstCtrlService::clientToMain(ClientState *pClient, uint32_t idFunction, uint
                             || pClient->m_fIsMaster
                             || (   m_fLegacyMode                                /* (see bugref:9313#c16) */
                                 && pClient->m_idSession == UINT32_MAX
-                                && (   idFunction == GUEST_EXEC_STATUS
-                                    || idFunction == GUEST_SESSION_NOTIFY)),
-                            ("idSession=%u (CID=%#x) m_idSession=%u idClient=%u idFunction=%u (%s)\n", idSession, idContext,
-                             pClient->m_idSession, pClient->m_idClient, idFunction, GstCtrlGuestFnName((eGuestFn)idFunction)),
+                                && (   idMsg == GUEST_MSG_EXEC_STATUS
+                                    || idMsg == GUEST_MSG_SESSION_NOTIFY)),
+                            ("idSession=%u (CID=%#x) m_idSession=%u idClient=%u idMsg=%u (%s)\n", idSession, idContext,
+                             pClient->m_idSession, pClient->m_idClient, idMsg, GstCtrlGuestMsgToStr((eGuestMsg)idMsg)),
                             VERR_ACCESS_DENIED);
 
     /*
      * It seems okay, so make the call.
      */
-    return hostCallback(idFunction, cParms, paParms);
+    return hostCallback(idMsg, cParms, paParms);
 }
 
 
@@ -1980,10 +1976,10 @@ int GstCtrlService::clientToMain(ClientState *pClient, uint32_t idFunction, uint
  */
 /*static*/ DECLCALLBACK(void)
 GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idClient, void *pvClient,
-                        uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival)
+                        uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival)
 {
-    LogFlowFunc(("[Client %RU32] idFunction=%RU32 (%s), cParms=%RU32, paParms=0x%p\n",
-                 idClient, idFunction, GstCtrlGuestFnName((eGuestFn)idFunction), cParms, paParms));
+    LogFlowFunc(("[Client %RU32] u32Function=%RU32 (%s), cParms=%RU32, paParms=0x%p\n",
+                 idClient, u32Function, GstCtrlGuestMsgToStr((eGuestMsg)u32Function), cParms, paParms));
     RT_NOREF(tsArrival, idClient);
 
     /*
@@ -1999,9 +1995,9 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
      * Do the dispatching.
      */
     int rc;
-    switch (idFunction)
+    switch (u32Function)
     {
-        case GUEST_MAKE_ME_MASTER:
+        case GUEST_MSG_MAKE_ME_MASTER:
             LogFlowFunc(("[Client %RU32] GUEST_MAKE_ME_MASTER\n", idClient));
             rc = pThis->clientMakeMeMaster(pClient, hCall, cParms);
             break;
@@ -2025,19 +2021,19 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
             LogFlowFunc(("[Client %RU32] GUEST_MSG_SKIP\n", idClient));
             rc = pThis->clientMsgSkip(pClient, hCall, cParms, paParms);
             break;
-        case GUEST_SESSION_PREPARE:
+        case GUEST_MSG_SESSION_PREPARE:
             LogFlowFunc(("[Client %RU32] GUEST_SESSION_PREPARE\n", idClient));
             rc = pThis->clientSessionPrepare(pClient, hCall, cParms, paParms);
             break;
-        case GUEST_SESSION_CANCEL_PREPARED:
+        case GUEST_MSG_SESSION_CANCEL_PREPARED:
             LogFlowFunc(("[Client %RU32] GUEST_SESSION_CANCEL_PREPARED\n", idClient));
             rc = pThis->clientSessionCancelPrepared(pClient, cParms, paParms);
             break;
-        case GUEST_SESSION_ACCEPT:
+        case GUEST_MSG_SESSION_ACCEPT:
             LogFlowFunc(("[Client %RU32] GUEST_SESSION_ACCEPT\n", idClient));
             rc = pThis->clientSessionAccept(pClient, hCall, cParms, paParms);
             break;
-        case GUEST_SESSION_CLOSE:
+        case GUEST_MSG_SESSION_CLOSE:
             LogFlowFunc(("[Client %RU32] GUEST_SESSION_CLOSE\n", idClient));
             rc = pThis->clientSessionCloseOther(pClient, cParms, paParms);
             break;
@@ -2048,26 +2044,26 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
         case GUEST_MSG_REPLY:
             if (cParms >= 3 && paParms[2].u.uint32 == (uint32_t)VERR_NOT_SUPPORTED)
             {
-                HostCommand *pFirstCmd = RTListGetFirstCpp(&pClient->m_HostCmdList, HostCommand, m_ListEntry);
-                if (pFirstCmd && pFirstCmd->m_idContext == paParms[0].u.uint32)
-                    pFirstCmd->m_f60BetaHackInPlay = true;
+                HostMsg *pFirstMsg = RTListGetFirstCpp(&pClient->m_HostMsgList, HostMsg, m_ListEntry);
+                if (pFirstMsg && pFirstMsg->m_idContext == paParms[0].u.uint32)
+                    pFirstMsg->m_f60BetaHackInPlay = true;
             }
             RT_FALL_THROUGH();
         case GUEST_MSG_PROGRESS_UPDATE:
-        case GUEST_SESSION_NOTIFY:
-        case GUEST_EXEC_OUTPUT:
-        case GUEST_EXEC_STATUS:
-        case GUEST_EXEC_INPUT_STATUS:
-        case GUEST_EXEC_IO_NOTIFY:
-        case GUEST_DIR_NOTIFY:
-        case GUEST_FILE_NOTIFY:
-            LogFlowFunc(("[Client %RU32] %s\n", idClient, GstCtrlGuestFnName((eGuestFn)idFunction)));
-            rc = pThis->clientToMain(pClient, idFunction, cParms, paParms);
+        case GUEST_MSG_SESSION_NOTIFY:
+        case GUEST_MSG_EXEC_OUTPUT:
+        case GUEST_MSG_EXEC_STATUS:
+        case GUEST_MSG_EXEC_INPUT_STATUS:
+        case GUEST_MSG_EXEC_IO_NOTIFY:
+        case GUEST_MSG_DIR_NOTIFY:
+        case GUEST_MSG_FILE_NOTIFY:
+            LogFlowFunc(("[Client %RU32] %s\n", idClient, GstCtrlGuestMsgToStr((eGuestMsg)u32Function)));
+            rc = pThis->clientToMain(pClient, u32Function /* Msg */, cParms, paParms);
             Assert(rc != VINF_HGCM_ASYNC_EXECUTE);
             break;
 
         /*
-         * The remaining commands are here for compatibility with older guest additions:
+         * The remaining messages are here for compatibility with older Guest Additions:
          */
         case GUEST_MSG_WAIT:
             LogFlowFunc(("[Client %RU32] GUEST_MSG_WAIT\n", idClient));
@@ -2096,7 +2092,7 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
          *       and Guest::i_notifyCtrlDispatcher().
          */
         default:
-            ASSERT_GUEST_MSG_FAILED(("idFunction=%d (%#x)\n", idFunction, idFunction));
+            ASSERT_GUEST_MSG_FAILED(("u32Function=%RU32 (%#x)\n", u32Function, u32Function));
             rc = VERR_INVALID_FUNCTION;
             break;
     }
@@ -2116,19 +2112,20 @@ GstCtrlService::svcCall(void *pvService, VBOXHGCMCALLHANDLE hCall, uint32_t idCl
  * which was sent from the client.
  *
  * @returns VBox status code.
- * @param   idFunction      Function (event) that occured.
+ * @param   u32Function     Message ID that occured.
  * @param   cParms          Number of parameters.
  * @param   paParms         Array of parameters.
  */
-int GstCtrlService::hostCallback(uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int GstCtrlService::hostCallback(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    LogFlowFunc(("idFunction=%u (%s), cParms=%ld, paParms=%p\n", idFunction, GstCtrlGuestFnName((eGuestFn)idFunction), cParms, paParms));
+    LogFlowFunc(("u32Function=%RU32 (%s), cParms=%ld, paParms=%p\n",
+                 u32Function, GstCtrlGuestMsgToStr((eGuestMsg)u32Function), cParms, paParms));
 
     int rc;
     if (mpfnHostCallback)
     {
         VBOXGUESTCTRLHOSTCALLBACK data(cParms, paParms);
-        rc = mpfnHostCallback(mpvHostData, idFunction, &data, sizeof(data));
+        rc = mpfnHostCallback(mpvHostData, u32Function, &data, sizeof(data));
     }
     else
         rc = VERR_NOT_SUPPORTED;
@@ -2139,54 +2136,54 @@ int GstCtrlService::hostCallback(uint32_t idFunction, uint32_t cParms, VBOXHGCMS
 
 
 /**
- * Processes a command received from the host side and re-routes it to
+ * Processes a message received from the host side and re-routes it to
  * a connect client on the guest.
  *
  * @returns VBox status code.
- * @param   idFunction  Function code to process.
+ * @param   idMsg   Message ID to process.
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
  */
-int GstCtrlService::hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int GstCtrlService::hostProcessMessage(uint32_t idMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
-     * If no client is connected at all we don't buffer any host commands
+     * If no client is connected at all we don't buffer any host messages
      * and immediately return an error to the host.  This avoids the host
      * waiting for a response from the guest side in case VBoxService on
      * the guest is not running/system is messed up somehow.
      */
     if (m_ClientStateMap.empty())
     {
-        LogFlow(("GstCtrlService::hostProcessCommand: VERR_NOT_FOUND!\n"));
+        LogFlow(("GstCtrlService::hostProcessMessage: VERR_NOT_FOUND!\n"));
         return VERR_NOT_FOUND;
     }
 
     /*
-     * Create a host command for each destination.
+     * Create a host message for each destination.
      * Note! There is currently only one scenario in which we send a host
-     *       command to two recipients.
+     *       message to two recipients.
      */
-    HostCommand *pHostCmd = new (std::nothrow) HostCommand();
-    AssertReturn(pHostCmd, VERR_NO_MEMORY);
-    int rc = pHostCmd->Init(idFunction, cParms, paParms);
+    HostMsg *pHostMsg = new (std::nothrow) HostMsg();
+    AssertReturn(pHostMsg, VERR_NO_MEMORY);
+    int rc = pHostMsg->Init(idMsg, cParms, paParms);
     if (RT_SUCCESS(rc))
     {
-        uint64_t const fDestinations = pHostCmd->m_idContextAndDst & VBOX_GUESTCTRL_DST_BOTH;
-        HostCommand   *pHostCmd2     = NULL;
+        uint64_t const fDestinations = pHostMsg->m_idContextAndDst & VBOX_GUESTCTRL_DST_BOTH;
+        HostMsg       *pHostMsg2     = NULL;
         if (fDestinations != VBOX_GUESTCTRL_DST_BOTH)
         { /* likely */ }
         else
         {
-            pHostCmd2 = new (std::nothrow) HostCommand();
-            if (pHostCmd2)
-                rc = pHostCmd2->Init(idFunction, cParms, paParms);
+            pHostMsg2 = new (std::nothrow) HostMsg();
+            if (pHostMsg2)
+                rc = pHostMsg2->Init(idMsg, cParms, paParms);
             else
                 rc = VERR_NO_MEMORY;
         }
         if (RT_SUCCESS(rc))
         {
-            LogFlowFunc(("Handling host command m_idContextAndDst=%#RX64, idFunction=%RU32, cParms=%RU32, paParms=%p, cClients=%zu\n",
-                         pHostCmd->m_idContextAndDst, idFunction, cParms, paParms, m_ClientStateMap.size()));
+            LogFlowFunc(("Handling host message m_idContextAndDst=%#RX64, idMsg=%RU32, cParms=%RU32, paParms=%p, cClients=%zu\n",
+                         pHostMsg->m_idContextAndDst, idMsg, cParms, paParms, m_ClientStateMap.size()));
 
             /*
              * Find the message destination and post it to the client.  If the
@@ -2197,15 +2194,15 @@ int GstCtrlService::hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBO
             /* Dispatch to the session. */
             if (fDestinations & VBOX_GUESTCTRL_DST_SESSION)
             {
-                uint32_t const idSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCmd->m_idContext);
+                uint32_t const idSession = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostMsg->m_idContext);
                 ClientStateMap::iterator It = m_SessionIdMap.find(idSession);
                 if (It != m_SessionIdMap.end())
                 {
                     ClientState *pClient = It->second;
                     Assert(pClient->m_idSession == idSession);
-                    RTListAppend(&pClient->m_HostCmdList, &pHostCmd->m_ListEntry);
-                    pHostCmd  = pHostCmd2;
-                    pHostCmd2 = NULL;
+                    RTListAppend(&pClient->m_HostMsgList, &pHostMsg->m_ListEntry);
+                    pHostMsg  = pHostMsg2;
+                    pHostMsg2 = NULL;
 
                     int rc2 = pClient->Wakeup();
                     LogFlowFunc(("Woke up client ID=%RU32 -> rc=%Rrc\n", pClient->m_idClient, rc2));
@@ -2214,8 +2211,8 @@ int GstCtrlService::hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBO
                 }
                 else
                 {
-                    LogFunc(("No client with session ID %u was found! (idFunction=%d %s)\n",
-                             idSession, idFunction, GstCtrlHostFnName((eHostFn)idFunction)));
+                    LogFunc(("No client with session ID %u was found! (idMsg=%d %s)\n",
+                             idSession, idMsg, GstCtrlHostMsgtoStr((eHostMsg)idMsg)));
                     rc = !(fDestinations & VBOX_GUESTCTRL_DST_ROOT_SVC) ? VERR_NOT_FOUND : VWRN_NOT_FOUND;
                 }
             }
@@ -2224,11 +2221,11 @@ int GstCtrlService::hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBO
             if (   (fDestinations & VBOX_GUESTCTRL_DST_ROOT_SVC)
                 && RT_SUCCESS(rc))
             {
-                Assert(pHostCmd);
+                Assert(pHostMsg);
                 if (m_pMasterClient)
                 {
-                    RTListAppend(&m_pMasterClient->m_HostCmdList, &pHostCmd->m_ListEntry);
-                    pHostCmd = NULL;
+                    RTListAppend(&m_pMasterClient->m_HostMsgList, &pHostMsg->m_ListEntry);
+                    pHostMsg = NULL;
 
                     int rc2 = m_pMasterClient->Wakeup();
                     LogFlowFunc(("Woke up client ID=%RU32 (master) -> rc=%Rrc\n", m_pMasterClient->m_idClient, rc2));
@@ -2239,22 +2236,22 @@ int GstCtrlService::hostProcessCommand(uint32_t idFunction, uint32_t cParms, VBO
             }
         }
 
-        /* Drop unset commands */
-        if (pHostCmd2)
-            pHostCmd2->Delete();
+        /* Drop unset messages. */
+        if (pHostMsg2)
+            pHostMsg2->Delete();
     }
-    if (pHostCmd)
-        pHostCmd->Delete();
+    if (pHostMsg)
+        pHostMsg->Delete();
 
     if (RT_FAILURE(rc))
-        LogFunc(("Failed %Rrc (idFunction=%u, cParms=%u)\n", rc, idFunction, cParms));
+        LogFunc(("Failed %Rrc (idMsg=%u, cParms=%u)\n", rc, idMsg, cParms));
     return rc;
 }
 
 
 /**
  * @interface_method_impl{VBOXHGCMSVCFNTABLE,pfnHostCall,
- *  Wraps to the hostProcessCommand() member function.}
+ *  Wraps to the hostProcessMessage() member function.}
  */
 /*static*/ DECLCALLBACK(int)
 GstCtrlService::svcHostCall(void *pvService, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
@@ -2263,9 +2260,9 @@ GstCtrlService::svcHostCall(void *pvService, uint32_t u32Function, uint32_t cPar
     SELF *pThis = reinterpret_cast<SELF *>(pvService);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("fn=%RU32, cParms=%RU32, paParms=0x%p\n", u32Function, cParms, paParms));
-    AssertReturn(u32Function != HOST_CANCEL_PENDING_WAITS, VERR_INVALID_FUNCTION);
-    return pThis->hostProcessCommand(u32Function, cParms, paParms);
+    LogFlowFunc(("u32Function=%RU32, cParms=%RU32, paParms=0x%p\n", u32Function, cParms, paParms));
+    AssertReturn(u32Function != HOST_MSG_CANCEL_PENDING_WAITS, VERR_INVALID_FUNCTION);
+    return pThis->hostProcessMessage(u32Function, cParms, paParms);
 }
 
 

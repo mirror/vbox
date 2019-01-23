@@ -60,7 +60,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Static callback function for receiving updates on guest control commands
+ * Static callback function for receiving updates on guest control messages
  * from the guest. Acts as a dispatcher for the actual class instance.
  *
  * @returns VBox status code.
@@ -71,8 +71,8 @@
  *          "Never return any errors back to the guest here." attached to the
  *          return locations.  However, there is no explaination for this attitude
  *          thowards error handling.   Further, it creates a slight problem since
- *          the service would route all function calls it didn't recognize here,
- *          thereby making any undefined functions confusingly return VINF_SUCCESS.
+ *          the service would route all message calls it didn't recognize here,
+ *          thereby making any undefined messages confusingly return VINF_SUCCESS.
  *
  *          In my humble opinion, if the guest gives us incorrect input it should
  *          expect and deal with error statuses.  If there is unimplemented
@@ -84,7 +84,7 @@
  */
 /* static */
 DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
-                                                uint32_t idFunction,
+                                                uint32_t idMessage,
                                                 void    *pvData,
                                                 uint32_t cbData)
 {
@@ -94,7 +94,7 @@ DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
      * No locking, as this is purely a notification which does not make any
      * changes to the object state.
      */
-    Log2Func(("pvExtension=%p, idFunction=%RU32, pvParms=%p, cbParms=%RU32\n", pvExtension, idFunction, pvData, cbData));
+    Log2Func(("pvExtension=%p, idMessage=%RU32, pvParms=%p, cbParms=%RU32\n", pvExtension, idMessage, pvData, cbData));
 
     ComObjPtr<Guest> pGuest = reinterpret_cast<Guest *>(pvExtension);
     AssertReturn(pGuest.isNotNull(), VERR_WRONG_ORDER);
@@ -109,7 +109,7 @@ DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
     AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
 
     /*
-     * For guest control 2.0 using the legacy commands we need to do the following here:
+     * For guest control 2.0 using the legacy messages we need to do the following here:
      * - Get the callback header to access the context ID
      * - Get the context ID of the callback
      * - Extract the session ID out of the context ID
@@ -122,7 +122,7 @@ DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
                             ("type=%d\n", pSvcCb->mpaParms[0].type), VERR_WRONG_PARAMETER_TYPE);
     uint32_t const idContext = pSvcCb->mpaParms[0].u.uint32;
 
-    VBOXGUESTCTRLHOSTCBCTX CtxCb = { idFunction, idContext };
+    VBOXGUESTCTRLHOSTCBCTX CtxCb = { idMessage, idContext };
     int rc = pGuest->i_dispatchToSession(&CtxCb, pSvcCb);
 
     Log2Func(("CID=%#x, idSession=%RU32, uObject=%RU32, uCount=%RU32, rc=%Rrc\n",
@@ -141,7 +141,7 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
     AssertPtrReturn(pCtxCb, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
 
-    Log2Func(("uFunction=%RU32, uContextID=%RU32, uProtocol=%RU32\n", pCtxCb->uFunction, pCtxCb->uContextID, pCtxCb->uProtocol));
+    Log2Func(("uMessage=%RU32, uContextID=%RU32, uProtocol=%RU32\n", pCtxCb->uMessage, pCtxCb->uContextID, pCtxCb->uProtocol));
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -169,7 +169,7 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
          */
         bool fDispatch = true;
         rc = VERR_INVALID_FUNCTION;
-        if (   pCtxCb->uFunction == GUEST_EXEC_STATUS
+        if (   pCtxCb->uMessage == GUEST_MSG_EXEC_STATUS
             && pSvcCb->mParms    >= 5)
         {
             CALLBACKDATA_PROC_STATUS dataCb;
@@ -182,7 +182,7 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
             if (   dataCb.uStatus == PROC_STS_ERROR
                 && (int32_t)dataCb.uFlags == VERR_TOO_MUCH_DATA)
             {
-                LogFlowFunc(("Requested command with too much data, skipping dispatching ...\n"));
+                LogFlowFunc(("Requested message with too much data, skipping dispatching ...\n"));
                 Assert(dataCb.uPID == 0);
                 fDispatch = false;
             }
@@ -190,27 +190,27 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
         if (fDispatch)
 #endif
         {
-            switch (pCtxCb->uFunction)
+            switch (pCtxCb->uMessage)
             {
-                case GUEST_DISCONNECTED:
+                case GUEST_MSG_DISCONNECTED:
                     rc = pSession->i_dispatchToThis(pCtxCb, pSvcCb);
                     break;
 
                 /* Process stuff. */
-                case GUEST_EXEC_STATUS:
-                case GUEST_EXEC_OUTPUT:
-                case GUEST_EXEC_INPUT_STATUS:
-                case GUEST_EXEC_IO_NOTIFY:
+                case GUEST_MSG_EXEC_STATUS:
+                case GUEST_MSG_EXEC_OUTPUT:
+                case GUEST_MSG_EXEC_INPUT_STATUS:
+                case GUEST_MSG_EXEC_IO_NOTIFY:
                     rc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
                     break;
 
                 /* File stuff. */
-                case GUEST_FILE_NOTIFY:
+                case GUEST_MSG_FILE_NOTIFY:
                     rc = pSession->i_dispatchToObject(pCtxCb, pSvcCb);
                     break;
 
                 /* Session stuff. */
-                case GUEST_SESSION_NOTIFY:
+                case GUEST_MSG_SESSION_NOTIFY:
                     rc = pSession->i_dispatchToThis(pCtxCb, pSvcCb);
                     break;
 

@@ -332,16 +332,16 @@ int GuestFile::i_callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCT
     AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
 
     LogFlowThisFunc(("strName=%s, uContextID=%RU32, uFunction=%RU32, pSvcCb=%p\n",
-                     mData.mOpenInfo.mFilename.c_str(), pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
+                     mData.mOpenInfo.mFilename.c_str(), pCbCtx->uContextID, pCbCtx->uMessage, pSvcCb));
 
     int vrc;
-    switch (pCbCtx->uFunction)
+    switch (pCbCtx->uMessage)
     {
-        case GUEST_DISCONNECTED:
+        case GUEST_MSG_DISCONNECTED:
             vrc = i_onGuestDisconnected(pCbCtx, pSvcCb);
             break;
 
-        case GUEST_FILE_NOTIFY:
+        case GUEST_MSG_FILE_NOTIFY:
             vrc = i_onFileNotify(pCbCtx, pSvcCb);
             break;
 
@@ -385,7 +385,7 @@ int GuestFile::i_closeFile(int *prcGuest)
     HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
     HGCMSvcSetU32(&paParms[i++], mObjectID /* Guest file ID */);
 
-    vrc = sendCommand(HOST_FILE_CLOSE, i, paParms);
+    vrc = sendMessage(HOST_MSG_FILE_CLOSE, i, paParms);
     if (RT_SUCCESS(vrc))
         vrc = i_waitForStatusChange(pEvent, 30 * 1000 /* Timeout in ms */,
                                     NULL /* FileStatus */, prcGuest);
@@ -729,7 +729,7 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *prcGuest)
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = sendCommand(HOST_FILE_OPEN, i, paParms);
+    vrc = sendMessage(HOST_MSG_FILE_OPEN, i, paParms);
     if (RT_SUCCESS(vrc))
         vrc = i_waitForStatusChange(pEvent, uTimeoutMS, NULL /* FileStatus */, prcGuest);
 
@@ -784,7 +784,7 @@ int GuestFile::i_readData(uint32_t uSize, uint32_t uTimeoutMS,
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = sendCommand(HOST_FILE_READ, i, paParms);
+    vrc = sendMessage(HOST_MSG_FILE_READ, i, paParms);
     if (RT_SUCCESS(vrc))
     {
         uint32_t cbRead = 0;
@@ -844,7 +844,7 @@ int GuestFile::i_readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutM
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = sendCommand(HOST_FILE_READ_AT, i, paParms);
+    vrc = sendMessage(HOST_MSG_FILE_READ_AT, i, paParms);
     if (RT_SUCCESS(vrc))
     {
         uint32_t cbRead = 0;
@@ -906,7 +906,7 @@ int GuestFile::i_seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = sendCommand(HOST_FILE_SEEK, i, paParms);
+    vrc = sendMessage(HOST_MSG_FILE_SEEK, i, paParms);
     if (RT_SUCCESS(vrc))
     {
         uint64_t uOffset;
@@ -1170,7 +1170,7 @@ int GuestFile::i_writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = sendCommand(HOST_FILE_WRITE, i, paParms);
+    vrc = sendMessage(HOST_MSG_FILE_WRITE, i, paParms);
     if (RT_SUCCESS(vrc))
     {
         uint32_t cbWritten = 0;
@@ -1234,7 +1234,7 @@ int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
 
     alock.release(); /* Drop write lock before sending. */
 
-    vrc = sendCommand(HOST_FILE_WRITE_AT, i, paParms);
+    vrc = sendMessage(HOST_MSG_FILE_WRITE_AT, i, paParms);
     if (RT_SUCCESS(vrc))
     {
         uint32_t cbWritten = 0;
