@@ -831,8 +831,9 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/medium/viso/UIVisoBrowserBase.h \
 	src/medium/viso/UIVisoContentBrowser.h \
 	src/medium/viso/UIVisoCreator.h \
-	src/medium/viso/UIVisoConfigurationDialog.h \
-	src/medium/viso/UIVisoCreatorOptionsDialog.h \
+	src/medium/viso/UIVisoCreatorPanel.h \
+	src/medium/viso/UIVisoConfigurationPanel.h \
+	src/medium/viso/UIVisoCreatorOptionsPanel.h \
 	src/medium/viso/UIVisoHostBrowser.h \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
@@ -1296,8 +1297,9 @@ VBoxGlobal_SOURCES = \
 	src/medium/viso/UIVisoBrowserBase.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoCreator.cpp \
-	src/medium/viso/UIVisoConfigurationDialog.cpp \
-	src/medium/viso/UIVisoCreatorOptionsDialog.cpp \
+	src/medium/viso/UIVisoCreatorPanel.cpp \
+	src/medium/viso/UIVisoConfigurationPanel.cpp \
+	src/medium/viso/UIVisoCreatorOptionsPanel.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/objects/UIRichTextString.cpp \
 	src/settings/UISettingsDefs.cpp \

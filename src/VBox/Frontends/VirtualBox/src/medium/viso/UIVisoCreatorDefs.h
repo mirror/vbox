@@ -39,12 +39,12 @@ struct VisoOptions
 struct BrowserOptions
 {
     BrowserOptions()
-        :m_bShowHiddenObjects(true){}
+        :m_fShowHiddenObjects(true){}
     bool operator==(const BrowserOptions &otherOptions) const
     {
-        return m_bShowHiddenObjects == otherOptions.m_bShowHiddenObjects;
+        return m_fShowHiddenObjects == otherOptions.m_fShowHiddenObjects;
     }
-    bool m_bShowHiddenObjects;
+    bool m_fShowHiddenObjects;
 };
 
 

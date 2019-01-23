@@ -28,8 +28,8 @@
 #include "UIToolBar.h"
 #include "UIVisoHostBrowser.h"
 #include "UIVisoCreator.h"
-#include "UIVisoConfigurationDialog.h"
-#include "UIVisoCreatorOptionsDialog.h"
+#include "UIVisoConfigurationPanel.h"
+#include "UIVisoCreatorOptionsPanel.h"
 #include "UIVisoContentBrowser.h"
 
 
@@ -48,10 +48,13 @@ UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */, const QString& strMachin
     , m_pHostBrowserMenu(0)
     , m_pVisoContentBrowserMenu(0)
     , m_strMachineName(strMachineName)
+    , m_pCreatorOptionsPanel(0)
+    , m_pConfigurationPanel(0)
 {
     prepareActions();
     prepareObjects();
     prepareConnections();
+    manageEscapeShortCut();
 }
 
 UIVisoCreator::~UIVisoCreator()
@@ -104,32 +107,82 @@ void UIVisoCreator::sltHandleAddObjectsToViso(QStringList pathList)
         m_pVisoBrowser->addObjectsToViso(pathList);
 }
 
-void UIVisoCreator::sltHandleOptionsAction()
-{
-    UIVisoCreatorOptionsDialog *pDialog = new UIVisoCreatorOptionsDialog(m_browserOptions, this);
+// void UIVisoCreator::sltHandleOptionsAction()
+// {
+//     // UIVisoCreatorOptionsDialog *pDialog = new UIVisoCreatorOptionsDialog(this, m_browserOptions, this);
 
-    if(!pDialog)
+//     // if(!pDialog)
+//     //     return;
+//     // if (pDialog->execute(true, false))
+//     // {
+//     //     /** Check if any of the options has been modified: */
+//     //     checkBrowserOptions(pDialog->browserOptions());
+//     // }
+//     // delete pDialog;
+// }
+
+// void UIVisoCreator::sltHandleConfigurationAction()
+// {
+//     // UIVisoConfigurationDialog *pDialog = new UIVisoConfigurationDialog(m_visoOptions, this);
+
+//     // if(!pDialog)
+//     //     return;
+//     // if (pDialog->execute(true, false))
+//     // {
+//     //     /** Check if any of the options has been modified: */
+//     //     checkVisoOptions(pDialog->visoOptions());
+//     // }
+//     // delete pDialog;
+// }
+
+void UIVisoCreator::sltPanelActionToggled(bool fChecked)
+{
+    QAction *pSenderAction = qobject_cast<QAction*>(sender());
+    if (!pSenderAction)
         return;
-    if (pDialog->execute(true, false))
+    UIVisoCreatorPanel* pPanel = 0;
+    /* Look for the sender() within the m_panelActionMap's values: */
+    for (QMap<UIVisoCreatorPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
+        iterator != m_panelActionMap.end(); ++iterator)
     {
-        /** Check if any of the options has been modified: */
-        checkBrowserOptions(pDialog->browserOptions());
+        if (iterator.value() == pSenderAction)
+            pPanel = iterator.key();
     }
-    delete pDialog;
+    if (!pPanel)
+        return;
+    if (fChecked)
+        showPanel(pPanel);
+    else
+        hidePanel(pPanel);
 }
 
-void UIVisoCreator::sltHandleConfigurationAction()
+void UIVisoCreator::sltHandleVisoNameChanged(const QString &strVisoName)
 {
-    UIVisoConfigurationDialog *pDialog = new UIVisoConfigurationDialog(m_visoOptions, this);
-
-    if(!pDialog)
+    if (m_visoOptions.m_strVisoName == strVisoName)
         return;
-    if (pDialog->execute(true, false))
-    {
-        /** Check if any of the options has been modified: */
-        checkVisoOptions(pDialog->visoOptions());
-    }
-    delete pDialog;
+    m_visoOptions.m_strVisoName = strVisoName;
+    if(m_pVisoBrowser)
+        m_pVisoBrowser->setVisoName(m_visoOptions.m_strVisoName);
+}
+
+void UIVisoCreator::sltHandleCustomVisoOptionsChanged(const QStringList &customVisoOptions)
+{
+    if (m_visoOptions.m_customOptions == customVisoOptions)
+        return;
+    m_visoOptions.m_customOptions = customVisoOptions;
+}
+
+void UIVisoCreator::sltHandleShowHiddenObjectsChange(bool fShow)
+{
+    if (m_browserOptions.m_fShowHiddenObjects == fShow)
+        return;
+    m_browserOptions.m_fShowHiddenObjects = fShow;
+    m_pHostBrowser->showHideHiddenObjects(fShow);
+}
+
+void UIVisoCreator::sltHandleHidePanel(UIVisoCreatorPanel *pPanel)
+{
+    hidePanel(pPanel);
 }
 
 void UIVisoCreator::prepareObjects()
@@ -143,6 +196,14 @@ void UIVisoCreator::prepareObjects()
     m_pCentralWidget->setLayout(m_pMainLayout);
     if (!m_pMainLayout || !menuBar())
         return;
+
+    /* Configure layout: */
+    m_pMainLayout->setContentsMargins(1, 1, 1, 1);
+#ifdef VBOX_WS_MAC
+    m_pMainLayout->setSpacing(10);
+#else
+    m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
+#endif
 
     m_pMainMenu = menuBar()->addMenu(tr("VISO"));
     if (m_pActionConfiguration)
@@ -183,18 +244,41 @@ void UIVisoCreator::prepareObjects()
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigAddObjectsToViso,
                 this, &UIVisoCreator::sltHandleAddObjectsToViso);
     }
+
     m_pVisoBrowser = new UIVisoContentBrowser(0 /* parent */, m_pVisoContentBrowserMenu);
     if (m_pVisoBrowser)
     {
         m_pVerticalSplitter->addWidget(m_pVisoBrowser);
         m_pVisoBrowser->setVisoName(m_visoOptions.m_strVisoName);
     }
+
+    m_pConfigurationPanel = new UIVisoConfigurationPanel(this);
+    if (m_pConfigurationPanel)
+    {
+        m_pVerticalSplitter->addWidget(m_pConfigurationPanel);
+        m_panelActionMap.insert(m_pConfigurationPanel, m_pActionConfiguration);
+        m_pConfigurationPanel->hide();
+        m_pConfigurationPanel->setVisoName(m_visoOptions.m_strVisoName);
+        m_pConfigurationPanel->setVisoCustomOptions(m_visoOptions.m_customOptions);
+        installEventFilter(m_pConfigurationPanel);
+    }
+
+    m_pCreatorOptionsPanel = new UIVisoCreatorOptionsPanel(this);
+    if (m_pCreatorOptionsPanel)
+    {
+        m_pCreatorOptionsPanel->setShowHiddenbjects(m_browserOptions.m_fShowHiddenObjects);
+        m_pMainLayout->addWidget(m_pCreatorOptionsPanel);
+        m_panelActionMap.insert(m_pCreatorOptionsPanel, m_pActionOptions);
+        m_pCreatorOptionsPanel->hide();
+    }
+
     m_pButtonBox = new QIDialogButtonBox;
     if (m_pButtonBox)
     {
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pMainLayout->addWidget(m_pButtonBox);
+
     }
     retranslateUi();
 }
@@ -206,10 +290,28 @@ void UIVisoCreator::prepareConnections()
         connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVisoCreator::close);
         connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIVisoCreator::accept);
     }
+
     if (m_pActionConfiguration)
-        connect(m_pActionConfiguration, &QAction::triggered, this, &UIVisoCreator::sltHandleConfigurationAction);
+        connect(m_pActionConfiguration, &QAction::triggered, this, &UIVisoCreator::sltPanelActionToggled);
     if (m_pActionOptions)
-        connect(m_pActionOptions, &QAction::triggered, this, &UIVisoCreator::sltHandleOptionsAction);
+        connect(m_pActionOptions, &QAction::triggered, this, &UIVisoCreator::sltPanelActionToggled);
+
+    if (m_pConfigurationPanel)
+    {
+        connect(m_pConfigurationPanel, &UIVisoConfigurationPanel::sigVisoNameChanged,
+                this, &UIVisoCreator::sltHandleVisoNameChanged);
+        connect(m_pConfigurationPanel, &UIVisoConfigurationPanel::sigCustomVisoOptionsChanged,
+                this, &UIVisoCreator::sltHandleCustomVisoOptionsChanged);
+        connect(m_pConfigurationPanel, &UIVisoConfigurationPanel::sigHidePanel,
+                this, &UIVisoCreator::sltHandleHidePanel);
+    }
+    if (m_pCreatorOptionsPanel)
+    {
+        connect(m_pCreatorOptionsPanel, &UIVisoCreatorOptionsPanel::sigShowHiddenObjects,
+                this, &UIVisoCreator::sltHandleShowHiddenObjectsChange);
+        connect(m_pCreatorOptionsPanel, &UIVisoCreatorOptionsPanel::sigHidePanel,
+                this, &UIVisoCreator::sltHandleHidePanel);
+    }
 }
 
 void UIVisoCreator::prepareActions()
@@ -217,6 +319,7 @@ void UIVisoCreator::prepareActions()
     m_pActionConfiguration = new QAction(this);
     if (m_pActionConfiguration)
     {
+        m_pActionConfiguration->setCheckable(true);
         m_pActionConfiguration->setIcon(UIIconPool::iconSetFull(":/file_manager_options_32px.png",
                                                           ":/%file_manager_options_16px.png",
                                                           ":/file_manager_options_disabled_32px.png",
@@ -226,6 +329,8 @@ void UIVisoCreator::prepareActions()
     m_pActionOptions = new QAction(this);
     if (m_pActionOptions)
     {
+        m_pActionOptions->setCheckable(true);
+
         m_pActionOptions->setIcon(UIIconPool::iconSetFull(":/file_manager_options_32px.png",
                                                           ":/%file_manager_options_16px.png",
                                                           ":/file_manager_options_disabled_32px.png",
@@ -233,28 +338,55 @@ void UIVisoCreator::prepareActions()
     }
 }
 
-void UIVisoCreator::checkBrowserOptions(const BrowserOptions &browserOptions)
+
+void UIVisoCreator::hidePanel(UIVisoCreatorPanel* panel)
 {
-    if (browserOptions == m_browserOptions)
-        return;
-    if (browserOptions.m_bShowHiddenObjects != m_browserOptions.m_bShowHiddenObjects)
+    if (panel && panel->isVisible())
+        panel->setVisible(false);
+    QMap<UIVisoCreatorPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
+    if (iterator != m_panelActionMap.end())
     {
-        if (m_pHostBrowser)
-            m_pHostBrowser->showHideHiddenObjects(browserOptions.m_bShowHiddenObjects);
-        if(m_pVisoBrowser)
-            m_pVisoBrowser->showHideHiddenObjects(browserOptions.m_bShowHiddenObjects);
+        if (iterator.value() && iterator.value()->isChecked())
+            iterator.value()->setChecked(false);
     }
-    m_browserOptions = browserOptions;
+    m_visiblePanelsList.removeAll(panel);
+    manageEscapeShortCut();
 }
 
-void UIVisoCreator::checkVisoOptions(const VisoOptions &visoOptions)
+void UIVisoCreator::showPanel(UIVisoCreatorPanel* panel)
 {
-    if (visoOptions == m_visoOptions)
-        return;
-    if (visoOptions.m_strVisoName != m_visoOptions.m_strVisoName)
+    if (panel && panel->isHidden())
+        panel->setVisible(true);
+    QMap<UIVisoCreatorPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
+    if (iterator != m_panelActionMap.end())
     {
-        if(m_pVisoBrowser)
-            m_pVisoBrowser->setVisoName(visoOptions.m_strVisoName);
+        if (!iterator.value()->isChecked())
+            iterator.value()->setChecked(true);
     }
-    m_visoOptions = visoOptions;
+    if (!m_visiblePanelsList.contains(panel))
+        m_visiblePanelsList.push_back(panel);
+    manageEscapeShortCut();
+}
+
+
+
+void UIVisoCreator::manageEscapeShortCut()
+{
+    /* if there are no visible panels then assign esc. key to cancel button of the button box: */
+    if (m_visiblePanelsList.isEmpty())
+    {
+        if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Cancel))
+            m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(QKeySequence(Qt::Key_Escape));
+        return;
+    }
+    if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Cancel))
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(QKeySequence());
+
+    /* Just loop thru the visible panel list and set the esc key to the
+       panel which made visible latest */
+    for (int i = 0; i < m_visiblePanelsList.size() - 1; ++i)
+    {
+        m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
+    }
+    m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
 }

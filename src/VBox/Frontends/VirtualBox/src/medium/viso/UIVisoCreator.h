@@ -44,6 +44,9 @@ class UIActionPool;
 class UIToolBar;
 class UIVisoHostBrowser;
 class UIVisoContentBrowser;
+class UIVisoCreatorOptionsPanel;
+class UIVisoCreatorPanel;
+class UIVisoConfigurationPanel;
 
 class UIVisoCreator : public QIWithRetranslateUI<QIMainDialog>
 {
@@ -69,10 +72,13 @@ protected:
 private slots:
 
     void sltHandleAddObjectsToViso(QStringList pathList);
-    void sltHandleOptionsAction();
-    void sltHandleConfigurationAction();
+    void sltPanelActionToggled(bool fChecked);
+    void sltHandleVisoNameChanged(const QString& strVisoName);
+    void sltHandleCustomVisoOptionsChanged(const QStringList &customVisoOptions);
+    void sltHandleShowHiddenObjectsChange(bool fShow);
+    void sltHandleHidePanel(UIVisoCreatorPanel *pPanel);
 
- private:
+private:
 
     void prepareObjects();
     void prepareConnections();
@@ -80,8 +86,14 @@ private slots:
     /** Set the root index of the m_pTableModel to the current index of m_pTreeModel. */
     void setTableRootIndex(QModelIndex index = QModelIndex() );
     void setTreeCurrentIndex(QModelIndex index = QModelIndex() );
-    void checkBrowserOptions(const BrowserOptions &browserOptions);
-    void checkVisoOptions(const VisoOptions &visoOptions);
+    void hidePanel(UIVisoCreatorPanel *panel);
+    void showPanel(UIVisoCreatorPanel *panel);
+    /** Makes sure escape key is assigned to only a single widget. This is done by checking
+        several things in the following order:
+        - when there are no more panels visible assign it to the parent dialog
+        - grab it from the dialog as soon as a panel becomes visible again
+        - assign it to the most recently "unhidden" panel */
+    void manageEscapeShortCut();
 
     QVBoxLayout          *m_pMainLayout;
     QSplitter            *m_pVerticalSplitter;
@@ -98,6 +110,10 @@ private slots:
     QMenu                *m_pHostBrowserMenu;
     QMenu                *m_pVisoContentBrowserMenu;
     QString               m_strMachineName;
+    UIVisoCreatorOptionsPanel *m_pCreatorOptionsPanel;
+    UIVisoConfigurationPanel  *m_pConfigurationPanel;
+    QMap<UIVisoCreatorPanel*, QAction*> m_panelActionMap;
+    QList<UIVisoCreatorPanel*>          m_visiblePanelsList;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoCreator_h */
