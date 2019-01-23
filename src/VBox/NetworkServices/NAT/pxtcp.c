@@ -218,7 +218,9 @@ struct pxtcp {
     struct tcpip_msg msg_accept;   /* confirm accept of proxied connection */
     struct tcpip_msg msg_outbound; /* trigger send of outbound data */
     struct tcpip_msg msg_inbound;  /* trigger send of inbound data */
+#if HAVE_TCP_POLLHUP
     struct tcpip_msg msg_inpull;   /* trigger pull of last inbound data */
+#endif
 };
 
 
@@ -264,7 +266,9 @@ static void pxtcp_pcb_accept_refuse(void *);
 static void pxtcp_pcb_accept_confirm(void *);
 static void pxtcp_pcb_write_outbound(void *);
 static void pxtcp_pcb_write_inbound(void *);
+#if HAVE_TCP_POLLHUP
 static void pxtcp_pcb_pull_inbound(void *);
+#endif
 
 /* tcp pcb callbacks */
 static err_t pxtcp_pcb_heard(void *, struct tcp_pcb *, struct pbuf *); /* global */
@@ -634,7 +638,9 @@ pxtcp_allocate(void)
     CALLBACK_MSG(msg_accept, pxtcp_pcb_accept_confirm);
     CALLBACK_MSG(msg_outbound, pxtcp_pcb_write_outbound);
     CALLBACK_MSG(msg_inbound, pxtcp_pcb_write_inbound);
+#if HAVE_TCP_POLLHUP
     CALLBACK_MSG(msg_inpull, pxtcp_pcb_pull_inbound);
+#endif
 
 #undef CALLBACK_MSG
 
@@ -2406,6 +2412,7 @@ pxtcp_pcb_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
 }
 
 
+#if HAVE_TCP_POLLHUP
 /**
  * Callback from poll manager (pxtcp::msg_inpull) to switch
  * pxtcp_pcb_sent() to actively pull the last bits of input.  See
@@ -2439,6 +2446,7 @@ pxtcp_pcb_pull_inbound(void *ctx)
 
     pxtcp_pcb_sent(pxtcp, pxtcp->pcb, 0);
 }
+#endif  /* HAVE_TCP_POLLHUP */
 
 
 /**
