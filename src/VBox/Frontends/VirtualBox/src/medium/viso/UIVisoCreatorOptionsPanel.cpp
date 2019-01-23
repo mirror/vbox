@@ -31,7 +31,7 @@
 #include "UIVisoCreatorOptionsPanel.h"
 
 UIVisoCreatorOptionsPanel::UIVisoCreatorOptionsPanel(QWidget *pParent /* =0 */)
-    : UIVisoCreatorPanel(pParent)
+    : UIDialogPanel(pParent)
     , m_pShowHiddenObjectsCheckBox(0)
     , m_pShowHiddenObjectsLabel(0)
 {

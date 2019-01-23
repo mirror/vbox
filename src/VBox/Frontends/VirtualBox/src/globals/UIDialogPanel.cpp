@@ -26,13 +26,13 @@
 /* GUI includes: */
 #include "QIToolButton.h"
 #include "UIIconPool.h"
-#include "UIVisoCreatorPanel.h"
+#include "UIDialogPanel.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
 
 
-UIVisoCreatorPanel::UIVisoCreatorPanel(QWidget *pParent)
+UIDialogPanel::UIDialogPanel(QWidget *pParent)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(0)
     , m_pCloseButton(0)
@@ -40,26 +40,26 @@ UIVisoCreatorPanel::UIVisoCreatorPanel(QWidget *pParent)
     prepare();
 }
 
-void UIVisoCreatorPanel::setCloseButtonShortCut(QKeySequence shortCut)
+void UIDialogPanel::setCloseButtonShortCut(QKeySequence shortCut)
 {
     if (!m_pCloseButton)
         return;
     m_pCloseButton->setShortcut(shortCut);
 }
 
-QHBoxLayout* UIVisoCreatorPanel::mainLayout()
+QHBoxLayout* UIDialogPanel::mainLayout()
 {
     return m_pMainLayout;
 }
 
-void UIVisoCreatorPanel::prepare()
+void UIDialogPanel::prepare()
 {
     prepareWidgets();
     prepareConnections();
     retranslateUi();
 }
 
-void UIVisoCreatorPanel::prepareWidgets()
+void UIDialogPanel::prepareWidgets()
 {
     m_pMainLayout = new QHBoxLayout(this);
     if (m_pMainLayout)
@@ -82,19 +82,19 @@ void UIVisoCreatorPanel::prepareWidgets()
     }
 }
 
-void UIVisoCreatorPanel::prepareConnections()
+void UIDialogPanel::prepareConnections()
 {
     if (m_pCloseButton)
-        connect(m_pCloseButton, &QIToolButton::clicked, this, &UIVisoCreatorPanel::hide);
+        connect(m_pCloseButton, &QIToolButton::clicked, this, &UIDialogPanel::hide);
 }
 
-void UIVisoCreatorPanel::retranslateUi()
+void UIDialogPanel::retranslateUi()
 {
     if (m_pCloseButton)
         m_pCloseButton->setToolTip(QApplication::translate("UIVisoCreator", "Close the pane"));
 }
 
-bool UIVisoCreatorPanel::eventFilter(QObject *pObject, QEvent *pEvent)
+bool UIDialogPanel::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     Q_UNUSED(pObject);
     Q_UNUSED(pEvent);
@@ -102,12 +102,12 @@ bool UIVisoCreatorPanel::eventFilter(QObject *pObject, QEvent *pEvent)
     return false;
 }
 
-void UIVisoCreatorPanel::showEvent(QShowEvent *pEvent)
+void UIDialogPanel::showEvent(QShowEvent *pEvent)
 {
     QWidget::showEvent(pEvent);
 }
 
-void UIVisoCreatorPanel::hideEvent(QHideEvent *pEvent)
+void UIDialogPanel::hideEvent(QHideEvent *pEvent)
 {
     /* Get focused widget: */
     QWidget *pFocus = QApplication::focusWidget();
@@ -120,7 +120,7 @@ void UIVisoCreatorPanel::hideEvent(QHideEvent *pEvent)
     QWidget::hideEvent(pEvent);
 }
 
-void UIVisoCreatorPanel::addVerticalSeparator()
+void UIDialogPanel::addVerticalSeparator()
 {
     QFrame *pSeparator = new QFrame();
     pSeparator->setFrameShape(QFrame::VLine);

@@ -34,7 +34,7 @@
 #include "UIVisoConfigurationPanel.h"
 
 UIVisoConfigurationPanel::UIVisoConfigurationPanel(QWidget *pParent /* =0 */)
-    : UIVisoCreatorPanel(pParent)
+    : UIDialogPanel(pParent)
     , m_pVisoNameLabel(0)
     , m_pCustomOptionsLabel(0)
     , m_pVisoNameLineEdit(0)
@@ -136,7 +136,7 @@ bool UIVisoConfigurationPanel::eventFilter(QObject *pObject, QEvent *pEvent)
         break;
     }
     /* Call to base-class: */
-    return UIVisoCreatorPanel::eventFilter(pObject, pEvent);
+    return UIDialogPanel::eventFilter(pObject, pEvent);
 }
 
 void UIVisoConfigurationPanel::retranslateUi()

@@ -804,6 +804,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/globals/UIAnimationFramework.h \
 	src/globals/UICustomFileSystemModel.h \
 	src/globals/UIDesktopWidgetWatchdog.h \
+	src/globals/UIDialogPanel.h \
 	src/globals/UIMainEventListener.h \
 	src/globals/UIMessageCenter.h \
 	src/globals/UIModalWindowManager.h \
@@ -831,7 +832,6 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/medium/viso/UIVisoBrowserBase.h \
 	src/medium/viso/UIVisoContentBrowser.h \
 	src/medium/viso/UIVisoCreator.h \
-	src/medium/viso/UIVisoCreatorPanel.h \
 	src/medium/viso/UIVisoConfigurationPanel.h \
 	src/medium/viso/UIVisoCreatorOptionsPanel.h \
 	src/medium/viso/UIVisoHostBrowser.h \
@@ -1265,6 +1265,7 @@ VBoxGlobal_SOURCES = \
 	src/globals/UICustomFileSystemModel.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
+	src/globals/UIDialogPanel.cpp \
 	src/globals/UIErrorString.cpp \
 	src/globals/UIIconPool.cpp \
 	src/globals/UIImageTools.cpp \
@@ -1297,7 +1298,6 @@ VBoxGlobal_SOURCES = \
 	src/medium/viso/UIVisoBrowserBase.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoCreator.cpp \
-	src/medium/viso/UIVisoCreatorPanel.cpp \
 	src/medium/viso/UIVisoConfigurationPanel.cpp \
 	src/medium/viso/UIVisoCreatorOptionsPanel.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \

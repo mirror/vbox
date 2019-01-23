@@ -26,10 +26,10 @@ class QCheckBox;
 class QILabel;
 
 /* GUI includes: */
-#include "UIVisoCreatorPanel.h"
+#include "UIDialogPanel.h"
 #include "QIWithRetranslateUI.h"
 
-class UIVisoCreatorOptionsPanel : public UIVisoCreatorPanel
+class UIVisoCreatorOptionsPanel : public UIDialogPanel
 {
     Q_OBJECT;
 

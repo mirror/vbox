@@ -22,7 +22,7 @@
 #endif
 
 /* GUI includes: */
-#include "UIVisoCreatorPanel.h"
+#include "UIDialogPanel.h"
 
 /* Forward declarations: */
 class QGridLayout;
@@ -34,7 +34,7 @@ class QITabWidget;
 class QIToolButton;
 class UIVisoCreator;
 
-class UIVisoConfigurationPanel : public UIVisoCreatorPanel
+class UIVisoConfigurationPanel : public UIDialogPanel
 {
     Q_OBJECT;
 

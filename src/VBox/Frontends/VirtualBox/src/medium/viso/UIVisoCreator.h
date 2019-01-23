@@ -40,11 +40,11 @@ class QSplitter;
 class QVBoxLayout;
 class QIDialogButtonBox;
 class UIActionPool;
+class UIDialogPanel;
 class UIToolBar;
 class UIVisoHostBrowser;
 class UIVisoContentBrowser;
 class UIVisoCreatorOptionsPanel;
-class UIVisoCreatorPanel;
 class UIVisoConfigurationPanel;
 
 class UIVisoCreator : public QIWithRetranslateUI<QIMainDialog>
@@ -75,7 +75,7 @@ private slots:
     void sltHandleVisoNameChanged(const QString& strVisoName);
     void sltHandleCustomVisoOptionsChanged(const QStringList &customVisoOptions);
     void sltHandleShowHiddenObjectsChange(bool fShow);
-    void sltHandleHidePanel(UIVisoCreatorPanel *pPanel);
+    void sltHandleHidePanel(UIDialogPanel *pPanel);
 
 private:
     struct VisoOptions
@@ -100,8 +100,8 @@ private:
     /** Set the root index of the m_pTableModel to the current index of m_pTreeModel. */
     void setTableRootIndex(QModelIndex index = QModelIndex() );
     void setTreeCurrentIndex(QModelIndex index = QModelIndex() );
-    void hidePanel(UIVisoCreatorPanel *panel);
-    void showPanel(UIVisoCreatorPanel *panel);
+    void hidePanel(UIDialogPanel *panel);
+    void showPanel(UIDialogPanel *panel);
     /** Makes sure escape key is assigned to only a single widget. This is done by checking
         several things in the following order:
         - when there are no more panels visible assign it to the parent dialog
@@ -126,8 +126,8 @@ private:
     QString               m_strMachineName;
     UIVisoCreatorOptionsPanel *m_pCreatorOptionsPanel;
     UIVisoConfigurationPanel  *m_pConfigurationPanel;
-    QMap<UIVisoCreatorPanel*, QAction*> m_panelActionMap;
-    QList<UIVisoCreatorPanel*>          m_visiblePanelsList;
+    QMap<UIDialogPanel*, QAction*> m_panelActionMap;
+    QList<UIDialogPanel*>          m_visiblePanelsList;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoCreator_h */

@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef FEQT_INCLUDED_SRC_medium_viso_UIVisoCreatorPanel_h
-#define FEQT_INCLUDED_SRC_medium_viso_UIVisoCreatorPanel_h
+#ifndef FEQT_INCLUDED_SRC_globals_UIDialogPanel_h
+#define FEQT_INCLUDED_SRC_globals_UIDialogPanel_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -35,19 +35,19 @@ class QIToolButton;
 
 
 /** QWidget extension acting as the base class for UIVMLogViewerXXXPanel widgets. */
-class UIVisoCreatorPanel : public QIWithRetranslateUI<QWidget>
+class UIDialogPanel : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
 public:
 
-    UIVisoCreatorPanel(QWidget *pParent);
+    UIDialogPanel(QWidget *pParent);
     void setCloseButtonShortCut(QKeySequence shortCut);
     virtual QString panelName() const = 0;
 
 signals:
 
-    void sigHidePanel(UIVisoCreatorPanel *pPanel);
+    void sigHidePanel(UIDialogPanel *pPanel);
 
 protected:
 
@@ -76,4 +76,4 @@ private:
     QIToolButton  *m_pCloseButton;
 };
 
-#endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoCreatorPanel_h */
+#endif /* !FEQT_INCLUDED_SRC_globals_UIDialogPanel_h */
