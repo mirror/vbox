@@ -971,7 +971,7 @@ GstCtrlService::svcConnect(void *pvService, uint32_t idClient, void *pvClient, u
     /*
      * Create client state.
      */
-    ClientState *pClient;
+    ClientState *pClient = NULL;
     try
     {
         pClient = new (pvClient) ClientState(pThis->mpHelpers, idClient);
