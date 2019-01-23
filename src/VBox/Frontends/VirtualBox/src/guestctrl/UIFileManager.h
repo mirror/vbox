@@ -49,7 +49,7 @@ class UIActionPool;
 class UIFileOperationsList;
 class UIGuestControlConsole;
 class UIGuestControlInterface;
-class UIFileManagerPanel;
+class UIDialogPanel;
 class UIFileManagerLogPanel;
 class UIFileManagerOperationsPanel;
 class UIFileManagerSessionPanel;
@@ -123,6 +123,7 @@ private slots:
     void sltFileOperationComplete(QUuid progressId);
     /** Performs whatever necessary when some signal about option change has been receieved. */
     void sltHandleOptionsUpdated();
+    void sltHandleHidePanel(UIDialogPanel *pPanel);
 
 private:
 
@@ -156,8 +157,8 @@ private:
     /** Loads file manager options. This should be done before widget creation
      *  since some widgets are initilized with these options */
     void loadOptions();
-    void hidePanel(UIFileManagerPanel *panel);
-    void showPanel(UIFileManagerPanel *panel);
+    void hidePanel(UIDialogPanel *panel);
+    void showPanel(UIDialogPanel *panel);
     /** Makes sure escape key is assigned to only a single widget. This is done by checking
         several things in the following order:
         - when there are no more panels visible assign it to the parent dialog
@@ -188,14 +189,13 @@ private:
     const EmbedTo  m_enmEmbedding;
     UIActionPool  *m_pActionPool;
     const bool     m_fShowToolbar;
-    QMap<UIFileManagerPanel*, QAction*> m_panelActionMap;
-    QList<UIFileManagerPanel*>          m_visiblePanelsList;
+    QMap<UIDialogPanel*, QAction*> m_panelActionMap;
+    QList<UIDialogPanel*>          m_visiblePanelsList;
     UIFileManagerOptionsPanel          *m_pOptionsPanel;
     UIFileManagerLogPanel              *m_pLogPanel;
     UIFileManagerSessionPanel          *m_pSessionPanel;
     UIFileManagerOperationsPanel       *m_pOperationsPanel;
     friend class UIFileManagerOptionsPanel;
-    friend class UIFileManagerPanel;
     friend class UIFileManagerDialog;
 };
 

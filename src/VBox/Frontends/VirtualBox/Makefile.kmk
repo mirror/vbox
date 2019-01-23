@@ -720,7 +720,6 @@ VirtualBoxVM_QT_MOCHDRS = \
 	src/guestctrl/UIFileManagerLogPanel.h \
 	src/guestctrl/UIFileManagerOperationsPanel.h \
 	src/guestctrl/UIFileManagerOptionsPanel.h \
-	src/guestctrl/UIFileManagerPanel.h \
 	src/guestctrl/UIFileManagerSessionPanel.h \
 	src/guestctrl/UIFileManagerTable.h \
 	src/guestctrl/UIGuestControlInterface.h \
@@ -1158,7 +1157,6 @@ VirtualBoxVM_SOURCES = \
 	src/guestctrl/UIFileManagerLogPanel.cpp \
 	src/guestctrl/UIFileManagerOperationsPanel.cpp \
 	src/guestctrl/UIFileManagerOptionsPanel.cpp \
-	src/guestctrl/UIFileManagerPanel.cpp \
 	src/guestctrl/UIFileManagerSessionPanel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/guestctrl/UIGuestControlInterface.cpp \

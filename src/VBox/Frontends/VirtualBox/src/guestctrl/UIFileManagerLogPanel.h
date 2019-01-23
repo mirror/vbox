@@ -23,20 +23,20 @@
 
 /* GUI includes: */
 #include "UIGuestControlDefs.h"
-#include "UIFileManagerPanel.h"
+#include "UIDialogPanel.h"
 
 /* Forward declarations: */
 class QTextEdit;
 class UIFileManager;
 
-/** UIFileManagerPanel extension to display file manager logs. */
-class UIFileManagerLogPanel : public UIFileManagerPanel
+/** UIDialogPanel extension to display file manager logs. */
+class UIFileManagerLogPanel : public UIDialogPanel
 {
     Q_OBJECT;
 
 public:
 
-    UIFileManagerLogPanel(UIFileManager *pManagerWidget, QWidget *pParent);
+    UIFileManagerLogPanel(QWidget *pParent = 0);
     void appendLog(const QString &str, FileManagerLogType);
     virtual QString panelName() const /* override */;
 

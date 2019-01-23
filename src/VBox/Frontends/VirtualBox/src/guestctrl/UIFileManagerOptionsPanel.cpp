@@ -31,9 +31,8 @@
 #include "UIFileManagerOptionsPanel.h"
 
 
-UIFileManagerOptionsPanel::UIFileManagerOptionsPanel(UIFileManager *pManagerWidget,
-                                                                               QWidget *pParent, UIFileManagerOptions *pFileManagerOptions)
-    : UIFileManagerPanel(pManagerWidget, pParent)
+UIFileManagerOptionsPanel::UIFileManagerOptionsPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions)
+    : UIDialogPanel(pParent)
     , m_pListDirectoriesOnTopCheckBox(0)
     , m_pDeleteConfirmationCheckBox(0)
     , m_pHumanReabableSizesCheckBox(0)
@@ -180,7 +179,7 @@ void UIFileManagerOptionsPanel::prepareConnections()
 
 void UIFileManagerOptionsPanel::retranslateUi()
 {
-    UIFileManagerPanel::retranslateUi();
+    UIDialogPanel::retranslateUi();
     if (m_pListDirectoriesOnTopCheckBox)
     {
         m_pListDirectoriesOnTopCheckBox->setText(UIFileManager::tr("List directories on top"));

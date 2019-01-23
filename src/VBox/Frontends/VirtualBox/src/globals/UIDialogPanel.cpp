@@ -32,7 +32,7 @@
 #endif
 
 
-UIDialogPanel::UIDialogPanel(QWidget *pParent)
+UIDialogPanel::UIDialogPanel(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(0)
     , m_pCloseButton(0)

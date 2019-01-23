@@ -260,7 +260,7 @@ void UIFileManager::prepareObjects()
     }
 
     pTopLayout->addLayout(pFileTableContainerLayout);
-    m_pSessionPanel = new UIFileManagerSessionPanel(this /* manager dialog */, 0 /*parent */);
+    m_pSessionPanel = new UIFileManagerSessionPanel;
     if (m_pSessionPanel)
     {
         m_pSessionPanel->hide();
@@ -269,8 +269,7 @@ void UIFileManager::prepareObjects()
     }
 
     m_pOptionsPanel =
-        new UIFileManagerOptionsPanel(this /* manager dialog */,
-                                                   0 /*parent */, UIFileManagerOptions::instance());
+        new UIFileManagerOptionsPanel(0 /*parent */, UIFileManagerOptions::instance());
     if (m_pOptionsPanel)
     {
         m_pOptionsPanel->hide();
@@ -283,7 +282,7 @@ void UIFileManager::prepareObjects()
     m_pVerticalSplitter->addWidget(pTopWidget);
 
     m_pOperationsPanel =
-        new UIFileManagerOperationsPanel(this /* manager dialog */, 0 /*parent */);
+        new UIFileManagerOperationsPanel;
     if (m_pOperationsPanel)
     {
         m_pOperationsPanel->hide();
@@ -294,7 +293,7 @@ void UIFileManager::prepareObjects()
         m_panelActionMap.insert(m_pOperationsPanel, m_pActionPool->action(UIActionIndex_M_FileManager_T_Operations));
     }
 
-    m_pLogPanel = new UIFileManagerLogPanel(this /* manager dialog */, 0 /*parent */);
+    m_pLogPanel = new UIFileManagerLogPanel;
     if (m_pLogPanel)
     {
         m_pLogPanel->hide();
@@ -355,7 +354,20 @@ void UIFileManager::prepareConnections()
                 this, &UIFileManager::sltCreateSession);
         connect(m_pSessionPanel, &UIFileManagerSessionPanel::sigCloseSession,
                 this, &UIFileManager::sltCloseSession);
+        connect(m_pSessionPanel, &UIFileManagerSessionPanel::sigHidePanel,
+                this, &UIFileManager::sltHandleHidePanel);
     }
+    if (m_pOptionsPanel)
+        connect(m_pOptionsPanel, &UIFileManagerOptionsPanel::sigHidePanel,
+                this, &UIFileManager::sltHandleHidePanel);
+
+    if (m_pLogPanel)
+        connect(m_pLogPanel, &UIFileManagerLogPanel::sigHidePanel,
+                this, &UIFileManager::sltHandleHidePanel);
+
+    if (m_pOperationsPanel)
+        connect(m_pOperationsPanel, &UIFileManagerOperationsPanel::sigHidePanel,
+                this, &UIFileManager::sltHandleHidePanel);
 }
 
 void UIFileManager::prepareToolBar()
@@ -483,9 +495,9 @@ void UIFileManager::sltPanelActionToggled(bool fChecked)
     QAction *pSenderAction = qobject_cast<QAction*>(sender());
     if (!pSenderAction)
         return;
-    UIFileManagerPanel* pPanel = 0;
+    UIDialogPanel* pPanel = 0;
     /* Look for the sender() within the m_panelActionMap's values: */
-    for (QMap<UIFileManagerPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
+    for (QMap<UIDialogPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
         iterator != m_panelActionMap.end(); ++iterator)
     {
         if (iterator.value() == pSenderAction)
@@ -526,6 +538,11 @@ void UIFileManager::sltHandleOptionsUpdated()
         m_pGuestFileTable->optionsUpdated();
     if (m_pHostFileTable)
         m_pHostFileTable->optionsUpdated();
+}
+
+void UIFileManager::sltHandleHidePanel(UIDialogPanel *pPanel)
+{
+    hidePanel(pPanel);
 }
 
 void UIFileManager::copyToHost()
@@ -677,7 +694,7 @@ void UIFileManager::saveOptions()
 {
     /* Save a list of currently visible panels: */
     QStringList strNameList;
-    foreach(UIFileManagerPanel* pPanel, m_visiblePanelsList)
+    foreach(UIDialogPanel* pPanel, m_visiblePanelsList)
         strNameList.append(pPanel->panelName());
     gEDataManager->setFileManagerVisiblePanels(strNameList);
     /* Save the options: */
@@ -706,7 +723,7 @@ void UIFileManager::restorePanelVisibility()
     QStringList strNameList = gEDataManager->fileManagerVisiblePanels();
     foreach(const QString strName, strNameList)
     {
-        foreach(UIFileManagerPanel* pPanel, m_panelActionMap.keys())
+        foreach(UIDialogPanel* pPanel, m_panelActionMap.keys())
         {
             if (strName == pPanel->panelName())
             {
@@ -730,11 +747,11 @@ void UIFileManager::loadOptions()
     }
 }
 
-void UIFileManager::hidePanel(UIFileManagerPanel* panel)
+void UIFileManager::hidePanel(UIDialogPanel* panel)
 {
     if (panel && panel->isVisible())
         panel->setVisible(false);
-    QMap<UIFileManagerPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
+    QMap<UIDialogPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
     if (iterator != m_panelActionMap.end())
     {
         if (iterator.value() && iterator.value()->isChecked())
@@ -744,11 +761,11 @@ void UIFileManager::hidePanel(UIFileManagerPanel* panel)
     manageEscapeShortCut();
 }
 
-void UIFileManager::showPanel(UIFileManagerPanel* panel)
+void UIFileManager::showPanel(UIDialogPanel* panel)
 {
     if (panel && panel->isHidden())
         panel->setVisible(true);
-    QMap<UIFileManagerPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
+    QMap<UIDialogPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
     if (iterator != m_panelActionMap.end())
     {
         if (!iterator.value()->isChecked())

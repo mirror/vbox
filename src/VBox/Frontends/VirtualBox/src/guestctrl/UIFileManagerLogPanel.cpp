@@ -82,8 +82,8 @@ void UIFileManagerLogViewer::sltClear()
 *   UIFileManagerLogPanel implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIFileManagerLogPanel::UIFileManagerLogPanel(UIFileManager *pManagerWidget, QWidget *pParent)
-    : UIFileManagerPanel(pManagerWidget, pParent)
+UIFileManagerLogPanel::UIFileManagerLogPanel(QWidget *pParent /* = 0 */)
+    : UIDialogPanel(pParent)
     , m_pLogTextEdit(0)
 {
     prepare();
@@ -124,7 +124,7 @@ void UIFileManagerLogPanel::prepareConnections()
 
 void UIFileManagerLogPanel::retranslateUi()
 {
-    UIFileManagerPanel::retranslateUi();
+    UIDialogPanel::retranslateUi();
 
 }
 

@@ -26,7 +26,7 @@
 
 /* GUI includes: */
 #include "UIGuestControlDefs.h"
-#include "UIFileManagerPanel.h"
+#include "UIDialogPanel.h"
 
 /* Forward declarations: */
 class CProgress;
@@ -41,20 +41,20 @@ class UIFileManager;
 
 /** UIVMLogViewerPanel extension hosting a QListWidget which in turn has a special QWidget extension
   * to manage multiple CProgress instances. This is particulary used in monitoring file operations. */
-class UIFileManagerOperationsPanel : public UIFileManagerPanel
+class UIFileManagerOperationsPanel : public UIDialogPanel
 {
     Q_OBJECT;
+
+public:
+
+    UIFileManagerOperationsPanel(QWidget *pParent = 0);
+    virtual QString panelName() const /* override */;
+    void addNewProgress(const CProgress &comProgress);
 
 signals:
 
     void sigFileOperationComplete(QUuid progressId);
     void sigFileOperationFail(QString strErrorString, FileManagerLogType eLogType);
-
-public:
-
-    UIFileManagerOperationsPanel(UIFileManager *pManagerWidget, QWidget *pParent);
-    virtual QString panelName() const /* override */;
-    void addNewProgress(const CProgress &comProgress);
 
 protected:
 

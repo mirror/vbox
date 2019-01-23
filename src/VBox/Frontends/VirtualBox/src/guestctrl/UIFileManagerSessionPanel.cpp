@@ -215,8 +215,8 @@ void UIGuestSessionCreateWidget::switchSessionCloseMode()
 *   UIFileManagerSessionPanel implementation.                                                                        *
 *********************************************************************************************************************************/
 
-UIFileManagerSessionPanel::UIFileManagerSessionPanel(UIFileManager *pManagerWidget, QWidget *pParent)
-    : UIFileManagerPanel(pManagerWidget, pParent)
+UIFileManagerSessionPanel::UIFileManagerSessionPanel(QWidget *pParent /* = 0 */)
+    : UIDialogPanel(pParent)
     , m_pSessionCreateWidget(0)
 {
     prepare();
@@ -261,7 +261,7 @@ void UIFileManagerSessionPanel::prepareConnections()
 
 void UIFileManagerSessionPanel::retranslateUi()
 {
-    UIFileManagerPanel::retranslateUi();
+    UIDialogPanel::retranslateUi();
 
 }
 

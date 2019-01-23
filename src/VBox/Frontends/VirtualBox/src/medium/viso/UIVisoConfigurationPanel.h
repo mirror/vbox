@@ -50,7 +50,6 @@ signals:
     void sigVisoNameChanged(const QString &strVisoName);
     void sigCustomVisoOptionsChanged(const QStringList &customVisoOptions);
 
-
 protected:
 
     bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
