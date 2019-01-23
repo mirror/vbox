@@ -2000,7 +2000,7 @@ PDMBOTHCBDECL(int) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPor
 
 # ifdef IN_RING3
 /**
- * Handle LFB access.
+ * Handle FIFO memory access.
  * @returns VBox status code.
  * @param   pVM             VM handle.
  * @param   pThis           VGA device instance data.
@@ -4980,7 +4980,7 @@ static void vmsvgaSetTraces(PVGASTATE pThis, bool fTraces)
         unsigned cbFrameBuffer = pThis->vram_size;
 
         Log(("vmsvgaSetTraces: enable dirty page handling for the frame buffer only (%x bytes)\n", 0));
-        /** @todo How this works with screens? */
+        /** @todo How does this work with screens? */
         if (pThis->svga.uHeight != VMSVGA_VAL_UNINITIALIZED)
         {
 #ifndef DEBUG_bird /* BB-10.3.1 triggers this as it initializes everything to zero. Better just ignore it. */
@@ -5854,9 +5854,9 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     STAM_REL_REG(pVM, &pSVGAState->StatR3CmdEscape,                 STAMTYPE_COUNTER, "/Devices/VMSVGA/Cmd/Escape",               STAMUNIT_OCCURENCES, "SVGA_CMD_ESCAPE");
     STAM_REL_REG(pVM, &pSVGAState->StatR3CmdFence,                  STAMTYPE_COUNTER, "/Devices/VMSVGA/Cmd/Fence",                STAMUNIT_OCCURENCES, "SVGA_CMD_FENCE");
     STAM_REL_REG(pVM, &pSVGAState->StatR3CmdInvalidCmd,             STAMTYPE_COUNTER, "/Devices/VMSVGA/Cmd/InvalidCmd",           STAMUNIT_OCCURENCES, "SVGA_CMD_INVALID_CMD");
-    STAM_REL_REG(pVM, &pSVGAState->StatR3CmdRemapGmr2,              STAMTYPE_COUNTER, "/Devices/VMSVGA/Cmd/RemapGmr2",            STAMUNIT_OCCURENCES, "SVGA_CMD_REMAP_GMR2.");
+    STAM_REL_REG(pVM, &pSVGAState->StatR3CmdRemapGmr2,              STAMTYPE_COUNTER, "/Devices/VMSVGA/Cmd/RemapGmr2",            STAMUNIT_OCCURENCES, "SVGA_CMD_REMAP_GMR2");
     STAM_REL_REG(pVM, &pSVGAState->StatR3CmdRemapGmr2Modify,        STAMTYPE_COUNTER, "/Devices/VMSVGA/Cmd/RemapGmr2/Modify",     STAMUNIT_OCCURENCES, "Number of SVGA_CMD_REMAP_GMR2 commands that modifies rather than complete the definition of a GMR.");
-    STAM_REL_REG(pVM, &pSVGAState->StatR3CmdUpdate,                 STAMTYPE_COUNTER, "/Devices/VMSVGA/Cmd/Update",               STAMUNIT_OCCURENCES, "SVGA_CMD_UPATE");
+    STAM_REL_REG(pVM, &pSVGAState->StatR3CmdUpdate,                 STAMTYPE_COUNTER, "/Devices/VMSVGA/Cmd/Update",               STAMUNIT_OCCURENCES, "SVGA_CMD_UPDATE");
     STAM_REL_REG(pVM, &pSVGAState->StatR3CmdUpdateVerbose,          STAMTYPE_COUNTER, "/Devices/VMSVGA/Cmd/UpdateVerbose",        STAMUNIT_OCCURENCES, "SVGA_CMD_UPDATE_VERBOSE");
 
     STAM_REL_REG(pVM, &pSVGAState->StatR3RegConfigDoneWr,           STAMTYPE_COUNTER, "/Devices/VMSVGA/Reg/ConfigDoneWrite",            STAMUNIT_OCCURENCES, "SVGA_REG_CONFIG_DONE writes");
