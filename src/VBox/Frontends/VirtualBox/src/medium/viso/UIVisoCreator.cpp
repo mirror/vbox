@@ -170,7 +170,11 @@ void UIVisoCreator::prepareObjects()
         return;
 
     /* Configure layout: */
-    m_pMainLayout->setContentsMargins(1, 1, 1, 1);
+    const int iL = qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2;
+    const int iT = qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) / 2;
+    const int iR = qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2;
+    const int iB = qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) / 2;
+    m_pMainLayout->setContentsMargins(iL, iT, iR, iB);
 #ifdef VBOX_WS_MAC
     m_pMainLayout->setSpacing(10);
 #else
