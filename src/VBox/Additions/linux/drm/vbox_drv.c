@@ -291,7 +291,11 @@ static struct drm_driver driver = {
 	.minor = DRIVER_MINOR,
 	.patchlevel = DRIVER_PATCHLEVEL,
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
 	.gem_free_object = vbox_gem_free_object,
+#else
+	.gem_free_object_unlocked = vbox_gem_free_object,
+#endif
 	.dumb_create = vbox_dumb_create,
 	.dumb_map_offset = vbox_dumb_mmap_offset,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && !defined(RHEL_73)
