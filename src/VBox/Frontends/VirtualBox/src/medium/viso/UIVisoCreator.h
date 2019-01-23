@@ -32,7 +32,6 @@
 /* GUI includes: */
 #include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "UIVisoCreatorDefs.h"
 
 /* Forward declarations: */
 class QItemSelection;
@@ -79,6 +78,21 @@ private slots:
     void sltHandleHidePanel(UIVisoCreatorPanel *pPanel);
 
 private:
+    struct VisoOptions
+    {
+        VisoOptions()
+            :m_strVisoName("ad-hoc-viso"){}
+        QString m_strVisoName;
+        /** Additions viso options to be inserted to the viso file as separate lines. */
+        QStringList m_customOptions;
+    };
+
+    struct BrowserOptions
+    {
+        BrowserOptions()
+            :m_fShowHiddenObjects(true){}
+        bool m_fShowHiddenObjects;
+    };
 
     void prepareObjects();
     void prepareConnections();

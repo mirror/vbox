@@ -28,8 +28,6 @@ class QILabel;
 /* GUI includes: */
 #include "UIVisoCreatorPanel.h"
 #include "QIWithRetranslateUI.h"
-#include "UIVisoCreatorDefs.h"
-
 
 class UIVisoCreatorOptionsPanel : public UIVisoCreatorPanel
 {

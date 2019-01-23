@@ -23,7 +23,6 @@
 
 /* GUI includes: */
 #include "UIVisoCreatorPanel.h"
-#include "UIVisoCreatorDefs.h"
 
 /* Forward declarations: */
 class QGridLayout;
