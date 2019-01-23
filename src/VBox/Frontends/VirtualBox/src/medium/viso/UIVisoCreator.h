@@ -58,6 +58,9 @@ public:
     QStringList entryList() const;
     const QString &visoName() const;
     const QStringList &customOptions() const;
+    /** Returns the current path that the host browser is listing. */
+    QString currentPath() const;
+    void setCurrentPath(const QString &strPath);
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */

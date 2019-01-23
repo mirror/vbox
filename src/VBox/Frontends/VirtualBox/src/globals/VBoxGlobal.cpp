@@ -2641,6 +2641,7 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
     if (!pVisoCreator)
         return QString();
     windowManager().registerNewParent(pVisoCreator, pDialogParent);
+    pVisoCreator->setCurrentPath(gEDataManager->recentFolderForVISOContent());
 
     if (pVisoCreator->exec(false /* not application modal */))
     {
@@ -2649,6 +2650,8 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
 
         if (files.empty() || files[0].isEmpty())
             return QUuid();
+
+        gEDataManager->setRecentFolderForVISOContent(pVisoCreator->currentPath());
 
         /* Produce the VISO. */
         char szVisoPath[RTPATH_MAX];

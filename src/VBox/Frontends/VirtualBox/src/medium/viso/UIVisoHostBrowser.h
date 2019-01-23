@@ -45,6 +45,8 @@ public:
     UIVisoHostBrowser(QWidget *pParent = 0, QMenu *pMenu = 0);
     ~UIVisoHostBrowser();
     virtual void showHideHiddenObjects(bool bShow) /* override */;
+    QString currentPath() const;
+    void setCurrentPath(const QString &strPath);
 
 protected:
 

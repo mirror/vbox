@@ -78,6 +78,20 @@ const QStringList &UIVisoCreator::customOptions() const
     return m_visoOptions.m_customOptions;
 }
 
+QString UIVisoCreator::currentPath() const
+{
+    if (!m_pHostBrowser)
+        return QString();
+    return m_pHostBrowser->currentPath();
+}
+
+void UIVisoCreator::setCurrentPath(const QString &strPath)
+{
+    if (!m_pHostBrowser)
+        return;
+    m_pHostBrowser->setCurrentPath(strPath);
+}
+
 void UIVisoCreator::retranslateUi()
 {
     setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("VISO Creator")));

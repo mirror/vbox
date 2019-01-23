@@ -270,6 +270,22 @@ void UIVisoHostBrowser::showHideHiddenObjects(bool bShow)
     }
 }
 
+QString UIVisoHostBrowser::currentPath() const
+{
+    if (!m_pTreeView || !m_pTreeModel)
+        return QString();
+    QModelIndex currentTreeIndex = m_pTreeView->selectionModel()->currentIndex();
+    return QDir::fromNativeSeparators(m_pTreeModel->filePath(currentTreeIndex));
+}
+
+void UIVisoHostBrowser::setCurrentPath(const QString &strPath)
+{
+    if (strPath.isEmpty() || !m_pTreeModel)
+        return;
+    QModelIndex index = m_pTreeModel->index(strPath);
+    setTreeCurrentIndex(index);
+}
+
 void UIVisoHostBrowser::sltHandleAddAction()
 {
     if (!m_pTableView || !m_pTableModel)
@@ -315,7 +331,10 @@ void UIVisoHostBrowser::setTreeCurrentIndex(QModelIndex index /* = QModelIndex()
     }
     else
         strCurrentTablePath = m_pTableModel->filePath(index);
-    m_pTreeView->setCurrentIndex(m_pTreeModel->index(strCurrentTablePath));
+    QModelIndex treeIndex = m_pTreeModel->index(strCurrentTablePath);
+    m_pTreeView->setCurrentIndex(treeIndex);
+    m_pTreeView->setExpanded(treeIndex, true);
+    m_pTreeView->scrollTo(treeIndex, QAbstractItemView::PositionAtCenter);
 }
 
 
