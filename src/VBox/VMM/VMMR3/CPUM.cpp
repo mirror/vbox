@@ -1728,6 +1728,11 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
         Assert(!pGuestFeat->fVmxXsavesXrstors);
         Assert(!pGuestFeat->fVmxUseTscScaling);
     }
+    if (pGuestFeat->fVmxUnrestrictedGuest)
+    {
+        /* See footnote in Intel spec. 27.2 "Recording VM-Exit Information And Updating VM-entry Control Fields". */
+        Assert(pGuestFeat->fVmxExitSaveEferLma);
+    }
 
     /*
      * Finally initialize the VMX guest MSRs.

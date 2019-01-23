@@ -2819,6 +2819,24 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     Log3(("vmexit: uExitReason=%#RX32 uExitQual=%#RX64\n", uExitReason, pVmcs->u64RoExitQual));
 
     /*
+     * We need to clear the VM-entry interruption information field's valid bit on VM-exit.
+     * See Intel spec. 24.8.3 "VM-Entry Controls for Event Injection".
+     */
+    pVmcs->u32EntryIntInfo &= ~VMX_ENTRY_INT_INFO_VALID;
+
+    /*
+     * If we support storing EFER.LMA into IA32e-mode guest field on VM-exit, we need to do that now.
+     * See Intel spec. 27.2 "Recording VM-exit Information And Updating VM-entry Control".
+     */
+    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxExitSaveEferLma)
+    {
+        if (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_LMA)
+            pVmcs->u32EntryCtls |= VMX_ENTRY_CTLS_IA32E_MODE_GUEST;
+        else
+            pVmcs->u32EntryCtls &= ~VMX_ENTRY_CTLS_IA32E_MODE_GUEST;
+    }
+
+    /*
      * Save the guest state back into the VMCS.
      * We only need to save the state when the VM-entry was successful.
      */
@@ -3853,7 +3871,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool f
          */
         if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_ACK_EXT_INT)
         {
-            uint8_t  const fNmiUnblocking = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
+            bool const     fNmiUnblocking = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
             uint32_t const uExitIntInfo   = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR,           uVector)
                                           | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,             VMX_EXIT_INT_INFO_TYPE_EXT_INT)
                                           | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET, fNmiUnblocking)
@@ -3933,7 +3951,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
     {
         /* Update the IDT-vectoring event in the VMCS as the source of the upcoming event. */
         uint8_t  const uIdtVectoringType = iemVmxGetEventType(uVector, fFlags);
-        uint8_t  const fErrCodeValid     = (fFlags & IEM_XCPT_FLAGS_ERR);
+        bool     const fErrCodeValid     = RT_BOOL(fFlags & IEM_XCPT_FLAGS_ERR);
         uint32_t const uIdtVectoringInfo = RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VECTOR,         uVector)
                                          | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_TYPE,           uIdtVectoringType)
                                          | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_ERR_CODE_VALID, fErrCodeValid)
@@ -4015,7 +4033,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
         }
 
         uint8_t  const fNmiUnblocking = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
-        uint8_t  const fErrCodeValid  = (fFlags & IEM_XCPT_FLAGS_ERR);
+        bool     const fErrCodeValid  = RT_BOOL(fFlags & IEM_XCPT_FLAGS_ERR);
         uint8_t  const uIntInfoType   = iemVmxGetEventType(uVector, fFlags);
         uint32_t const uExitIntInfo   = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR,           uVector)
                                       | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,             uIntInfoType)
