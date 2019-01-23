@@ -107,34 +107,6 @@ void UIVisoCreator::sltHandleAddObjectsToViso(QStringList pathList)
         m_pVisoBrowser->addObjectsToViso(pathList);
 }
 
-// void UIVisoCreator::sltHandleOptionsAction()
-// {
-//     // UIVisoCreatorOptionsDialog *pDialog = new UIVisoCreatorOptionsDialog(this, m_browserOptions, this);
-
-//     // if(!pDialog)
-//     //     return;
-//     // if (pDialog->execute(true, false))
-//     // {
-//     //     /** Check if any of the options has been modified: */
-//     //     checkBrowserOptions(pDialog->browserOptions());
-//     // }
-//     // delete pDialog;
-// }
-
-// void UIVisoCreator::sltHandleConfigurationAction()
-// {
-//     // UIVisoConfigurationDialog *pDialog = new UIVisoConfigurationDialog(m_visoOptions, this);
-
-//     // if(!pDialog)
-//     //     return;
-//     // if (pDialog->execute(true, false))
-//     // {
-//     //     /** Check if any of the options has been modified: */
-//     //     checkVisoOptions(pDialog->visoOptions());
-//     // }
-//     // delete pDialog;
-// }
-
 void UIVisoCreator::sltPanelActionToggled(bool fChecked)
 {
     QAction *pSenderAction = qobject_cast<QAction*>(sender());
