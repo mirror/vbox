@@ -25,6 +25,12 @@
   !addplugindir .\PluginTest
 !endif
 
+!if $%VBOX_WITH_GUEST_INSTALLER_UNICODE% == "1"
+  ; Whether to use the Unicode version of NSIS
+  ; Note: Using Unicode will result in the installer not working on a Windows 95/98/ME guest
+  Unicode true
+!endif
+
 ; Defines for special functions
 !define WHQL_FAKE                   ; Enables faking of non WHQL signed / approved drivers
                                     ; Needs the VBoxWHQLFake.exe in the additions output directory!
@@ -203,10 +209,6 @@ InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
 RequestExecutionLevel highest
-
-; Whether to use the Unicode version of NSIS
-; Note: Using Unicode will result in the installer not working on a Windows 95/98/ME guest
-;Unicode true
 
 ; Internal parameters
 Var g_iSystemMode                       ; Current system mode (0 = Normal boot, 1 = Fail-safe boot, 2 = Fail-safe with network boot)
