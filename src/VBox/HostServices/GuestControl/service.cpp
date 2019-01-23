@@ -972,21 +972,15 @@ GstCtrlService::svcConnect(void *pvService, uint32_t idClient, void *pvClient, u
      * Create client state.
      */
     ClientState *pClient;
-    //try - can't currently throw anything.
-    {
-        pClient = new (pvClient) ClientState(pThis->mpHelpers, idClient);
-    }
-    //catch (std::bad_alloc &)
-    //{
-    //    return VERR_NO_MEMORY;
-    //}
     try
     {
+        pClient = new (pvClient) ClientState(pThis->mpHelpers, idClient);
         pThis->m_ClientStateMap[idClient] = pClient;
     }
     catch (std::bad_alloc &)
     {
-        pClient->~ClientState();
+        if (pClient)
+            pClient->~ClientState();
         return VERR_NO_MEMORY;
     }
 
@@ -2134,21 +2128,7 @@ int GstCtrlService::hostCallback(uint32_t idFunction, uint32_t cParms, VBOXHGCMS
     if (mpfnHostCallback)
     {
         VBOXGUESTCTRLHOSTCALLBACK data(cParms, paParms);
-        /** @todo Not sure if this try/catch is necessary, I pushed it down here from
-         * GstCtrlService::call where it was not needed for anything else that I
-         * could spot.  I know this might be a tough, but I expect someone writing
-         * this kind of code to know what can throw errors and handle them where it
-         * is appropriate, rather than grand catch-all-at-the-top crap like this.
-         * The reason why it is utter crap, is that you have no state cleanup code
-         * where you might need it, which is why I despise exceptions in general */
-        try
-        {
-            rc = mpfnHostCallback(mpvHostData, idFunction, &data, sizeof(data));
-        }
-        catch (std::bad_alloc &)
-        {
-            rc = VERR_NO_MEMORY;
-        }
+        rc = mpfnHostCallback(mpvHostData, idFunction, &data, sizeof(data));
     }
     else
         rc = VERR_NOT_SUPPORTED;
