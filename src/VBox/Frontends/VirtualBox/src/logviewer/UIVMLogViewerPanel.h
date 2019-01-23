@@ -22,61 +22,42 @@
 #endif
 
 /* Qt includes: */
-#include <QWidget>
 #include <QKeySequence>
+
 /* GUI includes: */
-#include "QIWithRetranslateUI.h"
+#include "UIDialogPanel.h"
 
 /* Forward declarations: */
-class QHBoxLayout;
 class QPlainTextEdit;
 class QTextDocument;
-class QIToolButton;
 class UIVMLogViewerWidget;
 
 
-/** QWidget extension acting as the base class for UIVMLogViewerXXXPanel widgets. */
-class UIVMLogViewerPanel : public QIWithRetranslateUI<QWidget>
+/** UIDialonPanel extension acting as the base class for UIVMLogViewerXXXPanel widgets. */
+class UIVMLogViewerPanel : public UIDialogPanel
 {
     Q_OBJECT;
 
 public:
 
     UIVMLogViewerPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
-    void setCloseButtonShortCut(QKeySequence shortCut);
 
 protected:
 
-    virtual void prepare();
-    virtual void prepareWidgets();
-    virtual void prepareConnections();
+    virtual void retranslateUi() /* override */;
 
     /* Access functions for children classes. */
-    UIVMLogViewerWidget*       viewer();
-    const UIVMLogViewerWidget* viewer() const;
-    QHBoxLayout*               mainLayout();
-
-    /** Handles the translation event. */
-    void retranslateUi() /* override */;
-
-    /** Handles Qt @a pEvent, used for keyboard processing. */
-    bool eventFilter(QObject *pObject, QEvent *pEvent);
-    /** Handles the Qt show @a pEvent. */
-    void showEvent(QShowEvent *pEvent);
-    /** Handles the Qt hide @a pEvent. */
-    void hideEvent(QHideEvent *pEvent);
-
+    UIVMLogViewerWidget        *viewer();
+    const UIVMLogViewerWidget  *viewer() const;
     QTextDocument  *textDocument();
     QPlainTextEdit *textEdit();
     /* Return the unmodified log. */
-    const QString* logString() const;
+    const QString *logString() const;
 
 private:
 
     /** Holds the reference to VM Log-Viewer this panel belongs to. */
     UIVMLogViewerWidget *m_pViewer;
-    QHBoxLayout         *m_pMainLayout;
-    QIToolButton        *m_pCloseButton;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerPanel_h */

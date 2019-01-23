@@ -51,6 +51,7 @@ public:
     void setShowLineNumbers(bool bShowLineNumbers);
     void setWrapLines(bool bWrapLines);
     void setFontSizeInPoints(int fontSizeInPoints);
+    virtual QString panelName() const /* override */;
 
 public slots:
 

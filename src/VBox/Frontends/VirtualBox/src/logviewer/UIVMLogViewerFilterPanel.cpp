@@ -258,6 +258,11 @@ UIVMLogViewerFilterPanel::UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogView
     prepare();
 }
 
+QString UIVMLogViewerFilterPanel::panelName() const
+{
+    return "FilterPanel";
+}
+
 void UIVMLogViewerFilterPanel::applyFilter(const int iCurrentIndex /* = 0 */)
 {
     Q_UNUSED(iCurrentIndex);

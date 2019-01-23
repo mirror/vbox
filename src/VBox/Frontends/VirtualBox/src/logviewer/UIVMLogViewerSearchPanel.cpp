@@ -109,6 +109,11 @@ const QVector<float> &UIVMLogViewerSearchPanel::getMatchLocationVector() const
     return m_matchLocationVector;
 }
 
+QString UIVMLogViewerSearchPanel::panelName() const
+{
+    return "SearchPanel";
+}
+
 void UIVMLogViewerSearchPanel::hideEvent(QHideEvent *pEvent)
 {
     /* Get focus-widget: */
@@ -611,4 +616,3 @@ QTextDocument::FindFlags UIVMLogViewerSearchPanel::constructFindFlags(SearchDire
 }
 
 #include "UIVMLogViewerSearchPanel.moc"
-

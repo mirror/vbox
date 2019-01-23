@@ -56,6 +56,7 @@ public:
     /** Constructs the filter-panel by passing @a pParent to the QWidget base-class constructor.
       * @param  pViewer  Specifies reference to the VM Log-Viewer this filter-panel belongs to. */
     UIVMLogViewerFilterPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
+    virtual QString panelName() const /* override */;
 
 public slots:
 
@@ -112,4 +113,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerFilterPanel_h */
-

@@ -71,6 +71,11 @@ void UIVMLogViewerOptionsPanel::setFontSizeInPoints(int fontSizeInPoints)
     m_pFontSizeSpinBox->setValue(fontSizeInPoints);
 }
 
+QString UIVMLogViewerOptionsPanel::panelName() const
+{
+    return "OptionsPanel";
+}
+
 void UIVMLogViewerOptionsPanel::prepareWidgets()
 {
     if (!mainLayout())

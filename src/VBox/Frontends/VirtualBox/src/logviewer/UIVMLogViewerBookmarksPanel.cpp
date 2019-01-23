@@ -83,6 +83,11 @@ void UIVMLogViewerBookmarksPanel::disableEnableBookmarking(bool flag)
     m_pPreviousButton->setEnabled(flag);
 }
 
+QString UIVMLogViewerBookmarksPanel::panelName() const
+{
+    return "FilterPanel";
+}
+
 void UIVMLogViewerBookmarksPanel::setBookmarkIndex(int index)
 {
     if (!m_pBookmarksComboBox)

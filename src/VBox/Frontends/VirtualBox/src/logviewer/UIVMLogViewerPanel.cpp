@@ -35,19 +35,13 @@
 
 
 UIVMLogViewerPanel::UIVMLogViewerPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
-    : QIWithRetranslateUI<QWidget>(pParent)
+    : UIDialogPanel(pParent)
     , m_pViewer(pViewer)
-    , m_pMainLayout(0)
-    , m_pCloseButton(0)
 {
-    prepare();
 }
 
-void UIVMLogViewerPanel::setCloseButtonShortCut(QKeySequence shortCut)
+void UIVMLogViewerPanel::retranslateUi()
 {
-    if (!m_pCloseButton)
-        return;
-    m_pCloseButton->setShortcut(shortCut);
 }
 
 UIVMLogViewerWidget* UIVMLogViewerPanel::viewer()
@@ -58,80 +52,6 @@ UIVMLogViewerWidget* UIVMLogViewerPanel::viewer()
 const UIVMLogViewerWidget* UIVMLogViewerPanel::viewer() const
 {
     return m_pViewer;
-}
-
-QHBoxLayout* UIVMLogViewerPanel::mainLayout()
-{
-    return m_pMainLayout;
-}
-
-void UIVMLogViewerPanel::prepare()
-{
-    prepareWidgets();
-    prepareConnections();
-    retranslateUi();
-}
-
-void UIVMLogViewerPanel::prepareWidgets()
-{
-    m_pMainLayout = new QHBoxLayout(this);
-    if (m_pMainLayout)
-    {
-#ifdef VBOX_WS_MAC
-        m_pMainLayout->setContentsMargins(5 /* since there is always a button */, 0, 10 /* standard */, 0);
-        m_pMainLayout->setSpacing(10);
-#else
-        m_pMainLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2, 0,
-                                          qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2,
-                                          qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) / 2);
-        m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing));
-#endif
-    }
-    m_pCloseButton = new QIToolButton;
-    if (m_pCloseButton)
-    {
-        m_pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
-        m_pMainLayout->addWidget(m_pCloseButton, 0, Qt::AlignLeft);
-    }
-}
-
-void UIVMLogViewerPanel::prepareConnections()
-{
-    if (m_pCloseButton)
-        connect(m_pCloseButton, &QIToolButton::clicked, this, &UIVMLogViewerPanel::hide);
-}
-
-void UIVMLogViewerPanel::retranslateUi()
-{
-    if (m_pCloseButton)
-        m_pCloseButton->setToolTip(UIVMLogViewerWidget::tr("Close the pane"));
-}
-
-bool UIVMLogViewerPanel::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    Q_UNUSED(pObject);
-    Q_UNUSED(pEvent);
-    /* Dont consume this event. Pass it back to Qt's event system: */
-    return false;
-}
-
-void UIVMLogViewerPanel::showEvent(QShowEvent *pEvent)
-{
-    QWidget::showEvent(pEvent);
-}
-
-void UIVMLogViewerPanel::hideEvent(QHideEvent *pEvent)
-{
-    /* Get focused widget: */
-    QWidget *pFocus = QApplication::focusWidget();
-    /* If focus-widget is valid and child-widget of search-panel,
-     * focus next child-widget in line: */
-    if (pFocus && pFocus->parent() == this)
-        focusNextPrevChild(true);
-    if (m_pViewer)
-        m_pViewer->hidePanel(this);
-
-    QWidget::hideEvent(pEvent);
 }
 
 QTextDocument  *UIVMLogViewerPanel::textDocument()
@@ -161,4 +81,3 @@ const QString* UIVMLogViewerPanel::logString() const
         return 0;
     return &(page->logString());
 }
-

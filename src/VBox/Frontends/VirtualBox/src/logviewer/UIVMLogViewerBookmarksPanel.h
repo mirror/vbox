@@ -35,12 +35,6 @@ class UIVMLogViewerBookmarksPanel : public UIVMLogViewerPanel
 {
     Q_OBJECT;
 
-signals:
-
-    void sigDeleteBookmark(int bookmarkIndex);
-    void sigDeleteAllBookmarks();
-    void sigBookmarkSelected(int index);
-
 public:
 
     UIVMLogViewerBookmarksPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer);
@@ -54,8 +48,12 @@ public:
     void updateBookmarkList(const QVector<QPair<int, QString> > &bookmarkVector);
     /** Disable/enable all the widget except the close button */
     void disableEnableBookmarking(bool flag);
+    virtual QString panelName() const /* override */;
+signals:
 
-public slots:
+    void sigDeleteBookmark(int bookmarkIndex);
+    void sigDeleteAllBookmarks();
+    void sigBookmarkSelected(int index);
 
 protected:
 

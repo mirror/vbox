@@ -55,6 +55,7 @@ public:
     void refresh();
     void reset();
     const QVector<float> &getMatchLocationVector() const;
+    virtual QString panelName() const /* override */;
 
 protected:
 
@@ -130,4 +131,3 @@ private:
 
 
 #endif /* !FEQT_INCLUDED_SRC_logviewer_UIVMLogViewerSearchPanel_h */
-
