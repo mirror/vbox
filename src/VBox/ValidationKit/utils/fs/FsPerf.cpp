@@ -1240,6 +1240,10 @@ void fsPerfRm(void)
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))),  VERR_ACCESS_DENIED);
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(".."))), VERR_ACCESS_DENIED);
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(""))),   VERR_ACCESS_DENIED);
+#elif defined(RT_OS_DARWIN) /* unlink() on xnu 16.7.0 is behaviour totally werid: */
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))),  VERR_INVALID_PARAMETER);
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(".."))), VINF_SUCCESS /*WTF?!?*/);
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(""))),   VERR_ACCESS_DENIED);
 #else
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))),  VERR_IS_A_DIRECTORY);
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(".."))), VERR_IS_A_DIRECTORY);
@@ -2004,7 +2008,7 @@ void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint
         for (size_t offBuf = 0; offBuf < cbBuf; )
         {
             uint32_t const cbLeft    = (uint32_t)(cbBuf - offBuf);
-            uint32_t const cbToWrite = aRuns[i].cbMax < UINT32_MAX / 2 ? RTRandU32Ex(1, aRuns[i].cbMax)
+            uint32_t const cbToWrite = aRuns[i].cbMax < UINT32_MAX / 2 ? RTRandU32Ex(1, RT_MIN(aRuns[i].cbMax, cbLeft))
                                      : aRuns[i].cbMax == UINT32_MAX    ? RTRandU32Ex(RT_MAX(cbLeft / 4, 1), cbLeft)
                                      : RTRandU32Ex(cbLeft >= _8K ? _8K : 1, RT_MIN(_1M, cbLeft));
             size_t cbActual = 0;
@@ -2013,7 +2017,8 @@ void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint
                 offBuf += cbActual;
             else
             {
-                RTTestIFailed("Attempting to write %#x bytes at %#zx, only got %#x written!\n", cbToWrite, offBuf, cbActual);
+                RTTestIFailed("Attempting to write %#x bytes at %#zx (%#x left), only got %#x written!\n",
+                              cbToWrite, offBuf, cbLeft, cbActual);
                 if (cbActual)
                     offBuf += cbActual;
                 else
