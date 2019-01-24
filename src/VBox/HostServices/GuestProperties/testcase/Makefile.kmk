@@ -31,7 +31,9 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  # The second define here is to ensure that the testcase will run fast,
  # without waiting for any thread synchronisation.
  tstGuestPropSvc_DEFS     = VBOX_WITH_HGCM VBOX_GUEST_PROP_TEST_NOTHREAD
- tstGuestPropSvc_SOURCES  = tstGuestPropSvc.cpp ../service.cpp
+ tstGuestPropSvc_SOURCES  = \
+	tstGuestPropSvc.cpp \
+	../VBoxGuestPropSvc.cpp
  tstGuestPropSvc_LIBS     = $(LIB_RUNTIME)
 
 $$(tstGuestPropSvc_0_OUTDIR)/tstGuestPropSvc.run: $$(tstGuestPropSvc_1_STAGE_TARGET)
