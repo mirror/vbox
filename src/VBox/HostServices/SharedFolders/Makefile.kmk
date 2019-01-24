@@ -36,14 +36,14 @@ VBoxSharedFolders_LDFLAGS.darwin = \
 	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSharedFolders.dylib
 
 VBoxSharedFolders_SOURCES = \
-	service.cpp \
+	VBoxSharedFoldersSvc.cpp \
 	shflhandle.cpp \
 	vbsf.cpp \
 	vbsfpath.cpp \
 	vbsfpathabs.cpp \
 	mappings.cpp
 VBoxSharedFolders_SOURCES.win = \
-	VBoxSharedFolders.rc
+	VBoxSharedFoldersSvc.rc
 
 VBoxSharedFolders_LIBS = \
 	$(LIB_VMM) \

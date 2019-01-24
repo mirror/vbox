@@ -61,7 +61,7 @@ tstSharedFolderService_INCS     = ..
 tstSharedFolderService_SOURCES  = \
     tstSharedFolderService.cpp \
     ../mappings.cpp \
-    ../service.cpp \
+    ../VBoxSharedFoldersSvc.cpp \
     ../shflhandle.cpp \
     ../vbsfpathabs.cpp \
     ../vbsfpath.cpp \
