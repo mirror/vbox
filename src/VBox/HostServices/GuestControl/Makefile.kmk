@@ -33,7 +33,7 @@ VBoxGuestControlSvc_INCS.win  = \
 	$(VBOX_PATH_SDK)
 
 VBoxGuestControlSvc_SOURCES = \
-	service.cpp
+	VBoxGuestControlSvc.cpp
 
 VBoxGuestControlSvc_SOURCES.win = \
 	VBoxGuestControlSvc.rc
