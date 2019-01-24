@@ -827,6 +827,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/medium/UIFDCreationDialog.h \
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumItem.h \
+	src/medium/UIMediumSearchWidget.h \
 	src/medium/UIMediumSelector.h \
 	src/medium/viso/UIVisoBrowserBase.h \
 	src/medium/viso/UIVisoContentBrowser.h \
@@ -971,7 +972,6 @@ VBoxGlobal_QT_MOCSRCS = \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
-	src/medium/UIMediumSelector.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
@@ -1292,6 +1292,7 @@ VBoxGlobal_SOURCES = \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumItem.cpp \
+	src/medium/UIMediumSearchWidget.cpp \
 	src/medium/UIMediumSelector.cpp \
 	src/medium/viso/UIVisoBrowserBase.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \

@@ -26,7 +26,7 @@
 #include "QIWithRetranslateUI.h"
 #include "UIMedium.h"
 #include "UIMediumDefs.h"
-#include "UIMediumDetailsWidget.h"
+
 
 /* Forward declarations: */
 class QAction;
