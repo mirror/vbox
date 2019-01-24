@@ -202,7 +202,9 @@ static bool vbox_set_up_input_mapping(struct vbox_private *vbox)
 }
 
 static int vbox_crtc_set_base(struct drm_crtc *crtc,
-				 struct drm_framebuffer *old_fb, int x, int y)
+				 struct drm_framebuffer *old_fb,
+				 struct drm_framebuffer *new_fb,
+				 int x, int y)
 {
 	struct vbox_private *vbox = crtc->dev->dev_private;
 	struct vbox_crtc *vbox_crtc = to_vbox_crtc(crtc);
@@ -212,7 +214,7 @@ static int vbox_crtc_set_base(struct drm_crtc *crtc,
 	int ret;
 	u64 gpu_addr;
 
-	vbox_fb = to_vbox_framebuffer(CRTC_FB(crtc));
+	vbox_fb = to_vbox_framebuffer(new_fb);
 	obj = vbox_fb->obj;
 	bo = gem_to_vbox_bo(obj);
 
@@ -262,7 +264,7 @@ static int vbox_crtc_mode_set(struct drm_crtc *crtc,
 			      int x, int y, struct drm_framebuffer *old_fb)
 {
 	struct vbox_private *vbox = crtc->dev->dev_private;
-	int ret = vbox_crtc_set_base(crtc, old_fb, x, y);
+	int ret = vbox_crtc_set_base(crtc, old_fb, CRTC_FB(crtc), x, y);
 	if (ret)
 		return ret;
 	mutex_lock(&vbox->hw_mutex);
