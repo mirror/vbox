@@ -28,11 +28,11 @@ VBoxHostChannel_INCS.win  = \
 	$(VBOX_PATH_SDK)
 
 VBoxHostChannel_SOURCES = \
-	service.cpp \
+	VBoxHostChannelSvc.cpp \
 	HostChannel.cpp
 
 VBoxHostChannel_SOURCES.win = \
-	VBoxHostChannel.rc
+	VBoxHostChannelSvc.rc
 
 VBoxHostChannel_LIBS = \
 	$(LIB_VMM) \
