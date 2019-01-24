@@ -40,6 +40,7 @@
 %VERPKG%: binary-without-manpage usr/bin/VBoxTunctl
 %VERPKG%: binary-without-manpage usr/bin/VBoxVRDP
 %VERPKG%: binary-without-manpage usr/bin/VirtualBox
+%VERPKG%: binary-without-manpage usr/bin/VirtualBoxVM
 %VERPKG%: binary-without-manpage usr/bin/rdesktop-vrdp
 %VERPKG%: binary-without-manpage usr/bin/vboxballoonctrl
 %VERPKG%: binary-without-manpage usr/bin/vboxdtrace
@@ -48,6 +49,7 @@
 %VERPKG%: binary-without-manpage usr/bin/vboxsdl
 %VERPKG%: binary-without-manpage usr/bin/vboxwebsrv
 %VERPKG%: binary-without-manpage usr/bin/virtualbox
+%VERPKG%: binary-without-manpage usr/bin/virtualboxvm
 %VERPKG%: unstripped-binary-or-object usr/lib/virtualbox/VBoxDDRC.rc
 %VERPKG%: unstripped-binary-or-object usr/lib/virtualbox/VBoxDDR0.r0
 %VERPKG%: unstripped-binary-or-object usr/lib/virtualbox/VMMRC.rc
@@ -105,6 +107,7 @@
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxXPCOMIPCD /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxAuth.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VirtualBox /usr/lib/virtualbox
+%VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VirtualBoxVM /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VirtualBox.so /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/VBoxExtPackHelperApp /usr/lib/virtualbox
 %VERPKG%: binary-or-shlib-defines-rpath ./usr/lib/virtualbox/components/VBoxC.so /usr/lib/virtualbox

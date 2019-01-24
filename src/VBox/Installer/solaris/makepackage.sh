@@ -126,6 +126,7 @@ create_hardlink VBoxBugReport
 create_hardlink VBoxBalloonCtrl
 create_hardlink VBoxTestOGL
 create_hardlink VirtualBox
+create_hardlink VirtualBoxVM
 create_hardlink vbox-img
 create_hardlink VBoxHeadless
 

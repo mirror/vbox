@@ -65,6 +65,7 @@ fi
 # Remove symlinks
 rm -f \
   /usr/bin/VirtualBox \
+  /usr/bin/VirtualBoxVM \
   /usr/bin/VBoxManage \
   /usr/bin/VBoxSDL \
   /usr/bin/VBoxVRDP \
@@ -81,6 +82,7 @@ rm -f \
   /usr/bin/VBoxDeleteIf \
   /usr/bin/VBoxTunctl \
   /usr/bin/virtualbox \
+  /usr/bin/virtualboxvm \
   /usr/share/pixmaps/VBox.png \
   /usr/share/pixmaps/virtualbox.png \
   /usr/share/applications/virtualbox.desktop \
