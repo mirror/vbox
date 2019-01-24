@@ -71,6 +71,16 @@ apmf_disconnect:			; function 04h
 		jmp	apmw_success
 
 apmf_idle:				; function 05h
+                ;
+                ; Windows 3.1 POWER.DRV in Standard mode calls into APM
+                ; with CPL=3. If that happens, the HLT instruction will fault
+                ; and Windows will crash. To prevent that, we check the CPL
+                ; and do nothing (better than crashing).
+                ;
+                push    cs
+                pop     ax
+                test    ax, 3           ; CPL > 0?
+                jnz     apmw_success
 		sti
 		hlt
 		jmp	apmw_success

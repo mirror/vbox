@@ -70,12 +70,16 @@
 
 - PC DOS 6.x/7.x QCONFIG is a rare user of INT 16h fn 0Ah (read keyboard ID).
 
-- DOS POWER.EXE uses the real mode APM interface, OS/2 APM.SYS uses the 16-bit
-  protected mode APM interface, and Windows 9x uses the 32-bit protected mode
-  APM interface.
+- DOS POWER.EXE uses the real mode APM interface, Windows 3.1 POWER.DRV and
+  OS/2 APM.SYS use the 16-bit protected mode APM interface, and Windows 9x
+  uses the 32-bit protected mode APM interface.
 
 - Windows 98 is one of the few APM 1.2 users; Windows 95 uses APM 1.1, while
   newer systems prefer ACPI.
+
+- Windows 3.1 Standard mode violates the APM specifications and calls into
+  APM with CPL=3, causing the HLT instruction to fault if used. 386 Enhanced
+  mode Windows 3.1 calls into APM with CPL=3.
 
 - QNX4 calls 16-bit protected-mode PCI BIOS in an environment where ESP is
   16-bit but SS is a 32-bit stack segment. In such environments, using the
