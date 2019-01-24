@@ -35,7 +35,7 @@ VBoxDragAndDropSvc_INCS.win  = \
 	$(VBOX_PATH_SDK)
 
 VBoxDragAndDropSvc_SOURCES = \
-	service.cpp \
+	VBoxDragAndDropSvc.cpp \
 	dndmanager.cpp
 
 VBoxDragAndDropSvc_SOURCES += \
