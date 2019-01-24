@@ -447,7 +447,11 @@ static void vbox_hw_fini(struct vbox_private *vbox)
 	pci_iounmap(vbox->dev->pdev, vbox->guest_heap);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
 int vbox_driver_load(struct drm_device *dev, unsigned long flags)
+#else
+int vbox_driver_load(struct drm_device *dev)
+#endif
 {
 	struct vbox_private *vbox;
 	int ret = 0;

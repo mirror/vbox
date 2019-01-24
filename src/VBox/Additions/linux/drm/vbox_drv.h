@@ -216,7 +216,11 @@ struct vbox_private {
 #undef CURSOR_PIXEL_COUNT
 #undef CURSOR_DATA_SIZE
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
 int vbox_driver_load(struct drm_device *dev, unsigned long flags);
+#else
+int vbox_driver_load(struct drm_device *dev);
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || defined(RHEL_75)
 void vbox_driver_unload(struct drm_device *dev);
 #else
