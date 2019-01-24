@@ -430,6 +430,8 @@ pxdns_hash_add(struct pxdns *pxdns, struct request *req)
     struct request **chain;
 
     LWIP_ASSERT1(req->pprev_hash == NULL);
+    ++pxdns->active_queries;
+
     chain = &pxdns->request_hash[HASH(req->id)];
     if ((req->next_hash = *chain) != NULL) {
         (*chain)->pprev_hash = &req->next_hash;
@@ -510,7 +512,6 @@ pxdns_request_register(struct pxdns *pxdns, struct request *req)
 
     pxdns_hash_add(pxdns, req);
     pxdns_timeout_add(pxdns, req);
-    ++pxdns->active_queries;
 
     sys_mutex_unlock(&pxdns->lock);
 }
@@ -523,7 +524,6 @@ pxdns_request_deregister(struct pxdns *pxdns, struct request *req)
 
     pxdns_hash_del(pxdns, req);
     pxdns_timeout_del(pxdns, req);
-    --pxdns->active_queries;
 
     sys_mutex_unlock(&pxdns->lock);
 }
@@ -551,7 +551,6 @@ pxdns_request_find(struct pxdns *pxdns, u16_t id)
     if (req != NULL) {
         pxdns_hash_del(pxdns, req);
         pxdns_timeout_del(pxdns, req);
-        --pxdns->active_queries;
     }
 
     sys_mutex_unlock(&pxdns->lock);
