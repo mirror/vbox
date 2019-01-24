@@ -105,10 +105,6 @@ typedef struct ClientRequest
 /**
  * Structure for holding a buffered host message which has
  * not been processed yet.
- *
- * @todo r=bird: It would be nice if we could decide on _one_ term for what the
- *       host passes to the guest.  We currently have:
- *          - The enum is called eHostMsg, implying it's a function
  */
 typedef struct HostMsg
 {
