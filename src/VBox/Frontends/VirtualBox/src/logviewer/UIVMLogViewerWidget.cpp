@@ -49,8 +49,6 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
-
-
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
                                          UIActionPool *pActionPool,
                                          bool fShowToolbar /* = true */,
@@ -75,6 +73,7 @@ UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
 {
     /* Prepare VM Log-Viewer: */
     prepare();
+    restorePanelVisibility();
 }
 
 UIVMLogViewerWidget::~UIVMLogViewerWidget()
@@ -606,8 +605,39 @@ void UIVMLogViewerWidget::loadOptions()
         m_font = loadedFont;
 }
 
+void UIVMLogViewerWidget::restorePanelVisibility()
+{
+    /** Reset the action states first: */
+    foreach(QAction* pAction, m_panelActionMap.values())
+    {
+        pAction->blockSignals(true);
+        pAction->setChecked(false);
+        pAction->blockSignals(false);
+    }
+
+    /* Load the visible panel list and show them: */
+    QStringList strNameList = gEDataManager->logViewerVisiblePanels();
+    foreach(const QString strName, strNameList)
+    {
+        foreach(UIDialogPanel* pPanel, m_panelActionMap.keys())
+        {
+            if (strName == pPanel->panelName())
+            {
+                showPanel(pPanel);
+                break;
+            }
+        }
+    }
+}
+
 void UIVMLogViewerWidget::saveOptions()
 {
+    /* Save a list of currently visible panels: */
+    QStringList strNameList;
+    foreach(UIDialogPanel* pPanel, m_visiblePanelsList)
+        strNameList.append(pPanel->panelName());
+    gEDataManager->setLogViewerVisiblePanels(strNameList);
+
     gEDataManager->setLogViweverOptions(m_font, m_bWrapLines, m_bShowLineNumbers);
 }
 

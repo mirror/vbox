@@ -722,6 +722,8 @@ public:
         bool logViewerShowLineNumbers();
         /** Tries to find system font by searching by family and style strings within the font database. */
         QFont logViewerFont();
+        void setLogViewerVisiblePanels(const QStringList &panelNameList);
+        QStringList logViewerVisiblePanels();
     /** @} */
 
 private slots:

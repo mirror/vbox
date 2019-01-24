@@ -222,6 +222,7 @@ const char *UIExtraDataDefs::GUI_LogViewerOptions = "GUI/LogViewerOptions";
 const char *UIExtraDataDefs::GUI_LogViewerWrapLinesEnabled = "WrapLines";
 const char *UIExtraDataDefs::GUI_LogViewerShowLineNumbersDisabled = "showLineNumbersDisabled";
 const char *UIExtraDataDefs::GUI_LogViewerNoFontStyleName = "noFontStyleName";
+const char *UIExtraDataDefs::GUI_GuestControl_LogViewerVisiblePanels = "GUI/LogViewerVisiblePanels";
 
 
 /* Obsolete keys: */

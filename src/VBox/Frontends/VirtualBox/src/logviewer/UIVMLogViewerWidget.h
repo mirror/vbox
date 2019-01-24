@@ -146,6 +146,8 @@ private:
         void prepareToolBar();
         /** Loads options.  */
         void loadOptions();
+        /** Shows the panels that have been visible the last time logviewer is closed. */
+        void restorePanelVisibility();
 
         /** Saves options.  */
         void saveOptions();

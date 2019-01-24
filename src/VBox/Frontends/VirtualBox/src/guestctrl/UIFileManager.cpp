@@ -100,7 +100,6 @@ void UIFileManagerOptions::destroy()
 
  UIFileManagerOptions::~UIFileManagerOptions()
 {
-
 }
 
 UIFileManagerOptions::UIFileManagerOptions()
