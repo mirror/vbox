@@ -40,6 +40,7 @@ class QITabWidget;
 class QPlainTextEdit;
 class QVBoxLayout;
 class UIActionPool;
+class UIDialogPanel;
 class UIToolBar;
 class UIVMLogPage;
 class UIVMLogViewerBookmarksPanel;
@@ -120,6 +121,7 @@ private slots:
     /* Handles the UIVMLogPage signal which is emitted when isFiltered property
        of UIVMLogPage is changed. */
     void sltLogPageFilteredChanged(bool isFiltered);
+    void sltHandleHidePanel(UIDialogPanel *pPanel);
 
     /** @name Slots to handle signals from settings panel
      * @{ */
@@ -177,8 +179,8 @@ private:
     /** Resets document (of the curent tab) and scrollbar highligthing */
     void resetHighlighthing();
 
-    void hidePanel(UIVMLogViewerPanel* panel);
-    void showPanel(UIVMLogViewerPanel* panel);
+    void hidePanel(UIDialogPanel* panel);
+    void showPanel(UIDialogPanel* panel);
 
     /** Make sure escape key is assigned to only a single widget. This is done by checking
         several things in the following order:
@@ -210,9 +212,9 @@ private:
         UIVMLogViewerSearchPanel    *m_pSearchPanel;
         UIVMLogViewerFilterPanel    *m_pFilterPanel;
         UIVMLogViewerBookmarksPanel *m_pBookmarksPanel;
-        UIVMLogViewerOptionsPanel  *m_pOptionsPanel;
-        QMap<UIVMLogViewerPanel*, QAction*> m_panelActionMap;
-        QList<UIVMLogViewerPanel*>          m_visiblePanelsList;
+        UIVMLogViewerOptionsPanel   *m_pOptionsPanel;
+        QMap<UIDialogPanel*, QAction*> m_panelActionMap;
+        QList<UIDialogPanel*>          m_visiblePanelsList;
     /** @} */
     QVBoxLayout         *m_pMainLayout;
 
@@ -229,10 +231,7 @@ private:
         bool  m_bWrapLines;
         QFont m_font;
     /** @} */
-    friend class UIVMLogViewerBookmarksPanel;
     friend class UIVMLogViewerFilterPanel;
-    friend class UIVMLogViewerSearchPanel;
-    friend class UIVMLogViewerOptionsPanel;
     friend class UIVMLogViewerPanel;
     friend class UIVMLogViewerDialog;
 };

@@ -196,7 +196,7 @@ void UIVMLogViewerWidget::sltRefresh()
     /* If there are no log files to show the hide all the open panels: */
     if (noLogsToShow)
     {
-        for (QMap<UIVMLogViewerPanel*, QAction*>::iterator iterator = m_panelActionMap.begin();
+        for (QMap<UIDialogPanel*, QAction*>::iterator iterator = m_panelActionMap.begin();
             iterator != m_panelActionMap.end(); ++iterator)
         {
             if (iterator.key())
@@ -283,9 +283,9 @@ void UIVMLogViewerWidget::sltPanelActionToggled(bool fChecked)
     QAction *pSenderAction = qobject_cast<QAction*>(sender());
     if (!pSenderAction)
         return;
-    UIVMLogViewerPanel* pPanel = 0;
+    UIDialogPanel* pPanel = 0;
     /* Look for the sender() within the m_panelActionMap's values: */
-    for (QMap<UIVMLogViewerPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
+    for (QMap<UIDialogPanel*, QAction*>::const_iterator iterator = m_panelActionMap.begin();
         iterator != m_panelActionMap.end(); ++iterator)
     {
         if (iterator.value() == pSenderAction)
@@ -337,6 +337,11 @@ void UIVMLogViewerWidget::sltLogPageFilteredChanged(bool isFiltered)
        the original log text and does not mean much in a reduced/filtered one. */
     if (m_pBookmarksPanel)
         m_pBookmarksPanel->disableEnableBookmarking(!isFiltered);
+}
+
+void UIVMLogViewerWidget::sltHandleHidePanel(UIDialogPanel *pPanel)
+{
+    hidePanel(pPanel);
 }
 
 void UIVMLogViewerWidget::sltShowLineNumbers(bool bShowLineNumbers)
@@ -488,6 +493,8 @@ void UIVMLogViewerWidget::prepareWidgets()
             m_pSearchPanel->hide();
             connect(m_pSearchPanel, &UIVMLogViewerSearchPanel::sigHighlightingUpdated,
                     this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
+            connect(m_pSearchPanel, &UIVMLogViewerSearchPanel::sigHidePanel,
+                    this, &UIVMLogViewerWidget::sltHandleHidePanel);
             m_panelActionMap.insert(m_pSearchPanel, m_pActionPool->action(UIActionIndex_M_Log_T_Find));
 
             /* Add into layout: */
@@ -503,6 +510,8 @@ void UIVMLogViewerWidget::prepareWidgets()
             m_pFilterPanel->hide();
             connect(m_pFilterPanel, &UIVMLogViewerFilterPanel::sigFilterApplied,
                     this, &UIVMLogViewerWidget::sltFilterApplied);
+            connect(m_pFilterPanel, &UIVMLogViewerFilterPanel::sigHidePanel,
+                    this, &UIVMLogViewerWidget::sltHandleHidePanel);
             m_panelActionMap.insert(m_pFilterPanel, m_pActionPool->action(UIActionIndex_M_Log_T_Filter));
 
             /* Add into layout: */
@@ -522,6 +531,8 @@ void UIVMLogViewerWidget::prepareWidgets()
             connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigBookmarkSelected,
                     this, &UIVMLogViewerWidget::gotoBookmark);
             m_panelActionMap.insert(m_pBookmarksPanel, m_pActionPool->action(UIActionIndex_M_Log_T_Bookmark));
+            connect(m_pBookmarksPanel, &UIVMLogViewerBookmarksPanel::sigHidePanel,
+                    this, &UIVMLogViewerWidget::sltHandleHidePanel);
 
             /* Add into layout: */
             m_pMainLayout->addWidget(m_pBookmarksPanel);
@@ -541,6 +552,8 @@ void UIVMLogViewerWidget::prepareWidgets()
             connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigChangeFontSizeInPoints, this, &UIVMLogViewerWidget::sltFontSizeChanged);
             connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigChangeFont, this, &UIVMLogViewerWidget::sltChangeFont);
             connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigResetToDefaults, this, &UIVMLogViewerWidget::sltResetOptionsToDefault);
+            connect(m_pOptionsPanel, &UIVMLogViewerOptionsPanel::sigHidePanel, this, &UIVMLogViewerWidget::sltHandleHidePanel);
+
             m_panelActionMap.insert(m_pOptionsPanel, m_pActionPool->action(UIActionIndex_M_Log_T_Options));
 
             /* Add into layout: */
@@ -804,11 +817,13 @@ void UIVMLogViewerWidget::resetHighlighthing()
     logPage->clearScrollBarMarkingsVector();
 }
 
-void UIVMLogViewerWidget::hidePanel(UIVMLogViewerPanel* panel)
+void UIVMLogViewerWidget::hidePanel(UIDialogPanel* panel)
 {
-    if (panel && panel->isVisible())
+    if (!panel)
+        return;
+    if (panel->isVisible())
         panel->setVisible(false);
-    QMap<UIVMLogViewerPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
+    QMap<UIDialogPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
     if (iterator != m_panelActionMap.end())
     {
         if (iterator.value() && iterator.value()->isChecked())
@@ -818,11 +833,11 @@ void UIVMLogViewerWidget::hidePanel(UIVMLogViewerPanel* panel)
     manageEscapeShortCut();
 }
 
-void UIVMLogViewerWidget::showPanel(UIVMLogViewerPanel* panel)
+void UIVMLogViewerWidget::showPanel(UIDialogPanel* panel)
 {
     if (panel && panel->isHidden())
         panel->setVisible(true);
-    QMap<UIVMLogViewerPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
+    QMap<UIDialogPanel*, QAction*>::iterator iterator = m_panelActionMap.find(panel);
     if (iterator != m_panelActionMap.end())
     {
         if (!iterator.value()->isChecked())
