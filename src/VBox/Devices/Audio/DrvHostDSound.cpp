@@ -766,12 +766,10 @@ static HRESULT directSoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS
         pThis->pDSStrmOut = pStreamDS;
 
         const uint32_t cfBufSize = PDMAUDIOSTREAMCFG_B2F(pCfgAcq, pStreamDS->cbBufSize);
-        if (cfBufSize != pCfgAcq->Backend.cfBufferSize)
-        {
-            pCfgAcq->Backend.cfBufferSize = cfBufSize;
-            pCfgAcq->Backend.cfPeriod     = cfBufSize / 4;
-            pCfgAcq->Backend.cfPreBuf     = pCfgAcq->Backend.cfPeriod * 2;
-        }
+
+        pCfgAcq->Backend.cfBufferSize = cfBufSize;
+        pCfgAcq->Backend.cfPeriod     = cfBufSize / 4;
+        pCfgAcq->Backend.cfPreBuf     = pCfgAcq->Backend.cfPeriod * 2;
 
     } while (0);
 
