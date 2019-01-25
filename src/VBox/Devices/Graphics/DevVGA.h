@@ -349,10 +349,20 @@ typedef struct VGAState {
     /* Whether the SVGA emulation is enabled or not. */
     bool                        fVMSVGAEnabled;
     bool                        fVMSVGAPciId;
-    bool                        Padding4[0+3];
+    bool                        fVMSVGAPciBarLayout;
+    bool                        Padding4[0+2];
 # else
     bool                        Padding4[1+4];
 # endif
+
+    struct {
+        uint32_t                    u32Padding1;
+        uint32_t                    iVRAM;
+# ifdef VBOX_WITH_VMSVGA
+        uint32_t                    iIO;
+        uint32_t                    iFIFO;
+# endif
+    } pciRegions;
 
     /** Physical access type for the linear frame buffer dirty page tracking. */
     PGMPHYSHANDLERTYPE          hLfbAccessHandlerType;

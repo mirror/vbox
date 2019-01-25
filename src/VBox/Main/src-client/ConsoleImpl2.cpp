@@ -3822,7 +3822,10 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
         {
             InsertConfigInteger(pCfg, "VMSVGAEnabled", true);
             if (enmGraphicsController == GraphicsControllerType_VMSVGA)
+            {
+                InsertConfigInteger(pCfg, "VMSVGAPciBarLayout", true);
                 InsertConfigInteger(pCfg, "VMSVGAPciId", true);
+            }
 #ifdef VBOX_WITH_VMSVGA3D
             InsertConfigInteger(pCfg, "VMSVGA3dEnabled", f3DEnabled);
 #else
