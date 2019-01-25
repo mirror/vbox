@@ -6257,7 +6257,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     Log(("VMSVGA: VMSVGA3dEnabled = %d\n", pThis->svga.f3DEnabled));
 #endif
 
-    
 #ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAPciBarLayout)
     {
