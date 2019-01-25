@@ -3130,13 +3130,14 @@ static int drvAudioStreamCreateInternalBackend(PDRVAUDIO pThis,
         LogRel2(("Audio: Period size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",
                  pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cfPeriod, &pCfgAcq->Props), pCfgAcq->Backend.cfPeriod));
 
+    /* Was pre-buffering requested, but the acquired configuration from the backend told us something else? */
     if (   pCfgReq->Backend.cfPreBuf
         && pCfgAcq->Backend.cfPreBuf != pCfgReq->Backend.cfPreBuf)
     {
         LogRel2(("Audio: Pre-buffering size overwritten by backend for stream '%s' (now %RU64ms, %RU32 frames)\n",
                  pStream->szName, DrvAudioHlpFramesToMilli(pCfgAcq->Backend.cfPreBuf, &pCfgAcq->Props), pCfgAcq->Backend.cfPreBuf));
     }
-    else
+    else if (pCfgReq->Backend.cfPreBuf == 0) /* Was the pre-buffering requested as being disabeld? Tell the users. */
     {
         LogRel2(("Audio: Pre-buffering is disabled for stream '%s'\n", pStream->szName));
         pCfgAcq->Backend.cfPreBuf = 0;
