@@ -44,6 +44,9 @@ signals:
 
 public:
 
+    /** Click policy. */
+    enum ClickPolicy { ClickPolicy_OnRelease, ClickPolicy_OnPress };
+
     /* Constructor: */
     UIGraphicsButton(QIGraphicsWidget *pParent, const QIcon &icon);
 
@@ -54,6 +57,11 @@ public:
     void setIconScaleIndex(double dIndex);
     /** Returns icon scale index. */
     double iconScaleIndex() const;
+
+    /** Defines click @a enmPolicy. */
+    void setClickPolicy(ClickPolicy enmPolicy);
+    /** Returns click policy. */
+    ClickPolicy clickPolicy() const;
 
 protected:
 
@@ -78,6 +86,9 @@ protected:
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent);
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent);
 
+    /** Handles timer @a pEvent. */
+    virtual void timerEvent(QTimerEvent *pEvent) /* override */;
+
     /* Helpers: Update stuff: */
     virtual void refresh();
 
@@ -86,6 +97,14 @@ private:
     /* Variables: */
     QIcon m_icon;
     bool m_fParentSelected;
+
+    /** Holds the click policy. */
+    ClickPolicy  m_enmClickPolicy;
+
+    /** Holds the delay timer ID. */
+    int  m_iDelayId;
+    /** Holds the repeat timer ID. */
+    int  m_iRepeatId;
 
     /** Holds the icon scale index. */
     double  m_dIconScaleIndex;

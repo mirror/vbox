@@ -18,10 +18,11 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QGraphicsScene>
+#include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
 #include <QPainter>
 #include <QStyle>
-#include <QGraphicsSceneMouseEvent>
+#include <QTimerEvent>
 
 /* GUI includes: */
 #include "UIGraphicsButton.h"
@@ -31,6 +32,9 @@ UIGraphicsButton::UIGraphicsButton(QIGraphicsWidget *pParent, const QIcon &icon)
     : QIGraphicsWidget(pParent)
     , m_icon(icon)
     , m_fParentSelected(false)
+    , m_enmClickPolicy(ClickPolicy_OnRelease)
+    , m_iDelayId(0)
+    , m_iRepeatId(0)
     , m_dIconScaleIndex(0)
 {
     /* Refresh finally: */
@@ -54,6 +58,16 @@ void UIGraphicsButton::setIconScaleIndex(double dIndex)
 double UIGraphicsButton::iconScaleIndex() const
 {
     return m_dIconScaleIndex;
+}
+
+void UIGraphicsButton::setClickPolicy(ClickPolicy enmPolicy)
+{
+    m_enmClickPolicy = enmPolicy;
+}
+
+UIGraphicsButton::ClickPolicy UIGraphicsButton::clickPolicy() const
+{
+    return m_enmClickPolicy;
 }
 
 QVariant UIGraphicsButton::data(int iKey) const
@@ -123,16 +137,67 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
 
 void UIGraphicsButton::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
 {
+    /* Call to base-class: */
+    QIGraphicsWidget::mousePressEvent(pEvent);
+
     /* Accepting this event allows to get release-event: */
     pEvent->accept();
+
+    /* For click-on-press policy: */
+    if (m_enmClickPolicy == ClickPolicy_OnPress)
+    {
+        /* Notify listeners about button click: */
+        emit sigButtonClicked();
+        /* Start delay timer: */
+        m_iDelayId = startTimer(500);
+    }
 }
 
 void UIGraphicsButton::mouseReleaseEvent(QGraphicsSceneMouseEvent *pEvent)
 {
     /* Call to base-class: */
     QIGraphicsWidget::mouseReleaseEvent(pEvent);
-    /* Notify listeners about button click: */
-    emit sigButtonClicked();
+
+    /* Depending on click policy: */
+    switch (m_enmClickPolicy)
+    {
+        /* For click-on-release policy: */
+        case ClickPolicy_OnRelease:
+        {
+            /* Notify listeners about button click: */
+            emit sigButtonClicked();
+            break;
+        }
+        /* For click-on-press policy: */
+        case ClickPolicy_OnPress:
+        {
+            /* We should stop all timers: */
+            killTimer(m_iDelayId);
+            killTimer(m_iRepeatId);
+            m_iDelayId = 0;
+            m_iRepeatId = 0;
+            break;
+        }
+    }
+}
+
+void UIGraphicsButton::timerEvent(QTimerEvent *pEvent)
+{
+    /* For click-on-press policy: */
+    if (m_enmClickPolicy == ClickPolicy_OnPress)
+    {
+        /* We should auto-repeat button click: */
+        emit sigButtonClicked();
+
+        /* For delay timer: */
+        if (pEvent->timerId() == m_iDelayId)
+        {
+            /* We should stop it and start repeat timer: */
+            killTimer(m_iDelayId);
+            m_iDelayId = 0;
+            m_iRepeatId = startTimer(90);
+        }
+    }
 }
 
 void UIGraphicsButton::refresh()
