@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIGraphicsButton class definition.
+ * VBox Qt GUI - UIGraphicsButton class implementation.
  */
 
 /*
@@ -31,22 +31,12 @@
 UIGraphicsButton::UIGraphicsButton(QIGraphicsWidget *pParent, const QIcon &icon)
     : QIGraphicsWidget(pParent)
     , m_icon(icon)
-    , m_fParentSelected(false)
     , m_enmClickPolicy(ClickPolicy_OnRelease)
     , m_iDelayId(0)
     , m_iRepeatId(0)
     , m_dIconScaleIndex(0)
 {
-    /* Refresh finally: */
     refresh();
-}
-
-void UIGraphicsButton::setParentSelected(bool fParentSelected)
-{
-    if (m_fParentSelected == fParentSelected)
-        return;
-    m_fParentSelected = fParentSelected;
-    update();
 }
 
 void UIGraphicsButton::setIconScaleIndex(double dIndex)
@@ -85,26 +75,28 @@ QVariant UIGraphicsButton::data(int iKey) const
         }
         case GraphicsButton_Icon:
             return m_icon;
-        default: break;
+        default:
+            break;
     }
     return QVariant();
 }
 
-QSizeF UIGraphicsButton::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
+QSizeF UIGraphicsButton::sizeHint(Qt::SizeHint enmType, const QSizeF &constraint /* = QSizeF() */) const
 {
-    /* Calculations for minimum size: */
-    if (which == Qt::MinimumSize)
+    /* For minimum size-hint: */
+    if (enmType == Qt::MinimumSize)
     {
-        /* Variables: */
-        int iMargin = data(GraphicsButton_Margin).toInt();
-        QSize iconSize = data(GraphicsButton_IconSize).toSize();
-        /* Calculations: */
+        /* Prepare variables: */
+        const int iMargin = data(GraphicsButton_Margin).toInt();
+        const QSize iconSize = data(GraphicsButton_IconSize).toSize();
+        /* Perform calculations: */
         int iWidth = 2 * iMargin + iconSize.width();
         int iHeight = 2 * iMargin + iconSize.height();
         return QSize(iWidth, iHeight);
     }
+
     /* Call to base-class: */
-    return QIGraphicsWidget::sizeHint(which, constraint);
+    return QIGraphicsWidget::sizeHint(enmType, constraint);
 }
 
 void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem* /* pOption */, QWidget* /* pWidget = 0 */)
@@ -113,14 +105,17 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
     const int iMargin = data(GraphicsButton_Margin).toInt();
     const QIcon icon = data(GraphicsButton_Icon).value<QIcon>();
     const QSize expectedIconSize = data(GraphicsButton_IconSize).toSize();
-    /* Determine which QWindow this QGraphicsWidget belongs to: */
+
+    /* Determine which QWindow this QGraphicsWidget belongs to.
+     * This is required for proper HiDPI-aware pixmap calculations. */
     QWindow *pWindow = 0;
     if (   scene()
         && !scene()->views().isEmpty()
         && scene()->views().first()
         && scene()->views().first()->window())
         pWindow = scene()->views().first()->window()->windowHandle();
-    /* Acquire pixmap: */
+
+    /* Acquire pixmap, adjust it to be in center of button if necessary: */
     const QPixmap pixmap = icon.pixmap(pWindow, expectedIconSize);
     const QSize actualIconSize = pixmap.size() / pixmap.devicePixelRatio();
     QPoint position = QPoint(iMargin, iMargin);
@@ -131,7 +126,7 @@ void UIGraphicsButton::paint(QPainter *pPainter, const QStyleOptionGraphicsItem*
         position += QPoint(iDx, iDy);
     }
 
-    /* Just draw the pixmap: */
+    /* Draw the pixmap finally: */
     pPainter->drawPixmap(position, pixmap);
 }
 
@@ -204,7 +199,6 @@ void UIGraphicsButton::refresh()
 {
     /* Refresh geometry: */
     updateGeometry();
-    /* Resize to minimum size: */
+    /* Resize to minimum size-hint: */
     resize(minimumSizeHint());
 }
-
