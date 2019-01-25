@@ -1399,8 +1399,7 @@ typedef enum
 
 /** @name VMX abort reasons.
  * See Intel spec. "27.7 VMX Aborts".
- * Update HMVmxGetAbortDesc() if new reasons are added.
- * @{
+ * Update HMGetVmxAbortDesc() if new reasons are added. @{
  */
 typedef enum
 {
@@ -4093,9 +4092,9 @@ AssertCompileSize(VMXVDIAG, 4);
  * These are not HM all-context API functions, those are to be placed in hm.h.
  * @{
  */
-VMM_INT_DECL(int)   HMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
+VMM_INT_DECL(int)   HMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
                                           PVMXMSREXITWRITE penmWrite);
-VMM_INT_DECL(bool)  HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
+VMM_INT_DECL(bool)  HMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
                                                uint8_t cbAccess);
 /** @} */
 

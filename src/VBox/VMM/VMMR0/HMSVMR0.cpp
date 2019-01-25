@@ -711,7 +711,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     uint32_t u32Family;
     uint32_t u32Model;
     uint32_t u32Stepping;
-    if (HMSvmIsSubjectToErratum170(&u32Family, &u32Model, &u32Stepping))
+    if (HMIsSubjectToSvmErratum170(&u32Family, &u32Model, &u32Stepping))
     {
         Log4Func(("AMD cpu with erratum 170 family %#x model %#x stepping %#x\n", u32Family, u32Model, u32Stepping));
         pVM->hm.s.svm.fAlwaysFlushTLB = true;
@@ -871,7 +871,7 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, uint8_t *pbMsrBitmap, uint32_t
     bool const  fInNestedGuestMode = CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx);
     uint16_t    offMsrpm;
     uint8_t     uMsrpmBit;
-    int rc = HMSvmGetMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
+    int rc = HMGetSvmMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
     AssertRC(rc);
 
     Assert(uMsrpmBit == 0 || uMsrpmBit == 2 || uMsrpmBit == 4 || uMsrpmBit == 6);
@@ -2452,7 +2452,7 @@ static int hmR0SvmExportGuestState(PVMCPU pVCpu)
     if (pVmcb->ctrl.IntCtrl.n.u1VGifEnable)
     {
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);    /* Hardware supports it. */
-        Assert(HMSvmIsVGifActive(pVCpu->CTX_SUFF(pVM)));                                        /* VM has configured it. */
+        Assert(HMIsSvmVGifActive(pVCpu->CTX_SUFF(pVM)));                                        /* VM has configured it. */
         pVmcb->ctrl.IntCtrl.n.u1VGif = CPUMGetGuestGif(pCtx);
     }
 #endif
@@ -2542,7 +2542,7 @@ DECLINLINE(void) hmR0SvmMergeMsrpmNested(PHMPHYSCPU pHostCpu, PVMCPU pVCpu)
  * @returns true if the VMCB was previously already cached, false otherwise.
  * @param   pVCpu           The cross context virtual CPU structure.
  *
- * @sa      HMSvmNstGstVmExitNotify.
+ * @sa      HMNotifySvmNstGstVmexit.
  */
 static bool hmR0SvmCacheVmcbNested(PVMCPU pVCpu)
 {
@@ -2805,7 +2805,7 @@ static void hmR0SvmImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
             if (pVmcbCtrl->IntCtrl.n.u1VGifEnable)
             {
                 Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));    /* We don't yet support passing VGIF feature to the guest. */
-                Assert(HMSvmIsVGifActive(pVCpu->CTX_SUFF(pVM)));    /* VM has configured it. */
+                Assert(HMIsSvmVGifActive(pVCpu->CTX_SUFF(pVM)));    /* VM has configured it. */
                 CPUMSetGuestGif(pCtx, pVmcbCtrl->IntCtrl.n.u1VGif);
             }
         }
@@ -3336,7 +3336,7 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu, PSVMVMCB pVmcb)
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         /* Apply the nested-guest VMCB's TSC offset over the guest TSC offset. */
         if (CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
-            uTscOffset = HMSvmNstGstApplyTscOffset(pVCpu, uTscOffset);
+            uTscOffset = HMApplySvmNstGstTscOffset(pVCpu, uTscOffset);
 #endif
 
         /* Update the TSC offset in the VMCB and the relevant clean bits. */
@@ -4685,7 +4685,7 @@ DECLINLINE(int) hmR0SvmRunGuest(PVMCPU pVCpu, RTHCPHYS HCPhysVmcb)
  * @note    If you make any changes to this function, please check if
  *          hmR0SvmNstGstUndoTscOffset() needs adjusting.
  *
- * @sa      HMSvmNstGstApplyTscOffset().
+ * @sa      HMApplySvmNstGstTscOffset().
  */
 DECLINLINE(uint64_t) hmR0SvmNstGstUndoTscOffset(PVMCPU pVCpu, uint64_t uTicks)
 {
@@ -4726,7 +4726,7 @@ static void hmR0SvmPostRunGuest(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient, int r
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         else
         {
-            /* The nested-guest VMCB TSC offset shall eventually be restored on #VMEXIT via HMSvmNstGstVmExitNotify(). */
+            /* The nested-guest VMCB TSC offset shall eventually be restored on #VMEXIT via HMNotifySvmNstGstVmexit(). */
             uint64_t const uGstTsc = hmR0SvmNstGstUndoTscOffset(pVCpu, uHostTsc + pVmcbCtrl->u64TSCOffset);
             TMCpuTickSetLastSeen(pVCpu, uGstTsc);
         }
@@ -5166,7 +5166,7 @@ static bool hmR0SvmIsIoInterceptActive(void *pvIoBitmap, PSVMIOIOEXITINFO pIoExi
     const bool        fRep          = pIoExitInfo->n.u1Rep;
     const bool        fStrIo        = pIoExitInfo->n.u1Str;
 
-    return HMSvmIsIOInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep, fStrIo,
+    return HMIsSvmIoInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep, fStrIo,
                                       NULL /* pIoExitInfo */);
 }
 
@@ -5258,7 +5258,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
                 uint32_t const idMsr = pVCpu->cpum.GstCtx.ecx;
                 uint16_t offMsrpm;
                 uint8_t  uMsrpmBit;
-                int rc = HMSvmGetMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
+                int rc = HMGetSvmMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(uMsrpmBit == 0 || uMsrpmBit == 2 || uMsrpmBit == 4 || uMsrpmBit == 6);

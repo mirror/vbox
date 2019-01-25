@@ -129,7 +129,7 @@ int hmSvmEmulateMovTpr(PVMCPU pVCpu)
  *
  * @sa      hmR0SvmVmRunCacheVmcb.
  */
-VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(void) HMNotifySvmNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     PSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     if (pVmcbNstGstCache->fCacheValid)
@@ -183,7 +183,7 @@ VMM_INT_DECL(void) HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx)
  * @remarks This value returned by this functions is expected by the callers not
  *          to change throughout the lifetime of the VM.
  */
-VMM_INT_DECL(bool) HMSvmIsVGifActive(PVM pVM)
+VMM_INT_DECL(bool) HMIsSvmVGifActive(PVM pVM)
 {
     bool const fVGif    = RT_BOOL(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);
     bool const fUseVGif = fVGif && pVM->hm.s.svm.fVGif;
@@ -208,7 +208,7 @@ VMM_INT_DECL(bool) HMSvmIsVGifActive(PVM pVM)
  *
  * @sa      CPUMApplyNestedGuestTscOffset(), hmR0SvmNstGstUndoTscOffset().
  */
-VMM_INT_DECL(uint64_t) HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t uTicks)
+VMM_INT_DECL(uint64_t) HMApplySvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks)
 {
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx)); RT_NOREF(pCtx);
@@ -228,7 +228,7 @@ VMM_INT_DECL(uint64_t) HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t uTicks)
  *
  * @param   pVCpu               The cross context virtual CPU structure.
  */
-VMM_INT_DECL(int) HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu)
+VMM_INT_DECL(int) HMHCMaybeMovTprSvmHypercall(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (pVM->hm.s.fTprPatchingAllowed)
@@ -251,7 +251,7 @@ VMM_INT_DECL(int) HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu)
  * @param   pu32Stepping    Where to store the CPU stepping (can be NULL).
  * @returns true if the erratum applies, false otherwise.
  */
-VMM_INT_DECL(int) HMSvmIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping)
+VMM_INT_DECL(int) HMIsSubjectToSvmErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping)
 {
     /*
      * Erratum 170 which requires a forced TLB flush for each world switch:
@@ -307,7 +307,7 @@ VMM_INT_DECL(int) HMSvmIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu3
  * @param   puMsrpmBit  Where to store the bit offset starting at the byte
  *                      returned in @a pbOffMsrpm.
  */
-VMM_INT_DECL(int) HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit)
+VMM_INT_DECL(int) HMGetSvmMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit)
 {
     Assert(pbOffMsrpm);
     Assert(puMsrpmBit);
@@ -371,7 +371,7 @@ VMM_INT_DECL(int) HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm
  * @param   pIoExitInfo     Pointer to the SVMIOIOEXITINFO struct to be filled.
  *                          Optional, can be NULL.
  */
-VMM_INT_DECL(bool) HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+VMM_INT_DECL(bool) HMIsSvmIoInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
                                             uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
                                             PSVMIOIOEXITINFO pIoExitInfo)
 {

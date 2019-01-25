@@ -147,7 +147,7 @@
     do \
     { \
         Log(("%s: VM-entry failed! enmDiag=%u (%s) -> %s\n", (a_pszInstr), (a_VmxDiag), \
-            HMVmxGetDiagDesc(a_VmxDiag), (a_pszFailure))); \
+            HMGetVmxDiagDesc(a_VmxDiag), (a_pszFailure))); \
         (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_VmxDiag); \
         return VERR_VMX_VMENTRY_FAILED; \
     } while (0)
@@ -157,7 +157,7 @@
     do \
     { \
         Log(("VM-exit failed! uExitReason=%u enmDiag=%u (%s) -> %s\n", (a_uExitReason), (a_VmxDiag), \
-            HMVmxGetDiagDesc(a_VmxDiag), (a_pszFailure))); \
+            HMGetVmxDiagDesc(a_VmxDiag), (a_pszFailure))); \
         (a_pVCpu)->cpum.GstCtx.hwvirt.vmx.enmDiag = (a_VmxDiag); \
         return VERR_VMX_VMEXIT_FAILED; \
     } while (0)
@@ -2038,7 +2038,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxAbort(PVMCPU pVCpu, VMXABORT enmAbort)
      * Perform the VMX abort.
      * See Intel spec. 27.7 "VMX Aborts".
      */
-    LogFunc(("enmAbort=%u (%s) -> RESET\n", enmAbort, HMVmxGetAbortDesc(enmAbort)));
+    LogFunc(("enmAbort=%u (%s) -> RESET\n", enmAbort, HMGetVmxAbortDesc(enmAbort)));
 
     /* We don't support SMX yet. */
     pVCpu->cpum.GstCtx.hwvirt.vmx.enmAbort = enmAbort;
@@ -3072,7 +3072,7 @@ IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t c
         uint8_t const *pbIoBitmapB = (uint8_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap) + VMX_V_IO_BITMAP_A_SIZE;
         Assert(pbIoBitmapA);
         Assert(pbIoBitmapB);
-        return HMVmxGetIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, u16Port, cbAccess);
+        return HMGetVmxIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, u16Port, cbAccess);
     }
 
     return false;
@@ -7484,7 +7484,7 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PVMCPU pVCpu, uint32_t uExitReaso
         if (uExitReason == VMX_EXIT_RDMSR)
         {
             VMXMSREXITREAD enmRead;
-            int rc = HMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, &enmRead,
+            int rc = HMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, &enmRead,
                                              NULL /* penmWrite */);
             AssertRC(rc);
             if (enmRead == VMXMSREXIT_INTERCEPT_READ)
@@ -7493,7 +7493,7 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PVMCPU pVCpu, uint32_t uExitReaso
         else
         {
             VMXMSREXITWRITE enmWrite;
-            int rc = HMVmxGetMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, NULL /* penmRead */,
+            int rc = HMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, NULL /* penmRead */,
                                              &enmWrite);
             AssertRC(rc);
             if (enmWrite == VMXMSREXIT_INTERCEPT_WRITE)

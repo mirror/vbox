@@ -6247,7 +6247,7 @@ VMMDECL(void) CPUMSetGuestEferMsrNoChecks(PVMCPU pVCpu, uint64_t uOldEfer, uint6
         != (pVCpu->cpum.s.Guest.msrEFER & (MSR_K6_EFER_NXE | MSR_K6_EFER_LME | MSR_K6_EFER_LMA)))
     {
         /// @todo PGMFlushTLB(pVCpu, cr3, true /*fGlobal*/);
-        HMFlushTLB(pVCpu);
+        HMFlushTlb(pVCpu);
 
         /* Notify PGM about NXE changes. */
         if (   (uOldEfer                    & MSR_K6_EFER_NXE)

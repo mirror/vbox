@@ -159,7 +159,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t 
              * would have modified some VMCB state) that might need to be restored on #VMEXIT before
              * writing the VMCB back to guest memory.
              */
-            HMSvmNstGstVmExitNotify(pVCpu, IEM_GET_CTX(pVCpu));
+            HMNotifySvmNstGstVmexit(pVCpu, IEM_GET_CTX(pVCpu));
 
             Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.es));
             Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pVCpu->cpum.GstCtx.cs));
@@ -340,7 +340,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, uint64_t 
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
     /* CLGI/STGI may not have been intercepted and thus not executed in IEM. */
     if (   HMIsEnabled(pVCpu->CTX_SUFF(pVM))
-        && HMSvmIsVGifActive(pVCpu->CTX_SUFF(pVM)))
+        && HMIsSvmVGifActive(pVCpu->CTX_SUFF(pVM)))
         return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false);
 # endif
     return rcStrict;
@@ -841,7 +841,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPU pVCpu, uint8_t cbInstr, RTGCPHYS GCPh
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
         /* If CLGI/STGI isn't intercepted we force IEM-only nested-guest execution here. */
         if (   HMIsEnabled(pVM)
-            && HMSvmIsVGifActive(pVM))
+            && HMIsSvmVGifActive(pVM))
             return EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
 # endif
 
@@ -989,7 +989,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPU pVCpu, uint16_t u16Port, 
 
     SVMIOIOEXITINFO IoExitInfo;
     void *pvIoBitmap = pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvIoBitmap);
-    bool const fIntercept = HMSvmIsIOInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep,
+    bool const fIntercept = HMIsSvmIoInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep,
                                                        fStrIo, &IoExitInfo);
     if (fIntercept)
     {
@@ -1038,7 +1038,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleMsrIntercept(PVMCPU pVCpu, uint32_t idMsr, b
      */
     uint16_t offMsrpm;
     uint8_t  uMsrpmBit;
-    int rc = HMSvmGetMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
+    int rc = HMGetSvmMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
     if (RT_SUCCESS(rc))
     {
         Assert(uMsrpmBit == 0 || uMsrpmBit == 2 || uMsrpmBit == 4 || uMsrpmBit == 6);
@@ -1416,7 +1416,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
        patch MOV CR8 instructions to speed up APIC.TPR access for 32-bit windows guests. */
     if (VM_IS_HM_ENABLED(pVCpu->CTX_SUFF(pVM)))
     {
-        int rc = HMHCSvmMaybeMovTprHypercall(pVCpu);
+        int rc = HMHCMaybeMovTprSvmHypercall(pVCpu);
         if (RT_SUCCESS(rc))
         {
             Log(("vmmcall: MovTrp\n"));

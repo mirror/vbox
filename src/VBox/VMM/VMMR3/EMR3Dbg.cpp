@@ -129,11 +129,11 @@ static const char *emR3HistoryGetExitName(uint32_t uFlagsAndType, char *pszFallb
             break;
 
         case EMEXIT_F_KIND_VMX:
-            pszExitName = HMR3GetVmxExitName( uFlagsAndType & EMEXIT_F_TYPE_MASK);
+            pszExitName = HMGetVmxExitName( uFlagsAndType & EMEXIT_F_TYPE_MASK);
             break;
 
         case EMEXIT_F_KIND_SVM:
-            pszExitName = HMR3GetSvmExitName( uFlagsAndType & EMEXIT_F_TYPE_MASK);
+            pszExitName = HMGetSvmExitName( uFlagsAndType & EMEXIT_F_TYPE_MASK);
             break;
 
         case EMEXIT_F_KIND_NEM:

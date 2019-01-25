@@ -2984,7 +2984,7 @@ VMM_INT_DECL(void) CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr)
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   uTicks      The guest TSC.
  *
- * @sa      HMSvmNstGstApplyTscOffset.
+ * @sa      HMApplySvmNstGstTscOffset.
  */
 VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks)
 {
@@ -3005,7 +3005,7 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTic
             PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
             return uTicks + pVmcb->ctrl.u64TSCOffset;
         }
-        return HMSvmNstGstApplyTscOffset(pVCpu, uTicks);
+        return HMApplySvmNstGstTscOffset(pVCpu, uTicks);
     }
 #else
     RT_NOREF(pVCpu);

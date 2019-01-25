@@ -136,16 +136,18 @@ VMM_INT_DECL(PX86PDPE)          HMGetPaePdpes(PVMCPU pVCpu);
 VMM_INT_DECL(bool)              HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable);
 VMM_INT_DECL(bool)              HMIsSvmActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsVmxActive(PVM pVM);
-VMM_INT_DECL(bool)              HMIsVmxSupported(PVM pVM);
-VMM_INT_DECL(const char *)      HMVmxGetDiagDesc(VMXVDIAG enmDiag);
-VMM_INT_DECL(const char *)      HMVmxGetAbortDesc(VMXABORT enmAbort);
-VMM_INT_DECL(const char *)      HMVmxGetVmcsStateDesc(uint8_t fVmcsState);
-VMM_INT_DECL(const char *)      HMVmxGetIdtVectoringInfoTypeDesc(uint8_t uType);
-VMM_INT_DECL(const char *)      HMVmxGetExitIntInfoTypeDesc(uint8_t uType);
-VMM_INT_DECL(const char *)      HMVmxGetEntryIntInfoTypeDesc(uint8_t uType);
-VMM_INT_DECL(void)              HMHCPagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
-VMM_INT_DECL(void)              HMVmxGetVmxMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs, PVMXMSRS pVmxMsrs);
-VMM_INT_DECL(void)              HMVmxGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs, PSVMMSRS pSvmMsrs);
+VMM_INT_DECL(const char *)      HMGetVmxDiagDesc(VMXVDIAG enmDiag);
+VMM_INT_DECL(const char *)      HMGetVmxAbortDesc(VMXABORT enmAbort);
+VMM_INT_DECL(const char *)      HMGetVmxVmcsStateDesc(uint8_t fVmcsState);
+VMM_INT_DECL(const char *)      HMGetVmxIdtVectoringInfoTypeDesc(uint8_t uType);
+VMM_INT_DECL(const char *)      HMGetVmxExitIntInfoTypeDesc(uint8_t uType);
+VMM_INT_DECL(const char *)      HMGetVmxEntryIntInfoTypeDesc(uint8_t uType);
+VMM_INT_DECL(const char *)      HMGetVmxExitName(uint32_t uExit);
+VMM_INT_DECL(const char *)      HMGetSvmExitName(uint32_t uExit);
+VMM_INT_DECL(void)              HMDumpHwvirtVmxState(PVMCPU pVCpu);
+VMM_INT_DECL(void)              HMHCChangedPagingMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
+VMM_INT_DECL(void)              HMGetVmxMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs, PVMXMSRS pVmxMsrs);
+VMM_INT_DECL(void)              HMGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs, PSVMMSRS pSvmMsrs);
 /** @} */
 
 /** @name All-context VMX helpers.
@@ -154,7 +156,7 @@ VMM_INT_DECL(void)              HMVmxGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pM
  * based purely on the Intel VT-x specification (used by IEM/REM and HM) can be
  * found in CPUM.
  * @{ */
-VMM_INT_DECL(bool)              HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(bool)              HMCanExecuteVmxGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
 /** @} */
 
 /** @name All-context SVM helpers.
@@ -170,8 +172,8 @@ VMM_INT_DECL(TRPMEVENT)         HMSvmEventToTrpmEventType(PCSVMEVENT pSvmEvent);
 
 /** @name R0, R3 HM (VMX/SVM agnostic) handlers.
  * @{ */
-VMM_INT_DECL(int)               HMFlushTLB(PVMCPU pVCpu);
-VMM_INT_DECL(int)               HMFlushTLBOnAllVCpus(PVM pVM);
+VMM_INT_DECL(int)               HMFlushTlb(PVMCPU pVCpu);
+VMM_INT_DECL(int)               HMFlushTlbOnAllVCpus(PVM pVM);
 VMM_INT_DECL(int)               HMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt);
 VMM_INT_DECL(int)               HMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
 VMM_INT_DECL(bool)              HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM);
@@ -182,21 +184,21 @@ VMM_INT_DECL(bool)              HMIsMsrBitmapActive(PVM pVM);
 
 /** @name R0, R3 SVM handlers.
  * @{ */
-VMM_INT_DECL(bool)              HMSvmIsVGifActive(PVM pVM);
-VMM_INT_DECL(uint64_t)          HMSvmNstGstApplyTscOffset(PVMCPU pVCpu, uint64_t uTicks);
+VMM_INT_DECL(bool)              HMIsSvmVGifActive(PVM pVM);
+VMM_INT_DECL(uint64_t)          HMApplySvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-VMM_INT_DECL(void)              HMSvmNstGstVmExitNotify(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(void)              HMNotifySvmNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx);
 # endif
-VMM_INT_DECL(int)               HMSvmIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
-VMM_INT_DECL(int)               HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu);
+VMM_INT_DECL(int)               HMIsSubjectToSvmErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
+VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCPU pVCpu);
 /** @} */
 
 #else /* Nops in RC: */
 
 /** @name RC HM (VMX/SVM agnostic) handlers.
  * @{ */
-# define HMFlushTLB(pVCpu)                                            do { } while (0)
-# define HMFlushTLBOnAllVCpus(pVM)                                    do { } while (0)
+# define HMFlushTlb(pVCpu)                                            do { } while (0)
+# define HMFlushTlbOnAllVCpus(pVM)                                    do { } while (0)
 # define HMInvalidatePageOnAllVCpus(pVM, GCVirt)                      do { } while (0)
 # define HMInvalidatePhysPage(pVM,  GCVirt)                           do { } while (0)
 # define HMAreNestedPagingAndFullGuestExecEnabled(pVM)                false
@@ -207,11 +209,11 @@ VMM_INT_DECL(int)               HMHCSvmMaybeMovTprHypercall(PVMCPU pVCpu);
 
 /** @name RC SVM handlers.
  * @{ */
-# define HMSvmIsVGifActive(pVM)                                       false
-# define HMSvmNstGstApplyTscOffset(pVCpu, uTicks)                     (uTicks)
-# define HMSvmNstGstVmExitNotify(pVCpu, pCtx)                         do { } while (0)
-# define HMSvmIsSubjectToErratum170(puFamily, puModel, puStepping)    false
-# define HMHCSvmMaybeMovTprHypercall(pVCpu)                           do { } while (0)
+# define HMIsSvmVGifActive(pVM)                                       false
+# define HMApplySvmNstGstTscOffset(pVCpu, uTicks)                     (uTicks)
+# define HMNotifySvmNstGstVmexit(pVCpu, pCtx)                         do { } while (0)
+# define HMIsSubjectToSvmErratum170(puFamily, puModel, puStepping)    false
+# define HMHCMaybeMovTprSvmHypercall(pVCpu)                           do { } while (0)
 /** @} */
 
 #endif
@@ -280,8 +282,6 @@ VMMR3_INT_DECL(int)             HMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, 
 VMMR3_INT_DECL(int)             HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(bool)            HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx);
 VMMR3_INT_DECL(bool)            HMR3IsVmxPreemptionTimerUsed(PVM pVM);
-VMMR3DECL(const char *)         HMR3GetVmxExitName(uint32_t uExit);
-VMMR3DECL(const char *)         HMR3GetSvmExitName(uint32_t uExit);
 /** @} */
 #endif /* IN_RING3 */
 

@@ -1755,8 +1755,8 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu)
         {
             VMXMSREXITREAD  enmRead;
             VMXMSREXITWRITE enmWrite;
-            rc = HMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, pGuestMsr->u32Msr, &enmRead, &enmWrite);
-            AssertMsgReturnVoid(rc == VINF_SUCCESS, ("HMVmxGetMsrPermission! failed. rc=%Rrc\n", rc));
+            rc = HMGetVmxMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, pGuestMsr->u32Msr, &enmRead, &enmWrite);
+            AssertMsgReturnVoid(rc == VINF_SUCCESS, ("HMGetVmxMsrPermission! failed. rc=%Rrc\n", rc));
             if (pGuestMsr->u32Msr == MSR_K6_EFER)
             {
                 AssertMsgReturnVoid(enmRead  == VMXMSREXIT_INTERCEPT_READ,  ("Passthru read for EFER!?\n"));
@@ -11985,7 +11985,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         {
             VMXMSREXITREAD  enmRead;
             VMXMSREXITWRITE enmWrite;
-            int rc2 = HMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, idMsr, &enmRead, &enmWrite);
+            int rc2 = HMGetVmxMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, idMsr, &enmRead, &enmWrite);
             AssertRCReturn(rc2, rc2);
             if (enmRead == VMXMSREXIT_PASSTHRU_READ)
             {
@@ -12130,7 +12130,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                     {
                         VMXMSREXITREAD  enmRead;
                         VMXMSREXITWRITE enmWrite;
-                        int rc2 = HMVmxGetMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, idMsr, &enmRead, &enmWrite);
+                        int rc2 = HMGetVmxMsrPermission(pVCpu->hm.s.vmx.pvMsrBitmap, idMsr, &enmRead, &enmWrite);
                         AssertRCReturn(rc2, rc2);
                         if (enmWrite == VMXMSREXIT_PASSTHRU_WRITE)
                         {
@@ -13294,7 +13294,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
              * The guest is no longer in real-mode, check if we can continue executing the
              * guest using hardware-assisted VMX. Otherwise, fall back to emulation.
              */
-            if (HMVmxCanExecuteGuest(pVCpu, pCtx))
+            if (HMCanExecuteVmxGuest(pVCpu, pCtx))
             {
                 Log4Func(("Mode changed but guest still suitable for executing using VT-x\n"));
                 pVCpu->hm.s.vmx.RealMode.fRealOnV86Active = false;

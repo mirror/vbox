@@ -1161,8 +1161,8 @@ AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
  * These are not HM all-context API functions, those are to be placed in hm.h.
  * @{
  */
-VMM_INT_DECL(int)       HMSvmGetMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit);
-VMM_INT_DECL(bool)      HMSvmIsIOInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+VMM_INT_DECL(int)       HMGetSvmMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit);
+VMM_INT_DECL(bool)      HMIsSvmIoInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
                                                  uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
                                                  PSVMIOIOEXITINFO pIoExitInfo);
 /** @} */

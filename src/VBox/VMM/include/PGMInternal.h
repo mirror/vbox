@@ -417,9 +417,9 @@
 #ifdef IN_RC
 # define PGM_INVL_BIG_PG(pVCpu, GCVirt)         ASMReloadCR3()
 #elif defined(IN_RING0)
-# define PGM_INVL_BIG_PG(pVCpu, GCVirt)         HMFlushTLB(pVCpu)
+# define PGM_INVL_BIG_PG(pVCpu, GCVirt)         HMFlushTlb(pVCpu)
 #else
-# define PGM_INVL_BIG_PG(pVCpu, GCVirt)         HMFlushTLB(pVCpu)
+# define PGM_INVL_BIG_PG(pVCpu, GCVirt)         HMFlushTlb(pVCpu)
 #endif
 
 /** @def PGM_INVL_VCPU_TLBS()
@@ -430,9 +430,9 @@
 #ifdef IN_RC
 # define PGM_INVL_VCPU_TLBS(pVCpu)             ASMReloadCR3()
 #elif defined(IN_RING0)
-# define PGM_INVL_VCPU_TLBS(pVCpu)             HMFlushTLB(pVCpu)
+# define PGM_INVL_VCPU_TLBS(pVCpu)             HMFlushTlb(pVCpu)
 #else
-# define PGM_INVL_VCPU_TLBS(pVCpu)             HMFlushTLB(pVCpu)
+# define PGM_INVL_VCPU_TLBS(pVCpu)             HMFlushTlb(pVCpu)
 #endif
 
 /** @def PGM_INVL_ALL_VCPU_TLBS()
@@ -443,9 +443,9 @@
 #ifdef IN_RC
 # define PGM_INVL_ALL_VCPU_TLBS(pVM)            ASMReloadCR3()
 #elif defined(IN_RING0)
-# define PGM_INVL_ALL_VCPU_TLBS(pVM)            HMFlushTLBOnAllVCpus(pVM)
+# define PGM_INVL_ALL_VCPU_TLBS(pVM)            HMFlushTlbOnAllVCpus(pVM)
 #else
-# define PGM_INVL_ALL_VCPU_TLBS(pVM)            HMFlushTLBOnAllVCpus(pVM)
+# define PGM_INVL_ALL_VCPU_TLBS(pVM)            HMFlushTlbOnAllVCpus(pVM)
 #endif
 
 

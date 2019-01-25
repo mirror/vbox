@@ -369,7 +369,7 @@ AssertCompile(RT_ELEMENTS(g_apszVmxVDiagDesc) == kVmxVDiag_End);
  * @returns The descriptive string.
  * @param   enmDiag    The VMX diagnostic.
  */
-VMM_INT_DECL(const char *) HMVmxGetDiagDesc(VMXVDIAG enmDiag)
+VMM_INT_DECL(const char *) HMGetVmxDiagDesc(VMXVDIAG enmDiag)
 {
     if (RT_LIKELY((unsigned)enmDiag < RT_ELEMENTS(g_apszVmxVDiagDesc)))
         return g_apszVmxVDiagDesc[enmDiag];
@@ -383,7 +383,7 @@ VMM_INT_DECL(const char *) HMVmxGetDiagDesc(VMXVDIAG enmDiag)
  * @returns The descriptive string.
  * @param   enmAbort    The VMX abort reason.
  */
-VMM_INT_DECL(const char *) HMVmxGetAbortDesc(VMXABORT enmAbort)
+VMM_INT_DECL(const char *) HMGetVmxAbortDesc(VMXABORT enmAbort)
 {
     switch (enmAbort)
     {
@@ -407,7 +407,7 @@ VMM_INT_DECL(const char *) HMVmxGetAbortDesc(VMXABORT enmAbort)
  * @returns The descriptive string.
  * @param   fVmcsState      The virtual-VMCS state.
  */
-VMM_INT_DECL(const char *) HMVmxGetVmcsStateDesc(uint8_t fVmcsState)
+VMM_INT_DECL(const char *) HMGetVmxVmcsStateDesc(uint8_t fVmcsState)
 {
     switch (fVmcsState)
     {
@@ -424,7 +424,7 @@ VMM_INT_DECL(const char *) HMVmxGetVmcsStateDesc(uint8_t fVmcsState)
  * @returns The descriptive string.
  * @param   uType    The event type.
  */
-VMM_INT_DECL(const char *) HMVmxGetEntryIntInfoTypeDesc(uint8_t uType)
+VMM_INT_DECL(const char *) HMGetVmxEntryIntInfoTypeDesc(uint8_t uType)
 {
     switch (uType)
     {
@@ -448,7 +448,7 @@ VMM_INT_DECL(const char *) HMVmxGetEntryIntInfoTypeDesc(uint8_t uType)
  * @returns The descriptive string.
  * @param   uType    The event type.
  */
-VMM_INT_DECL(const char *) HMVmxGetExitIntInfoTypeDesc(uint8_t uType)
+VMM_INT_DECL(const char *) HMGetVmxExitIntInfoTypeDesc(uint8_t uType)
 {
     switch (uType)
     {
@@ -471,7 +471,7 @@ VMM_INT_DECL(const char *) HMVmxGetExitIntInfoTypeDesc(uint8_t uType)
  * @returns The descriptive string.
  * @param   uType    The event type.
  */
-VMM_INT_DECL(const char *) HMVmxGetIdtVectoringInfoTypeDesc(uint8_t uType)
+VMM_INT_DECL(const char *) HMGetVmxIdtVectoringInfoTypeDesc(uint8_t uType)
 {
     switch (uType)
     {
@@ -648,7 +648,7 @@ static bool hmVmxIsStackSelectorOk(PCCPUMSELREG pSel)
  *          Secondly, if additional checks are added that require more of the CPU
  *          state, make sure REM (which supplies a partial state) is updated.
  */
-VMM_INT_DECL(bool) HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
+VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     Assert(HMIsEnabled(pVM));
@@ -830,7 +830,7 @@ VMM_INT_DECL(bool) HMVmxCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
  * @param   penmWrite       Where to store the write permissions. Optional, can be
  *                          NULL.
  */
-VMM_INT_DECL(int) HMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
+VMM_INT_DECL(int) HMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
                                         PVMXMSREXITWRITE penmWrite)
 {
     AssertPtrReturn(pvMsrBitmap, VERR_INVALID_PARAMETER);
@@ -905,7 +905,7 @@ VMM_INT_DECL(int) HMVmxGetMsrPermission(void const *pvMsrBitmap, uint32_t idMsr,
  * @param   uPort           The I/O port being accessed.
  * @param   cbAccess        The size of the I/O access in bytes (1, 2 or 4 bytes).
  */
-VMM_INT_DECL(bool) HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
+VMM_INT_DECL(bool) HMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
                                                 uint8_t cbAccess)
 {
     Assert(cbAccess == 1 || cbAccess == 2 || cbAccess == 4);
@@ -926,5 +926,282 @@ VMM_INT_DECL(bool) HMVmxGetIoBitmapPermission(void const *pvIoBitmapA, void cons
     /* Read the appropriate bit from the corresponding IO bitmap. */
     void const *pvIoBitmap = uPort < 0x8000 ? pvIoBitmapA : pvIoBitmapB;
     return ASMBitTest(pvIoBitmap, uPort);
+}
+
+
+/**
+ * Dumps the virtual VMCS state to the release log.
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ */
+VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
+{
+#ifndef IN_RC
+    /* The string width of -4 used in the macros below to cover 'LDTR', 'GDTR', 'IDTR. */
+# define HMVMX_DUMP_HOST_XDTR(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+    do { \
+        LogRel(("  %s%-4s                       = {base=%016RX64}\n", \
+            (a_pszPrefix), (a_SegName), (a_pVmcs)->u64Host##a_Seg##Base.u)); \
+    } while (0)
+# define HMVMX_DUMP_HOST_FS_GS_TR(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+    do { \
+        LogRel(("  %s%-4s                       = {%04x base=%016RX64}\n", \
+                (a_pszPrefix), (a_SegName), (a_pVmcs)->Host##a_Seg, (a_pVmcs)->u64Host##a_Seg##Base.u)); \
+    } while (0)
+# define HMVMX_DUMP_GUEST_SEGREG(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+    do { \
+        LogRel(("  %s%-4s                       = {%04x base=%016RX64 limit=%08x flags=%04x}\n", \
+                (a_pszPrefix), (a_SegName), (a_pVmcs)->Guest##a_Seg, (a_pVmcs)->u64Guest##a_Seg##Base.u, \
+                (a_pVmcs)->u32Guest##a_Seg##Limit, (a_pVmcs)->u32Guest##a_Seg##Attr)); \
+    } while (0)
+# define HMVMX_DUMP_GUEST_XDTR(a_pVmcs, a_Seg, a_SegName, a_pszPrefix) \
+    do { \
+        LogRel(("  %s%-4s                       = {base=%016RX64 limit=%08x}\n", \
+                (a_pszPrefix), (a_SegName), (a_pVmcs)->u64Guest##a_Seg##Base.u, (a_pVmcs)->u32Guest##a_Seg##Limit)); \
+    } while (0)
+
+    PCCPUMCTX  pCtx  = &pVCpu->cpum.GstCtx;
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    if (!pVmcs)
+    {
+        LogRel(("Virtual VMCS not allocated\n"));
+        return;
+    }
+    LogRel(("GCPhysVmxon                = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysVmxon));
+    LogRel(("GCPhysVmcs                 = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysVmcs));
+    LogRel(("GCPhysShadowVmcs           = %#RGp\n",     pCtx->hwvirt.vmx.GCPhysShadowVmcs));
+    LogRel(("enmDiag                    = %u (%s)\n",   pCtx->hwvirt.vmx.enmDiag, HMGetVmxDiagDesc(pCtx->hwvirt.vmx.enmDiag)));
+    LogRel(("enmAbort                   = %u (%s)\n",   pCtx->hwvirt.vmx.enmAbort, HMGetVmxAbortDesc(pCtx->hwvirt.vmx.enmAbort)));
+    LogRel(("uAbortAux                  = %u (%#x)\n",  pCtx->hwvirt.vmx.uAbortAux, pCtx->hwvirt.vmx.uAbortAux));
+    LogRel(("fInVmxRootMode             = %RTbool\n",   pCtx->hwvirt.vmx.fInVmxRootMode));
+    LogRel(("fInVmxNonRootMode          = %RTbool\n",   pCtx->hwvirt.vmx.fInVmxNonRootMode));
+    LogRel(("fInterceptEvents           = %RTbool\n",   pCtx->hwvirt.vmx.fInterceptEvents));
+    LogRel(("fNmiUnblockingIret         = %RTbool\n",   pCtx->hwvirt.vmx.fNmiUnblockingIret));
+    LogRel(("uFirstPauseLoopTick        = %RX64\n",     pCtx->hwvirt.vmx.uFirstPauseLoopTick));
+    LogRel(("uPrevPauseTick             = %RX64\n",     pCtx->hwvirt.vmx.uPrevPauseTick));
+    LogRel(("uVmentryTick               = %RX64\n",     pCtx->hwvirt.vmx.uVmentryTick));
+    LogRel(("offVirtApicWrite           = %#RX16\n",    pCtx->hwvirt.vmx.offVirtApicWrite));
+    LogRel(("VMCS cache:\n"));
+
+    const char *pszPrefix = "  ";
+    /* Header. */
+    {
+        LogRel(("%sHeader:\n", pszPrefix));
+        LogRel(("  %sVMCS revision id           = %#RX32\n",      pszPrefix, pVmcs->u32VmcsRevId));
+        LogRel(("  %sVMX-abort id               = %#RX32 (%s)\n", pszPrefix, pVmcs->enmVmxAbort, HMGetVmxAbortDesc(pVmcs->enmVmxAbort)));
+        LogRel(("  %sVMCS state                 = %#x (%s)\n",    pszPrefix, pVmcs->fVmcsState, HMGetVmxVmcsStateDesc(pVmcs->fVmcsState)));
+    }
+
+    /* Control fields. */
+    {
+        /* 16-bit. */
+        LogRel(("%sControl:\n", pszPrefix));
+        LogRel(("  %sVPID                       = %#RX16\n",   pszPrefix, pVmcs->u16Vpid));
+        LogRel(("  %sPosted intr notify vector  = %#RX16\n",   pszPrefix, pVmcs->u16PostIntNotifyVector));
+        LogRel(("  %sEPTP index                 = %#RX16\n",   pszPrefix, pVmcs->u16EptpIndex));
+
+        /* 32-bit. */
+        LogRel(("  %sPinCtls                    = %#RX32\n",   pszPrefix, pVmcs->u32PinCtls));
+        LogRel(("  %sProcCtls                   = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls));
+        LogRel(("  %sProcCtls2                  = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls2));
+        LogRel(("  %sExitCtls                   = %#RX32\n",   pszPrefix, pVmcs->u32ExitCtls));
+        LogRel(("  %sEntryCtls                  = %#RX32\n",   pszPrefix, pVmcs->u32EntryCtls));
+        LogRel(("  %sException bitmap           = %#RX32\n",   pszPrefix, pVmcs->u32XcptBitmap));
+        LogRel(("  %sPage-fault mask            = %#RX32\n",   pszPrefix, pVmcs->u32XcptPFMask));
+        LogRel(("  %sPage-fault match           = %#RX32\n",   pszPrefix, pVmcs->u32XcptPFMatch));
+        LogRel(("  %sCR3-target count           = %RU32\n",    pszPrefix, pVmcs->u32Cr3TargetCount));
+        LogRel(("  %sVM-exit MSR store count    = %RU32\n",    pszPrefix, pVmcs->u32ExitMsrStoreCount));
+        LogRel(("  %sVM-exit MSR load count     = %RU32\n",    pszPrefix, pVmcs->u32ExitMsrLoadCount));
+        LogRel(("  %sVM-entry MSR load count    = %RU32\n",    pszPrefix, pVmcs->u32EntryMsrLoadCount));
+        LogRel(("  %sVM-entry interruption info = %#RX32\n",   pszPrefix, pVmcs->u32EntryIntInfo));
+        {
+            uint32_t const fInfo = pVmcs->u32EntryIntInfo;
+            uint8_t  const uType = VMX_ENTRY_INT_INFO_TYPE(fInfo);
+            LogRel(("    %sValid                      = %RTbool\n",  pszPrefix, VMX_ENTRY_INT_INFO_IS_VALID(fInfo)));
+            LogRel(("    %sType                       = %#x (%s)\n", pszPrefix, uType, HMGetVmxEntryIntInfoTypeDesc(uType)));
+            LogRel(("    %sVector                     = %#x\n",      pszPrefix, VMX_ENTRY_INT_INFO_VECTOR(fInfo)));
+            LogRel(("    %sNMI-unblocking-IRET        = %RTbool\n",  pszPrefix, VMX_ENTRY_INT_INFO_IS_NMI_UNBLOCK_IRET(fInfo)));
+            LogRel(("    %sError-code valid           = %RTbool\n",  pszPrefix, VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(fInfo)));
+        }
+        LogRel(("  %sVM-entry xcpt error-code   = %#RX32\n",   pszPrefix, pVmcs->u32EntryXcptErrCode));
+        LogRel(("  %sVM-entry instruction len   = %u bytes\n", pszPrefix, pVmcs->u32EntryInstrLen));
+        LogRel(("  %sTPR threshold              = %#RX32\n",   pszPrefix, pVmcs->u32TprThreshold));
+        LogRel(("  %sPLE gap                    = %#RX32\n",   pszPrefix, pVmcs->u32PleGap));
+        LogRel(("  %sPLE window                 = %#RX32\n",   pszPrefix, pVmcs->u32PleWindow));
+
+        /* 64-bit. */
+        LogRel(("  %sIO-bitmap A addr           = %#RX64\n",   pszPrefix, pVmcs->u64AddrIoBitmapA.u));
+        LogRel(("  %sIO-bitmap B addr           = %#RX64\n",   pszPrefix, pVmcs->u64AddrIoBitmapB.u));
+        LogRel(("  %sMSR-bitmap addr            = %#RX64\n",   pszPrefix, pVmcs->u64AddrMsrBitmap.u));
+        LogRel(("  %sVM-exit MSR store addr     = %#RX64\n",   pszPrefix, pVmcs->u64AddrExitMsrStore.u));
+        LogRel(("  %sVM-exit MSR load addr      = %#RX64\n",   pszPrefix, pVmcs->u64AddrExitMsrLoad.u));
+        LogRel(("  %sVM-entry MSR load addr     = %#RX64\n",   pszPrefix, pVmcs->u64AddrEntryMsrLoad.u));
+        LogRel(("  %sExecutive VMCS ptr         = %#RX64\n",   pszPrefix, pVmcs->u64ExecVmcsPtr.u));
+        LogRel(("  %sPML addr                   = %#RX64\n",   pszPrefix, pVmcs->u64AddrPml.u));
+        LogRel(("  %sTSC offset                 = %#RX64\n",   pszPrefix, pVmcs->u64TscOffset.u));
+        LogRel(("  %sVirtual-APIC addr          = %#RX64\n",   pszPrefix, pVmcs->u64AddrVirtApic.u));
+        LogRel(("  %sAPIC-access addr           = %#RX64\n",   pszPrefix, pVmcs->u64AddrApicAccess.u));
+        LogRel(("  %sPosted-intr desc addr      = %#RX64\n",   pszPrefix, pVmcs->u64AddrPostedIntDesc.u));
+        LogRel(("  %sVM-functions control       = %#RX64\n",   pszPrefix, pVmcs->u64VmFuncCtls.u));
+        LogRel(("  %sEPTP ptr                   = %#RX64\n",   pszPrefix, pVmcs->u64EptpPtr.u));
+        LogRel(("  %sEOI-exit bitmap 0 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap0.u));
+        LogRel(("  %sEOI-exit bitmap 1 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap1.u));
+        LogRel(("  %sEOI-exit bitmap 2 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap2.u));
+        LogRel(("  %sEOI-exit bitmap 3 addr     = %#RX64\n",   pszPrefix, pVmcs->u64EoiExitBitmap3.u));
+        LogRel(("  %sEPTP-list addr             = %#RX64\n",   pszPrefix, pVmcs->u64AddrEptpList.u));
+        LogRel(("  %sVMREAD-bitmap addr         = %#RX64\n",   pszPrefix, pVmcs->u64AddrVmreadBitmap.u));
+        LogRel(("  %sVMWRITE-bitmap addr        = %#RX64\n",   pszPrefix, pVmcs->u64AddrVmwriteBitmap.u));
+        LogRel(("  %sVirt-Xcpt info addr        = %#RX64\n",   pszPrefix, pVmcs->u64AddrXcptVeInfo.u));
+        LogRel(("  %sXSS-bitmap                 = %#RX64\n",   pszPrefix, pVmcs->u64XssBitmap.u));
+        LogRel(("  %sENCLS-exiting bitmap addr  = %#RX64\n",   pszPrefix, pVmcs->u64AddrEnclsBitmap.u));
+        LogRel(("  %sTSC multiplier             = %#RX64\n",   pszPrefix, pVmcs->u64TscMultiplier.u));
+
+        /* Natural width. */
+        LogRel(("  %sCR0 guest/host mask        = %#RX64\n",   pszPrefix, pVmcs->u64Cr0Mask.u));
+        LogRel(("  %sCR4 guest/host mask        = %#RX64\n",   pszPrefix, pVmcs->u64Cr4Mask.u));
+        LogRel(("  %sCR0 read shadow            = %#RX64\n",   pszPrefix, pVmcs->u64Cr0ReadShadow.u));
+        LogRel(("  %sCR4 read shadow            = %#RX64\n",   pszPrefix, pVmcs->u64Cr4ReadShadow.u));
+        LogRel(("  %sCR3-target 0               = %#RX64\n",   pszPrefix, pVmcs->u64Cr3Target0.u));
+        LogRel(("  %sCR3-target 1               = %#RX64\n",   pszPrefix, pVmcs->u64Cr3Target1.u));
+        LogRel(("  %sCR3-target 2               = %#RX64\n",   pszPrefix, pVmcs->u64Cr3Target2.u));
+        LogRel(("  %sCR3-target 3               = %#RX64\n",   pszPrefix, pVmcs->u64Cr3Target3.u));
+    }
+
+    /* Guest state. */
+    {
+        LogRel(("%sGuest state:\n", pszPrefix));
+
+        /* 16-bit. */
+        HMVMX_DUMP_GUEST_SEGREG(pVmcs, Cs,   "cs",   pszPrefix);
+        HMVMX_DUMP_GUEST_SEGREG(pVmcs, Ss,   "ss",   pszPrefix);
+        HMVMX_DUMP_GUEST_SEGREG(pVmcs, Es,   "es",   pszPrefix);
+        HMVMX_DUMP_GUEST_SEGREG(pVmcs, Ds,   "ds",   pszPrefix);
+        HMVMX_DUMP_GUEST_SEGREG(pVmcs, Fs,   "fs",   pszPrefix);
+        HMVMX_DUMP_GUEST_SEGREG(pVmcs, Gs,   "gs",   pszPrefix);
+        HMVMX_DUMP_GUEST_SEGREG(pVmcs, Ldtr, "ldtr", pszPrefix);
+        HMVMX_DUMP_GUEST_SEGREG(pVmcs, Tr,   "tr",   pszPrefix);
+        HMVMX_DUMP_GUEST_XDTR(  pVmcs, Gdtr, "gdtr", pszPrefix);
+        HMVMX_DUMP_GUEST_XDTR(  pVmcs, Idtr, "idtr", pszPrefix);
+        LogRel(("  %sInterrupt status           = %#RX16\n",   pszPrefix, pVmcs->u16GuestIntStatus));
+        LogRel(("  %sPML index                  = %#RX16\n",   pszPrefix, pVmcs->u16PmlIndex));
+
+        /* 32-bit. */
+        LogRel(("  %sInterruptibility state     = %#RX32\n",   pszPrefix, pVmcs->u32GuestIntrState));
+        LogRel(("  %sActivity state             = %#RX32\n",   pszPrefix, pVmcs->u32GuestActivityState));
+        LogRel(("  %sSMBASE                     = %#RX32\n",   pszPrefix, pVmcs->u32GuestSmBase));
+        LogRel(("  %sSysEnter CS                = %#RX32\n",   pszPrefix, pVmcs->u32GuestSysenterCS));
+        LogRel(("  %sVMX-preemption timer value = %#RX32\n",   pszPrefix, pVmcs->u32PreemptTimer));
+
+        /* 64-bit. */
+        LogRel(("  %sVMCS link ptr              = %#RX64\n",   pszPrefix, pVmcs->u64VmcsLinkPtr.u));
+        LogRel(("  %sDBGCTL                     = %#RX64\n",   pszPrefix, pVmcs->u64GuestDebugCtlMsr.u));
+        LogRel(("  %sPAT                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestPatMsr.u));
+        LogRel(("  %sEFER                       = %#RX64\n",   pszPrefix, pVmcs->u64GuestEferMsr.u));
+        LogRel(("  %sPERFGLOBALCTRL             = %#RX64\n",   pszPrefix, pVmcs->u64GuestPerfGlobalCtlMsr.u));
+        LogRel(("  %sPDPTE 0                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestPdpte0.u));
+        LogRel(("  %sPDPTE 1                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestPdpte1.u));
+        LogRel(("  %sPDPTE 2                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestPdpte2.u));
+        LogRel(("  %sPDPTE 3                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestPdpte3.u));
+        LogRel(("  %sBNDCFGS                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestBndcfgsMsr.u));
+
+        /* Natural width. */
+        LogRel(("  %scr0                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr0.u));
+        LogRel(("  %scr3                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr3.u));
+        LogRel(("  %scr4                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr4.u));
+        LogRel(("  %sdr7                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestDr7.u));
+        LogRel(("  %srsp                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRsp.u));
+        LogRel(("  %srip                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestRip.u));
+        LogRel(("  %srflags                     = %#RX64\n",   pszPrefix, pVmcs->u64GuestRFlags.u));
+        LogRel(("  %sPending debug xcpts        = %#RX64\n",   pszPrefix, pVmcs->u64GuestPendingDbgXcpt.u));
+        LogRel(("  %sSysEnter ESP               = %#RX64\n",   pszPrefix, pVmcs->u64GuestSysenterEsp.u));
+        LogRel(("  %sSysEnter EIP               = %#RX64\n",   pszPrefix, pVmcs->u64GuestSysenterEip.u));
+    }
+
+    /* Host state. */
+    {
+        LogRel(("%sHost state:\n", pszPrefix));
+
+        /* 16-bit. */
+        LogRel(("  %scs                         = %#RX16\n",   pszPrefix, pVmcs->HostCs));
+        LogRel(("  %sss                         = %#RX16\n",   pszPrefix, pVmcs->HostSs));
+        LogRel(("  %sds                         = %#RX16\n",   pszPrefix, pVmcs->HostDs));
+        LogRel(("  %ses                         = %#RX16\n",   pszPrefix, pVmcs->HostEs));
+        HMVMX_DUMP_HOST_FS_GS_TR(pVmcs, Fs, "fs", pszPrefix);
+        HMVMX_DUMP_HOST_FS_GS_TR(pVmcs, Gs, "gs", pszPrefix);
+        HMVMX_DUMP_HOST_FS_GS_TR(pVmcs, Tr, "tr", pszPrefix);
+        HMVMX_DUMP_HOST_XDTR(pVmcs, Gdtr, "gdtr", pszPrefix);
+        HMVMX_DUMP_HOST_XDTR(pVmcs, Idtr, "idtr", pszPrefix);
+
+        /* 32-bit. */
+        LogRel(("  %sSysEnter CS                = %#RX32\n",   pszPrefix, pVmcs->u32HostSysenterCs));
+
+        /* 64-bit. */
+        LogRel(("  %sEFER                       = %#RX64\n",   pszPrefix, pVmcs->u64HostEferMsr.u));
+        LogRel(("  %sPAT                        = %#RX64\n",   pszPrefix, pVmcs->u64HostPatMsr.u));
+        LogRel(("  %sPERFGLOBALCTRL             = %#RX64\n",   pszPrefix, pVmcs->u64HostPerfGlobalCtlMsr.u));
+
+        /* Natural width. */
+        LogRel(("  %scr0                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr0.u));
+        LogRel(("  %scr3                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr3.u));
+        LogRel(("  %scr4                        = %#RX64\n",   pszPrefix, pVmcs->u64HostCr4.u));
+        LogRel(("  %sSysEnter ESP               = %#RX64\n",   pszPrefix, pVmcs->u64HostSysenterEsp.u));
+        LogRel(("  %sSysEnter EIP               = %#RX64\n",   pszPrefix, pVmcs->u64HostSysenterEip.u));
+        LogRel(("  %srsp                        = %#RX64\n",   pszPrefix, pVmcs->u64HostRsp.u));
+        LogRel(("  %srip                        = %#RX64\n",   pszPrefix, pVmcs->u64HostRip.u));
+    }
+
+    /* Read-only fields. */
+    {
+        LogRel(("%sRead-only data fields:\n", pszPrefix));
+
+        /* 16-bit (none currently). */
+
+        /* 32-bit. */
+        uint32_t const uExitReason = pVmcs->u32RoExitReason;
+        LogRel(("  %sExit reason                = %u (%s)\n",  pszPrefix, uExitReason, HMGetVmxExitName(uExitReason)));
+        LogRel(("  %sExit qualification         = %#RX64\n",   pszPrefix, pVmcs->u64RoExitQual.u));
+        LogRel(("  %sVM-instruction error       = %#RX32\n",   pszPrefix, pVmcs->u32RoVmInstrError));
+        LogRel(("  %sVM-exit intr info          = %#RX32\n",   pszPrefix, pVmcs->u32RoExitIntInfo));
+        {
+            uint32_t const fInfo = pVmcs->u32RoExitIntInfo;
+            uint8_t  const uType = VMX_EXIT_INT_INFO_TYPE(fInfo);
+            LogRel(("    %sValid                      = %RTbool\n",  pszPrefix, VMX_EXIT_INT_INFO_IS_VALID(fInfo)));
+            LogRel(("    %sType                       = %#x (%s)\n", pszPrefix, uType, HMGetVmxExitIntInfoTypeDesc(uType)));
+            LogRel(("    %sVector                     = %#x\n",      pszPrefix, VMX_EXIT_INT_INFO_VECTOR(fInfo)));
+            LogRel(("    %sNMI-unblocking-IRET        = %RTbool\n",  pszPrefix, VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(fInfo)));
+            LogRel(("    %sError-code valid           = %RTbool\n",  pszPrefix, VMX_EXIT_INT_INFO_IS_ERROR_CODE_VALID(fInfo)));
+        }
+        LogRel(("  %sVM-exit intr error-code    = %#RX32\n",   pszPrefix, pVmcs->u32RoExitIntErrCode));
+        LogRel(("  %sIDT-vectoring info         = %#RX32\n",   pszPrefix, pVmcs->u32RoIdtVectoringInfo));
+        {
+            uint32_t const fInfo = pVmcs->u32RoIdtVectoringInfo;
+            uint8_t  const uType = VMX_IDT_VECTORING_INFO_TYPE(fInfo);
+            LogRel(("    %sValid                      = %RTbool\n",  pszPrefix, VMX_IDT_VECTORING_INFO_IS_VALID(fInfo)));
+            LogRel(("    %sType                       = %#x (%s)\n", pszPrefix, uType, HMGetVmxIdtVectoringInfoTypeDesc(uType)));
+            LogRel(("    %sVector                     = %#x\n",      pszPrefix, VMX_IDT_VECTORING_INFO_VECTOR(fInfo)));
+            LogRel(("    %sError-code valid           = %RTbool\n",  pszPrefix, VMX_IDT_VECTORING_INFO_IS_ERROR_CODE_VALID(fInfo)));
+        }
+        LogRel(("  %sIDT-vectoring error-code   = %#RX32\n",   pszPrefix, pVmcs->u32RoIdtVectoringErrCode));
+        LogRel(("  %sVM-exit instruction length = %u bytes\n", pszPrefix, pVmcs->u32RoExitInstrLen));
+        LogRel(("  %sVM-exit instruction info   = %#RX64\n",   pszPrefix, pVmcs->u32RoExitInstrInfo));
+
+        /* 64-bit. */
+        LogRel(("  %sGuest-physical addr        = %#RX64\n",   pszPrefix, pVmcs->u64RoGuestPhysAddr.u));
+
+        /* Natural width. */
+        LogRel(("  %sI/O RCX                    = %#RX64\n",   pszPrefix, pVmcs->u64RoIoRcx.u));
+        LogRel(("  %sI/O RSI                    = %#RX64\n",   pszPrefix, pVmcs->u64RoIoRsi.u));
+        LogRel(("  %sI/O RDI                    = %#RX64\n",   pszPrefix, pVmcs->u64RoIoRdi.u));
+        LogRel(("  %sI/O RIP                    = %#RX64\n",   pszPrefix, pVmcs->u64RoIoRip.u));
+        LogRel(("  %sGuest-linear addr          = %#RX64\n",   pszPrefix, pVmcs->u64RoGuestLinearAddr.u));
+    }
+
+# undef HMVMX_DUMP_HOST_XDTR
+# undef HMVMX_DUMP_HOST_FS_GS_TR
+# undef HMVMX_DUMP_GUEST_SEGREG
+# undef HMVMX_DUMP_GUEST_XDTR
+#else
+    NOREF(pVCpu);
+#endif /* !IN_RC */
 }
 
