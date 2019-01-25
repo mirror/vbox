@@ -1244,7 +1244,13 @@ uint64_t DrvAudioHlpBytesToMilli(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProp
 {
     AssertPtrReturn(pProps, 0);
 
+    if (!pProps->uHz) /* Prevent division by zero. */
+        return 0;
+
     const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+
+    if (!cbFrame) /* Prevent division by zero. */
+        return 0;
 
     uint64_t uTimeMs = ((cbBytes + cbFrame - 1) / cbFrame) * RT_MS_1SEC;
 
@@ -1264,7 +1270,13 @@ uint64_t DrvAudioHlpBytesToMicro(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProp
 {
     AssertPtrReturn(pProps, 0);
 
+    if (!pProps->uHz) /* Prevent division by zero. */
+        return 0;
+
     const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+
+    if (!cbFrame) /* Prevent division by zero. */
+        return 0;
 
     uint64_t uTimeUs = ((cbBytes + cbFrame - 1) / cbFrame) * RT_US_1SEC;
 
@@ -1284,7 +1296,13 @@ uint64_t DrvAudioHlpBytesToNano(uint32_t cbBytes, const PPDMAUDIOPCMPROPS pProps
 {
     AssertPtrReturn(pProps, 0);
 
+    if (!pProps->uHz) /* Prevent division by zero. */
+        return 0;
+
     const unsigned cbFrame = PDMAUDIOPCMPROPS_F2B(pProps, 1 /* Frame */);
+
+    if (!cbFrame) /* Prevent division by zero. */
+        return 0;
 
     uint64_t uTimeNs = ((cbBytes + cbFrame - 1) / cbFrame) * RT_NS_1SEC;
 
