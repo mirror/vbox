@@ -2044,50 +2044,6 @@ protected:
     }
 };
 
-/** Toggle action extension, used as 'Toggle Search Pane' action class. */
-class UIActionMenuSelectorMediumToggleSearch : public UIActionToggle
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionMenuSelectorMediumToggleSearch(UIActionPool *pParent)
-        : UIActionToggle(pParent)
-    {
-        setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        setIcon(0, UIIconPool::iconSetFull(":/hd_modify_32px.png",          ":/hd_modify_16px.png",
-                                           ":/hd_modify_disabled_32px.png", ":/hd_modify_disabled_16px.png"));
-        setIcon(1, UIIconPool::iconSetFull(":/cd_modify_32px.png",          ":/cd_modify_16px.png",
-                                           ":/cd_modify_disabled_32px.png", ":/cd_modify_disabled_16px.png"));
-        setIcon(2, UIIconPool::iconSetFull(":/fd_modify_32px.png",          ":/fd_modify_16px.png",
-                                           ":/fd_modify_disabled_32px.png", ":/fd_modify_disabled_16px.png"));
-    }
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ToggleMediumSearch");
-    }
-
-    /** Returns default shortcut. */
-    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
-    {
-        return QKeySequence("");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "&Search"));
-        setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the medium search pane"));
-        setToolTip(QApplication::translate("UIActionPool", "Open Medium Search Pane (%1)").arg(shortcut().toString()));
-    }
-};
-
 /** Simple action extension, used as 'Perform Refresh' action class. */
 class UIActionMenuSelectorMediumPerformRefresh : public UIActionSimple
 {
@@ -2662,7 +2618,6 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Medium_S_Remove] = new UIActionMenuSelectorMediumPerformRemove(this);
     m_pool[UIActionIndexST_M_Medium_S_Release] = new UIActionMenuSelectorMediumPerformRelease(this);
     m_pool[UIActionIndexST_M_Medium_T_Details] = new UIActionMenuSelectorMediumToggleProperties(this);
-    m_pool[UIActionIndexST_M_Medium_T_Search] = new UIActionMenuSelectorMediumToggleSearch(this);
     m_pool[UIActionIndexST_M_Medium_S_Refresh] = new UIActionMenuSelectorMediumPerformRefresh(this);
 
     /* Host Network Manager actions: */
@@ -3131,8 +3086,6 @@ void UIActionPoolManager::updateMenuMediumWrapper(UIMenu *pMenu)
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Release)) || fSeparator;
     /* 'Properties' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_T_Details)) || fSeparator;
-    /* 'Search' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_T_Search)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)

@@ -31,16 +31,6 @@
 /* Forward declarations: */
 class QITreeWidget;
 
-/** A functor base to be passed to QITabWidget::filterItems(..). Overload operator()(..) to filter out
- *  tree items. */
-class SHARED_LIBRARY_STUFF QITreeWidgetItemFilter
-{
- public:
-    virtual bool operator()(QTreeWidgetItem*) const
-    {
-        return true;
-    }
-};
 
 /** QTreeWidgetItem subclass extending standard functionality. */
 class SHARED_LIBRARY_STUFF QITreeWidgetItem : public QObject, public QTreeWidgetItem
@@ -108,9 +98,6 @@ signals:
     /** Returns the child item with @a iIndex. */
     QITreeWidgetItem *childItem(int iIndex) const;
     QModelIndex itemIndex(QTreeWidgetItem *pItem);
-    /** Recurses thru the subtree with a root pParent and returns a list of tree items filtered by @a filter.
-     *  When @a pParent is null than QTreeWidget::invisibleRootItem() is used as the root item. */
-    QList<QTreeWidgetItem*> filterItems(const QITreeWidgetItemFilter &filter, QTreeWidgetItem* pParent = 0);
 
 protected:
 
@@ -118,12 +105,6 @@ protected:
     void paintEvent(QPaintEvent *pEvent);
     /** Handles resize @a pEvent. */
     void resizeEvent(QResizeEvent *pEvent);
-
- private:
-
-    /* Recurses thru the tree and append filtered items to @a filteredItemList. */
-    void filterItemsInternal(const QITreeWidgetItemFilter &filter, QTreeWidgetItem* pParent,
-                             QList<QTreeWidgetItem*> &filteredItemList);
 };
 
 

@@ -137,7 +137,6 @@ enum UIActionIndexST
     UIActionIndexST_M_Medium_S_Remove,
     UIActionIndexST_M_Medium_S_Release,
     UIActionIndexST_M_Medium_T_Details,
-    UIActionIndexST_M_Medium_T_Search,
     UIActionIndexST_M_Medium_S_Refresh,
 
     /* Host Network Manager actions: */
@@ -247,3 +246,4 @@ private:
 
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIActionPoolManager_h */
+

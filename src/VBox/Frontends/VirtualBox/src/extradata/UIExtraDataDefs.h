@@ -190,8 +190,6 @@ namespace UIExtraDataDefs
       * @{ */
         /** Holds whether Virtual Media Manager details expanded. */
         SHARED_LIBRARY_STUFF extern const char *GUI_VirtualMediaManager_Details_Expanded;
-        /** Holds whether Virtual Media Manager search widget expanded. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_VirtualMediaManager_Search_Widget_Expanded;
     /** @} */
 
     /** @name Host Network Manager
