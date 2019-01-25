@@ -504,7 +504,7 @@ setup()
         fi
         # That is, we mark all but the requested kernel.
         rm -f "$SKIPFILE_BASE"-"$TARGET_VER"
-        test -d /lib/modules/"TARGET_VER"/build || test -n "$QUICKSETUP" ||
+        test -d /lib/modules/"$TARGET_VER"/build || test -n "$QUICKSETUP" ||
             info "Kernel headers not found for target kernel $TARGET_VER. \
 Please install them and execute
   /sbin/rcvboxadd setup"
