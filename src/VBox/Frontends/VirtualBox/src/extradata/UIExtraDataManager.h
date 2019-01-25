@@ -369,6 +369,10 @@ public:
         bool virtualMediaManagerDetailsExpanded();
         /** Defines whether Virtual Media Manager details @a fExpanded. */
         void setVirtualMediaManagerDetailsExpanded(bool fExpanded);
+        /** Returns whether Virtual Media Manager search widget expanded. */
+        bool virtualMediaManagerSearchWidgetExpanded();
+        /** Defines whether Virtual Media Manager search widget @a fExpanded. */
+        void setVirtualMediaManagerSearchWidgetExpanded(bool fExpanded);
     /** @} */
 
     /** @name Host Network Manager

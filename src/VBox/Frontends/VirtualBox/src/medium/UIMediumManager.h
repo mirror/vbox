@@ -39,6 +39,7 @@ class UIActionPool;
 class UIMedium;
 class UIMediumDetailsWidget;
 class UIMediumItem;
+class UIMediumSearchWidget;
 class UIToolBar;
 
 
@@ -176,6 +177,8 @@ private slots:
         void sltReleaseMedium();
         /** Handles command to make medium details @a fVisible. */
         void sltToggleMediumDetailsVisibility(bool fVisible);
+        /** Handles command to make medium search pane @a fVisible. */
+        void sltToggleMediumSearchVisibility(bool fVisible);
         /** Handles command to refresh medium. */
         void sltRefreshAll();
     /** @} */
@@ -194,6 +197,12 @@ private slots:
       * @{ */
         /** Adjusts tree-widgets according content. */
         void sltPerformTablesAdjustment();
+    /** @} */
+
+   /** @name Medium search stuff.
+      * @{ */
+        /** Adjusts tree-widgets according content. */
+        void sltHandlePerformSearch();
     /** @} */
 
 private:
@@ -218,6 +227,8 @@ private:
         void prepareTreeWidget(UIMediumDeviceType type, int iColumns);
         /** Prepares details-widget. */
         void prepareDetailsWidget();
+        /** Prepares search-widget. */
+        void prepareSearchWidget();
         /** Load settings: */
         void loadSettings();
 
@@ -285,6 +296,7 @@ private:
                                         const CheckIfSuitableBy &condition,
                                         CheckIfSuitableBy *pException = 0);
 
+
         /** Checks if @a action can be used for @a pItem. */
         static bool checkMediumFor(UIMediumItem *pItem, Action action);
 
@@ -350,6 +362,13 @@ private:
         /** Holds the progress-bar widget reference. */
         UIEnumerationProgressBar *m_pProgressBar;
     /** @} */
+
+    /** @name Search-widget variables.
+      * @{ */
+        /** Holds the medium details-widget instance. */
+        UIMediumSearchWidget *m_pSearchWidget;
+    /** @} */
+
 };
 
 

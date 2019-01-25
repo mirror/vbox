@@ -36,6 +36,7 @@
 #include "UIMediumDetailsWidget.h"
 #include "UIMediumItem.h"
 #include "UIMediumManager.h"
+#include "UIMediumSearchWidget.h"
 #include "UIWizardCloneVD.h"
 #include "UIMessageCenter.h"
 #include "UIToolBar.h"
@@ -160,6 +161,7 @@ UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, UIActionPool 
     , m_pDetailsWidget(0)
     , m_pToolBar(0)
     , m_pProgressBar(0)
+    , m_pSearchWidget(0)
 {
     /* Prepare: */
     prepare();
@@ -561,6 +563,15 @@ void UIMediumManagerWidget::sltToggleMediumDetailsVisibility(bool fVisible)
     emit sigMediumDetailsVisibilityChanged(fVisible);
 }
 
+void UIMediumManagerWidget::sltToggleMediumSearchVisibility(bool fVisible)
+{
+    /* Save the setting: */
+    //gEDataManager->setVirtualMediaManagerSea(fVisible);
+    /* Toggle medium details visibility: */
+    if (m_pSearchWidget)
+        m_pSearchWidget->setVisible(fVisible);
+}
+
 void UIMediumManagerWidget::sltRefreshAll()
 {
     /* Start medium-enumeration: */
@@ -619,10 +630,12 @@ void UIMediumManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
     }
     else
     {
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
     }
     /* And show it: */
@@ -652,6 +665,42 @@ void UIMediumManagerWidget::sltPerformTablesAdjustment()
         if (pTreeWidget->header()->sectionSize(0) != iSize0)
             pTreeWidget->header()->resizeSection(0, iSize0);
     }
+}
+
+void UIMediumManagerWidget::sltHandlePerformSearch()
+{
+    if (!m_pSearchWidget || !m_pTabWidget)
+        return;
+
+    QITreeWidget *pTreeWidget = treeWidget(static_cast<UIMediumDeviceType>(m_pTabWidget->currentIndex()));
+    if (!pTreeWidget)
+        return;
+    m_pSearchWidget->search(pTreeWidget);
+
+    // printf("size %d\n", matchedList.size());
+    // m_pSearchWidget->searchItems(pTreeWidget->invisibleRootItem(), matchedList);
+
+
+
+    //     SearchType searchType() const;
+    // QString searchTerm() const;
+
+
+    // foreach (const QUuid &id, vboxGlobal().mediumIDs())
+    // {
+    //     UIMedium medium = vboxGlobal().medium(id);
+    //     /** Only search among the types of the tab widget's current page: */
+    //     if (static_cast<UIMediumDeviceType>(m_pTabWidget->currentIndex()) != medium.type())
+    //         continue;
+    //     if (m_pSearchWidget->searchType() == UIMediumSearchWidget::SearchByName &&
+    //         medium.name().contains(m_pSearchWidget->searchTerm(), Qt::CaseInsensitive))
+    //         matchedMediumList << medium;
+    //     else if (m_pSearchWidget->searchType() == UIMediumSearchWidget::SearchByUUID &&
+    //              medium.id().toString().contains(m_pSearchWidget->searchTerm(), Qt::CaseInsensitive))
+    //         matchedMediumList << medium;
+    // }
+    // printf("search %s -- %d\n", qPrintable(m_pSearchWidget->searchTerm()), matchedMediumList.size());
+
 }
 
 void UIMediumManagerWidget::prepare()
@@ -710,6 +759,7 @@ void UIMediumManagerWidget::prepareActions()
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
 
     /* Connect actions: */
@@ -725,6 +775,8 @@ void UIMediumManagerWidget::prepareActions()
             this, &UIMediumManagerWidget::sltReleaseMedium);
     connect(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details), &QAction::toggled,
             this, &UIMediumManagerWidget::sltToggleMediumDetailsVisibility);
+    connect(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search), &QAction::toggled,
+            this, &UIMediumManagerWidget::sltToggleMediumSearchVisibility);
     connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh), &QAction::triggered,
             this, &UIMediumManagerWidget::sltRefreshAll);
 
@@ -753,6 +805,8 @@ void UIMediumManagerWidget::prepareWidgets()
         prepareTabWidget();
         /* Prepare details-widget: */
         prepareDetailsWidget();
+        /* Prepare search-widget: */
+        prepareSearchWidget();
     }
 }
 
@@ -775,6 +829,7 @@ void UIMediumManagerWidget::prepareToolBar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
 
@@ -900,11 +955,31 @@ void UIMediumManagerWidget::prepareDetailsWidget()
     }
 }
 
+void UIMediumManagerWidget::prepareSearchWidget()
+{
+    m_pSearchWidget = new UIMediumSearchWidget(this);
+    AssertPtrReturnVoid(m_pSearchWidget);
+    {
+        m_pSearchWidget->setVisible(false);
+        m_pSearchWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        connect(m_pSearchWidget, &UIMediumSearchWidget::sigPerformSearch,
+                this, &UIMediumManagerWidget::sltHandlePerformSearch);
+
+        /* Add into layout: */
+        layout()->addWidget(m_pSearchWidget);
+    }
+
+}
+
 void UIMediumManagerWidget::loadSettings()
 {
     /* Details action/widget: */
     m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->setChecked(gEDataManager->virtualMediaManagerDetailsExpanded());
     sltToggleMediumDetailsVisibility(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->isChecked());
+
+    /* Search action/widget: */
+    m_pActionPool->action(UIActionIndexST_M_Medium_T_Search)->setChecked(gEDataManager->virtualMediaManagerDetailsExpanded());
+    sltToggleMediumSearchVisibility(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search)->isChecked());
 }
 
 void UIMediumManagerWidget::repopulateTreeWidgets()
@@ -1642,4 +1717,43 @@ void UIMediumManager::finalize()
 UIMediumManagerWidget *UIMediumManager::widget()
 {
     return qobject_cast<UIMediumManagerWidget*>(QIManagerDialog::widget());
+}
+
+void UIMediumManagerWidget::markUnmarkSearchMatchedItems(bool fMark)
+{
+    /* Unmark the whole tree: */
+    if (!fMark)
+    {
+        QITreeWidget *pTreeWidget = treeWidget(static_cast<UIMediumDeviceType>(m_pTabWidget->currentIndex()));
+        if (!pTreeWidget)
+            return;
+        QList<UIMediumItem*> itemList;
+
+        getItems(pTreeWidget->invisibleRootItem(), itemList);
+    }
+    //QList<UIMedium> m_matchedMediumList;
+    // for (int i = 0; i < m_mediumItemList.size(); ++i)
+    // {
+    //     for (int j = 0; j < m_pTreeWidget->columnCount(); ++j)
+    //     {
+    //         if (m_mediumItemList[i])
+    //             m_mediumItemList[i]->setData(j, Qt::ForegroundRole, m_defaultItemForeground);
+    //     }
+    // }
+
+}
+
+void UIMediumManagerWidget::getItems(QTreeWidgetItem *pParentItem, QList<UIMediumItem*> outList)
+{
+    if (!pParentItem)
+        return;
+    if (pParentItem->type() == QITreeWidgetItem::ItemType)
+    {
+        UIMediumItem* pItem = static_cast<UIMediumItem*>(pParentItem);
+        if (pItem)
+            outList.append(pItem);
+    }
+
+    for (int iChildIndex = 0; iChildIndex < pParentItem->childCount(); ++iChildIndex)
+        getItems(pParentItem->child(iChildIndex), outList);
 }
