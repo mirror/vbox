@@ -31,6 +31,7 @@ UIGraphicsButton::UIGraphicsButton(QIGraphicsWidget *pParent, const QIcon &icon)
     : QIGraphicsWidget(pParent)
     , m_icon(icon)
     , m_fParentSelected(false)
+    , m_dIconScaleIndex(0)
 {
     /* Refresh finally: */
     refresh();
@@ -44,6 +45,17 @@ void UIGraphicsButton::setParentSelected(bool fParentSelected)
     update();
 }
 
+void UIGraphicsButton::setIconScaleIndex(double dIndex)
+{
+    if (dIndex >= 0)
+        m_dIconScaleIndex = dIndex;
+}
+
+double UIGraphicsButton::iconScaleIndex() const
+{
+    return m_dIconScaleIndex;
+}
+
 QVariant UIGraphicsButton::data(int iKey) const
 {
     switch (iKey)
@@ -52,7 +64,9 @@ QVariant UIGraphicsButton::data(int iKey) const
             return 0;
         case GraphicsButton_IconSize:
         {
-            const int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+            int iMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+            if (m_dIconScaleIndex > 0)
+                iMetric *= m_dIconScaleIndex;
             return QSize(iMetric, iMetric);
         }
         case GraphicsButton_Icon:

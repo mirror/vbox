@@ -50,6 +50,11 @@ public:
     /* API: Parent stuff: */
     void setParentSelected(bool fParentSelected);
 
+    /** Defines icon scale @a dIndex. */
+    void setIconScaleIndex(double dIndex);
+    /** Returns icon scale index. */
+    double iconScaleIndex() const;
+
 protected:
 
     /* Data enumerator: */
@@ -81,6 +86,9 @@ private:
     /* Variables: */
     QIcon m_icon;
     bool m_fParentSelected;
+
+    /** Holds the icon scale index. */
+    double  m_dIconScaleIndex;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_graphics_UIGraphicsButton_h */
