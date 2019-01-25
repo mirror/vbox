@@ -1018,6 +1018,9 @@ static int dsoundStreamEnable(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS, boo
              fEnable ? "Enabling" : "Disabling",
              pStreamDS->Cfg.enmDir == PDMAUDIODIR_IN ? "capture" : "playback"));
 
+    if (fEnable)
+        dsoundStreamReset(pThis, pStreamDS);
+
     pStreamDS->fEnabled = fEnable;
 
     return VINF_SUCCESS;
@@ -1044,6 +1047,22 @@ static void dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
     {
         pStreamDS->In.offReadPos = 0;
         pStreamDS->In.cOverruns  = 0;
+
+        /* Also reset the DirectSound Capture Buffer (DSCB) by clearing all data to make sure
+         * not stale audio data is left. */
+        if (pStreamDS->In.pDSCB)
+        {
+            PVOID pv1; PVOID pv2; DWORD cb1; DWORD cb2;
+            HRESULT hr = directSoundCaptureLock(pStreamDS, 0 /* Offset */, pStreamDS->cbBufSize, &pv1, &pv2, &cb1, &cb2,
+                                                0 /* Flags */);
+            if (SUCCEEDED(hr))
+            {
+                DrvAudioHlpClearBuf(&pStreamDS->Cfg.Props, pv1, cb1, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb1));
+                if (pv2 && cb2)
+                    DrvAudioHlpClearBuf(&pStreamDS->Cfg.Props, pv2, cb2, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb2));
+                directSoundCaptureUnlock(pStreamDS->In.pDSCB, pv1, pv2, cb1, cb2);
+            }
+        }
     }
     else if (pStreamDS->Cfg.enmDir == PDMAUDIODIR_OUT)
     {
@@ -1060,6 +1079,26 @@ static void dsoundStreamReset(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
         pStreamDS->Out.offWritePos = 0;
         pStreamDS->Out.offPlayCursorLastPending = 0;
         pStreamDS->Out.offPlayCursorLastPlayed = 0;
+
+        /* Also reset the DirectSound Buffer (DSB) by setting the position to 0 and clear all data to make sure
+         * not stale audio data is left. */
+        if (pStreamDS->Out.pDSB)
+        {
+            HRESULT hr = IDirectSoundBuffer8_SetCurrentPosition(pStreamDS->Out.pDSB, 0);
+            if (SUCCEEDED(hr))
+            {
+                PVOID pv1; PVOID pv2; DWORD cb1; DWORD cb2;
+                hr = directSoundPlayLock(pThis, pStreamDS, 0 /* Offset */, pStreamDS->cbBufSize, &pv1, &pv2, &cb1, &cb2,
+                                         0 /* Flags */);
+                if (SUCCEEDED(hr))
+                {
+                    DrvAudioHlpClearBuf(&pStreamDS->Cfg.Props, pv1, cb1, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb1));
+                    if (pv2 && cb2)
+                        DrvAudioHlpClearBuf(&pStreamDS->Cfg.Props, pv2, cb2, PDMAUDIOPCMPROPS_B2F(&pStreamDS->Cfg.Props, cb2));
+                    directSoundPlayUnlock(pThis, pStreamDS->Out.pDSB, pv1, pv2, cb1, cb2);
+                }
+            }
+        }
     }
 
 #ifdef LOG_ENABLED
