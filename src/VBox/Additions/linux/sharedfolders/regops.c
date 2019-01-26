@@ -860,6 +860,36 @@ int sf_write_end(struct file *file, struct address_space *mapping, loff_t pos,
 
 # endif	/* KERNEL_VERSION >= 2.6.24 */
 
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+/**
+ * This is needed to make open accept O_DIRECT as well as dealing with direct
+ * I/O requests if we don't intercept them earlier.
+ */
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+static ssize_t sf_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+static ssize_t sf_direct_IO(struct kiocb *iocb, struct iov_iter *iter, loff_t offset)
+#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+static ssize_t sf_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter, loff_t offset)
+#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 6)
+static ssize_t sf_direct_IO(int rw, struct kiocb *iocb, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
+#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 55)
+static int sf_direct_IO(int rw, struct kiocb *iocb, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
+#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 41)
+static int sf_direct_IO(int rw, struct file *file, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
+#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 35)
+static int sf_direct_IO(int rw, struct inode *inode, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
+#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 26)
+static int sf_direct_IO(int rw, struct inode *inode, char *buf, loff_t offset, size_t count)
+#  else
+static int sf_direct_IO(int rw, struct inode *inode, struct kiobuf *, unsigned long, int)
+#  endif
+{
+	TRACE();
+	return -EINVAL;
+}
+# endif
+
 struct address_space_operations sf_reg_aops = {
 	.readpage = sf_readpage,
 	.writepage = sf_writepage,
@@ -869,6 +899,9 @@ struct address_space_operations sf_reg_aops = {
 # else
 	.prepare_write = simple_prepare_write,
 	.commit_write = simple_commit_write,
+# endif
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+	.direct_IO = sf_direct_IO,
 # endif
 };
 
