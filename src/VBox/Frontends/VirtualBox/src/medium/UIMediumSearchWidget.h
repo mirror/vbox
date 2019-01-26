@@ -44,8 +44,6 @@ class  SHARED_LIBRARY_STUFF UIMediumSearchWidget : public QIWithRetranslateUI<QW
 signals:
 
     void sigPerformSearch();
-    void sigShowNextMatchingItem();
-    void sigShowPreviousMatchingItem();
 
 public:
 

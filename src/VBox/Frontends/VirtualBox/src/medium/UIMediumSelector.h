@@ -69,8 +69,6 @@ private slots:
     void sltHandleMediumEnumerationFinish();
     void sltHandleRefresh();
     void sltHandlePerformSearch();
-    void sltHandleShowNextMatchingItem();
-    void sltHandleShowPreviousMatchingItem();
     void sltHandleTreeContextMenuRequest(const QPoint &point);
     void sltHandleTreeExpandAllSignal();
     void sltHandleTreeCollapseAllSignal();

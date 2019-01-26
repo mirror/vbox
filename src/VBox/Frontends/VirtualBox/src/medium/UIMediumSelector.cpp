@@ -242,10 +242,6 @@ void UIMediumSelector::prepareConnections()
     {
         connect(m_pSearchWidget, &UIMediumSearchWidget::sigPerformSearch,
                 this, &UIMediumSelector::sltHandlePerformSearch);
-        connect(m_pSearchWidget, &UIMediumSearchWidget::sigShowNextMatchingItem,
-                this, &UIMediumSelector::sltHandleShowNextMatchingItem);
-        connect(m_pSearchWidget, &UIMediumSearchWidget::sigShowPreviousMatchingItem,
-                this, &UIMediumSelector::sltHandleShowPreviousMatchingItem);
     }
 }
 
@@ -460,26 +456,10 @@ void UIMediumSelector::sltHandleRefresh()
 
 void UIMediumSelector::sltHandlePerformSearch()
 {
-    performMediumSearch();
-}
-
-void UIMediumSelector::sltHandleShowNextMatchingItem()
-{
-    if (m_mathingItemList.isEmpty())
+    //performMediumSearch();
+    if (!m_pSearchWidget)
         return;
-
-    if (++m_iCurrentShownIndex >= m_mathingItemList.size())
-        m_iCurrentShownIndex = 0;
-    scrollToItem(m_mathingItemList[m_iCurrentShownIndex]);
-}
-
-void UIMediumSelector::sltHandleShowPreviousMatchingItem()
-{
-    if (m_mathingItemList.isEmpty())
-        return;
-    if (--m_iCurrentShownIndex < 0)
-        m_iCurrentShownIndex = m_mathingItemList.size() -1;
-    scrollToItem(m_mathingItemList[m_iCurrentShownIndex]);
+    m_pSearchWidget->search(m_pTreeWidget);
 }
 
 void UIMediumSelector::sltHandleTreeContextMenuRequest(const QPoint &point)
@@ -700,6 +680,7 @@ UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const
 
 void UIMediumSelector::performMediumSearch()
 {
+    return;
     if (!m_pSearchWidget || !m_pTreeWidget)
         return;
     /* Unmark all tree items to remove the highltights: */
