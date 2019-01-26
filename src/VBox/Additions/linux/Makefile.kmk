@@ -358,7 +358,6 @@ OTHER_CLEAN += \
 #
 # Build test for the Guest Additions kernel modules (kmk check).
 #
-$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxsf-src,vboxguest-src,)
 $(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxvideo-src,,)
 
 

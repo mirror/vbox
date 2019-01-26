@@ -30,6 +30,8 @@ vboxsf-src_SOURCES      = \
 vboxsf-src_EXEC_SOURCES = \
 	$(subst $(DQUOTE),,$(FILES_VBOXSF_BIN))
 
+# Build test for the Guest Additions kernel modules (kmk check).
+$(evalcall2 VBOX_LINUX_KMOD_TEST_BUILD_RULE_FN,vboxsf-src,vboxguest-src,)
 
 #
 # The mount util.
