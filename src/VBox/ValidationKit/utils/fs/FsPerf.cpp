@@ -2235,6 +2235,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 
 # ifdef RT_OS_WINDOWS
         HANDLE hSection;
+        pbMapping = NULL;
         for (;; cbMapping /= 2)
         {
             hSection = CreateFileMapping((HANDLE)RTFileToNative(hFile1), NULL,
