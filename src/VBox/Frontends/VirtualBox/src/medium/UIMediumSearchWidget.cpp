@@ -44,7 +44,7 @@ public:
     FilterByNameUUID(UIMediumSearchWidget::SearchType enmSearchType, const QString &strSearchTerm)
         : m_enmSearchType(enmSearchType)
         , m_strSearchTerm(strSearchTerm){}
-
+    virtual ~FilterByNameUUID(){}
     virtual bool operator()(QTreeWidgetItem *pItem) const
     {
         if (!pItem || m_strSearchTerm.isEmpty())

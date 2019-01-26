@@ -101,7 +101,6 @@ private slots:
     /** Recursively create the hard disk hierarchy under the tree widget */
     UIMediumItem* createHardDiskItem(const UIMedium &medium, QITreeWidgetItem *pParent);
     UIMediumItem* searchItem(const QTreeWidgetItem *pParent, const QUuid &mediumId);
-    void          performMediumSearch();
     /** Remember the default foreground brush of the tree so that we can reset tree items' foreground later */
     void          saveDefaultForeground();
     void          selectMedium(const QUuid &uMediumID);

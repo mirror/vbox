@@ -626,7 +626,6 @@ void UIMediumSelector::repopulateTreeWidget()
         m_pTreeWidget->expandItem(m_pNotAttachedSubTreeRoot);
 
     m_pTreeWidget->resizeColumnToContents(0);
-    performMediumSearch();
 }
 
 void UIMediumSelector::saveDefaultForeground()
@@ -676,55 +675,6 @@ UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const
             return pResult;
     }
     return 0;
-}
-
-void UIMediumSelector::performMediumSearch()
-{
-    return;
-    if (!m_pSearchWidget || !m_pTreeWidget)
-        return;
-    /* Unmark all tree items to remove the highltights: */
-    for (int i = 0; i < m_mediumItemList.size(); ++i)
-    {
-        for (int j = 0; j < m_pTreeWidget->columnCount(); ++j)
-        {
-            if (m_mediumItemList[i])
-                m_mediumItemList[i]->setData(j, Qt::ForegroundRole, m_defaultItemForeground);
-        }
-    }
-
-    m_mathingItemList.clear();
-    m_iCurrentShownIndex = 0;
-
-    UIMediumSearchWidget::SearchType searchType =
-        m_pSearchWidget->searchType();
-    if (searchType >= UIMediumSearchWidget::SearchByMax)
-        return;
-    QString strTerm = m_pSearchWidget->searchTerm();
-    if (strTerm.isEmpty())
-        return;
-
-    for (int i = 0; i < m_mediumItemList.size(); ++i)
-    {
-        if (!m_mediumItemList[i])
-            continue;
-        QString strMedium;
-        if (searchType == UIMediumSearchWidget::SearchByName)
-            strMedium = m_mediumItemList[i]->medium().name();
-        else if(searchType == UIMediumSearchWidget::SearchByUUID)
-            strMedium = m_mediumItemList[i]->medium().id().toString();
-        if (strMedium.isEmpty())
-            continue;
-        if (strMedium.contains(strTerm, Qt::CaseInsensitive))
-        {
-            /* mark all the items by setting foregroung color to red: */
-            for (int j = 0; j < m_pTreeWidget->columnCount(); ++j)
-                m_mediumItemList[i]->setData(j, Qt::ForegroundRole, QBrush(QColor(255, 0, 0)));
-            m_mathingItemList.append(m_mediumItemList[i]);
-        }
-    }
-    if (!m_mathingItemList.isEmpty())
-        scrollToItem(m_mathingItemList[0]);
 }
 
 void UIMediumSelector::scrollToItem(UIMediumItem* pItem)
