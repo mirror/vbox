@@ -441,7 +441,7 @@ typedef struct XFSINODECORE
     uint64_t     cbInode;
     /** 0x40: Number of direct and B-Tree blocks used for the forks. */
     uint64_t     cBlocks;
-    /** 0x48: Minimum exten size for the inode. */
+    /** 0x48: Minimum extent size for the inode. */
     uint32_t     cExtentBlocksMin;
     /** 0x4c: Number of extents in the data fork. */
     uint32_t     cExtentsData;
@@ -632,6 +632,78 @@ typedef XFSINODEBTREEREC *PXFSINODEBTREEREC;
 /** Pointer to a const inode B-Tree record. */
 typedef const XFSINODEBTREEREC *PCXFSINODEBTREEREC;
 
+
+/**
+ * XFS B+Tree root header.
+ */
+typedef struct XFSBTREEROOTHDR
+{
+    /** 0x00: Tree level. */
+    uint16_t            iLvl;
+    /** 0x02: Number of records. */
+    uint16_t            cRecs;
+} XFSBTREEROOTHDR;
+/** Pointer to a B+Tree root header */
+typedef XFSBTREEROOTHDR *PXFSBTREEROOTHDR;
+/** Pointer to a const B+Tree root header. */
+typedef const XFSBTREEROOTHDR *PCXFSBTREEROOTHDR;
+
+
+/**
+ * XFS B+Tree intermediate/leave node header.
+ */
+typedef struct XFSBTREENODEHDR
+{
+    /** 0x00: Magic identifying the node. */
+    uint32_t            u32Magic;
+    /** 0x04: Tree level. */
+    uint16_t            iLvl;
+    /** 0x06: Number of records. */
+    uint16_t            cRecs;
+    /** 0x08: Block number of the left sibling. */
+    uint64_t            uSibLeft;
+    /** 0x10: Block number of the right sibling. */
+    uint64_t            uSibRight;
+} XFSBTREENODEHDR;
+/** Pointer to a B+Tree intermediate/leave node header. */
+typedef XFSBTREENODEHDR *PXFSBTREENODEHDR;
+/** Pointer to a const B+Tree intermediate/leave node header. */
+typedef const XFSBTREENODEHDR *PCXFSBTREENODEHDR;
+
+/** @name XFS_BTREENODEHDR_XXX - B+Tree node related defines.
+ * @{ */
+/** Magic for the tree node header. */
+#define XFS_BTREENODEHDR_MAGIC                       RT_MAKE_U32_FROM_U8('P', 'A', 'M', 'B')
+/** @} */
+
+
+/**
+ * XFS Extent.
+ */
+typedef struct XFSEXTENT
+{
+    /** 0x00: Low 64 bits. */
+    uint64_t    u64Low;
+    /** 0x08: High 64 bits. */
+    uint64_t    u64High;
+} XFSEXTENT;
+/** Pointer to an XFS extent. */
+typedef XFSEXTENT *PXFSEXTENT;
+/** Pointer to a const XFS extent. */
+typedef const XFSEXTENT *PCXFSEXTENT;
+
+/** @name XFS_EXTENT_XXX - Extent related getters.
+ * @{ */
+/** Returns whether the extent is allocated but unwritten (true) or a normal extent (false). */
+#define XFS_EXTENT_IS_UNWRITTEN(a_pExtent) (RT_BOOL((a_pExtent)->u64High & RT_BIT_64(63)))
+/** Returns the number of blocks the extent covers. */
+#define XFS_EXTENT_GET_BLOCK_COUNT(a_pExtent) ((a_pExtent)->u64Low & UINT64_C(0x1fffff))
+/** Returns the absolute block number where the data is stored on the disk. */
+#define XFS_EXTENT_GET_DISK_BLOCK(a_pExtent) (  (((a_pExtent)->u64High & UINT64_C(0x1ff)) << 42) \
+                                              | (((a_pExtent)->u64Low & UINT64_C(0xffffffffffe00000)) >> 21))
+/** Returns the logical inode block offset. */
+#define XFS_EXTENT_GET_LOGICAL_BLOCK(a_pExtent) (((a_pExtent)->u64High & UINT64_C(0x7ffffffffffffe00)) >> 9)
+/** @} */
 
 /** @} */
 
