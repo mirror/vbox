@@ -256,10 +256,14 @@ enum
     kCmdOpt_NoRm,
     kCmdOpt_ChSize,
     kCmdOpt_NoChSize,
-    kCmdOpt_Read,
-    kCmdOpt_NoRead,
-    kCmdOpt_Write,
-    kCmdOpt_NoWrite,
+    kCmdOpt_ReadPerf,
+    kCmdOpt_NoReadPerf,
+    kCmdOpt_ReadTests,
+    kCmdOpt_NoReadTests,
+    kCmdOpt_WritePerf,
+    kCmdOpt_NoWritePerf,
+    kCmdOpt_WriteTests,
+    kCmdOpt_NoWriteTests,
     kCmdOpt_Seek,
     kCmdOpt_NoSeek,
     kCmdOpt_FSync,
@@ -330,10 +334,14 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--no-rm",            kCmdOpt_NoRm,           RTGETOPT_REQ_NOTHING },
     { "--chsize",           kCmdOpt_ChSize,         RTGETOPT_REQ_NOTHING },
     { "--no-chsize",        kCmdOpt_NoChSize,       RTGETOPT_REQ_NOTHING },
-    { "--read",             kCmdOpt_Read,           RTGETOPT_REQ_NOTHING },
-    { "--no-read",          kCmdOpt_NoRead,         RTGETOPT_REQ_NOTHING },
-    { "--write",            kCmdOpt_Write,          RTGETOPT_REQ_NOTHING },
-    { "--no-write",         kCmdOpt_NoWrite,        RTGETOPT_REQ_NOTHING },
+    { "--read-tests",       kCmdOpt_ReadTests,      RTGETOPT_REQ_NOTHING },
+    { "--no-read-tests",    kCmdOpt_NoReadTests,    RTGETOPT_REQ_NOTHING },
+    { "--read-perf",        kCmdOpt_ReadPerf,       RTGETOPT_REQ_NOTHING },
+    { "--no-read-perf",     kCmdOpt_NoReadPerf,     RTGETOPT_REQ_NOTHING },
+    { "--write-tests",      kCmdOpt_WriteTests,     RTGETOPT_REQ_NOTHING },
+    { "--no-write-tests",   kCmdOpt_NoWriteTests,   RTGETOPT_REQ_NOTHING },
+    { "--write-perf",       kCmdOpt_WritePerf,      RTGETOPT_REQ_NOTHING },
+    { "--no-write-perf",    kCmdOpt_NoWritePerf,    RTGETOPT_REQ_NOTHING },
     { "--seek",             kCmdOpt_Seek,           RTGETOPT_REQ_NOTHING },
     { "--no-seek",          kCmdOpt_NoSeek,         RTGETOPT_REQ_NOTHING },
     { "--fsync",            kCmdOpt_FSync,          RTGETOPT_REQ_NOTHING },
@@ -387,8 +395,10 @@ static bool         g_fMkRmDir   = true;
 static bool         g_fStatVfs   = true;
 static bool         g_fRm        = true;
 static bool         g_fChSize    = true;
-static bool         g_fRead      = true;
-static bool         g_fWrite     = true;
+static bool         g_fReadTests = true;
+static bool         g_fReadPerf  = true;
+static bool         g_fWriteTests= true;
+static bool         g_fWritePerf = true;
 static bool         g_fSeek      = true;
 static bool         g_fFSync     = true;
 static bool         g_fMMap      = true;
@@ -1691,6 +1701,10 @@ void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
         if (ns > g_nsPerNanoTSCall + 32) \
             ns -= g_nsPerNanoTSCall; \
         uint64_t cIterations = g_nsTestRun / ns; \
+        if (cIterations < 2) \
+            cIterations = 2; \
+        else if (cIterations & 1) \
+            cIterations++; \
         \
         /* Do the actual profiling: */ \
         cSeeks = 0; \
@@ -2243,8 +2257,9 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             }
             if (cbMapping <= _2M)
             {
-                RTTestIFailed("%u: CreateFileMapping or MapViewOfFile failed: %u, %u", enmState, dwErr1, dwErr2);
-                return;
+                RTTestIFailed("%u/%s: CreateFileMapping or MapViewOfFile failed: %u, %u",
+                              enmState, s_apszStates[enmState], dwErr1, dwErr2);
+                break;
             }
         }
 # else
@@ -2256,9 +2271,15 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                                         (int)RTFileToNative(hFile1), 0);
             if ((void *)pbMapping != MAP_FAILED)
                 break;
-            RTTESTI_CHECK_MSG_RETV(cbMapping > _2M, ("errno=%d", errno));
+            if (cbMapping <= _2M)
+            {
+                RTTestIFailed("%u/%s: mmap failed: %s (%u)", enmState, s_apszStates[enmState], strerror(errno), errno);
+                break;
+            }
         }
 # endif
+        if (cbMapping <= _2M)
+            continue;
 
         /*
          * Time page-ins just for fun.
@@ -2438,21 +2459,23 @@ void fsPerfIo(void)
          */
         if (g_fSeek)
             fsPerfIoSeek(hFile1, cbFile);
-        if (g_fRead)
-        {
+
+        if (g_fReadTests)
             fsPerfRead(hFile1, hFileNoCache, cbFile);
+        if (g_fReadPerf)
             for (unsigned i = 0; i < g_cIoBlocks; i++)
                 fsPerfIoReadBlockSize(hFile1, cbFile, g_acbIoBlocks[i]);
-        }
+
         if (g_fMMap)
             fsPerfMMap(hFile1, hFileNoCache, cbFile);
-        if (g_fWrite)
-        {
-            /* This is destructive to the file content. */
+
+        /* This is destructive to the file content. */
+        if (g_fWriteTests)
             fsPerfWrite(hFile1, hFileNoCache, hFileWriteThru, cbFile);
+        if (g_fWritePerf)
             for (unsigned i = 0; i < g_cIoBlocks; i++)
                 fsPerfIoWriteBlockSize(hFile1, cbFile, g_acbIoBlocks[i]);
-        }
+
         if (g_fFSync)
             fsPerfFSync(hFile1, cbFile);
     }
@@ -2617,8 +2640,10 @@ int main(int argc, char *argv[])
                 g_fStatVfs   = true;
                 g_fRm        = true;
                 g_fChSize    = true;
-                g_fRead      = true;
-                g_fWrite     = true;
+                g_fReadTests = true;
+                g_fReadPerf  = true;
+                g_fWriteTests= true;
+                g_fWritePerf = true;
                 g_fSeek      = true;
                 g_fFSync     = true;
                 g_fMMap      = true;
@@ -2639,8 +2664,10 @@ int main(int argc, char *argv[])
                 g_fStatVfs   = false;
                 g_fRm        = false;
                 g_fChSize    = false;
-                g_fRead      = false;
-                g_fWrite     = false;
+                g_fReadTests = false;
+                g_fReadPerf  = false;
+                g_fWriteTests= false;
+                g_fWritePerf = false;
                 g_fSeek      = false;
                 g_fFSync     = false;
                 g_fMMap      = false;
@@ -2662,8 +2689,10 @@ int main(int argc, char *argv[])
             CASE_OPT(StatVfs);
             CASE_OPT(Rm);
             CASE_OPT(ChSize);
-            CASE_OPT(Read);
-            CASE_OPT(Write);
+            CASE_OPT(ReadTests);
+            CASE_OPT(ReadPerf);
+            CASE_OPT(WriteTests);
+            CASE_OPT(WritePerf);
             CASE_OPT(Seek);
             CASE_OPT(FSync);
             CASE_OPT(MMap);
@@ -2817,7 +2846,7 @@ int main(int argc, char *argv[])
                     fsPerfRm(); /* deletes manyfiles and manytree */
                 if (g_fChSize)
                     fsPerfChSize();
-                if (g_fRead || g_fWrite || g_fSeek || g_fFSync || g_fMMap)
+                if (g_fReadPerf || g_fReadTests || g_fWritePerf || g_fWriteTests || g_fSeek || g_fFSync || g_fMMap)
                     fsPerfIo();
             }
 
