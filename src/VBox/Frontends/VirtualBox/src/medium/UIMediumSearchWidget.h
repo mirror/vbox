@@ -26,10 +26,14 @@
 
 /* Forward declarations: */
 class QAction;
+class QTreeWidgetItem;
 class QLineEdit;
 class QIComboBox;
 class QIDialogButtonBox;
 class QIToolButton;
+class QITreeWidget;
+class UIMediumItem;
+
 
 /** QWidget extension providing a simple way to enter a earch term and search type for medium searching
  *  in virtual media manager, medium selection dialog, etc. */
@@ -57,18 +61,31 @@ public:
     UIMediumSearchWidget(QWidget *pParent = 0);
     SearchType searchType() const;
     QString searchTerm() const;
+    void    search(QITreeWidget* pTreeWidget);
 
-protected:
+ protected:
 
     void retranslateUi() /* override */;
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+
+ private slots:
+
+    void sltShowNextMatchingItem();
+    void sltShowPreviousMatchingItem();
 
 private:
 
-    void              prepareWidgets();
+    void    prepareWidgets();
+    void    markUnmarkItems(QList<QTreeWidgetItem*> &itemList, bool fMark);
+
     QIComboBox       *m_pSearchComboxBox;
     QLineEdit        *m_pSearchTermLineEdit;
     QIToolButton     *m_pShowNextMatchButton;
     QIToolButton     *m_pShowPreviousMatchButton;
+
+    QList<QTreeWidgetItem*> m_matchedItemList;
+    QITreeWidget           *m_pTreeWidget;
+    int                     m_iScrollToIndex;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIMediumSearchWidget_h */
