@@ -297,6 +297,7 @@ DECLINLINE(bool) vusbDevIsRh(PVUSBDEV pDev)
 bool vusbDevDoSelectConfig(PVUSBDEV dev, PCVUSBDESCCONFIGEX pCfg);
 void vusbDevMapEndpoint(PVUSBDEV dev, PCVUSBDESCENDPOINTEX ep);
 int vusbDevDetach(PVUSBDEV pDev);
+int vusbDevAttach(PVUSBDEV pDev, PVUSBHUB pHub);
 DECLINLINE(PVUSBROOTHUB) vusbDevGetRh(PVUSBDEV pDev);
 size_t vusbDevMaxInterfaces(PVUSBDEV dev);
 
@@ -737,10 +738,6 @@ DECLINLINE(uint32_t) vusbDevRelease(PVUSBDEV pThis)
 
 /** Strings for the CTLSTAGE enum values. */
 extern const char * const g_apszCtlStates[4];
-/** Default message pipe. */
-extern const VUSBDESCENDPOINTEX g_Endpoint0;
-/** Default configuration. */
-extern const VUSBDESCCONFIGEX g_Config0;
 
 RT_C_DECLS_END
 #endif /* !VBOX_INCLUDED_SRC_USB_VUSBInternal_h */

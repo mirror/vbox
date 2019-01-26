@@ -1213,6 +1213,39 @@ int vusbDevUrbIoThreadDestroy(PVUSBDEV pDev)
 
 
 /**
+ * Attaches a device to the given hub.
+ *
+ * @returns VBox status code.
+ * @param   pDev        The device to attach.
+ * @param   pHub        THe hub to attach to.
+ */
+int vusbDevAttach(PVUSBDEV pDev, PVUSBHUB pHub)
+{
+    AssertMsg(pDev->enmState == VUSB_DEVICE_STATE_DETACHED, ("enmState=%d\n", pDev->enmState));
+
+    pDev->pHub = pHub;
+    pDev->enmState = VUSB_DEVICE_STATE_ATTACHED;
+
+    /* noone else ever messes with the default pipe while we are attached */
+    vusbDevMapEndpoint(pDev, &g_Endpoint0);
+    vusbDevDoSelectConfig(pDev, &g_Config0);
+
+    /* Create I/O thread and attach to the hub. */
+    int rc = vusbDevUrbIoThreadCreate(pDev);
+    if (RT_SUCCESS(rc))
+        rc = pHub->pOps->pfnAttach(pHub, pDev);
+
+    if (RT_FAILURE(rc))
+    {
+        pDev->pHub = NULL;
+        pDev->enmState = VUSB_DEVICE_STATE_DETACHED;
+    }
+
+    return rc;
+}
+
+
+/**
  * Detaches a device from the hub it's attached to.
  *
  * @returns VBox status code.
@@ -1243,10 +1276,6 @@ int vusbDevDetach(PVUSBDEV pDev)
      * when cancelling URBs.
      */
     vusbDevUrbIoThreadDestroy(pDev);
-
-    int rc = RTReqQueueDestroy(pDev->hReqQueueSync);
-    AssertRC(rc);
-    pDev->hReqQueueSync = NIL_RTREQQUEUE;
 
     vusbDevSetState(pDev, VUSB_DEVICE_STATE_DETACHED);
     pDev->pHub = NULL;
@@ -1282,6 +1311,10 @@ void vusbDevDestroy(PVUSBDEV pDev)
         VUSBSnifferDestroy(pDev->hSniffer);
 
     vusbUrbPoolDestroy(&pDev->UrbPool);
+
+    int rc = RTReqQueueDestroy(pDev->hReqQueueSync);
+    AssertRC(rc);
+    pDev->hReqQueueSync = NIL_RTREQQUEUE;
 
     RTCritSectDelete(&pDev->CritSectAsyncUrbs);
     /* Not using vusbDevSetState() deliberately here because it would assert on the state. */
@@ -1715,12 +1748,6 @@ DECLHIDDEN(int) vusbDevIoThreadExecSync(PVUSBDEV pDev, PFNRT pfnFunction, unsign
 }
 
 
-static DECLCALLBACK(int) vusbDevGetDescriptorCacheWorker(PPDMUSBINS pUsbIns, PCPDMUSBDESCCACHE *ppDescCache)
-{
-    *ppDescCache = pUsbIns->pReg->pfnUsbGetDescriptorCache(pUsbIns);
-    return VINF_SUCCESS;
-}
-
 /**
  * Initialize a new VUSB device.
  *
@@ -1781,10 +1808,6 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilenam
     rc = RTReqQueueCreate(&pDev->hReqQueueSync);
     AssertRCReturn(rc, rc);
 
-    /* Create I/O thread. */
-    rc = vusbDevUrbIoThreadCreate(pDev);
-    AssertRCReturn(rc, rc);
-
     /*
      * Create the reset timer.
      */
@@ -1801,8 +1824,7 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilenam
     /*
      * Get the descriptor cache from the device. (shall cannot fail)
      */
-    rc = vusbDevIoThreadExecSync(pDev, (PFNRT)vusbDevGetDescriptorCacheWorker, 2, pUsbIns, &pDev->pDescCache);
-    AssertRC(rc);
+    pDev->pDescCache = pUsbIns->pReg->pfnUsbGetDescriptorCache(pUsbIns);
     AssertPtr(pDev->pDescCache);
 #ifdef VBOX_STRICT
     if (pDev->pDescCache->fUseCachedStringsDescriptors)

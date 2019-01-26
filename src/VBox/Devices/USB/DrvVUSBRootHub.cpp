@@ -233,22 +233,7 @@
 static int vusbHubAttach(PVUSBHUB pHub, PVUSBDEV pDev)
 {
     LogFlow(("vusbHubAttach: pHub=%p[%s] pDev=%p[%s]\n", pHub, pHub->pszName, pDev, pDev->pUsbIns->pszName));
-    AssertMsg(pDev->enmState == VUSB_DEVICE_STATE_DETACHED, ("enmState=%d\n", pDev->enmState));
-
-    pDev->pHub = pHub;
-    pDev->enmState = VUSB_DEVICE_STATE_ATTACHED;
-
-    /* noone else ever messes with the default pipe while we are attached */
-    vusbDevMapEndpoint(pDev, &g_Endpoint0);
-    vusbDevDoSelectConfig(pDev, &g_Config0);
-
-    int rc = pHub->pOps->pfnAttach(pHub, pDev);
-    if (RT_FAILURE(rc))
-    {
-        pDev->pHub = NULL;
-        pDev->enmState = VUSB_DEVICE_STATE_DETACHED;
-    }
-    return rc;
+    return vusbDevAttach(pDev, pHub);
 }
 
 
