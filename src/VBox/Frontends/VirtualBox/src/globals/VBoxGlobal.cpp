@@ -4224,7 +4224,11 @@ void VBoxGlobal::prepare()
 
     /* Populate the list of medium names to be excluded from the
        recently used media extra data: */
+#if 0 /* bird: This is counter productive as it is _frequently_ necessary to re-insert the
+               viso to refresh the files (like after you rebuilt them on the host).
+               The guest caches ISOs aggressively and files sizes may change. */
     m_recentMediaExcludeList << "ad-hoc.viso";
+#endif
 }
 
 void VBoxGlobal::cleanup()
