@@ -1542,6 +1542,7 @@ static uint64_t ataR3GetSector(ATADevState *s)
         iLBA = ((s->uATARegHCyl << 8) | s->uATARegLCyl) * s->PCHSGeometry.cHeads * s->PCHSGeometry.cSectors +
             (s->uATARegSelect & 0x0f) * s->PCHSGeometry.cSectors +
             (s->uATARegSector - 1);
+        LogFlowFunc(("CHS %u/%u/%u -> LBA %llu\n", (s->uATARegHCyl << 8) | s->uATARegLCyl, s->uATARegSelect & 0x0f, s->uATARegSector, iLBA));
     }
     return iLBA;
 }
@@ -1580,6 +1581,7 @@ static void ataR3SetSector(ATADevState *s, uint64_t iLBA)
         s->uATARegLCyl = cyl;
         s->uATARegSelect = (s->uATARegSelect & 0xf0) | ((r / s->PCHSGeometry.cSectors) & 0x0f);
         s->uATARegSector = (r % s->PCHSGeometry.cSectors) + 1;
+        LogFlowFunc(("LBA %llu -> CHS %u/%u/%u\n", iLBA, cyl, s->uATARegSelect & 0x0f, s->uATARegSector));
     }
 }
 
