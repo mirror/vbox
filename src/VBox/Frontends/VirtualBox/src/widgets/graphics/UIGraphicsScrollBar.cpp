@@ -28,6 +28,9 @@
 #include "UIGraphicsScrollBar.h"
 #include "UIIconPool.h"
 
+/* External includes: */
+#include <math.h>
+
 
 /** QIGraphicsWidget subclass providing GUI with graphics scroll-bar taken. */
 class UIGraphicsScrollBarToken : public QIGraphicsWidget
