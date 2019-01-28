@@ -154,8 +154,8 @@ void UIMediumSearchWidget::search(QITreeWidget* pTreeWidget)
     markUnmarkItems(m_matchedItemList, true);
     if (!m_matchedItemList.isEmpty())
     {
-        m_iScrollToIndex = 0;
-        pTreeWidget->scrollTo(pTreeWidget->itemIndex(m_matchedItemList[m_iScrollToIndex]), QAbstractItemView::PositionAtCenter);
+        m_iScrollToIndex = -1;
+        goToNextPrevious(true);
     }
 }
 
@@ -194,28 +194,52 @@ void UIMediumSearchWidget::markUnmarkItems(QList<QTreeWidgetItem*> &itemList, bo
         QFont font = pMediumItem->font(0);
         font.setBold(fMark);
         pMediumItem->setFont(0, font);
+
+        if (!fMark)
+            setUnderlineItemText(pMediumItem, false);
     }
+}
+
+void UIMediumSearchWidget::setUnderlineItemText(QTreeWidgetItem* pItem, bool fUnderline)
+{
+    if (!pItem)
+        return;
+    QFont font = pItem->font(0);
+    font.setUnderline(fUnderline);
+    pItem->setFont(0, font);
+}
+
+void UIMediumSearchWidget::goToNextPrevious(bool fNext)
+{
+    if (!m_pTreeWidget || m_matchedItemList.isEmpty())
+        return;
+
+    if (m_iScrollToIndex >= 0 && m_iScrollToIndex < m_matchedItemList.size())
+        setUnderlineItemText(m_matchedItemList[m_iScrollToIndex], false);
+
+    if (fNext)
+        ++m_iScrollToIndex;
+    else
+        --m_iScrollToIndex;
+
+    if (m_iScrollToIndex >= m_matchedItemList.size())
+        m_iScrollToIndex = 0;
+    if (m_iScrollToIndex < 0)
+        m_iScrollToIndex = m_matchedItemList.size() - 1;
+
+    setUnderlineItemText(m_matchedItemList[m_iScrollToIndex], true);
+    m_pTreeWidget->scrollTo(m_pTreeWidget->itemIndex(m_matchedItemList[m_iScrollToIndex]), QAbstractItemView::PositionAtCenter);
+
 }
 
 void UIMediumSearchWidget::sltShowNextMatchingItem()
 {
-    if (!m_pTreeWidget)
+    if (m_matchedItemList.isEmpty())
         return;
-    if (++m_iScrollToIndex >= m_matchedItemList.size())
-        m_iScrollToIndex = 0;
-    if (!m_matchedItemList[m_iScrollToIndex])
-        return;
-    m_pTreeWidget->scrollTo(m_pTreeWidget->itemIndex(m_matchedItemList[m_iScrollToIndex]), QAbstractItemView::PositionAtCenter);
+    goToNextPrevious(true);
 }
 
 void UIMediumSearchWidget::sltShowPreviousMatchingItem()
 {
-    if (!m_pTreeWidget)
-        return;
-    if (--m_iScrollToIndex <= 0)
-        m_iScrollToIndex = m_matchedItemList.size() - 1;
-    if (!m_matchedItemList[m_iScrollToIndex])
-        return;
-    m_pTreeWidget->scrollTo(m_pTreeWidget->itemIndex(m_matchedItemList[m_iScrollToIndex]), QAbstractItemView::PositionAtCenter);
-
+    goToNextPrevious(false);
 }

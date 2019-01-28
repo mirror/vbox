@@ -75,7 +75,10 @@ private:
 
     void    prepareWidgets();
     void    markUnmarkItems(QList<QTreeWidgetItem*> &itemList, bool fMark);
-
+    void    setUnderlineItemText(QTreeWidgetItem* pItem, bool fUnderline);
+    /** Increases (or decreases if @p fNext is false) the m_iScrollToIndex and
+     *  takes care of the necessary decoration changes to mark the current item. */
+    void    goToNextPrevious(bool fNext);
     QIComboBox       *m_pSearchComboxBox;
     QLineEdit        *m_pSearchTermLineEdit;
     QIToolButton     *m_pShowNextMatchButton;
