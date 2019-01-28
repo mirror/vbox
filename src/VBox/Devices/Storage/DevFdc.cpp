@@ -100,14 +100,6 @@ typedef struct fdctrl_t fdctrl_t;
 #define FD_RESET_SENSEI_COUNT  4   /* Number of sense interrupts on RESET */
 
 /* Floppy disk drive emulation */
-typedef enum fdisk_type_t {
-    FDRIVE_DISK_288   = 0x01, /* 2.88 MB disk           */
-    FDRIVE_DISK_144   = 0x02, /* 1.44 MB disk           */
-    FDRIVE_DISK_720   = 0x03, /* 720 kB disk            */
-    FDRIVE_DISK_USER  = 0x04, /* User defined geometry  */
-    FDRIVE_DISK_NONE  = 0x05  /* No disk                */
-} fdisk_type_t;
-
 typedef enum fdrive_type_t {
     FDRIVE_DRV_144  = 0x00,   /* 1.44 MB 3"5 drive      */
     FDRIVE_DRV_288  = 0x01,   /* 2.88 MB 3"5 drive      */
