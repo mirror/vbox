@@ -630,8 +630,8 @@ void UIMediumManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
-        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
     }
     else
     {
@@ -734,8 +734,8 @@ void UIMediumManagerWidget::prepareActions()
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
-    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
 
     /* Connect actions: */
@@ -779,10 +779,10 @@ void UIMediumManagerWidget::prepareWidgets()
             prepareToolBar();
         /* Prepare tab-widget: */
         prepareTabWidget();
-        /* Prepare details-widget: */
-        prepareDetailsWidget();
         /* Prepare search-widget: */
         prepareSearchWidget();
+        /* Prepare details-widget: */
+        prepareDetailsWidget();
     }
 }
 
@@ -804,8 +804,8 @@ void UIMediumManagerWidget::prepareToolBar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
-        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
 
