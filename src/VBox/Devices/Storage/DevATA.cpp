@@ -3235,6 +3235,7 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
     const uint8_t *pbPacket;
     uint8_t *pbBuf;
     uint32_t cbMax;
+    uint32_t cSectors, iATAPILBA;
 
     pbPacket = s->aATAPICmd;
     pbBuf = s->CTX_SUFF(pbIOBuffer);
@@ -3340,8 +3341,6 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
         case SCSI_READ_10:
         case SCSI_READ_12:
         {
-            uint32_t cSectors, iATAPILBA;
-
             if (s->cNotifiedMediaChange > 0)
             {
                 s->cNotifiedMediaChange-- ;
@@ -3405,10 +3404,9 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
             atapiR3ReadSectors(s, iATAPILBA, cSectors, 2048);
             break;
         }
+        case SCSI_READ_CD_MSF:
         case SCSI_READ_CD:
         {
-            uint32_t cSectors, iATAPILBA;
-
             if (s->cNotifiedMediaChange > 0)
             {
                 s->cNotifiedMediaChange-- ;
@@ -3425,8 +3423,25 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                 atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
                 break;
             }
-            cSectors = (pbPacket[6] << 16) | (pbPacket[7] << 8) | pbPacket[8];
-            iATAPILBA = scsiBE2H_U32(pbPacket + 2);
+            if (pbPacket[0] == SCSI_READ_CD)
+            {
+                cSectors = (pbPacket[6] << 16) | (pbPacket[7] << 8) | pbPacket[8];
+                iATAPILBA = scsiBE2H_U32(pbPacket + 2);
+            }
+            else    /* READ CD MSF */
+            {
+                iATAPILBA = scsiMSF2LBA(pbPacket + 3);
+                if (iATAPILBA > scsiMSF2LBA(pbPacket + 6))
+                {
+                    Log2(("Start MSF %02u:%02u:%02u > end MSF  %02u:%02u:%02u!\n", *(pbPacket + 3), *(pbPacket + 4), *(pbPacket + 5),
+                          *(pbPacket + 6), *(pbPacket + 7), *(pbPacket + 8)));
+                    atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+                    break;
+                }
+                cSectors = scsiMSF2LBA(pbPacket + 6) - iATAPILBA;
+                Log2(("Start MSF %02u:%02u:%02u -> LBA %u\n", *(pbPacket + 3), *(pbPacket + 4), *(pbPacket + 5), iATAPILBA));
+                Log2(("End   MSF %02u:%02u:%02u -> %u sectors\n", *(pbPacket + 6), *(pbPacket + 7), *(pbPacket + 8), cSectors));
+            }
             if (cSectors == 0)
             {
                 atapiR3CmdOK(s);
@@ -3496,7 +3511,6 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
         }
         case SCSI_SEEK_10:
         {
-            uint32_t iATAPILBA;
             if (s->cNotifiedMediaChange > 0)
             {
                 s->cNotifiedMediaChange-- ;
