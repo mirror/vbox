@@ -2974,6 +2974,18 @@ void UIExtraDataManager::setVirtualMediaManagerDetailsExpanded(bool fExpanded)
     return setExtraDataString(GUI_VirtualMediaManager_Details_Expanded, toFeatureAllowed(fExpanded));
 }
 
+bool UIExtraDataManager::virtualMediaManagerSearchWidgetExpanded()
+{
+    /* 'False' unless feature allowed: */
+    return isFeatureAllowed(GUI_VirtualMediaManager_Search_Widget_Expanded);
+}
+
+void UIExtraDataManager::setVirtualMediaManagerSearchWidgetExpanded(bool fExpanded)
+{
+    /* 'True' if feature allowed, null-string otherwise: */
+    return setExtraDataString(GUI_VirtualMediaManager_Search_Widget_Expanded, toFeatureAllowed(fExpanded));
+}
+
 bool UIExtraDataManager::hostNetworkManagerDetailsExpanded()
 {
     /* 'False' unless feature allowed: */

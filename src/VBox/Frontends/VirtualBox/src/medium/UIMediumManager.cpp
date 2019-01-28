@@ -36,6 +36,7 @@
 #include "UIMediumDetailsWidget.h"
 #include "UIMediumItem.h"
 #include "UIMediumManager.h"
+#include "UIMediumSearchWidget.h"
 #include "UIWizardCloneVD.h"
 #include "UIMessageCenter.h"
 #include "UIToolBar.h"
@@ -160,6 +161,7 @@ UIMediumManagerWidget::UIMediumManagerWidget(EmbedTo enmEmbedding, UIActionPool 
     , m_pDetailsWidget(0)
     , m_pToolBar(0)
     , m_pProgressBar(0)
+    , m_pSearchWidget(0)
 {
     /* Prepare: */
     prepare();
@@ -561,6 +563,15 @@ void UIMediumManagerWidget::sltToggleMediumDetailsVisibility(bool fVisible)
     emit sigMediumDetailsVisibilityChanged(fVisible);
 }
 
+void UIMediumManagerWidget::sltToggleMediumSearchVisibility(bool fVisible)
+{
+    /* Save the setting: */
+    gEDataManager->setVirtualMediaManagerSearchWidgetExpanded(fVisible);
+    /* Toggle medium details visibility: */
+    if (m_pSearchWidget)
+        m_pSearchWidget->setVisible(fVisible);
+}
+
 void UIMediumManagerWidget::sltRefreshAll()
 {
     /* Start medium-enumeration: */
@@ -587,6 +598,7 @@ void UIMediumManagerWidget::sltHandleCurrentTabChanged()
         m_pDetailsWidget->setCurrentType(currentMediumType());
     /* Re-fetch currently chosen medium-item: */
     refetchCurrentChosenMediumItem();
+    sltHandlePerformSearch();
 }
 
 void UIMediumManagerWidget::sltHandleCurrentItemChanged()
@@ -619,10 +631,12 @@ void UIMediumManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
     }
     else
     {
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
     }
     /* And show it: */
@@ -652,6 +666,17 @@ void UIMediumManagerWidget::sltPerformTablesAdjustment()
         if (pTreeWidget->header()->sectionSize(0) != iSize0)
             pTreeWidget->header()->resizeSection(0, iSize0);
     }
+}
+
+void UIMediumManagerWidget::sltHandlePerformSearch()
+{
+    if (!m_pSearchWidget || !m_pTabWidget)
+        return;
+
+    QITreeWidget *pTreeWidget = treeWidget(static_cast<UIMediumDeviceType>(m_pTabWidget->currentIndex()));
+    if (!pTreeWidget)
+        return;
+    m_pSearchWidget->search(pTreeWidget);
 }
 
 void UIMediumManagerWidget::prepare()
@@ -710,6 +735,7 @@ void UIMediumManagerWidget::prepareActions()
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
 
     /* Connect actions: */
@@ -725,6 +751,8 @@ void UIMediumManagerWidget::prepareActions()
             this, &UIMediumManagerWidget::sltReleaseMedium);
     connect(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details), &QAction::toggled,
             this, &UIMediumManagerWidget::sltToggleMediumDetailsVisibility);
+    connect(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search), &QAction::toggled,
+            this, &UIMediumManagerWidget::sltToggleMediumSearchVisibility);
     connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh), &QAction::triggered,
             this, &UIMediumManagerWidget::sltRefreshAll);
 
@@ -753,6 +781,8 @@ void UIMediumManagerWidget::prepareWidgets()
         prepareTabWidget();
         /* Prepare details-widget: */
         prepareDetailsWidget();
+        /* Prepare search-widget: */
+        prepareSearchWidget();
     }
 }
 
@@ -775,6 +805,7 @@ void UIMediumManagerWidget::prepareToolBar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Release));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
 
@@ -900,11 +931,31 @@ void UIMediumManagerWidget::prepareDetailsWidget()
     }
 }
 
+void UIMediumManagerWidget::prepareSearchWidget()
+{
+    m_pSearchWidget = new UIMediumSearchWidget(this);
+    AssertPtrReturnVoid(m_pSearchWidget);
+    {
+        m_pSearchWidget->setVisible(false);
+        m_pSearchWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        connect(m_pSearchWidget, &UIMediumSearchWidget::sigPerformSearch,
+                this, &UIMediumManagerWidget::sltHandlePerformSearch);
+
+        /* Add into layout: */
+        layout()->addWidget(m_pSearchWidget);
+    }
+
+}
+
 void UIMediumManagerWidget::loadSettings()
 {
     /* Details action/widget: */
     m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->setChecked(gEDataManager->virtualMediaManagerDetailsExpanded());
     sltToggleMediumDetailsVisibility(m_pActionPool->action(UIActionIndexST_M_Medium_T_Details)->isChecked());
+
+    /* Search action/widget: */
+    m_pActionPool->action(UIActionIndexST_M_Medium_T_Search)->setChecked(gEDataManager->virtualMediaManagerSearchWidgetExpanded());
+    sltToggleMediumSearchVisibility(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search)->isChecked());
 }
 
 void UIMediumManagerWidget::repopulateTreeWidgets()
@@ -953,6 +1004,8 @@ void UIMediumManagerWidget::repopulateTreeWidgets()
     if (pTreeWidgetFD && !mediumItem(UIMediumDeviceType_Floppy))
         if (QTreeWidgetItem *pItem = pTreeWidgetFD->topLevelItem(0))
             setCurrentItem(pTreeWidgetFD, pItem);
+
+    sltHandlePerformSearch();
 }
 
 void UIMediumManagerWidget::refetchCurrentMediumItem(UIMediumDeviceType type)

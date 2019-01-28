@@ -99,6 +99,7 @@ const char *UIExtraDataDefs::GUI_SnapshotManager_Details_Expanded = "GUI/Snapsho
 
 /* Virtual Media Manager: */
 const char *UIExtraDataDefs::GUI_VirtualMediaManager_Details_Expanded = "GUI/VirtualMediaManager/Details/Expanded";
+const char *UIExtraDataDefs::GUI_VirtualMediaManager_Search_Widget_Expanded = "GUI/VirtualMediaManager/SearchWidget/Expanded";
 
 /* Host Network Manager: */
 const char *UIExtraDataDefs::GUI_HostNetworkManager_Details_Expanded = "GUI/HostNetworkManager/Details/Expanded";
