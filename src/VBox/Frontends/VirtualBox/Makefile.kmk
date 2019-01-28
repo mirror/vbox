@@ -655,6 +655,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIMenuToolBar.h \
 	src/widgets/graphics/UIGraphicsButton.h \
 	src/widgets/graphics/UIGraphicsRotatorButton.h \
+	src/widgets/graphics/UIGraphicsScrollBar.h \
 	src/widgets/graphics/UIGraphicsZoomButton.h \
 	src/widgets/graphics/UIGraphicsToolBar.h \
 	src/widgets/graphics/UIGraphicsTextPane.h \
@@ -931,6 +932,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/widgets/UIApplianceEditorWidget.cpp \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UITabBar.cpp \
+	src/widgets/graphics/UIGraphicsScrollBar.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
 
@@ -1071,6 +1073,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/graphics/UIGraphicsButton.cpp \
 	src/widgets/graphics/UIGraphicsRotatorButton.cpp \
+	src/widgets/graphics/UIGraphicsScrollBar.cpp \
 	src/widgets/graphics/UIGraphicsZoomButton.cpp \
 	src/widgets/graphics/UIGraphicsToolBar.cpp \
 	src/widgets/graphics/UIGraphicsTextPane.cpp \
