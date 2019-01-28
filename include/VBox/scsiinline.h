@@ -183,7 +183,7 @@ DECLINLINE(void) scsiLBA2MSF(uint8_t *pbBuf, uint32_t iLBA)
  */
 DECLINLINE(uint32_t) scsiMSF2LBA(const uint8_t *pbBuf)
 {
-    return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2];
+    return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2] - 150;
 }
 
 
