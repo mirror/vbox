@@ -194,7 +194,7 @@
         <file alias="file_manager_file_16px_x2.png">images/x2/file_manager_file_16px_x2.png</file>
         <file alias="file_manager_file_symlink_16px.png">images/x2/file_manager_file_symlink_16px.png</file>
         <file alias="file_manager_folder_16px_x2.png">images/x2/file_manager_folder_16px_x2.png</file>
-        <file alias="file_manager_folder_symlink_16px.png">images/x2/file_manager_folder_symlink_16px.png</file>
+        <file alias="file_manager_folder_symlink_16px_x2.png">images/x2/file_manager_folder_symlink_16px_x2.png</file>
         <file alias="file_manager_go_home_16px_x2.png">images/x2/file_manager_go_home_16px_x2.png</file>
         <file alias="file_manager_go_home_24px_x2.png">images/x2/file_manager_go_home_24px_x2.png</file>
         <file alias="file_manager_go_home_disabled_16px_x2.png">images/x2/file_manager_go_home_disabled_16px_x2.png</file>
