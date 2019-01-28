@@ -3962,7 +3962,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PSVMVMCB pVmcb)
     bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu);
 #ifdef VBOX_STRICT
     PCCPUMCTX  pCtx       = &pVCpu->cpum.GstCtx;
-    bool const fGif       = pCtx->hwvirt.fGif;
+    bool const fGif       = CPUMGetGuestGif(pCtx);
     bool       fAllowInt  = fGif;
     if (fGif)
     {
