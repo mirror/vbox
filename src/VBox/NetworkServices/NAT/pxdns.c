@@ -461,6 +461,7 @@ pxdns_timeout_add(struct pxdns *pxdns, struct request *req)
     omask = pxdns->timeout_mask;
     pxdns->timeout_mask |= 1U << req->timeout_slot;
     if (omask == 0) {
+        sys_untimeout(pxdns_timer, pxdns);
         sys_timeout(1 * 1000, pxdns_timer, pxdns);
     }
 }
