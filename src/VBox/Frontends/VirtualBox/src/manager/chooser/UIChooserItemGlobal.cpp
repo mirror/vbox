@@ -66,7 +66,7 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
 }
 
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
-                                         UIChooserItemGlobal * ,
+                                         UIChooserItemGlobal *pCopyFrom,
                                          int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isTemporary(), 0, 100)
     , m_iDefaultLightnessMin(0)
@@ -77,6 +77,7 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
     , m_iHighlightLightnessMax(0)
     , m_iMinimumNameWidth(0)
     , m_iMaximumNameWidth(0)
+    , m_iHeightHint(pCopyFrom->heightHint())
 {
     /* Prepare: */
     prepare();
@@ -148,6 +149,11 @@ void UIChooserItemGlobal::setHeightHint(int iHint)
     /* Update geometry and the model layout: */
     updateGeometry();
     model()->updateLayout();
+}
+
+int UIChooserItemGlobal::heightHint() const
+{
+    return m_iHeightHint;
 }
 
 void UIChooserItemGlobal::retranslateUi()

@@ -58,6 +58,8 @@ public:
       * @{ */
         /** Defines height @a iHint. */
         void setHeightHint(int iHint);
+        /** Returns height hint. */
+        int heightHint() const;
     /** @} */
 
 protected:
