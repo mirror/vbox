@@ -1156,7 +1156,7 @@ my_generate_project "Net-NAT"       "src/VBox/NetworkServices/NAT"          --be
 my_generate_project "Net-NetLib"    "src/VBox/NetworkServices/NetLib"       --begin-incs "include" "src/VBox/NetworkServices/NetLib"        --end-includes "src/VBox/NetworkServices/NetLib"
 
 # src/VBox/RDP
-my_generate_project "RDP-Client"    "src/VBox/RDP/client-1.8.3"             --begin-incs "include" "src/VBox/RDP/client-1.8.3"              --end-includes "src/VBox/RDP/client-1.8.3"
+my_generate_project "RDP-Client"    "src/VBox/RDP/client-1.8.4"             --begin-incs "include" "src/VBox/RDP/client-1.8.4"              --end-includes "src/VBox/RDP/client-1.8.4"
 my_generate_project "RDP-Server"    "src/VBox/RDP/server"                   --begin-incs "include" "src/VBox/RDP/server"                    --end-includes "src/VBox/RDP/server"
 my_generate_project "RDP-WebClient" "src/VBox/RDP/webclient"                --begin-incs "include" "src/VBox/RDP/webclient"                 --end-includes "src/VBox/RDP/webclient"
 my_generate_project "RDP-Misc"      "src/VBox/RDP"                          --begin-incs "include"                                          --end-includes "src/VBox/RDP/auth" "src/VBox/RDP/tscpasswd" "src/VBox/RDP/x11server"
@@ -1177,8 +1177,8 @@ my_generate_project "bldprogs"      "src/bldprogs"                          --be
 my_generate_project "zlib"          "src/libs/zlib-1.2.8"                   --begin-incs "include"                                          --end-includes "src/libs/zlib-1.2.8/*.c" "src/libs/zlib-1.2.8/*.h"
 my_generate_project "liblzf"        "src/libs/liblzf-3.4"                   --begin-incs "include"                                          --end-includes "src/libs/liblzf-3.4"
 my_generate_project "libpng"        "src/libs/libpng-1.2.54"                --begin-incs "include"                                          --end-includes "src/libs/libpng-1.2.54/*.c" "src/libs/libpng-1.2.54/*.h"
-my_generate_project "openssl"       "src/libs/openssl-1.1.0i"               --begin-incs "include" "src/libs/openssl-1.1.0i/crypto"         --end-includes "src/libs/openssl-1.1.0i"
-my_generate_project "curl"          "src/libs/curl-7.57.0"                  --begin-incs "include" "src/libs/curl-7.57.0/include"           --end-includes "src/libs/curl-7.57.0"
+my_generate_project "openssl"       "src/libs/openssl-1.1.0j"               --begin-incs "include" "src/libs/openssl-1.1.0j/crypto"         --end-includes "src/libs/openssl-1.1.0j"
+my_generate_project "curl"          "src/libs/curl-7.62.0"                  --begin-incs "include" "src/libs/curl-7.62.0/include"           --end-includes "src/libs/curl-7.62.0"
 
 # webtools
 my_generate_project "webtools"      "webtools"                              --begin-incs "include" "webtools/tinderbox/server/Tinderbox3"   --end-includes "webtools"
