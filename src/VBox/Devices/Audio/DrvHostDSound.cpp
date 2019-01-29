@@ -509,8 +509,8 @@ static void directSoundPlayInterfaceDestroy(LPDIRECTSOUND8 pDS)
  * Creates a DirectSound playback interface.
  *
  * @return  HRESULT
- * @param   pThis               GUID of device to create the playback interface for.
- * @param   ppDSC               Where to store the created interface. Optional.
+ * @param   pGUID               GUID of device to create the playback interface for.
+ * @param   ppDS                Where to store the created interface. Optional.
  */
 static HRESULT directSoundPlayInterfaceCreate(LPCGUID pGUID, LPDIRECTSOUND8 *ppDS)
 {
