@@ -496,7 +496,8 @@ DECLINLINE(int) VbglR0SfHostReqRemove(SHFLROOT idRoot, VBOXSFREMOVEREQ *pReq, ui
 }
 
 
-/** Request structure for vboxSfOs2HostReqRename.  */
+/** Request structure for VbglR0SfHostReqRenameWithSrcContig and
+ *  VbglR0SfHostReqRenameWithSrcBuf. */
 typedef struct VBOXSFRENAMEWITHSRCBUFREQ
 {
     VBGLIOCIDCHGCMFASTCALL  Hdr;
@@ -506,11 +507,12 @@ typedef struct VBOXSFRENAMEWITHSRCBUFREQ
     SHFLSTRING              StrDstPath;
 } VBOXSFRENAMEWITHSRCBUFREQ;
 
+
 /**
  * SHFL_FN_REMOVE request.
  */
-DECLINLINE(int) VbglR0SfHostReqRenameWithSrcBuf(SHFLROOT idRoot, VBOXSFRENAMEWITHSRCBUFREQ *pReq,
-                                                PSHFLSTRING pSrcStr, uint32_t fFlags)
+DECLINLINE(int) VbglR0SfHostReqRenameWithSrcContig(SHFLROOT idRoot, VBOXSFRENAMEWITHSRCBUFREQ *pReq,
+                                                   PSHFLSTRING pSrcStr, RTGCPHYS64 PhysSrcStr, uint32_t fFlags)
 {
     uint32_t const cbReq = RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ, StrDstPath.String)
                          + (g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS ? pReq->StrDstPath.u16Size : 0);
@@ -527,9 +529,8 @@ DECLINLINE(int) VbglR0SfHostReqRenameWithSrcBuf(SHFLROOT idRoot, VBOXSFRENAMEWIT
         pReq->Parms.pStrSrcPath.u.PageList.offset   = RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ, PgLst)
                                                     - sizeof(VBGLIOCIDCHGCMFASTCALL);
         pReq->PgLst.flags                           = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
-        pReq->PgLst.aPages[0]                       = VbglR0PhysHeapGetPhysAddr(pSrcStr);
-        pReq->PgLst.offFirstPage                    = (uint16_t)(pReq->PgLst.aPages[0] & PAGE_OFFSET_MASK);
-        pReq->PgLst.aPages[0]                      &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
+        pReq->PgLst.offFirstPage                    = ((uint16_t)PhysSrcStr) & (uint16_t)(PAGE_OFFSET_MASK);
+        pReq->PgLst.aPages[0]                       = PhysSrcStr & ~(RTGCPHYS64)PAGE_OFFSET_MASK;
         pReq->PgLst.cPages                          = 1;
     }
     else
@@ -561,6 +562,16 @@ DECLINLINE(int) VbglR0SfHostReqRenameWithSrcBuf(SHFLROOT idRoot, VBOXSFRENAMEWIT
     if (RT_SUCCESS(vrc))
         vrc = pReq->Call.header.result;
     return vrc;
+}
+
+
+/**
+ * SHFL_FN_REMOVE request.
+ */
+DECLINLINE(int) VbglR0SfHostReqRenameWithSrcBuf(SHFLROOT idRoot, VBOXSFRENAMEWITHSRCBUFREQ *pReq,
+                                                PSHFLSTRING pSrcStr, uint32_t fFlags)
+{
+    return VbglR0SfHostReqRenameWithSrcContig(idRoot, pReq, pSrcStr, VbglR0PhysHeapGetPhysAddr(pSrcStr), fFlags);
 }
 
 
@@ -945,7 +956,8 @@ DECLINLINE(int) VbglR0SfHostReqWriteContig(SHFLROOT idRoot, VBOXSFWRITEPGLSTREQ 
     return vrc;
 }
 
-/** Request structure for vboxSfOs2HostReqListDir. */
+/** Request structure for VbglR0SfHostReqListDirContig2x() and
+ *  VbglR0SfHostReqListDir(). */
 typedef struct VBOXSFLISTDIRREQ
 {
     VBGLIOCIDCHGCMFASTCALL  Hdr;
@@ -957,10 +969,11 @@ typedef struct VBOXSFLISTDIRREQ
 
 /**
  * SHFL_FN_LIST request with separate string buffer and buffers for entries,
- * both allocated on the physical heap.
+ * both physically contiguous allocations.
  */
-DECLINLINE(int) VbglR0SfHostReqListDir(SHFLROOT idRoot, VBOXSFLISTDIRREQ *pReq, uint64_t hHostDir,
-                                       PSHFLSTRING pFilter, uint32_t fFlags, PSHFLDIRINFO pBuffer, uint32_t cbBuffer)
+DECLINLINE(int) VbglR0SfHostReqListDirContig2x(SHFLROOT idRoot, VBOXSFLISTDIRREQ *pReq, uint64_t hHostDir,
+                                               PSHFLSTRING pFilter, RTGCPHYS64 PhysFilter, uint32_t fFlags,
+                                               PSHFLDIRINFO pBuffer, RTGCPHYS64 PhysBuffer, uint32_t cbBuffer)
 {
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
                                 SHFL_FN_LIST, SHFL_CPARMS_LIST, sizeof(*pReq));
@@ -986,10 +999,9 @@ DECLINLINE(int) VbglR0SfHostReqListDir(SHFLROOT idRoot, VBOXSFLISTDIRREQ *pReq, 
         if (pFilter)
         {
             pReq->Parms.pStrFilter.u.PageList.size  = SHFLSTRING_HEADER_SIZE + pFilter->u16Size;
-            RTGCPHYS32 const GCPhys       = VbglR0PhysHeapGetPhysAddr(pFilter);
-            uint32_t const   offFirstPage = GCPhys & PAGE_OFFSET_MASK;
+            uint32_t const offFirstPage = (uint32_t)PhysFilter & PAGE_OFFSET_MASK;
             pReq->StrPgLst.offFirstPage             = (uint16_t)offFirstPage;
-            pReq->StrPgLst.aPages[0]                = GCPhys - offFirstPage;
+            pReq->StrPgLst.aPages[0]                = PhysFilter - offFirstPage;
         }
         else
         {
@@ -1003,10 +1015,9 @@ DECLINLINE(int) VbglR0SfHostReqListDir(SHFLROOT idRoot, VBOXSFLISTDIRREQ *pReq, 
         pReq->Parms.pBuffer.u.PageList.size         = cbBuffer;
         pReq->BufPgLst.flags                        = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
         pReq->BufPgLst.cPages                       = 1;
-        RTGCPHYS32 const GCPhys       = VbglR0PhysHeapGetPhysAddr(pBuffer);
-        uint32_t const   offFirstPage = GCPhys & PAGE_OFFSET_MASK;
+        uint32_t const offFirstPage = (uint32_t)PhysBuffer & PAGE_OFFSET_MASK;
         pReq->BufPgLst.offFirstPage                 = (uint16_t)offFirstPage;
-        pReq->BufPgLst.aPages[0]                    = GCPhys - offFirstPage;
+        pReq->BufPgLst.aPages[0]                    = PhysBuffer - offFirstPage;
     }
     else
     {
@@ -1029,6 +1040,24 @@ DECLINLINE(int) VbglR0SfHostReqListDir(SHFLROOT idRoot, VBOXSFLISTDIRREQ *pReq, 
     if (RT_SUCCESS(vrc))
         vrc = pReq->Call.header.result;
     return vrc;
+}
+
+/**
+ * SHFL_FN_LIST request with separate string buffer and buffers for entries,
+ * both allocated on the physical heap.
+ */
+DECLINLINE(int) VbglR0SfHostReqListDir(SHFLROOT idRoot, VBOXSFLISTDIRREQ *pReq, uint64_t hHostDir,
+                                       PSHFLSTRING pFilter, uint32_t fFlags, PSHFLDIRINFO pBuffer, uint32_t cbBuffer)
+{
+    return VbglR0SfHostReqListDirContig2x(idRoot,
+                                          pReq,
+                                          hHostDir,
+                                          pFilter,
+                                          pFilter ? VbglR0PhysHeapGetPhysAddr(pFilter) : NIL_RTGCPHYS64,
+                                          fFlags,
+                                          pBuffer,
+                                          VbglR0PhysHeapGetPhysAddr(pBuffer),
+                                          cbBuffer);
 }
 
 /** @} */
