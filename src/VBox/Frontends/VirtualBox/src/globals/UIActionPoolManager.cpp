@@ -3129,10 +3129,10 @@ void UIActionPoolManager::updateMenuMediumWrapper(UIMenu *pMenu)
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Remove)) || fSeparator;
     /* 'Release' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Release)) || fSeparator;
-    /* 'Properties' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_T_Details)) || fSeparator;
     /* 'Search' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_T_Search)) || fSeparator;
+    /* 'Properties' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_T_Details)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)
