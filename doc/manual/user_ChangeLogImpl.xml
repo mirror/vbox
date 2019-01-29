@@ -57,6 +57,10 @@ technical terms if no non-technical ones are clear enough.
           (6.0.0 regression; bug #18319)</para>
       </listitem>
 
+      <listitem>
+        <para>Windows Guest Additions installer: upgraded to NSIS 3</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
