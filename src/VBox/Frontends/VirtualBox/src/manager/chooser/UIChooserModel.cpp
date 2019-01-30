@@ -483,6 +483,13 @@ void UIChooserModel::indentRoot(UIChooserItem *pNewRootItem)
     root()->setRoot(true);
     m_pAfterSlidingFocus = root()->items().first();
 
+    /* Hiding new root: */
+    root()->hide();
+
+    /* Move it to scene (making it top-level item): */
+    root()->setParentItem(0);
+    scene()->addItem(root());
+
     /* Slide root: */
     slideRoot(true);
 }
@@ -499,6 +506,9 @@ void UIChooserModel::unindentRoot()
 
     /* Hiding old root: */
     root()->hide();
+
+    /* Remove it from scene (returning back to it's parent): */
+    root()->setParentItem(root()->parentItem());
 
     /* Create left root: */
     bool fLeftRootIsMain = m_rootStack.at(m_rootStack.size() - 2) == mainRoot();

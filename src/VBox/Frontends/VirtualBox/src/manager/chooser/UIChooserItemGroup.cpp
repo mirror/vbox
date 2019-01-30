@@ -123,7 +123,6 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     /* Add item to the parent: */
     AssertMsg(parentItem(), ("Incorrect parent passed!"));
     parentItem()->addItem(this, iPosition);
-    setZValue(parentItem()->zValue() + 1);
     connect(this, &UIChooserItemGroup::sigToggleStarted,
             model(), &UIChooserModel::sigToggleStarted);
     connect(this, &UIChooserItemGroup::sigToggleFinished,
@@ -168,7 +167,6 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     /* Add item to the parent: */
     AssertMsg(parentItem(), ("Incorrect parent passed!"));
     parentItem()->addItem(this, iPosition);
-    setZValue(parentItem()->zValue() + 1);
     connect(this, &UIChooserItemGroup::sigToggleStarted,
             model(), &UIChooserModel::sigToggleStarted);
     connect(this, &UIChooserItemGroup::sigToggleFinished,
@@ -361,25 +359,6 @@ void UIChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsIte
     paintHeader(pPainter, rectangle);
 }
 
-void UIChooserItemGroup::show()
-{
-    /* Call to base-class: */
-    UIChooserItem::show();
-    /* Show children: */
-    if (!isClosed())
-        foreach (UIChooserItem *pItem, items())
-            pItem->show();
-}
-
-void UIChooserItemGroup::hide()
-{
-    /* Call to base-class: */
-    UIChooserItem::hide();
-    /* Hide children: */
-    foreach (UIChooserItem *pItem, items())
-        pItem->hide();
-}
-
 void UIChooserItemGroup::startEditing()
 {
     /* Not for root: */
@@ -512,7 +491,6 @@ void UIChooserItemGroup::addItem(UIChooserItem *pItem, int iPosition)
                 m_groupItems.append(pItem);
             else
                 m_groupItems.insert(iPosition, pItem);
-            scene()->addItem(pItem);
             break;
         }
         case UIChooserItemType_Global:
@@ -522,7 +500,6 @@ void UIChooserItemGroup::addItem(UIChooserItem *pItem, int iPosition)
                 m_globalItems.append(pItem);
             else
                 m_globalItems.insert(iPosition, pItem);
-            scene()->addItem(pItem);
             break;
         }
         case UIChooserItemType_Machine:
@@ -532,7 +509,6 @@ void UIChooserItemGroup::addItem(UIChooserItem *pItem, int iPosition)
                 m_machineItems.append(pItem);
             else
                 m_machineItems.insert(iPosition, pItem);
-            scene()->addItem(pItem);
             break;
         }
         default:
@@ -556,21 +532,18 @@ void UIChooserItemGroup::removeItem(UIChooserItem *pItem)
         case UIChooserItemType_Group:
         {
             AssertMsg(m_groupItems.contains(pItem), ("Group-item was not found!"));
-            scene()->removeItem(pItem);
             m_groupItems.removeAt(m_groupItems.indexOf(pItem));
             break;
         }
         case UIChooserItemType_Global:
         {
             AssertMsg(m_globalItems.contains(pItem), ("Global-item was not found!"));
-            scene()->removeItem(pItem);
             m_globalItems.removeAt(m_globalItems.indexOf(pItem));
             break;
         }
         case UIChooserItemType_Machine:
         {
             AssertMsg(m_machineItems.contains(pItem), ("Machine-item was not found!"));
-            scene()->removeItem(pItem);
             m_machineItems.removeAt(m_machineItems.indexOf(pItem));
             break;
         }
@@ -844,8 +817,8 @@ void UIChooserItemGroup::updateLayout()
         /* Prepare variables: */
         const int iChildrenSpacing = data(GroupItemData_ChildrenSpacing).toInt();
         QRect geo = geometry().toRect();
-        int iX = geo.x();
-        int iY = geo.y();
+        int iX = 0;
+        int iY = 0;
         int iWidth = geo.width();
 
         /* Layout all the items: */

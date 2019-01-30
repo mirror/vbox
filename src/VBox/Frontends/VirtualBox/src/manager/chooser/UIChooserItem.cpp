@@ -194,7 +194,8 @@ private:
 
 UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fTemporary,
                              int iDefaultValue /* = 100 */, int iHoveredValue /* = 90 */)
-    : m_pParent(pParent)
+    : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)
+    , m_pParent(pParent)
     , m_fTemporary(fTemporary)
     , m_fRoot(!pParent)
     , m_iLevel(-1)
@@ -342,18 +343,6 @@ int UIChooserItem::level() const
 void UIChooserItem::setLevel(int iLevel)
 {
     m_iLevel = iLevel;
-}
-
-void UIChooserItem::show()
-{
-    /* Call to base-class: */
-    QIGraphicsWidget::show();
-}
-
-void UIChooserItem::hide()
-{
-    /* Call to base-class: */
-    QIGraphicsWidget::hide();
 }
 
 void UIChooserItem::setRoot(bool fRoot)

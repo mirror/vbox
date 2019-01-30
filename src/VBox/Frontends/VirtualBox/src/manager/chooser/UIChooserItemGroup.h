@@ -122,11 +122,6 @@ protected:
         /** Returns RTTI item type. */
         virtual int type() const /* override */ { return Type; }
 
-        /** Shows item. */
-        virtual void show() /* override */;
-        /** Hides item. */
-        virtual void hide() /* override */;
-
         /** Starts item editing. */
         virtual void startEditing() /* override */;
 

@@ -134,11 +134,6 @@ public:
         /** Defines a @a iLevel of item. */
         void setLevel(int iLevel);
 
-        /** Shows item. */
-        virtual void show();
-        /** Hides item. */
-        virtual void hide();
-
         /** Starts item editing. */
         virtual void startEditing() = 0;
 

@@ -591,7 +591,6 @@ void UIChooserItemMachine::prepare()
     /* Add item to the parent: */
     AssertPtrReturnVoid(parentItem());
     parentItem()->addItem(this, m_iPosition);
-    setZValue(parentItem()->zValue() + 1);
 
     /* Configure connections: */
     connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
