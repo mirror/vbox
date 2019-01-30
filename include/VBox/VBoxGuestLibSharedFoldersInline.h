@@ -71,11 +71,12 @@ typedef struct VBOXSFMAPFOLDERWITHBUFREQ
     HGCMPageListInfo        PgLst;
 } VBOXSFMAPFOLDERWITHBUFREQ;
 
+
 /**
  * SHFL_FN_MAP_FOLDER request.
  */
-DECLINLINE(int) VbglR0SfHostReqMapFolderWithBuf(VBOXSFMAPFOLDERWITHBUFREQ *pReq, PSHFLSTRING pStrName,
-                                                RTUTF16 wcDelimiter, bool fCaseSensitive)
+DECLINLINE(int) VbglR0SfHostReqMapFolderWithContig(VBOXSFMAPFOLDERWITHBUFREQ *pReq, PSHFLSTRING pStrName, RTGCPHYS64 PhysStrName,
+                                                   RTUTF16 wcDelimiter, bool fCaseSensitive)
 {
     VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
                                 SHFL_FN_MAP_FOLDER, SHFL_CPARMS_MAP_FOLDER, sizeof(*pReq));
@@ -95,9 +96,8 @@ DECLINLINE(int) VbglR0SfHostReqMapFolderWithBuf(VBOXSFMAPFOLDERWITHBUFREQ *pReq,
         pReq->Parms.pStrName.u.PageList.size    = SHFLSTRING_HEADER_SIZE + pStrName->u16Size;
         pReq->Parms.pStrName.u.PageList.offset  = RT_UOFFSETOF(VBOXSFMAPFOLDERWITHBUFREQ, PgLst) - sizeof(VBGLIOCIDCHGCMFASTCALL);
         pReq->PgLst.flags                       = VBOX_HGCM_F_PARM_DIRECTION_BOTH;
-        pReq->PgLst.aPages[0]                   = VbglR0PhysHeapGetPhysAddr(pStrName);
-        pReq->PgLst.offFirstPage                = (uint16_t)(pReq->PgLst.aPages[0] & PAGE_OFFSET_MASK);
-        pReq->PgLst.aPages[0]                  &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
+        pReq->PgLst.offFirstPage                = (uint16_t)PhysStrName & (uint16_t)(PAGE_OFFSET_MASK);
+        pReq->PgLst.aPages[0]                   = PhysStrName & ~(RTGCPHYS64)PAGE_OFFSET_MASK;
         pReq->PgLst.cPages                      = 1;
     }
     else
@@ -111,6 +111,34 @@ DECLINLINE(int) VbglR0SfHostReqMapFolderWithBuf(VBOXSFMAPFOLDERWITHBUFREQ *pReq,
     if (RT_SUCCESS(vrc))
         vrc = pReq->Call.header.result;
     return vrc;
+}
+
+/**
+ * SHFL_FN_MAP_FOLDER request.
+ */
+DECLINLINE(int) VbglR0SfHostReqMapFolderWithContigSimple(PSHFLSTRING pStrName, RTGCPHYS64 PhysStrName,
+                                                         RTUTF16 wcDelimiter, bool fCaseSensitive, SHFLROOT *pidRoot)
+{
+    VBOXSFMAPFOLDERWITHBUFREQ *pReq = (VBOXSFMAPFOLDERWITHBUFREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
+    {
+        int rc = VbglR0SfHostReqMapFolderWithContig(pReq, pStrName, PhysStrName, wcDelimiter, fCaseSensitive);
+        *pidRoot = RT_SUCCESS(rc) ? pReq->Parms.id32Root.u.value32 : SHFL_ROOT_NIL;
+        VbglR0PhysHeapFree(pReq);
+        return rc;
+    }
+    *pidRoot = SHFL_ROOT_NIL;
+    return VERR_NO_MEMORY;
+}
+
+
+/**
+ * SHFL_FN_MAP_FOLDER request.
+ */
+DECLINLINE(int) VbglR0SfHostReqMapFolderWithBuf(VBOXSFMAPFOLDERWITHBUFREQ *pReq, PSHFLSTRING pStrName,
+                                                RTUTF16 wcDelimiter, bool fCaseSensitive)
+{
+    return VbglR0SfHostReqMapFolderWithContig(pReq, pStrName, VbglR0PhysHeapGetPhysAddr(pStrName), wcDelimiter, fCaseSensitive);
 }
 
 

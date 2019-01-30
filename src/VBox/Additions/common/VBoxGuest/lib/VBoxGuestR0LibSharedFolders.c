@@ -65,10 +65,6 @@
 
 
 
-/** @todo We only need HGCM, not physical memory, so other guests should also
- *        switch to calling vbglR0HGCMInit() and vbglR0HGCMTerminate() instead
- *        of VbglR0SfInit() and VbglR0SfTerm(). */
-#ifndef RT_OS_LINUX
 DECLVBGL(int) VbglR0SfInit(void)
 {
     return VbglR0InitClient();
@@ -78,7 +74,6 @@ DECLVBGL(void) VbglR0SfTerm(void)
 {
     VbglR0TerminateClient();
 }
-#endif
 
 DECLVBGL(int) VbglR0SfConnect(PVBGLSFCLIENT pClient)
 {

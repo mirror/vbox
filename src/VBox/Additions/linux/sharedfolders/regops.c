@@ -437,7 +437,12 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
 	struct sf_reg_info *sf_r;
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	SHFLCREATEPARMS params;
+#else
+	VBOXSFCREATEREQ *pReq;
+#endif
+	SHFLCREATEPARMS *pCreateParms;  /* temp glue */
 
 	TRACE();
 	BUG_ON(!sf_g);
@@ -466,44 +471,58 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 		return 0;
 	}
 
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	RT_ZERO(params);
-	params.Handle = SHFL_HANDLE_NIL;
-	/* We check the value of params.Handle afterwards to find out if
+	pCreateParms = &params;
+#else
+	pReq = (VBOXSFCREATEREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq) + sf_i->path->u16Size);
+	if (!pReq) {
+		kfree(sf_r);
+		LogRelFunc(("Failed to allocate a VBOXSFCREATEREQ buffer!\n"));
+		return -ENOMEM;
+	}
+	memcpy(&pReq->StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
+	RT_ZERO(pReq->CreateParms);
+	pCreateParms = &pReq->CreateParms;
+#endif
+	pCreateParms->Handle = SHFL_HANDLE_NIL;
+
+	/* We check the value of pCreateParms->Handle afterwards to find out if
 	 * the call succeeded or failed, as the API does not seem to cleanly
 	 * distinguish error and informational messages.
 	 *
-	 * Furthermore, we must set params.Handle to SHFL_HANDLE_NIL to
+	 * Furthermore, we must set pCreateParms->Handle to SHFL_HANDLE_NIL to
 	 * make the shared folders host service use our fMode parameter */
 
 	if (file->f_flags & O_CREAT) {
 		LogFunc(("O_CREAT set\n"));
-		params.CreateFlags |= SHFL_CF_ACT_CREATE_IF_NEW;
+		pCreateParms->CreateFlags |= SHFL_CF_ACT_CREATE_IF_NEW;
 		/* We ignore O_EXCL, as the Linux kernel seems to call create
 		   beforehand itself, so O_EXCL should always fail. */
 		if (file->f_flags & O_TRUNC) {
 			LogFunc(("O_TRUNC set\n"));
-			params.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
+			pCreateParms->CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
 		} else
-			params.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
+			pCreateParms->CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
 	} else {
-		params.CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
+		pCreateParms->CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
 		if (file->f_flags & O_TRUNC) {
 			LogFunc(("O_TRUNC set\n"));
-			params.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
+			pCreateParms->CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
 		}
 	}
 
 	switch (file->f_flags & O_ACCMODE) {
 	case O_RDONLY:
-		params.CreateFlags |= SHFL_CF_ACCESS_READ;
+		pCreateParms->CreateFlags |= SHFL_CF_ACCESS_READ;
 		break;
 
 	case O_WRONLY:
-		params.CreateFlags |= SHFL_CF_ACCESS_WRITE;
+		pCreateParms->CreateFlags |= SHFL_CF_ACCESS_WRITE;
 		break;
 
 	case O_RDWR:
-		params.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
+		pCreateParms->CreateFlags |= SHFL_CF_ACCESS_READWRITE;
 		break;
 
 	default:
@@ -512,21 +531,32 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 
 	if (file->f_flags & O_APPEND) {
 		LogFunc(("O_APPEND set\n"));
-		params.CreateFlags |= SHFL_CF_ACCESS_APPEND;
+		pCreateParms->CreateFlags |= SHFL_CF_ACCESS_APPEND;
 	}
 
-	params.Info.Attr.fMode = inode->i_mode;
-	LogFunc(("sf_reg_open: calling VbglR0SfCreate, file %s, flags=%#x, %#x\n", sf_i->path->String.utf8, file->f_flags, params.CreateFlags));
-	rc = VbglR0SfCreate(&client_handle, &sf_g->map, sf_i->path, &params);
+	pCreateParms->Info.Attr.fMode = inode->i_mode;
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+	LogFunc(("sf_reg_open: calling VbglR0SfCreate, file %s, flags=%#x, %#x\n", sf_i->path->String.utf8, file->f_flags, pCreateParms->CreateFlags));
+	rc = VbglR0SfCreate(&client_handle, &sf_g->map, sf_i->path, pCreateParms);
+#else
+	LogFunc(("sf_reg_open: calling VbglR0SfHostReqCreate, file %s, flags=%#x, %#x\n", sf_i->path->String.utf8, file->f_flags, pCreateParms->CreateFlags));
+	rc = VbglR0SfHostReqCreate(sf_g->map.root, pReq);
+#endif
 	if (RT_FAILURE(rc)) {
-		LogFunc(("VbglR0SfCreate failed flags=%d,%#x rc=%Rrc\n",
-			 file->f_flags, params.CreateFlags, rc));
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+		LogFunc(("VbglR0SfCreate failed flags=%d,%#x rc=%Rrc\n", file->f_flags, pCreateParms->CreateFlags, rc));
+#else
+		LogFunc(("VbglR0SfHostReqCreate failed flags=%d,%#x rc=%Rrc\n", file->f_flags, pCreateParms->CreateFlags, rc));
+#endif
 		kfree(sf_r);
+#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+		VbglR0PhysHeapFree(pReq);
+#endif
 		return -RTErrConvertToErrno(rc);
 	}
 
-	if (SHFL_HANDLE_NIL == params.Handle) {
-		switch (params.Result) {
+	if (pCreateParms->Handle == SHFL_HANDLE_NIL) {
+		switch (pCreateParms->Result) {
 		case SHFL_PATH_NOT_FOUND:
 		case SHFL_FILE_NOT_FOUND:
 			rc_linux = -ENOENT;
@@ -540,9 +570,12 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 	}
 
 	sf_i->force_restat = 1;
-	sf_r->handle = params.Handle;
+	sf_r->handle = pCreateParms->Handle;
 	sf_i->file = file;
 	file->private_data = sf_r;
+#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+	VbglR0PhysHeapFree(pReq);
+#endif
 	return rc_linux;
 }
 
@@ -577,9 +610,16 @@ static int sf_reg_release(struct inode *inode, struct file *file)
 	    && filemap_fdatawrite(inode->i_mapping) != -EIO)
 		filemap_fdatawait(inode->i_mapping);
 #endif
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	rc = VbglR0SfClose(&client_handle, &sf_g->map, sf_r->handle);
 	if (RT_FAILURE(rc))
 		LogFunc(("VbglR0SfClose failed rc=%Rrc\n", rc));
+#else
+	rc = VbglR0SfHostReqCloseSimple(sf_g->map.root, sf_r->handle);
+	if (RT_FAILURE(rc))
+		LogFunc(("VbglR0SfHostReqCloseSimple failed rc=%Rrc\n", rc));
+	sf_r->handle = SHFL_HANDLE_NIL;
+#endif
 
 	kfree(sf_r);
 	sf_i->file = NULL;

@@ -28,9 +28,12 @@ MOD_OBJS   = \
 	lnkops.o \
 	regops.o \
 	utils.o \
+	VBoxGuestR0LibGenericRequest.o \
 	VBoxGuestR0LibHGCM.o \
 	VBoxGuestR0LibIdc.o \
 	VBoxGuestR0LibIdc-unix.o \
+	VBoxGuestR0LibInit.o \
+	VBoxGuestR0LibPhysHeap.o \
 	VBoxGuestR0LibSharedFolders.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
 MOD_OBJS  += \
@@ -61,6 +64,9 @@ ifeq ($(BUILD_TARGET_ARCH),amd64)
 else
  MOD_DEFS += -DRT_ARCH_X86
 endif
+ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+ MOD_DEFS += -DVBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+endif
 
 ifeq ($(KERN_VERSION), 24)
  MOD_CFLAGS =
@@ -84,6 +90,9 @@ else
 			echo "$(KERNELRELEASE)"|grep '2.6.18.*cc4.*'),\
 		-DKERNEL_FC6,)
  endif
+endif
+ifdef VBOX_NO_OMIT_FRAME_POINTER
+ MOD_CFLAGS += -fno-omit-frame-pointer
 endif
 
 MOD_CLEAN = . linux r0drv r0drv/linux

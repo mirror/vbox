@@ -36,8 +36,6 @@
 #include <linux/nfs_fs.h>
 #include <linux/vfs.h>
 
-/* #define USE_VMALLOC */
-
 /*
  * sf_reg_aops and sf_backing_dev_info are just quick implementations to make
  * sendfile work. For more information have a look at
@@ -117,10 +115,10 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	inode->i_mapping->a_ops = &sf_reg_aops;
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
+# if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
 	/* XXX Was this ever necessary? */
 	inode->i_mapping->backing_dev_info = &sf_g->bdi;
-#endif
+# endif
 #endif
 
 	if (RTFS_IS_DIRECTORY(attr->fMode)) {
@@ -143,11 +141,11 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
 		inode->i_mode &= ~sf_g->fmask;
 		inode->i_mode |= S_IFLNK;
 		inode->i_op = &sf_lnk_iops;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
 		set_nlink(inode, 1);
-#else
+# else
 		inode->i_nlink = 1;
-#endif
+# endif
 	}
 #endif
 	else {
@@ -187,14 +185,19 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
 }
 
 int sf_stat(const char *caller, struct sf_glob_info *sf_g,
-	    SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail)
+	    SHFLSTRING *path, PSHFLFSOBJINFO result, int ok_to_fail)
 {
 	int rc;
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	SHFLCREATEPARMS params;
+#else
+	VBOXSFCREATEREQ *pReq;
+#endif
 	NOREF(caller);
 
 	TRACE();
 
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	RT_ZERO(params);
 	params.Handle = SHFL_HANDLE_NIL;
 	params.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
@@ -218,6 +221,38 @@ int sf_stat(const char *caller, struct sf_glob_info *sf_g,
 
 	*result = params.Info;
 	return 0;
+#else
+	pReq = (VBOXSFCREATEREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq) + path->u16Size);
+	if (pReq) {
+		RT_ZERO(*pReq);
+		memcpy(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
+		pReq->CreateParms.Handle = SHFL_HANDLE_NIL;
+		pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
+
+		LogFunc(("Calling VbglR0SfHostReqCreate on %s\n", path->String.utf8));
+		rc = VbglR0SfHostReqCreate(sf_g->map.root, pReq);
+		if (RT_SUCCESS(rc)) {
+			if (pReq->CreateParms.Result == SHFL_FILE_EXISTS) {
+				*result = pReq->CreateParms.Info;
+				rc = 0;
+			} else {
+				if (!ok_to_fail)
+					LogFunc(("VbglR0SfHostReqCreate on %s: file does not exist: %d (caller=%s)\n",
+						 path->String.utf8, pReq->CreateParms.Result, caller));
+				rc = -ENOENT;
+			}
+		} else if (rc == VERR_INVALID_NAME) {
+			rc = -ENOENT; /* this can happen for names like 'foo*' on a Windows host */
+		} else {
+			LogFunc(("VbglR0SfHostReqCreate failed on %s: %Rrc (caller=%s)\n", path->String.utf8, rc, caller));
+			rc = -EPROTO;
+		}
+		VbglR0PhysHeapFree(pReq);
+	}
+	else
+		rc = -ENOMEM;
+	return rc;
+#endif
 }
 
 /* this is called directly as iop on 2.4, indirectly as dop
@@ -300,17 +335,18 @@ sf_dentry_revalidate(struct dentry *dentry, int flags)
    has inode at all) from these new attributes we derive [kstat] via
    [generic_fillattr] */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int sf_getattr(const struct path *path, struct kstat *kstat, u32 request_mask,
 	       unsigned int flags)
-#else
+# else
 int sf_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
-#endif
+# endif
 {
 	int err;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	struct dentry *dentry = path->dentry;
-#endif
+# endif
 
 	TRACE();
 	err = sf_inode_revalidate(dentry);
@@ -325,34 +361,76 @@ int sf_setattr(struct dentry *dentry, struct iattr *iattr)
 {
 	struct sf_glob_info *sf_g;
 	struct sf_inode_info *sf_i;
-	SHFLCREATEPARMS params;
-	SHFLFSOBJINFO info;
+# ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+	SHFLCREATEPARMS CreateParms;
+	SHFLCREATEPARMS *pCreateParms = &CreateParms;
+	SHFLFSOBJINFO InfoBuf;
+	SHFLFSOBJINFO *pInfo = &InfoBuf;
 	uint32_t cbBuffer;
 	int rc, err;
+# else
+	union SetAttrReqs
+	{
+	    VBOXSFCREATEREQ         Create;
+	    VBOXSFOBJINFOREQ        Info;
+	    VBOXSFSETFILESIZEREQ    SetSize;
+	    VBOXSFCLOSEREQ          Close;
+	} *pReq;
+	size_t cbReq;
+	SHFLCREATEPARMS *pCreateParms;
+	SHFLFSOBJINFO *pInfo;
+	SHFLHANDLE hHostFile;
+	int vrc;
+	int err = 0;
+# endif
 
 	TRACE();
 
 	sf_g = GET_GLOB_INFO(dentry->d_inode->i_sb);
 	sf_i = GET_INODE_INFO(dentry->d_inode);
+# ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	err = 0;
+# else
+	cbReq = RT_MAX(sizeof(pReq->Info), sizeof(pReq->Create) + SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
+	pReq = (union SetAttrReqs *)VbglR0PhysHeapAlloc(cbReq);
+	if (!pReq) {
+		LogFunc(("Failed to allocate %#x byte request buffer!\n", cbReq));
+		return -ENOMEM;
+	}
+	pCreateParms = &pReq->Create.CreateParms;
+	pInfo = &pReq->Info.ObjInfo;
+# endif
 
-	RT_ZERO(params);
-	params.Handle = SHFL_HANDLE_NIL;
-	params.CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS
-	    | SHFL_CF_ACT_FAIL_IF_NEW | SHFL_CF_ACCESS_ATTR_WRITE;
+	RT_ZERO(*pCreateParms);
+	pCreateParms->Handle = SHFL_HANDLE_NIL;
+	pCreateParms->CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS
+				  | SHFL_CF_ACT_FAIL_IF_NEW
+				  | SHFL_CF_ACCESS_ATTR_WRITE;
 
 	/* this is at least required for Posix hosts */
 	if (iattr->ia_valid & ATTR_SIZE)
-		params.CreateFlags |= SHFL_CF_ACCESS_WRITE;
+		pCreateParms->CreateFlags |= SHFL_CF_ACCESS_WRITE;
 
-	rc = VbglR0SfCreate(&client_handle, &sf_g->map, sf_i->path, &params);
+# ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+	rc = VbglR0SfCreate(&client_handle, &sf_g->map, sf_i->path, pCreateParms);
 	if (RT_FAILURE(rc)) {
 		LogFunc(("VbglR0SfCreate(%s) failed rc=%Rrc\n",
 			 sf_i->path->String.utf8, rc));
 		err = -RTErrConvertToErrno(rc);
 		goto fail2;
 	}
-	if (params.Result != SHFL_FILE_EXISTS) {
+# else
+	memcpy(&pReq->Create.StrPath, sf_i->path, sf_i->path->u16Size);
+	vrc = VbglR0SfHostReqCreate(sf_g->map.root, &pReq->Create);
+	if (RT_SUCCESS(vrc)) {
+		hHostFile = pCreateParms->Handle;
+	} else {
+		err = -RTErrConvertToErrno(vrc);
+		LogFunc(("VbglR0SfCreate(%s) failed vrc=%Rrc err=%d\n", sf_i->path->String.ach, vrc, err));
+		goto fail2;
+	}
+# endif
+	if (pCreateParms->Result != SHFL_FILE_EXISTS) {
 		LogFunc(("file %s does not exist\n", sf_i->path->String.utf8));
 		err = -ENOENT;
 		goto fail1;
@@ -362,78 +440,125 @@ int sf_setattr(struct dentry *dentry, struct iattr *iattr)
 	 * handled separately, see implementation of vbsfSetFSInfo() in
 	 * vbsf.cpp */
 	if (iattr->ia_valid & (ATTR_MODE | ATTR_ATIME | ATTR_MTIME)) {
-#define mode_set(r) ((iattr->ia_mode & (S_##r)) ? RTFS_UNIX_##r : 0)
+# define mode_set(r) ((iattr->ia_mode & (S_##r)) ? RTFS_UNIX_##r : 0)
 
-		RT_ZERO(info);
+		RT_ZERO(*pInfo);
 		if (iattr->ia_valid & ATTR_MODE) {
-			info.Attr.fMode = mode_set(IRUSR);
-			info.Attr.fMode |= mode_set(IWUSR);
-			info.Attr.fMode |= mode_set(IXUSR);
-			info.Attr.fMode |= mode_set(IRGRP);
-			info.Attr.fMode |= mode_set(IWGRP);
-			info.Attr.fMode |= mode_set(IXGRP);
-			info.Attr.fMode |= mode_set(IROTH);
-			info.Attr.fMode |= mode_set(IWOTH);
-			info.Attr.fMode |= mode_set(IXOTH);
+			pInfo->Attr.fMode = mode_set(IRUSR);
+			pInfo->Attr.fMode |= mode_set(IWUSR);
+			pInfo->Attr.fMode |= mode_set(IXUSR);
+			pInfo->Attr.fMode |= mode_set(IRGRP);
+			pInfo->Attr.fMode |= mode_set(IWGRP);
+			pInfo->Attr.fMode |= mode_set(IXGRP);
+			pInfo->Attr.fMode |= mode_set(IROTH);
+			pInfo->Attr.fMode |= mode_set(IWOTH);
+			pInfo->Attr.fMode |= mode_set(IXOTH);
 
 			if (iattr->ia_mode & S_IFDIR)
-				info.Attr.fMode |= RTFS_TYPE_DIRECTORY;
+				pInfo->Attr.fMode |= RTFS_TYPE_DIRECTORY;
 			else
-				info.Attr.fMode |= RTFS_TYPE_FILE;
+				pInfo->Attr.fMode |= RTFS_TYPE_FILE;
 		}
 
 		if (iattr->ia_valid & ATTR_ATIME)
-			sf_timespec_from_ftime(&info.AccessTime,
+			sf_timespec_from_ftime(&pInfo->AccessTime,
 					       &iattr->ia_atime);
 		if (iattr->ia_valid & ATTR_MTIME)
-			sf_timespec_from_ftime(&info.ModificationTime,
+			sf_timespec_from_ftime(&pInfo->ModificationTime,
 					       &iattr->ia_mtime);
 		/* ignore ctime (inode change time) as it can't be set from userland anyway */
 
-		cbBuffer = sizeof(info);
-		rc = VbglR0SfFsInfo(&client_handle, &sf_g->map, params.Handle,
+# ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+		cbBuffer = sizeof(*pInfo);
+		rc = VbglR0SfFsInfo(&client_handle, &sf_g->map, pCreateParms->Handle,
 				    SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer,
-				    (PSHFLDIRINFO) & info);
+				    (PSHFLDIRINFO)pInfo);
 		if (RT_FAILURE(rc)) {
 			LogFunc(("VbglR0SfFsInfo(%s, FILE) failed rc=%Rrc\n",
 				 sf_i->path->String.utf8, rc));
 			err = -RTErrConvertToErrno(rc);
 			goto fail1;
 		}
+# else
+		vrc = VbglR0SfHostReqSetObjInfo(sf_g->map.root, &pReq->Info, hHostFile);
+		if (RT_FAILURE(vrc)) {
+			err = -RTErrConvertToErrno(vrc);
+			LogFunc(("VbglR0SfHostReqSetObjInfo(%s) failed vrc=%Rrc err=%d\n", sf_i->path->String.ach, vrc, err));
+			goto fail1;
+		}
+# endif
 	}
 
 	if (iattr->ia_valid & ATTR_SIZE) {
-		RT_ZERO(info);
-		info.cbObject = iattr->ia_size;
-		cbBuffer = sizeof(info);
-		rc = VbglR0SfFsInfo(&client_handle, &sf_g->map, params.Handle,
+# ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+		RT_ZERO(*pInfo);
+		pInfo->cbObject = iattr->ia_size;
+		cbBuffer = sizeof(*pInfo);
+		rc = VbglR0SfFsInfo(&client_handle, &sf_g->map, pCreateParms->Handle,
 				    SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer,
-				    (PSHFLDIRINFO) & info);
+				    (PSHFLDIRINFO)pInfo);
 		if (RT_FAILURE(rc)) {
 			LogFunc(("VbglR0SfFsInfo(%s, SIZE) failed rc=%Rrc\n",
 				 sf_i->path->String.utf8, rc));
 			err = -RTErrConvertToErrno(rc);
 			goto fail1;
 		}
+# else
+		vrc = VbglR0SfHostReqSetFileSize(sf_g->map.root, &pReq->SetSize, hHostFile, iattr->ia_size);
+		/** @todo Implement fallback if host is < 6.0? */
+		if (RT_FAILURE(vrc)) {
+			err = -RTErrConvertToErrno(vrc);
+			LogFunc(("VbglR0SfHostReqSetFileSize(%s, %#llx) failed vrc=%Rrc err=%d\n",
+				 sf_i->path->String.ach, (unsigned long long)iattr->ia_size, vrc, err));
+			goto fail1;
+		}
+# endif
 	}
 
-	rc = VbglR0SfClose(&client_handle, &sf_g->map, params.Handle);
+# ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+	rc = VbglR0SfClose(&client_handle, &sf_g->map, pCreateParms->Handle);
 	if (RT_FAILURE(rc))
 		LogFunc(("VbglR0SfClose(%s) failed rc=%Rrc\n",
 			 sf_i->path->String.utf8, rc));
+# else
+	vrc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, hHostFile);
+	if (RT_FAILURE(vrc))
+		LogFunc(("VbglR0SfHostReqClose(%s [%#llx]) failed vrc=%Rrc\n", sf_i->path->String.utf8, hHostFile, vrc));
+	VbglR0PhysHeapFree(pReq);
+# endif
 
+	/** @todo r=bird: I guess we're calling revalidate here to update the inode
+	 * info.  However, due to the TTL optimization this is not guarenteed to happen.
+	 *
+	 * Also, we already have accurate stat information on the file, either from the
+	 * SHFL_FN_CREATE call or from SHFL_FN_INFORMATION, so there is no need to do a
+	 * slow stat()-like operation to retrieve the information again.
+	 *
+	 * What's more, given that the SHFL_FN_CREATE call succeeded, we know that the
+	 * dentry and all its parent entries are valid and could touch their timestamps
+	 * extending their TTL (CIFS does that). */
 	return sf_inode_revalidate(dentry);
 
  fail1:
-	rc = VbglR0SfClose(&client_handle, &sf_g->map, params.Handle);
+# ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+	rc = VbglR0SfClose(&client_handle, &sf_g->map, pCreateParms->Handle);
 	if (RT_FAILURE(rc))
 		LogFunc(("VbglR0SfClose(%s) failed rc=%Rrc\n",
 			 sf_i->path->String.utf8, rc));
+# else
+	vrc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, hHostFile);
+	if (RT_FAILURE(vrc))
+		LogFunc(("VbglR0SfHostReqClose(%s [%#llx]) failed vrc=%Rrc; err=%d\n", sf_i->path->String.utf8, hHostFile, vrc, err));
+# endif
 
  fail2:
+# ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+	VbglR0PhysHeapFree(pReq);
+# endif
 	return err;
 }
-#endif				/* >= 2.6.0 */
+
+#endif /* >= 2.6.0 */
 
 static int sf_make_path(const char *caller, struct sf_inode_info *sf_i,
 			const char *d_name, size_t d_len, SHFLSTRING ** result)
@@ -637,11 +762,7 @@ static struct sf_dir_buf *sf_dir_buf_alloc(void)
 		LogRelFunc(("could not alloc directory buffer\n"));
 		return NULL;
 	}
-#ifdef USE_VMALLOC
-	b->buf = vmalloc(DIR_BUFFER_SIZE);
-#else
 	b->buf = kmalloc(DIR_BUFFER_SIZE, GFP_KERNEL);
-#endif
 	if (!b->buf) {
 		kfree(b);
 		LogRelFunc(("could not alloc directory buffer storage\n"));
@@ -661,11 +782,7 @@ static void sf_dir_buf_free(struct sf_dir_buf *b)
 
 	TRACE();
 	list_del(&b->head);
-#ifdef USE_VMALLOC
-	vfree(b->buf);
-#else
 	kfree(b->buf);
-#endif
 	kfree(b);
 }
 
@@ -745,23 +862,35 @@ static struct sf_dir_buf *sf_get_empty_dir_buf(struct sf_dir_info *sf_d)
 	return NULL;
 }
 
+/** @todo r=bird: Why on earth do we read in the entire directory???  This
+ *        cannot be healthy for like big directory and such... */
 int sf_dir_read_all(struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
 		    struct sf_dir_info *sf_d, SHFLHANDLE handle)
 {
 	int err;
 	SHFLSTRING *mask;
-	struct sf_dir_buf *b;
+#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+	VBOXSFLISTDIRREQ *pReq = NULL;
+#endif
 
 	TRACE();
 	err = sf_make_path(__func__, sf_i, "*", 1, &mask);
 	if (err)
 		goto fail0;
+#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+	pReq = (VBOXSFLISTDIRREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+	if (!pReq)
+		goto fail1;
+#endif
 
 	for (;;) {
 		int rc;
+		struct sf_dir_buf *b;
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 		void *buf;
 		uint32_t cbSize;
 		uint32_t cEntries;
+#endif
 
 		b = sf_get_empty_dir_buf(sf_d);
 		if (!b) {
@@ -769,11 +898,12 @@ int sf_dir_read_all(struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
 			if (!b) {
 				err = -ENOMEM;
 				LogRelFunc(("could not alloc directory buffer\n"));
-				goto fail1;
+				goto fail2;
 			}
 			list_add(&b->head, &sf_d->info_list);
 		}
 
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 		buf = b->buf;
 		cbSize = b->cbFree;
 
@@ -791,7 +921,7 @@ int sf_dir_read_all(struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
 		default:
 			err = -RTErrConvertToErrno(rc);
 			LogFunc(("VbglR0SfDirInfo failed rc=%Rrc\n", rc));
-			goto fail1;
+			goto fail2;
 		}
 
 		b->cEntries += cEntries;
@@ -800,9 +930,28 @@ int sf_dir_read_all(struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
 
 		if (RT_FAILURE(rc))
 			break;
+#else
+		rc = VbglR0SfHostReqListDirContig2x(sf_g->map.root, pReq, handle, mask, virt_to_phys(mask),
+						    0 /*fFlags*/, b->buf, virt_to_phys(b->buf), b->cbFree);
+		if (RT_SUCCESS(rc)) {
+			b->cEntries += pReq->Parms.c32Entries.u.value32;
+			b->cbFree   -= pReq->Parms.cb32Buffer.u.value32;
+			b->cbUsed   += pReq->Parms.cb32Buffer.u.value32;
+		} else if (rc == VERR_NO_MORE_FILES) {
+			break;
+		} else {
+			err = -RTErrConvertToErrno(rc);
+			LogFunc(("VbglR0SfHostReqListDirContig2x failed rc=%Rrc err=%d\n", rc, err));
+			goto fail2;
+		}
+#endif
 	}
 	err = 0;
 
+ fail2:
+#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+	VbglR0PhysHeapFree(pReq);
+#endif
  fail1:
 	kfree(mask);
 
@@ -813,33 +962,59 @@ int sf_dir_read_all(struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
 int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS * stat)
 {
 	struct sf_glob_info *sf_g;
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	SHFLVOLINFO SHFLVolumeInfo;
+	SHFLVOLINFO *pVolInfo = &SHFLVolumeInfo;
 	uint32_t cbBuffer;
+#else
+	VBOXSFVOLINFOREQ *pReq;
+	SHFLVOLINFO *pVolInfo;
+#endif
 	int rc;
 
 	sf_g = GET_GLOB_INFO(sb);
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	cbBuffer = sizeof(SHFLVolumeInfo);
 	rc = VbglR0SfFsInfo(&client_handle, &sf_g->map, 0,
 			    SHFL_INFO_GET | SHFL_INFO_VOLUME, &cbBuffer,
 			    (PSHFLDIRINFO) & SHFLVolumeInfo);
-	if (RT_FAILURE(rc))
-		return -RTErrConvertToErrno(rc);
-
-	stat->f_type = NFS_SUPER_MAGIC;	/* XXX vboxsf type? */
-	stat->f_bsize = SHFLVolumeInfo.ulBytesPerAllocationUnit;
-	stat->f_blocks = SHFLVolumeInfo.ullTotalAllocationBytes
-	    / SHFLVolumeInfo.ulBytesPerAllocationUnit;
-	stat->f_bfree = SHFLVolumeInfo.ullAvailableAllocationBytes
-	    / SHFLVolumeInfo.ulBytesPerAllocationUnit;
-	stat->f_bavail = SHFLVolumeInfo.ullAvailableAllocationBytes
-	    / SHFLVolumeInfo.ulBytesPerAllocationUnit;
-	stat->f_files = 1000;
-	stat->f_ffree = 1000;	/* don't return 0 here since the guest may think
-				 * that it is not possible to create any more files */
-	stat->f_fsid.val[0] = 0;
-	stat->f_fsid.val[1] = 0;
-	stat->f_namelen = 255;
-	return 0;
+#else
+	pReq = VbglR0PhysHeapAlloc(sizeof(*pReq));
+	if (pReq) {
+		pVolInfo = &pReq->VolInfo;
+		rc = VbglR0SfHostReqQueryVolInfo(sf_g->map.root, pReq, SHFL_HANDLE_ROOT);
+#endif
+		if (RT_SUCCESS(rc)) {
+			stat->f_type   = NFS_SUPER_MAGIC;	/* XXX vboxsf type? */
+			stat->f_bsize  = pVolInfo->ulBytesPerAllocationUnit;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 73)
+			stat->f_frsize = pVolInfo->ulBytesPerAllocationUnit;
+#endif
+			stat->f_blocks = pVolInfo->ullTotalAllocationBytes
+				       / pVolInfo->ulBytesPerAllocationUnit;
+			stat->f_bfree  = pVolInfo->ullAvailableAllocationBytes
+				       / pVolInfo->ulBytesPerAllocationUnit;
+			stat->f_bavail = pVolInfo->ullAvailableAllocationBytes
+				       / pVolInfo->ulBytesPerAllocationUnit;
+			stat->f_files  = 1000;
+			stat->f_ffree  = 1000; /* don't return 0 here since the guest may think
+						* that it is not possible to create any more files */
+			stat->f_fsid.val[0] = 0;
+			stat->f_fsid.val[1] = 0;
+			stat->f_namelen = 255;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 73)
+			stat->f_flags = 0; /* not valid */
+#endif
+			RT_ZERO(stat->f_spare);
+			rc = 0;
+		} else
+			rc = -RTErrConvertToErrno(rc);
+#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+		VbglR0PhysHeapFree(pReq);
+	} else
+		rc = -ENOMEM;
+#endif
+	return rc;
 }
 
 struct dentry_operations sf_dentry_ops = {
@@ -856,22 +1031,22 @@ int sf_init_backing_dev(struct sf_glob_info *sf_g)
 	uint64_t u64CurrentSequence = ASMAtomicIncU64(&s_u64Sequence);
 
 	sf_g->bdi.ra_pages = 0;	/* No readahead */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
 	sf_g->bdi.capabilities = BDI_CAP_MAP_DIRECT	/* MAP_SHARED */
 	    | BDI_CAP_MAP_COPY	/* MAP_PRIVATE */
 	    | BDI_CAP_READ_MAP	/* can be mapped for reading */
 	    | BDI_CAP_WRITE_MAP	/* can be mapped for writing */
 	    | BDI_CAP_EXEC_MAP;	/* can be mapped for execution */
-#endif				/* >= 2.6.12 */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+# endif				/* >= 2.6.12 */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 	rc = bdi_init(&sf_g->bdi);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
 	if (!rc)
 		rc = bdi_register(&sf_g->bdi, NULL, "vboxsf-%llu",
 				  (unsigned long long)u64CurrentSequence);
-#endif				/* >= 2.6.26 */
-#endif				/* >= 2.6.24 */
-#endif				/* >= 2.6.0 && <= 3.19.0 */
+#  endif /* >= 2.6.26 */
+# endif	 /* >= 2.6.24 */
+#endif   /* >= 2.6.0 && <= 3.19.0 */
 	return rc;
 }
 
@@ -881,3 +1056,4 @@ void sf_done_backing_dev(struct sf_glob_info *sf_g)
 	bdi_destroy(&sf_g->bdi);	/* includes bdi_unregister() */
 #endif
 }
+

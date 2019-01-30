@@ -39,11 +39,11 @@
 #include "version-generated.h"
 #include "revision-generated.h"
 #include "product-generated.h"
-#include "VBoxGuestR0LibInternal.h"
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
 # include <linux/mount.h>
 #endif
 #include <linux/seq_file.h>
+#include <iprt/path.h>
 
 MODULE_DESCRIPTION(VBOX_PRODUCT " VFS Module for Host File System Access");
 MODULE_AUTHOR(VBOX_VENDOR);
@@ -57,6 +57,8 @@ MODULE_VERSION(VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV));
 
 /* globals */
 VBGLSFCLIENT client_handle;
+VBGLSFCLIENT g_SfClient;      /* temporary? */
+uint32_t g_fHostFeatures = 0; /* temporary? */
 
 /* forward declarations */
 static struct super_operations sf_super_ops;
@@ -104,10 +106,8 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info,
 	str_name->u16Size = name_len + 1;
 	memcpy(str_name->String.utf8, info->name, name_len + 1);
 
-#define _IS_UTF8(_str) \
-    (strcmp(_str, "utf8") == 0)
-#define _IS_EMPTY(_str) \
-    (strcmp(_str, "") == 0)
+#define _IS_UTF8(_str)  (strcmp(_str, "utf8") == 0)
+#define _IS_EMPTY(_str) (strcmp(_str, "") == 0)
 
 	/* Check if NLS charset is valid and not points to UTF8 table */
 	if (info->nls_name[0]) {
@@ -135,17 +135,22 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info,
 #else
 		sf_g->nls = NULL;
 #endif
+	}
 
 #undef _IS_UTF8
 #undef _IS_EMPTY
-	}
 
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	rc = VbglR0SfMapFolder(&client_handle, str_name, &sf_g->map);
+#else
+	rc = VbglR0SfHostReqMapFolderWithContigSimple(str_name, virt_to_phys(str_name), RTPATH_DELIMITER,
+						      true /*fCaseSensitive*/, &sf_g->map.root);
+#endif
 	kfree(str_name);
 
 	if (RT_FAILURE(rc)) {
 		err = -EPROTO;
-		LogFunc(("VbglR0SfMapFolder failed rc=%d\n", rc));
+		LogFunc(("SHFL_FN_MAP_FOLDER failed rc=%Rrc\n", rc));
 		goto fail2;
 	}
 
@@ -192,9 +197,15 @@ static void sf_glob_free(struct sf_glob_info *sf_g)
 	int rc;
 
 	TRACE();
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	rc = VbglR0SfUnmapFolder(&client_handle, &sf_g->map);
 	if (RT_FAILURE(rc))
 		LogFunc(("VbglR0SfUnmapFolder failed rc=%d\n", rc));
+#else
+	rc = VbglR0SfHostReqUnmapFolderSimple(sf_g->map.root);
+	if (RT_FAILURE(rc))
+		LogFunc(("VbglR0SfHostReqUnmapFolderSimple failed rc=%Rrc\n", rc));
+#endif
 
 	if (sf_g->nls)
 		unload_nls(sf_g->nls);
@@ -454,8 +465,7 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 	sf_g = GET_GLOB_INFO(sb);
 	BUG_ON(!sf_g);
 	if (data && data[0] != 0) {
-		struct vbsf_mount_info_new *info =
-		    (struct vbsf_mount_info_new *)data;
+		struct vbsf_mount_info_new *info = (struct vbsf_mount_info_new *)data;
 		if (info->signature[0] == VBSF_MOUNT_SIGNATURE_BYTE_0
 		    && info->signature[1] == VBSF_MOUNT_SIGNATURE_BYTE_1
 		    && info->signature[2] == VBSF_MOUNT_SIGNATURE_BYTE_2) {
@@ -598,7 +608,7 @@ MODULE_PARM_DESC(follow_symlinks,
 /* Module initialization/finalization handlers */
 static int __init init(void)
 {
-	int rcVBox;
+	int vrc;
 	int rcRet = 0;
 	int err;
 
@@ -619,33 +629,42 @@ static int __init init(void)
 		return err;
 	}
 
-	rcVBox = VbglR0HGCMInit();
-	if (RT_FAILURE(rcVBox)) {
-		LogRelFunc(("VbglR0HGCMInit failed, rc=%d\n", rcVBox));
+	vrc = VbglR0SfInit();
+	if (RT_FAILURE(vrc)) {
+		LogRelFunc(("VbglR0SfInit failed, vrc=%Rrc\n", vrc));
 		rcRet = -EPROTO;
 		goto fail0;
 	}
 
-	rcVBox = VbglR0SfConnect(&client_handle);
-	if (RT_FAILURE(rcVBox)) {
-		LogRelFunc(("VbglR0SfConnect failed, rc=%d\n", rcVBox));
+	vrc = VbglR0SfConnect(&client_handle);
+	g_SfClient = client_handle; /* temporary */
+	if (RT_FAILURE(vrc)) {
+		LogRelFunc(("VbglR0SfConnect failed, vrc=%Rrc\n", vrc));
 		rcRet = -EPROTO;
 		goto fail1;
 	}
 
-	rcVBox = VbglR0SfSetUtf8(&client_handle);
-	if (RT_FAILURE(rcVBox)) {
-		LogRelFunc(("VbglR0SfSetUtf8 failed, rc=%d\n", rcVBox));
+	vrc = VbglR0QueryHostFeatures(&g_fHostFeatures);
+	if (RT_FAILURE(vrc))
+	{
+		LogRelFunc(("VbglR0QueryHostFeatures failed: vrc=%Rrc (ignored)\n", vrc));
+		g_fHostFeatures = 0;
+	}
+	LogRelFunc(("g_fHostFeatures=%#x\n", g_fHostFeatures));
+
+	vrc = VbglR0SfSetUtf8(&client_handle);
+	if (RT_FAILURE(vrc)) {
+		LogRelFunc(("VbglR0SfSetUtf8 failed, vrc=%Rrc\n", vrc));
 		rcRet = -EPROTO;
 		goto fail2;
 	}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	if (!follow_symlinks) {
-		rcVBox = VbglR0SfSetSymlinks(&client_handle);
-		if (RT_FAILURE(rcVBox)) {
+		vrc = VbglR0SfSetSymlinks(&client_handle);
+		if (RT_FAILURE(vrc)) {
 			printk(KERN_WARNING
-			       "vboxsf: Host unable to show symlinks, rc=%d\n",
-			       rcVBox);
+			       "vboxsf: Host unable to show symlinks, vrc=%d\n",
+			       vrc);
 		}
 	}
 #endif
@@ -658,9 +677,10 @@ static int __init init(void)
 
  fail2:
 	VbglR0SfDisconnect(&client_handle);
+	g_SfClient = client_handle; /* temporary */
 
  fail1:
-	VbglR0HGCMTerminate();
+	VbglR0SfTerm();
 
  fail0:
 	unregister_filesystem(&vboxsf_fs_type);
@@ -672,7 +692,8 @@ static void __exit fini(void)
 	TRACE();
 
 	VbglR0SfDisconnect(&client_handle);
-	VbglR0HGCMTerminate();
+	g_SfClient = client_handle; /* temporary */
+	VbglR0SfTerm();
 	unregister_filesystem(&vboxsf_fs_type);
 }
 
