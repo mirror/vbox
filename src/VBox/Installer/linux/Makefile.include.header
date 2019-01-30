@@ -79,7 +79,9 @@ ifeq ($(BUILD_TYPE),)
  BUILD_TYPE := release
 else
  ifneq ($(BUILD_TYPE),release)
-  $(warning Using BUILD_TYPE='$(BUILD_TYPE)' from the $(origin BUILD_TYPE).)
+  ifndef VBOX_KERN_QUIET
+   $(warning Using BUILD_TYPE='$(BUILD_TYPE)' from the $(origin BUILD_TYPE).)
+  endif
  endif
 endif
 ifeq ($(USERNAME),)
@@ -151,10 +153,12 @@ MODULE_DIR := $(INSTALL_MOD_PATH)/lib/modules/$(KERN_VER)/$(INSTALL_MOD_DIR)
 
 # debug - show guesses.
 ifdef DEBUG
+ ifndef VBOX_KERN_QUIET
 $(warning dbg: INSTALL_MOD_PATH = $(INSTALL_MOD_PATH))
 $(warning dbg: INSTALL_MOD_DIR  = $(INSTALL_MOD_DIR))
 $(warning dbg: KERN_DIR         = $(KERN_DIR))
 $(warning dbg: KERN_INCL        = $(KERN_INCL))
 $(warning dbg: KERN_VERSION     = $(KERN_VERSION))
 $(warning dbg: MODULE_DIR       = $(MODULE_DIR))
+ endif
 endif
