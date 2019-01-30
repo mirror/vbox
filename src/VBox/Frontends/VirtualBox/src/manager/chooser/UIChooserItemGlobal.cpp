@@ -36,6 +36,7 @@
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
                                          int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isTemporary(), 0, 100)
+    , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
     , m_iHoverLightnessMin(0)
@@ -46,29 +47,14 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
     , m_iMaximumNameWidth(0)
     , m_iHeightHint(0)
 {
-    /* Prepare: */
     prepare();
-
-    /* Add item to the parent: */
-    AssertMsg(parentItem(), ("No parent set for global-item!"));
-    parentItem()->addItem(this, iPosition);
-    setZValue(parentItem()->zValue() + 1);
-
-    /* Configure connections: */
-    connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
-            this, &UIChooserItemGlobal::sltHandleWindowRemapped);
-
-    /* Init: */
-    updatePixmaps();
-
-    /* Apply language settings: */
-    retranslateUi();
 }
 
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
                                          UIChooserItemGlobal *pCopyFrom,
                                          int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isTemporary(), 0, 100)
+    , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
     , m_iHoverLightnessMin(0)
@@ -79,49 +65,12 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
     , m_iMaximumNameWidth(0)
     , m_iHeightHint(pCopyFrom->heightHint())
 {
-    /* Prepare: */
     prepare();
-
-    /* Add item to the parent: */
-    AssertMsg(parentItem(), ("No parent set for global-item!"));
-    parentItem()->addItem(this, iPosition);
-    setZValue(parentItem()->zValue() + 1);
-
-    /* Configure connections: */
-    connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
-            this, &UIChooserItemGlobal::sltHandleWindowRemapped);
-
-    /* Init: */
-    updatePixmaps();
-
-    /* Apply language settings: */
-    retranslateUi();
 }
 
 UIChooserItemGlobal::~UIChooserItemGlobal()
 {
-    /* If that item is focused: */
-    if (model()->focusItem() == this)
-    {
-        /* Unset the focus: */
-        model()->setFocusItem(0);
-    }
-    /* If that item is in selection list: */
-    if (model()->currentItems().contains(this))
-    {
-        /* Remove item from the selection list: */
-        model()->removeFromCurrentItems(this);
-    }
-    /* If that item is in navigation list: */
-    if (model()->navigationList().contains(this))
-    {
-        /* Remove item from the navigation list: */
-        model()->removeFromNavigationList(this);
-    }
-
-    /* Remove item from the parent: */
-    AssertMsg(parentItem(), ("No parent set for global-item!"));
-    parentItem()->removeItem(this);
+    cleanup();
 }
 
 bool UIChooserItemGlobal::isToolsButtonArea(const QPoint &position, int iMarginMultiplier /* = 1 */) const
@@ -437,6 +386,47 @@ void UIChooserItemGlobal::prepare()
     /* Sizes: */
     m_iMinimumNameWidth = 0;
     m_iMaximumNameWidth = 0;
+
+    /* Add item to the parent: */
+    AssertPtrReturnVoid(parentItem());
+    parentItem()->addItem(this, m_iPosition);
+    setZValue(parentItem()->zValue() + 1);
+
+    /* Configure connections: */
+    connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
+            this, &UIChooserItemGlobal::sltHandleWindowRemapped);
+
+    /* Init: */
+    updatePixmaps();
+
+    /* Apply language settings: */
+    retranslateUi();
+}
+
+void UIChooserItemGlobal::cleanup()
+{
+    /* If that item is focused: */
+    if (model()->focusItem() == this)
+    {
+        /* Unset the focus: */
+        model()->setFocusItem(0);
+    }
+    /* If that item is in selection list: */
+    if (model()->currentItems().contains(this))
+    {
+        /* Remove item from the selection list: */
+        model()->removeFromCurrentItems(this);
+    }
+    /* If that item is in navigation list: */
+    if (model()->navigationList().contains(this))
+    {
+        /* Remove item from the navigation list: */
+        model()->removeFromNavigationList(this);
+    }
+
+    /* Remove item from the parent: */
+    AssertPtrReturnVoid(parentItem());
+    parentItem()->removeItem(this);
 }
 
 QVariant UIChooserItemGlobal::data(int iKey) const
