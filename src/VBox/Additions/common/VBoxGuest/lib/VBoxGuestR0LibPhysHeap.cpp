@@ -403,7 +403,7 @@ void vbglPhysHeapChunkDelete (VBGLPHYSHEAPCHUNK *pChunk)
 
 DECLR0VBGL(void *) VbglR0PhysHeapAlloc (uint32_t cbSize)
 {
-    VBGLPHYSHEAPBLOCK *pBlock, *iter;
+    VBGLPHYSHEAPBLOCK *pBlock, *pIter;
     int rc = vbglPhysHeapEnter ();
 
     if (RT_FAILURE(rc))
@@ -411,41 +411,61 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc (uint32_t cbSize)
 
     dumpheap ("pre alloc");
 
-    pBlock = NULL;
-
-    /* If there are free blocks in the heap, look at them. */
-    iter = g_vbgldata.pFreeBlocksHead;
-
-    /* There will be not many blocks in the heap, so
-     * linear search would be fast enough.
+    /*
+     * Search the free list.  We do this in linear fashion as we don't expect
+     * there to be many blocks in the heap.
      */
 
-    while (iter)
+    pBlock = NULL;
+    if (cbSize <= PAGE_SIZE / 4 * 3)
     {
-        if (iter->cbDataSize == cbSize)
-        {
-            /* exact match */
-            pBlock = iter;
-            break;
-        }
+        /* Smaller than 3/4 page:  Prefer a free block that can keep the request within a single page,
+           so HGCM processing in VMMDev can use page locks instead of several reads and writes. */
 
-        /* Looking for a free block with nearest size */
-        if (iter->cbDataSize > cbSize)
-        {
-            if (pBlock)
+        VBGLPHYSHEAPBLOCK *pFallback = NULL;
+        for (pIter = g_vbgldata.pFreeBlocksHead; pIter != NULL; pIter = pIter->pNext)
+            if (pIter->cbDataSize >= cbSize)
             {
-                if (iter->cbDataSize < pBlock->cbDataSize)
+                if (pIter->cbDataSize == cbSize)
                 {
-                    pBlock = iter;
+                    if (PAGE_SIZE - ((uintptr_t)vbglPhysHeapBlock2Data(pIter) & PAGE_OFFSET_MASK) >= cbSize)
+                    {
+                        pBlock = pIter;
+                        break;
+                    }
+                    pFallback = pIter;
+                }
+                else
+                {
+                    if (!pFallback || pIter->cbDataSize < pFallback->cbDataSize)
+                        pFallback = pIter;
+                    if (PAGE_SIZE - ((uintptr_t)vbglPhysHeapBlock2Data(pIter) & PAGE_OFFSET_MASK) >= cbSize)
+                        if (!pBlock || pIter->cbDataSize < pBlock->cbDataSize)
+                            pBlock = pIter;
                 }
             }
-            else
-            {
-                pBlock = iter;
-            }
-        }
 
-        iter = iter->pNext;
+        if (!pBlock)
+            pBlock = pFallback;
+    }
+    else
+    {
+        /* Large than 3/4 page:  Find smallest free list match. */
+
+        for (pIter = g_vbgldata.pFreeBlocksHead; pIter != NULL; pIter = pIter->pNext)
+            if (pIter->cbDataSize >= cbSize)
+            {
+                if (pIter->cbDataSize == cbSize)
+                {
+                    /* Exact match - we're done! */
+                    pBlock = pIter;
+                    break;
+                }
+
+                /* Looking for a free block with nearest size. */
+                if (!pBlock || pIter->cbDataSize < pBlock->cbDataSize)
+                    pBlock = pIter;
+            }
     }
 
     if (!pBlock)
@@ -469,17 +489,17 @@ DECLR0VBGL(void *) VbglR0PhysHeapAlloc (uint32_t cbSize)
         if (pBlock->cbDataSize > 2*(cbSize + sizeof (VBGLPHYSHEAPBLOCK)))
         {
             /* Data will occupy less than a half of the block,
-             * the block should be split.
+             * split off the tail end into a new free list entry.
              */
-            iter = (VBGLPHYSHEAPBLOCK *)((char *)pBlock + sizeof (VBGLPHYSHEAPBLOCK) + cbSize);
+            pIter = (VBGLPHYSHEAPBLOCK *)((char *)pBlock + sizeof (VBGLPHYSHEAPBLOCK) + cbSize);
 
-            /* Init the new 'iter' block, initialized blocks are always marked as free. */
-            vbglPhysHeapInitBlock (iter, pBlock->pChunk, pBlock->cbDataSize - cbSize - sizeof (VBGLPHYSHEAPBLOCK));
+            /* Init the new 'pIter' block, initialized blocks are always marked as free. */
+            vbglPhysHeapInitBlock (pIter, pBlock->pChunk, pBlock->cbDataSize - cbSize - sizeof (VBGLPHYSHEAPBLOCK));
 
             pBlock->cbDataSize = cbSize;
 
-            /* Insert the new 'iter' block after the 'pBlock' in the free list */
-            vbglPhysHeapInsertBlock (pBlock, iter);
+            /* Insert the new 'pIter' block after the 'pBlock' in the free list */
+            vbglPhysHeapInsertBlock (pBlock, pIter);
         }
 
         /* Exclude pBlock from free list */
