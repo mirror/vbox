@@ -333,11 +333,6 @@ static HRESULT vboxUhgsmiKmtQueryCaps(PVBOXUHGSMI_PRIVATE_KMT pHgsmi, uint32_t *
 
     if (Query.enmHwType == VBOXVIDEO_HWTYPE_VBOX)
         *pu32Caps = Query.u.vbox.u32VBox3DCaps;
-#ifdef VBOX_WITH_MESA3D
-    /** @todo Remove the hack. u32VBox3DCaps should not be used with Gallium. */
-    else if (Query.enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
-        *pu32Caps = CR_VBOX_CAP_TEX_PRESENT | CR_VBOX_CAP_CMDVBVA;
-#endif
     else
         *pu32Caps = 0;
 

@@ -341,9 +341,6 @@ HRESULT APIENTRY GaDdiTexBlt(HANDLE hDevice, const D3DDDIARG_TEXBLT *pData)
         }
     }
 
-//    vboxWddmDalCheckAddRc(pDevice, pDstRc, TRUE);
-//    vboxWddmDalCheckAddRc(pDevice, pSrcRc, FALSE);
-
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
@@ -1466,6 +1463,93 @@ HRESULT APIENTRY GaDdiCreateVertexShaderFunc(HANDLE hDevice, D3DDDIARG_CREATEVER
     return hr;
 }
 
+HRESULT APIENTRY GaDdiSetVertexShaderFunc(HANDLE hDevice, HANDLE hShaderHandle)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    IDirect3DVertexShader9 *pShader = (IDirect3DVertexShader9 *)hShaderHandle;
+
+    HRESULT hr = pDevice9If->SetVertexShader(pShader);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiDeleteVertexShaderFunc(HANDLE hDevice, HANDLE hShaderHandle)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    IDirect3DVertexShader9 *pShader = (IDirect3DVertexShader9 *)hShaderHandle;
+    pShader->Release();
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, S_OK));
+    return S_OK;
+}
+
+HRESULT APIENTRY GaDdiSetVertexShaderConst(HANDLE hDevice, const D3DDDIARG_SETVERTEXSHADERCONST *pData,
+                                           const VOID *pRegisters)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = pDevice9If->SetVertexShaderConstantF(pData->Register,
+                                                      (const float*)pRegisters,
+                                                      pData->Count);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetVertexShaderConstI(HANDLE hDevice, const D3DDDIARG_SETVERTEXSHADERCONSTI *pData,
+                                            const INT *pRegisters)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = pDevice9If->SetVertexShaderConstantI(pData->Register, pRegisters, pData->Count);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetVertexShaderConstB(HANDLE hDevice, const D3DDDIARG_SETVERTEXSHADERCONSTB *pData,
+                                            const BOOL *pRegisters)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = pDevice9If->SetVertexShaderConstantB(pData->Register, pRegisters, pData->Count);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
 HRESULT APIENTRY GaDdiCreatePixelShader(HANDLE hDevice, D3DDDIARG_CREATEPIXELSHADER *pData, const UINT *pCode)
 {
     VBOXVDBG_BREAK_DDI();
@@ -1527,6 +1611,57 @@ HRESULT APIENTRY GaDdiCreatePixelShader(HANDLE hDevice, D3DDDIARG_CREATEPIXELSHA
             RTMemFree(pFunction);
         }
     }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiDeletePixelShader(HANDLE hDevice, HANDLE hShaderHandle)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    IDirect3DPixelShader9 *pShader = (IDirect3DPixelShader9 *)hShaderHandle;
+
+    pShader->Release();
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, S_OK));
+    return S_OK;
+}
+
+HRESULT APIENTRY GaDdiSetPixelShaderConstI(HANDLE hDevice, const D3DDDIARG_SETPIXELSHADERCONSTI *pData,
+                                           const INT *pRegisters)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = pDevice9If->SetPixelShaderConstantI(pData->Register, pRegisters, pData->Count);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetPixelShaderConstB(HANDLE hDevice, const D3DDDIARG_SETPIXELSHADERCONSTB *pData,
+                                           const BOOL *pRegisters)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = pDevice9If->SetPixelShaderConstantB(pData->Register, pRegisters, pData->Count);
+    Assert(hr == S_OK);
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
@@ -1893,9 +2028,6 @@ HRESULT APIENTRY GaDdiCreateResource(HANDLE hDevice, D3DDDIARG_CREATERESOURCE *p
     return hr;
 }
 
-/** @todo Will be removed when there will be a full set of GaDdi functions, which will not use this. */
-extern BOOLEAN vboxWddmDalCheckNotifyRemove(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pAlloc);
-
 HRESULT APIENTRY GaDdiDestroyResource(HANDLE hDevice, HANDLE hResource)
 {
     VBOXVDBG_BREAK_DDI();
@@ -1938,8 +2070,6 @@ HRESULT APIENTRY GaDdiDestroyResource(HANDLE hDevice, HANDLE hResource)
 
             if (pAlloc->pD3DIf)
                 pAlloc->pD3DIf->Release();
-
-            vboxWddmDalCheckNotifyRemove(pDevice, pAlloc);
         }
     }
 
@@ -2150,9 +2280,6 @@ HRESULT APIENTRY GaDdiOpenResource(HANDLE hDevice, D3DDDIARG_OPENRESOURCE *pReso
     return hr;
 }
 
-/** @todo Will be removed when there will be a full set of GaDdi functions, which will not use this. */
-extern VOID vboxWddmDalCheckAddOnDraw(PVBOXWDDMDISP_DEVICE pDevice);
-
 HRESULT APIENTRY GaDdiDrawPrimitive(HANDLE hDevice, const D3DDDIARG_DRAWPRIMITIVE *pData, const UINT *pFlagBuffer)
 {
     VBOXVDBG_BREAK_DDI();
@@ -2233,8 +2360,6 @@ HRESULT APIENTRY GaDdiDrawPrimitive(HANDLE hDevice, const D3DDDIARG_DRAWPRIMITIV
                                        pData->PrimitiveCount);
         Assert(hr == S_OK);
     }
-
-    vboxWddmDalCheckAddOnDraw(pDevice);
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
@@ -2347,8 +2472,6 @@ HRESULT APIENTRY GaDdiDrawIndexedPrimitive(HANDLE hDevice, const D3DDDIARG_DRAWI
         Assert(hr == S_OK);
     }
 
-    vboxWddmDalCheckAddOnDraw(pDevice);
-
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
     return hr;
 }
@@ -2401,8 +2524,6 @@ HRESULT APIENTRY GaDdiDrawPrimitive2(HANDLE hDevice, const D3DDDIARG_DRAWPRIMITI
     {
         hr = E_FAIL;
     }
-
-    vboxWddmDalCheckAddOnDraw(pDevice);
 
     Assert(hr == S_OK);
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
@@ -2607,8 +2728,2317 @@ HRESULT APIENTRY GaDdiDrawIndexedPrimitive2(HANDLE hDevice, const D3DDDIARG_DRAW
         }
     }
 
-    vboxWddmDalCheckAddOnDraw(pDevice);
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetRenderState(HANDLE hDevice, const D3DDDIARG_RENDERSTATE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    D3DRENDERSTATETYPE const enmD3DRenderStateType = vboxDDI2D3DRenderStateType(pData->State);
+    HRESULT hr = pDevice9If->SetRenderState(enmD3DRenderStateType, pData->Value);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiUpdateWInfo(HANDLE hDevice, const D3DDDIARG_WINFO *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(hDevice, pData);
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return S_OK;
+}
+
+HRESULT APIENTRY GaDdiValidateDevice(HANDLE hDevice, D3DDDIARG_VALIDATETEXTURESTAGESTATE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(hDevice, pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return S_OK;
+}
+
+HRESULT APIENTRY GaDdiSetTextureStageState(HANDLE hDevice, const D3DDDIARG_TEXTURESTAGESTATE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    VBOXWDDMDISP_TSS_LOOKUP lookup = vboxDDI2D3DTestureStageStateType(pData->State);
+
+    HRESULT hr;
+    if (lookup.bSamplerState)
+    {
+        hr = pDevice9If->SetSamplerState(pData->Stage, (D3DSAMPLERSTATETYPE)lookup.dType, pData->Value);
+    }
+    else
+    {
+        hr = pDevice9If->SetTextureStageState(pData->Stage, (D3DTEXTURESTAGESTATETYPE)lookup.dType, pData->Value);
+    }
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetTexture(HANDLE hDevice, UINT Stage, HANDLE hTexture)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)hTexture;
+
+    int const idx = VBOXWDDMDISP_SAMPLER_IDX(Stage);
+    AssertMsgReturn(idx >= 0 && idx < RT_ELEMENTS(pDevice->aSamplerTextures),
+                    ("Stage %d, idx %d, hTexture %p\n", Stage, idx, hTexture), E_FAIL);
+
+    Assert(pDevice->cSamplerTextures < RT_ELEMENTS(pDevice->aSamplerTextures));
+
+    IDirect3DBaseTexture9 *pD3DIfTex = NULL;
+    if (pRc)
+    {
+        // VBOXVDBG_CHECK_SMSYNC(pRc);
+        if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE)
+        {
+            pD3DIfTex = (IDirect3DTexture9*)pRc->aAllocations[0].pD3DIf;
+        }
+        else if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE)
+        {
+            pD3DIfTex = (IDirect3DCubeTexture9*)pRc->aAllocations[0].pD3DIf;
+        }
+        else if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE)
+        {
+            pD3DIfTex = (IDirect3DVolumeTexture9*)pRc->aAllocations[0].pD3DIf;
+        }
+        else
+        {
+            AssertFailed();
+        }
+
+        if (pD3DIfTex && !pDevice->aSamplerTextures[idx])
+        {
+            ++pDevice->cSamplerTextures;
+        }
+    }
+    else
+    {
+        if (pDevice->aSamplerTextures[idx])
+        {
+            Assert(pDevice->cSamplerTextures);
+            --pDevice->cSamplerTextures;
+        }
+    }
+
+    Assert(pDevice->cSamplerTextures < RT_ELEMENTS(pDevice->aSamplerTextures));
+    pDevice->aSamplerTextures[idx] = pRc;
+
+    HRESULT hr = pDevice9If->SetTexture(Stage, pD3DIfTex);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetPixelShader(HANDLE hDevice, HANDLE hShaderHandle)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    IDirect3DPixelShader9 *pShader = (IDirect3DPixelShader9 *)hShaderHandle;
+    HRESULT hr = pDevice9If->SetPixelShader(pShader);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetPixelShaderConst(HANDLE hDevice, const D3DDDIARG_SETPIXELSHADERCONST *pData,
+                                          const FLOAT *pRegisters)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = pDevice9If->SetPixelShaderConstantF(pData->Register, pRegisters, pData->Count);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetStreamSourceUm(HANDLE hDevice, const D3DDDIARG_SETSTREAMSOURCEUM *pData,
+                                        const VOID *pUMBuffer)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    AssertReturn(pData->Stream < RT_ELEMENTS(pDevice->aStreamSourceUm), E_INVALIDARG);
+
+    PVBOXWDDMDISP_STREAMSOURCEUM pStrSrcUm = &pDevice->aStreamSourceUm[pData->Stream];
+    if (pStrSrcUm->pvBuffer && !pUMBuffer)
+    {
+        --pDevice->cStreamSourcesUm;
+        Assert(pDevice->cStreamSourcesUm < UINT32_MAX/2);
+    }
+    else if (!pStrSrcUm->pvBuffer && pUMBuffer)
+    {
+        ++pDevice->cStreamSourcesUm;
+        Assert(pDevice->cStreamSourcesUm <= RT_ELEMENTS(pDevice->aStreamSourceUm));
+    }
+
+    pStrSrcUm->pvBuffer = pUMBuffer;
+    pStrSrcUm->cbStride = pData->Stride;
+
+    HRESULT hr = S_OK;
+    if (pDevice->aStreamSource[pData->Stream])
+    {
+        hr = pDevice9If->SetStreamSource(pData->Stream, NULL, 0, 0);
+        pDevice->aStreamSource[pData->Stream] = NULL;
+
+        --pDevice->cStreamSources;
+        Assert(pDevice->cStreamSources < UINT32_MAX/2);
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetIndices(HANDLE hDevice, const D3DDDIARG_SETINDICES *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hIndexBuffer;
+    PVBOXWDDMDISP_ALLOCATION pAlloc = NULL;
+    IDirect3DIndexBuffer9 *pIndexBuffer = NULL;
+    if (pRc)
+    {
+        // VBOXVDBG_CHECK_SMSYNC(pRc);
+        Assert(pRc->cAllocations == 1);
+
+        pAlloc = &pRc->aAllocations[0];
+        Assert(pAlloc->pD3DIf);
+
+        pIndexBuffer = (IDirect3DIndexBuffer9 *)pAlloc->pD3DIf;
+    }
+
+    HRESULT hr = pDevice9If->SetIndices(pIndexBuffer);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        pDevice->IndiciesInfo.pIndicesAlloc = pAlloc;
+        pDevice->IndiciesInfo.uiStride = pData->Stride;
+        pDevice->IndiciesInfo.pvIndicesUm = NULL;
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetIndicesUm(HANDLE hDevice, UINT IndexSize, const VOID *pUMBuffer)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = S_OK;
+    if (pDevice->IndiciesInfo.pIndicesAlloc)
+    {
+        hr = pDevice9If->SetIndices(NULL);
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        pDevice->IndiciesInfo.pvIndicesUm = pUMBuffer;
+        pDevice->IndiciesInfo.uiStride = IndexSize;
+        pDevice->IndiciesInfo.pIndicesAlloc = NULL;
+        hr = S_OK;
+    }
+    else
+    {
+        WARN(("SetIndices failed hr 0x%x", hr));
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiBufBlt(HANDLE hDevice, const D3DDDIARG_BUFFERBLT *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiStateSet(HANDLE hDevice, D3DDDIARG_STATESET *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiSetPriority(HANDLE hDevice, const D3DDDIARG_SETPRIORITY *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    return S_OK;
+}
+
+AssertCompile(sizeof (RECT) == sizeof (D3DRECT));
+AssertCompile(RT_SIZEOFMEMB(RECT, left)   == RT_SIZEOFMEMB(D3DRECT, x1));
+AssertCompile(RT_SIZEOFMEMB(RECT, right)  == RT_SIZEOFMEMB(D3DRECT, x2));
+AssertCompile(RT_SIZEOFMEMB(RECT, top)    == RT_SIZEOFMEMB(D3DRECT, y1));
+AssertCompile(RT_SIZEOFMEMB(RECT, bottom) == RT_SIZEOFMEMB(D3DRECT, y2));
+AssertCompile(RT_OFFSETOF(RECT, left)   == RT_OFFSETOF(D3DRECT, x1));
+AssertCompile(RT_OFFSETOF(RECT, right)  == RT_OFFSETOF(D3DRECT, x2));
+AssertCompile(RT_OFFSETOF(RECT, top)    == RT_OFFSETOF(D3DRECT, y1));
+AssertCompile(RT_OFFSETOF(RECT, bottom) == RT_OFFSETOF(D3DRECT, y2));
+
+HRESULT APIENTRY GaDdiClear(HANDLE hDevice, const D3DDDIARG_CLEAR *pData, UINT NumRect, const RECT *pRect)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = pDevice9If->Clear(NumRect, (D3DRECT *)pRect /* see AssertCompile above */,
+                                   pData->Flags,
+                                   pData->FillColor,
+                                   pData->FillDepth,
+                                   pData->FillStencil);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiUpdatePalette(HANDLE hDevice, const D3DDDIARG_UPDATEPALETTE *pData,
+                                    const PALETTEENTRY *pPaletteData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData, pPaletteData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiSetPalette(HANDLE hDevice, const D3DDDIARG_SETPALETTE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiMultiplyTransform(HANDLE hDevice, const D3DDDIARG_MULTIPLYTRANSFORM *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiSetTransform(HANDLE hDevice, const D3DDDIARG_SETTRANSFORM *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiSetViewport(HANDLE hDevice, const D3DDDIARG_VIEWPORTINFO *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    pDevice->ViewPort.X      = pData->X;
+    pDevice->ViewPort.Y      = pData->Y;
+    pDevice->ViewPort.Width  = pData->Width;
+    pDevice->ViewPort.Height = pData->Height;
+
+    HRESULT hr = pDevice9If->SetViewport(&pDevice->ViewPort);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetZRange(HANDLE hDevice, const D3DDDIARG_ZRANGE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    pDevice->ViewPort.MinZ = pData->MinZ;
+    pDevice->ViewPort.MaxZ = pData->MaxZ;
+
+    HRESULT hr = pDevice9If->SetViewport(&pDevice->ViewPort);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetMaterial(HANDLE hDevice, const D3DDDIARG_SETMATERIAL *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiSetLight(HANDLE hDevice, const D3DDDIARG_SETLIGHT *pData, const D3DDDI_LIGHT *pLightProperties)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData, pLightProperties);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiCreateLight(HANDLE hDevice, const D3DDDIARG_CREATELIGHT *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDestroyLight(HANDLE hDevice, const D3DDDIARG_DESTROYLIGHT *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiSetClipPlane(HANDLE hDevice, const D3DDDIARG_SETCLIPPLANE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = pDevice9If->SetClipPlane(pData->Index, pData->Plane);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiGetInfo(HANDLE hDevice, UINT DevInfoID, VOID *pDevInfoStruct, UINT DevInfoSize)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    HRESULT hr = S_OK;
+    switch (DevInfoID)
+    {
+        case D3DDDIDEVINFOID_VCACHE:
+        {
+            Assert(DevInfoSize == sizeof (D3DDDIDEVINFO_VCACHE));
+            if (DevInfoSize == sizeof (D3DDDIDEVINFO_VCACHE))
+            {
+                D3DDDIDEVINFO_VCACHE *pVCache = (D3DDDIDEVINFO_VCACHE*)pDevInfoStruct;
+                pVCache->Pattern = MAKEFOURCC('C', 'A', 'C', 'H');
+                pVCache->OptMethod = 0 /* D3DXMESHOPT_STRIPREORDER */;
+                pVCache->CacheSize = 0;
+                pVCache->MagicNumber = 0;
+            }
+            else
+                hr = E_INVALIDARG;
+            break;
+        }
+
+        default:
+            AssertFailed();
+            hr = E_NOTIMPL;
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetDisplayMode(HANDLE hDevice, const D3DDDIARG_SETDISPLAYMODE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    Assert(VBOXDISPMODE_IS_3D(pDevice->pAdapter));
+
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hResource;
+    Assert(pRc);
+    Assert(pRc->cAllocations > pData->SubResourceIndex);
+
+    PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
+    Assert(pRc->RcDesc.fFlags.RenderTarget);
+    Assert(pRc->RcDesc.fFlags.Primary);
+    Assert(pAlloc->hAllocation);
+
+    D3DDDICB_SETDISPLAYMODE DdiDm;
+    RT_ZERO(DdiDm);
+    DdiDm.hPrimaryAllocation = pAlloc->hAllocation;
+
+    HRESULT hr = pDevice->RtCallbacks.pfnSetDisplayModeCb(pDevice->hDevice, &DdiDm);
+    Assert(hr == S_OK);
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
     return hr;
+}
+
+AssertCompile(sizeof(D3DDDIVERTEXELEMENT) == sizeof(D3DVERTEXELEMENT9));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, Stream)     == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, Stream));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, Offset)     == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, Offset));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, Type)       == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, Type));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, Method)     == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, Method));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, Usage)      == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, Usage));
+AssertCompile(RT_SIZEOFMEMB(D3DDDIVERTEXELEMENT, UsageIndex) == RT_SIZEOFMEMB(D3DVERTEXELEMENT9, UsageIndex));
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, Stream)     == RT_OFFSETOF(D3DVERTEXELEMENT9, Stream));
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, Offset)     == RT_OFFSETOF(D3DVERTEXELEMENT9, Offset));
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, Type)       == RT_OFFSETOF(D3DVERTEXELEMENT9, Type));
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, Method)     == RT_OFFSETOF(D3DVERTEXELEMENT9, Method));
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, Usage)      == RT_OFFSETOF(D3DVERTEXELEMENT9, Usage));
+AssertCompile(RT_OFFSETOF(D3DDDIVERTEXELEMENT, UsageIndex) == RT_OFFSETOF(D3DVERTEXELEMENT9, UsageIndex));
+
+HRESULT APIENTRY GaDdiCreateVertexShaderDecl(HANDLE hDevice, D3DDDIARG_CREATEVERTEXSHADERDECL *pData,
+                                             const D3DDDIVERTEXELEMENT *pVertexElements)
+{
+    static D3DVERTEXELEMENT9 DeclEnd = D3DDECL_END();
+
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = S_OK;
+
+    D3DVERTEXELEMENT9 *pVe = NULL;
+    if (memcmp(&DeclEnd, &pVertexElements[pData->NumVertexElements], sizeof(DeclEnd)) != 0)
+    {
+        pVe = (D3DVERTEXELEMENT9 *)RTMemAlloc(sizeof(D3DVERTEXELEMENT9) * (pData->NumVertexElements + 1));
+        if (pVe)
+        {
+            memcpy(pVe, pVertexElements, sizeof(D3DVERTEXELEMENT9) * pData->NumVertexElements);
+            pVe[pData->NumVertexElements] = DeclEnd;
+        }
+        else
+            hr = E_OUTOFMEMORY;
+    }
+    else
+        pVe = (D3DVERTEXELEMENT9 *)pVertexElements;
+
+    if (hr == S_OK)
+    {
+        IDirect3DVertexDeclaration9 *pDecl = NULL;
+        hr = pDevice9If->CreateVertexDeclaration(pVe, &pDecl);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            Assert(pDecl);
+            pData->ShaderHandle = pDecl;
+        }
+    }
+
+    if (pVe && pVe != (D3DVERTEXELEMENT9 *)pVertexElements)
+        RTMemFree(pVe);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetVertexShaderDecl(HANDLE hDevice, HANDLE hShaderHandle)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    IDirect3DVertexDeclaration9 *pDecl = (IDirect3DVertexDeclaration9 *)hShaderHandle;
+
+    HRESULT hr = pDevice9If->SetVertexDeclaration(pDecl);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiDeleteVertexShaderDecl(HANDLE hDevice, HANDLE hShaderHandle)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    IDirect3DVertexDeclaration9 *pDecl = (IDirect3DVertexDeclaration9 *)hShaderHandle;
+
+    pDecl->Release();
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, S_OK));
+    return S_OK;
+}
+
+HRESULT APIENTRY GaDdiSetScissorRect(HANDLE hDevice, const RECT *pRect)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = pDevice9If->SetScissorRect(pRect);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetStreamSource(HANDLE hDevice, const D3DDDIARG_SETSTREAMSOURCE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    AssertReturn(pData->Stream < VBOXWDDMDISP_MAX_VERTEX_STREAMS, E_INVALIDARG);
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    PVBOXWDDMDISP_ALLOCATION pAlloc = NULL;
+    IDirect3DVertexBuffer9 *pStreamData = NULL;
+
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hVertexBuffer;
+    if (pRc)
+    {
+        // VBOXVDBG_CHECK_SMSYNC(pRc);
+        Assert(pRc->cAllocations == 1);
+        pAlloc = &pRc->aAllocations[0];
+
+        Assert(pAlloc->pD3DIf);
+        pStreamData = (IDirect3DVertexBuffer9*)pAlloc->pD3DIf;
+    }
+
+    HRESULT hr = pDevice9If->SetStreamSource(pData->Stream, pStreamData, pData->Offset, pData->Stride);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        if (pDevice->aStreamSource[pData->Stream] && !pAlloc)
+        {
+            --pDevice->cStreamSources;
+            Assert(pDevice->cStreamSources < UINT32_MAX/2);
+        }
+        else if (!pDevice->aStreamSource[pData->Stream] && pAlloc)
+        {
+            ++pDevice->cStreamSources;
+            Assert(pDevice->cStreamSources <= RT_ELEMENTS(pDevice->aStreamSource));
+        }
+
+        pDevice->aStreamSource[pData->Stream] = pAlloc;
+        pDevice->StreamSourceInfo[pData->Stream].uiOffset = pData->Offset;
+        pDevice->StreamSourceInfo[pData->Stream].uiStride = pData->Stride;
+
+        PVBOXWDDMDISP_STREAMSOURCEUM pStrSrcUm = &pDevice->aStreamSourceUm[pData->Stream];
+        if (pStrSrcUm->pvBuffer)
+        {
+            --pDevice->cStreamSourcesUm;
+            Assert(pDevice->cStreamSourcesUm < UINT32_MAX/2);
+
+            pStrSrcUm->pvBuffer = NULL;
+            pStrSrcUm->cbStride = 0;
+        }
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetStreamSourceFreq(HANDLE hDevice, const D3DDDIARG_SETSTREAMSOURCEFREQ *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = pDevice9If->SetStreamSourceFreq(pData->Stream, pData->Divider);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetConvolutionKernelMono(HANDLE hDevice, const D3DDDIARG_SETCONVOLUTIONKERNELMONO *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiComposeRects(HANDLE hDevice, const D3DDDIARG_COMPOSERECTS *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiColorFill(HANDLE hDevice, const D3DDDIARG_COLORFILL *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hResource;
+    Assert(pRc);
+
+    IDirect3DSurface9 *pSurfIf = NULL;
+    HRESULT hr = VBoxD3DIfSurfGet(pRc, pData->SubResourceIndex, &pSurfIf);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        // VBOXVDBG_CHECK_SMSYNC(pRc);
+        Assert(pSurfIf);
+
+        hr = pDevice9If->ColorFill(pSurfIf, &pData->DstRect, pData->Color);
+        Assert(hr == S_OK);
+
+        /** @todo check what need to do when PresentToDwm flag is set */
+        Assert(pData->Flags.Value == 0);
+
+        pSurfIf->Release();
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiDepthFill(HANDLE hDevice, const D3DDDIARG_DEPTHFILL *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiCreateQuery(HANDLE hDevice, D3DDDIARG_CREATEQUERY *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)RTMemAllocZ(sizeof(VBOXWDDMDISP_QUERY));
+    AssertReturn(pQuery, E_OUTOFMEMORY);
+
+    D3DQUERYTYPE const d3dQueryType = vboxDDI2D3DQueryType(pData->QueryType);
+    HRESULT hr = pDevice9If->CreateQuery(d3dQueryType, &pQuery->pQueryIf);
+    if (hr == S_OK)
+    {
+        pQuery->enmType = pData->QueryType;
+        pData->hQuery = pQuery;
+    }
+    else
+    {
+        WARN(("CreateQuery failed, hr 0x%x", hr));
+        RTMemFree(pQuery);
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiDestroyQuery(HANDLE hDevice, HANDLE hQuery)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)hQuery;
+    Assert(pQuery);
+    if (pQuery)
+    {
+        Assert(pQuery->pQueryIf);
+        if (pQuery->pQueryIf)
+        {
+            pQuery->pQueryIf->Release();
+        }
+        RTMemFree(pQuery);
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return S_OK;
+}
+
+HRESULT APIENTRY GaDdiIssueQuery(HANDLE hDevice, const D3DDDIARG_ISSUEQUERY *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)pData->hQuery;
+    AssertReturn(pQuery, E_INVALIDARG);
+
+    pQuery->fQueryState.Value |= pData->Flags.Value;
+
+    DWORD const d3dQueryFlags = vboxDDI2D3DIssueQueryFlags(pData->Flags);
+    HRESULT hr = pQuery->pQueryIf->Issue(d3dQueryFlags);
+    Assert(hr == S_OK);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiGetQueryData(HANDLE hDevice, const D3DDDIARG_GETQUERYDATA *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    PVBOXWDDMDISP_QUERY pQuery = (PVBOXWDDMDISP_QUERY)pData->hQuery;
+    AssertReturn(pQuery && pQuery->pQueryIf, E_INVALIDARG);
+
+    DWORD const cbData = pQuery->pQueryIf->GetDataSize();
+#ifdef DEBUG
+    switch (pQuery->enmType)
+    {
+        case D3DDDIQUERYTYPE_EVENT:
+            Assert(cbData == sizeof (BOOL));
+            break;
+        case D3DDDIQUERYTYPE_OCCLUSION:
+            Assert(cbData == sizeof (UINT));
+            break;
+        default:
+            AssertFailed();
+            break;
+    }
+#endif
+
+    HRESULT hr = pQuery->pQueryIf->GetData(pData->pData, cbData, 0);
+    Assert(hr == S_OK || hr == S_FALSE);
+
+#ifdef DEBUG
+    switch (pQuery->enmType)
+    {
+        case D3DDDIQUERYTYPE_EVENT:
+            vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p) D3DDDIQUERYTYPE_EVENT %d\n", hDevice, *(BOOL *)pData->pData));
+            break;
+        case D3DDDIQUERYTYPE_OCCLUSION:
+            vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p) D3DDDIQUERYTYPE_OCCLUSION %d\n", hDevice, *(UINT *)pData->pData));
+            break;
+        default:
+            break;
+    }
+#endif
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
+}
+
+#if 0
+static HRESULT vboxWddmRenderTargetSet(PVBOXWDDMDISP_DEVICE pDevice, UINT iRt, PVBOXWDDMDISP_ALLOCATION pAlloc)
+{
+    IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
+    HRESULT hr = S_OK;
+    IDirect3DSurface9 *pD3D9Surf = NULL;
+    if (pAlloc)
+    {
+        hr = VBoxD3DIfSurfGet(pAlloc->pRc, pAlloc->iAlloc, &pD3D9Surf);
+        if (FAILED(hr))
+        {
+            WARN(("VBoxD3DIfSurfGet failed, hr(0x%x)",hr));
+            return hr;
+        }
+
+        Assert(pD3D9Surf);
+    }
+
+    hr = pDevice9If->SetRenderTarget(iRt, pD3D9Surf);
+    if (hr == S_OK)
+    {
+        pDevice->apRTs[iRt] = pAlloc;
+    }
+    else
+    {
+        /** @todo This is workaround for wine 1 render target. */
+        if (!pAlloc)
+        {
+            pDevice->apRTs[iRt] = NULL;
+            hr = S_OK;
+        }
+        else
+        {
+            AssertFailed();
+        }
+    }
+
+    if (pD3D9Surf)
+    {
+        pD3D9Surf->Release();
+    }
+
+    return hr;
+}
+#endif
+
+HRESULT APIENTRY GaDdiSetRenderTarget(HANDLE hDevice, const D3DDDIARG_SETRENDERTARGET *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    AssertReturn(pData->RenderTargetIndex < pDevice->cRTs, E_INVALIDARG);
+
+    HRESULT hr = S_OK;
+    PVBOXWDDMDISP_ALLOCATION pAlloc = NULL;
+    IDirect3DSurface9 *pD3D9Surf = NULL;
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hRenderTarget;
+    if (pRc)
+    {
+        // VBOXVDBG_CHECK_SMSYNC(pRc);
+        Assert(pData->SubResourceIndex < pRc->cAllocations);
+
+        pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
+        hr = VBoxD3DIfSurfGet(pAlloc->pRc, pAlloc->iAlloc, &pD3D9Surf);
+        if (FAILED(hr))
+        {
+            WARN(("VBoxD3DIfSurfGet failed, hr(0x%x)",hr));
+            return hr;
+        }
+
+        Assert(pD3D9Surf);
+    }
+
+    hr = pDevice9If->SetRenderTarget(pData->RenderTargetIndex, pD3D9Surf);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        pDevice->apRTs[pData->RenderTargetIndex] = pAlloc;
+    }
+
+    if (pD3D9Surf)
+    {
+        pD3D9Surf->Release();
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiSetDepthStencil(HANDLE hDevice, const D3DDDIARG_SETDEPTHSTENCIL *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    IDirect3DDevice9 *pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    HRESULT hr = S_OK;
+    IDirect3DSurface9 *pD3D9Surf = NULL;
+
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hZBuffer;
+    if (pRc)
+    {
+        // VBOXVDBG_CHECK_SMSYNC(pRc);
+        Assert(pRc->cAllocations == 1);
+
+        hr = VBoxD3DIfSurfGet(pRc, 0, &pD3D9Surf);
+        if (FAILED(hr))
+            WARN(("VBoxD3DIfSurfGet failed, hr (0x%x)",hr));
+        else
+            Assert(pD3D9Surf);
+    }
+
+    if (SUCCEEDED(hr))
+    {
+        hr = pDevice9If->SetDepthStencilSurface(pD3D9Surf);
+        if (SUCCEEDED(hr))
+        {
+            pDevice->pDepthStencilRc = pRc;
+        }
+        else
+            WARN(("VBoxD3DIfSurfGet failed, hr (0x%x)",hr));
+
+        if (pD3D9Surf)
+            pD3D9Surf->Release();
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(0x%x)\n", hDevice, hr));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiGenerateMipSubLevels(HANDLE hDevice, const D3DDDIARG_GENERATEMIPSUBLEVELS *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiCreateDecodeDevice(HANDLE hDevice, D3DDDIARG_CREATEDECODEDEVICE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDestroyDecodeDevice(HANDLE hDevice, HANDLE hDecodeDevice)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(hDecodeDevice);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiSetDecodeRenderTarget(HANDLE hDevice, const D3DDDIARG_SETDECODERENDERTARGET *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDecodeBeginFrame(HANDLE hDevice, D3DDDIARG_DECODEBEGINFRAME* pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDecodeEndFrame(HANDLE hDevice, D3DDDIARG_DECODEENDFRAME* pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDecodeExecute(HANDLE hDevice, const D3DDDIARG_DECODEEXECUTE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDecodeExtensionExecute(HANDLE hDevice, const D3DDDIARG_DECODEEXTENSIONEXECUTE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiCreateVideoProcessDevice(HANDLE hDevice, D3DDDIARG_CREATEVIDEOPROCESSDEVICE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDestroyVideoProcessDevice(HANDLE hDevice, HANDLE hVideoProcessor)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(hVideoProcessor);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiVideoProcessBeginFrame(HANDLE hDevice, HANDLE hVideoProcessor)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(hVideoProcessor);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiVideoProcessEndFrame(HANDLE hDevice, D3DDDIARG_VIDEOPROCESSENDFRAME* pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiSetVideoProcessRenderTarget(HANDLE hDevice,
+                                                  const D3DDDIARG_SETVIDEOPROCESSRENDERTARGET *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiVideoProcessBlt(HANDLE hDevice, const D3DDDIARG_VIDEOPROCESSBLT *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiCreateExtensionDevice(HANDLE hDevice, D3DDDIARG_CREATEEXTENSIONDEVICE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDestroyExtensionDevice(HANDLE hDevice, HANDLE hExtension)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(hExtension);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiExtensionExecute(HANDLE hDevice, const D3DDDIARG_EXTENSIONEXECUTE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+AssertCompile(sizeof(RECT) == sizeof(D3DDDIRECT));
+AssertCompile(RT_SIZEOFMEMB(RECT, left)   == RT_SIZEOFMEMB(D3DDDIRECT, left));
+AssertCompile(RT_SIZEOFMEMB(RECT, right)  == RT_SIZEOFMEMB(D3DDDIRECT, right));
+AssertCompile(RT_SIZEOFMEMB(RECT, top)    == RT_SIZEOFMEMB(D3DDDIRECT, top));
+AssertCompile(RT_SIZEOFMEMB(RECT, bottom) == RT_SIZEOFMEMB(D3DDDIRECT, bottom));
+AssertCompile(RT_OFFSETOF(RECT, left)   == RT_OFFSETOF(D3DDDIRECT, left));
+AssertCompile(RT_OFFSETOF(RECT, right)  == RT_OFFSETOF(D3DDDIRECT, right));
+AssertCompile(RT_OFFSETOF(RECT, top)    == RT_OFFSETOF(D3DDDIRECT, top));
+AssertCompile(RT_OFFSETOF(RECT, bottom) == RT_OFFSETOF(D3DDDIRECT, bottom));
+
+HRESULT APIENTRY GaDdiCreateOverlay(HANDLE hDevice, D3DDDIARG_CREATEOVERLAY *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->OverlayInfo.hResource;
+    AssertReturn(pData->OverlayInfo.SubResourceIndex < pRc->cAllocations, E_INVALIDARG);
+
+    HRESULT hr = S_OK;
+    PVBOXWDDMDISP_OVERLAY pOverlay = (PVBOXWDDMDISP_OVERLAY)RTMemAllocZ(sizeof(VBOXWDDMDISP_OVERLAY));
+    Assert(pOverlay);
+    if (pOverlay)
+    {
+        PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->OverlayInfo.SubResourceIndex];
+
+        VBOXWDDM_OVERLAY_INFO OurInfo;
+        OurInfo.OverlayDesc.DstColorKeyLow = pData->OverlayInfo.DstColorKeyLow;
+        OurInfo.OverlayDesc.DstColorKeyHigh = pData->OverlayInfo.DstColorKeyHigh;
+        OurInfo.OverlayDesc.SrcColorKeyLow = pData->OverlayInfo.SrcColorKeyLow;
+        OurInfo.OverlayDesc.SrcColorKeyHigh = pData->OverlayInfo.SrcColorKeyHigh;
+        OurInfo.OverlayDesc.fFlags = pData->OverlayInfo.Flags.Value;
+
+        vboxWddmDirtyRegionClear(&OurInfo.DirtyRegion);
+
+        Assert(!pAlloc->LockInfo.cLocks);
+        vboxWddmDirtyRegionUnite(&OurInfo.DirtyRegion, &pAlloc->DirtyRegion);
+
+        D3DDDICB_CREATEOVERLAY OverInfo;
+        OverInfo.VidPnSourceId = pData->VidPnSourceId;
+        OverInfo.OverlayInfo.hAllocation = pAlloc->hAllocation;
+        Assert(pAlloc->hAllocation);
+        OverInfo.OverlayInfo.DstRect = *(D3DDDIRECT*)((void*)&pData->OverlayInfo.DstRect);
+        OverInfo.OverlayInfo.SrcRect = *(D3DDDIRECT*)((void*)&pData->OverlayInfo.SrcRect);
+        OverInfo.OverlayInfo.pPrivateDriverData = &OurInfo;
+        OverInfo.OverlayInfo.PrivateDriverDataSize = sizeof (OurInfo);
+        OverInfo.hKernelOverlay = NULL; /* <-- out */
+
+        hr = pDevice->RtCallbacks.pfnCreateOverlayCb(pDevice->hDevice, &OverInfo);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            Assert(OverInfo.hKernelOverlay);
+            pOverlay->hOverlay = OverInfo.hKernelOverlay;
+            pOverlay->VidPnSourceId = pData->VidPnSourceId;
+
+            Assert(!pAlloc->LockInfo.cLocks);
+            if (!pAlloc->LockInfo.cLocks)
+            {
+                /* we have reported the dirty rect, may clear it if no locks are pending currently */
+                vboxWddmDirtyRegionClear(&pAlloc->DirtyRegion);
+            }
+
+            pData->hOverlay = pOverlay;
+        }
+        else
+        {
+            RTMemFree(pOverlay);
+        }
+    }
+    else
+        hr = E_OUTOFMEMORY;
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiUpdateOverlay(HANDLE hDevice, const D3DDDIARG_UPDATEOVERLAY *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->OverlayInfo.hResource;
+    Assert(pRc);
+    AssertReturn(pRc->cAllocations > pData->OverlayInfo.SubResourceIndex, E_INVALIDARG);
+
+    PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->OverlayInfo.SubResourceIndex];
+
+    HRESULT hr = S_OK;
+    PVBOXWDDMDISP_OVERLAY pOverlay = (PVBOXWDDMDISP_OVERLAY)pData->hOverlay;
+
+    VBOXWDDM_OVERLAY_INFO OurInfo;
+    OurInfo.OverlayDesc.DstColorKeyLow = pData->OverlayInfo.DstColorKeyLow;
+    OurInfo.OverlayDesc.DstColorKeyHigh = pData->OverlayInfo.DstColorKeyHigh;
+    OurInfo.OverlayDesc.SrcColorKeyLow = pData->OverlayInfo.SrcColorKeyLow;
+    OurInfo.OverlayDesc.SrcColorKeyHigh = pData->OverlayInfo.SrcColorKeyHigh;
+    OurInfo.OverlayDesc.fFlags = pData->OverlayInfo.Flags.Value;
+    vboxWddmDirtyRegionClear(&OurInfo.DirtyRegion);
+
+    Assert(!pAlloc->LockInfo.cLocks);
+    vboxWddmDirtyRegionUnite(&OurInfo.DirtyRegion, &pAlloc->DirtyRegion);
+
+    D3DDDICB_UPDATEOVERLAY OverInfo;
+    OverInfo.hKernelOverlay = pOverlay->hOverlay;
+    OverInfo.OverlayInfo.hAllocation = pAlloc->hAllocation;
+    OverInfo.OverlayInfo.DstRect = *(D3DDDIRECT*)((void*)&pData->OverlayInfo.DstRect);
+    OverInfo.OverlayInfo.SrcRect = *(D3DDDIRECT*)((void*)&pData->OverlayInfo.SrcRect);
+    OverInfo.OverlayInfo.pPrivateDriverData = &OurInfo;
+    OverInfo.OverlayInfo.PrivateDriverDataSize = sizeof (OurInfo);
+
+    hr = pDevice->RtCallbacks.pfnUpdateOverlayCb(pDevice->hDevice, &OverInfo);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        Assert(!pAlloc->LockInfo.cLocks);
+        if (!pAlloc->LockInfo.cLocks)
+        {
+            /* we have reported the dirty rect, may clear it if no locks are pending currently */
+            vboxWddmDirtyRegionClear(&pAlloc->DirtyRegion);
+        }
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiFlipOverlay(HANDLE hDevice, const D3DDDIARG_FLIPOVERLAY *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+
+    PVBOXWDDMDISP_RESOURCE pRc = (PVBOXWDDMDISP_RESOURCE)pData->hSource;
+    Assert(pRc);
+    Assert(pRc->cAllocations > pData->SourceIndex);
+
+    PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SourceIndex];
+
+    HRESULT hr = S_OK;
+    PVBOXWDDMDISP_OVERLAY pOverlay = (PVBOXWDDMDISP_OVERLAY)pData->hOverlay;
+
+    VBOXWDDM_OVERLAYFLIP_INFO OurInfo;
+    vboxWddmDirtyRegionClear(&OurInfo.DirtyRegion);
+    Assert(!pAlloc->LockInfo.cLocks);
+    vboxWddmDirtyRegionUnite(&OurInfo.DirtyRegion, &pAlloc->DirtyRegion);
+
+    D3DDDICB_FLIPOVERLAY OverInfo;
+    OverInfo.hKernelOverlay = pOverlay->hOverlay;
+    OverInfo.hSource = pAlloc->hAllocation;
+    OverInfo.pPrivateDriverData = &OurInfo;
+    OverInfo.PrivateDriverDataSize = sizeof (OurInfo);
+
+    hr = pDevice->RtCallbacks.pfnFlipOverlayCb(pDevice->hDevice, &OverInfo);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        Assert(!pAlloc->LockInfo.cLocks);
+        if (!pAlloc->LockInfo.cLocks)
+        {
+            /* we have reported the dirty rect, may clear it if no locks are pending currently */
+            vboxWddmDirtyRegionClear(&pAlloc->DirtyRegion);
+        }
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiGetOverlayColorControls(HANDLE hDevice, D3DDDIARG_GETOVERLAYCOLORCONTROLS *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiSetOverlayColorControls(HANDLE hDevice, const D3DDDIARG_SETOVERLAYCOLORCONTROLS *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDestroyOverlay(HANDLE hDevice, const D3DDDIARG_DESTROYOVERLAY *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+
+    PVBOXWDDMDISP_OVERLAY pOverlay = (PVBOXWDDMDISP_OVERLAY)pData->hOverlay;
+
+    D3DDDICB_DESTROYOVERLAY OverInfo;
+    OverInfo.hKernelOverlay = pOverlay->hOverlay;
+
+    HRESULT hr = pDevice->RtCallbacks.pfnDestroyOverlayCb(pDevice->hDevice, &OverInfo);
+    Assert(hr == S_OK);
+    if (hr == S_OK)
+    {
+        RTMemFree(pOverlay);
+    }
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiQueryResourceResidency(HANDLE hDevice, const D3DDDIARG_QUERYRESOURCERESIDENCY *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    HRESULT hr = S_OK;
+    /** @todo check residency for the "real" allocations */
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiGetCaptureAllocationHandle(HANDLE hDevice, D3DDDIARG_GETCAPTUREALLOCATIONHANDLE *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiCaptureToSysMem(HANDLE hDevice, const D3DDDIARG_CAPTURETOSYSMEM *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF(pData);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDrawRectPatch(HANDLE hDevice, const D3DDDIARG_DRAWRECTPATCH *pData,
+                                    const D3DDDIRECTPATCH_INFO *pInfo, const FLOAT *pPatch)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF3(pData, pInfo, pPatch);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDrawTriPatch(HANDLE hDevice, const D3DDDIARG_DRAWTRIPATCH *pData,
+                                   const D3DDDITRIPATCH_INFO *pInfo, const FLOAT *pPatch)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    RT_NOREF3(pData, pInfo, pPatch);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    RT_NOREF(pDevice);
+
+    /// @todo Not implemented.
+    AssertFailed();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return E_NOTIMPL;
+}
+
+HRESULT APIENTRY GaDdiDestroyDevice(HANDLE hDevice)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
+    AssertReturn(pDevice->pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA, E_FAIL);
+
+    PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
+    if (VBOXDISPMODE_IS_3D(pAdapter))
+    {
+        if (pDevice->pDevice9If)
+        {
+            pDevice->pDevice9If->Release();
+            pDevice->pDevice9If = NULL;
+        }
+    }
+
+    RTMemFree(pDevice);
+
+    vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p)\n", hDevice));
+    return S_OK;
+}
+
+HRESULT APIENTRY GaDdiAdapterCreateDevice(HANDLE hAdapter, D3DDDIARG_CREATEDEVICE *pCreateData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    HRESULT hr = S_OK;
+
+    vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p), Interface(%d), Version(%d)\n", hAdapter, pCreateData->Interface, pCreateData->Version));
+
+    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
+    AssertReturn(pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VMSVGA, E_INVALIDARG);
+
+    PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)RTMemAllocZ(RT_UOFFSETOF_DYN(VBOXWDDMDISP_DEVICE,
+                                                                                      apRTs[pAdapter->D3D.cMaxSimRTs]));
+    if (pDevice)
+    {
+        /*
+         * Initialize our device object.
+         */
+        pDevice->cRTs                    = pAdapter->D3D.cMaxSimRTs;
+        pDevice->pfnCreateDirect3DDevice = GaD3DIfDeviceCreate;
+        pDevice->pfnCreateSharedPrimary  = GaD3DIfCreateSharedPrimary;
+        pDevice->hDevice                 = pCreateData->hDevice;
+        pDevice->pAdapter                = pAdapter;
+        pDevice->u32IfVersion            = pCreateData->Interface;
+        pDevice->uRtVersion              = pCreateData->Version;
+        pDevice->RtCallbacks             = *pCreateData->pCallbacks;
+        pDevice->pvCmdBuffer             = pCreateData->pCommandBuffer;
+        pDevice->cbCmdBuffer             = pCreateData->CommandBufferSize;
+        pDevice->fFlags                  = pCreateData->Flags;
+
+        /* Set Viewport to some default values */
+        pDevice->ViewPort.X      = 0;
+        pDevice->ViewPort.Y      = 0;
+        pDevice->ViewPort.Width  = 1;
+        pDevice->ViewPort.Height = 1;
+        pDevice->ViewPort.MinZ   = 0.;
+        pDevice->ViewPort.MaxZ   = 1.;
+
+        /*
+         * Set data for the DX runtime.
+         */
+        pCreateData->hDevice = pDevice;
+
+        pCreateData->pDeviceFuncs->pfnSetRenderState            = GaDdiSetRenderState;
+        pCreateData->pDeviceFuncs->pfnUpdateWInfo               = GaDdiUpdateWInfo;
+        pCreateData->pDeviceFuncs->pfnValidateDevice            = GaDdiValidateDevice;
+        pCreateData->pDeviceFuncs->pfnSetTextureStageState      = GaDdiSetTextureStageState;
+        pCreateData->pDeviceFuncs->pfnSetTexture                = GaDdiSetTexture;
+        pCreateData->pDeviceFuncs->pfnSetPixelShader            = GaDdiSetPixelShader;
+        pCreateData->pDeviceFuncs->pfnSetPixelShaderConst       = GaDdiSetPixelShaderConst;
+        pCreateData->pDeviceFuncs->pfnSetStreamSourceUm         = GaDdiSetStreamSourceUm;
+        pCreateData->pDeviceFuncs->pfnSetIndices                = GaDdiSetIndices;
+        pCreateData->pDeviceFuncs->pfnSetIndicesUm              = GaDdiSetIndicesUm;
+        pCreateData->pDeviceFuncs->pfnDrawPrimitive             = GaDdiDrawPrimitive;
+        pCreateData->pDeviceFuncs->pfnDrawIndexedPrimitive      = GaDdiDrawIndexedPrimitive;
+        pCreateData->pDeviceFuncs->pfnDrawRectPatch             = GaDdiDrawRectPatch;
+        pCreateData->pDeviceFuncs->pfnDrawTriPatch              = GaDdiDrawTriPatch;
+        pCreateData->pDeviceFuncs->pfnDrawPrimitive2            = GaDdiDrawPrimitive2;
+        pCreateData->pDeviceFuncs->pfnDrawIndexedPrimitive2     = GaDdiDrawIndexedPrimitive2;
+        pCreateData->pDeviceFuncs->pfnVolBlt                    = GaDdiVolBlt;
+        pCreateData->pDeviceFuncs->pfnBufBlt                    = GaDdiBufBlt;
+        pCreateData->pDeviceFuncs->pfnTexBlt                    = GaDdiTexBlt;
+        pCreateData->pDeviceFuncs->pfnStateSet                  = GaDdiStateSet;
+        pCreateData->pDeviceFuncs->pfnSetPriority               = GaDdiSetPriority;
+        pCreateData->pDeviceFuncs->pfnClear                     = GaDdiClear;
+        pCreateData->pDeviceFuncs->pfnUpdatePalette             = GaDdiUpdatePalette;
+        pCreateData->pDeviceFuncs->pfnSetPalette                = GaDdiSetPalette;
+        pCreateData->pDeviceFuncs->pfnSetVertexShaderConst      = GaDdiSetVertexShaderConst;
+        pCreateData->pDeviceFuncs->pfnMultiplyTransform         = GaDdiMultiplyTransform;
+        pCreateData->pDeviceFuncs->pfnSetTransform              = GaDdiSetTransform;
+        pCreateData->pDeviceFuncs->pfnSetViewport               = GaDdiSetViewport;
+        pCreateData->pDeviceFuncs->pfnSetZRange                 = GaDdiSetZRange;
+        pCreateData->pDeviceFuncs->pfnSetMaterial               = GaDdiSetMaterial;
+        pCreateData->pDeviceFuncs->pfnSetLight                  = GaDdiSetLight;
+        pCreateData->pDeviceFuncs->pfnCreateLight               = GaDdiCreateLight;
+        pCreateData->pDeviceFuncs->pfnDestroyLight              = GaDdiDestroyLight;
+        pCreateData->pDeviceFuncs->pfnSetClipPlane              = GaDdiSetClipPlane;
+        pCreateData->pDeviceFuncs->pfnGetInfo                   = GaDdiGetInfo;
+        pCreateData->pDeviceFuncs->pfnLock                      = GaDdiLock;
+        pCreateData->pDeviceFuncs->pfnUnlock                    = GaDdiUnlock;
+        pCreateData->pDeviceFuncs->pfnCreateResource            = GaDdiCreateResource;
+        pCreateData->pDeviceFuncs->pfnDestroyResource           = GaDdiDestroyResource;
+        pCreateData->pDeviceFuncs->pfnSetDisplayMode            = GaDdiSetDisplayMode;
+        pCreateData->pDeviceFuncs->pfnPresent                   = GaDdiPresent;
+        pCreateData->pDeviceFuncs->pfnFlush                     = GaDdiFlush;
+        pCreateData->pDeviceFuncs->pfnCreateVertexShaderFunc    = GaDdiCreateVertexShaderFunc;
+        pCreateData->pDeviceFuncs->pfnDeleteVertexShaderFunc    = GaDdiDeleteVertexShaderFunc;
+        pCreateData->pDeviceFuncs->pfnSetVertexShaderFunc       = GaDdiSetVertexShaderFunc;
+        pCreateData->pDeviceFuncs->pfnCreateVertexShaderDecl    = GaDdiCreateVertexShaderDecl;
+        pCreateData->pDeviceFuncs->pfnDeleteVertexShaderDecl    = GaDdiDeleteVertexShaderDecl;
+        pCreateData->pDeviceFuncs->pfnSetVertexShaderDecl       = GaDdiSetVertexShaderDecl;
+        pCreateData->pDeviceFuncs->pfnSetVertexShaderConstI     = GaDdiSetVertexShaderConstI;
+        pCreateData->pDeviceFuncs->pfnSetVertexShaderConstB     = GaDdiSetVertexShaderConstB;
+        pCreateData->pDeviceFuncs->pfnSetScissorRect            = GaDdiSetScissorRect;
+        pCreateData->pDeviceFuncs->pfnSetStreamSource           = GaDdiSetStreamSource;
+        pCreateData->pDeviceFuncs->pfnSetStreamSourceFreq       = GaDdiSetStreamSourceFreq;
+        pCreateData->pDeviceFuncs->pfnSetConvolutionKernelMono  = GaDdiSetConvolutionKernelMono;
+        pCreateData->pDeviceFuncs->pfnComposeRects              = GaDdiComposeRects;
+        pCreateData->pDeviceFuncs->pfnBlt                       = GaDdiBlt;
+        pCreateData->pDeviceFuncs->pfnColorFill                 = GaDdiColorFill;
+        pCreateData->pDeviceFuncs->pfnDepthFill                 = GaDdiDepthFill;
+        pCreateData->pDeviceFuncs->pfnCreateQuery               = GaDdiCreateQuery;
+        pCreateData->pDeviceFuncs->pfnDestroyQuery              = GaDdiDestroyQuery;
+        pCreateData->pDeviceFuncs->pfnIssueQuery                = GaDdiIssueQuery;
+        pCreateData->pDeviceFuncs->pfnGetQueryData              = GaDdiGetQueryData;
+        pCreateData->pDeviceFuncs->pfnSetRenderTarget           = GaDdiSetRenderTarget;
+        pCreateData->pDeviceFuncs->pfnSetDepthStencil           = GaDdiSetDepthStencil;
+        pCreateData->pDeviceFuncs->pfnGenerateMipSubLevels      = GaDdiGenerateMipSubLevels;
+        pCreateData->pDeviceFuncs->pfnSetPixelShaderConstI      = GaDdiSetPixelShaderConstI;
+        pCreateData->pDeviceFuncs->pfnSetPixelShaderConstB      = GaDdiSetPixelShaderConstB;
+        pCreateData->pDeviceFuncs->pfnCreatePixelShader         = GaDdiCreatePixelShader;
+        pCreateData->pDeviceFuncs->pfnDeletePixelShader         = GaDdiDeletePixelShader;
+        pCreateData->pDeviceFuncs->pfnCreateDecodeDevice        = GaDdiCreateDecodeDevice;
+        pCreateData->pDeviceFuncs->pfnDestroyDecodeDevice       = GaDdiDestroyDecodeDevice;
+        pCreateData->pDeviceFuncs->pfnSetDecodeRenderTarget     = GaDdiSetDecodeRenderTarget;
+        pCreateData->pDeviceFuncs->pfnDecodeBeginFrame          = GaDdiDecodeBeginFrame;
+        pCreateData->pDeviceFuncs->pfnDecodeEndFrame            = GaDdiDecodeEndFrame;
+        pCreateData->pDeviceFuncs->pfnDecodeExecute             = GaDdiDecodeExecute;
+        pCreateData->pDeviceFuncs->pfnDecodeExtensionExecute    = GaDdiDecodeExtensionExecute;
+        pCreateData->pDeviceFuncs->pfnCreateVideoProcessDevice  = GaDdiCreateVideoProcessDevice;
+        pCreateData->pDeviceFuncs->pfnDestroyVideoProcessDevice = GaDdiDestroyVideoProcessDevice;
+        pCreateData->pDeviceFuncs->pfnVideoProcessBeginFrame    = GaDdiVideoProcessBeginFrame;
+        pCreateData->pDeviceFuncs->pfnVideoProcessEndFrame      = GaDdiVideoProcessEndFrame;
+        pCreateData->pDeviceFuncs->pfnSetVideoProcessRenderTarget = GaDdiSetVideoProcessRenderTarget;
+        pCreateData->pDeviceFuncs->pfnVideoProcessBlt           = GaDdiVideoProcessBlt;
+        pCreateData->pDeviceFuncs->pfnCreateExtensionDevice     = GaDdiCreateExtensionDevice;
+        pCreateData->pDeviceFuncs->pfnDestroyExtensionDevice    = GaDdiDestroyExtensionDevice;
+        pCreateData->pDeviceFuncs->pfnExtensionExecute          = GaDdiExtensionExecute;
+        pCreateData->pDeviceFuncs->pfnCreateOverlay             = GaDdiCreateOverlay;
+        pCreateData->pDeviceFuncs->pfnUpdateOverlay             = GaDdiUpdateOverlay;
+        pCreateData->pDeviceFuncs->pfnFlipOverlay               = GaDdiFlipOverlay;
+        pCreateData->pDeviceFuncs->pfnGetOverlayColorControls   = GaDdiGetOverlayColorControls;
+        pCreateData->pDeviceFuncs->pfnSetOverlayColorControls   = GaDdiSetOverlayColorControls;
+        pCreateData->pDeviceFuncs->pfnDestroyOverlay            = GaDdiDestroyOverlay;
+        pCreateData->pDeviceFuncs->pfnDestroyDevice             = GaDdiDestroyDevice;
+        pCreateData->pDeviceFuncs->pfnQueryResourceResidency    = GaDdiQueryResourceResidency;
+        pCreateData->pDeviceFuncs->pfnOpenResource              = GaDdiOpenResource;
+        pCreateData->pDeviceFuncs->pfnGetCaptureAllocationHandle = GaDdiGetCaptureAllocationHandle;
+        pCreateData->pDeviceFuncs->pfnCaptureToSysMem           = GaDdiCaptureToSysMem;
+        // pCreateData->pDeviceFuncs->pfnLockAsync                 = NULL; /* Optional. */
+        // pCreateData->pDeviceFuncs->pfnUnlockAsync               = NULL; /* Optional. */
+        // pCreateData->pDeviceFuncs->pfnRename                    = NULL; /* Optional. */
+
+    }
+    else
+    {
+        vboxVDbgPrintR((__FUNCTION__": RTMemAllocZ returned NULL\n"));
+        hr = E_OUTOFMEMORY;
+    }
+
+#ifdef VBOX_WITH_MESA3D_D3DTEST
+    /* Built-in gallium backend test for early development stages.
+     * Use it only with kernel debugger attached to the VM.
+     */
+    extern void GaDrvTest(IGalliumStack *pGalliumStack, PVBOXWDDMDISP_DEVICE pDevice);
+    if (SUCCEEDED(hr))
+       GaDrvTest(pAdapter->D3D.pGalliumStack, pDevice);
+#endif
+
+    vboxVDbgPrint(("<== "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
+    return hr;
+}
+
+HRESULT APIENTRY GaDdiAdapterCloseAdapter(IN HANDLE hAdapter)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
+
+    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
+    if (VBOXDISPMODE_IS_3D(pAdapter))
+    {
+        VBoxDispD3DGlobalClose(&pAdapter->D3D, &pAdapter->Formats);
+    }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    else
+    {
+        VBoxDispD3DGlobal2DFormatsTerm(pAdapter);
+    }
+#endif
+
+    RTMemFree(pAdapter);
+
+    vboxVDbgPrint(("<== "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
+
+    return S_OK;
+}
+
+static D3DDDIQUERYTYPE const gVBoxQueryTypes[] = {
+        D3DDDIQUERYTYPE_EVENT,
+        D3DDDIQUERYTYPE_OCCLUSION
+};
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+static bool vboxVhwaHasCKeying(PVBOXWDDMDISP_ADAPTER pAdapter)
+{
+    for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
+    {
+        VBOXVHWA_INFO* pSettings = &pAdapter->aHeads[i].Vhwa.Settings;
+        if (   (pSettings->fFlags & VBOXVHWA_F_ENABLED)
+            && (   (pSettings->fFlags & VBOXVHWA_F_CKEY_DST)
+                || (pSettings->fFlags & VBOXVHWA_F_CKEY_SRC)))
+            return true;
+    }
+    return false;
+}
+#endif
+
+HRESULT APIENTRY GaDdiAdapterGetCaps(HANDLE hAdapter, const D3DDDIARG_GETCAPS *pData)
+{
+    VBOXVDBG_BREAK_DDI();
+
+    vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p), caps type(%d)\n", hAdapter, pData->Type));
+
+    HRESULT hr = S_OK;
+    PVBOXWDDMDISP_ADAPTER pAdapter = (PVBOXWDDMDISP_ADAPTER)hAdapter;
+
+    switch (pData->Type)
+    {
+        case D3DDDICAPS_DDRAW:
+        {
+            Assert(!VBOXDISPMODE_IS_3D(pAdapter));
+            Assert(pData->DataSize == sizeof(DDRAW_CAPS));
+            if (pData->DataSize >= sizeof(DDRAW_CAPS))
+            {
+                memset(pData->pData, 0, sizeof(DDRAW_CAPS));
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                if (!VBOXDISPMODE_IS_3D(pAdapter))
+                {
+                    if (vboxVhwaHasCKeying(pAdapter))
+                    {
+                        DDRAW_CAPS *pCaps = (DDRAW_CAPS*)pData->pData;
+                        pCaps->Caps |= DDRAW_CAPS_COLORKEY;
+//                        pCaps->Caps2 |= DDRAW_CAPS2_FLIPNOVSYNC;
+                    }
+                }
+                else
+                {
+                    WARN(("D3DDDICAPS_DDRAW query for D3D mode!"));
+                }
+#endif
+            }
+            else
+                hr = E_INVALIDARG;
+            break;
+        }
+
+        case D3DDDICAPS_DDRAW_MODE_SPECIFIC:
+        {
+            Assert(!VBOXDISPMODE_IS_3D(pAdapter));
+            Assert(pData->DataSize == sizeof(DDRAW_MODE_SPECIFIC_CAPS));
+            if (pData->DataSize >= sizeof(DDRAW_MODE_SPECIFIC_CAPS))
+            {
+                DDRAW_MODE_SPECIFIC_CAPS *pCaps = (DDRAW_MODE_SPECIFIC_CAPS *)pData->pData;
+                /* Do not overwrite the first "Head" field, zero starting with the one following "Head", i.e. Caps. */
+                memset(&pCaps->Caps, 0, sizeof(DDRAW_MODE_SPECIFIC_CAPS) - RT_UOFFSETOF(DDRAW_MODE_SPECIFIC_CAPS, Caps));
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                if (!VBOXDISPMODE_IS_3D(pAdapter))
+                {
+                    VBOXVHWA_INFO *pSettings = &pAdapter->aHeads[pCaps->Head].Vhwa.Settings;
+                    if (pSettings->fFlags & VBOXVHWA_F_ENABLED)
+                    {
+                        pCaps->Caps |= MODE_CAPS_OVERLAY | MODE_CAPS_OVERLAYSTRETCH;
+
+                        if (pSettings->fFlags & VBOXVHWA_F_CKEY_DST)
+                        {
+                            pCaps->CKeyCaps |= MODE_CKEYCAPS_DESTOVERLAY
+                                    | MODE_CKEYCAPS_DESTOVERLAYYUV /* ?? */
+                                    ;
+                        }
+
+                        if (pSettings->fFlags & VBOXVHWA_F_CKEY_SRC)
+                        {
+                            pCaps->CKeyCaps |= MODE_CKEYCAPS_SRCOVERLAY
+                                    | MODE_CKEYCAPS_SRCOVERLAYCLRSPACE /* ?? */
+                                    | MODE_CKEYCAPS_SRCOVERLAYCLRSPACEYUV /* ?? */
+                                    | MODE_CKEYCAPS_SRCOVERLAYYUV /* ?? */
+                                    ;
+                        }
+
+                        pCaps->FxCaps = MODE_FXCAPS_OVERLAYSHRINKX
+                                | MODE_FXCAPS_OVERLAYSHRINKY
+                                | MODE_FXCAPS_OVERLAYSTRETCHX
+                                | MODE_FXCAPS_OVERLAYSTRETCHY;
+
+
+                        pCaps->MaxVisibleOverlays = pSettings->cOverlaysSupported;
+                        pCaps->MinOverlayStretch = 1;
+                        pCaps->MaxOverlayStretch = 32000;
+                    }
+                }
+                else
+                {
+                    WARN(("D3DDDICAPS_DDRAW_MODE_SPECIFIC query for D3D mode!"));
+                }
+#endif
+            }
+            else
+                hr = E_INVALIDARG;
+            break;
+        }
+
+        case D3DDDICAPS_GETFORMATCOUNT:
+            *((uint32_t*)pData->pData) = pAdapter->Formats.cFormstOps;
+            break;
+
+        case D3DDDICAPS_GETFORMATDATA:
+            Assert(pData->DataSize == pAdapter->Formats.cFormstOps * sizeof(FORMATOP));
+            memcpy(pData->pData, pAdapter->Formats.paFormstOps, pAdapter->Formats.cFormstOps * sizeof(FORMATOP));
+            break;
+
+        case D3DDDICAPS_GETD3DQUERYCOUNT:
+            *((uint32_t*)pData->pData) = RT_ELEMENTS(gVBoxQueryTypes);
+            break;
+
+        case D3DDDICAPS_GETD3DQUERYDATA:
+            Assert(pData->DataSize == RT_ELEMENTS(gVBoxQueryTypes) * sizeof(D3DDDIQUERYTYPE));
+            memcpy(pData->pData, gVBoxQueryTypes, RT_ELEMENTS(gVBoxQueryTypes) * sizeof(D3DDDIQUERYTYPE));
+            break;
+
+        case D3DDDICAPS_GETD3D3CAPS:
+            Assert(!VBOXDISPMODE_IS_3D(pAdapter));
+            Assert(pData->DataSize == sizeof(D3DHAL_GLOBALDRIVERDATA));
+            if (pData->DataSize >= sizeof(D3DHAL_GLOBALDRIVERDATA))
+            {
+                D3DHAL_GLOBALDRIVERDATA *pCaps = (D3DHAL_GLOBALDRIVERDATA *)pData->pData;
+                memset (pCaps, 0, sizeof (D3DHAL_GLOBALDRIVERDATA));
+                pCaps->dwSize = sizeof (D3DHAL_GLOBALDRIVERDATA);
+                pCaps->hwCaps.dwSize = sizeof (D3DDEVICEDESC_V1);
+                pCaps->hwCaps.dwFlags = D3DDD_COLORMODEL
+                        | D3DDD_DEVCAPS
+                        | D3DDD_DEVICERENDERBITDEPTH;
+
+                pCaps->hwCaps.dcmColorModel = D3DCOLOR_RGB;
+                pCaps->hwCaps.dwDevCaps = D3DDEVCAPS_CANRENDERAFTERFLIP
+//                        | D3DDEVCAPS_DRAWPRIMTLVERTEX
+                        | D3DDEVCAPS_EXECUTESYSTEMMEMORY
+                        | D3DDEVCAPS_EXECUTEVIDEOMEMORY
+//                        | D3DDEVCAPS_FLOATTLVERTEX
+                        | D3DDEVCAPS_HWRASTERIZATION
+//                        | D3DDEVCAPS_HWTRANSFORMANDLIGHT
+//                        | D3DDEVCAPS_TLVERTEXSYSTEMMEMORY
+//                        | D3DDEVCAPS_TEXTUREVIDEOMEMORY
+                        ;
+                pCaps->hwCaps.dtcTransformCaps.dwSize = sizeof (D3DTRANSFORMCAPS);
+                pCaps->hwCaps.dtcTransformCaps.dwCaps = 0;
+                pCaps->hwCaps.bClipping = FALSE;
+                pCaps->hwCaps.dlcLightingCaps.dwSize = sizeof (D3DLIGHTINGCAPS);
+                pCaps->hwCaps.dlcLightingCaps.dwCaps = 0;
+                pCaps->hwCaps.dlcLightingCaps.dwLightingModel = 0;
+                pCaps->hwCaps.dlcLightingCaps.dwNumLights = 0;
+                pCaps->hwCaps.dpcLineCaps.dwSize = sizeof (D3DPRIMCAPS);
+                pCaps->hwCaps.dpcLineCaps.dwMiscCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwRasterCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwZCmpCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwSrcBlendCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwDestBlendCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwAlphaCmpCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwShadeCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwTextureCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwTextureFilterCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwTextureBlendCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwTextureAddressCaps = 0;
+                pCaps->hwCaps.dpcLineCaps.dwStippleWidth = 0;
+                pCaps->hwCaps.dpcLineCaps.dwStippleHeight = 0;
+
+                pCaps->hwCaps.dpcTriCaps.dwSize = sizeof (D3DPRIMCAPS);
+                pCaps->hwCaps.dpcTriCaps.dwMiscCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwRasterCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwZCmpCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwSrcBlendCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwDestBlendCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwAlphaCmpCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwShadeCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwTextureCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwTextureFilterCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwTextureBlendCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwTextureAddressCaps = 0;
+                pCaps->hwCaps.dpcTriCaps.dwStippleWidth = 0;
+                pCaps->hwCaps.dpcTriCaps.dwStippleHeight = 0;
+                pCaps->hwCaps.dwDeviceRenderBitDepth = DDBD_8 | DDBD_16 | DDBD_24 | DDBD_32;
+                pCaps->hwCaps.dwDeviceZBufferBitDepth = 0;
+                pCaps->hwCaps.dwMaxBufferSize = 0;
+                pCaps->hwCaps.dwMaxVertexCount = 0;
+
+
+                pCaps->dwNumVertices = 0;
+                pCaps->dwNumClipVertices = 0;
+                pCaps->dwNumTextureFormats = 0;//pAdapter->cSurfDescs;
+                pCaps->lpTextureFormats = NULL;//pAdapter->paSurfDescs;
+            }
+            else
+                hr = E_INVALIDARG;
+            break;
+
+        case D3DDDICAPS_GETD3D7CAPS:
+            Assert(!VBOXDISPMODE_IS_3D(pAdapter));
+            Assert(pData->DataSize == sizeof(D3DHAL_D3DEXTENDEDCAPS));
+            if (pData->DataSize >= sizeof(D3DHAL_D3DEXTENDEDCAPS))
+            {
+                memset(pData->pData, 0, sizeof(D3DHAL_D3DEXTENDEDCAPS));
+                D3DHAL_D3DEXTENDEDCAPS *pCaps = (D3DHAL_D3DEXTENDEDCAPS *)pData->pData;
+                pCaps->dwSize = sizeof(D3DHAL_D3DEXTENDEDCAPS);
+            }
+            else
+                hr = E_INVALIDARG;
+            break;
+
+        case D3DDDICAPS_GETD3D9CAPS:
+        {
+            Assert(pData->DataSize == sizeof(D3DCAPS9));
+            if (pData->DataSize >= sizeof(D3DCAPS9))
+            {
+                if (VBOXDISPMODE_IS_3D(pAdapter))
+                {
+                    memcpy(pData->pData, &pAdapter->D3D.Caps, sizeof(D3DCAPS9));
+                }
+                else
+                {
+                    AssertFailed();
+                    memset(pData->pData, 0, sizeof (D3DCAPS9));
+                }
+            }
+            else
+                hr = E_INVALIDARG;
+            break;
+        }
+
+        case D3DDDICAPS_GETD3D8CAPS:
+        {
+            Assert(pData->DataSize == RT_UOFFSETOF(D3DCAPS9, DevCaps2));
+            if (pData->DataSize == RT_UOFFSETOF(D3DCAPS9, DevCaps2))
+            {
+                if (VBOXDISPMODE_IS_3D(pAdapter))
+                {
+                    memcpy(pData->pData, &pAdapter->D3D.Caps, RT_UOFFSETOF(D3DCAPS9, DevCaps2));
+                }
+                else
+                {
+                    AssertFailed();
+                    memset(pData->pData, 0, RT_UOFFSETOF(D3DCAPS9, DevCaps2));
+                }
+            }
+            else
+                hr = E_INVALIDARG;
+            break;
+        }
+
+        case D3DDDICAPS_GETGAMMARAMPCAPS:
+            *((uint32_t*)pData->pData) = 0;
+            break;
+
+        case D3DDDICAPS_GETVIDEOPROCESSORCAPS:
+        case D3DDDICAPS_GETEXTENSIONGUIDCOUNT:
+        case D3DDDICAPS_GETDECODEGUIDCOUNT:
+        case D3DDDICAPS_GETVIDEOPROCESSORDEVICEGUIDCOUNT:
+        case D3DDDICAPS_GETVIDEOPROCESSORRTFORMATCOUNT:
+        case D3DDDICAPS_GETCONTENTPROTECTIONCAPS:
+            if (pData->pData && pData->DataSize)
+                memset(pData->pData, 0, pData->DataSize);
+            break;
+
+        case D3DDDICAPS_GETMULTISAMPLEQUALITYLEVELS:
+        case D3DDDICAPS_GETD3D5CAPS:
+        case D3DDDICAPS_GETD3D6CAPS:
+        case D3DDDICAPS_GETDECODEGUIDS:
+        case D3DDDICAPS_GETDECODERTFORMATCOUNT:
+        case D3DDDICAPS_GETDECODERTFORMATS:
+        case D3DDDICAPS_GETDECODECOMPRESSEDBUFFERINFOCOUNT:
+        case D3DDDICAPS_GETDECODECOMPRESSEDBUFFERINFO:
+        case D3DDDICAPS_GETDECODECONFIGURATIONCOUNT:
+        case D3DDDICAPS_GETDECODECONFIGURATIONS:
+        case D3DDDICAPS_GETVIDEOPROCESSORDEVICEGUIDS:
+        case D3DDDICAPS_GETVIDEOPROCESSORRTFORMATS:
+        case D3DDDICAPS_GETVIDEOPROCESSORRTSUBSTREAMFORMATCOUNT:
+        case D3DDDICAPS_GETVIDEOPROCESSORRTSUBSTREAMFORMATS:
+        case D3DDDICAPS_GETPROCAMPRANGE:
+        case D3DDDICAPS_FILTERPROPERTYRANGE:
+        case D3DDDICAPS_GETEXTENSIONGUIDS:
+        case D3DDDICAPS_GETEXTENSIONCAPS:
+            vboxVDbgPrint((__FUNCTION__": unimplemented caps type(%d)\n", pData->Type));
+            AssertFailed();
+            if (pData->pData && pData->DataSize)
+                memset(pData->pData, 0, pData->DataSize);
+            break;
+
+        default:
+            vboxVDbgPrint((__FUNCTION__": unknown caps type(%d)\n", pData->Type));
+            AssertFailed();
+    }
+
+    vboxVDbgPrint(("<== "__FUNCTION__", hAdapter(0x%p), caps type(%d)\n", hAdapter, pData->Type));
+    return S_OK;
 }
