@@ -1782,7 +1782,7 @@ static int vmmdevReqHandler_HGCMDisconnect(PVMMDEV pThis, VMMDevRequestHeader *p
 
 
 /**
- * Handles VMMDevReq_HGCMCall.
+ * Handles VMMDevReq_HGCMCall32 and VMMDevReq_HGCMCall64.
  *
  * @returns VBox status code that the guest should see.
  * @param   pThis           The VMMDev instance data.
@@ -2741,11 +2741,9 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
             break;
 
 # ifdef VBOX_WITH_64_BITS_GUESTS
-        case VMMDevReq_HGCMCall32:
         case VMMDevReq_HGCMCall64:
-# else
-        case VMMDevReq_HGCMCall:
-# endif /* VBOX_WITH_64_BITS_GUESTS */
+# endif
+        case VMMDevReq_HGCMCall32:
             vmmdevReqHdrSetHgcmAsyncExecute(pThis, GCPhysReqHdr, *ppLock);
             pReqHdr->rc = vmmdevReqHandler_HGCMCall(pThis, pReqHdr, GCPhysReqHdr, tsArrival, ppLock);
             Assert(pReqHdr->rc == VINF_HGCM_ASYNC_EXECUTE || RT_FAILURE_NP(pReqHdr->rc));

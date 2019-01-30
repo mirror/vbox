@@ -1048,7 +1048,7 @@ int vmmdevHGCMCall(PVMMDEV pThis, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHG
     ASSERT_GUEST_RETURN(   enmRequestType == VMMDevReq_HGCMCall32
                         || enmRequestType == VMMDevReq_HGCMCall64, VERR_INVALID_PARAMETER);
 #else
-    ASSERT_GUEST_RETURN(enmRequestType == VMMDevReq_HGCMCall, VERR_INVALID_PARAMETER);
+    ASSERT_GUEST_RETURN(enmRequestType == VMMDevReq_HGCMCall32, VERR_INVALID_PARAMETER);
 #endif
     RT_UNTRUSTED_VALIDATED_FENCE();
 
@@ -1371,10 +1371,8 @@ static int hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHG
                     {
 #ifdef VBOX_WITH_64_BITS_GUESTS
                         case VMMDevReq_HGCMCall64:
-                        case VMMDevReq_HGCMCall32:
-#else
-                        case VMMDevReq_HGCMCall:
 #endif
+                        case VMMDevReq_HGCMCall32:
                         {
                             VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)pHeader;
                             rc = vmmdevHGCMCompleteCallRequest(pThis, pCmd, pHGCMCall, (uint8_t *)pHeader);
@@ -1454,10 +1452,8 @@ static int hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHG
                 {
 #ifdef VBOX_WITH_64_BITS_GUESTS
                     case VMMDevReq_HGCMCall64:
-                    case VMMDevReq_HGCMCall32:
-#else
-                    case VMMDevReq_HGCMCall:
 #endif
+                    case VMMDevReq_HGCMCall32:
                     {
                         VMMDevHGCMCall *pHGCMCall = (VMMDevHGCMCall *)pHeader;
                         rc = vmmdevHGCMCompleteCallRequest(pThis, pCmd, pHGCMCall, (uint8_t *)pHeader);
@@ -2190,11 +2186,9 @@ static int vmmdevHGCMRestoreCommand(PVMMDEV pThis, uint32_t u32SSMVersion, const
         }
 
 #ifdef VBOX_WITH_64_BITS_GUESTS
-        case VMMDevReq_HGCMCall32:
         case VMMDevReq_HGCMCall64:
-#else
-        case VMMDevReq_HGCMCall:
 #endif
+        case VMMDevReq_HGCMCall32:
         {
             VMMDevHGCMCall *pReq = (VMMDevHGCMCall *)pReqHdr;
             rc = vmmdevHGCMRestoreCall(pThis, u32SSMVersion, pLoadedCmd, pReq, cbReq, enmRequestType,
