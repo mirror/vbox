@@ -55,8 +55,9 @@ public:
 
 protected:
 
-    void retranslateUi();
-    void keyPressEvent(QKeyEvent * pEvent);
+    void retranslateUi() /* override */;
+    void keyPressEvent(QKeyEvent * pEvent) /* override */;
+    void showEvent(QShowEvent *pEvent) /* override */;
 
 private slots:
 
@@ -184,6 +185,13 @@ void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)
             sigCreateSession(m_pUserNameEdit->text(), m_pPasswordEdit->text());
     }
     QWidget::keyPressEvent(pEvent);
+}
+
+void UIGuestSessionCreateWidget::showEvent(QShowEvent *pEvent)
+{
+    QIWithRetranslateUI<QWidget>::showEvent(pEvent);
+    if (m_pUserNameEdit)
+        m_pUserNameEdit->setFocus();
 }
 
 void UIGuestSessionCreateWidget::switchSessionCreateMode()
