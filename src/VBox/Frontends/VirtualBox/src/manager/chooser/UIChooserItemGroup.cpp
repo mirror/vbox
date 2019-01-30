@@ -320,6 +320,10 @@ void UIChooserItemGroup::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
     if (pos.y() >= iFullHeaderHeight)
         return;
 
+    /* Show enter-button: */
+    if (!isRoot() && m_pEnterButton)
+        m_pEnterButton->show();
+
     /* Call to base-class: */
     UIChooserItem::hoverMoveEvent(pEvent);
 
@@ -332,6 +336,10 @@ void UIChooserItemGroup::hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent)
     /* Skip if not hovered: */
     if (!isHovered())
         return;
+
+    /* Hide enter-button: */
+    if (m_pEnterButton)
+        m_pEnterButton->hide();
 
     /* Call to base-class: */
     UIChooserItem::hoverLeaveEvent(pEvent);
@@ -1775,10 +1783,6 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
     /* Should we add more info? */
     if (isHovered())
     {
-        /* Show enter-button: */
-        if (!isRoot() && m_pEnterButton)
-            m_pEnterButton->show();
-
         /* Prepare variables: */
         int iEnterButtonWidth = m_enterButtonSize.width();
 
@@ -1846,12 +1850,6 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
                         /* Pixmap to paint: */
                         m_groupsPixmap);
         }
-    }
-    else
-    {
-        /* Hide enter-button: */
-        if (m_pEnterButton)
-            m_pEnterButton->hide();
     }
 }
 
