@@ -474,7 +474,7 @@ shared_folder_setup()
         # the real path.  The "chcon" is there as a back-up for old guests.
         command -v semanage > /dev/null &&
             semanage fcontext -a -t mount_exec_t "${INSTALL_DIR}/other/mount.vboxsf"
-        chcon -t mount_exec_t "${INSTALL_DIR}/other/mount.vboxsf"
+        chcon -t mount_exec_t "${INSTALL_DIR}/other/mount.vboxsf" 2>/dev/null
     fi
 }
 
@@ -488,8 +488,9 @@ setup()
     test -n "$QUICKSETUP" || cleanup
     MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
     BUILDINTMP="$MODULE_SRC/build_in_tmp"
+    # chcon is needed on old Fedora/Redhat systems.  No one remembers which.
     test ! -e /etc/selinux/config ||
-        chcon -t bin_t "$BUILDINTMP"
+        chcon -t bin_t "$BUILDINTMP" 2>/dev/null
 
     if test -z "$INSTALL_NO_MODULE_BUILDS"; then
         if test -z "$QUICKSETUP"; then

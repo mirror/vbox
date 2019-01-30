@@ -166,7 +166,8 @@ setup_opengl()
             if command -v semanage > /dev/null; then
                 semanage fcontext -a -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
             fi
-            chcon -h  -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1"
+            # This is needed on old Fedora/Redhat systems.  No one remembers which.
+            chcon -h  -t lib_t "/var/lib/VBoxGuestAdditions/lib/libGL.so.1" 2>/dev/null
         fi
         echo "/var/lib/VBoxGuestAdditions/lib" > /etc/ld.so.conf.d/00vboxvideo.conf
     fi
@@ -464,13 +465,14 @@ EOF
     # open our drivers
     case "$redhat_release" in
         Fedora\ release\ 8* )
-            chcon -u system_u -t lib_t "${lib_dir}"/*.so
+            chcon -u system_u -t lib_t "${lib_dir}"/*.so 2>/dev/null
             ;;
     esac
 
     # Our logging code generates some glue code on 32-bit systems.  At least F10
     # needs a rule to allow this.  Send all output to /dev/null in case this is
     # completely irrelevant on the target system.
+    # chcon is needed on old Fedora/Redhat systems.  No one remembers which.
     chcon -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
     semanage fcontext -a -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
 
