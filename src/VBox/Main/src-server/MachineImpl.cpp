@@ -2244,7 +2244,7 @@ HRESULT Machine::removeCPUIDLeaf(ULONG aIdx, ULONG aSubIdx)
     /*
      * Do the removal.
      */
-    bool fModified = false;
+    bool fModified = mHWData.isBackedUp();
     for (settings::CpuIdLeafsList::iterator it = mHWData->mCpuIdLeafList.begin(); it != mHWData->mCpuIdLeafList.end(); )
     {
         settings::CpuIdLeaf &rLeaf= *it;
@@ -2257,8 +2257,14 @@ HRESULT Machine::removeCPUIDLeaf(ULONG aIdx, ULONG aSubIdx)
                 fModified = true;
                 i_setModified(IsModified_MachineData);
                 mHWData.backup();
+                // Start from the beginning, since mHWData.backup() creates
+                // a new list, causing iterator mixup. This makes sure that
+                // the settings are not unnecessarily marked as modified,
+                // at the price of extra list walking.
+                it = mHWData->mCpuIdLeafList.begin();
             }
-            it = mHWData->mCpuIdLeafList.erase(it);
+            else
+                it = mHWData->mCpuIdLeafList.erase(it);
         }
         else
             ++it;
