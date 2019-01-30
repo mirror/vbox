@@ -261,11 +261,11 @@ sf_splice_read(struct file *in, loff_t * poffset,
  * @param file          the file
  * @param buf           the buffer
  * @param size          length of the buffer
- * @param off           offset within the file
+ * @param off           offset within the file (in/out).
  * @returns the number of read bytes on success, Linux error code otherwise
  */
-static ssize_t sf_reg_read(struct file *file, char *buf, size_t size,
-			   loff_t * off)
+static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
+			   loff_t *off)
 {
 	int err;
 	void *tmp;
@@ -289,9 +289,40 @@ static ssize_t sf_reg_read(struct file *file, char *buf, size_t size,
 	if (!size)
 		return 0;
 
-	tmp =
-	    alloc_bounce_buffer(&tmp_size, &tmp_phys, size,
-				__PRETTY_FUNCTION__);
+#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+	/*
+	 * For small requests, try use an embedded buffer provided we get a heap block
+	 * that does not cross page boundraries (see host code).
+	 */
+	if (size <= PAGE_SIZE / 4 * 3 /* see allocator */) {
+		uint32_t const         cbReq = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) + size;
+		VBOXSFREADEMBEDDEDREQ *pReq  = (VBOXSFREADEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
+		if (   pReq
+		    && (PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
+			ssize_t cbRet;
+			int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->handle, pos, (uint32_t)size);
+			if (RT_SUCCESS(vrc)) {
+				cbRet = pReq->Parms.cb32Read.u.value32;
+				if (copy_to_user(buf, pReq->abData, cbRet) == 0)
+					*off += cbRet;
+				else
+					cbRet = -EPROTO;
+			} else
+				cbRet = -EPROTO;
+		        VbglR0PhysHeapFree(pReq);
+			return cbRet;
+		}
+		if (pReq)
+			VbglR0PhysHeapFree(pReq);
+	}
+
+//	/*
+//	 * For other requests, use a bounce buffer.
+//	 */
+//	VBOXSFREADPGLSTREQ *pReq  = (VBOXSFREADEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
+#endif
+
+	tmp = alloc_bounce_buffer(&tmp_size, &tmp_phys, size, __PRETTY_FUNCTION__);
 	if (!tmp)
 		return -ENOMEM;
 
@@ -786,7 +817,7 @@ static int sf_readpage(struct file *file, struct page *page)
 	struct sf_reg_info *sf_r = file->private_data;
 	uint32_t nread = PAGE_SIZE;
 	char *buf;
-	loff_t off = ((loff_t) page->index) << PAGE_SHIFT;
+	loff_t off = (loff_t)page->index << PAGE_SHIFT;
 	int ret;
 
 	TRACE();
@@ -875,8 +906,7 @@ int sf_write_end(struct file *file, struct address_space *mapping, loff_t pos,
 	TRACE();
 
 	buf = kmap(page);
-	err =
-	    sf_reg_write_aux(__func__, sf_g, sf_r, buf + from, &nwritten, pos);
+	err = sf_reg_write_aux(__func__, sf_g, sf_r, buf + from, &nwritten, pos);
 	kunmap(page);
 
 	if (err >= 0) {
