@@ -59,7 +59,6 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
     , m_iMinimumSnapshotNameWidth(0)
     , m_iMaximumSnapshotNameWidth(0)
 {
-    /* Prepare: */
     prepare();
 }
 
@@ -81,34 +80,12 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
     , m_iMinimumSnapshotNameWidth(0)
     , m_iMaximumSnapshotNameWidth(0)
 {
-    /* Prepare: */
     prepare();
 }
 
 UIChooserItemMachine::~UIChooserItemMachine()
 {
-    /* If that item is focused: */
-    if (model()->focusItem() == this)
-    {
-        /* Unset the focus: */
-        model()->setFocusItem(0);
-    }
-    /* If that item is in selection list: */
-    if (model()->currentItems().contains(this))
-    {
-        /* Remove item from the selection list: */
-        model()->removeFromCurrentItems(this);
-    }
-    /* If that item is in navigation list: */
-    if (model()->navigationList().contains(this))
-    {
-        /* Remove item from the navigation list: */
-        model()->removeFromNavigationList(this);
-    }
-
-    /* Remove item from the parent: */
-    AssertMsg(parentItem(), ("No parent set for machine-item!"));
-    parentItem()->removeItem(this);
+    cleanup();
 }
 
 QString UIChooserItemMachine::name() const
@@ -612,7 +589,7 @@ void UIChooserItemMachine::prepare()
     m_iMaximumSnapshotNameWidth = 0;
 
     /* Add item to the parent: */
-    AssertMsg(parentItem(), ("No parent set for machine-item!"));
+    AssertPtrReturnVoid(parentItem());
     parentItem()->addItem(this, m_iPosition);
     setZValue(parentItem()->zValue() + 1);
 
@@ -633,6 +610,32 @@ void UIChooserItemMachine::prepare()
 
     /* Apply language settings: */
     retranslateUi();
+}
+
+void UIChooserItemMachine::cleanup()
+{
+    /* If that item is focused: */
+    if (model()->focusItem() == this)
+    {
+        /* Unset the focus: */
+        model()->setFocusItem(0);
+    }
+    /* If that item is in selection list: */
+    if (model()->currentItems().contains(this))
+    {
+        /* Remove item from the selection list: */
+        model()->removeFromCurrentItems(this);
+    }
+    /* If that item is in navigation list: */
+    if (model()->navigationList().contains(this))
+    {
+        /* Remove item from the navigation list: */
+        model()->removeFromNavigationList(this);
+    }
+
+    /* Remove item from the parent: */
+    AssertPtrReturnVoid(parentItem());
+    parentItem()->removeItem(this);
 }
 
 QVariant UIChooserItemMachine::data(int iKey) const

@@ -219,6 +219,8 @@ private:
       * @{ */
         /** Prepares all. */
         void prepare();
+        /** Cleanups all. */
+        void cleanup();
     /** @} */
 
     /** @name Item stuff.
