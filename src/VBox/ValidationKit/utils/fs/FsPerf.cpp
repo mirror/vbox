@@ -1253,6 +1253,9 @@ void fsPerfStatVfs(void)
     RTFSTYPE enmType;
     RTTESTI_CHECK_RC(RTFsQueryType(g_szEmptyDir, &enmType), VINF_SUCCESS);
 
+    g_szDeepDir[g_cchDeepDir] = '\0';
+    PROFILE_FN(RTFsQuerySizes(g_szEmptyDir, &cbTotal, &cbFree, &cbBlock, &cbSector), g_nsTestRun, "RTFsQuerySize/empty");
+    PROFILE_FN(RTFsQuerySizes(g_szDeepDir, &cbTotal, &cbFree, &cbBlock, &cbSector), g_nsTestRun, "RTFsQuerySize/deep");
 }
 
 
