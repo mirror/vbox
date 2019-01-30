@@ -420,7 +420,7 @@ int sf_setattr(struct dentry *dentry, struct iattr *iattr)
 		goto fail2;
 	}
 # else
-	memcpy(&pReq->Create.StrPath, sf_i->path, sf_i->path->u16Size);
+	memcpy(&pReq->Create.StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
 	vrc = VbglR0SfHostReqCreate(sf_g->map.root, &pReq->Create);
 	if (RT_SUCCESS(vrc)) {
 		hHostFile = pCreateParms->Handle;
@@ -1002,7 +1002,7 @@ int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS * stat)
 			stat->f_fsid.val[0] = 0;
 			stat->f_fsid.val[1] = 0;
 			stat->f_namelen = 255;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 73)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
 			stat->f_flags = 0; /* not valid */
 #endif
 			RT_ZERO(stat->f_spare);
