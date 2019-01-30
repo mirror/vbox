@@ -185,9 +185,9 @@ void UICustomFileSystemItem::setIsOpened(bool flag)
     m_bIsOpened = flag;
 }
 
-QString  UICustomFileSystemItem::path() const
+QString UICustomFileSystemItem::path() const
 {
-    return m_itemData.value(UICustomFileSystemModelColumn_Path, QString()).toString();
+    return UIPathOperations::removeTrailingDelimiters(m_itemData.value(UICustomFileSystemModelColumn_Path, QString()).toString());
 }
 
 void UICustomFileSystemItem::setPath(const QString &path)
