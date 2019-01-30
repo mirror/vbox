@@ -176,6 +176,11 @@ int GuestSessionTask::setProgressSuccess(void)
     if (   SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted)))
         && !fCompleted)
     {
+#ifdef VBOX_STRICT
+        ULONG uCurOp; mProgress->COMGETTER(Operation(&uCurOp));
+        ULONG cOps;   mProgress->COMGETTER(OperationCount(&cOps));
+        AssertMsg(uCurOp + 1 /* Zero-based */ == cOps, ("Not all operations done yet (%u/%u)\n", uCurOp + 1, cOps));
+#endif
         HRESULT hr = mProgress->i_notifyComplete(S_OK);
         if (FAILED(hr))
             return VERR_COM_UNEXPECTED; /** @todo Find a better rc. */
@@ -1472,7 +1477,7 @@ HRESULT GuestSessionTaskCopyFrom::Init(const Utf8Str &strTaskDesc)
 
         Utf8Str strFirstOp = mDest + mVecLists[0]->mVecEntries[0]->strPath;
         hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
-                             TRUE /* aCancelable */, cOperations /* Number of operations */, Bstr(strFirstOp).raw());
+                             TRUE /* aCancelable */, cOperations + 1 /* Number of operations */, Bstr(strFirstOp).raw());
     }
     else /* If no operations have been defined, go with an "empty" progress object when will be used for error handling. */
         hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
@@ -1536,6 +1541,8 @@ int GuestSessionTaskCopyFrom::Run(void)
                     strDstAbs.findReplace('\\', '/');
             }
 
+            mProgress->SetNextOperation(Bstr(strSrcAbs).raw(), 1);
+
             switch (pEntry->fMode & RTFS_TYPE_MASK)
             {
                 case RTFS_TYPE_DIRECTORY:
@@ -1575,8 +1582,6 @@ int GuestSessionTaskCopyFrom::Run(void)
 
             if (RT_FAILURE(rc))
                 break;
-
-            mProgress->SetNextOperation(Bstr(strSrcAbs).raw(), 1);
 
             ++itEntry;
         }
@@ -1724,11 +1729,9 @@ HRESULT GuestSessionTaskCopyTo::Init(const Utf8Str &strTaskDesc)
         Assert(mVecLists.size());
         Assert(mVecLists[0]->mVecEntries.size());
 
-        Utf8Str strFirstOp = mDest + mVecLists[0]->mVecEntries[0]->strPath;
-
         hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
-                             TRUE /* aCancelable */, cOperations /* Number of operations */,
-                             Bstr(strFirstOp).raw());
+                             TRUE /* aCancelable */, cOperations + 1 /* Number of operations */,
+                             Bstr(mDesc).raw());
     }
     else /* If no operations have been defined, go with an "empty" progress object when will be used for error handling. */
         hr = pProgress->init(static_cast<IGuestSession*>(mSession), Bstr(mDesc).raw(),
@@ -1801,6 +1804,8 @@ int GuestSessionTaskCopyTo::Run(void)
                 strDstAbs += pEntry->strPath;
             }
 
+            mProgress->SetNextOperation(Bstr(strSrcAbs).raw(), 1);
+
             switch (pEntry->fMode & RTFS_TYPE_MASK)
             {
                 case RTFS_TYPE_DIRECTORY:
@@ -1839,8 +1844,6 @@ int GuestSessionTaskCopyTo::Run(void)
 
             if (RT_FAILURE(rc))
                 break;
-
-            mProgress->SetNextOperation(Bstr(strSrcAbs).raw(), 1);
 
             ++itEntry;
         }
