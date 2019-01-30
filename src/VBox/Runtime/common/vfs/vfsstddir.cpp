@@ -752,6 +752,12 @@ RTDECL(int) RTVfsDirOpenNormal(const char *pszPath, uint32_t fFlags, PRTVFSDIR p
 }
 
 
+RTDECL(bool) RTVfsDirIsStdDir(RTVFSDIR hVfsDir)
+{
+    return RTVfsDirToPrivate(hVfsDir, &g_rtVfsStdDirOps) != NULL;
+}
+
+
 /**
  * @interface_method_impl{RTVFSCHAINELEMENTREG,pfnValidate}
  */

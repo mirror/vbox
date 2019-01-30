@@ -2518,6 +2518,17 @@ RTDECL(int) RTVfsNewDir(PCRTVFSDIROPS pDirOps, size_t cbInstance, uint32_t fFlag
 }
 
 
+RTDECL(void *) RTVfsDirToPrivate(RTVFSDIR hVfsDir, PCRTVFSDIROPS pDirOps)
+{
+    RTVFSDIRINTERNAL *pThis = hVfsDir;
+    AssertPtrReturn(pThis, NULL);
+    AssertReturn(pThis->uMagic == RTVFSDIR_MAGIC, NULL);
+    if (pThis->pOps != pDirOps)
+        return NULL;
+    return pThis->Base.pvThis;
+}
+
+
 #ifdef DEBUG
 # undef RTVfsDirRetain
 #endif

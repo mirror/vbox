@@ -761,6 +761,17 @@ RTDECL(int) RTVfsNewDir(PCRTVFSDIROPS pDirOps, size_t cbInstance, uint32_t fFlag
 #define RTVFSDIR_F_NO_VFS_REF   RT_BIT_32(0)
 /** @} */
 
+/**
+ * Gets the private data of a directory.
+ *
+ * @returns Pointer to the private data.  NULL if the handle is invalid in some
+ *          way.
+ * @param   hVfsDir             The directory handle.
+ * @param   pDirOps             The directory operations.  This servers as a
+ *                              sort of password.
+ */
+RTDECL(void *) RTVfsDirToPrivate(RTVFSDIR hVfsDir, PCRTVFSDIROPS pDirOps);
+
 
 /**
  * The symbolic link operations.

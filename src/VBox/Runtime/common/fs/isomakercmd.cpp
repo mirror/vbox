@@ -1703,9 +1703,13 @@ static bool rtFsIsoMakerCmdIsFilteredOut(PRTFSISOMAKERCMDOPTS pOpts, const char 
  * @param   fNamespaces         Which ISO maker namespaces to add the names to.
  * @param   cDepth              Number of recursions.  Used to deal with loopy
  *                              directories.
+ * @param   fFilesWithSrcPath   Whether to add files using @a pszSrc or to add
+ *                              as VFS handles (open first). For saving native
+ *                              file descriptors.
  */
 static int rtFsIsoMakerCmdAddVfsDirRecursive(PRTFSISOMAKERCMDOPTS pOpts, RTVFSDIR hVfsDir, uint32_t idxDirObj,
-                                             char *pszSrc, size_t cchSrc, uint32_t fNamespaces, uint8_t cDepth)
+                                             char *pszSrc, size_t cchSrc, uint32_t fNamespaces, uint8_t cDepth,
+                                             bool fFilesWithSrcPath)
 {
     /*
      * Check that we're not in too deep.
@@ -1774,31 +1778,43 @@ static int rtFsIsoMakerCmdAddVfsDirRecursive(PRTFSISOMAKERCMDOPTS pOpts, RTVFSDI
                 if (RTFS_IS_FILE(pDirEntry->Info.Attr.fMode))
                 {
                     /*
-                     * Files are added with VFS file sources.
-                     * The ASSUMPTION is that we're working with a virtual file system
-                     * here and won't be wasting native file descriptors.
+                     * Files are either added with VFS handles or paths to the sources,
+                     * depending on what's considered more efficient.  We prefer the latter
+                     * if hVfsDir maps to native handle and not a virtual one.
                      */
-                    RTVFSFILE hVfsFileSrc;
-                    rc = RTVfsDirOpenFile(hVfsDir, pDirEntry->szName,
-                                          RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFileSrc);
-                    if (RT_SUCCESS(rc))
+                    if (!fFilesWithSrcPath)
                     {
-                        rc = RTFsIsoMakerAddUnnamedFileWithVfsFile(pOpts->hIsoMaker, hVfsFileSrc, &idxObj);
-                        RTVfsFileRelease(hVfsFileSrc);
+                        RTVFSFILE hVfsFileSrc;
+                        rc = RTVfsDirOpenFile(hVfsDir, pDirEntry->szName,
+                                              RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE, &hVfsFileSrc);
                         if (RT_SUCCESS(rc))
                         {
-                            pOpts->cItemsAdded++;
-                            rc = RTFsIsoMakerObjSetNameAndParent(pOpts->hIsoMaker, idxObj, idxDirObj, fNamespaces,
-                                                                 pDirEntry->szName);
+                            rc = RTFsIsoMakerAddUnnamedFileWithVfsFile(pOpts->hIsoMaker, hVfsFileSrc, &idxObj);
+                            RTVfsFileRelease(hVfsFileSrc);
                             if (RT_FAILURE(rc))
-                                rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error setting parent & name on file '%s' to '%s': %Rrc",
-                                                            pszSrc, pDirEntry->szName, rc);
+                                rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error adding file '%s' (VFS recursive, handle): %Rrc",
+                                                            pszSrc, rc);
                         }
                         else
-                            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error adding file '%s' (VFS recursive): %Rrc", pszSrc, rc);
+                            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error opening file '%s' (VFS recursive): %Rrc", pszSrc, rc);
                     }
                     else
-                        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error opening file '%s' (VFS recursive): %Rrc", pszSrc, rc);
+                    {
+                        /* Add file with source path: */
+                        rc = RTFsIsoMakerAddUnnamedFileWithSrcPath(pOpts->hIsoMaker, pszSrc, &idxObj);
+                        if (RT_FAILURE(rc))
+                            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error adding file '%s' (VFS recursive, path): %Rrc",
+                                                        pszSrc, rc);
+                    }
+                    if (RT_SUCCESS(rc))
+                    {
+                        pOpts->cItemsAdded++;
+                        rc = RTFsIsoMakerObjSetNameAndParent(pOpts->hIsoMaker, idxObj, idxDirObj, fNamespaces,
+                                                             pDirEntry->szName);
+                        if (RT_FAILURE(rc))
+                            rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "Error setting parent & name on file '%s' to '%s': %Rrc",
+                                                        pszSrc, pDirEntry->szName, rc);
+                    }
                 }
                 else if (RTFS_IS_DIRECTORY(pDirEntry->Info.Attr.fMode))
                 {
@@ -1818,7 +1834,8 @@ static int rtFsIsoMakerCmdAddVfsDirRecursive(PRTFSISOMAKERCMDOPTS pOpts, RTVFSDI
                             if (RT_SUCCESS(rc))
                                 /* Recurse into the sub-directory. */
                                 rc = rtFsIsoMakerCmdAddVfsDirRecursive(pOpts, hVfsSubDirSrc, idxObj, pszSrc,
-                                                                       cchSrc + 1 + pDirEntry->cbName, fNamespaces, cDepth + 1);
+                                                                       cchSrc + 1 + pDirEntry->cbName, fNamespaces, cDepth + 1,
+                                                                       fFilesWithSrcPath);
                             else
                                 rc = rtFsIsoMakerCmdErrorRc(pOpts, rc,
                                                             "Error setting parent & name on directory '%s' to '%s': %Rrc",
@@ -1863,11 +1880,14 @@ static int rtFsIsoMakerCmdAddVfsDirRecursive(PRTFSISOMAKERCMDOPTS pOpts, RTVFSDI
  * @param   hVfsSrcDir          The directory being added.
  * @param   pszSrc              The source directory name.
  * @param   pParsed             The parsed names.
+ * @param   fFilesWithSrcPath   Whether to add files using @a pszSrc
+ *                              or to add as VFS handles (open first).  For
+ *                              saving native file descriptors.
  * @param   pidxObj             Where to return the configuration index for the
  *                              added file.  Optional.
  */
 static int rtFsIsoMakerCmdAddVfsDirCommon(PRTFSISOMAKERCMDOPTS pOpts, RTVFSDIR hVfsDirSrc, char *pszSrc,
-                                          PCRTFSISOMKCMDPARSEDNAMES pParsed, PCRTFSOBJINFO pObjInfo)
+                                          PCRTFSISOMKCMDPARSEDNAMES pParsed, bool fFilesWithSrcPath, PCRTFSOBJINFO pObjInfo)
 {
     /*
      * Add the directory if it doesn't exist.
@@ -1903,7 +1923,8 @@ static int rtFsIsoMakerCmdAddVfsDirCommon(PRTFSISOMAKERCMDOPTS pOpts, RTVFSDIR h
         for (uint32_t i = 0; i < pParsed->cNames; i++)
             fNamespaces |= pParsed->aNames[i].fNameSpecifiers & RTFSISOMAKERCMDNAME_MAJOR_MASK;
         rc = rtFsIsoMakerCmdAddVfsDirRecursive(pOpts, hVfsDirSrc, idxObj, pszSrc,
-                                               pParsed->aNames[pParsed->cNamesWithSrc - 1].cchPath, fNamespaces, 0 /*cDepth*/);
+                                               pParsed->aNames[pParsed->cNamesWithSrc - 1].cchPath, fNamespaces, 0 /*cDepth*/,
+                                               fFilesWithSrcPath);
     }
 
     return rc;
@@ -1928,7 +1949,7 @@ static int rtFsIsoMakerCmdAddVfsDir(PRTFSISOMAKERCMDOPTS pOpts, PCRTFSISOMKCMDPA
     int rc = RTVfsDirOpenDir(pOpts->aSrcStack[pOpts->iSrcStack].hSrcDir, pszSrc, 0 /*fFlags*/, &hVfsDirSrc);
     if (RT_SUCCESS(rc))
     {
-        rc = rtFsIsoMakerCmdAddVfsDirCommon(pOpts, hVfsDirSrc, pszSrc, pParsed, pObjInfo);
+        rc = rtFsIsoMakerCmdAddVfsDirCommon(pOpts, hVfsDirSrc, pszSrc, pParsed, false /*fFilesWithSrcPath*/, pObjInfo);
         RTVfsDirRelease(hVfsDirSrc);
     }
     else
@@ -1957,7 +1978,8 @@ static int rtFsIsoMakerCmdAddDir(PRTFSISOMAKERCMDOPTS pOpts, PCRTFSISOMKCMDPARSE
     int rc = RTVfsChainOpenDir(pszSrc, 0 /*fOpen*/, &hVfsDirSrc, &offError, RTErrInfoInitStatic(&ErrInfo));
     if (RT_SUCCESS(rc))
     {
-        rc = rtFsIsoMakerCmdAddVfsDirCommon(pOpts, hVfsDirSrc, pszSrc, pParsed, pObjInfo);
+        rc = rtFsIsoMakerCmdAddVfsDirCommon(pOpts, hVfsDirSrc, pszSrc, pParsed,
+                                            RTVfsDirIsStdDir(hVfsDirSrc) /*fFilesWithSrcPath*/, pObjInfo);
         RTVfsDirRelease(hVfsDirSrc);
     }
     else

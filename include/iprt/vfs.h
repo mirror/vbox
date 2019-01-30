@@ -685,6 +685,10 @@ RTDECL(int) RTVfsDirFromRTDir(RTDIR hDir, bool fLeaveOpen, PRTVFSDIR phVfsDir);
  */
 RTDECL(int) RTVfsDirOpenNormal(const char *pszPath, uint32_t fFlags, PRTVFSDIR phVfsDir);
 
+/** Checks if @a hVfsDir was opened using RTVfsDirOpenNormal() or
+ *  RTVfsDirFromRTDir(), either directly or indirectly. */
+RTDECL(bool) RTVfsDirIsStdDir(RTVFSDIR hVfsDir);
+
 /**
  * Queries information about a object in or under the given directory.
  *
