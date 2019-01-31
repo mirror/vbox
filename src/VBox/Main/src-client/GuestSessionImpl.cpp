@@ -1575,6 +1575,16 @@ int GuestSession::i_fileOpen(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestF
     return rc;
 }
 
+/**
+ * Queries information from a file on the guest.
+ *
+ * @returns IPRT status code. VERR_NOT_A_FILE if the queried file system object on the guest is not a file,
+ *                            or VERR_GSTCTL_GUEST_ERROR if prcGuest contains more error information from the guest.
+ * @param   strPath           Absolute path of file to query information for.
+ * @param   fFollowSymlinks   Whether or not to follow symbolic links on the guest.
+ * @param   objData           Where to store the acquired information.
+ * @param   prcGuest          Where to store the guest rc. Optional.
+ */
 int GuestSession::i_fileQueryInfo(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *prcGuest)
 {
     LogFlowThisFunc(("strPath=%s fFollowSymlinks=%RTbool\n", strPath.c_str(), fFollowSymlinks));
@@ -3565,11 +3575,11 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    /* By default we return non-existent. */
+    *aExists = FALSE;
+
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
-    {
-        *aExists = FALSE;
         return S_OK;
-    }
 
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
@@ -3578,7 +3588,7 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
     LogFlowThisFuncEnter();
 
     GuestFsObjData objData; int rcGuest;
-    int vrc = i_fileQueryInfo(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
+    int vrc = i_fileQueryInfo(aPath, RT_BOOL(aFollowSymlinks), objData, &rcGuest);
     if (RT_SUCCESS(vrc))
     {
         *aExists = TRUE;
@@ -3588,13 +3598,23 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
     switch (vrc)
     {
         case VERR_GSTCTL_GUEST_ERROR:
-            hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
-            break;
+        {
+            switch (rcGuest)
+            {
+                case VERR_PATH_NOT_FOUND:
+                    RT_FALL_THROUGH();
+                case VERR_FILE_NOT_FOUND:
+                    break;
 
-/** @todo r=bird: what about VERR_PATH_NOT_FOUND and VERR_FILE_NOT_FOUND?
- *        Where does that get converted to *aExists = FALSE? */
+                default:
+                    hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+                    break;
+            }
+
+            break;
+        }
+
         case VERR_NOT_A_FILE:
-            *aExists = FALSE;
             break;
 
         default:
