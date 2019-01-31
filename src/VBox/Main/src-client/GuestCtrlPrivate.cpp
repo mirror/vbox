@@ -1533,10 +1533,6 @@ int GuestWaitEvent::Init(uint32_t uCID, const GuestEventTypes &lstEvents)
  */
 int GuestWaitEvent::SignalExternal(IEvent *pEvent)
 {
-    /** @todo r=bird: VERR_CANCELLED is misleading. mEventSem can only be NIL if
-     *        not successfully initialized! */
-    AssertReturn(mEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
-
     if (pEvent)
         mEvent = pEvent;
 
