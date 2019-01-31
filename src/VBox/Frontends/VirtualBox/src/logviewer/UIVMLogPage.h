@@ -116,6 +116,9 @@ public:
     QFont currentFont() const;
     void setCurrentFont(QFont font);
 
+    void setSearchResultOverlayShowHide(bool fShow);
+    void setSearchMatchCount(int iMatchCount);
+
 private slots:
 
     void sltAddBookmark(LogBookmark bookmark);

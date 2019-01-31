@@ -66,8 +66,10 @@ public:
         plain text position as we switch from a tab to another */
     int  currentVerticalScrollBarValue() const;
     void setCurrentVerticalScrollBarValue(int value);
-
     void setCurrentFont(QFont font);
+
+    void setSearchResultOverlayShowHide(bool fShow);
+    void setSearchMatchCount(int iMatchCount);
 
 protected:
 
@@ -75,13 +77,14 @@ protected:
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
     virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
     virtual void leaveEvent(QEvent * pEvent) /* override */;
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     virtual void retranslateUi() /* override */;
 
 private slots:
 
     void sltBookmark();
     void sltUpdateLineNumberAreaWidth(int newBlockCount);
-    void sltUpdateLineNumberArea(const QRect &, int);
+    void sltHandleUpdateRequest(const QRect &, int);
     int  visibleLineCount();
 
 private:
@@ -106,12 +109,14 @@ private:
     /** If true the we draw a text near the top right corner of the text edit to warn
         the user the text edit's content is filtered (as oppesed to whole log file content.
         And we dont display bookmarks and adding/deleting bookmarks are disabled. */
-    bool                 m_bShownTextIsFiltered;
-    bool                 m_bShowLineNumbers;
-    bool                 m_bWrapLines;
-    QString              m_strBackgroungText;
+    bool         m_bShownTextIsFiltered;
+    bool         m_bShowLineNumbers;
+    bool         m_bWrapLines;
+    QString      m_strBackgroungText;
     friend class UILineNumberArea;
-    bool                 m_bHasContextMenu;
+    bool         m_bHasContextMenu;
+    bool         m_fShowSearchResultOverlay;
+    int          m_iMatchCount;
 };
 
 

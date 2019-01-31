@@ -192,12 +192,12 @@ UIVMLogViewerTextEdit::UIVMLogViewerTextEdit(QWidget* parent /* = 0 */)
     , m_bShowLineNumbers(true)
     , m_bWrapLines(true)
     , m_bHasContextMenu(false)
+    , m_fShowSearchResultOverlay(0)
+    , m_iMatchCount(0)
 {
     setMouseTracking(true);
     //setStyleSheet("background-color: rgba(240, 240, 240, 75%) ");
     prepare();
-
-
 }
 
 void UIVMLogViewerTextEdit::prepare()
@@ -211,7 +211,7 @@ void UIVMLogViewerTextEdit::prepareWidgets()
     m_pLineNumberArea = new UILineNumberArea(this);
 
     connect(this, &UIVMLogViewerTextEdit::blockCountChanged, this, &UIVMLogViewerTextEdit::sltUpdateLineNumberAreaWidth);
-    connect(this, &UIVMLogViewerTextEdit::updateRequest, this, &UIVMLogViewerTextEdit::sltUpdateLineNumberArea);
+    connect(this, &UIVMLogViewerTextEdit::updateRequest, this, &UIVMLogViewerTextEdit::sltHandleUpdateRequest);
     sltUpdateLineNumberAreaWidth(0);
 
     setVerticalScrollBar(new UIIndicatorScrollBar());
@@ -231,6 +231,24 @@ void UIVMLogViewerTextEdit::setCurrentFont(QFont font)
     setFont(font);
     if (m_pLineNumberArea)
         m_pLineNumberArea->setFont(font);
+}
+
+void UIVMLogViewerTextEdit::setSearchResultOverlayShowHide(bool fShow)
+{
+    if (m_fShowSearchResultOverlay == fShow)
+        return;
+    m_fShowSearchResultOverlay = fShow;
+    if (viewport())
+        viewport()->repaint();
+}
+
+void UIVMLogViewerTextEdit::setSearchMatchCount(int iMatchCount)
+{
+    if (m_iMatchCount == iMatchCount)
+        return;
+    m_iMatchCount = iMatchCount;
+    if (m_fShowSearchResultOverlay && viewport())
+        viewport()->repaint();
 }
 
 int UIVMLogViewerTextEdit::lineNumberAreaWidth()
@@ -399,12 +417,50 @@ void UIVMLogViewerTextEdit::leaveEvent(QEvent * pEvent)
     update();
 }
 
+void UIVMLogViewerTextEdit::paintEvent(QPaintEvent *pEvent)
+{
+    QIWithRetranslateUI<QPlainTextEdit>::paintEvent(pEvent);
+
+    /** Draw an overlay with text in it to show the number of search matches: */
+    if (viewport() && m_fShowSearchResultOverlay)
+    {
+        QPainter painter(viewport());
+        QColor rectColor = viewport()->palette().color(QPalette::Active, QPalette::Dark);
+        double fontScale = 1.5;
+        rectColor.setAlpha(200);
+
+        QString strText = QString("%1 %2").arg(QString::number(m_iMatchCount)).arg(UIVMLogViewerWidget::tr("Matches Found"));
+        /** Space between the text and rectangle border. */
+        QSize textMargin(5, 5);
+        /** Space between the rectangle and viewport edges. */
+        QSize rectMargin(2, 2);
+
+        QSize rectSize(fontScale * QApplication::fontMetrics().width(strText) + textMargin.width(),
+                       fontScale * QApplication::fontMetrics().height() + textMargin.height());
+        QPoint topLeft(viewport()->rect().width() - rectSize.width() - rectMargin.width(),
+                       viewport()->rect().height() - rectSize.height() - rectMargin.height());
+        painter.fillRect(topLeft.x(),topLeft.y(), rectSize.width(), rectSize.height(), rectColor);
+
+
+        QFont pfont = QApplication::font();
+        QColor fontColor(QPalette::WindowText);
+        painter.setPen(fontColor);
+        if (pfont.pixelSize() != -1)
+            pfont.setPixelSize(fontScale * pfont.pixelSize());
+        else
+            pfont.setPointSize(fontScale * pfont.pointSize());
+        painter.setFont(pfont);
+
+        painter.drawText(QRect(topLeft, rectSize), Qt::AlignCenter | Qt::AlignVCenter, strText);
+    }
+}
+
 void UIVMLogViewerTextEdit::sltUpdateLineNumberAreaWidth(int /* newBlockCount */)
 {
     setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
 }
 
-void UIVMLogViewerTextEdit::sltUpdateLineNumberArea(const QRect &rect, int dy)
+void UIVMLogViewerTextEdit::sltHandleUpdateRequest(const QRect &rect, int dy)
 {
     if (dy)
         m_pLineNumberArea->scroll(0, dy);
@@ -413,6 +469,10 @@ void UIVMLogViewerTextEdit::sltUpdateLineNumberArea(const QRect &rect, int dy)
 
     if (rect.contains(viewport()->rect()))
         sltUpdateLineNumberAreaWidth(0);
+
+    if (viewport())
+        viewport()->repaint();
+
 }
 
 void UIVMLogViewerTextEdit::sltBookmark()

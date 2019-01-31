@@ -300,21 +300,26 @@ void UIVMLogViewerWidget::sltPanelActionToggled(bool fChecked)
 
 void UIVMLogViewerWidget::sltSearchResultHighLigting()
 {
-    if (!m_pSearchPanel)
+    if (!m_pSearchPanel || !currentLogPage())
         return;
+    currentLogPage()->setScrollBarMarkingsVector(m_pSearchPanel->matchLocationVector());
+}
 
-    if (!currentLogPage())
+void UIVMLogViewerWidget::sltHandleSearchUpdated()
+{
+    if (!m_pSearchPanel || !currentLogPage())
         return;
-    currentLogPage()->setScrollBarMarkingsVector(m_pSearchPanel->getMatchLocationVector());
+    for (int i = 0; i < m_logPageList.size(); ++i)
+        if (UIVMLogPage *pPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]))
+            pPage->setSearchMatchCount(m_pSearchPanel->marchCount());
 }
 
 void UIVMLogViewerWidget::sltTabIndexChange(int tabIndex)
 {
     Q_UNUSED(tabIndex);
 
-    resetHighlighthing();
-    if (m_pSearchPanel)
-        m_pSearchPanel->reset();
+    /* Dont refresh the search here as it is refreshed by the filtering mechanism
+       which is updated as tab current index changes: */
 
     /* We keep a separate QVector<LogBookmark> for each log page: */
     if (m_pBookmarksPanel && currentLogPage())
@@ -492,6 +497,8 @@ void UIVMLogViewerWidget::prepareWidgets()
             m_pSearchPanel->hide();
             connect(m_pSearchPanel, &UIVMLogViewerSearchPanel::sigHighlightingUpdated,
                     this, &UIVMLogViewerWidget::sltSearchResultHighLigting);
+            connect(m_pSearchPanel, &UIVMLogViewerSearchPanel::sigSearchUpdated,
+                    this, &UIVMLogViewerWidget::sltHandleSearchUpdated);
             connect(m_pSearchPanel, &UIVMLogViewerSearchPanel::sigHidePanel,
                     this, &UIVMLogViewerWidget::sltHandleHidePanel);
             m_panelActionMap.insert(m_pSearchPanel, m_pActionPool->action(UIActionIndex_M_Log_T_Find));
@@ -759,6 +766,9 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
             pLogPage->setTextEditTextAsHtml(strLogContent);
             pLogPage->markForError();
         }
+        pLogPage->setSearchResultOverlayShowHide(m_pSearchPanel->isVisible());
+        pLogPage->setSearchMatchCount(m_pSearchPanel->marchCount());
+        pLogPage->setScrollBarMarkingsVector(m_pSearchPanel->matchLocationVector());
     }
 }
 
@@ -861,6 +871,13 @@ void UIVMLogViewerWidget::hidePanel(UIDialogPanel* panel)
     }
     m_visiblePanelsList.removeOne(panel);
     manageEscapeShortCut();
+    /* Hide the search result overlay on the text edit: */
+    if (panel == m_pSearchPanel)
+    {
+        for (int i = 0; i < m_logPageList.size(); ++i)
+            if (UIVMLogPage *pPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]))
+                pPage->setSearchResultOverlayShowHide(false);
+    }
 }
 
 void UIVMLogViewerWidget::showPanel(UIDialogPanel* panel)
@@ -875,6 +892,14 @@ void UIVMLogViewerWidget::showPanel(UIDialogPanel* panel)
     }
     m_visiblePanelsList.push_back(panel);
     manageEscapeShortCut();
+
+    /* Show the search result overlay on the text edit: */
+    if (panel == m_pSearchPanel)
+    {
+        for (int i = 0; i < m_logPageList.size(); ++i)
+            if (UIVMLogPage *pPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]))
+                pPage->setSearchResultOverlayShowHide(true);
+    }
 }
 
 void UIVMLogViewerWidget::manageEscapeShortCut()

@@ -45,6 +45,7 @@ class UIVMLogViewerSearchPanel : public UIVMLogViewerPanel
 signals:
 
     void sigHighlightingUpdated();
+    void sigSearchUpdated();
 
 public:
 
@@ -54,8 +55,10 @@ public:
     /** Resets the search position and starts a new search. */
     void refresh();
     void reset();
-    const QVector<float> &getMatchLocationVector() const;
+    const QVector<float> &matchLocationVector() const;
     virtual QString panelName() const /* override */;
+    /** Returns the number of the matches to the current search. */
+    int marchCount() const;
 
 protected:
 
@@ -87,8 +90,7 @@ private:
     enum SearchDirection { ForwardSearch, BackwardSearch };
 
     /** Clear the highlighting */
-    void clearHighlight();
-    void clearHighlighting(int count);
+    void clearHighlighting();
 
     /** Search routine.
       * @param  eDirection     Specifies the seach direction
@@ -96,12 +98,10 @@ private:
                                thus we avoid calling highlighting for the same string repeatedly. */
     void search(SearchDirection eDirection, bool highlight);
     void highlightAll(QTextDocument *pDocument, const QString &searchString);
-    /** Controls the visibility of the warning icon and info labels.
-     Also marks the search editor in case of no match.*/
-    void configureInfoLabels();
     /** Constructs the find flags for QTextDocument::find function. */
-    QTextDocument::FindFlags constructFindFlags(SearchDirection eDirection);
-
+    QTextDocument::FindFlags constructFindFlags(SearchDirection eDirection) const;
+    /** Searches the whole document and return the number of matches to the current search term. */
+    int countMatches(QTextDocument *pDocument, const QString &searchString) const;
     /** Holds the instance of search-editor we create. */
     UIVMLogViewerSearchField *m_pSearchEditor;
 
@@ -112,17 +112,9 @@ private:
     QCheckBox    *m_pMatchWholeWordCheckBox;
     QCheckBox    *m_pHighlightAllCheckBox;
 
-    /** Holds the instance of warning icon we create. */
-    QLabel      *m_pWarningIcon;
-    /** Holds the instance of info label we create. */
-    QLabel      *m_pInfoLabel;
-
     /** Holds the position where we start the next search. */
     int          m_iSearchPosition;
-    /** Holds the number of the matches for the string.
-     -1: highLightAll function is not called
-      0: no matches found
-      n > 0: n matches found. */
+    /** Holds the number of the matches for the string. 0 for no matches. */
     int          m_iMatchCount;
     /** Stores relative positions of the lines of the matches. The values are [0,1]
         0 being the first line 1 being the last. */
