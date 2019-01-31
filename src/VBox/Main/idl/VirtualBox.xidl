@@ -12486,7 +12486,7 @@ and "VAR" for unsetting. -->
       <param name="sources" type="wstring" dir="in" safearray="yes">
         <desc>Paths to directories and/or files on the guest side that should be
           copied to the host. If the path ends with a path delimiter, only
-          the directory's contents are being copied. Guest path style.</desc>
+          the directory's content is being copied. Guest path style.</desc>
       </param>
       <param name="filters" type="wstring" dir="in" safearray="yes">
         <desc>Array of source filters. This uses the
@@ -12542,7 +12542,7 @@ and "VAR" for unsetting. -->
       <param name="sources" type="wstring" dir="in" safearray="yes">
         <desc>Paths to directories and/or files on the host side that should be
           copied to the guest. If the path ends with a path delimiter, only
-          the directory's contents are being copied. Host path style.</desc>
+          the directory's content is being copied. Host path style.</desc>
       </param>
       <param name="filters" type="wstring" dir="in" safearray="yes">
         <desc>Array of source filters. This uses the
