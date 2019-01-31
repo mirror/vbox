@@ -74,7 +74,7 @@ public:
     static bool i_isGuestError(int guestRc);
     static HRESULT i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     static ProcessWaitResult_T i_waitFlagsToResultEx(uint32_t fWaitFlags, ProcessStatus_T oldStatus, ProcessStatus_T newStatus, uint32_t uProcFlags, uint32_t uProtocol);
-    static bool i_waitResultImpliesEx(ProcessWaitResult_T waitResult, ProcessStatus_T procStatus, uint32_t uProcFlags, uint32_t uProtocol);
+    static bool i_waitResultImpliesEx(ProcessWaitResult_T waitResult, ProcessStatus_T procStatus, uint32_t uProtocol);
     /** @}  */
 
 protected:

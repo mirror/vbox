@@ -1640,13 +1640,10 @@ int GuestProcess::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeou
 }
 
 /* static */
-bool GuestProcess::i_waitResultImpliesEx(ProcessWaitResult_T waitResult,
-                                         ProcessStatus_T procStatus, uint32_t uProcFlags,
-                                         uint32_t uProtocol)
+bool GuestProcess::i_waitResultImpliesEx(ProcessWaitResult_T waitResult, ProcessStatus_T procStatus, uint32_t uProtocol)
 {
-    /** @todo r=bird: If you subscribe to HN, which the 'u' in 'uProcFlags'
-     *        indicates, you should actually be using 'fProc'! */
-    RT_NOREF(uProtocol, uProcFlags);
+    RT_NOREF(uProtocol);
+
     bool fImplies;
 
     switch (waitResult)
