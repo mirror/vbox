@@ -1511,7 +1511,7 @@ int GuestWaitEvent::Init(uint32_t uCID)
  *
  * @returns IPRT status code.
  * @param   uCID                Context ID to initialize wait event with.
- * @param   lstEvent            List of event types to wait for this wait event to get signalled.
+ * @param   lstEvents           List of event types to wait for this wait event to get signalled.
  */
 int GuestWaitEvent::Init(uint32_t uCID, const GuestEventTypes &lstEvents)
 {
