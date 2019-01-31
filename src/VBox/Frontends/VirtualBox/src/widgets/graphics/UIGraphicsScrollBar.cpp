@@ -191,7 +191,10 @@ void UIGraphicsScrollBar::setMinimum(int iMinimum)
     if (m_iMaximum < m_iMinimum)
         m_iMaximum = m_iMinimum;
     if (m_iValue < m_iMinimum)
+    {
         m_iValue = m_iMinimum;
+        emit sigValueChanged(m_iValue);
+    }
     layoutToken();
 }
 
@@ -206,7 +209,10 @@ void UIGraphicsScrollBar::setMaximum(int iMaximum)
     if (m_iMinimum > m_iMaximum)
         m_iMinimum = m_iMaximum;
     if (m_iValue > m_iMaximum)
+    {
         m_iValue = m_iMaximum;
+        emit sigValueChanged(m_iValue);
+    }
     layoutToken();
 }
 
@@ -222,6 +228,7 @@ void UIGraphicsScrollBar::setValue(int iValue)
     if (iValue < m_iMinimum)
         iValue = m_iMinimum;
     m_iValue = iValue;
+    emit sigValueChanged(m_iValue);
     layoutToken();
 }
 
