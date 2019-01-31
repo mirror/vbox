@@ -2361,6 +2361,12 @@ int GuestSession::i_processCreateEx(GuestProcessStartupInfo &procInfo, ComObjPtr
         return VERR_INVALID_PARAMETER;
     }
 
+    if (procInfo.mPriority)
+    {
+        if (!(procInfo.mPriority & ProcessPriority_Default))
+            return VERR_INVALID_PARAMETER;
+    }
+
     /* Adjust timeout.
      * If set to 0, we define an infinite timeout (unlimited process run time). */
     if (procInfo.mTimeoutMS == 0)
@@ -4014,11 +4020,6 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
     if (FAILED(hr))
         return hr;
 
-    /** @todo r=bird: Check input better? aPriority is passed on to the guest
-     * without any validation.  Flags not existing in this vbox version are
-     * ignored, potentially doing something entirely different than what the
-     * caller had in mind. */
-
     /*
      * Must have an executable to execute.  If none is given, we try use the
      * zero'th argument.
@@ -4031,6 +4032,8 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
         if (pszExecutable == NULL || *pszExecutable == '\0')
             return setError(E_INVALIDARG, tr("No command to execute specified"));
     }
+
+    /* The rest of the input is being validated in i_processCreateEx(). */
 
     LogFlowThisFuncEnter();
 
