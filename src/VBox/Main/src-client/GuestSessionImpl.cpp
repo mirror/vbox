@@ -1705,10 +1705,6 @@ Utf8Str GuestSession::i_guestErrorToString(int rcGuest)
             strError += Utf8StrFmt(tr("The session operation was canceled"));
             break;
 
-        case VERR_PERMISSION_DENIED: /** @todo r=bird: This is probably completely and utterly misleading. VERR_AUTHENTICATION_FAILURE could have this message. */
-            strError += Utf8StrFmt(tr("Invalid user/password credentials"));
-            break;
-
         case VERR_GSTCTL_MAX_OBJECTS_REACHED:
             strError += Utf8StrFmt(tr("Maximum number of concurrent guest processes has been reached"));
             break;
