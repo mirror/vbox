@@ -1278,10 +1278,8 @@ int GuestBase::unregisterWaitEvent(GuestWaitEvent *pWaitEvt)
  * @return  IPRT status code.
  * @param   pWaitEvt                Pointer to event to wait for.
  * @param   msTimeout               Timeout (in ms) for waiting.
- * @param   pType                   Event type of following IEvent.
- *                                  Optional.
- * @param   ppEvent                 Pointer to IEvent which got triggered
- *                                  for this event. Optional.
+ * @param   pType                   Event type of following IEvent. Optional.
+ * @param   ppEvent                 Pointer to IEvent which got triggered for this event. Optional.
  */
 int GuestBase::waitForEvent(GuestWaitEvent *pWaitEvt, uint32_t msTimeout, VBoxEventType_T *pType, IEvent **ppEvent)
 {
@@ -1293,7 +1291,7 @@ int GuestBase::waitForEvent(GuestWaitEvent *pWaitEvt, uint32_t msTimeout, VBoxEv
     if (RT_SUCCESS(vrc))
     {
         const ComPtr<IEvent> pThisEvent = pWaitEvt->Event();
-        if (pThisEvent.isNotNull()) /* Having a VBoxEventType_ event is optional. */ /** @todo r=bird: misplaced comment? */
+        if (pThisEvent.isNotNull()) /* Make sure that we actually have an event associated. */
         {
             if (pType)
             {
