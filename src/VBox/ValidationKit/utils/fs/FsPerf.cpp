@@ -1825,7 +1825,11 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             size_t cbActual = 0;
             RTTESTI_CHECK_RC(RTFileRead(hFile1, &pbBuf[offBuf], cbToRead, &cbActual), VINF_SUCCESS);
             if (cbActual == cbToRead)
+            {
                 offBuf += cbActual;
+                RTTESTI_CHECK_MSG(RTFileTell(hFile1) == aRuns[i].offFile + offBuf,
+                                  ("%#RX64, expected %#RX64\n", RTFileTell(hFile1), aRuns[i].offFile + offBuf));
+            }
             else
             {
                 RTTestIFailed("Attempting to read %#x bytes at %#zx, only got %#x bytes back! (cbLeft=%#x cbBuf=%#zx)\n",
@@ -1868,7 +1872,7 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 
             cbActual = ~(size_t)0;
             RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, 1, &cbActual), VINF_SUCCESS);
-            RTTESTI_CHECK(cbActual == 0);
+            RTTESTI_CHECK_MSG(cbActual == 0, ("cbActual=%zu\n", cbActual));
 
             RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, cbMaxRead, NULL), VERR_EOF);
         }
@@ -2054,7 +2058,11 @@ void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint
             size_t cbActual = 0;
             RTTESTI_CHECK_RC(RTFileWrite(hFile1, &pbBuf[offBuf], cbToWrite, &cbActual), VINF_SUCCESS);
             if (cbActual == cbToWrite)
+            {
                 offBuf += cbActual;
+                RTTESTI_CHECK_MSG(RTFileTell(hFile1) == aRuns[i].offFile + offBuf,
+                                  ("%#RX64, expected %#RX64\n", RTFileTell(hFile1), aRuns[i].offFile + offBuf));
+            }
             else
             {
                 RTTestIFailed("Attempting to write %#x bytes at %#zx (%#x left), only got %#x written!\n",
