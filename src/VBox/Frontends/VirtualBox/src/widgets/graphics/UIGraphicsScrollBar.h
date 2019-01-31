@@ -55,8 +55,14 @@ public:
 
     /** Defines @a iMinimum scroll-bar value. */
     void setMinimum(int iMinimum);
+    /** Returns minimum scroll-bar value. */
+    int minimum() const;
+
     /** Defines @a iMaximum scroll-bar value. */
     void setMaximum(int iMaximum);
+    /** Returns minimum scroll-bar value. */
+    int maximum() const;
+
     /** Defines current scroll-bar @a iValue. */
     void setValue(int iValue);
     /** Returns current scroll-bar value. */

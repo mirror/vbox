@@ -195,6 +195,11 @@ void UIGraphicsScrollBar::setMinimum(int iMinimum)
     layoutToken();
 }
 
+int UIGraphicsScrollBar::minimum() const
+{
+    return m_iMinimum;
+}
+
 void UIGraphicsScrollBar::setMaximum(int iMaximum)
 {
     m_iMaximum = iMaximum;
@@ -203,6 +208,11 @@ void UIGraphicsScrollBar::setMaximum(int iMaximum)
     if (m_iValue > m_iMaximum)
         m_iValue = m_iMaximum;
     layoutToken();
+}
+
+int UIGraphicsScrollBar::maximum() const
+{
+    return m_iMaximum;
 }
 
 void UIGraphicsScrollBar::setValue(int iValue)
