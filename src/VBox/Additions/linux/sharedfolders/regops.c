@@ -255,6 +255,54 @@ sf_splice_read(struct file *in, loff_t * poffset,
 
 #endif /* 2.6.23 <= LINUX_VERSION_CODE < 2.6.31 */
 
+
+/** Companion to sf_lock_user_pages(). */
+DECLINLINE(void) sf_unlock_user_pages(struct page **papPages, size_t cPages, bool fSetDirty)
+{
+    while (cPages-- > 0)
+    {
+	struct page *pPage = papPages[cPages];
+	if (fSetDirty && !PageReserved(pPage))
+	    SetPageDirty(pPage);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+	put_page(pPage);
+#else
+	page_cache_release(pPage);
+#endif
+    }
+}
+
+
+/** Wrapper around get_user_pages. */
+DECLINLINE(int) sf_lock_user_pages(void /*__user*/ *pvFrom, size_t cPages, bool fWrite, struct page **papPages)
+{
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+	ssize_t cPagesLocked = get_user_pages_unlocked((uintptr_t)pvFrom, cPages, papPages,
+						       fWrite ? FOLL_WRITE | FOLL_FORCE : FOLL_FORCE);
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+	ssize_t cPagesLocked = get_user_pages_unlocked((uintptr_t)pvFrom, cPages, fWrite, 1 /*force*/, papPages);
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
+	ssize_t cPagesLocked = get_user_pages_unlocked(current, current->mm, (uintptr_t)pvFrom, cPages,
+						       fWrite, 1 /*force*/, papPages);
+# else
+	struct task_struct *pTask = current;
+	size_t cPagesLocked;
+	down_read(&pTask->mm->mmap_sem);
+	cPagesLocked = get_user_pages(current, current->mm, (uintptr_t)pvFrom, cPages, fWrite, 1 /*force*/, papPages, NULL);
+	up_read(&pTask->mm->mmap_sem);
+# endif
+	if (cPagesLocked == cPages)
+	    return 0;
+	if (cPagesLocked < 0)
+	    return cPagesLocked;
+
+	sf_unlock_user_pages(papPages, cPagesLocked, false /*fSetDirty*/);
+
+	/* We could use pvFrom + cPagesLocked to get the correct status here... */
+	return -EFAULT;
+}
+
+
 /**
  * Read from a regular file.
  *
@@ -267,12 +315,14 @@ sf_splice_read(struct file *in, loff_t * poffset,
 static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 			   loff_t *off)
 {
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	int err;
 	void *tmp;
 	RTCCPHYS tmp_phys;
 	size_t tmp_size;
 	size_t left = size;
 	ssize_t total_bytes_read = 0;
+#endif
 	struct inode *inode = GET_F_DENTRY(file)->d_inode;
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
 	struct sf_reg_info *sf_r = file->private_data;
@@ -289,39 +339,7 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 	if (!size)
 		return 0;
 
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	/*
-	 * For small requests, try use an embedded buffer provided we get a heap block
-	 * that does not cross page boundraries (see host code).
-	 */
-	if (size <= PAGE_SIZE / 4 * 3 /* see allocator */) {
-		uint32_t const         cbReq = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) + size;
-		VBOXSFREADEMBEDDEDREQ *pReq  = (VBOXSFREADEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
-		if (   pReq
-		    && (PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
-			ssize_t cbRet;
-			int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->handle, pos, (uint32_t)size);
-			if (RT_SUCCESS(vrc)) {
-				cbRet = pReq->Parms.cb32Read.u.value32;
-				if (copy_to_user(buf, pReq->abData, cbRet) == 0)
-					*off += cbRet;
-				else
-					cbRet = -EPROTO;
-			} else
-				cbRet = -EPROTO;
-		        VbglR0PhysHeapFree(pReq);
-			return cbRet;
-		}
-		if (pReq)
-			VbglR0PhysHeapFree(pReq);
-	}
-
-//	/*
-//	 * For other requests, use a bounce buffer.
-//	 */
-//	VBOXSFREADPGLSTREQ *pReq  = (VBOXSFREADEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
-#endif
-
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	tmp = alloc_bounce_buffer(&tmp_size, &tmp_phys, size, __PRETTY_FUNCTION__);
 	if (!tmp)
 		return -ENOMEM;
@@ -359,6 +377,145 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
  fail:
 	free_bounce_buffer(tmp);
 	return err;
+
+#else  /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
+	/*
+	 * For small requests, try use an embedded buffer provided we get a heap block
+	 * that does not cross page boundraries (see host code).
+	 */
+	if (size <= PAGE_SIZE / 4 * 3 /* see allocator */) {
+		uint32_t const         cbReq = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) + size;
+		VBOXSFREADEMBEDDEDREQ *pReq  = (VBOXSFREADEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
+		if (   pReq
+		    && (PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
+			ssize_t cbRet;
+			int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->handle, pos, (uint32_t)size);
+			if (RT_SUCCESS(vrc)) {
+				cbRet = pReq->Parms.cb32Read.u.value32;
+				AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
+				if (copy_to_user(buf, pReq->abData, cbRet) == 0)
+					*off += cbRet;
+				else
+					cbRet = -EPROTO;
+			} else
+				cbRet = -EPROTO;
+		        VbglR0PhysHeapFree(pReq);
+			return cbRet;
+		}
+		if (pReq)
+			VbglR0PhysHeapFree(pReq);
+	}
+
+# if 0 /* Turns out this is slightly slower than locking the pages even for 4KB reads (4.19/amd64). */
+	/*
+	 * For medium sized requests try use a bounce buffer.
+	 */
+	if (size <= _64K /** @todo make this configurable? */) {
+		void *pvBounce = kmalloc(size, GFP_KERNEL);
+		if (pvBounce) {
+			VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+			if (pReq) {
+				ssize_t cbRet;
+				int vrc = VbglR0SfHostReqReadContig(sf_g->map.root, pReq, sf_r->handle, pos, (uint32_t)size,
+								    pvBounce, virt_to_phys(pvBounce));
+				if (RT_SUCCESS(vrc)) {
+					cbRet = pReq->Parms.cb32Read.u.value32;
+					AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
+					if (copy_to_user(buf, pvBounce, cbRet) == 0)
+						*off += cbRet;
+					else
+						cbRet = -EPROTO;
+				} else
+					cbRet = -EPROTO;
+				VbglR0PhysHeapFree(pReq);
+				kfree(pvBounce);
+				return cbRet;
+			}
+			kfree(pvBounce);
+		}
+	}
+# endif
+
+	/*
+	 * Lock pages and execute the read, taking care not to pass the host
+	 * more than it can handle in one go or more than we care to allocate
+	 * page arrays for.  The latter limit is set at just short of 32KB due
+	 * to how the physical heap works.
+	 */
+	{
+	struct page        *apPagesStack[8];
+	struct page       **papPages     = &apPagesStack[0];
+	struct page       **papPagesFree = NULL;
+	VBOXSFREADPGLSTREQ *pReq;
+	ssize_t             cbRet        = -ENOMEM;
+	size_t              cPages       = (((uintptr_t)buf & PAGE_OFFSET_MASK) + size + PAGE_OFFSET_MASK) >> PAGE_SHIFT;
+	size_t              cMaxPages    = RT_MIN(cPages,
+				                  RT_MIN((_32K - sizeof(VBOXSFREADPGLSTREQ) - 64) / sizeof(RTGCPHYS64),
+				                         VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT));
+
+	pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
+	while (!pReq && cMaxPages > 4) {
+		cMaxPages /= 2;
+		pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
+	}
+	if (pReq && cPages > RT_ELEMENTS(apPagesStack))
+		papPagesFree = papPages = kmalloc(cMaxPages * sizeof(sizeof(papPages[0])), GFP_KERNEL);
+	if (pReq && papPages) {
+		cbRet = 0;
+		for (;;) {
+			/* Figure out how much to process now and lock the user pages. */
+			int    rc;
+			size_t cbChunk = (uintptr_t)buf & PAGE_OFFSET_MASK;
+			pReq->PgLst.offFirstPage = (uint16_t)cbChunk;
+			cPages  = RT_ALIGN_Z(cbChunk + size, PAGE_SIZE) >> PAGE_SHIFT;
+			if (cPages <= cMaxPages)
+				cbChunk = size;
+			else {
+				cPages  = cMaxPages;
+				cbChunk = (cMaxPages << PAGE_SHIFT) - cbChunk;
+			}
+
+			rc = sf_lock_user_pages(buf, cPages, true /*fWrite*/, papPages);
+			if (rc == 0) {
+				size_t iPage = cPages;
+				while (iPage-- > 0)
+					pReq->PgLst.aPages[iPage] = page_to_phys(papPages[iPage]);
+			} else {
+				cbRet = rc;
+				break;
+			}
+
+			rc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->handle, pos, cbChunk, cPages);
+
+			sf_unlock_user_pages(papPages, cPages, true /*fSetDirty*/);
+
+			if (RT_SUCCESS(rc)) {
+				uint32_t cbActual = pReq->Parms.cb32Read.u.value32;
+				AssertStmt(cbActual <= cbChunk, cbActual = cbChunk);
+				cbRet += cbActual;
+				pos   += cbActual;
+				buf    = (uint8_t *)buf + cbActual;
+				size  -= cbActual;
+				if (!size || cbActual < cbChunk) {
+					*off = pos;
+					break;
+				}
+			} else {
+				if (cbRet > 0)
+					*off = pos;
+				else
+					cbRet = -EPROTO;
+				break;
+			}
+		}
+	}
+	if (papPagesFree)
+		kfree(papPages);
+	if (pReq)
+		VbglR0PhysHeapFree(pReq);
+	return cbRet;
+	}
+#endif /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
 }
 
 /**
