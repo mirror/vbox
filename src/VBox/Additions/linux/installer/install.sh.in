@@ -351,10 +351,9 @@ fi
 
 INSTALL_DIR=""
 uninstalled=0
-test -r "$CONFIG_DIR/$CONFIG" &&
-    eval `grep ^INSTALL_DIR= "$CONFIG_DIR/$CONFIG"` 2>/dev/null &&
-    eval `grep ^UNINSTALLER= "$CONFIG_DIR/$CONFIG"` 2>/dev/null
-if test -n "$INSTALL_DIR" -a -x "$INSTALL_DIR/$UNINSTALLER"; then
+test -r "$CONFIG_DIR/$CONFIG" && . "$CONFIG_DIR/$CONFIG"
+if test -n "$INSTALL_DIR" && test -n "$UNINSTALLER" &&
+    test -x "$INSTALL_DIR/$UNINSTALLER"; then
   "$INSTALL_DIR/$UNINSTALLER" $NO_CLEANUP 1>&2 ||
     abort "Failed to remove existing installation.  Aborting..."
   uninstalled=1
