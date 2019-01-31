@@ -2769,7 +2769,8 @@ else # !darwin
  VBOX_JAVAH     = "$(VBOX_JAVA_HOME)/bin/javah$(HOSTSUFF_EXE)"
  VBOX_JAR       = "$(VBOX_JAVA_HOME)/bin/jar$(HOSTSUFF_EXE)"
  VBOX_JAVADOC   = "$(VBOX_JAVA_HOME)/bin/javadoc$(HOSTSUFF_EXE)"
- VBOX_WSIMPORT  = "$(VBOX_JAVA_HOME)/bin/wsimport$(HOSTSUFF_EXE)"
+ # With Java 11 wsimport was removed, usually part of a separate install now.
+ VBOX_WSIMPORT  = $(firstword $(wildcard "$(VBOX_JAVA_HOME)/bin/wsimport$(HOSTSUFF_EXE)") wsimport$(HOSTSUFF_EXE))
  # correct for targets we care about
  VBOX_MD_OS     = $(KBUILD_TARGET)
  VBOX_JAVA_INC  = \
@@ -7747,7 +7748,7 @@ endif
 # Java compiler options, needs some version checking.
 if defined(VBOX_JAVA_VERSION) && $(VBOX_JAVA_VERSION) >= 110000
  VBOX_JAVA_WS_PATH ?= /usr/share/java
- VBOX_JAVA_WS_OPTS ?= -classpath $(VBOX_JAVA_WS_PATH)/jws-api.jar:$(VBOX_JAVA_WS_PATH)/jaxb-api.jar:$(VBOX_JAVA_WS_PATH)/jaxws-api.jar
+ VBOX_JAVA_WS_EXTRA_JARS ?= $(VBOX_JAVA_WS_PATH)/jws-api.jar$(VBOX_SEP)$(VBOX_JAVA_WS_PATH)/jaxb-api.jar$(VBOX_SEP)$(VBOX_JAVA_WS_PATH)/jaxws-api.jar
 else if defined(VBOX_JAVA_VERSION) && $(VBOX_JAVA_VERSION) >= 10900
  VBOX_JAVA_WS_OPTS ?= --add-modules java.xml.ws
 endif
