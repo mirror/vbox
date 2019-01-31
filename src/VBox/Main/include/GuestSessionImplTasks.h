@@ -34,7 +34,7 @@
 
 class Guest;
 class GuestSessionTask;
-class GuestSessionTaskInternalOpen;
+class GuestSessionTaskInternalStart;
 
 
 /**

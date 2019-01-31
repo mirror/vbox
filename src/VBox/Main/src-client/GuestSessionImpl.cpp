@@ -78,13 +78,13 @@ protected:
 };
 
 /**
- * Class for asynchronously opening a guest session.
+ * Class for asynchronously starting a guest session.
  */
-class GuestSessionTaskInternalOpen : public GuestSessionTaskInternal
+class GuestSessionTaskInternalStart : public GuestSessionTaskInternal
 {
 public:
 
-    GuestSessionTaskInternalOpen(GuestSession *pSession)
+    GuestSessionTaskInternalStart(GuestSession *pSession)
         : GuestSessionTaskInternal(pSession)
     {
         m_strTaskName = "gctlSesStart";
@@ -92,7 +92,7 @@ public:
 
     void handler()
     {
-        GuestSession::i_startSessionThreadTask(this);
+        /* Ignore rc */ GuestSession::i_startSessionThreadTask(this);
     }
 };
 
@@ -1971,25 +1971,29 @@ int GuestSession::i_startSession(int *prcGuest)
     return vrc;
 }
 
+/**
+ * Starts the guest session asynchronously in a separate thread.
+ *
+ * @returns IPRT status code.
+ */
 int GuestSession::i_startSessionAsync(void)
 {
     LogFlowThisFuncEnter();
 
     int vrc;
-    GuestSessionTaskInternalOpen* pTask = NULL;
+    GuestSessionTaskInternalStart* pTask = NULL;
     try
     {
-        pTask = new GuestSessionTaskInternalOpen(this);
+        pTask = new GuestSessionTaskInternalStart(this);
         if (!pTask->isOk())
         {
             delete pTask;
-            LogFlow(("GuestSession: Could not create GuestSessionTaskInternalOpen object \n"));
+            LogFlow(("GuestSession: Could not create GuestSessionTaskInternalStart object\n"));
             throw VERR_MEMOBJ_INIT_FAILED;
         }
 
-        /* Asynchronously open the session on the guest by kicking off a
-         * worker thread. */
-        //this function delete pTask in case of exceptions, so there is no need in the call of delete operator
+        /* Asynchronously open the session on the guest by kicking off a worker thread. */
+        /* Note: This function deletes pTask in case of exceptions, so there is no need in the call of delete operator. */
         HRESULT hrc = pTask->createThread();
         vrc = Global::vboxStatusCodeFromCOM(hrc);
     }
@@ -2007,8 +2011,14 @@ int GuestSession::i_startSessionAsync(void)
     return vrc;
 }
 
+/**
+ * Static function to start a guest session asynchronously.
+ *
+ * @returns IPRT status code.
+ * @param   pTask               Task object to use for starting the guest session.
+ */
 /* static */
-void GuestSession::i_startSessionThreadTask(GuestSessionTaskInternalOpen *pTask)
+int GuestSession::i_startSessionThreadTask(GuestSessionTaskInternalStart *pTask)
 {
     LogFlowFunc(("pTask=%p\n", pTask));
     AssertPtr(pTask);
@@ -2018,19 +2028,13 @@ void GuestSession::i_startSessionThreadTask(GuestSessionTaskInternalOpen *pTask)
 
     AutoCaller autoCaller(pSession);
     if (FAILED(autoCaller.rc()))
-        return;
+        return VERR_COM_INVALID_OBJECT_STATE;
 
     int vrc = pSession->i_startSession(NULL /* Guest rc, ignored */);
-/** @todo
- *
- * r=bird: Is it okay to ignore @a vrc here?
- *
- */
-
     /* Nothing to do here anymore. */
 
     LogFlowFuncLeaveRC(vrc);
-    NOREF(vrc);
+    return vrc;
 }
 
 /**
