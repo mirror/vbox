@@ -136,12 +136,12 @@ static int vgsvcGstCtrlSessionHandleDirRemove(PVBOXSERVICECTRLSESSION pSession, 
         /*
          * Do some validating before executing the job.
          */
-        if (!(fFlags & ~DIRREMOVE_FLAG_VALID_MASK))
+        if (!(fFlags & ~DIRREMOVEREC_FLAG_VALID_MASK))
         {
-            if (fFlags & DIRREMOVE_FLAG_RECURSIVE)
+            if (fFlags & DIRREMOVEREC_FLAG_RECURSIVE)
             {
                 uint32_t fFlagsRemRec = RTDIRRMREC_F_CONTENT_AND_DIR; /* Set default. */
-                if (fFlags & DIRREMOVE_FLAG_CONTENT_ONLY)
+                if (fFlags & DIRREMOVEREC_FLAG_CONTENT_ONLY)
                     fFlagsRemRec |= RTDIRRMREC_F_CONTENT_ONLY;
                 rc = RTDirRemoveRecursive(szDir, fFlagsRemRec);
                 VGSvcVerbose(4, "[Dir %s]: rmdir /s (%#x) -> rc=%Rrc\n", szDir, fFlags, rc);
@@ -155,7 +155,7 @@ static int vgsvcGstCtrlSessionHandleDirRemove(PVBOXSERVICECTRLSESSION pSession, 
         }
         else
         {
-            VGSvcError("[Dir %s]: Unsupported flags: %#x (all %#x)\n", szDir, (fFlags & ~DIRREMOVE_FLAG_VALID_MASK), fFlags);
+            VGSvcError("[Dir %s]: Unsupported flags: %#x (all %#x)\n", szDir, (fFlags & ~DIRREMOVEREC_FLAG_VALID_MASK), fFlags);
             rc = VERR_NOT_SUPPORTED;
         }
 

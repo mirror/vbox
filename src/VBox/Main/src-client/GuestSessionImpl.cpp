@@ -1050,7 +1050,7 @@ int GuestSession::i_directoryUnregister(GuestDirectory *pDirectory)
 
 int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t uFlags, int *prcGuest)
 {
-    AssertReturn(!(uFlags & ~DIRREMOVE_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(!(uFlags & ~DIRREMOVEREC_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
 
     LogFlowThisFunc(("strPath=%s, uFlags=0x%x\n", strPath.c_str(), uFlags));
@@ -3355,8 +3355,26 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to remove recursively specified"));
 
-/** @todo r=bird: Must check that the flags matches the hardcoded behavior
- *        further down!! */
+    uint32_t fFlags = DIRREMOVEREC_FLAG_NONE;
+    if (aFlags.size())
+    {
+        for (size_t i = 0; i < aFlags.size(); i++)
+        {
+            switch (aFlags[i])
+            {
+                case DirectoryRemoveRecFlag_ContentAndDir:
+                    fFlags = DIRREMOVEREC_FLAG_RECURSIVE | DIRREMOVEREC_FLAG_CONTENT_AND_DIR;
+                    break;
+
+                case DirectoryRemoveRecFlag_ContentOnly:
+                    fFlags = DIRREMOVEREC_FLAG_RECURSIVE | DIRREMOVEREC_FLAG_CONTENT_ONLY;
+                    break;
+
+                default:
+                    return setError(E_INVALIDARG, tr("Invalid flags specified"));
+            }
+        }
+    }
 
     HRESULT hrc = i_isReadyExternal();
     if (FAILED(hrc))
@@ -3381,11 +3399,8 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
     if (FAILED(hrc))
         return hrc;
 
-    /* Remove the directory + all its contents. */
-    uint32_t uFlags = DIRREMOVE_FLAG_RECURSIVE
-                    | DIRREMOVE_FLAG_CONTENT_AND_DIR;
     int rcGuest;
-    int vrc = i_directoryRemove(aPath, uFlags, &rcGuest);
+    int vrc = i_directoryRemove(aPath, fFlags, &rcGuest);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)

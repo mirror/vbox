@@ -79,18 +79,21 @@ enum eProcessStatus
  */
 #define SESSIONCREATIONFLAG_NONE            0x0
 
-/** @name DIRREMOVE_FLAG_XXX - Guest directory removement flags.
+/** @name DIRREMOVEREC_FLAG_XXX - Guest directory removement flags.
  * Essentially using what IPRT's RTDIRRMREC_F_
  * defines have to offer.
  * @{
  */
-#define DIRREMOVE_FLAG_RECURSIVE            RT_BIT(0)
+/** No remove flags specified. */
+#define DIRREMOVEREC_FLAG_NONE                 UINT32_C(0x0)
+/** Recursively deletes the directorie's contents. */
+#define DIRREMOVEREC_FLAG_RECURSIVE            RT_BIT(0)
 /** Delete the content of the directory and the directory itself. */
-#define DIRREMOVE_FLAG_CONTENT_AND_DIR      RT_BIT(1)
+#define DIRREMOVEREC_FLAG_CONTENT_AND_DIR      RT_BIT(1)
 /** Only delete the content of the directory, omit the directory it self. */
-#define DIRREMOVE_FLAG_CONTENT_ONLY         RT_BIT(2)
+#define DIRREMOVEREC_FLAG_CONTENT_ONLY         RT_BIT(2)
 /** Mask of valid flags. */
-#define DIRREMOVE_FLAG_VALID_MASK           UINT32_C(0x00000003)
+#define DIRREMOVEREC_FLAG_VALID_MASK           UINT32_C(0x00000003)
 /** @}   */
 
 /** @name EXECUTEPROCESSFLAG_XXX - Guest process creation flags.
