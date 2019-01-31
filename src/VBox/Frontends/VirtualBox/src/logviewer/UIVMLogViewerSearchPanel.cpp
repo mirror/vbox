@@ -161,6 +161,8 @@ void UIVMLogViewerSearchPanel::sltSearchTextChanged(const QString &strSearchStri
         pBrowser->setTextCursor(cursor);
     }
     m_iSearchPosition = -1;
+    m_iMatchCount = 0;
+    emit sigSearchUpdated();
     clearHighlighting();
 }
 

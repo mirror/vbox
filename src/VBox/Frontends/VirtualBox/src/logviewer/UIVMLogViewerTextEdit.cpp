@@ -223,7 +223,6 @@ void UIVMLogViewerTextEdit::prepareWidgets()
     /* Configure this' wrap mode: */
     setWrapLines(false);
     setReadOnly(true);
-    setBackground();
 }
 
 void UIVMLogViewerTextEdit::setCurrentFont(QFont font)
@@ -313,47 +312,6 @@ void UIVMLogViewerTextEdit::retranslateUi()
     m_strBackgroungText = QString(UIVMLogViewerWidget::tr("Filtered"));
 }
 
-void UIVMLogViewerTextEdit::setBackground()
-{
-    /* Prepare modified standard palette: */
-    QPalette pal = style() ? style()->standardPalette() : palette(); // fallback if no style exist.
-    pal.setColor(QPalette::Inactive, QPalette::Highlight, pal.color(QPalette::Active, QPalette::Highlight));
-    pal.setColor(QPalette::Inactive, QPalette::HighlightedText, pal.color(QPalette::Active, QPalette::HighlightedText));
-
-    /* Paint a string to the background of the text edit to indicate that
-       the text has been filtered */
-    if (m_bShownTextIsFiltered)
-    {
-        /* For 100% scale PM_LargeIconSize is 32px, and since we want ~300x~100 pixmap we take it 9x3: */
-        const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize);
-        int imageW = 8 * iIconMetric;
-        int imageH = 8 * iIconMetric;
-        QImage image(imageW, imageH, QImage::Format_ARGB32_Premultiplied);
-        QColor fillColor(QPalette::Light);
-        fillColor.setAlpha(0);
-        image.fill(fillColor);
-        QPainter painter(&image);
-        painter.translate(0.5 * imageW, 0.5 * imageH);
-        painter.rotate(-45);
-
-        /* Configure the font size and color: */
-        QFont pfont = painter.font();
-        QColor fontColor(QPalette::Dark);
-        fontColor.setAlpha(22);
-        painter.setPen(fontColor);
-        pfont.setBold(true);
-        pfont.setPixelSize(48);
-        painter.setFont(pfont);
-        QRect textRect(- 0.5 * imageW, - 0.5 * imageH, imageW, imageH);
-        painter.drawText(textRect, Qt::AlignCenter | Qt::AlignVCenter, m_strBackgroungText);
-
-        pal.setBrush(QPalette::Base, QBrush(image));
-    }
-
-    /* Apply palette changes finally: */
-    setPalette(pal);
-}
-
 void UIVMLogViewerTextEdit::contextMenuEvent(QContextMenuEvent *pEvent)
 {
     /* If shown text is filtered, do not create Bookmark action since
@@ -422,14 +380,22 @@ void UIVMLogViewerTextEdit::paintEvent(QPaintEvent *pEvent)
     QIWithRetranslateUI<QPlainTextEdit>::paintEvent(pEvent);
 
     /** Draw an overlay with text in it to show the number of search matches: */
-    if (viewport() && m_fShowSearchResultOverlay)
+    if (viewport() && (m_fShowSearchResultOverlay || m_bShownTextIsFiltered))
     {
         QPainter painter(viewport());
         QColor rectColor = viewport()->palette().color(QPalette::Active, QPalette::Dark);
         double fontScale = 1.5;
         rectColor.setAlpha(200);
 
-        QString strText = QString("%1 %2").arg(QString::number(m_iMatchCount)).arg(UIVMLogViewerWidget::tr("Matches Found"));
+        QString strText;
+        if (m_fShowSearchResultOverlay)
+            strText = QString("%1 %2").arg(QString::number(m_iMatchCount)).arg(UIVMLogViewerWidget::tr("Matches Found"));
+        if (m_bShownTextIsFiltered)
+        {
+            if (!strText.isEmpty())
+                strText.append(" / ");
+            strText.append(UIVMLogViewerWidget::tr("Filtered"));
+        }
         /** Space between the text and rectangle border. */
         QSize textMargin(5, 5);
         /** Space between the rectangle and viewport edges. */
@@ -562,7 +528,8 @@ void UIVMLogViewerTextEdit::setShownTextIsFiltered(bool warning)
     if (m_bShownTextIsFiltered == warning)
         return;
     m_bShownTextIsFiltered = warning;
-    setBackground();
+    if (viewport())
+        viewport()->repaint();
 }
 
 void UIVMLogViewerTextEdit::setShowLineNumbers(bool bShowLineNumbers)

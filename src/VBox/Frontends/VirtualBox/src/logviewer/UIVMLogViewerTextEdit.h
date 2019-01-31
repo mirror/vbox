@@ -96,7 +96,6 @@ private:
     void setMouseCursorLine(int lineNumber);
     /** If bookmark exists this function removes it, if not it adds the bookmark. */
     void toggleBookmark(const QPair<int, QString>& bookmark);
-    void setBackground();
 
     /** Line number and text at the context menu position */
     QPair<int, QString>  m_iContextMenuBookmark;
