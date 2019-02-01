@@ -187,11 +187,7 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_PHYS:
         case RTR0MEMOBJTYPE_PHYS_NC:
         {
-#if __FreeBSD_version >= 1000030
             VM_OBJECT_WLOCK(pMemFreeBSD->pObject);
-#else
-            VM_OBJECT_LOCK(pMemFreeBSD->pObject);
-#endif
             vm_page_t pPage = vm_page_find_least(pMemFreeBSD->pObject, 0);
 #if __FreeBSD_version < 1000000
             vm_page_lock_queues();
@@ -205,11 +201,7 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 #if __FreeBSD_version < 1000000
             vm_page_unlock_queues();
 #endif
-#if __FreeBSD_version >= 1000030
             VM_OBJECT_WUNLOCK(pMemFreeBSD->pObject);
-#else
-            VM_OBJECT_UNLOCK(pMemFreeBSD->pObject);
-#endif
             vm_object_deallocate(pMemFreeBSD->pObject);
             break;
         }
@@ -237,18 +229,10 @@ static vm_page_t rtR0MemObjFreeBSDContigPhysAllocHelper(vm_object_t pObject, vm_
 
     while (cTries <= 1)
     {
-#if __FreeBSD_version >= 1000030
         VM_OBJECT_WLOCK(pObject);
-#else
-        VM_OBJECT_LOCK(pObject);
-#endif
         pPages = vm_page_alloc_contig(pObject, iPIndex, fFlags, cPages, 0,
                                       VmPhysAddrHigh, uAlignment, 0, VM_MEMATTR_DEFAULT);
-#if __FreeBSD_version >= 1000030
         VM_OBJECT_WUNLOCK(pObject);
-#else
-        VM_OBJECT_UNLOCK(pObject);
-#endif
         if (pPages)
             break;
         vm_pageout_grow_cache(cTries, 0, VmPhysAddrHigh);
@@ -268,11 +252,7 @@ static vm_page_t rtR0MemObjFreeBSDContigPhysAllocHelper(vm_object_t pObject, vm_
 
     if (!pPages)
         return pPages;
-#if __FreeBSD_version >= 1000030
     VM_OBJECT_WLOCK(pObject);
-#else
-    VM_OBJECT_LOCK(pObject);
-#endif
     for (vm_pindex_t iPage = 0; iPage < cPages; iPage++)
     {
         vm_page_t pPage = pPages + iPage;
@@ -284,11 +264,7 @@ static vm_page_t rtR0MemObjFreeBSDContigPhysAllocHelper(vm_object_t pObject, vm_
             atomic_add_int(&cnt.v_wire_count, 1);
         }
     }
-#if __FreeBSD_version >= 1000030
     VM_OBJECT_WUNLOCK(pObject);
-#else
-    VM_OBJECT_UNLOCK(pObject);
-#endif
     return pPages;
 #endif
 }
@@ -312,11 +288,7 @@ static int rtR0MemObjFreeBSDPhysAllocHelper(vm_object_t pObject, u_long cPages,
         if (!pPage)
         {
             /* Free all allocated pages */
-#if __FreeBSD_version >= 1000030
             VM_OBJECT_WLOCK(pObject);
-#else
-            VM_OBJECT_LOCK(pObject);
-#endif
             while (iPage-- > 0)
             {
                 pPage = vm_page_lookup(pObject, iPage);
@@ -330,11 +302,7 @@ static int rtR0MemObjFreeBSDPhysAllocHelper(vm_object_t pObject, u_long cPages,
                 vm_page_unlock_queues();
 #endif
             }
-#if __FreeBSD_version >= 1000030
             VM_OBJECT_WUNLOCK(pObject);
-#else
-            VM_OBJECT_UNLOCK(pObject);
-#endif
             return rcNoMem;
         }
     }
@@ -473,17 +441,9 @@ static int rtR0MemObjFreeBSDAllocPhysPages(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOB
         if (fContiguous)
         {
             Assert(enmType == RTR0MEMOBJTYPE_PHYS);
-#if __FreeBSD_version >= 1000030
             VM_OBJECT_WLOCK(pMemFreeBSD->pObject);
-#else
-            VM_OBJECT_LOCK(pMemFreeBSD->pObject);
-#endif
             pMemFreeBSD->Core.u.Phys.PhysBase = VM_PAGE_TO_PHYS(vm_page_find_least(pMemFreeBSD->pObject, 0));
-#if __FreeBSD_version >= 1000030
             VM_OBJECT_WUNLOCK(pMemFreeBSD->pObject);
-#else
-            VM_OBJECT_UNLOCK(pMemFreeBSD->pObject);
-#endif
             pMemFreeBSD->Core.u.Phys.fAllocated = true;
         }
 
@@ -902,17 +862,10 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
         case RTR0MEMOBJTYPE_PHYS_NC:
         {
             RTHCPHYS addr;
-#if __FreeBSD_version >= 1000030
+
             VM_OBJECT_WLOCK(pMemFreeBSD->pObject);
-#else
-            VM_OBJECT_LOCK(pMemFreeBSD->pObject);
-#endif
             addr = VM_PAGE_TO_PHYS(vm_page_lookup(pMemFreeBSD->pObject, iPage));
-#if __FreeBSD_version >= 1000030
             VM_OBJECT_WUNLOCK(pMemFreeBSD->pObject);
-#else
-            VM_OBJECT_UNLOCK(pMemFreeBSD->pObject);
-#endif
             return addr;
         }
 

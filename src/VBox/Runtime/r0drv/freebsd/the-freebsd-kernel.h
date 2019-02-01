@@ -129,6 +129,14 @@
 #endif
 
 /**
+ * The VM object lock/unlock wrappers for older kernels.
+ */
+#if __FreeBSD_version < 1000030
+# define VM_OBJECT_WLOCK(a_pObject) VM_OBJECT_LOCK((a_pObject))
+# define VM_OBJECT_WUNLOCK(a_pObject) VM_OBJECT_UNLOCK((a_pObject))
+#endif
+
+/**
  * Check whether we can use kmem_alloc_attr for low allocs.
  */
 #if    (__FreeBSD_version >= 900011) \
