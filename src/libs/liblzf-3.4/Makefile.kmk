@@ -29,6 +29,7 @@ VBox-liblzf_BLD_TYPE = release # WARNING! Always optimizing this lib.
 VBox-liblzf_DEFS = ULTRA_FAST=1 HLOG=12
 VBox-liblzf_DEFS.x86 = STRICT_ALIGN=0
 VBox-liblzf_DEFS.amd64 = STRICT_ALIGN=0
+VBox-liblzf_CFLAGS.freebsd = -std=gnu99
 VBox-liblzf_SOURCES = \
 	lzf_c.c \
 	lzf_d.c
