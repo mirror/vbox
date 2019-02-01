@@ -354,6 +354,24 @@ int sf_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
 		return err;
 
 	generic_fillattr(dentry->d_inode, kstat);
+
+	/*
+	 * FsPerf shows the following numbers for sequential file reads:
+	 *   4096 KB = 2254 MB/s
+	 *   2048 KB = 2368 MB/s
+	 *   1024 KB = 2208 MB/s
+	 *    512 KB = 1908 MB/s
+	 *    256 KB = 1625 MB/s
+	 *    128 KB = 1413 MB/s
+	 *     64 KB = 1152 MB/s
+	 *     32 KB =  726 MB/s
+	 *      4 KB =  145 MB/s
+	 */
+	if (S_ISREG(kstat->mode))
+		kstat->blksize = _1M;
+	else if (S_ISDIR(kstat->mode))
+		/** @todo this may need more tuning after we rewrite the directory handling. */
+		kstat->blksize = _16K;
 	return 0;
 }
 
