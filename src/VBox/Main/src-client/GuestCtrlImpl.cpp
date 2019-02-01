@@ -64,23 +64,6 @@
  * from the guest. Acts as a dispatcher for the actual class instance.
  *
  * @returns VBox status code.
- *
- * @todo
- *
- * @todo    r=bird: This code mostly returned VINF_SUCCESS with the comment
- *          "Never return any errors back to the guest here." attached to the
- *          return locations.  However, there is no explaination for this attitude
- *          thowards error handling.   Further, it creates a slight problem since
- *          the service would route all message calls it didn't recognize here,
- *          thereby making any undefined messages confusingly return VINF_SUCCESS.
- *
- *          In my humble opinion, if the guest gives us incorrect input it should
- *          expect and deal with error statuses.  If there is unimplemented
- *          features I expect there to have been sufficient forethought by the
- *          coder that these return sensible status codes.
- *
- *          It would be much appreciated if the esteemed card house builder could
- *          please step in and explain this confusing state of affairs.
  */
 /* static */
 DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
