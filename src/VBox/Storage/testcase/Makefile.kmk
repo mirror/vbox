@@ -145,7 +145,12 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
   ifdef SDK_VBOX_LIBXML2_LIBS
    vbox-img_LIBS += xml2
   endif
- else if1of ($(KBUILD_TARGET),darwin freebsd)
+ else ifeq ($(KBUILD_TARGET),freebsd)
+  vbox-img_LIBS += iconv
+  ifdef SDK_VBOX_LIBXML2_LIBS
+   vbox-img_LIBS += xml2 lzma
+  endif
+ else ifeq ($(KBUILD_TARGET),darwin)
   vbox-img_LIBS += iconv
  else ifeq ($(KBUILD_TARGET),win)
   vbox-img_SDKS.win = VBOX_NTDLL
