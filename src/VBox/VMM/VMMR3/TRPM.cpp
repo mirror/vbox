@@ -1516,6 +1516,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
     DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "TRPMInject");
 # endif
 
+    Assert(!CPUMIsGuestInNestedHwvirtMode(pCtx));
     uint8_t u8Interrupt = 0;
     int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
     Log(("TRPMR3InjectEvent: CPU%d u8Interrupt=%d (%#x) rc=%Rrc\n", pVCpu->idCpu, u8Interrupt, u8Interrupt, rc));
@@ -1599,6 +1600,8 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
         else
         {
             VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8Interrupt, enmEvent, 0, 0, 0);
+            /** @todo NSTVMX: NSTSVM: We don't support nested VMX or nested SVM with NEM yet.
+             *        If so we should handle VINF_SVM_VMEXIT and VINF_VMX_VMEXIT codes here. */
             if (rcStrict != VINF_SUCCESS)
                 return VBOXSTRICTRC_TODO(rcStrict);
         }
