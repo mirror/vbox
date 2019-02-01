@@ -373,7 +373,7 @@ protected:
     virtual int interruptWait(void);
     virtual PUSBDEVICE getDevices(void);
     int addDeviceToChain(PUSBDEVICE pDev, PUSBDEVICE *ppFirst, PUSBDEVICE **pppNext, int rc);
-    virtual void deviceAdded(ComObjPtr<HostUSBDevice> &aDevice, SessionMachinesList &llOpenedMachines, PUSBDEVICE aUSBDevice);
+    virtual bool isFakeUpdateRequired();
 
 private:
     RTSEMEVENT mNotifyEventSem;
