@@ -253,8 +253,8 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
                         PeriphMatchPattern.pattern.periph_pattern.path_id    = paMatches[i].result.device_result.path_id;
                         PeriphMatchPattern.pattern.periph_pattern.target_id  = paMatches[i].result.device_result.target_id;
                         PeriphMatchPattern.pattern.periph_pattern.target_lun = paMatches[i].result.device_result.target_lun;
-                        PeriphMatchPattern.pattern.periph_pattern.flags      = PERIPH_MATCH_PATH | PERIPH_MATCH_TARGET |
-                                                                               PERIPH_MATCH_LUN;
+                        PeriphMatchPattern.pattern.periph_pattern.flags      = (periph_pattern_flags)(  PERIPH_MATCH_PATH | PERIPH_MATCH_TARGET
+                                                                                                      | PERIPH_MATCH_LUN);
                         PeriphCCB.cdm.num_patterns    = 1;
                         PeriphCCB.cdm.pattern_buf_len = sizeof(struct dev_match_result);
                         PeriphCCB.cdm.patterns        = &PeriphMatchPattern;
