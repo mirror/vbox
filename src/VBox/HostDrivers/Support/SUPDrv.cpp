@@ -480,13 +480,13 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
     (PFNRT)RTRandBytes,
     /* VBoxUSB */
     (PFNRT)RTPathStripFilename,
-    (PFNRT)RTHandleTableAlloc,
 #if !defined(RT_OS_FREEBSD)
+    (PFNRT)RTHandleTableAlloc,
     (PFNRT)RTStrPurgeEncoding,
 #endif
     NULL
 };
-#endif  /* RT_OS_DARWIN || RT_OS_SOLARIS || RT_OS_SOLARIS */
+#endif  /* RT_OS_DARWIN || RT_OS_SOLARIS || RT_OS_FREEBSD */
 
 /** Hardware-virtualization MSRs. */
 static SUPHWVIRTMSRS            g_HwvirtMsrs;
