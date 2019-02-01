@@ -31,7 +31,9 @@
 #include <VBox/err.h>
 
 #include <VBox/scsi.h>
+#include <iprt/file.h>
 #include <iprt/log.h>
+#include <iprt/string.h>
 
 
 /*********************************************************************************************************************************
@@ -164,6 +166,8 @@ DECLHIDDEN(int) drvHostBaseScsiCmdOs(PDRVHOSTBASE pThis, const uint8_t *pbCmd, s
         else
             rc = RTErrConvertFromErrno(errno);
     }
+
+    return rc;
 }
 
 
