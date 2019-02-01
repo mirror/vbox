@@ -103,7 +103,7 @@
 # else
 #  include <unistd.h>
 # endif
-# if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
+# if defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
 #  ifdef _MSC_VER
 #   define ftruncate64  _chsize
 #  else

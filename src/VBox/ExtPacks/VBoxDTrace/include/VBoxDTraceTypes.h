@@ -55,7 +55,9 @@ typedef uintptr_t                   ulong_t;
 typedef int64_t                     longlong_t;
 typedef uint64_t                    u_longlong_t;
 typedef uint64_t                    hrtime_t;
+# ifndef RT_OS_FREEBSD
 typedef uint32_t                    id_t;
+# endif
 typedef uint32_t                    zoneid_t;
 #endif
 #if (!defined(__NGREG) && !defined(NGREG)) || !defined(RT_OS_LINUX)
@@ -111,7 +113,7 @@ typedef char                       *caddr_t;
 # ifndef _IPL32
 #  define _IPL32                    1
 # endif
-# if !defined(_LITTLE_ENDIAN) || !defined(RT_OS_SOLARIS)
+# if !defined(_LITTLE_ENDIAN) || (!defined(RT_OS_SOLARIS) && !defined(RT_OS_FREEBSD))
 #  define _LITTLE_ENDIAN            1
 # endif
 
@@ -125,7 +127,7 @@ typedef char                       *caddr_t;
 # ifndef _LP64
 #  define _LP64                     1
 # endif
-# if !defined(_LITTLE_ENDIAN) || !defined(RT_OS_SOLARIS)
+# if !defined(_LITTLE_ENDIAN) || (!defined(RT_OS_SOLARIS) && !defined(RT_OS_FREEBSD))
 #  define _LITTLE_ENDIAN            1
 # endif
 

@@ -45,7 +45,7 @@
 #  include <sys/resource.h>
 #  include <unistd.h>
 #  include <signal.h>
-#  if defined(RT_OS_DARWIN)
+#  if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
 #   define open64 open
 #  endif
 # else
