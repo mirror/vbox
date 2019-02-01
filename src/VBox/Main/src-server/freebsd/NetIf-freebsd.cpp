@@ -32,6 +32,7 @@
 #include <sys/sockio.h>
 #include <net/if.h>
 #include <net/if_types.h>
+#include <net80211/ieee80211_ioctl.h>
 
 #include <net/route.h>
 /*
@@ -311,7 +312,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
             else
                 enmType = HostNetworkInterfaceType_HostOnly;
 
-            pNew->wireless = isWireless(pNew->szName);
+            pNew->fWireless = isWireless(pNew->szName);
 
             ComObjPtr<HostNetworkInterface> IfObj;
             IfObj.createObject();
