@@ -2,6 +2,7 @@
 /** @file
  * IPRT - Memory Allocation, Ring-0 Driver, NetBSD.
  */
+
 /*
  * Copyright (C) 2014-2019 Oracle Corporation
  *
@@ -21,6 +22,7 @@
  *
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
+ *
  * ---------------------------------------------------------------------------
  *
  * This code is based on:

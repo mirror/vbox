@@ -44,54 +44,6 @@
 /r3/win/vcc100-kernel32-fakes.h: --external-copyright --no-update-license
 
 # external code
-/r0drv/freebsd/alloc-r0drv-freebsd.c           : --external-copyright
-/r0drv/freebsd/assert-r0drv-freebsd.c          : --external-copyright
-/r0drv/freebsd/initterm-r0drv-freebsd.c        : --external-copyright
-/r0drv/freebsd/memobj-r0drv-freebsd.c          : --external-copyright
-/r0drv/freebsd/process-r0drv-freebsd.c         : --external-copyright
-/r0drv/freebsd/semevent-r0drv-freebsd.c        : --external-copyright
-/r0drv/freebsd/semeventmulti-r0drv-freebsd.c   : --external-copyright
-/r0drv/freebsd/semfastmutex-r0drv-freebsd.c    : --external-copyright
-/r0drv/freebsd/spinlock-r0drv-freebsd.c        : --external-copyright
-/r0drv/freebsd/the-freebsd-kernel.h            : --external-copyright
-/r0drv/freebsd/thread2-r0drv-freebsd.c         : --external-copyright
-/r0drv/freebsd/time-r0drv-freebsd.c            : --external-copyright
-/r0drv/freebsd/timer-r0drv-freebsd.c           : --external-copyright
-
-/r0drv/netbsd/assert-r0drv-netbsd.c            : --external-copyright
-/r0drv/netbsd/initterm-r0drv-netbsd.c          : --external-copyright
-/r0drv/netbsd/memobj-r0drv-netbsd.c            : --external-copyright
-/r0drv/netbsd/process-r0drv-netbsd.c           : --external-copyright
-/r0drv/netbsd/semevent-r0drv-netbsd.c          : --external-copyright
-/r0drv/netbsd/semeventmulti-r0drv-netbsd.c     : --external-copyright
-/r0drv/netbsd/semfastmutex-r0drv-netbsd.c      : --external-copyright
-/r0drv/netbsd/spinlock-r0drv-netbsd.c          : --external-copyright
-/r0drv/netbsd/the-netbsd-kernel.h              : --external-copyright
-/r0drv/netbsd/thread2-r0drv-netbsd.c           : --external-copyright
-/r0drv/netbsd/time-r0drv-netbsd.c              : --external-copyright
-
-/r0drv/os2/alloc-r0drv-os2.cpp                 : --external-copyright
-/r0drv/os2/assert-r0drv-os2.cpp                : --external-copyright
-/r0drv/os2/assertA-r0drv-os2.asm               : --external-copyright
-/r0drv/os2/initterm-r0drv-os2.cpp              : --external-copyright
-/r0drv/os2/memobj-r0drv-os2.cpp                : --external-copyright
-/r0drv/os2/process-r0drv-os2.cpp               : --external-copyright
-/r0drv/os2/RTR0AssertPanicSystem-r0drv-os2.asm : --external-copyright
-/r0drv/os2/RTR0Os2DHQueryDOSVar.asm            : --external-copyright
-/r0drv/os2/RTR0Os2DHVMGlobalToProcess.asm      : --external-copyright
-/r0drv/os2/semevent-r0drv-os2.cpp              : --external-copyright
-/r0drv/os2/semeventmulti-r0drv-os2.cpp         : --external-copyright
-/r0drv/os2/semfastmutex-r0drv-os2.cpp          : --external-copyright
-/r0drv/os2/spinlock-r0drv-os2.cpp              : --external-copyright
-/r0drv/os2/the-os2-kernel.h                    : --external-copyright
-/r0drv/os2/thread-r0drv-os2.cpp                : --external-copyright
-/r0drv/os2/thread2-r0drv-os2.cpp               : --external-copyright
-/r0drv/os2/time-r0drv-os2.cpp                  : --external-copyright
-/r0drv/os2/timer-r0drv-os2.cpp                 : --external-copyright
-/r0drv/os2/timerA-r0drv-os2.asm                : --external-copyright
-
-/r3/os2/time-os2.cpp                           : --external-copyright
-/r3/os2/RTTimeSet-os2.cpp                      : --external-copyright
 /r0drv/os2/os2imports.imp                      : --external-copyright --treat-as .def
 
 /r3/win/VBoxRT-msvcp100-win32.def              : --external-copyright

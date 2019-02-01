@@ -67,6 +67,7 @@ DECLHIDDEN(void) rtR0AssertNativeMsg2V(bool fInitial, const char *pszFormat, va_
 
 RTR0DECL(void) RTR0AssertPanicSystem(void)
 {
+ASMBreakpoint();// temp
     panic("%s%s", g_szRTAssertMsg1, g_szRTAssertMsg2);
 }
 
