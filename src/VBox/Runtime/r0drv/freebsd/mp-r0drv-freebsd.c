@@ -37,6 +37,10 @@
 #include "r0drv/mp-r0drv.h"
 
 
+#if __FreeBSD_version < 1200028
+# define smp_no_rendezvous_barrier smp_no_rendevous_barrier
+#endif
+
 RTDECL(RTCPUID) RTMpCpuId(void)
 {
     return curcpu;
@@ -155,7 +159,7 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Args.pvUser2 = pvUser2;
     Args.idCpu = NIL_RTCPUID;
     Args.cHits = 0;
-    smp_rendezvous(NULL, rtmpOnAllFreeBSDWrapper, smp_no_rendevous_barrier, &Args);
+    smp_rendezvous(NULL, rtmpOnAllFreeBSDWrapper, smp_no_rendezvous_barrier, &Args);
     return VINF_SUCCESS;
 }
 
@@ -194,12 +198,12 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
         Args.cHits = 0;
 #if __FreeBSD_version >= 700000
 # if __FreeBSD_version >= 900000
-    Mask = all_cpus;
-    CPU_CLR(curcpu, &Mask);
+        Mask = all_cpus;
+        CPU_CLR(curcpu, &Mask);
 # else
-    Mask = ~(cpumask_t)curcpu;
+        Mask = ~(cpumask_t)curcpu;
 # endif
-        smp_rendezvous_cpus(Mask, NULL, rtmpOnOthersFreeBSDWrapper, smp_no_rendevous_barrier, &Args);
+        smp_rendezvous_cpus(Mask, NULL, rtmpOnOthersFreeBSDWrapper, smp_no_rendezvous_barrier, &Args);
 #else
         smp_rendezvous(NULL, rtmpOnOthersFreeBSDWrapper, NULL, &Args);
 #endif
@@ -250,7 +254,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
 # else
     Mask = (cpumask_t)1 << idCpu;
 # endif
-    smp_rendezvous_cpus(Mask, NULL, rtmpOnSpecificFreeBSDWrapper, smp_no_rendevous_barrier, &Args);
+    smp_rendezvous_cpus(Mask, NULL, rtmpOnSpecificFreeBSDWrapper, smp_no_rendezvous_barrier, &Args);
 #else
     smp_rendezvous(NULL, rtmpOnSpecificFreeBSDWrapper, NULL, &Args);
 #endif
@@ -288,7 +292,7 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 # else
     Mask = (cpumask_t)1 << idCpu;
 # endif
-    smp_rendezvous_cpus(Mask, NULL, rtmpFreeBSDPokeCallback, smp_no_rendevous_barrier, NULL);
+    smp_rendezvous_cpus(Mask, NULL, rtmpFreeBSDPokeCallback, smp_no_rendezvous_barrier, NULL);
 
     return VINF_SUCCESS;
 }
