@@ -614,7 +614,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
 #  define _LogIt(a_fFlags, a_iGroup, ...) \
    do \
    { \
-        register PRTLOGGER LogIt_pLogger = RTLogDefaultInstanceEx(RT_MAKE_U32(a_fFlags, a_iGroup)); \
+        PRTLOGGER LogIt_pLogger = RTLogDefaultInstanceEx(RT_MAKE_U32(a_fFlags, a_iGroup)); \
         if (RT_LIKELY(!LogIt_pLogger)) \
         {   /* likely */ } \
         else \
@@ -628,7 +628,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
 #  define LogIt(a_fFlags, a_iGroup, fmtargs) \
     do \
     { \
-        register PRTLOGGER LogIt_pLogger = RTLogDefaultInstanceEx(RT_MAKE_U32(a_fFlags, a_iGroup)); \
+        PRTLOGGER LogIt_pLogger = RTLogDefaultInstanceEx(RT_MAKE_U32(a_fFlags, a_iGroup)); \
         if (RT_LIKELY(!LogIt_pLogger)) \
         {   /* likely */ } \
         else \
@@ -639,7 +639,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
 #  define LogItAlways(a_fFlags, a_iGroup, fmtargs) \
     do \
     { \
-        register PRTLOGGER LogIt_pLogger = RTLogDefaultInstanceEx(RT_MAKE_U32(0, UINT16_MAX)); \
+        PRTLOGGER LogIt_pLogger = RTLogDefaultInstanceEx(RT_MAKE_U32(0, UINT16_MAX)); \
         if (LogIt_pLogger) \
             LogIt_pLogger->pfnLogger fmtargs; \
     } while (0)
