@@ -253,7 +253,7 @@ typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, 
 # else
 #  define VMSVGA3D_GL_COMPLAIN(a_pState, a_pContext, a_LogRelDetails) \
     do { \
-        LogRelMax(32, ("VMSVGA3d: OpenGL error %#x (idActiveContext=%#x) on line %u ", (a_pContext)->lastError, (a_pContext)->id)); \
+        LogRelMax(32, ("VMSVGA3d: OpenGL error %#x (idActiveContext=%#x) on line %u ", (a_pContext)->lastError, (a_pContext)->id, __LINE__)); \
         GLenum iNextError; \
         while ((iNextError = glGetError()) != GL_NO_ERROR) \
             LogRelMax(32, (" - also error %#x ", iNextError)); \
@@ -523,6 +523,17 @@ typedef struct
 typedef VMSVGA3DSHAREDSURFACE *PVMSVGA3DSHAREDSURFACE;
 #endif /* VMSVGA3D_DIRECT3D  */
 
+#ifdef VMSVGA3D_OPENGL
+/* What kind of OpenGL resource has been created for the VMSVGA3D surface. */
+typedef enum VMSVGA3DOGLRESTYPE
+{
+    VMSVGA3D_OGLRESTYPE_NONE           = 0,
+    VMSVGA3D_OGLRESTYPE_BUFFER         = 1,
+    VMSVGA3D_OGLRESTYPE_TEXTURE        = 2,
+    VMSVGA3D_OGLRESTYPE_RENDERBUFFER   = 3
+} VMSVGA3DOGLRESTYPE;
+#endif
+
 /**
  * VMSVGA3d surface.
  */
@@ -540,6 +551,7 @@ typedef struct VMSVGA3DSURFACE
     GLint                   internalFormatGL;
     GLint                   formatGL;
     GLint                   typeGL;
+    VMSVGA3DOGLRESTYPE      enmOGLResType; /* Which resource was created for the surface. */
     union
     {
         GLuint              texture;
@@ -1019,12 +1031,14 @@ typedef struct VMSVGA3DSTATE
         PFNGLENDQUERYPROC                               glEndQuery;
         PFNGLGETQUERYOBJECTUIVPROC                      glGetQueryObjectuiv;
         PFNGLTEXIMAGE3DPROC                             glTexImage3D;
+        PFNGLTEXSUBIMAGE3DPROC                          glTexSubImage3D;
         PFNGLVERTEXATTRIBDIVISORPROC                    glVertexAttribDivisor;
         PFNGLDRAWARRAYSINSTANCEDPROC                    glDrawArraysInstanced;
         PFNGLDRAWELEMENTSINSTANCEDPROC                  glDrawElementsInstanced;
         PFNGLCOMPRESSEDTEXIMAGE2DPROC                   glCompressedTexImage2D;
         PFNGLCOMPRESSEDTEXIMAGE3DPROC                   glCompressedTexImage3D;
         PFNGLCOMPRESSEDTEXSUBIMAGE2DPROC                glCompressedTexSubImage2D;
+        PFNGLCOMPRESSEDTEXSUBIMAGE3DPROC                glCompressedTexSubImage3D;
     } ext;
 
     struct

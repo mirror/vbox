@@ -700,11 +700,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
 
                     Log(("Surface sid=%d: save mipmap level %d with %x bytes data.\n", sid, i, pMipmapLevel->cbSurface));
 
-#ifdef VMSVGA3D_DIRECT3D
-                    if (!pSurface->u.pSurface)
-#else
-                    if (pSurface->oglId.texture == OPENGL_INVALID_ID)
-#endif
+                    if (!VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
                     {
                         if (pMipmapLevel->fDirty)
                         {
@@ -887,22 +883,19 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
 
                         Assert(pMipmapLevel->cbSurface);
 
-                        switch (pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK)
+                        switch (pSurface->enmOGLResType)
                         {
                         default:
                             AssertFailed();
                             RT_FALL_THRU();
-                        case SVGA3D_SURFACE_HINT_DEPTHSTENCIL:
-                        case SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_HINT_TEXTURE:
-                            /** @todo fetch data from the renderbuffer */
+                        case VMSVGA3D_OGLRESTYPE_RENDERBUFFER:
+                            /** @todo fetch data from the renderbuffer. Not used currently. */
                             /* No data follows */
                             rc = SSMR3PutBool(pSSM, false);
                             AssertRCReturn(rc, rc);
                             break;
 
-                        case SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET:
-                        case SVGA3D_SURFACE_HINT_TEXTURE:
-                        case SVGA3D_SURFACE_HINT_RENDERTARGET:
+                        case VMSVGA3D_OGLRESTYPE_TEXTURE:
                         {
                             GLint activeTexture;
 
@@ -942,9 +935,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                             break;
                         }
 
-                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_INDEXBUFFER:
-                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
-                        case SVGA3D_SURFACE_HINT_INDEXBUFFER:
+                        case VMSVGA3D_OGLRESTYPE_BUFFER:
                         {
                             uint8_t *pBufferData;
 

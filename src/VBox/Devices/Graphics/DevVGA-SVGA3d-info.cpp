@@ -291,11 +291,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
             PVMSVGA3DMIPMAPLEVEL pMipmapLevel = &pSurface->pMipmapLevels[iFace * pSurface->faces[0].numMipLevels];
             for (uint32_t i = 0; i < pSurface->faces[iFace].numMipLevels; i++, pMipmapLevel++)
             {
-#ifdef VMSVGA3D_DIRECT3D
-                if (pSurface->u.pSurface)
-#else
-                if (pSurface->oglId.texture != OPENGL_INVALID_ID)
-#endif
+                if (VMSVGA3DSURFACE_HAS_HW_SURFACE(pSurface))
                 {
                     Assert(pMipmapLevel->cbSurface);
                     Assert(pMipmapLevel->cbSurface == pMipmapLevel->cbSurfacePlane * pMipmapLevel->mipmapSize.depth);
@@ -450,11 +446,9 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                     /*
                      * OpenGL specifics.
                      */
-                    switch (fSwitchFlags)
+                    switch (pSurface->enmOGLResType)
                     {
-                        case SVGA3D_SURFACE_HINT_TEXTURE:
-                        case SVGA3D_SURFACE_HINT_RENDERTARGET:
-                        case SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET:
+                        case VMSVGA3D_OGLRESTYPE_TEXTURE:
                         {
                             GLint activeTexture;
                             glGetIntegerv(GL_TEXTURE_BINDING_2D, &activeTexture);
@@ -482,9 +476,7 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                             break;
                         }
 
-                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_INDEXBUFFER:
-                        case SVGA3D_SURFACE_HINT_VERTEXBUFFER:
-                        case SVGA3D_SURFACE_HINT_INDEXBUFFER:
+                        case VMSVGA3D_OGLRESTYPE_BUFFER:
                         {
                             pState->ext.glBindBuffer(GL_ARRAY_BUFFER, pSurface->oglId.buffer);
                             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
