@@ -62,6 +62,9 @@ struct sf_glob_info {
 	int fmode;
 	int dmask;
 	int fmask;
+	/** Maximum number of pages to allow in an I/O buffer with the host.
+	 * This applies to read and write operations.  */
+	uint32_t cMaxIoPages;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	struct backing_dev_info bdi;
 #endif

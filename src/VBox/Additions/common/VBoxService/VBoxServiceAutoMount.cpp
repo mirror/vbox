@@ -390,6 +390,7 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
         0,                     /* remount */
         "\0",                  /* nls_name */
         NULL,                  /* convertcp */
+        0,                     /* cMaxIoPages */
     };
 
     int rc = vbsvcAutoMountPrepareMountPointOld(pszMountPoint, pszShareName, &Opts);
@@ -436,6 +437,7 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
         mntinf.fmode = Opts.fmode;
         mntinf.dmask = Opts.dmask;
         mntinf.fmask = Opts.fmask;
+        mntinf.cMaxIoPages = Opts.cMaxIoPages;
         mntinf.tag[0] = '\0';
 
         strcpy(mntinf.name, pszShareName);
@@ -1476,6 +1478,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
     MntInfo.fmode        = MntOpts.fmode = 0770;
     MntInfo.dmask        = MntOpts.dmask = 0000;
     MntInfo.fmask        = MntOpts.fmask = 0000;
+    MntInfo.cMaxIoPages  = MntOpts.cMaxIoPages = 0 /*default*/;
     memcpy(MntInfo.tag, g_szTag, sizeof(g_szTag)); AssertCompile(sizeof(MntInfo.tag) >= sizeof(g_szTag));
     rc = RTStrCopy(MntInfo.name, sizeof(MntInfo.name), pEntry->pszName);
     if (RT_FAILURE(rc))

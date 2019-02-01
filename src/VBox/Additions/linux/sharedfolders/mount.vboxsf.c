@@ -96,27 +96,28 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
     size_t len;
     typedef enum handler_opt
     {
-        HORW,
-        HORO,
-        HOUID,
-        HOGID,
-        HOTTL,
-        HODMODE,
-        HOFMODE,
-        HOUMASK,
-        HODMASK,
-        HOFMASK,
-        HOIOCHARSET,
-        HOCONVERTCP,
-        HONOEXEC,
-        HOEXEC,
-        HONODEV,
-        HODEV,
-        HONOSUID,
-        HOSUID,
-        HOREMOUNT,
-        HONOAUTO,
-        HONIGNORE
+        HO_RW,
+        HO_RO,
+        HO_UID,
+        HO_GID,
+        HO_TTL,
+        HO_DMODE,
+        HO_FMODE,
+        HO_UMASK,
+        HO_DMASK,
+        HO_FMASK,
+        HO_IOCHARSET,
+        HO_CONVERTCP,
+        HO_MAX_IO_PAGES,
+        HO_NOEXEC,
+        HO_EXEC,
+        HO_NODEV,
+        HO_DEV,
+        HO_NOSUID,
+        HO_SUID,
+        HO_REMOUNT,
+        HO_NOAUTO,
+        HO_NIGNORE
     } handler_opt;
     struct
     {
@@ -126,28 +127,30 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
         const char *desc;
     } handlers[] =
     {
-        {"rw",        HORW,        0, "mount read write (default)"},
-        {"ro",        HORO,        0, "mount read only"},
-        {"uid",       HOUID,       1, "default file owner user id"},
-        {"gid",       HOGID,       1, "default file owner group id"},
-        {"ttl",       HOTTL,       1, "time to live for dentry"},
-        {"iocharset", HOIOCHARSET, 1, "i/o charset (default utf8)"},
-        {"convertcp", HOCONVERTCP, 1, "convert share name from given charset to utf8"},
-        {"dmode",     HODMODE,     1, "mode of all directories"},
-        {"fmode",     HOFMODE,     1, "mode of all regular files"},
-        {"umask",     HOUMASK,     1, "umask of directories and regular files"},
-        {"dmask",     HODMASK,     1, "umask of directories"},
-        {"fmask",     HOFMASK,     1, "umask of regular files"},
-        {"noexec",    HONOEXEC,    0, 0 }, /* don't document these options directly here */
-        {"exec",      HOEXEC,      0, 0 }, /* as they are well known and described in the */
-        {"nodev",     HONODEV,     0, 0 }, /* usual manpages */
-        {"dev",       HODEV,       0, 0 },
-        {"nosuid",    HONOSUID,    0, 0 },
-        {"suid",      HOSUID,      0, 0 },
-        {"remount",   HOREMOUNT,   0, 0 },
-        {"noauto",    HONOAUTO,    0, 0 },
-        {"_netdev",   HONIGNORE,   0, 0 },
-        {NULL, 0, 0, NULL}
+        {"rw",          HO_RW,              0, "mount read write (default)"},
+        {"ro",          HO_RO,              0, "mount read only"},
+        {"uid",         HO_UID,             1, "default file owner user id"},
+        {"gid",         HO_GID,             1, "default file owner group id"},
+        {"ttl",         HO_TTL,             1, "time to live for dentry"},
+        {"iocharset",   HO_IOCHARSET,       1, "i/o charset (default utf8)"},
+        {"convertcp",   HO_CONVERTCP,       1, "convert share name from given charset to utf8"},
+        {"dmode",       HO_DMODE,           1, "mode of all directories"},
+        {"fmode",       HO_FMODE,           1, "mode of all regular files"},
+        {"umask",       HO_UMASK,           1, "umask of directories and regular files"},
+        {"dmask",       HO_DMASK,           1, "umask of directories"},
+        {"fmask",       HO_FMASK,           1, "umask of regular files"},
+        {"maxiopages",  HO_MAX_IO_PAGES,    1, "max buffer size for I/O with host"},
+        {"noexec",      HO_NOEXEC,          0, NULL}, /* don't document these options directly here */
+        {"exec",        HO_EXEC,            0, NULL}, /* as they are well known and described in the */
+        {"nodev",       HO_NODEV,           0, NULL}, /* usual manpages */
+        {"dev",         HO_DEV,             0, NULL},
+        {"nosuid",      HO_NOSUID,          0, NULL},
+        {"suid",        HO_SUID,            0, NULL},
+        {"remount",     HO_REMOUNT,         0, NULL},
+        {"noauto",      HO_NOAUTO,          0, NULL},
+        {"_netdev",     HO_NIGNORE,         0, NULL},
+        {"relatime",    HO_NIGNORE,         0, NULL},
+        {NULL,          0,                  0, NULL}
     }, *handler;
 
     while (next)
@@ -203,79 +206,82 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
 
                 switch(handler->opt)
                 {
-                case HORW:
-                    opts->ronly = 0;
-                    break;
-                case HORO:
-                    opts->ronly = 1;
-                    break;
-                case HONOEXEC:
-                    opts->noexec = 1;
-                    break;
-                case HOEXEC:
-                    opts->noexec = 0;
-                    break;
-                case HONODEV:
-                    opts->nodev = 1;
-                    break;
-                case HODEV:
-                    opts->nodev = 0;
-                    break;
-                case HONOSUID:
-                    opts->nosuid = 1;
-                    break;
-                case HOSUID:
-                    opts->nosuid = 0;
-                    break;
-                case HOREMOUNT:
-                    opts->remount = 1;
-                    break;
-                case HOUID:
-                    /** @todo convert string to id. */
-                    opts->uid = safe_atoi(val, val_len, 10);
-                    break;
-                case HOGID:
-                    /** @todo convert string to id. */
-                    opts->gid = safe_atoi(val, val_len, 10);
-                    break;
-                case HOTTL:
-                    opts->ttl = safe_atoi(val, val_len, 10);
-                    break;
-                case HODMODE:
-                    opts->dmode = safe_atoi(val, val_len, 8);
-                    break;
-                case HOFMODE:
-                    opts->fmode = safe_atoi(val, val_len, 8);
-                    break;
-                case HOUMASK:
-                    opts->dmask = opts->fmask = safe_atoi(val, val_len, 8);
-                    break;
-                case HODMASK:
-                    opts->dmask = safe_atoi(val, val_len, 8);
-                    break;
-                case HOFMASK:
-                    opts->fmask = safe_atoi(val, val_len, 8);
-                    break;
-                case HOIOCHARSET:
-                    if (val_len + 1 > sizeof(opts->nls_name))
-                    {
-                        panic("iocharset name too long\n");
-                    }
-                    memcpy(opts->nls_name, val, val_len);
-                    opts->nls_name[val_len] = 0;
-                    break;
-                case HOCONVERTCP:
-                    opts->convertcp = malloc(val_len + 1);
-                    if (!opts->convertcp)
-                    {
-                        panic_err("could not allocate memory");
-                    }
-                    memcpy(opts->convertcp, val, val_len);
-                    opts->convertcp[val_len] = 0;
-                    break;
-                case HONOAUTO:
-                case HONIGNORE:
-                    break;
+                    case HO_RW:
+                        opts->ronly = 0;
+                        break;
+                    case HO_RO:
+                        opts->ronly = 1;
+                        break;
+                    case HO_NOEXEC:
+                        opts->noexec = 1;
+                        break;
+                    case HO_EXEC:
+                        opts->noexec = 0;
+                        break;
+                    case HO_NODEV:
+                        opts->nodev = 1;
+                        break;
+                    case HO_DEV:
+                        opts->nodev = 0;
+                        break;
+                    case HO_NOSUID:
+                        opts->nosuid = 1;
+                        break;
+                    case HO_SUID:
+                        opts->nosuid = 0;
+                        break;
+                    case HO_REMOUNT:
+                        opts->remount = 1;
+                        break;
+                    case HO_UID:
+                        /** @todo convert string to id. */
+                        opts->uid = safe_atoi(val, val_len, 10);
+                        break;
+                    case HO_GID:
+                        /** @todo convert string to id. */
+                        opts->gid = safe_atoi(val, val_len, 10);
+                        break;
+                    case HO_TTL:
+                        opts->ttl = safe_atoi(val, val_len, 10);
+                        break;
+                    case HO_DMODE:
+                        opts->dmode = safe_atoi(val, val_len, 8);
+                        break;
+                    case HO_FMODE:
+                        opts->fmode = safe_atoi(val, val_len, 8);
+                        break;
+                    case HO_UMASK:
+                        opts->dmask = opts->fmask = safe_atoi(val, val_len, 8);
+                        break;
+                    case HO_DMASK:
+                        opts->dmask = safe_atoi(val, val_len, 8);
+                        break;
+                    case HO_FMASK:
+                        opts->fmask = safe_atoi(val, val_len, 8);
+                        break;
+                    case HO_MAX_IO_PAGES:
+                        opts->cMaxIoPages = safe_atoi(val, val_len, 10);
+                        break;
+                    case HO_IOCHARSET:
+                        if (val_len + 1 > sizeof(opts->nls_name))
+                        {
+                            panic("iocharset name too long\n");
+                        }
+                        memcpy(opts->nls_name, val, val_len);
+                        opts->nls_name[val_len] = 0;
+                        break;
+                    case HO_CONVERTCP:
+                        opts->convertcp = malloc(val_len + 1);
+                        if (!opts->convertcp)
+                        {
+                            panic_err("could not allocate memory");
+                        }
+                        memcpy(opts->convertcp, val, val_len);
+                        opts->convertcp[val_len] = 0;
+                        break;
+                    case HO_NOAUTO:
+                    case HO_NIGNORE:
+                        break;
                 }
                 break;
             }
@@ -392,10 +398,12 @@ main(int argc, char **argv)
         0,     /* remount */
         "\0",  /* nls_name */
         NULL,  /* convertcp */
+        0,     /* cMaxIoPages */
     };
     AssertCompile(sizeof(uid_t) == sizeof(int));
     AssertCompile(sizeof(gid_t) == sizeof(int));
 
+    memset(&mntinf, 0, sizeof(mntinf));
     mntinf.nullchar = '\0';
     mntinf.signature[0] = VBSF_MOUNT_SIGNATURE_BYTE_0;
     mntinf.signature[1] = VBSF_MOUNT_SIGNATURE_BYTE_1;
@@ -479,6 +487,7 @@ main(int argc, char **argv)
     mntinf.fmode = opts.fmode;
     mntinf.dmask = opts.dmask;
     mntinf.fmask = opts.fmask;
+    mntinf.cMaxIoPages = opts.cMaxIoPages;
 
     /*
      * Note: When adding and/or modifying parameters of the vboxsf mounting

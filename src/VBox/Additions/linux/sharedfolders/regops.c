@@ -303,6 +303,117 @@ DECLINLINE(int) sf_lock_user_pages(void /*__user*/ *pvFrom, size_t cPages, bool 
 }
 
 
+#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+/**
+ * Fallback case of sf_reg_read() that locks the user buffers and let the host
+ * write directly to them.
+ */
+static ssize_t sf_reg_read_fallback(struct file *file, char /*__user*/ *buf, size_t size, loff_t *off,
+				    struct sf_glob_info *sf_g, struct sf_reg_info *sf_r)
+{
+	/*
+	 * Lock pages and execute the read, taking care not to pass the host
+	 * more than it can handle in one go or more than we care to allocate
+	 * page arrays for.  The latter limit is set at just short of 32KB due
+	 * to how the physical heap works.
+	 */
+	struct page        *apPagesStack[16];
+	struct page       **papPages     = &apPagesStack[0];
+	struct page       **papPagesFree = NULL;
+	VBOXSFREADPGLSTREQ *pReq;
+	loff_t              offFile      = *off;
+	ssize_t             cbRet        = -ENOMEM;
+	size_t              cPages       = (((uintptr_t)buf & PAGE_OFFSET_MASK) + size + PAGE_OFFSET_MASK) >> PAGE_SHIFT;
+	size_t              cMaxPages    = RT_MIN(RT_MAX(sf_g->cMaxIoPages, 1), cPages);
+
+	pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
+	while (!pReq && cMaxPages > 4) {
+		cMaxPages /= 2;
+		pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
+	}
+	if (pReq && cPages > RT_ELEMENTS(apPagesStack))
+		papPagesFree = papPages = kmalloc(cMaxPages * sizeof(sizeof(papPages[0])), GFP_KERNEL);
+	if (pReq && papPages) {
+		cbRet = 0;
+		for (;;) {
+			/*
+			 * Figure out how much to process now and lock the user pages.
+			 */
+			int    rc;
+			size_t cbChunk = (uintptr_t)buf & PAGE_OFFSET_MASK;
+			pReq->PgLst.offFirstPage = (uint16_t)cbChunk;
+			cPages  = RT_ALIGN_Z(cbChunk + size, PAGE_SIZE) >> PAGE_SHIFT;
+			if (cPages <= cMaxPages)
+				cbChunk = size;
+			else {
+				cPages  = cMaxPages;
+				cbChunk = (cMaxPages << PAGE_SHIFT) - cbChunk;
+			}
+
+			rc = sf_lock_user_pages(buf, cPages, true /*fWrite*/, papPages);
+			if (rc == 0) {
+				size_t iPage = cPages;
+				while (iPage-- > 0)
+					pReq->PgLst.aPages[iPage] = page_to_phys(papPages[iPage]);
+			} else {
+				cbRet = rc;
+				break;
+			}
+
+			/*
+			 * Issue the request and unlock the pages.
+			 */
+			rc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->handle, offFile, cbChunk, cPages);
+
+			sf_unlock_user_pages(papPages, cPages, true /*fSetDirty*/);
+
+			if (RT_SUCCESS(rc)) {
+				/*
+				 * Success, advance position and buffer.
+				 */
+				uint32_t cbActual = pReq->Parms.cb32Read.u.value32;
+				AssertStmt(cbActual <= cbChunk, cbActual = cbChunk);
+				cbRet   += cbActual;
+				offFile += cbActual;
+				buf      = (uint8_t *)buf + cbActual;
+				size    -= cbActual;
+
+				/*
+				 * Are we done already?  If so commit the new file offset.
+				 */
+				if (!size || cbActual < cbChunk) {
+					*off = offFile;
+					break;
+				}
+			} else if (rc == VERR_NO_MEMORY && cMaxPages > 4) {
+				/*
+				 * The host probably doesn't have enough heap to handle the
+				 * request, reduce the page count and retry.
+				 */
+				cMaxPages /= 4;
+				Assert(cMaxPages > 0);
+			} else {
+				/*
+				 * If we've successfully read stuff, return it rather than
+				 * the error.  (Not sure if this is such a great idea...)
+				 */
+				if (cbRet > 0)
+					*off = offFile;
+				else
+					cbRet = -EPROTO;
+				break;
+			}
+		}
+	}
+	if (papPagesFree)
+		kfree(papPages);
+	if (pReq)
+		VbglR0PhysHeapFree(pReq);
+	return cbRet;
+}
+#endif /* VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
+
+
 /**
  * Read from a regular file.
  *
@@ -322,11 +433,11 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 	size_t tmp_size;
 	size_t left = size;
 	ssize_t total_bytes_read = 0;
+	loff_t pos = *off;
 #endif
 	struct inode *inode = GET_F_DENTRY(file)->d_inode;
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
 	struct sf_reg_info *sf_r = file->private_data;
-	loff_t pos = *off;
 
 	TRACE();
 	if (!S_ISREG(inode->i_mode)) {
@@ -383,13 +494,13 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 	 * For small requests, try use an embedded buffer provided we get a heap block
 	 * that does not cross page boundraries (see host code).
 	 */
-	if (size <= PAGE_SIZE / 4 * 3 /* see allocator */) {
+	if (size <= PAGE_SIZE / 4 * 3 - RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) /* see allocator */) {
 		uint32_t const         cbReq = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) + size;
 		VBOXSFREADEMBEDDEDREQ *pReq  = (VBOXSFREADEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
 		if (   pReq
 		    && (PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
 			ssize_t cbRet;
-			int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->handle, pos, (uint32_t)size);
+			int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->handle, *off, (uint32_t)size);
 			if (RT_SUCCESS(vrc)) {
 				cbRet = pReq->Parms.cb32Read.u.value32;
 				AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
@@ -416,7 +527,7 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 			VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
 			if (pReq) {
 				ssize_t cbRet;
-				int vrc = VbglR0SfHostReqReadContig(sf_g->map.root, pReq, sf_r->handle, pos, (uint32_t)size,
+				int vrc = VbglR0SfHostReqReadContig(sf_g->map.root, pReq, sf_r->handle, *off, (uint32_t)size,
 								    pvBounce, virt_to_phys(pvBounce));
 				if (RT_SUCCESS(vrc)) {
 					cbRet = pReq->Parms.cb32Read.u.value32;
@@ -436,85 +547,7 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 	}
 # endif
 
-	/*
-	 * Lock pages and execute the read, taking care not to pass the host
-	 * more than it can handle in one go or more than we care to allocate
-	 * page arrays for.  The latter limit is set at just short of 32KB due
-	 * to how the physical heap works.
-	 */
-	{
-	struct page        *apPagesStack[8];
-	struct page       **papPages     = &apPagesStack[0];
-	struct page       **papPagesFree = NULL;
-	VBOXSFREADPGLSTREQ *pReq;
-	ssize_t             cbRet        = -ENOMEM;
-	size_t              cPages       = (((uintptr_t)buf & PAGE_OFFSET_MASK) + size + PAGE_OFFSET_MASK) >> PAGE_SHIFT;
-	size_t              cMaxPages    = RT_MIN(cPages,
-				                  RT_MIN((_32K - sizeof(VBOXSFREADPGLSTREQ) - 64) / sizeof(RTGCPHYS64),
-				                         VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT));
-
-	pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
-	while (!pReq && cMaxPages > 4) {
-		cMaxPages /= 2;
-		pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
-	}
-	if (pReq && cPages > RT_ELEMENTS(apPagesStack))
-		papPagesFree = papPages = kmalloc(cMaxPages * sizeof(sizeof(papPages[0])), GFP_KERNEL);
-	if (pReq && papPages) {
-		cbRet = 0;
-		for (;;) {
-			/* Figure out how much to process now and lock the user pages. */
-			int    rc;
-			size_t cbChunk = (uintptr_t)buf & PAGE_OFFSET_MASK;
-			pReq->PgLst.offFirstPage = (uint16_t)cbChunk;
-			cPages  = RT_ALIGN_Z(cbChunk + size, PAGE_SIZE) >> PAGE_SHIFT;
-			if (cPages <= cMaxPages)
-				cbChunk = size;
-			else {
-				cPages  = cMaxPages;
-				cbChunk = (cMaxPages << PAGE_SHIFT) - cbChunk;
-			}
-
-			rc = sf_lock_user_pages(buf, cPages, true /*fWrite*/, papPages);
-			if (rc == 0) {
-				size_t iPage = cPages;
-				while (iPage-- > 0)
-					pReq->PgLst.aPages[iPage] = page_to_phys(papPages[iPage]);
-			} else {
-				cbRet = rc;
-				break;
-			}
-
-			rc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->handle, pos, cbChunk, cPages);
-
-			sf_unlock_user_pages(papPages, cPages, true /*fSetDirty*/);
-
-			if (RT_SUCCESS(rc)) {
-				uint32_t cbActual = pReq->Parms.cb32Read.u.value32;
-				AssertStmt(cbActual <= cbChunk, cbActual = cbChunk);
-				cbRet += cbActual;
-				pos   += cbActual;
-				buf    = (uint8_t *)buf + cbActual;
-				size  -= cbActual;
-				if (!size || cbActual < cbChunk) {
-					*off = pos;
-					break;
-				}
-			} else {
-				if (cbRet > 0)
-					*off = pos;
-				else
-					cbRet = -EPROTO;
-				break;
-			}
-		}
-	}
-	if (papPagesFree)
-		kfree(papPages);
-	if (pReq)
-		VbglR0PhysHeapFree(pReq);
-	return cbRet;
-	}
+	return sf_reg_read_fallback(file, buf, size, off, sf_g, sf_r);
 #endif /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
 }
 
@@ -563,9 +596,8 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 	if (!size)
 		return 0;
 
-	tmp =
-	    alloc_bounce_buffer(&tmp_size, &tmp_phys, size,
-				__PRETTY_FUNCTION__);
+	tmp = alloc_bounce_buffer(&tmp_size, &tmp_phys, size,
+				  __PRETTY_FUNCTION__);
 	if (!tmp)
 		return -ENOMEM;
 

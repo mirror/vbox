@@ -57,6 +57,8 @@ int vbsfmount_complete(const char *host_name, const char *mount_point,
         fprintf(m, "%s,", MNTOPT_RO);
     else
         fprintf(m, "%s,", MNTOPT_RW);
+    if (opts->cMaxIoPages)
+        fprintf(m, "maxiopages=%u,", opts->cMaxIoPages);
 
     fclose(m);
 

@@ -63,6 +63,55 @@ uint32_t g_fHostFeatures = 0; /* temporary? */
 /* forward declarations */
 static struct super_operations sf_super_ops;
 
+/**
+ * Copies options from the mount info structure into @a sf_g.
+ *
+ * This is used both by sf_glob_alloc() and sf_remount_fs().
+ */
+static void sf_glob_copy_remount_options(struct sf_glob_info *sf_g, struct vbsf_mount_info_new *info)
+{
+	sf_g->ttl = info->ttl;
+	sf_g->uid = info->uid;
+	sf_g->gid = info->gid;
+
+	if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, tag)) {
+		/* new fields */
+		sf_g->dmode = info->dmode;
+		sf_g->fmode = info->fmode;
+		sf_g->dmask = info->dmask;
+		sf_g->fmask = info->fmask;
+	} else {
+		sf_g->dmode = ~0;
+		sf_g->fmode = ~0;
+	}
+
+	if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, cMaxIoPages)) {
+		AssertCompile(sizeof(sf_g->tag) >= sizeof(info->tag));
+		memcpy(sf_g->tag, info->tag, sizeof(info->tag));
+		sf_g->tag[sizeof(sf_g->tag) - 1] = '\0';
+	} else {
+		sf_g->tag[0] = '\0';
+	}
+
+	/* The max number of pages in an I/O request.  This must take into
+	   account that the physical heap generally grows in 64 KB chunks,
+	   so we should not try push that limit.   It also needs to take
+	   into account that the host will allocate temporary heap buffers
+	   for the I/O bytes we send/receive, so don't push the host heap
+	   too hard as we'd have to retry with smaller requests when this
+	   happens, which isn't too efficient. */
+	sf_g->cMaxIoPages = RT_MIN(_16K / sizeof(RTGCPHYS64) /* => 8MB buffer */,
+				   VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT);
+	if (   (unsigned)info->length >= sizeof(struct vbsf_mount_info_new)
+	    && info->cMaxIoPages != 0) {
+		if (info->cMaxIoPages <= VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT)
+			sf_g->cMaxIoPages = info->cMaxIoPages;
+		else
+			printk(KERN_WARNING "vboxsf: max I/O page count (%#x) is out of range, using default (%#x) instead.\n",
+			        info->cMaxIoPages, sf_g->cMaxIoPages);
+	}
+}
+
 /* allocate global info, try to map host share */
 static int sf_glob_alloc(struct vbsf_mount_info_new *info,
 			 struct sf_glob_info **sf_gp)
@@ -154,28 +203,8 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info,
 		goto fail2;
 	}
 
-	sf_g->ttl = info->ttl;
-	sf_g->uid = info->uid;
-	sf_g->gid = info->gid;
-
-	if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, tag)) {
-		/* new fields */
-		sf_g->dmode = info->dmode;
-		sf_g->fmode = info->fmode;
-		sf_g->dmask = info->dmask;
-		sf_g->fmask = info->fmask;
-	} else {
-		sf_g->dmode = ~0;
-		sf_g->fmode = ~0;
-	}
-
-	if ((unsigned)info->length >= sizeof(struct vbsf_mount_info_new)) {
-		AssertCompile(sizeof(sf_g->tag) >= sizeof(info->tag));
-		memcpy(sf_g->tag, info->tag, sizeof(info->tag));
-		sf_g->tag[sizeof(sf_g->tag) - 1] = '\0';
-	} else {
-		sf_g->tag[0] = '\0';
-	}
+	/* The rest is shared with remount. */
+	sf_glob_copy_remount_options(sf_g, info);
 
 	*sf_gp = sf_g;
 	return 0;
@@ -466,28 +495,11 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 	BUG_ON(!sf_g);
 	if (data && data[0] != 0) {
 		struct vbsf_mount_info_new *info = (struct vbsf_mount_info_new *)data;
-		if (info->signature[0] == VBSF_MOUNT_SIGNATURE_BYTE_0
+		if (   info->nullchar == '\0'
+		    && info->signature[0] == VBSF_MOUNT_SIGNATURE_BYTE_0
 		    && info->signature[1] == VBSF_MOUNT_SIGNATURE_BYTE_1
 		    && info->signature[2] == VBSF_MOUNT_SIGNATURE_BYTE_2) {
-			sf_g->uid = info->uid;
-			sf_g->gid = info->gid;
-			sf_g->ttl = info->ttl;
-			if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, tag)) {
-				sf_g->dmode = info->dmode;
-				sf_g->fmode = info->fmode;
-				sf_g->dmask = info->dmask;
-				sf_g->fmask = info->fmask;
-			} else {
-				sf_g->dmode = ~0;
-				sf_g->fmode = ~0;
-			}
-			if ((unsigned)info->length >= sizeof(struct vbsf_mount_info_new)) {
-				AssertCompile(sizeof(sf_g->tag) >= sizeof(info->tag));
-				memcpy(sf_g->tag, info->tag, sizeof(info->tag));
-				sf_g->tag[sizeof(sf_g->tag) - 1] = '\0';
-			} else {
-				sf_g->tag[0] = '\0';
-			}
+			sf_glob_copy_remount_options(sf_g, info);
 		}
 	}
 
@@ -520,8 +532,9 @@ static int sf_show_options(struct seq_file *m, struct dentry *root)
 #endif
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(sb);
 	if (sf_g) {
-		seq_printf(m, ",uid=%u,gid=%u,ttl=%u,dmode=0%o,fmode=0%o,dmask=0%o,fmask=0%o",
-			sf_g->uid, sf_g->gid, sf_g->ttl, sf_g->dmode, sf_g->fmode, sf_g->dmask, sf_g->fmask);
+		seq_printf(m, ",uid=%u,gid=%u,ttl=%u,dmode=0%o,fmode=0%o,dmask=0%o,fmask=0%o,maxiopages=%u",
+			   sf_g->uid, sf_g->gid, sf_g->ttl, sf_g->dmode, sf_g->fmode, sf_g->dmask,
+			   sf_g->fmask, sf_g->cMaxIoPages);
 		if (sf_g->tag[0] != '\0') {
 			seq_puts(m, ",tag=");
 			seq_escape(m, sf_g->tag, " \t\n\\");
