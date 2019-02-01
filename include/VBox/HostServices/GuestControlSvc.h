@@ -84,7 +84,7 @@ namespace guestControl {
 /**
  * Structure keeping the context of a host callback.
  */
-typedef struct VBoxGuestCtrlHostCbCtx
+typedef struct VBOXGUESTCTRLHOSTCBCTX
 {
     /** HGCM message number. */
     uint32_t uMessage;
@@ -93,26 +93,20 @@ typedef struct VBoxGuestCtrlHostCbCtx
     /** Protocol version of this guest session. Might
      *  be 0 if not supported. */
     uint32_t uProtocol;
-
 } VBOXGUESTCTRLHOSTCBCTX, *PVBOXGUESTCTRLHOSTCBCTX;
 
 /**
  * Structure for low level HGCM host callback from
  * the guest. No deep copy. */
-typedef struct VBoxGuestCtrlHostCallback
+typedef struct VBOXGUESTCTRLHOSTCALLBACK
 {
-    VBoxGuestCtrlHostCallback(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
-                                : mParms(cParms), mpaParms(paParms) { }
-
     /** Number of HGCM parameters. */
-    uint32_t mParms;
+    uint32_t         mParms;
     /** Actual HGCM parameters. */
     PVBOXHGCMSVCPARM mpaParms;
-
 } VBOXGUESTCTRLHOSTCALLBACK, *PVBOXGUESTCTRLHOSTCALLBACK;
 
-
-/** @name Host message destiation flags.
+/** @name Host message destination flags.
  *
  * This is ORed into the context ID parameter Main after extending it to 64-bit.
  *

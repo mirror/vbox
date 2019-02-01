@@ -2120,7 +2120,7 @@ int GstCtrlService::hostCallback(uint32_t u32Function, uint32_t cParms, VBOXHGCM
     int rc;
     if (mpfnHostCallback)
     {
-        VBOXGUESTCTRLHOSTCALLBACK data(cParms, paParms);
+        VBOXGUESTCTRLHOSTCALLBACK data = { cParms, paParms };
         rc = mpfnHostCallback(mpvHostData, u32Function, &data, sizeof(data));
     }
     else
