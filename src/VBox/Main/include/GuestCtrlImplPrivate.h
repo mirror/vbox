@@ -66,7 +66,6 @@ struct GuestCredentials
 };
 
 
-
 /**
  * Wrapper around the RTEnv API, unusable base class.
  *
@@ -223,7 +222,6 @@ public:
         return RTEnvApplyChanges(m_hEnv, rChanges.m_hEnv);
     }
 
-
     /**
      * See RTEnvQueryUtf8Block for details.
      * @returns IPRT status code.
@@ -290,7 +288,6 @@ public:
         }
         return rc;
     }
-
 
     /**
      * Get an environment variable.

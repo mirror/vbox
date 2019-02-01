@@ -234,12 +234,26 @@ int GuestFsObjData::FromLs(const GuestProcessStreamBlock &strmBlk, bool fLong)
     return VINF_SUCCESS;
 }
 
+/**
+ * Parses stream block output data which came from the 'stat' (vbox_stat)
+ * VBoxService toolbox command. The result will be stored in this object.
+ *
+ * @returns VBox status code.
+ * @param   strmBlk             Stream block output data to parse.
+ */
 int GuestFsObjData::FromStat(const GuestProcessStreamBlock &strmBlk)
 {
     /* Should be identical output. */
     return GuestFsObjData::FromLs(strmBlk, true /*fLong*/);
 }
 
+/**
+ * Parses stream block output data which came from the 'mktemp' (vbox_mktemp)
+ * VBoxService toolbox command. The result will be stored in this object.
+ *
+ * @returns VBox status code.
+ * @param   strmBlk             Stream block output data to parse.
+ */
 int GuestFsObjData::FromMkTemp(const GuestProcessStreamBlock &strmBlk)
 {
     LogFlowFunc(("\n"));
@@ -257,8 +271,6 @@ int GuestFsObjData::FromMkTemp(const GuestProcessStreamBlock &strmBlk)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
-
 
 /**
  * Returns the IPRT-compatible file mode.
@@ -303,30 +315,13 @@ GuestProcessStreamBlock::GuestProcessStreamBlock(void)
 
 }
 
-/*
-GuestProcessStreamBlock::GuestProcessStreamBlock(const GuestProcessStreamBlock &otherBlock)
-{
-    for (GuestCtrlStreamPairsIter it = otherBlock.mPairs.begin();
-         it != otherBlock.end(); ++it)
-    {
-        mPairs[it->first] = new
-        if (it->second.pszValue)
-        {
-            RTMemFree(it->second.pszValue);
-            it->second.pszValue = NULL;
-        }
-    }
-}*/
-
 GuestProcessStreamBlock::~GuestProcessStreamBlock()
 {
     Clear();
 }
 
 /**
- * Destroys the currently stored stream pairs.
- *
- * @return  IPRT status code.
+ * Clears (destroys) the currently stored stream pairs.
  */
 void GuestProcessStreamBlock::Clear(void)
 {
@@ -334,6 +329,9 @@ void GuestProcessStreamBlock::Clear(void)
 }
 
 #ifdef DEBUG
+/**
+ * Dumps the currently stored stream pairs to the (debug) log.
+ */
 void GuestProcessStreamBlock::DumpToLog(void) const
 {
     LogFlowFunc(("Dumping contents of stream block=0x%p (%ld items):\n",
@@ -350,7 +348,7 @@ void GuestProcessStreamBlock::DumpToLog(void) const
 /**
  * Returns a 64-bit signed integer of a specified key.
  *
- * @return  IPRT status code. VERR_NOT_FOUND if key was not found.
+ * @return VBox status code. VERR_NOT_FOUND if key was not found.
  * @param  pszKey               Name of key to get the value for.
  * @param  piVal                Pointer to value to return.
  */
@@ -394,7 +392,7 @@ size_t GuestProcessStreamBlock::GetCount(void) const
 /**
  * Gets the return code (name = "rc") of this stream block.
  *
- * @return  IPRT status code.
+ * @return  VBox status code.
  */
 int GuestProcessStreamBlock::GetRc(void) const
 {
@@ -432,7 +430,7 @@ const char *GuestProcessStreamBlock::GetString(const char *pszKey) const
 /**
  * Returns a 32-bit unsigned integer of a specified key.
  *
- * @return  IPRT status code. VERR_NOT_FOUND if key was not found.
+ * @return  VBox status code. VERR_NOT_FOUND if key was not found.
  * @param   pszKey              Name of key to get the value for.
  * @param   puVal               Pointer to value to return.
  */
@@ -486,7 +484,7 @@ uint32_t GuestProcessStreamBlock::GetUInt32(const char *pszKey, uint32_t uDefaul
 /**
  * Sets a value to a key or deletes a key by setting a NULL value.
  *
- * @return  IPRT status code.
+ * @return  VBox status code.
  * @param   pszKey              Key name to process.
  * @param   pszValue            Value to set. Set NULL for deleting the key.
  */
@@ -541,7 +539,7 @@ GuestProcessStream::~GuestProcessStream(void)
  * Adds data to the internal parser buffer. Useful if there
  * are multiple rounds of adding data needed.
  *
- * @return  IPRT status code.
+ * @return  VBox status code.
  * @param   pbData              Pointer to data to add.
  * @param   cbData              Size (in bytes) of data to add.
  */
@@ -626,6 +624,12 @@ void GuestProcessStream::Destroy(void)
 }
 
 #ifdef DEBUG
+/**
+ * Dumps the raw guest process output to a file on the host.
+ * If the file on the host already exists, it will be overwritten.
+ *
+ * @param   pszFile             Absolute path to host file to dump the output to.
+ */
 void GuestProcessStream::Dump(const char *pszFile)
 {
     LogFlowFunc(("Dumping contents of stream=0x%p (cbAlloc=%u, cbSize=%u, cbOff=%u) to %s\n",
@@ -655,9 +659,8 @@ void GuestProcessStream::Dump(const char *pszFile)
  * Returns VINF_SUCCESS if current block was parsed until the next upcoming
  * block (with zero or more pairs stored in stream block).
  *
- * @return IPRT status code.
+ * @return VBox status code.
  * @param streamBlock               Reference to guest stream block to fill.
- *
  */
 int GuestProcessStream::ParseBlock(GuestProcessStreamBlock &streamBlock)
 {
@@ -735,6 +738,11 @@ GuestBase::~GuestBase(void)
 {
 }
 
+/**
+ * Separate initialization function for the base class.
+ *
+ * @returns VBox status code.
+ */
 int GuestBase::baseInit(void)
 {
     int rc = RTCritSectInit(&mWaitEventCritSect);
@@ -743,6 +751,9 @@ int GuestBase::baseInit(void)
     return rc;
 }
 
+/**
+ * Separate uninitialization function for the base class.
+ */
 void GuestBase::baseUninit(void)
 {
     LogFlowThisFuncEnter();
@@ -754,6 +765,11 @@ void GuestBase::baseUninit(void)
     /* No return value. */
 }
 
+/**
+ * Cancels all outstanding wait events.
+ *
+ * @returns VBox status code.
+ */
 int GuestBase::cancelWaitEvents(void)
 {
     LogFlowThisFuncEnter();
@@ -860,6 +876,18 @@ int GuestBase::dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
     return vrc;
 }
 
+/**
+ * Generates a context ID (CID) by incrementing the object's count.
+ * A CID consists of a session ID, an object ID and a count.
+ *
+ * Note: This function does not guarantee that the returned CID is unique;
+ *       the caller has to take care of that and eventually retry.
+ *
+ * @returns VBox status code.
+ * @param   uSessionID          Session ID to use for CID generation.
+ * @param   uObjectID           Object ID to use for CID generation.
+ * @param   puContextID         Where to store the generated CID on success.
+ */
 int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32_t *puContextID)
 {
     AssertPtrReturn(puContextID, VERR_INVALID_POINTER);
@@ -889,7 +917,7 @@ int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32
  * From those IDs an unique context ID (CID) will be built, which only can be
  * around once at a time.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @retval  VERR_GSTCTL_MAX_CID_COUNT_REACHED if unable to generate a free context ID (CID, the count part (bits 15:0)).
  * @param   uSessionID              Session ID to register wait event for.
  * @param   uObjectID               Object ID to register wait event for.
@@ -1024,6 +1052,14 @@ int GuestBase::registerWaitEventEx(uint32_t uSessionID, uint32_t uObjectID, cons
     return rc;
 }
 
+/**
+ * Signals all wait events of a specific type (if found)
+ * and notifies external events accordingly.
+ *
+ * @returns VBox status code.
+ * @param   aType               Event type to signal.
+ * @param   aEvent              Which external event to notify.
+ */
 int GuestBase::signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent)
 {
     int rc = RTCritSectEnter(&mWaitEventCritSect);
@@ -1080,6 +1116,14 @@ int GuestBase::signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent)
     return rc;
 }
 
+/**
+ * Signals a wait event which is registered to a specific callback (bound to a context ID (CID)).
+ *
+ * @returns VBox status code.
+ * @param   pCbCtx              Pointer to host service callback context.
+ * @param   rcGuest             Guest return code (rc) to set additionally, if rc is set to VERR_GSTCTL_GUEST_ERROR.
+ * @param   pPayload            Additional wait event payload data set set on return. Optional.
+ */
 int GuestBase::signalWaitEventInternal(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
                                        int rcGuest, const GuestWaitEventPayload *pPayload)
 {
@@ -1091,6 +1135,16 @@ int GuestBase::signalWaitEventInternal(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
                                      rcGuest, pPayload);
 }
 
+/**
+ * Signals a wait event which is registered to a specific callback (bound to a context ID (CID)).
+ * Extended version.
+ *
+ * @returns VBox status code.
+ * @param   pCbCtx              Pointer to host service callback context.
+ * @param   rc                  Return code (rc) to set as wait result.
+ * @param   rcGuest             Guest return code (rc) to set additionally, if rc is set to VERR_GSTCTL_GUEST_ERROR.
+ * @param   pPayload            Additional wait event payload data set set on return. Optional.
+ */
 int GuestBase::signalWaitEventInternalEx(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
                                          int rc, int rcGuest,
                                          const GuestWaitEventPayload *pPayload)
@@ -1126,7 +1180,7 @@ int GuestBase::signalWaitEventInternalEx(PVBOXGUESTCTRLHOSTCBCTX pCbCtx,
  *
  * After successful unregistration the event will not be valid anymore.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   pWaitEvt        Wait event to unregister (delete).
  */
 int GuestBase::unregisterWaitEvent(GuestWaitEvent *pWaitEvt)
@@ -1206,7 +1260,7 @@ int GuestBase::unregisterWaitEvent(GuestWaitEvent *pWaitEvt)
 /**
  * Waits for an already registered guest wait event.
  *
- * @return  IPRT status code.
+ * @return  VBox status code.
  * @param   pWaitEvt                Pointer to event to wait for.
  * @param   msTimeout               Timeout (in ms) for waiting.
  * @param   pType                   Event type of following IEvent. Optional.
@@ -1267,6 +1321,15 @@ GuestObject::~GuestObject(void)
 {
 }
 
+/**
+ * Binds this guest (control) object to a specific guest (control) session.
+ *
+ * @returns VBox status code.
+ * @param   pConsole            Pointer to console object to use.
+ * @param   pSession            Pointer to session to bind this object to.
+ * @param   uObjectID           Object ID for this object to use within that specific session.
+ *                              Each object ID must be unique per session.
+ */
 int GuestObject::bindToSession(Console *pConsole, GuestSession *pSession, uint32_t uObjectID)
 {
     AssertPtrReturn(pConsole, VERR_INVALID_POINTER);
@@ -1279,6 +1342,13 @@ int GuestObject::bindToSession(Console *pConsole, GuestSession *pSession, uint32
     return VINF_SUCCESS;
 }
 
+/**
+ * Registers (creates) a new wait event.
+ *
+ * @returns VBox status code.
+ * @param   lstEvents           List of events which the new wait event gets triggered at.
+ * @param   ppEvent             Returns the new wait event on success.
+ */
 int GuestObject::registerWaitEvent(const GuestEventTypes &lstEvents,
                                    GuestWaitEvent **ppEvent)
 {
@@ -1286,6 +1356,14 @@ int GuestObject::registerWaitEvent(const GuestEventTypes &lstEvents,
     return GuestBase::registerWaitEventEx(mSession->i_getId(), mObjectID, lstEvents, ppEvent);
 }
 
+/**
+ * Sends a HGCM message to the guest (via the guest control host service).
+ *
+ * @returns VBox status code.
+ * @param   uMessage            Message ID of message to send.
+ * @param   cParms              Number of HGCM message parameters to send.
+ * @param   paParms             Array of HGCM message parameters to send.
+ */
 int GuestObject::sendMessage(uint32_t uMessage, uint32_t cParms, PVBOXHGCMSVCPARM paParms)
 {
 #ifndef VBOX_GUESTCTRL_TEST_CASE
@@ -1340,6 +1418,12 @@ GuestWaitEventBase::~GuestWaitEventBase(void)
     }
 }
 
+/**
+ * Initializes a wait event with a specific context ID (CID).
+ *
+ * @returns VBox status code.
+ * @param   uCID                Context ID (CID) to initialize wait event with.
+ */
 int GuestWaitEventBase::Init(uint32_t uCID)
 {
     mCID = uCID;
@@ -1347,6 +1431,14 @@ int GuestWaitEventBase::Init(uint32_t uCID)
     return RTSemEventCreate(&mEventSem);
 }
 
+/**
+ * Signals a wait event.
+ *
+ * @returns VBox status code.
+ * @param   rc                  Return code (rc) to set as wait result.
+ * @param   rcGuest             Guest return code (rc) to set additionally, if rc is set to VERR_GSTCTL_GUEST_ERROR.
+ * @param   pPayload            Additional wait event payload data set set on return. Optional.
+ */
 int GuestWaitEventBase::SignalInternal(int rc, int rcGuest,
                                        const GuestWaitEventPayload *pPayload)
 {
@@ -1376,6 +1468,14 @@ int GuestWaitEventBase::SignalInternal(int rc, int rcGuest,
     return rc2;
 }
 
+/**
+ * Waits for the event to get triggered. Will return success if the
+ * wait was successufl (e.g. was being triggered), otherwise an error will be returned.
+ *
+ * @returns VBox status code.
+ * @param   msTimeout           Timeout (in ms) to wait.
+ *                              Specifiy 0 to wait indefinitely.
+ */
 int GuestWaitEventBase::Wait(RTMSINTERVAL msTimeout)
 {
     int rc = VINF_SUCCESS;
@@ -1427,7 +1527,7 @@ int GuestWaitEvent::Cancel(void)
 /**
  * Initializes a wait event with a given context ID (CID).
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   uCID                Context ID to initialize wait event with.
  */
 int GuestWaitEvent::Init(uint32_t uCID)
@@ -1438,7 +1538,7 @@ int GuestWaitEvent::Init(uint32_t uCID)
 /**
  * Initializes a wait event with a given context ID (CID) and a list of event types to wait for.
  *
- * @returns IPRT status code.
+ * @returns VBox status code.
  * @param   uCID                Context ID to initialize wait event with.
  * @param   lstEvents           List of event types to wait for this wait event to get signalled.
  */
@@ -1456,7 +1556,7 @@ int GuestWaitEvent::Init(uint32_t uCID, const GuestEventTypes &lstEvents)
 /**
  * Signals the event.
  *
- * @return  IPRT status code.
+ * @return  VBox status code.
  * @param   pEvent              Public IEvent to associate.
  *                              Optional.
  */

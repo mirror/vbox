@@ -64,6 +64,10 @@
  * from the guest. Acts as a dispatcher for the actual class instance.
  *
  * @returns VBox status code.
+ * @param   pvExtension         Pointer to HGCM service extension.
+ * @param   idMessage           HGCM message ID the callback was called for.
+ * @param   pvData              Pointer to user-supplied callback data.
+ * @param   cbData              Size (in bytes) of user-supplied callback data.
  */
 /* static */
 DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
@@ -117,6 +121,13 @@ DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Dispatches a host service callback to the appropriate guest control session object.
+ *
+ * @returns VBox status code.
+ * @param   pCtxCb              Pointer to host callback context.
+ * @param   pSvcCb              Pointer to callback parameters.
+ */
 int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
 {
     LogFlowFunc(("pCtxCb=%p, pSvcCb=%p\n", pCtxCb, pSvcCb));
@@ -210,6 +221,12 @@ int Guest::i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOS
     return rc;
 }
 
+/**
+ * Removes a guest control session from the internal list and destroys the session.
+ *
+ * @returns VBox status code.
+ * @param   uSessionID          ID of the guest control session to remove.
+ */
 int Guest::i_sessionRemove(uint32_t uSessionID)
 {
     LogFlowThisFuncEnter();
@@ -243,6 +260,18 @@ int Guest::i_sessionRemove(uint32_t uSessionID)
     return rc;
 }
 
+/**
+ * Creates a new guest session.
+ * This will invoke VBoxService running on the guest creating a new (dedicated) guest session
+ * On older Guest Additions this call has no effect on the guest, and only the credentials will be
+ * used for starting/impersonating guest processes.
+ *
+ * @returns VBox status code.
+ * @param   ssInfo              Guest session startup information.
+ * @param   guestCreds          Guest OS (user) credentials to use on the guest for creating the session.
+ *                              The specified user must be able to logon to the guest and able to start new processes.
+ * @param   pGuestSession       Where to store the created guest session on success.
+ */
 int Guest::i_sessionCreate(const GuestSessionStartupInfo &ssInfo,
                            const GuestCredentials &guestCreds, ComObjPtr<GuestSession> &pGuestSession)
 {
@@ -324,6 +353,12 @@ int Guest::i_sessionCreate(const GuestSessionStartupInfo &ssInfo,
     return rc;
 }
 
+/**
+ * Returns whether a guest control session with a specific ID exists or not.
+ *
+ * @returns Returns \c true if the session exists, \c false if not.
+ * @param   uSessionID          ID to check for.
+ */
 inline bool Guest::i_sessionExists(uint32_t uSessionID)
 {
     GuestSessions::const_iterator itSessions = mData.mGuestSessions.find(uSessionID);
