@@ -315,7 +315,7 @@ static int VBoxDrvFreeBSDIOCtl(struct cdev *pDev, u_long ulCmd, caddr_t pvData, 
      * Deal with the fast ioctl path first.
      */
     AssertCompile((SUP_IOCTL_FAST_DO_FIRST & 0xff) == (SUP_IOCTL_FLAG | 64));
-    if (   (uintptr_t)(iCmd - SUP_IOCTL_FAST_DO_FIRST) < (uintptr_t)32
+    if (   (uintptr_t)(ulCmd - SUP_IOCTL_FAST_DO_FIRST) < (uintptr_t)32
         && pSession->fUnrestricted)
         return supdrvIOCtlFast(ulCmd - SUP_IOCTL_FAST_DO_FIRST, *(uint32_t *)pvData, &g_VBoxDrvFreeBSDDevExt, pSession);
 
