@@ -136,6 +136,12 @@
 # define VM_OBJECT_WUNLOCK(a_pObject) VM_OBJECT_UNLOCK((a_pObject))
 #endif
 
+#if __FreeBSD_version >= 1100077
+# define MY_LIM_MAX_PROC(a_pProc, a_Limit) lim_max_proc((a_pProc), (a_Limit))
+#else
+# define MY_LIM_MAX_PROC(a_pProc, a_Limit) lim_max((a_pProc), (a_Limit))
+#endif
+
 /**
  * Check whether we can use kmem_alloc_attr for low allocs.
  */

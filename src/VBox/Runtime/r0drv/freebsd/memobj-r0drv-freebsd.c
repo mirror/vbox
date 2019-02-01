@@ -235,7 +235,12 @@ static vm_page_t rtR0MemObjFreeBSDContigPhysAllocHelper(vm_object_t pObject, vm_
         VM_OBJECT_WUNLOCK(pObject);
         if (pPages)
             break;
+#if __FreeBSD_version >= 1100092
+        if (!vm_page_reclaim_contig(cTries, cPages, 0, VmPhysAddrHigh, PAGE_SIZE, 0))
+            break;
+#else
         vm_pageout_grow_cache(cTries, 0, VmPhysAddrHigh);
+#endif
         cTries++;
     }
 
@@ -736,7 +741,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
     {
         /** @todo is this needed?. */
         PROC_LOCK(pProc);
-        AddrR3 = round_page((vm_offset_t)pProc->p_vmspace->vm_daddr + lim_max(pProc, RLIMIT_DATA));
+        AddrR3 = round_page((vm_offset_t)pProc->p_vmspace->vm_daddr + MY_LIM_MAX_PROC(pProc, RLIMIT_DATA));
         PROC_UNLOCK(pProc);
     }
     else
