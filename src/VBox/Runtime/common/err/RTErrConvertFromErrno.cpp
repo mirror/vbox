@@ -449,7 +449,7 @@ RTDECL(int)  RTErrConvertFromErrno(int iNativeCode)
 # endif
 #endif
         default:
-            AssertLogRelMsgFailed(("Unhandled error code %d\n", uNativeCode));
+            AssertLogRelMsgFailed(("Unhandled error code %d\n", iNativeCode));
             return VERR_UNRESOLVED_ERROR;
     }
 }
