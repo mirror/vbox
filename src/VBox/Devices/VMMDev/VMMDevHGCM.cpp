@@ -2384,7 +2384,7 @@ void vmmdevHGCMDestroy(PVMMDEV pThis)
         RTCritSectDelete(&pThis->critsectHGCMCmdList);
     }
 
-    AssertCompile((uintptr_t)NIL_RTMEMCACHE == 0);
+    AssertCompile(NIL_RTMEMCACHE == (RTMEMCACHE)0);
     if (pThis->hHgcmCmdCache != NIL_RTMEMCACHE)
     {
         RTMemCacheDestroy(pThis->hHgcmCmdCache);
