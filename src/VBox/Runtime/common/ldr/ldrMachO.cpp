@@ -22,9 +22,10 @@
  *
  * You may elect to license modified versions of this file under the
  * terms and conditions of either the GPL or the CDDL or both.
+ *
  * --------------------------------------------------------------------
  *
- * This code is based on:
+ * This code is based on: kLdr/kLdrModMachO.c from kStuff r113.
  *
  * Copyright (c) 2006-2013 Knut St. Osmundsen <bird-kStuff-spamix@anduin.net>
  *
