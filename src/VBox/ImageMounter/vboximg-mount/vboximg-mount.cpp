@@ -164,16 +164,16 @@ VBOXIMGOPTS g_vboximgOpts;
 #define OPTION(fmt, pos, val) { fmt, offsetof(struct vboximgOpts, pos), val }
 
 static struct fuse_opt vboximgOptDefs[] = {
-    OPTION("--image=%s",      pszImageUuidOrPath,   0),
+    OPTION("--image %s",      pszImageUuidOrPath,   0),
     OPTION("-i %s",           pszImageUuidOrPath,   0),
     OPTION("--rw",            fRW,                  1),
     OPTION("--root",          fAllowRoot,           0),
-    OPTION("--vm=%s",         pszVm,                0),
-    OPTION("--partition=%d",  idxPartition,         1),
+    OPTION("--vm %s",         pszVm,                0),
+    OPTION("--partition %d",  idxPartition,         1),
     OPTION("-p %d",           idxPartition,         1),
-    OPTION("--offset=%d",     offset,               1),
+    OPTION("--offset %d",     offset,               1),
     OPTION("-o %d",           offset,               1),
-    OPTION("--size=%d",       size,                 1),
+    OPTION("--size %d",       size,                 1),
     OPTION("-s %d",           size,                 1),
     OPTION("-l",              fList,                1),
     OPTION("--list",          fList,                1),
@@ -209,7 +209,7 @@ briefUsage()
 {
     RTPrintf("usage: vboximg-mount [options] <mount point directory path>\n\n"
         "vboximg-mount options:\n\n"
-        "  [ { -i | --image= } <specifier> ]  VirtualBox disk base or snapshot image,\n"
+        "  [ { -i | --image } <specifier> ]   VirtualBox disk base or snapshot image,\n"
         "                                     specified by UUID, or fully-qualified path\n"
         "\n"
         "  [ { -l | --list } ]                If --image specified, list its partitions,\n"
@@ -218,54 +218,54 @@ briefUsage()
         "                                     mode, VM/media list will be long format,\n"
         "                                     i.e. including snapshot images and paths.\n"
         "\n"
-        " [ { -w | --wide } ]                 List media in wide / tabular format\n"
+        "  [ { -w | --wide } ]                List media in wide / tabular format\n"
         "                                     (reduces vertical scrolling but requires\n"
-        "                                     wider than standard 80 column window\n)"
+        "                                     wider than standard 80 column window)\n"
         "\n"
-        "  [ --vm=UUID ]                      Restrict media list to specified vm.\n"
+        "  [ --vm UUID ]                      Restrict media list to specified vm.\n"
         "\n"
-        "  [ { -p | --partition= } <part #> ] Expose only specified partition via FUSE.\n"
+        "  [ { -p | --partition } <part #> ]  Expose only specified partition via FUSE.\n"
         "\n"
-        "  [ { -o | --offset= } <byte #> ]    Bias disk I/O by offset from disk start.\n"
+        "  [ { -o | --offset } <byte #> ]     Bias disk I/O by offset from disk start.\n"
         "                                     (incompatible with -p, --partition)\n"
         "\n"
-        "  [ { -s | --size=<bytes> } ]        Specify size of mounted disk.\n"
+        "  [ { -s | --size <bytes> } ]        Specify size of mounted disk.\n"
         "                                     (incompatible with -p, --partition)\n"
         "\n"
         "  [ --rw ]                           Make image writeable (default = readonly)\n"
         "\n"
         "  [ --root ]                         Same as -o allow_root.\n"
         "\n"
-        "  [ { -v | --verbose } ]              Log extra information.\n"
+        "  [ { -v | --verbose } ]             Log extra information.\n"
         "\n"
         "  [ -o opt[,opt...]]                 FUSE mount options.\n"
         "\n"
-        "  [ { -h | -? } ]                    Display short usage info (no FUSE options).\n"
-        "  [ --help ]                         Display long usage info (incl. FUSE opts).\n\n"
+        "  [ { --help | -h | -? } ]           Display this usage information.\n"
     );
     RTPrintf("\n"
       "vboximg-mount is a utility to make VirtualBox disk images available to the host\n"
-      "operating system in a root or non-root accessible way. The user determines the\n"
-      "historical representation of the disk by choosing either the base image or a\n"
-      "snapshot, to establish the desired level of currency of the mounted disk.\n"
-      "\n"
-      "The disk image is mounted through this utility inside a FUSE-based filesystem\n"
-      "that overlays the user-provided mount point. The FUSE filesystem presents a\n"
-      "a directory that contains two files: an HDD pseudo device node and a symbolic\n"
-      "link. The device node is named 'vhdd' and is the access point to the synthesized\n"
-      "state of the virtual disk. It is the entity that can be mounted or otherwise\n"
-      "accessed through the host OS. The symbolic link is given the same name as the\n"
-      "base image, as determined from '--image' option argument. The link equates\n"
-      "to the specified image's location (path).\n"
+      "operating system in a root or non-root accessible way. The user selects which\n"
+      "point in the available history of the virtual disk to mount it by specifying\n"
+      "either the base image or a snapshot image on the command line.\n"
       "\n"
       "If the user provides a base image UUID/path with the --image option, only\n"
-      "the base image will be exposed via vhdd, disregarding any snapshots.\n"
-      "Alternatively, if a snapshot (e.g. disk differencing image) is provided,\n"
-      "the chain of snapshots is calculated from that \"leaf\" snapshot\n"
-      "to the base image and the whole chain of images is merged to form the exposed\n"
-      "state of the FUSE-mounted disk.\n"
+      "the base image will be mounted, disregarding any snapshots. Alternatively,\n"
+      "if a snapshot (e.g. disk differencing image) is provided, the chain of\n"
+      "snapshots is calculated from that \"leaf\" snapshot to the base image and\n"
+      "the resulting chain is processed to synthesize a FUSE-mounted virtual disk\n"
+      "in the depicted state.\n"
       "\n"
-
+      "The virtual disk is exposed as a device node within a FUSE-based filesystem\n"
+      "that overlays the user-provided mount point. The FUSE filesystem consists of a\n"
+      "directory containing two files: A pseudo HDD device node and a symbolic\n"
+      "link. The device node, named 'vhdd', is the access point to the virtual disk\n"
+      "(i.e. the OS-mountable raw binary). The symbolic link has the same basename(1)\n"
+      "as the virtual disk base image and points to the location of the\n"
+      "virtual disk base image. If the --partition, --offset, or --size\n"
+      "options are provided, the boundaries of the FUSE-mounted subsection of the\n"
+      "virtual disk will be described as a numeric range in brackets appended to the\n"
+      "symbolic link name.\n"
+      "\n"
     );
 }
 
