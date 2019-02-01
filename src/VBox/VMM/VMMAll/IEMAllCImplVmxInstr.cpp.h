@@ -1764,7 +1764,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestSegRegs(PVMCPU pVCpu)
         }
     }
 
-    /* Segment attribute bits 31:7 and 11:8 MBZ. */
+    /* Segment attribute bits 31:17 and 11:8 MBZ. */
     uint32_t const fValidAttrMask = X86DESCATTR_TYPE | X86DESCATTR_DT  | X86DESCATTR_DPL | X86DESCATTR_P
                                   | X86DESCATTR_AVL  | X86DESCATTR_L   | X86DESCATTR_D   | X86DESCATTR_G | X86DESCATTR_UNUSABLE;
     /* LDTR. */
@@ -3316,6 +3316,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr0Cr4(PVMCPU pVCpu, uint8_t iCrRe
      */
     if ((fReadShadow & fGstHostMask) != (*puNewCrX & fGstHostMask))
     {
+        Assert(fGstHostMask != 0);
         Log2(("mov_Cr_Rd: (CR%u) Guest intercept -> VM-exit\n", iCrReg));
 
         VMXVEXITINFO ExitInfo;
@@ -3966,7 +3967,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
     /*
      * We are injecting an external interrupt, check if we need to cause a VM-exit now.
      * If not, the caller will continue delivery of the external interrupt as it would
-     * normally.
+     * normally. The interrupt is no longer pending in the interrupt controller at this
+     * point.
      */
     if (fFlags & IEM_XCPT_FLAGS_T_EXT_INT)
     {

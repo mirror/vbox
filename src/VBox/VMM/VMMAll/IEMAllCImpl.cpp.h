@@ -6568,7 +6568,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
      * Do the job.
      */
     uint64_t uTicks = TMCpuTickGet(pVCpu);
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
     uTicks = CPUMApplyNestedGuestTscOffset(pVCpu, uTicks);
 #endif
     pVCpu->cpum.GstCtx.rax = RT_LO_U32(uTicks);
@@ -6625,7 +6625,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
         pVCpu->cpum.GstCtx.rcx &= UINT32_C(0xffffffff);
 
         uint64_t uTicks = TMCpuTickGet(pVCpu);
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
         uTicks = CPUMApplyNestedGuestTscOffset(pVCpu, uTicks);
 #endif
         pVCpu->cpum.GstCtx.rax = RT_LO_U32(uTicks);

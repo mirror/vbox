@@ -1132,7 +1132,7 @@ DECLINLINE(void) iemInitExec(PVMCPU pVCpu, bool fBypassHandlers)
 #endif
 }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
 /**
  * Performs a minimal reinitialization of the execution state.
  *
@@ -5566,7 +5566,7 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
                 return rcStrict0;
         }
     }
-#endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
+#endif
 
     /*
      * Do recursion accounting.
@@ -14335,14 +14335,19 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
      * See if there is an interrupt pending in TRPM, inject it if we can.
      */
     /** @todo Can we centralize this under CPUMCanInjectInterrupt()? */
-#if defined(VBOX_WITH_NESTED_HWVIRT_SVM)
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
     bool fIntrEnabled = CPUMGetGuestGif(&pVCpu->cpum.GstCtx);
     if (fIntrEnabled)
     {
-        if (CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)))
-            fIntrEnabled = CPUMIsGuestSvmPhysIntrEnabled(pVCpu, IEM_GET_CTX(pVCpu));
-        else
+        if (!CPUMIsGuestInNestedHwvirtMode(IEM_GET_CTX(pVCpu)))
             fIntrEnabled = pVCpu->cpum.GstCtx.eflags.Bits.u1IF;
+        else if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
+            fIntrEnabled = CPUMIsGuestVmxPhysIntrEnabled(pVCpu, IEM_GET_CTX(pVCpu));
+        else
+        {
+            Assert(CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)));
+            fIntrEnabled = CPUMIsGuestSvmPhysIntrEnabled(pVCpu, IEM_GET_CTX(pVCpu));
+        }
     }
 #else
     bool fIntrEnabled = pVCpu->cpum.GstCtx.eflags.Bits.u1IF;
@@ -14356,8 +14361,16 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
         RTGCUINT    uErrCode;
         RTGCPTR     uCr2;
         int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, NULL /* pu8InstLen */); AssertRC(rc2);
-        IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2, 0 /* cbInstr */);
+        VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2, 0 /* cbInstr */);
         TRPMResetTrap(pVCpu);
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
+        /* Injecting an event may cause a VM-exit. */
+        if (   rcStrict != VINF_SUCCESS
+            && rcStrict != VINF_IEM_RAISED_XCPT)
+            return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+#else
+        NOREF(rcStrict);
+#endif
     }
 
     /*
@@ -14455,7 +14468,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
         if (pVCpu->iem.s.cActiveMappings > 0)
             iemMemRollback(pVCpu);
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
         /*
          * When a nested-guest causes an exception intercept (e.g. #PF) when fetching
          * code as part of instruction execution, we need this to fix-up VINF_SVM_VMEXIT.
@@ -14632,7 +14645,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecForExits(PVMCPU pVCpu, uint32_t fWillExit, uint32_t
         if (pVCpu->iem.s.cActiveMappings > 0)
             iemMemRollback(pVCpu);
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
         /*
          * When a nested-guest causes an exception intercept (e.g. #PF) when fetching
          * code as part of instruction execution, we need this to fix-up VINF_SVM_VMEXIT.
@@ -14749,11 +14762,14 @@ VMMDECL(VBOXSTRICTRC) IEMInjectTrpmEvent(PVMCPU pVCpu)
         return rc;
 
     VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8TrapNo, enmType, uErrCode, uCr2, cbInstr);
-# ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (rcStrict == VINF_SVM_VMEXIT)
         rcStrict = VINF_SUCCESS;
-# endif
-
+#endif
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (rcStrict == VINF_VMX_VMEXIT)
+        rcStrict = VINF_SUCCESS;
+#endif
     /** @todo Are there any other codes that imply the event was successfully
      *        delivered to the guest? See @bugref{6607}.  */
     if (   rcStrict == VINF_SUCCESS
