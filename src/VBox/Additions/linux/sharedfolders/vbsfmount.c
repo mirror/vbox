@@ -16,8 +16,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "vbsfmount.h"
-
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -25,8 +23,11 @@
 #include <mntent.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/mount.h>
+
+#include "vbsfmount.h"
 
 
 /** @todo Use defines for return values! */
