@@ -9512,7 +9512,7 @@ HRESULT Console::i_attachToTapInterface(INetworkAdapter *networkAdapter)
         {
             case VERR_ACCESS_DENIED:
                 /* will be handled by our caller */
-                rc = vrc;
+                rc = E_ACCESSDENIED;
                 break;
             default:
                 rc = setErrorBoth(E_FAIL, vrc, tr("Could not set up the host networking device: %Rrc"), vrc);
@@ -9553,7 +9553,7 @@ HRESULT Console::i_attachToTapInterface(INetworkAdapter *networkAdapter)
         {
             case VERR_ACCESS_DENIED:
                 /* will be handled by our caller */
-                rc = vrc;
+                rc = E_ACCESSDENIED;
                 break;
             default:
                 rc = setErrorBoth(E_FAIL, vrc, tr("Failed to open the host network interface %ls"), tapDeviceName.raw());

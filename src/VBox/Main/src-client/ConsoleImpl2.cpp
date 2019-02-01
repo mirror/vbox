@@ -5449,7 +5449,7 @@ int Console::i_configNetwork(const char *pszDevice,
                     {
                         switch (hrc)
                         {
-                            case VERR_ACCESS_DENIED:
+                            case E_ACCESSDENIED:
                                 return VMSetError(VMR3GetVM(mpUVM), VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
                                                 "Failed to open '/dev/%s' for read/write access.  Please check the "
                                                 "permissions of that node, and that the net.link.tap.user_open "
