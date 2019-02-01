@@ -53,6 +53,13 @@
   physical ATA disk geometry; for that reason, disks smaller than ~500MB are
   easiest to use. Otherwise a "large" BIOS disk option would be required.
 
+- Older NetWare IDE disk drivers (IDE.DSK from 1993, likely older as well)
+  fall into the same category. If FDPT contains logical geometry, NetWare
+  malfunctions. NetWare 3.x/4.x is unusual in that it boots from a DOS
+  partition using BIOS, and only later switches to its own disk drivers.
+  NetWare reportedly understands FDPT cylinder values over 1024, but requires
+  physical disk geometry in the FDPT (only up to 16 heads).
+
 - Some really old OSes (Xenix circa 1986-7) do not understand the EBDA idea
   and clear the memory. For those, the FDPT must be in the BIOS ROM area, or
   the OS will destroy it (even when it's at 0:300 in the IVT).
