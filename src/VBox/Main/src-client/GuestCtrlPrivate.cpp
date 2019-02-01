@@ -890,10 +890,7 @@ int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32
  * around once at a time.
  *
  * @returns IPRT status code.
- * @retval  VERR_ALREADY_EXISTS if an event with the given session and object ID
- *          already has been registered.  r=bird: Incorrect, see explanation in
- *          registerWaitEventEx().
- *
+ * @retval  VERR_GSTCTL_MAX_CID_COUNT_REACHED if unable to generate a free context ID (CID, the count part (bits 15:0)).
  * @param   uSessionID              Session ID to register wait event for.
  * @param   uObjectID               Object ID to register wait event for.
  * @param   ppEvent                 Pointer to registered (created) wait event on success.
@@ -917,12 +914,7 @@ int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID, GuestW
  * the waking up the thread waiting on it.
  *
  * @returns VBox status code.
- * @retval  VERR_ALREADY_EXISTS if an event with the given session and object ID
- *          already has been registered.  r=bird: No, this isn't when this is
- *          returned, it is returned when generateContextID() generates a
- *          duplicate.  The duplicate being in the count part (bits 15:0) of the
- *          session ID.  So, VERR_DUPLICATE would be more appropraite.
- *
+ * @retval  VERR_GSTCTL_MAX_CID_COUNT_REACHED if unable to generate a free context ID (CID, the count part (bits 15:0)).
  * @param   uSessionID              Session ID to register wait event for.
  * @param   uObjectID               Object ID to register wait event for.
  * @param   lstEvents               List of events to register the wait event for.
@@ -962,9 +954,9 @@ int GuestBase::registerWaitEventEx(uint32_t uSessionID, uint32_t uObjectID, cons
             {
                 rc = generateContextID(uSessionID, uObjectID, &idContext);
                 AssertRCBreak(rc);
-                Log(("Duplicate! Trying a different context ID: %#x\n", idContext));
+                LogFunc(("Found context ID duplicate; trying a different context ID: %#x\n", idContext));
                 if (mWaitEvents.find(idContext) != mWaitEvents.end())
-                    rc = VERR_ALREADY_EXISTS;
+                    rc = VERR_GSTCTL_MAX_CID_COUNT_REACHED;
             } while (RT_FAILURE_NP(rc) && cTries++ < 10);
         }
         if (RT_SUCCESS(rc))

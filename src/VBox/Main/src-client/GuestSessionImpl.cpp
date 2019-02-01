@@ -1715,7 +1715,7 @@ Utf8Str GuestSession::i_guestErrorToString(int rcGuest)
             strError += Utf8StrFmt(tr("The session operation was canceled"));
             break;
 
-        case VERR_GSTCTL_MAX_OBJECTS_REACHED:
+        case VERR_GSTCTL_MAX_CID_OBJECTS_REACHED:
             strError += Utf8StrFmt(tr("Maximum number of concurrent guest processes has been reached"));
             break;
 
@@ -2069,14 +2069,14 @@ int GuestSession::i_objectRegister(SESSIONOBJECTTYPE enmType, uint32_t *pidObjec
         int iHit = ASMBitNextClear(&mData.bmObjectIds[0], VBOX_GUESTCTRL_MAX_OBJECTS, idObject);
         if (iHit < 0)
             iHit = ASMBitFirstClear(&mData.bmObjectIds[0], VBOX_GUESTCTRL_MAX_OBJECTS);
-        AssertLogRelMsgReturn(iHit >= 0, ("object count: %#zu\n", mData.mObjects.size()), VERR_GSTCTL_MAX_OBJECTS_REACHED);
+        AssertLogRelMsgReturn(iHit >= 0, ("object count: %#zu\n", mData.mObjects.size()), VERR_GSTCTL_MAX_CID_OBJECTS_REACHED);
         idObject = iHit;
         AssertLogRelMsgReturn(!ASMBitTestAndSet(&mData.bmObjectIds[0], idObject), ("idObject=%#x\n", idObject), VERR_INTERNAL_ERROR_2);
     }
     else
     {
-        LogFunc(("enmType=%RU32 -> VERR_GSTCTL_MAX_OBJECTS_REACHED!! (%zu objects)\n", enmType, mData.mObjects.size()));
-        return VERR_GSTCTL_MAX_OBJECTS_REACHED;
+        LogFunc(("Maximum number of objects reached (enmType=%RU32, %zu objects)\n", enmType, mData.mObjects.size()));
+        return VERR_GSTCTL_MAX_CID_OBJECTS_REACHED;
     }
 
     Log2Func(("enmType=%RU32 -> idObject=%RU32 (%zu objects)\n", enmType, idObject, mData.mObjects.size()));
@@ -4097,7 +4097,7 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
                 hr = setErrorVrc(vrc, tr("Failed to start guest process: %Rrc"), vrc);
             }
         }
-        else if (vrc == VERR_GSTCTL_MAX_OBJECTS_REACHED)
+        else if (vrc == VERR_GSTCTL_MAX_CID_OBJECTS_REACHED)
             hr = setErrorVrc(vrc, tr("Maximum number of concurrent guest processes per session (%u) reached"),
                              VBOX_GUESTCTRL_MAX_OBJECTS);
         else
