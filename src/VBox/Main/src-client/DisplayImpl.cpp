@@ -4453,7 +4453,7 @@ DECLCALLBACK(void) Display::i_displayVBVAInputMappingUpdate(PPDMIDISPLAYCONNECTO
     pThis->i_handleUpdateVBVAInputMapping(xOrigin, yOrigin, cx, cy);
 }
 
-DECLCALLBACK(void) Display::i_displayVBVAReportCursorPosition(PPDMIDISPLAYCONNECTOR pInterface, uint32_t fFlags, ULONG aScreenId, uint32_t x, uint32_t y)
+DECLCALLBACK(void) Display::i_displayVBVAReportCursorPosition(PPDMIDISPLAYCONNECTOR pInterface, uint32_t fFlags, uint32_t aScreenId, uint32_t x, uint32_t y)
 {
     LogFlowFunc(("\n"));
 
