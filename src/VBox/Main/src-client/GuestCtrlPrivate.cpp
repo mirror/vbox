@@ -1013,9 +1013,14 @@ int GuestBase::registerWaitEventEx(uint32_t uSessionID, uint32_t uObjectID, cons
         RTCritSectLeave(&mWaitEventCritSect);
     }
     if (RT_SUCCESS(rc))
+    {
+        *ppEvent = pEvent;
         return rc;
+    }
 
-    delete pEvent;
+    if (pEvent)
+        delete pEvent;
+
     return rc;
 }
 
