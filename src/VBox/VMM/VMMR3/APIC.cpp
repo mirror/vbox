@@ -1333,7 +1333,7 @@ static int apicR3InitState(PVM pVM)
             SupApicPage.Phys = NIL_RTHCPHYS;
 
             Assert(pVCpu->idCpu == idCpu);
-            Assert(pApicCpu->pvApicPageR3 == NIL_RTR0PTR);
+            Assert(pApicCpu->pvApicPageR3 == NIL_RTR3PTR);
             Assert(pApicCpu->pvApicPageR0 == NIL_RTR0PTR);
             Assert(pApicCpu->pvApicPageRC == NIL_RTRCPTR);
             AssertCompile(sizeof(XAPICPAGE) == PAGE_SIZE);
