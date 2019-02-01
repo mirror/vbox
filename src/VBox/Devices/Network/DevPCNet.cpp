@@ -1336,8 +1336,8 @@ static void pcnetSoftReset(PPCNETSTATE pThis)
  */
 static void pcnetUpdateIrq(PPCNETSTATE pThis)
 {
-    register int      iISR = 0;
-    register uint16_t csr0 = pThis->aCSR[0];
+    int      iISR = 0;
+    uint16_t csr0 = pThis->aCSR[0];
 
     csr0 &= ~0x0080; /* clear INTR */
 
