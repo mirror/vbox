@@ -1035,71 +1035,6 @@ int GuestBase::signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent)
         GuestEventGroup::iterator itGroup = mWaitEventGroups.find(aType);
         if (itGroup != mWaitEventGroups.end())
         {
-#if 1 /** @todo r=bird: consider the other variant. */
-            GuestWaitEvents::iterator itEvents = itGroup->second.begin();
-            while (itEvents != itGroup->second.end())
-            {
-#ifdef DEBUG
-                LogFlowThisFunc(("Signalling event=%p, type=%ld (CID %RU32: Session=%RU32, Object=%RU32, Count=%RU32) ...\n",
-                                 itEvents->second, aType, itEvents->first,
-                                 VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(itEvents->first),
-                                 VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(itEvents->first),
-                                 VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(itEvents->first)));
-#endif
-                ComPtr<IEvent> pThisEvent = aEvent; /** @todo r=bird: This means addref/release for each iteration. Isn't that silly? */
-                Assert(!pThisEvent.isNull());
-                int rc2 = itEvents->second->SignalExternal(aEvent);
-                if (RT_SUCCESS(rc))
-                    rc = rc2; /** @todo r=bird: This doesn't make much sense since it will only fail if not
-                               * properly initialized or major memory corruption.  And if it's broken, why
-                               * don't you just remove it instead of leaving it in the group???  It would
-                               * make life so much easier here as you could just change the while condition
-                               * to while ((itEvents = itGroup->second.begin() != itGroup->second.end())
-                               * and skip all this two step removal below.  I'll put this in a #if 0 and show what I mean... */
-
-                if (RT_SUCCESS(rc2))
-                {
-                    /** @todo r=bird: I don't follow the logic here.  Why don't you just remove
-                     *        it from all groups, including this one?  You just have move the  */
-
-                    /* Remove the event from all other event groups (except the
-                     * original one!) because it was signalled. */
-                    AssertPtr(itEvents->second);
-                    const GuestEventTypes evTypes = itEvents->second->Types();
-                    for (GuestEventTypes::const_iterator itType = evTypes.begin();
-                         itType != evTypes.end(); ++itType)
-                    {
-                        if ((*itType) != aType) /* Only remove all other groups. */
-                        {
-                            /* Get current event group. */
-                            GuestEventGroup::iterator evGroup = mWaitEventGroups.find((*itType));
-                            Assert(evGroup != mWaitEventGroups.end());
-
-                            /* Lookup event in event group. */
-                            GuestWaitEvents::iterator evEvent = evGroup->second.find(itEvents->first /* Context ID */);
-                            Assert(evEvent != evGroup->second.end());
-
-                            LogFlowThisFunc(("Removing event=%p (type %ld)\n", evEvent->second, (*itType)));
-                            evGroup->second.erase(evEvent);
-
-                            LogFlowThisFunc(("%zu events for type=%ld left\n",
-                                             evGroup->second.size(), aType));
-                        }
-                    }
-
-                    /* Remove the event from the passed-in event group. */
-                    GuestWaitEvents::iterator itEventsNext = itEvents;
-                    ++itEventsNext;
-                    itGroup->second.erase(itEvents);
-                    itEvents = itEventsNext;
-                }
-                else
-                    ++itEvents;
-#ifdef DEBUG
-                cEvents++;
-#endif
-            }
-#else
             /* Signal all events in the group, leaving the group empty afterwards. */
             GuestWaitEvents::iterator ItWaitEvt;
             while ((ItWaitEvt = itGroup->second.begin()) != itGroup->second.end())
@@ -1132,7 +1067,6 @@ int GuestBase::signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent)
                     }
                 }
             }
-#endif
         }
 
         int rc2 = RTCritSectLeave(&mWaitEventCritSect);
