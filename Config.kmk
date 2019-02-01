@@ -4775,6 +4775,7 @@ TEMPLATE_VBOXR0DRV_DEFS               += RT_WITHOUT_PRAGMA_ONCE
 TEMPLATE_VBOXR0DRV_INCS                = \
 	$(VBOX_FREEBSD_SRC) \
 	$(VBOX_FREEBSD_SRC)/contrib/altq \
+	$(VBOX_FREEBSD_SRC)/contrib/ck/include \
 	$(VBOX_FREEBSD_SRC)/../include \
 	$(VBOX_FREEBSD_SYS_INCS)
 # omitting: -Wcast-qual, -Wredundant-decls
@@ -4782,16 +4783,15 @@ TEMPLATE_VBOXR0DRV_CFLAGS              =  \
 	$(VBOX_GCC_WARN) -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) $(VBOX_GCC_fdiagnostics-show-option) \
 	-Wstrict-prototypes -Wmissing-prototypes -Wstrict-prototypes \
 	-Wimplicit-function-declaration -Werror-implicit-function-declaration \
-	-O2 -ffreestanding -fno-strict-aliasing -fno-common -finline-limit=8000 \
+	-O2 -ffreestanding -fno-strict-aliasing -fno-common \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
 	-nostdinc -std=c99
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-align-long-strings -mpreferred-stack-boundary=2 -mno-mmx -mno-3dnow -mno-sse -mno-sse2
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 --param inline-unit-growth=100 --param large-function-growth=1000 \
-	-fno-omit-frame-pointer -mcmodel=kernel -mno-red-zone -mfpmath=387 -mno-sse -mno-sse2 -mno-mmx \
-	-mno-3dnow -msoft-float -fno-asynchronous-unwind-tables -Wundef
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-align-long-strings -mno-mmx -mno-3dnow -mno-sse -mno-sse2
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -fno-omit-frame-pointer -mcmodel=kernel -mno-red-zone -mfpmath=387 \
+	-mno-sse -mno-sse2 -mno-mmx -mno-3dnow -msoft-float -fno-asynchronous-unwind-tables -Wundef
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = -fno-exceptions -fno-rtti \
 	$(VBOX_GCC_WARN) -Wpointer-arith -Winline \
-	-O2 -fno-strict-aliasing -fno-common -finline-limit=8000 \
+	-O2 -fno-strict-aliasing -fno-common \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
 	-nostdinc
 TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)
@@ -4870,8 +4870,7 @@ TEMPLATE_VBOXR0DRV_CFLAGS              =  \
 	-O2 -ffreestanding -fno-strict-aliasing -fno-common -finline-limit=8000 \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
 	-nostdinc -std=c99 -msoft-float
-TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 \
-    -mpreferred-stack-boundary=2 -mno-mmx -mno-sse -mno-avx \
+TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-mmx -mno-sse -mno-avx \
     -mno-fp-ret-in-387
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 --param inline-unit-growth=100 \
     --param large-function-growth=1000 -fno-omit-frame-pointer \
@@ -4944,7 +4943,7 @@ ifdef VBOX_WITH_VBOXDRV
  endif
 endif
 
-ifn1of ($(KBUILD_TARGET), darwin os2 win solaris)
+ifn1of ($(KBUILD_TARGET), darwin os2 win solaris freebsd)
  # This doesn't work if supdrv is natively loading VMMR0.r0 et al, but
  # fortunately it isn't really necessary.
  TEMPLATE_VBOXR0DRV_CFLAGS    += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
