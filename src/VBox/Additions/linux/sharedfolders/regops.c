@@ -34,6 +34,8 @@
 
 #include "vfsmod.h"
 
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+
 static void *alloc_bounce_buffer(size_t * tmp_sizep, PRTCCPHYS physp, size_t
 				 xfer_size, const char *caller)
 {
@@ -64,6 +66,29 @@ static void free_bounce_buffer(void *tmp)
 {
 	kfree(tmp);
 }
+
+#else  /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+
+/*
+ * inode compatibility glue.
+ */
+# include <iprt/asm.h>
+
+DECLINLINE(loff_t) i_size_read(struct inode *inode)
+{
+	AssertCompile(sizeof(loff_t) == sizeof(uint64_t));
+	return ASMAtomicReadU64((uint64_t volatile *)&inode->i_size);
+}
+
+DECLINLINE(void) i_size_write(struct inode *inode, loff_t i_size)
+{
+	AssertCompile(sizeof(inode->i_size) == sizeof(uint64_t));
+	ASMAtomicWriteU64((uint64_t volatile *)&inode->i_size, i_size);
+}
+
+# endif /* < 2.6.0 */
+#endif /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
 
 /* fops */
 static int sf_reg_read_aux(const char *caller, struct sf_glob_info *sf_g,
@@ -274,21 +299,21 @@ DECLINLINE(void) sf_unlock_user_pages(struct page **papPages, size_t cPages, boo
 
 
 /** Wrapper around get_user_pages. */
-DECLINLINE(int) sf_lock_user_pages(void /*__user*/ *pvFrom, size_t cPages, bool fWrite, struct page **papPages)
+DECLINLINE(int) sf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWrite, struct page **papPages)
 {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
-	ssize_t cPagesLocked = get_user_pages_unlocked((uintptr_t)pvFrom, cPages, papPages,
+	ssize_t cPagesLocked = get_user_pages_unlocked(uPtrFrom, cPages, papPages,
 						       fWrite ? FOLL_WRITE | FOLL_FORCE : FOLL_FORCE);
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
-	ssize_t cPagesLocked = get_user_pages_unlocked((uintptr_t)pvFrom, cPages, fWrite, 1 /*force*/, papPages);
+	ssize_t cPagesLocked = get_user_pages_unlocked(uPtrFrom, cPages, fWrite, 1 /*force*/, papPages);
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
-	ssize_t cPagesLocked = get_user_pages_unlocked(current, current->mm, (uintptr_t)pvFrom, cPages,
+	ssize_t cPagesLocked = get_user_pages_unlocked(current, current->mm, uPtrFrom, cPages,
 						       fWrite, 1 /*force*/, papPages);
 # else
 	struct task_struct *pTask = current;
 	size_t cPagesLocked;
 	down_read(&pTask->mm->mmap_sem);
-	cPagesLocked = get_user_pages(current, current->mm, (uintptr_t)pvFrom, cPages, fWrite, 1 /*force*/, papPages, NULL);
+	cPagesLocked = get_user_pages(current, current->mm, uPtrFrom, cPages, fWrite, 1 /*force*/, papPages, NULL);
 	up_read(&pTask->mm->mmap_sem);
 # endif
 	if (cPagesLocked == cPages)
@@ -298,7 +323,7 @@ DECLINLINE(int) sf_lock_user_pages(void /*__user*/ *pvFrom, size_t cPages, bool 
 
 	sf_unlock_user_pages(papPages, cPagesLocked, false /*fSetDirty*/);
 
-	/* We could use pvFrom + cPagesLocked to get the correct status here... */
+	/* We could use uPtrFrom + cPagesLocked to get the correct status here... */
 	return -EFAULT;
 }
 
@@ -350,7 +375,7 @@ static ssize_t sf_reg_read_fallback(struct file *file, char /*__user*/ *buf, siz
 				cbChunk = (cMaxPages << PAGE_SHIFT) - cbChunk;
 			}
 
-			rc = sf_lock_user_pages(buf, cPages, true /*fWrite*/, papPages);
+			rc = sf_lock_user_pages((uintptr_t)buf, cPages, true /*fWrite*/, papPages);
 			if (rc == 0) {
 				size_t iPage = cPages;
 				while (iPage-- > 0)
@@ -507,7 +532,7 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 				if (copy_to_user(buf, pReq->abData, cbRet) == 0)
 					*off += cbRet;
 				else
-					cbRet = -EPROTO;
+					cbRet = -EFAULT;
 			} else
 				cbRet = -EPROTO;
 		        VbglR0PhysHeapFree(pReq);
@@ -535,7 +560,7 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 					if (copy_to_user(buf, pvBounce, cbRet) == 0)
 						*off += cbRet;
 					else
-						cbRet = -EPROTO;
+						cbRet = -EFAULT;
 				} else
 					cbRet = -EPROTO;
 				VbglR0PhysHeapFree(pReq);
@@ -551,6 +576,120 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 #endif /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
 }
 
+
+#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+/**
+ * Fallback case of sf_reg_write() that locks the user buffers and let the host
+ * write directly to them.
+ */
+static ssize_t sf_reg_write_fallback(struct file *file, const char /*__user*/ *buf, size_t size, loff_t *off, loff_t offFile,
+				     struct inode *inode, struct sf_inode_info *sf_i,
+				     struct sf_glob_info *sf_g, struct sf_reg_info *sf_r)
+{
+	/*
+	 * Lock pages and execute the write, taking care not to pass the host
+	 * more than it can handle in one go or more than we care to allocate
+	 * page arrays for.  The latter limit is set at just short of 32KB due
+	 * to how the physical heap works.
+	 */
+	struct page         *apPagesStack[16];
+	struct page        **papPages     = &apPagesStack[0];
+	struct page        **papPagesFree = NULL;
+	VBOXSFWRITEPGLSTREQ *pReq;
+	ssize_t              cbRet        = -ENOMEM;
+	size_t               cPages       = (((uintptr_t)buf & PAGE_OFFSET_MASK) + size + PAGE_OFFSET_MASK) >> PAGE_SHIFT;
+	size_t               cMaxPages    = RT_MIN(RT_MAX(sf_g->cMaxIoPages, 1), cPages);
+
+	pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cMaxPages]));
+	while (!pReq && cMaxPages > 4) {
+		cMaxPages /= 2;
+		pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cMaxPages]));
+	}
+	if (pReq && cPages > RT_ELEMENTS(apPagesStack))
+		papPagesFree = papPages = kmalloc(cMaxPages * sizeof(sizeof(papPages[0])), GFP_KERNEL);
+	if (pReq && papPages) {
+		cbRet = 0;
+		for (;;) {
+			/*
+			 * Figure out how much to process now and lock the user pages.
+			 */
+			int    rc;
+			size_t cbChunk = (uintptr_t)buf & PAGE_OFFSET_MASK;
+			pReq->PgLst.offFirstPage = (uint16_t)cbChunk;
+			cPages  = RT_ALIGN_Z(cbChunk + size, PAGE_SIZE) >> PAGE_SHIFT;
+			if (cPages <= cMaxPages)
+				cbChunk = size;
+			else {
+				cPages  = cMaxPages;
+				cbChunk = (cMaxPages << PAGE_SHIFT) - cbChunk;
+			}
+
+			rc = sf_lock_user_pages((uintptr_t)buf, cPages, false /*fWrite*/, papPages);
+			if (rc == 0) {
+				size_t iPage = cPages;
+				while (iPage-- > 0)
+					pReq->PgLst.aPages[iPage] = page_to_phys(papPages[iPage]);
+			} else {
+				cbRet = rc;
+				break;
+			}
+
+			/*
+			 * Issue the request and unlock the pages.
+			 */
+			rc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->handle, offFile, cbChunk, cPages);
+
+			sf_unlock_user_pages(papPages, cPages, false /*fSetDirty*/);
+
+			if (RT_SUCCESS(rc)) {
+				/*
+				 * Success, advance position and buffer.
+				 */
+				uint32_t cbActual = pReq->Parms.cb32Write.u.value32;
+				AssertStmt(cbActual <= cbChunk, cbActual = cbChunk);
+				cbRet   += cbActual;
+				offFile += cbActual;
+				buf      = (uint8_t *)buf + cbActual;
+				size    -= cbActual;
+				if (offFile > i_size_read(inode))
+					i_size_write(inode, offFile);
+
+				/*
+				 * Are we done already?  If so commit the new file offset.
+				 */
+				if (!size || cbActual < cbChunk) {
+					*off = offFile;
+					break;
+				}
+			} else if (rc == VERR_NO_MEMORY && cMaxPages > 4) {
+				/*
+				 * The host probably doesn't have enough heap to handle the
+				 * request, reduce the page count and retry.
+				 */
+				cMaxPages /= 4;
+				Assert(cMaxPages > 0);
+			} else {
+				/*
+				 * If we've successfully written stuff, return it rather than
+				 * the error.  (Not sure if this is such a great idea...)
+				 */
+				if (cbRet > 0)
+					*off = offFile;
+				else
+					cbRet = -EPROTO;
+				break;
+			}
+			sf_i->force_restat = 1; /* mtime (and size) may have changed */
+		}
+	}
+	if (papPagesFree)
+		kfree(papPages);
+	if (pReq)
+		VbglR0PhysHeapFree(pReq);
+	return cbRet;
+}
+#endif /* VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
+
 /**
  * Write to a regular file.
  *
@@ -563,17 +702,19 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 			    loff_t * off)
 {
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	int err;
 	void *tmp;
 	RTCCPHYS tmp_phys;
 	size_t tmp_size;
 	size_t left = size;
 	ssize_t total_bytes_written = 0;
+#endif
+	loff_t pos;
 	struct inode *inode = GET_F_DENTRY(file)->d_inode;
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
 	struct sf_reg_info *sf_r = file->private_data;
-	loff_t pos;
 
 	TRACE();
 	BUG_ON(!sf_i);
@@ -586,16 +727,28 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 	}
 
 	pos = *off;
+	/** @todo This should be handled by the host, it returning the new file
+	 *        offset when appending.  We may have an outdated i_size value here! */
 	if (file->f_flags & O_APPEND) {
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 		pos = inode->i_size;
 		*off = pos;
+#else
+		pos = i_size_read(inode);
+#endif
 	}
 
 	/** @todo XXX Check write permission according to inode->i_mode! */
 
-	if (!size)
+	if (!size) {
+#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
+		if (file->f_flags & O_APPEND)  /** @todo check if this is the consensus behavior... */
+			*off = pos;
+#endif
 		return 0;
+	}
 
+#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	tmp = alloc_bounce_buffer(&tmp_size, &tmp_phys, size,
 				  __PRETTY_FUNCTION__);
 	if (!tmp)
@@ -642,6 +795,78 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
  fail:
 	free_bounce_buffer(tmp);
 	return err;
+#else  /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
+
+	/*
+	 * For small requests, try use an embedded buffer provided we get a heap block
+	 * that does not cross page boundraries (see host code).
+	 */
+	if (size <= PAGE_SIZE / 4 * 3 - RT_UOFFSETOF(VBOXSFWRITEEMBEDDEDREQ, abData[0]) /* see allocator */) {
+		uint32_t const          cbReq = RT_UOFFSETOF(VBOXSFWRITEEMBEDDEDREQ, abData[0]) + size;
+		VBOXSFWRITEEMBEDDEDREQ *pReq  = (VBOXSFWRITEEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
+		if (   pReq
+		    && (PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
+			ssize_t cbRet;
+			if (copy_from_user(pReq->abData, buf, size) == 0) {
+				int vrc = VbglR0SfHostReqWriteEmbedded(sf_g->map.root, pReq, sf_r->handle, pos, (uint32_t)size);
+				if (RT_SUCCESS(vrc)) {
+					cbRet = pReq->Parms.cb32Write.u.value32;
+					AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
+					pos += cbRet;
+					*off = pos;
+					if (pos > i_size_read(inode))
+						i_size_write(inode, pos);
+				} else
+					cbRet = -EPROTO;
+				sf_i->force_restat = 1; /* mtime (and size) may have changed */
+			} else
+				cbRet = -EFAULT;
+
+		        VbglR0PhysHeapFree(pReq);
+			return cbRet;
+		}
+		if (pReq)
+			VbglR0PhysHeapFree(pReq);
+	}
+
+# if 0 /* Turns out this is slightly slower than locking the pages even for 4KB reads (4.19/amd64). */
+	/*
+	 * For medium sized requests try use a bounce buffer.
+	 */
+	if (size <= _64K /** @todo make this configurable? */) {
+		void *pvBounce = kmalloc(size, GFP_KERNEL);
+		if (pvBounce) {
+			if (copy_from_user(pvBounce, buf, size) == 0) {
+				VBOXSFWRITEPGLSTREQ *pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+				if (pReq) {
+					ssize_t cbRet;
+					int vrc = VbglR0SfHostReqWriteContig(sf_g->map.root, pReq, sf_r->handle, pos,
+									     (uint32_t)size, pvBounce, virt_to_phys(pvBounce));
+					if (RT_SUCCESS(vrc)) {
+						cbRet = pReq->Parms.cb32Write.u.value32;
+						AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
+						pos += cbRet;
+						*off = pos;
+						if (pos > i_size_read(inode))
+							i_size_write(inode, pos);
+					} else
+						cbRet = -EPROTO;
+					sf_i->force_restat = 1; /* mtime (and size) may have changed */
+					VbglR0PhysHeapFree(pReq);
+					kfree(pvBounce);
+					return cbRet;
+				}
+				kfree(pvBounce);
+			} else {
+				kfree(pvBounce);
+				return -EFAULT;
+			}
+		}
+	}
+# endif
+
+	return sf_reg_write_fallback(file, buf, size, off, pos, inode, sf_i, sf_g, sf_r);
+#endif /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
 }
 
 /**
