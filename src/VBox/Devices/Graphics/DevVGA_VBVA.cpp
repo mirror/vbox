@@ -2659,10 +2659,10 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
                 Report.y               = pReport->y;
                 RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
-                LogRelFlowFunc(("VBVA: ChannelHandler: VBVA_CURSOR_POSITION: fReportPosition=%RTbool, x=%RU32, y=%RU32\n",
-                                RT_BOOL(Report.fReportPosition), Report.x, Report.y));
+                LogRelFlowFunc(("VBVA: ChannelHandler: VBVA_CURSOR_POSITION: fReportPosition=%RTbool, Id=%RU32, x=%RU32, y=%RU32\n",
+                                RT_BOOL(Report.fReportPosition), vbvaViewFromBufferPtr(pIns, pCtx, pvBuffer), Report.x, Report.y));
 
-                pVGAState->pDrv->pfnVBVAReportCursorPosition(pVGAState->pDrv, RT_BOOL(Report.fReportPosition), Report.x, Report.y);
+                pVGAState->pDrv->pfnVBVAReportCursorPosition(pVGAState->pDrv, RT_BOOL(Report.fReportPosition), vbvaViewFromBufferPtr(pIns, pCtx, pvBuffer), Report.x, Report.y);
                 pReport->x = pCtx->xCursor;
                 pReport->y = pCtx->yCursor;
                 rc = VINF_SUCCESS;

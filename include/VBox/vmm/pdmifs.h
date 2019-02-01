@@ -714,6 +714,13 @@ typedef struct PDMIDISPLAYPORT
 #define PDMIDISPLAYPORT_IID                     "323f3412-8903-4564-b04c-cbfe0d2d1596"
 #endif
 
+/** @name Flags for PDMIDISPLAYCONNECTOR::pfnVBVAReportCursorPosition.
+ * @{ */
+/** Is the data in the report valid? */
+#define VBVA_CURSOR_VALID_DATA                              RT_BIT(0)
+/** Is the cursor position reported relative to a particular guest screen? */
+#define VBVA_CURSOR_SCREEN_RELATIVE                         RT_BIT(1)
+/** @} */
 
 /** Pointer to a 2D graphics acceleration command. */
 typedef struct VBOXVHWACMD VBOXVHWACMD;
@@ -1048,16 +1055,16 @@ typedef struct PDMIDISPLAYCONNECTOR
      * The guest is reporting the requested location of the host pointer.
      *
      * @param   pInterface  Pointer to this interface.
-     * @param   fData       Does this report contain valid X and Y data or is
-     *                      it only reporting interface support?
+     * @param   fFlags      VBVA_CURSOR_*
+     * @param   uScreenId   The screen to which X and Y are relative if VBVA_CURSOR_SCREEN_RELATIVE is set.
      * @param   x           Cursor X offset.
      * @param   y           Cursor Y offset.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnVBVAReportCursorPosition,(PPDMIDISPLAYCONNECTOR pInterface, bool fData, uint32_t x, uint32_t y));
+    DECLR3CALLBACKMEMBER(void, pfnVBVAReportCursorPosition,(PPDMIDISPLAYCONNECTOR pInterface, uint32_t fFlags, uint32_t uScreen, uint32_t x, uint32_t y));
 } PDMIDISPLAYCONNECTOR;
 /** PDMIDISPLAYCONNECTOR interface ID. */
-#define PDMIDISPLAYCONNECTOR_IID                "e648dac6-c918-11e7-8be6-a317e6b79645"
+#define PDMIDISPLAYCONNECTOR_IID                "f2a4c9fc-2613-11e9-bc48-bf934e641fc0"
 
 
 /** Pointer to a secret key interface. */
