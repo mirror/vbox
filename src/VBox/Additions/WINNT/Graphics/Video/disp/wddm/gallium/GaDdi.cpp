@@ -3048,9 +3048,6 @@ HRESULT APIENTRY GaDdiSetPriority(HANDLE hDevice, const D3DDDIARG_SETPRIORITY *p
     PVBOXWDDMDISP_DEVICE pDevice = (PVBOXWDDMDISP_DEVICE)hDevice;
     RT_NOREF(pDevice);
 
-    /// @todo Not implemented.
-    AssertFailed();
-
     vboxVDbgPrintF(("==> "__FUNCTION__", hDevice(0x%p)\n", hDevice));
 
     return S_OK;
