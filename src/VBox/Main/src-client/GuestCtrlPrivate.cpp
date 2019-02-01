@@ -424,7 +424,7 @@ const char *GuestProcessStreamBlock::GetString(const char *pszKey) const
     }
     catch (const std::exception &ex)
     {
-        NOREF(ex);
+        RT_NOREF(ex);
     }
     return NULL;
 }
@@ -516,7 +516,7 @@ int GuestProcessStreamBlock::SetValue(const char *pszKey, const char *pszValue)
     }
     catch (const std::exception &ex)
     {
-        NOREF(ex);
+        RT_NOREF(ex);
     }
     return rc;
 }
@@ -1191,7 +1191,7 @@ int GuestBase::unregisterWaitEvent(GuestWaitEvent *pWaitEvt)
         }
         catch (const std::exception &ex)
         {
-            NOREF(ex);
+            RT_NOREF(ex);
             AssertFailedStmt(rc = VERR_NOT_FOUND);
         }
 
