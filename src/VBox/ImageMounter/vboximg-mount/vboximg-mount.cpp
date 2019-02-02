@@ -250,7 +250,7 @@ briefUsage()
       "If the user specifies a base image identifier using the --image option, only\n"
       "the base image will be mounted, disregarding any snapshots. Alternatively,\n"
       "if a snapshot is specified, the state of the FUSE-mounted virtual disk\n"
-      "is synthesized from the implied chain of snapshots, including base the image.\n"
+      "is synthesized from the implied chain of snapshots, including the base image.\n"
       "\n"
       "The virtual disk is exposed as a device node within a FUSE-based filesystem\n"
       "that overlays the user-provided mount point. The FUSE filesystem consists of a\n"
