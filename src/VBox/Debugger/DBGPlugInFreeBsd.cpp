@@ -43,6 +43,21 @@
 *********************************************************************************************************************************/
 
 /**
+ * FreeBSD .dynstr and .dynsym location probing state.
+ */
+typedef enum FBSDPROBESTATE
+{
+    /** Invalid state. */
+    FBSDPROBESTATE_INVALID = 0,
+    /** Searching for the end of the .dynstr section (terminator). */
+    FBSDPROBESTATE_DYNSTR_END,
+    /** Last symbol was a symbol terminator character. */
+    FBSDPROBESTATE_DYNSTR_SYM_TERMINATOR,
+    /** Last symbol was a symbol character. */
+    FBSDPROBESTATE_DYNSTR_SYM_CHAR,
+} FBSDPROBESTATE;
+
+/**
  * ELF headers union.
  */
 typedef union ELFEHDRS
@@ -217,7 +232,7 @@ static int dbgDiggerFreeBsdLoadSymbols(PDBGDIGGERFBSD pThis, PUVM pUVM, const ch
     LogFlowFunc(("pThis=%#p pszName=%s uKernelStart=%RGv cbKernel=%zu pAddrDynsym=%#p{%RGv} cSymbols=%u pAddrDynstr=%#p{%RGv} cbDynstr=%zu\n",
                  pThis, pszName, uKernelStart, cbKernel, pAddrDynsym, pAddrDynsym->FlatPtr, cSymbols, pAddrDynstr, pAddrDynstr->FlatPtr, cbDynstr));
 
-    char *pbDynstr = (char *)RTMemAllocZ(cbDynstr);
+    char *pbDynstr = (char *)RTMemAllocZ(cbDynstr + 1); /* Extra terminator. */
     int rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, pAddrDynstr, pbDynstr, cbDynstr);
     if (RT_SUCCESS(rc))
     {
@@ -250,7 +265,8 @@ static int dbgDiggerFreeBsdLoadSymbols(PDBGDIGGERFBSD pThis, PUVM pUVM, const ch
 
                     /* Add it without the type char. */
                     RT_NOREF(uType);
-                    if (AddrVal <= uKernelStart + cbKernel)
+                    if (   AddrVal <= uKernelStart + cbKernel
+                        && idxSymStr < cbDynstr)
                     {
                         rc = RTDbgModSymbolAdd(hMod, &pbDynstr[idxSymStr], RTDBGSEGIDX_RVA, AddrVal - uKernelStart,
                                                cbSymVal, 0 /*fFlags*/, NULL);
@@ -321,22 +337,121 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
      * which is understandable but unfortunate because it would make our life easier.
      *
      * All checked FreeBSD kernels so far have the following layout in the kernel:
-     *     [.interp] - contiains the /red/herring string we used for probing earlier
-     *     [.hash]   - contains the hashes of the symbol names, 8 byte alignment on 64bit, 4 byte on 32bit
-     *     [.dynsym] - contains the ELF symbol descriptors, 8 byte alignment, 4 byte on 32bit
-     *     [.dynstr] - contains the symbol names as a string table, 1 byte alignmnt
-     *     [.text]   - contains the executable code, 16 byte alignment.
-     * The sections are always adjacent (sans alignment) so we just parse the .hash section right after
-     * .interp, ELF states that it can contain 32bit or 64bit words but all observed kernels
-     * always use 32bit words. It contains two counters at the beginning which we can use to
-     * deduct the .hash section size and the beginning of .dynsym.
-     * .dynsym contains an array of symbol descriptors which have a fixed size depending on the
-     * guest bitness.
-     * Finding the end of .dynsym is not easily doable as there is no counter available (it lives
-     * in the section headers) at this point so we just have to check whether the record is valid
-     * and if not check if it contains an ASCII string which marks the start of the .dynstr section.
+     *     [.interp]   - contains the /red/herring string we used for probing earlier
+     *     [.hash]     - contains the hashes of the symbol names, 8 byte alignment on 64bit, 4 byte on 32bit
+     *     [.gnu.hash] - GNU hash section. (introduced somewhere between 10.0 and 12.0 @todo Find out when exactly)
+     *     [.dynsym]   - contains the ELF symbol descriptors, 8 byte alignment, 4 byte on 32bit
+     *     [.dynstr]   - contains the symbol names as a string table, 1 byte alignmnt
+     *     [.text]     - contains the executable code, 16 byte alignment.
+     *
+     * To find the start of the .dynsym and .dynstr sections we scan backwards from the start of the .text section
+     * and check for all characters allowed for symbol names and count the amount of symbols found. When the start of the
+     * .dynstr section is reached the number of entries in .dynsym is known and we can deduce the start address.
+     *
+     * This applied to the old code before the FreeBSD kernel introduced the .gnu.hash section
+     * (keeping it here for informational pruposes):
+     *     The sections are always adjacent (sans alignment) so we just parse the .hash section right after
+     *     .interp, ELF states that it can contain 32bit or 64bit words but all observed kernels
+     *     always use 32bit words. It contains two counters at the beginning which we can use to
+     *     deduct the .hash section size and the beginning of .dynsym.
+     *     .dynsym contains an array of symbol descriptors which have a fixed size depending on the
+     *     guest bitness.
+     *     Finding the end of .dynsym is not easily doable as there is no counter available (it lives
+     *     in the section headers) at this point so we just have to check whether the record is valid
+     *     and if not check if it contains an ASCII string which marks the start of the .dynstr section.
      */
 
+#if 0
+    DBGFADDRESS AddrInterpEnd = pThis->AddrKernelInterp;
+    DBGFR3AddrAdd(&AddrInterpEnd, sizeof(g_abNeedleInterp));
+
+    DBGFADDRESS AddrCur = pThis->AddrKernelText;
+    int rc = VINF_SUCCESS;
+    uint32_t cSymbols = 0;
+    size_t cbKernel = 512 * _1M;
+    RTGCUINTPTR uKernelStart = pThis->AddrKernelElfStart.FlatPtr;
+    FBSDPROBESTATE enmState = FBSDPROBESTATE_DYNSTR_END; /* Start searching for the end of the .dynstr section. */
+
+    while (AddrCur.FlatPtr > AddrInterpEnd.FlatPtr)
+    {
+        char achBuf[_16K];
+        size_t cbToRead = RT_MIN(sizeof(achBuf), AddrCur.FlatPtr - AddrInterpEnd.FlatPtr);
+
+        rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrSub(&AddrCur, cbToRead), &achBuf[0], cbToRead);
+        if (RT_FAILURE(rc))
+            break;
+
+        for (unsigned i = cbToRead; i > 0; i--)
+        {
+            char ch = achBuf[i - 1];
+
+            switch (enmState)
+            {
+                case FBSDPROBESTATE_DYNSTR_END:
+                {
+                    if (ch != '\0')
+                        enmState = FBSDPROBESTATE_DYNSTR_SYM_CHAR;
+                    break;
+                }
+                case FBSDPROBESTATE_DYNSTR_SYM_TERMINATOR:
+                {
+                    if (   RT_C_IS_ALNUM(ch)
+                        || ch == '_'
+                        || ch == '.')
+                        enmState = FBSDPROBESTATE_DYNSTR_SYM_CHAR;
+                    else
+                    {
+                        /* Two consecutive terminator symbols mean end of .dynstr section. */
+                        DBGFR3AddrAdd(&AddrCur, i);
+                        DBGFADDRESS AddrDynstrStart = AddrCur;
+                        DBGFADDRESS AddrDynsymStart = AddrCur;
+                        DBGFR3AddrSub(&AddrDynsymStart, cSymbols * (pThis->f64Bit ? sizeof(Elf64_Sym) : sizeof(Elf64_Sym)));
+                        LogFlowFunc(("Found all required section start addresses (.dynsym=%RGv cSymbols=%u, .dynstr=%RGv cb=%u)\n",
+                                     AddrDynsymStart.FlatPtr, cSymbols, AddrDynstrStart.FlatPtr,
+                                     pThis->AddrKernelText.FlatPtr - AddrDynstrStart.FlatPtr));
+                        dbgDiggerFreeBsdLoadSymbols(pThis, pUVM, pszName, uKernelStart, cbKernel, &AddrDynsymStart, cSymbols, &AddrDynstrStart,
+                                                    pThis->AddrKernelText.FlatPtr - AddrDynstrStart.FlatPtr);
+                        return;
+                    }
+                    break;
+                }
+                case FBSDPROBESTATE_DYNSTR_SYM_CHAR:
+                {
+                    if (   !RT_C_IS_ALNUM(ch)
+                        && ch != '_'
+                        && ch != '.')
+                    {
+                        /* Non symbol character. */
+                        if (ch == '\0')
+                        {
+                            enmState = FBSDPROBESTATE_DYNSTR_SYM_TERMINATOR;
+                            cSymbols++;
+                        }
+                        else
+                        {
+                            /* Indicates the end of the .dynstr section. */
+                            DBGFR3AddrAdd(&AddrCur, i);
+                            DBGFADDRESS AddrDynstrStart = AddrCur;
+                            DBGFADDRESS AddrDynsymStart = AddrCur;
+                            DBGFR3AddrSub(&AddrDynsymStart, cSymbols * (pThis->f64Bit ? sizeof(Elf64_Sym) : sizeof(Elf32_Sym)));
+                            LogFlowFunc(("Found all required section start addresses (.dynsym=%RGv cSymbols=%u, .dynstr=%RGv cb=%u)\n",
+                                         AddrDynsymStart.FlatPtr, cSymbols, AddrDynstrStart.FlatPtr,
+                                         pThis->AddrKernelText.FlatPtr - AddrDynstrStart.FlatPtr));
+                            dbgDiggerFreeBsdLoadSymbols(pThis, pUVM, pszName, uKernelStart, cbKernel, &AddrDynsymStart, cSymbols, &AddrDynstrStart,
+                                                        pThis->AddrKernelText.FlatPtr - AddrDynstrStart.FlatPtr);
+                            return;
+                        }
+                    }
+                    break;
+                }
+                default:
+                    AssertFailedBreak();
+            }
+        }
+    }
+
+    LogFlow(("Failed to find valid .dynsym and .dynstr sections (%Rrc), can't load kernel symbols\n", rc));
+#else
     /* Calculate the start of the .hash section. */
     DBGFADDRESS AddrHashStart = pThis->AddrKernelInterp;
     DBGFR3AddrAdd(&AddrHashStart, sizeof(g_abNeedleInterp));
@@ -437,6 +552,7 @@ static void dbgDiggerFreeBsdProcessKernelImage(PDBGDIGGERFBSD pThis, PUVM pUVM, 
             LogFlowFunc((".hash section overlaps with .text section: %zu (expected much less than %u)\n", cbHash,
                          pThis->AddrKernelText.FlatPtr - AddrHashStart.FlatPtr));
     }
+#endif
 }
 
 
@@ -758,7 +874,7 @@ static DECLCALLBACK(bool)  dbgDiggerFreeBsdProbe(PUVM pUVM, void *pvData)
                         pThis->f64Bit = ElfHdr.Hdr32.e_ident[EI_CLASS] == ELFCLASS64;
                         pThis->AddrKernelElfStart = HitAddr;
                         pThis->AddrKernelInterp = HitAddrInterp;
-                        pThis->AddrKernelText.FlatPtr = FBSD_UNION(pThis, &ElfHdr, e_entry);
+                        DBGFR3AddrFromFlat(pUVM, &pThis->AddrKernelText, FBSD_UNION(pThis, &ElfHdr, e_entry));
                         LogFunc(("Found %s FreeBSD kernel at %RGv (.interp section at %RGv, .text section at %RGv)\n",
                                  pThis->f64Bit ? "amd64" : "i386", pThis->AddrKernelElfStart.FlatPtr,
                                  pThis->AddrKernelInterp.FlatPtr, pThis->AddrKernelText.FlatPtr));
