@@ -54,7 +54,7 @@ typedef enum FBSDPROBESTATE
     /** Last symbol was a symbol terminator character. */
     FBSDPROBESTATE_DYNSTR_SYM_TERMINATOR,
     /** Last symbol was a symbol character. */
-    FBSDPROBESTATE_DYNSTR_SYM_CHAR,
+    FBSDPROBESTATE_DYNSTR_SYM_CHAR
 } FBSDPROBESTATE;
 
 /**
