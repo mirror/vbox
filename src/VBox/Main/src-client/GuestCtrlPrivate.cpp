@@ -1019,7 +1019,7 @@ int GuestBase::registerWaitEventEx(uint32_t uSessionID, uint32_t uObjectID, cons
             }
             if (RT_SUCCESS(rc))
             {
-                Assert(cInserts > 0);
+                Assert(cInserts > 0 || lstEvents.size() == 0);
                 RT_NOREF(cInserts);
 
                 /*
