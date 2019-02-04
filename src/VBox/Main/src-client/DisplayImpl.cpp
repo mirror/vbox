@@ -4415,6 +4415,7 @@ DECLCALLBACK(int) Display::i_displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR 
                                                           const void *pvShape)
 {
     LogFlowFunc(("\n"));
+    LogRel2(("%s: fVisible=%RTbool\n", __PRETTY_FUNCTION__, fVisible));
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
@@ -4456,6 +4457,8 @@ DECLCALLBACK(void) Display::i_displayVBVAInputMappingUpdate(PPDMIDISPLAYCONNECTO
 DECLCALLBACK(void) Display::i_displayVBVAReportCursorPosition(PPDMIDISPLAYCONNECTOR pInterface, uint32_t fFlags, uint32_t aScreenId, uint32_t x, uint32_t y)
 {
     LogFlowFunc(("\n"));
+    LogRel2(("%s: fFlags=%RU32, aScreenId=%RU32, x=%RU32, y=%RU32\n",
+             __PRETTY_FUNCTION__, fFlags, aScreenId, x, y));
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
