@@ -21,6 +21,9 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QVariant>
+
 /* GUI includes: */
 #include "UIWizardPage.h"
 
@@ -28,13 +31,13 @@
 #include "COMEnums.h"
 
 /* Forward declarations: */
-class QButtonGroup;
-class QRadioButton;
-class QCheckBox;
+class CMediumFormat;
+class QLineEdit;
+class QIToolButton;
 class QIRichTextLabel;
 
 
-/** 3rd page of the Clone Virtual Disk Image wizard (base part): */
+/** 4th page of the Clone Virtual Disk Image wizard (base part): */
 class UIWizardCloneVDPage3 : public UIWizardPageBase
 {
 protected:
@@ -42,32 +45,63 @@ protected:
     /** Constructs page basis. */
     UIWizardCloneVDPage3();
 
-    /** Returns 'mediumVariant' field value. */
-    qulonglong mediumVariant() const;
-    /** Defines 'mediumVariant' field value. */
-    void setMediumVariant(qulonglong uMediumVariant);
+    /** Handles command to open target disk. */
+    void onSelectLocationButtonClicked();
 
-    /** Holds the variant button-group instance. */
-    QButtonGroup *m_pVariantButtonGroup;
-    /** Holds the 'Dynamical' button instance. */
-    QRadioButton *m_pDynamicalButton;
-    /** Holds the 'Fixed' button instance. */
-    QRadioButton *m_pFixedButton;
-    /** Holds the 'Split to 2GB files' check-box instance. */
-    QCheckBox    *m_pSplitBox;
+    /** Helps to compose full file name on the basis of incoming @a strName and @a strExtension. */
+    static QString toFileName(const QString &strName, const QString &strExtension);
+    /** Converts the @a strFileName to absolute one if necessary using @a strDefaultPath as advice. */
+    static QString absoluteFilePath(const QString &strFileName, const QString &strDefaultPath);
+    /** Acquires the list of @a aAllowedExtensions and @a strDefaultExtension
+      * on the basis of incoming @a comMediumFormat and @a enmDeviceType. */
+    static void acquireExtensions(const CMediumFormat &comMediumFormat, KDeviceType enmDeviceType,
+                                  QStringList &aAllowedExtensions, QString &strDefaultExtension);
+
+    /** Returns 'mediumPath' field value. */
+    QString mediumPath() const;
+
+    /** Returns 'mediumSize' field value. */
+    qulonglong mediumSize();
+
+    /** Holds the default path. */
+    QString      m_strDefaultPath;
+    /** Holds the default extension. */
+    QString      m_strDefaultExtension;
+    /** Holds the allowed extensions. */
+    QStringList  m_aAllowedExtensions;
+
+    /** Holds the target disk path editor instance. */
+    QLineEdit    *m_pDestinationDiskEditor;
+    /** Holds the open-target-disk button instance. */
+    QIToolButton *m_pDestinationDiskOpenButton;
 };
 
 
-/** 3rd page of the Clone Virtual Disk Image wizard (basic extension): */
+/** 4th page of the Clone Virtual Disk Image wizard (basic extension): */
 class UIWizardCloneVDPageBasic3 : public UIWizardPage, public UIWizardCloneVDPage3
 {
     Q_OBJECT;
-    Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
+    Q_PROPERTY(QString mediumPath READ mediumPath);
+    Q_PROPERTY(qulonglong mediumSize READ mediumSize);
 
 public:
 
     /** Constructs basic page. */
-    UIWizardCloneVDPageBasic3(KDeviceType enmDeviceType);
+    UIWizardCloneVDPageBasic3();
+
+protected:
+
+    /** Allows to access 'wizard()' from base part. */
+    UIWizard* wizardImp() { return wizard(); }
+    /** Allows to access 'this' from base part. */
+    UIWizardPage* thisImp() { return this; }
+    /** Allows to access 'field()' from base part. */
+    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
+
+private slots:
+
+    /** Handles command to open target disk. */
+    void sltSelectLocationButtonClicked();
 
 private:
 
@@ -80,15 +114,11 @@ private:
     /** Returns whether the page is complete. */
     virtual bool isComplete() const /* override */;
 
+    /** Returns whether the page is valid. */
+    virtual bool validatePage() /* override */;
+
     /** Holds the description label instance. */
-    QIRichTextLabel *m_pDescriptionLabel;
-    /** Holds the 'Dynamic' description label instance. */
-    QIRichTextLabel *m_pDynamicLabel;
-    /** Holds the 'Fixed' description label instance. */
-    QIRichTextLabel *m_pFixedLabel;
-    /** Holds the 'Split to 2GB files' description label instance. */
-    QIRichTextLabel *m_pSplitLabel;
+    QIRichTextLabel *m_pLabel;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic3_h */
-

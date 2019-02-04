@@ -674,7 +674,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic1.h \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic2.h \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic3.h \
-	src/wizards/clonevd/UIWizardCloneVDPageBasic4.h \
 	src/wizards/clonevd/UIWizardCloneVDPageExpert.h \
 	src/wizards/exportappliance/UIWizardExportApp.h \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic1.h \
@@ -1093,7 +1092,6 @@ VirtualBox_SOURCES = \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic1.cpp \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic2.cpp \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp \
-	src/wizards/clonevd/UIWizardCloneVDPageBasic4.cpp \
 	src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp \
 	src/wizards/exportappliance/UIWizardExportApp.cpp \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic1.cpp \

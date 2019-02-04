@@ -26,12 +26,13 @@
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CMedium.h"
+#include "CMediumFormat.h"
 
 /* Forward declarations: */
+class QVBoxLayout;
+class QButtonGroup;
+class QRadioButton;
 class QIRichTextLabel;
-class QIToolButton;
-class UIMediaComboBox;
 
 
 /** 1st page of the Clone Virtual Disk Image wizard (base part): */
@@ -42,42 +43,43 @@ protected:
     /** Constructs page basis. */
     UIWizardCloneVDPage1();
 
-    /** Handles command to open source disk. */
-    void onHandleOpenSourceDiskClick();
+    /** Adds format button.
+      * @param  pParent          Brings the parent to add button to.
+      * @param  pFormatsLayout   Brings the layout to insert button to.
+      * @param  enmDeviceType    Brings the device type all buttons should be restricted to.
+      * @param  comMediumFormat  Brings the medium format object to acquire format from.
+      * @param  fPreferred       Brings whether curretn format is preferred or not. */
+    void addFormatButton(QWidget *pParent,
+                         QVBoxLayout *pFormatsLayout,
+                         KDeviceType enmDeviceType,
+                         CMediumFormat comMediumFormat,
+                         bool fPreferred = false);
 
-    /** Returns 'sourceVirtualDisk' field value. */
-    CMedium sourceVirtualDisk() const;
-    /** Defines 'sourceVirtualDisk' field value. */
-    void setSourceVirtualDisk(const CMedium &comSourceVirtualDisk);
+    /** Returns 'mediumFormat' field value. */
+    CMediumFormat mediumFormat() const;
+    /** Defines 'mediumFormat' field value. */
+    void setMediumFormat(const CMediumFormat &comMediumFormat);
 
-    /** Holds the source media combo-box instance. */
-    UIMediaComboBox *m_pSourceDiskSelector;
-    /** Holds the open-source-disk button instance. */
-    QIToolButton      *m_pSourceDiskOpenButton;
+    /** Holds the format button-group instance. */
+    QButtonGroup         *m_pFormatButtonGroup;
+    /** Holds the format description list. */
+    QList<CMediumFormat>  m_formats;
+    /** Holds the format name list. */
+    QStringList           m_formatNames;
 };
 
 
-/** 1st page of the Clone Virtual Disk Image wizard (basic extension): */
+/** 2nd page of the Clone Virtual Disk Image wizard (basic extension): */
 class UIWizardCloneVDPageBasic1 : public UIWizardPage, public UIWizardCloneVDPage1
 {
     Q_OBJECT;
-    Q_PROPERTY(CMedium sourceVirtualDisk READ sourceVirtualDisk WRITE setSourceVirtualDisk);
+    Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
 
 public:
 
     /** Constructs basic page.
-      * @param  comSourceVirtualDisk  Brings the initial source disk to make copy from. */
-    UIWizardCloneVDPageBasic1(const CMedium &comSourceVirtualDisk, KDeviceType enmDeviceType);
-
-protected:
-
-    /** Allows to access 'this' from base part. */
-    UIWizardPage *thisImp() { return this; }
-
-private slots:
-
-    /** Handles command to open source disk. */
-    void sltHandleOpenSourceDiskClick();
+      * @param  enmDeviceType  Brings the device type to limit format to. */
+    UIWizardCloneVDPageBasic1(KDeviceType enmDeviceType);
 
 private:
 
@@ -90,9 +92,11 @@ private:
     /** Returns whether the page is complete. */
     virtual bool isComplete() const /* override */;
 
+    /** Returns the ID of the next page to traverse to. */
+    virtual int nextId() const /* override */;
+
     /** Holds the description label instance. */
     QIRichTextLabel *m_pLabel;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVDPageBasic1_h */
-

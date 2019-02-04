@@ -19,73 +19,56 @@
 #include <QVBoxLayout>
 #include <QButtonGroup>
 #include <QRadioButton>
+#include <QCheckBox>
 
 /* GUI includes: */
-#include "UIConverter.h"
 #include "UIWizardCloneVDPageBasic2.h"
 #include "UIWizardCloneVD.h"
-#include "VBoxGlobal.h"
 #include "QIRichTextLabel.h"
 
 /* COM includes: */
-#include "CSystemProperties.h"
+#include "CMediumFormat.h"
 
 
 UIWizardCloneVDPage2::UIWizardCloneVDPage2()
 {
 }
 
-void UIWizardCloneVDPage2::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, KDeviceType enmDeviceType, CMediumFormat comMediumFormat, bool fPreferred /* = false */)
+qulonglong UIWizardCloneVDPage2::mediumVariant() const
 {
-    /* Check that medium format supports creation: */
-    ULONG uFormatCapabilities = 0;
-    QVector<KMediumFormatCapabilities> capabilities;
-    capabilities = comMediumFormat.GetCapabilities();
-    for (int i = 0; i < capabilities.size(); i++)
-        uFormatCapabilities |= capabilities[i];
+    /* Initial value: */
+    qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
 
-    if (!(uFormatCapabilities & KMediumFormatCapabilities_CreateFixed ||
-          uFormatCapabilities & KMediumFormatCapabilities_CreateDynamic))
-        return;
+    /* Exclusive options: */
+    if (m_pDynamicalButton->isChecked())
+        uMediumVariant = (qulonglong)KMediumVariant_Standard;
+    else if (m_pFixedButton->isChecked())
+        uMediumVariant = (qulonglong)KMediumVariant_Fixed;
 
-    /* Check that medium format supports creation of virtual disk images: */
-    QVector<QString> fileExtensions;
-    QVector<KDeviceType> deviceTypes;
-    comMediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-    if (!deviceTypes.contains(enmDeviceType))
-        return;
+    /* Additional options: */
+    if (m_pSplitBox->isChecked())
+        uMediumVariant |= (qulonglong)KMediumVariant_VmdkSplit2G;
 
-    /* Create/add corresponding radio-button: */
-    QRadioButton *pFormatButton = new QRadioButton(pParent);
-    AssertPtrReturnVoid(pFormatButton);
-    {
-        /* Make the preferred button font bold: */
-        if (fPreferred)
-        {
-            QFont font = pFormatButton->font();
-            font.setBold(true);
-            pFormatButton->setFont(font);
-        }
-        pFormatLayout->addWidget(pFormatButton);
-        m_formats << comMediumFormat;
-        m_formatNames << comMediumFormat.GetName();
-        m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
-    }
+    /* Return options: */
+    return uMediumVariant;
 }
 
-CMediumFormat UIWizardCloneVDPage2::mediumFormat() const
+void UIWizardCloneVDPage2::setMediumVariant(qulonglong uMediumVariant)
 {
-    return m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
-}
-
-void UIWizardCloneVDPage2::setMediumFormat(const CMediumFormat &comMediumFormat)
-{
-    int iPosition = m_formats.indexOf(comMediumFormat);
-    if (iPosition >= 0)
+    /* Exclusive options: */
+    if (uMediumVariant & (qulonglong)KMediumVariant_Fixed)
     {
-        m_pFormatButtonGroup->button(iPosition)->click();
-        m_pFormatButtonGroup->button(iPosition)->setFocus();
+        m_pFixedButton->click();
+        m_pFixedButton->setFocus();
     }
+    else
+    {
+        m_pDynamicalButton->click();
+        m_pDynamicalButton->setFocus();
+    }
+
+    /* Additional options: */
+    m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
 }
 
 UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2(KDeviceType enmDeviceType)
@@ -93,120 +76,101 @@ UIWizardCloneVDPageBasic2::UIWizardCloneVDPageBasic2(KDeviceType enmDeviceType)
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
-        m_pLabel = new QIRichTextLabel(this);
-        QVBoxLayout *pFormatLayout = new QVBoxLayout;
+        m_pDescriptionLabel = new QIRichTextLabel(this);
+        m_pDynamicLabel = new QIRichTextLabel(this);
+        m_pFixedLabel = new QIRichTextLabel(this);
+        m_pSplitLabel = new QIRichTextLabel(this);
+        QVBoxLayout *pVariantLayout = new QVBoxLayout;
         {
-            m_pFormatButtonGroup = new QButtonGroup(this);
+            m_pVariantButtonGroup = new QButtonGroup(this);
             {
-                /* Enumerate medium formats in special order: */
-                CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-                const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
-                QMap<QString, CMediumFormat> vdi, preferred, others;
-                foreach (const CMediumFormat &format, formats)
+                m_pDynamicalButton = new QRadioButton(this);
+                if (enmDeviceType == KDeviceType_HardDisk)
                 {
-                    /* VDI goes first: */
-                    if (format.GetName() == "VDI")
-                        vdi[format.GetId()] = format;
-                    else
-                    {
-                        const QVector<KMediumFormatCapabilities> &capabilities = format.GetCapabilities();
-                        /* Then preferred: */
-                        if (capabilities.contains(KMediumFormatCapabilities_Preferred))
-                            preferred[format.GetId()] = format;
-                        /* Then others: */
-                        else
-                            others[format.GetId()] = format;
-                    }
+                    m_pDynamicalButton->click();
+                    m_pDynamicalButton->setFocus();
                 }
-
-                /* Create buttons for VDI and preferred: */
-                foreach (const QString &strId, vdi.keys())
-                    addFormatButton(this, pFormatLayout, enmDeviceType, vdi.value(strId));
-                foreach (const QString &strId, preferred.keys())
-                    addFormatButton(this, pFormatLayout, enmDeviceType, preferred.value(strId));
-                if (enmDeviceType == KDeviceType_DVD || enmDeviceType == KDeviceType_Floppy)
-                    foreach (const QString &strId, others.keys())
-                        addFormatButton(this, pFormatLayout, enmDeviceType, others.value(strId));
-
-                if (!m_pFormatButtonGroup->buttons().isEmpty())
+                m_pFixedButton = new QRadioButton(this);
+                if (   enmDeviceType == KDeviceType_DVD
+                    || enmDeviceType == KDeviceType_Floppy)
                 {
-                    m_pFormatButtonGroup->button(0)->click();
-                    m_pFormatButtonGroup->button(0)->setFocus();
+                    m_pFixedButton->click();
+                    m_pFixedButton->setFocus();
                 }
+                m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
+                m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
             }
+            m_pSplitBox = new QCheckBox(this);
+            pVariantLayout->addWidget(m_pDynamicalButton);
+            pVariantLayout->addWidget(m_pFixedButton);
+            pVariantLayout->addWidget(m_pSplitBox);
         }
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addLayout(pFormatLayout);
+        pMainLayout->addWidget(m_pDescriptionLabel);
+        pMainLayout->addWidget(m_pDynamicLabel);
+        pMainLayout->addWidget(m_pFixedLabel);
+        pMainLayout->addWidget(m_pSplitLabel);
+        pMainLayout->addLayout(pVariantLayout);
         pMainLayout->addStretch();
     }
 
     /* Setup connections: */
-    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+    connect(m_pVariantButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
+            this, &UIWizardCloneVDPageBasic2::completeChanged);
+    connect(m_pSplitBox, &QCheckBox::stateChanged,
             this, &UIWizardCloneVDPageBasic2::completeChanged);
 
-    /* Register classes: */
-    qRegisterMetaType<CMediumFormat>();
     /* Register fields: */
-    registerField("mediumFormat", this, "mediumFormat");
+    registerField("mediumVariant", this, "mediumVariant");
 }
 
 void UIWizardCloneVDPageBasic2::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("Disk image file type"));
+    setTitle(UIWizardCloneVD::tr("Storage on physical hard disk"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardCloneVD::tr("Please choose the type of file that you would like to use "
-                                          "for the new virtual disk image. If you do not need to use it "
-                                          "with other virtualization software you can leave this setting unchanged."));
-    QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
-    for (int i = 0; i < buttons.size(); ++i)
-    {
-        QAbstractButton *pButton = buttons[i];
-        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
-        pButton->setText(gpConverter->toString(enmFormat));
-    }
+    m_pDescriptionLabel->setText(UIWizardCloneVD::tr("Please choose whether the new virtual disk image file should grow as it is used "
+                                                     "(dynamically allocated) or if it should be created at its maximum size (fixed size)."));
+    m_pDynamicLabel->setText(UIWizardCloneVD::tr("<p>A <b>dynamically allocated</b> disk image file will only use space "
+                                                 "on your physical hard disk as it fills up (up to a maximum <b>fixed size</b>), "
+                                                 "although it will not shrink again automatically when space on it is freed.</p>"));
+    m_pFixedLabel->setText(UIWizardCloneVD::tr("<p>A <b>fixed size</b> disk image file may take longer to create on some "
+                                               "systems but is often faster to use.</p>"));
+    m_pSplitLabel->setText(UIWizardCloneVD::tr("<p>You can also choose to <b>split</b> the disk image file into several files "
+                                               "of up to two gigabytes each. This is mainly useful if you wish to store the "
+                                               "virtual machine on removable USB devices or old systems, some of which cannot "
+                                               "handle very large files."));
+    m_pDynamicalButton->setText(UIWizardCloneVD::tr("&Dynamically allocated"));
+    m_pFixedButton->setText(UIWizardCloneVD::tr("&Fixed size"));
+    m_pSplitBox->setText(UIWizardCloneVD::tr("&Split into files of less than 2GB"));
 }
 
 void UIWizardCloneVDPageBasic2::initializePage()
 {
     /* Translate page: */
     retranslateUi();
+
+    /* Setup visibility: */
+    CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
+    ULONG uCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = mediumFormat.GetCapabilities();
+    for (int i = 0; i < capabilities.size(); i++)
+        uCapabilities |= capabilities[i];
+
+    bool fIsCreateDynamicPossible = uCapabilities & KMediumFormatCapabilities_CreateDynamic;
+    bool fIsCreateFixedPossible = uCapabilities & KMediumFormatCapabilities_CreateFixed;
+    bool fIsCreateSplitPossible = uCapabilities & KMediumFormatCapabilities_CreateSplit2G;
+    m_pDynamicLabel->setHidden(!fIsCreateDynamicPossible);
+    m_pDynamicalButton->setHidden(!fIsCreateDynamicPossible);
+    m_pFixedLabel->setHidden(!fIsCreateFixedPossible);
+    m_pFixedButton->setHidden(!fIsCreateFixedPossible);
+    m_pSplitLabel->setHidden(!fIsCreateSplitPossible);
+    m_pSplitBox->setHidden(!fIsCreateSplitPossible);
 }
 
 bool UIWizardCloneVDPageBasic2::isComplete() const
 {
-    /* Make sure medium format is correct: */
-    return !mediumFormat().isNull();
+    /* Make sure medium variant is correct: */
+    return mediumVariant() != (qulonglong)KMediumVariant_Max;
 }
-
-int UIWizardCloneVDPageBasic2::nextId() const
-{
-    /* Show variant page only if there is something to show: */
-    CMediumFormat mf = mediumFormat();
-    if (mf.isNull())
-    {
-        AssertMsgFailed(("No medium format set!"));
-    }
-    else
-    {
-        ULONG uCapabilities = 0;
-        QVector<KMediumFormatCapabilities> capabilities;
-        capabilities = mf.GetCapabilities();
-        for (int i = 0; i < capabilities.size(); i++)
-            uCapabilities |= capabilities[i];
-
-        int cTest = 0;
-        if (uCapabilities & KMediumFormatCapabilities_CreateDynamic)
-            ++cTest;
-        if (uCapabilities & KMediumFormatCapabilities_CreateFixed)
-            ++cTest;
-        if (uCapabilities & KMediumFormatCapabilities_CreateSplit2G)
-            ++cTest;
-        if (cTest > 1)
-            return UIWizardCloneVD::Page3;
-    }
-    /* Skip otherwise: */
-    return UIWizardCloneVD::Page4;
-}
-

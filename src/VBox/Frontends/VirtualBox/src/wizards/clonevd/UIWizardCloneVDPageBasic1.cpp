@@ -16,107 +16,156 @@
  */
 
 /* Qt includes: */
-#include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QButtonGroup>
+#include <QRadioButton>
 
 /* GUI includes: */
-#include "QIRichTextLabel.h"
-#include "QIToolButton.h"
-#include "UIIconPool.h"
-#include "UIMediaComboBox.h"
-#include "UIMedium.h"
-#include "UIWizardCloneVD.h"
+#include "UIConverter.h"
 #include "UIWizardCloneVDPageBasic1.h"
+#include "UIWizardCloneVD.h"
+#include "VBoxGlobal.h"
+#include "QIRichTextLabel.h"
+
+/* COM includes: */
+#include "CSystemProperties.h"
 
 
 UIWizardCloneVDPage1::UIWizardCloneVDPage1()
 {
 }
 
-void UIWizardCloneVDPage1::onHandleOpenSourceDiskClick()
+void UIWizardCloneVDPage1::addFormatButton(QWidget *pParent, QVBoxLayout *pFormatLayout, KDeviceType enmDeviceType, CMediumFormat comMediumFormat, bool fPreferred /* = false */)
 {
-    /* Get current virtual-disk medium type: */
-    const UIMediumDeviceType enmMediumType = UIMediumDefs::mediumTypeToLocal(sourceVirtualDisk().GetDeviceType());
-    /* Get source virtual-disk using file-open dialog: */
-    QUuid uMediumId = vboxGlobal().openMediumWithFileOpenDialog(enmMediumType, thisImp());
-    if (!uMediumId.isNull())
+    /* Check that medium format supports creation: */
+    ULONG uFormatCapabilities = 0;
+    QVector<KMediumFormatCapabilities> capabilities;
+    capabilities = comMediumFormat.GetCapabilities();
+    for (int i = 0; i < capabilities.size(); i++)
+        uFormatCapabilities |= capabilities[i];
+
+    if (!(uFormatCapabilities & KMediumFormatCapabilities_CreateFixed ||
+          uFormatCapabilities & KMediumFormatCapabilities_CreateDynamic))
+        return;
+
+    /* Check that medium format supports creation of virtual disk images: */
+    QVector<QString> fileExtensions;
+    QVector<KDeviceType> deviceTypes;
+    comMediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
+    if (!deviceTypes.contains(enmDeviceType))
+        return;
+
+    /* Create/add corresponding radio-button: */
+    QRadioButton *pFormatButton = new QRadioButton(pParent);
+    AssertPtrReturnVoid(pFormatButton);
     {
-        /* Update medium-combo if necessary: */
-        m_pSourceDiskSelector->setCurrentItem(uMediumId);
-        /* Focus on virtual-disk combo: */
-        m_pSourceDiskSelector->setFocus();
+        /* Make the preferred button font bold: */
+        if (fPreferred)
+        {
+            QFont font = pFormatButton->font();
+            font.setBold(true);
+            pFormatButton->setFont(font);
+        }
+        pFormatLayout->addWidget(pFormatButton);
+        m_formats << comMediumFormat;
+        m_formatNames << comMediumFormat.GetName();
+        m_pFormatButtonGroup->addButton(pFormatButton, m_formatNames.size() - 1);
     }
 }
 
-CMedium UIWizardCloneVDPage1::sourceVirtualDisk() const
+CMediumFormat UIWizardCloneVDPage1::mediumFormat() const
 {
-    return vboxGlobal().medium(m_pSourceDiskSelector->id()).medium();
+    return m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
 }
 
-void UIWizardCloneVDPage1::setSourceVirtualDisk(const CMedium &comSourceVirtualDisk)
+void UIWizardCloneVDPage1::setMediumFormat(const CMediumFormat &comMediumFormat)
 {
-    m_pSourceDiskSelector->setCurrentItem(comSourceVirtualDisk.GetId());
+    int iPosition = m_formats.indexOf(comMediumFormat);
+    if (iPosition >= 0)
+    {
+        m_pFormatButtonGroup->button(iPosition)->click();
+        m_pFormatButtonGroup->button(iPosition)->setFocus();
+    }
 }
 
-UIWizardCloneVDPageBasic1::UIWizardCloneVDPageBasic1(const CMedium &comSourceVirtualDisk, KDeviceType enmDeviceType)
+UIWizardCloneVDPageBasic1::UIWizardCloneVDPageBasic1(KDeviceType enmDeviceType)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
         m_pLabel = new QIRichTextLabel(this);
-        QHBoxLayout *pSourceDiskLayout = new QHBoxLayout;
+        QVBoxLayout *pFormatLayout = new QVBoxLayout;
         {
-            m_pSourceDiskSelector = new UIMediaComboBox(this);
+            m_pFormatButtonGroup = new QButtonGroup(this);
             {
-                m_pSourceDiskSelector->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-                m_pSourceDiskSelector->setType(UIMediumDefs::mediumTypeToLocal(enmDeviceType));
-                m_pSourceDiskSelector->setCurrentItem(comSourceVirtualDisk.GetId());
-                m_pSourceDiskSelector->repopulate();
+                /* Enumerate medium formats in special order: */
+                CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+                const QVector<CMediumFormat> &formats = properties.GetMediumFormats();
+                QMap<QString, CMediumFormat> vdi, preferred, others;
+                foreach (const CMediumFormat &format, formats)
+                {
+                    /* VDI goes first: */
+                    if (format.GetName() == "VDI")
+                        vdi[format.GetId()] = format;
+                    else
+                    {
+                        const QVector<KMediumFormatCapabilities> &capabilities = format.GetCapabilities();
+                        /* Then preferred: */
+                        if (capabilities.contains(KMediumFormatCapabilities_Preferred))
+                            preferred[format.GetId()] = format;
+                        /* Then others: */
+                        else
+                            others[format.GetId()] = format;
+                    }
+                }
+
+                /* Create buttons for VDI and preferred: */
+                foreach (const QString &strId, vdi.keys())
+                    addFormatButton(this, pFormatLayout, enmDeviceType, vdi.value(strId));
+                foreach (const QString &strId, preferred.keys())
+                    addFormatButton(this, pFormatLayout, enmDeviceType, preferred.value(strId));
+                if (enmDeviceType == KDeviceType_DVD || enmDeviceType == KDeviceType_Floppy)
+                    foreach (const QString &strId, others.keys())
+                        addFormatButton(this, pFormatLayout, enmDeviceType, others.value(strId));
+
+                if (!m_pFormatButtonGroup->buttons().isEmpty())
+                {
+                    m_pFormatButtonGroup->button(0)->click();
+                    m_pFormatButtonGroup->button(0)->setFocus();
+                }
             }
-            m_pSourceDiskOpenButton = new QIToolButton(this);
-            {
-                m_pSourceDiskOpenButton->setAutoRaise(true);
-                m_pSourceDiskOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
-            }
-            pSourceDiskLayout->addWidget(m_pSourceDiskSelector);
-            pSourceDiskLayout->addWidget(m_pSourceDiskOpenButton);
         }
         pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addLayout(pSourceDiskLayout);
+        pMainLayout->addLayout(pFormatLayout);
         pMainLayout->addStretch();
     }
 
     /* Setup connections: */
-    connect(m_pSourceDiskSelector, static_cast<void(UIMediaComboBox::*)(int)>(&UIMediaComboBox::currentIndexChanged),
+    connect(m_pFormatButtonGroup, static_cast<void(QButtonGroup::*)(QAbstractButton*)>(&QButtonGroup::buttonClicked),
             this, &UIWizardCloneVDPageBasic1::completeChanged);
-    connect(m_pSourceDiskOpenButton, &QIToolButton::clicked,
-            this, &UIWizardCloneVDPageBasic1::sltHandleOpenSourceDiskClick);
 
     /* Register classes: */
-    qRegisterMetaType<CMedium>();
+    qRegisterMetaType<CMediumFormat>();
     /* Register fields: */
-    registerField("sourceVirtualDisk", this, "sourceVirtualDisk");
-}
-
-void UIWizardCloneVDPageBasic1::sltHandleOpenSourceDiskClick()
-{
-    /* Call to base-class: */
-    onHandleOpenSourceDiskClick();
-
-    /* Broadcast complete-change: */
-    emit completeChanged();
+    registerField("mediumFormat", this, "mediumFormat");
 }
 
 void UIWizardCloneVDPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("Disk image to copy"));
+    setTitle(UIWizardCloneVD::tr("Disk image file type"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardCloneVD::tr("<p>Please select the virtual disk image file that you would like to copy "
-                                          "if it is not already selected. You can either choose one from the list "
-                                          "or use the folder icon beside the list to select one.</p>"));
-    m_pSourceDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual disk image file to copy..."));
+    m_pLabel->setText(UIWizardCloneVD::tr("Please choose the type of file that you would like to use "
+                                          "for the new virtual disk image. If you do not need to use it "
+                                          "with other virtualization software you can leave this setting unchanged."));
+    QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
+    for (int i = 0; i < buttons.size(); ++i)
+    {
+        QAbstractButton *pButton = buttons[i];
+        UIMediumFormat enmFormat = gpConverter->fromInternalString<UIMediumFormat>(m_formatNames[m_pFormatButtonGroup->id(pButton)]);
+        pButton->setText(gpConverter->toString(enmFormat));
+    }
 }
 
 void UIWizardCloneVDPageBasic1::initializePage()
@@ -127,7 +176,36 @@ void UIWizardCloneVDPageBasic1::initializePage()
 
 bool UIWizardCloneVDPageBasic1::isComplete() const
 {
-    /* Make sure source virtual-disk feats the rules: */
-    return !sourceVirtualDisk().isNull();
+    /* Make sure medium format is correct: */
+    return !mediumFormat().isNull();
 }
 
+int UIWizardCloneVDPageBasic1::nextId() const
+{
+    /* Show variant page only if there is something to show: */
+    CMediumFormat mf = mediumFormat();
+    if (mf.isNull())
+    {
+        AssertMsgFailed(("No medium format set!"));
+    }
+    else
+    {
+        ULONG uCapabilities = 0;
+        QVector<KMediumFormatCapabilities> capabilities;
+        capabilities = mf.GetCapabilities();
+        for (int i = 0; i < capabilities.size(); i++)
+            uCapabilities |= capabilities[i];
+
+        int cTest = 0;
+        if (uCapabilities & KMediumFormatCapabilities_CreateDynamic)
+            ++cTest;
+        if (uCapabilities & KMediumFormatCapabilities_CreateFixed)
+            ++cTest;
+        if (uCapabilities & KMediumFormatCapabilities_CreateSplit2G)
+            ++cTest;
+        if (cTest > 1)
+            return UIWizardCloneVD::Page3;
+    }
+    /* Skip otherwise: */
+    return UIWizardCloneVD::Page3;
+}

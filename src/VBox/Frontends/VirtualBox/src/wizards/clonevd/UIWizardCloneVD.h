@@ -41,8 +41,7 @@ public:
     {
         Page1,
         Page2,
-        Page3,
-        Page4
+        Page3
     };
 
     /** Expert Page IDs. */
@@ -55,7 +54,7 @@ public:
     UIWizardCloneVD(QWidget *pParent, const CMedium &comSourceVirtualDisk);
 
     /** Returns source virtual-disk. */
-    CMedium sourceVirtualDisk() const { return m_comSourceVirtualDisk; }
+    const CMedium &sourceVirtualDisk() const { return m_comSourceVirtualDisk; }
     /** Returns target virtual-disk. */
     CMedium targetVirtualDisk() const { return m_comTargetVirtualDisk; }
 
@@ -83,4 +82,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_clonevd_UIWizardCloneVD_h */
-
