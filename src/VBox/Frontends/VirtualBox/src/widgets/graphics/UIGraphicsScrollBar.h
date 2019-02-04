@@ -52,6 +52,10 @@ public:
 
     /** Defines scrolling @a iStep. */
     void setStep(int iStep);
+    /** Returns scrolling step. */
+    int step() const;
+    /** Returns scrolling wheel step. */
+    int wheelStep() const;
 
     /** Defines @a iMinimum scroll-bar value. */
     void setMinimum(int iMinimum);

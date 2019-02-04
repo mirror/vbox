@@ -185,6 +185,16 @@ void UIGraphicsScrollBar::setStep(int iStep)
     m_iStep = iStep;
 }
 
+int UIGraphicsScrollBar::step() const
+{
+    return m_iStep;
+}
+
+int UIGraphicsScrollBar::wheelStep() const
+{
+    return 10 * step();
+}
+
 void UIGraphicsScrollBar::setMinimum(int iMinimum)
 {
     m_iMinimum = iMinimum;
