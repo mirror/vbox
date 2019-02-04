@@ -105,6 +105,34 @@ bool UIGraphicsScrollArea::eventFilter(QObject *pObject, QEvent *pEvent)
         && pEvent->type() == QEvent::LayoutRequest)
         layoutWidgets();
 
+    /* Handle redirected wheel events: */
+    if (pEvent->type() == QEvent::Wheel)
+    {
+        QWheelEvent *pWheelEvent = static_cast<QWheelEvent*>(pEvent);
+        const QPoint angleDelta = pWheelEvent->angleDelta();
+        switch (m_enmOrientation)
+        {
+            /* Scroll viewport horizontally: */
+            case Qt::Horizontal:
+            {
+                if (angleDelta.x() > 0)
+                    m_pScrollBar->setValue(m_pScrollBar->value() - m_pScrollBar->wheelStep());
+                else
+                    m_pScrollBar->setValue(m_pScrollBar->value() + m_pScrollBar->wheelStep());
+                break;
+            }
+            /* Scroll viewport vertically: */
+            case Qt::Vertical:
+            {
+                if (angleDelta.y() > 0)
+                    m_pScrollBar->setValue(m_pScrollBar->value() - m_pScrollBar->wheelStep());
+                else
+                    m_pScrollBar->setValue(m_pScrollBar->value() + m_pScrollBar->wheelStep());
+                break;
+            }
+        }
+    }
+
     /* Call to base-class: */
     return QIGraphicsWidget::eventFilter(pObject, pEvent);
 }
