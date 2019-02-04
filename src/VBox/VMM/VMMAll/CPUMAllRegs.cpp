@@ -2882,13 +2882,7 @@ VMM_INT_DECL(bool) CPUMIsGuestSvmVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
         &&  pVmcbIntCtrl->n.u4VIntrPrio <= pVmcbIntCtrl->n.u8VTPR)
         return false;
 
-    X86EFLAGS fEFlags;
-    if (CPUMIsGuestSvmVirtIntrMasking(pVCpu, pCtx))
-        fEFlags.u = pCtx->eflags.u;
-    else
-        fEFlags.u = pCtx->hwvirt.svm.HostState.rflags.u;
-
-    return fEFlags.Bits.u1IF;
+    return RT_BOOL(pCtx->eflags.u & X86_EFL_IF);
 #endif
 }
 
