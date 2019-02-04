@@ -99,7 +99,6 @@ private:
     QProgressBar           *m_pProgressBar;
     QIToolButton           *m_pCancelButton;
     QILabel                *m_pStatusLabel;
-    QILabel                *m_pPercentageLabel;
 };
 
 
@@ -116,7 +115,6 @@ UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &co
     , m_pProgressBar(0)
     , m_pCancelButton(0)
     , m_pStatusLabel(0)
-    , m_pPercentageLabel(0)
 {
     prepare();
     setFocusPolicy(Qt::ClickFocus);
@@ -206,8 +204,7 @@ void UIFileOperationProgressWidget::prepareWidgets()
     {
         m_pProgressBar->setMinimum(0);
         m_pProgressBar->setMaximum(100);
-        /* Hide the QProgressBar's text since in MacOS it never shows: */
-        m_pProgressBar->setTextVisible(false);
+        m_pProgressBar->setTextVisible(true);
         m_pMainLayout->addWidget(m_pProgressBar, 0, 0, 1, 2);
     }
 
@@ -226,13 +223,6 @@ void UIFileOperationProgressWidget::prepareWidgets()
     {
         m_pStatusLabel->setContextMenuPolicy(Qt::NoContextMenu);
         m_pMainLayout->addWidget(m_pStatusLabel, 0, 3, 1, 1);
-    }
-
-    m_pPercentageLabel = new QILabel;
-    if (m_pPercentageLabel)
-    {
-        m_pPercentageLabel->setContextMenuPolicy(Qt::NoContextMenu);
-        m_pMainLayout->addWidget(m_pPercentageLabel, 1, 0, 1, 4);
     }
 
     setLayout(m_pMainLayout);
@@ -261,10 +251,7 @@ void UIFileOperationProgressWidget::cleanupEventHandler()
 void UIFileOperationProgressWidget::sltHandleProgressPercentageChange(const QUuid &uProgressId, const int iPercent)
 {
     Q_UNUSED(uProgressId);
-    Q_UNUSED(iPercent);
     m_pProgressBar->setValue(iPercent);
-    if (m_pPercentageLabel)
-        m_pPercentageLabel->setText(QString("%1%").arg(QString::number(iPercent)));
 }
 
 void UIFileOperationProgressWidget::sltHandleProgressComplete(const QUuid &uProgressId)
