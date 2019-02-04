@@ -3184,6 +3184,35 @@ static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t RT_UNTRUSTE
     return pbBounceBuf;
 }
 
+/** Send cursor position and visibility information from the FIFO to the
+ * front-end.  We handle global, not per-screen visibility information by
+ * sending pfnVBVAMousePointerShape without shape data. */
+static void vmsvgaFIFOUpdateCursor(PVGASTATE pVGAState, uint32_t RT_UNTRUSTED_VOLATILE_GUEST *pFIFO, uint32_t *pcLastX, uint32_t *pcLastY, uint32_t *pfLastVisible)
+{
+    uint32_t uScreenId = pFIFO[SVGA_FIFO_CURSOR_SCREEN_ID];
+    uint32_t fFlags = VBVA_CURSOR_VALID_DATA;
+    uint32_t fVisible;
+
+    /* Potentially race-prone, but not our design and Linux ignores it anyway.
+     */
+    pFIFO[SVGA_FIFO_CURSOR_LAST_UPDATED] = pFIFO[SVGA_FIFO_CURSOR_COUNT];
+    fVisible = pFIFO[SVGA_FIFO_CURSOR_ON];
+    /* Check if anything has changed, as calling into pDrv is not light-weight. */
+    if (   *pcLastX == pFIFO[SVGA_FIFO_CURSOR_X]
+        && *pcLastY == pFIFO[SVGA_FIFO_CURSOR_Y]
+        && (uScreenId != SVGA_ID_INVALID || *pfLastVisible == fVisible))
+        return;
+    *pcLastX = pFIFO[SVGA_FIFO_CURSOR_X];
+    *pcLastY = pFIFO[SVGA_FIFO_CURSOR_Y];
+    if (uScreenId != SVGA_ID_INVALID)
+        fFlags |= VBVA_CURSOR_SCREEN_RELATIVE;
+    if (uScreenId == SVGA_ID_INVALID && *pfLastVisible != fVisible) {
+        *pfLastVisible = fVisible;
+        pVGAState->pDrv->pfnVBVAMousePointerShape(pVGAState->pDrv, RT_BOOL(fVisible), false, 0, 0, 0, 0, NULL);
+    }
+    pVGAState->pDrv->pfnVBVAReportCursorPosition(pVGAState->pDrv, fFlags, uScreenId, *pcLastX, *pcLastY);
+}
+
 /* The async FIFO handling thread. */
 static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
@@ -3244,6 +3273,14 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
     LogFlow(("vmsvgaFIFOLoop: started loop\n"));
     bool fBadOrDisabledFifo = false;
     uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const pFIFO = pThis->svga.pFIFOR3;
+    uint32_t cCursorCount = pFIFO[SVGA_FIFO_CURSOR_COUNT];
+    uint32_t cLastCursorX       = 0;
+    uint32_t cLastCursorY       = 0;
+    uint32_t fLastCursorVisible = 0;
+    /* Update cursor information before entering the loop to avoid having to
+     * think about the initial value of COUNT or to put it in the saved state.
+     */
+    vmsvgaFIFOUpdateCursor(pThis, pFIFO, &cLastCursorX, &cLastCursorY, &fLastCursorVisible);
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
 # if defined(RT_OS_DARWIN) && defined(VBOX_WITH_VMSVGA3D)
@@ -3274,7 +3311,8 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         fBadOrDisabledFifo = false;
         if (rc == VERR_TIMEOUT)
         {
-            if (pFIFO[SVGA_FIFO_NEXT_CMD] == pFIFO[SVGA_FIFO_STOP])
+            if (   pFIFO[SVGA_FIFO_NEXT_CMD] == pFIFO[SVGA_FIFO_STOP]
+                && cCursorCount == pFIFO[SVGA_FIFO_CURSOR_COUNT])
             {
                 cMsSleep = RT_MIN(cMsSleep + cMsIncSleep, cMsMaxSleep);
                 continue;
@@ -3299,6 +3337,10 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             vmsvgaR3FifoHandleExtCmd(pThis);
             continue;
         }
+
+        /* Update the cursor position. */
+        cCursorCount = pFIFO[SVGA_FIFO_CURSOR_COUNT];
+        vmsvgaFIFOUpdateCursor(pThis, pFIFO, &cLastCursorX, &cLastCursorY, &fLastCursorVisible);
 
         /*
          * The device must be enabled and configured.
