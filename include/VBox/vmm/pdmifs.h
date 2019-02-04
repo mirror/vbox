@@ -1001,11 +1001,8 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   fAlpha              Flag whether alpha channel is being passed.
      * @param   xHot                Pointer hot spot x coordinate.
      * @param   yHot                Pointer hot spot y coordinate.
-     * @param   x                   Pointer new x coordinate on screen.
-     * @param   y                   Pointer new y coordinate on screen.
      * @param   cx                  Pointer width in pixels.
      * @param   cy                  Pointer height in pixels.
-     * @param   cbScanline          Size of one scanline in bytes.
      * @param   pvShape             New shape buffer.
      * @thread  The emulation thread.
      */
