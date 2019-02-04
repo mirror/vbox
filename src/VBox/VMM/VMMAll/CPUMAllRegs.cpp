@@ -2873,6 +2873,7 @@ VMM_INT_DECL(bool) CPUMIsGuestSvmVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx)
     RT_NOREF2(pVCpu, pCtx);
     AssertReleaseFailedReturn(false);
 #else
+    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
 
     PCSVMVMCBCTRL pVmcbCtrl    = &pCtx->hwvirt.svm.CTX_SUFF(pVmcb)->ctrl;
