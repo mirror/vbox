@@ -16,6 +16,7 @@
  */
 
 /* GUI includes: */
+#include "UIMedium.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardCloneVDPageBasic1.h"
 #include "UIWizardCloneVDPageBasic2.h"
@@ -95,8 +96,8 @@ bool UIWizardCloneVD::copyVirtualDisk()
     /* Save created image as target one: */
     m_comTargetVirtualDisk = comVirtualDisk;
 
-    /* Just close the created image, it is not required anymore: */
-    m_comTargetVirtualDisk.Close();
+    /* Make sure we register the medium to VBox: */
+    vboxGlobal().createMedium(UIMedium(m_comTargetVirtualDisk, UIMediumDeviceType_HardDisk, KMediumState_Created));
 
     return true;
 }
