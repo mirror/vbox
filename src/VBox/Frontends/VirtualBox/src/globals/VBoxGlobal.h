@@ -508,7 +508,7 @@ public:
           * @param  parent            Passes the parent of the dialog,
           * @param  strMachineName    Passes the name of the machine,
           * @param  strMachineFolder  Passes the machine folder,
-          * returns the ID of the newly created medium if successful, an empty string otherwise.*/
+          * returns the ID of the newly created medium if successful, a null QUuid otherwise.*/
         QUuid showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder);
 
         /** Creates and shows a UIMediumSelector dialog.
@@ -516,9 +516,16 @@ public:
           * @param  enmMediumType     Passes the medium type.
           * @param  strMachineName    Passes the name of the machine,
           * @param  strMachineFolder  Passes the machine folder,
-          * returns the ID of the  selected/created medium if successful, an empty string otherwise.*/
+          * returns the ID of the  selected/created medium if successful, a null QUuid otherwise.*/
         QUuid openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
                                        const QString &strMachineName, const QString &strMachineFolder);
+
+        /** Creates and shows a UIWizardNewVD wizard.
+          * @param  parent                    Passes the parent of the wizard,
+          * @param  strMachineGuestOSTypeId   Passes the string of machine's guest OS type ID,
+          * @param  strMachineFolder          Passes the machine folder,
+          * returns the ID of the  created hard disk if successful, a null QUuid otherwise.*/
+        QUuid createHDWithNewHDWizard(QWidget *pParent, const QString &strMachineGuestOSTypeId, const QString &strMachineFolder);
 
         /** Prepares storage menu according passed parameters.
           * @param  menu               Brings the #QMenu to be prepared.

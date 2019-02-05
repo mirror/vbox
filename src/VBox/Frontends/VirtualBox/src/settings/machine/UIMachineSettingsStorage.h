@@ -754,9 +754,6 @@ private:
     /** Adds attachment with @a enmDevice. */
     void addAttachmentWrapper(KDeviceType enmDevice);
 
-    /** Creates new hard-drive. */
-    QUuid getWithNewHDWizard();
-
     /** Updates additions details according to passed @a enmType. */
     void updateAdditionalDetails(KDeviceType enmType);
 
