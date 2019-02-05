@@ -1735,25 +1735,33 @@ static int emR3VmxNstGstIntrIntercept(PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     Assert(CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx));
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
+
+    /* Handle the "interrupt-window" VM-exit intercept. */
+    if (   CPUMIsGuestPhysIntrEnabled(pVCpu)
+        && CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
     {
         CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
         VBOXSTRICTRC rcStrict = IEMExecVmxVmexitIntWindow(pVCpu);
         if (RT_SUCCESS(rcStrict))
         {
-            Assert(rcStrict != VINF_PGM_CHANGE_MODE);
-            Assert(rcStrict != VINF_VMX_VMEXIT);
+            AssertMsg(   rcStrict != VINF_PGM_CHANGE_MODE
+                      && rcStrict != VINF_VMX_VMEXIT
+                      && rcStrict != VINF_NO_CHANGE, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             return VBOXSTRICTRC_VAL(rcStrict);
         }
-        AssertMsgFailed(("Interrupt-window Vm-exit failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+        AssertMsgFailed(("Interrupt-window VM-exit failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
         return VINF_EM_TRIPLE_FAULT;
     }
+
     /* Handle the "external interrupt" VM-exit intercept. */
-    else if (CPUMIsGuestVmxPinCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
+    if (CPUMIsGuestVmxPinCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
     {
+        CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
         VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
-        Assert(rcStrict != VINF_PGM_CHANGE_MODE);
-        Assert(rcStrict != VINF_VMX_VMEXIT);
+        AssertMsg(   rcStrict != VINF_PGM_CHANGE_MODE
+                  && rcStrict != VINF_VMX_VMEXIT
+                  && rcStrict != VINF_NO_CHANGE, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             return VBOXSTRICTRC_TODO(rcStrict);
     }
@@ -1774,16 +1782,21 @@ static int emR3SvmNstGstIntrIntercept(PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx));
-    if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_INTR))
+
+    /* Handle the physical interrupt intercept (can be masked by the guest hypervisor). */
+    if (   CPUMIsGuestPhysIntrEnabled(pVCpu)
+        && CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_INTR))
     {
         CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_SVM_VMEXIT_MASK);
         VBOXSTRICTRC rcStrict = IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
         if (RT_SUCCESS(rcStrict))
         {
-            Assert(rcStrict != VINF_PGM_CHANGE_MODE);
-            Assert(rcStrict != VINF_SVM_VMEXIT);
+            AssertMsg(   rcStrict != VINF_PGM_CHANGE_MODE
+                      && rcStrict != VINF_SVM_VMEXIT
+                      && rcStrict != VINF_NO_CHANGE, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             return VBOXSTRICTRC_VAL(rcStrict);
         }
+
         AssertMsgFailed(("INTR #VMEXIT failed! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
         return VINF_EM_TRIPLE_FAULT;
     }
@@ -2217,19 +2230,27 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                         /** @todo NSTVMX: virtual-interrupt delivery. */
                         rc2 = VINF_NO_CHANGE;
                     }
-                    else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
-                             && CPUMIsGuestPhysIntrEnabled(pVCpu))
+                    else if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
                     {
                         bool fInjected = false;
                         Assert(pVCpu->em.s.enmState != EMSTATE_WAIT_SIPI);
 
-                        if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
+                        if (!CPUMIsGuestInNestedHwvirtMode(&pVCpu->cpum.GstCtx))
+                        {
+                            if (CPUMIsGuestPhysIntrEnabled(pVCpu))
+                                rc2 = VINF_NO_CHANGE;
+                            else
+                                rc2 = VINF_SUCCESS;
+                        }
+                        else if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx))
                             rc2 = emR3VmxNstGstIntrIntercept(pVCpu);
-                        else if (CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
-                            rc2 = emR3SvmNstGstIntrIntercept(pVCpu);
                         else
-                            rc2 = VINF_NO_CHANGE;
+                        {
+                            Assert(CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx));
+                            rc2 = emR3SvmNstGstIntrIntercept(pVCpu);
+                        }
 
+                        /* If no interrupt has been injected so far, do so now. */
                         if (rc2 == VINF_NO_CHANGE)
                         {
                             CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_XCPT_MASK);
