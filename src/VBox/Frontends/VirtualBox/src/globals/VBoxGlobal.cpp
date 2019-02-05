@@ -2648,7 +2648,7 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
         QStringList files = pVisoCreator->entryList();
         QString strVisoName = pVisoCreator->visoName();
         if (strVisoName.isEmpty())
-            strVisoName = "ad-hoc";
+            strVisoName = strMachineName;
 
         if (files.empty() || files[0].isEmpty())
             return QUuid();

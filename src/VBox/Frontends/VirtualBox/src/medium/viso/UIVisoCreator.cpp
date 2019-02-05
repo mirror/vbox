@@ -51,6 +51,7 @@ UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */, const QString& strMachin
     , m_pCreatorOptionsPanel(0)
     , m_pConfigurationPanel(0)
 {
+    m_visoOptions.m_strVisoName = strMachineName;
     prepareActions();
     prepareObjects();
     prepareConnections();
