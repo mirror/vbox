@@ -2647,6 +2647,8 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
     {
         QStringList files = pVisoCreator->entryList();
         QString strVisoName = pVisoCreator->visoName();
+        if (strVisoName.isEmpty())
+            strVisoName = "ad-hoc";
 
         if (files.empty() || files[0].isEmpty())
             return QUuid();
@@ -2655,7 +2657,8 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
 
         /* Produce the VISO. */
         char szVisoPath[RTPATH_MAX];
-        int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strFolder.toUtf8().constData(), "ad-hoc.viso");
+        QString strFileName = QString("%1%2").arg(strVisoName).arg(".viso");
+        int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strFolder.toUtf8().constData(), strFileName.toUtf8().constData());
         if (RT_SUCCESS(vrc))
         {
             PRTSTREAM pStrmViso;
@@ -2667,8 +2670,7 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
                 if (RT_SUCCESS(vrc))
                 {
                     RTStrmPrintf(pStrmViso, "--iprt-iso-maker-file-marker-bourne-sh %RTuuid\n", &Uuid);
-                    if (!strVisoName.isEmpty())
-                        RTStrmPrintf(pStrmViso, "--volume-id=%s\n", strVisoName.toUtf8().constData());
+                    RTStrmPrintf(pStrmViso, "--volume-id=%s\n", strVisoName.toUtf8().constData());
 
                     for (int iFile = 0; iFile < files.size(); iFile++)
                     {
