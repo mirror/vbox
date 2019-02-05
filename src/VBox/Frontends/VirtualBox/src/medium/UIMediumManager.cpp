@@ -1537,8 +1537,7 @@ bool UIMediumManagerWidget::checkMediumFor(UIMediumItem *pItem, Action action)
         }
         case Action_Copy:
         {
-            /* False for children: */
-            return pItem->medium().parentID() == UIMedium::nullID();
+            return true;
         }
         case Action_Remove:
         {
