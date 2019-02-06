@@ -99,6 +99,8 @@ VBoxOGLcrutil_LIBS.win = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/ddraw.lib \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dxguid.lib \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/shlwapi.lib
+VBoxOGLcrutil_LIBS.linux = \
+    crypt
 VBoxOGLcrutil_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
 	$(VBOX_LIB_VBGL_R3_SHARED)
