@@ -75,7 +75,7 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
     , m_pParent(pParent)
     , m_pSearchWidget(0)
     , m_iCurrentShownIndex(0)
-    , m_strMachineSettingsFilePath(machineSettingsFilePath)
+    , m_strMachineFolder(machineSettingsFilePath)
     , m_strMachineName(machineName)
     , m_strMachineGuestOSTypeId(strMachineGuestOSTypeId)
 {
@@ -437,11 +437,11 @@ void UIMediumSelector::sltCreateMedium()
     QUuid uMediumId;
 
     if (m_enmMediumType == UIMediumDeviceType_Floppy)
-        uMediumId = vboxGlobal().showCreateFloppyDiskDialog(this, m_strMachineName, m_strMachineSettingsFilePath);
+        uMediumId = vboxGlobal().showCreateFloppyDiskDialog(this, m_strMachineName, m_strMachineFolder);
     else if (m_enmMediumType == UIMediumDeviceType_HardDisk)
-        uMediumId = vboxGlobal().createHDWithNewHDWizard(this, m_strMachineGuestOSTypeId, m_strMachineSettingsFilePath);
+        uMediumId = vboxGlobal().createHDWithNewHDWizard(this, m_strMachineGuestOSTypeId, m_strMachineFolder);
     else if (m_enmMediumType == UIMediumDeviceType_DVD)
-        uMediumId = vboxGlobal().createVisoMediumWithVisoCreator(this, m_strMachineName, m_strMachineSettingsFilePath);
+        uMediumId = vboxGlobal().createVisoMediumWithVisoCreator(this, m_strMachineName, m_strMachineFolder);
 
     if (!uMediumId.isNull())
     {

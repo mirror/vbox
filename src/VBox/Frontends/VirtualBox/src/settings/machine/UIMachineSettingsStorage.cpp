@@ -3799,25 +3799,26 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
 
     QUuid uMediumId;
     int iAnswer = static_cast<int>(UIMediumSelector::ReturnCode_Rejected);
+
     switch (enmDevice)
     {
         case KDeviceType_HardDisk:
         {
             iAnswer = vboxGlobal().openMediumSelectorDialog(this, UIMediumDeviceType_HardDisk, uMediumId,
-                                                            m_strMachineName, m_strMachineSettingsFilePath,
+                                                            m_strMachineName, strMachineFolder,
                                                             m_strMachineGuestOSTypeId);
             break;
         }
         case KDeviceType_DVD:
         {
             iAnswer = vboxGlobal().openMediumSelectorDialog(this, UIMediumDeviceType_DVD, uMediumId,
-                                                            m_strMachineName, m_strMachineSettingsFilePath);
+                                                            m_strMachineName, strMachineFolder);
             break;
         }
         case KDeviceType_Floppy:
         {
             iAnswer = vboxGlobal().openMediumSelectorDialog(this, UIMediumDeviceType_Floppy, uMediumId,
-                                                            m_strMachineName, m_strMachineSettingsFilePath);
+                                                            m_strMachineName, strMachineFolder);
         }
         default: break; /* Shut up, MSC! */
     }

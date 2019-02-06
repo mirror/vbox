@@ -145,7 +145,7 @@ private slots:
     /** Index of the currently shown (scrolled) item in the m_mathingItemList. */
     int                   m_iCurrentShownIndex;
     QBrush                m_defaultItemForeground;
-    QString               m_strMachineSettingsFilePath;
+    QString               m_strMachineFolder;
     QString               m_strMachineName;
     QString               m_strMachineGuestOSTypeId;
 };

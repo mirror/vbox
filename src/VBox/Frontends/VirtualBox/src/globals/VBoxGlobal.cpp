@@ -2749,6 +2749,7 @@ QUuid VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &st
 
     if (pDialog->exec())
     {
+        delete pDialog;
         return pDialog->mediumID();
     }
     delete pDialog;
