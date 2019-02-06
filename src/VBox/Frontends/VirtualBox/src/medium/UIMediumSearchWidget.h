@@ -33,6 +33,7 @@ class QIDialogButtonBox;
 class QIToolButton;
 class QITreeWidget;
 class UIMediumItem;
+class UISearchLineEdit;
 
 
 /** QWidget extension providing a simple way to enter a earch term and search type for medium searching
@@ -79,8 +80,10 @@ private:
     /** Increases (or decreases if @p fNext is false) the m_iScrollToIndex and
      *  takes care of the necessary decoration changes to mark the current item. */
     void    goToNextPrevious(bool fNext);
+    /** Updates the feedback text of th line edit that shows # of matches. */
+    void    updateSearchLineEdit(int iMatchCount, int iScrollToIndex);
     QIComboBox       *m_pSearchComboxBox;
-    QLineEdit        *m_pSearchTermLineEdit;
+    UISearchLineEdit *m_pSearchTermLineEdit;
     QIToolButton     *m_pShowNextMatchButton;
     QIToolButton     *m_pShowPreviousMatchButton;
 

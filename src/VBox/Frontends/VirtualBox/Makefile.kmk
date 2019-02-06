@@ -974,6 +974,7 @@ VBoxGlobal_QT_MOCSRCS = \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
+	src/medium/UIMediumSearchWidget.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \

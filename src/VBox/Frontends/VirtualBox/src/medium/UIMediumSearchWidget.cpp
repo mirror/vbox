@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QLineEdit>
 #include <QPushButton>
+#include <QPainter>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -35,6 +36,10 @@
 # include "UIWindowMenuManager.h"
 #endif /* VBOX_WS_MAC */
 
+
+/*********************************************************************************************************************************
+*   FilterByNameUUID definition/implementation.                                                                                  *
+*********************************************************************************************************************************/
 
 class FilterByNameUUID : public QITreeWidgetItemFilter
 {
@@ -55,9 +60,11 @@ public:
         UIMediumItem *pMediumItem = dynamic_cast<UIMediumItem*>(pItem);
         if (!pMediumItem)
             return false;
-        if (m_enmSearchType == UIMediumSearchWidget::SearchByUUID && !pMediumItem->id().toString().contains(m_strSearchTerm))
+        if (m_enmSearchType == UIMediumSearchWidget::SearchByUUID &&
+            !pMediumItem->id().toString().contains(m_strSearchTerm, Qt::CaseInsensitive))
             return false;
-        if (m_enmSearchType == UIMediumSearchWidget::SearchByName && !pMediumItem->name().contains(m_strSearchTerm))
+        if (m_enmSearchType == UIMediumSearchWidget::SearchByName &&
+            !pMediumItem->name().contains(m_strSearchTerm, Qt::CaseInsensitive))
             return false;
         return true;
     }
@@ -68,6 +75,92 @@ private:
     QString m_strSearchTerm;
 };
 
+
+/*********************************************************************************************************************************
+*   UISearchLineEdit definition             .                                                                                    *
+*********************************************************************************************************************************/
+
+class UISearchLineEdit : public QLineEdit
+{
+
+    Q_OBJECT;
+
+public:
+
+    UISearchLineEdit(QWidget *pParent = 0);
+    void setMatchCount(int iMatchCount);
+    void setScroolToIndex(int iScrollToIndex);
+
+protected:
+
+    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
+
+private:
+
+    int m_iMatchCount;
+    int m_iScrollToIndex;
+};
+
+
+/*********************************************************************************************************************************
+*   UISearchLineEdit implementation         .                                                                                    *
+*********************************************************************************************************************************/
+
+UISearchLineEdit::UISearchLineEdit(QWidget *pParent /* = 0 */)
+    :QLineEdit(pParent)
+    , m_iMatchCount(0)
+    , m_iScrollToIndex(-1)
+{
+}
+
+void UISearchLineEdit::paintEvent(QPaintEvent *pEvent)
+{
+    QLineEdit::paintEvent(pEvent);
+
+
+    QPainter painter(this);
+
+    QFont pfont = font();
+    QString strText = QString("%1/%2").arg(QString::number(m_iScrollToIndex + 1)).arg(QString::number(m_iMatchCount));
+    QSize textSize(QApplication::fontMetrics().width(strText),
+                   QApplication::fontMetrics().height());
+
+    /* Dont draw anything if we dont have enough space: */
+    if (textSize.width() > 0.5 * width())
+        return;
+    int iTopMargin = (height() - textSize.height()) / 2;
+    int iRightMargin = iTopMargin;
+
+
+    QColor fontColor(Qt::darkGray);
+    painter.setPen(fontColor);
+    painter.setFont(pfont);
+
+    painter.drawText(QRect(width() - textSize.width() - iRightMargin, iTopMargin, textSize.width(), textSize.height()),
+                     Qt::AlignCenter | Qt::AlignVCenter, strText);
+}
+
+void UISearchLineEdit::setMatchCount(int iMatchCount)
+{
+    if (m_iMatchCount == iMatchCount)
+        return;
+    m_iMatchCount = iMatchCount;
+    repaint();
+}
+
+void UISearchLineEdit::setScroolToIndex(int iScrollToIndex)
+{
+    if (m_iScrollToIndex == iScrollToIndex)
+        return;
+    m_iScrollToIndex = iScrollToIndex;
+    repaint();
+}
+
+
+/*********************************************************************************************************************************
+*   UIMediumSearchWidget implementation      .                                                                                   *
+*********************************************************************************************************************************/
+
 UIMediumSearchWidget::UIMediumSearchWidget(QWidget *pParent)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_pSearchComboxBox(0)
@@ -75,7 +168,7 @@ UIMediumSearchWidget::UIMediumSearchWidget(QWidget *pParent)
     , m_pShowNextMatchButton(0)
     , m_pShowPreviousMatchButton(0)
     , m_pTreeWidget(0)
-    , m_iScrollToIndex(0)
+    , m_iScrollToIndex(-1)
 {
     prepareWidgets();
 }
@@ -100,10 +193,10 @@ void UIMediumSearchWidget::prepareWidgets()
 
     }
 
-    m_pSearchTermLineEdit = new QLineEdit;
+    m_pSearchTermLineEdit = new UISearchLineEdit;
     if (m_pSearchTermLineEdit)
     {
-        m_pSearchTermLineEdit->setClearButtonEnabled(true);
+        m_pSearchTermLineEdit->setClearButtonEnabled(false);
         pLayout->addWidget(m_pSearchTermLineEdit);
         connect(m_pSearchTermLineEdit, &QLineEdit::textChanged,
                 this, &UIMediumSearchWidget::sigPerformSearch);
@@ -157,6 +250,9 @@ void UIMediumSearchWidget::search(QITreeWidget* pTreeWidget)
         m_iScrollToIndex = -1;
         goToNextPrevious(true);
     }
+    else
+        m_iScrollToIndex = -1;
+    updateSearchLineEdit(m_matchedItemList.size(), m_iScrollToIndex);
 }
 
 void UIMediumSearchWidget::retranslateUi()
@@ -229,7 +325,7 @@ void UIMediumSearchWidget::goToNextPrevious(bool fNext)
 
     setUnderlineItemText(m_matchedItemList[m_iScrollToIndex], true);
     m_pTreeWidget->scrollTo(m_pTreeWidget->itemIndex(m_matchedItemList[m_iScrollToIndex]), QAbstractItemView::PositionAtCenter);
-
+    updateSearchLineEdit(m_matchedItemList.size(), m_iScrollToIndex);
 }
 
 void UIMediumSearchWidget::sltShowNextMatchingItem()
@@ -243,3 +339,13 @@ void UIMediumSearchWidget::sltShowPreviousMatchingItem()
 {
     goToNextPrevious(false);
 }
+
+void UIMediumSearchWidget::updateSearchLineEdit(int iMatchCount, int iScrollToIndex)
+{
+    if (!m_pSearchTermLineEdit)
+        return;
+    m_pSearchTermLineEdit->setMatchCount(iMatchCount);
+    m_pSearchTermLineEdit->setScroolToIndex(iScrollToIndex);
+}
+
+#include "UIMediumSearchWidget.moc"
