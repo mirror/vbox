@@ -247,14 +247,25 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
         <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
       </xsl:choose>
     </xsl:if>
+
+    <!-- Make sure group choice and arg choice matches. -->
+    <xsl:if test="self::arg and ancestor::group">
+      <xsl:if test="@choice != ancestor::group/@choice">
+        <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Mismatching group and arg choice: "<xsl:value-of select="@choice"/>" (arg) vs "<xsl:value-of select="ancestor::group/@choice"/>" (group)</xsl:message>
+      </xsl:if>
+    </xsl:if>
+
     <!-- open wrapping -->
-    <xsl:choose>
-      <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.open.str"/></xsl:when>
-      <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.open.str"/></xsl:when>
-      <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.open.str"/></xsl:when>
-      <xsl:when test="@choice = 'plain'"/>
-      <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
-    </xsl:choose>
+    <xsl:variable name="fWrappers" select="not(ancestor::group)"/>
+    <xsl:if test="$fWrappers">
+      <xsl:choose>
+        <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.open.str"/></xsl:when>
+        <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.open.str"/></xsl:when>
+        <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.open.str"/></xsl:when>
+        <xsl:when test="@choice = 'plain'"/>
+        <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
+      </xsl:choose>
+    </xsl:if>
 
     <!-- render the arg (TODO: may need to do more work here) -->
     <xsl:apply-templates />
@@ -265,12 +276,15 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
       <xsl:when test="@rep = 'repeat'">               <xsl:value-of select="$arg.rep.repeat.str"/></xsl:when>
       <xsl:otherwise><xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
+
     <!-- close wrapping -->
-    <xsl:choose>
-      <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.close.str"/></xsl:when>
-      <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.close.str"/></xsl:when>
-      <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.close.str"/></xsl:when>
-    </xsl:choose>
+    <xsl:if test="$fWrappers">
+      <xsl:choose>
+        <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.close.str"/></xsl:when>
+        <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.close.str"/></xsl:when>
+        <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.close.str"/></xsl:when>
+      </xsl:choose>
+    </xsl:if>
   </xsl:template>
 
 
