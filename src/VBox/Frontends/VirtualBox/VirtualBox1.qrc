@@ -84,6 +84,7 @@
         <file alias="cloud_profile_restore_32px.png">images/cloud_profile_restore_32px.png</file>
         <file alias="cloud_profile_restore_disabled_16px.png">images/cloud_profile_restore_disabled_16px.png</file>
         <file alias="cloud_profile_restore_disabled_32px.png">images/cloud_profile_restore_disabled_32px.png</file>
+        <file alias="collapse_all_16px.png">images/collapse_all_16px.png</file>
         <file alias="connect_16px.png">images/connect_16px.png</file>
         <file alias="connect_on_16px.png">images/connect_on_16px.png</file>
         <file alias="controller_add_16px.png">images/controller_add_16px.png</file>
@@ -122,6 +123,7 @@
         <file alias="edata_save_disabled_22px.png">images/edata_save_disabled_22px.png</file>
         <file alias="eraser_16px.png">images/eraser_16px.png</file>
         <file alias="exit_16px.png">images/exit_16px.png</file>
+        <file alias="expand_all_16px.png">images/expand_all_16px.png</file>
         <file alias="expanding_collapsing_16px.png">images/expanding_collapsing_16px.png</file>
         <file alias="export_16px.png">images/export_16px.png</file>
         <file alias="export_32px.png">images/export_32px.png</file>
@@ -350,8 +352,8 @@
         <file alias="list_moveup_16px.png">images/list_moveup_16px.png</file>
         <file alias="list_moveup_disabled_16px.png">images/list_moveup_disabled_16px.png</file>
         <file alias="log_viewer_bookmark_16px.png">images/log_viewer_bookmark_16px.png</file>
-        <file alias="log_viewer_bookmark_disabled_16px.png">images/log_viewer_bookmark_disabled_16px.png</file>
         <file alias="log_viewer_bookmark_32px.png">images/log_viewer_bookmark_32px.png</file>
+        <file alias="log_viewer_bookmark_disabled_16px.png">images/log_viewer_bookmark_disabled_16px.png</file>
         <file alias="log_viewer_bookmark_disabled_32px.png">images/log_viewer_bookmark_disabled_32px.png</file>
         <file alias="log_viewer_bookmark_off_16px.png">images/log_viewer_bookmark_off_16px.png</file>
         <file alias="log_viewer_bookmark_on_16px.png">images/log_viewer_bookmark_on_16px.png</file>
@@ -361,29 +363,29 @@
         <file alias="log_viewer_delete_current_bookmark_16px.png">images/log_viewer_delete_current_bookmark_16px.png</file>
         <file alias="log_viewer_delete_filter_16px.png">images/log_viewer_delete_filter_16px.png</file>
         <file alias="log_viewer_filter_16px.png">images/log_viewer_filter_16px.png</file>
-        <file alias="log_viewer_filter_disabled_16px.png">images/log_viewer_filter_disabled_16px.png</file>
         <file alias="log_viewer_filter_32px.png">images/log_viewer_filter_32px.png</file>
         <file alias="log_viewer_filter_add_16px.png">images/log_viewer_filter_add_16px.png</file>
+        <file alias="log_viewer_filter_disabled_16px.png">images/log_viewer_filter_disabled_16px.png</file>
         <file alias="log_viewer_filter_disabled_32px.png">images/log_viewer_filter_disabled_32px.png</file>
         <file alias="log_viewer_find_16px.png">images/log_viewer_find_16px.png</file>
-        <file alias="log_viewer_find_disabled_16px.png">images/log_viewer_find_disabled_16px.png</file>
         <file alias="log_viewer_find_32px.png">images/log_viewer_find_32px.png</file>
+        <file alias="log_viewer_find_disabled_16px.png">images/log_viewer_find_disabled_16px.png</file>
         <file alias="log_viewer_find_disabled_32px.png">images/log_viewer_find_disabled_32px.png</file>
         <file alias="log_viewer_goto_next_bookmark_16px.png">images/log_viewer_goto_next_bookmark_16px.png</file>
         <file alias="log_viewer_goto_previous_bookmark_16px.png">images/log_viewer_goto_previous_bookmark_16px.png</file>
         <file alias="log_viewer_goto_selected_bookmark_16px.png">images/log_viewer_goto_selected_bookmark_16px.png</file>
         <file alias="log_viewer_options_16px.png">images/log_viewer_options_16px.png</file>
-        <file alias="log_viewer_options_disabled_16px.png">images/log_viewer_options_disabled_16px.png</file>
         <file alias="log_viewer_options_32px.png">images/log_viewer_options_32px.png</file>
+        <file alias="log_viewer_options_disabled_16px.png">images/log_viewer_options_disabled_16px.png</file>
         <file alias="log_viewer_options_disabled_32px.png">images/log_viewer_options_disabled_32px.png</file>
         <file alias="log_viewer_refresh_16px.png">images/log_viewer_refresh_16px.png</file>
-        <file alias="log_viewer_refresh_disabled_16px.png">images/log_viewer_refresh_disabled_16px.png</file>
         <file alias="log_viewer_refresh_32px.png">images/log_viewer_refresh_32px.png</file>
+        <file alias="log_viewer_refresh_disabled_16px.png">images/log_viewer_refresh_disabled_16px.png</file>
         <file alias="log_viewer_refresh_disabled_32px.png">images/log_viewer_refresh_disabled_32px.png</file>
         <file alias="log_viewer_reset_font_16px.png">images/log_viewer_reset_font_16px.png</file>
         <file alias="log_viewer_save_16px.png">images/log_viewer_save_16px.png</file>
-        <file alias="log_viewer_save_disabled_16px.png">images/log_viewer_save_disabled_16px.png</file>
         <file alias="log_viewer_save_32px.png">images/log_viewer_save_32px.png</file>
+        <file alias="log_viewer_save_disabled_16px.png">images/log_viewer_save_disabled_16px.png</file>
         <file alias="log_viewer_save_disabled_32px.png">images/log_viewer_save_disabled_32px.png</file>
         <file alias="log_viewer_search_backward_16px.png">images/log_viewer_search_backward_16px.png</file>
         <file alias="log_viewer_search_forward_16px.png">images/log_viewer_search_forward_16px.png</file>
@@ -391,13 +393,5 @@
         <file alias="machine_24px.png">images/machine_24px.png</file>
         <file alias="machine_32px.png">images/machine_32px.png</file>
         <file alias="machine_abstract_16px.png">images/machine_abstract_16px.png</file>
-        <file alias="machine_details_manager_16px.png">images/machine_details_manager_16px.png</file>
-        <file alias="machine_details_manager_24px.png">images/machine_details_manager_24px.png</file>
-        <file alias="machine_details_manager_disabled_16px.png">images/machine_details_manager_disabled_16px.png</file>
-        <file alias="machine_details_manager_disabled_24px.png">images/machine_details_manager_disabled_24px.png</file>
-        <file alias="machine_warning_16px.png">images/machine_warning_16px.png</file>
-        <file alias="media_manager_16px.png">images/media_manager_16px.png</file>
-        <file alias="media_manager_24px.png">images/media_manager_24px.png</file>
-        <file alias="media_manager_32px.png">images/media_manager_32px.png</file>
     </qresource>
 </RCC>
