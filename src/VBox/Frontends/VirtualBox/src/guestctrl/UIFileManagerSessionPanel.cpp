@@ -136,6 +136,7 @@ void UIGuestSessionCreateWidget::prepareWidgets()
         connect(m_pCloseButton, &QPushButton::clicked, this, &UIGuestSessionCreateWidget::sigCloseSession);
     }
     m_pMainLayout->insertStretch(-1, 1);
+    switchSessionCreateMode();
     retranslateUi();
 }
 
