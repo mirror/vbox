@@ -858,6 +858,7 @@ static void audioMixerSinkDestroyInternal(PAUDMIXSINK pSink)
         pSink->pszName = NULL;
     }
 
+    AudioMixBufDestroy(&pSink->MixBuf);
     RTCritSectDelete(&pSink->CritSect);
 
     RTMemFree(pSink);
