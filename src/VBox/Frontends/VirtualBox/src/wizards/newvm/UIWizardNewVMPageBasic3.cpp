@@ -27,6 +27,7 @@
 #include "UIIconPool.h"
 #include "UIMediaComboBox.h"
 #include "UIMedium.h"
+#include "UIMediumSelector.h"
 #include "UIMessageCenter.h"
 #include "UIWizardNewVD.h"
 #include "UIWizardNewVM.h"
@@ -61,11 +62,15 @@ void UIWizardNewVMPage3::updateVirtualDiskSource()
 void UIWizardNewVMPage3::getWithFileOpenDialog()
 {
     /* Get opened medium id: */
-    QUuid uMediumId = vboxGlobal().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_HardDisk,
-                                                            fieldImp("machineBaseName").toString(),
-                                                            fieldImp("machineFolder").toString(),
-                                                            fieldImp("type").value<CGuestOSType>().GetFamilyId());
-    if (!uMediumId.isNull())
+    QUuid uMediumId;
+
+    int returnCode = vboxGlobal().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_HardDisk,
+                                                           uMediumId,
+                                                           fieldImp("machineBaseName").toString(),
+                                                           fieldImp("machineFolder").toString(),
+                                                           fieldImp("type").value<CGuestOSType>().GetFamilyId());
+
+    if (returnCode == static_cast<int>(UIMediumSelector::ReturnCode_Accepted) && !uMediumId.isNull())
     {
         /* Update medium-combo if necessary: */
         m_pDiskSelector->setCurrentItem(uMediumId);

@@ -62,6 +62,9 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
     , m_pTreeWidget(0)
     , m_enmMediumType(enmMediumType)
     , m_pButtonBox(0)
+    , m_pCancelButton(0)
+    , m_pChooseButton(0)
+    , m_pLeaveEmptyButton(0)
     , m_pMainMenu(0)
     , m_pToolBar(0)
     , m_pActionAdd(0)
@@ -122,8 +125,12 @@ void UIMediumSelector::retranslateUi()
         m_pActionRefresh->setStatusTip(tr("Refresh the list of disk image files"));
     }
 
-    if (m_pButtonBox)
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setText(tr("Choose"));
+    if (m_pCancelButton)
+        m_pCancelButton->setText(tr("Cancel"));
+    if (m_pLeaveEmptyButton)
+        m_pLeaveEmptyButton->setText(tr("Leave Empty"));
+    if (m_pChooseButton)
+        m_pChooseButton->setText(tr("Choose"));
 
     if (m_pTreeWidget)
     {
@@ -230,11 +237,13 @@ void UIMediumSelector::prepareConnections()
         connect(m_pTreeWidget, &QITreeWidget::customContextMenuRequested, this, &UIMediumSelector::sltHandleTreeContextMenuRequest);
     }
 
-    if (m_pButtonBox)
-    {
-        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIMediumSelector::close);
-        connect(m_pButtonBox, &QIDialogButtonBox::accepted, this, &UIMediumSelector::accept);
-    }
+    if (m_pCancelButton)
+        connect(m_pCancelButton, &QPushButton::clicked, this, &UIMediumSelector::sltButtonCancel);
+    if (m_pChooseButton)
+        connect(m_pChooseButton, &QPushButton::clicked, this, &UIMediumSelector::sltButtonChoose);
+    if (m_pLeaveEmptyButton)
+        connect(m_pLeaveEmptyButton, &QPushButton::clicked, this, &UIMediumSelector::sltButtonLeaveEmpty);
+
 
     if (m_pSearchWidget)
     {
@@ -381,14 +390,35 @@ void UIMediumSelector::prepareWidgets()
     if (m_pButtonBox)
     {
         /* Configure button-box: */
-        m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
+        m_pCancelButton = m_pButtonBox->addButton(tr("Cancel"), QDialogButtonBox::RejectRole);
+
+        /* Only DVDs and Floppies can be left empty: */
+        if (m_enmMediumType == UIMediumDeviceType_DVD || m_enmMediumType == UIMediumDeviceType_Floppy)
+            m_pLeaveEmptyButton = m_pButtonBox->addButton(tr("Leave Empty"), QDialogButtonBox::ActionRole);
+
+        m_pChooseButton = m_pButtonBox->addButton(tr("Choose"), QDialogButtonBox::AcceptRole);
+        m_pCancelButton->setShortcut(Qt::Key_Escape);
 
         /* Add button-box into main layout: */
         m_pMainLayout->addWidget(m_pButtonBox);
     }
 
     repopulateTreeWidget();
+}
+
+void UIMediumSelector::sltButtonChoose()
+{
+    done(static_cast<int>(ReturnCode_Accepted));
+}
+
+void UIMediumSelector::sltButtonCancel()
+{
+    done(static_cast<int>(ReturnCode_Rejected));
+}
+
+void UIMediumSelector::sltButtonLeaveEmpty()
+{
+    done(static_cast<int>(ReturnCode_LeftEmpty));
 }
 
 void UIMediumSelector::sltAddMedium()
@@ -422,7 +452,7 @@ void UIMediumSelector::sltCreateMedium()
 
 void UIMediumSelector::sltHandleItemSelectionChanged()
 {
-    updateOkButton();
+    updateChooseButton();
 }
 
 void UIMediumSelector::sltHandleTreeWidgetDoubleClick(QTreeWidgetItem * item, int column)
@@ -516,15 +546,15 @@ void UIMediumSelector::selectMedium(const QUuid &uMediumID)
     }
 }
 
-void UIMediumSelector::updateOkButton()
+void UIMediumSelector::updateChooseButton()
 {
 
-    if (!m_pTreeWidget || !m_pButtonBox || !m_pButtonBox->button(QDialogButtonBox::Ok))
+    if (!m_pTreeWidget || !m_pChooseButton)
         return;
     QList<QTreeWidgetItem*> selectedItems = m_pTreeWidget->selectedItems();
     if (selectedItems.isEmpty())
     {
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+        m_pChooseButton->setEnabled(false);
         return;
     }
 
@@ -536,9 +566,9 @@ void UIMediumSelector::updateOkButton()
             mediumItemSelected = true;
     }
     if (mediumItemSelected)
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(true);
+        m_pChooseButton->setEnabled(true);
     else
-        m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+        m_pChooseButton->setEnabled(false);
 }
 
 void UIMediumSelector::finalize()
@@ -627,7 +657,7 @@ void UIMediumSelector::repopulateTreeWidget()
     }
     restoreSelection(selectedMedia, menuItemVector);
     saveDefaultForeground();
-    updateOkButton();
+    updateChooseButton();
     if (m_pAttachedSubTreeRoot)
         m_pTreeWidget->expandItem(m_pAttachedSubTreeRoot);
 

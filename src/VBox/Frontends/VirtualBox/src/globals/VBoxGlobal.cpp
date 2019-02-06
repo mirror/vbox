@@ -2734,29 +2734,39 @@ QUuid VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &st
     return QUuid();
 }
 
-QUuid VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
-                                           const QString &strMachineName, const QString &strMachineFolder,
-                                           const QString &strMachineGuestOSTypeId  /* = QString() */)
+int VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType, QUuid &outUuid,
+                                         const QString &strMachineName, const QString &strMachineFolder,
+                                         const QString &strMachineGuestOSTypeId  /* = QString() */)
 {
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     QPointer<UIMediumSelector> pSelector = new UIMediumSelector(enmMediumType, strMachineName,
                                                                 strMachineFolder, strMachineGuestOSTypeId, pDialogParent);
 
     if (!pSelector)
-        return QUuid();
+        return static_cast<int>(UIMediumSelector::ReturnCode_Rejected);
+
     windowManager().registerNewParent(pSelector, pDialogParent);
-    if (pSelector->exec(false))
+
+    int iResult = pSelector->exec(false);
+    UIMediumSelector::ReturnCode returnCode;
+
+    if (iResult >= static_cast<int>(UIMediumSelector::ReturnCode_Max) || iResult < 0)
+        returnCode = UIMediumSelector::ReturnCode_Rejected;
+    else
+        returnCode = static_cast<UIMediumSelector::ReturnCode>(iResult);
+
+    if (returnCode == UIMediumSelector::ReturnCode_Accepted)
     {
         QList<QUuid> selectedMediumIds = pSelector->selectedMediumIds();
-        delete pSelector;
+
         /* Currently we only care about the 0th since we support single selection by intention: */
         if (selectedMediumIds.isEmpty())
-            return QUuid();
+            returnCode = UIMediumSelector::ReturnCode_Rejected;
         else
-            return selectedMediumIds[0];
+            outUuid = selectedMediumIds[0];
     }
     delete pSelector;
-    return QUuid();
+    return static_cast<int>(returnCode);
 }
 
 QUuid VBoxGlobal::createHDWithNewHDWizard(QWidget *pParent, const QString &strMachineGuestOSTypeId,

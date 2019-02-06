@@ -517,8 +517,9 @@ public:
           * @param  strMachineName           Passes the name of the machine,
           * @param  strMachineFolder         Passes the machine folder,
           * @param  strMachineGuestOSTypeId  Passes the type ID of machine's guest os,
-          * returns the ID of the  selected/created medium if successful, a null QUuid otherwise.*/
-        QUuid openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
+          * returns the return code of the UIMediumSelector::ReturnCode as int. In case of a medium selection
+          *         UUID of the selected medium is stored in @param outUuid.*/
+        int openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType, QUuid &outUuid,
                                        const QString &strMachineName, const QString &strMachineFolder,
                                        const QString &strMachineGuestOSTypeId = QString());
 

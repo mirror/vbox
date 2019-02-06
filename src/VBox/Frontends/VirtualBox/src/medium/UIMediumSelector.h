@@ -56,12 +56,24 @@ public:
 
     QList<QUuid> selectedMediumIds() const;
 
+    enum ReturnCode
+    {
+        ReturnCode_Rejected = 0,
+        ReturnCode_Accepted,
+        ReturnCode_LeftEmpty,
+        ReturnCode_Max
+    };
+
 protected:
 
     void showEvent(QShowEvent *pEvent);
 
+
 private slots:
 
+    void sltButtonLeaveEmpty();
+    void sltButtonCancel();
+    void sltButtonChoose();
     void sltAddMedium();
     void sltCreateMedium();
     void sltHandleItemSelectionChanged();
@@ -97,7 +109,7 @@ private slots:
 
     void          repopulateTreeWidget();
     /** Disable/enable 'ok' button on the basis of having a selected item */
-    void          updateOkButton();
+    void          updateChooseButton();
     UIMediumItem* addTreeItem(const UIMedium &medium, QITreeWidgetItem *pParent);
     void          restoreSelection(const QList<QUuid> &selectedMediums, QVector<UIMediumItem*> &mediumList);
     /** Recursively create the hard disk hierarchy under the tree widget */
@@ -112,6 +124,9 @@ private slots:
     QITreeWidget         *m_pTreeWidget;
     UIMediumDeviceType    m_enmMediumType;
     QIDialogButtonBox    *m_pButtonBox;
+    QPushButton          *m_pCancelButton;
+    QPushButton          *m_pChooseButton;
+    QPushButton          *m_pLeaveEmptyButton;
     QMenu                *m_pMainMenu;
     UIToolBar            *m_pToolBar;
     QAction              *m_pActionAdd;
