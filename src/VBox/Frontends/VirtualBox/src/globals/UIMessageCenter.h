@@ -317,9 +317,6 @@ public:
     void warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent = 0) const;
     void warnAboutStateChange(QWidget *pParent = 0) const;
     bool confirmSettingsReloading(QWidget *pParent = 0) const;
-    int confirmHardDiskAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
-    int confirmOpticalAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
-    int confirmFloppyAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
     int confirmRemovingOfLastDVDDevice(QWidget *pParent = 0) const;
     void cannotAttachDevice(const CMachine &machine, UIMediumDeviceType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
     bool warnAboutIncorrectPort(QWidget *pParent = 0) const;
