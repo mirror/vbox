@@ -185,12 +185,22 @@ static DECLCALLBACK(int) rtldrFileDestroy(PRTLDRREADER pReader)
 {
     int rc = VINF_SUCCESS;
     PRTLDRREADERFILE pFileReader = (PRTLDRREADERFILE)pReader;
+
+    Assert(!pFileReader->cMappings);
+
     if (pFileReader->hFile != NIL_RTFILE)
     {
         rc = RTFileClose(pFileReader->hFile);
         AssertRC(rc);
         pFileReader->hFile = NIL_RTFILE;
     }
+
+    if (pFileReader->pvMapping)
+    {
+        RTMemFree(pFileReader->pvMapping);
+        pFileReader->pvMapping = NULL;
+    }
+
     RTMemFree(pFileReader);
     return rc;
 }

@@ -676,7 +676,11 @@ static DECLCALLBACK(int) RTLDRELF_NAME(Close)(PRTLDRMODINTERNAL pMod)
         pModElf->paShdrs = NULL;
     }
 
-    pModElf->pvBits = NULL;
+    if (pModElf->pvBits)
+    {
+        pModElf->Core.pReader->pfnUnmap(pModElf->Core.pReader, pModElf->pvBits);
+        pModElf->pvBits = NULL;
+    }
 
     return VINF_SUCCESS;
 }
