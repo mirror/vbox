@@ -508,7 +508,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
 
   <!-- Elements producing non-breaking strings (single line). -->
   <xsl:template match="command/text()|option/text()|computeroutput/text()|arg/text()" name="escape_fixed_text">
-    <xsl:param name="sText" select="."/>
+    <xsl:param name="sText" select="normalize-space(.)"/>
     <xsl:choose>
 
       <xsl:when test="contains($sText, '\') or contains($sText, '&quot;')">
