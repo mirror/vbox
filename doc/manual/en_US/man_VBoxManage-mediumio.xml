@@ -35,22 +35,22 @@
     <cmdsynopsis id="synopsis-vboxmanage-mediumio-formatfat"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage mediumio</command>
       <group choice="req">
-        <arg>--disk=<replaceable>uuid|filename</replaceable></arg>
-        <arg>--dvd=<replaceable>uuid|filename</replaceable></arg>
-        <arg>--floppy=<replaceable>uuid|filename</replaceable></arg>
+        <arg choice="req">--disk=<replaceable>uuid|filename</replaceable></arg>
+        <arg choice="req">--dvd=<replaceable>uuid|filename</replaceable></arg>
+        <arg choice="req">--floppy=<replaceable>uuid|filename</replaceable></arg>
       </group>
-      <arg>--password-file<replaceable>-|filename</replaceable></arg>
+      <arg>--password-file=<replaceable>-|filename</replaceable></arg>
       <arg choice="plain">formatfat</arg>
       <arg>--quick</arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-mediumio-cat">
       <command>VBoxManage mediumio</command>
       <group choice="req">
-        <arg>--disk=<replaceable>uuid|filename</replaceable></arg>
-        <arg>--dvd=<replaceable>uuid|filename</replaceable></arg>
-        <arg>--floppy=<replaceable>uuid|filename</replaceable></arg>
+        <arg choice="req">--disk=<replaceable>uuid|filename</replaceable></arg>
+        <arg choice="req">--dvd=<replaceable>uuid|filename</replaceable></arg>
+        <arg choice="req">--floppy=<replaceable>uuid|filename</replaceable></arg>
       </group>
-      <arg>--password-file<replaceable>-|filename</replaceable></arg>
+      <arg>--password-file=<replaceable>-|filename</replaceable></arg>
       <arg choice="plain">cat</arg>
       <arg>--hex</arg>
       <arg>--offset=<replaceable>byte-offset</replaceable></arg>
@@ -60,11 +60,11 @@
     <cmdsynopsis id="synopsis-vboxmanage-mediumio-stream">
       <command>VBoxManage mediumio</command>
       <group choice="req">
-        <arg>--disk=<replaceable>uuid|filename</replaceable></arg>
-        <arg>--dvd=<replaceable>uuid|filename</replaceable></arg>
-        <arg>--floppy=<replaceable>uuid|filename</replaceable></arg>
+        <arg choice="req">--disk=<replaceable>uuid|filename</replaceable></arg>
+        <arg choice="req">--dvd=<replaceable>uuid|filename</replaceable></arg>
+        <arg choice="req">--floppy=<replaceable>uuid|filename</replaceable></arg>
       </group>
-      <arg>--password-file<replaceable>-|filename</replaceable></arg>
+      <arg>--password-file=<replaceable>-|filename</replaceable></arg>
       <arg choice="plain">stream</arg>
       <arg>--format=<replaceable>image-format</replaceable></arg>
       <arg>--variant=<replaceable>image-variant</replaceable></arg>
