@@ -979,6 +979,7 @@ IEM_STATIC uint64_t         iemSRegBaseFetchU64(PVMCPU pVCpu, uint8_t iSegReg);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH enmTaskSwitch, RTSEL SelNewTss, uint8_t cbInstr);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_t fFlags, uint32_t uErrCode, uint64_t uCr2, uint8_t cbInstr);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEventDoubleFault(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTripleFault(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitPreemptTimer(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending);
@@ -5603,7 +5604,15 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
             fFlags   = IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR;
             u8Vector = X86_XCPT_DF;
             uErr     = 0;
-            /** @todo NSTVMX: Do we need to do something here for VMX? */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+            /* VMX nested-guest #DF intercept needs to be checked here. */
+            if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+            {
+                VBOXSTRICTRC rcStrict0 = iemVmxVmexitEventDoubleFault(pVCpu);
+                if (rcStrict0 != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                    return rcStrict0;
+            }
+#endif
             /* SVM nested-guest #DF intercepts need to be checked now. See AMD spec. 15.12 "Exception Intercepts". */
             if (IEM_SVM_IS_XCPT_INTERCEPT_SET(pVCpu, X86_XCPT_DF))
                 IEM_SVM_VMEXIT_RET(pVCpu, SVM_EXIT_XCPT_DF, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);

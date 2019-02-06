@@ -3925,6 +3925,52 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitIntWindow(PVMCPU pVCpu)
 
 
 /**
+ * VMX VM-exit handler for VM-exits due to a double fault caused during delivery of
+ * an event.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitEventDoubleFault(PVMCPU pVCpu)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    uint32_t const fXcptBitmap = pVmcs->u32XcptBitmap;
+    if (fXcptBitmap & RT_BIT(X86_XCPT_DF))
+    {
+        uint8_t  const fNmiUnblocking = pVCpu->cpum.GstCtx.hwvirt.vmx.fNmiUnblockingIret;
+        uint32_t const uExitIntInfo   = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR,           X86_XCPT_DF)
+                                      | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,             VMX_EXIT_INT_INFO_TYPE_HW_XCPT)
+                                      | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_ERR_CODE_VALID,   1)
+                                      | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_NMI_UNBLOCK_IRET, fNmiUnblocking)
+                                      | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,            1);
+        iemVmxVmcsSetExitIntInfo(pVCpu, uExitIntInfo);
+        iemVmxVmcsSetExitIntErrCode(pVCpu, 0);
+        iemVmxVmcsSetExitQual(pVCpu, 0);
+        iemVmxVmcsSetExitInstrLen(pVCpu, 0);
+
+        /*
+         * A VM-exit is not considered to occur during event delivery when the original
+         * event results in a double-fault that causes a VM-exit directly (i.e. intercepted
+         * using the exception bitmap).
+         *
+         * Therefore, we must clear the original event from the IDT-vectoring fields which
+         * would've been recorded before causing the VM-exit.
+         *
+         * 27.2.3 "Information for VM Exits During Event Delivery"
+         */
+        iemVmxVmcsSetIdtVectoringInfo(pVCpu, 0);
+        iemVmxVmcsSetIdtVectoringErrCode(pVCpu, 0);
+
+        return iemVmxVmexit(pVCpu, VMX_EXIT_XCPT_OR_NMI);
+    }
+
+    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+}
+
+
+/**
  * VMX VM-exit handler for VM-exits due to delivery of an event.
  *
  * @returns VBox strict status code.
