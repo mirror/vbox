@@ -41,13 +41,13 @@ QIMainDialog::QIMainDialog(QWidget *pParent /* = 0 */,
     : QMainWindow(pParent, fFlags)
     , m_fIsAutoCentering(fIsAutoCentering)
     , m_fPolished(false)
-    , m_enmResult(QDialog::Rejected)
+    , m_iResult(QDialog::Rejected)
 {
     /* Install event-filter: */
     qApp->installEventFilter(this);
 }
 
-QDialog::DialogCode QIMainDialog::exec(bool fApplicationModal /* = true */)
+int QIMainDialog::exec(bool fApplicationModal /* = true */)
 {
     /* Check for the recursive run: */
     AssertMsgReturn(!m_pEventLoop, ("QIMainDialog::exec() is called recursively!\n"), QDialog::Rejected);
@@ -88,7 +88,7 @@ QDialog::DialogCode QIMainDialog::exec(bool fApplicationModal /* = true */)
     }
 
     /* Save the result code early (we can delete ourself on close): */
-    const QDialog::DialogCode enmResultCode = result();
+    const int iResultCode = result();
 
     /* Return old modality: */
     setWindowModality(oldModality);
@@ -100,7 +100,7 @@ QDialog::DialogCode QIMainDialog::exec(bool fApplicationModal /* = true */)
         delete this;
 
     /* Return the result code: */
-    return enmResultCode;
+    return iResultCode;
 }
 
 QPushButton *QIMainDialog::defaultButton() const
@@ -324,10 +324,10 @@ QPushButton *QIMainDialog::searchDefaultButton() const
     return 0;
 }
 
-void QIMainDialog::done(QDialog::DialogCode enmResult)
+void QIMainDialog::done(int iResult)
 {
     /* Set the final result: */
-    setResult(enmResult);
+    setResult(iResult);
     /* Hide: */
     hide();
 }

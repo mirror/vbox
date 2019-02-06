@@ -48,11 +48,11 @@ public:
                  bool fIsAutoCentering = true);
 
     /** Returns the dialog's result code. */
-    QDialog::DialogCode result() const { return m_enmResult; }
+    int result() const { return m_iResult; }
 
     /** Executes the dialog, launching local event-loop.
       * @param fApplicationModal defines whether this dialog should be modal to application or window. */
-    QDialog::DialogCode exec(bool fApplicationModal = true);
+    int exec(bool fApplicationModal = true);
 
     /** Returns dialog's default button. */
     QPushButton *defaultButton() const;
@@ -92,13 +92,13 @@ protected:
 
 protected slots:
 
-    /** Sets the modal dialog's result code to @a enmResult. */
-    void setResult(QDialog::DialogCode enmResult) { m_enmResult = enmResult; }
+    /** Sets the modal dialog's result code to @a iResult. */
+    void setResult(int iResult) { m_iResult = iResult; }
 
-    /** Closes the modal dialog and sets its result code to @a enmResult.
+    /** Closes the modal dialog and sets its result code to @a iResult.
       * If this dialog is shown with exec(), done() causes the local
-      * event-loop to finish, and exec() to return @a enmResult. */
-    virtual void done(QDialog::DialogCode enmResult);
+      * event-loop to finish, and exec() to return @a iResult. */
+    virtual void done(int iResult);
     /** Hides the modal dialog and sets the result code to Accepted. */
     virtual void accept() { done(QDialog::Accepted); }
     /** Hides the modal dialog and sets the result code to Rejected. */
@@ -112,7 +112,7 @@ private:
     bool        m_fPolished;
 
     /** Holds modal dialog's result code. */
-    QDialog::DialogCode   m_enmResult;
+    int                   m_iResult;
     /** Holds modal dialog's event-loop. */
     QPointer<QEventLoop>  m_pEventLoop;
 
