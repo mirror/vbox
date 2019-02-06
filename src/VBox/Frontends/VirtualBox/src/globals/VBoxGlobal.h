@@ -512,13 +512,15 @@ public:
         QUuid showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder);
 
         /** Creates and shows a UIMediumSelector dialog.
-          * @param  parent            Passes the parent of the dialog,
-          * @param  enmMediumType     Passes the medium type.
-          * @param  strMachineName    Passes the name of the machine,
-          * @param  strMachineFolder  Passes the machine folder,
+          * @param  parent                   Passes the parent of the dialog,
+          * @param  enmMediumType            Passes the medium type.
+          * @param  strMachineName           Passes the name of the machine,
+          * @param  strMachineFolder         Passes the machine folder,
+          * @param  strMachineGuestOSTypeId  Passes the type ID of machine's guest os,
           * returns the ID of the  selected/created medium if successful, a null QUuid otherwise.*/
         QUuid openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
-                                       const QString &strMachineName, const QString &strMachineFolder);
+                                       const QString &strMachineName, const QString &strMachineFolder,
+                                       const QString &strMachineGuestOSTypeId = QString());
 
         /** Creates and shows a UIWizardNewVD wizard.
           * @param  parent                    Passes the parent of the wizard,

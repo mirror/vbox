@@ -51,7 +51,9 @@ signals:
 public:
 
     UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName = QString(),
-                     const QString &machineSettigFilePath = QString(), QWidget *pParent = 0);
+                     const QString &machineSettingsFilePath = QString(), const QString &strMachineGuestOSTypeId = QString(),
+                     QWidget *pParent = 0);
+
     QList<QUuid> selectedMediumIds() const;
 
 protected:
@@ -130,6 +132,7 @@ private slots:
     QBrush                m_defaultItemForeground;
     QString               m_strMachineSettingsFilePath;
     QString               m_strMachineName;
+    QString               m_strMachineGuestOSTypeId;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIMediumSelector_h */

@@ -63,7 +63,8 @@ void UIWizardNewVMPage3::getWithFileOpenDialog()
     /* Get opened medium id: */
     QUuid uMediumId = vboxGlobal().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_HardDisk,
                                                             fieldImp("machineBaseName").toString(),
-                                                            fieldImp("machineFolder").toString());
+                                                            fieldImp("machineFolder").toString(),
+                                                            fieldImp("type").value<CGuestOSType>().GetFamilyId());
     if (!uMediumId.isNull())
     {
         /* Update medium-combo if necessary: */

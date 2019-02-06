@@ -54,7 +54,8 @@
 
 
 UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName /* = QString() */,
-                                   const QString &machineSettigFilePath /* = QString() */, QWidget *pParent /* = 0 */)
+                                   const QString &machineSettingsFilePath /* = QString() */,
+                                   const QString &strMachineGuestOSTypeId /*= QString() */, QWidget *pParent /* = 0 */)
     :QIWithRetranslateUI<QIMainDialog>(pParent)
     , m_pCentralWidget(0)
     , m_pMainLayout(0)
@@ -71,8 +72,9 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
     , m_pParent(pParent)
     , m_pSearchWidget(0)
     , m_iCurrentShownIndex(0)
-    , m_strMachineSettingsFilePath(machineSettigFilePath)
+    , m_strMachineSettingsFilePath(machineSettingsFilePath)
     , m_strMachineName(machineName)
+    , m_strMachineGuestOSTypeId(strMachineGuestOSTypeId)
 {
     configure();
     finalize();
@@ -175,11 +177,7 @@ void UIMediumSelector::prepareActions()
             m_pToolBar->addAction(m_pActionAdd);
     }
 
-    /* Currently create is supported only for Floppy: */
-    if (m_enmMediumType == UIMediumDeviceType_Floppy)
-    {
-        m_pActionCreate = new QAction(this);
-    }
+    m_pActionCreate = new QAction(this);
     if (m_pActionCreate)
     {
 
@@ -406,14 +404,20 @@ void UIMediumSelector::sltAddMedium()
 
 void UIMediumSelector::sltCreateMedium()
 {
-    QString strMachineFolder = QFileInfo(m_strMachineSettingsFilePath).absolutePath();
-    UIFDCreationDialog *pDialog = new UIFDCreationDialog(this, m_strMachineName, strMachineFolder);
-    if (pDialog->exec())
+    QUuid uMediumId;
+
+    if (m_enmMediumType == UIMediumDeviceType_Floppy)
+        uMediumId = vboxGlobal().showCreateFloppyDiskDialog(this, m_strMachineName, m_strMachineSettingsFilePath);
+    else if (m_enmMediumType == UIMediumDeviceType_HardDisk)
+        uMediumId = vboxGlobal().createHDWithNewHDWizard(this, m_strMachineGuestOSTypeId, m_strMachineSettingsFilePath);
+    else if (m_enmMediumType == UIMediumDeviceType_DVD)
+        uMediumId = vboxGlobal().createVisoMediumWithVisoCreator(this, m_strMachineName, m_strMachineSettingsFilePath);
+
+    if (!uMediumId.isNull())
     {
         repopulateTreeWidget();
-        selectMedium(pDialog->mediumID());
+        selectMedium(uMediumId);
     }
-    delete pDialog;
 }
 
 void UIMediumSelector::sltHandleItemSelectionChanged()
