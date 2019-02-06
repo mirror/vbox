@@ -2633,6 +2633,38 @@ QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType,
     return QUuid();
 }
 
+
+/**
+ * Helper for createVisoMediumWithVisoCreator.
+ * @returns IPRT status code.
+ * @param   pStrmDst            Where to write the quoted string.
+ * @param   pszPrefix           Stuff to put in front of it.
+ * @param   rStr                The string to quote and write out.
+ * @param   pszPrefix           Stuff to put after it.
+ */
+DECLINLINE(int) visoWriteQuotedString(PRTSTREAM pStrmDst, const char *pszPrefix, QString const &rStr, const char *pszPostFix)
+{
+    QByteArray const utf8Array   = rStr.toUtf8();
+    const char      *apszArgv[2] = { utf8Array.constData(), NULL };
+    char            *pszQuoted;
+    int vrc = RTGetOptArgvToString(&pszQuoted, apszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+    if (RT_SUCCESS(vrc))
+    {
+        if (pszPrefix)
+            vrc = RTStrmPutStr(pStrmDst, pszPrefix);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTStrmPutStr(pStrmDst, pszQuoted);
+            if (pszPostFix && RT_SUCCESS(vrc))
+                vrc = RTStrmPutStr(pStrmDst, pszPostFix);
+        }
+        RTStrFree(pszQuoted);
+    }
+
+    return vrc;
+}
+
+
 QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strMachineName, const QString &strFolder)
 {
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
@@ -2670,22 +2702,11 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
                 if (RT_SUCCESS(vrc))
                 {
                     RTStrmPrintf(pStrmViso, "--iprt-iso-maker-file-marker-bourne-sh %RTuuid\n", &Uuid);
-                    RTStrmPrintf(pStrmViso, "--volume-id=%s\n", strVisoName.toUtf8().constData());
+                    vrc = visoWriteQuotedString(pStrmViso, "--volume-id=", strVisoName, "\n");
 
-                    for (int iFile = 0; iFile < files.size(); iFile++)
-                    {
-                        QByteArray const utf8Name = files[iFile].toUtf8();
-                        const char *apszArgv[2] = { utf8Name.constData(), NULL };
-                        char *pszQuoted;
-                        vrc = RTGetOptArgvToString(&pszQuoted, apszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
-                        if (RT_SUCCESS(vrc))
-                        {
-                            RTStrmPrintf(pStrmViso, "%s\n", pszQuoted);
-                            RTStrFree(pszQuoted);
-                        }
-                        else
-                            break;
-                    }
+                    for (int iFile = 0; iFile < files.size() && RT_SUCCESS(vrc); iFile++)
+                        vrc = visoWriteQuotedString(pStrmViso, NULL, files[iFile], "\n");
+
                     /* Append custom options if any to the file: */
                     const QStringList &customOptions = pVisoCreator->customOptions();
                     foreach (QString strLine, customOptions)
