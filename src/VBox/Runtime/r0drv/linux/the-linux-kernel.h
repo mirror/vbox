@@ -128,6 +128,9 @@
 # include <linux/cpu.h>
 # include <linux/notifier.h>
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
+# include <uapi/linux/mman.h>
+#endif
 /* For the basic additions module */
 #include <linux/pci.h>
 #include <linux/delay.h>
