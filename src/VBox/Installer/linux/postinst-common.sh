@@ -103,7 +103,9 @@ test -n "${START}" &&
         echo >&2
         echo "There were problems setting up VirtualBox.  To re-start the set-up process, run" >&2
         echo "  /sbin/vboxconfig" >&2
-        echo "as root." >&2
+        echo "as root.  If your system is using EFI Secure Boot you may need to sign the" >&2
+        echo "kernel modules (vboxdrv, vboxnetflt, vboxnetadp, vboxpci) before you can load" >&2
+        echo " them. Please see your Linux system's documentation for more information." >&2
     else
         start_init_script vboxdrv
         start_init_script vboxballoonctrl-service
