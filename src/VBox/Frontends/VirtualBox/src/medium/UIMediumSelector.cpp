@@ -445,8 +445,12 @@ void UIMediumSelector::sltCreateMedium()
 
     if (!uMediumId.isNull())
     {
+        /* Update the tree widget making sure we show the new item: */
         repopulateTreeWidget();
+        /* Select the new item: */
         selectMedium(uMediumId);
+        /* Update the search: */
+        m_pSearchWidget->search(m_pTreeWidget);
     }
 }
 
@@ -486,6 +490,8 @@ void UIMediumSelector::sltHandleRefresh()
 {
     /* Initialize media enumation: */
     vboxGlobal().startMediumEnumeration();
+    /* Update the search: */
+    m_pSearchWidget->search(m_pTreeWidget);
 }
 
 void UIMediumSelector::sltHandlePerformSearch()
