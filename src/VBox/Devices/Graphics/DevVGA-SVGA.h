@@ -258,10 +258,12 @@ typedef struct VMSVGAState
     /** Set by vmsvgaR3RunExtCmdOnFifoThread when it temporarily resumes the FIFO
      * thread and does not want it do anything but the command. */
     bool volatile               fFifoExtCommandWakeup;
-// #if defined(DEBUG_GMR_ACCESS)  /* Needed for alignment. */
+#ifdef DEBUG_GMR_ACCESS
     /** GMR debug access handler type handle. */
     PGMPHYSHANDLERTYPE          hGmrAccessHandlerType;
-// #endif
+#else
+    uint32_t                    uPadding1;
+#endif
     /** FIFO debug access handler type handle. */
     PGMPHYSHANDLERTYPE          hFifoAccessHandlerType;
     /** Number of GMRs. */

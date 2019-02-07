@@ -142,9 +142,9 @@
 #ifdef IN_RING3
 # include <iprt/ctype.h>
 # include <iprt/mem.h>
-// # ifdef DEBUG
+# ifdef VBOX_STRICT
 #  include <iprt/time.h>
-// # endif
+# endif
 #endif
 
 #include <VBox/AssertGuest.h>
@@ -245,12 +245,12 @@ typedef struct VMSVGAR3STATE
     /** Information obout screens. */
     VMSVGASCREENOBJECT aScreens[64];
 
-// #ifdef DEBUG
+# ifdef VBOX_STRICT
     /** The time the access handler for the FIFO last triggered.  This should
      *  never happen less than a certain interval from the last access, and we
      *  assert this. */
     uint64_t                TimeLastFIFOIntercept;
-// #endif
+# endif
 
     /** Tracks how much time we waste reading SVGA_REG_BUSY with a busy FIFO. */
     STAMPROFILE             StatBusyDelayEmts;
@@ -323,7 +323,12 @@ typedef struct VMSVGAR3STATE
     STAMCOUNTER             StatFifoTodoTimeout;
     STAMCOUNTER             StatFifoTodoWoken;
     STAMPROFILE             StatFifoStalls;
+    STAMPROFILE             StatFifoSleepOnHandler;
     STAMCOUNTER             StatFifoAccessHandler;
+    STAMCOUNTER             StatFifoCursorFetchAgain;
+    STAMCOUNTER             StatFifoCursorNoChange;
+    STAMCOUNTER             StatFifoCursorPosition;
+    STAMCOUNTER             StatFifoCursorVisiblity;
 
 } VMSVGAR3STATE, *PVMSVGAR3STATE;
 #endif /* IN_RING3 */
@@ -407,9 +412,9 @@ static SSMFIELD const g_aVMSVGAR3STATEFields[] =
 #else
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, hBusyDelayedEmts),
 #endif
-// #ifdef DEBUG
+#ifdef VBOX_STRICT
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, TimeLastFIFOIntercept),
-// #endif
+#endif
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatBusyDelayEmts),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3Cmd3dPresentProf),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3Cmd3dDrawPrimitivesProf),
@@ -479,7 +484,13 @@ static SSMFIELD const g_aVMSVGAR3STATEFields[] =
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoTodoTimeout),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoTodoWoken),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoStalls),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoSleepOnHandler),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoAccessHandler),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoCursorFetchAgain),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoCursorNoChange),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoCursorPosition),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoCursorVisiblity),
+
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -1228,8 +1239,8 @@ PDMBOTHCBDECL(int) vmsvgaReadPort(PVGASTATE pThis, uint32_t *pu32)
     case SVGA_REG_NUM_DISPLAYS:        /* (Deprecated) */
         STAM_REL_COUNTER_INC(&pThis->svga.StatRegNumDisplaysRd);
         /* We must return something sensible here otherwise the Linux driver
-         * will take a legacy code path without 3d support.  This number also
-         * limits how many screens Linux guests will allow. */
+           will take a legacy code path without 3d support.  This number also
+           limits how many screens Linux guests will allow. */
         *pu32 = pThis->cMonitors;
         break;
 
@@ -1549,10 +1560,9 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
             /* Disable or enable dirty page tracking according to the current fTraces value. */
             vmsvgaSetTraces(pThis, !!pThis->svga.fTraces);
 
-            for (uint32_t iScreen = 0; iScreen < pThis->cMonitors; ++iScreen)
-            {
-                pThis->pDrv->pfnVBVAEnable(pThis->pDrv, iScreen, NULL, false);
-            }
+            /* bird: Whatever this is was added to make screenshot work, ask sunlover should explain... */
+            for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
+                pThis->pDrv->pfnVBVAEnable(pThis->pDrv, idScreen, NULL /*pHostFlags*/, false /*fRenderThreadMode*/);
         }
         else
         {
@@ -1564,10 +1574,9 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
             /* Enable dirty page tracking again when going into legacy mode. */
             vmsvgaSetTraces(pThis, true);
 
-            for (uint32_t iScreen = 0; iScreen < pThis->cMonitors; ++iScreen)
-            {
-                pThis->pDrv->pfnVBVADisable(pThis->pDrv, iScreen);
-            }
+            /* bird: Whatever this is was added to make screenshot work, ask sunlover should explain... */
+            for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
+                pThis->pDrv->pfnVBVADisable(pThis->pDrv, idScreen);
         }
 #else  /* !IN_RING3 */
         rc = VINF_IOM_R3_IOPORT_WRITE;
@@ -2350,7 +2359,6 @@ static int vmsvgaDebugFIFOAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, bool
 
     return VINF_EM_RAW_EMULATE_INSTR;
 }
-
 # endif /* DEBUG_FIFO_ACCESS */
 
 /**
@@ -2372,25 +2380,35 @@ static DECLCALLBACK(VBOXSTRICTRC)
 vmsvgaR3FIFOAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
                           PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
-    PVGASTATE   pThis = (PVGASTATE)pvUser;
-    int         rc;
-    Assert(pThis);
-    NOREF(pVCpu); NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmOrigin);
+    NOREF(pVCpu); NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmOrigin); NOREF(enmAccessType); NOREF(GCPhys);
+    PVGASTATE pThis = (PVGASTATE)pvUser;
+    AssertPtr(pThis);
 
-    SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+    /* 
+     * Wake up the FIFO thread as it might have work to do now.
+     */
+    int rc = SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+    AssertLogRelRC(rc);
+    
 # ifdef DEBUG_FIFO_ACCESS
+    /* 
+     * When in debug-fifo-access mode, we do not disable the access handler, 
+     * but leave it on as we wish to catch all access.
+     */
     Assert(GCPhys >= pThis->svga.GCPhysFIFO);
     rc = vmsvgaDebugFIFOAccess(pVM, pThis, GCPhys, enmAccessType == PGMACCESSTYPE_WRITE);
 # else
-    NOREF(enmAccessType);
-    NOREF(GCPhys);
-// #  ifdef DEBUG
-    /* Invariant: the access handler should never trigger twice within a certain
-     * time span; calling it 500ms here for simplicity. */
+    /* 
+     * Temporarily disable the access handler now that we've kicked the FIFO thread.
+     */ 
+#  ifdef VBOX_STRICT /** @todo r=bird: This is _not_ guaranteed at all.  Expect spurious assertions! */
+    /* Invariant: The access handler should never trigger twice within a certain
+       time span; calling it 500ms here for simplicity. */ 
     uint64_t TimeNow = RTTimeMilliTS();
     Assert(TimeNow - pThis->svga.pSvgaR3State->TimeLastFIFOIntercept > 500);
     pThis->svga.pSvgaR3State->TimeLastFIFOIntercept = TimeNow;
-// #  endif
+#  endif
+
     STAM_REL_COUNTER_INC(&pThis->svga.pSvgaR3State->StatFifoAccessHandler);
     rc = PGMHandlerPhysicalPageTempOff(pVM, pThis->svga.GCPhysFIFO, pThis->svga.GCPhysFIFO);
 # endif
@@ -3213,41 +3231,96 @@ static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t RT_UNTRUSTE
     return pbBounceBuf;
 }
 
-/** Send cursor position and visibility information from the FIFO to the
- * front-end.  We handle global, not per-screen visibility information by
- * sending pfnVBVAMousePointerShape without shape data. */
-static void vmsvgaFIFOUpdateCursor(PVGASTATE pVGAState, uint32_t RT_UNTRUSTED_VOLATILE_GUEST *pFIFO, uint32_t *pcLastX, uint32_t *pcLastY, uint32_t *pfLastVisible)
-{
-    uint32_t uScreenId = pFIFO[SVGA_FIFO_CURSOR_SCREEN_ID];
-    uint32_t fFlags = VBVA_CURSOR_VALID_DATA;
-    uint32_t fVisible;
 
-    /* Potentially race-prone, but not our design and Linux ignores it anyway.
+/**
+ * Sends cursor position and visibility information from the FIFO to the front-end.
+ * @returns SVGA_FIFO_CURSOR_COUNT value used.
+ */ 
+static uint32_t
+vmsvgaFIFOUpdateCursor(PVGASTATE pVGAState, PVMSVGAR3STATE  pSVGAState, uint32_t RT_UNTRUSTED_VOLATILE_GUEST *pFIFO,
+                       uint32_t offFifoMin,  uint32_t uCursorUpdateCount,
+                       uint32_t *pxLast, uint32_t *pyLast, uint32_t *pfLastVisible)
+{
+    /*
+     * Check if the cursor update counter has changed and try get a stable
+     * set of values if it has.  This is race-prone, especially consindering
+     * the screen ID, but little we can do about that.
      */
-    pFIFO[SVGA_FIFO_CURSOR_LAST_UPDATED] = pFIFO[SVGA_FIFO_CURSOR_COUNT];
-    fVisible = pFIFO[SVGA_FIFO_CURSOR_ON];
-    /* Check if anything has changed, as calling into pDrv is not light-weight. */
-    if (   *pcLastX == pFIFO[SVGA_FIFO_CURSOR_X]
-        && *pcLastY == pFIFO[SVGA_FIFO_CURSOR_Y]
-        && (uScreenId != SVGA_ID_INVALID || *pfLastVisible == fVisible))
-        return;
-    *pcLastX = pFIFO[SVGA_FIFO_CURSOR_X];
-    *pcLastY = pFIFO[SVGA_FIFO_CURSOR_Y];
-    if (uScreenId != SVGA_ID_INVALID)
-        fFlags |= VBVA_CURSOR_SCREEN_RELATIVE;
-    if (uScreenId == SVGA_ID_INVALID && *pfLastVisible != fVisible) {
-        *pfLastVisible = fVisible;
-        pVGAState->pDrv->pfnVBVAMousePointerShape(pVGAState->pDrv, RT_BOOL(fVisible), false, 0, 0, 0, 0, NULL);
+    uint32_t x, y, fVisible, idScreen;
+    for (uint32_t i = 0; ; i++)
+    {
+        x        = pFIFO[SVGA_FIFO_CURSOR_X];
+        y        = pFIFO[SVGA_FIFO_CURSOR_Y];
+        fVisible = pFIFO[SVGA_FIFO_CURSOR_ON];
+        idScreen = VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_CURSOR_SCREEN_ID, offFifoMin)
+                 ? pFIFO[SVGA_FIFO_CURSOR_SCREEN_ID] : SVGA_ID_INVALID;
+        if (   uCursorUpdateCount == pFIFO[SVGA_FIFO_CURSOR_COUNT]
+            || i > 3)
+            break;
+        if (i == 0)
+            STAM_REL_COUNTER_INC(&pSVGAState->StatFifoCursorFetchAgain);
+        ASMNopPause();
+        uCursorUpdateCount = pFIFO[SVGA_FIFO_CURSOR_COUNT];
     }
-    pVGAState->pDrv->pfnVBVAReportCursorPosition(pVGAState->pDrv, fFlags, uScreenId, *pcLastX, *pcLastY);
+
+    /*
+     * Check if anything has changed, as calling into pDrv is not light-weight.
+     */
+    if (   *pxLast == x
+        && *pyLast == y
+        && (idScreen != SVGA_ID_INVALID || *pfLastVisible == fVisible))
+        STAM_REL_COUNTER_INC(&pSVGAState->StatFifoCursorNoChange);
+    else
+    {
+        /*
+         * Detected changes.
+         *
+         * We handle global, not per-screen visibility information by sending
+         * pfnVBVAMousePointerShape without shape data.
+         */
+        *pxLast = x;
+        *pyLast = y;
+        uint32_t fFlags = VBVA_CURSOR_VALID_DATA;
+        if (idScreen != SVGA_ID_INVALID)
+            fFlags |= VBVA_CURSOR_SCREEN_RELATIVE;
+        else if (*pfLastVisible != fVisible)
+        {
+            *pfLastVisible = fVisible;
+            pVGAState->pDrv->pfnVBVAMousePointerShape(pVGAState->pDrv, RT_BOOL(fVisible), false, 0, 0, 0, 0, NULL);
+            STAM_REL_COUNTER_INC(&pSVGAState->StatFifoCursorVisiblity);
+        }
+        pVGAState->pDrv->pfnVBVAReportCursorPosition(pVGAState->pDrv, fFlags, idScreen, x, y);
+        STAM_REL_COUNTER_INC(&pSVGAState->StatFifoCursorPosition);
+    }
+
+    /*
+     * Update done.  Signal this to the guest.
+     */
+    pFIFO[SVGA_FIFO_CURSOR_LAST_UPDATED] = uCursorUpdateCount;
+
+    return uCursorUpdateCount;
 }
 
-static bool vmsvgaFIFOHasWork(uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const pFIFO,
-                              uint32_t cCursorCount)
+
+/**
+ * Checks if there is work to be done, either cursor updating or FIFO commands.
+ *
+ * @returns true if pending work, false if not.
+ * @param   pFIFO               The FIFO to examine.
+ * @param   uLastCursorCount    The last cursor update counter value.
+ */
+DECLINLINE(bool) vmsvgaFIFOHasWork(uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const pFIFO, uint32_t uLastCursorCount)
 {
-    return    pFIFO[SVGA_FIFO_NEXT_CMD] != pFIFO[SVGA_FIFO_STOP]
-           || cCursorCount != pFIFO[SVGA_FIFO_CURSOR_COUNT];
+    if (pFIFO[SVGA_FIFO_NEXT_CMD] != pFIFO[SVGA_FIFO_STOP])
+        return true;
+
+    if (   uLastCursorCount != pFIFO[SVGA_FIFO_CURSOR_COUNT]
+        && VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_CURSOR_LAST_UPDATED, pFIFO[SVGA_FIFO_MIN]))
+        return true;
+
+    return false;
 }
+
 
 /* The async FIFO handling thread. */
 static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
@@ -3293,30 +3366,34 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
      * Polling/sleep interval config.
      *
      * We wait for an a short interval if the guest has recently given us work
-     * to do, but the interval increases the longer we're kept idle.  With the
-     * current parameters we'll be at a 66ms poll interval after 1 idle second.
-     * When we reach the maximum we switch to intercepting accesses and after
-     * one intercept we restart polling at minimum.
+     * to do, but the interval increases the longer we're kept idle.  After
+     * about a second we'll switch to long sleeps and using an access handler
+     * monitoring writes to the first FIFO page to wake us up.  Should the FIFO
+     * not be mapped, we will continue increasing the wait interval till it
+     * reaches the 250ms max after about 16 seconds.
      */
-    RTMSINTERVAL const  cMsMinSleep = 16;
-    RTMSINTERVAL const  cMsIncSleep = 2;
-    RTMSINTERVAL const  cMsMaxSleep = 66;
-    RTMSINTERVAL        cMsSleep    = cMsMaxSleep;
+    RTMSINTERVAL const  cMsMinSleep           = 16;
+    RTMSINTERVAL const  cMsIncSleep           = 2;
+    RTMSINTERVAL const  cMsMaxSleep           = 250;
+    RTMSINTERVAL const  cMsAccessHandlerThres = 66;
+    RTMSINTERVAL const  cMsAccessHandlerSleep = 15 * RT_MS_1SEC; /* Regular paranoia dictates that this cannot be indefinite. */
+    RTMSINTERVAL        cMsSleep              = cMsMaxSleep;
+
+    /* 
+     * Cursor update state (SVGA_FIFO_CAP_CURSOR_BYPASS_3).
+     * Initialize with values that will trigger an update as soon as maybe.
+     */
+    uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const pFIFO = pThis->svga.pFIFOR3;
+    uint32_t uLastCursorCount   = ~pFIFO[SVGA_FIFO_CURSOR_COUNT];
+    uint32_t xLastCursor        = ~pFIFO[SVGA_FIFO_CURSOR_X];
+    uint32_t yLastCursor        = ~pFIFO[SVGA_FIFO_CURSOR_Y];
+    uint32_t fLastCursorVisible = ~pFIFO[SVGA_FIFO_CURSOR_ON];
 
     /*
      * The FIFO loop.
      */
     LogFlow(("vmsvgaFIFOLoop: started loop\n"));
     bool fBadOrDisabledFifo = false;
-    uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const pFIFO = pThis->svga.pFIFOR3;
-    uint32_t cCursorCount = pFIFO[SVGA_FIFO_CURSOR_COUNT];
-    uint32_t cLastCursorX       = 0;
-    uint32_t cLastCursorY       = 0;
-    uint32_t fLastCursorVisible = 0;
-    /* Update cursor information before entering the loop to avoid having to
-     * think about the initial value of COUNT or to put it in the saved state.
-     */
-    vmsvgaFIFOUpdateCursor(pThis, pFIFO, &cLastCursorX, &cLastCursorY, &fLastCursorVisible);
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
 # if defined(RT_OS_DARWIN) && defined(VBOX_WITH_VMSVGA3D)
@@ -3331,16 +3408,27 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
          * Unless there's already work pending, go to sleep for a short while.
          * (See polling/sleep interval config above.)
          */
-        if (fBadOrDisabledFifo || !vmsvgaFIFOHasWork(pFIFO, cCursorCount))
+        if (   fBadOrDisabledFifo
+            || !vmsvgaFIFOHasWork(pFIFO, uLastCursorCount))
         {
-            if (cMsSleep >= cMsMaxSleep && pThis->svga.GCPhysFIFO)
-            {
-                rc = PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
-                AssertBreak(RT_SUCCESS(rc));
-                rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, RT_INDEFINITE_WAIT);
-            }
-            else
+            if (    cMsSleep < cMsAccessHandlerThres
+                || !pThis->svga.GCPhysFIFO /* yeah, really zero rather than NIL when unmapped. */)
                 rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, cMsSleep);
+            else
+            {
+                int rc2 = PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
+                AssertRC(rc2); /* No break. Racing EMTs unmapping and remapping the region. */
+
+                if (   fBadOrDisabledFifo
+                    || !vmsvgaFIFOHasWork(pFIFO, uLastCursorCount))
+                {
+                    STAM_REL_PROFILE_START(&pSVGAState->StatFifoSleepOnHandler, Acc);
+                    rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, cMsAccessHandlerSleep);
+                    STAM_REL_PROFILE_STOP(&pSVGAState->StatFifoSleepOnHandler, Acc);
+                }
+                else
+                    rc = VINF_SUCCESS;
+            }
             AssertBreak(RT_SUCCESS(rc) || rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED);
             if (pThread->enmState != PDMTHREADSTATE_RUNNING)
             {
@@ -3353,11 +3441,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         fBadOrDisabledFifo = false;
         if (rc == VERR_TIMEOUT)
         {
-            /* Invariant: we should never have been doing a timed wait if the
-             * interval is already at maximum.  Instead we should have been
-             * intercepting accesses. */
-            Assert(cMsSleep < cMsMaxSleep);
-            if (!vmsvgaFIFOHasWork(pFIFO, cCursorCount))
+            if (!vmsvgaFIFOHasWork(pFIFO, uLastCursorCount))
             {
                 cMsSleep = RT_MIN(cMsSleep + cMsIncSleep, cMsMaxSleep);
                 continue;
@@ -3366,7 +3450,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             Log(("vmsvgaFIFOLoop: timeout\n"));
         }
-        else if (vmsvgaFIFOHasWork(pFIFO, cCursorCount))
+        else if (vmsvgaFIFOHasWork(pFIFO, uLastCursorCount))
             STAM_REL_COUNTER_INC(&pSVGAState->StatFifoTodoWoken);
         cMsSleep = cMsMinSleep;
 
@@ -3383,10 +3467,6 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             continue;
         }
 
-        /* Update the cursor position. */
-        cCursorCount = pFIFO[SVGA_FIFO_CURSOR_COUNT];
-        vmsvgaFIFOUpdateCursor(pThis, pFIFO, &cLastCursorX, &cLastCursorY, &fLastCursorVisible);
-
         /*
          * The device must be enabled and configured.
          */
@@ -3395,6 +3475,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         {
             vmsvgaFifoSetNotBusy(pThis, pSVGAState, pFIFO[SVGA_FIFO_MIN]);
             fBadOrDisabledFifo = true;
+            cMsSleep           = cMsMaxSleep; /* cheat */
             continue;
         }
 
@@ -3428,6 +3509,20 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             STAM_REL_COUNTER_INC(&pSVGAState->StatFifoErrors);
             LogRelMax(8, ("vmsvgaFIFOLoop: Misaligned offCurrentCmd=%#x?\n", offCurrentCmd));
             offCurrentCmd = ~UINT32_C(3);
+        }
+
+        /*
+         * Update the cursor position before we start on the FIFO commands.
+         */
+        /** @todo do we need to check whether the guest disabled the SVGA_FIFO_CAP_CURSOR_BYPASS_3 capability here? */
+        if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_CURSOR_LAST_UPDATED, offFifoMin))
+        {
+            uint32_t const uCursorUpdateCount = pFIFO[SVGA_FIFO_CURSOR_COUNT];
+            if (uCursorUpdateCount == uLastCursorCount)
+            { /* halfways likely */ }
+            else
+                uLastCursorCount = vmsvgaFIFOUpdateCursor(pThis, pSVGAState, pFIFO, offFifoMin, uCursorUpdateCount,
+                                                          &xLastCursor, &yLastCursor, &fLastCursorVisible);
         }
 
 /** @def VMSVGAFIFO_GET_CMD_BUFFER_BREAK
@@ -4894,11 +4989,12 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
 }
 
 
-/** Unsigned coordinates in pBox. Clip to [0; pSizeSrc), [0;pSizeDest).
+/** 
+ * Unsigned coordinates in pBox. Clip to [0; pSizeSrc), [0; pSizeDest).
  *
- * @param pSizeSrc  Source surface dimensions.
- * @param pSizeDest Destination surface dimensions.
- * @param pBox      Coordinates to be clipped.
+ * @param   pSizeSrc    Source surface dimensions.
+ * @param   pSizeDest   Destination surface dimensions.
+ * @param   pBox        Coordinates to be clipped.
  */
 void vmsvgaClipCopyBox(const SVGA3dSize *pSizeSrc,
                        const SVGA3dSize *pSizeDest,
@@ -4941,10 +5037,11 @@ void vmsvgaClipCopyBox(const SVGA3dSize *pSizeSrc,
         pBox->d = pSizeDest->depth - pBox->z;
 }
 
-/** Unsigned coordinates in pBox. Clip to [0; pSize).
+/** 
+ * Unsigned coordinates in pBox. Clip to [0; pSize).
  *
- * @param pSize     Source surface dimensions.
- * @param pBox      Coordinates to be clipped.
+ * @param   pSize   Source surface dimensions.
+ * @param   pBox    Coordinates to be clipped.
  */
 void vmsvgaClipBox(const SVGA3dSize *pSize,
                    SVGA3dBox *pBox)
@@ -4968,10 +5065,11 @@ void vmsvgaClipBox(const SVGA3dSize *pSize,
         pBox->d = pSize->depth - pBox->z;
 }
 
-/** Clip.
+/** 
+ * Clip.
  *
- * @param pBound    Bounding rectangle.
- * @param pRect     Rectangle to be clipped.
+ * @param   pBound  Bounding rectangle.
+ * @param   pRect   Rectangle to be clipped.
  */
 void vmsvgaClipRect(SVGASignedRect const *pBound,
                     SVGASignedRect *pRect)
@@ -5146,11 +5244,11 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
             if (RT_SUCCESS(rc))
             {
                 rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns), GCPhysAddress,
-#ifdef DEBUG_FIFO_ACCESS
+# ifdef DEBUG_FIFO_ACCESS
                                                 GCPhysAddress + (pThis->svga.cbFIFO - 1),
-#else
+# else
                                                 GCPhysAddress + PAGE_SIZE - 1,
-#endif
+# endif
                                                 pThis->svga.hFifoAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR,
                                                 "VMSVGA FIFO");
                 AssertRC(rc);
@@ -5168,7 +5266,6 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
             AssertRC(rc);
             pThis->svga.GCPhysFIFO = 0;
         }
-
     }
     return VINF_SUCCESS;
 }
@@ -5593,7 +5690,7 @@ int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
 
     /*
-     * Must save the some state (3D in particular) in the FIFO thread.
+     * Must save some state (3D in particular) in the FIFO thread.
      */
     rc = vmsvgaR3RunExtCmdOnFifoThread(pThis, VMSVGA_FIFO_EXTCMD_SAVESTATE, pSSM, RT_INDEFINITE_WAIT);
     AssertLogRelRCReturn(rc, rc);
@@ -5869,12 +5966,16 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
                                           "VMSVGA GMR", &pThis->svga.hGmrAccessHandlerType);
     AssertRCReturn(rc, rc);
 # endif
+
+    /* Register the FIFO access handler type.  In addition to
+       debugging FIFO access, this is also used to facilitate
+       extended fifo thread sleeps. */
     rc = PGMR3HandlerPhysicalTypeRegister(PDMDevHlpGetVM(pThis->pDevInsR3),
 # ifdef DEBUG_FIFO_ACCESS
-PGMPHYSHANDLERKIND_ALL,
-#else
-PGMPHYSHANDLERKIND_WRITE,
-#endif
+                                          PGMPHYSHANDLERKIND_ALL,
+# else
+                                          PGMPHYSHANDLERKIND_WRITE,
+# endif
                                           vmsvgaR3FIFOAccessHandler,
                                           NULL, NULL, NULL,
                                           NULL, NULL, NULL,
@@ -6033,14 +6134,19 @@ PGMPHYSHANDLERKIND_WRITE,
     STAM_REL_REG(pVM, &pThis->svga.StatRegWidthRd,                  STAMTYPE_COUNTER, "/Devices/VMSVGA/Reg/WidthRead",                  STAMUNIT_OCCURENCES, "SVGA_REG_WIDTH reads.");
     STAM_REL_REG(pVM, &pThis->svga.StatRegWriteOnlyRd,              STAMTYPE_COUNTER, "/Devices/VMSVGA/Reg/WriteOnlyRead",              STAMUNIT_OCCURENCES, "Write-only SVGA_REG_XXXX reads.");
 
-    STAM_REL_REG(pVM, &pSVGAState->StatBusyDelayEmts,   STAMTYPE_PROFILE, "/Devices/VMSVGA/EmtDelayOnBusyFifo",  STAMUNIT_TICKS_PER_CALL, "Time we've delayed EMTs because of busy FIFO thread.");
-    STAM_REL_REG(pVM, &pSVGAState->StatFifoCommands,    STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCommands",  STAMUNIT_OCCURENCES, "FIFO command counter.");
-    STAM_REL_REG(pVM, &pSVGAState->StatFifoErrors,      STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoErrors",  STAMUNIT_OCCURENCES, "FIFO error counter.");
-    STAM_REL_REG(pVM, &pSVGAState->StatFifoUnkCmds,     STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoUnknownCommands",  STAMUNIT_OCCURENCES, "FIFO unknown command counter.");
-    STAM_REL_REG(pVM, &pSVGAState->StatFifoTodoTimeout, STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoTodoTimeout",  STAMUNIT_OCCURENCES, "Number of times we discovered pending work after a wait timeout.");
-    STAM_REL_REG(pVM, &pSVGAState->StatFifoTodoWoken,   STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoTodoWoken",  STAMUNIT_OCCURENCES, "Number of times we discovered pending work after being woken up.");
-    STAM_REL_REG(pVM, &pSVGAState->StatFifoStalls,      STAMTYPE_PROFILE, "/Devices/VMSVGA/FifoStalls",  STAMUNIT_TICKS_PER_CALL, "Profiling of FIFO stalls (waiting for guest to finish copying data).");
-    STAM_REL_REG(pVM, &pSVGAState->StatFifoAccessHandler, STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoAccessHandler",  STAMUNIT_OCCURENCES, "Number of times the FIFO access handler triggered.");
+    STAM_REL_REG(pVM, &pSVGAState->StatBusyDelayEmts,               STAMTYPE_PROFILE, "/Devices/VMSVGA/EmtDelayOnBusyFifo",             STAMUNIT_TICKS_PER_CALL, "Time we've delayed EMTs because of busy FIFO thread.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoCommands,                STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCommands",                   STAMUNIT_OCCURENCES, "FIFO command counter.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoErrors,                  STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoErrors",                     STAMUNIT_OCCURENCES, "FIFO error counter.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoUnkCmds,                 STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoUnknownCommands",            STAMUNIT_OCCURENCES, "FIFO unknown command counter.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoTodoTimeout,             STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoTodoTimeout",                STAMUNIT_OCCURENCES, "Number of times we discovered pending work after a wait timeout.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoTodoWoken,               STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoTodoWoken",                  STAMUNIT_OCCURENCES, "Number of times we discovered pending work after being woken up.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoStalls,                  STAMTYPE_PROFILE, "/Devices/VMSVGA/FifoStalls",                     STAMUNIT_TICKS_PER_CALL, "Profiling of FIFO stalls (waiting for guest to finish copying data).");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoSleepOnHandler,          STAMTYPE_PROFILE, "/Devices/VMSVGA/FifoSleepOnHandler",             STAMUNIT_TICKS_PER_CALL, "Profiling FIFO sleeps relying on the access handler.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoAccessHandler,           STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoAccessHandler",              STAMUNIT_OCCURENCES, "Number of times the FIFO access handler triggered.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoCursorFetchAgain,        STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCursorFetchAgain",           STAMUNIT_OCCURENCES, "Times the cursor update counter changed while reading.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoCursorNoChange,          STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCursorNoChange",             STAMUNIT_OCCURENCES, "No cursor position change event though the update counter was modified.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoCursorPosition,          STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCursorPosition",             STAMUNIT_OCCURENCES, "Cursor position and visibility changes.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoCursorVisiblity,         STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCursorVisiblity",            STAMUNIT_OCCURENCES, "Cursor visibility changes.");
 
     /*
      * Info handlers.

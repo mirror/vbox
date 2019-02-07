@@ -6381,7 +6381,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pThis->fVMSVGAEnabled)
     {
         /* Register the io command ports. */
-        rc = PDMDevHlpPCIIORegionRegister (pDevIns, pThis->pciRegions.iIO, 0x10, PCI_ADDRESS_SPACE_IO, vmsvgaR3IORegionMap);
+        rc = PDMDevHlpPCIIORegionRegister(pDevIns, pThis->pciRegions.iIO, 0x10, PCI_ADDRESS_SPACE_IO, vmsvgaR3IORegionMap);
         if (RT_FAILURE (rc))
             return rc;
         /* VMware's MetalKit doesn't like PCI_ADDRESS_SPACE_MEM_PREFETCH */
