@@ -20,8 +20,13 @@
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 #include <QPainter>
+#include <QPropertyAnimation>
+#include <QSignalTransition>
+#include <QState>
+#include <QStateMachine>
 #include <QStyle>
 #include <QStyleOptionGraphicsItem>
+#include <QTimerEvent>
 
 /* GUI includes: */
 #include "UIGraphicsButton.h"
@@ -147,6 +152,9 @@ UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QGraphi
     , m_pButton1(0)
     , m_pButton2(0)
     , m_pToken(0)
+    , m_fHovered(false)
+    , m_iHoverOffTimerId(0)
+    , m_iAnimatedValue(0)
 {
     pScene->addItem(this);
     prepare();
@@ -163,6 +171,9 @@ UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QIGraph
     , m_pButton1(0)
     , m_pButton2(0)
     , m_pToken(0)
+    , m_fHovered(false)
+    , m_iHoverOffTimerId(0)
+    , m_iAnimatedValue(0)
 {
     prepare();
 }
@@ -273,6 +284,53 @@ void UIGraphicsScrollBar::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
     layoutToken();
 }
 
+void UIGraphicsScrollBar::hoverMoveEvent(QGraphicsSceneHoverEvent *)
+{
+    /* Only if not yet hovered, that way we
+     * make sure trigger emitted just once: */
+    if (!m_fHovered)
+    {
+        /* Emit hover-on trigger: */
+        m_fHovered = true;
+        emit sigHoverEnter();
+    }
+    /* Update in any case: */
+    update();
+}
+
+void UIGraphicsScrollBar::hoverLeaveEvent(QGraphicsSceneHoverEvent *)
+{
+    /* Only if it's still hovered, that way we
+     * make sure trigger emitted just once: */
+    if (m_fHovered)
+    {
+        /* Start hover-off timer, handled in timerEvent() below: */
+        m_iHoverOffTimerId = startTimer(1000);
+        m_fHovered = false;
+    }
+    /* Update in any case: */
+    update();
+}
+
+void UIGraphicsScrollBar::timerEvent(QTimerEvent *pEvent)
+{
+    /* Kill timer in any case: */
+    const int iTimerId = pEvent->timerId();
+    killTimer(iTimerId);
+
+    /* If that timer is the one we expecting: */
+    if (m_iHoverOffTimerId != 0 && iTimerId == m_iHoverOffTimerId)
+    {
+        /* Wait for timer no more: */
+        m_iHoverOffTimerId = 0;
+        /* Emit hover-off trigger if not hovered: */
+        if (!m_fHovered)
+            emit sigHoverLeave();
+        /* Update in any case: */
+        update();
+    }
+}
+
 void UIGraphicsScrollBar::sltButton1Clicked()
 {
     setValue(value() - m_iStep);
@@ -326,14 +384,46 @@ void UIGraphicsScrollBar::sltTokenMoved(const QPointF &pos)
     emit sigValueChanged(m_iValue);
 }
 
+void UIGraphicsScrollBar::sltStateLeftDefault()
+{
+    m_pButton1->hide();
+    m_pButton2->hide();
+    m_pToken->hide();
+}
+
+void UIGraphicsScrollBar::sltStateLeftHovered()
+{
+    m_pButton1->hide();
+    m_pButton2->hide();
+    m_pToken->hide();
+}
+
+void UIGraphicsScrollBar::sltStateEnteredDefault()
+{
+    m_pButton1->hide();
+    m_pButton2->hide();
+    m_pToken->hide();
+}
+
+void UIGraphicsScrollBar::sltStateEnteredHovered()
+{
+    m_pButton1->show();
+    m_pButton2->show();
+    m_pToken->show();
+}
+
 void UIGraphicsScrollBar::prepare()
 {
+    /* Configure self: */
     setAcceptHoverEvents(true);
 
     /* Prepare/layout widgets: */
     prepareWidgets();
     updateExtent();
     layoutWidgets();
+
+    /* Prepare animation: */
+    prepareAnimation();
 }
 
 void UIGraphicsScrollBar::prepareWidgets()
@@ -381,6 +471,78 @@ void UIGraphicsScrollBar::prepareWidgets()
     if (m_pToken)
         connect(m_pToken, &UIGraphicsScrollBarToken::sigMouseMoved,
                 this, &UIGraphicsScrollBar::sltTokenMoved);
+}
+
+void UIGraphicsScrollBar::prepareAnimation()
+{
+    /* Create hovering animation machine: */
+    QStateMachine *pHoveringMachine = new QStateMachine(this);
+    if (pHoveringMachine)
+    {
+        /* Create 'default' state: */
+        QState *pStateDefault = new QState(pHoveringMachine);
+        /* Create 'hovered' state: */
+        QState *pStateHovered = new QState(pHoveringMachine);
+
+        /* Configure 'default' state: */
+        if (pStateDefault)
+        {
+            /* When we entering default state => we assigning animatedValue to 0: */
+            pStateDefault->assignProperty(this, "animatedValue", 0);
+            connect(pStateDefault, &QState::propertiesAssigned, this, &UIGraphicsScrollBar::sltStateEnteredDefault);
+
+            /* Add state transitions: */
+            QSignalTransition *pDefaultToHovered = pStateDefault->addTransition(this, SIGNAL(sigHoverEnter()), pStateHovered);
+            if (pDefaultToHovered)
+            {
+                connect(pDefaultToHovered, &QSignalTransition::triggered, this, &UIGraphicsScrollBar::sltStateLeftDefault);
+
+                /* Create forward animation: */
+                QPropertyAnimation *pHoveringAnimationForward = new QPropertyAnimation(this, "animatedValue", this);
+                if (pHoveringAnimationForward)
+                {
+                    pHoveringAnimationForward->setDuration(200);
+                    pHoveringAnimationForward->setStartValue(0);
+                    pHoveringAnimationForward->setEndValue(100);
+
+                    /* Add to transition: */
+                    pDefaultToHovered->addAnimation(pHoveringAnimationForward);
+                }
+            }
+        }
+
+        /* Configure 'hovered' state: */
+        if (pStateHovered)
+        {
+            /* When we entering hovered state => we assigning animatedValue to 100: */
+            pStateHovered->assignProperty(this, "animatedValue", 100);
+            connect(pStateHovered, &QState::propertiesAssigned, this, &UIGraphicsScrollBar::sltStateEnteredHovered);
+
+            /* Add state transitions: */
+            QSignalTransition *pHoveredToDefault = pStateHovered->addTransition(this, SIGNAL(sigHoverLeave()), pStateDefault);
+            if (pHoveredToDefault)
+            {
+                connect(pHoveredToDefault, &QSignalTransition::triggered, this, &UIGraphicsScrollBar::sltStateLeftHovered);
+
+                /* Create backward animation: */
+                QPropertyAnimation *pHoveringAnimationBackward = new QPropertyAnimation(this, "animatedValue", this);
+                if (pHoveringAnimationBackward)
+                {
+                    pHoveringAnimationBackward->setDuration(200);
+                    pHoveringAnimationBackward->setStartValue(100);
+                    pHoveringAnimationBackward->setEndValue(0);
+
+                    /* Add to transition: */
+                    pHoveredToDefault->addAnimation(pHoveringAnimationBackward);
+                }
+            }
+        }
+
+        /* Initial state is 'default': */
+        pHoveringMachine->setInitialState(pStateDefault);
+        /* Start state-machine: */
+        pHoveringMachine->start();
+    }
 }
 
 void UIGraphicsScrollBar::updateExtent()
@@ -454,7 +616,9 @@ void UIGraphicsScrollBar::paintBackground(QPainter *pPainter, const QRect &recta
     backgroundColor.setAlpha(200);
 
     /* Draw background: */
-    pPainter->fillRect(rectangle, backgroundColor);
+    QRect actualRectangle = rectangle;
+    actualRectangle.setLeft(actualRectangle.left() + .8 * actualRectangle.width() * ((double)100 - m_iAnimatedValue) / 100);
+    pPainter->fillRect(actualRectangle, backgroundColor);
 
     /* Restore painter: */
     pPainter->restore();

@@ -33,8 +33,14 @@ class UIGraphicsScrollBarToken;
 class UIGraphicsScrollBar : public QIGraphicsWidget
 {
     Q_OBJECT;
+    Q_PROPERTY(int animatedValue READ animatedValue WRITE setAnimatedValue);
 
 signals:
+
+    /** Notifies listeners about hover enter. */
+    void sigHoverEnter();
+    /** Notifies listeners about hover leave. */
+    void sigHoverLeave();
 
     /** Notifies listeners about @a iValue has changed. */
     void sigValueChanged(int iValue);
@@ -81,6 +87,14 @@ protected:
     /** Handles mouse-press @a pEvent. */
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
 
+    /** Handles hover enter @a pEvent. */
+    virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
+    /** Handles hover leave @a pEvent. */
+    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
+
+    /** Handles timer @a pEvent. */
+    virtual void timerEvent(QTimerEvent *pEvent) /* override */;
+
 private slots:
 
     /** Handles button 1 click signal. */
@@ -91,12 +105,23 @@ private slots:
     /** Handles token being moved to cpecified @a pos. */
     void sltTokenMoved(const QPointF &pos);
 
+    /** Handles default state leaving. */
+    void sltStateLeftDefault();
+    /** Handles hovered state leaving. */
+    void sltStateLeftHovered();
+    /** Handles default state entering. */
+    void sltStateEnteredDefault();
+    /** Handles hovered state entering. */
+    void sltStateEnteredHovered();
+
 private:
 
     /** Prepares all. */
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
+    /** Prepares animation. */
+    void prepareAnimation();
 
     /** Updates scroll-bar extent value. */
     void updateExtent();
@@ -109,6 +134,11 @@ private:
 
     /** Paints background using specified @a pPainter and certain @a rectangle. */
     void paintBackground(QPainter *pPainter, const QRect &rectangle) const;
+
+    /** Defines item's animated @a iValue. */
+    void setAnimatedValue(int iValue) { m_iAnimatedValue = iValue; update(); }
+    /** Returns item's animated value. */
+    int animatedValue() const { return m_iAnimatedValue; }
 
     /** Holds the orientation. */
     const Qt::Orientation  m_enmOrientation;
@@ -132,6 +162,13 @@ private:
     UIGraphicsButton         *m_pButton2;
     /** Holds the scroll-bar token instance. */
     UIGraphicsScrollBarToken *m_pToken;
+
+    /** Holds whether item is hovered. */
+    bool  m_fHovered;
+    /** Holds the hover-off timer id. */
+    int   m_iHoverOffTimerId;
+    /** Holds the animated value. */
+    int   m_iAnimatedValue;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_graphics_UIGraphicsScrollBar_h */
