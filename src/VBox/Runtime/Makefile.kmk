@@ -814,6 +814,8 @@ RuntimeR3_SOURCES.win = \
 	generic/cdrom-generic.cpp \
 	generic/RTDirExists-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/fileio-at-generic.cpp \
+	generic/fileio-sg-generic.cpp \
 	generic/RTFileExists-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTMpGetCurFrequency-generic.cpp \
@@ -905,6 +907,8 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/fileio-at-generic.cpp \
+	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTPathAbs-generic.cpp \
@@ -1003,6 +1007,8 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/fileio-at-generic.cpp \
+	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1084,6 +1090,8 @@ RuntimeR3_SOURCES.darwin = \
 	generic/cdrom-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/fileio-at-generic.cpp \
+	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1166,6 +1174,8 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/fileio-at-generic.cpp \
+	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1246,6 +1256,8 @@ RuntimeR3_SOURCES.netbsd = \
 	generic/cdrom-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/fileio-at-generic.cpp \
+	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTPathAbs-generic.cpp \
@@ -1324,6 +1336,8 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/fileio-at-generic.cpp \
+	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTPathAbs-generic.cpp \
@@ -1413,6 +1427,8 @@ RuntimeR3_SOURCES.haiku = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/fileio-at-generic.cpp \
+	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1802,6 +1818,7 @@ endif
 RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	generic/cdrom-generic.cpp \
 	generic/RTFileMove-generic.cpp \
+	generic/fileio-at-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTThreadGetAffinity-stub-generic.cpp \
@@ -1840,6 +1857,7 @@ RuntimeBldProg_SOURCES.win = \
 	generic/mppresent-generic-online.cpp \
 	generic/RTDirExists-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/fileio-at-generic.cpp \
 	generic/RTFileExists-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTPathAbs-generic.cpp \
@@ -1907,6 +1925,7 @@ RuntimeBldProg_SOURCES.os2 += \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/fileio-at-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
