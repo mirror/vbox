@@ -30,6 +30,7 @@
 #include "UIChooserItem.h"
 
 /* Forward declarations: */
+class QGraphicsLinearLayout;
 class QGraphicsScene;
 class QLineEdit;
 class QMenu;
@@ -174,6 +175,9 @@ protected:
 
     /** @name Layout stuff.
       * @{ */
+        /** Updates geometry. */
+        virtual void updateGeometry() /* override */;
+
         /** Updates layout. */
         virtual void updateLayout() /* override */;
 
@@ -292,7 +296,7 @@ private:
         /** Returns minimum height-hint depending on whether @a fGroupOpened. */
         int minimumHeightHintForGroup(bool fGroupOpened) const;
         /** Returns minimum size-hint depending on whether @a fGroupOpened. */
-        QSizeF minimumSizeHintForProup(bool fGroupOpened) const;
+        QSizeF minimumSizeHintForGroup(bool fGroupOpened) const;
 
         /** Updates visible name. */
         void updateVisibleName();
@@ -300,6 +304,8 @@ private:
         void updatePixmaps();
         /** Updates minimum header size. */
         void updateMinimumHeaderSize();
+        /** Updates layout spacings. */
+        void updateLayoutSpacings();
     /** @} */
 
     /** @name Painting stuff.
@@ -315,7 +321,8 @@ private:
     /** @name Item stuff.
       * @{ */
         /** Holds whether group is main-root. */
-        bool  m_fMainRoot;
+        const bool  m_fMainRoot;
+
         /** Holds whether group is closed. */
         bool  m_fClosed;
 
@@ -347,6 +354,18 @@ private:
 
     /** @name Children stuff.
       * @{ */
+        /** Holds the children container instance. */
+        QIGraphicsWidget *m_pContainer;
+
+        /** Holds the main layout instance. */
+        QGraphicsLinearLayout *m_pLayout;
+        /** Holds the global layout instance. */
+        QGraphicsLinearLayout *m_pLayoutGlobal;
+        /** Holds the group layout instance. */
+        QGraphicsLinearLayout *m_pLayoutGroup;
+        /** Holds the machine layout instance. */
+        QGraphicsLinearLayout *m_pLayoutMachine;
+
         /** Holds the group children list. */
         QList<UIChooserItem*>  m_groupItems;
         /** Holds the global children list. */

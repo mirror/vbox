@@ -194,7 +194,7 @@ public:
     /** @name Layout stuff.
       * @{ */
         /** Updates geometry. */
-        void updateGeometry();
+        virtual void updateGeometry() /* override */;
 
         /** Updates layout. */
         virtual void updateLayout() = 0;

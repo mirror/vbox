@@ -23,6 +23,7 @@
 #include <QMenu>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
+#include <QGraphicsLinearLayout>
 #include <QGraphicsProxyWidget>
 #include <QWindow>
 
@@ -51,6 +52,11 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
     , m_pEnterButton(0)
     , m_pExitButton(0)
     , m_pNameEditorWidget(0)
+    , m_pContainer(0)
+    , m_pLayout(0)
+    , m_pLayoutGlobal(0)
+    , m_pLayoutGroup(0)
+    , m_pLayoutMachine(0)
 {
     /* Prepare: */
     prepare();
@@ -82,6 +88,11 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene,
     , m_pEnterButton(0)
     , m_pExitButton(0)
     , m_pNameEditorWidget(0)
+    , m_pContainer(0)
+    , m_pLayout(0)
+    , m_pLayoutGlobal(0)
+    , m_pLayoutGroup(0)
+    , m_pLayoutMachine(0)
 {
     /* Prepare: */
     prepare();
@@ -116,6 +127,11 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     , m_pEnterButton(0)
     , m_pExitButton(0)
     , m_pNameEditorWidget(0)
+    , m_pContainer(0)
+    , m_pLayout(0)
+    , m_pLayoutGlobal(0)
+    , m_pLayoutGroup(0)
+    , m_pLayoutMachine(0)
 {
     /* Prepare: */
     prepare();
@@ -160,6 +176,11 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     , m_pEnterButton(0)
     , m_pExitButton(0)
     , m_pNameEditorWidget(0)
+    , m_pContainer(0)
+    , m_pLayout(0)
+    , m_pLayoutGlobal(0)
+    , m_pLayoutGroup(0)
+    , m_pLayoutMachine(0)
 {
     /* Prepare: */
     prepare();
@@ -488,27 +509,45 @@ void UIChooserItemGroup::addItem(UIChooserItem *pItem, int iPosition)
         {
             AssertMsg(!m_groupItems.contains(pItem), ("Group-item already added!"));
             if (iPosition < 0 || iPosition >= m_groupItems.size())
+            {
+                m_pLayoutGroup->addItem(pItem);
                 m_groupItems.append(pItem);
+            }
             else
+            {
+                m_pLayoutGroup->insertItem(iPosition, pItem);
                 m_groupItems.insert(iPosition, pItem);
+            }
             break;
         }
         case UIChooserItemType_Global:
         {
             AssertMsg(!m_globalItems.contains(pItem), ("Global-item already added!"));
             if (iPosition < 0 || iPosition >= m_globalItems.size())
+            {
+                m_pLayoutGlobal->addItem(pItem);
                 m_globalItems.append(pItem);
+            }
             else
+            {
+                m_pLayoutGlobal->insertItem(iPosition, pItem);
                 m_globalItems.insert(iPosition, pItem);
+            }
             break;
         }
         case UIChooserItemType_Machine:
         {
             AssertMsg(!m_machineItems.contains(pItem), ("Machine-item already added!"));
             if (iPosition < 0 || iPosition >= m_machineItems.size())
+            {
+                m_pLayoutMachine->addItem(pItem);
                 m_machineItems.append(pItem);
+            }
             else
+            {
+                m_pLayoutMachine->insertItem(iPosition, pItem);
                 m_machineItems.insert(iPosition, pItem);
+            }
             break;
         }
         default:
@@ -519,6 +558,7 @@ void UIChooserItemGroup::addItem(UIChooserItem *pItem, int iPosition)
     }
 
     /* Update linked values: */
+    updateLayoutSpacings();
     updateItemCountInfo();
     updateToolTip();
     updateGeometry();
@@ -555,6 +595,7 @@ void UIChooserItemGroup::removeItem(UIChooserItem *pItem)
     }
 
     /* Update linked values: */
+    updateLayoutSpacings();
     updateItemCountInfo();
     updateToolTip();
     updateGeometry();
@@ -572,6 +613,7 @@ void UIChooserItemGroup::setItems(const QList<UIChooserItem*> &items, UIChooserI
     }
 
     /* Update linked values: */
+    updateLayoutSpacings();
     updateItemCountInfo();
     updateToolTip();
     updateGeometry();
@@ -638,6 +680,7 @@ void UIChooserItemGroup::clearItems(UIChooserItemType type /* = UIChooserItemTyp
     }
 
     /* Update linked values: */
+    updateLayoutSpacings();
     updateItemCountInfo();
     updateToolTip();
     updateGeometry();
@@ -726,6 +769,16 @@ void UIChooserItemGroup::sortItems()
     model()->updateLayout();
 }
 
+void UIChooserItemGroup::updateGeometry()
+{
+    /* Call to base-class: */
+    UIChooserItem::updateGeometry();
+
+    /* Update/activate children layout: */
+    m_pLayout->updateGeometry();
+    m_pLayout->activate();
+}
+
 void UIChooserItemGroup::updateLayout()
 {
     /* Prepare variables: */
@@ -804,39 +857,21 @@ void UIChooserItemGroup::updateLayout()
         iPreviousVerticalIndent = 2 * iVerticalMargin + iFullHeaderHeight;
     }
 
+    /* Adjust container geometry: */
+    QSize itemSize = size().toSize();
+    itemSize.setHeight(minimumHeightHint() - iPreviousVerticalIndent);
+    m_pContainer->resize(itemSize);
+    m_pContainer->setPos(0, iPreviousVerticalIndent);
+
     /* No body for closed group: */
     if (isClosed())
-    {
-        /* Hide all the items: */
-        foreach (UIChooserItem *pItem, items())
-            pItem->hide();
-    }
+        m_pContainer->hide();
     /* Body for opened group: */
     else
     {
-        /* Prepare variables: */
-        const int iChildrenSpacing = data(GroupItemData_ChildrenSpacing).toInt();
-        QRect geo = geometry().toRect();
-        int iX = 0;
-        int iY = 0;
-        int iWidth = geo.width();
-
-        /* Layout all the items: */
+        m_pContainer->show();
         foreach (UIChooserItem *pItem, items())
-        {
-            /* Show if hidden: */
-            pItem->show();
-            /* Get item height-hint: */
-            int iMinimumHeight = pItem->minimumHeightHint();
-            /* Set item position: */
-            pItem->setPos(iX, iY + iPreviousVerticalIndent);
-            /* Set item size: */
-            pItem->resize(iWidth, iMinimumHeight);
-            /* Relayout group: */
             pItem->updateLayout();
-            /* Advance indent for next items: */
-            iPreviousVerticalIndent += (iMinimumHeight + iChildrenSpacing);
-        }
     }
 }
 
@@ -854,7 +889,7 @@ QSizeF UIChooserItemGroup::sizeHint(Qt::SizeHint enmWhich, const QSizeF &constra
 {
     /* If Qt::MinimumSize requested: */
     if (enmWhich == Qt::MinimumSize)
-        return minimumSizeHintForProup(isOpened());
+        return minimumSizeHintForGroup(isOpened());
     /* Else call to base-class: */
     return UIChooserItem::sizeHint(enmWhich, constraint);
 }
@@ -1220,6 +1255,46 @@ void UIChooserItemGroup::prepare()
     m_toggleButtonSize = m_pToggleButton ? m_pToggleButton->minimumSizeHint().toSize() : QSize(0, 0);
     m_enterButtonSize = m_pEnterButton ? m_pEnterButton->minimumSizeHint().toSize() : QSize(0, 0);
     m_exitButtonSize = m_pExitButton ? m_pExitButton->minimumSizeHint().toSize() : QSize(0, 0);
+
+    /* Prepare container: */
+    m_pContainer = new QIGraphicsWidget(this);
+    if (m_pContainer)
+    {
+        /* Prepare layout: */
+        m_pLayout = new QGraphicsLinearLayout(Qt::Vertical, m_pContainer);
+        if (m_pLayout)
+        {
+            m_pLayout->setContentsMargins(0, 0, 0, 0);
+            m_pLayout->setSpacing(0);
+
+            /* Prepare global layout: */
+            m_pLayoutGlobal = new QGraphicsLinearLayout(Qt::Vertical);
+            if (m_pLayoutGlobal)
+            {
+                m_pLayoutGlobal->setContentsMargins(0, 0, 0, 0);
+                m_pLayoutGlobal->setSpacing(1);
+                m_pLayout->addItem(m_pLayoutGlobal);
+            }
+
+            /* Prepare group layout: */
+            m_pLayoutGroup = new QGraphicsLinearLayout(Qt::Vertical);
+            if (m_pLayoutGroup)
+            {
+                m_pLayoutGroup->setContentsMargins(0, 0, 0, 0);
+                m_pLayoutGroup->setSpacing(1);
+                m_pLayout->addItem(m_pLayoutGroup);
+            }
+
+            /* Prepare machine layout: */
+            m_pLayoutMachine = new QGraphicsLinearLayout(Qt::Vertical);
+            if (m_pLayoutMachine)
+            {
+                m_pLayoutMachine->setContentsMargins(0, 0, 0, 0);
+                m_pLayoutMachine->setSpacing(1);
+                m_pLayout->addItem(m_pLayoutMachine);
+            }
+        }
+    }
 }
 
 /* static */
@@ -1273,8 +1348,8 @@ void UIChooserItemGroup::updateAnimationParameters()
         return;
 
     /* Recalculate animation parameters: */
-    QSizeF openedSize = minimumSizeHintForProup(true);
-    QSizeF closedSize = minimumSizeHintForProup(false);
+    QSizeF openedSize = minimumSizeHintForGroup(true);
+    QSizeF closedSize = minimumSizeHintForGroup(false);
     int iAdditionalHeight = (int)(openedSize.height() - closedSize.height());
     m_pToggleButton->setAnimationRange(0, iAdditionalHeight);
 }
@@ -1366,11 +1441,8 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
         /* Main root-item always takes body into account: */
         if (hasItems())
         {
-            /* We have to take every child width into account: */
-            int iMaximumChildWidth = 0;
-            foreach (UIChooserItem *pItem, items())
-                iMaximumChildWidth = qMax(iMaximumChildWidth, pItem->minimumWidthHint());
-            iProposedWidth += iMaximumChildWidth;
+            /* We have to take maximum children width into account: */
+            iProposedWidth = m_pContainer->minimumSizeHint().width();
         }
     }
     /* Other items, including temporary roots: */
@@ -1386,11 +1458,8 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
         /* But if group-item is opened: */
         if (fGroupOpened)
         {
-            /* We have to take every child width into account: */
-            int iMaximumChildWidth = 0;
-            foreach (UIChooserItem *pItem, items())
-                iMaximumChildWidth = qMax(iMaximumChildWidth, pItem->minimumWidthHint());
-            iProposedWidth = qMax(iProposedWidth, iMaximumChildWidth);
+            /* We have to take maximum children width into account: */
+            iProposedWidth = m_pContainer->minimumSizeHint().width();
         }
 
         /* And 2 margins at last - left and right: */
@@ -1412,14 +1481,8 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
         /* Main root-item always takes body into account: */
         if (hasItems())
         {
-            /* Prepare variables: */
-            const int iChildrenSpacing = data(GroupItemData_ChildrenSpacing).toInt();
-
-            /* And every existing child height: */
-            foreach (UIChooserItem *pItem, items())
-                iProposedHeight += (pItem->minimumHeightHint() + iChildrenSpacing);
-            /* Minus last spacing: */
-            iProposedHeight -= iChildrenSpacing;
+            /* We have to take maximum children height into account: */
+            iProposedHeight = m_pContainer->minimumSizeHint().height();
         }
     }
     /* Other items, including temporary roots: */
@@ -1427,7 +1490,6 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
     {
         /* Prepare variables: */
         const int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
-        const int iChildrenSpacing = data(GroupItemData_ChildrenSpacing).toInt();
 
         /* Group-item header have 2 margins - top and bottom: */
         iProposedHeight += 2 * iVerticalMargin;
@@ -1437,11 +1499,8 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
         /* But if group-item is opened: */
         if (fGroupOpened)
         {
-            /* And every existing child height: */
-            foreach (UIChooserItem *pItem, items())
-                iProposedHeight += (pItem->minimumHeightHint() + iChildrenSpacing);
-            /* Minus last spacing: */
-            iProposedHeight -= iChildrenSpacing;
+            /* We have to take maximum children height into account: */
+            iProposedHeight += m_pContainer->minimumSizeHint().height();
         }
 
         /* Finally, additional height during animation: */
@@ -1453,7 +1512,7 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
     return iProposedHeight;
 }
 
-QSizeF UIChooserItemGroup::minimumSizeHintForProup(bool fGroupOpened) const
+QSizeF UIChooserItemGroup::minimumSizeHintForGroup(bool fGroupOpened) const
 {
     return QSizeF(minimumWidthHintForGroup(fGroupOpened), minimumHeightHintForGroup(fGroupOpened));
 }
@@ -1600,6 +1659,13 @@ void UIChooserItemGroup::updateMinimumHeaderSize()
     /* Update linked values: */
     m_minimumHeaderSize = minimumHeaderSize;
     updateGeometry();
+}
+
+void UIChooserItemGroup::updateLayoutSpacings()
+{
+    m_pLayout->setItemSpacing(0, m_globalItems.isEmpty() ? 0 : 1);
+    m_pLayout->setItemSpacing(1, m_groupItems.isEmpty() ? 0 : 1);
+    m_pLayout->setItemSpacing(2, m_machineItems.isEmpty() ? 0 : 1);
 }
 
 void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
