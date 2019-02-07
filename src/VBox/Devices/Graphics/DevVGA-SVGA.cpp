@@ -2384,26 +2384,26 @@ vmsvgaR3FIFOAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, 
     PVGASTATE pThis = (PVGASTATE)pvUser;
     AssertPtr(pThis);
 
-    /* 
+    /*
      * Wake up the FIFO thread as it might have work to do now.
      */
     int rc = SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
     AssertLogRelRC(rc);
-    
+
 # ifdef DEBUG_FIFO_ACCESS
-    /* 
-     * When in debug-fifo-access mode, we do not disable the access handler, 
+    /*
+     * When in debug-fifo-access mode, we do not disable the access handler,
      * but leave it on as we wish to catch all access.
      */
     Assert(GCPhys >= pThis->svga.GCPhysFIFO);
     rc = vmsvgaDebugFIFOAccess(pVM, pThis, GCPhys, enmAccessType == PGMACCESSTYPE_WRITE);
 # else
-    /* 
+    /*
      * Temporarily disable the access handler now that we've kicked the FIFO thread.
-     */ 
+     */
 #  ifdef VBOX_STRICT /** @todo r=bird: This is _not_ guaranteed at all.  Expect spurious assertions! */
     /* Invariant: The access handler should never trigger twice within a certain
-       time span; calling it 500ms here for simplicity. */ 
+       time span; calling it 500ms here for simplicity. */
     uint64_t TimeNow = RTTimeMilliTS();
     Assert(TimeNow - pThis->svga.pSvgaR3State->TimeLastFIFOIntercept > 500);
     pThis->svga.pSvgaR3State->TimeLastFIFOIntercept = TimeNow;
@@ -3235,7 +3235,7 @@ static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t RT_UNTRUSTE
 /**
  * Sends cursor position and visibility information from the FIFO to the front-end.
  * @returns SVGA_FIFO_CURSOR_COUNT value used.
- */ 
+ */
 static uint32_t
 vmsvgaFIFOUpdateCursor(PVGASTATE pVGAState, PVMSVGAR3STATE  pSVGAState, uint32_t RT_UNTRUSTED_VOLATILE_GUEST *pFIFO,
                        uint32_t offFifoMin,  uint32_t uCursorUpdateCount,
@@ -3379,7 +3379,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
     RTMSINTERVAL const  cMsAccessHandlerSleep = 15 * RT_MS_1SEC; /* Regular paranoia dictates that this cannot be indefinite. */
     RTMSINTERVAL        cMsSleep              = cMsMaxSleep;
 
-    /* 
+    /*
      * Cursor update state (SVGA_FIFO_CAP_CURSOR_BYPASS_3).
      * Initialize with values that will trigger an update as soon as maybe.
      */
@@ -4989,7 +4989,7 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
 }
 
 
-/** 
+/**
  * Unsigned coordinates in pBox. Clip to [0; pSizeSrc), [0; pSizeDest).
  *
  * @param   pSizeSrc    Source surface dimensions.
@@ -5037,7 +5037,7 @@ void vmsvgaClipCopyBox(const SVGA3dSize *pSizeSrc,
         pBox->d = pSizeDest->depth - pBox->z;
 }
 
-/** 
+/**
  * Unsigned coordinates in pBox. Clip to [0; pSize).
  *
  * @param   pSize   Source surface dimensions.
@@ -5065,7 +5065,7 @@ void vmsvgaClipBox(const SVGA3dSize *pSize,
         pBox->d = pSize->depth - pBox->z;
 }
 
-/** 
+/**
  * Clip.
  *
  * @param   pBound  Bounding rectangle.
