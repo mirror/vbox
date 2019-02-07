@@ -3035,16 +3035,16 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 QAction *pCreateNewHardDisk = pOpenMediumMenu->addAction(tr("Create New Hard Disk..."));
                 pCreateNewHardDisk->setIcon(iconPool()->icon(HDNewEn, HDNewDis));
                 connect(pCreateNewHardDisk, SIGNAL(triggered(bool)), this, SLOT(sltCreateNewHardDisk()));
-                /* Add "Choose a virtual hard disk file" action: */
-                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Hard Disk File..."));
+                /* Add "Choose a virtual hard disk" action: */
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Hard Disk..."));
                 /* Add recent media list: */
                 addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 break;
             }
             case UIMediumDeviceType_DVD:
             {
-                /* Add "Choose a virtual optical disk file" action: */
-                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Optical Disk File..."));
+                /* Add "Choose a virtual optical disk" action: */
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Optical Disk..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
                 /* Add recent media list: */
@@ -3059,8 +3059,8 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
             }
             case UIMediumDeviceType_Floppy:
             {
-                /* Add "Choose a virtual floppy disk file" action: */
-                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Floppy Disk File..."));
+                /* Add "Choose a virtual floppy disk" action: */
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Floppy Disk..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
                 /* Add recent media list: */
@@ -3095,9 +3095,20 @@ void UIMachineSettingsStorage::sltUnmountDevice()
 void UIMachineSettingsStorage::sltChooseExistingMedium()
 {
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
-    const QUuid uMediumId = vboxGlobal().openMediumWithFileOpenDialog(m_pMediumIdHolder->type(), this, strMachineFolder);
-    if (!uMediumId.isNull())
-        m_pMediumIdHolder->setId(uMediumId);
+
+    QUuid uMediumId;
+    int iResult = vboxGlobal().openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uMediumId,
+                                                        m_strMachineName, strMachineFolder,
+                                                        m_strMachineGuestOSTypeId);
+
+    if (iResult == UIMediumSelector::ReturnCode_Rejected ||
+        (iResult == UIMediumSelector::ReturnCode_Accepted && uMediumId.isNull()))
+        return;
+    if (iResult == static_cast<int>(UIMediumSelector::ReturnCode_LeftEmpty) &&
+        (m_pMediumIdHolder->type() != UIMediumDeviceType_DVD && m_pMediumIdHolder->type() != UIMediumDeviceType_Floppy))
+        return;
+
+    m_pMediumIdHolder->setId(uMediumId);
 }
 
 void UIMachineSettingsStorage::sltChooseHostDrive()
@@ -3794,46 +3805,23 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
     const QModelIndex index = m_pTreeStorage->currentIndex();
     Assert(m_pModelStorage->data(index, StorageModel::R_IsController).toBool());
     Assert(m_pModelStorage->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
-    const QString strControllerName(m_pModelStorage->data(index, StorageModel::R_CtrName).toString());
+    // const QString strControllerName(m_pModelStorage->data(index, StorageModel::R_CtrName).toString());
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
     QUuid uMediumId;
-    int iAnswer = static_cast<int>(UIMediumSelector::ReturnCode_Rejected);
+    int iResult = vboxGlobal().openMediumSelectorDialog(this, UIMediumDefs::mediumTypeToLocal(enmDevice), uMediumId,
+                                                        m_strMachineName, strMachineFolder,
+                                                        m_strMachineGuestOSTypeId);
 
-    switch (enmDevice)
-    {
-        case KDeviceType_HardDisk:
-        {
-            iAnswer = vboxGlobal().openMediumSelectorDialog(this, UIMediumDeviceType_HardDisk, uMediumId,
-                                                            m_strMachineName, strMachineFolder,
-                                                            m_strMachineGuestOSTypeId);
-            break;
-        }
-        case KDeviceType_DVD:
-        {
-            iAnswer = vboxGlobal().openMediumSelectorDialog(this, UIMediumDeviceType_DVD, uMediumId,
-                                                            m_strMachineName, strMachineFolder);
-            break;
-        }
-        case KDeviceType_Floppy:
-        {
-            iAnswer = vboxGlobal().openMediumSelectorDialog(this, UIMediumDeviceType_Floppy, uMediumId,
-                                                            m_strMachineName, strMachineFolder);
-        }
-        default: break; /* Shut up, MSC! */
-    }
-    /* continue only if iAnswer is either UIMediumSelector::ReturnCode_Accepted or UIMediumSelector::ReturnCode_LeftEmpty: */
-    if (iAnswer != static_cast<int>(UIMediumSelector::ReturnCode_Accepted) &&
-        iAnswer != static_cast<int>(UIMediumSelector::ReturnCode_LeftEmpty))
+    /* Continue only if iResult is either UIMediumSelector::ReturnCode_Accepted or UIMediumSelector::ReturnCode_LeftEmpty: */
+    /* If iResult is UIMediumSelector::ReturnCode_Accepted then we have to have a valid uMediumId: */
+    if (iResult == UIMediumSelector::ReturnCode_Rejected ||
+        (iResult == UIMediumSelector::ReturnCode_Accepted && uMediumId.isNull()))
         return;
 
     /* Only DVDs and floppy can be created empty: */
-    if (iAnswer == static_cast<int>(UIMediumSelector::ReturnCode_LeftEmpty) &&
-        (enmDevice != KDeviceType_DVD && enmDevice != KDeviceType_Floppy))
-        return;
-
-    /* if iAnswer is UIMediumSelector::ReturnCode_Accepted then we have to have a valid uMediumId: */
-    if (iAnswer == static_cast<int>(UIMediumSelector::ReturnCode_Accepted) && uMediumId.isNull())
+    if (iResult == static_cast<int>(UIMediumSelector::ReturnCode_LeftEmpty) &&
+        (m_pMediumIdHolder->type() != UIMediumDeviceType_DVD && m_pMediumIdHolder->type() != UIMediumDeviceType_Floppy))
         return;
 
     m_pModelStorage->addAttachment(QUuid(m_pModelStorage->data(index, StorageModel::R_ItemId).toString()), enmDevice, uMediumId);
