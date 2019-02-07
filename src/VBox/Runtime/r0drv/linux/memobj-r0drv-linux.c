@@ -1071,6 +1071,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
         /*
          * Get user pages.
          */
+/** @todo r=bird: Should we not force read access too? */
 #if GET_USER_PAGES_API >= KERNEL_VERSION(4, 6, 0)
         if (R0Process == RTR0ProcHandleSelf())
             rc = get_user_pages(R3Ptr,                  /* Where from. */
@@ -1146,7 +1147,7 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
             while (rc-- > 0)
             {
                 flush_dcache_page(pMemLnx->apPages[rc]);
-                papVMAs[rc]->vm_flags |= (VM_DONTCOPY | VM_LOCKED);
+                papVMAs[rc]->vm_flags |= VM_DONTCOPY | VM_LOCKED;
             }
 
             up_read(&pTask->mm->mmap_sem);
