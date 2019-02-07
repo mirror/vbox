@@ -32,6 +32,10 @@
         <file alias="cd_copy_32px_x2.png">images/x2/cd_copy_32px_x2.png</file>
         <file alias="cd_copy_disabled_16px_x2.png">images/x2/cd_copy_disabled_16px_x2.png</file>
         <file alias="cd_copy_disabled_32px_x2.png">images/x2/cd_copy_disabled_32px_x2.png</file>
+        <file alias="cd_create_16px_x2.png">images/x2/cd_create_16px_x2.png</file>
+        <file alias="cd_create_32px_x2.png">images/x2/cd_create_32px_x2.png</file>
+        <file alias="cd_create_disabled_16px_x2.png">images/x2/cd_create_disabled_16px_x2.png</file>
+        <file alias="cd_create_disabled_32px_x2.png">images/x2/cd_create_disabled_32px_x2.png</file>
         <file alias="cd_disabled_16px_x2.png">images/x2/cd_disabled_16px_x2.png</file>
         <file alias="cd_modify_16px_x2.png">images/x2/cd_modify_16px_x2.png</file>
         <file alias="cd_modify_32px_x2.png">images/x2/cd_modify_32px_x2.png</file>
@@ -146,6 +150,10 @@
         <file alias="fd_copy_32px_x2.png">images/x2/fd_copy_32px_x2.png</file>
         <file alias="fd_copy_disabled_16px_x2.png">images/x2/fd_copy_disabled_16px_x2.png</file>
         <file alias="fd_copy_disabled_32px_x2.png">images/x2/fd_copy_disabled_32px_x2.png</file>
+        <file alias="fd_create_16px_x2.png">images/x2/fd_create_16px_x2.png</file>
+        <file alias="fd_create_32px_x2.png">images/x2/fd_create_32px_x2.png</file>
+        <file alias="fd_create_disabled_16px_x2.png">images/x2/fd_create_disabled_16px_x2.png</file>
+        <file alias="fd_create_disabled_32px_x2.png">images/x2/fd_create_disabled_32px_x2.png</file>
         <file alias="fd_disabled_16px_x2.png">images/x2/fd_disabled_16px_x2.png</file>
         <file alias="fd_modify_16px_x2.png">images/x2/fd_modify_16px_x2.png</file>
         <file alias="fd_modify_32px_x2.png">images/x2/fd_modify_32px_x2.png</file>
@@ -276,6 +284,10 @@
         <file alias="hd_copy_32px_x2.png">images/x2/hd_copy_32px_x2.png</file>
         <file alias="hd_copy_disabled_16px_x2.png">images/x2/hd_copy_disabled_16px_x2.png</file>
         <file alias="hd_copy_disabled_32px_x2.png">images/x2/hd_copy_disabled_32px_x2.png</file>
+        <file alias="hd_create_16px_x2.png">images/x2/hd_create_16px_x2.png</file>
+        <file alias="hd_create_32px_x2.png">images/x2/hd_create_32px_x2.png</file>
+        <file alias="hd_create_disabled_16px_x2.png">images/x2/hd_create_disabled_16px_x2.png</file>
+        <file alias="hd_create_disabled_32px_x2.png">images/x2/hd_create_disabled_32px_x2.png</file>
         <file alias="hd_disabled_16px_x2.png">images/x2/hd_disabled_16px_x2.png</file>
         <file alias="hd_modify_16px_x2.png">images/x2/hd_modify_16px_x2.png</file>
         <file alias="hd_modify_32px_x2.png">images/x2/hd_modify_32px_x2.png</file>
@@ -381,11 +393,5 @@
         <file alias="log_viewer_reset_font_16px_x2.png">images/x2/log_viewer_reset_font_16px_x2.png</file>
         <file alias="log_viewer_save_16px_x2.png">images/x2/log_viewer_save_16px_x2.png</file>
         <file alias="log_viewer_save_32px_x2.png">images/x2/log_viewer_save_32px_x2.png</file>
-        <file alias="log_viewer_save_disabled_16px_x2.png">images/x2/log_viewer_save_disabled_16px_x2.png</file>
-        <file alias="log_viewer_save_disabled_32px_x2.png">images/x2/log_viewer_save_disabled_32px_x2.png</file>
-        <file alias="log_viewer_search_backward_16px_x2.png">images/x2/log_viewer_search_backward_16px_x2.png</file>
-        <file alias="log_viewer_search_forward_16px_x2.png">images/x2/log_viewer_search_forward_16px_x2.png</file>
-        <file alias="machine_16px_x2.png">images/x2/machine_16px_x2.png</file>
-        <file alias="machine_24px_x2.png">images/x2/machine_24px_x2.png</file>
     </qresource>
 </RCC>
