@@ -283,7 +283,6 @@ void UIGraphicsScrollBar::mousePressEvent(QGraphicsSceneMouseEvent *pEvent)
 
     /* Redirect to token move handler: */
     sltTokenMoved(pEvent->pos());
-    layoutToken();
 }
 
 void UIGraphicsScrollBar::hoverMoveEvent(QGraphicsSceneHoverEvent *)
@@ -365,32 +364,26 @@ void UIGraphicsScrollBar::sltTokenMoved(const QPointF &pos)
     {
         case Qt::Horizontal:
         {
-            /* We have to adjust the X coord of the token, leaving Y unchanged: */
-            int iX = pos.x();
+            /* We have to calculate the X coord of the token, leaving Y untouched: */
             const int iMin = m_iExtent;
             const int iMax = size().width() - 2 * m_iExtent;
-            if (iX < iMin)
-                iX = iMin;
-            if (iX > iMax)
-                iX = iMax;
-            /* We also calculating new ratio to update value same way: */
-            dRatio = (double)(iX - iMin) / (iMax - iMin);
-            m_pToken->setPos(iX, 0);
+            int iX = pos.x() - m_iExtent / 2;
+            iX = qMax(iX, iMin);
+            iX = qMin(iX, iMax);
+            /* And then calculate new ratio to update value finally: */
+            dRatio = iMax > iMin ? (double)(iX - iMin) / (iMax - iMin) : 0;
             break;
         }
         case Qt::Vertical:
         {
-            /* We have to adjust the Y coord of the token, leaving X unchanged: */
-            int iY = pos.y();
+            /* We have to calculate the Y coord of the token, leaving X untouched: */
             const int iMin = m_iExtent;
             const int iMax = size().height() - 2 * m_iExtent;
-            if (iY < iMin)
-                iY = iMin;
-            if (iY > iMax)
-                iY = iMax;
-            /* We also calculating new ratio to update value same way: */
-            dRatio = (double)(iY - iMin) / (iMax - iMin);
-            m_pToken->setPos(0, iY);
+            int iY = pos.y() - m_iExtent / 2;
+            iY = qMax(iY, iMin);
+            iY = qMin(iY, iMax);
+            /* And then calculate new ratio to update value finally: */
+            dRatio = iMax > iMin ? (double)(iY - iMin) / (iMax - iMin) : 0;
             break;
         }
     }
@@ -398,6 +391,7 @@ void UIGraphicsScrollBar::sltTokenMoved(const QPointF &pos)
     /* Update value according to calculated ratio: */
     m_iValue = dRatio * (m_iMaximum - m_iMinimum) + m_iMinimum;
     emit sigValueChanged(m_iValue);
+    layoutToken();
 }
 
 void UIGraphicsScrollBar::sltStateLeftDefault()
