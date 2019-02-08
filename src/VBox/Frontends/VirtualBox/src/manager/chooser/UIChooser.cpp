@@ -166,8 +166,6 @@ void UIChooser::prepareConnections()
     /* Setup chooser-model connections: */
     connect(m_pChooserModel, &UIChooserModel::sigRootItemMinimumWidthHintChanged,
             m_pChooserView, &UIChooserView::sltMinimumWidthHintChanged);
-    connect(m_pChooserModel, &UIChooserModel::sigRootItemMinimumHeightHintChanged,
-            m_pChooserView, &UIChooserView::sltMinimumHeightHintChanged);
     connect(m_pChooserModel, &UIChooserModel::sigFocusChanged,
             m_pChooserView, &UIChooserView::sltFocusChanged);
     connect(m_pChooserModel, &UIChooserModel::sigToolMenuRequested,

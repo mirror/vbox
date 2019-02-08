@@ -91,6 +91,10 @@ UIChooserModel::~UIChooserModel()
 
 void UIChooserModel::init()
 {
+    /* Install root as event-filter for scene view,
+     * we need QEvent::Scroll events from it: */
+    root()->installEventFilterHelper(scene()->views()[0]);
+
     /* Load group tree: */
     loadGroupTree();
 
@@ -667,7 +671,7 @@ void UIChooserModel::updateLayout()
 
     /* Initialize variables: */
     const int iSceneMargin = data(ChooserModelData_Margin).toInt();
-    const QSize viewportSize = scene()->views()[0]->viewport()->size();
+    const QSize viewportSize = scene()->views()[0]->size();
     const int iViewportWidth = viewportSize.width() - 2 * iSceneMargin;
     const int iViewportHeight = viewportSize.height() - 2 * iSceneMargin;
 

@@ -94,8 +94,6 @@ signals:
       * @{ */
         /** Notifies about root item minimum width @a iHint changed. */
         void sigRootItemMinimumWidthHintChanged(int iHint);
-        /** Notifies about root item minimum height @a iHint changed. */
-        void sigRootItemMinimumHeightHintChanged(int iHint);
     /** @} */
 
     /** @name Group saving stuff.

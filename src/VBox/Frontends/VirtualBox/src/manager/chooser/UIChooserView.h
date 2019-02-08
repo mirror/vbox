@@ -62,8 +62,6 @@ public slots:
       * @{ */
         /** Handles minimum width @a iHint change. */
         void sltMinimumWidthHintChanged(int iHint);
-        /** Handles minimum height @a iHint change. */
-        void sltMinimumHeightHintChanged(int iHint);
     /** @} */
 
 protected:
@@ -103,8 +101,6 @@ private:
       * @{ */
         /** Holds the minimum width hint. */
         int m_iMinimumWidthHint;
-        /** Holds the minimum height hint. */
-        int m_iMinimumHeightHint;
     /** @} */
 };
 

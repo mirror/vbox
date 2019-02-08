@@ -40,6 +40,7 @@ class QStyleOptionGraphicsItem;
 class UIEditorGroupRename;
 class UIGraphicsButton;
 class UIGraphicsRotatorButton;
+class UIGraphicsScrollArea;
 
 
 /** UIChooserItem extension implementing group item. */
@@ -88,6 +89,9 @@ public:
         void open(bool fAnimated = true);
         /** Returns whether group is opened. */
         bool isOpened() const;
+
+        /** Installs event-filter for @a pSource object. */
+        virtual void installEventFilterHelper(QObject *pSource) /* override */;
     /** @} */
 
     /** @name Navigation stuff.
@@ -354,8 +358,10 @@ private:
 
     /** @name Children stuff.
       * @{ */
+        /** Holds the children scroll-area instance. */
+        UIGraphicsScrollArea  *m_pScrollArea;
         /** Holds the children container instance. */
-        QIGraphicsWidget *m_pContainer;
+        QIGraphicsWidget      *m_pContainer;
 
         /** Holds the main layout instance. */
         QGraphicsLinearLayout *m_pLayout;
