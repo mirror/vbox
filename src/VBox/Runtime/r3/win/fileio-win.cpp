@@ -495,6 +495,50 @@ RTR3DECL(int)  RTFileRead(RTFILE hFile, void *pvBuf, size_t cbToRead, size_t *pc
 }
 
 
+RTDECL(int)  RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    ULONG cbToReadAdj = (ULONG)cbToRead;
+    AssertReturn(cbToReadAdj == cbToRead, VERR_NUMBER_TOO_BIG);
+
+    OVERLAPPED Overlapped;
+    Overlapped.Offset       = (uint32_t)off;
+    Overlapped.OffsetHigh   = (uint32_t)(off >> 32);
+    Overlapped.hEvent       = NULL;
+    Overlapped.Internal     = 0;
+    Overlapped.InternalHigh = 0;
+
+    ULONG cbRead = 0;
+    if (ReadFile((HANDLE)RTFileToNative(hFile), pvBuf, cbToReadAdj, &cbRead, &Overlapped))
+    {
+        if (pcbRead)
+            /* Caller can handle partial reads. */
+            *pcbRead = cbRead;
+        else
+        {
+            /* Caller expects everything to be read. */
+            while (cbToReadAdj > cbRead)
+            {
+                Overlapped.Offset       = (uint32_t)(off + cbRead);
+                Overlapped.OffsetHigh   = (uint32_t)((off + cbRead) >> 32);
+                Overlapped.hEvent       = NULL;
+                Overlapped.Internal     = 0;
+                Overlapped.InternalHigh = 0;
+
+                ULONG cbReadPart = 0;
+                if (!ReadFile((HANDLE)RTFileToNative(hFile), (char *)pvBuf + cbRead, cbToReadAdj - cbRead,
+                              &cbReadPart, &Overlapped))
+                    return RTErrConvertFromWin32(GetLastError());
+                if (cbReadPart == 0)
+                    return VERR_EOF;
+                cbRead += cbReadPart;
+            }
+        }
+        return VINF_SUCCESS;
+    }
+    return RTErrConvertFromWin32(GetLastError());
+}
+
+
 RTR3DECL(int)  RTFileWrite(RTFILE hFile, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
 {
     if (cbToWrite <= 0)
@@ -583,6 +627,62 @@ RTR3DECL(int)  RTFileWrite(RTFILE hFile, const void *pvBuf, size_t cbToWrite, si
     }
 
     int rc = RTErrConvertFromWin32(dwErr);
+    if (   rc == VERR_DISK_FULL
+        && IsBeyondLimit(hFile, cbToWriteAdj - cbWritten, FILE_CURRENT))
+        rc = VERR_FILE_TOO_BIG;
+    return rc;
+}
+
+
+RTDECL(int)  RTFileWriteAt(RTFILE hFile, RTFOFF off, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
+{
+    ULONG const cbToWriteAdj = (ULONG)cbToWrite;
+    AssertReturn(cbToWriteAdj == cbToWrite, VERR_NUMBER_TOO_BIG);
+
+    OVERLAPPED Overlapped;
+    Overlapped.Offset       = (uint32_t)off;
+    Overlapped.OffsetHigh   = (uint32_t)(off >> 32);
+    Overlapped.hEvent       = NULL;
+    Overlapped.Internal     = 0;
+    Overlapped.InternalHigh = 0;
+
+    ULONG cbWritten = 0;
+    if (WriteFile((HANDLE)RTFileToNative(hFile), pvBuf, cbToWriteAdj, &cbWritten, &Overlapped))
+    {
+        if (pcbWritten)
+            /* Caller can handle partial writes. */
+            *pcbWritten = RT_MIN(cbWritten, cbToWriteAdj); /* paranoia^3 */
+        else
+        {
+            /* Caller expects everything to be written. */
+            while (cbWritten < cbToWriteAdj)
+            {
+                Overlapped.Offset       = (uint32_t)(off + cbWritten);
+                Overlapped.OffsetHigh   = (uint32_t)((off + cbWritten) >> 32);
+                Overlapped.hEvent       = NULL;
+                Overlapped.Internal     = 0;
+                Overlapped.InternalHigh = 0;
+
+                ULONG cbWrittenPart = 0;
+                if (!WriteFile((HANDLE)RTFileToNative(hFile), (char*)pvBuf + cbWritten,
+                               cbToWriteAdj - cbWritten, &cbWrittenPart, &Overlapped))
+                {
+                    int rc = RTErrConvertFromWin32(GetLastError());
+                    if (   rc == VERR_DISK_FULL
+                        && IsBeyondLimit(hFile, cbToWriteAdj - cbWritten, FILE_CURRENT)
+                       )
+                        rc = VERR_FILE_TOO_BIG;
+                    return rc;
+                }
+                if (cbWrittenPart == 0)
+                    return VERR_WRITE_ERROR;
+                cbWritten += cbWrittenPart;
+            }
+        }
+        return VINF_SUCCESS;
+    }
+
+    int rc = RTErrConvertFromWin32(GetLastError());
     if (   rc == VERR_DISK_FULL
         && IsBeyondLimit(hFile, cbToWriteAdj - cbWritten, FILE_CURRENT))
         rc = VERR_FILE_TOO_BIG;

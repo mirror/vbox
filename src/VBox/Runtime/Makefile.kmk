@@ -814,7 +814,6 @@ RuntimeR3_SOURCES.win = \
 	generic/cdrom-generic.cpp \
 	generic/RTDirExists-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
-	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \
 	generic/RTFileExists-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
@@ -1856,7 +1855,6 @@ RuntimeBldProg_SOURCES.win = \
 	generic/mppresent-generic-online.cpp \
 	generic/RTDirExists-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
-	generic/fileio-at-generic.cpp \
 	generic/RTFileExists-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTPathAbs-generic.cpp \
