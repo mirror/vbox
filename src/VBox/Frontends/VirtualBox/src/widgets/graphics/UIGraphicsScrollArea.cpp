@@ -152,7 +152,7 @@ bool UIGraphicsScrollArea::eventFilter(QObject *pObject, QEvent *pEvent)
             {
                 if (angleDelta.x() > 0)
                     m_pScrollBar->setValue(m_pScrollBar->value() - m_pScrollBar->step());
-                else
+                else if (angleDelta.x() < 0)
                     m_pScrollBar->setValue(m_pScrollBar->value() + m_pScrollBar->step());
                 break;
             }
