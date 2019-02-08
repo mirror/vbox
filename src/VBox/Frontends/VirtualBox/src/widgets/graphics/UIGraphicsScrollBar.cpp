@@ -594,8 +594,16 @@ void UIGraphicsScrollBar::layoutButtons()
 
 void UIGraphicsScrollBar::layoutToken()
 {
+    m_pToken->setPos(actualTokenPosition());
+}
+
+QPoint UIGraphicsScrollBar::actualTokenPosition() const
+{
     /* We calculating ratio on the basis of current/minimum/maximum values: */
     const double dRatio = m_iMaximum > m_iMinimum ? (double)(m_iValue - m_iMinimum) / (m_iMaximum - m_iMinimum) : 0;
+
+    /* Prepare result: */
+    QPoint position;
 
     /* Depending on orientation: */
     switch (m_enmOrientation)
@@ -606,7 +614,7 @@ void UIGraphicsScrollBar::layoutToken()
             const int iMin = m_iExtent;
             const int iMax = size().width() - 2 * m_iExtent;
             int iX = dRatio * (iMax - iMin) + iMin;
-            m_pToken->setPos(iX, 0);
+            position = QPoint(iX, 0);
             break;
         }
         case Qt::Vertical:
@@ -615,10 +623,13 @@ void UIGraphicsScrollBar::layoutToken()
             const int iMin = m_iExtent;
             const int iMax = size().height() - 2 * m_iExtent;
             int iY = dRatio * (iMax - iMin) + iMin;
-            m_pToken->setPos(0, iY);
+            position = QPoint(0, iY);
             break;
         }
     }
+
+    /* Return result: */
+    return position;
 }
 
 void UIGraphicsScrollBar::paintBackground(QPainter *pPainter, const QRect &rectangle) const

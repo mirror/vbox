@@ -132,6 +132,9 @@ private:
     /** Layout token. */
     void layoutToken();
 
+    /** Returns actual token position. */
+    QPoint actualTokenPosition() const;
+
     /** Paints background using specified @a pPainter and certain @a rectangle. */
     void paintBackground(QPainter *pPainter, const QRect &rectangle) const;
 
