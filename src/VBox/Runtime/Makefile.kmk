@@ -907,7 +907,6 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
-	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -955,6 +954,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/errvars-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fileio2-posix.cpp \
+	r3/posix/fileio-at-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
@@ -1090,7 +1090,6 @@ RuntimeR3_SOURCES.darwin = \
 	generic/cdrom-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
-	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
@@ -1142,6 +1141,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/errvars-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fileio2-posix.cpp \
+	r3/posix/fileio-at-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
 	r3/posix/fs3-posix.cpp \
@@ -1174,7 +1174,6 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
-	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
@@ -1222,6 +1221,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/errvars-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fileio2-posix.cpp \
+	r3/posix/fileio-at-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
@@ -1256,7 +1256,6 @@ RuntimeR3_SOURCES.netbsd = \
 	generic/cdrom-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
-	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1302,6 +1301,7 @@ RuntimeR3_SOURCES.netbsd = \
 	r3/posix/errvars-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fileio2-posix.cpp \
+	r3/posix/fileio-at-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
@@ -1336,7 +1336,6 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
-	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1373,6 +1372,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/errvars-posix.cpp \
 	r3/posix/fileio-posix.cpp \
 	r3/posix/fileio2-posix.cpp \
+	r3/posix/fileio-at-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
@@ -1818,7 +1818,6 @@ endif
 RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	generic/cdrom-generic.cpp \
 	generic/RTFileMove-generic.cpp \
-	generic/fileio-at-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTThreadGetAffinity-stub-generic.cpp \
