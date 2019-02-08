@@ -165,6 +165,8 @@ private:
 
     /** Holds whether item is hovered. */
     bool  m_fHovered;
+    /** Holds the hover-on timer id. */
+    int   m_iHoverOnTimerId;
     /** Holds the hover-off timer id. */
     int   m_iHoverOffTimerId;
     /** Holds the animated value. */

@@ -153,6 +153,7 @@ UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QGraphi
     , m_pButton2(0)
     , m_pToken(0)
     , m_fHovered(false)
+    , m_iHoverOnTimerId(0)
     , m_iHoverOffTimerId(0)
     , m_iAnimatedValue(0)
 {
@@ -172,6 +173,7 @@ UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QIGraph
     , m_pButton2(0)
     , m_pToken(0)
     , m_fHovered(false)
+    , m_iHoverOnTimerId(0)
     , m_iHoverOffTimerId(0)
     , m_iAnimatedValue(0)
 {
@@ -290,9 +292,9 @@ void UIGraphicsScrollBar::hoverMoveEvent(QGraphicsSceneHoverEvent *)
      * make sure trigger emitted just once: */
     if (!m_fHovered)
     {
-        /* Emit hover-on trigger: */
+        /* Start hover-on timer, handled in timerEvent() below: */
+        m_iHoverOnTimerId = startTimer(400);
         m_fHovered = true;
-        emit sigHoverEnter();
     }
     /* Update in any case: */
     update();
@@ -318,7 +320,21 @@ void UIGraphicsScrollBar::timerEvent(QTimerEvent *pEvent)
     const int iTimerId = pEvent->timerId();
     killTimer(iTimerId);
 
-    /* If that timer is the one we expecting: */
+    /* If that is hover-on timer: */
+    if (m_iHoverOnTimerId != 0 && iTimerId == m_iHoverOnTimerId)
+    {
+        /* Wait for timer no more: */
+        m_iHoverOnTimerId = 0;
+        /* Emit hover-on trigger if hovered: */
+        if (m_fHovered)
+            emit sigHoverEnter();
+        /* Update in any case: */
+        update();
+    }
+
+    else
+
+    /* If that is hover-off timer: */
     if (m_iHoverOffTimerId != 0 && iTimerId == m_iHoverOffTimerId)
     {
         /* Wait for timer no more: */
