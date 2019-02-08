@@ -2795,7 +2795,7 @@ QUuid VBoxGlobal::createHDWithNewHDWizard(QWidget *pParent, const QString &strMa
                                           const QString &strMachineFolder)
 {
     /* Initialize variables: */
-    const CGuestOSType comGuestOSType = vboxGlobal().virtualBox().GetGuestOSType(strMachineGuestOSTypeId);
+    const CGuestOSType comGuestOSType = virtualBox().GetGuestOSType(strMachineGuestOSTypeId);
     const QFileInfo fileInfo(strMachineFolder);
     /* Show New VD wizard: */
     UISafePointerWizardNewVD pWizard = new UIWizardNewVD(pParent, QString(), fileInfo.absolutePath(), comGuestOSType.GetRecommendedHDD());
