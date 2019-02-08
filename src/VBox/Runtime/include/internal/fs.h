@@ -50,7 +50,11 @@ bool    rtFsModeIsValidPermissions(RTFMODE fMode);
 void    rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, const char *pszName, unsigned cbName);
 void    rtFsObjInfoAttrSetUnixOwner(PRTFSOBJINFO pObjInfo, RTUID uid);
 void    rtFsObjInfoAttrSetUnixGroup(PRTFSOBJINFO pObjInfo, RTUID gid);
-#endif
+#else  /* RT_OS_WINDOWS */
+# ifdef DECLARE_HANDLE
+int     rtNtQueryFsType(HANDLE hHandle, PRTFSTYPE penmType);
+# endif
+#endif /* RT_OS_WINDOWS */
 
 #ifdef RT_OS_LINUX
 # ifdef __USE_MISC
