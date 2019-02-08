@@ -52,6 +52,9 @@ public:
     /** Returns minimum size-hint. */
     virtual QSizeF minimumSizeHint() const /* override */;
 
+    /** Returns whether token is hovered. */
+    bool isHovered() const { return m_fHovered; }
+
 protected:
 
     /** Performs painting using passed @a pPainter, @a pOptions and optionally specified @a pWidget. */
@@ -62,6 +65,11 @@ protected:
     /** Handles mouse-release @a pEvent. */
     virtual void mouseMoveEvent(QGraphicsSceneMouseEvent *pEvent) /* override */;
 
+    /** Handles hover enter @a pEvent. */
+    virtual void hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
+    /** Handles hover leave @a pEvent. */
+    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *pEvent) /* override */;
+
 private:
 
     /** Prepares all. */
@@ -71,6 +79,9 @@ private:
 
     /** Holds the scroll-bar extent. */
     int  m_iExtent;
+
+    /** Holds whether item is hovered. */
+    bool  m_fHovered;
 };
 
 
@@ -80,6 +91,7 @@ private:
 
 UIGraphicsScrollBarToken::UIGraphicsScrollBarToken(QIGraphicsWidget *pParent /* = 0 */)
     : QIGraphicsWidget(pParent)
+    , m_fHovered(false)
 {
     prepare();
 }
@@ -121,6 +133,18 @@ void UIGraphicsScrollBarToken::mouseMoveEvent(QGraphicsSceneMouseEvent *pEvent)
 
     /* Let listeners know about our mouse move events. */
     emit sigMouseMoved(mapToParent(pEvent->pos()));
+}
+
+void UIGraphicsScrollBarToken::hoverMoveEvent(QGraphicsSceneHoverEvent *)
+{
+    if (!m_fHovered)
+        m_fHovered = true;
+}
+
+void UIGraphicsScrollBarToken::hoverLeaveEvent(QGraphicsSceneHoverEvent *)
+{
+    if (m_fHovered)
+        m_fHovered = false;
 }
 
 void UIGraphicsScrollBarToken::prepare()
@@ -339,7 +363,7 @@ void UIGraphicsScrollBar::timerEvent(QTimerEvent *pEvent)
         /* Wait for timer no more: */
         m_iHoverOffTimerId = 0;
         /* Emit hover-off trigger if not hovered: */
-        if (!m_fHovered)
+        if (!m_fHovered && !m_pToken->isHovered())
             emit sigHoverLeave();
         /* Update in any case: */
         update();
