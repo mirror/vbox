@@ -2401,13 +2401,6 @@ vmsvgaR3FIFOAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, 
     /*
      * Temporarily disable the access handler now that we've kicked the FIFO thread.
      */
-#  ifdef VBOX_STRICT /** @todo r=bird: This is _not_ guaranteed at all.  Expect spurious assertions! */
-    /* Invariant: The access handler should never trigger twice within a certain
-       time span; calling it 500ms here for simplicity. */
-    uint64_t TimeNow = RTTimeMilliTS();
-    Assert(TimeNow - pThis->svga.pSvgaR3State->TimeLastFIFOIntercept > 500);
-    pThis->svga.pSvgaR3State->TimeLastFIFOIntercept = TimeNow;
-#  endif
 
     STAM_REL_COUNTER_INC(&pThis->svga.pSvgaR3State->StatFifoAccessHandler);
     rc = PGMHandlerPhysicalPageTempOff(pVM, pThis->svga.GCPhysFIFO, pThis->svga.GCPhysFIFO);
@@ -3416,6 +3409,13 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, cMsSleep);
             else
             {
+# ifdef VBOX_STRICT
+                /* Invariant: The access handler should never be reset twice within
+                   a certain time span; calling it 500ms here for simplicity. */
+                uint64_t TimeNow = RTTimeMilliTS();
+                Assert(TimeNow - pSVGAState->TimeLastFIFOIntercept > 500);
+                pSVGAState->TimeLastFIFOIntercept = TimeNow;
+# endif
                 int rc2 = PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
                 AssertRC(rc2); /* No break. Racing EMTs unmapping and remapping the region. */
 
