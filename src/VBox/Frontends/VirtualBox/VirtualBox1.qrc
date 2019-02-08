@@ -54,6 +54,10 @@
         <file alias="cd_remove_32px.png">images/cd_remove_32px.png</file>
         <file alias="cd_remove_disabled_16px.png">images/cd_remove_disabled_16px.png</file>
         <file alias="cd_remove_disabled_32px.png">images/cd_remove_disabled_32px.png</file>
+        <file alias="cd_search_16px.png">images/cd_search_16px.png</file>
+        <file alias="cd_search_32px.png">images/cd_search_32px.png</file>
+        <file alias="cd_search_disabled_16px.png">images/cd_search_disabled_16px.png</file>
+        <file alias="cd_search_disabled_32px.png">images/cd_search_disabled_32px.png</file>
         <file alias="cd_unmount_16px.png">images/cd_unmount_16px.png</file>
         <file alias="cd_unmount_disabled_16px.png">images/cd_unmount_disabled_16px.png</file>
         <file alias="cd_write_16px.png">images/cd_write_16px.png</file>
@@ -172,6 +176,10 @@
         <file alias="fd_remove_32px.png">images/fd_remove_32px.png</file>
         <file alias="fd_remove_disabled_16px.png">images/fd_remove_disabled_16px.png</file>
         <file alias="fd_remove_disabled_32px.png">images/fd_remove_disabled_32px.png</file>
+        <file alias="fd_search_16px.png">images/fd_search_16px.png</file>
+        <file alias="fd_search_32px.png">images/fd_search_32px.png</file>
+        <file alias="fd_search_disabled_16px.png">images/fd_search_disabled_16px.png</file>
+        <file alias="fd_search_disabled_32px.png">images/fd_search_disabled_32px.png</file>
         <file alias="fd_unmount_16px.png">images/fd_unmount_16px.png</file>
         <file alias="fd_unmount_disabled_16px.png">images/fd_unmount_disabled_16px.png</file>
         <file alias="fd_write_16px.png">images/fd_write_16px.png</file>
@@ -308,6 +316,10 @@
         <file alias="hd_remove_32px.png">images/hd_remove_32px.png</file>
         <file alias="hd_remove_disabled_16px.png">images/hd_remove_disabled_16px.png</file>
         <file alias="hd_remove_disabled_32px.png">images/hd_remove_disabled_32px.png</file>
+        <file alias="hd_search_16px.png">images/hd_search_16px.png</file>
+        <file alias="hd_search_32px.png">images/hd_search_32px.png</file>
+        <file alias="hd_search_disabled_16px.png">images/hd_search_disabled_16px.png</file>
+        <file alias="hd_search_disabled_32px.png">images/hd_search_disabled_32px.png</file>
         <file alias="hd_settings_16px.png">images/hd_settings_16px.png</file>
         <file alias="hd_settings_disabled_16px.png">images/hd_settings_disabled_16px.png</file>
         <file alias="hd_warning_16px.png">images/hd_warning_16px.png</file>
@@ -393,11 +405,5 @@
         <file alias="log_viewer_refresh_16px.png">images/log_viewer_refresh_16px.png</file>
         <file alias="log_viewer_refresh_32px.png">images/log_viewer_refresh_32px.png</file>
         <file alias="log_viewer_refresh_disabled_16px.png">images/log_viewer_refresh_disabled_16px.png</file>
-        <file alias="log_viewer_refresh_disabled_32px.png">images/log_viewer_refresh_disabled_32px.png</file>
-        <file alias="log_viewer_reset_font_16px.png">images/log_viewer_reset_font_16px.png</file>
-        <file alias="log_viewer_save_16px.png">images/log_viewer_save_16px.png</file>
-        <file alias="log_viewer_save_32px.png">images/log_viewer_save_32px.png</file>
-        <file alias="log_viewer_save_disabled_16px.png">images/log_viewer_save_disabled_16px.png</file>
-        <file alias="log_viewer_save_disabled_32px.png">images/log_viewer_save_disabled_32px.png</file>
     </qresource>
 </RCC>

@@ -2056,12 +2056,12 @@ public:
         : UIActionToggle(pParent)
     {
         setShortcutContext(Qt::WidgetWithChildrenShortcut);
-        setIcon(0, UIIconPool::iconSetFull(":/hd_modify_32px.png",          ":/hd_modify_16px.png",
-                                           ":/hd_modify_disabled_32px.png", ":/hd_modify_disabled_16px.png"));
-        setIcon(1, UIIconPool::iconSetFull(":/cd_modify_32px.png",          ":/cd_modify_16px.png",
-                                           ":/cd_modify_disabled_32px.png", ":/cd_modify_disabled_16px.png"));
-        setIcon(2, UIIconPool::iconSetFull(":/fd_modify_32px.png",          ":/fd_modify_16px.png",
-                                           ":/fd_modify_disabled_32px.png", ":/fd_modify_disabled_16px.png"));
+        setIcon(0, UIIconPool::iconSetFull(":/hd_search_32px.png",          ":/hd_search_16px.png",
+                                           ":/hd_search_disabled_32px.png", ":/hd_search_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_search_32px.png",          ":/cd_search_16px.png",
+                                           ":/cd_search_disabled_32px.png", ":/cd_search_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_search_32px.png",          ":/fd_search_16px.png",
+                                           ":/fd_search_disabled_32px.png", ":/fd_search_disabled_16px.png"));
     }
 
 protected:
