@@ -639,13 +639,23 @@ void UIGraphicsScrollBar::paintBackground(QPainter *pPainter, const QRect &recta
 
     /* Prepare color: */
     const QPalette pal = palette();
-    QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
-    backgroundColor.setAlpha(200);
 
     /* Draw background: */
+    QColor backgroundColor = pal.color(QPalette::Active, QPalette::Mid);
+    backgroundColor.setAlpha(200);
     QRect actualRectangle = rectangle;
-    actualRectangle.setLeft(actualRectangle.left() + .8 * actualRectangle.width() * ((double)100 - m_iAnimatedValue) / 100);
+    actualRectangle.setLeft(actualRectangle.left() + .9 * actualRectangle.width() * ((double)100 - m_iAnimatedValue) / 100);
     pPainter->fillRect(actualRectangle, backgroundColor);
+
+    /* Emulate token when necessary: */
+    if (m_iAnimatedValue < 100)
+    {
+        QColor tokenColor = pal.color(QPalette::Active, QPalette::Window);
+        tokenColor.setAlpha(200);
+        QRect tokenRectangle = QRect(actualTokenPosition(), QSize(m_iExtent, m_iExtent));
+        tokenRectangle.setLeft(tokenRectangle.left() + .9 * tokenRectangle.width() * ((double)100 - m_iAnimatedValue) / 100);
+        pPainter->fillRect(tokenRectangle, tokenColor);
+    }
 
     /* Restore painter: */
     pPainter->restore();
