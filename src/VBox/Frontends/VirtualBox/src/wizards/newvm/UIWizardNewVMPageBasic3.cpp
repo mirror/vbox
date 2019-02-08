@@ -68,7 +68,8 @@ void UIWizardNewVMPage3::getWithFileOpenDialog()
                                                            uMediumId,
                                                            fieldImp("machineBaseName").toString(),
                                                            fieldImp("machineFolder").toString(),
-                                                           fieldImp("type").value<CGuestOSType>().GetId());
+                                                           fieldImp("type").value<CGuestOSType>().GetId(),
+                                                           false /* don't show/enable the create action: */);
 
     if (returnCode == static_cast<int>(UIMediumSelector::ReturnCode_Accepted) && !uMediumId.isNull())
     {

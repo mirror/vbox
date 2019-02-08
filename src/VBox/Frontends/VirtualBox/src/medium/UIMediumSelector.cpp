@@ -83,6 +83,14 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
     finalize();
 }
 
+void UIMediumSelector::setEnableCreateAction(bool fEnable)
+{
+    if (!m_pActionCreate)
+        return;
+    m_pActionCreate->setEnabled(fEnable);
+    m_pActionCreate->setVisible(fEnable);
+}
+
 QList<QUuid> UIMediumSelector::selectedMediumIds() const
 {
     QList<QUuid> selectedIds;

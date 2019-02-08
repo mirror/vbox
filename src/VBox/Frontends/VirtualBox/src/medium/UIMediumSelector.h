@@ -53,7 +53,8 @@ public:
     UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName = QString(),
                      const QString &machineSettingsFilePath = QString(), const QString &strMachineGuestOSTypeId = QString(),
                      QWidget *pParent = 0);
-
+    /** Disables/enables the create action and controls its visibility. */
+    void         setEnableCreateAction(bool fEnable);
     QList<QUuid> selectedMediumIds() const;
 
     enum ReturnCode

@@ -2758,7 +2758,7 @@ QUuid VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &st
 
 int VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType, QUuid &outUuid,
                                          const QString &strMachineName, const QString &strMachineFolder,
-                                         const QString &strMachineGuestOSTypeId  /* = QString() */)
+                                         const QString &strMachineGuestOSTypeId, bool fEnableCreate)
 {
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     QPointer<UIMediumSelector> pSelector = new UIMediumSelector(enmMediumType, strMachineName,
@@ -2766,7 +2766,7 @@ int VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  e
 
     if (!pSelector)
         return static_cast<int>(UIMediumSelector::ReturnCode_Rejected);
-
+    pSelector->setEnableCreateAction(fEnableCreate);
     windowManager().registerNewParent(pSelector, pDialogParent);
 
     int iResult = pSelector->exec(false);
