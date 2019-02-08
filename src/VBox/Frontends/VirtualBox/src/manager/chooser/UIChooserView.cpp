@@ -99,21 +99,6 @@ UIChooserView::UIChooserView(UIChooser *pParent)
     prepare();
 }
 
-void UIChooserView::sltFocusChanged()
-{
-    /* Make sure focus-item set: */
-    const UIChooserItem *pFocusItem = chooser() && chooser()->model()
-                                    ? chooser()->model()->focusItem()
-                                    : 0;
-    if (!pFocusItem)
-        return;
-
-    const QSize viewSize = viewport()->size();
-    QRectF geo = pFocusItem->geometry();
-    geo &= QRectF(geo.topLeft(), viewSize);
-    ensureVisible(geo, 0, 0);
-}
-
 void UIChooserView::sltMinimumWidthHintChanged(int iHint)
 {
     /* Is there something changed? */

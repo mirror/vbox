@@ -49,6 +49,9 @@ public:
     /** Returns scroll-area viewport. */
     QIGraphicsWidget *viewport() const;
 
+    /** Makes sure passed @a rect is visible. */
+    void makeSureRectIsVisible(const QRectF &rect);
+
 protected:
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */

@@ -420,8 +420,9 @@ void UIChooserModel::setFocusItem(UIChooserItem *pItem)
     if (m_pFocusItem)
         connect(m_pFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
 
-    /* Notify listeners about focus change: */
-    emit sigFocusChanged();
+    /* If dialog is visible and item exists => make it visible as well: */
+    if (scene()->views()[0]->window()->isVisible() && pItem)
+        root()->makeSureItemIsVisible(pItem);
 }
 
 UIChooserItem *UIChooserModel::focusItem() const

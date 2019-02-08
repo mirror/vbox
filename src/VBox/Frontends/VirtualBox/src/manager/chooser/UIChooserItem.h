@@ -211,6 +211,8 @@ public:
       * @{ */
         /** Makes sure item is visible. */
         virtual void makeSureItsVisible();
+        /** Makes sure passed child @a pItem is visible. */
+        virtual void makeSureItemIsVisible(UIChooserItem *pItem) { Q_UNUSED(pItem); }
 
         /** Returns pixmap item representation. */
         virtual QPixmap toPixmap() = 0;
