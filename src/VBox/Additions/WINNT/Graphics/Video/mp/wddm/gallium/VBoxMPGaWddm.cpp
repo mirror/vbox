@@ -710,11 +710,8 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
                 RT_FALL_THRU();
             case STATUS_SUCCESS:
             {
-                if (u32TargetLength)
-                {
-                    pPresent->pDmaBuffer = (uint8_t *)pPresent->pDmaBuffer + u32TargetLength;
-                    pPresent->pDmaBufferPrivateData = (uint8_t *)pPresent->pDmaBufferPrivateData + cbPrivateData;
-                }
+                pPresent->pDmaBuffer = (uint8_t *)pPresent->pDmaBuffer + u32TargetLength;
+                pPresent->pDmaBufferPrivateData = (uint8_t *)pPresent->pDmaBufferPrivateData + cbPrivateData;
             } break;
             default: break;
         }
@@ -827,19 +824,55 @@ NTSTATUS APIENTRY GaDxgkDdiPresent(const HANDLE hContext,
                 RT_FALL_THRU();
             case STATUS_SUCCESS:
             {
-                if (u32TargetLength)
-                {
-                    pPresent->pDmaBuffer = (uint8_t *)pPresent->pDmaBuffer + u32TargetLength;
-                    pPresent->pDmaBufferPrivateData = (uint8_t *)pPresent->pDmaBufferPrivateData + cbPrivateData;
-                }
+                pPresent->pDmaBuffer = (uint8_t *)pPresent->pDmaBuffer + u32TargetLength;
+                pPresent->pDmaBufferPrivateData = (uint8_t *)pPresent->pDmaBufferPrivateData + cbPrivateData;
             } break;
             default: break;
         }
     }
     else if (pPresent->Flags.ColorFill)
     {
-        GALOG(("ColorFill\n"));
+        LogRelMax(16, ("ColorFill is not implemented\n"));
         AssertFailed();
+
+        /* Generate empty DMA buffer.
+         * Store the command buffer descriptor to pDmaBufferPrivateData.
+         */
+        GARENDERDATA *pRenderData = NULL;
+        uint32_t u32TargetLength = 0;
+        uint32_t cbPrivateData = 0;
+
+        if (pPresent->DmaBufferPrivateDataSize >= sizeof(GARENDERDATA))
+        {
+            /* Fill RenderData description in any case, it will be ignored if the above code failed. */
+            pRenderData = (GARENDERDATA *)pPresent->pDmaBufferPrivateData;
+            pRenderData->u32DataType  = GARENDERDATA_TYPE_PRESENT;
+            pRenderData->cbData       = u32TargetLength;
+            pRenderData->pFenceObject = NULL; /* Not a user request, so no user accessible fence object. */
+            pRenderData->pvDmaBuffer  = pPresent->pDmaBuffer;
+            cbPrivateData = sizeof(GARENDERDATA);
+        }
+        else
+        {
+            Status = STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER;
+        }
+
+        switch (Status)
+        {
+            case STATUS_GRAPHICS_INSUFFICIENT_DMA_BUFFER:
+                if (pRenderData == NULL)
+                {
+                    /* Not enough space in pDmaBufferPrivateData. */
+                    break;
+                }
+                RT_FALL_THRU();
+            case STATUS_SUCCESS:
+            {
+                pPresent->pDmaBuffer = (uint8_t *)pPresent->pDmaBuffer + u32TargetLength;
+                pPresent->pDmaBufferPrivateData = (uint8_t *)pPresent->pDmaBufferPrivateData + cbPrivateData;
+            } break;
+            default: break;
+        }
     }
     else
     {
@@ -1165,11 +1198,8 @@ NTSTATUS APIENTRY GaDxgkDdiBuildPagingBuffer(const HANDLE hAdapter,
             RT_FALL_THRU();
         case STATUS_SUCCESS:
         {
-            if (u32TargetLength)
-            {
-                pBuildPagingBuffer->pDmaBuffer = (uint8_t *)pBuildPagingBuffer->pDmaBuffer + u32TargetLength;
-                pBuildPagingBuffer->pDmaBufferPrivateData = (uint8_t *)pBuildPagingBuffer->pDmaBufferPrivateData + cbPrivateData;
-            }
+            pBuildPagingBuffer->pDmaBuffer = (uint8_t *)pBuildPagingBuffer->pDmaBuffer + u32TargetLength;
+            pBuildPagingBuffer->pDmaBufferPrivateData = (uint8_t *)pBuildPagingBuffer->pDmaBufferPrivateData + cbPrivateData;
         } break;
         default: break;
     }
@@ -1241,9 +1271,20 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
 
     uint32_t cbDmaBufferSubmission = pSubmitCommand->DmaBufferSubmissionEndOffset - pSubmitCommand->DmaBufferSubmissionStartOffset;
     uint32_t cDataBlocks = cbPrivateData / sizeof(GARENDERDATA);
-    AssertReturn(cDataBlocks, STATUS_INVALID_PARAMETER);
 
-    GARENDERDATA *pRenderData = (GARENDERDATA *)pvPrivateData;
+    if (cDataBlocks == 0)
+    {
+        /* Sometimes a zero sized paging buffer is submitted.
+         * Seen this on W10.17763 right after DXGK_OPERATION_DISCARD_CONTENT.
+         * Can not ignore such block, since a new SubmissionFenceId is passed.
+         * Try to handle it by emitting the fence command only.
+         */
+        Assert(cbPrivateData == 0);
+        Assert(pSubmitCommand->Flags.Paging);
+        LogRelMax(16, ("WDDM: empty buffer: cbPrivateData %d, flags 0x%x\n", cbPrivateData, pSubmitCommand->Flags.Value));
+    }
+
+    GARENDERDATA const *pRenderData = (GARENDERDATA *)pvPrivateData;
     while (cDataBlocks--)
     {
         AssertReturn(cbDmaBufferSubmission >= pRenderData->cbData, STATUS_INVALID_PARAMETER);
@@ -1292,28 +1333,39 @@ NTSTATUS APIENTRY GaDxgkDdiSubmitCommand(const HANDLE hAdapter, const DXGKARG_SU
 
         if (pvDmaBuffer)
         {
-            /* Copy DmaBuffer to Fifo. */
             Assert(pSubmitCommand->DmaBufferSegmentId == 0);
 
             uint32_t const cbSubmit = pRenderData->cbData;
+            if (cbSubmit)
+            {
+                /* Copy DmaBuffer to Fifo. */
+                void *pvCmd = SvgaFifoReserve(pGaDevExt->hw.pSvga, cbSubmit);
+                AssertPtrReturn(pvCmd, STATUS_INSUFFICIENT_RESOURCES);
 
-            void *pvCmd = SvgaFifoReserve(pGaDevExt->hw.pSvga, cbSubmit);
-            AssertPtrReturn(pvCmd, STATUS_INSUFFICIENT_RESOURCES);
-
-            /* pvDmaBuffer is the actual address of the current data block.
-             * Therefore do not use pSubmitCommand->DmaBufferSubmissionStartOffset here.
-             */
-            memcpy(pvCmd, pvDmaBuffer, cbSubmit);
-            SvgaFifoCommit(pGaDevExt->hw.pSvga, cbSubmit);
+                /* pvDmaBuffer is the actual address of the current data block.
+                 * Therefore do not use pSubmitCommand->DmaBufferSubmissionStartOffset here.
+                 */
+                memcpy(pvCmd, pvDmaBuffer, cbSubmit);
+                SvgaFifoCommit(pGaDevExt->hw.pSvga, cbSubmit);
+            }
+            else
+            {
+                /* 'Paging' buffers can be empty, implementation is incomplete. See GaDxgkDdiBuildPagingBuffer. */
+                if (pSubmitCommand->Flags.Paging == 0)
+                {
+                    LogRelMax(16, ("WDDM: Zero sized command buffer. Flags 0x%x, type %d\n", pSubmitCommand->Flags.Value, pRenderData->u32DataType));
+                    AssertFailed();
+                }
+            }
         }
 
         ++pRenderData;
     }
 
+    ASMAtomicWriteU32(&pGaDevExt->u32LastSubmittedFenceId, pSubmitCommand->SubmissionFenceId);
+
     /* Submit the fence. */
     SvgaFence(pGaDevExt->hw.pSvga, pSubmitCommand->SubmissionFenceId);
-
-    ASMAtomicWriteU32(&pGaDevExt->u32LastSubmittedFenceId, pSubmitCommand->SubmissionFenceId);
 
     GALOG(("done %d\n", pSubmitCommand->SubmissionFenceId));
     return STATUS_SUCCESS;
