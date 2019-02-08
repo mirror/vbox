@@ -437,8 +437,7 @@ void UIVMLogViewerTextEdit::sltHandleUpdateRequest(const QRect &rect, int dy)
         sltUpdateLineNumberAreaWidth(0);
 
     if (viewport())
-        viewport()->repaint();
-
+        viewport()->update();
 }
 
 void UIVMLogViewerTextEdit::sltBookmark()
