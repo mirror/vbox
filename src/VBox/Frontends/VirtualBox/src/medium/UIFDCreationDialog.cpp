@@ -62,7 +62,7 @@ UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent /* = 0 */,
 
 void UIFDCreationDialog::retranslateUi()
 {
-    setWindowTitle(tr("Create a Floppy Disk"));
+    setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Floppy Disk Creator")));
     if (m_pPathLabel)
         m_pPathLabel->setText(tr("File Path:"));
     if (m_pSizeLabel)

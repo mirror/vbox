@@ -144,6 +144,7 @@ void UIMediumSelector::configure()
 {
     /* Apply window icons: */
     setWindowIcon(UIIconPool::iconSetFull(":/media_manager_32px.png", ":/media_manager_16px.png"));
+    setTitle();
     prepareWidgets();
     prepareActions();
     prepareConnections();
@@ -739,4 +740,25 @@ void UIMediumSelector::scrollToItem(UIMediumItem* pItem)
     pItem->setFont(0, font);
 
     m_pTreeWidget->scrollTo(itemIndex);
+}
+
+void UIMediumSelector::setTitle()
+{
+    switch (m_enmMediumType)
+    {
+        case UIMediumDeviceType_DVD:
+            setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Optical Disk Selector")));
+            break;
+        case UIMediumDeviceType_Floppy:
+            setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Floppy Disk Selector")));
+            break;
+        case UIMediumDeviceType_HardDisk:
+            setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Hard Disk Selector")));
+            break;
+        case UIMediumDeviceType_All:
+        case UIMediumDeviceType_Invalid:
+        default:
+            setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Virtual Medium Selector")));
+            break;
+    }
 }

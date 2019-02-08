@@ -119,6 +119,7 @@ private slots:
     void          saveDefaultForeground();
     void          selectMedium(const QUuid &uMediumID);
     void          scrollToItem(UIMediumItem* pItem);
+    void          setTitle();
     QWidget              *m_pCentralWidget;
     QVBoxLayout          *m_pMainLayout;
     QITreeWidget         *m_pTreeWidget;
