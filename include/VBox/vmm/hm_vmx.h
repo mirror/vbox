@@ -1933,7 +1933,7 @@ AssertCompileSize(VMXVMCSFIELDWIDTH, 4);
  * @{ */
 /** CR0 bits ignored on VM-entry (ET, NW, CD and reserved bits bits 6:15, bit 17,
  *  bits 19:28). */
-#define VMX_ENTRY_CR0_IGNORE_MASK                               UINT64_C(0x7ffaffc0)
+#define VMX_ENTRY_CR0_IGNORE_MASK                               UINT64_C(0x7ffaffd0)
 /** DR7 bits set here are always cleared on VM-entry (bit 12, bits 14:15). */
 #define VMX_ENTRY_DR7_MBZ_MASK                                  UINT64_C(0xd000)
 /** DR7 bits set here are always set on VM-entry (bit 10). */
