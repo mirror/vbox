@@ -33,6 +33,11 @@
 
 RT_C_DECLS_BEGIN
 
+/** @defgroup grp_rt_sgbuf  RTSgBuf - Scatter / Gather Buffers
+ * @ingroup grp_rt
+ * @{
+ */
+
 /**
  * A S/G entry.
  */
@@ -54,6 +59,11 @@ typedef PRTSGSEG *PPRTSGSEG;
  * A S/G buffer.
  *
  * The members should be treated as private.
+ *
+ * @warning There is a lot of code, especially in the VFS area of IPRT, that
+ *          totally ignores the idxSeg, pvSegCur and cbSegLeft members!  So,
+ *          it is not recommended to pass buffers that aren't fully reset or
+ *          where cbSegLeft is shorter than what paSegs describes.
  */
 typedef struct RTSGBUF
 {
@@ -61,6 +71,7 @@ typedef struct RTSGBUF
     PCRTSGSEG paSegs;
     /** Number of segments. */
     unsigned  cSegs;
+
     /** Current segment we are in. */
     unsigned  idxSeg;
     /** Pointer to the current segment start. */
@@ -75,6 +86,75 @@ typedef const RTSGBUF *PCRTSGBUF;
 /** Pointer to a S/G entry pointer. */
 typedef PRTSGBUF *PPRTSGBUF;
 
+
+/**
+ * Sums up the length of all the segments.
+ *
+ * @returns The complete segment length.
+ * @param   pSgBuf      The S/G buffer to check out.
+ */
+DECLINLINE(size_t) RTSgBufCalcTotalLength(PCRTSGBUF pSgBuf)
+{
+    size_t   cb = 0;
+    unsigned i  = pSgBuf->cSegs;
+    while (i-- > 0)
+        cb += pSgBuf->paSegs[i].cbSeg;
+    return cb;
+}
+
+/**
+ * Sums up the number of bytes left from the current position.
+ *
+ * @returns Number of bytes left.
+ * @param   pSgBuf      The S/G buffer to check out.
+ */
+DECLINLINE(size_t) RTSgBufCalcLengthLeft(PCRTSGBUF pSgBuf)
+{
+    size_t   cb = pSgBuf->cbSegLeft;
+    unsigned i  = pSgBuf->cSegs;
+    while (i-- > pSgBuf->idxSeg + 1)
+        cb += pSgBuf->paSegs[i].cbSeg;
+    return cb;
+}
+
+/**
+ * Checks if the current buffer position is at the start of the first segment.
+ *
+ * @returns true / false.
+ * @param   pSgBuf      The S/G buffer to check out.
+ */
+DECLINLINE(bool) RTSgBufIsAtStart(PCRTSGBUF pSgBuf)
+{
+    return pSgBuf->idxSeg == 0
+        && (   pSgBuf->cSegs == 0
+            || pSgBuf->pvSegCur == pSgBuf->paSegs[0].pvSeg);
+}
+
+/**
+ * Checks if the current buffer position is at the end of all the segments.
+ *
+ * @returns true / false.
+ * @param   pSgBuf      The S/G buffer to check out.
+ */
+DECLINLINE(bool) RTSgBufIsAtEnd(PCRTSGBUF pSgBuf)
+{
+    return pSgBuf->idxSeg > pSgBuf->cSegs
+        || (   pSgBuf->idxSeg == pSgBuf->cSegs
+            && pSgBuf->cbSegLeft == 0);
+}
+
+/**
+ * Checks if the current buffer position is at the start of the current segment.
+ *
+ * @returns true / false.
+ * @param   pSgBuf      The S/G buffer to check out.
+ */
+DECLINLINE(bool) RTSgBufIsAtStartOfSegment(PCRTSGBUF pSgBuf)
+{
+    return pSgBuf->idxSeg < pSgBuf->cSegs
+        && pSgBuf->paSegs[pSgBuf->idxSeg].pvSeg == pSgBuf->pvSegCur;
+}
+
 /**
  * Initialize a S/G buffer structure.
  *
@@ -83,9 +163,9 @@ typedef PRTSGBUF *PPRTSGBUF;
  * @param   paSegs    Pointer to the start of the segment array.
  * @param   cSegs     Number of segments in the array.
  *
- * @note paSegs and cSegs can be NULL and 0 respectively to indicate
- *       an empty S/G buffer. All operations on the S/G buffer will
- *       not do anything in this case.
+ * @note paSegs and cSegs can be NULL and 0 respectively to indicate an empty
+ *       S/G buffer.  Operations on the S/G buffer will not do anything in this
+ *       case.
  */
 RTDECL(void) RTSgBufInit(PRTSGBUF pSgBuf, PCRTSGSEG paSegs, size_t cSegs);
 
@@ -108,6 +188,28 @@ RTDECL(void) RTSgBufReset(PRTSGBUF pSgBuf);
  *       same segment array.
  */
 RTDECL(void) RTSgBufClone(PRTSGBUF pSgBufNew, PCRTSGBUF pSgBufOld);
+
+/**
+ * Returns the next segment in the S/G buffer or NULL if no segments left.
+ *
+ * @returns Pointer to the next segment in the S/G buffer.
+ * @param   pSgBuf      The S/G buffer.
+ * @param   cbDesired   The max number of bytes to get.
+ * @param   pcbSeg      Where to store the size of the returned segment, this is
+ *                      equal or smaller than @a cbDesired.
+ *
+ * @note    Use RTSgBufAdvance() to advance after read/writing into the buffer.
+ */
+DECLINLINE(void *) RTSgBufGetCurrentSegment(PRTSGBUF pSgBuf, size_t cbDesired, size_t *pcbSeg)
+{
+    if (!RTSgBufIsAtEnd(pSgBuf))
+    {
+        *pcbSeg = RT_MIN(cbDesired, pSgBuf->cbSegLeft);
+        return pSgBuf->pvSegCur;
+    }
+    *pcbSeg = 0;
+    return NULL;
+}
 
 /**
  * Returns the next segment in the S/G buffer or NULL if no segment is left.
