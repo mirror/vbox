@@ -1106,7 +1106,7 @@ static int qedFreeImage(PQEDIMAGE pImage, bool fDelete)
 
         if (pImage->pszBackingFilename)
         {
-            RTMemFree(pImage->pszBackingFilename);
+            RTStrFree(pImage->pszBackingFilename);
             pImage->pszBackingFilename = NULL;
         }
 
@@ -1174,17 +1174,20 @@ static int qedOpenImage(PQEDIMAGE pImage, unsigned uOpenFlags)
                             && (Header.u64FeatureFlags & QED_FEATURE_BACKING_FILE))
                         {
                             /* Load backing filename from image. */
-                            pImage->pszBackingFilename = (char *)RTMemAllocZ(Header.u32BackingFilenameSize + 1); /* +1 for \0 terminator. */
+                            pImage->pszBackingFilename = RTStrAlloc(Header.u32BackingFilenameSize + 1); /* +1 for \0 terminator. */
                             if (pImage->pszBackingFilename)
                             {
+                                RT_BZERO(pImage->pszBackingFilename, Header.u32BackingFilenameSize + 1);
                                 pImage->cbBackingFilename  = Header.u32BackingFilenameSize;
                                 pImage->offBackingFilename = Header.u32OffBackingFilename;
                                 rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
                                                            Header.u32OffBackingFilename, pImage->pszBackingFilename,
                                                            Header.u32BackingFilenameSize);
+                                if (RT_SUCCESS(rc))
+                                    rc = RTStrValidateEncoding(pImage->pszBackingFilename);
                             }
                             else
-                                rc = VERR_NO_MEMORY;
+                                rc = VERR_NO_STR_MEMORY;
                         }
 
                         if (RT_SUCCESS(rc))
@@ -2202,7 +2205,7 @@ static DECLCALLBACK(int) qedSetParentFilename(void *pBackendData, const char *ps
             RTStrFree(pImage->pszBackingFilename);
         pImage->pszBackingFilename = RTStrDup(pszParentFilename);
         if (!pImage->pszBackingFilename)
-            rc = VERR_NO_MEMORY;
+            rc = VERR_NO_STR_MEMORY;
         else
         {
             if (!pImage->offBackingFilename)

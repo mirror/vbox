@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * VBox HDD container test utility - scripting engine, interpreter.
  */

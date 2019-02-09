@@ -1,6 +1,5 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
- *
  * VBox HDD container test utility, memory disk/file.
  */
 

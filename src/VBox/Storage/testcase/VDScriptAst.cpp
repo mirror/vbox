@@ -1,6 +1,5 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
- *
  * VBox HDD container test utility - scripting engine AST node related functions.
  */
 

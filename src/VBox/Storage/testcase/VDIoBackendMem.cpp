@@ -1,6 +1,5 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
- *
  * VBox HDD container test utility, async I/O memory backend
  */
 

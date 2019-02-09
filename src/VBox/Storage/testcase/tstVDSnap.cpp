@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * Snapshot VBox HDD container test utility.
  */
 

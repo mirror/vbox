@@ -973,7 +973,7 @@ static int qcowFreeImage(PQCOWIMAGE pImage, bool fDelete)
 
         if (pImage->pszBackingFilename)
         {
-            RTMemFree(pImage->pszBackingFilename);
+            RTStrFree(pImage->pszBackingFilename);
             pImage->pszBackingFilename = NULL;
         }
 
@@ -1152,15 +1152,18 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
                         && pImage->offBackingFilename)
                     {
                         /* Load backing filename from image. */
-                        pImage->pszBackingFilename = (char *)RTMemAllocZ(pImage->cbBackingFilename + 1); /* +1 for \0 terminator. */
+                        pImage->pszBackingFilename = RTStrAlloc(pImage->cbBackingFilename + 1); /* +1 for \0 terminator. */
                         if (pImage->pszBackingFilename)
                         {
+                            RT_BZERO(pImage->pszBackingFilename, pImage->cbBackingFilename + 1);
                             rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage,
                                                        pImage->offBackingFilename, pImage->pszBackingFilename,
                                                        pImage->cbBackingFilename);
+                            if (RT_SUCCESS(rc))
+                                rc = RTStrValidateEncoding(pImage->pszBackingFilename);
                         }
                         else
-                            rc = VERR_NO_MEMORY;
+                            rc = VERR_NO_STR_MEMORY;
                     }
 
                     if (   RT_SUCCESS(rc)
@@ -2196,7 +2199,7 @@ static DECLCALLBACK(int) qcowSetParentFilename(void *pBackendData, const char *p
                 RTStrFree(pImage->pszBackingFilename);
             pImage->pszBackingFilename = RTStrDup(pszParentFilename);
             if (!pImage->pszBackingFilename)
-                rc = VERR_NO_MEMORY;
+                rc = VERR_NO_STR_MEMORY;
             else
             {
                 if (!pImage->offBackingFilename)
