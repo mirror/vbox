@@ -515,7 +515,7 @@ RTR3DECL(int)  RTFileWrite(RTFILE hFile, const void *pvBuf, size_t cbToWrite, si
             {
                 ssize_t cbWrittenPart = write(RTFileToNative(hFile), (const char *)pvBuf + cbWritten, cbToWrite - cbWritten);
                 if (cbWrittenPart <= 0)
-                    return RTErrConvertFromErrno(errno);
+                    return cbWrittenPart < 0 ? RTErrConvertFromErrno(errno) : VERR_TRY_AGAIN;
                 cbWritten += cbWrittenPart;
             }
         }
