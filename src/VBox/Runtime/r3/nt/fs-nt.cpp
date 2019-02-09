@@ -224,6 +224,8 @@ int rtNtQueryFsType(HANDLE hHandle, PRTFSTYPE penmType)
             *penmType = RTFSTYPE_ISO9660;
         else if (IS_FS("HPFS"))
             *penmType = RTFSTYPE_HPFS;
+        else if (IS_FS("ReFS")) /** @todo verify ReFS signature. */
+            *penmType = RTFSTYPE_REFS;
         else if (IS_FS("VBoxSharedFolderFS"))
             *penmType = RTFSTYPE_VBOXSHF;
 #undef IS_FS

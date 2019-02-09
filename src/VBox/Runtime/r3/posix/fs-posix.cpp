@@ -294,6 +294,8 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
             {
                 if (!strcmp("hfs", statfsBuf.f_fstypename))
                     *penmType = RTFSTYPE_HFS;
+                else if (!strcmp("apfs", statfsBuf.f_fstypename)) /** @todo verify apfs signature. */
+                    *penmType = RTFSTYPE_APFS;
                 else if (   !strcmp("fat", statfsBuf.f_fstypename)
                          || !strcmp("msdos", statfsBuf.f_fstypename))
                     *penmType = RTFSTYPE_FAT;

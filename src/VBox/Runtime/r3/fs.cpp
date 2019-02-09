@@ -211,12 +211,14 @@ RTDECL(const char *) RTFsTypeName(RTFSTYPE enmType)
         case RTFSTYPE_NTFS:         return "ntfs";
         case RTFSTYPE_FAT:          return "fat";
         case RTFSTYPE_EXFAT:        return "exfat";
+        case RTFSTYPE_REFS:         return "refs";
 
         case RTFSTYPE_ZFS:          return "zfs";
         case RTFSTYPE_UFS:          return "ufs";
         case RTFSTYPE_NFS:          return "nfs";
 
         case RTFSTYPE_HFS:          return "hfs";
+        case RTFSTYPE_APFS:         return "apfs";
         case RTFSTYPE_AUTOFS:       return "autofs";
         case RTFSTYPE_DEVFS:        return "devfs";
 
