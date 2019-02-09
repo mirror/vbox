@@ -764,8 +764,8 @@ static int rtAioMgrCheckFiles(PRTAIOMGRINT pThis)
 {
     int rc = VINF_SUCCESS;
 
-    PRTAIOMGRFILEINT pIt;
-    RTListForEach(&pThis->ListFiles, pIt, RTAIOMGRFILEINT, AioMgr.NodeAioMgrFiles)
+    PRTAIOMGRFILEINT pIt, pNext;
+    RTListForEachSafe(&pThis->ListFiles, pIt, pNext, RTAIOMGRFILEINT, AioMgr.NodeAioMgrFiles)
     {
         rc = rtAioMgrQueueReqs(pThis, pIt);
         if (RT_FAILURE(rc))
