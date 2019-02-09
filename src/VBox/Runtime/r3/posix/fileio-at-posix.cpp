@@ -85,8 +85,8 @@ RTDECL(int)  RTFileWriteAt(RTFILE hFile, RTFOFF off, const void *pvBuf, size_t c
             {
                 ssize_t cbWrittenPart = pwrite(RTFileToNative(hFile), (const char *)pvBuf + cbWritten, cbToWrite - cbWritten,
                                                off + cbWritten);
-                if (cbWrittenPart <= 0)
-                    return RTErrConvertFromErrno(errno);
+                if (cbWrittenPart < 0)
+                    return cbWrittenPart < 0 ? RTErrConvertFromErrno(errno) : VERR_TRY_AGAIN;
                 cbWritten += cbWrittenPart;
             }
         }

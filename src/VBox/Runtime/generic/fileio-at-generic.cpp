@@ -35,18 +35,6 @@
 
 
 
-/**
- * Read bytes from a file at a given offset.
- * This function may modify the file position.
- *
- * @returns iprt status code.
- * @param   File        Handle to the file.
- * @param   off         Where to read.
- * @param   pvBuf       Where to put the bytes we read.
- * @param   cbToRead    How much to read.
- * @param   *pcbRead    How much we actually read.
- *                      If NULL an error will be returned for a partial read.
- */
 RTDECL(int)  RTFileReadAt(RTFILE File, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
     int rc = RTFileSeek(File, off, RTFILE_SEEK_BEGIN, NULL);
@@ -56,18 +44,6 @@ RTDECL(int)  RTFileReadAt(RTFILE File, RTFOFF off, void *pvBuf, size_t cbToRead,
 }
 
 
-/**
- * Write bytes to a file at a given offset.
- * This function may modify the file position.
- *
- * @returns iprt status code.
- * @param   File        Handle to the file.
- * @param   off         Where to write.
- * @param   pvBuf       What to write.
- * @param   cbToWrite   How much to write.
- * @param   *pcbWritten How much we actually wrote.
- *                      If NULL an error will be returned for a partial write.
- */
 RTDECL(int)  RTFileWriteAt(RTFILE File, RTFOFF off, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
 {
     int rc = RTFileSeek(File, off, RTFILE_SEEK_BEGIN, NULL);

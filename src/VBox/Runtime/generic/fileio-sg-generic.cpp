@@ -31,21 +31,10 @@
 #include "internal/iprt.h"
 #include <iprt/file.h>
 
-#include <iprt/errcore.h>
+#include <iprt/assert.h>
+#include <iprt/err.h>
 
 
-/**
- * Read bytes from a file at a given offset into a S/G buffer.
- * This function may modify the file position.
- *
- * @returns iprt status code.
- * @param   hFile       Handle to the file.
- * @param   off         Where to read.
- * @param   pSgBuf      Pointer to the S/G buffer to read into.
- * @param   cbToRead    How much to read.
- * @param   pcbRead     How much we actually read.
- *                      If NULL an error will be returned for a partial read.
- */
 RTDECL(int)  RTFileSgReadAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToRead, size_t *pcbRead)
 {
     int rc = VINF_SUCCESS;
@@ -53,20 +42,23 @@ RTDECL(int)  RTFileSgReadAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cb
     while (cbToRead)
     {
         size_t cbBuf = cbToRead;
-        void  *pvBuf = RTSgBufGetNextSegment(pSgBuf, &cbBuf);
+        void  *pvBuf = RTSgBufGetNextSegment(pSgBuf, &cbBuf); /** @todo this is wrong as it may advance the buffer past what's actually read. */
 
-        size_t cbThisRead = 0;
+        size_t cbThisRead = cbBuf;
         rc = RTFileReadAt(hFile, off, pvBuf, cbBuf, pcbRead ? &cbThisRead : NULL);
         if (RT_SUCCESS(rc))
             cbRead += cbThisRead;
         else
             break;
-        if (   cbThisRead < cbBuf
-            && pcbRead)
+        if (cbThisRead < cbBuf)
+        {
+            AssertStmt(pcbRead, rc = VERR_INTERNAL_ERROR_2);
             break;
+        }
+        Assert(cbBuf == cbThisRead);
 
         cbToRead -= cbBuf;
-        off += cbBuf;
+        off      += cbBuf;
     }
 
     if (pcbRead)
@@ -76,18 +68,6 @@ RTDECL(int)  RTFileSgReadAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cb
 }
 
 
-/**
- * Write bytes from a S/G buffer to a file at a given offset.
- * This function may modify the file position.
- *
- * @returns iprt status code.
- * @param   hFile       Handle to the file.
- * @param   off         Where to write.
- * @param   pSgBuf      What to write.
- * @param   cbToWrite   How much to write.
- * @param   pcbWritten  How much we actually wrote.
- *                      If NULL an error will be returned for a partial write.
- */
 RTDECL(int)  RTFileSgWriteAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToWrite, size_t *pcbWritten)
 {
     int rc = VINF_SUCCESS;
@@ -95,20 +75,23 @@ RTDECL(int)  RTFileSgWriteAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t c
     while (cbToWrite)
     {
         size_t cbBuf = cbToWrite;
-        void  *pvBuf = RTSgBufGetNextSegment(pSgBuf, &cbBuf);
+        void  *pvBuf = RTSgBufGetNextSegment(pSgBuf, &cbBuf); /** @todo this is wrong as it may advance the buffer past what's actually read. */
 
-        size_t cbThisWritten = 0;
+        size_t cbThisWritten = cbBuf;
         rc = RTFileWriteAt(hFile, off, pvBuf, cbBuf, pcbWritten ? &cbThisWritten : NULL);
         if (RT_SUCCESS(rc))
             cbWritten += cbThisWritten;
         else
             break;
-        if (   cbThisWritten < cbBuf
-            && pcbWritten)
+        if (cbThisWritten < cbBuf)
+        {
+            AssertStmt(pcbWritten, rc = VERR_INTERNAL_ERROR_2);
             break;
+        }
 
+        Assert(cbBuf == cbThisWritten);
         cbToWrite -= cbBuf;
-        off += cbBuf;
+        off       += cbBuf;
     }
 
     if (pcbWritten)
