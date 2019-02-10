@@ -665,12 +665,12 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             uint32_t         cbRead  = paParms[3].u.uint32;
 
             /* Verify parameters values. */
-            ASSERT_GUEST_STMT_BREAK(hFile != SHFL_HANDLE_ROOT, rc == VERR_INVALID_PARAMETER);
-            ASSERT_GUEST_STMT_BREAK(hFile != SHFL_HANDLE_NIL,  rc == VERR_INVALID_HANDLE);
+            ASSERT_GUEST_STMT_BREAK(hFile != SHFL_HANDLE_ROOT, rc = VERR_INVALID_PARAMETER);
+            ASSERT_GUEST_STMT_BREAK(hFile != SHFL_HANDLE_NIL,  rc = VERR_INVALID_HANDLE);
             if (paParms[4].type == VBOX_HGCM_SVC_PARM_PTR)
-                ASSERT_GUEST_STMT_BREAK(cbRead <= paParms[4].u.pointer.size, rc == VERR_INVALID_HANDLE);
+                ASSERT_GUEST_STMT_BREAK(cbRead <= paParms[4].u.pointer.size, rc = VERR_INVALID_HANDLE);
             else
-                ASSERT_GUEST_STMT_BREAK(cbRead <= paParms[4].u.Pages.cb, rc == VERR_OUT_OF_RANGE);
+                ASSERT_GUEST_STMT_BREAK(cbRead <= paParms[4].u.Pages.cb, rc = VERR_OUT_OF_RANGE);
 
             /* Execute the function. */
             if (g_pStatusLed)
@@ -714,12 +714,12 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             uint32_t         cbWrite  = paParms[3].u.uint32;
 
             /* Verify parameters values. */
-            ASSERT_GUEST_STMT_BREAK(hFile != SHFL_HANDLE_ROOT, rc == VERR_INVALID_PARAMETER);
-            ASSERT_GUEST_STMT_BREAK(hFile != SHFL_HANDLE_NIL,  rc == VERR_INVALID_HANDLE);
+            ASSERT_GUEST_STMT_BREAK(hFile != SHFL_HANDLE_ROOT, rc = VERR_INVALID_PARAMETER);
+            ASSERT_GUEST_STMT_BREAK(hFile != SHFL_HANDLE_NIL,  rc = VERR_INVALID_HANDLE);
             if (paParms[4].type == VBOX_HGCM_SVC_PARM_PTR)
-                ASSERT_GUEST_STMT_BREAK(cbWrite <= paParms[4].u.pointer.size, rc == VERR_INVALID_HANDLE);
+                ASSERT_GUEST_STMT_BREAK(cbWrite <= paParms[4].u.pointer.size, rc = VERR_INVALID_HANDLE);
             else
-                ASSERT_GUEST_STMT_BREAK(cbWrite <= paParms[4].u.Pages.cb, rc == VERR_OUT_OF_RANGE);
+                ASSERT_GUEST_STMT_BREAK(cbWrite <= paParms[4].u.Pages.cb, rc = VERR_OUT_OF_RANGE);
 
             /* Execute the function. */
             if (g_pStatusLed)
