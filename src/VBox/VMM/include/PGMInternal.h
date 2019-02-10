@@ -2475,12 +2475,13 @@ typedef struct PGMPOOL
     /** Number of active dirty pages. */
     uint32_t                    cDirtyPages;
     /** Array of current dirty pgm pool page indices. */
+    uint16_t                    aidxDirtyPages[16];
+    /** Array running in parallel to aidxDirtyPages with the page data. */
     struct
     {
-        uint16_t                    uIdx;
-        uint16_t                    Alignment[3];
-        uint64_t                    aPage[512];
+        uint64_t                aPage[512];
     } aDirtyPages[16];
+
     /** The number of pages currently in use. */
     uint16_t                    cUsedPages;
 #ifdef VBOX_WITH_STATISTICS
@@ -4293,7 +4294,7 @@ void            pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys);
 PPGMPOOLPAGE    pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
 PPGMPOOLPAGE    pgmPoolQueryPageForDbg(PPGMPOOL pPool, RTHCPHYS HCPhys);
 int             pgmPoolSyncCR3(PVMCPU pVCpu);
-bool            pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys);
+bool            pgmPoolIsDirtyPageSlow(PVM pVM, RTGCPHYS GCPhys);
 void            pgmPoolInvalidateDirtyPage(PVM pVM, RTGCPHYS GCPhysPT);
 int             pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, bool fFlushPTEs, bool *pfFlushTLBs);
 void            pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCPhys, RTGCPHYS GCPhysHint, uint16_t iPte);

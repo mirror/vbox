@@ -1495,6 +1495,23 @@ DECLINLINE(bool) pgmPoolIsPageLocked(PPGMPOOLPAGE pPage)
 
 
 /**
+ * Check if the specified page is dirty (not write monitored)
+ *
+ * @return dirty or not
+ * @param   pVM             The cross context VM structure.
+ * @param   GCPhys          Guest physical address
+ */
+DECLINLINE(bool) pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
+{
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    PGM_LOCK_ASSERT_OWNER(pVM);
+    if (!pPool->cDirtyPages)
+        return false;
+    return pgmPoolIsDirtyPageSlow(pVM, GCPhys);
+}
+
+
+/**
  * Tells if mappings are to be put into the shadow page table or not.
  *
  * @returns boolean result

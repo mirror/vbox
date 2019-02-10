@@ -742,15 +742,11 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
      */
     for (unsigned i = 0; i < RT_ELEMENTS(pPool->aDirtyPages); i++)
     {
-        PPGMPOOLPAGE pPage;
-        unsigned     idxPage;
-
-        if (pPool->aDirtyPages[i].uIdx == NIL_PGMPOOL_IDX)
+        unsigned idxPage = pPool->aidxDirtyPages[i];
+        if (idxPage == NIL_PGMPOOL_IDX)
             continue;
 
-        idxPage = pPool->aDirtyPages[i].uIdx;
-        AssertRelease(idxPage != NIL_PGMPOOL_IDX);
-        pPage = &pPool->aPages[idxPage];
+        PPGMPOOLPAGE pPage = &pPool->aPages[idxPage];
         Assert(pPage->idx == idxPage);
         Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX && pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
 
@@ -763,7 +759,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
         AssertRCSuccess(rc);
         pPage->fDirty = false;
 
-        pPool->aDirtyPages[i].uIdx = NIL_PGMPOOL_IDX;
+        pPool->aidxDirtyPages[i] = NIL_PGMPOOL_IDX;
     }
 
     /* Clear all dirty pages. */
