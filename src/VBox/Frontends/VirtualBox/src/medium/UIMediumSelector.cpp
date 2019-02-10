@@ -448,7 +448,7 @@ void UIMediumSelector::sltCreateMedium()
     if (m_enmMediumType == UIMediumDeviceType_Floppy)
         uMediumId = vboxGlobal().showCreateFloppyDiskDialog(this, m_strMachineName, m_strMachineFolder);
     else if (m_enmMediumType == UIMediumDeviceType_HardDisk)
-        uMediumId = vboxGlobal().createHDWithNewHDWizard(this, m_strMachineGuestOSTypeId, m_strMachineFolder);
+        uMediumId = vboxGlobal().createHDWithNewHDWizard(this, m_strMachineGuestOSTypeId, m_strMachineName, m_strMachineFolder);
     else if (m_enmMediumType == UIMediumDeviceType_DVD)
         uMediumId = vboxGlobal().createVisoMediumWithVisoCreator(this, m_strMachineName, m_strMachineFolder);
 

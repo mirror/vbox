@@ -162,7 +162,9 @@ QString UIFDCreationDialog::getDefaultFolder() const
     if (strInitialPath.isEmpty())
         return strInitialPath;
 
-    strInitialPath = QDir(strInitialPath).absoluteFilePath(m_strMachineName + "." + strPreferredExtension);
+    QString strDiskname = VBoxGlobal::findUniqueFileName(m_strMachineFolder, m_strMachineName);
+
+    strInitialPath = QDir(strInitialPath).absoluteFilePath(strDiskname + "." + strPreferredExtension);
     return strInitialPath;
 }
 

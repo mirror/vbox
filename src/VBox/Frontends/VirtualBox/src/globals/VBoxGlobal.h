@@ -184,6 +184,9 @@ public:
         bool brandingIsActive(bool fForce = false);
         /** Returns value for certain branding @a strKey from custom.ini file. */
         QString brandingGetKey(QString strKey);
+        /** Returns a file name (unique up to extension) wrt. @a strFullFolderPath folder content. Starts
+          * searching strBaseFileName and adds suffixes until a unique file name is found. */
+        static QString findUniqueFileName(const QString &strFullFolderPath, const QString &strBaseFileName);
     /** @} */
 
     /** @name Process arguments stuff.
@@ -527,9 +530,11 @@ public:
         /** Creates and shows a UIWizardNewVD wizard.
           * @param  parent                    Passes the parent of the wizard,
           * @param  strMachineGuestOSTypeId   Passes the string of machine's guest OS type ID,
+          * @param  strMachineName            Passes the name of the machine,
           * @param  strMachineFolder          Passes the machine folder,
           * returns the ID of the  created hard disk if successful, a null QUuid otherwise.*/
-        QUuid createHDWithNewHDWizard(QWidget *pParent, const QString &strMachineGuestOSTypeId, const QString &strMachineFolder);
+        QUuid createHDWithNewHDWizard(QWidget *pParent, const QString &strMachineGuestOSTypeId,
+                                      const QString &strMachineName, const QString &strMachineFolder);
 
         /** Prepares storage menu according passed parameters.
           * @param  menu               Brings the #QMenu to be prepared.

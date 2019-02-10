@@ -432,6 +432,28 @@ QString VBoxGlobal::brandingGetKey(QString strKey)
     return settings.value(QString("%1").arg(strKey)).toString();
 }
 
+/*static */
+QString VBoxGlobal::findUniqueFileName(const QString &strFullFolderPath, const QString &strBaseFileName)
+{
+    QDir folder(strFullFolderPath);
+    if (!folder.exists())
+        return strBaseFileName;
+    QFileInfoList folderContent = folder.entryInfoList();
+    QSet<QString> fileNameSet;
+    foreach (const QFileInfo &fileInfo, folderContent)
+    {
+        /* Remove the extension : */
+        fileNameSet.insert(fileInfo.baseName());
+    }
+    int iSuffix = 0;
+    QString strNewName(strBaseFileName);
+    while (fileNameSet.contains(strNewName))
+    {
+        strNewName = strBaseFileName + QString("_") + QString::number(++iSuffix);
+    }
+    return strNewName;
+}
+
 /* static */
 bool VBoxGlobal::hasAllowedExtension(const QString &strExt, const QStringList &extList)
 {
@@ -2792,13 +2814,14 @@ int VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  e
 }
 
 QUuid VBoxGlobal::createHDWithNewHDWizard(QWidget *pParent, const QString &strMachineGuestOSTypeId,
+                                          const QString &strMachineName,
                                           const QString &strMachineFolder)
 {
     /* Initialize variables: */
     const CGuestOSType comGuestOSType = virtualBox().GetGuestOSType(strMachineGuestOSTypeId);
-    const QFileInfo fileInfo(strMachineFolder);
+    QString strDiskName = findUniqueFileName(strMachineFolder, strMachineName);
     /* Show New VD wizard: */
-    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(pParent, QString(), fileInfo.absolutePath(), comGuestOSType.GetRecommendedHDD());
+    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(pParent, strDiskName, strMachineFolder, comGuestOSType.GetRecommendedHDD());
 
     if (!pWizard)
         return QUuid();
