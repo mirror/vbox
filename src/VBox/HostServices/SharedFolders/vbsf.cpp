@@ -1040,7 +1040,7 @@ static int vbsfPagesToSgBuf(VBOXHGCMSVCPARMPAGES const *pPages, uint32_t cbLeft,
             /* Current page. */
             void *pvSeg;
             paSegs[iSeg].pvSeg = pvSeg = pPages->papvPages[iPage];
-            size_t cbSeg = PAGE_SIZE - ((uintptr_t)pvSeg & PAGE_OFFSET_MASK);
+            uint32_t cbSeg = PAGE_SIZE - (uint32_t)((uintptr_t)pvSeg & PAGE_OFFSET_MASK);
             iPage++;
 
             /* Adjacent to the next page? */
