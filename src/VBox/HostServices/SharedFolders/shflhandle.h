@@ -51,12 +51,13 @@ typedef struct _SHFLFILEHANDLE
         struct
         {
             RTFILE        Handle;
+            uint64_t      fOpenFlags;       /**< RTFILE_O_XXX. */
         } file;
         struct
         {
             RTDIR         Handle;
             RTDIR         SearchHandle;
-            PRTDIRENTRYEX pLastValidEntry; /* last found file in a directory search */
+            PRTDIRENTRYEX pLastValidEntry;  /**< last found file in a directory search */
         } dir;
     };
 } SHFLFILEHANDLE;

@@ -318,6 +318,7 @@ typedef struct VMMDevState
     STAMPROFILE StatHgcmCmdCompletion;
     STAMPROFILE StatHgcmCmdTotal;
     STAMCOUNTER StatHgcmLargeCmdAllocs;
+    STAMCOUNTER StatHgcmFailedPageListLocking;
 #endif /* VBOX_WITH_HGCM */
     STAMCOUNTER StatReqBufAllocs;
 

@@ -204,9 +204,20 @@ DECLINLINE(int) HGCMSvcHlpInfoDeregister(PVBOXHGCMSVCHELPERS pHlp, const char *p
 
 
 #define VBOX_HGCM_SVC_PARM_INVALID (0U)
-#define VBOX_HGCM_SVC_PARM_32BIT (1U)
-#define VBOX_HGCM_SVC_PARM_64BIT (2U)
-#define VBOX_HGCM_SVC_PARM_PTR   (3U)
+#define VBOX_HGCM_SVC_PARM_32BIT   (1U)
+#define VBOX_HGCM_SVC_PARM_64BIT   (2U)
+#define VBOX_HGCM_SVC_PARM_PTR     (3U)
+#define VBOX_HGCM_SVC_PARM_PAGES   (4U)
+
+/** VBOX_HGCM_SVC_PARM_PAGES specific data. */
+typedef struct VBOXHGCMSVCPARMPAGES
+{
+    uint32_t    cb;
+    uint16_t    cPages;
+    uint16_t    u16Padding;
+    void      **papvPages;
+} VBOXHGCMSVCPARMPAGES;
+typedef VBOXHGCMSVCPARMPAGES *PVBOXHGCMSVCPARMPAGES;
 
 typedef struct VBOXHGCMSVCPARM
 {
@@ -222,6 +233,8 @@ typedef struct VBOXHGCMSVCPARM
             uint32_t size;
             void *addr;
         } pointer;
+        /** VBOX_HGCM_SVC_PARM_PAGES */
+        VBOXHGCMSVCPARMPAGES Pages;
     } u;
 } VBOXHGCMSVCPARM;
 

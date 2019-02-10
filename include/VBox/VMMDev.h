@@ -531,6 +531,8 @@ AssertCompileSize(VMMDevReqHostVersion, 24+16);
 #define VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS        RT_BIT_32(1)
 /** HGCM supports the contiguous page list parameter type. */
 #define VMMDEV_HVF_HGCM_CONTIGUOUS_PAGE_LIST    RT_BIT_32(2)
+/** HGCM supports the no-bounce page list parameter type. */
+#define VMMDEV_HVF_HGCM_NO_BOUNCE_PAGE_LIST     RT_BIT_32(3)
 /** VMMDev supports fast IRQ acknowledgements. */
 #define VMMDEV_HVF_FAST_IRQ_ACK                 RT_BIT_32(31)
 /** @} */
@@ -1631,10 +1633,11 @@ AssertCompileSize(VMMDevHGCMCall, 32+12);
 #define VBOX_HGCM_F_PARM_DIRECTION_TO_HOST   UINT32_C(0x00000001)
 #define VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST UINT32_C(0x00000002)
 #define VBOX_HGCM_F_PARM_DIRECTION_BOTH      UINT32_C(0x00000003)
+#define VBOX_HGCM_F_PARM_DIRECTION_MASK      UINT32_C(0x00000003)
 /** Macro for validating that the specified flags are valid. */
 #define VBOX_HGCM_F_PARM_ARE_VALID(fFlags) \
-    (   (fFlags) > VBOX_HGCM_F_PARM_DIRECTION_NONE \
-     && (fFlags) <= VBOX_HGCM_F_PARM_DIRECTION_BOTH )
+    (   ((fFlags) & VBOX_HGCM_F_PARM_DIRECTION_MASK) \
+     && !((fFlags) & ~VBOX_HGCM_F_PARM_DIRECTION_MASK) )
 /** @} */
 
 /**

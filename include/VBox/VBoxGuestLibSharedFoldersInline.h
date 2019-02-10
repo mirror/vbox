@@ -778,7 +778,8 @@ DECLINLINE(int) VbglR0SfHostReqReadPgLst(SHFLROOT idRoot, VBOXSFREADPGLSTREQ *pR
     pReq->Parms.cb32Read.type               = VMMDevHGCMParmType_32bit;
     pReq->Parms.cb32Read.u.value32          = cbToRead;
 
-    pReq->Parms.pBuf.type                   = VMMDevHGCMParmType_PageList;
+    pReq->Parms.pBuf.type                   = g_fHostFeatures & VMMDEV_HVF_HGCM_NO_BOUNCE_PAGE_LIST
+                                            ? VMMDevHGCMParmType_NoBouncePageList : VMMDevHGCMParmType_PageList;
     pReq->Parms.pBuf.u.PageList.size        = cbToRead;
     pReq->Parms.pBuf.u.PageList.offset      = RT_UOFFSETOF(VBOXSFREADPGLSTREQ, PgLst) - sizeof(VBGLIOCIDCHGCMFASTCALL);
     pReq->PgLst.flags                       = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
@@ -924,7 +925,8 @@ DECLINLINE(int) VbglR0SfHostReqWritePgLst(SHFLROOT idRoot, VBOXSFWRITEPGLSTREQ *
     pReq->Parms.cb32Write.type              = VMMDevHGCMParmType_32bit;
     pReq->Parms.cb32Write.u.value32         = cbToWrite;
 
-    pReq->Parms.pBuf.type                   = VMMDevHGCMParmType_PageList;
+    pReq->Parms.pBuf.type                   = g_fHostFeatures & VMMDEV_HVF_HGCM_NO_BOUNCE_PAGE_LIST
+                                            ? VMMDevHGCMParmType_NoBouncePageList : VMMDevHGCMParmType_PageList;;
     pReq->Parms.pBuf.u.PageList.size        = cbToWrite;
     pReq->Parms.pBuf.u.PageList.offset      = RT_UOFFSETOF(VBOXSFWRITEPGLSTREQ, PgLst) - sizeof(VBGLIOCIDCHGCMFASTCALL);
     pReq->PgLst.flags                       = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;

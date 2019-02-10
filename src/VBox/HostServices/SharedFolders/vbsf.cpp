@@ -30,6 +30,7 @@
 #include "shflhandle.h"
 
 #include <VBox/AssertGuest.h>
+#include <VBox/param.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -478,6 +479,7 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszP
             if (pHandle)
             {
                 pHandle->root = root;
+                pHandle->file.fOpenFlags = fOpen;
                 rc = RTFileOpen(&pHandle->file.Handle, pszPath, fOpen);
             }
         }
@@ -1016,6 +1018,60 @@ int vbsfClose(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
     return rc;
 }
 
+/**
+ * Helper for vbsfReadPages and vbsfWritePages that creates a S/G buffer from a
+ * pages parameter.
+ */
+static int vbsfPagesToSgBuf(VBOXHGCMSVCPARMPAGES const *pPages, uint32_t cbLeft, PRTSGBUF pSgBuf)
+{
+    PRTSGSEG paSegs = (PRTSGSEG)RTMemTmpAlloc(sizeof(paSegs[0]) * pPages->cPages);
+    if (paSegs)
+    {
+        /*
+         * Convert the pages to segments.
+         */
+        uint32_t iSeg  = 0;
+        uint32_t iPage = 0;
+        for (;;)
+        {
+            Assert(iSeg < pPages->cPages);
+            Assert(iPage < pPages->cPages);
+
+            /* Current page. */
+            void *pvSeg;
+            paSegs[iSeg].pvSeg = pvSeg = pPages->papvPages[iPage];
+            size_t cbSeg = PAGE_SIZE - ((uintptr_t)pvSeg & PAGE_OFFSET_MASK);
+            iPage++;
+
+            /* Adjacent to the next page? */
+            while (   iPage < pPages->cPages
+                   && (uintptr_t)pvSeg + cbSeg == (uintptr_t)pPages->papvPages[iPage])
+            {
+                iPage++;
+                cbSeg += PAGE_SIZE;
+            }
+
+            /* Adjust for max size. */
+            if (cbLeft <= cbSeg)
+            {
+                paSegs[iSeg++].cbSeg = cbLeft;
+                break;
+            }
+            paSegs[iSeg++].cbSeg = cbSeg;
+            cbLeft -= cbSeg;
+        }
+
+        /*
+         * Initialize the s/g buffer and execute the read.
+         */
+        RTSgBufInit(pSgBuf, paSegs, iSeg);
+        return VINF_SUCCESS;
+    }
+    pSgBuf->paSegs = NULL;
+    return VERR_NO_TMP_MEMORY;
+}
+
+
 #ifdef UNITTEST
 /** Unit test the SHFL_FN_READ API.  Located here as a form of API
  * documentation. */
@@ -1044,6 +1100,7 @@ int vbsfRead(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t
 
     if (RT_LIKELY(*pcbBuffer != 0))
     {
+/** @todo use RTFileReadAt! */
         rc = RTFileSeek(pHandle->file.Handle, offset, RTFILE_SEEK_BEGIN, NULL);
         if (RT_SUCCESS(rc))
         {
@@ -1064,6 +1121,78 @@ int vbsfRead(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t
     return rc;
 }
 
+/**
+ * SHFL_FN_READ w/o bounce buffering.
+ */
+int vbsfReadPages(SHFLCLIENTDATA *pClient, SHFLROOT idRoot, SHFLHANDLE hFile, uint64_t offFile,
+                  uint32_t *pcbRead, PVBOXHGCMSVCPARMPAGES pPages)
+{
+    LogFunc(("pClient %p, idRoot %#RX32, hFile %#RX64, offFile %#RX64, cbRead %#RX32, cPages %#x\n",
+             pClient, idRoot, hFile, offFile, *pcbRead, pPages->cPages));
+
+    AssertPtrReturn(pClient, VERR_INVALID_PARAMETER);
+
+    size_t          cbTotal = 0;
+    SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, hFile);
+    int rc = vbsfCheckHandleAccess(pClient, idRoot, pHandle, VBSF_CHECK_ACCESS_READ);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t const cbToRead = *pcbRead;
+        if (cbToRead > 0)
+        {
+            ASSERT_GUEST_RETURN(pPages->cPages > 0, VERR_INTERNAL_ERROR_3);
+
+            /*
+             * Convert to a scatter-gather buffer.
+             *
+             * We need not do any platform specific code here as the RTSGBUF
+             * segment array maps directly onto the posix iovec structure.
+             * Windows does currently benefit much from this conversion, but
+             * so be it.
+             */
+            RTSGBUF SgBuf;
+            rc = vbsfPagesToSgBuf(pPages, cbToRead, &SgBuf);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTFileSgReadAt(pHandle->file.Handle, offFile, &SgBuf, cbToRead, &cbTotal);
+                while (rc == VERR_INTERRUPTED)
+                {
+                    RTSgBufReset(&SgBuf);
+                    rc = RTFileSgReadAt(pHandle->file.Handle, offFile, &SgBuf, cbToRead, &cbTotal);
+                }
+
+                RTMemTmpFree((void *)SgBuf.paSegs);
+            }
+            else
+                rc = VERR_NO_TMP_MEMORY;
+
+            *pcbRead = (uint32_t)cbTotal;
+        }
+        else
+        {
+            /* Reading zero bytes always succeeds. */
+            rc = VINF_SUCCESS;
+        }
+    }
+    else
+        *pcbRead = 0;
+
+    LogFunc(("%Rrc bytes read %#zx\n", rc, cbTotal));
+    return rc;
+}
+
+/**
+ * Helps with writes to RTFILE_O_APPEND files.
+ */
+static uint64_t vbsfWriteCalcPostAppendFilePosition(RTFILE hFile, uint64_t offGuessed)
+{
+    RTFSOBJINFO ObjInfo;
+    int rc2 = RTFileQueryInfo(hFile, &ObjInfo, RTFSOBJATTRADD_NOTHING);
+    if (RT_SUCCESS(rc2) && (uint64_t)ObjInfo.cbObject >= offGuessed)
+        return ObjInfo.cbObject;
+    return offGuessed;
+}
+
 #ifdef UNITTEST
 /** Unit test the SHFL_FN_WRITE API.  Located here as a form of API
  * documentation. */
@@ -1076,39 +1205,157 @@ void testWrite(RTTEST hTest)
     /* Add tests as required... */
 }
 #endif
-int vbsfWrite(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
+int vbsfWrite(SHFLCLIENTDATA *pClient, SHFLROOT idRoot, SHFLHANDLE hFile, uint64_t *poffFile,
+              uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    LogFunc(("pClient %p, root 0x%RX32, Handle 0x%RX64, offset 0x%RX64, bytes 0x%RX32\n",
-             pClient, root, Handle, offset, pcbBuffer? *pcbBuffer: 0));
+    uint64_t offFile = *poffFile;
+    LogFunc(("pClient %p, root 0x%RX32, Handle 0x%RX64, offFile 0x%RX64, bytes 0x%RX32\n",
+             pClient, idRoot, hFile, offFile, *pcbBuffer));
 
     AssertPtrReturn(pClient, VERR_INVALID_PARAMETER);
 
-    SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
-    int rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_WRITE);
+    SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, hFile);
+    int rc = vbsfCheckHandleAccess(pClient, idRoot, pHandle, VBSF_CHECK_ACCESS_WRITE);
     if (RT_SUCCESS(rc))
-    { /* likely */ }
-    else
-        return rc;
-
-    if (RT_LIKELY(*pcbBuffer != 0))
     {
-        rc = RTFileSeek(pHandle->file.Handle, offset, RTFILE_SEEK_BEGIN, NULL);
-        if (RT_SUCCESS(rc))
+        size_t const cbToWrite = *pcbBuffer;
+        if (RT_LIKELY(cbToWrite != 0))
         {
-            size_t count = 0;
-            rc = RTFileWrite(pHandle->file.Handle, pBuffer, *pcbBuffer, &count);
-            *pcbBuffer = (uint32_t)count;
+/** @todo use RTFileWriteAt unless RTFILE_O_APPEND is in effect.  */
+            rc = RTFileSeek(pHandle->file.Handle, offFile, RTFILE_SEEK_BEGIN, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                size_t cbWritten = 0;
+                rc = RTFileWrite(pHandle->file.Handle, pBuffer, cbToWrite, &cbWritten);
+                *pcbBuffer = (uint32_t)cbWritten;
+
+                /* Update the file offset (mainly for RTFILE_O_APPEND), */
+                if (RT_SUCCESS(rc))
+                {
+                    offFile += cbWritten;
+                    if (!(pHandle->file.fOpenFlags & RTFILE_O_APPEND))
+                        *poffFile = offFile;
+                    else
+                        *poffFile = vbsfWriteCalcPostAppendFilePosition(pHandle->file.Handle, offFile);
+                }
+            }
+            else
+                AssertRC(rc);
         }
         else
-            AssertRC(rc);
+        {
+            /** @todo What writing zero bytes should do? */
+            rc = VINF_SUCCESS;
+        }
     }
     else
-    {
-        /** @todo What writing zero bytes should do? */
-        rc = VINF_SUCCESS;
-    }
-
+        *pcbBuffer = 0;
     LogFunc(("%Rrc bytes written 0x%RX32\n", rc, *pcbBuffer));
+    return rc;
+}
+
+/**
+ * SHFL_FN_WRITE w/o bounce buffering.
+ */
+int vbsfWritePages(SHFLCLIENTDATA *pClient, SHFLROOT idRoot, SHFLHANDLE hFile, uint64_t *poffFile,
+                   uint32_t *pcbWrite, PVBOXHGCMSVCPARMPAGES pPages)
+{
+    uint64_t offFile = *poffFile;
+    LogFunc(("pClient %p, idRoot %#RX32, hFile %#RX64, offFile %#RX64, cbWrite %#RX32, cPages %#x\n",
+             pClient, idRoot, hFile, offFile, *pcbWrite, pPages->cPages));
+
+    AssertPtrReturn(pClient, VERR_INVALID_PARAMETER);
+
+    size_t          cbTotal = 0;
+    SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, hFile);
+    int rc = vbsfCheckHandleAccess(pClient, idRoot, pHandle, VBSF_CHECK_ACCESS_WRITE);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t const cbToWrite = *pcbWrite;
+        if (cbToWrite > 0)
+        {
+            ASSERT_GUEST_RETURN(pPages->cPages > 0, VERR_INTERNAL_ERROR_3);
+
+            /*
+             * Convert to a scatter-gather buffer.
+             *
+             * We need not do any platform specific code here as the RTSGBUF
+             * segment array maps directly onto the posix iovec structure.
+             * Windows does currently benefit much from this conversion, but
+             * so be it.
+             */
+            RTSGBUF SgBuf;
+            rc = vbsfPagesToSgBuf(pPages, cbToWrite, &SgBuf);
+            if (RT_SUCCESS(rc))
+            {
+//#ifndef RT_OS_LINUX
+                /* Cannot use RTFileSgWriteAt or RTFileWriteAt when opened with
+                   RTFILE_O_APPEND, except for on linux where the offset is
+                   then ignored by the low level kernel API. */
+                if (pHandle->file.fOpenFlags & RTFILE_O_APPEND)
+                {
+                    /* paranoia */
+                    RTFileSeek(pHandle->file.Handle, 0, RTFILE_SEEK_END, NULL);
+
+                    for (size_t iSeg = 0; iSeg < SgBuf.cSegs; iSeg++)
+                    {
+                        size_t cbWrittenNow = 0;
+                        do
+                            rc = RTFileWrite(pHandle->file.Handle, SgBuf.paSegs[iSeg].pvSeg,
+                                             SgBuf.paSegs[iSeg].cbSeg, &cbWrittenNow);
+                        while (rc == VERR_INTERRUPTED);
+                        if (RT_SUCCESS(rc))
+                        {
+                            cbTotal += cbWrittenNow;
+                            if (cbWrittenNow < SgBuf.paSegs[iSeg].cbSeg)
+                                break;
+                        }
+                        else
+                        {
+                            if (cbTotal > 0)
+                                rc = VINF_SUCCESS;
+                            break;
+                        }
+                    }
+                }
+                else
+//#endif
+                {
+                    rc = RTFileSgWriteAt(pHandle->file.Handle, offFile, &SgBuf, cbToWrite, &cbTotal);
+                    while (rc == VERR_INTERRUPTED)
+                    {
+                        RTSgBufReset(&SgBuf);
+                        rc = RTFileSgWriteAt(pHandle->file.Handle, offFile, &SgBuf, cbToWrite, &cbTotal);
+                    }
+                }
+
+                RTMemTmpFree((void *)SgBuf.paSegs);
+
+                /* Update the file offset (mainly for RTFILE_O_APPEND), */
+                if (RT_SUCCESS(rc))
+                {
+                    offFile += cbTotal;
+                    if (!(pHandle->file.fOpenFlags & RTFILE_O_APPEND))
+                        *poffFile = offFile;
+                    else
+                        *poffFile = vbsfWriteCalcPostAppendFilePosition(pHandle->file.Handle, offFile);
+                }
+            }
+            else
+                rc = VERR_NO_TMP_MEMORY;
+
+            *pcbWrite = (uint32_t)cbTotal;
+        }
+        else
+        {
+            /* Writing zero bytes always succeeds. */
+            rc = VINF_SUCCESS;
+        }
+    }
+    else
+        *pcbWrite = 0;
+
+    LogFunc(("%Rrc bytes written %#zx\n", rc, cbTotal));
     return rc;
 }
 

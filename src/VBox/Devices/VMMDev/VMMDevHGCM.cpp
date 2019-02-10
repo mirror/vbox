@@ -83,6 +83,8 @@ typedef struct VBOXHGCMPARMPTR
     /** Size of the buffer described by the pointer parameter. */
     uint32_t cbData;
 
+/** @todo save 8 bytes here by putting offFirstPage, cPages, and f32Direction
+ *        into a bitfields like in VBOXHGCMPARMPAGES. */
     /** Offset in the first physical page of the region. */
     uint32_t offFirstPage;
 
@@ -102,6 +104,27 @@ typedef struct VBOXHGCMPARMPTR
 
 } VBOXHGCMPARMPTR;
 
+
+/**
+ * Pages w/o bounce buffering.
+ */
+typedef struct VBOXHGCMPARMPAGES
+{
+    /** The buffer size. */
+    uint32_t        cbData;
+    /** Start of buffer offset into the first page. */
+    uint32_t        offFirstPage : 12;
+    /** VBOX_HGCM_F_PARM_XXX flags. */
+    uint32_t        fFlags : 3;
+    /** Set if we've locked all the pages. */
+    uint32_t        fLocked : 1;
+    /** Number of pages. */
+    uint32_t        cPages : 16;
+    /**< Array of page locks followed by array of page pointers, the first page
+     * pointer is adjusted by offFirstPage. */
+    PPGMPAGEMAPLOCK paPgLocks;
+} VBOXHGCMPARMPAGES;
+
 /**
  * Information about a guest HGCM parameter.
  */
@@ -114,6 +137,7 @@ typedef struct VBOXHGCMGUESTPARM
     {
         VBOXHGCMPARMVAL       val;
         VBOXHGCMPARMPTR       ptr;
+        VBOXHGCMPARMPAGES     Pages;
     } u;
 
 } VBOXHGCMGUESTPARM;
@@ -129,11 +153,14 @@ typedef struct VBOXHGCMCMD
     /** Whether the command was cancelled by the guest. */
     bool                fCancelled;
 
-    /** Whether the command was restored from saved state. */
-    bool                fRestored;
-
     /** Set if allocated from the memory cache, clear if heap. */
     bool                fMemCache;
+
+    /** Whether the command was restored from saved state. */
+    bool                fRestored : 1;
+    /** Whether this command has a no-bounce page list and needs to be restored
+     *  from guest memory the old fashioned way. */
+    bool                fRestoreFromGuestMem : 1;
 
     /** Copy of VMMDevRequestHeader::fRequestor.
      * @note Only valid if VBOXGSTINFO2_F_REQUESTOR_INFO is set in
@@ -330,8 +357,21 @@ static void vmmdevHGCMCmdFree(PVMMDEV pThis, PVBOXHGCMCMD pCmd)
                     || pGuestParm->enmType == VMMDevHGCMParmType_LinAddr
                     || pGuestParm->enmType == VMMDevHGCMParmType_PageList
                     || pGuestParm->enmType == VMMDevHGCMParmType_ContiguousPageList)
+                {
                     if (pGuestParm->u.ptr.paPages != &pGuestParm->u.ptr.GCPhysSinglePage)
                         RTMemFree(pGuestParm->u.ptr.paPages);
+                }
+                else if (pGuestParm->enmType == VMMDevHGCMParmType_NoBouncePageList)
+                {
+                    if (pGuestParm->u.Pages.paPgLocks)
+                    {
+                        if (pGuestParm->u.Pages.fLocked)
+                            PDMDevHlpPhysBulkReleasePageMappingLocks(pThis->pDevInsR3, pGuestParm->u.Pages.cPages,
+                                                                     pGuestParm->u.Pages.paPgLocks);
+                        RTMemFree(pGuestParm->u.Pages.paPgLocks);
+                        pGuestParm->u.Pages.paPgLocks = NULL;
+                    }
+                }
             }
         }
 
@@ -662,10 +702,11 @@ static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd, uint8_
                 break;
             }
 
+            case VMMDevHGCMParmType_PageList:
+                RT_FALL_THRU();
             case VMMDevHGCMParmType_LinAddr_In:
             case VMMDevHGCMParmType_LinAddr_Out:
             case VMMDevHGCMParmType_LinAddr:
-            case VMMDevHGCMParmType_PageList:
             case VMMDevHGCMParmType_Embedded:
             case VMMDevHGCMParmType_ContiguousPageList:
             {
@@ -711,6 +752,16 @@ static int vmmdevHGCMInitHostParameters(PVMMDEV pThis, PVBOXHGCMCMD pCmd, uint8_
                 {
                     pHostParm->u.pointer.addr = NULL;
                 }
+
+                break;
+            }
+
+            case VMMDevHGCMParmType_NoBouncePageList:
+            {
+                pHostParm->type = VBOX_HGCM_SVC_PARM_PAGES;
+                pHostParm->u.Pages.cb        = pGuestParm->u.Pages.cbData;
+                pHostParm->u.Pages.cPages    = pGuestParm->u.Pages.cPages;
+                pHostParm->u.Pages.papvPages = (void **)&pGuestParm->u.Pages.paPgLocks[pGuestParm->u.Pages.cPages];
 
                 break;
             }
@@ -911,6 +962,7 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
 
             case VMMDevHGCMParmType_PageList:
             case VMMDevHGCMParmType_ContiguousPageList:
+            case VMMDevHGCMParmType_NoBouncePageList:
             {
 #ifdef VBOX_WITH_64_BITS_GUESTS
                 AssertCompileMembersSameSizeAndOffset(HGCMFunctionParameter64, u.PageList.size,   HGCMFunctionParameter32, u.PageList.size);
@@ -943,20 +995,79 @@ static int vmmdevHGCMCallFetchGuestParms(PVMMDEV pThis, PVBOXHGCMCMD pCmd,
                                     && pPageListInfo->cPages <= cMaxPages,
                                     VERR_INVALID_PARAMETER);
 
-                /* Contiguous page lists only ever have a single page. */
-                ASSERT_GUEST_RETURN(   pPageListInfo->cPages == 1
-                                    || pGuestParm->enmType == VMMDevHGCMParmType_PageList, VERR_INVALID_PARAMETER);
+                /* Flags. */
+                ASSERT_GUEST_MSG_RETURN(VBOX_HGCM_F_PARM_ARE_VALID(pPageListInfo->flags),
+                                        ("%#x\n", pPageListInfo->flags), VERR_INVALID_FLAGS);
+                /* First page offset. */
+                ASSERT_GUEST_MSG_RETURN(pPageListInfo->offFirstPage < PAGE_SIZE,
+                                        ("%#x\n", pPageListInfo->offFirstPage), VERR_INVALID_PARAMETER);
 
-                /* Other fields of PageListInfo. */
-                ASSERT_GUEST_RETURN(   (pPageListInfo->flags & ~VBOX_HGCM_F_PARM_DIRECTION_BOTH) == 0
-                                    && pPageListInfo->offFirstPage < PAGE_SIZE,
-                                    VERR_INVALID_PARAMETER);
+                /* Contiguous page lists only ever have a single page and
+                   no-bounce page list requires cPages to match the size exactly.
+                   Plain page list does not impose any restrictions on cPages currently. */
+                ASSERT_GUEST_MSG_RETURN(      pPageListInfo->cPages
+                                           == (pGuestParm->enmType == VMMDevHGCMParmType_ContiguousPageList ? 1
+                                               : RT_ALIGN_32(pPageListInfo->offFirstPage + cbData, PAGE_SIZE) >> PAGE_SHIFT)
+                                        || pGuestParm->enmType == VMMDevHGCMParmType_PageList,
+                                        ("offFirstPage=%#x cbData=%#x cPages=%#x enmType=%d\n",
+                                         pPageListInfo->offFirstPage, cbData, pPageListInfo->cPages, pGuestParm->enmType),
+                                        VERR_INVALID_PARAMETER);
+
                 RT_UNTRUSTED_VALIDATED_FENCE();
 
-                /* cbData is not checked to fit into the pages, because the host code does not access
-                 * more than the provided number of pages.
+                /*
+                 * Deal with no-bounce buffers first, as
+                 * VMMDevHGCMParmType_PageList is the fallback.
                  */
+                if (pGuestParm->enmType == VMMDevHGCMParmType_NoBouncePageList)
+                {
+                    /* Validate page offsets */
+                    ASSERT_GUEST_MSG_RETURN(   !(pPageListInfo->aPages[0] & PAGE_OFFSET_MASK)
+                                            || (pPageListInfo->aPages[0] & PAGE_OFFSET_MASK) == pPageListInfo->offFirstPage,
+                                            ("%#RX64 offFirstPage=%#x\n", pPageListInfo->aPages[0], pPageListInfo->offFirstPage),
+                                            VERR_INVALID_POINTER);
+                    uint32_t const cPages = pPageListInfo->cPages;
+                    for (uint32_t iPage = 1; iPage < cPages; iPage++)
+                        ASSERT_GUEST_MSG_RETURN(!(pPageListInfo->aPages[iPage] & PAGE_OFFSET_MASK),
+                                                ("[%#zx]=%#RX64\n", iPage, pPageListInfo->aPages[iPage]), VERR_INVALID_POINTER);
+                    RT_UNTRUSTED_VALIDATED_FENCE();
 
+                    pGuestParm->u.Pages.cbData       = cbData;
+                    pGuestParm->u.Pages.offFirstPage = pPageListInfo->offFirstPage;
+                    pGuestParm->u.Pages.fFlags       = pPageListInfo->flags;
+                    pGuestParm->u.Pages.cPages       = (uint16_t)cPages;
+                    pGuestParm->u.Pages.fLocked      = false;
+                    pGuestParm->u.Pages.paPgLocks    = (PPGMPAGEMAPLOCK)RTMemAllocZ(  (sizeof(PGMPAGEMAPLOCK) + sizeof(void *))
+                                                                                    * cPages);
+                    AssertReturn(pGuestParm->u.Pages.paPgLocks, VERR_NO_MEMORY);
+
+                    /* Make sure the page offsets are sensible. */
+                    int rc = VINF_SUCCESS;
+                    void **papvPages = (void **)&pGuestParm->u.Pages.paPgLocks[cPages];
+                    if (pPageListInfo->flags & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST)
+                        rc = PDMDevHlpPhysBulkGCPhys2CCPtr(pThis->pDevInsR3, cPages, pPageListInfo->aPages, 0 /*fFlags*/,
+                                                           papvPages, pGuestParm->u.Pages.paPgLocks);
+                    else
+                        rc = PDMDevHlpPhysBulkGCPhys2CCPtrReadOnly(pThis->pDevInsR3, cPages, pPageListInfo->aPages, 0 /*fFlags*/,
+                                                                   (void const **)papvPages, pGuestParm->u.Pages.paPgLocks);
+                    if (RT_SUCCESS(rc))
+                    {
+                        papvPages[0] = (void *)((uintptr_t)papvPages[0] | pPageListInfo->offFirstPage);
+                        pGuestParm->u.Pages.fLocked = true;
+                        break;
+                    }
+
+                    /* Locking failed, bail out.  In case of MMIO we fall back on regular page list handling. */
+                    RTMemFree(pGuestParm->u.Pages.paPgLocks);
+                    pGuestParm->u.Pages.paPgLocks = NULL;
+                    STAM_REL_COUNTER_INC(&pThis->StatHgcmFailedPageListLocking);
+                    ASSERT_GUEST_MSG_RETURN(rc == VERR_PGM_PHYS_PAGE_RESERVED, ("cPages=%u %Rrc\n", cPages, rc), rc);
+                    pGuestParm->enmType = VMMDevHGCMParmType_PageList;
+                }
+
+                /*
+                 * Regular page list or contiguous page list.
+                 */
                 pGuestParm->u.ptr.cbData        = cbData;
                 pGuestParm->u.ptr.offFirstPage  = pPageListInfo->offFirstPage;
                 pGuestParm->u.ptr.cPages        = pPageListInfo->cPages;
@@ -1218,8 +1329,22 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
     /*
      * Go over parameter descriptions saved in pCmd.
      */
-    uint32_t i;
-    for (i = 0; i < pCmd->u.call.cParms; ++i)
+#ifdef VBOX_WITH_64_BITS_GUESTS
+    HGCMFunctionParameter64 *pReqParm         = (HGCMFunctionParameter64 *)(pbReq + sizeof(VMMDevHGCMCall));
+    size_t const             cbHGCMParmStruct = pCmd->enmRequestType == VMMDevReq_HGCMCall64
+                                              ? sizeof(HGCMFunctionParameter64) : sizeof(HGCMFunctionParameter32);
+#else
+    HGCMFunctionParameter   *pReqParm         = (HGCMFunctionParameter   *)(pbReq + sizeof(VMMDevHGCMCall));
+    size_t const             cbHGCMParmStruct = sizeof(HGCMFunctionParameter);
+#endif
+    for (uint32_t i = 0;
+         i < pCmd->u.call.cParms;
+#ifdef VBOX_WITH_64_BITS_GUESTS
+         ++i, pReqParm = (HGCMFunctionParameter64 *)((uint8_t *)pReqParm + cbHGCMParmStruct)
+#else
+         ++i, pReqParm = (HGCMFunctionParameter   *)((uint8_t *)pReqParm + cbHGCMParmStruct)
+#endif
+        )
     {
         VBOXHGCMGUESTPARM * const pGuestParm = &pCmd->u.call.paGuestParms[i];
         VBOXHGCMSVCPARM   * const pHostParm  = &pCmd->u.call.paHostParms[i];
@@ -1233,6 +1358,7 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
                 const VBOXHGCMPARMVAL * const pVal = &pGuestParm->u.val;
                 const void *pvSrc = enmType == VMMDevHGCMParmType_32bit ? (void *)&pHostParm->u.uint32
                                                                         : (void *)&pHostParm->u.uint64;
+/** @todo optimize memcpy away here. */
                 memcpy((uint8_t *)pHGCMCall + pVal->offValue, pvSrc, pVal->cbValue);
                 break;
             }
@@ -1242,7 +1368,7 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
             case VMMDevHGCMParmType_LinAddr:
             case VMMDevHGCMParmType_PageList:
             {
-/** @todo Update the return buffer size.  */
+/** @todo Update the return buffer size? */
                 const VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
                 if (   pPtr->cbData > 0
                     && (pPtr->fu32Direction & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST))
@@ -1258,8 +1384,15 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
 
             case VMMDevHGCMParmType_Embedded:
             {
-/** @todo Update the return buffer size!  */
                 const VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
+
+                /* Update size. */
+#ifdef VBOX_WITH_64_BITS_GUESTS
+                AssertCompileMembersSameSizeAndOffset(HGCMFunctionParameter64, u.Embedded.cbData, HGCMFunctionParameter32, u.Embedded.cbData);
+#endif
+                pReqParm->u.Embedded.cbData = pHostParm->u.pointer.size;
+
+                /* Copy out data. */
                 if (   pPtr->cbData > 0
                     && (pPtr->fu32Direction & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST))
                 {
@@ -1273,8 +1406,15 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
 
             case VMMDevHGCMParmType_ContiguousPageList:
             {
-/** @todo Update the return buffer size.  */
                 const VBOXHGCMPARMPTR * const pPtr = &pGuestParm->u.ptr;
+
+                /* Update size. */
+#ifdef VBOX_WITH_64_BITS_GUESTS
+                AssertCompileMembersSameSizeAndOffset(HGCMFunctionParameter64, u.PageList.size, HGCMFunctionParameter32, u.PageList.size);
+#endif
+                pReqParm->u.PageList.size = pHostParm->u.pointer.size;
+
+                /* Copy out data. */
                 if (   pPtr->cbData > 0
                     && (pPtr->fu32Direction & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST))
                 {
@@ -1285,6 +1425,24 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
                                                 pvSrc, cbToCopy);
                     if (RT_FAILURE(rc))
                         break;
+                }
+                break;
+            }
+
+            case VMMDevHGCMParmType_NoBouncePageList:
+            {
+                /* Update size. */
+#ifdef VBOX_WITH_64_BITS_GUESTS
+                AssertCompileMembersSameSizeAndOffset(HGCMFunctionParameter64, u.PageList.size, HGCMFunctionParameter32, u.PageList.size);
+#endif
+                pReqParm->u.PageList.size = pHostParm->u.Pages.cb;
+
+                /* unlock early. */
+                if (pGuestParm->u.Pages.fLocked)
+                {
+                    PDMDevHlpPhysBulkReleasePageMappingLocks(pThis->pDevInsR3, pGuestParm->u.Pages.cPages,
+                                                             pGuestParm->u.Pages.paPgLocks);
+                    pGuestParm->u.Pages.fLocked = false;
                 }
                 break;
             }
@@ -1680,8 +1838,14 @@ int vmmdevHGCMSaveState(PVMMDEV pThis, PSSMHANDLE pSSM)
                         rc = SSMR3PutU32(pSSM, pPtr->fu32Direction);
 
                         uint32_t iPage;
-                        for (iPage = 0; iPage < pPtr->cPages; ++iPage)
+                        for (iPage = 0; RT_SUCCESS(rc) && iPage < pPtr->cPages; ++iPage)
                             rc = SSMR3PutGCPhys(pSSM, pPtr->paPages[iPage]);
+                    }
+                    else if (pGuestParm->enmType == VMMDevHGCMParmType_NoBouncePageList)
+                    {
+                        /* We don't have the page addresses here, so it will need to be
+                           restored from guest memory.  This isn't an issue as it is only
+                           use with services which won't survive a save/restore anyway. */
                     }
                     else
                     {
@@ -1832,6 +1996,11 @@ int vmmdevHGCMLoadState(PVMMDEV pThis, PSSMHANDLE pSSM, uint32_t uVersion)
                                     rc = SSMR3GetGCPhys(pSSM, &pPtr->paPages[iPage]);
                             }
                         }
+                    }
+                    else if (pGuestParm->enmType == VMMDevHGCMParmType_NoBouncePageList)
+                    {
+                        /* This request type can only be stored from guest memory for now. */
+                        pCmd->fRestoreFromGuestMem = true;
                     }
                     else
                     {
@@ -2260,7 +2429,8 @@ int vmmdevHGCMLoadStateDone(PVMMDEV pThis)
             /*
              * Reconstruct legacy commands.
              */
-            if (RT_LIKELY(pThis->u32SSMVersion >= VMMDEV_SAVED_STATE_VERSION_HGCM_PARAMS))
+            if (RT_LIKELY(   pThis->u32SSMVersion >= VMMDEV_SAVED_STATE_VERSION_HGCM_PARAMS
+                          && !pCmd->fRestoreFromGuestMem))
             { /* likely */ }
             else
             {

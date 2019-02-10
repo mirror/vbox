@@ -1348,7 +1348,12 @@ typedef struct VBoxSFParmWrite
     HGCMFunctionParameter id32Root;
     /** value64, in: SHFLHANDLE of object to write to. */
     HGCMFunctionParameter u64Handle;
-    /** value64, in: Offset to start writing at. */
+    /** value64, in/out: Offset to start writing at / New offset.
+     * @note The new offset isn't necessarily off + cb for files opened with
+     *       SHFL_CF_ACCESS_APPEND since other parties (host programs, other VMs,
+     *       other computers) could have extended the file since the last time the
+     *       guest got a fresh size statistic.  So, this helps the guest avoiding
+     *       a stat call to check the actual size. */
     HGCMFunctionParameter off64Write;
     /** value32, in/out: How much to try write / Actually written. */
     HGCMFunctionParameter cb32Write;
@@ -1371,8 +1376,13 @@ typedef struct _VBoxSFWrite
      */
     HGCMFunctionParameter handle;
 
-    /** value64, in:
-     * Offset to write to.
+    /** value64, in/out:
+     * Offset to write to/New offset.
+     * @note The new offset isn't necessarily off + cb for files opened with
+     *       SHFL_CF_ACCESS_APPEND since other parties (host programs, other VMs,
+     *       other computers) could have extended the file since the last time the
+     *       guest got a fresh size statistic.  So, this helps the guest avoiding
+     *       a stat call to check the actual size.
      */
     HGCMFunctionParameter offset;
 
