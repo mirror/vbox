@@ -82,7 +82,8 @@ ifdef VBOX_WITH_TESTCASES
   tstVDIo_DEFS += VBOX_TSTVDIO_WITH_LOG_REPLAY
  endif
 
- tstVDIo_SOURCES  = tstVDIo.cpp \
+ tstVDIo_SOURCES  = \
+ 	tstVDIo.cpp \
  	VDIoBackend.cpp \
  	VDIoBackendMem.cpp \
  	VDMemDisk.cpp \
