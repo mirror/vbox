@@ -2127,6 +2127,113 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
 }
 
 
+#ifdef IN_RING3
+/**
+ * Release the mapping of multiple guest pages.
+ *
+ * This is the counter part to PGMR3PhysBulkGCPhys2CCPtrExternal() and
+ * PGMR3PhysBulkGCPhys2CCPtrReadOnlyExternal().
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   cPages      Number of pages to unlock.
+ * @param   paLocks     Array of locks lock structure initialized by the mapping
+ *                      function.
+ */
+VMMDECL(void) PGMPhysBulkReleasePageMappingLocks(PVM pVM, uint32_t cPages, PPGMPAGEMAPLOCK paLocks)
+{
+    Assert(cPages > 0);
+    bool const fWriteLock = (paLocks[0].uPageAndType & PGMPAGEMAPLOCK_TYPE_MASK) == PGMPAGEMAPLOCK_TYPE_WRITE;
+#ifdef VBOX_STRICT
+    for (uint32_t i = 1; i < cPages; i++)
+    {
+        Assert(fWriteLock == ((paLocks[i].uPageAndType & PGMPAGEMAPLOCK_TYPE_MASK) == PGMPAGEMAPLOCK_TYPE_WRITE));
+        AssertPtr(paLocks[i].uPageAndType);
+    }
+#endif
+
+    pgmLock(pVM);
+    if (fWriteLock)
+    {
+        /*
+         * Write locks:
+         */
+        for (uint32_t i = 0; i < cPages; i++)
+        {
+            PPGMPAGE pPage  = (PPGMPAGE)(paLocks[i].uPageAndType & ~PGMPAGEMAPLOCK_TYPE_MASK);
+            unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
+            Assert(cLocks > 0);
+            if (RT_LIKELY(cLocks > 0 && cLocks < PGM_PAGE_MAX_LOCKS))
+            {
+                if (cLocks == 1)
+                {
+                    Assert(pVM->pgm.s.cWriteLockedPages > 0);
+                    pVM->pgm.s.cWriteLockedPages--;
+                }
+                PGM_PAGE_DEC_WRITE_LOCKS(pPage);
+            }
+
+            if (PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED)
+            { /* probably extremely likely */ }
+            else
+                pgmPhysPageMakeWriteMonitoredWritable(pVM, pPage, NIL_RTGCPHYS);
+
+            PPGMPAGEMAP pMap = (PPGMPAGEMAP)paLocks[i].pvMap;
+            if (pMap)
+            {
+                Assert(pMap->cRefs >= 1);
+                pMap->cRefs--;
+            }
+
+            /* Yield the lock: */
+            if ((i & 1023) == 1023)
+            {
+                pgmLock(pVM);
+                pgmUnlock(pVM);
+            }
+        }
+    }
+    else
+    {
+        /*
+         * Read locks:
+         */
+        for (uint32_t i = 0; i < cPages; i++)
+        {
+            PPGMPAGE pPage  = (PPGMPAGE)(paLocks[i].uPageAndType & ~PGMPAGEMAPLOCK_TYPE_MASK);
+            unsigned cLocks = PGM_PAGE_GET_READ_LOCKS(pPage);
+            Assert(cLocks > 0);
+            if (RT_LIKELY(cLocks > 0 && cLocks < PGM_PAGE_MAX_LOCKS))
+            {
+                if (cLocks == 1)
+                {
+                    Assert(pVM->pgm.s.cReadLockedPages > 0);
+                    pVM->pgm.s.cReadLockedPages--;
+                }
+                PGM_PAGE_DEC_READ_LOCKS(pPage);
+            }
+
+            PPGMPAGEMAP pMap = (PPGMPAGEMAP)paLocks[i].pvMap;
+            if (pMap)
+            {
+                Assert(pMap->cRefs >= 1);
+                pMap->cRefs--;
+            }
+
+            /* Yield the lock: */
+            if ((i & 1023) == 1023)
+            {
+                pgmLock(pVM);
+                pgmUnlock(pVM);
+            }
+        }
+    }
+    pgmUnlock(pVM);
+
+    RT_BZERO(paLocks, sizeof(paLocks[0]) * cPages);
+}
+#endif /* IN_RING3 */
+
+
 /**
  * Release the internal mapping of a guest page.
  *
