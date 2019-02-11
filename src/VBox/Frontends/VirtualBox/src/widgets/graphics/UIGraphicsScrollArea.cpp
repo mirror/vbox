@@ -145,6 +145,9 @@ bool UIGraphicsScrollArea::eventFilter(QObject *pObject, QEvent *pEvent)
     {
         QWheelEvent *pWheelEvent = static_cast<QWheelEvent*>(pEvent);
         const QPoint angleDelta = pWheelEvent->angleDelta();
+#ifdef VBOX_WS_MAC
+        const QPoint pixelDelta = pWheelEvent->pixelDelta();
+#endif
         switch (m_enmOrientation)
         {
             /* Scroll viewport horizontally: */
@@ -160,9 +163,17 @@ bool UIGraphicsScrollArea::eventFilter(QObject *pObject, QEvent *pEvent)
             case Qt::Vertical:
             {
                 if (angleDelta.y() > 0)
+#ifdef VBOX_WS_MAC
+                    m_pScrollBar->setValue(m_pScrollBar->value() - pixelDelta.y());
+#else
                     m_pScrollBar->setValue(m_pScrollBar->value() - m_pScrollBar->step());
+#endif
                 else if (angleDelta.y() < 0)
+#ifdef VBOX_WS_MAC
+                    m_pScrollBar->setValue(m_pScrollBar->value() - pixelDelta.y());
+#else
                     m_pScrollBar->setValue(m_pScrollBar->value() + m_pScrollBar->step());
+#endif
                 break;
             }
         }
