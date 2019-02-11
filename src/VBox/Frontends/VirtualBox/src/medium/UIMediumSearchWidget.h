@@ -25,14 +25,10 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
-class QAction;
 class QTreeWidgetItem;
-class QLineEdit;
 class QIComboBox;
-class QIDialogButtonBox;
 class QIToolButton;
 class QITreeWidget;
-class UIMediumItem;
 class UISearchLineEdit;
 
 
