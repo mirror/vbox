@@ -356,16 +356,23 @@ int sf_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
 	generic_fillattr(dentry->d_inode, kstat);
 
 	/*
-	 * FsPerf shows the following numbers for sequential file reads:
-	 *   4096 KB = 2254 MB/s
-	 *   2048 KB = 2368 MB/s
-	 *   1024 KB = 2208 MB/s
-	 *    512 KB = 1908 MB/s
-	 *    256 KB = 1625 MB/s
-	 *    128 KB = 1413 MB/s
-	 *     64 KB = 1152 MB/s
-	 *     32 KB =  726 MB/s
-	 *      4 KB =  145 MB/s
+	 * FsPerf shows the following numbers for sequential file access against
+	 * a tmpfs folder on an AMD 1950X host running debian buster/sid:
+	 *
+	 * block size = r128600    ----- r128753 -----
+	 *               reads      reads     writes
+	 *    4096 KB = 2254 MB/s  4953 MB/s 3668 MB/s
+	 *    2048 KB = 2368 MB/s  4908 MB/s 3541 MB/s
+	 *    1024 KB = 2208 MB/s  4011 MB/s 3291 MB/s
+	 *     512 KB = 1908 MB/s  3399 MB/s 2721 MB/s
+	 *     256 KB = 1625 MB/s  2679 MB/s 2251 MB/s
+	 *     128 KB = 1413 MB/s  1967 MB/s 1684 MB/s
+	 *      64 KB = 1152 MB/s  1409 MB/s 1265 MB/s
+	 *      32 KB =  726 MB/s   815 MB/s  783 MB/s
+	 *      16 KB =             683 MB/s  475 MB/s
+	 *       8 KB =             294 MB/s  286 MB/s
+	 *       4 KB =  145 MB/s   156 MB/s  149 MB/s
+	 *
 	 */
 	if (S_ISREG(kstat->mode))
 		kstat->blksize = _1M;
