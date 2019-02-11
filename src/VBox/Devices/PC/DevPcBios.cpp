@@ -1581,23 +1581,20 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return rc;
 
-    for (unsigned i = 0; i < pThis->cbPcBios; i += 16)
+    /* Look for _SM_/_DMI_ anchor strings within the BIOS and replace the table headers. */
+    for (unsigned i = 0; i < (pThis->cbPcBios - 16); i += 16)
     {
-        /* If the DMI table is located at the expected place, patch the DMI table length and the checksum. */
         if (   pThis->pu8PcBios[i + 0x00] == '_'
-            && pThis->pu8PcBios[i + 0x01] == 'D'
+            && pThis->pu8PcBios[i + 0x01] == 'S'
             && pThis->pu8PcBios[i + 0x02] == 'M'
-            && pThis->pu8PcBios[i + 0x03] == 'I'
-            && pThis->pu8PcBios[i + 0x04] == '_'
-            && *(uint16_t*)&pThis->pu8PcBios[i + 0x06] == 0)
+            && pThis->pu8PcBios[i + 0x03] == '_'
+            && pThis->pu8PcBios[i + 0x10] == '_'
+            && pThis->pu8PcBios[i + 0x11] == 'D'
+            && pThis->pu8PcBios[i + 0x12] == 'M'
+            && pThis->pu8PcBios[i + 0x13] == 'I'
+            && pThis->pu8PcBios[i + 0x14] == '_')
         {
-            *(uint16_t*)&pThis->pu8PcBios[i + 0x06] = RT_H2LE_U16(cbDmiTables);
-            *(uint16_t*)&pThis->pu8PcBios[i + 0x0C] = RT_H2LE_U16(cNumDmiTables);
-            uint8_t u8Sum = 0;
-            for (unsigned j = 0; j < pThis->cbPcBios; j++)
-                if (j != i + 0x05)
-                    u8Sum += pThis->pu8PcBios[j];
-            pThis->pu8PcBios[i + 0x05] = -u8Sum;
+            FwCommonPlantSmbiosAndDmiHdrs(pDevIns, pThis->pu8PcBios + i, cbDmiTables, cNumDmiTables);
             break;
         }
     }
