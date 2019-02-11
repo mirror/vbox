@@ -1224,8 +1224,10 @@ void UIChooserItemGroup::sltIndentRoot()
     /* Unhover before indenting: */
     setHovered(false);
 
+#if 0
     /* Indent to this root: */
     model()->indentRoot(this);
+#endif
 }
 
 void UIChooserItemGroup::sltUnindentRoot()
