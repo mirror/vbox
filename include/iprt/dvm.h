@@ -120,12 +120,14 @@ typedef enum RTDVMVOLTYPE
 /** @}  */
 
 
-/** @defgroup grp_dvm_vol_flags     Volume flags used by DVMVolumeGetFlags.
+/** @defgroup grp_dvm_vol_flags     Volume flags used by RTDvmVolumeGetFlags().
  * @{ */
 /** Volume flags - Volume is bootable. */
 #define DVMVOLUME_FLAGS_BOOTABLE    RT_BIT_64(0)
 /** Volume flags - Volume is active. */
 #define DVMVOLUME_FLAGS_ACTIVE      RT_BIT_64(1)
+/** Volume is contiguous on the underlying medium and RTDvmVolumeQueryRange(). */
+#define DVMVOLUME_F_CONTIGUOUS      RT_BIT_64(2)
 /** @}  */
 
 /** A handle to a volume manager. */
@@ -223,7 +225,7 @@ typedef enum RTDVMFORMATTYPE
     /** GUID partition table. */
     RTDVMFORMATTYPE_GPT,
     /** BSD labels. */
-    RTDVMFORMATTYPE_BSD_LABLE,
+    RTDVMFORMATTYPE_BSD_LABEL,
     /** End of valid values. */
     RTDVMFORMATTYPE_END,
     /** 32-bit type size hack. */
@@ -351,6 +353,17 @@ RTDECL(RTDVMVOLTYPE) RTDvmVolumeGetType(RTDVMVOLUME hVol);
  * @param   hVol            The volume handle.
  */
 RTDECL(uint64_t) RTDvmVolumeGetFlags(RTDVMVOLUME hVol);
+
+/**
+ * Queries the range of the given volume on the underyling medium.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if the DVMVOLUME_F_CONTIGUOUS flag is not returned by RTDvmVolumeGetFlags().
+ * @param   hVol            The volume handle.
+ * @param   poffStart       Where to store the start offset in bytes on the underlying medium.
+ * @param   poffEnd         Where to store the end offset in bytes on the underlying medium (inclusive).
+ */
+RTDECL(int) RTDvmVolumeQueryRange(RTDVMVOLUME hVol, uint64_t *poffStart, uint64_t *poffEnd);
 
 /**
  * Reads data from the given volume.

@@ -379,7 +379,7 @@ RTDECL(int) RTDvmMapOpen(RTDVM hVolMgr)
                 }
             }
 
-            /** @todo shouldn't we close the format too here?  */
+            pDvmFmtOpsMatch->pfnClose(pThis->hVolMgrFmt);
         }
     }
     else
@@ -660,6 +660,17 @@ RTDECL(uint64_t) RTDvmVolumeGetFlags(RTDVMVOLUME hVol)
     AssertReturn(pThis->u32Magic == RTDVMVOLUME_MAGIC, UINT64_MAX);
 
     return pThis->pVolMgr->pDvmFmtOps->pfnVolumeGetFlags(pThis->hVolFmt);
+}
+
+RTDECL(int) RTDvmVolumeQueryRange(RTDVMVOLUME hVol, uint64_t *poffStart, uint64_t *poffEnd)
+{
+    PRTDVMVOLUMEINTERNAL pThis = hVol;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTDVMVOLUME_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(poffStart, VERR_INVALID_POINTER);
+    AssertPtrReturn(poffEnd, VERR_INVALID_POINTER);
+
+    return pThis->pVolMgr->pDvmFmtOps->pfnVolumeQueryRange(pThis->hVolFmt, poffStart, poffEnd);
 }
 
 RTDECL(int) RTDvmVolumeRead(RTDVMVOLUME hVol, uint64_t off, void *pvBuf, size_t cbRead)

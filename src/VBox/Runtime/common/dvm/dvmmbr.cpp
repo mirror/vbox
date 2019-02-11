@@ -640,11 +640,19 @@ static DECLCALLBACK(uint64_t) rtDvmFmtMbrVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
 
-    uint64_t fFlags = 0;
+    uint64_t fFlags = DVMVOLUME_F_CONTIGUOUS;
     if (pVol->pEntry->bType & 0x80)
         fFlags |= DVMVOLUME_FLAGS_BOOTABLE | DVMVOLUME_FLAGS_ACTIVE;
 
     return fFlags;
+}
+
+static DECLCALLBACK(int) rtDvmFmtMbrVolumeQueryRange(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffStart, uint64_t *poffEnd)
+{
+    PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
+    *poffStart = pVol->pEntry->offPart;
+    *poffEnd   = pVol->pEntry->offPart + pVol->pEntry->cbPart - 1;
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(bool) rtDvmFmtMbrVolumeIsRangeIntersecting(RTDVMVOLUMEFMT hVolFmt, uint64_t offStart, size_t cbRange,
@@ -711,6 +719,8 @@ RTDVMFMTOPS g_rtDvmFmtMbr =
     rtDvmFmtMbrVolumeGetType,
     /* pfnVolumeGetFlags */
     rtDvmFmtMbrVolumeGetFlags,
+    /* pfnVolumeQueryRange */
+    rtDvmFmtMbrVolumeQueryRange,
     /* pfnVOlumeIsRangeIntersecting */
     rtDvmFmtMbrVolumeIsRangeIntersecting,
     /* pfnVolumeRead */

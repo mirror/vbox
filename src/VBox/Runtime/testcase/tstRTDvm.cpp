@@ -70,10 +70,14 @@ static int tstRTDvmVolume(RTTEST hTest, RTVFSFILE hVfsDisk, unsigned cNesting)
         && rc != VERR_NOT_SUPPORTED)
     {
         RTTestIFailed("RTDvmOpen -> %Rrc", rc);
+        RTDvmRelease(hVolMgr);
         return RTTestSummaryAndDestroy(hTest);
     }
     if (rc == VERR_NOT_SUPPORTED)
+    {
+        RTDvmRelease(hVolMgr);
         return VINF_SUCCESS;
+    }
 
     RTTestIPrintf(RTTESTLVL_ALWAYS, "%s Successfully opened map with format: %s.\n", szPrefix, RTDvmMapGetFormatName(hVolMgr));
 
@@ -93,9 +97,10 @@ static int tstRTDvmVolume(RTTEST hTest, RTVFSFILE hVfsDisk, unsigned cNesting)
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%s Volume %u:\n", szPrefix, cVolume);
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%s Volume type  %s\n", szPrefix, RTDvmVolumeTypeGetDescr(enmVolType));
         RTTestIPrintf(RTTESTLVL_ALWAYS, "%s Volume size  %llu\n", szPrefix, RTDvmVolumeGetSize(hVol));
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s Volume flags %s %s\n\n", szPrefix,
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s Volume flags %s %s %s\n", szPrefix,
                       fVolFlags & DVMVOLUME_FLAGS_BOOTABLE ? "Bootable" : "",
-                      fVolFlags & DVMVOLUME_FLAGS_ACTIVE ? "Active" : "");
+                      fVolFlags & DVMVOLUME_FLAGS_ACTIVE ? "Active" : "",
+                      fVolFlags & DVMVOLUME_F_CONTIGUOUS ? "Contiguous" : "");
 
         rc = RTDvmVolumeQueryName(hVol, &pszVolName);
         if (RT_SUCCESS(rc))
@@ -107,6 +112,18 @@ static int tstRTDvmVolume(RTTEST hTest, RTVFSFILE hVfsDisk, unsigned cNesting)
             RTTestIFailed("RTDvmVolumeQueryName -> %Rrc", rc);
         else
             rc = VINF_SUCCESS;
+
+        if (fVolFlags & DVMVOLUME_F_CONTIGUOUS)
+        {
+            uint64_t offStart, offEnd;
+            rc = RTDvmVolumeQueryRange(hVol, &offStart, &offEnd);
+            if (RT_SUCCESS(rc))
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "%s Volume range %llu:%llu\n", szPrefix, offStart, offEnd);
+            else
+                RTTestIFailed("RTDvmVolumeQueryRange -> %Rrc", rc);
+        }
+
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "\n");
 
         /*
          * Query all volumes which might be inside this.
@@ -183,6 +200,8 @@ int main(int argc, char **argv)
     rc = tstRTDvmVolume(hTest, hVfsDisk, 0);
 
     RTTESTI_CHECK(rc == VINF_SUCCESS);
+
+    RTVfsFileRelease(hVfsDisk);
 
     /*
      * Summary

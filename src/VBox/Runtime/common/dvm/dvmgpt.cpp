@@ -492,8 +492,16 @@ static DECLCALLBACK(RTDVMVOLTYPE) rtDvmFmtGptVolumeGetType(RTDVMVOLUMEFMT hVolFm
 
 static DECLCALLBACK(uint64_t) rtDvmFmtGptVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
 {
-    NOREF(hVolFmt); /* No supported flags for now. */
-    return 0;
+    NOREF(hVolFmt);
+    return DVMVOLUME_F_CONTIGUOUS;
+}
+
+static DECLCALLBACK(int) rtDvmFmtGptVolumeQueryRange(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffStart, uint64_t *poffEnd)
+{
+    PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
+    *poffStart = pVol->offStart;
+    *poffEnd   = pVol->offStart + pVol->cbVolume - 1;
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(bool) rtDvmFmtGptVolumeIsRangeIntersecting(RTDVMVOLUMEFMT hVolFmt,
@@ -562,6 +570,8 @@ RTDVMFMTOPS g_rtDvmFmtGpt =
     rtDvmFmtGptVolumeGetType,
     /* pfnVolumeGetFlags */
     rtDvmFmtGptVolumeGetFlags,
+    /* pfnVolumeQueryRange */
+    rtDvmFmtGptVolumeQueryRange,
     /* pfnVolumeIsRangeIntersecting */
     rtDvmFmtGptVolumeIsRangeIntersecting,
     /* pfnVolumeRead */

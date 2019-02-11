@@ -828,6 +828,7 @@
 # define RTDvmVolumeQueryName                           RT_MANGLER(RTDvmVolumeQueryName)
 # define RTDvmVolumeGetType                             RT_MANGLER(RTDvmVolumeGetType)
 # define RTDvmVolumeGetFlags                            RT_MANGLER(RTDvmVolumeGetFlags)
+# define RTDvmVolumeQueryRange                          RT_MANGLER(RTDvmVolumeQueryRange)
 # define RTDvmVolumeRead                                RT_MANGLER(RTDvmVolumeRead)
 # define RTDvmVolumeWrite                               RT_MANGLER(RTDvmVolumeWrite)
 # define RTDvmVolumeSetQueryBlockStatusCallback         RT_MANGLER(RTDvmVolumeSetQueryBlockStatusCallback)
