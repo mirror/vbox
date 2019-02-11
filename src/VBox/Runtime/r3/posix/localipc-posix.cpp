@@ -528,8 +528,9 @@ RTDECL(int) RTLocalIpcSessionConnect(PRTLOCALIPCSESSION phSession, const char *p
                             return VINF_SUCCESS;
                         }
                     }
-                    RTCritSectDelete(&pThis->CritSect);
+                    RTSocketRelease(pThis->hSocket);
                 }
+                RTCritSectDelete(&pThis->CritSect);
             }
             RTMemFree(pThis);
         }
