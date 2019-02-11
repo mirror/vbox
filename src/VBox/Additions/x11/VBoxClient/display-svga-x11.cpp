@@ -61,7 +61,7 @@ static bool checkRecentLinuxKernel(void)
 {
     struct utsname name;
 
-    if (uname(&name))
+    if (uname(&name) == -1)
         VBClFatalError(("Failed to get kernel name.\n"));
     if (strcmp(name.sysname, "Linux"))
         return false;
