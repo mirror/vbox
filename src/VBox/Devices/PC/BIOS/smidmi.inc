@@ -47,8 +47,12 @@
 
 include vbdmismi.inc
 
-; org 0xff30
 align 16
+                ;;
+                ;; NOTE! These are placeholders, also required for correct BIOS
+                ;; checksum calculation. Overwritten by DevPcBios.
+                ;;
+
 		;; The SMBIOS header
 		db	'_SM_'		; signature
 		db	0		; checksum (set by biossums)
