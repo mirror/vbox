@@ -36,9 +36,9 @@
 #include "CMediumFormat.h"
 
 
-UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent /* = 0 */,
-                                       const QString &strMachineName /* = QString() */,
-                                       const QString &strMachineFolder /* = QString() */)
+UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent,
+                                           const QString &strDefaultFolder,
+                                           const QString &strMachineName /* = QString() */)
    : QIWithRetranslateUI<QDialog>(pParent)
     , m_pFilePathselector(0)
     , m_pPathLabel(0)
@@ -46,8 +46,8 @@ UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent /* = 0 */,
     , m_pSizeCombo(0)
     , m_pButtonBox(0)
     , m_pFormatCheckBox(0)
+    , m_strDefaultFolder(strDefaultFolder)
     , m_strMachineName(strMachineName)
-    , m_strMachineFolder(strMachineFolder)
 {
 
     prepare();
@@ -62,7 +62,10 @@ UIFDCreationDialog::UIFDCreationDialog(QWidget *pParent /* = 0 */,
 
 void UIFDCreationDialog::retranslateUi()
 {
-    setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Floppy Disk Creator")));
+    if (m_strMachineName.isEmpty())
+        setWindowTitle(QString("%1").arg(tr("Floppy Disk Creator")));
+    else
+        setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Floppy Disk Creator")));
     if (m_pPathLabel)
         m_pPathLabel->setText(tr("File Path:"));
     if (m_pSizeLabel)
@@ -155,14 +158,15 @@ QString UIFDCreationDialog::getDefaultFolder() const
 {
     QString strPreferredExtension = UIMediumDefs::getPreferredExtensionForMedium(KDeviceType_Floppy);
 
-    QString strInitialPath = m_strMachineFolder;
+    QString strInitialPath = m_strDefaultFolder;
     if (strInitialPath.isEmpty())
         strInitialPath = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
 
     if (strInitialPath.isEmpty())
         return strInitialPath;
 
-    QString strDiskname = VBoxGlobal::findUniqueFileName(m_strMachineFolder, m_strMachineName);
+    QString strDiskname = !(m_strMachineName.isEmpty()) ? m_strMachineName : "NewFloppyDisk";
+    strDiskname = VBoxGlobal::findUniqueFileName(m_strDefaultFolder, m_strMachineName);
 
     strInitialPath = QDir(strInitialPath).absoluteFilePath(strDiskname + "." + strPreferredExtension);
     return strInitialPath;

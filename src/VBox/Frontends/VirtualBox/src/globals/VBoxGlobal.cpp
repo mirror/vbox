@@ -2764,7 +2764,7 @@ QUuid VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &st
 {
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
 
-    UIFDCreationDialog *pDialog = new UIFDCreationDialog(pParent, strMachineName, strMachineFolder);
+    UIFDCreationDialog *pDialog = new UIFDCreationDialog(pParent, strMachineFolder, strMachineName);
     if (!pDialog)
         return QUuid();
     windowManager().registerNewParent(pDialog, pDialogParent);

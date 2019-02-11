@@ -44,9 +44,10 @@ class SHARED_LIBRARY_STUFF UIFDCreationDialog : public QIWithRetranslateUI<QDial
 
 public:
 
-    UIFDCreationDialog(QWidget *pParent = 0,
-                       const QString &strMachineName = QString(),
-                       const QString &strMachineFolder = QString());
+    UIFDCreationDialog(QWidget *pParent,
+                       const QString &strDefaultFolder,
+                       const QString &strMachineName = QString());
+
 
     virtual void accept() /* override */;
     /* Return the mediumID */
@@ -77,8 +78,8 @@ private:
     QComboBox          *m_pSizeCombo;
     QDialogButtonBox   *m_pButtonBox;
     QCheckBox          *m_pFormatCheckBox;
+    QString             m_strDefaultFolder;
     QString             m_strMachineName;
-    QString             m_strMachineFolder;
     QUuid               m_uMediumID;
 };
 
