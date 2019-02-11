@@ -996,6 +996,10 @@ void FwCommonPlantSmbiosAndDmiHdrs(PPDMDEVINS pDevIns, uint8_t *pHdr, uint16_t c
 
     aBiosHeaders.dmi.u16TablesLength = cbDmiTables;
     aBiosHeaders.dmi.u16TableEntries = cNumDmiTables;
+    /* NB: The _SM_ table checksum technically covers both the _SM_ part (16 bytes) and the _DMI_ part
+     * (further 15 bytes). However, because the _DMI_ checksum must be zero, the _SM_ checksum can
+     * be calculated independently.
+     */
     aBiosHeaders.smbios.u8Checksum   = fwCommonChecksum((uint8_t*)&aBiosHeaders.smbios, sizeof(aBiosHeaders.smbios));
     aBiosHeaders.dmi.u8Checksum      = fwCommonChecksum((uint8_t*)&aBiosHeaders.dmi,    sizeof(aBiosHeaders.dmi));
 
