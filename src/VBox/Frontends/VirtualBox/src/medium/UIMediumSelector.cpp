@@ -454,7 +454,7 @@ void UIMediumSelector::sltCreateMedium()
             uMediumId = vboxGlobal().createHDWithNewHDWizard(this, m_strMachineGuestOSTypeId, m_strMachineName, m_strMachineFolder);
             break;
         case UIMediumDeviceType_DVD:
-            uMediumId = vboxGlobal().createVisoMediumWithVisoCreator(this, m_strMachineName, m_strMachineFolder);
+            uMediumId = vboxGlobal().createVisoMediumWithVisoCreator(this, m_strMachineFolder, m_strMachineName);
             break;
         default:
             break;

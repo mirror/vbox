@@ -51,7 +51,7 @@ UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */, const QString& strMachin
     , m_pCreatorOptionsPanel(0)
     , m_pConfigurationPanel(0)
 {
-    m_visoOptions.m_strVisoName = strMachineName;
+    m_visoOptions.m_strVisoName = !strMachineName.isEmpty() ? strMachineName : "ad-hoc";
     prepareActions();
     prepareObjects();
     prepareConnections();
@@ -95,7 +95,10 @@ void UIVisoCreator::setCurrentPath(const QString &strPath)
 
 void UIVisoCreator::retranslateUi()
 {
-    setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("VISO Creator")));
+    if (!m_strMachineName.isEmpty())
+        setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("VISO Creator")));
+    else
+        setWindowTitle(QString("%1").arg(tr("VISO Creator")));
     if (m_pActionConfiguration)
     {
         m_pActionConfiguration->setText(tr("&Configuration..."));

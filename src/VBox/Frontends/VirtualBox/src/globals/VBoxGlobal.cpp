@@ -2687,7 +2687,7 @@ DECLINLINE(int) visoWriteQuotedString(PRTSTREAM pStrmDst, const char *pszPrefix,
 }
 
 
-QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strMachineName, const QString &strFolder)
+QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strFolder, const QString &strMachineName /* = QString */)
 {
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     QPointer<UIVisoCreator> pVisoCreator = new UIVisoCreator(pDialogParent, strMachineName);
@@ -3048,7 +3048,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
                 if (target.type == UIMediumTarget::UIMediumTargetType_WithID)
                     uMediumID = openMediumWithFileOpenDialog(target.mediumType, windowManager().mainWindowShown(), strMachineFolder);
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)
-                    uMediumID = createVisoMediumWithVisoCreator(windowManager().mainWindowShown(), comConstMachine.GetName(), strMachineFolder);
+                    uMediumID = createVisoMediumWithVisoCreator(windowManager().mainWindowShown(), strMachineFolder, comConstMachine.GetName());
 
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)
                     uMediumID = showCreateFloppyDiskDialog(windowManager().mainWindowShown(), comConstMachine.GetName(), strMachineFolder);
