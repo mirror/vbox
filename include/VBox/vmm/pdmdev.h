@@ -4704,7 +4704,7 @@ DECLINLINE(int) PDMDevHlpPhysBulkGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, uint32
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnPhysReleasePageMappingLocks
+ * @copydoc PDMDEVHLPR3::pfnPhysBulkReleasePageMappingLocks
  */
 DECLINLINE(void) PDMDevHlpPhysBulkReleasePageMappingLocks(PPDMDEVINS pDevIns, uint32_t cLocks, PPGMPAGEMAPLOCK paLocks)
 {

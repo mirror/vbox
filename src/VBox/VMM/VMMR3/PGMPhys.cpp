@@ -616,7 +616,6 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
  * @param   cPages          Number of pages to lock.
  * @param   paGCPhysPages   The guest physical address of the pages that
  *                          should be mapped (@a cPages entries).
- * @param   fFlags          Flags reserved for future use, MBZ.
  * @param   papvPages       Where to store the ring-3 mapping addresses
  *                          corresponding to @a paGCPhysPages.
  * @param   paLocks         Where to store the locking information that
@@ -776,7 +775,6 @@ VMMR3DECL(int) PGMR3PhysBulkGCPhys2CCPtrExternal(PVM pVM, uint32_t cPages, PCRTG
  * @param   cPages          Number of pages to lock.
  * @param   paGCPhysPages   The guest physical address of the pages that
  *                          should be mapped (@a cPages entries).
- * @param   fFlags          Flags reserved for future use, MBZ.
  * @param   papvPages       Where to store the ring-3 mapping addresses
  *                          corresponding to @a paGCPhysPages.
  * @param   paLocks         Where to store the lock information that

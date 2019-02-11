@@ -1017,7 +1017,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysBulkGCPhys2CCPtrReadOnly(PPDMDEVINS pDe
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnPhysReleasePageMappingLocks} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysBulkReleasePageMappingLocks} */
 static DECLCALLBACK(void) pdmR3DevHlp_PhysBulkReleasePageMappingLocks(PPDMDEVINS pDevIns, uint32_t cPages, PPGMPAGEMAPLOCK paLocks)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
