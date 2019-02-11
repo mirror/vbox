@@ -3388,9 +3388,9 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(void, pfnReserved5,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved6,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved7,(void));
-    //DECLR3CALLBACKMEMBER(void, pfnReserved8,(void));
-    //DECLR3CALLBACKMEMBER(void, pfnReserved9,(void));
-    //DECLR3CALLBACKMEMBER(void, pfnReserved10,(void));
+    /*DECLR3CALLBACKMEMBER(void, pfnReserved8,(void)); */
+    /*DECLR3CALLBACKMEMBER(void, pfnReserved9,(void)); */
+    /*DECLR3CALLBACKMEMBER(void, pfnReserved10,(void));*/
     /** @} */
 
 
