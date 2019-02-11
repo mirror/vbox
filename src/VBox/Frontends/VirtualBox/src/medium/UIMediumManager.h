@@ -167,6 +167,8 @@ private slots:
       * @{ */
         /** Handles command to add medium. */
         void sltAddMedium();
+        /** Handles command to create medium. */
+        void sltCreateMedium();
         /** Handles command to copy medium. */
         void sltCopyMedium();
         /** Handles command to move medium. */

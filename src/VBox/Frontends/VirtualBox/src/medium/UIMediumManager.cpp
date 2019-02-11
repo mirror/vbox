@@ -491,6 +491,10 @@ void UIMediumManagerWidget::sltAddMedium()
     vboxGlobal().openMediumWithFileOpenDialog(currentMediumType(), this, strDefaultMachineFolder);
 }
 
+void UIMediumManagerWidget::sltCreateMedium()
+{
+}
+
 void UIMediumManagerWidget::sltCopyMedium()
 {
     /* Get current medium-item: */
@@ -636,6 +640,7 @@ void UIMediumManagerWidget::sltHandleContextMenuRequest(const QPoint &position)
     else
     {
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
+        menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Create));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_T_Search));
         menu.addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Refresh));
     }
@@ -730,6 +735,7 @@ void UIMediumManagerWidget::prepareActions()
 {
     /* First of all, add actions which has smaller shortcut scope: */
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Create));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
     addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove));
@@ -741,6 +747,8 @@ void UIMediumManagerWidget::prepareActions()
     /* Connect actions: */
     connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add), &QAction::triggered,
             this, &UIMediumManagerWidget::sltAddMedium);
+    connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Create), &QAction::triggered,
+            this, &UIMediumManagerWidget::sltCreateMedium);
     connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy), &QAction::triggered,
             this, &UIMediumManagerWidget::sltCopyMedium);
     connect(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move), &QAction::triggered,
@@ -799,6 +807,7 @@ void UIMediumManagerWidget::prepareToolBar()
 
         /* Add toolbar actions: */
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Add));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Create));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Medium_S_Move));
@@ -1070,6 +1079,7 @@ void UIMediumManagerWidget::updateActionIcons()
     if (enmCurrentMediumType != UIMediumDeviceType_Invalid)
     {
         m_pActionPool->action(UIActionIndexST_M_Medium_S_Add)->setState((int)enmCurrentMediumType);
+        m_pActionPool->action(UIActionIndexST_M_Medium_S_Create)->setState((int)enmCurrentMediumType);
         m_pActionPool->action(UIActionIndexST_M_Medium_S_Copy)->setState((int)enmCurrentMediumType);
         m_pActionPool->action(UIActionIndexST_M_Medium_S_Move)->setState((int)enmCurrentMediumType);
         m_pActionPool->action(UIActionIndexST_M_Medium_S_Remove)->setState((int)enmCurrentMediumType);

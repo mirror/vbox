@@ -1824,6 +1824,50 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Perform Create' action class. */
+class UIActionMenuSelectorMediumPerformCreate : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorMediumPerformCreate(UIActionPool *pParent)
+        : UIActionSimple(pParent)
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+        setIcon(0, UIIconPool::iconSetFull(":/hd_create_32px.png",          ":/hd_create_16px.png",
+                                           ":/hd_create_disabled_32px.png", ":/hd_create_disabled_16px.png"));
+        setIcon(1, UIIconPool::iconSetFull(":/cd_create_32px.png",          ":/cd_create_16px.png",
+                                           ":/cd_create_disabled_32px.png", ":/cd_create_disabled_16px.png"));
+        setIcon(2, UIIconPool::iconSetFull(":/fd_create_32px.png",          ":/fd_create_16px.png",
+                                           ":/fd_create_disabled_32px.png", ":/fd_create_disabled_16px.png"));
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("CreateMedium");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "&Create..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Media Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Create a new disk image"));
+        setToolTip(QApplication::translate("UIActionPool", "Create a New Disk Image (%1)").arg(shortcut().toString()));
+    }
+};
+
 /** Simple action extension, used as 'Perform Copy' action class. */
 class UIActionMenuSelectorMediumPerformCopy : public UIActionSimple
 {
@@ -2657,6 +2701,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_MediumWindow] = new UIActionMenuSelectorMedium(this);
     m_pool[UIActionIndexST_M_Medium] = new UIActionMenuSelectorMedium(this);
     m_pool[UIActionIndexST_M_Medium_S_Add] = new UIActionMenuSelectorMediumPerformAdd(this);
+    m_pool[UIActionIndexST_M_Medium_S_Create] = new UIActionMenuSelectorMediumPerformCreate(this);
     m_pool[UIActionIndexST_M_Medium_S_Copy] = new UIActionMenuSelectorMediumPerformCopy(this);
     m_pool[UIActionIndexST_M_Medium_S_Move] = new UIActionMenuSelectorMediumPerformMove(this);
     m_pool[UIActionIndexST_M_Medium_S_Remove] = new UIActionMenuSelectorMediumPerformRemove(this);
@@ -3113,6 +3158,7 @@ void UIActionPoolManager::updateMenuMediumWrapper(UIMenu *pMenu)
 
     /* 'Add' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Add)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Medium_S_Create)) || fSeparator;
 
     /* Separator? */
     if (fSeparator)

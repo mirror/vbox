@@ -132,6 +132,7 @@ enum UIActionIndexST
     UIActionIndexST_M_MediumWindow,
     UIActionIndexST_M_Medium,
     UIActionIndexST_M_Medium_S_Add,
+    UIActionIndexST_M_Medium_S_Create,
     UIActionIndexST_M_Medium_S_Copy,
     UIActionIndexST_M_Medium_S_Move,
     UIActionIndexST_M_Medium_S_Remove,
