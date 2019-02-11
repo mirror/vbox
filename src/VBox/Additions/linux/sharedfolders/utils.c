@@ -359,7 +359,7 @@ int sf_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
 	 * FsPerf shows the following numbers for sequential file access against
 	 * a tmpfs folder on an AMD 1950X host running debian buster/sid:
 	 *
-	 * block size = r128600    ----- r128753 -----
+	 * block size = r128600    ----- r128755 -----
 	 *               reads      reads     writes
 	 *    4096 KB = 2254 MB/s  4953 MB/s 3668 MB/s
 	 *    2048 KB = 2368 MB/s  4908 MB/s 3541 MB/s
