@@ -284,6 +284,7 @@ static int rtReqPoolThreadExit(PRTREQPOOLINT pPool, PRTREQPOOLTHREAD pThread, bo
 
     RTCritSectLeave(&pPool->CritSect);
 
+    RTMemFree(pThread);
     return VINF_SUCCESS;
 }
 
@@ -1036,6 +1037,7 @@ RTDECL(uint32_t) RTReqPoolRelease(RTREQPOOL hPool)
         }
 
         /* Finally, free the critical section and pool instance. */
+        RTSemEventMultiDestroy(pPool->hThreadTermEvt);
         RTCritSectLeave(&pPool->CritSect);
         RTCritSectDelete(&pPool->CritSect);
         RTMemFree(pPool);
