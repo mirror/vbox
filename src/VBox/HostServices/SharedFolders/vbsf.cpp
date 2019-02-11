@@ -1094,28 +1094,22 @@ int vbsfRead(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t
     SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     int rc = vbsfCheckHandleAccess(pClient, root, pHandle, VBSF_CHECK_ACCESS_READ);
     if (RT_SUCCESS(rc))
-    { /* likely */ }
-    else
-        return rc;
-
-    if (RT_LIKELY(*pcbBuffer != 0))
     {
-/** @todo use RTFileReadAt! */
-        rc = RTFileSeek(pHandle->file.Handle, offset, RTFILE_SEEK_BEGIN, NULL);
-        if (RT_SUCCESS(rc))
+        size_t const cbToRead = *pcbBuffer;
+        if (RT_LIKELY(cbToRead > 0))
         {
-            size_t count = 0;
-            rc = RTFileRead(pHandle->file.Handle, pBuffer, *pcbBuffer, &count);
-            *pcbBuffer = (uint32_t)count;
+            size_t cbActual = 0;
+            rc = RTFileReadAt(pHandle->file.Handle, offset, pBuffer, cbToRead, &cbActual);
+            *pcbBuffer = (uint32_t)cbActual;
         }
         else
-            AssertRC(rc);
+        {
+            /* Reading zero bytes always succeeds. */
+            rc = VINF_SUCCESS;
+        }
     }
     else
-    {
-        /* Reading zero bytes always succeeds. */
-        rc = VINF_SUCCESS;
-    }
+        *pcbBuffer = 0;
 
     LogFunc(("%Rrc bytes read 0x%RX32\n", rc, *pcbBuffer));
     return rc;
@@ -1221,26 +1215,29 @@ int vbsfWrite(SHFLCLIENTDATA *pClient, SHFLROOT idRoot, SHFLHANDLE hFile, uint64
         size_t const cbToWrite = *pcbBuffer;
         if (RT_LIKELY(cbToWrite != 0))
         {
-/** @todo use RTFileWriteAt unless RTFILE_O_APPEND is in effect.  */
-            rc = RTFileSeek(pHandle->file.Handle, offFile, RTFILE_SEEK_BEGIN, NULL);
-            if (RT_SUCCESS(rc))
+            size_t cbWritten = 0;
+            if (!(pHandle->file.fOpenFlags & RTFILE_O_APPEND))
+                rc = RTFileWriteAt(pHandle->file.Handle, offFile, pBuffer, cbToWrite, &cbWritten);
+            else
             {
-                size_t cbWritten = 0;
-                rc = RTFileWrite(pHandle->file.Handle, pBuffer, cbToWrite, &cbWritten);
-                *pcbBuffer = (uint32_t)cbWritten;
-
-                /* Update the file offset (mainly for RTFILE_O_APPEND), */
+                rc = RTFileSeek(pHandle->file.Handle, offFile, RTFILE_SEEK_BEGIN, NULL);
+                AssertRC(rc);
                 if (RT_SUCCESS(rc))
                 {
-                    offFile += cbWritten;
-                    if (!(pHandle->file.fOpenFlags & RTFILE_O_APPEND))
-                        *poffFile = offFile;
-                    else
-                        *poffFile = vbsfWriteCalcPostAppendFilePosition(pHandle->file.Handle, offFile);
+                    rc = RTFileWrite(pHandle->file.Handle, pBuffer, cbToWrite, &cbWritten);
+                    *pcbBuffer = (uint32_t)cbWritten;
                 }
             }
-            else
-                AssertRC(rc);
+
+            /* Update the file offset (mainly for RTFILE_O_APPEND), */
+            if (RT_SUCCESS(rc))
+            {
+                offFile += cbWritten;
+                if (!(pHandle->file.fOpenFlags & RTFILE_O_APPEND))
+                    *poffFile = offFile;
+                else
+                    *poffFile = vbsfWriteCalcPostAppendFilePosition(pHandle->file.Handle, offFile);
+            }
         }
         else
         {
@@ -1288,7 +1285,7 @@ int vbsfWritePages(SHFLCLIENTDATA *pClient, SHFLROOT idRoot, SHFLHANDLE hFile, u
             rc = vbsfPagesToSgBuf(pPages, cbToWrite, &SgBuf);
             if (RT_SUCCESS(rc))
             {
-//#ifndef RT_OS_LINUX
+#ifndef RT_OS_LINUX
                 /* Cannot use RTFileSgWriteAt or RTFileWriteAt when opened with
                    RTFILE_O_APPEND, except for on linux where the offset is
                    then ignored by the low level kernel API. */
@@ -1319,7 +1316,7 @@ int vbsfWritePages(SHFLCLIENTDATA *pClient, SHFLROOT idRoot, SHFLHANDLE hFile, u
                     }
                 }
                 else
-//#endif
+#endif
                 {
                     rc = RTFileSgWriteAt(pHandle->file.Handle, offFile, &SgBuf, cbToWrite, &cbTotal);
                     while (rc == VERR_INTERRUPTED)
