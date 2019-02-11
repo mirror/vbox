@@ -108,9 +108,9 @@ void UIGraphicsScrollBarToken::paint(QPainter *pPainter, const QStyleOptionGraph
 
     /* Prepare color: */
     const QPalette pal = palette();
-    QColor backgroundColor = pal.color(QPalette::Active, QPalette::Window);
 
     /* Draw background: */
+    QColor backgroundColor = pal.color(QPalette::Active, QPalette::Window);
     pPainter->fillRect(pOptions->rect, backgroundColor);
 
     /* Restore painter: */
@@ -462,6 +462,12 @@ void UIGraphicsScrollBar::prepare()
 
 void UIGraphicsScrollBar::prepareWidgets()
 {
+    prepareButtons();
+    prepareToken();
+}
+
+void UIGraphicsScrollBar::prepareButtons()
+{
     /* Create buttons depending on orientation: */
     switch (m_enmOrientation)
     {
@@ -483,8 +489,7 @@ void UIGraphicsScrollBar::prepareWidgets()
     {
         /* We use 10px icons, not 16px, let buttons know that: */
         m_pButton1->setIconScaleIndex((double)10 / 16);
-        /* Also we want to have buttons react on mouse presses,
-         * not mouse releases, this also implies auto-repeat feature: */
+        /* Also we want to have buttons react on mouse presses for auto-repeat feature: */
         m_pButton1->setClickPolicy(UIGraphicsButton::ClickPolicy_OnPress);
         connect(m_pButton1, &UIGraphicsButton::sigButtonClicked,
                 this, &UIGraphicsScrollBar::sltButton1Clicked);
@@ -493,13 +498,15 @@ void UIGraphicsScrollBar::prepareWidgets()
     {
         /* We use 10px icons, not 16px, let buttons know that: */
         m_pButton2->setIconScaleIndex((double)10 / 16);
-        /* Also we want to have buttons react on mouse presses,
-         * not mouse releases, this also implies auto-repeat feature: */
+        /* Also we want to have buttons react on mouse presses for auto-repeat feature: */
         m_pButton2->setClickPolicy(UIGraphicsButton::ClickPolicy_OnPress);
         connect(m_pButton2, &UIGraphicsButton::sigButtonClicked,
                 this, &UIGraphicsScrollBar::sltButton2Clicked);
     }
+}
 
+void UIGraphicsScrollBar::prepareToken()
+{
     /* Create token: */
     m_pToken = new UIGraphicsScrollBarToken(this);
     if (m_pToken)
@@ -596,8 +603,9 @@ void UIGraphicsScrollBar::layoutWidgets()
 
 void UIGraphicsScrollBar::layoutButtons()
 {
-    /* We are calculating proper button shift delta, because
-     * button size can be smaller than scroll-bar extent value. */
+    // WORKAROUND:
+    // We are calculating proper button shift delta, because
+    // button size can be smaller than scroll-bar extent value.
 
     int iDelta1 = 0;
     if (m_iExtent > m_pButton1->minimumSizeHint().width())

@@ -120,6 +120,10 @@ private:
     void prepare();
     /** Prepares widgets. */
     void prepareWidgets();
+    /** Prepares buttons. */
+    void prepareButtons();
+    /** Prepares token. */
+    void prepareToken();
     /** Prepares animation. */
     void prepareAnimation();
 
