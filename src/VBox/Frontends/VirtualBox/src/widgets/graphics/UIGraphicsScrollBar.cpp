@@ -47,7 +47,7 @@ signals:
 public:
 
     /** Constructs graphics scroll-bar token passing @a pParent to the base-class. */
-    UIGraphicsScrollBarToken(QIGraphicsWidget *pParent = 0);
+    UIGraphicsScrollBarToken(Qt::Orientation enmOrientation, QIGraphicsWidget *pParent = 0);
 
     /** Returns minimum size-hint. */
     virtual QSizeF minimumSizeHint() const /* override */;
@@ -77,6 +77,9 @@ private:
     /** Updates scroll-bar extent value. */
     void updateExtent();
 
+    /** Holds the orientation. */
+    const Qt::Orientation  m_enmOrientation;
+
     /** Holds the scroll-bar extent. */
     int  m_iExtent;
 
@@ -89,8 +92,9 @@ private:
 *   Class UIGraphicsScrollBarToken implementation.                                                                               *
 *********************************************************************************************************************************/
 
-UIGraphicsScrollBarToken::UIGraphicsScrollBarToken(QIGraphicsWidget *pParent /* = 0 */)
+UIGraphicsScrollBarToken::UIGraphicsScrollBarToken(Qt::Orientation enmOrientation, QIGraphicsWidget *pParent /* = 0 */)
     : QIGraphicsWidget(pParent)
+    , m_enmOrientation(enmOrientation)
     , m_fHovered(false)
 {
     prepare();
@@ -98,7 +102,20 @@ UIGraphicsScrollBarToken::UIGraphicsScrollBarToken(QIGraphicsWidget *pParent /* 
 
 QSizeF UIGraphicsScrollBarToken::minimumSizeHint() const
 {
-    return QSizeF(m_iExtent, m_iExtent);
+    /* Calculate minimum size-hint depending on orientation: */
+    switch (m_enmOrientation)
+    {
+#ifdef VBOX_WS_MAC
+        case Qt::Horizontal: return QSizeF(2 * m_iExtent, m_iExtent);
+        case Qt::Vertical:   return QSizeF(m_iExtent, 2 * m_iExtent);
+#else
+        case Qt::Horizontal: return QSizeF(m_iExtent, m_iExtent);
+        case Qt::Vertical:   return QSizeF(m_iExtent, m_iExtent);
+#endif
+    }
+
+    /* Call to base-class: */
+    return QIGraphicsWidget::minimumSizeHint();
 }
 
 void UIGraphicsScrollBarToken::paint(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions, QWidget *)
@@ -391,7 +408,7 @@ void UIGraphicsScrollBar::sltTokenMoved(const QPointF &pos)
             /* We have to calculate the X coord of the token, leaving Y untouched: */
 #ifdef VBOX_WS_MAC
             const int iMin = 0;
-            const int iMax = size().width() - m_iExtent;
+            const int iMax = size().width() - 2 * m_iExtent;
 #else
             const int iMin = m_iExtent;
             const int iMax = size().width() - 2 * m_iExtent;
@@ -408,7 +425,7 @@ void UIGraphicsScrollBar::sltTokenMoved(const QPointF &pos)
             /* We have to calculate the Y coord of the token, leaving X untouched: */
 #ifdef VBOX_WS_MAC
             const int iMin = 0;
-            const int iMax = size().height() - m_iExtent;
+            const int iMax = size().height() - 2 * m_iExtent;
 #else
             const int iMin = m_iExtent;
             const int iMax = size().height() - 2 * m_iExtent;
@@ -532,7 +549,7 @@ void UIGraphicsScrollBar::prepareButtons()
 void UIGraphicsScrollBar::prepareToken()
 {
     /* Create token: */
-    m_pToken = new UIGraphicsScrollBarToken(this);
+    m_pToken = new UIGraphicsScrollBarToken(m_enmOrientation, this);
     if (m_pToken)
         connect(m_pToken, &UIGraphicsScrollBarToken::sigMouseMoved,
                 this, &UIGraphicsScrollBar::sltTokenMoved);
@@ -667,7 +684,7 @@ QPoint UIGraphicsScrollBar::actualTokenPosition() const
             /* We have to adjust the X coord of the token, leaving Y unchanged: */
 #ifdef VBOX_WS_MAC
             const int iMin = 0;
-            const int iMax = size().width() - m_iExtent;
+            const int iMax = size().width() - 2 * m_iExtent;
 #else
             const int iMin = m_iExtent;
             const int iMax = size().width() - 2 * m_iExtent;
@@ -681,7 +698,7 @@ QPoint UIGraphicsScrollBar::actualTokenPosition() const
             /* We have to adjust the Y coord of the token, leaving X unchanged: */
 #ifdef VBOX_WS_MAC
             const int iMin = 0;
-            const int iMax = size().height() - m_iExtent;
+            const int iMax = size().height() - 2 * m_iExtent;
 #else
             const int iMin = m_iExtent;
             const int iMax = size().height() - 2 * m_iExtent;
@@ -716,7 +733,11 @@ void UIGraphicsScrollBar::paintBackground(QPainter *pPainter, const QRect &recta
     {
         QColor tokenColor = pal.color(QPalette::Active, QPalette::Window);
         tokenColor.setAlpha(200);
+#ifdef VBOX_WS_MAC
+        QRect tokenRectangle = QRect(actualTokenPosition(), QSize(m_iExtent, 2 * m_iExtent));
+#else
         QRect tokenRectangle = QRect(actualTokenPosition(), QSize(m_iExtent, m_iExtent));
+#endif
         tokenRectangle.setLeft(tokenRectangle.left() + .9 * tokenRectangle.width() * ((double)100 - m_iAnimatedValue) / 100);
         pPainter->fillRect(tokenRectangle, tokenColor);
     }
