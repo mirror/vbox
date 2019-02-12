@@ -2110,8 +2110,6 @@ VBOX_PATH_MSIDB     ?= $(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Bin/MsiDb.Exe
 VBOX_PATH_WISUBSTG  ?= $(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSubStg.vbs
 VBOX_PATH_WISUMINFO ?= $(KBUILD_DEVTOOLS)/win.x86/sdk/v7.1/Samples/sysmgmt/msi/scripts/WiSumInf.vbs
 VBOX_PATH_DIFX      ?= $(KBUILD_DEVTOOLS)/win.$(KBUILD_TARGET_ARCH)/DIFx/v2.1-r3
-VBOX_PATH_CABSDK    ?= $(KBUILD_DEVTOOLS)/win.x86/cabsdk/r1
-VBOX_PATH_MAKECAB   ?= $(VBOX_PATH_CABSDK)/BIN/MAKECAB.EXE
 
 ifdef VBOX_OSE ## @todo try get rid of this crap! People can use the latest and greatest Yasm release, no need to check in the binary for OSE.
  # We need to export YASM for OSE, but since it was converted to .zip we need to
