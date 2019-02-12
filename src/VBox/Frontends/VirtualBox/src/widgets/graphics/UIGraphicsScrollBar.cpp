@@ -218,6 +218,12 @@ UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QGraphi
     , m_iHoverOnTimerId(0)
     , m_iHoverOffTimerId(0)
     , m_iHoveringValue(0)
+#ifdef VBOX_WS_MAC
+    , m_fRevealed(false)
+    , m_iRevealingValue(0)
+    , m_iRevealOnTimerId(0)
+    , m_iRevealOffTimerId(0)
+#endif
 {
     pScene->addItem(this);
     prepare();
@@ -238,6 +244,12 @@ UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QIGraph
     , m_iHoverOnTimerId(0)
     , m_iHoverOffTimerId(0)
     , m_iHoveringValue(0)
+#ifdef VBOX_WS_MAC
+    , m_fRevealed(false)
+    , m_iRevealingValue(0)
+    , m_iRevealOnTimerId(0)
+    , m_iRevealOffTimerId(0)
+#endif
 {
     prepare();
 }
@@ -406,6 +418,36 @@ void UIGraphicsScrollBar::timerEvent(QTimerEvent *pEvent)
         /* Update in any case: */
         update();
     }
+
+#ifdef VBOX_WS_MAC
+
+    else
+
+    /* If that is reveal-in timer: */
+    if (m_iRevealOnTimerId != 0 && iTimerId == m_iRevealOnTimerId)
+    {
+        /* Wait for timer no more: */
+        m_iRevealOnTimerId = 0;
+    }
+
+    else
+
+    /* If that is reveal-out timer: */
+    if (m_iRevealOffTimerId != 0 && iTimerId == m_iRevealOffTimerId)
+    {
+        /* Wait for timer no more: */
+        m_iRevealOffTimerId = 0;
+        /* Emit reveal-out signal if not hovered or was reinvoked not long time ago: */
+        if (!m_fHovered && !m_pToken->isHovered() && m_iRevealOnTimerId == 0)
+            emit sigRevealLeave();
+        /* Restart timer otherwise: */
+        else
+            m_iRevealOffTimerId = startTimer(2000);
+        /* Update in any case: */
+        update();
+    }
+
+#endif
 }
 
 void UIGraphicsScrollBar::sltButton1Clicked()
@@ -506,6 +548,36 @@ void UIGraphicsScrollBar::sltStateEnteredHovered()
         m_pToken->show();
 }
 
+#ifdef VBOX_WS_MAC
+void UIGraphicsScrollBar::sltHandleRevealingStart()
+{
+    /* Only if not yet revealed, that way we
+     * make sure trigger emitted just once: */
+    if (!m_fRevealed)
+    {
+        /* Mark token revealed: */
+        m_fRevealed = true;
+        /* Emit reveal signal immediately: */
+        emit sigRevealEnter();
+    }
+
+    /* Restart fresh sustain timer: */
+    m_iRevealOnTimerId = startTimer(1000);
+}
+
+void UIGraphicsScrollBar::sltStateEnteredFaded()
+{
+    /* Mark token faded: */
+    m_fRevealed = false;
+}
+
+void UIGraphicsScrollBar::sltStateEnteredRevealed()
+{
+    /* Start reveal-out timer: */
+    m_iRevealOffTimerId = startTimer(2000);
+}
+#endif /* VBOX_WS_MAC */
+
 void UIGraphicsScrollBar::prepare()
 {
     /* Configure self: */
@@ -579,6 +651,9 @@ void UIGraphicsScrollBar::prepareToken()
 void UIGraphicsScrollBar::prepareAnimation()
 {
     prepareHoveringAnimation();
+#ifdef VBOX_WS_MAC
+    prepareRevealingAnimation();
+#endif
 }
 
 void UIGraphicsScrollBar::prepareHoveringAnimation()
@@ -652,6 +727,79 @@ void UIGraphicsScrollBar::prepareHoveringAnimation()
         pHoveringMachine->start();
     }
 }
+
+#ifdef VBOX_WS_MAC
+void UIGraphicsScrollBar::prepareRevealingAnimation()
+{
+    /* Create revealing animation machine: */
+    QStateMachine *pRevealingMachine = new QStateMachine(this);
+    if (pRevealingMachine)
+    {
+        /* Create 'faded' state: */
+        QState *pStateFaded = new QState(pRevealingMachine);
+        /* Create 'revealed' state: */
+        QState *pStateRevealed = new QState(pRevealingMachine);
+
+        /* Configure 'faded' state: */
+        if (pStateFaded)
+        {
+            /* When we entering fade state => we assigning revealingValue to 0: */
+            pStateFaded->assignProperty(this, "revealingValue", 0);
+            connect(pStateFaded, &QState::propertiesAssigned, this, &UIGraphicsScrollBar::sltStateEnteredFaded);
+
+            /* Add state transitions: */
+            QSignalTransition *pFadeToRevealed = pStateFaded->addTransition(this, SIGNAL(sigRevealEnter()), pStateRevealed);
+            if (pFadeToRevealed)
+            {
+                /* Create forward animation: */
+                QPropertyAnimation *pRevealingAnimationForward = new QPropertyAnimation(this, "revealingValue", this);
+                if (pRevealingAnimationForward)
+                {
+                    pRevealingAnimationForward->setDuration(200);
+                    pRevealingAnimationForward->setStartValue(0);
+                    pRevealingAnimationForward->setEndValue(100);
+
+                    /* Add to transition: */
+                    pFadeToRevealed->addAnimation(pRevealingAnimationForward);
+                }
+            }
+        }
+
+        /* Configure 'revealed' state: */
+        if (pStateRevealed)
+        {
+            /* When we entering revealed state => we assigning revealingValue to 100: */
+            pStateRevealed->assignProperty(this, "revealingValue", 100);
+            connect(pStateRevealed, &QState::propertiesAssigned, this, &UIGraphicsScrollBar::sltStateEnteredRevealed);
+
+            /* Add state transitions: */
+            QSignalTransition *pRevealedToFaded = pStateRevealed->addTransition(this, SIGNAL(sigRevealLeave()), pStateFaded);
+            if (pRevealedToFaded)
+            {
+                /* Create backward animation: */
+                QPropertyAnimation *pRevealingAnimationBackward = new QPropertyAnimation(this, "revealingValue", this);
+                if (pRevealingAnimationBackward)
+                {
+                    pRevealingAnimationBackward->setDuration(200);
+                    pRevealingAnimationBackward->setStartValue(100);
+                    pRevealingAnimationBackward->setEndValue(0);
+
+                    /* Add to transition: */
+                    pRevealedToFaded->addAnimation(pRevealingAnimationBackward);
+                }
+            }
+        }
+
+        /* Initial state is 'fade': */
+        pRevealingMachine->setInitialState(pStateFaded);
+        /* Start state-machine: */
+        pRevealingMachine->start();
+    }
+
+    /* Install self-listener: */
+    connect(this, &UIGraphicsScrollBar::sigValueChanged, this, &UIGraphicsScrollBar::sltHandleRevealingStart);
+}
+#endif /* VBOX_WS_MAC */
 
 void UIGraphicsScrollBar::updateExtent()
 {
@@ -769,6 +917,7 @@ void UIGraphicsScrollBar::paintBackground(QPainter *pPainter, const QRect &recta
     if (m_iHoveringValue < 100)
     {
         QColor tokenColor = pal.color(QPalette::Active, QPalette::Mid);
+        tokenColor.setAlpha(255 * ((double)m_iRevealingValue / 100));
         tokenColor = tokenColor.darker(140);
         QRectF tokenRectangle = QRect(actualTokenPosition(), QSize(m_iExtent, 2 * m_iExtent));
         QRectF actualRectangle = tokenRectangle;

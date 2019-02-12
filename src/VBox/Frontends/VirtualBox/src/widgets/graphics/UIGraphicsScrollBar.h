@@ -34,6 +34,9 @@ class UIGraphicsScrollBar : public QIGraphicsWidget
 {
     Q_OBJECT;
     Q_PROPERTY(int hoveringValue READ hoveringValue WRITE setHoveringValue);
+#ifdef VBOX_WS_MAC
+    Q_PROPERTY(int revealingValue READ revealingValue WRITE setRevealingValue);
+#endif
 
 signals:
 
@@ -41,6 +44,13 @@ signals:
     void sigHoverEnter();
     /** Notifies listeners about hover leave. */
     void sigHoverLeave();
+
+#ifdef VBOX_WS_MAC
+    /** Notifies listeners about token should be revealed. */
+    void sigRevealEnter();
+    /** Notifies listeners about token should be faded. */
+    void sigRevealLeave();
+#endif
 
     /** Notifies listeners about @a iValue has changed. */
     void sigValueChanged(int iValue);
@@ -114,6 +124,15 @@ private slots:
     /** Handles hovered state entering. */
     void sltStateEnteredHovered();
 
+#ifdef VBOX_WS_MAC
+    /** Handles signals to start revealing. */
+    void sltHandleRevealingStart();
+    /** Handles faded state entering. */
+    void sltStateEnteredFaded();
+    /** Handles revealed state entering. */
+    void sltStateEnteredRevealed();
+#endif
+
 private:
 
     /** Prepares all. */
@@ -128,6 +147,10 @@ private:
     void prepareAnimation();
     /** Prepares hovering animation. */
     void prepareHoveringAnimation();
+#ifdef VBOX_WS_MAC
+    /** Prepares revealing animation. */
+    void prepareRevealingAnimation();
+#endif
 
     /** Updates scroll-bar extent value. */
     void updateExtent();
@@ -148,6 +171,13 @@ private:
     void setHoveringValue(int iValue) { m_iHoveringValue = iValue; update(); }
     /** Returns hovering animation value. */
     int hoveringValue() const { return m_iHoveringValue; }
+
+#ifdef VBOX_WS_MAC
+    /** Defines revealing animation @a iValue. */
+    void setRevealingValue(int iValue) { m_iRevealingValue = iValue; update(); }
+    /** Returns revealing animation value. */
+    int revealingValue() const { return m_iRevealingValue; }
+#endif
 
     /** Holds the orientation. */
     const Qt::Orientation  m_enmOrientation;
@@ -180,6 +210,17 @@ private:
     int   m_iHoverOffTimerId;
     /** Holds the hovering animation value. */
     int   m_iHoveringValue;
+
+#ifdef VBOX_WS_MAC
+    /** Holds whether token is revealed. */
+    bool  m_fRevealed;
+    /** Holds the revealing animation value. */
+    int   m_iRevealingValue;
+    /** Holds the reveal-out timer id. */
+    int   m_iRevealOnTimerId;
+    /** Holds the reveal-out timer id. */
+    int   m_iRevealOffTimerId;
+#endif
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_graphics_UIGraphicsScrollBar_h */
