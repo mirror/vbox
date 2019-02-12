@@ -4836,7 +4836,7 @@ static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface, bo
  * @returns VBox status code.
  * @param   pInterface          Pointer to this interface.
  * @param   cMilliesInterval    Number of millis between two refreshes.
- * @see     PDMIKEYBOARDPORT::pfnSetRefreshRate() for details.
+ * @see     PDMIDISPLAYPORT::pfnSetRefreshRate() for details.
  */
 static DECLCALLBACK(int) vgaPortSetRefreshRate(PPDMIDISPLAYPORT pInterface, uint32_t cMilliesInterval)
 {
