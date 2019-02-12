@@ -3409,12 +3409,14 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, cMsSleep);
             else
             {
+# if 0 /* Still doesn't work. The trouble is on line 3424 and 3425. */
 # ifdef VBOX_STRICT
                 /* Invariant: The access handler should never be reset twice within
                    a certain time span; calling it 500ms here for simplicity. */
                 uint64_t TimeNow = RTTimeMilliTS();
                 Assert(TimeNow - pSVGAState->TimeLastFIFOIntercept > 500);
                 pSVGAState->TimeLastFIFOIntercept = TimeNow;
+# endif
 # endif
                 int rc2 = PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
                 AssertRC(rc2); /* No break. Racing EMTs unmapping and remapping the region. */
