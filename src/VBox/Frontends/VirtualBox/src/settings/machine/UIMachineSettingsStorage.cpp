@@ -3082,8 +3082,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
 void UIMachineSettingsStorage::sltCreateNewHardDisk()
 {
     const QUuid uMediumId = vboxGlobal().createHDWithNewHDWizard(this, m_strMachineGuestOSTypeId,
-                                                                 m_strMachineName, m_strMachineSettingsFilePath);
-
+                                                                 m_strMachineSettingsFilePath, m_strMachineName);
     if (!uMediumId.isNull())
         m_pMediumIdHolder->setId(uMediumId);
 }

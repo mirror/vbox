@@ -90,26 +90,27 @@
 #endif /* VBOX_WS_MAC */
 
 /* COM includes: */
+#include "CAudioAdapter.h"
+#include "CBIOSSettings.h"
+#include "CConsole.h"
 #include "CExtPack.h"
 #include "CExtPackFile.h"
 #include "CExtPackManager.h"
-#include "CMachine.h"
-#include "CUSBDevice.h"
-#include "CUSBDeviceFilters.h"
-#include "CUSBDeviceFilter.h"
-#include "CBIOSSettings.h"
-#include "CVRDEServer.h"
-#include "CStorageController.h"
-#include "CMediumAttachment.h"
-#include "CAudioAdapter.h"
-#include "CNetworkAdapter.h"
-#include "CSerialPort.h"
-#include "CUSBController.h"
 #include "CHostUSBDevice.h"
 #include "CHostVideoInputDevice.h"
+#include "CMachine.h"
+#include "CMediumAttachment.h"
+#include "CNetworkAdapter.h"
+#include "CSerialPort.h"
 #include "CSharedFolder.h"
-#include "CConsole.h"
 #include "CSnapshot.h"
+#include "CStorageController.h"
+#include "CSystemProperties.h"
+#include "CUSBController.h"
+#include "CUSBDevice.h"
+#include "CUSBDeviceFilter.h"
+#include "CUSBDeviceFilters.h"
+#include "CVRDEServer.h"
 
 /* Other VBox includes: */
 #include <iprt/asm.h>
@@ -2575,8 +2576,8 @@ QUuid VBoxGlobal::openMedium(UIMediumDeviceType enmMediumType, QString strMedium
 }
 
 QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent,
-                                                 const QString &strDefaultFolder /* = QString() */,
-                                                 bool fUseLastFolder /* = false */)
+                                               const QString &strDefaultFolder /* = QString() */,
+                                               bool fUseLastFolder /* = false */)
 {
     /* Initialize variables: */
     QList<QPair <QString, QString> > filters;
@@ -2585,7 +2586,7 @@ QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType,
     QString strFilter;
     QString strTitle;
     QString allType;
-    QString strLastFolder;
+    QString strLastFolder = defaultFolderPathForType(enmMediumType);
     switch (enmMediumType)
     {
         case UIMediumDeviceType_HardDisk:
@@ -2593,11 +2594,6 @@ QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType,
             filters = HDDBackends(virtualBox());
             strTitle = tr("Please choose a virtual hard disk file");
             allType = tr("All virtual hard disk files (%1)");
-            strLastFolder = gEDataManager->recentFolderForHardDrives();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
             break;
         }
         case UIMediumDeviceType_DVD:
@@ -2605,11 +2601,6 @@ QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType,
             filters = DVDBackends(virtualBox());
             strTitle = tr("Please choose a virtual optical disk file");
             allType = tr("All virtual optical disk files (%1)");
-            strLastFolder = gEDataManager->recentFolderForOpticalDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForHardDrives();
             break;
         }
         case UIMediumDeviceType_Floppy:
@@ -2617,11 +2608,6 @@ QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType,
             filters = FloppyBackends(virtualBox());
             strTitle = tr("Please choose a virtual floppy disk file");
             allType = tr("All virtual floppy disk files (%1)");
-            strLastFolder = gEDataManager->recentFolderForFloppyDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
-            if (strLastFolder.isEmpty())
-                strLastFolder = gEDataManager->recentFolderForHardDrives();
             break;
         }
         default:
@@ -2687,8 +2673,13 @@ DECLINLINE(int) visoWriteQuotedString(PRTSTREAM pStrmDst, const char *pszPrefix,
 }
 
 
-QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strFolder, const QString &strMachineName /* = QString */)
+QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strDefaultFolder /* = QString */,
+                                                  const QString &strMachineName /* = QString */)
 {
+    QString strVisoSaveFolder(strDefaultFolder);
+    if (strVisoSaveFolder.isEmpty())
+        strVisoSaveFolder = defaultFolderPathForType(UIMediumDeviceType_DVD);
+
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     QPointer<UIVisoCreator> pVisoCreator = new UIVisoCreator(pDialogParent, strMachineName);
 
@@ -2712,7 +2703,7 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
         /* Produce the VISO. */
         char szVisoPath[RTPATH_MAX];
         QString strFileName = QString("%1%2").arg(strVisoName).arg(".viso");
-        int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strFolder.toUtf8().constData(), strFileName.toUtf8().constData());
+        int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strDefaultFolder.toUtf8().constData(), strFileName.toUtf8().constData());
         if (RT_SUCCESS(vrc))
         {
             PRTSTREAM pStrmViso;
@@ -2760,11 +2751,17 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
     return QUuid();
 }
 
-QUuid VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder)
+QUuid VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &strDefaultFolder /* QString() */,
+                                             const QString &strMachineName /* = QString() */ )
 {
+    QString strStartPath(strDefaultFolder);
+
+    if (strStartPath.isEmpty())
+        strStartPath = defaultFolderPathForType(UIMediumDeviceType_Floppy);
+
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
 
-    UIFDCreationDialog *pDialog = new UIFDCreationDialog(pParent, strMachineFolder, strMachineName);
+    UIFDCreationDialog *pDialog = new UIFDCreationDialog(pParent, strStartPath, strMachineName);
     if (!pDialog)
         return QUuid();
     windowManager().registerNewParent(pDialog, pDialogParent);
@@ -2813,15 +2810,45 @@ int VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  e
     return static_cast<int>(returnCode);
 }
 
+QUuid VBoxGlobal::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
+                                          const QString &strDefaultFolder /* = QString() */, const QString &strMachineName /* = QString() */,
+                                          const QString &strMachineGuestOSTypeId /*= QString() */)
+{
+    QUuid uMediumId;
+
+    switch (enmMediumType)
+    {
+        case UIMediumDeviceType_Floppy:
+            uMediumId = showCreateFloppyDiskDialog(pParent, strDefaultFolder, strMachineName);
+            break;
+        case UIMediumDeviceType_HardDisk:
+            uMediumId = createHDWithNewHDWizard(pParent, strMachineGuestOSTypeId, strDefaultFolder, strMachineName);
+
+            break;
+        case UIMediumDeviceType_DVD:
+            uMediumId = createVisoMediumWithVisoCreator(pParent, strDefaultFolder, strMachineName);
+            break;
+        default:
+            break;
+    }
+
+    return uMediumId;
+}
+
 QUuid VBoxGlobal::createHDWithNewHDWizard(QWidget *pParent, const QString &strMachineGuestOSTypeId,
-                                          const QString &strMachineName,
-                                          const QString &strMachineFolder)
+                                          const QString &strMachineFolder /* = QString() */,
+                                          const QString &strMachineName /* = QString() */)
 {
     /* Initialize variables: */
-    const CGuestOSType comGuestOSType = virtualBox().GetGuestOSType(strMachineGuestOSTypeId);
-    QString strDiskName = findUniqueFileName(strMachineFolder, strMachineName);
+    QString strDefaultFolder(strMachineFolder);
+    if (strDefaultFolder.isEmpty())
+        strDefaultFolder = defaultFolderPathForType(UIMediumDeviceType_HardDisk);
+
+    const CGuestOSType comGuestOSType = virtualBox().GetGuestOSType(!strMachineGuestOSTypeId.isEmpty() ? strMachineGuestOSTypeId : "Other");
+    QString strDiskName = findUniqueFileName(strDefaultFolder,
+                                             !strMachineName.isEmpty() ? strMachineName : "NewVirtualDisk");
     /* Show New VD wizard: */
-    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(pParent, strDiskName, strMachineFolder, comGuestOSType.GetRecommendedHDD());
+    UISafePointerWizardNewVD pWizard = new UIWizardNewVD(pParent, strDiskName, strDefaultFolder, comGuestOSType.GetRecommendedHDD());
 
     if (!pWizard)
         return QUuid();
@@ -3051,7 +3078,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
                     uMediumID = createVisoMediumWithVisoCreator(windowManager().mainWindowShown(), strMachineFolder, comConstMachine.GetName());
 
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)
-                    uMediumID = showCreateFloppyDiskDialog(windowManager().mainWindowShown(), comConstMachine.GetName(), strMachineFolder);
+                    uMediumID = showCreateFloppyDiskDialog(windowManager().mainWindowShown(), strMachineFolder, comConstMachine.GetName());
 
                 /* Return focus back: */
                 if (pLastFocusedWidget)
@@ -3248,6 +3275,42 @@ void VBoxGlobal::updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType enmMed
         case UIMediumDeviceType_Floppy:   gEDataManager->setRecentListOfFloppyDisks(recentMediumList); break;
         default: break;
     }
+}
+
+QString VBoxGlobal::defaultFolderPathForType(UIMediumDeviceType enmMediumType)
+{
+    QString strLastFolder;
+    switch (enmMediumType)
+    {
+        case UIMediumDeviceType_HardDisk:
+            strLastFolder = gEDataManager->recentFolderForHardDrives();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
+            break;
+        case UIMediumDeviceType_DVD:
+            strLastFolder = gEDataManager->recentFolderForOpticalDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForFloppyDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForHardDrives();
+            break;
+        case UIMediumDeviceType_Floppy:
+            strLastFolder = gEDataManager->recentFolderForFloppyDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForOpticalDisks();
+            if (strLastFolder.isEmpty())
+                strLastFolder = gEDataManager->recentFolderForHardDrives();
+            break;
+        default:
+            break;
+    }
+
+    if (strLastFolder.isEmpty())
+        return virtualBox().GetSystemProperties().GetDefaultMachineFolder();
+
+    return strLastFolder;
 }
 
 #ifdef RT_OS_LINUX

@@ -493,6 +493,7 @@ void UIMediumManagerWidget::sltAddMedium()
 
 void UIMediumManagerWidget::sltCreateMedium()
 {
+    vboxGlobal().openMediumCreatorDialog(this, currentMediumType());
 }
 
 void UIMediumManagerWidget::sltCopyMedium()

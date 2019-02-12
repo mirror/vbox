@@ -499,20 +499,21 @@ public:
           * @param  strDefaultFolder  Brings the folder to browse for medium.
           * @param  fUseLastFolder    Brings whether we should propose to use last used folder. */
         QUuid openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType, QWidget *pParent = 0,
-                                             const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
+                                             const QString &strDefaultFolder = QString(), bool fUseLastFolder = false);
 
         /** Creates a VISO by using the VISO creator dialog.
-          * @param  pParent    Brings the dialog parent.
-          * @param  strFolder  Brings the folder to save the VISO file.
+          * @param  pParent           Passes the dialog parent.
+          * @param  strDefaultFolder  Passes the folder to save the VISO file.
           * @param  strMachineName    Passes the name of the machine, */
-        QUuid createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strFolder, const QString &strMachineName = QString());
+        QUuid createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strDefaultFolder = QString(), const QString &strMachineName = QString());
 
         /** Creates and shows a dialog thru which user can create a new floppy disk a VISO using the file-open dialog.
           * @param  parent            Passes the parent of the dialog,
+          * @param  strDefaultFolder  Passes the default folder,
           * @param  strMachineName    Passes the name of the machine,
-          * @param  strMachineFolder  Passes the machine folder,
           * returns the ID of the newly created medium if successful, a null QUuid otherwise.*/
-        QUuid showCreateFloppyDiskDialog(QWidget *pParent, const QString &strMachineName, const QString &strMachineFolder);
+        QUuid showCreateFloppyDiskDialog(QWidget *pParent, const QString &strDefaultFolder = QString(),
+                                         const QString &strMachineName = QString());
 
         /** Creates and shows a UIMediumSelector dialog.
           * @param  parent                   Passes the parent of the dialog,
@@ -527,14 +528,28 @@ public:
                                      const QString &strMachineName, const QString &strMachineFolder,
                                      const QString &strMachineGuestOSTypeId, bool fEnableCreate);
 
+        /** Creates and shows a dialog (wizard) to create a medium of type @a enmMediumType.
+          * @param  parent                   Passes the parent of the dialog,
+          * @param  enmMediumType            Passes the medium type.
+          * @param  strMachineName           Passes the name of the machine,
+          * @param  strMachineFolder         Passes the machine folder,
+          * @param  strMachineGuestOSTypeId  Passes the type ID of machine's guest os,
+          * @param  fEnableCreate            Passes whether to show/enable create action in the medium selector dialog,
+          * returns the return code of the UIMediumSelector::ReturnCode as int. In case of a medium selection
+          *         UUID of the selected medium is stored in @param outUuid.*/
+        QUuid openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
+                                      const QString &strMachineFolder = QString(), const QString &strMachineName = QString(),
+                                      const QString &strMachineGuestOSTypeId = QString());
+
+
         /** Creates and shows a UIWizardNewVD wizard.
           * @param  parent                    Passes the parent of the wizard,
           * @param  strMachineGuestOSTypeId   Passes the string of machine's guest OS type ID,
-          * @param  strMachineName            Passes the name of the machine,
           * @param  strMachineFolder          Passes the machine folder,
+          * @param  strMachineName            Passes the name of the machine,
           * returns the ID of the  created hard disk if successful, a null QUuid otherwise.*/
         QUuid createHDWithNewHDWizard(QWidget *pParent, const QString &strMachineGuestOSTypeId,
-                                      const QString &strMachineName, const QString &strMachineFolder);
+                                      const QString &strMachineFolder = QString(), const QString &strMachineName = QString());
 
         /** Prepares storage menu according passed parameters.
           * @param  menu               Brings the #QMenu to be prepared.
@@ -558,6 +573,11 @@ public:
           * @param  enmMediumType       Passes the medium type.
           * @param  strMediumLocation   Passes the medium location. */
         void updateRecentlyUsedMediumListAndFolder(UIMediumDeviceType enmMediumType, QString strMediumLocation);
+
+        /** Searches extra data for the recently used folder path which corresponds to @a enmMediumType. When that search fails
+            it looks for recent folder extra data for other medium types. As the last resort returns default vm folder path.
+          * @param  enmMediumType       Passes the medium type. */
+        QString defaultFolderPathForType(UIMediumDeviceType enmMediumType);
     /** @} */
 
     /** @name COM: USB stuff.

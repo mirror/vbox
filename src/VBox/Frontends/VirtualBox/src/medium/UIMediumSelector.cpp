@@ -432,8 +432,7 @@ void UIMediumSelector::sltButtonLeaveEmpty()
 
 void UIMediumSelector::sltAddMedium()
 {
-    QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
-    QUuid uMediumID = vboxGlobal().openMediumWithFileOpenDialog(m_enmMediumType, this, strDefaultMachineFolder);
+    QUuid uMediumID = vboxGlobal().openMediumWithFileOpenDialog(m_enmMediumType, this, m_strMachineFolder);
     if (uMediumID.isNull())
         return;
     repopulateTreeWidget();
@@ -443,22 +442,8 @@ void UIMediumSelector::sltAddMedium()
 
 void UIMediumSelector::sltCreateMedium()
 {
-    QUuid uMediumId;
-
-    switch (m_enmMediumType)
-    {
-        case UIMediumDeviceType_Floppy:
-            uMediumId = vboxGlobal().showCreateFloppyDiskDialog(this, m_strMachineName, m_strMachineFolder);
-            break;
-        case UIMediumDeviceType_HardDisk:
-            uMediumId = vboxGlobal().createHDWithNewHDWizard(this, m_strMachineGuestOSTypeId, m_strMachineName, m_strMachineFolder);
-            break;
-        case UIMediumDeviceType_DVD:
-            uMediumId = vboxGlobal().createVisoMediumWithVisoCreator(this, m_strMachineFolder, m_strMachineName);
-            break;
-        default:
-            break;
-    }
+    QUuid uMediumId = vboxGlobal().openMediumCreatorDialog(this, m_enmMediumType, m_strMachineFolder,
+                                                           m_strMachineName, m_strMachineGuestOSTypeId);
     if (!uMediumId.isNull())
     {
         /* Update the tree widget making sure we show the new item: */
