@@ -648,7 +648,6 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             pStat     = &g_StatRead;
             pStatFail = &g_StatReadFail;
             Log(("SharedFolders host service: svcCall: SHFL_FN_READ\n"));
-
             /* Verify parameter count and types. */
             ASSERT_GUEST_STMT_BREAK(cParms == SHFL_CPARMS_READ, rc = VERR_WRONG_PARAMETER_COUNT);
             ASSERT_GUEST_STMT_BREAK(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* root */

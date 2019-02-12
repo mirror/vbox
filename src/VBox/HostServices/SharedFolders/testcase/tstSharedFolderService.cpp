@@ -413,6 +413,19 @@ extern int  testRTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pc
     return VINF_SUCCESS;
 }
 
+extern int  testRTFileReadAt(RTFILE hFile, uint64_t offFile, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    RT_NOREF1(hFile);
+    RT_NOREF(offFile);
+ /* RTPrintf("%s : File=%p, cbToRead=%llu\n", __PRETTY_FUNCTION__, File,
+             LLUIFY(cbToRead)); */
+    bufferFromPath(pvBuf, cbToRead, testRTFileReadData);
+    if (pcbRead)
+        *pcbRead = RT_MIN(cbToRead, strlen(testRTFileReadData) + 1);
+    testRTFileReadData = 0;
+    return VINF_SUCCESS;
+}
+
 extern int testRTFileSeek(RTFILE hFile, int64_t offSeek, unsigned uMethod, uint64_t *poffActual)
 {
     RT_NOREF3(hFile, offSeek, uMethod);
@@ -484,6 +497,17 @@ static char testRTFileWriteData[256];
 extern int  testRTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
 {
     RT_NOREF2(File, cbToWrite);
+ /* RTPrintf("%s: File=%p, pvBuf=%.*s, cbToWrite=%llu\n", __PRETTY_FUNCTION__,
+             File, cbToWrite, (const char *)pvBuf, LLUIFY(cbToWrite)); */
+    ARRAY_FROM_PATH(testRTFileWriteData, (const char *)pvBuf);
+    if (pcbWritten)
+        *pcbWritten = strlen(testRTFileWriteData) + 1;
+    return VINF_SUCCESS;
+}
+
+extern int  testRTFileWriteAt(RTFILE File, uint64_t offFile, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
+{
+    RT_NOREF3(File, cbToWrite, offFile);
  /* RTPrintf("%s: File=%p, pvBuf=%.*s, cbToWrite=%llu\n", __PRETTY_FUNCTION__,
              File, cbToWrite, (const char *)pvBuf, LLUIFY(cbToWrite)); */
     ARRAY_FROM_PATH(testRTFileWriteData, (const char *)pvBuf);
@@ -860,14 +884,14 @@ void testCreateFileSimple(RTTEST hTest)
     VBOXHGCMSVCFNTABLE  svcTable;
     VBOXHGCMSVCHELPERS  svcHelpers;
     SHFLROOT Root;
-    const RTFILE hcFile = (RTFILE) 0x10000;
+    const RTFILE hFile = (RTFILE) 0x10000;
     SHFLCREATERESULT Result;
     int rc;
 
     RTTestSub(hTest, "Create file simple");
     Root = initWithWritableMapping(hTest, &svcTable, &svcHelpers,
                                    "/test/mapping", "testname");
-    testRTFileOpenpFile = hcFile;
+    testRTFileOpenpFile = hFile;
     rc = createFile(&svcTable, Root, "/test/file", SHFL_CF_ACCESS_READ, NULL,
                     &Result);
     RTTEST_CHECK_RC_OK(hTest, rc);
@@ -883,7 +907,7 @@ void testCreateFileSimple(RTTEST hTest)
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
     AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile,
+    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hFile,
                      (hTest, "File=%u\n", (uintptr_t)g_testRTFileCloseFile));
 }
 
@@ -892,7 +916,7 @@ void testCreateFileSimpleCaseInsensitive(RTTEST hTest)
     VBOXHGCMSVCFNTABLE  svcTable;
     VBOXHGCMSVCHELPERS  svcHelpers;
     SHFLROOT Root;
-    const RTFILE hcFile = (RTFILE) 0x10000;
+    const RTFILE hFile = (RTFILE) 0x10000;
     SHFLCREATERESULT Result;
     int rc;
 
@@ -901,7 +925,7 @@ void testCreateFileSimpleCaseInsensitive(RTTEST hTest)
     RTTestSub(hTest, "Create file case insensitive");
     Root = initWithWritableMapping(hTest, &svcTable, &svcHelpers,
                                    "/test/mapping", "testname", false /*fCaseSensitive*/);
-    testRTFileOpenpFile = hcFile;
+    testRTFileOpenpFile = hFile;
     rc = createFile(&svcTable, Root, "/TesT/FilE", SHFL_CF_ACCESS_READ, NULL,
                     &Result);
     RTTEST_CHECK_RC_OK(hTest, rc);
@@ -918,7 +942,7 @@ void testCreateFileSimpleCaseInsensitive(RTTEST hTest)
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
     AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile,
+    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hFile,
                      (hTest, "File=%u\n", (uintptr_t)g_testRTFileCloseFile));
 
     g_fFailIfNotLowercase = false;
@@ -962,31 +986,32 @@ void testReadFileSimple(RTTEST hTest)
     VBOXHGCMSVCFNTABLE  svcTable;
     VBOXHGCMSVCHELPERS  svcHelpers;
     SHFLROOT Root;
-    const RTFILE hcFile = (RTFILE) 0x10000;
+    const RTFILE hFile = (RTFILE) 0x10000;
     SHFLHANDLE Handle;
     const char *pcszReadData = "Data to read";
-    char acBuf[sizeof(pcszReadData) + 10];
+    char achBuf[sizeof(pcszReadData) + 10];
     uint32_t cbRead;
     int rc;
 
     RTTestSub(hTest, "Read file simple");
     Root = initWithWritableMapping(hTest, &svcTable, &svcHelpers,
                                    "/test/mapping", "testname");
-    testRTFileOpenpFile = hcFile;
+    testRTFileOpenpFile = hFile;
     rc = createFile(&svcTable, Root, "/test/file", SHFL_CF_ACCESS_READ,
                     &Handle, NULL);
     RTTEST_CHECK_RC_OK(hTest, rc);
     testRTFileReadData = pcszReadData;
+    memset(achBuf, 'f', sizeof(achBuf));
     rc = readFile(&svcTable, Root, Handle, 0, (uint32_t)strlen(pcszReadData) + 1,
-                  &cbRead, acBuf, (uint32_t)sizeof(acBuf));
+                  &cbRead, achBuf, (uint32_t)sizeof(achBuf));
     RTTEST_CHECK_RC_OK(hTest, rc);
     RTTEST_CHECK_MSG(hTest,
-                     !strncmp(acBuf, pcszReadData, sizeof(acBuf)),
-                     (hTest, "pvBuf=%.*s\n", sizeof(acBuf), acBuf));
+                     !strncmp(achBuf, pcszReadData, sizeof(achBuf)),
+                     (hTest, "pvBuf=%.*s Handle=%#RX64\n", sizeof(achBuf), achBuf, Handle));
     RTTEST_CHECK_MSG(hTest, cbRead == strlen(pcszReadData) + 1,
                      (hTest, "cbRead=%llu\n", LLUIFY(cbRead)));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
     AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
@@ -997,7 +1022,7 @@ void testWriteFileSimple(RTTEST hTest)
     VBOXHGCMSVCFNTABLE  svcTable;
     VBOXHGCMSVCHELPERS  svcHelpers;
     SHFLROOT Root;
-    const RTFILE hcFile = (RTFILE) 0x10000;
+    const RTFILE hFile = (RTFILE) 0x10000;
     SHFLHANDLE Handle;
     const char *pcszWrittenData = "Data to write";
     uint32_t cbToWrite = (uint32_t)strlen(pcszWrittenData) + 1;
@@ -1007,7 +1032,7 @@ void testWriteFileSimple(RTTEST hTest)
     RTTestSub(hTest, "Write file simple");
     Root = initWithWritableMapping(hTest, &svcTable, &svcHelpers,
                                    "/test/mapping", "testname");
-    testRTFileOpenpFile = hcFile;
+    testRTFileOpenpFile = hFile;
     rc = createFile(&svcTable, Root, "/test/file", SHFL_CF_ACCESS_READ,
                     &Handle, NULL);
     RTTEST_CHECK_RC_OK(hTest, rc);
@@ -1020,7 +1045,7 @@ void testWriteFileSimple(RTTEST hTest)
     RTTEST_CHECK_MSG(hTest, cbWritten == cbToWrite,
                      (hTest, "cbWritten=%llu\n", LLUIFY(cbWritten)));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
-    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
     AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
@@ -1031,25 +1056,25 @@ void testFlushFileSimple(RTTEST hTest)
     VBOXHGCMSVCFNTABLE  svcTable;
     VBOXHGCMSVCHELPERS  svcHelpers;
     SHFLROOT Root;
-    const RTFILE hcFile = (RTFILE) 0x10000;
+    const RTFILE hFile = (RTFILE) 0x10000;
     SHFLHANDLE Handle;
     int rc;
 
     RTTestSub(hTest, "Flush file simple");
     Root = initWithWritableMapping(hTest, &svcTable, &svcHelpers,
                                    "/test/mapping", "testname");
-    testRTFileOpenpFile = hcFile;
+    testRTFileOpenpFile = hFile;
     rc = createFile(&svcTable, Root, "/test/file", SHFL_CF_ACCESS_READ,
                     &Handle, NULL);
     RTTEST_CHECK_RC_OK(hTest, rc);
     rc = flushFile(&svcTable, Root, Handle);
     RTTEST_CHECK_RC_OK(hTest, rc);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileFlushFile == hcFile, (hTest, "File=%u\n", g_testRTFileFlushFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileFlushFile == hFile, (hTest, "File=%u\n", g_testRTFileFlushFile));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
     AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
 }
 
 void testDirListEmpty(RTTEST hTest)
@@ -1091,7 +1116,7 @@ void testFSInfoQuerySetFMode(RTTEST hTest)
     VBOXHGCMSVCFNTABLE  svcTable;
     VBOXHGCMSVCHELPERS  svcHelpers;
     SHFLROOT Root;
-    const RTFILE hcFile = (RTFILE) 0x10000;
+    const RTFILE hFile = (RTFILE) 0x10000;
     const uint32_t fMode = 0660;
     SHFLFSOBJINFO Info;
     int rc;
@@ -1100,7 +1125,7 @@ void testFSInfoQuerySetFMode(RTTEST hTest)
     Root = initWithWritableMapping(hTest, &svcTable, &svcHelpers,
                                    "/test/mapping", "testname");
     SHFLHANDLE Handle = SHFL_HANDLE_NIL;
-    testRTFileOpenpFile = hcFile;
+    testRTFileOpenpFile = hFile;
     rc = createFile(&svcTable, Root, "/test/file", SHFL_CF_ACCESS_READ,
                     &Handle, NULL);
     RTTEST_CHECK_RC_OK_RETV(hTest, rc);
@@ -1110,7 +1135,7 @@ void testFSInfoQuerySetFMode(RTTEST hTest)
     rc = sfInformation(&svcTable, Root, Handle, SHFL_INFO_FILE, sizeof(Info),
                        &Info);
     RTTEST_CHECK_RC_OK(hTest, rc);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileQueryInfoFile == hcFile, (hTest, "File=%u\n", g_testRTFileQueryInfoFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileQueryInfoFile == hFile, (hTest, "File=%u\n", g_testRTFileQueryInfoFile));
     RTTEST_CHECK_MSG(hTest, Info.Attr.fMode == fMode,
                      (hTest, "cbObject=%llu\n", LLUIFY(Info.cbObject)));
     RT_ZERO(Info);
@@ -1124,7 +1149,7 @@ void testFSInfoQuerySetFMode(RTTEST hTest)
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
     AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
 }
 
 void testFSInfoQuerySetDirATime(RTTEST hTest)
@@ -1175,7 +1200,7 @@ void testFSInfoQuerySetFileATime(RTTEST hTest)
     VBOXHGCMSVCFNTABLE  svcTable;
     VBOXHGCMSVCHELPERS  svcHelpers;
     SHFLROOT Root;
-    const RTFILE hcFile = (RTFILE) 0x10000;
+    const RTFILE hFile = (RTFILE) 0x10000;
     const int64_t ccAtimeNano = 100000;
     SHFLFSOBJINFO Info;
     SHFLHANDLE Handle;
@@ -1184,7 +1209,7 @@ void testFSInfoQuerySetFileATime(RTTEST hTest)
     RTTestSub(hTest, "Query and set file atime");
     Root = initWithWritableMapping(hTest, &svcTable, &svcHelpers,
                                    "/test/mapping", "testname");
-    testRTFileOpenpFile = hcFile;
+    testRTFileOpenpFile = hFile;
     rc = createFile(&svcTable, Root, "/test/file", SHFL_CF_ACCESS_READ,
                     &Handle, NULL);
     RTTEST_CHECK_RC_OK(hTest, rc);
@@ -1193,7 +1218,7 @@ void testFSInfoQuerySetFileATime(RTTEST hTest)
     rc = sfInformation(&svcTable, Root, Handle, SHFL_INFO_FILE, sizeof(Info),
                        &Info);
     RTTEST_CHECK_RC_OK(hTest, rc);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileQueryInfoFile == hcFile, (hTest, "File=%u\n", g_testRTFileQueryInfoFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileQueryInfoFile == hFile, (hTest, "File=%u\n", g_testRTFileQueryInfoFile));
     RTTEST_CHECK_MSG(hTest, RTTimeSpecGetNano(&Info.AccessTime) == ccAtimeNano,
                      (hTest, "ATime=%llu\n",
                       LLUIFY(RTTimeSpecGetNano(&Info.AccessTime))));
@@ -1210,7 +1235,7 @@ void testFSInfoQuerySetFileATime(RTTEST hTest)
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
     AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
 }
 
 void testFSInfoQuerySetEndOfFile(RTTEST hTest)
@@ -1218,7 +1243,7 @@ void testFSInfoQuerySetEndOfFile(RTTEST hTest)
     VBOXHGCMSVCFNTABLE  svcTable;
     VBOXHGCMSVCHELPERS  svcHelpers;
     SHFLROOT Root;
-    const RTFILE hcFile = (RTFILE) 0x10000;
+    const RTFILE hFile = (RTFILE) 0x10000;
     const RTFOFF cbNew = 50000;
     SHFLFSOBJINFO Info;
     SHFLHANDLE Handle;
@@ -1227,7 +1252,7 @@ void testFSInfoQuerySetEndOfFile(RTTEST hTest)
     RTTestSub(hTest, "Set end of file position");
     Root = initWithWritableMapping(hTest, &svcTable, &svcHelpers,
                                    "/test/mapping", "testname");
-    testRTFileOpenpFile = hcFile;
+    testRTFileOpenpFile = hFile;
     rc = createFile(&svcTable, Root, "/test/file", SHFL_CF_ACCESS_READ,
                     &Handle, NULL);
     RTTEST_CHECK_RC_OK(hTest, rc);
@@ -1236,14 +1261,14 @@ void testFSInfoQuerySetEndOfFile(RTTEST hTest)
     rc = sfInformation(&svcTable, Root, Handle, SHFL_INFO_SET | SHFL_INFO_SIZE,
                        sizeof(Info), &Info);
     RTTEST_CHECK_RC_OK(hTest, rc);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileSetSizeFile == hcFile, (hTest, "File=%u\n", g_testRTFileSetSizeFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileSetSizeFile == hFile, (hTest, "File=%u\n", g_testRTFileSetSizeFile));
     RTTEST_CHECK_MSG(hTest, testRTFileSetSizeSize == cbNew,
                      (hTest, "Size=%llu\n", LLUIFY(testRTFileSetSizeSize)));
     unmapAndRemoveMapping(hTest, &svcTable, Root, "testname");
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
     AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
 }
 
 void testLockFileSimple(RTTEST hTest)
@@ -1251,7 +1276,7 @@ void testLockFileSimple(RTTEST hTest)
     VBOXHGCMSVCFNTABLE  svcTable;
     VBOXHGCMSVCHELPERS  svcHelpers;
     SHFLROOT Root;
-    const RTFILE hcFile = (RTFILE) 0x10000;
+    const RTFILE hFile = (RTFILE) 0x10000;
     const int64_t offLock = 50000;
     const uint64_t cbLock = 4000;
     SHFLHANDLE Handle;
@@ -1260,14 +1285,14 @@ void testLockFileSimple(RTTEST hTest)
     RTTestSub(hTest, "Simple file lock and unlock");
     Root = initWithWritableMapping(hTest, &svcTable, &svcHelpers,
                                    "/test/mapping", "testname");
-    testRTFileOpenpFile = hcFile;
+    testRTFileOpenpFile = hFile;
     rc = createFile(&svcTable, Root, "/test/file", SHFL_CF_ACCESS_READ,
                     &Handle, NULL);
     RTTEST_CHECK_RC_OK(hTest, rc);
     rc = lockFile(&svcTable, Root, Handle, offLock, cbLock, SHFL_LOCK_SHARED);
     RTTEST_CHECK_RC_OK(hTest, rc);
 #ifdef RT_OS_WINDOWS  /* Locking is a no-op elsewhere. */
-    RTTEST_CHECK_MSG(hTest, g_testRTFileLockFile == hcFile, (hTest, "File=%u\n", g_testRTFileLockFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileLockFile == hFile, (hTest, "File=%u\n", g_testRTFileLockFile));
     RTTEST_CHECK_MSG(hTest, testRTFileLockfLock == 0,
                      (hTest, "fLock=%u\n", testRTFileLockfLock));
     RTTEST_CHECK_MSG(hTest, testRTFileLockOffset == offLock,
@@ -1278,7 +1303,7 @@ void testLockFileSimple(RTTEST hTest)
     rc = lockFile(&svcTable, Root, Handle, offLock, cbLock, SHFL_LOCK_CANCEL);
     RTTEST_CHECK_RC_OK(hTest, rc);
 #ifdef RT_OS_WINDOWS
-    RTTEST_CHECK_MSG(hTest, g_testRTFileUnlockFile == hcFile, (hTest, "File=%u\n", g_testRTFileUnlockFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileUnlockFile == hFile, (hTest, "File=%u\n", g_testRTFileUnlockFile));
     RTTEST_CHECK_MSG(hTest, testRTFileUnlockOffset == offLock,
                      (hTest, "Offs=%llu\n",
                       (long long) testRTFileUnlockOffset));
@@ -1289,7 +1314,7 @@ void testLockFileSimple(RTTEST hTest)
     AssertReleaseRC(svcTable.pfnDisconnect(NULL, 0, svcTable.pvService));
     AssertReleaseRC(svcTable.pfnUnload(NULL));
     RTTestGuardedFree(hTest, svcTable.pvService);
-    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hcFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
+    RTTEST_CHECK_MSG(hTest, g_testRTFileCloseFile == hFile, (hTest, "File=%u\n", g_testRTFileCloseFile));
 }
 
 
