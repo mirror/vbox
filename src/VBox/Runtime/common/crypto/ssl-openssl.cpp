@@ -272,7 +272,7 @@ RTDECL(int) RTCrSslCreateSessionForNativeSocket(RTCRSSL hSsl, RTHCINTPTR hNative
             pSession->pBio = BIO_new_socket(hNativeSocket, BIO_NOCLOSE);
             if (pSession->pBio)
             {
-# if OPENSSL_VERSION_NUMBER >= 0x10100000
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)) || LIBRESSL_VERSION_NUMBER >= 0x2070000f
                 BIO_up_ref(pSession->pBio); /* our reference. */
 # endif
                 SSL_set_bio(pSession->pSsl, pSession->pBio, pSession->pBio);
@@ -320,7 +320,7 @@ static int rtCrSslSessionDestroy(RTCRSSLSESSIONINT *pThis)
     ASMAtomicWriteU32(&pThis->u32Magic, ~RTCRSSLSESSIONINT_MAGIC);
     SSL_free(pThis->pSsl);
     pThis->pSsl = NULL;
-# if OPENSSL_VERSION_NUMBER >= 0x10100000
+# if (OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)) || LIBRESSL_VERSION_NUMBER >= 0x2070000f
     BIO_free(pThis->pBio);
 # endif
     pThis->pBio = NULL;
