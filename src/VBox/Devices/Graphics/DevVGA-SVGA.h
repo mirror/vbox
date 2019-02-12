@@ -231,10 +231,15 @@ typedef struct VMSVGAState
     R3PTRTYPE(RTSEMEVENT)       FIFOExtCmdSem;
     /** FIFO IO Thread. */
     R3PTRTYPE(PPDMTHREAD)       pFIFOIOThread;
+    /** The last seen SVGA_FIFO_CURSOR_COUNT value.
+     * Used by the FIFO thread and its watchdog. */
+    uint32_t                    uLastCursorUpdateCount;
+    /** Indicates that the FIFO thread is sleeping and might need waking up. */
+    bool volatile               fFIFOThreadSleeping;
     /** The legacy GFB mode registers. If used, they correspond to screen 0. */
     /** True when the guest modifies the GFB mode registers. */
     bool                        fGFBRegisters;
-    bool                        afPadding[7];
+    bool                        afPadding[2];
     uint32_t                    uWidth;
     uint32_t                    uHeight;
     uint32_t                    uBpp;
@@ -261,11 +266,13 @@ typedef struct VMSVGAState
 #ifdef DEBUG_GMR_ACCESS
     /** GMR debug access handler type handle. */
     PGMPHYSHANDLERTYPE          hGmrAccessHandlerType;
-#else
-    uint32_t                    uPadding1;
 #endif
+#if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
     /** FIFO debug access handler type handle. */
     PGMPHYSHANDLERTYPE          hFifoAccessHandlerType;
+#elif defined(DEBUG_GMR_ACCESS)
+    uint32_t                    uPadding1;
+#endif
     /** Number of GMRs. */
     uint32_t                    cGMR;
     uint32_t                    uScreenOffset; /* Used only for loading older saved states. */
@@ -354,6 +361,7 @@ typedef struct VMSVGAState
     STAMCOUNTER                 StatRegWriteOnlyRd;
 } VMSVGAState;
 
+typedef struct VGAState *PVGASTATE;
 
 DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType);
@@ -369,8 +377,7 @@ int vmsvgaLoadDone(PPDMDEVINS pDevIns);
 int vmsvgaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns);
 DECLCALLBACK(void) vmsvgaR3PowerOff(PPDMDEVINS pDevIns);
-
-typedef struct VGAState *PVGASTATE;
+void vmsvgaFIFOWatchdogTimer(PVGASTATE pThis);
 
 #ifdef IN_RING3
 VMSVGASCREENOBJECT *vmsvgaGetScreenObject(PVGASTATE pThis, uint32_t idScreen);

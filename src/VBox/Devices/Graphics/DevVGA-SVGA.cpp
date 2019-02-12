@@ -245,13 +245,6 @@ typedef struct VMSVGAR3STATE
     /** Information obout screens. */
     VMSVGASCREENOBJECT aScreens[64];
 
-# ifdef VBOX_STRICT
-    /** The time the access handler for the FIFO last triggered.  This should
-     *  never happen less than a certain interval from the last access, and we
-     *  assert this. */
-    uint64_t                TimeLastFIFOIntercept;
-# endif
-
     /** Tracks how much time we waste reading SVGA_REG_BUSY with a busy FIFO. */
     STAMPROFILE             StatBusyDelayEmts;
 
@@ -323,13 +316,15 @@ typedef struct VMSVGAR3STATE
     STAMCOUNTER             StatFifoTodoTimeout;
     STAMCOUNTER             StatFifoTodoWoken;
     STAMPROFILE             StatFifoStalls;
-    STAMPROFILE             StatFifoSleepOnHandler;
+    STAMPROFILE             StatFifoExtendedSleep;
+# ifdef VMSVGA_USE_FIFO_ACCESS_HANDLER
     STAMCOUNTER             StatFifoAccessHandler;
+# endif
     STAMCOUNTER             StatFifoCursorFetchAgain;
     STAMCOUNTER             StatFifoCursorNoChange;
     STAMCOUNTER             StatFifoCursorPosition;
     STAMCOUNTER             StatFifoCursorVisiblity;
-
+    STAMCOUNTER             StatFifoWatchdogWakeUps;
 } VMSVGAR3STATE, *PVMSVGAR3STATE;
 #endif /* IN_RING3 */
 
@@ -412,9 +407,6 @@ static SSMFIELD const g_aVMSVGAR3STATEFields[] =
 #else
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, hBusyDelayedEmts),
 #endif
-#ifdef VBOX_STRICT
-    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, TimeLastFIFOIntercept),
-#endif
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatBusyDelayEmts),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3Cmd3dPresentProf),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatR3Cmd3dDrawPrimitivesProf),
@@ -484,8 +476,10 @@ static SSMFIELD const g_aVMSVGAR3STATEFields[] =
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoTodoTimeout),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoTodoWoken),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoStalls),
-    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoSleepOnHandler),
+    SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoExtendedSleep),
+# if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoAccessHandler),
+# endif
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoCursorFetchAgain),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoCursorNoChange),
     SSMFIELD_ENTRY_IGNORE(      VMSVGAR3STATE, StatFifoCursorPosition),
@@ -527,6 +521,8 @@ static SSMFIELD const g_aVGAStateSVGAFields[] =
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, FIFORequestSem),
     SSMFIELD_ENTRY_IGNORE(          VMSVGAState, FIFOExtCmdSem),
     SSMFIELD_ENTRY_IGN_HCPTR(       VMSVGAState, pFIFOIOThread),
+    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, uLastCursorUpdateCount),
+    SSMFIELD_ENTRY_IGNORE(          VMSVGAState, fFIFOThreadSleeping),
     SSMFIELD_ENTRY_VER(             VMSVGAState, fGFBRegisters, VGA_SAVEDSTATE_VERSION_VMSVGA_SCREENS),
     SSMFIELD_ENTRY(                 VMSVGAState, uWidth),
     SSMFIELD_ENTRY(                 VMSVGAState, uHeight),
@@ -2361,6 +2357,7 @@ static int vmsvgaDebugFIFOAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, bool
 }
 # endif /* DEBUG_FIFO_ACCESS */
 
+# if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
 /**
  * HC access handler for the FIFO.
  *
@@ -2384,11 +2381,13 @@ vmsvgaR3FIFOAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, 
     PVGASTATE pThis = (PVGASTATE)pvUser;
     AssertPtr(pThis);
 
+# ifdef VMSVGA_USE_FIFO_ACCESS_HANDLER
     /*
      * Wake up the FIFO thread as it might have work to do now.
      */
     int rc = SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
     AssertLogRelRC(rc);
+# endif
 
 # ifdef DEBUG_FIFO_ACCESS
     /*
@@ -2397,11 +2396,10 @@ vmsvgaR3FIFOAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, 
      */
     Assert(GCPhys >= pThis->svga.GCPhysFIFO);
     rc = vmsvgaDebugFIFOAccess(pVM, pThis, GCPhys, enmAccessType == PGMACCESSTYPE_WRITE);
-# else
+# elif defined(VMSVGA_USE_FIFO_ACCESS_HANDLER)
     /*
      * Temporarily disable the access handler now that we've kicked the FIFO thread.
      */
-
     STAM_REL_COUNTER_INC(&pThis->svga.pSvgaR3State->StatFifoAccessHandler);
     rc = PGMHandlerPhysicalPageTempOff(pVM, pThis->svga.GCPhysFIFO, pThis->svga.GCPhysFIFO);
 # endif
@@ -2410,6 +2408,7 @@ vmsvgaR3FIFOAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, 
     AssertMsg(rc <= VINF_SUCCESS, ("rc=%Rrc\n", rc));
     return rc;
 }
+# endif /* VMSVGA_USE_FIFO_ACCESS_HANDLER || DEBUG_FIFO_ACCESS */
 
 #endif /* IN_RING3 */
 
@@ -3315,6 +3314,27 @@ DECLINLINE(bool) vmsvgaFIFOHasWork(uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const 
 }
 
 
+/**
+ * Called by the VGA refresh timer to wake up the FIFO thread when needed.
+ *
+ * @param   pThis   The VGA state.
+ */
+void vmsvgaFIFOWatchdogTimer(PVGASTATE pThis)
+{
+    /* Caller already checked pThis->svga.fFIFOThreadSleeping, so we only have
+       to recheck it before doing the signalling. */
+    uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const pFIFO = pThis->svga.pFIFOR3;
+    AssertReturnVoid(pThis->svga.pFIFOR3);
+    if (   vmsvgaFIFOHasWork(pFIFO, pThis->svga.uLastCursorUpdateCount)
+        && pThis->svga.fFIFOThreadSleeping)
+    {
+        int rc = SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+        AssertRC(rc);
+        STAM_REL_COUNTER_INC(&pThis->svga.pSvgaR3State->StatFifoWatchdogWakeUps);
+    }
+}
+
+
 /* The async FIFO handling thread. */
 static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
@@ -3359,17 +3379,17 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
      * Polling/sleep interval config.
      *
      * We wait for an a short interval if the guest has recently given us work
-     * to do, but the interval increases the longer we're kept idle.  After
-     * about a second we'll switch to long sleeps and using an access handler
-     * monitoring writes to the first FIFO page to wake us up.  Should the FIFO
-     * not be mapped, we will continue increasing the wait interval till it
-     * reaches the 250ms max after about 16 seconds.
+     * to do, but the interval increases the longer we're kept idle.  Once we've
+     * reached the refresh timer interval, we'll switch to extended waits,
+     * depending on it or the guest to kick us into action when needed.
+     *
+     * Should the refresh time go fishing, we'll just continue increasing the
+     * sleep length till we reaches the 250 ms max after about 16 seconds.
      */
     RTMSINTERVAL const  cMsMinSleep           = 16;
     RTMSINTERVAL const  cMsIncSleep           = 2;
     RTMSINTERVAL const  cMsMaxSleep           = 250;
-    RTMSINTERVAL const  cMsAccessHandlerThres = 66;
-    RTMSINTERVAL const  cMsAccessHandlerSleep = 15 * RT_MS_1SEC; /* Regular paranoia dictates that this cannot be indefinite. */
+    RTMSINTERVAL const  cMsExtendedSleep      = 15 * RT_MS_1SEC; /* Regular paranoia dictates that this cannot be indefinite. */
     RTMSINTERVAL        cMsSleep              = cMsMaxSleep;
 
     /*
@@ -3377,7 +3397,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
      * Initialize with values that will trigger an update as soon as maybe.
      */
     uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const pFIFO = pThis->svga.pFIFOR3;
-    uint32_t uLastCursorCount   = ~pFIFO[SVGA_FIFO_CURSOR_COUNT];
+    uint32_t uLastCursorCount   = pThis->svga.uLastCursorUpdateCount = ~pFIFO[SVGA_FIFO_CURSOR_COUNT];
     uint32_t xLastCursor        = ~pFIFO[SVGA_FIFO_CURSOR_X];
     uint32_t yLastCursor        = ~pFIFO[SVGA_FIFO_CURSOR_Y];
     uint32_t fLastCursorVisible = ~pFIFO[SVGA_FIFO_CURSOR_ON];
@@ -3404,33 +3424,27 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         if (   fBadOrDisabledFifo
             || !vmsvgaFIFOHasWork(pFIFO, uLastCursorCount))
         {
-            if (    cMsSleep < cMsAccessHandlerThres
-                || !pThis->svga.GCPhysFIFO /* yeah, really zero rather than NIL when unmapped. */)
+            ASMAtomicWriteBool(&pThis->svga.fFIFOThreadSleeping, true);
+            Assert(pThis->cMilliesRefreshInterval > 0);
+            if (cMsSleep < pThis->cMilliesRefreshInterval)
                 rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, cMsSleep);
             else
             {
-# if 0 /* Still doesn't work. The trouble is on line 3424 and 3425. */
-# ifdef VBOX_STRICT
-                /* Invariant: The access handler should never be reset twice within
-                   a certain time span; calling it 500ms here for simplicity. */
-                uint64_t TimeNow = RTTimeMilliTS();
-                Assert(TimeNow - pSVGAState->TimeLastFIFOIntercept > 500);
-                pSVGAState->TimeLastFIFOIntercept = TimeNow;
-# endif
-# endif
+# ifdef VMSVGA_USE_FIFO_ACCESS_HANDLER
                 int rc2 = PGMHandlerPhysicalReset(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
                 AssertRC(rc2); /* No break. Racing EMTs unmapping and remapping the region. */
-
-                if (   fBadOrDisabledFifo
-                    || !vmsvgaFIFOHasWork(pFIFO, uLastCursorCount))
-                {
-                    STAM_REL_PROFILE_START(&pSVGAState->StatFifoSleepOnHandler, Acc);
-                    rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, cMsAccessHandlerSleep);
-                    STAM_REL_PROFILE_STOP(&pSVGAState->StatFifoSleepOnHandler, Acc);
-                }
-                else
+# endif
+                if (   !fBadOrDisabledFifo
+                    && vmsvgaFIFOHasWork(pFIFO, uLastCursorCount))
                     rc = VINF_SUCCESS;
+                else
+                {
+                    STAM_REL_PROFILE_START(&pSVGAState->StatFifoExtendedSleep, Acc);
+                    rc = SUPSemEventWaitNoResume(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem, cMsExtendedSleep);
+                    STAM_REL_PROFILE_STOP(&pSVGAState->StatFifoExtendedSleep, Acc);
+                }
             }
+            ASMAtomicWriteBool(&pThis->svga.fFIFOThreadSleeping, false);
             AssertBreak(RT_SUCCESS(rc) || rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED);
             if (pThread->enmState != PDMTHREADSTATE_RUNNING)
             {
@@ -3523,8 +3537,11 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             if (uCursorUpdateCount == uLastCursorCount)
             { /* halfways likely */ }
             else
+            {
                 uLastCursorCount = vmsvgaFIFOUpdateCursor(pThis, pSVGAState, pFIFO, offFifoMin, uCursorUpdateCount,
                                                           &xLastCursor, &yLastCursor, &fLastCursorVisible);
+                ASMAtomicWriteU32(&pThis->svga.uLastCursorUpdateCount, uLastCursorCount);
+            }
         }
 
 /** @def VMSVGAFIFO_GET_CMD_BUFFER_BREAK
@@ -5243,18 +5260,20 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
             rc = PDMDevHlpMMIOExMap(pDevIns, pPciDev, iRegion, GCPhysAddress);
             AssertRC(rc);
 
+# if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
             if (RT_SUCCESS(rc))
             {
                 rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns), GCPhysAddress,
-# ifdef DEBUG_FIFO_ACCESS
+#  ifdef DEBUG_FIFO_ACCESS
                                                 GCPhysAddress + (pThis->svga.cbFIFO - 1),
-# else
+#  else
                                                 GCPhysAddress + PAGE_SIZE - 1,
-# endif
+#  endif
                                                 pThis->svga.hFifoAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR,
                                                 "VMSVGA FIFO");
                 AssertRC(rc);
             }
+# endif
             if (RT_SUCCESS(rc))
             {
                 pThis->svga.GCPhysFIFO = GCPhysAddress;
@@ -5264,8 +5283,10 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, ui
         else
         {
             Assert(pThis->svga.GCPhysFIFO);
+# if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
             rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pThis->svga.GCPhysFIFO);
             AssertRC(rc);
+# endif
             pThis->svga.GCPhysFIFO = 0;
         }
     }
@@ -5969,20 +5990,22 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     AssertRCReturn(rc, rc);
 # endif
 
+# if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
     /* Register the FIFO access handler type.  In addition to
        debugging FIFO access, this is also used to facilitate
        extended fifo thread sleeps. */
     rc = PGMR3HandlerPhysicalTypeRegister(PDMDevHlpGetVM(pThis->pDevInsR3),
-# ifdef DEBUG_FIFO_ACCESS
+#  ifdef DEBUG_FIFO_ACCESS
                                           PGMPHYSHANDLERKIND_ALL,
-# else
+#  else
                                           PGMPHYSHANDLERKIND_WRITE,
-# endif
+#  endif
                                           vmsvgaR3FIFOAccessHandler,
                                           NULL, NULL, NULL,
                                           NULL, NULL, NULL,
                                           "VMSVGA FIFO", &pThis->svga.hFifoAccessHandlerType);
     AssertRCReturn(rc, rc);
+# endif
 
     /* Create the async IO thread. */
     rc = PDMDevHlpThreadCreate(pDevIns, &pThis->svga.pFIFOIOThread, pThis, vmsvgaFIFOLoop, vmsvgaFIFOLoopWakeUp, 0,
@@ -6143,12 +6166,15 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     STAM_REL_REG(pVM, &pSVGAState->StatFifoTodoTimeout,             STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoTodoTimeout",                STAMUNIT_OCCURENCES, "Number of times we discovered pending work after a wait timeout.");
     STAM_REL_REG(pVM, &pSVGAState->StatFifoTodoWoken,               STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoTodoWoken",                  STAMUNIT_OCCURENCES, "Number of times we discovered pending work after being woken up.");
     STAM_REL_REG(pVM, &pSVGAState->StatFifoStalls,                  STAMTYPE_PROFILE, "/Devices/VMSVGA/FifoStalls",                     STAMUNIT_TICKS_PER_CALL, "Profiling of FIFO stalls (waiting for guest to finish copying data).");
-    STAM_REL_REG(pVM, &pSVGAState->StatFifoSleepOnHandler,          STAMTYPE_PROFILE, "/Devices/VMSVGA/FifoSleepOnHandler",             STAMUNIT_TICKS_PER_CALL, "Profiling FIFO sleeps relying on the access handler.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoExtendedSleep,           STAMTYPE_PROFILE, "/Devices/VMSVGA/FifoExtendedSleep",              STAMUNIT_TICKS_PER_CALL, "Profiling FIFO sleeps relying on the refresh timer and/or access handler.");
+# if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
     STAM_REL_REG(pVM, &pSVGAState->StatFifoAccessHandler,           STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoAccessHandler",              STAMUNIT_OCCURENCES, "Number of times the FIFO access handler triggered.");
+# endif
     STAM_REL_REG(pVM, &pSVGAState->StatFifoCursorFetchAgain,        STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCursorFetchAgain",           STAMUNIT_OCCURENCES, "Times the cursor update counter changed while reading.");
     STAM_REL_REG(pVM, &pSVGAState->StatFifoCursorNoChange,          STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCursorNoChange",             STAMUNIT_OCCURENCES, "No cursor position change event though the update counter was modified.");
     STAM_REL_REG(pVM, &pSVGAState->StatFifoCursorPosition,          STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCursorPosition",             STAMUNIT_OCCURENCES, "Cursor position and visibility changes.");
     STAM_REL_REG(pVM, &pSVGAState->StatFifoCursorVisiblity,         STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoCursorVisiblity",            STAMUNIT_OCCURENCES, "Cursor visibility changes.");
+    STAM_REL_REG(pVM, &pSVGAState->StatFifoWatchdogWakeUps,         STAMTYPE_COUNTER, "/Devices/VMSVGA/FifoWatchdogWakeUps",            STAMUNIT_OCCURENCES, "Number of times the FIFO refresh poller/watchdog woke up the FIFO thread.");
 
     /*
      * Info handlers.
