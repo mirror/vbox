@@ -323,15 +323,13 @@ bool UIFileManagerGuestTable::createDirectory(const QString &path, const QString
 }
 
 void UIFileManagerGuestTable::copyHostToGuest(const QStringList &hostSourcePathList,
-                                              const QString &strDestination /* = QString() */)
+                                        const QString &strDestination /* = QString() */)
 {
     if (!checkGuestSession())
         return;
     QVector<QString> sourcePaths = hostSourcePathList.toVector();
-    QVector<QString> aFilters;
-    aFilters.resize(sourcePaths.size()); /* Make sure to match the number of sources, even if empty. */
-    QVector<QString> aFlags;
-    aFlags.resize(sourcePaths.size());   /* Ditto. */
+    QVector<QString>  aFilters;
+    QVector<QString>  aFlags;
     QString strDestinationPath = strDestination;
     if (strDestinationPath.isEmpty())
         strDestinationPath = currentDirectoryPath();
@@ -358,10 +356,8 @@ void UIFileManagerGuestTable::copyGuestToHost(const QString& hostDestinationPath
     if (!checkGuestSession())
         return;
     QVector<QString> sourcePaths = selectedItemPathList().toVector();
-    QVector<QString> aFilters;
-    aFilters.resize(sourcePaths.size()); /* Make sure to match the number of sources, even if empty. */
-    QVector<QString> aFlags;
-    aFlags.resize(sourcePaths.size());   /* Ditto. */
+    QVector<QString>  aFilters;
+    QVector<QString>  aFlags;
 
     if (hostDestinationPath.isEmpty())
     {

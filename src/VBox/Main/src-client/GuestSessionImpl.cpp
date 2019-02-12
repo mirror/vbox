@@ -2906,13 +2906,10 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     const size_t cSources = aSources.size();
-    if (!cSources)
-        return setError(E_INVALIDARG, tr("No sources specified"));
-
-    if (   (aFilters.size() != cSources)
-        || (aFlags.size()   != cSources))
+    if (   (aFilters.size() && aFilters.size() != cSources)
+        || (aFlags.size()   && aFlags.size()   != cSources))
     {
-        return setError(E_INVALIDARG, tr("Filter / flag parameter array sizes don't match to the number of sources specified"));
+        return setError(E_INVALIDARG, tr("Parameter array sizes don't match to the number of sources specified"));
     }
 
     GuestSessionFsSourceSet SourceSet;
@@ -2988,13 +2985,10 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     const size_t cSources = aSources.size();
-    if (!cSources)
-        return setError(E_INVALIDARG, tr("No sources specified"));
-
-    if (   (aFilters.size() != cSources)
-        || (aFlags.size()   != cSources))
+    if (   (aFilters.size() && aFilters.size() != cSources)
+        || (aFlags.size()   && aFlags.size()   != cSources))
     {
-        return setError(E_INVALIDARG, tr("Filter / flag parameter array sizes don't match to the number of sources specified"));
+        return setError(E_INVALIDARG, tr("Parameter array sizes don't match to the number of sources specified"));
     }
 
     GuestSessionFsSourceSet SourceSet;
