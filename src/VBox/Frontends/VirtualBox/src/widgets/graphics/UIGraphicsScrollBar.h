@@ -33,7 +33,7 @@ class UIGraphicsScrollBarToken;
 class UIGraphicsScrollBar : public QIGraphicsWidget
 {
     Q_OBJECT;
-    Q_PROPERTY(int animatedValue READ animatedValue WRITE setAnimatedValue);
+    Q_PROPERTY(int hoveringValue READ hoveringValue WRITE setHoveringValue);
 
 signals:
 
@@ -126,6 +126,8 @@ private:
     void prepareToken();
     /** Prepares animation. */
     void prepareAnimation();
+    /** Prepares hovering animation. */
+    void prepareHoveringAnimation();
 
     /** Updates scroll-bar extent value. */
     void updateExtent();
@@ -142,10 +144,10 @@ private:
     /** Paints background using specified @a pPainter and certain @a rectangle. */
     void paintBackground(QPainter *pPainter, const QRect &rectangle) const;
 
-    /** Defines item's animated @a iValue. */
-    void setAnimatedValue(int iValue) { m_iAnimatedValue = iValue; update(); }
-    /** Returns item's animated value. */
-    int animatedValue() const { return m_iAnimatedValue; }
+    /** Defines hovering animation @a iValue. */
+    void setHoveringValue(int iValue) { m_iHoveringValue = iValue; update(); }
+    /** Returns hovering animation value. */
+    int hoveringValue() const { return m_iHoveringValue; }
 
     /** Holds the orientation. */
     const Qt::Orientation  m_enmOrientation;
@@ -176,8 +178,8 @@ private:
     int   m_iHoverOnTimerId;
     /** Holds the hover-off timer id. */
     int   m_iHoverOffTimerId;
-    /** Holds the animated value. */
-    int   m_iAnimatedValue;
+    /** Holds the hovering animation value. */
+    int   m_iHoveringValue;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_graphics_UIGraphicsScrollBar_h */
