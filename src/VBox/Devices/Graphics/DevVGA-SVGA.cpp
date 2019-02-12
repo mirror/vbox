@@ -333,7 +333,9 @@ typedef struct VMSVGAR3STATE
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 #ifdef IN_RING3
+# if defined(VMSVGA_USE_FIFO_ACCESS_HANDLER) || defined(DEBUG_FIFO_ACCESS)
 static FNPGMPHYSHANDLER vmsvgaR3FIFOAccessHandler;
+# endif
 # ifdef DEBUG_GMR_ACCESS
 static FNPGMPHYSHANDLER vmsvgaR3GMRAccessHandler;
 # endif
