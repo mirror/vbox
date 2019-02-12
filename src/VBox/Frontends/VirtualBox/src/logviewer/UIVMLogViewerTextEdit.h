@@ -89,6 +89,8 @@ private slots:
 
 private:
 
+    /** Configures this (such as palette etc.) */
+    void configure();
     void prepare();
     void prepareWidgets();
     QPair<int, QString> bookmarkForPos(const QPoint &position);

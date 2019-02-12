@@ -195,9 +195,23 @@ UIVMLogViewerTextEdit::UIVMLogViewerTextEdit(QWidget* parent /* = 0 */)
     , m_fShowSearchResultOverlay(0)
     , m_iMatchCount(0)
 {
-    setMouseTracking(true);
-    //setStyleSheet("background-color: rgba(240, 240, 240, 75%) ");
+    configure();
     prepare();
+}
+
+void UIVMLogViewerTextEdit::configure()
+{
+    setMouseTracking(true);
+
+    /* Prepare modified standard palette: */
+    QPalette pal = style() ? style()->standardPalette() : palette(); // fallback if no style exist.
+    pal.setColor(QPalette::Inactive, QPalette::Highlight, pal.color(QPalette::Active, QPalette::Highlight));
+    pal.setColor(QPalette::Inactive, QPalette::HighlightedText, pal.color(QPalette::Active, QPalette::HighlightedText));
+    setPalette(pal);
+
+    /* Configure this' wrap mode: */
+    setWrapLines(false);
+    setReadOnly(true);
 }
 
 void UIVMLogViewerTextEdit::prepare()
@@ -219,10 +233,6 @@ void UIVMLogViewerTextEdit::prepareWidgets()
     QScrollBar *pHorizontalScrollBar = horizontalScrollBar();
     if (pHorizontalScrollBar)
         pHorizontalScrollBar->setStyleSheet(horizontalScrollBarStyle);
-
-    /* Configure this' wrap mode: */
-    setWrapLines(false);
-    setReadOnly(true);
 }
 
 void UIVMLogViewerTextEdit::setCurrentFont(QFont font)
@@ -379,7 +389,7 @@ void UIVMLogViewerTextEdit::paintEvent(QPaintEvent *pEvent)
 {
     QIWithRetranslateUI<QPlainTextEdit>::paintEvent(pEvent);
 
-    /** Draw an overlay with text in it to show the number of search matches: */
+    /* Draw an overlay with text in it to show the number of search matches: */
     if (viewport() && (m_fShowSearchResultOverlay || m_bShownTextIsFiltered))
     {
         QPainter painter(viewport());
@@ -396,9 +406,9 @@ void UIVMLogViewerTextEdit::paintEvent(QPaintEvent *pEvent)
                 strText.append(" / ");
             strText.append(UIVMLogViewerWidget::tr("Filtered"));
         }
-        /** Space between the text and rectangle border. */
+        /* Space between the text and rectangle border: */
         QSize textMargin(5, 5);
-        /** Space between the rectangle and viewport edges. */
+        /* Space between the rectangle and viewport edges: */
         QSize rectMargin(2, 2);
 
         QSize rectSize(fontScale * QApplication::fontMetrics().width(strText) + textMargin.width(),
