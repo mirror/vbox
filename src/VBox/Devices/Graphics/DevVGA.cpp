@@ -4842,7 +4842,17 @@ static DECLCALLBACK(int) vgaPortSetRefreshRate(PPDMIDISPLAYPORT pInterface, uint
 {
     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
 
-    pThis->cMilliesRefreshInterval = cMilliesInterval;
+    /*
+     * Update the interval, notify the VMSVGA FIFO thread if sleeping,
+     * then restart or stop the timer.
+     */
+    ASMAtomicWriteU32(&pThis->cMilliesRefreshInterval, cMilliesInterval);
+
+#ifdef VBOX_WITH_VMSVGA
+    if (pThis->svga.fFIFOThreadSleeping)
+        SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
+#endif
+
     if (cMilliesInterval)
         return TMTimerSetMillies(pThis->RefreshTimer, cMilliesInterval);
     return TMTimerStop(pThis->RefreshTimer);
