@@ -7366,10 +7366,10 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
 
     if (pVCpu->CTX_SUFF(pVM)->hm.s.fTprPatchingAllowed)
     {
-        int rc = hmSvmEmulateMovTpr(pVCpu);
+        int rc = hmEmulateSvmMovTpr(pVCpu);
         if (rc != VERR_NOT_FOUND)
         {
-            Log4Func(("hmSvmEmulateMovTpr returns %Rrc\n", rc));
+            Log4Func(("hmEmulateSvmMovTpr returns %Rrc\n", rc));
             return rc;
         }
     }
