@@ -75,8 +75,8 @@ public:
     bool isOpened() const;
     void setIsOpened(bool flag);
 
-    /** Full absolute path of the item. Without the trailing '/' */
-    QString  path() const;
+    /** Full absolute path of the item. With or without the trailing '/' */
+    QString  path(bool fRemoveTrailingDelimiters = false) const;
     void setPath(const QString &path);
 
     /** Returns true if this is directory and name is ".." */
