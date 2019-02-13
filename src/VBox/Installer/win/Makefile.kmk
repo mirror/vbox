@@ -504,7 +504,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm: \
                '  || exit /b1' \
 		'call sign-sha1.cmd $(@F) || exit /b1' \
                ) \
-               '@echo Created MSM module: $$(@F)' \
+               '@echo Created MSM module: $$(@F)'
 endef
 
 $(if-expr defined(VBOX_WITH_MSM_INSTALL), \
