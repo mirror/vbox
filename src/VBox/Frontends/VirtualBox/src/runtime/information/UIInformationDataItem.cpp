@@ -787,7 +787,7 @@ UIInformationDataNetworkStatistics::UIInformationDataNetworkStatistics(const CMa
                 name = "VNet";
                 break;
             default:
-                name = "PCNet";
+                name = "PCnet";
                 break;
         }
 
