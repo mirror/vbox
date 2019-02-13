@@ -434,6 +434,7 @@ endif
 ifeq ($(lang),en_US)
 	$(CP) -f -- "$(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl" "$(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl" \
        	"$(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/"
+# Create repack script for this step.
 	$(APPEND) -tn "$$(VBOX_WIN_INST_REPACK_DIR)/2-link-$$(PACKAGE_NAME_LANG).cmd" \
        	'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b1)' \
 		$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%,\
@@ -488,7 +489,22 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).msm: \
 		$(VBOX_PATH_WIX)/difxapp_$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86",x86,x64).wixlib
 	$(RM) -f $(VBOX_WIN_INST_OUT_DIR)/NLS/$(lang).mst
 	$(call VBOX_SIGN_FILE_FN,$$@,$(VBOX_PRODUCT) $(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)),,,disable-dual-signing)
-## @todo repack script and files
+# Create repack script for this step.
+	$(APPEND) -tn "$$(VBOX_WIN_INST_REPACK_DIR)/2-link-VBoxMerge$(module)_$(lang).cmd" \
+       	'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b1)' \
+		$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%,\
+		'$(VBOX_PATH_WIX)/light.exe -v -nologo ^' \
+		'  -loc files-VirtualBox_$(lang)/Language_$(lang).wxl ^' \
+		'  -loc files-VirtualBox_$(lang)/License_$(lang).wxl ^' \
+		'  -ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll ^' \
+		'  $(VBOX_MSI_ICE_IGNORE) ^' \
+		'  -out $$(@F) ^' \
+		'  $$(<F) ^' \
+		'  $(VBOX_PATH_WIX)/difxapp_$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86",x86,x64).wixlib ^' \
+               '  || exit /b1' \
+		'call sign-sha1.cmd $(@F) || exit /b1' \
+               ) \
+               '@echo Created MSM module: $$(@F)' \
 endef
 
 $(if-expr defined(VBOX_WITH_MSM_INSTALL), \
@@ -788,7 +804,16 @@ $(if-expr "$(lang)" != "en_US",, \
 	$(MKDIR) -p -- "$(VBOX_WIN_INST_REPACK_DIR)/files-VBoxMerge$(module)_$(lang)/"
 	set -xe && for file in  `$(CAT_EXT) "$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files"`; \
 		do $(CP_EXT) -f -- "$$(DOLLAR){file}" "$(VBOX_WIN_INST_REPACK_DIR)/files-VBoxMerge$(module)_$(lang)/"; done
-## @todo repack script
+# Create repack script for this step.
+	$(APPEND) -tn "$(VBOX_WIN_INST_REPACK_DIR)/1-compile-VBoxMerge$(module)_$(lang).cmd" \
+       	'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b1)' \
+		$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%,\
+		'$(VBOX_PATH_WIX)/candle.exe VBoxMerge$(module)$(lang).wix ^' \
+		'  -ext $(VBOX_PATH_WIX)/WixUIExtension.dll ^'\
+		'  -ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll ^' \
+		'  -out $$(@F) || exit /b1' \
+               ) \
+               '@echo Created: $$(@F)'
  endif
 # Generate wxi dependencies based on the sourceLineNumber references in the output.
 	$(QUIET)$(APPEND) -t '$$@.dep' '$$@: \'
