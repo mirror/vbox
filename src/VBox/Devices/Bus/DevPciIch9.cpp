@@ -1233,6 +1233,23 @@ static DECLCALLBACK(int) devpciR3CommonRestoreOldSetRegion(PPDMPCIDEV pPciDev, u
 
 
 /**
+ * @callback_method_impl{FNPCIIOREGIONSWAP}
+ */
+static DECLCALLBACK(int) devpciR3CommonRestoreSwapRegions(PPDMPCIDEV pPciDev, uint32_t iRegion, uint32_t iOtherRegion)
+{
+    AssertReturn(iRegion < iOtherRegion, VERR_INVALID_PARAMETER);
+    AssertLogRelReturn(iOtherRegion < RT_ELEMENTS(pPciDev->Int.s.aIORegions), VERR_INVALID_PARAMETER);
+    AssertReturn(pPciDev->Int.s.bPadding0 == (0xe0 | (uint8_t)iRegion), VERR_INVALID_PARAMETER);
+
+    PCIIOREGION Tmp = pPciDev->Int.s.aIORegions[iRegion];
+    pPciDev->Int.s.aIORegions[iRegion] = pPciDev->Int.s.aIORegions[iOtherRegion];
+    pPciDev->Int.s.aIORegions[iOtherRegion] = Tmp;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Checks for and deals with changes in resource sizes and types.
  *
  * @returns VBox status code.
@@ -1259,8 +1276,11 @@ int devpciR3CommonRestoreRegions(PSSMHANDLE pSSM, PPDMPCIDEV pPciDev, PPCIIOREGI
                                        paIoRegions[iRegion].size, paIoRegions[iRegion].type));
                 if (pPciDev->pfnRegionLoadChangeHookR3)
                 {
+                    pPciDev->Int.s.bPadding0 = 0xe0 | (uint8_t)iRegion;
                     rc = pPciDev->pfnRegionLoadChangeHookR3(pPciDev->Int.s.pDevInsR3, pPciDev, iRegion, paIoRegions[iRegion].size,
-                                                            (PCIADDRESSSPACE)paIoRegions[iRegion].type, NULL /*pfnOldSetter*/);
+                                                            (PCIADDRESSSPACE)paIoRegions[iRegion].type, NULL /*pfnOldSetter*/,
+                                                            devpciR3CommonRestoreSwapRegions);
+                    pPciDev->Int.s.bPadding0 = 0;
                     if (RT_FAILURE(rc))
                         return SSMR3SetLoadError(pSSM, rc, RT_SRC_POS,
                                                  N_("Device %s/%u failed to respond to region #%u size/type changing from %#RGp/%#x to %#RGp/%#x: %Rrc"),
@@ -1278,7 +1298,7 @@ int devpciR3CommonRestoreRegions(PSSMHANDLE pSSM, PPDMPCIDEV pPciDev, PPCIIOREGI
     else if (pPciDev->pfnRegionLoadChangeHookR3)
     {
         rc = pPciDev->pfnRegionLoadChangeHookR3(pPciDev->Int.s.pDevInsR3, pPciDev, UINT32_MAX, RTGCPHYS_MAX, (PCIADDRESSSPACE)-1,
-                                                devpciR3CommonRestoreOldSetRegion);
+                                                devpciR3CommonRestoreOldSetRegion, NULL);
         if (RT_FAILURE(rc))
             return SSMR3SetLoadError(pSSM, rc, RT_SRC_POS,  N_("Device %s/%u failed to resize its resources: %Rrc"),
                                      pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, rc);
