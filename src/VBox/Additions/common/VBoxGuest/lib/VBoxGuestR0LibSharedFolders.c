@@ -100,6 +100,19 @@ DECLVBGL(void) VbglR0SfDisconnect(PVBGLSFCLIENT pClient)
     return;
 }
 
+DECLVBGL(int) VbglR0SfSetUtf8(PVBGLSFCLIENT pClient)
+{
+    int rc;
+    VBGLIOCHGCMCALL callInfo;
+
+    VBOX_INIT_CALL(&callInfo, SET_UTF8, pClient);
+    rc = VbglR0HGCMCall(pClient->handle, &callInfo, sizeof(callInfo));
+/*    Log(("VBOXSF: VbglR0SfSetUtf8: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
+    return rc;
+}
+
+#if !defined(RT_OS_LINUX)
+
 /** @name       Deprecated VBGL shared folder helpers.
  *
  * @deprecated  These are all use the slow VbglR0HGCMCall interface, that
@@ -298,6 +311,8 @@ DECLVBGL(int) VbglR0SfRename(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING
     return rc;
 }
 
+#endif /* !RT_OS_LINUX */
+
 DECLVBGL(int) VbglR0SfRead(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                            uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked)
 {
@@ -328,6 +343,8 @@ DECLVBGL(int) VbglR0SfRead(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hF
     }
     return rc;
 }
+
+#if !defined(RT_OS_LINUX)
 
 DECLVBGL(int) VbglR0SfReadPageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer,
                                    uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages)
@@ -375,6 +392,8 @@ DECLVBGL(int) VbglR0SfReadPageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLH
     return rc;
 }
 
+#endif /* !RT_OS_LINUX */
+
 DECLVBGL(int) VbglR0SfWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                             uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked)
 {
@@ -405,6 +424,8 @@ DECLVBGL(int) VbglR0SfWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE h
     }
     return rc;
 }
+
+#ifndef RT_OS_LINUX
 
 DECLVBGL(int) VbglR0SfWritePhysCont(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset,
                                     uint32_t *pcbBuffer, RTCCPHYS PhysBuffer)
@@ -595,6 +616,7 @@ DECLVBGL(int) VbglR0SfFsInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE 
     return rc;
 }
 
+
 DECLVBGL(int) VbglR0SfLock(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                            uint64_t offset, uint64_t cbSize, uint32_t fLock)
 {
@@ -621,16 +643,7 @@ DECLVBGL(int) VbglR0SfLock(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hF
     return rc;
 }
 
-DECLVBGL(int) VbglR0SfSetUtf8(PVBGLSFCLIENT pClient)
-{
-    int rc;
-    VBGLIOCHGCMCALL callInfo;
-
-    VBOX_INIT_CALL(&callInfo, SET_UTF8, pClient);
-    rc = VbglR0HGCMCall(pClient->handle, &callInfo, sizeof(callInfo));
-/*    Log(("VBOXSF: VbglR0SfSetUtf8: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
-    return rc;
-}
+#endif /* !RT_OS_LINUX */
 
 DECLVBGL(int) VbglR0SfReadLink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pParsedPath, uint32_t cbBuffer, uint8_t *pBuffer)
 {
