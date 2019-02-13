@@ -714,7 +714,7 @@ protected:
     /** Handles translation event. */
     virtual void retranslateUi() /* override */
     {
-        setName(QApplication::translate("UIActionPool", "&Export..."));
+        setName(QApplication::translate("UIActionPool", "E&xport..."));
         setStatusTip(QApplication::translate("UIActionPool", "Export selected virtual machine"));
     }
 };
