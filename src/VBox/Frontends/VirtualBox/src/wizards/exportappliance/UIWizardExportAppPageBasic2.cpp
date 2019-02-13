@@ -53,8 +53,9 @@
 *   Class UIWizardExportAppPage2 implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-UIWizardExportAppPage2::UIWizardExportAppPage2()
-    : m_pFormatLayout(0)
+UIWizardExportAppPage2::UIWizardExportAppPage2(bool fExportToOCIByDefault)
+    : m_fExportToOCIByDefault(fExportToOCIByDefault)
+    , m_pFormatLayout(0)
     , m_pSettingsLayout1(0)
     , m_pSettingsLayout2(0)
     , m_pFormatComboBoxLabel(0)
@@ -92,6 +93,7 @@ void UIWizardExportAppPage2::populateFormats()
     }
 
     /* Initialize Cloud Provider Manager: */
+    bool fOCIPresent = false;
     CVirtualBox comVBox = vboxGlobal().virtualBox();
     m_comCloudProviderManager = comVBox.GetCloudProviderManager();
     /* Show error message if necessary: */
@@ -119,12 +121,17 @@ void UIWizardExportAppPage2::populateFormats()
                 m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetName(),      FormatData_Name);
                 m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, comProvider.GetShortName(), FormatData_ShortName);
                 m_pFormatComboBox->setItemData(m_pFormatComboBox->count() - 1, true,                       FormatData_IsItCloudFormat);
+                if (m_pFormatComboBox->itemData(m_pFormatComboBox->count() - 1, FormatData_ShortName).toString() == "OCI")
+                    fOCIPresent = true;
             }
         }
     }
 
     /* Set default: */
-    setFormat("ovf-1.0");
+    if (m_fExportToOCIByDefault && fOCIPresent)
+        setFormat("OCI");
+    else
+        setFormat("ovf-1.0");
 }
 
 void UIWizardExportAppPage2::populateMACAddressPolicies()
@@ -732,8 +739,9 @@ AbstractVSDParameterList UIWizardExportAppPage2::cloudClientParameters() const
 *   Class UIWizardExportAppPageBasic2 implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2()
-    : m_pLabelFormat(0)
+UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefault)
+    : UIWizardExportAppPage2(fExportToOCIByDefault)
+    , m_pLabelFormat(0)
     , m_pLabelSettings(0)
 {
     /* Create main layout: */

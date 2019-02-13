@@ -45,8 +45,9 @@
 *   Class UIWizardExportAppPageExpert implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &selectedVMNames)
-    : m_pSelectorCnt(0)
+UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &selectedVMNames, bool fExportToOCIByDefault)
+    : UIWizardExportAppPage2(fExportToOCIByDefault)
+    , m_pSelectorCnt(0)
     , m_pApplianceCnt(0)
     , m_pSettingsCnt(0)
 {

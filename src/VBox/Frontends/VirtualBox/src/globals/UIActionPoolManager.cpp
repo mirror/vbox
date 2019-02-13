@@ -691,34 +691,6 @@ protected:
     }
 };
 
-/** Simple action extension, used as 'Perform Export Machine' action class. */
-class UIActionSimpleSelectorMachinePerformExport : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs action passing @a pParent to the base-class. */
-    UIActionSimpleSelectorMachinePerformExport(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/export_16px.png", ":/export_disabled_16px.png")
-    {}
-
-protected:
-
-    /** Returns shortcut extra-data ID. */
-    virtual QString shortcutExtraDataID() const /* override */
-    {
-        return QString("ExportVM");
-    }
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */
-    {
-        setName(QApplication::translate("UIActionPool", "E&xport..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Export selected virtual machine"));
-    }
-};
-
 /** Simple action extension, used as 'Perform Move Machine' action class. */
 class UIActionSimpleSelectorMachinePerformMove : public UIActionSimple
 {
@@ -744,6 +716,34 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Move..."));
         setStatusTip(QApplication::translate("UIActionPool", "Move selected virtual machine"));
+    }
+};
+
+/** Simple action extension, used as 'Perform Export Machine to OCI' action class. */
+class UIActionSimpleSelectorMachinePerformExportToOCI : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorMachinePerformExportToOCI(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/export_16px.png", ":/export_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ExportToOCI");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "E&xport to OCI..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Export selected virtual machine to OCI"));
     }
 };
 
@@ -2686,8 +2686,8 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Machine_S_Add] = new UIActionSimpleSelectorMachinePerformAdd(this);
     m_pool[UIActionIndexST_M_Machine_S_Settings] = new UIActionSimpleSelectorMachineShowSettings(this);
     m_pool[UIActionIndexST_M_Machine_S_Clone] = new UIActionSimpleSelectorMachinePerformClone(this);
-    m_pool[UIActionIndexST_M_Machine_S_Export] = new UIActionSimpleSelectorMachinePerformExport(this);
     m_pool[UIActionIndexST_M_Machine_S_Move] = new UIActionSimpleSelectorMachinePerformMove(this);
+    m_pool[UIActionIndexST_M_Machine_S_ExportToOCI] = new UIActionSimpleSelectorMachinePerformExportToOCI(this);
     m_pool[UIActionIndexST_M_Machine_S_Remove] = new UIActionSimpleSelectorMachinePerformRemove(this);
     m_pool[UIActionIndexST_M_Machine_S_AddGroup] = new UIActionSimpleSelectorMachinePerformGroup(this);
     m_pool[UIActionIndexST_M_Machine_M_StartOrShow] = new UIActionStateSelectorCommonStartOrShow(this);
@@ -3031,8 +3031,8 @@ void UIActionPoolManager::updateMenuMachine()
     pMenu->addSeparator();
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_Settings));
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_Clone));
-    pMenu->addAction(action(UIActionIndexST_M_Machine_S_Export));
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_Move));
+    pMenu->addAction(action(UIActionIndexST_M_Machine_S_ExportToOCI));
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_Remove));
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_AddGroup));
     pMenu->addSeparator();
@@ -3402,8 +3402,8 @@ void UIActionPoolManager::setShortcutsVisible(int iIndex, bool fVisible)
                     << action(UIActionIndexST_M_Machine_S_Add)
                     << action(UIActionIndexST_M_Machine_S_Settings)
                     << action(UIActionIndexST_M_Machine_S_Clone)
-                    << action(UIActionIndexST_M_Machine_S_Export)
                     << action(UIActionIndexST_M_Machine_S_Move)
+                    << action(UIActionIndexST_M_Machine_S_ExportToOCI)
                     << action(UIActionIndexST_M_Machine_S_Remove)
                     << action(UIActionIndexST_M_Machine_S_AddGroup)
                     << action(UIActionIndexST_M_Machine_M_StartOrShow)

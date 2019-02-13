@@ -39,10 +39,10 @@
 
 UIWizardExportApp::UIWizardExportApp(QWidget *pParent,
                                      const QStringList &selectedVMNames /* = QStringList() */,
-                                     bool fFastTraverToPage2 /* = false */)
+                                     bool fFastTraverToExportOCI /* = false */)
     : UIWizard(pParent, WizardType_ExportAppliance)
     , m_selectedVMNames(selectedVMNames)
-    , m_fFastTraverToPage2(fFastTraverToPage2)
+    , m_fFastTraverToExportOCI(fFastTraverToExportOCI)
 {
 #ifndef VBOX_WS_MAC
     /* Assign watermark: */
@@ -211,13 +211,13 @@ void UIWizardExportApp::prepare()
         case WizardMode_Basic:
         {
             setPage(Page1, new UIWizardExportAppPageBasic1(m_selectedVMNames));
-            setPage(Page2, new UIWizardExportAppPageBasic2);
+            setPage(Page2, new UIWizardExportAppPageBasic2(m_fFastTraverToExportOCI));
             setPage(Page3, new UIWizardExportAppPageBasic3);
             break;
         }
         case WizardMode_Expert:
         {
-            setPage(PageExpert, new UIWizardExportAppPageExpert(m_selectedVMNames));
+            setPage(PageExpert, new UIWizardExportAppPageExpert(m_selectedVMNames, m_fFastTraverToExportOCI));
             break;
         }
         default:
@@ -232,7 +232,7 @@ void UIWizardExportApp::prepare()
 
     /* Now, when we are ready, we can
      * fast traver to page 2 if requested: */
-    if (m_fFastTraverToPage2)
+    if (m_fFastTraverToExportOCI)
         button(QWizard::NextButton)->click();
 }
 

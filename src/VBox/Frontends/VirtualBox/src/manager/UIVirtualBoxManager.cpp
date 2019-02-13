@@ -529,7 +529,7 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
 
     /* Lock the action preventing cascade calls: */
     actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setProperty("opened", true);
-    actionPool()->action(UIActionIndexST_M_Machine_S_Export)->setProperty("opened", true);
+    actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI)->setProperty("opened", true);
     updateActionsAppearance();
 
     /* Check what was the action invoked us: */
@@ -539,7 +539,7 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
     QWidget *pWizardParent = windowManager().realParentWindow(this);
     UISafePointerWizard pWizard = new UIWizardExportApp(pWizardParent, names,
                                                         pAction &&
-                                                        pAction == actionPool()->action(UIActionIndexST_M_Machine_S_Export));
+                                                        pAction == actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI));
     windowManager().registerNewParent(pWizard, pWizardParent);
     pWizard->prepare();
     pWizard->exec();
@@ -549,7 +549,7 @@ void UIVirtualBoxManager::sltOpenExportApplianceWizard()
     if (actionPool())
     {
         actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance)->setProperty("opened", QVariant());
-        actionPool()->action(UIActionIndexST_M_Machine_S_Export)->setProperty("opened", QVariant());
+        actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI)->setProperty("opened", QVariant());
         updateActionsAppearance();
     }
 }
@@ -1435,10 +1435,10 @@ void UIVirtualBoxManager::prepareConnections()
             this, &UIVirtualBoxManager::sltOpenMachineSettingsDialogDefault);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Clone), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltOpenCloneMachineWizard);
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Export), &UIAction::triggered,
-            this, &UIVirtualBoxManager::sltOpenExportApplianceWizard);
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Move), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformMachineMove);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI), &UIAction::triggered,
+            this, &UIVirtualBoxManager::sltOpenExportApplianceWizard);
     connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow), &UIAction::triggered,
             this, &UIVirtualBoxManager::sltPerformStartOrShowMachine);
     connect(actionPool()->action(UIActionIndexST_M_Machine_T_Pause), &UIAction::toggled,
@@ -1720,8 +1720,8 @@ void UIVirtualBoxManager::updateActionsAppearance()
     /* Enable/disable machine actions: */
     actionPool()->action(UIActionIndexST_M_Machine_S_Settings)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Settings, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_Clone)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Clone, items));
-    actionPool()->action(UIActionIndexST_M_Machine_S_Export)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Export, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_Move)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Move, items));
+    actionPool()->action(UIActionIndexST_M_Machine_S_ExportToOCI)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_ExportToOCI, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_Remove)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_Remove, items));
     actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_S_AddGroup, items));
     actionPool()->action(UIActionIndexST_M_Machine_T_Pause)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_T_Pause, items));
@@ -1885,7 +1885,7 @@ bool UIVirtualBoxManager::isActionEnabled(int iActionIndex, const QList<UIVirtua
                    items.size() == 1 &&
                    UIVirtualMachineItem::isItemEditable(pItem);
         }
-        case UIActionIndexST_M_Machine_S_Export:
+        case UIActionIndexST_M_Machine_S_ExportToOCI:
         {
             return !actionPool()->action(iActionIndex)->property("opened").toBool() &&
                    items.size() == 1;

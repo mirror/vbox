@@ -54,7 +54,7 @@ public:
 
     /** Constructs expert basic page.
       * @param  selectedVMNames  Brings the list of selected VM names. */
-    UIWizardExportAppPageExpert(const QStringList &selectedVMNames);
+    UIWizardExportAppPageExpert(const QStringList &selectedVMNames, bool fExportToOCIByDefault);
 
 protected:
 
