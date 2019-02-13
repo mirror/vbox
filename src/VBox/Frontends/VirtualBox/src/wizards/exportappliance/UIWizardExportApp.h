@@ -50,7 +50,7 @@ public:
 
     /** Constructs export appliance wizard passing @a pParent to the base-class.
       * @param  selectedVMNames  Brings the names of VMs to be exported. */
-    UIWizardExportApp(QWidget *pParent, const QStringList &selectedVMNames = QStringList());
+    UIWizardExportApp(QWidget *pParent, const QStringList &selectedVMNames = QStringList(), bool fFastTraverToPage2 = false);
 
     /** Exports full appliance. */
     bool exportAppliance();
@@ -81,7 +81,9 @@ private:
     bool exportVMs(CAppliance &comAppliance);
 
     /** Holds the names of VMs to be exported. */
-    QStringList m_selectedVMNames;
+    QStringList  m_selectedVMNames;
+    /** Holds whether we should fast travel to page 2. */
+    bool         m_fFastTraverToPage2;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_exportappliance_UIWizardExportApp_h */
