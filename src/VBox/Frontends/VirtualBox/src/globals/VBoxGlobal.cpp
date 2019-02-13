@@ -2673,6 +2673,30 @@ DECLINLINE(int) visoWriteQuotedString(PRTSTREAM pStrmDst, const char *pszPrefix,
 }
 
 
+QUuid VBoxGlobal::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
+                                          const QString &strDefaultFolder /* = QString() */, const QString &strMachineName /* = QString() */,
+                                          const QString &strMachineGuestOSTypeId /*= QString() */)
+{
+    QUuid uMediumId;
+
+    switch (enmMediumType)
+    {
+        case UIMediumDeviceType_Floppy:
+            uMediumId = showCreateFloppyDiskDialog(pParent, strDefaultFolder, strMachineName);
+            break;
+        case UIMediumDeviceType_HardDisk:
+            uMediumId = createHDWithNewHDWizard(pParent, strDefaultFolder, strMachineName, strMachineGuestOSTypeId);
+            break;
+        case UIMediumDeviceType_DVD:
+            uMediumId = createVisoMediumWithVisoCreator(pParent, strDefaultFolder, strMachineName);
+            break;
+        default:
+            break;
+    }
+
+    return uMediumId;
+}
+
 QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QString &strDefaultFolder /* = QString */,
                                                   const QString &strMachineName /* = QString */)
 {
@@ -2776,7 +2800,7 @@ QUuid VBoxGlobal::showCreateFloppyDiskDialog(QWidget *pParent, const QString &st
 }
 
 int VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType, QUuid &outUuid,
-                                         const QString &strMachineName, const QString &strMachineFolder,
+                                         const QString &strMachineFolder, const QString &strMachineName,
                                          const QString &strMachineGuestOSTypeId, bool fEnableCreate)
 {
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
@@ -2810,32 +2834,7 @@ int VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  e
     return static_cast<int>(returnCode);
 }
 
-QUuid VBoxGlobal::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType,
-                                          const QString &strDefaultFolder /* = QString() */, const QString &strMachineName /* = QString() */,
-                                          const QString &strMachineGuestOSTypeId /*= QString() */)
-{
-    QUuid uMediumId;
-
-    switch (enmMediumType)
-    {
-        case UIMediumDeviceType_Floppy:
-            uMediumId = showCreateFloppyDiskDialog(pParent, strDefaultFolder, strMachineName);
-            break;
-        case UIMediumDeviceType_HardDisk:
-            uMediumId = createHDWithNewHDWizard(pParent, strMachineGuestOSTypeId, strDefaultFolder, strMachineName);
-
-            break;
-        case UIMediumDeviceType_DVD:
-            uMediumId = createVisoMediumWithVisoCreator(pParent, strDefaultFolder, strMachineName);
-            break;
-        default:
-            break;
-    }
-
-    return uMediumId;
-}
-
-QUuid VBoxGlobal::createHDWithNewHDWizard(QWidget *pParent, const QString &strMachineGuestOSTypeId,
+QUuid VBoxGlobal::createHDWithNewHDWizard(QWidget *pParent, const QString &strMachineGuestOSTypeId  /* = QString() */,
                                           const QString &strMachineFolder /* = QString() */,
                                           const QString &strMachineName /* = QString() */)
 {

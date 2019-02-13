@@ -103,6 +103,7 @@ private slots:
             void configure();
             void prepareWidgets();
             void prepareActions();
+            void prepareMenuAndToolBar();
             void prepareConnections();
         /** Perform final preparations. */
         void finalize();

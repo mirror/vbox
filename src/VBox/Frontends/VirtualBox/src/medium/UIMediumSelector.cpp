@@ -155,6 +155,7 @@ void UIMediumSelector::configure()
     setTitle();
     prepareWidgets();
     prepareActions();
+    prepareMenuAndToolBar();
     prepareConnections();
 }
 
@@ -181,46 +182,50 @@ void UIMediumSelector::prepareActions()
     if (m_pActionAdd)
     {
         /* Configure add-action: */
-        m_pActionAdd->setShortcut(QKeySequence("Ctrl+A"));
+        m_pActionAdd->setShortcut(QKeySequence(""));
 
         m_pActionAdd->setIcon(UIIconPool::iconSetFull(QString(":/%1_add_32px.png").arg(strPrefix),
                                                       QString(":/%1_add_16px.png").arg(strPrefix),
                                                       QString(":/%1_add_disabled_32px.png").arg(strPrefix),
                                                       QString(":/%1_add_disabled_16px.png").arg(strPrefix)));
-        if (m_pMainMenu)
-            m_pMainMenu->addAction(m_pActionAdd);
-        if (m_pToolBar)
-            m_pToolBar->addAction(m_pActionAdd);
+
     }
 
     m_pActionCreate = new QAction(this);
     if (m_pActionCreate)
     {
-
-        m_pActionCreate->setShortcut(QKeySequence("Ctrl+C"));
+        m_pActionCreate->setShortcut(QKeySequence(""));
         m_pActionCreate->setIcon(UIIconPool::iconSetFull(QString(":/%1_create_32px.png").arg(strPrefix),
                                                          QString(":/%1_create_16px.png").arg(strPrefix),
                                                          QString(":/%1_create_disabled_32px.png").arg(strPrefix),
                                                          QString(":/%1_create_disabled_16px.png").arg(strPrefix)));
-        if (m_pMainMenu)
-            m_pMainMenu->addAction(m_pActionCreate);
-        if (m_pToolBar)
-            m_pToolBar->addAction(m_pActionCreate);
     }
 
 
     m_pActionRefresh = new QAction(this);
     if (m_pActionRefresh)
     {
-        m_pActionRefresh->setShortcut(QKeySequence(QKeySequence::Refresh));
+        m_pActionRefresh->setShortcut(QKeySequence());
         if (m_pActionRefresh && m_pActionRefresh->icon().isNull())
             m_pActionRefresh->setIcon(UIIconPool::iconSetFull(":/refresh_32px.png", ":/refresh_16px.png",
                                                               ":/refresh_disabled_32px.png", ":/refresh_disabled_16px.png"));
-        if (m_pMainMenu)
-            m_pMainMenu->addAction(m_pActionRefresh);
-        if (m_pToolBar)
-            m_pToolBar->addAction(m_pActionRefresh);
     }
+}
+
+void UIMediumSelector::prepareMenuAndToolBar()
+{
+    if (!m_pMainMenu || !m_pToolBar)
+        return;
+
+    m_pMainMenu->addAction(m_pActionAdd);
+    m_pMainMenu->addAction(m_pActionCreate);
+    m_pMainMenu->addSeparator();
+    m_pMainMenu->addAction(m_pActionRefresh);
+
+    m_pToolBar->addAction(m_pActionAdd);
+    m_pToolBar->addAction(m_pActionCreate);
+    m_pToolBar->addSeparator();
+    m_pToolBar->addAction(m_pActionRefresh);
 }
 
 void UIMediumSelector::prepareConnections()
@@ -747,18 +752,30 @@ void UIMediumSelector::setTitle()
     switch (m_enmMediumType)
     {
         case UIMediumDeviceType_DVD:
-            setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Optical Disk Selector")));
+            if (!m_strMachineName.isEmpty())
+                setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Optical Disk Selector")));
+            else
+                setWindowTitle(QString("%1").arg(tr("Optical Disk Selector")));
             break;
         case UIMediumDeviceType_Floppy:
-            setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Floppy Disk Selector")));
+            if (!m_strMachineName.isEmpty())
+                setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Floppy Disk Selector")));
+            else
+                setWindowTitle(QString("%1").arg(tr("Floppy Disk Selector")));
             break;
         case UIMediumDeviceType_HardDisk:
-            setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Hard Disk Selector")));
+            if (!m_strMachineName.isEmpty())
+                setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Hard Disk Selector")));
+            else
+                setWindowTitle(QString("%1").arg(tr("Hard Disk Selector")));
             break;
         case UIMediumDeviceType_All:
         case UIMediumDeviceType_Invalid:
         default:
-            setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Virtual Medium Selector")));
+            if (!m_strMachineName.isEmpty())
+                setWindowTitle(QString("%1 - %2").arg(m_strMachineName).arg(tr("Virtual Medium Selector")));
+            else
+                setWindowTitle(QString("%1").arg(tr("Virtual Medium Selector")));
             break;
     }
 }

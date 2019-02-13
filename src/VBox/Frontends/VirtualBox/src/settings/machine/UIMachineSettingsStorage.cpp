@@ -3081,8 +3081,9 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
 
 void UIMachineSettingsStorage::sltCreateNewHardDisk()
 {
-    const QUuid uMediumId = vboxGlobal().createHDWithNewHDWizard(this, m_strMachineGuestOSTypeId,
-                                                                 m_strMachineSettingsFilePath, m_strMachineName);
+    const QUuid uMediumId = vboxGlobal().openMediumCreatorDialog(this, UIMediumDeviceType_HardDisk, m_strMachineSettingsFilePath,
+                                                                 m_strMachineName, m_strMachineGuestOSTypeId);
+
     if (!uMediumId.isNull())
         m_pMediumIdHolder->setId(uMediumId);
 }
@@ -3098,7 +3099,7 @@ void UIMachineSettingsStorage::sltChooseExistingMedium()
 
     QUuid uMediumId;
     int iResult = vboxGlobal().openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uMediumId,
-                                                        m_strMachineName, strMachineFolder,
+                                                        strMachineFolder, m_strMachineName,
                                                         m_strMachineGuestOSTypeId, true /* enable create action: */);
 
     if (iResult == UIMediumSelector::ReturnCode_Rejected ||
@@ -3810,7 +3811,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
 
     QUuid uMediumId;
     int iResult = vboxGlobal().openMediumSelectorDialog(this, UIMediumDefs::mediumTypeToLocal(enmDevice), uMediumId,
-                                                        m_strMachineName, strMachineFolder,
+                                                        strMachineFolder, m_strMachineName,
                                                         m_strMachineGuestOSTypeId, true /* enable cr1eate action: */);
 
     /* Continue only if iResult is either UIMediumSelector::ReturnCode_Accepted or UIMediumSelector::ReturnCode_LeftEmpty: */

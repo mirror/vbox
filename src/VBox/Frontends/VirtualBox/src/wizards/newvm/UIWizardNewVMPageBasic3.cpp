@@ -66,8 +66,8 @@ void UIWizardNewVMPage3::getWithFileOpenDialog()
 
     int returnCode = vboxGlobal().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_HardDisk,
                                                            uMediumId,
-                                                           fieldImp("machineBaseName").toString(),
                                                            fieldImp("machineFolder").toString(),
+                                                           fieldImp("machineBaseName").toString(),
                                                            fieldImp("type").value<CGuestOSType>().GetId(),
                                                            false /* don't show/enable the create action: */);
 
