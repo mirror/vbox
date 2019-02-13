@@ -5554,16 +5554,49 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
  */
 static DECLCALLBACK(int) vgaR3PciRegionLoadChangeHook(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                       uint64_t cbRegion, PCIADDRESSSPACE enmType,
-                                                      PFNPCIIOREGIONOLDSETTER pfnOldSetter)
+                                                      PFNPCIIOREGIONOLDSETTER pfnOldSetter, PFNPCIIOREGIONSWAP pfnSwapRegions)
 {
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
 # ifdef VBOX_WITH_VMSVGA
-    /*
-     * The VMSVGA changed the default FIFO size from 128KB to 2MB after 5.1.
-     */
     if (pThis->fVMSVGAEnabled)
     {
+        /*
+         * We messed up BAR order for the hybrid devices in 6.0 (see #9359).
+         * It should have been compatible with the VBox VGA device and had the
+         * VRAM region first and I/O second, but instead the I/O region ended
+         * up first and VRAM second like the VMSVGA device.
+         *
+         * So, we have to detect that here and reconfigure the memory regions.
+         * Region numbers are used in our (and the PCI bus') interfaction with
+         * PGM, so PGM needs to be informed too.
+         */
+        if (   iRegion == 0
+            && iRegion == pThis->pciRegions.iVRAM
+            && (enmType & PCI_ADDRESS_SPACE_IO))
+        {
+            LogRel(("VGA: Detected old BAR config, making adjustments.\n"));
+
+            /* Update the entries. */
+            pThis->pciRegions.iIO   = 0;
+            pThis->pciRegions.iVRAM = 1;
+
+            /* Update PGM on the region number change so it won't barf when restoring state. */
+            AssertLogRelReturn(pDevIns->CTX_SUFF(pHlp)->pfnMMIOExChangeRegionNo, VERR_VERSION_MISMATCH);
+            int rc = pDevIns->CTX_SUFF(pHlp)->pfnMMIOExChangeRegionNo(pDevIns, pPciDev, 0, 1);
+            AssertLogRelRCReturn(rc, rc);
+
+            /* Update the calling PCI device. */
+            AssertLogRelReturn(pfnSwapRegions, VERR_INTERNAL_ERROR_2);
+            rc = pfnSwapRegions(pPciDev, 0, 1);
+            AssertLogRelRCReturn(rc, rc);
+
+            return rc;
+        }
+
+        /*
+         * The VMSVGA changed the default FIFO size from 128KB to 2MB after 5.1.
+         */
         if (iRegion == pThis->pciRegions.iFIFO)
         {
             /* Make sure it's still 32-bit memory.  Ignore fluxtuations in the prefetch flag */
@@ -5590,10 +5623,12 @@ static DECLCALLBACK(int) vgaR3PciRegionLoadChangeHook(PPDMDEVINS pDevIns, PPDMPC
             return rc;
 
         }
+
         /* Emulate callbacks for 5.1 and older saved states by recursion. */
-        else if (iRegion == UINT32_MAX)
+        if (iRegion == UINT32_MAX)
         {
-            int rc = vgaR3PciRegionLoadChangeHook(pDevIns, pPciDev, pThis->pciRegions.iFIFO, VMSVGA_FIFO_SIZE_OLD, PCI_ADDRESS_SPACE_MEM, NULL);
+            int rc = vgaR3PciRegionLoadChangeHook(pDevIns, pPciDev, pThis->pciRegions.iFIFO, VMSVGA_FIFO_SIZE_OLD,
+                                                  PCI_ADDRESS_SPACE_MEM, NULL, NULL);
             if (RT_SUCCESS(rc))
                 rc = pfnOldSetter(pPciDev, pThis->pciRegions.iFIFO, VMSVGA_FIFO_SIZE_OLD, PCI_ADDRESS_SPACE_MEM);
             return rc;
@@ -6258,7 +6293,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     AssertLogRelRCReturn(rc, rc);
     Log(("VMSVGA: VMSVGAPciId   = %d\n", pThis->fVMSVGAPciId));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "VMSVGAPciBarLayout", &pThis->fVMSVGAPciBarLayout, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "VMSVGAPciBarLayout", &pThis->fVMSVGAPciBarLayout, pThis->fVMSVGAPciId);
     AssertLogRelRCReturn(rc, rc);
     Log(("VMSVGA: VMSVGAPciBarLayout = %d\n", pThis->fVMSVGAPciBarLayout));
 
@@ -6281,14 +6316,13 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         pThis->pciRegions.iIO   = 0;
         pThis->pciRegions.iVRAM = 1;
-        pThis->pciRegions.iFIFO = 2;
     }
     else
     {
         pThis->pciRegions.iVRAM = 0;
         pThis->pciRegions.iIO   = 1;
-        pThis->pciRegions.iFIFO = 2;
     }
+    pThis->pciRegions.iFIFO = 2;
 #else
     pThis->pciRegions.iVRAM = 0;
 #endif

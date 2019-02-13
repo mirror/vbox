@@ -841,6 +841,8 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIOExReduce(PVM pVM, PPDMDEVINS pDevIns, uint32_t 
 VMMR3DECL(bool)     PGMR3PhysMMIOExIsBase(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys);
 VMMR3_INT_DECL(int) PGMR3PhysMMIO2GetHCPhys(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS off, PRTHCPHYS pHCPhys);
 VMMR3_INT_DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTR0PTR pR0Ptr);
+VMMR3_INT_DECL(int) PGMR3PhysMMIOExChangeRegionNo(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, uint32_t iNewRegion);
+
 
 /** @name PGMR3PhysRegisterRom flags.
  * @{ */

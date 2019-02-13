@@ -4172,6 +4172,48 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_
 
 
 /**
+ * Changes the region number of an MMIO2 or pre-registered MMIO region.
+ *
+ * This is only for dealing with save state issues, nothing else.
+ *
+ * @return VBox status code.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pDevIns     The device owning the MMIO2 memory.
+ * @param   iSubDev     The sub-device number.
+ * @param   iRegion     The region.
+ * @param   iNewRegion  The new region index.
+ *
+ * @sa      @bugref{9359}
+ */
+VMMR3_INT_DECL(int) PGMR3PhysMMIOExChangeRegionNo(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion,
+                                                  uint32_t iNewRegion)
+{
+    /*
+     * Validate input.
+     */
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
+    AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
+    AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
+    AssertReturn(iNewRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
+
+    AssertReturn(pVM->enmVMState == VMSTATE_LOADING, VERR_INVALID_STATE);
+
+    PPGMREGMMIORANGE pFirstRegMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion);
+    AssertReturn(pFirstRegMmio, VERR_NOT_FOUND);
+    AssertReturn(pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iNewRegion) == NULL, VERR_RESOURCE_IN_USE);
+
+    /*
+     * Make the change.
+     */
+    pFirstRegMmio->iRegion = (uint8_t)iNewRegion;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Worker for PGMR3PhysRomRegister.
  *
  * This is here to simplify lock management, i.e. the caller does all the

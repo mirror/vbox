@@ -1889,7 +1889,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @}   */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 22, 1)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 22, 2)
 
 /**
  * PDM Device API.
@@ -3379,6 +3379,24 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(void, pfnPhysBulkReleasePageMappingLocks,(PPDMDEVINS pDevIns, uint32_t cPages, PPGMPAGEMAPLOCK paLocks));
 
+    /**
+     * Changes the number of an MMIO2 or pre-registered MMIO region.
+     *
+     * This should only be used to deal with saved state problems, so there is no
+     * convenience inline wrapper for this method.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pPciDev             The PCI device the region is associated with, or
+     *                              NULL if not associated with any.
+     * @param   iRegion             The region.
+     * @param   iNewRegion          The new region index.
+     *
+     * @sa      @bugref{9359}
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMMIOExChangeRegionNo,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                                       uint32_t iNewRegion));
+
     /** Space reserved for future members.
      * @{ */
     DECLR3CALLBACKMEMBER(void, pfnReserved1,(void));
@@ -3387,7 +3405,7 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(void, pfnReserved4,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved5,(void));
     DECLR3CALLBACKMEMBER(void, pfnReserved6,(void));
-    DECLR3CALLBACKMEMBER(void, pfnReserved7,(void));
+    /*DECLR3CALLBACKMEMBER(void, pfnReserved7,(void)); */
     /*DECLR3CALLBACKMEMBER(void, pfnReserved8,(void)); */
     /*DECLR3CALLBACKMEMBER(void, pfnReserved9,(void)); */
     /*DECLR3CALLBACKMEMBER(void, pfnReserved10,(void));*/
