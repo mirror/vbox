@@ -34,46 +34,12 @@
 
 #include "vfsmod.h"
 
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-
-static void *alloc_bounce_buffer(size_t * tmp_sizep, PRTCCPHYS physp, size_t
-				 xfer_size, const char *caller)
-{
-	size_t tmp_size;
-	void *tmp;
-
-	/* try for big first. */
-	tmp_size = RT_ALIGN_Z(xfer_size, PAGE_SIZE);
-	if (tmp_size > 16U * _1K)
-		tmp_size = 16U * _1K;
-	tmp = kmalloc(tmp_size, GFP_KERNEL);
-	if (!tmp) {
-		/* fall back on a page sized buffer. */
-		tmp = kmalloc(PAGE_SIZE, GFP_KERNEL);
-		if (!tmp) {
-			LogRel(("%s: could not allocate bounce buffer for xfer_size=%zu %s\n", caller, xfer_size));
-			return NULL;
-		}
-		tmp_size = PAGE_SIZE;
-	}
-
-	*tmp_sizep = tmp_size;
-	*physp = virt_to_phys(tmp);
-	return tmp;
-}
-
-static void free_bounce_buffer(void *tmp)
-{
-	kfree(tmp);
-}
-
-#else  /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 
 /*
  * inode compatibility glue.
  */
-# include <iprt/asm.h>
+#include <iprt/asm.h>
 
 DECLINLINE(loff_t) i_size_read(struct inode *inode)
 {
@@ -87,8 +53,7 @@ DECLINLINE(void) i_size_write(struct inode *inode, loff_t i_size)
 	ASMAtomicWriteU64((uint64_t volatile *)&inode->i_size, i_size);
 }
 
-# endif /* < 2.6.0 */
-#endif /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
+#endif /* < 2.6.0 */
 
 /* fops */
 static int sf_reg_read_aux(const char *caller, struct sf_glob_info *sf_g,
@@ -200,6 +165,7 @@ sf_splice_read(struct file *in, loff_t * poffset,
 	struct page *kpage = 0;
 	size_t nsent = 0;
 
+/** @todo rig up a FsPerf test for this code  */
 	TRACE();
 	if (!S_ISREG(inode->i_mode)) {
 		LogFunc(("read from non regular file %d\n", inode->i_mode));
@@ -328,7 +294,6 @@ DECLINLINE(int) sf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWrit
 }
 
 
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 /**
  * Fallback case of sf_reg_read() that locks the user buffers and let the host
  * write directly to them.
@@ -436,7 +401,6 @@ static ssize_t sf_reg_read_fallback(struct file *file, char /*__user*/ *buf, siz
 		VbglR0PhysHeapFree(pReq);
 	return cbRet;
 }
-#endif /* VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
 
 
 /**
@@ -451,15 +415,6 @@ static ssize_t sf_reg_read_fallback(struct file *file, char /*__user*/ *buf, siz
 static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 			   loff_t *off)
 {
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	int err;
-	void *tmp;
-	RTCCPHYS tmp_phys;
-	size_t tmp_size;
-	size_t left = size;
-	ssize_t total_bytes_read = 0;
-	loff_t pos = *off;
-#endif
 	struct inode *inode = GET_F_DENTRY(file)->d_inode;
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
 	struct sf_reg_info *sf_r = file->private_data;
@@ -475,46 +430,6 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 	if (!size)
 		return 0;
 
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	tmp = alloc_bounce_buffer(&tmp_size, &tmp_phys, size, __PRETTY_FUNCTION__);
-	if (!tmp)
-		return -ENOMEM;
-
-	while (left) {
-		uint32_t to_read, nread;
-
-		to_read = tmp_size;
-		if (to_read > left)
-			to_read = (uint32_t) left;
-
-		nread = to_read;
-
-		err = sf_reg_read_aux(__func__, sf_g, sf_r, tmp, &nread, pos);
-		if (err)
-			goto fail;
-
-		if (copy_to_user(buf, tmp, nread)) {
-			err = -EFAULT;
-			goto fail;
-		}
-
-		pos += nread;
-		left -= nread;
-		buf += nread;
-		total_bytes_read += nread;
-		if (nread != to_read)
-			break;
-	}
-
-	*off += total_bytes_read;
-	free_bounce_buffer(tmp);
-	return total_bytes_read;
-
- fail:
-	free_bounce_buffer(tmp);
-	return err;
-
-#else  /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
 	/*
 	 * For small requests, try use an embedded buffer provided we get a heap block
 	 * that does not cross page boundraries (see host code).
@@ -573,11 +488,9 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 # endif
 
 	return sf_reg_read_fallback(file, buf, size, off, sf_g, sf_r);
-#endif /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
 }
 
 
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 /**
  * Fallback case of sf_reg_write() that locks the user buffers and let the host
  * write directly to them.
@@ -688,7 +601,7 @@ static ssize_t sf_reg_write_fallback(struct file *file, const char /*__user*/ *b
 		VbglR0PhysHeapFree(pReq);
 	return cbRet;
 }
-#endif /* VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
+
 
 /**
  * Write to a regular file.
@@ -702,14 +615,6 @@ static ssize_t sf_reg_write_fallback(struct file *file, const char /*__user*/ *b
 static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 			    loff_t * off)
 {
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	int err;
-	void *tmp;
-	RTCCPHYS tmp_phys;
-	size_t tmp_size;
-	size_t left = size;
-	ssize_t total_bytes_written = 0;
-#endif
 	loff_t pos;
 	struct inode *inode = GET_F_DENTRY(file)->d_inode;
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
@@ -729,73 +634,16 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 	pos = *off;
 	/** @todo This should be handled by the host, it returning the new file
 	 *        offset when appending.  We may have an outdated i_size value here! */
-	if (file->f_flags & O_APPEND) {
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-		pos = inode->i_size;
-		*off = pos;
-#else
+	if (file->f_flags & O_APPEND)
 		pos = i_size_read(inode);
-#endif
-	}
 
 	/** @todo XXX Check write permission according to inode->i_mode! */
 
 	if (!size) {
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 		if (file->f_flags & O_APPEND)  /** @todo check if this is the consensus behavior... */
 			*off = pos;
-#endif
 		return 0;
 	}
-
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	tmp = alloc_bounce_buffer(&tmp_size, &tmp_phys, size,
-				  __PRETTY_FUNCTION__);
-	if (!tmp)
-		return -ENOMEM;
-
-	while (left) {
-		uint32_t to_write, nwritten;
-
-		to_write = tmp_size;
-		if (to_write > left)
-			to_write = (uint32_t) left;
-
-		nwritten = to_write;
-
-		if (copy_from_user(tmp, buf, to_write)) {
-			err = -EFAULT;
-			goto fail;
-		}
-
-		err =
-		    VbglR0SfWritePhysCont(&client_handle, &sf_g->map,
-					  sf_r->handle, pos, &nwritten,
-					  tmp_phys);
-		err = RT_FAILURE(err) ? -EPROTO : 0;
-		if (err)
-			goto fail;
-
-		pos += nwritten;
-		left -= nwritten;
-		buf += nwritten;
-		total_bytes_written += nwritten;
-		if (nwritten != to_write)
-			break;
-	}
-
-	*off += total_bytes_written;
-	if (*off > inode->i_size)
-		inode->i_size = *off;
-
-	sf_i->force_restat = 1;
-	free_bounce_buffer(tmp);
-	return total_bytes_written;
-
- fail:
-	free_bounce_buffer(tmp);
-	return err;
-#else  /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
 
 	/*
 	 * For small requests, try use an embedded buffer provided we get a heap block
@@ -866,8 +714,8 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 # endif
 
 	return sf_reg_write_fallback(file, buf, size, off, pos, inode, sf_i, sf_g, sf_r);
-#endif /* !VBOXSF_USE_DEPRECATED_VBGL_INTERFACE */
 }
+
 
 /**
  * Open a regular file.
@@ -882,11 +730,7 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
 	struct sf_reg_info *sf_r;
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	SHFLCREATEPARMS params;
-#else
 	VBOXSFCREATEREQ *pReq;
-#endif
 	SHFLCREATEPARMS *pCreateParms;  /* temp glue */
 
 	TRACE();
@@ -916,10 +760,6 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 		return 0;
 	}
 
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	RT_ZERO(params);
-	pCreateParms = &params;
-#else
 	pReq = (VBOXSFCREATEREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq) + sf_i->path->u16Size);
 	if (!pReq) {
 		kfree(sf_r);
@@ -929,7 +769,6 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 	memcpy(&pReq->StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
 	RT_ZERO(pReq->CreateParms);
 	pCreateParms = &pReq->CreateParms;
-#endif
 	pCreateParms->Handle = SHFL_HANDLE_NIL;
 
 	/* We check the value of pCreateParms->Handle afterwards to find out if
@@ -980,23 +819,12 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 	}
 
 	pCreateParms->Info.Attr.fMode = inode->i_mode;
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	LogFunc(("sf_reg_open: calling VbglR0SfCreate, file %s, flags=%#x, %#x\n", sf_i->path->String.utf8, file->f_flags, pCreateParms->CreateFlags));
-	rc = VbglR0SfCreate(&client_handle, &sf_g->map, sf_i->path, pCreateParms);
-#else
 	LogFunc(("sf_reg_open: calling VbglR0SfHostReqCreate, file %s, flags=%#x, %#x\n", sf_i->path->String.utf8, file->f_flags, pCreateParms->CreateFlags));
 	rc = VbglR0SfHostReqCreate(sf_g->map.root, pReq);
-#endif
 	if (RT_FAILURE(rc)) {
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-		LogFunc(("VbglR0SfCreate failed flags=%d,%#x rc=%Rrc\n", file->f_flags, pCreateParms->CreateFlags, rc));
-#else
 		LogFunc(("VbglR0SfHostReqCreate failed flags=%d,%#x rc=%Rrc\n", file->f_flags, pCreateParms->CreateFlags, rc));
-#endif
 		kfree(sf_r);
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 		VbglR0PhysHeapFree(pReq);
-#endif
 		return -RTErrConvertToErrno(rc);
 	}
 
@@ -1018,9 +846,7 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 	sf_r->handle = pCreateParms->Handle;
 	sf_i->file = file;
 	file->private_data = sf_r;
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	VbglR0PhysHeapFree(pReq);
-#endif
 	return rc_linux;
 }
 
@@ -1055,16 +881,10 @@ static int sf_reg_release(struct inode *inode, struct file *file)
 	    && filemap_fdatawrite(inode->i_mapping) != -EIO)
 		filemap_fdatawait(inode->i_mapping);
 #endif
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	rc = VbglR0SfClose(&client_handle, &sf_g->map, sf_r->handle);
-	if (RT_FAILURE(rc))
-		LogFunc(("VbglR0SfClose failed rc=%Rrc\n", rc));
-#else
 	rc = VbglR0SfHostReqCloseSimple(sf_g->map.root, sf_r->handle);
 	if (RT_FAILURE(rc))
 		LogFunc(("VbglR0SfHostReqCloseSimple failed rc=%Rrc\n", rc));
 	sf_r->handle = SHFL_HANDLE_NIL;
-#endif
 
 	kfree(sf_r);
 	sf_i->file = NULL;
@@ -1269,6 +1089,8 @@ static int sf_writepage(struct page *page, struct writeback_control *wbc)
 
 	TRACE();
 
+/** @todo rig up a FsPerf testcase for this code! */
+
 	if (page->index >= end_index)
 		nwritten = inode->i_size & (PAGE_SIZE - 1);
 
@@ -1318,6 +1140,8 @@ int sf_write_end(struct file *file, struct address_space *mapping, loff_t pos,
 	int err;
 
 	TRACE();
+
+/** @todo rig up a FsPerf testcase for this code! */
 
 	buf = kmap(page);
 	err = sf_reg_write_aux(__func__, sf_g, sf_r, buf + from, &nwritten, pos);

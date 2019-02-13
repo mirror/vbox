@@ -31,7 +31,9 @@
 #include "vfsmod.h"
 #include <iprt/err.h>
 
-/** Reads or re-reads a directory.
+
+/**
+ * Reads or re-reads a directory.
  *
  * @note As suggested a couple of other places, we should probably stop
  *       reading in the whole directory on open.
@@ -41,19 +43,13 @@ static int sf_dir_open_worker(struct sf_glob_info *sf_g, struct sf_dir_info *sf_
 {
     int rc;
     int err;
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-    SHFLCREATEPARMS CreateParms;
-    SHFLCREATEPARMS *pCreateParms = &CreateParms;
-#else
     union SfDirOpenCloseReq
     {
 	VBOXSFCREATEREQ Create;
 	VBOXSFCLOSEREQ  Close;
     } *pReq;
     SHFLCREATEPARMS *pCreateParms;
-#endif
 
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
     pReq = (union SfDirOpenCloseReq *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String)
 							  + sf_i->path->u16Size);
     if (pReq) {
@@ -65,7 +61,6 @@ static int sf_dir_open_worker(struct sf_glob_info *sf_g, struct sf_dir_info *sf_
 			       sf_i->path->String.ach, pszCaller));
 	    return -ENOMEM;
     }
-#endif
 
     RT_ZERO(*pCreateParms);
     pCreateParms->Handle = SHFL_HANDLE_NIL;
@@ -74,15 +69,9 @@ static int sf_dir_open_worker(struct sf_glob_info *sf_g, struct sf_dir_info *sf_
 			      | SHFL_CF_ACT_FAIL_IF_NEW
 			      | SHFL_CF_ACCESS_READ;
 
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-    LogFunc(("calling VbglR0SfCreate, folder %s, flags %#x [caller: %s]\n",
-	     sf_i->path->String.utf8, pCreateParms->CreateFlags, pszCaller));
-    rc = VbglR0SfCreate(&client_handle, &sf_g->map, sf_i->path, pCreateParms);
-#else
     LogFunc(("calling VbglR0SfHostReqCreate on folder %s, flags %#x [caller: %s]\n",
 	     sf_i->path->String.utf8, pCreateParms->CreateFlags, pszCaller));
     rc = VbglR0SfHostReqCreate(sf_g->map.root, &pReq->Create);
-#endif
     if (RT_SUCCESS(rc)) {
 	    if (pCreateParms->Result == SHFL_FILE_EXISTS) {
 
@@ -99,12 +88,6 @@ static int sf_dir_open_worker(struct sf_glob_info *sf_g, struct sf_dir_info *sf_
 	    } else
 		    err = -ENOENT;
 
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	    rc = VbglR0SfClose(&client_handle, &sf_g->map, pCreateParms->Handle);
-	    if (RT_FAILURE(rc))
-		    LogFunc(("VbglR0SfClose(%s) after err=%d failed rc=%Rrc caller=%s\n",
-			     sf_i->path->String.utf8, err, rc, pszCaller));
-#else
 	    AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
 	    if (pCreateParms->Handle != SHFL_HANDLE_NIL)
 	    {
@@ -113,14 +96,10 @@ static int sf_dir_open_worker(struct sf_glob_info *sf_g, struct sf_dir_info *sf_
 			LogFunc(("VbglR0SfHostReqCloseSimple(%s) after err=%d failed rc=%Rrc caller=%s\n",
 				 sf_i->path->String.utf8, err, rc, pszCaller));
 	    }
-#endif
     } else
 	    err = -EPERM;
 
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
     VbglR0PhysHeapFree(pReq);
-#endif
-
     return err;
 }
 
@@ -578,17 +557,12 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 	struct sf_inode_info *sf_i = GET_INODE_INFO(parent);
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(parent->i_sb);
 	SHFLSTRING *path;
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	SHFLCREATEPARMS CreateParms;
-	SHFLCREATEPARMS *pCreateParms = &CreateParms;
-#else
 	union CreateAuxReq
 	{
 	    VBOXSFCREATEREQ Create;
 	    VBOXSFCLOSEREQ  Close;
 	} *pReq;
 	SHFLCREATEPARMS *pCreateParms;
-#endif
 
 	TRACE();
 	BUG_ON(!sf_i);
@@ -598,7 +572,6 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 	if (err)
 		goto fail0;
 
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	/** @todo combine with sf_path_from_dentry? */
 	pReq = (union CreateAuxReq *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + path->u16Size);
 	if (pReq) {
@@ -608,7 +581,6 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 		err = -ENOMEM;
 		goto fail1;
 	}
-#endif
 
 	RT_ZERO(*pCreateParms);
 	pCreateParms->Handle = SHFL_HANDLE_NIL;
@@ -620,13 +592,8 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 	                              | (mode & S_IRWXUGO);
 	pCreateParms->Info.Attr.enmAdditional = RTFSOBJATTRADD_NOTHING;
 
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	LogFunc(("calling VbglR0SfCreate, folder %s, flags %#x\n", path->String.utf8, pCreateParms->CreateFlags));
-	rc = VbglR0SfCreate(&client_handle, &sf_g->map, path, pCreateParms);
-#else
 	LogFunc(("calling VbglR0SfHostReqCreate, folder %s, flags %#x\n", path->String.ach, pCreateParms->CreateFlags));
 	rc = VbglR0SfHostReqCreate(sf_g->map.root, &pReq->Create);
-#endif
 	if (RT_FAILURE(rc)) {
 		if (rc == VERR_WRITE_PROTECT) {
 			err = -EROFS;
@@ -659,40 +626,22 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 	 * the handle in between. Does not apply to directories. True?
 	 */
 	if (fDirectory) {
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-		rc = VbglR0SfClose(&client_handle, &sf_g->map, pCreateParms->Handle);
-		if (RT_FAILURE(rc))
-			LogFunc(("(%d): VbglR0SfClose failed rc=%Rrc\n",
-				 fDirectory, rc));
-#else
 		AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
 		rc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pCreateParms->Handle);
 		if (RT_FAILURE(rc))
 			LogFunc(("(%d): VbglR0SfHostReqClose failed rc=%Rrc\n", fDirectory, rc));
-#endif
 	}
 
 	sf_i->force_restat = 1;
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	VbglR0PhysHeapFree(pReq);
-#endif
 	return 0;
 
  fail3:
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	rc = VbglR0SfClose(&client_handle, &sf_g->map, pCreateParms->Handle);
-	if (RT_FAILURE(rc))
-		LogFunc(("(%d): VbglR0SfClose failed rc=%Rrc\n", fDirectory,
-			 rc));
-#else
 	rc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pCreateParms->Handle);
 	if (RT_FAILURE(rc))
 		LogFunc(("(%d): VbglR0SfHostReqCloseSimple failed rc=%Rrc\n", fDirectory, rc));
-#endif
  fail2:
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 	VbglR0PhysHeapFree(pReq);
-#endif
  fail1:
 	kfree(path);
 
@@ -765,21 +714,15 @@ static int sf_unlink_aux(struct inode *parent, struct dentry *dentry,
 
 	err = sf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
 	if (!err) {
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 		VBOXSFREMOVEREQ *pReq = (VBOXSFREMOVEREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String)
 									       + path->u16Size);
 		if (pReq) {
 			memcpy(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
-#endif
 			uint32_t fFlags = fDirectory ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE;
 			if (dentry->d_inode && ((dentry->d_inode->i_mode & S_IFLNK) == S_IFLNK))
 				fFlags |= SHFL_REMOVE_SYMLINK;
 
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-			rc = VbglR0SfRemove(&client_handle, &sf_g->map, path, fFlags);
-#else
 			rc = VbglR0SfHostReqRemove(sf_g->map.root, pReq, fFlags);
-#endif
 			if (RT_SUCCESS(rc)) {
 				/* directory access/change time changed */
 				sf_i->force_restat = 1;
@@ -792,11 +735,9 @@ static int sf_unlink_aux(struct inode *parent, struct dentry *dentry,
 					 fDirectory, path->String.utf8, rc));
 				err = -RTErrConvertToErrno(rc);
 			}
-#ifndef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
 			VbglR0PhysHeapFree(pReq);
 		} else
 			err = -ENOMEM;
-#endif
 		kfree(path);
 	}
 	return err;
@@ -880,14 +821,6 @@ static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
 		if (err)
 			LogFunc(("failed to create new path\n"));
 		else {
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-			int fDir =
-			    ((old_dentry->d_inode->i_mode & S_IFDIR) != 0);
-			rc = VbglR0SfRename(&client_handle, &sf_g->map,
-					    old_path, new_path,
-					    fDir ? 0 : SHFL_RENAME_FILE |
-					    SHFL_RENAME_REPLACE_IF_EXISTS);
-#else
 			VBOXSFRENAMEWITHSRCBUFREQ *pReq;
 			pReq = (VBOXSFRENAMEWITHSRCBUFREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ,
 											     StrDstPath.String)
@@ -901,7 +834,6 @@ static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
 				VbglR0PhysHeapFree(pReq);
 			} else
 				rc = VERR_NO_MEMORY;
-#endif
 			if (RT_SUCCESS(rc)) {
 				kfree(old_path);
 				sf_new_i->force_restat = 1;

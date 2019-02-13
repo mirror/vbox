@@ -189,12 +189,8 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info,
 #undef _IS_UTF8
 #undef _IS_EMPTY
 
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	rc = VbglR0SfMapFolder(&client_handle, str_name, &sf_g->map);
-#else
 	rc = VbglR0SfHostReqMapFolderWithContigSimple(str_name, virt_to_phys(str_name), RTPATH_DELIMITER,
 						      true /*fCaseSensitive*/, &sf_g->map.root);
-#endif
 	kfree(str_name);
 
 	if (RT_FAILURE(rc)) {
@@ -226,15 +222,9 @@ static void sf_glob_free(struct sf_glob_info *sf_g)
 	int rc;
 
 	TRACE();
-#ifdef VBOXSF_USE_DEPRECATED_VBGL_INTERFACE
-	rc = VbglR0SfUnmapFolder(&client_handle, &sf_g->map);
-	if (RT_FAILURE(rc))
-		LogFunc(("VbglR0SfUnmapFolder failed rc=%d\n", rc));
-#else
 	rc = VbglR0SfHostReqUnmapFolderSimple(sf_g->map.root);
 	if (RT_FAILURE(rc))
 		LogFunc(("VbglR0SfHostReqUnmapFolderSimple failed rc=%Rrc\n", rc));
-#endif
 
 	if (sf_g->nls)
 		unload_nls(sf_g->nls);
