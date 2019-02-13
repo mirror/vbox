@@ -241,6 +241,10 @@ QVariant UIInformationDataDisplay::data(const QModelIndex &index, int role) cons
             p_text << UITextTableLine(tr("2D Video Acceleration", "details report"), acc2dVideo);
 #endif
 
+            /* Graphics Controller: */
+            p_text << UITextTableLine(QApplication::translate("UIDetails", "Graphics Controller", "details (display)"),
+                                      gpConverter->toString(m_machine.GetGraphicsControllerType()));
+
             /* VRDP tab: */
             CVRDEServer srv = m_machine.GetVRDEServer();
             if (!srv.isNull())
