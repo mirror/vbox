@@ -4856,7 +4856,7 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
             SSMR3GetU32(pSSM, &pThis->u32DiagMemAddr);
             uint32_t cMemRegions = 0;
             rc = SSMR3GetU32(pSSM, &cMemRegions);
-            AssertLogRelReturn(rc, rc);
+            AssertLogRelRCReturn(rc, rc);
 
             while (cMemRegions)
             {
@@ -4864,7 +4864,7 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
                 SSMR3GetU32(pSSM, &u32AddrStart);
                 uint32_t u32AddrEnd = 0;
                 rc = SSMR3GetU32(pSSM, &u32AddrEnd);
-                AssertLogRelReturn(rc, rc);
+                AssertLogRelRCReturn(rc, rc);
 
                 uint32_t         cRegion = u32AddrEnd - u32AddrStart + 1;
                 PLSILOGICMEMREGN pRegion = (PLSILOGICMEMREGN)RTMemAllocZ(RT_UOFFSETOF_DYN(LSILOGICMEMREGN, au32Data[cRegion]));
