@@ -914,7 +914,7 @@ IEM_STATIC int iemVmxVmcsGetGuestSegReg(PCVMXVVMCS pVmcs, uint8_t iSegReg, PCPUM
  * @param   idxCr3Target    The index of the CR3-target value to retrieve.
  * @param   puValue         Where to store the CR3-target value.
  */
-DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr3Target)
+IEM_STATIC uint64_t iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr3Target)
 {
     Assert(idxCr3Target < VMX_V_CR3_TARGET_COUNT);
     uint8_t  const  uWidth         = VMX_VMCS_ENC_WIDTH_NATURAL;
@@ -926,7 +926,6 @@ DECLINLINE(uint64_t) iemVmxVmcsGetCr3TargetValue(PCVMXVVMCS pVmcs, uint8_t idxCr
     uint8_t  const *pbVmcs         = (uint8_t *)pVmcs;
     uint8_t  const *pbField        = pbVmcs + offField;
     uint64_t const uCr3TargetValue = *(uint64_t *)pbField;
-
     return uCr3TargetValue;
 }
 
@@ -2816,7 +2815,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
 
     /* Update the VM-exit reason, the other relevant data fields are expected to be updated by the caller already. */
     pVmcs->u32RoExitReason = uExitReason;
-    Log3(("vmexit: uExitReason=%#RX32 uExitQual=%#RX64\n", uExitReason, pVmcs->u64RoExitQual));
+    Log3(("vmexit: uExitReason=%#RX32 uExitQual=%#RX64 cs:rip=%04x:%#RX64\n", uExitReason, pVmcs->u64RoExitQual,
+          IEM_GET_CTX(pVCpu)->cs.Sel,  IEM_GET_CTX(pVCpu)->rip));
 
     /*
      * We need to clear the VM-entry interruption information field's valid bit on VM-exit.
@@ -3249,7 +3249,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrClts(PVMCPU pVCpu, uint8_t cbInstr)
             RT_ZERO(ExitInfo);
             ExitInfo.uReason = VMX_EXIT_MOV_CRX;
             ExitInfo.cbInstr = cbInstr;
-
             ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 0) /* CR0 */
                              | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_CLTS);
             return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
@@ -3285,6 +3284,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr0Cr4(PVMCPU pVCpu, uint8_t iCrRe
 {
     Assert(puNewCrX);
     Assert(iCrReg == 0 || iCrReg == 4);
+    Assert(iGReg < X86_GREG_COUNT);
 
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -3323,7 +3323,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr0Cr4(PVMCPU pVCpu, uint8_t iCrRe
         RT_ZERO(ExitInfo);
         ExitInfo.uReason = VMX_EXIT_MOV_CRX;
         ExitInfo.cbInstr = cbInstr;
-
         ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, iCrReg)
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_WRITE)
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
@@ -3354,6 +3353,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovFromCr3(PVMCPU pVCpu, uint8_t iGReg,
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
+    Assert(iGReg < X86_GREG_COUNT);
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
 
     /*
@@ -3368,7 +3368,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovFromCr3(PVMCPU pVCpu, uint8_t iGReg,
         RT_ZERO(ExitInfo);
         ExitInfo.uReason = VMX_EXIT_MOV_CRX;
         ExitInfo.cbInstr = cbInstr;
-
         ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 3) /* CR3 */
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_READ)
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
@@ -3393,6 +3392,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr3(PVMCPU pVCpu, uint64_t uNewCr3
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
+    Assert(iGReg < X86_GREG_COUNT);
 
     /*
      * If the CR3-load exiting control is set and the new CR3 value does not
@@ -3402,26 +3402,36 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr3(PVMCPU pVCpu, uint64_t uNewCr3
      */
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_CR3_LOAD_EXIT)
     {
-        uint32_t uCr3TargetCount = pVmcs->u32Cr3TargetCount;
+        uint32_t const uCr3TargetCount = pVmcs->u32Cr3TargetCount;
         Assert(uCr3TargetCount <= VMX_V_CR3_TARGET_COUNT);
 
-        for (uint32_t idxCr3Target = 0; idxCr3Target < uCr3TargetCount; idxCr3Target++)
+        /* If the CR3-target count is 0, we must always cause a VM-exit. */
+        bool fIntercept = RT_BOOL(uCr3TargetCount == 0);
+        if (!fIntercept)
         {
-            uint64_t const uCr3TargetValue = iemVmxVmcsGetCr3TargetValue(pVmcs, idxCr3Target);
-            if (uNewCr3 != uCr3TargetValue)
+            for (uint32_t idxCr3Target = 0; idxCr3Target < uCr3TargetCount; idxCr3Target++)
             {
-                Log2(("mov_Cr_Rd: (CR3) Guest intercept -> VM-exit\n"));
-
-                VMXVEXITINFO ExitInfo;
-                RT_ZERO(ExitInfo);
-                ExitInfo.uReason = VMX_EXIT_MOV_CRX;
-                ExitInfo.cbInstr = cbInstr;
-
-                ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 3) /* CR3 */
-                                 | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_WRITE)
-                                 | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
-                return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+                uint64_t const uCr3TargetValue = iemVmxVmcsGetCr3TargetValue(pVmcs, idxCr3Target);
+                if (uNewCr3 != uCr3TargetValue)
+                {
+                    fIntercept = true;
+                    break;
+                }
             }
+        }
+
+        if (fIntercept)
+        {
+            Log2(("mov_Cr_Rd: (CR3) Guest intercept -> VM-exit\n"));
+
+            VMXVEXITINFO ExitInfo;
+            RT_ZERO(ExitInfo);
+            ExitInfo.uReason = VMX_EXIT_MOV_CRX;
+            ExitInfo.cbInstr = cbInstr;
+            ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 3) /* CR3 */
+                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_WRITE)
+                             | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
+            return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
         }
     }
 
@@ -3441,6 +3451,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovFromCr8(PVMCPU pVCpu, uint8_t iGReg,
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
+    Assert(iGReg < X86_GREG_COUNT);
 
     /*
      * If the CR8-store exiting control is set, we must cause a VM-exit.
@@ -3454,7 +3465,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovFromCr8(PVMCPU pVCpu, uint8_t iGReg,
         RT_ZERO(ExitInfo);
         ExitInfo.uReason = VMX_EXIT_MOV_CRX;
         ExitInfo.cbInstr = cbInstr;
-
         ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 8) /* CR8 */
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_READ)
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
@@ -3478,6 +3488,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr8(PVMCPU pVCpu, uint8_t iGReg, u
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
+    Assert(iGReg < X86_GREG_COUNT);
 
     /*
      * If the CR8-load exiting control is set, we must cause a VM-exit.
@@ -3491,7 +3502,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr8(PVMCPU pVCpu, uint8_t iGReg, u
         RT_ZERO(ExitInfo);
         ExitInfo.uReason = VMX_EXIT_MOV_CRX;
         ExitInfo.cbInstr = cbInstr;
-
         ExitInfo.u64Qual = RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_REGISTER, 8) /* CR8 */
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_ACCESS,   VMX_EXIT_QUAL_CRX_ACCESS_WRITE)
                          | RT_BF_MAKE(VMX_BF_EXIT_QUAL_CRX_GENREG,   iGReg);
@@ -3520,6 +3530,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovDrX(PVMCPU pVCpu, VMXINSTRID uInstrI
 {
     Assert(iDrReg <= 7);
     Assert(uInstrId == VMXINSTRID_MOV_TO_DRX || uInstrId == VMXINSTRID_MOV_FROM_DRX);
+    Assert(iGReg < X86_GREG_COUNT);
 
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -6934,27 +6945,26 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPU pVCpu)
      * See Intel spec. 26.6 "Special Features of VM Entry"
      */
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    bool const fEntryVectoring = HMVmxIsVmentryVectoring(pVmcs->u32EntryIntInfo, NULL /* puEntryIntInfoType */);
-    if (!fEntryVectoring)
-    {
-        if (pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS))
-            EMSetInhibitInterruptsPC(pVCpu, pVCpu->cpum.GstCtx.rip);
-        else
-            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
 
-        /* SMI blocking is irrelevant. We don't support SMIs yet. */
-    }
-    else
-    {
-        /* When the VM-entry is not vectoring, there is no blocking by STI or Mov-SS. */
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-    }
+    /*
+     * If VM-entry is not vectoring, block-by-STI and block-by-MovSS state must be loaded.
+     * If VM-entry is vectoring, there is no block-by-STI or block-by-MovSS.
+     *
+     * See Intel spec. 26.6.1 "Interruptibility State".
+     */
+    bool const fEntryVectoring = HMVmxIsVmentryVectoring(pVmcs->u32EntryIntInfo, NULL /* puEntryIntInfoType */);
+    if (   !fEntryVectoring
+        && (pVmcs->u32GuestIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS)))
+        EMSetInhibitInterruptsPC(pVCpu, pVmcs->u64GuestRip.u);
+    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
     /* NMI blocking. */
     if (   (pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI)
         && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
         VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+
+    /* SMI blocking is irrelevant. We don't support SMIs yet. */
 
     /* Loading PDPTEs will be taken care when we switch modes. We don't support EPT yet. */
     Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));
@@ -7340,7 +7350,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
         return VINF_SUCCESS;
     }
 
-    /** @todo Distinguish block-by-MOV-SS from block-by-STI. Currently we
+    /** @todo Distinguish block-by-MovSS from block-by-STI. Currently we
      *        use block-by-STI here which is not quite correct. */
     if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
         && pVCpu->cpum.GstCtx.rip == EMGetInhibitInterruptsPC(pVCpu))
