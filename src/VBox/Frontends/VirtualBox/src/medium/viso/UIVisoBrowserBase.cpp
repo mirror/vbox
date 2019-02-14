@@ -61,9 +61,6 @@ private:
     QLineEdit   *m_pLineEdit;
     QGridLayout *m_pMainLayout;
     QIToolButton *m_pExpandButton;
-    bool          m_fExpanded;
-    QDialog           *m_pDialog;
-
 };
 
 /*********************************************************************************************************************************
@@ -75,8 +72,6 @@ UILocationSelector::UILocationSelector(QWidget *pParent /* = 0 */)
     , m_pLineEdit(0)
     , m_pMainLayout(0)
     , m_pExpandButton(0)
-    , m_fExpanded(false)
-    , m_pDialog(0)
 {
     prepareWidget();
 }
