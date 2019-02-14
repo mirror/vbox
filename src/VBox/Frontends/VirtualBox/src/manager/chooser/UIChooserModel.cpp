@@ -976,6 +976,9 @@ void UIChooserModel::sltUngroupSelectedGroup()
     /* Delete focus group: */
     delete focusItem();
 
+    /* Notify about selection invalidated: */
+    emit sigSelectionInvalidated();
+
     /* And update model: */
     updateNavigation();
     updateLayout();
@@ -1445,6 +1448,8 @@ void UIChooserModel::prepareConnections()
     /* Setup parent connections: */
     connect(this, SIGNAL(sigSelectionChanged()),
             parent(), SIGNAL(sigSelectionChanged()));
+    connect(this, SIGNAL(sigSelectionInvalidated()),
+            parent(), SIGNAL(sigSelectionInvalidated()));
     connect(this, SIGNAL(sigSlidingStarted()),
             parent(), SIGNAL(sigSlidingStarted()));
     connect(this, SIGNAL(sigToggleStarted()),

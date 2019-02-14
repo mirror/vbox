@@ -46,6 +46,8 @@ signals:
       * @{ */
         /** Notifies listeners about selection changed. */
         void sigSelectionChanged();
+        /** Notifies listeners about selection invalidated. */
+        void sigSelectionInvalidated();
 
         /** Notifies listeners about sliding started. */
         void sigSlidingStarted();

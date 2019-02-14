@@ -78,6 +78,8 @@ signals:
       * @{ */
         /** Notifies about selection changed. */
         void sigSelectionChanged();
+        /** Notifies about selection invalidated. */
+        void sigSelectionInvalidated();
 
         /** Notifies about root sliding started. */
         void sigSlidingStarted();

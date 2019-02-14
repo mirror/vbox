@@ -246,44 +246,7 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange()
 
     /* If that was machine or group item selected: */
     if (isMachineItemSelected() || isGroupItemSelected())
-    {
-        /* Get current item: */
-        UIVirtualMachineItem *pItem = currentItem();
-        const bool fCurrentItemIsOk = pItem && pItem->accessible();
-
-        /* Update machine tools availability: */
-        m_pPaneTools->setToolsEnabled(UIToolClass_Machine, fCurrentItemIsOk);
-
-        /* Propagate current item anyway: */
-        m_pPaneToolsMachine->setCurrentItem(pItem);
-
-        /* If current item is Ok: */
-        if (fCurrentItemIsOk)
-        {
-            /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
-            if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
-                sltHandleToolsPaneIndexChange();
-
-            /* Propagate current items to update the Details-pane: */
-            m_pPaneToolsMachine->setItems(currentItems());
-            /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane: */
-            m_pPaneToolsMachine->setMachine(pItem->machine());
-        }
-        else
-        {
-            /* Make sure Error pane raised: */
-            m_pPaneToolsMachine->openTool(UIToolType_Error);
-
-            /* Propagate last access error to update the Error-pane (if machine selected but inaccessible): */
-            if (pItem)
-                m_pPaneToolsMachine->setErrorDetails(UIErrorString::formatErrorInfo(pItem->accessError()));
-
-            /* Propagate current items to update the Details-pane (in any case): */
-            m_pPaneToolsMachine->setItems(currentItems());
-            /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane (in any case): */
-            m_pPaneToolsMachine->setMachine(CMachine());
-        }
-    }
+        recacheCurrentItemInformation();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirection enmDirection)
@@ -525,6 +488,8 @@ void UIVirtualBoxManagerWidget::prepareConnections()
     /* Chooser-pane connections: */
     connect(m_pPaneChooser, &UIChooser::sigSelectionChanged,
             this, &UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange);
+    connect(m_pPaneChooser, &UIChooser::sigSelectionInvalidated,
+            this, &UIVirtualBoxManagerWidget::sltHandleChooserPaneSelectionInvalidated);
     connect(m_pPaneChooser, &UIChooser::sigSlidingStarted,
             m_pPaneToolsMachine, &UIToolPaneMachine::sigSlidingStarted);
     connect(m_pPaneChooser, &UIChooser::sigToggleStarted,
@@ -729,4 +694,48 @@ void UIVirtualBoxManagerWidget::cleanup()
 {
     /* Save settings: */
     saveSettings();
+}
+
+void UIVirtualBoxManagerWidget::recacheCurrentItemInformation(bool fDontRaiseErrorPane /* = false */)
+{
+    /* Get current item: */
+    UIVirtualMachineItem *pItem = currentItem();
+    const bool fCurrentItemIsOk = pItem && pItem->accessible();
+
+    /* Update machine tools availability: */
+    m_pPaneTools->setToolsEnabled(UIToolClass_Machine, fCurrentItemIsOk);
+
+    /* Propagate current item anyway: */
+    m_pPaneToolsMachine->setCurrentItem(pItem);
+
+    /* If current item is Ok: */
+    if (fCurrentItemIsOk)
+    {
+        /* If Error-pane is chosen currently => open tool currently chosen in Tools-pane: */
+        if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
+            sltHandleToolsPaneIndexChange();
+
+        /* Propagate current items to update the Details-pane: */
+        m_pPaneToolsMachine->setItems(currentItems());
+        /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane: */
+        m_pPaneToolsMachine->setMachine(pItem->machine());
+    }
+    else
+    {
+        /* If we were not asked separately: */
+        if (!fDontRaiseErrorPane)
+        {
+            /* Make sure Error pane raised: */
+            m_pPaneToolsMachine->openTool(UIToolType_Error);
+
+            /* Propagate last access error to update the Error-pane (if machine selected but inaccessible): */
+            if (pItem)
+                m_pPaneToolsMachine->setErrorDetails(UIErrorString::formatErrorInfo(pItem->accessError()));
+        }
+
+        /* Propagate current items to update the Details-pane (in any case): */
+        m_pPaneToolsMachine->setItems(currentItems());
+        /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane (in any case): */
+        m_pPaneToolsMachine->setMachine(CMachine());
+    }
 }

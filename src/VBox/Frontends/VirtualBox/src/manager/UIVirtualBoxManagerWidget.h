@@ -147,6 +147,9 @@ private slots:
         /** Handles signal about Chooser-pane index change. */
         void sltHandleChooserPaneIndexChange();
 
+        /** Handles signal about Chooser-pane selection invalidated. */
+        void sltHandleChooserPaneSelectionInvalidated() { recacheCurrentItemInformation(true /* fDontRaiseErrorPane */); }
+
         /** Handles sliding animation complete signal.
           * @param  enmDirection  Brings which direction was animation finished for. */
         void sltHandleSlidingAnimationComplete(SlidingDirection enmDirection);
@@ -181,6 +184,13 @@ private:
         void saveSettings();
         /** Cleanups window. */
         void cleanup();
+    /** @} */
+
+    /** @name Common stuff.
+      * @{ */
+        /** Recaches current item information.
+          * @param  fDontRaiseErrorPane  Brings whether we should not raise error-pane. */
+        void recacheCurrentItemInformation(bool fDontRaiseErrorPane = false);
     /** @} */
 
     /** Holds the action-pool instance. */
