@@ -75,8 +75,12 @@ typedef struct RTSERIALPORTINTERNAL
     HANDLE              hEvtIntr;
     /** Events currently waited for. */
     uint32_t            fEvtMask;
+    /** Event mask as received by WaitCommEvent(). */
+    DWORD               dwEventMask;
     /** Flag whether a write is currently pending. */
     bool                fWritePending;
+    /** Event query pending. */
+    bool                fEvtQueryPending;
     /** Bounce buffer for writes. */
     uint8_t            *pbBounceBuf;
     /** Amount of used buffer space. */
@@ -246,6 +250,73 @@ static int rtSerialPortWriteCheckCompletion(PRTSERIALPORTINTERNAL pThis)
 }
 
 
+/**
+ * Processes the received Windows comm events and converts them to our format.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The pipe instance handle.
+ * @param   dwEventMask         Event mask received.
+ * @param   pfEvtsRecv          Where to store the converted events.
+ */
+static int rtSerialPortEvtFlagsProcess(PRTSERIALPORTINTERNAL pThis, DWORD dwEventMask, uint32_t *pfEvtsRecv)
+{
+    int rc = VINF_SUCCESS;
+
+    if (dwEventMask & EV_RXCHAR)
+        *pfEvtsRecv |= RTSERIALPORT_EVT_F_DATA_RX;
+    if (dwEventMask & EV_TXEMPTY)
+    {
+        if (pThis->fWritePending)
+        {
+            rc = rtSerialPortWriteCheckCompletion(pThis);
+            if (rc == VINF_SUCCESS)
+                *pfEvtsRecv |= RTSERIALPORT_EVT_F_DATA_TX;
+            else
+                rc = VINF_SUCCESS;
+        }
+        else
+            *pfEvtsRecv |= RTSERIALPORT_EVT_F_DATA_TX;
+    }
+    if (dwEventMask & EV_BREAK)
+        *pfEvtsRecv |= RTSERIALPORT_EVT_F_BREAK_DETECTED;
+    if (dwEventMask & (EV_CTS | EV_DSR | EV_RING | EV_RLSD))
+        *pfEvtsRecv |= RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED;
+
+    return rc;
+}
+
+
+/**
+ * The internal comm event wait worker.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The pipe instance handle.
+ * @param   msTimeout           The timeout to wait for.
+ */
+static int rtSerialPortEvtWaitWorker(PRTSERIALPORTINTERNAL pThis, RTMSINTERVAL msTimeout)
+{
+    int rc = VINF_SUCCESS;
+    HANDLE ahWait[2];
+    ahWait[0] = pThis->hEvtDev;
+    ahWait[1] = pThis->hEvtIntr;
+
+    DWORD dwRet = WaitForMultipleObjects(2, ahWait, FALSE, msTimeout == RT_INDEFINITE_WAIT ? INFINITE : msTimeout);
+    if (dwRet == WAIT_TIMEOUT)
+        rc = VERR_TIMEOUT;
+    else if (dwRet == WAIT_FAILED)
+        rc = RTErrConvertFromWin32(GetLastError());
+    else if (dwRet == WAIT_OBJECT_0)
+        rc = VINF_SUCCESS;
+    else
+    {
+        Assert(dwRet == WAIT_OBJECT_0 + 1);
+        rc = VERR_INTERRUPTED;
+    }
+
+    return rc;
+}
+
+
 RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAddress, uint32_t fFlags)
 {
     AssertPtrReturn(phSerialPort, VERR_INVALID_POINTER);
@@ -262,6 +333,7 @@ RTDECL(int)  RTSerialPortOpen(PRTSERIALPORT phSerialPort, const char *pszPortAdd
         pThis->fOpenFlags       = fFlags;
         pThis->fEvtMask         = 0;
         pThis->fWritePending    = false;
+        pThis->fEvtQueryPending = false;
         pThis->pbBounceBuf      = NULL;
         pThis->cbBounceBufUsed  = 0;
         pThis->cbBounceBufAlloc = 0;
@@ -785,7 +857,25 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uin
 
     int rc = VINF_SUCCESS;
     if (fEvtMask != pThis->fEvtMask)
+    {
         rc = rtSerialPortWinUpdateEvtMask(pThis, fEvtMask);
+        if (   RT_SUCCESS(rc)
+            && pThis->fEvtQueryPending)
+        {
+            /*
+             * Setting a new event mask lets the WaitCommEvent() call finish immediately,
+             * so clean up and process any events here.
+             */
+            rc = rtSerialPortEvtWaitWorker(pThis, 1);
+            AssertRC(rc);
+
+            if (pThis->dwEventMask != 0)
+            {
+                pThis->fEvtQueryPending = false;
+                return rtSerialPortEvtFlagsProcess(pThis, pThis->dwEventMask, pfEvtsRecv);
+            }
+        }
+    }
 
     /*
      * EV_RXCHAR is triggered only if a byte is received after the event mask is set,
@@ -816,53 +906,36 @@ RTDECL(int) RTSerialPortEvtPoll(RTSERIALPORT hSerialPort, uint32_t fEvtMask, uin
 
     if (RT_SUCCESS(rc))
     {
-        DWORD dwEventMask = 0;
-        HANDLE ahWait[2];
-        ahWait[0] = pThis->hEvtDev;
-        ahWait[1] = pThis->hEvtIntr;
-
-        RT_ZERO(pThis->OverlappedEvt);
-        pThis->OverlappedEvt.hEvent = pThis->hEvtDev;
-
-        if (!WaitCommEvent(pThis->hDev, &dwEventMask, &pThis->OverlappedEvt))
+        /* Set up a new event wait if there is none pending. */
+        if (!pThis->fEvtQueryPending)
         {
-            DWORD dwRet = GetLastError();
-            if (dwRet == ERROR_IO_PENDING)
+            RT_ZERO(pThis->OverlappedEvt);
+            pThis->OverlappedEvt.hEvent = pThis->hEvtDev;
+
+            pThis->dwEventMask = 0;
+            pThis->fEvtQueryPending = true;
+            if (!WaitCommEvent(pThis->hDev, &pThis->dwEventMask, &pThis->OverlappedEvt))
             {
-                dwRet = WaitForMultipleObjects(2, ahWait, FALSE, msTimeout == RT_INDEFINITE_WAIT ? INFINITE : msTimeout);
-                if (dwRet == WAIT_TIMEOUT)
-                    rc = VERR_TIMEOUT;
-                else if (dwRet == WAIT_FAILED)
+                DWORD dwRet = GetLastError();
+                if (dwRet == ERROR_IO_PENDING)
+                    rc = VINF_SUCCESS;
+                else
                     rc = RTErrConvertFromWin32(GetLastError());
-                else if (dwRet != WAIT_OBJECT_0)
-                    rc = VERR_INTERRUPTED;
             }
             else
-                rc = RTErrConvertFromWin32(dwRet);
+                pThis->fEvtQueryPending = false;
         }
+
+        Assert(RT_FAILURE(rc) || pThis->fEvtQueryPending);
+
+        if (   RT_SUCCESS(rc)
+            || pThis->fEvtQueryPending)
+            rc = rtSerialPortEvtWaitWorker(pThis, msTimeout);
 
         if (RT_SUCCESS(rc))
         {
-            /* Check the event */
-            if (dwEventMask & EV_RXCHAR)
-                *pfEvtsRecv |= RTSERIALPORT_EVT_F_DATA_RX;
-            if (dwEventMask & EV_TXEMPTY)
-            {
-                if (pThis->fWritePending)
-                {
-                    rc = rtSerialPortWriteCheckCompletion(pThis);
-                    if (rc == VINF_SUCCESS)
-                        *pfEvtsRecv |= RTSERIALPORT_EVT_F_DATA_TX;
-                    else
-                        rc = VINF_SUCCESS;
-                }
-                else
-                    *pfEvtsRecv |= RTSERIALPORT_EVT_F_DATA_TX;
-            }
-            if (dwEventMask & EV_BREAK)
-                *pfEvtsRecv |= RTSERIALPORT_EVT_F_BREAK_DETECTED;
-            if (dwEventMask & (EV_CTS | EV_DSR | EV_RING | EV_RLSD))
-                *pfEvtsRecv |= RTSERIALPORT_EVT_F_STATUS_LINE_CHANGED;
+            pThis->fEvtQueryPending = false;
+            rc = rtSerialPortEvtFlagsProcess(pThis, pThis->dwEventMask, pfEvtsRecv);
         }
     }
 
