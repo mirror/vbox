@@ -3094,7 +3094,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitMtf(PVMCPU pVCpu)
      */
 
     /* Clear the force-flag indicating that monitor-trap flag is no longer active. */
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER);
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_MTF);
 
     /* Cause the MTF VM-exit. The VM-exit qualification MBZ. */
     return iemVmxVmexit(pVCpu, VMX_EXIT_MTF);
