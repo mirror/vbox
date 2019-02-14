@@ -445,5 +445,5 @@ $(PATH_STAGE_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(CP) -f $(file) $(VBOX_LNX_ADD_INST_STAGE_DIR)$(subst -r$(VBOX_SVN_REV),,$(notdir $(file)))$(NLTAB) )
 	$(QUIET)$(VBOX_MAKESELF) --nocomp $(VBOX_LNX_ADD_INST_STAGE_DIR) $@ \
 		"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux" \
-		/bin/sh ./install.sh "\$$0 1> /dev/null"
+		/bin/sh ./install.sh "\$$0"
 

@@ -362,7 +362,7 @@ test "$uninstalled" = 0 && def_uninstall "$FORCE_UPGRADE" && uninstalled=1
 test "$uninstalled" = 0 && exit 1
 rm -f "$CONFIG_DIR/$CONFIG"
 rm -f "$CONFIG_DIR/$CONFIG_FILES"
-rmdir "$CONFIG_DIR" 2>/dev/null
+rmdir "$CONFIG_DIR" 2>/dev/null || true
 test "$ACTION" = "install" || exit 0
 
 # Now check whether the kernel modules were stopped.
@@ -466,7 +466,7 @@ if [ -n "${INSTALLATION_MODULES_LIST}" ]; then
   done
 fi
 
-"$INSTALLATION_DIR/init/vboxadd" setup 1>&2 2>> "${LOGFILE}"
+"$INSTALLATION_DIR"/init/vboxadd setup 2>&1 | tee -a "$LOGFILE"
 
 # Install, set up and start init scripts
 install_init_script "$INSTALLATION_DIR"/init/vboxadd vboxadd 2>> "$LOGFILE"

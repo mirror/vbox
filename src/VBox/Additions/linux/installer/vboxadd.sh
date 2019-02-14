@@ -56,12 +56,13 @@ PACKAGE=VBoxGuestAdditions
 MODPROBE=/sbin/modprobe
 OLDMODULES="vboxguest vboxadd vboxsf vboxvfs vboxvideo"
 SERVICE="VirtualBox Guest Additions"
-QUICKSETUP=
 ## systemd logs information about service status, otherwise do that ourselves.
 QUIET=
 test -z "${TARGET_VER}" && TARGET_VER=`uname -r`
 # Marker to ignore a particular kernel version which was already installed.
 SKIPFILE_BASE=/var/lib/VBoxGuestAdditions/skip
+export BUILD_TYPE
+export USERNAME
 
 setup_log()
 {
@@ -77,27 +78,6 @@ setup_log()
 if $MODPROBE -c 2>/dev/null | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
 fi
-
-# Check architecture
-cpu=`uname -m`;
-case "$cpu" in
-  i[3456789]86|x86)
-    cpu="x86"
-    ldconfig_arch="(libc6)"
-    lib_candidates="/usr/lib/i386-linux-gnu /usr/lib /lib"
-    ;;
-  x86_64|amd64)
-    cpu="amd64"
-    ldconfig_arch="(libc6,x86-64)"
-    lib_candidates="/usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib64 /lib"
-    ;;
-esac
-for i in $lib_candidates; do
-  if test -d "$i/VBoxGuestAdditions"; then
-    lib_path=$i
-    break
-  fi
-done
 
 # Preamble for Gentoo
 if [ "`which $0`" = "/sbin/rc" ]; then
@@ -152,6 +132,8 @@ else
 fi
 test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
   fail "Configuration file $config not complete"
+MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
+BUILDINTMP="$MODULE_SRC/build_in_tmp"
 
 running_vboxguest()
 {
@@ -219,66 +201,6 @@ do_vboxguest_non_udev()
             }
         fi
     fi
-}
-
-start()
-{
-    begin "Starting."
-    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
-        setup --quick
-        test -d /sys &&
-            ps -A -o comm | grep -q '/*udevd$' 2>/dev/null ||
-            no_udev=1
-        running_vboxguest || {
-            rm -f $dev || {
-                fail "Cannot remove $dev"
-            }
-            rm -f $userdev || {
-                fail "Cannot remove $userdev"
-            }
-            $MODPROBE vboxguest >/dev/null 2>&1 ||
-                fail "modprobe vboxguest failed"
-            case "$no_udev" in 1)
-                sleep .5;;
-            esac
-        }
-        case "$no_udev" in 1)
-            do_vboxguest_non_udev;;
-        esac
-
-        running_vboxsf || {
-            $MODPROBE vboxsf > /dev/null 2>&1 ||
-                info "modprobe vboxsf failed"
-        }
-    fi  # INSTALL_NO_MODULE_BUILDS
-
-    # Put the X.Org driver in place.  This is harmless if it is not needed.
-    # Also set up the OpenGL library.
-    myerr=`"${INSTALL_DIR}/init/vboxadd-x11" setup 2>&1`
-    test -z "${myerr}" || log "${myerr}"
-
-    # Mount all shared folders from /etc/fstab. Normally this is done by some
-    # other startup script but this requires the vboxdrv kernel module loaded.
-    # This isn't necessary anymore as the vboxsf module is autoloaded.
-    # mount -a -t vboxsf
-
-    return 0
-}
-
-stop()
-{
-    begin "Stopping."
-    test -n "${INSTALL_NO_MODULE_BUILDS}" || setup --quick
-    if test -r /etc/ld.so.conf.d/00vboxvideo.conf; then
-        rm /etc/ld.so.conf.d/00vboxvideo.conf
-        ldconfig
-    fi
-    if ! umount -a -t vboxsf 2>/dev/null; then
-        fail "Cannot unmount vboxsf folders"
-    fi
-    test -n "${INSTALL_NO_MODULE_BUILDS}" ||
-        info "You may need to restart your guest system to finish removing the guest drivers."
-    return 0
 }
 
 restart()
@@ -357,7 +279,6 @@ setup_modules()
     test ! -f /lib/modules/"$KERN_VER"/misc/vboxguest.ko || return 0
     test ! -f /lib/modules/"$KERN_VER"/misc/vboxguest.o || return 0
     test -d /lib/modules/"$KERN_VER"/build || return 0
-    test ! -f "$SKIPFILE_BASE"-"$KERN_VER" || return 0
     export KERN_VER
     info "Building the modules for kernel $KERN_VER."
 
@@ -450,7 +371,7 @@ EOF
     cat << EOF > /etc/kernel/prerm.d/vboxadd
 #!/bin/sh
 for i in ${OLDMODULES}; do rm -f /lib/modules/"\${1}"/misc/"\${i}".ko; done
-rmdir -p /lib/modules/"\$1"/misc 2>/dev/null
+rmdir -p /lib/modules/"\$1"/misc 2>/dev/null || true
 exit 0
 EOF
     chmod 0755 /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
@@ -481,48 +402,38 @@ shared_folder_setup()
 # setup_script
 setup()
 {
-    export BUILD_TYPE
-    export USERNAME
-
-    test x"$1" != x--quick || QUICKSETUP=true
-    test -n "$QUICKSETUP" || cleanup
-    MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
-    BUILDINTMP="$MODULE_SRC/build_in_tmp"
     # chcon is needed on old Fedora/Redhat systems.  No one remembers which.
     test ! -e /etc/selinux/config ||
         chcon -t bin_t "$BUILDINTMP" 2>/dev/null
 
     if test -z "$INSTALL_NO_MODULE_BUILDS"; then
-        if test -z "$QUICKSETUP"; then
-            info "Building the VirtualBox Guest Additions kernel modules.  This may take a while."
-            info "To build modules for other installed kernels, run"
-            info "  /sbin/rcvboxadd quicksetup <version>"
-            for setupi in /lib/modules/*; do
-                KERN_VER="${setupi##*/}"
-                # For a full setup, mark kernels we do not want to build.
-                touch "$SKIPFILE_BASE"-"$KERN_VER"
-            done
-        fi
-        # That is, we mark all but the requested kernel.
-        rm -f "$SKIPFILE_BASE"-"$TARGET_VER"
-        test -d /lib/modules/"$TARGET_VER"/build || test -n "$QUICKSETUP" ||
+        info "Building the VirtualBox Guest Additions kernel modules.  This may take a while."
+        info "To build modules for other installed kernels, run"
+        info "  /sbin/rcvboxadd quicksetup <version>"
+        info "or"
+        info "  /sbin/rcvboxadd quicksetup all"
+        if test -d /lib/modules/"$TARGET_VER"/build; then
+            setup_modules "$TARGET_VER"
+            depmod
+        else
             info "Kernel headers not found for target kernel $TARGET_VER. \
 Please install them and execute
   /sbin/rcvboxadd setup"
-        for setupi in /lib/modules/*; do
-            KERN_VER="${setupi##*/}"
-            setup_modules "$KERN_VER"
-        done
-        depmod
+        fi
     fi
     create_vbox_user
     create_udev_rule
     test -n "${INSTALL_NO_MODULE_BUILDS}" || create_module_rebuild_script
-    test -z "$QUICKSETUP" || return 0
     shared_folder_setup
     if  running_vboxguest || running_vboxadd; then
         info "Running kernel modules will not be replaced until the system is restarted"
     fi
+
+    # Put the X.Org driver in place.  This is harmless if it is not needed.
+    # Also set up the OpenGL library.
+    myerr=`"${INSTALL_DIR}/init/vboxadd-x11" setup 2>&1`
+    test -z "${myerr}" || log "${myerr}"
+
     return 0
 }
 
@@ -546,10 +457,75 @@ cleanup()
     # Remove other files
     if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
         rm -f /etc/kernel/postinst.d/vboxadd /etc/kernel/prerm.d/vboxadd
-        rmdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d 2>/dev/null
+        rmdir -p /etc/kernel/postinst.d /etc/kernel/prerm.d 2>/dev/null || true
     fi
-    rm /sbin/mount.vboxsf 2>/dev/null
-    rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
+    rm -f /sbin/mount.vboxsf 2>/dev/null
+    rm -f /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
+}
+
+start()
+{
+    begin "Starting."
+    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
+        # We want to build modules for newly installed kernels on shutdown, so
+        # mark the ones already present.  These will be ignored on shutdown.
+        rm -f "$SKIPFILE_BASE"-*
+        for setupi in /lib/modules/*; do
+            KERN_VER="${setupi##*/}"
+            # For a full setup, mark kernels we do not want to build.
+            touch "$SKIPFILE_BASE"-"$KERN_VER"
+        done
+    fi
+    setup
+    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
+        test -d /sys &&
+            ps -A -o comm | grep -q '/*udevd$' 2>/dev/null ||
+            no_udev=1
+        running_vboxguest || {
+            rm -f $dev || {
+                fail "Cannot remove $dev"
+            }
+            rm -f $userdev || {
+                fail "Cannot remove $userdev"
+            }
+            $MODPROBE vboxguest >/dev/null 2>&1 ||
+                fail "modprobe vboxguest failed"
+            case "$no_udev" in 1)
+                sleep .5;;
+            esac
+            $MODPROBE vboxsf > /dev/null 2>&1 ||
+                info "modprobe vboxsf failed"
+        }
+        case "$no_udev" in 1)
+            do_vboxguest_non_udev;;
+        esac
+    fi  # INSTALL_NO_MODULE_BUILDS
+
+    return 0
+}
+
+stop()
+{
+    begin "Stopping."
+    if test -z "${INSTALL_NO_MODULE_BUILDS}"; then
+        # We want to build modules for newly installed kernels on shutdown, so
+        # check which we marked at start-up.
+        for setupi in /lib/modules/*; do
+            KERN_VER="${setupi##*/}"
+            # For a full setup, mark kernels we do not want to build.
+            test -f "$SKIPFILE_BASE"-"$KERN_VER" || setup_modules "$KERN_VER"
+        done
+    fi
+    if test -r /etc/ld.so.conf.d/00vboxvideo.conf; then
+        rm /etc/ld.so.conf.d/00vboxvideo.conf
+        ldconfig
+    fi
+    if ! umount -a -t vboxsf 2>/dev/null; then
+        fail "Cannot unmount vboxsf folders"
+    fi
+    test -n "${INSTALL_NO_MODULE_BUILDS}" ||
+        info "You may need to restart your guest system to finish removing guest drivers."
+    return 0
 }
 
 dmnstatus()
@@ -561,27 +537,46 @@ dmnstatus()
     fi
 }
 
-case "$2" in quiet)
-    QUIET=yes;;
-esac
+for i; do
+    case "$i" in quiet) QUIET=yes;; esac
+done
 case "$1" in
+# Does setup without clean-up first and marks all kernels currently found on the
+# system so that we can see later if any were added.
 start)
     start
     ;;
+# Tries to build kernel modules for kernels added since start.  Tries to unmount
+# shared folders.  Uninstalls our Chromium 3D libraries since we can't always do
+# this fast enough at start time if we discover we do not want to use them.
 stop)
     stop
     ;;
 restart)
     restart
     ;;
+# Setup does a clean-up (see below) and re-does all Additions-specific
+# configuration of the guest system, including building kernel modules for the
+# current kernel.
 setup)
-    setup
-    start
+    cleanup && start
     ;;
+# Builds kernel modules for the specified kernels if they are not already built.
 quicksetup)
-    test -z "$2" || test ! -d /lib/modules/"$2"/build || TARGET_VER="$2"
-    setup --quick
+    if test x"$2" = xall; then
+       for i in /lib/modules/*; do 
+           KERN_VER="${i%/misc}"
+           KERN_VER="${KERN_VER#/lib/modules/}"
+           setup_modules "$KERN_VER"
+        done
+    elif test -n "$2"; then
+        setup_modules "$2"
+    else
+        setup_modules "$TARGET_VER"
+    fi
     ;;
+# Clean-up removes all Additions-specific configuration of the guest system,
+# including all kernel modules.
 cleanup)
     cleanup
     ;;
