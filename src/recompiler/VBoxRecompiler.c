@@ -1511,6 +1511,7 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
         pCtx->ss.Attr.u      = (env->segs[R_SS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
         pCtx->msrEFER        = env->efer;
+        pCtx->hwvirt.enmHwvirt = CPUMHWVIRT_NONE;
 
         /*
          * Hardware accelerated mode:
