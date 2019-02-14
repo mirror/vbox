@@ -564,8 +564,8 @@ setup)
 # Builds kernel modules for the specified kernels if they are not already built.
 quicksetup)
     if test x"$2" = xall; then
-       for i in /lib/modules/*; do 
-           KERN_VER="${i%/misc}"
+       for topi in /lib/modules/*; do
+           KERN_VER="${topi%/misc}"
            KERN_VER="${KERN_VER#/lib/modules/}"
            setup_modules "$KERN_VER"
         done
