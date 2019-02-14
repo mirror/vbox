@@ -3267,17 +3267,16 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                                                  "gctrlDirCopyTo");
                         try:
                             oProgress.wait();
-                            if not oProgress.isSuccess():
+                            if oProgress.isSuccess():
+                                fRc2 = True;
+                            else:
                                 oProgress.logResult(fIgnoreErrors = True);
-                                fRc = False;
                         except:
                             reporter.logXcpt('Waiting exception for sSrc="%s", sDst="%s":' % (curTest.sSrc, curTest.sDst));
-                            fRc2 = False;
                     else:
                         reporter.error('No progress object returned');
-                        fRc2 = False;
                 except:
-                    fRc2 = False;
+                    reporter.logXcpt('directoryCopyToGuest exception for sSrc="%s", sDst="%s":' % (curTest.sSrc, curTest.sDst));
             else:
                 fRc2 = self.gctrlCopyFileTo(curGuestSession, curTest.sSrc, curTest.sDst, curTest.aFlags);
 
