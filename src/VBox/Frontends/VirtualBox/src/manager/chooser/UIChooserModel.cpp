@@ -952,6 +952,7 @@ void UIChooserModel::sltUngroupSelectedGroup()
     }
 
     /* Copy all the children into our parent: */
+    QList<UIChooserItem*> copiedItems;
     foreach (UIChooserItem *pItem, pFocusItem->items())
     {
         if (toBeRemoved.contains(pItem))
@@ -963,11 +964,13 @@ void UIChooserModel::sltUngroupSelectedGroup()
                 UIChooserItemGroup *pGroupItem = new UIChooserItemGroup(pParentItem, pItem->toGroupItem());
                 if (toBeRenamed.contains(pItem))
                     pGroupItem->setName(uniqueGroupName(pParentItem));
+                copiedItems << pGroupItem;
                 break;
             }
             case UIChooserItemType_Machine:
             {
-                new UIChooserItemMachine(pParentItem, pItem->toMachineItem());
+                UIChooserItemMachine *pMachineItem = new UIChooserItemMachine(pParentItem, pItem->toMachineItem());
+                copiedItems << pMachineItem;
                 break;
             }
         }
@@ -982,7 +985,13 @@ void UIChooserModel::sltUngroupSelectedGroup()
     /* And update model: */
     updateNavigation();
     updateLayout();
-    setCurrentItem(navigationList().first());
+    if (!copiedItems.isEmpty())
+    {
+        setCurrentItems(copiedItems);
+        setFocusItem(currentItem());
+    }
+    else
+        setCurrentItem(navigationList().first());
     saveGroupSettings();
 }
 
