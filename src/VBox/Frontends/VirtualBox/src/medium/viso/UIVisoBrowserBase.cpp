@@ -101,13 +101,19 @@ void UILocationSelector::retranslateUi()
 
 bool UILocationSelector::eventFilter(QObject *pObj, QEvent *pEvent)
 {
-    if (pObj == m_pLineEdit && pEvent->type() == QEvent::MouseButtonPress)
+    if (pObj == m_pLineEdit)
     {
-        emit sigExpandCollapseTreeView();
+        if(pEvent->type() == QEvent::MouseButtonPress)
+        {
+            QMouseEvent *pMouseEvent = dynamic_cast<QMouseEvent*>(pEvent);
+            if (pMouseEvent && pMouseEvent->button() == Qt::LeftButton)
+                emit sigExpandCollapseTreeView();
+        }
     }
     /* Pass the events to event system for further processing: */
     return false;
 }
+
 void UILocationSelector::prepareWidget()
 {
     m_pMainLayout = new QGridLayout;
@@ -154,6 +160,19 @@ UIVisoBrowserBase::~UIVisoBrowserBase()
 {
 }
 
+bool UIVisoBrowserBase::isTreeViewVisible() const
+{
+    if (!m_pTreeView)
+        return false;
+    return m_pTreeView->isVisible();
+}
+
+void UIVisoBrowserBase::hideTreeView()
+{
+    if (isTreeViewVisible())
+        sltExpandCollapseTreeView();
+}
+
 void UIVisoBrowserBase::prepareObjects()
 {
     m_pMainLayout = new QGridLayout;
@@ -178,6 +197,7 @@ void UIVisoBrowserBase::prepareObjects()
         m_pTreeView->header()->hide();
         m_pTreeView->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
         m_pTreeView->setFrameStyle(QFrame::Panel | QFrame::Plain);
+        m_pTreeView->installEventFilter(this);
     }
 
     m_pVerticalToolBar = new UIToolBar;
@@ -216,6 +236,41 @@ void UIVisoBrowserBase::resizeEvent(QResizeEvent *pEvent)
         updateTreeViewGeometry(m_pTreeView->isVisible());
 }
 
+/* Close the tree view when it recieves focus-out and enter key press event: */
+bool UIVisoBrowserBase::eventFilter(QObject *pObj, QEvent *pEvent)
+{
+    if (pObj == m_pTreeView)
+    {
+        if(pEvent->type() == QEvent::KeyPress)
+        {
+            QKeyEvent *pKeyEvent = dynamic_cast<QKeyEvent*>(pEvent);
+            if (pKeyEvent &&
+                (pKeyEvent->key() == Qt::Key_Return ||
+                 pKeyEvent->key() == Qt::Key_Enter))
+            {
+                sltExpandCollapseTreeView();
+            }
+        }
+        else if (pEvent->type() == QEvent::FocusOut)
+        {
+                sltExpandCollapseTreeView();
+        }
+    }
+    return false;
+}
+
+void UIVisoBrowserBase::keyPressEvent(QKeyEvent *pEvent)
+{
+    if (pEvent->key() == Qt::Key_Escape)
+    {
+        if (m_pTreeView->isVisible())
+            updateTreeViewGeometry(false);
+
+    }
+    QIWithRetranslateUI<QWidget>::keyPressEvent(pEvent);
+}
+
+
 void UIVisoBrowserBase::sltHandleTableViewItemDoubleClick(const QModelIndex &index)
 {
     tableViewItemDoubleClick(index);
@@ -231,13 +286,13 @@ void UIVisoBrowserBase::sltHandleTreeSelectionChanged(const QItemSelection &sele
     treeSelectionChanged(selectedIndex);
 }
 
-
 void UIVisoBrowserBase::sltHandleTreeItemClicked(const QModelIndex &modelIndex)
 {
     if (!m_pTreeView)
         return;
     m_pTreeView->setExpanded(modelIndex, true);
     m_pTreeView->hide();
+    emit sigTreeViewVisibilityChanged(m_pTreeView->isVisible());
 }
 
 void UIVisoBrowserBase::sltExpandCollapseTreeView()
@@ -255,7 +310,9 @@ void UIVisoBrowserBase::updateTreeViewGeometry(bool fShow)
     if (!fShow)
     {
         m_pTreeView->hide();
-        return;
+        emit sigTreeViewVisibilityChanged(m_pTreeView->isVisible());
+        m_pTreeView->clearFocus();
+            return;
     }
     if (!m_pLocationSelector)
         return;
@@ -263,13 +320,12 @@ void UIVisoBrowserBase::updateTreeViewGeometry(bool fShow)
     int iy = m_pLocationSelector->y() + m_pLocationSelector->height();
     int ix = m_pLocationSelector->x();
     int iWidth = m_pLocationSelector->lineEditWidth();
-
     m_pTreeView-> move(ix, iy);
     m_pTreeView->raise();
     m_pTreeView->resize(iWidth, 0.75 * height());
     m_pTreeView->show();
-
-    //m_pTreeView->scrollTo(m_pTreeView->currentIndex(), QAbstractItemView::PositionAtTop);
+    m_pTreeView->setFocus();
+    emit sigTreeViewVisibilityChanged(m_pTreeView->isVisible());
 }
 
 #include "UIVisoBrowserBase.moc"

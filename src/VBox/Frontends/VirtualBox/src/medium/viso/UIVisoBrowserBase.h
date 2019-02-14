@@ -44,12 +44,19 @@ class UIVisoBrowserBase : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
 
+signals:
+
+    void sigTreeViewVisibilityChanged(bool fVisible);
+
 public:
     /** @p pMenu is the pointer to the menu related to this browser widget.
      *  any member actions will be added to this menu. */
     UIVisoBrowserBase(QWidget *pParent = 0, QMenu *pMenu = 0);
     ~UIVisoBrowserBase();
     virtual void showHideHiddenObjects(bool bShow) = 0;
+    /* Returns true if tree view is currently visible: */
+    bool isTreeViewVisible() const;
+    void hideTreeView();
 
 public slots:
 
@@ -67,13 +74,13 @@ protected:
     virtual void setTreeCurrentIndex(QModelIndex index = QModelIndex()) = 0;
 
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+    virtual bool eventFilter(QObject *pObj, QEvent *pEvent) /* override */;
+    virtual void keyPressEvent(QKeyEvent *pEvent) /* override */;
 
     QTreeView          *m_pTreeView;
     UIToolBar          *m_pVerticalToolBar;
     QMenu              *m_pMenu;
     QGridLayout       *m_pMainLayout;
-
-private:
 
 private slots:
 

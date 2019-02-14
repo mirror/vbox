@@ -119,6 +119,26 @@ void UIVisoCreator::retranslateUi()
         m_pVisoContentBrowserMenu->setTitle(tr("VISO Browser"));
 }
 
+// bool UIVisoCreator::event(QEvent *pEvent)
+// {
+
+//     if (pEvent->type() == QEvent::KeyPress)
+//     {
+//         printf("key press %d\n", pEvent->type());
+//     }
+//     return false;
+// }
+
+// bool UIVisoCreator::eventFilter(QObject *, QEvent *pEvent)
+// {
+//     if (pEvent->type() == QEvent::KeyPress)
+//     {
+//         printf("key press in filter %d\n", pEvent->type());
+//     }
+
+//     return false;
+// }
+
 void UIVisoCreator::sltHandleAddObjectsToViso(QStringList pathList)
 {
     if (m_pVisoBrowser)
@@ -175,6 +195,12 @@ void UIVisoCreator::sltHandleHidePanel(UIDialogPanel *pPanel)
     hidePanel(pPanel);
 }
 
+void UIVisoCreator::sltHandleBrowserTreeViewVisibilityChanged(bool fVisible)
+{
+    Q_UNUSED(fVisible);
+    manageEscapeShortCut();
+}
+
 void UIVisoCreator::prepareObjects()
 {
     m_pCentralWidget = new QWidget;
@@ -219,7 +245,6 @@ void UIVisoCreator::prepareObjects()
             m_pToolBar->addAction(m_pActionConfiguration);
         if (m_pActionOptions)
             m_pToolBar->addAction(m_pActionOptions);
-
         m_pMainLayout->addWidget(m_pToolBar);
     }
 
@@ -239,6 +264,8 @@ void UIVisoCreator::prepareObjects()
         m_pHorizontalSplitter->addWidget(m_pHostBrowser);
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigAddObjectsToViso,
                 this, &UIVisoCreator::sltHandleAddObjectsToViso);
+        connect(m_pHostBrowser, &UIVisoHostBrowser::sigTreeViewVisibilityChanged,
+                this, &UIVisoCreator::sltHandleBrowserTreeViewVisibilityChanged);
     }
 
     m_pVisoBrowser = new UIVisoContentBrowser(0 /* parent */, m_pVisoContentBrowserMenu);
@@ -274,7 +301,6 @@ void UIVisoCreator::prepareObjects()
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Ok);
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pMainLayout->addWidget(m_pButtonBox);
-
     }
     retranslateUi();
 }
@@ -364,10 +390,20 @@ void UIVisoCreator::showPanel(UIDialogPanel* panel)
     manageEscapeShortCut();
 }
 
-
-
 void UIVisoCreator::manageEscapeShortCut()
 {
+    /* Take the escape key from m_pButtonBox and from the panels in case treeview(s) in
+       host and/or content browser is open. We use the escape key to close those first: */
+    if ((m_pHostBrowser && m_pHostBrowser->isTreeViewVisible()) ||
+        (m_pVisoBrowser && m_pVisoBrowser->isTreeViewVisible()))
+    {
+        if (m_pButtonBox && m_pButtonBox->button(QDialogButtonBox::Cancel))
+            m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(QKeySequence());
+        for (int i = 0; i < m_visiblePanelsList.size(); ++i)
+            m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
+        return;
+    }
+
     /* if there are no visible panels then assign esc. key to cancel button of the button box: */
     if (m_visiblePanelsList.isEmpty())
     {
@@ -381,8 +417,6 @@ void UIVisoCreator::manageEscapeShortCut()
     /* Just loop thru the visible panel list and set the esc key to the
        panel which made visible latest */
     for (int i = 0; i < m_visiblePanelsList.size() - 1; ++i)
-    {
         m_visiblePanelsList[i]->setCloseButtonShortCut(QKeySequence());
-    }
     m_visiblePanelsList.back()->setCloseButtonShortCut(QKeySequence(Qt::Key_Escape));
 }

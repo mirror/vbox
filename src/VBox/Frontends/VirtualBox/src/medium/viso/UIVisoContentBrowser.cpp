@@ -585,8 +585,6 @@ void UIVisoContentBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex 
         if (pItem)
         {
             QString strPath = pItem->data(UICustomFileSystemModelColumn_Path).toString();
-            if (strPath == QDir::fromNativeSeparators("/"))
-                strPath += m_strVisoName;
             updateLocationSelectorText(strPath);
         }
     }
