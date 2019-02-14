@@ -144,15 +144,8 @@ private slots:
 
     /** @name Common stuff.
       * @{ */
-        /** Handles signal about Chooser-pane index change.
-          * @param  fUpdateDetails    Brings whether details should be updated.
-          * @param  fUpdateSnapshots  Brings whether snapshots should be updated.
-          * @param  fUpdateLogs       Brings whether log-viewer should be updated. */
-        void sltHandleChooserPaneIndexChange(bool fUpdateDetails = true,
-                                             bool fUpdateSnapshots = true,
-                                             bool fUpdateLogs = true);
-        /** Handles signal about Chooser-pane index change the default way. */
-        void sltHandleChooserPaneIndexChangeDefault() { sltHandleChooserPaneIndexChange(); }
+        /** Handles signal about Chooser-pane index change. */
+        void sltHandleChooserPaneIndexChange();
 
         /** Handles sliding animation complete signal.
           * @param  enmDirection  Brings which direction was animation finished for. */

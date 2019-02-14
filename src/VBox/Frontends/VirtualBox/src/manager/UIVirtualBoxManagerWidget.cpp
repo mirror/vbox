@@ -203,7 +203,7 @@ void UIVirtualBoxManagerWidget::sltHandleContextMenuRequest(const QPoint &positi
 void UIVirtualBoxManagerWidget::retranslateUi()
 {
     /* Make sure chosen item fetched: */
-    sltHandleChooserPaneIndexChange(false /* update details? */, false /* update snapshots? */, false /* update the logviewer? */);
+    sltHandleChooserPaneIndexChange();
 
 #ifdef VBOX_WS_MAC
     // WORKAROUND:
@@ -215,9 +215,7 @@ void UIVirtualBoxManagerWidget::retranslateUi()
 #endif
 }
 
-void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDetails /* = true */,
-                                                                bool fUpdateSnapshots /* = true */,
-                                                                bool fUpdateLogs /* = true */)
+void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange()
 {
     /* Let the parent know: */
     emit sigChooserPaneIndexChange();
@@ -266,12 +264,10 @@ void UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange(bool fUpdateDeta
             if (m_pPaneToolsMachine->currentTool() == UIToolType_Error)
                 sltHandleToolsPaneIndexChange();
 
-            /* Propagate current items to update the Details-pane (if requested): */
-            if (fUpdateDetails)
-                m_pPaneToolsMachine->setItems(currentItems());
-            /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane (if requested): */
-            if (fUpdateSnapshots || fUpdateLogs)
-                m_pPaneToolsMachine->setMachine(pItem->machine());
+            /* Propagate current items to update the Details-pane: */
+            m_pPaneToolsMachine->setItems(currentItems());
+            /* Propagate current machine to update the Snapshots-pane or/and Logviewer-pane: */
+            m_pPaneToolsMachine->setMachine(pItem->machine());
         }
         else
         {
@@ -309,7 +305,7 @@ void UIVirtualBoxManagerWidget::sltHandleSlidingAnimationComplete(SlidingDirecti
         }
     }
     /* Then handle current item change (again!): */
-    sltHandleChooserPaneIndexChangeDefault();
+    sltHandleChooserPaneIndexChange();
 }
 
 void UIVirtualBoxManagerWidget::sltHandleToolMenuRequested(UIToolClass enmClass, const QPoint &position)
@@ -528,7 +524,7 @@ void UIVirtualBoxManagerWidget::prepareConnections()
 
     /* Chooser-pane connections: */
     connect(m_pPaneChooser, &UIChooser::sigSelectionChanged,
-            this, &UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChangeDefault);
+            this, &UIVirtualBoxManagerWidget::sltHandleChooserPaneIndexChange);
     connect(m_pPaneChooser, &UIChooser::sigSlidingStarted,
             m_pPaneToolsMachine, &UIToolPaneMachine::sigSlidingStarted);
     connect(m_pPaneChooser, &UIChooser::sigToggleStarted,
