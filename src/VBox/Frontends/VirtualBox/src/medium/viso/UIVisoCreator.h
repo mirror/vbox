@@ -70,8 +70,6 @@ public:
 protected:
 
     virtual void retranslateUi() /* override */;
-    // virtual bool event(QEvent *pEvent) /* override */;
-    // virtual bool eventFilter(QObject *pObj, QEvent *pEvent) /* override */;
 
 private slots:
 

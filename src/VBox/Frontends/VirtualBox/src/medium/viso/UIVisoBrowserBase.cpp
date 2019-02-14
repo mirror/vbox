@@ -35,7 +35,8 @@
 /*********************************************************************************************************************************
 *   UILocationSelector definition.                                                                                   *
 *********************************************************************************************************************************/
-
+/** A QWidget extension used to show/hide parents treeview (thru signals) and show the path of
+ * the current selected file item. */
 class UILocationSelector : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -57,7 +58,7 @@ protected:
 
 private:
 
-    void prepareWidget();
+    void prepareWidgets();
     QLineEdit   *m_pLineEdit;
     QGridLayout *m_pMainLayout;
     QIToolButton *m_pExpandButton;
@@ -73,7 +74,7 @@ UILocationSelector::UILocationSelector(QWidget *pParent /* = 0 */)
     , m_pMainLayout(0)
     , m_pExpandButton(0)
 {
-    prepareWidget();
+    prepareWidgets();
 }
 
 int UILocationSelector::lineEditWidth() const
@@ -97,6 +98,8 @@ void UILocationSelector::paintEvent(QPaintEvent *pEvent)
 
 void UILocationSelector::retranslateUi()
 {
+    if (m_pExpandButton)
+        m_pExpandButton->setToolTip(QApplication::translate("UIVisoCreator", "Click to show/hide the tree view"));
 }
 
 bool UILocationSelector::eventFilter(QObject *pObj, QEvent *pEvent)
@@ -114,7 +117,7 @@ bool UILocationSelector::eventFilter(QObject *pObj, QEvent *pEvent)
     return false;
 }
 
-void UILocationSelector::prepareWidget()
+void UILocationSelector::prepareWidgets()
 {
     m_pMainLayout = new QGridLayout;
     if (!m_pMainLayout)
@@ -140,6 +143,7 @@ void UILocationSelector::prepareWidget()
 
     }
     setLayout(m_pMainLayout);
+    retranslateUi();
 }
 
 /*********************************************************************************************************************************

@@ -119,26 +119,6 @@ void UIVisoCreator::retranslateUi()
         m_pVisoContentBrowserMenu->setTitle(tr("VISO Browser"));
 }
 
-// bool UIVisoCreator::event(QEvent *pEvent)
-// {
-
-//     if (pEvent->type() == QEvent::KeyPress)
-//     {
-//         printf("key press %d\n", pEvent->type());
-//     }
-//     return false;
-// }
-
-// bool UIVisoCreator::eventFilter(QObject *, QEvent *pEvent)
-// {
-//     if (pEvent->type() == QEvent::KeyPress)
-//     {
-//         printf("key press in filter %d\n", pEvent->type());
-//     }
-
-//     return false;
-// }
-
 void UIVisoCreator::sltHandleAddObjectsToViso(QStringList pathList)
 {
     if (m_pVisoBrowser)
