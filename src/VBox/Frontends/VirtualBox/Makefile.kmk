@@ -977,6 +977,7 @@ VBoxGlobal_QT_MOCSRCS = \
 	src/medium/UIMediumSearchWidget.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
+	src/medium/viso/UIVisoBrowserBase.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/global/UIGlobalSettingsLanguage.cpp \

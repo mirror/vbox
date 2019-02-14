@@ -36,7 +36,7 @@
 UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIMainDialog>(pParent)
     , m_pMainLayout(0)
-    , m_pVerticalSplitter(0)
+    , m_pHorizontalSplitter(0)
     , m_pHostBrowser(0)
     , m_pVisoBrowser(0)
     , m_pButtonBox(0)
@@ -196,7 +196,7 @@ void UIVisoCreator::prepareObjects()
 #ifdef VBOX_WS_MAC
     m_pMainLayout->setSpacing(10);
 #else
-    m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing) / 2);
+    m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
 #endif
 
     m_pMainMenu = menuBar()->addMenu(tr("VISO"));
@@ -223,18 +223,20 @@ void UIVisoCreator::prepareObjects()
         m_pMainLayout->addWidget(m_pToolBar);
     }
 
-    m_pVerticalSplitter = new QSplitter;
-    if (!m_pVerticalSplitter)
+    m_pHorizontalSplitter = new QSplitter;
+    if (!m_pHorizontalSplitter)
         return;
 
-    m_pMainLayout->addWidget(m_pVerticalSplitter);
-    m_pVerticalSplitter->setOrientation(Qt::Vertical);
-    m_pVerticalSplitter->setHandleWidth(1);
+    m_pMainLayout->addWidget(m_pHorizontalSplitter);
+    /* Make sure m_pHorizontalSplitter takes all the extra space: */
+    m_pMainLayout->setStretch(m_pMainLayout->indexOf(m_pHorizontalSplitter), 2);
+    m_pHorizontalSplitter->setOrientation(Qt::Horizontal);
+    m_pHorizontalSplitter->setHandleWidth(1);
 
     m_pHostBrowser = new UIVisoHostBrowser(0 /* parent */, m_pHostBrowserMenu);
     if (m_pHostBrowser)
     {
-        m_pVerticalSplitter->addWidget(m_pHostBrowser);
+        m_pHorizontalSplitter->addWidget(m_pHostBrowser);
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigAddObjectsToViso,
                 this, &UIVisoCreator::sltHandleAddObjectsToViso);
     }
@@ -242,14 +244,14 @@ void UIVisoCreator::prepareObjects()
     m_pVisoBrowser = new UIVisoContentBrowser(0 /* parent */, m_pVisoContentBrowserMenu);
     if (m_pVisoBrowser)
     {
-        m_pVerticalSplitter->addWidget(m_pVisoBrowser);
+        m_pHorizontalSplitter->addWidget(m_pVisoBrowser);
         m_pVisoBrowser->setVisoName(m_visoOptions.m_strVisoName);
     }
 
     m_pConfigurationPanel = new UIVisoConfigurationPanel(this);
     if (m_pConfigurationPanel)
     {
-        m_pVerticalSplitter->addWidget(m_pConfigurationPanel);
+        m_pMainLayout->addWidget(m_pConfigurationPanel);
         m_panelActionMap.insert(m_pConfigurationPanel, m_pActionConfiguration);
         m_pConfigurationPanel->hide();
         m_pConfigurationPanel->setVisoName(m_visoOptions.m_strVisoName);

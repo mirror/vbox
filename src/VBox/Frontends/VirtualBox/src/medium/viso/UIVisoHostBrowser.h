@@ -30,6 +30,7 @@
 
 /* Forward declarations: */
 class QItemSelection;
+class UIFileTreeContainer;
 class UIVisoHostBrowserModel;
 
 class UIVisoHostBrowser : public UIVisoBrowserBase
@@ -71,7 +72,6 @@ private:
     UIVisoHostBrowserModel *m_pTableModel;
     QAction                *m_pAddAction;
     QTableView             *m_pTableView;
-
 };
 
 

@@ -245,8 +245,6 @@ QStringList UIVisoContentBrowser::entryList()
 
 void UIVisoContentBrowser::retranslateUi()
 {
-    if (m_pTitleLabel)
-        m_pTitleLabel->setText(QApplication::translate("UIVisoCreator", "VISO content"));
     if (m_pRemoveAction)
     {
         m_pRemoveAction->setToolTip(QApplication::translate("UIVisoCreator", "Remove selected file objects from VISO"));
@@ -417,7 +415,7 @@ void UIVisoContentBrowser::prepareObjects()
     m_pTableView = new UIVisoContentTableView;
     if (m_pTableView)
     {
-        m_pRightContainerLayout->addWidget(m_pTableView, 0, 0, 6, 4);
+        m_pMainLayout->addWidget(m_pTableView, 1, 0, 6, 4);
         m_pTableView->setSelectionMode(QAbstractItemView::ContiguousSelection);
         m_pTableView->setShowGrid(false);
         m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -558,22 +556,38 @@ void UIVisoContentBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex 
 {
     if (!m_pTableView)
         return;
+
+    QModelIndex tableIndex;
     if (index.isValid())
     {
-        QModelIndex tableIndex = convertIndexToTableIndex(index);
+        tableIndex = convertIndexToTableIndex(index);
         if (tableIndex.isValid())
             m_pTableView->setRootIndex(tableIndex);
-        return;
     }
-    QItemSelectionModel *selectionModel = m_pTreeView->selectionModel();
-    if (selectionModel)
+    else
     {
-        if (!selectionModel->selectedIndexes().isEmpty())
+        QItemSelectionModel *selectionModel = m_pTreeView->selectionModel();
+        if (selectionModel)
         {
-            QModelIndex treeIndex = selectionModel->selectedIndexes().at(0);
-            QModelIndex tableIndex = convertIndexToTableIndex(treeIndex);
-            if (tableIndex.isValid())
-                m_pTableView->setRootIndex(tableIndex);
+            if (!selectionModel->selectedIndexes().isEmpty())
+            {
+                QModelIndex treeIndex = selectionModel->selectedIndexes().at(0);
+                tableIndex = convertIndexToTableIndex(treeIndex);
+                if (tableIndex.isValid())
+                    m_pTableView->setRootIndex(tableIndex);
+            }
+        }
+    }
+    if (tableIndex.isValid())
+    {
+        UICustomFileSystemItem *pItem =
+            static_cast<UICustomFileSystemItem*>(m_pTableProxyModel->mapToSource(tableIndex).internalPointer());
+        if (pItem)
+        {
+            QString strPath = pItem->data(UICustomFileSystemModelColumn_Path).toString();
+            if (strPath == QDir::fromNativeSeparators("/"))
+                strPath += m_strVisoName;
+            updateLocationSelectorText(strPath);
         }
     }
 }
@@ -612,7 +626,6 @@ void UIVisoContentBrowser::setTreeCurrentIndex(QModelIndex index /* = QModelInde
         m_pTreeView->scrollTo(index, QAbstractItemView::PositionAtCenter);
         m_pTreeProxyModel->invalidate();
     }
-
     pSelectionModel->blockSignals(false);
     m_pTreeView->blockSignals(false);
 }
@@ -727,9 +740,12 @@ void UIVisoContentBrowser::updateStartItemName()
 {
     if (!rootItem() || !rootItem()->child(0))
         return;
-    const QString strName = QString("/%1").arg(m_strVisoName);
+    const QString strName = QString("%1%2").arg(QDir::toNativeSeparators("/")).arg(m_strVisoName);
 
     rootItem()->child(0)->setData(strName, UICustomFileSystemModelColumn_Name);
+    /* If the table root index is the start item then we have to update the location selector text here: */
+    if (m_pTableProxyModel->mapToSource(m_pTableView->rootIndex()).internalPointer() == rootItem()->child(0))
+        updateLocationSelectorText(strName);
     m_pTreeProxyModel->invalidate();
     m_pTableProxyModel->invalidate();
 }

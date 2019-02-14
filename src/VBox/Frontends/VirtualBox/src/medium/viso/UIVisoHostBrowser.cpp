@@ -17,15 +17,18 @@
 /* Qt includes: */
 #include <QAction>
 #include <QAbstractItemModel>
+#include <QDialog>
 #include <QDir>
 #include <QFileSystemModel>
 #include <QGridLayout>
 #include <QHeaderView>
 #include <QLabel>
+#include <QLineEdit>
 #include <QListView>
 #include <QMenu>
 #include <QMimeData>
 #include <QTableView>
+#include <QTextEdit>
 #include <QTreeView>
 
 /* GUI includes: */
@@ -33,6 +36,7 @@
 #include "UIIconPool.h"
 #include "UIToolBar.h"
 #include "UIVisoHostBrowser.h"
+
 
 
 /*********************************************************************************************************************************
@@ -132,8 +136,6 @@ UIVisoHostBrowser::~UIVisoHostBrowser()
 
 void UIVisoHostBrowser::retranslateUi()
 {
-    if (m_pTitleLabel)
-        m_pTitleLabel->setText(QApplication::translate("UIVisoCreator", "Host file system"));
     if (m_pAddAction)
     {
         m_pAddAction->setToolTip(QApplication::translate("UIVisoCreator", "Add selected file objects to ISO"));
@@ -168,7 +170,7 @@ void UIVisoHostBrowser::prepareObjects()
     m_pTableView = new QTableView;
     if (m_pTableView)
     {
-        m_pRightContainerLayout->addWidget(m_pTableView, 0, 0, 6, 4);
+        m_pMainLayout->addWidget(m_pTableView, 1, 0, 8, 4);
         m_pTableView->setSelectionMode(QAbstractItemView::ContiguousSelection);
         m_pTableView->setShowGrid(false);
         m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -319,6 +321,7 @@ void UIVisoHostBrowser::setTableRootIndex(QModelIndex index /* = QModelIndex */)
         strCurrentTreePath = m_pTreeModel->filePath(index);
     if (!strCurrentTreePath.isEmpty())
         m_pTableView->setRootIndex(m_pTableModel->index(strCurrentTreePath));
+    updateLocationSelectorText(strCurrentTreePath);
 }
 
 void UIVisoHostBrowser::setTreeCurrentIndex(QModelIndex index /* = QModelIndex() */)

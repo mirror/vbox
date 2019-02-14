@@ -123,6 +123,8 @@ void UIDialogPanel::hideEvent(QHideEvent *pEvent)
 void UIDialogPanel::addVerticalSeparator()
 {
     QFrame *pSeparator = new QFrame();
+    if (!pSeparator)
+        return;
     pSeparator->setFrameShape(QFrame::VLine);
     pSeparator->setFrameShadow(QFrame::Sunken);
     mainLayout()->addWidget(pSeparator);

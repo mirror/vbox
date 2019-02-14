@@ -113,7 +113,7 @@ private:
     void manageEscapeShortCut();
 
     QVBoxLayout          *m_pMainLayout;
-    QSplitter            *m_pVerticalSplitter;
+    QSplitter            *m_pHorizontalSplitter;
     UIVisoHostBrowser    *m_pHostBrowser;
     UIVisoContentBrowser *m_pVisoBrowser;
     QIDialogButtonBox    *m_pButtonBox;
