@@ -143,7 +143,6 @@ typedef struct HostMsg
     void Delete(void)
     {
         LogFlowThisFunc(("[Msg %RU32 (%s)] destroying\n", mType, GstCtrlHostMsgtoStr((eHostMsg)mType)));
-        Assert(m_ListEntry.pNext == NULL);
         if (mpParms)
         {
             for (uint32_t i = 0; i < mParmCount; i++)
