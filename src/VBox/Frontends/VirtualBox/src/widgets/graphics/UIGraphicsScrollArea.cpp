@@ -105,28 +105,31 @@ void UIGraphicsScrollArea::makeSureRectIsVisible(const QRectF &rect)
     actualRectSize = actualRectSize.boundedTo(size());
     actualRect.setSize(actualRectSize);
 
+    /* Acquire scroll-area scene position: */
+    const QPointF saPos = mapToScene(QPointF(0, 0));
+
     switch (m_enmOrientation)
     {
         /* Scroll viewport horizontally: */
         case Qt::Horizontal:
         {
             /* If rectangle is at least partially right of visible area: */
-            if (actualRect.x() + actualRect.width() > size().width())
-                m_pScrollBar->setValue(m_pScrollBar->value() + actualRect.x() + actualRect.width() - size().width());
+            if (actualRect.x() + actualRect.width() - saPos.x() > size().width())
+                m_pScrollBar->setValue(m_pScrollBar->value() + actualRect.x() + actualRect.width() - saPos.x() - size().width());
             /* If rectangle is at least partially left of visible area: */
-            else if (actualRect.x() < 0)
-                m_pScrollBar->setValue(m_pScrollBar->value() + actualRect.x());
+            else if (actualRect.x() - saPos.x() < 0)
+                m_pScrollBar->setValue(m_pScrollBar->value() + actualRect.x() - saPos.x());
             break;
         }
         /* Scroll viewport vertically: */
         case Qt::Vertical:
         {
             /* If rectangle is at least partially under visible area: */
-            if (actualRect.y() + actualRect.height() > size().height())
-                m_pScrollBar->setValue(m_pScrollBar->value() + actualRect.y() + actualRect.height() - size().height());
+            if (actualRect.y() + actualRect.height() - saPos.y() > size().height())
+                m_pScrollBar->setValue(m_pScrollBar->value() + actualRect.y() + actualRect.height() - saPos.y() - size().height());
             /* If rectangle is at least partially above visible area: */
-            else if (actualRect.y() < 0)
-                m_pScrollBar->setValue(m_pScrollBar->value() + actualRect.y());
+            else if (actualRect.y() - saPos.y() < 0)
+                m_pScrollBar->setValue(m_pScrollBar->value() + actualRect.y() - saPos.y());
             break;
         }
     }
