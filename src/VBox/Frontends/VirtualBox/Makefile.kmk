@@ -54,11 +54,11 @@ include $(PATH_SUB_CURRENT)/nls/ApprovedLanguages.kmk
 #
 VirtualBoxHardenedVM_TEMPLATE = VBOXR3HARDENEDEXE
 VirtualBoxHardenedVM_SOURCES = src/hardenedmain.cpp
-VirtualBoxHardenedVM_SOURCES.win = src/platform/win/VirtualBoxHardened.rc
+VirtualBoxHardenedVM_SOURCES.win = src/platform/win/VirtualBoxHardenedVM.rc
 VirtualBoxHardenedVM_NAME = VirtualBoxVM
 VirtualBoxHardenedVM_LDFLAGS.win = /SUBSYSTEM:$(if-expr "$(KBUILD_TYPE)" != "release",console,windows)
-src/platform/win/VirtualBoxHardened.rc_INCS  = $(VirtualBox_0_OUTDIR)
-src/platform/win/VirtualBoxHardened.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+src/platform/win/VirtualBoxHardenedVM.rc_INCS  = $(VirtualBox_0_OUTDIR)
+src/platform/win/VirtualBoxHardenedVM.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
 
 
 #
@@ -1211,7 +1211,7 @@ VirtualBoxVM_SOURCES.darwin += \
 	src/platform/darwin/UICocoaDockIconPreview.mm
 
 VirtualBoxVM_SOURCES.win += \
-	src/platform/win/VirtualBox.rc
+	src/platform/win/VirtualBoxVM.rc
 
 
 #
@@ -1642,6 +1642,9 @@ ifeq ($(KBUILD_TARGET),win)
 src/platform/win/VirtualBox.rc_INCS  = $(VirtualBox_0_OUTDIR)
 src/platform/win/VirtualBox.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
 src/platform/win/VirtualBox.rc_CLEAN = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+src/platform/win/VirtualBoxVM.rc_INCS  = $(VirtualBox_0_OUTDIR)
+src/platform/win/VirtualBoxVM.rc_DEPS  = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
+src/platform/win/VirtualBoxVM.rc_CLEAN = $(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc
 
 $$(VirtualBox_0_OUTDIR)/VirtualBox-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FILE) | $$(dir $$@)
 	$(APPEND) -t $@ 'IDI_ICON1 ICON "$(subst /,\\,$(VBOX_WINDOWS_ICON_FILE))"'

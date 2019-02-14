@@ -32,9 +32,9 @@ BEGIN
   BEGIN
     BLOCK "040904E4" // Lang=US English, CharSet=Windows Multilingual
     BEGIN
-      VALUE "FileDescription", "VirtualBox Manager\0"
-      VALUE "InternalName",    "VirtualBox\0"
-      VALUE "OriginalFilename","VirtualBox.exe\0"
+      VALUE "FileDescription", "VirtualBox Virtual Machine\0"
+      VALUE "InternalName",    "VirtualBox Virtual Machine\0"
+      VALUE "OriginalFilename","VirtualBoxVM.exe\0"
       VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
       VALUE "FileVersion",      VBOX_RC_FILE_VERSION_STR
       VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
