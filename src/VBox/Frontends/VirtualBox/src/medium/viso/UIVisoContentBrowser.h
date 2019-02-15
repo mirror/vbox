@@ -47,9 +47,13 @@ class UIVisoContentBrowser : public UIVisoBrowserBase
 {
     Q_OBJECT;
 
+signals:
+
+    void sigTableSelectionChanged(bool fIsSelectionEmpty);
+
 public:
 
-    UIVisoContentBrowser(QWidget *pParent = 0, QMenu *pMenu = 0);
+    UIVisoContentBrowser(QWidget *pParent = 0);
     ~UIVisoContentBrowser();
     /** Adds file objests from the host file system. @p pathList consists of list of paths to there objects. */
     void addObjectsToViso(QStringList pathList);
@@ -57,6 +61,16 @@ public:
     virtual void showHideHiddenObjects(bool bShow) /* override */;
 
     void setVisoName(const QString &strName);
+
+public slots:
+
+    void sltHandleCreateNewDirectory();
+    /** Handles the signal we get from the model during setData call. Restores the old name of the file object
+     *  to @p strOldName if need be. */
+    void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
+    void sltHandleRemoveItems();
+    void sltHandleResetAction();
+    void sltHandleItemRenameAction();
 
 protected:
 
@@ -73,14 +87,7 @@ protected:
 
 private slots:
 
-    void sltHandleCreateNewDirectory();
-    /** Handles the signal we get from the model during setData call. Restores the old name of the file object
-     *  to @p strOldName if need be. */
-    void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
-    void sltHandleItemRenameAction();
-    void sltHandleRemoveItems();
     void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
-    void sltHandleResetAction();
     void sltHandleDroppedItems(QStringList pathList);
 
 private:
@@ -108,10 +115,6 @@ private:
     UICustomFileSystemModel      *m_pModel;
     UICustomFileSystemProxyModel *m_pTableProxyModel;
     UIVisoContentTreeProxyModel  *m_pTreeProxyModel;
-    QAction                 *m_pRemoveAction;
-    QAction                 *m_pNewDirectoryAction;
-    QAction                 *m_pRenameAction;
-    QAction                 *m_pResetAction;
 
     QString                       m_strVisoName;
     /** keys of m_entryMap are iso locations and values are

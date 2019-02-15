@@ -37,7 +37,7 @@
 class QItemSelection;
 class QMenu;
 class QSplitter;
-class QVBoxLayout;
+class QGridLayout;
 class QIDialogButtonBox;
 class UIActionPool;
 class UIDialogPanel;
@@ -80,6 +80,8 @@ private slots:
     void sltHandleShowHiddenObjectsChange(bool fShow);
     void sltHandleHidePanel(UIDialogPanel *pPanel);
     void sltHandleBrowserTreeViewVisibilityChanged(bool fVisible);
+    void sltHandleHostBrowserTableSelectionChanged(bool fIsSelectionEmpty);
+    void sltHandleContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
 
 private:
     struct VisoOptions
@@ -98,36 +100,45 @@ private:
         bool m_fShowHiddenObjects;
     };
 
-    void prepareObjects();
+    void prepareWidgets();
     void prepareConnections();
     void prepareActions();
+    /** Creates and configures the vertical toolbar. Should be called after prepareActions() */
+    void prepareVerticalToolBar();
+    /* Populates the main menu and toolbard with already created actions.
+     * Leave out the vertical toolbar which is handled in prepareVerticalToolBar. */
+    void populateMenuMainToolbar();
     /** Set the root index of the m_pTableModel to the current index of m_pTreeModel. */
     void setTableRootIndex(QModelIndex index = QModelIndex() );
     void setTreeCurrentIndex(QModelIndex index = QModelIndex() );
     void hidePanel(UIDialogPanel *panel);
     void showPanel(UIDialogPanel *panel);
     /** Makes sure escape key is assigned to only a single widget. This is done by checking
-        several things in the following order:
-        - when tree views of browser panes are visible esc. key used to close those. thus it is taken from the dialog and panels
-        - when there are no more panels visible assign it to the parent dialog
-        - grab it from the dialog as soon as a panel becomes visible again
-        - assign it to the most recently "unhidden" panel */
+      *  several things in the following order:
+      *  - when tree views of browser panes are visible esc. key used to close those. thus it is taken from the dialog and panels
+      *  - when there are no more panels visible assign it to the parent dialog
+      *  - grab it from the dialog as soon as a panel becomes visible again
+      *  - assign it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
 
-    QVBoxLayout          *m_pMainLayout;
-    QSplitter            *m_pHorizontalSplitter;
+    QAction              *m_pActionConfiguration;
+    QAction              *m_pActionOptions;
+    QAction              *m_pAddAction;
+    QAction              *m_pRemoveAction;
+    QAction              *m_pNewDirectoryAction;
+    QAction              *m_pRenameAction;
+    QAction              *m_pResetAction;
+
+    QGridLayout          *m_pMainLayout;
     UIVisoHostBrowser    *m_pHostBrowser;
     UIVisoContentBrowser *m_pVisoBrowser;
     QIDialogButtonBox    *m_pButtonBox;
     UIToolBar            *m_pToolBar;
-    QAction              *m_pActionConfiguration;
-    QAction              *m_pActionOptions;
+    UIToolBar            *m_pVerticalToolBar;
     VisoOptions           m_visoOptions;
     BrowserOptions        m_browserOptions;
     QWidget              *m_pCentralWidget;
     QMenu                *m_pMainMenu;
-    QMenu                *m_pHostBrowserMenu;
-    QMenu                *m_pVisoContentBrowserMenu;
     QString               m_strMachineName;
     UIVisoCreatorOptionsPanel *m_pCreatorOptionsPanel;
     UIVisoConfigurationPanel  *m_pConfigurationPanel;

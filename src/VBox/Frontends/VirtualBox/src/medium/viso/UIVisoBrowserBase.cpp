@@ -28,7 +28,6 @@
 /* GUI includes: */
 #include "QIToolButton.h"
 #include "UIIconPool.h"
-#include "UIToolBar.h"
 #include "UIVisoBrowserBase.h"
 
 
@@ -150,11 +149,9 @@ void UILocationSelector::prepareWidgets()
 *   UIVisoBrowserBase implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIVisoBrowserBase::UIVisoBrowserBase(QWidget *pParent /* = 0 */, QMenu *pMenu /*= 0*/)
+UIVisoBrowserBase::UIVisoBrowserBase(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pTreeView(0)
-    , m_pVerticalToolBar(0)
-    , m_pMenu(pMenu)
     , m_pMainLayout(0)
     , m_pLocationSelector(0)
 {
@@ -203,13 +200,6 @@ void UIVisoBrowserBase::prepareObjects()
         m_pTreeView->setFrameStyle(QFrame::Panel | QFrame::Plain);
         m_pTreeView->installEventFilter(this);
     }
-
-    m_pVerticalToolBar = new UIToolBar;
-    if (m_pVerticalToolBar)
-    {
-        m_pVerticalToolBar->setOrientation(Qt::Vertical);
-        m_pMainLayout->addWidget(m_pVerticalToolBar, 0, 5, 6, 1);
-    }
 }
 
 void UIVisoBrowserBase::prepareConnections()
@@ -252,12 +242,12 @@ bool UIVisoBrowserBase::eventFilter(QObject *pObj, QEvent *pEvent)
                 (pKeyEvent->key() == Qt::Key_Return ||
                  pKeyEvent->key() == Qt::Key_Enter))
             {
-                sltExpandCollapseTreeView();
+                updateTreeViewGeometry(false);
             }
         }
         else if (pEvent->type() == QEvent::FocusOut)
         {
-                sltExpandCollapseTreeView();
+            updateTreeViewGeometry(false);
         }
     }
     return false;
@@ -295,7 +285,7 @@ void UIVisoBrowserBase::sltHandleTreeItemClicked(const QModelIndex &modelIndex)
     if (!m_pTreeView)
         return;
     m_pTreeView->setExpanded(modelIndex, true);
-    m_pTreeView->hide();
+    updateTreeViewGeometry(false);
     emit sigTreeViewVisibilityChanged(m_pTreeView->isVisible());
 }
 
@@ -313,10 +303,15 @@ void UIVisoBrowserBase::updateTreeViewGeometry(bool fShow)
 
     if (!fShow)
     {
-        m_pTreeView->hide();
-        emit sigTreeViewVisibilityChanged(m_pTreeView->isVisible());
-        m_pTreeView->clearFocus();
+        if (!m_pTreeView->isVisible())
             return;
+        else
+        {
+            m_pTreeView->hide();
+            emit sigTreeViewVisibilityChanged(m_pTreeView->isVisible());
+            m_pTreeView->clearFocus();
+            return;
+        }
     }
     if (!m_pLocationSelector)
         return;

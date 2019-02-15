@@ -15,29 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 /* Qt includes: */
-#include <QAction>
 #include <QAbstractItemModel>
-#include <QDialog>
-#include <QDir>
 #include <QFileSystemModel>
 #include <QGridLayout>
 #include <QHeaderView>
-#include <QLabel>
-#include <QLineEdit>
-#include <QListView>
-#include <QMenu>
 #include <QMimeData>
 #include <QTableView>
 #include <QTextEdit>
 #include <QTreeView>
 
 /* GUI includes: */
-#include "QIToolButton.h"
-#include "UIIconPool.h"
-#include "UIToolBar.h"
 #include "UIVisoHostBrowser.h"
-
-
 
 /*********************************************************************************************************************************
 *   UIVisoHostBrowserModel definition.                                                                                   *
@@ -119,11 +107,10 @@ QMimeData *UIVisoHostBrowserModel::mimeData(const QModelIndexList &indexes) cons
 *   UIVisoHostBrowser implementation.                                                                                   *
 *********************************************************************************************************************************/
 
-UIVisoHostBrowser::UIVisoHostBrowser(QWidget *pParent /* = 0 */, QMenu *pMenu /* = 0 */)
-    : UIVisoBrowserBase(pParent, pMenu)
+UIVisoHostBrowser::UIVisoHostBrowser(QWidget *pParent /* = 0 */)
+    : UIVisoBrowserBase(pParent)
     , m_pTreeModel(0)
     , m_pTableModel(0)
-    , m_pAddAction(0)
     , m_pTableView(0)
 {
     prepareObjects();
@@ -136,11 +123,6 @@ UIVisoHostBrowser::~UIVisoHostBrowser()
 
 void UIVisoHostBrowser::retranslateUi()
 {
-    if (m_pAddAction)
-    {
-        m_pAddAction->setToolTip(QApplication::translate("UIVisoCreator", "Add selected file objects to ISO"));
-        m_pAddAction->setText(QApplication::translate("UIVisoCreator", "Add"));
-    }
 }
 
 void UIVisoHostBrowser::prepareObjects()
@@ -199,20 +181,6 @@ void UIVisoHostBrowser::prepareObjects()
         m_pTableView->setDragDropMode(QAbstractItemView::DragOnly);
     }
 
-    m_pAddAction = new QAction(this);
-    if (m_pAddAction)
-    {
-        m_pVerticalToolBar->addAction(m_pAddAction);
-        m_pAddAction->setIcon(UIIconPool::iconSetFull(":/file_manager_copy_to_guest_24px.png",
-                                                      ":/file_manager_copy_to_guest_16px.png",
-                                                      ":/file_manager_copy_to_guest_disabled_24px.png",
-                                                      ":/file_manager_copy_to_guest_disabled_16px.png"));
-        m_pAddAction->setText(QApplication::translate("UIVisoCreator", "Add"));
-        m_pAddAction->setEnabled(false);
-        if (m_pMenu)
-            m_pMenu->addAction(m_pAddAction);
-    }
-
     retranslateUi();
 }
 
@@ -226,16 +194,12 @@ void UIVisoHostBrowser::prepareConnections()
     if (m_pTableView->selectionModel())
         connect(m_pTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
                 this, &UIVisoHostBrowser::sltHandleTableSelectionChanged);
-    if (m_pAddAction)
-        connect(m_pAddAction, &QAction::triggered,
-                this, &UIVisoHostBrowser::sltHandleAddAction);
 }
 
 void UIVisoHostBrowser::sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
 {
     Q_UNUSED(deselected);
-    if (m_pAddAction)
-        m_pAddAction->setEnabled(!selected.isEmpty());
+    emit sigTableSelectionChanged(selected.isEmpty());
 }
 
 void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)
