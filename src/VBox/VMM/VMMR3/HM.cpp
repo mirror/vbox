@@ -822,7 +822,12 @@ static int hmR3InitFinalizeR3(PVM pVM)
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelBase,   "/HM/CPU%d/VMXCheck/RMSelBase", "Could not use VMX due to unsuitable real-mode selector base.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelLimit,  "/HM/CPU%d/VMXCheck/RMSelLimit", "Could not use VMX due to unsuitable real-mode selector limit.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelAttr,   "/HM/CPU%d/VMXCheck/RMSelAttrs", "Could not use VMX due to unsuitable real-mode selector limit.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRmSelAttr,   "/HM/CPU%d/VMXCheck/RMSelAttrs", "Could not use VMX due to unsuitable real-mode selector attributes.");
+
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadV86SelBase,  "/HM/CPU%d/VMXCheck/V86SelBase",  "Could not use VMX due to unsuitable v8086-mode selector base.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadV86SelLimit, "/HM/CPU%d/VMXCheck/V86SelLimit", "Could not use VMX due to unsuitable v8086-mode selector limit.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadV86SelAttr,  "/HM/CPU%d/VMXCheck/V86SelAttrs", "Could not use VMX due to unsuitable v8086-mode selector attributes.");
+
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckRmOk,           "/HM/CPU%d/VMXCheck/VMX_RM", "VMX execution in real (V86) mode OK.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadSel,         "/HM/CPU%d/VMXCheck/Selector", "Could not use VMX due to unsuitable selector.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatVmxCheckBadRpl,         "/HM/CPU%d/VMXCheck/RPL", "Could not use VMX due to unsuitable RPL.");

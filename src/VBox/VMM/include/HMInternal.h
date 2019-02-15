@@ -1067,6 +1067,9 @@ typedef struct HMCPU
     STAMCOUNTER             StatVmxCheckBadRmSelBase;
     STAMCOUNTER             StatVmxCheckBadRmSelLimit;
     STAMCOUNTER             StatVmxCheckBadRmSelAttr;
+    STAMCOUNTER             StatVmxCheckBadV86SelBase;
+    STAMCOUNTER             StatVmxCheckBadV86SelLimit;
+    STAMCOUNTER             StatVmxCheckBadV86SelAttr;
     STAMCOUNTER             StatVmxCheckRmOk;
     STAMCOUNTER             StatVmxCheckBadSel;
     STAMCOUNTER             StatVmxCheckBadRpl;
