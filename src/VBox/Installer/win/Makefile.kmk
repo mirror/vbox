@@ -803,7 +803,7 @@ $(if-expr "$(lang)" != "en_US",, \
 		-e 's,^.*"\($(VBOX_PATH_WIN_INST_SRC)/Binary/[^"]*\)".*$$(DOLLAR),\1,p' \
 		-e 's,^.*"\($(dir $(VBOX_WINDOWS_ICON_FILE))[^"]*\)".*$$(DOLLAR),\1,p' \
 		--output "$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files" \
-		"$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VBoxMerge$(module)_$(lang).wix"
+		"$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wix"
 	$(MKDIR) -p -- "$(VBOX_WIN_INST_REPACK_DIR)/files-VBoxMerge$(module)_$(lang)/"
 	set -xe && for file in  `$(CAT_EXT) "$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files"`; \
 		do $(CP_EXT) -f -- "$$(DOLLAR){file}" "$(VBOX_WIN_INST_REPACK_DIR)/files-VBoxMerge$(module)_$(lang)/"; done
@@ -830,7 +830,7 @@ $(if-expr "$(lang)" != "en_US",, \
  endif
 
 $(eval BLDDIRS += $(VBOX_WIN_INST_REPACK_DIR)/files-VBoxMerge$(module)_$(lang)/)
-$(eval OTHER_CLEAN += $(VBOX_REPACK_FILES_VBoxMerge$(module)_$(lang)) $(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files $(VBOX_WIN_INST_OUT_DIR)/$(lang)/VBoxMerge$(module)_$(lang).wixobj.dep)
+$(eval OTHER_CLEAN += $(VBOX_REPACK_FILES_VBoxMerge$(module)_$(lang)) $(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj.dep)
 endef
 
 $(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
