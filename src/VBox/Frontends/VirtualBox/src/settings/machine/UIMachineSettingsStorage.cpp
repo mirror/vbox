@@ -3801,7 +3801,7 @@ void UIMachineSettingsStorage::addControllerWrapper(const QString &strName, KSto
     emit sigStorageChanged();
 }
 
-void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
+void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDeviceType)
 {
     const QModelIndex index = m_pTreeStorage->currentIndex();
     Assert(m_pModelStorage->data(index, StorageModel::R_IsController).toBool());
@@ -3810,7 +3810,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
     const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
 
     QUuid uMediumId;
-    int iResult = vboxGlobal().openMediumSelectorDialog(this, UIMediumDefs::mediumTypeToLocal(enmDevice), uMediumId,
+    int iResult = vboxGlobal().openMediumSelectorDialog(this, UIMediumDefs::mediumTypeToLocal(enmDeviceType), uMediumId,
                                                         strMachineFolder, m_strMachineName,
                                                         m_strMachineGuestOSTypeId, true /* enable cr1eate action: */);
 
@@ -3822,10 +3822,10 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDevice)
 
     /* Only DVDs and floppy can be created empty: */
     if (iResult == static_cast<int>(UIMediumSelector::ReturnCode_LeftEmpty) &&
-        (m_pMediumIdHolder->type() != UIMediumDeviceType_DVD && m_pMediumIdHolder->type() != UIMediumDeviceType_Floppy))
+        (enmDeviceType != KDeviceType_DVD && enmDeviceType != KDeviceType_Floppy))
         return;
 
-    m_pModelStorage->addAttachment(QUuid(m_pModelStorage->data(index, StorageModel::R_ItemId).toString()), enmDevice, uMediumId);
+    m_pModelStorage->addAttachment(QUuid(m_pModelStorage->data(index, StorageModel::R_ItemId).toString()), enmDeviceType, uMediumId);
     m_pModelStorage->sort();
     emit sigStorageChanged();
 
