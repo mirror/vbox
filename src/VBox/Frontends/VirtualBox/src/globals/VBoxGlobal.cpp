@@ -2727,7 +2727,7 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
         /* Produce the VISO. */
         char szVisoPath[RTPATH_MAX];
         QString strFileName = QString("%1%2").arg(strVisoName).arg(".viso");
-        int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strDefaultFolder.toUtf8().constData(), strFileName.toUtf8().constData());
+        int vrc = RTPathJoin(szVisoPath, sizeof(szVisoPath), strVisoSaveFolder.toUtf8().constData(), strFileName.toUtf8().constData());
         if (RT_SUCCESS(vrc))
         {
             PRTSTREAM pStrmViso;
