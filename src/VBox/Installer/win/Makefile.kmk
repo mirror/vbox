@@ -568,7 +568,7 @@ $(if-expr "$(lang)" != "en_US",, \
 			$(VBOX_VERSION_STAMP) \
 			| $$$$(dir $$$$@) $(if-expr "$(lang)" != "en_US",, \
 			$(VBOX_WIN_INST_REPACK_DIR)/ $(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/ )
-	$(QUIET)$(RM) -f -- $@  "$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wix" "$(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).wix"
+	$(QUIET)$(RM) -f -- "$$@"  "$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wix" "$(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).wix"
 	$(REDIRECT) \
 		-E 'PATH_OUT=$(subst /,\,$(PATH_OUT))' \
 		-E 'PATH_TARGET=$(subst /,\,$(VBOX_WIN_INST_OUT_DIR))' \
@@ -715,7 +715,7 @@ $(if-expr "$(lang)" != "en_US",, \
 		$(VBOX_MSI_DEPENDENCIES) \
 		$(VBOX_VERSION_STAMP) \
 		| $$$$(dir $$$$@) $(VBOX_WIN_INST_REPACK_DIR)/
-	$(QUIET)$(RM) -f -- "$@" "$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wix" "$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).wix"
+	$(QUIET)$(RM) -f -- "$$@" "$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wix" "$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).wix"
 	$(REDIRECT) \
 		-E 'PATH_OUT=$(subst /,\,$(PATH_OUT))' \
 		-E 'PATH_TARGET=$(subst /,\,$(VBOX_WIN_INST_OUT_DIR))' \
