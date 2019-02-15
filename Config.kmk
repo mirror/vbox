@@ -744,7 +744,7 @@ endif
 # Enables use of merge modules in the windows installer. This will increase
 # the overall installer size significantly because merge modules are not able
 # to use a common .cab file to reduce their size.
-VBOX_WITH_MSM_INSTALL = 1
+#VBOX_WITH_MSM_INSTALL = 1
 ## @}
 
 
