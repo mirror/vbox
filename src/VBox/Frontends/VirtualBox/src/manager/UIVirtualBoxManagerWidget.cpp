@@ -569,6 +569,7 @@ void UIVirtualBoxManagerWidget::updateToolbar()
                 case UIToolType_Media:
                 {
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Add));
+                    m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Create));
                     m_pToolBar->addSeparator();
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Copy));
                     m_pToolBar->addAction(actionPool()->action(UIActionIndexST_M_Medium_S_Move));
