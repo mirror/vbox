@@ -304,6 +304,7 @@ void UIVisoCreator::prepareWidgets()
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setShortcut(Qt::Key_Escape);
         m_pMainLayout->addWidget(m_pButtonBox, 4, 3, 1, 5, Qt::AlignRight);
     }
+
 }
 
 void UIVisoCreator::prepareConnections()
@@ -341,13 +342,16 @@ void UIVisoCreator::prepareConnections()
                 this, &UIVisoCreator::sltHandleCustomVisoOptionsChanged);
         connect(m_pConfigurationPanel, &UIVisoConfigurationPanel::sigHidePanel,
                 this, &UIVisoCreator::sltHandleHidePanel);
+        m_panelActionMap.insert(m_pConfigurationPanel, m_pActionConfiguration);
     }
+
     if (m_pCreatorOptionsPanel)
     {
         connect(m_pCreatorOptionsPanel, &UIVisoCreatorOptionsPanel::sigShowHiddenObjects,
                 this, &UIVisoCreator::sltHandleShowHiddenObjectsChange);
         connect(m_pCreatorOptionsPanel, &UIVisoCreatorOptionsPanel::sigHidePanel,
                 this, &UIVisoCreator::sltHandleHidePanel);
+        m_panelActionMap.insert(m_pCreatorOptionsPanel, m_pActionOptions);
     }
 
     if (m_pAddAction)
@@ -378,7 +382,6 @@ void UIVisoCreator::prepareActions()
                                                           ":/%file_manager_options_16px.png",
                                                           ":/file_manager_options_disabled_32px.png",
                                                           ":/file_manager_options_disabled_16px.png"));
-        m_panelActionMap.insert(m_pConfigurationPanel, m_pActionConfiguration);
     }
 
     m_pActionOptions = new QAction(this);
@@ -390,7 +393,6 @@ void UIVisoCreator::prepareActions()
                                                           ":/%file_manager_options_16px.png",
                                                           ":/file_manager_options_disabled_32px.png",
                                                           ":/file_manager_options_disabled_16px.png"));
-        m_panelActionMap.insert(m_pCreatorOptionsPanel, m_pActionOptions);
     }
 
     m_pAddAction = new QAction(this);
