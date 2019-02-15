@@ -195,6 +195,12 @@ AtaPassThruPassThruExecute (
   Mode = Instance->Mode;
   switch (Mode) {
     case EfiAtaIdeMode:
+#ifdef VBOX
+      // Reading the IDE controller's PCI config space byte by byte is quite expensive.
+      // It is very unclear why it should be done again and again for every command
+      // when it was already done in IdeModeInitialization().
+      // See also ExtScsiPassThruPassThru().
+#else
       //
       // Reassign IDE mode io port registers' base addresses
       //
@@ -203,6 +209,7 @@ AtaPassThruPassThruExecute (
       if (EFI_ERROR (Status)) {
         return Status;
       }
+#endif
 
       switch (Protocol) {
         case EFI_ATA_PASS_THRU_PROTOCOL_ATA_NON_DATA:
@@ -2026,6 +2033,12 @@ ExtScsiPassThruPassThru (
   Mode = Instance->Mode;
   switch (Mode) {
     case EfiAtaIdeMode:
+#ifdef VBOX
+      // Reading the IDE controller's PCI config space byte by byte is quite expensive.
+      // It is very unclear why it should be done again and again for every command
+      // when it was already done in IdeModeInitialization().
+      // See also AtaPassThruPassThruExecute().
+#else
       //
       // Reassign IDE mode io port registers' base addresses
       //
@@ -2034,6 +2047,7 @@ ExtScsiPassThruPassThru (
       if (EFI_ERROR (Status)) {
         return Status;
       }
+#endif
 
       Status = AtaPacketCommandExecute (Instance->PciIo, &Instance->IdeRegisters[Port], Port, PortMultiplier, Packet);
       break;

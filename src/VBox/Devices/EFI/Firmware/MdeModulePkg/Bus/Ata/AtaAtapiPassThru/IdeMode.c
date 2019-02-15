@@ -1145,10 +1145,14 @@ AtaIssueCommand (
   //
   IdeWritePortB (PciIo, IdeRegisters->CmdOrStatus, AtaCommand);
 
+#ifdef VBOX
+  // Stalling is a complete waste of time in a VM. BSY gets set before the status register can be read again.
+#else
   //
   // Stall at least 400 microseconds.
   //
   MicroSecondDelay (400);
+#endif
 
   return EFI_SUCCESS;
 }
@@ -1801,10 +1805,14 @@ AtaUdmaInOut (
     DeviceControl  = IdeReadPortB (PciIo, IdeRegisters->AltOrDev);
     DeviceControl |= ATA_CTLREG_IEN_L;
     IdeWritePortB (PciIo, IdeRegisters->AltOrDev, DeviceControl);
+#ifdef VBOX
+    // It is not at all clear what purpose the unconditional 10 millisecond delay might possibly serve.
+#else
     //
     // Stall for 10 milliseconds.
     //
     MicroSecondDelay (10000);
+#endif
 
   }
 
@@ -2078,10 +2086,14 @@ AtaPacketCommandExecute (
   //
   for (Count = 0; Count < 6; Count++) {
     IdeWritePortW (PciIo, IdeRegisters->Data, *((UINT16*)PacketCommand + Count));
+#ifdef VBOX
+    // Any stalling is completely unnecessary, especially in a VM.
+#else
     //
     // Stall for 10 microseconds.
     //
     MicroSecondDelay (10);
+#endif
   }
 
   //
