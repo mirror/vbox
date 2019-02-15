@@ -276,8 +276,9 @@ setup_modules()
 {
     KERN_VER="$1"
     test -n "$KERN_VER" || return 1
-    test ! -f /lib/modules/"$KERN_VER"/misc/vboxguest.ko || return 0
-    test ! -f /lib/modules/"$KERN_VER"/misc/vboxguest.o || return 0
+    # Match (at least): vboxguest.o; vboxguest.ko; vboxguest.ko.xz
+    set /lib/modules/"$KERN_VER"/misc/vboxguest.*o*
+    test ! -f "$1" || return 0
     test -d /lib/modules/"$KERN_VER"/build || return 0
     export KERN_VER
     info "Building the modules for kernel $KERN_VER."
