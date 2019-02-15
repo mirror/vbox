@@ -659,7 +659,7 @@ $(if-expr "$(lang)" != "en_US",, \
 		-e 's,^.*"\($(PATH_ROOT)/doc/[^"]*\)".*$$(DOLLAR),\1,p' \
 		-e 's,^.*"\($(VBOX_PATH_WIN_INST_SRC)/Binary/[^"]*\)".*$$(DOLLAR),\1,p' \
 		-e 's,^.*"\($(dir $(VBOX_WINDOWS_ICON_FILE))[^"]*\)".*$$(DOLLAR),\1,p' \
-               --output "$(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).files" \
+		--output "$(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).files" \
 		"$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wix"
 	set -xe && for file in  `$(CAT_EXT) "$(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).files"`; \
 		do $(CP_EXT) -f -- "$$(DOLLAR){file}" "$(VBOX_WIN_INST_REPACK_DIR)/files-VirtualBox_$(lang)/"; done
@@ -696,7 +696,7 @@ $(foreach lang,$(VBOX_INSTALLER_LANGUAGES), \
 # MSM (merge module) compile.
 #
 define def_vbox_compile_msm
-includedep $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj
+includedep $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj.dep
 $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj \
 + $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wix \
 $(if-expr "$(lang)" != "en_US",, \
@@ -782,12 +782,15 @@ $(if-expr "$(lang)" != "en_US",, \
 		-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
 		-out $$@
  ifeq ($(lang),en_US)
+# Copy preprocessed wix and change source paths to be relative.  Stuff not in ../bin needs copying.
 	$(SED)	-e 's,$(subst /,\\,$(PATH_OUT))\\bin,..\\bin,g' \
+		-e 's,$(subst /,\\,$(PATH_OUT_BASE))\\win.amd64\\$(KBUILD_TYPE)\\bin,..\\..\\..\\win.amd64\\$(KBUILD_TYPE)\\bin,g' \
+		-e 's,$(subst /,\\,$(PATH_OUT_BASE))\\win.x86\\$(KBUILD_TYPE)\\bin,..\\..\\..\\win.x86\\$(KBUILD_TYPE)\\bin,g' \
 		-e 's,$(subst /,\\,$(PATH_ROOT))\\doc\\,files-VirtualBox_$(lang)\\,g' \
 		-e 's,$(subst /,\\,$(VBOX_PATH_WIN_INST_SRC))\\Binary\\,files-VirtualBox_$(lang)\\,g' \
 		-e 's,$(subst /,\\,$(dir $(VBOX_WINDOWS_ICON_FILE))),files-VirtualBox_$(lang)\\,g' \
 		--output "$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).wix" \
-		"$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VBoxMerge$(module)_$(lang).wix"
+		"$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wix"
 	$(SED)	-n \
 		-e '/<\?ln /d' \
 		-e '/$(subst /,\\,$(PATH_ROOT))/p' \
@@ -799,7 +802,7 @@ $(if-expr "$(lang)" != "en_US",, \
 		-e 's,^.*"\($(PATH_ROOT)/doc/[^"]*\)".*$$(DOLLAR),\1,p' \
 		-e 's,^.*"\($(VBOX_PATH_WIN_INST_SRC)/Binary/[^"]*\)".*$$(DOLLAR),\1,p' \
 		-e 's,^.*"\($(dir $(VBOX_WINDOWS_ICON_FILE))[^"]*\)".*$$(DOLLAR),\1,p' \
-               --output "$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files" \
+		--output "$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files" \
 		"$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VBoxMerge$(module)_$(lang).wix"
 	$(MKDIR) -p -- "$(VBOX_WIN_INST_REPACK_DIR)/files-VBoxMerge$(module)_$(lang)/"
 	set -xe && for file in  `$(CAT_EXT) "$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files"`; \
@@ -815,13 +818,19 @@ $(if-expr "$(lang)" != "en_US",, \
                ) \
                '@echo Created: $$(@F)'
  endif
-# Generate wxi dependencies based on the sourceLineNumber references in the output.
+# Generate wxi dependencies based on the sourceLineNumber references in the output.  Add repack file list for cleanup.
 	$(QUIET)$(APPEND) -t '$$@.dep' '$$@: \'
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOX_PATH_WIN_INST_SRC)/dep.xsl "$$@" >> "$$@.dep"
 	$(QUIET)$(VBOX_XSLTPROC) $(VBOX_PATH_WIN_INST_SRC)/dep2.xsl "$$@" | sort  | $(SED) '$!N; /^\(.*\)\n\1$$$$/!P; D' >> "$$@.dep"
 	$(QUIET)$(APPEND) -n '$$@.dep' '' ''
+ ifeq ($(lang),en_US)
+	$(QUIET)$(APPEND) -n '$$@.dep' 'define VBOX_REPACK_FILES_VBoxMerge$(module)_$(lang)'
+	$(QUIET)$(CAT_EXT) "$(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files" >> '$$@.dep'
+	$(QUIET)$(APPEND) -n '$$@.dep' '' 'endef'
+ endif
 
-$(eval OTHER_CLEAN += $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wixobj)
+$(eval BLDDIRS += $(VBOX_WIN_INST_REPACK_DIR)/files-VBoxMerge$(module)_$(lang)/)
+$(eval OTHER_CLEAN += $(VBOX_REPACK_FILES_VBoxMerge$(module)_$(lang)) $(VBOX_WIN_INST_REPACK_DIR)/VBoxMerge$(module)_$(lang).files $(VBOX_WIN_INST_OUT_DIR)/$(lang)/VBoxMerge$(module)_$(lang).wixobj.dep)
 endef
 
 $(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
