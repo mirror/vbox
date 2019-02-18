@@ -1179,7 +1179,7 @@ NTSTATUS DxgkDdiStartDevice(
                 /* Figure out the host capabilities. Start with nothing. */
                 pDevExt->fTexPresentEnabled = FALSE;
                 pDevExt->fCmdVbvaEnabled = FALSE;
-                pDevExt->fComplexTopologiesEnabled = FALSE;
+                pDevExt->fComplexTopologiesEnabled = TRUE;
 
                 if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                 {
@@ -1188,7 +1188,6 @@ NTSTATUS DxgkDdiStartDevice(
                     {
                         pDevExt->fTexPresentEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_TEX_PRESENT);
                         pDevExt->fCmdVbvaEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_CMDVBVA);
-                        // Disabled, see xTracker #8244 pDevExt->fComplexTopologiesEnabled = pDevExt->fCmdVbvaEnabled;
                     }
 #else
                     pDevExt->f3DEnabled = FALSE;
@@ -1209,6 +1208,8 @@ NTSTATUS DxgkDdiStartDevice(
                 {
                     pDevExt->f3DEnabled = FALSE;
                 }
+
+                LOGREL(("Handling complex topologies %s", pDevExt->fComplexTopologiesEnabled ? "enabled" : "disabled"));
 
                 /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported.
                  * The host will however support both old and new interface to keep compatibility
@@ -8089,4 +8090,3 @@ DriverEntry(
 
     return Status;
 }
-
