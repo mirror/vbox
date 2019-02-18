@@ -2617,8 +2617,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if oTestVm.sKind == "WindowsXP":
                 aaTests.extend([
                     # Reading directories.
-                    [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '../../Windows/Fonts'),
-                      tdTestResultDirRead(fRc = True, numFiles = 191) ],
+                    [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '../../Windows/Media'),
+                      tdTestResultDirRead(fRc = True, numFiles = 36) ],
                     [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'c:\\Windows\\Help'),
                       tdTestResultDirRead(fRc = True, numDirs = 13, numFiles = 569) ],
                     [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'c:\\Windows\\Web'),
@@ -2645,15 +2645,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     if curRes.numFiles != cFiles:
                         reporter.error('Test #%d failed: Got %d files, expected %d' % (i, cFiles, curRes.numFiles));
                         fRc = False;
-                        break;
                     if curRes.numDirs != cDirs:
                         reporter.error('Test #%d failed: Got %d directories, expected %d' % (i, cDirs, curRes.numDirs));
                         fRc = False;
-                        break;
             else:
                 reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, curRes.fRc));
                 fRc = False;
-                break;
 
         return (fRc, oTxsSession);
 
