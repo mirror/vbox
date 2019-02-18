@@ -1853,6 +1853,34 @@ void UIChooserModel::cleanupGroupTree(UIChooserItem *pParent)
     }
 }
 
+bool UIChooserModel::isGlobalItemFavorite(UIChooserItem *pParentItem) const
+{
+    /* Read group definitions: */
+    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentItem->fullName());
+    /* Return 'false' if no definitions found: */
+    if (definitions.isEmpty())
+        return false;
+
+    /* Prepare required group definition reg-exp: */
+    const QString strDefinitionTemplate = QString("n(\\S)*=GLOBAL");
+    const QRegExp definitionRegExp(strDefinitionTemplate);
+    /* For each the group definition: */
+    foreach (const QString &strDefinition, definitions)
+    {
+        /* Check if this is required definition: */
+        if (definitionRegExp.indexIn(strDefinition) == 0)
+        {
+            /* Get group descriptor: */
+            const QString strDescriptor(definitionRegExp.cap(1));
+            if (strDescriptor.contains('f'))
+                return true;
+        }
+    }
+
+    /* Return 'false' by default: */
+    return false;
+}
+
 UIChooserItem *UIChooserModel::getGroupItem(const QString &strName, UIChooserItem *pParentItem, bool fAllGroupsOpened)
 {
     /* Check passed stuff: */
@@ -2015,7 +2043,7 @@ void UIChooserModel::createMachineItem(const CMachine &machine, UIChooserItem *p
 void UIChooserModel::createGlobalItem(UIChooserItem *pParentItem)
 {
     /* Create global-item: */
-    new UIChooserItemGlobal(pParentItem, 0);
+    new UIChooserItemGlobal(pParentItem, isGlobalItemFavorite(pParentItem), 0);
 }
 
 void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
@@ -2202,10 +2230,16 @@ void UIChooserModel::gatherGroupOrders(QMap<QString, QStringList> &orders,
 {
     /* Prepare extra-data key for current group: */
     const QString strExtraDataKey = pParentItem->fullName();
+    /* Iterate over all the global-items: */
+    foreach (UIChooserItem *pItem, pParentItem->items(UIChooserItemType_Global))
+    {
+        const QString strGlobalDescriptor(pItem->isFavorite() ? "nf" : "n");
+        orders[strExtraDataKey] << QString("%1=GLOBAL").arg(strGlobalDescriptor);
+    }
     /* Iterate over all the group-items: */
     foreach (UIChooserItem *pItem, pParentItem->items(UIChooserItemType_Group))
     {
-        QString strGroupDescriptor(pItem->toGroupItem()->isOpened() ? "go" : "gc");
+        const QString strGroupDescriptor(pItem->toGroupItem()->isOpened() ? "go" : "gc");
         orders[strExtraDataKey] << QString("%1=%2").arg(strGroupDescriptor, pItem->name());
         gatherGroupOrders(orders, pItem);
     }

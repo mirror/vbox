@@ -411,6 +411,9 @@ private:
         /** Cleanups group tree starting from the passed @a pParentItem. */
         void cleanupGroupTree(UIChooserItem *pParentItem);
 
+        /** Returns whether global item within the @a pParentItem is favorite. */
+        bool isGlobalItemFavorite(UIChooserItem *pParentItem) const;
+
         /** Acquires group item, creates one if necessary.
           * @param  strName           Brings the name of group we looking for.
           * @param  pParentItem       Brings the parent we starting to look for a group from.

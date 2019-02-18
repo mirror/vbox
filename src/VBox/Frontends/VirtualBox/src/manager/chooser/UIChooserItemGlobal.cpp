@@ -34,8 +34,9 @@
 
 
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
+                                         bool fFavorite,
                                          int iPosition /* = -1 */)
-    : UIChooserItem(pParent, false /* favorite? */, pParent->isTemporary(), 0, 100)
+    : UIChooserItem(pParent, fFavorite, pParent->isTemporary(), 0, 100)
     , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
@@ -51,9 +52,10 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
 }
 
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
+                                         bool fFavorite,
                                          UIChooserItemGlobal *pCopyFrom,
                                          int iPosition /* = -1 */)
-    : UIChooserItem(pParent, false /* favorite? */, pParent->isTemporary(), 0, 100)
+    : UIChooserItem(pParent, fFavorite, pParent->isTemporary(), 0, 100)
     , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
@@ -389,7 +391,7 @@ void UIChooserItemGlobal::prepare()
 
     /* Add item to the parent: */
     AssertPtrReturnVoid(parentItem());
-    parentItem()->addItem(this, false, m_iPosition);
+    parentItem()->addItem(this, isFavorite(), m_iPosition);
 
     /* Configure connections: */
     connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
