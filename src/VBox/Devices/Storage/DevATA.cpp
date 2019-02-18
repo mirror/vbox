@@ -3919,7 +3919,7 @@ static void ataR3ResetDevice(ATADevState *s)
 }
 
 
-static bool ataR3ExecuteDeviceDiagnosticSS(ATADevState *s)
+static void ataR3DeviceDiag(ATADevState *s)
 {
     ataR3SetSignature(s);
     if (s->fATAPI)
@@ -3927,6 +3927,24 @@ static bool ataR3ExecuteDeviceDiagnosticSS(ATADevState *s)
     else
         ataSetStatusValue(s, ATA_STAT_READY | ATA_STAT_SEEK);
     s->uATARegError = 0x01;
+}
+
+
+static bool ataR3ExecuteDeviceDiagnosticSS(ATADevState *s)
+{
+    PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
+
+    /* EXECUTE DEVICE DIAGNOSTIC is a very special command which always
+     * gets executed, regardless of which device is selected. As a side
+     * effect, it always completes with device 0 selected.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pCtl->aIfs); i++)
+        ataR3DeviceDiag(&pCtl->aIfs[i]);
+
+    LogRel(("ATA: LUN#%d: EXECUTE DEVICE DIAGNOSTIC, status %02X\n",
+            s->iLUN, s->uATARegStatus));
+    pCtl->iSelectedIf = 0;
+
     return false;
 }
 
@@ -5875,7 +5893,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                 if (pReq->u.a.fResetDrive)
                 {
                     ataR3ResetDevice(s);
-                    ataR3ExecuteDeviceDiagnosticSS(s);
+                    ataR3DeviceDiag(s);
                 }
                 else
                 {
