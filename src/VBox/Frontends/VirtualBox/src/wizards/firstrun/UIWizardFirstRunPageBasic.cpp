@@ -39,7 +39,8 @@ UIWizardFirstRunPage::UIWizardFirstRunPage(bool fBootHardDiskWasSet)
 void UIWizardFirstRunPage::onOpenMediumWithFileOpenDialog()
 {
     /* Get opened vboxMedium id: */
-    QUuid uMediumId = vboxGlobal().openMediumWithFileOpenDialog(m_pMediaSelector->type(), thisImp());
+    QUuid uMediumId;
+    vboxGlobal().openMediumSelectorDialog(thisImp(), UIMediumDeviceType_DVD, uMediumId, "", "", "", true);
     /* Update medium-combo if necessary: */
     if (!uMediumId.isNull())
         m_pMediaSelector->setCurrentItem(uMediumId);
@@ -158,4 +159,3 @@ QString UIWizardFirstRunPageBasic::source() const
 {
     return m_pMediaSelector->currentText();
 }
-

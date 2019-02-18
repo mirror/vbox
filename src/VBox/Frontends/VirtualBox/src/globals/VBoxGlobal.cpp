@@ -2889,29 +2889,6 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose/Create a disk image...",
                                                                "This is used for hard disks, optical media and floppies"));
 
-    // /* Prepare create floppy disk action: */
-    // if (enmMediumType == UIMediumDeviceType_Floppy)
-    // {
-    //     QAction *pActionCreateFloppy = menu.addAction(UIIconPool::iconSet(":/fd_add_16px.png"),
-    //                                                   QString(), pListener, pszSlotName);
-    //     pActionCreateFloppy->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
-    //                                                                     comCurrentAttachment.GetDevice(), enmMediumType,
-    //                                                                     UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)));
-    //     pActionCreateFloppy->setText(QApplication::translate("UIMachineSettingsStorage", "Create a new floppy disk...",
-    //                                                          "This is used to create a new floppy disk"));
-    // }
-    // /* Prepare ad-hoc-viso action for DVD-ROMs: */
-    // if (enmMediumType == UIMediumDeviceType_DVD)
-    // {
-    //     QAction *pActionAdHocViso = menu.addAction(UIIconPool::iconSet(":/select_file_16px.png"),
-    //                                                QString(), pListener, pszSlotName);
-    //     pActionAdHocViso->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
-    //                                                                  comCurrentAttachment.GetDevice(), enmMediumType,
-    //                                                                  UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)));
-    //     pActionAdHocViso->setText(QApplication::translate("UIMachineSettingsStorage", "Create ad hoc VISO...",
-    //                                                       "This is used for optical media"));
-    // }
-
 
     /* Insert separator: */
     menu.addSeparator();
