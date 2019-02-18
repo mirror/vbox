@@ -3073,7 +3073,14 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
                 const QString strMachineFolder(QFileInfo(comConstMachine.GetSettingsFilePath()).absolutePath());
                 QUuid uMediumID;
                 if (target.type == UIMediumTarget::UIMediumTargetType_WithID)
-                    uMediumID = openMediumWithFileOpenDialog(target.mediumType, windowManager().mainWindowShown(), strMachineFolder);
+                {
+                    int iDialogReturn = openMediumSelectorDialog(windowManager().mainWindowShown(), target.mediumType, uMediumID,
+                                                                 strMachineFolder, "" /*strMachineName*/,
+                                                                 "" /*strMachineGuestOSTypeId*/, true /*fEnableCreate */);
+                    if (iDialogReturn == UIMediumSelector::ReturnCode_LeftEmpty &&
+                        (target.mediumType == UIMediumDeviceType_DVD || target.mediumType == UIMediumDeviceType_Floppy))
+                        fMount = false;
+                }
                 else if(target.type == UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)
                     uMediumID = createVisoMediumWithVisoCreator(windowManager().mainWindowShown(), strMachineFolder, comConstMachine.GetName());
 
@@ -3086,8 +3093,10 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
                 /* Accept new medium ID: */
                 if (!uMediumID.isNull())
                     uNewID = uMediumID;
-                /* Else just exit: */
-                else return;
+                else
+                    /* Else just exit in case left empty is not chosen in medium selector dialog: */
+                    if (fMount)
+                        return;
             }
             /* Use medium ID which was passed: */
             else if (!target.data.isNull() && target.data != uCurrentID.toString())
@@ -3102,7 +3111,7 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
             uActualID = fMount ? uNewID : uCurrentID;
             break;
         }
-        /* Do we have a resent location? */
+        /* Do we have a recent location? */
         case UIMediumTarget::UIMediumTargetType_WithLocation:
         {
             /* Open medium by location and get new medium ID if any: */
