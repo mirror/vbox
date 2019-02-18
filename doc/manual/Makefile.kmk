@@ -130,7 +130,6 @@ VBOX_DOC_XIDL_SRC_TMP  = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.xidl.tmp
 
 BLDDIRS += $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/, $(VBOX_MANUAL_LANGUAGES))
 
-
 if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
  if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_DOCS_SDKREF)
   INSTALLS += VBox-docs-sdkref
@@ -182,33 +181,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
   VBOX_MANUAL_LANGUAGES += $(VBOX_MANUAL_ADD_LANGUAGES)
  endif
 
- VBOX_MANUAL_XML_FILES = \
- 	UserManual.xml \
- 	user_Preface.xml \
- 	user_Introduction.xml \
- 	user_Installation.xml \
- 	user_BasicConcepts.xml \
- 	user_GuestAdditions.xml \
- 	user_Storage.xml \
- 	user_Networking.xml \
- 	user_Frontends.xml \
- 	user_VBoxManage.xml \
- 	user_AdvancedTopics.xml \
- 	user_Technical.xml \
- 	user_VirtualBoxAPI.xml \
- 	user_Troubleshooting.xml \
- 	user_Security.xml \
- 	user_KnownIssues.xml \
- 	user_ChangeLog.xml \
- 	user_ThirdParty.xml \
- 	user_PrivacyPolicy.xml \
- 	user_Glossary.xml \
- 	oracle-accessibility-en.xml \
- 	oracle-support-en.xml
-
- VBOX_MANUAL_XML_FILES_COMMON = \
- 	$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml
-
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
  $(eval VBOX_MANUAL_XML_FILES_GENERATED_$$(lang) := \
  	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
@@ -255,8 +227,11 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
  	$(VBOX_XML_CATALOG_DOCBOOK) \
  	$(VBOX_XML_CATALOG_MANUAL) \
  	$(VBOX_XML_ENTITIES) \
+ 	$(VBOX_XML_XREF_TO_TEXT) \
+ 	$(VBOX_XML_XREF_TO_TEXT).cat \
  	$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/, \
         $(addprefix user_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
+	 $(VBOX_MANUAL_XML_REFENTRY_FILES) \
         $(patsubst man_%,%.1,$(basename $(VBOX_MANUAL_XML_REFENTRY_FILES))) \
         isomakercmd-man.xml \
         user_isomakercmd-man.xml \
@@ -871,12 +846,15 @@ define def_vbox_refentry_to_manpage
 $$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(2): \
 		$$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl \
+		$$(VBOX_XML_XREF_TO_TEXT) \
 		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK)  $$(VBOX_XML_CATALOG_MANUAL) \
 		$$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(RM) -f "$$@"
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --output $$@ \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl $$<
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --output $$@.tmp $$(VBOX_XML_XREF_TO_TEXT) $$@
+	$$(QUIET)$$(MV) -f -- "$$@.tmp" "$$@"
 if defined(VBOX_HAVE_XMLLINT)
 	$$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $$@
 endif

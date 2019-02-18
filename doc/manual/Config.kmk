@@ -40,6 +40,35 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-extpack.xml \
 	man_VBoxManage-unattended.xml
 
+## List of user manual XML files.
+VBOX_MANUAL_XML_FILES = \
+	UserManual.xml \
+	user_Preface.xml \
+	user_Introduction.xml \
+	user_Installation.xml \
+	user_BasicConcepts.xml \
+	user_GuestAdditions.xml \
+	user_Storage.xml \
+	user_Networking.xml \
+	user_Frontends.xml \
+	user_VBoxManage.xml \
+	user_AdvancedTopics.xml \
+	user_Technical.xml \
+	user_VirtualBoxAPI.xml \
+	user_Troubleshooting.xml \
+	user_Security.xml \
+	user_KnownIssues.xml \
+	user_ChangeLog.xml \
+	user_ThirdParty.xml \
+	user_PrivacyPolicy.xml \
+	user_Glossary.xml \
+	oracle-accessibility-en.xml \
+	oracle-support-en.xml
+
+## List of user manual XML files common for all languages.
+VBOX_MANUAL_XML_FILES_COMMON = \
+	$(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml
+
 
 # Tool locations.
 ifndef VBOX_OSE
@@ -61,14 +90,19 @@ VBOX_XML_ENTITIES         ?= $(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent
 # one of them is enough, they show the same information).
 ifdef VBOX_XML_CATALOG
  VBOX_XSLTPROC_WITH_CAT    = $(REDIRECT) -E "XML_CATALOG_FILES=$(VBOX_XML_CATALOG)" -E "XML_DEBUG_CATALOG=" $1 -- \
- 	$(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS)
+ 	$(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
  VBOX_XMLLINT_WITH_CAT     = $(REDIRECT) -E "XML_CATALOG_FILES=$(VBOX_XML_CATALOG)" -E "XML_DEBUG_CATALOG=" -- \
-	$(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS)
+	$(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
 else
- VBOX_XSLTPROC_WITH_CAT    = $(if $(1), $(REDIRECT) $1 --,) $(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS)
- VBOX_XMLLINT_WITH_CAT     = $(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS)
+ VBOX_XSLTPROC_WITH_CAT    = $(if $(1), $(REDIRECT) $1 --,) $(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS) \
+	--path "$(VBOX_PATH_MANUAL_OUTBASE)"
+ VBOX_XMLLINT_WITH_CAT     = $(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS) --path "$(VBOX_PATH_MANUAL_OUTBASE)"
 endif
 
+
+# Location of the generate stylesheet for transformating xref elements into
+# name user manual sections.
+VBOX_XML_XREF_TO_TEXT      = $(VBOX_PATH_MANUAL_OUTBASE)/xref-to-text.xsl
 
 ##
 # Emits rules for preprocessing refentry sources (applying remarks element),
@@ -78,16 +112,22 @@ endif
 # @param    1   The output directory.
 # @param    2   The XML file name (no path).
 # @param    3   The XML file with full path.
+# @param    4   Non-empty if xrefs to replace.
 define def_vbox_refentry_preprocess_for_manpage
 $(1)/$(2): \
 		$(3) \
 		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl \
+		$(if $(4),$$(VBOX_XML_XREF_TO_TEXT),) \
 		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(VBOX_XML_CATALOG_MANUAL) \
 		$$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
 	$$(call MSG_TOOL,xsltproc $$(notdir $$(firstword $$(filter %.xsl,$$^))),,$$(firstword $$(filter %.xml,$$^)),$$@)
 	$$(QUIET)$$(RM) -f "$$@"
 	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --output $$@ \
-		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl $$<
+		"$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl" $$<
+ifneq ($(4),)
+	$$(QUIET)$$(call VBOX_XSLTPROC_WITH_CAT) --output $$@.tmp $$(VBOX_XML_XREF_TO_TEXT) $$@
+	$$(QUIET)$$(MV) -f -- "$$@.tmp" "$$@"
+endif
 if defined(VBOX_HAVE_XMLLINT) && "$(USER)" == "bird" # Effing stuff happends on build servers, probably kmk related...
 	$$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $$@
 endif
@@ -237,7 +277,7 @@ ifdef VBOX_XML_ENTITIES
  $(VBOX_XML_ENTITIES): $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,Creating entities $@)
 	$(QUIET)$(APPEND) -tn "$@" \
-        '<!-- Entities for product names -->' \
+		'<!-- Entities for product names -->' \
 		'<!ENTITY product-version "$(VBOX_VERSION_STRING)">' \
 		'<!ENTITY product-name "Oracle VM VirtualBox">' \
 		'<!ENTITY oci "Oracle Cloud Infrastructure">' \
@@ -257,6 +297,32 @@ ifdef VBOX_XML_ENTITIES
 
 endif # VBOX_XML_ENTITIES
 
+
+## Produce stylesheet for translating cross references (xref) to user manual
+# chapters and sections in the man pages and --help output.
+#
+# Note! This requires processing UserManual.xml as a single document in order
+#       to get the correct chapter and section numbering, so we use a catalog
+#       file to replace the generated XML documents it includes with a dummy
+#       one.  This reduces the dependencies and recipies we require to build
+#       VBoxManage and the RTIsoMaker (w/ derivatives).
+$(VBOX_XML_XREF_TO_TEXT) + $(VBOX_XML_XREF_TO_TEXT).cat: \
+		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-link-replacement-xsl-gen.xsl \
+		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_XML_FILES)) \
+		$(VBOX_MANUAL_XML_FILES_COMMON) \
+		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(VBOX_XML_CATALOG_MANUAL) $(VBOX_XML_ENTITIES) \
+               | $$(dir $$@)
+	$(call MSG_L1,Creating stylesheet $@)
+	$(QUIET)$(APPEND) -nt "$(VBOX_XML_XREF_TO_TEXT).cat" \
+		'<?xml version="1.0"?>' \
+		'<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">' \
+		'<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">' \
+		$(foreach x,user_VBoxManage_CommandsOverview.xml user_isomakercmd-man.xml $(addprefix user_,$(VBOX_MANUAL_XML_REFENTRY_FILES))\
+		,'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/$(x)" uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_SRC)/dummy-sect1.xml"/>') \
+		'  <nextCatalog catalog="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_XML_CATALOG)"/>' \
+		'</catalog>'
+	$(QUIET)$(call VBOX_XSLTPROC_WITH_CAT, -E "XML_CATALOG_FILES=$(VBOX_XML_XREF_TO_TEXT).cat") \
+		--output "$@" "$<" $(filter %UserManual.xml,$^)
 
 #
 # Generate rules for editing the refentry to C/H style sheets.

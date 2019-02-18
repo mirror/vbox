@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Dummy for xref-to-text usage. -->
+<sect1>
+  Blah.
+  <xsect2>
+    More blah.
+  </xsect2>
+</sect1>
+

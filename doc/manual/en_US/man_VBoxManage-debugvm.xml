@@ -127,8 +127,8 @@
     <title>Description</title>
 
     <para>The "debugvm" commands are for experts who want to tinker with the
-      exact details of virtual machine execution.  Like the VM debugger<remark role="help-manual">
-      described in <xref linkend="ts_debugger" /></remark>, these commands are only useful if you are
+      exact details of virtual machine execution.  Like the VM debugger
+      described in <xref linkend="ts_debugger" />, these commands are only useful if you are
       very familiar with the details of the PC architecture and how to debug
       software.</para>
 
@@ -150,8 +150,8 @@
       <remark role="help-copy-synopsis"/>
       <para>
         Creates a system dump file of the specified VM.  This file will have
-        the standard ELF core format (with custom sections)<remark role="help-manual">; see
-        <xref linkend="ts_guest-core-format" /></remark>.
+        the standard ELF core format (with custom sections); see
+        <xref linkend="ts_guest-core-format" />.
       </para>
       <para>
         This corresponds to the <command>writecore</command> command in the debugger.
