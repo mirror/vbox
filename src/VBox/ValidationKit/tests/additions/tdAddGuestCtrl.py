@@ -2615,7 +2615,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResultDirRead(fRc = False) ]
             ]);
 
-            if oTestVm.sVmName == 'tst-xppro':
+            if oTestVm.sKind == "WindowsXP":
                 aaTests.extend([
                     # Reading directories.
                     [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '../../Windows/Fonts'),
@@ -2696,7 +2696,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResult(fRc = False) ]
             ]);
 
-            if oTestVm.sVmName == 'tst-xppro':
+            if oTestVm.sKind == "WindowsXP":
                 aaTests.extend([
                     # Try delete some unimportant media stuff.
                     [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\Media\\chimes.wav'),
