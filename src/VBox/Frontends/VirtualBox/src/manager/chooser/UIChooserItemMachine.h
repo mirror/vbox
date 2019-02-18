@@ -119,8 +119,8 @@ protected:
 
     /** @name Children stuff.
       * @{ */
-        /** Adds child @a pItem to certain @a iPosition. */
-        virtual void addItem(UIChooserItem *pItem, int iPosition) /* override */;
+        /** Adds possible @a fFavorite child @a pItem to certain @a iPosition. */
+        virtual void addItem(UIChooserItem *pItem, bool fFavorite, int iPosition) /* override */;
         /** Removes child @a pItem. */
         virtual void removeItem(UIChooserItem *pItem) /* override */;
 

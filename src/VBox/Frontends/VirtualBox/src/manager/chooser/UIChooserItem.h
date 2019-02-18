@@ -102,16 +102,19 @@ signals:
 public:
 
     /** Constructs item passing @a pParent to the base-class.
+      * @param  fFavorite      Brings whether this item created directly in favorite container.
       * @param  fTemporary     Brings whether this item created for temporary needs.
       * @param  iDefaultValue  Brings default value for hovering animation.
       * @param  iHoveredValue  Brings hovered value for hovering animation. */
-    UIChooserItem(UIChooserItem *pParent, bool fTemporary,
+    UIChooserItem(UIChooserItem *pParent, bool fFavorite, bool fTemporary,
                   int iDefaultValue = 100, int iHoveredValue = 90);
 
     /** @name Item stuff.
       * @{ */
         /** Returns parent  reference. */
         UIChooserItem *parentItem() const {  return m_pParent; }
+        /** Returns whether item is favorite. */
+        bool isFavorite() const { return m_fFavorite; }
         /** Returns whether item is temporary. */
         bool isTemporary() const { return m_fTemporary; }
 
@@ -164,8 +167,8 @@ public:
 
     /** @name Children stuff.
       * @{ */
-        /** Adds child @a pItem to certain @a iPosition. */
-        virtual void addItem(UIChooserItem *pItem, int iPosition) = 0;
+        /** Adds possible @a fFavorite child @a pItem to certain @a iPosition. */
+        virtual void addItem(UIChooserItem *pItem, bool fFavorite, int iPosition) = 0;
         /** Removes child @a pItem. */
         virtual void removeItem(UIChooserItem *pItem) = 0;
 
@@ -328,6 +331,8 @@ private:
       * @{ */
         /** Holds the item's parent item. */
         UIChooserItem *m_pParent;
+        /** Holds whether item is favorite. */
+        bool           m_fFavorite;
         /** Holds whether item is temporary. */
         bool           m_fTemporary;
 

@@ -35,7 +35,7 @@
 
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
                                          int iPosition /* = -1 */)
-    : UIChooserItem(pParent, pParent->isTemporary(), 0, 100)
+    : UIChooserItem(pParent, false /* favorite? */, pParent->isTemporary(), 0, 100)
     , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
@@ -53,7 +53,7 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
                                          UIChooserItemGlobal *pCopyFrom,
                                          int iPosition /* = -1 */)
-    : UIChooserItem(pParent, pParent->isTemporary(), 0, 100)
+    : UIChooserItem(pParent, false /* favorite? */, pParent->isTemporary(), 0, 100)
     , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
@@ -195,7 +195,7 @@ QString UIChooserItemGlobal::definition() const
     return QString("n=%1").arg("GLOBAL");
 }
 
-void UIChooserItemGlobal::addItem(UIChooserItem *, int)
+void UIChooserItemGlobal::addItem(UIChooserItem *, bool, int)
 {
     AssertMsgFailed(("Global graphics item do NOT support children!"));
 }
@@ -389,7 +389,7 @@ void UIChooserItemGlobal::prepare()
 
     /* Add item to the parent: */
     AssertPtrReturnVoid(parentItem());
-    parentItem()->addItem(this, m_iPosition);
+    parentItem()->addItem(this, false, m_iPosition);
 
     /* Configure connections: */
     connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,

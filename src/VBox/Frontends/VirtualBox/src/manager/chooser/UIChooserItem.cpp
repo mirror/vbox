@@ -192,10 +192,11 @@ private:
 *   Class UIChooserItem implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fTemporary,
+UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fFavorite, bool fTemporary,
                              int iDefaultValue /* = 100 */, int iHoveredValue /* = 90 */)
     : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)
     , m_pParent(pParent)
+    , m_fFavorite(fFavorite)
     , m_fTemporary(fTemporary)
     , m_fRoot(!pParent)
     , m_iLevel(-1)
