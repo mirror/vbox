@@ -166,7 +166,7 @@ QString UIFDCreationDialog::getDefaultFolder() const
         return strInitialPath;
 
     QString strDiskname = !(m_strMachineName.isEmpty()) ? m_strMachineName : "NewFloppyDisk";
-    strDiskname = VBoxGlobal::findUniqueFileName(m_strDefaultFolder, m_strMachineName);
+    strDiskname = VBoxGlobal::findUniqueFileName(m_strDefaultFolder, strDiskname);
 
     strInitialPath = QDir(strInitialPath).absoluteFilePath(strDiskname + "." + strPreferredExtension);
     return strInitialPath;

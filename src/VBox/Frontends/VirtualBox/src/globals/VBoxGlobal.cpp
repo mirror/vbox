@@ -2834,9 +2834,9 @@ int VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  e
     return static_cast<int>(returnCode);
 }
 
-QUuid VBoxGlobal::createHDWithNewHDWizard(QWidget *pParent, const QString &strMachineGuestOSTypeId  /* = QString() */,
-                                          const QString &strMachineFolder /* = QString() */,
-                                          const QString &strMachineName /* = QString() */)
+QUuid VBoxGlobal::createHDWithNewHDWizard(QWidget *pParent,  const QString &strMachineFolder /* = QString() */,
+                                          const QString &strMachineName /* = QString() */,
+                                          const QString &strMachineGuestOSTypeId  /* = QString() */)
 {
     /* Initialize variables: */
     QString strDefaultFolder(strMachineFolder);
@@ -2886,31 +2886,31 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
                                                         QString(), pListener, pszSlotName);
     pActionOpenExistingMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                           comCurrentAttachment.GetDevice(), enmMediumType)));
-    pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose disk image...",
+    pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose/Create a disk image...",
                                                                "This is used for hard disks, optical media and floppies"));
 
-    /* Prepare create floppy disk action: */
-    if (enmMediumType == UIMediumDeviceType_Floppy)
-    {
-        QAction *pActionCreateFloppy = menu.addAction(UIIconPool::iconSet(":/fd_add_16px.png"),
-                                                      QString(), pListener, pszSlotName);
-        pActionCreateFloppy->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
-                                                                        comCurrentAttachment.GetDevice(), enmMediumType,
-                                                                        UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)));
-        pActionCreateFloppy->setText(QApplication::translate("UIMachineSettingsStorage", "Create a new floppy disk...",
-                                                             "This is used to create a new floppy disk"));
-    }
-    /* Prepare ad-hoc-viso action for DVD-ROMs: */
-    if (enmMediumType == UIMediumDeviceType_DVD)
-    {
-        QAction *pActionAdHocViso = menu.addAction(UIIconPool::iconSet(":/select_file_16px.png"),
-                                                   QString(), pListener, pszSlotName);
-        pActionAdHocViso->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
-                                                                     comCurrentAttachment.GetDevice(), enmMediumType,
-                                                                     UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)));
-        pActionAdHocViso->setText(QApplication::translate("UIMachineSettingsStorage", "Create ad hoc VISO...",
-                                                          "This is used for optical media"));
-    }
+    // /* Prepare create floppy disk action: */
+    // if (enmMediumType == UIMediumDeviceType_Floppy)
+    // {
+    //     QAction *pActionCreateFloppy = menu.addAction(UIIconPool::iconSet(":/fd_add_16px.png"),
+    //                                                   QString(), pListener, pszSlotName);
+    //     pActionCreateFloppy->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
+    //                                                                     comCurrentAttachment.GetDevice(), enmMediumType,
+    //                                                                     UIMediumTarget::UIMediumTargetType_CreateFloppyDisk)));
+    //     pActionCreateFloppy->setText(QApplication::translate("UIMachineSettingsStorage", "Create a new floppy disk...",
+    //                                                          "This is used to create a new floppy disk"));
+    // }
+    // /* Prepare ad-hoc-viso action for DVD-ROMs: */
+    // if (enmMediumType == UIMediumDeviceType_DVD)
+    // {
+    //     QAction *pActionAdHocViso = menu.addAction(UIIconPool::iconSet(":/select_file_16px.png"),
+    //                                                QString(), pListener, pszSlotName);
+    //     pActionAdHocViso->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
+    //                                                                  comCurrentAttachment.GetDevice(), enmMediumType,
+    //                                                                  UIMediumTarget::UIMediumTargetType_CreateAdHocVISO)));
+    //     pActionAdHocViso->setText(QApplication::translate("UIMachineSettingsStorage", "Create ad hoc VISO...",
+    //                                                       "This is used for optical media"));
+    // }
 
 
     /* Insert separator: */
@@ -3075,8 +3075,8 @@ void VBoxGlobal::updateMachineStorage(const CMachine &comConstMachine, const UIM
                 if (target.type == UIMediumTarget::UIMediumTargetType_WithID)
                 {
                     int iDialogReturn = openMediumSelectorDialog(windowManager().mainWindowShown(), target.mediumType, uMediumID,
-                                                                 strMachineFolder, "" /*strMachineName*/,
-                                                                 "" /*strMachineGuestOSTypeId*/, true /*fEnableCreate */);
+                                                                 strMachineFolder, comConstMachine.GetName(),
+                                                                 comConstMachine.GetOSTypeId(), true /*fEnableCreate */);
                     if (iDialogReturn == UIMediumSelector::ReturnCode_LeftEmpty &&
                         (target.mediumType == UIMediumDeviceType_DVD || target.mediumType == UIMediumDeviceType_Floppy))
                         fMount = false;
