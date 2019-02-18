@@ -375,10 +375,10 @@ class tdTestFileReadWrite(tdTestGuestCtrlBase):
 
     def getAccessMode(self):
         """ Converts open mode to access mode enum. """
-        if self.sOpenMode == 'r':  return vboxcon.FileOpenMode_ReadOnly;
-        if self.sOpenMode == 'w':  return vboxcon.FileOpenMode_WriteOnly;
-        if self.sOpenMode == 'w+': return vboxcon.FileOpenMode_ReadWrite;
-        if self.sOpenMode == 'r+': return vboxcon.FileOpenMode_ReadWrite;
+        if self.sOpenMode == 'r':  return vboxcon.FileAccessMode_ReadOnly;
+        if self.sOpenMode == 'w':  return vboxcon.FileAccessMode_WriteOnly;
+        if self.sOpenMode == 'w+': return vboxcon.FileAccessMode_ReadWrite;
+        if self.sOpenMode == 'r+': return vboxcon.FileAccessMode_ReadWrite;
         raise base.GenError(self.sOpenMode);
 
     def getSharingMode(self):
@@ -1057,12 +1057,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             fRc, oTxsSession = self.testGuestCtrlFileStat(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
-        # FIXME: Failing tests.
-        # reporter.testStart('File read');
-        # fSkip = 'file_read' not in self.asTests or fRc is False;
-        # if fSkip is False:
-        #     fRc, oTxsSession = self.testGuestCtrlFileRead(oSession, oTxsSession, oTestVm);
-        # reporter.testDone(fSkip);
+        reporter.testStart('File read');
+        fSkip = 'file_read' not in self.asTests or fRc is False;
+        if fSkip is False:
+            fRc, oTxsSession = self.testGuestCtrlFileRead(oSession, oTxsSession, oTestVm);
+        reporter.testDone(fSkip);
 
         # reporter.testStart('File write');
         # fSkip = 'file_write' not in self.asTests or fRc is False;
@@ -3005,7 +3004,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aScratchBuf = array('b', [random.randint(-128, 127) for i in range(cScratchBuf)]);
         aaTests.extend([
             # Write to a non-existing file.
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = sScratch + 'testGuestCtrlFileWrite.txt', \
+            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = sScratch + 'testGuestCtrlFileWrite.txt',
                                   sOpenMode = 'w+', sDisposition = 'ce', cbToReadWrite = cScratchBuf,
                                   aBuf = aScratchBuf),
               tdTestResultFileReadWrite(fRc = True, aBuf = aScratchBuf, \
@@ -3015,7 +3014,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aScratchBuf2 = array('b', [random.randint(-128, 127) for i in range(cScratchBuf)]);
         aaTests.extend([
             # Append the same amount of data to the just created file.
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = sScratch + 'testGuestCtrlFileWrite.txt', \
+            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = sScratch + 'testGuestCtrlFileWrite.txt',
                                   sOpenMode = 'w+', sDisposition = 'oa', cbToReadWrite = cScratchBuf,
                                   cbOffset = cScratchBuf, aBuf = aScratchBuf2),
               tdTestResultFileReadWrite(fRc = True, aBuf = aScratchBuf2, \
@@ -3026,7 +3025,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         for (i, aTest) in enumerate(aaTests):
             curTest = aTest[0]; # tdTestFileReadWrite, use an index, later.
             curRes  = aTest[1]; # tdTestResult
-            reporter.log('Testing #%d, sFile="%s", cbToReadWrite=%d, sOpenMode="%s", sDisposition="%s", cbOffset=%d ...' %
+            reporter.log('Testing #%d, sFile="%s", cbToReadWrite=%d, sOpenMode="%s", sDisposition="%s", cbOffset=%d ...' % \
                          (i, curTest.sFile, curTest.cbToReadWrite, curTest.sOpenMode, curTest.sDisposition, curTest.cbOffset));
             curTest.setEnvironment(oSession, oTxsSession, oTestVm);
             fRc, curGuestSession = curTest.createSession('testGuestCtrlFileWrite: Test #%d' % (i,));
@@ -3046,7 +3045,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     curOffset = long(curFile.offset);
                     resOffset = long(curTest.cbOffset);
                     if curOffset != resOffset:
-                        reporter.error('Test #%d failed: Initial offset on open does not match: Got %d, expected %d'
+                        reporter.error('Test #%d failed: Initial offset on open does not match: Got %d, expected %d' \
                                        % (i, curOffset, resOffset));
                         fRc = False;
                 else:
@@ -3062,7 +3061,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     cBytesWritten = curFile.write(curTest.aBuf, 30 * 1000);
                     if    curRes.cbProcessed > 0 \
                       and curRes.cbProcessed != cBytesWritten:
-                        reporter.error('Test #%d failed: Written buffer length does not match: Got %d, expected %d'
+                        reporter.error('Test #%d failed: Written buffer length does not match: Got %d, expected %d' \
                                        % (i, cBytesWritten, curRes.cbProcessed));
                         fRc = False;
                     if fRc:
@@ -3077,26 +3076,26 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             reporter.logXcpt('Seeking back to initial write position failed:');
                             fRc = False;
                         if fRc and long(curFile.offset) != curTest.cbOffset:
-                            reporter.error('Test #%d failed: Initial write position does not match current position, '
+                            reporter.error('Test #%d failed: Initial write position does not match current position, ' \
                                            'got %d, expected %d' % (i, long(curFile.offset), curTest.cbOffset));
                             fRc = False;
                     if fRc:
                         aBufRead = curFile.read(curTest.cbToReadWrite, 30 * 1000);
                         if len(aBufRead) != curTest.cbToReadWrite:
-                            reporter.error('Test #%d failed: Got buffer length %d, expected %d'
+                            reporter.error('Test #%d failed: Got buffer length %d, expected %d' \
                                            % (i, len(aBufRead), curTest.cbToReadWrite));
                             fRc = False;
                         if    fRc \
                           and curRes.aBuf is not None \
                           and curRes.aBuf != aBufRead:
-                            reporter.error('Test #%d failed: Got buffer\n%s, expected\n%s'
+                            reporter.error('Test #%d failed: Got buffer\n%s, expected\n%s' \
                                            % (i, aBufRead, curRes.aBuf));
                             fRc = False;
                 # Test final offset.
                 curOffset = long(curFile.offset);
                 resOffset = long(curRes.cbOffset);
                 if curOffset != resOffset:
-                    reporter.error('Test #%d failed: Final offset does not match: Got %d, expected %d'
+                    reporter.error('Test #%d failed: Final offset does not match: Got %d, expected %d' \
                                    % (i, curOffset, resOffset));
                     fRc = False;
                 curFile.close();
