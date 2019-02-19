@@ -79,7 +79,8 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
     , m_strMachineName(machineName)
     , m_strMachineGuestOSTypeId(strMachineGuestOSTypeId)
 {
-    vboxGlobal().startMediumEnumeration();
+    if (vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI)
+        vboxGlobal().startMediumEnumeration();
     configure();
     finalize();
 }
