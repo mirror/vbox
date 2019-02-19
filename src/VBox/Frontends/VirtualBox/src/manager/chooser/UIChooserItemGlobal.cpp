@@ -81,8 +81,8 @@ bool UIChooserItemGlobal::isToolButtonArea(const QPoint &position, int iMarginMu
     const int iFullHeight = geometry().height();
     const int iMargin = data(GlobalItemData_Margin).toInt();
     const int iButtonMargin = data(GlobalItemData_ButtonMargin).toInt();
-    const int iToolPixmapX = iFullWidth - iMargin
-                           - 1 - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio();
+    const int iToolPixmapX = iFullWidth - iMargin - 1
+                           - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio();
     const int iToolPixmapY = (iFullHeight - m_toolPixmap.height() / m_toolPixmap.devicePixelRatio()) / 2;
     QRect rect = QRect(iToolPixmapX,
                        iToolPixmapY,
