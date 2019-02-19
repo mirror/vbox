@@ -14461,6 +14461,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
         {
             if (pVCpu->iem.s.cActiveMappings > 0)
                 iemMemRollback(pVCpu);
+# if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
+            rcStrict = iemExecStatusCodeFiddling(pVCpu, rcStrict);
+# endif
             pVCpu->iem.s.cLongJumps++;
         }
         pVCpu->iem.s.CTX_SUFF(pJmpBuf) = pSavedJmpBuf;
