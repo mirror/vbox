@@ -2614,18 +2614,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResultDirRead(fRc = False) ]
             ]);
 
-            if oTestVm.sVmName == "tst-xppro":
-                aaTests.extend([
-                    # Reading directories.
-                    [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '../../Windows/Media'),
-                      tdTestResultDirRead(fRc = True, numFiles = 36) ],
-                    [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'c:\\Windows\\Help'),
-                      tdTestResultDirRead(fRc = True, numDirs = 13, numFiles = 569) ],
-                    [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'c:\\Windows\\Web'),
-                      tdTestResultDirRead(fRc = True, numDirs = 3, numFiles = 55) ]
-                ]);
-
-            if oTestVm.sVmName == "tst-xpsp2":
+            if oTestVm.sVmName.startswith('tst-xpsp2'):
                 aaTests.extend([
                     # Reading directories.
                     [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '../../Windows/Media'),
@@ -2821,8 +2810,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aoTests += [ tdTestSessionEx([ tdStepStat('', vbox.ComError.E_INVALIDARG), ]), ];
 
         # Some test VM specific tests.
-        if oTestVm.sVmName == 'tst-xppro':
-            aoTests += [ tdTestSessionEx([ tdStepStatFileSize('c:\\Windows\\system32\\kernel32.dll', 926720), ]) ];
+        if oTestVm.sVmName.startswith('tst-xpsp2'):
+            aoTests += [ tdTestSessionEx([ tdStepStatFileSize('c:\\Windows\\system32\\kernel32.dll', 983552), ]) ];
 
         #
         # Execute the tests.
@@ -2901,19 +2890,20 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResultFileReadWrite(fRc = False) ]
             ]);
 
-        if oTestVm.sKind == "WindowsXP":
-            aaTests.extend([
-                # Reading from beginning.
-                [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows\\System32\\eula.txt', \
-                                      sOpenMode = 'r', sDisposition = 'oe', cbToReadWrite = 33),
-                  tdTestResultFileReadWrite(fRc = True, aBuf = 'Microsoft Windows XP Professional', \
-                                            cbProcessed = 33, cbOffset = 33) ],
-                # Reading from offset.
-                [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows\\System32\\eula.txt', \
-                                      sOpenMode = 'r', sDisposition = 'oe', cbOffset = 17782, cbToReadWrite = 26),
-                  tdTestResultFileReadWrite(fRc = True, aBuf = 'LINKS TO THIRD PARTY SITES', \
-                                            cbProcessed = 26, cbOffset = 17782 + 26) ]
-            ]);
+            # Note: tst-xppro has other contents in eula.txt.
+            if oTestVm.sVmName.startswith('tst-xpsp2'):
+                aaTests.extend([
+                    # Reading from beginning.
+                    [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows\\System32\\eula.txt',
+                                        sOpenMode = 'r', sDisposition = 'oe', cbToReadWrite = 33),
+                      tdTestResultFileReadWrite(fRc = True, aBuf = 'Microsoft(r) Windows(r) XP Profes',
+                                                cbProcessed = 33, cbOffset = 33) ],
+                    # Reading from offset.
+                    [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows\\System32\\eula.txt',
+                                        sOpenMode = 'r', sDisposition = 'oe', cbOffset = 17769, cbToReadWrite = 31),
+                      tdTestResultFileReadWrite(fRc = True, aBuf = 'only with the HARDWARE. If\x0d\x0a   ',
+                                                cbProcessed = 31, cbOffset = 17769 + 31) ]
+                ]);
 
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
@@ -2927,6 +2917,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             try:
+                fRc2 = True;
                 if curTest.cbOffset > 0: # The offset parameter is gone.
                     if self.oTstDrv.fpApiVer >= 5.0:
                         curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
@@ -2940,7 +2931,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     if curOffset != resOffset:
                         reporter.error('Test #%d failed: Initial offset on open does not match: Got %d, expected %d' \
                                        % (i, curOffset, resOffset));
-                        fRc = False;
+                        fRc2 = False;
                 else:
                     if self.oTstDrv.fpApiVer >= 5.0:
                         curFile = curGuestSession.fileOpen(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
@@ -2948,7 +2939,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     else:
                         curFile = curGuestSession.fileOpen(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
                                                            curTest.lCreationMode);
-                if  fRc \
+                if  fRc2 \
                 and curTest.cbToReadWrite > 0:
                     ## @todo Split this up in 64K reads. Later.
                     ## @todo Test timeouts.
@@ -2957,34 +2948,34 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     and curRes.cbProcessed is not len(aBufRead):
                         reporter.error('Test #%d failed: Read buffer length does not match: Got %d, expected %d' \
                                        % (i, len(aBufRead), curRes.cbProcessed));
-                        fRc = False;
-                    if fRc:
+                        fRc2 = False;
+                    if fRc2:
                         if  curRes.aBuf is not None \
                         and bytes(curRes.aBuf) != bytes(aBufRead):
-                            reporter.error('Test #%d failed: Got buffer\n%s (%d bytes), expected\n%s (%d bytes)' \
-                                           % (i, map(hex, map(ord, aBufRead)), len(aBufRead), \
+                            reporter.error('Test #%d failed: Got buffer:\n"%s" (%d bytes)\nExpected buffer:\n"%s" (%d bytes)' \
+                                           % (i, map(hex, map(ord, aBufRead)), len(aBufRead),
                                               map(hex, map(ord, curRes.aBuf)), len(curRes.aBuf)));
-                            reporter.error('Test #%d failed: Got buffer\n%s, expected\n%s' \
+                            reporter.error('Test #%d failed: Got buffer:\n"%s"\nExpected buffer:\n"%s"' \
                                            % (i, aBufRead, curRes.aBuf));
-                            fRc = False;
+                            fRc2 = False;
                 # Test final offset.
                 curOffset = long(curFile.offset);
                 resOffset = long(curRes.cbOffset);
                 if curOffset != resOffset:
                     reporter.error('Test #%d failed: Final offset does not match: Got %d, expected %d' \
                                    % (i, curOffset, resOffset));
-                    fRc = False;
+                    fRc2 = False;
                 curFile.close();
+
+                if fRc2 != curRes.fRc:
+                    reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc2, curRes.fRc));
+                    fRc = False;
+
             except:
                 reporter.logXcpt('Opening "%s" failed:' % (curTest.sFile,));
                 fRc = False;
 
             curTest.closeSession();
-
-            if fRc != curRes.fRc:
-                reporter.error('Test #%d failed: Got %s, expected %s' % (i, fRc, curRes.fRc));
-                fRc = False;
-                break;
 
         return (fRc, oTxsSession);
 
