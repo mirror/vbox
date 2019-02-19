@@ -164,20 +164,26 @@
 
 /** Enables/disables IEM-only EM execution policy in and from ring-3.   */
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcRet) \
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcStrictRet) \
     do { \
         Log(("%s: Enabling IEM-only EM execution policy!\n", (a_pszLogPrefix))); \
-        return EMR3SetExecutionPolicy((a_pVCpu)->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true); \
+        int rcSched = EMR3SetExecutionPolicy((a_pVCpu)->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true); \
+        if (rcSched != VINF_SUCCESS) \
+            iemSetPassUpStatus(pVCpu, rcSched); \
+        return (a_rcStrictRet); \
     } while (0)
 
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcRet) \
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcStrictRet) \
     do { \
         Log(("%s: Disabling IEM-only EM execution policy!\n", (a_pszLogPrefix))); \
-        return EMR3SetExecutionPolicy((a_pVCpu)->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false); \
+        int rcSched = EMR3SetExecutionPolicy((a_pVCpu)->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false); \
+        if (rcSched != VINF_SUCCESS) \
+            iemSetPassUpStatus(pVCpu, rcSched); \
+        return (a_rcStrictRet); \
     } while (0)
 # else
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcRet)   do { return (a_rcRet); } while (0)
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcRet)  do { return (a_rcRet); } while (0)
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcStrictRet)   do { return (a_rcRet); } while (0)
+#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcStrictRet)  do { return (a_rcRet); } while (0)
 # endif
 
 
