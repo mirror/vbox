@@ -103,6 +103,12 @@ public:
         virtual void makeSureItemIsVisible(UIChooserItem *pItem) /* override */;
     /** @} */
 
+    /** @name Children stuff.
+      * @{ */
+        /** Updates positions of favorite items. */
+        void updateFavorites();
+    /** @} */
+
 protected:
 
     /** @name Event-handling stuff.

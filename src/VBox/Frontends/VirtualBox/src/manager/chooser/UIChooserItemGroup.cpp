@@ -311,6 +311,31 @@ void UIChooserItemGroup::makeSureItemIsVisible(UIChooserItem *pItem)
     m_pScrollArea->makeSureRectIsVisible(itemRectInGroup);
 }
 
+void UIChooserItemGroup::updateFavorites()
+{
+    /* Global items only for now, move items to corresponding layout: */
+    foreach (UIChooserItem *pItem, items(UIChooserItemType_Global))
+        if (pItem->isFavorite())
+        {
+            for (int iIndex = 0; iIndex < m_pLayoutGlobal->count(); ++iIndex)
+                if (m_pLayoutGlobal->itemAt(iIndex) == pItem)
+                    m_pLayoutFavorite->addItem(pItem);
+        }
+        else
+        {
+            for (int iIndex = 0; iIndex < m_pLayoutFavorite->count(); ++iIndex)
+                if (m_pLayoutFavorite->itemAt(iIndex) == pItem)
+                    m_pLayoutGlobal->addItem(pItem);
+        }
+
+    /* Update/activate children layout: */
+    m_pLayout->updateGeometry();
+    m_pLayout->activate();
+
+    /* Relayout model: */
+    model()->updateLayout();
+}
+
 void UIChooserItemGroup::retranslateUi()
 {
     /* Update description: */

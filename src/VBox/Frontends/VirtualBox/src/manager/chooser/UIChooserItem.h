@@ -118,6 +118,9 @@ public:
         /** Returns whether item is temporary. */
         bool isTemporary() const { return m_fTemporary; }
 
+        /** Defines whether item is @a fFavorite. */
+        virtual void setFavorite(bool fFavorite);
+
         /** Casts item to group one. */
         UIChooserItemGroup *toGroupItem();
         /** Casts item to global one. */

@@ -50,8 +50,13 @@ public:
 
     /** @name Item stuff.
       * @{ */
+        /** Defines whether item is @a fFavorite. */
+        virtual void setFavorite(bool fFavorite) /* override */;
+
         /** Returns whether passed @a position belongs to tool button area. */
         bool isToolButtonArea(const QPoint &position, int iMarginMultiplier = 1) const;
+        /** Returns whether passed @a position belongs to pin button area. */
+        bool isPinButtonArea(const QPoint &position, int iMarginMultiplier = 1) const;
     /** @} */
 
     /** @name Layout stuff.
@@ -212,6 +217,8 @@ private:
         void updatePixmap();
         /** Updates tool pixmap. */
         void updateToolPixmap();
+        /** Updates pin pixmap. */
+        void updatePinPixmap();
         /** Updates minimum name width. */
         void updateMinimumNameWidth();
         /** Updates maximum name width. */
@@ -252,6 +259,8 @@ private:
         QPixmap  m_pixmap;
         /** Holds item tool pixmap. */
         QPixmap  m_toolPixmap;
+        /** Holds item pin pixmap. */
+        QPixmap  m_pinPixmap;
 
         /** Holds item name. */
         QString  m_strName;
@@ -270,6 +279,8 @@ private:
         QSize  m_pixmapSize;
         /** Holds tool pixmap size. */
         QSize  m_toolPixmapSize;
+        /** Holds pin pixmap size. */
+        QSize  m_pinPixmapSize;
         /** Holds visible name size. */
         QSize  m_visibleNameSize;
 

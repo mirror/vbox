@@ -145,6 +145,8 @@
         <file alias="extension_pack_uninstall_16px_x2.png">images/x2/extension_pack_uninstall_16px_x2.png</file>
         <file alias="extension_pack_uninstall_disabled_16px_x2.png">images/x2/extension_pack_uninstall_disabled_16px_x2.png</file>
         <file alias="extension_pack_warning_16px_x2.png">images/x2/extension_pack_warning_16px_x2.png</file>
+        <file alias="favorite_24px_x2.png">images/x2/favorite_24px_x2.png</file>
+        <file alias="favorite_pressed_24px_x2.png">images/x2/favorite_pressed_24px_x2.png</file>
         <file alias="fd_16px_x2.png">images/x2/fd_16px_x2.png</file>
         <file alias="fd_add_16px_x2.png">images/x2/fd_add_16px_x2.png</file>
         <file alias="fd_add_32px_x2.png">images/x2/fd_add_32px_x2.png</file>

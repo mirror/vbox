@@ -290,6 +290,13 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fFavorite, bool fTempo
     }
 }
 
+void UIChooserItem::setFavorite(bool fFavorite)
+{
+    m_fFavorite = fFavorite;
+    if (m_pParent)
+        m_pParent->toGroupItem()->updateFavorites();
+}
+
 UIChooserItemGroup *UIChooserItem::toGroupItem()
 {
     UIChooserItemGroup *pItem = qgraphicsitem_cast<UIChooserItemGroup*>(this);

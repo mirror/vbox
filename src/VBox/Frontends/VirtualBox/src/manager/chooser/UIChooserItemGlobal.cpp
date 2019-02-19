@@ -75,6 +75,15 @@ UIChooserItemGlobal::~UIChooserItemGlobal()
     cleanup();
 }
 
+void UIChooserItemGlobal::setFavorite(bool fFavorite)
+{
+    /* Call to base-class: */
+    UIChooserItem::setFavorite(fFavorite);
+
+    /* Update pin-pixmap: */
+    updatePinPixmap();
+}
+
 bool UIChooserItemGlobal::isToolButtonArea(const QPoint &position, int iMarginMultiplier /* = 1 */) const
 {
     const int iFullWidth = geometry().width();
@@ -88,6 +97,27 @@ bool UIChooserItemGlobal::isToolButtonArea(const QPoint &position, int iMarginMu
                        iToolPixmapY,
                        m_toolPixmap.width() / m_toolPixmap.devicePixelRatio(),
                        m_toolPixmap.height() / m_toolPixmap.devicePixelRatio());
+    rect.adjust(-iMarginMultiplier * iButtonMargin, -iMarginMultiplier * iButtonMargin,
+                 iMarginMultiplier * iButtonMargin,  iMarginMultiplier * iButtonMargin);
+    return rect.contains(position);
+}
+
+bool UIChooserItemGlobal::isPinButtonArea(const QPoint &position, int iMarginMultiplier /* = 1 */) const
+{
+    const int iFullWidth = geometry().width();
+    const int iFullHeight = geometry().height();
+    const int iMargin = data(GlobalItemData_Margin).toInt();
+    const int iSpacing = data(GlobalItemData_Spacing).toInt();
+    const int iButtonMargin = data(GlobalItemData_ButtonMargin).toInt();
+    const int iPinPixmapX = iFullWidth - iMargin - 1
+                            - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio()
+                            - iSpacing
+                            - m_pinPixmap.width() / m_pinPixmap.devicePixelRatio();
+    const int iPinPixmapY = (iFullHeight - m_pinPixmap.height() / m_pinPixmap.devicePixelRatio()) / 2;
+    QRect rect = QRect(iPinPixmapX,
+                       iPinPixmapY,
+                       m_pinPixmap.width() / m_pinPixmap.devicePixelRatio(),
+                       m_pinPixmap.height() / m_pinPixmap.devicePixelRatio());
     rect.adjust(-iMarginMultiplier * iButtonMargin, -iMarginMultiplier * iButtonMargin,
                  iMarginMultiplier * iButtonMargin,  iMarginMultiplier * iButtonMargin);
     return rect.contains(position);
@@ -294,7 +324,9 @@ int UIChooserItemGlobal::minimumWidthHint() const
                        iSpacing +
                        m_iMinimumNameWidth +
                        iSpacing +
-                       m_toolPixmapSize.width());
+                       m_toolPixmapSize.width() +
+                       iSpacing +
+                       m_pinPixmapSize.width());
 
     /* Return result: */
     return iProposedWidth;
@@ -311,6 +343,7 @@ int UIChooserItemGlobal::minimumHeightHint() const
     /* Global-item content height: */
     int iContentHeight = qMax(m_pixmapSize.height(), m_visibleNameSize.height());
     iContentHeight = qMax(iContentHeight, m_toolPixmapSize.height());
+    iContentHeight = qMax(iContentHeight, m_pinPixmapSize.height());
 
     /* If we have height hint: */
     if (m_iHeightHint)
@@ -453,6 +486,8 @@ void UIChooserItemGlobal::updatePixmaps()
     updatePixmap();
     /* Update tool-pixmap: */
     updateToolPixmap();
+    /* Update pin-pixmap: */
+    updatePinPixmap();
 }
 
 void UIChooserItemGlobal::updatePixmap()
@@ -497,6 +532,28 @@ void UIChooserItemGlobal::updateToolPixmap()
     if (m_toolPixmap.toImage() != toolPixmap.toImage())
     {
         m_toolPixmap = toolPixmap;
+        update();
+    }
+}
+
+void UIChooserItemGlobal::updatePinPixmap()
+{
+    /* Determine icon metric: */
+    const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_LargeIconSize) * .75;
+    /* Create new tool-pixmap and tool-pixmap size: */
+    const QIcon pinIcon = UIIconPool::iconSet(isFavorite() ? ":/favorite_pressed_24px.png" : ":/favorite_24px.png");
+    AssertReturnVoid(!pinIcon.isNull());
+    const QSize pinPixmapSize = QSize(iIconMetric, iIconMetric);
+    const QPixmap pinPixmap = pinIcon.pixmap(gpManager->windowHandle(), pinPixmapSize);
+    /* Update linked values: */
+    if (m_pinPixmapSize != pinPixmapSize)
+    {
+        m_pinPixmapSize = pinPixmapSize;
+        updateGeometry();
+    }
+    if (m_pinPixmap.toImage() != pinPixmap.toImage())
+    {
+        m_pinPixmap = pinPixmap;
         update();
     }
 }
@@ -806,5 +863,40 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
                     QPoint(iToolPixmapX, iToolPixmapY),
                     /* Pixmap to paint: */
                     m_toolPixmap);
+    }
+
+    /* Calculate indents: */
+    iRightColumnIndent = iRightColumnIndent - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio() - iSpacing;
+
+    /* Paint right column: */
+    if (   model()->currentItem() == this
+        || isHovered())
+    {
+        /* Prepare variables: */
+        const int iPinPixmapX = iRightColumnIndent;
+        const int iPinPixmapY = (iFullHeight - m_pinPixmap.height() / m_pinPixmap.devicePixelRatio()) / 2;
+        QRect pinButtonRectangle = QRect(iPinPixmapX,
+                                         iPinPixmapY,
+                                         m_pinPixmap.width() / m_pinPixmap.devicePixelRatio(),
+                                         m_pinPixmap.height() / m_pinPixmap.devicePixelRatio());
+        pinButtonRectangle.adjust(- iButtonMargin, -iButtonMargin, iButtonMargin, iButtonMargin);
+
+        /* Paint pin button: */
+        if (   isHovered()
+            && isPinButtonArea(itemCursorPosition, 4))
+            paintFlatButton(/* Painter: */
+                            pPainter,
+                            /* Button rectangle: */
+                            pinButtonRectangle,
+                            /* Cursor position: */
+                            itemCursorPosition);
+
+        /* Paint pixmap: */
+        paintPixmap(/* Painter: */
+                    pPainter,
+                    /* Point to paint in: */
+                    QPoint(iPinPixmapX, iPinPixmapY),
+                    /* Pixmap to paint: */
+                    m_pinPixmap);
     }
 }

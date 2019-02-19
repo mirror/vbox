@@ -167,6 +167,18 @@ void UIChooserModel::handleToolButtonClick(UIChooserItem *pItem)
     }
 }
 
+void UIChooserModel::handlePinButtonClick(UIChooserItem *pItem)
+{
+    switch (pItem->type())
+    {
+        case UIChooserItemType_Global:
+            pItem->setFavorite(!pItem->isFavorite());
+            break;
+        default:
+            break;
+    }
+}
+
 void UIChooserModel::setCurrentItems(const QList<UIChooserItem*> &items)
 {
     /* Is there something changed? */

@@ -80,6 +80,11 @@ bool UIChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) c
                             pClickedItem = pGlobalItem;
                     }
                     else
+                    if (   pGlobalItem->isPinButtonArea(itemCursorPos)
+                        && (   model()->currentItem() == pGlobalItem
+                            || pGlobalItem->isHovered()))
+                        model()->handlePinButtonClick(pGlobalItem);
+                    else
                         pClickedItem = pGlobalItem;
                 }
                 /* Or a machine one? */
