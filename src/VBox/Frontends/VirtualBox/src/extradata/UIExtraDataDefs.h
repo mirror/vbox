@@ -628,7 +628,7 @@ public:
         DetailsElementOptionTypeGeneral_OS       = RT_BIT(1),
         DetailsElementOptionTypeGeneral_Location = RT_BIT(2),
         DetailsElementOptionTypeGeneral_Groups   = RT_BIT(3),
-        DetailsElementOptionTypeGeneral_Default  = 0xFFFF
+        DetailsElementOptionTypeGeneral_Default  = 0xFFFB
     };
     Q_ENUM(DetailsElementOptionTypeGeneral);
 
