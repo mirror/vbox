@@ -2548,8 +2548,6 @@ QUuid VBoxGlobal::openMedium(UIMediumDeviceType enmMediumType, QString strMedium
     /* Initialize variables: */
     CVirtualBox comVBox = virtualBox();
 
-    updateRecentlyUsedMediumListAndFolder(enmMediumType, strMediumLocation);
-
     /* Open corresponding medium: */
     CMedium comMedium = comVBox.OpenMedium(strMediumLocation, mediumTypeToGlobal(enmMediumType), KAccessMode_ReadWrite, false);
 
@@ -2636,8 +2634,11 @@ QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType,
 
     /* If dialog has some result: */
     if (!files.empty() && !files[0].isEmpty())
-        return openMedium(enmMediumType, files[0], pParent);
-
+    {
+        QUuid uMediumId = openMedium(enmMediumType, files[0], pParent);
+        updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
+        return uMediumId;
+    }
     return QUuid();
 }
 
@@ -2693,6 +2694,8 @@ QUuid VBoxGlobal::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  
         default:
             break;
     }
+    if (!uMediumId.isNull())
+        updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
 
     return uMediumId;
 }
@@ -2828,7 +2831,10 @@ int VBoxGlobal::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  e
         if (selectedMediumIds.isEmpty())
             returnCode = UIMediumSelector::ReturnCode_Rejected;
         else
+        {
             outUuid = selectedMediumIds[0];
+            updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(outUuid).location());
+        }
     }
     delete pSelector;
     return static_cast<int>(returnCode);
