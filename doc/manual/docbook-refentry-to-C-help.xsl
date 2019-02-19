@@ -250,7 +250,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
 
     <!-- Make sure group choice and arg choice matches. -->
     <xsl:if test="self::arg and ancestor::group">
-      <xsl:if test="@choice != ancestor::group/@choice">
+      <xsl:if test="@choice != ancestor::group/@choice and (@choice = 'opt' or @choice = '' or ancestor::group/@choice = 'opt' or ancestor::group/@choice = '')">
         <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>Mismatching group and arg choice: "<xsl:value-of select="@choice"/>" (arg) vs "<xsl:value-of select="ancestor::group/@choice"/>" (group)</xsl:message>
       </xsl:if>
     </xsl:if>
