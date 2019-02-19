@@ -2614,7 +2614,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                   tdTestResultDirRead(fRc = False) ]
             ]);
 
-            if oTestVm.sKind == "WindowsXP":
+            if oTestVm.sVmName == "tst-xppro":
                 aaTests.extend([
                     # Reading directories.
                     [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '../../Windows/Media'),
@@ -2623,6 +2623,17 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                       tdTestResultDirRead(fRc = True, numDirs = 13, numFiles = 569) ],
                     [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'c:\\Windows\\Web'),
                       tdTestResultDirRead(fRc = True, numDirs = 3, numFiles = 55) ]
+                ]);
+
+            if oTestVm.sVmName == "tst-xpsp2":
+                aaTests.extend([
+                    # Reading directories.
+                    [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '../../Windows/Media'),
+                      tdTestResultDirRead(fRc = True, numFiles = 38) ],
+                    [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'c:\\Windows\\Help'),
+                      tdTestResultDirRead(fRc = True, numDirs = 13, numFiles = 574) ],
+                    [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'c:\\Windows\\Web'),
+                      tdTestResultDirRead(fRc = True, numDirs = 3, numFiles = 49) ]
                 ]);
         else:
             reporter.log('No OS-specific tests for non-Windows yet!');
