@@ -2585,6 +2585,11 @@ QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType,
     QString strTitle;
     QString allType;
     QString strLastFolder = defaultFolderPathForType(enmMediumType);
+
+    /* For DVDs and Floppies always check first the last recently used medium folder. For hard disk use
+       the caller's setting: */
+    fUseLastFolder = (enmMediumType == UIMediumDeviceType_DVD) || (enmMediumType == UIMediumDeviceType_Floppy);
+
     switch (enmMediumType)
     {
         case UIMediumDeviceType_HardDisk:
@@ -2636,7 +2641,9 @@ QUuid VBoxGlobal::openMediumWithFileOpenDialog(UIMediumDeviceType enmMediumType,
     if (!files.empty() && !files[0].isEmpty())
     {
         QUuid uMediumId = openMedium(enmMediumType, files[0], pParent);
-        updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
+        if (enmMediumType == UIMediumDeviceType_DVD || enmMediumType == UIMediumDeviceType_Floppy ||
+            (enmMediumType == UIMediumDeviceType_HardDisk && fUseLastFolder))
+            updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
         return uMediumId;
     }
     return QUuid();
@@ -2695,8 +2702,13 @@ QUuid VBoxGlobal::openMediumCreatorDialog(QWidget *pParent, UIMediumDeviceType  
             break;
     }
     if (!uMediumId.isNull())
-        updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
-
+    {
+        /* Update the recent medium list only if the mdium type is DVD or floppy. In case of hard disk
+           update those only if there is no vm context: */
+        if (enmMediumType == UIMediumDeviceType_DVD || enmMediumType == UIMediumDeviceType_Floppy ||
+            (enmMediumType == UIMediumDeviceType_HardDisk && strMachineName.isEmpty()))
+            updateRecentlyUsedMediumListAndFolder(enmMediumType, medium(uMediumId).location());
+    }
     return uMediumId;
 }
 

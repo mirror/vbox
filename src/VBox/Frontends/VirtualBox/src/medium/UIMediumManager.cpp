@@ -488,7 +488,8 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationFinish()
 void UIMediumManagerWidget::sltAddMedium()
 {
     QString strDefaultMachineFolder = vboxGlobal().virtualBox().GetSystemProperties().GetDefaultMachineFolder();
-    vboxGlobal().openMediumWithFileOpenDialog(currentMediumType(), this, strDefaultMachineFolder);
+    vboxGlobal().openMediumWithFileOpenDialog(currentMediumType(), this,
+                                              strDefaultMachineFolder, true /* use most recent medium folder */);
 }
 
 void UIMediumManagerWidget::sltCreateMedium()
