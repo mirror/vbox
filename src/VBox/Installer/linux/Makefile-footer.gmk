@@ -17,15 +17,9 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-#
-# Note! The MOD_XXX variables are ours and does not directly influence the
-#       kernel build system.  When adding more variables, please prefix them
-#       with VBOX_ so we can tell more easily who's variable it is.
-#
-
 # override is required by the Debian guys
-override MODULE = $(MOD_NAME)
-OBJS   = $(MOD_OBJS)
+override MODULE = $(VBOXMOD_NAME)
+OBJS = $(VBOXMOD_OBJS)
 
 KBUILD_VERBOSE ?= 1
 LINUX_VERBOSE = $(if $(KBUILD_VERBOSE),1,)
@@ -33,9 +27,9 @@ LINUX_VERBOSE = $(if $(KBUILD_VERBOSE),1,)
 #
 # Compiler options
 #
-VBOX_INCL := $(addprefix -I,$(KERN_INCL) $(EXTRA_INCL)) $(MOD_INCL)
+VBOX_INCL := $(addprefix -I,$(KERN_INCL) $(EXTRA_INCL)) $(VBOXMOD_INCL)
 
-KFLAGS := -D__KERNEL__ -DMODULE -DRT_WITHOUT_PRAGMA_ONCE $(addprefix -D,$(MOD_DEFS))
+KFLAGS := -D__KERNEL__ -DMODULE -DRT_WITHOUT_PRAGMA_ONCE $(addprefix -D,$(VBOXMOD_DEFS))
 ifeq ($(BUILD_TARGET_ARCH),amd64)
 KFLAGS += -DRT_ARCH_AMD64
 else
@@ -65,7 +59,7 @@ ifeq ($(BUILD_TARGET_ARCH),amd64)
  KFLAGS += -mcmodel=kernel
 endif
 
-CFLAGS := -O2 -DVBOX_LINUX_2_4 $(MOD_CFLAGS) $(VBOX_INCL) $(KFLAGS) $(MOD_EXTRA) $(KDEBUG)
+CFLAGS := -O2 -DVBOX_LINUX_2_4 $(VBOXMOD_CFLAGS) $(VBOX_INCL) $(KFLAGS) $(KDEBUG)
 MODULE_EXT := o
 
 # 2.4 Module linking
@@ -83,7 +77,7 @@ install: $(MODULE)
 
 clean:
 	for f in $(sort $(dir $(OBJS))); do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
-	rm -rf .$(MOD_NAME)* .tmp_ver* $(MOD_NAME).* Modules.symvers modules.order
+	rm -rf .$(VBOXMOD_NAME)* .tmp_ver* $(VBOXMOD_NAME).* Modules.symvers modules.order
 
 else  # ! $(KERN_VERSION), 24
 #
@@ -96,7 +90,7 @@ MODULE_EXT := ko
 $(MODULE)-y  := $(OBJS)
 
 # build defs
-EXTRA_CFLAGS += $(MOD_CFLAGS) $(VBOX_INCL) $(KFLAGS) $(MOD_EXTRA) $(KDEBUG)
+EXTRA_CFLAGS += $(VBOXMOD_CFLAGS) $(VBOX_INCL) $(KFLAGS) $(KDEBUG)
 
 .PHONY: $(MODULE)
 all: $(MODULE)

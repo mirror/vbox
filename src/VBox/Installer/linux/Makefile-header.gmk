@@ -29,11 +29,11 @@
 # # Linux kbuild sets this to our source directory if we are called from there
 # obj ?= $(CURDIR)
 # include $(obj)/Makefile-header.gmk
-# MOD_NAME = <name of the module to be built, without extension>
-# MOD_OBJS = <list of object files which should be included>
-# MOD_DEFS = <any additional defines which this module needs>
-# MOD_INCL = <any additional include paths which this module needs>
-# MOD_CFLAGS = <any additional CFLAGS which this module needs>
+# VBOXMOD_NAME = <name of the module to be built, without extension>
+# VBOXMOD_OBJS = <list of object files which should be included>
+# VBOXMOD_DEFS = <any additional defines which this module needs>
+# VBOXMOD_INCL = <any additional include paths which this module needs>
+# VBOXMOD_CFLAGS = <any additional CFLAGS which this module needs>
 # include $(obj)/Makefile-footer.gmk
 #
 # The kmk kBuild define KBUILD_TARGET_ARCH is available.

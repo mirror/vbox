@@ -32,15 +32,15 @@ obj ?= $(CURDIR)
 include $(obj)/Makefile-header.gmk
 
 # override is required by the Debian guys
-MOD_NAME = vboxpci
-MOD_OBJS = \
+VBOXMOD_NAME = vboxpci
+VBOXMOD_OBJS = \
 	linux/VBoxPci-linux.o \
 	VBoxPci.o \
 	SUPR0IdcClient.o \
 	SUPR0IdcClientComponent.o \
 	linux/SUPR0IdcClient-linux.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
-MOD_OBJS += \
+VBOXMOD_OBJS += \
 	math/gcc/divdi3.o \
 	math/gcc/moddi3.o \
 	math/gcc/qdivrem.o \
@@ -49,11 +49,11 @@ MOD_OBJS += \
 	math/gcc/divdi3.o \
 	math/gcc/umoddi3.o
 endif
-MOD_INCL = \
+VBOXMOD_INCL = \
 	-I$(VBOXPCI_DIR) \
 	-I$(VBOXPCI_DIR)include \
 	-I$(VBOXPCI_DIR)r0drv/linux
-MOD_DEFS = \
+VBOXMOD_DEFS = \
 	RT_OS_LINUX \
 	IN_RING0 \
 	IN_RT_R0 \
@@ -61,6 +61,6 @@ MOD_DEFS = \
 	VBOX \
 	RT_WITH_VBOX \
 	VBOX_WITH_HARDENING
-MOD_CFLAGS = -include $(VBOXPCI_DIR)include/VBox/SUPDrvMangling.h -fno-pie
+VBOXMOD_CFLAGS = -include $(VBOXPCI_DIR)include/VBox/SUPDrvMangling.h -fno-pie
 
 include $(obj)/Makefile-footer.gmk

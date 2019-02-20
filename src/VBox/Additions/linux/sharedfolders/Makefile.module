@@ -24,8 +24,8 @@ VBOXSF_DIR := $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 obj ?= $(CURDIR)
 include $(obj)/Makefile-header.gmk
 
-MOD_NAME = vboxsf
-MOD_OBJS = \
+VBOXMOD_NAME = vboxsf
+VBOXMOD_OBJS = \
 	vfsmod.o \
 	dirops.o \
 	lnkops.o \
@@ -39,7 +39,7 @@ MOD_OBJS = \
 	VBoxGuestR0LibPhysHeap.o \
 	VBoxGuestR0LibSharedFolders.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
-MOD_OBJS += \
+VBOXMOD_OBJS += \
 	divdi3.o \
 	moddi3.o \
 	udivdi3.o \
@@ -47,11 +47,11 @@ MOD_OBJS += \
 	umoddi3.o \
 	qdivrem.o
 endif
-MOD_INCL = \
+VBOXMOD_INCL = \
 	-I$(VBOXSF_DIR) \
 	-I$(VBOXSF_DIR)include \
 	-I$(VBOXSF_DIR)r0drv/linux
-MOD_DEFS = \
+VBOXMOD_DEFS = \
 	RT_OS_LINUX \
 	IN_RING0 \
 	IN_RT_R0 \
@@ -63,22 +63,22 @@ MOD_DEFS = \
 	IN_GUEST_R0 \
 	RT_NO_EXPORT_SYMBOL
 ifeq ($(BUILD_TARGET_ARCH),amd64)
-MOD_DEFS += VBOX_WITH_64_BITS_GUESTS
+VBOXMOD_DEFS += VBOX_WITH_64_BITS_GUESTS
 endif
 ifeq ($(KERN_VERSION),24)
-MOD_CFLAGS =
+VBOXMOD_CFLAGS =
 else
-MOD_CFLAGS = -Wno-declaration-after-statement -fshort-wchar -include $(VBOXSF_DIR)/include/VBox/VBoxGuestMangling.h -fno-pie
+VBOXMOD_CFLAGS = -Wno-declaration-after-statement -fshort-wchar -include $(VBOXSF_DIR)/include/VBox/VBoxGuestMangling.h -fno-pie
 endif
 ifdef VBOX_NO_OMIT_FRAME_POINTER
-MOD_CFLAGS += -fno-omit-frame-pointer
+VBOXMOD_CFLAGS += -fno-omit-frame-pointer
 endif
 
 ifneq ($(KERN_VERSION),24)
 # special hack for Fedora Core 6 2.6.18 (fc6), rhel5 2.6.18 (el5),
 # ClarkConnect 4.3 (cc4) and ClarkConnect 5 (v5)
  ifeq ($(KERNELRELEASE),)
-MOD_EXTRA += $(foreach inc,$(KERN_INCL),\
+VBOXMOD_CFLAGS += $(foreach inc,$(KERN_INCL),\
                $(if $(wildcard $(inc)/linux/utsrelease.h),\
                  $(if $(shell grep '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h; \
                               grep '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h; \
@@ -86,7 +86,7 @@ MOD_EXTRA += $(foreach inc,$(KERN_INCL),\
                               grep '"2.6.18.*cc4.*"' $(inc)/linux/utsrelease.h),\
                    -DKERNEL_FC6,),))
  else
-MOD_EXTRA += $(if $(shell echo "$(KERNELRELEASE)"|grep '2.6.18.*fc6.*';\
+VBOXMOD_CFLAGS += $(if $(shell echo "$(KERNELRELEASE)"|grep '2.6.18.*fc6.*';\
                           echo "$(KERNELRELEASE)"|grep '2.6.18.*el5.*';\
                           echo "$(KERNELRELEASE)"|grep '2.6.18.*v5.*';\
                           echo "$(KERNELRELEASE)"|grep '2.6.18.*cc4.*'),\
@@ -94,7 +94,7 @@ MOD_EXTRA += $(if $(shell echo "$(KERNELRELEASE)"|grep '2.6.18.*fc6.*';\
  endif
 endif
 
-MOD_CLEAN = . linux r0drv r0drv/linux
+VBOXMOD_CLEAN = . linux r0drv r0drv/linux
 
 include $(obj)/Makefile-footer.gmk
 

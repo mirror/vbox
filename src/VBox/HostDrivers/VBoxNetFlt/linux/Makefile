@@ -31,15 +31,15 @@ VBOXNETFLT_DIR := $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 obj ?= $(CURDIR)
 include $(obj)/Makefile-header.gmk
 
-MOD_NAME = vboxnetflt
-MOD_OBJS = \
+VBOXMOD_NAME = vboxnetflt
+VBOXMOD_OBJS = \
 	linux/VBoxNetFlt-linux.o \
 	VBoxNetFlt.o \
 	SUPR0IdcClient.o \
 	SUPR0IdcClientComponent.o \
 	linux/SUPR0IdcClient-linux.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
-MOD_OBJS += \
+VBOXMOD_OBJS += \
 	math/gcc/divdi3.o \
 	math/gcc/moddi3.o \
 	math/gcc/qdivrem.o \
@@ -48,11 +48,11 @@ MOD_OBJS += \
 	math/gcc/divdi3.o \
 	math/gcc/umoddi3.o
 endif
-MOD_INCL = \
+VBOXMOD_INCL = \
 	-I$(VBOXNETFLT_DIR) \
 	-I$(VBOXNETFLT_DIR)include \
 	-I$(VBOXNETFLT_DIR)r0drv/linux
-MOD_DEFS = \
+VBOXMOD_DEFS = \
 	RT_OS_LINUX \
 	IN_RING0 \
 	IN_RT_R0 \
@@ -61,7 +61,7 @@ MOD_DEFS = \
 	RT_WITH_VBOX \
 	VBOX_WITH_HARDENING \
 	VBOX_WITH_64_BITS_GUESTS # <-- must be consistent with Config.kmk!
-MOD_CFLAGS = -include $(VBOXNETFLT_DIR)include/VBox/SUPDrvMangling.h -fno-pie -Wno-declaration-after-statement
+VBOXMOD_CFLAGS = -include $(VBOXNETFLT_DIR)include/VBox/SUPDrvMangling.h -fno-pie -Wno-declaration-after-statement
 
 include $(obj)/Makefile-footer.gmk
 

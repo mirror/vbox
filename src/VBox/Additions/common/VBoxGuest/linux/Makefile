@@ -31,9 +31,8 @@ VBOXGUEST_DIR := $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 obj ?= $(CURDIR)
 include $(obj)/Makefile-header.gmk
 
-MOD_NAME = vboxguest
-
-MOD_OBJS = \
+VBOXMOD_NAME = vboxguest
+VBOXMOD_OBJS = \
 	VBoxGuest-linux.o \
 	VBoxGuest.o \
 	VBoxGuestR0LibGenericRequest.o \
@@ -117,7 +116,7 @@ MOD_OBJS = \
 	VBox/log-vbox.o \
 	VBox/logbackdoor.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
-MOD_OBJS += \
+VBOXMOD_OBJS += \
 	common/math/gcc/divdi3.o \
 	common/math/gcc/moddi3.o \
 	common/math/gcc/udivdi3.o \
@@ -126,10 +125,10 @@ MOD_OBJS += \
 	common/math/gcc/qdivrem.o
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
-MOD_OBJS += common/alloc/heapsimple.o
+VBOXMOD_OBJS += common/alloc/heapsimple.o
 endif
 
-MOD_DEFS = \
+VBOXMOD_DEFS = \
 	VBOX \
 	RT_OS_LINUX \
 	IN_RING0 \
@@ -141,27 +140,40 @@ MOD_DEFS = \
 	VBGL_VBOXGUEST \
 	VBOX_WITH_HGCM
 ifeq ($(BUILD_TARGET_ARCH),amd64)
-MOD_DEFS += VBOX_WITH_64_BITS_GUESTS
+VBOXMOD_DEFS += VBOX_WITH_64_BITS_GUESTS
 endif
 ifeq ($(KERN_VERSION),24)
-MOD_DEFS += EXPORT_SYMTAB
+VBOXMOD_DEFS += EXPORT_SYMTAB
 endif
 
-MOD_INCL  = -I$(VBOXGUEST_DIR) -I$(VBOXGUEST_DIR)include -I$(VBOXGUEST_DIR)r0drv/linux
+VBOXMOD_INCL  = -I$(VBOXGUEST_DIR) -I$(VBOXGUEST_DIR)include -I$(VBOXGUEST_DIR)r0drv/linux
 
 ifeq ($(KERN_VERSION),24)
-MOD_CFLAGS =
+VBOXMOD_CFLAGS =
 else
-MOD_CFLAGS = -Wno-declaration-after-statement -include $(VBOXGUEST_DIR)include/VBox/VBoxGuestMangling.h -fno-pie
+VBOXMOD_CFLAGS = -Wno-declaration-after-statement -include $(VBOXGUEST_DIR)include/VBox/VBoxGuestMangling.h -fno-pie
 endif
 
-MOD_CLEAN = . linux r0drv generic r0drv/linux r0drv/generic VBox \
-	common/alloc common/err common/log common/math/gcc common/misc \
-	common/string common/table common/time
+VBOXMOD_CLEAN = \
+	. \
+	linux \
+	r0drv \
+	generic \
+	r0drv/linux \
+	r0drv/generic \
+	VBox \
+	common/alloc \
+	common/err \
+	common/log \
+	common/math/gcc \
+	common/misc \
+	common/string \
+	common/table \
+	common/time
 
 include $(obj)/Makefile-footer.gmk
 
-check: $(MOD_NAME)
+check: $(VBOXMOD_NAME)
 	@if ! readelf -p __ksymtab_strings vboxguest.ko | grep -E "\[.*\]  *(RT|g_..*RT.*)"; then \
 	    echo "All exported IPRT symbols are properly renamed!"; \
 	 else \
