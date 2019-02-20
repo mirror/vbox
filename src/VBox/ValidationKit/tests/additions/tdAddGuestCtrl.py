@@ -43,7 +43,6 @@ __version__ = "$Revision$"
 # pylint: disable=R0903
 
 # Standard Python imports.
-from array import array
 import errno
 import os
 import random
@@ -3088,8 +3087,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         if    fRc \
                           and curRes.aBuf is not None \
                           and curRes.aBuf != aBufRead:
-                            reporter.error('Test #%d failed: Read back buffer (%d bytes) does not match written content (%d bytes)' \
-                                           % (i, len(curRes.aBuf), len(aBufRead)));
+                            reporter.error('Test #%d failed: Read back buffer (%d bytes) does not match ' \
+                                           'written content (%d bytes)' % (i, len(curRes.aBuf), len(aBufRead)));
                             reporter.error('Test #%d failed: Got:\n%s' % (i, aBufRead.encode('hex')));
                             reporter.error('Test #%d failed: Expected:\n%s' % (i, curRes.aBuf.encode('hex')));
                             fRc = False;
