@@ -277,6 +277,9 @@ private slots:
     /** Handles change in format combo-box. */
     void sltHandleFormatComboChange();
 
+    /** Handles change in file-name selector. */
+    void sltHandleFileSelectorChange();
+
     /** Handles change in MAC address policy combo-box. */
     void sltHandleMACAddressPolicyComboChange();
 

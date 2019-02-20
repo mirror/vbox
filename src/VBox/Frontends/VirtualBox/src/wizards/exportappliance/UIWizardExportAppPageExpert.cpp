@@ -354,7 +354,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
         connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
                 this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
     connect(m_pVMSelector, &QListWidget::itemSelectionChanged,      this, &UIWizardExportAppPageExpert::sltVMSelectionChangeHandler);
-    connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageExpert::completeChanged);
+    connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
+            this, &UIWizardExportAppPageExpert::sltHandleFileSelectorChange);
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageExpert::sltHandleFormatComboChange);
     connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
@@ -580,6 +581,16 @@ void UIWizardExportAppPageExpert::sltHandleFormatComboChange()
     populateAccountProperties();
     populateCloudClientParameters();
     refreshApplianceSettingsWidget();
+    emit completeChanged();
+}
+
+void UIWizardExportAppPageExpert::sltHandleFileSelectorChange()
+{
+    /* Remember changed name, except empty one: */
+    if (!m_pFileSelector->path().isEmpty())
+        m_strFileSelectorName = QFileInfo(m_pFileSelector->path()).completeBaseName();
+
+    /* Refresh required settings: */
     emit completeChanged();
 }
 

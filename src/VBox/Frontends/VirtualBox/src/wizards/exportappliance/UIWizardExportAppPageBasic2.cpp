@@ -518,6 +518,9 @@ void UIWizardExportAppPage2::refreshFileSelectorName()
 
 void UIWizardExportAppPage2::refreshFileSelectorExtension()
 {
+    /* Save old extension to compare afterwards: */
+    const QString strOldExtension = m_strFileSelectorExt;
+
     /* If format is cloud one: */
     if (isFormatCloudOne())
     {
@@ -538,19 +541,27 @@ void UIWizardExportAppPage2::refreshFileSelectorExtension()
                                         UIWizardExportApp::tr("Open Virtualization Format (%1)").arg("*.ovf"));
     }
 
-    /* Cascade update for file selector path: */
-    refreshFileSelectorPath();
+    /* Cascade update for file selector path if necessary: */
+    if (m_strFileSelectorExt != strOldExtension)
+        refreshFileSelectorPath();
 }
 
 void UIWizardExportAppPage2::refreshFileSelectorPath()
 {
-    /* Compose file selector path: */
-    const QString strPath = QDir::toNativeSeparators(QString("%1/%2")
-                                                     .arg(vboxGlobal().documentsPath())
-                                                     .arg(m_strFileSelectorName + m_strFileSelectorExt));
-
-    /* Assign the path: */
-    m_pFileSelector->setPath(strPath);
+    /* If format is cloud one: */
+    if (isFormatCloudOne())
+    {
+        /* Clear file selector path: */
+        m_pFileSelector->setPath(QString());
+    }
+    else
+    {
+        /* Compose file selector path: */
+        const QString strPath = QDir::toNativeSeparators(QString("%1/%2")
+                                                         .arg(vboxGlobal().documentsPath())
+                                                         .arg(m_strFileSelectorName + m_strFileSelectorExt));
+        m_pFileSelector->setPath(strPath);
+    }
 }
 
 void UIWizardExportAppPage2::refreshManifestCheckBoxAccess()
@@ -1001,7 +1012,8 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
     if (gpManager)
         connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
                 this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
-    connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardExportAppPageBasic2::completeChanged);
+    connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
+            this, &UIWizardExportAppPageBasic2::sltHandleFileSelectorChange);
     connect(m_pFormatComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             this, &UIWizardExportAppPageBasic2::sltHandleFormatComboChange);
     connect(m_pMACComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
@@ -1144,7 +1156,7 @@ void UIWizardExportAppPageBasic2::initializePage()
     retranslateUi();
 
     /* Refresh file selector name: */
-    // refreshFileSelectorName(); alreeady called from retranslateUi();
+    // refreshFileSelectorName(); already called from retranslateUi();
     /* Refresh file selector extension: */
     refreshFileSelectorExtension();
     /* Refresh manifest check-box access: */
@@ -1232,6 +1244,16 @@ void UIWizardExportAppPageBasic2::sltHandleFormatComboChange()
     refreshIncludeISOsCheckBoxAccess();
     populateAccounts();
     populateAccountProperties();
+    emit completeChanged();
+}
+
+void UIWizardExportAppPageBasic2::sltHandleFileSelectorChange()
+{
+    /* Remember changed name, except empty one: */
+    if (!m_pFileSelector->path().isEmpty())
+        m_strFileSelectorName = QFileInfo(m_pFileSelector->path()).completeBaseName();
+
+    /* Refresh required settings: */
     emit completeChanged();
 }
 
