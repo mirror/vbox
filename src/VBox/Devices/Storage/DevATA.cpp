@@ -4492,8 +4492,14 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
         }
         else                    /* Device 0 selected (but not present). */
         {
-            Log2(("%s: addr=%#x: LUN#%d not attached\n", __FUNCTION__, addr, s->iLUN));
-            return VERR_IOM_IOPORT_UNUSED;
+            /* ATA-3 and later specifies that the host must have a pull-down resistor on DD7; ATA-5 explains
+             * that this causes the BSY bit to always be read as clear when there is no device on a given
+             * channel. Software then does not need to wait a long time for non-existent drives; note that
+             * EFI (TianoCore) relies on this behavior.
+             */
+            *pu32 = 0x7F;
+            Log2(("%s: addr=%#x: LUN#%d not attached, val=%#02x\n", __FUNCTION__, addr, s->iLUN, *pu32));
+            return VINF_SUCCESS;
         }
     }
     fHOB = !!(s->uATARegDevCtl & (1 << 7));
