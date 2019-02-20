@@ -24,8 +24,10 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
-# Linux kbuild sets this to our source directory if we are called from
-# there
+# Find the directory of this makefile.
+VBOXDRV_DIR := $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
+
+# Linux kbuild sets this to our source directory if we are called from there
 obj ?= $(CURDIR)
 include $(obj)/Makefile-header.gmk
 
@@ -118,7 +120,8 @@ MOD_OBJS = \
 	generic/uuid-generic.o \
 	VBox/log-vbox.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
- MOD_OBJS += math/gcc/divdi3.o \
+MOD_OBJS += \
+	math/gcc/divdi3.o \
 	math/gcc/moddi3.o \
 	math/gcc/qdivrem.o \
 	math/gcc/udivdi3.o \
@@ -127,40 +130,49 @@ ifeq ($(BUILD_TARGET_ARCH),x86)
 	math/gcc/umoddi3.o
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
- MOD_OBJS += common/alloc/heapsimple.o
+MOD_OBJS += common/alloc/heapsimple.o
 endif
 ifdef VBOX_WITH_NATIVE_DTRACE
- MOD_OBJS += SUPDrvDTrace.o
+MOD_OBJS += SUPDrvDTrace.o
 endif
-
-MOD_INCL  = $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
+MOD_INCL  = \
+	-I$(VBOXDRV_DIR) \
+	-I$(VBOXDRV_DIR)include \
+	-I$(VBOXDRV_DIR)r0drv/linux
 ifdef VBOX_WITH_NATIVE_DTRACE
- MOD_INCL += -I/usr/include/linux -I/usr/include
+MOD_INCL += \
+	-I/usr/include/linux \
+	-I/usr/include
 endif
-MOD_DEFS = -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0 -DVBOX \
-	-DRT_WITH_VBOX -DVBOX_WITH_HARDENING -DSUPDRV_WITH_RELEASE_LOGGER \
-	-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV -DIPRT_WITH_EFLAGS_AC_PRESERVING \
-    -Wno-declaration-after-statement
+MOD_DEFS = \
+	-DRT_OS_LINUX \
+	-DIN_RING0 \
+	-DIN_RT_R0 \
+	-DIN_SUP_R0 \
+	-DVBOX \
+	-DRT_WITH_VBOX \
+	-DVBOX_WITH_HARDENING \
+	-DSUPDRV_WITH_RELEASE_LOGGER \
+	-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV \
+	-DIPRT_WITH_EFLAGS_AC_PRESERVING \
+	-DVBOX_WITH_64_BITS_GUESTS # <-- must be consistent with Config.kmk!
 ifndef CONFIG_VBOXDRV_FIXEDMAJOR
- MOD_DEFS += -DCONFIG_VBOXDRV_AS_MISC
+MOD_DEFS += -DCONFIG_VBOXDRV_AS_MISC
 endif
 ifdef VBOX_WITH_NATIVE_DTRACE
- MOD_DEFS += -DVBOX_WITH_NATIVE_DTRACE
+MOD_DEFS += -DVBOX_WITH_NATIVE_DTRACE
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
- MOD_DEFS += -DRT_ARCH_AMD64
+MOD_DEFS += -DRT_ARCH_AMD64
 else
- MOD_DEFS += -DRT_ARCH_X86
+MOD_DEFS += -DRT_ARCH_X86
 endif
-# must be consistent with Config.kmk!
-MOD_DEFS += -DVBOX_WITH_64_BITS_GUESTS
 ifdef VBOX_WITH_TEXT_MODMEM_HACK
- MOD_DEFS += -DRTMEMALLOC_EXEC_HEAP -DVBOX_WITH_TEXT_MODMEM_HACK
+MOD_DEFS += -DRTMEMALLOC_EXEC_HEAP -DVBOX_WITH_TEXT_MODMEM_HACK
 endif
+MOD_CFLAGS = -include $(VBOXDRV_DIR)include/VBox/SUPDrvMangling.h \
+	-fno-omit-frame-pointer -fno-pie -Wno-declaration-after-statement
 
-# build defs
-MOD_CFLAGS = -include $(KBUILD_EXTMOD)/include/VBox/SUPDrvMangling.h \
-	-fno-omit-frame-pointer -fno-pie
 
 include $(obj)/Makefile-footer.gmk
 
@@ -171,3 +183,4 @@ check: $(MODULE)
 	    echo "error: Some exported IPRT symbols was not properly renamed! See above." >&2; \
 	    false; \
 	 fi
+
