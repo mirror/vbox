@@ -65,10 +65,12 @@ VBOXMOD_DEFS = \
 ifeq ($(BUILD_TARGET_ARCH),amd64)
 VBOXMOD_DEFS += VBOX_WITH_64_BITS_GUESTS
 endif
-ifeq ($(KERN_VERSION),24)
-VBOXMOD_CFLAGS =
-else
-VBOXMOD_CFLAGS = -Wno-declaration-after-statement -fshort-wchar -include $(VBOXSF_DIR)/include/VBox/VBoxGuestMangling.h -fno-pie
+VBOXMOD_CFLAGS := $(call VBOX_GCC_CHECK_CC,-Wno-declaration-after-statement,-Wno-declaration-after-statement,,)
+VBOXMOD_CFLAGS += $(call VBOX_GCC_CHECK_CC,-fno-pie,-fno-pie,,)
+ifneq ($(KERN_VERSION),24)
+VBOXMOD_CFLAGS += -include $(VBOXSF_DIR)/include/VBox/VBoxGuestMangling.h
+## @todo r-bird: What's with -fshort-wchar here?? We either need that or we dont, right? It should be 2.6+ only.
+VBOXMOD_CFLAGS += -fshort-wchar
 endif
 ifdef VBOX_NO_OMIT_FRAME_POINTER
 VBOXMOD_CFLAGS += -fno-omit-frame-pointer

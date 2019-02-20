@@ -112,11 +112,21 @@ ifeq ($(KERNELRELEASE),)
  KERN_VER ?= $(shell uname -r)
  endif
 
- # guess kernel major version (24 or later)
- ifeq ($(shell if grep '"2\.4\.' /lib/modules/$(KERN_VER)/build/include/linux/version.h > /dev/null 2>&1; then echo yes; fi),yes)
+ ifeq ($(KERN_DIR),)
+  KERN_DIR := /lib/modules/$(KERN_VER)/build
+ endif
+
+ # Is this 2.4 or < 2.6.6? The UTS_RELEASE "2.x.y.z" define is present in the header until 2.6.1x something.
+ ifeq ($(shell if grep '"2\.4\.' $(KERN_DIR)/include/linux/version.h > /dev/null 2>&1; then echo yes; fi),yes)
   KERN_VERSION := 24
+  VBOX_KERN_GROKS_EXTMOD :=
  else
   KERN_VERSION := 26
+  VBOX_KERN_GROKS_EXTMOD := yes
+  ifeq ($(shell if grep '"2\.6\.[012345][."]' $(KERN_DIR)/include/linux/version.h > /dev/null 2>&1; then echo yes; fi),yes)
+   VBOX_KERN_GROKS_EXTMOD :=
+  else
+  endif
  endif
 
 else # neq($(KERNELRELEASE),)
@@ -126,20 +136,27 @@ else # neq($(KERNELRELEASE),)
  #
 
  # guess kernel version (24 or 26)
- ifeq ($(shell if echo "$(VERSION).$(PATCHLEVEL)." | grep '2\.4\.' > /dev/null; then echo yes; fi),yes)
+ ifeq ($(VERSION).$(PATCHLEVEL),2.4)
   KERN_VERSION := 24
+  VBOX_KERN_GROKS_EXTMOD :=
  else
   KERN_VERSION := 26
+  VBOX_KERN_GROKS_EXTMOD := yes
+  ifeq ($(VERSION).$(PATCHLEVEL),2.6)
+   ifeq ($(findstring @$(SUBLEVEL)@,@0@1@2@3@4@5@),@$(SUBLEVEL)@)
+    VBOX_KERN_GROKS_EXTMOD :=
+   endif
+  endif
  endif
 
  KERN_VER := $(KERNELRELEASE)
 
+ ifeq ($(KERN_DIR),)
+  KERN_DIR := /lib/modules/$(KERN_VER)/build
+ endif
 endif # neq($(KERNELRELEASE),)
 
 # Kernel build folder
-ifeq ($(KERN_DIR),)
- KERN_DIR := /lib/modules/$(KERN_VER)/build
-endif
 ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
  $(error Error: unable to find the headers of the Linux kernel to build against. \
           Specify KERN_VER=<version> (currently $(KERN_VER)) and run Make again)
@@ -162,6 +179,25 @@ ifndef KBUILD_EXTMOD
  endif
  KBUILD_EXTMOD := $(CURDIR)
 endif
+
+
+# For VBOX_GCC_CHECK_CC
+VBOX_CLOSEPAR := )
+VBOX_DOLLAR   := $$
+## Modified VBOX_GCC_CHECK_EX_CC_CXX macro from /Config.kmk.
+# @param 1 The option to test for.
+# @param 2 The return value when supported.
+# @param 3 The return value when NOT supported.
+VBOX_GCC_CHECK_CC = $(shell \
+    > /tmp/$(VBOX_DOLLAR)$(VBOX_DOLLAR).check.c; \
+    if $(CC) $(subst -Wno-,-W,$(1)) -Werror -c -o /dev/null /tmp/$(VBOX_DOLLAR)$(VBOX_DOLLAR).check.c > /dev/null 2>&1; then \
+        case "`LC_ALL=C $(CC) $(subst -Wno-,-W,$(1)) -Werror -c -o /dev/null /tmp/$(VBOX_DOLLAR)$(VBOX_DOLLAR).check.c 2>&1`" in \
+            "error: unknown warning option"*$(VBOX_CLOSEPAR) echo "$(3)";; \
+            *$(VBOX_CLOSEPAR) echo "$(2)";; \
+         esac; \
+    else echo "$(3)"; fi; \
+    rm -f /tmp/$(VBOX_DOLLAR)$(VBOX_DOLLAR).check.c; )
+
 
 # debug - show guesses.
 ifdef DEBUG
