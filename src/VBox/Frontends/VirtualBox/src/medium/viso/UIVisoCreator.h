@@ -120,6 +120,9 @@ private:
       *  - grab it from the dialog as soon as a panel becomes visible again
       *  - assign it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
+    void loadSettings();
+    void saveSettings() const;
+    void setDialogGeometry(const QRect &geometry);
 
     QAction              *m_pActionConfiguration;
     QAction              *m_pActionOptions;

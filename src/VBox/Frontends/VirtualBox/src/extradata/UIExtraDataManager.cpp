@@ -1956,7 +1956,8 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_LanguageID
            << GUI_ActivateHoveredMachineWindow
            << GUI_Input_SelectorShortcuts << GUI_Input_MachineShortcuts
-           << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD << GUI_RecentFolderVISOContent
+           << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD
+           << GUI_VisoCreator_RecentFolder << GUI_VisoCreator_DialogGeometry
            << GUI_RecentListHD << GUI_RecentListCD << GUI_RecentListFD
            << GUI_LastSelectorWindowPosition << GUI_SplitterSizes
            << GUI_Toolbar << GUI_Toolbar_Text
@@ -2617,11 +2618,6 @@ QString UIExtraDataManager::recentFolderForFloppyDisks()
     return extraDataString(GUI_RecentFolderFD);
 }
 
-QString UIExtraDataManager::recentFolderForVISOContent()
-{
-    return extraDataString(GUI_RecentFolderVISOContent);
-}
-
 void UIExtraDataManager::setRecentFolderForHardDrives(const QString &strValue)
 {
     setExtraDataString(GUI_RecentFolderHD, strValue);
@@ -2635,11 +2631,6 @@ void UIExtraDataManager::setRecentFolderForOpticalDisks(const QString &strValue)
 void UIExtraDataManager::setRecentFolderForFloppyDisks(const QString &strValue)
 {
     setExtraDataString(GUI_RecentFolderFD, strValue);
-}
-
-void UIExtraDataManager::setRecentFolderForVISOContent(const QString &strValue)
-{
-    setExtraDataString(GUI_RecentFolderVISOContent, strValue);
 }
 
 QStringList UIExtraDataManager::recentListOfHardDrives()
@@ -2670,6 +2661,35 @@ void UIExtraDataManager::setRecentListOfOpticalDisks(const QStringList &value)
 void UIExtraDataManager::setRecentListOfFloppyDisks(const QStringList &value)
 {
     setExtraDataStringList(GUI_RecentListFD, value);
+}
+
+QString UIExtraDataManager::visoCreatorRecentFolder()
+{
+    return extraDataString(GUI_VisoCreator_RecentFolder);
+}
+
+void UIExtraDataManager::setVisoCreatorRecentFolder(const QString &strValue)
+{
+    setExtraDataString(GUI_VisoCreator_RecentFolder, strValue);
+}
+
+QRect UIExtraDataManager::visoCreatorDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
+{
+    return dialogGeometry(GUI_VisoCreator_DialogGeometry, pWidget, defaultGeometry);
+}
+
+void UIExtraDataManager::setVisoCreatorDialogGeometry(const QRect &geometry, bool fMaximized)
+{
+    setDialogGeometry(GUI_VisoCreator_DialogGeometry, geometry, fMaximized);
+}
+
+bool UIExtraDataManager::visoCreatorDialogShouldBeMaximized()
+{
+    /* Get corresponding extra-data: */
+    const QStringList data = extraDataStringList(GUI_VisoCreator_DialogGeometry);
+
+    /* Make sure 5th item has required value: */
+    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
 QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
