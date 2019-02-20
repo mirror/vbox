@@ -602,7 +602,7 @@ $(if-expr "$(lang)" != "en_US",, \
 		-E 'VBOX_MIDL_PROXY_CLSID=$(VBOX_MIDL_PROXY_CLSID)' \
 		$(if-expr defined(VBOX_WITH_MSM_INSTALL), \
 			$(foreach module,$(VBOX_INSTALLER_MERGE_MODULES), \
-				-E 'VBOX_WIN_INST_MERGE_$(toupper $(module))=$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang)_$(KBUILD_TARGET_ARCH).msm'),) \
+				-E 'VBOX_WIN_INST_MERGE_$(toupper $(module))=$(subst /,\,$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang)_$(KBUILD_TARGET_ARCH).msm')),) \
 		-E 'VBOX_WINDOWS_ICON_FILE=$(subst /,\,$(VBOX_WINDOWS_ICON_FILE))' \
 		-E 'VBOX_QT_INFIX=$(VBOX_QT_INFIX)' \
 		-E 'VBOX_WITH_32_ON_64_MAIN_API=$(if $(VBOX_WITH_32_ON_64_MAIN_API),yes,no)' \
@@ -651,6 +651,7 @@ $(if-expr "$(lang)" != "en_US",, \
                \
 		-e 's,$(subst /,\\,$(PATH_ROOT))\\doc\\,files-VirtualBox_$(lang)\\,g' \
 		-e 's,$(subst /,\\,$(VBOX_PATH_WIN_INST_SRC))\\Binary\\,files-VirtualBox_$(lang)\\,g' \
+		-e 's,$(subst /,\\,$(VBOX_WIN_INST_OUT_DIR))\\,,g' \
 		-e 's,$(subst /,\\,$(dir $(VBOX_WINDOWS_ICON_FILE))),files-VirtualBox_$(lang)\\,g' \
 		--output "$(VBOX_WIN_INST_REPACK_DIR)/VirtualBox_$(lang).wix" \
 		"$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wix"
