@@ -53,18 +53,18 @@ MOD_INCL = \
 	-I$(VBOXNETFLT_DIR)include \
 	-I$(VBOXNETFLT_DIR)r0drv/linux
 MOD_DEFS = \
-	-DRT_OS_LINUX \
-	-DIN_RING0 \
-	-DIN_RT_R0 \
-	-DIN_SUP_R0 \
-	-DVBOX \
-	-DRT_WITH_VBOX \
-	-DVBOX_WITH_HARDENING \
-	-DVBOX_WITH_64_BITS_GUESTS # <-- must be consistent with Config.kmk!
+	RT_OS_LINUX \
+	IN_RING0 \
+	IN_RT_R0 \
+	IN_SUP_R0 \
+	VBOX \
+	RT_WITH_VBOX \
+	VBOX_WITH_HARDENING \
+	VBOX_WITH_64_BITS_GUESTS # <-- must be consistent with Config.kmk!
 ifeq ($(BUILD_TARGET_ARCH),amd64)
-MOD_DEFS += -DRT_ARCH_AMD64
+MOD_DEFS += RT_ARCH_AMD64
 else
-MOD_DEFS += -DRT_ARCH_X86
+MOD_DEFS += RT_ARCH_X86
 endif
 MOD_CFLAGS = -include $(VBOXNETFLT_DIR)include/VBox/SUPDrvMangling.h -fno-pie -Wno-declaration-after-statement
 

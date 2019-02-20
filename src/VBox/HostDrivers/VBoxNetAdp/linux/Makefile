@@ -50,19 +50,14 @@ MOD_INCL = \
 	-I$(VBOXNETADPT_DIR)include \
 	-I$(VBOXNETADPT_DIR)r0drv/linux
 MOD_DEFS = \
-	-DRT_OS_LINUX \
-	-DIN_RING0 \
-	-DIN_RT_R0 \
-	-DIN_SUP_R0 \
-	-DVBOX \
-	-DRT_WITH_VBOX \
-	-DVBOX_WITH_HARDENING
-ifeq ($(BUILD_TARGET_ARCH),amd64)
- MOD_DEFS += -DRT_ARCH_AMD64
-else
- MOD_DEFS += -DRT_ARCH_X86
-endif
-MOD_DEFS += -DVBOX_WITH_64_BITS_GUESTS # <-- must be consistent with Config.kmk!
+	RT_OS_LINUX \
+	IN_RING0 \
+	IN_RT_R0 \
+	IN_SUP_R0 \
+	VBOX \
+	RT_WITH_VBOX \
+	VBOX_WITH_HARDENING \
+	VBOX_WITH_64_BITS_GUESTS # <-- must be consistent with Config.kmk!
 MOD_CFLAGS = -include $(KBUILD_EXTMOD)/include/VBox/SUPDrvMangling.h -fno-pie -Wno-declaration-after-statement
 
 include $(obj)/Makefile-footer.gmk

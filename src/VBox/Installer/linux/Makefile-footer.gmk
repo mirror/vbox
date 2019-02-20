@@ -35,7 +35,13 @@ LINUX_VERBOSE = $(if $(KBUILD_VERBOSE),1,)
 #
 VBOX_INCL := $(addprefix -I,$(KERN_INCL) $(EXTRA_INCL)) $(MOD_INCL)
 
-KFLAGS   := -D__KERNEL__ -DMODULE -DRT_WITHOUT_PRAGMA_ONCE $(MOD_DEFS)
+KFLAGS := -D__KERNEL__ -DMODULE -DRT_WITHOUT_PRAGMA_ONCE $(addprefix -D,$(MOD_DEFS))
+ifeq ($(BUILD_TARGET_ARCH),amd64)
+KFLAGS += -DRT_ARCH_AMD64
+else
+KFLAGS += -DRT_ARCH_X86
+endif
+
 ifeq ($(BUILD_TYPE),debug)
 # The -Wno-array-bounds is because of a bug in gcc 4.something, see
 # https://sourceware.org/bugzilla/show_bug.cgi?id=10001

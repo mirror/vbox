@@ -26,8 +26,7 @@
 # build as part of the Guest Additions.  The intended way of doing this is as
 # follows:
 #
-# # Linux kbuild sets this to our source directory if we are called from
-# # there
+# # Linux kbuild sets this to our source directory if we are called from there
 # obj ?= $(CURDIR)
 # include $(obj)/Makefile-header.gmk
 # MOD_NAME = <name of the module to be built, without extension>
