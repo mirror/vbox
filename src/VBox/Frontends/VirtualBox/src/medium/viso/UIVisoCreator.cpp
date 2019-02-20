@@ -33,6 +33,9 @@
 #include "UIVisoCreatorOptionsPanel.h"
 #include "UIVisoContentBrowser.h"
 #include "VBoxGlobal.h"
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
 
 UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */, const QString& strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIMainDialog>(pParent)
