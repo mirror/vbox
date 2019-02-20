@@ -171,7 +171,7 @@ VBOXMOD_CFLAGS = -include $(VBOXDRV_DIR)include/VBox/SUPDrvMangling.h \
 
 include $(obj)/Makefile-footer.gmk
 
-check: $(MODULE)
+check: $(VBOXMOD_0_TARGET)
 	@if ! readelf -p __ksymtab_strings vboxdrv.ko | grep -E "\[.*\]  *(RT|g_..*RT.*)"; then \
 	    echo "All exported IPRT symbols are properly renamed!"; \
 	 else \

@@ -17,9 +17,7 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-# override is required by the Debian guys
-override MODULE = $(VBOXMOD_NAME)
-OBJS = $(VBOXMOD_OBJS)
+VBOXMOD_0_TARGET = $(VBOXMOD_NAME)
 
 KBUILD_VERBOSE ?= 1
 LINUX_VERBOSE = $(if $(KBUILD_VERBOSE),1,)
@@ -49,64 +47,64 @@ ifeq ($(KERN_VERSION),24)
 #
 # 2.4
 #
-
 # Note: while 2.4 kernels could also do "proper" builds from kbuild, the make
 # script needed to support it was somewhat different from 2.6.  Since this
 # script works and 2.4 is not a moving target we will not try do do things the
 # "proper" way.
+#
+VBOXMOD_EXT := o
 
 ifeq ($(BUILD_TARGET_ARCH),amd64)
  KFLAGS += -mcmodel=kernel
 endif
 
 CFLAGS := -O2 -DVBOX_LINUX_2_4 $(VBOXMOD_CFLAGS) $(VBOX_INCL) $(KFLAGS) $(KDEBUG)
-MODULE_EXT := o
 
 # 2.4 Module linking
-$(MODULE).$(MODULE_EXT): $(OBJS)
-	$(LD) -o $@ -r $(OBJS)
+$(VBOXMOD_0_TARGET).$(VBOXMOD_EXT): $(VBOXMOD_OBJS)
+	$(LD) -o $@ -r $(VBOXMOD_OBJS)
 
-.PHONY: $(MODULE)
-all: $(MODULE)
-$(MODULE): $(MODULE).$(MODULE_EXT)
+.PHONY: $(VBOXMOD_0_TARGET)
+all: $(VBOXMOD_0_TARGET)
+$(VBOXMOD_0_TARGET): $(VBOXMOD_0_TARGET).$(VBOXMOD_EXT)
 
-install: $(MODULE)
+install: $(VBOXMOD_0_TARGET)
 	@mkdir -p $(MODULE_DIR); \
-	install -m 0644 -o root -g root $(MODULE).$(MODULE_EXT) $(MODULE_DIR); \
+	install -m 0644 -o root -g root $(VBOXMOD_0_TARGET).$(VBOXMOD_EXT) $(MODULE_DIR); \
 	PATH="$(PATH):/bin:/sbin" depmod -a; sync
 
 clean:
-	for f in $(sort $(dir $(OBJS))); do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
+	for f in $(sort $(dir $(VBOXMOD_OBJS))); do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
 	rm -rf .$(VBOXMOD_NAME)* .tmp_ver* $(VBOXMOD_NAME).* Modules.symvers modules.order
 
 else  # ! $(KERN_VERSION), 24
 #
 # 2.6 and later
+#
 ## @todo XXX does not work for 2.6.5 and earlier (see KBUILD_EXTMOD in header).
 #
-
-MODULE_EXT := ko
-
-$(MODULE)-y  := $(OBJS)
+VBOXMOD_EXT := ko
 
 # build defs
 EXTRA_CFLAGS += $(VBOXMOD_CFLAGS) $(VBOX_INCL) $(KFLAGS) $(KDEBUG)
+$(VBOXMOD_0_TARGET)-y := $(VBOXMOD_OBJS)
+obj-m += $(VBOXMOD_0_TARGET).o
 
-.PHONY: $(MODULE)
-all: $(MODULE)
-
-obj-m += $(MODULE).o
-
+# Trigger parallel make job.
 JOBS := $(shell (getconf _NPROCESSORS_ONLN || grep -Ec '^processor|^CPU[0-9]' /proc/cpuinfo) 2>/dev/null)
 ifeq ($(JOBS),0)
-  override JOBS := 1
+ override JOBS := 1
 endif
 
+# rules:
+.PHONY: $(VBOXMOD_0_TARGET)
+all: $(VBOXMOD_0_TARGET)
+
 # OL/UEK: disable module signing for external modules -- we don't have any private key
-$(MODULE):
+$(VBOXMOD_0_TARGET):
 	$(MAKE) V=$(LINUX_VERBOSE) CONFIG_MODULE_SIG= -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) $(if $(JOBS),-j$(JOBS),) modules
 
-install: $(MODULE)
+install: $(VBOXMOD_0_TARGET)
 	$(MAKE) V=$(LINUX_VERBOSE) CONFIG_MODULE_SIG= -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) INSTALL_MOD_PATH=$(INSTALL_MOD_PATH) INSTALL_MOD_DIR=$(INSTALL_MOD_DIR) modules_install
 
 modules_install: install
@@ -114,5 +112,5 @@ modules_install: install
 clean:
 	$(MAKE) V=$(LINUX_VERBOSE) CONFIG_MODULE_SIG= -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) clean
 
-.PHONY: $(MODULE) install modules_install clean
+.PHONY: all $(VBOXMOD_0_TARGET) install modules_install clean
 endif
