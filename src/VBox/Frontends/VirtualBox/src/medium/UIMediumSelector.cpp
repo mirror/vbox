@@ -373,7 +373,7 @@ void UIMediumSelector::prepareWidgets()
 
     m_pMainMenu = menuBar()->addMenu(tr("Medium"));
 
-    m_pToolBar = new UIToolBar(parentWidget());
+    m_pToolBar = new UIToolBar;
     if (m_pToolBar)
     {
         /* Configure toolbar: */
