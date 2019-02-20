@@ -160,10 +160,8 @@ void UIChooserModel::handleToolButtonClick(UIChooserItem *pItem)
             break;
         case UIChooserItemType_Group:
         case UIChooserItemType_Machine:
-        {
             emit sigToolMenuRequested(UIToolClass_Machine, pItem->mapToScene(QPointF(pItem->size().width(), 0)).toPoint());
             break;
-        }
         default:
             break;
     }
