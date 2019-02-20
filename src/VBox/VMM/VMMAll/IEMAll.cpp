@@ -14336,9 +14336,10 @@ VMMDECL(VBOXSTRICTRC)       IEMExecOneBypassWithPrefetchedByPCWritten(PVMCPU pVC
 }
 
 
-VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
+VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t cMaxInstructions, uint32_t cPollRate, uint32_t *pcInstructions)
 {
     uint32_t const cInstructionsAtStart = pVCpu->iem.s.cInstructions;
+    AssertMsg(RT_IS_POWER_OF_TWO(cPollRate + 1), ("%#x\n", cPollRate));
 
     /*
      * See if there is an interrupt pending in TRPM, inject it if we can.
@@ -14385,7 +14386,6 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
     /*
      * Initial decoder init w/ prefetch, then setup setjmp.
      */
-    unsigned     cTimerPoll = 0;
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
     if (rcStrict == VINF_SUCCESS)
     {
@@ -14400,8 +14400,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
             /*
              * The run loop.  We limit ourselves to 4096 instructions right now.
              */
-            PVM         pVM    = pVCpu->CTX_SUFF(pVM);
-            uint32_t    cInstr = 4096;
+            PVM pVM = pVCpu->CTX_SUFF(pVM);
             for (;;)
             {
                 /*
@@ -14441,10 +14440,10 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
                                               && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF) )
                                       && !VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_MASK) ))
                         {
-                            if (cInstr-- > 0)
+                            if (cMaxInstructions-- > 0)
                             {
-                                /* Poll timers every 128 call*/
-                                if (   (++cTimerPoll & 0x7f) != 0
+                                /* Poll timers every 2048 instructions. */
+                                if (   (cMaxInstructions & cPollRate) != 0
                                     || !TMTimerPollBool(pVM, pVCpu))
                                 {
                                     Assert(pVCpu->iem.s.cActiveMappings == 0);

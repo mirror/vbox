@@ -1205,7 +1205,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 #ifdef VBOX_WITH_REM
             rc = REMR3Run(pVM, pVCpu);
 #else
-            rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu, NULL /*pcInstructions*/));
+            rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu, 8192 /*cMaxInstructions*/, 4095 /*cPollRate*/, NULL /*pcInstructions*/));
 #endif
             STAM_PROFILE_STOP(&pVCpu->em.s.StatREMExec, c);
         }
@@ -1373,7 +1373,8 @@ static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     while (pVCpu->em.s.cIemThenRemInstructions < 1024)
     {
         uint32_t     cInstructions;
-        VBOXSTRICTRC rcStrict = IEMExecLots(pVCpu, &cInstructions);
+        VBOXSTRICTRC rcStrict = IEMExecLots(pVCpu, 1024 - pVCpu->em.s.cIemThenRemInstructions /*cMaxInstructions*/,
+                                            UINT32_MAX/2 /*cPollRate*/, &cInstructions);
         pVCpu->em.s.cIemThenRemInstructions += cInstructions;
         if (rcStrict != VINF_SUCCESS)
         {
@@ -2893,6 +2894,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_IEM:
                 {
+                    uint32_t cInstructions = 0;
 #if 0 /* For testing purposes. */
                     STAM_PROFILE_START(&pVCpu->em.s.StatHmExec, x1);
                     rc = VBOXSTRICTRC_TODO(EMR3HmSingleInstruction(pVM, pVCpu, EM_ONE_INS_FLAGS_RIP_CHANGE));
@@ -2901,12 +2903,16 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         rc = VINF_SUCCESS;
                     else if (rc == VERR_EM_CANNOT_EXEC_GUEST)
 #endif
-                        rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu, NULL /*pcInstructions*/));
+                        rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu, 4096 /*cMaxInstructions*/, 2047 /*cPollRate*/, &cInstructions));
                     if (pVM->em.s.fIemExecutesAll)
                     {
                         Assert(rc != VINF_EM_RESCHEDULE_REM);
                         Assert(rc != VINF_EM_RESCHEDULE_RAW);
                         Assert(rc != VINF_EM_RESCHEDULE_HM);
+#ifdef VBOX_HIGH_RES_TIMERS_HACK
+                        if (cInstructions < 2048)
+                            TMTimerPollVoid(pVM, pVCpu);
+#endif
                     }
                     fFFDone = false;
                     break;
