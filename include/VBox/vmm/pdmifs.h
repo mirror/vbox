@@ -689,13 +689,14 @@ typedef struct PDMIDISPLAYPORT
     /**
      * Send the guest a notification about host cursor capabilities changes.
      *
-     * @param   pInterface            Pointer to this interface.
-     * @param   fCapabilitiesAdded    New supported capabilities.
-     * @param   fCapabilitiesRemoved  No longer supported capabilities.
+     * @param   pInterface             Pointer to this interface.
+     * @param   fSupportsRenderCursor  Whether the host can draw the guest cursor
+     *                                 using the host one provided the location matches.
+     * @param   fSupportsMoveCursor    Whether the host can draw the guest cursor
+     *                                 itself at any position.  Implies RenderCursor.
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(void, pfnReportHostCursorCapabilities, (PPDMIDISPLAYPORT pInterface, uint32_t fCapabilitiesAdded,
-                                                                 uint32_t fCapabilitiesRemoved));
+    DECLR3CALLBACKMEMBER(void, pfnReportHostCursorCapabilities, (PPDMIDISPLAYPORT pInterface, bool fSupportsRenderCursor, bool fSupportsMoveCursor));
 
     /**
      * Tell the graphics device about the host cursor position.
@@ -708,11 +709,7 @@ typedef struct PDMIDISPLAYPORT
     DECLR3CALLBACKMEMBER(void, pfnReportHostCursorPosition, (PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y));
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */
-#ifdef VBOX_WITH_VMSVGA
-#define PDMIDISPLAYPORT_IID                     "9672e2b0-1aef-4c4d-9108-864cdb28333f"
-#else
-#define PDMIDISPLAYPORT_IID                     "323f3412-8903-4564-b04c-cbfe0d2d1596"
-#endif
+#define PDMIDISPLAYPORT_IID                     "471b0520-338c-11e9-bb84-6ff2c956da45"
 
 /** @name Flags for PDMIDISPLAYCONNECTOR::pfnVBVAReportCursorPosition.
  * @{ */

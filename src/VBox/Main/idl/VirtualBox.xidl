@@ -17881,6 +17881,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Supports visible region. If set, then IFramebuffer::setVisibleRegion can be called.
       </desc>
     </const>
+
+    <const name="RenderCursor" value="0x08">
+      <desc>
+        This framebuffer implementation can render a pointer cursor itself.  Unless the
+        MoveCursor capability is also set the cursor will always be rendered at the
+        location of (and usually using) the host pointer.
+      </desc>
+    </const>
+
+    <const name="MoveCursor" value="0x10">
+      <desc>
+        Supports rendering a pointer cursor anywhere within the guest screen.  Implies
+        RenderCursor.
+      </desc>
+    </const>
   </enum>
 
   <interface
@@ -25446,7 +25461,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>The guest reports cursor position data.</desc>
 
     <attribute name="hasData" readonly="yes" type="boolean">
-      <desc>Event contains valid data (alternative: notification of support)</desc>
+      <desc>Event contains valid data.  If not set, switch back to using the host cursor.</desc>
     </attribute>
     <attribute name="x" readonly="yes" type="unsigned long">
       <desc>Reported X position</desc>

@@ -2833,17 +2833,22 @@ DECLCALLBACK(int) vbvaPortSendModeHint(PPDMIDISPLAYPORT pInterface, uint32_t cx,
     return rc;
 }
 
-DECLCALLBACK(void) vbvaPortReportHostCursorCapabilities(PPDMIDISPLAYPORT pInterface, uint32_t fCapabilitiesAdded,
-                                                        uint32_t fCapabilitiesRemoved)
+DECLCALLBACK(void) vbvaPortReportHostCursorCapabilities(PPDMIDISPLAYPORT pInterface, bool fSupportsRenderCursor, bool fSupportsMoveCursor)
 {
+    LogRelFlowFunc(("fSupportsRenderCursor=%RTbool, fSupportsMoveCursor=%RTbool\n",
+                    fSupportsRenderCursor, fSupportsMoveCursor));
+#if 0
     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    NOREF(fSupportsMoveCursor);
     AssertRC(rc);
-    pThis->fHostCursorCapabilities |= fCapabilitiesAdded;
-    pThis->fHostCursorCapabilities &= ~fCapabilitiesRemoved;
+    pThis->fHostCursorCapabilities = fSupportsRenderCursor ? VBOX_VBVA_CURSOR_CAPABILITY_HARDWARE : 0;
     if (pThis->fGuestCaps & VBVACAPS_IRQ && pThis->fGuestCaps & VBVACAPS_DISABLE_CURSOR_INTEGRATION)
         VBVARaiseIrq(pThis, HGSMIHOSTFLAGS_CURSOR_CAPABILITIES);
     PDMCritSectLeave(&pThis->CritSect);
+#else
+    RT_NOREF(pInterface, fSupportsRenderCursor, fSupportsMoveCursor);
+#endif
 }
 
 DECLCALLBACK(void) vbvaPortReportHostCursorPosition(PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y)
@@ -2884,7 +2889,7 @@ int VBVAInit(PVGASTATE pVGAState)
              pCtx->cViews = pVGAState->cMonitors;
              pCtx->fPaused = true;
              memset(pCtx->aModeHints, ~0, sizeof(pCtx->aModeHints));
-             pVGAState->fHostCursorCapabilities = 0;
+             pVGAState->fHostCursorCapabilities = VBOX_VBVA_CURSOR_CAPABILITY_HARDWARE;
          }
      }
 

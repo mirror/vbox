@@ -411,12 +411,14 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferCapab
 
     if (mfUpdateImage)
     {
-        caps.resize(1);
+        caps.resize(2);
         caps[0] = FramebufferCapabilities_UpdateImage;
+        caps[1] = FramebufferCapabilities_RenderCursor;
     }
     else
     {
-        /* No caps to return. */
+        caps.resize(1);
+        caps[0] = FramebufferCapabilities_RenderCursor;
     }
 
     caps.detachTo(ComSafeArrayOutArg(aCapabilities));

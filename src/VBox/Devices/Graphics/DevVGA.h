@@ -584,8 +584,7 @@ DECLCALLBACK(int) vbvaPortSendModeHint(PPDMIDISPLAYPORT pInterface, uint32_t cx,
                                        uint32_t cDisplay, uint32_t dx,
                                        uint32_t dy, uint32_t fEnabled,
                                        uint32_t fNotifyGuest);
-DECLCALLBACK(void) vbvaPortReportHostCursorCapabilities(PPDMIDISPLAYPORT pInterface, uint32_t fCapabilitiesAdded,
-                                                        uint32_t fCapabilitiesRemoved);
+DECLCALLBACK(void) vbvaPortReportHostCursorCapabilities(PPDMIDISPLAYPORT pInterface, bool fSupportsRenderCursor, bool fSupportsMoveCursor);
 DECLCALLBACK(void) vbvaPortReportHostCursorPosition(PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y);
 
 # ifdef VBOX_WITH_VDMA

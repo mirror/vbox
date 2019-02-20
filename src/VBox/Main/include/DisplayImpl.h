@@ -192,7 +192,8 @@ public:
     int  i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect);
     int  i_handleQueryVisibleRegion(uint32_t *pcRects, PRTRECT paRects);
 
-    void i_VideoAccelVRDP(bool fEnable);
+    void i_VRDPConnectionEvent(bool fConnect);
+    void i_VideoAccelVRDP(bool fEnable, int c);
 
     /* Legacy video acceleration requests coming from the VGA refresh timer. */
     int  VideoAccelEnableVGA(bool fEnable, VBVAMEMORY *pVbvaMemory);
@@ -200,6 +201,8 @@ public:
     /* Legacy video acceleration requests coming from VMMDev. */
     int  VideoAccelEnableVMMDev(bool fEnable, VBVAMEMORY *pVbvaMemory);
     void VideoAccelFlushVMMDev(void);
+
+    void i_UpdateDeviceCursorCapabilities(void);
 
 #ifdef VBOX_WITH_RECORDING
     int  i_recordingInvalidate(void);
@@ -432,7 +435,8 @@ private:
 
     bool        mfVideoAccelVRDP;
     uint32_t    mfu32SupportedOrders;
-    int32_t volatile mcVideoAccelVRDPRefs;
+    /** Number of currently connected VRDP clients. */
+    int32_t volatile mcVRDPRefs;
 
     /** Accelerate3DEnabled = true && GraphicsControllerType == VBoxVGA. */
     bool        mfIsCr3DEnabled;

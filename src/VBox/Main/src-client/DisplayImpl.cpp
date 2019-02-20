@@ -124,7 +124,7 @@ HRESULT Display::FinalConstruct()
 
     mfVideoAccelVRDP = false;
     mfu32SupportedOrders = 0;
-    mcVideoAccelVRDPRefs = 0;
+    mcVRDPRefs = 0;
 
     mfSeamlessEnabled = false;
     mpRectVisibleRegion = NULL;
@@ -1350,6 +1350,34 @@ void Display::i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
     *py2 = y2;
 }
 
+/** Updates the device's view of the host cursor handling capabilities.
+ *  Calls into mpDrv->pUpPort. */
+void Display::i_UpdateDeviceCursorCapabilities(void)
+{
+    bool fRenderCursor = true;
+    bool fMoveCursor = mcVRDPRefs == 0;
+#ifdef VBOX_WITH_RECORDING
+    RecordingContext *pCtx = mParent->i_recordingGetContext();
+
+    if (   pCtx
+        && pCtx->IsStarted()
+        && pCtx->IsFeatureEnabled(RecordingFeature_Video))
+        fRenderCursor = fMoveCursor = false;
+    else
+#endif /* VBOX_WITH_RECORDING */
+    {
+        for (unsigned uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
+        {
+            DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
+            if (!(pFBInfo->u32Caps & FramebufferCapabilities_RenderCursor))
+                fRenderCursor = false;
+            if (!(pFBInfo->u32Caps & FramebufferCapabilities_MoveCursor))
+                fMoveCursor = false;
+        }
+    }
+    mpDrv->pUpPort->pfnReportHostCursorCapabilities(mpDrv->pUpPort, fRenderCursor, fMoveCursor);
+}
+
 HRESULT Display::i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uint32_t fCapabilitiesRemoved)
 {
     /* Do we need this to access mParent?  I presume that the safe VM pointer
@@ -1365,8 +1393,8 @@ HRESULT Display::i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uin
         return S_OK;
     CHECK_CONSOLE_DRV(mpDrv);
     alock.release();  /* Release before calling up for lock order reasons. */
-    mpDrv->pUpPort->pfnReportHostCursorCapabilities(mpDrv->pUpPort, fCapabilitiesAdded, fCapabilitiesRemoved);
     mfHostCursorCapabilities = fHostCursorCapabilities;
+    i_UpdateDeviceCursorCapabilities();
     return S_OK;
 }
 
@@ -1624,15 +1652,22 @@ void Display::VideoAccelFlushVMMDev(void)
 
 /* Called always by one VRDP server thread. Can be thread-unsafe.
  */
-void Display::i_VideoAccelVRDP(bool fEnable)
+void Display::i_VRDPConnectionEvent(bool fConnect)
 {
-    LogRelFlowFunc(("fEnable = %d\n", fEnable));
+    LogRelFlowFunc(("fConnect = %d\n", fConnect));
 
+    int c = fConnect?
+                ASMAtomicIncS32(&mcVRDPRefs):
+                ASMAtomicDecS32(&mcVRDPRefs);
+
+    i_VideoAccelVRDP(fConnect, c);
+    i_UpdateDeviceCursorCapabilities();
+}
+
+
+void Display::i_VideoAccelVRDP(bool fEnable, int c)
+{
     VIDEOACCEL *pVideoAccel = &mVideoAccelLegacy;
-
-    int c = fEnable?
-                ASMAtomicIncS32(&mcVideoAccelVRDPRefs):
-                ASMAtomicDecS32(&mcVideoAccelVRDPRefs);
 
     Assert (c >= 0);
 
@@ -2440,6 +2475,7 @@ void Display::i_recordingScreenChanged(unsigned uScreenId)
 {
     RecordingContext *pCtx = mParent->i_recordingGetContext();
 
+    i_UpdateDeviceCursorCapabilities();
     if (   RT_LIKELY(!maRecordingEnabled[uScreenId])
         || !pCtx || !pCtx->IsStarted())
     {
