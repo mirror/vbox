@@ -50,9 +50,9 @@ VBOXMOD_OBJS += \
 	math/gcc/umoddi3.o
 endif
 VBOXMOD_INCL = \
-	-I$(VBOXPCI_DIR) \
-	-I$(VBOXPCI_DIR)include \
-	-I$(VBOXPCI_DIR)r0drv/linux
+	$(VBOXPCI_DIR) \
+	$(VBOXPCI_DIR)include \
+	$(VBOXPCI_DIR)r0drv/linux
 VBOXMOD_DEFS = \
 	RT_OS_LINUX \
 	IN_RING0 \

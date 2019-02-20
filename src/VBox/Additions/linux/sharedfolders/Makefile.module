@@ -48,9 +48,9 @@ VBOXMOD_OBJS += \
 	qdivrem.o
 endif
 VBOXMOD_INCL = \
-	-I$(VBOXSF_DIR) \
-	-I$(VBOXSF_DIR)include \
-	-I$(VBOXSF_DIR)r0drv/linux
+	$(VBOXSF_DIR) \
+	$(VBOXSF_DIR)include \
+	$(VBOXSF_DIR)r0drv/linux
 VBOXMOD_DEFS = \
 	RT_OS_LINUX \
 	IN_RING0 \

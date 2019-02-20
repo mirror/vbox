@@ -49,9 +49,9 @@ VBOXMOD_OBJS += \
 	math/gcc/umoddi3.o
 endif
 VBOXMOD_INCL = \
-	-I$(VBOXNETFLT_DIR) \
-	-I$(VBOXNETFLT_DIR)include \
-	-I$(VBOXNETFLT_DIR)r0drv/linux
+	$(VBOXNETFLT_DIR) \
+	$(VBOXNETFLT_DIR)include \
+	$(VBOXNETFLT_DIR)r0drv/linux
 VBOXMOD_DEFS = \
 	RT_OS_LINUX \
 	IN_RING0 \
