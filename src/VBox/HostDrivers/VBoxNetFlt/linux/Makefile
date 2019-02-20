@@ -26,7 +26,7 @@
 # Linux kbuild sets this to our source directory if we are called from
 # there
 obj ?= $(CURDIR)
-include $(obj)/Makefile.include.header
+include $(obj)/Makefile-header.gmk
 
 MOD_NAME = vboxnetflt
 MOD_OBJS = \
@@ -73,4 +73,4 @@ endif
 # build defs
 MOD_CFLAGS = -include $(KBUILD_EXTMOD)/include/VBox/SUPDrvMangling.h -fno-pie
 
-include $(obj)/Makefile.include.footer
+include $(obj)/Makefile-footer.gmk

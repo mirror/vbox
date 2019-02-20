@@ -26,7 +26,7 @@
 
 # Linux kbuild sets this to our source directory if we are called from there
 obj ?= $(CURDIR)
-include $(obj)/Makefile.include.header
+include $(obj)/Makefile-header.gmk
 
 MOD_NAME = vboxguest
 
@@ -156,7 +156,7 @@ MOD_CLEAN = . linux r0drv generic r0drv/linux r0drv/generic VBox \
 		common/alloc common/err common/log common/math/gcc common/misc \
 		common/string common/table common/time
 
-include $(obj)/Makefile.include.footer
+include $(obj)/Makefile-footer.gmk
 
 check: $(MOD_NAME)
 	@if ! readelf -p __ksymtab_strings vboxguest.ko | grep -E "\[.*\]  *(RT|g_..*RT.*)"; then \

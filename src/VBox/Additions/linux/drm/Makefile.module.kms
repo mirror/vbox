@@ -19,7 +19,7 @@
 
 # Linux kbuild sets this to our source directory if we are called from there
 obj ?= $(CURDIR)
-include $(obj)/Makefile.include.header
+include $(obj)/Makefile-header.gmk
 
 BUILD =
 
@@ -40,7 +40,7 @@ MOD_OBJS   = hgsmi_base.o \
              vbox_mode.o vbox_ttm.o vbva_base.o vbox_prime.o vbox_hgsmi.o
 MOD_INCL   = -I$(KBUILD_EXTMOD) -Iinclude/drm
 
-include $(obj)/Makefile.include.footer
+include $(obj)/Makefile-footer.gmk
 
 else  # ! wildcard $(KERN_INCL)/drm/drm_rect.h
 

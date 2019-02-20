@@ -2,7 +2,7 @@
 ## @file
 # VirtualBox Guest Additions kernel module Makefile, common parts.
 #
-# See Makefile.include.header for details of how to use this.
+# See Makefile-header.gmk for details of how to use this.
 #
 
 #

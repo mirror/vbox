@@ -56,8 +56,8 @@
 /linux/deffiles:                                --treat-as .sh
 --filter-out-files /linux/distributions_deb
 --filter-out-files /linux/distributions_rpm
-/linux/Makefile.include.footer:                 --treat-as Makefile --no-convert-eol
-/linux/Makefile.include.header:                 --treat-as Makefile --no-convert-eol
+/linux/Makefile-footer.gmk:                 --treat-as Makefile --no-convert-eol
+/linux/Makefile-header.gmk:                 --treat-as Makefile --no-convert-eol
 /linux/rpm/rules:                               --treat-as Makefile --no-convert-eol --dont-set-svn-executable
 /linux/rpm/VirtualBox.tmpl.spec:                --treat-as .sh
 /linux/rpm-kmod/build-kmod.in:                  --treat-as .sh
