@@ -1,4 +1,4 @@
-# $Revision$
+# $Id$
 ## @file
 # VirtualBox Guest Additions Module Makefile.
 #
@@ -24,13 +24,16 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
+# Find the directory of this makefile.
+VBOXGUEST_DIR := $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
+
 # Linux kbuild sets this to our source directory if we are called from there
 obj ?= $(CURDIR)
 include $(obj)/Makefile-header.gmk
 
 MOD_NAME = vboxguest
 
-MOD_OBJS   = \
+MOD_OBJS = \
 	VBoxGuest-linux.o \
 	VBoxGuest.o \
 	VBoxGuestR0LibGenericRequest.o \
@@ -123,38 +126,35 @@ MOD_OBJS += \
 	common/math/gcc/qdivrem.o
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
-MOD_OBJS +=	common/alloc/heapsimple.o
+MOD_OBJS += common/alloc/heapsimple.o
 endif
 
 MOD_DEFS = -DVBOX -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 -DIN_GUEST \
-            -DIN_GUEST_R0 -DIN_MODULE -DRT_WITH_VBOX -DVBGL_VBOXGUEST \
-            -DVBOX_WITH_HGCM
+           -DIN_GUEST_R0 -DIN_MODULE -DRT_WITH_VBOX -DVBGL_VBOXGUEST \
+           -DVBOX_WITH_HGCM
 ifeq ($(BUILD_TARGET_ARCH),amd64)
- MOD_DEFS  += -DRT_ARCH_AMD64
+MOD_DEFS += -DRT_ARCH_AMD64
 else
- MOD_DEFS  += -DRT_ARCH_X86
+MOD_DEFS += -DRT_ARCH_X86
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
- MOD_DEFS += -DVBOX_WITH_64_BITS_GUESTS
-endif
-MOD_INCL  = $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
-MOD_INCL += $(addprefix -I$(KBUILD_EXTMOD)/vboxguest,/ /include /r0drv/linux)
-
-ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxguest),)
- MANGLING := $(KBUILD_EXTMOD)/vboxguest/include/VBox/VBoxGuestMangling.h
-else
- MANGLING := $(KBUILD_EXTMOD)/include/VBox/VBoxGuestMangling.h
+MOD_DEFS += -DVBOX_WITH_64_BITS_GUESTS
 endif
 ifeq ($(KERN_VERSION),24)
- ## @todo move to MOD_DEFS when we have finished refactoring
- MOD_CFLAGS = -DEXPORT_SYMTAB
+MOD_DEFS += -DEXPORT_SYMTAB
+endif
+
+MOD_INCL  = -I$(VBOXGUEST_DIR) -I$(VBOXGUEST_DIR)include -I$(VBOXGUEST_DIR)r0drv/linux
+
+ifeq ($(KERN_VERSION),24)
+MOD_CFLAGS =
 else
- MOD_CFLAGS = -Wno-declaration-after-statement -include $(MANGLING) -fno-pie
+MOD_CFLAGS = -Wno-declaration-after-statement -include $(VBOXGUEST_DIR)include/VBox/VBoxGuestMangling.h -fno-pie
 endif
 
 MOD_CLEAN = . linux r0drv generic r0drv/linux r0drv/generic VBox \
-		common/alloc common/err common/log common/math/gcc common/misc \
-		common/string common/table common/time
+	common/alloc common/err common/log common/math/gcc common/misc \
+	common/string common/table common/time
 
 include $(obj)/Makefile-footer.gmk
 
