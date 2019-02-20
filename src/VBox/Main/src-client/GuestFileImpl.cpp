@@ -1131,7 +1131,7 @@ int GuestFile::i_waitForWrite(GuestWaitEvent *pEvent,
     return vrc;
 }
 
-int GuestFile::i_writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
+int GuestFile::i_writeData(uint32_t uTimeoutMS, const void *pvData, uint32_t cbData,
                            uint32_t *pcbWritten)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
@@ -1167,7 +1167,7 @@ int GuestFile::i_writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
     HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
     HGCMSvcSetU32(&paParms[i++], mObjectID /* File handle */);
     HGCMSvcSetU32(&paParms[i++], cbData /* Size (in bytes) to write */);
-    HGCMSvcSetPv(&paParms[i++], pvData, cbData);
+    HGCMSvcSetPv (&paParms[i++], unconst(pvData), cbData);
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -1195,7 +1195,7 @@ int GuestFile::i_writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
 }
 
 int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
-                             void *pvData, uint32_t cbData, uint32_t *pcbWritten)
+                             const void *pvData, uint32_t cbData, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -1231,7 +1231,7 @@ int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
     HGCMSvcSetU32(&paParms[i++], mObjectID /* File handle */);
     HGCMSvcSetU64(&paParms[i++], uOffset /* Offset where to starting writing */);
     HGCMSvcSetU32(&paParms[i++], cbData /* Size (in bytes) to write */);
-    HGCMSvcSetPv(&paParms[i++], pvData, cbData);
+    HGCMSvcSetPv (&paParms[i++], unconst(pvData), cbData);
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -1486,8 +1486,8 @@ HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG
 
     HRESULT hr = S_OK;
 
-    uint32_t cbData = (uint32_t)aData.size();
-    void *pvData = cbData > 0? (void *)&aData.front(): NULL;
+    const uint32_t cbData = (uint32_t)aData.size();
+    const void *pvData = (void *)&aData.front();
     int vrc = i_writeData(aTimeoutMS, pvData, cbData, (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
         hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Writing %zubytes to file \"%s\" failed: %Rrc"),
@@ -1509,8 +1509,8 @@ HRESULT GuestFile::writeAt(LONG64 aOffset, const std::vector<BYTE> &aData, ULONG
 
     HRESULT hr = S_OK;
 
-    uint32_t cbData = (uint32_t)aData.size();
-    void *pvData = cbData > 0? (void *)&aData.front(): NULL;
+    const uint32_t cbData = (uint32_t)aData.size();
+    const void *pvData = (void *)&aData.front();
     int vrc = i_writeData(aTimeoutMS, pvData, cbData, (uint32_t*)aWritten);
     if (RT_FAILURE(vrc))
         hr = setErrorBoth(VBOX_E_IPRT_ERROR, vrc, tr("Writing %zubytes to file \"%s\" (at offset %RU64) failed: %Rrc"),
