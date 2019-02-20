@@ -17,6 +17,12 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+#
+# Note! The MOD_XXX variables are ours and does not directly influence the
+#       kernel build system.  When adding more variables, please prefix them
+#       with VBOX_ so we can tell more easily who's variable it is.
+#
+
 # override is required by the Debian guys
 override MODULE = $(MOD_NAME)
 OBJS   = $(MOD_OBJS)
@@ -27,14 +33,8 @@ LINUX_VERBOSE = $(if $(KBUILD_VERBOSE),1,)
 #
 # Compiler options
 #
-ifndef INCL
- INCL    := $(addprefix -I,$(KERN_INCL) $(EXTRA_INCL))
- ifndef KBUILD_EXTMOD
-  KBUILD_EXTMOD := $(shell pwd)
- endif
- INCL    += $(MOD_INCL)
- export INCL
-endif
+VBOX_INCL := $(addprefix -I,$(KERN_INCL) $(EXTRA_INCL)) $(MOD_INCL)
+
 KFLAGS   := -D__KERNEL__ -DMODULE -DRT_WITHOUT_PRAGMA_ONCE $(MOD_DEFS)
 ifeq ($(BUILD_TYPE),debug)
 # The -Wno-array-bounds is because of a bug in gcc 4.something, see
@@ -45,7 +45,7 @@ ifeq ($(BUILD_TYPE),debug)
  endif
 endif
 
-ifeq ($(KERN_VERSION), 24)
+ifeq ($(KERN_VERSION),24)
 #
 # 2.4
 #
@@ -56,19 +56,19 @@ ifeq ($(KERN_VERSION), 24)
 # "proper" way.
 
 ifeq ($(BUILD_TARGET_ARCH),amd64)
- KFLAGS  += -mcmodel=kernel
+ KFLAGS += -mcmodel=kernel
 endif
 
-CFLAGS := -O2 -DVBOX_LINUX_2_4 $(MOD_CFLAGS) $(INCL) $(KFLAGS) $(MOD_EXTRA) $(KDEBUG)
+CFLAGS := -O2 -DVBOX_LINUX_2_4 $(MOD_CFLAGS) $(VBOX_INCL) $(KFLAGS) $(MOD_EXTRA) $(KDEBUG)
 MODULE_EXT := o
 
 # 2.4 Module linking
-$(MODULE).o: $(OBJS)
+$(MODULE).$(MODULE_EXT): $(OBJS)
 	$(LD) -o $@ -r $(OBJS)
 
 .PHONY: $(MODULE)
 all: $(MODULE)
-$(MODULE): $(MODULE).o
+$(MODULE): $(MODULE).$(MODULE_EXT)
 
 install: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
@@ -82,6 +82,7 @@ clean:
 else  # ! $(KERN_VERSION), 24
 #
 # 2.6 and later
+## @todo XXX does not work for 2.6.5 and earlier (see KBUILD_EXTMOD in header).
 #
 
 MODULE_EXT := ko
@@ -89,7 +90,7 @@ MODULE_EXT := ko
 $(MODULE)-y  := $(OBJS)
 
 # build defs
-EXTRA_CFLAGS += $(MOD_CFLAGS) $(INCL) $(KFLAGS) $(MOD_EXTRA) $(KDEBUG)
+EXTRA_CFLAGS += $(MOD_CFLAGS) $(VBOX_INCL) $(KFLAGS) $(MOD_EXTRA) $(KDEBUG)
 
 .PHONY: $(MODULE)
 all: $(MODULE)
