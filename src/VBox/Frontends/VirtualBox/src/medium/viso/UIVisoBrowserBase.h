@@ -45,6 +45,7 @@ class UIVisoBrowserBase : public QIWithRetranslateUI<QWidget>
 signals:
 
     void sigTreeViewVisibilityChanged(bool fVisible);
+    void sigCreateFileTableViewContextMenu(QWidget *pMenuRequester, const QPoint &point);
 
 public:
 
@@ -76,6 +77,10 @@ protected:
 
     QTreeView          *m_pTreeView;
     QGridLayout        *m_pMainLayout;
+
+protected slots:
+
+    void sltFileTableViewContextMenu(const QPoint &point);
 
 private slots:
 

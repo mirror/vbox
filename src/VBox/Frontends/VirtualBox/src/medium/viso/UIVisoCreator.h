@@ -82,6 +82,7 @@ private slots:
     void sltHandleBrowserTreeViewVisibilityChanged(bool fVisible);
     void sltHandleHostBrowserTableSelectionChanged(bool fIsSelectionEmpty);
     void sltHandleContentBrowserTableSelectionChanged(bool fIsSelectionEmpty);
+    void sltHandleShowContextMenu(const QWidget *pContextMenuRequester, const QPoint &point);
 
 private:
     struct VisoOptions

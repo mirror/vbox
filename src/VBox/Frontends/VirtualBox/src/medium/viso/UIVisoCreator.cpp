@@ -224,6 +224,27 @@ void UIVisoCreator::sltHandleContentBrowserTableSelectionChanged(bool fIsSelecti
         m_pRemoveAction->setEnabled(!fIsSelectionEmpty);
 }
 
+void UIVisoCreator::sltHandleShowContextMenu(const QWidget *pContextMenuRequester, const QPoint &point)
+{
+    if (!pContextMenuRequester)
+        return;
+
+    QMenu menu;
+
+    if (sender() == m_pHostBrowser)
+    {
+        menu.addAction(m_pAddAction);
+    }
+    else if (sender() == m_pVisoBrowser)
+    {
+        menu.addAction(m_pRemoveAction);
+        menu.addAction(m_pNewDirectoryAction);
+        menu.addAction(m_pResetAction);
+    }
+
+    menu.exec(pContextMenuRequester->mapToGlobal(point));
+}
+
 void UIVisoCreator::prepareWidgets()
 {
     m_pCentralWidget = new QWidget;
@@ -324,11 +345,17 @@ void UIVisoCreator::prepareConnections()
                 this, &UIVisoCreator::sltHandleBrowserTreeViewVisibilityChanged);
         connect(m_pHostBrowser, &UIVisoHostBrowser::sigTableSelectionChanged,
                 this, &UIVisoCreator::sltHandleHostBrowserTableSelectionChanged);
+        connect(m_pHostBrowser, &UIVisoHostBrowser::sigCreateFileTableViewContextMenu,
+                this, &UIVisoCreator::sltHandleShowContextMenu);
     }
 
     if (m_pVisoBrowser)
+    {
         connect(m_pVisoBrowser, &UIVisoContentBrowser::sigTableSelectionChanged,
                 this, &UIVisoCreator::sltHandleContentBrowserTableSelectionChanged);
+        connect(m_pVisoBrowser, &UIVisoContentBrowser::sigCreateFileTableViewContextMenu,
+                this, &UIVisoCreator::sltHandleShowContextMenu);
+    }
 
     if (m_pButtonBox)
     {

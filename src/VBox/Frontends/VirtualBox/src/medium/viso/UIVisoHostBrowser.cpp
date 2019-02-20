@@ -152,6 +152,7 @@ void UIVisoHostBrowser::prepareObjects()
     m_pTableView = new QTableView;
     if (m_pTableView)
     {
+        m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
         m_pMainLayout->addWidget(m_pTableView, 1, 0, 8, 4);
         m_pTableView->setSelectionMode(QAbstractItemView::ContiguousSelection);
         m_pTableView->setShowGrid(false);
@@ -188,8 +189,12 @@ void UIVisoHostBrowser::prepareConnections()
 {
     UIVisoBrowserBase::prepareConnections();
     if (m_pTableView)
+    {
         connect(m_pTableView, &QTableView::doubleClicked,
                 this, &UIVisoBrowserBase::sltHandleTableViewItemDoubleClick);
+        connect(m_pTableView, &QTableView::customContextMenuRequested,
+                this, &UIVisoHostBrowser::sltFileTableViewContextMenu);
+    }
 
     if (m_pTableView->selectionModel())
         connect(m_pTableView->selectionModel(), &QItemSelectionModel::selectionChanged,
@@ -215,6 +220,10 @@ void UIVisoHostBrowser::tableViewItemDoubleClick(const QModelIndex &index)
     m_pTreeView->blockSignals(true);
     setTreeCurrentIndex(index);
     m_pTreeView->blockSignals(false);
+
+    /* Check if we still have something selected after table root index change: */
+    if (m_pTableView && m_pTableView->selectionModel())
+        emit sigTableSelectionChanged(m_pTableView->selectionModel()->hasSelection());
 }
 
 void UIVisoHostBrowser::treeSelectionChanged(const QModelIndex &selectedTreeIndex)

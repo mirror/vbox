@@ -264,6 +264,13 @@ void UIVisoBrowserBase::keyPressEvent(QKeyEvent *pEvent)
     QIWithRetranslateUI<QWidget>::keyPressEvent(pEvent);
 }
 
+void UIVisoBrowserBase::sltFileTableViewContextMenu(const QPoint &point)
+{
+    QWidget *pSender = qobject_cast<QWidget*>(sender());
+    if (!pSender)
+        return;
+    emit sigCreateFileTableViewContextMenu(pSender, point);
+}
 
 void UIVisoBrowserBase::sltHandleTableViewItemDoubleClick(const QModelIndex &index)
 {

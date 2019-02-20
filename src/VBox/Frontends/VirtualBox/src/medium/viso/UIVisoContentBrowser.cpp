@@ -392,6 +392,7 @@ void UIVisoContentBrowser::prepareObjects()
     if (m_pTableView)
     {
         m_pMainLayout->addWidget(m_pTableView, 1, 0, 6, 4);
+        m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
         m_pTableView->setSelectionMode(QAbstractItemView::ContiguousSelection);
         m_pTableView->setShowGrid(false);
         m_pTableView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -439,6 +440,8 @@ void UIVisoContentBrowser::prepareConnections()
                 this, &UIVisoBrowserBase::sltHandleTableViewItemDoubleClick);
         connect(m_pTableView, &UIVisoContentTableView::sigNewItemsDropped,
                 this, &UIVisoContentBrowser::sltHandleDroppedItems);
+        connect(m_pTableView, &QTableView::customContextMenuRequested,
+                this, &UIVisoContentBrowser::sltFileTableViewContextMenu);
     }
 
     if (m_pTableView->selectionModel())
@@ -447,7 +450,6 @@ void UIVisoContentBrowser::prepareConnections()
     if (m_pModel)
         connect(m_pModel, &UICustomFileSystemModel::sigItemRenamed,
                 this, &UIVisoContentBrowser::sltHandleItemRenameAttempt);
-
 }
 
 UICustomFileSystemItem* UIVisoContentBrowser::rootItem()
