@@ -14442,7 +14442,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t cMaxInstructions, uint3
                         {
                             if (cMaxInstructions-- > 0)
                             {
-                                /* Poll timers every 2048 instructions. */
+                                /* Poll timers every now an then according to the caller's specs. */
                                 if (   (cMaxInstructions & cPollRate) != 0
                                     || !TMTimerPollBool(pVM, pVCpu))
                                 {
