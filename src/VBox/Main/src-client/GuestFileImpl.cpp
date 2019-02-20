@@ -155,9 +155,11 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession,
     {
         mSession = pSession;
 
+        mData.mOpenInfo    = openInfo;
         mData.mInitialSize = 0;
-        mData.mStatus = FileStatus_Undefined;
-        mData.mOpenInfo = openInfo;
+        mData.mStatus      = FileStatus_Undefined;
+        mData.mLastError   = VINF_SUCCESS;
+        mData.mOffCurrent  = 0;
 
         unconst(mEventSource).createObject();
         HRESULT hr = mEventSource->init();
