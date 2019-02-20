@@ -289,17 +289,17 @@ public:
         void setRecentListOfFloppyDisks(const QStringList &value);
     /** @} */
 
-    /** @name Viso Creator
+    /** @name VISO Creator
       * @{ */
-        /** Returns recent folder for Viso creation content. */
+        /** Returns recent folder for VISO creation content. */
         QString visoCreatorRecentFolder();
-        /** Defines recent folder for Viso creation content as @a strValue. */
-        void setVisoCreatorRecentFolder(const QString &strValue);
-        /** Returns the Viso creation dialog geometry. */
+        /** Defines recent folder for VISO creation content as @a strValue. */
+        void setVISOCreatorRecentFolder(const QString &strValue);
+        /** Returns the VISO creation dialog geometry. */
         QRect visoCreatorDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry);
-        /** Defines the Viso creation dialog geometry. */
-        void setVisoCreatorDialogGeometry(const QRect &geometry, bool fMaximized);
-        /** Returns whether the Viso creation dialog should be maximized. */
+        /** Defines the VISO creation dialog geometry. */
+        void setVISOCreatorDialogGeometry(const QRect &geometry, bool fMaximized);
+        /** Returns whether the VISO creation dialog should be maximized. */
         bool visoCreatorDialogShouldBeMaximized();
     /** @} */
 

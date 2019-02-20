@@ -1957,7 +1957,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_ActivateHoveredMachineWindow
            << GUI_Input_SelectorShortcuts << GUI_Input_MachineShortcuts
            << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD
-           << GUI_VisoCreator_RecentFolder << GUI_VisoCreator_DialogGeometry
+           << GUI_VISOCreator_RecentFolder << GUI_VISOCreator_DialogGeometry
            << GUI_RecentListHD << GUI_RecentListCD << GUI_RecentListFD
            << GUI_LastSelectorWindowPosition << GUI_SplitterSizes
            << GUI_Toolbar << GUI_Toolbar_Text
@@ -2665,28 +2665,28 @@ void UIExtraDataManager::setRecentListOfFloppyDisks(const QStringList &value)
 
 QString UIExtraDataManager::visoCreatorRecentFolder()
 {
-    return extraDataString(GUI_VisoCreator_RecentFolder);
+    return extraDataString(GUI_VISOCreator_RecentFolder);
 }
 
-void UIExtraDataManager::setVisoCreatorRecentFolder(const QString &strValue)
+void UIExtraDataManager::setVISOCreatorRecentFolder(const QString &strValue)
 {
-    setExtraDataString(GUI_VisoCreator_RecentFolder, strValue);
+    setExtraDataString(GUI_VISOCreator_RecentFolder, strValue);
 }
 
 QRect UIExtraDataManager::visoCreatorDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
 {
-    return dialogGeometry(GUI_VisoCreator_DialogGeometry, pWidget, defaultGeometry);
+    return dialogGeometry(GUI_VISOCreator_DialogGeometry, pWidget, defaultGeometry);
 }
 
-void UIExtraDataManager::setVisoCreatorDialogGeometry(const QRect &geometry, bool fMaximized)
+void UIExtraDataManager::setVISOCreatorDialogGeometry(const QRect &geometry, bool fMaximized)
 {
-    setDialogGeometry(GUI_VisoCreator_DialogGeometry, geometry, fMaximized);
+    setDialogGeometry(GUI_VISOCreator_DialogGeometry, geometry, fMaximized);
 }
 
 bool UIExtraDataManager::visoCreatorDialogShouldBeMaximized()
 {
     /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_VisoCreator_DialogGeometry);
+    const QStringList data = extraDataStringList(GUI_VISOCreator_DialogGeometry);
 
     /* Make sure 5th item has required value: */
     return data.size() == 5 && data[4] == GUI_Geometry_State_Max;

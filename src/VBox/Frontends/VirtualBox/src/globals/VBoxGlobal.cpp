@@ -2740,7 +2740,7 @@ QUuid VBoxGlobal::createVisoMediumWithVisoCreator(QWidget *pParent, const QStrin
             return QUuid();
         }
 
-        gEDataManager->setVisoCreatorRecentFolder(pVisoCreator->currentPath());
+        gEDataManager->setVISOCreatorRecentFolder(pVisoCreator->currentPath());
 
         /* Produce the VISO. */
         char szVisoPath[RTPATH_MAX];

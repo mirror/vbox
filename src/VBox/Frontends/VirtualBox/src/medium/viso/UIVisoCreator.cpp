@@ -140,7 +140,7 @@ void UIVisoCreator::retranslateUi()
     }
     if (m_pResetAction)
     {
-        m_pResetAction->setToolTip(QApplication::translate("UIVisoCreator", "Reset ISO content."));
+        m_pResetAction->setToolTip(QApplication::translate("UIVisoCreator", "Reset VISO content."));
         m_pResetAction->setText(QApplication::translate("UIVisoCreator", "Reset"));
     }
     if (m_pRenameAction)
@@ -569,7 +569,7 @@ void UIVisoCreator::saveSettings() const
     QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
     gEDataManager->setVisoCreatorDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
 #else /* !VBOX_WS_MAC */
-    gEDataManager->setVisoCreatorDialogGeometry(saveGeometry, isMaximized());
+    gEDataManager->setVISOCreatorDialogGeometry(saveGeometry, isMaximized());
 #endif /* !VBOX_WS_MAC */
 }
 

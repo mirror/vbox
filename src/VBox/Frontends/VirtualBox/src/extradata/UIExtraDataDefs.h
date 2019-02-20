@@ -143,12 +143,12 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_RecentListFD;
     /** @} */
 
-    /** @name Settings: Viso Creator
+    /** @name Settings: VISO Creator
       * @{ */
-        /** Holds recent folder for Viso creation content. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_VisoCreator_RecentFolder;
-        /** Holds dialog geometry for Viso creation dialog. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_VisoCreator_DialogGeometry;
+        /** Holds recent folder for VISO creation content. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_VISOCreator_RecentFolder;
+        /** Holds dialog geometry for VISO creation dialog. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_VISOCreator_DialogGeometry;
     /** @} */
 
     /** @name VirtualBox Manager
