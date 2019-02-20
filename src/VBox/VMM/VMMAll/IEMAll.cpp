@@ -14400,6 +14400,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t cMaxInstructions, uint3
             /*
              * The run loop.  We limit ourselves to 4096 instructions right now.
              */
+            uint32_t cMaxInstructionsGccStupidity = cMaxInstructions;
             PVM pVM = pVCpu->CTX_SUFF(pVM);
             for (;;)
             {
@@ -14440,10 +14441,10 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t cMaxInstructions, uint3
                                               && !pVCpu->cpum.GstCtx.rflags.Bits.u1IF) )
                                       && !VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_MASK) ))
                         {
-                            if (cMaxInstructions-- > 0)
+                            if (cMaxInstructionsGccStupidity-- > 0)
                             {
                                 /* Poll timers every now an then according to the caller's specs. */
-                                if (   (cMaxInstructions & cPollRate) != 0
+                                if (   (cMaxInstructionsGccStupidity & cPollRate) != 0
                                     || !TMTimerPollBool(pVM, pVCpu))
                                 {
                                     Assert(pVCpu->iem.s.cActiveMappings == 0);
