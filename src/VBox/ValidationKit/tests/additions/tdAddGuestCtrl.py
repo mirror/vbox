@@ -1063,11 +1063,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             fRc, oTxsSession = self.testGuestCtrlFileRead(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
-        # reporter.testStart('File write');
-        # fSkip = 'file_write' not in self.asTests or fRc is False;
-        # if fSkip is False:
-        #     fRc, oTxsSession = self.testGuestCtrlFileWrite(oSession, oTxsSession, oTestVm);
-        # reporter.testDone(fSkip);
+        reporter.testStart('File write');
+        fSkip = 'file_write' not in self.asTests or fRc is False;
+        if fSkip is False:
+            fRc, oTxsSession = self.testGuestCtrlFileWrite(oSession, oTxsSession, oTestVm);
+        reporter.testDone(fSkip);
 
         reporter.testStart('Updating Guest Additions');
         fSkip = 'update_additions' not in self.asTests or fRc is False;
@@ -2999,8 +2999,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         aaTests = [];
 
-        cScratchBuf = 512;
-        aScratchBuf = array('b', [random.randint(-128, 127) for i in range(cScratchBuf)]);
+        cScratchBuf = random.randint(1, 4096);
+        aScratchBuf = os.urandom(cScratchBuf);
         aaTests.extend([
             # Write to a non-existing file.
             [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = sScratch + 'testGuestCtrlFileWrite.txt',
@@ -3010,7 +3010,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                         cbProcessed = cScratchBuf, cbOffset = cScratchBuf) ]
         ]);
 
-        aScratchBuf2 = array('b', [random.randint(-128, 127) for i in range(cScratchBuf)]);
+        aScratchBuf2 = os.urandom(cScratchBuf);
         aaTests.extend([
             # Append the same amount of data to the just created file.
             [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = sScratch + 'testGuestCtrlFileWrite.txt',
@@ -3036,7 +3036,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 if curTest.cbOffset > 0: # The offset parameter is gone.
                     if self.oTstDrv.fpApiVer >= 5.0:
                         curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
-                                                             curTest.getSharingMode(), []);
+                                                             curTest.getSharingMode(), curTest.lCreationMode, []);
                         curFile.seek(curTest.cbOffset, vboxcon.FileSeekOrigin_Begin);
                     else:
                         curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.sOpenMode, curTest.sDisposition,
@@ -3049,12 +3049,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         fRc = False;
                 else:
                     if self.oTstDrv.fpApiVer >= 5.0:
-                        curFile = curGuestSession.fileOpen(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
-                                                           curTest.lCreationMode);
+                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
+                                                             curTest.getSharingMode(), curTest.lCreationMode, []);
                     else:
                         curFile = curGuestSession.fileOpen(curTest.sFile, curTest.sOpenMode, curTest.sDisposition,
                                                            curTest.lCreationMode);
                 if fRc and curTest.cbToReadWrite > 0:
+                    reporter.log("File '%s' opened" % curTest.sFile);
                     ## @todo Split this up in 64K writes. Later.
                     ## @todo Test timeouts.
                     cBytesWritten = curFile.write(curTest.aBuf, 30 * 1000);
@@ -3087,8 +3088,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         if    fRc \
                           and curRes.aBuf is not None \
                           and curRes.aBuf != aBufRead:
-                            reporter.error('Test #%d failed: Got buffer\n%s, expected\n%s' \
-                                           % (i, aBufRead, curRes.aBuf));
+                            reporter.error('Test #%d failed: Read back buffer (%d bytes) does not match written content (%d bytes)' \
+                                           % (i, len(curRes.aBuf), len(aBufRead)));
+                            reporter.error('Test #%d failed: Got:\n%s' % (i, aBufRead.encode('hex')));
+                            reporter.error('Test #%d failed: Expected:\n%s' % (i, curRes.aBuf.encode('hex')));
                             fRc = False;
                 # Test final offset.
                 curOffset = long(curFile.offset);
@@ -3098,6 +3101,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                    % (i, curOffset, resOffset));
                     fRc = False;
                 curFile.close();
+                reporter.log("File '%s' closed" % curTest.sFile);
             except:
                 reporter.logXcpt('Opening "%s" failed:' % (curTest.sFile,));
                 fRc = False;
