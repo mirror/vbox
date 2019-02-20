@@ -14385,6 +14385,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
     /*
      * Initial decoder init w/ prefetch, then setup setjmp.
      */
+    unsigned     cTimerPoll = 0;
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, false);
     if (rcStrict == VINF_SUCCESS)
     {
@@ -14442,9 +14443,14 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu, uint32_t *pcInstructions)
                         {
                             if (cInstr-- > 0)
                             {
-                                Assert(pVCpu->iem.s.cActiveMappings == 0);
-                                iemReInitDecoder(pVCpu);
-                                continue;
+                                /* Poll timers every 128 call*/
+                                if (   (++cTimerPoll & 0x7f) != 0
+                                    || !TMTimerPollBool(pVM, pVCpu))
+                                {
+                                    Assert(pVCpu->iem.s.cActiveMappings == 0);
+                                    iemReInitDecoder(pVCpu);
+                                    continue;
+                                }
                             }
                         }
                     }
