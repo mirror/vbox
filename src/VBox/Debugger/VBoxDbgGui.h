@@ -140,6 +140,10 @@ public:
         return m_pUVM;
     }
 
+    /**
+     * @returns The name of the machine.
+     */
+    QString getMachineName() const;
 
 protected slots:
     /**

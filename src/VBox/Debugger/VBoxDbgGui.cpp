@@ -256,6 +256,20 @@ VBoxDbgGui::adjustRelativePos(int x, int y, unsigned cx, unsigned cy)
     repositionStatistics(fResize);
 }
 
+QString
+VBoxDbgGui::getMachineName() const
+{
+    QString strName;
+    AssertReturn(m_pMachine, strName);
+    BSTR bstr;
+    HRESULT hrc = m_pMachine->COMGETTER(Name)(&bstr);
+    if (SUCCEEDED(hrc))
+    {
+        strName = QString::fromUtf16(bstr);
+    }
+    SysFreeString(bstr);
+    return strName;
+}
 
 void
 VBoxDbgGui::notifyChildDestroyed(QObject *pObj)
