@@ -147,19 +147,19 @@ typedef struct UARTCORE
 
     /** R3 timer pointer for the character timeout indication. */
     PTMTIMERR3                      pTimerRcvFifoTimeoutR3;
-    /** R3 timer pointer for the send loop if no driver is connected. */
+    /** R3 timer pointer for the send loop if no driver is connected/loopback mode is active. */
     PTMTIMERR3                      pTimerTxUnconnectedR3;
     /** R3 interrupt request callback of the owning device. */
     R3PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqR3;
     /** R0 timer pointer fo the character timeout indication. */
     PTMTIMERR0                      pTimerRcvFifoTimeoutR0;
-    /** R0 timer pointer for the send loop if no driver is connected. */
+    /** R0 timer pointer for the send loop if no driver is connected/loopback mode is active. */
     PTMTIMERR0                      pTimerTxUnconnectedR0;
     /** R0 interrupt request callback of the owning device. */
     R0PTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqR0;
     /** RC timer pointer fo the character timeout indication. */
     PTMTIMERRC                      pTimerRcvFifoTimeoutRC;
-    /** RC timer pointer for the send loop if no driver is connected. */
+    /** RC timer pointer for the send loop if no driver is connected/loopback mode is active. */
     PTMTIMERRC                      pTimerTxUnconnectedRC;
     /** RC interrupt request callback of the owning device. */
     RCPTRTYPE(PFNUARTCOREIRQREQ)    pfnUartIrqReqRC;

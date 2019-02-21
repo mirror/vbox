@@ -705,6 +705,8 @@ static void uartR3DataFetch(PUARTCORE pThis)
  */
 static void uartR3XferReset(PUARTCORE pThis)
 {
+    TMTimerStop(pThis->CTX_SUFF(pTimerRcvFifoTimeout));
+    TMTimerStop(pThis->CTX_SUFF(pTimerTxUnconnected));
     pThis->uRegLsr = UART_REG_LSR_THRE | UART_REG_LSR_TEMT;
     pThis->fThreEmptyPending = false;
 
@@ -778,6 +780,77 @@ static void uartR3TxQueueCopyFrom(PUARTCORE pThis, void *pvBuf, size_t cbRead, s
 
 
 /**
+ * Transmits the given byte.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The serial port instance.
+ * @param   bVal                Byte to transmit.
+ */
+static int uartXmit(PUARTCORE pThis, uint8_t bVal)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
+    {
+#ifndef IN_RING3
+        if (!uartFifoUsedGet(&pThis->FifoXmit))
+            rc = VINF_IOM_R3_IOPORT_WRITE;
+        else
+        {
+            uartFifoPut(&pThis->FifoXmit, true /*fOvrWr*/, bVal);
+            UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
+        }
+#else
+        uartFifoPut(&pThis->FifoXmit, true /*fOvrWr*/, bVal);
+        UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
+        pThis->fThreEmptyPending = false;
+        uartIrqUpdate(pThis);
+        if (uartFifoUsedGet(&pThis->FifoXmit) == 1)
+        {
+            if (   pThis->pDrvSerial
+                && !(pThis->uRegMcr & UART_REG_MCR_LOOP))
+            {
+                int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial);
+                if (RT_FAILURE(rc2))
+                    LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pThis->pDevInsR3->iInstance, rc2));
+            }
+            else
+                TMTimerSetRelative(pThis->CTX_SUFF(pTimerTxUnconnected), pThis->cSymbolXferTicks, NULL);
+        }
+#endif
+    }
+    else
+    {
+        /* Notify the lower driver about available data only if the register was empty before. */
+        if (pThis->uRegLsr & UART_REG_LSR_THRE)
+        {
+#ifndef IN_RING3
+            rc = VINF_IOM_R3_IOPORT_WRITE;
+#else
+            pThis->uRegThr = bVal;
+            UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
+            pThis->fThreEmptyPending = false;
+            uartIrqUpdate(pThis);
+            if (   pThis->pDrvSerial
+                && !(pThis->uRegMcr & UART_REG_MCR_LOOP))
+            {
+                int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial);
+                if (RT_FAILURE(rc2))
+                    LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pThis->pDevInsR3->iInstance, rc2));
+            }
+            else
+                TMTimerSetRelative(pThis->CTX_SUFF(pTimerTxUnconnected), pThis->cSymbolXferTicks, NULL);
+#endif
+        }
+        else
+            pThis->uRegThr = bVal;
+    }
+
+    return rc;
+}
+
+
+/**
  * Write handler for the THR/DLL register (depending on the DLAB bit in LCR).
  *
  * @returns VBox status code.
@@ -802,57 +875,7 @@ DECLINLINE(int) uartRegThrDllWrite(PUARTCORE pThis, uint8_t uVal)
         }
     }
     else
-    {
-        if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
-        {
-#ifndef IN_RING3
-            if (!uartFifoUsedGet(&pThis->FifoXmit))
-                rc = VINF_IOM_R3_IOPORT_WRITE;
-            else
-            {
-                uartFifoPut(&pThis->FifoXmit, true /*fOvrWr*/, uVal);
-                UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
-            }
-#else
-            uartFifoPut(&pThis->FifoXmit, true /*fOvrWr*/, uVal);
-            UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
-            pThis->fThreEmptyPending = false;
-            uartIrqUpdate(pThis);
-            if (   pThis->pDrvSerial
-                && uartFifoUsedGet(&pThis->FifoXmit) == 1)
-            {
-                int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial);
-                if (RT_FAILURE(rc2))
-                    LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pThis->pDevInsR3->iInstance, rc2));
-            }
-#endif
-        }
-        else
-        {
-            /* Notify the lower driver about available data only if the register was empty before. */
-            if (pThis->uRegLsr & UART_REG_LSR_THRE)
-            {
-#ifndef IN_RING3
-                rc = VINF_IOM_R3_IOPORT_WRITE;
-#else
-                pThis->uRegThr = uVal;
-                UART_REG_CLR(pThis->uRegLsr, UART_REG_LSR_THRE | UART_REG_LSR_TEMT);
-                pThis->fThreEmptyPending = false;
-                uartIrqUpdate(pThis);
-                if (pThis->pDrvSerial)
-                {
-                    int rc2 = pThis->pDrvSerial->pfnDataAvailWrNotify(pThis->pDrvSerial);
-                    if (RT_FAILURE(rc2))
-                        LogRelMax(10, ("Serial#%d: Failed to send data with %Rrc\n", pThis->pDevInsR3->iInstance, rc2));
-                }
-                else
-                    TMTimerSetRelative(pThis->CTX_SUFF(pTimerTxUnconnected), pThis->cSymbolXferTicks, NULL);
-#endif
-            }
-            else
-                pThis->uRegThr = uVal;
-        }
-    }
+        rc = uartXmit(pThis, uVal);
 
     return rc;
 }
@@ -1430,9 +1453,40 @@ static DECLCALLBACK(void) uartR3TxUnconnectedTimer(PPDMDEVINS pDevIns, PTMTIMER 
     RT_NOREF(pDevIns, pTimer);
     PUARTCORE pThis = (PUARTCORE)pvUser;
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
-    uint8_t bIgnore = 0;
+    uint8_t bVal = 0;
     size_t cbRead = 0;
-    uartR3TxQueueCopyFrom(pThis, &bIgnore, sizeof(uint8_t), &cbRead);
+    uartR3TxQueueCopyFrom(pThis, &bVal, sizeof(bVal), &cbRead);
+    if (pThis->uRegMcr & UART_REG_MCR_LOOP)
+    {
+        /* Loopback mode is active, feed in the data at the receiving end. */
+        uint32_t cbAvailOld = ASMAtomicAddU32(&pThis->cbAvailRdr, 1);
+        if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
+        {
+            PUARTFIFO pFifo = &pThis->FifoRecv;
+            if (uartFifoFreeGet(pFifo) > 0)
+            {
+                pFifo->abBuf[pFifo->offWrite] = bVal;
+                pFifo->offWrite = (pFifo->offWrite + 1) % pFifo->cbMax;
+                pFifo->cbUsed++;
+
+                UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
+                if (pFifo->cbUsed < pFifo->cbItl)
+                {
+                    pThis->fIrqCtiPending = false;
+                    TMTimerSetRelative(pThis->CTX_SUFF(pTimerRcvFifoTimeout), pThis->cSymbolXferTicks * 4, NULL);
+                }
+                uartIrqUpdate(pThis);
+            }
+
+            ASMAtomicSubU32(&pThis->cbAvailRdr, 1);
+        }
+        else if (!cbAvailOld)
+        {
+            pThis->uRegRbr = bVal;
+            UART_REG_SET(pThis->uRegLsr, UART_REG_LSR_DR);
+            uartIrqUpdate(pThis);
+        }
+    }
     if (cbRead == 1)
         TMTimerSetRelative(pThis->CTX_SUFF(pTimerTxUnconnected), pThis->cSymbolXferTicks, NULL);
     PDMCritSectLeave(&pThis->CritSect);
