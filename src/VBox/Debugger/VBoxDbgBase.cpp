@@ -265,37 +265,35 @@ QSize
 VBoxDbgBaseWindow::vGuessBorderSizes()
 {
 #ifdef Q_WS_X11 /* (from the qt gui) */
-    /* only once. */
-    if (!m_cxBorder && !m_cyBorder)
+    /*
+     * On X11, there is no way to determine frame geometry (including WM
+     * decorations) before the widget is shown for the first time.  Stupidly
+     * enumerate other top level widgets to find the thickest frame.
+     */
+    if (!m_cxBorder && !m_cyBorder) /* (only till we're successful) */
     {
+        int cxExtra = 0;
+        int cyExtra = 0;
 
-        /* On X11, there is no way to determine frame geometry (including WM
-         * decorations) before the widget is shown for the first time. Stupidly
-         * enumerate other top level widgets to find the thickest frame. The code
-         * is based on the idea taken from QDialog::adjustPositionInternal(). */
-
-        int extraw = 0, extrah = 0;
-
-        QWidgetList list = QApplication::topLevelWidgets();
-        QListIterator<QWidget*> it (list);
-        while ((extraw == 0 || extrah == 0) && it.hasNext())
+        QWidgetList WidgetList = QApplication::topLevelWidgets();
+        for (QListIterator<QWidget *> it(WidgetList); it.hasNext(); )
         {
-            int framew, frameh;
-            QWidget *current = it.next();
-            if (!current->isVisible())
-                continue;
-
-            framew = current->frameGeometry().width() - current->width();
-            frameh = current->frameGeometry().height() - current->height();
-
-            extraw = qMax (extraw, framew);
-            extrah = qMax (extrah, frameh);
+            QWidget *pCurWidget = it.next();
+            if (pCurWidget->isVisible())
+            {
+                int const cxFrame = pCurWidget->frameGeometry().width()  - pCurWidget->width();
+                cxExtra = qMax(cxExtra, cxFrame);
+                int const cyFrame = pCurWidget->frameGeometry().height() - pCurWidget->height();
+                cyExtra = qMax(cyExtra, cyFrame);
+                if (cyExtra && cxExtra)
+                    break;
+            }
         }
 
-        if (extraw || extrah)
+        if (cxExtra || cyExtra)
         {
-            m_cxBorder = extraw;
-            m_cyBorder = extrah;
+            m_cxBorder = cxExtra;
+            m_cyBorder = cyExtra;
         }
     }
 #endif /* X11 */
