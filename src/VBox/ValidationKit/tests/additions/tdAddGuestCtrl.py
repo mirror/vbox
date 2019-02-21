@@ -43,6 +43,7 @@ __version__ = "$Revision$"
 # pylint: disable=R0903
 
 # Standard Python imports.
+from array import array
 import errno
 import os
 import random
@@ -3057,7 +3058,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     reporter.log("File '%s' opened" % curTest.sFile);
                     ## @todo Split this up in 64K writes. Later.
                     ## @todo Test timeouts.
-                    cBytesWritten = curFile.write(curTest.aBuf, 30 * 1000);
+                    cBytesWritten = curFile.write(array('b', curTest.aBuf), 30 * 1000);
                     if    curRes.cbProcessed > 0 \
                       and curRes.cbProcessed != cBytesWritten:
                         reporter.error('Test #%d failed: Written buffer length does not match: Got %d, expected %d' \
