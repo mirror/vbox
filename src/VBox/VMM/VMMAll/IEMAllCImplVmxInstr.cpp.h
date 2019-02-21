@@ -2831,24 +2831,31 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     pVmcs->u32EntryIntInfo &= ~VMX_ENTRY_INT_INFO_VALID;
 
     /*
-     * If we support storing EFER.LMA into IA32e-mode guest field on VM-exit, we need to do that now.
-     * See Intel spec. 27.2 "Recording VM-exit Information And Updating VM-entry Control".
-     */
-    if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxExitSaveEferLma)
-    {
-        if (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_LMA)
-            pVmcs->u32EntryCtls |= VMX_ENTRY_CTLS_IA32E_MODE_GUEST;
-        else
-            pVmcs->u32EntryCtls &= ~VMX_ENTRY_CTLS_IA32E_MODE_GUEST;
-    }
-
-    /*
      * Save the guest state back into the VMCS.
      * We only need to save the state when the VM-entry was successful.
      */
     bool const fVmentryFailed = VMX_EXIT_REASON_HAS_ENTRY_FAILED(uExitReason);
     if (!fVmentryFailed)
     {
+        /*
+         * If we support storing EFER.LMA into IA32e-mode guest field on VM-exit, we need to do that now.
+         * See Intel spec. 27.2 "Recording VM-exit Information And Updating VM-entry Control".
+         *
+         * It is not clear from the Intel spec. if this is done only when VM-entry succeeds.
+         * If a VM-exit happens before loading guest EFER, we risk restoring the host EFER.LMA
+         * as guest-CPU state would not been modified. Hence for now, we do this only when
+         * the VM-entry succeeded.
+         */
+        /** @todo r=ramshankar: Figure out if this bit gets set to host EFER.LMA on real
+         *        hardware when VM-exit fails during VM-entry (e.g. VERR_VMX_INVALID_GUEST_STATE). */
+        if (IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxExitSaveEferLma)
+        {
+            if (pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_LMA)
+                pVmcs->u32EntryCtls |= VMX_ENTRY_CTLS_IA32E_MODE_GUEST;
+            else
+                pVmcs->u32EntryCtls &= ~VMX_ENTRY_CTLS_IA32E_MODE_GUEST;
+        }
+
         /*
          * The rest of the high bits of the VM-exit reason are only relevant when the VM-exit
          * occurs in enclave mode/SMM which we don't support yet.
