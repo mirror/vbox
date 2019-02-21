@@ -35,8 +35,8 @@ endif
 
 ifneq ($(VBOX_BUILD),)
 
-MOD_NAME = vboxvideo
-MOD_OBJS = \
+VBOXMOD_NAME = vboxvideo
+VBOXMOD_OBJS = \
 	hgsmi_base.o \
 	modesetting.o \
 	vbox_drv.o \
@@ -48,9 +48,9 @@ MOD_OBJS = \
 	vbva_base.o \
 	vbox_prime.o \
 	vbox_hgsmi.o
-MOD_INCL = \
-	-I$(VBOXDRM_DIR) \
-	-Iinclude/drm
+VBOXMOD_INCL = \
+	$(VBOXDRM_DIR) \
+	include/drm
 ## @todo r=bird: -Iinclude/drm is ambigious.
 
 include $(obj)/Makefile-footer.gmk
