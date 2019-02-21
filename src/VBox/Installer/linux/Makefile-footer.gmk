@@ -56,7 +56,6 @@ VBOXMOD_EXT := o
 VBOXMOD_0_KFLAGS += -mcmodel=kernel
  endif
  ifeq ($(KERN_VERSION),24)
-$(error KERN_VERSION=$(KERN_VERSION))
 VBOXMOD_0_KFLAGS += -DVBOX_LINUX_2_4
  endif
 
