@@ -3039,17 +3039,9 @@ VBoxDbgStatsView::actAdjColumns()
 
 
 VBoxDbgStats::VBoxDbgStats(VBoxDbgGui *a_pDbgGui, const char *pszPat/* = NULL*/, unsigned uRefreshRate/* = 0*/, QWidget *pParent/* = NULL*/)
-    : VBoxDbgBaseWindow(a_pDbgGui, pParent), m_PatStr(pszPat), m_pPatCB(NULL), m_uRefreshRate(0), m_pTimer(NULL), m_pView(NULL)
+    : VBoxDbgBaseWindow(a_pDbgGui, pParent, "Statistics")
+    , m_PatStr(pszPat), m_pPatCB(NULL), m_uRefreshRate(0), m_pTimer(NULL), m_pView(NULL)
 {
-    /* Assign window-title: */
-    if (parent())
-    {
-        setWindowTitle(QString("%1 - Statistics").arg(parentWidget()->windowTitle()));
-        parent()->installEventFilter(this);
-    }
-    else
-        setWindowTitle("VBoxDbg - Statistics");
-
     /*
      * On top, a horizontal box with the pattern field, buttons and refresh interval.
      */
@@ -3157,24 +3149,6 @@ VBoxDbgStats::closeEvent(QCloseEvent *a_pCloseEvt)
 {
     a_pCloseEvt->accept();
     delete this; /** @todo This is wrong! We get more events after this one and end up using memory after freeing it in vPolishSizeAndPos().  (Qt3 holdover?) */
-}
-
-
-bool VBoxDbgStats::eventFilter(QObject *pWatched, QEvent *pEvent)
-{
-    /* Skip events which are not related to our parent: */
-    if (pWatched != parent())
-        return VBoxDbgBaseWindow::eventFilter(pWatched, pEvent);
-
-    /* Depending on event-type: */
-    switch (pEvent->type())
-    {
-        case QEvent::WindowTitleChange: setWindowTitle(QString("%1 - Statistics").arg(parentWidget()->windowTitle())); break;
-        default: break;
-    }
-
-    /* Call to base-class: */
-    return VBoxDbgBaseWindow::eventFilter(pWatched, pEvent);
 }
 
 

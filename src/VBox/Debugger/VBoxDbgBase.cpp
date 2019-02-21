@@ -162,10 +162,26 @@ unsigned VBoxDbgBaseWindow::m_cxBorder = 0;
 unsigned VBoxDbgBaseWindow::m_cyBorder = 0;
 
 
-VBoxDbgBaseWindow::VBoxDbgBaseWindow(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent)
-    : QWidget(a_pParent, Qt::Window), VBoxDbgBase(a_pDbgGui), m_fPolished(false),
-    m_x(INT_MAX), m_y(INT_MAX), m_cx(0), m_cy(0)
+VBoxDbgBaseWindow::VBoxDbgBaseWindow(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent, const char *a_pszTitle)
+    : QWidget(a_pParent, Qt::Window), VBoxDbgBase(a_pDbgGui), m_pszTitle(a_pszTitle), m_fPolished(false)
+    , m_x(INT_MAX), m_y(INT_MAX), m_cx(0), m_cy(0)
 {
+    /* Set the title, using the parent one as prefix when possible: */
+    if (!parent())
+    {
+        QString strMachineName = a_pDbgGui->getMachineName();
+        if (strMachineName.isEmpty())
+            setWindowTitle(QString("VBoxDbg - %1").arg(m_pszTitle));
+        else
+            setWindowTitle(QString("%1 - VBoxDbg - %2").arg(strMachineName).arg(m_pszTitle));
+    }
+    else
+    {
+        setWindowTitle(QString("%1 - %2").arg(parentWidget()->windowTitle()).arg(m_pszTitle));
+
+        /* Install an event filter so we can make adjustments when the parent title changes: */
+        parent()->installEventFilter(this);
+    }
 }
 
 
@@ -214,6 +230,18 @@ VBoxDbgBaseWindow::event(QEvent *a_pEvt)
     bool fRc = QWidget::event(a_pEvt);
     vPolishSizeAndPos();
     return fRc;
+}
+
+
+bool VBoxDbgBaseWindow::eventFilter(QObject *pWatched, QEvent *pEvent)
+{
+    /* We're only interested in title changes to the parent so we can amend our own title: */
+    if (   pWatched == parent()
+        && pEvent->type() == QEvent::WindowTitleChange)
+        setWindowTitle(QString("%1 - %2").arg(parentWidget()->windowTitle()).arg(m_pszTitle));
+
+    /* Forward to base-class: */
+    return QWidget::eventFilter(pWatched, pEvent);
 }
 
 

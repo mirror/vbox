@@ -203,14 +203,6 @@ protected:
      */
     virtual void closeEvent(QCloseEvent *a_pCloseEvt);
 
-    /**
-     * Event filter for various purposes.
-     *
-     * @param  pWatched         The object event came to.
-     * @param  pEvent           The event being handled.
-     */
-    virtual bool eventFilter(QObject *pWatched, QEvent *pEvent);
-
 protected slots:
     /** Apply the activated combobox pattern. */
     void apply(const QString &Str);
