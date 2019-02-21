@@ -33,6 +33,7 @@ class QItemSelection;
 class UIFileTreeContainer;
 class UIVisoHostBrowserModel;
 
+/** A UIVisoBrowserBase extension to view host file system. Uses QFileSystemModel. */
 class UIVisoHostBrowser : public UIVisoBrowserBase
 {
     Q_OBJECT;
@@ -47,8 +48,8 @@ public:
     UIVisoHostBrowser(QWidget *pParent = 0);
     ~UIVisoHostBrowser();
     virtual void showHideHiddenObjects(bool bShow) /* override */;
-    QString currentPath() const;
-    void setCurrentPath(const QString &strPath);
+    QString      currentPath() const;
+    void         setCurrentPath(const QString &strPath);
 
 public slots:
 
@@ -56,7 +57,7 @@ public slots:
 
 protected:
 
-    void retranslateUi();
+    virtual void retranslateUi() /* override */;
     virtual void tableViewItemDoubleClick(const QModelIndex &index) /* override */;
     virtual void setTableRootIndex(QModelIndex index = QModelIndex()) /* override */;
     virtual void setTreeCurrentIndex(QModelIndex index = QModelIndex()) /* override */;
@@ -71,7 +72,7 @@ private:
     void prepareObjects();
     void prepareConnections();
 
-    /** We have two file system models (one for each item view) since we set different filter on each of these models. */
+    /** We have two file system models (one for each item view) since we set different filters on each of these models. */
     UIVisoHostBrowserModel *m_pTreeModel;
     UIVisoHostBrowserModel *m_pTableModel;
     QTableView             *m_pTableView;

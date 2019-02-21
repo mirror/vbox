@@ -47,6 +47,9 @@ class UIVisoContentBrowser;
 class UIVisoCreatorOptionsPanel;
 class UIVisoConfigurationPanel;
 
+/** A QIMainDialog extension. It hosts two UIVisoBrowserBase extensions, one for host and one
+  * for VISO file system. It has the main menu, main toolbar, and a vertical toolbar and corresponding
+  * actions. */
 class UIVisoCreator : public QIWithRetranslateUI<QIMainDialog>
 {
     Q_OBJECT;
@@ -55,12 +58,12 @@ public:
 
     UIVisoCreator(QWidget *pParent = 0, const QString& strMachineName = QString());
     ~UIVisoCreator();
-    QStringList entryList() const;
-    const QString &visoName() const;
+    QStringList       entryList() const;
+    const QString     &visoName() const;
     const QStringList &customOptions() const;
     /** Returns the current path that the host browser is listing. */
     QString currentPath() const;
-    void setCurrentPath(const QString &strPath);
+    void    setCurrentPath(const QString &strPath);
 
 #ifdef VBOX_WS_MAC
     /** Returns the toolbar. */
@@ -85,6 +88,7 @@ private slots:
     void sltHandleShowContextMenu(const QWidget *pContextMenuRequester, const QPoint &point);
 
 private:
+
     struct VisoOptions
     {
         VisoOptions()
@@ -116,22 +120,33 @@ private:
     void showPanel(UIDialogPanel *panel);
     /** Makes sure escape key is assigned to only a single widget. This is done by checking
       *  several things in the following order:
-      *  - when tree views of browser panes are visible esc. key used to close those. thus it is taken from the dialog and panels
+      *  - when (drop-down) tree views of browser panes are visible esc. key used to close those. thus it is taken from the dialog and panels
       *  - when there are no more panels visible assign it to the parent dialog
       *  - grab it from the dialog as soon as a panel becomes visible again
       *  - assign it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
-    void loadSettings();
-    void saveSettings() const;
+
+    /** @name Save/Load dialog related extra data.
+     * @{ */
+       void loadSettings();
+       void saveSettings() const;
+    /** @} */
     void setDialogGeometry(const QRect &geometry);
 
-    QAction              *m_pActionConfiguration;
-    QAction              *m_pActionOptions;
-    QAction              *m_pAddAction;
-    QAction              *m_pRemoveAction;
-    QAction              *m_pNewDirectoryAction;
-    QAction              *m_pRenameAction;
-    QAction              *m_pResetAction;
+    /** @name Main toolbar (and main menu) actions
+      * @{ */
+        QAction         *m_pActionConfiguration;
+        QAction         *m_pActionOptions;
+    /** @} */
+
+    /** @name These actions are addded to vertical toolbar, context menus, and the main menu.
+      * @{ */
+        QAction              *m_pAddAction;
+        QAction              *m_pRemoveAction;
+        QAction              *m_pNewDirectoryAction;
+        QAction              *m_pRenameAction;
+        QAction              *m_pResetAction;
+    /** @} */
 
     QGridLayout          *m_pMainLayout;
     UIVisoHostBrowser    *m_pHostBrowser;

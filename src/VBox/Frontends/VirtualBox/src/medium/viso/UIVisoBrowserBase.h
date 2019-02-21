@@ -38,6 +38,7 @@ class QTableView;
 class QTreeView;
 class UILocationSelector;
 
+/** An abstract QWidget extension hosting a tree and table view. */
 class UIVisoBrowserBase : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;

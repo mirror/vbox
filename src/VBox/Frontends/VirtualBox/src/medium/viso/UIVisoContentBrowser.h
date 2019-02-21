@@ -43,6 +43,7 @@ class UIVisoContentTreeProxyModel;
 class UICustomFileSystemItem;
 class UIVisoContentTableView;
 
+/** A UIVisoBrowserBase extension to view content of a VISO as a file tree. */
 class UIVisoContentBrowser : public UIVisoBrowserBase
 {
     Q_OBJECT;
@@ -57,16 +58,17 @@ public:
     ~UIVisoContentBrowser();
     /** Adds file objests from the host file system. @p pathList consists of list of paths to there objects. */
     void addObjectsToViso(QStringList pathList);
+    /** Returns the content of the VISO as a string list. Each element of the list becomes a line in the
+      * .viso file. */
     QStringList entryList();
     virtual void showHideHiddenObjects(bool bShow) /* override */;
-
     void setVisoName(const QString &strName);
 
 public slots:
 
     void sltHandleCreateNewDirectory();
     /** Handles the signal we get from the model during setData call. Restores the old name of the file object
-     *  to @p strOldName if need be. */
+     *  to @p strOldName if need be (if rename fails for some reason). */
     void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
     void sltHandleRemoveItems();
     void sltHandleResetAction();
@@ -88,6 +90,7 @@ protected:
 private slots:
 
     void sltHandleTableSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+    /** Adds the dragged-dropped items to VISO. */
     void sltHandleDroppedItems(QStringList pathList);
 
 private:
@@ -96,10 +99,17 @@ private:
     void                    prepareConnections();
     void                    initializeModel();
     UICustomFileSystemItem *rootItem();
-    QModelIndex             convertIndexToTableIndex(const QModelIndex &index);
-    QModelIndex             convertIndexToTreeIndex(const QModelIndex &index);
+
+
+    /** @name Index conversion functions. These are half-smart and tries to determine the source model before conversion.
+      * @{ */
+        QModelIndex         convertIndexToTableIndex(const QModelIndex &index);
+        QModelIndex         convertIndexToTreeIndex(const QModelIndex &index);
+    /** @} */
+    /** Lists the content of the host file system directory by using Qt file system API. */
     void                    scanHostDirectory(UICustomFileSystemItem *directory);
     KFsObjType              fileType(const QFileInfo &fsInfo);
+    /** Renames the starts item's name as VISO name changes. */
     void                    updateStartItemName();
     void                    renameFileObject(UICustomFileSystemItem *pItem);
     void                    removeItems(const QList<UICustomFileSystemItem*> itemList);
