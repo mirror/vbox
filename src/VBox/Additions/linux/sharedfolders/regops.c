@@ -28,11 +28,27 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*
- * Limitations: only COW memory mapping is supported
- */
-
 #include "vfsmod.h"
+#include <linux/uio.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 32)
+# include <linux/aio.h> /* struct kiocb before 4.1 */
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
+# include <linux/buffer_head.h>
+#endif
+#if LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31) \
+ && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
+# include <linux/writeback.h>
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
+ && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
+# include <linux/splice.h>
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
+# define SEEK_END 2
+#endif
+
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 
@@ -54,6 +70,7 @@ DECLINLINE(void) i_size_write(struct inode *inode, loff_t i_size)
 }
 
 #endif /* < 2.6.0 */
+
 
 /* fops */
 static int sf_reg_read_aux(const char *caller, struct sf_glob_info *sf_g,
@@ -143,13 +160,8 @@ static struct pipe_buf_operations sf_pipe_buf_ops = {
 	.get = sf_pipe_buf_get,
 };
 
-#define LOCK_PIPE(pipe) \
-    if (pipe->inode) \
-        mutex_lock(&pipe->inode->i_mutex);
-
-#define UNLOCK_PIPE(pipe) \
-    if (pipe->inode) \
-        mutex_unlock(&pipe->inode->i_mutex);
+# define LOCK_PIPE(pipe)   do { if (pipe->inode) mutex_lock(&pipe->inode->i_mutex); } while (0)
+# define UNLOCK_PIPE(pipe) do { if (pipe->inode) mutex_unlock(&pipe->inode->i_mutex); } while (0)
 
 ssize_t
 sf_splice_read(struct file *in, loff_t * poffset,
@@ -295,6 +307,50 @@ DECLINLINE(int) sf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWrit
 
 
 /**
+ * Read function used when accessing files that are memory mapped.
+ *
+ * We read from the page cache here to present the a cohertent picture of the
+ * the file content.
+ */
+static ssize_t sf_reg_read_mapped(struct file *file, char /*__user*/ *buf, size_t size, loff_t *off)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+	struct iovec    iov = { .iov_base = buf, .iov_len = size };
+	struct iov_iter iter;
+	struct kiocb    kiocb;
+	ssize_t         cbRet;
+
+	init_sync_kiocb(&kiocb, file);
+	kiocb.ki_pos = *off;
+	iov_iter_init(&iter, READ, &iov, 1, size);
+
+	cbRet = generic_file_read_iter(&kiocb, &iter);
+
+	*off = kiocb.ki_pos;
+	return cbRet;
+
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+	struct iovec    iov = { .iov_base = buf, .iov_len = size };
+	struct kiocb    kiocb;
+	ssize_t         cbRet;
+
+	init_sync_kiocb(&kiocb, file);
+	kiocb.ki_pos = *off;
+
+	cbRet = generic_file_aio_read(&kiocb, &iov, 1, *off);
+	if (cbRet == -EIOCBQUEUED)
+		cbRet = wait_on_sync_kiocb(&kiocb);
+
+	*off = kiocb.ki_pos;
+	return cbRet;
+
+#else /* 2.6.18 or earlier: */
+	return generic_file_read(file, buf, size, off);
+#endif
+}
+
+
+/**
  * Fallback case of sf_reg_read() that locks the user buffers and let the host
  * write directly to them.
  */
@@ -418,6 +474,11 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 	struct inode *inode = GET_F_DENTRY(file)->d_inode;
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
 	struct sf_reg_info *sf_r = file->private_data;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 2)
+	struct address_space *mapping = file->f_mapping;
+#else
+	struct address_space *mapping = inode->i_mapping;
+#endif
 
 	TRACE();
 	if (!S_ISREG(inode->i_mode)) {
@@ -429,6 +490,19 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 
 	if (!size)
 		return 0;
+
+	/*
+	 * If there is a mapping and O_DIRECT isn't in effect, we must at a
+	 * heed dirty pages in the mapping and read from them.  For simplicity
+	 * though, we just do page cache reading when there are writable
+	 * mappings around with any kind of pages loaded.
+	 */
+	if (   mapping
+	    && mapping->nrpages > 0
+	    && mapping_writably_mapped(mapping)
+	    && !(file->f_flags & O_DIRECT)
+	    && 1 /** @todo make this behaviour configurable */ )
+		return sf_reg_read_mapped(file, buf, size, off);
 
 	/*
 	 * For small requests, try use an embedded buffer provided we get a heap block
@@ -893,125 +967,103 @@ static int sf_reg_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-static int sf_reg_fault(struct vm_fault *vmf)
-#elif LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
-static int sf_reg_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-static struct page *sf_reg_nopage(struct vm_area_struct *vma,
-				  unsigned long vaddr, int *type)
-# define SET_TYPE(t) *type = (t)
-#else  /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0) */
-static struct page *sf_reg_nopage(struct vm_area_struct *vma,
-				  unsigned long vaddr, int unused)
-# define SET_TYPE(t)
-#endif
+/**
+ * Wrapper around generic/default seek function that ensures that we've got
+ * the up-to-date file size when doing anything relative to EOF.
+ *
+ * The issue is that the host may extend the file while we weren't looking and
+ * if the caller wishes to append data, it may end up overwriting existing data
+ * if we operate with a stale size.  So, we always retrieve the file size on EOF
+ * relative seeks.
+ */
+static loff_t sf_reg_llseek(struct file *file, loff_t off, int whence)
 {
-	struct page *page;
-	char *buf;
-	loff_t off;
-	uint32_t nread = PAGE_SIZE;
-	int err;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-	struct vm_area_struct *vma = vmf->vma;
+	switch (whence) {
+#ifdef SEEK_HOLE
+		case SEEK_HOLE:
+		case SEEK_DATA:
 #endif
-	struct file *file = vma->vm_file;
-	struct inode *inode = GET_F_DENTRY(file)->d_inode;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
-	struct sf_reg_info *sf_r = file->private_data;
-
-	TRACE();
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
-	if (vmf->pgoff > vma->vm_end)
-		return VM_FAULT_SIGBUS;
-#else
-	if (vaddr > vma->vm_end) {
-		SET_TYPE(VM_FAULT_SIGBUS);
-		return NOPAGE_SIGBUS;
-	}
-#endif
-
-	/* Don't use GFP_HIGHUSER as long as sf_reg_read_aux() calls VbglR0SfRead()
-	 * which works on virtual addresses. On Linux cannot reliably determine the
-	 * physical address for high memory, see rtR0MemObjNativeLockKernel(). */
-	page = alloc_page(GFP_USER);
-	if (!page) {
-		LogRelFunc(("failed to allocate page\n"));
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
-		return VM_FAULT_OOM;
-#else
-		SET_TYPE(VM_FAULT_OOM);
-		return NOPAGE_OOM;
-#endif
+		case SEEK_END: {
+			struct sf_reg_info *sf_r = file->private_data;
+			int rc = sf_inode_revalidate_with_handle(GET_F_DENTRY(file), sf_r->handle, true /*fForce*/);
+			if (rc == 0)
+				break;
+			return rc;
+		}
 	}
 
-	buf = kmap(page);
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
-	off = (vmf->pgoff << PAGE_SHIFT);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 8)
+	return generic_file_llseek(file, off, whence);
 #else
-	off = (vaddr - vma->vm_start) + (vma->vm_pgoff << PAGE_SHIFT);
-#endif
-	err = sf_reg_read_aux(__func__, sf_g, sf_r, buf, &nread, off);
-	if (err) {
-		kunmap(page);
-		put_page(page);
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
-		return VM_FAULT_SIGBUS;
-#else
-		SET_TYPE(VM_FAULT_SIGBUS);
-		return NOPAGE_SIGBUS;
-#endif
-	}
-
-	BUG_ON(nread > PAGE_SIZE);
-	if (!nread) {
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
-		clear_user_page(page_address(page), vmf->pgoff, page);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-		clear_user_page(page_address(page), vaddr, page);
-#else
-		clear_user_page(page_address(page), vaddr);
-#endif
-	} else
-		memset(buf + nread, 0, PAGE_SIZE - nread);
-
-	flush_dcache_page(page);
-	kunmap(page);
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
-	vmf->page = page;
-	return 0;
-#else
-	SET_TYPE(VM_FAULT_MAJOR);
-	return page;
+	return default_llseek(file, off, whence);
 #endif
 }
 
-static struct vm_operations_struct sf_vma_ops = {
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 25)
-	.fault = sf_reg_fault
-#else
-	.nopage = sf_reg_nopage
-#endif
-};
-
-static int sf_reg_mmap(struct file *file, struct vm_area_struct *vma)
+/**
+ * Flush region of file - chiefly mmap/msync.
+ *
+ * We cannot use the noop_fsync / simple_sync_file here as that means
+ * msync(,,MS_SYNC) will return before the data hits the host, thereby
+ * causing coherency issues with O_DIRECT access to the same file as
+ * well as any host interaction with the file.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 0)
+static int sf_reg_fsync(struct file *file, loff_t start, loff_t end, int datasync)
 {
-	TRACE();
-	if (vma->vm_flags & VM_SHARED) {
-		LogFunc(("shared mmapping not available\n"));
-		return -EINVAL;
-	}
-
-	vma->vm_ops = &sf_vma_ops;
-	return 0;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+	return __generic_file_fsync(file, start, end, datasync);
+# else
+	return generic_file_fsync(file, start, end, datasync);
+# endif
 }
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
+static int sf_reg_fsync(struct file *file, int datasync)
+{
+	return generic_file_fsync(file, datasync);
+}
+#else /* < 2.6.35 */
+static int sf_reg_fsync(struct file *file, struct dentry *dentry, int datasync)
+{
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+	return simple_fsync(file, dentry, datasync);
+# else
+	int rc;
+	struct inode *inode = dentry->d_inode;
+	AssertReturn(inode, -EINVAL);
+
+	/** @todo What about file_fsync()? (<= 2.5.11) */
+
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
+	rc = sync_mapping_buffers(inode->i_mapping);
+	if (   rc == 0
+	    && (inode->i_state & I_DIRTY)
+	    && ((inode->i_state & I_DIRTY_DATASYNC) || !datasync)
+	   ) {
+		struct writeback_control wbc = {
+			.sync_mode = WB_SYNC_ALL,
+			.nr_to_write = 0
+		};
+		rc = sync_inode(inode, &wbc);
+	}
+#  else  /* < 2.5.12 */
+	rc  = fsync_inode_buffers(inode);
+#   if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+	rc |= fsync_inode_data_buffers(inode);
+#   endif
+	/** @todo probably need to do more here... */
+#  endif /* < 2.5.12 */
+	return rc;
+# endif
+}
+#endif /* < 2.6.35 */
+
 
 struct file_operations sf_reg_fops = {
 	.read = sf_reg_read,
 	.open = sf_reg_open,
 	.write = sf_reg_write,
 	.release = sf_reg_release,
-	.mmap = sf_reg_mmap,
+	.mmap = generic_file_mmap,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 /** @todo This code is known to cause caching of data which should not be
@@ -1024,13 +1076,9 @@ struct file_operations sf_reg_fops = {
 	.aio_read = generic_file_aio_read,
 	.aio_write = generic_file_aio_write,
 # endif
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
-	.fsync = noop_fsync,
-# else
-	.fsync = simple_sync_file,
-# endif
-	.llseek = generic_file_llseek,
 #endif
+	.llseek = sf_reg_llseek,
+	.fsync = sf_reg_fsync,
 };
 
 struct inode_operations sf_reg_iops = {
@@ -1089,8 +1137,6 @@ static int sf_writepage(struct page *page, struct writeback_control *wbc)
 
 	TRACE();
 
-/** @todo rig up a FsPerf testcase for this code! */
-
 	if (page->index >= end_index)
 		nwritten = inode->i_size & (PAGE_SIZE - 1);
 
@@ -1123,6 +1169,7 @@ int sf_write_begin(struct file *file, struct address_space *mapping, loff_t pos,
 		   void **fsdata)
 {
 	TRACE();
+/** @todo rig up a FsPerf testcase for this code! */
 
 	return simple_write_begin(file, mapping, pos, len, flags, pagep,
 				  fsdata);
@@ -1140,7 +1187,6 @@ int sf_write_end(struct file *file, struct address_space *mapping, loff_t pos,
 	int err;
 
 	TRACE();
-
 /** @todo rig up a FsPerf testcase for this code! */
 
 	buf = kmap(page);
@@ -1201,6 +1247,9 @@ static int sf_direct_IO(int rw, struct inode *inode, struct kiobuf *, unsigned l
 struct address_space_operations sf_reg_aops = {
 	.readpage = sf_readpage,
 	.writepage = sf_writepage,
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
+	.set_page_dirty = __set_page_dirty_buffers,
+# endif
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 	.write_begin = sf_write_begin,
 	.write_end = sf_write_end,

@@ -48,44 +48,42 @@
  */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-static void sf_ftime_from_timespec(time_t * time, RTTIMESPEC * ts)
+
+DECLINLINE(void) sf_ftime_from_timespec(time_t * time, RTTIMESPEC *ts)
 {
 	int64_t t = RTTimeSpecGetNano(ts);
-
-	do_div(t, 1000000000);
+	do_div(t, RT_NS_1SEC);
 	*time = t;
 }
 
-static void sf_timespec_from_ftime(RTTIMESPEC * ts, time_t * time)
+DECLINLINE(void) sf_timespec_from_ftime(RTTIMESPEC * ts, time_t *time)
 {
-	int64_t t = 1000000000 * *time;
-	RTTimeSpecSetNano(ts, t);
+	RTTimeSpecSetNano(ts, RT_NS_1SEC_64 * *time);
 }
-#else				/* >= 2.6.0 */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
-static void sf_ftime_from_timespec(struct timespec *tv, RTTIMESPEC *ts)
-#else
-static void sf_ftime_from_timespec(struct timespec64 *tv, RTTIMESPEC *ts)
-#endif
+
+#else	/* >= 2.6.0 */
+
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+DECLINLINE(void) sf_ftime_from_timespec(struct timespec *tv, RTTIMESPEC *ts)
+# else
+DECLINLINE(void) sf_ftime_from_timespec(struct timespec64 *tv, RTTIMESPEC *ts)
+# endif
 {
 	int64_t t = RTTimeSpecGetNano(ts);
-	int64_t nsec;
-
-	nsec = do_div(t, 1000000000);
-	tv->tv_sec = t;
-	tv->tv_nsec = nsec;
+	tv->tv_nsec = do_div(t, RT_NS_1SEC);
+	tv->tv_sec  = t;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
-static void sf_timespec_from_ftime(RTTIMESPEC *ts, struct timespec *tv)
-#else
-static void sf_timespec_from_ftime(RTTIMESPEC *ts, struct timespec64 *tv)
-#endif
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+DECLINLINE(void) sf_timespec_from_ftime(RTTIMESPEC *ts, struct timespec *tv)
+# else
+DECLINLINE(void) sf_timespec_from_ftime(RTTIMESPEC *ts, struct timespec64 *tv)
+# endif
 {
-	int64_t t = (int64_t) tv->tv_nsec + (int64_t) tv->tv_sec * 1000000000;
-	RTTimeSpecSetNano(ts, t);
+	RTTimeSpecSetNano(ts, tv->tv_nsec + tv->tv_sec * (int64_t)RT_NS_1SEC);
 }
-#endif				/* >= 2.6.0 */
+
+#endif	/* >= 2.6.0 */
 
 /* set [inode] attributes based on [info], uid/gid based on [sf_g] */
 void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
@@ -116,8 +114,7 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	inode->i_mapping->a_ops = &sf_reg_aops;
 # if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
-	/* XXX Was this ever necessary? */
-	inode->i_mapping->backing_dev_info = &sf_g->bdi;
+	inode->i_mapping->backing_dev_info = &sf_g->bdi; /* This is needed for mmap. */
 # endif
 #endif
 
@@ -135,7 +132,7 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
 		inode->i_nlink = 1;
 #endif
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
 	else if (RTFS_IS_SYMLINK(attr->fMode)) {
 		inode->i_mode = sf_g->fmode != ~0 ? (sf_g->fmode & 0777) : mode;
 		inode->i_mode &= ~sf_g->fmask;
@@ -240,8 +237,7 @@ int sf_inode_revalidate(struct dentry *dentry)
 
 	TRACE();
 	if (!dentry || !dentry->d_inode) {
-		LogFunc(("no dentry(%p) or inode(%p)\n", dentry,
-			 dentry->d_inode));
+		LogFunc(("no dentry(%p) or inode(%p)\n", dentry, dentry ? dentry->d_inode : NULL));
 		return -EINVAL;
 	}
 
@@ -267,8 +263,60 @@ int sf_inode_revalidate(struct dentry *dentry)
 		return err;
 
 	dentry->d_time = jiffies;
+/** @todo bird has severe inode locking / rcu concerns here:  */
 	sf_init_inode(sf_g, dentry->d_inode, &info);
 	return 0;
+}
+
+/**
+ * Similar to sf_inode_revalidate, but uses associated host file handle as that
+ * is quite a bit faster.
+ */
+int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced)
+{
+	int err;
+	struct inode *pInode = dentry ? dentry->d_inode : NULL;
+	if (!pInode) {
+		LogFunc(("no dentry(%p) or inode(%p)\n", dentry, pInode));
+		err = -EINVAL;
+	} else {
+		struct sf_inode_info *sf_i = GET_INODE_INFO(pInode);
+		struct sf_glob_info  *sf_g = GET_GLOB_INFO(pInode->i_sb);
+		AssertReturn(sf_i, -EINVAL);
+		AssertReturn(sf_g, -EINVAL);
+
+		/*
+		 * Can we get away without any action here?
+		 */
+		if (   !fForced
+		    && !sf_i->force_restat
+		    && jiffies - dentry->d_time < sf_g->ttl)
+			err = 0;
+		else {
+			/*
+			 * No, we have to query the file info from the host.
+			 */
+			VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+			if (pReq) {
+				RT_ZERO(*pReq);
+				err = VbglR0SfHostReqQueryObjInfo(sf_g->map.root, pReq, hHostFile);
+				if (RT_SUCCESS(err)) {
+					/*
+					 * Reset the TTL and copy the info over into the inode structure.
+					 */
+					dentry->d_time = jiffies;
+/** @todo bird has severe inode locking / rcu concerns here:  */
+					sf_init_inode(sf_g, pInode, &pReq->ObjInfo);
+				} else {
+					LogFunc(("VbglR0SfHostReqQueryObjInfo failed on %#RX64: %Rrc\n", hHostFile, err));
+					err = -RTErrConvertToErrno(err);
+				}
+				VbglR0PhysHeapFree(pReq);
+			} else
+				err = -ENOMEM;
+		}
+	}
+	return err;
 }
 
 /* this is called during name resolution/lookup to check if the
@@ -894,24 +942,57 @@ struct dentry_operations sf_dentry_ops = {
 	.d_revalidate = sf_dentry_revalidate
 };
 
-int sf_init_backing_dev(struct sf_glob_info *sf_g)
+int sf_init_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g)
 {
 	int rc = 0;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
+/** @todo this needs sorting out between 3.19 and 4.11   */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) //&& LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
 	/* Each new shared folder map gets a new uint64_t identifier,
 	 * allocated in sequence.  We ASSUME the sequence will not wrap. */
 	static uint64_t s_u64Sequence = 0;
 	uint64_t u64CurrentSequence = ASMAtomicIncU64(&s_u64Sequence);
+	struct backing_dev_info *bdi;
 
-	sf_g->bdi.ra_pages = 0;	/* No readahead */
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+	rc = super_setup_bdi_name(sb, "vboxsf-%llu", (unsigned long long)u64CurrentSequence);
+	if (!rc)
+		bdi = sb->s_bdi;
+	else
+		return rc;
+#  else
+	bdi = &sf_g->bdi;
+#  endif
+
+	bdi->ra_pages = 0;                      /* No readahead */
+
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
-	sf_g->bdi.capabilities = BDI_CAP_MAP_DIRECT	/* MAP_SHARED */
-	    | BDI_CAP_MAP_COPY	/* MAP_PRIVATE */
-	    | BDI_CAP_READ_MAP	/* can be mapped for reading */
-	    | BDI_CAP_WRITE_MAP	/* can be mapped for writing */
-	    | BDI_CAP_EXEC_MAP;	/* can be mapped for execution */
-# endif				/* >= 2.6.12 */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+	bdi->capabilities = 0
+#  ifdef BDI_CAP_MAP_DIRECT
+		          | BDI_CAP_MAP_DIRECT  /* MAP_SHARED */
+#  endif
+#  ifdef BDI_CAP_MAP_COPY
+	                  | BDI_CAP_MAP_COPY    /* MAP_PRIVATE */
+#  endif
+#  ifdef BDI_CAP_READ_MAP
+	                  | BDI_CAP_READ_MAP    /* can be mapped for reading */
+#  endif
+#  ifdef BDI_CAP_WRITE_MAP
+	                  | BDI_CAP_WRITE_MAP   /* can be mapped for writing */
+#  endif
+#  ifdef BDI_CAP_EXEC_MAP
+	                  | BDI_CAP_EXEC_MAP    /* can be mapped for execution */
+#  endif
+#  ifdef BDI_CAP_STRICTLIMIT
+	                  | BDI_CAP_STRICTLIMIT;
+#  endif
+			  ;
+#  ifdef BDI_CAP_STRICTLIMIT
+	/* Smalles possible amount of dirty pages: %1 of RAM */
+	bdi_set_max_ratio(bdi, 1);
+#  endif
+# endif	/* >= 2.6.12 */
+
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
 	rc = bdi_init(&sf_g->bdi);
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
 	if (!rc)
@@ -919,11 +1000,11 @@ int sf_init_backing_dev(struct sf_glob_info *sf_g)
 				  (unsigned long long)u64CurrentSequence);
 #  endif /* >= 2.6.26 */
 # endif	 /* >= 2.6.24 */
-#endif   /* >= 2.6.0 && <= 3.19.0 */
+#endif   /* >= 2.6.0 */
 	return rc;
 }
 
-void sf_done_backing_dev(struct sf_glob_info *sf_g)
+void sf_done_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
 	bdi_destroy(&sf_g->bdi);	/* includes bdi_unregister() */

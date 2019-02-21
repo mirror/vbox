@@ -62,7 +62,7 @@ struct sf_glob_info {
 	/** Maximum number of pages to allow in an I/O buffer with the host.
 	 * This applies to read and write operations.  */
 	uint32_t cMaxIoPages;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
 	struct backing_dev_info bdi;
 #endif
 	char tag[32];		/**< Mount tag for VBoxService automounter.  @since 6.0 */
@@ -116,6 +116,7 @@ extern void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
 extern int sf_stat(const char *caller, struct sf_glob_info *sf_g,
 		   SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
 extern int sf_inode_revalidate(struct dentry *dentry);
+int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 extern int sf_getattr(const struct path *path, struct kstat *kstat,
@@ -138,8 +139,8 @@ extern struct sf_dir_info *sf_dir_info_alloc(void);
 extern int sf_dir_read_all(struct sf_glob_info *sf_g,
 			   struct sf_inode_info *sf_i, struct sf_dir_info *sf_d,
 			   SHFLHANDLE handle);
-extern int sf_init_backing_dev(struct sf_glob_info *sf_g);
-extern void sf_done_backing_dev(struct sf_glob_info *sf_g);
+extern int sf_init_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g);
+extern void sf_done_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 # define STRUCT_STATFS  struct statfs

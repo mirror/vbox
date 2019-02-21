@@ -327,7 +327,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 		goto fail3;
 	}
 
-	if (sf_init_backing_dev(sf_g)) {
+	if (sf_init_backing_dev(sb, sf_g)) {
 		err = -EINVAL;
 		LogFunc(("could not init bdi\n"));
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
@@ -362,7 +362,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 	return 0;
 
  fail5:
-	sf_done_backing_dev(sf_g);
+	sf_done_backing_dev(sb, sf_g);
 
  fail4:
 	if (fInodePut)
@@ -455,7 +455,7 @@ static void sf_put_super(struct super_block *sb)
 
 	sf_g = GET_GLOB_INFO(sb);
 	BUG_ON(!sf_g);
-	sf_done_backing_dev(sf_g);
+	sf_done_backing_dev(sb, sf_g);
 	sf_glob_free(sf_g);
 }
 
