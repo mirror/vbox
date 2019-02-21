@@ -5188,19 +5188,23 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPU pVCpu, const char *
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestPatMsr);
 
     /* EFER MSR. */
-    uint64_t const uValidEferMask = CPUMGetGuestEferMsrValidMask(pVCpu->CTX_SUFF(pVM));
-    if (   (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
-        && (pVmcs->u64GuestEferMsr.u & ~uValidEferMask))
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestEferMsrRsvd);
+    if (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
+    {
+        uint64_t const uValidEferMask = CPUMGetGuestEferMsrValidMask(pVCpu->CTX_SUFF(pVM));
+        if (!(pVmcs->u64GuestEferMsr.u & ~uValidEferMask))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestEferMsrRsvd);
 
-    bool const fGstLma = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_BIT_LMA);
-    bool const fGstLme = RT_BOOL(pVmcs->u64HostEferMsr.u & MSR_K6_EFER_BIT_LME);
-    if (   fGstInLongMode == fGstLma
-        && (   !(pVmcs->u64GuestCr0.u & X86_CR0_PG)
-            || fGstLma == fGstLme))
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestEferMsr);
+        bool const fGstLma = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_LMA);
+        bool const fGstLme = RT_BOOL(pVmcs->u64GuestEferMsr.u & MSR_K6_EFER_LME);
+        if (   fGstLma == fGstInLongMode
+            && (   !(pVmcs->u64GuestCr0.u & X86_CR0_PG)
+                || fGstLma == fGstLme))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_GuestEferMsr);
+    }
 
     /* We don't support IA32_BNDCFGS MSR yet. */
     Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR));
