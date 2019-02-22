@@ -70,28 +70,27 @@ HRESULT OUSBDevice::init(IUSBDevice *aUSBDevice)
     hrc = aUSBDevice->COMGETTER(Revision)(&unconst(mData.revision));
     ComAssertComRCRet(hrc, hrc);
 
-    BSTR tmp;
-    BSTR *bptr = &tmp;
+    Bstr bstr;
 
-    hrc = aUSBDevice->COMGETTER(Manufacturer)(bptr);
+    hrc = aUSBDevice->COMGETTER(Manufacturer)(bstr.asOutParam());
     ComAssertComRCRet(hrc, hrc);
-    unconst(mData.manufacturer) = Utf8Str(tmp);
+    unconst(mData.manufacturer) = bstr;
 
-    hrc = aUSBDevice->COMGETTER(Product)(bptr);
+    hrc = aUSBDevice->COMGETTER(Product)(bstr.asOutParam());
     ComAssertComRCRet(hrc, hrc);
-    unconst(mData.product) = Utf8Str(tmp);
+    unconst(mData.product) = bstr;
 
-    hrc = aUSBDevice->COMGETTER(SerialNumber)(bptr);
+    hrc = aUSBDevice->COMGETTER(SerialNumber)(bstr.asOutParam());
     ComAssertComRCRet(hrc, hrc);
-    unconst(mData.serialNumber) = Utf8Str(tmp);
+    unconst(mData.serialNumber) = bstr;
 
-    hrc = aUSBDevice->COMGETTER(Address)(bptr);
+    hrc = aUSBDevice->COMGETTER(Address)(bstr.asOutParam());
     ComAssertComRCRet(hrc, hrc);
-    unconst(mData.address) = Utf8Str(tmp);
+    unconst(mData.address) = bstr;
 
-    hrc = aUSBDevice->COMGETTER(Backend)(bptr);
+    hrc = aUSBDevice->COMGETTER(Backend)(bstr.asOutParam());
     ComAssertComRCRet(hrc, hrc);
-    unconst(mData.backend) = Utf8Str(tmp);
+    unconst(mData.backend) = bstr;
 
     hrc = aUSBDevice->COMGETTER(Port)(&unconst(mData.port));
     ComAssertComRCRet(hrc, hrc);

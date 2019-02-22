@@ -5168,8 +5168,7 @@ int Console::i_configNetwork(const char *pszDevice,
                     PCFGMNODE pPF = NULL; /* /Devices/Dev/.../Config/PortForwarding/$n/ */
 
                     uint16_t port = 0;
-                    BSTR r = pfs[i];
-                    Utf8Str utf = Utf8Str(r);
+                    Utf8Str utf = pfs[i];
                     Utf8Str strName;
                     Utf8Str strProto;
                     Utf8Str strHostPort;

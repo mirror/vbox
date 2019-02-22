@@ -297,7 +297,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     queryIfaceSpeed(&Info);
     ComObjPtr<HostNetworkInterface> IfObj;
     IfObj.createObject();
-    if (SUCCEEDED(IfObj->init(Bstr(szNICDesc), enmType, &Info)))
+    if (SUCCEEDED(IfObj->init(szNICDesc, enmType, &Info)))
         pList->push_back(IfObj);
 }
 

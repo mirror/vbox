@@ -135,8 +135,6 @@ Session::ClientTokenHolder::ClientTokenHolder(IToken *aToken) :
 #if defined(RT_OS_WINDOWS)
     mThreadSem = CTHTHREADSEMARG;
 
-    Bstr bstrTokenId(strTokenId);
-
     /*
      * Since there is no guarantee that the constructor and destructor will be
      * called in the same thread, we need a separate thread to hold the token.
@@ -147,7 +145,7 @@ Session::ClientTokenHolder::ClientTokenHolder(IToken *aToken) :
                         ("Cannot create an event sem, err=%d", ::GetLastError()));
 
     void *data[3];
-    data[0] = (void*)(BSTR)bstrTokenId.raw();
+    data[0] = (void*)strTokenId.c_str();
     data[1] = (void*)mThreadSem;
     data[2] = 0; /* will get an output from the thread */
 
@@ -171,8 +169,6 @@ Session::ClientTokenHolder::ClientTokenHolder(IToken *aToken) :
         mThreadSem = NULL;
     }
 #elif defined(RT_OS_OS2)
-    Bstr bstrTokenId(strTokenId);
-
     /*
      * Since there is no guarantee that the constructor and destructor will be
      * called in the same thread, we need a separate thread to hold the token.
@@ -182,7 +178,7 @@ Session::ClientTokenHolder::ClientTokenHolder(IToken *aToken) :
     AssertRCReturnVoid(vrc);
 
     void *data[3];
-    data[0] = (void*)bstrTokenId.raw();
+    data[0] = (void*)strTokenId.c_str();
     data[1] = (void*)mSem;
     data[2] = (void*)false; /* will get the thread result here */
 
@@ -250,10 +246,10 @@ DECLCALLBACK(int) ClientTokenHolderThread(RTTHREAD hThreadSelf, void *pvUser)
     void **data = (void **)pvUser;
 
 # if defined(RT_OS_WINDOWS)
-    BSTR sessionId = (BSTR)data[0];
+    Utf8Str strSessionId = (const char *)data[0];
     HANDLE initDoneSem = (HANDLE)data[1];
 
-    HANDLE mutex = ::OpenMutex(MUTEX_ALL_ACCESS, FALSE, sessionId);
+    HANDLE mutex = ::OpenMutex(MUTEX_ALL_ACCESS, FALSE, Bstr(strSessionId).raw());
     AssertMsg(mutex, ("cannot open token, err=%d\n", ::GetLastError()));
 
     if (mutex)
@@ -285,13 +281,13 @@ DECLCALLBACK(int) ClientTokenHolderThread(RTTHREAD hThreadSelf, void *pvUser)
     /* signal we're done */
     ::SetEvent(initDoneSem);
 # elif defined(RT_OS_OS2)
-    Utf8Str sessionId = (BSTR)data[0];
+    Utf8Str strSessionId = (const char *)data[0];
     RTSEMEVENT finishSem = (RTSEMEVENT)data[1];
 
-    LogFlowFunc(("sessionId='%s', finishSem=%p\n", sessionId.raw(), finishSem));
+    LogFlowFunc(("strSessionId='%s', finishSem=%p\n", strSessionId.c_str(), finishSem));
 
     HMTX mutex = NULLHANDLE;
-    APIRET arc = ::DosOpenMutexSem((PSZ)sessionId.raw(), &mutex);
+    APIRET arc = ::DosOpenMutexSem((PSZ)strSessionId.c_str(), &mutex);
     AssertMsg(arc == NO_ERROR, ("cannot open token, arc=%ld\n", arc));
 
     if (arc == NO_ERROR)

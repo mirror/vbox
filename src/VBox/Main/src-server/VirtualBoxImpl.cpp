@@ -2179,14 +2179,13 @@ HRESULT VirtualBox::setExtraData(const com::Utf8Str &aKey,
         if (!i_onExtraDataCanChange(Guid::Empty, Bstr(aKey).raw(), Bstr(aValue).raw(), error))
         {
             const char *sep = error.isEmpty() ? "" : ": ";
-            CBSTR err = error.raw();
-            Log1WarningFunc(("Someone vetoed! Change refused%s%ls\n", sep, err));
+            Log1WarningFunc(("Someone vetoed! Change refused%s%ls\n", sep, error.raw()));
             return setError(E_ACCESSDENIED,
                             tr("Could not set extra data because someone refused the requested change of '%s' to '%s'%s%ls"),
                             strKey.c_str(),
                             strValue.c_str(),
                             sep,
-                            err);
+                            error.raw());
         }
 
         // data is changing and change not vetoed: then write it out under the lock

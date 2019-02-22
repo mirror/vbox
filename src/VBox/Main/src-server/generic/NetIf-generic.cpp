@@ -155,20 +155,20 @@ int NetIfEnableStaticIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * pI
     return NetIfAdpCtl(pIf, szAddress, pszOption, pszMask);
 }
 
-int NetIfEnableStaticIpConfigV6(VirtualBox * /* vBox */, HostNetworkInterface * pIf, IN_BSTR aOldIPV6Address,
-                                IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
+int NetIfEnableStaticIpConfigV6(VirtualBox * /* vBox */, HostNetworkInterface * pIf, const Utf8Str &aOldIPV6Address,
+                                const Utf8Str &aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
     char szAddress[5*8 + 1 + 5 + 1];
-    if (Bstr(aIPV6Address).length())
+    if (aIPV6Address.length())
     {
-        RTStrPrintf(szAddress, sizeof(szAddress), "%ls/%d",
-                    aIPV6Address, aIPV6MaskPrefixLength);
+        RTStrPrintf(szAddress, sizeof(szAddress), "%s/%d",
+                    aIPV6Address.c_str(), aIPV6MaskPrefixLength);
         return NetIfAdpCtl(pIf, szAddress, NULL, NULL);
     }
     else
     {
-        RTStrPrintf(szAddress, sizeof(szAddress), "%ls",
-                    aOldIPV6Address);
+        RTStrPrintf(szAddress, sizeof(szAddress), "%s",
+                    aOldIPV6Address.c_str());
         return NetIfAdpCtl(pIf, szAddress, "remove", NULL);
     }
 }
@@ -194,7 +194,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
     if (SUCCEEDED(hrc))
     {
         hrc = progress->init(pVirtualBox, host,
-                             Bstr("Creating host only network interface").raw(),
+                             "Creating host only network interface",
                              FALSE /* aCancelable */);
         if (SUCCEEDED(hrc))
         {
@@ -260,7 +260,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
                         }
                         else
                         {
-                            Bstr IfName(szBuf);
+                            Utf8Str IfName(szBuf);
                             /* create a new uninitialized host interface object */
                             ComObjPtr<HostNetworkInterface> iface;
                             iface.createObject();
@@ -308,7 +308,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
 #endif
 }
 
-int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, IN_GUID aId,
+int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, const Guid &aId,
                                         IProgress **aProgress)
 {
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
@@ -322,14 +322,14 @@ int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, IN_GUID aId,
     {
         Bstr ifname;
         ComPtr<IHostNetworkInterface> iface;
-        if (FAILED(host->FindHostNetworkInterfaceById(Guid(aId).toUtf16().raw(), iface.asOutParam())))
+        if (FAILED(host->FindHostNetworkInterfaceById(aId.toUtf16().raw(), iface.asOutParam())))
             return VERR_INVALID_PARAMETER;
         iface->COMGETTER(Name)(ifname.asOutParam());
         if (ifname.isEmpty())
             return VERR_INTERNAL_ERROR;
 
         rc = progress->init(pVirtualBox, host,
-                            Bstr("Removing host network interface").raw(),
+                            "Removing host network interface",
                             FALSE /* aCancelable */);
         if (SUCCEEDED(rc))
         {

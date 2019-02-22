@@ -58,7 +58,7 @@ HRESULT ProgressProxy::init(
                             VirtualBox *pParent,
 #endif
                             IUnknown *pInitiator,
-                            CBSTR bstrDescription,
+                            Utf8Str strDescription,
                             BOOL fCancelable)
 {
     mfMultiOperation = false;
@@ -71,11 +71,11 @@ HRESULT ProgressProxy::init(
                           pParent,
 #endif
                           pInitiator,
-                          bstrDescription,
+                          strDescription,
                           fCancelable,
                           1 /* cOperations */,
                           1 /* ulTotalOperationsWeight */,
-                          bstrDescription /* bstrFirstOperationDescription */,
+                          strDescription /* strFirstOperationDescription */,
                           1 /* ulFirstOperationWeight */);
 }
 
@@ -94,10 +94,10 @@ HRESULT ProgressProxy::init(
                             VirtualBox *pParent,
 #endif
                             IUnknown *pInitiator,
-                            CBSTR bstrDescription,
+                            Utf8Str strDescription,
                             BOOL fCancelable,
                             ULONG uTotalOperationsWeight,
-                            CBSTR bstrFirstOperationDescription,
+                            Utf8Str strFirstOperationDescription,
                             ULONG uFirstOperationWeight,
                             ULONG cOtherProgressObjectOperations)
 {
@@ -111,11 +111,11 @@ HRESULT ProgressProxy::init(
                           pParent,
 #endif
                           pInitiator,
-                          bstrDescription,
+                          strDescription,
                           fCancelable,
                           1 + cOtherProgressObjectOperations /* cOperations */,
                           uTotalOperationsWeight,
-                          bstrFirstOperationDescription,
+                          strFirstOperationDescription,
                           uFirstOperationWeight);
 }
 

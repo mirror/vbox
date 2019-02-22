@@ -692,7 +692,7 @@ void NATNetwork::i_updateDomainNameServerOption(ComPtr<IHost> &host)
         */
         bool fUnmappedLoopback = false;
 
-        for (size_t i = 0; i < nameServers.size(); ++i)
+        for (size_t i = 0; i < cAddresses; ++i)
         {
             RTNETADDRIPV4 addr;
 
@@ -803,19 +803,10 @@ HRESULT  NATNetwork::start(const com::Utf8Str &aTrunkType)
 
                 hrc = m->dhcpServer->COMSETTER(Enabled)(true);
 
-                BSTR dhcpip = NULL;
-                BSTR netmask = NULL;
-                BSTR lowerip = NULL;
-                BSTR upperip = NULL;
-
-                m->IPv4DhcpServer.cloneTo(&dhcpip);
-                m->IPv4NetworkMask.cloneTo(&netmask);
-                m->IPv4DhcpServerLowerIp.cloneTo(&lowerip);
-                m->IPv4DhcpServerUpperIp.cloneTo(&upperip);
-                hrc = m->dhcpServer->SetConfiguration(dhcpip,
-                                                     netmask,
-                                                     lowerip,
-                                                     upperip);
+                hrc = m->dhcpServer->SetConfiguration(Bstr(m->IPv4DhcpServer).raw(),
+                                                      Bstr(m->IPv4NetworkMask).raw(),
+                                                      Bstr(m->IPv4DhcpServerLowerIp).raw(),
+                                                      Bstr(m->IPv4DhcpServerUpperIp).raw());
             }
             case S_OK:
                 break;

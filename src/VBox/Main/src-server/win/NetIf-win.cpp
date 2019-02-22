@@ -234,7 +234,7 @@ struct StaticIpConfig
 
 struct StaticIpV6Config
 {
-    BSTR           IPV6Address;
+    Utf8Str        IPV6Address;
     ULONG          IPV6NetMaskLength;
 };
 
@@ -1283,8 +1283,8 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
 #endif
 }
 
-int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN_BSTR aOldIPV6Address,
-                                IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
+int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, const Utf8Str &aOldIPV6Address,
+                                const Utf8Str &aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
     RT_NOREF(aOldIPV6Address);
 #ifndef VBOX_WITH_NETFLT

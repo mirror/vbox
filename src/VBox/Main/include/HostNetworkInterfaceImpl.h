@@ -42,9 +42,9 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Bstr aInterfaceName, Bstr aShortName, Guid aGuid, HostNetworkInterfaceType_T ifType);
+    HRESULT init(Utf8Str aInterfaceName, Utf8Str aShortName, Guid aGuid, HostNetworkInterfaceType_T ifType);
 #ifdef VBOX_WITH_HOSTNETIF_API
-    HRESULT init(Bstr aInterfaceName, HostNetworkInterfaceType_T ifType, struct NETIFINFO *pIfs);
+    HRESULT init(Utf8Str aInterfaceName, HostNetworkInterfaceType_T ifType, struct NETIFINFO *pIfs);
     HRESULT updateConfig();
 #endif
 
@@ -82,12 +82,12 @@ private:
     HRESULT enableDynamicIPConfig();
     HRESULT dHCPRediscover();
 
-    Bstr i_composeNetworkName(const Utf8Str szShortName);
+    Utf8Str i_composeNetworkName(const Utf8Str szShortName);
 
-    const Bstr mInterfaceName;
+    const Utf8Str mInterfaceName;
     const Guid mGuid;
-    const Bstr mNetworkName;
-    const Bstr mShortName;
+    const Utf8Str mNetworkName;
+    const Utf8Str mShortName;
     HostNetworkInterfaceType_T mIfType;
 
     VirtualBox * const  mVirtualBox;
@@ -100,14 +100,14 @@ private:
 
         ULONG IPAddress;
         ULONG networkMask;
-        Bstr IPV6Address;
+        Utf8Str IPV6Address;
         ULONG IPV6NetworkMaskPrefixLength;
         ULONG realIPAddress;
         ULONG realNetworkMask;
-        Bstr  realIPV6Address;
+        Utf8Str realIPV6Address;
         ULONG realIPV6PrefixLength;
         BOOL dhcpEnabled;
-        Bstr hardwareAddress;
+        Utf8Str hardwareAddress;
         HostNetworkInterfaceMediumType_T mediumType;
         HostNetworkInterfaceStatus_T status;
         ULONG speedMbits;

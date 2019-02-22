@@ -579,7 +579,7 @@ public:
 
     HRESULT i_prepareRegister();
 
-    HRESULT i_getSharedFolder(CBSTR aName,
+    HRESULT i_getSharedFolder(const Utf8Str &aName,
                               ComObjPtr<SharedFolder> &aSharedFolder,
                               bool aSetError = false)
     {

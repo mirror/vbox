@@ -375,8 +375,8 @@ HRESULT Guest::getOSTypeId(com::Utf8Str &aOSTypeId)
         /* Redirect the call to IMachine if no additions are installed. */
         ComPtr<IMachine> ptrMachine(mParent->i_machine());
         alock.release();
-        BSTR bstr;
-        hrc = ptrMachine->COMGETTER(OSTypeId)(&bstr);
+        Bstr bstr;
+        hrc = ptrMachine->COMGETTER(OSTypeId)(bstr.asOutParam());
         aOSTypeId = bstr;
     }
     return hrc;

@@ -812,10 +812,10 @@ HRESULT VRDEServer::getVRDEExtPack(com::Utf8Str &aExtPack)
         hrc = mParent->i_getVirtualBox()->COMGETTER(SystemProperties)(systemProperties.asOutParam());
         if (SUCCEEDED(hrc))
         {
-            BSTR bstr;
-            hrc = systemProperties->COMGETTER(DefaultVRDEExtPack)(&bstr);
+            Bstr bstr;
+            hrc = systemProperties->COMGETTER(DefaultVRDEExtPack)(bstr.asOutParam());
             if (SUCCEEDED(hrc))
-                aExtPack = Utf8Str(bstr);
+                aExtPack = bstr;
         }
     }
     return hrc;

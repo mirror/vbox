@@ -256,7 +256,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
                     else
                         enmType = HostNetworkInterfaceType_HostOnly;
 
-                    if (SUCCEEDED(IfObj->init(Bstr(pszName), enmType, &Info)))
+                    if (SUCCEEDED(IfObj->init(pszName, enmType, &Info)))
                     {
                         if (strcmp(pszName, szDefaultIface) == 0)
                             list.push_front(IfObj);

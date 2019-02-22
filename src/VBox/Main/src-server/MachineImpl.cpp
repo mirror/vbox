@@ -4889,14 +4889,13 @@ HRESULT Machine::setExtraData(const com::Utf8Str &aKey, const com::Utf8Str &aVal
         if (!mParent->i_onExtraDataCanChange(mData->mUuid, Bstr(aKey).raw(), bstrValue.raw(), error))
         {
             const char *sep = error.isEmpty() ? "" : ": ";
-            CBSTR err = error.raw();
-            Log1WarningFunc(("Someone vetoed! Change refused%s%ls\n", sep, err));
+            Log1WarningFunc(("Someone vetoed! Change refused%s%ls\n", sep, error.raw()));
             return setError(E_ACCESSDENIED,
                             tr("Could not set extra data because someone refused the requested change of '%s' to '%s'%s%ls"),
                             aKey.c_str(),
                             aValue.c_str(),
                             sep,
-                            err);
+                            error.raw());
         }
 
         // data is changing and change not vetoed: then write it out under the lock
@@ -5598,8 +5597,8 @@ HRESULT Machine::i_getGuestPropertyFromVM(const com::Utf8Str &aName,
                                           com::Utf8Str &aFlags) const
 {
     HRESULT rc = S_OK;
-    BSTR bValue = NULL;
-    BSTR bFlags = NULL;
+    Bstr bstrValue;
+    Bstr bstrFlags;
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -5614,10 +5613,10 @@ HRESULT Machine::i_getGuestPropertyFromVM(const com::Utf8Str &aName,
     else
         rc = directControl->AccessGuestProperty(Bstr(aName).raw(), Bstr::Empty.raw(), Bstr::Empty.raw(),
                                                 0 /* accessMode */,
-                                                &bValue, aTimestamp, &bFlags);
+                                                bstrValue.asOutParam(), aTimestamp, bstrFlags.asOutParam());
 
-    aValue = bValue;
-    aFlags = bFlags;
+    aValue = bstrValue;
+    aFlags = bstrFlags;
 
     return rc;
 }
@@ -5756,15 +5755,16 @@ HRESULT Machine::i_setGuestPropertyToVM(const com::Utf8Str &aName, const com::Ut
                 directControl = mData->mSession.mDirectControl;
         }
 
-        BSTR dummy = NULL; /* will not be changed (setter) */
+        Bstr dummy1; /* will not be changed (setter) */
+        Bstr dummy2; /* will not be changed (setter) */
         LONG64 dummy64;
         if (!directControl)
             rc = E_ACCESSDENIED;
         else
             /** @todo Fix when adding DeleteGuestProperty(), see defect. */
             rc = directControl->AccessGuestProperty(Bstr(aName).raw(), Bstr(aValue).raw(), Bstr(aFlags).raw(),
-                                                    fDelete? 2: 1 /* accessMode */,
-                                                    &dummy, &dummy64, &dummy);
+                                                    fDelete ? 2 : 1 /* accessMode */,
+                                                    dummy1.asOutParam(), &dummy64, dummy2.asOutParam());
     }
     catch (std::bad_alloc &)
     {
@@ -6625,7 +6625,7 @@ HRESULT Machine::readLog(ULONG aIdx, LONG64 aOffset, LONG64 aSize, std::vector<B
                          RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(vrc))
     {
-        vrc = RTFileReadAt(LogFile, aOffset, cbData? &aData.front(): NULL, cbData, &cbData);
+        vrc = RTFileReadAt(LogFile, aOffset, cbData ? &aData.front() : NULL, cbData, &cbData);
         if (RT_SUCCESS(vrc))
             aData.resize(cbData);
         else

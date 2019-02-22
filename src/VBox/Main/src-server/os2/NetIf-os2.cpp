@@ -38,7 +38,7 @@ int NetIfEnableStaticIpConfig(VirtualBox *pVBox, HostNetworkInterface * pIf, ULO
     return VERR_NOT_IMPLEMENTED;
 }
 
-int NetIfEnableStaticIpConfigV6(VirtualBox *pVBox, HostNetworkInterface * pIf, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength)
+int NetIfEnableStaticIpConfigV6(VirtualBox *pVBox, HostNetworkInterface * pIf, const Utf8Str &aIPV6Address, ULONG aIPV6MaskPrefixLength)
 {
     return VERR_NOT_IMPLEMENTED;
 }
