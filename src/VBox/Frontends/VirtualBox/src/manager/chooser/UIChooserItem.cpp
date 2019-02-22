@@ -198,7 +198,6 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fFavorite, bool fTempo
     , m_pParent(pParent)
     , m_fFavorite(fFavorite)
     , m_fTemporary(fTemporary)
-    , m_fRoot(!pParent)
     , m_iLevel(-1)
     , m_fHovered(false)
     , m_pHoveringMachine(0)
@@ -350,17 +349,6 @@ int UIChooserItem::level() const
 void UIChooserItem::setLevel(int iLevel)
 {
     m_iLevel = iLevel;
-}
-
-void UIChooserItem::setRoot(bool fRoot)
-{
-    m_fRoot = fRoot;
-    handleRootStatusChange();
-}
-
-bool UIChooserItem::isRoot() const
-{
-    return m_fRoot;
 }
 
 void UIChooserItem::setHovered(bool fHovered)
@@ -530,13 +518,6 @@ void UIChooserItem::dropEvent(QGraphicsSceneDragDropEvent *pEvent)
             break;
         }
     }
-}
-
-void UIChooserItem::handleRootStatusChange()
-{
-    /* Reset minimum size hints for non-root items: */
-    if (!isRoot())
-        m_iPreviousMinimumWidthHint = 0;
 }
 
 /* static */

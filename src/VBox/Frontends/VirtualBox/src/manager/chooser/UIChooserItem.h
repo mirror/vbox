@@ -121,6 +121,9 @@ public:
         /** Defines whether item is @a fFavorite. */
         virtual void setFavorite(bool fFavorite);
 
+        /** Returns whether item is root. */
+        bool isRoot() const { return !m_pParent; }
+
         /** Casts item to group one. */
         UIChooserItemGroup *toGroupItem();
         /** Casts item to global one. */
@@ -152,11 +155,6 @@ public:
         virtual QString fullName() const = 0;
         /** Returns item definition. */
         virtual QString definition() const = 0;
-
-        /** Defines whether item is @a fRoot. */
-        void setRoot(bool fRoot);
-        /** Returns whether item is root. */
-        bool isRoot() const;
 
         /** Defines whether item is @a fHovered. */
         void setHovered(bool fHovered);
@@ -265,9 +263,6 @@ protected:
 
     /** @name Item stuff.
       * @{ */
-        /** Handles root status change. */
-        virtual void handleRootStatusChange();
-
         /** Defines item's default animation @a iValue. */
         void setDefaultValue(int iValue) { m_iDefaultValue = iValue; update(); }
         /** Returns item's default animation value. */
@@ -339,8 +334,6 @@ private:
         /** Holds whether item is temporary. */
         bool           m_fTemporary;
 
-        /** Holds whether item is root. */
-        bool  m_fRoot;
         /** Holds the item level according to root. */
         int   m_iLevel;
 

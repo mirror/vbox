@@ -45,7 +45,6 @@
 
 UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
     : UIChooserItem(0, false /* favorite? */, false /* temporary? */)
-    , m_fMainRoot(true)
     , m_fClosed(false)
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
@@ -77,53 +76,11 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
             model(), &UIChooserModel::sigRootItemMinimumWidthHintChanged);
 }
 
-UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene,
-                                       UIChooserItemGroup *pCopyFrom,
-                                       bool fMainRoot)
-    : UIChooserItem(0, false /* favorite? */, true /* temporary? */)
-    , m_fMainRoot(fMainRoot)
-    , m_fClosed(pCopyFrom->isClosed())
-    , m_iAdditionalHeight(0)
-    , m_iHeaderDarkness(110)
-    , m_strName(pCopyFrom->name())
-    , m_pToggleButton(0)
-    , m_pEnterButton(0)
-    , m_pExitButton(0)
-    , m_pNameEditorWidget(0)
-    , m_pContainerFavorite(0)
-    , m_pLayoutFavorite(0)
-    , m_pScrollArea(0)
-    , m_pContainer(0)
-    , m_pLayout(0)
-    , m_pLayoutGlobal(0)
-    , m_pLayoutGroup(0)
-    , m_pLayoutMachine(0)
-{
-    /* Prepare: */
-    prepare();
-
-    /* Add item to the scene: */
-    AssertMsg(pScene, ("Incorrect scene passed!"));
-    pScene->addItem(this);
-
-    /* Copy content to 'this': */
-    copyContent(pCopyFrom, this);
-
-    /* Apply language settings: */
-    retranslateUi();
-
-    /* Init: */
-    updateItemCountInfo();
-    updateVisibleName();
-    updateToolTip();
-}
-
 UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
                                        const QString &strName,
                                        bool fOpened /* = false */,
                                        int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isFavorite(), pParent->isTemporary())
-    , m_fMainRoot(false)
     , m_fClosed(!fOpened)
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
@@ -173,7 +130,6 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
                                        UIChooserItemGroup *pCopyFrom,
                                        int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isFavorite(), pParent->isTemporary())
-    , m_fMainRoot(false)
     , m_fClosed(pCopyFrom->isClosed())
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
@@ -467,8 +423,8 @@ void UIChooserItemGroup::startEditing()
 
 void UIChooserItemGroup::updateToolTip()
 {
-    /* Not for main root: */
-    if (isMainRoot())
+    /* Not for root item: */
+    if (isRoot())
         return;
 
     /* Prepare variables: */
@@ -530,9 +486,10 @@ QString UIChooserItemGroup::description() const
 
 QString UIChooserItemGroup::fullName() const
 {
-    /* Return "/" for main root-item: */
-    if (isMainRoot())
+    /* Return "/" for root item: */
+    if (isRoot())
         return "/";
+
     /* Get full parent name, append with '/' if not yet appended: */
     AssertMsg(parentItem(), ("Incorrect parent set!"));
     QString strFullParentName = parentItem()->fullName();
@@ -545,16 +502,6 @@ QString UIChooserItemGroup::fullName() const
 QString UIChooserItemGroup::definition() const
 {
     return QString("g=%1").arg(name());
-}
-
-void UIChooserItemGroup::handleRootStatusChange()
-{
-    /* Call to base-class: */
-    UIChooserItem::handleRootStatusChange();
-
-    /* Update linked values: */
-    updateVisibleName();
-    updateMinimumHeaderSize();
 }
 
 void UIChooserItemGroup::addItem(UIChooserItem *pItem, bool fFavorite, int iPosition)
@@ -857,6 +804,7 @@ void UIChooserItemGroup::updateLayout()
         /* Acquire view: */
         const QGraphicsView *pView = model()->scene()->views().first();
 
+#if 0
         /* Header (non-main root-item): */
         if (!isMainRoot())
         {
@@ -883,6 +831,7 @@ void UIChooserItemGroup::updateLayout()
             /* Prepare body indent: */
             iPreviousVerticalIndent = iVerticalMargin + iFullHeaderHeight + iVerticalMargin;
         }
+#endif
 
         /* Adjust scroll-view geometry: */
         QSize viewSize = pView->size();
@@ -1306,12 +1255,14 @@ void UIChooserItemGroup::prepare()
         connect(m_pToggleButton, &UIGraphicsRotatorButton::sigRotationFinish,
                 this, &UIChooserItemGroup::sltGroupToggleFinish);
         m_pToggleButton->hide();
+        m_toggleButtonSize = m_pToggleButton ? m_pToggleButton->minimumSizeHint().toSize() : QSize(0, 0);
 
         /* Setup enter-button: */
         m_pEnterButton = new UIGraphicsButton(this, UIIconPool::iconSet(":/next_16px.png"));
         connect(m_pEnterButton, &UIGraphicsButton::sigButtonClicked,
                 this, &UIChooserItemGroup::sltIndentRoot);
         m_pEnterButton->hide();
+        m_enterButtonSize = m_pEnterButton ? m_pEnterButton->minimumSizeHint().toSize() : QSize(0, 0);
 
         /* Setup name-editor: */
         m_pNameEditorWidget = new UIEditorGroupRename(name());
@@ -1319,6 +1270,8 @@ void UIChooserItemGroup::prepare()
         connect(m_pNameEditorWidget, &UIEditorGroupRename::sigEditingFinished,
                 this, &UIChooserItemGroup::sltNameEditingFinished);
     }
+
+#if 0
     /* Items except main root: */
     if (!isMainRoot())
     {
@@ -1329,12 +1282,9 @@ void UIChooserItemGroup::prepare()
         QSizeF sh = m_pExitButton->minimumSizeHint();
         m_pExitButton->setTransformOriginPoint(sh.width() / 2, sh.height() / 2);
         m_pExitButton->hide();
+        m_exitButtonSize = m_pExitButton ? m_pExitButton->minimumSizeHint().toSize() : QSize(0, 0);
     }
-
-    /* Button sizes: */
-    m_toggleButtonSize = m_pToggleButton ? m_pToggleButton->minimumSizeHint().toSize() : QSize(0, 0);
-    m_enterButtonSize = m_pEnterButton ? m_pEnterButton->minimumSizeHint().toSize() : QSize(0, 0);
-    m_exitButtonSize = m_pExitButton ? m_pExitButton->minimumSizeHint().toSize() : QSize(0, 0);
+#endif
 
     /* Prepare favorite children container: */
     m_pContainerFavorite = new QIGraphicsWidget(this);
@@ -1494,8 +1444,8 @@ bool UIChooserItemGroup::isContainsLockedMachine()
 
 void UIChooserItemGroup::updateItemCountInfo()
 {
-    /* Not for main root: */
-    if (isMainRoot())
+    /* Not for root item: */
+    if (isRoot())
         return;
 
     /* Update item info attributes: */
@@ -1539,8 +1489,8 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
     /* Calculating proposed width: */
     int iProposedWidth = 0;
 
-    /* Main root-item: */
-    if (isMainRoot())
+    /* For root item: */
+    if (isRoot())
     {
         /* Main root-item always takes body into account: */
         if (hasItems())
@@ -1550,7 +1500,7 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
                                   m_pContainer->minimumSizeHint().width());
         }
     }
-    /* Other items, including temporary roots: */
+    /* For other items: */
     else
     {
         /* Prepare variables: */
@@ -1581,8 +1531,8 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
     /* Calculating proposed height: */
     int iProposedHeight = 0;
 
-    /* Main root-item: */
-    if (isMainRoot())
+    /* For root item: */
+    if (isRoot())
     {
         /* Main root-item always takes body into account: */
         if (hasItems())
@@ -1592,7 +1542,7 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
             iProposedHeight += m_pContainer->minimumSizeHint().height();
         }
     }
-    /* Other items, including temporary roots: */
+    /* For other items: */
     else
     {
         /* Prepare variables: */
@@ -1627,8 +1577,8 @@ QSizeF UIChooserItemGroup::minimumSizeHintForGroup(bool fGroupOpened) const
 
 void UIChooserItemGroup::updateVisibleName()
 {
-    /* Not for main root: */
-    if (isMainRoot())
+    /* Not for root item: */
+    if (isRoot())
         return;
 
     /* Prepare variables: */
@@ -1699,8 +1649,8 @@ void UIChooserItemGroup::updatePixmaps()
 
 void UIChooserItemGroup::updateMinimumHeaderSize()
 {
-    /* Not for main root: */
-    if (isMainRoot())
+    /* Not for root item: */
+    if (isRoot())
         return;
 
     /* Prepare variables: */
@@ -1790,6 +1740,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     /* Root-item: */
     if (isRoot())
     {
+#if 0
         /* Non-main root-item: */
         if (!isMainRoot())
         {
@@ -1804,6 +1755,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
             headerGradient.setColorAt(0, headerColor.darker(animatedValue()));
             pPainter->fillRect(headerRect, headerGradient);
         }
+#endif
     }
     /* Non-root-item: */
     else
@@ -1891,8 +1843,8 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
 
 void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
 {
-    /* Not for main root: */
-    if (isMainRoot())
+    /* Not for root item: */
+    if (isRoot())
         return;
 
     /* Prepare variables: */
