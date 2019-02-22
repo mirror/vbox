@@ -55,8 +55,6 @@ check_deps bzip2 tar
 
 create_log "$LOGFILE"
 
-## @todo r=andy: Explain options like "force" and "no_setup" -- not self-explanatory
-#        to the user.
 usage()
 {
     catinfo << EOF
@@ -72,6 +70,7 @@ Options:
                            Installs relative to <base> instead of to "/",
                            does not run setup, installs to "<base>/usr/lib"
                            instead of to "/opt" and does not create uninstall.
+  --force                  Forces an upgrade. Not recommended.
 
 Example:
 $SELF install
@@ -210,7 +209,6 @@ info "$PACKAGE_NAME installer"
 
 # Sensible default actions
 ACTION="install"
-DO_SETUP="true"
 NO_CLEANUP=""
 FORCE_UPGRADE=""
 PACKAGE_BASE=""
@@ -235,7 +233,6 @@ do
                 ACTION="package"
                 INSTALLATION_DIR=/usr/lib
                 PACKAGE_BASE="$2"
-                DO_SETUP=""
                 shift
                 if test ! -d "${PACKAGE_BASE}"; then
                     info "Package base directory not found."
@@ -280,14 +277,13 @@ do
                 FORCE_UPGRADE="force"
                 ;;
 
-            --no-setup|no_setup) # Keep "no_setup" for backwards compatibility.
-                DO_SETUP=""
+            --no-setup|no_setup)
+                # Deprecated; keep this setting for backwards compatibility.
                 ;;
 
             --no-cleanup|no_cleanup) # Keep "no_cleanup" for backwards compatibility.
                 # Do not do cleanup of old modules when removing them.  For
                 # testing purposes only.
-                DO_SETUP=""
                 NO_CLEANUP="no_cleanup"
                 ;;
 
