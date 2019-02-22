@@ -1137,7 +1137,6 @@ static int sf_readpage(struct file *file, struct page *page)
 
 			    flush_dcache_page(page);
 			    SetPageUptodate(page);
-			    unlock_page(page);
 			    err = 0;
 		    } else
 			    err = -EPROTO;
