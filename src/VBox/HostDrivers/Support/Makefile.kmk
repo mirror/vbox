@@ -759,9 +759,9 @@ if1of ($(KBUILD_TARGET), linux freebsd)
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
 	$(QUIET)$(SED) -e "" \
-		$(if-expr !defined(VBOX_WITH_HARDENING)   ,-e "s;-DVBOX_WITH_HARDENING;;g",) \
+		$(if-expr !defined(VBOX_WITH_HARDENING)   ,-e "s;VBOX_WITH_HARDENING;;g",) \
 		$(if-expr ($(VBOX_VERSION_BUILD) % 2) == 0 \
-		 , -e "s;-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" -e "s;-DIPRT_WITH_EFLAGS_AC_PRESERVING;;g",) \
+		 , -e "s;VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" -e "s;IPRT_WITH_EFLAGS_AC_PRESERVING;;g",) \
 		--output $@ $<
 	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/vboxdrv-src-1.dep' \
 		'Support/$(KBUILD_TARGET)/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
