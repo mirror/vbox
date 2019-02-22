@@ -1193,7 +1193,7 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVirtualBox,
 #endif
 }
 
-int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, IN_GUID aId,
+int NetIfRemoveHostOnlyNetworkInterface(VirtualBox *pVirtualBox, const Guid &aId,
                                         IProgress **aProgress)
 {
 #ifndef VBOX_WITH_NETFLT
