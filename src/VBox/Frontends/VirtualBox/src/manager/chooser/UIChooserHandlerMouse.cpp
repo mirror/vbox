@@ -198,45 +198,14 @@ bool UIChooserHandlerMouse::handleMouseDoubleClick(QGraphicsSceneMouseEvent *pEv
                 /* Was that a group item? */
                 if (UIChooserItemGroup *pGroupItem = qgraphicsitem_cast<UIChooserItemGroup*>(pItemUnderMouse))
                 {
-                    /* Prepare variables: */
-                    int iGroupItemWidth = pGroupItem->geometry().toRect().width();
-                    int iMouseDoubleClickX = pEvent->scenePos().toPoint().x();
-                    /* If it was a root: */
-                    if (pGroupItem->isRoot())
+                    /* If it was not root: */
+                    if (!pGroupItem->isRoot())
                     {
-#if 0
-                        /* Do not allow for unhovered root: */
-                        if (!pGroupItem->isHovered())
-                            return false;
-                        /* Unindent root if possible: */
-                        if (model()->root() != model()->mainRoot())
-                        {
-                            pGroupItem->setHovered(false);
-                            model()->unindentRoot();
-                        }
-#endif
-                    }
-                    /* If it was a simple group item: */
-                    else
-                    {
-                        /* If click was at left part: */
-                        if (iMouseDoubleClickX < iGroupItemWidth / 2)
-                        {
-                            /* Toggle it: */
-                            if (pGroupItem->isClosed())
-                                pGroupItem->open();
-                            else if (pGroupItem->isOpened())
-                                pGroupItem->close();
-                        }
-#if 0
-                        /* If click was at right part: */
-                        else
-                        {
-                            /* Indent root with group item: */
-                            pGroupItem->setHovered(false);
-                            model()->indentRoot(pGroupItem);
-                        }
-#endif
+                        /* Toggle it: */
+                        if (pGroupItem->isClosed())
+                            pGroupItem->open();
+                        else if (pGroupItem->isOpened())
+                            pGroupItem->close();
                     }
                     /* Filter that event out: */
                     return true;

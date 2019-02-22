@@ -81,9 +81,6 @@ signals:
         /** Notifies about selection invalidated. */
         void sigSelectionInvalidated();
 
-        /** Notifies about root sliding started. */
-        void sigSlidingStarted();
-
         /** Notifies about group toggling started. */
         void sigToggleStarted();
         /** Notifies about group toggling finished. */
@@ -198,17 +195,8 @@ public:
 
     /** @name Children stuff.
       * @{ */
-        /** Holds the main root instance. */
-        UIChooserItem *mainRoot() const;
-        /** Holds the current root reference. */
+        /** Returns the root instance. */
         UIChooserItem *root() const;
-
-        /** Indents stack of root items with @a pNewRootItem. */
-        void indentRoot(UIChooserItem *pNewRootItem);
-        /** Unindents stack of root items flushing top-most. */
-        void unindentRoot();
-        /** Returns whether root indenting/unindenting is in progress. */
-        bool isSlidingInProgress() const;
 
         /** Starts editing group name. */
         void startEditingGroupItemName();
@@ -288,13 +276,6 @@ private slots:
 
     /** @name Children stuff.
       * @{ */
-        /** Handles left root sliding progress. */
-        void sltLeftRootSlidingProgress();
-        /** Handles right root sliding progress. */
-        void sltRightRootSlidingProgress();
-        /** Handles sliding progress complete. */
-        void sltSlidingComplete();
-
         /** Handles group rename request. */
         void sltEditGroupName();
         /** Handles group sort request. */
@@ -403,9 +384,6 @@ private:
 
     /** @name Children stuff.
       * @{ */
-        /** Performs root sliding, @a fForward if specified. */
-        void slideRoot(bool fForward);
-
         /** Loads group tree. */
         void loadGroupTree();
         /** Adds machine item based on certain @a comMachine and optionally @a fMakeItVisible. */
@@ -496,16 +474,8 @@ private:
 
     /** @name Children stuff.
       * @{ */
-        /** Holds the root stack. */
-        QList<UIChooserItem*>    m_rootStack;
-        /** Holds whether root sliding is in progress. */
-        bool                     m_fSliding;
-        /** Holds left temporary root instance. */
-        UIChooserItem           *m_pLeftRoot;
-        /** Holds right temporary root instance. */
-        UIChooserItem           *m_pRightRoot;
-        /** Holds the item whish should be ficused after sliding. */
-        QPointer<UIChooserItem>  m_pAfterSlidingFocus;
+        /** Holds the root instance. */
+        QPointer<UIChooserItem>  m_pRoot;
 
         /** Holds the navigation list. */
         QList<UIChooserItem*>  m_navigationList;

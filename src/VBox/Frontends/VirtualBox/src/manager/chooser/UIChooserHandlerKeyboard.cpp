@@ -62,10 +62,6 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         /* Key HOME? */
         case Qt::Key_Home:
         {
-            /* Not during sliding: */
-            if (model()->isSlidingInProgress())
-                return false;
-
             /* Was control modifier pressed? */
 #ifdef VBOX_WS_MAC
             if (pEvent->modifiers() & Qt::ControlModifier &&
@@ -159,10 +155,6 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         /* Key END? */
         case Qt::Key_End:
         {
-            /* Not during sliding: */
-            if (model()->isSlidingInProgress())
-                return false;
-
             /* Was control modifier pressed? */
 #ifdef VBOX_WS_MAC
             if (pEvent->modifiers() & Qt::ControlModifier &&
@@ -249,51 +241,6 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 }
             }
             /* Pass this event: */
-            return false;
-        }
-        /* Key LEFT? */
-        case Qt::Key_Left:
-        {
-#if 0
-            /* If there is a focus item: */
-            if (UIChooserItem *pFocusItem = model()->focusItem())
-            {
-                /* Of the known type: */
-                switch (pFocusItem->type())
-                {
-                    case UIChooserItemType_Group:
-                    case UIChooserItemType_Global:
-                    case UIChooserItemType_Machine:
-                    {
-                        /* Unindent root if its NOT main: */
-                        if (model()->root() != model()->mainRoot())
-                            model()->unindentRoot();
-                        break;
-                    }
-                    default:
-                        break;
-                }
-            }
-#endif
-            /* Pass that event: */
-            return false;
-        }
-        /* Key RIGHT? */
-        case Qt::Key_Right:
-        {
-#if 0
-            /* If there is focus item: */
-            if (UIChooserItem *pFocusItem = model()->focusItem())
-            {
-                /* Of the group type: */
-                if (pFocusItem->type() == UIChooserItemType_Group)
-                {
-                    /* Indent root with this item: */
-                    model()->indentRoot(pFocusItem);
-                }
-            }
-#endif
-            /* Pass that event: */
             return false;
         }
         /* Key F2? */

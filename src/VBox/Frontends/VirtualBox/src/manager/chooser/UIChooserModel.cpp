@@ -71,10 +71,6 @@ UIChooserModel:: UIChooserModel(UIChooser *pParent)
     , m_pContextMenuGlobal(0)
     , m_pContextMenuGroup(0)
     , m_pContextMenuMachine(0)
-    , m_fSliding(false)
-    , m_pLeftRoot(0)
-    , m_pRightRoot(0)
-    , m_pAfterSlidingFocus(0)
     , m_iScrollingTokenSize(30)
     , m_fIsScrollingInProgress(false)
     , m_pLookupTimer(0)
@@ -242,9 +238,9 @@ void UIChooserModel::setCurrentItem(const QString &strDefinition)
     if (strItemType == "g")
     {
         /* Search for group-item with passed descriptor (name): */
-        pItem = mainRoot()->searchForItem(strItemDescriptor,
-                                          UIChooserItemSearchFlag_Group |
-                                          UIChooserItemSearchFlag_ExactName);
+        pItem = root()->searchForItem(strItemDescriptor,
+                                      UIChooserItemSearchFlag_Group |
+                                      UIChooserItemSearchFlag_ExactName);
     }
     /* Its a machine-item definition? */
     else if (strItemType == "m")
@@ -254,9 +250,9 @@ void UIChooserModel::setCurrentItem(const QString &strDefinition)
         if (!comMachine.isNull())
         {
             /* Search for machine-item with required name: */
-            pItem = mainRoot()->searchForItem(comMachine.GetName(),
-                                              UIChooserItemSearchFlag_Machine |
-                                              UIChooserItemSearchFlag_ExactName);
+            pItem = root()->searchForItem(comMachine.GetName(),
+                                          UIChooserItemSearchFlag_Machine |
+                                          UIChooserItemSearchFlag_ExactName);
         }
     }
 
@@ -353,7 +349,7 @@ bool UIChooserModel::isAllItemsOfOneGroupSelected() const
     UIChooserItem *pFirstParent = currentItem()->parentItem();
 
     /* Make sure this parent is not main root-item: */
-    if (pFirstParent == mainRoot())
+    if (pFirstParent == root())
         return false;
 
     /* Enumerate current-item set: */
@@ -459,99 +455,9 @@ void UIChooserModel::updateNavigation()
     m_navigationList = createNavigationList(root());
 }
 
-UIChooserItem *UIChooserModel::mainRoot() const
-{
-    return m_rootStack.first();
-}
-
 UIChooserItem *UIChooserModel::root() const
 {
-    return m_rootStack.last();
-}
-
-void UIChooserModel::indentRoot(UIChooserItem *pNewRootItem)
-{
-    /* Do nothing if sliding already: */
-    if (m_fSliding)
-        return;
-
-    /* We are sliding: */
-    m_fSliding = true;
-    emit sigSlidingStarted();
-
-    /* Hiding old root: */
-    root()->hide();
-
-    /* Create left root: */
-    bool fLeftRootIsMain = root() == mainRoot();
-    m_pLeftRoot = new UIChooserItemGroup(scene(), root()->toGroupItem(), fLeftRootIsMain);
-    m_pLeftRoot->setPos(0, 0);
-    m_pLeftRoot->resize(root()->geometry().size());
-
-    /* Create right root: */
-    m_pRightRoot = new UIChooserItemGroup(scene(), pNewRootItem->toGroupItem(), false);
-    m_pRightRoot->setPos(root()->geometry().width(), 0);
-    m_pRightRoot->resize(root()->geometry().size());
-    m_pRightRoot->setLevel(pNewRootItem->level() + 1);
-
-    /* Indent root: */
-    root()->setRoot(false);
-    m_rootStack << pNewRootItem;
-    root()->setRoot(true);
-    m_pAfterSlidingFocus = root()->items().first();
-
-    /* Hiding new root: */
-    root()->hide();
-
-    /* Move it to scene (making it top-level item): */
-    root()->setParentItem(0);
-    scene()->addItem(root());
-
-    /* Slide root: */
-    slideRoot(true);
-}
-
-void UIChooserModel::unindentRoot()
-{
-    /* Do nothing if sliding already: */
-    if (m_fSliding)
-        return;
-
-    /* We are sliding: */
-    m_fSliding = true;
-    emit sigSlidingStarted();
-
-    /* Hiding old root: */
-    root()->hide();
-
-    /* Remove it from scene (returning back to it's parent): */
-    root()->setParentItem(root()->parentItem());
-
-    /* Create left root: */
-    bool fLeftRootIsMain = m_rootStack.at(m_rootStack.size() - 2) == mainRoot();
-    m_pLeftRoot = new UIChooserItemGroup(scene(), m_rootStack.at(m_rootStack.size() - 2)->toGroupItem(), fLeftRootIsMain);
-    m_pLeftRoot->setPos(- root()->geometry().width(), 0);
-    m_pLeftRoot->resize(root()->geometry().size());
-
-    /* Create right root: */
-    m_pRightRoot = new UIChooserItemGroup(scene(), root()->toGroupItem(), false);
-    m_pRightRoot->setPos(0, 0);
-    m_pRightRoot->resize(root()->geometry().size());
-    m_pRightRoot->setLevel(root()->level());
-
-    /* Unindent root: */
-    m_pAfterSlidingFocus = root();
-    root()->setRoot(false);
-    m_rootStack.removeLast();
-    root()->setRoot(true);
-
-    /* Slide root: */
-    slideRoot(false);
-}
-
-bool UIChooserModel::isSlidingInProgress() const
-{
-    return m_fSliding;
+    return m_pRoot.data();
 }
 
 void UIChooserModel::startEditingGroupItemName()
@@ -561,7 +467,7 @@ void UIChooserModel::startEditingGroupItemName()
 
 void UIChooserModel::cleanupGroupTree()
 {
-    cleanupGroupTree(mainRoot());
+    cleanupGroupTree(root());
 }
 
 void UIChooserModel::activateMachineItem()
@@ -678,10 +584,6 @@ QString UIChooserModel::uniqueGroupName(UIChooserItem *pRoot)
 
 void UIChooserModel::updateLayout()
 {
-    /* No layout updates while sliding: */
-    if (m_fSliding)
-        return;
-
     /* Initialize variables: */
     const int iSceneMargin = data(ChooserModelData_Margin).toInt();
     const QSize viewportSize = scene()->views()[0]->size();
@@ -775,13 +677,13 @@ bool UIChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
 void UIChooserModel::sltMachineStateChanged(const QUuid &uId, const KMachineState)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAllItems(uId);
+    root()->updateAllItems(uId);
 }
 
 void UIChooserModel::sltMachineDataChanged(const QUuid &uId)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAllItems(uId);
+    root()->updateAllItems(uId);
 }
 
 void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegistered)
@@ -802,9 +704,9 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
             /* Change current-item only if VM was created from the GUI side: */
             if (uId == m_uLastCreatedMachineId)
             {
-                setCurrentItem(mainRoot()->searchForItem(comMachine.GetName(),
-                                                         UIChooserItemSearchFlag_Machine |
-                                                         UIChooserItemSearchFlag_ExactName));
+                setCurrentItem(root()->searchForItem(comMachine.GetName(),
+                                                     UIChooserItemSearchFlag_Machine |
+                                                     UIChooserItemSearchFlag_ExactName));
             }
         }
     }
@@ -812,7 +714,7 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
     else
     {
         /* Remove machine-items with passed id: */
-        mainRoot()->removeAllItems(uId.toString());
+        root()->removeAllItems(uId.toString());
         /* Update model: */
         cleanupGroupTree();
         updateNavigation();
@@ -831,64 +733,18 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
 void UIChooserModel::sltSessionStateChanged(const QUuid &uId, const KSessionState)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAllItems(uId);
+    root()->updateAllItems(uId);
 }
 
 void UIChooserModel::sltSnapshotChanged(const QUuid &uId, const QUuid &)
 {
     /* Update machine-items with passed id: */
-    mainRoot()->updateAllItems(uId);
+    root()->updateAllItems(uId);
 }
 
 void UIChooserModel::sltFocusItemDestroyed()
 {
     AssertMsgFailed(("Focus item destroyed!"));
-}
-
-void UIChooserModel::sltLeftRootSlidingProgress()
-{
-    /* Update left root: */
-    m_pLeftRoot->updateGeometry();
-    m_pLeftRoot->updateLayout();
-}
-
-void UIChooserModel::sltRightRootSlidingProgress()
-{
-    /* Update right root: */
-    m_pRightRoot->updateGeometry();
-    m_pRightRoot->updateLayout();
-}
-
-void UIChooserModel::sltSlidingComplete()
-{
-    /* Delete temporary roots: */
-    delete m_pLeftRoot;
-    m_pLeftRoot = 0;
-    delete m_pRightRoot;
-    m_pRightRoot = 0;
-
-    /* We are no more sliding: */
-    m_fSliding = false;
-
-    /* Update root geometry: */
-    root()->updateGeometry();
-
-    /* Update model: */
-    cleanupGroupTree();
-    updateNavigation();
-    updateLayout();
-    if (m_pAfterSlidingFocus)
-    {
-        setCurrentItem(m_pAfterSlidingFocus);
-        m_pAfterSlidingFocus = 0;
-    }
-    else
-    {
-        if (!navigationList().isEmpty())
-            setCurrentItem(navigationList().first());
-        else
-            unsetCurrentItems();
-    }
 }
 
 void UIChooserModel::sltEditGroupName()
@@ -1103,7 +959,7 @@ void UIChooserModel::sltGroupSelectedMachines()
 void UIChooserModel::sltReloadMachine(const QUuid &uId)
 {
     /* Remove all the items first: */
-    mainRoot()->removeAllItems(uId);
+    root()->removeAllItems(uId);
     /* Wipe out empty groups: */
     cleanupGroupTree();
 
@@ -1165,9 +1021,9 @@ void UIChooserModel::sltPerformRefreshAction()
             sltReloadMachine(pItem->id());
             /* Select first of reloaded items: */
             if (!pSelectedItem)
-                pSelectedItem = mainRoot()->searchForItem(strMachineName,
-                                                          UIChooserItemSearchFlag_Machine |
-                                                          UIChooserItemSearchFlag_ExactName);
+                pSelectedItem = root()->searchForItem(strMachineName,
+                                                      UIChooserItemSearchFlag_Machine |
+                                                      UIChooserItemSearchFlag_ExactName);
         }
     }
 
@@ -1190,7 +1046,7 @@ void UIChooserModel::sltRemoveSelectedMachine()
     UIChooserItemMachine::enumerateMachineItems(currentItems(), selectedMachineItemList);
     /* Enumerate all the existing machine-items: */
     QList<UIChooserItemMachine*> existingMachineItemList;
-    UIChooserItemMachine::enumerateMachineItems(mainRoot()->items(), existingMachineItemList);
+    UIChooserItemMachine::enumerateMachineItems(root()->items(), existingMachineItemList);
 
     /* Prepare arrays: */
     QMap<QUuid, bool> verdicts;
@@ -1345,7 +1201,7 @@ void UIChooserModel::prepareScene()
 
 void UIChooserModel::prepareRoot()
 {
-    m_rootStack << new UIChooserItemGroup(scene());
+    m_pRoot = new UIChooserItemGroup(scene());
 }
 
 void UIChooserModel::prepareLookup()
@@ -1471,8 +1327,6 @@ void UIChooserModel::prepareConnections()
             parent(), SIGNAL(sigSelectionChanged()));
     connect(this, SIGNAL(sigSelectionInvalidated()),
             parent(), SIGNAL(sigSelectionInvalidated()));
-    connect(this, SIGNAL(sigSlidingStarted()),
-            parent(), SIGNAL(sigSlidingStarted()));
     connect(this, SIGNAL(sigToggleStarted()),
             parent(), SIGNAL(sigToggleStarted()));
     connect(this, SIGNAL(sigToggleFinished()),
@@ -1566,8 +1420,8 @@ void UIChooserModel::cleanupLookup()
 
 void UIChooserModel::cleanupRoot()
 {
-    delete mainRoot();
-    m_rootStack.clear();
+    delete root();
+    m_pRoot.clear();
 }
 
 void UIChooserModel::cleanupScene()
@@ -1750,48 +1604,10 @@ QList<UIChooserItem*> UIChooserModel::createNavigationList(UIChooserItem *pItem)
     return navigationItems;
 }
 
-void UIChooserModel::slideRoot(bool fForward)
-{
-    /* Animation group: */
-    QParallelAnimationGroup *pAnimation = new QParallelAnimationGroup(this);
-    connect(pAnimation, SIGNAL(finished()), this, SLOT(sltSlidingComplete()), Qt::QueuedConnection);
-
-    /* Left root animation: */
-    {
-        QPropertyAnimation *pLeftAnimation = new QPropertyAnimation(m_pLeftRoot, "geometry", this);
-        connect(pLeftAnimation, SIGNAL(valueChanged(const QVariant&)), this, SLOT(sltLeftRootSlidingProgress()));
-        QRectF startGeo = m_pLeftRoot->geometry();
-        QRectF endGeo = fForward ? startGeo.translated(- startGeo.width(), 0) :
-                                   startGeo.translated(startGeo.width(), 0);
-        pLeftAnimation->setEasingCurve(QEasingCurve::InCubic);
-        pLeftAnimation->setDuration(500);
-        pLeftAnimation->setStartValue(startGeo);
-        pLeftAnimation->setEndValue(endGeo);
-        pAnimation->addAnimation(pLeftAnimation);
-    }
-
-    /* Right root animation: */
-    {
-        QPropertyAnimation *pRightAnimation = new QPropertyAnimation(m_pRightRoot, "geometry", this);
-        connect(pRightAnimation, SIGNAL(valueChanged(const QVariant&)), this, SLOT(sltRightRootSlidingProgress()));
-        QRectF startGeo = m_pRightRoot->geometry();
-        QRectF endGeo = fForward ? startGeo.translated(- startGeo.width(), 0) :
-                                   startGeo.translated(startGeo.width(), 0);
-        pRightAnimation->setEasingCurve(QEasingCurve::InCubic);
-        pRightAnimation->setDuration(500);
-        pRightAnimation->setStartValue(startGeo);
-        pRightAnimation->setEndValue(endGeo);
-        pAnimation->addAnimation(pRightAnimation);
-    }
-
-    /* Start animation: */
-    pAnimation->start();
-}
-
 void UIChooserModel::loadGroupTree()
 {
     /* Create Global item: */
-    createGlobalItem(mainRoot());
+    createGlobalItem(root());
 
     /* Add all the approved machines we have into the group-tree: */
     LogRelFlow(("UIChooserModel: Loading VMs...\n"));
@@ -1833,7 +1649,7 @@ void UIChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeIt
             /* Create machine-item with found group-item as parent: */
             LogRelFlow(("UIChooserModel:   Creating item for VM {%s} in group {%s}.\n", strName.toUtf8().constData(),
                                                                                          strGroup.toUtf8().constData()));
-            createMachineItem(machine, getGroupItem(strGroup, mainRoot(), fMakeItVisible));
+            createMachineItem(machine, getGroupItem(strGroup, root(), fMakeItVisible));
         }
         /* Update group definitions: */
         m_groups[toOldStyleUuid(machine.GetId())] = groupList;
@@ -1844,7 +1660,7 @@ void UIChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeIt
         /* VM is accessible: */
         LogRelFlow(("UIChooserModel:  VM {%s} is inaccessible.\n", toOldStyleUuid(machine.GetId()).toUtf8().constData()));
         /* Create machine-item with main-root group-item as parent: */
-        createMachineItem(machine, mainRoot());
+        createMachineItem(machine, root());
     }
 }
 
@@ -1859,9 +1675,6 @@ void UIChooserModel::cleanupGroupTree(UIChooserItem *pParent)
         /* Cleanup if that is non-root item: */
         if (!pParent->isRoot())
             delete pParent;
-        /* Unindent if that is root item: */
-        else if (root() != mainRoot())
-            unindentRoot();
     }
 }
 
@@ -2195,7 +2008,7 @@ void UIChooserModel::saveGroupDefinitions()
 
     /* Prepare full group map: */
     QMap<QString, QStringList> groups;
-    gatherGroupDefinitions(groups, mainRoot());
+    gatherGroupDefinitions(groups, root());
 
     /* Save information in other thread: */
     UIThreadGroupDefinitionSave::prepare();
@@ -2215,7 +2028,7 @@ void UIChooserModel::saveGroupOrders()
 
     /* Prepare full group map: */
     QMap<QString, QStringList> groups;
-    gatherGroupOrders(groups, mainRoot());
+    gatherGroupOrders(groups, root());
 
     /* Save information in other thread: */
     UIThreadGroupOrderSave::prepare();
