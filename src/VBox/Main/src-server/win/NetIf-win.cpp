@@ -234,7 +234,7 @@ struct StaticIpConfig
 
 struct StaticIpV6Config
 {
-    Utf8Str        IPV6Address;
+    char *         IPV6Address;
     ULONG          IPV6NetMaskLength;
 };
 
@@ -242,7 +242,14 @@ class NetworkInterfaceHelperClientData : public ThreadVoidData
 {
 public:
     NetworkInterfaceHelperClientData(){};
-    ~NetworkInterfaceHelperClientData(){};
+    ~NetworkInterfaceHelperClientData()
+    {
+        if (msgCode == SVCHlpMsg::EnableStaticIpConfigV6 && u.StaticIPV6.IPV6Address)
+        {
+            RTStrFree(u.StaticIPV6.IPV6Address);
+            u.StaticIPV6.IPV6Address = NULL;
+        }
+    };
 
     SVCHlpMsg::Code msgCode;
     /* for SVCHlpMsg::CreateHostOnlyNetworkInterface */
@@ -535,7 +542,7 @@ static HRESULT netIfNetworkInterfaceHelperClient(SVCHlpClient *aClient,
             if (RT_FAILURE(vrc)) break;
             vrc = aClient->write(d->guid);
             if (RT_FAILURE(vrc)) break;
-            vrc = aClient->write(Utf8Str(d->u.StaticIPV6.IPV6Address));
+            vrc = aClient->write(d->u.StaticIPV6.IPV6Address);
             if (RT_FAILURE(vrc)) break;
             vrc = aClient->write(d->u.StaticIPV6.IPV6NetMaskLength);
             if (RT_FAILURE(vrc)) break;
@@ -1319,7 +1326,7 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, co
                     d->msgCode = SVCHlpMsg::EnableStaticIpConfigV6;
                     d->guid = guid;
                     d->iface = pIf;
-                    d->u.StaticIPV6.IPV6Address = aIPV6Address;
+                    d->u.StaticIPV6.IPV6Address = RTStrDup(aIPV6Address);
                     d->u.StaticIPV6.IPV6NetMaskLength = aIPV6MaskPrefixLength;
 
                     rc = vBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
