@@ -813,6 +813,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/globals/UIProgressEventHandler.h \
 	src/globals/UIShortcutPool.h \
 	src/globals/UIThreadPool.h \
+	src/globals/UITextTable.h \
 	src/globals/UIVirtualBoxEventHandler.h \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxUtils.h \
@@ -1279,6 +1280,7 @@ VBoxGlobal_SOURCES = \
 	src/globals/UIPopupCenter.cpp \
 	src/globals/UIProgressEventHandler.cpp \
 	src/globals/UIShortcutPool.cpp \
+	src/globals/UITextTable.cpp \
 	src/globals/UIThreadPool.cpp \
 	src/globals/UIVersion.cpp \
 	src/globals/UIVirtualBoxEventHandler.cpp \

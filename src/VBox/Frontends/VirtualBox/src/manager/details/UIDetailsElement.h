@@ -27,6 +27,7 @@
 /* GUI includes: */
 #include "UIDetailsItem.h"
 #include "UIExtraDataDefs.h"
+#include "UITextTable.h"
 
 /* Forward declarations: */
 class QPropertyAnimation;
@@ -35,11 +36,8 @@ class QTextLayout;
 class UIDetailsSet;
 class UIGraphicsRotatorButton;
 class UIGraphicsTextPane;
-class UITextTableLine;
 class CMachine;
 
-/* Typedefs: */
-typedef QList<UITextTableLine> UITextTable;
 
 /** UIDetailsItem extension implementing element item. */
 class UIDetailsElement : public UIDetailsItem

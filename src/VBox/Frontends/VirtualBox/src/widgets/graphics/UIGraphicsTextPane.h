@@ -23,72 +23,10 @@
 
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
+#include "UITextTable.h"
 
 /* Forward declarations: */
 class QTextLayout;
-
-
-/** QObject extension used as an
-  * accessible wrapper for QString pairs. */
-class UITextTableLine : public QObject
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs text-table line passing @a pParent to the base-class.
-      * @param  str1  Brings the 1st table string.
-      * @param  str2  Brings the 2nd table string. */
-    UITextTableLine(const QString &str1, const QString &str2, QObject *pParent = 0)
-        : QObject(pParent)
-        , m_str1(str1)
-        , m_str2(str2)
-    {}
-
-    /** Constructs text-table line on the basis of passed @a other. */
-    UITextTableLine(const UITextTableLine &other)
-        : QObject(other.parent())
-        , m_str1(other.string1())
-        , m_str2(other.string2())
-    {}
-
-    /** Assigns @a other to this. */
-    UITextTableLine &operator=(const UITextTableLine &other)
-    {
-        setParent(other.parent());
-        set1(other.string1());
-        set2(other.string2());
-        return *this;
-    }
-
-    /** Compares @a other to this. */
-    bool operator==(const UITextTableLine &other) const
-    {
-        return string1() == other.string1()
-            && string2() == other.string2();
-    }
-
-    /** Defines 1st table @a strString. */
-    void set1(const QString &strString) { m_str1 = strString; }
-    /** Returns 1st table string. */
-    const QString &string1() const { return m_str1; }
-
-    /** Defines 2nd table @a strString. */
-    void set2(const QString &strString) { m_str2 = strString; }
-    /** Returns 2nd table string. */
-    const QString &string2() const { return m_str2; }
-
-private:
-
-    /** Holds the 1st table string. */
-    QString m_str1;
-    /** Holds the 2nd table string. */
-    QString m_str2;
-};
-
-/** Defines the list of UITextTableLine instances. */
-typedef QList<UITextTableLine> UITextTable;
-Q_DECLARE_METATYPE(UITextTable);
 
 
 /** QIGraphicsWidget reimplementation to draw QTextLayout content. */
@@ -192,4 +130,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_graphics_UIGraphicsTextPane_h */
-

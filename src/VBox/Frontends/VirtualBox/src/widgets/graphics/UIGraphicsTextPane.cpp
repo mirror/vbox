@@ -31,7 +31,6 @@
 /* Other VBox includes: */
 #include <iprt/assert.h>
 
-
 /** QAccessibleObject extension used as an accessibility interface for UITextTableLine. */
 class UIAccessibilityInterfaceForUITextTableLine : public QAccessibleObject
 {
@@ -105,7 +104,6 @@ private:
     /** Returns corresponding text-table line. */
     UITextTableLine *line() const { return qobject_cast<UITextTableLine*>(object()); }
 };
-
 
 UIGraphicsTextPane::UIGraphicsTextPane(QIGraphicsWidget *pParent, QPaintDevice *pPaintDevice)
     : QIGraphicsWidget(pParent)

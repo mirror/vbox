@@ -27,16 +27,11 @@
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "UIExtraDataDefs.h"
+#include "UITextTable.h"
 
 /* Forward declarations: */
 class QStyleOptionViewItem;
 class QTextDocument;
-
-/* Type definitions: */
-typedef QPair<QString, QString> UITextTableLine;
-typedef QList<UITextTableLine> UITextTable;
-
-Q_DECLARE_METATYPE(UITextTable);
 
 
 /** QStyledItemDelegate extension
@@ -97,4 +92,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationItem_h */
-
