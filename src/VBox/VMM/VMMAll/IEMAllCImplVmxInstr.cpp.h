@@ -7262,8 +7262,8 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
     if (fPendingDbgXcpt)
     {
         uint32_t const uDbgXcptInfo = RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR, X86_XCPT_DB)
-                                    | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE, VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
-                                    | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID, 1);
+                                    | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,   VMX_ENTRY_INT_INFO_TYPE_HW_XCPT)
+                                    | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,  1);
         return iemVmxVmentryInjectTrpmEvent(pVCpu, uDbgXcptInfo, 0 /* uErrCode */, pVmcs->u32EntryInstrLen,
                                             0 /* GCPtrFaultAddress */);
     }
@@ -7610,7 +7610,7 @@ IEM_STATIC bool iemVmxIsVmreadVmwriteInterceptSet(PVMCPU pVCpu, uint32_t uExitRe
         return true;
 
     /* Finally, consult the VMREAD/VMWRITE bitmap whether to intercept the instruction or not. */
-    uint32_t u32FieldEnc = RT_LO_U32(u64FieldEnc);
+    uint32_t const u32FieldEnc = RT_LO_U32(u64FieldEnc);
     Assert(u32FieldEnc >> 3 < VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
     Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap));
     uint8_t const *pbBitmap = uExitReason == VMX_EXIT_VMREAD
