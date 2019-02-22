@@ -2358,6 +2358,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                             cbBuf = _4K;
                             pbBuf = (uint8_t *)RTMemPageAlloc(cbBuf);
                         }
+                        RTTESTI_CHECK(pbBuf != NULL);
                         if (pbBuf)
                         {
                             RTTESTI_CHECK_RC(RTFileSeek(hFileNoCache, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
@@ -2382,6 +2383,67 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                         }
                     }
                 }
+
+# if 0 /* not needed, very very slow */
+                /*
+                 * Restore the file to 0xf6 state for the next test.
+                 */
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "Restoring content...\n");
+                fsPerfFillWriteBuf(0, pbMapping, cbMapping, 0xf6);
+#  ifdef RT_OS_WINDOWS
+                RTTESTI_CHECK(FlushViewOfFile(pbMapping, cbMapping));
+#  else
+                RTTESTI_CHECK(msync(pbMapping, cbMapping, MS_SYNC) == 0);
+#  endif
+                RTTestIPrintf(RTTESTLVL_ALWAYS, "... done\n");
+# endif
+            }
+        }
+
+        /*
+         * Obsever how regular writes affects a read-only or readwrite mapping.
+         * These should ideally be immediately visible in the mapping, at least
+         * when not performed thru an no-cache handle.
+         */
+        if (enmState == kMMap_ReadOnly || enmState == kMMap_ReadWrite)
+        {
+            size_t   cbBuf = RT_MIN(_2M, cbMapping / 2);
+            uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBuf);
+            if (!pbBuf)
+            {
+                cbBuf = _4K;
+                pbBuf = (uint8_t *)RTMemPageAlloc(cbBuf);
+            }
+            RTTESTI_CHECK(pbBuf != NULL);
+            if (pbBuf)
+            {
+                /* Do a number of random writes to the file (using hFile1).
+                   Immediately undoing them. */
+                for (uint32_t i = 0; i < 128; i++)
+                {
+                    /* Generate a randomly sized write at a random location, making
+                       sure it differs from whatever is there already before writing. */
+                    uint32_t const cbToWrite  = RTRandU32Ex(1, cbBuf);
+                    uint64_t const offToWrite = RTRandU64Ex(0, cbMapping - cbToWrite);
+
+                    fsPerfFillWriteBuf(offToWrite, pbBuf, cbToWrite, 0xf8);
+                    pbBuf[0] = ~pbBuf[0];
+                    if (cbToWrite > 1)
+                        pbBuf[cbToWrite - 1] = ~pbBuf[cbToWrite - 1];
+                    RTTESTI_CHECK_RC(RTFileWriteAt(hFile1, offToWrite, pbBuf, cbToWrite, NULL), VINF_SUCCESS);
+
+                    /* Check the mapping. */
+                    if (memcmp(&pbMapping[(size_t)offToWrite], pbBuf, cbToWrite) != 0)
+                    {
+                        RTTestIFailed("Write #%u @ %#RX64 LB %#x was not reflected in the mapping!\n", i, offToWrite, cbToWrite);
+                    }
+
+                    /* Restore */
+                    fsPerfFillWriteBuf(offToWrite, pbBuf, cbToWrite, 0xf6);
+                    RTTESTI_CHECK_RC(RTFileWriteAt(hFile1, offToWrite, pbBuf, cbToWrite, NULL), VINF_SUCCESS);
+                }
+
+                RTMemPageFree(pbBuf, cbBuf);
             }
         }
 
