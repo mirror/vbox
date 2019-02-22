@@ -44,6 +44,7 @@
  && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
 # include <linux/splice.h>
 #endif
+#include <iprt/err.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
 # define SEEK_END 2
@@ -1107,8 +1108,6 @@ static int sf_readpage(struct file *file, struct page *page)
 	    if (pReq) {
 		    struct sf_glob_info *sf_g     = GET_GLOB_INFO(inode->i_sb);
 		    struct sf_reg_info  *sf_r     = file->private_data;
-		    uint8_t             *pbMapped = (g_fHostFeatures & VMMDEV_HVF_HGCM_CONTIGUOUS_PAGE_LIST)
-						  ? NULL : (uint8_t *)kmap(page);
 		    uint32_t 		 cbRead;
 		    int                  vrc;
 
@@ -1129,9 +1128,9 @@ static int sf_readpage(struct file *file, struct page *page)
 			    if (cbRead == PAGE_SIZE) {
 				    /* likely */
 			    } else {
-				    if (!pbMapped)
-					    pbMapped = (uint8_t *)kmap(page);
+				    uint8_t *pbMapped = (uint8_t *)kmap(page);
 				    RT_BZERO(&pbMapped[cbRead], PAGE_SIZE - cbRead);
+				    kunmap(page);
 				    /** @todo truncate the inode file size? */
 			    }
 
@@ -1140,8 +1139,6 @@ static int sf_readpage(struct file *file, struct page *page)
 			    err = 0;
 		    } else
 			    err = -EPROTO;
-		    if (pbMapped)
-			    kunmap(page);
 	    } else
 		    err = -ENOMEM;
 	} else
@@ -1150,43 +1147,63 @@ static int sf_readpage(struct file *file, struct page *page)
 	return err;
 }
 
+/**
+ * Used to write out the content of a dirty page cache page to the host file.
+ *
+ * Needed for mmap and writes when the file is mmapped in a shared+writeable
+ * fashion.
+ */
 static int sf_writepage(struct page *page, struct writeback_control *wbc)
 {
-	struct address_space *mapping = page->mapping;
-	struct inode *inode = mapping->host;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
-	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
-	struct file *file = sf_i->file;
-	struct sf_reg_info *sf_r = file->private_data;
-	char *buf;
-	uint32_t nwritten = PAGE_SIZE;
-	int end_index = inode->i_size >> PAGE_SHIFT;
-	loff_t off = ((loff_t) page->index) << PAGE_SHIFT;
 	int err;
 
 	TRACE();
 
-	if (page->index >= end_index)
-		nwritten = inode->i_size & (PAGE_SIZE - 1);
+	VBOXSFWRITEPGLSTREQ *pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+	if (pReq) {
+		struct address_space *mapping   = page->mapping;
+		struct inode         *inode     = mapping->host;
+		struct sf_glob_info  *sf_g      = GET_GLOB_INFO(inode->i_sb);
+		struct sf_inode_info *sf_i      = GET_INODE_INFO(inode);
+		struct file          *file      = sf_i->file; /** @todo r=bird: This isn't quite sane wrt readonly vs writeable. */
+		struct sf_reg_info   *sf_r      = file->private_data;
+		uint64_t const        cbFile    = i_size_read(inode);
+		uint64_t const        offInFile = (uint64_t)page->index << PAGE_SHIFT;
+		uint32_t const        cbToWrite = page->index != (cbFile >> PAGE_SHIFT) ? PAGE_SIZE
+			                        : (uint32_t)cbFile & (uint32_t)PAGE_OFFSET_MASK;
+		int                   vrc;
 
-	buf = kmap(page);
+		pReq->PgLst.offFirstPage = 0;
+		pReq->PgLst.aPages[0]    = page_to_phys(page);
+		vrc = VbglR0SfHostReqWritePgLst(sf_g->map.root,
+					        pReq,
+					        sf_r->handle,
+					        offInFile,
+		                                cbToWrite,
+					        1 /*cPages*/);
+		AssertMsgStmt(pReq->Parms.cb32Write.u.value32 == cbToWrite || RT_FAILURE(vrc), /* lazy bird */
+		              ("%#x vs %#x\n", pReq->Parms.cb32Write, cbToWrite),
+			      vrc = VERR_WRITE_ERROR);
+		VbglR0PhysHeapFree(pReq);
 
-	err = sf_reg_write_aux(__func__, sf_g, sf_r, buf, &nwritten, off);
-	if (err < 0) {
-		ClearPageUptodate(page);
-		goto out;
-	}
+		if (RT_SUCCESS(vrc)) {
+			/* Update the inode if we've extended the file. */
+			/** @todo is this necessary given the cbToWrite calc above? */
+			uint64_t const offEndOfWrite = offInFile + cbToWrite;
+			if (   offEndOfWrite > cbFile
+			    && offEndOfWrite > i_size_read(inode))
+				i_size_write(inode, offEndOfWrite);
 
-	if (off > inode->i_size)
-		inode->i_size = off;
+			if (PageError(page))
+				ClearPageError(page);
 
-	if (PageError(page))
-		ClearPageError(page);
-	err = 0;
-
- out:
-	kunmap(page);
-
+			err = 0;
+		} else {
+			ClearPageUptodate(page);
+			err = -EPROTO;
+		}
+	} else
+		err = -ENOMEM;
 	unlock_page(page);
 	return err;
 }
