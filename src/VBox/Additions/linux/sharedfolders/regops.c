@@ -1109,14 +1109,19 @@ static int sf_readpage(struct file *file, struct page *page)
 		    struct sf_reg_info  *sf_r     = file->private_data;
 		    uint8_t             *pbMapped = (g_fHostFeatures & VMMDEV_HVF_HGCM_CONTIGUOUS_PAGE_LIST)
 						  ? NULL : (uint8_t *)kmap(page);
-		    int vrc = VbglR0SfHostReqReadContig(sf_g->map.root,
-							pReq,
-							sf_r->handle,
-							(uint64_t)page->index << PAGE_SHIFT,
-							PAGE_SIZE,
-							pbMapped,
-							page_to_phys(page));
-		    uint32_t cbRead = pReq->Parms.cb32Read.u.value32;
+		    uint32_t 		 cbRead;
+		    int                  vrc;
+
+		    pReq->PgLst.offFirstPage = 0;
+		    pReq->PgLst.aPages[0]    = page_to_phys(page);
+		    vrc = VbglR0SfHostReqReadPgLst(sf_g->map.root,
+		                                   pReq,
+		                                   sf_r->handle,
+		                                   (uint64_t)page->index << PAGE_SHIFT,
+		                                   PAGE_SIZE,
+		                                   1 /*cPages*/);
+
+		    cbRead = pReq->Parms.cb32Read.u.value32;
 		    AssertStmt(cbRead <= PAGE_SIZE, cbRead = PAGE_SIZE);
 		    VbglR0PhysHeapFree(pReq);
 
@@ -1129,6 +1134,7 @@ static int sf_readpage(struct file *file, struct page *page)
 				    RT_BZERO(&pbMapped[cbRead], PAGE_SIZE - cbRead);
 				    /** @todo truncate the inode file size? */
 			    }
+
 			    flush_dcache_page(page);
 			    SetPageUptodate(page);
 			    unlock_page(page);
