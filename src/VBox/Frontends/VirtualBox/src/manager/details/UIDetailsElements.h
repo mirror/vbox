@@ -326,6 +326,9 @@ private:
     /** Contains update task body. */
     void run();
 
+    /** Summarizes generic properties. */
+    static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
+
     /** Holds the options. */
     UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork m_fOptions;
 };
@@ -544,3 +547,4 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_details_UIDetailsElements_h */
+

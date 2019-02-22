@@ -1052,7 +1052,6 @@ VirtualBox_SOURCES = \
 	src/manager/details/UIDetailsSet.cpp \
 	src/manager/details/UIDetailsElement.cpp \
 	src/manager/details/UIDetailsElements.cpp \
-	src/manager/details/UIDetailsGenerator.cpp \
 	src/manager/details/UIMachinePreview.cpp \
 	src/manager/tools/UITools.cpp \
 	src/manager/tools/UIToolsModel.cpp \
