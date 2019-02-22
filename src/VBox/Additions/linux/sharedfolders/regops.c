@@ -73,22 +73,6 @@ DECLINLINE(void) i_size_write(struct inode *inode, loff_t i_size)
 
 
 /* fops */
-static int sf_reg_read_aux(const char *caller, struct sf_glob_info *sf_g,
-			   struct sf_reg_info *sf_r, void *buf,
-			   uint32_t * nread, uint64_t pos)
-{
-    /** @todo bird: yes, kmap() and kmalloc() input only. Since the buffer is
-     *        contiguous in physical memory (kmalloc or single page), we should
-     *        use a physical address here to speed things up. */
-	int rc = VbglR0SfRead(&client_handle, &sf_g->map, sf_r->handle,
-			      pos, nread, buf, false /* already locked? */ );
-	if (RT_FAILURE(rc)) {
-		LogFunc(("VbglR0SfRead failed. caller=%s, rc=%Rrc\n", caller,
-			 rc));
-		return -EPROTO;
-	}
-	return 0;
-}
 
 static int sf_reg_write_aux(const char *caller, struct sf_glob_info *sf_g,
 			    struct sf_reg_info *sf_r, void *buf,
@@ -159,6 +143,20 @@ static struct pipe_buf_operations sf_pipe_buf_ops = {
 	.steal = sf_pipe_buf_steal,
 	.get = sf_pipe_buf_get,
 };
+
+static int sf_reg_read_aux(const char *caller, struct sf_glob_info *sf_g,
+			   struct sf_reg_info *sf_r, void *buf,
+			   uint32_t * nread, uint64_t pos)
+{
+	int rc = VbglR0SfRead(&client_handle, &sf_g->map, sf_r->handle,
+			      pos, nread, buf, false /* already locked? */ );
+	if (RT_FAILURE(rc)) {
+		LogFunc(("VbglR0SfRead failed. caller=%s, rc=%Rrc\n", caller,
+			 rc));
+		return -EPROTO;
+	}
+	return 0;
+}
 
 # define LOCK_PIPE(pipe)   do { if (pipe->inode) mutex_lock(&pipe->inode->i_mutex); } while (0)
 # define UNLOCK_PIPE(pipe) do { if (pipe->inode) mutex_unlock(&pipe->inode->i_mutex); } while (0)
@@ -1092,33 +1090,59 @@ struct inode_operations sf_reg_iops = {
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 
+/**
+ * Used to read the content of a page into the page cache.
+ *
+ * Needed for mmap and reads+writes when the file is mmapped in a
+ * shared+writeable fashion.
+ */
 static int sf_readpage(struct file *file, struct page *page)
 {
 	struct inode *inode = GET_F_DENTRY(file)->d_inode;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
-	struct sf_reg_info *sf_r = file->private_data;
-	uint32_t nread = PAGE_SIZE;
-	char *buf;
-	loff_t off = (loff_t)page->index << PAGE_SHIFT;
-	int ret;
+	int           err;
 
 	TRACE();
+	if (!is_bad_inode(inode)) {
+	    VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+	    if (pReq) {
+		    struct sf_glob_info *sf_g     = GET_GLOB_INFO(inode->i_sb);
+		    struct sf_reg_info  *sf_r     = file->private_data;
+		    uint8_t             *pbMapped = (g_fHostFeatures & VMMDEV_HVF_HGCM_CONTIGUOUS_PAGE_LIST)
+						  ? NULL : (uint8_t *)kmap(page);
+		    int vrc = VbglR0SfHostReqReadContig(sf_g->map.root,
+							pReq,
+							sf_r->handle,
+							(uint64_t)page->index << PAGE_SHIFT,
+							PAGE_SIZE,
+							pbMapped,
+							page_to_phys(page));
+		    uint32_t cbRead = pReq->Parms.cb32Read.u.value32;
+		    AssertStmt(cbRead <= PAGE_SIZE, cbRead = PAGE_SIZE);
+		    VbglR0PhysHeapFree(pReq);
 
-	buf = kmap(page);
-	ret = sf_reg_read_aux(__func__, sf_g, sf_r, buf, &nread, off);
-	if (ret) {
-		kunmap(page);
-		if (PageLocked(page))
-			unlock_page(page);
-		return ret;
-	}
-	BUG_ON(nread > PAGE_SIZE);
-	memset(&buf[nread], 0, PAGE_SIZE - nread);
-	flush_dcache_page(page);
-	kunmap(page);
-	SetPageUptodate(page);
+		    if (RT_SUCCESS(vrc)) {
+			    if (cbRead == PAGE_SIZE) {
+				    /* likely */
+			    } else {
+				    if (!pbMapped)
+					    pbMapped = (uint8_t *)kmap(page);
+				    RT_BZERO(&pbMapped[cbRead], PAGE_SIZE - cbRead);
+				    /** @todo truncate the inode file size? */
+			    }
+			    flush_dcache_page(page);
+			    SetPageUptodate(page);
+			    unlock_page(page);
+			    err = 0;
+		    } else
+			    err = -EPROTO;
+		    if (pbMapped)
+			    kunmap(page);
+	    } else
+		    err = -ENOMEM;
+	} else
+		err = -EIO;
 	unlock_page(page);
-	return 0;
+	return err;
 }
 
 static int sf_writepage(struct page *page, struct writeback_control *wbc)
