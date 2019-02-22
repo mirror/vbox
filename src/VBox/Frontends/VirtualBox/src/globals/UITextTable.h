@@ -21,12 +21,12 @@
 # pragma once
 #endif
 
+/* Qt includes: */
+#include <QObject>
+#include <QString>
+
 /* GUI includes: */
-#include "QIGraphicsWidget.h"
-
-/* Forward declarations: */
-class QTextLayout;
-
+#include "UILibraryDefs.h"
 
 /** QObject extension used as an
   * accessible wrapper for QString pairs. */
@@ -39,34 +39,16 @@ public:
     /** Constructs text-table line passing @a pParent to the base-class.
       * @param  str1  Brings the 1st table string.
       * @param  str2  Brings the 2nd table string. */
-    UITextTableLine(const QString &str1, const QString &str2, QObject *pParent = 0)
-        : QObject(pParent)
-        , m_str1(str1)
-        , m_str2(str2)
-    {}
+    UITextTableLine(const QString &str1, const QString &str2, QObject *pParent = 0);
 
     /** Constructs text-table line on the basis of passed @a other. */
-    UITextTableLine(const UITextTableLine &other)
-        : QObject(other.parent())
-        , m_str1(other.string1())
-        , m_str2(other.string2())
-    {}
+    UITextTableLine(const UITextTableLine &other);
 
     /** Assigns @a other to this. */
-    UITextTableLine &operator=(const UITextTableLine &other)
-    {
-        setParent(other.parent());
-        set1(other.string1());
-        set2(other.string2());
-        return *this;
-    }
+    UITextTableLine &operator=(const UITextTableLine &other);
 
     /** Compares @a other to this. */
-    bool operator==(const UITextTableLine &other) const
-    {
-        return string1() == other.string1()
-            && string2() == other.string2();
-    }
+    bool operator==(const UITextTableLine &other) const;
 
     /** Defines 1st table @a strString. */
     void set1(const QString &strString) { m_str1 = strString; }
@@ -89,6 +71,5 @@ private:
 /** Defines the list of UITextTableLine instances. */
 typedef QList<UITextTableLine> UITextTable;
 Q_DECLARE_METATYPE(UITextTable);
-
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UITextTable_h */

@@ -15,18 +15,32 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Qt includes: */
-#include <QAccessibleObject>
-#include <QPainter>
-#include <QTextLayout>
-#include <QApplication>
-#include <QFontMetrics>
-#include <QGraphicsSceneHoverEvent>
-
 /* GUI includes: */
 #include "UITextTable.h"
-#include "UIRichTextString.h"
-#include "VBoxGlobal.h"
 
-/* Other VBox includes: */
-#include <iprt/assert.h>
+
+UITextTableLine::UITextTableLine(const QString &str1, const QString &str2, QObject *pParent /* = 0 */)
+    : QObject(pParent)
+    , m_str1(str1)
+    , m_str2(str2)
+{}
+
+UITextTableLine::UITextTableLine(const UITextTableLine &other)
+    : QObject(other.parent())
+    , m_str1(other.string1())
+    , m_str2(other.string2())
+{}
+
+UITextTableLine &UITextTableLine::operator=(const UITextTableLine &other)
+{
+    setParent(other.parent());
+    set1(other.string1());
+    set2(other.string2());
+    return *this;
+}
+
+bool UITextTableLine::operator==(const UITextTableLine &other) const
+{
+    return    string1() == other.string1()
+           && string2() == other.string2();
+}
