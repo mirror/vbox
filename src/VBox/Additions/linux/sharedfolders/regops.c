@@ -473,11 +473,7 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 	struct inode *inode = GET_F_DENTRY(file)->d_inode;
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
 	struct sf_reg_info *sf_r = file->private_data;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 2)
-	struct address_space *mapping = file->f_mapping;
-#else
 	struct address_space *mapping = inode->i_mapping;
-#endif
 
 	TRACE();
 	if (!S_ISREG(inode->i_mode)) {
@@ -530,7 +526,7 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 			VbglR0PhysHeapFree(pReq);
 	}
 
-# if 0 /* Turns out this is slightly slower than locking the pages even for 4KB reads (4.19/amd64). */
+#if 0 /* Turns out this is slightly slower than locking the pages even for 4KB reads (4.19/amd64). */
 	/*
 	 * For medium sized requests try use a bounce buffer.
 	 */
@@ -558,9 +554,37 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 			kfree(pvBounce);
 		}
 	}
-# endif
+#endif
 
 	return sf_reg_read_fallback(file, buf, size, off, sf_g, sf_r);
+}
+
+
+/**
+ * Wrapper around invalidate_mapping_pages() for page cache invalidation so that
+ * the changes written via sf_reg_write are made visible to mmap users.
+ */
+DECLINLINE(void) sf_reg_write_invalidate_mapping_range(struct address_space *mapping, loff_t offStart, loff_t offEnd)
+{
+	/*
+	 * Only bother with this if the mapping has any pages in it.
+	 *
+	 * Note! According to the docs, the last parameter, end, is inclusive (we
+	 *       would have named it 'last' to indicate this).
+	 *
+	 * Note! The pre-2.6.12 function might not do enough to sure consistency
+	 *       when any of the pages in the range is already mapped.
+	 */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
+	if (mapping)
+		invalidate_inode_pages2_range(mapping, offStart >> PAGE_SHIFT, (offEnd - 1) >> PAGE_SHIFT);
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 60)
+	if (mapping && mapping->nrpages > 0)
+		invalidate_mapping_pages(mapping, offStart >> PAGE_SHIFT, (offEnd - 1) >> PAGE_SHIFT);
+# else
+	/** @todo ... */
+	RT_NOREF(mapping, offStart, offEnd);
+# endif
 }
 
 
@@ -639,6 +663,7 @@ static ssize_t sf_reg_write_fallback(struct file *file, const char /*__user*/ *b
 				size    -= cbActual;
 				if (offFile > i_size_read(inode))
 					i_size_write(inode, offFile);
+				sf_reg_write_invalidate_mapping_range(inode->i_mapping, offFile - cbActual, offFile);
 
 				/*
 				 * Are we done already?  If so commit the new file offset.
@@ -688,11 +713,12 @@ static ssize_t sf_reg_write_fallback(struct file *file, const char /*__user*/ *b
 static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 			    loff_t * off)
 {
-	loff_t pos;
-	struct inode *inode = GET_F_DENTRY(file)->d_inode;
+	struct inode         *inode = GET_F_DENTRY(file)->d_inode;
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
-	struct sf_reg_info *sf_r = file->private_data;
+	struct sf_glob_info  *sf_g = GET_GLOB_INFO(inode->i_sb);
+	struct sf_reg_info   *sf_r = file->private_data;
+	struct address_space *mapping = inode->i_mapping;
+	loff_t                pos;
 
 	TRACE();
 	BUG_ON(!sf_i);
@@ -719,6 +745,22 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 	}
 
 	/*
+	 * If there are active writable mappings, coordinate with any
+	 * pending writes via those.
+	 */
+	if (   mapping
+	    && mapping->nrpages > 0
+	    && mapping_writably_mapped(mapping)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
+		int err = filemap_fdatawait_range(mapping, pos, pos + size - 1);
+		if (err)
+			return err;
+#else
+		/** @todo ...   */
+#endif
+	}
+
+	/*
 	 * For small requests, try use an embedded buffer provided we get a heap block
 	 * that does not cross page boundraries (see host code).
 	 */
@@ -737,6 +779,7 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 					*off = pos;
 					if (pos > i_size_read(inode))
 						i_size_write(inode, pos);
+					sf_reg_write_invalidate_mapping_range(mapping, pos - cbRet, pos);
 				} else
 					cbRet = -EPROTO;
 				sf_i->force_restat = 1; /* mtime (and size) may have changed */
@@ -750,7 +793,7 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 			VbglR0PhysHeapFree(pReq);
 	}
 
-# if 0 /* Turns out this is slightly slower than locking the pages even for 4KB reads (4.19/amd64). */
+#if 0 /* Turns out this is slightly slower than locking the pages even for 4KB reads (4.19/amd64). */
 	/*
 	 * For medium sized requests try use a bounce buffer.
 	 */
@@ -770,6 +813,7 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 						*off = pos;
 						if (pos > i_size_read(inode))
 							i_size_write(inode, pos);
+						sf_reg_write_invalidate_mapping_range(mapping, pos - cbRet, pos);
 					} else
 						cbRet = -EPROTO;
 					sf_i->force_restat = 1; /* mtime (and size) may have changed */
@@ -784,7 +828,7 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 			}
 		}
 	}
-# endif
+#endif
 
 	return sf_reg_write_fallback(file, buf, size, off, pos, inode, sf_i, sf_g, sf_r);
 }
@@ -1215,6 +1259,10 @@ int sf_write_begin(struct file *file, struct address_space *mapping, loff_t pos,
 		   void **fsdata)
 {
 	TRACE();
+#if 0
+	printk("sf_write_begin: pos=%#llx len=%#x flags=%#x\n", pos, len, flags);
+	RTLogBackdoorPrintf("sf_write_begin: pos=%#llx len=%#x flags=%#x\n", pos, len, flags);
+#endif
 /** @todo rig up a FsPerf testcase for this code! */
 
 	return simple_write_begin(file, mapping, pos, len, flags, pagep,
