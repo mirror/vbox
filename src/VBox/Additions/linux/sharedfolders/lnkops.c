@@ -35,8 +35,10 @@
 # if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
 static const char *sf_follow_link(struct dentry *dentry, void **cookie)
-#  else
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
 static void *sf_follow_link(struct dentry *dentry, struct nameidata *nd)
+#else
+static int sf_follow_link(struct dentry *dentry, struct nameidata *nd)
 #  endif
 {
 	struct inode *inode = dentry->d_inode;
@@ -60,13 +62,21 @@ static void *sf_follow_link(struct dentry *dentry, struct nameidata *nd)
 	return error ? ERR_PTR(error) : (*cookie = path);
 #  else
 	nd_set_link(nd, error ? ERR_PTR(error) : path);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
 	return NULL;
-#  endif
+# else
+	return 0;
+# endif
+#endif
 }
 
 #  if LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
 static void sf_put_link(struct dentry *dentry, struct nameidata *nd,
 			void *cookie)
+#else
+static void sf_put_link(struct dentry *dentry, struct nameidata *nd)
+#endif
 {
 	char *page = nd_get_link(nd);
 	if (!IS_ERR(page))
