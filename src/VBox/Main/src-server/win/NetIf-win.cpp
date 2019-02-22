@@ -1326,7 +1326,7 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, co
                     d->msgCode = SVCHlpMsg::EnableStaticIpConfigV6;
                     d->guid = guid;
                     d->iface = pIf;
-                    d->u.StaticIPV6.IPV6Address = RTStrDup(aIPV6Address);
+                    d->u.StaticIPV6.IPV6Address = RTStrDup(aIPV6Address.c_str());
                     d->u.StaticIPV6.IPV6NetMaskLength = aIPV6MaskPrefixLength;
 
                     rc = vBox->i_startSVCHelperClient(IsUACEnabled() == TRUE /* aPrivileged */,
