@@ -2423,7 +2423,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                 {
                     /* Generate a randomly sized write at a random location, making
                        sure it differs from whatever is there already before writing. */
-                    uint32_t const cbToWrite  = RTRandU32Ex(1, cbBuf);
+                    uint32_t const cbToWrite  = RTRandU32Ex(1, (uint32_t)cbBuf);
                     uint64_t const offToWrite = RTRandU64Ex(0, cbMapping - cbToWrite);
 
                     fsPerfFillWriteBuf(offToWrite, pbBuf, cbToWrite, 0xf8);
