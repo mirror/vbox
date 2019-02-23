@@ -2458,7 +2458,106 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 # endif
     }
 
-    RT_NOREF(hFileNoCache);
+    /*
+     * Memory mappings without open handles (pretty common).
+     */
+    for (uint32_t i = 0; i < 32; i++)
+    {
+        /* Create a new file, 256 KB in size, and fill it with random bytes.
+           Try uncached access if we can to force the page-in to do actual reads. */
+        char szFile2[RTPATH_MAX + 32];
+        memcpy(szFile2, g_szDir, g_cchDir);
+        RTStrPrintf(&szFile2[g_cchDir], sizeof(szFile2) - g_cchDir, "mmap-%u.noh", i);
+        RTFILE hFile2 = NIL_RTFILE;
+        int rc = (i & 3) == 3 ? VERR_TRY_AGAIN
+               : RTFileOpen(&hFile2, szFile2, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_NO_CACHE);
+        if (RT_FAILURE(rc))
+        {
+            RTTESTI_CHECK_RC_BREAK(RTFileOpen(&hFile2, szFile2, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE),
+                                   VINF_SUCCESS);
+        }
+
+        static char s_abContent[256*1024];
+        RTRandBytes(s_abContent, sizeof(s_abContent));
+        RTTESTI_CHECK_RC(RTFileWrite(hFile2, s_abContent, sizeof(s_abContent), NULL), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+
+        /* Reopen the file with normal caching.  Every second time, we also
+           does a read-only open of it to confuse matters. */
+        RTFILE hFile3 = NIL_RTFILE;
+        if ((i & 3) == 3)
+            RTTESTI_CHECK_RC(RTFileOpen(&hFile3, szFile2, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE), VINF_SUCCESS);
+        hFile2 = NIL_RTFILE;
+        RTTESTI_CHECK_RC_BREAK(RTFileOpen(&hFile2, szFile2, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE),
+                               VINF_SUCCESS);
+        if ((i & 3) == 1)
+            RTTESTI_CHECK_RC(RTFileOpen(&hFile3, szFile2, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE), VINF_SUCCESS);
+
+        /* Memory map it read-write (no COW). */
+#ifdef RT_OS_WINDOWS
+        pbMapping = NULL;
+        HANDLE hSection = CreateFileMapping((HANDLE)RTFileToNative(hFile2), NULL, PAGE_READWRITE, 0, sizeof(s_abContent), NULL);
+        RTTESTI_CHECK_MSG(hSection  != NULL, ("last error %u\n", GetLastError));
+        uint8_t *pbMapping = (uint8_t *)MapViewOfFile(hSection, FILE_MAP_WRITE, 0, 0, sizeof(s_abContent));
+        RTTESTI_CHECK_MSG(pbMapping != NULL, ("last error %u\n", GetLastError));
+        RTTESTI_CHECK_MSG(CloseHandle(hSection), ("last error %u\n", GetLastError));
+# else
+        uint8_t *pbMapping = (uint8_t *)mmap(NULL, sizeof(s_abContent), PROT_READ | PROT_WRITE, MAP_SHARED,
+                                             (int)RTFileToNative(hFile2), 0);
+        if ((void *)pbMapping == MAP_FAILED)
+            pbMapping = NULL;
+        RTTESTI_CHECK_MSG(pbMapping != NULL, ("errno=%s (%d)\n", strerror(errno), errno));
+# endif
+
+        /* Close the file handles. */
+        if ((i & 7) == 7)
+        {
+            RTTESTI_CHECK_RC(RTFileClose(hFile3), VINF_SUCCESS);
+            hFile3 = NIL_RTFILE;
+        }
+        RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+        if ((i & 7) == 5)
+        {
+            RTTESTI_CHECK_RC(RTFileClose(hFile3), VINF_SUCCESS);
+            hFile3 = NIL_RTFILE;
+        }
+        if (pbMapping)
+        {
+            RTThreadSleep(2); /* fudge for cleanup/whatever */
+
+            /* Page in the mapping by comparing with the content we wrote above. */
+            RTTESTI_CHECK(memcmp(pbMapping, s_abContent, sizeof(s_abContent)) == 0);
+
+            /* Now dirty everything by inverting everything. */
+            size_t *puCur  = (size_t *)pbMapping;
+            size_t  cbLeft = sizeof(s_abContent);
+            while (cbLeft-- > 0)
+            {
+                *puCur = ~*puCur;
+                puCur;
+            }
+
+            /* Sync it all. */
+#  ifdef RT_OS_WINDOWS
+            RTTESTI_CHECK(FlushViewOfFile(pbMapping, sizeof(s_abContent));
+#  else
+            RTTESTI_CHECK(msync(pbMapping, sizeof(s_abContent), MS_SYNC) == 0);
+#  endif
+
+            /* Unmap it. */
+# ifdef RT_OS_WINDOWS
+            RTTESTI_CHECK(UnmapViewOfFile(pbMapping));
+# else
+            RTTESTI_CHECK(munmap(pbMapping, sizeof(s_abContent)) == 0);
+# endif
+        }
+
+        if (hFile3 != NIL_RTFILE)
+            RTTESTI_CHECK_RC(RTFileClose(hFile3), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileDelete(szFile2), VINF_SUCCESS);
+    }
+
+
 #else
     RTTestSkipped(g_hTest,  "not supported/implemented");
     RT_NOREF(hFile1, hFileNoCache, cbFile);
