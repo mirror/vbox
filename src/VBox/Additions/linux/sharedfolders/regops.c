@@ -73,25 +73,6 @@ DECLINLINE(void) i_size_write(struct inode *inode, loff_t i_size)
 #endif /* < 2.6.0 */
 
 
-/* fops */
-
-static int sf_reg_write_aux(const char *caller, struct sf_glob_info *sf_g,
-			    struct sf_reg_info *sf_r, void *buf,
-			    uint32_t * nwritten, uint64_t pos)
-{
-    /** @todo bird: yes, kmap() and kmalloc() input only. Since the buffer is
-     *        contiguous in physical memory (kmalloc or single page), we should
-     *        use a physical address here to speed things up. */
-	int rc = VbglR0SfWrite(&client_handle, &sf_g->map, sf_r->handle,
-			       pos, nwritten, buf,
-			       false /* already locked? */ );
-	if (RT_FAILURE(rc)) {
-		LogFunc(("VbglR0SfWrite failed. caller=%s, rc=%Rrc\n",
-			 caller, rc));
-		return -EPROTO;
-	}
-	return 0;
-}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
  && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
@@ -1254,24 +1235,57 @@ static int sf_writepage(struct page *page, struct writeback_control *wbc)
 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 
+#  if 0 /* unused - see below */
+static int sf_reg_write_aux(const char *caller, struct sf_glob_info *sf_g,
+			    struct sf_reg_info *sf_r, void *buf,
+			    uint32_t * nwritten, uint64_t pos)
+{
+    /** @todo bird: yes, kmap() and kmalloc() input only. Since the buffer is
+     *        contiguous in physical memory (kmalloc or single page), we should
+     *        use a physical address here to speed things up. */
+	int rc = VbglR0SfWrite(&client_handle, &sf_g->map, sf_r->handle,
+			       pos, nwritten, buf,
+			       false /* already locked? */ );
+	if (RT_FAILURE(rc)) {
+		LogFunc(("VbglR0SfWrite failed. caller=%s, rc=%Rrc\n",
+			 caller, rc));
+		return -EPROTO;
+	}
+	return 0;
+}
+#  endif
+
+/**
+ * Called when writing thru the page cache (which we shouldn't be doing).
+ */
 int sf_write_begin(struct file *file, struct address_space *mapping, loff_t pos,
 		   unsigned len, unsigned flags, struct page **pagep,
 		   void **fsdata)
 {
-	TRACE();
-#if 0
-	printk("sf_write_begin: pos=%#llx len=%#x flags=%#x\n", pos, len, flags);
-	RTLogBackdoorPrintf("sf_write_begin: pos=%#llx len=%#x flags=%#x\n", pos, len, flags);
-#endif
-/** @todo rig up a FsPerf testcase for this code! */
-
-	return simple_write_begin(file, mapping, pos, len, flags, pagep,
-				  fsdata);
+	/** @todo r=bird: We shouldn't ever get here, should we?  Because we don't use
+	 *        the page cache for any writes AFAIK.  We could just as well use
+	 *        simple_write_begin & simple_write_end here if we think we really
+	 *        need to have non-NULL function pointers in the table... */
+	static uint64_t volatile s_cCalls = 0;
+	if (s_cCalls++ < 16) {
+		printk("vboxsf: Unexpected call to sf_write_begin(pos=%#llx len=%#x flags=%#x)! Please report.\n",
+		       (unsigned long long)pos, len, flags);
+		RTLogBackdoorPrintf("vboxsf: Unexpected call to sf_write_begin(pos=%#llx len=%#x flags=%#x)!  Please report.\n",
+				    (unsigned long long)pos, len, flags);
+#  ifdef WARN_ON
+		WARN_ON(1);
+#  endif
+	}
+	return simple_write_begin(file, mapping, pos, len, flags, pagep, fsdata);
 }
 
+/**
+ * Called to complete a write thru the page cache (which we shouldn't be doing).
+ */
 int sf_write_end(struct file *file, struct address_space *mapping, loff_t pos,
 		 unsigned len, unsigned copied, struct page *page, void *fsdata)
 {
+#  if 0 /** @todo r=bird: See sf_write_begin. */
 	struct inode *inode = mapping->host;
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
 	struct sf_reg_info *sf_r = file->private_data;
@@ -1281,7 +1295,6 @@ int sf_write_end(struct file *file, struct address_space *mapping, loff_t pos,
 	int err;
 
 	TRACE();
-/** @todo rig up a FsPerf testcase for this code! */
 
 	buf = kmap(page);
 	err = sf_reg_write_aux(__func__, sf_g, sf_r, buf + from, &nwritten, pos);
@@ -1297,13 +1310,15 @@ int sf_write_end(struct file *file, struct address_space *mapping, loff_t pos,
 	}
 
 	unlock_page(page);
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+#   if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
 	put_page(page);
-#  else
+#   else
 	page_cache_release(page);
-#  endif
-
+#   endif
 	return nwritten;
+#  else
+	return simple_write_end(file, mapping, pos, len, copied, page, fsdata);
+#  endif
 }
 
 # endif	/* KERNEL_VERSION >= 2.6.24 */
