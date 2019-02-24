@@ -251,30 +251,43 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
 
     if (pstrFilename)
     {
-        // reading existing settings file:
-        m->strFilename = *pstrFilename;
+        try
+        {
+            // reading existing settings file:
+            m->strFilename = *pstrFilename;
 
-        xml::XmlFileParser parser;
-        m->pDoc = new xml::Document;
-        parser.read(*pstrFilename,
-                    *m->pDoc);
+            xml::XmlFileParser parser;
+            m->pDoc = new xml::Document;
+            parser.read(*pstrFilename,
+                        *m->pDoc);
 
-        m->fFileExists = true;
+            m->fFileExists = true;
 
-        m->pelmRoot = m->pDoc->getRootElement();
-        if (!m->pelmRoot || !m->pelmRoot->nameEquals("VirtualBox"))
-            throw ConfigFileError(this, m->pelmRoot, N_("Root element in VirtualBox settings files must be \"VirtualBox\""));
+            m->pelmRoot = m->pDoc->getRootElement();
+            if (!m->pelmRoot || !m->pelmRoot->nameEquals("VirtualBox"))
+                throw ConfigFileError(this, m->pelmRoot, N_("Root element in VirtualBox settings files must be \"VirtualBox\""));
 
-        if (!(m->pelmRoot->getAttributeValue("version", m->strSettingsVersionFull)))
-            throw ConfigFileError(this, m->pelmRoot, N_("Required VirtualBox/@version attribute is missing"));
+            if (!(m->pelmRoot->getAttributeValue("version", m->strSettingsVersionFull)))
+                throw ConfigFileError(this, m->pelmRoot, N_("Required VirtualBox/@version attribute is missing"));
 
-        LogRel(("Loading settings file \"%s\" with version \"%s\"\n", m->strFilename.c_str(), m->strSettingsVersionFull.c_str()));
+            LogRel(("Loading settings file \"%s\" with version \"%s\"\n", m->strFilename.c_str(), m->strSettingsVersionFull.c_str()));
 
-        m->sv = parseVersion(m->strSettingsVersionFull, m->pelmRoot);
+            m->sv = parseVersion(m->strSettingsVersionFull, m->pelmRoot);
 
-        // remember the settings version we read in case it gets upgraded later,
-        // so we know when to make backups
-        m->svRead = m->sv;
+            // remember the settings version we read in case it gets upgraded later,
+            // so we know when to make backups
+            m->svRead = m->sv;
+        }
+        catch(...)
+        {
+            /*
+             * The destructor is not called when an exception is thrown in the constructor,
+             * so we have to do the cleanup here.
+             */
+            delete m;
+            m = NULL;
+            throw;
+        }
     }
     else
     {
