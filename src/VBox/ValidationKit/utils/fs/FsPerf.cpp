@@ -2495,7 +2495,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 
         /* Memory map it read-write (no COW). */
 #ifdef RT_OS_WINDOWS
-        pbMapping = NULL;
+        uint8_t *pbMapping = NULL;
         HANDLE hSection = CreateFileMapping((HANDLE)RTFileToNative(hFile2), NULL, PAGE_READWRITE, 0, sizeof(s_abContent), NULL);
         RTTESTI_CHECK_MSG(hSection  != NULL, ("last error %u\n", GetLastError));
         uint8_t *pbMapping = (uint8_t *)MapViewOfFile(hSection, FILE_MAP_WRITE, 0, 0, sizeof(s_abContent));
@@ -2534,12 +2534,12 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             while (cbLeft-- > 0)
             {
                 *puCur = ~*puCur;
-                puCur;
+                puCur++;
             }
 
             /* Sync it all. */
 #  ifdef RT_OS_WINDOWS
-            RTTESTI_CHECK(FlushViewOfFile(pbMapping, sizeof(s_abContent));
+            RTTESTI_CHECK(FlushViewOfFile(pbMapping, sizeof(s_abContent)));
 #  else
             RTTESTI_CHECK(msync(pbMapping, sizeof(s_abContent), MS_SYNC) == 0);
 #  endif
