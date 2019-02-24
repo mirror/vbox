@@ -2495,7 +2495,6 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 
         /* Memory map it read-write (no COW). */
 #ifdef RT_OS_WINDOWS
-        uint8_t *pbMapping = NULL;
         HANDLE hSection = CreateFileMapping((HANDLE)RTFileToNative(hFile2), NULL, PAGE_READWRITE, 0, sizeof(s_abContent), NULL);
         RTTESTI_CHECK_MSG(hSection  != NULL, ("last error %u\n", GetLastError));
         uint8_t *pbMapping = (uint8_t *)MapViewOfFile(hSection, FILE_MAP_WRITE, 0, 0, sizeof(s_abContent));
