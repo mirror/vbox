@@ -181,6 +181,16 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
 	sf_ftime_from_timespec(&inode->i_mtime, &info->ModificationTime);
 }
 
+/**
+ * Update the inode with new object info from the host.
+ */
+void sf_update_inode(struct inode *pInode, PSHFLFSOBJINFO pObjInfo, struct sf_glob_info *sf_g)
+{
+	/** @todo  make lock/rcu safe.  */
+	sf_init_inode(sf_g, pInode, pObjInfo);
+}
+
+
 int sf_stat(const char *caller, struct sf_glob_info *sf_g,
 	    SHFLSTRING *path, PSHFLFSOBJINFO result, int ok_to_fail)
 {
@@ -222,50 +232,99 @@ int sf_stat(const char *caller, struct sf_glob_info *sf_g,
 	return rc;
 }
 
-/* this is called directly as iop on 2.4, indirectly as dop
-   [sf_dentry_revalidate] on 2.4/2.6, indirectly as iop through
-   [sf_getattr] on 2.6. the job is to find out whether dentry/inode is
-   still valid. the test is failed if [dentry] does not have an inode
-   or [sf_stat] is unsuccessful, otherwise we return success and
-   update inode attributes */
+/**
+ * Revalidate an inode.
+ *
+ * This is called directly as inode-op on 2.4, indirectly as dir-op
+ * sf_dentry_revalidate() on 2.4/2.6, indirectly as inode-op through
+ * sf_getattr() on 2.6.  The job is to find out whether dentry/inode is still
+ * valid.  The test fails if @a dentry does not have an inode or sf_stat() is
+ * unsuccessful, otherwise we return success and update inode attributes.
+ */
 int sf_inode_revalidate(struct dentry *dentry)
 {
-	int err;
-	struct sf_glob_info *sf_g;
-	struct sf_inode_info *sf_i;
-	SHFLFSOBJINFO info;
+	int rc;
+	struct inode *pInode = dentry ? dentry->d_inode : NULL;
+	if (pInode) {
+		struct sf_inode_info *sf_i = GET_INODE_INFO(pInode);
+		struct sf_glob_info  *sf_g = GET_GLOB_INFO(pInode->i_sb);
+		AssertReturn(sf_i, -EINVAL);
+		AssertReturn(sf_g, -EINVAL);
 
-	TRACE();
-	if (!dentry || !dentry->d_inode) {
-		LogFunc(("no dentry(%p) or inode(%p)\n", dentry, dentry ? dentry->d_inode : NULL));
-		return -EINVAL;
+		/*
+		 * Can we get away without any action here?
+		 */
+		if (   !sf_i->force_restat
+		    && jiffies - dentry->d_time < sf_g->ttl)
+			rc = 0;
+		else {
+			/*
+			 * No, we have to query the file info from the host.
+			 * Try get a handle we can query, any kind of handle will do here.
+			 */
+			struct sf_handle *pHandle = sf_handle_find(sf_i, 0, 0);
+			if (pHandle) {
+				/* Query thru pHandle. */
+				VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+				if (pReq) {
+					RT_ZERO(*pReq);
+					rc = VbglR0SfHostReqQueryObjInfo(sf_g->map.root, pReq, pHandle->hHost);
+					if (RT_SUCCESS(rc)) {
+						/*
+						 * Reset the TTL and copy the info over into the inode structure.
+						 */
+						dentry->d_time = jiffies;
+						sf_update_inode(pInode, &pReq->ObjInfo, sf_g);
+					} else if (rc == VERR_INVALID_HANDLE) {
+						rc = -ENOENT; /* Restore.*/
+					} else {
+						LogFunc(("VbglR0SfHostReqQueryObjInfo failed on %#RX64: %Rrc\n", pHandle->hHost, rc));
+						rc = -RTErrConvertToErrno(rc);
+					}
+					VbglR0PhysHeapFree(pReq);
+				} else
+					rc = -ENOMEM;
+				sf_handle_release(pHandle, sf_g, "sf_inode_revalidate");
+
+			} else {
+				/* Query via path. */
+				SHFLSTRING      *pPath = sf_i->path;
+				VBOXSFCREATEREQ *pReq  = (VBOXSFCREATEREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq) + pPath->u16Size);
+				if (pReq) {
+					RT_ZERO(*pReq);
+					memcpy(&pReq->StrPath, pPath, SHFLSTRING_HEADER_SIZE + pPath->u16Size);
+					pReq->CreateParms.Handle      = SHFL_HANDLE_NIL;
+					pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
+
+					rc = VbglR0SfHostReqCreate(sf_g->map.root, pReq);
+					if (RT_SUCCESS(rc)) {
+						if (pReq->CreateParms.Result == SHFL_FILE_EXISTS) {
+							/*
+							 * Reset the TTL and copy the info over into the inode structure.
+							 */
+							dentry->d_time = jiffies;
+							sf_update_inode(pInode, &pReq->CreateParms.Info, sf_g);
+							rc = 0;
+						} else {
+							rc = -ENOENT;
+						}
+					} else if (rc == VERR_INVALID_NAME) {
+						rc = -ENOENT; /* this can happen for names like 'foo*' on a Windows host */
+					} else {
+						LogFunc(("VbglR0SfHostReqCreate failed on %s: %Rrc\n", pPath->String.ach, rc));
+						rc = -EPROTO;
+					}
+					VbglR0PhysHeapFree(pReq);
+				}
+				else
+					rc = -ENOMEM;
+			}
+		}
+	} else {
+		LogFunc(("no dentry(%p) or inode(%p)\n", dentry, pInode));
+		rc = -EINVAL;
 	}
-
-	sf_g = GET_GLOB_INFO(dentry->d_inode->i_sb);
-	sf_i = GET_INODE_INFO(dentry->d_inode);
-
-#if 0
-	printk("%s called by %p:%p\n",
-	       sf_i->path->String.utf8,
-	       __builtin_return_address(0), __builtin_return_address(1));
-#endif
-
-	BUG_ON(!sf_g);
-	BUG_ON(!sf_i);
-
-	if (!sf_i->force_restat) {
-		if (jiffies - dentry->d_time < sf_g->ttl)
-			return 0;
-	}
-
-	err = sf_stat(__func__, sf_g, sf_i->path, &info, 1);
-	if (err)
-		return err;
-
-	dentry->d_time = jiffies;
-/** @todo bird has severe inode locking / rcu concerns here:  */
-	sf_init_inode(sf_g, dentry->d_inode, &info);
-	return 0;
+	return rc;
 }
 
 /**
@@ -305,8 +364,7 @@ int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile,
 					 * Reset the TTL and copy the info over into the inode structure.
 					 */
 					dentry->d_time = jiffies;
-/** @todo bird has severe inode locking / rcu concerns here:  */
-					sf_init_inode(sf_g, pInode, &pReq->ObjInfo);
+					sf_update_inode(pInode, &pReq->ObjInfo, sf_g);
 				} else {
 					LogFunc(("VbglR0SfHostReqQueryObjInfo failed on %#RX64: %Rrc\n", hHostFile, err));
 					err = -RTErrConvertToErrno(err);
@@ -361,43 +419,47 @@ int sf_getattr(const struct path *path, struct kstat *kstat, u32 request_mask,
 int sf_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
 # endif
 {
-	int err;
+	int            rc;
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 	struct dentry *dentry = path->dentry;
 # endif
 
-	TRACE();
-	err = sf_inode_revalidate(dentry);
-	if (err)
-		return err;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+	SFLOGFLOW(("sf_getattr: dentry=%p request_mask=%#x flags=%#x\n", dentry, request_mask, flags));
+# else
+	SFLOGFLOW(("sf_getattr: dentry=%p\n", dentry));
+# endif
 
-	generic_fillattr(dentry->d_inode, kstat);
+	rc = sf_inode_revalidate(dentry);
+	if (rc == 0) {
+		generic_fillattr(dentry->d_inode, kstat);
 
-	/*
-	 * FsPerf shows the following numbers for sequential file access against
-	 * a tmpfs folder on an AMD 1950X host running debian buster/sid:
-	 *
-	 * block size = r128600    ----- r128755 -----
-	 *               reads      reads     writes
-	 *    4096 KB = 2254 MB/s  4953 MB/s 3668 MB/s
-	 *    2048 KB = 2368 MB/s  4908 MB/s 3541 MB/s
-	 *    1024 KB = 2208 MB/s  4011 MB/s 3291 MB/s
-	 *     512 KB = 1908 MB/s  3399 MB/s 2721 MB/s
-	 *     256 KB = 1625 MB/s  2679 MB/s 2251 MB/s
-	 *     128 KB = 1413 MB/s  1967 MB/s 1684 MB/s
-	 *      64 KB = 1152 MB/s  1409 MB/s 1265 MB/s
-	 *      32 KB =  726 MB/s   815 MB/s  783 MB/s
-	 *      16 KB =             683 MB/s  475 MB/s
-	 *       8 KB =             294 MB/s  286 MB/s
-	 *       4 KB =  145 MB/s   156 MB/s  149 MB/s
-	 *
-	 */
-	if (S_ISREG(kstat->mode))
-		kstat->blksize = _1M;
-	else if (S_ISDIR(kstat->mode))
-		/** @todo this may need more tuning after we rewrite the directory handling. */
-		kstat->blksize = _16K;
-	return 0;
+		/*
+		 * FsPerf shows the following numbers for sequential file access against
+		 * a tmpfs folder on an AMD 1950X host running debian buster/sid:
+		 *
+		 * block size = r128600    ----- r128755 -----
+		 *               reads      reads     writes
+		 *    4096 KB = 2254 MB/s  4953 MB/s 3668 MB/s
+		 *    2048 KB = 2368 MB/s  4908 MB/s 3541 MB/s
+		 *    1024 KB = 2208 MB/s  4011 MB/s 3291 MB/s
+		 *     512 KB = 1908 MB/s  3399 MB/s 2721 MB/s
+		 *     256 KB = 1625 MB/s  2679 MB/s 2251 MB/s
+		 *     128 KB = 1413 MB/s  1967 MB/s 1684 MB/s
+		 *      64 KB = 1152 MB/s  1409 MB/s 1265 MB/s
+		 *      32 KB =  726 MB/s   815 MB/s  783 MB/s
+		 *      16 KB =             683 MB/s  475 MB/s
+		 *       8 KB =             294 MB/s  286 MB/s
+		 *       4 KB =  145 MB/s   156 MB/s  149 MB/s
+		 *
+		 */
+		if (S_ISREG(kstat->mode))
+			kstat->blksize = _1M;
+		else if (S_ISDIR(kstat->mode))
+			/** @todo this may need more tuning after we rewrite the directory handling. */
+			kstat->blksize = _16K;
+	}
+	return rc;
 }
 
 int sf_setattr(struct dentry *dentry, struct iattr *iattr)
