@@ -1049,7 +1049,6 @@ VirtualBox_SOURCES = \
 	src/manager/details/UIDetailsModel.cpp \
 	src/manager/details/UIDetailsView.cpp \
 	src/manager/details/UIDetailsItem.cpp \
-	src/manager/details/UIDetailsGenerator.cpp \
 	src/manager/details/UIDetailsGroup.cpp \
 	src/manager/details/UIDetailsSet.cpp \
 	src/manager/details/UIDetailsElement.cpp \
@@ -1270,6 +1269,7 @@ VBoxGlobal_SOURCES = \
 	src/globals/UICustomFileSystemModel.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
+	src/globals/UIDetailsGenerator.cpp \
 	src/globals/UIDialogPanel.cpp \
 	src/globals/UIErrorString.cpp \
 	src/globals/UIIconPool.cpp \
