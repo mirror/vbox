@@ -1216,7 +1216,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
         ExitInstrInfo.u = 0;
         ExitInstrInfo.StrIo.u3AddrSize = ADDR_VMXSTRIO;
         ExitInstrInfo.StrIo.iSegReg    = X86_SREG_ES;
-        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_INS, pVCpu->cpum.GstCtx.dx, (OP_SIZE / 8) - 1, false /* fRep */,
+        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_INS, pVCpu->cpum.GstCtx.dx, OP_SIZE / 8, false /* fRep */,
                                           ExitInstrInfo, cbInstr);
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             return rcStrict;
@@ -1301,7 +1301,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
         ExitInstrInfo.u = 0;
         ExitInstrInfo.StrIo.u3AddrSize = ADDR_VMXSTRIO;
         ExitInstrInfo.StrIo.iSegReg    = X86_SREG_ES;
-        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_INS, pVCpu->cpum.GstCtx.dx, (OP_SIZE / 8) - 1, true /* fRep */,
+        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_INS, pVCpu->cpum.GstCtx.dx, OP_SIZE / 8, true /* fRep */,
                                           ExitInstrInfo, cbInstr);
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             return rcStrict;
@@ -1516,7 +1516,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
         ExitInstrInfo.u = 0;
         ExitInstrInfo.StrIo.u3AddrSize = ADDR_VMXSTRIO;
         ExitInstrInfo.StrIo.iSegReg    = iEffSeg;
-        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_OUTS, pVCpu->cpum.GstCtx.dx, (OP_SIZE / 8) - 1, false /* fRep */,
+        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_OUTS, pVCpu->cpum.GstCtx.dx, OP_SIZE / 8, false /* fRep */,
                                           ExitInstrInfo, cbInstr);
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             return rcStrict;
@@ -1589,7 +1589,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
         ExitInstrInfo.u = 0;
         ExitInstrInfo.StrIo.u3AddrSize = ADDR_VMXSTRIO;
         ExitInstrInfo.StrIo.iSegReg    = iEffSeg;
-        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_OUTS, pVCpu->cpum.GstCtx.dx, (OP_SIZE / 8) - 1, true /* fRep */,
+        rcStrict = iemVmxVmexitInstrStrIo(pVCpu, VMXINSTRID_IO_OUTS, pVCpu->cpum.GstCtx.dx, OP_SIZE / 8, true /* fRep */,
                                           ExitInstrInfo, cbInstr);
         if (rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             return rcStrict;
