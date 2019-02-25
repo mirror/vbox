@@ -701,12 +701,14 @@ typedef struct PDMIDISPLAYPORT
     /**
      * Tell the graphics device about the host cursor position.
      *
-     * @param   pInterface  Pointer to this interface.
-     * @param   x           X offset into the cursor range.
-     * @param   y           Y offset into the cursor range.
+     * @param   pInterface   Pointer to this interface.
+     * @param   x            X offset into the cursor range.
+     * @param   y            Y offset into the cursor range.
+     * @param   fOutOfRange  The host pointer is out of all guest windows, so
+     *                       X and Y do not currently have meaningful value.
      * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(void, pfnReportHostCursorPosition, (PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y));
+    DECLR3CALLBACKMEMBER(void, pfnReportHostCursorPosition, (PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y, bool fOutOfRange));
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */
 #define PDMIDISPLAYPORT_IID                     "471b0520-338c-11e9-bb84-6ff2c956da45"

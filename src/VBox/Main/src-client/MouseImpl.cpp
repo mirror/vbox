@@ -667,9 +667,14 @@ HRESULT Mouse::i_reportAbsEventToDisplayDevice(int32_t x, int32_t y)
     DisplayMouseInterface *pDisplay = mParent->i_getDisplayMouseInterface();
     ComAssertRet(pDisplay, E_FAIL);
 
-    if (x != mcLastX || y != mcLastY)
+    if (x == -1 || y == -1)  /* Report only. */
+        return S_OK;
+    if (x != mcLastX || y != mcLastY)  /* This covers out-of-range too. */
     {
-        pDisplay->i_reportHostCursorPosition(x - 1, y - 1);
+        if (x < 0x7fffffff && y < 0x7fffffff)
+            pDisplay->i_reportHostCursorPosition(x - 1, y - 1, false);
+        else  /* Out of range. */
+            pDisplay->i_reportHostCursorPosition(0, 0, true);            
     }
     return S_OK;
 }

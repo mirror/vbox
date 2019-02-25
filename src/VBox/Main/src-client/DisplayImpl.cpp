@@ -1398,7 +1398,7 @@ HRESULT Display::i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uin
     return S_OK;
 }
 
-HRESULT Display::i_reportHostCursorPosition(int32_t x, int32_t y)
+HRESULT Display::i_reportHostCursorPosition(int32_t x, int32_t y, bool fOutOfRange)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     uint32_t xAdj = (uint32_t)RT_MAX(x - xInputMappingOrigin, 0);
@@ -1411,7 +1411,10 @@ HRESULT Display::i_reportHostCursorPosition(int32_t x, int32_t y)
         return ptrVM.rc();
     CHECK_CONSOLE_DRV(mpDrv);
     alock.release();  /* Release before calling up for lock order reasons. */
-    mpDrv->pUpPort->pfnReportHostCursorPosition(mpDrv->pUpPort, xAdj, yAdj);
+    if (fOutOfRange)
+        mpDrv->pUpPort->pfnReportHostCursorPosition(mpDrv->pUpPort, 0, 0, true);
+    else
+        mpDrv->pUpPort->pfnReportHostCursorPosition(mpDrv->pUpPort, xAdj, yAdj, false);
     return S_OK;
 }
 

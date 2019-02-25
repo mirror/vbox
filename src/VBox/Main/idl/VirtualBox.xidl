@@ -17699,7 +17699,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Positions the mouse pointer using absolute x and y coordinates.
         These coordinates are expressed in pixels and
         start from <tt>[1,1]</tt> which corresponds to the top left
-        corner of the virtual display.
+        corner of the virtual display.  The values <tt>[-1,-1]</tt> and
+        <tt>[0x7fffffff,0x7fffffff]</tt> have special meanings as
+        respectively "no data" (to signal that the host wishes to report
+        absolute pointer data in future) and "out of range" (the host
+        pointer is outside of all guest windows).
 
         <result name="E_ACCESSDENIED">
           Console not powered up.
