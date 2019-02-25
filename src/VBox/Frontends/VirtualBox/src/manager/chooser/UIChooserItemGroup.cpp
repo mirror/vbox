@@ -44,7 +44,7 @@
 *********************************************************************************************************************************/
 
 UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
-    : UIChooserItem(0, false /* favorite? */, false /* temporary? */)
+    : UIChooserItem(0, false /* favorite? */)
     , m_fClosed(false)
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
@@ -80,7 +80,7 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
                                        const QString &strName,
                                        bool fOpened /* = false */,
                                        int iPosition /* = -1 */)
-    : UIChooserItem(pParent, pParent->isFavorite(), pParent->isTemporary())
+    : UIChooserItem(pParent, pParent->isFavorite())
     , m_fClosed(!fOpened)
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
@@ -127,13 +127,13 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
 }
 
 UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
-                                       UIChooserItemGroup *pCopyFrom,
+                                       UIChooserItemGroup *pCopiedItem,
                                        int iPosition /* = -1 */)
-    : UIChooserItem(pParent, pParent->isFavorite(), pParent->isTemporary())
-    , m_fClosed(pCopyFrom->isClosed())
+    : UIChooserItem(pParent, pParent->isFavorite())
+    , m_fClosed(pCopiedItem->isClosed())
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
-    , m_strName(pCopyFrom->name())
+    , m_strName(pCopiedItem->name())
     , m_pToggleButton(0)
     , m_pEnterButton(0)
     , m_pExitButton(0)
@@ -161,7 +161,7 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
             this, &UIChooserItemGroup::sltHandleWindowRemapped);
 
     /* Copy content to 'this': */
-    copyContent(pCopyFrom, this);
+    copyContent(pCopiedItem, this);
 
     /* Apply language settings: */
     retranslateUi();
@@ -1177,8 +1177,7 @@ void UIChooserItemGroup::sltGroupToggleStart()
         return;
 
     /* Toggle started: */
-    if (!isTemporary())
-        emit sigToggleStarted();
+    emit sigToggleStarted();
 
     /* Setup animation: */
     updateAnimationParameters();
@@ -1221,8 +1220,7 @@ void UIChooserItemGroup::sltGroupToggleFinish(bool fToggled)
     updateToggleButtonToolTip();
 
     /* Toggle finished: */
-    if (!isTemporary())
-        emit sigToggleFinished();
+    emit sigToggleFinished();
 }
 
 void UIChooserItemGroup::sltIndentRoot()

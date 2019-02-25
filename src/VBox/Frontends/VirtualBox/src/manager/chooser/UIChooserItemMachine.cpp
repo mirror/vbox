@@ -42,10 +42,10 @@
 
 
 UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
-                                           const CMachine &machine,
+                                           const CMachine &comMachine,
                                            int iPosition /* = -1 */)
-    : UIChooserItem(pParent, false /* favorite? */, pParent->isTemporary(), 0, 100)
-    , UIVirtualMachineItem(machine)
+    : UIChooserItem(pParent, false /* favorite? */, 0, 100)
+    , UIVirtualMachineItem(comMachine)
     , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
@@ -63,10 +63,10 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
 }
 
 UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
-                                           UIChooserItemMachine *pCopyFrom,
+                                           UIChooserItemMachine *pCopiedItem,
                                            int iPosition /* = -1 */)
-    : UIChooserItem(pParent, false /* favorite? */, pParent->isTemporary(), 0, 100)
-    , UIVirtualMachineItem(pCopyFrom->machine())
+    : UIChooserItem(pParent, false /* favorite? */, 0, 100)
+    , UIVirtualMachineItem(pCopiedItem->machine())
     , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)

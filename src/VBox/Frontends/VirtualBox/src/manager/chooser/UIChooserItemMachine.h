@@ -50,8 +50,8 @@ public:
 
     /** Constructs item with specified @a comMachine and @a iPosition, passing @a pParent to the base-class. */
     UIChooserItemMachine(UIChooserItem *pParent, const CMachine &comMachine, int iPosition = -1);
-    /** Constructs temporary item with specified @a iPosition as a @a pCopyFrom, passing @a pParent to the base-class. */
-    UIChooserItemMachine(UIChooserItem *pParent, UIChooserItemMachine *pCopyFrom, int iPosition = -1);
+    /** Constructs a copy of @a pCopiedItem with specified @a iPosition, passing @a pParent to the base-class. */
+    UIChooserItemMachine(UIChooserItem *pParent, UIChooserItemMachine *pCopiedItem, int iPosition = -1);
     /** Destructs machine item. */
     virtual ~UIChooserItemMachine() /* override */;
 

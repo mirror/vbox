@@ -103,10 +103,9 @@ public:
 
     /** Constructs item passing @a pParent to the base-class.
       * @param  fFavorite      Brings whether this item created directly in favorite container.
-      * @param  fTemporary     Brings whether this item created for temporary needs.
       * @param  iDefaultValue  Brings default value for hovering animation.
       * @param  iHoveredValue  Brings hovered value for hovering animation. */
-    UIChooserItem(UIChooserItem *pParent, bool fFavorite, bool fTemporary,
+    UIChooserItem(UIChooserItem *pParent, bool fFavorite,
                   int iDefaultValue = 100, int iHoveredValue = 90);
 
     /** @name Item stuff.
@@ -115,8 +114,6 @@ public:
         UIChooserItem *parentItem() const {  return m_pParent; }
         /** Returns whether item is favorite. */
         bool isFavorite() const { return m_fFavorite; }
-        /** Returns whether item is temporary. */
-        bool isTemporary() const { return m_fTemporary; }
 
         /** Defines whether item is @a fFavorite. */
         virtual void setFavorite(bool fFavorite);
@@ -331,8 +328,6 @@ private:
         UIChooserItem *m_pParent;
         /** Holds whether item is favorite. */
         bool           m_fFavorite;
-        /** Holds whether item is temporary. */
-        bool           m_fTemporary;
 
         /** Holds the item level according to root. */
         int   m_iLevel;
