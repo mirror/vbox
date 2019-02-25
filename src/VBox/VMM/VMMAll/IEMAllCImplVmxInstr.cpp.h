@@ -2832,6 +2832,20 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     pVmcs->u32EntryIntInfo &= ~VMX_ENTRY_INT_INFO_VALID;
 
     /*
+     * Clear IDT-vectoring information fields if the VM-exit was not triggered during delivery of an event.
+     * See Intel spec. 27.2.3 "Information for VM Exits During Event Delivery".
+     */
+    {
+        uint8_t    uVector;
+        uint32_t   fFlags;
+        uint32_t   uErrCode;
+        bool const fInEventDelivery = IEMGetCurrentXcpt(pVCpu, &uVector, &fFlags,  &uErrCode, NULL /* uCr2 */);
+        if (!fInEventDelivery)
+            iemVmxVmcsSetIdtVectoringInfo(pVCpu, 0);
+        /* else: Caller would have updated IDT-vectoring information already, see iemVmxVmexitEvent(). */
+    }
+
+    /*
      * Save the guest state back into the VMCS.
      * We only need to save the state when the VM-entry was successful.
      */
@@ -4143,6 +4157,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
  */
 IEM_STATIC VBOXSTRICTRC iemVmxVmexitTripleFault(PVMCPU pVCpu)
 {
+    /*
+     * A VM-exit is not considered to occur during event delivery when the original
+     * event results in a triple-fault.
+     *
+     * Therefore, we must clear the original event from the IDT-vectoring fields which
+     * would've been recorded before causing the VM-exit.
+     *
+     * 27.2.3 "Information for VM Exits During Event Delivery"
+     */
+    iemVmxVmcsSetIdtVectoringInfo(pVCpu, 0);
+    iemVmxVmcsSetIdtVectoringErrCode(pVCpu, 0);
+
     return iemVmxVmexit(pVCpu, VMX_EXIT_TRIPLE_FAULT);
 }
 
