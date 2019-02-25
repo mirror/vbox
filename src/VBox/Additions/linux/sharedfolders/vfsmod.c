@@ -58,7 +58,11 @@ MODULE_VERSION(VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV));
 /* globals */
 VBGLSFCLIENT client_handle;
 VBGLSFCLIENT g_SfClient;      /* temporary? */
+
 uint32_t g_fHostFeatures = 0; /* temporary? */
+
+spinlock_t g_SfHandleLock;
+
 
 /* forward declarations */
 static struct super_operations sf_super_ops;
@@ -291,6 +295,10 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 	sf_i->path->String.utf8[0] = '/';
 	sf_i->path->String.utf8[1] = 0;
 	sf_i->force_reread = 0;
+	RTListInit(&sf_i->HandleList);
+#ifdef VBOX_STRICT
+	sf_i->u32Magic = SF_INODE_INFO_MAGIC;
+#endif
 
 	err = sf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
 	if (err) {
@@ -408,8 +416,13 @@ static void sf_clear_inode(struct inode *inode)
 	if (!sf_i)
 		return;
 
+	Assert(sf_i->u32Magic == SF_INODE_INFO_MAGIC);
 	BUG_ON(!sf_i->path);
 	kfree(sf_i->path);
+	sf_handle_drop_chain(sf_i);
+# ifdef VBOX_STRICT
+	sf_i->u32Magic = SF_INODE_INFO_MAGIC_DEAD;
+# endif
 	kfree(sf_i);
 	SET_INODE_INFO(inode, NULL);
 }
@@ -430,8 +443,13 @@ static void sf_evict_inode(struct inode *inode)
 	if (!sf_i)
 		return;
 
+	Assert(sf_i->u32Magic == SF_INODE_INFO_MAGIC);
 	BUG_ON(!sf_i->path);
 	kfree(sf_i->path);
+	sf_handle_drop_chain(sf_i);
+# ifdef VBOX_STRICT
+	sf_i->u32Magic = SF_INODE_INFO_MAGIC_DEAD;
+# endif
 	kfree(sf_i);
 	SET_INODE_INFO(inode, NULL);
 }
@@ -626,6 +644,9 @@ static int __init init(void)
 		return -EINVAL;
 	}
 
+	/** @todo Init order is wrong, file system reigstration is the very last
+	 *        thing we should do. */
+	spin_lock_init(&g_SfHandleLock);
 	err = register_filesystem(&vboxsf_fs_type);
 	if (err) {
 		LogFunc(("register_filesystem err=%d\n", err));

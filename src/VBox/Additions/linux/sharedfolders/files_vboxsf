@@ -29,6 +29,7 @@ FILES_VBOXSF_NOBIN=" \
     ${PATH_ROOT}/include/iprt/errcore.h=>include/iprt/errcore.h \
     ${PATH_ROOT}/include/iprt/fs.h=>include/iprt/fs.h \
     ${PATH_ROOT}/include/iprt/latin1.h=>include/iprt/latin1.h \
+    ${PATH_ROOT}/include/iprt/list.h=>include/iprt/list.h \
     ${PATH_ROOT}/include/iprt/log.h=>include/iprt/log.h \
     ${PATH_ROOT}/include/iprt/mangling.h=>include/iprt/mangling.h \
     ${PATH_ROOT}/include/iprt/mem.h=>include/iprt/mem.h \

@@ -73,6 +73,148 @@ DECLINLINE(void) i_size_write(struct inode *inode, loff_t i_size)
 #endif /* < 2.6.0 */
 
 
+/**
+ * Called when an inode is released to unlink all handles that might impossibly
+ * still be associated with it.
+ *
+ * @param   pInodeInfo  The inode which handles to drop.
+ */
+void sf_handle_drop_chain(struct sf_inode_info *pInodeInfo)
+{
+	struct sf_handle *pCur, *pNext;
+	unsigned long     fSavedFlags;
+	SFLOGFLOW(("sf_handle_drop_chain: %p\n", pInodeInfo));
+	spin_lock_irqsave(&g_SfHandleLock, fSavedFlags);
+
+	RTListForEachSafe(&pInodeInfo->HandleList, pCur, pNext, struct sf_handle, Entry) {
+		AssertMsg((pCur->fFlags & (SF_HANDLE_F_MAGIC_MASK | SF_HANDLE_F_ON_LIST)) == (SF_HANDLE_F_MAGIC | SF_HANDLE_F_ON_LIST),
+		          ("%p %#x\n", pCur, pCur->fFlags));
+		pCur->fFlags |= SF_HANDLE_F_ON_LIST;
+		RTListNodeRemove(&pCur->Entry);
+	}
+
+	spin_unlock_irqrestore(&g_SfHandleLock, fSavedFlags);
+}
+
+
+/**
+ * Locates a handle that matches all the flags in @a fFlags.
+ *
+ * @returns Pointer to handle on success (retained), use sf_handle_release() to
+ *          release it.  NULL if no suitable handle was found.
+ * @param   pInodeInfo  The inode info to search.
+ * @param   fFlagsSet   The flags that must be set.
+ * @param   fFlagsClear The flags that must be clear.
+ */
+struct sf_handle *sf_handle_find(struct sf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear)
+{
+	struct sf_handle *pCur;
+	unsigned long     fSavedFlags;
+	spin_lock_irqsave(&g_SfHandleLock, fSavedFlags);
+
+	RTListForEach(&pInodeInfo->HandleList, pCur, struct sf_handle, Entry) {
+		AssertMsg((pCur->fFlags & (SF_HANDLE_F_MAGIC_MASK | SF_HANDLE_F_ON_LIST)) == (SF_HANDLE_F_MAGIC | SF_HANDLE_F_ON_LIST),
+		          ("%p %#x\n", pCur, pCur->fFlags));
+		if ((pCur->fFlags & (fFlagsSet | fFlagsClear)) == fFlagsSet) {
+			uint32_t cRefs = ASMAtomicIncU32(&pCur->cRefs);
+			if (cRefs > 1) {
+				spin_unlock_irqrestore(&g_SfHandleLock, fSavedFlags);
+				SFLOGFLOW(("sf_handle_find: returns %p\n", pCur));
+				return pCur;
+			}
+			/* Oops, already being closed (safe as it's only ever increased here). */
+			ASMAtomicDecU32(&pCur->cRefs);
+		}
+	}
+
+	spin_unlock_irqrestore(&g_SfHandleLock, fSavedFlags);
+	SFLOGFLOW(("sf_handle_find: returns NULL!\n"));
+	return NULL;
+}
+
+
+/**
+ * Slow worker for sf_handle_release() that does the freeing.
+ *
+ * @returns 0 (ref count).
+ * @param   pHandle         The handle to release.
+ * @param   sf_g            The info structure for the shared folder associated
+ *      		    with the handle.
+ * @param   pszCaller       The caller name (for logging failures).
+ */
+uint32_t sf_handle_release_slow(struct sf_handle *pHandle, struct sf_glob_info *sf_g, const char *pszCaller)
+{
+	int rc;
+	unsigned long fSavedFlags;
+
+	SFLOGFLOW(("sf_handle_release_slow: %p (%s)\n", pHandle, pszCaller));
+
+	/*
+	 * Remove from the list.
+	 */
+	spin_lock_irqsave(&g_SfHandleLock, fSavedFlags);
+
+	AssertMsg((pHandle->fFlags & SF_HANDLE_F_MAGIC_MASK) == SF_HANDLE_F_MAGIC, ("%p %#x\n", pHandle, pHandle->fFlags));
+	Assert(pHandle->pInodeInfo);
+	Assert(pHandle->pInodeInfo && pHandle->pInodeInfo->u32Magic == SF_INODE_INFO_MAGIC);
+
+	if (pHandle->fFlags & SF_HANDLE_F_ON_LIST) {
+		pHandle->fFlags &= ~SF_HANDLE_F_ON_LIST;
+		RTListNodeRemove(&pHandle->Entry);
+	}
+
+	spin_unlock_irqrestore(&g_SfHandleLock, fSavedFlags);
+
+	/*
+	 * Actually destroy it.
+	 */
+	rc = VbglR0SfHostReqCloseSimple(sf_g->map.root, pHandle->hHost);
+	if (RT_FAILURE(rc))
+		LogFunc(("Caller %s: VbglR0SfHostReqCloseSimple %#RX64 failed with rc=%Rrc\n", pszCaller, pHandle->hHost, rc));
+	pHandle->hHost  = SHFL_HANDLE_NIL;
+	pHandle->fFlags = SF_HANDLE_F_MAGIC_DEAD;
+	kfree(pHandle);
+	return 0;
+}
+
+
+/**
+ * Appends a handle to a handle list.
+ *
+ * @param   pInodeInfo          The inode to add it to.
+ * @param   pHandle             The handle to add.
+ */
+void sf_handle_append(struct sf_inode_info *pInodeInfo, struct sf_handle *pHandle)
+{
+#ifdef VBOX_STRICT
+	struct sf_handle *pCur;
+#endif
+	unsigned long fSavedFlags;
+
+	SFLOGFLOW(("sf_handle_append: %p (to %p)\n", pHandle, pInodeInfo));
+	AssertMsg((pHandle->fFlags & (SF_HANDLE_F_MAGIC_MASK | SF_HANDLE_F_ON_LIST)) == SF_HANDLE_F_MAGIC,
+		  ("%p %#x\n", pHandle, pHandle->fFlags));
+	Assert(pInodeInfo->u32Magic == SF_INODE_INFO_MAGIC);
+
+	spin_lock_irqsave(&g_SfHandleLock, fSavedFlags);
+
+	AssertMsg((pHandle->fFlags & (SF_HANDLE_F_MAGIC_MASK | SF_HANDLE_F_ON_LIST)) == SF_HANDLE_F_MAGIC,
+		  ("%p %#x\n", pHandle, pHandle->fFlags));
+#ifdef VBOX_STRICT
+	RTListForEach(&pInodeInfo->HandleList, pCur, struct sf_handle, Entry) {
+		Assert(pCur != pHandle);
+		AssertMsg((pCur->fFlags & (SF_HANDLE_F_MAGIC_MASK | SF_HANDLE_F_ON_LIST)) == (SF_HANDLE_F_MAGIC | SF_HANDLE_F_ON_LIST),
+			  ("%p %#x\n", pCur, pCur->fFlags));
+	}
+	pHandle->pInodeInfo = pInodeInfo;
+#endif
+
+	pHandle->fFlags |= SF_HANDLE_F_ON_LIST;
+	RTListAppend(&pInodeInfo->HandleList, &pHandle->Entry);
+
+	spin_unlock_irqrestore(&g_SfHandleLock, fSavedFlags);
+}
+
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
  && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
@@ -130,7 +272,7 @@ static int sf_reg_read_aux(const char *caller, struct sf_glob_info *sf_g,
 			   struct sf_reg_info *sf_r, void *buf,
 			   uint32_t * nread, uint64_t pos)
 {
-	int rc = VbglR0SfRead(&client_handle, &sf_g->map, sf_r->handle,
+	int rc = VbglR0SfRead(&client_handle, &sf_g->map, sf_r->Handle.hHost,
 			      pos, nread, buf, false /* already locked? */ );
 	if (RT_FAILURE(rc)) {
 		LogFunc(("VbglR0SfRead failed. caller=%s, rc=%Rrc\n", caller,
@@ -389,7 +531,7 @@ static ssize_t sf_reg_read_fallback(struct file *file, char /*__user*/ *buf, siz
 			/*
 			 * Issue the request and unlock the pages.
 			 */
-			rc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->handle, offFile, cbChunk, cPages);
+			rc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
 
 			sf_unlock_user_pages(papPages, cPages, true /*fSetDirty*/);
 
@@ -456,7 +598,8 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 	struct sf_reg_info *sf_r = file->private_data;
 	struct address_space *mapping = inode->i_mapping;
 
-	TRACE();
+	SFLOGFLOW(("sf_reg_read: inode=%p file=%p buf=%p size=%#zx off=%#llx\n", inode, file, buf, size, *off));
+
 	if (!S_ISREG(inode->i_mode)) {
 		LogFunc(("read from non regular file %d\n", inode->i_mode));
 		return -EINVAL;
@@ -490,7 +633,7 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 		if (   pReq
 		    && (PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
 			ssize_t cbRet;
-			int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->handle, *off, (uint32_t)size);
+			int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->Handle.hHost, *off, (uint32_t)size);
 			if (RT_SUCCESS(vrc)) {
 				cbRet = pReq->Parms.cb32Read.u.value32;
 				AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
@@ -517,8 +660,8 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 			VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
 			if (pReq) {
 				ssize_t cbRet;
-				int vrc = VbglR0SfHostReqReadContig(sf_g->map.root, pReq, sf_r->handle, *off, (uint32_t)size,
-								    pvBounce, virt_to_phys(pvBounce));
+				int vrc = VbglR0SfHostReqReadContig(sf_g->map.root, pReq, sf_r->Handle.hHost, *off,
+				                                    (uint32_t)size, pvBounce, virt_to_phys(pvBounce));
 				if (RT_SUCCESS(vrc)) {
 					cbRet = pReq->Parms.cb32Read.u.value32;
 					AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
@@ -628,7 +771,7 @@ static ssize_t sf_reg_write_fallback(struct file *file, const char /*__user*/ *b
 			/*
 			 * Issue the request and unlock the pages.
 			 */
-			rc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->handle, offFile, cbChunk, cPages);
+			rc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
 
 			sf_unlock_user_pages(papPages, cPages, false /*fSetDirty*/);
 
@@ -701,7 +844,7 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 	struct address_space *mapping = inode->i_mapping;
 	loff_t                pos;
 
-	TRACE();
+	SFLOGFLOW(("sf_reg_write: inode=%p file=%p buf=%p size=%#zx off=%#llx\n", inode, file, buf, size, *off));
 	BUG_ON(!sf_i);
 	BUG_ON(!sf_g);
 	BUG_ON(!sf_r);
@@ -752,7 +895,8 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 		    && (PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
 			ssize_t cbRet;
 			if (copy_from_user(pReq->abData, buf, size) == 0) {
-				int vrc = VbglR0SfHostReqWriteEmbedded(sf_g->map.root, pReq, sf_r->handle, pos, (uint32_t)size);
+				int vrc = VbglR0SfHostReqWriteEmbedded(sf_g->map.root, pReq, sf_r->Handle.hHost,
+								       pos, (uint32_t)size);
 				if (RT_SUCCESS(vrc)) {
 					cbRet = pReq->Parms.cb32Write.u.value32;
 					AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
@@ -831,17 +975,21 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 	VBOXSFCREATEREQ *pReq;
 	SHFLCREATEPARMS *pCreateParms;  /* temp glue */
 
-	TRACE();
+	SFLOGFLOW(("sf_reg_open: inode=%p file=%p flags=%#x %s\n",
+		   inode, file, file->f_flags, sf_i ? sf_i->path->String.ach : NULL));
 	BUG_ON(!sf_g);
 	BUG_ON(!sf_i);
-
-	LogFunc(("open %s\n", sf_i->path->String.utf8));
 
 	sf_r = kmalloc(sizeof(*sf_r), GFP_KERNEL);
 	if (!sf_r) {
 		LogRelFunc(("could not allocate reg info\n"));
 		return -ENOMEM;
 	}
+
+	RTListInit(&sf_r->Handle.Entry);
+	sf_r->Handle.cRefs  = 1;
+	sf_r->Handle.fFlags = SF_HANDLE_F_FILE | SF_HANDLE_F_MAGIC;
+	sf_r->Handle.hHost  = SHFL_HANDLE_NIL;
 
 	/* Already open? */
 	if (sf_i->handle != SHFL_HANDLE_NIL) {
@@ -851,10 +999,13 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 		 * about the access flags (SHFL_CF_ACCESS_*).
 		 */
 		sf_i->force_restat = 1;
-		sf_r->handle = sf_i->handle;
+		sf_r->Handle.hHost = sf_i->handle;
 		sf_i->handle = SHFL_HANDLE_NIL;
-		sf_i->file = file;
 		file->private_data = sf_r;
+
+		sf_r->Handle.fFlags |= SF_HANDLE_F_READ | SF_HANDLE_F_WRITE; /** @todo check */
+		sf_handle_append(sf_i, &sf_r->Handle);
+		SFLOGFLOW(("sf_reg_open: returns 0 (#1) - sf_i=%p hHost=%#llx\n", sf_i, sf_r->Handle.hHost));
 		return 0;
 	}
 
@@ -897,14 +1048,17 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 	switch (file->f_flags & O_ACCMODE) {
 	case O_RDONLY:
 		pCreateParms->CreateFlags |= SHFL_CF_ACCESS_READ;
+		sf_r->Handle.fFlags |= SF_HANDLE_F_READ;
 		break;
 
 	case O_WRONLY:
 		pCreateParms->CreateFlags |= SHFL_CF_ACCESS_WRITE;
+		sf_r->Handle.fFlags |= SF_HANDLE_F_WRITE;
 		break;
 
 	case O_RDWR:
 		pCreateParms->CreateFlags |= SHFL_CF_ACCESS_READWRITE;
+		sf_r->Handle.fFlags |= SF_HANDLE_F_READ | SF_HANDLE_F_WRITE;
 		break;
 
 	default:
@@ -914,6 +1068,7 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 	if (file->f_flags & O_APPEND) {
 		LogFunc(("O_APPEND set\n"));
 		pCreateParms->CreateFlags |= SHFL_CF_ACCESS_APPEND;
+		sf_r->Handle.fFlags |= SF_HANDLE_F_APPEND;
 	}
 
 	pCreateParms->Info.Attr.fMode = inode->i_mode;
@@ -941,12 +1096,14 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 	}
 
 	sf_i->force_restat = 1;
-	sf_r->handle = pCreateParms->Handle;
-	sf_i->file = file;
+	sf_r->Handle.hHost = pCreateParms->Handle;
 	file->private_data = sf_r;
+	sf_handle_append(sf_i, &sf_r->Handle);
 	VbglR0PhysHeapFree(pReq);
+	SFLOGFLOW(("sf_reg_open: returns 0 (#2) - sf_i=%p hHost=%#llx\n", sf_i, sf_r->Handle.hHost));
 	return rc_linux;
 }
+
 
 /**
  * Close a regular file.
@@ -957,12 +1114,11 @@ static int sf_reg_open(struct inode *inode, struct file *file)
  */
 static int sf_reg_release(struct inode *inode, struct file *file)
 {
-	int rc;
 	struct sf_reg_info *sf_r;
 	struct sf_glob_info *sf_g;
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
 
-	TRACE();
+	SFLOGFLOW(("sf_reg_release: inode=%p file=%p\n", inode, file));
 	sf_g = GET_GLOB_INFO(inode->i_sb);
 	sf_r = file->private_data;
 
@@ -979,15 +1135,12 @@ static int sf_reg_release(struct inode *inode, struct file *file)
 	    && filemap_fdatawrite(inode->i_mapping) != -EIO)
 		filemap_fdatawait(inode->i_mapping);
 #endif
-	rc = VbglR0SfHostReqCloseSimple(sf_g->map.root, sf_r->handle);
-	if (RT_FAILURE(rc))
-		LogFunc(("VbglR0SfHostReqCloseSimple failed rc=%Rrc\n", rc));
-	sf_r->handle = SHFL_HANDLE_NIL;
 
-	kfree(sf_r);
-	sf_i->file = NULL;
-	sf_i->handle = SHFL_HANDLE_NIL;
+	/* Release sf_r, closing the handle if we're the last user. */
 	file->private_data = NULL;
+	sf_handle_release(&sf_r->Handle, sf_g, "sf_reg_release");
+
+	sf_i->handle = SHFL_HANDLE_NIL;
 	return 0;
 }
 
@@ -1002,6 +1155,8 @@ static int sf_reg_release(struct inode *inode, struct file *file)
  */
 static loff_t sf_reg_llseek(struct file *file, loff_t off, int whence)
 {
+	SFLOGFLOW(("sf_reg_llseek: file=%p off=%lld whence=%d\n", file, off, whence));
+
 	switch (whence) {
 #ifdef SEEK_HOLE
 		case SEEK_HOLE:
@@ -1009,7 +1164,7 @@ static loff_t sf_reg_llseek(struct file *file, loff_t off, int whence)
 #endif
 		case SEEK_END: {
 			struct sf_reg_info *sf_r = file->private_data;
-			int rc = sf_inode_revalidate_with_handle(GET_F_DENTRY(file), sf_r->handle, true /*fForce*/);
+			int rc = sf_inode_revalidate_with_handle(GET_F_DENTRY(file), sf_r->Handle.hHost, true /*fForce*/);
 			if (rc == 0)
 				break;
 			return rc;
@@ -1127,7 +1282,8 @@ static int sf_readpage(struct file *file, struct page *page)
 	struct inode *inode = GET_F_DENTRY(file)->d_inode;
 	int           err;
 
-	TRACE();
+	SFLOGFLOW(("sf_readpage: inode=%p file=%p page=%p off=%#llx\n", inode, file, page, (uint64_t)page->index << PAGE_SHIFT));
+
 	if (!is_bad_inode(inode)) {
 	    VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
 	    if (pReq) {
@@ -1140,7 +1296,7 @@ static int sf_readpage(struct file *file, struct page *page)
 		    pReq->PgLst.aPages[0]    = page_to_phys(page);
 		    vrc = VbglR0SfHostReqReadPgLst(sf_g->map.root,
 		                                   pReq,
-		                                   sf_r->handle,
+		                                   sf_r->Handle.hHost,
 		                                   (uint64_t)page->index << PAGE_SHIFT,
 		                                   PAGE_SIZE,
 		                                   1 /*cPages*/);
@@ -1172,6 +1328,7 @@ static int sf_readpage(struct file *file, struct page *page)
 	return err;
 }
 
+
 /**
  * Used to write out the content of a dirty page cache page to the host file.
  *
@@ -1180,81 +1337,68 @@ static int sf_readpage(struct file *file, struct page *page)
  */
 static int sf_writepage(struct page *page, struct writeback_control *wbc)
 {
-	int err;
+	struct address_space *mapping   = page->mapping;
+	struct inode         *inode     = mapping->host;
+	struct sf_inode_info *sf_i      = GET_INODE_INFO(inode);
+	struct sf_handle     *pHandle   = sf_handle_find(sf_i, SF_HANDLE_F_WRITE, SF_HANDLE_F_APPEND);
+	int                   err;
 
-	TRACE();
+	SFLOGFLOW(("sf_writepage: inode=%p page=%p off=%#llx pHandle=%p (%#llx)\n",
+		   inode, page,(uint64_t)page->index << PAGE_SHIFT, pHandle, pHandle->hHost));
 
-	VBOXSFWRITEPGLSTREQ *pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
-	if (pReq) {
-		struct address_space *mapping   = page->mapping;
-		struct inode         *inode     = mapping->host;
-		struct sf_glob_info  *sf_g      = GET_GLOB_INFO(inode->i_sb);
-		struct sf_inode_info *sf_i      = GET_INODE_INFO(inode);
-		struct file          *file      = sf_i->file; /** @todo r=bird: This isn't quite sane wrt readonly vs writeable. */
-		struct sf_reg_info   *sf_r      = file->private_data;
-		uint64_t const        cbFile    = i_size_read(inode);
-		uint64_t const        offInFile = (uint64_t)page->index << PAGE_SHIFT;
-		uint32_t const        cbToWrite = page->index != (cbFile >> PAGE_SHIFT) ? PAGE_SIZE
-			                        : (uint32_t)cbFile & (uint32_t)PAGE_OFFSET_MASK;
-		int                   vrc;
+	if (pHandle) {
+		struct sf_glob_info  *sf_g = GET_GLOB_INFO(inode->i_sb);
+		VBOXSFWRITEPGLSTREQ  *pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+		if (pReq) {
+			uint64_t const cbFile    = i_size_read(inode);
+			uint64_t const offInFile = (uint64_t)page->index << PAGE_SHIFT;
+			uint32_t const cbToWrite = page->index != (cbFile >> PAGE_SHIFT) ? PAGE_SIZE
+			                         : (uint32_t)cbFile & (uint32_t)PAGE_OFFSET_MASK;
+			int            vrc;
 
-		pReq->PgLst.offFirstPage = 0;
-		pReq->PgLst.aPages[0]    = page_to_phys(page);
-		vrc = VbglR0SfHostReqWritePgLst(sf_g->map.root,
-					        pReq,
-					        sf_r->handle,
-					        offInFile,
-		                                cbToWrite,
-					        1 /*cPages*/);
-		AssertMsgStmt(pReq->Parms.cb32Write.u.value32 == cbToWrite || RT_FAILURE(vrc), /* lazy bird */
-		              ("%#x vs %#x\n", pReq->Parms.cb32Write, cbToWrite),
-			      vrc = VERR_WRITE_ERROR);
-		VbglR0PhysHeapFree(pReq);
+			pReq->PgLst.offFirstPage = 0;
+			pReq->PgLst.aPages[0]    = page_to_phys(page);
+			vrc = VbglR0SfHostReqWritePgLst(sf_g->map.root,
+							pReq,
+							pHandle->hHost,
+							offInFile,
+							cbToWrite,
+							1 /*cPages*/);
+			AssertMsgStmt(pReq->Parms.cb32Write.u.value32 == cbToWrite || RT_FAILURE(vrc), /* lazy bird */
+				      ("%#x vs %#x\n", pReq->Parms.cb32Write, cbToWrite),
+				      vrc = VERR_WRITE_ERROR);
+			VbglR0PhysHeapFree(pReq);
 
-		if (RT_SUCCESS(vrc)) {
-			/* Update the inode if we've extended the file. */
-			/** @todo is this necessary given the cbToWrite calc above? */
-			uint64_t const offEndOfWrite = offInFile + cbToWrite;
-			if (   offEndOfWrite > cbFile
-			    && offEndOfWrite > i_size_read(inode))
-				i_size_write(inode, offEndOfWrite);
+			if (RT_SUCCESS(vrc)) {
+				/* Update the inode if we've extended the file. */
+				/** @todo is this necessary given the cbToWrite calc above? */
+				uint64_t const offEndOfWrite = offInFile + cbToWrite;
+				if (   offEndOfWrite > cbFile
+				    && offEndOfWrite > i_size_read(inode))
+					i_size_write(inode, offEndOfWrite);
 
-			if (PageError(page))
-				ClearPageError(page);
+				if (PageError(page))
+					ClearPageError(page);
 
-			err = 0;
-		} else {
-			ClearPageUptodate(page);
-			err = -EPROTO;
-		}
-	} else
-		err = -ENOMEM;
+				err = 0;
+			} else {
+				ClearPageUptodate(page);
+				err = -EPROTO;
+			}
+		} else
+			err = -ENOMEM;
+		sf_handle_release(pHandle, sf_g, "sf_writepage");
+	} else {
+		static uint64_t volatile s_cCalls = 0;
+		if (s_cCalls++ < 16)
+			printk("sf_writepage: no writable handle for %s..\n", sf_i->path->String.ach);
+		err = -EPROTO;
+	}
 	unlock_page(page);
 	return err;
 }
 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-
-#  if 0 /* unused - see below */
-static int sf_reg_write_aux(const char *caller, struct sf_glob_info *sf_g,
-			    struct sf_reg_info *sf_r, void *buf,
-			    uint32_t * nwritten, uint64_t pos)
-{
-    /** @todo bird: yes, kmap() and kmalloc() input only. Since the buffer is
-     *        contiguous in physical memory (kmalloc or single page), we should
-     *        use a physical address here to speed things up. */
-	int rc = VbglR0SfWrite(&client_handle, &sf_g->map, sf_r->handle,
-			       pos, nwritten, buf,
-			       false /* already locked? */ );
-	if (RT_FAILURE(rc)) {
-		LogFunc(("VbglR0SfWrite failed. caller=%s, rc=%Rrc\n",
-			 caller, rc));
-		return -EPROTO;
-	}
-	return 0;
-}
-#  endif
-
 /**
  * Called when writing thru the page cache (which we shouldn't be doing).
  */
@@ -1278,49 +1422,6 @@ int sf_write_begin(struct file *file, struct address_space *mapping, loff_t pos,
 	}
 	return simple_write_begin(file, mapping, pos, len, flags, pagep, fsdata);
 }
-
-/**
- * Called to complete a write thru the page cache (which we shouldn't be doing).
- */
-int sf_write_end(struct file *file, struct address_space *mapping, loff_t pos,
-		 unsigned len, unsigned copied, struct page *page, void *fsdata)
-{
-#  if 0 /** @todo r=bird: See sf_write_begin. */
-	struct inode *inode = mapping->host;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
-	struct sf_reg_info *sf_r = file->private_data;
-	void *buf;
-	unsigned from = pos & (PAGE_SIZE - 1);
-	uint32_t nwritten = len;
-	int err;
-
-	TRACE();
-
-	buf = kmap(page);
-	err = sf_reg_write_aux(__func__, sf_g, sf_r, buf + from, &nwritten, pos);
-	kunmap(page);
-
-	if (err >= 0) {
-		if (!PageUptodate(page) && nwritten == PAGE_SIZE)
-			SetPageUptodate(page);
-
-		pos += nwritten;
-		if (pos > inode->i_size)
-			inode->i_size = pos;
-	}
-
-	unlock_page(page);
-#   if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
-	put_page(page);
-#   else
-	page_cache_release(page);
-#   endif
-	return nwritten;
-#  else
-	return simple_write_end(file, mapping, pos, len, copied, page, fsdata);
-#  endif
-}
-
 # endif	/* KERNEL_VERSION >= 2.6.24 */
 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
@@ -1356,12 +1457,13 @@ static int sf_direct_IO(int rw, struct inode *inode, struct kiobuf *, unsigned l
 struct address_space_operations sf_reg_aops = {
 	.readpage = sf_readpage,
 	.writepage = sf_writepage,
+	/** @todo Need .writepages if we want msync performance...  */
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
 	.set_page_dirty = __set_page_dirty_buffers,
 # endif
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 	.write_begin = sf_write_begin,
-	.write_end = sf_write_end,
+	.write_end = simple_write_end,
 # else
 	.prepare_write = simple_prepare_write,
 	.commit_write = simple_commit_write,
