@@ -674,7 +674,7 @@ HRESULT Mouse::i_reportAbsEventToDisplayDevice(int32_t x, int32_t y)
         if (x < 0x7fffffff && y < 0x7fffffff)
             pDisplay->i_reportHostCursorPosition(x - 1, y - 1, false);
         else  /* Out of range. */
-            pDisplay->i_reportHostCursorPosition(0, 0, true);            
+            pDisplay->i_reportHostCursorPosition(0, 0, true);
     }
     return S_OK;
 }
