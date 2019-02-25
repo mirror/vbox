@@ -16,31 +16,31 @@
  */
 
 /* Qt includes: */
+#include <QApplication>
 #include <QDir>
 
 /* GUI includes: */
-#include "UIDetailsGenerator.h"
 #include "UIConverter.h"
+#include "UIDetailsGenerator.h"
 #include "UIErrorString.h"
-#include "UIInformationItem.h"
 #include "VBoxGlobal.h"
 
 /* COM includes: */
 #include "COMEnums.h"
-#include "CMachine.h"
-#include "CSystemProperties.h"
-#include "CVRDEServer.h"
-#include "CStorageController.h"
-#include "CMediumAttachment.h"
 #include "CAudioAdapter.h"
-#include "CRecordingSettings.h"
-#include "CRecordingScreenSettings.h"
+#include "CMachine.h"
+#include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
+#include "CRecordingScreenSettings.h"
+#include "CRecordingSettings.h"
 #include "CSerialPort.h"
-#include "CUSBController.h"
-#include "CUSBDeviceFilters.h"
-#include "CUSBDeviceFilter.h"
 #include "CSharedFolder.h"
+#include "CStorageController.h"
+#include "CSystemProperties.h"
+#include "CUSBController.h"
+#include "CUSBDeviceFilter.h"
+#include "CUSBDeviceFilters.h"
+#include "CVRDEServer.h"
 
 UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comMachine,
                                                                   const UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral &fOptions)
@@ -56,7 +56,6 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
         return table;
     }
 
-    /* Gather information: */
     /* Name: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Name)
         table << UITextTableLine(QApplication::translate("UIDetails", "Name", "details (general)"), comMachine.GetName());
@@ -92,6 +91,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationGeneral(CMachine &comM
             table << UITextTableLine(QApplication::translate("UIDetails", "Groups", "details (general)"), groups.join(", "));
         }
     }
+
     return table;
 }
 
@@ -99,6 +99,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
                                                                  const UIExtraDataMetaDefs::DetailsElementOptionTypeSystem &fOptions)
 {
     UITextTable table;
+
     if (comMachine.isNull())
         return table;
 
@@ -209,6 +210,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
             table << UITextTableLine(QApplication::translate("UIDetails", "Acceleration", "details (system)"),
                                      acceleration.join(", "));
     }
+
     return table;
 }
 
@@ -319,6 +321,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationDisplay(CMachine &comM
                                      QApplication::translate("UIDetails", "Disabled", "details (display/recording)"));
         }
     }
+
     return table;
 }
 
@@ -416,7 +419,6 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
 UITextTable UIDetailsGenerator::generateMachineInformationAudio(CMachine &comMachine,
                                                                 const UIExtraDataMetaDefs::DetailsElementOptionTypeAudio &fOptions)
 {
-
     UITextTable table;
 
     if (comMachine.isNull())
@@ -459,14 +461,15 @@ UITextTable UIDetailsGenerator::generateMachineInformationAudio(CMachine &comMac
     else
         table << UITextTableLine(QApplication::translate("UIDetails", "Disabled", "details (audio)"),
                                  QString());
+
     return table;
 }
 
-QString summarizeGenericProperties(const CNetworkAdapter &adapter)
+QString summarizeGenericProperties(const CNetworkAdapter &comAdapter)
 {
     QVector<QString> names;
     QVector<QString> props;
-    props = adapter.GetProperties(QString(), names);
+    props = comAdapter.GetProperties(QString(), names);
     QString strResult;
     for (int i = 0; i < names.size(); ++i)
     {
@@ -578,7 +581,6 @@ UITextTable UIDetailsGenerator::generateMachineInformationSerial(CMachine &comMa
         return table;
     }
 
-
     /* Iterate over all the ports: */
     const ulong uCount = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
     for (ulong uSlot = 0; uSlot < uCount; ++uSlot)
@@ -638,7 +640,6 @@ UITextTable UIDetailsGenerator::generateMachineInformationSerial(CMachine &comMa
 UITextTable UIDetailsGenerator::generateMachineInformationUSB(CMachine &comMachine,
                                                               const UIExtraDataMetaDefs::DetailsElementOptionTypeUsb &fOptions)
 {
-
     UITextTable table;
 
     if (comMachine.isNull())
@@ -649,6 +650,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationUSB(CMachine &comMachi
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
         return table;
     }
+
     /* Iterate over all the USB filters: */
     const CUSBDeviceFilters comFilterObject = comMachine.GetUSBDeviceFilters();
     if (!comFilterObject.isNull() && comMachine.GetUSBProxyAvailable())
@@ -690,7 +692,8 @@ UITextTable UIDetailsGenerator::generateMachineInformationUSB(CMachine &comMachi
 UITextTable UIDetailsGenerator::generateMachineInformationSharedFolders(CMachine &comMachine,
                                                                         const UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders &fOptions)
 {
-    (void)fOptions;
+    Q_UNUSED(fOptions);
+
     UITextTable table;
 
     if (comMachine.isNull())
@@ -701,6 +704,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationSharedFolders(CMachine
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
         return table;
     }
+
     /* Summary: */
     const ulong uCount = comMachine.GetSharedFolders().size();
     if (uCount > 0)
@@ -724,7 +728,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationUI(CMachine &comMachin
         table << UITextTableLine(QApplication::translate("UIDetails", "Information Inaccessible", "details"), QString());
         return table;
     }
-    /* Gather information: */
+
 #ifndef VBOX_WS_MAC
     /* Menu-bar: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_MenuBar)
@@ -742,7 +746,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationUI(CMachine &comMachin
     }
 #endif /* !VBOX_WS_MAC */
 
-       /* Status-bar: */
+    /* Status-bar: */
     if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface_StatusBar)
     {
         const QString strStatusbarEnabled = comMachine.GetExtraData(UIExtraDataDefs::GUI_StatusBar_Enabled);
@@ -795,13 +799,15 @@ UITextTable UIDetailsGenerator::generateMachineInformationUI(CMachine &comMachin
                                      QApplication::translate("UIDetails", "Disabled", "details (user interface/mini-toolbar)"));
     }
 #endif /* !VBOX_WS_MAC */
+
     return table;
 }
 
 UITextTable UIDetailsGenerator::generateMachineInformationDetails(CMachine &comMachine,
                                                                   const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &fOptions)
 {
-    (void)fOptions;
+    Q_UNUSED(fOptions);
+
     UITextTable table;
 
     if (comMachine.isNull())
@@ -813,7 +819,6 @@ UITextTable UIDetailsGenerator::generateMachineInformationDetails(CMachine &comM
         return table;
     }
 
-    /* Gather information: */
     /* Summary: */
     const QString strDescription = comMachine.GetDescription();
     if (!strDescription.isEmpty())

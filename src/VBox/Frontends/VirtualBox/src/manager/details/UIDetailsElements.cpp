@@ -228,7 +228,7 @@ void UIDetailsUpdateTaskGeneral::run()
     if (comMachine.isNull())
         return;
 
-    /* Generate the table: */
+    /* Generate details table: */
     UITextTable table = UIDetailsGenerator::generateMachineInformationGeneral(comMachine, m_fOptions);
     setProperty("table", QVariant::fromValue(table));
 }
@@ -246,9 +246,8 @@ void UIDetailsUpdateTaskSystem::run()
     if (comMachine.isNull())
         return;
 
-    /* Prepare table: */
+    /* Generate details table: */
     UITextTable table = UIDetailsGenerator::generateMachineInformationSystem(comMachine, m_fOptions);
-    /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
 
@@ -265,10 +264,8 @@ void UIDetailsUpdateTaskDisplay::run()
     if (comMachine.isNull())
         return;
 
-    /* Prepare table: */
+    /* Generate details table: */
     UITextTable table = UIDetailsGenerator::generateMachineInformationDisplay(comMachine, m_fOptions);
-
-    /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
 
@@ -285,10 +282,8 @@ void UIDetailsUpdateTaskStorage::run()
     if (comMachine.isNull())
         return;
 
-    /* Prepare table: */
+    /* Generate details table: */
     UITextTable table = UIDetailsGenerator::generateMachineInformationStorage(comMachine, m_fOptions);
-
-    /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
 
@@ -305,11 +300,8 @@ void UIDetailsUpdateTaskAudio::run()
     if (comMachine.isNull())
         return;
 
-    /* Prepare table: */
+    /* Generate details table: */
     UITextTable table = UIDetailsGenerator::generateMachineInformationAudio(comMachine, m_fOptions);
-
-
-    /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
 
@@ -325,10 +317,8 @@ void UIDetailsUpdateTaskNetwork::run()
     if (comMachine.isNull())
         return;
 
-    /* Prepare table: */
+    /* Generate details table: */
     UITextTable table = UIDetailsGenerator::generateMachineInformationNetwork(comMachine, m_fOptions);
-
-    /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
 
@@ -344,9 +334,8 @@ void UIDetailsUpdateTaskSerial::run()
     if (comMachine.isNull())
         return;
 
-    /* Prepare table: */
+    /* Generate details table: */
     UITextTable table = UIDetailsGenerator::generateMachineInformationSerial(comMachine, m_fOptions);
-    /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
 
@@ -362,10 +351,8 @@ void UIDetailsUpdateTaskUSB::run()
     if (comMachine.isNull())
         return;
 
-    /* Prepare table: */
+    /* Generate details table: */
     UITextTable table = UIDetailsGenerator::generateMachineInformationUSB(comMachine, m_fOptions);
-
-    /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
 
@@ -382,10 +369,8 @@ void UIDetailsUpdateTaskSF::run()
     if (comMachine.isNull())
         return;
 
-    /* Prepare table: */
+    /* Generate details table: */
     UITextTable table = UIDetailsGenerator::generateMachineInformationSharedFolders(comMachine, m_fOptions);
-
-    /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
 
@@ -402,10 +387,8 @@ void UIDetailsUpdateTaskUI::run()
     if (comMachine.isNull())
         return;
 
-    /* Prepare table: */
+    /* Generate details table: */
     UITextTable table = UIDetailsGenerator::generateMachineInformationUI(comMachine, m_fOptions);
-
-    /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
 
@@ -422,10 +405,8 @@ void UIDetailsUpdateTaskDescription::run()
     if (comMachine.isNull())
         return;
 
-    /* Prepare table: */
+    /* Generate details table: */
     UITextTable table = UIDetailsGenerator::generateMachineInformationDetails(comMachine, m_fOptions);
-
-    /* Save the table as property: */
     setProperty("table", QVariant::fromValue(table));
 }
 

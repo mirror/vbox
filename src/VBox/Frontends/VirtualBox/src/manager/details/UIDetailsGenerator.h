@@ -25,9 +25,10 @@
 #include "UIExtraDataDefs.h"
 #include "UITextTable.h"
 
+/* Forward declarations: */
 class CMachine;
 
-
+/** Details generation namespace. */
 namespace UIDetailsGenerator
 {
     UITextTable generateMachineInformationGeneral(CMachine &comMachine,
@@ -61,7 +62,7 @@ namespace UIDetailsGenerator
                                              const UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface &fOptions);
 
     UITextTable generateMachineInformationDetails(CMachine &comMachine,
-                                             const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &fOptions);
+                                                  const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &fOptions);
 }
 
 #endif /* !FEQT_INCLUDED_SRC_manager_details_UIDetailsGenerator_h */
