@@ -29,6 +29,7 @@ terms and conditions of either the GPL or the CDDL or both.
 """
 __version__ = "$Revision$"
 
+# pylint: disable=unnecessary-semicolon
 
 # Standard Python imports.
 import os;
@@ -62,7 +63,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
     def __init__(self):
         vbox.TestDriver.__init__(self);
         self.oTestVmSet = self.oTestVmManager.getSmokeVmSet('nat');
-        self.asTestsDef = ['guestprops', 'stdguestprops', 'guestcontrol'];
+        self.asTestsDef = ['install', 'guestprops', 'stdguestprops', 'guestcontrol'];
         self.asTests    = self.asTestsDef;
         self.asRsrcs    = None
 
@@ -132,26 +133,32 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         """
         fRc = False;
 
+        if oTestVm.isWindows():
+            sFileCdWait = 'VBoxWindowsAdditions.exe';
+        elif oTestVm.isLinux():
+            sFileCdWait = 'VBoxLinuxAdditions.run';
+
         self.logVmInfo(oVM);
-        oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True, \
-                                                                  sFileCdWait = 'AUTORUN.INF');
+        oSession, oTxsSession = self.startVmAndConnectToTxsViaTcp(oTestVm.sVmName, fCdWait = True, sFileCdWait = sFileCdWait);
         if oSession is not None:
             self.addTask(oTxsSession);
             # Do the testing.
+            fSkip = 'install' not in self.asTests;
             reporter.testStart('Install');
-            fRc, oTxsSession = self.testInstallAdditions(oSession, oTxsSession, oTestVm);
-            reporter.testDone();
-            fSkip = not fRc;
+            if not fSkip:
+                fRc, oTxsSession = self.testInstallAdditions(oSession, oTxsSession, oTestVm);
+            reporter.testDone(fSkip);
 
+            fSkip = 'guestprops' not in self.asTests;
             reporter.testStart('Guest Properties');
             if not fSkip:
                 fRc = self.testGuestProperties(oSession, oTxsSession, oTestVm) and fRc;
             reporter.testDone(fSkip);
 
+            fSkip = 'guestcontrol' not in self.asTests;
             reporter.testStart('Guest Control');
             if not fSkip:
-                (fRc2, oTxsSession) = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
-                fRc = fRc2 and fRc;
+                fRc, oTxsSession = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
             reporter.testDone(fSkip);
 
             ## @todo Save and restore test.
@@ -171,6 +178,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         """
         if oTestVm.isWindows():
             (fRc, oTxsSession) = self.testWindowsInstallAdditions(oSession, oTxsSession, oTestVm);
+        elif oTestVm.isLinux():
+            (fRc, oTxsSession) = self.testLinuxInstallAdditions(oSession, oTxsSession, oTestVm);
         else:
             reporter.error('Guest Additions installation not implemented for %s yet! (%s)' % \
                            (oTestVm.sKind, oTestVm.sVmName));
@@ -278,6 +287,64 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         return (fRc, oTxsSession);
 
+    def testLinuxInstallAdditions(self, oSession, oTxsSession, oTestVm):
+        oSession = oSession;
+        oTestVm = oTestVm;
+
+        fRc = False;
+
+        # Install Kernel headers, which are required for actually installing the Linux Additions.
+        if oTestVm.sKind.startswith('Debian') \
+        or oTestVm.sKind.startswith('Ubuntu'):
+            fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', 5 * 60 *1000,
+                                  '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'linux-headers-generic'));
+            if not fRc:
+                reporter.error('Error installing Kernel headers');
+            fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', 5 * 60 *1000, \
+                                  '/usr/bin/apt-get', ('/usr/bin/apt-get', 'install', '-y', 'build-essential', 'perl'));
+            if not fRc:
+                reporter.error('Error installing additional installer dependencies');
+        elif oTestVm.sKind.startswith('OL') \
+        or   oTestVm.sKind.startswith('Oracle') \
+        or   oTestVm.sKind.startswith('RHEL') \
+        or   oTestVm.sKind.startswith('Redhat') \
+        or   oTestVm.sKind.startswith('Cent'):
+            fRc = self.txsRunTest(oTxsSession, 'Installing Kernel headers', 5 * 60 *1000,
+                                  '/usr/bin/yum', ('/usr/bin/yum', '-y', 'install', 'kernel-headers'));
+            if not fRc:
+                reporter.error('Error installing Kernel headers');
+            fRc = self.txsRunTest(oTxsSession, 'Installing Guest Additions depdendencies', 5 * 60 *1000, \
+                                  '/usr/bin/yum', ('/usr/bin/yum', '-y', 'install', \
+                                                   'make', 'automake', 'gcc', 'kernel-devel', 'dkms', 'bzip2', 'perl'));
+            if not fRc:
+                reporter.error('Error installing additional installer dependencies');
+        else:
+            reporter.error('Installing Linux Additions for kind "%s" is not supported yet' % oTestVm.sKind);
+            return (False, oTxsSession);
+
+        if fRc:
+            #
+            # The actual install.
+            # Also tell the installer to produce the appropriate log files.
+            #
+            fRc = self.txsRunTest(oTxsSession, 'VBoxLinuxAdditions.run', 5 * 60 * 1000,
+                '/bin/sh', ('/bin/sh', '${CDROM}/VBoxLinuxAdditions.run'));
+            if not fRc:
+                reporter.error('Installing Linux Additions failed (see log file for details)');
+
+            #
+            # Download log files.
+            # Ignore errors as all files above might not be present for whatever reason.
+            #
+            asLogFile = [];
+            asLogFile.append('/var/log/vboxadd-install.log');
+            self.txsDownloadFiles(oSession, oTxsSession, asLogFile, fIgnoreErrors = True);
+
+        if fRc:
+            (fRc, oTxsSession) = self.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 3 * 60000);
+
+        return (fRc, oTxsSession);
+
     def testIGuest_additionsVersion(self, oGuest):
         """
         Returns False if no version string could be obtained, otherwise True
@@ -337,4 +404,3 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
 if __name__ == '__main__':
     sys.exit(tdAddBasic1().main(sys.argv));
-
