@@ -1031,10 +1031,6 @@ DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS P
     && LINUX_VERSION_CODE <  KERNEL_VERSION(4, 6, 0) \
     && defined(FAULT_FLAG_REMOTE)
 # define GET_USER_PAGES_API     KERNEL_VERSION(4, 10, 0) /* no typo! */
-/* The get_user_pages API change was back-ported to 4.4.168. */
-#elif    LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 168) \
-      && LINUX_VERSION_CODE <  KERNEL_VERSION(4, 5, 0)
-# define GET_USER_PAGES_API     KERNEL_VERSION(4, 10, 0) /* no typo! */
 #else
 # define GET_USER_PAGES_API     LINUX_VERSION_CODE
 #endif
@@ -1119,7 +1115,9 @@ DECLHIDDEN(int) rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3P
                                 pTask->mm,              /* Whose pages. */
                                 R3Ptr,                  /* Where from. */
                                 cPages,                 /* How many pages. */
-# if GET_USER_PAGES_API >= KERNEL_VERSION(4, 9, 0)
+/* The get_user_pages API change was back-ported to 4.4.168. */
+# if    LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 168) \
+      && LINUX_VERSION_CODE <  KERNEL_VERSION(4, 5, 0)
                                 fWrite ? FOLL_WRITE |   /* Write to memory. */
                                          FOLL_FORCE     /* force write access. */
                                        : 0,             /* Write to memory. */
