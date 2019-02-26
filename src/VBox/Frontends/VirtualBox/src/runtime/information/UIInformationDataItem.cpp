@@ -21,6 +21,7 @@
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
+#include "UIDetailsGenerator.h"
 #include "UIMachine.h"
 #include "UISession.h"
 #include "UIConverter.h"
@@ -92,10 +93,10 @@ QVariant UIInformationDataGeneral::data(const QModelIndex &index, int role) cons
 
         case Qt::UserRole + 1:
         {
-            UITextTable p_text;
-            p_text << UITextTableLine(tr("Name", "details report"), m_machine.GetName());
-            p_text << UITextTableLine(tr("OS Type", "details report"), vboxGlobal().vmGuestOSTypeDescription(m_machine.GetOSTypeId()));
-            return QVariant::fromValue(p_text);
+            UITextTable textTable =
+                UIDetailsGenerator::generateMachineInformationGeneral(m_machine,
+                                                                      UIExtraDataMetaDefs::DetailsElementOptionTypeGeneral_Default);
+            return QVariant::fromValue(textTable);
         }
 
         default:
@@ -128,67 +129,11 @@ QVariant UIInformationDataSystem::data(const QModelIndex &index, int role) const
 
         case Qt::UserRole + 1:
         {
-#ifdef VBOX_WITH_FULL_DETAILS_REPORT
-            /* BIOS Settings holder: */
-            CBIOSSettings biosSettings = aMachine.GetBIOSSettings();
-            /* ACPI: */
-            QString acpi = biosSettings.GetACPIEnabled() ? tr("Enabled", "details report (ACPI)") :
-                                                           tr("Disabled", "details report (ACPI)");
-            /* I/O APIC: */
-            QString ioapic = biosSettings.GetIOAPICEnabled() ? tr("Enabled", "details report (I/O APIC)") :
-                                                               tr("Disabled", "details report (I/O APIC)");
-            /* PAE/NX: */
-            QString pae = aMachine.GetCpuProperty(KCpuPropertyType_PAE) ? tr("Enabled", "details report (PAE/NX)") :
-                                                                          tr("Disabled", "details report (PAE/NX)");
-
-            iRowCount += 3; /* Full report rows: */
-#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
-            /* Boot order: */
-            QString bootOrder;
-            for (ulong i = 1; i <= vboxGlobal().virtualBox().GetSystemProperties().GetMaxBootPosition(); ++i)
-            {
-                KDeviceType device = m_machine.GetBootOrder(i);
-                if (device == KDeviceType_Null)
-                    continue;
-                if (!bootOrder.isEmpty())
-                    bootOrder += ", ";
-                bootOrder += gpConverter->toString(device);
-            }
-            if (bootOrder.isEmpty())
-                bootOrder = gpConverter->toString(KDeviceType_Null);
-
             /* Prepare data: */
-            UITextTable p_text;
-            p_text << UITextTableLine(tr("Base Memory", "details report"), QString::number(m_machine.GetMemorySize()));
-            p_text << UITextTableLine(tr("Processor(s)", "details report"), QString::number(m_machine.GetCPUCount()));
-            p_text << UITextTableLine(tr("Execution Cap", "details report"), QString::number(m_machine.GetCPUExecutionCap()));
-            p_text << UITextTableLine(tr("Boot Order", "details report"), bootOrder);
-#ifdef VBOX_WITH_FULL_DETAILS_REPORT
-            p_text << UITextTableLine(tr("ACPI", "details report"), acpi);
-            p_text << UITextTableLine(tr("I/O APIC", "details report"), ioapic);
-            p_text << UITextTableLine(tr("PAE/NX", "details report"), pae);
-#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
-
-            /* VT-x/AMD-V availability: */
-            bool fVTxAMDVSupported = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
-            if (fVTxAMDVSupported)
-            {
-                /* VT-x/AMD-V: */
-                QString virt = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled) ?
-                               tr("Enabled", "details report (VT-x/AMD-V)") :
-                               tr("Disabled", "details report (VT-x/AMD-V)");
-                p_text << UITextTableLine(tr("VT-x/AMD-V", "details report"), virt);
-                /* Nested Paging: */
-                QString nested = m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging) ?
-                                 tr("Enabled", "details report (Nested Paging)") :
-                                 tr("Disabled", "details report (Nested Paging)");
-                p_text << UITextTableLine(tr("Nested Paging", "details report"), nested);
-            }
-            /* Paravirtualization Interface: */
-            const QString strParavirtProvider = gpConverter->toString(m_machine.GetParavirtProvider());
-            p_text << UITextTableLine(tr("Paravirtualization Interface", "details report"), strParavirtProvider);
-
-            return QVariant::fromValue(p_text);
+            UITextTable textTable =
+                UIDetailsGenerator::generateMachineInformationSystem(m_machine,
+                                                                     UIExtraDataMetaDefs::DetailsElementOptionTypeSystem_Default);
+            return QVariant::fromValue(textTable);
         }
 
         default:
@@ -221,41 +166,9 @@ QVariant UIInformationDataDisplay::data(const QModelIndex &index, int role) cons
 
         case Qt::UserRole + 1:
         {
-            UITextTable p_text;
-            /* Video tab: */
-            p_text << UITextTableLine(tr("Video Memory", "details report"), QString::number(m_machine.GetVRAMSize()));
-
-            int cGuestScreens = m_machine.GetMonitorCount();
-            if (cGuestScreens > 1)
-                p_text << UITextTableLine(tr("Screens", "details report"), QString::number(cGuestScreens));
-
-            QString acc3d = m_machine.GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable() ?
-                            tr("Enabled", "details report (3D Acceleration)") :
-                            tr("Disabled", "details report (3D Acceleration)");
-            p_text << UITextTableLine(tr("3D Acceleration", "details report"), acc3d);
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-            QString acc2dVideo = m_machine.GetAccelerate2DVideoEnabled() ?
-                                 tr("Enabled", "details report (2D Video Acceleration)") :
-                                 tr("Disabled", "details report (2D Video Acceleration)");
-            p_text << UITextTableLine(tr("2D Video Acceleration", "details report"), acc2dVideo);
-#endif
-
-            /* Graphics Controller: */
-            p_text << UITextTableLine(QApplication::translate("UIDetails", "Graphics Controller", "details (display)"),
-                                      gpConverter->toString(m_machine.GetGraphicsControllerType()));
-
-            /* VRDP tab: */
-            CVRDEServer srv = m_machine.GetVRDEServer();
-            if (!srv.isNull())
-            {
-                if (srv.GetEnabled())
-                    p_text << UITextTableLine(tr("Remote Desktop Server Port", "details report (VRDE Server)"), srv.GetVRDEProperty("TCP/Ports"));
-                else
-                    p_text << UITextTableLine(tr("Remote Desktop Server", "details report (VRDE Server)"), tr("Disabled", "details report (VRDE Server)"));
-            }
-
-            return QVariant::fromValue(p_text);
+            UITextTable textTable = UIDetailsGenerator::generateMachineInformationDisplay(m_machine,
+                                                                                      UIExtraDataMetaDefs::DetailsElementOptionTypeDisplay_Default);
+            return QVariant::fromValue(textTable);
         }
 
         default:
@@ -288,41 +201,11 @@ QVariant UIInformationDataStorage::data(const QModelIndex &index, int role) cons
 
         case Qt::UserRole + 1:
         {
-            UITextTable p_text;
-
-            /* Iterate over the all machine controllers: */
-            CStorageControllerVector controllers = m_machine.GetStorageControllers();
-            for (int i = 0; i < controllers.size(); ++i)
-            {
-                /* Get current controller: */
-                const CStorageController &controller = controllers[i];
-                /* Add controller information: */
-                QString strControllerName = QApplication::translate("UIMachineSettingsStorage", "Controller: %1");
-                p_text << UITextTableLine(strControllerName.arg(controller.GetName()), QString());
-
-                CMediumAttachmentVector attachments = m_machine.GetMediumAttachmentsOfController(controller.GetName());
-                for (int j = 0; j < attachments.size(); ++j)
-                {
-                    /* Get current attachment: */
-                    const CMediumAttachment &attachment = attachments[j];
-                    /* Append 'device slot name' with 'device type name' for optical devices only: */
-                    QString strDeviceType = attachment.GetType() == KDeviceType_DVD ? tr("(Optical Drive)") : QString();
-                    if (!strDeviceType.isNull())
-                        strDeviceType.prepend(' ');
-                    /* Prepare current medium object: */
-                    const CMedium &medium = attachment.GetMedium();
-                    /* Prepare information about current medium & attachment: */
-                    QString strAttachmentInfo = gpConverter->toString(StorageSlot(controller.GetBus(),
-                                                                      attachment.GetPort(),
-                                                                      attachment.GetDevice())) + strDeviceType;
-
-                    /* Insert that attachment into map: */
-                    if (attachment.isOk())
-                        p_text << UITextTableLine(strAttachmentInfo, vboxGlobal().details(medium, false, false));
-                }
-            }
-
-            return QVariant::fromValue(p_text);
+            UITextTable textTable =
+                UIDetailsGenerator::generateMachineInformationStorage(m_machine,
+                                                                      UIExtraDataMetaDefs::DetailsElementOptionTypeStorage_Default,
+                                                                      false);
+            return QVariant::fromValue(textTable);
         }
 
         default:
@@ -355,16 +238,10 @@ QVariant UIInformationDataAudio::data(const QModelIndex &index, int role) const
 
         case Qt::UserRole + 1:
         {
-            UITextTable p_text;
-
-            CAudioAdapter audio = m_machine.GetAudioAdapter();
-            if (audio.GetEnabled())
-            {
-                p_text << UITextTableLine(tr("Host Driver", "details report (audio)"), gpConverter->toString(audio.GetAudioDriver()));
-                p_text << UITextTableLine(tr("Controller", "details report (audio)"), gpConverter->toString(audio.GetAudioController()));
-            }
-
-            return QVariant::fromValue(p_text);
+            UITextTable textTable =
+                UIDetailsGenerator::generateMachineInformationAudio(m_machine,
+                                                                      UIExtraDataMetaDefs::DetailsElementOptionTypeAudio_Default);
+            return QVariant::fromValue(textTable);
         }
 
         default:
@@ -397,43 +274,10 @@ QVariant UIInformationDataNetwork::data(const QModelIndex &index, int role) cons
 
         case Qt::UserRole + 1:
         {
-            UITextTable p_text;
-
-            ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetMaxNetworkAdapters(m_machine.GetChipsetType());
-            for (ulong slot = 0; slot < count; slot++)
-            {
-                CNetworkAdapter adapter = m_machine.GetNetworkAdapter(slot);
-                if (adapter.GetEnabled())
-                {
-                    KNetworkAttachmentType type = adapter.GetAttachmentType();
-                    QString attType = gpConverter->toString(adapter.GetAdapterType())
-                                      .replace(QRegExp ("\\s\\(.+\\)"), " (%1)");
-                    /* don't use the adapter type string for types that have
-                     * an additional symbolic network/interface name field, use
-                     * this name instead */
-                    if (type == KNetworkAttachmentType_Bridged)
-                        attType = attType.arg(tr("Bridged adapter, %1",
-                            "details report (network)").arg(adapter.GetBridgedInterface()));
-                    else if (type == KNetworkAttachmentType_Internal)
-                        attType = attType.arg(tr("Internal network, '%1'",
-                            "details report (network)").arg(adapter.GetInternalNetwork()));
-                    else if (type == KNetworkAttachmentType_HostOnly)
-                        attType = attType.arg(tr("Host-only adapter, '%1'",
-                            "details report (network)").arg(adapter.GetHostOnlyInterface()));
-                    else if (type == KNetworkAttachmentType_Generic)
-                        attType = attType.arg(tr("Generic, '%1'",
-                            "details report (network)").arg(adapter.GetGenericDriver()));
-                    else if (type == KNetworkAttachmentType_NATNetwork)
-                        attType = attType.arg(tr("NAT network, '%1'",
-                            "details report (network)").arg(adapter.GetNATNetwork()));
-                    else
-                        attType = attType.arg(gpConverter->toString(type));
-
-                    p_text << UITextTableLine(tr("Adapter %1", "details report (network)").arg(adapter.GetSlot() + 1), attType);
-                }
-            }
-
-            return QVariant::fromValue(p_text);
+            UITextTable textTable =
+                UIDetailsGenerator::generateMachineInformationNetwork(m_machine,
+                                                                      UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Default);
+            return QVariant::fromValue(textTable);
         }
 
         default:
@@ -466,31 +310,10 @@ QVariant UIInformationDataSerialPorts::data(const QModelIndex &index, int role) 
 
         case Qt::UserRole + 1:
         {
-            UITextTable p_text;
-            ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetSerialPortCount();
-
-            for (ulong slot = 0; slot < count; slot++)
-            {
-                CSerialPort port = m_machine.GetSerialPort(slot);
-                if (port.GetEnabled())
-                {
-                    KPortMode mode = port.GetHostMode();
-                    QString data = vboxGlobal().toCOMPortName(port.GetIRQ(), port.GetIOBase()) + ", ";
-                    if (mode == KPortMode_HostPipe ||
-                        mode == KPortMode_HostDevice ||
-                        mode == KPortMode_TCP ||
-                        mode == KPortMode_RawFile)
-                        data += QString("%1 (<nobr>%2</nobr>)")
-                                       .arg(gpConverter->toString(mode))
-                                       .arg(QDir::toNativeSeparators(port.GetPath()));
-                    else
-                        data += gpConverter->toString(mode);
-
-                    p_text << UITextTableLine(tr("Port %1", "details report (serial ports)").arg(port.GetSlot() + 1), data);
-                }
-            }
-
-            return QVariant::fromValue(p_text);
+            UITextTable textTable =
+                UIDetailsGenerator::generateMachineInformationSerial(m_machine,
+                                                                      UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Default);
+            return QVariant::fromValue(textTable);
         }
 
         default:
@@ -523,27 +346,11 @@ QVariant UIInformationDataUSB::data(const QModelIndex &index, int role) const
 
         case Qt::UserRole + 1:
         {
-            UITextTable p_text;
 
-            CUSBDeviceFilters flts = m_machine.GetUSBDeviceFilters();
-            if (   !flts.isNull()
-                && m_machine.GetUSBProxyAvailable())
-            {
-                /* The USB controller may be unavailable (i.e. in VirtualBox OSE): */
-                if (m_machine.GetUSBControllers().isEmpty())
-                    p_text << UITextTableLine(tr("Disabled", "details report (USB)"), QString());
-                else
-                {
-                    CUSBDeviceFilterVector coll = flts.GetDeviceFilters();
-                    uint active = 0;
-                    for (int i = 0; i < coll.size(); ++i)
-                        if (coll[i].GetActive())
-                            active ++;
-
-                    p_text << UITextTableLine(tr("Device Filters", "details report (USB)"), tr("%1 (%2 active)", "details report (USB)")
-                                                                                              .arg(coll.size()).arg(active));
-                }
-            }
+            UITextTable textTable =
+                UIDetailsGenerator::generateMachineInformationUSB(m_machine,
+                                                                  UIExtraDataMetaDefs::DetailsElementOptionTypeUsb_Default);
+            return QVariant::fromValue(textTable);
         }
 
         default:
@@ -577,13 +384,10 @@ QVariant UIInformationDataSharedFolders::data(const QModelIndex &index, int role
 
         case Qt::UserRole + 1:
         {
-            UITextTable p_text;
-
-            ulong count = m_machine.GetSharedFolders().size();
-            if (count > 0)
-                p_text << UITextTableLine(tr("Shared Folders", "details report (shared folders)"), QString::number(count));
-
-            return QVariant::fromValue(p_text);
+            UITextTable textTable =
+                UIDetailsGenerator::generateMachineInformationSharedFolders(m_machine,
+                                                                            UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders_Default);
+            return QVariant::fromValue(textTable);
         }
 
         default:
@@ -1191,4 +995,3 @@ void UIInformationDataStorageStatistics::sltProcessStatistics()
     QModelIndex index = m_pModel->index(1,0);
     m_pModel->updateData(index);
 }
-
