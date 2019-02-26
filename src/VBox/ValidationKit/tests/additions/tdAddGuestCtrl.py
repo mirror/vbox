@@ -44,7 +44,6 @@ __version__ = "$Revision$"
 
 # Standard Python imports.
 from array import array
-import binascii
 import errno
 import os
 import random
