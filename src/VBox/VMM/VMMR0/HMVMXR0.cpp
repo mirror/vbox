@@ -233,24 +233,6 @@
         } \
     } while (0)
 
-# ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
-/** Macro that executes a VMX instruction in IEM. */
-#  define HMVMX_IEM_EXEC_VMX_INSTR_RET(a_pVCpu) \
-    do { \
-        int rc = HMVMX_CPUMCTX_IMPORT_STATE((a_pVCpu), HMVMX_CPUMCTX_EXTRN_ALL); \
-        AssertRCReturn(rc, rc); \
-        VBOXSTRICTRC rcStrict = IEMExecOne((a_pVCpu)); \
-        if (rcStrict == VINF_SUCCESS) \
-            ASMAtomicUoOrU64(&(a_pVCpu)->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST); \
-        else if (rcStrict == VINF_IEM_RAISED_XCPT) \
-        { \
-            rcStrict = VINF_SUCCESS; \
-            ASMAtomicUoOrU64(&(a_pVCpu)->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK); \
-        } \
-        return VBOXSTRICTRC_VAL(rcStrict); \
-    } while (0)
-
-# endif /* VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM */
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
@@ -5896,7 +5878,6 @@ DECLINLINE(void) hmR0VmxSetPendingXcptSS(PVMCPU pVCpu, uint32_t u32ErrCode)
 }
 
 
-# ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
 /**
  * Decodes the memory operand of an instruction that caused a VM-exit.
  *
@@ -6162,7 +6143,6 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToVmxInstr(PVMCPU pVCpu, uint32_t uExitRe
 
     return VINF_SUCCESS;
 }
-# endif /* !VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM */
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
@@ -13464,7 +13444,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmclear(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13491,9 +13471,6 @@ HMVMX_EXIT_DECL hmR0VmxExitVmclear(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
-#else
-    HMVMX_IEM_EXEC_VMX_INSTR_RET(pVCpu);
-#endif
 }
 
 
@@ -13503,7 +13480,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmclear(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmlaunch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMENTRY_MASK);
     AssertRCReturn(rc, rc);
@@ -13515,9 +13492,6 @@ HMVMX_EXIT_DECL hmR0VmxExitVmlaunch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
     Assert(rcStrict != VINF_IEM_RAISED_XCPT);
     return rcStrict;
-#else
-    HMVMX_IEM_EXEC_VMX_INSTR_RET(pVCpu);
-#endif
 }
 
 
@@ -13527,7 +13501,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmlaunch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmptrld(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13554,9 +13528,6 @@ HMVMX_EXIT_DECL hmR0VmxExitVmptrld(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
-#else
-    HMVMX_IEM_EXEC_VMX_INSTR_RET(pVCpu);
-#endif
 }
 
 
@@ -13566,7 +13537,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmptrld(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmptrst(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13593,9 +13564,6 @@ HMVMX_EXIT_DECL hmR0VmxExitVmptrst(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
-#else
-    HMVMX_IEM_EXEC_VMX_INSTR_RET(pVCpu);
-#endif
 }
 
 
@@ -13605,7 +13573,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmptrst(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13633,9 +13601,6 @@ HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
-#else
-    HMVMX_IEM_EXEC_VMX_INSTR_RET(pVCpu);
-#endif
 }
 
 
@@ -13645,7 +13610,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmread(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmresume(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMENTRY_MASK);
     AssertRCReturn(rc, rc);
@@ -13657,9 +13622,6 @@ HMVMX_EXIT_DECL hmR0VmxExitVmresume(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
     Assert(rcStrict != VINF_IEM_RAISED_XCPT);
     return rcStrict;
-#else
-    HMVMX_IEM_EXEC_VMX_INSTR_RET(pVCpu);
-#endif
 }
 
 
@@ -13669,7 +13631,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmresume(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13697,9 +13659,6 @@ HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
-#else
-    HMVMX_IEM_EXEC_VMX_INSTR_RET(pVCpu);
-#endif
 }
 
 
@@ -13709,7 +13668,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmwrite(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmxoff(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_CR4 | IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     AssertRCReturn(rc, rc);
@@ -13728,9 +13687,6 @@ HMVMX_EXIT_DECL hmR0VmxExitVmxoff(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
-#else
-    HMVMX_IEM_EXEC_VMX_INSTR_RET(pVCpu);
-#endif
 }
 
 
@@ -13740,7 +13696,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmxoff(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitVmxon(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-#ifndef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+
     int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
                                              | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
@@ -13767,9 +13723,6 @@ HMVMX_EXIT_DECL hmR0VmxExitVmxon(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         rcStrict = VINF_SUCCESS;
     }
     return rcStrict;
-#else
-    HMVMX_IEM_EXEC_VMX_INSTR_RET(pVCpu);
-#endif
 }
 
 /** @} */
