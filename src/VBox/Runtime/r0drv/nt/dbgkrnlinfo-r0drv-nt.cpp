@@ -157,11 +157,13 @@ static RTDBGNTKRNLMODINFO   g_HalInfo      = { "hal.dll",      NULL, NULL, false
  * @returns VINF_SUCCESS or VERR_SYMBOL_NOT_FOUND.
  * @param   pModInfo            The module info.
  * @param   pszSymbol           The symbol to find.
+ * @param   cForwarders         Forwarder nesting depth.
  * @param   ppvSymbol           Where to put the symbol address.
  *
  * @note    Support library has similar code for in the importless area.
  */
-static int rtR0DbgKrnlInfoLookupSymbol(PCRTDBGNTKRNLMODINFO pModInfo, const char *pszSymbol, void **ppvSymbol)
+static int rtR0DbgKrnlInfoLookupSymbol(PCRTDBGNTKRNLMODINFO pModInfo, const char *pszSymbol, unsigned cForwarders,
+                                       void **ppvSymbol)
 {
     if (pModInfo->fOkay)
     {
@@ -201,6 +203,40 @@ static int rtR0DbgKrnlInfoLookupSymbol(PCRTDBGNTKRNLMODINFO pModInfo, const char
                         {
                             *ppvSymbol = (void *)&pModInfo->pbImageBase[offExport];
                             return VINF_SUCCESS;
+                        }
+
+                        /*
+                         * Deal with forwarders to NT and HAL.  No ordinals.
+                         */
+                        const char *pszForwarder = (const char *)&pModInfo->pbImageBase[offExport];
+                        uint32_t    cbMax        = pModInfo->cbImage - offExpName;
+                        size_t      cchForwarder = RTStrNLen(pszForwarder, cbMax);
+                        if (cchForwarder < cbMax)
+                        {
+                            if (   cchForwarder > 9
+                                && pModInfo != &g_NtOsKrnlInfo
+                                && g_NtOsKrnlInfo.pbImageBase != NULL
+                                && cForwarders < 2
+                                && (pszForwarder[0] == 'n' || pszForwarder[0] == 'N')
+                                && (pszForwarder[1] == 't' || pszForwarder[1] == 'T')
+                                && (pszForwarder[2] == 'o' || pszForwarder[2] == 'O')
+                                && (pszForwarder[3] == 's' || pszForwarder[3] == 'S')
+                                && (pszForwarder[4] == 'k' || pszForwarder[4] == 'K')
+                                && (pszForwarder[5] == 'r' || pszForwarder[5] == 'R')
+                                && (pszForwarder[6] == 'n' || pszForwarder[6] == 'N')
+                                && (pszForwarder[7] == 'l' || pszForwarder[7] == 'L')
+                                &&  pszForwarder[8] == '.')
+                                return rtR0DbgKrnlInfoLookupSymbol(&g_NtOsKrnlInfo, pszForwarder + 9, cForwarders + 1, ppvSymbol);
+
+                            if (   cchForwarder > 4
+                                && pModInfo != &g_HalInfo
+                                && g_HalInfo.pbImageBase != NULL
+                                && cForwarders < 2
+                                && (pszForwarder[0] == 'h' || pszForwarder[0] == 'H')
+                                && (pszForwarder[1] == 'a' || pszForwarder[1] == 'A')
+                                && (pszForwarder[2] == 'l' || pszForwarder[2] == 'L')
+                                &&  pszForwarder[3] == '.')
+                                return rtR0DbgKrnlInfoLookupSymbol(&g_HalInfo, pszForwarder + 4, cForwarders + 1, ppvSymbol);
                         }
 
                         RTR0DBG_NT_ERROR_LOG(("rtR0DbgKrnlInfoLookupSymbol: %s: Forwarded symbol '%s': offExport=%#x (dir %#x LB %#x)\n",
@@ -496,7 +532,8 @@ static int rtR0DbgKrnlNtInit(PRTDBGNTKRNLMODINFO pModInfo)
                 if (!g_pfnMmGetSystemRoutineAddress)
                 {
                     //RTR0DBG_NT_DEBUG_LOG(("rtR0DbgKrnlNtInit: Looking up 'MmGetSystemRoutineAddress'...\n"));
-                    rtR0DbgKrnlInfoLookupSymbol(&g_NtOsKrnlInfo, "MmGetSystemRoutineAddress", (void **)&g_pfnMmGetSystemRoutineAddress);
+                    rtR0DbgKrnlInfoLookupSymbol(&g_NtOsKrnlInfo, "MmGetSystemRoutineAddress", 0,
+                                                (void **)&g_pfnMmGetSystemRoutineAddress);
                 }
             }
         }
@@ -640,11 +677,11 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
             Assert(g_NtOsKrnlInfo.fOkay);
             Assert(g_HalInfo.fOkay);
             //RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: Calling RTR0DbgKrnlInfoQuerySymbol on NT kernel...\n"));
-            rc = rtR0DbgKrnlInfoLookupSymbol(&g_NtOsKrnlInfo, pszSymbol, ppvSymbol);
+            rc = rtR0DbgKrnlInfoLookupSymbol(&g_NtOsKrnlInfo, pszSymbol, 0, ppvSymbol);
             if (RT_FAILURE(rc))
             {
                 //RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: Calling RTR0DbgKrnlInfoQuerySymbol on HAL kernel...\n"));
-                rc = rtR0DbgKrnlInfoLookupSymbol(&g_HalInfo, pszSymbol, ppvSymbol);
+                rc = rtR0DbgKrnlInfoLookupSymbol(&g_HalInfo, pszSymbol, 0, ppvSymbol);
             }
             RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: #1 returns %d *ppvSymbol=%p\n", rc, *ppvSymbol));
         }
@@ -653,9 +690,9 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
             /* Init failed. Try resolve symbol, but preserve the status code up to a point. */
             int rc2 = VERR_SYMBOL_NOT_FOUND;
             if (g_NtOsKrnlInfo.fOkay)
-                rc2 = rtR0DbgKrnlInfoLookupSymbol(&g_NtOsKrnlInfo, pszSymbol, ppvSymbol);
+                rc2 = rtR0DbgKrnlInfoLookupSymbol(&g_NtOsKrnlInfo, pszSymbol, 0, ppvSymbol);
             if (g_HalInfo.fOkay && rc2 == VERR_SYMBOL_NOT_FOUND)
-                rc2 = rtR0DbgKrnlInfoLookupSymbol(&g_HalInfo, pszSymbol, ppvSymbol);
+                rc2 = rtR0DbgKrnlInfoLookupSymbol(&g_HalInfo, pszSymbol, 0, ppvSymbol);
             if (   rc2 == VERR_SYMBOL_NOT_FOUND
                 && g_pfnMmGetSystemRoutineAddress)
             {
@@ -740,7 +777,7 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
         }
         if (pModInfo)
         {
-            rc = rtR0DbgKrnlInfoLookupSymbol(pModInfo, pszSymbol, ppvSymbol);
+            rc = rtR0DbgKrnlInfoLookupSymbol(pModInfo, pszSymbol, 0, ppvSymbol);
             RTR0DBG_NT_DEBUG_LOG(("RTR0DbgKrnlInfoQuerySymbol: #3 returns %d *ppvSymbol=%p\n", rc, *ppvSymbol));
         }
     }

@@ -805,7 +805,7 @@ Nt3Fb_ExReleaseFastMutex(PFAST_MUTEX pFastMtx)
     KIRQL    OldIrql  = pFastMtx->OldIrql;
     pFastMtx->Owner   = NULL;
     int32_t  cLockers = ASMAtomicIncS32((int32_t volatile *)&pFastMtx->Count);
-    if (cLockers < 0)
+    if (cLockers <= 0)
         KeSetEvent(&pFastMtx->Event, EVENT_INCREMENT, FALSE /*fWait*/);
     if (OldIrql != APC_LEVEL)
         KeLowerIrql(OldIrql);
