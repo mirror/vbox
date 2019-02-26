@@ -3104,8 +3104,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                 oCurTestFile     = open(sHstFileName, "wb");
                                 oCurTestFile.write(aBufRead);
                                 oCurTestFile.close();
-
-                                reporter.addLogFile(sHstFileName, ('testGuestCtrlFileWrite/test%d' % i),
+                                reporter.addLogFile(sHstFileName, 'misc/other',
                                                     'Buffer of testGuestCtrlFileWrite test #%d' % i);
                             except:
                                 reporter.error('Test #%d failed: Unable to create temporary buffer file "%s"' \
