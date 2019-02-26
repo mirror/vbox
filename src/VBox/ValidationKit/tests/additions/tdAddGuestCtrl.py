@@ -3086,13 +3086,31 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             reporter.error('Test #%d failed: Got buffer length %d, expected %d' \
                                            % (i, len(aBufRead), curTest.cbToReadWrite));
                             fRc = False;
-                        if    fRc \
-                          and curRes.aBuf is not None \
-                          and curRes.aBuf != aBufRead:
+                        if     fRc \
+                           and curRes.aBuf is not None \
+                           and curRes.aBuf != aBufRead:
                             reporter.error('Test #%d failed: Read back buffer (%d bytes) does not match ' \
-                                           'written content (%d bytes)' % (i, len(curRes.aBuf), len(aBufRead)));
-                            reporter.error('Test #%d failed: Got:\n%s' % (i, binascii.hexlify(aBufRead)));
-                            reporter.error('Test #%d failed: Expected:\n%s' % (i, binascii.hexlify(curRes.aBuf)));
+                                           'written content (%d bytes)' % (i, len(aBufRead), len(aBufRead)));
+
+                            curFile.close();
+
+                            # Download written file from guest.
+                            aGstFiles = [];
+                            aGstFiles.append(curTest.sFile.replace('\\', '/'));
+                            self.oTstDrv.txsDownloadFiles(oSession, oTxsSession, aGstFiles, fIgnoreErrors = True);
+
+                            # Create file with buffer content on host.
+                            sHstFileName = os.path.join(self.oTstDrv.sScratchPath, ('testGuestCtrlWriteTest%d' % i));
+                            try:
+                                oCurTestFile     = open(sHstFileName, "wb");
+                                oCurTestFile.write(aBufRead);
+                                oCurTestFile.close();
+
+                                reporter.addLogFile(sHstFileName, ('testGuestCtrlFileWrite/test%d' % i),
+                                                    'Buffer of testGuestCtrlFileWrite test #%d' % i);
+                            except:
+                                reporter.error('Test #%d failed: Unable to create temporary buffer file "%s"' \
+                                               % (i, sHstFileName));
                             fRc = False;
                 # Test final offset.
                 curOffset = long(curFile.offset);
@@ -3101,7 +3119,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     reporter.error('Test #%d failed: Final offset does not match: Got %d, expected %d' \
                                    % (i, curOffset, resOffset));
                     fRc = False;
-                curFile.close();
+                if curFile.status == vboxcon.FileStatus_Open:
+                    curFile.close();
                 reporter.log("File '%s' closed" % curTest.sFile);
             except:
                 reporter.logXcpt('Opening "%s" failed:' % (curTest.sFile,));
