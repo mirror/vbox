@@ -22,7 +22,7 @@
 #endif
 
 /* Qt includes: */
-#include <QIcon>
+#include <QPixmap>
 #include <QModelIndex>
 
 /* GUI includes: */
