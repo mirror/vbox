@@ -1070,6 +1070,10 @@ class TestVmManager(object):
                sKind = 'RedHat', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat'),
         TestVm('tst-arch',                  kfGrpStandard,        sHd = '4.2/usb/tst-arch.vdi',
                sKind = 'ArchLinux_64', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat'),
+        TestVm('tst-ubuntu-180401-64',   kfGrpStdSmoke,        sHd = '4.2/ubuntu-180401/t-ubuntu-180401-64.vdi',
+               sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True),
+        TestVm('tst-ol76-64',   kfGrpStdSmoke,        sHd = '4.2/ol76/t-ol76-64.vdi',
+               sKind = 'Oracle_64', acCpusSup = range(1, 33), fIoApic = True),
 
         # Solaris
         TestVm('tst-sol10',                 kfGrpSmoke,           sHd = '3.0/tcp/solaris10.vdi',
