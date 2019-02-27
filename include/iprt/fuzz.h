@@ -62,6 +62,21 @@ typedef RTFUZZOBS              *PRTFUZZOBS;
 #define NIL_RTFUZZOBS           ((RTFUZZOBS)~(uintptr_t)0)
 
 
+/**
+ * Fuzzing context type.
+ */
+typedef enum RTFUZZCTXTYPE
+{
+    /** Invalid type. */
+    RTFUZZCTXTYPE_INVALID = 0,
+    /** Original input data is a single binary large object (BLOB), from a file or similar. */
+    RTFUZZCTXTYPE_BLOB,
+    /** Original input data is from a data stream like a network connection. */
+    RTFUZZCTXTYPE_STREAM,
+    /** 32bit hack. */
+    RTFUZZCTXTYPE_32BIT_HACK = 0x7fffffff
+} RTFUZZCTXTYPE;
+
 /** @name RTFUZZCTX_F_XXX - Flags for RTFuzzCtxCfgSetBehavioralFlags
  * @{ */
 /** Adds all generated inputs automatically to the input corpus for the owning context. */
@@ -75,8 +90,9 @@ typedef RTFUZZOBS              *PRTFUZZOBS;
  *
  * @returns IPRT status code.
  * @param   phFuzzCtx           Where to store the handle to the fuzzing context on success.
+ * @param   enmType             Fuzzing context data type.
  */
-RTDECL(int) RTFuzzCtxCreate(PRTFUZZCTX phFuzzCtx);
+RTDECL(int) RTFuzzCtxCreate(PRTFUZZCTX phFuzzCtx, RTFUZZCTXTYPE enmType);
 
 /**
  * Creates a new fuzzing context from the given state.
@@ -241,18 +257,6 @@ RTDECL(int) RTFuzzCtxReseed(RTFUZZCTX hFuzzCtx, uint64_t uSeed);
  */
 RTDECL(int) RTFuzzCtxInputGenerate(RTFUZZCTX hFuzzCtx, PRTFUZZINPUT phFuzzInput);
 
-/**
- * Mutates a raw buffer.
- *
- * @returns IPRT status code.
- * @param   hFuzzCtx            The fuzzing context handle.
- * @param   pvBuf               Pointer to the buffer to mutate.
- * @param   cbBuf               Size of the buffer iny bytes to mutate.
- * @param   phFuzzInput         Where to store the handle to the fuzzed input on success.
- */
-RTDECL(int) RTFuzzCtxMutateBuffer(RTFUZZCTX hFuzzCtx, void *pvBuf, size_t cbBuf,
-                                  PRTFUZZINPUT phFuzzInput);
-
 
 /**
  * Retains a reference to the given fuzzing input handle.
@@ -271,14 +275,24 @@ RTDECL(uint32_t) RTFuzzInputRetain(RTFUZZINPUT hFuzzInput);
 RTDECL(uint32_t) RTFuzzInputRelease(RTFUZZINPUT hFuzzInput);
 
 /**
- * Queries the data pointer and size of the given fuzzing input.
+ * Queries the data pointer and size of the given fuzzed input blob.
  *
  * @returns IPRT status code
  * @param   hFuzzInput          The fuzzing input handle.
  * @param   ppv                 Where to store the pointer to the input data on success.
  * @param   pcb                 Where to store the size of the input data on success.
  */
-RTDECL(int) RTFuzzInputQueryData(RTFUZZINPUT hFuzzInput, void **ppv, size_t *pcb);
+RTDECL(int) RTFuzzInputQueryBlobData(RTFUZZINPUT hFuzzInput, void **ppv, size_t *pcb);
+
+/**
+ * Processes the given data stream for a streamed fuzzing context.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzInput          The fuzzing input handle.
+ * @param   pvBuf               The data buffer.
+ * @param   cbBuf               Size of the buffer.
+ */
+RTDECL(int) RTFuzzInputMutateStreamData(RTFUZZINPUT hFuzzInput, void *pvBuf, size_t cbBuf);
 
 /**
  * Queries the string of the MD5 digest for the given fuzzed input.
@@ -367,8 +381,9 @@ typedef RTFUZZOBSSTATS *PRTFUZZOBSSTATS;
  *
  * @returns IPRT status code.
  * @param   phFuzzObs           Where to store the fuzzing observer handle on success.
+ * @param   enmType             Fuzzing context data type.
  */
-RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs);
+RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs, RTFUZZCTXTYPE enmType);
 
 /**
  * Destroys a previously created fuzzing observer.

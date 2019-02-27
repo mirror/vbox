@@ -874,7 +874,7 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
         }
         else if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_STDIN)
         {
-            rc = RTFuzzInputQueryData(pObsThrd->hFuzzInput, (void **)&pExecCtx->pbInputCur, &pExecCtx->cbInputLeft);
+            rc = RTFuzzInputQueryBlobData(pObsThrd->hFuzzInput, (void **)&pExecCtx->pbInputCur, &pExecCtx->cbInputLeft);
             if (RT_SUCCESS(rc))
                 rc = rtFuzzObsExecCtxArgvPrepare(pThis, pExecCtx, NULL);
         }
@@ -906,6 +906,8 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
             }
             else
                 AssertFailed();
+
+            ASMAtomicXchgBool(&pObsThrd->fKeepInput, true);
 
             if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_FILE)
                 RTFileDelete(&szInput[0]);
@@ -1065,7 +1067,7 @@ static int rtFuzzObsMasterCreate(PRTFUZZOBSINT pThis)
 }
 
 
-RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs)
+RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs, RTFUZZCTXTYPE enmType)
 {
     AssertPtrReturn(phFuzzObs, VERR_INVALID_POINTER);
 
@@ -1086,7 +1088,7 @@ RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs)
         pThis->Stats.cFuzzedInputs       = 0;
         pThis->Stats.cFuzzedInputsHang   = 0;
         pThis->Stats.cFuzzedInputsCrash  = 0;
-        rc = RTFuzzCtxCreate(&pThis->hFuzzCtx);
+        rc = RTFuzzCtxCreate(&pThis->hFuzzCtx, enmType);
         if (RT_SUCCESS(rc))
         {
             *phFuzzObs = pThis;

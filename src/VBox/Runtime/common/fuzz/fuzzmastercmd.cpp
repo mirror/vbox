@@ -636,7 +636,7 @@ static int rtFuzzCmdMasterCreateFuzzRunWithId(PRTFUZZCMDMASTER pThis, const char
         pFuzzRun->pszId = RTStrDup(pszId);
         if (RT_LIKELY(pFuzzRun->pszId))
         {
-            rc = RTFuzzObsCreate(&pFuzzRun->hFuzzObs);
+            rc = RTFuzzObsCreate(&pFuzzRun->hFuzzObs, RTFUZZCTXTYPE_BLOB);
             if (RT_SUCCESS(rc))
             {
                 rc = rtFuzzCmdMasterFuzzRunProcessBinaryCfg(pFuzzRun, hJsonRoot, pErrInfo);

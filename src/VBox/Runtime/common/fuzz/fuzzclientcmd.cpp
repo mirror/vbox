@@ -84,7 +84,7 @@ static int rtFuzzCmdClientMainloop(PRTFUZZCMDCLIENT pThis)
         {
             void *pv = NULL;
             size_t cb = 0;
-            rc = RTFuzzInputQueryData(hFuzzInput, &pv, &cb);
+            rc = RTFuzzInputQueryBlobData(hFuzzInput, &pv, &cb);
             if (RT_SUCCESS(rc))
             {
                 char bResp = '.';

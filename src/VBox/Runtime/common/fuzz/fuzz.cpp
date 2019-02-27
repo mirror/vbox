@@ -43,6 +43,7 @@
 #include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/rand.h>
+#include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
 #include <iprt/vfs.h>
@@ -56,48 +57,150 @@
 *********************************************************************************************************************************/
 /** Pointer to the internal fuzzer state. */
 typedef struct RTFUZZCTXINT *PRTFUZZCTXINT;
+/** Pointer to a fuzzed mutation. */
+typedef struct RTFUZZMUTATION *PRTFUZZMUTATION;
+/** Pointer to a fuzzed mutation pointer. */
+typedef PRTFUZZMUTATION *PPRTFUZZMUTATION;
+/** Pointer to a const mutation. */
+typedef const struct RTFUZZMUTATION *PCRTFUZZMUTATION;
+
+
+/**
+ * Mutator preparation callback.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The fuzzer context instance.
+ * @param   offStart            Where the mutation should start.
+ * @param   pMutationParent     The parent mutation to start working from.
+ * @param   ppMutation          Where to store the created mutation on success.
+ */
+typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATORPREP(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                 PPRTFUZZMUTATION ppMutation);
+/** Pointer to a mutator preparation callback. */
+typedef FNRTFUZZCTXMUTATORPREP *PFNRTFUZZCTXMUTATORPREP;
+
+
+/**
+ * Mutator execution callback.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The fuzzer context instance.
+ * @param   pMutation           The mutation to work on.
+ * @param   pbBuf               The buffer to work on.
+ * @param   cbBuf               Size of the remaining buffer.
+ */
+typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATOREXEC(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                 uint8_t *pbBuf, size_t cbBuf);
+/** Pointer to a mutator execution callback. */
+typedef FNRTFUZZCTXMUTATOREXEC *PFNRTFUZZCTXMUTATOREXEC;
+
+
+/**
+ * A fuzzing mutator descriptor.
+ */
+typedef struct RTFUZZMUTATOR
+{
+    /** Id of the mutator. */
+    const char                  *pszId;
+    /** Mutator description. */
+    const char                  *pszDesc;
+    /** Additional flags for the mutator, controlling the behavior. */
+    uint64_t                    fFlags;
+    /** The preparation callback. */
+    PFNRTFUZZCTXMUTATORPREP     pfnPrep;
+    /** The execution callback. */
+    PFNRTFUZZCTXMUTATOREXEC     pfnExec;
+} RTFUZZMUTATOR;
+/** Pointer to a fuzzing mutator descriptor. */
+typedef RTFUZZMUTATOR *PRTFUZZMUTATOR;
+/** Pointer to a const fuzzing mutator descriptor. */
+typedef const RTFUZZMUTATOR *PCRTFUZZMUTATOR;
+
+/** Mutator always works from the end of the buffer (no starting offset generation). */
+#define RTFUZZMUTATOR_F_END_OF_BUF          RT_BIT_64(0)
+/** Default flags. */
+#define RTFUZZMUTATOR_F_DEFAULT             (0)
+
+
+/**
+ * A fuzzed mutation.
+ */
+typedef struct RTFUZZMUTATION
+{
+    /** The AVL tree core. */
+    AVLU64NODECORE              Core;
+    /** Magic identifying this structure. */
+    uint32_t                    u32Magic;
+    /** Reference counter. */
+    volatile uint32_t           cRefs;
+    /** The fuzzer this mutation belongs to. */
+    PRTFUZZCTXINT               pFuzzer;
+    /** Parent mutation (reference is held), NULL means root or original data. */
+    PCRTFUZZMUTATION            pMutationParent;
+    /** Mutation level. */
+    uint32_t                    iLvl;
+    /** The mutator causing this mutation, NULL if original input data. */
+    PCRTFUZZMUTATOR             pMutator;
+    /** Byte offset where the mutation starts. */
+    uint64_t                    offMutation;
+    /** Size of the generated input data in bytes after the mutation was applied. */
+    size_t                      cbInput;
+    /** Mutation dependent data. */
+    union
+    {
+        /** Array of bytes making up the corups, variable in size. */
+        uint8_t                 abCorpus[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+        /** Bit flip mutation, which bit to flip. */
+        uint32_t                idxBitFlip;
+        /** Byte replace, the byte to replace with. */
+        uint8_t                 bByteReplace;
+        /** Array of bytes to insert/append, variable in size. */
+        uint8_t                 abAdd[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
+    } u;
+} RTFUZZMUTATION;
+
 
 /**
  * A fuzzing input seed.
  */
 typedef struct RTFUZZINPUTINT
 {
-    /** The AVL tree core. */
-    AVLU64NODECORE              Core;
-    /** Node for the global list. */
-    RTLISTNODE                  NdInputs;
+    /** Magic identifying this structure. */
+    uint32_t                    u32Magic;
     /** Reference counter. */
     volatile uint32_t           cRefs;
-/** @todo add magic here (unused padding space on 64-bit hosts). */
     /** The fuzzer this input belongs to. */
     PRTFUZZCTXINT               pFuzzer;
-    /** Complete MD5 hash of the input data. */
-    uint8_t                     abMd5Hash[RTMD5_HASH_SIZE];
-    /** Size of the input data. */
-    size_t                      cbInput;
-    /** Input data - variable in size. */
-    uint8_t                     abInput[1];
+    /** The top mutation to work from (reference held). */
+    PRTFUZZMUTATION             pMutationTop;
+    /** Fuzzer context type dependent data. */
+    union
+    {
+        /** Blob data. */
+        struct
+        {
+            /** Size to allocate initially. */
+            size_t              cbAlloc;
+            /** Input data size. */
+            size_t              cbInput;
+            /** Pointer to the input data if created. */
+            void                *pvInput;
+        } Blob;
+        /** Stream state. */
+        struct
+        {
+            /** Number of bytes seen so far. */
+            size_t              cbSeen;
+        } Stream;
+    } u;
+    /** Array holding all the individual mutations, variable in size. */
+    PCRTFUZZMUTATION            apMutations[1];
 } RTFUZZINPUTINT;
 /** Pointer to the internal input state. */
 typedef RTFUZZINPUTINT *PRTFUZZINPUTINT;
 /** Pointer to an internal input state pointer. */
 typedef PRTFUZZINPUTINT *PPRTFUZZINPUTINT;
 
-
-/**
- * Intermediate indexing structure.
- */
-typedef struct RTFUZZINTERMEDIATE
-{
-    /** The AVL tree core. */
-    AVLU64NODECORE              Core;
-    /** The AVL tree for indexing the input seeds (keyed by the lower half of the MD5). */
-    AVLU64TREE                  TreeSeedsLow;
-} RTFUZZINTERMEDIATE;
-/** Pointer to an intermediate indexing state. */
-typedef RTFUZZINTERMEDIATE *PRTFUZZINTERMEDIATE;
-/** Pointer to an intermediate indexing state pointer. */
-typedef PRTFUZZINTERMEDIATE *PPRTFUZZINTERMEDIATE;
 
 /**
  * The fuzzer state.
@@ -110,45 +213,25 @@ typedef struct RTFUZZCTXINT
     volatile uint32_t           cRefs;
     /** The random number generator. */
     RTRAND                      hRand;
-    /** The AVL tree for indexing the input seeds (keyed by the upper half of the MD5). */
-    AVLU64TREE                  TreeSeedsHigh;
-    /** Sequential list of all inputs. */
-    RTLISTANCHOR                LstInputs;
+    /** Fuzzing context type. */
+    RTFUZZCTXTYPE               enmType;
+    /** Semaphore protecting the mutations tree. */
+    RTSEMRW                     hSemRwMutations;
+    /** The AVL tree for indexing the mutations (keyed by counter). */
+    AVLU64TREE                  TreeMutations;
     /** Number of inputs currently in the tree. */
-    uint32_t                    cInputs;
+    volatile uint64_t           cMutations;
     /** The maximum size of one input seed to generate. */
     size_t                      cbInputMax;
     /** Behavioral flags. */
     uint32_t                    fFlagsBehavioral;
+    /** Number of enabled mutators. */
+    uint32_t                    cMutators;
+    /** Pointer to the mutator descriptors. */
+    PRTFUZZMUTATOR              paMutators;
+    /** Total number of bytes of memory currently allocated in total for this context. */
+    volatile size_t             cbMemTotal;
 } RTFUZZCTXINT;
-
-
-/**
- * Available mutators enum.
- */
-typedef enum RTFUZZCTXMUTATOR
-{
-    /** Invalid mutator, not used. */
-    RTFUZZCTXMUTATOR_INVALID = 0,
-    /** Flips a single bit in the input. */
-    RTFUZZCTXMUTATOR_BIT_FLIP,
-    /** Replaces a single byte in the input. */
-    RTFUZZCTXMUTATOR_BYTE_REPLACE,
-    /** Inserts a byte sequence into the input. */
-    RTFUZZCTXMUTATOR_BYTE_SEQUENCE_INSERT,
-    /** Appends a byte sequence to the input. */
-    RTFUZZCTXMUTATOR_BYTE_SEQUENCE_APPEND,
-    /** Deletes a single byte from the input. */
-    RTFUZZCTXMUTATOR_BYTE_DELETE,
-    /** Deletes a sequence of bytes from the input. */
-    RTFUZZCTXMUTATOR_BYTE_SEQUENCE_DELETE,
-    /** Last valid mutator. */
-    RTFUZZCTXMUTATOR_LAST = RTFUZZCTXMUTATOR_BYTE_SEQUENCE_DELETE,
-    /** 32bit hack. */
-    RTFUZZCTXMUTATOR_32BIT_HACK = 0x7fffffff
-} RTFUZZCTXMUTATOR;
-/** Pointer to a mutator enum. */
-typedef RTFUZZCTXMUTATOR *PRTFUZZCTXMUTATOR;
 
 
 /**
@@ -172,209 +255,246 @@ typedef RTFUZZCTXSTATE *PRTFUZZCTXSTATE;
 
 
 /**
- * Mutator callback.
- *
- * @returns IPRT status code.
- * @param   pThis               The fuzzer context instance.
- * @param   pvBuf               The input buffer to mutate.
- * @param   cbBuf               Size of the buffer in bytes.
- * @param   ppInputMutated      Where to store the pointer to the mutated input success.
+ * Fuzzing context memory header.
  */
-typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATOR(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated);
-/** Pointer to a mutator callback. */
-typedef FNRTFUZZCTXMUTATOR *PFNRTFUZZCTXMUTATOR;
+typedef struct RTFUZZMEMHDR
+{
+    /** Size of the memory area following. */
+    size_t                      cb;
+#if HC_ARCH_BITS == 32
+    /** Some padding. */
+    uint32_t                    uPadding0;
+#elif HC_ARCH_BITS == 64
+#else
+    /** Some padding. */
+    uint64_t                    uPadding0;
+# error "Port me"
+#endif
+} RTFUZZMEMHDR;
+/** Pointer to a memory header. */
+typedef RTFUZZMEMHDR *PRTFUZZMEMHDR;
+
 
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlip(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
-                                                 PPRTFUZZINPUTINT ppInputMutated);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplace(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
-                                                     PPRTFUZZINPUTINT ppInputMutated);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsert(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
-                                                            PPRTFUZZINPUTINT ppInputMutated);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceAppend(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
-                                                            PPRTFUZZINPUTINT ppInputMutated);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteDelete(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
-                                                    PPRTFUZZINPUTINT ppInputMutated);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDelete(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf,
-                                                            PPRTFUZZINPUTINT ppInputMutated);
+static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipPrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                     PPRTFUZZMUTATION ppMutation);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplacePrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                         PPRTFUZZMUTATION ppMutation);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendPrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                                      PPRTFUZZMUTATION ppMutation);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeletePrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                        PPRTFUZZMUTATION ppMutation);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeletePrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                                PPRTFUZZMUTATION ppMutation);
 
+static DECLCALLBACK(int) rtFuzzCtxMutatorCorpusExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                    uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                     uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplaceExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                         uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                                      uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                        uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                                uint8_t *pbBuf, size_t cbBuf);
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /**
+ * The special corpus mutator for the original data.
+ */
+static RTFUZZMUTATOR const g_MutatorCorpus =
+{
+    /** pszId */
+    "Corpus",
+    /** pszDesc */
+    "Special mutator, which is assigned to the initial corpus",
+    /** fFlags */
+    RTFUZZMUTATOR_F_DEFAULT,
+    /** pfnPrep */
+    NULL,
+    /** pfnExec */
+    rtFuzzCtxMutatorCorpusExec
+};
+
+/**
  * Array of all available mutators.
  */
-static PFNRTFUZZCTXMUTATOR const g_apfnMutators[] =
+static RTFUZZMUTATOR const g_aMutators[] =
 {
-    NULL,
-    rtFuzzCtxMutatorBitFlip,
-    rtFuzzCtxMutatorByteReplace,
-    rtFuzzCtxMutatorByteSequenceInsert,
-    rtFuzzCtxMutatorByteSequenceAppend,
-    rtFuzzCtxMutatorByteDelete,
-    rtFuzzCtxMutatorByteSequenceDelete,
-    NULL
+    /* pszId         pszDesc                                          fFlags                      pfnPrep                                       pfnExec */
+    { "BitFlip",     "Flips a single bit in the input",               RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorBitFlipPrep,                  rtFuzzCtxMutatorBitFlipExec},
+    { "ByteReplace", "Replaces a single byte in the input",           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteReplacePrep,              rtFuzzCtxMutatorByteReplaceExec},
+    { "ByteSeqIns",  "Inserts a byte sequence in the input",          RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteSequenceInsertAppendPrep, rtFuzzCtxMutatorByteSequenceInsertAppendExec},
+    { "ByteSeqApp",  "Appends a byte sequence to the input",          RTFUZZMUTATOR_F_END_OF_BUF, rtFuzzCtxMutatorByteSequenceInsertAppendPrep, rtFuzzCtxMutatorByteSequenceInsertAppendExec},
+    { "ByteDelete",  "Deletes a single byte sequence from the input", RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteDeletePrep,               rtFuzzCtxMutatorByteDeleteExec},
+    { "ByteSeqDel",  "Deletes a byte sequence from the input",        RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteSequenceDeletePrep,       rtFuzzCtxMutatorByteSequenceDeleteExec}
 };
 
 
-
 /**
- * Tries to locate an input seed with the given input MD5 seed.
+ * Allocates the given number of bytes.
  *
- * @returns Pointer to the input seed on success or NULL if not found.
+ * @returns Pointer to the allocated memory
  * @param   pThis               The fuzzer context instance.
- * @param   pbMd5Hash           The MD5 hash to search for.
- * @param   fExact              Flag whether to search for an exact match or return the next best fit if no match exists.
- * @param   ppIntermediate      Where to store the pointer to the intermediate layer upon success, optional.
+ * @param   cb                  How much to allocate.
  */
-static PRTFUZZINPUTINT rtFuzzCtxInputLocate(PRTFUZZCTXINT pThis, uint8_t *pbMd5Hash, bool fExact, PPRTFUZZINTERMEDIATE ppIntermediate)
+static void *rtFuzzCtxMemoryAlloc(PRTFUZZCTXINT pThis, size_t cb)
 {
-    PRTFUZZINPUTINT pInput = NULL;
-    uint64_t u64Md5High = *(uint64_t *)&pbMd5Hash[RTMD5_HASH_SIZE / 2];
-    uint64_t u64Md5Low = *(uint64_t *)&pbMd5Hash[0];
-    PRTFUZZINTERMEDIATE pIntermediate = (PRTFUZZINTERMEDIATE)RTAvlU64Get(&pThis->TreeSeedsHigh, u64Md5High);
-    if (!fExact && !pIntermediate)
-        pIntermediate = (PRTFUZZINTERMEDIATE)RTAvlU64GetBestFit(&pThis->TreeSeedsHigh, u64Md5High, true /*fAbove*/);
-    if (!fExact && !pIntermediate)
-        pIntermediate = (PRTFUZZINTERMEDIATE)RTAvlU64GetBestFit(&pThis->TreeSeedsHigh, u64Md5High, false /*fAbove*/);
-
-    if (pIntermediate)
+    PRTFUZZMEMHDR pMemHdr = (PRTFUZZMEMHDR)RTMemAllocZ(cb + sizeof(RTFUZZMEMHDR));
+    if (RT_LIKELY(pMemHdr))
     {
-        /* 2nd level lookup. */
-        pInput = (PRTFUZZINPUTINT)RTAvlU64Get(&pIntermediate->TreeSeedsLow, u64Md5Low);
-        if (!fExact && !pInput)
-            pInput = (PRTFUZZINPUTINT)RTAvlU64GetBestFit(&pIntermediate->TreeSeedsLow, u64Md5Low, true /*fAbove*/);
-        if (!fExact && !pInput)
-            pInput = (PRTFUZZINPUTINT)RTAvlU64GetBestFit(&pIntermediate->TreeSeedsLow, u64Md5Low, false /*fAbove*/);
+        size_t cbIgn = 0;
+        pMemHdr->cb = cb;
+        ASMAtomicAddSize(&pThis->cbMemTotal, cb + sizeof(RTFUZZMEMHDR), &cbIgn); RT_NOREF(cbIgn);
+        return pMemHdr + 1;
     }
 
-    if (ppIntermediate)
-        *ppIntermediate = pIntermediate;
-
-    return pInput;
+    return NULL;
 }
 
 
 /**
- * Adds the given input to the corpus of the given fuzzer context.
+ * Frees the given memory.
+ *
+ * @returns nothing.
+ * @param   pThis               The fuzzer context instance.
+ * @param   pv                  Pointer to the memory area to free.
+ */
+static void rtFuzzCtxMemoryFree(PRTFUZZCTXINT pThis, void *pv)
+{
+    PRTFUZZMEMHDR pMemHdr = ((PRTFUZZMEMHDR)pv) - 1;
+
+    size_t cbIgn = 0;
+    ASMAtomicSubSize(&pThis->cbMemTotal, pMemHdr->cb + sizeof(RTFUZZMEMHDR), &cbIgn); RT_NOREF(cbIgn);
+    RTMemFree(pMemHdr);
+}
+
+
+/**
+ * Retains an external reference to the given mutation.
+ *
+ * @returns New reference count on success.
+ * @param   pMutation           The mutation to retain.
+ */
+static uint32_t rtFuzzMutationRetain(PRTFUZZMUTATION pMutation)
+{
+    uint32_t cRefs = ASMAtomicIncU32(&pMutation->cRefs);
+    AssertMsg(cRefs > 1 && cRefs < _1M, ("%#x %p\n", cRefs, pMutation));
+    return cRefs;
+}
+
+#if 0 /* unused */
+/**
+ * Releases an external reference from the given mutation.
+ *
+ * @returns New reference count on success.
+ * @param   pMutation           The mutation to retain.
+ */
+static uint32_t rtFuzzMutationRelease(PRTFUZZMUTATION pMutation)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pMutation->cRefs);
+    AssertMsg(cRefs < _1M, ("%#x %p\n", cRefs, pMutation));
+    return cRefs;
+}
+#endif
+
+/**
+ * Adds the given mutation to the corpus of the given fuzzer context.
  *
  * @returns IPRT status code.
  * @param   pThis               The fuzzer context instance.
- * @param   pInput              The input to add.
+ * @param   pMutation           The mutation to add.
  */
-static int rtFuzzCtxInputAdd(PRTFUZZCTXINT pThis, PRTFUZZINPUTINT pInput)
+static int rtFuzzCtxMutationAdd(PRTFUZZCTXINT pThis, PRTFUZZMUTATION pMutation)
 {
     int rc = VINF_SUCCESS;
-    uint64_t u64Md5High = *(uint64_t *)&pInput->abMd5Hash[RTMD5_HASH_SIZE / 2];
-    uint64_t u64Md5Low = *(uint64_t *)&pInput->abMd5Hash[0];
 
-    pInput->Core.Key = u64Md5Low;
-    PRTFUZZINTERMEDIATE pIntermediate = (PRTFUZZINTERMEDIATE)RTAvlU64Get(&pThis->TreeSeedsHigh, u64Md5High);
-    if (!pIntermediate)
-    {
-        pIntermediate = (PRTFUZZINTERMEDIATE)RTMemAllocZ(sizeof(*pIntermediate));
-        if (RT_LIKELY(pIntermediate))
-        {
-            pIntermediate->Core.Key = u64Md5High;
-            pIntermediate->TreeSeedsLow = NULL;
-            bool fIns = RTAvlU64Insert(&pThis->TreeSeedsHigh, &pIntermediate->Core);
-            Assert(fIns); RT_NOREF(fIns);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        AssertPtr(pIntermediate);
-        bool fIns = RTAvlU64Insert(&pIntermediate->TreeSeedsLow, &pInput->Core);
-        if (!fIns)
-            rc = VERR_ALREADY_EXISTS;
-        else
-        {
-            RTListAppend(&pThis->LstInputs, &pInput->NdInputs);
-            pThis->cInputs++;
-            RTFuzzInputRetain(pInput);
-        }
-    }
+    pMutation->Core.Key = ASMAtomicIncU64(&pThis->cMutations) - 1;
+    rc = RTSemRWRequestWrite(pThis->hSemRwMutations, RT_INDEFINITE_WAIT);
+    AssertRC(rc); RT_NOREF(rc);
+    bool fIns = RTAvlU64Insert(&pThis->TreeMutations, &pMutation->Core);
+    Assert(fIns);
+    rc = RTSemRWReleaseWrite(pThis->hSemRwMutations);
+    AssertRC(rc); RT_NOREF(rc);
 
     return rc;
 }
 
 
 /**
- * Returns a random input from the corpus of the given fuzzer context.
+ * Returns a random mutation from the corpus of the given fuzzer context.
  *
- * @returns Pointer to a randomly picked input.
+ * @returns Pointer to a randomly picked mutation (reference count is increased).
  * @param   pThis               The fuzzer context instance.
  */
-static PRTFUZZINPUTINT rtFuzzCtxInputPickRnd(PRTFUZZCTXINT pThis)
+static PRTFUZZMUTATION rtFuzzCtxMutationPickRnd(PRTFUZZCTXINT pThis)
 {
-    /* Generate a random MD5 hash and do a non exact localisation. */
-    uint8_t abDigestRnd[RTMD5_HASH_SIZE];
-    RTRandAdvBytes(pThis->hRand, &abDigestRnd[0], sizeof(abDigestRnd));
+    uint64_t idxMutation = RTRandAdvU64Ex(pThis->hRand, 0, ASMAtomicReadU64(&pThis->cMutations));
 
-    return rtFuzzCtxInputLocate(pThis, &abDigestRnd[0], false /*fExact*/, NULL /*ppIntermediate*/);
+    int rc = RTSemRWRequestRead(pThis->hSemRwMutations, RT_INDEFINITE_WAIT);
+    AssertRC(rc); RT_NOREF(rc);
+
+    /*
+     * Using best fit getter here as there might be a racing mutation insertion and the mutation counter has increased
+     * already but the mutation is not yet in the tree.
+     */
+    PRTFUZZMUTATION pMutation = (PRTFUZZMUTATION)RTAvlU64GetBestFit(&pThis->TreeMutations, idxMutation, false /*fAbove*/);
+    AssertPtr(pMutation);
+
+    /* Increase reference count of the mutation. */
+    rtFuzzMutationRetain(pMutation);
+    rc = RTSemRWReleaseRead(pThis->hSemRwMutations);
+    AssertRC(rc); RT_NOREF(rc);
+
+    return pMutation;
 }
 
 
 /**
- * Clones a given input.
+ * Creates a new mutation capable of holding the additional number of bytes.
  *
- * @returns Pointer to the cloned input or NULL if out of memory.
+ * @returns Pointer to the newly created mutation or NULL if out of memory.
  * @param   pThis               The fuzzer context instance.
- * @param   pvBuf               The buffer to clone.
- * @param   cbBuf               Size of the buffer in bytes.
+ * @param   offMutation         The starting offset for the mutation.
+ * @param   pMutationParent     The parent mutation, can be NULL.
+ * @param   cbAdditional        Additional number of bytes to allocate after the core structure.
  */
-static PRTFUZZINPUTINT rtFuzzCtxInputClone(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf)
+static PRTFUZZMUTATION rtFuzzMutationCreate(PRTFUZZCTXINT pThis, uint64_t offMutation, PRTFUZZMUTATION pMutationParent, size_t cbAdditional)
 {
-    PRTFUZZINPUTINT pInpClone = (PRTFUZZINPUTINT)RTMemAllocZ(RT_UOFFSETOF_DYN(RTFUZZINPUTINT, abInput[cbBuf]));
-    if (RT_LIKELY(pInpClone))
+    PRTFUZZMUTATION pMutation = (PRTFUZZMUTATION)rtFuzzCtxMemoryAlloc(pThis, sizeof(RTFUZZMUTATION) + cbAdditional);
+    if (RT_LIKELY(pMutation))
     {
-        pInpClone->cRefs    = 1;
-        pInpClone->pFuzzer  = pThis,
-        pInpClone->cbInput  = cbBuf;
-        memcpy(&pInpClone->abInput[0], pvBuf, cbBuf);
+        pMutation->u32Magic        = 0; /** @todo */
+        pMutation->pFuzzer         = pThis;
+        pMutation->cRefs           = 1;
+        pMutation->iLvl            = 0;
+        pMutation->offMutation     = offMutation;
+        pMutation->pMutationParent = pMutationParent;
+
+        if (pMutationParent)
+            pMutation->iLvl = pMutationParent->iLvl + 1;
     }
 
-    return pInpClone;
+    return pMutation;
 }
 
 
 /**
- * Creates an empty input seed capable of holding the given number of bytes.
- *
- * @returns Pointer to the newly created input seed.
- * @param   pThis               The fuzzer context instance.
- * @param   cbInput             Input seed size in bytes.
- */
-static PRTFUZZINPUTINT rtFuzzCtxInputCreate(PRTFUZZCTXINT pThis, size_t cbInput)
-{
-    PRTFUZZINPUTINT pInput = (PRTFUZZINPUTINT)RTMemAllocZ(RT_UOFFSETOF_DYN(RTFUZZINPUTINT, abInput[cbInput]));
-    if (RT_LIKELY(pInput))
-    {
-        pInput->pFuzzer = pThis;
-        pInput->cRefs   = 1;
-        pInput->cbInput = cbInput;
-    }
-
-    return pInput;
-}
-
-
-/**
- * Destroys the given input.
+ * Destroys the given mutation.
  *
  * @returns nothing.
- * @param   pInput              The input to destroy.
+ * @param   pMutation           The mutation to destroy.
  */
-static void rtFuzzInputDestroy(PRTFUZZINPUTINT pInput)
+static void rtFuzzMutationDestroy(PRTFUZZMUTATION pMutation)
 {
-    RTMemFree(pInput);
+    rtFuzzCtxMemoryFree(pMutation->pFuzzer, pMutation);
 }
 
 
@@ -390,75 +510,93 @@ static void rtFuzzCtxDestroy(PRTFUZZCTXINT pThis)
 }
 
 
+static DECLCALLBACK(int) rtFuzzCtxMutatorCorpusExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                    uint8_t *pbBuf, size_t cbBuf)
+{
+    RT_NOREF(pThis, cbBuf);
+    memcpy(pbBuf, &pMutation->u.abCorpus[0], pMutation->cbInput);
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Mutator callback - flips a single bit in the input.
  */
-static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlip(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
+static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipPrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                     PPRTFUZZMUTATION ppMutation)
 {
     int rc = VINF_SUCCESS;
-    PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputClone(pThis, pvBuf, cbBuf);
-    if (RT_LIKELY(pInputMutated))
+    PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, 0 /*cbAdditional*/);
+    if (RT_LIKELY(pMutation))
     {
-        int32_t iBit = RTRandAdvS32Ex(pThis->hRand, 0, (uint32_t)cbBuf * 8 - 1);
-        ASMBitToggle(&pInputMutated->abInput[0], iBit);
-        RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
-        *ppInputMutated = pInputMutated;
+        pMutation->cbInput      = pMutationParent->cbInput; /* Bit flips don't change the input size. */
+        pMutation->u.idxBitFlip = RTRandAdvS32Ex(pThis->hRand, 0, (pMutationParent->cbInput - offStart) * 8 - 1);
+        *ppMutation = pMutation;
     }
     else
         rc = VERR_NO_MEMORY;
 
     return rc;
+}
+
+
+static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                     uint8_t *pbBuf, size_t cbBuf)
+{
+    RT_NOREF(pThis, cbBuf);
+    ASMBitToggle(pbBuf, pMutation->u.idxBitFlip);
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Mutator callback - replaces a single byte in the input.
  */
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplace(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplacePrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                         PPRTFUZZMUTATION ppMutation)
 {
     int rc = VINF_SUCCESS;
-    PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputClone(pThis, pvBuf, cbBuf);
-    if (RT_LIKELY(pInputMutated))
+    PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, 0 /*cbAdditional*/);
+    if (RT_LIKELY(pMutation))
     {
-        uint8_t *pbBuf = (uint8_t *)pvBuf;
-        uint32_t offByte = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)cbBuf - 1);
-        RTRandAdvBytes(pThis->hRand, &pInputMutated->abInput[offByte], 1);
-        if (pbBuf[offByte] != pInputMutated->abInput[offByte])
-        {
-            RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
-            *ppInputMutated = pInputMutated;
-        }
-        else
-            RTMemFree(pInputMutated);
+        pMutation->cbInput = pMutationParent->cbInput; /* Byte replacements don't change the input size. */
+        RTRandAdvBytes(pThis->hRand, &pMutation->u.bByteReplace, 1); /** @todo: Filter out same values. */
+        *ppMutation = pMutation;
     }
     else
         rc = VERR_NO_MEMORY;
 
     return rc;
+}
+
+
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplaceExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                         uint8_t *pbBuf, size_t cbBuf)
+{
+    RT_NOREF(pThis, cbBuf);
+    *pbBuf = pMutation->u.bByteReplace;
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Mutator callback - inserts a byte sequence into the input.
  */
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsert(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendPrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                                      PPRTFUZZMUTATION ppMutation)
 {
     int rc = VINF_SUCCESS;
-    if (cbBuf < pThis->cbInputMax)
+    if (pMutationParent->cbInput < pThis->cbInputMax)
     {
-        size_t cbInputMutated = RTRandAdvU32Ex(pThis->hRand, (uint32_t)cbBuf + 1, (uint32_t)pThis->cbInputMax);
-        size_t cbInsert = cbInputMutated - cbBuf;
-        uint32_t offInsert = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)cbBuf);
-        uint8_t *pbBuf = (uint8_t *)pvBuf;
-        PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputCreate(pThis, cbInputMutated);
-        if (RT_LIKELY(pInputMutated))
+        size_t cbInputMutated = (size_t)RTRandAdvU64Ex(pThis->hRand, pMutationParent->cbInput + 1, pThis->cbInputMax);
+        size_t cbInsert = cbInputMutated - pMutationParent->cbInput;
+
+        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, cbInsert);
+        if (RT_LIKELY(pMutation))
         {
-            if (offInsert)
-                memcpy(&pInputMutated->abInput[0], pbBuf, offInsert);
-            RTRandAdvBytes(pThis->hRand, &pInputMutated->abInput[offInsert], cbInsert);
-            memcpy(&pInputMutated->abInput[offInsert + cbInsert], &pbBuf[offInsert], cbBuf - offInsert);
-            RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
-            *ppInputMutated = pInputMutated;
+            pMutation->cbInput = cbInputMutated;
+            RTRandAdvBytes(pThis->hRand, &pMutation->u.abAdd[0], cbInsert);
+            *ppMutation = pMutation;
         }
         else
             rc = VERR_NO_MEMORY;
@@ -468,132 +606,209 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsert(PRTFUZZCTXINT pThis,
 }
 
 
-/**
- * Mutator callback - appends a byte sequence to the input.
- */
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceAppend(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                                      uint8_t *pbBuf, size_t cbBuf)
 {
-    int rc = VINF_SUCCESS;
-    if (cbBuf < pThis->cbInputMax)
-    {
-        size_t cbInputMutated = RTRandAdvU32Ex(pThis->hRand, (uint32_t)cbBuf + 1, (uint32_t)pThis->cbInputMax);
-        size_t cbInsert = cbInputMutated - cbBuf;
-        PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputCreate(pThis, cbInputMutated);
-        if (RT_LIKELY(pInputMutated))
-        {
-            memcpy(&pInputMutated->abInput[0], pvBuf, cbBuf);
-            RTRandAdvBytes(pThis->hRand, &pInputMutated->abInput[cbBuf], cbInsert);
-            RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
-            *ppInputMutated = pInputMutated;
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
+    RT_NOREF(pThis);
+    size_t cbInsert = pMutation->cbInput - pMutation->pMutationParent->cbInput;
 
-    return rc;
+    /* Move any remaining data to the end. */
+    if (cbBuf)
+        memmove(pbBuf + cbInsert, pbBuf, cbBuf);
+
+    memcpy(pbBuf, &pMutation->u.abAdd[0], cbInsert);
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Mutator callback - deletes a single byte in the input.
  */
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteDelete(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeletePrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                        PPRTFUZZMUTATION ppMutation)
 {
     int rc = VINF_SUCCESS;
-    if (cbBuf > 1)
+    if (pMutationParent->cbInput - offStart >= 1)
     {
-        uint32_t offDelete = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)cbBuf - 1);
-        uint8_t *pbBuf = (uint8_t *)pvBuf;
-        PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputCreate(pThis, cbBuf - 1);
-        if (RT_LIKELY(pInputMutated))
+        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, 0 /*cbAdditional*/);
+        if (RT_LIKELY(pMutation))
         {
-            if (offDelete)
-                memcpy(&pInputMutated->abInput[0], pbBuf, offDelete);
-            if (offDelete < cbBuf - 1)
-                memcpy(&pInputMutated->abInput[offDelete], &pbBuf[offDelete + 1], cbBuf - offDelete - 1);
-            RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
-            *ppInputMutated = pInputMutated;
+            pMutation->cbInput = pMutationParent->cbInput - 1;
+            *ppMutation = pMutation;
         }
         else
             rc = VERR_NO_MEMORY;
     }
+
+    return rc;
+}
+
+
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                        uint8_t *pbBuf, size_t cbBuf)
+{
+    RT_NOREF(pThis, pMutation);
+
+    /* Just move the residual data to the front. */
+    memmove(pbBuf, pbBuf + 1, cbBuf - 1);
+    return VINF_SUCCESS;
+}
+
+
+
+/**
+ * Mutator callback - deletes a byte sequence in the input.
+ */
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeletePrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                                PPRTFUZZMUTATION ppMutation)
+{
+    int rc = VINF_SUCCESS;
+    if (pMutationParent->cbInput > 1)
+    {
+        size_t cbInputMutated = (size_t)RTRandAdvU64Ex(pThis->hRand, offStart, pMutationParent->cbInput - 1);
+
+        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, 0 /*cbAdditional*/);
+        if (RT_LIKELY(pMutation))
+        {
+            pMutation->cbInput = cbInputMutated;
+            *ppMutation = pMutation;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+                                                                uint8_t *pbBuf, size_t cbBuf)
+{
+    RT_NOREF(pThis);
+    Assert(pMutation->pMutationParent->cbInput > pMutation->cbInput);
+    size_t cbDel = pMutation->pMutationParent->cbInput - pMutation->cbInput;
+
+    /* Just move the residual data to the front. */
+    memmove(pbBuf, pbBuf + cbDel, cbBuf - cbDel);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Creates an empty fuzzing context.
+ *
+ * @returns IPRT status code.
+ * @param   ppThis              Where to store the pointer to the internal fuzzing context instance on success.
+ * @param   enmType             Fuzzing context type.
+ */
+static int rtFuzzCtxCreateEmpty(PRTFUZZCTXINT *ppThis, RTFUZZCTXTYPE enmType)
+{
+    int rc;
+    PRTFUZZCTXINT pThis = (PRTFUZZCTXINT)RTMemAllocZ(sizeof(*pThis));
+    if (RT_LIKELY(pThis))
+    {
+        pThis->u32Magic         = RTFUZZCTX_MAGIC;
+        pThis->cRefs            = 1;
+        pThis->enmType          = enmType;
+        pThis->TreeMutations    = NULL;
+        pThis->cbInputMax       = UINT32_MAX;
+        pThis->cMutations       = 0;
+        pThis->fFlagsBehavioral = 0;
+        pThis->cbMemTotal       = 0;
+
+        /* Copy the default mutator descriptors over. */
+        pThis->paMutators = (PRTFUZZMUTATOR)RTMemAllocZ(RT_ELEMENTS(g_aMutators) * sizeof(RTFUZZMUTATOR));
+        if (RT_LIKELY(pThis->paMutators))
+        {
+            pThis->cMutators = RT_ELEMENTS(g_aMutators);
+            memcpy(&pThis->paMutators[0], &g_aMutators[0], RT_ELEMENTS(g_aMutators) * sizeof(RTFUZZMUTATOR));
+
+            rc = RTSemRWCreate(&pThis->hSemRwMutations);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTRandAdvCreateParkMiller(&pThis->hRand);
+                if (RT_SUCCESS(rc))
+                {
+                    RTRandAdvSeed(pThis->hRand, RTTimeSystemNanoTS());
+                    *ppThis = pThis;
+                    return VINF_SUCCESS;
+                }
+
+                RTSemRWDestroy(pThis->hSemRwMutations);
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        RTMemFree(pThis);
+    }
+    else
+        rc = VERR_NO_MEMORY;
 
     return rc;
 }
 
 
 /**
- * Mutator callback - deletes a byte sequence in the input.
+ * Destroys the given fuzzing input.
+ *
+ * @returns nothing.
+ * @param   pThis               The fuzzing input to destroy.
  */
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDelete(PRTFUZZCTXINT pThis, const void *pvBuf, size_t cbBuf, PPRTFUZZINPUTINT ppInputMutated)
+static void rtFuzzInputDestroy(PRTFUZZINPUTINT pThis)
 {
-    int rc = VINF_SUCCESS;
-    if (cbBuf > 1)
-    {
-        size_t cbInputMutated = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)cbBuf - 1);
-        size_t cbDel = cbBuf - cbInputMutated;
-        uint32_t offDel = RTRandAdvU32Ex(pThis->hRand, 0, (uint32_t)(cbBuf - cbDel));
-        uint8_t *pbBuf = (uint8_t *)pvBuf;
+    PRTFUZZCTXINT pFuzzer = pThis->pFuzzer;
 
-        PRTFUZZINPUTINT pInputMutated = rtFuzzCtxInputCreate(pThis, cbInputMutated);
-        if (RT_LIKELY(pInputMutated))
-        {
-            if (offDel)
-                memcpy(&pInputMutated->abInput[0], pbBuf, offDel);
-            memcpy(&pInputMutated->abInput[offDel], &pbBuf[offDel + cbDel], cbBuf - offDel - cbDel);
-            RTMd5(&pInputMutated->abInput[0], pInputMutated->cbInput, &pInputMutated->abMd5Hash[0]);
-            *ppInputMutated = pInputMutated;
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
+    if (   pFuzzer->enmType == RTFUZZCTXTYPE_BLOB
+        && pThis->u.Blob.pvInput)
+        rtFuzzCtxMemoryFree(pFuzzer, pThis->u.Blob.pvInput);
 
-    return rc;
+    rtFuzzCtxMemoryFree(pFuzzer, pThis);
+    RTFuzzCtxRelease(pFuzzer);
 }
 
 
-static PRTFUZZCTXINT rtFuzzCtxCreateEmpty(void)
+/**
+ * Creates the final input data applying all accumulated mutations.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The fuzzing input to finalize.
+ */
+static int rtFuzzInputDataFinalize(PRTFUZZINPUTINT pThis)
 {
-    PRTFUZZCTXINT pThis = (PRTFUZZCTXINT)RTMemAllocZ(sizeof(*pThis));
-    if (RT_LIKELY(pThis))
-    {
-        pThis->u32Magic         = RTFUZZCTX_MAGIC;
-        pThis->cRefs            = 1;
-        pThis->TreeSeedsHigh    = NULL;
-        pThis->cbInputMax       = UINT32_MAX;
-        pThis->cInputs          = 0;
-        pThis->fFlagsBehavioral = 0;
-        RTListInit(&pThis->LstInputs);
-
-        int rc = RTRandAdvCreateParkMiller(&pThis->hRand);
-        if (RT_SUCCESS(rc))
-        {
-            RTRandAdvSeed(pThis->hRand, RTTimeSystemNanoTS());
-            return pThis;
-        }
-
-        RTMemFree(pThis);
-    }
-
-    return NULL;
-}
-
-
-RTDECL(int) RTFuzzCtxCreate(PRTFUZZCTX phFuzzCtx)
-{
-    AssertPtrReturn(phFuzzCtx, VERR_INVALID_POINTER);
+    Assert(!pThis->u.Blob.pvInput);
 
     int rc = VINF_SUCCESS;
-    PRTFUZZCTXINT pThis = rtFuzzCtxCreateEmpty();
-    if (RT_LIKELY(pThis))
+    uint8_t *pbBuf = (uint8_t *)rtFuzzCtxMemoryAlloc(pThis->pFuzzer, pThis->u.Blob.cbAlloc);
+    if (RT_LIKELY(pbBuf))
     {
-        *phFuzzCtx = pThis;
-        return VINF_SUCCESS;
+        pThis->u.Blob.pvInput = pbBuf;
+        pThis->u.Blob.cbInput = pThis->pMutationTop->cbInput;
+
+        size_t cbInputNow = pThis->apMutations[0]->cbInput;
+        for (uint32_t i = 0; i < pThis->pMutationTop->iLvl + 1; i++)
+        {
+            PCRTFUZZMUTATION pMutation = pThis->apMutations[i];
+            pMutation->pMutator->pfnExec(pThis->pFuzzer, pMutation, pbBuf + pMutation->offMutation,
+                                         cbInputNow - pMutation->offMutation);
+
+            cbInputNow = pMutation->cbInput;
+        }
+
+        Assert(cbInputNow == pThis->u.Blob.cbInput);
     }
     else
         rc = VERR_NO_MEMORY;
 
     return rc;
+}
+
+
+RTDECL(int) RTFuzzCtxCreate(PRTFUZZCTX phFuzzCtx, RTFUZZCTXTYPE enmType)
+{
+    AssertPtrReturn(phFuzzCtx, VERR_INVALID_POINTER);
+
+    return rtFuzzCtxCreateEmpty(phFuzzCtx, enmType);
 }
 
 
@@ -603,6 +818,7 @@ RTDECL(int) RTFuzzCtxCreateFromState(PRTFUZZCTX phFuzzCtx, const void *pvState, 
     AssertPtrReturn(pvState, VERR_INVALID_POINTER);
     AssertReturn(cbState > 0, VERR_INVALID_PARAMETER);
 
+#if 0
     int rc = VINF_SUCCESS;
     if (cbState >= sizeof(RTFUZZCTXSTATE))
     {
@@ -678,6 +894,9 @@ RTDECL(int) RTFuzzCtxCreateFromState(PRTFUZZCTX phFuzzCtx, const void *pvState, 
         rc = VERR_INVALID_MAGIC;
 
     return rc;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
@@ -733,6 +952,7 @@ RTDECL(int) RTFuzzCtxStateExport(RTFUZZCTX hFuzzCtx, void **ppvState, size_t *pc
     AssertPtrReturn(ppvState, VERR_INVALID_POINTER);
     AssertPtrReturn(pcbState, VERR_INVALID_POINTER);
 
+#if 0
     char aszPrngExport[_4K]; /* Should be plenty of room here. */
     size_t cbPrng = sizeof(aszPrngExport);
     int rc = RTRandAdvSaveState(pThis->hRand, &aszPrngExport[0], &cbPrng);
@@ -798,6 +1018,9 @@ RTDECL(int) RTFuzzCtxStateExport(RTFUZZCTX hFuzzCtx, void **ppvState, size_t *pc
     }
 
     return rc;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
@@ -837,31 +1060,19 @@ RTDECL(int) RTFuzzCtxCorpusInputAdd(RTFUZZCTX hFuzzCtx, const void *pvInput, siz
     AssertPtrReturn(pvInput, VERR_INVALID_POINTER);
     AssertReturn(cbInput, VERR_INVALID_POINTER);
 
-    /* Generate MD5 checksum and try to locate input. */
     int rc = VINF_SUCCESS;
-    uint8_t abDigest[RTMD5_HASH_SIZE];
-    RTMd5(pvInput, cbInput, &abDigest[0]);
-
-    PRTFUZZINPUTINT pInput = rtFuzzCtxInputLocate(pThis, &abDigest[0], true /*fExact*/, NULL /*ppIntermediate*/);
-    if (!pInput)
+    PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, 0, NULL, cbInput);
+    if (RT_LIKELY(pMutation))
     {
-        pInput = (PRTFUZZINPUTINT)RTMemAllocZ(RT_UOFFSETOF_DYN(RTFUZZINPUTINT, abInput[cbInput]));
-        if (RT_LIKELY(pInput))
-        {
-            pInput->cRefs   = 1;
-            pInput->pFuzzer = pThis;
-            pInput->cbInput = cbInput;
-            memcpy(&pInput->abInput[0], pvInput, cbInput);
-            memcpy(&pInput->abMd5Hash[0], &abDigest[0], sizeof(abDigest));
-            rc = rtFuzzCtxInputAdd(pThis, pInput);
-            if (RT_FAILURE(rc))
-                RTMemFree(pInput);
-        }
-        else
-            rc = VERR_NO_MEMORY;
+        pMutation->pMutator = &g_MutatorCorpus;
+        pMutation->cbInput  = cbInput;
+        memcpy(&pMutation->u.abCorpus[0], pvInput, cbInput);
+        rc = rtFuzzCtxMutationAdd(pThis, pMutation);
+        if (RT_FAILURE(rc))
+            rtFuzzMutationDestroy(pMutation);
     }
     else
-        rc = VERR_ALREADY_EXISTS;
+        rc = VERR_NO_MEMORY;
 
     return rc;
 }
@@ -896,34 +1107,18 @@ RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsFile(RTFUZZCTX hFuzzCtx, RTVFSFILE hVf
     int rc = RTVfsFileGetSize(hVfsFile, &cbFile);
     if (RT_SUCCESS(rc))
     {
-        PRTFUZZINPUTINT pInput = (PRTFUZZINPUTINT)RTMemAllocZ(RT_UOFFSETOF_DYN(RTFUZZINPUTINT, abInput[cbFile]));
-        if (RT_LIKELY(pInput))
+        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, 0, NULL, cbFile);
+        if (RT_LIKELY(pMutation))
         {
-            pInput->cRefs   = 1;
-            pInput->pFuzzer = pThis;
-            pInput->cbInput = cbFile;
-
-            rc = RTVfsFileRead(hVfsFile, &pInput->abInput[0], cbFile, NULL);
+            pMutation->pMutator = &g_MutatorCorpus;
+            pMutation->cbInput  = cbFile;
+            rc = RTVfsFileRead(hVfsFile, &pMutation->u.abCorpus[0], cbFile, NULL);
             if (RT_SUCCESS(rc))
-            {
-                /* Generate MD5 checksum and try to locate input. */
-                uint8_t abDigest[RTMD5_HASH_SIZE];
-                RTMd5(&pInput->abInput[0], cbFile, &abDigest[0]);
-
-                if (!rtFuzzCtxInputLocate(pThis, &abDigest[0], true /*fExact*/, NULL /*ppIntermediate*/))
-                {
-                    memcpy(&pInput->abMd5Hash[0], &abDigest[0], sizeof(abDigest));
-                    rc = rtFuzzCtxInputAdd(pThis, pInput);
-                }
-                else
-                    rc = VERR_ALREADY_EXISTS;
-            }
+                rc = rtFuzzCtxMutationAdd(pThis, pMutation);
 
             if (RT_FAILURE(rc))
-                RTMemFree(pInput);
+                rtFuzzMutationDestroy(pMutation);
         }
-        else
-            rc = VERR_NO_MEMORY;
     }
 
     return rc;
@@ -1058,19 +1253,56 @@ RTDECL(int) RTFuzzCtxInputGenerate(RTFUZZCTX hFuzzCtx, PRTFUZZINPUT phFuzzInput)
     AssertPtrReturn(phFuzzInput, VERR_INVALID_POINTER);
 
     uint32_t cTries = 0;
-    PRTFUZZINPUTINT pSrc = rtFuzzCtxInputPickRnd(pThis);
+    PRTFUZZMUTATION pMutationParent = rtFuzzCtxMutationPickRnd(pThis);
     do
     {
-        RTFUZZCTXMUTATOR enmMutator = (RTFUZZCTXMUTATOR)RTRandAdvU32Ex(pThis->hRand, 1, RTFUZZCTXMUTATOR_LAST);
-        PRTFUZZINPUTINT pInput = NULL;
-        rc = g_apfnMutators[enmMutator](pThis, &pSrc->abInput[0], pSrc->cbInput, &pInput);
+        uint32_t idxMutator = RTRandAdvU32Ex(pThis->hRand, 0, pThis->cMutators - 1);
+        PCRTFUZZMUTATOR pMutator = &pThis->paMutators[idxMutator];
+        PRTFUZZMUTATION pMutation = NULL;
+
+        uint64_t offStart = 0;
+        if (!(pMutator->fFlags & RTFUZZMUTATOR_F_END_OF_BUF))
+            offStart = RTRandAdvU64Ex(pThis->hRand, 0, pMutationParent->cbInput);
+        else
+            offStart = pMutationParent->cbInput;
+
+        rc = pMutator->pfnPrep(pThis, offStart, pMutationParent, &pMutation);
         if (   RT_SUCCESS(rc)
-            && VALID_PTR(pInput))
+            && VALID_PTR(pMutation))
         {
+            pMutation->pMutator = pMutator;
+
             if (pThis->fFlagsBehavioral & RTFUZZCTX_F_BEHAVIORAL_ADD_INPUT_AUTOMATICALLY_TO_CORPUS)
-                rtFuzzCtxInputAdd(pThis, pInput);
-            *phFuzzInput = pInput;
-            return rc;
+                rtFuzzCtxMutationAdd(pThis, pMutation);
+
+            /* Create a new input. */
+            PRTFUZZINPUTINT pInput = (PRTFUZZINPUTINT)rtFuzzCtxMemoryAlloc(pThis, RT_UOFFSETOF_DYN(RTFUZZINPUTINT, apMutations[pMutation->iLvl + 1]));
+            if (RT_LIKELY(pInput))
+            {
+                pInput->u32Magic     = 0; /** @todo */
+                pInput->cRefs        = 1;
+                pInput->pFuzzer      = pThis;
+                pInput->pMutationTop = pMutation;
+                RTFuzzCtxRetain(pThis);
+
+                /* Traverse the mutations top to bottom and insert into the array. */
+                uint32_t idx = pMutation->iLvl + 1;
+                PCRTFUZZMUTATION pMutationCur = pMutation;
+                size_t cbAlloc = 0;
+                while (idx > 0)
+                {
+                    pInput->apMutations[idx - 1] = pMutationCur;
+                    cbAlloc = RT_MAX(cbAlloc, pMutationCur->cbInput);
+                    pMutationCur = pMutationCur->pMutationParent;
+                    idx--;
+                }
+
+                pInput->u.Blob.cbAlloc = cbAlloc;
+                *phFuzzInput = pInput;
+                return rc;
+            }
+            else
+                rc = VERR_NO_MEMORY;
         }
     } while (++cTries <= 50);
 
@@ -1081,31 +1313,37 @@ RTDECL(int) RTFuzzCtxInputGenerate(RTFUZZCTX hFuzzCtx, PRTFUZZINPUT phFuzzInput)
 }
 
 
-RTDECL(int) RTFuzzCtxMutateBuffer(RTFUZZCTX hFuzzCtx, void *pvBuf, size_t cbBuf, PRTFUZZINPUT phFuzzInput)
+RTDECL(int) RTFuzzInputQueryBlobData(RTFUZZINPUT hFuzzInput, void **ppv, size_t *pcb)
 {
-    int rc = VINF_SUCCESS;
-    PRTFUZZCTXINT pThis = hFuzzCtx;
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(phFuzzInput, VERR_INVALID_POINTER);
+    PRTFUZZINPUTINT pThis = hFuzzInput;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->pFuzzer->enmType == RTFUZZCTXTYPE_BLOB, VERR_INVALID_STATE);
 
-    uint32_t cTries = 0;
-    do
-    {
-        RTFUZZCTXMUTATOR enmMutator = (RTFUZZCTXMUTATOR)RTRandAdvU32Ex(pThis->hRand, 1, RTFUZZCTXMUTATOR_LAST);
-        PRTFUZZINPUTINT pInput = NULL;
-        rc = g_apfnMutators[enmMutator](pThis, pvBuf, cbBuf, &pInput);
-        if (   RT_SUCCESS(rc)
-            && VALID_PTR(pInput))
-        {
-            *phFuzzInput = pInput;
-            return rc;
-        }
-    } while (++cTries <= 50);
+    int rc = VINF_SUCCESS;
+    if (!pThis->u.Blob.pvInput)
+        rc = rtFuzzInputDataFinalize(pThis);
 
     if (RT_SUCCESS(rc))
-        rc = VERR_INVALID_STATE;
+    {
+        AssertPtr(pThis->u.Blob.pvInput);
+        Assert(pThis->u.Blob.cbInput > 0);
+
+        *ppv = pThis->u.Blob.pvInput;
+        *pcb = pThis->u.Blob.cbInput;
+    }
 
     return rc;
+}
+
+
+RTDECL(int) RTFuzzInputMutateStreamData(RTFUZZINPUT hFuzzInput, void *pvBuf, size_t cbBuf)
+{
+    PRTFUZZINPUTINT pThis = hFuzzInput;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->pFuzzer->enmType == RTFUZZCTXTYPE_STREAM, VERR_INVALID_STATE);
+
+    RT_NOREF(pvBuf, cbBuf);
+    return VERR_NOT_IMPLEMENTED;
 }
 
 
@@ -1136,27 +1374,26 @@ RTDECL(uint32_t) RTFuzzInputRelease(RTFUZZINPUT hFuzzInput)
 }
 
 
-RTDECL(int) RTFuzzInputQueryData(RTFUZZINPUT hFuzzInput, void **ppv, size_t *pcb)
-{
-    PRTFUZZINPUTINT pThis = hFuzzInput;
-    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppv, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcb, VERR_INVALID_POINTER);
-
-    *ppv = &pThis->abInput[0];
-    *pcb = pThis->cbInput;
-    return VINF_SUCCESS;
-}
-
-
 RTDECL(int) RTFuzzInputQueryDigestString(RTFUZZINPUT hFuzzInput, char *pszDigest, size_t cchDigest)
 {
     PRTFUZZINPUTINT pThis = hFuzzInput;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->pFuzzer->enmType == RTFUZZCTXTYPE_BLOB, VERR_INVALID_STATE);
     AssertPtrReturn(pszDigest, VERR_INVALID_POINTER);
     AssertReturn(cchDigest >= RTMD5_STRING_LEN + 1, VERR_INVALID_PARAMETER);
 
-    return RTMd5ToString(&pThis->abMd5Hash[0], pszDigest, cchDigest);
+    int rc = VINF_SUCCESS;
+    if (!pThis->u.Blob.pvInput)
+        rc = rtFuzzInputDataFinalize(pThis);
+
+    if (RT_SUCCESS(rc))
+    {
+        uint8_t abHash[RTMD5_HASH_SIZE];
+        RTMd5(pThis->u.Blob.pvInput, pThis->u.Blob.cbInput, &abHash[0]);
+        rc = RTMd5ToString(&abHash[0], pszDigest, cchDigest);
+    }
+
+    return rc;
 }
 
 
@@ -1164,18 +1401,26 @@ RTDECL(int) RTFuzzInputWriteToFile(RTFUZZINPUT hFuzzInput, const char *pszFilena
 {
     PRTFUZZINPUTINT pThis = hFuzzInput;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->pFuzzer->enmType == RTFUZZCTXTYPE_BLOB, VERR_INVALID_STATE);
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
 
-    RTFILE hFile;
-    int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+    int rc = VINF_SUCCESS;
+    if (!pThis->u.Blob.pvInput)
+        rc = rtFuzzInputDataFinalize(pThis);
+
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileWrite(hFile, &pThis->abInput[0], pThis->cbInput, NULL);
-        AssertRC(rc);
-        RTFileClose(hFile);
+        RTFILE hFile;
+        rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileWrite(hFile, pThis->u.Blob.pvInput, pThis->u.Blob.cbInput, NULL);
+            AssertRC(rc);
+            RTFileClose(hFile);
 
-        if (RT_FAILURE(rc))
-            RTFileDelete(pszFilename);
+            if (RT_FAILURE(rc))
+                RTFileDelete(pszFilename);
+        }
     }
 
     return rc;
@@ -1187,7 +1432,7 @@ RTDECL(int) RTFuzzInputAddToCtxCorpus(RTFUZZINPUT hFuzzInput)
     PRTFUZZINPUTINT pThis = hFuzzInput;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
 
-    return rtFuzzCtxInputAdd(pThis->pFuzzer, pThis);
+    return rtFuzzCtxMutationAdd(pThis->pFuzzer, pThis->pMutationTop);
 }
 
 
@@ -1196,6 +1441,7 @@ RTDECL(int) RTFuzzInputRemoveFromCtxCorpus(RTFUZZINPUT hFuzzInput)
     PRTFUZZINPUTINT pThis = hFuzzInput;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
 
+#if 0
     int rc = VINF_SUCCESS;
     PRTFUZZINTERMEDIATE pIntermediate = NULL;
     PRTFUZZINPUTINT pInputLoc = rtFuzzCtxInputLocate(pThis->pFuzzer, &pThis->abMd5Hash[0], true /*fExact*/,
@@ -1211,7 +1457,8 @@ RTDECL(int) RTFuzzInputRemoveFromCtxCorpus(RTFUZZINPUT hFuzzInput)
     }
     else
         rc = VERR_NOT_FOUND;
+#endif
 
-    return rc;
+    return VERR_NOT_IMPLEMENTED;
 }
 
