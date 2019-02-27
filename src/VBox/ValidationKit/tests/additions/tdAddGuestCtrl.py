@@ -3098,16 +3098,25 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             aGstFiles.append(curTest.sFile.replace('\\', '/'));
                             self.oTstDrv.txsDownloadFiles(oSession, oTxsSession, aGstFiles, fIgnoreErrors = True);
 
-                            # Create file with buffer content on host.
-                            sHstFileName = os.path.join(self.oTstDrv.sScratchPath, ('testGuestCtrlWriteTest%d' % i));
+                            # Create files with buffer contents and upload those for later (manual) inspection.
+                            sHstFileName = os.path.join(self.oTstDrv.sScratchPath, ('testGuestCtrlWriteTest%d-BufExcepted' % i));
+                            try:
+                                oCurTestFile     = open(sHstFileName, "wb");
+                                oCurTestFile.write(curRes.aBuf);
+                                oCurTestFile.close();
+                                reporter.addLogFile(sHstFileName, 'misc/other', 'Test #%d: Expected buffer' % i);
+                            except:
+                                reporter.error('Test #%d failed: Unable to create temporary expected buffer file "%s"' \
+                                               % (i, sHstFileName));
+
+                            sHstFileName = os.path.join(self.oTstDrv.sScratchPath, ('testGuestCtrlWriteTest%d-BufGot' % i));
                             try:
                                 oCurTestFile     = open(sHstFileName, "wb");
                                 oCurTestFile.write(aBufRead);
                                 oCurTestFile.close();
-                                reporter.addLogFile(sHstFileName, 'misc/other',
-                                                    'Buffer of testGuestCtrlFileWrite test #%d' % i);
+                                reporter.addLogFile(sHstFileName, 'misc/other', 'Test #%d: Got buffer' % i);
                             except:
-                                reporter.error('Test #%d failed: Unable to create temporary buffer file "%s"' \
+                                reporter.error('Test #%d failed: Unable to create temporary got buffer file "%s"' \
                                                % (i, sHstFileName));
                             fRc = False;
                 # Test final offset.
