@@ -303,6 +303,7 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeleteExec(PRTFUZZCTXINT pThis, PCR
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
                                                                 uint8_t *pbBuf, size_t cbBuf);
 
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
@@ -559,7 +560,7 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplacePrep(PRTFUZZCTXINT pThis, ui
     if (RT_LIKELY(pMutation))
     {
         pMutation->cbInput = pMutationParent->cbInput; /* Byte replacements don't change the input size. */
-        RTRandAdvBytes(pThis->hRand, &pMutation->u.bByteReplace, 1); /** @todo: Filter out same values. */
+        RTRandAdvBytes(pThis->hRand, &pMutation->u.bByteReplace, 1); /** @todo Filter out same values. */
         *ppMutation = pMutation;
     }
     else
