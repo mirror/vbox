@@ -351,7 +351,6 @@ static void *rtFuzzCtxMemoryAlloc(PRTFUZZCTXINT pThis, size_t cb)
     PRTFUZZMEMHDR pMemHdr = (PRTFUZZMEMHDR)RTMemAllocZ(cb + sizeof(RTFUZZMEMHDR));
     if (RT_LIKELY(pMemHdr))
     {
-        size_t cbIgn = 0;
         pMemHdr->cb = cb;
         size_t cbIgn = ASMAtomicAddZ(&pThis->cbMemTotal, cb + sizeof(RTFUZZMEMHDR)); RT_NOREF(cbIgn);
         return pMemHdr + 1;
