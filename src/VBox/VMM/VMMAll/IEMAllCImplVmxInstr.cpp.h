@@ -1912,32 +1912,6 @@ IEM_STATIC void iemVmxVmexitSaveGuestState(PVMCPU pVCpu, uint32_t uExitReason)
     iemVmxVmexitSaveGuestControlRegsMsrs(pVCpu);
     iemVmxVmexitSaveGuestSegRegs(pVCpu);
 
-    /** @todo r=ramshankar: The below hack is no longer necessary because we invoke the
-     *        VM-exit after updating RIP. I'm leaving it in-place temporarily in case
-     *        we need to fix missing exit information or callers still setting
-     *        instruction-length field when it is not necessary. */
-#if 0
-    /*
-     * Save guest RIP, RSP and RFLAGS.
-     * See Intel spec. 27.3.3 "Saving RIP, RSP and RFLAGS".
-     *
-     * For trap-like VM-exits we must advance the RIP by the length of the instruction.
-     * Callers must pass the instruction length in the VM-exit instruction length
-     * field though it is undefined for such VM-exits. After updating RIP here, we clear
-     * the VM-exit instruction length field.
-     *
-     * See Intel spec. 27.1 "Architectural State Before A VM Exit"
-     */
-    if (HMVmxIsTrapLikeVmexit(uExitReason))
-    {
-        uint8_t const cbInstr = pVmcs->u32RoExitInstrLen;
-        AssertMsg(cbInstr >= 1 && cbInstr <= 15, ("uReason=%u cbInstr=%u\n", uExitReason, cbInstr));
-        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-        iemVmxVmcsSetExitInstrLen(pVCpu, 0 /* cbInstr */);
-    }
-#endif
-
-    /* We don't support enclave mode yet. */
     pVmcs->u64GuestRip.u    = pVCpu->cpum.GstCtx.rip;
     pVmcs->u64GuestRsp.u    = pVCpu->cpum.GstCtx.rsp;
     pVmcs->u64GuestRFlags.u = pVCpu->cpum.GstCtx.rflags.u;  /** @todo NSTVMX: Check RFLAGS.RF handling. */
@@ -5097,7 +5071,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxApicWriteEmulation(PVMCPU pVCpu)
         case XAPIC_OFF_ICR_HI:
         {
             /* Clear bytes 2:0 of VICR_HI. No other virtualization or VM-exit must occur. */
-            uint32_t uIcrHi = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_ICR_HI);
+            uint32_t uIcrHi  = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_ICR_HI);
             uIcrHi          &= UINT32_C(0xff000000);
             iemVmxVirtApicWriteRaw32(pVCpu, XAPIC_OFF_ICR_HI, uIcrHi);
             rcStrict = VINF_SUCCESS;
