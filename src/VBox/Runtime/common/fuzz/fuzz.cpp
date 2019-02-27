@@ -529,7 +529,7 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipPrep(PRTFUZZCTXINT pThis, uint64
     if (RT_LIKELY(pMutation))
     {
         pMutation->cbInput      = pMutationParent->cbInput; /* Bit flips don't change the input size. */
-        pMutation->u.idxBitFlip = RTRandAdvS32Ex(pThis->hRand, 0, (pMutationParent->cbInput - offStart) * 8 - 1);
+        pMutation->u.idxBitFlip = RTRandAdvS32Ex(pThis->hRand, 0, sizeof(uint8_t) * 8 - 1);
         *ppMutation = pMutation;
     }
     else
