@@ -106,12 +106,11 @@ class tdCtxCreds(object):
             assert oTestVm is not None;
 
             ## @todo fix this so all VMs have several usable test users with the same passwords (or none).
-            sUser     = 'test';
-            sPassword = 'password';
             if oTestVm.isWindows():
-                #sPassword = ''; # stupid config mistake.
-                sPassword = 'password';
-                sUser     = 'Administrator';
+                sUser = 'Administrator';
+            else:
+                sUser = 'vbox';
+            sPassword = 'password';
             sDomain   = '';
 
         self.sUser     = sUser;
@@ -1633,6 +1632,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sPassword = "password";
             sDomain = "";
             sFile = "C:\\windows\\system32\\kernel32.dll";
+        elif oTestVm.isLinux():
+            sUser = "vbox";
+            sPassword = "password";
+            sDomain = "";
+            sFile = "/bin/sh";
 
         # Number of stale guest files to create.
         cStaleFiles = 10;
@@ -1769,6 +1773,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sDomain = "";
             sCmd = "C:\\windows\\system32\\cmd.exe";
             aArgs = [sCmd,];
+        elif oTestVm.isLinux():
+            sUser = "vbox";
+            sPassword = "password";
+            sDomain = "";
+            sCmd = "/bin/sh";
+            aArgs = [sCmd,];
 
         # Number of stale guest processes to create.
         cStaleProcs = 10;
@@ -1823,6 +1833,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 #
                 if oTestVm.isWindows():
                     aArgs = [ sCmd, '/C', 'dir', '/S', 'C:\\Windows\\system'];
+                else:
+                    aArgs = [ sCmd, '-c', 'date'];
                 reporter.log2('Starting non-stale processes');
                 aaProcs = [];
                 for i in range(0, cStaleProcs):
@@ -1873,6 +1885,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # Fire off blocking processes which are terminated via terminate().
                 if oTestVm.isWindows():
                     aArgs = [ sCmd, '/C', 'dir', '/S', 'C:\\Windows'];
+                else:
+                    aArgs = [ sCmd ];
                 reporter.log2('Starting blocking processes');
                 aaProcs = [];
                 for i in range(0, cStaleProcs):
@@ -1921,11 +1935,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         sPassword = "password";
 
         if oTestVm.isWindows():
-            # Outputting stuff.
             sImageOut = "C:\\windows\\system32\\cmd.exe";
         else:
-            reporter.error('Implement me!'); ## @todo Implement non-Windows bits.
-            return (False, oTxsSession);
+            sImageOut = "/bin/sh";
 
         aaInvalid = [
             # Invalid parameters.
@@ -2170,11 +2182,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         sPassword = "password";
 
         if oTestVm.isWindows():
-            # Outputting stuff.
             sImage = "C:\\windows\\system32\\cmd.exe";
         else:
-            reporter.error('Implement me!'); ## @todo Implement non-Windows bits.
-            return (False, oTxsSession);
+            sImage = "/bin/sh";
 
         aaTests = [];
         if oTestVm.isWindows():
@@ -2272,14 +2282,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         else:
             sUser = "vbox";
         sPassword = "password";
-        sDomain = "";
+        sDomain   = "";
 
         if oTestVm.isWindows():
-            # Outputting stuff.
             sImage = "C:\\windows\\system32\\cmd.exe";
         else:
-            reporter.error('Implement me!'); ## @todo Implement non-Windows bits.
-            return (False, oTxsSession);
+            sImage = "/bin/sh";
 
         fRc = True;
         try:
@@ -2366,6 +2374,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         if oTestVm.isWindows():
             sScratch  = "C:\\Temp\\vboxtest\\testGuestCtrlDirCreate\\";
+        else:
+            sScratch  = "/tmp/testGuestCtrlDirCreate/";
 
         aaTests = [];
         if oTestVm.isWindows():
@@ -2443,9 +2453,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         else:
             sUser = "vbox";
         sPassword = "password";
-
-        # if oTestVm.isWindows():
-        #     sScratch = "C:\\Temp\\vboxtest\\testGuestCtrlDirCreateTemp\\";
 
         aaTests = [];
         if oTestVm.isWindows():
