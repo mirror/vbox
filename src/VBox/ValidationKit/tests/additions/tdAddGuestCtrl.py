@@ -1769,16 +1769,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         if oTestVm.isWindows():
             sUser = "Administrator";
-            sPassword = "password";
-            sDomain = "";
             sCmd = "C:\\windows\\system32\\cmd.exe";
-            aArgs = [sCmd,];
         elif oTestVm.isLinux():
             sUser = "vbox";
-            sPassword = "password";
-            sDomain = "";
             sCmd = "/bin/sh";
-            aArgs = [sCmd,];
+        sPassword = "password";
+        sDomain = "";
+        aArgs = [sCmd,];
 
         # Number of stale guest processes to create.
         cStaleProcs = 10;
