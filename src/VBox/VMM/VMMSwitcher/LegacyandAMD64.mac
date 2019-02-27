@@ -862,19 +862,19 @@ BEGINPROC VMXRCStartVM64
     mov     rbx, [rbp + 24 + 8]                             ; pCache
 
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    mov     qword [rbx + VMCSCACHE.uPos], 2
+    mov     qword [rbx + VMXVMCSBATCHCACHE.uPos], 2
  %endif
 
  %ifdef DEBUG
     mov     rax, [rbp + 8 + 8]                              ; HCPhysCpuPage
-    mov     [rbx + VMCSCACHE.TestIn.HCPhysCpuPage], rax
+    mov     [rbx + VMXVMCSBATCHCACHE.TestIn.HCPhysCpuPage], rax
     mov     rax, [rbp + 16 + 8]                             ; HCPhysVmcs
-    mov     [rbx + VMCSCACHE.TestIn.HCPhysVmcs], rax
-    mov     [rbx + VMCSCACHE.TestIn.pCache], rbx
-    mov     [rbx + VMCSCACHE.TestIn.pCtx], rsi
+    mov     [rbx + VMXVMCSBATCHCACHE.TestIn.HCPhysVmcs], rax
+    mov     [rbx + VMXVMCSBATCHCACHE.TestIn.pCache], rbx
+    mov     [rbx + VMXVMCSBATCHCACHE.TestIn.pCtx], rsi
  %endif
 
-    mov     ecx, [rbx + VMCSCACHE.Write.cValidEntries]
+    mov     ecx, [rbx + VMXVMCSBATCHCACHE.Write.cValidEntries]
     cmp     ecx, 0
     je      .no_cached_writes
     mov     rdx, rcx
@@ -883,17 +883,17 @@ BEGINPROC VMXRCStartVM64
 
 ALIGN(16)
 .cached_write:
-    mov     eax, [rbx + VMCSCACHE.Write.aField + rcx*4]
-    vmwrite rax, qword [rbx + VMCSCACHE.Write.aFieldVal + rcx*8]
+    mov     eax, [rbx + VMXVMCSBATCHCACHE.Write.aField + rcx*4]
+    vmwrite rax, qword [rbx + VMXVMCSBATCHCACHE.Write.aFieldVal + rcx*8]
     inc     rcx
     cmp     rcx, rdx
     jl     .cached_write
 
-    mov     dword [rbx + VMCSCACHE.Write.cValidEntries], 0
+    mov     dword [rbx + VMXVMCSBATCHCACHE.Write.cValidEntries], 0
 .no_cached_writes:
 
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    mov     qword [rbx + VMCSCACHE.uPos], 3
+    mov     qword [rbx + VMXVMCSBATCHCACHE.uPos], 3
  %endif
     ; Save the pCache pointer.
     push    rbx
@@ -945,7 +945,7 @@ ALIGN(16)
 %endif
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    mov     qword [rbx + VMCSCACHE.uPos], 4
+    mov     qword [rbx + VMXVMCSBATCHCACHE.uPos], 4
 %endif
 
     ; Hopefully we can ignore TR (we restore it anyway on the way back to 32-bit mode).
@@ -968,7 +968,7 @@ ALIGN(16)
     ;  - EFLAGS (reset to RT_BIT(1); not relevant)
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    mov     qword [rbx + VMCSCACHE.uPos], 5
+    mov     qword [rbx + VMXVMCSBATCHCACHE.uPos], 5
 %endif
 
     ;
@@ -1083,16 +1083,16 @@ ALIGNCODE(16)
     pop     rdi         ; Saved pCache
 
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    mov     dword [rdi + VMCSCACHE.uPos], 7
+    mov     dword [rdi + VMXVMCSBATCHCACHE.uPos], 7
  %endif
  %ifdef DEBUG
-    mov     [rdi + VMCSCACHE.TestOut.pCache], rdi
-    mov     [rdi + VMCSCACHE.TestOut.pCtx], rsi
+    mov     [rdi + VMXVMCSBATCHCACHE.TestOut.pCache], rdi
+    mov     [rdi + VMXVMCSBATCHCACHE.TestOut.pCtx], rsi
     mov     rax, cr8
-    mov     [rdi + VMCSCACHE.TestOut.cr8], rax
+    mov     [rdi + VMXVMCSBATCHCACHE.TestOut.cr8], rax
  %endif
 
-    mov     ecx, [rdi + VMCSCACHE.Read.cValidEntries]
+    mov     ecx, [rdi + VMXVMCSBATCHCACHE.Read.cValidEntries]
     cmp     ecx, 0  ; Can't happen
     je      .no_cached_reads
     jmp     .cached_read
@@ -1100,13 +1100,13 @@ ALIGNCODE(16)
 ALIGN(16)
 .cached_read:
     dec     rcx
-    mov     eax, [rdi + VMCSCACHE.Read.aField + rcx*4]
-    vmread  qword [rdi + VMCSCACHE.Read.aFieldVal + rcx*8], rax
+    mov     eax, [rdi + VMXVMCSBATCHCACHE.Read.aField + rcx*4]
+    vmread  qword [rdi + VMXVMCSBATCHCACHE.Read.aFieldVal + rcx*8], rax
     cmp     rcx, 0
     jnz     .cached_read
 .no_cached_reads:
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    mov     dword [rdi + VMCSCACHE.uPos], 8
+    mov     dword [rdi + VMXVMCSBATCHCACHE.uPos], 8
  %endif
 %endif
 
@@ -1116,14 +1116,14 @@ ALIGN(16)
     mov     eax, VINF_SUCCESS
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    mov     dword [rdi + VMCSCACHE.uPos], 9
+    mov     dword [rdi + VMXVMCSBATCHCACHE.uPos], 9
 %endif
 .vmstart64_end:
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
  %ifdef DEBUG
     mov     rdx, [rsp]                             ; HCPhysVmcs
-    mov     [rdi + VMCSCACHE.TestOut.HCPhysVmcs], rdx
+    mov     [rdi + VMXVMCSBATCHCACHE.TestOut.HCPhysVmcs], rdx
  %endif
 %endif
 
@@ -1142,9 +1142,9 @@ ALIGN(16)
 
     pushf
     pop     rdx
-    mov     [rdi + VMCSCACHE.TestOut.eflags], rdx
+    mov     [rdi + VMXVMCSBATCHCACHE.TestOut.eflags], rdx
   %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    mov     dword [rdi + VMCSCACHE.uPos], 12
+    mov     dword [rdi + VMXVMCSBATCHCACHE.uPos], 12
   %endif
 .skip_flags_save:
  %endif
@@ -1168,12 +1168,12 @@ ALIGN(16)
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     rdi         ; pCache
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    mov     dword [rdi + VMCSCACHE.uPos], 10
+    mov     dword [rdi + VMXVMCSBATCHCACHE.uPos], 10
  %endif
 
  %ifdef DEBUG
-    mov     [rdi + VMCSCACHE.TestOut.pCache], rdi
-    mov     [rdi + VMCSCACHE.TestOut.pCtx], rsi
+    mov     [rdi + VMXVMCSBATCHCACHE.TestOut.pCache], rdi
+    mov     [rdi + VMXVMCSBATCHCACHE.TestOut.pCtx], rsi
  %endif
 %endif
 
@@ -1200,11 +1200,11 @@ ALIGN(16)
     pop     rdi         ; pCache
 
  %ifdef DEBUG
-    mov     [rdi + VMCSCACHE.TestOut.pCache], rdi
-    mov     [rdi + VMCSCACHE.TestOut.pCtx], rsi
+    mov     [rdi + VMXVMCSBATCHCACHE.TestOut.pCache], rdi
+    mov     [rdi + VMXVMCSBATCHCACHE.TestOut.pCtx], rsi
  %endif
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    mov     dword [rdi + VMCSCACHE.uPos], 11
+    mov     dword [rdi + VMXVMCSBATCHCACHE.uPos], 11
  %endif
 %endif
 

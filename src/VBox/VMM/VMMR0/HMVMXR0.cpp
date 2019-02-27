@@ -4987,9 +4987,9 @@ DECLINLINE(int) hmR0VmxRunGuest(PVMCPU pVCpu)
     /** @todo Add stats for resume vs launch. */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-    int rc = hmR0VMXStartVMWrapXMM(fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu, pVCpu->hm.s.vmx.pfnStartVM);
+    int rc = hmR0VMXStartVMWrapXMM(fResumeVM, pCtx, &pVCpu->hm.s.vmx.VmcsBatchCache, pVM, pVCpu, pVCpu->hm.s.vmx.pfnStartVM);
 #else
-    int rc = pVCpu->hm.s.vmx.pfnStartVM(fResumeVM, pCtx, &pVCpu->hm.s.vmx.VMCSCache, pVM, pVCpu);
+    int rc = pVCpu->hm.s.vmx.pfnStartVM(fResumeVM, pCtx, &pVCpu->hm.s.vmx.VmcsBatchCache, pVM, pVCpu);
 #endif
     AssertMsg(rc <= VINF_SUCCESS, ("%Rrc\n", rc));
     return rc;
@@ -5266,15 +5266,15 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVMCPU pVCpu, HM64ON32OP enmOp, uint32_
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
     Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
-    Assert(pVCpu->hm.s.vmx.VMCSCache.Write.cValidEntries <= RT_ELEMENTS(pVCpu->hm.s.vmx.VMCSCache.Write.aField));
-    Assert(pVCpu->hm.s.vmx.VMCSCache.Read.cValidEntries <= RT_ELEMENTS(pVCpu->hm.s.vmx.VMCSCache.Read.aField));
+    Assert(pVCpu->hm.s.vmx.VmcsBatchCache.Write.cValidEntries <= RT_ELEMENTS(pVCpu->hm.s.vmx.VmcsBatchCache.Write.aField));
+    Assert(pVCpu->hm.s.vmx.VmcsBatchCache.Read.cValidEntries <= RT_ELEMENTS(pVCpu->hm.s.vmx.VmcsBatchCache.Read.aField));
 
 #ifdef VBOX_STRICT
-    for (uint32_t i = 0; i < pVCpu->hm.s.vmx.VMCSCache.Write.cValidEntries; i++)
-        Assert(hmR0VmxIsValidWriteField(pVCpu->hm.s.vmx.VMCSCache.Write.aField[i]));
+    for (uint32_t i = 0; i < pVCpu->hm.s.vmx.VmcsBatchCache.Write.cValidEntries; i++)
+        Assert(hmR0VmxIsValidWriteField(pVCpu->hm.s.vmx.VmcsBatchCache.Write.aField[i]));
 
-    for (uint32_t i = 0; i <pVCpu->hm.s.vmx.VMCSCache.Read.cValidEntries; i++)
-        Assert(hmR0VmxIsValidReadField(pVCpu->hm.s.vmx.VMCSCache.Read.aField[i]));
+    for (uint32_t i = 0; i <pVCpu->hm.s.vmx.VmcsBatchCache.Read.cValidEntries; i++)
+        Assert(hmR0VmxIsValidReadField(pVCpu->hm.s.vmx.VmcsBatchCache.Read.aField[i]));
 #endif
 
     /* Disable interrupts. */
@@ -5342,7 +5342,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVMCPU pVCpu, HM64ON32OP enmOp, uint32_
  * @param   pVM         The cross context VM structure.
  * @param   pVCpu       The cross context virtual CPU structure.
  */
-DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu)
+DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSBATCHCACHE pCache, PVM pVM, PVMCPU pVCpu)
 {
     NOREF(fResume);
 
@@ -5372,7 +5372,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     aParam[1] = RT_HI_U32(HCPhysCpuPage);                               /* Param 1: VMXON physical address - Hi. */
     aParam[2] = RT_LO_U32(pVCpu->hm.s.vmx.HCPhysVmcs);                  /* Param 2: VMCS physical address - Lo. */
     aParam[3] = RT_HI_U32(pVCpu->hm.s.vmx.HCPhysVmcs);                  /* Param 2: VMCS physical address - Hi. */
-    aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VMCSCache);
+    aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VmcsBatchCache);
     aParam[5] = 0;
     aParam[6] = VM_RC_ADDR(pVM, pVM);
     aParam[7] = 0;
@@ -5399,8 +5399,8 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
                                                                            pCache->TestOut.HCPhysVmcs));
     AssertMsg(pCache->TestIn.pCache        == pCache->TestOut.pCache, ("%RGv vs %RGv\n", pCache->TestIn.pCache,
                                                                        pCache->TestOut.pCache));
-    AssertMsg(pCache->TestIn.pCache        == VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VMCSCache),
-              ("%RGv vs %RGv\n", pCache->TestIn.pCache, VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VMCSCache)));
+    AssertMsg(pCache->TestIn.pCache        == VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VmcsBatchCache),
+              ("%RGv vs %RGv\n", pCache->TestIn.pCache, VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VmcsBatchCache)));
     AssertMsg(pCache->TestIn.pCtx          == pCache->TestOut.pCtx, ("%RGv vs %RGv\n", pCache->TestIn.pCtx,
                                                                      pCache->TestOut.pCtx));
     Assert(!(pCache->TestOut.eflags & X86_EFL_IF));
@@ -5431,7 +5431,7 @@ static int hmR0VmxInitVmcsReadCache(PVMCPU pVCpu)
         ++cReadFields;                                             \
     } while (0)
 
-    PVMCSCACHE pCache = &pVCpu->hm.s.vmx.VMCSCache;
+    PVMXVMCSBATCHCACHE pCache = &pVCpu->hm.s.vmx.VmcsBatchCache;
     uint32_t cReadFields = 0;
 
     /*
@@ -5611,9 +5611,9 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
 VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val)
 {
     AssertPtr(pVCpu);
-    PVMCSCACHE pCache = &pVCpu->hm.s.vmx.VMCSCache;
+    PVMXVMCSBATCHCACHE pCache = &pVCpu->hm.s.vmx.VmcsBatchCache;
 
-    AssertMsgReturn(pCache->Write.cValidEntries < VMCSCACHE_MAX_ENTRY - 1,
+    AssertMsgReturn(pCache->Write.cValidEntries < VMX_VMCS_BATCH_CACHE_MAX_ENTRY - 1,
                     ("entries=%u\n", pCache->Write.cValidEntries), VERR_ACCESS_DENIED);
 
     /* Make sure there are no duplicates. */
