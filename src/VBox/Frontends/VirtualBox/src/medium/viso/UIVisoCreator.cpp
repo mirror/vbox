@@ -275,7 +275,7 @@ void UIVisoCreator::prepareWidgets()
     if (m_pActionOptions)
         m_pMainMenu->addAction(m_pActionOptions);
 
-    m_pToolBar = new UIToolBar(parentWidget());
+    m_pToolBar = new UIToolBar;
     if (m_pToolBar)
     {
         /* Configure toolbar: */
@@ -285,7 +285,7 @@ void UIVisoCreator::prepareWidgets()
         m_pMainLayout->addWidget(m_pToolBar, 0, 0, 1, 5);
     }
 
-    m_pHostBrowser = new UIVisoHostBrowser(0 /* parent */);
+    m_pHostBrowser = new UIVisoHostBrowser;
     if (m_pHostBrowser)
     {
         m_pMainLayout->addWidget(m_pHostBrowser, 1, 0, 1, 2);
@@ -299,7 +299,7 @@ void UIVisoCreator::prepareWidgets()
         m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVerticalToolBar), 1);
     }
 
-    m_pVisoBrowser = new UIVisoContentBrowser(0 /* parent */);
+    m_pVisoBrowser = new UIVisoContentBrowser;
     if (m_pVisoBrowser)
     {
         m_pMainLayout->addWidget(m_pVisoBrowser, 1, 3, 1, 2);
@@ -307,7 +307,7 @@ void UIVisoCreator::prepareWidgets()
         m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVisoBrowser), 2);
     }
 
-    m_pConfigurationPanel = new UIVisoConfigurationPanel(this);
+    m_pConfigurationPanel = new UIVisoConfigurationPanel;
     if (m_pConfigurationPanel)
     {
         m_pMainLayout->addWidget(m_pConfigurationPanel, 2, 0, 1, 5);
@@ -317,7 +317,7 @@ void UIVisoCreator::prepareWidgets()
         installEventFilter(m_pConfigurationPanel);
     }
 
-    m_pCreatorOptionsPanel = new UIVisoCreatorOptionsPanel(this);
+    m_pCreatorOptionsPanel = new UIVisoCreatorOptionsPanel;
     if (m_pCreatorOptionsPanel)
     {
         m_pCreatorOptionsPanel->setShowHiddenbjects(m_browserOptions.m_fShowHiddenObjects);
