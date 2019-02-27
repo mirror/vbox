@@ -352,7 +352,7 @@ static void *rtFuzzCtxMemoryAlloc(PRTFUZZCTXINT pThis, size_t cb)
     {
         size_t cbIgn = 0;
         pMemHdr->cb = cb;
-        ASMAtomicAddSize(&pThis->cbMemTotal, cb + sizeof(RTFUZZMEMHDR), &cbIgn); RT_NOREF(cbIgn);
+        size_t cbIgn = ASMAtomicAddZ(&pThis->cbMemTotal, cb + sizeof(RTFUZZMEMHDR)); RT_NOREF(cbIgn);
         return pMemHdr + 1;
     }
 
@@ -371,8 +371,7 @@ static void rtFuzzCtxMemoryFree(PRTFUZZCTXINT pThis, void *pv)
 {
     PRTFUZZMEMHDR pMemHdr = ((PRTFUZZMEMHDR)pv) - 1;
 
-    size_t cbIgn = 0;
-    ASMAtomicSubSize(&pThis->cbMemTotal, pMemHdr->cb + sizeof(RTFUZZMEMHDR), &cbIgn); RT_NOREF(cbIgn);
+    size_t cbIgn = ASMAtomicSubZ(&pThis->cbMemTotal, pMemHdr->cb + sizeof(RTFUZZMEMHDR)); RT_NOREF(cbIgn);
     RTMemFree(pMemHdr);
 }
 
