@@ -667,14 +667,9 @@ HRESULT Mouse::i_reportAbsEventToDisplayDevice(int32_t x, int32_t y)
     DisplayMouseInterface *pDisplay = mParent->i_getDisplayMouseInterface();
     ComAssertRet(pDisplay, E_FAIL);
 
-    if (x == -1 || y == -1)  /* Report only. */
-        return S_OK;
-    if (x != mcLastX || y != mcLastY)  /* This covers out-of-range too. */
+    if (x != mcLastX || y != mcLastY)
     {
-        if (x < 0x7fffffff && y < 0x7fffffff)
-            pDisplay->i_reportHostCursorPosition(x - 1, y - 1, false);
-        else  /* Out of range. */
-            pDisplay->i_reportHostCursorPosition(0, 0, true);
+        pDisplay->i_reportHostCursorPosition(x - 1, y - 1, false);
     }
     return S_OK;
 }
@@ -854,10 +849,27 @@ HRESULT Mouse::putMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     LogRel3(("%s: x=%d, y=%d, dz=%d, dw=%d, fButtons=0x%x\n",
              __PRETTY_FUNCTION__, x, y, dz, dw, aButtonState));
 
+    DisplayMouseInterface *pDisplay = mParent->i_getDisplayMouseInterface();
+    ComAssertRet(pDisplay, E_FAIL);
     int32_t xAdj, yAdj;
     uint32_t fButtonsAdj;
     bool fValid;
 
+    /* If we are doing old-style (IRQ-less) absolute reporting to the VMM
+     * device then make sure the guest is aware of it, so that it knows to
+     * ignore relative movement on the PS/2 device. */
+    i_updateVMMDevMouseCaps(VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE, 0);
+    /* Detect out-of-range. */
+    if (x == 0x7FFFFFFF && y == 0x7FFFFFFF)
+    {
+        pDisplay->i_reportHostCursorPosition(0, 0, true);
+        return S_OK;
+    }
+    /* Detect "report-only" (-1, -1).  This is not ideal, as in theory the
+     * front-end could be sending negative values relative to the primary
+     * screen. */
+    if (x == -1 && y == -1)
+        return S_OK;
     /** @todo the front end should do this conversion to avoid races */
     /** @note Or maybe not... races are pretty inherent in everything done in
      *        this object and not really bad as far as I can see. */
@@ -865,10 +877,6 @@ HRESULT Mouse::putMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     if (FAILED(rc)) return rc;
 
     fButtonsAdj = i_mouseButtonsToPDM(aButtonState);
-    /* If we are doing old-style (IRQ-less) absolute reporting to the VMM
-     * device then make sure the guest is aware of it, so that it knows to
-     * ignore relative movement on the PS/2 device. */
-    i_updateVMMDevMouseCaps(VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE, 0);
     if (fValid)
     {
         rc = i_reportAbsEventToInputDevices(xAdj, yAdj, dz, dw, fButtonsAdj,
