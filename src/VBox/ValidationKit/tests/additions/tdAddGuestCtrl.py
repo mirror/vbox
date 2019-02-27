@@ -138,6 +138,20 @@ class tdTestGuestCtrlBase(object):
         self.oTest = tdCtxTest(oSession, oTxsSession, oTestVm);
         return self.oTest;
 
+    def uploadLogData(self, oTstDrv, aData, sFileName, sDesc):
+        """
+        Uploads (binary) data to a log file for manual (later) inspection.
+        """
+        reporter.log('Creating + uploading log data file "%s"' % sFileName);
+        sHstFileName = os.path.join(oTstDrv.sScratchPath, sFileName);
+        try:
+            oCurTestFile     = open(sHstFileName, "wb");
+            oCurTestFile.write(aData);
+            oCurTestFile.close();
+            reporter.addLogFile(sHstFileName, 'misc/other', sDesc);
+        except:
+            reporter.error('Unable to create temporary file for "%s"' % sDesc);
+
     def createSession(self, sName):
         """
         Creates (opens) a guest session.
@@ -3099,25 +3113,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             self.oTstDrv.txsDownloadFiles(oSession, oTxsSession, aGstFiles, fIgnoreErrors = True);
 
                             # Create files with buffer contents and upload those for later (manual) inspection.
-                            sHstFileName = os.path.join(self.oTstDrv.sScratchPath, ('testGuestCtrlWriteTest%d-BufExcepted' % i));
-                            try:
-                                oCurTestFile     = open(sHstFileName, "wb");
-                                oCurTestFile.write(curRes.aBuf);
-                                oCurTestFile.close();
-                                reporter.addLogFile(sHstFileName, 'misc/other', 'Test #%d: Expected buffer' % i);
-                            except:
-                                reporter.error('Test #%d failed: Unable to create temporary expected buffer file "%s"' \
-                                               % (i, sHstFileName));
-
-                            sHstFileName = os.path.join(self.oTstDrv.sScratchPath, ('testGuestCtrlWriteTest%d-BufGot' % i));
-                            try:
-                                oCurTestFile     = open(sHstFileName, "wb");
-                                oCurTestFile.write(aBufRead);
-                                oCurTestFile.close();
-                                reporter.addLogFile(sHstFileName, 'misc/other', 'Test #%d: Got buffer' % i);
-                            except:
-                                reporter.error('Test #%d failed: Unable to create temporary got buffer file "%s"' \
-                                               % (i, sHstFileName));
+                            self.uploadLogData(self.oTstDrv, curRes.aBuf, ('testGuestCtrlWriteTest%d-BufExcepted' % i),
+                                                                          ('Test #%d: Expected buffer' % i));
+                            self.uploadLogData(self.oTstDrv, aBufRead,    ('testGuestCtrlWriteTest%d-BufGot' % i),
+                                                                          ('Test #%d: Got buffer' % i));
                             fRc = False;
                 # Test final offset.
                 curOffset = long(curFile.offset);
