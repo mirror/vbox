@@ -222,18 +222,25 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
  * @param  enmDirectoryCreateFlags  Directory creation flags.
  * @param  uMode                    Directory mode to use for creation.
  * @param  fFollowSymlinks          Whether to follow symlinks on the guest or not.
+ * @param  fCanExist                Whether the directory to create is allowed to exist already.
  */
-int GuestSessionTask::directoryCreate(const com::Utf8Str &strPath,
-                                      DirectoryCreateFlag_T enmDirectoryCreateFlags, uint32_t uMode, bool fFollowSymlinks)
+int GuestSessionTask::directoryCreateOnGuest(const com::Utf8Str &strPath,
+                                             DirectoryCreateFlag_T enmDirectoryCreateFlags, uint32_t uMode,
+                                             bool fFollowSymlinks, bool fCanExist)
 {
-    LogFlowFunc(("strPath=%s, fFlags=0x%x, uMode=%RU32, fFollowSymlinks=%RTbool\n",
-                 strPath.c_str(), enmDirectoryCreateFlags, uMode, fFollowSymlinks));
+    LogFlowFunc(("strPath=%s, enmDirectoryCreateFlags=0x%x, uMode=%RU32, fFollowSymlinks=%RTbool, fCanExist=%RTbool\n",
+                 strPath.c_str(), enmDirectoryCreateFlags, uMode, fFollowSymlinks, fCanExist));
 
     GuestFsObjData objData; int rcGuest;
     int rc = mSession->i_directoryQueryInfo(strPath, fFollowSymlinks, objData, &rcGuest);
     if (RT_SUCCESS(rc))
     {
-        return VERR_ALREADY_EXISTS;
+        if (!fCanExist)
+        {
+            setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                Utf8StrFmt(GuestSession::tr("Guest directory \"%s\" already exists"), strPath.c_str()));
+            return VERR_ALREADY_EXISTS;
+        }
     }
     else
     {
@@ -267,6 +274,42 @@ int GuestSessionTask::directoryCreate(const com::Utf8Str &strPath,
         else
             setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                 Utf8StrFmt(GuestSession::tr("Error creating directory on the guest: %Rrc"), strPath.c_str(), rc));
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Creates a directory on the host.
+ *
+ * @return VBox status code. VERR_ALREADY_EXISTS if directory on the guest already exists.
+ * @param  strPath                  Absolute path to directory on the host (host style path) to create.
+ * @param  fCreate                  Directory creation flags.
+ * @param  uMode                    Directory mode to use for creation.
+ * @param  fCanExist                Whether the directory to create is allowed to exist already.
+ */
+int GuestSessionTask::directoryCreateOnHost(const com::Utf8Str &strPath, uint32_t fCreate, uint32_t uMode, bool fCanExist)
+{
+    LogFlowFunc(("strPath=%s, fCreate=0x%x, uMode=%RU32, fCanExist=%RTbool\n", strPath.c_str(), fCreate, uMode, fCanExist));
+
+    int rc = RTDirCreate(strPath.c_str(), uMode, fCreate);
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_ALREADY_EXISTS)
+        {
+            if (!fCanExist)
+            {
+                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                    Utf8StrFmt(GuestSession::tr("Host directory \"%s\" already exists"), strPath.c_str()));
+            }
+            else
+                rc = VINF_SUCCESS;
+        }
+        else
+            setProgressErrorMsg(VBOX_E_IPRT_ERROR,
+                                Utf8StrFmt(GuestSession::tr("Could not create host directory \"%s\": %Rrc"),
+                                           strPath.c_str(), rc));
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1509,19 +1552,21 @@ int GuestSessionTaskCopyFrom::Run(void)
         AssertPtr(pList);
 
         const bool     fCopyIntoExisting = pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting;
+        const bool     fFollowSymlinks   = true; /** @todo */
         const uint32_t fDirMode          = 0700; /** @todo Play safe by default; implement ACLs. */
+              uint32_t fDirCreate = 0;
+
+        if (!fFollowSymlinks)
+            fDirCreate |= RTDIRCREATE_FLAGS_NO_SYMLINKS;
 
         LogFlowFunc(("List: srcRootAbs=%s, dstRootAbs=%s\n", pList->mSrcRootAbs.c_str(), pList->mDstRootAbs.c_str()));
 
         /* Create the root directory. */
         if (pList->mSourceSpec.enmType == FsObjType_Directory)
         {
-            rc = RTDirCreate(pList->mDstRootAbs.c_str(), fDirMode, 0 /* fCreate */);
-            if (   rc == VWRN_ALREADY_EXISTS
-                && !fCopyIntoExisting)
-            {
+            rc = directoryCreateOnHost(pList->mDstRootAbs.c_str(), fDirMode, fDirCreate, fCopyIntoExisting);
+            if (RT_FAILURE(rc))
                 break;
-            }
         }
 
         FsEntries::const_iterator itEntry = pList->mVecEntries.begin();
@@ -1549,20 +1594,7 @@ int GuestSessionTaskCopyFrom::Run(void)
                     LogFlowFunc(("Directory '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                     {
-                        rc = RTDirCreate(strDstAbs.c_str(), fDirMode, 0 /* fCreate */);
-                        if (rc == VERR_ALREADY_EXISTS)
-                        {
-                            if (!fCopyIntoExisting)
-                            {
-                                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                    Utf8StrFmt(GuestSession::tr("Destination directory \"%s\" already exists"),
-                                                               strDstAbs.c_str()));
-                                break;
-                            }
-
-                            rc = VINF_SUCCESS;
-                        }
-
+                        rc = directoryCreateOnHost(pList->mDstRootAbs.c_str(), fDirMode, fDirCreate, fCopyIntoExisting);
                         if (RT_FAILURE(rc))
                             break;
                     }
@@ -1774,13 +1806,10 @@ int GuestSessionTaskCopyTo::Run(void)
             fCopyIntoExisting = pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting;
             fFollowSymlinks   = pList->mSourceSpec.Type.Dir.fFollowSymlinks;
 
-            rc = directoryCreate(pList->mDstRootAbs.c_str(), DirectoryCreateFlag_None, fDirMode,
-                                 pList->mSourceSpec.Type.Dir.fFollowSymlinks);
-            if (   rc == VWRN_ALREADY_EXISTS
-                && !fCopyIntoExisting)
-            {
+            rc = directoryCreateOnGuest(pList->mDstRootAbs.c_str(), DirectoryCreateFlag_None, fDirMode,
+                                        pList->mSourceSpec.Type.Dir.fFollowSymlinks, fCopyIntoExisting);
+            if (RT_FAILURE(rc))
                 break;
-            }
         }
         else if (pList->mSourceSpec.enmType == FsObjType_File)
         {
@@ -1812,21 +1841,10 @@ int GuestSessionTaskCopyTo::Run(void)
                     LogFlowFunc(("Directory '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                     {
-                        rc = directoryCreate(strDstAbs.c_str(), DirectoryCreateFlag_None, fDirMode, fFollowSymlinks);
+                        rc = directoryCreateOnGuest(strDstAbs.c_str(), DirectoryCreateFlag_None, fDirMode,
+                                                    fFollowSymlinks, fCopyIntoExisting);
                         if (RT_FAILURE(rc))
-                        {
-                            if (rc == VERR_ALREADY_EXISTS)
-                            {
-                                if (!fCopyIntoExisting)
-                                {
-                                    setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                                        Utf8StrFmt(GuestSession::tr("Destination directory '%s' already exists"),
-                                                                   strDstAbs.c_str()));
-                                }
-                                else /* Copy into destination directory. */
-                                    rc = VINF_SUCCESS;
-                            }
-                        }
+                            break;
                     }
                     break;
 
