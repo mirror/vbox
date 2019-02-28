@@ -498,6 +498,8 @@ void Host::uninit()
         m->llNetIfs.pop_front();
     }
 
+    m->hostDnsMonitorProxy.uninit();
+
 #ifdef VBOX_WITH_USB
     /* wait for USB proxy service to terminate before we uninit all USB
      * devices */

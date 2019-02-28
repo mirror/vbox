@@ -57,7 +57,7 @@ class HostDnsMonitor
 
   public:
     static HostDnsMonitor *createHostDnsMonitor();
-    static void shutdown();
+    void shutdown();
 
     /* @note: method will wait till client call
        HostDnsService::monitorThreadInitializationDone() */
@@ -94,6 +94,7 @@ class HostDnsMonitorProxy
     HostDnsMonitorProxy();
     ~HostDnsMonitorProxy();
     void init(VirtualBox *virtualbox);
+    void uninit();
     void notify(const HostDnsInformation &info);
 
     HRESULT GetNameServers(std::vector<com::Utf8Str> &aNameServers);
