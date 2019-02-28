@@ -390,6 +390,7 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorExportDefault(PRTFUZZCTXINT pThis, PCRT
 static DECLCALLBACK(int) rtFuzzCtxMutatorImportDefault(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, void *pvMutation,
                                                       PFNRTFUZZCTXIMPORT pfnImport, void *pvUser);
 
+
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
