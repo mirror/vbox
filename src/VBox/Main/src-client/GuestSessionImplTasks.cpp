@@ -1594,7 +1594,7 @@ int GuestSessionTaskCopyFrom::Run(void)
                     LogFlowFunc(("Directory '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                     {
-                        rc = directoryCreateOnHost(pList->mDstRootAbs.c_str(), fDirMode, fDirCreate, fCopyIntoExisting);
+                        rc = directoryCreateOnHost(strDstAbs.c_str(), fDirMode, fDirCreate, fCopyIntoExisting);
                         if (RT_FAILURE(rc))
                             break;
                     }
