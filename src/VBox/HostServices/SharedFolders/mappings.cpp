@@ -97,8 +97,8 @@ void vbsfMappingInit(void)
 
 int vbsfMappingLoaded(const MAPPING *pLoadedMapping, SHFLROOT root)
 {
-    /* Mapping loaded from the saved state with the index. Which means
-     * the guest uses the iMapping as root handle for this folder.
+    /* Mapping loaded from the saved state with the 'root' index. Which means
+     * the guest uses the 'root' as root handle for this folder.
      * Check whether there is the same mapping in g_FolderMapping and
      * update the g_aIndexFromRoot.
      *
@@ -119,22 +119,32 @@ int vbsfMappingLoaded(const MAPPING *pLoadedMapping, SHFLROOT root)
             && ShflStringSizeOfBuffer(pLoadedMapping->pMapName) == ShflStringSizeOfBuffer(pMapping->pMapName)
             && memcmp(pLoadedMapping->pMapName, pMapping->pMapName, ShflStringSizeOfBuffer(pMapping->pMapName)) == 0)
         {
+            Log(("vbsfMappingLoaded: root=%u i=%u (was %u) (%ls)\n",
+                 root, i, g_aIndexFromRoot[root], pLoadedMapping->pMapName->String.utf16));
+
             if (!pMapping->fLoadedRootId)
             {
+                /* First encounter. */
                 pMapping->fLoadedRootId = true;
-                Log(("vbsfMappingLoaded: root=%u i=%u (was %u) (%ls)\n",
-                     root, i, g_aIndexFromRoot[root], pLoadedMapping->pMapName->String.utf16));
-
-                /* Actual index is i. */
-                /** @todo This will not work with global shared folders, as these can change
-                 *        while state is saved and these blind assignments may hid new ones.  */
-                g_aIndexFromRoot[root] = i;
 
                 /* Update the mapping properties. */
                 pMapping->cMappings = pLoadedMapping->cMappings;
-
-                return VINF_SUCCESS;
             }
+            else
+            {
+                /* When pMapping->fLoadedRootId is already true it means that another HGCM client uses the same mapping. */
+                Assert(pMapping->cMappings > 1);
+            }
+
+            /* Actual index is i. Remember that when the guest uses 'root' it is actually 'i'. */
+            /** @todo This will not work with global shared folders, as these can change
+             *        while state is saved and these blind assignments may hid new ones.  */
+            g_aIndexFromRoot[root] = i;
+
+            /* The mapping is known to the host and is used by the guest.
+             * No need for a 'placeholder'.
+             */
+            return VINF_SUCCESS;
         }
     }
 
