@@ -481,6 +481,7 @@ static uint32_t rtFuzzMutationRetain(PRTFUZZMUTATION pMutation)
     return cRefs;
 }
 
+
 #if 0 /* unused */
 /**
  * Releases an external reference from the given mutation.
@@ -495,6 +496,7 @@ static uint32_t rtFuzzMutationRelease(PRTFUZZMUTATION pMutation)
     return cRefs;
 }
 #endif
+
 
 /**
  * Adds the given mutation to the corpus of the given fuzzer context.
@@ -1187,7 +1189,7 @@ RTDECL(int) RTFuzzCtxStateExportToMem(RTFUZZCTX hFuzzCtx, void **ppvState, size_
 /**
  * Export to file callback.
  */
-DECLCALLBACK(int) rtFuzzCtxStateExportFile(RTFUZZCTX hFuzzCtx, const void *pvBuf, size_t cbWrite, void *pvUser)
+static DECLCALLBACK(int) rtFuzzCtxStateExportFile(RTFUZZCTX hFuzzCtx, const void *pvBuf, size_t cbWrite, void *pvUser)
 {
     RT_NOREF(hFuzzCtx);
 
