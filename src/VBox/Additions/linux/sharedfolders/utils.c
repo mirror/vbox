@@ -1084,12 +1084,14 @@ static int sf_dentry_delete(const struct dentry *pDirEntry)
 	return 0;
 }
 
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
 /** For logging purposes only. */
 static int sf_dentry_init(struct dentry *pDirEntry)
 {
 	SFLOGFLOW(("sf_dentry_init: %p\n", pDirEntry));
 	return 0;
 }
+# endif
 
 #endif /* SFLOG_ENABLED */
 
@@ -1102,7 +1104,9 @@ struct dentry_operations sf_dentry_ops = {
 	.d_revalidate = sf_dentry_revalidate,
 #ifdef SFLOG_ENABLED
 	.d_delete = sf_dentry_delete,
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
 	.d_init = sf_dentry_init,
+# endif
 #endif
 };
 
