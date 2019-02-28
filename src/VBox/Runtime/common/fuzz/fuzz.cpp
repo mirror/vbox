@@ -86,13 +86,46 @@ typedef FNRTFUZZCTXMUTATORPREP *PFNRTFUZZCTXMUTATORPREP;
  * @returns IPRT status code.
  * @param   pThis               The fuzzer context instance.
  * @param   pMutation           The mutation to work on.
+ * @param   pvMutation          Mutation dependent data.
  * @param   pbBuf               The buffer to work on.
  * @param   cbBuf               Size of the remaining buffer.
  */
-typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATOREXEC(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATOREXEC(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                  uint8_t *pbBuf, size_t cbBuf);
 /** Pointer to a mutator execution callback. */
 typedef FNRTFUZZCTXMUTATOREXEC *PFNRTFUZZCTXMUTATOREXEC;
+
+
+/**
+ * Mutator export callback.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The fuzzer context instance.
+ * @param   pMutation           The mutation to work on.
+ * @param   pvMutation          Mutation dependent data.
+ * @param   pfnExport           The export callback.
+ * @param   pvUser              Opaque user data to pass to the export callback.
+ */
+typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATOREXPORT(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
+                                                   PFNRTFUZZCTXEXPORT pfnExport, void *pvUser);
+/** Pointer to a mutator export callback. */
+typedef FNRTFUZZCTXMUTATOREXPORT *PFNRTFUZZCTXMUTATOREXPORT;
+
+
+/**
+ * Mutator import callback.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The fuzzer context instance.
+ * @param   pMutation           The mutation to work on.
+ * @param   pvMutation          Mutation dependent data.
+ * @param   pfnExport           The import callback.
+ * @param   pvUser              Opaque user data to pass to the import callback.
+ */
+typedef DECLCALLBACK(int) FNRTFUZZCTXMUTATORIMPORT(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, void *pvMutation,
+                                                   PFNRTFUZZCTXIMPORT pfnImport, void *pvUser);
+/** Pointer to a mutator import callback. */
+typedef FNRTFUZZCTXMUTATORIMPORT *PFNRTFUZZCTXMUTATORIMPORT;
 
 
 /**
@@ -104,17 +137,26 @@ typedef struct RTFUZZMUTATOR
     const char                  *pszId;
     /** Mutator description. */
     const char                  *pszDesc;
+    /** Mutator index. */
+    uint32_t                    uMutator;
     /** Additional flags for the mutator, controlling the behavior. */
     uint64_t                    fFlags;
     /** The preparation callback. */
     PFNRTFUZZCTXMUTATORPREP     pfnPrep;
     /** The execution callback. */
     PFNRTFUZZCTXMUTATOREXEC     pfnExec;
+    /** The export callback. */
+    PFNRTFUZZCTXMUTATOREXPORT   pfnExport;
+    /** The import callback. */
+    PFNRTFUZZCTXMUTATORIMPORT   pfnImport;
 } RTFUZZMUTATOR;
 /** Pointer to a fuzzing mutator descriptor. */
 typedef RTFUZZMUTATOR *PRTFUZZMUTATOR;
 /** Pointer to a const fuzzing mutator descriptor. */
 typedef const RTFUZZMUTATOR *PCRTFUZZMUTATOR;
+
+/** The special corpus mutator. */
+#define RTFUZZMUTATOR_ID_CORPUS             UINT32_C(0xffffffff)
 
 /** Mutator always works from the end of the buffer (no starting offset generation). */
 #define RTFUZZMUTATOR_F_END_OF_BUF          RT_BIT_64(0)
@@ -145,18 +187,10 @@ typedef struct RTFUZZMUTATION
     uint64_t                    offMutation;
     /** Size of the generated input data in bytes after the mutation was applied. */
     size_t                      cbInput;
-    /** Mutation dependent data. */
-    union
-    {
-        /** Array of bytes making up the corups, variable in size. */
-        uint8_t                 abCorpus[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
-        /** Bit flip mutation, which bit to flip. */
-        uint32_t                idxBitFlip;
-        /** Byte replace, the byte to replace with. */
-        uint8_t                 bByteReplace;
-        /** Array of bytes to insert/append, variable in size. */
-        uint8_t                 abAdd[RT_FLEXIBLE_ARRAY_IN_NESTED_UNION];
-    } u;
+    /** Size of the mutation dependent data. */
+    size_t                      cbMutation;
+    /** Mutation dependent data, variable in size. */
+    uint8_t                     abMutation[1];
 } RTFUZZMUTATION;
 
 
@@ -241,10 +275,14 @@ typedef struct RTFUZZCTXSTATE
 {
     /** Magic value for identification. */
     uint32_t                    u32Magic;
+    /** Context type. */
+    uint32_t                    uCtxType;
     /** Size of the PRNG state following in bytes. */
     uint32_t                    cbPrng;
-    /** Number of input descriptors following. */
-    uint32_t                    cInputs;
+    /** Number of mutator descriptors following. */
+    uint32_t                    cMutators;
+    /** Number of mutation descriptors following. */
+    uint32_t                    cMutations;
     /** Behavioral flags. */
     uint32_t                    fFlagsBehavioral;
     /** Maximum input size to generate. */
@@ -252,6 +290,35 @@ typedef struct RTFUZZCTXSTATE
 } RTFUZZCTXSTATE;
 /** Pointer to a fuzzing context state. */
 typedef RTFUZZCTXSTATE *PRTFUZZCTXSTATE;
+
+/** BLOB context type. */
+#define RTFUZZCTX_STATE_TYPE_BLOB         UINT32_C(0)
+/** Stream context type. */
+#define RTFUZZCTX_STATE_TYPE_STREAM       UINT32_C(1)
+
+
+/**
+ * The fuzzer mutation state to be exported - all members are stored in little endian form.
+ */
+typedef struct RTFUZZMUTATIONSTATE
+{
+    /** The mutation identifier. */
+    uint64_t                    u64Id;
+    /** The mutation identifier of the parent, 0 for no parent. */
+    uint64_t                    u64IdParent;
+    /** The byte offset where the mutation starts. */
+    uint64_t                    u64OffMutation;
+    /** Size of input data after mutation was applied. */
+    uint64_t                    cbInput;
+    /** Size of mutation dependent data following. */
+    uint64_t                    cbMutation;
+    /** The mutator ID. */
+    uint32_t                    u32IdMutator;
+    /** The mutation level. */
+    uint32_t                    iLvl;
+    /** Magic value for identification. */
+    uint32_t                    u32Magic;
+} RTFUZZMUTATIONSTATE;
 
 
 /**
@@ -275,6 +342,21 @@ typedef struct RTFUZZMEMHDR
 typedef RTFUZZMEMHDR *PRTFUZZMEMHDR;
 
 
+/**
+ * Fuzzing context export AVL arguments.
+ */
+typedef struct RTFUZZEXPORTARGS
+{
+    /** Pointer to the export callback. */
+    PFNRTFUZZCTXEXPORT pfnExport;
+    /** Opaque user data to pass to the callback. */
+    void               *pvUser;
+} RTFUZZEXPORTARGS;
+/** Pointer to the export arguments. */
+typedef RTFUZZEXPORTARGS *PRTFUZZEXPORTARGS;
+/** Pointer to the constant export arguments. */
+typedef const RTFUZZEXPORTARGS *PCRTFUZZEXPORTARGS;
+
 
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
@@ -290,19 +372,23 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeletePrep(PRTFUZZCTXINT pThis, uin
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeletePrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
                                                                 PPRTFUZZMUTATION ppMutation);
 
-static DECLCALLBACK(int) rtFuzzCtxMutatorCorpusExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+static DECLCALLBACK(int) rtFuzzCtxMutatorCorpusExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                     uint8_t *pbBuf, size_t cbBuf);
-static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                      uint8_t *pbBuf, size_t cbBuf);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplaceExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplaceExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                          uint8_t *pbBuf, size_t cbBuf);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                                       uint8_t *pbBuf, size_t cbBuf);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                         uint8_t *pbBuf, size_t cbBuf);
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                                 uint8_t *pbBuf, size_t cbBuf);
 
+static DECLCALLBACK(int) rtFuzzCtxMutatorExportDefault(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
+                                                       PFNRTFUZZCTXEXPORT pfnExport, void *pvUser);
+static DECLCALLBACK(int) rtFuzzCtxMutatorImportDefault(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, void *pvMutation,
+                                                      PFNRTFUZZCTXIMPORT pfnImport, void *pvUser);
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -316,12 +402,18 @@ static RTFUZZMUTATOR const g_MutatorCorpus =
     "Corpus",
     /** pszDesc */
     "Special mutator, which is assigned to the initial corpus",
+    /** uMutator. */
+    RTFUZZMUTATOR_ID_CORPUS,
     /** fFlags */
     RTFUZZMUTATOR_F_DEFAULT,
     /** pfnPrep */
     NULL,
     /** pfnExec */
-    rtFuzzCtxMutatorCorpusExec
+    rtFuzzCtxMutatorCorpusExec,
+    /** pfnExport */
+    rtFuzzCtxMutatorExportDefault,
+    /** pfnImport */
+    rtFuzzCtxMutatorImportDefault
 };
 
 /**
@@ -329,13 +421,13 @@ static RTFUZZMUTATOR const g_MutatorCorpus =
  */
 static RTFUZZMUTATOR const g_aMutators[] =
 {
-    /* pszId         pszDesc                                          fFlags                      pfnPrep                                       pfnExec */
-    { "BitFlip",     "Flips a single bit in the input",               RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorBitFlipPrep,                  rtFuzzCtxMutatorBitFlipExec},
-    { "ByteReplace", "Replaces a single byte in the input",           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteReplacePrep,              rtFuzzCtxMutatorByteReplaceExec},
-    { "ByteSeqIns",  "Inserts a byte sequence in the input",          RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteSequenceInsertAppendPrep, rtFuzzCtxMutatorByteSequenceInsertAppendExec},
-    { "ByteSeqApp",  "Appends a byte sequence to the input",          RTFUZZMUTATOR_F_END_OF_BUF, rtFuzzCtxMutatorByteSequenceInsertAppendPrep, rtFuzzCtxMutatorByteSequenceInsertAppendExec},
-    { "ByteDelete",  "Deletes a single byte sequence from the input", RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteDeletePrep,               rtFuzzCtxMutatorByteDeleteExec},
-    { "ByteSeqDel",  "Deletes a byte sequence from the input",        RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteSequenceDeletePrep,       rtFuzzCtxMutatorByteSequenceDeleteExec}
+    /* pszId         pszDesc                                          uMutator     fFlags                      pfnPrep                                       pfnExec                                       pfnExport                                       pfnImport */
+    { "BitFlip",     "Flips a single bit in the input",               0,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorBitFlipPrep,                  rtFuzzCtxMutatorBitFlipExec,                  rtFuzzCtxMutatorExportDefault, rtFuzzCtxMutatorImportDefault },
+    { "ByteReplace", "Replaces a single byte in the input",           1,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteReplacePrep,              rtFuzzCtxMutatorByteReplaceExec,              rtFuzzCtxMutatorExportDefault, rtFuzzCtxMutatorImportDefault },
+    { "ByteSeqIns",  "Inserts a byte sequence in the input",          2,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteSequenceInsertAppendPrep, rtFuzzCtxMutatorByteSequenceInsertAppendExec, rtFuzzCtxMutatorExportDefault, rtFuzzCtxMutatorImportDefault },
+    { "ByteSeqApp",  "Appends a byte sequence to the input",          3,           RTFUZZMUTATOR_F_END_OF_BUF, rtFuzzCtxMutatorByteSequenceInsertAppendPrep, rtFuzzCtxMutatorByteSequenceInsertAppendExec, rtFuzzCtxMutatorExportDefault, rtFuzzCtxMutatorImportDefault },
+    { "ByteDelete",  "Deletes a single byte sequence from the input", 4,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteDeletePrep,               rtFuzzCtxMutatorByteDeleteExec,               NULL,                          NULL                          },
+    { "ByteSeqDel",  "Deletes a byte sequence from the input",        5,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteSequenceDeletePrep,       rtFuzzCtxMutatorByteSequenceDeleteExec,       NULL,                          NULL                          }
 };
 
 
@@ -389,7 +481,6 @@ static uint32_t rtFuzzMutationRetain(PRTFUZZMUTATION pMutation)
     return cRefs;
 }
 
-
 #if 0 /* unused */
 /**
  * Releases an external reference from the given mutation.
@@ -405,7 +496,6 @@ static uint32_t rtFuzzMutationRelease(PRTFUZZMUTATION pMutation)
 }
 #endif
 
-
 /**
  * Adds the given mutation to the corpus of the given fuzzer context.
  *
@@ -417,7 +507,7 @@ static int rtFuzzCtxMutationAdd(PRTFUZZCTXINT pThis, PRTFUZZMUTATION pMutation)
 {
     int rc = VINF_SUCCESS;
 
-    pMutation->Core.Key = ASMAtomicIncU64(&pThis->cMutations) - 1;
+    pMutation->Core.Key = ASMAtomicIncU64(&pThis->cMutations);
     rc = RTSemRWRequestWrite(pThis->hSemRwMutations, RT_INDEFINITE_WAIT);
     AssertRC(rc); RT_NOREF(rc);
     bool fIns = RTAvlU64Insert(&pThis->TreeMutations, &pMutation->Core);
@@ -466,8 +556,10 @@ static PRTFUZZMUTATION rtFuzzCtxMutationPickRnd(PRTFUZZCTXINT pThis)
  * @param   offMutation         The starting offset for the mutation.
  * @param   pMutationParent     The parent mutation, can be NULL.
  * @param   cbAdditional        Additional number of bytes to allocate after the core structure.
+ * @param   ppvMutation         Where to store the pointer to the mutation dependent data on success.
  */
-static PRTFUZZMUTATION rtFuzzMutationCreate(PRTFUZZCTXINT pThis, uint64_t offMutation, PRTFUZZMUTATION pMutationParent, size_t cbAdditional)
+static PRTFUZZMUTATION rtFuzzMutationCreate(PRTFUZZCTXINT pThis, uint64_t offMutation, PRTFUZZMUTATION pMutationParent,
+                                            size_t cbAdditional, void **ppvMutation)
 {
     PRTFUZZMUTATION pMutation = (PRTFUZZMUTATION)rtFuzzCtxMemoryAlloc(pThis, sizeof(RTFUZZMUTATION) + cbAdditional);
     if (RT_LIKELY(pMutation))
@@ -478,9 +570,12 @@ static PRTFUZZMUTATION rtFuzzMutationCreate(PRTFUZZCTXINT pThis, uint64_t offMut
         pMutation->iLvl            = 0;
         pMutation->offMutation     = offMutation;
         pMutation->pMutationParent = pMutationParent;
+        pMutation->cbMutation      = cbAdditional;
 
         if (pMutationParent)
             pMutation->iLvl = pMutationParent->iLvl + 1;
+        if (ppvMutation)
+            *ppvMutation = &pMutation->abMutation[0];
     }
 
     return pMutation;
@@ -511,11 +606,31 @@ static void rtFuzzCtxDestroy(PRTFUZZCTXINT pThis)
 }
 
 
-static DECLCALLBACK(int) rtFuzzCtxMutatorCorpusExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+/**
+ * Default mutator export callback (just writing the raw data).
+ */
+static DECLCALLBACK(int) rtFuzzCtxMutatorExportDefault(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
+                                                       PFNRTFUZZCTXEXPORT pfnExport, void *pvUser)
+{
+    return pfnExport(pThis, pvMutation, pMutation->cbMutation, pvUser);
+}
+
+
+/**
+ * Default mutator import callback (just reading the raw data).
+ */
+static DECLCALLBACK(int) rtFuzzCtxMutatorImportDefault(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, void *pvMutation,
+                                                       PFNRTFUZZCTXIMPORT pfnImport, void *pvUser)
+{
+    return pfnImport(pThis, pvMutation, pMutation->cbMutation, NULL, pvUser);
+}
+
+
+static DECLCALLBACK(int) rtFuzzCtxMutatorCorpusExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                     uint8_t *pbBuf, size_t cbBuf)
 {
-    RT_NOREF(pThis, cbBuf);
-    memcpy(pbBuf, &pMutation->u.abCorpus[0], pMutation->cbInput);
+    RT_NOREF(pThis, cbBuf, pvMutation);
+    memcpy(pbBuf, pvMutation, pMutation->cbInput);
     return VINF_SUCCESS;
 }
 
@@ -527,11 +642,12 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipPrep(PRTFUZZCTXINT pThis, uint64
                                                      PPRTFUZZMUTATION ppMutation)
 {
     int rc = VINF_SUCCESS;
-    PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, 0 /*cbAdditional*/);
+    uint8_t *pidxBitFlip = 0;
+    PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, sizeof(*pidxBitFlip), (void **)&pidxBitFlip);
     if (RT_LIKELY(pMutation))
     {
-        pMutation->cbInput      = pMutationParent->cbInput; /* Bit flips don't change the input size. */
-        pMutation->u.idxBitFlip = RTRandAdvS32Ex(pThis->hRand, 0, sizeof(uint8_t) * 8 - 1);
+        pMutation->cbInput = pMutationParent->cbInput; /* Bit flips don't change the input size. */
+        *pidxBitFlip = (uint8_t)RTRandAdvU32Ex(pThis->hRand, 0, sizeof(uint8_t) * 8 - 1);
         *ppMutation = pMutation;
     }
     else
@@ -541,11 +657,12 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipPrep(PRTFUZZCTXINT pThis, uint64
 }
 
 
-static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                      uint8_t *pbBuf, size_t cbBuf)
 {
-    RT_NOREF(pThis, cbBuf);
-    ASMBitToggle(pbBuf, pMutation->u.idxBitFlip);
+    RT_NOREF(pThis, cbBuf, pMutation);
+    uint8_t idxBitFlip = *(uint8_t *)pvMutation;
+    ASMBitToggle(pbBuf, idxBitFlip);
     return VINF_SUCCESS;
 }
 
@@ -557,11 +674,12 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplacePrep(PRTFUZZCTXINT pThis, ui
                                                          PPRTFUZZMUTATION ppMutation)
 {
     int rc = VINF_SUCCESS;
-    PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, 0 /*cbAdditional*/);
+    uint8_t *pbReplace = 0;
+    PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, sizeof(*pbReplace), (void **)&pbReplace);
     if (RT_LIKELY(pMutation))
     {
         pMutation->cbInput = pMutationParent->cbInput; /* Byte replacements don't change the input size. */
-        RTRandAdvBytes(pThis->hRand, &pMutation->u.bByteReplace, 1); /** @todo Filter out same values. */
+        RTRandAdvBytes(pThis->hRand, pbReplace, 1); /** @todo Filter out same values. */
         *ppMutation = pMutation;
     }
     else
@@ -571,11 +689,12 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplacePrep(PRTFUZZCTXINT pThis, ui
 }
 
 
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplaceExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplaceExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                          uint8_t *pbBuf, size_t cbBuf)
 {
-    RT_NOREF(pThis, cbBuf);
-    *pbBuf = pMutation->u.bByteReplace;
+    RT_NOREF(pThis, cbBuf, pMutation);
+    uint8_t bReplace = *(uint8_t *)pvMutation;
+    *pbBuf = bReplace;
     return VINF_SUCCESS;
 }
 
@@ -591,12 +710,13 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendPrep(PRTFUZZCTX
     {
         size_t cbInputMutated = (size_t)RTRandAdvU64Ex(pThis->hRand, pMutationParent->cbInput + 1, pThis->cbInputMax);
         size_t cbInsert = cbInputMutated - pMutationParent->cbInput;
+        uint8_t *pbAdd = NULL;
 
-        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, cbInsert);
+        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, cbInsert, (void **)&pbAdd);
         if (RT_LIKELY(pMutation))
         {
             pMutation->cbInput = cbInputMutated;
-            RTRandAdvBytes(pThis->hRand, &pMutation->u.abAdd[0], cbInsert);
+            RTRandAdvBytes(pThis->hRand, pbAdd, cbInsert);
             *ppMutation = pMutation;
         }
         else
@@ -607,7 +727,7 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendPrep(PRTFUZZCTX
 }
 
 
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                                       uint8_t *pbBuf, size_t cbBuf)
 {
     RT_NOREF(pThis);
@@ -617,7 +737,7 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendExec(PRTFUZZCTX
     if (cbBuf)
         memmove(pbBuf + cbInsert, pbBuf, cbBuf);
 
-    memcpy(pbBuf, &pMutation->u.abAdd[0], cbInsert);
+    memcpy(pbBuf, pvMutation, cbInsert);
     return VINF_SUCCESS;
 }
 
@@ -631,7 +751,7 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeletePrep(PRTFUZZCTXINT pThis, uin
     int rc = VINF_SUCCESS;
     if (pMutationParent->cbInput - offStart >= 1)
     {
-        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, 0 /*cbAdditional*/);
+        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, 0 /*cbAdditional*/, NULL);
         if (RT_LIKELY(pMutation))
         {
             pMutation->cbInput = pMutationParent->cbInput - 1;
@@ -645,10 +765,10 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeletePrep(PRTFUZZCTXINT pThis, uin
 }
 
 
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                         uint8_t *pbBuf, size_t cbBuf)
 {
-    RT_NOREF(pThis, pMutation);
+    RT_NOREF(pThis, pMutation, pvMutation);
 
     /* Just move the residual data to the front. */
     memmove(pbBuf, pbBuf + 1, cbBuf - 1);
@@ -668,7 +788,7 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeletePrep(PRTFUZZCTXINT pT
     {
         size_t cbInputMutated = (size_t)RTRandAdvU64Ex(pThis->hRand, offStart, pMutationParent->cbInput - 1);
 
-        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, 0 /*cbAdditional*/);
+        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, 0 /*cbAdditional*/, NULL);
         if (RT_LIKELY(pMutation))
         {
             pMutation->cbInput = cbInputMutated;
@@ -682,10 +802,10 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeletePrep(PRTFUZZCTXINT pT
 }
 
 
-static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation,
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                                 uint8_t *pbBuf, size_t cbBuf)
 {
-    RT_NOREF(pThis);
+    RT_NOREF(pThis, pvMutation);
     Assert(pMutation->pMutationParent->cbInput > pMutation->cbInput);
     size_t cbDel = pMutation->pMutationParent->cbInput - pMutation->cbInput;
 
@@ -790,7 +910,8 @@ static int rtFuzzInputDataFinalize(PRTFUZZINPUTINT pThis)
         for (uint32_t i = 0; i < pThis->pMutationTop->iLvl + 1; i++)
         {
             PCRTFUZZMUTATION pMutation = pThis->apMutations[i];
-            pMutation->pMutator->pfnExec(pThis->pFuzzer, pMutation, pbBuf + pMutation->offMutation,
+            pMutation->pMutator->pfnExec(pThis->pFuzzer, pMutation, (void *)&pMutation->abMutation[0],
+                                         pbBuf + pMutation->offMutation,
                                          cbInputNow - pMutation->offMutation);
 
             cbInputNow = pMutation->cbInput;
@@ -813,11 +934,10 @@ RTDECL(int) RTFuzzCtxCreate(PRTFUZZCTX phFuzzCtx, RTFUZZCTXTYPE enmType)
 }
 
 
-RTDECL(int) RTFuzzCtxCreateFromState(PRTFUZZCTX phFuzzCtx, const void *pvState, size_t cbState)
+RTDECL(int) RTFuzzCtxCreateFromState(PRTFUZZCTX phFuzzCtx, PFNRTFUZZCTXIMPORT pfnImport, void *pvUser)
 {
     AssertPtrReturn(phFuzzCtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvState, VERR_INVALID_POINTER);
-    AssertReturn(cbState > 0, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfnImport, VERR_INVALID_POINTER);
 
 #if 0
     int rc = VINF_SUCCESS;
@@ -896,8 +1016,19 @@ RTDECL(int) RTFuzzCtxCreateFromState(PRTFUZZCTX phFuzzCtx, const void *pvState, 
 
     return rc;
 #else
+    RT_NOREF(pvUser);
     return VERR_NOT_IMPLEMENTED;
 #endif
+}
+
+
+RTDECL(int) RTFuzzCtxCreateFromStateMem(PRTFUZZCTX phFuzzCtx, const void *pvState, size_t cbState)
+{
+    AssertPtrReturn(phFuzzCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvState, VERR_INVALID_POINTER);
+    AssertPtrReturn(cbState, VERR_INVALID_POINTER);
+
+    return VERR_NOT_IMPLEMENTED;
 }
 
 
@@ -911,7 +1042,7 @@ RTDECL(int) RTFuzzCtxCreateFromStateFile(PRTFUZZCTX phFuzzCtx, const char *pszFi
     int rc = RTFileReadAll(pszFilename, &pv, &cb);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFuzzCtxCreateFromState(phFuzzCtx, pv, cb);
+        rc = RTFuzzCtxCreateFromStateMem(phFuzzCtx, pv, cb);
         RTFileReadAllFree(pv, cb);
     }
 
@@ -946,14 +1077,42 @@ RTDECL(uint32_t) RTFuzzCtxRelease(RTFUZZCTX hFuzzCtx)
 }
 
 
-RTDECL(int) RTFuzzCtxStateExport(RTFUZZCTX hFuzzCtx, void **ppvState, size_t *pcbState)
+/**
+ * Fuzzing context export callback for a single mutation.
+ */
+static DECLCALLBACK(int) rtFuzzCtxStateExportMutations(PAVLU64NODECORE pCore, void *pvParam)
+{
+    PRTFUZZMUTATION pMutation = (PRTFUZZMUTATION)pCore;
+    PCRTFUZZMUTATOR pMutator = pMutation->pMutator;
+    PCRTFUZZEXPORTARGS pArgs = (PCRTFUZZEXPORTARGS)pvParam;
+    RTFUZZMUTATIONSTATE MutationState;
+
+    MutationState.u64Id           = RT_H2LE_U64(pMutation->Core.Key);
+    if (pMutation->pMutationParent)
+        MutationState.u64IdParent = RT_H2LE_U64(pMutation->pMutationParent->Core.Key);
+    else
+        MutationState.u64IdParent = RT_H2LE_U64(0);
+    MutationState.u64OffMutation  = RT_H2LE_U64(pMutation->offMutation);
+    MutationState.cbInput         = RT_H2LE_U64((uint64_t)pMutation->cbInput);
+    MutationState.cbMutation      = RT_H2LE_U64((uint64_t)pMutation->cbMutation);
+    MutationState.u32IdMutator    = RT_H2LE_U32(pMutator->uMutator);
+    MutationState.iLvl            = RT_H2LE_U32(pMutation->iLvl);
+    MutationState.u32Magic        = RT_H2LE_U32(pMutation->u32Magic);
+
+    int rc = pArgs->pfnExport(pMutation->pFuzzer, &MutationState, sizeof(MutationState), pArgs->pvUser);
+    if (   RT_SUCCESS(rc)
+        && pMutator->pfnExport)
+        rc = pMutator->pfnExport(pMutation->pFuzzer, pMutation, &pMutation->abMutation[0], pArgs->pfnExport, pArgs->pvUser);
+    return rc;
+}
+
+
+RTDECL(int) RTFuzzCtxStateExport(RTFUZZCTX hFuzzCtx, PFNRTFUZZCTXEXPORT pfnExport, void *pvUser)
 {
     PRTFUZZCTXINT pThis = hFuzzCtx;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppvState, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcbState, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfnExport, VERR_INVALID_POINTER);
 
-#if 0
     char aszPrngExport[_4K]; /* Should be plenty of room here. */
     size_t cbPrng = sizeof(aszPrngExport);
     int rc = RTRandAdvSaveState(pThis->hRand, &aszPrngExport[0], &cbPrng);
@@ -962,66 +1121,78 @@ RTDECL(int) RTFuzzCtxStateExport(RTFUZZCTX hFuzzCtx, void **ppvState, size_t *pc
         RTFUZZCTXSTATE StateExport;
 
         StateExport.u32Magic         = RT_H2LE_U32(RTFUZZCTX_MAGIC);
+        switch (pThis->enmType)
+        {
+            case RTFUZZCTXTYPE_BLOB:
+                StateExport.uCtxType = RT_H2LE_U32(RTFUZZCTX_STATE_TYPE_BLOB);
+                break;
+            case RTFUZZCTXTYPE_STREAM:
+                StateExport.uCtxType = RT_H2LE_U32(RTFUZZCTX_STATE_TYPE_STREAM);
+                break;
+            default:
+                AssertFailed();
+                break;
+        }
         StateExport.cbPrng           = RT_H2LE_U32((uint32_t)cbPrng);
-        StateExport.cInputs          = RT_H2LE_U32(pThis->cInputs);
+        StateExport.cMutations       = RT_H2LE_U32(pThis->cMutations);
+        StateExport.cMutators        = RT_H2LE_U32(pThis->cMutators);
         StateExport.fFlagsBehavioral = RT_H2LE_U32(pThis->fFlagsBehavioral);
         StateExport.cbInputMax       = RT_H2LE_U64(pThis->cbInputMax);
 
-        /* Estimate the size of the required state. */
-        size_t cbState =   sizeof(StateExport)
-                         + cbPrng
-                         + pThis->cInputs * ((pThis->cbInputMax < _1M ? pThis->cbInputMax : _64K) + sizeof(uint32_t)); /* For the size indicator before each input. */
-        uint8_t *pbState = (uint8_t *)RTMemAllocZ(cbState);
-        if (RT_LIKELY(pbState))
+        /* Write the context state and PRNG state first. */
+        rc = pfnExport(pThis, &StateExport, sizeof(StateExport), pvUser);
+        if (RT_SUCCESS(rc))
+            rc = pfnExport(pThis, &aszPrngExport[0], cbPrng, pvUser);
+        if (RT_SUCCESS(rc))
         {
-            size_t offState = 0;
-            memcpy(pbState, &StateExport, sizeof(StateExport));
-            offState += sizeof(StateExport);
-            memcpy(&pbState[offState], &aszPrngExport[0], cbPrng);
-            offState += cbPrng;
-
-            /* Export each input. */
-            PRTFUZZINPUTINT pIt;
-            RTListForEach(&pThis->LstInputs, pIt, RTFUZZINPUTINT, NdInputs)
+            /* Write the mutator descriptors next. */
+            for (uint32_t i = 0; i < pThis->cMutators && RT_SUCCESS(rc); i++)
             {
-                /* Ensure buffer size. */
-                if (offState + pIt->cbInput + sizeof(uint32_t) > cbState)
-                {
-                    uint8_t *pbStateNew = (uint8_t *)RTMemRealloc(pbState, cbState + pIt->cbInput + sizeof(uint32_t));
-                    if (RT_LIKELY(pbStateNew))
-                    {
-                        pbState = pbStateNew;
-                        cbState += pIt->cbInput + sizeof(uint32_t);
-                    }
-                    else
-                    {
-                        rc = VERR_NO_MEMORY;
-                        break;
-                    }
-                }
+                PRTFUZZMUTATOR pMutator = &pThis->paMutators[i];
+                uint32_t cchId = (uint32_t)strlen(pMutator->pszId) + 1;
+                uint32_t cchIdW = RT_H2LE_U32(cchId);
 
-                *(uint32_t *)&pbState[offState] = RT_H2LE_U32((uint32_t)pIt->cbInput);
-                offState += sizeof(uint32_t);
-                memcpy(&pbState[offState], &pIt->abInput[0], pIt->cbInput);
-                offState += pIt->cbInput;
+                rc = pfnExport(pThis, &cchIdW, sizeof(cchIdW), pvUser);
+                if (RT_SUCCESS(rc))
+                    rc = pfnExport(pThis, &pMutator->pszId[0], cchId, pvUser);
             }
-
-            if (RT_SUCCESS(rc))
-            {
-                *ppvState = pbState;
-                *pcbState = offState;
-            }
-            else
-                RTMemFree(pbState);
         }
-        else
-            rc = VERR_NO_MEMORY;
+
+        /* Write the mutations last. */
+        if (RT_SUCCESS(rc))
+        {
+            RTFUZZEXPORTARGS Args;
+
+            Args.pfnExport = pfnExport;
+            Args.pvUser    = pvUser;
+            rc = RTAvlU64DoWithAll(&pThis->TreeMutations, true /*fFromLeft*/, rtFuzzCtxStateExportMutations, &Args);
+        }
     }
 
     return rc;
-#else
+}
+
+
+RTDECL(int) RTFuzzCtxStateExportToMem(RTFUZZCTX hFuzzCtx, void **ppvState, size_t *pcbState)
+{
+    PRTFUZZCTXINT pThis = hFuzzCtx;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppvState, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbState, VERR_INVALID_POINTER);
+
     return VERR_NOT_IMPLEMENTED;
-#endif
+}
+
+
+/**
+ * Export to file callback.
+ */
+DECLCALLBACK(int) rtFuzzCtxStateExportFile(RTFUZZCTX hFuzzCtx, const void *pvBuf, size_t cbWrite, void *pvUser)
+{
+    RT_NOREF(hFuzzCtx);
+
+    RTFILE hFile = (RTFILE)pvUser;
+    return RTFileWrite(hFile, pvBuf, cbWrite, NULL);
 }
 
 
@@ -1031,23 +1202,14 @@ RTDECL(int) RTFuzzCtxStateExportToFile(RTFUZZCTX hFuzzCtx, const char *pszFilena
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
 
-    void *pvState = NULL;
-    size_t cbState = 0;
-    int rc = RTFuzzCtxStateExport(hFuzzCtx, &pvState, &cbState);
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
     if (RT_SUCCESS(rc))
     {
-        RTFILE hFile;
-
-        rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTFileWrite(hFile, pvState, cbState, NULL);
-            RTFileClose(hFile);
-            if (RT_FAILURE(rc))
-                RTFileDelete(pszFilename);
-        }
-
-        RTMemFree(pvState);
+        rc = RTFuzzCtxStateExport(hFuzzCtx, rtFuzzCtxStateExportFile, hFile);
+        RTFileClose(hFile);
+        if (RT_FAILURE(rc))
+            RTFileDelete(pszFilename);
     }
 
     return rc;
@@ -1062,12 +1224,13 @@ RTDECL(int) RTFuzzCtxCorpusInputAdd(RTFUZZCTX hFuzzCtx, const void *pvInput, siz
     AssertReturn(cbInput, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
-    PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, 0, NULL, cbInput);
+    void *pvCorpus = NULL;
+    PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, 0, NULL, cbInput, &pvCorpus);
     if (RT_LIKELY(pMutation))
     {
         pMutation->pMutator = &g_MutatorCorpus;
         pMutation->cbInput  = cbInput;
-        memcpy(&pMutation->u.abCorpus[0], pvInput, cbInput);
+        memcpy(pvCorpus, pvInput, cbInput);
         rc = rtFuzzCtxMutationAdd(pThis, pMutation);
         if (RT_FAILURE(rc))
             rtFuzzMutationDestroy(pMutation);
@@ -1105,15 +1268,16 @@ RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsFile(RTFUZZCTX hFuzzCtx, RTVFSFILE hVf
     AssertReturn(hVfsFile != NIL_RTVFSFILE, VERR_INVALID_HANDLE);
 
     uint64_t cbFile = 0;
+    void *pvCorpus = NULL;
     int rc = RTVfsFileGetSize(hVfsFile, &cbFile);
     if (RT_SUCCESS(rc))
     {
-        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, 0, NULL, cbFile);
+        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, 0, NULL, cbFile, &pvCorpus);
         if (RT_LIKELY(pMutation))
         {
             pMutation->pMutator = &g_MutatorCorpus;
             pMutation->cbInput  = cbFile;
-            rc = RTVfsFileRead(hVfsFile, &pMutation->u.abCorpus[0], cbFile, NULL);
+            rc = RTVfsFileRead(hVfsFile, pvCorpus, cbFile, NULL);
             if (RT_SUCCESS(rc))
                 rc = rtFuzzCtxMutationAdd(pThis, pMutation);
 
