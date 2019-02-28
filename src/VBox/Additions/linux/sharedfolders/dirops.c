@@ -378,6 +378,58 @@ struct file_operations sf_dir_fops = {
 /* iops */
 
 /**
+ * Worker for sf_lookup() and sf_instantiate().
+ */
+static struct inode *sf_create_inode(struct inode *parent, struct dentry *dentry, PSHFLSTRING path,
+				     PSHFLFSOBJINFO pObjInfo, struct sf_glob_info *sf_g, bool fInstantiate)
+{
+	/*
+	 * Allocate memory for our additional inode info and create an inode.
+	 */
+	struct sf_inode_info *sf_new_i = (struct sf_inode_info *)kmalloc(sizeof(*sf_new_i), GFP_KERNEL);
+	if (sf_new_i) {
+		ino_t         iNodeNo = iunique(parent->i_sb, 1);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
+		struct inode *pInode  = iget_locked(parent->i_sb, iNodeNo);
+#else
+		struct inode *pInode  = iget(parent->i_sb, iNodeNo);
+#endif
+		if (pInode) {
+			/*
+			 * Initialize the two structures.
+			 */
+#ifdef VBOX_STRICT
+			sf_new_i->u32Magic      = SF_INODE_INFO_MAGIC;
+#endif
+			sf_new_i->path          = path;
+			sf_new_i->force_reread  = 0;
+			sf_new_i->force_restat  = 0;
+			sf_new_i->ts_up_to_date = jiffies;
+			RTListInit(&sf_new_i->HandleList);
+			sf_new_i->handle        = SHFL_HANDLE_NIL;
+
+			SET_INODE_INFO(pInode, sf_new_i);
+			sf_init_inode(pInode, sf_new_i, pObjInfo, sf_g);
+
+			/*
+			 * Before we unlock the new inode, we may need to call d_instantiate.
+			 */
+			if (fInstantiate)
+				d_instantiate(dentry, pInode);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
+			unlock_new_inode(pInode);
+#endif
+			return pInode;
+
+		}
+		LogFunc(("iget failed\n"));
+		kfree(sf_new_i);
+	} else
+		LogRelFunc(("could not allocate memory for new inode info\n"));
+	return NULL;
+}
+
+/**
  * This is called when vfs failed to locate dentry in the cache. The
  * job of this function is to allocate inode and link it to dentry.
  * [dentry] contains the name to be looked in the [parent] directory.
@@ -394,90 +446,92 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
 #endif
     )
 {
-	int err;
-	struct sf_inode_info *sf_i, *sf_new_i;
-	struct sf_glob_info *sf_g;
-	SHFLSTRING *path;
-	struct inode *inode;
-	ino_t ino;
-	SHFLFSOBJINFO fsinfo;
+	struct sf_glob_info  *sf_g = GET_GLOB_INFO(parent->i_sb);
+	struct sf_inode_info *sf_i = GET_INODE_INFO(parent);
+	SHFLSTRING           *path;
+	struct dentry        *dret;
+	int                   rc;
 
-	TRACE();
-	sf_g = GET_GLOB_INFO(parent->i_sb);
-	sf_i = GET_INODE_INFO(parent);
-
-	BUG_ON(!sf_g);
-	BUG_ON(!sf_i);
-
-	err = sf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
-	if (err)
-		goto fail0;
-
-	/** @todo call host directly and avoid unnecessary copying here. */
-	err = sf_stat(__func__, sf_g, path, &fsinfo, 1);
-	if (err) {
-		if (err == -ENOENT) {
-			/* -ENOENT: add NULL inode to dentry so it later can be
-			   created via call to create/mkdir/open */
-			kfree(path);
-			inode = NULL;
-		} else
-			goto fail1;
-	} else {
-		sf_new_i = kmalloc(sizeof(*sf_new_i), GFP_KERNEL);
-		if (!sf_new_i) {
-			LogRelFunc(("could not allocate memory for new inode info\n"));
-			err = -ENOMEM;
-			goto fail1;
-		}
-		sf_new_i->handle = SHFL_HANDLE_NIL;
-		sf_new_i->force_reread = 0;
-		RTListInit(&sf_new_i->HandleList);
-#ifdef VBOX_STRICT
-		sf_new_i->u32Magic = SF_INODE_INFO_MAGIC;
-#endif
-
-		ino = iunique(parent->i_sb, 1);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-		inode = iget_locked(parent->i_sb, ino);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+	SFLOGFLOW(("sf_lookup: parent=%p dentry=%p flags=%#x\n", parent, dentry, flags));
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+	SFLOGFLOW(("sf_lookup: parent=%p dentry=%p nd=%p{.flags=%#x}\n", parent, dentry, nd, nd ? nd->flags : 0));
 #else
-		inode = iget(parent->i_sb, ino);
+	SFLOGFLOW(("sf_lookup: parent=%p dentry=%p\n", parent, dentry));
 #endif
-		if (!inode) {
-			LogFunc(("iget failed\n"));
-			err = -ENOMEM;	/* XXX: ??? */
-			goto fail2;
-		}
 
-		sf_new_i->path = path;
-		SET_INODE_INFO(inode, sf_new_i);
-		sf_init_inode(inode, sf_new_i, &fsinfo, sf_g);
+	Assert(sf_g);
+	Assert(sf_i && sf_i->u32Magic == SF_INODE_INFO_MAGIC);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-		unlock_new_inode(inode);
-#endif
-		sf_dentry_chain_increase_parent_ttl(dentry);
-	}
+	/*
+	 * Build the path.  We'll associate the path with dret's inode on success.
+	 */
+	rc = sf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
+	if (rc == 0) {
+		/*
+		 * Do a lookup on the host side.
+		 */
+		VBOXSFCREATEREQ *pReq = (VBOXSFCREATEREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq) + path->u16Size);
+		if (pReq) {
+			struct inode *pInode = NULL;
 
-	//sf_i->force_restat = 0; /** @todo r=bird: This looks like confusion. */
+			RT_ZERO(*pReq);
+			memcpy(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
+			pReq->CreateParms.Handle = SHFL_HANDLE_NIL;
+			pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
 
-	sf_dentry_set_update_jiffies(dentry, jiffies);
+			LogFunc(("Calling VbglR0SfHostReqCreate on %s\n", path->String.utf8));
+			rc = VbglR0SfHostReqCreate(sf_g->map.root, pReq);
+			if (RT_SUCCESS(rc)) {
+				if (pReq->CreateParms.Result == SHFL_FILE_EXISTS) {
+					/*
+					 * Create an inode for the result.  Since this also confirms
+					 * the existence of all parent dentries, we increase their TTL.
+					 */
+					pInode = sf_create_inode(parent, dentry, path, &pReq->CreateParms.Info,
+								 sf_g, false /*fInstantiate*/);
+					if (rc == 0) {
+						path = NULL; /* given to the inode */
+						dret = dentry;
+					} else
+						dret = (struct dentry *)ERR_PTR(-ENOMEM);
+					sf_dentry_chain_increase_parent_ttl(dentry);
+				} else if (   pReq->CreateParms.Result == SHFL_FILE_NOT_FOUND
+					   || pReq->CreateParms.Result == SHFL_PATH_NOT_FOUND /*this probably should happen*/) {
+					dret = dentry;
+				} else {
+					AssertMsgFailed(("%d\n", pReq->CreateParms.Result));
+					dret = (struct dentry *)ERR_PTR(-EPROTO);
+				}
+			} else if (rc == VERR_INVALID_NAME) {
+				dret = dentry; /* this can happen for names like 'foo*' on a Windows host */
+			} else {
+				LogFunc(("VbglR0SfHostReqCreate failed on %s: %Rrc\n", path->String.utf8, rc));
+				dret = (struct dentry *)ERR_PTR(-EPROTO);
+			}
+			VbglR0PhysHeapFree(pReq);
+
+			/*
+			 * When dret is set to dentry we got something to insert,
+			 * though it may be negative (pInode == NULL).
+			 */
+			if (dret == dentry) {
+				sf_dentry_set_update_jiffies(dentry, jiffies);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
-	Assert(dentry->d_op == &sf_dentry_ops); /* (taken from the superblock) */
+				Assert(dentry->d_op == &sf_dentry_ops); /* (taken from the superblock) */
 #else
-	dentry->d_op = &sf_dentry_ops;
+				dentry->d_op = &sf_dentry_ops;
 #endif
-	d_add(dentry, inode);
-	return NULL;
-
- fail2:
-	kfree(sf_new_i);
-
- fail1:
-	kfree(path);
-
- fail0:
-	return ERR_PTR(err);
+				d_add(dentry, pInode);
+				dret = NULL;
+			}
+		} else
+			dret = (struct dentry *)ERR_PTR(-ENOMEM);
+		if (path)
+			kfree(path);
+	} else
+		dret = (struct dentry *)ERR_PTR(rc);
+	return dret;
 }
 
 /**
@@ -487,71 +541,24 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
  *
  * @param parent        inode entry of the directory
  * @param dentry        directory cache entry
- * @param path          path name
+ * @param path          path name.  Consumed on success.
  * @param info          file information
  * @param handle        handle
  * @returns 0 on success, Linux error code otherwise
  */
 static int sf_instantiate(struct inode *parent, struct dentry *dentry,
-			  SHFLSTRING * path, PSHFLFSOBJINFO info,
+			  PSHFLSTRING path, PSHFLFSOBJINFO info,
 			  SHFLHANDLE handle)
 {
-	int err;
-	ino_t ino;
-	struct inode *inode;
-	struct sf_inode_info *sf_new_i;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(parent->i_sb);
-
-	TRACE();
-	BUG_ON(!sf_g);
-
-	sf_new_i = kmalloc(sizeof(*sf_new_i), GFP_KERNEL);
-	if (!sf_new_i) {
-		LogRelFunc(("could not allocate inode info.\n"));
-		err = -ENOMEM;
-		goto fail0;
+	struct sf_glob_info *sf_g   = GET_GLOB_INFO(parent->i_sb);
+	struct inode        *pInode = sf_create_inode(parent, dentry, path, info, sf_g, true /*fInstantiate*/);
+	if (pInode) {
+		/* Store this handle if we leave the handle open. */
+		struct sf_inode_info *sf_new_i = GET_INODE_INFO(pInode);
+		sf_new_i->handle = handle;
+		return 0;
 	}
-
-	ino = iunique(parent->i_sb, 1);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-	inode = iget_locked(parent->i_sb, ino);
-#else
-	inode = iget(parent->i_sb, ino);
-#endif
-	if (!inode) {
-		LogFunc(("iget failed\n"));
-		err = -ENOMEM;
-		goto fail1;
-	}
-
-	sf_init_inode(inode, sf_new_i, info, sf_g);
-
-	sf_new_i->path = path;
-	RTListInit(&sf_new_i->HandleList);
-	sf_new_i->force_restat = 1;
-	sf_new_i->force_reread = 0;
-	sf_new_i->ts_up_to_date = jiffies - INT_MAX / 2;
-#ifdef VBOX_STRICT
-	sf_new_i->u32Magic = SF_INODE_INFO_MAGIC;
-#endif
-	SET_INODE_INFO(inode, sf_new_i);
-
-	d_instantiate(dentry, inode);
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-	unlock_new_inode(inode);
-#endif
-
-	/* Store this handle if we leave the handle open. */
-	sf_new_i->handle = handle;
-	return 0;
-
- fail1:
-	kfree(sf_new_i);
-
- fail0:
-	return err;
-
+	return -ENOMEM;
 }
 
 /**
@@ -567,7 +574,7 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 			 umode_t mode, int fDirectory)
 {
 	int rc, err;
-	struct sf_inode_info *sf_i = GET_INODE_INFO(parent);
+	struct sf_inode_info *sf_parent_i = GET_INODE_INFO(parent);
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(parent->i_sb);
 	SHFLSTRING *path;
 	union CreateAuxReq
@@ -578,10 +585,10 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 	SHFLCREATEPARMS *pCreateParms;
 
 	TRACE();
-	BUG_ON(!sf_i);
+	BUG_ON(!sf_parent_i);
 	BUG_ON(!sf_g);
 
-	err = sf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
+	err = sf_path_from_dentry(__func__, sf_g, sf_parent_i, dentry, &path);
 	if (err)
 		goto fail0;
 
@@ -614,14 +621,14 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 		}
 		err = -EPROTO;
 		LogFunc(("(%d): SHFL_FN_CREATE(%s) failed rc=%Rrc\n",
-			 fDirectory, sf_i->path->String.utf8, rc));
+			 fDirectory, sf_parent_i->path->String.utf8, rc));
 		goto fail2;
 	}
 
 	if (pCreateParms->Result != SHFL_FILE_CREATED) {
 		err = -EPERM;
 		LogFunc(("(%d): could not create file %s result=%d\n",
-			 fDirectory, sf_i->path->String.utf8, pCreateParms->Result));
+			 fDirectory, sf_parent_i->path->String.utf8, pCreateParms->Result));
 		goto fail2;
 	}
 
@@ -630,8 +637,7 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 	err = sf_instantiate(parent, dentry, path, &pCreateParms->Info,
 			     fDirectory ? SHFL_HANDLE_NIL : pCreateParms->Handle);
 	if (err) {
-		LogFunc(("(%d): could not instantiate dentry for %s err=%d\n",
-			 fDirectory, sf_i->path->String.utf8, err));
+		LogFunc(("(%d): could not instantiate dentry for %s err=%d\n", fDirectory, path->String.utf8, err));
 		goto fail3;
 	}
 
@@ -647,7 +653,7 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 			LogFunc(("(%d): VbglR0SfHostReqClose failed rc=%Rrc\n", fDirectory, rc));
 	}
 
-	sf_i->force_restat = 1; /**< @todo r=bird: Why?!? */
+	sf_parent_i->force_restat = 1;
 	VbglR0PhysHeapFree(pReq);
 	return 0;
 

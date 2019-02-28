@@ -532,7 +532,12 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 #endif /* LINUX_VERSION_CODE < 2.4.23 */
 }
 
-/** Show mount options. */
+/**
+ * Show mount options.
+ *
+ * This is needed by the VBoxService automounter in order for it to pick up
+ * the the 'tag' option value it sets on its mount.
+ */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
 static int sf_show_options(struct seq_file *m, struct vfsmount *mnt)
 #else
@@ -554,8 +559,7 @@ static int sf_show_options(struct seq_file *m, struct dentry *root)
 			seq_escape(m, sf_g->tag, " \t\n\\");
 		}
 	}
-
-    return 0;
+	return 0;
 }
 
 static struct super_operations sf_super_ops = {

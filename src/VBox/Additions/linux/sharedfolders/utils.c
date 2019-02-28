@@ -191,6 +191,7 @@ void sf_update_inode(struct inode *pInode, struct sf_inode_info *pInfoInfo, PSHF
 }
 
 
+/** @note Currently only used for the root directory during (re-)mount.  */
 int sf_stat(const char *caller, struct sf_glob_info *sf_g,
 	    SHFLSTRING *path, PSHFLFSOBJINFO result, int ok_to_fail)
 {
@@ -970,9 +971,11 @@ int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS * stat)
 }
 
 
-/* this is called during name resolution/lookup to check if the
-   [dentry] in the cache is still valid. the job is handled by
-   [sf_inode_revalidate] */
+/**
+ * This is called during name resolution/lookup to check if the @a dentry in the
+ * cache is still valid.  The actual validation is job is handled by
+ * sf_inode_revalidate().
+ */
 static int
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
 sf_dentry_revalidate(struct dentry *dentry, unsigned flags)
@@ -1081,6 +1084,7 @@ static int sf_dentry_delete(const struct dentry *pDirEntry)
 	return 0;
 }
 
+/** For logging purposes only. */
 static int sf_dentry_init(struct dentry *pDirEntry)
 {
 	SFLOGFLOW(("sf_dentry_init: %p\n", pDirEntry));
@@ -1089,7 +1093,11 @@ static int sf_dentry_init(struct dentry *pDirEntry)
 
 #endif /* SFLOG_ENABLED */
 
-
+/**
+ * Directory entry operations.
+ *
+ * Since 2.6.38 this is used via the super_block::s_d_op member.
+ */
 struct dentry_operations sf_dentry_ops = {
 	.d_revalidate = sf_dentry_revalidate,
 #ifdef SFLOG_ENABLED
@@ -1097,6 +1105,7 @@ struct dentry_operations sf_dentry_ops = {
 	.d_init = sf_dentry_init,
 #endif
 };
+
 
 int sf_init_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g)
 {
