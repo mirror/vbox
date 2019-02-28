@@ -1304,7 +1304,7 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGue
         AssertMsgRCReturn(rc, ("hmR0VmxAddAutoLoadStoreMsr: Insufficient space to add MSR %u\n", uMsr), rc);
 
         /* Now that we're swapping MSRs during the world-switch, allow the guest to read/write them without causing VM-exits. */
-        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
+        if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
             hmR0VmxSetMsrPermission(pVCpu, uMsr, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
 
         fAdded = true;
@@ -1388,7 +1388,7 @@ static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr)
         AssertRCReturn(rc, rc);
 
         /* We're no longer swapping MSRs during the world-switch, intercept guest read/writes to them. */
-        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
+        if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
             hmR0VmxSetMsrPermission(pVCpu, uMsr, VMXMSREXIT_INTERCEPT_READ, VMXMSREXIT_INTERCEPT_WRITE);
 
         Log4Func(("Removed MSR %#RX32 new cMsrs=%u\n", uMsr, pVCpu->hm.s.vmx.cMsrs));
@@ -1621,54 +1621,54 @@ static int hmR0VmxCheckVmcsCtls(PVMCPU pVCpu)
     uint32_t u32Val;
     int rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY, &u32Val);
     AssertRCReturn(rc, rc);
-    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32EntryCtls == u32Val,
-                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32EntryCtls, u32Val),
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.GstCtls.u32EntryCtls == u32Val,
+                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.GstCtls.u32EntryCtls, u32Val),
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_ENTRY,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT, &u32Val);
     AssertRCReturn(rc, rc);
-    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32ExitCtls == u32Val,
-                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32ExitCtls, u32Val),
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.GstCtls.u32ExitCtls == u32Val,
+                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.GstCtls.u32ExitCtls, u32Val),
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_EXIT,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PIN_EXEC, &u32Val);
     AssertRCReturn(rc, rc);
-    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32PinCtls == u32Val,
-                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32PinCtls, u32Val),
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.GstCtls.u32PinCtls == u32Val,
+                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.GstCtls.u32PinCtls, u32Val),
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_PIN_EXEC,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);
     AssertRCReturn(rc, rc);
-    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32ProcCtls == u32Val,
-                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls, u32Val),
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls == u32Val,
+                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.GstCtls.u32ProcCtls, u32Val),
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_PROC_EXEC,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
-    if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
+    if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
     {
         rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, &u32Val);
         AssertRCReturn(rc, rc);
-        AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32ProcCtls2 == u32Val,
-                            ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls2, u32Val),
+        AssertMsgReturnStmt(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2 == u32Val,
+                            ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2, u32Val),
                             pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_PROC_EXEC2,
                             VERR_VMX_VMCS_FIELD_CACHE_INVALID);
     }
 
     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, &u32Val);
     AssertRCReturn(rc, rc);
-    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u32XcptBitmap == u32Val,
-                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.u32XcptBitmap, u32Val),
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap == u32Val,
+                        ("Cache=%#RX32 VMCS=%#RX32\n", pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap, u32Val),
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_XCPT_BITMAP,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
     uint64_t u64Val;
     rc = VMXReadVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, &u64Val);
     AssertRCReturn(rc, rc);
-    AssertMsgReturnStmt(pVCpu->hm.s.vmx.u64TscOffset == u64Val,
-                        ("Cache=%#RX64 VMCS=%#RX64\n", pVCpu->hm.s.vmx.u64TscOffset, u64Val),
+    AssertMsgReturnStmt(pVCpu->hm.s.vmx.GstCtls.u64TscOffset == u64Val,
+                        ("Cache=%#RX64 VMCS=%#RX64\n", pVCpu->hm.s.vmx.GstCtls.u64TscOffset, u64Val),
                         pVCpu->hm.s.u32HMError = VMX_VCI_CTRL_TSC_OFFSET,
                         VERR_VMX_VMCS_FIELD_CACHE_INVALID);
 
@@ -1687,7 +1687,7 @@ static void hmR0VmxCheckHostEferMsr(PVMCPU pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    if (pVCpu->hm.s.vmx.u32ExitCtls & VMX_EXIT_CTLS_LOAD_EFER_MSR)
+    if (pVCpu->hm.s.vmx.GstCtls.u32ExitCtls & VMX_EXIT_CTLS_LOAD_EFER_MSR)
     {
         uint64_t u64Val;
         int rc = VMXReadVmcs64(VMX_VMCS64_HOST_EFER_FULL, &u64Val);
@@ -1733,7 +1733,7 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu)
                                                            pHostMsr->u32Msr, pHostMsr->u64Value, u64Msr, cMsrs));
 
         /* Verify that the permissions are as expected in the MSR bitmap. */
-        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
+        if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
         {
             VMXMSREXITREAD  enmRead;
             VMXMSREXITWRITE enmWrite;
@@ -2324,7 +2324,7 @@ static int hmR0VmxSetupPinCtls(PVMCPU pVCpu)
     /* Commit it to the VMCS and update our cache. */
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PIN_EXEC, fVal);
     AssertRCReturn(rc, rc);
-    pVCpu->hm.s.vmx.u32PinCtls = fVal;
+    pVCpu->hm.s.vmx.GstCtls.u32PinCtls = fVal;
 
     return VINF_SUCCESS;
 }
@@ -2421,7 +2421,7 @@ static int hmR0VmxSetupProcCtls2(PVMCPU pVCpu)
     /* Commit it to the VMCS and update our cache. */
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, fVal);
     AssertRCReturn(rc, rc);
-    pVCpu->hm.s.vmx.u32ProcCtls2 = fVal;
+    pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2 = fVal;
 
     return VINF_SUCCESS;
 }
@@ -2555,10 +2555,10 @@ static int hmR0VmxSetupProcCtls(PVMCPU pVCpu)
     /* Commit it to the VMCS and update our cache. */
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, fVal);
     AssertRCReturn(rc, rc);
-    pVCpu->hm.s.vmx.u32ProcCtls = fVal;
+    pVCpu->hm.s.vmx.GstCtls.u32ProcCtls = fVal;
 
     /* Set up secondary processor-based VM-execution controls if the CPU supports it. */
-    if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
+    if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
         return hmR0VmxSetupProcCtls2(pVCpu);
 
     /* Sanity check, should not really happen. */
@@ -2673,7 +2673,7 @@ static int hmR0VmxInitXcptBitmap(PVMCPU pVCpu)
     AssertRCReturn(rc, rc);
 
     /* Update our cache of the exception bitmap. */
-    pVCpu->hm.s.vmx.u32XcptBitmap = uXcptBitmap;
+    pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap = uXcptBitmap;
     return VINF_SUCCESS;
 }
 
@@ -2958,7 +2958,7 @@ static int hmR0VmxExportHostSegmentRegs(PVMCPU pVCpu)
 
     /* Assertion is right but we would not have updated u32ExitCtls yet. */
 #if 0
-    if (!(pVCpu->hm.s.vmx.u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE))
+    if (!(pVCpu->hm.s.vmx.GstCtls.u32ExitCtls & VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE))
         Assert(uSelSS != 0);
 #endif
 
@@ -3270,11 +3270,11 @@ static int hmR0VmxExportGuestEntryCtls(PVMCPU pVCpu)
         }
 
         /* Commit it to the VMCS and update our cache. */
-        if (pVCpu->hm.s.vmx.u32EntryCtls != fVal)
+        if (pVCpu->hm.s.vmx.GstCtls.u32EntryCtls != fVal)
         {
             int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY, fVal);
             AssertRCReturn(rc, rc);
-            pVCpu->hm.s.vmx.u32EntryCtls = fVal;
+            pVCpu->hm.s.vmx.GstCtls.u32EntryCtls = fVal;
         }
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_VMX_ENTRY_CTLS);
@@ -3354,11 +3354,11 @@ static int hmR0VmxExportGuestExitCtls(PVMCPU pVCpu)
         }
 
         /* Commit it to the VMCS and update our cache. */
-        if (pVCpu->hm.s.vmx.u32ExitCtls != fVal)
+        if (pVCpu->hm.s.vmx.GstCtls.u32ExitCtls != fVal)
         {
             int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT, fVal);
             AssertRCReturn(rc, rc);
-            pVCpu->hm.s.vmx.u32ExitCtls = fVal;
+            pVCpu->hm.s.vmx.GstCtls.u32ExitCtls = fVal;
         }
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_VMX_EXIT_CTLS);
@@ -3377,7 +3377,7 @@ static int hmR0VmxExportGuestExitCtls(PVMCPU pVCpu)
 DECLINLINE(int) hmR0VmxApicSetTprThreshold(PVMCPU pVCpu, uint32_t u32TprThreshold)
 {
     Assert(!(u32TprThreshold & ~VMX_TPR_THRESHOLD_MASK));         /* Bits 31:4 MBZ. */
-    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW); RT_NOREF_PV(pVCpu);
+    Assert(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW); RT_NOREF_PV(pVCpu);
     return VMXWriteVmcs32(VMX_VMCS32_CTRL_TPR_THRESHOLD, u32TprThreshold);
 }
 
@@ -3402,7 +3402,7 @@ static int hmR0VmxExportGuestApicTpr(PVMCPU pVCpu)
             /*
              * Setup TPR shadowing.
              */
-            if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+            if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
             {
                 Assert(pVCpu->hm.s.vmx.HCPhysVirtApic);
 
@@ -3489,7 +3489,7 @@ static uint32_t hmR0VmxGetGuestIntrState(PVMCPU pVCpu)
      * See Intel spec. 26.6.1 "Interruptibility state". See @bugref{7445}.
      */
     if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS)
-        && (pVCpu->hm.s.vmx.u32PinCtls & VMX_PIN_CTLS_VIRT_NMI))
+        && (pVCpu->hm.s.vmx.GstCtls.u32PinCtls & VMX_PIN_CTLS_VIRT_NMI))
     {
         fIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
     }
@@ -3510,7 +3510,7 @@ static int hmR0VmxExportGuestXcptIntercepts(PVMCPU pVCpu)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS)
     {
-        uint32_t uXcptBitmap = pVCpu->hm.s.vmx.u32XcptBitmap;
+        uint32_t uXcptBitmap = pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap;
 
         /* The remaining exception intercepts are handled elsewhere, e.g. in hmR0VmxExportGuestCR0(). */
         if (pVCpu->hm.s.fGIMTrapXcptUD)
@@ -3523,11 +3523,11 @@ static int hmR0VmxExportGuestXcptIntercepts(PVMCPU pVCpu)
         Assert(uXcptBitmap & RT_BIT_32(X86_XCPT_AC));
         Assert(uXcptBitmap & RT_BIT_32(X86_XCPT_DB));
 
-        if (uXcptBitmap != pVCpu->hm.s.vmx.u32XcptBitmap)
+        if (uXcptBitmap != pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap)
         {
             int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, uXcptBitmap);
             AssertRCReturn(rc, rc);
-            pVCpu->hm.s.vmx.u32XcptBitmap = uXcptBitmap;
+            pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap = uXcptBitmap;
         }
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS);
@@ -3671,7 +3671,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu)
          * Setup VT-x's view of the guest CR0.
          * Minimize VM-exits due to CR3 changes when we have NestedPaging.
          */
-        uint32_t uProcCtls = pVCpu->hm.s.vmx.u32ProcCtls;
+        uint32_t uProcCtls = pVCpu->hm.s.vmx.GstCtls.u32ProcCtls;
         if (pVM->hm.s.fNestedPaging)
         {
             if (CPUMIsGuestPagingEnabled(pVCpu))
@@ -3714,7 +3714,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu)
         /*
          * Update exception intercepts.
          */
-        uint32_t uXcptBitmap = pVCpu->hm.s.vmx.u32XcptBitmap;
+        uint32_t uXcptBitmap = pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap;
         if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
         {
             Assert(PDMVmmDevHeapIsEnabled(pVM));
@@ -3789,18 +3789,18 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu)
          */
         int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0, u32GuestCr0);
         rc    |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, u32ShadowCr0);
-        if (u32Cr0Mask != pVCpu->hm.s.vmx.u32Cr0Mask)
+        if (u32Cr0Mask != pVCpu->hm.s.vmx.GstCtls.u32Cr0Mask)
             rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, u32Cr0Mask);
-        if (uProcCtls != pVCpu->hm.s.vmx.u32ProcCtls)
+        if (uProcCtls != pVCpu->hm.s.vmx.GstCtls.u32ProcCtls)
             rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
-        if (uXcptBitmap != pVCpu->hm.s.vmx.u32XcptBitmap)
+        if (uXcptBitmap != pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap)
             rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, uXcptBitmap);
         AssertRCReturn(rc, rc);
 
         /* Update our caches. */
-        pVCpu->hm.s.vmx.u32Cr0Mask    = u32Cr0Mask;
-        pVCpu->hm.s.vmx.u32ProcCtls   = uProcCtls;
-        pVCpu->hm.s.vmx.u32XcptBitmap = uXcptBitmap;
+        pVCpu->hm.s.vmx.GstCtls.u32Cr0Mask    = u32Cr0Mask;
+        pVCpu->hm.s.vmx.GstCtls.u32ProcCtls   = uProcCtls;
+        pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap = uXcptBitmap;
 
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_CR0);
 
@@ -4030,10 +4030,10 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu)
            into the VMCS and update our cache. */
         rc  = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4, u32GuestCr4);
         rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, u32ShadowCr4);
-        if (pVCpu->hm.s.vmx.u32Cr4Mask != u32Cr4Mask)
+        if (pVCpu->hm.s.vmx.GstCtls.u32Cr4Mask != u32Cr4Mask)
             rc |= VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, u32Cr4Mask);
         AssertRCReturn(rc, rc);
-        pVCpu->hm.s.vmx.u32Cr4Mask = u32Cr4Mask;
+        pVCpu->hm.s.vmx.GstCtls.u32Cr4Mask = u32Cr4Mask;
 
         /* Whether to save/load/restore XCR0 during world switch depends on CR4.OSXSAVE and host+guest XCR0. */
         pVCpu->hm.s.fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
@@ -4064,7 +4064,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu)
 
 #ifdef VBOX_STRICT
     /* Validate. Intel spec. 26.3.1.1 "Checks on Guest Controls Registers, Debug Registers, MSRs" */
-    if (pVCpu->hm.s.vmx.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
+    if (pVCpu->hm.s.vmx.GstCtls.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
     {
         /* Validate. Intel spec. 17.2 "Debug Registers", recompiler paranoia checks. */
         Assert((pVCpu->cpum.GstCtx.dr[7] & (X86_DR7_MBZ_MASK | X86_DR7_RAZ_MASK)) == 0);
@@ -4074,7 +4074,7 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu)
 
     bool     fSteppingDB      = false;
     bool     fInterceptMovDRx = false;
-    uint32_t uProcCtls        = pVCpu->hm.s.vmx.u32ProcCtls;
+    uint32_t uProcCtls        = pVCpu->hm.s.vmx.GstCtls.u32ProcCtls;
     if (pVCpu->hm.s.fSingleInstruction)
     {
         /* If the CPU supports the monitor trap flag, use it for single stepping in DBGF and avoid intercepting #DB. */
@@ -4184,11 +4184,11 @@ static int hmR0VmxExportSharedDebugState(PVMCPU pVCpu)
      * Update the processor-based VM-execution controls with the MOV-DRx intercepts and the
      * monitor-trap flag and update our cache.
      */
-    if (uProcCtls != pVCpu->hm.s.vmx.u32ProcCtls)
+    if (uProcCtls != pVCpu->hm.s.vmx.GstCtls.u32ProcCtls)
     {
         int rc2 = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
         AssertRCReturn(rc2, rc2);
-        pVCpu->hm.s.vmx.u32ProcCtls = uProcCtls;
+        pVCpu->hm.s.vmx.GstCtls.u32ProcCtls = uProcCtls;
     }
 
     /*
@@ -5048,7 +5048,7 @@ static void hmR0VmxReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun, PVMXTRANSIE
                 Log4(("VMX_VMCS32_CTRL_PIN_EXEC                %#RX32\n", u32Val));
                 rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);                 AssertRC(rc);
                 Log4(("VMX_VMCS32_CTRL_PROC_EXEC               %#RX32\n", u32Val));
-                if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
+                if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
                 {
                     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, &u32Val);            AssertRC(rc);
                     Log4(("VMX_VMCS32_CTRL_PROC_EXEC2              %#RX32\n", u32Val));
@@ -5679,15 +5679,15 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
 
-    uint32_t uProcCtls = pVCpu->hm.s.vmx.u32ProcCtls;
+    uint32_t uProcCtls = pVCpu->hm.s.vmx.GstCtls.u32ProcCtls;
     if (   fOffsettedTsc
         && RT_LIKELY(!pVCpu->hm.s.fDebugWantRdTscExit))
     {
-        if (pVCpu->hm.s.vmx.u64TscOffset != uTscOffset)
+        if (pVCpu->hm.s.vmx.GstCtls.u64TscOffset != uTscOffset)
         {
             int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, uTscOffset);
             AssertRC(rc);
-            pVCpu->hm.s.vmx.u64TscOffset = uTscOffset;
+            pVCpu->hm.s.vmx.GstCtls.u64TscOffset = uTscOffset;
         }
 
         if (uProcCtls & VMX_PROC_CTLS_RDTSC_EXIT)
@@ -5695,7 +5695,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
             uProcCtls &= ~VMX_PROC_CTLS_RDTSC_EXIT;
             int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
             AssertRC(rc);
-            pVCpu->hm.s.vmx.u32ProcCtls = uProcCtls;
+            pVCpu->hm.s.vmx.GstCtls.u32ProcCtls = uProcCtls;
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscOffset);
     }
@@ -5707,7 +5707,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
             uProcCtls |= VMX_PROC_CTLS_RDTSC_EXIT;
             int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
             AssertRC(rc);
-            pVCpu->hm.s.vmx.u32ProcCtls = uProcCtls;
+            pVCpu->hm.s.vmx.GstCtls.u32ProcCtls = uProcCtls;
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscIntercept);
     }
@@ -6239,7 +6239,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
             && uIdtVectorType == VMX_IDT_VECTORING_INFO_TYPE_NMI
             && (   enmRaise   == IEMXCPTRAISE_PREV_EVENT
                 || (fRaiseInfo & IEMXCPTRAISEINFO_NMI_PF))
-            && (pVCpu->hm.s.vmx.u32PinCtls & VMX_PIN_CTLS_VIRT_NMI))
+            && (pVCpu->hm.s.vmx.GstCtls.u32PinCtls & VMX_PIN_CTLS_VIRT_NMI))
         {
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
         }
@@ -6330,7 +6330,7 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PVMXTRANSIE
     else if (   VMX_EXIT_INT_INFO_IS_VALID(pVmxTransient->uExitIntInfo)
              && VMX_EXIT_INT_INFO_IS_NMI_UNBLOCK_IRET(pVmxTransient->uExitIntInfo)
              && uExitVector != X86_XCPT_DF
-             && (pVCpu->hm.s.vmx.u32PinCtls & VMX_PIN_CTLS_VIRT_NMI))
+             && (pVCpu->hm.s.vmx.GstCtls.u32PinCtls & VMX_PIN_CTLS_VIRT_NMI))
     {
         /*
          * Execution of IRET caused this fault when NMI blocking was in effect (i.e we're in the guest NMI handler).
@@ -6785,8 +6785,8 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
                     rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR0,            &u32Val);
                     rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, &u32Shadow);
                     VMXLOCAL_BREAK_RC(rc);
-                    u32Val = (u32Val & ~pVCpu->hm.s.vmx.u32Cr0Mask)
-                           | (u32Shadow & pVCpu->hm.s.vmx.u32Cr0Mask);
+                    u32Val = (u32Val & ~pVCpu->hm.s.vmx.GstCtls.u32Cr0Mask)
+                           | (u32Shadow & pVCpu->hm.s.vmx.GstCtls.u32Cr0Mask);
                     VMMRZCallRing3Disable(pVCpu);   /* Calls into PGM which has Log statements. */
                     CPUMSetGuestCR0(pVCpu, u32Val);
                     VMMRZCallRing3Enable(pVCpu);
@@ -6797,8 +6797,8 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, uint64_t fWhat)
                     rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR4,            &u32Val);
                     rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, &u32Shadow);
                     VMXLOCAL_BREAK_RC(rc);
-                    u32Val = (u32Val & ~pVCpu->hm.s.vmx.u32Cr4Mask)
-                           | (u32Shadow & pVCpu->hm.s.vmx.u32Cr4Mask);
+                    u32Val = (u32Val & ~pVCpu->hm.s.vmx.GstCtls.u32Cr4Mask)
+                           | (u32Shadow & pVCpu->hm.s.vmx.GstCtls.u32Cr4Mask);
                     CPUMSetGuestCR4(pVCpu, u32Val);
                 }
 
@@ -7159,7 +7159,7 @@ static int hmR0VmxLeave(PVMCPU pVCpu, bool fImportState)
     /* Restore host debug registers if necessary. We will resync on next R0 reentry. */
 #ifdef VBOX_STRICT
     if (CPUMIsHyperDebugStateActive(pVCpu))
-        Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_MOV_DR_EXIT);
+        Assert(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_MOV_DR_EXIT);
 #endif
     CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */);
     Assert(!CPUMIsGuestDebugStateActive(pVCpu) && !CPUMIsGuestDebugStateActivePending(pVCpu));
@@ -7454,10 +7454,10 @@ DECLINLINE(void) hmR0VmxSetIntWindowExitVmcs(PVMCPU pVCpu)
 {
     if (RT_LIKELY(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_INT_WINDOW_EXIT))
     {
-        if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT))
+        if (!(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT))
         {
-            pVCpu->hm.s.vmx.u32ProcCtls |= VMX_PROC_CTLS_INT_WINDOW_EXIT;
-            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+            pVCpu->hm.s.vmx.GstCtls.u32ProcCtls |= VMX_PROC_CTLS_INT_WINDOW_EXIT;
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.GstCtls.u32ProcCtls);
             AssertRC(rc);
             Log4Func(("Setup interrupt-window exiting\n"));
         }
@@ -7472,9 +7472,9 @@ DECLINLINE(void) hmR0VmxSetIntWindowExitVmcs(PVMCPU pVCpu)
  */
 DECLINLINE(void) hmR0VmxClearIntWindowExitVmcs(PVMCPU pVCpu)
 {
-    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT);
-    pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_PROC_CTLS_INT_WINDOW_EXIT;
-    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+    Assert(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT);
+    pVCpu->hm.s.vmx.GstCtls.u32ProcCtls &= ~VMX_PROC_CTLS_INT_WINDOW_EXIT;
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.GstCtls.u32ProcCtls);
     AssertRC(rc);
     Log4Func(("Cleared interrupt-window exiting\n"));
 }
@@ -7490,10 +7490,10 @@ DECLINLINE(void) hmR0VmxSetNmiWindowExitVmcs(PVMCPU pVCpu)
 {
     if (RT_LIKELY(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_NMI_WINDOW_EXIT))
     {
-        if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT))
+        if (!(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT))
         {
-            pVCpu->hm.s.vmx.u32ProcCtls |= VMX_PROC_CTLS_NMI_WINDOW_EXIT;
-            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+            pVCpu->hm.s.vmx.GstCtls.u32ProcCtls |= VMX_PROC_CTLS_NMI_WINDOW_EXIT;
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.GstCtls.u32ProcCtls);
             AssertRC(rc);
             Log4Func(("Setup NMI-window exiting\n"));
         }
@@ -7508,9 +7508,9 @@ DECLINLINE(void) hmR0VmxSetNmiWindowExitVmcs(PVMCPU pVCpu)
  */
 DECLINLINE(void) hmR0VmxClearNmiWindowExitVmcs(PVMCPU pVCpu)
 {
-    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT);
-    pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_PROC_CTLS_NMI_WINDOW_EXIT;
-    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+    Assert(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT);
+    pVCpu->hm.s.vmx.GstCtls.u32ProcCtls &= ~VMX_PROC_CTLS_NMI_WINDOW_EXIT;
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.GstCtls.u32ProcCtls);
     AssertRC(rc);
     Log4Func(("Cleared NMI-window exiting\n"));
 }
@@ -7592,7 +7592,7 @@ static uint32_t hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu)
             }
             else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
             {
-                if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+                if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
                     hmR0VmxApicSetTprThreshold(pVCpu, u8Interrupt >> 4);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
 
@@ -8008,13 +8008,13 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, uint64_t u64IntInfo, ui
  */
 static void hmR0VmxClearIntNmiWindowsVmcs(PVMCPU pVCpu)
 {
-    if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT)
+    if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_INT_WINDOW_EXIT)
     {
         hmR0VmxClearIntWindowExitVmcs(pVCpu);
         Log4Func(("Cleared interrupt window\n"));
     }
 
-    if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT)
+    if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT)
     {
         hmR0VmxClearNmiWindowExitVmcs(pVCpu);
         Log4Func(("Cleared NMI window\n"));
@@ -8480,7 +8480,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (   !pVCpu->hm.s.vmx.u64MsrApicBase
-        && (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+        && (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
         && PDMHasApic(pVM))
     {
         uint64_t const u64MsrApicBase = APICGetBaseMsrNoCheck(pVCpu);
@@ -8697,7 +8697,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     /*
      * Cache the TPR-shadow for checking on every VM-exit if it might have changed.
      */
-    if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+    if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
         pVmxTransient->u8GuestTpr = pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR];
 
     PHMPHYSCPU pHostCpu     = hmR0GetCurrentCpu();
@@ -8722,9 +8722,9 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     /*
      * Load the TSC_AUX MSR when we are not intercepting RDTSCP.
      */
-    if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_PROC_CTLS2_RDTSCP)
+    if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2 & VMX_PROC_CTLS2_RDTSCP)
     {
-        if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_RDTSC_EXIT))
+        if (!(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_RDTSC_EXIT))
         {
             bool fMsrUpdated;
             hmR0VmxImportGuestState(pVCpu, CPUMCTX_EXTRN_TSC_AUX);
@@ -8760,7 +8760,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     AssertRC(hmR0VmxCheckVmcsCtls(pVCpu));
 #endif
 #ifdef HMVMX_ALWAYS_CHECK_GUEST_STATE
-    if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS))
+    if (!(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS))
     {
         uint32_t uInvalidReason = hmR0VmxCheckGuestState(pVCpu);
         if (uInvalidReason != VMX_IGS_REASON_NOT_FOUND)
@@ -8795,8 +8795,8 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
     pVmxTransient->fVectoringPF        = false;                 /* Vectoring page-fault needs to be determined later. */
     pVmxTransient->fVectoringDoublePF  = false;                 /* Vectoring double page-fault needs to be determined later. */
 
-    if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_RDTSC_EXIT))
-        TMCpuTickSetLastSeen(pVCpu, uHostTsc + pVCpu->hm.s.vmx.u64TscOffset);
+    if (!(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_RDTSC_EXIT))
+        TMCpuTickSetLastSeen(pVCpu, uHostTsc + pVCpu->hm.s.vmx.GstCtls.u64TscOffset);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatPreExit, x);
     TMNotifyEndOfExecution(pVCpu);                                    /* Notify TM that the guest is no longer running. */
@@ -8874,7 +8874,7 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
             /*
              * Sync the TPR shadow with our APIC state.
              */
-            if (   (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+            if (   (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
                 && pVmxTransient->u8GuestTpr != pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR])
             {
                 rc = APICSetTpr(pVCpu, pVCpu->hm.s.vmx.pbVirtApic[XAPIC_OFF_TPR]);
@@ -9053,9 +9053,9 @@ static void hmR0VmxRunDebugStateInit(PVMCPU pVCpu, PVMXRUNDBGSTATE pDbgState)
     pDbgState->fCpe1Unwanted        = 0;
     pDbgState->fCpe2Extra           = 0;
     pDbgState->bmXcptExtra          = 0;
-    pDbgState->fProcCtlsInitial     = pVCpu->hm.s.vmx.u32ProcCtls;
-    pDbgState->fProcCtls2Initial    = pVCpu->hm.s.vmx.u32ProcCtls2;
-    pDbgState->bmXcptInitial        = pVCpu->hm.s.vmx.u32XcptBitmap;
+    pDbgState->fProcCtlsInitial     = pVCpu->hm.s.vmx.GstCtls.u32ProcCtls;
+    pDbgState->fProcCtls2Initial    = pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2;
+    pDbgState->bmXcptInitial        = pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap;
 }
 
 
@@ -9079,42 +9079,42 @@ static void hmR0VmxPreRunGuestDebugStateApply(PVMCPU pVCpu, PVMXRUNDBGSTATE pDbg
      * Note! We load the shadow CR0 & CR4 bits when we flag the clearing, so
      *       there should be no stale data in pCtx at this point.
      */
-    if (   (pVCpu->hm.s.vmx.u32ProcCtls & pDbgState->fCpe1Extra) != pDbgState->fCpe1Extra
-        || (pVCpu->hm.s.vmx.u32ProcCtls & pDbgState->fCpe1Unwanted))
+    if (   (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & pDbgState->fCpe1Extra) != pDbgState->fCpe1Extra
+        || (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & pDbgState->fCpe1Unwanted))
     {
-        pVCpu->hm.s.vmx.u32ProcCtls   |= pDbgState->fCpe1Extra;
-        pVCpu->hm.s.vmx.u32ProcCtls   &= ~pDbgState->fCpe1Unwanted;
-        VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
-        Log6Func(("VMX_VMCS32_CTRL_PROC_EXEC: %#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls));
+        pVCpu->hm.s.vmx.GstCtls.u32ProcCtls   |= pDbgState->fCpe1Extra;
+        pVCpu->hm.s.vmx.GstCtls.u32ProcCtls   &= ~pDbgState->fCpe1Unwanted;
+        VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.GstCtls.u32ProcCtls);
+        Log6Func(("VMX_VMCS32_CTRL_PROC_EXEC: %#RX32\n", pVCpu->hm.s.vmx.GstCtls.u32ProcCtls));
         pDbgState->fModifiedProcCtls   = true;
     }
 
-    if ((pVCpu->hm.s.vmx.u32ProcCtls2 & pDbgState->fCpe2Extra) != pDbgState->fCpe2Extra)
+    if ((pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2 & pDbgState->fCpe2Extra) != pDbgState->fCpe2Extra)
     {
-        pVCpu->hm.s.vmx.u32ProcCtls2  |= pDbgState->fCpe2Extra;
-        VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, pVCpu->hm.s.vmx.u32ProcCtls2);
-        Log6Func(("VMX_VMCS32_CTRL_PROC_EXEC2: %#RX32\n", pVCpu->hm.s.vmx.u32ProcCtls2));
+        pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2  |= pDbgState->fCpe2Extra;
+        VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2);
+        Log6Func(("VMX_VMCS32_CTRL_PROC_EXEC2: %#RX32\n", pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2));
         pDbgState->fModifiedProcCtls2  = true;
     }
 
-    if ((pVCpu->hm.s.vmx.u32XcptBitmap & pDbgState->bmXcptExtra) != pDbgState->bmXcptExtra)
+    if ((pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap & pDbgState->bmXcptExtra) != pDbgState->bmXcptExtra)
     {
-        pVCpu->hm.s.vmx.u32XcptBitmap |= pDbgState->bmXcptExtra;
-        VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
-        Log6Func(("VMX_VMCS32_CTRL_EXCEPTION_BITMAP: %#RX32\n", pVCpu->hm.s.vmx.u32XcptBitmap));
+        pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap |= pDbgState->bmXcptExtra;
+        VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap);
+        Log6Func(("VMX_VMCS32_CTRL_EXCEPTION_BITMAP: %#RX32\n", pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap));
         pDbgState->fModifiedXcptBitmap = true;
     }
 
-    if (pDbgState->fClearCr0Mask && pVCpu->hm.s.vmx.u32Cr0Mask != 0)
+    if (pDbgState->fClearCr0Mask && pVCpu->hm.s.vmx.GstCtls.u32Cr0Mask != 0)
     {
-        pVCpu->hm.s.vmx.u32Cr0Mask = 0;
+        pVCpu->hm.s.vmx.GstCtls.u32Cr0Mask = 0;
         VMXWriteVmcs32(VMX_VMCS_CTRL_CR0_MASK, 0);
         Log6Func(("VMX_VMCS_CTRL_CR0_MASK: 0\n"));
     }
 
-    if (pDbgState->fClearCr4Mask && pVCpu->hm.s.vmx.u32Cr4Mask != 0)
+    if (pDbgState->fClearCr4Mask && pVCpu->hm.s.vmx.GstCtls.u32Cr4Mask != 0)
     {
-        pVCpu->hm.s.vmx.u32Cr4Mask = 0;
+        pVCpu->hm.s.vmx.GstCtls.u32Cr4Mask = 0;
         VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, 0);
         Log6Func(("VMX_VMCS_CTRL_CR4_MASK: 0\n"));
     }
@@ -9145,23 +9145,23 @@ static VBOXSTRICTRC hmR0VmxRunDebugStateRevert(PVMCPU pVCpu, PVMXRUNDBGSTATE pDb
             pDbgState->fProcCtlsInitial |= VMX_PROC_CTLS_MOV_DR_EXIT; /* Avoid assertion in hmR0VmxLeave */
         int rc2 = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pDbgState->fProcCtlsInitial);
         AssertRCReturn(rc2, rc2);
-        pVCpu->hm.s.vmx.u32ProcCtls = pDbgState->fProcCtlsInitial;
+        pVCpu->hm.s.vmx.GstCtls.u32ProcCtls = pDbgState->fProcCtlsInitial;
     }
 
     /* We're currently the only ones messing with this one, so just restore the
        cached value and reload the field. */
     if (   pDbgState->fModifiedProcCtls2
-        && pVCpu->hm.s.vmx.u32ProcCtls2 != pDbgState->fProcCtls2Initial)
+        && pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2 != pDbgState->fProcCtls2Initial)
     {
         int rc2 = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC2, pDbgState->fProcCtls2Initial);
         AssertRCReturn(rc2, rc2);
-        pVCpu->hm.s.vmx.u32ProcCtls2 = pDbgState->fProcCtls2Initial;
+        pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2 = pDbgState->fProcCtls2Initial;
     }
 
     /* If we've modified the exception bitmap, we restore it and trigger
        reloading and partial recalculation the next time around. */
     if (pDbgState->fModifiedXcptBitmap)
-        pVCpu->hm.s.vmx.u32XcptBitmap = pDbgState->bmXcptInitial;
+        pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap = pDbgState->bmXcptInitial;
 
     return rcStrict;
 }
@@ -10576,7 +10576,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu)
         uint64_t u64Val;
         rc = VMXReadVmcs64(VMX_VMCS64_GUEST_DEBUGCTL_FULL, &u64Val);
         AssertRCBreak(rc);
-        if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
+        if (   (pVCpu->hm.s.vmx.GstCtls.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
             && (u64Val & 0xfffffe3c))                           /* Bits 31:9, bits 5:2 MBZ. */
         {
             HMVMX_ERROR_BREAK(VMX_IGS_DEBUGCTL_MSR_RESERVED);
@@ -10586,9 +10586,9 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu)
 #ifdef VBOX_STRICT
         rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY, &u32Val);
         AssertRCBreak(rc);
-        Assert(u32Val == pVCpu->hm.s.vmx.u32EntryCtls);
+        Assert(u32Val == pVCpu->hm.s.vmx.GstCtls.u32EntryCtls);
 #endif
-        bool const fLongModeGuest = RT_BOOL(pVCpu->hm.s.vmx.u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+        bool const fLongModeGuest = RT_BOOL(pVCpu->hm.s.vmx.GstCtls.u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
 
         /*
          * RIP and RFLAGS.
@@ -10657,7 +10657,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu)
         /** @todo CR3 field must be such that bits 63:52 and bits in the range
          *        51:32 beyond the processor's physical-address width are 0. */
 
-        if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
+        if (   (pVCpu->hm.s.vmx.GstCtls.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
             && (pCtx->dr[7] & X86_DR7_MBZ_MASK))
         {
             HMVMX_ERROR_BREAK(VMX_IGS_DR7_RESERVED);
@@ -10675,7 +10675,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu)
         /*
          * PERF_GLOBAL MSR.
          */
-        if (pVCpu->hm.s.vmx.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PERF_MSR)
+        if (pVCpu->hm.s.vmx.GstCtls.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PERF_MSR)
         {
             rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL, &u64Val);
             AssertRCBreak(rc);
@@ -10686,7 +10686,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu)
         /*
          * PAT MSR.
          */
-        if (pVCpu->hm.s.vmx.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PAT_MSR)
+        if (pVCpu->hm.s.vmx.GstCtls.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_PAT_MSR)
         {
             rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PAT_FULL, &u64Val);
             AssertRCBreak(rc);
@@ -10710,14 +10710,14 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu)
         /*
          * EFER MSR.
          */
-        if (pVCpu->hm.s.vmx.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
+        if (pVCpu->hm.s.vmx.GstCtls.u32EntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR)
         {
             Assert(pVM->hm.s.vmx.fSupportsVmcsEfer);
             rc = VMXReadVmcs64(VMX_VMCS64_GUEST_EFER_FULL, &u64Val);
             AssertRCBreak(rc);
             HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xfffffffffffff2fe)),
                               VMX_IGS_EFER_MSR_RESERVED);               /* Bits 63:12, bit 9, bits 7:1 MBZ. */
-            HMVMX_CHECK_BREAK(RT_BOOL(u64Val & MSR_K6_EFER_LMA) == RT_BOOL(  pVCpu->hm.s.vmx.u32EntryCtls
+            HMVMX_CHECK_BREAK(RT_BOOL(u64Val & MSR_K6_EFER_LMA) == RT_BOOL(  pVCpu->hm.s.vmx.GstCtls.u32EntryCtls
                                                                            & VMX_ENTRY_CTLS_IA32E_MODE_GUEST),
                               VMX_IGS_EFER_LMA_GUEST_MODE_MISMATCH);
             /** @todo r=ramshankar: Unrestricted check here is probably wrong, see
@@ -10986,7 +10986,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu)
         /** @todo Activity state and injecting interrupts. Left as a todo since we
          *        currently don't use activity states but ACTIVE. */
 
-        HMVMX_CHECK_BREAK(   !(pVCpu->hm.s.vmx.u32EntryCtls & VMX_ENTRY_CTLS_ENTRY_TO_SMM)
+        HMVMX_CHECK_BREAK(   !(pVCpu->hm.s.vmx.GstCtls.u32EntryCtls & VMX_ENTRY_CTLS_ENTRY_TO_SMM)
                           || u32ActivityState != VMX_VMCS_GUEST_ACTIVITY_SIPI_WAIT, VMX_IGS_ACTIVITY_STATE_SIPI_WAIT_INVALID);
 
         /* Guest interruptibility-state. */
@@ -11016,10 +11016,10 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPU pVCpu)
         /** @todo Assumes the processor is not in SMM. */
         HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI),
                           VMX_IGS_INTERRUPTIBILITY_STATE_SMI_INVALID);
-        HMVMX_CHECK_BREAK(   !(pVCpu->hm.s.vmx.u32EntryCtls & VMX_ENTRY_CTLS_ENTRY_TO_SMM)
+        HMVMX_CHECK_BREAK(   !(pVCpu->hm.s.vmx.GstCtls.u32EntryCtls & VMX_ENTRY_CTLS_ENTRY_TO_SMM)
                           || (u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI),
                              VMX_IGS_INTERRUPTIBILITY_STATE_SMI_SMM_INVALID);
-        if (   (pVCpu->hm.s.vmx.u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
+        if (   (pVCpu->hm.s.vmx.GstCtls.u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
             && VMX_ENTRY_INT_INFO_IS_VALID(u32EntryInfo)
             && VMX_ENTRY_INT_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INT_INFO_TYPE_NMI)
         {
@@ -11140,7 +11140,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     AssertRCReturn(rc, rc);
 
     uint32_t uIntType = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
-    Assert(   !(pVCpu->hm.s.vmx.u32ExitCtls & VMX_EXIT_CTLS_ACK_EXT_INT)
+    Assert(   !(pVCpu->hm.s.vmx.GstCtls.u32ExitCtls & VMX_EXIT_CTLS_ACK_EXT_INT)
            && uIntType != VMX_EXIT_INT_INFO_TYPE_EXT_INT);
     Assert(VMX_EXIT_INT_INFO_IS_VALID(pVmxTransient->uExitIntInfo));
 
@@ -11285,7 +11285,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitIntWindow(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransi
 HMVMX_EXIT_NSRC_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    if (RT_UNLIKELY(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT)))
+    if (RT_UNLIKELY(!(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT)))
     {
         AssertMsgFailed(("Unexpected NMI-window exit.\n"));
         HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
@@ -11425,7 +11425,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtsc(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     {
         /* If we get a spurious VM-exit when offsetting is enabled,
            we must reset offsetting on VM-reentry. See @bugref{6634}. */
-        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TSC_OFFSETTING)
+        if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_TSC_OFFSETTING)
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
     }
@@ -11453,7 +11453,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscp(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     {
         /* If we get a spurious VM-exit when offsetting is enabled,
            we must reset offsetting on VM-reentry. See @bugref{6634}. */
-        if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TSC_OFFSETTING)
+        if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_TSC_OFFSETTING)
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
     }
@@ -11725,7 +11725,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTripleFault(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
 HMVMX_EXIT_DECL hmR0VmxExitHlt(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_HLT_EXIT);
+    Assert(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_HLT_EXIT);
 
     int rc = hmR0VmxAdvanceGuestRip(pVCpu, pVmxTransient);
     rc    |= HMVMX_CPUMCTX_IMPORT_STATE(pVCpu, CPUMCTX_EXTRN_RFLAGS);
@@ -11906,7 +11906,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXdtrAccess(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     /* By default, we don't enable VMX_PROC_CTLS2_DESCRIPTOR_TABLE_EXIT. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitXdtrAccess);
-    if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_PROC_CTLS2_DESC_TABLE_EXIT)
+    if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2 & VMX_PROC_CTLS2_DESC_TABLE_EXIT)
         return VERR_EM_INTERPRETER;
     AssertMsgFailed(("Unexpected XDTR access\n"));
     HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
@@ -11921,7 +11921,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdrand(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     /* By default, we don't enable VMX_PROC_CTLS2_RDRAND_EXIT. */
-    if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_PROC_CTLS2_RDRAND_EXIT)
+    if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls2 & VMX_PROC_CTLS2_RDRAND_EXIT)
         return VERR_EM_INTERPRETER;
     AssertMsgFailed(("Unexpected RDRAND exit\n"));
     HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
@@ -11953,7 +11953,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     Log4Func(("ecx=%#RX32\n", idMsr));
 
 #ifdef VBOX_STRICT
-    if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
+    if (pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
         if (   hmR0VmxIsAutoLoadStoreGuestMsr(pVCpu, idMsr)
             && idMsr != MSR_K6_EFER)
@@ -12056,7 +12056,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         }
 
         /* Update MSRs that are part of the VMCS and auto-load/store area when MSR-bitmaps are not supported. */
-        if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS))
+        if (!(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS))
         {
             switch (idMsr)
             {
@@ -12155,7 +12155,7 @@ HMVMX_EXIT_DECL hmR0VmxExitPause(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_NSRC_DECL hmR0VmxExitTprBelowThreshold(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW);
+    Assert(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW);
 
     /*
      * The TPR shadow would've been synced with the APIC TPR in hmR0VmxPostRunGuest(). We'll re-evaluate
@@ -12264,7 +12264,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                 case 8:
                 {
                     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR8Write);
-                    Assert(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW));
+                    Assert(!(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW));
                     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged,
                                      HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_APIC_TPR);
                     break;
@@ -12284,7 +12284,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                    || VMX_EXIT_QUAL_CRX_REGISTER(uExitQual) != 3);
             /* CR8 reads only cause a VM-exit when the TPR shadow feature isn't enabled. */
             Assert(   VMX_EXIT_QUAL_CRX_REGISTER(uExitQual) != 8
-                   || !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW));
+                   || !(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW));
 
             rcStrict = IEMExecDecodedMovCRxRead(pVCpu, pVmxTransient->cbInstr, VMX_EXIT_QUAL_CRX_GENREG(uExitQual),
                                                 VMX_EXIT_QUAL_CRX_REGISTER(uExitQual));
@@ -12653,9 +12653,9 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitMtf(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
-    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_MONITOR_TRAP_FLAG);
-    pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_PROC_CTLS_MONITOR_TRAP_FLAG;
-    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+    Assert(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_MONITOR_TRAP_FLAG);
+    pVCpu->hm.s.vmx.GstCtls.u32ProcCtls &= ~VMX_PROC_CTLS_MONITOR_TRAP_FLAG;
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.GstCtls.u32ProcCtls);
     AssertRCReturn(rc, rc);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMtf);
     return VINF_EM_DBG_STEPPED;
@@ -12702,7 +12702,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         case VMX_APIC_ACCESS_TYPE_LINEAR_WRITE:
         case VMX_APIC_ACCESS_TYPE_LINEAR_READ:
         {
-            AssertMsg(   !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+            AssertMsg(   !(pVCpu->hm.s.vmx.GstCtls.u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
                       || VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(pVmxTransient->uExitQual) != XAPIC_OFF_TPR,
                       ("hmR0VmxExitApicAccess: can't access TPR offset while using TPR shadowing.\n"));
 
@@ -12760,11 +12760,11 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         && !pVmxTransient->fWasHyperDebugStateActive)
     {
         Assert(!DBGFIsStepping(pVCpu));
-        Assert(pVCpu->hm.s.vmx.u32XcptBitmap & RT_BIT_32(X86_XCPT_DB));
+        Assert(pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap & RT_BIT_32(X86_XCPT_DB));
 
         /* Don't intercept MOV DRx any more. */
-        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_PROC_CTLS_MOV_DR_EXIT;
-        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+        pVCpu->hm.s.vmx.GstCtls.u32ProcCtls &= ~VMX_PROC_CTLS_MOV_DR_EXIT;
+        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.GstCtls.u32ProcCtls);
         AssertRCReturn(rc, rc);
 
         /* We're playing with the host CPU state here, make sure we can't preempt or longjmp. */
@@ -13311,7 +13311,7 @@ static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
     AssertMsg(pVCpu->hm.s.fUsingDebugLoop || pVCpu->hm.s.vmx.RealMode.fRealOnV86Active,
               ("uVector=%#x u32XcptBitmap=%#X32\n",
-               VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo), pVCpu->hm.s.vmx.u32XcptBitmap));
+               VMX_EXIT_INT_INFO_VECTOR(pVmxTransient->uExitIntInfo), pVCpu->hm.s.vmx.GstCtls.u32XcptBitmap));
 #endif
 
     /* Re-inject the exception into the guest. This cannot be a double-fault condition which would have been handled in

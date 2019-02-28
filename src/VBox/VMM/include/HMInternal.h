@@ -683,6 +683,36 @@ typedef DECLCALLBACK(int) FNHMSVMVMRUN(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhy
 typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
 
 /**
+ * Cache of certain VMCS fields during execution of a guest or nested-guest.
+ */
+typedef struct VMXVMCSCTLSCACHE
+{
+    /** Cache of pin-based VM-execution controls. */
+    uint32_t                    u32PinCtls;
+    /** Cache of processor-based VM-execution controls. */
+    uint32_t                    u32ProcCtls;
+    /** Cache of secondary processor-based VM-execution controls. */
+    uint32_t                    u32ProcCtls2;
+    /** Cache of VM-entry controls. */
+    uint32_t                    u32EntryCtls;
+    /** Cache of VM-exit controls. */
+    uint32_t                    u32ExitCtls;
+    /** Cache of CR0 mask. */
+    uint32_t                    u32Cr0Mask;
+    /** Cache of CR4 mask. */
+    uint32_t                    u32Cr4Mask;
+    /** Cache of exception bitmap. */
+    uint32_t                    u32XcptBitmap;
+    /** Cache of TSC offset. */
+    uint64_t                    u64TscOffset;
+} VMXVMCSCTLSCACHE;
+/** Pointer to a VMXVMCSCTLSCACHE struct. */
+typedef VMXVMCSCTLSCACHE *PVMXVMCSCTLSCACHE;
+/** Pointer to a  VMXVMCSCTLSCACHE struct. */
+typedef const VMXVMCSCTLSCACHE *PCVMXVMCSCTLSCACHE;
+AssertCompileSizeAlignment(VMXVMCSCTLSCACHE, 8);
+
+/**
  * HM VMCPU Instance data.
  *
  * Note! If you change members of this struct, make sure to check if the
@@ -751,24 +781,10 @@ typedef struct HMCPU
             uint32_t                    u32Alignment0;
 #endif
 
-            /** Current pin-based VM-execution controls. */
-            uint32_t                    u32PinCtls;
-            /** Current processor-based VM-execution controls. */
-            uint32_t                    u32ProcCtls;
-            /** Current secondary processor-based VM-execution controls. */
-            uint32_t                    u32ProcCtls2;
-            /** Current VM-entry controls. */
-            uint32_t                    u32EntryCtls;
-            /** Current VM-exit controls. */
-            uint32_t                    u32ExitCtls;
-            /** Current CR0 mask. */
-            uint32_t                    u32Cr0Mask;
-            /** Current CR4 mask. */
-            uint32_t                    u32Cr4Mask;
-            /** Current exception bitmap. */
-            uint32_t                    u32XcptBitmap;
-            /** Padding. */
-            uint32_t                    au32Alignment0[2];
+            /** Cache of guest VMCS control fields. */
+            VMXVMCSCTLSCACHE            GstCtls;
+            /** Cache of nested-guest VMCS control fields. */
+            VMXVMCSCTLSCACHE            NstGstCtls;
 
             /** Physical address of the VM control structure (VMCS). */
             RTHCPHYS                    HCPhysVmcs;
@@ -831,8 +847,6 @@ typedef struct HMCPU
 
             /** The cached APIC-base MSR used for identifying when to map the HC physical APIC-access page. */
             uint64_t                    u64MsrApicBase;
-            /** Last use TSC offset value. (cached) */
-            uint64_t                    u64TscOffset;
 
             /** VMCS cache for batched vmread/vmwrites. */
             VMXVMCSBATCHCACHE           VmcsBatchCache;
