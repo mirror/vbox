@@ -782,8 +782,13 @@ class RemoteReporter(ReporterBase):
         dHeader['Content-Type'] = 'application/octet-stream';
         self._writeOutput('%s: _doUploadFile: sHeader=%s' % (utils.getTimePrefix(), dHeader,));
         oSrcFile.seek(0, 2);
-        self._writeOutput('%s: _doUploadFile: size=%d' % (utils.getTimePrefix(), oSrcFile.tell(),));
+        cbFileSize = oSrcFile.tell();
+        self._writeOutput('%s: _doUploadFile: size=%d' % (utils.getTimePrefix(), cbFileSize,));
         oSrcFile.seek(0);
+
+        if cbFileSize <= 0: # The Test Manager will bitch if the file size is 0, so skip uploading.
+            self._writeOutput('%s: _doUploadFile: Empty file, skipping upload' % utils.getTimePrefix());
+            return False;
 
         from common import constants;
         sUrl = self._sTmServerPath + '&' \
@@ -1759,4 +1764,3 @@ def _InitReporterModule():
 
 if __name__ != "checker": # pychecker avoidance.
     _InitReporterModule();
-
