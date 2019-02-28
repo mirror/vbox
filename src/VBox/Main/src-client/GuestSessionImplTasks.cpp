@@ -1562,7 +1562,8 @@ int GuestSessionTaskCopyFrom::Run(void)
         LogFlowFunc(("List: srcRootAbs=%s, dstRootAbs=%s\n", pList->mSrcRootAbs.c_str(), pList->mDstRootAbs.c_str()));
 
         /* Create the root directory. */
-        if (pList->mSourceSpec.enmType == FsObjType_Directory)
+        if (   pList->mSourceSpec.enmType == FsObjType_Directory
+            && pList->mSourceSpec.fDryRun == false)
         {
             rc = directoryCreateOnHost(pList->mDstRootAbs.c_str(), fDirMode, fDirCreate, fCopyIntoExisting);
             if (RT_FAILURE(rc))
@@ -1593,11 +1594,7 @@ int GuestSessionTaskCopyFrom::Run(void)
                 case RTFS_TYPE_DIRECTORY:
                     LogFlowFunc(("Directory '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
-                    {
                         rc = directoryCreateOnHost(strDstAbs.c_str(), fDirMode, fDirCreate, fCopyIntoExisting);
-                        if (RT_FAILURE(rc))
-                            break;
-                    }
                     break;
 
                 case RTFS_TYPE_FILE:
@@ -1806,10 +1803,13 @@ int GuestSessionTaskCopyTo::Run(void)
             fCopyIntoExisting = pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting;
             fFollowSymlinks   = pList->mSourceSpec.Type.Dir.fFollowSymlinks;
 
-            rc = directoryCreateOnGuest(pList->mDstRootAbs.c_str(), DirectoryCreateFlag_None, fDirMode,
-                                        pList->mSourceSpec.Type.Dir.fFollowSymlinks, fCopyIntoExisting);
-            if (RT_FAILURE(rc))
-                break;
+            if (pList->mSourceSpec.fDryRun == false)
+            {
+                rc = directoryCreateOnGuest(pList->mDstRootAbs.c_str(), DirectoryCreateFlag_None, fDirMode,
+                                            fFollowSymlinks, fCopyIntoExisting);
+                if (RT_FAILURE(rc))
+                    break;
+            }
         }
         else if (pList->mSourceSpec.enmType == FsObjType_File)
         {
