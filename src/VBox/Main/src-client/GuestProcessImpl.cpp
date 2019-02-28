@@ -2541,6 +2541,22 @@ int GuestProcessTool::exitCodeToRc(const char *pszTool, int32_t iExitCode)
             default:                 break;
         }
     }
+    else if (!RTStrICmp(pszTool, VBOXSERVICE_TOOL_MKTEMP))
+    {
+        switch (iExitCode)
+        {
+            case RTEXITCODE_FAILURE: return VERR_CANT_CREATE;
+            default:                 break;
+        }
+    }
+    else if (!RTStrICmp(pszTool, VBOXSERVICE_TOOL_RM))
+    {
+        switch (iExitCode)
+        {
+            case RTEXITCODE_FAILURE: return VERR_ACCESS_DENIED;
+            default:                 break;
+        }
+    }
 
     LogFunc(("Warning: Exit code %d not handled for tool '%s', returning VERR_GENERAL_FAILURE\n", iExitCode, pszTool));
 
