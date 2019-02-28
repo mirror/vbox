@@ -24,12 +24,10 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
-# Find the directory of this makefile.
-VBOXGUEST_DIR := $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
-
 # Linux kbuild sets this to our source directory if we are called from there
 obj ?= $(CURDIR)
 include $(obj)/Makefile-header.gmk
+VBOXGUEST_DIR = $(VBOX_MODULE_SRC_DIR)
 
 VBOXMOD_NAME = vboxguest
 VBOXMOD_OBJS = \
