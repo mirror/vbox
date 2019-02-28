@@ -36,80 +36,98 @@
 #include <linux/nfs_fs.h>
 #include <linux/vfs.h>
 
-/*
- * sf_reg_aops and sf_backing_dev_info are just quick implementations to make
- * sendfile work. For more information have a look at
- *
- *   http://us1.samba.org/samba/ftp/cifs-cvs/ols2006-fs-tutorial-smf.odp
- *
- * and the sample implementation
- *
- *   http://pserver.samba.org/samba/ftp/cifs-cvs/samplefs.tar.gz
+
+/**
+ * Convert from VBox to linux time.
  */
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-
-DECLINLINE(void) sf_ftime_from_timespec(time_t * time, RTTIMESPEC *ts)
+DECLINLINE(void) sf_ftime_from_timespec(time_t *pLinuxDst, PCRTTIMESPEC pVBoxSrc)
 {
-	int64_t t = RTTimeSpecGetNano(ts);
+	int64_t t = RTTimeSpecGetNano(pVBoxSrc);
 	do_div(t, RT_NS_1SEC);
-	*time = t;
+	*pLinuxDst = t;
 }
-
-DECLINLINE(void) sf_timespec_from_ftime(RTTIMESPEC * ts, time_t *time)
-{
-	RTTimeSpecSetNano(ts, RT_NS_1SEC_64 * *time);
-}
-
 #else	/* >= 2.6.0 */
-
 # if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
-DECLINLINE(void) sf_ftime_from_timespec(struct timespec *tv, RTTIMESPEC *ts)
+DECLINLINE(void) sf_ftime_from_timespec(struct timespec *pLinuxDst, PCRTTIMESPEC pVBoxSrc)
 # else
-DECLINLINE(void) sf_ftime_from_timespec(struct timespec64 *tv, RTTIMESPEC *ts)
+DECLINLINE(void) sf_ftime_from_timespec(struct timespec64 *pLinuxDst, PCRTTIMESPEC pVBoxSrc)
 # endif
 {
-	int64_t t = RTTimeSpecGetNano(ts);
-	tv->tv_nsec = do_div(t, RT_NS_1SEC);
-	tv->tv_sec  = t;
+	int64_t t = RTTimeSpecGetNano(pVBoxSrc);
+	pLinuxDst->tv_nsec = do_div(t, RT_NS_1SEC);
+	pLinuxDst->tv_sec  = t;
 }
-
-# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
-DECLINLINE(void) sf_timespec_from_ftime(RTTIMESPEC *ts, struct timespec *tv)
-# else
-DECLINLINE(void) sf_timespec_from_ftime(RTTIMESPEC *ts, struct timespec64 *tv)
-# endif
-{
-	RTTimeSpecSetNano(ts, tv->tv_nsec + tv->tv_sec * (int64_t)RT_NS_1SEC);
-}
-
 #endif	/* >= 2.6.0 */
 
-/* set [inode] attributes based on [info], uid/gid based on [sf_g] */
-void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO info, struct sf_glob_info *sf_g)
+
+/**
+ * Convert from linux to VBox time.
+ */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+DECLINLINE(void) sf_timespec_from_ftime(PRTTIMESPEC pVBoxDst, time_t *pLinuxSrc)
 {
-	PCSHFLFSOBJATTR attr = &info->Attr;
-	int mode;
+	RTTimeSpecSetNano(pVBoxDst, RT_NS_1SEC_64 * *pLinuxSrc);
+}
+#else	/* >= 2.6.0 */
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 18, 0)
+DECLINLINE(void) sf_timespec_from_ftime(PRTTIMESPEC pVBoxDst, struct timespec const *pLinuxSrc)
+# else
+DECLINLINE(void) sf_timespec_from_ftime(PRTTIMESPEC pVBoxDst, struct timespec64 const *pLinuxSrc)
+# endif
+{
+	RTTimeSpecSetNano(pVBoxDst, pLinuxSrc->tv_nsec + pLinuxSrc->tv_sec * (int64_t)RT_NS_1SEC);
+}
+#endif	/* >= 2.6.0 */
+
+
+/**
+ * Converts VBox access permissions  to Linux ones (mode & 0777).
+ *
+ * @note Currently identical.
+ */
+DECLINLINE(int) sf_convert_access_perms(uint32_t fAttr)
+{
+	/* Access bits should be the same: */
+	AssertCompile(RTFS_UNIX_IRUSR == S_IRUSR);
+	AssertCompile(RTFS_UNIX_IWUSR == S_IWUSR);
+	AssertCompile(RTFS_UNIX_IXUSR == S_IXUSR);
+	AssertCompile(RTFS_UNIX_IRGRP == S_IRGRP);
+	AssertCompile(RTFS_UNIX_IWGRP == S_IWGRP);
+	AssertCompile(RTFS_UNIX_IXGRP == S_IXGRP);
+	AssertCompile(RTFS_UNIX_IROTH == S_IROTH);
+	AssertCompile(RTFS_UNIX_IWOTH == S_IWOTH);
+	AssertCompile(RTFS_UNIX_IXOTH == S_IXOTH);
+
+	return fAttr & RTFS_UNIX_ALL_ACCESS_PERMS;
+}
+
+
+/**
+ * Produce the Linux mode mask, given VBox, mount options and file type.
+ */
+DECLINLINE(int) sf_convert_file_mode(uint32_t fVBoxMode, int fFixedMode, int fClearMask, int fType)
+{
+	int fLnxMode = sf_convert_access_perms(fVBoxMode);
+	if (fFixedMode != ~0)
+		fLnxMode = fFixedMode & 0777;
+	fLnxMode &= ~fClearMask;
+	fLnxMode |= fType;
+	return fLnxMode;
+}
+
+
+/**
+ * Initializes the @a inode attributes based on @a pObjInfo and @a sf_g options.
+ */
+void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO pObjInfo, struct sf_glob_info *sf_g)
+{
+	PCSHFLFSOBJATTR pAttr = &pObjInfo->Attr;
 
 	TRACE();
 
 	sf_i->ts_up_to_date = jiffies;
 	sf_i->force_restat  = 0;
-
-#define mode_set(r) attr->fMode & (RTFS_UNIX_##r) ? (S_##r) : 0;
-	mode = mode_set(IRUSR);
-	mode |= mode_set(IWUSR);
-	mode |= mode_set(IXUSR);
-
-	mode |= mode_set(IRGRP);
-	mode |= mode_set(IWGRP);
-	mode |= mode_set(IXGRP);
-
-	mode |= mode_set(IROTH);
-	mode |= mode_set(IWOTH);
-	mode |= mode_set(IXOTH);
-
-#undef mode_set
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 	inode->i_mapping->a_ops = &sf_reg_aops;
@@ -117,45 +135,29 @@ void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJIN
 	inode->i_mapping->backing_dev_info = &sf_g->bdi; /* This is needed for mmap. */
 # endif
 #endif
-
-	if (RTFS_IS_DIRECTORY(attr->fMode)) {
-		inode->i_mode = sf_g->dmode != ~0 ? (sf_g->dmode & 0777) : mode;
-		inode->i_mode &= ~sf_g->dmask;
-		inode->i_mode |= S_IFDIR;
+	if (RTFS_IS_DIRECTORY(pAttr->fMode)) {
+		inode->i_mode = sf_convert_file_mode(pAttr->fMode, sf_g->dmode, sf_g->dmask, S_IFDIR);
 		inode->i_op = &sf_dir_iops;
 		inode->i_fop = &sf_dir_fops;
+
 		/* XXX: this probably should be set to the number of entries
 		   in the directory plus two (. ..) */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
 		set_nlink(inode, 1);
-#else
-		inode->i_nlink = 1;
-#endif
 	}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
-	else if (RTFS_IS_SYMLINK(attr->fMode)) {
-		inode->i_mode = sf_g->fmode != ~0 ? (sf_g->fmode & 0777) : mode;
-		inode->i_mode &= ~sf_g->fmask;
-		inode->i_mode |= S_IFLNK;
+	else if (RTFS_IS_SYMLINK(pAttr->fMode)) {
+		/** @todo r=bird: Aren't System V symlinks w/o any mode mask? IIRC there is
+		 *        no lchmod on Linux. */
+		inode->i_mode = sf_convert_file_mode(pAttr->fMode, sf_g->fmode, sf_g->fmask, S_IFLNK);
 		inode->i_op = &sf_lnk_iops;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
 		set_nlink(inode, 1);
-# else
-		inode->i_nlink = 1;
-# endif
 	}
 #endif
 	else {
-		inode->i_mode = sf_g->fmode != ~0 ? (sf_g->fmode & 0777) : mode;
-		inode->i_mode &= ~sf_g->fmask;
-		inode->i_mode |= S_IFREG;
+		inode->i_mode = sf_convert_file_mode(pAttr->fMode, sf_g->fmode, sf_g->fmask, S_IFREG);
 		inode->i_op = &sf_reg_iops;
 		inode->i_fop = &sf_reg_fops;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
 		set_nlink(inode, 1);
-#else
-		inode->i_nlink = 1;
-#endif
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
@@ -166,7 +168,7 @@ void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJIN
 	inode->i_gid = sf_g->gid;
 #endif
 
-	inode->i_size = info->cbObject;
+	inode->i_size = pObjInfo->cbObject;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19) && !defined(KERNEL_FC6)
 	inode->i_blksize = 4096;
 #endif
@@ -174,20 +176,93 @@ void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJIN
 	inode->i_blkbits = 12;
 #endif
 	/* i_blocks always in units of 512 bytes! */
-	inode->i_blocks = (info->cbAllocated + 511) / 512;
+	inode->i_blocks = (pObjInfo->cbAllocated + 511) / 512;
 
-	sf_ftime_from_timespec(&inode->i_atime, &info->AccessTime);
-	sf_ftime_from_timespec(&inode->i_ctime, &info->ChangeTime);
-	sf_ftime_from_timespec(&inode->i_mtime, &info->ModificationTime);
+	sf_ftime_from_timespec(&inode->i_atime, &pObjInfo->AccessTime);
+	sf_ftime_from_timespec(&inode->i_ctime, &pObjInfo->ChangeTime);
+	sf_ftime_from_timespec(&inode->i_mtime, &pObjInfo->ModificationTime);
+	sf_i->BirthTime = pObjInfo->BirthTime;
 }
 
 /**
  * Update the inode with new object info from the host.
+ *
+ * Called by sf_inode_revalidate() and sf_inode_revalidate_with_handle(), the
+ * inode is probably locked...
+ *
+ * @todo sort out the inode locking situation.
  */
-void sf_update_inode(struct inode *pInode, struct sf_inode_info *pInfoInfo, PSHFLFSOBJINFO pObjInfo, struct sf_glob_info *sf_g)
+static void sf_update_inode(struct inode *pInode, struct sf_inode_info *pInodeInfo, PSHFLFSOBJINFO pObjInfo,
+			    struct sf_glob_info *sf_g, bool fInodeLocked)
 {
-	/** @todo  make lock/rcu safe.  */
-	sf_init_inode(pInode, pInfoInfo, pObjInfo, sf_g);
+	PCSHFLFSOBJATTR pAttr = &pObjInfo->Attr;
+	int fMode;
+
+	TRACE();
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+	if (!fInodeLocked)
+		inode_lock(pInode);
+#endif
+
+	/*
+	 * Calc new mode mask and update it if it changed.
+	 */
+	if (RTFS_IS_DIRECTORY(pAttr->fMode))
+		fMode = sf_convert_file_mode(pAttr->fMode, sf_g->dmode, sf_g->dmask, S_IFDIR);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
+	else if (RTFS_IS_SYMLINK(pAttr->fMode))
+		/** @todo r=bird: Aren't System V symlinks w/o any mode mask? IIRC there is
+		 *        no lchmod on Linux. */
+		fMode = sf_convert_file_mode(pAttr->fMode, sf_g->fmode, sf_g->fmask, S_IFLNK);
+#endif
+	else
+		fMode = sf_convert_file_mode(pAttr->fMode, sf_g->fmode, sf_g->fmask, S_IFREG);
+
+	if (fMode == pInode->i_mode) {
+		/* likely */
+	} else {
+		if ((fMode & S_IFMT) == (pInode->i_mode & S_IFMT))
+			pInode->i_mode = fMode;
+		else {
+			SFLOGFLOW(("sf_update_inode: Changed from %o to %o (%s)\n",
+				   pInode->i_mode & S_IFMT, fMode & S_IFMT, pInodeInfo->path->String.ach));
+			/** @todo we probably need to be more drastic... */
+			sf_init_inode(pInode, pInodeInfo, pObjInfo, sf_g);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+			if (!fInodeLocked)
+				inode_unlock(pInode);
+#endif
+			return;
+		}
+	}
+
+	/*
+	 * Update the sizes.
+	 * Note! i_blocks is always in units of 512 bytes!
+	 */
+	pInode->i_blocks = (pObjInfo->cbAllocated + 511) / 512;
+	i_size_write(pInode, pObjInfo->cbObject);
+
+	/*
+	 * Update the timestamps.
+	 */
+	sf_ftime_from_timespec(&pInode->i_atime, &pObjInfo->AccessTime);
+	sf_ftime_from_timespec(&pInode->i_ctime, &pObjInfo->ChangeTime);
+	sf_ftime_from_timespec(&pInode->i_mtime, &pObjInfo->ModificationTime);
+	pInodeInfo->BirthTime = pObjInfo->BirthTime;
+
+	/*
+	 * Mark it as up to date.
+	 */
+	pInodeInfo->ts_up_to_date = jiffies;
+	pInodeInfo->force_restat  = 0;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+	if (!fInodeLocked)
+		inode_unlock(pInode);
+#endif
 }
 
 
@@ -234,15 +309,11 @@ int sf_stat(const char *caller, struct sf_glob_info *sf_g,
 }
 
 /**
- * Revalidate an inode.
+ * Revalidate an inode, inner worker.
  *
- * This is called directly as inode-op on 2.4, indirectly as dir-op
- * sf_dentry_revalidate() on 2.4/2.6, indirectly as inode-op through
- * sf_getattr() on 2.6.  The job is to find out whether dentry/inode is still
- * valid.  The test fails if @a dentry does not have an inode or sf_stat() is
- * unsuccessful, otherwise we return success and update inode attributes.
+ * @sa sf_inode_revalidate()
  */
-int sf_inode_revalidate(struct dentry *dentry)
+int sf_inode_revalidate_worker(struct dentry *dentry, bool fForced)
 {
 	int rc;
 	struct inode *pInode = dentry ? dentry->d_inode : NULL;
@@ -255,7 +326,8 @@ int sf_inode_revalidate(struct dentry *dentry)
 		/*
 		 * Can we get away without any action here?
 		 */
-		if (   !sf_i->force_restat
+		if (   !fForced
+		    && !sf_i->force_restat
 		    && jiffies - sf_i->ts_up_to_date < sf_g->ttl)
 			rc = 0;
 		else {
@@ -274,7 +346,7 @@ int sf_inode_revalidate(struct dentry *dentry)
 						/*
 						 * Reset the TTL and copy the info over into the inode structure.
 						 */
-						sf_update_inode(pInode, sf_i, &pReq->ObjInfo, sf_g);
+						sf_update_inode(pInode, sf_i, &pReq->ObjInfo, sf_g, true /*fInodeLocked??*/);
 					} else if (rc == VERR_INVALID_HANDLE) {
 						rc = -ENOENT; /* Restore.*/
 					} else {
@@ -284,7 +356,7 @@ int sf_inode_revalidate(struct dentry *dentry)
 					VbglR0PhysHeapFree(pReq);
 				} else
 					rc = -ENOMEM;
-				sf_handle_release(pHandle, sf_g, "sf_inode_revalidate");
+				sf_handle_release(pHandle, sf_g, "sf_inode_revalidate_worker");
 
 			} else {
 				/* Query via path. */
@@ -302,7 +374,8 @@ int sf_inode_revalidate(struct dentry *dentry)
 							/*
 							 * Reset the TTL and copy the info over into the inode structure.
 							 */
-							sf_update_inode(pInode, sf_i, &pReq->CreateParms.Info, sf_g);
+							sf_update_inode(pInode, sf_i, &pReq->CreateParms.Info,
+									sf_g, true /*fInodeLocked??*/);
 							rc = 0;
 						} else {
 							rc = -ENOENT;
@@ -326,11 +399,27 @@ int sf_inode_revalidate(struct dentry *dentry)
 	return rc;
 }
 
+
+/**
+ * Revalidate an inode.
+ *
+ * This is called directly as inode-op on 2.4, indirectly as dir-op
+ * sf_dentry_revalidate() on 2.4/2.6.  The job is to find out whether
+ * dentry/inode is still valid.  The test fails if @a dentry does not have an
+ * inode or sf_stat() is unsuccessful, otherwise we return success and update
+ * inode attributes.
+ */
+int sf_inode_revalidate(struct dentry *dentry)
+{
+    return sf_inode_revalidate_worker(dentry, false /*fForced*/);
+}
+
+
 /**
  * Similar to sf_inode_revalidate, but uses associated host file handle as that
  * is quite a bit faster.
  */
-int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced)
+int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced, bool fInodeLocked)
 {
 	int err;
 	struct inode *pInode = dentry ? dentry->d_inode : NULL;
@@ -362,7 +451,7 @@ int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile,
 					/*
 					 * Reset the TTL and copy the info over into the inode structure.
 					 */
-					sf_update_inode(pInode, sf_i, &pReq->ObjInfo, sf_g);
+					sf_update_inode(pInode, sf_i, &pReq->ObjInfo, sf_g, fInodeLocked);
 				} else {
 					LogFunc(("VbglR0SfHostReqQueryObjInfo failed on %#RX64: %Rrc\n", hHostFile, err));
 					err = -RTErrConvertToErrno(err);
@@ -399,9 +488,41 @@ int sf_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
 	SFLOGFLOW(("sf_getattr: dentry=%p\n", dentry));
 # endif
 
-	rc = sf_inode_revalidate(dentry);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+	/*
+	 * With the introduction of statx() userland can control whether we
+	 * update the inode information or not.
+	 */
+	switch (flags & AT_STATX_SYNC_TYPE) {
+		default:
+			rc = sf_inode_revalidate_worker(dentry, false /*fForced*/);
+			break;
+
+		case AT_STATX_FORCE_SYNC:
+			rc = sf_inode_revalidate_worker(dentry, true /*fForced*/);
+			break;
+
+		case AT_STATX_DONT_SYNC:
+			rc = 0;
+			break;
+	}
+# else
+	rc = sf_inode_revalidate_worker(dentry, false /*fForced*/);
+# endif
 	if (rc == 0) {
+		/* Do generic filling in of info. */
 		generic_fillattr(dentry->d_inode, kstat);
+
+		/* Add birth time. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+		if (dentry->d_inode) {
+			struct sf_inode_info *pInodeInfo = GET_INODE_INFO(dentry->d_inode);
+			if (pInodeInfo) {
+				sf_ftime_from_timespec(&kstat->btime, &pInodeInfo->BirthTime);
+				kstat->result_mask |= STATX_BTIME;
+			}
+		}
+#endif
 
 		/*
 		 * FsPerf shows the following numbers for sequential file access against
@@ -553,8 +674,7 @@ int sf_setattr(struct dentry *dentry, struct iattr *iattr)
 	 * What's more, given that the SHFL_FN_CREATE call succeeded, we know that the
 	 * dentry and all its parent entries are valid and could touch their timestamps
 	 * extending their TTL (CIFS does that). */
-	sf_i->force_restat = 1; /* temp fix */
-	return sf_inode_revalidate(dentry);
+	return sf_inode_revalidate_worker(dentry, true /*fForced*/);
 
  fail1:
 	vrc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, hHostFile);
@@ -974,7 +1094,7 @@ int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS * stat)
 /**
  * This is called during name resolution/lookup to check if the @a dentry in the
  * cache is still valid.  The actual validation is job is handled by
- * sf_inode_revalidate().
+ * sf_inode_revalidate_worker().
  */
 static int
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
@@ -1028,7 +1148,7 @@ sf_dentry_revalidate(struct dentry *dentry, int flags)
 			if (cJiffiesAge < sf_g->ttl) {
 				SFLOGFLOW(("sf_dentry_revalidate: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, sf_g->ttl));
 				rc = 1;
-			} else if (!sf_inode_revalidate(dentry /** @todo force */)) {
+			} else if (!sf_inode_revalidate_worker(dentry, true /*fForced*/)) {
 				sf_dentry_set_update_jiffies(dentry, jiffies); /** @todo get jiffies from inode. */
 				SFLOGFLOW(("sf_dentry_revalidate: age: %lu vs. TTL %lu -> reval -> 1\n", cJiffiesAge, sf_g->ttl));
 				rc = 1;
@@ -1078,7 +1198,11 @@ sf_dentry_revalidate(struct dentry *dentry, int flags)
 #ifdef SFLOG_ENABLED
 
 /** For logging purposes only. */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
 static int sf_dentry_delete(const struct dentry *pDirEntry)
+# else
+static int sf_dentry_delete(struct dentry *pDirEntry)
+# endif
 {
 	SFLOGFLOW(("sf_dentry_delete: %p\n", pDirEntry));
 	return 0;

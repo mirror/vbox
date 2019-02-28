@@ -51,7 +51,36 @@
 
 #include <VBox/VBoxGuestLibSharedFolders.h>
 #include <VBox/VBoxGuestLibSharedFoldersInline.h>
+#include <iprt/asm.h>
 #include "vbsfmount.h"
+
+
+/*
+ * inode compatibility glue.
+ */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+
+DECLINLINE(loff_t) i_size_read(struct inode *pInode)
+{
+	AssertCompile(sizeof(loff_t) == sizeof(uint64_t));
+	return ASMAtomicReadU64((uint64_t volatile *)&pInode->i_size);
+}
+
+DECLINLINE(void) i_size_write(struct inode *pInode, loff_t cbNew)
+{
+	AssertCompile(sizeof(pInode->i_size) == sizeof(uint64_t));
+	ASMAtomicWriteU64((uint64_t volatile *)&pInode->i_size, cbNew);
+}
+
+#endif /* < 2.6.0 */
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0)
+DECLINLINE(void) set_nlink(struct inode *pInode, unsigned int cLinks)
+{
+	pInode->i_nlink = cLinks;
+}
+#endif
+
 
 #define DIR_BUFFER_SIZE (16*_1K)
 
@@ -120,11 +149,13 @@ struct sf_inode_info {
 	/** Which file */
 	SHFLSTRING *path;
 	/** Some information was changed, update data on next revalidate */
-	int force_restat;
+	bool force_restat;
 	/** directory content changed, update the whole directory on next sf_getdent */
-	int force_reread;
+	bool force_reread;
 	/** The timestamp (jiffies) where the inode info was last updated. */
-	unsigned long ts_up_to_date;
+	unsigned long           ts_up_to_date;
+	/** The birth time. */
+	RTTIMESPEC              BirthTime;
 
 	/** handle valid if a file was created with sf_create_aux until it will
 	 * be opened with sf_reg_open()
@@ -264,7 +295,8 @@ extern void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFL
 extern int sf_stat(const char *caller, struct sf_glob_info *sf_g,
 		   SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
 extern int sf_inode_revalidate(struct dentry *dentry);
-int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced);
+extern int sf_inode_revalidate_worker(struct dentry *dentry, bool fForced);
+extern int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced, bool fInodeLocked);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 extern int sf_getattr(const struct path *path, struct kstat *kstat,
