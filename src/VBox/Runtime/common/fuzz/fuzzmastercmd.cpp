@@ -885,7 +885,7 @@ static int rtFuzzCmdMasterProcessJsonReqSaveState(PRTFUZZCMDMASTER pThis, RTJSON
 
             void *pvState = NULL;
             size_t cbState = 0;
-            rc = RTFuzzCtxStateExport(hFuzzCtx, &pvState, &cbState);
+            rc = RTFuzzCtxStateExportToMem(hFuzzCtx, &pvState, &cbState);
             if (RT_SUCCESS(rc))
             {
                 /* Encode to base64. */

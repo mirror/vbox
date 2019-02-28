@@ -132,7 +132,7 @@ static RTEXITCODE rtFuzzCmdClientRun(PRTFUZZCMDCLIENT pThis)
                     rc = RTVfsIoStrmRead(pThis->hVfsStdIn, pvFuzzCtxState, cbFuzzCtxState, true /*fBlocking*/, NULL);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = RTFuzzCtxCreateFromState(&pThis->hFuzzCtx, pvFuzzCtxState, cbFuzzCtxState);
+                        rc = RTFuzzCtxCreateFromStateMem(&pThis->hFuzzCtx, pvFuzzCtxState, cbFuzzCtxState);
                         if (RT_SUCCESS(rc))
                             rc = rtFuzzCmdClientMainloop(pThis);
                     }

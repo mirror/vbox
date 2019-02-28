@@ -77,6 +77,7 @@ typedef enum RTFUZZCTXTYPE
     RTFUZZCTXTYPE_32BIT_HACK = 0x7fffffff
 } RTFUZZCTXTYPE;
 
+
 /** @name RTFUZZCTX_F_XXX - Flags for RTFuzzCtxCfgSetBehavioralFlags
  * @{ */
 /** Adds all generated inputs automatically to the input corpus for the owning context. */
@@ -84,6 +85,35 @@ typedef enum RTFUZZCTXTYPE
 /** All valid behavioral modification flags. */
 #define RTFUZZCTX_F_BEHAVIORAL_VALID                                (RTFUZZCTX_F_BEHAVIORAL_ADD_INPUT_AUTOMATICALLY_TO_CORPUS)
 /** @} */
+
+
+/**
+ * Fuzzing context state export callback.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            Handle of the fuzzing context.
+ * @param   pvBuf               The data to write.
+ * @param   cbWrite             Number of bytes to write.
+ * @param   pvUser              Opaque user data passed in RTFuzzCtxStateExport().
+ */
+typedef DECLCALLBACK(int) FNRTFUZZCTXEXPORT(RTFUZZCTX hFuzzCtx, const void *pvBuf, size_t cbWrite, void *pvUser);
+/** Pointer to a fuzzing context state export callback. */
+typedef FNRTFUZZCTXEXPORT *PFNRTFUZZCTXEXPORT;
+
+/**
+ * Fuzzing context state import callback.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            Handle of the fuzzing context.
+ * @param   pvBuf               Where to store the read data.
+ * @param   cbRead              Number of bytes to read.
+ * @param   pcbRead             Where to store the amount of data written, optional.
+ * @param   pvUser              Opaque user data passed in RTFuzzCtxCreateFromState().
+ */
+typedef DECLCALLBACK(int) FNRTFUZZCTXIMPORT(RTFUZZCTX hFuzzCtx, void *pvBuf, size_t cbRead, size_t *pcbRead, void *pvUser);
+/** Pointer to a fuzzing context state export callback. */
+typedef FNRTFUZZCTXIMPORT *PFNRTFUZZCTXIMPORT;
+
 
 /**
  * Creates a new fuzzing context.
@@ -99,10 +129,20 @@ RTDECL(int) RTFuzzCtxCreate(PRTFUZZCTX phFuzzCtx, RTFUZZCTXTYPE enmType);
  *
  * @returns IPRT status code.
  * @param   phFuzzCtx           Where to store the handle to the fuzzing context on success.
- * @param   pvState             The pointer to the fuzzing state.
- * @param   cbState             Size of the state buffer in bytes.
+ * @param   pfnImport           State import callback.
+ * @param   pvUser              Opaque user data to pass to the callback.
  */
-RTDECL(int) RTFuzzCtxCreateFromState(PRTFUZZCTX phFuzzCtx, const void *pvState, size_t cbState);
+RTDECL(int) RTFuzzCtxCreateFromState(PRTFUZZCTX phFuzzCtx, PFNRTFUZZCTXIMPORT pfnImport, void *pvUser);
+
+/**
+ * Creates a new fuzzing context loading the state from the given memory buffer.
+ *
+ * @returns IPRT status code.
+ * @param   phFuzzCtx           Where to store the handle to the fuzzing context on success.
+ * @param   pvState             Pointer to the memory containing the state.
+ * @param   cbState             Size of the state buffer.
+ */
+RTDECL(int) RTFuzzCtxCreateFromStateMem(PRTFUZZCTX phFuzzCtx, const void *pvState, size_t cbState);
 
 /**
  * Creates a new fuzzing context loading the state from the given file.
@@ -134,10 +174,21 @@ RTDECL(uint32_t) RTFuzzCtxRelease(RTFUZZCTX hFuzzCtx);
  *
  * @returns IPRT statuse code
  * @param   hFuzzCtx            The fuzzing context to export.
- * @param   ppvState            Where to store the buffer of the state on success, free with RTMemFree().
- * @param   pcbState            Where to store the size of the context on success.
+ * @param   pfnExport           Export callback.
+ * @param   pvUser              Opaque user data to pass to the callback.
  */
-RTDECL(int) RTFuzzCtxStateExport(RTFUZZCTX hFuzzCtx, void **ppvState, size_t *pcbState);
+RTDECL(int) RTFuzzCtxStateExport(RTFUZZCTX hFuzzCtx, PFNRTFUZZCTXEXPORT pfnExport, void *pvUser);
+
+/**
+ * Exports the given fuzzing context state to memory allocating the buffer.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            The fuzzing context to export.
+ * @param   ppvState            Where to store the pointer to the memory containing state on success.
+ *                              Free with RTMemFree().
+ * @param   pcbState            Where to store the size of the state in bytes.
+ */
+RTDECL(int) RTFuzzCtxStateExportToMem(RTFUZZCTX hFuzzCtx, void **ppvState, size_t *pcbState);
 
 /**
  * Exports the given fuzzing context state to the given file.

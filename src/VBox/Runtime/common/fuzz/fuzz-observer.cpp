@@ -59,6 +59,8 @@
 /** Poll ID for the writing end of the stdin pipe to the client process. */
 #define RTFUZZOBS_EXEC_CTX_POLL_ID_STDIN  2
 
+/** Length of the input queue for an observer thread. */
+# define RTFUZZOBS_THREAD_INPUT_QUEUE_MAX       UINT32_C(5)
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -80,12 +82,14 @@ typedef struct RTFUZZOBSTHRD
     volatile bool               fShutdown;
     /** Pointer to te global observer state. */
     PRTFUZZOBSINT               pFuzzObs;
-    /** Current fuzzer input. */
-    RTFUZZINPUT                 hFuzzInput;
-    /** Flag whether to keep the input. */
-    bool                        fKeepInput;
-    /** Flag whether a new input is waiting. */
-    volatile bool               fNewInput;
+    /** Number of inputs in the queue. */
+    volatile uint32_t           cInputs;
+    /** Where to insert the next input. */
+    volatile uint32_t           offQueueInputW;
+    /** Where to retrieve the next input from. */
+    volatile uint32_t           offQueueInputR;
+    /** The input queue for this thread. */
+    RTFUZZINPUT                 ahQueueInput[RTFUZZOBS_THREAD_INPUT_QUEUE_MAX];
 } RTFUZZOBSTHRD;
 /** Pointer to an observer thread state. */
 typedef RTFUZZOBSTHRD *PRTFUZZOBSTHRD;
@@ -669,7 +673,7 @@ static int rtFuzzObsExecCtxClientRunFuzzingAware(PRTFUZZOBSINT pThis, PRTFUZZOBS
         /* Send the initial fuzzing context state over to the client. */
         void *pvState = NULL;
         size_t cbState = 0;
-        rc = RTFuzzCtxStateExport(pThis->hFuzzCtx, &pvState, &cbState);
+        rc = RTFuzzCtxStateExportToMem(pThis->hFuzzCtx, &pvState, &cbState);
         if (RT_SUCCESS(rc))
         {
             uint32_t cbStateWr = (uint32_t)cbState;
@@ -840,16 +844,26 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
         char szInput[RTPATH_MAX];
 
         /* Wait for work. */
-        rc = RTThreadUserWait(hThrd, RT_INDEFINITE_WAIT);
-        AssertRC(rc);
+        if (!ASMAtomicReadU32(&pObsThrd->cInputs))
+        {
+            rc = RTThreadUserWait(hThrd, RT_INDEFINITE_WAIT);
+            AssertRC(rc);
+        }
 
         if (pObsThrd->fShutdown)
             break;
 
-        if (!ASMAtomicXchgBool(&pObsThrd->fNewInput, false))
+        if (!ASMAtomicReadU32(&pObsThrd->cInputs))
             continue;
 
-        AssertPtr(pObsThrd->hFuzzInput);
+        uint32_t offRead = ASMAtomicReadU32(&pObsThrd->offQueueInputR);
+        RTFUZZINPUT hFuzzInput = pObsThrd->ahQueueInput[offRead];
+
+        ASMAtomicDecU32(&pObsThrd->cInputs);
+        offRead = (offRead + 1) % RT_ELEMENTS(pObsThrd->ahQueueInput);
+        ASMAtomicWriteU32(&pObsThrd->offQueueInputR, offRead);
+        if (!ASMAtomicBitTestAndSet(&pThis->bmEvt, pObsThrd->idObs))
+            RTSemEventSignal(pThis->hEvtGlobal);
 
         if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_FILE)
         {
@@ -862,7 +876,7 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
             rc = RTPathJoin(szInput, sizeof(szInput), pThis->pszTmpDir, &szFilename[0]);
             AssertRC(rc);
 
-            rc = RTFuzzInputWriteToFile(pObsThrd->hFuzzInput, &szInput[0]);
+            rc = RTFuzzInputWriteToFile(hFuzzInput, &szInput[0]);
             if (RT_SUCCESS(rc))
             {
                 RTFUZZOBSVARIABLE aVar[2] = {
@@ -874,7 +888,7 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
         }
         else if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_STDIN)
         {
-            rc = RTFuzzInputQueryBlobData(pObsThrd->hFuzzInput, (void **)&pExecCtx->pbInputCur, &pExecCtx->cbInputLeft);
+            rc = RTFuzzInputQueryBlobData(hFuzzInput, (void **)&pExecCtx->pbInputCur, &pExecCtx->cbInputLeft);
             if (RT_SUCCESS(rc))
                 rc = rtFuzzObsExecCtxArgvPrepare(pThis, pExecCtx, NULL);
         }
@@ -896,25 +910,23 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
                 if (ProcSts.enmReason != RTPROCEXITREASON_NORMAL)
                 {
                     ASMAtomicIncU32(&pThis->Stats.cFuzzedInputsCrash);
-                    rc = rtFuzzObsAddInputToResults(pThis, pObsThrd->hFuzzInput, pExecCtx);
+                    rc = rtFuzzObsAddInputToResults(pThis, hFuzzInput, pExecCtx);
                 }
             }
             else if (rc == VERR_TIMEOUT)
             {
                 ASMAtomicIncU32(&pThis->Stats.cFuzzedInputsHang);
-                rc = rtFuzzObsAddInputToResults(pThis, pObsThrd->hFuzzInput, pExecCtx);
+                rc = rtFuzzObsAddInputToResults(pThis, hFuzzInput, pExecCtx);
             }
             else
                 AssertFailed();
 
-            ASMAtomicXchgBool(&pObsThrd->fKeepInput, true);
+            RTFuzzInputAddToCtxCorpus(hFuzzInput);
+            RTFuzzInputRelease(hFuzzInput);
 
             if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_FILE)
                 RTFileDelete(&szInput[0]);
         }
-
-        ASMAtomicBitSet(&pThis->bmEvt, pObsThrd->idObs);
-        RTSemEventSignal(pThis->hEvtGlobal);
     }
 
     rtFuzzObsExecCtxDestroy(pThis, pExecCtx);
@@ -923,10 +935,44 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
 
 
 /**
+ * Fills the input queue of the given observer thread until it is full.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               Pointer to the observer instance data.
+ * @param   pObsThrd            The observer thread instance to fill.
+ */
+static int rtFuzzObsMasterInputQueueFill(PRTFUZZOBSINT pThis, PRTFUZZOBSTHRD pObsThrd)
+{
+    int rc = VINF_SUCCESS;
+    uint32_t cInputsAdded = 0;
+    uint32_t cInputsAdd = RTFUZZOBS_THREAD_INPUT_QUEUE_MAX - ASMAtomicReadU32(&pObsThrd->cInputs);
+    uint32_t offW = ASMAtomicReadU32(&pObsThrd->offQueueInputW);
+
+    while (   cInputsAdded < cInputsAdd
+           && RT_SUCCESS(rc))
+    {
+        RTFUZZINPUT hFuzzInput = NIL_RTFUZZINPUT;
+        rc = RTFuzzCtxInputGenerate(pThis->hFuzzCtx, &hFuzzInput);
+        if (RT_SUCCESS(rc))
+        {
+            pObsThrd->ahQueueInput[offW] = hFuzzInput;
+            offW = (offW + 1) % RTFUZZOBS_THREAD_INPUT_QUEUE_MAX;
+            cInputsAdded++;
+        }
+    }
+
+    ASMAtomicWriteU32(&pObsThrd->offQueueInputW, offW);
+    ASMAtomicAddU32(&pObsThrd->cInputs, cInputsAdded);
+
+    return rc;
+}
+
+
+/**
  * Fuzzing observer master worker loop.
  *
  * @returns IPRT status code.
- * @param   hThread               The thread handle.
+ * @param   hThread             The thread handle.
  * @param   pvUser              Opaque user data.
  */
 static DECLCALLBACK(int) rtFuzzObsMasterLoop(RTTHREAD hThread, void *pvUser)
@@ -949,24 +995,9 @@ static DECLCALLBACK(int) rtFuzzObsMasterLoop(RTTHREAD hThread, void *pvUser)
                 /* Create a new input for this observer and kick it. */
                 PRTFUZZOBSTHRD pObsThrd = &pThis->paObsThreads[idxObs];
 
-                /* Release the old input. */
-                if (pObsThrd->hFuzzInput)
-                {
-                    if (pObsThrd->fKeepInput)
-                    {
-                        int rc2 = RTFuzzInputAddToCtxCorpus(pObsThrd->hFuzzInput);
-                        Assert(RT_SUCCESS(rc2) || rc2 == VERR_ALREADY_EXISTS); RT_NOREF(rc2);
-                        pObsThrd->fKeepInput= false;
-                    }
-                    RTFuzzInputRelease(pObsThrd->hFuzzInput);
-                }
-
-                rc = RTFuzzCtxInputGenerate(pThis->hFuzzCtx, &pObsThrd->hFuzzInput);
+                rc = rtFuzzObsMasterInputQueueFill(pThis, pObsThrd);
                 if (RT_SUCCESS(rc))
-                {
-                    ASMAtomicWriteBool(&pObsThrd->fNewInput, true);
                     RTThreadUserSignal(pObsThrd->hThread);
-                }
             }
 
             idxObs++;
@@ -990,10 +1021,12 @@ static DECLCALLBACK(int) rtFuzzObsMasterLoop(RTTHREAD hThread, void *pvUser)
  */
 static int rtFuzzObsWorkerThreadInit(PRTFUZZOBSINT pThis, uint32_t idObs, PRTFUZZOBSTHRD pObsThrd)
 {
-    pObsThrd->pFuzzObs   = pThis;
-    pObsThrd->hFuzzInput = NULL;
-    pObsThrd->idObs      = idObs;
-    pObsThrd->fShutdown  = false;
+    pObsThrd->pFuzzObs       = pThis;
+    pObsThrd->idObs          = idObs;
+    pObsThrd->fShutdown      = false;
+    pObsThrd->cInputs        = 0;
+    pObsThrd->offQueueInputW = 0;
+    pObsThrd->offQueueInputR = 0;
 
     ASMAtomicBitSet(&pThis->bmEvt, idObs);
     return RTThreadCreate(&pObsThrd->hThread, rtFuzzObsWorkerLoop, pObsThrd, 0, RTTHREADTYPE_IO,
@@ -1317,8 +1350,6 @@ RTDECL(int) RTFuzzObsExecStop(RTFUZZOBS hFuzzObs)
             ASMAtomicXchgBool(&pThrd->fShutdown, true);
             RTThreadUserSignal(pThrd->hThread);
             RTThreadWait(pThrd->hThread, RT_INDEFINITE_WAIT, NULL);
-            if (pThrd->hFuzzInput)
-                RTFuzzInputRelease(pThrd->hFuzzInput);
         }
 
         RTMemFree(pThis->paObsThreads);
