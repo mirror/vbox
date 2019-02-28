@@ -59,7 +59,11 @@
 struct sf_glob_info {
 	VBGLSFMAP map;
 	struct nls_table *nls;
-	int ttl;
+	/** time-to-live value for direntry and inode info in jiffies.
+	 * Zero == disabled. */
+	unsigned long ttl;
+	/** The mount option value for /proc/mounts. */
+	int ttl_msec;
 	int uid;
 	int gid;
 	int dmode;
@@ -119,6 +123,8 @@ struct sf_inode_info {
 	int force_restat;
 	/** directory content changed, update the whole directory on next sf_getdent */
 	int force_reread;
+	/** The timestamp (jiffies) where the inode info was last updated. */
+	unsigned long ts_up_to_date;
 
 	/** handle valid if a file was created with sf_create_aux until it will
 	 * be opened with sf_reg_open()
@@ -148,12 +154,68 @@ struct sf_dir_buf {
 };
 
 /**
- * VBox specific infor fore a regular file.
+ * VBox specific information for a regular file.
  */
 struct sf_reg_info {
 	/** Handle tracking structure. */
 	struct sf_handle        Handle;
 };
+
+/**
+ * Sets the update-jiffies value for a dentry.
+ *
+ * This is used together with sf_glob_info::ttl to reduce re-validation of
+ * dentry structures while walking.
+ *
+ * This used to be living in d_time, but since 4.9.0 that seems to have become
+ * unfashionable and d_fsdata is now used to for this purpose.  We do this all
+ * the way back, since d_time seems only to have been used by the file system
+ * specific code (at least going back to 2.4.0).
+ */
+DECLINLINE(void) sf_dentry_set_update_jiffies(struct dentry *pDirEntry, unsigned long uToSet)
+{
+    pDirEntry->d_fsdata = (void *)uToSet;
+}
+
+/**
+ * Get the update-jiffies value for a dentry.
+ */
+DECLINLINE(unsigned long) sf_dentry_get_update_jiffies(struct dentry *pDirEntry)
+{
+    return (unsigned long)pDirEntry->d_fsdata;
+}
+
+/**
+ * Increase the time-to-live of @a pDirEntry and all ancestors.
+ * @param   pDirEntry           The directory entry cache entry which ancestors
+ *      			we should increase the TTL for.
+ */
+DECLINLINE(void) sf_dentry_chain_increase_ttl(struct dentry *pDirEntry)
+{
+#ifdef VBOX_STRICT
+	struct super_block * const pSuper = pDirEntry->d_sb;
+#endif
+	unsigned long const        uToSet = jiffies;
+	do {
+		Assert(pDirEntry->d_sb == pSuper);
+		sf_dentry_set_update_jiffies(pDirEntry, uToSet);
+		pDirEntry = pDirEntry->d_parent;
+	} while (!IS_ROOT(pDirEntry));
+}
+
+/**
+ * Increase the time-to-live of all ancestors.
+ * @param   pDirEntry           The directory entry cache entry which ancestors
+ *      			we should increase the TTL for.
+ */
+DECLINLINE(void) sf_dentry_chain_increase_parent_ttl(struct dentry *pDirEntry)
+{
+	Assert(!pDirEntry->d_parent || pDirEntry->d_parent->d_sb == pDirEntry->d_sb);
+	pDirEntry = pDirEntry->d_parent;
+	if (pDirEntry)
+	    sf_dentry_chain_increase_ttl(pDirEntry);
+}
+
 
 /* globals */
 extern VBGLSFCLIENT client_handle;
@@ -198,8 +260,7 @@ DECLINLINE(uint32_t) sf_handle_release(struct sf_handle *pHandle, struct sf_glob
 	return sf_handle_release_slow(pHandle, sf_g, pszCaller);
 }
 
-extern void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
-			  PSHFLFSOBJINFO info);
+extern void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO info, struct sf_glob_info *sf_g);
 extern int sf_stat(const char *caller, struct sf_glob_info *sf_g,
 		   SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
 extern int sf_inode_revalidate(struct dentry *dentry);
@@ -245,9 +306,13 @@ int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS * stat);
 #if 1
 # define TRACE()          LogFunc(("tracepoint\n"))
 # define SFLOGFLOW(aArgs) Log(aArgs)
+# ifdef LOG_ENABLED
+#  define SFLOG_ENABLED   1
+# endif
 #else
 # define TRACE()          RTLogBackdoorPrintf("%s: tracepoint\n", __FUNCTION__)
 # define SFLOGFLOW(aArgs) RTLogBackdoorPrintf aArgs
+# define SFLOG_ENABLED    1
 #endif
 
 /* Following casts are here to prevent assignment of void * to

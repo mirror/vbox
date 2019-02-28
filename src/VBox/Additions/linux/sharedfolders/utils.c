@@ -86,15 +86,15 @@ DECLINLINE(void) sf_timespec_from_ftime(RTTIMESPEC *ts, struct timespec64 *tv)
 #endif	/* >= 2.6.0 */
 
 /* set [inode] attributes based on [info], uid/gid based on [sf_g] */
-void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
-		   PSHFLFSOBJINFO info)
+void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO info, struct sf_glob_info *sf_g)
 {
-	PSHFLFSOBJATTR attr;
+	PCSHFLFSOBJATTR attr = &info->Attr;
 	int mode;
 
 	TRACE();
 
-	attr = &info->Attr;
+	sf_i->ts_up_to_date = jiffies;
+	sf_i->force_restat  = 0;
 
 #define mode_set(r) attr->fMode & (RTFS_UNIX_##r) ? (S_##r) : 0;
 	mode = mode_set(IRUSR);
@@ -184,10 +184,10 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
 /**
  * Update the inode with new object info from the host.
  */
-void sf_update_inode(struct inode *pInode, PSHFLFSOBJINFO pObjInfo, struct sf_glob_info *sf_g)
+void sf_update_inode(struct inode *pInode, struct sf_inode_info *pInfoInfo, PSHFLFSOBJINFO pObjInfo, struct sf_glob_info *sf_g)
 {
 	/** @todo  make lock/rcu safe.  */
-	sf_init_inode(sf_g, pInode, pObjInfo);
+	sf_init_inode(pInode, pInfoInfo, pObjInfo, sf_g);
 }
 
 
@@ -255,7 +255,7 @@ int sf_inode_revalidate(struct dentry *dentry)
 		 * Can we get away without any action here?
 		 */
 		if (   !sf_i->force_restat
-		    && jiffies - dentry->d_time < sf_g->ttl)
+		    && jiffies - sf_i->ts_up_to_date < sf_g->ttl)
 			rc = 0;
 		else {
 			/*
@@ -273,8 +273,7 @@ int sf_inode_revalidate(struct dentry *dentry)
 						/*
 						 * Reset the TTL and copy the info over into the inode structure.
 						 */
-						dentry->d_time = jiffies;
-						sf_update_inode(pInode, &pReq->ObjInfo, sf_g);
+						sf_update_inode(pInode, sf_i, &pReq->ObjInfo, sf_g);
 					} else if (rc == VERR_INVALID_HANDLE) {
 						rc = -ENOENT; /* Restore.*/
 					} else {
@@ -302,8 +301,7 @@ int sf_inode_revalidate(struct dentry *dentry)
 							/*
 							 * Reset the TTL and copy the info over into the inode structure.
 							 */
-							dentry->d_time = jiffies;
-							sf_update_inode(pInode, &pReq->CreateParms.Info, sf_g);
+							sf_update_inode(pInode, sf_i, &pReq->CreateParms.Info, sf_g);
 							rc = 0;
 						} else {
 							rc = -ENOENT;
@@ -349,7 +347,7 @@ int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile,
 		 */
 		if (   !fForced
 		    && !sf_i->force_restat
-		    && jiffies - dentry->d_time < sf_g->ttl)
+		    && jiffies - sf_i->ts_up_to_date <= sf_g->ttl)
 			err = 0;
 		else {
 			/*
@@ -363,8 +361,7 @@ int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile,
 					/*
 					 * Reset the TTL and copy the info over into the inode structure.
 					 */
-					dentry->d_time = jiffies;
-					sf_update_inode(pInode, &pReq->ObjInfo, sf_g);
+					sf_update_inode(pInode, sf_i, &pReq->ObjInfo, sf_g);
 				} else {
 					LogFunc(("VbglR0SfHostReqQueryObjInfo failed on %#RX64: %Rrc\n", hHostFile, err));
 					err = -RTErrConvertToErrno(err);
@@ -375,35 +372,6 @@ int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile,
 		}
 	}
 	return err;
-}
-
-/* this is called during name resolution/lookup to check if the
-   [dentry] in the cache is still valid. the job is handled by
-   [sf_inode_revalidate] */
-static int
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
-sf_dentry_revalidate(struct dentry *dentry, unsigned flags)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-sf_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
-#else
-sf_dentry_revalidate(struct dentry *dentry, int flags)
-#endif
-{
-	TRACE();
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
-	if (flags & LOOKUP_RCU)
-		return -ECHILD;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
-	/* see Documentation/filesystems/vfs.txt */
-	if (nd && nd->flags & LOOKUP_RCU)
-		return -ECHILD;
-#endif
-
-	if (sf_inode_revalidate(dentry))
-		return 0;
-
-	return 1;
 }
 
 /* on 2.6 this is a proxy for [sf_inode_revalidate] which (as a side
@@ -584,6 +552,7 @@ int sf_setattr(struct dentry *dentry, struct iattr *iattr)
 	 * What's more, given that the SHFL_FN_CREATE call succeeded, we know that the
 	 * dentry and all its parent entries are valid and could touch their timestamps
 	 * extending their TTL (CIFS does that). */
+	sf_i->force_restat = 1; /* temp fix */
 	return sf_inode_revalidate(dentry);
 
  fail1:
@@ -1000,8 +969,133 @@ int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS * stat)
 	return rc;
 }
 
+
+/* this is called during name resolution/lookup to check if the
+   [dentry] in the cache is still valid. the job is handled by
+   [sf_inode_revalidate] */
+static int
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+sf_dentry_revalidate(struct dentry *dentry, unsigned flags)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+sf_dentry_revalidate(struct dentry *dentry, struct nameidata *nd)
+#else
+sf_dentry_revalidate(struct dentry *dentry, int flags)
+#endif
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0)
+	int const flags = nd ? nd->flags : 0;
+#endif
+
+	int rc;
+
+	Assert(dentry);
+	SFLOGFLOW(("sf_dentry_revalidate: %p %#x %s\n", dentry, flags, dentry->d_inode ? GET_INODE_INFO(dentry->d_inode)->path->String.ach : "<negative>"));
+
+	/*
+	 * See Documentation/filesystems/vfs.txt why we skip LOOKUP_RCU.
+	 *
+	 * Also recommended: https://lwn.net/Articles/649115/
+	 *      	     https://lwn.net/Articles/649729/
+	 *      	     https://lwn.net/Articles/650786/
+	 *
+	 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
+	if (flags & LOOKUP_RCU) {
+		rc = -ECHILD;
+		SFLOGFLOW(("sf_dentry_revalidate: RCU -> -ECHILD\n"));
+	} else
+#endif
+	{
+		/*
+		 * Do we have an inode or not?  If not it's probably a negative cache
+		 * entry, otherwise most likely a positive one.
+		 */
+		struct inode *pInode = dentry->d_inode;
+		if (pInode) {
+			/*
+			 * Positive entry.
+			 *
+			 * Note! We're more aggressive here than other remote file systems,
+			 *       current (4.19) CIFS will for instance revalidate the inode
+			 *       and ignore the dentry timestamp for positive entries.
+			 */
+			//struct sf_inode_info *sf_i = GET_INODE_INFO(pInode);
+			unsigned long const  cJiffiesAge = sf_dentry_get_update_jiffies(dentry) - jiffies;
+			struct sf_glob_info *sf_g        = GET_GLOB_INFO(dentry->d_sb);
+			if (cJiffiesAge <= sf_g->ttl) {
+				SFLOGFLOW(("sf_dentry_revalidate: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, sf_g->ttl));
+				rc = 1;
+			} else if (!sf_inode_revalidate(dentry /** @todo force */)) {
+				sf_dentry_set_update_jiffies(dentry, jiffies); /** @todo get jiffies from inode. */
+				SFLOGFLOW(("sf_dentry_revalidate: age: %lu vs. TTL %lu -> reval -> 1\n", cJiffiesAge, sf_g->ttl));
+				rc = 1;
+			} else {
+				SFLOGFLOW(("sf_dentry_revalidate: age: %lu vs. TTL %lu -> reval -> 0\n", cJiffiesAge, sf_g->ttl));
+				rc = 0;
+			}
+		} else {
+			/*
+			 * Negative entry.
+			 *
+			 * Invalidate dentries for open and renames here as we'll revalidate
+			 * these when taking the actual action (also good for case preservation
+			 * if we do case-insensitive mounts against windows + mac hosts at some
+			 * later point).
+			 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+			if (flags & (LOOKUP_CREATE | LOOKUP_RENAME_TARGET))
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 75)
+			if (flags & LOOKUP_CREATE)
+#else
+			if (0)
+#endif
+			{
+				SFLOGFLOW(("sf_dentry_revalidate: negative: create or rename target -> 0\n"));
+				rc = 0;
+			} else {
+				/* Can we skip revalidation based on TTL? */
+				unsigned long const  cJiffiesAge = sf_dentry_get_update_jiffies(dentry) - jiffies;
+				struct sf_glob_info *sf_g        = GET_GLOB_INFO(dentry->d_sb);
+				if (cJiffiesAge < sf_g->ttl) {
+					SFLOGFLOW(("sf_dentry_revalidate: negative: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, sf_g->ttl));
+					rc = 1;
+				} else {
+					/* We could revalidate it here, but we could instead just
+					   have the caller kick it out. */
+					/** @todo stat the direntry and see if it exists now. */
+					SFLOGFLOW(("sf_dentry_revalidate: negative: age: %lu vs. TTL %lu -> 0\n", cJiffiesAge, sf_g->ttl));
+					rc = 0;
+				}
+			}
+		}
+	}
+	return rc;
+}
+
+#ifdef SFLOG_ENABLED
+
+/** For logging purposes only. */
+static int sf_dentry_delete(const struct dentry *pDirEntry)
+{
+	SFLOGFLOW(("sf_dentry_delete: %p\n", pDirEntry));
+	return 0;
+}
+
+static int sf_dentry_init(struct dentry *pDirEntry)
+{
+	SFLOGFLOW(("sf_dentry_init: %p\n", pDirEntry));
+	return 0;
+}
+
+#endif /* SFLOG_ENABLED */
+
+
 struct dentry_operations sf_dentry_ops = {
-	.d_revalidate = sf_dentry_revalidate
+	.d_revalidate = sf_dentry_revalidate,
+#ifdef SFLOG_ENABLED
+	.d_delete = sf_dentry_delete,
+	.d_init = sf_dentry_init,
+#endif
 };
 
 int sf_init_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g)

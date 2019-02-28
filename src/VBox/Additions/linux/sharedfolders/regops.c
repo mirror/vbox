@@ -972,6 +972,13 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
 	struct sf_reg_info *sf_r;
+#if   LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+	struct dentry *dentry = file_dentry(file);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+	struct dentry *dentry = file->f_path.dentry;
+#else
+	struct dentry *dentry = file->f_dentry;
+#endif
 	VBOXSFCREATEREQ *pReq;
 	SHFLCREATEPARMS *pCreateParms;  /* temp glue */
 
@@ -1081,21 +1088,30 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 		return -RTErrConvertToErrno(rc);
 	}
 
-	if (pCreateParms->Handle == SHFL_HANDLE_NIL) {
+	if (pCreateParms->Handle != SHFL_HANDLE_NIL) {
+		sf_dentry_chain_increase_ttl(dentry);
+		rc_linux = 0;
+	} else {
 		switch (pCreateParms->Result) {
 		case SHFL_PATH_NOT_FOUND:
+			rc_linux = -ENOENT;
+			break;
 		case SHFL_FILE_NOT_FOUND:
+			/** @todo sf_dentry_increase_parent_ttl(file->f_dentry); if we can trust it.  */
 			rc_linux = -ENOENT;
 			break;
 		case SHFL_FILE_EXISTS:
+			sf_dentry_chain_increase_ttl(dentry);
 			rc_linux = -EEXIST;
 			break;
 		default:
+			sf_dentry_chain_increase_parent_ttl(dentry);
+			rc_linux = 0;
 			break;
 		}
 	}
 
-	sf_i->force_restat = 1;
+	sf_i->force_restat = 1; /** @todo Why?!? */
 	sf_r->Handle.hHost = pCreateParms->Handle;
 	file->private_data = sf_r;
 	sf_handle_append(sf_i, &sf_r->Handle);

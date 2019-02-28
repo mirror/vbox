@@ -37,6 +37,7 @@
 /* Linux constraints the size of data mount argument to PAGE_SIZE - 1. */
 #define MAX_HOST_NAME  256
 #define MAX_NLS_NAME    32
+#define VBSF_DEFAULT_TTL_MS     200
 
 #define VBSF_MOUNT_SIGNATURE_BYTE_0 '\377'
 #define VBSF_MOUNT_SIGNATURE_BYTE_1 '\376'
@@ -57,7 +58,8 @@ struct vbsf_mount_info_new {
 	char nls_name[MAX_NLS_NAME];	/**< name of an I/O charset */
 	int uid;		/**< user ID for all entries, default 0=root */
 	int gid;		/**< group ID for all entries, default 0=root */
-	int ttl;		/**< time to live */
+	int ttl;		/**< directory entry and inode time to live in milliseconds.
+	                         * -1 for kernel default, 0 to disable caching.  */
 	int dmode;		/**< mode for directories if != 0xffffffff */
 	int fmode;		/**< mode for regular files if != 0xffffffff */
 	int dmask;		/**< umask applied to directories */

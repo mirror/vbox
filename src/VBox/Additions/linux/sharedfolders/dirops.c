@@ -413,6 +413,7 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
 	if (err)
 		goto fail0;
 
+	/** @todo call host directly and avoid unnecessary copying here. */
 	err = sf_stat(__func__, sf_g, path, &fsinfo, 1);
 	if (err) {
 		if (err == -ENOENT) {
@@ -448,19 +449,21 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
 			goto fail2;
 		}
 
-		SET_INODE_INFO(inode, sf_new_i);
-		sf_init_inode(sf_g, inode, &fsinfo);
 		sf_new_i->path = path;
+		SET_INODE_INFO(inode, sf_new_i);
+		sf_init_inode(inode, sf_new_i, &fsinfo, sf_g);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
 		unlock_new_inode(inode);
 #endif
+		sf_dentry_chain_increase_parent_ttl(dentry);
 	}
 
-	sf_i->force_restat = 0;
-	dentry->d_time = jiffies;
+	//sf_i->force_restat = 0; /** @todo r=bird: This looks like confusion. */
+
+	sf_dentry_set_update_jiffies(dentry, jiffies);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
-	d_set_d_op(dentry, &sf_dentry_ops);
+	Assert(dentry->d_op == &sf_dentry_ops); /* (taken from the superblock) */
 #else
 	dentry->d_op = &sf_dentry_ops;
 #endif
@@ -521,12 +524,13 @@ static int sf_instantiate(struct inode *parent, struct dentry *dentry,
 		goto fail1;
 	}
 
-	sf_init_inode(sf_g, inode, info);
+	sf_init_inode(inode, sf_new_i, info, sf_g);
 
 	sf_new_i->path = path;
 	RTListInit(&sf_new_i->HandleList);
 	sf_new_i->force_restat = 1;
 	sf_new_i->force_reread = 0;
+	sf_new_i->ts_up_to_date = jiffies - INT_MAX / 2;
 #ifdef VBOX_STRICT
 	sf_new_i->u32Magic = SF_INODE_INFO_MAGIC;
 #endif
@@ -621,6 +625,8 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 		goto fail2;
 	}
 
+	sf_dentry_chain_increase_parent_ttl(dentry);
+
 	err = sf_instantiate(parent, dentry, path, &pCreateParms->Info,
 			     fDirectory ? SHFL_HANDLE_NIL : pCreateParms->Handle);
 	if (err) {
@@ -641,7 +647,7 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 			LogFunc(("(%d): VbglR0SfHostReqClose failed rc=%Rrc\n", fDirectory, rc));
 	}
 
-	sf_i->force_restat = 1;
+	sf_i->force_restat = 1; /**< @todo r=bird: Why?!? */
 	VbglR0PhysHeapFree(pReq);
 	return 0;
 
@@ -680,6 +686,9 @@ static int sf_create(struct inode *parent, struct dentry *dentry, int mode,
 static int sf_create(struct inode *parent, struct dentry *dentry, int mode)
 #endif
 {
+/** @todo @a nd (struct nameidata) contains intent with partial open flags for
+ *        2.6.0-3.5.999.  In 3.6.0 atomic_open was introduced and stuff
+ *        changed (investigate)... */
 	TRACE();
 	return sf_create_aux(parent, dentry, mode, 0 /*fDirectory*/);
 }
@@ -715,13 +724,13 @@ static int sf_unlink_aux(struct inode *parent, struct dentry *dentry,
 {
 	int rc, err;
 	struct sf_glob_info *sf_g = GET_GLOB_INFO(parent->i_sb);
-	struct sf_inode_info *sf_i = GET_INODE_INFO(parent);
+	struct sf_inode_info *sf_parent_i = GET_INODE_INFO(parent);
 	SHFLSTRING *path;
 
 	TRACE();
 	BUG_ON(!sf_g);
 
-	err = sf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
+	err = sf_path_from_dentry(__func__, sf_g, sf_parent_i, dentry, &path);
 	if (!err) {
 		VBOXSFREMOVEREQ *pReq = (VBOXSFREMOVEREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String)
 									       + path->u16Size);
@@ -732,16 +741,26 @@ static int sf_unlink_aux(struct inode *parent, struct dentry *dentry,
 				fFlags |= SHFL_REMOVE_SYMLINK;
 
 			rc = VbglR0SfHostReqRemove(sf_g->map.root, pReq, fFlags);
+
+			if (dentry->d_inode) {
+				struct sf_inode_info *sf_i = GET_INODE_INFO(dentry->d_inode);
+				sf_i->force_restat = 1;
+				sf_i->force_reread = 1;
+			}
+
 			if (RT_SUCCESS(rc)) {
 				/* directory access/change time changed */
-				sf_i->force_restat = 1;
+				sf_parent_i->force_restat = 1;
 				/* directory content changed */
-				sf_i->force_reread = 1;
+				sf_parent_i->force_reread = 1;
 
 				err = 0;
+			} else if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND) {
+				LogFunc(("(%d): VbglR0SfRemove(%s) failed rc=%Rrc; calling d_drop on %p\n",
+				         fDirectory, path->String.utf8, rc, dentry));
+				d_drop(dentry);
 			} else {
-				LogFunc(("(%d): VbglR0SfRemove(%s) failed rc=%Rrc\n",
-					 fDirectory, path->String.utf8, rc));
+				LogFunc(("(%d): VbglR0SfRemove(%s) failed rc=%Rrc\n", fDirectory, path->String.utf8, rc));
 				err = -RTErrConvertToErrno(rc);
 			}
 			VbglR0PhysHeapFree(pReq);

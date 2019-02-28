@@ -377,7 +377,7 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
     {
         0,                     /* uid */
         (int)grp_vboxsf->gr_gid, /* gid */
-        0,                     /* ttl */
+        -1,                    /* ttl */
         0770,                  /* dmode, owner and group "vboxsf" have full access */
         0770,                  /* fmode, owner and group "vboxsf" have full access */
         0,                     /* dmask */
@@ -1472,6 +1472,7 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
     MntInfo.signature[1] = VBSF_MOUNT_SIGNATURE_BYTE_1;
     MntInfo.signature[2] = VBSF_MOUNT_SIGNATURE_BYTE_2;
     MntInfo.length       = sizeof(MntInfo);
+    MntInfo.ttl          = MntOpts.uid   = -1;
     MntInfo.uid          = MntOpts.uid   = 0;
     MntInfo.gid          = MntOpts.gid   = gidMount;
     MntInfo.dmode        = MntOpts.dmode = 0770;

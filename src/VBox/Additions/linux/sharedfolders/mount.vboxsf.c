@@ -386,7 +386,7 @@ main(int argc, char **argv)
     {
         0,     /* uid */
         0,     /* gid */
-        0,     /* ttl */
+        -1,    /* ttl */
        ~0U,    /* dmode */
        ~0U,    /* fmode*/
         0,     /* dmask */
