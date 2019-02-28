@@ -348,7 +348,7 @@ int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile,
 		 */
 		if (   !fForced
 		    && !sf_i->force_restat
-		    && jiffies - sf_i->ts_up_to_date <= sf_g->ttl)
+		    && jiffies - sf_i->ts_up_to_date < sf_g->ttl)
 			err = 0;
 		else {
 			/*
@@ -1025,7 +1025,7 @@ sf_dentry_revalidate(struct dentry *dentry, int flags)
 			//struct sf_inode_info *sf_i = GET_INODE_INFO(pInode);
 			unsigned long const  cJiffiesAge = sf_dentry_get_update_jiffies(dentry) - jiffies;
 			struct sf_glob_info *sf_g        = GET_GLOB_INFO(dentry->d_sb);
-			if (cJiffiesAge <= sf_g->ttl) {
+			if (cJiffiesAge < sf_g->ttl) {
 				SFLOGFLOW(("sf_dentry_revalidate: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, sf_g->ttl));
 				rc = 1;
 			} else if (!sf_inode_revalidate(dentry /** @todo force */)) {
