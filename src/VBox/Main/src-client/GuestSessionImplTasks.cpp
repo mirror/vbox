@@ -1565,7 +1565,7 @@ int GuestSessionTaskCopyFrom::Run(void)
         if (   pList->mSourceSpec.enmType == FsObjType_Directory
             && pList->mSourceSpec.fDryRun == false)
         {
-            rc = directoryCreateOnHost(pList->mDstRootAbs.c_str(), fDirMode, fDirCreate, fCopyIntoExisting);
+            rc = directoryCreateOnHost(pList->mDstRootAbs, fDirMode, fDirCreate, fCopyIntoExisting);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -1594,7 +1594,7 @@ int GuestSessionTaskCopyFrom::Run(void)
                 case RTFS_TYPE_DIRECTORY:
                     LogFlowFunc(("Directory '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
-                        rc = directoryCreateOnHost(strDstAbs.c_str(), fDirMode, fDirCreate, fCopyIntoExisting);
+                        rc = directoryCreateOnHost(strDstAbs, fDirMode, fDirCreate, fCopyIntoExisting);
                     break;
 
                 case RTFS_TYPE_FILE:
@@ -1805,7 +1805,7 @@ int GuestSessionTaskCopyTo::Run(void)
 
             if (pList->mSourceSpec.fDryRun == false)
             {
-                rc = directoryCreateOnGuest(pList->mDstRootAbs.c_str(), DirectoryCreateFlag_None, fDirMode,
+                rc = directoryCreateOnGuest(pList->mDstRootAbs, DirectoryCreateFlag_None, fDirMode,
                                             fFollowSymlinks, fCopyIntoExisting);
                 if (RT_FAILURE(rc))
                     break;
@@ -1841,7 +1841,7 @@ int GuestSessionTaskCopyTo::Run(void)
                     LogFlowFunc(("Directory '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
                     {
-                        rc = directoryCreateOnGuest(strDstAbs.c_str(), DirectoryCreateFlag_None, fDirMode,
+                        rc = directoryCreateOnGuest(strDstAbs, DirectoryCreateFlag_None, fDirMode,
                                                     fFollowSymlinks, fCopyIntoExisting);
                         if (RT_FAILURE(rc))
                             break;
