@@ -945,10 +945,8 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
     struct dentry *dentry = file->f_dentry;
 #endif
     VBOXSFCREATEREQ *pReq;
-    SHFLCREATEPARMS *pCreateParms;  /* temp glue */
 
-    SFLOGFLOW(("vbsf_reg_open: inode=%p file=%p flags=%#x %s\n",
-           inode, file, file->f_flags, sf_i ? sf_i->path->String.ach : NULL));
+    SFLOGFLOW(("vbsf_reg_open: inode=%p file=%p flags=%#x %s\n", inode, file, file->f_flags, sf_i ? sf_i->path->String.ach : NULL));
     BUG_ON(!sf_g);
     BUG_ON(!sf_i);
 
@@ -989,47 +987,46 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
     }
     memcpy(&pReq->StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
     RT_ZERO(pReq->CreateParms);
-    pCreateParms = &pReq->CreateParms;
-    pCreateParms->Handle = SHFL_HANDLE_NIL;
+    pReq->CreateParms.Handle = SHFL_HANDLE_NIL;
 
-    /* We check the value of pCreateParms->Handle afterwards to find out if
-     * the call succeeded or failed, as the API does not seem to cleanly
-     * distinguish error and informational messages.
+    /* We check the value of pReq->CreateParms.Handle afterwards to
+     * find out if the call succeeded or failed, as the API does not seem
+     * to cleanly distinguish error and informational messages.
      *
-     * Furthermore, we must set pCreateParms->Handle to SHFL_HANDLE_NIL to
-     * make the shared folders host service use our fMode parameter */
+     * Furthermore, we must set pReq->CreateParms.Handle to SHFL_HANDLE_NIL
+     * to make the shared folders host service use our fMode parameter */
 
     if (file->f_flags & O_CREAT) {
         LogFunc(("O_CREAT set\n"));
-        pCreateParms->CreateFlags |= SHFL_CF_ACT_CREATE_IF_NEW;
+        pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_CREATE_IF_NEW;
         /* We ignore O_EXCL, as the Linux kernel seems to call create
            beforehand itself, so O_EXCL should always fail. */
         if (file->f_flags & O_TRUNC) {
             LogFunc(("O_TRUNC set\n"));
-            pCreateParms->CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
         } else
-            pCreateParms->CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
     } else {
-        pCreateParms->CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
+        pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
         if (file->f_flags & O_TRUNC) {
             LogFunc(("O_TRUNC set\n"));
-            pCreateParms->CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
         }
     }
 
     switch (file->f_flags & O_ACCMODE) {
     case O_RDONLY:
-        pCreateParms->CreateFlags |= SHFL_CF_ACCESS_READ;
+        pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_READ;
         sf_r->Handle.fFlags |= SF_HANDLE_F_READ;
         break;
 
     case O_WRONLY:
-        pCreateParms->CreateFlags |= SHFL_CF_ACCESS_WRITE;
+        pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_WRITE;
         sf_r->Handle.fFlags |= SF_HANDLE_F_WRITE;
         break;
 
     case O_RDWR:
-        pCreateParms->CreateFlags |= SHFL_CF_ACCESS_READWRITE;
+        pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
         sf_r->Handle.fFlags |= SF_HANDLE_F_READ | SF_HANDLE_F_WRITE;
         break;
 
@@ -1039,45 +1036,46 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
 
     if (file->f_flags & O_APPEND) {
         LogFunc(("O_APPEND set\n"));
-        pCreateParms->CreateFlags |= SHFL_CF_ACCESS_APPEND;
+        pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_APPEND;
         sf_r->Handle.fFlags |= SF_HANDLE_F_APPEND;
     }
 
-    pCreateParms->Info.Attr.fMode = inode->i_mode;
-    LogFunc(("vbsf_reg_open: calling VbglR0SfHostReqCreate, file %s, flags=%#x, %#x\n", sf_i->path->String.utf8, file->f_flags, pCreateParms->CreateFlags));
+    pReq->CreateParms.Info.Attr.fMode = inode->i_mode;
+    LogFunc(("vbsf_reg_open: calling VbglR0SfHostReqCreate, file %s, flags=%#x, %#x\n",
+             sf_i->path->String.utf8, file->f_flags, pReq->CreateParms.CreateFlags));
     rc = VbglR0SfHostReqCreate(sf_g->map.root, pReq);
     if (RT_FAILURE(rc)) {
-        LogFunc(("VbglR0SfHostReqCreate failed flags=%d,%#x rc=%Rrc\n", file->f_flags, pCreateParms->CreateFlags, rc));
+        LogFunc(("VbglR0SfHostReqCreate failed flags=%d,%#x rc=%Rrc\n", file->f_flags, pReq->CreateParms.CreateFlags, rc));
         kfree(sf_r);
         VbglR0PhysHeapFree(pReq);
         return -RTErrConvertToErrno(rc);
     }
 
-    if (pCreateParms->Handle != SHFL_HANDLE_NIL) {
+    if (pReq->CreateParms.Handle != SHFL_HANDLE_NIL) {
         vbsf_dentry_chain_increase_ttl(dentry);
         rc_linux = 0;
     } else {
-        switch (pCreateParms->Result) {
-        case SHFL_PATH_NOT_FOUND:
-            rc_linux = -ENOENT;
-            break;
-        case SHFL_FILE_NOT_FOUND:
-            /** @todo sf_dentry_increase_parent_ttl(file->f_dentry); if we can trust it.  */
-            rc_linux = -ENOENT;
-            break;
-        case SHFL_FILE_EXISTS:
-            vbsf_dentry_chain_increase_ttl(dentry);
-            rc_linux = -EEXIST;
-            break;
-        default:
-            vbsf_dentry_chain_increase_parent_ttl(dentry);
-            rc_linux = 0;
-            break;
+        switch (pReq->CreateParms.Result) {
+            case SHFL_PATH_NOT_FOUND:
+                rc_linux = -ENOENT;
+                break;
+            case SHFL_FILE_NOT_FOUND:
+                /** @todo sf_dentry_increase_parent_ttl(file->f_dentry); if we can trust it.  */
+                rc_linux = -ENOENT;
+                break;
+            case SHFL_FILE_EXISTS:
+                vbsf_dentry_chain_increase_ttl(dentry);
+                rc_linux = -EEXIST;
+                break;
+            default:
+                vbsf_dentry_chain_increase_parent_ttl(dentry);
+                rc_linux = 0;
+                break;
         }
     }
 
     sf_i->force_restat = 1; /** @todo Why?!? */
-    sf_r->Handle.hHost = pCreateParms->Handle;
+    sf_r->Handle.hHost = pReq->CreateParms.Handle;
     file->private_data = sf_r;
     vbsf_handle_append(sf_i, &sf_r->Handle);
     VbglR0PhysHeapFree(pReq);

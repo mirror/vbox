@@ -583,8 +583,6 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
         VBOXSFCLOSEREQ          Close;
     } *pReq;
     size_t cbReq;
-    SHFLCREATEPARMS *pCreateParms;
-    SHFLFSOBJINFO *pInfo;
     SHFLHANDLE hHostFile;
     int vrc;
     int err = 0;
@@ -599,29 +597,27 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
         LogFunc(("Failed to allocate %#x byte request buffer!\n", cbReq));
         return -ENOMEM;
     }
-    pCreateParms = &pReq->Create.CreateParms;
-    pInfo = &pReq->Info.ObjInfo;
 
-    RT_ZERO(*pCreateParms);
-    pCreateParms->Handle = SHFL_HANDLE_NIL;
-    pCreateParms->CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS
-                              | SHFL_CF_ACT_FAIL_IF_NEW
-                              | SHFL_CF_ACCESS_ATTR_WRITE;
+    RT_ZERO(pReq->Create.CreateParms);
+    pReq->Create.CreateParms.Handle      = SHFL_HANDLE_NIL;
+    pReq->Create.CreateParms.CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS
+                                         | SHFL_CF_ACT_FAIL_IF_NEW
+                                         | SHFL_CF_ACCESS_ATTR_WRITE;
 
     /* this is at least required for Posix hosts */
     if (iattr->ia_valid & ATTR_SIZE)
-        pCreateParms->CreateFlags |= SHFL_CF_ACCESS_WRITE;
+        pReq->Create.CreateParms.CreateFlags |= SHFL_CF_ACCESS_WRITE;
 
     memcpy(&pReq->Create.StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
     vrc = VbglR0SfHostReqCreate(sf_g->map.root, &pReq->Create);
     if (RT_SUCCESS(vrc)) {
-        hHostFile = pCreateParms->Handle;
+        hHostFile = pReq->Create.CreateParms.Handle;
     } else {
         err = -RTErrConvertToErrno(vrc);
         LogFunc(("VbglR0SfCreate(%s) failed vrc=%Rrc err=%d\n", sf_i->path->String.ach, vrc, err));
         goto fail2;
     }
-    if (pCreateParms->Result != SHFL_FILE_EXISTS) {
+    if (pReq->Create.CreateParms.Result != SHFL_FILE_EXISTS) {
         LogFunc(("file %s does not exist\n", sf_i->path->String.utf8));
         err = -ENOENT;
         goto fail1;
@@ -631,22 +627,22 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
      * handled separately, see implementation of vbsfSetFSInfo() in
      * vbsf.cpp */
     if (iattr->ia_valid & (ATTR_MODE | ATTR_ATIME | ATTR_MTIME)) {
-        RT_ZERO(*pInfo);
+        RT_ZERO(pReq->Info.ObjInfo);
 
         if (iattr->ia_valid & ATTR_MODE) {
-            pInfo->Attr.fMode = sf_access_permissions_to_vbox(iattr->ia_mode);
+            pReq->Info.ObjInfo.Attr.fMode = sf_access_permissions_to_vbox(iattr->ia_mode);
             if (iattr->ia_mode & S_IFDIR)
-                pInfo->Attr.fMode |= RTFS_TYPE_DIRECTORY;
+                pReq->Info.ObjInfo.Attr.fMode |= RTFS_TYPE_DIRECTORY;
             else if (iattr->ia_mode & S_IFLNK)
-                pInfo->Attr.fMode |= RTFS_TYPE_SYMLINK;
+                pReq->Info.ObjInfo.Attr.fMode |= RTFS_TYPE_SYMLINK;
             else
-                pInfo->Attr.fMode |= RTFS_TYPE_FILE;
+                pReq->Info.ObjInfo.Attr.fMode |= RTFS_TYPE_FILE;
         }
 
         if (iattr->ia_valid & ATTR_ATIME)
-            vbsf_time_to_vbox(&pInfo->AccessTime, &iattr->ia_atime);
+            vbsf_time_to_vbox(&pReq->Info.ObjInfo.AccessTime, &iattr->ia_atime);
         if (iattr->ia_valid & ATTR_MTIME)
-            vbsf_time_to_vbox(&pInfo->ModificationTime, &iattr->ia_mtime);
+            vbsf_time_to_vbox(&pReq->Info.ObjInfo.ModificationTime, &iattr->ia_mtime);
         /* ignore ctime (inode change time) as it can't be set from userland anyway */
 
         vrc = VbglR0SfHostReqSetObjInfo(sf_g->map.root, &pReq->Info, hHostFile);

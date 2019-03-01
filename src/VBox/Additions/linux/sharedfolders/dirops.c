@@ -45,16 +45,13 @@ static int vbsf_dir_open_worker(struct vbsf_super_info *sf_g, struct vbsf_dir_in
     int err;
     union SfDirOpenCloseReq
     {
-    VBOXSFCREATEREQ Create;
-    VBOXSFCLOSEREQ  Close;
+        VBOXSFCREATEREQ Create;
+        VBOXSFCLOSEREQ  Close;
     } *pReq;
-    SHFLCREATEPARMS *pCreateParms;
 
-    pReq = (union SfDirOpenCloseReq *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String)
-                              + sf_i->path->u16Size);
+    pReq = (union SfDirOpenCloseReq *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + sf_i->path->u16Size);
     if (pReq) {
         memcpy(&pReq->Create.StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
-        pCreateParms = &pReq->Create.CreateParms;
     } else {
         LogRelMaxFunc(64, ("failed to allocate %zu bytes for '%s' [caller: %s]\n",
                            RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + sf_i->path->u16Size,
@@ -62,18 +59,18 @@ static int vbsf_dir_open_worker(struct vbsf_super_info *sf_g, struct vbsf_dir_in
         return -ENOMEM;
     }
 
-    RT_ZERO(*pCreateParms);
-    pCreateParms->Handle = SHFL_HANDLE_NIL;
-    pCreateParms->CreateFlags = SHFL_CF_DIRECTORY
-                  | SHFL_CF_ACT_OPEN_IF_EXISTS
-                  | SHFL_CF_ACT_FAIL_IF_NEW
-                  | SHFL_CF_ACCESS_READ;
+    RT_ZERO(pReq->Create.CreateParms);
+    pReq->Create.CreateParms.Handle      = SHFL_HANDLE_NIL;
+    pReq->Create.CreateParms.CreateFlags = SHFL_CF_DIRECTORY
+                                         | SHFL_CF_ACT_OPEN_IF_EXISTS
+                                         | SHFL_CF_ACT_FAIL_IF_NEW
+                                         | SHFL_CF_ACCESS_READ;
 
     LogFunc(("calling VbglR0SfHostReqCreate on folder %s, flags %#x [caller: %s]\n",
-             sf_i->path->String.utf8, pCreateParms->CreateFlags, pszCaller));
+             sf_i->path->String.utf8, pReq->Create.CreateParms.CreateFlags, pszCaller));
     rc = VbglR0SfHostReqCreate(sf_g->map.root, &pReq->Create);
     if (RT_SUCCESS(rc)) {
-        if (pCreateParms->Result == SHFL_FILE_EXISTS) {
+        if (pReq->Create.CreateParms.Result == SHFL_FILE_EXISTS) {
 
             /** @todo We could refresh the inode information here since SHFL_FN_CREATE
              * returns updated object information. */
@@ -84,14 +81,14 @@ static int vbsf_dir_open_worker(struct vbsf_super_info *sf_g, struct vbsf_dir_in
             /** @todo Reading all entries upon opening the directory doesn't seem like
              * a good idea. */
             vbsf_dir_info_empty(sf_d);
-            err = vbsf_dir_read_all(sf_g, sf_i, sf_d, pCreateParms->Handle);
+            err = vbsf_dir_read_all(sf_g, sf_i, sf_d, pReq->Create.CreateParms.Handle);
         } else
             err = -ENOENT;
 
         AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
-        if (pCreateParms->Handle != SHFL_HANDLE_NIL)
+        if (pReq->Create.CreateParms.Handle != SHFL_HANDLE_NIL)
         {
-        rc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pCreateParms->Handle);
+        rc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pReq->Create.CreateParms.Handle);
         if (RT_FAILURE(rc))
             LogFunc(("VbglR0SfHostReqCloseSimple(%s) after err=%d failed rc=%Rrc caller=%s\n",
                      sf_i->path->String.utf8, err, rc, pszCaller));
@@ -261,8 +258,7 @@ static int vbsf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
 
         *d_type = vbsf_get_d_type(info->Info.Attr.fMode);
 
-        return vbsf_nlscpy(sf_g, d_name, NAME_MAX,
-                 info->name.String.utf8, info->name.u16Length);
+        return vbsf_nlscpy(sf_g, d_name, NAME_MAX, info->name.String.utf8, info->name.u16Length);
     }
 
     return 1;
@@ -579,7 +575,6 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
         VBOXSFCREATEREQ Create;
         VBOXSFCLOSEREQ  Close;
     } *pReq;
-    SHFLCREATEPARMS *pCreateParms;
 
     TRACE();
     BUG_ON(!sf_parent_i);
@@ -593,23 +588,22 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
     pReq = (union CreateAuxReq *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + path->u16Size);
     if (pReq) {
         memcpy(&pReq->Create.StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
-        pCreateParms = &pReq->Create.CreateParms;
     } else {
         err = -ENOMEM;
         goto fail1;
     }
 
-    RT_ZERO(*pCreateParms);
-    pCreateParms->Handle = SHFL_HANDLE_NIL;
-    pCreateParms->CreateFlags = SHFL_CF_ACT_CREATE_IF_NEW
-                              | SHFL_CF_ACT_FAIL_IF_EXISTS
-                              | SHFL_CF_ACCESS_READWRITE
-                              | (fDirectory ? SHFL_CF_DIRECTORY : 0);
-    pCreateParms->Info.Attr.fMode = (fDirectory ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE)
-                                  | (mode & S_IRWXUGO);
-    pCreateParms->Info.Attr.enmAdditional = RTFSOBJATTRADD_NOTHING;
+    RT_ZERO(pReq->Create.CreateParms);
+    pReq->Create.CreateParms.Handle      = SHFL_HANDLE_NIL;
+    pReq->Create.CreateParms.CreateFlags = SHFL_CF_ACT_CREATE_IF_NEW
+                                         | SHFL_CF_ACT_FAIL_IF_EXISTS
+                                         | SHFL_CF_ACCESS_READWRITE
+                                         | (fDirectory ? SHFL_CF_DIRECTORY : 0);
+/** @todo use conversion function from utils.c here!   */
+    pReq->Create.CreateParms.Info.Attr.fMode = (fDirectory ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE) | (mode & S_IRWXUGO);
+    pReq->Create.CreateParms.Info.Attr.enmAdditional = RTFSOBJATTRADD_NOTHING;
 
-    LogFunc(("calling VbglR0SfHostReqCreate, folder %s, flags %#x\n", path->String.ach, pCreateParms->CreateFlags));
+    LogFunc(("calling VbglR0SfHostReqCreate, folder %s, flags %#x\n", path->String.ach, pReq->Create.CreateParms.CreateFlags));
     rc = VbglR0SfHostReqCreate(sf_g->map.root, &pReq->Create);
     if (RT_FAILURE(rc)) {
         if (rc == VERR_WRITE_PROTECT) {
@@ -622,17 +616,17 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
         goto fail2;
     }
 
-    if (pCreateParms->Result != SHFL_FILE_CREATED) {
+    if (pReq->Create.CreateParms.Result != SHFL_FILE_CREATED) {
         err = -EPERM;
         LogFunc(("(%d): could not create file %s result=%d\n",
-             fDirectory, sf_parent_i->path->String.utf8, pCreateParms->Result));
+             fDirectory, sf_parent_i->path->String.utf8, pReq->Create.CreateParms.Result));
         goto fail2;
     }
 
     vbsf_dentry_chain_increase_parent_ttl(dentry);
 
-    err = vbsf_inode_instantiate(parent, dentry, path, &pCreateParms->Info,
-                 fDirectory ? SHFL_HANDLE_NIL : pCreateParms->Handle);
+    err = vbsf_inode_instantiate(parent, dentry, path, &pReq->Create.CreateParms.Info,
+                                 fDirectory ? SHFL_HANDLE_NIL : pReq->Create.CreateParms.Handle);
     if (err) {
         LogFunc(("(%d): could not instantiate dentry for %s err=%d\n", fDirectory, path->String.utf8, err));
         goto fail3;
@@ -645,7 +639,7 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
      */
     if (fDirectory) {
         AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
-        rc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pCreateParms->Handle);
+        rc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pReq->Create.CreateParms.Handle);
         if (RT_FAILURE(rc))
             LogFunc(("(%d): VbglR0SfHostReqClose failed rc=%Rrc\n", fDirectory, rc));
     }
@@ -655,7 +649,7 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
     return 0;
 
  fail3:
-    rc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pCreateParms->Handle);
+    rc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pReq->Create.CreateParms.Handle);
     if (RT_FAILURE(rc))
         LogFunc(("(%d): VbglR0SfHostReqCloseSimple failed rc=%Rrc\n", fDirectory, rc));
  fail2:
