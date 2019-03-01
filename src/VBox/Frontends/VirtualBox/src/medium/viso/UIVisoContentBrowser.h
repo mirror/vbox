@@ -95,7 +95,6 @@ private:
     void                    initializeModel();
     UICustomFileSystemItem *rootItem();
 
-
     /** @name Index conversion functions. These are half-smart and tries to determine the source model before conversion.
       * @{ */
         QModelIndex         convertIndexToTableIndex(const QModelIndex &index);

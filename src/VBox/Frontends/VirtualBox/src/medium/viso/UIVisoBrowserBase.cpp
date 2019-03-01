@@ -34,15 +34,16 @@
 class UILocationSelector : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
+
+signals:
+
+    void sigExpandCollapseTreeView();
 public:
 
     UILocationSelector(QWidget *pParent = 0);
     int  lineEditWidth() const;
     void updateLineEditText(const QString &strText);
 
-signals:
-
-    void sigExpandCollapseTreeView();
 
 protected:
 

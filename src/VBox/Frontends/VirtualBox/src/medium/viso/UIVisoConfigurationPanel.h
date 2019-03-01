@@ -34,17 +34,17 @@ class UIVisoConfigurationPanel : public UIDialogPanel
 {
     Q_OBJECT;
 
+signals:
+
+    void sigVisoNameChanged(const QString &strVisoName);
+    void sigCustomVisoOptionsChanged(const QStringList &customVisoOptions);
+
 public:
     UIVisoConfigurationPanel(QWidget *pParent = 0);
     ~UIVisoConfigurationPanel();
     virtual QString panelName() const /* override */;
     void setVisoName(const QString& strVisoName);
     void setVisoCustomOptions(const QStringList& visoCustomOptions);
-
-signals:
-
-    void sigVisoNameChanged(const QString &strVisoName);
-    void sigCustomVisoOptionsChanged(const QStringList &customVisoOptions);
 
 protected:
 

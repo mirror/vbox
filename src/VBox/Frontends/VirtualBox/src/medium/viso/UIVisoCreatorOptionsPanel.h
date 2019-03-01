@@ -32,16 +32,16 @@ class UIVisoCreatorOptionsPanel : public UIDialogPanel
 {
     Q_OBJECT;
 
+signals:
+
+    void sigShowHiddenObjects(bool fShow);
+
 public:
 
     UIVisoCreatorOptionsPanel(QWidget *pParent = 0);
     ~UIVisoCreatorOptionsPanel();
     virtual QString panelName() const /* override */;
     void setShowHiddenbjects(bool fShow);
-
-signals:
-
-    void sigShowHiddenObjects(bool fShow);
 
 protected:
 

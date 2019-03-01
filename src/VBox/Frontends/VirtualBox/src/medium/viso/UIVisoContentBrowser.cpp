@@ -71,7 +71,6 @@ protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const /* override */;
 };
 
-
 /*********************************************************************************************************************************
 *   UIVisoContentTableView implementation.                                                                                       *
 *********************************************************************************************************************************/
@@ -111,7 +110,6 @@ void UIVisoContentTableView::dropEvent(QDropEvent *pEvent)
     }
 }
 
-
 /*********************************************************************************************************************************
 *   UIVisoContentTreeProxyModel implementation.                                                                                  *
 *********************************************************************************************************************************/
@@ -138,7 +136,6 @@ bool UIVisoContentTreeProxyModel::filterAcceptsRow(int iSourceRow, const QModelI
 
     return false;
 }
-
 
 /*********************************************************************************************************************************
 *   UIVisoContentBrowser implementation.                                                                                         *
@@ -451,7 +448,6 @@ UICustomFileSystemItem* UIVisoContentBrowser::rootItem()
     return m_pModel->rootItem();
 }
 
-
 void UIVisoContentBrowser::initializeModel()
 {
     if (m_pModel)
@@ -541,8 +537,6 @@ void UIVisoContentBrowser::setTreeCurrentIndex(QModelIndex index /* = QModelInde
     pSelectionModel->blockSignals(false);
     m_pTreeView->blockSignals(false);
 }
-
-
 
 void UIVisoContentBrowser::treeSelectionChanged(const QModelIndex &selectedTreeIndex)
 {
