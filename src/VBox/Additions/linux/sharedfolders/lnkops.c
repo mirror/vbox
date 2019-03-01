@@ -44,15 +44,14 @@ static int         vbsf_follow_link(struct dentry *dentry, struct nameidata *nd)
 {
     struct inode *inode = dentry->d_inode;
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
+    struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
     int error = -ENOMEM;
     char *path = (char *)get_zeroed_page(GFP_KERNEL);
     int rc;
 
     if (path) {
         error = 0;
-        rc = VbglR0SfReadLink(&g_SfClient, &sf_g->map, sf_i->path,
-                      PATH_MAX, path);
+        rc = VbglR0SfReadLink(&g_SfClient, &sf_g->map, sf_i->path, PATH_MAX, path);
         if (RT_FAILURE(rc)) {
             LogFunc(("VbglR0SfReadLink failed, caller=%s, rc=%Rrc\n", __func__, rc));
             free_page((unsigned long)path);
@@ -89,7 +88,7 @@ static void vbsf_put_link(struct dentry *dentry, struct nameidata *nd)
 static const char *vbsf_get_link(struct dentry *dentry, struct inode *inode, struct delayed_call *done)
 {
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
+    struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
     char *path;
     int rc;
 

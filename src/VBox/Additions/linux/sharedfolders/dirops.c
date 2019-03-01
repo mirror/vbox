@@ -38,8 +38,8 @@
  * @note As suggested a couple of other places, we should probably stop
  *       reading in the whole directory on open.
  */
-static int vbsf_dir_open_worker(struct vbsf_super_info *sf_g, struct sf_dir_info *sf_d,
-                                struct sf_inode_info *sf_i, const char *pszCaller)
+static int vbsf_dir_open_worker(struct vbsf_super_info *sf_g, struct vbsf_dir_info *sf_d,
+                                struct vbsf_inode_info *sf_i, const char *pszCaller)
 {
     int rc;
     int err;
@@ -113,8 +113,8 @@ static int vbsf_dir_open_worker(struct vbsf_super_info *sf_g, struct sf_dir_info
 static int vbsf_dir_open(struct inode *inode, struct file *file)
 {
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
-    struct sf_dir_info *sf_d;
+    struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
+    struct vbsf_dir_info *sf_d;
     int err;
 
     TRACE();
@@ -209,15 +209,15 @@ static int vbsf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
 {
     loff_t cur;
     struct vbsf_super_info *sf_g;
-    struct sf_dir_info *sf_d;
-    struct sf_inode_info *sf_i;
+    struct vbsf_dir_info *sf_d;
+    struct vbsf_inode_info *sf_i;
     struct inode *inode;
     struct list_head *pos, *list;
 
     TRACE();
 
-    inode = GET_F_DENTRY(dir)->d_inode;
-    sf_i = GET_INODE_INFO(inode);
+    inode = VBSF_GET_F_DENTRY(dir)->d_inode;
+    sf_i = VBSF_GET_INODE_INFO(inode);
     sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
     sf_d = dir->private_data;
 
@@ -241,11 +241,11 @@ static int vbsf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
     cur = 0;
     list = &sf_d->info_list;
     list_for_each(pos, list) {
-        struct sf_dir_buf *b;
+        struct vbsf_dir_buf *b;
         SHFLDIRINFO *info;
         loff_t i;
 
-        b = list_entry(pos, struct sf_dir_buf, head);
+        b = list_entry(pos, struct vbsf_dir_buf, head);
         if (dir->f_pos >= cur + b->cEntries) {
             cur += b->cEntries;
             continue;
@@ -386,7 +386,7 @@ static struct inode *vbsf_create_inode(struct inode *parent, struct dentry *dent
     /*
      * Allocate memory for our additional inode info and create an inode.
      */
-    struct sf_inode_info *sf_new_i = (struct sf_inode_info *)kmalloc(sizeof(*sf_new_i), GFP_KERNEL);
+    struct vbsf_inode_info *sf_new_i = (struct vbsf_inode_info *)kmalloc(sizeof(*sf_new_i), GFP_KERNEL);
     if (sf_new_i) {
         ino_t         iNodeNo = iunique(parent->i_sb, 1);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
@@ -408,7 +408,7 @@ static struct inode *vbsf_create_inode(struct inode *parent, struct dentry *dent
             RTListInit(&sf_new_i->HandleList);
             sf_new_i->handle        = SHFL_HANDLE_NIL;
 
-            SET_INODE_INFO(pInode, sf_new_i);
+            VBSF_SET_INODE_INFO(pInode, sf_new_i);
             vbsf_init_inode(pInode, sf_new_i, pObjInfo, sf_g);
 
             /*
@@ -447,7 +447,7 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
                                         )
 {
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
-    struct sf_inode_info   *sf_i = GET_INODE_INFO(parent);
+    struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(parent);
     SHFLSTRING             *path;
     struct dentry          *dret;
     int                     rc;
@@ -534,7 +534,7 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
 }
 
 /**
- * This should allocate memory for sf_inode_info, compute a unique inode
+ * This should allocate memory for vbsf_inode_info, compute a unique inode
  * number, get an inode from vfs, initialize inode info, instantiate
  * dentry.
  *
@@ -552,7 +552,7 @@ static int vbsf_inode_instantiate(struct inode *parent, struct dentry *dentry, P
     struct inode           *pInode = vbsf_create_inode(parent, dentry, path, info, sf_g, true /*fInstantiate*/);
     if (pInode) {
         /* Store this handle if we leave the handle open. */
-        struct sf_inode_info *sf_new_i = GET_INODE_INFO(pInode);
+        struct vbsf_inode_info *sf_new_i = VBSF_GET_INODE_INFO(pInode);
         sf_new_i->handle = handle;
         return 0;
     }
@@ -571,7 +571,7 @@ static int vbsf_inode_instantiate(struct inode *parent, struct dentry *dentry, P
 static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode_t mode, int fDirectory)
 {
     int rc, err;
-    struct sf_inode_info *sf_parent_i = GET_INODE_INFO(parent);
+    struct vbsf_inode_info *sf_parent_i = VBSF_GET_INODE_INFO(parent);
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
     SHFLSTRING *path;
     union CreateAuxReq
@@ -723,7 +723,7 @@ static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int f
 {
     int rc, err;
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
-    struct sf_inode_info *sf_parent_i = GET_INODE_INFO(parent);
+    struct vbsf_inode_info *sf_parent_i = VBSF_GET_INODE_INFO(parent);
     SHFLSTRING *path;
 
     TRACE();
@@ -742,7 +742,7 @@ static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int f
             rc = VbglR0SfHostReqRemove(sf_g->map.root, pReq, fFlags);
 
             if (dentry->d_inode) {
-                struct sf_inode_info *sf_i = GET_INODE_INFO(dentry->d_inode);
+                struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(dentry->d_inode);
                 sf_i->force_restat = 1;
                 sf_i->force_reread = 1;
             }
@@ -829,11 +829,11 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
         LogFunc(("rename with different roots\n"));
         err = -EINVAL;
     } else {
-        struct sf_inode_info *sf_old_i = GET_INODE_INFO(old_parent);
-        struct sf_inode_info *sf_new_i = GET_INODE_INFO(new_parent);
+        struct vbsf_inode_info *sf_old_i = VBSF_GET_INODE_INFO(old_parent);
+        struct vbsf_inode_info *sf_new_i = VBSF_GET_INODE_INFO(new_parent);
         /* As we save the relative path inside the inode structure, we need to change
            this if the rename is successful. */
-        struct sf_inode_info *sf_file_i = GET_INODE_INFO(old_dentry->d_inode);
+        struct vbsf_inode_info *sf_file_i = VBSF_GET_INODE_INFO(old_dentry->d_inode);
         SHFLSTRING *old_path;
         SHFLSTRING *new_path;
 
@@ -881,7 +881,7 @@ static int vbsf_ino_symlink(struct inode *parent, struct dentry *dentry, const c
 {
     int err;
     int rc;
-    struct sf_inode_info *sf_i;
+    struct vbsf_inode_info *sf_i;
     struct vbsf_super_info *sf_g;
     SHFLSTRING *path, *ssymname;
     SHFLFSOBJINFO info;
@@ -889,7 +889,7 @@ static int vbsf_ino_symlink(struct inode *parent, struct dentry *dentry, const c
 
     TRACE();
     sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
-    sf_i = GET_INODE_INFO(parent);
+    sf_i = VBSF_GET_INODE_INFO(parent);
 
     BUG_ON(!sf_g);
     BUG_ON(!sf_i);

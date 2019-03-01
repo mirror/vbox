@@ -60,7 +60,7 @@
 VBGLSFCLIENT g_SfClient;
 uint32_t     g_fHostFeatures = 0;
 
-/** Protects all the sf_inode_info::HandleList lists. */
+/** Protects all the vbsf_inode_info::HandleList lists. */
 spinlock_t   g_SfHandleLock;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 52)
@@ -343,7 +343,7 @@ static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
     int err;
     struct dentry *droot;
     struct inode *iroot;
-    struct sf_inode_info *sf_i;
+    struct vbsf_inode_info *sf_i;
     struct vbsf_super_info *sf_g;
     SHFLFSOBJINFO fsinfo;
     struct vbsf_mount_info_new *info;
@@ -435,7 +435,7 @@ static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
     }
 
     vbsf_init_inode(iroot, sf_i, &fsinfo, sf_g);
-    SET_INODE_INFO(iroot, sf_i);
+    VBSF_SET_INODE_INFO(iroot, sf_i);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
     unlock_new_inode(iroot);
@@ -491,7 +491,7 @@ static void vbsf_evict_inode(struct inode *inode)
 static void vbsf_clear_inode(struct inode *inode)
 #endif
 {
-    struct sf_inode_info *sf_i;
+    struct vbsf_inode_info *sf_i;
 
     TRACE();
 
@@ -509,9 +509,9 @@ static void vbsf_clear_inode(struct inode *inode)
     /*
      * Clean up our inode info.
      */
-    sf_i = GET_INODE_INFO(inode);
+    sf_i = VBSF_GET_INODE_INFO(inode);
     if (sf_i) {
-        SET_INODE_INFO(inode, NULL);
+        VBSF_SET_INODE_INFO(inode, NULL);
 
         Assert(sf_i->u32Magic == SF_INODE_INFO_MAGIC);
         BUG_ON(!sf_i->path);
@@ -604,7 +604,7 @@ static int vbsf_remount_fs(struct super_block *sb, int *flags, char *data)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 23)
     struct vbsf_super_info *sf_g;
-    struct sf_inode_info *sf_i;
+    struct vbsf_inode_info *sf_i;
     struct inode *iroot;
     SHFLFSOBJINFO fsinfo;
     int err;
@@ -625,7 +625,7 @@ static int vbsf_remount_fs(struct super_block *sb, int *flags, char *data)
     if (!iroot)
         return -ENOSYS;
 
-    sf_i = GET_INODE_INFO(iroot);
+    sf_i = VBSF_GET_INODE_INFO(iroot);
     err = vbsf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
     BUG_ON(err != 0);
     vbsf_init_inode(iroot, sf_i, &fsinfo, sf_g);

@@ -57,7 +57,7 @@
  *
  * @param   pInodeInfo  The inode which handles to drop.
  */
-void vbsf_handle_drop_chain(struct sf_inode_info *pInodeInfo)
+void vbsf_handle_drop_chain(struct vbsf_inode_info *pInodeInfo)
 {
     struct sf_handle *pCur, *pNext;
     unsigned long     fSavedFlags;
@@ -84,7 +84,7 @@ void vbsf_handle_drop_chain(struct sf_inode_info *pInodeInfo)
  * @param   fFlagsSet   The flags that must be set.
  * @param   fFlagsClear The flags that must be clear.
  */
-struct sf_handle *vbsf_handle_find(struct sf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear)
+struct sf_handle *vbsf_handle_find(struct vbsf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear)
 {
     struct sf_handle *pCur;
     unsigned long     fSavedFlags;
@@ -162,7 +162,7 @@ uint32_t vbsf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_i
  * @param   pInodeInfo          The inode to add it to.
  * @param   pHandle             The handle to add.
  */
-void vbsf_handle_append(struct sf_inode_info *pInodeInfo, struct sf_handle *pHandle)
+void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct sf_handle *pHandle)
 {
 #ifdef VBOX_STRICT
     struct sf_handle *pCur;
@@ -245,7 +245,7 @@ static struct pipe_buf_operations vbsf_pipe_buf_ops = {
     .get = vbsf_pipe_buf_get,
 };
 
-static int vbsf_reg_read_aux(const char *caller, struct vbsf_super_info *sf_g, struct sf_reg_info *sf_r,
+static int vbsf_reg_read_aux(const char *caller, struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r,
                              void *buf, uint32_t *nread, uint64_t pos)
 {
     int rc = VbglR0SfRead(&g_SfClient, &sf_g->map, sf_r->Handle.hHost, pos, nread, buf, false /* already locked? */ );
@@ -265,9 +265,9 @@ ssize_t vbsf_splice_read(struct file *in, loff_t * poffset, struct pipe_inode_in
     size_t bytes_remaining = len;
     loff_t orig_offset = *poffset;
     loff_t offset = orig_offset;
-    struct inode *inode = GET_F_DENTRY(in)->d_inode;
+    struct inode *inode = VBSF_GET_F_DENTRY(in)->d_inode;
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct sf_reg_info *sf_r = in->private_data;
+    struct vbsf_reg_info *sf_r = in->private_data;
     ssize_t retval;
     struct page *kpage = 0;
     size_t nsent = 0;
@@ -444,7 +444,7 @@ static ssize_t vbsf_reg_read_mapped(struct file *file, char /*__user*/ *buf, siz
  * write directly to them.
  */
 static ssize_t vbsf_reg_read_fallback(struct file *file, char /*__user*/ *buf, size_t size, loff_t *off,
-                                      struct vbsf_super_info *sf_g, struct sf_reg_info *sf_r)
+                                      struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r)
 {
     /*
      * Lock pages and execute the read, taking care not to pass the host
@@ -559,9 +559,9 @@ static ssize_t vbsf_reg_read_fallback(struct file *file, char /*__user*/ *buf, s
  */
 static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t size, loff_t *off)
 {
-    struct inode *inode = GET_F_DENTRY(file)->d_inode;
+    struct inode *inode = VBSF_GET_F_DENTRY(file)->d_inode;
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct sf_reg_info *sf_r = file->private_data;
+    struct vbsf_reg_info *sf_r = file->private_data;
     struct address_space *mapping = inode->i_mapping;
 
     SFLOGFLOW(("vbsf_reg_read: inode=%p file=%p buf=%p size=%#zx off=%#llx\n", inode, file, buf, size, *off));
@@ -683,8 +683,8 @@ DECLINLINE(void) vbsf_reg_write_invalidate_mapping_range(struct address_space *m
  * write directly to them.
  */
 static ssize_t vbsf_reg_write_fallback(struct file *file, const char /*__user*/ *buf, size_t size, loff_t *off, loff_t offFile,
-                                       struct inode *inode, struct sf_inode_info *sf_i,
-                                       struct vbsf_super_info *sf_g, struct sf_reg_info *sf_r)
+                                       struct inode *inode, struct vbsf_inode_info *sf_i,
+                                       struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r)
 {
     /*
      * Lock pages and execute the write, taking care not to pass the host
@@ -802,10 +802,10 @@ static ssize_t vbsf_reg_write_fallback(struct file *file, const char /*__user*/ 
  */
 static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, loff_t * off)
 {
-    struct inode           *inode   = GET_F_DENTRY(file)->d_inode;
-    struct sf_inode_info   *sf_i    = GET_INODE_INFO(inode);
+    struct inode           *inode   = VBSF_GET_F_DENTRY(file)->d_inode;
+    struct vbsf_inode_info *sf_i    = VBSF_GET_INODE_INFO(inode);
     struct vbsf_super_info *sf_g    = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct sf_reg_info     *sf_r    = file->private_data;
+    struct vbsf_reg_info     *sf_r    = file->private_data;
     struct address_space   *mapping = inode->i_mapping;
     loff_t                  pos;
 
@@ -935,8 +935,8 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
 {
     int rc, rc_linux = 0;
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
-    struct sf_reg_info *sf_r;
+    struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
+    struct vbsf_reg_info *sf_r;
 #if   LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
     struct dentry *dentry = file_dentry(file);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
@@ -1095,9 +1095,9 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
  */
 static int vbsf_reg_release(struct inode *inode, struct file *file)
 {
-    struct sf_reg_info *sf_r;
+    struct vbsf_reg_info *sf_r;
     struct vbsf_super_info *sf_g;
-    struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
+    struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
 
     SFLOGFLOW(("vbsf_reg_release: inode=%p file=%p\n", inode, file));
     sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
@@ -1144,8 +1144,8 @@ static loff_t vbsf_reg_llseek(struct file *file, loff_t off, int whence)
         case SEEK_DATA:
 #endif
         case SEEK_END: {
-            struct sf_reg_info *sf_r = file->private_data;
-            int rc = vbsf_inode_revalidate_with_handle(GET_F_DENTRY(file), sf_r->Handle.hHost, true /*fForce*/,
+            struct vbsf_reg_info *sf_r = file->private_data;
+            int rc = vbsf_inode_revalidate_with_handle(VBSF_GET_F_DENTRY(file), sf_r->Handle.hHost, true /*fForce*/,
                                  false /*fInodeLocked*/);
             if (rc == 0)
                 break;
@@ -1265,7 +1265,7 @@ struct inode_operations vbsf_reg_iops = {
  */
 static int vbsf_readpage(struct file *file, struct page *page)
 {
-    struct inode *inode = GET_F_DENTRY(file)->d_inode;
+    struct inode *inode = VBSF_GET_F_DENTRY(file)->d_inode;
     int           err;
 
     SFLOGFLOW(("vbsf_readpage: inode=%p file=%p page=%p off=%#llx\n", inode, file, page, (uint64_t)page->index << PAGE_SHIFT));
@@ -1274,7 +1274,7 @@ static int vbsf_readpage(struct file *file, struct page *page)
         VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
         if (pReq) {
             struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-            struct sf_reg_info     *sf_r = file->private_data;
+            struct vbsf_reg_info     *sf_r = file->private_data;
             uint32_t            cbRead;
             int                     vrc;
 
@@ -1323,11 +1323,11 @@ static int vbsf_readpage(struct file *file, struct page *page)
  */
 static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
 {
-    struct address_space *mapping   = page->mapping;
-    struct inode         *inode     = mapping->host;
-    struct sf_inode_info *sf_i      = GET_INODE_INFO(inode);
-    struct sf_handle     *pHandle   = vbsf_handle_find(sf_i, SF_HANDLE_F_WRITE, SF_HANDLE_F_APPEND);
-    int                   err;
+    struct address_space   *mapping = page->mapping;
+    struct inode           *inode   = mapping->host;
+    struct vbsf_inode_info *sf_i    = VBSF_GET_INODE_INFO(inode);
+    struct sf_handle       *pHandle = vbsf_handle_find(sf_i, SF_HANDLE_F_WRITE, SF_HANDLE_F_APPEND);
+    int                     err;
 
     SFLOGFLOW(("vbsf_writepage: inode=%p page=%p off=%#llx pHandle=%p (%#llx)\n",
            inode, page,(uint64_t)page->index << PAGE_SHIFT, pHandle, pHandle->hHost));

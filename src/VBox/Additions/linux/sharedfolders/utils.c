@@ -141,7 +141,7 @@ DECLINLINE(int) sf_file_mode_to_linux(uint32_t fVBoxMode, int fFixedMode, int fC
 /**
  * Initializes the @a inode attributes based on @a pObjInfo and @a sf_g options.
  */
-void vbsf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO pObjInfo, struct vbsf_super_info *sf_g)
+void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSOBJINFO pObjInfo, struct vbsf_super_info *sf_g)
 {
     PCSHFLFSOBJATTR pAttr = &pObjInfo->Attr;
 
@@ -213,7 +213,7 @@ void vbsf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJ
  *
  * @todo sort out the inode locking situation.
  */
-static void vbsf_update_inode(struct inode *pInode, struct sf_inode_info *pInodeInfo, PSHFLFSOBJINFO pObjInfo,
+static void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo, PSHFLFSOBJINFO pObjInfo,
                               struct vbsf_super_info *sf_g, bool fInodeLocked)
 {
     PCSHFLFSOBJATTR pAttr = &pObjInfo->Attr;
@@ -338,7 +338,7 @@ int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced)
     int rc;
     struct inode *pInode = dentry ? dentry->d_inode : NULL;
     if (pInode) {
-        struct sf_inode_info   *sf_i = GET_INODE_INFO(pInode);
+        struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(pInode);
         struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(pInode->i_sb);
         AssertReturn(sf_i, -EINVAL);
         AssertReturn(sf_g, -EINVAL);
@@ -447,7 +447,7 @@ int vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFil
         LogFunc(("no dentry(%p) or inode(%p)\n", dentry, pInode));
         err = -EINVAL;
     } else {
-        struct sf_inode_info   *sf_i = GET_INODE_INFO(pInode);
+        struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(pInode);
         struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(pInode->i_sb);
         AssertReturn(sf_i, -EINVAL);
         AssertReturn(sf_g, -EINVAL);
@@ -535,7 +535,7 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
         /* Add birth time. */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
         if (dentry->d_inode) {
-            struct sf_inode_info *pInodeInfo = GET_INODE_INFO(dentry->d_inode);
+            struct vbsf_inode_info *pInodeInfo = VBSF_GET_INODE_INFO(dentry->d_inode);
             if (pInodeInfo) {
                 vbsf_time_to_linux(&kstat->btime, &pInodeInfo->BirthTime);
                 kstat->result_mask |= STATX_BTIME;
@@ -574,7 +574,7 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
 int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
 {
     struct vbsf_super_info *sf_g;
-    struct sf_inode_info *sf_i;
+    struct vbsf_inode_info *sf_i;
     union SetAttrReqs
     {
         VBOXSFCREATEREQ         Create;
@@ -592,7 +592,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
     TRACE();
 
     sf_g = VBSF_GET_SUPER_INFO(dentry->d_inode->i_sb);
-    sf_i = GET_INODE_INFO(dentry->d_inode);
+    sf_i = VBSF_GET_INODE_INFO(dentry->d_inode);
     cbReq = RT_MAX(sizeof(pReq->Info), sizeof(pReq->Create) + SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
     pReq = (union SetAttrReqs *)VbglR0PhysHeapAlloc(cbReq);
     if (!pReq) {
@@ -697,7 +697,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
 
 #endif /* >= 2.6.0 */
 
-static int vbsf_make_path(const char *caller, struct sf_inode_info *sf_i,
+static int vbsf_make_path(const char *caller, struct vbsf_inode_info *sf_i,
                           const char *d_name, size_t d_len, SHFLSTRING **result)
 {
     size_t path_len, shflstring_len;
@@ -750,7 +750,7 @@ static int vbsf_make_path(const char *caller, struct sf_inode_info *sf_i,
  * to [sf_g]->nls, we must convert it to UTF8 here and pass down to
  * [vbsf_make_path] which will allocate SHFLSTRING and fill it in
  */
-int vbsf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g, struct sf_inode_info *sf_i,
+int vbsf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i,
                           struct dentry *dentry, SHFLSTRING **result)
 {
     int err;
@@ -886,9 +886,9 @@ int vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len,
     return 0;
 }
 
-static struct sf_dir_buf *vbsf_dir_buf_alloc(void)
+static struct vbsf_dir_buf *vbsf_dir_buf_alloc(void)
 {
-    struct sf_dir_buf *b;
+    struct vbsf_dir_buf *b;
 
     TRACE();
     b = kmalloc(sizeof(*b), GFP_KERNEL);
@@ -910,7 +910,7 @@ static struct sf_dir_buf *vbsf_dir_buf_alloc(void)
     return b;
 }
 
-static void vbsf_dir_buf_free(struct sf_dir_buf *b)
+static void vbsf_dir_buf_free(struct vbsf_dir_buf *b)
 {
     BUG_ON(!b || !b->buf);
 
@@ -923,16 +923,16 @@ static void vbsf_dir_buf_free(struct sf_dir_buf *b)
 /**
  * Free the directory buffer.
  */
-void vbsf_dir_info_free(struct sf_dir_info *p)
+void vbsf_dir_info_free(struct vbsf_dir_info *p)
 {
     struct list_head *list, *pos, *tmp;
 
     TRACE();
     list = &p->info_list;
     list_for_each_safe(pos, tmp, list) {
-        struct sf_dir_buf *b;
+        struct vbsf_dir_buf *b;
 
-        b = list_entry(pos, struct sf_dir_buf, head);
+        b = list_entry(pos, struct vbsf_dir_buf, head);
         vbsf_dir_buf_free(b);
     }
     kfree(p);
@@ -941,14 +941,14 @@ void vbsf_dir_info_free(struct sf_dir_info *p)
 /**
  * Empty (but not free) the directory buffer.
  */
-void vbsf_dir_info_empty(struct sf_dir_info *p)
+void vbsf_dir_info_empty(struct vbsf_dir_info *p)
 {
     struct list_head *list, *pos, *tmp;
     TRACE();
     list = &p->info_list;
     list_for_each_safe(pos, tmp, list) {
-        struct sf_dir_buf *b;
-        b = list_entry(pos, struct sf_dir_buf, head);
+        struct vbsf_dir_buf *b;
+        b = list_entry(pos, struct vbsf_dir_buf, head);
         b->cEntries = 0;
         b->cbUsed = 0;
         b->cbFree = DIR_BUFFER_SIZE;
@@ -958,9 +958,9 @@ void vbsf_dir_info_empty(struct sf_dir_info *p)
 /**
  * Create a new directory buffer descriptor.
  */
-struct sf_dir_info *vbsf_dir_info_alloc(void)
+struct vbsf_dir_info *vbsf_dir_info_alloc(void)
 {
-    struct sf_dir_info *p;
+    struct vbsf_dir_info *p;
 
     TRACE();
     p = kmalloc(sizeof(*p), GFP_KERNEL);
@@ -976,15 +976,15 @@ struct sf_dir_info *vbsf_dir_info_alloc(void)
 /**
  * Search for an empty directory content buffer.
  */
-static struct sf_dir_buf *vbsf_get_empty_dir_buf(struct sf_dir_info *sf_d)
+static struct vbsf_dir_buf *vbsf_get_empty_dir_buf(struct vbsf_dir_info *sf_d)
 {
     struct list_head *list, *pos;
 
     list = &sf_d->info_list;
     list_for_each(pos, list) {
-        struct sf_dir_buf *b;
+        struct vbsf_dir_buf *b;
 
-        b = list_entry(pos, struct sf_dir_buf, head);
+        b = list_entry(pos, struct vbsf_dir_buf, head);
         if (!b)
             return NULL;
         else {
@@ -998,7 +998,7 @@ static struct sf_dir_buf *vbsf_get_empty_dir_buf(struct sf_dir_info *sf_d)
 
 /** @todo r=bird: Why on earth do we read in the entire directory???  This
  *        cannot be healthy for like big directory and such... */
-int vbsf_dir_read_all(struct vbsf_super_info *sf_g, struct sf_inode_info *sf_i, struct sf_dir_info *sf_d, SHFLHANDLE handle)
+int vbsf_dir_read_all(struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i, struct vbsf_dir_info *sf_d, SHFLHANDLE handle)
 {
     int err;
     SHFLSTRING *mask;
@@ -1014,7 +1014,7 @@ int vbsf_dir_read_all(struct vbsf_super_info *sf_g, struct sf_inode_info *sf_i, 
 
     for (;;) {
         int rc;
-        struct sf_dir_buf *b;
+        struct vbsf_dir_buf *b;
 
         b = vbsf_get_empty_dir_buf(sf_d);
         if (!b) {
@@ -1073,7 +1073,8 @@ static int vbsf_dentry_revalidate(struct dentry *dentry, int flags)
     int rc;
 
     Assert(dentry);
-    SFLOGFLOW(("vbsf_dentry_revalidate: %p %#x %s\n", dentry, flags, dentry->d_inode ? GET_INODE_INFO(dentry->d_inode)->path->String.ach : "<negative>"));
+    SFLOGFLOW(("vbsf_dentry_revalidate: %p %#x %s\n", dentry, flags,
+               dentry->d_inode ? VBSF_GET_INODE_INFO(dentry->d_inode)->path->String.ach : "<negative>"));
 
     /*
      * See Documentation/filesystems/vfs.txt why we skip LOOKUP_RCU.
@@ -1103,7 +1104,7 @@ static int vbsf_dentry_revalidate(struct dentry *dentry, int flags)
              *       current (4.19) CIFS will for instance revalidate the inode
              *       and ignore the dentry timestamp for positive entries.
              */
-            //struct sf_inode_info *sf_i = GET_INODE_INFO(pInode);
+            //struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(pInode);
             unsigned long const     cJiffiesAge = vbsf_dentry_get_update_jiffies(dentry) - jiffies;
             struct vbsf_super_info *sf_g        = VBSF_GET_SUPER_INFO(dentry->d_sb);
             if (cJiffiesAge < sf_g->ttl) {
