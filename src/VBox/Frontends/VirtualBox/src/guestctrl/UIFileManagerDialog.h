@@ -58,7 +58,6 @@ protected:
     QString       m_strMachineName;
 };
 
-
 /** QIManagerDialog extension providing GUI with the dialog displaying file manager releated logs. */
 class UIFileManagerDialog : public QIWithRetranslateUI<QIManagerDialog>
 {

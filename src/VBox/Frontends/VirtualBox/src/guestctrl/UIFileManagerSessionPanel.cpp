@@ -18,18 +18,11 @@
 /* Qt includes: */
 #include <QCheckBox>
 #include <QHBoxLayout>
-#include <QMenu>
 #include <QPushButton>
-#include <QSpinBox>
-#include <QTextEdit>
 
 /* GUI includes: */
 #include "QILineEdit.h"
-#include "QIToolButton.h"
-#include "UIIconPool.h"
-#include "UIFileManager.h"
 #include "UIFileManagerSessionPanel.h"
-
 
 /*********************************************************************************************************************************
 *   UIGuestSessionCreateWidget definition.                                                                                   *
@@ -102,21 +95,21 @@ void UIGuestSessionCreateWidget::prepareWidgets()
     if (m_pUserNameEdit)
     {
         m_pMainLayout->addWidget(m_pUserNameEdit, 2);
-        m_pUserNameEdit->setPlaceholderText("User Name");
+        m_pUserNameEdit->setPlaceholderText(QApplication::translate("UIFileManager", "User Name"));
     }
 
     m_pPasswordEdit = new QILineEdit;
     if (m_pPasswordEdit)
     {
         m_pMainLayout->addWidget(m_pPasswordEdit, 2);
-        m_pPasswordEdit->setPlaceholderText(UIFileManager::tr("Password"));
+        m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIFileManager", "Password"));
         m_pPasswordEdit->setEchoMode(QLineEdit::Password);
     }
 
     m_pShowPasswordCheckBox = new QCheckBox;
     if (m_pShowPasswordCheckBox)
     {
-        m_pShowPasswordCheckBox->setText(UIFileManager::tr("Show Password"));
+        m_pShowPasswordCheckBox->setText(QApplication::translate("UIFileManager", "Show Password"));
         m_pMainLayout->addWidget(m_pShowPasswordCheckBox);
         connect(m_pShowPasswordCheckBox, &QCheckBox::toggled,
                 this, &UIGuestSessionCreateWidget::sltShowHidePassword);
@@ -160,20 +153,20 @@ void UIGuestSessionCreateWidget::retranslateUi()
 {
     if (m_pUserNameEdit)
     {
-        m_pUserNameEdit->setToolTip(UIFileManager::tr("User name to authenticate session creation"));
-        m_pUserNameEdit->setPlaceholderText(UIFileManager::tr("User Name"));
+        m_pUserNameEdit->setToolTip(QApplication::translate("UIFileManager", "User name to authenticate session creation"));
+        m_pUserNameEdit->setPlaceholderText(QApplication::translate("UIFileManager", "User Name"));
 
     }
     if (m_pPasswordEdit)
     {
-        m_pPasswordEdit->setToolTip(UIFileManager::tr("Password to authenticate session creation"));
-        m_pPasswordEdit->setPlaceholderText(UIFileManager::tr("Password"));
+        m_pPasswordEdit->setToolTip(QApplication::translate("UIFileManager", "Password to authenticate session creation"));
+        m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIFileManager", "Password"));
     }
 
     if (m_pCreateButton)
-        m_pCreateButton->setText(UIFileManager::tr("Create Session"));
+        m_pCreateButton->setText(QApplication::translate("UIFileManager", "Create Session"));
     if (m_pCloseButton)
-        m_pCloseButton->setText(UIFileManager::tr("Close Session"));
+        m_pCloseButton->setText(QApplication::translate("UIFileManager", "Close Session"));
 }
 
 void UIGuestSessionCreateWidget::keyPressEvent(QKeyEvent * pEvent)

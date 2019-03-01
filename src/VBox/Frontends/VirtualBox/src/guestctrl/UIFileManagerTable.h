@@ -103,7 +103,6 @@ private:
     bool     m_fOkToContinue;
 };
 
-
 /** A QIDialog child to display properties of a file object */
 class UIPropertiesDialog : public QIDialog
 {
@@ -122,7 +121,6 @@ private:
     QTextEdit   *m_pInfoEdit;
     QString      m_strProperty;
 };
-
 
 /** This class serves a base class for file table. Currently a guest version
  *  and a host version are derived from this base. Each of these children

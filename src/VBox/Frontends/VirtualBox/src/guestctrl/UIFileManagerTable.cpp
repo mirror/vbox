@@ -19,22 +19,16 @@
 #include <QAction>
 #include <QComboBox>
 #include <QCheckBox>
-#include <QDateTime>
-#include <QDir>
 #include <QHeaderView>
 #include <QItemDelegate>
 #include <QGridLayout>
-#include <QMenu>
-#include <QSortFilterProxyModel>
 #include <QTextEdit>
-#include <QPushButton>
 
 /* GUI includes: */
 #include "QIDialog.h"
 #include "QIDialogButtonBox.h"
 #include "QILabel.h"
 #include "QILineEdit.h"
-#include "QIMessageBox.h"
 #include "VBoxGlobal.h"
 #include "UIActionPool.h"
 #include "UICustomFileSystemModel.h"
@@ -97,7 +91,6 @@ class UIFileDelegate : public QItemDelegate
 protected:
 
     virtual void drawFocus ( QPainter * /*painter*/, const QStyleOptionViewItem & /*option*/, const QRect & /*rect*/ ) const {}
-
 };
 
 
@@ -119,7 +112,6 @@ public:
 private:
 
     QILineEdit      *m_pLineEdit;
-
 };
 
 
@@ -143,7 +135,6 @@ private:
 
     QCheckBox *m_pAskNextTimeCheckBox;
     QILabel   *m_pQuestionLabel;
-
 };
 
 

@@ -68,7 +68,6 @@ private:
 
     static QString permissionString(QFileDevice::Permissions permissions);
     void    prepareActionConnections();
-
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerHostTable_h */

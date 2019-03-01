@@ -157,7 +157,6 @@ private slots:
             }
         }
     }
-
 };
 
 UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,

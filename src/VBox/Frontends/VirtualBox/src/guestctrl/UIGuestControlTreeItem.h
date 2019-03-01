@@ -109,7 +109,6 @@ private:
     void addGuestProcess(CGuestProcess guestProcess);
     void initProcessSubTree();
     CGuestSession m_comGuestSession;
-
 };
 
 /** UIGuestControlTreeItem extension. Represents a instance of CGuestProcess
@@ -150,4 +149,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIGuestControlTreeItem_h */
-

@@ -45,16 +45,16 @@ class UIFileManagerOperationsPanel : public UIDialogPanel
 {
     Q_OBJECT;
 
+signals:
+
+    void sigFileOperationComplete(QUuid progressId);
+    void sigFileOperationFail(QString strErrorString, FileManagerLogType eLogType);
+
 public:
 
     UIFileManagerOperationsPanel(QWidget *pParent = 0);
     virtual QString panelName() const /* override */;
     void addNewProgress(const CProgress &comProgress);
-
-signals:
-
-    void sigFileOperationComplete(QUuid progressId);
-    void sigFileOperationFail(QString strErrorString, FileManagerLogType eLogType);
 
 protected:
 
@@ -89,9 +89,6 @@ private:
         QWidget        *m_pWidgetInFocus;
         QSet<QWidget*>  m_widgetSet;
     /** @} */
-
-
-
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIFileManagerOperationsPanel_h */

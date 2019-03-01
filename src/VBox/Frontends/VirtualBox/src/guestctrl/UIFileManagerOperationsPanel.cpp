@@ -48,19 +48,19 @@ class UIFileOperationProgressWidget : public QIWithRetranslateUI<QFrame>
 
     Q_OBJECT;
 
-public:
-
-    UIFileOperationProgressWidget(const CProgress &comProgress, QWidget *pParent = 0);
-    ~UIFileOperationProgressWidget();
-    bool isCompleted() const;
-    bool isCanceled() const;
-
 signals:
 
     void sigProgressComplete(QUuid progressId);
     void sigProgressFail(QString strErrorString, FileManagerLogType eLogType);
     void sigFocusIn(QWidget *pWidget);
     void sigFocusOut(QWidget *pWidget);
+
+public:
+
+    UIFileOperationProgressWidget(const CProgress &comProgress, QWidget *pParent = 0);
+    ~UIFileOperationProgressWidget();
+    bool isCompleted() const;
+    bool isCanceled() const;
 
 protected:
 
@@ -85,8 +85,8 @@ private:
         OperationStatus_Failed,
         OperationStatus_Invalid,
         OperationStatus_Max
-
     };
+
     void prepare();
     void prepareWidgets();
     void prepareEventHandler();

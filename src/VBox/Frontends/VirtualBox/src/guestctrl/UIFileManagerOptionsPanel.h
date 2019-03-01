@@ -26,7 +26,6 @@
 
 /* Forward declarations: */
 class QCheckBox;
-class QSpinBox;
 class QLabel;
 class QIToolButton;
 class UIFileManagerOptions;
@@ -37,6 +36,10 @@ class UIFileManagerOptionsPanel : public UIDialogPanel
 {
     Q_OBJECT;
 
+signals:
+
+    void sigOptionsChanged();
+
 public:
 
     UIFileManagerOptionsPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions);
@@ -44,10 +47,6 @@ public:
     /** Reads the file manager options and updates the widget accordingly. This functions is typically called
      *  when file manager options have been changed by other means and this panel needs to adapt. */
     void update();
-
-signals:
-
-    void sigOptionsChanged();
 
 protected:
 

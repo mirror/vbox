@@ -71,6 +71,7 @@ protected:
     virtual bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const /* override */;
 };
 
+
 /*********************************************************************************************************************************
 *   UIVisoContentTableView implementation.                                                                                       *
 *********************************************************************************************************************************/
@@ -110,6 +111,7 @@ void UIVisoContentTableView::dropEvent(QDropEvent *pEvent)
     }
 }
 
+
 /*********************************************************************************************************************************
 *   UIVisoContentTreeProxyModel implementation.                                                                                  *
 *********************************************************************************************************************************/
@@ -136,6 +138,7 @@ bool UIVisoContentTreeProxyModel::filterAcceptsRow(int iSourceRow, const QModelI
 
     return false;
 }
+
 
 /*********************************************************************************************************************************
 *   UIVisoContentBrowser implementation.                                                                                         *

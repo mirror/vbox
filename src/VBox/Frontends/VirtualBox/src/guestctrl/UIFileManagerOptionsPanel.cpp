@@ -16,20 +16,13 @@
  */
 
 /* Qt includes: */
-#include <QComboBox>
 #include <QHBoxLayout>
-#include <QFontDatabase>
-#include <QFontDialog>
 #include <QCheckBox>
-#include <QLabel>
-#include <QSpinBox>
 
 /* GUI includes: */
 #include "QIToolButton.h"
-#include "UIIconPool.h"
 #include "UIFileManager.h"
 #include "UIFileManagerOptionsPanel.h"
-
 
 UIFileManagerOptionsPanel::UIFileManagerOptionsPanel(QWidget *pParent, UIFileManagerOptions *pFileManagerOptions)
     : UIDialogPanel(pParent)

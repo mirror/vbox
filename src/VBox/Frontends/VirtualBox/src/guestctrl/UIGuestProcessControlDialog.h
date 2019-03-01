@@ -33,12 +33,9 @@
 #include "CGuest.h"
 
 /* Forward declarations: */
-class QDialogButtonBox;
-class QVBoxLayout;
 class UIActionPool;
 class UIGuestProcessControlDialog;
 class CGuest;
-
 
 /** QIManagerDialogFactory extension used as a factory for the Guest Control dialog. */
 class UIGuestProcessControlDialogFactory : public QIManagerDialogFactory
