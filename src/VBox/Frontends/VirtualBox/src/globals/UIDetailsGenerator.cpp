@@ -340,10 +340,6 @@ UITextTable UIDetailsGenerator::generateMachineInformationStorage(CMachine &comM
         return table;
     }
 
-    /* This is needed at least for some vm to show correct storage info. For the manager UI enumeration has been done already: */
-    if (vboxGlobal().uiType() == VBoxGlobal::UIType_RuntimeUI)
-        vboxGlobal().startMediumEnumeration();
-
     /* Iterate over all the machine controllers: */
     foreach (const CStorageController &comController, comMachine.GetStorageControllers())
     {
