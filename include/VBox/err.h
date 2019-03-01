@@ -2117,6 +2117,8 @@
 /** The behavior of the instruction/operation is modified/needs modification
  *  in VMX non-root mode. */
 #define VINF_VMX_MODIFIES_BEHAVIOR                  4036
+/** VMLAUNCH/VMRESUME succeeded, can enter nested-guest execution. */
+#define VINF_VMX_VMLAUNCH_VMRESUME                  4037
 /** @} */
 
 
