@@ -25,14 +25,10 @@
 #include "UIDialogPanel.h"
 
 /* Forward declarations: */
-class QGridLayout;
-class QTextEdit;
 class QComboBox;
 class QILabel;
 class QILineEdit;
-class QITabWidget;
 class QIToolButton;
-class UIVisoCreator;
 
 class UIVisoConfigurationPanel : public UIDialogPanel
 {
@@ -72,8 +68,6 @@ private:
     QILineEdit   *m_pVisoNameLineEdit;
     QComboBox    *m_pCustomOptionsComboBox;
     QIToolButton *m_pDeleteButton;
-
-    friend class UIVisoCreator;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_viso_UIVisoConfigurationPanel_h */

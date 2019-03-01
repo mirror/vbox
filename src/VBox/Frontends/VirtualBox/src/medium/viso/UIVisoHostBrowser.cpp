@@ -15,7 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 /* Qt includes: */
-#include <QAbstractItemModel>
 #include <QFileSystemModel>
 #include <QGridLayout>
 #include <QHeaderView>

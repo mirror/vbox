@@ -17,24 +17,16 @@
 
 
 /* Qt includes: */
-#include <QAction>
-#include <QAbstractItemModel>
-#include <QDateTime>
 #include <QDir>
-#include <QFileSystemModel>
-#include <QHBoxLayout>
+#include <QFileInfo>
+#include <QGridLayout>
 #include <QHeaderView>
-#include <QLabel>
-#include <QListView>
-#include <QMenu>
 #include <QMimeData>
-#include <QSplitter>
 #include <QTableView>
 #include <QTreeView>
 
 /* GUI includes: */
 #include "UICustomFileSystemModel.h"
-#include "UIIconPool.h"
 #include "UIPathOperations.h"
 #include "UIVisoContentBrowser.h"
 

@@ -18,18 +18,13 @@
 /* Qt includes: */
 #include <QHeaderView>
 #include <QGridLayout>
-#include <QLabel>
 #include <QLineEdit>
-#include <QSplitter>
-#include <QTableView>
 #include <QTreeView>
-#include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIToolButton.h"
 #include "UIIconPool.h"
 #include "UIVisoBrowserBase.h"
-
 
 /*********************************************************************************************************************************
 *   UILocationSelector definition.                                                                                   *

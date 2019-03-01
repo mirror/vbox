@@ -16,17 +16,10 @@
  */
 
 /* Qt includes: */
-#include <QCheckBox>
+#include <QComboBox>
 #include <QGridLayout>
-#include <QTextEdit>
-#include <QPushButton>
-#include <QSplitter>
-#include <QStyle>
-#include <QTextBlock>
 
 /* GUI includes: */
-#include <QComboBox>
-#include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
 #include "QILabel.h"
 #include "QILineEdit.h"

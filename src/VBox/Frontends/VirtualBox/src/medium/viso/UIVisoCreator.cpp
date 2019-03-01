@@ -16,10 +16,10 @@
  */
 
 /* Qt includes: */
+#include <QGridLayout>
 #include <QMenuBar>
 #include <QPushButton>
 #include <QStyle>
-#include <QGridLayout>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"

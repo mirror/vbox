@@ -21,11 +21,6 @@
 # pragma once
 #endif
 
-
-
-/* Qt includes: */
-
-
 /* Qt includes: */
 #include <QModelIndex>
 
@@ -34,12 +29,9 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
-class QItemSelection;
 class QMenu;
-class QSplitter;
 class QGridLayout;
 class QIDialogButtonBox;
-class UIActionPool;
 class UIDialogPanel;
 class UIToolBar;
 class UIVisoHostBrowser;
@@ -58,8 +50,10 @@ public:
 
     UIVisoCreator(QWidget *pParent = 0, const QString& strMachineName = QString());
     ~UIVisoCreator();
+    /** Returns the content of the .viso file. Each element of the list corresponds to a line in the .viso file. */
     QStringList       entryList() const;
     const QString     &visoName() const;
+    /** Returns custom ISO options (if any). */
     const QStringList &customOptions() const;
     /** Returns the current path that the host browser is listing. */
     QString currentPath() const;

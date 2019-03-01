@@ -31,10 +31,6 @@
 /* Forward declarations: */
 class QItemSelection;
 class QGridLayout;
-class QLabel;
-class QSplitter;
-class QVBoxLayout;
-class QTableView;
 class QTreeView;
 class UILocationSelector;
 

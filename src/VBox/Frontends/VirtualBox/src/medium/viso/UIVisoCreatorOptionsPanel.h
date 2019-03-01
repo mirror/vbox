@@ -27,7 +27,6 @@ class QILabel;
 
 /* GUI includes: */
 #include "UIDialogPanel.h"
-#include "QIWithRetranslateUI.h"
 
 class UIVisoCreatorOptionsPanel : public UIDialogPanel
 {

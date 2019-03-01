@@ -21,16 +21,12 @@
 # pragma once
 #endif
 
-
-/* Qt includes: */
-# include <QModelIndex>
-
 /* GUI includes: */
 #include "UIVisoBrowserBase.h"
 
 /* Forward declarations: */
 class QItemSelection;
-class UIFileTreeContainer;
+class QTableView;
 class UIVisoHostBrowserModel;
 
 /** A UIVisoBrowserBase extension to view host file system. Uses QFileSystemModel. */

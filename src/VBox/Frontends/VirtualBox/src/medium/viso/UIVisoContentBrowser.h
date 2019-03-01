@@ -24,23 +24,18 @@
 /* Qt includes: */
 #include <QWidget>
 
-/* Qt includes: */
-#include <QModelIndex>
-#include <QFileInfo>
-
 /* GUI includes: */
 #include "UIVisoBrowserBase.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 
-
 /* Forward declarations: */
+class QFileInfo;
 class UICustomFileSystemItem;
 class UICustomFileSystemModel;
 class UICustomFileSystemProxyModel;
 class UIVisoContentTreeProxyModel;
-class UICustomFileSystemItem;
 class UIVisoContentTableView;
 
 /** A UIVisoBrowserBase extension to view content of a VISO as a file tree. */
