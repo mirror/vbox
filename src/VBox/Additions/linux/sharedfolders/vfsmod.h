@@ -319,15 +319,6 @@ extern struct sf_dir_info *sf_dir_info_alloc(void);
 extern int sf_dir_read_all(struct sf_glob_info *sf_g,
 			   struct sf_inode_info *sf_i, struct sf_dir_info *sf_d,
 			   SHFLHANDLE handle);
-extern int sf_init_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g);
-extern void sf_done_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g);
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-# define STRUCT_STATFS  struct statfs
-#else
-# define STRUCT_STATFS  struct kstatfs
-#endif
-int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS * stat);
 
 #ifdef __cplusplus
 # define CMC_API __attribute__ ((cdecl, regparm (0)))

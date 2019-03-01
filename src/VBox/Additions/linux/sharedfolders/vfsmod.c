@@ -37,6 +37,9 @@
  * See also: http://us1.samba.org/samba/ftp/cifs-cvs/ols2006-fs-tutorial-smf.odp
  */
 
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "vfsmod.h"
 #include "version-generated.h"
 #include "revision-generated.h"
@@ -45,29 +48,30 @@
 # include <linux/mount.h>
 #endif
 #include <linux/seq_file.h>
+#include <linux/vfs.h>
+#include <linux/nfs_fs.h> /* for NFS_SUPER_MAGIC */
 #include <iprt/path.h>
 
-MODULE_DESCRIPTION(VBOX_PRODUCT " VFS Module for Host File System Access");
-MODULE_AUTHOR(VBOX_VENDOR);
-MODULE_LICENSE("GPL and additional rights");
-#ifdef MODULE_ALIAS_FS
-MODULE_ALIAS_FS("vboxsf");
-#endif
-#ifdef MODULE_VERSION
-MODULE_VERSION(VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV));
-#endif
 
-/* globals */
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 VBGLSFCLIENT client_handle;
 VBGLSFCLIENT g_SfClient;      /* temporary? */
 
 uint32_t g_fHostFeatures = 0; /* temporary? */
 
+/** Protects all the sf_inode_info::HandleList lists. */
 spinlock_t g_SfHandleLock;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 52)
+static int g_fFollowSymlinks = 0;
+#endif
 
-/* forward declarations */
+/* forward declaration */
 static struct super_operations sf_super_ops;
+
+
 
 /**
  * Copies options from the mount info structure into @a sf_g.
@@ -245,9 +249,89 @@ static void sf_glob_free(struct sf_glob_info *sf_g)
 	kfree(sf_g);
 }
 
+
 /**
- * This is called (by sf_read_super_[24|26] when vfs mounts the fs and
- * wants to read super_block.
+ * Initialize backing device related matters.
+ */
+static int sf_init_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g)
+{
+	int rc = 0;
+/** @todo this needs sorting out between 3.19 and 4.11   */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) //&& LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
+	/* Each new shared folder map gets a new uint64_t identifier,
+	 * allocated in sequence.  We ASSUME the sequence will not wrap. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
+	static uint64_t s_u64Sequence = 0;
+	uint64_t u64CurrentSequence = ASMAtomicIncU64(&s_u64Sequence);
+#endif
+	struct backing_dev_info *bdi;
+
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+	rc = super_setup_bdi_name(sb, "vboxsf-%llu", (unsigned long long)u64CurrentSequence);
+	if (!rc)
+		bdi = sb->s_bdi;
+	else
+		return rc;
+#  else
+	bdi = &sf_g->bdi;
+#  endif
+
+	bdi->ra_pages = 0;                      /* No readahead */
+
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
+	bdi->capabilities = 0
+#  ifdef BDI_CAP_MAP_DIRECT
+		          | BDI_CAP_MAP_DIRECT  /* MAP_SHARED */
+#  endif
+#  ifdef BDI_CAP_MAP_COPY
+	                  | BDI_CAP_MAP_COPY    /* MAP_PRIVATE */
+#  endif
+#  ifdef BDI_CAP_READ_MAP
+	                  | BDI_CAP_READ_MAP    /* can be mapped for reading */
+#  endif
+#  ifdef BDI_CAP_WRITE_MAP
+	                  | BDI_CAP_WRITE_MAP   /* can be mapped for writing */
+#  endif
+#  ifdef BDI_CAP_EXEC_MAP
+	                  | BDI_CAP_EXEC_MAP    /* can be mapped for execution */
+#  endif
+#  ifdef BDI_CAP_STRICTLIMIT
+	                  | BDI_CAP_STRICTLIMIT;
+#  endif
+			  ;
+#  ifdef BDI_CAP_STRICTLIMIT
+	/* Smalles possible amount of dirty pages: %1 of RAM */
+	bdi_set_max_ratio(bdi, 1);
+#  endif
+# endif	/* >= 2.6.12 */
+
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+	rc = bdi_init(&sf_g->bdi);
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
+	if (!rc)
+		rc = bdi_register(&sf_g->bdi, NULL, "vboxsf-%llu",
+				  (unsigned long long)u64CurrentSequence);
+#  endif /* >= 2.6.26 */
+# endif	 /* >= 2.6.24 */
+#endif   /* >= 2.6.0 */
+	return rc;
+}
+
+
+/**
+ * Undoes what sf_init_backing_dev did.
+ */
+static void sf_done_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
+	bdi_destroy(&sf_g->bdi);	/* includes bdi_unregister() */
+#endif
+}
+
+
+/**
+ * This is called by sf_read_super_24() and sf_read_super_26() when vfs mounts
+ * the fs and wants to read super_block.
  *
  * calls [sf_glob_alloc] to map the folder and allocate global
  * information structure.
@@ -397,71 +481,51 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 	return err;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-static struct super_block *sf_read_super_24(struct super_block *sb, void *data,
-					    int flags)
-{
-	int err;
 
-	TRACE();
-	err = sf_read_super_aux(sb, data, flags);
-	if (err)
-		return NULL;
-
-	return sb;
-}
-#endif
-
-/* this is called when vfs is about to destroy the [inode]. all
-   resources associated with this [inode] must be cleared here */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
-static void sf_clear_inode(struct inode *inode)
-{
-	struct sf_inode_info *sf_i;
-
-	TRACE();
-	sf_i = GET_INODE_INFO(inode);
-	if (!sf_i)
-		return;
-
-	Assert(sf_i->u32Magic == SF_INODE_INFO_MAGIC);
-	BUG_ON(!sf_i->path);
-	kfree(sf_i->path);
-	sf_handle_drop_chain(sf_i);
-# ifdef VBOX_STRICT
-	sf_i->u32Magic = SF_INODE_INFO_MAGIC_DEAD;
-# endif
-	kfree(sf_i);
-	SET_INODE_INFO(inode, NULL);
-}
-#else  /* LINUX_VERSION_CODE >= 2.6.36 */
+/**
+ * This is called when vfs is about to destroy the @a inode.
+ *
+ * We must free the inode info structure here.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
 static void sf_evict_inode(struct inode *inode)
+#else
+static void sf_clear_inode(struct inode *inode)
+#endif
 {
 	struct sf_inode_info *sf_i;
 
 	TRACE();
+
+	/*
+	 * Flush stuff.
+	 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
 	truncate_inode_pages(&inode->i_data, 0);
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)
 	clear_inode(inode);
 # else
 	end_writeback(inode);
 # endif
-
+#endif
+	/*
+	 * Clean up our inode info.
+	 */
 	sf_i = GET_INODE_INFO(inode);
-	if (!sf_i)
-		return;
+	if (sf_i) {
+		SET_INODE_INFO(inode, NULL);
 
-	Assert(sf_i->u32Magic == SF_INODE_INFO_MAGIC);
-	BUG_ON(!sf_i->path);
-	kfree(sf_i->path);
-	sf_handle_drop_chain(sf_i);
+		Assert(sf_i->u32Magic == SF_INODE_INFO_MAGIC);
+		BUG_ON(!sf_i->path);
+		kfree(sf_i->path);
+		sf_handle_drop_chain(sf_i);
 # ifdef VBOX_STRICT
-	sf_i->u32Magic = SF_INODE_INFO_MAGIC_DEAD;
+		sf_i->u32Magic = SF_INODE_INFO_MAGIC_DEAD;
 # endif
-	kfree(sf_i);
-	SET_INODE_INFO(inode, NULL);
+		kfree(sf_i);
+	}
 }
-#endif /* LINUX_VERSION_CODE >= 2.6.36 */
+
 
 /* this is called by vfs when it wants to populate [inode] with data.
    the only thing that is known about inode at this point is its index
@@ -472,6 +536,7 @@ static void sf_read_inode(struct inode *inode)
 {
 }
 #endif
+
 
 /* vfs is done with [sb] (umount called) call [sf_glob_free] to unmap
    the folder and free [sf_g] */
@@ -485,18 +550,57 @@ static void sf_put_super(struct super_block *sb)
 	sf_glob_free(sf_g);
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-static int sf_statfs(struct super_block *sb, STRUCT_STATFS * stat)
-{
-	return sf_get_volume_info(sb, stat);
-}
+
+/**
+ * Get file system statistics.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+static int sf_statfs(struct dentry *dentry, struct kstatfs *stat)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 73)
+static int sf_statfs(struct super_block *sb, struct kstatfs *stat)
 #else
-static int sf_statfs(struct dentry *dentry, STRUCT_STATFS * stat)
-{
-	struct super_block *sb = dentry->d_inode->i_sb;
-	return sf_get_volume_info(sb, stat);
-}
+static int sf_statfs(struct super_block *sb, struct statfs *stat)
 #endif
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+	struct super_block *sb = dentry->d_inode->i_sb;
+#endif
+	int rc;
+	VBOXSFVOLINFOREQ *pReq = (VBOXSFVOLINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+	if (pReq) {
+		SHFLVOLINFO         *pVolInfo = &pReq->VolInfo;
+		struct sf_glob_info *sf_g     = GET_GLOB_INFO(sb);
+		rc = VbglR0SfHostReqQueryVolInfo(sf_g->map.root, pReq, SHFL_HANDLE_ROOT);
+		if (RT_SUCCESS(rc)) {
+			stat->f_type   = NFS_SUPER_MAGIC; /** @todo vboxsf type? */
+			stat->f_bsize  = pVolInfo->ulBytesPerAllocationUnit;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 73)
+			stat->f_frsize = pVolInfo->ulBytesPerAllocationUnit;
+#endif
+			stat->f_blocks = pVolInfo->ullTotalAllocationBytes
+				       / pVolInfo->ulBytesPerAllocationUnit;
+			stat->f_bfree  = pVolInfo->ullAvailableAllocationBytes
+				       / pVolInfo->ulBytesPerAllocationUnit;
+			stat->f_bavail = pVolInfo->ullAvailableAllocationBytes
+				       / pVolInfo->ulBytesPerAllocationUnit;
+			stat->f_files  = 1000;
+			stat->f_ffree  = 1000; /* don't return 0 here since the guest may think
+						* that it is not possible to create any more files */
+			stat->f_fsid.val[0] = 0;
+			stat->f_fsid.val[1] = 0;
+			stat->f_namelen = 255;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
+			stat->f_flags = 0; /* not valid */
+#endif
+			RT_ZERO(stat->f_spare);
+			rc = 0;
+		} else
+			rc = -RTErrConvertToErrno(rc);
+		VbglR0PhysHeapFree(pReq);
+	} else
+		rc = -ENOMEM;
+	return rc;
+}
 
 static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 {
@@ -534,6 +638,7 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 #endif /* LINUX_VERSION_CODE < 2.4.23 */
 }
 
+
 /**
  * Show mount options.
  *
@@ -564,6 +669,10 @@ static int sf_show_options(struct seq_file *m, struct dentry *root)
 	return 0;
 }
 
+
+/**
+ * Super block operations.
+ */
 static struct super_operations sf_super_ops = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 	.clear_inode = sf_clear_inode,
@@ -579,9 +688,13 @@ static struct super_operations sf_super_ops = {
 	.show_options = sf_show_options
 };
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-static DECLARE_FSTYPE(vboxsf_fs_type, "vboxsf", sf_read_super_24, 0);
-#else
+
+/*
+ * File system type related stuff.
+ */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 4)
+
 static int sf_read_super_26(struct super_block *sb, void *data, int flags)
 {
 	int err;
@@ -629,14 +742,27 @@ static struct file_system_type vboxsf_fs_type = {
 	.kill_sb = kill_anon_super
 };
 
-#endif /* LINUX_VERSION_CODE >= 2.6.0 */
+#else  /* LINUX_VERSION_CODE < 2.5.4 */
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-static int follow_symlinks = 0;
-module_param(follow_symlinks, int, 0);
-MODULE_PARM_DESC(follow_symlinks,
-		 "Let host resolve symlinks rather than showing them");
-#endif
+static struct super_block *sf_read_super_24(struct super_block *sb, void *data,
+					    int flags)
+{
+	int err;
+
+	TRACE();
+	err = sf_read_super_aux(sb, data, flags);
+	if (err) {
+		printk(KERN_DEBUG "sf_read_super_aux err=%d\n", err);
+		return NULL;
+	}
+
+	return sb;
+}
+
+static DECLARE_FSTYPE(vboxsf_fs_type, "vboxsf", sf_read_super_24, 0);
+
+#endif /* LINUX_VERSION_CODE < 2.5.4 */
+
 
 /* Module initialization/finalization handlers */
 static int __init init(void)
@@ -695,7 +821,7 @@ static int __init init(void)
 		goto fail2;
 	}
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-	if (!follow_symlinks) {
+	if (!g_fFollowSymlinks) {
 		vrc = VbglR0SfSetSymlinks(&client_handle);
 		if (RT_FAILURE(vrc)) {
 			printk(KERN_WARNING
@@ -733,8 +859,30 @@ static void __exit fini(void)
 	unregister_filesystem(&vboxsf_fs_type);
 }
 
+
+/*
+ * Module parameters.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 52)
+module_param_named(follow_symlinks, g_fFollowSymlinks, int, 0);
+MODULE_PARM_DESC(follow_symlinks,
+		 "Let host resolve symlinks rather than showing them");
+#endif
+
+
+/*
+ * Module declaration related bits.
+ */
 module_init(init);
 module_exit(fini);
 
-/* C++ hack */
-int __gxx_personality_v0 = 0xdeadbeef;
+MODULE_DESCRIPTION(VBOX_PRODUCT " VFS Module for Host File System Access");
+MODULE_AUTHOR(VBOX_VENDOR);
+MODULE_LICENSE("GPL and additional rights");
+#ifdef MODULE_ALIAS_FS
+MODULE_ALIAS_FS("vboxsf");
+#endif
+#ifdef MODULE_VERSION
+MODULE_VERSION(VBOX_VERSION_STRING " r" RT_XSTR(VBOX_SVN_REV));
+#endif
+

@@ -33,7 +33,6 @@
 #include "vfsmod.h"
 #include <iprt/asm.h>
 #include <iprt/err.h>
-#include <linux/nfs_fs.h>
 #include <linux/vfs.h>
 
 
@@ -1047,49 +1046,6 @@ int sf_dir_read_all(struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
 	return err;
 }
 
-int sf_get_volume_info(struct super_block *sb, STRUCT_STATFS * stat)
-{
-	struct sf_glob_info *sf_g;
-	VBOXSFVOLINFOREQ *pReq;
-	SHFLVOLINFO *pVolInfo;
-	int rc;
-
-	sf_g = GET_GLOB_INFO(sb);
-	pReq = VbglR0PhysHeapAlloc(sizeof(*pReq));
-	if (pReq) {
-		pVolInfo = &pReq->VolInfo;
-		rc = VbglR0SfHostReqQueryVolInfo(sf_g->map.root, pReq, SHFL_HANDLE_ROOT);
-		if (RT_SUCCESS(rc)) {
-			stat->f_type   = NFS_SUPER_MAGIC;	/* XXX vboxsf type? */
-			stat->f_bsize  = pVolInfo->ulBytesPerAllocationUnit;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 73)
-			stat->f_frsize = pVolInfo->ulBytesPerAllocationUnit;
-#endif
-			stat->f_blocks = pVolInfo->ullTotalAllocationBytes
-				       / pVolInfo->ulBytesPerAllocationUnit;
-			stat->f_bfree  = pVolInfo->ullAvailableAllocationBytes
-				       / pVolInfo->ulBytesPerAllocationUnit;
-			stat->f_bavail = pVolInfo->ullAvailableAllocationBytes
-				       / pVolInfo->ulBytesPerAllocationUnit;
-			stat->f_files  = 1000;
-			stat->f_ffree  = 1000; /* don't return 0 here since the guest may think
-						* that it is not possible to create any more files */
-			stat->f_fsid.val[0] = 0;
-			stat->f_fsid.val[1] = 0;
-			stat->f_namelen = 255;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
-			stat->f_flags = 0; /* not valid */
-#endif
-			RT_ZERO(stat->f_spare);
-			rc = 0;
-		} else
-			rc = -RTErrConvertToErrno(rc);
-		VbglR0PhysHeapFree(pReq);
-	} else
-		rc = -ENOMEM;
-	return rc;
-}
-
 
 /**
  * This is called during name resolution/lookup to check if the @a dentry in the
@@ -1233,76 +1189,4 @@ struct dentry_operations sf_dentry_ops = {
 # endif
 #endif
 };
-
-
-int sf_init_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g)
-{
-	int rc = 0;
-/** @todo this needs sorting out between 3.19 and 4.11   */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) //&& LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
-	/* Each new shared folder map gets a new uint64_t identifier,
-	 * allocated in sequence.  We ASSUME the sequence will not wrap. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
-	static uint64_t s_u64Sequence = 0;
-	uint64_t u64CurrentSequence = ASMAtomicIncU64(&s_u64Sequence);
-#endif
-	struct backing_dev_info *bdi;
-
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-	rc = super_setup_bdi_name(sb, "vboxsf-%llu", (unsigned long long)u64CurrentSequence);
-	if (!rc)
-		bdi = sb->s_bdi;
-	else
-		return rc;
-#  else
-	bdi = &sf_g->bdi;
-#  endif
-
-	bdi->ra_pages = 0;                      /* No readahead */
-
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
-	bdi->capabilities = 0
-#  ifdef BDI_CAP_MAP_DIRECT
-		          | BDI_CAP_MAP_DIRECT  /* MAP_SHARED */
-#  endif
-#  ifdef BDI_CAP_MAP_COPY
-	                  | BDI_CAP_MAP_COPY    /* MAP_PRIVATE */
-#  endif
-#  ifdef BDI_CAP_READ_MAP
-	                  | BDI_CAP_READ_MAP    /* can be mapped for reading */
-#  endif
-#  ifdef BDI_CAP_WRITE_MAP
-	                  | BDI_CAP_WRITE_MAP   /* can be mapped for writing */
-#  endif
-#  ifdef BDI_CAP_EXEC_MAP
-	                  | BDI_CAP_EXEC_MAP    /* can be mapped for execution */
-#  endif
-#  ifdef BDI_CAP_STRICTLIMIT
-	                  | BDI_CAP_STRICTLIMIT;
-#  endif
-			  ;
-#  ifdef BDI_CAP_STRICTLIMIT
-	/* Smalles possible amount of dirty pages: %1 of RAM */
-	bdi_set_max_ratio(bdi, 1);
-#  endif
-# endif	/* >= 2.6.12 */
-
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
-	rc = bdi_init(&sf_g->bdi);
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
-	if (!rc)
-		rc = bdi_register(&sf_g->bdi, NULL, "vboxsf-%llu",
-				  (unsigned long long)u64CurrentSequence);
-#  endif /* >= 2.6.26 */
-# endif	 /* >= 2.6.24 */
-#endif   /* >= 2.6.0 */
-	return rc;
-}
-
-void sf_done_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g)
-{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
-	bdi_destroy(&sf_g->bdi);	/* includes bdi_unregister() */
-#endif
-}
 
