@@ -168,11 +168,6 @@ struct sf_handle {
 #define SF_HANDLE_F_MAGIC_DEAD  UINT32_C(0x19371228)
 /** @} */
 
-extern void              vbsf_handle_drop_chain(struct vbsf_inode_info *pInodeInfo);
-extern struct sf_handle *vbsf_handle_find(struct vbsf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear);
-extern uint32_t          vbsf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller);
-extern void              vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct sf_handle *pHandle);
-
 
 /**
  * VBox specific per-inode information.
@@ -227,6 +222,36 @@ extern int  vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr);
 #endif
 
 
+extern void              vbsf_handle_drop_chain(struct vbsf_inode_info *pInodeInfo);
+extern struct sf_handle *vbsf_handle_find(struct vbsf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear);
+extern uint32_t          vbsf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller);
+extern void              vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct sf_handle *pHandle);
+
+/**
+ * Releases a handle.
+ *
+ * @returns New reference count.
+ * @param   pHandle         The handle to release.
+ * @param   sf_g            The info structure for the shared folder associated
+ *                          with the handle.
+ * @param   pszCaller       The caller name (for logging failures).
+ */
+DECLINLINE(uint32_t) vbsf_handle_release(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
+{
+    uint32_t cRefs;
+
+    Assert((pHandle->fFlags & SF_HANDLE_F_MAGIC_MASK) == SF_HANDLE_F_MAGIC);
+    Assert(pHandle->pInodeInfo);
+    Assert(pHandle->pInodeInfo && pHandle->pInodeInfo->u32Magic == SF_INODE_INFO_MAGIC);
+
+    cRefs = ASMAtomicDecU32(&pHandle->cRefs);
+    Assert(cRefs < _64M);
+    if (cRefs)
+        return cRefs;
+    return vbsf_handle_release_slow(pHandle, sf_g, pszCaller);
+}
+
+
 /**
  * VBox specific information for a regular file.
  */
@@ -255,30 +280,6 @@ extern void vbsf_dir_info_empty(struct vbsf_dir_info *p);
 extern struct vbsf_dir_info *vbsf_dir_info_alloc(void);
 extern int  vbsf_dir_read_all(struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i,
                               struct vbsf_dir_info *sf_d, SHFLHANDLE handle);
-
-/**
- * Releases a handle.
- *
- * @returns New reference count.
- * @param   pHandle         The handle to release.
- * @param   sf_g            The info structure for the shared folder associated
- *                          with the handle.
- * @param   pszCaller       The caller name (for logging failures).
- */
-DECLINLINE(uint32_t) vbsf_handle_release(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
-{
-    uint32_t cRefs;
-
-    Assert((pHandle->fFlags & SF_HANDLE_F_MAGIC_MASK) == SF_HANDLE_F_MAGIC);
-    Assert(pHandle->pInodeInfo);
-    Assert(pHandle->pInodeInfo && pHandle->pInodeInfo->u32Magic == SF_INODE_INFO_MAGIC);
-
-    cRefs = ASMAtomicDecU32(&pHandle->cRefs);
-    Assert(cRefs < _64M);
-    if (cRefs)
-        return cRefs;
-    return vbsf_handle_release_slow(pHandle, sf_g, pszCaller);
-}
 
 
 /**
