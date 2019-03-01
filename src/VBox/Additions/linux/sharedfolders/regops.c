@@ -1015,23 +1015,23 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
     }
 
     switch (file->f_flags & O_ACCMODE) {
-    case O_RDONLY:
-        pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_READ;
-        sf_r->Handle.fFlags |= SF_HANDLE_F_READ;
-        break;
+        case O_RDONLY:
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_READ;
+            sf_r->Handle.fFlags |= SF_HANDLE_F_READ;
+            break;
 
-    case O_WRONLY:
-        pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_WRITE;
-        sf_r->Handle.fFlags |= SF_HANDLE_F_WRITE;
-        break;
+        case O_WRONLY:
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_WRITE;
+            sf_r->Handle.fFlags |= SF_HANDLE_F_WRITE;
+            break;
 
-    case O_RDWR:
-        pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
-        sf_r->Handle.fFlags |= SF_HANDLE_F_READ | SF_HANDLE_F_WRITE;
-        break;
+        case O_RDWR:
+            pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
+            sf_r->Handle.fFlags |= SF_HANDLE_F_READ | SF_HANDLE_F_WRITE;
+            break;
 
-    default:
-        BUG();
+        default:
+            BUG();
     }
 
     if (file->f_flags & O_APPEND) {

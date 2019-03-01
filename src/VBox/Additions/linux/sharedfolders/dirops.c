@@ -166,33 +166,33 @@ static int vbsf_get_d_type(RTFMODE fMode)
 {
     int d_type;
     switch (fMode & RTFS_TYPE_MASK) {
-    case RTFS_TYPE_FIFO:
-        d_type = DT_FIFO;
-        break;
-    case RTFS_TYPE_DEV_CHAR:
-        d_type = DT_CHR;
-        break;
-    case RTFS_TYPE_DIRECTORY:
-        d_type = DT_DIR;
-        break;
-    case RTFS_TYPE_DEV_BLOCK:
-        d_type = DT_BLK;
-        break;
-    case RTFS_TYPE_FILE:
-        d_type = DT_REG;
-        break;
-    case RTFS_TYPE_SYMLINK:
-        d_type = DT_LNK;
-        break;
-    case RTFS_TYPE_SOCKET:
-        d_type = DT_SOCK;
-        break;
-    case RTFS_TYPE_WHITEOUT:
-        d_type = DT_WHT;
-        break;
-    default:
-        d_type = DT_UNKNOWN;
-        break;
+        case RTFS_TYPE_FIFO:
+            d_type = DT_FIFO;
+            break;
+        case RTFS_TYPE_DEV_CHAR:
+            d_type = DT_CHR;
+            break;
+        case RTFS_TYPE_DIRECTORY:
+            d_type = DT_DIR;
+            break;
+        case RTFS_TYPE_DEV_BLOCK:
+            d_type = DT_BLK;
+            break;
+        case RTFS_TYPE_FILE:
+            d_type = DT_REG;
+            break;
+        case RTFS_TYPE_SYMLINK:
+            d_type = DT_LNK;
+            break;
+        case RTFS_TYPE_SOCKET:
+            d_type = DT_SOCK;
+            break;
+        case RTFS_TYPE_WHITEOUT:
+            d_type = DT_WHT;
+            break;
+        default:
+            d_type = DT_UNKNOWN;
+            break;
     }
     return d_type;
 }
@@ -303,21 +303,21 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
 
         err = vbsf_getdent(dir, d_name, &d_type);
         switch (err) {
-        case 1:
-            return 0;
+            case 1:
+                return 0;
 
-        case 0:
-            break;
+            case 0:
+                break;
 
-        case -1:
-        default:
-            /* skip erroneous entry and proceed */
-            LogFunc(("vbsf_getdent error %d\n", err));
-            dir->f_pos += 1;
+            case -1:
+            default:
+                /* skip erroneous entry and proceed */
+                LogFunc(("vbsf_getdent error %d\n", err));
+                dir->f_pos += 1;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-            ctx->pos += 1;
+                ctx->pos += 1;
 #endif
-            continue;
+                continue;
         }
 
         /* d_name now contains a valid entry name */

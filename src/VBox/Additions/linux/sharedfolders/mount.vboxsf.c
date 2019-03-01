@@ -205,7 +205,7 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
                     }
                 }
 
-                switch(handler->opt)
+                switch (handler->opt)
                 {
                     case HO_RW:
                         opts->ronly = 0;
