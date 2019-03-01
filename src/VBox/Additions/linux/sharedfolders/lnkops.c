@@ -33,12 +33,13 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8) /* no generic_readlink() before 2.6.8 */
 
 # if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
-static const char *sf_follow_link(struct dentry *dentry, void **cookie)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
-static void *sf_follow_link(struct dentry *dentry, struct nameidata *nd)
-#else
-static int sf_follow_link(struct dentry *dentry, struct nameidata *nd)
+static const char *vbsf_follow_link(struct dentry *dentry, void **cookie)
+#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
+static void       *vbsf_follow_link(struct dentry *dentry, struct nameidata *nd)
+#  else
+static int         vbsf_follow_link(struct dentry *dentry, struct nameidata *nd)
 #  endif
 {
     struct inode *inode = dentry->d_inode;
@@ -50,7 +51,7 @@ static int sf_follow_link(struct dentry *dentry, struct nameidata *nd)
 
     if (path) {
         error = 0;
-        rc = VbglR0SfReadLink(&client_handle, &sf_g->map, sf_i->path,
+        rc = VbglR0SfReadLink(&g_SfClient, &sf_g->map, sf_i->path,
                       PATH_MAX, path);
         if (RT_FAILURE(rc)) {
             LogFunc(("VbglR0SfReadLink failed, caller=%s, rc=%Rrc\n", __func__, rc));
@@ -62,31 +63,30 @@ static int sf_follow_link(struct dentry *dentry, struct nameidata *nd)
     return error ? ERR_PTR(error) : (*cookie = path);
 #  else
     nd_set_link(nd, error ? ERR_PTR(error) : path);
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
+#   if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
     return NULL;
-# else
+#   else
     return 0;
-# endif
-#endif
+#   endif
+#  endif
 }
 
 #  if LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
-static void sf_put_link(struct dentry *dentry, struct nameidata *nd,
-            void *cookie)
-#else
-static void sf_put_link(struct dentry *dentry, struct nameidata *nd)
-#endif
+#   if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
+static void vbsf_put_link(struct dentry *dentry, struct nameidata *nd, void *cookie)
+#   else
+static void vbsf_put_link(struct dentry *dentry, struct nameidata *nd)
+#   endif
 {
     char *page = nd_get_link(nd);
     if (!IS_ERR(page))
         free_page((unsigned long)page);
 }
-#  endif
+#  endif /* < 4.2.0 */
 
-# else  /* LINUX_VERSION_CODE >= 4.5.0 */
-static const char *sf_get_link(struct dentry *dentry, struct inode *inode,
-                               struct delayed_call *done)
+# else  /* >= 4.5.0 */
+
+static const char *vbsf_get_link(struct dentry *dentry, struct inode *inode, struct delayed_call *done)
 {
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
     struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
@@ -98,31 +98,30 @@ static const char *sf_get_link(struct dentry *dentry, struct inode *inode,
     path = kzalloc(PAGE_SIZE, GFP_KERNEL);
     if (!path)
         return ERR_PTR(-ENOMEM);
-    rc = VbglR0SfReadLink(&client_handle, &sf_g->map, sf_i->path, PATH_MAX,
-                  path);
+    rc = VbglR0SfReadLink(&g_SfClient, &sf_g->map, sf_i->path, PATH_MAX, path);
     if (RT_FAILURE(rc)) {
-        LogFunc(("VbglR0SfReadLink failed, caller=%s, rc=%Rrc\n",
-             __func__, rc));
+        LogFunc(("VbglR0SfReadLink failed, rc=%Rrc\n", rc));
         kfree(path);
         return ERR_PTR(-EPROTO);
     }
     set_delayed_call(done, kfree_link, path);
     return path;
 }
-# endif /* LINUX_VERSION_CODE >= 4.5.0 */
 
-struct inode_operations sf_lnk_iops = {
+# endif /* >= 4.5.0 */
+
+struct inode_operations vbsf_lnk_iops = {
 # if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
     .readlink = generic_readlink,
 # endif
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
-    .get_link = sf_get_link
+    .get_link = vbsf_get_link
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
-    .follow_link = sf_follow_link,
+    .follow_link = vbsf_follow_link,
     .put_link = free_page_put_link,
 # else
-    .follow_link = sf_follow_link,
-    .put_link = sf_put_link
+    .follow_link = vbsf_follow_link,
+    .put_link = vbsf_put_link
 # endif
 };
 

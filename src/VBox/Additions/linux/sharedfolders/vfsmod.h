@@ -126,7 +126,7 @@ struct vbsf_super_info {
 /**
  * For associating inodes with host handles.
  *
- * This is necessary for address_space_operations::sf_writepage and allows
+ * This is necessary for address_space_operations::vbsf_writepage and allows
  * optimizing stat, lookups and other operations on open files and directories.
  */
 struct sf_handle {
@@ -165,15 +165,15 @@ struct sf_inode_info {
     SHFLSTRING *path;
     /** Some information was changed, update data on next revalidate */
     bool force_restat;
-    /** directory content changed, update the whole directory on next sf_getdent */
+    /** directory content changed, update the whole directory on next vbsf_getdent */
     bool force_reread;
     /** The timestamp (jiffies) where the inode info was last updated. */
     unsigned long           ts_up_to_date;
     /** The birth time. */
     RTTIMESPEC              BirthTime;
 
-    /** handle valid if a file was created with sf_create_aux until it will
-     * be opened with sf_reg_open()
+    /** handle valid if a file was created with vbsf_create_worker until it will
+     * be opened with vbsf_reg_open()
      * @todo r=bird: figure this one out...  */
     SHFLHANDLE handle;
 
@@ -185,6 +185,16 @@ struct sf_inode_info {
 # define SF_INODE_INFO_MAGIC_DEAD       UINT32_C(0x19180325)
 #endif
 };
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || defined(KERNEL_FC6)
+/* FC6 kernel 2.6.18, vanilla kernel 2.6.19+ */
+# define GET_INODE_INFO(i)       ((struct sf_inode_info *) (i)->i_private)
+# define SET_INODE_INFO(i, sf_i) (i)->i_private = sf_i
+#else
+/* vanilla kernel up to 2.6.18 */
+# define GET_INODE_INFO(i)       ((struct sf_inode_info *) (i)->u.generic_ip)
+# define SET_INODE_INFO(i, sf_i) (i)->u.generic_ip = sf_i
+#endif
 
 struct sf_dir_info {
     /** @todo sf_handle. */
@@ -218,7 +228,7 @@ struct sf_reg_info {
  * the way back, since d_time seems only to have been used by the file system
  * specific code (at least going back to 2.4.0).
  */
-DECLINLINE(void) sf_dentry_set_update_jiffies(struct dentry *pDirEntry, unsigned long uToSet)
+DECLINLINE(void) vbsf_dentry_set_update_jiffies(struct dentry *pDirEntry, unsigned long uToSet)
 {
     pDirEntry->d_fsdata = (void *)uToSet;
 }
@@ -226,7 +236,7 @@ DECLINLINE(void) sf_dentry_set_update_jiffies(struct dentry *pDirEntry, unsigned
 /**
  * Get the update-jiffies value for a dentry.
  */
-DECLINLINE(unsigned long) sf_dentry_get_update_jiffies(struct dentry *pDirEntry)
+DECLINLINE(unsigned long) vbsf_dentry_get_update_jiffies(struct dentry *pDirEntry)
 {
     return (unsigned long)pDirEntry->d_fsdata;
 }
@@ -236,7 +246,7 @@ DECLINLINE(unsigned long) sf_dentry_get_update_jiffies(struct dentry *pDirEntry)
  * @param   pDirEntry           The directory entry cache entry which ancestors
  *                  we should increase the TTL for.
  */
-DECLINLINE(void) sf_dentry_chain_increase_ttl(struct dentry *pDirEntry)
+DECLINLINE(void) vbsf_dentry_chain_increase_ttl(struct dentry *pDirEntry)
 {
 #ifdef VBOX_STRICT
     struct super_block * const pSuper = pDirEntry->d_sb;
@@ -244,7 +254,7 @@ DECLINLINE(void) sf_dentry_chain_increase_ttl(struct dentry *pDirEntry)
     unsigned long const        uToSet = jiffies;
     do {
         Assert(pDirEntry->d_sb == pSuper);
-        sf_dentry_set_update_jiffies(pDirEntry, uToSet);
+        vbsf_dentry_set_update_jiffies(pDirEntry, uToSet);
         pDirEntry = pDirEntry->d_parent;
     } while (!IS_ROOT(pDirEntry));
 }
@@ -254,33 +264,33 @@ DECLINLINE(void) sf_dentry_chain_increase_ttl(struct dentry *pDirEntry)
  * @param   pDirEntry           The directory entry cache entry which ancestors
  *                  we should increase the TTL for.
  */
-DECLINLINE(void) sf_dentry_chain_increase_parent_ttl(struct dentry *pDirEntry)
+DECLINLINE(void) vbsf_dentry_chain_increase_parent_ttl(struct dentry *pDirEntry)
 {
     Assert(!pDirEntry->d_parent || pDirEntry->d_parent->d_sb == pDirEntry->d_sb);
     pDirEntry = pDirEntry->d_parent;
     if (pDirEntry)
-        sf_dentry_chain_increase_ttl(pDirEntry);
+        vbsf_dentry_chain_increase_ttl(pDirEntry);
 }
 
 
 /* globals */
-extern VBGLSFCLIENT client_handle;
+extern VBGLSFCLIENT g_SfClient;
 extern spinlock_t g_SfHandleLock;
 
 
 /* forward declarations */
-extern struct inode_operations sf_dir_iops;
-extern struct inode_operations sf_lnk_iops;
-extern struct inode_operations sf_reg_iops;
-extern struct file_operations sf_dir_fops;
-extern struct file_operations sf_reg_fops;
-extern struct dentry_operations sf_dentry_ops;
-extern struct address_space_operations sf_reg_aops;
+extern struct inode_operations         vbsf_dir_iops;
+extern struct inode_operations         vbsf_lnk_iops;
+extern struct inode_operations         vbsf_reg_iops;
+extern struct file_operations          vbsf_dir_fops;
+extern struct file_operations          vbsf_reg_fops;
+extern struct dentry_operations        vbsf_dentry_ops;
+extern struct address_space_operations vbsf_reg_aops;
 
-extern void              sf_handle_drop_chain(struct sf_inode_info *pInodeInfo);
-extern struct sf_handle *sf_handle_find(struct sf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear);
-extern uint32_t          sf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller);
-extern void              sf_handle_append(struct sf_inode_info *pInodeInfo, struct sf_handle *pHandle);
+extern void              vbsf_handle_drop_chain(struct sf_inode_info *pInodeInfo);
+extern struct sf_handle *vbsf_handle_find(struct sf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear);
+extern uint32_t          vbsf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller);
+extern void              vbsf_handle_append(struct sf_inode_info *pInodeInfo, struct sf_handle *pHandle);
 
 /**
  * Releases a handle.
@@ -288,10 +298,10 @@ extern void              sf_handle_append(struct sf_inode_info *pInodeInfo, stru
  * @returns New reference count.
  * @param   pHandle         The handle to release.
  * @param   sf_g            The info structure for the shared folder associated
- *                  with the handle.
+ *                          with the handle.
  * @param   pszCaller       The caller name (for logging failures).
  */
-DECLINLINE(uint32_t) sf_handle_release(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
+DECLINLINE(uint32_t) vbsf_handle_release(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
 {
     uint32_t cRefs;
 
@@ -303,43 +313,31 @@ DECLINLINE(uint32_t) sf_handle_release(struct sf_handle *pHandle, struct vbsf_su
     Assert(cRefs < _64M);
     if (cRefs)
         return cRefs;
-    return sf_handle_release_slow(pHandle, sf_g, pszCaller);
+    return vbsf_handle_release_slow(pHandle, sf_g, pszCaller);
 }
 
-extern void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO info, struct vbsf_super_info *sf_g);
-extern int sf_stat(const char *caller, struct vbsf_super_info *sf_g,
-           SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
-extern int sf_inode_revalidate(struct dentry *dentry);
-extern int sf_inode_revalidate_worker(struct dentry *dentry, bool fForced);
-extern int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced, bool fInodeLocked);
+extern void vbsf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO info, struct vbsf_super_info *sf_g);
+extern int  vbsf_stat(const char *caller, struct vbsf_super_info *sf_g, SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
+extern int  vbsf_inode_revalidate(struct dentry *dentry);
+extern int  vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced);
+extern int  vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced, bool fInodeLocked);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-extern int sf_getattr(const struct path *path, struct kstat *kstat,
-              u32 request_mask, unsigned int query_flags);
+extern int  vbsf_inode_getattr(const struct path *path, struct kstat *kstat, u32 request_mask, unsigned int query_flags);
 # else
-extern int sf_getattr(struct vfsmount *mnt, struct dentry *dentry,
-              struct kstat *kstat);
+extern int  vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat);
 # endif
-extern int sf_setattr(struct dentry *dentry, struct iattr *iattr);
+extern int  vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr);
 #endif
-extern int sf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g,
-                   struct sf_inode_info *sf_i,
-                   struct dentry *dentry, SHFLSTRING ** result);
-extern int sf_nlscpy(struct vbsf_super_info *sf_g, char *name,
-             size_t name_bound_len, const unsigned char *utf8_name,
-             size_t utf8_len);
-extern void sf_dir_info_free(struct sf_dir_info *p);
-extern void sf_dir_info_empty(struct sf_dir_info *p);
-extern struct sf_dir_info *sf_dir_info_alloc(void);
-extern int sf_dir_read_all(struct vbsf_super_info *sf_g,
-               struct sf_inode_info *sf_i, struct sf_dir_info *sf_d,
-               SHFLHANDLE handle);
-
-#ifdef __cplusplus
-# define CMC_API __attribute__ ((cdecl, regparm (0)))
-#else
-# define CMC_API __attribute__ ((regparm (0)))
-#endif
+extern int  vbsf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g, struct sf_inode_info *sf_i,
+                                  struct dentry *dentry, SHFLSTRING ** result);
+extern int  vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len,
+                       const unsigned char *utf8_name, size_t utf8_len);
+extern void vbsf_dir_info_free(struct sf_dir_info *p);
+extern void vbsf_dir_info_empty(struct sf_dir_info *p);
+extern struct sf_dir_info *vbsf_dir_info_alloc(void);
+extern int  vbsf_dir_read_all(struct vbsf_super_info *sf_g, struct sf_inode_info *sf_i,
+                              struct sf_dir_info *sf_d, SHFLHANDLE handle);
 
 #if 1
 # define TRACE()          LogFunc(("tracepoint\n"))
@@ -351,16 +349,6 @@ extern int sf_dir_read_all(struct vbsf_super_info *sf_g,
 # define TRACE()          RTLogBackdoorPrintf("%s: tracepoint\n", __FUNCTION__)
 # define SFLOGFLOW(aArgs) RTLogBackdoorPrintf aArgs
 # define SFLOG_ENABLED    1
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || defined(KERNEL_FC6)
-/* FC6 kernel 2.6.18, vanilla kernel 2.6.19+ */
-# define GET_INODE_INFO(i)       ((struct sf_inode_info *) (i)->i_private)
-# define SET_INODE_INFO(i, sf_i) (i)->i_private = sf_i
-#else
-/* vanilla kernel up to 2.6.18 */
-# define GET_INODE_INFO(i)       ((struct sf_inode_info *) (i)->u.generic_ip)
-# define SET_INODE_INFO(i, sf_i) (i)->u.generic_ip = sf_i
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)

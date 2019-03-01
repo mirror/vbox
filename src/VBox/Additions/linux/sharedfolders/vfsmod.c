@@ -57,16 +57,14 @@
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-VBGLSFCLIENT client_handle;
-VBGLSFCLIENT g_SfClient;      /* temporary? */
-
-uint32_t g_fHostFeatures = 0; /* temporary? */
+VBGLSFCLIENT g_SfClient;
+uint32_t     g_fHostFeatures = 0;
 
 /** Protects all the sf_inode_info::HandleList lists. */
-spinlock_t g_SfHandleLock;
+spinlock_t   g_SfHandleLock;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 52)
-static int g_fFollowSymlinks = 0;
+static int   g_fFollowSymlinks = 0;
 #endif
 
 /* forward declaration */
@@ -77,9 +75,9 @@ static struct super_operations sf_super_ops;
 /**
  * Copies options from the mount info structure into @a sf_g.
  *
- * This is used both by sf_super_info_alloc() and sf_remount_fs().
+ * This is used both by vbsf_super_info_alloc() and vbsf_remount_fs().
  */
-static void sf_super_info_copy_remount_options(struct vbsf_super_info *sf_g, struct vbsf_mount_info_new *info)
+static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *sf_g, struct vbsf_mount_info_new *info)
 {
     sf_g->ttl_msec = info->ttl;
     if (info->ttl > 0)
@@ -131,7 +129,7 @@ static void sf_super_info_copy_remount_options(struct vbsf_super_info *sf_g, str
 }
 
 /* allocate super info, try to map host share */
-static int sf_super_info_alloc(struct vbsf_mount_info_new *info, struct vbsf_super_info **sf_gp)
+static int vbsf_super_info_alloc(struct vbsf_mount_info_new *info, struct vbsf_super_info **sf_gp)
 {
     int err, rc;
     SHFLSTRING *str_name;
@@ -217,7 +215,7 @@ static int sf_super_info_alloc(struct vbsf_mount_info_new *info, struct vbsf_sup
     }
 
     /* The rest is shared with remount. */
-    sf_super_info_copy_remount_options(sf_g, info);
+    vbsf_super_info_copy_remount_options(sf_g, info);
 
     *sf_gp = sf_g;
     return 0;
@@ -234,7 +232,7 @@ static int sf_super_info_alloc(struct vbsf_mount_info_new *info, struct vbsf_sup
 }
 
 /* unmap the share and free super info [sf_g] */
-static void sf_super_info_free(struct vbsf_super_info *sf_g)
+static void vbsf_super_info_free(struct vbsf_super_info *sf_g)
 {
     int rc;
 
@@ -253,7 +251,7 @@ static void sf_super_info_free(struct vbsf_super_info *sf_g)
 /**
  * Initialize backing device related matters.
  */
-static int sf_init_backing_dev(struct super_block *sb, struct vbsf_super_info *sf_g)
+static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info *sf_g)
 {
     int rc = 0;
 /** @todo this needs sorting out between 3.19 and 4.11   */
@@ -319,9 +317,9 @@ static int sf_init_backing_dev(struct super_block *sb, struct vbsf_super_info *s
 
 
 /**
- * Undoes what sf_init_backing_dev did.
+ * Undoes what vbsf_init_backing_dev did.
  */
-static void sf_done_backing_dev(struct super_block *sb, struct vbsf_super_info *sf_g)
+static void vbsf_done_backing_dev(struct super_block *sb, struct vbsf_super_info *sf_g)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
     bdi_destroy(&sf_g->bdi);    /* includes bdi_unregister() */
@@ -330,17 +328,17 @@ static void sf_done_backing_dev(struct super_block *sb, struct vbsf_super_info *
 
 
 /**
- * This is called by sf_read_super_24() and sf_read_super_26() when vfs mounts
+ * This is called by vbsf_read_super_24() and vbsf_read_super_26() when vfs mounts
  * the fs and wants to read super_block.
  *
- * Calls sf_super_info_alloc() to map the folder and allocate super information
+ * Calls vbsf_super_info_alloc() to map the folder and allocate super information
  * structure.
  *
  * Initializes @a sb, initializes root inode and dentry.
  *
  * Should respect @a flags.
  */
-static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
+static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
 {
     int err;
     struct dentry *droot;
@@ -364,7 +362,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
         return -ENOSYS;
     }
 
-    err = sf_super_info_alloc(info, &sf_g);
+    err = vbsf_super_info_alloc(info, &sf_g);
     if (err)
         goto fail0;
 
@@ -393,7 +391,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
     sf_i->u32Magic = SF_INODE_INFO_MAGIC;
 #endif
 
-    err = sf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
+    err = vbsf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
     if (err) {
         LogFunc(("could not stat root of share\n"));
         goto fail3;
@@ -413,7 +411,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 #endif
     sb->s_op = &sf_super_ops;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
-    sb->s_d_op = &sf_dentry_ops;
+    sb->s_d_op = &vbsf_dentry_ops;
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
@@ -427,7 +425,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
         goto fail3;
     }
 
-    if (sf_init_backing_dev(sb, sf_g)) {
+    if (vbsf_init_backing_dev(sb, sf_g)) {
         err = -EINVAL;
         LogFunc(("could not init bdi\n"));
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
@@ -436,7 +434,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
         goto fail4;
     }
 
-    sf_init_inode(iroot, sf_i, &fsinfo, sf_g);
+    vbsf_init_inode(iroot, sf_i, &fsinfo, sf_g);
     SET_INODE_INFO(iroot, sf_i);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
@@ -462,7 +460,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
     return 0;
 
  fail5:
-    sf_done_backing_dev(sb, sf_g);
+    vbsf_done_backing_dev(sb, sf_g);
 
  fail4:
     if (fInodePut)
@@ -475,7 +473,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
     kfree(sf_i);
 
  fail1:
-    sf_super_info_free(sf_g);
+    vbsf_super_info_free(sf_g);
 
  fail0:
     return err;
@@ -488,9 +486,9 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
  * We must free the inode info structure here.
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
-static void sf_evict_inode(struct inode *inode)
+static void vbsf_evict_inode(struct inode *inode)
 #else
-static void sf_clear_inode(struct inode *inode)
+static void vbsf_clear_inode(struct inode *inode)
 #endif
 {
     struct sf_inode_info *sf_i;
@@ -518,7 +516,7 @@ static void sf_clear_inode(struct inode *inode)
         Assert(sf_i->u32Magic == SF_INODE_INFO_MAGIC);
         BUG_ON(!sf_i->path);
         kfree(sf_i->path);
-        sf_handle_drop_chain(sf_i);
+        vbsf_handle_drop_chain(sf_i);
 # ifdef VBOX_STRICT
         sf_i->u32Magic = SF_INODE_INFO_MAGIC_DEAD;
 # endif
@@ -532,22 +530,22 @@ static void sf_clear_inode(struct inode *inode)
    hence we can't do anything here, and let lookup/whatever with the
    job to properly fill then [inode] */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
-static void sf_read_inode(struct inode *inode)
+static void vbsf_read_inode(struct inode *inode)
 {
 }
 #endif
 
 
-/* vfs is done with [sb] (umount called) call [sf_super_info_free] to unmap
+/* vfs is done with [sb] (umount called) call [vbsf_super_info_free] to unmap
    the folder and free [sf_g] */
-static void sf_put_super(struct super_block *sb)
+static void vbsf_put_super(struct super_block *sb)
 {
     struct vbsf_super_info *sf_g;
 
     sf_g = VBSF_GET_SUPER_INFO(sb);
     BUG_ON(!sf_g);
-    sf_done_backing_dev(sb, sf_g);
-    sf_super_info_free(sf_g);
+    vbsf_done_backing_dev(sb, sf_g);
+    vbsf_super_info_free(sf_g);
 }
 
 
@@ -555,11 +553,11 @@ static void sf_put_super(struct super_block *sb)
  * Get file system statistics.
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
-static int sf_statfs(struct dentry *dentry, struct kstatfs *stat)
+static int vbsf_statfs(struct dentry *dentry, struct kstatfs *stat)
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 73)
-static int sf_statfs(struct super_block *sb, struct kstatfs *stat)
+static int vbsf_statfs(struct super_block *sb, struct kstatfs *stat)
 #else
-static int sf_statfs(struct super_block *sb, struct statfs *stat)
+static int vbsf_statfs(struct super_block *sb, struct statfs *stat)
 #endif
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
@@ -602,7 +600,7 @@ static int sf_statfs(struct super_block *sb, struct statfs *stat)
     return rc;
 }
 
-static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
+static int vbsf_remount_fs(struct super_block *sb, int *flags, char *data)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 23)
     struct vbsf_super_info *sf_g;
@@ -619,7 +617,7 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
             && info->signature[0] == VBSF_MOUNT_SIGNATURE_BYTE_0
             && info->signature[1] == VBSF_MOUNT_SIGNATURE_BYTE_1
             && info->signature[2] == VBSF_MOUNT_SIGNATURE_BYTE_2) {
-            sf_super_info_copy_remount_options(sf_g, info);
+            vbsf_super_info_copy_remount_options(sf_g, info);
         }
     }
 
@@ -628,9 +626,9 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
         return -ENOSYS;
 
     sf_i = GET_INODE_INFO(iroot);
-    err = sf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
+    err = vbsf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
     BUG_ON(err != 0);
-    sf_init_inode(iroot, sf_i, &fsinfo, sf_g);
+    vbsf_init_inode(iroot, sf_i, &fsinfo, sf_g);
     /*unlock_new_inode(iroot); */
     return 0;
 #else  /* LINUX_VERSION_CODE < 2.4.23 */
@@ -646,9 +644,9 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
  * the the 'tag' option value it sets on its mount.
  */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
-static int sf_show_options(struct seq_file *m, struct vfsmount *mnt)
+static int vbsf_show_options(struct seq_file *m, struct vfsmount *mnt)
 #else
-static int sf_show_options(struct seq_file *m, struct dentry *root)
+static int vbsf_show_options(struct seq_file *m, struct dentry *root)
 #endif
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
@@ -675,17 +673,17 @@ static int sf_show_options(struct seq_file *m, struct dentry *root)
  */
 static struct super_operations sf_super_ops = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
-    .clear_inode = sf_clear_inode,
+    .clear_inode = vbsf_clear_inode,
 #else
-    .evict_inode = sf_evict_inode,
+    .evict_inode = vbsf_evict_inode,
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
-    .read_inode = sf_read_inode,
+    .read_inode = vbsf_read_inode,
 #endif
-    .put_super = sf_put_super,
-    .statfs = sf_statfs,
-    .remount_fs = sf_remount_fs,
-    .show_options = sf_show_options
+    .put_super = vbsf_put_super,
+    .statfs = vbsf_statfs,
+    .remount_fs = vbsf_remount_fs,
+    .show_options = vbsf_show_options
 };
 
 
@@ -695,39 +693,35 @@ static struct super_operations sf_super_ops = {
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 4)
 
-static int sf_read_super_26(struct super_block *sb, void *data, int flags)
+static int vbsf_read_super_26(struct super_block *sb, void *data, int flags)
 {
     int err;
 
     TRACE();
-    err = sf_read_super_aux(sb, data, flags);
+    err = vbsf_read_super_aux(sb, data, flags);
     if (err)
-        printk(KERN_DEBUG "sf_read_super_aux err=%d\n", err);
+        printk(KERN_DEBUG "vbsf_read_super_aux err=%d\n", err);
 
     return err;
 }
 
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
-static struct super_block *sf_get_sb(struct file_system_type *fs_type,
-                     int flags, const char *dev_name,
-                     void *data)
+static struct super_block *vbsf_get_sb(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
 {
     TRACE();
-    return get_sb_nodev(fs_type, flags, data, sf_read_super_26);
+    return get_sb_nodev(fs_type, flags, data, vbsf_read_super_26);
 }
 # elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
-static int sf_get_sb(struct file_system_type *fs_type, int flags,
-             const char *dev_name, void *data, struct vfsmount *mnt)
+static int vbsf_get_sb(struct file_system_type *fs_type, int flags, const char *dev_name, void *data, struct vfsmount *mnt)
 {
     TRACE();
-    return get_sb_nodev(fs_type, flags, data, sf_read_super_26, mnt);
+    return get_sb_nodev(fs_type, flags, data, vbsf_read_super_26, mnt);
 }
 # else /* LINUX_VERSION_CODE >= 2.6.39 */
-static struct dentry *sf_mount(struct file_system_type *fs_type, int flags,
-                   const char *dev_name, void *data)
+static struct dentry *sf_mount(struct file_system_type *fs_type, int flags, const char *dev_name, void *data)
 {
     TRACE();
-    return mount_nodev(fs_type, flags, data, sf_read_super_26);
+    return mount_nodev(fs_type, flags, data, vbsf_read_super_26);
 }
 # endif /* LINUX_VERSION_CODE >= 2.6.39 */
 
@@ -735,7 +729,7 @@ static struct file_system_type vboxsf_fs_type = {
     .owner = THIS_MODULE,
     .name = "vboxsf",
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
-    .get_sb = sf_get_sb,
+    .get_sb = vbsf_get_sb,
 # else
     .mount = sf_mount,
 # endif
@@ -744,22 +738,21 @@ static struct file_system_type vboxsf_fs_type = {
 
 #else  /* LINUX_VERSION_CODE < 2.5.4 */
 
-static struct super_block *sf_read_super_24(struct super_block *sb, void *data,
-                        int flags)
+static struct super_block *vbsf_read_super_24(struct super_block *sb, void *data, int flags)
 {
     int err;
 
     TRACE();
-    err = sf_read_super_aux(sb, data, flags);
+    err = vbsf_read_super_aux(sb, data, flags);
     if (err) {
-        printk(KERN_DEBUG "sf_read_super_aux err=%d\n", err);
+        printk(KERN_DEBUG "vbsf_read_super_aux err=%d\n", err);
         return NULL;
     }
 
     return sb;
 }
 
-static DECLARE_FSTYPE(vboxsf_fs_type, "vboxsf", sf_read_super_24, 0);
+static DECLARE_FSTYPE(vboxsf_fs_type, "vboxsf", vbsf_read_super_24, 0);
 
 #endif /* LINUX_VERSION_CODE < 2.5.4 */
 
@@ -767,12 +760,13 @@ static DECLARE_FSTYPE(vboxsf_fs_type, "vboxsf", sf_read_super_24, 0);
 /* Module initialization/finalization handlers */
 static int __init init(void)
 {
-    int vrc;
     int rcRet = 0;
+    int vrc;
     int err;
 
     TRACE();
 
+    AssertCompile(sizeof(struct vbsf_mount_info_new) <= PAGE_SIZE);
     if (sizeof(struct vbsf_mount_info_new) > PAGE_SIZE) {
         printk(KERN_ERR
                "Mount information structure is too large %lu\n"
@@ -798,8 +792,7 @@ static int __init init(void)
         goto fail0;
     }
 
-    vrc = VbglR0SfConnect(&client_handle);
-    g_SfClient = client_handle; /* temporary */
+    vrc = VbglR0SfConnect(&g_SfClient);
     if (RT_FAILURE(vrc)) {
         LogRelFunc(("VbglR0SfConnect failed, vrc=%Rrc\n", vrc));
         rcRet = -EPROTO;
@@ -814,7 +807,7 @@ static int __init init(void)
     }
     LogRelFunc(("g_fHostFeatures=%#x\n", g_fHostFeatures));
 
-    vrc = VbglR0SfSetUtf8(&client_handle);
+    vrc = VbglR0SfSetUtf8(&g_SfClient);
     if (RT_FAILURE(vrc)) {
         LogRelFunc(("VbglR0SfSetUtf8 failed, vrc=%Rrc\n", vrc));
         rcRet = -EPROTO;
@@ -822,7 +815,7 @@ static int __init init(void)
     }
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     if (!g_fFollowSymlinks) {
-        vrc = VbglR0SfSetSymlinks(&client_handle);
+        vrc = VbglR0SfSetSymlinks(&g_SfClient);
         if (RT_FAILURE(vrc)) {
             printk(KERN_WARNING
                    "vboxsf: Host unable to show symlinks, vrc=%d\n",
@@ -838,8 +831,7 @@ static int __init init(void)
     return 0;
 
  fail2:
-    VbglR0SfDisconnect(&client_handle);
-    g_SfClient = client_handle; /* temporary */
+    VbglR0SfDisconnect(&g_SfClient);
 
  fail1:
     VbglR0SfTerm();
@@ -853,8 +845,7 @@ static void __exit fini(void)
 {
     TRACE();
 
-    VbglR0SfDisconnect(&client_handle);
-    g_SfClient = client_handle; /* temporary */
+    VbglR0SfDisconnect(&g_SfClient);
     VbglR0SfTerm();
     unregister_filesystem(&vboxsf_fs_type);
 }

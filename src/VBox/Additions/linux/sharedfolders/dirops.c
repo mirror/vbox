@@ -38,8 +38,8 @@
  * @note As suggested a couple of other places, we should probably stop
  *       reading in the whole directory on open.
  */
-static int sf_dir_open_worker(struct vbsf_super_info *sf_g, struct sf_dir_info *sf_d,
-                              struct sf_inode_info *sf_i, const char *pszCaller)
+static int vbsf_dir_open_worker(struct vbsf_super_info *sf_g, struct sf_dir_info *sf_d,
+                                struct sf_inode_info *sf_i, const char *pszCaller)
 {
     int rc;
     int err;
@@ -83,8 +83,8 @@ static int sf_dir_open_worker(struct vbsf_super_info *sf_g, struct sf_dir_info *
 
             /** @todo Reading all entries upon opening the directory doesn't seem like
              * a good idea. */
-            sf_dir_info_empty(sf_d);
-            err = sf_dir_read_all(sf_g, sf_i, sf_d, pCreateParms->Handle);
+            vbsf_dir_info_empty(sf_d);
+            err = vbsf_dir_read_all(sf_g, sf_i, sf_d, pCreateParms->Handle);
         } else
             err = -ENOENT;
 
@@ -110,7 +110,7 @@ static int sf_dir_open_worker(struct vbsf_super_info *sf_g, struct sf_dir_info *
  * @param file      file
  * @returns 0 on success, Linux error code otherwise
  */
-static int sf_dir_open(struct inode *inode, struct file *file)
+static int vbsf_dir_open(struct inode *inode, struct file *file)
 {
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
     struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
@@ -126,17 +126,17 @@ static int sf_dir_open(struct inode *inode, struct file *file)
         return 0;
     }
 
-    sf_d = sf_dir_info_alloc();
+    sf_d = vbsf_dir_info_alloc();
     if (!sf_d) {
         LogRelFunc(("could not allocate directory info for '%s'\n", sf_i->path->String.ach));
         return -ENOMEM;
     }
 
-    err = sf_dir_open_worker(sf_g, sf_d, sf_i, "sf_dir_open");
+    err = vbsf_dir_open_worker(sf_g, sf_d, sf_i, "vbsf_dir_open");
     if (!err)
         file->private_data = sf_d;
     else
-        sf_dir_info_free(sf_d);
+        vbsf_dir_info_free(sf_d);
 
     return err;
 }
@@ -150,12 +150,12 @@ static int sf_dir_open(struct inode *inode, struct file *file)
  * @param file      file
  * returns 0 on success, Linux error code otherwise
  */
-static int sf_dir_release(struct inode *inode, struct file *file)
+static int vbsf_dir_release(struct inode *inode, struct file *file)
 {
     TRACE();
 
     if (file->private_data)
-        sf_dir_info_free(file->private_data);
+        vbsf_dir_info_free(file->private_data);
 
     return 0;
 }
@@ -165,7 +165,7 @@ static int sf_dir_release(struct inode *inode, struct file *file)
  * @param fMode     file mode
  * returns d_type
  */
-static int sf_get_d_type(RTFMODE fMode)
+static int vbsf_get_d_type(RTFMODE fMode)
 {
     int d_type;
     switch (fMode & RTFS_TYPE_MASK) {
@@ -205,7 +205,7 @@ static int sf_get_d_type(RTFMODE fMode)
  *
  * @returns 0 for success, 1 for end reached, Linux error code otherwise.
  */
-static int sf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
+static int vbsf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
 {
     loff_t cur;
     struct vbsf_super_info *sf_g;
@@ -226,12 +226,12 @@ static int sf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
     BUG_ON(!sf_i);
 
     if (sf_i->force_reread) {
-        int err = sf_dir_open_worker(sf_g, sf_d, sf_i, "sf_getdent");
+        int err = vbsf_dir_open_worker(sf_g, sf_d, sf_i, "vbsf_getdent");
         if (!err) {
             sf_i->force_reread = 0;
         } else {
             if (err == -ENOENT) {
-                sf_dir_info_free(sf_d);
+                vbsf_dir_info_free(sf_d);
                 dir->private_data = NULL;
             }
             return err;
@@ -259,9 +259,9 @@ static int sf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
             info = (SHFLDIRINFO *)((uintptr_t)info + size);
         }
 
-        *d_type = sf_get_d_type(info->Info.Attr.fMode);
+        *d_type = vbsf_get_d_type(info->Info.Attr.fMode);
 
-        return sf_nlscpy(sf_g, d_name, NAME_MAX,
+        return vbsf_nlscpy(sf_g, d_name, NAME_MAX,
                  info->name.String.utf8, info->name.u16Length);
     }
 
@@ -273,7 +273,7 @@ static int sf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
  * directory [dir]s contents. [opaque] is an argument to the
  * [filldir]. [filldir] magically modifies it's argument - [opaque]
  * and takes following additional arguments (which i in turn get from
- * the host via sf_getdent):
+ * the host via vbsf_getdent):
  *
  * name : name of the entry (i must also supply it's length huh?)
  * type : type of the entry (FILE | DIR | etc) (i ellect to use DT_UNKNOWN)
@@ -287,14 +287,14 @@ static int sf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
  * Extract elements from the directory listing (incrementing f_pos
  * along the way) and feed them to [filldir] until:
  *
- * a. there are no more entries (i.e. sf_getdent set done to 1)
+ * a. there are no more entries (i.e. vbsf_getdent set done to 1)
  * b. failure to compute fake inode number
  * c. filldir returns an error (see comment on that)
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-static int sf_dir_iterate(struct file *dir, struct dir_context *ctx)
+static int vbsf_dir_iterate(struct file *dir, struct dir_context *ctx)
 #else
-static int sf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
+static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
 #endif
 {
     TRACE();
@@ -305,7 +305,7 @@ static int sf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
         char d_name[NAME_MAX];
         int d_type = DT_UNKNOWN;
 
-        err = sf_getdent(dir, d_name, &d_type);
+        err = vbsf_getdent(dir, d_name, &d_type);
         switch (err) {
         case 1:
             return 0;
@@ -316,7 +316,7 @@ static int sf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
         case -1:
         default:
             /* skip erroneous entry and proceed */
-            LogFunc(("sf_getdent error %d\n", err));
+            LogFunc(("vbsf_getdent error %d\n", err));
             dir->f_pos += 1;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
             ctx->pos += 1;
@@ -361,14 +361,14 @@ static int sf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
     BUG();
 }
 
-struct file_operations sf_dir_fops = {
-    .open = sf_dir_open,
+struct file_operations vbsf_dir_fops = {
+    .open = vbsf_dir_open,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-    .iterate = sf_dir_iterate,
+    .iterate = vbsf_dir_iterate,
 #else
-    .readdir = sf_dir_read,
+    .readdir = vbsf_dir_read,
 #endif
-    .release = sf_dir_release,
+    .release = vbsf_dir_release,
     .read = generic_read_dir
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
     , .llseek = generic_file_llseek
@@ -378,10 +378,10 @@ struct file_operations sf_dir_fops = {
 /* iops */
 
 /**
- * Worker for sf_lookup() and sf_instantiate().
+ * Worker for vbsf_inode_lookup() and vbsf_inode_instantiate().
  */
-static struct inode *sf_create_inode(struct inode *parent, struct dentry *dentry, PSHFLSTRING path,
-                                     PSHFLFSOBJINFO pObjInfo, struct vbsf_super_info *sf_g, bool fInstantiate)
+static struct inode *vbsf_create_inode(struct inode *parent, struct dentry *dentry, PSHFLSTRING path,
+                                       PSHFLFSOBJINFO pObjInfo, struct vbsf_super_info *sf_g, bool fInstantiate)
 {
     /*
      * Allocate memory for our additional inode info and create an inode.
@@ -409,7 +409,7 @@ static struct inode *sf_create_inode(struct inode *parent, struct dentry *dentry
             sf_new_i->handle        = SHFL_HANDLE_NIL;
 
             SET_INODE_INFO(pInode, sf_new_i);
-            sf_init_inode(pInode, sf_new_i, pObjInfo, sf_g);
+            vbsf_init_inode(pInode, sf_new_i, pObjInfo, sf_g);
 
             /*
              * Before we unlock the new inode, we may need to call d_instantiate.
@@ -438,13 +438,13 @@ static struct inode *sf_create_inode(struct inode *parent, struct dentry *dentry
  * the entry via other means. NULL(or "positive" pointer) ought to be
  * returned in case of success and "negative" pointer on error
  */
-static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
+static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *dentry
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
-                                , unsigned int flags
+                                        , unsigned int flags
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-                                , struct nameidata *nd
+                                        , struct nameidata *nd
 #endif
-                                )
+                                        )
 {
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
     struct sf_inode_info   *sf_i = GET_INODE_INFO(parent);
@@ -453,11 +453,11 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
     int                     rc;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
-    SFLOGFLOW(("sf_lookup: parent=%p dentry=%p flags=%#x\n", parent, dentry, flags));
+    SFLOGFLOW(("vbsf_inode_lookup: parent=%p dentry=%p flags=%#x\n", parent, dentry, flags));
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    SFLOGFLOW(("sf_lookup: parent=%p dentry=%p nd=%p{.flags=%#x}\n", parent, dentry, nd, nd ? nd->flags : 0));
+    SFLOGFLOW(("vbsf_inode_lookup: parent=%p dentry=%p nd=%p{.flags=%#x}\n", parent, dentry, nd, nd ? nd->flags : 0));
 #else
-    SFLOGFLOW(("sf_lookup: parent=%p dentry=%p\n", parent, dentry));
+    SFLOGFLOW(("vbsf_inode_lookup: parent=%p dentry=%p\n", parent, dentry));
 #endif
 
     Assert(sf_g);
@@ -466,7 +466,7 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
     /*
      * Build the path.  We'll associate the path with dret's inode on success.
      */
-    rc = sf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
+    rc = vbsf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
     if (rc == 0) {
         /*
          * Do a lookup on the host side.
@@ -488,13 +488,13 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
                      * Create an inode for the result.  Since this also confirms
                      * the existence of all parent dentries, we increase their TTL.
                      */
-                    pInode = sf_create_inode(parent, dentry, path, &pReq->CreateParms.Info, sf_g, false /*fInstantiate*/);
+                    pInode = vbsf_create_inode(parent, dentry, path, &pReq->CreateParms.Info, sf_g, false /*fInstantiate*/);
                     if (rc == 0) {
                         path = NULL; /* given to the inode */
                         dret = dentry;
                     } else
                         dret = (struct dentry *)ERR_PTR(-ENOMEM);
-                    sf_dentry_chain_increase_parent_ttl(dentry);
+                    vbsf_dentry_chain_increase_parent_ttl(dentry);
                 } else if (   pReq->CreateParms.Result == SHFL_FILE_NOT_FOUND
                        || pReq->CreateParms.Result == SHFL_PATH_NOT_FOUND /*this probably should happen*/) {
                     dret = dentry;
@@ -515,11 +515,11 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
              * though it may be negative (pInode == NULL).
              */
             if (dret == dentry) {
-                sf_dentry_set_update_jiffies(dentry, jiffies);
+                vbsf_dentry_set_update_jiffies(dentry, jiffies);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
-                Assert(dentry->d_op == &sf_dentry_ops); /* (taken from the superblock) */
+                Assert(dentry->d_op == &vbsf_dentry_ops); /* (taken from the superblock) */
 #else
-                dentry->d_op = &sf_dentry_ops;
+                dentry->d_op = &vbsf_dentry_ops;
 #endif
                 d_add(dentry, pInode);
                 dret = NULL;
@@ -545,10 +545,11 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
  * @param handle        handle
  * @returns 0 on success, Linux error code otherwise
  */
-static int sf_instantiate(struct inode *parent, struct dentry *dentry, PSHFLSTRING path, PSHFLFSOBJINFO info, SHFLHANDLE handle)
+static int vbsf_inode_instantiate(struct inode *parent, struct dentry *dentry, PSHFLSTRING path,
+                                  PSHFLFSOBJINFO info, SHFLHANDLE handle)
 {
     struct vbsf_super_info *sf_g   = VBSF_GET_SUPER_INFO(parent->i_sb);
-    struct inode           *pInode = sf_create_inode(parent, dentry, path, info, sf_g, true /*fInstantiate*/);
+    struct inode           *pInode = vbsf_create_inode(parent, dentry, path, info, sf_g, true /*fInstantiate*/);
     if (pInode) {
         /* Store this handle if we leave the handle open. */
         struct sf_inode_info *sf_new_i = GET_INODE_INFO(pInode);
@@ -567,7 +568,7 @@ static int sf_instantiate(struct inode *parent, struct dentry *dentry, PSHFLSTRI
  * @param fDirectory    true if directory, false otherwise
  * @returns 0 on success, Linux error code otherwise
  */
-static int sf_create_aux(struct inode *parent, struct dentry *dentry, umode_t mode, int fDirectory)
+static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode_t mode, int fDirectory)
 {
     int rc, err;
     struct sf_inode_info *sf_parent_i = GET_INODE_INFO(parent);
@@ -584,11 +585,11 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry, umode_t mo
     BUG_ON(!sf_parent_i);
     BUG_ON(!sf_g);
 
-    err = sf_path_from_dentry(__func__, sf_g, sf_parent_i, dentry, &path);
+    err = vbsf_path_from_dentry(__func__, sf_g, sf_parent_i, dentry, &path);
     if (err)
         goto fail0;
 
-    /** @todo combine with sf_path_from_dentry? */
+    /** @todo combine with vbsf_path_from_dentry? */
     pReq = (union CreateAuxReq *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + path->u16Size);
     if (pReq) {
         memcpy(&pReq->Create.StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
@@ -628,9 +629,9 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry, umode_t mo
         goto fail2;
     }
 
-    sf_dentry_chain_increase_parent_ttl(dentry);
+    vbsf_dentry_chain_increase_parent_ttl(dentry);
 
-    err = sf_instantiate(parent, dentry, path, &pCreateParms->Info,
+    err = vbsf_inode_instantiate(parent, dentry, path, &pCreateParms->Info,
                  fDirectory ? SHFL_HANDLE_NIL : pCreateParms->Handle);
     if (err) {
         LogFunc(("(%d): could not instantiate dentry for %s err=%d\n", fDirectory, path->String.utf8, err));
@@ -639,7 +640,7 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry, umode_t mo
 
     /*
      * Don't close this handle right now. We assume that the same file is
-     * opened with sf_reg_open() and later closed with sf_reg_close(). Save
+     * opened with vbsf_reg_open() and later closed with sf_reg_close(). Save
      * the handle in between. Does not apply to directories. True?
      */
     if (fDirectory) {
@@ -676,20 +677,20 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry, umode_t mo
  * @returns 0 on success, Linux error code otherwise
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0) || defined(DOXYGEN_RUNNING)
-static int sf_create(struct inode *parent, struct dentry *dentry, umode_t mode, bool excl)
+static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, umode_t mode, bool excl)
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
-static int sf_create(struct inode *parent, struct dentry *dentry, umode_t mode, struct nameidata *nd)
+static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, umode_t mode, struct nameidata *nd)
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-static int sf_create(struct inode *parent, struct dentry *dentry, int mode, struct nameidata *nd)
+static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mode, struct nameidata *nd)
 #else
-static int sf_create(struct inode *parent, struct dentry *dentry, int mode)
+static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mode)
 #endif
 {
 /** @todo @a nd (struct nameidata) contains intent with partial open flags for
  *        2.6.0-3.5.999.  In 3.6.0 atomic_open was introduced and stuff
  *        changed (investigate)... */
     TRACE();
-    return sf_create_aux(parent, dentry, mode, 0 /*fDirectory*/);
+    return vbsf_create_worker(parent, dentry, mode, 0 /*fDirectory*/);
 }
 
 /**
@@ -701,13 +702,13 @@ static int sf_create(struct inode *parent, struct dentry *dentry, int mode)
  * @returns 0 on success, Linux error code otherwise
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
-static int sf_mkdir(struct inode *parent, struct dentry *dentry, umode_t mode)
+static int vbsf_inode_mkdir(struct inode *parent, struct dentry *dentry, umode_t mode)
 #else
-static int sf_mkdir(struct inode *parent, struct dentry *dentry, int mode)
+static int vbsf_inode_mkdir(struct inode *parent, struct dentry *dentry, int mode)
 #endif
 {
     TRACE();
-    return sf_create_aux(parent, dentry, mode, 1 /*fDirectory*/);
+    return vbsf_create_worker(parent, dentry, mode, 1 /*fDirectory*/);
 }
 
 /**
@@ -718,7 +719,7 @@ static int sf_mkdir(struct inode *parent, struct dentry *dentry, int mode)
  * @param fDirectory    true if directory, false otherwise
  * @returns 0 on success, Linux error code otherwise
  */
-static int sf_unlink_aux(struct inode *parent, struct dentry *dentry, int fDirectory)
+static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int fDirectory)
 {
     int rc, err;
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
@@ -728,7 +729,7 @@ static int sf_unlink_aux(struct inode *parent, struct dentry *dentry, int fDirec
     TRACE();
     BUG_ON(!sf_g);
 
-    err = sf_path_from_dentry(__func__, sf_g, sf_parent_i, dentry, &path);
+    err = vbsf_path_from_dentry(__func__, sf_g, sf_parent_i, dentry, &path);
     if (!err) {
         VBOXSFREMOVEREQ *pReq = (VBOXSFREMOVEREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String)
                                            + path->u16Size);
@@ -776,10 +777,10 @@ static int sf_unlink_aux(struct inode *parent, struct dentry *dentry, int fDirec
  * @param dentry        directory cache entry
  * @returns 0 on success, Linux error code otherwise
  */
-static int sf_unlink(struct inode *parent, struct dentry *dentry)
+static int vbsf_inode_unlink(struct inode *parent, struct dentry *dentry)
 {
     TRACE();
-    return sf_unlink_aux(parent, dentry, 0 /*fDirectory*/);
+    return vbsf_unlink_worker(parent, dentry, false /*fDirectory*/);
 }
 
 /**
@@ -789,10 +790,10 @@ static int sf_unlink(struct inode *parent, struct dentry *dentry)
  * @param dentry        directory cache entry
  * @returns 0 on success, Linux error code otherwise
  */
-static int sf_rmdir(struct inode *parent, struct dentry *dentry)
+static int vbsf_inode_rmdir(struct inode *parent, struct dentry *dentry)
 {
     TRACE();
-    return sf_unlink_aux(parent, dentry, 1 /*fDirectory*/);
+    return vbsf_unlink_worker(parent, dentry, true /*fDirectory*/);
 }
 
 /**
@@ -805,12 +806,12 @@ static int sf_rmdir(struct inode *parent, struct dentry *dentry)
  * @param flags         flags
  * @returns 0 on success, Linux error code otherwise
  */
-static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
-                     struct inode *new_parent, struct dentry *new_dentry
+static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry,
+                             struct inode *new_parent, struct dentry *new_dentry
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
-                     , unsigned flags
+                             , unsigned flags
 #endif
-                     )
+                             )
 {
     int err = 0, rc = VINF_SUCCESS;
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(old_parent->i_sb);
@@ -841,21 +842,19 @@ static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
         BUG_ON(!sf_file_i);
 
         old_path = sf_file_i->path;
-        err = sf_path_from_dentry(__func__, sf_g, sf_new_i,
-                      new_dentry, &new_path);
+        err = vbsf_path_from_dentry(__func__, sf_g, sf_new_i, new_dentry, &new_path);
         if (err)
             LogFunc(("failed to create new path\n"));
         else {
             VBOXSFRENAMEWITHSRCBUFREQ *pReq;
-            pReq = (VBOXSFRENAMEWITHSRCBUFREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ,
-                                                 StrDstPath.String)
-                                        + new_path->u16Size);
+            pReq = (VBOXSFRENAMEWITHSRCBUFREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ, StrDstPath.String)
+                                                                    + new_path->u16Size);
             if (pReq) {
                 memcpy(&pReq->StrDstPath, new_path, SHFLSTRING_HEADER_SIZE + new_path->u16Size);
                 rc = VbglR0SfHostReqRenameWithSrcContig(sf_g->map.root, pReq,
-                                    old_path, virt_to_phys(old_path),
-                                    old_dentry->d_inode->i_mode & S_IFDIR ? SHFL_RENAME_DIR
-                                    : SHFL_RENAME_FILE | SHFL_RENAME_REPLACE_IF_EXISTS);
+                                                        old_path, virt_to_phys(old_path),
+                                                        old_dentry->d_inode->i_mode & S_IFDIR ? SHFL_RENAME_DIR
+                                                        : SHFL_RENAME_FILE | SHFL_RENAME_REPLACE_IF_EXISTS);
                 VbglR0PhysHeapFree(pReq);
             } else
                 rc = VERR_NO_MEMORY;
@@ -866,7 +865,6 @@ static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
 
                 /* Set the new relative path in the inode. */
                 sf_file_i->path = new_path;
-
             } else {
                 LogFunc(("VbglR0SfRename failed rc=%Rrc\n",
                      rc));
@@ -879,7 +877,7 @@ static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-static int sf_symlink(struct inode *parent, struct dentry *dentry, const char *symname)
+static int vbsf_ino_symlink(struct inode *parent, struct dentry *dentry, const char *symname)
 {
     int err;
     int rc;
@@ -896,13 +894,11 @@ static int sf_symlink(struct inode *parent, struct dentry *dentry, const char *s
     BUG_ON(!sf_g);
     BUG_ON(!sf_i);
 
-    err = sf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
+    err = vbsf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
     if (err)
         goto fail0;
 
-    ssymname =
-        kmalloc(offsetof(SHFLSTRING, String.utf8) + symname_len,
-            GFP_KERNEL);
+    ssymname = kmalloc(offsetof(SHFLSTRING, String.utf8) + symname_len, GFP_KERNEL);
     if (!ssymname) {
         LogRelFunc(("kmalloc failed, caller=sf_symlink\n"));
         err = -ENOMEM;
@@ -913,7 +909,7 @@ static int sf_symlink(struct inode *parent, struct dentry *dentry, const char *s
     ssymname->u16Size = symname_len;
     memcpy(ssymname->String.utf8, symname, symname_len);
 
-    rc = VbglR0SfSymlink(&client_handle, &sf_g->map, path, ssymname, &info);
+    rc = VbglR0SfSymlink(&g_SfClient, &sf_g->map, path, ssymname, &info);
     kfree(ssymname);
 
     if (RT_FAILURE(rc)) {
@@ -921,16 +917,14 @@ static int sf_symlink(struct inode *parent, struct dentry *dentry, const char *s
             err = -EROFS;
             goto fail1;
         }
-        LogFunc(("VbglR0SfSymlink(%s) failed rc=%Rrc\n",
-             sf_i->path->String.utf8, rc));
+        LogFunc(("VbglR0SfSymlink(%s) failed rc=%Rrc\n", sf_i->path->String.utf8, rc));
         err = -EPROTO;
         goto fail1;
     }
 
-    err = sf_instantiate(parent, dentry, path, &info, SHFL_HANDLE_NIL);
+    err = vbsf_inode_instantiate(parent, dentry, path, &info, SHFL_HANDLE_NIL);
     if (err) {
-        LogFunc(("could not instantiate dentry for %s err=%d\n",
-             sf_i->path->String.utf8, err));
+        LogFunc(("could not instantiate dentry for %s err=%d\n", sf_i->path->String.utf8, err));
         goto fail1;
     }
 
@@ -944,19 +938,19 @@ static int sf_symlink(struct inode *parent, struct dentry *dentry, const char *s
 }
 #endif /* LINUX_VERSION_CODE >= 2.6.0 */
 
-struct inode_operations sf_dir_iops = {
-    .lookup = sf_lookup,
-    .create = sf_create,
-    .mkdir = sf_mkdir,
-    .rmdir = sf_rmdir,
-    .unlink = sf_unlink,
-    .rename = sf_rename,
+struct inode_operations vbsf_dir_iops = {
+    .lookup = vbsf_inode_lookup,
+    .create = vbsf_inode_create,
+    .mkdir = vbsf_inode_mkdir,
+    .rmdir = vbsf_inode_rmdir,
+    .unlink = vbsf_inode_unlink,
+    .rename = vbsf_inode_rename,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-    .revalidate = sf_inode_revalidate
+    .revalidate = vbsf_inode_revalidate
 #else
-    .getattr = sf_getattr,
-    .setattr = sf_setattr,
-    .symlink = sf_symlink
+    .getattr = vbsf_inode_getattr,
+    .setattr = vbsf_inode_setattr,
+    .symlink = vbsf_ino_symlink
 #endif
 };
 
