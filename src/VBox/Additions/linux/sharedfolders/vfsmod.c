@@ -76,9 +76,9 @@ static struct super_operations sf_super_ops;
 /**
  * Copies options from the mount info structure into @a sf_g.
  *
- * This is used both by sf_glob_alloc() and sf_remount_fs().
+ * This is used both by sf_super_info_alloc() and sf_remount_fs().
  */
-static void sf_glob_copy_remount_options(struct sf_glob_info *sf_g, struct vbsf_mount_info_new *info)
+static void sf_super_info_copy_remount_options(struct vbsf_super_info *sf_g, struct vbsf_mount_info_new *info)
 {
 	sf_g->ttl_msec = info->ttl;
 	if (info->ttl > 0)
@@ -129,20 +129,19 @@ static void sf_glob_copy_remount_options(struct sf_glob_info *sf_g, struct vbsf_
 	}
 }
 
-/* allocate global info, try to map host share */
-static int sf_glob_alloc(struct vbsf_mount_info_new *info,
-			 struct sf_glob_info **sf_gp)
+/* allocate super info, try to map host share */
+static int sf_super_info_alloc(struct vbsf_mount_info_new *info, struct vbsf_super_info **sf_gp)
 {
 	int err, rc;
 	SHFLSTRING *str_name;
 	size_t name_len, str_len;
-	struct sf_glob_info *sf_g;
+	struct vbsf_super_info *sf_g;
 
 	TRACE();
 	sf_g = kmalloc(sizeof(*sf_g), GFP_KERNEL);
 	if (!sf_g) {
 		err = -ENOMEM;
-		LogRelFunc(("could not allocate memory for global info\n"));
+		LogRelFunc(("could not allocate memory for super info\n"));
 		goto fail0;
 	}
 
@@ -217,7 +216,7 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info,
 	}
 
 	/* The rest is shared with remount. */
-	sf_glob_copy_remount_options(sf_g, info);
+	sf_super_info_copy_remount_options(sf_g, info);
 
 	*sf_gp = sf_g;
 	return 0;
@@ -233,8 +232,8 @@ static int sf_glob_alloc(struct vbsf_mount_info_new *info,
 	return err;
 }
 
-/* unmap the share and free global info [sf_g] */
-static void sf_glob_free(struct sf_glob_info *sf_g)
+/* unmap the share and free super info [sf_g] */
+static void sf_super_info_free(struct vbsf_super_info *sf_g)
 {
 	int rc;
 
@@ -253,7 +252,7 @@ static void sf_glob_free(struct sf_glob_info *sf_g)
 /**
  * Initialize backing device related matters.
  */
-static int sf_init_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g)
+static int sf_init_backing_dev(struct super_block *sb, struct vbsf_super_info *sf_g)
 {
 	int rc = 0;
 /** @todo this needs sorting out between 3.19 and 4.11   */
@@ -321,7 +320,7 @@ static int sf_init_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g
 /**
  * Undoes what sf_init_backing_dev did.
  */
-static void sf_done_backing_dev(struct super_block *sb, struct sf_glob_info *sf_g)
+static void sf_done_backing_dev(struct super_block *sb, struct vbsf_super_info *sf_g)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
 	bdi_destroy(&sf_g->bdi);	/* includes bdi_unregister() */
@@ -333,12 +332,12 @@ static void sf_done_backing_dev(struct super_block *sb, struct sf_glob_info *sf_
  * This is called by sf_read_super_24() and sf_read_super_26() when vfs mounts
  * the fs and wants to read super_block.
  *
- * calls [sf_glob_alloc] to map the folder and allocate global
- * information structure.
+ * Calls sf_super_info_alloc() to map the folder and allocate super information
+ * structure.
  *
- * initializes [sb], initializes root inode and dentry.
+ * Initializes @a sb, initializes root inode and dentry.
  *
- * should respect [flags]
+ * Should respect @a flags.
  */
 static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 {
@@ -346,7 +345,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 	struct dentry *droot;
 	struct inode *iroot;
 	struct sf_inode_info *sf_i;
-	struct sf_glob_info *sf_g;
+	struct vbsf_super_info *sf_g;
 	SHFLFSOBJINFO fsinfo;
 	struct vbsf_mount_info_new *info;
 	bool fInodePut = true;
@@ -364,7 +363,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 		return -ENOSYS;
 	}
 
-	err = sf_glob_alloc(info, &sf_g);
+	err = sf_super_info_alloc(info, &sf_g);
 	if (err)
 		goto fail0;
 
@@ -458,7 +457,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 	}
 
 	sb->s_root = droot;
-	SET_GLOB_INFO(sb, sf_g);
+	VBSF_SET_SUPER_INFO(sb, sf_g);
 	return 0;
 
  fail5:
@@ -475,7 +474,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 	kfree(sf_i);
 
  fail1:
-	sf_glob_free(sf_g);
+	sf_super_info_free(sf_g);
 
  fail0:
 	return err;
@@ -538,16 +537,16 @@ static void sf_read_inode(struct inode *inode)
 #endif
 
 
-/* vfs is done with [sb] (umount called) call [sf_glob_free] to unmap
+/* vfs is done with [sb] (umount called) call [sf_super_info_free] to unmap
    the folder and free [sf_g] */
 static void sf_put_super(struct super_block *sb)
 {
-	struct sf_glob_info *sf_g;
+	struct vbsf_super_info *sf_g;
 
-	sf_g = GET_GLOB_INFO(sb);
+	sf_g = VBSF_GET_SUPER_INFO(sb);
 	BUG_ON(!sf_g);
 	sf_done_backing_dev(sb, sf_g);
-	sf_glob_free(sf_g);
+	sf_super_info_free(sf_g);
 }
 
 
@@ -568,8 +567,8 @@ static int sf_statfs(struct super_block *sb, struct statfs *stat)
 	int rc;
 	VBOXSFVOLINFOREQ *pReq = (VBOXSFVOLINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
 	if (pReq) {
-		SHFLVOLINFO         *pVolInfo = &pReq->VolInfo;
-		struct sf_glob_info *sf_g     = GET_GLOB_INFO(sb);
+		SHFLVOLINFO            *pVolInfo = &pReq->VolInfo;
+		struct vbsf_super_info *sf_g     = VBSF_GET_SUPER_INFO(sb);
 		rc = VbglR0SfHostReqQueryVolInfo(sf_g->map.root, pReq, SHFL_HANDLE_ROOT);
 		if (RT_SUCCESS(rc)) {
 			stat->f_type   = NFS_SUPER_MAGIC; /** @todo vboxsf type? */
@@ -605,13 +604,13 @@ static int sf_statfs(struct super_block *sb, struct statfs *stat)
 static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 23)
-	struct sf_glob_info *sf_g;
+	struct vbsf_super_info *sf_g;
 	struct sf_inode_info *sf_i;
 	struct inode *iroot;
 	SHFLFSOBJINFO fsinfo;
 	int err;
 
-	sf_g = GET_GLOB_INFO(sb);
+	sf_g = VBSF_GET_SUPER_INFO(sb);
 	BUG_ON(!sf_g);
 	if (data && data[0] != 0) {
 		struct vbsf_mount_info_new *info = (struct vbsf_mount_info_new *)data;
@@ -619,7 +618,7 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 		    && info->signature[0] == VBSF_MOUNT_SIGNATURE_BYTE_0
 		    && info->signature[1] == VBSF_MOUNT_SIGNATURE_BYTE_1
 		    && info->signature[2] == VBSF_MOUNT_SIGNATURE_BYTE_2) {
-			sf_glob_copy_remount_options(sf_g, info);
+			sf_super_info_copy_remount_options(sf_g, info);
 		}
 	}
 
@@ -656,7 +655,7 @@ static int sf_show_options(struct seq_file *m, struct dentry *root)
 #else
 	struct super_block *sb = root->d_sb;
 #endif
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(sb);
+	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(sb);
 	if (sf_g) {
 		seq_printf(m, ",uid=%u,gid=%u,ttl=%d,dmode=0%o,fmode=0%o,dmask=0%o,fmask=0%o,maxiopages=%u",
 			   sf_g->uid, sf_g->gid, sf_g->ttl_msec, sf_g->dmode, sf_g->fmode, sf_g->dmask,

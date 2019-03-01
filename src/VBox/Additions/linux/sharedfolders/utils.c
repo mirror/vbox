@@ -119,7 +119,7 @@ DECLINLINE(int) sf_convert_file_mode(uint32_t fVBoxMode, int fFixedMode, int fCl
 /**
  * Initializes the @a inode attributes based on @a pObjInfo and @a sf_g options.
  */
-void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO pObjInfo, struct sf_glob_info *sf_g)
+void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO pObjInfo, struct vbsf_super_info *sf_g)
 {
 	PCSHFLFSOBJATTR pAttr = &pObjInfo->Attr;
 
@@ -192,7 +192,7 @@ void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJIN
  * @todo sort out the inode locking situation.
  */
 static void sf_update_inode(struct inode *pInode, struct sf_inode_info *pInodeInfo, PSHFLFSOBJINFO pObjInfo,
-			    struct sf_glob_info *sf_g, bool fInodeLocked)
+			    struct vbsf_super_info *sf_g, bool fInodeLocked)
 {
 	PCSHFLFSOBJATTR pAttr = &pObjInfo->Attr;
 	int fMode;
@@ -266,7 +266,7 @@ static void sf_update_inode(struct inode *pInode, struct sf_inode_info *pInodeIn
 
 
 /** @note Currently only used for the root directory during (re-)mount.  */
-int sf_stat(const char *caller, struct sf_glob_info *sf_g,
+int sf_stat(const char *caller, struct vbsf_super_info *sf_g,
 	    SHFLSTRING *path, PSHFLFSOBJINFO result, int ok_to_fail)
 {
 	int rc;
@@ -317,8 +317,8 @@ int sf_inode_revalidate_worker(struct dentry *dentry, bool fForced)
 	int rc;
 	struct inode *pInode = dentry ? dentry->d_inode : NULL;
 	if (pInode) {
-		struct sf_inode_info *sf_i = GET_INODE_INFO(pInode);
-		struct sf_glob_info  *sf_g = GET_GLOB_INFO(pInode->i_sb);
+		struct sf_inode_info   *sf_i = GET_INODE_INFO(pInode);
+		struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(pInode->i_sb);
 		AssertReturn(sf_i, -EINVAL);
 		AssertReturn(sf_g, -EINVAL);
 
@@ -426,8 +426,8 @@ int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile,
 		LogFunc(("no dentry(%p) or inode(%p)\n", dentry, pInode));
 		err = -EINVAL;
 	} else {
-		struct sf_inode_info *sf_i = GET_INODE_INFO(pInode);
-		struct sf_glob_info  *sf_g = GET_GLOB_INFO(pInode->i_sb);
+		struct sf_inode_info   *sf_i = GET_INODE_INFO(pInode);
+		struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(pInode->i_sb);
 		AssertReturn(sf_i, -EINVAL);
 		AssertReturn(sf_g, -EINVAL);
 
@@ -553,7 +553,7 @@ int sf_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat)
 
 int sf_setattr(struct dentry *dentry, struct iattr *iattr)
 {
-	struct sf_glob_info *sf_g;
+	struct vbsf_super_info *sf_g;
 	struct sf_inode_info *sf_i;
 	union SetAttrReqs
 	{
@@ -571,7 +571,7 @@ int sf_setattr(struct dentry *dentry, struct iattr *iattr)
 
 	TRACE();
 
-	sf_g = GET_GLOB_INFO(dentry->d_inode->i_sb);
+	sf_g = VBSF_GET_SUPER_INFO(dentry->d_inode->i_sb);
 	sf_i = GET_INODE_INFO(dentry->d_inode);
 	cbReq = RT_MAX(sizeof(pReq->Info), sizeof(pReq->Create) + SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
 	pReq = (union SetAttrReqs *)VbglR0PhysHeapAlloc(cbReq);
@@ -740,7 +740,7 @@ static int sf_make_path(const char *caller, struct sf_inode_info *sf_i,
  * to [sf_g]->nls, we must convert it to UTF8 here and pass down to
  * [sf_make_path] which will allocate SHFLSTRING and fill it in
  */
-int sf_path_from_dentry(const char *caller, struct sf_glob_info *sf_g,
+int sf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g,
 			struct sf_inode_info *sf_i, struct dentry *dentry,
 			SHFLSTRING ** result)
 {
@@ -820,7 +820,7 @@ int sf_path_from_dentry(const char *caller, struct sf_glob_info *sf_g,
 	return err;
 }
 
-int sf_nlscpy(struct sf_glob_info *sf_g,
+int sf_nlscpy(struct vbsf_super_info *sf_g,
 	      char *name, size_t name_bound_len,
 	      const unsigned char *utf8_name, size_t utf8_len)
 {
@@ -991,7 +991,7 @@ static struct sf_dir_buf *sf_get_empty_dir_buf(struct sf_dir_info *sf_d)
 
 /** @todo r=bird: Why on earth do we read in the entire directory???  This
  *        cannot be healthy for like big directory and such... */
-int sf_dir_read_all(struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
+int sf_dir_read_all(struct vbsf_super_info *sf_g, struct sf_inode_info *sf_i,
 		    struct sf_dir_info *sf_d, SHFLHANDLE handle)
 {
 	int err;
@@ -1099,8 +1099,8 @@ sf_dentry_revalidate(struct dentry *dentry, int flags)
 			 *       and ignore the dentry timestamp for positive entries.
 			 */
 			//struct sf_inode_info *sf_i = GET_INODE_INFO(pInode);
-			unsigned long const  cJiffiesAge = sf_dentry_get_update_jiffies(dentry) - jiffies;
-			struct sf_glob_info *sf_g        = GET_GLOB_INFO(dentry->d_sb);
+			unsigned long const     cJiffiesAge = sf_dentry_get_update_jiffies(dentry) - jiffies;
+			struct vbsf_super_info *sf_g        = VBSF_GET_SUPER_INFO(dentry->d_sb);
 			if (cJiffiesAge < sf_g->ttl) {
 				SFLOGFLOW(("sf_dentry_revalidate: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, sf_g->ttl));
 				rc = 1;
@@ -1133,8 +1133,8 @@ sf_dentry_revalidate(struct dentry *dentry, int flags)
 				rc = 0;
 			} else {
 				/* Can we skip revalidation based on TTL? */
-				unsigned long const  cJiffiesAge = sf_dentry_get_update_jiffies(dentry) - jiffies;
-				struct sf_glob_info *sf_g        = GET_GLOB_INFO(dentry->d_sb);
+				unsigned long const     cJiffiesAge = sf_dentry_get_update_jiffies(dentry) - jiffies;
+				struct vbsf_super_info *sf_g        = VBSF_GET_SUPER_INFO(dentry->d_sb);
 				if (cJiffiesAge < sf_g->ttl) {
 					SFLOGFLOW(("sf_dentry_revalidate: negative: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, sf_g->ttl));
 					rc = 1;

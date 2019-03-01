@@ -42,7 +42,7 @@ static int sf_follow_link(struct dentry *dentry, struct nameidata *nd)
 #  endif
 {
 	struct inode *inode = dentry->d_inode;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
+	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
 	int error = -ENOMEM;
 	char *path = (char *)get_zeroed_page(GFP_KERNEL);
@@ -88,7 +88,7 @@ static void sf_put_link(struct dentry *dentry, struct nameidata *nd)
 static const char *sf_get_link(struct dentry *dentry, struct inode *inode,
 			       struct delayed_call *done)
 {
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
+	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
 	char *path;
 	int rc;

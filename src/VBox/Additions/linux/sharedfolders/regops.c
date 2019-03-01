@@ -120,7 +120,7 @@ struct sf_handle *sf_handle_find(struct sf_inode_info *pInodeInfo, uint32_t fFla
  *      		    with the handle.
  * @param   pszCaller       The caller name (for logging failures).
  */
-uint32_t sf_handle_release_slow(struct sf_handle *pHandle, struct sf_glob_info *sf_g, const char *pszCaller)
+uint32_t sf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
 {
 	int rc;
 	unsigned long fSavedFlags;
@@ -246,7 +246,7 @@ static struct pipe_buf_operations sf_pipe_buf_ops = {
 	.get = sf_pipe_buf_get,
 };
 
-static int sf_reg_read_aux(const char *caller, struct sf_glob_info *sf_g,
+static int sf_reg_read_aux(const char *caller, struct vbsf_super_info *sf_g,
 			   struct sf_reg_info *sf_r, void *buf,
 			   uint32_t * nread, uint64_t pos)
 {
@@ -271,7 +271,7 @@ sf_splice_read(struct file *in, loff_t * poffset,
 	loff_t orig_offset = *poffset;
 	loff_t offset = orig_offset;
 	struct inode *inode = GET_F_DENTRY(in)->d_inode;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
+	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
 	struct sf_reg_info *sf_r = in->private_data;
 	ssize_t retval;
 	struct page *kpage = 0;
@@ -455,7 +455,7 @@ static ssize_t sf_reg_read_mapped(struct file *file, char /*__user*/ *buf, size_
  * write directly to them.
  */
 static ssize_t sf_reg_read_fallback(struct file *file, char /*__user*/ *buf, size_t size, loff_t *off,
-				    struct sf_glob_info *sf_g, struct sf_reg_info *sf_r)
+				    struct vbsf_super_info *sf_g, struct sf_reg_info *sf_r)
 {
 	/*
 	 * Lock pages and execute the read, taking care not to pass the host
@@ -572,7 +572,7 @@ static ssize_t sf_reg_read(struct file *file, char /*__user*/ *buf, size_t size,
 			   loff_t *off)
 {
 	struct inode *inode = GET_F_DENTRY(file)->d_inode;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
+	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
 	struct sf_reg_info *sf_r = file->private_data;
 	struct address_space *mapping = inode->i_mapping;
 
@@ -696,7 +696,7 @@ DECLINLINE(void) sf_reg_write_invalidate_mapping_range(struct address_space *map
  */
 static ssize_t sf_reg_write_fallback(struct file *file, const char /*__user*/ *buf, size_t size, loff_t *off, loff_t offFile,
 				     struct inode *inode, struct sf_inode_info *sf_i,
-				     struct sf_glob_info *sf_g, struct sf_reg_info *sf_r)
+				     struct vbsf_super_info *sf_g, struct sf_reg_info *sf_r)
 {
 	/*
 	 * Lock pages and execute the write, taking care not to pass the host
@@ -815,12 +815,12 @@ static ssize_t sf_reg_write_fallback(struct file *file, const char /*__user*/ *b
 static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 			    loff_t * off)
 {
-	struct inode         *inode = GET_F_DENTRY(file)->d_inode;
-	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
-	struct sf_glob_info  *sf_g = GET_GLOB_INFO(inode->i_sb);
-	struct sf_reg_info   *sf_r = file->private_data;
-	struct address_space *mapping = inode->i_mapping;
-	loff_t                pos;
+	struct inode           *inode   = GET_F_DENTRY(file)->d_inode;
+	struct sf_inode_info   *sf_i    = GET_INODE_INFO(inode);
+	struct vbsf_super_info *sf_g    = VBSF_GET_SUPER_INFO(inode->i_sb);
+	struct sf_reg_info     *sf_r    = file->private_data;
+	struct address_space   *mapping = inode->i_mapping;
+	loff_t                  pos;
 
 	SFLOGFLOW(("sf_reg_write: inode=%p file=%p buf=%p size=%#zx off=%#llx\n", inode, file, buf, size, *off));
 	BUG_ON(!sf_i);
@@ -947,7 +947,7 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size,
 static int sf_reg_open(struct inode *inode, struct file *file)
 {
 	int rc, rc_linux = 0;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
+	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
 	struct sf_reg_info *sf_r;
 #if   LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
@@ -1109,11 +1109,11 @@ static int sf_reg_open(struct inode *inode, struct file *file)
 static int sf_reg_release(struct inode *inode, struct file *file)
 {
 	struct sf_reg_info *sf_r;
-	struct sf_glob_info *sf_g;
+	struct vbsf_super_info *sf_g;
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
 
 	SFLOGFLOW(("sf_reg_release: inode=%p file=%p\n", inode, file));
-	sf_g = GET_GLOB_INFO(inode->i_sb);
+	sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
 	sf_r = file->private_data;
 
 	BUG_ON(!sf_g);
@@ -1282,10 +1282,10 @@ static int sf_readpage(struct file *file, struct page *page)
 	if (!is_bad_inode(inode)) {
 	    VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
 	    if (pReq) {
-		    struct sf_glob_info *sf_g     = GET_GLOB_INFO(inode->i_sb);
-		    struct sf_reg_info  *sf_r     = file->private_data;
-		    uint32_t 		 cbRead;
-		    int                  vrc;
+		    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
+		    struct sf_reg_info     *sf_r = file->private_data;
+		    uint32_t 		    cbRead;
+		    int                     vrc;
 
 		    pReq->PgLst.offFirstPage = 0;
 		    pReq->PgLst.aPages[0]    = page_to_phys(page);
@@ -1342,8 +1342,8 @@ static int sf_writepage(struct page *page, struct writeback_control *wbc)
 		   inode, page,(uint64_t)page->index << PAGE_SHIFT, pHandle, pHandle->hHost));
 
 	if (pHandle) {
-		struct sf_glob_info  *sf_g = GET_GLOB_INFO(inode->i_sb);
-		VBOXSFWRITEPGLSTREQ  *pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+		struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
+		VBOXSFWRITEPGLSTREQ    *pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
 		if (pReq) {
 			uint64_t const cbFile    = i_size_read(inode);
 			uint64_t const offInFile = (uint64_t)page->index << PAGE_SHIFT;

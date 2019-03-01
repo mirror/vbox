@@ -38,7 +38,7 @@
  * @note As suggested a couple of other places, we should probably stop
  *       reading in the whole directory on open.
  */
-static int sf_dir_open_worker(struct sf_glob_info *sf_g, struct sf_dir_info *sf_d,
+static int sf_dir_open_worker(struct vbsf_super_info *sf_g, struct sf_dir_info *sf_d,
 			      struct sf_inode_info *sf_i, const char *pszCaller)
 {
     int rc;
@@ -112,10 +112,10 @@ static int sf_dir_open_worker(struct sf_glob_info *sf_g, struct sf_dir_info *sf_
  */
 static int sf_dir_open(struct inode *inode, struct file *file)
 {
-	int err;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(inode->i_sb);
-	struct sf_dir_info *sf_d;
+	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
 	struct sf_inode_info *sf_i = GET_INODE_INFO(inode);
+	struct sf_dir_info *sf_d;
+	int err;
 
 	TRACE();
 	BUG_ON(!sf_g);
@@ -208,7 +208,7 @@ static int sf_get_d_type(RTFMODE fMode)
 static int sf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
 {
 	loff_t cur;
-	struct sf_glob_info *sf_g;
+	struct vbsf_super_info *sf_g;
 	struct sf_dir_info *sf_d;
 	struct sf_inode_info *sf_i;
 	struct inode *inode;
@@ -218,7 +218,7 @@ static int sf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
 
 	inode = GET_F_DENTRY(dir)->d_inode;
 	sf_i = GET_INODE_INFO(inode);
-	sf_g = GET_GLOB_INFO(inode->i_sb);
+	sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
 	sf_d = dir->private_data;
 
 	BUG_ON(!sf_g);
@@ -381,7 +381,7 @@ struct file_operations sf_dir_fops = {
  * Worker for sf_lookup() and sf_instantiate().
  */
 static struct inode *sf_create_inode(struct inode *parent, struct dentry *dentry, PSHFLSTRING path,
-				     PSHFLFSOBJINFO pObjInfo, struct sf_glob_info *sf_g, bool fInstantiate)
+				     PSHFLFSOBJINFO pObjInfo, struct vbsf_super_info *sf_g, bool fInstantiate)
 {
 	/*
 	 * Allocate memory for our additional inode info and create an inode.
@@ -446,11 +446,11 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
 #endif
     )
 {
-	struct sf_glob_info  *sf_g = GET_GLOB_INFO(parent->i_sb);
-	struct sf_inode_info *sf_i = GET_INODE_INFO(parent);
-	SHFLSTRING           *path;
-	struct dentry        *dret;
-	int                   rc;
+	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
+	struct sf_inode_info     *sf_i = GET_INODE_INFO(parent);
+	SHFLSTRING               *path;
+	struct dentry            *dret;
+	int                       rc;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
 	SFLOGFLOW(("sf_lookup: parent=%p dentry=%p flags=%#x\n", parent, dentry, flags));
@@ -550,8 +550,8 @@ static int sf_instantiate(struct inode *parent, struct dentry *dentry,
 			  PSHFLSTRING path, PSHFLFSOBJINFO info,
 			  SHFLHANDLE handle)
 {
-	struct sf_glob_info *sf_g   = GET_GLOB_INFO(parent->i_sb);
-	struct inode        *pInode = sf_create_inode(parent, dentry, path, info, sf_g, true /*fInstantiate*/);
+	struct vbsf_super_info *sf_g   = VBSF_GET_SUPER_INFO(parent->i_sb);
+	struct inode             *pInode = sf_create_inode(parent, dentry, path, info, sf_g, true /*fInstantiate*/);
 	if (pInode) {
 		/* Store this handle if we leave the handle open. */
 		struct sf_inode_info *sf_new_i = GET_INODE_INFO(pInode);
@@ -575,7 +575,7 @@ static int sf_create_aux(struct inode *parent, struct dentry *dentry,
 {
 	int rc, err;
 	struct sf_inode_info *sf_parent_i = GET_INODE_INFO(parent);
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(parent->i_sb);
+	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
 	SHFLSTRING *path;
 	union CreateAuxReq
 	{
@@ -729,7 +729,7 @@ static int sf_unlink_aux(struct inode *parent, struct dentry *dentry,
 			 int fDirectory)
 {
 	int rc, err;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(parent->i_sb);
+	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
 	struct sf_inode_info *sf_parent_i = GET_INODE_INFO(parent);
 	SHFLSTRING *path;
 
@@ -821,7 +821,7 @@ static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
     )
 {
 	int err = 0, rc = VINF_SUCCESS;
-	struct sf_glob_info *sf_g = GET_GLOB_INFO(old_parent->i_sb);
+	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(old_parent->i_sb);
 
 	TRACE();
 
@@ -832,7 +832,7 @@ static int sf_rename(struct inode *old_parent, struct dentry *old_dentry,
 	}
 #endif
 
-	if (sf_g != GET_GLOB_INFO(new_parent->i_sb)) {
+	if (sf_g != VBSF_GET_SUPER_INFO(new_parent->i_sb)) {
 		LogFunc(("rename with different roots\n"));
 		err = -EINVAL;
 	} else {
@@ -894,13 +894,13 @@ static int sf_symlink(struct inode *parent, struct dentry *dentry,
 	int err;
 	int rc;
 	struct sf_inode_info *sf_i;
-	struct sf_glob_info *sf_g;
+	struct vbsf_super_info *sf_g;
 	SHFLSTRING *path, *ssymname;
 	SHFLFSOBJINFO info;
 	int symname_len = strlen(symname) + 1;
 
 	TRACE();
-	sf_g = GET_GLOB_INFO(parent->i_sb);
+	sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
 	sf_i = GET_INODE_INFO(parent);
 
 	BUG_ON(!sf_g);

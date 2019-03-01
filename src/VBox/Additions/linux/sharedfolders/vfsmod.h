@@ -84,8 +84,10 @@ DECLINLINE(void) set_nlink(struct inode *pInode, unsigned int cLinks)
 
 #define DIR_BUFFER_SIZE (16*_1K)
 
-/* per-shared folder information */
-struct sf_glob_info {
+/**
+ * VBox specific per-mount (shared folder) information.
+ */
+struct vbsf_super_info {
 	VBGLSFMAP map;
 	struct nls_table *nls;
 	/** time-to-live value for direntry and inode info in jiffies.
@@ -102,11 +104,24 @@ struct sf_glob_info {
 	/** Maximum number of pages to allow in an I/O buffer with the host.
 	 * This applies to read and write operations.  */
 	uint32_t cMaxIoPages;
+	/** Mount tag for VBoxService automounter.  @since 6.0 */
+	char tag[32];
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+	/** The backing device info structure. */
 	struct backing_dev_info bdi;
 #endif
-	char tag[32];		/**< Mount tag for VBoxService automounter.  @since 6.0 */
 };
+
+/* Following casts are here to prevent assignment of void * to
+   pointers of arbitrary type */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+# define VBSF_GET_SUPER_INFO(sb)       ((struct vbsf_super_info *)(sb)->u.generic_sbp)
+# define VBSF_SET_SUPER_INFO(sb, sf_g) do { (sb)->u.generic_sbp = sf_g; } while (0)
+#else
+# define VBSF_GET_SUPER_INFO(sb)       ((struct vbsf_super_info *)(sb)->s_fs_info)
+# define VBSF_SET_SUPER_INFO(sb, sf_g) do { (sb)->s_fs_info = sf_g;} while (0)
+#endif
+
 
 /**
  * For associating inodes with host handles.
@@ -195,7 +210,7 @@ struct sf_reg_info {
 /**
  * Sets the update-jiffies value for a dentry.
  *
- * This is used together with sf_glob_info::ttl to reduce re-validation of
+ * This is used together with vbsf_super_info::ttl to reduce re-validation of
  * dentry structures while walking.
  *
  * This used to be living in d_time, but since 4.9.0 that seems to have become
@@ -264,7 +279,7 @@ extern struct address_space_operations sf_reg_aops;
 
 extern void              sf_handle_drop_chain(struct sf_inode_info *pInodeInfo);
 extern struct sf_handle *sf_handle_find(struct sf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear);
-extern uint32_t          sf_handle_release_slow(struct sf_handle *pHandle, struct sf_glob_info *sf_g, const char *pszCaller);
+extern uint32_t          sf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller);
 extern void              sf_handle_append(struct sf_inode_info *pInodeInfo, struct sf_handle *pHandle);
 
 /**
@@ -276,7 +291,7 @@ extern void              sf_handle_append(struct sf_inode_info *pInodeInfo, stru
  *      		    with the handle.
  * @param   pszCaller       The caller name (for logging failures).
  */
-DECLINLINE(uint32_t) sf_handle_release(struct sf_handle *pHandle, struct sf_glob_info *sf_g, const char *pszCaller)
+DECLINLINE(uint32_t) sf_handle_release(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
 {
 	uint32_t cRefs;
 
@@ -291,8 +306,8 @@ DECLINLINE(uint32_t) sf_handle_release(struct sf_handle *pHandle, struct sf_glob
 	return sf_handle_release_slow(pHandle, sf_g, pszCaller);
 }
 
-extern void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO info, struct sf_glob_info *sf_g);
-extern int sf_stat(const char *caller, struct sf_glob_info *sf_g,
+extern void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO info, struct vbsf_super_info *sf_g);
+extern int sf_stat(const char *caller, struct vbsf_super_info *sf_g,
 		   SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
 extern int sf_inode_revalidate(struct dentry *dentry);
 extern int sf_inode_revalidate_worker(struct dentry *dentry, bool fForced);
@@ -307,16 +322,16 @@ extern int sf_getattr(struct vfsmount *mnt, struct dentry *dentry,
 # endif
 extern int sf_setattr(struct dentry *dentry, struct iattr *iattr);
 #endif
-extern int sf_path_from_dentry(const char *caller, struct sf_glob_info *sf_g,
+extern int sf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g,
 			       struct sf_inode_info *sf_i,
 			       struct dentry *dentry, SHFLSTRING ** result);
-extern int sf_nlscpy(struct sf_glob_info *sf_g, char *name,
+extern int sf_nlscpy(struct vbsf_super_info *sf_g, char *name,
 		     size_t name_bound_len, const unsigned char *utf8_name,
 		     size_t utf8_len);
 extern void sf_dir_info_free(struct sf_dir_info *p);
 extern void sf_dir_info_empty(struct sf_dir_info *p);
 extern struct sf_dir_info *sf_dir_info_alloc(void);
-extern int sf_dir_read_all(struct sf_glob_info *sf_g,
+extern int sf_dir_read_all(struct vbsf_super_info *sf_g,
 			   struct sf_inode_info *sf_i, struct sf_dir_info *sf_d,
 			   SHFLHANDLE handle);
 
@@ -336,16 +351,6 @@ extern int sf_dir_read_all(struct sf_glob_info *sf_g,
 # define TRACE()          RTLogBackdoorPrintf("%s: tracepoint\n", __FUNCTION__)
 # define SFLOGFLOW(aArgs) RTLogBackdoorPrintf aArgs
 # define SFLOG_ENABLED    1
-#endif
-
-/* Following casts are here to prevent assignment of void * to
-   pointers of arbitrary type */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-# define GET_GLOB_INFO(sb)       ((struct sf_glob_info *) (sb)->u.generic_sbp)
-# define SET_GLOB_INFO(sb, sf_g) (sb)->u.generic_sbp = sf_g
-#else
-# define GET_GLOB_INFO(sb)       ((struct sf_glob_info *) (sb)->s_fs_info)
-# define SET_GLOB_INFO(sb, sf_g) (sb)->s_fs_info = sf_g
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || defined(KERNEL_FC6)
