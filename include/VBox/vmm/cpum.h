@@ -2020,6 +2020,53 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32
     return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ProcCtls2 & uProcCtls2);
 }
 
+/**
+ * Implements VMSucceed for VMX instruction success.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(void) CPUMSetGuestVmxVmSucceed(PCPUMCTX pCtx)
+{
+    pCtx->eflags.u32 &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
+}
+
+/**
+ * Implements VMFailInvalid for VMX instruction failure.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ */
+DECLINLINE(void) CPUMSetGuestVmxVmFailInvalid(PCPUMCTX pCtx)
+{
+    pCtx->eflags.u32 &= ~(X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
+    pCtx->eflags.u32 |= X86_EFL_CF;
+}
+
+/**
+ * Implements VMFailValid for VMX instruction failure.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   enmInsErr   The VM instruction error.
+ */
+DECLINLINE(void) CPUMSetGuestVmxVmFailValid(PCPUMCTX pCtx, VMXINSTRERR enmInsErr)
+{
+    pCtx->eflags.u32 &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
+    pCtx->eflags.u32 |= X86_EFL_ZF;
+    pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32RoVmInstrError = enmInsErr;
+}
+
+/**
+ * Implements VMFail for VMX instruction failure.
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   enmInsErr   The VM instruction error.
+ */
+DECLINLINE(void) CPUMSetGuestVmxVmFail(PCPUMCTX pCtx, VMXINSTRERR enmInsErr)
+{
+    if (pCtx->hwvirt.vmx.GCPhysVmcs != NIL_RTGCPHYS)
+        CPUMSetGuestVmxVmFailValid(pCtx, enmInsErr);
+    else
+        CPUMSetGuestVmxVmFailInvalid(pCtx);
+}
 
 /**
  * Checks whether one of the given VM-exit controls are set when executing a

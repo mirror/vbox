@@ -981,19 +981,6 @@ DECLINLINE(uint8_t) iemVmxGetEventType(uint32_t uVector, uint32_t fFlags)
 
 
 /**
- * Sets the VM-instruction error VMCS field.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   enmInsErr   The VM-instruction error.
- */
-DECL_FORCE_INLINE(void) iemVmxVmcsSetVmInstrErr(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
-{
-    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    pVmcs->u32RoVmInstrError = enmInsErr;
-}
-
-
-/**
  * Sets the VM-exit qualification VMCS field.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -1120,7 +1107,7 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitI
  */
 DECL_FORCE_INLINE(void) iemVmxVmSucceed(PVMCPU pVCpu)
 {
-    pVCpu->cpum.GstCtx.eflags.u32 &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
+    return CPUMSetGuestVmxVmSucceed(IEM_GET_CTX(pVCpu));
 }
 
 
@@ -1131,8 +1118,7 @@ DECL_FORCE_INLINE(void) iemVmxVmSucceed(PVMCPU pVCpu)
  */
 DECL_FORCE_INLINE(void) iemVmxVmFailInvalid(PVMCPU pVCpu)
 {
-    pVCpu->cpum.GstCtx.eflags.u32 &= ~(X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
-    pVCpu->cpum.GstCtx.eflags.u32 |= X86_EFL_CF;
+    return CPUMSetGuestVmxVmFailInvalid(IEM_GET_CTX(pVCpu));
 }
 
 
@@ -1144,9 +1130,7 @@ DECL_FORCE_INLINE(void) iemVmxVmFailInvalid(PVMCPU pVCpu)
  */
 DECL_FORCE_INLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 {
-    pVCpu->cpum.GstCtx.eflags.u32 &= ~(X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF);
-    pVCpu->cpum.GstCtx.eflags.u32 |= X86_EFL_ZF;
-    iemVmxVmcsSetVmInstrErr(pVCpu, enmInsErr);
+    return CPUMSetGuestVmxVmFailValid(IEM_GET_CTX(pVCpu), enmInsErr);
 }
 
 
@@ -1158,10 +1142,7 @@ DECL_FORCE_INLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
  */
 DECL_FORCE_INLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 {
-    if (IEM_VMX_HAS_CURRENT_VMCS(pVCpu))
-        iemVmxVmFailValid(pVCpu, enmInsErr);
-    else
-        iemVmxVmFailInvalid(pVCpu);
+    return CPUMSetGuestVmxVmFail(IEM_GET_CTX(pVCpu), enmInsErr);
 }
 
 
