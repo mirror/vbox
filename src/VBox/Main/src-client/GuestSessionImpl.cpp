@@ -2865,6 +2865,7 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
     source.strSource            = aSource;
     source.enmType              = FsObjType_File;
     source.enmPathStyle         = i_getPathStyle();
+    source.fDryRun              = false; /** @todo Implement support for a dry run. */
     source.Type.File.fCopyFlags = (FileCopyFlag_T)fFlags;
 
     SourceSet.push_back(source);
@@ -2891,6 +2892,7 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
     source.strSource            = aSource;
     source.enmType              = FsObjType_File;
     source.enmPathStyle         = i_getPathStyle();
+    source.fDryRun              = false; /** @todo Implement support for a dry run. */
     source.Type.File.fCopyFlags = (FileCopyFlag_T)fFlags;
 
     SourceSet.push_back(source);
@@ -2955,6 +2957,7 @@ HRESULT GuestSession::copyFromGuest(const std::vector<com::Utf8Str> &aSources, c
         source.strFilter    = strFilter;
         source.enmType      = objData.mType;
         source.enmPathStyle = i_getPathStyle();
+        source.fDryRun      = false; /** @todo Implement support for a dry run. */
 
         HRESULT hrc;
         if (source.enmType == FsObjType_Directory)
@@ -3028,6 +3031,7 @@ HRESULT GuestSession::copyToGuest(const std::vector<com::Utf8Str> &aSources, con
         source.strFilter    = strFilter;
         source.enmType      = GuestBase::fileModeToFsObjType(objInfo.Attr.fMode);
         source.enmPathStyle = i_getPathStyle();
+        source.fDryRun      = false; /** @todo Implement support for a dry run. */
 
         HRESULT hrc;
         if (source.enmType == FsObjType_Directory)
@@ -3077,6 +3081,7 @@ HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const 
     source.strSource            = aSource;
     source.enmType              = FsObjType_Directory;
     source.enmPathStyle         = i_getPathStyle();
+    source.fDryRun              = false; /** @todo Implement support for a dry run. */
     source.Type.Dir.fCopyFlags  = (DirectoryCopyFlag_T)fFlags;
     source.Type.Dir.fRecursive  = true; /* Implicit. */
 
@@ -3104,6 +3109,7 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
     source.strSource           = aSource;
     source.enmType             = FsObjType_Directory;
     source.enmPathStyle        = i_getPathStyle();
+    source.fDryRun             = false; /** @todo Implement support for a dry run. */
     source.Type.Dir.fCopyFlags = (DirectoryCopyFlag_T)fFlags;
     source.Type.Dir.fFollowSymlinks = true; /** @todo Add a flag for that in DirectoryCopyFlag_T. Later. */
     source.Type.Dir.fRecursive      = true; /* Implicit. */
