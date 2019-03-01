@@ -447,10 +447,10 @@ static struct dentry *sf_lookup(struct inode *parent, struct dentry *dentry
     )
 {
 	struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
-	struct sf_inode_info     *sf_i = GET_INODE_INFO(parent);
-	SHFLSTRING               *path;
-	struct dentry            *dret;
-	int                       rc;
+	struct sf_inode_info   *sf_i = GET_INODE_INFO(parent);
+	SHFLSTRING             *path;
+	struct dentry          *dret;
+	int                     rc;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
 	SFLOGFLOW(("sf_lookup: parent=%p dentry=%p flags=%#x\n", parent, dentry, flags));
@@ -551,7 +551,7 @@ static int sf_instantiate(struct inode *parent, struct dentry *dentry,
 			  SHFLHANDLE handle)
 {
 	struct vbsf_super_info *sf_g   = VBSF_GET_SUPER_INFO(parent->i_sb);
-	struct inode             *pInode = sf_create_inode(parent, dentry, path, info, sf_g, true /*fInstantiate*/);
+	struct inode           *pInode = sf_create_inode(parent, dentry, path, info, sf_g, true /*fInstantiate*/);
 	if (pInode) {
 		/* Store this handle if we leave the handle open. */
 		struct sf_inode_info *sf_new_i = GET_INODE_INFO(pInode);
