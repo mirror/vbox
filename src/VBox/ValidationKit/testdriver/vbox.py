@@ -1835,10 +1835,8 @@ class TestDriver(base.TestDriver):                                              
             # Testbox debugging - START - TEMPORARY, REMOVE ASAP.
             if self.sHost in ('darwin', 'freebsd', 'linux', 'solaris', ):
                 try:
-                    reporter.log('> ls -la %s' % (os.path.join(self.sScratchPath, 'VBoxUserHome'),));
-                    utils.processCall(['ls', '-la', os.path.join(self.sScratchPath, 'VBoxUserHome')]);
-                    reporter.log('> ls -la %s' % (self.sScratchPath,));
-                    utils.processCall(['ls', '-la', self.sScratchPath]);
+                    reporter.log('> ls -R -la %s' % (self.sScratchPath,));
+                    utils.processCall(['ls', '-R -la', self.sScratchPath]);
                 except: pass;
             # Testbox debugging - END   - TEMPORARY, REMOVE ASAP.
 
