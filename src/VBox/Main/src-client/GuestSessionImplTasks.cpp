@@ -220,16 +220,16 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
  * @return VBox status code. VERR_ALREADY_EXISTS if directory on the guest already exists.
  * @param  strPath                  Absolute path to directory on the guest (guest style path) to create.
  * @param  enmDirectoryCreateFlags  Directory creation flags.
- * @param  uMode                    Directory mode to use for creation.
+ * @param  fMode                    Directory mode to use for creation.
  * @param  fFollowSymlinks          Whether to follow symlinks on the guest or not.
  * @param  fCanExist                Whether the directory to create is allowed to exist already.
  */
 int GuestSessionTask::directoryCreateOnGuest(const com::Utf8Str &strPath,
-                                             DirectoryCreateFlag_T enmDirectoryCreateFlags, uint32_t uMode,
+                                             DirectoryCreateFlag_T enmDirectoryCreateFlags, uint32_t fMode,
                                              bool fFollowSymlinks, bool fCanExist)
 {
-    LogFlowFunc(("strPath=%s, enmDirectoryCreateFlags=0x%x, uMode=%RU32, fFollowSymlinks=%RTbool, fCanExist=%RTbool\n",
-                 strPath.c_str(), enmDirectoryCreateFlags, uMode, fFollowSymlinks, fCanExist));
+    LogFlowFunc(("strPath=%s, enmDirectoryCreateFlags=0x%x, fMode=%RU32, fFollowSymlinks=%RTbool, fCanExist=%RTbool\n",
+                 strPath.c_str(), enmDirectoryCreateFlags, fMode, fFollowSymlinks, fCanExist));
 
     GuestFsObjData objData; int rcGuest;
     int rc = mSession->i_directoryQueryInfo(strPath, fFollowSymlinks, objData, &rcGuest);
@@ -252,7 +252,7 @@ int GuestSessionTask::directoryCreateOnGuest(const com::Utf8Str &strPath,
                 {
                     case VERR_FILE_NOT_FOUND:
                     case VERR_PATH_NOT_FOUND:
-                        rc = mSession->i_directoryCreate(strPath.c_str(), uMode, enmDirectoryCreateFlags, &rcGuest);
+                        rc = mSession->i_directoryCreate(strPath.c_str(), fMode, enmDirectoryCreateFlags, &rcGuest);
                         break;
                     default:
                         break;
@@ -286,14 +286,14 @@ int GuestSessionTask::directoryCreateOnGuest(const com::Utf8Str &strPath,
  * @return VBox status code. VERR_ALREADY_EXISTS if directory on the guest already exists.
  * @param  strPath                  Absolute path to directory on the host (host style path) to create.
  * @param  fCreate                  Directory creation flags.
- * @param  uMode                    Directory mode to use for creation.
+ * @param  fMode                    Directory mode to use for creation.
  * @param  fCanExist                Whether the directory to create is allowed to exist already.
  */
-int GuestSessionTask::directoryCreateOnHost(const com::Utf8Str &strPath, uint32_t fCreate, uint32_t uMode, bool fCanExist)
+int GuestSessionTask::directoryCreateOnHost(const com::Utf8Str &strPath, uint32_t fCreate, uint32_t fMode, bool fCanExist)
 {
-    LogFlowFunc(("strPath=%s, fCreate=0x%x, uMode=%RU32, fCanExist=%RTbool\n", strPath.c_str(), fCreate, uMode, fCanExist));
+    LogFlowFunc(("strPath=%s, fCreate=0x%x, fMode=%RU32, fCanExist=%RTbool\n", strPath.c_str(), fCreate, fMode, fCanExist));
 
-    int rc = RTDirCreate(strPath.c_str(), uMode, fCreate);
+    int rc = RTDirCreate(strPath.c_str(), fMode, fCreate);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_ALREADY_EXISTS)
@@ -1554,7 +1554,7 @@ int GuestSessionTaskCopyFrom::Run(void)
         const bool     fCopyIntoExisting = pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting;
         const bool     fFollowSymlinks   = true; /** @todo */
         const uint32_t fDirMode          = 0700; /** @todo Play safe by default; implement ACLs. */
-              uint32_t fDirCreate = 0;
+              uint32_t fDirCreate        = 0;
 
         if (!fFollowSymlinks)
             fDirCreate |= RTDIRCREATE_FLAGS_NO_SYMLINKS;
@@ -1565,7 +1565,7 @@ int GuestSessionTaskCopyFrom::Run(void)
         if (   pList->mSourceSpec.enmType == FsObjType_Directory
             && pList->mSourceSpec.fDryRun == false)
         {
-            rc = directoryCreateOnHost(pList->mDstRootAbs, fDirMode, fDirCreate, fCopyIntoExisting);
+            rc = directoryCreateOnHost(pList->mDstRootAbs, fDirCreate, fDirMode, fCopyIntoExisting);
             if (RT_FAILURE(rc))
                 break;
         }
@@ -1594,7 +1594,7 @@ int GuestSessionTaskCopyFrom::Run(void)
                 case RTFS_TYPE_DIRECTORY:
                     LogFlowFunc(("Directory '%s': %s -> %s\n", pEntry->strPath.c_str(), strSrcAbs.c_str(), strDstAbs.c_str()));
                     if (!pList->mSourceSpec.fDryRun)
-                        rc = directoryCreateOnHost(strDstAbs, fDirMode, fDirCreate, fCopyIntoExisting);
+                        rc = directoryCreateOnHost(strDstAbs, fDirCreate, fDirMode, fCopyIntoExisting);
                     break;
 
                 case RTFS_TYPE_FILE:

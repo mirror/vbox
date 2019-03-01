@@ -188,9 +188,9 @@ protected:
     /** @name Directory handling primitives.
      * @{ */
     int directoryCreateOnGuest(const com::Utf8Str &strPath,
-                               DirectoryCreateFlag_T enmDirectoryCreateFlags, uint32_t uMode,
+                               DirectoryCreateFlag_T enmDirectoryCreateFlags, uint32_t fMode,
                                bool fFollowSymlinks, bool fCanExist);
-    int directoryCreateOnHost(const com::Utf8Str &strPath, uint32_t fCreate, uint32_t uMode, bool fCanExist);
+    int directoryCreateOnHost(const com::Utf8Str &strPath, uint32_t fCreate, uint32_t fMode, bool fCanExist);
     /** @}  */
 
     /** @name File handling primitives.
