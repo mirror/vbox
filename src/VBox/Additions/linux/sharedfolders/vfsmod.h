@@ -62,14 +62,14 @@
 
 DECLINLINE(loff_t) i_size_read(struct inode *pInode)
 {
-	AssertCompile(sizeof(loff_t) == sizeof(uint64_t));
-	return ASMAtomicReadU64((uint64_t volatile *)&pInode->i_size);
+    AssertCompile(sizeof(loff_t) == sizeof(uint64_t));
+    return ASMAtomicReadU64((uint64_t volatile *)&pInode->i_size);
 }
 
 DECLINLINE(void) i_size_write(struct inode *pInode, loff_t cbNew)
 {
-	AssertCompile(sizeof(pInode->i_size) == sizeof(uint64_t));
-	ASMAtomicWriteU64((uint64_t volatile *)&pInode->i_size, cbNew);
+    AssertCompile(sizeof(pInode->i_size) == sizeof(uint64_t));
+    ASMAtomicWriteU64((uint64_t volatile *)&pInode->i_size, cbNew);
 }
 
 #endif /* < 2.6.0 */
@@ -77,7 +77,7 @@ DECLINLINE(void) i_size_write(struct inode *pInode, loff_t cbNew)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0)
 DECLINLINE(void) set_nlink(struct inode *pInode, unsigned int cLinks)
 {
-	pInode->i_nlink = cLinks;
+    pInode->i_nlink = cLinks;
 }
 #endif
 
@@ -88,27 +88,27 @@ DECLINLINE(void) set_nlink(struct inode *pInode, unsigned int cLinks)
  * VBox specific per-mount (shared folder) information.
  */
 struct vbsf_super_info {
-	VBGLSFMAP map;
-	struct nls_table *nls;
-	/** time-to-live value for direntry and inode info in jiffies.
-	 * Zero == disabled. */
-	unsigned long ttl;
-	/** The mount option value for /proc/mounts. */
-	int ttl_msec;
-	int uid;
-	int gid;
-	int dmode;
-	int fmode;
-	int dmask;
-	int fmask;
-	/** Maximum number of pages to allow in an I/O buffer with the host.
-	 * This applies to read and write operations.  */
-	uint32_t cMaxIoPages;
-	/** Mount tag for VBoxService automounter.  @since 6.0 */
-	char tag[32];
+    VBGLSFMAP map;
+    struct nls_table *nls;
+    /** time-to-live value for direntry and inode info in jiffies.
+     * Zero == disabled. */
+    unsigned long ttl;
+    /** The mount option value for /proc/mounts. */
+    int ttl_msec;
+    int uid;
+    int gid;
+    int dmode;
+    int fmode;
+    int dmask;
+    int fmask;
+    /** Maximum number of pages to allow in an I/O buffer with the host.
+     * This applies to read and write operations.  */
+    uint32_t cMaxIoPages;
+    /** Mount tag for VBoxService automounter.  @since 6.0 */
+    char tag[32];
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
-	/** The backing device info structure. */
-	struct backing_dev_info bdi;
+    /** The backing device info structure. */
+    struct backing_dev_info bdi;
 #endif
 };
 
@@ -130,18 +130,18 @@ struct vbsf_super_info {
  * optimizing stat, lookups and other operations on open files and directories.
  */
 struct sf_handle {
-	/** List entry (head sf_inode_info::HandleList). */
-	RTLISTNODE              Entry;
-	/** Host file/whatever handle. */
-	SHFLHANDLE              hHost;
-	/** SF_HANDLE_F_XXX */
-	uint32_t                fFlags;
-	/** Reference counter.
-	 * Close the handle and free the structure when it reaches zero. */
-	uint32_t volatile       cRefs;
+    /** List entry (head sf_inode_info::HandleList). */
+    RTLISTNODE              Entry;
+    /** Host file/whatever handle. */
+    SHFLHANDLE              hHost;
+    /** SF_HANDLE_F_XXX */
+    uint32_t                fFlags;
+    /** Reference counter.
+     * Close the handle and free the structure when it reaches zero. */
+    uint32_t volatile       cRefs;
 #ifdef VBOX_STRICT
-	/** For strictness checks. */
-	struct sf_inode_info   *pInodeInfo;
+    /** For strictness checks. */
+    struct sf_inode_info   *pInodeInfo;
 #endif
 };
 
@@ -153,7 +153,7 @@ struct sf_handle {
 #define SF_HANDLE_F_FILE        UINT32_C(0x00000010)
 #define SF_HANDLE_F_ON_LIST     UINT32_C(0x00000080)
 #define SF_HANDLE_F_MAGIC_MASK  UINT32_C(0xffffff00)
-#define SF_HANDLE_F_MAGIC     	UINT32_C(0x75030700) /**< Maurice Ravel (1875-03-07). */
+#define SF_HANDLE_F_MAGIC       UINT32_C(0x75030700) /**< Maurice Ravel (1875-03-07). */
 #define SF_HANDLE_F_MAGIC_DEAD  UINT32_C(0x19371228)
 /** @} */
 
@@ -161,50 +161,50 @@ struct sf_handle {
  * VBox specific per-inode information.
  */
 struct sf_inode_info {
-	/** Which file */
-	SHFLSTRING *path;
-	/** Some information was changed, update data on next revalidate */
-	bool force_restat;
-	/** directory content changed, update the whole directory on next sf_getdent */
-	bool force_reread;
-	/** The timestamp (jiffies) where the inode info was last updated. */
-	unsigned long           ts_up_to_date;
-	/** The birth time. */
-	RTTIMESPEC              BirthTime;
+    /** Which file */
+    SHFLSTRING *path;
+    /** Some information was changed, update data on next revalidate */
+    bool force_restat;
+    /** directory content changed, update the whole directory on next sf_getdent */
+    bool force_reread;
+    /** The timestamp (jiffies) where the inode info was last updated. */
+    unsigned long           ts_up_to_date;
+    /** The birth time. */
+    RTTIMESPEC              BirthTime;
 
-	/** handle valid if a file was created with sf_create_aux until it will
-	 * be opened with sf_reg_open()
-	 * @todo r=bird: figure this one out...  */
-	SHFLHANDLE handle;
+    /** handle valid if a file was created with sf_create_aux until it will
+     * be opened with sf_reg_open()
+     * @todo r=bird: figure this one out...  */
+    SHFLHANDLE handle;
 
-	/** List of open handles (struct sf_handle), protected by g_SfHandleLock. */
-	RTLISTANCHOR 	        HandleList;
+    /** List of open handles (struct sf_handle), protected by g_SfHandleLock. */
+    RTLISTANCHOR            HandleList;
 #ifdef VBOX_STRICT
-	uint32_t                u32Magic;
+    uint32_t                u32Magic;
 # define SF_INODE_INFO_MAGIC            UINT32_C(0x18620822) /**< Claude Debussy */
 # define SF_INODE_INFO_MAGIC_DEAD       UINT32_C(0x19180325)
 #endif
 };
 
 struct sf_dir_info {
-	/** @todo sf_handle. */
-	struct list_head info_list;
+    /** @todo sf_handle. */
+    struct list_head info_list;
 };
 
 struct sf_dir_buf {
-	size_t cEntries;
-	size_t cbFree;
-	size_t cbUsed;
-	void *buf;
-	struct list_head head;
+    size_t cEntries;
+    size_t cbFree;
+    size_t cbUsed;
+    void *buf;
+    struct list_head head;
 };
 
 /**
  * VBox specific information for a regular file.
  */
 struct sf_reg_info {
-	/** Handle tracking structure. */
-	struct sf_handle        Handle;
+    /** Handle tracking structure. */
+    struct sf_handle        Handle;
 };
 
 /**
@@ -234,32 +234,32 @@ DECLINLINE(unsigned long) sf_dentry_get_update_jiffies(struct dentry *pDirEntry)
 /**
  * Increase the time-to-live of @a pDirEntry and all ancestors.
  * @param   pDirEntry           The directory entry cache entry which ancestors
- *      			we should increase the TTL for.
+ *                  we should increase the TTL for.
  */
 DECLINLINE(void) sf_dentry_chain_increase_ttl(struct dentry *pDirEntry)
 {
 #ifdef VBOX_STRICT
-	struct super_block * const pSuper = pDirEntry->d_sb;
+    struct super_block * const pSuper = pDirEntry->d_sb;
 #endif
-	unsigned long const        uToSet = jiffies;
-	do {
-		Assert(pDirEntry->d_sb == pSuper);
-		sf_dentry_set_update_jiffies(pDirEntry, uToSet);
-		pDirEntry = pDirEntry->d_parent;
-	} while (!IS_ROOT(pDirEntry));
+    unsigned long const        uToSet = jiffies;
+    do {
+        Assert(pDirEntry->d_sb == pSuper);
+        sf_dentry_set_update_jiffies(pDirEntry, uToSet);
+        pDirEntry = pDirEntry->d_parent;
+    } while (!IS_ROOT(pDirEntry));
 }
 
 /**
  * Increase the time-to-live of all ancestors.
  * @param   pDirEntry           The directory entry cache entry which ancestors
- *      			we should increase the TTL for.
+ *                  we should increase the TTL for.
  */
 DECLINLINE(void) sf_dentry_chain_increase_parent_ttl(struct dentry *pDirEntry)
 {
-	Assert(!pDirEntry->d_parent || pDirEntry->d_parent->d_sb == pDirEntry->d_sb);
-	pDirEntry = pDirEntry->d_parent;
-	if (pDirEntry)
-	    sf_dentry_chain_increase_ttl(pDirEntry);
+    Assert(!pDirEntry->d_parent || pDirEntry->d_parent->d_sb == pDirEntry->d_sb);
+    pDirEntry = pDirEntry->d_parent;
+    if (pDirEntry)
+        sf_dentry_chain_increase_ttl(pDirEntry);
 }
 
 
@@ -288,52 +288,52 @@ extern void              sf_handle_append(struct sf_inode_info *pInodeInfo, stru
  * @returns New reference count.
  * @param   pHandle         The handle to release.
  * @param   sf_g            The info structure for the shared folder associated
- *      		    with the handle.
+ *                  with the handle.
  * @param   pszCaller       The caller name (for logging failures).
  */
 DECLINLINE(uint32_t) sf_handle_release(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
 {
-	uint32_t cRefs;
+    uint32_t cRefs;
 
-	Assert((pHandle->fFlags & SF_HANDLE_F_MAGIC_MASK) == SF_HANDLE_F_MAGIC);
-	Assert(pHandle->pInodeInfo);
-	Assert(pHandle->pInodeInfo && pHandle->pInodeInfo->u32Magic == SF_INODE_INFO_MAGIC);
+    Assert((pHandle->fFlags & SF_HANDLE_F_MAGIC_MASK) == SF_HANDLE_F_MAGIC);
+    Assert(pHandle->pInodeInfo);
+    Assert(pHandle->pInodeInfo && pHandle->pInodeInfo->u32Magic == SF_INODE_INFO_MAGIC);
 
-	cRefs = ASMAtomicDecU32(&pHandle->cRefs);
-	Assert(cRefs < _64M);
-	if (cRefs)
-		return cRefs;
-	return sf_handle_release_slow(pHandle, sf_g, pszCaller);
+    cRefs = ASMAtomicDecU32(&pHandle->cRefs);
+    Assert(cRefs < _64M);
+    if (cRefs)
+        return cRefs;
+    return sf_handle_release_slow(pHandle, sf_g, pszCaller);
 }
 
 extern void sf_init_inode(struct inode *inode, struct sf_inode_info *sf_i, PSHFLFSOBJINFO info, struct vbsf_super_info *sf_g);
 extern int sf_stat(const char *caller, struct vbsf_super_info *sf_g,
-		   SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
+           SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
 extern int sf_inode_revalidate(struct dentry *dentry);
 extern int sf_inode_revalidate_worker(struct dentry *dentry, bool fForced);
 extern int sf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced, bool fInodeLocked);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 extern int sf_getattr(const struct path *path, struct kstat *kstat,
-		      u32 request_mask, unsigned int query_flags);
+              u32 request_mask, unsigned int query_flags);
 # else
 extern int sf_getattr(struct vfsmount *mnt, struct dentry *dentry,
-		      struct kstat *kstat);
+              struct kstat *kstat);
 # endif
 extern int sf_setattr(struct dentry *dentry, struct iattr *iattr);
 #endif
 extern int sf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g,
-			       struct sf_inode_info *sf_i,
-			       struct dentry *dentry, SHFLSTRING ** result);
+                   struct sf_inode_info *sf_i,
+                   struct dentry *dentry, SHFLSTRING ** result);
 extern int sf_nlscpy(struct vbsf_super_info *sf_g, char *name,
-		     size_t name_bound_len, const unsigned char *utf8_name,
-		     size_t utf8_len);
+             size_t name_bound_len, const unsigned char *utf8_name,
+             size_t utf8_len);
 extern void sf_dir_info_free(struct sf_dir_info *p);
 extern void sf_dir_info_empty(struct sf_dir_info *p);
 extern struct sf_dir_info *sf_dir_info_alloc(void);
 extern int sf_dir_read_all(struct vbsf_super_info *sf_g,
-			   struct sf_inode_info *sf_i, struct sf_dir_info *sf_d,
-			   SHFLHANDLE handle);
+               struct sf_inode_info *sf_i, struct sf_dir_info *sf_d,
+               SHFLHANDLE handle);
 
 #ifdef __cplusplus
 # define CMC_API __attribute__ ((cdecl, regparm (0)))
