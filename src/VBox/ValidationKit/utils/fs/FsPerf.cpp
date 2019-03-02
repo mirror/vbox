@@ -246,6 +246,8 @@ enum
     kCmdOpt_NoUtimes,
     kCmdOpt_Rename,
     kCmdOpt_NoRename,
+    kCmdOpt_DirOpen,
+    kCmdOpt_NoDirOpen,
     kCmdOpt_DirEnum,
     kCmdOpt_NoDirEnum,
     kCmdOpt_MkRmDir,
@@ -324,6 +326,8 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--no-utimes",        kCmdOpt_NoUtimes,       RTGETOPT_REQ_NOTHING },
     { "--rename",           kCmdOpt_Rename,         RTGETOPT_REQ_NOTHING },
     { "--no-rename",        kCmdOpt_NoRename,       RTGETOPT_REQ_NOTHING },
+    { "--dir-open",         kCmdOpt_DirOpen,        RTGETOPT_REQ_NOTHING },
+    { "--no-dir-open",      kCmdOpt_NoDirOpen,      RTGETOPT_REQ_NOTHING },
     { "--dir-enum",         kCmdOpt_DirEnum,        RTGETOPT_REQ_NOTHING },
     { "--no-dir-enum",      kCmdOpt_NoDirEnum,      RTGETOPT_REQ_NOTHING },
     { "--mk-rm-dir",        kCmdOpt_MkRmDir,        RTGETOPT_REQ_NOTHING },
@@ -390,6 +394,7 @@ static bool         g_fStat      = true;
 static bool         g_fChMod     = true;
 static bool         g_fUtimes    = true;
 static bool         g_fRename    = true;
+static bool         g_fDirOpen   = true;
 static bool         g_fDirEnum   = true;
 static bool         g_fMkRmDir   = true;
 static bool         g_fStatVfs   = true;
@@ -1005,6 +1010,48 @@ void fsPerfRename(void)
 }
 
 
+DECL_FORCE_INLINE(int) fsPerfOpenClose(const char *pszDir)
+{
+    RTDIR hDir;
+    RTTESTI_CHECK_RC_RET(RTDirOpen(&hDir, pszDir), VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RC(RTDirClose(hDir), VINF_SUCCESS);
+    return VINF_SUCCESS;
+}
+
+
+void vsPerfDirOpen(void)
+{
+    RTTestISub("dir open");
+    RTDIR hDir;
+
+    /*
+     * Non-existing files.
+     */
+    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InEmptyDir(RT_STR_TUPLE("no-such-file"))), VERR_FILE_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
+
+    /*
+     * Check that open + close works.
+     */
+    g_szEmptyDir[g_cchEmptyDir] = '\0';
+    RTTESTI_CHECK_RC_RETV(RTDirOpen(&hDir, g_szEmptyDir), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTDirClose(hDir), VINF_SUCCESS);
+
+
+    /*
+     * Profile empty dir and dir with many files.
+     */
+    g_szEmptyDir[g_cchEmptyDir] = '\0';
+    PROFILE_FN(fsPerfOpenClose(g_szEmptyDir), g_nsTestRun, "RTDirOpen/Close empty");
+    if (g_fManyFiles)
+    {
+        InDir(RT_STR_TUPLE("manyfiles"));
+        PROFILE_FN(fsPerfOpenClose(g_szDir), g_nsTestRun, "RTDirOpen/Close manyfiles");
+    }
+}
+
+
 DECL_FORCE_INLINE(int) fsPerfEnumEmpty(void)
 {
     RTDIR hDir;
@@ -1047,11 +1094,6 @@ void vsPerfDirEnum(void)
 {
     RTTestISub("dir enum");
     RTDIR hDir;
-
-    /* Non-existing files. */
-    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InEmptyDir(RT_STR_TUPLE("no-such-file"))), VERR_FILE_NOT_FOUND);
-    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
-    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
 
     /*
      * The empty directory.
@@ -2808,6 +2850,7 @@ int main(int argc, char *argv[])
                 g_fChMod     = true;
                 g_fUtimes    = true;
                 g_fRename    = true;
+                g_fDirOpen   = true;
                 g_fDirEnum   = true;
                 g_fMkRmDir   = true;
                 g_fStatVfs   = true;
@@ -2832,6 +2875,7 @@ int main(int argc, char *argv[])
                 g_fChMod     = false;
                 g_fUtimes    = false;
                 g_fRename    = false;
+                g_fDirOpen   = false;
                 g_fDirEnum   = false;
                 g_fMkRmDir   = false;
                 g_fStatVfs   = false;
@@ -2857,6 +2901,7 @@ int main(int argc, char *argv[])
             CASE_OPT(ChMod);
             CASE_OPT(Utimes);
             CASE_OPT(Rename);
+            CASE_OPT(DirOpen);
             CASE_OPT(DirEnum);
             CASE_OPT(MkRmDir);
             CASE_OPT(StatVfs);
@@ -3009,6 +3054,8 @@ int main(int argc, char *argv[])
                     fsPerfUtimes();
                 if (g_fRename)
                     fsPerfRename();
+                if (g_fDirOpen)
+                    vsPerfDirOpen();
                 if (g_fDirEnum)
                     vsPerfDirEnum();
                 if (g_fMkRmDir)
