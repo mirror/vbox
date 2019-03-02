@@ -1527,10 +1527,10 @@ typedef struct VBoxSFParmList
      * When SHFL_LIST_RETURN_ONE is not specfied, multiple record may be
      * returned, deriving the entry size using SHFLDIRINFO::name.u16Size.  */
     HGCMFunctionParameter pBuffer;
-    /** value32, out: Set to 1 if the listing is done, 0 if more entries.
+    /** value32, out: Set to 0 if the listing is done, 1 if there are more entries.
      * @note Must be set to zero on call as it was declared in/out parameter and
      *       may be used as such again. */
-    HGCMFunctionParameter f32Done;
+    HGCMFunctionParameter f32More;
     /** value32, out:  Number of entries returned. */
     HGCMFunctionParameter c32Entries;
 } VBoxSFParmList;

@@ -1060,8 +1060,8 @@ DECLINLINE(int) VbglR0SfHostReqListDirContig2x(SHFLROOT idRoot, VBOXSFLISTDIRREQ
         pReq->Parms.pBuffer.u.LinAddr.uAddr         = (uintptr_t)pBuffer;
     }
 
-    pReq->Parms.f32Done.type                        = VMMDevHGCMParmType_32bit;
-    pReq->Parms.f32Done.u.value32                   = 0;
+    pReq->Parms.f32More.type                        = VMMDevHGCMParmType_32bit;
+    pReq->Parms.f32More.u.value32                   = 0;
 
     pReq->Parms.c32Entries.type                     = VMMDevHGCMParmType_32bit;
     pReq->Parms.c32Entries.u.value32                = 0;

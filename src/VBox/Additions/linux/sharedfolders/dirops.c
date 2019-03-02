@@ -201,6 +201,7 @@ static int vbsf_dir_release(struct inode *inode, struct file *file)
         sf_d->cEntriesLeft = 0;
         sf_d->cbValid      = 0;
         sf_d->pEntry       = NULL;
+        sf_d->fNoMoreFiles = false;
         if (sf_d->pBuf) {
             kfree(sf_d->pBuf);
             sf_d->pBuf = NULL;
@@ -250,14 +251,25 @@ static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info
     VBOXSFLISTDIRREQ *pReq;
 
     /*
+     * Don't call the host again if we've reached the end of the
+     * directory entries already.
+     */
+    if (sf_d->fNoMoreFiles) {
+        if (!fRestart)
+            return 0;
+        sf_d->fNoMoreFiles = false;
+    }
+
+
+    /*
      * Make sure we've got some kind of buffers.
      */
     if (sf_d->pBuf) {
         /* Likely, except for the first time. */
     } else {
-        sf_d->pBuf = (PSHFLDIRINFO)kmalloc(_16K, GFP_KERNEL);
+        sf_d->pBuf = (PSHFLDIRINFO)kmalloc(_64K, GFP_KERNEL);
         if (sf_d->pBuf)
-            sf_d->cbBuf = _16K;
+            sf_d->cbBuf = _64K;
         else {
             sf_d->pBuf = (PSHFLDIRINFO)kmalloc(_4K, GFP_KERNEL);
             sf_d->cbBuf = _4K;
@@ -280,13 +292,15 @@ static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info
             sf_d->pEntry       = sf_d->pBuf;
             sf_d->cbValid      = pReq->Parms.cb32Buffer.u.value32;
             sf_d->cEntriesLeft = pReq->Parms.c32Entries.u.value32;
+            sf_d->fNoMoreFiles = pReq->Parms.f32More.u.value32 == 0;
         } else {
             sf_d->pEntry       = sf_d->pBuf;
             sf_d->cbValid      = 0;
             sf_d->cEntriesLeft = 0;
-            if (rc == VERR_NO_MORE_FILES)
+            if (rc == VERR_NO_MORE_FILES) {
+                sf_d->fNoMoreFiles = true;
                 rc = 0;
-            else {
+            } else {
                 /* In theory we could end up here with a buffer overflow, but
                    with a 4KB minimum buffer size that's very unlikely with the
                    typical filename length of today's file systems (2019). */
@@ -557,8 +571,8 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
              * We're ASSUMING the host gives us a zero terminated string (UTF-8) here.
              */
             uintptr_t const offEntryInBuf = (uintptr_t)pEntry - (uintptr_t)pBuf;
-            uint16_t cbSrcName;
-            uint16_t cchSrcName;
+            uint16_t        cbSrcName;
+            uint16_t        cchSrcName;
             AssertLogRelMsgBreak(offEntryInBuf + RT_UOFFSETOF(SHFLDIRINFO, name.String) <= cbValid,
                                  ("%#llx + %#x vs %#x\n", offEntryInBuf, RT_UOFFSETOF(SHFLDIRINFO, name.String), cbValid));
             cbSrcName  = pEntry->name.u16Size;
@@ -596,6 +610,7 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
                 } else  {
                     sf_d->cEntriesLeft = cEntriesLeft;
                     sf_d->pEntry       = pEntry;
+                    sf_d->offPos       = offPos;
                     return 0;
                 }
             }
@@ -612,9 +627,10 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
             cEntriesLeft -= 1;
         } while (cEntriesLeft > 0);
 
-        /* Reset the state. */
-        sf_d->cEntriesLeft = 0;
+        /* Done with all available entries. */
+        sf_d->offPos       = offPos + cEntriesLeft;
         sf_d->pEntry       = pBuf;
+        sf_d->cEntriesLeft = 0;
     }
 
 #else /* !VBSF_BUFFER_DIRS */
