@@ -174,10 +174,12 @@ static int vbsf_super_info_alloc(struct vbsf_mount_info_new *info, struct vbsf_s
 #define _IS_EMPTY(_str) (strcmp(_str, "") == 0)
 
     /* Check if NLS charset is valid and not points to UTF8 table */
+    sf_g->fNlsIsUtf8 = true;
     if (info->nls_name[0]) {
-        if (_IS_UTF8(info->nls_name))
+        if (_IS_UTF8(info->nls_name)) {
             sf_g->nls = NULL;
-        else {
+        } else {
+            sf_g->fNlsIsUtf8 = false;
             sf_g->nls = load_nls(info->nls_name);
             if (!sf_g->nls) {
                 err = -EINVAL;
@@ -192,9 +194,10 @@ static int vbsf_super_info_alloc(struct vbsf_mount_info_new *info, struct vbsf_s
         /* If no NLS charset specified, try to load the default
          * one if it's not points to UTF8. */
         if (!_IS_UTF8(CONFIG_NLS_DEFAULT)
-            && !_IS_EMPTY(CONFIG_NLS_DEFAULT))
+            && !_IS_EMPTY(CONFIG_NLS_DEFAULT)) {
+            sf_g->fNlsIsUtf8 = false;
             sf_g->nls = load_nls_default();
-        else
+        } else
             sf_g->nls = NULL;
 #else
         sf_g->nls = NULL;
@@ -385,7 +388,10 @@ static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
     sf_i->path->u16Size = 2;
     sf_i->path->String.utf8[0] = '/';
     sf_i->path->String.utf8[1] = 0;
-    sf_i->force_reread = 0;
+    sf_i->force_restat = false;
+#ifdef VBSF_BUFFER_DIRS
+    sf_i->force_reread = false;
+#endif
     RTListInit(&sf_i->HandleList);
 #ifdef VBOX_STRICT
     sf_i->u32Magic = SF_INODE_INFO_MAGIC;
@@ -414,10 +420,11 @@ static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
     sb->s_d_op = &vbsf_dentry_ops;
 #endif
 
+    /* Note! ls -la does display '.' and '..' entries with st_ino == 0, so root is #1. */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-    iroot = iget_locked(sb, 0);
+    iroot = iget_locked(sb, 1);
 #else
-    iroot = iget(sb, 0);
+    iroot = iget(sb, 1);
 #endif
     if (!iroot) {
         err = -ENOMEM;  /* XXX */

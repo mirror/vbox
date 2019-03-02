@@ -59,15 +59,15 @@
  */
 void vbsf_handle_drop_chain(struct vbsf_inode_info *pInodeInfo)
 {
-    struct sf_handle *pCur, *pNext;
+    struct vbsf_handle *pCur, *pNext;
     unsigned long     fSavedFlags;
     SFLOGFLOW(("vbsf_handle_drop_chain: %p\n", pInodeInfo));
     spin_lock_irqsave(&g_SfHandleLock, fSavedFlags);
 
-    RTListForEachSafe(&pInodeInfo->HandleList, pCur, pNext, struct sf_handle, Entry) {
-        AssertMsg((pCur->fFlags & (SF_HANDLE_F_MAGIC_MASK | SF_HANDLE_F_ON_LIST)) == (SF_HANDLE_F_MAGIC | SF_HANDLE_F_ON_LIST),
+    RTListForEachSafe(&pInodeInfo->HandleList, pCur, pNext, struct vbsf_handle, Entry) {
+        AssertMsg((pCur->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | vbSF_HANDLE_F_ON_LIST)) == (VBSF_HANDLE_F_MAGIC | vbSF_HANDLE_F_ON_LIST),
                   ("%p %#x\n", pCur, pCur->fFlags));
-        pCur->fFlags |= SF_HANDLE_F_ON_LIST;
+        pCur->fFlags |= vbSF_HANDLE_F_ON_LIST;
         RTListNodeRemove(&pCur->Entry);
     }
 
@@ -84,14 +84,14 @@ void vbsf_handle_drop_chain(struct vbsf_inode_info *pInodeInfo)
  * @param   fFlagsSet   The flags that must be set.
  * @param   fFlagsClear The flags that must be clear.
  */
-struct sf_handle *vbsf_handle_find(struct vbsf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear)
+struct vbsf_handle *vbsf_handle_find(struct vbsf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear)
 {
-    struct sf_handle *pCur;
+    struct vbsf_handle *pCur;
     unsigned long     fSavedFlags;
     spin_lock_irqsave(&g_SfHandleLock, fSavedFlags);
 
-    RTListForEach(&pInodeInfo->HandleList, pCur, struct sf_handle, Entry) {
-        AssertMsg((pCur->fFlags & (SF_HANDLE_F_MAGIC_MASK | SF_HANDLE_F_ON_LIST)) == (SF_HANDLE_F_MAGIC | SF_HANDLE_F_ON_LIST),
+    RTListForEach(&pInodeInfo->HandleList, pCur, struct vbsf_handle, Entry) {
+        AssertMsg((pCur->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | vbSF_HANDLE_F_ON_LIST)) == (VBSF_HANDLE_F_MAGIC | vbSF_HANDLE_F_ON_LIST),
                   ("%p %#x\n", pCur, pCur->fFlags));
         if ((pCur->fFlags & (fFlagsSet | fFlagsClear)) == fFlagsSet) {
             uint32_t cRefs = ASMAtomicIncU32(&pCur->cRefs);
@@ -120,7 +120,7 @@ struct sf_handle *vbsf_handle_find(struct vbsf_inode_info *pInodeInfo, uint32_t 
  *                  with the handle.
  * @param   pszCaller       The caller name (for logging failures).
  */
-uint32_t vbsf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
+uint32_t vbsf_handle_release_slow(struct vbsf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
 {
     int rc;
     unsigned long fSavedFlags;
@@ -132,12 +132,12 @@ uint32_t vbsf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_i
      */
     spin_lock_irqsave(&g_SfHandleLock, fSavedFlags);
 
-    AssertMsg((pHandle->fFlags & SF_HANDLE_F_MAGIC_MASK) == SF_HANDLE_F_MAGIC, ("%p %#x\n", pHandle, pHandle->fFlags));
+    AssertMsg((pHandle->fFlags & VBSF_HANDLE_F_MAGIC_MASK) == VBSF_HANDLE_F_MAGIC, ("%p %#x\n", pHandle, pHandle->fFlags));
     Assert(pHandle->pInodeInfo);
     Assert(pHandle->pInodeInfo && pHandle->pInodeInfo->u32Magic == SF_INODE_INFO_MAGIC);
 
-    if (pHandle->fFlags & SF_HANDLE_F_ON_LIST) {
-        pHandle->fFlags &= ~SF_HANDLE_F_ON_LIST;
+    if (pHandle->fFlags & vbSF_HANDLE_F_ON_LIST) {
+        pHandle->fFlags &= ~vbSF_HANDLE_F_ON_LIST;
         RTListNodeRemove(&pHandle->Entry);
     }
 
@@ -150,7 +150,7 @@ uint32_t vbsf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_i
     if (RT_FAILURE(rc))
         LogFunc(("Caller %s: VbglR0SfHostReqCloseSimple %#RX64 failed with rc=%Rrc\n", pszCaller, pHandle->hHost, rc));
     pHandle->hHost  = SHFL_HANDLE_NIL;
-    pHandle->fFlags = SF_HANDLE_F_MAGIC_DEAD;
+    pHandle->fFlags = VBSF_HANDLE_F_MAGIC_DEAD;
     kfree(pHandle);
     return 0;
 }
@@ -162,32 +162,32 @@ uint32_t vbsf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_i
  * @param   pInodeInfo          The inode to add it to.
  * @param   pHandle             The handle to add.
  */
-void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct sf_handle *pHandle)
+void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *pHandle)
 {
 #ifdef VBOX_STRICT
-    struct sf_handle *pCur;
+    struct vbsf_handle *pCur;
 #endif
     unsigned long fSavedFlags;
 
     SFLOGFLOW(("vbsf_handle_append: %p (to %p)\n", pHandle, pInodeInfo));
-    AssertMsg((pHandle->fFlags & (SF_HANDLE_F_MAGIC_MASK | SF_HANDLE_F_ON_LIST)) == SF_HANDLE_F_MAGIC,
+    AssertMsg((pHandle->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | vbSF_HANDLE_F_ON_LIST)) == VBSF_HANDLE_F_MAGIC,
           ("%p %#x\n", pHandle, pHandle->fFlags));
     Assert(pInodeInfo->u32Magic == SF_INODE_INFO_MAGIC);
 
     spin_lock_irqsave(&g_SfHandleLock, fSavedFlags);
 
-    AssertMsg((pHandle->fFlags & (SF_HANDLE_F_MAGIC_MASK | SF_HANDLE_F_ON_LIST)) == SF_HANDLE_F_MAGIC,
+    AssertMsg((pHandle->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | vbSF_HANDLE_F_ON_LIST)) == VBSF_HANDLE_F_MAGIC,
           ("%p %#x\n", pHandle, pHandle->fFlags));
 #ifdef VBOX_STRICT
-    RTListForEach(&pInodeInfo->HandleList, pCur, struct sf_handle, Entry) {
+    RTListForEach(&pInodeInfo->HandleList, pCur, struct vbsf_handle, Entry) {
         Assert(pCur != pHandle);
-        AssertMsg((pCur->fFlags & (SF_HANDLE_F_MAGIC_MASK | SF_HANDLE_F_ON_LIST)) == (SF_HANDLE_F_MAGIC | SF_HANDLE_F_ON_LIST),
+        AssertMsg((pCur->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | vbSF_HANDLE_F_ON_LIST)) == (VBSF_HANDLE_F_MAGIC | vbSF_HANDLE_F_ON_LIST),
               ("%p %#x\n", pCur, pCur->fFlags));
     }
     pHandle->pInodeInfo = pInodeInfo;
 #endif
 
-    pHandle->fFlags |= SF_HANDLE_F_ON_LIST;
+    pHandle->fFlags |= vbSF_HANDLE_F_ON_LIST;
     RTListAppend(&pInodeInfo->HandleList, &pHandle->Entry);
 
     spin_unlock_irqrestore(&g_SfHandleLock, fSavedFlags);
@@ -937,13 +937,7 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
     struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
     struct vbsf_reg_info *sf_r;
-#if   LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
-    struct dentry *dentry = file_dentry(file);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
-    struct dentry *dentry = file->f_path.dentry;
-#else
-    struct dentry *dentry = file->f_dentry;
-#endif
+    struct dentry *dentry = VBSF_GET_F_DENTRY(file);
     VBOXSFCREATEREQ *pReq;
 
     SFLOGFLOW(("vbsf_reg_open: inode=%p file=%p flags=%#x %s\n", inode, file, file->f_flags, sf_i ? sf_i->path->String.ach : NULL));
@@ -958,7 +952,7 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
 
     RTListInit(&sf_r->Handle.Entry);
     sf_r->Handle.cRefs  = 1;
-    sf_r->Handle.fFlags = SF_HANDLE_F_FILE | SF_HANDLE_F_MAGIC;
+    sf_r->Handle.fFlags = VBSF_HANDLE_F_FILE | VBSF_HANDLE_F_MAGIC;
     sf_r->Handle.hHost  = SHFL_HANDLE_NIL;
 
     /* Already open? */
@@ -973,7 +967,7 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
         sf_i->handle = SHFL_HANDLE_NIL;
         file->private_data = sf_r;
 
-        sf_r->Handle.fFlags |= SF_HANDLE_F_READ | SF_HANDLE_F_WRITE; /** @todo check */
+        sf_r->Handle.fFlags |= VBSF_HANDLE_F_READ | VBSF_HANDLE_F_WRITE; /** @todo fix  */
         vbsf_handle_append(sf_i, &sf_r->Handle);
         SFLOGFLOW(("vbsf_reg_open: returns 0 (#1) - sf_i=%p hHost=%#llx\n", sf_i, sf_r->Handle.hHost));
         return 0;
@@ -1017,17 +1011,17 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
     switch (file->f_flags & O_ACCMODE) {
         case O_RDONLY:
             pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_READ;
-            sf_r->Handle.fFlags |= SF_HANDLE_F_READ;
+            sf_r->Handle.fFlags |= VBSF_HANDLE_F_READ;
             break;
 
         case O_WRONLY:
             pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_WRITE;
-            sf_r->Handle.fFlags |= SF_HANDLE_F_WRITE;
+            sf_r->Handle.fFlags |= VBSF_HANDLE_F_WRITE;
             break;
 
         case O_RDWR:
             pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
-            sf_r->Handle.fFlags |= SF_HANDLE_F_READ | SF_HANDLE_F_WRITE;
+            sf_r->Handle.fFlags |= VBSF_HANDLE_F_READ | VBSF_HANDLE_F_WRITE;
             break;
 
         default:
@@ -1037,7 +1031,7 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
     if (file->f_flags & O_APPEND) {
         LogFunc(("O_APPEND set\n"));
         pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_APPEND;
-        sf_r->Handle.fFlags |= SF_HANDLE_F_APPEND;
+        sf_r->Handle.fFlags |= VBSF_HANDLE_F_APPEND;
     }
 
     pReq->CreateParms.Info.Attr.fMode = inode->i_mode;
@@ -1324,7 +1318,7 @@ static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
     struct address_space   *mapping = page->mapping;
     struct inode           *inode   = mapping->host;
     struct vbsf_inode_info *sf_i    = VBSF_GET_INODE_INFO(inode);
-    struct sf_handle       *pHandle = vbsf_handle_find(sf_i, SF_HANDLE_F_WRITE, SF_HANDLE_F_APPEND);
+    struct vbsf_handle       *pHandle = vbsf_handle_find(sf_i, VBSF_HANDLE_F_WRITE, VBSF_HANDLE_F_APPEND);
     int                     err;
 
     SFLOGFLOW(("vbsf_writepage: inode=%p page=%p off=%#llx pHandle=%p (%#llx)\n",

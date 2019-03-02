@@ -213,8 +213,8 @@ void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSO
  *
  * @todo sort out the inode locking situation.
  */
-static void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo, PSHFLFSOBJINFO pObjInfo,
-                              struct vbsf_super_info *sf_g, bool fInodeLocked)
+void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo, PSHFLFSOBJINFO pObjInfo,
+                       struct vbsf_super_info *sf_g, bool fInodeLocked)
 {
     PCSHFLFSOBJATTR pAttr = &pObjInfo->Attr;
     int fMode;
@@ -355,7 +355,7 @@ int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced)
              * No, we have to query the file info from the host.
              * Try get a handle we can query, any kind of handle will do here.
              */
-            struct sf_handle *pHandle = vbsf_handle_find(sf_i, 0, 0);
+            struct vbsf_handle *pHandle = vbsf_handle_find(sf_i, 0, 0);
             if (pHandle) {
                 /* Query thru pHandle. */
                 VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
@@ -853,9 +853,7 @@ int vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len,
             nb = utf8_mbtowc(&uni, in, in_bound_len);
 #endif
             if (nb < 0) {
-                LogFunc(("utf8_mbtowc failed(%s) %x:%d\n",
-                     (const char *)utf8_name, *in,
-                     in_bound_len));
+                LogFunc(("utf8_mbtowc failed(%s) %x:%d\n", (const char *)utf8_name, *in, in_bound_len));
                 return -EINVAL;
             }
             in += nb;
@@ -863,8 +861,7 @@ int vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len,
 
             nb = sf_g->nls->uni2char(uni, out, out_bound_len);
             if (nb < 0) {
-                LogFunc(("nls->uni2char failed(%s) %x:%d\n",
-                     utf8_name, uni, out_bound_len));
+                LogFunc(("nls->uni2char failed(%s) %x:%d\n", utf8_name, uni, out_bound_len));
                 return nb;
             }
             out += nb;
@@ -881,6 +878,8 @@ int vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len,
     }
     return 0;
 }
+
+#ifdef VBSF_BUFFER_DIRS
 
 static struct vbsf_dir_buf *vbsf_dir_buf_alloc(void)
 {
@@ -1024,7 +1023,7 @@ int vbsf_dir_read_all(struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i
         }
 
         rc = VbglR0SfHostReqListDirContig2x(sf_g->map.root, pReq, handle, mask, virt_to_phys(mask),
-                            0 /*fFlags*/, b->buf, virt_to_phys(b->buf), b->cbFree);
+                                            0 /*fFlags*/, b->buf, virt_to_phys(b->buf), b->cbFree);
         if (RT_SUCCESS(rc)) {
             b->cEntries += pReq->Parms.c32Entries.u.value32;
             b->cbFree   -= pReq->Parms.cb32Buffer.u.value32;
@@ -1047,6 +1046,8 @@ int vbsf_dir_read_all(struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i
  fail0:
     return err;
 }
+
+#endif /* VBSF_BUFFER_DIRS */
 
 
 /**

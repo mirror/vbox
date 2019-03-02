@@ -38,6 +38,7 @@
 # define RT_STRICT
 # define VBOX_STRICT
 #endif
+#define VBSF_BUFFER_DIRS /* till I've fully tested the other code */
 
 #define LOG_GROUP LOG_GROUP_SHARED_FOLDERS
 #include "the-linux-kernel.h"
@@ -101,6 +102,8 @@ extern struct address_space_operations vbsf_reg_aops;
 struct vbsf_super_info {
     VBGLSFMAP map;
     struct nls_table *nls;
+    /** Set if the NLS table is UTF-8. */
+    bool fNlsIsUtf8;
     /** time-to-live value for direntry and inode info in jiffies.
      * Zero == disabled. */
     unsigned long ttl;
@@ -140,12 +143,12 @@ struct vbsf_super_info {
  * This is necessary for address_space_operations::vbsf_writepage and allows
  * optimizing stat, lookups and other operations on open files and directories.
  */
-struct sf_handle {
+struct vbsf_handle {
     /** List entry (head vbsf_inode_info::HandleList). */
     RTLISTNODE              Entry;
     /** Host file/whatever handle. */
     SHFLHANDLE              hHost;
-    /** SF_HANDLE_F_XXX */
+    /** VBSF_HANDLE_F_XXX */
     uint32_t                fFlags;
     /** Reference counter.
      * Close the handle and free the structure when it reaches zero. */
@@ -156,16 +159,17 @@ struct sf_handle {
 #endif
 };
 
-/** @name SF_HANDLE_F_XXX - Handle summary flags (sf_handle::fFlags).
+/** @name VBSF_HANDLE_F_XXX - Handle summary flags (vbsf_handle::fFlags).
  * @{  */
-#define SF_HANDLE_F_READ        UINT32_C(0x00000001)
-#define SF_HANDLE_F_WRITE       UINT32_C(0x00000002)
-#define SF_HANDLE_F_APPEND      UINT32_C(0x00000004)
-#define SF_HANDLE_F_FILE        UINT32_C(0x00000010)
-#define SF_HANDLE_F_ON_LIST     UINT32_C(0x00000080)
-#define SF_HANDLE_F_MAGIC_MASK  UINT32_C(0xffffff00)
-#define SF_HANDLE_F_MAGIC       UINT32_C(0x75030700) /**< Maurice Ravel (1875-03-07). */
-#define SF_HANDLE_F_MAGIC_DEAD  UINT32_C(0x19371228)
+#define VBSF_HANDLE_F_READ        UINT32_C(0x00000001)
+#define VBSF_HANDLE_F_WRITE       UINT32_C(0x00000002)
+#define VBSF_HANDLE_F_APPEND      UINT32_C(0x00000004)
+#define VBSF_HANDLE_F_FILE        UINT32_C(0x00000010)
+#define VBSF_HANDLE_F_DIR         UINT32_C(0x00000020)
+#define vbSF_HANDLE_F_ON_LIST     UINT32_C(0x00000080)
+#define VBSF_HANDLE_F_MAGIC_MASK  UINT32_C(0xffffff00)
+#define VBSF_HANDLE_F_MAGIC       UINT32_C(0x75030700) /**< Maurice Ravel (1875-03-07). */
+#define VBSF_HANDLE_F_MAGIC_DEAD  UINT32_C(0x19371228)
 /** @} */
 
 
@@ -177,8 +181,10 @@ struct vbsf_inode_info {
     SHFLSTRING *path;
     /** Some information was changed, update data on next revalidate */
     bool force_restat;
-    /** directory content changed, update the whole directory on next vbsf_getdent */
+#ifdef VBSF_BUFFER_DIRS
+    /** Directory content changed, update the whole directory on next vbsf_getdent */
     bool force_reread;
+#endif
     /** The timestamp (jiffies) where the inode info was last updated. */
     unsigned long           ts_up_to_date;
     /** The birth time. */
@@ -189,7 +195,7 @@ struct vbsf_inode_info {
      * @todo r=bird: figure this one out...  */
     SHFLHANDLE handle;
 
-    /** List of open handles (struct sf_handle), protected by g_SfHandleLock. */
+    /** List of open handles (struct vbsf_handle), protected by g_SfHandleLock. */
     RTLISTANCHOR            HandleList;
 #ifdef VBOX_STRICT
     uint32_t                u32Magic;
@@ -209,6 +215,8 @@ struct vbsf_inode_info {
 #endif
 
 extern void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSOBJINFO info, struct vbsf_super_info *sf_g);
+extern void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo, PSHFLFSOBJINFO pObjInfo,
+                              struct vbsf_super_info *sf_g, bool fInodeLocked);
 extern int  vbsf_inode_revalidate(struct dentry *dentry);
 extern int  vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced);
 extern int  vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced, bool fInodeLocked);
@@ -223,9 +231,9 @@ extern int  vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr);
 
 
 extern void              vbsf_handle_drop_chain(struct vbsf_inode_info *pInodeInfo);
-extern struct sf_handle *vbsf_handle_find(struct vbsf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear);
-extern uint32_t          vbsf_handle_release_slow(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller);
-extern void              vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct sf_handle *pHandle);
+extern struct vbsf_handle *vbsf_handle_find(struct vbsf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear);
+extern uint32_t          vbsf_handle_release_slow(struct vbsf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller);
+extern void              vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *pHandle);
 
 /**
  * Releases a handle.
@@ -236,11 +244,11 @@ extern void              vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, 
  *                          with the handle.
  * @param   pszCaller       The caller name (for logging failures).
  */
-DECLINLINE(uint32_t) vbsf_handle_release(struct sf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
+DECLINLINE(uint32_t) vbsf_handle_release(struct vbsf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
 {
     uint32_t cRefs;
 
-    Assert((pHandle->fFlags & SF_HANDLE_F_MAGIC_MASK) == SF_HANDLE_F_MAGIC);
+    Assert((pHandle->fFlags & VBSF_HANDLE_F_MAGIC_MASK) == VBSF_HANDLE_F_MAGIC);
     Assert(pHandle->pInodeInfo);
     Assert(pHandle->pInodeInfo && pHandle->pInodeInfo->u32Magic == SF_INODE_INFO_MAGIC);
 
@@ -256,17 +264,48 @@ DECLINLINE(uint32_t) vbsf_handle_release(struct sf_handle *pHandle, struct vbsf_
  * VBox specific information for a regular file.
  */
 struct vbsf_reg_info {
-    /** Handle tracking structure. */
-    struct sf_handle        Handle;
+    /** Handle tracking structure.
+     * @note Must be first!  */
+    struct vbsf_handle  Handle;
 };
 
 
+/**
+ * VBox specific information for an open directory.
+ */
 struct vbsf_dir_info {
-    /** @todo sf_handle. */
+#ifndef VBSF_BUFFER_DIRS
+    /** Handle tracking structure.
+     * @note Must be first!  */
+    struct vbsf_handle  Handle;
+    /** A magic number (VBSF_DIR_INFO_MAGIC). */
+    uint32_t            u32Magic;
+    /** Size of the buffer for directory entries. */
+    uint32_t            cbBuf;
+    /** Buffer for directory entries on the physical heap. */
+    PSHFLDIRINFO        pBuf;
+    /** Number of valid bytes in the buffer. */
+    uint32_t            cbValid;
+    /** Number of entries left in the buffer.   */
+    uint32_t            cEntriesLeft;
+    /** The position of the next entry.  Incremented by one for each entry.  */
+    loff_t              offPos;
+    /** The next entry. */
+    PSHFLDIRINFO        pEntry;
+#else
+    /** List of vbsf_dir_buf. */
     struct list_head info_list;
+#endif
 };
 
-#define DIR_BUFFER_SIZE (16*_1K)
+/** Magic number for vbsf_dir_info::u32Magic (Robert Anson Heinlein). */
+#define VBSF_DIR_INFO_MAGIC         UINT32_C(0x19070707)
+/** Value of vbsf_dir_info::u32Magic when freed. */
+#define VBSF_DIR_INFO_MAGIC_DEAD    UINT32_C(0x19880508)
+
+
+#ifdef VBSF_BUFFER_DIRS
+# define DIR_BUFFER_SIZE (16*_1K)
 struct vbsf_dir_buf {
     size_t cEntries;
     size_t cbFree;
@@ -274,12 +313,15 @@ struct vbsf_dir_buf {
     void *buf;
     struct list_head head;
 };
+#endif
 
+#ifdef VBSF_BUFFER_DIRS
 extern void vbsf_dir_info_free(struct vbsf_dir_info *p);
 extern void vbsf_dir_info_empty(struct vbsf_dir_info *p);
 extern struct vbsf_dir_info *vbsf_dir_info_alloc(void);
 extern int  vbsf_dir_read_all(struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i,
                               struct vbsf_dir_info *sf_d, SHFLHANDLE handle);
+#endif
 
 
 /**
@@ -337,12 +379,14 @@ DECLINLINE(void) vbsf_dentry_chain_increase_parent_ttl(struct dentry *pDirEntry)
         vbsf_dentry_chain_increase_ttl(pDirEntry);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+/** Macro for getting the dentry for a struct file. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+# define VBSF_GET_F_DENTRY(f)   file_dentry(f)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
 # define VBSF_GET_F_DENTRY(f)   (f->f_path.dentry)
 #else
 # define VBSF_GET_F_DENTRY(f)   (f->f_dentry)
 #endif
-
 
 extern int  vbsf_stat(const char *caller, struct vbsf_super_info *sf_g, SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
 extern int  vbsf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i,
