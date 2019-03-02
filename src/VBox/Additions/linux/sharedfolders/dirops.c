@@ -37,6 +37,8 @@
  *
  * @note As suggested a couple of other places, we should probably stop
  *       reading in the whole directory on open.
+ *
+ * @todo merge with caller now that the VBSF_BUFFER_DIRS code is gonne.
  */
 static int vbsf_dir_open_worker(struct dentry *pDirEntry, struct inode *pInode, struct vbsf_inode_info *sf_i,
                                 struct vbsf_dir_info *sf_d, struct vbsf_super_info *sf_g, const char *pszCaller)
@@ -74,7 +76,6 @@ static int vbsf_dir_open_worker(struct dentry *pDirEntry, struct inode *pInode, 
                 vbsf_update_inode(pInode, sf_i, &pReq->Create.CreateParms.Info, sf_g, true /*fLocked*/ /** @todo inode locking */);
                 vbsf_dentry_chain_increase_ttl(pDirEntry);
 
-#ifndef VBSF_BUFFER_DIRS
                 sf_d->Handle.hHost  = pReq->Create.CreateParms.Handle;
                 sf_d->Handle.cRefs  = 1;
                 sf_d->Handle.fFlags = VBSF_HANDLE_F_READ | VBSF_HANDLE_F_DIR | VBSF_HANDLE_F_MAGIC;
@@ -82,20 +83,16 @@ static int vbsf_dir_open_worker(struct dentry *pDirEntry, struct inode *pInode, 
 
                 VbglR0PhysHeapFree(pReq);
                 return 0;
-#else
-                vbsf_dir_info_empty(sf_d);
-                err = vbsf_dir_read_all(sf_g, sf_i, sf_d, pReq->Create.CreateParms.Handle);
-#endif
-            } else {
-                /*
-                 * Directory does not exist, so we probably got some invalid
-                 * dir cache and inode info.
-                 */
-                /** @todo do more to invalidate dentry and inode here. */
-                vbsf_dentry_set_update_jiffies(pDirEntry, jiffies + INT_MAX / 2);
-                sf_i->force_restat = true;
-                err = -ENOENT;
             }
+
+            /*
+             * Directory does not exist, so we probably got some invalid
+             * dir cache and inode info.
+             */
+            /** @todo do more to invalidate dentry and inode here. */
+            vbsf_dentry_set_update_jiffies(pDirEntry, jiffies + INT_MAX / 2);
+            sf_i->force_restat = true;
+            err = -ENOENT;
 
             AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
             if (pReq->Create.CreateParms.Handle != SHFL_HANDLE_NIL) {
@@ -137,7 +134,6 @@ static int vbsf_dir_open(struct inode *inode, struct file *file)
     AssertReturn(sf_i, -EINVAL);
     AssertReturn(!file->private_data, 0);
 
-#ifndef VBSF_BUFFER_DIRS
     /*
      * Allocate and initialize our directory info structure.
      * We delay buffer allocation until vbsf_getdent is actually used.
@@ -159,21 +155,6 @@ static int vbsf_dir_open(struct inode *inode, struct file *file)
         }
     } else
         rc = -ENOMEM;
-
-#else
-    sf_d = vbsf_dir_info_alloc();
-    if (!sf_d) {
-        LogRelFunc(("could not allocate directory info for '%s'\n", sf_i->path->String.ach));
-        return -ENOMEM;
-    }
-
-    rc = vbsf_dir_open_worker(dentry, inode, sf_i, sf_d, sf_g, "vbsf_dir_open");
-    if (!rc)
-        file->private_data = sf_d;
-    else
-        vbsf_dir_info_free(sf_d);
-#endif
-
     return rc;
 }
 
@@ -193,7 +174,6 @@ static int vbsf_dir_release(struct inode *inode, struct file *file)
     TRACE();
 
     if (sf_d) {
-#ifndef VBSF_BUFFER_DIRS
         struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
 
         /* Invalidate the non-handle part. */
@@ -209,9 +189,6 @@ static int vbsf_dir_release(struct inode *inode, struct file *file)
 
         /* Closes the handle and frees the structure when the last reference is released. */
         vbsf_handle_release(&sf_d->Handle, sf_g, "vbsf_dir_release");
-#else
-        vbsf_dir_info_free(file->private_data);
-#endif
     }
 
     return 0;
@@ -238,7 +215,6 @@ static int vbsf_get_d_type(RTFMODE fMode)
     return DT_UNKNOWN;
 }
 
-#ifndef VBSF_BUFFER_DIRS
 
 /**
  * Refills the buffer with more entries.
@@ -267,16 +243,17 @@ static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info
     if (sf_d->pBuf) {
         /* Likely, except for the first time. */
     } else {
+        /** @todo make the buffer size configurable. */
         sf_d->pBuf = (PSHFLDIRINFO)kmalloc(_64K, GFP_KERNEL);
         if (sf_d->pBuf)
             sf_d->cbBuf = _64K;
         else {
             sf_d->pBuf = (PSHFLDIRINFO)kmalloc(_4K, GFP_KERNEL);
-            sf_d->cbBuf = _4K;
             if (!sf_d->pBuf) {
                 LogRelMax(10, ("vbsf_dir_read_more: Failed to allocate buffer!\n"));
                 return -ENOMEM;
             }
+            sf_d->cbBuf = _4K;
         }
     }
 
@@ -340,76 +317,6 @@ DECL_NO_INLINE(static, bool) vbsf_dir_emit_nls(
     return true;
 }
 
-#else /* VBSF_BUFFER_DIRS */
-
-/**
- * Extract element ([dir]->f_pos) from the directory [dir] into [d_name].
- *
- * @returns 0 for success, 1 for end reached, Linux error code otherwise.
- */
-static int vbsf_getdent(struct file *dir, char d_name[NAME_MAX], int *d_type)
-{
-    loff_t cur;
-    struct vbsf_super_info *sf_g;
-    struct vbsf_dir_info *sf_d;
-    struct vbsf_inode_info *sf_i;
-    struct inode *inode;
-    struct list_head *pos, *list;
-
-    TRACE();
-
-    inode = VBSF_GET_F_DENTRY(dir)->d_inode;
-    sf_i = VBSF_GET_INODE_INFO(inode);
-    sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    sf_d = dir->private_data;
-
-    BUG_ON(!sf_g);
-    BUG_ON(!sf_d);
-    BUG_ON(!sf_i);
-
-    if (sf_i->force_reread) {
-        struct dentry *dentry = VBSF_GET_F_DENTRY(dir);
-        int err = vbsf_dir_open_worker(dentry, inode, sf_i, sf_d, sf_g, "vbsf_getdent");
-        if (!err) {
-            sf_i->force_reread = false;
-        } else {
-            if (err == -ENOENT) {
-                vbsf_dir_info_free(sf_d);
-                dir->private_data = NULL;
-            }
-            return err;
-        }
-    }
-
-    cur = 0;
-    list = &sf_d->info_list;
-    list_for_each(pos, list) {
-        struct vbsf_dir_buf *b;
-        SHFLDIRINFO *info;
-        loff_t i;
-
-        b = list_entry(pos, struct vbsf_dir_buf, head);
-        if (dir->f_pos >= cur + b->cEntries) {
-            cur += b->cEntries;
-            continue;
-        }
-
-        for (i = 0, info = b->buf; i < dir->f_pos - cur; ++i) {
-            size_t size;
-
-            size = offsetof(SHFLDIRINFO, name.String)
-                 + info->name.u16Size;
-            info = (SHFLDIRINFO *)((uintptr_t)info + size);
-        }
-
-        *d_type = vbsf_get_d_type(info->Info.Attr.fMode);
-
-        return vbsf_nlscpy(sf_g, d_name, NAME_MAX, info->name.String.utf8, info->name.u16Length);
-    }
-
-    return 1;
-}
-#endif
 
 /**
  * This is called when vfs wants to populate internal buffers with
@@ -445,7 +352,6 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
 #else
     loff_t                  offPos  = dir->f_pos;
 #endif
-#ifndef VBSF_BUFFER_DIRS
     struct vbsf_dir_info   *sf_d    = (struct vbsf_dir_info *)dir->private_data;
     struct vbsf_super_info *sf_g    = VBSF_GET_SUPER_INFO(VBSF_GET_F_DENTRY(dir)->d_sb);
 
@@ -500,7 +406,7 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
      * however, to simplify the above skipping code).
      */
     if (offPos < 2) {
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
         if (offPos == 0) {
             if (dir_emit_dot(dir, ctx))
                 dir->f_pos = ctx->pos = sf_d->offPos = offPos = 1;
@@ -513,7 +419,7 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
             else
                 return 0;
         }
-# else
+#else
         if (offPos == 0) {
             int rc = filldir(opaque, ".", 1, 0, VBSF_GET_F_DENTRY(dir)->d_inode->i_ino, DT_DIR);
             if (!rc)
@@ -522,17 +428,17 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
                 return 0;
         }
         if (offPos == 1) {
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 5)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 5)
             int rc = filldir(opaque, "..", 2, 1, parent_ino(VBSF_GET_F_DENTRY(dir)), DT_DIR);
-#  else
+# else
             int rc = filldir(opaque, "..", 2, 1, VBSF_GET_F_DENTRY(dir)->d_parent->d_inode->i_ino, DT_DIR);
-#  endif
+# endif
             if (!rc)
                 dir->f_pos = sf_d->offPos = offPos = 2;
             else
                 return 0;
         }
-# endif
+#endif
     }
 
     /*
@@ -621,9 +527,9 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
             pEntry        = (PSHFLDIRINFO)((uintptr_t)pEntry + RT_UOFFSETOF(SHFLDIRINFO, name.String) + cbSrcName);
             offPos       += 1;
             dir->f_pos    = offPos;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
             ctx->pos      = offPos;
-# endif
+#endif
             cEntriesLeft -= 1;
         } while (cEntriesLeft > 0);
 
@@ -632,69 +538,6 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
         sf_d->pEntry       = pBuf;
         sf_d->cEntriesLeft = 0;
     }
-
-#else /* !VBSF_BUFFER_DIRS */
-
-    TRACE();
-    for (;;) {
-        int err;
-        ino_t fake_ino;
-        loff_t sanity;
-        char d_name[NAME_MAX];
-        int d_type = DT_UNKNOWN;
-
-        err = vbsf_getdent(dir, d_name, &d_type);
-        switch (err) {
-            case 1:
-                return 0;
-
-            case 0:
-                break;
-
-            case -1:
-            default:
-                /* skip erroneous entry and proceed */
-                LogFunc(("vbsf_getdent error %d\n", err));
-                offPos++;
-                dir->f_pos = offPos;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-                ctx->pos  = offPos;
-# endif
-                continue;
-        }
-
-        /* d_name now contains a valid entry name */
-
-        sanity = offPos + 0xbeef;
-        fake_ino = sanity;
-        if (sanity - fake_ino) {
-            LogRelFunc(("can not compute ino\n"));
-            return -EINVAL;
-        }
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-        if (!dir_emit(ctx, d_name, strlen(d_name), fake_ino, d_type)) {
-            LogFunc(("dir_emit failed\n"));
-            return 0;
-        }
-# else
-        err = filldir(opaque, d_name, strlen(d_name), dir->f_pos, fake_ino, d_type);
-        if (err) {
-            LogFunc(("filldir returned error %d\n", err));
-            /* Rely on the fact that filldir returns error
-               only when it runs out of space in opaque */
-            return 0;
-        }
-# endif
-
-        offPos++;
-        dir->f_pos = offPos;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-        ctx->pos   = offPos;
-# endif
-    }
-
-    BUG();
-#endif
 }
 
 /**
@@ -746,9 +589,6 @@ static struct inode *vbsf_create_inode(struct inode *parent, struct dentry *dent
 #endif
             sf_new_i->path          = path;
             sf_new_i->force_restat  = false;
-#ifdef VBSF_BUFFER_DIRS
-            sf_new_i->force_reread  = false;
-#endif
             sf_new_i->ts_up_to_date = jiffies;
             RTListInit(&sf_new_i->HandleList);
             sf_new_i->handle        = SHFL_HANDLE_NIL;
@@ -1087,19 +927,10 @@ static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int f
             if (dentry->d_inode) {
                 struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(dentry->d_inode);
                 sf_i->force_restat = true;
-#ifdef VBSF_BUFFER_DIRS
-                sf_i->force_reread = true;
-#endif
             }
 
             if (RT_SUCCESS(rc)) {
-                /* directory access/change time changed */
-                sf_parent_i->force_restat = true;
-#ifdef VBSF_BUFFER_DIRS
-                /* directory content changed */
-                sf_parent_i->force_reread = true;
-#endif
-
+                sf_parent_i->force_restat = true; /* directory access/change time changed */
                 err = 0;
             } else if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND) {
                 LogFunc(("(%d): VbglR0SfRemove(%s) failed rc=%Rrc; calling d_drop on %p\n",

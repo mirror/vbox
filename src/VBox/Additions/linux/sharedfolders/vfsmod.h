@@ -54,6 +54,7 @@
 #include <iprt/asm.h>
 #include "vbsfmount.h"
 
+
 /*
  * inode compatibility glue.
  */
@@ -179,10 +180,6 @@ struct vbsf_inode_info {
     SHFLSTRING *path;
     /** Some information was changed, update data on next revalidate */
     bool force_restat;
-#ifdef VBSF_BUFFER_DIRS
-    /** Directory content changed, update the whole directory on next vbsf_getdent */
-    bool force_reread;
-#endif
     /** The timestamp (jiffies) where the inode info was last updated. */
     unsigned long           ts_up_to_date;
     /** The birth time. */
@@ -272,7 +269,6 @@ struct vbsf_reg_info {
  * VBox specific information for an open directory.
  */
 struct vbsf_dir_info {
-#ifndef VBSF_BUFFER_DIRS
     /** Handle tracking structure.
      * @note Must be first!  */
     struct vbsf_handle  Handle;
@@ -292,36 +288,12 @@ struct vbsf_dir_info {
     PSHFLDIRINFO        pEntry;
     /** Set if there are no more files.  */
     bool                fNoMoreFiles;
-#else
-    /** List of vbsf_dir_buf. */
-    struct list_head info_list;
-#endif
 };
 
 /** Magic number for vbsf_dir_info::u32Magic (Robert Anson Heinlein). */
 #define VBSF_DIR_INFO_MAGIC         UINT32_C(0x19070707)
 /** Value of vbsf_dir_info::u32Magic when freed. */
 #define VBSF_DIR_INFO_MAGIC_DEAD    UINT32_C(0x19880508)
-
-
-#ifdef VBSF_BUFFER_DIRS
-# define DIR_BUFFER_SIZE (16*_1K)
-struct vbsf_dir_buf {
-    size_t cEntries;
-    size_t cbFree;
-    size_t cbUsed;
-    void *buf;
-    struct list_head head;
-};
-#endif
-
-#ifdef VBSF_BUFFER_DIRS
-extern void vbsf_dir_info_free(struct vbsf_dir_info *p);
-extern void vbsf_dir_info_empty(struct vbsf_dir_info *p);
-extern struct vbsf_dir_info *vbsf_dir_info_alloc(void);
-extern int  vbsf_dir_read_all(struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i,
-                              struct vbsf_dir_info *sf_d, SHFLHANDLE handle);
-#endif
 
 
 /**
