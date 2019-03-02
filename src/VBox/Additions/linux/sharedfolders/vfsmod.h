@@ -272,6 +272,8 @@ struct vbsf_dir_info {
     /** Handle tracking structure.
      * @note Must be first!  */
     struct vbsf_handle  Handle;
+    /** Semaphore protecting everything below. */
+    struct semaphore    Lock;
     /** A magic number (VBSF_DIR_INFO_MAGIC). */
     uint32_t            u32Magic;
     /** Size of the buffer for directory entries. */
@@ -282,7 +284,7 @@ struct vbsf_dir_info {
     uint32_t            cbValid;
     /** Number of entries left in the buffer.   */
     uint32_t            cEntriesLeft;
-    /** The position of the next entry.  Incremented by one for each entry.  */
+    /** The position of the next entry.  Incremented by one for each entry. */
     loff_t              offPos;
     /** The next entry. */
     PSHFLDIRINFO        pEntry;
