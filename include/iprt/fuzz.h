@@ -41,25 +41,39 @@ RT_C_DECLS_BEGIN
  */
 
 /** A fuzzer context handle. */
-typedef struct RTFUZZCTXINT    *RTFUZZCTX;
+typedef struct RTFUZZCTXINT      *RTFUZZCTX;
 /** Pointer to a fuzzer context handle. */
-typedef RTFUZZCTX              *PRTFUZZCTX;
+typedef RTFUZZCTX                *PRTFUZZCTX;
 /** NIL fuzzer context handle. */
-#define NIL_RTFUZZCTX           ((RTFUZZCTX)~(uintptr_t)0)
+#define NIL_RTFUZZCTX            ((RTFUZZCTX)~(uintptr_t)0)
 /** A fuzzer input handle. */
-typedef struct RTFUZZINPUTINT  *RTFUZZINPUT;
+typedef struct RTFUZZINPUTINT    *RTFUZZINPUT;
 /** Pointer to a fuzzer input handle. */
-typedef RTFUZZINPUT            *PRTFUZZINPUT;
+typedef RTFUZZINPUT              *PRTFUZZINPUT;
 /** NIL fuzzer input handle. */
-#define NIL_RTFUZZINPUT        ((RTFUZZINPUT)~(uintptr_t)0)
+#define NIL_RTFUZZINPUT          ((RTFUZZINPUT)~(uintptr_t)0)
+
+
+/** A fuzzer target recorder handler. */
+typedef struct RTFUZZTGTRECINT   *RTFUZZTGTREC;
+/** Pointer to a fuzzer target recorder handle. */
+typedef RTFUZZTGTREC             *PRTFUZZTGTREC;
+/** NIL fuzzer target recorder handle. */
+#define NIL_RTFUZZTGTREC         ((RTFUZZTGTREC)~(uintptr_t)0)
+/** A fuzzed target state handle. */
+typedef struct RTFUZZTGTSTATEINT *RTFUZZTGTSTATE;
+/** Pointer to a fuzzed target state handle. */
+typedef RTFUZZTGTSTATE           *PRTFUZZTGTSTATE;
+/** NIL fuzzed target state handle. */
+#define NIL_RTFUZZTGTSTATE       ((RTFUZZTGTSTATE)~(uintptr_t)0)
 
 
 /** Fuzzing observer handle. */
-typedef struct RTFUZZOBSINT    *RTFUZZOBS;
+typedef struct RTFUZZOBSINT      *RTFUZZOBS;
 /** Pointer to a fuzzing observer handle. */
-typedef RTFUZZOBS              *PRTFUZZOBS;
+typedef RTFUZZOBS                *PRTFUZZOBS;
 /** NIL fuzzing observer handle. */
-#define NIL_RTFUZZOBS           ((RTFUZZOBS)~(uintptr_t)0)
+#define NIL_RTFUZZOBS             ((RTFUZZOBS)~(uintptr_t)0)
 
 
 /**
@@ -318,7 +332,7 @@ RTDECL(int) RTFuzzCtxInputGenerate(RTFUZZCTX hFuzzCtx, PRTFUZZINPUT phFuzzInput)
 RTDECL(uint32_t) RTFuzzInputRetain(RTFUZZINPUT hFuzzInput);
 
 /**
- * Releases a reference from the given fuzzing input handle, destroying it when reaaching 0.
+ * Releases a reference from the given fuzzing input handle, destroying it when reaching 0.
  *
  * @returns New reference count on success, 0 if the fuzzing input got destroyed.
  * @param   hFuzzInput          The fuzzing input handle.
@@ -382,6 +396,123 @@ RTDECL(int) RTFuzzInputAddToCtxCorpus(RTFUZZINPUT hFuzzInput);
  * @param   hFuzzInput          The fuzzing input handle.
  */
 RTDECL(int) RTFuzzInputRemoveFromCtxCorpus(RTFUZZINPUT hFuzzInput);
+
+
+/**
+ * Creates a new fuzzed target recorder.
+ *
+ * @returns IPRT status code.
+ * @param   phFuzzTgtRec        Where to store the handle to the fuzzed target recorder on success.
+ */
+RTDECL(int) RTFuzzTgtRecorderCreate(PRTFUZZTGTREC phFuzzTgtRec);
+
+/**
+ * Retains a reference to the given fuzzed target recorder handle.
+ *
+ * @returns New reference count on success.
+ * @param   hFuzzTgtRec         The fuzzed target recorder handle.
+ */
+RTDECL(uint32_t) RTFuzzTgtRecorderRetain(RTFUZZTGTREC hFuzzTgtRec);
+
+/**
+ * Releases a reference from the given fuzzed target recorder handle, destroying it when reaching 0.
+ *
+ * @returns New reference count on success, 0 if the fuzzed target recorder got destroyed.
+ * @param   hFuzzTgtRec         The fuzzed target recorder handle.
+ */
+RTDECL(uint32_t) RTFuzzTgtRecorderRelease(RTFUZZTGTREC hFuzzTgtRec);
+
+/**
+ * Creates a new empty fuzzed target state.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzTgtRec         The fuzzed target recorder handle.
+ * @param   phFuzzTgtState      Where to store the handle to the fuzzed target state on success.
+ */
+RTDECL(int) RTFuzzTgtRecorderCreateNewState(RTFUZZTGTREC hFuzzTgtRec, PRTFUZZTGTSTATE phFuzzTgtState);
+
+/**
+ * Retains a reference to the given fuzzed target state handle.
+ *
+ * @returns New reference count on success.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ */
+RTDECL(uint32_t) RTFuzzTgtStateRetain(RTFUZZTGTSTATE hFuzzTgtState);
+
+/**
+ * Releases a reference from the given fuzzed target state handle, destroying it when reaching 0.
+ *
+ * @returns New reference count on success, 0 if the fuzzed target recorder got destroyed.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ */
+RTDECL(uint32_t) RTFuzzTgtStateRelease(RTFUZZTGTSTATE hFuzzTgtState);
+
+/**
+ * Resets the given fuzzed target state to an empty state (keeping allocated memory).
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ *
+ * @note Useful when the state is not added to the recorded set to avoid allocating memory.
+ */
+RTDECL(int) RTFuzzTgtStateReset(RTFUZZTGTSTATE hFuzzTgtState);
+
+/**
+ * Finalizes the given fuzzed target state, making it readonly.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ */
+RTDECL(int) RTFuzzTgtStateFinalize(RTFUZZTGTSTATE hFuzzTgtState);
+
+/**
+ * Adds the given state to the set for the owning target recorder.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_ALREADY_EXISTS if the state is already existing in the recorder set.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ *
+ * @note This also finalizes the target state if not already done.
+ */
+RTDECL(int) RTFuzzTgtStateAddToRecorder(RTFUZZTGTSTATE hFuzzTgtState);
+
+/**
+ * Appends the given stdout output to the given target state.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ * @param   pvStdOut            Pointer to the stdout data buffer.
+ * @param   cbStdOut            Size of the stdout data buffer in bytes.
+ */
+RTDECL(int) RTFuzzTgtStateAppendStdoutFromBuf(RTFUZZTGTSTATE hFuzzTgtState, const void *pvStdOut, size_t cbStdOut);
+
+/**
+ * Appends the given stderr output to the given target state.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ * @param   pvStdErr            Pointer to the stderr data buffer.
+ * @param   cbStdErr            Size of the stderr data buffer in bytes.
+ */
+RTDECL(int) RTFuzzTgtStateAppendStderrFromBuf(RTFUZZTGTSTATE hFuzzTgtState, const void *pvStdErr, size_t cbStdErr);
+
+/**
+ * Appends the given stdout output to the given target state, reading from the given pipe.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ * @param   hPipe               The stdout pipe to read the data from.
+ */
+RTDECL(int) RTFuzzTgtStateAppendStdoutFromPipe(RTFUZZTGTSTATE hFuzzTgtState, RTPIPE hPipe);
+
+/**
+ * Appends the given stderr output to the given target state, reading from the given pipe.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ * @param   hPipe               The stdout pipe to read the data from.
+ */
+RTDECL(int) RTFuzzTgtStateAppendStderrFromPipe(RTFUZZTGTSTATE hFuzzTgtState, RTPIPE hPipe);
 
 
 /**

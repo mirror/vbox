@@ -189,6 +189,8 @@ typedef struct RTFUZZMUTATION
     size_t                      cbInput;
     /** Size of the mutation dependent data. */
     size_t                      cbMutation;
+    /** Flag whether the mutation is contained in the tree of the context. */
+    bool                        fInTree;
     /** Mutation dependent data, variable in size. */
     uint8_t                     abMutation[1];
 } RTFUZZMUTATION;
@@ -470,6 +472,18 @@ static void rtFuzzCtxMemoryFree(PRTFUZZCTXINT pThis, void *pv)
 
 
 /**
+ * Destroys the given mutation.
+ *
+ * @returns nothing.
+ * @param   pMutation           The mutation to destroy.
+ */
+static void rtFuzzMutationDestroy(PRTFUZZMUTATION pMutation)
+{
+    rtFuzzCtxMemoryFree(pMutation->pFuzzer, pMutation);
+}
+
+
+/**
  * Retains an external reference to the given mutation.
  *
  * @returns New reference count on success.
@@ -478,12 +492,13 @@ static void rtFuzzCtxMemoryFree(PRTFUZZCTXINT pThis, void *pv)
 static uint32_t rtFuzzMutationRetain(PRTFUZZMUTATION pMutation)
 {
     uint32_t cRefs = ASMAtomicIncU32(&pMutation->cRefs);
-    AssertMsg(cRefs > 1 && cRefs < _1M, ("%#x %p\n", cRefs, pMutation));
+    AssertMsg(   (   cRefs > 1
+                  || pMutation->fInTree)
+              && cRefs < _1M, ("%#x %p\n", cRefs, pMutation));
     return cRefs;
 }
 
 
-#if 0 /* unused */
 /**
  * Releases an external reference from the given mutation.
  *
@@ -494,9 +509,10 @@ static uint32_t rtFuzzMutationRelease(PRTFUZZMUTATION pMutation)
 {
     uint32_t cRefs = ASMAtomicDecU32(&pMutation->cRefs);
     AssertMsg(cRefs < _1M, ("%#x %p\n", cRefs, pMutation));
+    if (cRefs == 0 && !pMutation->fInTree)
+        rtFuzzMutationDestroy(pMutation);
     return cRefs;
 }
-#endif
 
 
 /**
@@ -518,6 +534,7 @@ static int rtFuzzCtxMutationAdd(PRTFUZZCTXINT pThis, PRTFUZZMUTATION pMutation)
     rc = RTSemRWReleaseWrite(pThis->hSemRwMutations);
     AssertRC(rc); RT_NOREF(rc);
 
+    pMutation->fInTree = true;
     return rc;
 }
 
@@ -530,7 +547,7 @@ static int rtFuzzCtxMutationAdd(PRTFUZZCTXINT pThis, PRTFUZZMUTATION pMutation)
  */
 static PRTFUZZMUTATION rtFuzzCtxMutationPickRnd(PRTFUZZCTXINT pThis)
 {
-    uint64_t idxMutation = RTRandAdvU64Ex(pThis->hRand, 0, ASMAtomicReadU64(&pThis->cMutations));
+    uint64_t idxMutation = RTRandAdvU64Ex(pThis->hRand, 1, ASMAtomicReadU64(&pThis->cMutations));
 
     int rc = RTSemRWRequestRead(pThis->hSemRwMutations, RT_INDEFINITE_WAIT);
     AssertRC(rc); RT_NOREF(rc);
@@ -574,6 +591,7 @@ static PRTFUZZMUTATION rtFuzzMutationCreate(PRTFUZZCTXINT pThis, uint64_t offMut
         pMutation->offMutation     = offMutation;
         pMutation->pMutationParent = pMutationParent;
         pMutation->cbMutation      = cbAdditional;
+        pMutation->fInTree         = false;
 
         if (pMutationParent)
             pMutation->iLvl = pMutationParent->iLvl + 1;
@@ -582,18 +600,6 @@ static PRTFUZZMUTATION rtFuzzMutationCreate(PRTFUZZCTXINT pThis, uint64_t offMut
     }
 
     return pMutation;
-}
-
-
-/**
- * Destroys the given mutation.
- *
- * @returns nothing.
- * @param   pMutation           The mutation to destroy.
- */
-static void rtFuzzMutationDestroy(PRTFUZZMUTATION pMutation)
-{
-    rtFuzzCtxMemoryFree(pMutation->pFuzzer, pMutation);
 }
 
 
@@ -887,6 +893,7 @@ static void rtFuzzInputDestroy(PRTFUZZINPUTINT pThis)
         && pThis->u.Blob.pvInput)
         rtFuzzCtxMemoryFree(pFuzzer, pThis->u.Blob.pvInput);
 
+    rtFuzzMutationRelease(pThis->pMutationTop);
     rtFuzzCtxMemoryFree(pFuzzer, pThis);
     RTFuzzCtxRelease(pFuzzer);
 }
