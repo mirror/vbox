@@ -33,16 +33,16 @@
 
 
 /**
- * Open a directory.
+ * Open a directory (implements file_operations::open).
  *
- * @param inode     inode
- * @param file      file
- * @returns 0 on success, Linux error code otherwise
+ * @returns 0 on success, negative errno otherwise.
+ * @param   inode   inode
+ * @param   file    file
  */
 static int vbsf_dir_open(struct inode *inode, struct file *file)
 {
-    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
+    struct vbsf_super_info *sf_g   = VBSF_GET_SUPER_INFO(inode->i_sb);
+    struct vbsf_inode_info *sf_i   = VBSF_GET_INODE_INFO(inode);
     struct dentry          *dentry = VBSF_GET_F_DENTRY(file);
     struct vbsf_dir_info   *sf_d;
     int                     rc;
@@ -97,6 +97,7 @@ static int vbsf_dir_open(struct inode *inode, struct file *file)
 
                     file->private_data = sf_d;
                     VbglR0PhysHeapFree(pReq);
+                    SFLOGFLOW(("vbsf_dir_open(%p,%p): returns 0; hHost=%#llx\n", inode, file, sf_d->Handle.hHost));
                     return 0;
 
                 }
@@ -122,6 +123,7 @@ static int vbsf_dir_open(struct inode *inode, struct file *file)
         kfree(sf_d);
     } else
         rc = -ENOMEM;
+    SFLOGFLOW(("vbsf_dir_open(%p,%p): returns %d\n", inode, file, rc));
     return rc;
 }
 
@@ -139,7 +141,7 @@ static int vbsf_dir_release(struct inode *inode, struct file *file)
 {
     struct vbsf_dir_info *sf_d = (struct vbsf_dir_info *)file->private_data;
 
-    TRACE();
+    SFLOGFLOW(("vbsf_dir_release(%p,%p): sf_d=%p hHost=%#llx\n", inode, file, sf_d, sf_d ? sf_d->Handle.hHost : SHFL_HANDLE_NIL));
 
     if (sf_d) {
         struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
@@ -165,10 +167,10 @@ static int vbsf_dir_release(struct inode *inode, struct file *file)
 
 /**
  * Translate RTFMODE into DT_xxx (in conjunction to rtDirType()).
- * @param fMode     file mode
  * returns d_type
+ * @param  fMode    file mode
  */
-static int vbsf_get_d_type(RTFMODE fMode)
+DECLINLINE(int) vbsf_get_d_type(RTFMODE fMode)
 {
     switch (fMode & RTFS_TYPE_MASK) {
         case RTFS_TYPE_FIFO:        return DT_FIFO;
@@ -199,11 +201,12 @@ static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info
      * directory entries already.
      */
     if (sf_d->fNoMoreFiles) {
-        if (!fRestart)
+        if (!fRestart) {
+            SFLOGFLOW(("vbsf_dir_read_more: no more files\n"));
             return 0;
+        }
         sf_d->fNoMoreFiles = false;
     }
-
 
     /*
      * Make sure we've got some kind of buffers.
@@ -256,6 +259,8 @@ static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info
         VbglR0PhysHeapFree(pReq);
     } else
         rc = -ENOMEM;
+    SFLOGFLOW(("vbsf_dir_read_more: returns %d; cbValid=%#x cEntriesLeft=%#x fNoMoreFiles=%d\n",
+               rc, sf_d->cbValid, sf_d->cEntriesLeft, sf_d->fNoMoreFiles));
     return rc;
 }
 
@@ -281,7 +286,9 @@ DECL_NO_INLINE(static, bool) vbsf_dir_emit_nls(
         return filldir(opaque, szDstName, strlen(szDstName), offPos, d_ino, d_type) == 0;
 #endif
     }
+
     /* Assuming this is a buffer overflow issue, just silently skip it. */
+    SFLOGFLOW(("vbsf_dir_emit_nls: vbsf_nlscopy failed with %d for '%s'\n", rc, pszSrcName));
     return true;
 }
 
@@ -316,12 +323,12 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
 #endif
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-    loff_t                  offPos  = ctx->pos;
+    loff_t                  offPos = ctx->pos;
 #else
-    loff_t                  offPos  = dir->f_pos;
+    loff_t                  offPos = dir->f_pos;
 #endif
-    struct vbsf_dir_info   *sf_d    = (struct vbsf_dir_info *)dir->private_data;
-    struct vbsf_super_info *sf_g    = VBSF_GET_SUPER_INFO(VBSF_GET_F_DENTRY(dir)->d_sb);
+    struct vbsf_dir_info   *sf_d   = (struct vbsf_dir_info *)dir->private_data;
+    struct vbsf_super_info *sf_g   = VBSF_GET_SUPER_INFO(VBSF_GET_F_DENTRY(dir)->d_sb);
     int                     rc;
 
     /*
