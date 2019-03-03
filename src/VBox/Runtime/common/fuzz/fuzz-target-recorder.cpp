@@ -375,7 +375,7 @@ RTDECL(int) RTFuzzTgtStateAddToRecorder(RTFUZZTGTSTATE hFuzzTgtState)
     }
 
     PRTFUZZTGTRECINT pTgtRec = pThis->pTgtRec;
-    uint64_t uKey = (pThis->StdOutBuf.cbBuf << 32) | pThis->StdErrBuf.cbBuf;
+    uint64_t uKey = ((uint64_t)pThis->StdOutBuf.cbBuf << 32) | pThis->StdErrBuf.cbBuf;
 
     /* Try to find a node matching the stdout and sterr sizes first. */
     int rc = RTSemRWRequestRead(pTgtRec->hSemRwStates, RT_INDEFINITE_WAIT); AssertRC(rc);
