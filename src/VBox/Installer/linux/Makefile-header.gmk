@@ -125,10 +125,12 @@ ifeq ($(KERNELRELEASE),)
   VBOX_KERN_GROKS_EXTMOD := yes
   ifeq ($(shell if grep '"2\.6\.[012345][."]' $(KERN_DIR)/include/linux/version.h > /dev/null 2>&1; then echo yes; fi),yes)
    VBOX_KERN_GROKS_EXTMOD :=
-  else
+  endif
+  VBOX_KERN_GROKS_SUBDIRS  :=
+  ifeq ($(shell if grep '"[432]\.' $(KERN_DIR)/include/linux/version.h > /dev/null 2>&1; then echo yes; fi),yes)
+   VBOX_KERN_GROKS_SUBDIRS := yes
   endif
  endif
-
 else # neq($(KERNELRELEASE),)
 
  #
@@ -146,6 +148,16 @@ else # neq($(KERNELRELEASE),)
    ifeq ($(findstring @$(SUBLEVEL)@,@0@1@2@3@4@5@),@$(SUBLEVEL)@)
     VBOX_KERN_GROKS_EXTMOD :=
    endif
+  endif
+  VBOX_KERN_GROKS_SUBDIRS  :=
+  ifeq ($(VERSION),2)
+   VBOX_KERN_GROKS_SUBDIRS := yes
+  endif
+  ifeq ($(VERSION),3)
+   VBOX_KERN_GROKS_SUBDIRS := yes
+  endif
+  ifeq ($(VERSION),4)
+   VBOX_KERN_GROKS_SUBDIRS := yes
   endif
  endif
 
