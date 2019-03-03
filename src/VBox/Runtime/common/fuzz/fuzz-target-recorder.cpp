@@ -218,7 +218,7 @@ static void rtFuzzTgtRecDestroy(PRTFUZZTGTRECINT pThis)
  */
 static void rtFuzzTgtStateDestroy(PRTFUZZTGTSTATEINT pThis)
 {
-    pThis->u32Magic = ~0; /** @todo Dead magic */
+    pThis->u32Magic = ~(uint32_t)0; /** @todo Dead magic */
     rtFuzzTgtStdOutErrBufFree(&pThis->StdOutBuf);
     rtFuzzTgtStdOutErrBufFree(&pThis->StdErrBuf);
     RTMemFree(pThis);
