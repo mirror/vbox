@@ -3233,7 +3233,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             fRc = False;
                         if     fRc \
                            and curRes.aBuf is not None \
-                           and curRes.aBuf != aBufRead:
+                           and bytes(curRes.aBuf) != bytes(aBufRead):
                             reporter.error('Test #%d failed: Read back buffer (%d bytes) does not match ' \
                                            'written content (%d bytes)' % (i, len(aBufRead), len(aBufRead)));
 
