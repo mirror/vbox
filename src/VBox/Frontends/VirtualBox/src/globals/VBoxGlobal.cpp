@@ -444,7 +444,7 @@ QString VBoxGlobal::findUniqueFileName(const QString &strFullFolderPath, const Q
     foreach (const QFileInfo &fileInfo, folderContent)
     {
         /* Remove the extension : */
-        fileNameSet.insert(fileInfo.baseName());
+        fileNameSet.insert(fileInfo.completeBaseName());
     }
     int iSuffix = 0;
     QString strNewName(strBaseFileName);
