@@ -100,6 +100,7 @@ class tdCtxCreds(object):
     Provides credentials to pass to the guest.
     """
     def __init__(self, sUser = None, sPassword = None, sDomain = None):
+        self.oTestVm   = None;
         self.sUser     = sUser;
         self.sPassword = sPassword;
         self.sDomain   = sDomain;
@@ -1920,6 +1921,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         else:
             sImageOut = "/bin/ls";
 
+        # Use credential defaults.
+        oCreds = tdCtxCreds();
+        oCreds.applyDefaultsIfNotSet(oTestVm);
+
         aaInvalid = [
             # Invalid parameters.
             [ tdTestExec(), tdTestResultExec() ],
@@ -2090,7 +2095,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         oGuest = oSession.o.console.guest;
         try:
             reporter.log('Creating session for all tests ...');
-            curGuestSession = oGuest.createSession(sUser, sPassword, '', 'testGuestCtrlExec: One session for all tests');
+            curGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain,
+                                                   'testGuestCtrlExec: One session for all tests');
             try:
                 fWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
                 waitResult = curGuestSession.waitForArray(fWaitFor, 30 * 1000);
