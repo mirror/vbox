@@ -934,9 +934,8 @@ static int vboxGreeterLogCreate(const char *pszLogFile)
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     fFlags |= RTLOGFLAGS_USECRLF;
 #endif
-    int rc = RTLogCreateEx(&g_pLoggerRelease, fFlags, "all",
-                           "VBOXGREETER_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
-                           RTLOGDEST_STDOUT,
+    int rc = RTLogCreateEx(&g_pLoggerRelease, fFlags, "all", "VBOXGREETER_RELEASE_LOG",
+                           RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX /*cMaxEntriesPerGroup*/, RTLOGDEST_STDOUT,
                            vboxGreeterLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
                            NULL /*pErrInfo*/, pszLogFile);
     if (RT_SUCCESS(rc))

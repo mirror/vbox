@@ -317,7 +317,7 @@ int VGSvcLogCreate(const char *pszLogFile)
 #else
                            "VBOXSERVICE_RELEASE_LOG",
 #endif
-                           RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                           RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX /*cMaxEntriesPerGroup*/,
                            RTLOGDEST_STDOUT | RTLOGDEST_USER,
                            vgsvcLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
                            NULL /*pErrInfo*/, "%s", pszLogFile ? pszLogFile : "");

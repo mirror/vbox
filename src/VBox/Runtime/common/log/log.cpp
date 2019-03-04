@@ -781,8 +781,8 @@ static void rtLogRingBufFlush(PRTLOGGER pLogger)
 }
 
 
-RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
-                           const char *pszEnvVarBase, unsigned cGroups, const char * const *papszGroups,
+RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings, const char *pszEnvVarBase,
+                           unsigned cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
                            uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
                            uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
                            PRTERRINFO pErrInfo, const char *pszFilenameFmt, va_list args)
@@ -840,7 +840,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
             pLogger->pInt->pacEntriesPerGroup   = (uint32_t *)(pLogger->pInt + 1);
         else
             pLogger->pInt->pacEntriesPerGroup   = NULL;
-        pLogger->pInt->cMaxEntriesPerGroup      = UINT32_MAX;
+        pLogger->pInt->cMaxEntriesPerGroup      = cMaxEntriesPerGroup ? cMaxEntriesPerGroup : UINT32_MAX;
 # ifdef IN_RING3
         pLogger->pInt->pfnPhase                 = pfnPhase;
         pLogger->pInt->hFile                    = NIL_RTFILE;
@@ -938,6 +938,22 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                 pszValue = RTEnvGet(pszEnvVar);
                 if (pszValue)
                     RTLogGroupSettings(pLogger, pszValue);
+
+                /*
+                 * Group limit.
+                 */
+                strcpy(pszEnvVar + cchEnvVarBase, "_MAX_PER_GROUP");
+                pszValue = RTEnvGet(pszEnvVar);
+                if (pszValue)
+                {
+                    uint32_t cMax;
+                    rc = RTStrToUInt32Full(pszValue, 0, &cMax);
+                    if (RT_SUCCESS(rc))
+                        pLogger->pInt->cMaxEntriesPerGroup = cMax ? cMax : UINT32_MAX;
+                    else
+                        AssertMsgFailed(("Invalid group limit! %s=%s\n", pszEnvVar, pszValue));
+                }
+
             }
 # else  /* !IN_RING3 */
             RT_NOREF_PV(pszEnvVarBase); RT_NOREF_PV(pszFilenameFmt); RT_NOREF_PV(args);
@@ -1016,8 +1032,9 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGro
     int rc;
 
     va_start(args, pszFilenameFmt);
-    rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups,
-                        fDestFlags, NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
+    rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase,
+                        cGroups, papszGroups, UINT32_MAX /*cMaxEntriesPerGroup*/, fDestFlags,
+                        NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
                         NULL /*pErrInfo*/, pszFilenameFmt, args);
     va_end(args);
     return rc;
@@ -1025,8 +1042,8 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGro
 RT_EXPORT_SYMBOL(RTLogCreate);
 
 
-RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings,
-                          const char *pszEnvVarBase, unsigned cGroups, const char * const * papszGroups,
+RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGroupSettings, const char *pszEnvVarBase,
+                          unsigned cGroups, const char * const *papszGroups, uint32_t cMaxEntriesPerGroup,
                           uint32_t fDestFlags, PFNRTLOGPHASE pfnPhase, uint32_t cHistory,
                           uint64_t cbHistoryFileMax, uint32_t cSecsHistoryTimeSlot,
                           PRTERRINFO pErrInfo, const char *pszFilenameFmt, ...)
@@ -1035,7 +1052,7 @@ RTDECL(int) RTLogCreateEx(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszG
     int rc;
 
     va_start(args, pszFilenameFmt);
-    rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups,
+    rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups, cMaxEntriesPerGroup,
                         fDestFlags, pfnPhase, cHistory, cbHistoryFileMax, cSecsHistoryTimeSlot,
                         pErrInfo, pszFilenameFmt, args);
     va_end(args);
