@@ -36,6 +36,61 @@
 #include <linux/vfs.h>
 
 
+int vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len, const unsigned char *utf8_name, size_t utf8_len)
+{
+    if (sf_g->nls) {
+        const char *in;
+        char *out;
+        size_t out_len;
+        size_t out_bound_len;
+        size_t in_bound_len;
+
+        in = utf8_name;
+        in_bound_len = utf8_len;
+
+        out = name;
+        out_len = 0;
+        out_bound_len = name_bound_len;
+
+        while (in_bound_len) {
+            int nb;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+            unicode_t uni;
+
+            nb = utf8_to_utf32(in, in_bound_len, &uni);
+#else
+            linux_wchar_t uni;
+
+            nb = utf8_mbtowc(&uni, in, in_bound_len);
+#endif
+            if (nb < 0) {
+                LogFunc(("utf8_mbtowc failed(%s) %x:%d\n", (const char *)utf8_name, *in, in_bound_len));
+                return -EINVAL;
+            }
+            in += nb;
+            in_bound_len -= nb;
+
+            nb = sf_g->nls->uni2char(uni, out, out_bound_len);
+            if (nb < 0) {
+                LogFunc(("nls->uni2char failed(%s) %x:%d\n", utf8_name, uni, out_bound_len));
+                return nb;
+            }
+            out += nb;
+            out_bound_len -= nb;
+            out_len += nb;
+        }
+
+        *out = 0;
+    } else {
+        if (utf8_len + 1 > name_bound_len)
+            return -ENAMETOOLONG;
+
+        memcpy(name, utf8_name, utf8_len + 1);
+    }
+    return 0;
+}
+
+
 /**
  * Convert from VBox to linux time.
  */
@@ -81,31 +136,10 @@ DECLINLINE(void) vbsf_time_to_vbox(PRTTIMESPEC pVBoxDst, struct timespec64 const
 
 
 /**
- * Converts Linux access permissions to VBox ones (mode & 0777).
- *
- * @note Currently identical.
- */
-DECLINLINE(uint32_t) sf_access_permissions_to_vbox(int fAttr)
-{
-    /* Access bits should be the same: */
-    AssertCompile(RTFS_UNIX_IRUSR == S_IRUSR);
-    AssertCompile(RTFS_UNIX_IWUSR == S_IWUSR);
-    AssertCompile(RTFS_UNIX_IXUSR == S_IXUSR);
-    AssertCompile(RTFS_UNIX_IRGRP == S_IRGRP);
-    AssertCompile(RTFS_UNIX_IWGRP == S_IWGRP);
-    AssertCompile(RTFS_UNIX_IXGRP == S_IXGRP);
-    AssertCompile(RTFS_UNIX_IROTH == S_IROTH);
-    AssertCompile(RTFS_UNIX_IWOTH == S_IWOTH);
-    AssertCompile(RTFS_UNIX_IXOTH == S_IXOTH);
-
-    return fAttr & RTFS_UNIX_ALL_ACCESS_PERMS;
-}
-
-
-/**
  * Converts VBox access permissions  to Linux ones (mode & 0777).
  *
  * @note Currently identical.
+ * @sa   sf_access_permissions_to_vbox
  */
 DECLINLINE(int) sf_access_permissions_to_linux(uint32_t fAttr)
 {
@@ -204,6 +238,7 @@ void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSO
     vbsf_time_to_linux(&inode->i_mtime, &pObjInfo->ModificationTime);
     sf_i->BirthTime = pObjInfo->BirthTime;
 }
+
 
 /**
  * Update the inode with new object info from the host.
@@ -328,6 +363,7 @@ int vbsf_stat(const char *caller, struct vbsf_super_info *sf_g, SHFLSTRING *path
     return rc;
 }
 
+
 /**
  * Revalidate an inode, inner worker.
  *
@@ -394,8 +430,7 @@ int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced)
                             /*
                              * Reset the TTL and copy the info over into the inode structure.
                              */
-                            vbsf_update_inode(pInode, sf_i, &pReq->CreateParms.Info,
-                                    sf_g, true /*fInodeLocked??*/);
+                            vbsf_update_inode(pInode, sf_i, &pReq->CreateParms.Info, sf_g, true /*fInodeLocked??*/);
                             rc = 0;
                         } else {
                             rc = -ENOENT;
@@ -484,6 +519,7 @@ int vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFil
     return err;
 }
 
+
 /* on 2.6 this is a proxy for [sf_inode_revalidate] which (as a side
    effect) updates inode attributes for [dentry] (given that [dentry]
    has inode at all) from these new attributes we derive [kstat] via
@@ -570,6 +606,7 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
     }
     return rc;
 }
+
 
 int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
 {
@@ -741,6 +778,7 @@ static int vbsf_make_path(const char *caller, struct vbsf_inode_info *sf_i,
     return 0;
 }
 
+
 /**
  * [dentry] contains string encoded in coding system that corresponds
  * to [sf_g]->nls, we must convert it to UTF8 here and pass down to
@@ -823,60 +861,6 @@ int vbsf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g, stru
  fail1:
     kfree(name);
     return err;
-}
-
-int vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len, const unsigned char *utf8_name, size_t utf8_len)
-{
-    if (sf_g->nls) {
-        const char *in;
-        char *out;
-        size_t out_len;
-        size_t out_bound_len;
-        size_t in_bound_len;
-
-        in = utf8_name;
-        in_bound_len = utf8_len;
-
-        out = name;
-        out_len = 0;
-        out_bound_len = name_bound_len;
-
-        while (in_bound_len) {
-            int nb;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
-            unicode_t uni;
-
-            nb = utf8_to_utf32(in, in_bound_len, &uni);
-#else
-            linux_wchar_t uni;
-
-            nb = utf8_mbtowc(&uni, in, in_bound_len);
-#endif
-            if (nb < 0) {
-                LogFunc(("utf8_mbtowc failed(%s) %x:%d\n", (const char *)utf8_name, *in, in_bound_len));
-                return -EINVAL;
-            }
-            in += nb;
-            in_bound_len -= nb;
-
-            nb = sf_g->nls->uni2char(uni, out, out_bound_len);
-            if (nb < 0) {
-                LogFunc(("nls->uni2char failed(%s) %x:%d\n", utf8_name, uni, out_bound_len));
-                return nb;
-            }
-            out += nb;
-            out_bound_len -= nb;
-            out_len += nb;
-        }
-
-        *out = 0;
-    } else {
-        if (utf8_len + 1 > name_bound_len)
-            return -ENAMETOOLONG;
-
-        memcpy(name, utf8_name, utf8_len + 1);
-    }
-    return 0;
 }
 
 

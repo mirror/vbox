@@ -65,9 +65,9 @@ void vbsf_handle_drop_chain(struct vbsf_inode_info *pInodeInfo)
     spin_lock_irqsave(&g_SfHandleLock, fSavedFlags);
 
     RTListForEachSafe(&pInodeInfo->HandleList, pCur, pNext, struct vbsf_handle, Entry) {
-        AssertMsg((pCur->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | vbSF_HANDLE_F_ON_LIST)) == (VBSF_HANDLE_F_MAGIC | vbSF_HANDLE_F_ON_LIST),
-                  ("%p %#x\n", pCur, pCur->fFlags));
-        pCur->fFlags |= vbSF_HANDLE_F_ON_LIST;
+        AssertMsg(   (pCur->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | VBSF_HANDLE_F_ON_LIST))
+                  ==                 (VBSF_HANDLE_F_MAGIC      | VBSF_HANDLE_F_ON_LIST), ("%p %#x\n", pCur, pCur->fFlags));
+        pCur->fFlags |= VBSF_HANDLE_F_ON_LIST;
         RTListNodeRemove(&pCur->Entry);
     }
 
@@ -91,8 +91,8 @@ struct vbsf_handle *vbsf_handle_find(struct vbsf_inode_info *pInodeInfo, uint32_
     spin_lock_irqsave(&g_SfHandleLock, fSavedFlags);
 
     RTListForEach(&pInodeInfo->HandleList, pCur, struct vbsf_handle, Entry) {
-        AssertMsg((pCur->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | vbSF_HANDLE_F_ON_LIST)) == (VBSF_HANDLE_F_MAGIC | vbSF_HANDLE_F_ON_LIST),
-                  ("%p %#x\n", pCur, pCur->fFlags));
+        AssertMsg(   (pCur->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | VBSF_HANDLE_F_ON_LIST))
+                  ==                 (VBSF_HANDLE_F_MAGIC      | VBSF_HANDLE_F_ON_LIST), ("%p %#x\n", pCur, pCur->fFlags));
         if ((pCur->fFlags & (fFlagsSet | fFlagsClear)) == fFlagsSet) {
             uint32_t cRefs = ASMAtomicIncU32(&pCur->cRefs);
             if (cRefs > 1) {
@@ -136,8 +136,8 @@ uint32_t vbsf_handle_release_slow(struct vbsf_handle *pHandle, struct vbsf_super
     Assert(pHandle->pInodeInfo);
     Assert(pHandle->pInodeInfo && pHandle->pInodeInfo->u32Magic == SF_INODE_INFO_MAGIC);
 
-    if (pHandle->fFlags & vbSF_HANDLE_F_ON_LIST) {
-        pHandle->fFlags &= ~vbSF_HANDLE_F_ON_LIST;
+    if (pHandle->fFlags & VBSF_HANDLE_F_ON_LIST) {
+        pHandle->fFlags &= ~VBSF_HANDLE_F_ON_LIST;
         RTListNodeRemove(&pHandle->Entry);
     }
 
@@ -170,24 +170,24 @@ void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *
     unsigned long fSavedFlags;
 
     SFLOGFLOW(("vbsf_handle_append: %p (to %p)\n", pHandle, pInodeInfo));
-    AssertMsg((pHandle->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | vbSF_HANDLE_F_ON_LIST)) == VBSF_HANDLE_F_MAGIC,
-          ("%p %#x\n", pHandle, pHandle->fFlags));
+    AssertMsg((pHandle->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | VBSF_HANDLE_F_ON_LIST)) == VBSF_HANDLE_F_MAGIC,
+              ("%p %#x\n", pHandle, pHandle->fFlags));
     Assert(pInodeInfo->u32Magic == SF_INODE_INFO_MAGIC);
 
     spin_lock_irqsave(&g_SfHandleLock, fSavedFlags);
 
-    AssertMsg((pHandle->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | vbSF_HANDLE_F_ON_LIST)) == VBSF_HANDLE_F_MAGIC,
+    AssertMsg((pHandle->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | VBSF_HANDLE_F_ON_LIST)) == VBSF_HANDLE_F_MAGIC,
           ("%p %#x\n", pHandle, pHandle->fFlags));
 #ifdef VBOX_STRICT
     RTListForEach(&pInodeInfo->HandleList, pCur, struct vbsf_handle, Entry) {
         Assert(pCur != pHandle);
-        AssertMsg((pCur->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | vbSF_HANDLE_F_ON_LIST)) == (VBSF_HANDLE_F_MAGIC | vbSF_HANDLE_F_ON_LIST),
-              ("%p %#x\n", pCur, pCur->fFlags));
+        AssertMsg(   (pCur->fFlags & (VBSF_HANDLE_F_MAGIC_MASK | VBSF_HANDLE_F_ON_LIST))
+                  ==                  (VBSF_HANDLE_F_MAGIC     | VBSF_HANDLE_F_ON_LIST), ("%p %#x\n", pCur, pCur->fFlags));
     }
     pHandle->pInodeInfo = pInodeInfo;
 #endif
 
-    pHandle->fFlags |= vbSF_HANDLE_F_ON_LIST;
+    pHandle->fFlags |= VBSF_HANDLE_F_ON_LIST;
     RTListAppend(&pInodeInfo->HandleList, &pHandle->Entry);
 
     spin_unlock_irqrestore(&g_SfHandleLock, fSavedFlags);
@@ -347,26 +347,139 @@ ssize_t vbsf_splice_read(struct file *in, loff_t * poffset, struct pipe_inode_in
 
 #endif /* 2.6.23 <= LINUX_VERSION_CODE < 2.6.31 */
 
-
-/** Companion to vbsf_lock_user_pages(). */
-DECLINLINE(void) vbsf_unlock_user_pages(struct page **papPages, size_t cPages, bool fSetDirty)
+/** Wrapper around put_page / page_cache_release.  */
+DECLINLINE(void) vbsf_put_page(struct page *pPage)
 {
-    while (cPages-- > 0)
-    {
-    struct page *pPage = papPages[cPages];
-    if (fSetDirty && !PageReserved(pPage))
-        SetPageDirty(pPage);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
     put_page(pPage);
 #else
     page_cache_release(pPage);
 #endif
+}
+
+
+/** Wrapper around get_page / page_cache_get.  */
+DECLINLINE(void) vbsf_get_page(struct page *pPage)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
+    get_page(pPage);
+#else
+    page_cache_get(pPage);
+#endif
+}
+
+
+/** Companion to vbsf_lock_user_pages(). */
+DECLINLINE(void) vbsf_unlock_user_pages(struct page **papPages, size_t cPages, bool fSetDirty, bool fLockPgHack)
+{
+    /* We don't mark kernel pages dirty: */
+    if (fLockPgHack)
+        fSetDirty = false;
+
+    while (cPages-- > 0)
+    {
+        struct page *pPage = papPages[cPages];
+        if (fSetDirty && !PageReserved(pPage))
+            SetPageDirty(pPage);
+        vbsf_put_page(pPage);
     }
 }
 
 
+/**
+ * Catches kernel_read() and kernel_write() calls and works around them.
+ *
+ * The file_operations::read and file_operations::write callbacks supposedly
+ * hands us the user buffers to read into and write out of.  To allow the kernel
+ * to read and write without allocating buffers in userland, they kernel_read()
+ * and kernel_write() increases the user space address limit before calling us
+ * so that copyin/copyout won't reject it.  Our problem is that get_user_pages()
+ * works on the userspace address space structures and will not be fooled by an
+ * increased addr_limit.
+ *
+ * This code tries to detect this situation and fake get_user_lock() for the
+ * kernel buffer.
+ */
+static int vbsf_lock_user_pages_failed_check_kernel(uintptr_t uPtrFrom, size_t cPages, bool fWrite, int rcFailed,
+                                                    struct page **papPages, bool *pfLockPgHack)
+{
+    /*
+     * Check that this is valid user memory that is actually in the kernel range.
+     */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+    if (   access_ok((void *)uPtrFrom, cPages << PAGE_SHIFT)
+        && uPtrFrom >= USER_DS.seg)
+#else
+    if (   access_ok(fWrite ? VERIFY_WRITE : VERIFY_READ, (void *)uPtrFrom, cPages << PAGE_SHIFT)
+        && uPtrFrom >= USER_DS.seg)
+#endif
+    {
+        uintptr_t const uPtrLast = (uPtrFrom & ~(uintptr_t)PAGE_OFFSET_MASK) + (cPages << PAGE_SHIFT) - 1;
+        uint8_t        *pbPage   = (uint8_t *)uPtrLast;
+        size_t          iPage    = cPages;
+
+        /*
+         * Touch the pages first (paranoia^2).
+         */
+        if (fWrite) {
+            uint8_t volatile *pbProbe = (uint8_t volatile *)uPtrFrom;
+            while (iPage-- > 0) {
+                *pbProbe = *pbProbe;
+                pbProbe += PAGE_SIZE;
+            }
+        } else {
+            uint8_t const *pbProbe = (uint8_t const *)uPtrFrom;
+            while (iPage-- > 0) {
+                ASMProbeReadByte(pbProbe);
+                pbProbe += PAGE_SIZE;
+            }
+        }
+
+        /*
+         * Get the pages.
+         * Note! Fixes here probably applies to rtR0MemObjNativeLockKernel as well.
+         */
+        iPage = cPages;
+        if (   uPtrFrom >= (unsigned long)__va(0)
+            && uPtrLast <  (unsigned long)high_memory)
+        {
+            /* The physical page mapping area: */
+            while (iPage-- > 0)
+            {
+                struct page *pPage = papPages[iPage] = virt_to_page(pbPage);
+                vbsf_get_page(pPage);
+                pbPage -= PAGE_SIZE;
+            }
+        }
+        else
+        {
+            /* This is vmalloc or some such thing, so go thru page tables: */
+            while (iPage-- > 0)
+            {
+                struct page *pPage = rtR0MemObjLinuxVirtToPage(pbPage);
+                if (pPage) {
+                    papPages[iPage] = pPage;
+                    vbsf_get_page(pPage);
+                    pbPage -= PAGE_SIZE;
+                } else {
+                    while (++iPage < cPages) {
+                        pPage = papPages[iPage];
+                        vbsf_put_page(pPage);
+                    }
+                    return rcFailed;
+                }
+            }
+        }
+        *pfLockPgHack = true;
+        return 0;
+    }
+
+    return rcFailed;
+}
+
+
 /** Wrapper around get_user_pages. */
-DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWrite, struct page **papPages)
+DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWrite, struct page **papPages, bool *pfLockPgHack)
 {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
     ssize_t cPagesLocked = get_user_pages_unlocked(uPtrFrom, cPages, papPages,
@@ -374,8 +487,7 @@ DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWr
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
     ssize_t cPagesLocked = get_user_pages_unlocked(uPtrFrom, cPages, fWrite, 1 /*force*/, papPages);
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
-    ssize_t cPagesLocked = get_user_pages_unlocked(current, current->mm, uPtrFrom, cPages,
-                               fWrite, 1 /*force*/, papPages);
+    ssize_t cPagesLocked = get_user_pages_unlocked(current, current->mm, uPtrFrom, cPages, fWrite, 1 /*force*/, papPages);
 # else
     struct task_struct *pTask = current;
     size_t cPagesLocked;
@@ -383,12 +495,17 @@ DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWr
     cPagesLocked = get_user_pages(current, current->mm, uPtrFrom, cPages, fWrite, 1 /*force*/, papPages, NULL);
     up_read(&pTask->mm->mmap_sem);
 # endif
+    *pfLockPgHack = false;
     if (cPagesLocked == cPages)
         return 0;
-    if (cPagesLocked < 0)
-        return cPagesLocked;
 
-    vbsf_unlock_user_pages(papPages, cPagesLocked, false /*fSetDirty*/);
+    /*
+     * It failed.
+     */
+    if (cPagesLocked < 0)
+        return vbsf_lock_user_pages_failed_check_kernel(uPtrFrom, cPages, fWrite, (int)cPagesLocked, papPages, pfLockPgHack);
+
+    vbsf_unlock_user_pages(papPages, cPagesLocked, false /*fSetDirty*/, false /*fLockPgHack*/);
 
     /* We could use uPtrFrom + cPagesLocked to get the correct status here... */
     return -EFAULT;
@@ -443,8 +560,8 @@ static ssize_t vbsf_reg_read_mapped(struct file *file, char /*__user*/ *buf, siz
  * Fallback case of vbsf_reg_read() that locks the user buffers and let the host
  * write directly to them.
  */
-static ssize_t vbsf_reg_read_fallback(struct file *file, char /*__user*/ *buf, size_t size, loff_t *off,
-                                      struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r)
+static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, size_t size, loff_t *off,
+                                     struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r)
 {
     /*
      * Lock pages and execute the read, taking care not to pass the host
@@ -460,6 +577,7 @@ static ssize_t vbsf_reg_read_fallback(struct file *file, char /*__user*/ *buf, s
     ssize_t             cbRet        = -ENOMEM;
     size_t              cPages       = (((uintptr_t)buf & PAGE_OFFSET_MASK) + size + PAGE_OFFSET_MASK) >> PAGE_SHIFT;
     size_t              cMaxPages    = RT_MIN(RT_MAX(sf_g->cMaxIoPages, 1), cPages);
+    bool                fLockPgHack;
 
     pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
     while (!pReq && cMaxPages > 4) {
@@ -485,12 +603,13 @@ static ssize_t vbsf_reg_read_fallback(struct file *file, char /*__user*/ *buf, s
                 cbChunk = (cMaxPages << PAGE_SHIFT) - cbChunk;
             }
 
-            rc = vbsf_lock_user_pages((uintptr_t)buf, cPages, true /*fWrite*/, papPages);
+            rc = vbsf_lock_user_pages((uintptr_t)buf, cPages, true /*fWrite*/, papPages, &fLockPgHack);
             if (rc == 0) {
                 size_t iPage = cPages;
                 while (iPage-- > 0)
                     pReq->PgLst.aPages[iPage] = page_to_phys(papPages[iPage]);
             } else {
+                /** @todo may need fallback here for kernel addresses during exec. sigh.   */
                 cbRet = rc;
                 break;
             }
@@ -500,7 +619,7 @@ static ssize_t vbsf_reg_read_fallback(struct file *file, char /*__user*/ *buf, s
              */
             rc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
 
-            vbsf_unlock_user_pages(papPages, cPages, true /*fSetDirty*/);
+            vbsf_unlock_user_pages(papPages, cPages, true /*fSetDirty*/, fLockPgHack);
 
             if (RT_SUCCESS(rc)) {
                 /*
@@ -646,7 +765,7 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
     }
 #endif
 
-    return vbsf_reg_read_fallback(file, buf, size, off, sf_g, sf_r);
+    return vbsf_reg_read_locking(file, buf, size, off, sf_g, sf_r);
 }
 
 
@@ -682,9 +801,9 @@ DECLINLINE(void) vbsf_reg_write_invalidate_mapping_range(struct address_space *m
  * Fallback case of vbsf_reg_write() that locks the user buffers and let the host
  * write directly to them.
  */
-static ssize_t vbsf_reg_write_fallback(struct file *file, const char /*__user*/ *buf, size_t size, loff_t *off, loff_t offFile,
-                                       struct inode *inode, struct vbsf_inode_info *sf_i,
-                                       struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r)
+static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *buf, size_t size, loff_t *off, loff_t offFile,
+                                      struct inode *inode, struct vbsf_inode_info *sf_i,
+                                      struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r)
 {
     /*
      * Lock pages and execute the write, taking care not to pass the host
@@ -699,6 +818,7 @@ static ssize_t vbsf_reg_write_fallback(struct file *file, const char /*__user*/ 
     ssize_t              cbRet        = -ENOMEM;
     size_t               cPages       = (((uintptr_t)buf & PAGE_OFFSET_MASK) + size + PAGE_OFFSET_MASK) >> PAGE_SHIFT;
     size_t               cMaxPages    = RT_MIN(RT_MAX(sf_g->cMaxIoPages, 1), cPages);
+    bool                 fLockPgHack;
 
     pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cMaxPages]));
     while (!pReq && cMaxPages > 4) {
@@ -724,7 +844,7 @@ static ssize_t vbsf_reg_write_fallback(struct file *file, const char /*__user*/ 
                 cbChunk = (cMaxPages << PAGE_SHIFT) - cbChunk;
             }
 
-            rc = vbsf_lock_user_pages((uintptr_t)buf, cPages, false /*fWrite*/, papPages);
+            rc = vbsf_lock_user_pages((uintptr_t)buf, cPages, false /*fWrite*/, papPages, &fLockPgHack);
             if (rc == 0) {
                 size_t iPage = cPages;
                 while (iPage-- > 0)
@@ -739,7 +859,7 @@ static ssize_t vbsf_reg_write_fallback(struct file *file, const char /*__user*/ 
              */
             rc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
 
-            vbsf_unlock_user_pages(papPages, cPages, false /*fSetDirty*/);
+            vbsf_unlock_user_pages(papPages, cPages, false /*fSetDirty*/, fLockPgHack);
 
             if (RT_SUCCESS(rc)) {
                 /*
@@ -920,7 +1040,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
     }
 #endif
 
-    return vbsf_reg_write_fallback(file, buf, size, off, pos, inode, sf_i, sf_g, sf_r);
+    return vbsf_reg_write_locking(file, buf, size, off, pos, inode, sf_i, sf_g, sf_r);
 }
 
 
@@ -1261,13 +1381,19 @@ static int vbsf_readpage(struct file *file, struct page *page)
     int           err;
 
     SFLOGFLOW(("vbsf_readpage: inode=%p file=%p page=%p off=%#llx\n", inode, file, page, (uint64_t)page->index << PAGE_SHIFT));
+    Assert(PageLocked(page));
+
+    if (PageUptodate(page)) {
+        unlock_page(page);
+        return 0;
+    }
 
     if (!is_bad_inode(inode)) {
         VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
         if (pReq) {
             struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-            struct vbsf_reg_info     *sf_r = file->private_data;
-            uint32_t            cbRead;
+            struct vbsf_reg_info   *sf_r = file->private_data;
+            uint32_t                cbRead;
             int                     vrc;
 
             pReq->PgLst.offFirstPage = 0;
@@ -1295,13 +1421,15 @@ static int vbsf_readpage(struct file *file, struct page *page)
 
                 flush_dcache_page(page);
                 SetPageUptodate(page);
-                err = 0;
-            } else
-                err = -EPROTO;
+                unlock_page(page);
+                return 0;
+            }
+            err = -RTErrConvertToErrno(vrc);
         } else
             err = -ENOMEM;
     } else
         err = -EIO;
+    SetPageError(page);
     unlock_page(page);
     return err;
 }
@@ -1318,11 +1446,11 @@ static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
     struct address_space   *mapping = page->mapping;
     struct inode           *inode   = mapping->host;
     struct vbsf_inode_info *sf_i    = VBSF_GET_INODE_INFO(inode);
-    struct vbsf_handle       *pHandle = vbsf_handle_find(sf_i, VBSF_HANDLE_F_WRITE, VBSF_HANDLE_F_APPEND);
+    struct vbsf_handle     *pHandle = vbsf_handle_find(sf_i, VBSF_HANDLE_F_WRITE, VBSF_HANDLE_F_APPEND);
     int                     err;
 
     SFLOGFLOW(("vbsf_writepage: inode=%p page=%p off=%#llx pHandle=%p (%#llx)\n",
-           inode, page,(uint64_t)page->index << PAGE_SHIFT, pHandle, pHandle->hHost));
+               inode, page,(uint64_t)page->index << PAGE_SHIFT, pHandle, pHandle->hHost));
 
     if (pHandle) {
         struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
@@ -1337,14 +1465,14 @@ static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
             pReq->PgLst.offFirstPage = 0;
             pReq->PgLst.aPages[0]    = page_to_phys(page);
             vrc = VbglR0SfHostReqWritePgLst(sf_g->map.root,
-                            pReq,
-                            pHandle->hHost,
-                            offInFile,
-                            cbToWrite,
-                            1 /*cPages*/);
+                                            pReq,
+                                            pHandle->hHost,
+                                            offInFile,
+                                            cbToWrite,
+                                            1 /*cPages*/);
             AssertMsgStmt(pReq->Parms.cb32Write.u.value32 == cbToWrite || RT_FAILURE(vrc), /* lazy bird */
-                      ("%#x vs %#x\n", pReq->Parms.cb32Write, cbToWrite),
-                      vrc = VERR_WRITE_ERROR);
+                          ("%#x vs %#x\n", pReq->Parms.cb32Write, cbToWrite),
+                          vrc = VERR_WRITE_ERROR);
             VbglR0PhysHeapFree(pReq);
 
             if (RT_SUCCESS(vrc)) {

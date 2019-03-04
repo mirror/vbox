@@ -165,7 +165,7 @@ struct vbsf_handle {
 #define VBSF_HANDLE_F_APPEND      UINT32_C(0x00000004)
 #define VBSF_HANDLE_F_FILE        UINT32_C(0x00000010)
 #define VBSF_HANDLE_F_DIR         UINT32_C(0x00000020)
-#define vbSF_HANDLE_F_ON_LIST     UINT32_C(0x00000080)
+#define VBSF_HANDLE_F_ON_LIST     UINT32_C(0x00000080)
 #define VBSF_HANDLE_F_MAGIC_MASK  UINT32_C(0xffffff00)
 #define VBSF_HANDLE_F_MAGIC       UINT32_C(0x75030700) /**< Maurice Ravel (1875-03-07). */
 #define VBSF_HANDLE_F_MAGIC_DEAD  UINT32_C(0x19371228)
@@ -368,6 +368,28 @@ extern int  vbsf_path_from_dentry(const char *caller, struct vbsf_super_info *sf
 extern int  vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len,
                        const unsigned char *utf8_name, size_t utf8_len);
 
+
+/**
+ * Converts Linux access permissions to VBox ones (mode & 0777).
+ *
+ * @note Currently identical.
+ * @sa   sf_access_permissions_to_linux
+ */
+DECLINLINE(uint32_t) sf_access_permissions_to_vbox(int fAttr)
+{
+    /* Access bits should be the same: */
+    AssertCompile(RTFS_UNIX_IRUSR == S_IRUSR);
+    AssertCompile(RTFS_UNIX_IWUSR == S_IWUSR);
+    AssertCompile(RTFS_UNIX_IXUSR == S_IXUSR);
+    AssertCompile(RTFS_UNIX_IRGRP == S_IRGRP);
+    AssertCompile(RTFS_UNIX_IWGRP == S_IWGRP);
+    AssertCompile(RTFS_UNIX_IXGRP == S_IXGRP);
+    AssertCompile(RTFS_UNIX_IROTH == S_IROTH);
+    AssertCompile(RTFS_UNIX_IWOTH == S_IWOTH);
+    AssertCompile(RTFS_UNIX_IXOTH == S_IXOTH);
+
+    return fAttr & RTFS_UNIX_ALL_ACCESS_PERMS;
+}
 
 #if 1
 # define TRACE()          LogFunc(("tracepoint\n"))

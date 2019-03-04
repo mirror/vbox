@@ -28,6 +28,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "vfsmod.h"
 #include <iprt/err.h>
 
@@ -779,25 +783,20 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
     }
 
     RT_ZERO(pReq->Create.CreateParms);
-    pReq->Create.CreateParms.Handle      = SHFL_HANDLE_NIL;
-    pReq->Create.CreateParms.CreateFlags = SHFL_CF_ACT_CREATE_IF_NEW
-                                         | SHFL_CF_ACT_FAIL_IF_EXISTS
-                                         | SHFL_CF_ACCESS_READWRITE
-                                         | (fDirectory ? SHFL_CF_DIRECTORY : 0);
-/** @todo use conversion function from utils.c here!   */
-    pReq->Create.CreateParms.Info.Attr.fMode = (fDirectory ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE) | (mode & S_IRWXUGO);
+    pReq->Create.CreateParms.Handle                  = SHFL_HANDLE_NIL;
+    pReq->Create.CreateParms.CreateFlags             = SHFL_CF_ACT_CREATE_IF_NEW
+                                                     | SHFL_CF_ACT_FAIL_IF_EXISTS
+                                                     | SHFL_CF_ACCESS_READWRITE
+                                                     | (fDirectory ? SHFL_CF_DIRECTORY : 0);
+    pReq->Create.CreateParms.Info.Attr.fMode         = (fDirectory ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE)
+                                                     | sf_access_permissions_to_vbox(mode);
     pReq->Create.CreateParms.Info.Attr.enmAdditional = RTFSOBJATTRADD_NOTHING;
 
     LogFunc(("calling VbglR0SfHostReqCreate, folder %s, flags %#x\n", path->String.ach, pReq->Create.CreateParms.CreateFlags));
     rc = VbglR0SfHostReqCreate(sf_g->map.root, &pReq->Create);
     if (RT_FAILURE(rc)) {
-        if (rc == VERR_WRITE_PROTECT) {
-            err = -EROFS;
-            goto fail2;
-        }
-        err = -EPROTO;
-        LogFunc(("(%d): SHFL_FN_CREATE(%s) failed rc=%Rrc\n",
-             fDirectory, sf_parent_i->path->String.utf8, rc));
+        err = -RTErrConvertToErrno(rc);
+        LogFunc(("(%d): SHFL_FN_CREATE(%s) failed rc=%Rrc err=%d\n", fDirectory, sf_parent_i->path->String.utf8, rc, err));
         goto fail2;
     }
 
@@ -1087,12 +1086,8 @@ static int vbsf_ino_symlink(struct inode *parent, struct dentry *dentry, const c
     kfree(ssymname);
 
     if (RT_FAILURE(rc)) {
-        if (rc == VERR_WRITE_PROTECT) {
-            err = -EROFS;
-            goto fail1;
-        }
+        err = RTErrConvertFromErrno(rc);
         LogFunc(("VbglR0SfSymlink(%s) failed rc=%Rrc\n", sf_i->path->String.utf8, rc));
-        err = -EPROTO;
         goto fail1;
     }
 

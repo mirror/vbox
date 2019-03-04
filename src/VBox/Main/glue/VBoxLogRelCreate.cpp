@@ -156,7 +156,7 @@ int VBoxLogRelCreate(const char *pcszEntity, const char *pcszLogFile,
     if (RT_SUCCESS(vrc))
     {
         /* make sure that we don't flood logfiles */
-        RTLogSetGroupLimit(pReleaseLogger, cMaxEntriesPerGroup);
+RT_NOREF(cMaxEntriesPerGroup);  // RTLogSetGroupLimit(pReleaseLogger, cMaxEntriesPerGroup); - don't commit !!!
 
         /* explicitly flush the log, to have some info when buffering */
         RTLogFlush(pReleaseLogger);

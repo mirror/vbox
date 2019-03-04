@@ -460,5 +460,10 @@ typedef struct tq_struct    RTR0LNXWORKQUEUEITEM;
 DECLHIDDEN(void) rtR0LnxWorkqueuePush(RTR0LNXWORKQUEUEITEM *pWork, void (*pfnWorker)(RTR0LNXWORKQUEUEITEM *));
 DECLHIDDEN(void) rtR0LnxWorkqueueFlush(void);
 
+/*
+ * Memory hacks from memobj-r0drv-linux.c that shared folders need.
+ */
+RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv);
+
 
 #endif /* !IPRT_INCLUDED_SRC_r0drv_linux_the_linux_kernel_h */

@@ -1727,6 +1727,7 @@
 # define RTR0MemUserCopyFrom                            RT_MANGLER(RTR0MemUserCopyFrom)        /* r0drv */
 # define RTR0MemUserCopyTo                              RT_MANGLER(RTR0MemUserCopyTo)          /* r0drv */
 # define RTR0MemUserIsValidAddr                         RT_MANGLER(RTR0MemUserIsValidAddr)     /* r0drv */
+# define rtR0MemObjLinuxVirtToPage                      RT_MANGLER(rtR0MemObjLinuxVirtToPage)  /* r0drv linux-only */
 # define RTR0ProcHandleSelf                             RT_MANGLER(RTR0ProcHandleSelf)         /* r0drv */
 # define RTR0Term                                       RT_MANGLER(RTR0Term)                   /* r0drv */
 # define RTR0TermForced                                 RT_MANGLER(RTR0TermForced)             /* r0drv */
