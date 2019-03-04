@@ -90,32 +90,39 @@ class tdCtxTest(object):
         ## The desired Main API result.
         self.fRc = False;
         ## IGuest reference.
-        self.oGuest = oSession.o.console.guest;
-        # Rest not used (yet).
+        self.oGuest      = oSession.o.console.guest;
+        self.oSesison    = oSession;
+        self.oTxsSesison = oTxsSession;
+        self.oTestVm     = oTestVm;
 
 class tdCtxCreds(object):
     """
     Provides credentials to pass to the guest.
     """
-    def __init__(self, sUser = None, sPassword = None, sDomain = None, oTestVm = None):
-        # If no user is specified, select the default user and
-        # password for the given test VM.
-        if sUser is None:
-            assert sPassword is None;
-            assert sDomain is None;
-            assert oTestVm is not None;
-
-            ## @todo fix this so all VMs have several usable test users with the same passwords (or none).
-            if oTestVm.isWindows():
-                sUser = 'Administrator';
-            else:
-                sUser = 'vbox';
-            sPassword = 'password';
-            sDomain   = '';
-
+    def __init__(self, sUser = None, sPassword = None, sDomain = None):
         self.sUser     = sUser;
-        self.sPassword = sPassword if sPassword is not None else '';
-        self.sDomain   = sDomain if sDomain is not None else '';
+        self.sPassword = sPassword;
+        self.sDomain   = sDomain;
+
+    def applyDefaultsIfNotSet(self, oTestVm):
+        """
+        Applies credential defaults, based on the test VM (guest OS), if
+        no credentials were set yet.
+        """
+        self.oTestVm = oTestVm;
+        assert self.oTestVm is not None;
+
+        if self.sUser is None:
+            if self.oTestVm.isWindows():
+                self.sUser = 'Administrator';
+            else:
+                self.sUser = 'vbox';
+
+        if self.sPassword is None:
+            self.sPassword = 'password';
+
+        if self.sDomain is None:
+            self.sDomain   = '';
 
 class tdTestGuestCtrlBase(object):
     """
@@ -135,6 +142,7 @@ class tdTestGuestCtrlBase(object):
         Sets the test environment required for this test.
         """
         self.oTest = tdCtxTest(oSession, oTxsSession, oTestVm);
+        self.oCreds.applyDefaultsIfNotSet(oTestVm);
         return self.oTest;
 
     def uploadLogData(self, oTstDrv, aData, sFileName, sDesc):
@@ -225,9 +233,9 @@ class tdTestCopyFrom(tdTestGuestCtrlBase):
     """
     Test for copying files from the guest to the host.
     """
-    def __init__(self, sSrc = "", sDst = "", sUser = "", sPassword = "", aFlags = None):
+    def __init__(self, sSrc = "", sDst = "", sUser = None, sPassword = None, aFlags = None):
         tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = "");
+        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sSrc = sSrc;
         self.sDst = sDst;
         self.aFlags = aFlags;
@@ -236,9 +244,9 @@ class tdTestCopyTo(tdTestGuestCtrlBase):
     """
     Test for copying files from the host to the guest.
     """
-    def __init__(self, sSrc = "", sDst = "", sUser = "", sPassword = "", aFlags = None):
+    def __init__(self, sSrc = "", sDst = "", sUser = None, sPassword = None, aFlags = None):
         tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = "");
+        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sSrc = sSrc;
         self.sDst = sDst;
         self.aFlags = aFlags;
@@ -247,9 +255,9 @@ class tdTestDirCreate(tdTestGuestCtrlBase):
     """
     Test for directoryCreate call.
     """
-    def __init__(self, sDirectory = "", sUser = "", sPassword = "", fMode = 0, aFlags = None):
+    def __init__(self, sDirectory = "", sUser = None, sPassword = None, fMode = 0, aFlags = None):
         tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = "");
+        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sDirectory = sDirectory;
         self.fMode = fMode;
         self.aFlags = aFlags;
@@ -258,9 +266,9 @@ class tdTestDirCreateTemp(tdTestGuestCtrlBase):
     """
     Test for the directoryCreateTemp call.
     """
-    def __init__(self, sDirectory = "", sTemplate = "", sUser = "", sPassword = "", fMode = 0, fSecure = False):
+    def __init__(self, sDirectory = "", sTemplate = "", sUser = None, sPassword = None, fMode = 0, fSecure = False):
         tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = "");
+        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sDirectory = sDirectory;
         self.sTemplate = sTemplate;
         self.fMode = fMode;
@@ -270,10 +278,10 @@ class tdTestDirOpen(tdTestGuestCtrlBase):
     """
     Test for the directoryOpen call.
     """
-    def __init__(self, sDirectory = "", sUser = "", sPassword = "",
+    def __init__(self, sDirectory = "", sUser = None, sPassword = None,
                  sFilter = "", aFlags = None):
         tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = "");
+        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sDirectory = sDirectory;
         self.sFilter = sFilter;
         self.aFlags = aFlags or [];
@@ -282,7 +290,7 @@ class tdTestDirRead(tdTestDirOpen):
     """
     Test for the opening, reading and closing a certain directory.
     """
-    def __init__(self, sDirectory = "", sUser = "", sPassword = "",
+    def __init__(self, sDirectory = "", sUser = None, sPassword = None,
                  sFilter = "", aFlags = None):
         tdTestDirOpen.__init__(self, sDirectory, sUser, sPassword, sFilter, aFlags);
 
@@ -293,7 +301,7 @@ class tdTestExec(tdTestGuestCtrlBase):
     """
     def __init__(self, sCmd = "", aArgs = None, aEnv = None, \
                  aFlags = None, timeoutMS = 5 * 60 * 1000, \
-                 sUser = "", sPassword = "", sDomain = "", \
+                 sUser = None, sPassword = None, sDomain = None, \
                  fWaitForExit = True):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain);
@@ -313,27 +321,27 @@ class tdTestFileExists(tdTestGuestCtrlBase):
     """
     Test for the file exists API call (fileExists).
     """
-    def __init__(self, sFile = "", sUser = "", sPassword = ""):
+    def __init__(self, sFile = "", sUser = None, sPassword = None):
         tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = "");
+        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sFile = sFile;
 
 class tdTestFileRemove(tdTestGuestCtrlBase):
     """
     Test querying guest file information.
     """
-    def __init__(self, sFile = "", sUser = "", sPassword = ""):
+    def __init__(self, sFile = "", sUser = None, sPassword = None):
         tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = "");
+        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sFile = sFile;
 
 class tdTestFileStat(tdTestGuestCtrlBase):
     """
     Test querying guest file information.
     """
-    def __init__(self, sFile = "", sUser = "", sPassword = "", cbSize = 0, eFileType = 0):
+    def __init__(self, sFile = "", sUser = None, sPassword = None, cbSize = 0, eFileType = 0):
         tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = "");
+        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sFile = sFile;
         self.cbSize = cbSize;
         self.eFileType = eFileType;
@@ -342,31 +350,31 @@ class tdTestFileIO(tdTestGuestCtrlBase):
     """
     Test for the IGuestFile object.
     """
-    def __init__(self, sFile = "", sUser = "", sPassword = ""):
+    def __init__(self, sFile = "", sUser = None, sPassword = None):
         tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = "");
+        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sFile = sFile;
 
 class tdTestFileQuerySize(tdTestGuestCtrlBase):
     """
     Test for the file size query API call (fileQuerySize).
     """
-    def __init__(self, sFile = "", sUser = "", sPassword = ""):
+    def __init__(self, sFile = "", sUser = None, sPassword = None):
         tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = "");
+        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sFile = sFile;
 
 class tdTestFileReadWrite(tdTestGuestCtrlBase):
     """
     Tests reading from guest files.
     """
-    def __init__(self, sFile = "", sUser = "", sPassword = "",
+    def __init__(self, sFile = "", sUser = None, sPassword = None,
                  sOpenMode = "r", sDisposition = "",
                  sSharingMode = "",
                  lCreationMode = 0, cbOffset = 0, cbToReadWrite = 0,
                  aBuf = None):
         tdTestGuestCtrlBase.__init__(self);
-        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = "");
+        self.oCreds = tdCtxCreds(sUser, sPassword, sDomain = None);
         self.sFile = sFile;
         self.sOpenMode = sOpenMode;
         self.sDisposition = sDisposition;
@@ -402,7 +410,7 @@ class tdTestSession(tdTestGuestCtrlBase):
     """
     Test the guest session handling.
     """
-    def __init__(self, sUser = "", sPassword = "", sDomain = "", \
+    def __init__(self, sUser = None, sPassword = None, sDomain = None, \
                  sSessionName = ""):
         tdTestGuestCtrlBase.__init__(self);
         self.sSessionName = sSessionName;
@@ -436,7 +444,7 @@ class tdTestSessionEx(tdTestGuestCtrlBase):
         # Create a session.
         #
         assert self.enmUser is None; # For later.
-        self.oCreds = tdCtxCreds(oTestVm = oTestVm);
+        self.oCreds = tdCtxCreds();
         self.setEnvironment(oVmSession, oTxsSession, oTestVm);
         reporter.log2('%s: %s steps' % (sMsgPrefix, len(self.aoSteps),));
         fRc, oCurSession = self.createSession(sMsgPrefix);
@@ -848,7 +856,7 @@ class tdTestUpdateAdditions(tdTestGuestCtrlBase):
     Test updating the Guest Additions inside the guest.
     """
     def __init__(self, sSrc = "", aArgs = None, aFlags = None,
-                 sUser = "", sPassword = "", sDomain = ""):
+                 sUser = None, sPassword = None, sDomain = None):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain);
         self.sSrc = sSrc;
@@ -1477,35 +1485,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests the guest session handling.
         """
 
-        if oTestVm.isWindows():
-            sUser = "Administrator";
-        else:
-            sUser = "vbox";
-        sPassword = "password";
-
         aaTests = [
             # Invalid parameters.
-            [ tdTestSession(),
-              tdTestResultSession(fRc = False) ],
-            [ tdTestSession(sUser = ''),
-              tdTestResultSession(fRc = False) ],
-            [ tdTestSession(sPassword = 'bar'),
-              tdTestResultSession(fRc = False) ],
-            [ tdTestSession(sDomain = 'boo'),
-              tdTestResultSession(fRc = False) ],
-            [ tdTestSession(sPassword = 'bar', sDomain = 'boo'),
-              tdTestResultSession(fRc = False) ],
+            [ tdTestSession(sUser = ''), tdTestResultSession() ],
+            [ tdTestSession(sPassword = 'bar'), tdTestResultSession() ],
+            [ tdTestSession(sDomain = 'boo'),tdTestResultSession() ],
+            [ tdTestSession(sPassword = 'bar', sDomain = 'boo'), tdTestResultSession() ],
             # User account without a passwort - forbidden.
-            [ tdTestSession(sUser = sUser),
-              tdTestResultSession(fRc = False) ],
+            [ tdTestSession(sPassword = "" ), tdTestResultSession() ],
             # Wrong credentials.
             # Note: On Guest Additions < 4.3 this always succeeds because these don't
             #       support creating dedicated sessions. Instead, guest process creation
             #       then will fail. See note below.
-            [ tdTestSession(sUser = 'foo', sPassword = 'bar', sDomain = 'boo'),
-              tdTestResultSession(fRc = False) ],
+            [ tdTestSession(sUser = 'foo', sPassword = 'bar', sDomain = 'boo'), tdTestResultSession() ],
             # Correct credentials.
-            [ tdTestSession(sUser = sUser, sPassword = sPassword),
+            [ tdTestSession(),
               tdTestResultSession(fRc = True, cNumSessions = 1) ]
         ];
 
@@ -1557,7 +1551,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         multiSession = {};
         reporter.log2('Opening multiple guest tsessions at once ...');
         for i in range(iMaxGuestSessions + 1):
-            multiSession[i] = tdTestSession(sUser = sUser, sPassword = sPassword, sSessionName = 'MultiSession #%d' % (i,));
+            multiSession[i] = tdTestSession(sSessionName = 'MultiSession #%d' % (i,));
             multiSession[i].setEnvironment(oSession, oTxsSession, oTestVm);
             curSessionCount = multiSession[i].getSessionCount(self.oTstDrv.oVBoxMgr);
             reporter.log2('MultiSession test #%d count is %d' % (i, curSessionCount));
@@ -1628,15 +1622,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         if oTestVm.isWindows():
-            sUser = "Administrator";
-            sPassword = "password";
-            sDomain = "";
             sFile = "C:\\windows\\system32\\kernel32.dll";
         elif oTestVm.isLinux():
-            sUser = "vbox";
-            sPassword = "password";
-            sDomain = "";
             sFile = "/bin/sh";
+
+        # Use credential defaults.
+        oCreds = tdCtxCreds();
+        oCreds.applyDefaultsIfNotSet(oTestVm);
 
         # Number of stale guest files to create.
         cStaleFiles = 10;
@@ -1644,8 +1636,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         fRc = True;
         try:
             oGuest = oSession.o.console.guest;
-            oGuestSession = oGuest.createSession(sUser, sPassword, sDomain, \
-                                                 "testGuestCtrlSessionFileRefs");
+            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlSessionFileRefs");
             fWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
             waitResult = oGuestSession.waitForArray(fWaitFor, 30 * 1000);
             #
@@ -1768,14 +1759,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         if oTestVm.isWindows():
-            sUser = "Administrator";
             sCmd = "C:\\windows\\system32\\cmd.exe";
         elif oTestVm.isLinux():
-            sUser = "vbox";
             sCmd = "/bin/sh";
-        sPassword = "password";
-        sDomain = "";
         aArgs = [sCmd,];
+
+        # Use credential defaults.
+        oCreds = tdCtxCreds();
+        oCreds.applyDefaultsIfNotSet(oTestVm);
 
         # Number of stale guest processes to create.
         cStaleProcs = 10;
@@ -1783,8 +1774,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         fRc = True;
         try:
             oGuest = oSession.o.console.guest;
-            oGuestSession = oGuest.createSession(sUser, sPassword, sDomain, \
-                                                 "testGuestCtrlSessionProcRefs");
+            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlSessionProcRefs");
             fWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
             waitResult = oGuestSession.waitForArray(fWaitFor, 30 * 1000);
             #
@@ -1926,98 +1916,69 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         if oTestVm.isWindows():
-            sUser = "Administrator";
-        else:
-            sUser = "vbox";
-        sPassword = "password";
-
-        if oTestVm.isWindows():
             sImageOut = "C:\\windows\\system32\\cmd.exe";
         else:
-            sImageOut = "/bin/sh";
+            sImageOut = "/bin/ls";
 
         aaInvalid = [
             # Invalid parameters.
-            [ tdTestExec(sUser = sUser, sPassword = sPassword),
-              tdTestResultExec(fRc = False) ],
+            [ tdTestExec(), tdTestResultExec() ],
             # Non-existent / invalid image.
-            [ tdTestExec(sCmd = "non-existent", sUser = sUser, sPassword = sPassword),
-              tdTestResultExec(fRc = False) ],
-            [ tdTestExec(sCmd = "non-existent2", sUser = sUser, sPassword = sPassword, fWaitForExit = True),
-              tdTestResultExec(fRc = False) ],
+            [ tdTestExec(sCmd = "non-existent"), tdTestResultExec() ],
+            [ tdTestExec(sCmd = "non-existent2"), tdTestResultExec() ],
             # Use an invalid format string.
-            [ tdTestExec(sCmd = "%$%%%&", sUser = sUser, sPassword = sPassword),
-              tdTestResultExec(fRc = False) ],
+            [ tdTestExec(sCmd = "%$%%%&"), tdTestResultExec() ],
             # More stuff.
-            [ tdTestExec(sCmd = u"ƒ‰‹ˆ÷‹¸", sUser = sUser, sPassword = sPassword),
-              tdTestResultExec(fRc = False) ],
-            [ tdTestExec(sCmd = "???://!!!", sUser = sUser, sPassword = sPassword),
-              tdTestResultExec(fRc = False) ],
-            [ tdTestExec(sCmd = "<>!\\", sUser = sUser, sPassword = sPassword),
-              tdTestResultExec(fRc = False) ]
+            [ tdTestExec(sCmd = u"ƒ‰‹ˆ÷‹¸"), tdTestResultExec() ],
+            [ tdTestExec(sCmd = "???://!!!"), tdTestResultExec() ],
+            [ tdTestExec(sCmd = "<>!\\"), tdTestResultExec() ],
             # Enable as soon as ERROR_BAD_DEVICE is implemented.
-            #[ tdTestExec(sCmd = "CON", sUser = sUser, sPassword = sPassword),
-            #  tdTestResultExec(fRc = False) ]
+            #[ tdTestExec(sCmd = "CON", tdTestResultExec() ],
         ];
 
         if oTestVm.isWindows():
             sVBoxControl = "C:\\Program Files\\Oracle\\VirtualBox Guest Additions\\VBoxControl.exe";
             aaExec = [
                 # Basic executon.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32\\kernel32.dll' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32\\kernel32.dll' ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32\\nonexist.dll' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32\\nonexist.dll' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', '/wrongparam' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', '/wrongparam' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # Paths with spaces.
                 ## @todo Get path of installed Guest Additions. Later.
-                [ tdTestExec(sCmd = sVBoxControl, aArgs = [ sVBoxControl, 'version' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sVBoxControl, aArgs = [ sVBoxControl, 'version' ]),
                   tdTestResultExec(fRc = True) ],
                 # StdOut.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdout-non-existing' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdout-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stderr-non-existing' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stderr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # StdOut + StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdouterr-non-existing' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdouterr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 # FIXME: Failing tests.
                 # Environment variables.
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_NONEXIST' ],
-                #              sUser = sUser, sPassword = sPassword),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'windir' ],
-                #              sUser = sUser, sPassword = sPassword,
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'windir=C:\\WINDOWS\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
-                #              sUser = sUser, sPassword = sPassword,
                 #              aEnv = [ 'TEST_FOO=BAR' ],
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
-                #              sUser = sUser, sPassword = sPassword,
                 #              aEnv = [ 'TEST_FOO=BAR', 'TEST_BAZ=BAR' ],
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ]
@@ -2029,63 +1990,46 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sVBoxControl = "/usr/bin/VBoxControl"; # Symlink
             aaExec = [
                 # Basic executon.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-c', 'ls', '/R', 'etc' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-R', '/etc' ]),
+                  tdTestResultExec(fRc = True, iExitCode = 1) ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/bin/sh' ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-c', 'ls /bin/sh' ],
-                             sUser = sUser, sPassword = sPassword),
-                  tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '--wrong-parameter' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '--wrong-parameter' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-c', 'ls /non/existent' ],
-                             sUser = sUser, sPassword = sPassword),
-                  tdTestResultExec(fRc = True, iExitCode = 2) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-c', 'ls /bin/sh /wrongparam' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/non/existent' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
                 # Paths with spaces.
                 ## @todo Get path of installed Guest Additions. Later.
-                [ tdTestExec(sCmd = sVBoxControl, aArgs = [ sVBoxControl, 'version' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sVBoxControl, aArgs = [ sVBoxControl, 'version' ]),
                   tdTestResultExec(fRc = True) ],
                 # StdOut.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-c', 'ls /etc' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/etc' ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-c', 'ls stdout-non-existing' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, 'stdout-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
                 # StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-c', 'ls /etc' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/etc' ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-c', 'ls stderr-non-existing' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, 'stderr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
                 # StdOut + StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-c', 'ls /etc' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/etc' ]),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '-c', 'ls stdouterr-non-existing' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, 'stdouterr-non-existing' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ]
                 # FIXME: Failing tests.
                 # Environment variables.
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_NONEXIST' ],
-                #              sUser = sUser, sPassword = sPassword),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'windir' ],
-                #              sUser = sUser, sPassword = sPassword,
+                #
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'windir=C:\\WINDOWS\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
-                #              sUser = sUser, sPassword = sPassword,
                 #              aEnv = [ 'TEST_FOO=BAR' ],
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ],
                 # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
-                #              sUser = sUser, sPassword = sPassword,
                 #              aEnv = [ 'TEST_FOO=BAR', 'TEST_BAZ=BAR' ],
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ]
@@ -2093,8 +2037,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 ## @todo Create some files (or get files) we know the output size of to validate output length!
                 ## @todo Add task which gets killed at some random time while letting the guest output something.
             ];
-        else:
-            reporter.log('No OS-specific tests for non-Windows yet!');
 
         # Build up the final test array for the first batch.
         aaTests = [];
@@ -2124,6 +2066,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             fRc = curTest.closeSession();
             if fRc is False:
                 break;
+
+        reporter.log('Execution of all tests done, checking for stale sessions');
 
         # No sessions left?
         if fRc is True:
@@ -2181,6 +2125,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         except:
             reporter.logXcpt('Could not create one session:');
 
+        reporter.log('Execution of all tests done, checking for stale sessions again');
+
         # No sessions left?
         if fRc is True:
             cSessions = len(self.oTstDrv.oVBoxMgr.getArray(oSession.o.console.guest, 'sessions'));
@@ -2196,12 +2142,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         if oTestVm.isWindows():
-            sUser = "Administrator";
-        else:
-            sUser = "vbox";
-        sPassword = "password";
-
-        if oTestVm.isWindows():
             sImage = "C:\\windows\\system32\\cmd.exe";
         else:
             sImage = "/bin/sh";
@@ -2210,65 +2150,53 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isWindows():
             aaTests.extend([
                 # Simple.
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'wrongcommand' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'wrongcommand' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'exit', '22' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'exit', '22' ]),
                   tdTestResultExec(fRc = True, iExitCode = 22) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'set', 'ERRORLEVEL=234' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'set', 'ERRORLEVEL=234' ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'echo', '%WINDIR%' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'echo', '%WINDIR%' ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'set', 'ERRORLEVEL=0' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'set', 'ERRORLEVEL=0' ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32\\kernel32.dll' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32\\kernel32.dll' ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ]),
                   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 # FIXME: Failing tests.
                 # With stdout.
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
-                #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
+                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
-                #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
+                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
-                #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
+                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # With stderr.
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
-                #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
-                #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
-                #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
+                #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # With stdout/stderr.
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
-                #              sUser = sUser, sPassword = sPassword,
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
-                #              sUser = sUser, sPassword = sPassword,
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
-                #              sUser = sUser, sPassword = sPassword,
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 ## @todo Test stdin!
@@ -2276,29 +2204,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         elif oTestVm.isLinux():
             aaTests.extend([
                 # Simple.
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'wrongcommand' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'wrongcommand' ]),
                   tdTestResultExec(fRc = True, iExitCode = 127) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'exit 22' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'exit 22' ]),
                   tdTestResultExec(fRc = True, iExitCode = 22) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'echo $PWD' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'echo $PWD' ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'export MY_ERRORLEVEL=0' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'export MY_ERRORLEVEL=0' ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /etc' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /etc' ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /bin/sh' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /bin/sh' ]),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /non/existing/file' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /non/existing/file' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /non/existing/dir/' ],
-                             sUser = sUser, sPassword = sPassword),
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '-c', 'ls /non/existing/dir/' ]),
                   tdTestResultExec(fRc = True, iExitCode = 2) ]
             ]);
 
@@ -2324,21 +2244,18 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         if oTestVm.isWindows():
-            sUser = "Administrator";
-        else:
-            sUser = "vbox";
-        sPassword = "password";
-        sDomain   = "";
-
-        if oTestVm.isWindows():
             sImage = "C:\\windows\\system32\\cmd.exe";
         else:
             sImage = "/bin/sh";
 
+        # Use credential defaults.
+        oCreds = tdCtxCreds();
+        oCreds.applyDefaultsIfNotSet(oTestVm);
+
         fRc = True;
         try:
             oGuest = oSession.o.console.guest;
-            oGuestSession = oGuest.createSession(sUser, sPassword, sDomain, "testGuestCtrlExecTimeout");
+            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, "testGuestCtrlExecTimeout");
             oGuestSession.waitForArray([ vboxcon.GuestSessionWaitForFlag_Start ], 30 * 1000);
             # Create a process which never terminates and should timeout when
             # waiting for termination.
@@ -2413,12 +2330,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         if oTestVm.isWindows():
-            sUser = "Administrator";
-        else:
-            sUser = "vbox";
-        sPassword = "password";
-
-        if oTestVm.isWindows():
             sScratch  = "C:\\Temp\\vboxtest\\testGuestCtrlDirCreate\\";
         else:
             sScratch  = "/tmp/testGuestCtrlDirCreate/";
@@ -2426,44 +2337,33 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aaTests = [];
         aaTests.extend([
             # Invalid stuff.
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword, sDirectory = '' ),
-              tdTestResult(fRc = False) ],
+            [ tdTestDirCreate(sDirectory = '' ), tdTestResult() ],
             # More unusual stuff.
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword, sDirectory = '..\\..\\' ),
-              tdTestResult(fRc = False) ],
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword, sDirectory = '../../' ),
-              tdTestResult(fRc = False) ],
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword, sDirectory = 'z:\\' ),
-              tdTestResult(fRc = False) ],
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword, sDirectory = '\\\\uncrulez\\foo' ),
-              tdTestResult(fRc = False) ],
+            [ tdTestDirCreate(sDirectory = '..\\..\\' ), tdTestResult() ],
+            [ tdTestDirCreate(sDirectory = '../../' ), tdTestResult() ],
+            [ tdTestDirCreate(sDirectory = 'z:\\' ), tdTestResult() ],
+            [ tdTestDirCreate(sDirectory = '\\\\uncrulez\\foo' ), tdTestResult() ],
             # Creating directories.
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword, sDirectory = sScratch ),
-              tdTestResult(fRc = False) ],
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword, sDirectory = os.path.join(sScratch, 'foo\\bar\\baz'),
-                                aFlags = [ vboxcon.DirectoryCreateFlag_Parents ] ),
+            [ tdTestDirCreate(sDirectory = sScratch ), tdTestResult() ],
+            [ tdTestDirCreate(sDirectory = os.path.join(sScratch, 'foo\\bar\\baz'),
+                              aFlags = [ vboxcon.DirectoryCreateFlag_Parents ] ),
               tdTestResult(fRc = True) ],
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword, sDirectory = os.path.join(sScratch, 'foo\\bar\\baz'),
-                                aFlags = [ vboxcon.DirectoryCreateFlag_Parents ] ),
+            [ tdTestDirCreate(sDirectory = os.path.join(sScratch, 'foo\\bar\\baz'),
+                              aFlags = [ vboxcon.DirectoryCreateFlag_Parents ] ),
               tdTestResult(fRc = True) ],
             # Long (+ random) stuff.
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword,
-                                sDirectory = os.path.join(sScratch,
+            [ tdTestDirCreate(sDirectory = os.path.join(sScratch,
                                                         "".join(random.choice(string.ascii_lowercase) for i in range(32))) ),
               tdTestResult(fRc = True) ],
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword,
-                                sDirectory = os.path.join(sScratch,
+            [ tdTestDirCreate(sDirectory = os.path.join(sScratch,
                                                         "".join(random.choice(string.ascii_lowercase) for i in range(128))) ),
               tdTestResult(fRc = True) ],
             # Following two should fail on Windows (paths too long). Both should timeout.
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword,
-                                sDirectory = os.path.join(sScratch,
+            [ tdTestDirCreate(sDirectory = os.path.join(sScratch,
                                                         "".join(random.choice(string.ascii_lowercase) for i in range(255))) ),
               tdTestResult(fRc = not oTestVm.isWindows()) ],
-            [ tdTestDirCreate(sUser = sUser, sPassword = sPassword,
-                                sDirectory = os.path.join(sScratch,
-                                                        "".join(random.choice(string.ascii_lowercase) for i in range(255)))
-                                ),
+            [ tdTestDirCreate(sDirectory = os.path.join(sScratch,
+                                                        "".join(random.choice(string.ascii_lowercase) for i in range(255))) ),
               tdTestResult(fRc = not oTestVm.isWindows()) ]
         ]);
 
@@ -2491,147 +2391,109 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests creation of temporary directories.
         """
 
-        if oTestVm.isWindows():
-            sUser = "Administrator";
-        else:
-            sUser = "vbox";
-        sPassword = "password";
-
         aaTests = [];
         if oTestVm.isWindows():
             aaTests.extend([
                 # Invalid stuff.
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sDirectory = ''),
-                  tdTestResult(fRc = False) ],
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sDirectory = 'C:\\Windows',
-                                      fMode = 1234),
-                  tdTestResult(fRc = False) ],
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = '',
-                                      sDirectory = 'C:\\Windows', fMode = 1234),
-                  tdTestResult(fRc = False) ],
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'xXx',
-                                      sDirectory = 'C:\\Windows', fMode = 0o700),
-                  tdTestResult(fRc = False) ],
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'xxx',
-                                      sDirectory = 'C:\\Windows', fMode = 0o700),
-                  tdTestResult(fRc = False) ],
+                [ tdTestDirCreateTemp(sDirectory = ''), tdTestResult() ],
+                [ tdTestDirCreateTemp(sDirectory = 'C:\\Windows', fMode = 1234), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = '', sDirectory = 'C:\\Windows', fMode = 1234), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = 'xXx', sDirectory = 'C:\\Windows', fMode = 0o700), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = 'xxx', sDirectory = 'C:\\Windows', fMode = 0o700), tdTestResult() ],
                 # More unusual stuff.
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'foo',
-                                      sDirectory = 'z:\\'),
-                  tdTestResult(fRc = False) ],
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'foo',
-                                      sDirectory = '\\\\uncrulez\\foo'),
-                  tdTestResult(fRc = False) ],
+                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = 'z:\\'), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = '\\\\uncrulez\\foo'), tdTestResult() ],
                 # Non-existing stuff.
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'bar',
-                                      sDirectory = 'c:\\Apps\\nonexisting\\foo'),
-                  tdTestResult(fRc = False) ],
+                [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = 'c:\\Apps\\nonexisting\\foo'), tdTestResult() ],
                 # FIXME: Failing test. Non Windows path
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'bar',
-                #                       sDirectory = '/tmp/non/existing'),
-                #   tdTestResult(fRc = False) ]
+                # [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = '/tmp/non/existing'), tdTestResult() ]
             ]);
         elif oTestVm.isLinux():
             aaTests.extend([
                 # Invalid stuff.
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sDirectory = ''),
-                  tdTestResult(fRc = False) ],
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sDirectory = '/etc',
-                                      fMode = 1234),
-                  tdTestResult(fRc = False) ],
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = '',
-                                      sDirectory = '/etc', fMode = 1234),
-                  tdTestResult(fRc = False) ],
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'xXx',
-                                      sDirectory = '/etc', fMode = 0o700),
-                  tdTestResult(fRc = False) ],
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'xxx',
-                                      sDirectory = '/etc', fMode = 0o700),
-                  tdTestResult(fRc = False) ],
+                [ tdTestDirCreateTemp(sDirectory = ''), tdTestResult() ],
+                [ tdTestDirCreateTemp(sDirectory = '/etc', fMode = 1234) ],
+                [ tdTestDirCreateTemp(sTemplate = '', sDirectory = '/etc', fMode = 1234), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = 'xXx', sDirectory = '/etc', fMode = 0o700), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = 'xxx', sDirectory = '/etc', fMode = 0o700), tdTestResult() ],
                 # More unusual stuff.
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'foo',
-                                      sDirectory = 'z:\\'),
-                  tdTestResult(fRc = False) ],
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'foo',
-                                      sDirectory = '\\\\uncrulez\\foo'),
-                  tdTestResult(fRc = False) ],
+                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = 'z:\\'), tdTestResult() ],
+                [ tdTestDirCreateTemp(sTemplate = 'foo', sDirectory = '\\\\uncrulez\\foo'), tdTestResult() ],
                 # Non-existing stuff.
-                [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'bar',
-                                      sDirectory = '/non/existing'),
-                  tdTestResult(fRc = False) ]
+                [ tdTestDirCreateTemp(sTemplate = 'bar', sDirectory = '/non/existing'), tdTestResult() ],
             ]);
 
             # FIXME: Failing tests.
             # aaTests.extend([
                 # Non-secure variants.
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'X',
+                # [ tdTestDirCreateTemp(sTemplate = 'X',
                 #                       sDirectory = sScratch),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'X',
+                # [ tdTestDirCreateTemp(sTemplate = 'X',
                 #                       sDirectory = sScratch),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fMode = 0o700),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                     sDirectory = sScratch,
                 #                     fMode = 0o700),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fMode = 0o755),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fMode = 0o755),
                 #   tdTestResult(fRc = True) ],
                 # Secure variants.
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch, fSecure = True),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch, fSecure = True),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch, fSecure = True),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch, fSecure = True),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o700),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o700),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = 'XXX',
+                # [ tdTestDirCreateTemp(sTemplate = 'XXX',
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
                 #   tdTestResult(fRc = True) ],
                 # Random stuff.
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword,
+                # [ tdTestDirCreateTemp(
                 #                       sTemplate = "XXX-".join(random.choice(string.ascii_lowercase) for i in range(32)),
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = "".join('X' for i in range(32)),
+                # [ tdTestDirCreateTemp(sTemplate = "".join('X' for i in range(32)),
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
                 #   tdTestResult(fRc = True) ],
-                # [ tdTestDirCreateTemp(sUser = sUser, sPassword = sPassword, sTemplate = "".join('X' for i in range(128)),
+                # [ tdTestDirCreateTemp(sTemplate = "".join('X' for i in range(128)),
                 #                       sDirectory = sScratch,
                 #                       fSecure = True, fMode = 0o755),
                 #   tdTestResult(fRc = True) ]
@@ -2677,61 +2539,42 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests opening and reading (enumerating) guest directories.
         """
 
-        if oTestVm.isWindows():
-            sUser = "Administrator";
-        else:
-            sUser = "vbox";
-        sPassword = "password";
-
         aaTests = [];
         if oTestVm.isWindows():
             aaTests.extend([
                 # Invalid stuff.
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = ''),
-                  tdTestResultDirRead(fRc = False) ],
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'C:\\Windows', aFlags = [ 1234 ]),
-                  tdTestResultDirRead(fRc = False) ],
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'C:\\Windows', sFilter = '*.foo'),
-                  tdTestResultDirRead(fRc = False) ],
+                [ tdTestDirRead(sDirectory = ''), tdTestResultDirRead(fRc = False) ],
+                [ tdTestDirRead(sDirectory = 'C:\\Windows', aFlags = [ 1234 ]), tdTestResultDirRead() ],
+                [ tdTestDirRead(sDirectory = 'C:\\Windows', sFilter = '*.foo'), tdTestResultDirRead() ],
                 # More unusual stuff.
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'z:\\'),
-                  tdTestResultDirRead(fRc = False) ],
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '\\\\uncrulez\\foo'),
-                  tdTestResultDirRead(fRc = False) ],
+                [ tdTestDirRead(sDirectory = 'z:\\'), tdTestResultDirRead() ],
+                [ tdTestDirRead(sDirectory = '\\\\uncrulez\\foo'), tdTestResultDirRead() ],
                 # Non-existing stuff.
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'c:\\Apps\\nonexisting'),
-                  tdTestResultDirRead(fRc = False) ],
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'c:\\Apps\\testDirRead'),
-                  tdTestResultDirRead(fRc = False) ]
+                [ tdTestDirRead(sDirectory = 'c:\\Apps\\nonexisting'), tdTestResultDirRead() ],
+                [ tdTestDirRead(sDirectory = 'c:\\Apps\\testDirRead'), tdTestResultDirRead() ]
             ]);
 
             if oTestVm.sVmName.startswith('tst-xpsp2'):
                 aaTests.extend([
                     # Reading directories.
-                    [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '../../Windows/Media'),
+                    [ tdTestDirRead(sDirectory = '../../Windows/Media'),
                       tdTestResultDirRead(fRc = True, numFiles = 38) ],
-                    [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'c:\\Windows\\Help'),
+                    [ tdTestDirRead(sDirectory = 'c:\\Windows\\Help'),
                       tdTestResultDirRead(fRc = True, numDirs = 13, numFiles = 574) ],
-                    [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'c:\\Windows\\Web'),
+                    [ tdTestDirRead(sDirectory = 'c:\\Windows\\Web'),
                       tdTestResultDirRead(fRc = True, numDirs = 3, numFiles = 49) ]
                 ]);
         elif oTestVm.isLinux():
             aaTests.extend([
                 # Invalid stuff.
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = ''),
-                  tdTestResultDirRead(fRc = False) ],
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '/etc', aFlags = [ 1234 ]),
-                  tdTestResultDirRead(fRc = False) ],
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '/etc', sFilter = '*.foo'),
-                  tdTestResultDirRead(fRc = False) ],
+                [ tdTestDirRead(sDirectory = ''), tdTestResultDirRead() ],
+                [ tdTestDirRead(sDirectory = '/etc', aFlags = [ 1234 ]), tdTestResultDirRead() ],
+                [ tdTestDirRead(sDirectory = '/etc', sFilter = '*.foo'), tdTestResultDirRead() ],
                 # More unusual stuff.
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = 'z:/'),
-                  tdTestResultDirRead(fRc = False) ],
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '\\\\uncrulez\\foo'),
-                  tdTestResultDirRead(fRc = False) ],
+                [ tdTestDirRead(sDirectory = 'z:/'), tdTestResultDirRead() ],
+                [ tdTestDirRead(sDirectory = '\\\\uncrulez\\foo'), tdTestResultDirRead() ],
                 # Non-existing stuff.
-                [ tdTestDirRead(sUser = sUser, sPassword = sPassword, sDirectory = '/etc/non/existing'),
-                  tdTestResultDirRead(fRc = False) ]
+                [ tdTestDirRead(sDirectory = '/etc/non/existing'), tdTestResultDirRead() ]
             ]);
 
         fRc = True;
@@ -2767,74 +2610,53 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         if oTestVm.isWindows():
-            sUser = "Administrator";
             sFileToDelete = "c:\\Windows\\Media\\chord.wav";
         else:
-            sUser = "vbox";
             sFileToDelete = "/home/vbox/.profile";
-        sPassword = "password";
 
         aaTests = [];
         if oTestVm.isWindows():
             aaTests.extend([
                 # Invalid stuff.
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = ''),
-                  tdTestResult(fRc = False) ],
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows'),
-                  tdTestResult(fRc = False) ],
+                [ tdTestFileRemove(sFile = ''), tdTestResult() ],
+                [ tdTestFileRemove(sFile = 'C:\\Windows'), tdTestResult() ],
                 # More unusual stuff.
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'z:\\'),
-                  tdTestResult(fRc = False) ],
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = '\\\\uncrulez\\foo'),
-                  tdTestResult(fRc = False) ],
+                [ tdTestFileRemove(sFile = 'z:\\'), tdTestResult() ],
+                [ tdTestFileRemove(sFile = '\\\\uncrulez\\foo'), tdTestResult() ],
                 # Non-existing stuff.
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Apps\\nonexisting'),
-                  tdTestResult(fRc = False) ],
+                [ tdTestFileRemove(sFile = 'c:\\Apps\\nonexisting'), tdTestResult() ],
                 # Try to delete system files.
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\pagefile.sys'),
-                  tdTestResult(fRc = False) ],
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\kernel32.sys'),
-                  tdTestResult(fRc = False) ]
+                [ tdTestFileRemove(sFile = 'c:\\pagefile.sys'), tdTestResult() ],
+                [ tdTestFileRemove(sFile = 'c:\\Windows\\kernel32.sys'), tdTestResult() ]
             ]);
 
             if oTestVm.sKind == "WindowsXP":
                 aaTests.extend([
                     # Try delete some unimportant media stuff.
-                    [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\Media\\chimes.wav'),
-                      tdTestResult(fRc = True) ],
+                    [ tdTestFileRemove(sFile = 'c:\\Windows\\Media\\chimes.wav'), tdTestResult(fRc = True) ],
                     # Second attempt should fail.
-                    [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'c:\\Windows\\Media\\chimes.wav'),
-                      tdTestResult(fRc = False) ]
+                    [ tdTestFileRemove(sFile = 'c:\\Windows\\Media\\chimes.wav'), tdTestResult() ]
                 ]);
         elif oTestVm.isLinux():
             aaTests.extend([
                 # Invalid stuff.
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = ''),
-                  tdTestResult(fRc = False) ],
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows'),
-                  tdTestResult(fRc = False) ],
+                [ tdTestFileRemove(sFile = ''), tdTestResult() ],
+                [ tdTestFileRemove(sFile = 'C:\\Windows'), tdTestResult() ],
                 # More unusual stuff.
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = 'z:/'),
-                  tdTestResult(fRc = False) ],
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = '//uncrulez/foo'),
-                  tdTestResult(fRc = False) ],
+                [ tdTestFileRemove(sFile = 'z:/'), tdTestResult() ],
+                [ tdTestFileRemove(sFile = '//uncrulez/foo'), tdTestResult() ],
                 # Non-existing stuff.
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = '/non/existing'),
-                  tdTestResult(fRc = False) ],
+                [ tdTestFileRemove(sFile = '/non/existing'), tdTestResult() ],
                 # Try to delete system files.
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = '/etc'),
-                  tdTestResult(fRc = False) ],
-                [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = '/bin/sh'),
-                  tdTestResult(fRc = False) ]
+                [ tdTestFileRemove(sFile = '/etc'), tdTestResult() ],
+                [ tdTestFileRemove(sFile = '/bin/sh'), tdTestResult() ]
             ]);
 
         aaTests.extend([
             # Try delete some unimportant stuff.
-            [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = sFileToDelete),
-                tdTestResult(fRc = True) ],
+            [ tdTestFileRemove(sFile = sFileToDelete), tdTestResult(fRc = True) ],
             # Second attempt should fail.
-            [ tdTestFileRemove(sUser = sUser, sPassword = sPassword, sFile = sFileToDelete),
-                tdTestResult(fRc = False) ]
+            [ tdTestFileRemove(sFile = sFileToDelete), tdTestResult() ]
         ]);
 
         fRc = True;
@@ -2952,12 +2774,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests reading from guest files.
         """
 
-        if oTestVm.isWindows():
-            sUser = "Administrator";
-        else:
-            sUser = "vbox";
-        sPassword = "password";
-
         if oTxsSession.syncMkDir('${SCRATCH}/testGuestCtrlFileRead') is False:
             reporter.error('Could not create scratch directory on guest');
             return (False, oTxsSession);
@@ -2965,70 +2781,55 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aaTests = [];
         aaTests.extend([
             # Invalid stuff.
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, cbToReadWrite = 0),
-              tdTestResultFileReadWrite(fRc = False) ],
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = ''),
-              tdTestResultFileReadWrite(fRc = False) ],
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'non-existing.file'),
-              tdTestResultFileReadWrite(fRc = False) ],
+            [ tdTestFileReadWrite(cbToReadWrite = 0), tdTestResultFileReadWrite() ],
+            [ tdTestFileReadWrite(sFile = ''), tdTestResultFileReadWrite() ],
+            [ tdTestFileReadWrite(sFile = 'non-existing.file'), tdTestResultFileReadWrite() ],
             # Wrong open mode.
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'non-existing.file', \
-                                  sOpenMode = 'rt', sDisposition = 'oe'),
-              tdTestResultFileReadWrite(fRc = False) ],
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = '\\\\uncrulez\\non-existing.file', \
-                                  sOpenMode = 'tr', sDisposition = 'oe'),
-              tdTestResultFileReadWrite(fRc = False) ],
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = '../../non-existing.file', \
-                                  sOpenMode = 'wr', sDisposition = 'oe'),
-              tdTestResultFileReadWrite(fRc = False) ],
+            [ tdTestFileReadWrite(sFile = 'non-existing.file', sOpenMode = 'rt', sDisposition = 'oe'),
+              tdTestResultFileReadWrite() ],
+            [ tdTestFileReadWrite(sFile = '\\\\uncrulez\\non-existing.file', sOpenMode = 'tr', sDisposition = 'oe'),
+              tdTestResultFileReadWrite() ],
+            [ tdTestFileReadWrite(sFile = '../../non-existing.file', sOpenMode = 'wr', sDisposition = 'oe'),
+              tdTestResultFileReadWrite() ],
             # Wrong disposition.
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'non-existing.file', \
-                                  sOpenMode = 'r', sDisposition = 'e'),
-              tdTestResultFileReadWrite(fRc = False) ],
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = '\\\\uncrulez\\non-existing.file', \
-                                  sOpenMode = 'r', sDisposition = 'o'),
-              tdTestResultFileReadWrite(fRc = False) ],
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = '../../non-existing.file', \
-                                  sOpenMode = 'r', sDisposition = 'c'),
-              tdTestResultFileReadWrite(fRc = False) ],
+            [ tdTestFileReadWrite(sFile = 'non-existing.file', sOpenMode = 'r', sDisposition = 'e'),
+              tdTestResultFileReadWrite() ],
+            [ tdTestFileReadWrite(sFile = '\\\\uncrulez\\non-existing.file', sOpenMode = 'r', sDisposition = 'o'),
+              tdTestResultFileReadWrite() ],
+            [ tdTestFileReadWrite(sFile = '../../non-existing.file', sOpenMode = 'r', sDisposition = 'c'),
+              tdTestResultFileReadWrite() ],
             # Opening non-existing file when it should exist.
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'non-existing.file', \
-                                  sOpenMode = 'r', sDisposition = 'oe'),
-              tdTestResultFileReadWrite(fRc = False) ],
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = '\\\\uncrulez\\non-existing.file', \
-                                  sOpenMode = 'r', sDisposition = 'oe'),
-              tdTestResultFileReadWrite(fRc = False) ],
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = '../../non-existing.file', \
-                                  sOpenMode = 'r', sDisposition = 'oe'),
-              tdTestResultFileReadWrite(fRc = False) ]
+            [ tdTestFileReadWrite(sFile = 'non-existing.file', sOpenMode = 'r', sDisposition = 'oe'),
+              tdTestResultFileReadWrite() ],
+            [ tdTestFileReadWrite(sFile = '\\\\uncrulez\\non-existing.file', sOpenMode = 'r', sDisposition = 'oe'),
+              tdTestResultFileReadWrite() ],
+            [ tdTestFileReadWrite(sFile = '../../non-existing.file', sOpenMode = 'r', sDisposition = 'oe'),
+              tdTestResultFileReadWrite() ]
         ]);
 
         if oTestVm.isWindows():
             aaTests.extend([
                 # Create a file which must not exist (but it hopefully does).
-                [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows\\System32\\calc.exe', \
-                                      sOpenMode = 'w', sDisposition = 'ce'),
-                  tdTestResultFileReadWrite(fRc = False) ],
+                [ tdTestFileReadWrite(sFile = 'C:\\Windows\\System32\\calc.exe', sOpenMode = 'w', sDisposition = 'ce'),
+                  tdTestResultFileReadWrite() ],
                 # Open a file which must exist.
-                [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows\\System32\\kernel32.dll', \
-                                      sOpenMode = 'r', sDisposition = 'oe'),
+                [ tdTestFileReadWrite(sFile = 'C:\\Windows\\System32\\kernel32.dll', sOpenMode = 'r', sDisposition = 'oe'),
                   tdTestResultFileReadWrite(fRc = True) ],
                 # Try truncating a file which already is opened with a different sharing mode (and thus should fail).
-                [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows\\System32\\kernel32.dll', \
-                                      sOpenMode = 'w', sDisposition = 'ot'),
-                  tdTestResultFileReadWrite(fRc = False) ]
+                [ tdTestFileReadWrite(sFile = 'C:\\Windows\\System32\\kernel32.dll', sOpenMode = 'w', sDisposition = 'ot'),
+                  tdTestResultFileReadWrite() ]
             ]);
 
             # Note: tst-xppro has other contents in eula.txt.
             if oTestVm.sVmName.startswith('tst-xpsp2'):
                 aaTests.extend([
                     # Reading from beginning.
-                    [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows\\System32\\eula.txt',
+                    [ tdTestFileReadWrite(sFile = 'C:\\Windows\\System32\\eula.txt',
                                         sOpenMode = 'r', sDisposition = 'oe', cbToReadWrite = 33),
                       tdTestResultFileReadWrite(fRc = True, aBuf = 'Microsoft(r) Windows(r) XP Profes',
                                                 cbProcessed = 33, cbOffset = 33) ],
                     # Reading from offset.
-                    [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = 'C:\\Windows\\System32\\eula.txt',
+                    [ tdTestFileReadWrite(sFile = 'C:\\Windows\\System32\\eula.txt',
                                         sOpenMode = 'r', sDisposition = 'oe', cbOffset = 17769, cbToReadWrite = 31),
                       tdTestResultFileReadWrite(fRc = True, aBuf = 'only with the HARDWARE. If\x0d\x0a   ',
                                                 cbProcessed = 31, cbOffset = 17769 + 31) ]
@@ -3036,17 +2837,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         elif oTestVm.isLinux():
             aaTests.extend([
                 # Create a file which must not exist (but it hopefully does).
-                [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = '/etc/issue', \
-                                      sOpenMode = 'w', sDisposition = 'ce'),
-                  tdTestResultFileReadWrite(fRc = False) ],
+                [ tdTestFileReadWrite(sFile = '/etc/issue', sOpenMode = 'w', sDisposition = 'ce'),
+                  tdTestResultFileReadWrite() ],
                 # Open a file which must exist.
-                [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = '/etc/issue', \
-                                      sOpenMode = 'r', sDisposition = 'oe'),
+                [ tdTestFileReadWrite(sFile = '/etc/issue', sOpenMode = 'r', sDisposition = 'oe'),
                   tdTestResultFileReadWrite(fRc = True) ],
                 # Try truncating a file which already is opened with a different sharing mode (and thus should fail).
-                [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = '/etc/issue', \
-                                      sOpenMode = 'w', sDisposition = 'ot'),
-                  tdTestResultFileReadWrite(fRc = False) ]
+                [ tdTestFileReadWrite(sFile = '/etc/issue', sOpenMode = 'w', sDisposition = 'ot'),
+                  tdTestResultFileReadWrite() ]
             ]);
 
         fRc = True;
@@ -3129,12 +2927,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         if oTestVm.isWindows():
-            sUser = "Administrator";
-        else:
-            sUser = "vbox";
-        sPassword = "password";
-
-        if oTestVm.isWindows():
             sScratch = "C:\\Temp\\vboxtest\\testGuestCtrlFileWrite\\";
         else:
             sScratch = "/tmp/";
@@ -3149,7 +2941,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aScratchBuf = os.urandom(cScratchBuf);
         aaTests.extend([
             # Write to a non-existing file.
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = sScratch + 'testGuestCtrlFileWrite.txt',
+            [ tdTestFileReadWrite(sFile = sScratch + 'testGuestCtrlFileWrite.txt',
                                   sOpenMode = 'w+', sDisposition = 'ce', cbToReadWrite = cScratchBuf,
                                   aBuf = aScratchBuf),
               tdTestResultFileReadWrite(fRc = True, aBuf = aScratchBuf, \
@@ -3159,7 +2951,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aScratchBuf2 = os.urandom(cScratchBuf);
         aaTests.extend([
             # Append the same amount of data to the just created file.
-            [ tdTestFileReadWrite(sUser = sUser, sPassword = sPassword, sFile = sScratch + 'testGuestCtrlFileWrite.txt',
+            [ tdTestFileReadWrite(sFile = sScratch + 'testGuestCtrlFileWrite.txt',
                                   sOpenMode = 'w+', sDisposition = 'oa', cbToReadWrite = cScratchBuf,
                                   cbOffset = cScratchBuf, aBuf = aScratchBuf2),
               tdTestResultFileReadWrite(fRc = True, aBuf = aScratchBuf2, \
@@ -3279,16 +3071,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         if oTestVm.isWindows():
-            sUser = "Administrator";
             sScratchGst = "C:\\Temp\\vboxtest\\testGuestCtrlCopyTo\\";
             sScratchGstNotExist = "C:\\does-not-exist\\";
             sScratchGstInvalid = "?*|invalid-name?*|";
         else:
-            sUser = "vbox";
             sScratchGst = "/tmp/"; ## @todo Use "${SCRATCH}/testGuestCtrlCopyTo" as soon as TXS CHMOD is implemented.
             sScratchGstNotExist = "/tmp/does-not-exist/";
             sScratchGstInvalid = "/";
-        sPassword = "password";
 
         if oTxsSession.syncMkDir('${SCRATCH}/testGuestCtrlCopyTo') is False:
             reporter.error('Could not create scratch directory on guest');
@@ -3311,33 +3100,19 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aaTests = [];
         aaTests.extend([
             # Destination missing.
-            [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = ''),
-                tdTestResult(fRc = False) ],
-            [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = '/placeholder',
-                            aFlags = [ 80 ] ),
-                tdTestResult(fRc = False) ],
+            [ tdTestCopyTo(sSrc = ''), tdTestResult() ],
+            [ tdTestCopyTo(sSrc = '/placeholder', aFlags = [ 80 ] ), tdTestResult() ],
             # Source missing.
-            [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sDst = ''),
-                tdTestResult(fRc = False) ],
-            [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sDst = '/placeholder',
-                            aFlags = [ 80 ] ),
-                tdTestResult(fRc = False) ],
+            [ tdTestCopyTo(sDst = ''), tdTestResult() ],
+            [ tdTestCopyTo(sDst = '/placeholder', aFlags = [ 80 ] ), tdTestResult() ],
             # Testing DirectoryCopyFlag flags.
-            [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
-                            sDst = sScratchGstInvalid, aFlags = [ 80 ] ),
-                tdTestResult(fRc = False) ],
+            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, aFlags = [ 80 ] ), tdTestResult() ],
             # Testing FileCopyFlag flags.
-            [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
-                            sDst = sScratchGstInvalid, aFlags = [ 80 ] ),
-                tdTestResult(fRc = False) ],
+            [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid, aFlags = [ 80 ] ), tdTestResult() ],
             # Nothing to copy (source and/or destination is empty).
-            [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'z:\\'),
-                tdTestResult(fRc = False) ],
-            [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = '\\\\uncrulez\\foo'),
-                tdTestResult(fRc = False) ],
-            [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = 'non-exist',
-                            sDst = os.path.join(sScratchGst, 'non-exist.dll')),
-                tdTestResult(fRc = False) ]
+            [ tdTestCopyTo(sSrc = 'z:\\'), tdTestResult() ],
+            [ tdTestCopyTo(sSrc = '\\\\uncrulez\\foo'), tdTestResult() ],
+            [ tdTestCopyTo(sSrc = 'non-exist', sDst = os.path.join(sScratchGst, 'non-exist.dll')), tdTestResult() ]
         ]);
 
         #
@@ -3345,32 +3120,21 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         #
         if self.oTstDrv.fpApiVer > 5.2:
             aaTests.extend([
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
-                                sDst = sScratchGstInvalid),
-                  tdTestResult(fRc = False) ],
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
-                                sDst = sScratchGstNotExist),
-                  tdTestResult(fRc = False) ],
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
-                                sDst = sScratchGstNotExist),
-                  tdTestResult(fRc = False) ],
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
-                                sDst = os.path.join(sScratchGstNotExist, 'renamedfile.dll')),
-                  tdTestResult(fRc = False) ],
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
-                                sDst = os.path.join(sScratchGst, 'HostGABig.dat')),
+                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstInvalid), tdTestResult() ],
+                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstNotExist), tdTestResult() ],
+                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGstNotExist), tdTestResult() ],
+                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGstNotExist, 'renamedfile.dll')),
+                  tdTestResult() ],
+                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGst, 'HostGABig.dat')),
                   tdTestResult(fRc = True) ],
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
-                                sDst = os.path.join(sScratchGst, 'HostGABig.dat')),
+                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGst, 'HostGABig.dat')),
                   tdTestResult(fRc = True) ],
                 # Note: Copying files into directories via Main is supported only in versions > 5.2.
                 # Destination is a directory.
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
-                                sDst = sScratchGst),
+                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGst),
                   tdTestResult(fRc = True) ],
                 # Copy over file again into same directory (overwrite).
-                [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
-                                sDst = sScratchGst),
+                [ tdTestCopyTo(sSrc = sTestFileBig, sDst = sScratchGst),
                   tdTestResult(fRc = True) ]
             ]);
 
@@ -3378,8 +3142,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 aaTests.extend([
                     # Copy the same file over to the guest, but this time store the file into the former
                     # file's ADS (Alternate Data Stream). Only works on Windows, of course.
-                    [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = sTestFileBig,
-                                    sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
+                    [ tdTestCopyTo(sSrc = sTestFileBig, sDst = os.path.join(sScratchGst, 'HostGABig.dat:ADS-Test')),
                       tdTestResult(fRc = True) ]
                 ]);
 
@@ -3395,11 +3158,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         ## @todo r=klaus disabled, because this can fill up the guest disk, making other tests fail,
                         ## additionally it's not really clear if this fails reliably on all Windows versions, even
                         ## the old ones like XP with a "proper" administrator.
-                        #[ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = os.path.join(sSystemRoot, 'security'),
+                        #[ tdTestCopyTo(sSrc = os.path.join(sSystemRoot, 'security'),
                         #               sDst = sScratchGst, aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
-                        #  tdTestResult(fRc = False) ],
+                        #
                         # Copying directories with regular files.
-                        [ tdTestCopyTo(sUser = sUser, sPassword = sPassword, sSrc = os.path.join(sSystemRoot, 'Help'),
+                        [ tdTestCopyTo(sSrc = os.path.join(sSystemRoot, 'Help'),
                                        sDst = sScratchGst, aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                           tdTestResult(fRc = True) ]
                         ]);
@@ -3456,16 +3219,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
 
         if oTestVm.isWindows():
-            sUser = "Administrator";
             sPathSep         = "\\";
             sSrcDirExisting  = "C:\\Windows\\Web";
             sSrcFileExisting = "C:\\Windows\\system32\\ole32.dll";
         else:
-            sUser = "vbox";
             sPathSep         = "/";
             sSrcDirExisting  = "/bin";
             sSrcFileExisting = "/etc/issue";
-        sPassword = "password";
 
         sScratchHst = os.path.join(self.oTstDrv.sScratchPath, "testGctrlCopyFrom");
 
@@ -3489,33 +3249,19 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         aaTests = [];
         aaTests.extend([
             # Destination missing.
-            [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = ''),
-              tdTestResult(fRc = False) ],
-            [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'Something',
-                             aFlags = [ 80 ] ),
-              tdTestResult(fRc = False) ],
+            [ tdTestCopyFrom(sSrc = ''), tdTestResult() ],
+            [ tdTestCopyFrom(sSrc = 'Something', aFlags = [ 80 ] ), tdTestResult() ],
             # Source missing.
-            [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sDst = ''),
-              tdTestResult(fRc = False) ],
-            [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sDst = 'Something',
-                             aFlags = [ 80 ] ),
-              tdTestResult(fRc = False) ],
+            [ tdTestCopyFrom(sDst = ''), tdTestResult() ],
+            [ tdTestCopyFrom(sDst = 'Something', aFlags = [ 80 ] ), tdTestResult() ],
             # Testing DirectoryCopyFlag flags.
-            [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcDirExisting,
-                             sDst = sScratchHstInvalid, aFlags = [ 80 ] ),
-              tdTestResult(fRc = False) ],
+            [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHstInvalid, aFlags = [ 80 ] ), tdTestResult() ],
             # Testing FileCopyFlag flags.
-            [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcFileExisting,
-                             sDst = sScratchHstInvalid, aFlags = [ 80 ] ),
-              tdTestResult(fRc = False) ],
+            [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHstInvalid, aFlags = [ 80 ] ), tdTestResult() ],
             # Nothing to copy (sDst is empty / unreachable).
-            [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'z:\\'),
-              tdTestResult(fRc = False) ],
-            [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = '\\\\uncrulez\\foo'),
-              tdTestResult(fRc = False) ],
-            [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = 'non-exist',
-                             sDst = os.path.join(sScratchHst, 'non-exist')),
-              tdTestResult(fRc = False) ]
+            [ tdTestCopyFrom(sSrc = 'z:\\'), tdTestResult() ],
+            [ tdTestCopyFrom(sSrc = '\\\\uncrulez\\foo'), tdTestResult() ],
+            [ tdTestCopyFrom(sSrc = 'non-exist', sDst = os.path.join(sScratchHst, 'non-exist')), tdTestResult() ]
         ]);
 
         #
@@ -3525,35 +3271,26 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log(("Single file handling"));
             aaTests.extend([
                 # Copying single files.
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcFileExisting,
-                                    sDst = sScratchHstInvalid),
-                  tdTestResult(fRc = False) ],
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcFileExisting,
-                                 sDst = os.path.join(sScratchHstInvalid, 'tstCopyFrom-renamedfile')),
-                  tdTestResult(fRc = False) ],
+                [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHstInvalid), tdTestResult() ],
+                [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = os.path.join(sScratchHstInvalid, 'tstCopyFrom-renamedfile')),
+                  tdTestResult() ],
                 # Copy over file using a different destination name.
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcFileExisting,
-                                 sDst = os.path.join(sScratchHst, 'tstCopyFrom-renamedfile')),
+                [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = os.path.join(sScratchHst, 'tstCopyFrom-renamedfile')),
                   tdTestResult(fRc = True) ],
                 # Copy over same file (and overwrite existing one).
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcFileExisting,
-                                 sDst = os.path.join(sScratchHst, 'tstCopyFrom-renamedfile')),
+                [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = os.path.join(sScratchHst, 'tstCopyFrom-renamedfile')),
                   tdTestResult(fRc = True) ],
                 # Note: Copying files into directories via Main is supported only in versions > 5.2.
                 # Destination is a directory with a trailing slash (should work).
                 # See "cp" syntax.
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcFileExisting,
-                                 sDst = sScratchHst + "/"),
+                [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHst + "/"),
                   tdTestResult(fRc = True) ],
                 # Destination is a directory (without a trailing slash, should also work).
                 # See "cp" syntax.
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcFileExisting,
-                                 sDst = sScratchHst),
+                [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHst),
                   tdTestResult(fRc = True) ],
                 # Destination is a non-existing directory.
-                [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcFileExisting,
-                                 sDst = sScratchHstNotExist),
-                  tdTestResult(fRc = False) ]
+                [ tdTestCopyFrom(sSrc = sSrcFileExisting, sDst = sScratchHstNotExist), tdTestResult() ]
             ]);
 
             #
@@ -3563,31 +3300,25 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.log(("Directory handling"));
                 aaTests.extend([
                     # Copying entire directories (destination is "<sScratchHst>\Web").
-                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcDirExisting,
-                                     sDst = sScratchHst),
+                    [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHst),
                       tdTestResult(fRc = True) ],
                     # Repeat -- this time it should fail, as the destination directory already exists (and
                     # DirectoryCopyFlag_CopyIntoExisting is not specified).
-                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcDirExisting,
-                                     sDst = sScratchHst),
-                      tdTestResult(fRc = False) ],
+                    [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHst), tdTestResult() ],
                     # Next try with the DirectoryCopyFlag_CopyIntoExisting flag being set.
-                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcDirExisting,
-                                     sDst = sScratchHst, aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                    [ tdTestCopyFrom(sSrc = sSrcDirExisting, sDst = sScratchHst,
+                                     aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ] ),
                       tdTestResult(fRc = True) ],
                     # Ditto, with trailing slash.
-                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcDirExisting,
+                    [ tdTestCopyFrom(sSrc = sSrcDirExisting,
                                      sDst = sScratchHst + "/", aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
                       tdTestResult(fRc = True) ],
                     # Copying contents of directories into a non-existing directory chain on the host which fail.
-                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcDirExisting + sPathSep,
-                                     sDst = sScratchHstNotExistChain,
-                                     aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
-                      tdTestResult(fRc = False) ],
+                    [ tdTestCopyFrom(sSrc = sSrcDirExisting + sPathSep, sDst = sScratchHstNotExistChain,
+                                     aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]), tdTestResult() ],
                     # Copying contents of directories into a non-existing directory on the host, which should succeed.
-                    [ tdTestCopyFrom(sUser = sUser, sPassword = sPassword, sSrc = sSrcDirExisting + sPathSep,
-                                     sDst = sScratchHstNotExist,
-                                     aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ]),
+                    [ tdTestCopyFrom(sSrc = sSrcDirExisting + sPathSep, sDst = sScratchHstNotExist,
+                                     aFlags = [ vboxcon.DirectoryCopyFlag_CopyIntoExisting ] ),
                       tdTestResult(fRc = True) ]
                 ]);
 
@@ -3652,12 +3383,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         Tests updating the Guest Additions inside the guest.
         """
 
-        if oTestVm.isWindows():
-            sUser = "Administrator";
-        else:
-            sUser = "vbox";
-        sPassword = "password";
-
         # Some stupid trickery to guess the location of the iso.
         sVBoxValidationKitISO = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../VBoxValidationKit.iso'));
         if not os.path.isfile(sVBoxValidationKitISO):
@@ -3691,28 +3416,28 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isWindows():
             aaTests.extend([
                 # Source is missing.
-                [ tdTestUpdateAdditions(sUser = sUser, sPassword = sPassword, sSrc = ''),
-                  tdTestResult(fRc = False) ],
+                [ tdTestUpdateAdditions(sSrc = ''), tdTestResult() ],
+
                 # Wrong aFlags.
-                [ tdTestUpdateAdditions(sUser = sUser, sPassword = sPassword, sSrc = self.oTstDrv.getGuestAdditionsIso(),
-                                        aFlags = [ 1234 ]),
-                  tdTestResult(fRc = False) ],
+                [ tdTestUpdateAdditions(sSrc = self.oTstDrv.getGuestAdditionsIso(),
+                                        aFlags = [ 1234 ]), tdTestResult() ],
+
                 # Non-existing .ISO.
-                [ tdTestUpdateAdditions(sUser = sUser, sPassword = sPassword, sSrc = "non-existing.iso"),
-                  tdTestResult(fRc = False) ],
+                [ tdTestUpdateAdditions(sSrc = "non-existing.iso"), tdTestResult() ],
+
                 # Wrong .ISO.
-                [ tdTestUpdateAdditions(sUser = sUser, sPassword = sPassword, sSrc = sVBoxValidationKitISO),
-                  tdTestResult(fRc = False) ],
+                [ tdTestUpdateAdditions(sSrc = sVBoxValidationKitISO), tdTestResult() ],
+
                 # The real thing.
-                [ tdTestUpdateAdditions(sUser = sUser, sPassword = sPassword, sSrc = self.oTstDrv.getGuestAdditionsIso()),
+                [ tdTestUpdateAdditions(sSrc = self.oTstDrv.getGuestAdditionsIso()),
                   tdTestResult(fRc = True) ],
                 # Test the (optional) installer arguments. This will extract the
                 # installer into our guest's scratch directory.
-                [ tdTestUpdateAdditions(sUser = sUser, sPassword = sPassword, sSrc = self.oTstDrv.getGuestAdditionsIso(),
+                [ tdTestUpdateAdditions(sSrc = self.oTstDrv.getGuestAdditionsIso(),
                                         aArgs = [ '/extract', '/D=' + sScratch ]),
                   tdTestResult(fRc = True) ]
                 # Some debg ISO. Only enable locally.
-                #[ tdTestUpdateAdditions(sUser = sUser, sPassword = sPassword,
+                #[ tdTestUpdateAdditions(
                 #                      sSrc = "V:\\Downloads\\VBoxGuestAdditions-r80354.iso"),
                 #  tdTestResult(fRc = True) ]
             ]);
