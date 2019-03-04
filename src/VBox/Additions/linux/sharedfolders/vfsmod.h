@@ -212,17 +212,18 @@ struct vbsf_inode_info {
 extern void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSOBJINFO info, struct vbsf_super_info *sf_g);
 extern void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo, PSHFLFSOBJINFO pObjInfo,
                               struct vbsf_super_info *sf_g, bool fInodeLocked);
-extern int  vbsf_inode_revalidate(struct dentry *dentry);
-extern int  vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced);
+extern int  vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced, bool fInodeLocked);
 extern int  vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced, bool fInodeLocked);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 extern int  vbsf_inode_getattr(const struct path *path, struct kstat *kstat, u32 request_mask, unsigned int query_flags);
 # else
 extern int  vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat);
 # endif
 extern int  vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr);
-#endif
+#else  /* < 2.5.44 */
+extern int  vbsf_inode_revalidate(struct dentry *dentry);
+#endif /* < 2.5.44 */
 
 
 extern void              vbsf_handle_drop_chain(struct vbsf_inode_info *pInodeInfo);

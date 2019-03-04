@@ -243,10 +243,7 @@ void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSO
 /**
  * Update the inode with new object info from the host.
  *
- * Called by sf_inode_revalidate() and sf_inode_revalidate_with_handle(), the
- * inode is probably locked...
- *
- * @todo sort out the inode locking situation.
+ * Called by sf_inode_revalidate() and sf_inode_revalidate_with_handle().
  */
 void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo, PSHFLFSOBJINFO pObjInfo,
                        struct vbsf_super_info *sf_g, bool fInodeLocked)
@@ -369,7 +366,7 @@ int vbsf_stat(const char *caller, struct vbsf_super_info *sf_g, SHFLSTRING *path
  *
  * @sa sf_inode_revalidate()
  */
-int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced)
+int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced, bool fInodeLocked)
 {
     int rc;
     struct inode *pInode = dentry ? dentry->d_inode : NULL;
@@ -402,7 +399,7 @@ int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced)
                         /*
                          * Reset the TTL and copy the info over into the inode structure.
                          */
-                        vbsf_update_inode(pInode, sf_i, &pReq->ObjInfo, sf_g, true /*fInodeLocked??*/);
+                        vbsf_update_inode(pInode, sf_i, &pReq->ObjInfo, sf_g, fInodeLocked);
                     } else if (rc == VERR_INVALID_HANDLE) {
                         rc = -ENOENT; /* Restore.*/
                     } else {
@@ -430,7 +427,7 @@ int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced)
                             /*
                              * Reset the TTL and copy the info over into the inode structure.
                              */
-                            vbsf_update_inode(pInode, sf_i, &pReq->CreateParms.Info, sf_g, true /*fInodeLocked??*/);
+                            vbsf_update_inode(pInode, sf_i, &pReq->CreateParms.Info, sf_g, fInodeLocked);
                             rc = 0;
                         } else {
                             rc = -ENOENT;
@@ -455,19 +452,23 @@ int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced)
 }
 
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 18)
 /**
- * Revalidate an inode.
+ * Revalidate an inode for 2.4.
  *
- * This is called directly as inode-op on 2.4, indirectly as dir-op
- * vbsf_dentry_revalidate() on 2.4/2.6.  The job is to find out whether
- * dentry/inode is still valid.  The test fails if @a dentry does not have an
- * inode or vbsf_stat() is unsuccessful, otherwise we return success and update
- * inode attributes.
+ * This is called in the stat(), lstat() and readlink() code paths.  In the stat
+ * cases the caller will use the result afterwards to produce the stat data.
+ *
+ * @note 2.4.x has a getattr() inode operation too, but it is not used.
  */
 int vbsf_inode_revalidate(struct dentry *dentry)
 {
-    return vbsf_inode_revalidate_worker(dentry, false /*fForced*/);
+    /*
+     * We pretend the inode is locked here, as 2.4.x does not have inode level locking.
+     */
+    return vbsf_inode_revalidate_worker(dentry, false /*fForced*/, true /*fInodeLocked*/);
 }
+#endif /* < 2.5.18 */
 
 
 /**
@@ -524,7 +525,7 @@ int vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFil
    effect) updates inode attributes for [dentry] (given that [dentry]
    has inode at all) from these new attributes we derive [kstat] via
    [generic_fillattr] */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int vbsf_inode_getattr(const struct path *path, struct kstat *kstat, u32 request_mask, unsigned int flags)
@@ -550,11 +551,11 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
      */
     switch (flags & AT_STATX_SYNC_TYPE) {
         default:
-            rc = vbsf_inode_revalidate_worker(dentry, false /*fForced*/);
+            rc = vbsf_inode_revalidate_worker(dentry, false /*fForced*/, false /*fInodeLocked*/);
             break;
 
         case AT_STATX_FORCE_SYNC:
-            rc = vbsf_inode_revalidate_worker(dentry, true /*fForced*/);
+            rc = vbsf_inode_revalidate_worker(dentry, true /*fForced*/, false /*fInodeLocked*/);
             break;
 
         case AT_STATX_DONT_SYNC:
@@ -562,7 +563,7 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
             break;
     }
 # else
-    rc = vbsf_inode_revalidate_worker(dentry, false /*fForced*/);
+    rc = vbsf_inode_revalidate_worker(dentry, false /*fForced*/, false /*fInodeLocked*/);
 # endif
     if (rc == 0) {
         /* Do generic filling in of info. */
@@ -716,7 +717,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
      * What's more, given that the SHFL_FN_CREATE call succeeded, we know that the
      * dentry and all its parent entries are valid and could touch their timestamps
      * extending their TTL (CIFS does that). */
-    return vbsf_inode_revalidate_worker(dentry, true /*fForced*/);
+    return vbsf_inode_revalidate_worker(dentry, true /*fForced*/, true /*fInodeLocked*/);
 
  fail1:
     vrc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, hHostFile);
@@ -728,7 +729,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
     return err;
 }
 
-#endif /* >= 2.6.0 */
+#endif /* >= 2.5.18 */
 
 static int vbsf_make_path(const char *caller, struct vbsf_inode_info *sf_i,
                           const char *d_name, size_t d_len, SHFLSTRING **result)
@@ -868,6 +869,8 @@ int vbsf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g, stru
  * This is called during name resolution/lookup to check if the @a dentry in the
  * cache is still valid.  The actual validation is job is handled by
  * vbsf_inode_revalidate_worker().
+ *
+ * @note Caller holds no relevant locks, just a dentry reference.
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
 static int vbsf_dentry_revalidate(struct dentry *dentry, unsigned flags)
@@ -921,7 +924,7 @@ static int vbsf_dentry_revalidate(struct dentry *dentry, int flags)
             if (cJiffiesAge < sf_g->ttl) {
                 SFLOGFLOW(("vbsf_dentry_revalidate: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, sf_g->ttl));
                 rc = 1;
-            } else if (!vbsf_inode_revalidate_worker(dentry, true /*fForced*/)) {
+            } else if (!vbsf_inode_revalidate_worker(dentry, true /*fForced*/, false /*fInodeLocked*/)) {
                 vbsf_dentry_set_update_jiffies(dentry, jiffies); /** @todo get jiffies from inode. */
                 SFLOGFLOW(("vbsf_dentry_revalidate: age: %lu vs. TTL %lu -> reval -> 1\n", cJiffiesAge, sf_g->ttl));
                 rc = 1;

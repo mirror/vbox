@@ -1257,8 +1257,8 @@ static loff_t vbsf_reg_llseek(struct file *file, loff_t off, int whence)
 #endif
         case SEEK_END: {
             struct vbsf_reg_info *sf_r = file->private_data;
-            int rc = vbsf_inode_revalidate_with_handle(VBSF_GET_F_DENTRY(file), sf_r->Handle.hHost, true /*fForce*/,
-                                 false /*fInodeLocked*/);
+            int rc = vbsf_inode_revalidate_with_handle(VBSF_GET_F_DENTRY(file), sf_r->Handle.hHost,
+                                                       true /*fForce*/, false /*fInodeLocked*/);
             if (rc == 0)
                 break;
             return rc;
@@ -1358,11 +1358,11 @@ struct file_operations vbsf_reg_fops = {
 };
 
 struct inode_operations vbsf_reg_iops = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-    .revalidate = vbsf_inode_revalidate
-#else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
     .getattr = vbsf_inode_getattr,
     .setattr = vbsf_inode_setattr
+#else
+    .revalidate = vbsf_inode_revalidate
 #endif
 };
 
