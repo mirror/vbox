@@ -1360,10 +1360,10 @@ struct file_operations vbsf_reg_fops = {
 struct inode_operations vbsf_reg_iops = {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
     .getattr = vbsf_inode_getattr,
-    .setattr = vbsf_inode_setattr
 #else
-    .revalidate = vbsf_inode_revalidate
+    .revalidate = vbsf_inode_revalidate,
 #endif
+    .setattr = vbsf_inode_setattr,
 };
 
 

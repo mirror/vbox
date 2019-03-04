@@ -220,10 +220,10 @@ extern int  vbsf_inode_getattr(const struct path *path, struct kstat *kstat, u32
 # else
 extern int  vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *kstat);
 # endif
-extern int  vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr);
 #else  /* < 2.5.44 */
 extern int  vbsf_inode_revalidate(struct dentry *dentry);
 #endif /* < 2.5.44 */
+extern int  vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr);
 
 
 extern void              vbsf_handle_drop_chain(struct vbsf_inode_info *pInodeInfo);
