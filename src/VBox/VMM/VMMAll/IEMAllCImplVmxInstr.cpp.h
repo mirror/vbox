@@ -7414,6 +7414,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
     Assert(IEM_VMX_IS_ROOT_MODE(pVCpu));
 
+    /*
+     * Basic VM-entry checks.
+     * The order of the CPL, current and shadow VMCS and block-by-MovSS are important.
+     * The checks following that do not have to follow a specific order.
+     *
+     * See Intel spec. 26.1 "Basic VM-entry Checks".
+     */
+
     /* CPL. */
     if (pVCpu->iem.s.uCpl == 0)
     { /* likely */ }
@@ -7431,6 +7439,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     {
         Log(("%s: VMCS pointer %#RGp invalid -> VMFailInvalid\n", pszInstr, IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_PtrInvalid;
+        iemVmxVmFailInvalid(pVCpu);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /* Current VMCS is not a shadow VMCS. */
+    if (!pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->u32VmcsRevId.n.fIsShadowVmcs)
+    { /* likely */ }
+    else
+    {
+        Log(("%s: VMCS pointer %#RGp is a shadow VMCS -> VMFailInvalid\n", pszInstr, IEM_VMX_GET_CURRENT_VMCS(pVCpu)));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Vmentry_PtrShadowVmcs;
         iemVmxVmFailInvalid(pVCpu);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
         return VINF_SUCCESS;

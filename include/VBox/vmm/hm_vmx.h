@@ -4046,6 +4046,7 @@ typedef enum
     kVmxVDiag_Vmentry_ProcCtls2Allowed1,
     kVmxVDiag_Vmentry_ProcCtls2Disallowed0,
     kVmxVDiag_Vmentry_PtrInvalid,
+    kVmxVDiag_Vmentry_PtrShadowVmcs,
     kVmxVDiag_Vmentry_RealOrV86Mode,
     kVmxVDiag_Vmentry_SavePreemptTimer,
     kVmxVDiag_Vmentry_TprThresholdRsvd,
