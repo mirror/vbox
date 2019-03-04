@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "QILineEdit.h"
 #include "VBoxGlobal.h"
+#include "UIConverter.h"
 #include "UIMediumSizeEditor.h"
 
 /* COM includes: */
@@ -37,6 +38,8 @@ UIMediumSizeEditor::UIMediumSizeEditor(QWidget *pParent /* = 0 */)
     , m_uSizeMin(_4M)
     , m_uSizeMax(vboxGlobal().virtualBox().GetSystemProperties().GetInfoVDSize())
     , m_iSliderScale(calculateSliderScale(m_uSizeMax))
+    , m_uSize(0)
+    , m_enmSizeSuffix(SizeSuffix_Byte)
     , m_pSlider(0)
     , m_pLabelMinSize(0)
     , m_pLabelMaxSize(0)
@@ -57,6 +60,7 @@ void UIMediumSizeEditor::setMediumSize(qulonglong uSize)
     m_pSlider->blockSignals(false);
     m_pEditor->blockSignals(true);
     m_pEditor->setText(vboxGlobal().formatSize(m_uSize));
+    m_enmSizeSuffix = vboxGlobal().parseSizeSuffix(m_pEditor->text());
     m_pEditor->blockSignals(false);
 
     /* Update the tool-tips: */
@@ -84,6 +88,7 @@ void UIMediumSizeEditor::sltSizeSliderChanged(int iValue)
     /* Update the other widget: */
     m_pEditor->blockSignals(true);
     m_pEditor->setText(vboxGlobal().formatSize(m_uSize));
+    m_enmSizeSuffix = vboxGlobal().parseSizeSuffix(m_pEditor->text());
     m_pEditor->blockSignals(false);
     /* Update the tool-tips: */
     updateSizeToolTips(m_uSize);
@@ -91,10 +96,20 @@ void UIMediumSizeEditor::sltSizeSliderChanged(int iValue)
     emit sigSizeChanged(m_uSize);
 }
 
-void UIMediumSizeEditor::sltSizeEditorChanged(const QString &strValue)
+void UIMediumSizeEditor::sltSizeEditorEditingFinished()
 {
+    QString strSizeString = ensureSizeSuffix(m_pEditor->text());
+
+    if (strSizeString != m_pEditor->text())
+    {
+        m_pEditor->blockSignals(true);
+        m_pEditor->setText(strSizeString);
+        m_pEditor->blockSignals(false);
+    }
+
     /* Update the current size: */
-    m_uSize = vboxGlobal().parseSize(strValue);
+    m_uSize = checkSectorSizeAlignment(vboxGlobal().parseSize(strSizeString));
+
     /* Update the other widget: */
     m_pSlider->blockSignals(true);
     m_pSlider->setValue(sizeMBToSlider(m_uSize, m_iSliderScale));
@@ -105,14 +120,16 @@ void UIMediumSizeEditor::sltSizeEditorChanged(const QString &strValue)
     emit sigSizeChanged(m_uSize);
 }
 
-void UIMediumSizeEditor::sltSizeEditorEditingFinished()
+QString UIMediumSizeEditor::ensureSizeSuffix(const QString &strSizeString)
 {
-    qulonglong uSize = checkSectorSizeAlignment(m_uSize);
+    if (vboxGlobal().hasSizeSuffix(strSizeString))
+    {
+        /* Update the m_enmSizeSuffix: */
+        m_enmSizeSuffix = vboxGlobal().parseSizeSuffix(strSizeString);
+        return strSizeString;
+    }
 
-    /* The size is already aligned to sector size: */
-    if (uSize == m_uSize)
-        return;
-    setMediumSize(uSize);
+    return QString("%1 %2").arg(strSizeString).arg(gpConverter->toString(m_enmSizeSuffix));
 }
 
 void UIMediumSizeEditor::prepare()
@@ -179,8 +196,6 @@ void UIMediumSizeEditor::prepare()
             m_pEditor->setFixedWidthByText("88888.88 MB");
             m_pEditor->setAlignment(Qt::AlignRight);
             m_pEditor->setValidator(new QRegExpValidator(QRegExp(vboxGlobal().sizeRegexp()), this));
-            connect(m_pEditor, &QILineEdit::textChanged,
-                    this, &UIMediumSizeEditor::sltSizeEditorChanged);
             connect(m_pEditor, &QILineEdit::editingFinished,
                     this, &UIMediumSizeEditor::sltSizeEditorEditingFinished);
 

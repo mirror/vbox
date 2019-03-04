@@ -973,6 +973,73 @@ quint64 VBoxGlobal::parseSize(const QString &strText)
 }
 
 /* static */
+SizeSuffix VBoxGlobal::parseSizeSuffix(const QString &strText)
+{
+    /* Text should be in form of B|KB|MB|GB|TB|PB. */
+    QRegExp regexp(sizeRegexp());
+    int iPos = regexp.indexIn(strText);
+    if (iPos != -1)
+    {
+        QString strInteger = regexp.cap(1);
+        QString strSuff = regexp.cap(2);
+        if (strInteger.isEmpty())
+        {
+            strInteger = regexp.cap(3);
+            strSuff = regexp.cap(5);
+        }
+
+        SizeSuffix enmSizeSuffix = SizeSuffix_Byte;
+
+        if (strSuff.isEmpty() || strSuff == tr("B", "size suffix Bytes"))
+            enmSizeSuffix = SizeSuffix_Byte;
+        else if (strSuff == tr("KB", "size suffix KBytes=1024 Bytes"))
+            enmSizeSuffix = SizeSuffix_KiloByte;
+        else if (strSuff == tr("MB", "size suffix MBytes=1024 KBytes"))
+            enmSizeSuffix = SizeSuffix_MegaByte;
+        else if (strSuff == tr("GB", "size suffix GBytes=1024 MBytes"))
+            enmSizeSuffix = SizeSuffix_GigaByte;
+        else if (strSuff == tr("TB", "size suffix TBytes=1024 GBytes"))
+            enmSizeSuffix = SizeSuffix_TeraByte;
+        else if (strSuff == tr("PB", "size suffix PBytes=1024 TBytes"))
+            enmSizeSuffix = SizeSuffix_PetaByte;
+        return enmSizeSuffix;
+    }
+    else
+        return SizeSuffix_Byte;
+}
+
+/* static */
+bool VBoxGlobal::hasSizeSuffix(const QString &strText)
+{
+    /* Text should be in form of B|KB|MB|GB|TB|PB. */
+    QRegExp regexp(sizeRegexp());
+    int iPos = regexp.indexIn(strText);
+    if (iPos != -1)
+    {
+        QString strInteger = regexp.cap(1);
+        QString strSuff = regexp.cap(2);
+        if (strInteger.isEmpty())
+        {
+            strInteger = regexp.cap(3);
+            strSuff = regexp.cap(5);
+        }
+
+        if (strSuff.isEmpty())
+            return false;
+        if (strSuff == tr("B", "size suffix Bytes") ||
+            strSuff == tr("KB", "size suffix KBytes=1024 Bytes") ||
+            strSuff == tr("MB", "size suffix MBytes=1024 KBytes") ||
+            strSuff == tr("GB", "size suffix GBytes=1024 MBytes") ||
+            strSuff == tr("TB", "size suffix TBytes=1024 GBytes") ||
+            strSuff == tr("PB", "size suffix PBytes=1024 TBytes"))
+            return true;
+        return false;
+    }
+    else
+        return false;
+}
+
+/* static */
 QString VBoxGlobal::formatSize(quint64 uSize, uint cDecimal /* = 2 */,
                                FormatSize enmMode /* = FormatSize_Round */)
 {

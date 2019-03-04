@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UIDefs.h"
 #include "UILibraryDefs.h"
 
 /* Forward declarations: */
@@ -64,8 +65,7 @@ private slots:
 
     /** Handles size slider change. */
     void sltSizeSliderChanged(int iValue);
-    /** Handles size editor change. */
-    void sltSizeEditorChanged(const QString &strValue);
+    /** Handles size editor text edit finished signal. */
     void sltSizeEditorEditingFinished();
 
 private:
@@ -85,6 +85,7 @@ private:
     void updateSizeToolTips(qulonglong uSize);
     /** Checks if the uSize is divisible by m_uSectorSize */
     qulonglong checkSectorSizeAlignment(qulonglong uSize);
+    QString ensureSizeSuffix(const QString &strSizeString);
 
     /* Holds the block size. We force m_uSize to be multiple of this number. */
     static const qulonglong m_uSectorSize;
@@ -96,6 +97,7 @@ private:
     const int         m_iSliderScale;
     /** Holds the current medium size. */
     qulonglong        m_uSize;
+    SizeSuffix        m_enmSizeSuffix;
 
     /** Holds the size slider. */
     QSlider    *m_pSlider;
