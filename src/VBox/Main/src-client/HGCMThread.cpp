@@ -304,7 +304,7 @@ int HGCMThread::Initialize(const char *pszThreadName, PFNHGCMTHREAD pfnThread, v
                         STAMR3RegisterFU(pUVM, &m_StatPostMsgTwoPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                                          "Times a message was appended to input queue with only one pending message.",
                                          "/HGCM/%s/PostMsg2Pending", pszStatsSubDir);
-                        STAMR3RegisterFU(pUVM, &m_StatPostMsgTwoPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                        STAMR3RegisterFU(pUVM, &m_StatPostMsgThreePending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                                          "Times a message was appended to input queue with only one pending message.",
                                          "/HGCM/%s/PostMsg3Pending", pszStatsSubDir);
                         STAMR3RegisterFU(pUVM, &m_StatPostMsgManyPending, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
