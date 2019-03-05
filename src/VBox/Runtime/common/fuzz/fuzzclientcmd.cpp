@@ -34,7 +34,9 @@
 #include <iprt/assert.h>
 #include <iprt/buildconfig.h>
 #include <iprt/errcore.h>
+#include <iprt/file.h>
 #include <iprt/getopt.h>
+#include <iprt/ldr.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/stream.h>
@@ -43,24 +45,51 @@
 #include <iprt/vfs.h>
 
 
+
+typedef DECLCALLBACK(int) FNLLVMFUZZERTESTONEINPUT(const uint8_t *pbData, size_t cbData);
+typedef FNLLVMFUZZERTESTONEINPUT *PFNLLVMFUZZERTESTONEINPUT;
+
+
 /**
  * Fuzzing client command state.
  */
 typedef struct RTFUZZCMDCLIENT
 {
     /** Our own fuzzing context containing all the data. */
-    RTFUZZCTX               hFuzzCtx;
+    RTFUZZCTX                 hFuzzCtx;
     /** Consumption callback. */
-    PFNFUZZCLIENTCONSUME    pfnConsume;
+    PFNFUZZCLIENTCONSUME      pfnConsume;
     /** Opaque user data to pass to the consumption callback. */
-    void                    *pvUser;
+    void                      *pvUser;
+    /** The LLVM libFuzzer compatible entry point if configured */
+    PFNLLVMFUZZERTESTONEINPUT pfnLlvmFuzzerTestOneInput;
+    /** The selected input channel. */
+    RTFUZZOBSINPUTCHAN        enmInputChan;
     /** Standard input VFS handle. */
-    RTVFSIOSTREAM           hVfsStdIn;
+    RTVFSIOSTREAM             hVfsStdIn;
     /** Standard output VFS handle. */
-    RTVFSIOSTREAM           hVfsStdOut;
+    RTVFSIOSTREAM             hVfsStdOut;
 } RTFUZZCMDCLIENT;
 /** Pointer to a fuzzing client command state. */
 typedef RTFUZZCMDCLIENT *PRTFUZZCMDCLIENT;
+
+
+
+/**
+ * Runs the appropriate consumption callback with the provided data.
+ *
+ * @returns Status code, 0 for success.
+ * @param   pThis               The fuzzing client command state.
+ * @param   pvData              The data to consume.
+ * @param   cbData              Size of the data in bytes.
+ */
+static int rtFuzzCmdClientConsume(PRTFUZZCMDCLIENT pThis, const void *pvData, size_t cbData)
+{
+    if (pThis->pfnLlvmFuzzerTestOneInput)
+        return pThis->pfnLlvmFuzzerTestOneInput((const uint8_t *)pvData, cbData);
+    else
+        return pThis->pfnConsume(pvData, cbData, pThis->pvUser);
+}
 
 
 /**
@@ -88,7 +117,7 @@ static int rtFuzzCmdClientMainloop(PRTFUZZCMDCLIENT pThis)
             if (RT_SUCCESS(rc))
             {
                 char bResp = '.';
-                int rc2 = pThis->pfnConsume(pv, cb, pThis->pvUser);
+                int rc2 = rtFuzzCmdClientConsume(pThis, pv, cb);
                 if (RT_SUCCESS(rc2))
                 {
                     rc = RTFuzzInputAddToCtxCorpus(hFuzzInput);
@@ -152,6 +181,28 @@ static RTEXITCODE rtFuzzCmdClientRun(PRTFUZZCMDCLIENT pThis)
 }
 
 
+/**
+ * Run a single iteration of the fuzzing client and return.
+ *
+ * @returns Process exit status.
+ * @param   pThis               The fuzzing client command state.
+ */
+static RTEXITCODE rtFuzzCmdClientRunFile(PRTFUZZCMDCLIENT pThis, const char *pszFilename)
+{
+    void *pv = NULL;
+    size_t cbFile = 0;
+    int rc = RTFileReadAll(pszFilename, &pv, &cbFile);
+    if (RT_SUCCESS(rc))
+    {
+        rtFuzzCmdClientConsume(pThis, pv, cbFile);
+        RTFileReadAllFree(pv, cbFile);
+        return RTEXITCODE_SUCCESS;
+    }
+
+    return RTEXITCODE_FAILURE;
+}
+
+
 RTR3DECL(RTEXITCODE) RTFuzzCmdFuzzingClient(unsigned cArgs, char **papszArgs, PFNFUZZCLIENTCONSUME pfnConsume, void *pvUser)
 {
     /*
@@ -161,6 +212,8 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdFuzzingClient(unsigned cArgs, char **papszArgs, PF
     {
         { "--help",                            'h', RTGETOPT_REQ_NOTHING },
         { "--version",                         'V', RTGETOPT_REQ_NOTHING },
+        { "--llvm-input",                      'l', RTGETOPT_REQ_STRING  },
+        { "--file",                            'f', RTGETOPT_REQ_STRING  },
     };
 
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
@@ -171,12 +224,16 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdFuzzingClient(unsigned cArgs, char **papszArgs, PF
     {
         /* Option variables:  */
         RTFUZZCMDCLIENT This;
+        RTLDRMOD hLlvmMod = NIL_RTLDRMOD;
+        const char *pszFilename = NULL;
 
-        This.pfnConsume = pfnConsume;
-        This.pvUser     = pvUser;
+        This.pfnConsume   = pfnConsume;
+        This.pvUser       = pvUser;
+        This.enmInputChan = RTFUZZOBSINPUTCHAN_FUZZING_AWARE_CLIENT;
 
         /* Argument parsing loop. */
         bool fContinue = true;
+        bool fExit = false;
         do
         {
             RTGETOPTUNION ValueUnion;
@@ -187,16 +244,44 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdFuzzingClient(unsigned cArgs, char **papszArgs, PF
                     fContinue = false;
                     break;
 
+                case 'f':
+                {
+                    pszFilename = ValueUnion.psz;
+                    This.enmInputChan = RTFUZZOBSINPUTCHAN_FILE;
+                    break;
+                }
+
+                case 'l':
+                {
+                    /*
+                     * Load the indicated library and try to resolve LLVMFuzzerTestOneInput,
+                     * which will act as the input callback.
+                     */
+                    rc = RTLdrLoad(ValueUnion.psz, &hLlvmMod);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTLdrGetSymbol(hLlvmMod, "LLVMFuzzerTestOneInput", (void **)&This.pfnLlvmFuzzerTestOneInput);
+                        if (RT_FAILURE(rc))
+                            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to query '%s' from '%s': %Rrc",
+                                                    "LLVMFuzzerTestOneInput",
+                                                    ValueUnion.psz,
+                                                    rc);
+                    }
+                    break;
+                }
+
                 case 'h':
                     RTPrintf("Usage: to be written\nOption dump:\n");
                     for (unsigned i = 0; i < RT_ELEMENTS(s_aOptions); i++)
                         RTPrintf(" -%c,%s\n", s_aOptions[i].iShort, s_aOptions[i].pszLong);
                     fContinue = false;
+                    fExit = true;
                     break;
 
                 case 'V':
                     RTPrintf("%sr%d\n", RTBldCfgVersion(), RTBldCfgRevision());
                     fContinue = false;
+                    fExit = true;
                     break;
 
                 default:
@@ -206,8 +291,24 @@ RTR3DECL(RTEXITCODE) RTFuzzCmdFuzzingClient(unsigned cArgs, char **papszArgs, PF
             }
         } while (fContinue);
 
-        if (rcExit == RTEXITCODE_SUCCESS)
-            rcExit = rtFuzzCmdClientRun(&This);
+        if (   rcExit == RTEXITCODE_SUCCESS
+            && !fExit)
+        {
+            switch (This.enmInputChan)
+            {
+                case RTFUZZOBSINPUTCHAN_FUZZING_AWARE_CLIENT:
+                    rcExit = rtFuzzCmdClientRun(&This);
+                    break;
+                case RTFUZZOBSINPUTCHAN_FILE:
+                    rcExit = rtFuzzCmdClientRunFile(&This, pszFilename);
+                    break;
+                default:
+                    rcExit = RTMsgErrorExit(RTEXITCODE_SYNTAX, "Input channel unknown/not implemented yet");
+            }
+        }
+
+        if (hLlvmMod != NIL_RTLDRMOD)
+            RTLdrClose(hLlvmMod);
     }
     else
         rcExit = RTMsgErrorExit(RTEXITCODE_SYNTAX, "RTGetOptInit: %Rrc", rc);

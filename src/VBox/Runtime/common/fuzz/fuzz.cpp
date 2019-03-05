@@ -367,6 +367,8 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipPrep(PRTFUZZCTXINT pThis, uint64
                                                      PPRTFUZZMUTATION ppMutation);
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplacePrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
                                                          PPRTFUZZMUTATION ppMutation);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteInsertPrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                        PPRTFUZZMUTATION ppMutation);
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendPrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
                                                                       PPRTFUZZMUTATION ppMutation);
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeletePrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
@@ -380,6 +382,8 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorBitFlipExec(PRTFUZZCTXINT pThis, PCRTFU
                                                      uint8_t *pbBuf, size_t cbBuf);
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplaceExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                          uint8_t *pbBuf, size_t cbBuf);
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteInsertExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
+                                                        uint8_t *pbBuf, size_t cbBuf);
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
                                                                       uint8_t *pbBuf, size_t cbBuf);
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteDeleteExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
@@ -424,13 +428,14 @@ static RTFUZZMUTATOR const g_MutatorCorpus =
  */
 static RTFUZZMUTATOR const g_aMutators[] =
 {
-    /* pszId         pszDesc                                          uMutator     fFlags                      pfnPrep                                       pfnExec                                       pfnExport                                       pfnImport */
+    /* pszId         pszDesc                                          uMutator     fFlags                      pfnPrep                                       pfnExec                                       pfnExport                      pfnImport */
     { "BitFlip",     "Flips a single bit in the input",               0,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorBitFlipPrep,                  rtFuzzCtxMutatorBitFlipExec,                  rtFuzzCtxMutatorExportDefault, rtFuzzCtxMutatorImportDefault },
     { "ByteReplace", "Replaces a single byte in the input",           1,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteReplacePrep,              rtFuzzCtxMutatorByteReplaceExec,              rtFuzzCtxMutatorExportDefault, rtFuzzCtxMutatorImportDefault },
-    { "ByteSeqIns",  "Inserts a byte sequence in the input",          2,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteSequenceInsertAppendPrep, rtFuzzCtxMutatorByteSequenceInsertAppendExec, rtFuzzCtxMutatorExportDefault, rtFuzzCtxMutatorImportDefault },
-    { "ByteSeqApp",  "Appends a byte sequence to the input",          3,           RTFUZZMUTATOR_F_END_OF_BUF, rtFuzzCtxMutatorByteSequenceInsertAppendPrep, rtFuzzCtxMutatorByteSequenceInsertAppendExec, rtFuzzCtxMutatorExportDefault, rtFuzzCtxMutatorImportDefault },
-    { "ByteDelete",  "Deletes a single byte sequence from the input", 4,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteDeletePrep,               rtFuzzCtxMutatorByteDeleteExec,               NULL,                          NULL                          },
-    { "ByteSeqDel",  "Deletes a byte sequence from the input",        5,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteSequenceDeletePrep,       rtFuzzCtxMutatorByteSequenceDeleteExec,       NULL,                          NULL                          }
+    { "ByteInsert",  "Inserts a single byte sequence into the input", 2,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteInsertPrep,               rtFuzzCtxMutatorByteInsertExec,               rtFuzzCtxMutatorExportDefault, rtFuzzCtxMutatorImportDefault },
+    { "ByteSeqIns",  "Inserts a byte sequence in the input",          3,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteSequenceInsertAppendPrep, rtFuzzCtxMutatorByteSequenceInsertAppendExec, rtFuzzCtxMutatorExportDefault, rtFuzzCtxMutatorImportDefault },
+    { "ByteSeqApp",  "Appends a byte sequence to the input",          4,           RTFUZZMUTATOR_F_END_OF_BUF, rtFuzzCtxMutatorByteSequenceInsertAppendPrep, rtFuzzCtxMutatorByteSequenceInsertAppendExec, rtFuzzCtxMutatorExportDefault, rtFuzzCtxMutatorImportDefault },
+    { "ByteDelete",  "Deletes a single byte sequence from the input", 5,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteDeletePrep,               rtFuzzCtxMutatorByteDeleteExec,               NULL,                          NULL                          },
+    { "ByteSeqDel",  "Deletes a byte sequence from the input",        6,           RTFUZZMUTATOR_F_DEFAULT,    rtFuzzCtxMutatorByteSequenceDeletePrep,       rtFuzzCtxMutatorByteSequenceDeleteExec,       NULL,                          NULL                          }
 };
 
 
@@ -709,6 +714,43 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteReplaceExec(PRTFUZZCTXINT pThis, PC
 
 
 /**
+ * Mutator callback - inserts a single byte into the input.
+ */
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteInsertPrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
+                                                        PPRTFUZZMUTATION ppMutation)
+{
+    int rc = VINF_SUCCESS;
+    uint8_t *pbInsert = 0;
+    if (pMutationParent->cbInput < pThis->cbInputMax)
+    {
+        PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, offStart, pMutationParent, 1 /*cbAdditional*/, (void **)&pbInsert);
+        if (RT_LIKELY(pMutation))
+        {
+            pMutation->cbInput = pMutationParent->cbInput + 1;
+            RTRandAdvBytes(pThis->hRand, pbInsert, 1);
+            *ppMutation = pMutation;
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    return rc;
+}
+
+
+static DECLCALLBACK(int) rtFuzzCtxMutatorByteInsertExec(PRTFUZZCTXINT pThis, PCRTFUZZMUTATION pMutation, const void *pvMutation,
+                                                        uint8_t *pbBuf, size_t cbBuf)
+{
+    RT_NOREF(pThis, pMutation, pvMutation);
+
+    /* Just move the residual data one byte to the back. */
+    memmove(pbBuf + 1, pbBuf, cbBuf);
+    *pbBuf = *(uint8_t *)pvMutation;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Mutator callback - inserts a byte sequence into the input.
  */
 static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceInsertAppendPrep(PRTFUZZCTXINT pThis, uint64_t offStart, PRTFUZZMUTATION pMutationParent,
@@ -793,7 +835,7 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeletePrep(PRTFUZZCTXINT pT
                                                                 PPRTFUZZMUTATION ppMutation)
 {
     int rc = VINF_SUCCESS;
-    if (pMutationParent->cbInput > 1)
+    if (pMutationParent->cbInput > offStart)
     {
         size_t cbInputMutated = (size_t)RTRandAdvU64Ex(pThis->hRand, offStart, pMutationParent->cbInput - 1);
 
