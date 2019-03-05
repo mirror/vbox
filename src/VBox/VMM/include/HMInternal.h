@@ -781,10 +781,11 @@ typedef struct HMCPU
             uint32_t                    u32Alignment0;
 #endif
 
-            /** Cache of guest VMCS control fields. */
-            VMXVMCSCTLSCACHE            GstCtls;
-            /** Cache of nested-guest VMCS control fields. */
-            VMXVMCSCTLSCACHE            NstGstCtls;
+            /** Cache of the executing guest (or nested-guest) VMCS control fields. */
+            VMXVMCSCTLSCACHE            Ctls;
+            /** Cache of guest (level 1) VMCS control fields when executing a nested-guest
+             *  (level 2). */
+            VMXVMCSCTLSCACHE            Level1Ctls;
 
             /** Physical address of the VM control structure (VMCS). */
             RTHCPHYS                    HCPhysVmcs;
