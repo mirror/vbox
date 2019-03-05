@@ -53,31 +53,19 @@ static VBOXCLIENTSERVICE    g_aServices[] =
  *
  * @return  IPRT status code.
  */
-static int vbclInitLogger(char *szLogFileName)
+static int vbclInitLogger(char *pszLogFileName)
 {
-    int rc;
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    int rc = RTLogCreateEx(&g_pLogger, RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG, "all", "VBOXCLIENT_RELEASE_LOG",
+                           RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX /*cMaxEntriesPerGroup*/,
+                           RTLOGDEST_STDOUT,
+                           NULL /*pfnPhase*/,
+                           pszLogFileName ? 10 : 0 /*cHistory*/,
+                           pszLogFileName ? 100 * _1M : 0 /*cbHistoryFileMax*/,
+                           pszLogFileName ? RT_SEC_1DAY : 0 /*cSecsHistoryTimeSlot*/,
+                           NULL /*pErrInfo*/, "%s", pszLogFileName);
 
-    uint32_t                   fFlags         = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
-    static const char * const  s_apszGroups[] = VBOX_LOGGROUP_NAMES;
-    uint32_t                   fDestFlags     = RTLOGDEST_STDOUT;
-
-    rc = RTLogCreateEx(&g_pLogger,
-                       fFlags,                          /* Logger instance flags, a combination of the RTLOGFLAGS_* values */
-                       "all",                           /* The initial group settings */
-                       "VBOXCLIENT_RELEASE_LOG",        /* Base name for the environment variables for this instance */
-                       RT_ELEMENTS(s_apszGroups),       /* Number of groups in the array */
-                       s_apszGroups,                    /* Pointer to array of groups. This must stick around for the life of the logger instance */
-                       fDestFlags,                      /* The destination flags */
-                       NULL,                            /* Callback function for starting logging and for ending or starting a new file for log history rotation */
-                       szLogFileName ? 10 : 0,          /* Number of old log files to keep when performing log history rotation */
-                       szLogFileName ? 100 * _1M : 0,   /* Maximum size of log file when performing history rotation */
-                       szLogFileName ? RT_SEC_1DAY : 0, /* Maximum time interval per log file when performing history rotation */
-                       0,                               /* A buffer which is filled with an error message if something fails */
-                       0,                               /* The size of the error message buffer */
-                       szLogFileName                    /* Log filename format string */
-                       );
-
-    AssertReturn(RT_SUCCESS(rc), rc);
+    AssertRCReturn(rc, rc);
 
     /* Register this logger as the release logger */
     RTLogRelSetDefaultInstance(g_pLogger);
@@ -85,7 +73,7 @@ static int vbclInitLogger(char *szLogFileName)
     /* Explicitly flush the log in case of VBOXCLIENT_RELEASE_LOG=buffered. */
     RTLogFlush(g_pLogger);
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
