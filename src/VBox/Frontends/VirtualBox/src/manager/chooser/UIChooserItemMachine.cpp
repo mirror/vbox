@@ -448,7 +448,7 @@ QPixmap UIChooserItemMachine::toPixmap()
     return pixmap;
 }
 
-bool UIChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, DragToken where) const
+bool UIChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UIChooserItemDragToken where) const
 {
     /* No drops while saving groups: */
     if (model()->isGroupSavingInProgress())
@@ -459,7 +459,7 @@ bool UIChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, Dr
     /* Get mime: */
     const QMimeData *pMimeData = pEvent->mimeData();
     /* If drag token is shown, its up to parent to decide: */
-    if (where != DragToken_Off)
+    if (where != UIChooserItemDragToken_Off)
         return parentItem()->isDropAllowed(pEvent);
     /* Else we should make sure machine is accessible: */
     if (!accessible())
@@ -481,12 +481,12 @@ bool UIChooserItemMachine::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, Dr
     return false;
 }
 
-void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChooserItem *pFromWho, DragToken where)
+void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChooserItem *pFromWho, UIChooserItemDragToken where)
 {
     /* Get mime: */
     const QMimeData *pMime = pEvent->mimeData();
     /* Make sure this handler called by this item (not by children): */
-    AssertMsg(!pFromWho && where == DragToken_Off, ("Machine graphics item do NOT support children!"));
+    AssertMsg(!pFromWho && where == UIChooserItemDragToken_Off, ("Machine graphics item do NOT support children!"));
     Q_UNUSED(pFromWho);
     Q_UNUSED(where);
     if (pMime->hasFormat(UIChooserItemMachine::className()))
@@ -537,9 +537,9 @@ void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UICh
 void UIChooserItemMachine::resetDragToken()
 {
     /* Reset drag token for this item: */
-    if (dragTokenPlace() != DragToken_Off)
+    if (dragTokenPlace() != UIChooserItemDragToken_Off)
     {
-        setDragTokenPlace(DragToken_Off);
+        setDragTokenPlace(UIChooserItemDragToken_Off);
         update();
     }
 }
@@ -1036,7 +1036,7 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
     }
 
     /* Paint drag token UP? */
-    if (dragTokenPlace() != DragToken_Off)
+    if (dragTokenPlace() != UIChooserItemDragToken_Off)
     {
         /* Window color: */
         QColor color1;
@@ -1044,7 +1044,7 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
 
         QLinearGradient dragTokenGradient;
         QRect dragTokenRect = rectangle;
-        if (dragTokenPlace() == DragToken_Up)
+        if (dragTokenPlace() == UIChooserItemDragToken_Up)
         {
             /* Selection background: */
             if (model()->currentItems().contains(unconst(this)))
@@ -1065,7 +1065,7 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
             dragTokenGradient.setStart(dragTokenRect.bottomLeft());
             dragTokenGradient.setFinalStop(dragTokenRect.topLeft());
         }
-        else if (dragTokenPlace() == DragToken_Down)
+        else if (dragTokenPlace() == UIChooserItemDragToken_Down)
         {
             /* Selection background: */
             if (model()->currentItems().contains(unconst(this)))
@@ -1120,9 +1120,9 @@ void UIChooserItemMachine::paintFrame(QPainter *pPainter, const QRect &rectangle
     pPainter->setPen(pen);
 
     /* Draw borders: */
-    if (dragTokenPlace() != DragToken_Up)
+    if (dragTokenPlace() != UIChooserItemDragToken_Up)
         pPainter->drawLine(rectangle.topLeft(),    rectangle.topRight()    + QPoint(1, 0));
-    if (dragTokenPlace() != DragToken_Down)
+    if (dragTokenPlace() != UIChooserItemDragToken_Down)
         pPainter->drawLine(rectangle.bottomLeft(), rectangle.bottomRight() + QPoint(1, 0));
     pPainter->drawLine(rectangle.topLeft(),    rectangle.bottomLeft());
 

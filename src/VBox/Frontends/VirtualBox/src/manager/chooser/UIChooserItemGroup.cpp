@@ -943,7 +943,7 @@ QPixmap UIChooserItemGroup::toPixmap()
     return pixmap;
 }
 
-bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, DragToken where) const
+bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UIChooserItemDragToken where) const
 {
     /* No drops while saving groups: */
     if (model()->isGroupSavingInProgress())
@@ -951,7 +951,7 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, Drag
     /* Get mime: */
     const QMimeData *pMimeData = pEvent->mimeData();
     /* If drag token is shown, its up to parent to decide: */
-    if (where != DragToken_Off)
+    if (where != UIChooserItemDragToken_Off)
         return parentItem()->isDropAllowed(pEvent);
     /* Else we should check mime format: */
     if (pMimeData->hasFormat(UIChooserItemGroup::className()))
@@ -1006,7 +1006,7 @@ bool UIChooserItemGroup::isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, Drag
     return false;
 }
 
-void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChooserItem *pFromWho, DragToken where)
+void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChooserItem *pFromWho, UIChooserItemDragToken where)
 {
     /* Get mime: */
     const QMimeData *pMime = pEvent->mimeData();
@@ -1028,14 +1028,14 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
 
                 /* Check if we have position information: */
                 int iPosition = m_groupItems.size();
-                if (pFromWho && where != DragToken_Off)
+                if (pFromWho && where != UIChooserItemDragToken_Off)
                 {
                     /* Make sure sender item if our child: */
                     AssertMsg(m_groupItems.contains(pFromWho), ("Sender item is NOT our child!"));
                     if (m_groupItems.contains(pFromWho))
                     {
                         iPosition = m_groupItems.indexOf(pFromWho);
-                        if (where == DragToken_Down)
+                        if (where == UIChooserItemDragToken_Down)
                             ++iPosition;
                     }
                 }
@@ -1081,14 +1081,14 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
 
                 /* Check if we have position information: */
                 int iPosition = m_machineItems.size();
-                if (pFromWho && where != DragToken_Off)
+                if (pFromWho && where != UIChooserItemDragToken_Off)
                 {
                     /* Make sure sender item if our child: */
                     AssertMsg(m_machineItems.contains(pFromWho), ("Sender item is NOT our child!"));
                     if (m_machineItems.contains(pFromWho))
                     {
                         iPosition = m_machineItems.indexOf(pFromWho);
-                        if (where == DragToken_Down)
+                        if (where == UIChooserItemDragToken_Down)
                             ++iPosition;
                     }
                 }
@@ -1122,9 +1122,9 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
 void UIChooserItemGroup::resetDragToken()
 {
     /* Reset drag token for this item: */
-    if (dragTokenPlace() != DragToken_Off)
+    if (dragTokenPlace() != UIChooserItemDragToken_Off)
     {
-        setDragTokenPlace(DragToken_Off);
+        setDragTokenPlace(UIChooserItemDragToken_Off);
         update();
     }
     /* Reset drag tokens for all the items: */
@@ -1776,17 +1776,17 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         pPainter->fillRect(tRect, tGradient);
 
         /* Paint drag token UP? */
-        if (dragTokenPlace() != DragToken_Off)
+        if (dragTokenPlace() != UIChooserItemDragToken_Off)
         {
             QLinearGradient dragTokenGradient;
             QRect dragTokenRect = rect;
-            if (dragTokenPlace() == DragToken_Up)
+            if (dragTokenPlace() == UIChooserItemDragToken_Up)
             {
                 dragTokenRect.setHeight(5);
                 dragTokenGradient.setStart(dragTokenRect.bottomLeft());
                 dragTokenGradient.setFinalStop(dragTokenRect.topLeft());
             }
-            else if (dragTokenPlace() == DragToken_Down)
+            else if (dragTokenPlace() == UIChooserItemDragToken_Down)
             {
                 dragTokenRect.setTopLeft(dragTokenRect.bottomLeft() - QPoint(0, 5));
                 dragTokenGradient.setStart(dragTokenRect.topLeft());

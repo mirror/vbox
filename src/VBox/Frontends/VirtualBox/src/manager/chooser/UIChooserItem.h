@@ -30,6 +30,7 @@
 /* GUI includes: */
 #include "QIGraphicsWidget.h"
 #include "QIWithRetranslateUI.h"
+#include "UIChooserDefs.h"
 
 /* Other VBox includes: */
 #include <iprt/cdefs.h>
@@ -45,35 +46,6 @@ class UIChooserItemGroup;
 class UIChooserItemGlobal;
 class UIChooserItemMachine;
 class UIChooserModel;
-
-
-/** UIChooserItem types. */
-enum UIChooserItemType
-{
-    UIChooserItemType_Any     = QGraphicsItem::UserType,
-    UIChooserItemType_Group,
-    UIChooserItemType_Global,
-    UIChooserItemType_Machine
-};
-
-
-/** UIChooserItem search flags. */
-enum UIChooserItemSearchFlag
-{
-    UIChooserItemSearchFlag_Machine   = RT_BIT(0),
-    UIChooserItemSearchFlag_Global    = RT_BIT(1),
-    UIChooserItemSearchFlag_Group     = RT_BIT(2),
-    UIChooserItemSearchFlag_ExactName = RT_BIT(3)
-};
-
-
-/** Drag token placement types. */
-enum DragToken
-{
-    DragToken_Off,
-    DragToken_Up,
-    DragToken_Down
-};
 
 
 /** QIGraphicsWidget extension used as interface
@@ -221,19 +193,19 @@ public:
         /** Returns whether item drop is allowed.
           * @param  pEvent    Brings information about drop event.
           * @param  enmPlace  Brings the place of drag token to the drop moment. */
-        virtual bool isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, DragToken enmPlace = DragToken_Off) const = 0;
+        virtual bool isDropAllowed(QGraphicsSceneDragDropEvent *pEvent, UIChooserItemDragToken enmPlace = UIChooserItemDragToken_Off) const = 0;
         /** Processes item drop.
           * @param  pEvent    Brings information about drop event.
           * @param  pFromWho  Brings the item according to which we choose drop position.
           * @param  enmPlace  Brings the place of drag token to the drop moment (according to item mentioned above). */
-        virtual void processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChooserItem *pFromWho = 0, DragToken enmPlace = DragToken_Off) = 0;
+        virtual void processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChooserItem *pFromWho = 0, UIChooserItemDragToken enmPlace = UIChooserItemDragToken_Off) = 0;
         /** Reset drag token. */
         virtual void resetDragToken() = 0;
 
         /** Defines drag token @a enmPlace. */
-        void setDragTokenPlace(DragToken enmPlace);
+        void setDragTokenPlace(UIChooserItemDragToken enmPlace);
         /** Returns drag token place. */
-        DragToken dragTokenPlace() const;
+        UIChooserItemDragToken dragTokenPlace() const;
     /** @} */
 
 protected:
@@ -362,7 +334,7 @@ private:
     /** @name Navigation stuff.
       * @{ */
         /** Holds drag token place. */
-        DragToken  m_enmDragTokenPlace;
+        UIChooserItemDragToken  m_enmDragTokenPlace;
 
         /** Holds drag token darkness. */
         int  m_iDragTokenDarkness;

@@ -369,13 +369,13 @@ QPixmap UIChooserItemGlobal::toPixmap()
     AssertFailedReturn(QPixmap());
 }
 
-bool UIChooserItemGlobal::isDropAllowed(QGraphicsSceneDragDropEvent *, DragToken) const
+bool UIChooserItemGlobal::isDropAllowed(QGraphicsSceneDragDropEvent *, UIChooserItemDragToken) const
 {
     /* No drops at all: */
     return false;
 }
 
-void UIChooserItemGlobal::processDrop(QGraphicsSceneDragDropEvent *, UIChooserItem *, DragToken)
+void UIChooserItemGlobal::processDrop(QGraphicsSceneDragDropEvent *, UIChooserItem *, UIChooserItemDragToken)
 {
     /* Nothing to process: */
 }

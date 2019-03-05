@@ -207,7 +207,7 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fFavorite,
     , m_iHoveredValue(iHoveredValue)
     , m_iAnimatedValue(m_iDefaultValue)
     , m_iPreviousMinimumWidthHint(0)
-    , m_enmDragTokenPlace(DragToken_Off)
+    , m_enmDragTokenPlace(UIChooserItemDragToken_Off)
     , m_iDragTokenDarkness(110)
 {
     /* Install Chooser-view item accessibility interface factory: */
@@ -404,7 +404,7 @@ void UIChooserItem::makeSureItsVisible()
     }
 }
 
-void UIChooserItem::setDragTokenPlace(DragToken enmPlace)
+void UIChooserItem::setDragTokenPlace(UIChooserItemDragToken enmPlace)
 {
     /* Something changed? */
     if (m_enmDragTokenPlace != enmPlace)
@@ -414,7 +414,7 @@ void UIChooserItem::setDragTokenPlace(DragToken enmPlace)
     }
 }
 
-DragToken UIChooserItem::dragTokenPlace() const
+UIChooserItemDragToken UIChooserItem::dragTokenPlace() const
 {
     return m_enmDragTokenPlace;
 }
@@ -483,11 +483,11 @@ void UIChooserItem::dragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)
         {
             QPoint p = pEvent->pos().toPoint();
             if (p.y() < 10)
-                setDragTokenPlace(DragToken_Up);
+                setDragTokenPlace(UIChooserItemDragToken_Up);
             else if (p.y() > minimumSizeHint().toSize().height() - 10)
-                setDragTokenPlace(DragToken_Down);
+                setDragTokenPlace(UIChooserItemDragToken_Down);
             else
-                setDragTokenPlace(DragToken_Off);
+                setDragTokenPlace(UIChooserItemDragToken_Off);
         }
     }
     /* Check if drop is allowed: */
@@ -504,7 +504,7 @@ void UIChooserItem::dropEvent(QGraphicsSceneDragDropEvent *pEvent)
     /* Do we have token active? */
     switch (dragTokenPlace())
     {
-        case DragToken_Off:
+        case UIChooserItemDragToken_Off:
         {
             /* Its our drop, processing: */
             processDrop(pEvent);
