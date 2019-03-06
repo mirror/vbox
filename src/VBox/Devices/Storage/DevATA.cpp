@@ -1504,15 +1504,10 @@ static void ataR3SetSignature(ATADevState *s)
         s->uATARegLCyl = 0x14;
         s->uATARegHCyl = 0xeb;
     }
-    else if (s->pDrvMedia)
+    else
     {
         s->uATARegLCyl = 0;
         s->uATARegHCyl = 0;
-    }
-    else
-    {
-        s->uATARegLCyl = 0xff;
-        s->uATARegHCyl = 0xff;
     }
 }
 
