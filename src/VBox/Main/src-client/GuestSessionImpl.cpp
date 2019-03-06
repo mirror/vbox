@@ -541,7 +541,7 @@ HRESULT GuestSession::setCurrentDirectory(const com::Utf8Str &aCurrentDirectory)
 
 HRESULT GuestSession::getUserHome(com::Utf8Str &aUserHome)
 {
-    HRESULT hr = i_isReadyExternal();
+    HRESULT hr = i_isStartedExternal();
     if (FAILED(hr))
         return hr;
 
@@ -579,7 +579,7 @@ HRESULT GuestSession::getUserHome(com::Utf8Str &aUserHome)
 
 HRESULT GuestSession::getUserDocuments(com::Utf8Str &aUserDocuments)
 {
-    HRESULT hr = i_isReadyExternal();
+    HRESULT hr = i_isStartedExternal();
     if (FAILED(hr))
         return hr;
 
@@ -740,7 +740,7 @@ int GuestSession::i_closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *prcG
 HRESULT GuestSession::i_copyFromGuest(const GuestSessionFsSourceSet &SourceSet,
                                       const com::Utf8Str &strDestination, ComPtr<IProgress> &pProgress)
 {
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -811,7 +811,7 @@ HRESULT GuestSession::i_copyFromGuest(const GuestSessionFsSourceSet &SourceSet,
 HRESULT GuestSession::i_copyToGuest(const GuestSessionFsSourceSet &SourceSet,
                                     const com::Utf8Str &strDestination, ComPtr<IProgress> &pProgress)
 {
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -1732,20 +1732,64 @@ Utf8Str GuestSession::i_guestErrorToString(int rcGuest)
 }
 
 /**
+ * Returns whether the session is in a started state or not.
+ *
+ * @returns \c true if in a started state, or \c false if not.
+ */
+bool GuestSession::i_isStarted(void) const
+{
+    return (mData.mStatus == GuestSessionStatus_Started);
+}
+
+/**
  * Checks if this session is ready state where it can handle
  * all session-bound actions (like guest processes, guest files).
  * Only used by official API methods. Will set an external
  * error when not ready.
  */
-HRESULT GuestSession::i_isReadyExternal(void)
+HRESULT GuestSession::i_isStartedExternal(void)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /** @todo Be a bit more informative. */
-    if (mData.mStatus != GuestSessionStatus_Started)
+    if (!i_isStarted())
         return setError(E_UNEXPECTED, tr("Session is not in started state"));
 
     return S_OK;
+}
+
+/**
+ * Returns whether the session is in a terminated state or not.
+ *
+ * @returns \c true if in a terminated state, or \c false if not.
+ */
+bool GuestSession::i_isTerminated(void) const
+{
+    switch (mData.mStatus)
+    {
+        case GuestSessionStatus_Undefined:
+            RT_FALL_THROUGH();
+        case GuestSessionStatus_Starting:
+            RT_FALL_THROUGH();
+        case GuestSessionStatus_Started:
+            RT_FALL_THROUGH();
+        case GuestSessionStatus_Terminating:
+            RT_FALL_THROUGH();
+        case GuestSessionStatus_32BitHack:
+            break;
+
+        case GuestSessionStatus_Terminated:
+        case GuestSessionStatus_TimedOutKilled:
+        case GuestSessionStatus_TimedOutAbnormally:
+        case GuestSessionStatus_Down:
+        case GuestSessionStatus_Error:
+            return true;
+
+        default:
+            break;
+    }
+
+    return false;
 }
 
 /**
@@ -3139,7 +3183,7 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
                 return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), fFlags);
     }
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3187,7 +3231,7 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory name specified"));
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3221,7 +3265,7 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to check existence for specified"));
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3281,7 +3325,7 @@ HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8St
             return setError(E_INVALIDARG, tr("Open flags (%#x) not implemented yet"), fFlags);
     }
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3329,7 +3373,7 @@ HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to remove specified"));
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3394,7 +3438,7 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
         }
     }
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3593,7 +3637,7 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return S_OK;
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3657,7 +3701,7 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No file to open specified"));
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3767,7 +3811,7 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymli
     if (aPath.isEmpty())
         return setError(E_INVALIDARG, tr("No path specified"));
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3796,7 +3840,7 @@ HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlink
     if (aPath.isEmpty())
         return setError(E_INVALIDARG, tr("No path specified"));
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3840,7 +3884,7 @@ HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSyml
     if (aPath.isEmpty())
         return setError(E_INVALIDARG, tr("No path specified"));
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3880,7 +3924,7 @@ HRESULT GuestSession::fsObjRemove(const com::Utf8Str &aPath)
     if (RT_UNLIKELY(aPath.isEmpty()))
         return setError(E_INVALIDARG, tr("No path specified"));
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -3922,7 +3966,7 @@ HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
     if (RT_UNLIKELY(aDestination.isEmpty()))
         return setError(E_INVALIDARG, tr("No destination path specified"));
 
-    HRESULT hrc = i_isReadyExternal();
+    HRESULT hrc = i_isStartedExternal();
     if (FAILED(hrc))
         return hrc;
 
@@ -4022,7 +4066,7 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    HRESULT hr = i_isReadyExternal();
+    HRESULT hr = i_isStartedExternal();
     if (FAILED(hr))
         return hr;
 

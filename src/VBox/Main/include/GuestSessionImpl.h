@@ -306,7 +306,9 @@ public:
     Utf8Str                 i_getName(void);
     ULONG                   i_getId(void) { return mData.mSession.mID; }
     static Utf8Str          i_guestErrorToString(int guestRc);
-    HRESULT                 i_isReadyExternal(void);
+    bool                    i_isStarted(void) const;
+    HRESULT                 i_isStartedExternal(void);
+    bool                    i_isTerminated(void) const;
     int                     i_onRemove(void);
     int                     i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     PathStyle_T             i_getPathStyle(void);
