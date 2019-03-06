@@ -6925,6 +6925,12 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPU pVCpu, bool fStepping)
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
     /*
+     * Update pending interrupts into the APIC's IRR.
+     */
+    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
+        APICUpdatePendingInterrupts(pVCpu);
+
+    /*
      * Anything pending?  Should be more likely than not if we're doing a good job.
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -7538,9 +7544,6 @@ static uint32_t hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu)
     Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI));    /* We don't support block-by-SMI yet.*/
     Assert(!fBlockSti || pCtx->eflags.Bits.u1IF);                  /* Cannot set block-by-STI when interrupts are disabled. */
     Assert(!TRPMHasTrap(pVCpu));
-
-    if (VMCPU_FF_TEST_AND_CLEAR(pVCpu, VMCPU_FF_UPDATE_APIC))
-        APICUpdatePendingInterrupts(pVCpu);
 
     /*
      * Toggling of interrupt force-flags here is safe since we update TRPM on premature exits
