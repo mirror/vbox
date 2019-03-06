@@ -1442,7 +1442,7 @@ int GuestWaitEventBase::Init(uint32_t uCID)
 int GuestWaitEventBase::SignalInternal(int rc, int rcGuest,
                                        const GuestWaitEventPayload *pPayload)
 {
-    if (ASMAtomicReadBool(&mfAborted))
+    if (mfAborted)
         return VERR_CANCELLED;
 
 #ifdef VBOX_STRICT
@@ -1480,7 +1480,7 @@ int GuestWaitEventBase::Wait(RTMSINTERVAL msTimeout)
 {
     int rc = VINF_SUCCESS;
 
-    if (ASMAtomicReadBool(&mfAborted))
+    if (mfAborted)
         rc = VERR_CANCELLED;
 
     if (RT_SUCCESS(rc))
@@ -1488,8 +1488,12 @@ int GuestWaitEventBase::Wait(RTMSINTERVAL msTimeout)
         AssertReturn(mEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
 
         rc = RTSemEventWait(mEventSem, msTimeout ? msTimeout : RT_INDEFINITE_WAIT);
-        if (ASMAtomicReadBool(&mfAborted))
+        if (   RT_SUCCESS(rc)
+            && mfAborted)
+        {
             rc = VERR_CANCELLED;
+        }
+
         if (RT_SUCCESS(rc))
         {
             /* If waiting succeeded, return the overall
@@ -1515,8 +1519,10 @@ GuestWaitEvent::~GuestWaitEvent(void)
  */
 int GuestWaitEvent::Cancel(void)
 {
-    AssertReturn(!mfAborted, VERR_CANCELLED);
-    ASMAtomicWriteBool(&mfAborted, true);
+    if (mfAborted) /* Already aborted? */
+        return VINF_SUCCESS;
+
+    mfAborted = true;
 
 #ifdef DEBUG_andy
     LogFlowThisFunc(("Cancelling %p ...\n"));
