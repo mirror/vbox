@@ -9013,6 +9013,20 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVMCPU pVCpu)
     return rcStrict;
 }
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * Runs the nested-guest code using VT-x the normal way.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @sa      hmR0VmxRunGuestCodeNormal.
+ */
+static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPU pVCpu)
+{
+    RT_NOREF(pVCpu);
+    return VERR_NOT_IMPLEMENTED;
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
 
 /** @name Execution loop for single stepping, DBGF events and expensive Dtrace
@@ -10343,13 +10357,28 @@ VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPU pVCpu)
     VMMRZCallRing3SetNotification(pVCpu, hmR0VmxCallRing3Callback, pCtx);
 
     VBOXSTRICTRC rcStrict;
-    if (   !pVCpu->hm.s.fUseDebugLoop
-        && (!VBOXVMM_ANY_PROBES_ENABLED() || !hmR0VmxAnyExpensiveProbesEnabled())
-        && !DBGFIsStepping(pVCpu)
-        && !pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledInt3Breakpoints)
-        rcStrict = hmR0VmxRunGuestCodeNormal(pVCpu);
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    bool const fInNestedGuestMode = CPUMIsGuestInVmxNonRootMode(pCtx);
+#else
+    bool const fInNestedGuestMode = false;
+#endif
+    if (!fInNestedGuestMode)
+    {
+        if (   !pVCpu->hm.s.fUseDebugLoop
+            && (!VBOXVMM_ANY_PROBES_ENABLED() || !hmR0VmxAnyExpensiveProbesEnabled())
+            && !DBGFIsStepping(pVCpu)
+            && !pVCpu->CTX_SUFF(pVM)->dbgf.ro.cEnabledInt3Breakpoints)
+            rcStrict = hmR0VmxRunGuestCodeNormal(pVCpu);
+        else
+            rcStrict = hmR0VmxRunGuestCodeDebug(pVCpu);
+    }
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     else
-        rcStrict = hmR0VmxRunGuestCodeDebug(pVCpu);
+        rcStrict = VINF_VMX_VMLAUNCH_VMRESUME;
+
+    if (rcStrict == VINF_VMX_VMLAUNCH_VMRESUME)
+        rcStrict = hmR0VmxRunGuestCodeNested(pVCpu);
+#endif
 
     if (rcStrict == VERR_EM_INTERPRETER)
         rcStrict = VINF_EM_RAW_EMULATE_INSTR;
@@ -13535,7 +13564,10 @@ HMVMX_EXIT_DECL hmR0VmxExitVmlaunch(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmlaunchVmresume(pVCpu, pVmxTransient->cbInstr, VMXINSTRID_VMLAUNCH);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    {
+        rcStrict = VINF_VMX_VMLAUNCH_VMRESUME;
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
+    }
     Assert(rcStrict != VINF_IEM_RAISED_XCPT);
     return rcStrict;
 }
@@ -13665,7 +13697,10 @@ HMVMX_EXIT_DECL hmR0VmxExitVmresume(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 
     VBOXSTRICTRC rcStrict = IEMExecDecodedVmlaunchVmresume(pVCpu, pVmxTransient->cbInstr, VMXINSTRID_VMRESUME);
     if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+    {
+        rcStrict = VINF_VMX_VMLAUNCH_VMRESUME;
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
+    }
     Assert(rcStrict != VINF_IEM_RAISED_XCPT);
     return rcStrict;
 }
