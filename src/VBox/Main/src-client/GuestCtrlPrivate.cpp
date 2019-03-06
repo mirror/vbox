@@ -758,7 +758,11 @@ void GuestBase::baseUninit(void)
 {
     LogFlowThisFuncEnter();
 
-    int rc2 = RTCritSectDelete(&mWaitEventCritSect);
+    /* Make sure to cancel any outstanding wait events. */
+    int rc2 = cancelWaitEvents();
+    AssertRC(rc2);
+
+    rc2 = RTCritSectDelete(&mWaitEventCritSect);
     AssertRC(rc2);
 
     LogFlowFuncLeaveRC(rc2);
