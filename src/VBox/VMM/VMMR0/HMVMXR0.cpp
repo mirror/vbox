@@ -8527,7 +8527,9 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
     PGMRZDynMapFlushAutoSet(pVCpu);
 #endif
 
-    /* Check force flag actions that might require us to go back to ring-3. */
+    /*
+     * Check and process force flag actions, some of which might require us to go back to ring-3.
+     */
     VBOXSTRICTRC rcStrict = hmR0VmxCheckForceFlags(pVCpu, fStepping);
     if (rcStrict == VINF_SUCCESS)
     { /* FFs doesn't get set all the time. */ }
@@ -8535,12 +8537,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
         return rcStrict;
 
     /*
-     * Setup the virtualized-APIC accesses.
-     *
-     * Note! This can cause a longjumps to R3 due to the acquisition of the PGM lock
-     * in both PGMHandlerPhysicalReset() and IOMMMIOMapMMIOHCPage(), see @bugref{8721}.
-     *
-     * This is the reason we do it here and not in hmR0VmxExportGuestState().
+     * Virtualize memory-mapped accesses to the physical APIC (may take locks).
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (   !pVCpu->hm.s.vmx.u64MsrApicBase
