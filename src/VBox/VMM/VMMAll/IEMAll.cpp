@@ -15745,7 +15745,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecSvmVmexit(PVMCPU pVCpu, uint64_t uExitCode, ui
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *pu64Value, bool fWrite)
 {
-    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK);
     Assert(pu64Value);
 
     VBOXSTRICTRC rcStrict;
@@ -15779,7 +15778,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMsr(PVMCPU pVCpu, uint32_t id
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess, size_t cbAccess, void *pvData,
                                                        bool fWrite)
 {
-    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
     Assert(pvData);
 
     /** @todo NSTVMX: Unfortunately, the caller has no idea about instruction fetch
@@ -15803,8 +15801,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t of
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitApicWrite(PVMCPU pVCpu)
 {
-    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
-
     VBOXSTRICTRC rcStrict = iemVmxApicWriteEmulation(pVCpu);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
@@ -15821,7 +15817,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitApicWrite(PVMCPU pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitPreemptTimer(PVMCPU pVCpu)
 {
-    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
     VBOXSTRICTRC rcStrict = iemVmxVmexitPreemptTimer(pVCpu);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
@@ -15842,7 +15837,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitPreemptTimer(PVMCPU pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending)
 {
-    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
     VBOXSTRICTRC rcStrict = iemVmxVmexitExtInt(pVCpu, uVector, fIntPending);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
@@ -15860,7 +15854,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector,
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector)
 {
-    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
     VBOXSTRICTRC rcStrict = iemVmxVmexitStartupIpi(pVCpu, uVector);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
@@ -15877,7 +15870,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVec
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInitIpi(PVMCPU pVCpu)
 {
-    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
     VBOXSTRICTRC rcStrict = iemVmxVmexitInitIpi(pVCpu);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
@@ -15894,7 +15886,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInitIpi(PVMCPU pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitIntWindow(PVMCPU pVCpu)
 {
-    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
     VBOXSTRICTRC rcStrict = iemVmxVmexitIntWindow(pVCpu);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
@@ -15911,7 +15902,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitIntWindow(PVMCPU pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC)  IEMExecVmxVmexitMtf(PVMCPU pVCpu)
 {
-    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
     VBOXSTRICTRC rcStrict = iemVmxVmexitMtf(pVCpu);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
@@ -16098,7 +16088,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmlaunchVmresume(PVMCPU pVCpu, uint8_t 
     IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMENTRY_MASK);
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
-    VBOXSTRICTRC rcStrict = iemVmxVmlaunchVmresume(pVCpu, cbInstr,  uInstrId);
+    VBOXSTRICTRC rcStrict = iemVmxVmlaunchVmresume(pVCpu, cbInstr, uInstrId);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);

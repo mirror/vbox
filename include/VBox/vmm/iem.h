@@ -224,9 +224,8 @@ typedef uint8_t IEMMODE;
                                                     | CPUMCTX_EXTRN_DR7 /* for memory breakpoints */ )
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-/** @todo NSTVMX: Refine this mask later (probably some MSRs are not required). */
-# define IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK         CPUMCTX_EXTRN_ABSOLUTELY_ALL
-# define IEM_CPUMCTX_EXTRN_VMX_VMENTRY_MASK        IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK
+# define IEM_CPUMCTX_EXTRN_VMX_VMENTRY_MASK        (  IEM_CPUMCTX_EXTRN_EXEC_DECODED_NO_MEM_MASK \
+                                                    | CPUMCTX_EXTRN_HWVIRT )
 #endif
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM

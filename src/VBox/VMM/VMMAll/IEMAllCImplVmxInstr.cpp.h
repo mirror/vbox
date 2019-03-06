@@ -1667,6 +1667,7 @@ IEM_STATIC uint32_t iemVmxCalcPreemptTimer(PVMCPU pVCpu)
      *    Tmp    = 40000 / 20000 = 2
      *    NewPt  = 2 - 2 = 0
      */
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
     uint64_t const uCurTick        = TMCpuTickGetNoCheck(pVCpu);
     uint64_t const uVmentryTick    = pVCpu->cpum.GstCtx.hwvirt.vmx.uVmentryTick;
     uint64_t const uDelta          = uCurTick - uVmentryTick;
@@ -1846,6 +1847,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
          *
          * See Intel spec. 24.4.2 "Guest Non-Register State".
          */
+        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR6);
         uint64_t       fPendingDbgMask = pVCpu->cpum.GstCtx.dr[6];
         uint64_t const fBpHitMask = VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP0 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP1
                                   | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP2 | VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP3;
@@ -2767,7 +2769,16 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     RT_NOREF2(pVCpu, uExitReason);
     return VINF_EM_RAW_EMULATE_INSTR;
 # else
-    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4       /* Control registers */
+                            | CPUMCTX_EXTRN_DR7 | CPUMCTX_EXTRN_DR6                           /* Debug registers */
+                            | CPUMCTX_EXTRN_EFER                                              /* MSRs */
+                            | CPUMCTX_EXTRN_SYSENTER_MSRS
+                            | CPUMCTX_EXTRN_OTHER_MSRS    /* PAT */
+                            | CPUMCTX_EXTRN_RIP | CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_RFLAGS    /* GPRs */
+                            | CPUMCTX_EXTRN_SREG_MASK                                         /* Segment registers */
+                            | CPUMCTX_EXTRN_TR                                                /* Task register */
+                            | CPUMCTX_EXTRN_LDTR | CPUMCTX_EXTRN_GDTR | CPUMCTX_EXTRN_IDTR    /* Table registers */
+                            | CPUMCTX_EXTRN_HWVIRT);                                          /* Hardware virtualization state */
 
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -3788,9 +3799,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitPreemptTimer(PVMCPU pVCpu)
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
 
-    /* Check if the guest has enabled VMX-preemption timers in the first place. */
+    /* The VM-exit is subject to "Activate VMX-preemption timer" being set. */
     if (pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
     {
+        /* Import the hardware virtualization state (for nested-guest VM-entry TSC-tick). */
+        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_HWVIRT);
+
         /*
          * Calculate the current VMX-preemption timer value.
          * Only if the value has reached zero, we cause the VM-exit.
@@ -3831,7 +3845,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool f
     Assert(pVmcs);
     Assert(fIntPending || uVector == 0);
 
-    /* The VM-exit is subject to "External interrupt exiting" is being set. */
+    /** @todo NSTVMX: r=ramshankar: Consider standardizing check basic/blanket
+     *        intercepts for VM-exits. Right now it is not clear which iemVmxVmexitXXX()
+     *        functions require prior checking of a blanket intercept and which don't.
+     *        It is better for the caller to check a blanket intercept performance wise
+     *        than making a function call. Leaving this as a todo because it is more
+     *        a performance issue. */
+
+    /* The VM-exit is subject to "External interrupt exiting" being set. */
     if (pVmcs->u32PinCtls & VMX_PIN_CTLS_EXT_INT_EXIT)
     {
         if (fIntPending)
@@ -4066,7 +4087,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
             }
             else if (uVector == X86_XCPT_DB)
             {
-                IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_DR6);
+                IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_DR6);
                 uExitQual = pVCpu->cpum.GstCtx.dr[6] & VMX_VMCS_EXIT_QUAL_VALID_MASK;
             }
         }
@@ -4219,6 +4240,7 @@ DECLINLINE(void) iemVmxVirtApicSetPendingWrite(PVMCPU pVCpu, uint16_t offApic)
  */
 DECLINLINE(uint16_t) iemVmxVirtApicClearPendingWrite(PVMCPU pVCpu)
 {
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
     uint8_t const offVirtApicWrite = pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite;
     pVCpu->cpum.GstCtx.hwvirt.vmx.offVirtApicWrite = 0;
     Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE));
@@ -4991,6 +5013,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxApicWriteEmulation(PVMCPU pVCpu)
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
 
+    /* Import the virtual-APIC write offset (part of the hardware-virtualization state). */
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_HWVIRT);
+
     /*
      * Perform APIC-write emulation based on the virtual-APIC register written.
      * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
@@ -5655,7 +5680,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestGdtrIdtr(PVMCPU pVCpu,  const char *pszIns
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pszInstr        The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu,  const char *pszInstr)
+IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPU pVCpu, const char *pszInstr)
 {
     /*
      * RIP and RFLAGS.
@@ -6762,6 +6787,8 @@ IEM_STATIC void iemVmxVmentryLoadGuestControlRegsMsrs(PVMCPU pVCpu)
      * See Intel spec. 26.3.2.1 "Loading Guest Control Registers, Debug Registers and MSRs".
      */
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+
+    IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
     uint64_t const uGstCr0 = (pVmcs->u64GuestCr0.u   & ~VMX_ENTRY_CR0_IGNORE_MASK)
                            | (pVCpu->cpum.GstCtx.cr0 &  VMX_ENTRY_CR0_IGNORE_MASK);
     CPUMSetGuestCR0(pVCpu, uGstCr0);
@@ -6782,9 +6809,10 @@ IEM_STATIC void iemVmxVmentryLoadGuestControlRegsMsrs(PVMCPU pVCpu)
         /* EFER MSR. */
         if (!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_EFER_MSR))
         {
-            bool const fGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
-            bool const fGstPaging     = RT_BOOL(uGstCr0 & X86_CR0_PG);
-            uint64_t const uHostEfer  = pVCpu->cpum.GstCtx.msrEFER;
+            IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_EFER);
+            uint64_t const uHostEfer      = pVCpu->cpum.GstCtx.msrEFER;
+            bool const     fGstInLongMode = RT_BOOL(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_IA32E_MODE_GUEST);
+            bool const     fGstPaging     = RT_BOOL(uGstCr0 & X86_CR0_PG);
             if (fGstInLongMode)
             {
                 /* If the nested-guest is in long mode, LMA and LME are both set. */
