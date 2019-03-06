@@ -36,6 +36,10 @@
 #define ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS    17
 /** @} */
 
+/** Values read from an empty (with no devices attached) ATA bus. */
+#define ATA_EMPTY_BUS_DATA      0x7F
+#define ATA_EMPTY_BUS_DATA_32   0x7F7F7F7F
+
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
@@ -4473,15 +4477,16 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
     bool        fHOB;
 
     /* Check if the guest is reading from a non-existent device. */
-    if (!s->pDrvMedia)
+    if (RT_UNLIKELY(!s->pDrvMedia))
     {
         if (pCtl->iSelectedIf)  /* Device 1 selected, Device 0 responding for it. */
         {
-            if (!pCtl->aIfs[0].pDrvMedia)   /** @todo this case should never get here! */
-            {
-                Log2(("%s: addr=%#x: no device on channel\n", __FUNCTION__, addr));
-                return VERR_IOM_IOPORT_UNUSED;
-            }
+            Assert(pCtl->aIfs[0].pDrvMedia);
+
+            /* When an ATAPI device 0 responds for non-present device 1, it generally
+             * returns zeros on reads. The Error register is an exception. See clause 7.1,
+             * table 16 in ATA-6 specification.
+             */
             if (((addr & 7) != 1) && pCtl->aIfs[0].fATAPI) {
                 Log2(("%s: addr=%#x, val=0: LUN#%d not attached/LUN#%d ATAPI\n", __FUNCTION__, addr,
                                 s->iLUN, pCtl->aIfs[0].iLUN));
@@ -4492,12 +4497,11 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
         }
         else                    /* Device 0 selected (but not present). */
         {
-            /* ATA-3 and later specifies that the host must have a pull-down resistor on DD7; ATA-5 explains
-             * that this causes the BSY bit to always be read as clear when there is no device on a given
-             * channel. Software then does not need to wait a long time for non-existent drives; note that
-             * EFI (TianoCore) relies on this behavior.
+            /* Because device 1 has no way to tell if there is device 0, the behavior is the same
+             * as for an empty bus; see comments in ataIOPortReadEmptyBus(). Note that EFI (TianoCore)
+             * relies on this behavior when detecting devices.
              */
-            *pu32 = 0x7F;
+            *pu32 = ATA_EMPTY_BUS_DATA;
             Log2(("%s: addr=%#x: LUN#%d not attached, val=%#02x\n", __FUNCTION__, addr, s->iLUN, *pu32));
             return VINF_SUCCESS;
         }
@@ -4641,21 +4645,21 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
 }
 
 
+/*
+ * Read the Alternate status register. Does not affect interrupts.
+ */
 static uint32_t ataStatusRead(PATACONTROLLER pCtl, uint32_t addr)
 {
     ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
     uint32_t val;
     RT_NOREF1(addr);
 
-    /// @todo The handler should not be even registered if there
-    // is no device on an IDE channel.
-    if (!pCtl->aIfs[0].pDrvMedia && !pCtl->aIfs[1].pDrvMedia)
-        val = 0xff;
-    else if (pCtl->iSelectedIf == 1 && !s->pDrvMedia)
+    Assert(pCtl->aIfs[0].pDrvMedia || pCtl->aIfs[1].pDrvMedia); /* Channel must not be empty. */
+    if (pCtl->iSelectedIf == 1 && !s->pDrvMedia)
         val = 0;    /* Device 1 selected, Device 0 responding for it. */
     else
         val = s->uATARegStatus;
-    Log2(("%s: addr=%#x val=%#04x\n", __FUNCTION__, addr, val));
+    Log2(("%s: LUN#%d read addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN, addr, val));
     return val;
 }
 
@@ -4667,7 +4671,7 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
         return VINF_IOM_R3_IOPORT_WRITE; /* The RESET stuff is too complicated for RC+R0. */
 #endif /* !IN_RING3 */
 
-    Log2(("%s: addr=%#x val=%#04x\n", __FUNCTION__, addr, val));
+    Log2(("%s: LUN#%d write addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN, addr, val));
     /* RESET is common for both drives attached to a controller. */
     if (   !(pCtl->aIfs[0].uATARegDevCtl & ATA_DEVCTL_RESET)
         && (val & ATA_DEVCTL_RESET))
@@ -4848,8 +4852,8 @@ DECLINLINE(void) ataHCPIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
         /* Need to continue the transfer in the async I/O thread. This is
          * the case for write operations or generally for not yet finished
          * transfers (some data might need to be read). */
-        ataUnsetStatus(s, ATA_STAT_READY | ATA_STAT_DRQ);
         ataSetStatus(s, ATA_STAT_BUSY);
+        ataUnsetStatus(s, ATA_STAT_READY | ATA_STAT_DRQ);
 
         Log2(("%s: Ctl#%d: message to async I/O thread, continuing PIO transfer\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
         ataHCAsyncIOPutRequest(pCtl, &g_ataPIORequest);
@@ -6300,6 +6304,62 @@ static DECLCALLBACK(int) ataR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, con
 
 
 /**
+ * Port I/O Handler for OUT operations on unpopulated IDE channels.
+ * @see FNIOMIOPORTOUT for details.
+ */
+PDMBOTHCBDECL(int) ataIOPortWriteEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
+    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PATACONTROLLER pCtl = &pThis->aCts[i];
+#ifndef VBOX_LOG_ENABLED
+    RT_NOREF(Port); RT_NOREF(cb); RT_NOREF(u32); RT_NOREF(pCtl);
+#endif
+
+    Assert(i < 2);
+    Assert(!pCtl->aIfs[0].pDrvMedia && !pCtl->aIfs[1].pDrvMedia);
+
+    /* This is simply a black hole, writes on unpopulated IDE channels elicit no response. */
+    LogFunc(("Empty bus: Ignoring write to port %x val=%x size=%d\n", Port, u32, cb));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Port I/O Handler for IN operations on unpopulated IDE channels.
+ * @see FNIOMIOPORTIN for details.
+ */
+PDMBOTHCBDECL(int) ataIOPortReadEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+{
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
+    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PATACONTROLLER pCtl = &pThis->aCts[i];
+#ifndef VBOX_LOG_ENABLED
+    RT_NOREF(Port); RT_NOREF(pCtl);
+#endif
+
+    Assert(i < 2);
+    Assert(cb <= 4);
+    Assert(!pCtl->aIfs[0].pDrvMedia && !pCtl->aIfs[1].pDrvMedia);
+
+    /*
+     * Reads on unpopulated IDE channels behave in a unique way. Newer ATA specifications
+     * mandate that the host must have a pull-down resistor on signal DD7. As a consequence,
+     * bit 7 is always read as zero. This greatly aids in ATA device detection because
+     * the empty bus does not look to the host like a permanently busy drive, and no long
+     * timeouts (on the order of 30 seconds) are needed.
+     *
+     * The response is entirely static and does not require any locking or other fancy
+     * stuff. Breaking it out simplifies the I/O handling for non-empty IDE channels which
+     * is quite complicated enough already.
+     */
+    *pu32 = ATA_EMPTY_BUS_DATA_32 >> ((4 - cb) * 8);
+    LogFunc(("Empty bus: port %x val=%x size=%d\n", Port, *pu32, cb));
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Port I/O Handler for primary port range OUT operations.
  * @see FNIOMIOPORTOUT for details.
  */
@@ -6391,7 +6451,10 @@ PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
         }
     }
     else
+    {
+        Log(("ataIOPortWrite2: ignoring write to port %x size=%d!\n", Port, cb));
         rc = VINF_SUCCESS;
+    }
     return rc;
 }
 
@@ -6419,7 +6482,10 @@ PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
         }
     }
     else
+    {
+        Log(("ataIOPortRead2: ignoring read from port %x size=%d!\n", Port, cb));
         rc = VERR_IOM_IOPORT_UNUSED;
+    }
     return rc;
 }
 
@@ -7621,66 +7687,10 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register PCI I/O region for BMDMA"));
 
     /*
-     * Register the I/O ports.
-     * The ports are all hardcoded and enforced by the PIIX3 host bridge controller.
+     * Register stats, create critical sections.
      */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTHCPTR)(uintptr_t)i,
-                                     ataIOPortWrite1Data, ataIOPortRead1Data,
-                                     ataIOPortWriteStr1Data, ataIOPortReadStr1Data, "ATA I/O Base 1 - Data");
-        AssertLogRelRCReturn(rc, rc);
-        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase1 + 1, 7, (RTHCPTR)(uintptr_t)i,
-                                     ataIOPortWrite1Other, ataIOPortRead1Other, NULL, NULL, "ATA I/O Base 1 - Other");
-
-        AssertLogRelRCReturn(rc, rc);
-        if (fRCEnabled)
-        {
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTGCPTR)i,
-                                           "ataIOPortWrite1Data", "ataIOPortRead1Data",
-                                           "ataIOPortWriteStr1Data", "ataIOPortReadStr1Data", "ATA I/O Base 1 - Data");
-            AssertLogRelRCReturn(rc, rc);
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1 + 1, 7, (RTGCPTR)i,
-                                           "ataIOPortWrite1Other", "ataIOPortRead1Other", NULL, NULL, "ATA I/O Base 1 - Other");
-            AssertLogRelRCReturn(rc, rc);
-        }
-
-        if (fR0Enabled)
-        {
-#if 0
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTR0PTR)i,
-                                           "ataIOPortWrite1Data", "ataIOPortRead1Data", NULL, NULL, "ATA I/O Base 1 - Data");
-#else
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTR0PTR)i,
-                                           "ataIOPortWrite1Data", "ataIOPortRead1Data",
-                                           "ataIOPortWriteStr1Data", "ataIOPortReadStr1Data", "ATA I/O Base 1 - Data");
-#endif
-            AssertLogRelRCReturn(rc, rc);
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1 + 1, 7, (RTR0PTR)i,
-                                           "ataIOPortWrite1Other", "ataIOPortRead1Other", NULL, NULL, "ATA I/O Base 1 - Other");
-            AssertLogRelRCReturn(rc, rc);
-        }
-
-        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTHCPTR)(uintptr_t)i,
-                                     ataIOPortWrite2, ataIOPortRead2, NULL, NULL, "ATA I/O Base 2");
-        if (RT_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers"));
-
-        if (fRCEnabled)
-        {
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTGCPTR)i,
-                                           "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
-            if (RT_FAILURE(rc))
-                return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (GC)"));
-        }
-        if (fR0Enabled)
-        {
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTR0PTR)i,
-                                           "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
-            if (RT_FAILURE(rc))
-                return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (R0)"));
-        }
-
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
         {
             ATADevState *pIf = &pThis->aCts[i].aIfs[j];
@@ -7931,6 +7941,103 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                 }
             }
             cbTotalBuffer += pIf->cbIOBuffer;
+        }
+    }
+
+    /*
+     * Register the I/O ports.
+     * The ports are all hardcoded and enforced by the PIIX3 host bridge controller.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    {
+        if (!pThis->aCts[i].aIfs[0].pDrvMedia && !pThis->aCts[i].aIfs[1].pDrvMedia)
+        {
+            /* No device present on this ATA bus; requires special handling. */
+            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTHCPTR)(uintptr_t)i,
+                                         ataIOPortWriteEmptyBus, ataIOPortReadEmptyBus, NULL, NULL, "ATA I/O Base 1 - Empty Bus");
+
+            AssertLogRelRCReturn(rc, rc);
+            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTHCPTR)(uintptr_t)i,
+                                         ataIOPortWriteEmptyBus, ataIOPortReadEmptyBus, NULL, NULL, "ATA I/O Base 2 - Empty Bus");
+            AssertLogRelRCReturn(rc, rc);
+
+            if (fRCEnabled)
+            {
+                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTGCPTR)i,
+                                               "ataIOPortWriteEmptyBus", "ataIOPortReadEmptyBus", NULL, NULL, "ATA I/O Base 1 - Empty Bus");
+                AssertLogRelRCReturn(rc, rc);
+                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTGCPTR)i,
+                                               "ataIOPortWriteEmptyBus", "ataIOPortReadEmptyBus", NULL, NULL, "ATA I/O Base 2 - Empty Bus");
+                AssertLogRelRCReturn(rc, rc);
+            }
+
+            if (fR0Enabled)
+            {
+                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTR0PTR)i,
+                                               "ataIOPortWriteEmptyBus", "ataIOPortReadEmptyBus", NULL, NULL, "ATA I/O Base 1 - Empty Bus");
+                AssertLogRelRCReturn(rc, rc);
+                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTR0PTR)i,
+                                               "ataIOPortWriteEmptyBus", "ataIOPortReadEmptyBus", NULL, NULL, "ATA I/O Base 2 - Empty Bus");
+                AssertLogRelRCReturn(rc, rc);
+            }
+        }
+        else
+        {
+            /* At least one device present, register regular handlers. */
+            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTHCPTR)(uintptr_t)i,
+                                         ataIOPortWrite1Data, ataIOPortRead1Data,
+                                         ataIOPortWriteStr1Data, ataIOPortReadStr1Data, "ATA I/O Base 1 - Data");
+            AssertLogRelRCReturn(rc, rc);
+            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase1 + 1, 7, (RTHCPTR)(uintptr_t)i,
+                                         ataIOPortWrite1Other, ataIOPortRead1Other, NULL, NULL, "ATA I/O Base 1 - Other");
+
+            AssertLogRelRCReturn(rc, rc);
+            if (fRCEnabled)
+            {
+                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTGCPTR)i,
+                                               "ataIOPortWrite1Data", "ataIOPortRead1Data",
+                                               "ataIOPortWriteStr1Data", "ataIOPortReadStr1Data", "ATA I/O Base 1 - Data");
+                AssertLogRelRCReturn(rc, rc);
+                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1 + 1, 7, (RTGCPTR)i,
+                                               "ataIOPortWrite1Other", "ataIOPortRead1Other", NULL, NULL, "ATA I/O Base 1 - Other");
+                AssertLogRelRCReturn(rc, rc);
+            }
+
+            if (fR0Enabled)
+            {
+    #if 0
+                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTR0PTR)i,
+                                               "ataIOPortWrite1Data", "ataIOPortRead1Data", NULL, NULL, "ATA I/O Base 1 - Data");
+    #else
+                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTR0PTR)i,
+                                               "ataIOPortWrite1Data", "ataIOPortRead1Data",
+                                               "ataIOPortWriteStr1Data", "ataIOPortReadStr1Data", "ATA I/O Base 1 - Data");
+    #endif
+                AssertLogRelRCReturn(rc, rc);
+                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1 + 1, 7, (RTR0PTR)i,
+                                               "ataIOPortWrite1Other", "ataIOPortRead1Other", NULL, NULL, "ATA I/O Base 1 - Other");
+                AssertLogRelRCReturn(rc, rc);
+            }
+
+            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTHCPTR)(uintptr_t)i,
+                                         ataIOPortWrite2, ataIOPortRead2, NULL, NULL, "ATA I/O Base 2");
+            if (RT_FAILURE(rc))
+                return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers"));
+
+            if (fRCEnabled)
+            {
+                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTGCPTR)i,
+                                               "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
+                if (RT_FAILURE(rc))
+                    return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (GC)"));
+            }
+            if (fR0Enabled)
+            {
+                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTR0PTR)i,
+                                               "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
+                if (RT_FAILURE(rc))
+                    return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (R0)"));
+            }
         }
     }
 
