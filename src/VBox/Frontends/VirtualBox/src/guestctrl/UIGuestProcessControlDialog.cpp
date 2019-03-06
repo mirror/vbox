@@ -82,7 +82,7 @@ void UIGuestProcessControlDialog::configure()
 void UIGuestProcessControlDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIGuestProcessControlWidget *pWidget = new UIGuestProcessControlWidget(EmbedTo_Dialog, m_pActionPool, m_comGuest, this);
+    UIGuestProcessControlWidget *pWidget = new UIGuestProcessControlWidget(EmbedTo_Dialog, m_comGuest, this);
 
     if (pWidget)
     {
@@ -92,9 +92,6 @@ void UIGuestProcessControlDialog::configureCentralWidget()
 #ifdef VBOX_WS_MAC
         //setWidgetToolbar(pWidget->toolbar());
 #endif
-        // connect(pWidget, &UIGuestControlWidget::sigSetCloseButtonShortCut,
-        //         this, &UIGuestControlWidget::sltSetCloseButtonShortCut);
-
         /* Add into layout: */
         centralWidget()->layout()->addWidget(pWidget);
     }

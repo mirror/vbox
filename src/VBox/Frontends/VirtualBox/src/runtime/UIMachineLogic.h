@@ -278,8 +278,6 @@ private slots:
     void sltShowInformationDialog();
     void sltShowFileManagerDialog();
     void sltCloseFileManagerDialog();
-    void sltShowGuestProcessControlDialog();
-    void sltCloseGuestProcessControlDialog();
     void sltReset();
     void sltPause(bool fOn);
     void sltDetach();

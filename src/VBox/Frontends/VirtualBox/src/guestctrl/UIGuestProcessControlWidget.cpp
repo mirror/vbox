@@ -23,13 +23,13 @@
 
 /* GUI includes: */
 #include "QITreeWidget.h"
-#include "UIActionPool.h"
 #include "UIExtraDataManager.h"
 #include "UIGuestControlConsole.h"
 #include "UIGuestControlInterface.h"
 #include "UIGuestControlTreeItem.h"
 #include "UIGuestProcessControlWidget.h"
 #include "UIToolBar.h"
+#include "UIIconPool.h"
 #include "UIVMInformationDialog.h"
 #include "VBoxGlobal.h"
 
@@ -102,13 +102,19 @@ protected:
         // Add actions to expand/collapse all tree items
         QAction *pExpandAllAction = menu->addAction(tr("Expand All"));
         if (pExpandAllAction)
+        {
+            pExpandAllAction->setIcon(UIIconPool::iconSet(":/expand_all_16px.png"));
             connect(pExpandAllAction, &QAction::triggered,
                     this, &UIGuestControlTreeWidget::sltExpandAll);
+        }
+
         QAction *pCollapseAllAction = menu->addAction(tr("Collapse All"));
         if (pCollapseAllAction)
+        {
+            pCollapseAllAction->setIcon(UIIconPool::iconSet(":/collapse_all_16px.png"));
             connect(pCollapseAllAction, &QAction::triggered,
                     this, &UIGuestControlTreeWidget::sltCollapseAll);
-
+        }
         menu->exec(pEvent->globalPos());
 
         if (pSessionCloseAction)
@@ -159,8 +165,8 @@ private slots:
     }
 };
 
-UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, UIActionPool *pActionPool,
-                                                         const CGuest &comGuest, QWidget *pParent, bool fShowToolbar /* = false */)
+UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, const CGuest &comGuest,
+                                                         QWidget *pParent, bool fShowToolbar /* = false */)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_comGuest(comGuest)
     , m_pMainLayout(0)
@@ -169,10 +175,10 @@ UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, U
     , m_pConsole(0)
     , m_pControlInterface(0)
     , m_enmEmbedding(enmEmbedding)
-    , m_pActionPool(pActionPool)
     , m_pToolBar(0)
     , m_pQtListener(0)
     , m_fShowToolbar(fShowToolbar)
+    , m_fDeleteAfterSessionUnregister(false)
 {
     prepareListener();
     prepareObjects();
@@ -180,6 +186,7 @@ UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, U
     prepareToolBar();
     initGuestSessionTree();
     loadSettings();
+    retranslateUi();
 }
 
 UIGuestProcessControlWidget::~UIGuestProcessControlWidget()
@@ -189,6 +196,12 @@ UIGuestProcessControlWidget::~UIGuestProcessControlWidget()
 
 void UIGuestProcessControlWidget::retranslateUi()
 {
+    if (m_pTreeWidget)
+    {
+        QStringList labels;
+        labels << tr("Session ID") << tr("Session Name") << tr("Session Status");
+        m_pTreeWidget->setHeaderLabels(labels);
+    }
 }
 
 
@@ -220,12 +233,13 @@ void UIGuestProcessControlWidget::prepareObjects()
     {
         m_pSplitter->addWidget(m_pTreeWidget);
         m_pTreeWidget->setColumnCount(3);
-        QStringList labels;
-        labels << "" << "" << "";
-
-        m_pTreeWidget->setHeaderLabels(labels);
     }
+
+    /* Disable the CLI for now (and maybe forever): */
+#ifdef WITH_GUEST_CONTROL_CLI
     m_pConsole = new UIGuestControlConsole;
+#endif
+
     if (m_pConsole)
     {
         m_pSplitter->addWidget(m_pConsole);
@@ -253,8 +267,9 @@ void UIGuestProcessControlWidget::prepareConnections()
     qRegisterMetaType<QVector<int> >();
     connect(m_pControlInterface, &UIGuestControlInterface::sigOutputString,
             this, &UIGuestProcessControlWidget::sltConsoleOutputReceived);
-    connect(m_pConsole, &UIGuestControlConsole::commandEntered,
-            this, &UIGuestProcessControlWidget::sltConsoleCommandEntered);
+    if (m_pConsole)
+        connect(m_pConsole, &UIGuestControlConsole::commandEntered,
+                this, &UIGuestProcessControlWidget::sltConsoleCommandEntered);
 
     if (m_pTreeWidget)
         connect(m_pTreeWidget, &UIGuestControlTreeWidget::sigCloseSessionOrProcess,
@@ -450,7 +465,6 @@ void UIGuestProcessControlWidget::sltGuestSessionUnregistered(CGuestSession gues
 
     UIGuestSessionTreeItem *selectedItem = NULL;
 
-
     for (int i = 0; i < m_pTreeWidget->topLevelItemCount(); ++i)
     {
         QTreeWidgetItem *item = m_pTreeWidget->topLevelItem( i );
@@ -462,7 +476,8 @@ void UIGuestProcessControlWidget::sltGuestSessionUnregistered(CGuestSession gues
             break;
         }
     }
-    delete selectedItem;
+    if (m_fDeleteAfterSessionUnregister)
+        delete selectedItem;
 }
 
 void UIGuestProcessControlWidget::saveSettings()
