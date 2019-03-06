@@ -230,11 +230,25 @@ Utf8Str GuestDirectory::i_guestErrorToString(int rcGuest)
 }
 
 /**
- * Called by IGuestSession right before this directory gets
- * removed from the public directory list.
+ * @copydoc GuestObject::i_onUnregister
  */
-int GuestDirectory::i_onRemove(void)
+int GuestDirectory::i_onUnregister(void)
 {
+    LogFlowThisFuncEnter();
+
+    int vrc = VINF_SUCCESS;
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+/**
+ * @copydoc GuestObject::i_onSessionStatusChange
+ */
+int GuestDirectory::i_onSessionStatusChange(GuestSessionStatus_T enmSessionStatus)
+{
+    RT_NOREF(enmSessionStatus);
+
     LogFlowThisFuncEnter();
 
     int vrc = VINF_SUCCESS;

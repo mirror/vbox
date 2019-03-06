@@ -280,12 +280,6 @@ void GuestProcess::uninit(void)
 
     LogFlowThisFunc(("mExe=%s, PID=%RU32\n", mData.mProcess.mExecutable.c_str(), mData.mPID));
 
-    /* Terminate process if not already done yet. */
-    int rcGuest = VINF_SUCCESS;
-    int vrc = i_terminateProcess(30 * 1000, &rcGuest); /** @todo Make timeouts configurable. */
-    /* Note: Don't return here yet; first uninit all other stuff in
-     *       case of failure. */
-
     if (mData.mpSessionBaseEnv)
     {
         mData.mpSessionBaseEnv->releaseConst();
@@ -294,8 +288,7 @@ void GuestProcess::uninit(void)
 
     baseUninit();
 
-    LogFlowThisFunc(("Returning rc=%Rrc, rcGuest=%Rrc\n", vrc, rcGuest));
-    RT_NOREF_PV(vrc);
+    LogFlowFuncLeave();
 }
 
 // implementation of public getters/setters for attributes
@@ -817,10 +810,9 @@ int GuestProcess::i_onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCT
 }
 
 /**
- * Called by IGuestSession right before this process gets
- * removed from the public process list.
+ * @copydoc GuestObject::i_onUnregister
  */
-int GuestProcess::i_onRemove(void)
+int GuestProcess::i_onUnregister(void)
 {
     LogFlowThisFuncEnter();
 
@@ -838,6 +830,28 @@ int GuestProcess::i_onRemove(void)
 
         mLocalListener.setNull();
         unconst(mEventSource).setNull();
+    }
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+/**
+ * @copydoc GuestObject::i_onSessionStatusChange
+ */
+int GuestProcess::i_onSessionStatusChange(GuestSessionStatus_T enmSessionStatus)
+{
+    LogFlowThisFuncEnter();
+
+    int vrc = VINF_SUCCESS;
+
+    /* If the session now is in a terminated state, set the process status
+     * to "down", as there is not much else we can do now. */
+    if (GuestSession::i_isTerminated(enmSessionStatus))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        vrc = i_setProcessStatus(ProcessStatus_Down, 0 /* rc, ignored */);
     }
 
     LogFlowFuncLeaveRC(vrc);

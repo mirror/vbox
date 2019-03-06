@@ -262,6 +262,8 @@ private:
         uint64_t          msBirth;
         /** The object type. */
         SESSIONOBJECTTYPE enmType;
+        /** Weak pointer to the object itself. */
+        GuestObject      *pObject;
     };
 
     /** Map containing all objects bound to a guest session.
@@ -308,6 +310,7 @@ public:
     static Utf8Str          i_guestErrorToString(int guestRc);
     bool                    i_isStarted(void) const;
     HRESULT                 i_isStartedExternal(void);
+    static bool             i_isTerminated(GuestSessionStatus_T enmStatus);
     bool                    i_isTerminated(void) const;
     int                     i_onRemove(void);
     int                     i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
@@ -317,8 +320,10 @@ public:
     static int              i_startSessionThreadTask(GuestSessionTaskInternalStart *pTask);
     Guest                  *i_getParent(void) { return mParent; }
     uint32_t                i_getProtocolVersion(void) { return mData.mProtocolVersion; }
-    int                     i_objectRegister(SESSIONOBJECTTYPE enmType, uint32_t *pidObject);
+    int                     i_objectRegister(GuestObject *pObject, SESSIONOBJECTTYPE enmType, uint32_t *pidObject);
     int                     i_objectUnregister(uint32_t uObjectID);
+    int                     i_objectsUnregister(void);
+    int                     i_objectsNotifyAboutStatusChange(GuestSessionStatus_T enmSessionStatus);
     int                     i_pathRename(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *pGuestRc);
     int                     i_pathUserDocuments(Utf8Str &strPath, int *prcGuest);
     int                     i_pathUserHome(Utf8Str &strPath, int *prcGuest);

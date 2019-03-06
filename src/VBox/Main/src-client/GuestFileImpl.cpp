@@ -616,10 +616,9 @@ int GuestFile::i_onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTC
 }
 
 /**
- * Called by IGuestSession right before this file gets removed
- * from the public file list.
+ * @copydoc GuestObject::i_onUnregister
  */
-int GuestFile::i_onRemove(void)
+int GuestFile::i_onUnregister(void)
 {
     LogFlowThisFuncEnter();
 
@@ -638,6 +637,24 @@ int GuestFile::i_onRemove(void)
         mLocalListener.setNull();
         unconst(mEventSource).setNull();
     }
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+/**
+ * @copydoc GuestObject::i_onSessionStatusChange
+ */
+int GuestFile::i_onSessionStatusChange(GuestSessionStatus_T enmSessionStatus)
+{
+    LogFlowThisFuncEnter();
+
+    int vrc = VINF_SUCCESS;
+
+    /* If the session now is in a terminated state, set the file status
+     * to "down", as there is not much else we can do now. */
+    if (GuestSession::i_isTerminated(enmSessionStatus))
+        vrc = i_setFileStatus(FileStatus_Down, 0 /* fileRc, ignored */);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
