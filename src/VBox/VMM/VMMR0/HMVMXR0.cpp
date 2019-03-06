@@ -8447,6 +8447,41 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPU pVCpu)
 
 
 /**
+ * Setup the APIC-access page for virtualizing APIC access.
+ *
+ * This can cause a longjumps to R3 due to the acquisition of the PGM lock, hence
+ * this not done as part of exporting guest state, see @bugref{8721}.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+static int hmR0VmxMapHCApicAccessPage(PVMCPU pVCpu)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    uint64_t const u64MsrApicBase = APICGetBaseMsrNoCheck(pVCpu);
+
+    Assert(PDMHasApic(pVM));
+    Assert(u64MsrApicBase);
+
+    RTGCPHYS const GCPhysApicBase = u64MsrApicBase & PAGE_BASE_GC_MASK;
+    Log4Func(("Mappping HC APIC-access page at %#RGp\n", GCPhysApicBase));
+
+    /* Unalias any existing mapping. */
+    int rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
+    AssertRCReturn(rc, rc);
+
+    /* Map the HC APIC-access page in place of the MMIO page, also updates the shadow page tables if necessary. */
+    Assert(pVM->hm.s.vmx.HCPhysApicAccess);
+    rc = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
+    AssertRCReturn(rc, rc);
+
+    /* Update the per-VCPU cache of the APIC base MSR. */
+    pVCpu->hm.s.vmx.u64MsrApicBase = u64MsrApicBase;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Does the preparations before executing guest code in VT-x.
  *
  * This may cause longjmps to ring-3 and may even result in rescheduling to the
@@ -8512,23 +8547,8 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient
         && (pVCpu->hm.s.vmx.Ctls.u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
         && PDMHasApic(pVM))
     {
-        uint64_t const u64MsrApicBase = APICGetBaseMsrNoCheck(pVCpu);
-        Assert(u64MsrApicBase);
-        Assert(pVM->hm.s.vmx.HCPhysApicAccess);
-
-        RTGCPHYS const GCPhysApicBase = u64MsrApicBase & PAGE_BASE_GC_MASK;
-
-        /* Unalias any existing mapping. */
-        int rc = PGMHandlerPhysicalReset(pVM, GCPhysApicBase);
+        int rc = hmR0VmxMapHCApicAccessPage(pVCpu);
         AssertRCReturn(rc, rc);
-
-        /* Map the HC APIC-access page in place of the MMIO page, also updates the shadow page tables if necessary. */
-        Log4Func(("Mapped HC APIC-access page at %#RGp\n", GCPhysApicBase));
-        rc = IOMMMIOMapMMIOHCPage(pVM, pVCpu, GCPhysApicBase, pVM->hm.s.vmx.HCPhysApicAccess, X86_PTE_RW | X86_PTE_P);
-        AssertRCReturn(rc, rc);
-
-        /* Update the per-VCPU cache of the APIC base MSR. */
-        pVCpu->hm.s.vmx.u64MsrApicBase = u64MsrApicBase;
     }
 
     if (TRPMHasTrap(pVCpu))
