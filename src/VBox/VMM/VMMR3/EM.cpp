@@ -1741,7 +1741,6 @@ static int emR3VmxNstGstIntrIntercept(PVMCPU pVCpu)
     if (   CPUMIsGuestPhysIntrEnabled(pVCpu)
         && CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
     {
-        CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
         VBOXSTRICTRC rcStrict = IEMExecVmxVmexitIntWindow(pVCpu);
         if (RT_SUCCESS(rcStrict))
         {
@@ -1758,7 +1757,6 @@ static int emR3VmxNstGstIntrIntercept(PVMCPU pVCpu)
     /* Handle the "external interrupt" VM-exit intercept. */
     if (CPUMIsGuestVmxPinCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PIN_CTLS_EXT_INT_EXIT))
     {
-        CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_VMX_VMEXIT_MASK);
         VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
         AssertMsg(   rcStrict != VINF_PGM_CHANGE_MODE
                   && rcStrict != VINF_VMX_VMEXIT
