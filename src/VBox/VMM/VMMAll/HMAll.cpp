@@ -344,7 +344,9 @@ VMMDECL(bool) HMCanExecuteGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
         return true;
     }
 
-    return HMCanExecuteVmxGuest(pVCpu, pCtx);
+    bool rc = HMCanExecuteVmxGuest(pVCpu, pCtx);
+    LogFlowFunc(("returning %RTbool\n", rc));
+    return rc;
 }
 
 
