@@ -6083,7 +6083,7 @@ static VBOXSTRICTRC hmR0VmxDecodeMemOperand(PVMCPU pVCpu, uint32_t uExitInstrInf
  */
 static VBOXSTRICTRC hmR0VmxCheckExitDueToVmxInstr(PVMCPU pVCpu, uint32_t uExitReason)
 {
-    HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS
+    HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_RFLAGS | CPUMCTX_EXTRN_SS
                               | CPUMCTX_EXTRN_CS  | CPUMCTX_EXTRN_EFER);
 
     if (   CPUMIsGuestInRealOrV86ModeEx(&pVCpu->cpum.GstCtx)
@@ -6097,6 +6097,8 @@ static VBOXSTRICTRC hmR0VmxCheckExitDueToVmxInstr(PVMCPU pVCpu, uint32_t uExitRe
 
     if (uExitReason == VMX_EXIT_VMXON)
     {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
+
         /*
          * We check CR4.VMXE because it is required to be always set while in VMX operation
          * by physical CPUs and our CR4 read shadow is only consulted when executing specific
