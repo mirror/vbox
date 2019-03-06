@@ -6519,7 +6519,7 @@ DECLINLINE(int) hmR0VmxImportGuestIntrState(PVMCPU pVCpu)
 
     /*
      * We additionally have a requirement to import RIP, RFLAGS depending on whether we
-     * might need them in hmR0VmxEvaluatePendingEvent().
+     * might need them in while evaluating pending events before VM-entry.
      */
     if (!u32Val)
     {
@@ -11275,7 +11275,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitIntWindow(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransi
     /* Indicate that we no longer need to VM-exit when the guest is ready to receive interrupts, it is now ready. */
     hmR0VmxClearIntWindowExitVmcs(pVCpu);
 
-    /* Deliver the pending interrupts via hmR0VmxEvaluatePendingEvent() and resume guest execution. */
+    /* Evaluate and deliver pending events and resume guest execution. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIntWindow);
     return VINF_SUCCESS;
 }
@@ -11316,7 +11316,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransi
     /* Indicate that we no longer need to VM-exit when the guest is ready to receive NMIs, it is now ready */
     hmR0VmxClearNmiWindowExitVmcs(pVCpu);
 
-    /* Deliver the pending NMI via hmR0VmxEvaluatePendingEvent() and resume guest execution. */
+    /* Evaluate and deliver pending events and resume guest execution. */
     return VINF_SUCCESS;
 }
 
