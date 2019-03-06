@@ -1151,7 +1151,7 @@ protected:
  */
 class GuestObject : public GuestBase
 {
-    friend GuestSession;
+    friend class GuestSession;
 
 public:
 
