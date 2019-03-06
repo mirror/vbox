@@ -5801,6 +5801,37 @@ DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntInfo, uint3
 
 
 /**
+ * Sets an external interrupt as pending-for-injection into the VM.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   u8Interrupt     The external interrupt vector.
+ */
+DECLINLINE(void) hmR0VmxSetPendingExtInt(PVMCPU pVCpu, uint8_t u8Interrupt)
+{
+    uint32_t const u32IntInfo = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR,          u8Interrupt)
+                              | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,           VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
+                              | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID, 0)
+                              | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1);
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+}
+
+
+/**
+ * Sets an NMI (\#NMI) exception as pending-for-injection into the VM.
+ *
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+DECLINLINE(void) hmR0VmxSetPendingXcptNmi(PVMCPU pVCpu)
+{
+    uint32_t const u32IntInfo = RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VECTOR,         X86_XCPT_NMI)
+                              | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,           VMX_ENTRY_INT_INFO_TYPE_NMI)
+                              | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID, 0)
+                              | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1);
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+}
+
+
+/**
  * Sets a double-fault (\#DF) exception as pending-for-injection into the VM.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -5811,7 +5842,7 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu)
                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_TYPE,           VMX_EXIT_INT_INFO_TYPE_HW_XCPT)
                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID, 1)
                               | RT_BF_MAKE(VMX_BF_ENTRY_INT_INFO_VALID,          1);
-    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo,  0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
 
 
@@ -7558,12 +7589,9 @@ static uint32_t hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu)
             && !fBlockSti
             && !fBlockMovSS)
         {
-            Log4Func(("Pending NMI\n"));
-            uint32_t u32IntInfo = X86_XCPT_NMI | VMX_EXIT_INT_INFO_VALID;
-            u32IntInfo         |= (VMX_EXIT_INT_INFO_TYPE_NMI << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-
-            hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+            hmR0VmxSetPendingXcptNmi(pVCpu);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+            Log4Func(("Pending NMI\n"));
         }
         else
             hmR0VmxSetNmiWindowExitVmcs(pVCpu);
@@ -7588,12 +7616,8 @@ static uint32_t hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu)
             rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
             if (RT_SUCCESS(rc))
             {
-                Log4Func(("Pending external interrupt u8Interrupt=%#x\n", u8Interrupt));
-                uint32_t u32IntInfo = u8Interrupt
-                                    | VMX_EXIT_INT_INFO_VALID
-                                    | (VMX_EXIT_INT_INFO_TYPE_EXT_INT << VMX_EXIT_INT_INFO_TYPE_SHIFT);
-
-                hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrfaultAddress */);
+                hmR0VmxSetPendingExtInt(pVCpu, u8Interrupt);
+                Log4Func(("Pending external interrupt vector %#x\n", u8Interrupt));
             }
             else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
             {
