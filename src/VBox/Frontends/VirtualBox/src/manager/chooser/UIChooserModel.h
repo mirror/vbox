@@ -378,12 +378,6 @@ private:
         void loadGroupTree();
         /** Adds machine item based on certain @a comMachine and optionally @a fMakeItVisible. */
         void addMachineIntoTheTree(const CMachine &comMachine, bool fMakeItVisible = false);
-        /** Cleanups group tree starting from the passed @a pParentItem. */
-        void cleanupGroupTree(UIChooserItem *pParentItem);
-
-        /** Returns whether global item within the @a pParentItem is favorite. */
-        bool isGlobalItemFavorite(UIChooserItem *pParentItem) const;
-
         /** Acquires group item, creates one if necessary.
           * @param  strName           Brings the name of group we looking for.
           * @param  pParentItem       Brings the parent we starting to look for a group from.
@@ -391,6 +385,12 @@ private:
         UIChooserItem *getGroupItem(const QString &strName, UIChooserItem *pParentItem, bool fAllGroupsOpened);
         /** Returns whether group with certain @a strName should be opened, searching starting from the passed @a pParentItem. */
         bool shouldBeGroupOpened(UIChooserItem *pParentItem, const QString &strName);
+
+        /** Cleanups group tree starting from the passed @a pParentItem. */
+        void cleanupGroupTree(UIChooserItem *pParentItem);
+
+        /** Returns whether global item within the @a pParentItem is favorite. */
+        bool isGlobalItemFavorite(UIChooserItem *pParentItem) const;
 
         /** Acquires desired position for an child of @a pParentItem with specified @a enmType and @a strName. */
         int getDesiredPosition(UIChooserItem *pParentItem, UIChooserItemType enmType, const QString &strName);

@@ -1653,48 +1653,6 @@ void UIChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeIt
     }
 }
 
-void UIChooserModel::cleanupGroupTree(UIChooserItem *pParent)
-{
-    /* Cleanup all the group-items recursively first: */
-    foreach (UIChooserItem *pItem, pParent->items(UIChooserItemType_Group))
-        cleanupGroupTree(pItem);
-    /* If parent has no items: */
-    if (!pParent->hasItems())
-    {
-        /* Cleanup if that is non-root item: */
-        if (!pParent->isRoot())
-            delete pParent;
-            }
-        }
-
-bool UIChooserModel::isGlobalItemFavorite(UIChooserItem *pParentItem) const
-{
-    /* Read group definitions: */
-    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentItem->fullName());
-    /* Return 'false' if no definitions found: */
-    if (definitions.isEmpty())
-        return false;
-
-    /* Prepare required group definition reg-exp: */
-    const QString strDefinitionTemplate = QString("n(\\S)*=GLOBAL");
-    const QRegExp definitionRegExp(strDefinitionTemplate);
-    /* For each the group definition: */
-    foreach (const QString &strDefinition, definitions)
-    {
-        /* Check if this is required definition: */
-        if (definitionRegExp.indexIn(strDefinition) == 0)
-        {
-            /* Get group descriptor: */
-            const QString strDescriptor(definitionRegExp.cap(1));
-            if (strDescriptor.contains('f'))
-                return true;
-        }
-    }
-
-    /* Return 'false' by default: */
-    return false;
-}
-
 UIChooserItem *UIChooserModel::getGroupItem(const QString &strName, UIChooserItem *pParentItem, bool fAllGroupsOpened)
 {
     /* Check passed stuff: */
@@ -1757,6 +1715,48 @@ bool UIChooserModel::shouldBeGroupOpened(UIChooserItem *pParentItem, const QStri
             /* Get group descriptor: */
             const QString strDescriptor(definitionRegExp.cap(1));
             if (strDescriptor.contains('o'))
+                return true;
+        }
+    }
+
+    /* Return 'false' by default: */
+    return false;
+}
+
+void UIChooserModel::cleanupGroupTree(UIChooserItem *pParent)
+{
+    /* Cleanup all the group-items recursively first: */
+    foreach (UIChooserItem *pItem, pParent->items(UIChooserItemType_Group))
+        cleanupGroupTree(pItem);
+    /* If parent has no items: */
+    if (!pParent->hasItems())
+    {
+        /* Cleanup if that is non-root item: */
+        if (!pParent->isRoot())
+            delete pParent;
+            }
+        }
+
+bool UIChooserModel::isGlobalItemFavorite(UIChooserItem *pParentItem) const
+{
+    /* Read group definitions: */
+    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentItem->fullName());
+    /* Return 'false' if no definitions found: */
+    if (definitions.isEmpty())
+        return false;
+
+    /* Prepare required group definition reg-exp: */
+    const QString strDefinitionTemplate = QString("n(\\S)*=GLOBAL");
+    const QRegExp definitionRegExp(strDefinitionTemplate);
+    /* For each the group definition: */
+    foreach (const QString &strDefinition, definitions)
+    {
+        /* Check if this is required definition: */
+        if (definitionRegExp.indexIn(strDefinition) == 0)
+        {
+            /* Get group descriptor: */
+            const QString strDescriptor(definitionRegExp.cap(1));
+            if (strDescriptor.contains('f'))
                 return true;
         }
     }
