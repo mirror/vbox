@@ -104,6 +104,7 @@ static int audioMixerSinkWriteToStreamEx(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixSt
 
 int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl);
 static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream);
+static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream);
 
 
 #ifdef LOG_ENABLED
@@ -1147,8 +1148,7 @@ int AudioMixerSinkRead(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t 
     {
         Log3Func(("[%s] No recording source specified, skipping ...\n", pSink->pszName));
     }
-    else if (!DrvAudioHlpStreamStatusCanRead(
-       pStreamRecSource->pConn->pfnStreamGetStatus(pStreamRecSource->pConn, pStreamRecSource->pStream)))
+    else if (!(pStreamRecSource->fStatus & AUDMIXSTREAM_STATUS_ENABLED))
     {
         Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pStreamRecSource->pszName));
     }
@@ -1593,6 +1593,14 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         && pSink->In.pStreamRecSource == NULL)
         return rc;
 
+    /* Update each mixing sink stream's status. */
+    PAUDMIXSTREAM pMixStream;
+    RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
+    {
+        int rc2 = audioMixerStreamUpdateStatus(pMixStream);
+        AssertRC(rc2);
+    }
+
     /* Number of disabled streams of this sink. */
     uint8_t cStreamsDisabled = pSink->cStreams;
 
@@ -1615,7 +1623,6 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         rc = audioMixerSinkMultiplexSync(pSink, AUDMIXOP_COPY, arrChunkBuf, cbChunk, &cbChunkWrittenMin);
         if (RT_SUCCESS(rc))
         {
-            PAUDMIXSTREAM pMixStream;
             RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
             {
                 int rc2 = audioMixerSinkWriteToStream(pSink, pMixStream);
@@ -1642,8 +1649,7 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
         pSink->fStatus |= AUDMIXSINK_STS_DIRTY;
     }
 
-    PAUDMIXSTREAM pMixStream, pMixStreamNext;
-    RTListForEachSafe(&pSink->lstStreams, pMixStream, pMixStreamNext, AUDMIXSTREAM, Node)
+    RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
     {
         /* Input sink and not the recording source? Skip. */
         if (   pSink->enmDir == AUDMIXSINKDIR_INPUT
@@ -1658,7 +1664,7 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
 
         uint32_t cfProc = 0;
 
-        if (!DrvAudioHlpStreamStatusIsReady(pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream)))
+        if (!(pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED))
             continue;
 
         int rc2 = pConn->pfnStreamIterate(pConn, pStream);
@@ -1692,15 +1698,16 @@ static int audioMixerSinkUpdateInternal(PAUDMIXSINK pSink)
             }
         }
 
-        PDMAUDIOSTREAMSTS strmSts = pConn->pfnStreamGetStatus(pConn, pStream);
+        const PDMAUDIOSTREAMSTS streamStatusNew = pConn->pfnStreamGetStatus(pConn, pStream);
 
         /* Is the stream enabled or in pending disable state?
          * Don't consider this stream as being disabled then. */
-        if (   (strmSts & PDMAUDIOSTREAMSTS_FLAG_ENABLED)
-            || (strmSts & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE))
+        if (   (streamStatusNew & PDMAUDIOSTREAMSTS_FLAG_ENABLED)
+            || (streamStatusNew & PDMAUDIOSTREAMSTS_FLAG_PENDING_DISABLE))
         {
             cStreamsDisabled--;
         }
+        /* Note: The mixer stream's internal status will be updated in the next iteration of this function. */
 
         Log3Func(("\t%s: cPlayed/cCaptured=%RU32, rc2=%Rrc\n", pStream->szName, cfProc, rc2));
     }
@@ -1813,7 +1820,7 @@ static int audioMixerSinkWriteToStreamEx(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixSt
     /* pcbWritten is optional. */
 
     if (   !cbToWrite
-        || !DrvAudioHlpStreamStatusCanWrite(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream)))
+        || !(pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED))
     {
         if (pcbWritten)
             *pcbWritten = 0;
@@ -1920,8 +1927,11 @@ static int audioMixerSinkMultiplexSync(PAUDMIXSINK pSink, AUDMIXOP enmOp, const 
     PAUDMIXSTREAM pMixStream;
     RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
     {
-        if (!DrvAudioHlpStreamStatusCanWrite(pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream)))
+        if (!(pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED)) /* Mixing stream not enabled? Skip handling. */
+        {
+            Log3Func(("[%s] Stream '%s' disabled, skipping ...\n", pSink->pszName, pMixStream->pszName));
             continue;
+        }
 
         cbToWriteMin = RT_MIN(cbBuf, RT_MIN(cbToWriteMin, (uint32_t)RTCircBufFree(pMixStream->pCircBuf)));
     }
@@ -1933,6 +1943,9 @@ static int audioMixerSinkMultiplexSync(PAUDMIXSINK pSink, AUDMIXOP enmOp, const 
     {
         RTListForEach(&pSink->lstStreams, pMixStream, AUDMIXSTREAM, Node)
         {
+            if (!(pMixStream->fStatus & AUDMIXSTREAM_STATUS_ENABLED)) /* Mixing stream not enabled? Skip handling. */
+                continue;
+
             PRTCIRCBUF pCircBuf = pMixStream->pCircBuf;
             void *pvChunk;
             size_t cbChunk;
@@ -2056,6 +2069,46 @@ int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmC
     LogFlowFunc(("[%s] enmCmd=%ld, rc=%Rrc\n", pMixStream->pszName, enmCmd, rc));
 
     return rc;
+}
+
+/**
+ * Updates a mixer stream's internal status.
+ *
+ * @returns VBox status code.
+ * @param   pMixStream          Mixer stream to to update internal status for.
+ */
+static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream)
+{
+    pMixStream->fStatus = AUDMIXSTREAM_STATUS_NONE;
+
+    if (pMixStream->pConn) /* Audio connector available? */
+    {
+        const uint32_t fStreamStatus = pMixStream->pConn->pfnStreamGetStatus(pMixStream->pConn, pMixStream->pStream);
+
+        if (DrvAudioHlpStreamStatusIsReady(fStreamStatus))
+            pMixStream->fStatus |= AUDMIXSTREAM_STATUS_ENABLED;
+
+        AssertPtr(pMixStream->pSink);
+        switch (pMixStream->pSink->enmDir)
+        {
+            case AUDMIXSINKDIR_INPUT:
+                if (DrvAudioHlpStreamStatusCanRead(fStreamStatus))
+                   pMixStream->fStatus |= AUDMIXSTREAM_STATUS_CAN_READ;
+                break;
+
+            case AUDMIXSINKDIR_OUTPUT:
+                if (DrvAudioHlpStreamStatusCanWrite(fStreamStatus))
+                   pMixStream->fStatus |= AUDMIXSTREAM_STATUS_CAN_WRITE;
+                break;
+
+            default:
+                AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+                break;
+        }
+    }
+
+    LogFlowFunc(("[%s] -> 0x%x\n", pMixStream->pszName, pMixStream->fStatus));
+    return VINF_SUCCESS;
 }
 
 /**

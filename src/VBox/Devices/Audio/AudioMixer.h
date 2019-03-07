@@ -51,6 +51,21 @@ typedef struct AUDIOMIXER
 
 /** No flags specified. */
 #define AUDMIXSTREAM_FLAG_NONE                  0
+/** The mixing stream is flagged as being enabled (active). */
+#define AUDMIXSTREAM_FLAG_ENABLED               RT_BIT(0)
+
+/** Defines an audio mixer stream's internal status. */
+#define AUDMIXSTREAMSTATUS uint32_t
+
+/** No status set. */
+#define AUDMIXSTREAM_STATUS_NONE                0
+/** The mixing stream is enabled (active). */
+#define AUDMIXSTREAM_STATUS_ENABLED             RT_BIT(0)
+/** The mixing stream can be read from. */
+#define AUDMIXSTREAM_STATUS_CAN_READ            RT_BIT(1)
+/** The mixing stream can be written to. */
+#define AUDMIXSTREAM_STATUS_CAN_WRITE           RT_BIT(2)
+
 
 /** Prototype needed for AUDMIXSTREAM struct definition. */
 typedef struct AUDMIXSINK *PAUDMIXSINK;
@@ -70,6 +85,8 @@ typedef struct AUDMIXSTREAM
     PAUDMIXSINK             pSink;
     /** Stream flags of type AUDMIXSTREAM_FLAG_. */
     uint32_t                fFlags;
+    /** Stream status of type AUDMIXSTREAM_STATUS_. */
+    uint32_t                fStatus;
     /** Pointer to audio connector being used. */
     PPDMIAUDIOCONNECTOR     pConn;
     /** Pointer to PDM audio stream this mixer stream handles. */
