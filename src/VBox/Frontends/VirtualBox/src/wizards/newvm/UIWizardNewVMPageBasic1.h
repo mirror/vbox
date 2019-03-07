@@ -42,8 +42,9 @@ protected:
 
     bool createMachineFolder();
     /** Removes a previously created folder (if exists) before creating a new one.
-     *  used during page cleanup and new folder creation. */
-    bool cleanupMachineFolder();
+     *  used during page cleanup and new folder creation. Called upon page Next/Back and
+     *  wizard cancel */
+    bool cleanupMachineFolder(bool fWizardCancel = false);
 
     QString machineFilePath() const;
     void setMachineFilePath(const QString &strMachineFilePath);
@@ -76,6 +77,7 @@ private:
     QString m_strGroup;
     bool m_fSupportsHWVirtEx;
     bool m_fSupportsLongMode;
+    friend class UIWizardNewVM;
 };
 
 /* 1st page of the New Virtual Machine wizard (basic extension): */

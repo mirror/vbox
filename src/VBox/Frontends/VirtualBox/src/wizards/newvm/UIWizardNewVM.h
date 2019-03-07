@@ -67,6 +67,10 @@ protected:
     friend class UIWizardNewVMPageBasic3;
     friend class UIWizardNewVMPageExpert;
 
+private slots:
+
+    void sltHandleWizardCancel();
+
 private:
 
     /* Translation stuff: */
@@ -89,4 +93,3 @@ private:
 typedef QPointer<UIWizardNewVM> UISafePointerWizardNewVM;
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_newvm_UIWizardNewVM_h */
-
