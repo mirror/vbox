@@ -260,7 +260,7 @@ static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart)
                                            "previous vm option edition wasn't finished");
                     else
                         fVmOptionRead = true;
-                    u8Slot = (uint8_t)~0; /* clear slor */
+                    u8Slot = (uint8_t)~0; /* clear slot */
                     pszVmName = RTStrDup(ValueUnion.psz);
                 }
                 break; /* end of --vm */

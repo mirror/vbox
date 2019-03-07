@@ -45,102 +45,107 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-/** @name Syntax diagram category.
+/** @name Syntax diagram category, i.e. the command.
  * @{ */
-#define USAGE_DUMPOPTS              0
-#define USAGE_LIST                  RT_BIT_64(0)
-#define USAGE_SHOWVMINFO            RT_BIT_64(1)
-#define USAGE_REGISTERVM            RT_BIT_64(2)
-#define USAGE_UNREGISTERVM          RT_BIT_64(3)
-#define USAGE_CREATEVM              RT_BIT_64(4)
-#define USAGE_MODIFYVM              RT_BIT_64(5)
-#define USAGE_CLONEVM               RT_BIT_64(6)
-#define USAGE_STARTVM               RT_BIT_64(7)
-#define USAGE_CONTROLVM             RT_BIT_64(8)
-#define USAGE_DISCARDSTATE          RT_BIT_64(9)
-#define USAGE_SNAPSHOT              RT_BIT_64(10)
-#define USAGE_CLOSEMEDIUM           RT_BIT_64(11)
-#define USAGE_SHOWMEDIUMINFO        RT_BIT_64(12)
-#define USAGE_CREATEMEDIUM          RT_BIT_64(13)
-#define USAGE_MODIFYMEDIUM          RT_BIT_64(14)
-#define USAGE_CLONEMEDIUM           RT_BIT_64(15)
-#define USAGE_MOVEVM                RT_BIT_64(16)
-#define USAGE_CREATEHOSTIF          RT_BIT_64(17)
-#define USAGE_REMOVEHOSTIF          RT_BIT_64(18)
-#define USAGE_GETEXTRADATA          RT_BIT_64(19)
-#define USAGE_SETEXTRADATA          RT_BIT_64(20)
-#define USAGE_SETPROPERTY           RT_BIT_64(21)
-#define USAGE_USBFILTER             (RT_BIT_64(22) | RT_BIT_64(23) | RT_BIT_64(24))
-#define USAGE_USBFILTER_ADD         RT_BIT_64(22)
-#define USAGE_USBFILTER_MODIFY      RT_BIT_64(23)
-#define USAGE_USBFILTER_REMOVE      RT_BIT_64(24)
-#define USAGE_SHAREDFOLDER          (RT_BIT_64(25) | RT_BIT_64(26))
-#define USAGE_SHAREDFOLDER_ADD      RT_BIT_64(25)
-#define USAGE_SHAREDFOLDER_REMOVE   RT_BIT_64(26)
-#define USAGE_UNATTENDED            RT_BIT_64(27)
-#define USAGE_MEDIUMIO              RT_BIT_64(28)
-#define USAGE_LOADSYMS              RT_BIT_64(29)
-#define USAGE_LOADMAP               RT_BIT_64(30)
-#define USAGE_SETHDUUID             RT_BIT_64(31)
-#define USAGE_CONVERTFROMRAW        RT_BIT_64(32)
-#define USAGE_LISTPARTITIONS        RT_BIT_64(33)
-#define USAGE_CREATERAWVMDK         RT_BIT_64(34)
-#define USAGE_DEBUGVM               RT_BIT_64(35)
-#define USAGE_ADOPTSTATE            RT_BIT_64(36)
-#define USAGE_MODINSTALL            RT_BIT_64(37)
-#define USAGE_MODUNINSTALL          RT_BIT_64(38)
-#define USAGE_RENAMEVMDK            RT_BIT_64(39)
+typedef enum
+{
+    USAGE_INVALID = 0,
+    USAGE_LIST,
+    USAGE_SHOWVMINFO,
+    USAGE_REGISTERVM,
+    USAGE_UNREGISTERVM,
+    USAGE_CREATEVM,
+    USAGE_MODIFYVM,
+    USAGE_CLONEVM,
+    USAGE_STARTVM,
+    USAGE_CONTROLVM,
+    USAGE_DISCARDSTATE,
+    USAGE_SNAPSHOT,
+    USAGE_CLOSEMEDIUM,
+    USAGE_SHOWMEDIUMINFO,
+    USAGE_CREATEMEDIUM,
+    USAGE_MODIFYMEDIUM,
+    USAGE_CLONEMEDIUM,
+    USAGE_MOVEVM,
+    USAGE_CREATEHOSTIF,
+    USAGE_REMOVEHOSTIF,
+    USAGE_GETEXTRADATA,
+    USAGE_SETEXTRADATA,
+    USAGE_SETPROPERTY,
+    USAGE_USBFILTER,
+    USAGE_SHAREDFOLDER,
+    USAGE_I_LOADSYMS,
+    USAGE_I_LOADMAP,
+    USAGE_I_SETHDUUID,
+    USAGE_CONVERTFROMRAW,
+    USAGE_I_LISTPARTITIONS,
+    USAGE_I_CREATERAWVMDK,
+    USAGE_ADOPTSTATE,
+    USAGE_I_MODINSTALL,
+    USAGE_I_MODUNINSTALL,
+    USAGE_I_RENAMEVMDK,
 #ifdef VBOX_WITH_GUEST_PROPS
-# define USAGE_GUESTPROPERTY        RT_BIT_64(40)
+    USAGE_GUESTPROPERTY,
 #endif  /* VBOX_WITH_GUEST_PROPS defined */
-#define USAGE_CONVERTTORAW          RT_BIT_64(41)
-#define USAGE_METRICS               RT_BIT_64(42)
-#define USAGE_CONVERTHD             RT_BIT_64(43)
-#define USAGE_IMPORTAPPLIANCE       RT_BIT_64(44)
-#define USAGE_EXPORTAPPLIANCE       RT_BIT_64(45)
-#define USAGE_HOSTONLYIFS           RT_BIT_64(46)
-#define USAGE_DHCPSERVER            RT_BIT_64(47)
-#define USAGE_DUMPHDINFO            RT_BIT_64(48)
-#define USAGE_STORAGEATTACH         RT_BIT_64(49)
-#define USAGE_STORAGECONTROLLER     RT_BIT_64(50)
+    USAGE_I_CONVERTTORAW,
+    USAGE_METRICS,
+    USAGE_I_CONVERTHD,
+    USAGE_IMPORTAPPLIANCE,
+    USAGE_EXPORTAPPLIANCE,
+    USAGE_HOSTONLYIFS,
+    USAGE_DHCPSERVER,
+    USAGE_I_DUMPHDINFO,
+    USAGE_STORAGEATTACH,
+    USAGE_STORAGECONTROLLER,
 #ifdef VBOX_WITH_GUEST_CONTROL
-# define USAGE_GUESTCONTROL         RT_BIT_64(51)
+    USAGE_GUESTCONTROL,
 #endif  /* VBOX_WITH_GUEST_CONTROL defined */
-#define USAGE_DEBUGLOG              RT_BIT_64(52)
-#define USAGE_SETHDPARENTUUID       RT_BIT_64(53)
-#define USAGE_PASSWORDHASH          RT_BIT_64(54)
-#define USAGE_EXTPACK               RT_BIT_64(55)
-#define USAGE_BANDWIDTHCONTROL      RT_BIT_64(56)
-#define USAGE_GUESTSTATS            RT_BIT_64(57)
-#define USAGE_REPAIRHD              RT_BIT_64(58)
-#define USAGE_NATNETWORK            RT_BIT_64(59)
-#define USAGE_MEDIUMPROPERTY        RT_BIT_64(60)
-#define USAGE_ENCRYPTMEDIUM         RT_BIT_64(61)
-#define USAGE_MEDIUMENCCHKPWD       RT_BIT_64(62)
-#define USAGE_USBDEVSOURCE          RT_BIT_64(63)
-#define USAGE_ALL                   (~(uint64_t)0)
+    USAGE_I_DEBUGLOG,
+    USAGE_I_SETHDPARENTUUID,
+    USAGE_I_PASSWORDHASH,
+    USAGE_BANDWIDTHCONTROL,
+    USAGE_I_GUESTSTATS,
+    USAGE_I_REPAIRHD,
+    USAGE_NATNETWORK,
+    USAGE_MEDIUMPROPERTY,
+    USAGE_ENCRYPTMEDIUM,
+    USAGE_MEDIUMENCCHKPWD,
+    USAGE_USBDEVSOURCE,
+    /* Insert new entries before this line, but only if it is not an option
+     * to go for the new style command and help handling (see e.g. extpack,
+     * unattend or mediumio. */
+    USAGE_S_NEWCMD = 10000, /**< new style command with no old help support */
+    USAGE_S_ALL,
+    USAGE_S_DUMPOPTS
+} USAGECATEGORY;
 /** @} */
 
+
+#define HELP_SCOPE_USBFILTER_ADD        RT_BIT_64(0)
+#define HELP_SCOPE_USBFILTER_MODIFY     RT_BIT_64(1)
+#define HELP_SCOPE_USBFILTER_REMOVE     RT_BIT_64(2)
+
+#define HELP_SCOPE_SHAREDFOLDER_ADD     RT_BIT_64(0)
+#define HELP_SCOPE_SHAREDFOLDER_REMOVE  RT_BIT_64(1)
+
 #ifdef VBOX_WITH_GUEST_CONTROL
-# define USAGE_GSTCTRL_RUN          RT_BIT(0)
-# define USAGE_GSTCTRL_START        RT_BIT(1)
-# define USAGE_GSTCTRL_COPYFROM     RT_BIT(2)
-# define USAGE_GSTCTRL_COPYTO       RT_BIT(3)
-# define USAGE_GSTCTRL_MKDIR        RT_BIT(4)
-# define USAGE_GSTCTRL_RMDIR        RT_BIT(5)
-# define USAGE_GSTCTRL_RM           RT_BIT(6)
-# define USAGE_GSTCTRL_MV           RT_BIT(7)
-# define USAGE_GSTCTRL_MKTEMP       RT_BIT(8)
-# define USAGE_GSTCTRL_LIST         RT_BIT(9)
-# define USAGE_GSTCTRL_CLOSEPROCESS RT_BIT(10)
-# define USAGE_GSTCTRL_CLOSESESSION RT_BIT(11)
-# define USAGE_GSTCTRL_STAT         RT_BIT(12)
-# define USAGE_GSTCTRL_UPDATEGA     RT_BIT(13)
-# define USAGE_GSTCTRL_WATCH        RT_BIT(14)
+# define HELP_SCOPE_GSTCTRL_RUN             RT_BIT(0)
+# define HELP_SCOPE_GSTCTRL_START           RT_BIT(1)
+# define HELP_SCOPE_GSTCTRL_COPYFROM        RT_BIT(2)
+# define HELP_SCOPE_GSTCTRL_COPYTO          RT_BIT(3)
+# define HELP_SCOPE_GSTCTRL_MKDIR           RT_BIT(4)
+# define HELP_SCOPE_GSTCTRL_RMDIR           RT_BIT(5)
+# define HELP_SCOPE_GSTCTRL_RM              RT_BIT(6)
+# define HELP_SCOPE_GSTCTRL_MV              RT_BIT(7)
+# define HELP_SCOPE_GSTCTRL_MKTEMP          RT_BIT(8)
+# define HELP_SCOPE_GSTCTRL_LIST            RT_BIT(9)
+# define HELP_SCOPE_GSTCTRL_CLOSEPROCESS    RT_BIT(10)
+# define HELP_SCOPE_GSTCTRL_CLOSESESSION    RT_BIT(11)
+# define HELP_SCOPE_GSTCTRL_STAT            RT_BIT(12)
+# define HELP_SCOPE_GSTCTRL_UPDATEGA        RT_BIT(13)
+# define HELP_SCOPE_GSTCTRL_WATCH           RT_BIT(14)
 #endif
 
-
-typedef uint64_t USAGECATEGORY;
 
 /** command handler argument */
 struct HandlerArg
@@ -184,14 +189,16 @@ extern bool g_fDetailedProgress;        // in VBoxManage.cpp
 ////////////////////////////////////////////////////////////////////////////////
 
 /* VBoxManageHelp.cpp */
-void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm);
-RTEXITCODE errorSyntax(USAGECATEGORY fCategory, const char *pszFormat, ...);
-RTEXITCODE errorSyntaxEx(USAGECATEGORY fCategory, uint32_t fSubCategory, const char *pszFormat, ...);
-RTEXITCODE errorGetOpt(USAGECATEGORY fCategory, int rc, union RTGETOPTUNION const *pValueUnion);
-RTEXITCODE errorGetOptEx(USAGECATEGORY fCategory, uint32_t fSubCategory, int rc, union RTGETOPTUNION const *pValueUnion);
+
+/* Legacy help infrastructure, to be replaced by new one using generated help. */
+void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM pStrm);
+RTEXITCODE errorSyntax(USAGECATEGORY enmCommand, const char *pszFormat, ...);
+RTEXITCODE errorSyntaxEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, const char *pszFormat, ...);
+RTEXITCODE errorGetOpt(USAGECATEGORY enmCommand, int rc, union RTGETOPTUNION const *pValueUnion);
+RTEXITCODE errorGetOptEx(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, int rc, union RTGETOPTUNION const *pValueUnion);
 RTEXITCODE errorArgument(const char *pszFormat, ...);
 
-void printUsageInternal(USAGECATEGORY fCategory, PRTSTREAM pStrm);
+void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm);
 
 #ifndef VBOX_ONLY_DOCS
 void        setCurrentCommand(enum HELP_CMD_VBOXMANAGE enmCommand);
@@ -237,7 +244,7 @@ RTEXITCODE handleDebugVM(HandlerArg *a);
 extern void usageGuestProperty(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2);
 
 /* VBoxManageGuestCtrl.cpp */
-extern void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2, uint32_t fSubCategory);
+extern void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2, uint64_t fSubcommandScope);
 
 #ifndef VBOX_ONLY_DOCS
 /* VBoxManageGuestProp.cpp */

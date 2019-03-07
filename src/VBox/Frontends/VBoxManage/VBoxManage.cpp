@@ -97,7 +97,7 @@ static volatile bool    g_fCanceled = false;
  */
 static const VBMGCMD g_aCommands[] =
 {
-    { "internalcommands",   0,                      VBMG_CMD_TODO, handleInternalCommands,     0 },
+    { "internalcommands",   USAGE_INVALID,          VBMG_CMD_TODO, handleInternalCommands,     0 },
     { "list",               USAGE_LIST,             VBMG_CMD_TODO, handleList,                 0 },
     { "showvminfo",         USAGE_SHOWVMINFO,       VBMG_CMD_TODO, handleShowVMInfo,           0 },
     { "registervm",         USAGE_REGISTERVM,       VBMG_CMD_TODO, handleRegisterVM,           0 },
@@ -121,7 +121,7 @@ static const VBMGCMD g_aCommands[] =
     { "modifyvm",           USAGE_MODIFYVM,         VBMG_CMD_TODO, handleModifyVM,             0 },
     { "startvm",            USAGE_STARTVM,          VBMG_CMD_TODO, handleStartVM,              0 },
     { "controlvm",          USAGE_CONTROLVM,        VBMG_CMD_TODO, handleControlVM,            0 },
-    { "unattended",         USAGE_UNATTENDED, HELP_CMD_UNATTENDED, handleUnattended,    0 },
+    { "unattended",         USAGE_S_NEWCMD,   HELP_CMD_UNATTENDED, handleUnattended,           0 },
     { "discardstate",       USAGE_DISCARDSTATE,     VBMG_CMD_TODO, handleDiscardState,         0 },
     { "adoptstate",         USAGE_ADOPTSTATE,       VBMG_CMD_TODO, handleAdoptState,           0 },
     { "snapshot",           USAGE_SNAPSHOT,         VBMG_CMD_TODO, handleSnapshot,             0 },
@@ -131,7 +131,7 @@ static const VBMGCMD g_aCommands[] =
     { "showmediuminfo",     USAGE_SHOWMEDIUMINFO,   VBMG_CMD_TODO, handleShowMediumInfo,       0 },
     { "showhdinfo",         USAGE_SHOWMEDIUMINFO,   VBMG_CMD_TODO, handleShowMediumInfo,       0 }, /* backward compatibility */
     { "showvdiinfo",        USAGE_SHOWMEDIUMINFO,   VBMG_CMD_TODO, handleShowMediumInfo,       0 }, /* backward compatibility */
-    { "mediumio",           USAGE_MEDIUMIO,     HELP_CMD_MEDIUMIO, handleMediumIO,             0 },
+    { "mediumio",           USAGE_S_NEWCMD,     HELP_CMD_MEDIUMIO, handleMediumIO,             0 },
     { "getextradata",       USAGE_GETEXTRADATA,     VBMG_CMD_TODO, handleGetExtraData,         0 },
     { "setextradata",       USAGE_SETEXTRADATA,     VBMG_CMD_TODO, handleSetExtraData,         0 },
     { "setproperty",        USAGE_SETPROPERTY,      VBMG_CMD_TODO, handleSetProperty,          0 },
@@ -153,9 +153,9 @@ static const VBMGCMD g_aCommands[] =
 #ifdef VBOX_WITH_NAT_SERVICE
     { "natnetwork",         USAGE_NATNETWORK,       VBMG_CMD_TODO, handleNATNetwork,           0 },
 #endif
-    { "extpack",            USAGE_EXTPACK,       HELP_CMD_EXTPACK, handleExtPack,              0 },
+    { "extpack",            USAGE_S_NEWCMD,      HELP_CMD_EXTPACK, handleExtPack,              0 },
     { "bandwidthctl",       USAGE_BANDWIDTHCONTROL, VBMG_CMD_TODO, handleBandwidthControl,     0 },
-    { "debugvm",            USAGE_DEBUGVM,       HELP_CMD_DEBUGVM, handleDebugVM,              0 },
+    { "debugvm",            USAGE_S_NEWCMD,      HELP_CMD_DEBUGVM, handleDebugVM,              0 },
     { "convertfromraw",     USAGE_CONVERTFROMRAW,   VBMG_CMD_TODO, handleConvertFromRaw,       VBMG_CMD_F_NO_COM },
     { "convertdd",          USAGE_CONVERTFROMRAW,   VBMG_CMD_TODO, handleConvertFromRaw,       VBMG_CMD_F_NO_COM },
     { "usbdevsource",       USAGE_USBDEVSOURCE,     VBMG_CMD_TODO, handleUSBDevSource,         0 }
@@ -496,7 +496,7 @@ int main(int argc, char *argv[])
             if (i >= argc - 1)
             {
                 showLogo(g_pStdOut);
-                printUsage(USAGE_ALL, ~0U, g_pStdOut);
+                printUsage(USAGE_S_ALL, RTMSGREFENTRYSTR_SCOPE_GLOBAL, g_pStdOut);
                 return 0;
             }
             fShowLogo = true;
@@ -523,7 +523,7 @@ int main(int argc, char *argv[])
         {
             /* Special option to dump really all commands,
              * even the ones not understood on this platform. */
-            printUsage(USAGE_DUMPOPTS, ~0U, g_pStdOut);
+            printUsage(USAGE_S_DUMPOPTS, RTMSGREFENTRYSTR_SCOPE_GLOBAL, g_pStdOut);
             return 0;
         }
 
@@ -618,10 +618,10 @@ int main(int argc, char *argv[])
     if (   pCmd
         && (   fShowHelp
             || (   argc - iCmdArg == 0
-                && pCmd->enmHelpCat != 0)))
+                && pCmd->enmHelpCat != USAGE_INVALID)))
     {
         if (pCmd->enmCmdHelp == VBMG_CMD_TODO)
-            printUsage(pCmd->enmHelpCat, ~0U, g_pStdOut);
+            printUsage(pCmd->enmHelpCat, RTMSGREFENTRYSTR_SCOPE_GLOBAL, g_pStdOut);
         else if (fShowHelp)
             printHelp(g_pStdOut);
         else
@@ -635,11 +635,13 @@ int main(int argc, char *argv[])
             RTPrintf("commands:\n");
             for (unsigned i = 0; i < RT_ELEMENTS(g_aCommands); i++)
                 if (   i == 0  /* skip backwards compatibility entries */
-                    || g_aCommands[i].enmHelpCat != g_aCommands[i - 1].enmHelpCat)
+                    || (g_aCommands[i].enmHelpCat != USAGE_S_NEWCMD
+                        ? g_aCommands[i].enmHelpCat != g_aCommands[i - 1].enmHelpCat
+                        : g_aCommands[i].enmCmdHelp != g_aCommands[i - 1].enmCmdHelp))
                     RTPrintf("    %s\n", g_aCommands[i].pszCommand);
             return RTEXITCODE_SUCCESS;
         }
-        return errorSyntax(USAGE_ALL, "Invalid command '%s'", argv[iCmd]);
+        return errorSyntax(USAGE_S_ALL, "Invalid command '%s'", argv[iCmd]);
     }
 
     RTEXITCODE rcExit;

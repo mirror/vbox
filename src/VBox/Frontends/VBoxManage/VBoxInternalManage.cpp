@@ -134,8 +134,11 @@ bool g_fInternalMode;
 /**
  * Print the usage info.
  */
-void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
+void printUsageInternal(USAGECATEGORY enmCommand, PRTSTREAM pStrm)
 {
+    Assert(enmCommand != USAGE_INVALID);
+    Assert(enmCommand != USAGE_S_NEWCMD);
+    Assert(enmCommand != USAGE_S_DUMPOPTS);
     RTStrmPrintf(pStrm,
         "Usage: VBoxManage internalcommands <command> [command arguments]\n"
         "\n"
@@ -146,40 +149,40 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         "         problems. It is completely unsupported and will change in\n"
         "         incompatible ways without warning.\n",
 
-        (u64Cmd & USAGE_LOADMAP)
+        (enmCommand == USAGE_I_LOADMAP || enmCommand == USAGE_S_ALL)
         ? "  loadmap <vmname|uuid> <symfile> <address> [module] [subtrahend] [segment]\n"
           "      This will instruct DBGF to load the given map file\n"
           "      during initialization.  (See also loadmap in the debugger.)\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_LOADSYMS)
+        (enmCommand == USAGE_I_LOADSYMS || enmCommand == USAGE_S_ALL)
         ? "  loadsyms <vmname|uuid> <symfile> [delta] [module] [module address]\n"
           "      This will instruct DBGF to load the given symbol file\n"
           "      during initialization.\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_SETHDUUID)
+        (enmCommand == USAGE_I_SETHDUUID || enmCommand == USAGE_S_ALL)
         ? "  sethduuid <filepath> [<uuid>]\n"
           "       Assigns a new UUID to the given image file. This way, multiple copies\n"
           "       of a container can be registered.\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_SETHDPARENTUUID)
+        (enmCommand == USAGE_I_SETHDPARENTUUID || enmCommand == USAGE_S_ALL)
         ? "  sethdparentuuid <filepath> <uuid>\n"
           "       Assigns a new parent UUID to the given image file.\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_DUMPHDINFO)
+        (enmCommand == USAGE_I_DUMPHDINFO || enmCommand == USAGE_S_ALL)
         ?  "  dumphdinfo <filepath>\n"
            "       Prints information about the image at the given location.\n"
            "\n"
         : "",
-        (u64Cmd & USAGE_LISTPARTITIONS)
+        (enmCommand == USAGE_I_LISTPARTITIONS || enmCommand == USAGE_S_ALL)
         ? "  listpartitions -rawdisk <diskname>\n"
           "       Lists all partitions on <diskname>.\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_CREATERAWVMDK)
+        (enmCommand == USAGE_I_CREATERAWVMDK || enmCommand == USAGE_S_ALL)
         ? "  createrawvmdk -filename <filename> -rawdisk <diskname>\n"
           "                [-partitions <list of partition numbers> [-mbr <filename>] ]\n"
           "                [-relative]\n"
@@ -197,12 +200,12 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
           "         VBoxManage internalcommands listpartitions\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_RENAMEVMDK)
+        (enmCommand == USAGE_I_RENAMEVMDK || enmCommand == USAGE_S_ALL)
         ? "  renamevmdk -from <filename> -to <filename>\n"
           "       Renames an existing VMDK image, including the base file and all its extents.\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_CONVERTTORAW)
+        (enmCommand == USAGE_I_CONVERTTORAW || enmCommand == USAGE_S_ALL)
         ? "  converttoraw [-format <fileformat>] <filename> <outputfile>"
 #ifdef ENABLE_CONVERT_RAW_TO_STDOUT
           "|stdout"
@@ -215,14 +218,14 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
           ".\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_CONVERTHD)
+        (enmCommand == USAGE_I_CONVERTHD || enmCommand == USAGE_S_ALL)
         ? "  converthd [-srcformat VDI|VMDK|VHD|RAW]\n"
           "            [-dstformat VDI|VMDK|VHD|RAW]\n"
           "            <inputfile> <outputfile>\n"
           "       converts hard disk images between formats\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_REPAIRHD)
+        (enmCommand == USAGE_I_REPAIRHD || enmCommand == USAGE_S_ALL)
         ? "  repairhd [-dry-run]\n"
           "           [-format VDI|VMDK|VHD|...]\n"
           "           <filename>\n"
@@ -230,12 +233,12 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
           "\n"
         : "",
 #ifdef RT_OS_WINDOWS
-        (u64Cmd & USAGE_MODINSTALL)
+        (enmCommand == USAGE_I_MODINSTALL || enmCommand == USAGE_S_ALL)
         ? "  modinstall\n"
           "       Installs the necessary driver for the host OS\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_MODUNINSTALL)
+        (enmCommand == USAGE_I_MODUNINSTALL || enmCommand == USAGE_S_ALL)
         ? "  moduninstall\n"
           "       Deinstalls the driver\n"
           "\n"
@@ -244,18 +247,18 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         "",
         "",
 #endif
-        (u64Cmd & USAGE_DEBUGLOG)
+        (enmCommand == USAGE_I_DEBUGLOG || enmCommand == USAGE_S_ALL)
         ? "  debuglog <vmname|uuid> [--enable|--disable] [--flags todo]\n"
           "           [--groups todo] [--destinations todo]\n"
           "       Controls debug logging.\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_PASSWORDHASH)
-        ? "  passwordhash <passsword>\n"
+        (enmCommand == USAGE_I_PASSWORDHASH || enmCommand == USAGE_S_ALL)
+        ? "  passwordhash <password>\n"
           "       Generates a password hash.\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_GUESTSTATS)
+        (enmCommand == USAGE_I_GUESTSTATS || enmCommand == USAGE_S_ALL)
         ? "  gueststats <vmname|uuid> [--interval <seconds>]\n"
           "       Obtains and prints internal guest statistics.\n"
           "       Sets the update interval if specified.\n"
@@ -626,12 +629,12 @@ static RTEXITCODE CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
     {
         uuidType = HDUUID;
         if (argc != 3 && argc != 2)
-            return errorSyntax(USAGE_SETHDUUID, "Not enough parameters");
+            return errorSyntax(USAGE_I_SETHDUUID, "Not enough parameters");
         /* if specified, take UUID, otherwise generate a new one */
         if (argc == 3)
         {
             if (RT_FAILURE(RTUuidFromStr(&rtuuid, argv[2])))
-                return errorSyntax(USAGE_SETHDUUID, "Invalid UUID parameter");
+                return errorSyntax(USAGE_I_SETHDUUID, "Invalid UUID parameter");
             uuid = argv[2];
         } else
             uuid.create();
@@ -640,13 +643,13 @@ static RTEXITCODE CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtu
     {
         uuidType = HDPARENTUUID;
         if (argc != 3)
-            return errorSyntax(USAGE_SETHDPARENTUUID, "Not enough parameters");
+            return errorSyntax(USAGE_I_SETHDPARENTUUID, "Not enough parameters");
         if (RT_FAILURE(RTUuidFromStr(&rtuuid, argv[2])))
-            return errorSyntax(USAGE_SETHDPARENTUUID, "Invalid UUID parameter");
+            return errorSyntax(USAGE_I_SETHDPARENTUUID, "Invalid UUID parameter");
         uuid = argv[2];
     }
     else
-        return errorSyntax(USAGE_SETHDUUID, "Invalid invocation");
+        return errorSyntax(USAGE_I_SETHDUUID, "Invalid invocation");
 
     /* just try it */
     char *pszFormat = NULL;
@@ -698,7 +701,7 @@ static RTEXITCODE CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirt
     /* we need exactly one parameter: the image file */
     if (argc != 1)
     {
-        return errorSyntax(USAGE_DUMPHDINFO, "Not enough parameters");
+        return errorSyntax(USAGE_I_DUMPHDINFO, "Not enough parameters");
     }
 
     /* just try it */
@@ -1092,12 +1095,12 @@ static RTEXITCODE CmdListPartitions(int argc, char **argv, ComPtr<IVirtualBox> a
         }
         else
         {
-            return errorSyntax(USAGE_LISTPARTITIONS, "Invalid parameter '%s'", argv[i]);
+            return errorSyntax(USAGE_I_LISTPARTITIONS, "Invalid parameter '%s'", argv[i]);
         }
     }
 
     if (rawdisk.isEmpty())
-        return errorSyntax(USAGE_LISTPARTITIONS, "Mandatory parameter -rawdisk missing");
+        return errorSyntax(USAGE_I_LISTPARTITIONS, "Mandatory parameter -rawdisk missing");
 
     RTFILE hRawFile;
     int vrc = RTFileOpen(&hRawFile, rawdisk.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
@@ -1209,15 +1212,15 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
         }
 #endif /* RT_OS_LINUX || RT_OS_FREEBSD */
         else
-            return errorSyntax(USAGE_CREATERAWVMDK, "Invalid parameter '%s'", argv[i]);
+            return errorSyntax(USAGE_I_CREATERAWVMDK, "Invalid parameter '%s'", argv[i]);
     }
 
     if (filename.isEmpty())
-        return errorSyntax(USAGE_CREATERAWVMDK, "Mandatory parameter -filename missing");
+        return errorSyntax(USAGE_I_CREATERAWVMDK, "Mandatory parameter -filename missing");
     if (rawdisk.isEmpty())
-        return errorSyntax(USAGE_CREATERAWVMDK, "Mandatory parameter -rawdisk missing");
+        return errorSyntax(USAGE_I_CREATERAWVMDK, "Mandatory parameter -rawdisk missing");
     if (!pszPartitions && pszMBRFilename)
-        return errorSyntax(USAGE_CREATERAWVMDK, "The parameter -mbr is only valid when the parameter -partitions is also present");
+        return errorSyntax(USAGE_I_CREATERAWVMDK, "The parameter -mbr is only valid when the parameter -partitions is also present");
 
 #ifdef RT_OS_DARWIN
     fRelative = true;
@@ -1896,14 +1899,14 @@ static RTEXITCODE CmdRenameVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirt
         }
         else
         {
-            return errorSyntax(USAGE_RENAMEVMDK, "Invalid parameter '%s'", argv[i]);
+            return errorSyntax(USAGE_I_RENAMEVMDK, "Invalid parameter '%s'", argv[i]);
         }
     }
 
     if (src.isEmpty())
-        return errorSyntax(USAGE_RENAMEVMDK, "Mandatory parameter -from missing");
+        return errorSyntax(USAGE_I_RENAMEVMDK, "Mandatory parameter -from missing");
     if (dst.isEmpty())
-        return errorSyntax(USAGE_RENAMEVMDK, "Mandatory parameter -to missing");
+        return errorSyntax(USAGE_I_RENAMEVMDK, "Mandatory parameter -to missing");
 
     PVDISK pDisk = NULL;
 
@@ -1969,14 +1972,14 @@ static RTEXITCODE CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVi
         }
         else
         {
-            return errorSyntax(USAGE_CONVERTTORAW, "Invalid parameter '%s'", argv[i]);
+            return errorSyntax(USAGE_I_CONVERTTORAW, "Invalid parameter '%s'", argv[i]);
         }
     }
 
     if (src.isEmpty())
-        return errorSyntax(USAGE_CONVERTTORAW, "Mandatory filename parameter missing");
+        return errorSyntax(USAGE_I_CONVERTTORAW, "Mandatory filename parameter missing");
     if (dst.isEmpty())
-        return errorSyntax(USAGE_CONVERTTORAW, "Mandatory outputfile parameter missing");
+        return errorSyntax(USAGE_I_CONVERTTORAW, "Mandatory outputfile parameter missing");
 
     PVDISK pDisk = NULL;
 
@@ -2134,14 +2137,14 @@ static RTEXITCODE CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> 
         }
         else
         {
-            return errorSyntax(USAGE_CONVERTHD, "Invalid parameter '%s'", argv[i]);
+            return errorSyntax(USAGE_I_CONVERTHD, "Invalid parameter '%s'", argv[i]);
         }
     }
 
     if (src.isEmpty())
-        return errorSyntax(USAGE_CONVERTHD, "Mandatory input image parameter missing");
+        return errorSyntax(USAGE_I_CONVERTHD, "Mandatory input image parameter missing");
     if (dst.isEmpty())
-        return errorSyntax(USAGE_CONVERTHD, "Mandatory output image parameter missing");
+        return errorSyntax(USAGE_I_CONVERTHD, "Mandatory output image parameter missing");
 
 
     PVDINTERFACE     pVDIfs = NULL;
@@ -2253,12 +2256,12 @@ static RTEXITCODE CmdRepairHardDisk(int argc, char **argv, ComPtr<IVirtualBox> a
         }
         else
         {
-            return errorSyntax(USAGE_REPAIRHD, "Invalid parameter '%s'", argv[i]);
+            return errorSyntax(USAGE_I_REPAIRHD, "Invalid parameter '%s'", argv[i]);
         }
     }
 
     if (image.isEmpty())
-        return errorSyntax(USAGE_REPAIRHD, "Mandatory input image parameter missing");
+        return errorSyntax(USAGE_I_REPAIRHD, "Mandatory input image parameter missing");
 
     PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACEERROR vdInterfaceError;
@@ -2332,7 +2335,7 @@ static RTEXITCODE CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
      * that we wish to open.
      */
     if (argc < 1)
-        return errorSyntax(USAGE_DEBUGLOG, "Missing VM name/UUID");
+        return errorSyntax(USAGE_I_DEBUGLOG, "Missing VM name/UUID");
 
     ComPtr<IMachine> ptrMachine;
     HRESULT rc;
@@ -2420,7 +2423,7 @@ static RTEXITCODE CmdDebugLog(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
                 break;
 
             default:
-                return errorGetOpt(USAGE_DEBUGLOG, ch, &ValueUnion);
+                return errorGetOpt(USAGE_I_DEBUGLOG, ch, &ValueUnion);
         }
     }
 
@@ -2448,7 +2451,7 @@ static RTEXITCODE CmdGeneratePasswordHash(int argc, char **argv, ComPtr<IVirtual
 
     /* one parameter, the password to hash */
     if (argc != 1)
-        return errorSyntax(USAGE_PASSWORDHASH, "password to hash required");
+        return errorSyntax(USAGE_I_PASSWORDHASH, "password to hash required");
 
     uint8_t abDigest[RTSHA256_HASH_SIZE];
     RTSha256(argv[0], strlen(argv[0]), abDigest);
@@ -2467,7 +2470,7 @@ static RTEXITCODE CmdGuestStats(int argc, char **argv, ComPtr<IVirtualBox> aVirt
 {
     /* one parameter, guest name */
     if (argc < 1)
-        return errorSyntax(USAGE_GUESTSTATS, "Missing VM name/UUID");
+        return errorSyntax(USAGE_I_GUESTSTATS, "Missing VM name/UUID");
 
     /*
      * Parse the command.
@@ -2492,12 +2495,12 @@ static RTEXITCODE CmdGuestStats(int argc, char **argv, ComPtr<IVirtualBox> aVirt
                 break;
 
             default:
-                return errorGetOpt(USAGE_GUESTSTATS, ch, &ValueUnion);
+                return errorGetOpt(USAGE_I_GUESTSTATS, ch, &ValueUnion);
         }
     }
 
     if (argc > 1 && aUpdateInterval == 0)
-        return errorSyntax(USAGE_GUESTSTATS, "Invalid update interval specified");
+        return errorSyntax(USAGE_I_GUESTSTATS, "Invalid update interval specified");
 
     RTPrintf("argc=%d interval=%u\n", argc, aUpdateInterval);
 
@@ -2552,7 +2555,7 @@ RTEXITCODE handleInternalCommands(HandlerArg *a)
 
     /* at least a command is required */
     if (a->argc < 1)
-        return errorSyntax(USAGE_ALL, "Command missing");
+        return errorSyntax(USAGE_S_ALL, "Command missing");
 
     /*
      * The 'string switch' on command name.
@@ -2592,6 +2595,6 @@ RTEXITCODE handleInternalCommands(HandlerArg *a)
         return CmdRepairHardDisk(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
 
     /* default: */
-    return errorSyntax(USAGE_ALL, "Invalid command '%s'", a->argv[0]);
+    return errorSyntax(USAGE_S_ALL, "Invalid command '%s'", a->argv[0]);
 }
 

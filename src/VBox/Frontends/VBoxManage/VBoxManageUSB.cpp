@@ -197,9 +197,9 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
             if (a->argc < 6)
             {
                 if (cmd.mAction == USBFilterCmd::Add)
-                    return errorSyntax(USAGE_USBFILTER_ADD, "Not enough parameters");
+                    return errorSyntaxEx(USAGE_USBFILTER, HELP_SCOPE_USBFILTER_ADD, "Not enough parameters");
 
-                return errorSyntax(USAGE_USBFILTER_MODIFY, "Not enough parameters");
+                return errorSyntaxEx(USAGE_USBFILTER, HELP_SCOPE_USBFILTER_MODIFY, "Not enough parameters");
             }
 
             // set Active to true by default
@@ -328,7 +328,7 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
                         return errorArgument("Invalid USB filter action '%s'", a->argv[i]);
                 }
                 else
-                    return errorSyntax(cmd.mAction == USBFilterCmd::Add ? USAGE_USBFILTER_ADD : USAGE_USBFILTER_MODIFY,
+                    return errorSyntaxEx(USAGE_USBFILTER, cmd.mAction == USBFilterCmd::Add ? HELP_SCOPE_USBFILTER_ADD : HELP_SCOPE_USBFILTER_MODIFY,
                                        "Unknown option '%s'", a->argv[i]);
             }
 
@@ -346,7 +346,7 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
                         && !cmd.mFilter.mRemote.isEmpty())
                    )
                 {
-                    return errorSyntax(USAGE_USBFILTER_ADD, "Mandatory options not supplied");
+                    return errorSyntaxEx(USAGE_USBFILTER, HELP_SCOPE_USBFILTER_ADD, "Mandatory options not supplied");
                 }
             }
             break;
@@ -356,7 +356,7 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
         {
             /* at least: 0: command, 1: index, 2: --target, 3: <target value> */
             if (a->argc < 4)
-                return errorSyntax(USAGE_USBFILTER_REMOVE, "Not enough parameters");
+                return errorSyntaxEx(USAGE_USBFILTER, HELP_SCOPE_USBFILTER_REMOVE, "Not enough parameters");
 
             for (int i = 2; i < a->argc; i++)
             {
@@ -378,7 +378,7 @@ RTEXITCODE handleUSBFilter(HandlerArg *a)
 
             // mandatory options
             if (!cmd.mGlobal && !cmd.mMachine)
-                return errorSyntax(USAGE_USBFILTER_REMOVE, "Mandatory options not supplied");
+                return errorSyntaxEx(USAGE_USBFILTER, HELP_SCOPE_USBFILTER_REMOVE, "Mandatory options not supplied");
 
             break;
         }
