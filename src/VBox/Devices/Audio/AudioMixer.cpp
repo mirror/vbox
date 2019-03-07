@@ -102,7 +102,7 @@ static int audioMixerSinkMultiplexSync(PAUDMIXSINK pSink, AUDMIXOP enmOp, const 
 static int audioMixerSinkWriteToStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixStream);
 static int audioMixerSinkWriteToStreamEx(PAUDMIXSINK pSink, PAUDMIXSTREAM pMixStream, uint32_t cbToWrite, uint32_t *pcbWritten);
 
-int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl);
+static int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl);
 static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream);
 static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream);
 
@@ -2057,7 +2057,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
  * @param   enmCmd              Mixer stream command to use.
  * @param   fCtl                Additional control flags. Pass 0.
  */
-int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl)
+static int audioMixerStreamCtlInternal(PAUDMIXSTREAM pMixStream, PDMAUDIOSTREAMCMD enmCmd, uint32_t fCtl)
 {
     AssertPtr(pMixStream->pConn);
     AssertPtr(pMixStream->pStream);
