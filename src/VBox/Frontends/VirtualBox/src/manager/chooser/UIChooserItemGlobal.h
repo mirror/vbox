@@ -31,6 +31,7 @@ class QStyleOptionGraphicsItem;
 class UIGraphicsToolBar;
 class UIGraphicsZoomButton;
 
+
 /** UIChooserItem extension implementing global item. */
 class UIChooserItemGlobal : public UIChooserItem
 {
@@ -38,7 +39,7 @@ class UIChooserItemGlobal : public UIChooserItem
 
 public:
 
-    /** RTTI item type. */
+    /** RTTI required for qgraphicsitem_cast. */
     enum { Type = UIChooserItemType_Global };
 
     /** Constructs possible @a fFavorite item with specified @a iPosition, passing @a pParent to the base-class. */
@@ -50,9 +51,6 @@ public:
 
     /** @name Item stuff.
       * @{ */
-        /** Defines whether item is @a fFavorite. */
-        virtual void setFavorite(bool fFavorite) /* override */;
-
         /** Returns whether passed @a position belongs to tool button area. */
         bool isToolButtonArea(const QPoint &position, int iMarginMultiplier = 1) const;
         /** Returns whether passed @a position belongs to pin button area. */
@@ -61,10 +59,10 @@ public:
 
     /** @name Layout stuff.
       * @{ */
-        /** Defines height @a iHint. */
-        void setHeightHint(int iHint);
         /** Returns height hint. */
         int heightHint() const;
+        /** Defines height @a iHint. */
+        void setHeightHint(int iHint);
     /** @} */
 
 protected:
@@ -92,37 +90,41 @@ protected:
         /** Returns RTTI item type. */
         virtual int type() const /* override */ { return Type; }
 
+        /** Returns item name. */
+        virtual QString name() const /* override */;
+        /** Returns item full-name. */
+        virtual QString fullName() const /* override */;
+        /** Returns item description. */
+        virtual QString description() const /* override */;
+        /** Returns item definition. */
+        virtual QString definition() const /* override */;
+
+        /** Defines whether item is @a fFavorite. */
+        virtual void setFavorite(bool fFavorite) /* override */;
+
         /** Starts item editing. */
         virtual void startEditing() /* override */;
 
         /** Updates item tool-tip. */
         virtual void updateToolTip() /* override */;
-
-        /** Returns item name. */
-        virtual QString name() const /* override */;
-        /** Returns item description. */
-        virtual QString description() const /* override */;
-        /** Returns item full-name. */
-        virtual QString fullName() const /* override */;
-        /** Returns item definition. */
-        virtual QString definition() const /* override */;
     /** @} */
 
     /** @name Children stuff.
       * @{ */
+        /** Returns whether there are children items of certain @a enmType. */
+        virtual bool hasItems(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
+        /** Returns children items of certain @a enmType. */
+        virtual QList<UIChooserItem*> items(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
+
+        /** Replaces children @a items of certain @a enmType. */
+        virtual void setItems(const QList<UIChooserItem*> &items, UIChooserItemType enmType) /* override */;
+        /** Clears children items of certain @a enmType. */
+        virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) /* override */;
+
         /** Adds possible @a fFavorite child @a pItem to certain @a iPosition. */
         virtual void addItem(UIChooserItem *pItem, bool fFavorite, int iPosition) /* override */;
         /** Removes child @a pItem. */
         virtual void removeItem(UIChooserItem *pItem) /* override */;
-
-        /** Replaces children @a items of certain @a enmType. */
-        virtual void setItems(const QList<UIChooserItem*> &items, UIChooserItemType enmType) /* override */;
-        /** Returns children items of certain @a enmType. */
-        virtual QList<UIChooserItem*> items(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
-        /** Returns whether there are children items of certain @a enmType. */
-        virtual bool hasItems(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
-        /** Clears children items of certain @a enmType. */
-        virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) /* override */;
 
         /** Updates all children items with specified @a uId. */
         virtual void updateAllItems(const QUuid &uId) /* override */;
@@ -293,5 +295,6 @@ private:
         int  m_iHeightHint;
     /** @} */
 };
+
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserItemGlobal_h */

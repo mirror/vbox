@@ -1016,7 +1016,7 @@ void UIChooserModel::sltPerformRefreshAction()
         if (pItem->accessible())
         {
             /* Machine name: */
-            QString strMachineName = pItem->name();
+            QString strMachineName = ((UIChooserItem*)pItem)->name();
             /* We should reload this machine: */
             sltReloadMachine(pItem->id());
             /* Select first of reloaded items: */

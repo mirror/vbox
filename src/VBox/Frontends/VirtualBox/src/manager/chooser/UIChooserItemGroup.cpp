@@ -220,21 +220,15 @@ void UIChooserItemGroup::setName(const QString &strName)
     updateMinimumHeaderSize();
 }
 
-void UIChooserItemGroup::close(bool fAnimated /* = true */)
-{
-    AssertMsg(!isRoot(), ("Can't close root-item!"));
-    m_pToggleButton->setToggled(false, fAnimated);
-}
-
 bool UIChooserItemGroup::isClosed() const
 {
     return m_fClosed && !isRoot();
 }
 
-void UIChooserItemGroup::open(bool fAnimated /* = true */)
+void UIChooserItemGroup::close(bool fAnimated /* = true */)
 {
-    AssertMsg(!isRoot(), ("Can't open root-item!"));
-    m_pToggleButton->setToggled(true, fAnimated);
+    AssertMsg(!isRoot(), ("Can't close root-item!"));
+    m_pToggleButton->setToggled(false, fAnimated);
 }
 
 bool UIChooserItemGroup::isOpened() const
@@ -242,29 +236,10 @@ bool UIChooserItemGroup::isOpened() const
     return !m_fClosed || isRoot();
 }
 
-void UIChooserItemGroup::installEventFilterHelper(QObject *pSource)
+void UIChooserItemGroup::open(bool fAnimated /* = true */)
 {
-    /* The only object which need's that filter for now is scroll-area: */
-    pSource->installEventFilter(m_pScrollArea);
-}
-
-/* static */
-QString UIChooserItemGroup::className()
-{
-    return "UIChooserItemGroup";
-}
-
-void UIChooserItemGroup::makeSureItemIsVisible(UIChooserItem *pItem)
-{
-    /* Make sure item exists: */
-    AssertPtrReturnVoid(pItem);
-
-    /* Convert child rectangle to local coordinates for this group. This also
-     * works for a child at any sub-level, doesn't necessary of this group. */
-    const QPointF positionInScene = pItem->mapToScene(QPointF(0, 0));
-    const QPointF positionInGroup = mapFromScene(positionInScene);
-    const QRectF itemRectInGroup = QRectF(positionInGroup, pItem->size());
-    m_pScrollArea->makeSureRectIsVisible(itemRectInGroup);
+    AssertMsg(!isRoot(), ("Can't open root-item!"));
+    m_pToggleButton->setToggled(true, fAnimated);
 }
 
 void UIChooserItemGroup::updateFavorites()
@@ -290,6 +265,12 @@ void UIChooserItemGroup::updateFavorites()
 
     /* Relayout model: */
     model()->updateLayout();
+}
+
+/* static */
+QString UIChooserItemGroup::className()
+{
+    return "UIChooserItemGroup";
 }
 
 void UIChooserItemGroup::retranslateUi()
@@ -389,6 +370,36 @@ void UIChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsIte
     paintHeader(pPainter, rectangle);
 }
 
+QString UIChooserItemGroup::name() const
+{
+    return m_strName;
+}
+
+QString UIChooserItemGroup::fullName() const
+{
+    /* Return "/" for root item: */
+    if (isRoot())
+        return "/";
+
+    /* Get full parent name, append with '/' if not yet appended: */
+    AssertMsg(parentItem(), ("Incorrect parent set!"));
+    QString strFullParentName = parentItem()->fullName();
+    if (!strFullParentName.endsWith('/'))
+        strFullParentName.append('/');
+    /* Return full item name based on parent prefix: */
+    return strFullParentName + name();
+}
+
+QString UIChooserItemGroup::description() const
+{
+    return m_strDescription;
+}
+
+QString UIChooserItemGroup::definition() const
+{
+    return QString("g=%1").arg(name());
+}
+
 void UIChooserItemGroup::startEditing()
 {
     /* Not for root: */
@@ -474,34 +485,95 @@ void UIChooserItemGroup::updateToolTip()
     setToolTip(toolTipInfo.join("<br>"));
 }
 
-QString UIChooserItemGroup::name() const
+void UIChooserItemGroup::installEventFilterHelper(QObject *pSource)
 {
-    return m_strName;
+    /* The only object which need's that filter for now is scroll-area: */
+    pSource->installEventFilter(m_pScrollArea);
 }
 
-QString UIChooserItemGroup::description() const
+bool UIChooserItemGroup::hasItems(UIChooserItemType type /* = UIChooserItemType_Any */) const
 {
-    return m_strDescription;
+    switch (type)
+    {
+        case UIChooserItemType_Any:
+            return hasItems(UIChooserItemType_Global) || hasItems(UIChooserItemType_Group) || hasItems(UIChooserItemType_Machine);
+        case UIChooserItemType_Global:
+            return !m_globalItems.isEmpty();
+        case UIChooserItemType_Group:
+            return !m_groupItems.isEmpty();
+        case UIChooserItemType_Machine:
+            return !m_machineItems.isEmpty();
+    }
+    return false;
 }
 
-QString UIChooserItemGroup::fullName() const
+QList<UIChooserItem*> UIChooserItemGroup::items(UIChooserItemType type /* = UIChooserItemType_Any */) const
 {
-    /* Return "/" for root item: */
-    if (isRoot())
-        return "/";
-
-    /* Get full parent name, append with '/' if not yet appended: */
-    AssertMsg(parentItem(), ("Incorrect parent set!"));
-    QString strFullParentName = parentItem()->fullName();
-    if (!strFullParentName.endsWith('/'))
-        strFullParentName.append('/');
-    /* Return full item name based on parent prefix: */
-    return strFullParentName + name();
+    switch (type)
+    {
+        case UIChooserItemType_Any: return items(UIChooserItemType_Global) + items(UIChooserItemType_Group) + items(UIChooserItemType_Machine);
+        case UIChooserItemType_Global: return m_globalItems;
+        case UIChooserItemType_Group: return m_groupItems;
+        case UIChooserItemType_Machine: return m_machineItems;
+        default: break;
+    }
+    return QList<UIChooserItem*>();
 }
 
-QString UIChooserItemGroup::definition() const
+void UIChooserItemGroup::setItems(const QList<UIChooserItem*> &items, UIChooserItemType type)
 {
-    return QString("g=%1").arg(name());
+    /* Check item type: */
+    switch (type)
+    {
+        case UIChooserItemType_Global: m_globalItems = items; break;
+        case UIChooserItemType_Group: m_groupItems = items; break;
+        case UIChooserItemType_Machine: m_machineItems = items; break;
+        default: AssertMsgFailed(("Invalid item type!")); break;
+    }
+
+    /* Update linked values: */
+    updateLayoutSpacings();
+    updateItemCountInfo();
+    updateToolTip();
+    updateGeometry();
+}
+
+void UIChooserItemGroup::clearItems(UIChooserItemType type /* = UIChooserItemType_Any */)
+{
+    switch (type)
+    {
+        case UIChooserItemType_Any:
+        {
+            clearItems(UIChooserItemType_Global);
+            clearItems(UIChooserItemType_Group);
+            clearItems(UIChooserItemType_Machine);
+            break;
+        }
+        case UIChooserItemType_Global:
+        {
+            while (!m_globalItems.isEmpty()) { delete m_globalItems.last(); }
+            AssertMsg(m_globalItems.isEmpty(), ("Global items cleanup failed!"));
+            break;
+        }
+        case UIChooserItemType_Group:
+        {
+            while (!m_groupItems.isEmpty()) { delete m_groupItems.last(); }
+            AssertMsg(m_groupItems.isEmpty(), ("Group items cleanup failed!"));
+            break;
+        }
+        case UIChooserItemType_Machine:
+        {
+            while (!m_machineItems.isEmpty()) { delete m_machineItems.last(); }
+            AssertMsg(m_machineItems.isEmpty(), ("Machine items cleanup failed!"));
+            break;
+        }
+    }
+
+    /* Update linked values: */
+    updateLayoutSpacings();
+    updateItemCountInfo();
+    updateToolTip();
+    updateGeometry();
 }
 
 void UIChooserItemGroup::addItem(UIChooserItem *pItem, bool fFavorite, int iPosition)
@@ -600,91 +672,6 @@ void UIChooserItemGroup::removeItem(UIChooserItem *pItem)
         default:
         {
             AssertMsgFailed(("Invalid item type!"));
-            break;
-        }
-    }
-
-    /* Update linked values: */
-    updateLayoutSpacings();
-    updateItemCountInfo();
-    updateToolTip();
-    updateGeometry();
-}
-
-void UIChooserItemGroup::setItems(const QList<UIChooserItem*> &items, UIChooserItemType type)
-{
-    /* Check item type: */
-    switch (type)
-    {
-        case UIChooserItemType_Global: m_globalItems = items; break;
-        case UIChooserItemType_Group: m_groupItems = items; break;
-        case UIChooserItemType_Machine: m_machineItems = items; break;
-        default: AssertMsgFailed(("Invalid item type!")); break;
-    }
-
-    /* Update linked values: */
-    updateLayoutSpacings();
-    updateItemCountInfo();
-    updateToolTip();
-    updateGeometry();
-}
-
-QList<UIChooserItem*> UIChooserItemGroup::items(UIChooserItemType type /* = UIChooserItemType_Any */) const
-{
-    switch (type)
-    {
-        case UIChooserItemType_Any: return items(UIChooserItemType_Global) + items(UIChooserItemType_Group) + items(UIChooserItemType_Machine);
-        case UIChooserItemType_Global: return m_globalItems;
-        case UIChooserItemType_Group: return m_groupItems;
-        case UIChooserItemType_Machine: return m_machineItems;
-        default: break;
-    }
-    return QList<UIChooserItem*>();
-}
-
-bool UIChooserItemGroup::hasItems(UIChooserItemType type /* = UIChooserItemType_Any */) const
-{
-    switch (type)
-    {
-        case UIChooserItemType_Any:
-            return hasItems(UIChooserItemType_Global) || hasItems(UIChooserItemType_Group) || hasItems(UIChooserItemType_Machine);
-        case UIChooserItemType_Global:
-            return !m_globalItems.isEmpty();
-        case UIChooserItemType_Group:
-            return !m_groupItems.isEmpty();
-        case UIChooserItemType_Machine:
-            return !m_machineItems.isEmpty();
-    }
-    return false;
-}
-
-void UIChooserItemGroup::clearItems(UIChooserItemType type /* = UIChooserItemType_Any */)
-{
-    switch (type)
-    {
-        case UIChooserItemType_Any:
-        {
-            clearItems(UIChooserItemType_Global);
-            clearItems(UIChooserItemType_Group);
-            clearItems(UIChooserItemType_Machine);
-            break;
-        }
-        case UIChooserItemType_Global:
-        {
-            while (!m_globalItems.isEmpty()) { delete m_globalItems.last(); }
-            AssertMsg(m_globalItems.isEmpty(), ("Global items cleanup failed!"));
-            break;
-        }
-        case UIChooserItemType_Group:
-        {
-            while (!m_groupItems.isEmpty()) { delete m_groupItems.last(); }
-            AssertMsg(m_groupItems.isEmpty(), ("Group items cleanup failed!"));
-            break;
-        }
-        case UIChooserItemType_Machine:
-        {
-            while (!m_machineItems.isEmpty()) { delete m_machineItems.last(); }
-            AssertMsg(m_machineItems.isEmpty(), ("Machine items cleanup failed!"));
             break;
         }
     }
@@ -927,6 +914,19 @@ QSizeF UIChooserItemGroup::sizeHint(Qt::SizeHint enmWhich, const QSizeF &constra
         return minimumSizeHintForGroup(isOpened());
     /* Else call to base-class: */
     return UIChooserItem::sizeHint(enmWhich, constraint);
+}
+
+void UIChooserItemGroup::makeSureItemIsVisible(UIChooserItem *pItem)
+{
+    /* Make sure item exists: */
+    AssertPtrReturnVoid(pItem);
+
+    /* Convert child rectangle to local coordinates for this group. This also
+     * works for a child at any sub-level, doesn't necessary of this group. */
+    const QPointF positionInScene = pItem->mapToScene(QPointF(0, 0));
+    const QPointF positionInGroup = mapFromScene(positionInScene);
+    const QRectF itemRectInGroup = QRectF(positionInGroup, pItem->size());
+    m_pScrollArea->makeSureRectIsVisible(itemRectInGroup);
 }
 
 QPixmap UIChooserItemGroup::toPixmap()
@@ -1349,20 +1349,6 @@ void UIChooserItemGroup::prepare()
     }
 }
 
-/* static */
-void UIChooserItemGroup::copyContent(UIChooserItemGroup *pFrom, UIChooserItemGroup *pTo)
-{
-    /* Copy group-items: */
-    foreach (UIChooserItem *pGroupItem, pFrom->items(UIChooserItemType_Group))
-        new UIChooserItemGroup(pTo, pGroupItem->toGroupItem());
-    /* Copy global-items: */
-    foreach (UIChooserItem *pGlobalItem, pFrom->items(UIChooserItemType_Global))
-        new UIChooserItemGlobal(pTo, pGlobalItem->toGlobalItem());
-    /* Copy machine-items: */
-    foreach (UIChooserItem *pMachineItem, pFrom->items(UIChooserItemType_Machine))
-        new UIChooserItemMachine(pTo, pMachineItem->toMachineItem());
-}
-
 QVariant UIChooserItemGroup::data(int iKey) const
 {
     /* Provide other members with required data: */
@@ -1381,16 +1367,16 @@ QVariant UIChooserItemGroup::data(int iKey) const
     return QVariant();
 }
 
+int UIChooserItemGroup::additionalHeight() const
+{
+    return m_iAdditionalHeight;
+}
+
 void UIChooserItemGroup::setAdditionalHeight(int iAdditionalHeight)
 {
     m_iAdditionalHeight = iAdditionalHeight;
     updateGeometry();
     model()->updateLayout();
-}
-
-int UIChooserItemGroup::additionalHeight() const
-{
-    return m_iAdditionalHeight;
 }
 
 void UIChooserItemGroup::updateAnimationParameters()
@@ -1414,6 +1400,20 @@ void UIChooserItemGroup::updateToggleButtonToolTip()
 
     /* Update toggle-button tool-tip: */
     m_pToggleButton->setToolTip(isOpened() ? tr("Collapse group") : tr("Expand group"));
+}
+
+/* static */
+void UIChooserItemGroup::copyContent(UIChooserItemGroup *pFrom, UIChooserItemGroup *pTo)
+{
+    /* Copy group-items: */
+    foreach (UIChooserItem *pGroupItem, pFrom->items(UIChooserItemType_Group))
+        new UIChooserItemGroup(pTo, pGroupItem->toGroupItem());
+    /* Copy global-items: */
+    foreach (UIChooserItem *pGlobalItem, pFrom->items(UIChooserItemType_Global))
+        new UIChooserItemGlobal(pTo, pGlobalItem->toGlobalItem());
+    /* Copy machine-items: */
+    foreach (UIChooserItem *pMachineItem, pFrom->items(UIChooserItemType_Machine))
+        new UIChooserItemMachine(pTo, pMachineItem->toMachineItem());
 }
 
 bool UIChooserItemGroup::isContainsMachine(const QUuid &uId) const

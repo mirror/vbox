@@ -288,13 +288,6 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fFavorite,
     }
 }
 
-void UIChooserItem::setFavorite(bool fFavorite)
-{
-    m_fFavorite = fFavorite;
-    if (m_pParent)
-        m_pParent->toGroupItem()->updateFavorites();
-}
-
 UIChooserItemGroup *UIChooserItem::toGroupItem()
 {
     UIChooserItemGroup *pItem = qgraphicsitem_cast<UIChooserItemGroup*>(this);
@@ -328,6 +321,13 @@ UIActionPool *UIChooserItem::actionPool() const
     return model()->actionPool();
 }
 
+void UIChooserItem::setFavorite(bool fFavorite)
+{
+    m_fFavorite = fFavorite;
+    if (m_pParent)
+        m_pParent->toGroupItem()->updateFavorites();
+}
+
 int UIChooserItem::level() const
 {
     /* Check whether it is specified manually: */
@@ -350,6 +350,11 @@ void UIChooserItem::setLevel(int iLevel)
     m_iLevel = iLevel;
 }
 
+bool UIChooserItem::isHovered() const
+{
+    return m_fHovered;
+}
+
 void UIChooserItem::setHovered(bool fHovered)
 {
     m_fHovered = fHovered;
@@ -357,11 +362,6 @@ void UIChooserItem::setHovered(bool fHovered)
         emit sigHoverEnter();
     else
         emit sigHoverLeave();
-}
-
-bool UIChooserItem::isHovered() const
-{
-    return m_fHovered;
 }
 
 void UIChooserItem::updateGeometry()
@@ -404,6 +404,11 @@ void UIChooserItem::makeSureItsVisible()
     }
 }
 
+UIChooserItemDragToken UIChooserItem::dragTokenPlace() const
+{
+    return m_enmDragTokenPlace;
+}
+
 void UIChooserItem::setDragTokenPlace(UIChooserItemDragToken enmPlace)
 {
     /* Something changed? */
@@ -412,11 +417,6 @@ void UIChooserItem::setDragTokenPlace(UIChooserItemDragToken enmPlace)
         m_enmDragTokenPlace = enmPlace;
         update();
     }
-}
-
-UIChooserItemDragToken UIChooserItem::dragTokenPlace() const
-{
-    return m_enmDragTokenPlace;
 }
 
 void UIChooserItem::hoverMoveEvent(QGraphicsSceneHoverEvent *)

@@ -82,16 +82,8 @@ public:
 
     /** @name Item stuff.
       * @{ */
-        /** Returns parent  reference. */
+        /** Returns parent reference. */
         UIChooserItem *parentItem() const {  return m_pParent; }
-        /** Returns whether item is favorite. */
-        bool isFavorite() const { return m_fFavorite; }
-
-        /** Defines whether item is @a fFavorite. */
-        virtual void setFavorite(bool fFavorite);
-
-        /** Returns whether item is root. */
-        bool isRoot() const { return !m_pParent; }
 
         /** Casts item to group one. */
         UIChooserItemGroup *toGroupItem();
@@ -105,30 +97,38 @@ public:
         /** Returns action-pool reference. */
         UIActionPool *actionPool() const;
 
+        /** Returns whether item is root. */
+        bool isRoot() const { return !m_pParent; }
+
+        /** Returns item name. */
+        virtual QString name() const = 0;
+        /** Returns item full-name. */
+        virtual QString fullName() const = 0;
+        /** Returns item description. */
+        virtual QString description() const = 0;
+        /** Returns item definition. */
+        virtual QString definition() const = 0;
+
+        /** Returns whether item is favorite. */
+        bool isFavorite() const { return m_fFavorite; }
+        /** Defines whether item is @a fFavorite. */
+        virtual void setFavorite(bool fFavorite);
+
         /** Returns a level of item. */
         int level() const;
         /** Defines a @a iLevel of item. */
         void setLevel(int iLevel);
+
+        /** Returns whether item is hovered. */
+        bool isHovered() const;
+        /** Defines whether item is @a fHovered. */
+        void setHovered(bool fHovered);
 
         /** Starts item editing. */
         virtual void startEditing() = 0;
 
         /** Updates item tool-tip. */
         virtual void updateToolTip() = 0;
-
-        /** Returns item name. */
-        virtual QString name() const = 0;
-        /** Returns item description. */
-        virtual QString description() const = 0;
-        /** Returns item full-name. */
-        virtual QString fullName() const = 0;
-        /** Returns item definition. */
-        virtual QString definition() const = 0;
-
-        /** Defines whether item is @a fHovered. */
-        void setHovered(bool fHovered);
-        /** Returns whether item is hovered. */
-        bool isHovered() const;
 
         /** Installs event-filter for @a pSource object.
           * @note  Base-class implementation does nothing. */
@@ -137,19 +137,20 @@ public:
 
     /** @name Children stuff.
       * @{ */
+        /** Returns whether there are children items of certain @a enmType. */
+        virtual bool hasItems(UIChooserItemType enmType = UIChooserItemType_Any) const = 0;
+        /** Returns children items of certain @a enmType. */
+        virtual QList<UIChooserItem*> items(UIChooserItemType enmType = UIChooserItemType_Any) const = 0;
+
+        /** Replaces children @a items of certain @a enmType. */
+        virtual void setItems(const QList<UIChooserItem*> &items, UIChooserItemType enmType) = 0;
+        /** Clears children items of certain @a enmType. */
+        virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) = 0;
+
         /** Adds possible @a fFavorite child @a pItem to certain @a iPosition. */
         virtual void addItem(UIChooserItem *pItem, bool fFavorite, int iPosition) = 0;
         /** Removes child @a pItem. */
         virtual void removeItem(UIChooserItem *pItem) = 0;
-
-        /** Replaces children @a items of certain @a enmType. */
-        virtual void setItems(const QList<UIChooserItem*> &items, UIChooserItemType enmType) = 0;
-        /** Returns children items of certain @a enmType. */
-        virtual QList<UIChooserItem*> items(UIChooserItemType enmType = UIChooserItemType_Any) const = 0;
-        /** Returns whether there are children items of certain @a enmType. */
-        virtual bool hasItems(UIChooserItemType enmType = UIChooserItemType_Any) const = 0;
-        /** Clears children items of certain @a enmType. */
-        virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) = 0;
 
         /** Updates all children items with specified @a uId. */
         virtual void updateAllItems(const QUuid &uId) = 0;
@@ -202,10 +203,10 @@ public:
         /** Reset drag token. */
         virtual void resetDragToken() = 0;
 
-        /** Defines drag token @a enmPlace. */
-        void setDragTokenPlace(UIChooserItemDragToken enmPlace);
         /** Returns drag token place. */
         UIChooserItemDragToken dragTokenPlace() const;
+        /** Defines drag token @a enmPlace. */
+        void setDragTokenPlace(UIChooserItemDragToken enmPlace);
     /** @} */
 
 protected:
@@ -232,28 +233,28 @@ protected:
 
     /** @name Item stuff.
       * @{ */
-        /** Defines item's default animation @a iValue. */
-        void setDefaultValue(int iValue) { m_iDefaultValue = iValue; update(); }
         /** Returns item's default animation value. */
         int defaultValue() const { return m_iDefaultValue; }
+        /** Defines item's default animation @a iValue. */
+        void setDefaultValue(int iValue) { m_iDefaultValue = iValue; update(); }
 
-        /** Defines item's hovered animation @a iValue. */
-        void setHoveredValue(int iValue) { m_iHoveredValue = iValue; update(); }
         /** Returns item's hovered animation value. */
         int hoveredValue() const { return m_iHoveredValue; }
+        /** Defines item's hovered animation @a iValue. */
+        void setHoveredValue(int iValue) { m_iHoveredValue = iValue; update(); }
 
-        /** Defines item's animated @a iValue. */
-        void setAnimatedValue(int iValue) { m_iAnimatedValue = iValue; update(); }
         /** Returns item's animated value. */
         int animatedValue() const { return m_iAnimatedValue; }
+        /** Defines item's animated @a iValue. */
+        void setAnimatedValue(int iValue) { m_iAnimatedValue = iValue; update(); }
     /** @} */
 
     /** @name Layout stuff.
       * @{ */
-        /** Defines previous @a geometry. */
-        void setPreviousGeometry(const QRectF &geometry) { m_previousGeometry = geometry; }
         /** Returns previous geometry. */
         const QRectF &previousGeometry() const { return m_previousGeometry; }
+        /** Defines previous @a geometry. */
+        void setPreviousGeometry(const QRectF &geometry) { m_previousGeometry = geometry; }
 
         /** Returns @a strText size calculated on the basis of certain @a font and @a pPaintDevice. */
         static QSize textSize(const QFont &font, QPaintDevice *pPaintDevice, const QString &strText);
@@ -302,7 +303,7 @@ private:
         bool           m_fFavorite;
 
         /** Holds the item level according to root. */
-        int   m_iLevel;
+        int  m_iLevel;
 
         /** Holds whether item is hovered. */
         bool                m_fHovered;

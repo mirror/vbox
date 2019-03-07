@@ -61,7 +61,7 @@ signals:
 
 public:
 
-    /** RTTI item type. */
+    /** RTTI required for qgraphicsitem_cast. */
     enum { Type = UIChooserItemType_Group };
 
     /** Constructs root item, passing pScene to the base-class. */
@@ -78,33 +78,27 @@ public:
         /** Defines group @a strName. */
         void setName(const QString &strName);
 
-        /** Closes group in @a fAnimated way if requested. */
-        void close(bool fAnimated = true);
         /** Returns whether group is closed. */
         bool isClosed() const;
+        /** Closes group in @a fAnimated way if requested. */
+        void close(bool fAnimated = true);
 
-        /** Opens group in @a fAnimated way if requested. */
-        void open(bool fAnimated = true);
         /** Returns whether group is opened. */
         bool isOpened() const;
-
-        /** Installs event-filter for @a pSource object. */
-        virtual void installEventFilterHelper(QObject *pSource) /* override */;
-    /** @} */
-
-    /** @name Navigation stuff.
-      * @{ */
-        /** Class-name used for drag&drop mime-data format. */
-        static QString className();
-
-        /** Makes sure passed child @a pItem is visible. */
-        virtual void makeSureItemIsVisible(UIChooserItem *pItem) /* override */;
+        /** Opens group in @a fAnimated way if requested. */
+        void open(bool fAnimated = true);
     /** @} */
 
     /** @name Children stuff.
       * @{ */
         /** Updates positions of favorite items. */
         void updateFavorites();
+    /** @} */
+
+    /** @name Navigation stuff.
+      * @{ */
+        /** Class-name used for drag&drop mime-data format. */
+        static QString className();
     /** @} */
 
 protected:
@@ -134,37 +128,41 @@ protected:
         /** Returns RTTI item type. */
         virtual int type() const /* override */ { return Type; }
 
+        /** Returns item name. */
+        virtual QString name() const /* override */;
+        /** Returns item full-name. */
+        virtual QString fullName() const /* override */;
+        /** Returns item description. */
+        virtual QString description() const /* override */;
+        /** Returns item definition. */
+        virtual QString definition() const /* override */;
+
         /** Starts item editing. */
         virtual void startEditing() /* override */;
 
         /** Updates item tool-tip. */
         virtual void updateToolTip() /* override */;
 
-        /** Returns item name. */
-        virtual QString name() const /* override */;
-        /** Returns item description. */
-        virtual QString description() const /* override */;
-        /** Returns item full-name. */
-        virtual QString fullName() const /* override */;
-        /** Returns item definition. */
-        virtual QString definition() const /* override */;
+        /** Installs event-filter for @a pSource object. */
+        virtual void installEventFilterHelper(QObject *pSource) /* override */;
     /** @} */
 
     /** @name Children stuff.
       * @{ */
+        /** Returns whether there are children items of certain @a enmType. */
+        virtual bool hasItems(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
+        /** Returns children items of certain @a enmType. */
+        virtual QList<UIChooserItem*> items(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
+
+        /** Replaces children @a items of certain @a enmType. */
+        virtual void setItems(const QList<UIChooserItem*> &items, UIChooserItemType enmType) /* override */;
+        /** Clears children items of certain @a enmType. */
+        virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) /* override */;
+
         /** Adds possible @a fFavorite child @a pItem to certain @a iPosition. */
         virtual void addItem(UIChooserItem *pItem, bool fFavorite, int iPosition) /* override */;
         /** Removes child @a pItem. */
         virtual void removeItem(UIChooserItem *pItem) /* override */;
-
-        /** Replaces children @a items of certain @a enmType. */
-        virtual void setItems(const QList<UIChooserItem*> &items, UIChooserItemType enmType) /* override */;
-        /** Returns children items of certain @a enmType. */
-        virtual QList<UIChooserItem*> items(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
-        /** Returns whether there are children items of certain @a enmType. */
-        virtual bool hasItems(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
-        /** Clears children items of certain @a enmType. */
-        virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) /* override */;
 
         /** Updates all children items with specified @a uId. */
         virtual void updateAllItems(const QUuid &uId) /* override */;
@@ -202,6 +200,9 @@ protected:
 
     /** @name Navigation stuff.
       * @{ */
+        /** Makes sure passed child @a pItem is visible. */
+        virtual void makeSureItemIsVisible(UIChooserItem *pItem) /* override */;
+
         /** Returns pixmap item representation. */
         virtual QPixmap toPixmap() /* override */;
 
@@ -259,9 +260,6 @@ private:
       * @{ */
         /** Prepares all. */
         void prepare();
-
-        /** Copies group contents @a pFrom one item @a pTo another. */
-        static void copyContent(UIChooserItemGroup *pFrom, UIChooserItemGroup *pTo);
     /** @} */
 
     /** @name Item stuff.
@@ -272,10 +270,10 @@ private:
         /** Returns item's header darkness. */
         int headerDarkness() const { return m_iHeaderDarkness; }
 
-        /** Defines @a iAdditionalHeight. */
-        void setAdditionalHeight(int iAdditionalHeight);
         /** Returns additional height. */
         int additionalHeight() const;
+        /** Defines @a iAdditionalHeight. */
+        void setAdditionalHeight(int iAdditionalHeight);
 
         /** Updates animation parameters. */
         void updateAnimationParameters();
@@ -285,6 +283,9 @@ private:
 
     /** @name Children stuff.
       * @{ */
+        /** Copies group contents @a pFrom one item @a pTo another. */
+        static void copyContent(UIChooserItemGroup *pFrom, UIChooserItemGroup *pTo);
+
         /** Returns whether group contains machine with @a uId. */
         bool isContainsMachine(const QUuid &uId) const;
         /** Returns whether group contains locked machine. */
@@ -325,6 +326,17 @@ private:
 
     /** @name Item stuff.
       * @{ */
+        /** Holds the cached name. */
+        QString  m_strName;
+        /** Holds the cached description. */
+        QString  m_strDescription;
+        /** Holds the cached visible name. */
+        QString  m_strVisibleName;
+        /** Holds the cached group children info. */
+        QString  m_strInfoGroups;
+        /** Holds the cached machine children info. */
+        QString  m_strInfoMachines;
+
         /** Holds whether group is closed. */
         bool  m_fClosed;
 
@@ -333,15 +345,15 @@ private:
         /** Holds the header darkness. */
         int  m_iHeaderDarkness;
 
-        /** Holds the cached name. */
-        QString m_strName;
-        /** Holds the cached description. */
-        QString m_strDescription;
-        /** Holds the cached visible name. */
-        QString m_strVisibleName;
+        /** Holds group children pixmap. */
+        QPixmap  m_groupsPixmap;
+        /** Holds machine children pixmap. */
+        QPixmap  m_machinesPixmap;
 
         /** Holds the name font. */
         QFont  m_nameFont;
+        /** Holds the info font. */
+        QFont  m_infoFont;
 
         /** Holds the group toggle button instance. */
         UIGraphicsRotatorButton *m_pToggleButton;
@@ -381,19 +393,6 @@ private:
         QList<UIChooserItem*>  m_groupItems;
         /** Holds the machine children list. */
         QList<UIChooserItem*>  m_machineItems;
-
-        /** Holds group children pixmap. */
-        QPixmap  m_groupsPixmap;
-        /** Holds machine children pixmap. */
-        QPixmap  m_machinesPixmap;
-
-        /** Holds the cached group children info. */
-        QString  m_strInfoGroups;
-        /** Holds the cached machine children info. */
-        QString  m_strInfoMachines;
-
-        /** Holds the children info font. */
-        QFont  m_infoFont;
     /** @} */
 
     /** @name Layout stuff.

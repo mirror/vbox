@@ -75,15 +75,6 @@ UIChooserItemGlobal::~UIChooserItemGlobal()
     cleanup();
 }
 
-void UIChooserItemGlobal::setFavorite(bool fFavorite)
-{
-    /* Call to base-class: */
-    UIChooserItem::setFavorite(fFavorite);
-
-    /* Update pin-pixmap: */
-    updatePinPixmap();
-}
-
 bool UIChooserItemGlobal::isToolButtonArea(const QPoint &position, int iMarginMultiplier /* = 1 */) const
 {
     const int iFullWidth = geometry().width();
@@ -123,6 +114,11 @@ bool UIChooserItemGlobal::isPinButtonArea(const QPoint &position, int iMarginMul
     return rect.contains(position);
 }
 
+int UIChooserItemGlobal::heightHint() const
+{
+    return m_iHeightHint;
+}
+
 void UIChooserItemGlobal::setHeightHint(int iHint)
 {
     /* Remember a new hint: */
@@ -131,11 +127,6 @@ void UIChooserItemGlobal::setHeightHint(int iHint)
     /* Update geometry and the model layout: */
     updateGeometry();
     model()->updateLayout();
-}
-
-int UIChooserItemGlobal::heightHint() const
-{
-    return m_iHeightHint;
 }
 
 void UIChooserItemGlobal::retranslateUi()
@@ -198,6 +189,35 @@ void UIChooserItemGlobal::paint(QPainter *pPainter, const QStyleOptionGraphicsIt
     paintGlobalInfo(pPainter, rectangle);
 }
 
+QString UIChooserItemGlobal::name() const
+{
+    return m_strName;
+}
+
+QString UIChooserItemGlobal::fullName() const
+{
+    return m_strName;
+}
+
+QString UIChooserItemGlobal::description() const
+{
+    return m_strDescription;
+}
+
+QString UIChooserItemGlobal::definition() const
+{
+    return QString("n=%1").arg("GLOBAL");
+}
+
+void UIChooserItemGlobal::setFavorite(bool fFavorite)
+{
+    /* Call to base-class: */
+    UIChooserItem::setFavorite(fFavorite);
+
+    /* Update pin-pixmap: */
+    updatePinPixmap();
+}
+
 void UIChooserItemGlobal::startEditing()
 {
     AssertMsgFailed(("Global graphics item do NOT support editing yet!"));
@@ -208,24 +228,24 @@ void UIChooserItemGlobal::updateToolTip()
 //    setToolTip(toolTipText());
 }
 
-QString UIChooserItemGlobal::name() const
+bool UIChooserItemGlobal::hasItems(UIChooserItemType) const
 {
-    return m_strName;
+    AssertMsgFailedReturn(("Global graphics item do NOT support children!"), false);
 }
 
-QString UIChooserItemGlobal::description() const
+QList<UIChooserItem*> UIChooserItemGlobal::items(UIChooserItemType) const
 {
-    return m_strDescription;
+    AssertMsgFailedReturn(("Global graphics item do NOT support children!"), QList<UIChooserItem*>());
 }
 
-QString UIChooserItemGlobal::fullName() const
+void UIChooserItemGlobal::setItems(const QList<UIChooserItem*> &, UIChooserItemType)
 {
-    return m_strName;
+    AssertMsgFailed(("Global graphics item do NOT support children!"));
 }
 
-QString UIChooserItemGlobal::definition() const
+void UIChooserItemGlobal::clearItems(UIChooserItemType)
 {
-    return QString("n=%1").arg("GLOBAL");
+    AssertMsgFailed(("Global graphics item do NOT support children!"));
 }
 
 void UIChooserItemGlobal::addItem(UIChooserItem *, bool, int)
@@ -234,26 +254,6 @@ void UIChooserItemGlobal::addItem(UIChooserItem *, bool, int)
 }
 
 void UIChooserItemGlobal::removeItem(UIChooserItem *)
-{
-    AssertMsgFailed(("Global graphics item do NOT support children!"));
-}
-
-void UIChooserItemGlobal::setItems(const QList<UIChooserItem*> &, UIChooserItemType)
-{
-    AssertMsgFailed(("Global graphics item do NOT support children!"));
-}
-
-QList<UIChooserItem*> UIChooserItemGlobal::items(UIChooserItemType) const
-{
-    AssertMsgFailedReturn(("Global graphics item do NOT support children!"), QList<UIChooserItem*>());
-}
-
-bool UIChooserItemGlobal::hasItems(UIChooserItemType) const
-{
-    AssertMsgFailedReturn(("Global graphics item do NOT support children!"), false);
-}
-
-void UIChooserItemGlobal::clearItems(UIChooserItemType)
 {
     AssertMsgFailed(("Global graphics item do NOT support children!"));
 }
@@ -297,15 +297,6 @@ void UIChooserItemGlobal::sortItems()
 void UIChooserItemGlobal::updateLayout()
 {
     // Just do nothing ..
-}
-
-QSizeF UIChooserItemGlobal::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
-{
-    /* If Qt::MinimumSize requested: */
-    if (which == Qt::MinimumSize)
-        return QSizeF(minimumWidthHint(), minimumHeightHint());
-    /* Else call to base-class: */
-    return UIChooserItem::sizeHint(which, constraint);
 }
 
 int UIChooserItemGlobal::minimumWidthHint() const
@@ -362,6 +353,15 @@ int UIChooserItemGlobal::minimumHeightHint() const
 
     /* Return result: */
     return iProposedHeight;
+}
+
+QSizeF UIChooserItemGlobal::sizeHint(Qt::SizeHint which, const QSizeF &constraint /* = QSizeF() */) const
+{
+    /* If Qt::MinimumSize requested: */
+    if (which == Qt::MinimumSize)
+        return QSizeF(minimumWidthHint(), minimumHeightHint());
+    /* Else call to base-class: */
+    return UIChooserItem::sizeHint(which, constraint);
 }
 
 QPixmap UIChooserItemGlobal::toPixmap()
