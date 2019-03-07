@@ -521,7 +521,7 @@ void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UICh
                 delete this;
 
                 /* Update model: */
-                pModel->cleanupGroupTree();
+                pModel->wipeOutEmptyGroups();
                 pModel->updateNavigation();
                 pModel->updateLayout();
                 pModel->setCurrentItem(pNewGroupItem);

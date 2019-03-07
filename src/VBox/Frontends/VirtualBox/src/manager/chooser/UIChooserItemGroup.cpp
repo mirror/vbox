@@ -1053,7 +1053,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 }
 
                 /* Update model: */
-                pModel->cleanupGroupTree();
+                pModel->wipeOutEmptyGroups();
                 pModel->updateNavigation();
                 pModel->updateLayout();
                 pModel->setCurrentItem(pNewGroupItem);
@@ -1106,7 +1106,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 }
 
                 /* Update model: */
-                pModel->cleanupGroupTree();
+                pModel->wipeOutEmptyGroups();
                 pModel->updateNavigation();
                 pModel->updateLayout();
                 pModel->setCurrentItem(pNewMachineItem);

@@ -22,15 +22,12 @@
 #endif
 
 /* Qt includes: */
-#include <QMap>
-#include <QObject>
 #include <QPointer>
 #include <QThread>
-#include <QTransform>
 #include <QUuid>
 
 /* GUI includes: */
-#include "UIChooserItem.h"
+#include "UIChooserDefs.h"
 #include "UIExtraDataDefs.h"
 
 /* COM includes: */
@@ -38,16 +35,11 @@
 
 /* Forward declaration: */
 class QDrag;
-class QGraphicsItem;
-class QGraphicsScene;
-class QGraphicsSceneContextMenuEvent;
-class QMenu;
-class QPaintDevice;
-class QTimer;
 class UIActionPool;
 class UIChooser;
 class UIChooserHandlerMouse;
 class UIChooserHandlerKeyboard;
+class UIChooserItem;
 class UIVirtualMachineItem;
 class CMachine;
 
@@ -201,8 +193,8 @@ public:
         /** Starts editing group name. */
         void startEditingGroupItemName();
 
-        /** Cleanups group tree. */
-        void cleanupGroupTree();
+        /** Wipes out empty groups. */
+        void wipeOutEmptyGroups();
 
         /** Activates machine item. */
         void activateMachineItem();
@@ -386,21 +378,19 @@ private:
         /** Returns whether group with certain @a strName should be opened, searching starting from the passed @a pParentItem. */
         bool shouldBeGroupOpened(UIChooserItem *pParentItem, const QString &strName);
 
-        /** Cleanups group tree starting from the passed @a pParentItem. */
-        void cleanupGroupTree(UIChooserItem *pParentItem);
+        /** Wipes out empty groups starting from @a pParentItem. */
+        void wipeOutEmptyGroups(UIChooserItem *pParentItem);
 
         /** Returns whether global item within the @a pParentItem is favorite. */
         bool isGlobalItemFavorite(UIChooserItem *pParentItem) const;
 
-        /** Acquires desired position for an child of @a pParentItem with specified @a enmType and @a strName. */
+        /** Acquires desired position for a child of @a pParentItem with specified @a enmType and @a strName. */
         int getDesiredPosition(UIChooserItem *pParentItem, UIChooserItemType enmType, const QString &strName);
-        /** Acquires saved position for an child of @a pParentItem with specified @a enmType and @a strName. */
+        /** Acquires saved position for a child of @a pParentItem with specified @a enmType and @a strName. */
         int positionFromDefinitions(UIChooserItem *pParentItem, UIChooserItemType enmType, const QString &strName);
 
         /** Creates machine item based on certain @a comMachine as a child of specified @a pParentItem. */
-        void createMachineItem(const CMachine &comMachine, UIChooserItem *pParentItem);
-        /** Creates global item as a child of specified @a pParentItem. */
-        void createGlobalItem(UIChooserItem *pParentItem);
+        void createMachineItem(UIChooserItem *pParentItem, const CMachine &comMachine);
 
         /** Removes machine @a items. */
         void removeItems(const QList<UIChooserItem*> &items);
