@@ -3244,8 +3244,23 @@ static DECLCALLBACK(void) hmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
             pHlp->pfnPrintf(pHlp, "CPU[%u]: VT-x info:\n", pVCpu->idCpu);
         else
             pHlp->pfnPrintf(pHlp, "CPU[%u]: AMD-V info:\n", pVCpu->idCpu);
-        pHlp->pfnPrintf(pHlp, "  HM error       = %#x (%u)\n", pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError);
-        pHlp->pfnPrintf(pHlp, "  rcLastExitToR3 = %Rrc\n", pVCpu->hm.s.rcLastExitToR3);
+        pHlp->pfnPrintf(pHlp, "  HM error           = %#x (%u)\n", pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError);
+        pHlp->pfnPrintf(pHlp, "  rcLastExitToR3     = %Rrc\n", pVCpu->hm.s.rcLastExitToR3);
+        if (pVM->hm.s.vmx.fSupported)
+        {
+            bool const fRealOnV86Active = pVCpu->hm.s.vmx.RealMode.fRealOnV86Active;
+            pHlp->pfnPrintf(pHlp, "  Real-on-v86 active = %RTbool\n", fRealOnV86Active);
+            if (fRealOnV86Active)
+            {
+                pHlp->pfnPrintf(pHlp, "    EFlags  = %#x\n", pVCpu->hm.s.vmx.RealMode.Eflags.u32);
+                pHlp->pfnPrintf(pHlp, "    Attr CS = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrCS.u);
+                pHlp->pfnPrintf(pHlp, "    Attr SS = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrSS.u);
+                pHlp->pfnPrintf(pHlp, "    Attr DS = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrDS.u);
+                pHlp->pfnPrintf(pHlp, "    Attr ES = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrES.u);
+                pHlp->pfnPrintf(pHlp, "    Attr FS = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrFS.u);
+                pHlp->pfnPrintf(pHlp, "    Attr GS = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrGS.u);
+            }
+        }
     }
     else
         pHlp->pfnPrintf(pHlp, "HM is not enabled for this VM!\n");
