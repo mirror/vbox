@@ -472,9 +472,6 @@ private:
         QTimer  *m_pLookupTimer;
         /** Holds the item lookup string. */
         QString  m_strLookupString;
-
-        /** Holds the Id of last VM created from the GUI side. */
-        QUuid  m_uLastCreatedMachineId;
     /** @} */
 
     /** @name Group saving stuff.

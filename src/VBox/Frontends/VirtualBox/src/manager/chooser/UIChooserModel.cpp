@@ -685,11 +685,10 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
             updateNavigation();
             updateLayout();
 
-            /* Choose newly added item only if VM was created from the GUI side: */
-            if (uId == m_uLastCreatedMachineId)
-                setCurrentItem(root()->searchForItem(comMachine.GetName(),
-                                                     UIChooserItemSearchFlag_Machine |
-                                                     UIChooserItemSearchFlag_ExactName));
+            /* Choose newly added item: */
+            setCurrentItem(root()->searchForItem(comMachine.GetName(),
+                                                 UIChooserItemSearchFlag_Machine |
+                                                 UIChooserItemSearchFlag_ExactName));
         }
     }
     /* Existing VM unregistered? */
@@ -877,10 +876,8 @@ void UIChooserModel::sltCreateNewMachine()
     windowManager().registerNewParent(pWizard, pWizardParent);
     pWizard->prepare();
 
-    /* Execute wizard and store created VM Id
-     * on success for current-item handling: */
-    if (pWizard->exec() == QDialog::Accepted)
-        m_uLastCreatedMachineId = pWizard->createdMachineId();
+    /* Execute wizard: */
+    pWizard->exec();
     if (pWizard)
         delete pWizard;
 
@@ -2067,7 +2064,7 @@ void UIChooserModel::gatherGroupOrders(QMap<QString, QStringList> &orders,
     /* Iterate over all the machine-items: */
     foreach (UIChooserItem *pItem, pParentItem->items(UIChooserItemType_Machine))
         orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pItem->toMachineItem()->id()));
-}
+    }
 
 void UIChooserModel::makeSureGroupDefinitionsSaveIsFinished()
 {
