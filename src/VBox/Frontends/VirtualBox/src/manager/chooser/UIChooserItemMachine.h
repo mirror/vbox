@@ -31,13 +31,6 @@
 /* Forward declarations: */
 class CMachine;
 
-/** Machine-item enumeration flags. */
-enum UIChooserItemMachineEnumerationFlag
-{
-    UIChooserItemMachineEnumerationFlag_Unique       = RT_BIT(0),
-    UIChooserItemMachineEnumerationFlag_Inaccessible = RT_BIT(1)
-};
-
 /** UIChooserItem extension implementing machine item. */
 class UIChooserItemMachine : public UIChooserItem, public UIVirtualMachineItem
 {

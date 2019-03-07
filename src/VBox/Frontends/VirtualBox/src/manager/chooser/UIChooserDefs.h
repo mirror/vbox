@@ -56,5 +56,12 @@ enum UIChooserItemDragToken
     UIChooserItemDragToken_Down
 };
 
+/** UIChooserItemMachine enumeration flags. */
+enum UIChooserItemMachineEnumerationFlag
+{
+    UIChooserItemMachineEnumerationFlag_Unique       = RT_BIT(0),
+    UIChooserItemMachineEnumerationFlag_Inaccessible = RT_BIT(1)
+};
+
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserDefs_h */
