@@ -382,14 +382,14 @@ UIChooserItem *UIChooserModel::findClosestUnselectedItem() const
             if (idxBefore >= 0)
             {
                 pItem = navigationList().at(idxBefore);
-                if (!currentItems().contains(pItem))
+                if (!currentItems().contains(pItem) && pItem->type() == UIChooserItemType_Machine)
                     return pItem;
                 --idxBefore;
             }
             if (idxAfter < navigationList().size())
             {
                 pItem = navigationList().at(idxAfter);
-                if (!currentItems().contains(pItem))
+                if (!currentItems().contains(pItem) && pItem->type() == UIChooserItemType_Machine)
                     return pItem;
                 ++idxAfter;
             }
@@ -704,11 +704,11 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
             /* Change current-item only if VM was created from the GUI side: */
             if (uId == m_uLastCreatedMachineId)
             {
-                setCurrentItem(root()->searchForItem(comMachine.GetName(),
-                                                     UIChooserItemSearchFlag_Machine |
-                                                     UIChooserItemSearchFlag_ExactName));
-            }
+            setCurrentItem(root()->searchForItem(comMachine.GetName(),
+                                                 UIChooserItemSearchFlag_Machine |
+                                                 UIChooserItemSearchFlag_ExactName));
         }
+    }
     }
     /* Existing VM unregistered? */
     else
@@ -969,12 +969,12 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
         addMachineIntoTheTree(comMachine);
 
     /* And update model: */
-    updateNavigation();
-    updateLayout();
+        updateNavigation();
+        updateLayout();
 
-    /* Make sure at least one item selected after that: */
-    if (!currentItem() && !navigationList().isEmpty())
-        setCurrentItem(navigationList().first());
+        /* Make sure at least one item selected after that: */
+        if (!currentItem() && !navigationList().isEmpty())
+            setCurrentItem(navigationList().first());
 
     /* Notify listeners about selection change: */
     emit sigSelectionChanged();
@@ -1003,8 +1003,8 @@ void UIChooserModel::sltPerformRefreshAction()
     /* Gather list of current unique inaccessible machine-items: */
     QList<UIChooserItemMachine*> inaccessibleMachineItemList;
     UIChooserItemMachine::enumerateMachineItems(currentItems(), inaccessibleMachineItemList,
-                                                 UIChooserItemMachineEnumerationFlag_Unique |
-                                                 UIChooserItemMachineEnumerationFlag_Inaccessible);
+                                                UIChooserItemMachineEnumerationFlag_Unique |
+                                                UIChooserItemMachineEnumerationFlag_Inaccessible);
 
     /* For each machine-item: */
     UIChooserItem *pSelectedItem = 0;
@@ -1610,15 +1610,15 @@ void UIChooserModel::loadGroupTree()
     createGlobalItem(root());
 
     /* Add all the approved machines we have into the group-tree: */
-    LogRelFlow(("UIChooserModel: Loading VMs...\n"));
+        LogRelFlow(("UIChooserModel: Loading VMs...\n"));
     foreach (CMachine machine, vboxGlobal().virtualBox().GetMachines())
-    {
+        {
         const QUuid uMachineID = machine.GetId();
-        if (!uMachineID.isNull() && gEDataManager->showMachineInSelectorChooser(uMachineID))
+            if (!uMachineID.isNull() && gEDataManager->showMachineInSelectorChooser(uMachineID))
             addMachineIntoTheTree(machine);
+        }
+        LogRelFlow(("UIChooserModel: VMs loaded.\n"));
     }
-    LogRelFlow(("UIChooserModel: VMs loaded.\n"));
-}
 
 void UIChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeItVisible /* = false */)
 {
@@ -1640,7 +1640,7 @@ void UIChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeIt
         const QStringList groupList = groups.toList();
         const QString strGroups = groupList.join(", ");
         LogRelFlow(("UIChooserModel:  VM {%s} has groups: {%s}.\n", strName.toUtf8().constData(),
-                                                                     strGroups.toUtf8().constData()));
+                                                                    strGroups.toUtf8().constData()));
         foreach (QString strGroup, groups)
         {
             /* Remove last '/' if any: */
@@ -1648,7 +1648,7 @@ void UIChooserModel::addMachineIntoTheTree(const CMachine &machine, bool fMakeIt
                 strGroup.truncate(strGroup.size() - 1);
             /* Create machine-item with found group-item as parent: */
             LogRelFlow(("UIChooserModel:   Creating item for VM {%s} in group {%s}.\n", strName.toUtf8().constData(),
-                                                                                         strGroup.toUtf8().constData()));
+                                                                                        strGroup.toUtf8().constData()));
             createMachineItem(machine, getGroupItem(strGroup, root(), fMakeItVisible));
         }
         /* Update group definitions: */
@@ -1675,8 +1675,8 @@ void UIChooserModel::cleanupGroupTree(UIChooserItem *pParent)
         /* Cleanup if that is non-root item: */
         if (!pParent->isRoot())
             delete pParent;
-    }
-}
+            }
+        }
 
 bool UIChooserModel::isGlobalItemFavorite(UIChooserItem *pParentItem) const
 {
@@ -1733,9 +1733,9 @@ UIChooserItem *UIChooserModel::getGroupItem(const QString &strName, UIChooserIte
                     if (fAllGroupsOpened && pFoundGroupItem->isClosed())
                         pFoundGroupItem->open(false);
                 return pFoundItem;
-            }
         }
     }
+}
 
     /* Found nothing? Creating: */
     UIChooserItemGroup *pNewGroupItem =
@@ -2071,7 +2071,7 @@ void UIChooserModel::gatherGroupOrders(QMap<QString, QStringList> &orders,
     /* Iterate over all the machine-items: */
     foreach (UIChooserItem *pItem, pParentItem->items(UIChooserItemType_Machine))
         orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pItem->toMachineItem()->id()));
-}
+    }
 
 void UIChooserModel::makeSureGroupDefinitionsSaveIsFinished()
 {
