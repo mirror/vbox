@@ -317,13 +317,6 @@ private slots:
 
 private:
 
-    /** Data field types. */
-    enum ChooserModelData
-    {
-        /* Layout margin: */
-        ChooserModelData_Margin
-    };
-
     /** @name Prepare/Cleanup cascade.
       * @{ */
         /** Prepares all. */
@@ -361,9 +354,6 @@ private:
 
     /** @name General stuff.
       * @{ */
-        /** Returns abstractly stored data value for certain @a iKey. */
-        QVariant data(int iKey) const;
-
         /** Handles context-menu @a pEvent. */
         bool processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
         /** Popups context-menu of certain @a enmType in specified @a point. */

@@ -585,13 +585,12 @@ QString UIChooserModel::uniqueGroupName(UIChooserItem *pRoot)
 void UIChooserModel::updateLayout()
 {
     /* Initialize variables: */
-    const int iSceneMargin = data(ChooserModelData_Margin).toInt();
     const QSize viewportSize = scene()->views()[0]->size();
-    const int iViewportWidth = viewportSize.width() - 2 * iSceneMargin;
-    const int iViewportHeight = viewportSize.height() - 2 * iSceneMargin;
+    const int iViewportWidth = viewportSize.width();
+    const int iViewportHeight = viewportSize.height();
 
     /* Set root-item position: */
-    root()->setPos(iSceneMargin, iSceneMargin);
+    root()->setPos(0, 0);
     /* Set root-item size: */
     root()->resize(iViewportWidth, iViewportHeight);
     /* Relayout root-item: */
@@ -1446,16 +1445,6 @@ void UIChooserModel::cleanup()
 
     /* Cleanup scene: */
     cleanupScene();
-}
-
-QVariant UIChooserModel::data(int iKey) const
-{
-    switch (iKey)
-    {
-        case ChooserModelData_Margin: return 0;
-        default: break;
-    }
-    return QVariant();
 }
 
 bool UIChooserModel::processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
