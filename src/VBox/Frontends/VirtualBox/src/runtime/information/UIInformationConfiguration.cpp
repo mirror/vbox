@@ -154,8 +154,7 @@ void UIInformationConfiguration::prepareView()
             m_pView->setItemDelegate(pItem);
         }
         /* Connect data changed signal: */
-        connect(m_pModel, SIGNAL(dataChanged(const QModelIndex &, const QModelIndex &)),
-                m_pView, SLOT(updateData(const QModelIndex &, const QModelIndex &)));
+        connect(m_pModel, &UIInformationModel::dataChanged, m_pView, &UIInformationView::updateData);
 
         /* Set model for view: */
         m_pView->setModel(m_pModel);
@@ -163,4 +162,3 @@ void UIInformationConfiguration::prepareView()
         m_pMainLayout->addWidget(m_pView);
     }
 }
-

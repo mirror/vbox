@@ -176,7 +176,7 @@ void UIVMInformationDialog::prepareThis()
     /* Delete dialog on close: */
     setAttribute(Qt::WA_DeleteOnClose);
     /* Delete dialog on machine-window destruction: */
-    connect(m_pMachineWindow, SIGNAL(destroyed(QObject*)), this, SLOT(suicide()));
+    connect(m_pMachineWindow, &UIMachineWindow::destroyed, this, &UIVMInformationDialog::suicide);
 
 #ifdef VBOX_WS_MAC
     /* No window-icon on Mac OS X, because it acts as proxy icon which isn't necessary here. */
@@ -252,7 +252,7 @@ void UIVMInformationDialog::prepareTabWidget()
         m_pTabWidget->setCurrentIndex(1);
 
         /* Assign tab-widget page change handler: */
-        connect(m_pTabWidget, SIGNAL(currentChanged(int)), this, SLOT(sltHandlePageChanged(int)));
+        connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMInformationDialog::sltHandlePageChanged);
 
         /* Add tab-widget into main-layout: */
         centralWidget()->layout()->addWidget(m_pTabWidget);
@@ -268,7 +268,7 @@ void UIVMInformationDialog::prepareButtonBox()
         /* Configure button-box: */
         m_pButtonBox->setStandardButtons(QDialogButtonBox::Close);
         m_pButtonBox->button(QDialogButtonBox::Close)->setShortcut(Qt::Key_Escape);
-        connect(m_pButtonBox, SIGNAL(rejected()), this, SLOT(close()));
+        connect(m_pButtonBox, &QIDialogButtonBox::rejected, this, &UIVMInformationDialog::close);
         /* Add button-box into main-layout: */
         centralWidget()->layout()->addWidget(m_pButtonBox);
     }
