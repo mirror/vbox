@@ -5545,6 +5545,8 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
     if (   u8Vector == X86_XCPT_NMI
         && (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT))
         fBlockNmi = true;
+    else
+        fBlockNmi = false;
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
