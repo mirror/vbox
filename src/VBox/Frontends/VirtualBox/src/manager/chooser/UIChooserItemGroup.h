@@ -26,6 +26,7 @@
 
 /* Forward declarations: */
 class QGraphicsLinearLayout;
+class QLineEdit;
 class UIEditorGroupRename;
 class UIGraphicsButton;
 class UIGraphicsRotatorButton;
