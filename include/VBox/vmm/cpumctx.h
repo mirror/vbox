@@ -669,8 +669,10 @@ typedef struct CPUMCTX
                 uint64_t                uVmentryTick;
                 /** 0x3a0 - Virtual-APIC write offset (until trap-like VM-exit). */
                 uint16_t                offVirtApicWrite;
-                /** 0x3a2 - Padding. */
-                uint8_t                 abPadding0[6];
+                /** 0x3a2 - Whether virtual-NMI blocking is in effect. */
+                bool                    fVirtNmiBlocking;
+                /** 0x3a3 - Padding. */
+                uint8_t                 abPadding0[5];
                 /** 0x3a8 - Guest VMX MSRs. */
                 VMXMSRS                 Msrs;
             } vmx;
@@ -787,6 +789,7 @@ AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uFirstPauseLoopT
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uPrevPauseTick,         0x390);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.uVmentryTick,           0x398);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.offVirtApicWrite,       0x3a0);
+AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.fVirtNmiBlocking,       0x3a2);
 AssertCompileMemberOffset(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.Msrs,                   0x3a8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pVmcsR0,           8);
 AssertCompileMemberAlignment(CPUMCTX, hwvirt.CPUM_UNION_NM(s.) vmx.pShadowVmcsR0,     8);
