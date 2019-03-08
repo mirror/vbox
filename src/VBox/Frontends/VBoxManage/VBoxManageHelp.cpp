@@ -992,6 +992,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--format VDI|VMDK|VHD] (default: VDI)\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX,\n"
                      "                                       Formatted]\n"
+                     "                            [[--property <name>=<value>] --property <name>=<value]...\n"
                      "\n", SEP);
 
     if (enmCommand == USAGE_MODIFYMEDIUM || enmCommand == USAGE_S_ALL)

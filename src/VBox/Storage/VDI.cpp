@@ -39,6 +39,12 @@
 #define SET_ENDIAN_U32(conv, u32) (conv == VDIECONV_H2F ? RT_H2LE_U32(u32) : RT_LE2H_U32(u32))
 #define SET_ENDIAN_U64(conv, u64) (conv == VDIECONV_H2F ? RT_H2LE_U64(u64) : RT_LE2H_U64(u64))
 
+static const char *vdiAllocationBlockSize = "1048576";
+
+static const VDCONFIGINFO vdiConfigInfo[] = {
+    { "AllocationBlockSize",            vdiAllocationBlockSize,           VDCFGVALUETYPE_INTEGER,      0 }
+};
+
 
 /*********************************************************************************************************************************
 *   Static Variables                                                                                                             *
@@ -176,6 +182,7 @@ static void vdiConvHeaderEndianessV1p(VDIECONV enmConv, PVDIHEADER1PLUS pHdrConv
     pHdrConv->uuidParentModify = pHdr->uuidParentModify;
     vdiConvGeometryEndianess(enmConv, &pHdrConv->LCHSGeometry, &pHdr->LCHSGeometry);
 }
+
 
 /**
  * Internal: Set the appropriate endianess on all the Blocks pointed.
@@ -548,13 +555,13 @@ static void vdiSetupImageDesc(PVDIIMAGEDESC pImage)
  * @param   pLCHSGeometry   Logical CHS geometry for the image.
  */
 static int vdiSetupImageState(PVDIIMAGEDESC pImage, unsigned uImageFlags, const char *pszComment,
-                              uint64_t cbSize, uint32_t cbDataAlign, PCVDGEOMETRY pPCHSGeometry,
+                              uint64_t cbSize, uint32_t cbAllocationBlock, uint32_t cbDataAlign, PCVDGEOMETRY pPCHSGeometry,
                               PCVDGEOMETRY pLCHSGeometry)
 {
     int rc = VINF_SUCCESS;
 
     vdiInitPreHeader(&pImage->PreHeader);
-    vdiInitHeader(&pImage->Header, uImageFlags, pszComment, cbSize, VDI_IMAGE_DEFAULT_BLOCK_SIZE, 0,
+    vdiInitHeader(&pImage->Header, uImageFlags, pszComment, cbSize, cbAllocationBlock, 0,
                   cbDataAlign);
     /* Save PCHS geometry. Not much work, and makes the flow of information
      * quite a bit clearer - relying on the higher level isn't obvious. */
@@ -695,7 +702,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
 {
     int rc = VINF_SUCCESS;
     uint32_t cbDataAlign = VDI_DATA_ALIGN;
-
+    uint32_t cbAllocationBlock = VDI_IMAGE_DEFAULT_BLOCK_SIZE;
     AssertPtr(pPCHSGeometry);
     AssertPtr(pLCHSGeometry);
 
@@ -709,6 +716,14 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
         rc = vdIfError(pImage->pIfError, VERR_VD_VDI_COMMENT_TOO_LONG, RT_SRC_POS,
                        N_("VDI: comment is too long for '%s'"), pImage->pszFilename);
 
+    PVDINTERFACECONFIG pImgCfg = VDIfConfigGet(pImage->pVDIfsImage);
+    if (pImgCfg) {
+        rc = VDCFGQueryU32Def(pImgCfg, "AllocationBlockSize", &cbAllocationBlock, VDI_IMAGE_DEFAULT_BLOCK_SIZE);
+        if (RT_FAILURE(rc))
+            rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS,
+                           N_("VDI: Getting AllocationBlockSize for '%s' failed (%Rrc)"), pImage->pszFilename, rc);
+    }
+
     if (pIfCfg)
     {
         rc = VDCFGQueryU32Def(pIfCfg, "DataAlignment", &cbDataAlign, VDI_DATA_ALIGN);
@@ -719,8 +734,9 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
 
     if (RT_SUCCESS(rc))
     {
-        rc = vdiSetupImageState(pImage, uImageFlags, pszComment, cbSize, cbDataAlign,
-                                pPCHSGeometry, pLCHSGeometry);
+
+        rc = vdiSetupImageState(pImage, uImageFlags, pszComment, cbSize,
+                cbAllocationBlock, cbDataAlign, pPCHSGeometry, pLCHSGeometry);
         if (RT_SUCCESS(rc))
         {
             /* Use specified image uuid */
@@ -1483,7 +1499,6 @@ static DECLCALLBACK(int) vdiCreate(const char *pszFilename, uint64_t cbSize,
     {
         PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
         PVDINTERFACECONFIG pIfCfg = VDIfConfigGet(pVDIfsOperation);
-
         pImage->pszFilename = pszFilename;
         pImage->pStorage = NULL;
         pImage->paBlocks = NULL;
@@ -3131,7 +3146,7 @@ const VDIMAGEBACKEND g_VDIBackend =
     /* paFileExtensions */
     s_aVdiFileExtensions,
     /* paConfigInfo */
-    NULL,
+    vdiConfigInfo,
     /* pfnProbe */
     vdiProbe,
     /* pfnOpen */

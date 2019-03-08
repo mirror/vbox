@@ -2438,6 +2438,7 @@ HRESULT Medium::setProperty(const com::Utf8Str &aName,
 
     switch (m->state)
     {
+        case MediumState_NotCreated:
         case MediumState_Created:
         case MediumState_Inaccessible:
             break;
