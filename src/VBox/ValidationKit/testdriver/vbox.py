@@ -3176,7 +3176,7 @@ class TestDriver(base.TestDriver):                                              
 
         Returns task result on success.
         """
-        # All async methods ends with the following to args.
+        # All async methods ends with the following two args.
         cMsTimeout    = aArgs[-2];
         fIgnoreErrors = aArgs[-1];
 
