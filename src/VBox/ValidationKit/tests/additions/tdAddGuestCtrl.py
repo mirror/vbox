@@ -2220,7 +2220,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if fRc:
                 reporter.log('Creating reboot thread ...');
                 oThreadReboot = threading.Thread(target = self.threadForTestGuestCtrlSessionReboot,
-                                                 args=(oGuestProcess),
+                                                 args=(oGuestProcess,),
                                                  name=('threadForTestGuestCtrlSessionReboot'));
                 oThreadReboot.setDaemon(True);
                 oThreadReboot.start();
