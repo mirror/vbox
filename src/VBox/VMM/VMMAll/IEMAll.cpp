@@ -986,6 +986,7 @@ IEM_STATIC VBOXSTRICTRC     iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bo
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitInitIpi(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitIntWindow(PVMCPU pVCpu);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexitNmiWindow(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitMtf(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess, size_t cbAccess, void *pvData, uint32_t fAccess);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess, uint32_t fAccess);
@@ -5536,12 +5537,28 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
                       pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.ss.Sel, pVCpu->cpum.GstCtx.rsp);
 #endif
 
+    /*
+     * Evaluate whether NMI blocking should be in effect.
+     * Normally, NMI blocking is in effect whenever we inject an NMI.
+     */
+    bool fBlockNmi;
+    if (   u8Vector == X86_XCPT_NMI
+        && (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT))
+        fBlockNmi = true;
+
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
         VBOXSTRICTRC rcStrict0 = iemVmxVmexitEvent(pVCpu, u8Vector, fFlags, uErr, uCr2, cbInstr);
         if (rcStrict0 != VINF_VMX_INTERCEPT_NOT_ACTIVE)
             return rcStrict0;
+
+        /* If virtual-NMI blocking is in effect for the nested-guest, guest NMIs are not blocked. */
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking)
+        {
+            Assert(CPUMIsGuestVmxPinCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PIN_CTLS_VIRT_NMI));
+            fBlockNmi = false;
+        }
     }
 #endif
 
@@ -5568,6 +5585,13 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
         }
     }
 #endif
+
+    /*
+     * Set NMI blocking if necessary.
+     */
+    if (   fBlockNmi
+        && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     /*
      * Do recursion accounting.
@@ -14037,7 +14061,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
         }
-        /** Finally, check if the VMX preemption timer has expired. */
+        /* VMX preemption timer takes priority over NMI-window exits. */
         else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
         {
             rcStrict = iemVmxVmexitPreemptTimer(pVCpu);
@@ -14048,6 +14072,12 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
                 Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
                 Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
             }
+        }
+        /* NMI-window VM-exit. */
+        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW))
+        {
+            rcStrict = iemVmxVmexitNmiWindow(pVCpu);
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW));
         }
     }
 #endif
@@ -14739,10 +14769,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVE
                 case X86_XCPT_PF:
                 case X86_XCPT_AC:
                     fFlags |= IEM_XCPT_FLAGS_ERR;
-                    break;
-
-                case X86_XCPT_NMI:
-                    VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
                     break;
             }
             break;
@@ -15894,6 +15920,22 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitIntWindow(PVMCPU pVCpu)
 
 
 /**
+ * Interface for HM and EM to emulate VM-exits for NMI-windows.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitNmiWindow(PVMCPU pVCpu)
+{
+    VBOXSTRICTRC rcStrict = iemVmxVmexitNmiWindow(pVCpu);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
  * Interface for HM and EM to emulate VM-exits Monitor-Trap Flag (MTF).
  *
  * @returns Strict VBox status code.
@@ -15948,9 +15990,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmread(PVMCPU pVCpu, PCVMXVEXITINFO pEx
         IEMMODE enmEffAddrMode = (IEMMODE)pExitInfo->InstrInfo.VmreadVmwrite.u3AddrSize;
         rcStrict = iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrDst, uFieldEnc, pExitInfo);
     }
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
-    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
 
@@ -15988,9 +16029,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmwrite(PVMCPU pVCpu, PCVMXVEXITINFO pE
     uint8_t const  cbInstr   = pExitInfo->cbInstr;
     uint32_t const uFieldEnc = iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg2);
     VBOXSTRICTRC rcStrict = iemVmxVmwrite(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, u64Val, uFieldEnc, pExitInfo);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
-    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
 
@@ -16014,9 +16054,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrld(PVMCPU pVCpu, PCVMXVEXITINFO pE
     uint8_t const cbInstr   = pExitInfo->cbInstr;
     RTGCPTR const GCPtrVmcs = pExitInfo->GCPtrEffAddr;
     VBOXSTRICTRC rcStrict = iemVmxVmptrld(pVCpu, cbInstr, iEffSeg, GCPtrVmcs, pExitInfo);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
-    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
 
@@ -16040,9 +16079,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrst(PVMCPU pVCpu, PCVMXVEXITINFO pE
     uint8_t const cbInstr   = pExitInfo->cbInstr;
     RTGCPTR const GCPtrVmcs = pExitInfo->GCPtrEffAddr;
     VBOXSTRICTRC rcStrict = iemVmxVmptrst(pVCpu, cbInstr, iEffSeg, GCPtrVmcs, pExitInfo);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
-    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
 
@@ -16066,9 +16104,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmclear(PVMCPU pVCpu, PCVMXVEXITINFO pE
     uint8_t const cbInstr   = pExitInfo->cbInstr;
     RTGCPTR const GCPtrVmcs = pExitInfo->GCPtrEffAddr;
     VBOXSTRICTRC rcStrict = iemVmxVmclear(pVCpu, cbInstr, iEffSeg, GCPtrVmcs, pExitInfo);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
-    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
 
@@ -16089,9 +16126,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmlaunchVmresume(PVMCPU pVCpu, uint8_t 
 
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
     VBOXSTRICTRC rcStrict = iemVmxVmlaunchVmresume(pVCpu, cbInstr, uInstrId);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
-    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
 
@@ -16115,9 +16151,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmxon(PVMCPU pVCpu, PCVMXVEXITINFO pExi
     uint8_t const cbInstr    = pExitInfo->cbInstr;
     RTGCPTR const GCPtrVmxon = pExitInfo->GCPtrEffAddr;
     VBOXSTRICTRC rcStrict = iemVmxVmxon(pVCpu, cbInstr, iEffSeg, GCPtrVmxon, pExitInfo);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
-    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
 
 

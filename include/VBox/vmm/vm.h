@@ -368,7 +368,7 @@ typedef struct VMCPU
  *
  *
  * Available VMCPU bits:
- *      14, 15, 34 to 63
+ *      14, 15, 36 to 63
  *
  * @todo If we run low on VMCPU, we may consider merging the SELM bits
  *
@@ -555,6 +555,12 @@ typedef struct VMCPU
 /** VMX APIC-write emulation pending.  */
 #define VMCPU_FF_VMX_APIC_WRITE             RT_BIT_64(VMCPU_FF_VMX_APIC_WRITE_BIT)
 #define VMCPU_FF_VMX_APIC_WRITE_BIT         33
+/** VMX interrupt-window event pending. */
+#define VMCPU_FF_VMX_INT_WINDOW             RT_BIT_64(VMCPU_FF_VMX_INT_WINDOW_BIT)
+#define VMCPU_FF_VMX_INT_WINDOW_BIT         34
+/** VMX NMI-window event pending. */
+#define VMCPU_FF_VMX_NMI_WINDOW             RT_BIT_64(VMCPU_FF_VMX_NMI_WINDOW_BIT)
+#define VMCPU_FF_VMX_NMI_WINDOW_BIT         35
 
 
 /** Externally VM forced actions. Used to quit the idle/wait loop. */
@@ -579,7 +585,8 @@ typedef struct VMCPU
 #define VMCPU_FF_HIGH_PRIORITY_PRE_MASK         (  VMCPU_FF_TIMER        | VMCPU_FF_INTERRUPT_APIC     | VMCPU_FF_INTERRUPT_PIC \
                                                  | VMCPU_FF_UPDATE_APIC  | VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_DBGF \
                                                  | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL \
-                                                 | VMCPU_FF_INTERRUPT_NESTED_GUEST | VMCPU_FF_VMX_MTF \
+                                                 | VMCPU_FF_INTERRUPT_NESTED_GUEST | VMCPU_FF_VMX_MTF  | VMCPU_FF_VMX_APIC_WRITE \
+                                                 | VMCPU_FF_VMX_PREEMPT_TIMER | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW \
                                                  | VM_WHEN_RAW_MODE(  VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT \
                                                                     | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0 ) )
 
@@ -596,7 +603,7 @@ typedef struct VMCPU
 /** High priority post-execution actions. */
 #define VMCPU_FF_HIGH_PRIORITY_POST_MASK        (  VMCPU_FF_PDM_CRITSECT   | VM_WHEN_RAW_MODE(VMCPU_FF_CSAM_PENDING_ACTION, 0) \
                                                  | VMCPU_FF_HM_UPDATE_CR3  | VMCPU_FF_HM_UPDATE_PAE_PDPES \
-                                                 | VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_IEM | VMCPU_FF_IOM )
+                                                 | VMCPU_FF_IEM | VMCPU_FF_IOM )
 
 /** Normal priority VM post-execution actions. */
 #define VM_FF_NORMAL_PRIORITY_POST_MASK         (  VM_FF_CHECK_VM_STATE | VM_FF_DBGF | VM_FF_RESET \

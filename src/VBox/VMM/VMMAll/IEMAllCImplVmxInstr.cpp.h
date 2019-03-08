@@ -1805,25 +1805,36 @@ IEM_STATIC void iemVmxVmexitSaveGuestNonRegState(PVMCPU pVCpu, uint32_t uExitRea
      */
     /** @todo NSTVMX: Does triple-fault VM-exit reflect a shutdown activity state or
      *        not? */
-    EMSTATE enmActivityState = EMGetState(pVCpu);
+    EMSTATE const enmActivityState = EMGetState(pVCpu);
     switch (enmActivityState)
     {
         case EMSTATE_HALTED:    pVmcs->u32GuestActivityState = VMX_VMCS_GUEST_ACTIVITY_HLT;     break;
         default:                pVmcs->u32GuestActivityState = VMX_VMCS_GUEST_ACTIVITY_ACTIVE;  break;
     }
 
-    /* Interruptibility-state. */
+    /*
+     * Interruptibility-state.
+     */
+    /* NMI. */
     pVmcs->u32GuestIntrState = 0;
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
-        pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
+    if (pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
+    {
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking)
+            pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
+    }
+    else
+    {
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+            pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI;
+    }
 
+    /* Blocking-by-STI. */
     if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
         && pVCpu->cpum.GstCtx.rip == EMGetInhibitInterruptsPC(pVCpu))
     {
         /** @todo NSTVMX: We can't distinguish between blocking-by-MovSS and blocking-by-STI
          *        currently. */
         pVmcs->u32GuestIntrState |= VMX_VMCS_GUEST_INT_STATE_BLOCK_STI;
-        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
     }
     /* Nothing to do for SMI/enclave. We don't support enclaves or SMM yet. */
 
@@ -2863,6 +2874,17 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
             iemVmxVmexitRestoreNmiBlockingFF(pVCpu);
     }
 
+    /*
+     * Clear any pending VMX nested-guest force-flags.
+     * These force-flags have no effect on guest execution and will
+     * be re-evaluated and setup on the next nested-guest VM-entry.
+     */
+    VMCPU_FF_CLEAR_MASK(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER
+                             | VMCPU_FF_VMX_MTF
+                             | VMCPU_FF_VMX_APIC_WRITE
+                             | VMCPU_FF_VMX_INT_WINDOW
+                             | VMCPU_FF_VMX_NMI_WINDOW);
+
     /* Restore the host (outer guest) state. */
     VBOXSTRICTRC rcStrict = iemVmxVmexitLoadHostState(pVCpu, uExitReason);
     if (RT_SUCCESS(rcStrict))
@@ -3081,13 +3103,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitMtf(PVMCPU pVCpu)
     /*
      * The MTF VM-exit can occur even when the MTF VM-execution control is
      * not set (e.g. when VM-entry injects an MTF pending event), so do not
-     * check for it here.
+     * check for the intercept here.
      */
-
-    /* Clear the force-flag indicating that monitor-trap flag is no longer active. */
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_MTF);
-
-    /* Cause the MTF VM-exit. The VM-exit qualification MBZ. */
     return iemVmxVmexit(pVCpu, VMX_EXIT_MTF);
 }
 
@@ -3816,9 +3833,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitPreemptTimer(PVMCPU pVCpu)
             if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER)
                 pVmcs->u32PreemptTimer = 0;
 
-            /* Clear the force-flag indicating the VMX-preemption timer no longer active. */
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER);
-
             /* Cause the VMX-preemption timer VM-exit. The VM-exit qualification MBZ. */
             return iemVmxVmexit(pVCpu, VMX_EXIT_PREEMPT_TIMER);
         }
@@ -3937,6 +3951,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitIntWindow(PVMCPU pVCpu)
 
 
 /**
+ * VMX VM-exit handler for NMI-window VM-exits.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitNmiWindow(PVMCPU pVCpu)
+{
+    return iemVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW);
+}
+
+
+/**
  * VMX VM-exit handler for VM-exits due to a double fault caused during delivery of
  * an event.
  *
@@ -4017,6 +4043,19 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
                                          | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,          1);
         iemVmxVmcsSetIdtVectoringInfo(pVCpu, uIdtVectoringInfo);
         iemVmxVmcsSetIdtVectoringErrCode(pVCpu, uErrCode);
+
+        /*
+         * If the event is a virtual-NMI (which is an NMI being inject during VM-entry)
+         * virtual-NMI blocking must be set in effect rather than physical NMI blocking.
+         *
+         * See Intel spec. 24.6.1 "Pin-Based VM-Execution Controls".
+         */
+        if (   uVector == X86_XCPT_NMI
+            && (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
+            && (pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI))
+            pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking = true;
+        else
+            Assert(!pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking);
 
         pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = true;
         return VINF_VMX_INTERCEPT_NOT_ACTIVE;
@@ -7074,9 +7113,19 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPU pVCpu)
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
     /* NMI blocking. */
-    if (   (pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI)
-        && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+    if (pVmcs->u32GuestIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI)
+    {
+        if (pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
+            pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking = true;
+        else
+        {
+            pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking = false;
+            if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
+        }
+    }
+    else
+        pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking = false;
 
     /* SMI blocking is irrelevant. We don't support SMIs yet. */
 

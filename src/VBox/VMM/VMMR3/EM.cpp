@@ -1696,19 +1696,6 @@ VBOXSTRICTRC emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, VBOXSTRICT
             pVCpu->em.s.idxContinueExitRec = UINT16_MAX;
     }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-        /*
-         * VMX Nested-guest APIC-write pending (can cause VM-exits).
-         * Takes priority over even SMI and INIT signals.
-         * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
-         */
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
-        {
-            rc = VBOXSTRICTRC_VAL(IEMExecVmxVmexitApicWrite(pVCpu));
-            Assert(rc != VINF_VMX_INTERCEPT_NOT_ACTIVE);
-        }
-#endif
-
 #ifdef VBOX_WITH_RAW_MODE
     if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION))
         CSAMR3DoPendingAction(pVM, pVCpu);
@@ -2151,6 +2138,17 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         /*
+         * VMX Nested-guest APIC-write pending (can cause VM-exits).
+         * Takes priority over even SMI and INIT signals.
+         * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
+         */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+        {
+            rc = VBOXSTRICTRC_VAL(IEMExecVmxVmexitApicWrite(pVCpu));
+            Assert(rc != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+        }
+
+        /*
          * VMX Nested-guest monitor-trap flag (MTF) VM-exit.
          * Takes priority over "Traps on the previous instruction".
          * See Intel spec. 6.9 "Priority Among Simultaneous Exceptions And Interrupts".
@@ -2164,13 +2162,24 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
         /*
          * VMX Nested-guest preemption timer VM-exit.
-         * Takes priority over non-maskable interrupts (NMIs).
+         * Takes priority over NMI-window VM-exits.
          */
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
         {
             rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitPreemptTimer(pVCpu));
             if (rc2 == VINF_VMX_INTERCEPT_NOT_ACTIVE)
                 rc2 = VINF_SUCCESS;
+            UPDATE_RC();
+        }
+
+        /*
+         * VMX NMI-window VM-exit.
+         * Takes priority over non-maskable interrupts (NMIs).
+         */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW))
+        {
+            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitNmiWindow(pVCpu));
+            Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
             UPDATE_RC();
         }
 #endif
@@ -2396,7 +2405,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 
         /* check that we got them all  */
         AssertCompile(VM_FF_HIGH_PRIORITY_PRE_MASK == (VM_FF_TM_VIRTUAL_SYNC | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_DEBUG_SUSPEND | VM_FF_PGM_NEED_HANDY_PAGES | VM_FF_PGM_NO_MEMORY | VM_FF_EMT_RENDEZVOUS));
-        AssertCompile(VMCPU_FF_HIGH_PRIORITY_PRE_MASK == (VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_DBGF | VMCPU_FF_INTERRUPT_NESTED_GUEST | VMCPU_FF_VMX_MTF | VM_WHEN_RAW_MODE(VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0)));
+        AssertCompile(VMCPU_FF_HIGH_PRIORITY_PRE_MASK == (VMCPU_FF_TIMER | VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_UPDATE_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_INHIBIT_INTERRUPTS | VMCPU_FF_DBGF | VMCPU_FF_INTERRUPT_NESTED_GUEST | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_PREEMPT_TIMER | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW | VM_WHEN_RAW_MODE(VMCPU_FF_SELM_SYNC_TSS | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT, 0)));
     }
 
 #undef UPDATE_RC
