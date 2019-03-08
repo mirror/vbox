@@ -2149,7 +2149,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
         return (fRc, oTxsSession);
 
-    def threadForTestGuestCtrlSessionReboot(self, oSession, oTxsSession, oGuestProcess):
+    def threadForTestGuestCtrlSessionReboot(self, oGuestProcess):
         """
         Thread routine which waits for the stale guest process getting terminated (or some error)
         while the main test routine reboots the guest. It then compares the expected guest process result
@@ -2164,7 +2164,6 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         else:
             reporter.error('Got wrong stale process result: waitResult is %d, current process status is: %d' \
                             % (waitResult, oGuestProcess.status));
-            fRc = False;
 
     def testGuestCtrlSessionReboot(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
         """
@@ -2221,7 +2220,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if fRc:
                 reporter.log('Creating reboot thread ...');
                 oThreadReboot = threading.Thread(target = self.threadForTestGuestCtrlSessionReboot,
-                                                 args=(oSession, oTxsSession, oGuestProcess), name=('threadForTestGuestCtrlSessionReboot'));
+                                                 args=(oGuestProcess),
+                                                 name=('threadForTestGuestCtrlSessionReboot'));
                 oThreadReboot.setDaemon(True);
                 oThreadReboot.start();
 
