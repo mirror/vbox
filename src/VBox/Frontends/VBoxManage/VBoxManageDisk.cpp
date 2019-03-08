@@ -253,13 +253,15 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
     const char *filename = NULL;
     const char *diffparent = NULL;
     uint64_t size = 0;
-    typedef struct MEDIUMPROPERTY_LIST {
+    typedef struct MEDIUMPROPERTY_LIST
+    {
         struct MEDIUMPROPERTY_LIST *next;
-        char *key;
-        char *value;
+        const char *key;
+        const char *value;
     } MEDIUMPROPERTY, *PMEDIUMPROPERTY;
     PMEDIUMPROPERTY pMediumProps = NULL;
-    enum {
+    enum
+    {
         CMD_NONE,
         CMD_DISK,
         CMD_DVD,
@@ -325,18 +327,17 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                 PMEDIUMPROPERTY pNewProp = (PMEDIUMPROPERTY)RTMemAlloc(sizeof(MEDIUMPROPERTY));
                 if (!pNewProp)
                     return errorArgument("Can't allocate memory for property '%s'", ValueUnion.psz);
-                size_t cbKvp = RTStrNLen(ValueUnion.psz, PROP_MAXLEN);
-                char *cp;
-                for (cp = (char *)ValueUnion.psz; *cp != '=' && cp < ValueUnion.psz + cbKvp; cp++)
-                    continue;
-                if (cp < ValueUnion.psz + cbKvp)
+                size_t cchKvp = RTStrNLen(ValueUnion.psz, PROP_MAXLEN);
+                char *pszEqual = (char *)memchr(ValueUnion.psz, '=', cchKvp);
+                if (pszEqual)
                 {
-                    *cp = '\0';
+                    *pszEqual = '\0';       /* Warning! Modifies argument string. */
                     pNewProp->next = NULL;
                     pNewProp->key = (char *)ValueUnion.psz;
-                    pNewProp->value = cp + 1;
+                    pNewProp->value = pszEqual + 1;
                 }
-                if (pMediumProps) {
+                if (pMediumProps)
+                {
                     PMEDIUMPROPERTY pProp;
                     for (pProp = pMediumProps; pProp->next; pProp = pProp->next)
                         continue;
@@ -344,7 +345,9 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                 }
                 else
                     pMediumProps = pNewProp;
+                break;
             }
+
             case 'F':   // --static ("fixed"/"flat")
             {
                 unsigned uMediumVariant = (unsigned)enmMediumVariant;
@@ -454,7 +457,8 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                 strName.append(".vhd");
             else
                 strName.append(".vdi");
-        } else if (cmd == CMD_DVD)
+        }
+        else if (cmd == CMD_DVD)
             strName.append(".iso");
         else if (cmd == CMD_FLOPPY)
             strName.append(".img");
@@ -470,7 +474,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                           AccessMode_ReadOnly, pMedium);
     else if (cmd == CMD_FLOPPY)
         rc = createMedium(a, format, filename, DeviceType_Floppy,
-                        AccessMode_ReadWrite, pMedium);
+                          AccessMode_ReadWrite, pMedium);
     else
         rc = E_INVALIDARG; /* cannot happen but make gcc happy */
 
@@ -485,7 +489,6 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                 RTMemFree(pProp);
                 pProp = next;
             }
-        }
 
         ComPtr<IProgress> pProgress;
         com::SafeArray<MediumVariant_T> l_variants(sizeof(MediumVariant_T)*8);
@@ -505,6 +508,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
         {
             rc = showProgress(pProgress);
             CHECK_PROGRESS_ERROR(pProgress, ("Failed to create medium"));
+        }
     }
 
     if (SUCCEEDED(rc) && pMedium)
