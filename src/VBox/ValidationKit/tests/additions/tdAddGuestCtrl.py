@@ -50,6 +50,7 @@ import random
 import string # pylint: disable=W0402
 import struct
 import sys
+import threading
 import time
 
 # Only the main script needs to modify the path.
@@ -945,7 +946,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ## @todo base.TestBase.
         self.asTestsDef = \
         [
-            'session_basic', 'session_env', 'session_file_ref', 'session_dir_ref', 'session_proc_ref',
+            'session_basic', 'session_env', 'session_file_ref', 'session_dir_ref', 'session_proc_ref', 'session_reboot',
             'exec_basic', 'exec_errorlevel', 'exec_timeout',
             'dir_create', 'dir_create_temp', 'dir_read',
             'file_remove', 'file_stat', 'file_read', 'file_write',
@@ -1017,6 +1018,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         fSkip = 'session_proc_ref' not in self.asTests or fRc is False;
         if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlSessionProcRefs(oSession, oTxsSession, oTestVm);
+        reporter.testDone(fSkip);
+
+        reporter.testStart('Session w/ Guest Reboot');
+        fSkip = 'session_reboot' not in self.asTests;
+        if fSkip is False:
+            fRc, oTxsSession = self.testGuestCtrlSessionReboot(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
 
         reporter.testStart('Execution');
@@ -2139,6 +2146,100 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             if cSessions is not 0:
                 reporter.error('Found %d stale session(s), expected 0' % (cSessions,));
                 fRc = False;
+
+        return (fRc, oTxsSession);
+
+    def threadForTestGuestCtrlSessionReboot(self, oSession, oTxsSession, oGuestProcess):
+        """
+        Thread routine which waits for the stale guest process getting terminated (or some error)
+        while the main test routine reboots the guest. It then compares the expected guest process result
+        and logs an error if appropriate.
+        """
+        reporter.log('Waiting for stale process getting killed ...');
+        waitResult = oGuestProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Terminate ], 5 * 60 * 1000);
+
+        if  waitResult == vboxcon.ProcessWaitResult_Terminate \
+        and oGuestProcess.status == vboxcon.ProcessStatus_Down:
+            reporter.log('Stale process was correctly terminated (status: down)');
+        else:
+            reporter.error('Got wrong stale process result: waitResult is %d, current process status is: %d' \
+                            % (waitResult, oGuestProcess.status));
+            fRc = False;
+
+    def testGuestCtrlSessionReboot(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
+        """
+        Tests guest object notifications when a guest gets rebooted / shutdown.
+        These notifications gets sent from the guest sessions in order to make API clients
+        aware of guest session changes.
+
+        For that to test we create a stale guest process and trigger a reboot on the guest.
+        """
+
+        if oTestVm.isWindows():
+            sImage = "C:\\windows\\system32\\cmd.exe";
+        else:
+            sImage = "/bin/sh";
+
+        # Use credential defaults.
+        oCreds = tdCtxCreds();
+        oCreds.applyDefaultsIfNotSet(oTestVm);
+
+        fRc = True;
+
+        try:
+            reporter.log('Creating session ...');
+            oGuest = oSession.o.console.guest;
+            oGuestSession = oGuest.createSession(oCreds.sUser, oCreds.sPassword, oCreds.sDomain, 'testGuestCtrlExecReboot');
+            try:
+                fWaitFor = [ vboxcon.GuestSessionWaitForFlag_Start ];
+                waitResult = oGuestSession.waitForArray(fWaitFor, 30 * 1000);
+                if      waitResult != vboxcon.GuestSessionWaitResult_Start \
+                    and waitResult != vboxcon.GuestSessionWaitResult_WaitFlagNotSupported:
+                    reporter.error('Session did not start successfully, returned wait result: %d' \
+                                   % (waitResult));
+                    return (False, oTxsSession);
+                reporter.log('Session successfully started');
+            except:
+                # Just log, don't assume an error here (will be done in the main loop then).
+                reporter.logXcpt('Waiting for guest session to start failed:');
+                return (False, oTxsSession);
+
+            try:
+                aArgs = [ sImage ];
+                aEnv = [];
+                aFlags = [];
+                oGuestProcess = oGuestSession.processCreate(sImage,
+                                                            aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:], aEnv, aFlags,
+                                                            30 * 1000);
+                waitResult = oGuestProcess.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
+                reporter.log2('Starting process wait result returned: %d, current process status is: %d' \
+                              % (waitResult, oGuestProcess.status));
+            except:
+                reporter.logXcpt('Creating stale process failed:');
+                fRc = False;
+
+            if fRc:
+                reporter.log('Creating reboot thread ...');
+                oThreadReboot = threading.Thread(target = self.threadForTestGuestCtrlSessionReboot,
+                                                 args=(oSession, oTxsSession, oGuestProcess), name=('threadForTestGuestCtrlSessionReboot'));
+                oThreadReboot.setDaemon(True);
+                oThreadReboot.start();
+
+                reporter.log('Waiting for reboot ....');
+                time.sleep(15);
+                reporter.log('Rebooting guest');
+                self.oTstDrv.txsRebootAndReconnectViaTcp(oSession, oTxsSession, cMsTimeout = 3 * 60000,
+                                                         fNatForwardingForTxs = True);
+            try:
+                reporter.log2('Closing guest session ...');
+                oGuestSession.close();
+                oGuestSession = None;
+            except:
+                # Just log, don't assume an error here (will be done in the main loop then).
+                reporter.logXcpt('Closing guest session failed:');
+                fRc = False;
+        except:
+            reporter.logXcpt('Could not create one session:');
 
         return (fRc, oTxsSession);
 
