@@ -324,7 +324,7 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
                 PMEDIUMPROPERTY pNewProp = (PMEDIUMPROPERTY)RTMemAlloc(sizeof(MEDIUMPROPERTY));
                 if (!pNewProp)
                     return errorArgument("Can't allocate memory for property '%s'", ValueUnion.psz);
-                int cbKvp = RTStrNLen(ValueUnion.psz, PROP_MAXLEN);
+                size_t cbKvp = RTStrNLen(ValueUnion.psz, PROP_MAXLEN);
                 char *cp;
                 for (cp = (char *)ValueUnion.psz; *cp != '=' && cp < ValueUnion.psz + cbKvp; cp++)
                     continue;
