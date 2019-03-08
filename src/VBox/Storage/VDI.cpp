@@ -546,13 +546,14 @@ static void vdiSetupImageDesc(PVDIIMAGEDESC pImage)
  * Sets up the complete image state from the given parameters.
  *
  * @returns VBox status code.
- * @param   pImage          The VDI image descriptor.
- * @param   uImageFlags     Image flags.
- * @param   pszComment      The comment for the image (optional).
- * @param   cbSize          Size of the resulting image in bytes.
- * @param   cbDataAlign     Data alignment in bytes.
- * @param   pPCHSGeometry   Physical CHS geometry for the image.
- * @param   pLCHSGeometry   Logical CHS geometry for the image.
+ * @param   pImage            The VDI image descriptor.
+ * @param   uImageFlags       Image flags.
+ * @param   pszComment        The comment for the image (optional).
+ * @param   cbSize            Size of the resulting image in bytes.
+ * @param   cbAllocationBlock Size of blocks allocated
+ * @param   cbDataAlign       Data alignment in bytes.
+ * @param   pPCHSGeometry     Physical CHS geometry for the image.
+ * @param   pLCHSGeometry     Logical CHS geometry for the image.
  */
 static int vdiSetupImageState(PVDIIMAGEDESC pImage, unsigned uImageFlags, const char *pszComment,
                               uint64_t cbSize, uint32_t cbAllocationBlock, uint32_t cbDataAlign, PCVDGEOMETRY pPCHSGeometry,
