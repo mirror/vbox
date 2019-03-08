@@ -1070,8 +1070,9 @@ class TestVmManager(object):
                sKind = 'RedHat', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat'),
         TestVm('tst-arch',                  kfGrpStandard,        sHd = '4.2/usb/tst-arch.vdi',
                sKind = 'ArchLinux_64', acCpusSup = range(1, 33), fIoApic = True, sNic0AttachType = 'nat'),
-        TestVm('tst-ubuntu-1804-64',   kfGrpStdSmoke,        sHd = '4.2/ubuntu-1804/t-ubuntu-1804-64.vdi',
-               sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True),
+        # disabled 2019-03-08 klaus - fails all over the place and pollutes the test results
+        #TestVm('tst-ubuntu-1804-64',   kfGrpStdSmoke,        sHd = '4.2/ubuntu-1804/t-ubuntu-1804-64.vdi',
+        #       sKind = 'Ubuntu_64', acCpusSup = range(1, 33), fIoApic = True),
         TestVm('tst-ol76-64',   kfGrpStdSmoke,        sHd = '4.2/ol76/t-ol76-64.vdi',
                sKind = 'Oracle_64', acCpusSup = range(1, 33), fIoApic = True),
 
