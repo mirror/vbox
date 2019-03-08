@@ -1,4 +1,3 @@
-#include <signal.h>
 /* $Id$ */
 /** @file
  * VBoxManage - The disk/medium related commands.
@@ -50,6 +49,8 @@ typedef enum MEDIUMCATEGORY
     MEDIUMCATEGORY_DVD,
     MEDIUMCATEGORY_FLOPPY
 } MEDIUMCATEGORY;
+
+
 
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
@@ -477,8 +478,13 @@ RTEXITCODE handleCreateMedium(HandlerArg *a)
     if (SUCCEEDED(rc) && pMedium)
     {
         if (pMediumProps)
-            for (PMEDIUMPROPERTY pProp = pMediumProps; pProp; pProp = pProp->next)
+            for (PMEDIUMPROPERTY pProp = pMediumProps; pProp;)
+            {
                 CHECK_ERROR(pMedium, SetProperty(Bstr(pProp->key).raw(), Bstr(pProp->value).raw()));
+                PMEDIUMPROPERTY next = pProp->next;
+                RTMemFree(pProp);
+                pProp = next;
+            }
         }
 
         ComPtr<IProgress> pProgress;
