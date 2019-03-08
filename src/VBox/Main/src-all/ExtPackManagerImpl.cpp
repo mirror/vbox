@@ -2089,14 +2089,19 @@ HRESULT ExtPack::queryObject(const com::Utf8Str &aObjUuid, ComPtr<IUnknown> &aRe
     com::Guid ObjectId;
     CheckComArgGuid(aObjUuid, ObjectId);
 
-    HRESULT hrc  S_OK;
+    HRESULT hrc = S_OK;
 
     if (   m->pReg
         && m->pReg->pfnQueryObject)
     {
         void *pvUnknown = m->pReg->pfnQueryObject(m->pReg, ObjectId.raw());
         if (pvUnknown)
-             aReturnInterface = (IUnknown *)pvUnknown;
+        {
+            aReturnInterface = (IUnknown *)pvUnknown;
+            /* The above assignment increased the refcount. Since pvUnknown
+             * is a dumb pointer we have to do the release ourselves. */
+            ((IUnknown *)pvUnknown)->Release();
+        }
         else
             hrc = E_NOINTERFACE;
     }
