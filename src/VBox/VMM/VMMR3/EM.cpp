@@ -2144,8 +2144,9 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          */
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
         {
-            rc = VBOXSTRICTRC_VAL(IEMExecVmxVmexitApicWrite(pVCpu));
-            Assert(rc != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitApicWrite(pVCpu));
+            Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+            UPDATE_RC();
         }
 
         /*
