@@ -119,14 +119,14 @@ static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *sf_g, s
        too hard as we'd have to retry with smaller requests when this
        happens, which isn't too efficient. */
     sf_g->cMaxIoPages = RT_MIN(_16K / sizeof(RTGCPHYS64) /* => 8MB buffer */,
-                   VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT);
+                               VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT);
     if (   (unsigned)info->length >= sizeof(struct vbsf_mount_info_new)
-        && info->cMaxIoPages != 0) {
+        && info->cMaxIoPages > 0) {
         if (info->cMaxIoPages <= VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT)
-            sf_g->cMaxIoPages = info->cMaxIoPages;
+            sf_g->cMaxIoPages = RT_MAX(info->cMaxIoPages, 2); /* read_iter/write_iter requires a minimum of 2. */
         else
             printk(KERN_WARNING "vboxsf: max I/O page count (%#x) is out of range, using default (%#x) instead.\n",
-                    info->cMaxIoPages, sf_g->cMaxIoPages);
+                   info->cMaxIoPages, sf_g->cMaxIoPages);
     }
 }
 

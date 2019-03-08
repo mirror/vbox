@@ -28,6 +28,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "vfsmod.h"
 #include <linux/uio.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 32)
@@ -49,6 +53,30 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
 # define SEEK_END 2
 #endif
+
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+/** Used by vbsf_iter_lock_pages() to keep the first page of the next segment. */
+struct vbsf_iter_stash {
+    struct page    *pPage;
+    size_t          off;
+    size_t          cb;
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+    size_t          offFromEnd;
+    struct iov_iter Copy;
+# endif
+};
+#endif /* >= 3.16.0 */
+/** Initializer for struct vbsf_iter_stash. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# define VBSF_ITER_STASH_INITIALIZER    { NULL, 0 }
+#else
+# define VBSF_ITER_STASH_INITIALIZER    { NULL, 0, ~(size_t)0 }
+#endif
+
 
 
 /**
@@ -347,6 +375,22 @@ ssize_t vbsf_splice_read(struct file *in, loff_t * poffset, struct pipe_inode_in
 
 #endif /* 2.6.23 <= LINUX_VERSION_CODE < 2.6.31 */
 
+/**
+ * Helper for deciding wheter we should do a read via the page cache or not.
+ *
+ * By default we will only use the page cache if there is a writable memory
+ * mapping of the file with a chance that it may have modified any of the pages
+ * already.
+ */
+DECLINLINE(bool) vbsf_should_use_cached_read(struct file *file, struct address_space *mapping, struct vbsf_super_info *sf_g)
+{
+    return mapping
+        && mapping->nrpages > 0
+        && mapping_writably_mapped(mapping)
+        && !(file->f_flags & O_DIRECT)
+        && 1 /** @todo make this behaviour configurable at mount time (sf_g) */;
+}
+
 /** Wrapper around put_page / page_cache_release.  */
 DECLINLINE(void) vbsf_put_page(struct page *pPage)
 {
@@ -387,6 +431,68 @@ DECLINLINE(void) vbsf_unlock_user_pages(struct page **papPages, size_t cPages, b
 
 
 /**
+ * Worker for vbsf_lock_user_pages_failed_check_kernel() and
+ * vbsf_iter_lock_pages().
+ */
+static int vbsf_lock_kernel_pages(uint8_t *pbStart, bool fWrite, size_t cPages, struct page **papPages)
+{
+    uintptr_t const uPtrFrom = (uintptr_t)pbStart;
+    uintptr_t const uPtrLast = (uPtrFrom & ~(uintptr_t)PAGE_OFFSET_MASK) + (cPages << PAGE_SHIFT) - 1;
+    uint8_t        *pbPage   = (uint8_t *)uPtrLast;
+    size_t          iPage    = cPages;
+
+    /*
+     * Touch the pages first (paranoia^2).
+     */
+    if (fWrite) {
+        uint8_t volatile *pbProbe = (uint8_t volatile *)uPtrFrom;
+        while (iPage-- > 0) {
+            *pbProbe = *pbProbe;
+            pbProbe += PAGE_SIZE;
+        }
+    } else {
+        uint8_t const *pbProbe = (uint8_t const *)uPtrFrom;
+        while (iPage-- > 0) {
+            ASMProbeReadByte(pbProbe);
+            pbProbe += PAGE_SIZE;
+        }
+    }
+
+    /*
+     * Get the pages.
+     * Note! Fixes here probably applies to rtR0MemObjNativeLockKernel as well.
+     */
+    iPage = cPages;
+    if (   uPtrFrom >= (unsigned long)__va(0)
+        && uPtrLast <  (unsigned long)high_memory) {
+        /* The physical page mapping area: */
+        while (iPage-- > 0) {
+            struct page *pPage = papPages[iPage] = virt_to_page(pbPage);
+            vbsf_get_page(pPage);
+            pbPage -= PAGE_SIZE;
+        }
+    } else {
+        /* This is vmalloc or some such thing, so go thru page tables: */
+        while (iPage-- > 0) {
+            struct page *pPage = rtR0MemObjLinuxVirtToPage(pbPage);
+            if (pPage) {
+                papPages[iPage] = pPage;
+                vbsf_get_page(pPage);
+                pbPage -= PAGE_SIZE;
+            } else {
+                while (++iPage < cPages) {
+                    pPage = papPages[iPage];
+                    vbsf_put_page(pPage);
+                }
+                return -EFAULT;
+            }
+        }
+    }
+    return 0;
+}
+
+
+/**
  * Catches kernel_read() and kernel_write() calls and works around them.
  *
  * The file_operations::read and file_operations::write callbacks supposedly
@@ -414,64 +520,11 @@ static int vbsf_lock_user_pages_failed_check_kernel(uintptr_t uPtrFrom, size_t c
         && uPtrFrom >= USER_DS.seg)
 #endif
     {
-        uintptr_t const uPtrLast = (uPtrFrom & ~(uintptr_t)PAGE_OFFSET_MASK) + (cPages << PAGE_SHIFT) - 1;
-        uint8_t        *pbPage   = (uint8_t *)uPtrLast;
-        size_t          iPage    = cPages;
-
-        /*
-         * Touch the pages first (paranoia^2).
-         */
-        if (fWrite) {
-            uint8_t volatile *pbProbe = (uint8_t volatile *)uPtrFrom;
-            while (iPage-- > 0) {
-                *pbProbe = *pbProbe;
-                pbProbe += PAGE_SIZE;
-            }
-        } else {
-            uint8_t const *pbProbe = (uint8_t const *)uPtrFrom;
-            while (iPage-- > 0) {
-                ASMProbeReadByte(pbProbe);
-                pbProbe += PAGE_SIZE;
-            }
+        int rc = vbsf_lock_kernel_pages((uint8_t *)uPtrFrom, fWrite, cPages, papPages);
+        if (rc == 0) {
+            *pfLockPgHack = true;
+            return 0;
         }
-
-        /*
-         * Get the pages.
-         * Note! Fixes here probably applies to rtR0MemObjNativeLockKernel as well.
-         */
-        iPage = cPages;
-        if (   uPtrFrom >= (unsigned long)__va(0)
-            && uPtrLast <  (unsigned long)high_memory)
-        {
-            /* The physical page mapping area: */
-            while (iPage-- > 0)
-            {
-                struct page *pPage = papPages[iPage] = virt_to_page(pbPage);
-                vbsf_get_page(pPage);
-                pbPage -= PAGE_SIZE;
-            }
-        }
-        else
-        {
-            /* This is vmalloc or some such thing, so go thru page tables: */
-            while (iPage-- > 0)
-            {
-                struct page *pPage = rtR0MemObjLinuxVirtToPage(pbPage);
-                if (pPage) {
-                    papPages[iPage] = pPage;
-                    vbsf_get_page(pPage);
-                    pbPage -= PAGE_SIZE;
-                } else {
-                    while (++iPage < cPages) {
-                        pPage = papPages[iPage];
-                        vbsf_put_page(pPage);
-                    }
-                    return rcFailed;
-                }
-            }
-        }
-        *pfLockPgHack = true;
-        return 0;
     }
 
     return rcFailed;
@@ -584,7 +637,7 @@ static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, si
         cMaxPages /= 2;
         pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
     }
-    if (pReq && cPages > RT_ELEMENTS(apPagesStack))
+    if (pReq && cMaxPages > RT_ELEMENTS(apPagesStack))
         papPagesFree = papPages = kmalloc(cMaxPages * sizeof(sizeof(papPages[0])), GFP_KERNEL);
     if (pReq && papPages) {
         cbRet = 0;
@@ -609,7 +662,6 @@ static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, si
                 while (iPage-- > 0)
                     pReq->PgLst.aPages[iPage] = page_to_phys(papPages[iPage]);
             } else {
-                /** @todo may need fallback here for kernel addresses during exec. sigh.   */
                 cbRet = rc;
                 break;
             }
@@ -701,11 +753,7 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
      * though, we just do page cache reading when there are writable
      * mappings around with any kind of pages loaded.
      */
-    if (   mapping
-        && mapping->nrpages > 0
-        && mapping_writably_mapped(mapping)
-        && !(file->f_flags & O_DIRECT)
-        && 1 /** @todo make this behaviour configurable */ )
+    if (vbsf_should_use_cached_read(file, mapping, sf_g))
         return vbsf_reg_read_mapped(file, buf, size, off);
 
     /*
@@ -715,24 +763,24 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
     if (size <= PAGE_SIZE / 4 * 3 - RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) /* see allocator */) {
         uint32_t const         cbReq = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) + size;
         VBOXSFREADEMBEDDEDREQ *pReq  = (VBOXSFREADEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
-        if (   pReq
-            && (PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
-            ssize_t cbRet;
-            int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->Handle.hHost, *off, (uint32_t)size);
-            if (RT_SUCCESS(vrc)) {
-                cbRet = pReq->Parms.cb32Read.u.value32;
-                AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
-                if (copy_to_user(buf, pReq->abData, cbRet) == 0)
-                    *off += cbRet;
-                else
-                    cbRet = -EFAULT;
-            } else
-                cbRet = -EPROTO;
+        if (pReq) {
+            if ((PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
+                ssize_t cbRet;
+                int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->Handle.hHost, *off, (uint32_t)size);
+                if (RT_SUCCESS(vrc)) {
+                    cbRet = pReq->Parms.cb32Read.u.value32;
+                    AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
+                    if (copy_to_user(buf, pReq->abData, cbRet) == 0)
+                        *off += cbRet;
+                    else
+                        cbRet = -EFAULT;
+                } else
+                    cbRet = -EPROTO;
+                VbglR0PhysHeapFree(pReq);
+                return cbRet;
+            }
             VbglR0PhysHeapFree(pReq);
-            return cbRet;
         }
-        if (pReq)
-            VbglR0PhysHeapFree(pReq);
     }
 
 #if 0 /* Turns out this is slightly slower than locking the pages even for 4KB reads (4.19/amd64). */
@@ -825,7 +873,7 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
         cMaxPages /= 2;
         pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cMaxPages]));
     }
-    if (pReq && cPages > RT_ELEMENTS(apPagesStack))
+    if (pReq && cMaxPages > RT_ELEMENTS(apPagesStack))
         papPagesFree = papPages = kmalloc(cMaxPages * sizeof(sizeof(papPages[0])), GFP_KERNEL);
     if (pReq && papPages) {
         cbRet = 0;
@@ -925,7 +973,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
     struct inode           *inode   = VBSF_GET_F_DENTRY(file)->d_inode;
     struct vbsf_inode_info *sf_i    = VBSF_GET_INODE_INFO(inode);
     struct vbsf_super_info *sf_g    = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct vbsf_reg_info     *sf_r    = file->private_data;
+    struct vbsf_reg_info   *sf_r    = file->private_data;
     struct address_space   *mapping = inode->i_mapping;
     loff_t                  pos;
 
@@ -933,11 +981,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
     BUG_ON(!sf_i);
     BUG_ON(!sf_g);
     BUG_ON(!sf_r);
-
-    if (!S_ISREG(inode->i_mode)) {
-        LogFunc(("write to non regular file %d\n", inode->i_mode));
-        return -EINVAL;
-    }
+    AssertReturn(S_ISREG(inode->i_mode), -EINVAL);
 
     pos = *off;
     /** @todo This should be handled by the host, it returning the new file
@@ -1043,6 +1087,555 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
     return vbsf_reg_write_locking(file, buf, size, off, pos, inode, sf_i, sf_g, sf_r);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+
+/**
+ * Companion to vbsf_iter_lock_pages().
+ */
+DECLINLINE(void) vbsf_iter_unlock_pages(struct iov_iter *iter, struct page **papPages, size_t cPages, bool fSetDirty)
+{
+    /* We don't mark kernel pages dirty: */
+    if (iter->type & ITER_KVEC)
+        fSetDirty = false;
+
+    while (cPages-- > 0)
+    {
+        struct page *pPage = papPages[cPages];
+        if (fSetDirty && !PageReserved(pPage))
+            SetPageDirty(pPage);
+        vbsf_put_page(pPage);
+    }
+}
+
+
+/**
+ * Locks up to @a cMaxPages from the I/O vector iterator, advancing the
+ * iterator.
+ *
+ * @returns 0 on success, negative errno value on failure.
+ * @param   iter        The iterator to lock pages from.
+ * @param   fWrite      Whether to write (true) or read (false) lock the pages.
+ * @param   pStash      Where we stash peek results.
+ * @param   cMaxPages   The maximum number of pages to get.
+ * @param   papPages    Where to return the locked pages.
+ * @param   pcPages     Where to return the number of pages.
+ * @param   poffPage0   Where to return the offset into the first page.
+ * @param   pcbChunk    Where to return the number of bytes covered.
+ */
+static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_iter_stash *pStash, size_t cMaxPages,
+                                struct page **papPages, size_t *pcPages, size_t *poffPage0, size_t *pcbChunk)
+{
+    size_t cbChunk  = 0;
+    size_t cPages   = 0;
+    size_t offPage0 = 0;
+    int    rc       = 0;
+
+    Assert(iov_iter_count(iter) > 0);
+    if (!(iter->type & ITER_KVEC)) {
+        /*
+         * Do we have a stashed page?
+         */
+        if (pStash->pPage) {
+            papPages[0] = pStash->pPage;
+            offPage0    = pStash->off;
+            cbChunk     = pStash->cb;
+            cPages      = 1;
+            pStash->pPage = NULL;
+            pStash->off   = 0;
+            pStash->cb    = 0;
+            if (   offPage0 + cbChunk < PAGE_SIZE
+                || iov_iter_count(iter) == 0) {
+                *poffPage0 = offPage0;
+                *pcbChunk  = cbChunk;
+                *pcPages   = cPages;
+                return 0;
+            }
+            cMaxPages -= 1;
+        } else {
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+            /*
+             * Copy out our starting point to assist rewinding.
+             */
+            pStash->offFromEnd = iov_iter_count(iter);
+            pStash->Copy       = *iter;
+# endif
+        }
+
+        /*
+         * Get pages segment by segment.
+         */
+        do {
+            /*
+             * Make a special case of the first time thru here, since that's
+             * the most typical scenario.
+             */
+            ssize_t cbSegRet;
+            if (cPages == 0) {
+                cbSegRet = iov_iter_get_pages(iter, papPages, iov_iter_count(iter), cMaxPages, &offPage0);
+                if (cbSegRet > 0) {
+                    iov_iter_advance(iter, cbSegRet);
+                    cbChunk    = (size_t)cbSegRet;
+                    cPages     = RT_ALIGN_Z(offPage0 + cbSegRet, PAGE_SIZE) >> PAGE_SHIFT;
+                    cMaxPages -= cPages;
+                    if (   cMaxPages == 0
+                        || ((offPage0 + (size_t)cbSegRet) & PAGE_OFFSET_MASK))
+                        break;
+                } else {
+                    AssertStmt(cbSegRet < 0, cbSegRet = -EFAULT);
+                    rc = (int)cbSegRet;
+                    break;
+                }
+            } else {
+                /*
+                 * Probe first page of new segment to check that we've got a zero offset and
+                 * can continue on the current chunk. Stash the page if the offset isn't zero.
+                 */
+                size_t offPgProbe;
+                size_t cbSeg = iov_iter_single_seg_count(iter);
+                while (!cbSeg) {
+                    iov_iter_advance(iter, 0);
+                    cbSeg = iov_iter_single_seg_count(iter);
+                }
+                cbSegRet = iov_iter_get_pages(iter, &papPages[cPages], iov_iter_count(iter), 1, &offPgProbe);
+                if (cbSegRet > 0) {
+                    iov_iter_advance(iter, cbSegRet); /** @todo maybe not do this if we stash the page? */
+                    Assert(cbSegRet <= PAGE_SIZE);
+                    if (offPgProbe == 0) {
+                        cbChunk   += cbSegRet;
+                        cPages    += 1;
+                        cMaxPages -= 1;
+                        if (   cMaxPages == 0
+                            || cbSegRet != PAGE_SIZE)
+                            break;
+
+                        /*
+                         * Get the rest of the segment (if anything remaining).
+                         */
+                        cbSeg -= cbSegRet;
+                        if (cbSeg > 0) {
+                            cbSegRet = iov_iter_get_pages(iter, &papPages[cPages], iov_iter_count(iter), cMaxPages, &offPgProbe);
+                            if (cbSegRet > 0) {
+                                size_t const cSegsRet = RT_ALIGN_Z((size_t)cbSegRet, PAGE_SIZE) >> PAGE_SHIFT;
+                                Assert(offPgProbe == 0);
+                                iov_iter_advance(iter, cbSegRet);
+                                cPages    += cSegsRet;
+                                cMaxPages -= cSegsRet;
+                                cbChunk   += cbSegRet;
+                                if (   cMaxPages == 0
+                                    || ((size_t)cbSegRet & PAGE_OFFSET_MASK))
+                                    break;
+                            } else {
+                                AssertStmt(cbSegRet < 0, cbSegRet = -EFAULT);
+                                rc = (int)cbSegRet;
+                                break;
+                            }
+                        }
+                    } else {
+                        /* The segment didn't start at a page boundrary, so stash it for
+                           the next round: */
+                        Assert(papPages[cPages]);
+                        pStash->pPage = papPages[cPages];
+                        pStash->off   = offPage0;
+                        pStash->cb    = cbSegRet;
+                        break;
+                    }
+                } else {
+                    AssertStmt(cbSegRet < 0, cbSegRet = -EFAULT);
+                    rc = (int)cbSegRet;
+                    break;
+                }
+            }
+            Assert(cMaxPages > 0);
+        } while (iov_iter_count(iter) > 0);
+
+    } else {
+        /*
+         * The silly iov_iter_get_pages_alloc() function doesn't handle KVECs,
+         * so everyone needs to do that by themselves.
+         *
+         * Note! Fixes here may apply to rtR0MemObjNativeLockKernel()
+         *       and vbsf_lock_user_pages_failed_check_kernel() as well.
+         */
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+        pStash->offFromEnd = iov_iter_count(iter);
+        pStash->Copy       = *iter;
+# endif
+        do {
+            uint8_t *pbBuf;
+            size_t   offStart;
+            size_t   cPgSeg;
+
+            size_t   cbSeg = iov_iter_single_seg_count(iter);
+            while (!cbSeg) {
+                iov_iter_advance(iter, 0);
+                cbSeg = iov_iter_single_seg_count(iter);
+            }
+
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+            pbBuf    = iter->kvec->iov_base + iter->iov_offset;
+# else
+            pbBuf    = iter->iov->iov_base  + iter->iov_offset;
+# endif
+            offStart = (uintptr_t)pbBuf & PAGE_OFFSET_MASK;
+            if (!cPages)
+                offPage0 = offStart;
+            else if (offStart)
+                break;
+
+            cPgSeg = RT_ALIGN_Z(cbSeg, PAGE_SIZE) >> PAGE_SHIFT;
+            if (cPgSeg > cMaxPages) {
+                cPgSeg = cMaxPages;
+                cbSeg  = (cPgSeg << PAGE_SHIFT) - offStart;
+            }
+
+            rc = vbsf_lock_kernel_pages(pbBuf, fWrite, cPgSeg, &papPages[cPages]);
+            if (rc == 0) {
+                iov_iter_advance(iter, cbSeg);
+                cbChunk   += cbSeg;
+                cPages    += cPgSeg;
+                cMaxPages -= cPgSeg;
+                if (   cMaxPages == 0
+                    || ((offStart + cbSeg) & PAGE_OFFSET_MASK) != 0)
+                    break;
+            } else
+                break;
+        } while (iov_iter_count(iter) > 0);
+    }
+
+    /*
+     * Clean up if we failed; set return values.
+     */
+    if (rc == 0) {
+        /* likely */
+    } else {
+        if (cPages > 0)
+            vbsf_iter_unlock_pages(iter, papPages, cPages, false /*fSetDirty*/);
+        offPage0 = cbChunk = cPages = 0;
+    }
+    *poffPage0 = offPage0;
+    *pcbChunk  = cbChunk;
+    *pcPages   = cPages;
+    return rc;
+}
+
+
+/**
+ * Rewinds the I/O vector.
+ */
+static bool vbsf_iter_rewind(struct iov_iter *iter, struct vbsf_iter_stash *pStash, size_t cbToRewind, size_t cbChunk)
+{
+    size_t cbExtra;
+    if (!pStash->pPage) {
+        cbExtra = 0;
+    } else {
+        cbExtra = pStash->cb;
+        vbsf_put_page(pStash->pPage);
+        pStash->pPage = NULL;
+        pStash->cb    = 0;
+        pStash->off   = 0;
+    }
+
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+    iov_iter_revert(iter, cbToRewind + cbExtra);
+    return true;
+# else
+    /** @todo impl this   */
+    return false;
+# endif
+}
+
+
+/**
+ * Cleans up the page locking stash.
+ */
+DECLINLINE(void) vbsf_iter_cleanup_stash(struct iov_iter *iter, struct vbsf_iter_stash *pStash)
+{
+    if (pStash->pPage)
+        vbsf_iter_rewind(iter, pStash, 0, 0);
+}
+
+
+/**
+ * Calculates the longest span of pages we could transfer to the host in a
+ * single request.
+ *
+ * @returns Page count, non-zero.
+ * @param   iter        The I/O vector iterator to inspect.
+ */
+static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
+{
+    size_t cPages;
+    if (iter->type & (ITER_IOVEC | ITER_KVEC)) {
+        const struct iovec *pCurIov    = iter->iov;
+        size_t              cLeft      = iter->nr_segs;
+        size_t              cPagesSpan = 0;
+
+        AssertCompileMembersSameSizeAndOffset(struct iovec, iov_base, struct kvec, iov_base);
+        AssertCompileMembersSameSizeAndOffset(struct iovec, iov_len,  struct kvec, iov_len);
+        AssertCompile(sizeof(struct iovec) == sizeof(struct kvec));
+
+        cPages = 1;
+        AssertReturn(cLeft > 0, cPages);
+
+        /* Special case: segment offset. */
+        if (iter->iov_offset > 0) {
+            if (iter->iov_offset < pCurIov->iov_len) {
+                size_t const cbSegLeft = pCurIov->iov_len - iter->iov_offset;
+                size_t const offPage0  = ((uintptr_t)pCurIov->iov_base + iter->iov_offset) & PAGE_OFFSET_MASK;
+                cPages = cPagesSpan = RT_ALIGN_Z(offPage0 + cbSegLeft, PAGE_SIZE) >> PAGE_SHIFT;
+                if ((offPage0 + cbSegLeft) & PAGE_OFFSET_MASK)
+                    cPagesSpan = 0;
+            }
+            pCurIov++;
+            cLeft--;
+        }
+
+        /* Full segments. */
+        while (cLeft-- > 0) {
+            if (pCurIov->iov_len > 0) {
+                size_t const offPage0 = (uintptr_t)pCurIov->iov_base & PAGE_OFFSET_MASK;
+                if (offPage0 == 0) {
+                    if (!(pCurIov->iov_len & PAGE_OFFSET_MASK)) {
+                        cPagesSpan += pCurIov->iov_len >> PAGE_SHIFT;
+                    } else {
+                        cPagesSpan += RT_ALIGN_Z(pCurIov->iov_len, PAGE_SIZE) >> PAGE_SHIFT;
+                        if (cPagesSpan > cPages)
+                            cPages = cPagesSpan;
+                        cPagesSpan = 0;
+                    }
+                } else {
+                    if (cPagesSpan > cPages)
+                        cPages = cPagesSpan;
+                    if (!((offPage0 + pCurIov->iov_len) & PAGE_OFFSET_MASK)) {
+                        cPagesSpan = pCurIov->iov_len >> PAGE_SHIFT;
+                    } else {
+                        cPagesSpan += RT_ALIGN_Z(offPage0 + pCurIov->iov_len, PAGE_SIZE) >> PAGE_SHIFT;
+                        if (cPagesSpan > cPages)
+                            cPages = cPagesSpan;
+                        cPagesSpan = 0;
+                    }
+                }
+            }
+            pCurIov++;
+        }
+        if (cPagesSpan > cPages)
+            cPages = cPagesSpan;
+    } else  {
+        /* Won't bother with accurate counts for the next two types, just make
+           some rough estimates (does pipes have segments?): */
+        size_t cSegs = iter->type & ITER_BVEC ? RT_MAX(1, iter->nr_segs) : 1;
+        cPages = (iov_iter_count(iter) + (PAGE_SIZE * 2 - 2) * cSegs) >> PAGE_SHIFT;
+    }
+    return cPages;
+}
+
+
+/**
+ * Worker for vbsf_reg_read_iter() that deals with larger reads using page
+ * locking.
+ */
+static ssize_t vbsf_reg_read_iter_locking(struct kiocb *kio, struct iov_iter *iter, size_t cbToRead,
+                                          struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r)
+{
+    /*
+     * Estimate how many pages we may possible submit in a single request so
+     * that we can allocate matching request buffer and page array.
+     */
+    struct page        *apPagesStack[16];
+    struct page       **papPages     = &apPagesStack[0];
+    struct page       **papPagesFree = NULL;
+    VBOXSFREADPGLSTREQ *pReq;
+    ssize_t             cbRet        = 0;
+    size_t              cMaxPages    = vbsf_iter_max_span_of_pages(iter);
+    cMaxPages = RT_MIN(RT_MAX(sf_g->cMaxIoPages, 2), cMaxPages);
+
+    pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
+    while (!pReq && cMaxPages > 4) {
+        cMaxPages /= 2;
+        pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
+    }
+    if (pReq && cMaxPages > RT_ELEMENTS(apPagesStack))
+        papPagesFree = papPages = kmalloc(cMaxPages * sizeof(sizeof(papPages[0])), GFP_KERNEL);
+    if (pReq && papPages) {
+
+        /*
+         * The read loop.
+         */
+        struct vbsf_iter_stash Stash = VBSF_ITER_STASH_INITIALIZER;
+        do {
+            /*
+             * Grab as many pages as we can.  This means that if adjacent
+             * segments both starts and ends at a page boundrary, we can
+             * do them both in the same transfer from the host.
+             */
+            size_t cPages   = 0;
+            size_t cbChunk  = 0;
+            size_t offPage0 = 0;
+            int rc = vbsf_iter_lock_pages(iter, true /*fWrite*/, &Stash, cMaxPages, papPages, &cPages, &offPage0, &cbChunk);
+            if (rc == 0) {
+                size_t iPage = cPages;
+                while (iPage-- > 0)
+                    pReq->PgLst.aPages[iPage] = page_to_phys(papPages[iPage]);
+                pReq->PgLst.offFirstPage = (uint16_t)offPage0;
+                AssertStmt(cbChunk <= cbToRead, cbChunk = cbToRead);
+            } else {
+                cbRet = rc;
+                break;
+            }
+
+            /*
+             * Issue the request and unlock the pages.
+             */
+            rc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, kio->ki_pos, cbChunk, cPages);
+            SFLOGFLOW(("vbsf_reg_read_iter_locking: VbglR0SfHostReqReadPgLst -> %d (cbActual=%#x cbChunk=%#zx of %#zx cPages=%#zx offPage0=%#x\n",
+                       rc, pReq->Parms.cb32Read.u.value32, cbChunk, cbToRead, cPages, offPage0));
+
+            vbsf_iter_unlock_pages(iter, papPages, cPages, true /*fSetDirty*/);
+
+            if (RT_SUCCESS(rc)) {
+                /*
+                 * Success, advance position and buffer.
+                 */
+                uint32_t cbActual = pReq->Parms.cb32Read.u.value32;
+                AssertStmt(cbActual <= cbChunk, cbActual = cbChunk);
+                cbRet       += cbActual;
+                kio->ki_pos += cbActual;
+                cbToRead    -= cbActual;
+
+                /*
+                 * Are we done already?
+                 */
+                if (!cbToRead)
+                    break;
+                if (cbActual < cbChunk) { /* We ASSUME end-of-file here. */
+                    if (vbsf_iter_rewind(iter, &Stash, cbChunk - cbActual, cbActual))
+                        iov_iter_truncate(iter, 0);
+                    break;
+                }
+            } else {
+                /*
+                 * Try rewind the iter structure.
+                 */
+                bool const fRewindOkay = vbsf_iter_rewind(iter, &Stash, cbChunk, cbChunk);
+                if (rc == VERR_NO_MEMORY && cMaxPages > 4 && fRewindOkay) {
+                    /*
+                     * The host probably doesn't have enough heap to handle the
+                     * request, reduce the page count and retry.
+                     */
+                    cMaxPages /= 4;
+                    Assert(cMaxPages > 0);
+                } else {
+                    /*
+                     * If we've successfully read stuff, return it rather than
+                     * the error.  (Not sure if this is such a great idea...)
+                     */
+                    if (cbRet <= 0)
+                        cbRet = -EPROTO;
+                    break;
+                }
+            }
+        } while (cbToRead > 0);
+
+        vbsf_iter_cleanup_stash(iter, &Stash);
+    }
+    else
+        cbRet = -ENOMEM;
+    if (papPagesFree)
+        kfree(papPages);
+    if (pReq)
+        VbglR0PhysHeapFree(pReq);
+    SFLOGFLOW(("vbsf_reg_read_iter_locking: returns %#zx (%zd)\n", cbRet, cbRet));
+    return cbRet;
+}
+
+
+/**
+ * Read into I/O vector iterator.
+ *
+ * @returns Number of bytes read on success, negative errno on error.
+ * @param   kio         The kernel I/O control block (or something like that).
+ * @param   iter        The I/O vector iterator describing the buffer.
+ */
+static ssize_t vbsf_reg_read_iter(struct kiocb *kio, struct iov_iter *iter)
+{
+    size_t                  cbToRead = iov_iter_count(iter);
+    struct inode           *inode    = VBSF_GET_F_DENTRY(kio->ki_filp)->d_inode;
+    struct address_space   *mapping  = inode->i_mapping;
+
+    struct vbsf_reg_info   *sf_r     = kio->ki_filp->private_data;
+    struct vbsf_super_info *sf_g     = VBSF_GET_SUPER_INFO(inode->i_sb);
+
+    SFLOGFLOW(("vbsf_reg_read_iter: inode=%p file=%p size=%#zx off=%#llx type=%#x\n",
+               inode, kio->ki_filp, cbToRead, kio->ki_pos, iter->type));
+    AssertReturn(S_ISREG(inode->i_mode), -EINVAL);
+
+    /*
+     * Do we have anything at all to do here?
+     */
+    if (!cbToRead)
+        return 0;
+
+    /*
+     * If there is a mapping and O_DIRECT isn't in effect, we must at a
+     * heed dirty pages in the mapping and read from them.  For simplicity
+     * though, we just do page cache reading when there are writable
+     * mappings around with any kind of pages loaded.
+     */
+    if (vbsf_should_use_cached_read(kio->ki_filp, mapping, sf_g))
+        return generic_file_read_iter(kio, iter);
+
+    /*
+     * Now now we reject async I/O requests.
+     */
+    if (!is_sync_kiocb(kio)) {
+        SFLOGFLOW(("vbsf_reg_read_iter: async I/O not yet supported\n")); /** @todo extend FsPerf with AIO tests. */
+        return -EOPNOTSUPP;
+    }
+
+    /*
+     * For small requests, try use an embedded buffer provided we get a heap block
+     * that does not cross page boundraries (see host code).
+     */
+    if (cbToRead <= PAGE_SIZE / 4 * 3 - RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) /* see allocator */) {
+        uint32_t const         cbReq = RT_UOFFSETOF(VBOXSFREADEMBEDDEDREQ, abData[0]) + cbToRead;
+        VBOXSFREADEMBEDDEDREQ *pReq  = (VBOXSFREADEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
+        if (pReq) {
+            if ((PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
+                ssize_t cbRet;
+                int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->Handle.hHost, kio->ki_pos, (uint32_t)cbToRead);
+                if (RT_SUCCESS(vrc)) {
+                    cbRet = pReq->Parms.cb32Read.u.value32;
+                    AssertStmt(cbRet <= (ssize_t)cbToRead, cbRet = cbToRead);
+                    if (copy_to_iter(pReq->abData, cbRet, iter) == cbRet) {
+                        kio->ki_pos += cbRet;
+                        if (cbRet < cbToRead)
+                            iov_iter_truncate(iter, 0);
+                    } else
+                        cbRet = -EFAULT;
+                } else
+                    cbRet = -EPROTO;
+                VbglR0PhysHeapFree(pReq);
+                SFLOGFLOW(("vbsf_reg_read_iter: returns %#zx (%zd)\n", cbRet, cbRet));
+                return cbRet;
+            }
+            VbglR0PhysHeapFree(pReq);
+        }
+    }
+
+    /*
+     * Otherwise do the page locking thing.
+     */
+    return vbsf_reg_read_iter_locking(kio, iter, cbToRead, sf_g, sf_r);
+}
+
+
+static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
+{
+    SFLOGFLOW(("vbsf_reg_write_iter: -> EINVAL\n"));
+    return -EINVAL;
+}
+
+#endif /* >= 3.16.0 */
 
 /**
  * Open a regular file.
@@ -1335,11 +1928,15 @@ static int vbsf_reg_fsync(struct file *file, struct dentry *dentry, int datasync
  * File operations for regular files.
  */
 struct file_operations vbsf_reg_fops = {
-    .read = vbsf_reg_read,
-    .open = vbsf_reg_open,
-    .write = vbsf_reg_write,
-    .release = vbsf_reg_release,
-    .mmap = generic_file_mmap,
+    .open        = vbsf_reg_open,
+    .read        = vbsf_reg_read,
+    .write       = vbsf_reg_write,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+    .read_iter   = vbsf_reg_read_iter,
+    .write_iter  = vbsf_reg_write_iter,
+#endif
+    .release     = vbsf_reg_release,
+    .mmap        = generic_file_mmap,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 /** @todo This code is known to cause caching of data which should not be
@@ -1347,14 +1944,14 @@ struct file_operations vbsf_reg_fops = {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
     .splice_read = vbsf_splice_read,
 # else
-    .sendfile = generic_file_sendfile,
+    .sendfile    = generic_file_sendfile,
 # endif
-    .aio_read = generic_file_aio_read,
-    .aio_write = generic_file_aio_write,
+    .aio_read    = generic_file_aio_read,
+    .aio_write   = generic_file_aio_write,
 # endif
 #endif
-    .llseek = vbsf_reg_llseek,
-    .fsync = vbsf_reg_fsync,
+    .llseek      = vbsf_reg_llseek,
+    .fsync       = vbsf_reg_fsync,
 };
 
 struct inode_operations vbsf_reg_iops = {
