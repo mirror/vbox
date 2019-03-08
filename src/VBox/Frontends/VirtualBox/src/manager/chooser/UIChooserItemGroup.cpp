@@ -16,15 +16,14 @@
  */
 
 /* Qt includes: */
+#include <QGraphicsLinearLayout>
 #include <QGraphicsScene>
 #include <QGraphicsSceneDragDropEvent>
+#include <QGraphicsView>
 #include <QHBoxLayout>
 #include <QLineEdit>
-#include <QMenu>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
-#include <QGraphicsLinearLayout>
-#include <QGraphicsProxyWidget>
 #include <QWindow>
 
 /* GUI includes: */
@@ -32,7 +31,6 @@
 #include "UIChooserItemGroup.h"
 #include "UIChooserItemMachine.h"
 #include "UIChooserModel.h"
-#include "UIChooserView.h"
 #include "UIGraphicsRotatorButton.h"
 #include "UIGraphicsScrollArea.h"
 #include "UIIconPool.h"
@@ -1040,7 +1038,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                     }
                 }
 
-                /* Copy passed item into this group: */
+                /* Copy passed group-item into this group: */
                 UIChooserItem *pNewGroupItem = new UIChooserItemGroup(this, pItem->toGroupItem(), iPosition);
                 if (isClosed())
                     open(false);
@@ -1074,7 +1072,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 /* Remember scene: */
                 UIChooserModel *pModel = model();
 
-                /* Get passed item: */
+                /* Get passed machine-item: */
                 const UIChooserItemMimeData *pCastedMime = qobject_cast<const UIChooserItemMimeData*>(pMime);
                 AssertMsg(pCastedMime, ("Can't cast passed mime-data to UIChooserItemMimeData!"));
                 UIChooserItem *pItem = pCastedMime->item();
@@ -1237,52 +1235,67 @@ void UIChooserItemGroup::sltUnindentRoot()
 
 void UIChooserItemGroup::prepare()
 {
-    /* Painting stuff: */
+    /* Prepare self: */
     m_nameFont = font();
     m_nameFont.setWeight(QFont::Bold);
     m_infoFont = font();
     m_minimumHeaderSize = QSize(0, 0);
 
-    /* Items except roots: */
-    if (!isRoot())
+    /* Prepare header widgets of root item: */
+    if (isRoot())
+    {
+#if 0
+        /* Except main root ofc: */
+        if (!isMainRoot())
+        {
+            /* Setup exit-button: */
+            m_pExitButton = new UIGraphicsButton(this, UIIconPool::iconSet(":/previous_16px.png"));
+            if (m_pExitButton)
+            {
+                m_pExitButton->hide();
+                QSizeF sh = m_pExitButton->minimumSizeHint();
+                m_pExitButton->setTransformOriginPoint(sh.width() / 2, sh.height() / 2);
+                connect(m_pExitButton, &UIGraphicsButton::sigButtonClicked,
+                        this, &UIChooserItemGroup::sltUnindentRoot);
+            }
+            m_exitButtonSize = m_pExitButton ? m_pExitButton->minimumSizeHint().toSize() : QSize(0, 0);
+        }
+#endif
+    }
+    /* Prepare header widgets of non-root item: */
+    else
     {
         /* Setup toggle-button: */
         m_pToggleButton = new UIGraphicsRotatorButton(this, "additionalHeight", isOpened());
-        connect(m_pToggleButton, &UIGraphicsRotatorButton::sigRotationStart,
-                this, &UIChooserItemGroup::sltGroupToggleStart);
-        connect(m_pToggleButton, &UIGraphicsRotatorButton::sigRotationFinish,
-                this, &UIChooserItemGroup::sltGroupToggleFinish);
-        m_pToggleButton->hide();
+        if (m_pToggleButton)
+        {
+            m_pToggleButton->hide();
+            connect(m_pToggleButton, &UIGraphicsRotatorButton::sigRotationStart,
+                    this, &UIChooserItemGroup::sltGroupToggleStart);
+            connect(m_pToggleButton, &UIGraphicsRotatorButton::sigRotationFinish,
+                    this, &UIChooserItemGroup::sltGroupToggleFinish);
+        }
         m_toggleButtonSize = m_pToggleButton ? m_pToggleButton->minimumSizeHint().toSize() : QSize(0, 0);
 
         /* Setup enter-button: */
         m_pEnterButton = new UIGraphicsButton(this, UIIconPool::iconSet(":/next_16px.png"));
-        connect(m_pEnterButton, &UIGraphicsButton::sigButtonClicked,
-                this, &UIChooserItemGroup::sltIndentRoot);
-        m_pEnterButton->hide();
+        if (m_pEnterButton)
+        {
+            m_pEnterButton->hide();
+            connect(m_pEnterButton, &UIGraphicsButton::sigButtonClicked,
+                    this, &UIChooserItemGroup::sltIndentRoot);
+        }
         m_enterButtonSize = m_pEnterButton ? m_pEnterButton->minimumSizeHint().toSize() : QSize(0, 0);
 
         /* Setup name-editor: */
         m_pNameEditorWidget = new UIEditorGroupRename(name());
-        m_pNameEditorWidget->setFont(m_nameFont);
-        connect(m_pNameEditorWidget, &UIEditorGroupRename::sigEditingFinished,
-                this, &UIChooserItemGroup::sltNameEditingFinished);
+        if (m_pNameEditorWidget)
+        {
+            m_pNameEditorWidget->setFont(m_nameFont);
+            connect(m_pNameEditorWidget, &UIEditorGroupRename::sigEditingFinished,
+                    this, &UIChooserItemGroup::sltNameEditingFinished);
+        }
     }
-
-#if 0
-    /* Items except main root: */
-    if (!isMainRoot())
-    {
-        /* Setup exit-button: */
-        m_pExitButton = new UIGraphicsButton(this, UIIconPool::iconSet(":/previous_16px.png"));
-        connect(m_pExitButton, &UIGraphicsButton::sigButtonClicked,
-                this, &UIChooserItemGroup::sltUnindentRoot);
-        QSizeF sh = m_pExitButton->minimumSizeHint();
-        m_pExitButton->setTransformOriginPoint(sh.width() / 2, sh.height() / 2);
-        m_pExitButton->hide();
-        m_exitButtonSize = m_pExitButton ? m_pExitButton->minimumSizeHint().toSize() : QSize(0, 0);
-    }
-#endif
 
     /* Prepare favorite children container: */
     m_pContainerFavorite = new QIGraphicsWidget(this);

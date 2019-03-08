@@ -252,7 +252,7 @@ protected:
     /** @name Layout stuff.
       * @{ */
         /** Returns previous geometry. */
-        const QRectF &previousGeometry() const { return m_previousGeometry; }
+        QRectF previousGeometry() const { return m_previousGeometry; }
         /** Defines previous @a geometry. */
         void setPreviousGeometry(const QRectF &geometry) { m_previousGeometry = geometry; }
 

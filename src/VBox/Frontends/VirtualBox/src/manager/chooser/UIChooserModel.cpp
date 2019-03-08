@@ -2064,7 +2064,7 @@ void UIChooserModel::gatherGroupOrders(QMap<QString, QStringList> &orders,
     /* Iterate over all the machine-items: */
     foreach (UIChooserItem *pItem, pParentItem->items(UIChooserItemType_Machine))
         orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pItem->toMachineItem()->id()));
-    }
+}
 
 void UIChooserModel::makeSureGroupDefinitionsSaveIsFinished()
 {

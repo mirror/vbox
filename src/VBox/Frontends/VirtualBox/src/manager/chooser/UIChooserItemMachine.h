@@ -21,15 +21,9 @@
 # pragma once
 #endif
 
-/* Qt includes */
-#include <QUuid>
-
 /* GUI includes: */
 #include "UIVirtualMachineItem.h"
 #include "UIChooserItem.h"
-
-/* Forward declarations: */
-class CMachine;
 
 /** UIChooserItem extension implementing machine item. */
 class UIChooserItemMachine : public UIChooserItem, public UIVirtualMachineItem
@@ -107,7 +101,6 @@ protected:
 
         /** Updates item tool-tip. */
         virtual void updateToolTip() /* override */;
-
     /** @} */
 
     /** @name Children stuff.
@@ -233,10 +226,6 @@ private:
         void updateStatePixmap();
         /** Updates tool pixmap. */
         void updateToolPixmap();
-        /** Updates name. */
-        void updateName();
-        /** Updates snapshot name. */
-        void updateSnapshotName();
         /** Updates first row maximum width. */
         void updateFirstRowMaximumWidth();
         /** Updates minimum name width. */
@@ -251,8 +240,8 @@ private:
         void updateVisibleName();
         /** Updates visible snapshot name. */
         void updateVisibleSnapshotName();
-        /** Updates state text. */
-        void updateStateText();
+        /** Updates state text size. */
+        void updateStateTextSize();
     /** @} */
 
     /** @name Painting stuff.
@@ -297,18 +286,12 @@ private:
         /** Holds item tool pixmap. */
         QPixmap  m_toolPixmap;
 
-        /** Holds item name. */
-        QString  m_strName;
         /** Holds item description. */
         QString  m_strDescription;
         /** Holds item visible name. */
         QString  m_strVisibleName;
-        /** Holds item snapshot name. */
-        QString  m_strSnapshotName;
         /** Holds item visible snapshot name. */
         QString  m_strVisibleSnapshotName;
-        /** Holds item state text. */
-        QString  m_strStateText;
 
         /** Holds item name font. */
         QFont  m_nameFont;

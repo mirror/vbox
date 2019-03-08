@@ -16,26 +16,18 @@
  */
 
 /* Qt includes: */
-#include <QGraphicsScene>
-#include <QGraphicsSceneMouseEvent>
+#include <QGraphicsSceneDragDropEvent>
 #include <QGraphicsView>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 #include <QWindow>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
 #include "UIChooserItemGroup.h"
 #include "UIChooserItemMachine.h"
 #include "UIChooserModel.h"
-#include "UIActionPoolManager.h"
 #include "UIIconPool.h"
-#include "UIImageTools.h"
 #include "UIVirtualBoxManager.h"
-
-/* COM includes: */
-#include "COMEnums.h"
-#include "CMachine.h"
 
 /* Other VBox includes: */
 #include "iprt/cpp/utils.h"
@@ -90,11 +82,11 @@ UIChooserItemMachine::~UIChooserItemMachine()
 
 bool UIChooserItemMachine::isLockedMachine() const
 {
-    KMachineState state = machineState();
-    return state != KMachineState_PoweredOff &&
-           state != KMachineState_Saved &&
-           state != KMachineState_Teleported &&
-           state != KMachineState_Aborted;
+    const KMachineState enmState = machineState();
+    return enmState != KMachineState_PoweredOff &&
+           enmState != KMachineState_Saved &&
+           enmState != KMachineState_Teleported &&
+           enmState != KMachineState_Aborted;
 }
 
 bool UIChooserItemMachine::isToolButtonArea(const QPoint &position, int iMarginMultiplier /* = 1 */) const
@@ -163,8 +155,8 @@ void UIChooserItemMachine::retranslateUi()
     /* Update description: */
     m_strDescription = tr("Virtual Machine");
 
-    /* Update state text: */
-    updateStateText();
+    /* Update state text size: */
+    updateStateTextSize();
 
     /* Update machine tool-tip: */
     updateToolTip();
@@ -295,9 +287,11 @@ void UIChooserItemMachine::updateAllItems(const QUuid &uId)
     /* Update this machine-item: */
     recache();
     updatePixmaps();
-    updateName();
-    updateSnapshotName();
-    updateStateText();
+    updateMinimumNameWidth();
+    updateVisibleName();
+    updateMinimumSnapshotNameWidth();
+    updateVisibleSnapshotName();
+    updateStateTextSize();
     updateToolTip();
 
     /* Update parent group-item: */
@@ -378,7 +372,7 @@ int UIChooserItemMachine::minimumWidthHint() const
     iProposedWidth += 2 * iMargin + iParentIndent * level();
     /* And machine-item content to take into account: */
     int iTopLineWidth = m_iMinimumNameWidth;
-    if (!m_strSnapshotName.isEmpty())
+    if (!snapshotName().isEmpty())
         iTopLineWidth += (iMinorSpacing +
                           m_iMinimumSnapshotNameWidth);
     int iBottomLineWidth = m_statePixmapSize.width() +
@@ -506,8 +500,8 @@ void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UICh
 
                 /* Group passed item with current item into the new group: */
                 UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(parentItem(),
-                                                                             UIChooserModel::uniqueGroupName(parentItem()),
-                                                                             true);
+                                                                           UIChooserModel::uniqueGroupName(parentItem()),
+                                                                           true);
                 new UIChooserItemMachine(pNewGroupItem, this);
                 new UIChooserItemMachine(pNewGroupItem, pItem->toMachineItem());
 
@@ -604,8 +598,10 @@ void UIChooserItemMachine::prepare()
 
     /* Init: */
     updatePixmaps();
-    updateName();
-    updateSnapshotName();
+    updateMinimumNameWidth();
+    updateVisibleName();
+    updateMinimumSnapshotNameWidth();
+    updateVisibleSnapshotName();
 
     /* Apply language settings: */
     retranslateUi();
@@ -735,36 +731,6 @@ void UIChooserItemMachine::updateToolPixmap()
     }
 }
 
-void UIChooserItemMachine::updateName()
-{
-    /* Get new name: */
-    QString strName = name();
-
-    /* Is there something changed? */
-    if (m_strName == strName)
-        return;
-
-    /* Update linked values: */
-    m_strName = strName;
-    updateMinimumNameWidth();
-    updateVisibleName();
-}
-
-void UIChooserItemMachine::updateSnapshotName()
-{
-    /* Get new snapshot-name: */
-    QString strSnapshotName = snapshotName();
-
-    /* Is there something changed? */
-    if (m_strSnapshotName == strSnapshotName)
-        return;
-
-    /* Update linked values: */
-    m_strSnapshotName = strSnapshotName;
-    updateMinimumSnapshotNameWidth();
-    updateVisibleSnapshotName();
-}
-
 void UIChooserItemMachine::updateFirstRowMaximumWidth()
 {
     /* Prepare variables: */
@@ -802,7 +768,7 @@ void UIChooserItemMachine::updateMinimumNameWidth()
     /* Calculate new minimum name width: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
     QFontMetrics fm(m_nameFont, pPaintDevice);
-    int iMinimumNameWidth = fm.width(compressText(m_nameFont, pPaintDevice, m_strName, textWidth(m_nameFont, pPaintDevice, 15)));
+    int iMinimumNameWidth = fm.width(compressText(m_nameFont, pPaintDevice, name(), textWidth(m_nameFont, pPaintDevice, 15)));
 
     /* Is there something changed? */
     if (m_iMinimumNameWidth == iMinimumNameWidth)
@@ -818,11 +784,11 @@ void UIChooserItemMachine::updateMinimumSnapshotNameWidth()
     /* Calculate new minimum snapshot-name width: */
     int iMinimumSnapshotNameWidth = 0;
     /* Is there any snapshot exists? */
-    if (!m_strSnapshotName.isEmpty())
+    if (!snapshotName().isEmpty())
     {
         QFontMetrics fm(m_snapshotNameFont, model()->paintDevice());
         int iBracketWidth = fm.width("()"); /* bracket width */
-        int iActualTextWidth = fm.width(m_strSnapshotName); /* snapshot-name width */
+        int iActualTextWidth = fm.width(snapshotName()); /* snapshot-name width */
         int iMinimumTextWidth = fm.width("..."); /* ellipsis width */
         iMinimumSnapshotNameWidth = iBracketWidth + qMin(iActualTextWidth, iMinimumTextWidth);
     }
@@ -883,7 +849,7 @@ void UIChooserItemMachine::updateVisibleName()
     QPaintDevice *pPaintDevice = model()->paintDevice();
 
     /* Calculate new visible name and name-size: */
-    QString strVisibleName = compressText(m_nameFont, pPaintDevice, m_strName, m_iMaximumNameWidth);
+    QString strVisibleName = compressText(m_nameFont, pPaintDevice, name(), m_iMaximumNameWidth);
     QSize visibleNameSize = textSize(m_nameFont, pPaintDevice, strVisibleName);
 
     /* Update linked values: */
@@ -907,7 +873,7 @@ void UIChooserItemMachine::updateVisibleSnapshotName()
 
     /* Calculate new visible snapshot-name: */
     int iBracketWidth = QFontMetrics(m_snapshotNameFont, pPaintDevice).width("()");
-    QString strVisibleSnapshotName = compressText(m_snapshotNameFont, pPaintDevice, m_strSnapshotName,
+    QString strVisibleSnapshotName = compressText(m_snapshotNameFont, pPaintDevice, snapshotName(),
                                                   m_iMaximumSnapshotNameWidth - iBracketWidth);
     strVisibleSnapshotName = QString("(%1)").arg(strVisibleSnapshotName);
     QSize visibleSnapshotNameSize = textSize(m_snapshotNameFont, pPaintDevice, strVisibleSnapshotName);
@@ -925,22 +891,16 @@ void UIChooserItemMachine::updateVisibleSnapshotName()
     }
 }
 
-void UIChooserItemMachine::updateStateText()
+void UIChooserItemMachine::updateStateTextSize()
 {
     /* Get new state-text and state-text size: */
-    QString strStateText = machineStateName();
-    QSize stateTextSize = textSize(m_stateTextFont, model()->paintDevice(), m_strStateText);
+    const QSize stateTextSize = textSize(m_stateTextFont, model()->paintDevice(), machineStateName());
 
     /* Update linked values: */
     if (m_stateTextSize != stateTextSize)
     {
         m_stateTextSize = stateTextSize;
         updateGeometry();
-    }
-    if (m_strStateText != strStateText)
-    {
-        m_strStateText = strStateText;
-        update();
     }
 }
 
@@ -1275,7 +1235,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
                           /* Paint device: */
                           model()->paintDevice(),
                           /* Text to paint: */
-                          m_strStateText);
+                          machineStateName());
             }
         }
     }

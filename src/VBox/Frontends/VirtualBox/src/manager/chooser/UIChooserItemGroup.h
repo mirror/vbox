@@ -21,22 +21,11 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QPixmap>
-#include <QString>
-#include <QWidget>
-
 /* GUI includes: */
 #include "UIChooserItem.h"
 
 /* Forward declarations: */
 class QGraphicsLinearLayout;
-class QGraphicsScene;
-class QLineEdit;
-class QMenu;
-class QMimeData;
-class QPainter;
-class QStyleOptionGraphicsItem;
 class UIEditorGroupRename;
 class UIGraphicsButton;
 class UIGraphicsRotatorButton;

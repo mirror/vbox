@@ -24,13 +24,6 @@
 /* GUI includes: */
 #include "UIChooserItem.h"
 
-/* Forward declarations: */
-class QMimeData;
-class QPainter;
-class QStyleOptionGraphicsItem;
-class UIGraphicsToolBar;
-class UIGraphicsZoomButton;
-
 
 /** UIChooserItem extension implementing global item. */
 class UIChooserItemGlobal : public UIChooserItem

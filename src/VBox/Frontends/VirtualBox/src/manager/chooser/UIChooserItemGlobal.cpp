@@ -16,14 +16,12 @@
  */
 
 /* Qt includes: */
-#include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsView>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
 
 /* GUI includes: */
-#include "VBoxGlobal.h"
 #include "UIChooserItemGlobal.h"
 #include "UIChooserModel.h"
 #include "UIIconPool.h"
@@ -225,7 +223,7 @@ void UIChooserItemGlobal::startEditing()
 
 void UIChooserItemGlobal::updateToolTip()
 {
-//    setToolTip(toolTipText());
+    // Nothing for now..
 }
 
 bool UIChooserItemGlobal::hasItems(UIChooserItemType) const
