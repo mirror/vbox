@@ -1021,7 +1021,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         reporter.testDone(fSkip);
 
         reporter.testStart('Session w/ Guest Reboot');
-        fSkip = 'session_reboot' not in self.asTests;
+        fSkip =    'session_reboot' not in self.asTests \
+                or self.oTstDrv.fpApiVer <= 6.0; # Not backported yet.
         if fSkip is False:
             fRc, oTxsSession = self.testGuestCtrlSessionReboot(oSession, oTxsSession, oTestVm);
         reporter.testDone(fSkip);
