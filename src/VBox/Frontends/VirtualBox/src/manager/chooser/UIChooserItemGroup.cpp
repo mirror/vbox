@@ -43,6 +43,9 @@
 
 UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
     : UIChooserItem(0, false /* favorite? */)
+    , m_pScene(pScene)
+    , m_pItemToCopy(0)
+    , m_iPosition(0)
     , m_fClosed(false)
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
@@ -59,19 +62,7 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
     , m_pLayoutGroup(0)
     , m_pLayoutMachine(0)
 {
-    /* Prepare: */
     prepare();
-
-    /* Add item to the scene: */
-    AssertMsg(pScene, ("Incorrect scene passed!"));
-    pScene->addItem(this);
-
-    /* Apply language settings: */
-    retranslateUi();
-
-    /* Prepare connections: */
-    connect(this, &UIChooserItemGroup::sigMinimumWidthHintChanged,
-            model(), &UIChooserModel::sigRootItemMinimumWidthHintChanged);
 }
 
 UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
@@ -79,6 +70,9 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
                                        bool fOpened /* = false */,
                                        int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isFavorite())
+    , m_pScene(0)
+    , m_pItemToCopy(0)
+    , m_iPosition(iPosition)
     , m_strName(strName)
     , m_fClosed(!fOpened)
     , m_iAdditionalHeight(0)
@@ -96,38 +90,16 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     , m_pLayoutGroup(0)
     , m_pLayoutMachine(0)
 {
-    /* Prepare: */
     prepare();
-
-    /* Add item to the parent: */
-    AssertMsg(parentItem(), ("Incorrect parent passed!"));
-    parentItem()->addItem(this, false, iPosition);
-    connect(this, &UIChooserItemGroup::sigToggleStarted,
-            model(), &UIChooserModel::sigToggleStarted);
-    connect(this, &UIChooserItemGroup::sigToggleFinished,
-            model(), &UIChooserModel::sigToggleFinished,
-            Qt::QueuedConnection);
-    connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
-            this, &UIChooserItemGroup::sltHandleWindowRemapped);
-
-    /* Apply language settings: */
-    retranslateUi();
-
-    /* Init: */
-    updatePixmaps();
-    updateItemCountInfo();
-    updateVisibleName();
-    updateToolTip();
-
-    /* Prepare connections: */
-    connect(this, &UIChooserItemGroup::sigMinimumWidthHintChanged,
-            model(), &UIChooserModel::sigRootItemMinimumWidthHintChanged);
 }
 
 UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
                                        UIChooserItemGroup *pCopiedItem,
                                        int iPosition /* = -1 */)
     : UIChooserItem(pParent, pParent->isFavorite())
+    , m_pScene(0)
+    , m_pItemToCopy(pCopiedItem)
+    , m_iPosition(iPosition)
     , m_strName(pCopiedItem->name())
     , m_fClosed(pCopiedItem->isClosed())
     , m_iAdditionalHeight(0)
@@ -145,63 +117,12 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
     , m_pLayoutGroup(0)
     , m_pLayoutMachine(0)
 {
-    /* Prepare: */
     prepare();
-
-    /* Add item to the parent: */
-    AssertMsg(parentItem(), ("Incorrect parent passed!"));
-    parentItem()->addItem(this, false, iPosition);
-    connect(this, &UIChooserItemGroup::sigToggleStarted,
-            model(), &UIChooserModel::sigToggleStarted);
-    connect(this, &UIChooserItemGroup::sigToggleFinished,
-            model(), &UIChooserModel::sigToggleFinished);
-    connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
-            this, &UIChooserItemGroup::sltHandleWindowRemapped);
-
-    /* Copy content to 'this': */
-    copyContent(pCopiedItem, this);
-
-    /* Apply language settings: */
-    retranslateUi();
-
-    /* Init: */
-    updatePixmaps();
-    updateItemCountInfo();
-    updateVisibleName();
-    updateToolTip();
 }
 
 UIChooserItemGroup::~UIChooserItemGroup()
 {
-    /* Delete group name editor: */
-    delete m_pNameEditorWidget;
-    m_pNameEditorWidget = 0;
-
-    /* Delete all the items: */
-    clearItems();
-
-    /* If that item is focused: */
-    if (model()->focusItem() == this)
-    {
-        /* Unset the focus: */
-        model()->setFocusItem(0);
-    }
-    /* If that item is in selection list: */
-    if (model()->currentItems().contains(this))
-    {
-        /* Remove item from the selection list: */
-        model()->removeFromCurrentItems(this);
-    }
-    /* If that item is in navigation list: */
-    if (model()->navigationList().contains(this))
-    {
-        /* Remove item from the navigation list: */
-        model()->removeFromNavigationList(this);
-    }
-
-    /* Remove item from the parent: */
-    if (parentItem())
-        parentItem()->removeItem(this);
+    cleanup();
 }
 
 void UIChooserItemGroup::setName(const QString &strName)
@@ -1360,6 +1281,82 @@ void UIChooserItemGroup::prepare()
             m_pScrollArea->setViewport(m_pContainer);
         }
     }
+
+    /* Add item directly to the scene (if passed): */
+    if (m_pScene)
+        m_pScene->addItem(this);
+    /* Add item to the parent instead (if passed),
+     * it will be added to the scene indirectly: */
+    else if (parentItem())
+        parentItem()->addItem(this, isFavorite(), m_iPosition);
+    /* Otherwise sombody forgot to pass scene or parent. */
+    else
+        AssertFailedReturnVoid();
+
+    /* Copy item contents if any: */
+    if (m_pItemToCopy)
+        copyContent(m_pItemToCopy, this);
+
+    /* Apply language settings: */
+    retranslateUi();
+
+    /* Initialize non-root items: */
+    if (!isRoot())
+    {
+        updatePixmaps();
+        updateItemCountInfo();
+        updateVisibleName();
+        updateToolTip();
+    }
+
+    /* Configure connections: */
+    connect(this, &UIChooserItemGroup::sigMinimumWidthHintChanged,
+            model(), &UIChooserModel::sigRootItemMinimumWidthHintChanged);
+    if (!isRoot())
+    {
+        /* Non-root items can be toggled: */
+        connect(this, &UIChooserItemGroup::sigToggleStarted,
+                model(), &UIChooserModel::sigToggleStarted);
+        connect(this, &UIChooserItemGroup::sigToggleFinished,
+                model(), &UIChooserModel::sigToggleFinished,
+                Qt::QueuedConnection);
+        /* Non-root items requires pixmap updates: */
+        connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
+                this, &UIChooserItemGroup::sltHandleWindowRemapped);
+    }
+}
+
+void UIChooserItemGroup::cleanup()
+{
+    /* Delete group name editor: */
+    delete m_pNameEditorWidget;
+    m_pNameEditorWidget = 0;
+
+    /* Delete all the items: */
+    clearItems();
+
+    /* If that item is focused: */
+    if (model()->focusItem() == this)
+    {
+        /* Unset the focus: */
+        model()->setFocusItem(0);
+    }
+    /* If that item is in selection list: */
+    if (model()->currentItems().contains(this))
+    {
+        /* Remove item from the selection list: */
+        model()->removeFromCurrentItems(this);
+    }
+    /* If that item is in navigation list: */
+    if (model()->navigationList().contains(this))
+    {
+        /* Remove item from the navigation list: */
+        model()->removeFromNavigationList(this);
+    }
+
+    /* Remove item from the parent: */
+    if (parentItem())
+        parentItem()->removeItem(this);
 }
 
 QVariant UIChooserItemGroup::data(int iKey) const

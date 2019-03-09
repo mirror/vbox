@@ -250,6 +250,8 @@ private:
       * @{ */
         /** Prepares all. */
         void prepare();
+        /** Cleanups all. */
+        void cleanup();
     /** @} */
 
     /** @name Item stuff.
@@ -316,6 +318,13 @@ private:
 
     /** @name Item stuff.
       * @{ */
+        /** Holds the graphics scene reference. */
+        QGraphicsScene      *m_pScene;
+        /** Holds the copied chooser item reference. */
+        UIChooserItemGroup  *m_pItemToCopy;
+        /** Holds the item position. */
+        const int            m_iPosition;
+
         /** Holds the cached name. */
         QString  m_strName;
         /** Holds the cached description. */
