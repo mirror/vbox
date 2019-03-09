@@ -395,12 +395,16 @@ DECLINLINE(uint32_t) sf_access_permissions_to_vbox(int fAttr)
 #if 1
 # define TRACE()          LogFunc(("tracepoint\n"))
 # define SFLOGFLOW(aArgs) Log(aArgs)
+# define SFLOG2(aArgs)    Log2(aArgs)
+# define SFLOG3(aArgs)    Log3(aArgs)
 # ifdef LOG_ENABLED
 #  define SFLOG_ENABLED   1
 # endif
 #else
 # define TRACE()          RTLogBackdoorPrintf("%s: tracepoint\n", __FUNCTION__)
 # define SFLOGFLOW(aArgs) RTLogBackdoorPrintf aArgs
+# define SFLOG2(aArgs)    RTLogBackdoorPrintf aArgs
+# define SFLOG3(aArgs)    RTLogBackdoorPrintf aArgs
 # define SFLOG_ENABLED    1
 #endif
 

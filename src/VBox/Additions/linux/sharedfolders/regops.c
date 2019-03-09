@@ -1130,7 +1130,7 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
     size_t offPage0 = 0;
     int    rc       = 0;
 
-    Assert(iov_iter_count(iter) > 0);
+    Assert(iov_iter_count(iter) + pStash->cb > 0);
     if (!(iter->type & ITER_KVEC)) {
         /*
          * Do we have a stashed page?
@@ -1148,9 +1148,12 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
                 *poffPage0 = offPage0;
                 *pcbChunk  = cbChunk;
                 *pcPages   = cPages;
+                SFLOGFLOW(("vbsf_iter_lock_pages: returns %d - cPages=%#zx offPage0=%#zx cbChunk=%zx (stashed)\n",
+                           rc, cPages, offPage0, cbChunk));
                 return 0;
             }
             cMaxPages -= 1;
+            SFLOG3(("vbsf_iter_lock_pages: Picked up stashed page: %#zx LB %#zx\n", offPage0, cbChunk));
         } else {
 # if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
             /*
@@ -1177,6 +1180,7 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
                     cbChunk    = (size_t)cbSegRet;
                     cPages     = RT_ALIGN_Z(offPage0 + cbSegRet, PAGE_SIZE) >> PAGE_SHIFT;
                     cMaxPages -= cPages;
+                    SFLOG3(("vbsf_iter_lock_pages: iov_iter_get_pages -> %#zx @ %#zx; %#zx pages [first]\n", cbSegRet, offPage0, cPages));
                     if (   cMaxPages == 0
                         || ((offPage0 + (size_t)cbSegRet) & PAGE_OFFSET_MASK))
                         break;
@@ -1199,11 +1203,12 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
                 cbSegRet = iov_iter_get_pages(iter, &papPages[cPages], iov_iter_count(iter), 1, &offPgProbe);
                 if (cbSegRet > 0) {
                     iov_iter_advance(iter, cbSegRet); /** @todo maybe not do this if we stash the page? */
-                    Assert(cbSegRet <= PAGE_SIZE);
+                    Assert(offPgProbe + cbSegRet <= PAGE_SIZE);
                     if (offPgProbe == 0) {
                         cbChunk   += cbSegRet;
                         cPages    += 1;
                         cMaxPages -= 1;
+                        SFLOG3(("vbsf_iter_lock_pages: iov_iter_get_pages(1) -> %#zx @ %#zx\n", cbSegRet, offPgProbe));
                         if (   cMaxPages == 0
                             || cbSegRet != PAGE_SIZE)
                             break;
@@ -1215,11 +1220,12 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
                         if (cbSeg > 0) {
                             cbSegRet = iov_iter_get_pages(iter, &papPages[cPages], iov_iter_count(iter), cMaxPages, &offPgProbe);
                             if (cbSegRet > 0) {
-                                size_t const cSegsRet = RT_ALIGN_Z((size_t)cbSegRet, PAGE_SIZE) >> PAGE_SHIFT;
+                                size_t const cPgRet = RT_ALIGN_Z((size_t)cbSegRet, PAGE_SIZE) >> PAGE_SHIFT;
                                 Assert(offPgProbe == 0);
                                 iov_iter_advance(iter, cbSegRet);
-                                cPages    += cSegsRet;
-                                cMaxPages -= cSegsRet;
+                                SFLOG3(("vbsf_iter_lock_pages: iov_iter_get_pages() -> %#zx; %#zx pages\n", cbSegRet, cPgRet));
+                                cPages    += cPgRet;
+                                cMaxPages -= cPgRet;
                                 cbChunk   += cbSegRet;
                                 if (   cMaxPages == 0
                                     || ((size_t)cbSegRet & PAGE_OFFSET_MASK))
@@ -1233,9 +1239,10 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
                     } else {
                         /* The segment didn't start at a page boundrary, so stash it for
                            the next round: */
+                        SFLOGFLOW(("vbsf_iter_lock_pages: iov_iter_get_pages(1) -> %#zx @ %#zx; stashed\n", cbSegRet, offPgProbe));
                         Assert(papPages[cPages]);
                         pStash->pPage = papPages[cPages];
-                        pStash->off   = offPage0;
+                        pStash->off   = offPgProbe;
                         pStash->cb    = cbSegRet;
                         break;
                     }
@@ -1315,6 +1322,7 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
     *poffPage0 = offPage0;
     *pcbChunk  = cbChunk;
     *pcPages   = cPages;
+    SFLOGFLOW(("vbsf_iter_lock_pages: returns %d - cPages=%#zx offPage0=%#zx cbChunk=%zx\n", rc, cPages, offPage0, cbChunk));
     return rc;
 }
 
@@ -1365,11 +1373,12 @@ DECLINLINE(void) vbsf_iter_cleanup_stash(struct iov_iter *iter, struct vbsf_iter
 static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
 {
     size_t cPages;
-    if (iter->type & (ITER_IOVEC | ITER_KVEC)) {
+    if (iter_is_iovec(iter) || (iter->type & ITER_KVEC)) {
         const struct iovec *pCurIov    = iter->iov;
         size_t              cLeft      = iter->nr_segs;
         size_t              cPagesSpan = 0;
 
+        /* iovect and kvec are identical, except for the __user tagging of iov_base. */
         AssertCompileMembersSameSizeAndOffset(struct iovec, iov_base, struct kvec, iov_base);
         AssertCompileMembersSameSizeAndOffset(struct iovec, iov_len,  struct kvec, iov_len);
         AssertCompile(sizeof(struct iovec) == sizeof(struct kvec));
@@ -1386,6 +1395,7 @@ static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
                 if ((offPage0 + cbSegLeft) & PAGE_OFFSET_MASK)
                     cPagesSpan = 0;
             }
+            SFLOGFLOW(("vbsf_iter: seg[0]= %p LB %#zx\n", pCurIov->iov_base, pCurIov->iov_len));
             pCurIov++;
             cLeft--;
         }
@@ -1416,6 +1426,7 @@ static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
                     }
                 }
             }
+            SFLOGFLOW(("vbsf_iter: seg[%u]= %p LB %#zx\n", iter->nr_segs - cLeft, pCurIov->iov_base, pCurIov->iov_len));
             pCurIov++;
         }
         if (cPagesSpan > cPages)
@@ -1426,6 +1437,7 @@ static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
         size_t cSegs = iter->type & ITER_BVEC ? RT_MAX(1, iter->nr_segs) : 1;
         cPages = (iov_iter_count(iter) + (PAGE_SIZE * 2 - 2) * cSegs) >> PAGE_SHIFT;
     }
+    SFLOGFLOW(("vbsf_iter_max_span_of_pages: returns %#zx\n", cPages));
     return cPages;
 }
 
