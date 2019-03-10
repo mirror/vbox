@@ -55,7 +55,7 @@
 
 #ifndef HAVE_PREADV_AND_PWRITEV
 
-# include "../../generic/fileio-sg-generic.cpp"
+# include "../../generic/fileio-sg-at-generic.cpp"
 
 #else /* HAVE_PREADV_AND_PWRITEV - rest of the file */
 
