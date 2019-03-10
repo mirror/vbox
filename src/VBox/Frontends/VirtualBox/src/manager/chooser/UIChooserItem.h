@@ -80,8 +80,6 @@ public:
       * @param  iHoveredValue  Brings hovered value for hovering animation. */
     UIChooserItem(UIChooserItem *pParent, UIChooserNode *pNode,
                   int iDefaultValue = 100, int iHoveredValue = 90);
-    /** Destructs item. */
-    virtual ~UIChooserItem() /* override */;
 
     /** @name Item stuff.
       * @{ */
@@ -119,6 +117,9 @@ public:
         /** Defines whether item is @a fFavorite. */
         virtual void setFavorite(bool fFavorite);
 
+        /** Returns item position. */
+        int position() const;
+
         /** Returns a level of item. */
         int level() const;
         /** Defines a @a iLevel of item. */
@@ -144,25 +145,13 @@ public:
 
     /** @name Children stuff.
       * @{ */
-        /** Returns whether there are children items of certain @a enmType. */
-        virtual bool hasItems(UIChooserItemType enmType = UIChooserItemType_Any) const = 0;
         /** Returns children items of certain @a enmType. */
         virtual QList<UIChooserItem*> items(UIChooserItemType enmType = UIChooserItemType_Any) const = 0;
-
-        /** Replaces children @a items of certain @a enmType. */
-        virtual void setItems(const QList<UIChooserItem*> &items, UIChooserItemType enmType) = 0;
-        /** Clears children items of certain @a enmType. */
-        virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) = 0;
 
         /** Adds possible @a fFavorite child @a pItem to certain @a iPosition. */
         virtual void addItem(UIChooserItem *pItem, bool fFavorite, int iPosition) = 0;
         /** Removes child @a pItem. */
         virtual void removeItem(UIChooserItem *pItem) = 0;
-
-        /** Updates all children items with specified @a uId. */
-        virtual void updateAllItems(const QUuid &uId) = 0;
-        /** Removes all children items with specified @a uId. */
-        virtual void removeAllItems(const QUuid &uId) = 0;
 
         /** Searches for a first child item answering to specified @a strSearchTag and @a iItemSearchFlags. */
         virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags) = 0;

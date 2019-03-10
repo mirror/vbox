@@ -40,6 +40,7 @@ class UIChooser;
 class UIChooserHandlerMouse;
 class UIChooserHandlerKeyboard;
 class UIChooserItem;
+class UIChooserNode;
 class UIVirtualMachineItem;
 class CMachine;
 
@@ -187,6 +188,9 @@ public:
 
     /** @name Children stuff.
       * @{ */
+        /** Returns invisible root node instance. */
+        UIChooserNode *invisibleRoot() const;
+
         /** Returns the root instance. */
         UIChooserItem *root() const;
 
@@ -315,8 +319,6 @@ private:
         void prepare();
         /** Prepares scene. */
         void prepareScene();
-        /** Prepares root. */
-        void prepareRoot();
         /** Prepares lookup. */
         void prepareLookup();
         /** Prepares context-menu. */
@@ -336,8 +338,6 @@ private:
         void cleanupContextMenu();
         /** Cleanups lookup. */
         void cleanupLookup();
-        /** Cleanups root. */
-        void cleanupRoot();
         /** Cleanups scene. */
         void cleanupScene();
         /** Cleanups all. */
@@ -366,31 +366,34 @@ private:
 
     /** @name Children stuff.
       * @{ */
-        /** Loads group tree. */
-        void loadGroupTree();
+        /** Loads tree. */
+        void loadTree();
         /** Adds machine item based on certain @a comMachine and optionally @a fMakeItVisible. */
         void addMachineIntoTheTree(const CMachine &comMachine, bool fMakeItVisible = false);
-        /** Acquires group item, creates one if necessary.
+        /** Acquires group node, creates one if necessary.
           * @param  strName           Brings the name of group we looking for.
-          * @param  pParentItem       Brings the parent we starting to look for a group from.
+          * @param  pParentNode       Brings the parent we starting to look for a group from.
           * @param  fAllGroupsOpened  Brings whether we should open all the groups till the required one. */
-        UIChooserItem *getGroupItem(const QString &strName, UIChooserItem *pParentItem, bool fAllGroupsOpened);
+        UIChooserNode *getGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened);
         /** Returns whether group with certain @a strName should be opened, searching starting from the passed @a pParentItem. */
-        bool shouldBeGroupOpened(UIChooserItem *pParentItem, const QString &strName);
+        bool shouldBeGroupOpened(UIChooserNode *pParentNode, const QString &strName);
 
         /** Wipes out empty groups starting from @a pParentItem. */
-        void wipeOutEmptyGroups(UIChooserItem *pParentItem);
+        void wipeOutEmptyGroups(UIChooserNode *pParentNode);
 
-        /** Returns whether global item within the @a pParentItem is favorite. */
-        bool isGlobalItemFavorite(UIChooserItem *pParentItem) const;
+        /** Returns whether global node within the @a pParentNode is favorite. */
+        bool isGlobalNodeFavorite(UIChooserNode *pParentNode) const;
 
-        /** Acquires desired position for a child of @a pParentItem with specified @a enmType and @a strName. */
-        int getDesiredPosition(UIChooserItem *pParentItem, UIChooserItemType enmType, const QString &strName);
-        /** Acquires saved position for a child of @a pParentItem with specified @a enmType and @a strName. */
-        int positionFromDefinitions(UIChooserItem *pParentItem, UIChooserItemType enmType, const QString &strName);
+        /** Acquires desired position for a child of @a pParentNode with specified @a enmType and @a strName. */
+        int getDesiredPosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName);
+        /** Acquires saved position for a child of @a pParentNode with specified @a enmType and @a strName. */
+        int positionFromDefinitions(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName);
 
-        /** Creates machine item based on certain @a comMachine as a child of specified @a pParentItem. */
-        void createMachineItem(UIChooserItem *pParentItem, const CMachine &comMachine);
+        /** Creates machine node based on certain @a comMachine as a child of specified @a pParentNode. */
+        void createMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine);
+
+        /** Build tree for main root. */
+        void buildTreeForMainRoot();
 
         /** Removes machine @a items. */
         void removeItems(const QList<UIChooserItem*> &items);
@@ -411,9 +414,9 @@ private:
         void saveGroupOrders();
 
         /** Gathers group @a definitions of @a pParentGroup. */
-        void gatherGroupDefinitions(QMap<QString, QStringList> &definitions, UIChooserItem *pParentGroup);
+        void gatherGroupDefinitions(QMap<QString, QStringList> &definitions, UIChooserNode *pParentGroup);
         /** Gathers group @a orders of @a pParentGroup. */
-        void gatherGroupOrders(QMap<QString, QStringList> &orders, UIChooserItem *pParentItem);
+        void gatherGroupOrders(QMap<QString, QStringList> &orders, UIChooserNode *pParentItem);
 
         /** Makes sure group definitions saving is finished. */
         void makeSureGroupDefinitionsSaveIsFinished();
@@ -454,6 +457,9 @@ private:
 
     /** @name Children stuff.
       * @{ */
+        /** Holds the invisible root node instance. */
+        UIChooserNode  *m_pInvisibleRootNode;
+
         /** Holds the root instance. */
         QPointer<UIChooserItem>  m_pRoot;
 

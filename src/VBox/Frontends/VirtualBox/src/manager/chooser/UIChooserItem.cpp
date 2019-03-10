@@ -295,11 +295,6 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, UIChooserNode *pNode,
     }
 }
 
-UIChooserItem::~UIChooserItem()
-{
-    delete node();
-}
-
 UIChooserItemGroup *UIChooserItem::toGroupItem()
 {
     UIChooserItemGroup *pItem = qgraphicsitem_cast<UIChooserItemGroup*>(this);
@@ -368,6 +363,11 @@ void UIChooserItem::setFavorite(bool fFavorite)
     node()->setFavorite(fFavorite);
     if (m_pParent)
         m_pParent->toGroupItem()->updateFavorites();
+}
+
+int UIChooserItem::position() const
+{
+    return node()->position();
 }
 
 int UIChooserItem::level() const

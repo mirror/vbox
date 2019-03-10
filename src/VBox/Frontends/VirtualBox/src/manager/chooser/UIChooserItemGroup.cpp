@@ -37,21 +37,15 @@
 #include "UIGraphicsScrollArea.h"
 #include "UIIconPool.h"
 #include "UIVirtualBoxManager.h"
-#include "UIVirtualMachineItem.h"
 
 
 /*********************************************************************************************************************************
 *   Class UIChooserItemGroup implementation.                                                                                     *
 *********************************************************************************************************************************/
 
-UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
-    : UIChooserItem(0, new UIChooserNodeGroup(0 /* parent */,
-                                              false /* favorite? */,
-                                              QString() /* name */,
-                                              true /* opened? */))
+UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene, UIChooserNodeGroup *pNode)
+    : UIChooserItem(0, pNode)
     , m_pScene(pScene)
-    , m_pItemToCopy(0)
-    , m_iPosition(0)
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
     , m_pToggleButton(0)
@@ -70,45 +64,9 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
     prepare();
 }
 
-UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
-                                       const QString &strName,
-                                       bool fOpened /* = false */,
-                                       int iPosition /* = -1 */)
-    : UIChooserItem(pParent, new UIChooserNodeGroup(pParent->node(),
-                                                    pParent->isFavorite(),
-                                                    strName,
-                                                    fOpened))
+UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent, UIChooserNodeGroup *pNode)
+    : UIChooserItem(pParent, pNode)
     , m_pScene(0)
-    , m_pItemToCopy(0)
-    , m_iPosition(iPosition)
-    , m_iAdditionalHeight(0)
-    , m_iHeaderDarkness(110)
-    , m_pToggleButton(0)
-    , m_pEnterButton(0)
-    , m_pExitButton(0)
-    , m_pNameEditorWidget(0)
-    , m_pContainerFavorite(0)
-    , m_pLayoutFavorite(0)
-    , m_pScrollArea(0)
-    , m_pContainer(0)
-    , m_pLayout(0)
-    , m_pLayoutGlobal(0)
-    , m_pLayoutGroup(0)
-    , m_pLayoutMachine(0)
-{
-    prepare();
-}
-
-UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
-                                       UIChooserItemGroup *pCopiedItem,
-                                       int iPosition /* = -1 */)
-    : UIChooserItem(pParent, new UIChooserNodeGroup(pParent->node(),
-                                                    pParent->isFavorite(),
-                                                    pCopiedItem->name(),
-                                                    pCopiedItem->isOpened()))
-    , m_pScene(0)
-    , m_pItemToCopy(pCopiedItem)
-    , m_iPosition(iPosition)
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
     , m_pToggleButton(0)
@@ -383,22 +341,6 @@ void UIChooserItemGroup::installEventFilterHelper(QObject *pSource)
     pSource->installEventFilter(m_pScrollArea);
 }
 
-bool UIChooserItemGroup::hasItems(UIChooserItemType type /* = UIChooserItemType_Any */) const
-{
-    switch (type)
-    {
-        case UIChooserItemType_Any:
-            return hasItems(UIChooserItemType_Global) || hasItems(UIChooserItemType_Group) || hasItems(UIChooserItemType_Machine);
-        case UIChooserItemType_Global:
-            return !m_globalItems.isEmpty();
-        case UIChooserItemType_Group:
-            return !m_groupItems.isEmpty();
-        case UIChooserItemType_Machine:
-            return !m_machineItems.isEmpty();
-    }
-    return false;
-}
-
 QList<UIChooserItem*> UIChooserItemGroup::items(UIChooserItemType type /* = UIChooserItemType_Any */) const
 {
     switch (type)
@@ -410,62 +352,6 @@ QList<UIChooserItem*> UIChooserItemGroup::items(UIChooserItemType type /* = UICh
         default: break;
     }
     return QList<UIChooserItem*>();
-}
-
-void UIChooserItemGroup::setItems(const QList<UIChooserItem*> &items, UIChooserItemType type)
-{
-    /* Check item type: */
-    switch (type)
-    {
-        case UIChooserItemType_Global: m_globalItems = items; break;
-        case UIChooserItemType_Group: m_groupItems = items; break;
-        case UIChooserItemType_Machine: m_machineItems = items; break;
-        default: AssertMsgFailed(("Invalid item type!")); break;
-    }
-
-    /* Update linked values: */
-    updateLayoutSpacings();
-    updateItemCountInfo();
-    updateToolTip();
-    updateGeometry();
-}
-
-void UIChooserItemGroup::clearItems(UIChooserItemType type /* = UIChooserItemType_Any */)
-{
-    switch (type)
-    {
-        case UIChooserItemType_Any:
-        {
-            clearItems(UIChooserItemType_Global);
-            clearItems(UIChooserItemType_Group);
-            clearItems(UIChooserItemType_Machine);
-            break;
-        }
-        case UIChooserItemType_Global:
-        {
-            while (!m_globalItems.isEmpty()) { delete m_globalItems.last(); }
-            AssertMsg(m_globalItems.isEmpty(), ("Global items cleanup failed!"));
-            break;
-        }
-        case UIChooserItemType_Group:
-        {
-            while (!m_groupItems.isEmpty()) { delete m_groupItems.last(); }
-            AssertMsg(m_groupItems.isEmpty(), ("Group items cleanup failed!"));
-            break;
-        }
-        case UIChooserItemType_Machine:
-        {
-            while (!m_machineItems.isEmpty()) { delete m_machineItems.last(); }
-            AssertMsg(m_machineItems.isEmpty(), ("Machine items cleanup failed!"));
-            break;
-        }
-    }
-
-    /* Update linked values: */
-    updateLayoutSpacings();
-    updateItemCountInfo();
-    updateToolTip();
-    updateGeometry();
 }
 
 void UIChooserItemGroup::addItem(UIChooserItem *pItem, bool fFavorite, int iPosition)
@@ -575,23 +461,6 @@ void UIChooserItemGroup::removeItem(UIChooserItem *pItem)
     updateGeometry();
 }
 
-void UIChooserItemGroup::updateAllItems(const QUuid &uId)
-{
-    /* Update all the required items recursively: */
-    foreach (UIChooserItem *pItem, items())
-        pItem->updateAllItems(uId);
-
-    /* Update item finally: */
-    updateItem();
-}
-
-void UIChooserItemGroup::removeAllItems(const QUuid &uId)
-{
-    /* Remove all the required items recursively: */
-    foreach (UIChooserItem *pItem, items())
-        pItem->removeAllItems(uId);
-}
-
 UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, int iItemSearchFlags)
 {
     /* Are we searching among group-items? */
@@ -631,11 +500,11 @@ UIChooserItem* UIChooserItemGroup::searchForItem(const QString &strSearchTag, in
 UIChooserItem *UIChooserItemGroup::firstMachineItem()
 {
     /* If this group-item have at least one machine-item: */
-    if (hasItems(UIChooserItemType_Machine))
+    if (node()->hasNodes(UIChooserItemType_Machine))
         /* Return the first machine-item: */
         return items(UIChooserItemType_Machine).first()->firstMachineItem();
     /* If this group-item have at least one group-item: */
-    else if (hasItems(UIChooserItemType_Group))
+    else if (node()->hasNodes(UIChooserItemType_Group))
         /* Return the first machine-item of the first group-item: */
         return items(UIChooserItemType_Group).first()->firstMachineItem();
     /* Found nothing? */
@@ -644,6 +513,9 @@ UIChooserItem *UIChooserItemGroup::firstMachineItem()
 
 void UIChooserItemGroup::sortItems()
 {
+    /// @todo implement manual sorting
+
+#if 0
     /* Sort group-items: */
     QMap<QString, UIChooserItem*> sorter;
     foreach (UIChooserItem *pItem, items(UIChooserItemType_Group))
@@ -655,6 +527,7 @@ void UIChooserItemGroup::sortItems()
     foreach (UIChooserItem *pItem, items(UIChooserItemType_Machine))
         sorter.insert(pItem->name().toLower(), pItem);
     setItems(sorter.values(), UIChooserItemType_Machine);
+#endif
 
     /* Update model: */
     model()->updateNavigation();
@@ -919,7 +792,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 /* Get passed group-item: */
                 const UIChooserItemMimeData *pCastedMime = qobject_cast<const UIChooserItemMimeData*>(pMime);
                 AssertMsg(pCastedMime, ("Can't cast passed mime-data to UIChooserItemMimeData!"));
-                UIChooserItem *pItem = pCastedMime->item();
+                UIChooserNode *pNode = pCastedMime->item()->node();
 
                 /* Check if we have position information: */
                 int iPosition = m_groupItems.size();
@@ -936,7 +809,8 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 }
 
                 /* Copy passed group-item into this group: */
-                UIChooserItem *pNewGroupItem = new UIChooserItemGroup(this, pItem->toGroupItem(), iPosition);
+                UIChooserNodeGroup *pNewGroupNode = new UIChooserNodeGroup(node(), pNode->toGroupNode(), iPosition);
+                UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(this, pNewGroupNode);
                 if (isClosed())
                     open(false);
 
@@ -944,7 +818,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 if (pEvent->proposedAction() == Qt::MoveAction)
                 {
                     /* Delete passed item: */
-                    delete pItem;
+                    delete pNode;
                 }
 
                 /* Update model: */
@@ -972,7 +846,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 /* Get passed machine-item: */
                 const UIChooserItemMimeData *pCastedMime = qobject_cast<const UIChooserItemMimeData*>(pMime);
                 AssertMsg(pCastedMime, ("Can't cast passed mime-data to UIChooserItemMimeData!"));
-                UIChooserItem *pItem = pCastedMime->item();
+                UIChooserNode *pNode = pCastedMime->item()->node();
 
                 /* Check if we have position information: */
                 int iPosition = m_machineItems.size();
@@ -989,7 +863,8 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 }
 
                 /* Copy passed machine-item into this group: */
-                UIChooserItem *pNewMachineItem = new UIChooserItemMachine(this, pItem->toMachineItem(), iPosition);
+                UIChooserNodeMachine *pNewMachineNode = new UIChooserNodeMachine(node(), pNode->toMachineNode(), iPosition);
+                UIChooserItemMachine *pNewMachineItem = new UIChooserItemMachine(this, pNewMachineNode);
                 if (isClosed())
                     open(false);
 
@@ -997,7 +872,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 if (pEvent->proposedAction() == Qt::MoveAction)
                 {
                     /* Delete passed item: */
-                    delete pItem;
+                    delete pNode;
                 }
 
                 /* Update model: */
@@ -1264,14 +1139,13 @@ void UIChooserItemGroup::prepare()
     /* Add item to the parent instead (if passed),
      * it will be added to the scene indirectly: */
     else if (parentItem())
-        parentItem()->addItem(this, isFavorite(), m_iPosition);
+        parentItem()->addItem(this, isFavorite(), position());
     /* Otherwise sombody forgot to pass scene or parent. */
     else
         AssertFailedReturnVoid();
 
-    /* Copy item contents if any: */
-    if (m_pItemToCopy)
-        copyContent(m_pItemToCopy, this);
+    /* Copy contents: */
+    copyContents(node()->toGroupNode());
 
     /* Apply language settings: */
     retranslateUi();
@@ -1309,7 +1183,9 @@ void UIChooserItemGroup::cleanup()
     m_pNameEditorWidget = 0;
 
     /* Delete all the items: */
-    clearItems();
+    while (!m_groupItems.isEmpty()) { delete m_groupItems.last(); }
+    while (!m_globalItems.isEmpty()) { delete m_globalItems.last(); }
+    while (!m_machineItems.isEmpty()) { delete m_machineItems.last(); }
 
     /* If that item is focused: */
     if (model()->focusItem() == this)
@@ -1388,18 +1264,14 @@ void UIChooserItemGroup::updateToggleButtonToolTip()
     m_pToggleButton->setToolTip(isOpened() ? tr("Collapse group") : tr("Expand group"));
 }
 
-/* static */
-void UIChooserItemGroup::copyContent(UIChooserItemGroup *pFrom, UIChooserItemGroup *pTo)
+void UIChooserItemGroup::copyContents(UIChooserNodeGroup *pCopyFrom)
 {
-    /* Copy group-items: */
-    foreach (UIChooserItem *pGroupItem, pFrom->items(UIChooserItemType_Group))
-        new UIChooserItemGroup(pTo, pGroupItem->toGroupItem());
-    /* Copy global-items: */
-    foreach (UIChooserItem *pGlobalItem, pFrom->items(UIChooserItemType_Global))
-        new UIChooserItemGlobal(pTo, pGlobalItem->toGlobalItem());
-    /* Copy machine-items: */
-    foreach (UIChooserItem *pMachineItem, pFrom->items(UIChooserItemType_Machine))
-        new UIChooserItemMachine(pTo, pMachineItem->toMachineItem());
+    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserItemType_Group))
+        new UIChooserItemGroup(this, pNode->toGroupNode());
+    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserItemType_Global))
+        new UIChooserItemGlobal(this, pNode->toGlobalNode());
+    foreach (UIChooserNode *pNode, pCopyFrom->nodes(UIChooserItemType_Machine))
+        new UIChooserItemMachine(this, pNode->toMachineNode());
 }
 
 bool UIChooserItemGroup::isContainsMachine(const QUuid &uId) const
@@ -1477,7 +1349,7 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
     if (isRoot())
     {
         /* Main root-item always takes body into account: */
-        if (hasItems())
+        if (node()->hasNodes())
         {
             /* We have to take maximum children width into account: */
             iProposedWidth = qMax(m_pContainerFavorite->minimumSizeHint().width(),
@@ -1519,7 +1391,7 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
     if (isRoot())
     {
         /* Main root-item always takes body into account: */
-        if (hasItems())
+        if (node()->hasNodes())
         {
             /* We have to take maximum children height into account: */
             iProposedHeight += m_pContainerFavorite->minimumSizeHint().height();

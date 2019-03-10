@@ -49,6 +49,8 @@ public:
     /** Constructs chooser node passing @a pParent to the base-class.
       * @param  fFavorite  Brings whether the node is favorite. */
     UIChooserNode(UIChooserNode *pParent = 0, bool fFavorite = false);
+    /** Destructs chooser node. */
+    virtual ~UIChooserNode() /* override */;
 
     /** Returns RTTI node type. */
     virtual UIChooserItemType type() const = 0;
@@ -78,6 +80,26 @@ public:
     virtual QString description() const = 0;
     /** Returns item definition. */
     virtual QString definition() const = 0;
+
+    /** Returns whether there are children of certain @a enmType. */
+    virtual bool hasNodes(UIChooserItemType enmType = UIChooserItemType_Any) const = 0;
+    /** Returns a list of nodes of certain @a enmType. */
+    virtual QList<UIChooserNode*> nodes(UIChooserItemType enmType = UIChooserItemType_Any) const = 0;
+
+    /** Adds passed @a pNode to specified @a iPosition. */
+    virtual void addNode(UIChooserNode *pNode, int iPosition) = 0;
+    /** Removes passed @a pNode. */
+    virtual void removeNode(UIChooserNode *pNode) = 0;
+
+    /** Removes all children with specified @a uId recursively. */
+    virtual void removeAllNodes(const QUuid &uId) = 0;
+    /** Updates all children with specified @a uId recursively. */
+    virtual void updateAllNodes(const QUuid &uId) = 0;
+
+    /** Returns node position. */
+    int position();
+    /** Returns position of specified node inside this one. */
+    virtual int positionOf(UIChooserNode *pNode) = 0;
 
     /** Defines linked @a pItem. */
     void setItem(UIChooserItem *pItem) { m_pItem = pItem; }

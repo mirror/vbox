@@ -24,6 +24,9 @@
 /* GUI includes: */
 #include "UIChooserItem.h"
 
+/* Forward declarations: */
+class UIChooserNodeGlobal;
+
 
 /** UIChooserItem extension implementing global item. */
 class UIChooserItemGlobal : public UIChooserItem
@@ -35,10 +38,8 @@ public:
     /** RTTI required for qgraphicsitem_cast. */
     enum { Type = UIChooserItemType_Global };
 
-    /** Constructs possible @a fFavorite item with specified @a iPosition, passing @a pParent to the base-class. */
-    UIChooserItemGlobal(UIChooserItem *pParent, bool fFavorite, int iPosition = -1);
-    /** Constructs possible @a fFavorite copy of @a pCopiedItem with specified @a iPosition, passing @a pParent to the base-class. */
-    UIChooserItemGlobal(UIChooserItem *pParent, bool fFavorite, UIChooserItemGlobal *pCopiedItem, int iPosition = -1);
+    /** Build item for certain @a pNode, passing @a pParent to the base-class. */
+    UIChooserItemGlobal(UIChooserItem *pParent, UIChooserNodeGlobal *pNode);
     /** Destructs global item. */
     virtual ~UIChooserItemGlobal() /* override */;
 
@@ -97,25 +98,13 @@ protected:
 
     /** @name Children stuff.
       * @{ */
-        /** Returns whether there are children items of certain @a enmType. */
-        virtual bool hasItems(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
         /** Returns children items of certain @a enmType. */
         virtual QList<UIChooserItem*> items(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
-
-        /** Replaces children @a items of certain @a enmType. */
-        virtual void setItems(const QList<UIChooserItem*> &items, UIChooserItemType enmType) /* override */;
-        /** Clears children items of certain @a enmType. */
-        virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) /* override */;
 
         /** Adds possible @a fFavorite child @a pItem to certain @a iPosition. */
         virtual void addItem(UIChooserItem *pItem, bool fFavorite, int iPosition) /* override */;
         /** Removes child @a pItem. */
         virtual void removeItem(UIChooserItem *pItem) /* override */;
-
-        /** Updates all children items with specified @a uId. */
-        virtual void updateAllItems(const QUuid &uId) /* override */;
-        /** Removes all children items with specified @a uId. */
-        virtual void removeAllItems(const QUuid &uId) /* override */;
 
         /** Searches for a first child item answering to specified @a strSearchTag and @a iItemSearchFlags. */
         virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags) /* override */;
@@ -227,9 +216,6 @@ private:
 
     /** @name Item stuff.
       * @{ */
-        /** Holds initial item position. */
-        const int  m_iPosition;
-
         /** Holds item minimum default lightness. */
         int  m_iDefaultLightnessMin;
         /** Holds item maximum default lightness. */

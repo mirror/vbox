@@ -36,6 +36,7 @@
 #include "UIChooserModel.h"
 #include "UIChooserNode.h"
 #include "UIChooserNodeGroup.h"
+#include "UIChooserNodeGlobal.h"
 #include "UIChooserNodeMachine.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
@@ -65,6 +66,7 @@ UIChooserModel:: UIChooserModel(UIChooser *pParent)
     , m_pContextMenuGlobal(0)
     , m_pContextMenuGroup(0)
     , m_pContextMenuMachine(0)
+    , m_pInvisibleRootNode(0)
     , m_iScrollingTokenSize(30)
     , m_fIsScrollingInProgress(false)
     , m_pLookupTimer(0)
@@ -79,12 +81,11 @@ UIChooserModel::~UIChooserModel()
 
 void UIChooserModel::init()
 {
-    /* Install root as event-filter for scene view,
-     * we need QEvent::Scroll events from it: */
-    root()->installEventFilterHelper(scene()->views()[0]);
+    /* Load tree: */
+    loadTree();
 
-    /* Load group tree: */
-    loadGroupTree();
+    /* Build tree for main root: */
+    buildTreeForMainRoot();
     updateNavigation();
     updateLayout();
 
@@ -106,6 +107,13 @@ void UIChooserModel::deinit()
     /* Make sure all saving steps complete: */
     makeSureGroupDefinitionsSaveIsFinished();
     makeSureGroupOrdersSaveIsFinished();
+
+    /* Unset current items: */
+    unsetCurrentItems();
+
+    /* Delete tree: */
+    delete m_pInvisibleRootNode;
+    m_pInvisibleRootNode = 0;
 }
 
 UIChooser *UIChooserModel::chooser() const
@@ -287,7 +295,7 @@ UIVirtualMachineItem *UIChooserModel::currentMachineItem() const
 {
     /* Return first machine-item of the current-item: */
     return   currentItem() && currentItem()->firstMachineItem() && currentItem()->firstMachineItem()->node()
-           ? currentItem()->firstMachineItem()->toMachineItem()->node()->toMachineNode()
+           ? currentItem()->firstMachineItem()->node()->toMachineNode()
            : 0;
 }
 
@@ -442,6 +450,11 @@ void UIChooserModel::updateNavigation()
     m_navigationList = createNavigationList(root());
 }
 
+UIChooserNode *UIChooserModel::invisibleRoot() const
+{
+    return m_pInvisibleRootNode;
+}
+
 UIChooserItem *UIChooserModel::root() const
 {
     return m_pRoot.data();
@@ -454,7 +467,7 @@ void UIChooserModel::startEditingGroupItemName()
 
 void UIChooserModel::wipeOutEmptyGroups()
 {
-    wipeOutEmptyGroups(root());
+    wipeOutEmptyGroups(invisibleRoot());
 }
 
 void UIChooserModel::activateMachineItem()
@@ -662,14 +675,14 @@ bool UIChooserModel::eventFilter(QObject *pWatched, QEvent *pEvent)
 
 void UIChooserModel::sltMachineStateChanged(const QUuid &uId, const KMachineState)
 {
-    /* Update machine-items with passed id: */
-    root()->updateAllItems(uId);
+    /* Update machine-nodes with passed id: */
+    invisibleRoot()->updateAllNodes(uId);
 }
 
 void UIChooserModel::sltMachineDataChanged(const QUuid &uId)
 {
-    /* Update machine-items with passed id: */
-    root()->updateAllItems(uId);
+    /* Update machine-nodes with passed id: */
+    invisibleRoot()->updateAllNodes(uId);
 }
 
 void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegistered)
@@ -684,7 +697,8 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
             /* Add new machine-item: */
             addMachineIntoTheTree(comMachine, true /* make it visible */);
 
-            /* And update model: */
+            /* Rebuild tree for main root: */
+            buildTreeForMainRoot();
             updateNavigation();
             updateLayout();
 
@@ -698,11 +712,12 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
     else
     {
         /* Remove machine-items with passed id: */
-        root()->removeAllItems(uId.toString());
-        /* Update model: */
+        invisibleRoot()->removeAllNodes(uId.toString());
+        /* Wipe out empty groups: */
         wipeOutEmptyGroups();
 
-        /* And update model: */
+        /* Rebuild tree for main root: */
+        buildTreeForMainRoot();
         updateNavigation();
         updateLayout();
 
@@ -719,14 +734,14 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
 
 void UIChooserModel::sltSessionStateChanged(const QUuid &uId, const KSessionState)
 {
-    /* Update machine-items with passed id: */
-    root()->updateAllItems(uId);
+    /* Update machine-nodes with passed id: */
+    invisibleRoot()->updateAllNodes(uId);
 }
 
 void UIChooserModel::sltSnapshotChanged(const QUuid &uId, const QUuid &)
 {
-    /* Update machine-items with passed id: */
-    root()->updateAllItems(uId);
+    /* Update machine-nodes with passed id: */
+    invisibleRoot()->updateAllNodes(uId);
 }
 
 void UIChooserModel::sltFocusItemDestroyed()
@@ -773,33 +788,35 @@ void UIChooserModel::sltUngroupSelectedGroup()
 
     /* Check if we have collisions with our siblings: */
     UIChooserItem *pFocusItem = focusItem();
+    UIChooserNode *pFocusNode = pFocusItem->node();
     UIChooserItem *pParentItem = pFocusItem->parentItem();
-    QList<UIChooserItem*> siblings = pParentItem->items();
-    QList<UIChooserItem*> toBeRenamed;
-    QList<UIChooserItem*> toBeRemoved;
-    foreach (UIChooserItem *pItem, pFocusItem->items())
+    UIChooserNode *pParentNode = pParentItem->node();
+    QList<UIChooserNode*> siblings = pParentNode->nodes();
+    QList<UIChooserNode*> toBeRenamed;
+    QList<UIChooserNode*> toBeRemoved;
+    foreach (UIChooserNode *pNode, pFocusNode->nodes())
     {
-        QString strItemName = pItem->name();
-        UIChooserItem *pCollisionSibling = 0;
-        foreach (UIChooserItem *pSibling, siblings)
-            if (pSibling != pFocusItem && pSibling->name() == strItemName)
+        QString strItemName = pNode->name();
+        UIChooserNode *pCollisionSibling = 0;
+        foreach (UIChooserNode *pSibling, siblings)
+            if (pSibling != pFocusNode && pSibling->name() == strItemName)
                 pCollisionSibling = pSibling;
         if (pCollisionSibling)
         {
-            if (pItem->type() == UIChooserItemType_Machine)
+            if (pNode->type() == UIChooserItemType_Machine)
             {
                 if (pCollisionSibling->type() == UIChooserItemType_Machine)
-                    toBeRemoved << pItem;
+                    toBeRemoved << pNode;
                 else if (pCollisionSibling->type() == UIChooserItemType_Group)
                 {
-                    msgCenter().cannotResolveCollisionAutomatically(strItemName, pParentItem->name());
+                    msgCenter().cannotResolveCollisionAutomatically(strItemName, pParentNode->name());
                     return;
                 }
             }
-            else if (pItem->type() == UIChooserItemType_Group)
+            else if (pNode->type() == UIChooserItemType_Group)
             {
-                if (msgCenter().confirmAutomaticCollisionResolve(strItemName, pParentItem->name()))
-                    toBeRenamed << pItem;
+                if (msgCenter().confirmAutomaticCollisionResolve(strItemName, pParentNode->name()))
+                    toBeRenamed << pNode;
                 else
                     return;
             }
@@ -808,23 +825,29 @@ void UIChooserModel::sltUngroupSelectedGroup()
 
     /* Copy all the children into our parent: */
     QList<UIChooserItem*> copiedItems;
-    foreach (UIChooserItem *pItem, pFocusItem->items())
+    foreach (UIChooserNode *pNode, pFocusNode->nodes())
     {
-        if (toBeRemoved.contains(pItem))
+        if (toBeRemoved.contains(pNode))
             continue;
-        switch (pItem->type())
+        switch (pNode->type())
         {
             case UIChooserItemType_Group:
             {
-                UIChooserItemGroup *pGroupItem = new UIChooserItemGroup(pParentItem, pItem->toGroupItem());
-                if (toBeRenamed.contains(pItem))
-                    pGroupItem->node()->toGroupNode() ->setName(uniqueGroupName(pParentItem));
+                UIChooserNodeGroup *pGroupNode = new UIChooserNodeGroup(pParentNode,
+                                                                        pNode->toGroupNode(),
+                                                                        pParentNode->nodes().size());
+                UIChooserItemGroup *pGroupItem = new UIChooserItemGroup(pParentItem, pGroupNode);
+                if (toBeRenamed.contains(pNode))
+                    pGroupNode->setName(uniqueGroupName(pParentItem));
                 copiedItems << pGroupItem;
                 break;
             }
             case UIChooserItemType_Machine:
             {
-                UIChooserItemMachine *pMachineItem = new UIChooserItemMachine(pParentItem, pItem->toMachineItem());
+                UIChooserNodeMachine *pMachineNode = new UIChooserNodeMachine(pParentNode,
+                                                                              pNode->toMachineNode(),
+                                                                              pParentNode->nodes().size());
+                UIChooserItemMachine *pMachineItem = new UIChooserItemMachine(pParentItem, pMachineNode);
                 copiedItems << pMachineItem;
                 break;
             }
@@ -834,7 +857,7 @@ void UIChooserModel::sltUngroupSelectedGroup()
     }
 
     /* Delete focus group: */
-    delete focusItem();
+    delete pFocusNode;
 
     /* Notify about selection invalidated: */
     emit sigSelectionInvalidated();
@@ -896,8 +919,13 @@ void UIChooserModel::sltGroupSelectedMachines()
     if (!actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup)->isEnabled())
         return;
 
-    /* Create new group item in the current root: */
-    UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(root(), uniqueGroupName(root()), true);
+    /* Create new group node in the current root: */
+    UIChooserNodeGroup *pNewGroupNode = new UIChooserNodeGroup(invisibleRoot(),
+                                                               false /* favorite */,
+                                                               invisibleRoot()->nodes().size() /* position */,
+                                                               uniqueGroupName(root()),
+                                                               true /* opened */);
+    UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(root(), pNewGroupNode);
 
     /* Enumerate all the currently chosen items: */
     QStringList busyGroupNames;
@@ -916,8 +944,11 @@ void UIChooserModel::sltGroupSelectedMachines()
                 /* Add name to busy: */
                 busyGroupNames << pItem->name();
                 /* Copy or move group-item: */
-                new UIChooserItemGroup(pNewGroupItem, pItem->toGroupItem());
-                delete pItem;
+                UIChooserNodeGroup *pNewGroupSubNode = new UIChooserNodeGroup(pNewGroupNode,
+                                                                              pItem->node()->toGroupNode(),
+                                                                              pNewGroupNode->nodes().size());
+                new UIChooserItemGroup(pNewGroupItem, pNewGroupSubNode);
+                delete pItem->node();
                 break;
             }
             case UIChooserItemType_Machine:
@@ -928,8 +959,11 @@ void UIChooserModel::sltGroupSelectedMachines()
                 /* Add name to busy: */
                 busyMachineNames << pItem->name();
                 /* Copy or move machine-item: */
-                new UIChooserItemMachine(pNewGroupItem, pItem->toMachineItem());
-                delete pItem;
+                UIChooserNodeMachine *pNewMachineSubNode = new UIChooserNodeMachine(pNewGroupNode,
+                                                                                    pItem->node()->toMachineNode(),
+                                                                                    pNewGroupNode->nodes().size());
+                new UIChooserItemMachine(pNewGroupItem, pNewMachineSubNode);
+                delete pItem->node();
                 break;
             }
         }
@@ -945,8 +979,8 @@ void UIChooserModel::sltGroupSelectedMachines()
 
 void UIChooserModel::sltReloadMachine(const QUuid &uId)
 {
-    /* Remove all the items first: */
-    root()->removeAllItems(uId);
+    /* Remove all the nodes first: */
+    invisibleRoot()->removeAllNodes(uId);
     /* Wipe out empty groups: */
     wipeOutEmptyGroups();
 
@@ -957,7 +991,8 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
         /* Add new machine-item: */
         addMachineIntoTheTree(comMachine);
 
-        /* And update model: */
+        /* Rebuild tree for main root: */
+        buildTreeForMainRoot();
         updateNavigation();
         updateLayout();
 
@@ -1173,9 +1208,6 @@ void UIChooserModel::prepare()
     /* Prepare scene: */
     prepareScene();
 
-    /* Prepare root: */
-    prepareRoot();
-
     /* Prepare lookup: */
     prepareLookup();
 
@@ -1194,11 +1226,6 @@ void UIChooserModel::prepareScene()
     m_pScene = new QGraphicsScene(this);
     if (m_pScene)
         m_pScene->installEventFilter(this);
-}
-
-void UIChooserModel::prepareRoot()
-{
-    m_pRoot = new UIChooserItemGroup(scene());
 }
 
 void UIChooserModel::prepareLookup()
@@ -1417,12 +1444,6 @@ void UIChooserModel::cleanupLookup()
     m_pLookupTimer = 0;
 }
 
-void UIChooserModel::cleanupRoot()
-{
-    delete root();
-    m_pRoot.clear();
-}
-
 void UIChooserModel::cleanupScene()
 {
     delete m_pScene;
@@ -1439,9 +1460,6 @@ void UIChooserModel::cleanup()
 
     /* Cleanup lookup: */
     cleanupLookup();
-
-    /* Cleanup root: */
-    cleanupRoot();
 
     /* Cleanup scene: */
     cleanupScene();
@@ -1593,17 +1611,23 @@ QList<UIChooserItem*> UIChooserModel::createNavigationList(UIChooserItem *pItem)
     return navigationItems;
 }
 
-void UIChooserModel::loadGroupTree()
+void UIChooserModel::loadTree()
 {
-    /* Make sure root exists: */
-    if (root())
+    /* Create invisible root group node: */
+    m_pInvisibleRootNode = new UIChooserNodeGroup(0 /* parent */,
+                                                  false /* favorite */,
+                                                  0 /* position */,
+                                                  QString() /* name */,
+                                                  true /* opened */);
+    if (invisibleRoot())
     {
-        /* Create global item: */
-        new UIChooserItemGlobal(root(),
-                                isGlobalItemFavorite(root()),
-                                0);
+        /* Create global node: */
+        new UIChooserNodeGlobal(m_pInvisibleRootNode,
+                                isGlobalNodeFavorite(m_pInvisibleRootNode),
+                                0 /* position */,
+                                QString() /* tip */);
 
-        /* Add all the approved machine items into the tree: */
+        /* Add all the approved machine nodes into the tree: */
         LogRelFlow(("UIChooserModel: Loading VMs...\n"));
         foreach (const CMachine &comMachine, vboxGlobal().virtualBox().GetMachines())
         {
@@ -1645,7 +1669,7 @@ void UIChooserModel::addMachineIntoTheTree(const CMachine &comMachine, bool fMak
             /* Create machine-item with found group-item as parent: */
             LogRelFlow(("UIChooserModel:   Creating item for VM {%s} in group {%s}.\n", strName.toUtf8().constData(),
                                                                                         strGroup.toUtf8().constData()));
-            createMachineItem(getGroupItem(strGroup, root(), fMakeItVisible), comMachine);
+            createMachineNode(getGroupNode(strGroup, invisibleRoot(), fMakeItVisible), comMachine);
         }
         /* Update group definitions: */
         m_groups[toOldStyleUuid(comMachine.GetId())] = groupList;
@@ -1656,15 +1680,15 @@ void UIChooserModel::addMachineIntoTheTree(const CMachine &comMachine, bool fMak
         /* VM is accessible: */
         LogRelFlow(("UIChooserModel:  VM {%s} is inaccessible.\n", toOldStyleUuid(comMachine.GetId()).toUtf8().constData()));
         /* Create machine-item with main-root group-item as parent: */
-        createMachineItem(root(), comMachine);
+        createMachineNode(invisibleRoot(), comMachine);
     }
 }
 
-UIChooserItem *UIChooserModel::getGroupItem(const QString &strName, UIChooserItem *pParentItem, bool fAllGroupsOpened)
+UIChooserNode *UIChooserModel::getGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened)
 {
     /* Check passed stuff: */
-    if (pParentItem->name() == strName)
-        return pParentItem;
+    if (pParentNode->name() == strName)
+        return pParentNode;
 
     /* Prepare variables: */
     const QString strFirstSubName = strName.section('/', 0, 0);
@@ -1673,39 +1697,38 @@ UIChooserItem *UIChooserModel::getGroupItem(const QString &strName, UIChooserIte
     const QString strSecondSuffix = strFirstSuffix.section('/', 1, -1);
 
     /* Passed group name equal to first sub-name: */
-    if (pParentItem->name() == strFirstSubName)
+    if (pParentNode->name() == strFirstSubName)
     {
         /* Make sure first-suffix is NOT empty: */
         AssertMsg(!strFirstSuffix.isEmpty(), ("Invalid group name!"));
-        /* Trying to get group-item among our children: */
-        foreach (UIChooserItem *pGroupItem, pParentItem->items(UIChooserItemType_Group))
+        /* Trying to get group node among our children: */
+        foreach (UIChooserNode *pGroupNode, pParentNode->nodes(UIChooserItemType_Group))
         {
-            if (pGroupItem->name() == strSecondSubName)
+            if (pGroupNode->name() == strSecondSubName)
             {
-                UIChooserItem *pFoundItem = getGroupItem(strFirstSuffix, pGroupItem, fAllGroupsOpened);
-                if (UIChooserItemGroup *pFoundGroupItem = pFoundItem->toGroupItem())
-                    if (fAllGroupsOpened && pFoundGroupItem->isClosed())
-                        pFoundGroupItem->open(false);
-                return pFoundItem;
+                UIChooserNode *pFoundNode = getGroupNode(strFirstSuffix, pGroupNode, fAllGroupsOpened);
+                if (UIChooserNodeGroup *pFoundGroupNode = pFoundNode->toGroupNode())
+                    if (fAllGroupsOpened && pFoundGroupNode->isClosed())
+                        pFoundGroupNode->open();
+                return pFoundNode;
             }
         }
     }
 
     /* Found nothing? Creating: */
-    UIChooserItemGroup *pNewGroupItem =
-        new UIChooserItemGroup(/* Parent item and desired group name: */
-                               pParentItem, strSecondSubName,
-                               /* Should be new group opened when created? */
-                               fAllGroupsOpened || shouldBeGroupOpened(pParentItem, strSecondSubName),
-                               /* Which position new group-item should be placed in? */
-                               getDesiredPosition(pParentItem, UIChooserItemType_Group, strSecondSubName));
-    return strSecondSuffix.isEmpty() ? pNewGroupItem : getGroupItem(strFirstSuffix, pNewGroupItem, fAllGroupsOpened);
+    UIChooserNodeGroup *pNewGroupNode =
+        new UIChooserNodeGroup(pParentNode,
+                               false /* favorite */,
+                               getDesiredPosition(pParentNode, UIChooserItemType_Group, strSecondSubName),
+                               strSecondSubName,
+                               fAllGroupsOpened || shouldBeGroupOpened(pParentNode, strSecondSubName));
+    return strSecondSuffix.isEmpty() ? pNewGroupNode : getGroupNode(strFirstSuffix, pNewGroupNode, fAllGroupsOpened);
 }
 
-bool UIChooserModel::shouldBeGroupOpened(UIChooserItem *pParentItem, const QString &strName)
+bool UIChooserModel::shouldBeGroupOpened(UIChooserNode *pParentNode, const QString &strName)
 {
     /* Read group definitions: */
-    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentItem->fullName());
+    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
     /* Return 'false' if no definitions found: */
     if (definitions.isEmpty())
         return false;
@@ -1730,13 +1753,13 @@ bool UIChooserModel::shouldBeGroupOpened(UIChooserItem *pParentItem, const QStri
     return false;
 }
 
-void UIChooserModel::wipeOutEmptyGroups(UIChooserItem *pParent)
+void UIChooserModel::wipeOutEmptyGroups(UIChooserNode *pParent)
 {
     /* Cleanup all the group-items recursively first: */
-    foreach (UIChooserItem *pItem, pParent->items(UIChooserItemType_Group))
-        wipeOutEmptyGroups(pItem);
-    /* If parent has no items: */
-    if (!pParent->hasItems())
+    foreach (UIChooserNode *pNode, pParent->nodes(UIChooserItemType_Group))
+        wipeOutEmptyGroups(pNode);
+    /* If parent has no nodes: */
+    if (!pParent->hasNodes())
     {
         /* If that is non-root item: */
         if (!pParent->isRoot())
@@ -1747,10 +1770,24 @@ void UIChooserModel::wipeOutEmptyGroups(UIChooserItem *pParent)
     }
 }
 
-bool UIChooserModel::isGlobalItemFavorite(UIChooserItem *pParentItem) const
+void UIChooserModel::buildTreeForMainRoot()
+{
+    /* Cleanup previous tree if exists: */
+    delete m_pRoot;
+    m_pRoot = 0;
+
+    /* Build whole tree for invisible root item: */
+    m_pRoot = new UIChooserItemGroup(scene(), invisibleRoot()->toGroupNode());
+
+    /* Install root as event-filter for scene view,
+     * we need QEvent::Scroll events from it: */
+    root()->installEventFilterHelper(scene()->views()[0]);
+}
+
+bool UIChooserModel::isGlobalNodeFavorite(UIChooserNode *pParentNode) const
 {
     /* Read group definitions: */
-    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentItem->fullName());
+    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
     /* Return 'false' if no definitions found: */
     if (definitions.isEmpty())
         return false;
@@ -1775,49 +1812,49 @@ bool UIChooserModel::isGlobalItemFavorite(UIChooserItem *pParentItem) const
     return false;
 }
 
-int UIChooserModel::getDesiredPosition(UIChooserItem *pParentItem, UIChooserItemType enmType, const QString &strName)
+int UIChooserModel::getDesiredPosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName)
 {
     /* End of list (by default)? */
-    int iNewItemDesiredPosition = -1;
-    /* Which position should be new item placed by definitions: */
-    int iNewItemDefinitionPosition = positionFromDefinitions(pParentItem, enmType, strName);
+    int iNewNodeDesiredPosition = -1;
+    /* Which position should be new node placed by definitions: */
+    int iNewNodeDefinitionPosition = positionFromDefinitions(pParentNode, enmType, strName);
     /* If some position wanted: */
-    if (iNewItemDefinitionPosition != -1)
+    if (iNewNodeDefinitionPosition != -1)
     {
         /* Start of list if some definition present: */
-        iNewItemDesiredPosition = 0;
-        /* We have to check all the existing item positions: */
-        QList<UIChooserItem*> items = pParentItem->items(enmType);
-        for (int i = items.size() - 1; i >= 0; --i)
+        iNewNodeDesiredPosition = 0;
+        /* We have to check all the existing node positions: */
+        QList<UIChooserNode*> nodes = pParentNode->nodes(enmType);
+        for (int i = nodes.size() - 1; i >= 0; --i)
         {
-            /* Get current item: */
-            UIChooserItem *pItem = items[i];
-            /* Which position should be current item placed by definitions? */
-            QString strDefinitionName = pItem->type() == UIChooserItemType_Group ? pItem->name() :
-                                        pItem->type() == UIChooserItemType_Machine ? toOldStyleUuid(pItem->toMachineItem()->id()) :
+            /* Get current node: */
+            UIChooserNode *pNode = nodes[i];
+            /* Which position should be current node placed by definitions? */
+            QString strDefinitionName = pNode->type() == UIChooserItemType_Group ? pNode->name() :
+                                        pNode->type() == UIChooserItemType_Machine ? toOldStyleUuid(pNode->toMachineNode()->id()) :
                                         QString();
             AssertMsg(!strDefinitionName.isEmpty(), ("Wrong definition name!"));
-            int iItemDefinitionPosition = positionFromDefinitions(pParentItem, enmType, strDefinitionName);
+            int iNodeDefinitionPosition = positionFromDefinitions(pParentNode, enmType, strDefinitionName);
             /* If some position wanted: */
-            if (iItemDefinitionPosition != -1)
+            if (iNodeDefinitionPosition != -1)
             {
-                AssertMsg(iItemDefinitionPosition != iNewItemDefinitionPosition, ("Incorrect definitions!"));
-                if (iItemDefinitionPosition < iNewItemDefinitionPosition)
+                AssertMsg(iNodeDefinitionPosition != iNewNodeDefinitionPosition, ("Incorrect definitions!"));
+                if (iNodeDefinitionPosition < iNewNodeDefinitionPosition)
                 {
-                    iNewItemDesiredPosition = i + 1;
+                    iNewNodeDesiredPosition = i + 1;
                     break;
                 }
             }
         }
     }
-    /* Return desired item position: */
-    return iNewItemDesiredPosition;
+    /* Return desired node position: */
+    return iNewNodeDesiredPosition;
 }
 
-int UIChooserModel::positionFromDefinitions(UIChooserItem *pParentItem, UIChooserItemType enmType, const QString &strName)
+int UIChooserModel::positionFromDefinitions(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName)
 {
     /* Read group definitions: */
-    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentItem->fullName());
+    const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
     /* Return 'false' if no definitions found: */
     if (definitions.isEmpty())
         return -1;
@@ -1858,17 +1895,17 @@ int UIChooserModel::positionFromDefinitions(UIChooserItem *pParentItem, UIChoose
     return -1;
 }
 
-void UIChooserModel::createMachineItem(UIChooserItem *pParentItem, const CMachine &comMachine)
+void UIChooserModel::createMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine)
 {
-    /* Create machine item: */
-    new UIChooserItemMachine(pParentItem,
-                             comMachine,
-                             getDesiredPosition(pParentItem, UIChooserItemType_Machine, toOldStyleUuid(comMachine.GetId())));
+    /* Create machine node: */
+    new UIChooserNodeMachine(pParentNode,
+                             false /* favorite */,
+                             getDesiredPosition(pParentNode, UIChooserItemType_Machine, toOldStyleUuid(comMachine.GetId())),
+                             comMachine);
 }
 
 void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
 {
-
     /* Confirm machine-items removal: */
     QStringList names;
     foreach (UIChooserItem *pItem, itemsToRemove)
@@ -1876,9 +1913,9 @@ void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
     if (!msgCenter().confirmMachineItemRemoval(names))
         return;
 
-    /* Remove all the passed items: */
+    /* Remove all the passed nodes: */
     foreach (UIChooserItem *pItem, itemsToRemove)
-        delete pItem;
+        delete pItem->node();
 
     /* And update model: */
     wipeOutEmptyGroups();
@@ -2004,7 +2041,7 @@ void UIChooserModel::saveGroupDefinitions()
 
     /* Prepare full group map: */
     QMap<QString, QStringList> groups;
-    gatherGroupDefinitions(groups, root());
+    gatherGroupDefinitions(groups, invisibleRoot());
 
     /* Save information in other thread: */
     UIThreadGroupDefinitionSave::prepare();
@@ -2024,7 +2061,7 @@ void UIChooserModel::saveGroupOrders()
 
     /* Prepare full group map: */
     QMap<QString, QStringList> groups;
-    gatherGroupOrders(groups, root());
+    gatherGroupOrders(groups, invisibleRoot());
 
     /* Save information in other thread: */
     UIThreadGroupOrderSave::prepare();
@@ -2034,39 +2071,39 @@ void UIChooserModel::saveGroupOrders()
 }
 
 void UIChooserModel::gatherGroupDefinitions(QMap<QString, QStringList> &definitions,
-                                            UIChooserItem *pParentGroup)
+                                            UIChooserNode *pParentGroup)
 {
-    /* Iterate over all the machine-items: */
-    foreach (UIChooserItem *pItem, pParentGroup->items(UIChooserItemType_Machine))
-        if (UIChooserItemMachine *pMachineItem = pItem->toMachineItem())
-            if (pMachineItem->accessible())
-                definitions[toOldStyleUuid(pMachineItem->id())] << pParentGroup->fullName();
-    /* Iterate over all the group-items: */
-    foreach (UIChooserItem *pItem, pParentGroup->items(UIChooserItemType_Group))
-        gatherGroupDefinitions(definitions, pItem);
+    /* Iterate over all the machine-nodes: */
+    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Machine))
+        if (UIChooserNodeMachine *pMachineNode = pNode->toMachineNode())
+            if (pMachineNode->accessible())
+                definitions[toOldStyleUuid(pMachineNode->id())] << pParentGroup->fullName();
+    /* Iterate over all the group-nodes: */
+    foreach (UIChooserNode *pNode, pParentGroup->nodes(UIChooserItemType_Group))
+        gatherGroupDefinitions(definitions, pNode);
 }
 
 void UIChooserModel::gatherGroupOrders(QMap<QString, QStringList> &orders,
-                                       UIChooserItem *pParentItem)
+                                       UIChooserNode *pParentItem)
 {
     /* Prepare extra-data key for current group: */
     const QString strExtraDataKey = pParentItem->fullName();
-    /* Iterate over all the global-items: */
-    foreach (UIChooserItem *pItem, pParentItem->items(UIChooserItemType_Global))
+    /* Iterate over all the global-nodes: */
+    foreach (UIChooserNode *pNode, pParentItem->nodes(UIChooserItemType_Global))
     {
-        const QString strGlobalDescriptor(pItem->isFavorite() ? "nf" : "n");
+        const QString strGlobalDescriptor(pNode->isFavorite() ? "nf" : "n");
         orders[strExtraDataKey] << QString("%1=GLOBAL").arg(strGlobalDescriptor);
     }
-    /* Iterate over all the group-items: */
-    foreach (UIChooserItem *pItem, pParentItem->items(UIChooserItemType_Group))
+    /* Iterate over all the group-nodes: */
+    foreach (UIChooserNode *pNode, pParentItem->nodes(UIChooserItemType_Group))
     {
-        const QString strGroupDescriptor(pItem->toGroupItem()->isOpened() ? "go" : "gc");
-        orders[strExtraDataKey] << QString("%1=%2").arg(strGroupDescriptor, pItem->name());
-        gatherGroupOrders(orders, pItem);
+        const QString strGroupDescriptor(pNode->toGroupNode()->isOpened() ? "go" : "gc");
+        orders[strExtraDataKey] << QString("%1=%2").arg(strGroupDescriptor, pNode->name());
+        gatherGroupOrders(orders, pNode);
     }
-    /* Iterate over all the machine-items: */
-    foreach (UIChooserItem *pItem, pParentItem->items(UIChooserItemType_Machine))
-        orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pItem->toMachineItem()->id()));
+    /* Iterate over all the machine-nodes: */
+    foreach (UIChooserNode *pNode, pParentItem->nodes(UIChooserItemType_Machine))
+        orders[strExtraDataKey] << QString("m=%1").arg(toOldStyleUuid(pNode->toMachineNode()->id()));
 }
 
 void UIChooserModel::makeSureGroupDefinitionsSaveIsFinished()

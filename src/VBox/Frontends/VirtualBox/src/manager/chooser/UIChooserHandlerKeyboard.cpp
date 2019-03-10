@@ -322,6 +322,11 @@ bool UIChooserHandlerKeyboard::handleKeyRelease(QKeyEvent*) const
 
 void UIChooserHandlerKeyboard::shift(UIItemShiftDirection direction, UIItemShiftSize size) const
 {
+    Q_UNUSED(direction);
+    Q_UNUSED(size);
+    /// @todo implement item shifting
+
+#if 0
     /* Get focus-item and his parent: */
     UIChooserItem *pFocusItem = model()->focusItem();
     UIChooserItem *pParentItem = pFocusItem->parentItem();
@@ -371,5 +376,6 @@ void UIChooserHandlerKeyboard::shift(UIItemShiftDirection direction, UIItemShift
     /* Update model: */
     model()->updateNavigation();
     model()->updateLayout();
+#endif
 }
 

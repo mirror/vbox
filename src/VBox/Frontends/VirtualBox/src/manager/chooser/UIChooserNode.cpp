@@ -29,6 +29,12 @@ UIChooserNode::UIChooserNode(UIChooserNode *pParent /* = 0 */, bool fFavorite /*
 {
 }
 
+UIChooserNode::~UIChooserNode()
+{
+    if (!m_pItem.isNull())
+        delete m_pItem.data();
+}
+
 UIChooserNodeGroup *UIChooserNode::toGroupNode()
 {
     return static_cast<UIChooserNodeGroup*>(this);
@@ -42,4 +48,9 @@ UIChooserNodeGlobal *UIChooserNode::toGlobalNode()
 UIChooserNodeMachine *UIChooserNode::toMachineNode()
 {
     return static_cast<UIChooserNodeMachine*>(this);
+}
+
+int UIChooserNode::position()
+{
+    return parentNode() ? parentNode()->positionOf(this) : 0;
 }

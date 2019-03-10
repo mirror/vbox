@@ -15,20 +15,38 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Qt includes */
-//#include <QUuid>
-
 /* GUI includes: */
 #include "UIChooserNodeMachine.h"
 
 
 UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
                                            bool fFavorite,
+                                           int  iPosition,
                                            const CMachine &comMachine)
     : UIChooserNode(pParent, fFavorite)
     , UIVirtualMachineItem(comMachine)
 {
+    if (parentNode())
+        parentNode()->addNode(this, iPosition);
     retranslateUi();
+}
+
+UIChooserNodeMachine::UIChooserNodeMachine(UIChooserNode *pParent,
+                                           UIChooserNodeMachine *pCopyFrom,
+                                           int iPosition)
+    : UIChooserNode(pParent, pCopyFrom->isFavorite())
+    , UIVirtualMachineItem(pCopyFrom->machine())
+{
+    if (parentNode())
+        parentNode()->addNode(this, iPosition);
+    retranslateUi();
+}
+
+UIChooserNodeMachine::~UIChooserNodeMachine()
+{
+    delete item();
+    if (parentNode())
+        parentNode()->removeNode(this);
 }
 
 QString UIChooserNodeMachine::name() const
@@ -55,6 +73,61 @@ QString UIChooserNodeMachine::description() const
 QString UIChooserNodeMachine::definition() const
 {
     return QString("m=%1").arg(name());
+}
+
+bool UIChooserNodeMachine::hasNodes(UIChooserItemType enmType) const
+{
+    Q_UNUSED(enmType);
+    AssertFailedReturn(false);
+}
+
+QList<UIChooserNode*> UIChooserNodeMachine::nodes(UIChooserItemType enmType) const
+{
+    Q_UNUSED(enmType);
+    AssertFailedReturn(QList<UIChooserNode*>());
+}
+
+void UIChooserNodeMachine::addNode(UIChooserNode *pNode, int iPosition)
+{
+    Q_UNUSED(pNode);
+    Q_UNUSED(iPosition);
+    AssertFailedReturnVoid();
+}
+
+void UIChooserNodeMachine::removeNode(UIChooserNode *pNode)
+{
+    Q_UNUSED(pNode);
+    AssertFailedReturnVoid();
+}
+
+void UIChooserNodeMachine::removeAllNodes(const QUuid &uId)
+{
+    /* Skip other ids: */
+    if (id() != uId)
+        return;
+
+    /* Remove this node: */
+    delete this;
+}
+
+void UIChooserNodeMachine::updateAllNodes(const QUuid &uId)
+{
+    /* Skip other ids: */
+    if (id() != uId)
+        return;
+
+    /* Update machine-node: */
+    recache();
+
+    /* Update machine-item: */
+    if (item())
+        item()->updateItem();
+}
+
+int UIChooserNodeMachine::positionOf(UIChooserNode *pNode)
+{
+    Q_UNUSED(pNode);
+    AssertFailedReturn(0);
 }
 
 void UIChooserNodeMachine::retranslateUi()

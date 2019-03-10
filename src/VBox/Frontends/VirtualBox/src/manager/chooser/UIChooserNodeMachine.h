@@ -35,10 +35,20 @@ public:
 
     /** Constructs chooser node passing @a pParent to the base-class.
       * @param  fFavorite   Brings whether the node is favorite.
+      * @param  iPosition   Brings the initial node position.
       * @param  comMachine  Brings COM machine object. */
     UIChooserNodeMachine(UIChooserNode *pParent,
                          bool fFavorite,
+                         int iPosition,
                          const CMachine &comMachine);
+    /** Constructs chooser node passing @a pParent to the base-class.
+      * @param  pCopyFrom  Brings the node to copy data from.
+      * @param  iPosition  Brings the initial node position. */
+    UIChooserNodeMachine(UIChooserNode *pParent,
+                         UIChooserNodeMachine *pCopyFrom,
+                         int iPosition);
+    /** Destructs chooser node. */
+    virtual ~UIChooserNodeMachine() /* override */;
 
     /** Returns RTTI node type. */
     virtual UIChooserItemType type() const /* override */ { return UIChooserItemType_Machine; }
@@ -51,6 +61,24 @@ public:
     virtual QString description() const /* override */;
     /** Returns item definition. */
     virtual QString definition() const /* override */;
+
+    /** Returns whether there are children of certain @a enmType. */
+    virtual bool hasNodes(UIChooserItemType enmType) const /* override */;
+    /** Returns a list of nodes of certain @a enmType. */
+    virtual QList<UIChooserNode*> nodes(UIChooserItemType enmType) const /* override */;
+
+    /** Adds passed @a pNode to specified @a iPosition. */
+    virtual void addNode(UIChooserNode *pNode, int iPosition) /* override */;
+    /** Removes passed @a pNode. */
+    virtual void removeNode(UIChooserNode *pNode) /* override */;
+
+    /** Removes all children with specified @a uId recursively. */
+    virtual void removeAllNodes(const QUuid &uId) /* override */;
+    /** Updates all children with specified @a uId recursively. */
+    virtual void updateAllNodes(const QUuid &uId) /* override */;
+
+    /** Returns position of specified node inside this one. */
+    virtual int positionOf(UIChooserNode *pNode) /* override */;
 
 protected:
 

@@ -26,6 +26,7 @@
 #include "UIChooserItemGroup.h"
 #include "UIChooserItemMachine.h"
 #include "UIChooserModel.h"
+#include "UIChooserNodeGroup.h"
 #include "UIChooserNodeMachine.h"
 #include "UIIconPool.h"
 #include "UIVirtualBoxManager.h"
@@ -34,31 +35,8 @@
 #include "iprt/cpp/utils.h"
 
 
-UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
-                                           const CMachine &comMachine,
-                                           int iPosition /* = -1 */)
-    : UIChooserItem(pParent, new UIChooserNodeMachine(pParent->node(), false /* favorite? */, comMachine), 0, 100)
-    , m_iPosition(iPosition)
-    , m_iDefaultLightnessMin(0)
-    , m_iDefaultLightnessMax(0)
-    , m_iHoverLightnessMin(0)
-    , m_iHoverLightnessMax(0)
-    , m_iHighlightLightnessMin(0)
-    , m_iHighlightLightnessMax(0)
-    , m_iFirstRowMaximumWidth(0)
-    , m_iMinimumNameWidth(0)
-    , m_iMaximumNameWidth(0)
-    , m_iMinimumSnapshotNameWidth(0)
-    , m_iMaximumSnapshotNameWidth(0)
-{
-    prepare();
-}
-
-UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
-                                           UIChooserItemMachine *pCopiedItem,
-                                           int iPosition /* = -1 */)
-    : UIChooserItem(pParent, new UIChooserNodeMachine(pParent->node(), false /* favorite? */, pCopiedItem->machine()), 0, 100)
-    , m_iPosition(iPosition)
+UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent, UIChooserNodeMachine *pNode)
+    : UIChooserItem(pParent, pNode, 0, 100)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
     , m_iHoverLightnessMin(0)
@@ -77,11 +55,6 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
 UIChooserItemMachine::~UIChooserItemMachine()
 {
     cleanup();
-}
-
-CMachine UIChooserItemMachine::machine() const
-{
-    return node()->toMachineNode()->machine();
 }
 
 QUuid UIChooserItemMachine::id() const
@@ -248,26 +221,10 @@ void UIChooserItemMachine::updateToolTip()
     setToolTip(node()->toMachineNode()->toolTipText());
 }
 
-bool UIChooserItemMachine::hasItems(UIChooserItemType) const
-{
-    AssertMsgFailed(("Machine graphics item do NOT support children!"));
-    return false;
-}
-
 QList<UIChooserItem*> UIChooserItemMachine::items(UIChooserItemType) const
 {
     AssertMsgFailed(("Machine graphics item do NOT support children!"));
     return QList<UIChooserItem*>();
-}
-
-void UIChooserItemMachine::setItems(const QList<UIChooserItem*>&, UIChooserItemType)
-{
-    AssertMsgFailed(("Machine graphics item do NOT support children!"));
-}
-
-void UIChooserItemMachine::clearItems(UIChooserItemType)
-{
-    AssertMsgFailed(("Machine graphics item do NOT support children!"));
 }
 
 void UIChooserItemMachine::addItem(UIChooserItem*, bool, int)
@@ -278,33 +235,6 @@ void UIChooserItemMachine::addItem(UIChooserItem*, bool, int)
 void UIChooserItemMachine::removeItem(UIChooserItem*)
 {
     AssertMsgFailed(("Machine graphics item do NOT support children!"));
-}
-
-void UIChooserItemMachine::updateAllItems(const QUuid &uId)
-{
-    /* Skip other ids: */
-    if (id() != QUuid(uId))
-        return;
-
-    /* Update item: */
-    updateItem();
-}
-
-void UIChooserItemMachine::removeAllItems(const QUuid &uId)
-{
-    /* Skip wrong id: */
-    if (id() != QUuid(uId))
-        return;
-
-    /* Exclude itself from the current items: */
-    if (model()->currentItems().contains(this))
-        model()->removeFromCurrentItems(this);
-    /* Move the focus item to the first available current after that: */
-    if (model()->focusItem() == this && !model()->currentItems().isEmpty())
-        model()->setFocusItem(model()->currentItems().first());
-
-    /* Remove item: */
-    delete this;
 }
 
 UIChooserItem* UIChooserItemMachine::searchForItem(const QString &strSearchTag, int iItemSearchFlags)
@@ -487,23 +417,32 @@ void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UICh
                 /* Get passed item: */
                 const UIChooserItemMimeData *pCastedMime = qobject_cast<const UIChooserItemMimeData*>(pMime);
                 AssertMsg(pCastedMime, ("Can't cast passed mime-data to UIChooserItemMimeData!"));
-                UIChooserItem *pItem = pCastedMime->item();
+                UIChooserNode *pNode = pCastedMime->item()->node();
 
                 /* Group passed item with current item into the new group: */
-                UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(parentItem(),
+                UIChooserNodeGroup *pNewGroupNode = new UIChooserNodeGroup(parentItem()->node(),
+                                                                           false /* favorite */,
+                                                                           parentItem()->node()->nodes().size(),
                                                                            UIChooserModel::uniqueGroupName(parentItem()),
-                                                                           true);
-                new UIChooserItemMachine(pNewGroupItem, this);
-                new UIChooserItemMachine(pNewGroupItem, pItem->toMachineItem());
+                                                                           true /* true */);
+                UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(parentItem(), pNewGroupNode);
+                UIChooserNodeMachine *pNewMachineNode1 = new UIChooserNodeMachine(pNewGroupNode,
+                                                                                  node()->toMachineNode(),
+                                                                                  pNewGroupNode->nodes().size());
+                new UIChooserItemMachine(pNewGroupItem, pNewMachineNode1);
+                UIChooserNodeMachine *pNewMachineNode2 = new UIChooserNodeMachine(pNewGroupNode,
+                                                                                  pNode->toMachineNode(),
+                                                                                  pNewGroupNode->nodes().size());
+                new UIChooserItemMachine(pNewGroupItem, pNewMachineNode2);
 
                 /* If proposed action is 'move': */
                 if (pEvent->proposedAction() == Qt::MoveAction)
                 {
-                    /* Delete passed item: */
-                    delete pItem;
+                    /* Delete passed node: */
+                    delete pNode;
                 }
-                /* Delete this item: */
-                delete this;
+                /* Delete this node: */
+                delete node();
 
                 /* Update model: */
                 pModel->wipeOutEmptyGroups();
@@ -575,7 +514,7 @@ void UIChooserItemMachine::prepare()
 
     /* Add item to the parent: */
     AssertPtrReturnVoid(parentItem());
-    parentItem()->addItem(this, isFavorite(), m_iPosition);
+    parentItem()->addItem(this, isFavorite(), position());
 
     /* Configure connections: */
     connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,

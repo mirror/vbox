@@ -24,10 +24,30 @@
 
 UIChooserNodeGlobal::UIChooserNodeGlobal(UIChooserNode *pParent,
                                          bool fFavorite,
+                                         int iPosition,
                                          const QString &)
     : UIChooserNode(pParent, fFavorite)
 {
+    if (parentNode())
+        parentNode()->addNode(this, iPosition);
     retranslateUi();
+}
+
+UIChooserNodeGlobal::UIChooserNodeGlobal(UIChooserNode *pParent,
+                                         UIChooserNodeGlobal *pCopyFrom,
+                                         int iPosition)
+    : UIChooserNode(pParent, pCopyFrom->isFavorite())
+{
+    if (parentNode())
+        parentNode()->addNode(this, iPosition);
+    retranslateUi();
+}
+
+UIChooserNodeGlobal::~UIChooserNodeGlobal()
+{
+    delete item();
+    if (parentNode())
+        parentNode()->removeNode(this);
 }
 
 QString UIChooserNodeGlobal::name() const
@@ -48,6 +68,50 @@ QString UIChooserNodeGlobal::description() const
 QString UIChooserNodeGlobal::definition() const
 {
     return QString("n=%1").arg("GLOBAL");
+}
+
+bool UIChooserNodeGlobal::hasNodes(UIChooserItemType enmType) const
+{
+    Q_UNUSED(enmType);
+    AssertFailedReturn(false);
+}
+
+QList<UIChooserNode*> UIChooserNodeGlobal::nodes(UIChooserItemType enmType) const
+{
+    Q_UNUSED(enmType);
+    AssertFailedReturn(QList<UIChooserNode*>());
+}
+
+void UIChooserNodeGlobal::addNode(UIChooserNode *pNode, int iPosition)
+{
+    Q_UNUSED(pNode);
+    Q_UNUSED(iPosition);
+    AssertFailedReturnVoid();
+}
+
+void UIChooserNodeGlobal::removeNode(UIChooserNode *pNode)
+{
+    Q_UNUSED(pNode);
+    AssertFailedReturnVoid();
+}
+
+void UIChooserNodeGlobal::removeAllNodes(const QUuid &)
+{
+    // Nothing to remove for global-node..
+}
+
+void UIChooserNodeGlobal::updateAllNodes(const QUuid &)
+{
+    // Nothing to update for global-node..
+
+    /* Update global-item: */
+    item()->updateItem();
+}
+
+int UIChooserNodeGlobal::positionOf(UIChooserNode *pNode)
+{
+    Q_UNUSED(pNode);
+    AssertFailedReturn(0);
 }
 
 void UIChooserNodeGlobal::retranslateUi()

@@ -32,11 +32,8 @@
 #include "iprt/cpp/utils.h"
 
 
-UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
-                                         bool fFavorite,
-                                         int iPosition /* = -1 */)
-    : UIChooserItem(pParent, new UIChooserNodeGlobal(pParent->node(), fFavorite, QString()), 0, 100)
-    , m_iPosition(iPosition)
+UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent, UIChooserNodeGlobal *pNode)
+    : UIChooserItem(pParent, pNode, 0, 100)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
     , m_iHoverLightnessMin(0)
@@ -46,25 +43,6 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
     , m_iMinimumNameWidth(0)
     , m_iMaximumNameWidth(0)
     , m_iHeightHint(0)
-{
-    prepare();
-}
-
-UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
-                                         bool fFavorite,
-                                         UIChooserItemGlobal *pCopiedItem,
-                                         int iPosition /* = -1 */)
-    : UIChooserItem(pParent, new UIChooserNodeGlobal(pParent->node(), fFavorite, QString()), 0, 100)
-    , m_iPosition(iPosition)
-    , m_iDefaultLightnessMin(0)
-    , m_iDefaultLightnessMax(0)
-    , m_iHoverLightnessMin(0)
-    , m_iHoverLightnessMax(0)
-    , m_iHighlightLightnessMin(0)
-    , m_iHighlightLightnessMax(0)
-    , m_iMinimumNameWidth(0)
-    , m_iMaximumNameWidth(0)
-    , m_iHeightHint(pCopiedItem->heightHint())
 {
     prepare();
 }
@@ -211,24 +189,9 @@ void UIChooserItemGlobal::updateToolTip()
     // Nothing for now..
 }
 
-bool UIChooserItemGlobal::hasItems(UIChooserItemType) const
-{
-    AssertMsgFailedReturn(("Global graphics item do NOT support children!"), false);
-}
-
 QList<UIChooserItem*> UIChooserItemGlobal::items(UIChooserItemType) const
 {
     AssertMsgFailedReturn(("Global graphics item do NOT support children!"), QList<UIChooserItem*>());
-}
-
-void UIChooserItemGlobal::setItems(const QList<UIChooserItem*> &, UIChooserItemType)
-{
-    AssertMsgFailed(("Global graphics item do NOT support children!"));
-}
-
-void UIChooserItemGlobal::clearItems(UIChooserItemType)
-{
-    AssertMsgFailed(("Global graphics item do NOT support children!"));
 }
 
 void UIChooserItemGlobal::addItem(UIChooserItem *, bool, int)
@@ -239,16 +202,6 @@ void UIChooserItemGlobal::addItem(UIChooserItem *, bool, int)
 void UIChooserItemGlobal::removeItem(UIChooserItem *)
 {
     AssertMsgFailed(("Global graphics item do NOT support children!"));
-}
-
-void UIChooserItemGlobal::updateAllItems(const QUuid &)
-{
-    updateItem();
-}
-
-void UIChooserItemGlobal::removeAllItems(const QUuid &)
-{
-    // Just do nothing ..
 }
 
 UIChooserItem *UIChooserItemGlobal::searchForItem(const QString &, int iItemSearchFlags)
@@ -402,7 +355,7 @@ void UIChooserItemGlobal::prepare()
 
     /* Add item to the parent: */
     AssertPtrReturnVoid(parentItem());
-    parentItem()->addItem(this, isFavorite(), m_iPosition);
+    parentItem()->addItem(this, isFavorite(), position());
 
     /* Configure connections: */
     connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,

@@ -27,6 +27,7 @@
 /* Forward declarations: */
 class QGraphicsLinearLayout;
 class QLineEdit;
+class UIChooserNodeGroup;
 class UIEditorGroupRename;
 class UIGraphicsButton;
 class UIGraphicsRotatorButton;
@@ -54,12 +55,10 @@ public:
     /** RTTI required for qgraphicsitem_cast. */
     enum { Type = UIChooserItemType_Group };
 
-    /** Constructs root item, passing pScene to the base-class. */
-    UIChooserItemGroup(QGraphicsScene *pScene);
-    /** Constructs non-root item with specified @a strName and @a iPosition, @a fOpened if requested, passing pParent to the base-class. */
-    UIChooserItemGroup(UIChooserItem *pParent, const QString &strName, bool fOpened = false, int iPosition  = -1);
-    /** Constructs a copy of non-root @a pCopiedItem with specified @a iPosition, passing pParent to the base-class. */
-    UIChooserItemGroup(UIChooserItem *pParent, UIChooserItemGroup *pCopiedItem, int iPosition = -1);
+    /** Build item for certain @a pNode, adding it directly to the @a pScene. */
+    UIChooserItemGroup(QGraphicsScene *pScene, UIChooserNodeGroup *pNode);
+    /** Build item for certain @a pNode, passing @a pParent to the base-class. */
+    UIChooserItemGroup(UIChooserItem *pParent, UIChooserNodeGroup *pNode);
     /** Destructs group item. */
     virtual ~UIChooserItemGroup() /* override */;
 
@@ -129,25 +128,13 @@ protected:
 
     /** @name Children stuff.
       * @{ */
-        /** Returns whether there are children items of certain @a enmType. */
-        virtual bool hasItems(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
         /** Returns children items of certain @a enmType. */
         virtual QList<UIChooserItem*> items(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
-
-        /** Replaces children @a items of certain @a enmType. */
-        virtual void setItems(const QList<UIChooserItem*> &items, UIChooserItemType enmType) /* override */;
-        /** Clears children items of certain @a enmType. */
-        virtual void clearItems(UIChooserItemType enmType = UIChooserItemType_Any) /* override */;
 
         /** Adds possible @a fFavorite child @a pItem to certain @a iPosition. */
         virtual void addItem(UIChooserItem *pItem, bool fFavorite, int iPosition) /* override */;
         /** Removes child @a pItem. */
         virtual void removeItem(UIChooserItem *pItem) /* override */;
-
-        /** Updates all children items with specified @a uId. */
-        virtual void updateAllItems(const QUuid &uId) /* override */;
-        /** Removes all children items with specified @a uId. */
-        virtual void removeAllItems(const QUuid &uId) /* override */;
 
         /** Searches for a first child item answering to specified @a strSearchTag and @a iItemSearchFlags. */
         virtual UIChooserItem *searchForItem(const QString &strSearchTag, int iItemSearchFlags) /* override */;
@@ -265,8 +252,8 @@ private:
 
     /** @name Children stuff.
       * @{ */
-        /** Copies group contents @a pFrom one item @a pTo another. */
-        static void copyContent(UIChooserItemGroup *pFrom, UIChooserItemGroup *pTo);
+        /** Copies group contents from @a pCopyFrom node recursively. */
+        void copyContents(UIChooserNodeGroup *pCopyFrom);
 
         /** Returns whether group contains machine with @a uId. */
         bool isContainsMachine(const QUuid &uId) const;
@@ -309,11 +296,7 @@ private:
     /** @name Item stuff.
       * @{ */
         /** Holds the graphics scene reference. */
-        QGraphicsScene      *m_pScene;
-        /** Holds the copied chooser item reference. */
-        UIChooserItemGroup  *m_pItemToCopy;
-        /** Holds the item position. */
-        const int            m_iPosition;
+        QGraphicsScene *m_pScene;
 
         /** Holds the cached visible name. */
         QString  m_strVisibleName;
