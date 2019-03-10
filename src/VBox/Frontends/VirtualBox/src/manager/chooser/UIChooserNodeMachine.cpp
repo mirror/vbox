@@ -75,13 +75,13 @@ QString UIChooserNodeMachine::definition() const
     return QString("m=%1").arg(name());
 }
 
-bool UIChooserNodeMachine::hasNodes(UIChooserItemType enmType) const
+bool UIChooserNodeMachine::hasNodes(UIChooserItemType enmType /* = UIChooserItemType_Any */) const
 {
     Q_UNUSED(enmType);
     AssertFailedReturn(false);
 }
 
-QList<UIChooserNode*> UIChooserNodeMachine::nodes(UIChooserItemType enmType) const
+QList<UIChooserNode*> UIChooserNodeMachine::nodes(UIChooserItemType enmType /* = UIChooserItemType_Any */) const
 {
     Q_UNUSED(enmType);
     AssertFailedReturn(QList<UIChooserNode*>());

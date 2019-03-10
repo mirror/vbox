@@ -64,9 +64,9 @@ public:
     virtual QString definition() const /* override */;
 
     /** Returns whether there are children of certain @a enmType. */
-    virtual bool hasNodes(UIChooserItemType enmType) const /* override */;
+    virtual bool hasNodes(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
     /** Returns a list of nodes of certain @a enmType. */
-    virtual QList<UIChooserNode*> nodes(UIChooserItemType enmType) const /* override */;
+    virtual QList<UIChooserNode*> nodes(UIChooserItemType enmType = UIChooserItemType_Any) const /* override */;
 
     /** Adds passed @a pNode to specified @a iPosition. */
     virtual void addNode(UIChooserNode *pNode, int iPosition) /* override */;
