@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - File I/O, RTFileSgRead & RTFileSgWrite, posixy.
+ * IPRT - File I/O, RTFileSgReadAt & RTFileSgWriteAt, posixy.
  */
 
 /*
@@ -28,22 +28,52 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+/*
+ * Determin whether we've got preadv and pwritev.
+ */
 #include <iprt/cdefs.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/uio.h>
-#include <unistd.h>
+#ifdef RT_OS_LINUX
+/* Linux has these since glibc 2.10 and Linux 2.6.30: */
+# include <features.h>
+# ifdef __GLIBC_PREREQ
+#  if __GLIBC_PREREQ(2,10)
+#   define HAVE_PREADV_AND_PWRITEV 1
+#else
+#  endif
+# endif
 
-#include "internal/iprt.h"
-#include <iprt/file.h>
+#elif defined(RT_OS_FREEBSD)
+/* FreeBSD has these since 6.0: */
+# include <osreldate.h>
+# ifdef __FreeBSD_version
+#  if __FreeBSD_version >= 600000
+#   define HAVE_PREADV_AND_PWRITEV 1
+#  endif
+# endif
 
-#include <iprt/assert.h>
-#include <iprt/err.h>
-#include <iprt/log.h>
-
-#ifndef UIO_MAXIOV
-# error "UIO_MAXIOV is undefined"
 #endif
+
+#ifndef HAVE_PREADV_AND_PWRITEV
+
+# include "../../generic/fileio-sg-generic.cpp"
+
+#else /* HAVE_PREADV_AND_PWRITEV - rest of the file */
+
+# include <errno.h>
+# include <sys/types.h>
+# include <sys/uio.h>
+# include <unistd.h>
+
+# include "internal/iprt.h"
+# include <iprt/file.h>
+
+# include <iprt/assert.h>
+# include <iprt/err.h>
+# include <iprt/log.h>
+
+# ifndef UIO_MAXIOV
+#  error "UIO_MAXIOV is undefined"
+# endif
 
 
 /* These assumptions simplifies things a lot here. */
@@ -51,7 +81,7 @@ AssertCompileMembersSameSizeAndOffset(struct iovec, iov_base, RTSGSEG, pvSeg);
 AssertCompileMembersSameSizeAndOffset(struct iovec, iov_len,  RTSGSEG, cbSeg);
 
 
-RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t *pcbRead)
+RTDECL(int)  RTFileSgReadAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToRead, size_t *pcbRead)
 {
     /*
      * Make sure we set pcbRead.
@@ -60,10 +90,10 @@ RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t
         *pcbRead = 0;
 
     /*
-     * Special case: Zero read == nop.
+     * Special case: Zero read == seek.
      */
     if (cbToRead == 0)
-        return VINF_SUCCESS;
+        return RTFileSeek(hFile, off, RTFILE_SEEK_BEGIN, NULL);
 
     /*
      * We can use the segment array directly if we're at the start of the
@@ -78,8 +108,8 @@ RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t
         while (RTSgBufIsAtStartOfSegment(pSgBuf))
         {
             size_t const cSegsLeft  = pSgBuf->cSegs - pSgBuf->idxSeg;
-            ssize_t      cbThisRead = readv(RTFileToNative(hFile), (const struct iovec *)&pSgBuf->paSegs[pSgBuf->idxSeg],
-                                            RT_MIN(cSegsLeft, UIO_MAXIOV));
+            ssize_t      cbThisRead = preadv(RTFileToNative(hFile), (const struct iovec *)&pSgBuf->paSegs[pSgBuf->idxSeg],
+                                             RT_MIN(cSegsLeft, UIO_MAXIOV), off);
             if (cbThisRead >= 0)
             {
                 AssertStmt((size_t)cbThisRead <= cbToRead, cbThisRead = cbToRead);
@@ -103,6 +133,8 @@ RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t
                 }
                 if (cbThisRead == 0)
                     return VERR_EOF;
+
+                off += cbThisRead;
             }
             else if (cbTotalRead > 0 && pcbRead)
             {
@@ -123,7 +155,7 @@ RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t
         size_t cbSeg;
         void  *pvSeg = RTSgBufGetCurrentSegment(pSgBuf, cbToRead, &cbSeg);
         size_t cbThisRead = cbSeg;
-        rc = RTFileRead(hFile, pvSeg, cbSeg, pcbRead ? &cbThisRead : NULL);
+        rc = RTFileReadAt(hFile, off, pvSeg, cbSeg, pcbRead ? &cbThisRead : NULL);
         if (RT_SUCCESS(rc))
         {
             RTSgBufAdvance(pSgBuf, cbThisRead);
@@ -139,6 +171,7 @@ RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t
 
         Assert(cbSeg == cbThisRead);
         cbToRead -= cbSeg;
+        off      += cbSeg;
     }
     if (pcbRead)
         *pcbRead = cbTotalRead;
@@ -146,7 +179,7 @@ RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t
 }
 
 
-RTDECL(int)  RTFileSgWrite(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToWrite, size_t *pcbWritten)
+RTDECL(int)  RTFileSgWriteAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToWrite, size_t *pcbWritten)
 {
     /*
      * Make sure we set pcbWritten.
@@ -155,10 +188,10 @@ RTDECL(int)  RTFileSgWrite(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToWrite, size
         *pcbWritten = 0;
 
     /*
-     * Special case: Zero write == nop.
+     * Special case: Zero write == seek.
      */
     if (cbToWrite == 0)
-        return VINF_SUCCESS;
+        return RTFileSeek(hFile, off, RTFILE_SEEK_BEGIN, NULL);
 
     /*
      * We can use the segment array directly if we're at the start of the
@@ -173,8 +206,8 @@ RTDECL(int)  RTFileSgWrite(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToWrite, size
         while (RTSgBufIsAtStartOfSegment(pSgBuf))
         {
             size_t const cSegsLeft     = pSgBuf->cSegs - pSgBuf->idxSeg;
-            ssize_t      cbThisWritten = writev(RTFileToNative(hFile), (const struct iovec *)&pSgBuf->paSegs[pSgBuf->idxSeg],
-                                                RT_MIN(cSegsLeft, UIO_MAXIOV));
+            ssize_t      cbThisWritten = pwritev(RTFileToNative(hFile), (const struct iovec *)&pSgBuf->paSegs[pSgBuf->idxSeg],
+                                                 RT_MIN(cSegsLeft, UIO_MAXIOV), off);
             if (cbThisWritten >= 0)
             {
                 AssertStmt((size_t)cbThisWritten <= cbToWrite, cbThisWritten = cbToWrite);
@@ -198,6 +231,8 @@ RTDECL(int)  RTFileSgWrite(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToWrite, size
                 }
                 if (cbThisWritten == 0)
                     return VERR_TRY_AGAIN;
+
+                off += cbThisWritten;
             }
             else if (cbTotalWritten > 0 && pcbWritten)
             {
@@ -218,7 +253,7 @@ RTDECL(int)  RTFileSgWrite(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToWrite, size
         size_t cbSeg;
         void  *pvSeg = RTSgBufGetCurrentSegment(pSgBuf, cbToWrite, &cbSeg);
         size_t cbThisWritten = cbSeg;
-        rc = RTFileWrite(hFile, pvSeg, cbSeg, pcbWritten ? &cbThisWritten : NULL);
+        rc = RTFileWriteAt(hFile, off, pvSeg, cbSeg, pcbWritten ? &cbThisWritten : NULL);
         if (RT_SUCCESS(rc))
         {
             RTSgBufAdvance(pSgBuf, cbThisWritten);
@@ -234,9 +269,12 @@ RTDECL(int)  RTFileSgWrite(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToWrite, size
 
         Assert(cbSeg == cbThisWritten);
         cbToWrite -= cbSeg;
+        off       += cbSeg;
     }
     if (pcbWritten)
         *pcbWritten = cbTotalWritten;
     return rc;
 }
+
+#endif /* HAVE_PREADV_AND_PWRITEV */
 

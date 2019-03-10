@@ -369,7 +369,7 @@ RTDECL(int)  RTFileSeek(RTFILE File, int64_t offSeek, unsigned uMethod, uint64_t
  * @param   File        Handle to the file.
  * @param   pvBuf       Where to put the bytes we read.
  * @param   cbToRead    How much to read.
- * @param   *pcbRead    How much we actually read .
+ * @param   pcbRead     How much we actually read .
  *                      If NULL an error will be returned for a partial read.
  */
 RTDECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcbRead);
@@ -382,8 +382,11 @@ RTDECL(int)  RTFileRead(RTFILE File, void *pvBuf, size_t cbToRead, size_t *pcbRe
  * @param   off         Where to read.
  * @param   pvBuf       Where to put the bytes we read.
  * @param   cbToRead    How much to read.
- * @param   *pcbRead    How much we actually read .
+ * @param   pcbRead     How much we actually read .
  *                      If NULL an error will be returned for a partial read.
+ *
+ * @note    OS/2 requires separate seek and write calls.
+ *
  * @note    Whether the file position is modified or not is host specific.
  */
 RTDECL(int)  RTFileReadAt(RTFILE File, RTFOFF off, void *pvBuf, size_t cbToRead, size_t *pcbRead);
@@ -393,12 +396,31 @@ RTDECL(int)  RTFileReadAt(RTFILE File, RTFOFF off, void *pvBuf, size_t cbToRead,
  *
  * @returns iprt status code.
  * @param   hFile       Handle to the file.
+ * @param   pSgBuf      Pointer to the S/G buffer to read into.
+ * @param   cbToRead    How much to read.
+ * @param   pcbRead     How much we actually read .
+ *                      If NULL an error will be returned for a partial read.
+ *
+ * @note    It is not possible to guarantee atomicity on all platforms, so
+ *          caller must take care wrt concurrent access to @a hFile.
+ */
+RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t *pcbRead);
+
+/**
+ * Read bytes from a file at a given offset into a S/G buffer.
+ *
+ * @returns iprt status code.
+ * @param   hFile       Handle to the file.
  * @param   off         Where to read.
  * @param   pSgBuf      Pointer to the S/G buffer to read into.
  * @param   cbToRead    How much to read.
- * @param   *pcbRead    How much we actually read .
+ * @param   pcbRead     How much we actually read .
  *                      If NULL an error will be returned for a partial read.
+ *
  * @note    Whether the file position is modified or not is host specific.
+ *
+ * @note    It is not possible to guarantee atomicity on all platforms, so
+ *          caller must take care wrt concurrent access to @a hFile.
  */
 RTDECL(int)  RTFileSgReadAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToRead, size_t *pcbRead);
 
@@ -409,7 +431,7 @@ RTDECL(int)  RTFileSgReadAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cb
  * @param   File        Handle to the file.
  * @param   pvBuf       What to write.
  * @param   cbToWrite   How much to write.
- * @param   *pcbWritten How much we actually wrote.
+ * @param   pcbWritten  How much we actually wrote.
  *                      If NULL an error will be returned for a partial write.
  */
 RTDECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
@@ -422,15 +444,33 @@ RTDECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, size_
  * @param   off         Where to write.
  * @param   pvBuf       What to write.
  * @param   cbToWrite   How much to write.
- * @param   *pcbWritten How much we actually wrote.
+ * @param   pcbWritten  How much we actually wrote.
  *                      If NULL an error will be returned for a partial write.
  *
+ * @note    OS/2 requires separate seek and write calls.
+ *
  * @note    Whether the file position is modified or not is host specific.
+ *
  * @note    Whether @a off is used when @a hFile was opened with RTFILE_O_APPEND
  *          is also host specific.  Currently Linux is the the only one
  *          documented to ignore @a off.
  */
 RTDECL(int)  RTFileWriteAt(RTFILE hFile, RTFOFF off, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
+
+/**
+ * Write bytes from a S/G buffer to a file.
+ *
+ * @returns iprt status code.
+ * @param   hFile       Handle to the file.
+ * @param   pSgBuf      What to write.
+ * @param   cbToWrite   How much to write.
+ * @param   pcbWritten  How much we actually wrote.
+ *                      If NULL an error will be returned for a partial write.
+ *
+ * @note    It is not possible to guarantee atomicity on all platforms, so
+ *          caller must take care wrt concurrent access to @a hFile.
+ */
+RTDECL(int)  RTFileSgWrite(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToWrite, size_t *pcbWritten);
 
 /**
  * Write bytes from a S/G buffer to a file at a given offset.
@@ -440,10 +480,14 @@ RTDECL(int)  RTFileWriteAt(RTFILE hFile, RTFOFF off, const void *pvBuf, size_t c
  * @param   off         Where to write.
  * @param   pSgBuf      What to write.
  * @param   cbToWrite   How much to write.
- * @param   *pcbWritten How much we actually wrote.
+ * @param   pcbWritten  How much we actually wrote.
  *                      If NULL an error will be returned for a partial write.
  *
+ * @note    It is not possible to guarantee atomicity on all platforms, so
+ *          caller must take care wrt concurrent access to @a hFile.
+ *
  * @note    Whether the file position is modified or not is host specific.
+ *
  * @note    Whether @a off is used when @a hFile was opened with RTFILE_O_APPEND
  *          is also host specific.  Currently Linux is the the only one
  *          documented to ignore @a off.

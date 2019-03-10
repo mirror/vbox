@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - File I/O, RTFileSgRead & RTFileSgWrite, generic.
+ * IPRT - File I/O, RTFileSgReadAt & RTFileSgWriteAt, generic.
  */
 
 /*
@@ -35,7 +35,7 @@
 #include <iprt/err.h>
 
 
-RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t *pcbRead)
+RTDECL(int)  RTFileSgReadAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToRead, size_t *pcbRead)
 {
     int rc = VINF_SUCCESS;
     size_t cbRead = 0;
@@ -45,7 +45,7 @@ RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t
         void  *pvBuf = RTSgBufGetNextSegment(pSgBuf, &cbBuf); /** @todo this is wrong as it may advance the buffer past what's actually read. */
 
         size_t cbThisRead = cbBuf;
-        rc = RTFileRead(hFile, pvBuf, cbBuf, pcbRead ? &cbThisRead : NULL);
+        rc = RTFileReadAt(hFile, off, pvBuf, cbBuf, pcbRead ? &cbThisRead : NULL);
         if (RT_SUCCESS(rc))
             cbRead += cbThisRead;
         else
@@ -58,6 +58,7 @@ RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t
         Assert(cbBuf == cbThisRead);
 
         cbToRead -= cbBuf;
+        off      += cbBuf;
     }
 
     if (pcbRead)
@@ -67,7 +68,7 @@ RTDECL(int)  RTFileSgRead(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToRead, size_t
 }
 
 
-RTDECL(int)  RTFileSgWrite(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToWrite, size_t *pcbWritten)
+RTDECL(int)  RTFileSgWriteAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToWrite, size_t *pcbWritten)
 {
     int rc = VINF_SUCCESS;
     size_t cbWritten = 0;
@@ -77,7 +78,7 @@ RTDECL(int)  RTFileSgWrite(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToWrite, size
         void  *pvBuf = RTSgBufGetNextSegment(pSgBuf, &cbBuf); /** @todo this is wrong as it may advance the buffer past what's actually read. */
 
         size_t cbThisWritten = cbBuf;
-        rc = RTFileWrite(hFile, pvBuf, cbBuf, pcbWritten ? &cbThisWritten : NULL);
+        rc = RTFileWriteAt(hFile, off, pvBuf, cbBuf, pcbWritten ? &cbThisWritten : NULL);
         if (RT_SUCCESS(rc))
             cbWritten += cbThisWritten;
         else
@@ -90,6 +91,7 @@ RTDECL(int)  RTFileSgWrite(RTFILE hFile, PRTSGBUF pSgBuf, size_t cbToWrite, size
 
         Assert(cbBuf == cbThisWritten);
         cbToWrite -= cbBuf;
+        off       += cbBuf;
     }
 
     if (pcbWritten)

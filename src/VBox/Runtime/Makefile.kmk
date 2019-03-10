@@ -815,6 +815,7 @@ RuntimeR3_SOURCES.win = \
 	generic/RTDirExists-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/fileio-sg-generic.cpp \
+	generic/fileio-sg-at-generic.cpp \
 	generic/RTFileExists-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTMpGetCurFrequency-generic.cpp \
@@ -954,6 +955,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/fileio-at-posix.cpp \
 	r3/posix/fileio-sg-posix.cpp \
+	r3/posix/fileio-sg-at-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
@@ -1008,6 +1010,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \
+	generic/fileio-sg-at-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1141,6 +1144,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/fileio-at-posix.cpp \
 	r3/posix/fileio-sg-posix.cpp \
+	r3/posix/fileio-sg-at-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
 	r3/posix/fs3-posix.cpp \
@@ -1221,6 +1225,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/fileio-at-posix.cpp \
 	r3/posix/fileio-sg-posix.cpp \
+	r3/posix/fileio-sg-at-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
@@ -1301,6 +1306,7 @@ RuntimeR3_SOURCES.netbsd = \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/fileio-at-posix.cpp \
 	r3/posix/fileio-sg-posix.cpp \
+	r3/posix/fileio-sg-at-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
@@ -1372,6 +1378,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/fileio-at-posix.cpp \
 	r3/posix/fileio-sg-posix.cpp \
+	r3/posix/fileio-sg-at-posix.cpp \
 	r3/posix/filelock-posix.cpp \
 	r3/posix/fs-posix.cpp \
 	r3/posix/fs2-posix.cpp \
@@ -1428,6 +1435,7 @@ RuntimeR3_SOURCES.haiku = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \
+	generic/fileio-sg-at-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
