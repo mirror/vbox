@@ -964,7 +964,7 @@ static int vbsf_dentry_revalidate(struct dentry *dentry, int flags)
              *       and ignore the dentry timestamp for positive entries.
              */
             //struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(pInode);
-            unsigned long const     cJiffiesAge = vbsf_dentry_get_update_jiffies(dentry) - jiffies;
+            unsigned long const     cJiffiesAge = jiffies - vbsf_dentry_get_update_jiffies(dentry);
             struct vbsf_super_info *sf_g        = VBSF_GET_SUPER_INFO(dentry->d_sb);
             if (cJiffiesAge < sf_g->ttl) {
                 SFLOGFLOW(("vbsf_dentry_revalidate: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, sf_g->ttl));
