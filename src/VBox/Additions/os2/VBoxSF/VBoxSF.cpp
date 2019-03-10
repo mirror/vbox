@@ -504,7 +504,7 @@ APIRET vboxSfOs2ConvertPath(const char *pszFolderPath, PSHFLSTRING *ppStr)
     PSHFLSTRING pDst = vboxSfOs2StrAlloc(cchSrc + 4 /*fudge*/);
     if (pDst)
     {
-        APIRET rc = KernStrToUcs(NULL, &pDst->String.utf16[0], (char *)pszFolderPath, cchSrc + 4, cchSrc);
+        APIRET rc = SafeKernStrToUcs(NULL, &pDst->String.utf16[0], (char *)pszFolderPath, cchSrc + 4, cchSrc);
         if (rc == NO_ERROR)
         {
             pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
@@ -524,7 +524,7 @@ APIRET vboxSfOs2ConvertPath(const char *pszFolderPath, PSHFLSTRING *ppStr)
             pDst = vboxSfOs2StrAlloc((cchSrc + 16) * 2);
             if (pDst)
             {
-                rc = KernStrToUcs(NULL, pDst->String.utf16, (char *)pszFolderPath, (cchSrc + 16) * 2, cchSrc);
+                rc = SafeKernStrToUcs(NULL, pDst->String.utf16, (char *)pszFolderPath, (cchSrc + 16) * 2, cchSrc);
                 if (rc == NO_ERROR)
                 {
                     pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
@@ -534,11 +534,11 @@ APIRET vboxSfOs2ConvertPath(const char *pszFolderPath, PSHFLSTRING *ppStr)
                     return NO_ERROR;
                 }
                 VbglR0PhysHeapFree(pDst);
-                LogRel(("vboxSfOs2ConvertPath: KernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
+                LogRel(("vboxSfOs2ConvertPath: SafeKernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
             }
         }
         else
-            LogRel(("vboxSfOs2ConvertPath: KernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
+            LogRel(("vboxSfOs2ConvertPath: SafeKernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
     }
 
     LogRel(("vboxSfOs2ConvertPath: Out of memory - cchSrc=%#x\n", cchSrc));
@@ -580,7 +580,7 @@ APIRET vboxSfOs2ConvertPathEx(const char *pszFolderPath, uint32_t offStrInBuf, v
         RT_BZERO(pvBuf, offStrInBuf);
         PSHFLSTRING pDst = (PSHFLSTRING)((uint8_t *)pvBuf + offStrInBuf);
 
-        APIRET rc = KernStrToUcs(NULL, &pDst->String.utf16[0], (char *)pszFolderPath, cchSrc + 4, cchSrc);
+        APIRET rc = SafeKernStrToUcs(NULL, &pDst->String.utf16[0], (char *)pszFolderPath, cchSrc + 4, cchSrc);
         if (rc == NO_ERROR)
         {
             pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
@@ -603,7 +603,7 @@ APIRET vboxSfOs2ConvertPathEx(const char *pszFolderPath, uint32_t offStrInBuf, v
                 RT_BZERO(pvBuf, offStrInBuf);
                 pDst = (PSHFLSTRING)((uint8_t *)pvBuf + offStrInBuf);
 
-                rc = KernStrToUcs(NULL, pDst->String.utf16, (char *)pszFolderPath, (cchSrc + 16) * 2, cchSrc);
+                rc = SafeKernStrToUcs(NULL, pDst->String.utf16, (char *)pszFolderPath, (cchSrc + 16) * 2, cchSrc);
                 if (rc == NO_ERROR)
                 {
                     pDst->u16Length = (uint16_t)RTUtf16Len(pDst->String.utf16) * (uint16_t)sizeof(RTUTF16);
@@ -613,11 +613,11 @@ APIRET vboxSfOs2ConvertPathEx(const char *pszFolderPath, uint32_t offStrInBuf, v
                     return NO_ERROR;
                 }
                 VbglR0PhysHeapFree(pDst);
-                LogRel(("vboxSfOs2ConvertPath: KernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
+                LogRel(("vboxSfOs2ConvertPath: SafeKernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
             }
         }
         else
-            LogRel(("vboxSfOs2ConvertPath: KernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
+            LogRel(("vboxSfOs2ConvertPath: SafeKernStrToUcs returns %#x for %.*Rhxs\n", rc, cchSrc, pszFolderPath));
     }
 
     LogRel(("vboxSfOs2ConvertPath: Out of memory - cchSrc=%#x offStrInBuf=%#x\n", cchSrc, offStrInBuf));

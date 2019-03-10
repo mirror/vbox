@@ -247,7 +247,9 @@ APIRET      vboxSfOs2SetInfoCommonWorker(PVBOXSFFOLDER pFolder, SHFLHANDLE hHost
 APIRET      vboxSfOs2MakeEmptyEaList(PEAOP pEaOp, ULONG uLevel);
 APIRET      vboxSfOs2MakeEmptyEaListEx(PEAOP pEaOp, ULONG uLevel, uint32_t *pcbWritten, ULONG *poffError);
 
-DECLASM(PVBOXSFVP) Fsh32GetVolParams(USHORT hVbp, PVPFSI *ppVpFsi /*optional*/);
+DECLASM(PVBOXSFVP)  Fsh32GetVolParams(USHORT hVbp, PVPFSI *ppVpFsi /*optional*/);
+DECLASM(APIRET)     SafeKernStrToUcs(PUconvObj, UniChar *, char *, LONG, LONG);
+DECLASM(APIRET)     SafeKernStrFromUcs(PUconvObj, char *, UniChar *, LONG, LONG);
 
 
 #endif /* !GA_INCLUDED_SRC_os2_VBoxSF_VBoxSFInternal_h */

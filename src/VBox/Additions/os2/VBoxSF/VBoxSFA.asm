@@ -508,6 +508,8 @@ segment CODE32
 extern KernThunkStackTo32
 extern KernThunkStackTo16
 extern KernSelToFlat
+extern KernStrToUcs
+extern KernStrFromUcs
 segment CODE16
 extern FSH_FORCENOSWAP
 extern FSH_GETVOLPARM
@@ -1612,6 +1614,67 @@ VBOXSF_FROM_16_EPILOGUE
 ENDPROC     Fsh32GetVolParams
 
 
+
+;
+;
+; Calling 32-bit kernel code.
+;
+;
+
+BEGINCODE
+
+;;
+; Wraps APIRET APIENTRY KernStrToUcs(PUconvObj, UniChar *, char *, LONG, LONG),
+; to preserve ES.  ES get trashed in some cases (probably conversion table init).
+;
+BEGINPROC   SafeKernStrToUcs
+DWARF_LABEL_TEXT32 NAME(SafeKernStrToUcs)
+        push    ebp
+        mov     ebp, esp
+        push    es
+        push    ds
+
+        push    dword [ebp + 18h]
+        push    dword [ebp + 14h]
+        push    dword [ebp + 10h]
+        push    dword [ebp + 0ch]
+        push    dword [ebp + 08h]
+        call    KernStrToUcs
+
+        lea     esp, [ebp - 8]
+        pop     ds
+        pop     es
+        cld                             ; just to be on the safe side
+        leave
+        ret
+ENDPROC     SafeKernStrToUcs
+
+
+;;
+; Wraps APIRET APIENTRY KernStrFromUcs(PUconvObj, char *, UniChar *, LONG, LONG),
+; to preserve ES.  ES get trashed in some cases (probably conversion table init).
+;
+BEGINPROC   SafeKernStrFromUcs
+DWARF_LABEL_TEXT32 NAME(SafeKernStrFromUcs)
+        push    ebp
+        mov     ebp, esp
+        push    es
+        push    ds
+
+        push    dword [ebp + 18h]
+        push    dword [ebp + 14h]
+        push    dword [ebp + 10h]
+        push    dword [ebp + 0ch]
+        push    dword [ebp + 08h]
+        call    KernStrFromUcs
+
+        lea     esp, [ebp - 8]
+        pop     ds
+        pop     es
+        cld                             ; just to be on the safe side
+        leave
+        ret
+ENDPROC     SafeKernStrFromUcs
 
 
 

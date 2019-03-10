@@ -93,10 +93,10 @@ static bool vboxSfOs2IsUtf16Name8dot3(PRTUTF16 pwszName, size_t cwcName, char *p
     /*
      * Conver to the native code page.
      */
-    APIRET rc = KernStrFromUcs(NULL, pszTmp, pwszName, cbTmp, cwcName);
+    APIRET rc = SafeKernStrFromUcs(NULL, pszTmp, pwszName, cbTmp, cwcName);
     if (rc != NO_ERROR)
     {
-        LogRel(("vboxSfOs2IsUtf8Name8dot3: KernStrFromUcs failed: %d\n", rc));
+        LogRel(("vboxSfOs2IsUtf8Name8dot3: SafeKernStrFromUcs failed: %d\n", rc));
         return false;
     }
 
@@ -133,7 +133,7 @@ static bool vboxSfOs2IsUtf16Name8dot3(PRTUTF16 pwszName, size_t cwcName, char *p
 static uint8_t *vboxSfOs2CopyUtf16Name(uint8_t *pbDst, PRTUTF16 pwszSrc, size_t cwcSrc)
 {
     char *pszDst = (char *)pbDst + 1;
-    APIRET rc = KernStrFromUcs(NULL, pszDst, pwszSrc, CCHMAXPATHCOMP, cwcSrc);
+    APIRET rc = SafeKernStrFromUcs(NULL, pszDst, pwszSrc, CCHMAXPATHCOMP, cwcSrc);
     if (rc == NO_ERROR)
     {
         size_t cchDst = strlen(pszDst);
@@ -142,7 +142,7 @@ static uint8_t *vboxSfOs2CopyUtf16Name(uint8_t *pbDst, PRTUTF16 pwszSrc, size_t 
         *pbDst++ = '\0';
         return pbDst;
     }
-    LogRel(("vboxSfOs2CopyUtf8Name: KernStrFromUcs failed: %d\n", rc));
+    LogRel(("vboxSfOs2CopyUtf8Name: SafeKernStrFromUcs failed: %d\n", rc));
     return NULL;
 }
 
@@ -153,7 +153,7 @@ static uint8_t *vboxSfOs2CopyUtf16Name(uint8_t *pbDst, PRTUTF16 pwszSrc, size_t 
 static uint8_t *vboxSfOs2CopyUtf16NameAndUpperCase(uint8_t *pbDst, PRTUTF16 pwszSrc, size_t cwcSrc)
 {
     char *pszDst = (char *)(pbDst + 1);
-    APIRET rc = KernStrFromUcs(NULL, pszDst, RTUtf16ToUpper(pwszSrc), CCHMAXPATHCOMP, cwcSrc);
+    APIRET rc = SafeKernStrFromUcs(NULL, pszDst, RTUtf16ToUpper(pwszSrc), CCHMAXPATHCOMP, cwcSrc);
     if (rc == NO_ERROR)
     {
         size_t cchDst = strlen(pszDst);
@@ -162,7 +162,7 @@ static uint8_t *vboxSfOs2CopyUtf16NameAndUpperCase(uint8_t *pbDst, PRTUTF16 pwsz
         *pbDst++ = '\0';
         return pbDst;
     }
-    LogRel(("vboxSfOs2CopyUtf16NameAndUpperCase: KernStrFromUcs failed: %#x\n", rc));
+    LogRel(("vboxSfOs2CopyUtf16NameAndUpperCase: SafeKernStrFromUcs failed: %#x\n", rc));
     return NULL;
 }
 
@@ -442,7 +442,7 @@ DECLASM(APIRET)
 FS32_FINDFIRST(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszPath, LONG offCurDirEnd, ULONG fAttribs,
                PFSFSI pFsFsi, PVBOXSFFS pFsFsd, PBYTE pbData, ULONG cbData, PUSHORT pcMatches, ULONG uLevel, ULONG fFlags)
 {
-    LogFlow(("pCdFsi=%p pCdFsd=%p pszPath=%p:{%s} offCurDirEnd=%d fAttribs=%#x pFsFsi=%p pFsFsd=%p pbData=%p cbData=%#x pcMatches=%p:{%#x} uLevel=%#x fFlags=%#x\n",
+    LogFlow(("FS32_FINDFIRST: pCdFsi=%p pCdFsd=%p pszPath=%p:{%s} offCurDirEnd=%d fAttribs=%#x pFsFsi=%p pFsFsd=%p pbData=%p cbData=%#x pcMatches=%p:{%#x} uLevel=%#x fFlags=%#x\n",
              pCdFsi, pCdFsd, pszPath, pszPath, offCurDirEnd, fAttribs, pFsFsi, pFsFsd, pbData, cbData, pcMatches, *pcMatches, uLevel, fFlags));
     USHORT const cMaxMatches = *pcMatches;
     *pcMatches = 0;
