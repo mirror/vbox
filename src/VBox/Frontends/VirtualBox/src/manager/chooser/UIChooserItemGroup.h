@@ -65,9 +65,6 @@ public:
 
     /** @name Item stuff.
       * @{ */
-        /** Defines group @a strName. */
-        void setName(const QString &strName);
-
         /** Returns whether group is closed. */
         bool isClosed() const;
         /** Closes group in @a fAnimated way if requested. */
@@ -118,18 +115,11 @@ protected:
         /** Returns RTTI item type. */
         virtual int type() const /* override */ { return Type; }
 
-        /** Returns item name. */
-        virtual QString name() const /* override */;
-        /** Returns item full-name. */
-        virtual QString fullName() const /* override */;
-        /** Returns item description. */
-        virtual QString description() const /* override */;
-        /** Returns item definition. */
-        virtual QString definition() const /* override */;
-
         /** Starts item editing. */
         virtual void startEditing() /* override */;
 
+        /** Updates item. */
+        virtual void updateItem() /* override */;
         /** Updates item tool-tip. */
         virtual void updateToolTip() /* override */;
 
@@ -325,19 +315,12 @@ private:
         /** Holds the item position. */
         const int            m_iPosition;
 
-        /** Holds the cached name. */
-        QString  m_strName;
-        /** Holds the cached description. */
-        QString  m_strDescription;
         /** Holds the cached visible name. */
         QString  m_strVisibleName;
         /** Holds the cached group children info. */
         QString  m_strInfoGroups;
         /** Holds the cached machine children info. */
         QString  m_strInfoMachines;
-
-        /** Holds whether group is closed. */
-        bool  m_fClosed;
 
         /** Holds aditional height. */
         int  m_iAdditionalHeight;

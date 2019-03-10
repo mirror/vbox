@@ -46,6 +46,7 @@ class UIChooserItemGroup;
 class UIChooserItemGlobal;
 class UIChooserItemMachine;
 class UIChooserModel;
+class UIChooserNode;
 
 
 /** QIGraphicsWidget extension used as interface
@@ -74,16 +75,20 @@ signals:
 public:
 
     /** Constructs item passing @a pParent to the base-class.
-      * @param  fFavorite      Brings whether this item created directly in favorite container.
+      * @param  pNode          Brings the node this item is built for.
       * @param  iDefaultValue  Brings default value for hovering animation.
       * @param  iHoveredValue  Brings hovered value for hovering animation. */
-    UIChooserItem(UIChooserItem *pParent, bool fFavorite,
+    UIChooserItem(UIChooserItem *pParent, UIChooserNode *pNode,
                   int iDefaultValue = 100, int iHoveredValue = 90);
+    /** Destructs item. */
+    virtual ~UIChooserItem() /* override */;
 
     /** @name Item stuff.
       * @{ */
         /** Returns parent reference. */
         UIChooserItem *parentItem() const {  return m_pParent; }
+        /** Returns node reference. */
+        UIChooserNode *node() const { return m_pNode; }
 
         /** Casts item to group one. */
         UIChooserItemGroup *toGroupItem();
@@ -98,19 +103,19 @@ public:
         UIActionPool *actionPool() const;
 
         /** Returns whether item is root. */
-        bool isRoot() const { return !m_pParent; }
+        bool isRoot() const;
 
         /** Returns item name. */
-        virtual QString name() const = 0;
+        QString name() const;
         /** Returns item full-name. */
-        virtual QString fullName() const = 0;
+        QString fullName() const;
         /** Returns item description. */
-        virtual QString description() const = 0;
+        QString description() const;
         /** Returns item definition. */
-        virtual QString definition() const = 0;
+        QString definition() const;
 
         /** Returns whether item is favorite. */
-        bool isFavorite() const { return m_fFavorite; }
+        bool isFavorite() const;
         /** Defines whether item is @a fFavorite. */
         virtual void setFavorite(bool fFavorite);
 
@@ -127,6 +132,8 @@ public:
         /** Starts item editing. */
         virtual void startEditing() = 0;
 
+        /** Updates item. */
+        virtual void updateItem() = 0;
         /** Updates item tool-tip. */
         virtual void updateToolTip() = 0;
 
@@ -299,8 +306,8 @@ private:
       * @{ */
         /** Holds the item's parent item. */
         UIChooserItem *m_pParent;
-        /** Holds whether item is favorite. */
-        bool           m_fFavorite;
+        /** Holds the node this item is built for. */
+        UIChooserNode *m_pNode;
 
         /** Holds the item level according to root. */
         int  m_iLevel;

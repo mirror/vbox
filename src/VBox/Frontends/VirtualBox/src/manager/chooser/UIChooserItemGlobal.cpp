@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "UIChooserItemGlobal.h"
 #include "UIChooserModel.h"
+#include "UIChooserNodeGlobal.h"
 #include "UIIconPool.h"
 #include "UIVirtualBoxManager.h"
 
@@ -34,7 +35,7 @@
 UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
                                          bool fFavorite,
                                          int iPosition /* = -1 */)
-    : UIChooserItem(pParent, fFavorite, 0, 100)
+    : UIChooserItem(pParent, new UIChooserNodeGlobal(pParent->node(), fFavorite, QString()), 0, 100)
     , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
@@ -53,7 +54,7 @@ UIChooserItemGlobal::UIChooserItemGlobal(UIChooserItem *pParent,
                                          bool fFavorite,
                                          UIChooserItemGlobal *pCopiedItem,
                                          int iPosition /* = -1 */)
-    : UIChooserItem(pParent, fFavorite, 0, 100)
+    : UIChooserItem(pParent, new UIChooserNodeGlobal(pParent->node(), fFavorite, QString()), 0, 100)
     , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
@@ -129,16 +130,6 @@ void UIChooserItemGlobal::setHeightHint(int iHint)
 
 void UIChooserItemGlobal::retranslateUi()
 {
-    /* Update description: */
-    m_strName = tr("Tools");
-    m_strDescription = m_strName;
-
-    /* Update linked values: */
-    updateMinimumNameWidth();
-    updateVisibleName();
-
-    /* Update tool-tip: */
-    updateToolTip();
 }
 
 void UIChooserItemGlobal::showEvent(QShowEvent *pEvent)
@@ -187,26 +178,6 @@ void UIChooserItemGlobal::paint(QPainter *pPainter, const QStyleOptionGraphicsIt
     paintGlobalInfo(pPainter, rectangle);
 }
 
-QString UIChooserItemGlobal::name() const
-{
-    return m_strName;
-}
-
-QString UIChooserItemGlobal::fullName() const
-{
-    return m_strName;
-}
-
-QString UIChooserItemGlobal::description() const
-{
-    return m_strDescription;
-}
-
-QString UIChooserItemGlobal::definition() const
-{
-    return QString("n=%1").arg("GLOBAL");
-}
-
 void UIChooserItemGlobal::setFavorite(bool fFavorite)
 {
     /* Call to base-class: */
@@ -219,6 +190,20 @@ void UIChooserItemGlobal::setFavorite(bool fFavorite)
 void UIChooserItemGlobal::startEditing()
 {
     AssertMsgFailed(("Global graphics item do NOT support editing yet!"));
+}
+
+void UIChooserItemGlobal::updateItem()
+{
+    /* Update this global-item: */
+    updatePixmaps();
+    updateMinimumNameWidth();
+    updateVisibleName();
+    updateToolTip();
+    update();
+
+    /* Update parent group-item: */
+    parentItem()->updateToolTip();
+    parentItem()->update();
 }
 
 void UIChooserItemGlobal::updateToolTip()
@@ -258,13 +243,7 @@ void UIChooserItemGlobal::removeItem(UIChooserItem *)
 
 void UIChooserItemGlobal::updateAllItems(const QUuid &)
 {
-    /* Update this global-item: */
-    updatePixmaps();
-    updateToolTip();
-
-    /* Update parent group-item: */
-    parentItem()->updateToolTip();
-    parentItem()->update();
+    updateItem();
 }
 
 void UIChooserItemGlobal::removeAllItems(const QUuid &)
@@ -561,7 +540,7 @@ void UIChooserItemGlobal::updateMinimumNameWidth()
     /* Calculate new minimum name width: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
     const QFontMetrics fm(m_nameFont, pPaintDevice);
-    const int iMinimumNameWidth = fm.width(compressText(m_nameFont, pPaintDevice, m_strName, textWidth(m_nameFont, pPaintDevice, 15)));
+    const int iMinimumNameWidth = fm.width(compressText(m_nameFont, pPaintDevice, name(), textWidth(m_nameFont, pPaintDevice, 15)));
 
     /* Is there something changed? */
     if (m_iMinimumNameWidth == iMinimumNameWidth)
@@ -600,7 +579,7 @@ void UIChooserItemGlobal::updateVisibleName()
     QPaintDevice *pPaintDevice = model()->paintDevice();
 
     /* Calculate new visible name and name-size: */
-    const QString strVisibleName = compressText(m_nameFont, pPaintDevice, m_strName, m_iMaximumNameWidth);
+    const QString strVisibleName = compressText(m_nameFont, pPaintDevice, name(), m_iMaximumNameWidth);
     const QSize visibleNameSize = textSize(m_nameFont, pPaintDevice, strVisibleName);
 
     /* Update linked values: */

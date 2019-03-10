@@ -83,21 +83,14 @@ protected:
         /** Returns RTTI item type. */
         virtual int type() const /* override */ { return Type; }
 
-        /** Returns item name. */
-        virtual QString name() const /* override */;
-        /** Returns item full-name. */
-        virtual QString fullName() const /* override */;
-        /** Returns item description. */
-        virtual QString description() const /* override */;
-        /** Returns item definition. */
-        virtual QString definition() const /* override */;
-
         /** Defines whether item is @a fFavorite. */
         virtual void setFavorite(bool fFavorite) /* override */;
 
         /** Starts item editing. */
         virtual void startEditing() /* override */;
 
+        /** Updates item. */
+        virtual void updateItem() /* override */;
         /** Updates item tool-tip. */
         virtual void updateToolTip() /* override */;
     /** @} */
@@ -257,10 +250,6 @@ private:
         /** Holds item pin pixmap. */
         QPixmap  m_pinPixmap;
 
-        /** Holds item name. */
-        QString  m_strName;
-        /** Holds item description. */
-        QString  m_strDescription;
         /** Holds item visible name. */
         QString  m_strVisibleName;
 

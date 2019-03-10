@@ -36,6 +36,7 @@
 #include "UIChooserItemMachine.h"
 #include "UIChooserView.h"
 #include "UIChooserModel.h"
+#include "UIChooserNode.h"
 
 /* Other VBox includes: */
 #include "iprt/assert.h"
@@ -195,11 +196,11 @@ private:
 *   Class UIChooserItem implementation.                                                                                          *
 *********************************************************************************************************************************/
 
-UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fFavorite,
+UIChooserItem::UIChooserItem(UIChooserItem *pParent, UIChooserNode *pNode,
                              int iDefaultValue /* = 100 */, int iHoveredValue /* = 90 */)
     : QIWithRetranslateUI4<QIGraphicsWidget>(pParent)
     , m_pParent(pParent)
-    , m_fFavorite(fFavorite)
+    , m_pNode(pNode)
     , m_iLevel(-1)
     , m_fHovered(false)
     , m_pHoveringMachine(0)
@@ -215,6 +216,9 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fFavorite,
 {
     /* Install Chooser-view item accessibility interface factory: */
     QAccessible::installFactory(UIAccessibilityInterfaceForUIChooserItem::pFactory);
+
+    /* Assign item for passed node: */
+    node()->setItem(this);
 
     /* Basic item setup: */
     setOwnedByLayout(false);
@@ -291,6 +295,11 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, bool fFavorite,
     }
 }
 
+UIChooserItem::~UIChooserItem()
+{
+    delete node();
+}
+
 UIChooserItemGroup *UIChooserItem::toGroupItem()
 {
     UIChooserItemGroup *pItem = qgraphicsitem_cast<UIChooserItemGroup*>(this);
@@ -324,9 +333,39 @@ UIActionPool *UIChooserItem::actionPool() const
     return model()->actionPool();
 }
 
+bool UIChooserItem::isRoot() const
+{
+    return node()->isRoot();
+}
+
+QString UIChooserItem::name() const
+{
+    return node()->name();
+}
+
+QString UIChooserItem::fullName() const
+{
+    return node()->fullName();
+}
+
+QString UIChooserItem::description() const
+{
+    return node()->description();
+}
+
+QString UIChooserItem::definition() const
+{
+    return node()->definition();
+}
+
+bool UIChooserItem::isFavorite() const
+{
+    return node()->isFavorite();
+}
+
 void UIChooserItem::setFavorite(bool fFavorite)
 {
-    m_fFavorite = fFavorite;
+    node()->setFavorite(fFavorite);
     if (m_pParent)
         m_pParent->toGroupItem()->updateFavorites();
 }

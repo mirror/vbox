@@ -31,10 +31,13 @@
 #include "UIChooserItemGroup.h"
 #include "UIChooserItemMachine.h"
 #include "UIChooserModel.h"
+#include "UIChooserNodeGroup.h"
+#include "UIChooserNodeMachine.h"
 #include "UIGraphicsRotatorButton.h"
 #include "UIGraphicsScrollArea.h"
 #include "UIIconPool.h"
 #include "UIVirtualBoxManager.h"
+#include "UIVirtualMachineItem.h"
 
 
 /*********************************************************************************************************************************
@@ -42,11 +45,13 @@
 *********************************************************************************************************************************/
 
 UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene)
-    : UIChooserItem(0, false /* favorite? */)
+    : UIChooserItem(0, new UIChooserNodeGroup(0 /* parent */,
+                                              false /* favorite? */,
+                                              QString() /* name */,
+                                              true /* opened? */))
     , m_pScene(pScene)
     , m_pItemToCopy(0)
     , m_iPosition(0)
-    , m_fClosed(false)
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
     , m_pToggleButton(0)
@@ -69,12 +74,13 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
                                        const QString &strName,
                                        bool fOpened /* = false */,
                                        int iPosition /* = -1 */)
-    : UIChooserItem(pParent, pParent->isFavorite())
+    : UIChooserItem(pParent, new UIChooserNodeGroup(pParent->node(),
+                                                    pParent->isFavorite(),
+                                                    strName,
+                                                    fOpened))
     , m_pScene(0)
     , m_pItemToCopy(0)
     , m_iPosition(iPosition)
-    , m_strName(strName)
-    , m_fClosed(!fOpened)
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
     , m_pToggleButton(0)
@@ -96,12 +102,13 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
 UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent,
                                        UIChooserItemGroup *pCopiedItem,
                                        int iPosition /* = -1 */)
-    : UIChooserItem(pParent, pParent->isFavorite())
+    : UIChooserItem(pParent, new UIChooserNodeGroup(pParent->node(),
+                                                    pParent->isFavorite(),
+                                                    pCopiedItem->name(),
+                                                    pCopiedItem->isOpened()))
     , m_pScene(0)
     , m_pItemToCopy(pCopiedItem)
     , m_iPosition(iPosition)
-    , m_strName(pCopiedItem->name())
-    , m_fClosed(pCopiedItem->isClosed())
     , m_iAdditionalHeight(0)
     , m_iHeaderDarkness(110)
     , m_pToggleButton(0)
@@ -125,23 +132,9 @@ UIChooserItemGroup::~UIChooserItemGroup()
     cleanup();
 }
 
-void UIChooserItemGroup::setName(const QString &strName)
-{
-    /* Something changed? */
-    if (m_strName == strName)
-        return;
-
-    /* Remember new name: */
-    m_strName = strName;
-
-    /* Update linked values: */
-    updateVisibleName();
-    updateMinimumHeaderSize();
-}
-
 bool UIChooserItemGroup::isClosed() const
 {
-    return m_fClosed && !isRoot();
+    return node()->toGroupNode()->isClosed() && !isRoot();
 }
 
 void UIChooserItemGroup::close(bool fAnimated /* = true */)
@@ -152,7 +145,7 @@ void UIChooserItemGroup::close(bool fAnimated /* = true */)
 
 bool UIChooserItemGroup::isOpened() const
 {
-    return !m_fClosed || isRoot();
+    return node()->toGroupNode()->isOpened() || isRoot();
 }
 
 void UIChooserItemGroup::open(bool fAnimated /* = true */)
@@ -194,12 +187,6 @@ QString UIChooserItemGroup::className()
 
 void UIChooserItemGroup::retranslateUi()
 {
-    /* Update description: */
-    m_strDescription = tr("Virtual Machine group");
-
-    /* Update group tool-tip: */
-    updateToolTip();
-
     /* Update button tool-tips: */
     if (m_pEnterButton)
         m_pEnterButton->setToolTip(tr("Enter group"));
@@ -289,36 +276,6 @@ void UIChooserItemGroup::paint(QPainter *pPainter, const QStyleOptionGraphicsIte
     paintHeader(pPainter, rectangle);
 }
 
-QString UIChooserItemGroup::name() const
-{
-    return m_strName;
-}
-
-QString UIChooserItemGroup::fullName() const
-{
-    /* Return "/" for root item: */
-    if (isRoot())
-        return "/";
-
-    /* Get full parent name, append with '/' if not yet appended: */
-    AssertMsg(parentItem(), ("Incorrect parent set!"));
-    QString strFullParentName = parentItem()->fullName();
-    if (!strFullParentName.endsWith('/'))
-        strFullParentName.append('/');
-    /* Return full item name based on parent prefix: */
-    return strFullParentName + name();
-}
-
-QString UIChooserItemGroup::description() const
-{
-    return m_strDescription;
-}
-
-QString UIChooserItemGroup::definition() const
-{
-    return QString("g=%1").arg(name());
-}
-
 void UIChooserItemGroup::startEditing()
 {
     /* Not for root: */
@@ -349,6 +306,22 @@ void UIChooserItemGroup::startEditing()
     /* Show name-editor: */
     m_pNameEditorWidget->show();
     m_pNameEditorWidget->setFocus();
+}
+
+void UIChooserItemGroup::updateItem()
+{
+    /* Update this group-item: */
+    updateVisibleName();
+    updateMinimumHeaderSize();
+    updateToolTip();
+    update();
+
+    /* Update parent group-item: */
+    if (parentItem())
+    {
+        parentItem()->updateToolTip();
+        parentItem()->update();
+    }
 }
 
 void UIChooserItemGroup::updateToolTip()
@@ -387,7 +360,7 @@ void UIChooserItemGroup::updateToolTip()
         /* Check if 'this' group contains started VMs: */
         int iCountOfStartedMachineItems = 0;
         foreach (UIChooserItem *pItem, items(UIChooserItemType_Machine))
-            if (UIVirtualMachineItem::isItemStarted(pItem->toMachineItem()))
+            if (UIVirtualMachineItem::isItemStarted(pItem->node()->toMachineNode()))
                 ++iCountOfStartedMachineItems;
         /* Template: */
         QString strMachineCount = tr("%n machine(s)", "Group item tool-tip / Machine info", items(UIChooserItemType_Machine).size());
@@ -607,6 +580,9 @@ void UIChooserItemGroup::updateAllItems(const QUuid &uId)
     /* Update all the required items recursively: */
     foreach (UIChooserItem *pItem, items())
         pItem->updateAllItems(uId);
+
+    /* Update item finally: */
+    updateItem();
 }
 
 void UIChooserItemGroup::removeAllItems(const QUuid &uId)
@@ -1085,7 +1061,7 @@ void UIChooserItemGroup::sltNameEditingFinished()
     strNewName.replace(QRegExp("[\\\\/:*?\"<>]"), "_");
 
     /* Set new name, save settings: */
-    setName(strNewName);
+    node()->toGroupNode()->setName(strNewName);
     model()->saveGroupSettings();
 }
 
@@ -1102,7 +1078,7 @@ void UIChooserItemGroup::sltGroupToggleStart()
     updateAnimationParameters();
 
     /* Group closed, we are opening it: */
-    if (m_fClosed)
+    if (node()->toGroupNode()->isClosed())
     {
         /* Toggle-state and navigation will be
          * updated on toggle-finish signal! */
@@ -1111,7 +1087,7 @@ void UIChooserItemGroup::sltGroupToggleStart()
     else
     {
         /* Update toggle-state: */
-        m_fClosed = true;
+        node()->toGroupNode()->close();
         /* Update geometry: */
         updateGeometry();
         /* Update navigation: */
@@ -1128,7 +1104,7 @@ void UIChooserItemGroup::sltGroupToggleFinish(bool fToggled)
         return;
 
     /* Update toggle-state: */
-    m_fClosed = !fToggled;
+    fToggled ? node()->toGroupNode()->open() : node()->toGroupNode()->close();
     /* Update geometry: */
     updateGeometry();
     /* Update navigation: */
@@ -1774,7 +1750,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
 
         /* Calculate top rectangle: */
         QRect tRect = rect;
-        if (!m_fClosed)
+        if (node()->toGroupNode()->isOpened())
             tRect.setBottom(tRect.top() + iFullHeaderHeight - 1);
 
         /* Prepare top gradient: */
@@ -1838,7 +1814,7 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
 
     /* Calculate top rectangle: */
     QRect topRect = rectangle;
-    if (!m_fClosed)
+    if (node()->toGroupNode()->isOpened())
         topRect.setBottom(topRect.top() + iFullHeaderHeight - 1);
 
     /* Draw borders: */

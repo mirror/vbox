@@ -26,6 +26,7 @@
 #include "UIChooserItemGroup.h"
 #include "UIChooserItemMachine.h"
 #include "UIChooserModel.h"
+#include "UIChooserNodeMachine.h"
 #include "UIIconPool.h"
 #include "UIVirtualBoxManager.h"
 
@@ -36,8 +37,7 @@
 UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
                                            const CMachine &comMachine,
                                            int iPosition /* = -1 */)
-    : UIChooserItem(pParent, false /* favorite? */, 0, 100)
-    , UIVirtualMachineItem(comMachine)
+    : UIChooserItem(pParent, new UIChooserNodeMachine(pParent->node(), false /* favorite? */, comMachine), 0, 100)
     , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
@@ -57,8 +57,7 @@ UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
 UIChooserItemMachine::UIChooserItemMachine(UIChooserItem *pParent,
                                            UIChooserItemMachine *pCopiedItem,
                                            int iPosition /* = -1 */)
-    : UIChooserItem(pParent, false /* favorite? */, 0, 100)
-    , UIVirtualMachineItem(pCopiedItem->machine())
+    : UIChooserItem(pParent, new UIChooserNodeMachine(pParent->node(), false /* favorite? */, pCopiedItem->machine()), 0, 100)
     , m_iPosition(iPosition)
     , m_iDefaultLightnessMin(0)
     , m_iDefaultLightnessMax(0)
@@ -80,9 +79,29 @@ UIChooserItemMachine::~UIChooserItemMachine()
     cleanup();
 }
 
+CMachine UIChooserItemMachine::machine() const
+{
+    return node()->toMachineNode()->machine();
+}
+
+QUuid UIChooserItemMachine::id() const
+{
+    return node()->toMachineNode()->id();
+}
+
+bool UIChooserItemMachine::accessible() const
+{
+    return node()->toMachineNode()->accessible();
+}
+
+void UIChooserItemMachine::recache()
+{
+    node()->toMachineNode()->recache();
+}
+
 bool UIChooserItemMachine::isLockedMachine() const
 {
-    const KMachineState enmState = machineState();
+    const KMachineState enmState = node()->toMachineNode()->machineState();
     return enmState != KMachineState_PoweredOff &&
            enmState != KMachineState_Saved &&
            enmState != KMachineState_Teleported &&
@@ -152,14 +171,6 @@ void UIChooserItemMachine::enumerateMachineItems(const QList<UIChooserItem*> &il
 
 void UIChooserItemMachine::retranslateUi()
 {
-    /* Update description: */
-    m_strDescription = tr("Virtual Machine");
-
-    /* Update state text size: */
-    updateStateTextSize();
-
-    /* Update machine tool-tip: */
-    updateToolTip();
 }
 
 void UIChooserItemMachine::showEvent(QShowEvent *pEvent)
@@ -168,7 +179,7 @@ void UIChooserItemMachine::showEvent(QShowEvent *pEvent)
     UIChooserItem::showEvent(pEvent);
 
     /* Recache and update pixmaps: */
-    recachePixmap();
+    node()->toMachineNode()->recachePixmap();
     updatePixmaps();
 }
 
@@ -210,40 +221,31 @@ void UIChooserItemMachine::paint(QPainter *pPainter, const QStyleOptionGraphicsI
     paintMachineInfo(pPainter, rectangle);
 }
 
-QString UIChooserItemMachine::name() const
-{
-    return UIVirtualMachineItem::name();
-}
-
-QString UIChooserItemMachine::fullName() const
-{
-    /* Get full parent name, append with '/' if not yet appended: */
-    AssertMsg(parentItem(), ("Incorrect parent set!"));
-    QString strFullParentName = parentItem()->fullName();
-    if (!strFullParentName.endsWith('/'))
-        strFullParentName.append('/');
-    /* Return full item name based on parent prefix: */
-    return strFullParentName + name();
-}
-
-QString UIChooserItemMachine::description() const
-{
-    return m_strDescription;
-}
-
-QString UIChooserItemMachine::definition() const
-{
-    return QString("m=%1").arg(name());
-}
-
 void UIChooserItemMachine::startEditing()
 {
     AssertMsgFailed(("Machine graphics item do NOT support editing yet!"));
 }
 
+void UIChooserItemMachine::updateItem()
+{
+    /* Update this machine-item: */
+    updatePixmaps();
+    updateMinimumNameWidth();
+    updateVisibleName();
+    updateMinimumSnapshotNameWidth();
+    updateVisibleSnapshotName();
+    updateStateTextSize();
+    updateToolTip();
+    update();
+
+    /* Update parent group-item: */
+    parentItem()->updateToolTip();
+    parentItem()->update();
+}
+
 void UIChooserItemMachine::updateToolTip()
 {
-    setToolTip(toolTipText());
+    setToolTip(node()->toMachineNode()->toolTipText());
 }
 
 bool UIChooserItemMachine::hasItems(UIChooserItemType) const
@@ -284,19 +286,8 @@ void UIChooserItemMachine::updateAllItems(const QUuid &uId)
     if (id() != QUuid(uId))
         return;
 
-    /* Update this machine-item: */
-    recache();
-    updatePixmaps();
-    updateMinimumNameWidth();
-    updateVisibleName();
-    updateMinimumSnapshotNameWidth();
-    updateVisibleSnapshotName();
-    updateStateTextSize();
-    updateToolTip();
-
-    /* Update parent group-item: */
-    parentItem()->updateToolTip();
-    parentItem()->update();
+    /* Update item: */
+    updateItem();
 }
 
 void UIChooserItemMachine::removeAllItems(const QUuid &uId)
@@ -372,7 +363,7 @@ int UIChooserItemMachine::minimumWidthHint() const
     iProposedWidth += 2 * iMargin + iParentIndent * level();
     /* And machine-item content to take into account: */
     int iTopLineWidth = m_iMinimumNameWidth;
-    if (!snapshotName().isEmpty())
+    if (!node()->toMachineNode()->snapshotName().isEmpty())
         iTopLineWidth += (iMinorSpacing +
                           m_iMinimumSnapshotNameWidth);
     int iBottomLineWidth = m_statePixmapSize.width() +
@@ -546,7 +537,7 @@ QMimeData* UIChooserItemMachine::createMimeData()
 void UIChooserItemMachine::sltHandleWindowRemapped()
 {
     /* Recache and update pixmaps: */
-    recachePixmap();
+    node()->toMachineNode()->recachePixmap();
     updatePixmaps();
 }
 
@@ -584,7 +575,7 @@ void UIChooserItemMachine::prepare()
 
     /* Add item to the parent: */
     AssertPtrReturnVoid(parentItem());
-    parentItem()->addItem(this, false, m_iPosition);
+    parentItem()->addItem(this, isFavorite(), m_iPosition);
 
     /* Configure connections: */
     connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
@@ -597,11 +588,7 @@ void UIChooserItemMachine::prepare()
             this, &UIChooserItemMachine::sltUpdateFirstRowMaximumWidth);
 
     /* Init: */
-    updatePixmaps();
-    updateMinimumNameWidth();
-    updateVisibleName();
-    updateMinimumSnapshotNameWidth();
-    updateVisibleSnapshotName();
+    updateItem();
 
     /* Apply language settings: */
     retranslateUi();
@@ -672,7 +659,7 @@ void UIChooserItemMachine::updatePixmap()
 {
     /* Get new pixmap and pixmap-size: */
     QSize pixmapSize;
-    QPixmap pixmap = osPixmap(&pixmapSize);
+    QPixmap pixmap = node()->toMachineNode()->osPixmap(&pixmapSize);
     /* Update linked values: */
     if (m_pixmapSize != pixmapSize)
     {
@@ -692,7 +679,7 @@ void UIChooserItemMachine::updateStatePixmap()
     /* Determine icon metric: */
     const int iIconMetric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
     /* Get new state-pixmap and state-pixmap size: */
-    const QIcon stateIcon = machineStateIcon();
+    const QIcon stateIcon = node()->toMachineNode()->machineStateIcon();
     AssertReturnVoid(!stateIcon.isNull());
     const QSize statePixmapSize = QSize(iIconMetric, iIconMetric);
     const QPixmap statePixmap = stateIcon.pixmap(gpManager->windowHandle(), statePixmapSize);
@@ -784,11 +771,11 @@ void UIChooserItemMachine::updateMinimumSnapshotNameWidth()
     /* Calculate new minimum snapshot-name width: */
     int iMinimumSnapshotNameWidth = 0;
     /* Is there any snapshot exists? */
-    if (!snapshotName().isEmpty())
+    if (!node()->toMachineNode()->snapshotName().isEmpty())
     {
         QFontMetrics fm(m_snapshotNameFont, model()->paintDevice());
         int iBracketWidth = fm.width("()"); /* bracket width */
-        int iActualTextWidth = fm.width(snapshotName()); /* snapshot-name width */
+        int iActualTextWidth = fm.width(node()->toMachineNode()->snapshotName()); /* snapshot-name width */
         int iMinimumTextWidth = fm.width("..."); /* ellipsis width */
         iMinimumSnapshotNameWidth = iBracketWidth + qMin(iActualTextWidth, iMinimumTextWidth);
     }
@@ -873,7 +860,7 @@ void UIChooserItemMachine::updateVisibleSnapshotName()
 
     /* Calculate new visible snapshot-name: */
     int iBracketWidth = QFontMetrics(m_snapshotNameFont, pPaintDevice).width("()");
-    QString strVisibleSnapshotName = compressText(m_snapshotNameFont, pPaintDevice, snapshotName(),
+    QString strVisibleSnapshotName = compressText(m_snapshotNameFont, pPaintDevice, node()->toMachineNode()->snapshotName(),
                                                   m_iMaximumSnapshotNameWidth - iBracketWidth);
     strVisibleSnapshotName = QString("(%1)").arg(strVisibleSnapshotName);
     QSize visibleSnapshotNameSize = textSize(m_snapshotNameFont, pPaintDevice, strVisibleSnapshotName);
@@ -894,7 +881,7 @@ void UIChooserItemMachine::updateVisibleSnapshotName()
 void UIChooserItemMachine::updateStateTextSize()
 {
     /* Get new state-text and state-text size: */
-    const QSize stateTextSize = textSize(m_stateTextFont, model()->paintDevice(), machineStateName());
+    const QSize stateTextSize = textSize(m_stateTextFont, model()->paintDevice(), node()->toMachineNode()->machineStateName());
 
     /* Update linked values: */
     if (m_stateTextSize != stateTextSize)
@@ -1177,7 +1164,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
                                       iMinorSpacing;
 
             /* Paint middle element: */
-            if (!snapshotName().isEmpty())
+            if (!node()->toMachineNode()->snapshotName().isEmpty())
             {
                 /* Prepare variables: */
                 int iSnapshotNameX = iSnapshotNameIndent;
@@ -1235,7 +1222,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
                           /* Paint device: */
                           model()->paintDevice(),
                           /* Text to paint: */
-                          machineStateName());
+                          node()->toMachineNode()->machineStateName());
             }
         }
     }

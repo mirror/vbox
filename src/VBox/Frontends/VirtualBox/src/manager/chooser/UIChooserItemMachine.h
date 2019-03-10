@@ -22,11 +22,15 @@
 #endif
 
 /* GUI includes: */
-#include "UIVirtualMachineItem.h"
 #include "UIChooserItem.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+#include "CMachine.h"
+
+
 /** UIChooserItem extension implementing machine item. */
-class UIChooserItemMachine : public UIChooserItem, public UIVirtualMachineItem
+class UIChooserItemMachine : public UIChooserItem
 {
     Q_OBJECT;
 
@@ -44,6 +48,15 @@ public:
 
     /** @name Item stuff.
       * @{ */
+        /** Returns item machine. */
+        CMachine machine() const;
+        /** Returns item machine id. */
+        QUuid id() const;
+        /** Returns whether item accessible. */
+        bool accessible() const;
+        /** Recaches item contents. */
+        void recache();
+
         /** Returns whether VM is locked. */
         bool isLockedMachine() const;
 
@@ -87,18 +100,11 @@ protected:
         /** Returns RTTI item type. */
         virtual int type() const /* override */ { return Type; }
 
-        /** Returns item name. */
-        virtual QString name() const /* override */;
-        /** Returns item full-name. */
-        virtual QString fullName() const /* override */;
-        /** Returns item description. */
-        virtual QString description() const /* override */;
-        /** Returns item definition. */
-        virtual QString definition() const /* override */;
-
         /** Starts item editing. */
         virtual void startEditing() /* override */;
 
+        /** Updates item. */
+        virtual void updateItem() /* override */;
         /** Updates item tool-tip. */
         virtual void updateToolTip() /* override */;
     /** @} */
@@ -286,8 +292,6 @@ private:
         /** Holds item tool pixmap. */
         QPixmap  m_toolPixmap;
 
-        /** Holds item description. */
-        QString  m_strDescription;
         /** Holds item visible name. */
         QString  m_strVisibleName;
         /** Holds item visible snapshot name. */
