@@ -922,6 +922,7 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
                 if (offFile > i_size_read(inode))
                     i_size_write(inode, offFile);
                 vbsf_reg_write_invalidate_mapping_range(inode->i_mapping, offFile - cbActual, offFile);
+                sf_i->force_restat = 1; /* mtime (and size) may have changed */
 
                 /*
                  * Are we done already?  If so commit the new file offset.
@@ -948,7 +949,6 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
                     cbRet = -EPROTO;
                 break;
             }
-            sf_i->force_restat = 1; /* mtime (and size) may have changed */
         }
     }
     if (papPagesFree)
@@ -1025,7 +1025,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
             ssize_t cbRet;
             if (copy_from_user(pReq->abData, buf, size) == 0) {
                 int vrc = VbglR0SfHostReqWriteEmbedded(sf_g->map.root, pReq, sf_r->Handle.hHost,
-                                       pos, (uint32_t)size);
+                                                       pos, (uint32_t)size);
                 if (RT_SUCCESS(vrc)) {
                     cbRet = pReq->Parms.cb32Write.u.value32;
                     AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
@@ -1641,10 +1641,233 @@ static ssize_t vbsf_reg_read_iter(struct kiocb *kio, struct iov_iter *iter)
 }
 
 
+/**
+ * Worker for vbsf_reg_write_iter() that deals with larger writes using page
+ * locking.
+ */
+static ssize_t vbsf_reg_write_iter_locking(struct kiocb *kio, struct iov_iter *iter, size_t cbToWrite, loff_t offFile,
+                                           struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r,
+                                           struct inode *inode, struct vbsf_inode_info *sf_i, struct address_space *mapping)
+{
+    /*
+     * Estimate how many pages we may possible submit in a single request so
+     * that we can allocate matching request buffer and page array.
+     */
+    struct page         *apPagesStack[16];
+    struct page        **papPages     = &apPagesStack[0];
+    struct page        **papPagesFree = NULL;
+    VBOXSFWRITEPGLSTREQ *pReq;
+    ssize_t              cbRet        = 0;
+    size_t               cMaxPages    = vbsf_iter_max_span_of_pages(iter);
+    cMaxPages = RT_MIN(RT_MAX(sf_g->cMaxIoPages, 2), cMaxPages);
+
+    pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cMaxPages]));
+    while (!pReq && cMaxPages > 4) {
+        cMaxPages /= 2;
+        pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cMaxPages]));
+    }
+    if (pReq && cMaxPages > RT_ELEMENTS(apPagesStack))
+        papPagesFree = papPages = kmalloc(cMaxPages * sizeof(sizeof(papPages[0])), GFP_KERNEL);
+    if (pReq && papPages) {
+
+        /*
+         * The write loop.
+         */
+        struct vbsf_iter_stash Stash = VBSF_ITER_STASH_INITIALIZER;
+        do {
+            /*
+             * Grab as many pages as we can.  This means that if adjacent
+             * segments both starts and ends at a page boundrary, we can
+             * do them both in the same transfer from the host.
+             */
+            size_t cPages   = 0;
+            size_t cbChunk  = 0;
+            size_t offPage0 = 0;
+            int rc = vbsf_iter_lock_pages(iter, false /*fWrite*/, &Stash, cMaxPages, papPages, &cPages, &offPage0, &cbChunk);
+            if (rc == 0) {
+                size_t iPage = cPages;
+                while (iPage-- > 0)
+                    pReq->PgLst.aPages[iPage] = page_to_phys(papPages[iPage]);
+                pReq->PgLst.offFirstPage = (uint16_t)offPage0;
+                AssertStmt(cbChunk <= cbToWrite, cbChunk = cbToWrite);
+            } else {
+                cbRet = rc;
+                break;
+            }
+
+            /*
+             * Issue the request and unlock the pages.
+             */
+            rc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
+            SFLOGFLOW(("vbsf_reg_write_iter_locking: VbglR0SfHostReqWritePgLst -> %d (cbActual=%#x cbChunk=%#zx of %#zx cPages=%#zx offPage0=%#x\n",
+                       rc, pReq->Parms.cb32Write.u.value32, cbChunk, cbToWrite, cPages, offPage0));
+
+            vbsf_iter_unlock_pages(iter, papPages, cPages, false /*fSetDirty*/);
+
+            if (RT_SUCCESS(rc)) {
+                /*
+                 * Success, advance position and buffer.
+                 */
+                uint32_t cbActual = pReq->Parms.cb32Write.u.value32;
+                AssertStmt(cbActual <= cbChunk, cbActual = cbChunk);
+                cbRet      += cbActual;
+                offFile    += cbActual;
+                kio->ki_pos = offFile;
+                cbToWrite  -= cbActual;
+                if (offFile > i_size_read(inode))
+                    i_size_write(inode, offFile);
+                vbsf_reg_write_invalidate_mapping_range(mapping, offFile - cbActual, offFile);
+                sf_i->force_restat = 1; /* mtime (and size) may have changed */
+
+                /*
+                 * Are we done already?
+                 */
+                if (!cbToWrite)
+                    break;
+                if (cbActual < cbChunk) { /* We ASSUME end-of-file here. */
+                    if (vbsf_iter_rewind(iter, &Stash, cbChunk - cbActual, cbActual))
+                        iov_iter_truncate(iter, 0);
+                    break;
+                }
+            } else {
+                /*
+                 * Try rewind the iter structure.
+                 */
+                bool const fRewindOkay = vbsf_iter_rewind(iter, &Stash, cbChunk, cbChunk);
+                if (rc == VERR_NO_MEMORY && cMaxPages > 4 && fRewindOkay) {
+                    /*
+                     * The host probably doesn't have enough heap to handle the
+                     * request, reduce the page count and retry.
+                     */
+                    cMaxPages /= 4;
+                    Assert(cMaxPages > 0);
+                } else {
+                    /*
+                     * If we've successfully written stuff, return it rather than
+                     * the error.  (Not sure if this is such a great idea...)
+                     */
+                    if (cbRet <= 0)
+                        cbRet = -EPROTO;
+                    break;
+                }
+            }
+        } while (cbToWrite > 0);
+
+        vbsf_iter_cleanup_stash(iter, &Stash);
+    }
+    else
+        cbRet = -ENOMEM;
+    if (papPagesFree)
+        kfree(papPages);
+    if (pReq)
+        VbglR0PhysHeapFree(pReq);
+    SFLOGFLOW(("vbsf_reg_write_iter_locking: returns %#zx (%zd)\n", cbRet, cbRet));
+    return cbRet;
+}
+
+
+
+/**
+ * Write from I/O vector iterator.
+ *
+ * @returns Number of bytes written on success, negative errno on error.
+ * @param   kio         The kernel I/O control block (or something like that).
+ * @param   iter        The I/O vector iterator describing the buffer.
+ */
 static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
 {
-    SFLOGFLOW(("vbsf_reg_write_iter: -> EINVAL\n"));
-    return -EINVAL;
+    size_t                  cbToWrite = iov_iter_count(iter);
+    struct inode           *inode     = VBSF_GET_F_DENTRY(kio->ki_filp)->d_inode;
+    struct vbsf_inode_info *sf_i      = VBSF_GET_INODE_INFO(inode);
+    struct address_space   *mapping   = inode->i_mapping;
+
+    struct vbsf_reg_info   *sf_r      = kio->ki_filp->private_data;
+    struct vbsf_super_info *sf_g      = VBSF_GET_SUPER_INFO(inode->i_sb);
+    loff_t                  offFile   = kio->ki_pos;
+
+    SFLOGFLOW(("vbsf_reg_write_iter: inode=%p file=%p size=%#zx off=%#llx type=%#x\n",
+               inode, kio->ki_filp, cbToWrite, offFile, iter->type));
+    AssertReturn(S_ISREG(inode->i_mode), -EINVAL);
+
+    /*
+     * Enforce APPEND flag.
+     */
+    /** @todo This should be handled by the host, it returning the new file
+     *        offset when appending.  We may have an outdated i_size value here! */
+    if (kio->ki_flags & IOCB_APPEND)
+        kio->ki_pos = offFile = i_size_read(inode);
+
+    /*
+     * Do we have anything at all to do here?
+     */
+    if (!cbToWrite)
+        return 0;
+
+    /*
+     * Now now we reject async I/O requests.
+     */
+    if (!is_sync_kiocb(kio)) {
+        SFLOGFLOW(("vbsf_reg_write_iter: async I/O not yet supported\n")); /** @todo extend FsPerf with AIO tests. */
+        return -EOPNOTSUPP;
+    }
+
+    /*
+     * If there are active writable mappings, coordinate with any
+     * pending writes via those.
+     */
+    if (   mapping
+        && mapping->nrpages > 0
+        && mapping_writably_mapped(mapping)) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
+        int err = filemap_fdatawait_range(mapping, offFile, offFile + cbToWrite - 1);
+        if (err)
+            return err;
+#else
+        /** @todo ... */
+#endif
+    }
+
+    /*
+     * For small requests, try use an embedded buffer provided we get a heap block
+     * that does not cross page boundraries (see host code).
+     */
+    if (cbToWrite <= PAGE_SIZE / 4 * 3 - RT_UOFFSETOF(VBOXSFWRITEEMBEDDEDREQ, abData[0]) /* see allocator */) {
+        uint32_t const         cbReq = RT_UOFFSETOF(VBOXSFWRITEEMBEDDEDREQ, abData[0]) + cbToWrite;
+        VBOXSFWRITEEMBEDDEDREQ *pReq = (VBOXSFWRITEEMBEDDEDREQ *)VbglR0PhysHeapAlloc(cbReq);
+        if (pReq) {
+            if ((PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
+                ssize_t cbRet;
+                if (copy_from_iter(pReq->abData, cbToWrite, iter) == cbToWrite) {
+                    int vrc = VbglR0SfHostReqWriteEmbedded(sf_g->map.root, pReq, sf_r->Handle.hHost,
+                                                           offFile, (uint32_t)cbToWrite);
+                    if (RT_SUCCESS(vrc)) {
+                        cbRet = pReq->Parms.cb32Write.u.value32;
+                        AssertStmt(cbRet <= (ssize_t)cbToWrite, cbRet = cbToWrite);
+                        kio->ki_pos = offFile += cbRet;
+                        if (offFile > i_size_read(inode))
+                            i_size_write(inode, offFile);
+                        vbsf_reg_write_invalidate_mapping_range(mapping, offFile - cbRet, offFile);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+                        if ((size_t)cbRet < cbToWrite)
+                            iov_iter_revert(iter, cbToWrite - cbRet);
+# endif
+                    } else
+                        cbRet = -EPROTO;
+                    sf_i->force_restat = 1; /* mtime (and size) may have changed */
+                } else
+                    cbRet = -EFAULT;
+                VbglR0PhysHeapFree(pReq);
+                SFLOGFLOW(("vbsf_reg_write_iter: returns %#zx (%zd)\n", cbRet, cbRet));
+                return cbRet;
+            }
+            VbglR0PhysHeapFree(pReq);
+        }
+    }
+
+    /*
+     * Otherwise do the page locking thing.
+     */
+    return vbsf_reg_write_iter_locking(kio, iter, cbToWrite, offFile, sf_g, sf_r, inode, sf_i, mapping);
 }
 
 #endif /* >= 3.16.0 */
