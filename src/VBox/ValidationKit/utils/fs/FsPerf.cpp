@@ -1831,36 +1831,14 @@ void fsPerfIoReadBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
 }
 
 
-#if !defined(RT_OS_WINDOWS) && !defined(RT_OS_OS2) /** @todo use list-io on OS/2 (readv uses heap+read). */
-/** Our version of RTFileSgReadAt for hosts where preadv is too new.   */
-static int myFileSgReadAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToRead, size_t *pcbRead)
+/** preadv is too new to be useful, so we use the readv api via this wrapper. */
+DECLINLINE(int) myFileSgReadAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToRead, size_t *pcbRead)
 {
     int rc = RTFileSeek(hFile, off, RTFILE_SEEK_BEGIN, NULL);
     if (RT_SUCCESS(rc))
-    {
-        ssize_t cbRead = readv(RTFileToNative(hFile), (const struct iovec *)pSgBuf->paSegs, pSgBuf->cSegs);
-        if (cbRead < 0)
-        {
-            rc = RTErrConvertFromErrno(errno);
-            if (pcbRead)
-                *pcbRead = 0;
-        }
-        else
-        {
-            if (pcbRead)
-                *pcbRead = cbRead;
-            if ((size_t)cbRead == cbToRead || pcbRead)
-                rc = VINF_SUCCESS;
-            else
-            {
-                rc = VERR_READ_ERROR;
-                RTTestIFailed("readv: off=%#llx cbToRead=%#zx returned %#zx", off, cbToRead, cbRead);
-            }
-        }
-    }
+        rc = RTFileSgRead(hFile, pSgBuf, cbToRead, pcbRead);
     return rc;
 }
-#endif
 
 
 void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
@@ -2030,13 +2008,12 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 #endif
 
     /*
-     * Scatter read function operation.  While we have RTFileSgReadAt, it is
-     * generally not available, so we have to call readv directly.
+     * Scatter read function operation.
      */
 #ifdef RT_OS_WINDOWS
     /** @todo RTFileSgReadAt is just a RTFileReadAt loop for windows NT.  Need
      *        to use ReadFileScatter (nocache + page aligned). */
-#elif !defined(RT_OS_OS2)
+#elif !defined(RT_OS_OS2) /** @todo implement RTFileSg using list i/o */
 
 # ifdef UIO_MAXIOV
     RTSGSEG aSegs[UIO_MAXIOV];
@@ -2067,7 +2044,7 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             }
         else
         {
-            RTTestIFailed("RTFileSgReadAt failed: %Rrc - cSegs=%u cbSegs=%#zx cbToRead=%#zx", rc, cSegs, cbSeg, cbToRead);
+            RTTestIFailed("myFileSgReadAt failed: %Rrc - cSegs=%u cbSegs=%#zx cbToRead=%#zx", rc, cSegs, cbSeg, cbToRead);
             break;
         }
         if (cSegs == 16)
@@ -2127,7 +2104,7 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             }
         else
         {
-            RTTestIFailed("RTFileSgReadAt failed: %Rrc - cSegs=%#x cbToRead=%#zx", rc, cSegs, cbToRead);
+            RTTestIFailed("myFileSgReadAt failed: %Rrc - cSegs=%#x cbToRead=%#zx", rc, cSegs, cbToRead);
             break;
         }
     }
@@ -2203,6 +2180,16 @@ void fsPerfIoWriteBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
 }
 
 
+/** pwritev is too new to be useful, so we use the writev api via this wrapper. */
+DECLINLINE(int) myFileSgWriteAt(RTFILE hFile, RTFOFF off, PRTSGBUF pSgBuf, size_t cbToWrite, size_t *pcbWritten)
+{
+    int rc = RTFileSeek(hFile, off, RTFILE_SEEK_BEGIN, NULL);
+    if (RT_SUCCESS(rc))
+        rc = RTFileSgWrite(hFile, pSgBuf, cbToWrite, pcbWritten);
+    return rc;
+}
+
+
 void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint64_t cbFile)
 {
     RTTestISubF("IO - RTFileWrite");
@@ -2219,6 +2206,9 @@ void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint
         pbBuf = (uint8_t *)RTMemPageAlloc(_32M);
     }
 
+    uint8_t bFiller = 0x88;
+
+#if 1
     /*
      * Start at the beginning and write out the full buffer in random small chunks, thereby
      * checking that unaligned buffer addresses, size and file offsets work fine.
@@ -2228,7 +2218,6 @@ void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint
         uint64_t offFile;
         uint32_t cbMax;
     } aRuns[] = { { 0, 127 }, { cbFile - cbBuf, UINT32_MAX }, { 0, UINT32_MAX -1 }};
-    uint8_t bFiller = 0x88;
     for (uint32_t i = 0; i < RT_ELEMENTS(aRuns); i++, bFiller)
     {
         fsPerfFillWriteBuf(aRuns[i].offFile, pbBuf, cbBuf, bFiller);
@@ -2315,18 +2304,126 @@ void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint
      * to be used to truncate a file.
      */
     RTTESTI_CHECK_RC(RTFileSeek(hFile1, -_4K, RTFILE_SEEK_END, NULL), VINF_SUCCESS);
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
     IO_STATUS_BLOCK Ios        = RTNT_IO_STATUS_BLOCK_INITIALIZER;
     NTSTATUS rcNt = NtWriteFile((HANDLE)RTFileToNative(hFile1), NULL, NULL, NULL, &Ios, pbBuf, 0, NULL, NULL);
     RTTESTI_CHECK_MSG(rcNt == STATUS_SUCCESS, ("rcNt=%#x", rcNt));
     RTTESTI_CHECK(Ios.Status == STATUS_SUCCESS);
     RTTESTI_CHECK(Ios.Information == 0);
-#else
+# else
     ssize_t cbWritten = write((int)RTFileToNative(hFile1), pbBuf, 0);
     RTTESTI_CHECK(cbWritten == 0);
-#endif
+# endif
     RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, _4K, NULL), VINF_SUCCESS);
     fsPerfCheckReadBuf(__LINE__, cbFile - _4K, pbBuf, _4K, pbBuf[0x8]);
+
+#else
+    RT_NOREF(hFileNoCache, hFileWriteThru);
+#endif
+
+    /*
+     * Gather write function operation.
+     */
+#ifdef RT_OS_WINDOWS
+    /** @todo RTFileSgWriteAt is just a RTFileWriteAt loop for windows NT.  Need
+     *        to use WriteFileGather (nocache + page aligned). */
+#elif !defined(RT_OS_OS2) /** @todo implement RTFileSg using list i/o */
+
+# ifdef UIO_MAXIOV
+    RTSGSEG aSegs[UIO_MAXIOV];
+# else
+    RTSGSEG aSegs[512];
+# endif
+    RTSGBUF SgBuf;
+    uint32_t cIncr = 1;
+    for (uint32_t cSegs = 1; cSegs <= RT_ELEMENTS(aSegs); cSegs += cIncr, bFiller++)
+    {
+        size_t const cbSeg     = cbBuf / cSegs;
+        size_t const cbToWrite = cbSeg * cSegs;
+        for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+        {
+            aSegs[iSeg].cbSeg = cbSeg;
+            aSegs[iSeg].pvSeg = &pbBuf[cbToWrite - (iSeg + 1) * cbSeg];
+            fsPerfFillWriteBuf(iSeg * cbSeg, (uint8_t *)aSegs[iSeg].pvSeg, cbSeg, bFiller);
+        }
+        RTSgBufInit(&SgBuf, &aSegs[0], cSegs);
+        int rc = myFileSgWriteAt(hFile1, 0, &SgBuf, cbToWrite, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            RTTESTI_CHECK_RC(RTFileReadAt(hFile1, 0, pbBuf, cbToWrite, NULL), VINF_SUCCESS);
+            fsPerfCheckReadBuf(__LINE__, 0, pbBuf, cbToWrite, bFiller);
+        }
+        else
+        {
+            RTTestIFailed("myFileSgWriteAt failed: %Rrc - cSegs=%u cbSegs=%#zx cbToWrite=%#zx", rc, cSegs, cbSeg, cbToWrite);
+            break;
+        }
+        if (cSegs == 16)
+            cIncr = 7;
+        else if (cSegs == 16 * 7 + 16 /*= 128*/)
+            cIncr = 64;
+    }
+
+    /* random stuff, including zero segments.  */
+    for (uint32_t iTest = 0; iTest < 128; iTest++, bFiller++)
+    {
+        uint32_t cSegs     = RTRandU32Ex(1, RT_ELEMENTS(aSegs));
+        uint32_t iZeroSeg  = cSegs > 10 ? RTRandU32Ex(0, cSegs - 1)                    : UINT32_MAX / 2;
+        uint32_t cZeroSegs = cSegs > 10 ? RTRandU32Ex(1, RT_MIN(cSegs - iZeroSeg, 25)) : 0;
+        size_t   cbToWrite = 0;
+        size_t   cbLeft    = cbBuf;
+        uint8_t *pbCur     = &pbBuf[cbBuf];
+        for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+        {
+            uint32_t iAlign = RTRandU32Ex(0, 3);
+            if (iAlign & 2) /* end is page aligned */
+            {
+                cbLeft -= (uintptr_t)pbCur & PAGE_OFFSET_MASK;
+                pbCur  -= (uintptr_t)pbCur & PAGE_OFFSET_MASK;
+            }
+
+            size_t cbSegOthers = (cSegs - iSeg) * _8K;
+            size_t cbSegMax    = cbLeft > cbSegOthers ? cbLeft - cbSegOthers
+                               : cbLeft > cSegs       ? cbLeft - cSegs
+                               : cbLeft;
+            size_t cbSeg       = cbLeft != 0 ? RTRandU32Ex(0, cbSegMax) : 0;
+            if (iAlign & 1) /* start is page aligned */
+                cbSeg += ((uintptr_t)pbCur - cbSeg) & PAGE_OFFSET_MASK;
+
+            if (iSeg - iZeroSeg < cZeroSegs)
+                cbSeg = 0;
+
+            cbToWrite += cbSeg;
+            cbLeft    -= cbSeg;
+            pbCur     -= cbSeg;
+            aSegs[iSeg].cbSeg = cbSeg;
+            aSegs[iSeg].pvSeg = pbCur;
+        }
+
+        uint64_t const offFile = cbToWrite < cbFile ? RTRandU64Ex(0, cbFile - cbToWrite) : 0;
+        uint64_t       offFill = offFile;
+        for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+            if (aSegs[iSeg].cbSeg)
+            {
+                fsPerfFillWriteBuf(offFill, (uint8_t *)aSegs[iSeg].pvSeg, aSegs[iSeg].cbSeg, bFiller);
+                offFill += aSegs[iSeg].cbSeg;
+            }
+
+        RTSgBufInit(&SgBuf, &aSegs[0], cSegs);
+        int rc = myFileSgWriteAt(hFile1, offFile, &SgBuf, cbToWrite, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            RTTESTI_CHECK_RC(RTFileReadAt(hFile1, offFile, pbBuf, cbToWrite, NULL), VINF_SUCCESS);
+            fsPerfCheckReadBuf(__LINE__, offFile, pbBuf, cbToWrite, bFiller);
+        }
+        else
+        {
+            RTTestIFailed("myFileSgWriteAt failed: %Rrc - cSegs=%#x cbToWrite=%#zx", rc, cSegs, cbToWrite);
+            break;
+        }
+    }
+
+#endif
 
     /*
      * Other OS specific stuff.
