@@ -465,8 +465,13 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                     # Check for bad failure reasons.
                     oFailure = None;
                     if oSet.enmStatus in TestSetData.kasBadTestStatuses:
-                        oFailure = self.oTestResultFailureLogic.getById(oSet.idTestResult);
-                    if oFailure is not None and oFailure.idFailureReason in aidFailureReasons:
+                        (oTree, _ ) = self.oTestResultLogic.fetchResultTree(oSet.idTestSet)
+                        aoFailedResults = oTree.getListOfFailures();
+                        for oFailedResult in aoFailedResults:
+                            if oFailedResult.idFailureReason in aidFailureReasons:
+                                oFailure = oFailedResult;
+                                break;
+                    if oFailure is not None:
                         cBad += 1;
                     else:
                         # This is an okay test result then.
