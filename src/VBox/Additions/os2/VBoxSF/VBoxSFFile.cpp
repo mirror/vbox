@@ -312,7 +312,8 @@ FS32_OPENCREATE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd
 DECLASM(APIRET)
 FS32_CLOSE(ULONG uType, ULONG fIoFlags, PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd)
 {
-    LogFlow(("FS32_CLOSE: uType=%#x fIoFlags=%#x pSfFsi=%p pSfFsd=%p:{%#x}\n", uType, fIoFlags, pSfFsi, pSfFsd, pSfFsd->u32Magic));
+    LogFlow(("FS32_CLOSE: uType=%#x fIoFlags=%#x pSfFsi=%p pSfFsd=%p:{%#x, %#llx}\n",
+             uType, fIoFlags, pSfFsi, pSfFsd, pSfFsd->u32Magic, pSfFsd->hHostFile));
 
     /*
      * Validate input.
@@ -1120,6 +1121,9 @@ static void vboxSfOs2ConvertPageList(KernPageList_t volatile *paSrc, RTGCPHYS64 
 
 /**
  * Helper for FS32_READ.
+ *
+ * @note Must not called if reading beyond the end of the file, as we would give
+ *       sfi_sizel an incorrect value then.
  */
 DECLINLINE(uint32_t) vboxSfOs2ReadFinalize(PSFFSI pSfFsi, uint64_t offRead, uint32_t cbActual)
 {
@@ -1169,12 +1173,21 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
             if (RT_SUCCESS(vrc))
             {
                 cbActual = pReq->Parms.cb32Read.u.value32;
-                AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
-                rc = KernCopyOut(pvData, &pReq->abData[0], cbActual);
-                if (rc == NO_ERROR)
+                if (cbActual > 0)
                 {
-                    *pcb = vboxSfOs2ReadFinalize(pSfFsi, offRead, cbActual);
-                    LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [embedded]\n", cbActual, pSfFsi->sfi_positionl));
+                    AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
+                    rc = KernCopyOut(pvData, &pReq->abData[0], cbActual);
+                    if (rc == NO_ERROR)
+                    {
+                        *pcb = vboxSfOs2ReadFinalize(pSfFsi, offRead, cbActual);
+                        LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [embedded]\n", cbActual, pSfFsi->sfi_positionl));
+                    }
+                }
+                else
+                {
+                    LogFlow(("FS32_READ: returns; cbActual=0 (EOF); sfi_positionl=%RI64 [embedded]\n", pSfFsi->sfi_positionl));
+                    *pcb = 0;
+                    rc = NO_ERROR;
                 }
             }
             else
@@ -1226,12 +1239,21 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
             if (RT_SUCCESS(vrc))
             {
                 cbActual = pReq->Parms.cb32Read.u.value32;
-                AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
-                rc = KernCopyOut(pvData, pvBuf, cbActual);
-                if (rc == NO_ERROR)
+                if (cbActual > 0)
                 {
-                    *pcb = vboxSfOs2ReadFinalize(pSfFsi, offRead, cbActual);
-                    LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [bounced]\n", cbActual, pSfFsi->sfi_positionl));
+                    AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
+                    rc = KernCopyOut(pvData, pvBuf, cbActual);
+                    if (rc == NO_ERROR)
+                    {
+                        *pcb = vboxSfOs2ReadFinalize(pSfFsi, offRead, cbActual);
+                        LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [bounced]\n", cbActual, pSfFsi->sfi_positionl));
+                    }
+                }
+                else
+                {
+                    LogFlow(("FS32_READ: returns; cbActual=0 (EOF) sfi_positionl=%RI64 [bounced]\n", pSfFsi->sfi_positionl));
+                    *pcb = 0;
+                    rc = NO_ERROR;
                 }
             }
             else
@@ -1263,14 +1285,22 @@ FS32_READ(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, PVOID pvData, PULONG pcb, ULONG fIo
         cPages = (cbToRead + ((uint16_t)(uintptr_t)pvData & (uint16_t)PAGE_OFFSET_MASK) + PAGE_SIZE - 1) >> PAGE_SHIFT;
         vboxSfOs2ConvertPageList((KernPageList_t volatile *)&pReq->PgLst.aPages[0], &pReq->PgLst.aPages[0], cPagesRet, cPages);
 
-        APIRET rc;
         int vrc = VbglR0SfHostReqReadPgLst(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offRead, cbToRead, cPages);
         if (RT_SUCCESS(vrc))
         {
             cbActual = pReq->Parms.cb32Read.u.value32;
-            AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
-            *pcb = vboxSfOs2ReadFinalize(pSfFsi, offRead, cbActual);
-            LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [locked]\n", cbActual, pSfFsi->sfi_positionl));
+            if (cbActual > 0)
+            {
+                AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
+                *pcb = vboxSfOs2ReadFinalize(pSfFsi, offRead, cbActual);
+                LogFlow(("FS32_READ: returns; cbActual=%#x sfi_positionl=%RI64 [locked]\n", cbActual, pSfFsi->sfi_positionl));
+            }
+            else
+            {
+                LogFlow(("FS32_READ: returns; cbActual=0 (EOF) sfi_positionl=%RI64 [locked]\n", pSfFsi->sfi_positionl));
+                *pcb = 0;
+                rc = NO_ERROR;
+            }
         }
         else
         {
@@ -1391,7 +1421,6 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
             APIRET rc = KernCopyIn(pvBuf, pvData, cbToWrite);
             if (rc == NO_ERROR)
             {
-                APIRET rc;
                 int vrc = VbglR0SfHostReqWriteContig(pFolder->idHostRoot, pReq, pSfFsd->hHostFile,
                                                      offWrite, cbToWrite, pvBuf, GCPhys);
                 if (RT_SUCCESS(vrc))
@@ -1430,7 +1459,6 @@ FS32_WRITE(PSFFSI pSfFsi, PVBOXSFSYFI pSfFsd, void const *pvData, PULONG pcb, UL
         cPages = (cbToWrite + ((uint16_t)(uintptr_t)pvData & (uint16_t)PAGE_OFFSET_MASK) + PAGE_SIZE - 1) >> PAGE_SHIFT;
         vboxSfOs2ConvertPageList((KernPageList_t volatile *)&pReq->PgLst.aPages[0], &pReq->PgLst.aPages[0], cPagesRet, cPages);
 
-        APIRET rc;
         int vrc = VbglR0SfHostReqWritePgLst(pFolder->idHostRoot, pReq, pSfFsd->hHostFile, offWrite, cbToWrite, cPages);
         if (RT_SUCCESS(vrc))
         {

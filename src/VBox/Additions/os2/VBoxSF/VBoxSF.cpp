@@ -1600,7 +1600,7 @@ FS32_MKDIR(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszDir, LONG offCurDirEnd, PEAO
     }
 
     RT_NOREF_PV(pCdFsi);
-    LogFlow(("FS32_RMDIR: returns %u\n", rc));
+    LogFlow(("FS32_MMDIR: returns %u\n", rc));
     return rc;
 }
 
@@ -1620,7 +1620,7 @@ FS32_RMDIR(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszDir, LONG offCurDirEnd)
     if (rc == NO_ERROR)
     {
         int vrc = VbglR0SfHostReqRemove(pFolder->idHostRoot, pReq, SHFL_REMOVE_DIR);
-        LogFlow(("FS32_RMDIR: VbglR0SfHostReqRemove -> %Rrc\n", rc));
+        LogFlow(("FS32_RMDIR: VbglR0SfHostReqRemove -> %Rrc\n", vrc));
         if (RT_SUCCESS(vrc))
             rc = NO_ERROR;
         else
@@ -1718,7 +1718,7 @@ FS32_DELETE(PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszFile, LONG offCurDirEnd)
     if (rc == NO_ERROR)
     {
         int vrc = VbglR0SfHostReqRemove(pFolder->idHostRoot, pReq, SHFL_REMOVE_FILE);
-        LogFlow(("FS32_DELETE: VbglR0SfHostReqRemove -> %Rrc\n", rc));
+        LogFlow(("FS32_DELETE: VbglR0SfHostReqRemove -> %Rrc\n", vrc));
         if (RT_SUCCESS(vrc))
             rc = NO_ERROR;
         else
@@ -1762,6 +1762,8 @@ APIRET vboxSfOs2SetInfoCommonWorker(PVBOXSFFOLDER pFolder, SHFLHANDLE hHostFile,
 
     /** @todo should we validate attributes?   */
     pObjInfoBuf->Attr.fMode = (fAttribs << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_OS2;
+    if (pObjInfoBuf->Attr.fMode == 0)
+        pObjInfoBuf->Attr.fMode |= RTFS_DOS_NT_NORMAL;
 
     if (pTimestamps)
     {
@@ -1886,8 +1888,8 @@ static APIRET vboxSfOs2SetPathInfoWorker(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ 
 DECLASM(APIRET)
 FS32_FILEATTRIBUTE(ULONG fFlags, PCDFSI pCdFsi, PVBOXSFCD pCdFsd, PCSZ pszName, LONG offCurDirEnd, PUSHORT pfAttr)
 {
-    LogFlow(("FS32_FILEATTRIBUTE: fFlags=%#x pCdFsi=%p:{%#x,%s} pCdFsd=%p pszName=%p:{%s} offCurDirEnd=%d pfAttr=%p\n",
-             fFlags, pCdFsi, pCdFsi->cdi_hVPB, pCdFsi->cdi_curdir, pCdFsd, pszName, pszName, offCurDirEnd, pfAttr));
+    LogFlow(("FS32_FILEATTRIBUTE: fFlags=%#x pCdFsi=%p:{%#x,%s} pCdFsd=%p pszName=%p:{%s} offCurDirEnd=%d pfAttr=%p={%#x}\n",
+             fFlags, pCdFsi, pCdFsi->cdi_hVPB, pCdFsi->cdi_curdir, pCdFsd, pszName, pszName, offCurDirEnd, pfAttr, *pfAttr));
     RT_NOREF(pCdFsi, offCurDirEnd);
 
     APIRET rc;
@@ -2143,12 +2145,33 @@ vboxSfOs2MakeEmptyEaList(PEAOP pEaOp, ULONG uLevel)
  * @param   pbData          Where to return the data (user address).
  * @param   cbData          The maximum amount of data we can return.
  */
-static int vboxSfOs2QueryCorrectCase(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ *pReq, const char *pszPath,
-                                     PBYTE pbData, ULONG cbData)
+static APIRET vboxSfOs2QueryCorrectCase(PVBOXSFFOLDER pFolder, VBOXSFCREATEREQ *pReq, const char *pszPath,
+                                        PBYTE pbData, ULONG cbData)
 {
-/** @todo do case correction.  Can do step-by-step dir info... but slow */
-    RT_NOREF(pFolder, pReq, pszPath, pbData, cbData);
-    return ERROR_NOT_SUPPORTED;
+    RT_NOREF(pFolder, pReq);
+    APIRET rc;
+    size_t cchPath = RTStrNLen(pszPath, CCHMAXPATH + 1);
+    if (cchPath <= CCHMAXPATH)
+    {
+        if (cbData > cchPath)
+        {
+            /** @todo implement this properly on the host side! */
+            rc = KernCopyOut(pbData, pszPath, cbData + 1);
+            LogFlow(("vboxSfOs2QueryCorrectCase: returns %u\n", rc));
+        }
+        else
+        {
+            LogFlow(("vboxSfOs2QueryCorrectCase: returns %u (ERROR_INSUFFICIENT_BUFFER) - cchPath=%#x cbData=%#x\n",
+                     ERROR_INSUFFICIENT_BUFFER, cchPath, cbData));
+            rc = ERROR_INSUFFICIENT_BUFFER;
+        }
+    }
+    else
+    {
+        LogFlow(("vboxSfOs2QueryCorrectCase: returns %u (ERROR_FILENAME_EXCED_RANGE)\n", ERROR_FILENAME_EXCED_RANGE));
+        rc = ERROR_FILENAME_EXCED_RANGE;
+    }
+    return rc;
 }
 
 
