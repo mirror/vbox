@@ -161,7 +161,6 @@ void UIGuestSessionTreeItem::initProcessSubTree()
     if (!m_comGuestSession.isOk())
         return;
     QVector<CGuestProcess> processes = m_comGuestSession.GetProcesses();
-    printf("processes # %d\n", processes.size());
     for (int  i =0; i < processes.size(); ++i)
         addGuestProcess(processes[i]);
 }
