@@ -549,7 +549,16 @@ RTDECL(int)  RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead
         }
         return VINF_SUCCESS;
     }
-    return RTErrConvertFromWin32(GetLastError());
+
+    /* We will get an EOF error when using overlapped I/O.  So, make sure we don't
+       return it when pcbhRead is not NULL. */
+    DWORD dwErr = GetLastError();
+    if (pcbRead && dwErr == ERROR_HANDLE_EOF)
+    {
+        *pcbRead = 0;
+        return VINF_SUCCESS;
+    }
+    return RTErrConvertFromWin32(dwErr);
 }
 
 
