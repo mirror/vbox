@@ -468,9 +468,11 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                         (oTree, _ ) = self.oTestResultLogic.fetchResultTree(oSet.idTestSet)
                         aoFailedResults = oTree.getListOfFailures();
                         for oFailedResult in aoFailedResults:
-                            if oFailedResult.idFailureReason in aidFailureReasons:
-                                oFailure = oFailedResult;
+                            oFailure = self.oTestResultFailureLogic.getById(oFailedResult.idTestResult);
+                            if oFailure is not None and oFailure.idFailureReason in aidFailureReasons:
                                 break;
+                            else:
+                                oFailure = None;
                     if oFailure is not None:
                         cBad += 1;
                     else:
