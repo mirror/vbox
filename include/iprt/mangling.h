@@ -1040,6 +1040,7 @@
 # define RTFuzzCtxCreateFromStateFile                   RT_MANGLER(RTFuzzCtxCreateFromStateFile)
 # define RTFuzzCtxCreateFromStateMem                    RT_MANGLER(RTFuzzCtxCreateFromStateMem)
 # define RTFuzzCtxInputGenerate                         RT_MANGLER(RTFuzzCtxInputGenerate)
+# define RTFuzzCtxQueryStats                            RT_MANGLER(RTFuzzCtxQueryStats)
 # define RTFuzzCtxRelease                               RT_MANGLER(RTFuzzCtxRelease)
 # define RTFuzzCtxReseed                                RT_MANGLER(RTFuzzCtxReseed)
 # define RTFuzzCtxRetain                                RT_MANGLER(RTFuzzCtxRetain)

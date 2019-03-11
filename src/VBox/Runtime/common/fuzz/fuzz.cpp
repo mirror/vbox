@@ -1627,6 +1627,18 @@ RTDECL(uint32_t) RTFuzzCtxRelease(RTFUZZCTX hFuzzCtx)
 }
 
 
+RTDECL(int) RTFuzzCtxQueryStats(RTFUZZCTX hFuzzCtx, PRTFUZZCTXSTATS pStats)
+{
+    PRTFUZZCTXINT pThis = hFuzzCtx;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pStats, VERR_INVALID_POINTER);
+
+    pStats->cbMemory   = ASMAtomicReadZ(&pThis->cbMemTotal);
+    pStats->cMutations = ASMAtomicReadU64(&pThis->cMutations);
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Fuzzing context export callback for a single mutation.
  */

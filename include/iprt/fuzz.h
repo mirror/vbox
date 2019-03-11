@@ -92,6 +92,20 @@ typedef enum RTFUZZCTXTYPE
 } RTFUZZCTXTYPE;
 
 
+/**
+ * Fuzzing context statistics.
+ */
+typedef struct RTFUZZCTXSTATS
+{
+    /** Amount of memory currently allocated. */
+    size_t                      cbMemory;
+    /** Number of mutations accumulated in the corpus. */
+    uint64_t                    cMutations;
+} RTFUZZCTXSTATS;
+/** Pointer to fuzzing context statistics. */
+typedef RTFUZZCTXSTATS *PRTFUZZCTXSTATS;
+
+
 /** @name RTFUZZCTX_F_XXX - Flags for RTFuzzCtxCfgSetBehavioralFlags
  * @{ */
 /** Adds all generated inputs automatically to the input corpus for the owning context. */
@@ -182,6 +196,15 @@ RTDECL(uint32_t) RTFuzzCtxRetain(RTFUZZCTX hFuzzCtx);
  * @param   hFuzzCtx            Handle of the fuzzing context.
  */
 RTDECL(uint32_t) RTFuzzCtxRelease(RTFUZZCTX hFuzzCtx);
+
+/**
+ * Queries statistics about the given fuzzing context.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzCtx            Handle of the fuzzing context.
+ * @param   pStats              Where to store the stats on success.
+ */
+RTDECL(int) RTFuzzCtxQueryStats(RTFUZZCTX hFuzzCtx, PRTFUZZCTXSTATS pStats);
 
 /**
  * Exports the given fuzzing context state.
