@@ -53,7 +53,8 @@ template<> bool canConvert<KStorageBus>() { return true; }
 template<> bool canConvert<KStorageControllerType>() { return true; }
 template<> bool canConvert<KChipsetType>() { return true; }
 template<> bool canConvert<KNATProtocol>() { return true; }
-
+template<> bool canConvert<KGuestSessionStatus>() { return true; }
+template<> bool canConvert<KProcessStatus>() { return true; }
 
 /* QColor <= KMachineState: */
 template<> QColor toColor(const KMachineState &state)
@@ -676,4 +677,86 @@ template<> KNATProtocol fromInternalString<KNATProtocol>(const QString &strProto
     }
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strProtocol, Qt::CaseInsensitive)));
+}
+
+template<> QString toInternalString(const KGuestSessionStatus &enmStatus)
+{
+    switch (enmStatus)
+    {
+        case KGuestSessionStatus_Undefined:           return QApplication::translate("VBoxGlobal", "Undefined",          "GuestSessionStatus");
+        case KGuestSessionStatus_Starting:            return QApplication::translate("VBoxGlobal", "Starting",           "GuestSessionStatus");
+        case KGuestSessionStatus_Started:             return QApplication::translate("VBoxGlobal", "Started",            "GuestSessionStatus");
+        case KGuestSessionStatus_Terminating:         return QApplication::translate("VBoxGlobal", "Terminating",        "GuestSessionStatus");
+        case KGuestSessionStatus_Terminated:          return QApplication::translate("VBoxGlobal", "Terminated",         "GuestSessionStatus");
+        case KGuestSessionStatus_TimedOutKilled:      return QApplication::translate("VBoxGlobal", "TimedOutKilled",     "GuestSessionStatus");
+        case KGuestSessionStatus_TimedOutAbnormally:  return QApplication::translate("VBoxGlobal", "TimedOutAbnormally", "GuestSessionStatus");
+        case KGuestSessionStatus_Down:                return QApplication::translate("VBoxGlobal", "Down",               "GuestSessionStatus");
+        case KGuestSessionStatus_Error:               return QApplication::translate("VBoxGlobal", "Error",              "GuestSessionStatus");
+        default: AssertMsgFailed(("No text for %d", enmStatus)); break;
+    }
+    return QString();
+}
+
+template<> KGuestSessionStatus fromInternalString<KGuestSessionStatus>(const QString &strStatus)
+{
+    QHash<QString, KGuestSessionStatus> list;
+    list.insert(QApplication::translate("VBoxGlobal", "Undefined",          "GuestSessionStatus"),  KGuestSessionStatus_Undefined);
+    list.insert(QApplication::translate("VBoxGlobal", "Starting",           "GuestSessionStatus"),  KGuestSessionStatus_Starting);
+    list.insert(QApplication::translate("VBoxGlobal", "Started",            "GuestSessionStatus"),  KGuestSessionStatus_Started);
+    list.insert(QApplication::translate("VBoxGlobal", "Terminating",        "GuestSessionStatus"),  KGuestSessionStatus_Terminating);
+    list.insert(QApplication::translate("VBoxGlobal", "Terminated",         "GuestSessionStatus"),  KGuestSessionStatus_Terminated);
+    list.insert(QApplication::translate("VBoxGlobal", "TimedOutKilled",     "GuestSessionStatus"),  KGuestSessionStatus_TimedOutKilled);
+    list.insert(QApplication::translate("VBoxGlobal", "TimedOutAbnormally", "GuestSessionStatus"),  KGuestSessionStatus_TimedOutAbnormally);
+    list.insert(QApplication::translate("VBoxGlobal", "Down",               "GuestSessionStatus"),  KGuestSessionStatus_Down);
+    list.insert(QApplication::translate("VBoxGlobal", "Error",              "GuestSessionStatus"),  KGuestSessionStatus_Error);
+    if (!list.contains(strStatus))
+    {
+        AssertMsgFailed(("No value for '%s'", strStatus.toUtf8().constData()));
+    }
+    return list.value(strStatus, KGuestSessionStatus_Error);
+}
+
+template<> QString toInternalString(const KProcessStatus &enmStatus)
+{
+    switch (enmStatus)
+    {
+        case KProcessStatus_Undefined:            return QApplication::translate("VBoxGlobal", "Undefined",            "ProcessStatus");
+        case KProcessStatus_Starting:             return QApplication::translate("VBoxGlobal", "Starting",             "ProcessStatus");
+        case KProcessStatus_Started:              return QApplication::translate("VBoxGlobal", "Started",              "ProcessStatus");
+        case KProcessStatus_Paused:               return QApplication::translate("VBoxGlobal", "Paused",               "ProcessStatus");
+        case KProcessStatus_Terminating:          return QApplication::translate("VBoxGlobal", "Terminating",          "ProcessStatus");
+        case KProcessStatus_TerminatedNormally:   return QApplication::translate("VBoxGlobal", "TerminatedNormally",   "ProcessStatus");
+        case KProcessStatus_TerminatedSignal:     return QApplication::translate("VBoxGlobal", "TerminatedSignal",     "ProcessStatus");
+        case KProcessStatus_TerminatedAbnormally: return QApplication::translate("VBoxGlobal", "TerminatedAbnormally", "ProcessStatus");
+        case KProcessStatus_TimedOutKilled:       return QApplication::translate("VBoxGlobal", "TimedOutKilled",       "ProcessStatus");
+        case KProcessStatus_TimedOutAbnormally:   return QApplication::translate("VBoxGlobal", "TimedOutAbnormally",   "ProcessStatus");
+        case KProcessStatus_Down:                 return QApplication::translate("VBoxGlobal", "Down",                 "ProcessStatus");
+        case KProcessStatus_Error:                return QApplication::translate("VBoxGlobal", "Error",                "ProcessStatus");
+        default: AssertMsgFailed(("No text for %d", enmStatus)); break;
+    }
+    return QString();
+}
+
+template<> KProcessStatus fromInternalString<KProcessStatus>(const QString &strStatus)
+{
+    QHash<QString, KProcessStatus> list;
+    list.insert(QApplication::translate("VBoxGlobal", "Undefined",            "GuestSessionStatus"),  KProcessStatus_Undefined);
+    list.insert(QApplication::translate("VBoxGlobal", "Starting",             "GuestSessionStatus"),  KProcessStatus_Starting);
+    list.insert(QApplication::translate("VBoxGlobal", "Started",              "GuestSessionStatus"),  KProcessStatus_Started);
+    list.insert(QApplication::translate("VBoxGlobal", "Paused",               "GuestSessionStatus"),  KProcessStatus_Paused);
+    list.insert(QApplication::translate("VBoxGlobal", "Terminating",          "GuestSessionStatus"),  KProcessStatus_Terminating);
+    list.insert(QApplication::translate("VBoxGlobal", "TerminatedNormally",   "GuestSessionStatus"),  KProcessStatus_TerminatedNormally);
+    list.insert(QApplication::translate("VBoxGlobal", "TerminatedSignal",     "GuestSessionStatus"),  KProcessStatus_TerminatedSignal);
+    list.insert(QApplication::translate("VBoxGlobal", "TerminatedAbnormally", "GuestSessionStatus"),  KProcessStatus_TerminatedAbnormally);
+    list.insert(QApplication::translate("VBoxGlobal", "TimedOutKilled",       "GuestSessionStatus"),  KProcessStatus_TimedOutKilled);
+    list.insert(QApplication::translate("VBoxGlobal", "TimedOutAbnormally",   "GuestSessionStatus"),  KProcessStatus_TimedOutAbnormally);
+    list.insert(QApplication::translate("VBoxGlobal", "Down",                 "GuestSessionStatus"),  KProcessStatus_Down);
+    list.insert(QApplication::translate("VBoxGlobal", "Error",                "GuestSessionStatus"),  KProcessStatus_Error);
+
+    if (!list.contains(strStatus))
+    {
+        AssertMsgFailed(("No value for '%s'", strStatus.toUtf8().constData()));
+    }
+    return list.value(strStatus, KProcessStatus_Error);
+
 }

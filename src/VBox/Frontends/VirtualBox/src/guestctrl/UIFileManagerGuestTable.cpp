@@ -541,7 +541,7 @@ void UIFileManagerGuestTable::showProperties()
     if (fsPropertyString.isEmpty())
         return;
 
-    m_pPropertiesDialog = new UIPropertiesDialog();
+    m_pPropertiesDialog = new UIPropertiesDialog(this);
     if (!m_pPropertiesDialog)
         return;
 

@@ -82,7 +82,7 @@ void UIGuestProcessControlDialog::configure()
 void UIGuestProcessControlDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIGuestProcessControlWidget *pWidget = new UIGuestProcessControlWidget(EmbedTo_Dialog, m_comGuest, this);
+    UIGuestProcessControlWidget *pWidget = new UIGuestProcessControlWidget(EmbedTo_Dialog, m_comGuest, this, m_strMachineName);
 
     if (pWidget)
     {
