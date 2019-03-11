@@ -181,7 +181,7 @@ PRTTIMESPEC vboxSfOs2DateTimeToTimeSpec(FDATE DosDate, FTIME DosTime, int16_t cM
     Time.u8Second       = DosTime.twosecs * 2;
     Time.u32Nanosecond  = 0;
     Time.fFlags         = RTTIME_FLAGS_TYPE_LOCAL;
-    Time.offUTC         = cMinLocalTimeDelta;
+    Time.offUTC         = -cMinLocalTimeDelta;
     if (RTTimeLocalNormalize(&Time))
         return RTTimeImplode(pDstTimeSpec, &Time);
     return NULL;
