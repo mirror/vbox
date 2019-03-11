@@ -1770,20 +1770,6 @@ void UIChooserModel::wipeOutEmptyGroups(UIChooserNode *pParent)
     }
 }
 
-void UIChooserModel::buildTreeForMainRoot()
-{
-    /* Cleanup previous tree if exists: */
-    delete m_pRoot;
-    m_pRoot = 0;
-
-    /* Build whole tree for invisible root item: */
-    m_pRoot = new UIChooserItemGroup(scene(), invisibleRoot()->toGroupNode());
-
-    /* Install root as event-filter for scene view,
-     * we need QEvent::Scroll events from it: */
-    root()->installEventFilterHelper(scene()->views()[0]);
-}
-
 bool UIChooserModel::isGlobalNodeFavorite(UIChooserNode *pParentNode) const
 {
     /* Read group definitions: */
@@ -1902,6 +1888,20 @@ void UIChooserModel::createMachineNode(UIChooserNode *pParentNode, const CMachin
                              false /* favorite */,
                              getDesiredPosition(pParentNode, UIChooserItemType_Machine, toOldStyleUuid(comMachine.GetId())),
                              comMachine);
+}
+
+void UIChooserModel::buildTreeForMainRoot()
+{
+    /* Cleanup previous tree if exists: */
+    delete m_pRoot;
+    m_pRoot = 0;
+
+    /* Build whole tree for invisible root item: */
+    m_pRoot = new UIChooserItemGroup(scene(), invisibleRoot()->toGroupNode());
+
+    /* Install root as event-filter for scene view,
+     * we need QEvent::Scroll events from it: */
+    root()->installEventFilterHelper(scene()->views()[0]);
 }
 
 void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
