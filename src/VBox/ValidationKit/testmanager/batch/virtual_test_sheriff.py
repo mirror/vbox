@@ -479,10 +479,11 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             # We react if there are two or more bad-testbox statuses at the head of the
             # history and at least three in the last 10 results.
             if iFirstOkay >= 2 and cBad > 2:
-                # Frank: For now don't reboot boxes automatically
-                if True or oTestBoxLogic.hasTestBoxRecentlyBeenRebooted(idTestBox, cHoursBack = cHoursBack, tsNow = tsNow):
-                    self.vprint(u'Disabling testbox #%u (%s) - iFirstOkay=%u cBad=%u cOkay=%u'
-                                % ( idTestBox, oTestBox.sName, iFirstOkay, cBad, cOkay));
+                if oTestBoxLogic.hasTestBoxRecentlyBeenRebooted(idTestBox, cHoursBack = cHoursBack, tsNow = tsNow):
+                    sComment = u'Disabling testbox #%u (%s) - iFirstOkay=%u cBad=%u cOkay=%u' \
+                             % (idTestBox, oTestBox.sName, iFirstOkay, cBad, cOkay);
+                    self.vprint(sComment);
+                    self.sendEmailAlert(self.uidSelf, sComment);
                     if self.oConfig.fRealRun is True:
                         try:
                             oTestBoxLogic.disableTestBox(idTestBox, self.uidSelf, fCommit = True,
@@ -491,8 +492,10 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                         except Exception as oXcpt:
                             rcExit = self.eprint(u'Error disabling testbox #%u (%u): %s\n' % (idTestBox, oTestBox.sName, oXcpt,));
                 else:
-                    self.vprint(u'Rebooting testbox #%u (%s) - iFirstOkay=%u cBad=%u cOkay=%u'
-                                % ( idTestBox, oTestBox.sName, iFirstOkay, cBad, cOkay));
+                    sComment = u'Rebooting testbox #%u (%s) - iFirstOkay=%u cBad=%u cOkay=%u' \
+                             % (idTestBox, oTestBox.sName, iFirstOkay, cBad, cOkay);
+                    self.vprint(sComment);
+                    self.sendEmailAlert(self.uidSelf, sComment);
                     if self.oConfig.fRealRun is True:
                         try:
                             oTestBoxLogic.rebootTestBox(idTestBox, self.uidSelf, fCommit = True,
@@ -503,6 +506,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             else:
                 self.dprint(u'badTestBoxManagement: #%u (%s) looks ok:  iFirstOkay=%u cBad=%u cOkay=%u'
                             % ( idTestBox, oTestBox.sName, iFirstOkay, cBad, cOkay));
+
         #
         # Reset hanged testboxes
         #
