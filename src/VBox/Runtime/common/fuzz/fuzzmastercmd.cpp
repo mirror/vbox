@@ -1139,7 +1139,8 @@ static DECLCALLBACK(int) rtFuzzCmdMasterTcpServe(RTSOCKET hSocket, void *pvUser)
         {
             size_t cbThisRead = cbReqMax - cbReq;
             int rc = RTTcpRead(hSocket, pbCur, cbThisRead, &cbThisRead);
-            if (RT_SUCCESS(rc))
+            if (   RT_SUCCESS(rc)
+                && cbThisRead)
             {
                 cbReq += cbThisRead;
 
