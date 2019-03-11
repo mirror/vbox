@@ -28,6 +28,11 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#ifdef RT_OS_OS2
+#  define INCL_BASE
+#  include <os2.h>
+#  undef RT_MAX
+#endif
 #include <iprt/alloca.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -1208,15 +1213,29 @@ void fsPerfMkRmDir(void)
     RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE("..")), 0755, 0), VERR_ALREADY_EXISTS);
 
     /* Remove directory with subdirectories: */
-#if defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE("."))), VERR_DIR_NOT_EMPTY);
 #else
     RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE("."))), VERR_INVALID_PARAMETER); /* EINVAL for '.' */
 #endif
-#if defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     int rc = RTDirRemove(InDir(RT_STR_TUPLE("..")));
+# ifdef RT_OS_WINDOWS
     if (rc != VERR_DIR_NOT_EMPTY /*ntfs root*/ && rc != VERR_SHARING_VIOLATION /*ntfs weird*/)
         RTTestIFailed("RTDirRemove(%s) -> %Rrc, expected VERR_DIR_NOT_EMPTY or VERR_SHARING_VIOLATION",  g_szDir, rc);
+# else
+    if (rc != VERR_DIR_NOT_EMPTY && rc != VERR_RESOURCE_BUSY /*IPRT/kLIBC fun*/)
+        RTTestIFailed("RTDirRemove(%s) -> %Rrc, expected VERR_DIR_NOT_EMPTY or VERR_RESOURCE_BUSY",  g_szDir, rc);
+
+    APIRET orc;
+    RTTESTI_CHECK_MSG((orc = DosDelete((PCSZ)InEmptyDir(RT_STR_TUPLE(".")))) == ERROR_ACCESS_DENIED,
+                      ("DosDelete(%s) -> %u, expected %u\n", g_szEmptyDir, orc, ERROR_ACCESS_DENIED));
+    RTTESTI_CHECK_MSG((orc = DosDelete((PCSZ)InEmptyDir(RT_STR_TUPLE("..")))) == ERROR_ACCESS_DENIED,
+                      ("DosDelete(%s) -> %u, expected %u\n", g_szEmptyDir, orc, ERROR_ACCESS_DENIED));
+    RTTESTI_CHECK_MSG((orc = DosDelete((PCSZ)InEmptyDir(RT_STR_TUPLE("")))) == ERROR_PATH_NOT_FOUND, /* a little weird (fsrouter) */
+                      ("DosDelete(%s) -> %u, expected %u\n", g_szEmptyDir, orc, ERROR_PATH_NOT_FOUND));
+
+# endif
 #else
     RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE(".."))), VERR_DIR_NOT_EMPTY);
 #endif
@@ -1322,6 +1341,20 @@ void fsPerfRm(void)
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))),  VERR_INVALID_PARAMETER);
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(".."))), VINF_SUCCESS /*WTF?!?*/);
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(""))),   VERR_ACCESS_DENIED);
+#elif defined(RT_OS_OS2) /* OS/2 has a busted unlink, it think it should remove directories too. */
+    RTTESTI_CHECK_RC(RTFileDelete(InDir(RT_STR_TUPLE("."))),       VERR_DIR_NOT_EMPTY);
+    int rc = RTFileDelete(InDir(RT_STR_TUPLE("..")));
+    if (rc != VERR_DIR_NOT_EMPTY && rc != VERR_FILE_NOT_FOUND && rc != VERR_RESOURCE_BUSY)
+        RTTestIFailed("RTFileDelete(%s) -> %Rrc, expected VERR_DIR_NOT_EMPTY or VERR_FILE_NOT_FOUND or VERR_RESOURCE_BUSY", g_szDir, rc);
+    RTTESTI_CHECK_RC(RTFileDelete(InDir(RT_STR_TUPLE(""))),        VERR_DIR_NOT_EMPTY);
+    APIRET orc;
+    RTTESTI_CHECK_MSG((orc = DosDelete((PCSZ)InEmptyDir(RT_STR_TUPLE(".")))) == ERROR_ACCESS_DENIED,
+                      ("DosDelete(%s) -> %u, expected %u\n", g_szEmptyDir, orc, ERROR_ACCESS_DENIED));
+    RTTESTI_CHECK_MSG((orc = DosDelete((PCSZ)InEmptyDir(RT_STR_TUPLE("..")))) == ERROR_ACCESS_DENIED,
+                      ("DosDelete(%s) -> %u, expected %u\n", g_szEmptyDir, orc, ERROR_ACCESS_DENIED));
+    RTTESTI_CHECK_MSG((orc = DosDelete((PCSZ)InEmptyDir(RT_STR_TUPLE("")))) == ERROR_PATH_NOT_FOUND,
+                      ("DosDelete(%s) -> %u, expected %u\n", g_szEmptyDir, orc, ERROR_PATH_NOT_FOUND)); /* hpfs+jfs; weird.  */
+
 #else
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("."))),  VERR_IS_A_DIRECTORY);
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE(".."))), VERR_IS_A_DIRECTORY);
@@ -1922,13 +1955,46 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             RTTESTI_CHECK_RC(RTFileSeek(hFile1, cbFile - off, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
             cbActual = ~(size_t)0;
             RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, off, &cbActual), VINF_SUCCESS);
-            RTTESTI_CHECK_MSG(cbActual == off, ("%#zx vs %#zx", cbActual, off));
+            RTTESTI_CHECK_MSG(cbActual == off, ("%#zx vs %#zx\n", cbActual, off));
 
             cbActual = ~(size_t)0;
             RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, 1, &cbActual), VINF_SUCCESS);
             RTTESTI_CHECK_MSG(cbActual == 0, ("cbActual=%zu\n", cbActual));
 
             RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, cbMaxRead, NULL), VERR_EOF);
+
+            /* Repeat using native APIs in case IPRT or other layers hid status codes: */
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+            RTTESTI_CHECK_RC(RTFileSeek(hFile1, cbFile - off, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+# ifdef RT_OS_OS2
+            ULONG cbActual2 = ~(ULONG)0;
+            APIRET orc = DosRead((HFILE)RTFileToNative(hFile1), pbBuf, cbMaxRead, &cbActual2);
+            RTTESTI_CHECK_MSG(orc == NO_ERROR, ("orc=%u, expected 0\n", orc));
+            RTTESTI_CHECK_MSG(cbActual2 == off, ("%#x vs %#x\n", cbActual2, off));
+# else
+            IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+            NTSTATUS rcNt = NtReadFile((HANDLE)RTFileToNative(hFile1), NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/,
+                                       &Ios, pbBuf, (ULONG)cbMaxRead, NULL /*poffFile*/, NULL /*Key*/);
+            if (off == 0)
+                RTTESTI_CHECK_MSG(rcNt == STATUS_END_OF_FILE, ("rcNt=%#x, expected %#x\n", rcNt, STATUS_END_OF_FILE));
+            else
+                RTTESTI_CHECK_MSG(rcNt == STATUS_SUCCESS, ("rcNt=%#x, expected 0 (off=%#x cbMaxRead=%#zx)\n", rcNt, off, cbMaxRead));
+            RTTESTI_CHECK_MSG(Ios.Information == off, ("%#zx vs %#x\n", Ios.Information, off));
+# endif
+
+# ifdef RT_OS_OS2
+            cbActual2 = ~(ULONG)0;
+            orc = DosRead((HFILE)RTFileToNative(hFile1), pbBuf, 1, &cbActual2);
+            RTTESTI_CHECK_MSG(orc == NO_ERROR, ("orc=%u, expected 0\n", orc));
+            RTTESTI_CHECK_MSG(cbActual2 == 0, ("cbActual2=%u\n", cbActual2));
+# else
+            RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+            rcNt = NtReadFile((HANDLE)RTFileToNative(hFile1), NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/,
+                              &Ios, pbBuf, 1, NULL /*poffFile*/, NULL /*Key*/);
+            RTTESTI_CHECK_MSG(rcNt == STATUS_END_OF_FILE, ("rcNt=%#x, expected %#x\n", rcNt, STATUS_END_OF_FILE));
+# endif
+
+#endif
         }
     }
 
@@ -1946,6 +2012,22 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             RTTESTI_CHECK(cbActual == 0);
 
             RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, cbMaxRead, NULL), VERR_EOF);
+
+            /* Repeat using native APIs in case IPRT or other layers hid status codes: */
+#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+            RTTESTI_CHECK_RC(RTFileSeek(hFile1, cbFile + off, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+# ifdef RT_OS_OS2
+            ULONG cbActual2 = ~(ULONG)0;
+            APIRET orc = DosRead((HFILE)RTFileToNative(hFile1), pbBuf, cbMaxRead, &cbActual2);
+            RTTESTI_CHECK_MSG(orc == NO_ERROR, ("orc=%u, expected 0\n", orc));
+            RTTESTI_CHECK_MSG(cbActual2 == 0, ("%#x vs %#x\n", cbActual2, off));
+# else
+            IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+            NTSTATUS rcNt = NtReadFile((HANDLE)RTFileToNative(hFile1), NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/,
+                                       &Ios, pbBuf, (ULONG)cbMaxRead, NULL /*poffFile*/, NULL /*Key*/);
+            RTTESTI_CHECK_MSG(rcNt == STATUS_END_OF_FILE, ("rcNt=%#x, expected %#x\n", rcNt, STATUS_END_OF_FILE));
+# endif
+#endif
         }
     }
 
@@ -3325,3 +3407,4 @@ int main(int argc, char *argv[])
 
     return RTTestSummaryAndDestroy(g_hTest);
 }
+
