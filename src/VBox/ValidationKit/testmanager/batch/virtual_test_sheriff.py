@@ -426,6 +426,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         # Generate a list of failures reasons we consider bad-testbox behavior.
         #
         aidFailureReasons = [
+            self.getFailureReason(self.ktReason_Host_DriverNotLoaded).idFailureReason,
             self.getFailureReason(self.ktReason_Host_DriverNotUnloading).idFailureReason,
             self.getFailureReason(self.ktReason_Host_DriverNotCompilable).idFailureReason,
             self.getFailureReason(self.ktReason_Host_InstallationFailed).idFailureReason,
@@ -512,7 +513,12 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         #
         cStatusTimeoutMins = 10;
 
-        self.oDb.execute('SELECT idTestBox FROM TestBoxStatuses WHERE tsUpdated < (CURRENT_TIMESTAMP - interval \'%s minutes\')', (cStatusTimeoutMins,));
+        self.oDb.execute('SELECT TestBoxStatuses.idTestBox\n'
+                         '  FROM TestBoxStatuses, TestBoxes\n'
+                         ' WHERE TestBoxStatuses.tsUpdated >= (CURRENT_TIMESTAMP - interval \'%s hours\')\n'
+                         '   AND TestBoxStatuses.tsUpdated < (CURRENT_TIMESTAMP - interval \'%s minutes\')\n'
+                         '   AND TestBoxStatuses.idTestBox = TestBoxes.idTestBox\n'
+                         '   AND Testboxes.tsExpire = \'infinity\'::timestamp', (cHoursBack,cStatusTimeoutMins));
         for idTestBox in self.oDb.fetchAll():
             idTestBox = idTestBox[0];
             try:
@@ -540,7 +546,7 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
                 self.sendEmailAlert(self.uidSelf, sComment);
 
             except Exception as oXcpt:
-                rcExit = self.eprint(u'Error reseting testbox #%u (%s): %s\n' % (idTestBox, oTestBox.sName, oXcpt,));
+                rcExit = self.eprint(u'Error resetting testbox #%u (%s): %s\n' % (idTestBox, oTestBox.sName, oXcpt,));
 
         return rcExit;
 
