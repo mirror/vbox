@@ -740,18 +740,18 @@ template<> QString toInternalString(const KProcessStatus &enmStatus)
 template<> KProcessStatus fromInternalString<KProcessStatus>(const QString &strStatus)
 {
     QHash<QString, KProcessStatus> list;
-    list.insert(QApplication::translate("VBoxGlobal", "Undefined",            "GuestSessionStatus"),  KProcessStatus_Undefined);
-    list.insert(QApplication::translate("VBoxGlobal", "Starting",             "GuestSessionStatus"),  KProcessStatus_Starting);
-    list.insert(QApplication::translate("VBoxGlobal", "Started",              "GuestSessionStatus"),  KProcessStatus_Started);
-    list.insert(QApplication::translate("VBoxGlobal", "Paused",               "GuestSessionStatus"),  KProcessStatus_Paused);
-    list.insert(QApplication::translate("VBoxGlobal", "Terminating",          "GuestSessionStatus"),  KProcessStatus_Terminating);
-    list.insert(QApplication::translate("VBoxGlobal", "TerminatedNormally",   "GuestSessionStatus"),  KProcessStatus_TerminatedNormally);
-    list.insert(QApplication::translate("VBoxGlobal", "TerminatedSignal",     "GuestSessionStatus"),  KProcessStatus_TerminatedSignal);
-    list.insert(QApplication::translate("VBoxGlobal", "TerminatedAbnormally", "GuestSessionStatus"),  KProcessStatus_TerminatedAbnormally);
-    list.insert(QApplication::translate("VBoxGlobal", "TimedOutKilled",       "GuestSessionStatus"),  KProcessStatus_TimedOutKilled);
-    list.insert(QApplication::translate("VBoxGlobal", "TimedOutAbnormally",   "GuestSessionStatus"),  KProcessStatus_TimedOutAbnormally);
-    list.insert(QApplication::translate("VBoxGlobal", "Down",                 "GuestSessionStatus"),  KProcessStatus_Down);
-    list.insert(QApplication::translate("VBoxGlobal", "Error",                "GuestSessionStatus"),  KProcessStatus_Error);
+    list.insert(QApplication::translate("VBoxGlobal", "Undefined",            "ProcessStatus"),  KProcessStatus_Undefined);
+    list.insert(QApplication::translate("VBoxGlobal", "Starting",             "ProcessStatus"),  KProcessStatus_Starting);
+    list.insert(QApplication::translate("VBoxGlobal", "Started",              "ProcessStatus"),  KProcessStatus_Started);
+    list.insert(QApplication::translate("VBoxGlobal", "Paused",               "ProcessStatus"),  KProcessStatus_Paused);
+    list.insert(QApplication::translate("VBoxGlobal", "Terminating",          "ProcessStatus"),  KProcessStatus_Terminating);
+    list.insert(QApplication::translate("VBoxGlobal", "TerminatedNormally",   "ProcessStatus"),  KProcessStatus_TerminatedNormally);
+    list.insert(QApplication::translate("VBoxGlobal", "TerminatedSignal",     "ProcessStatus"),  KProcessStatus_TerminatedSignal);
+    list.insert(QApplication::translate("VBoxGlobal", "TerminatedAbnormally", "ProcessStatus"),  KProcessStatus_TerminatedAbnormally);
+    list.insert(QApplication::translate("VBoxGlobal", "TimedOutKilled",       "ProcessStatus"),  KProcessStatus_TimedOutKilled);
+    list.insert(QApplication::translate("VBoxGlobal", "TimedOutAbnormally",   "ProcessStatus"),  KProcessStatus_TimedOutAbnormally);
+    list.insert(QApplication::translate("VBoxGlobal", "Down",                 "ProcessStatus"),  KProcessStatus_Down);
+    list.insert(QApplication::translate("VBoxGlobal", "Error",                "ProcessStatus"),  KProcessStatus_Error);
 
     if (!list.contains(strStatus))
     {
