@@ -981,6 +981,7 @@ static int rtFuzzCmdMasterProcessQueryRunStats(PRTFUZZCMDMASTER pThis, PRTFUZZRU
     RTFUZZOBSSTATS ObsStats;
     RTFUZZCTXSTATS CtxStats;
     RTFUZZCTX hFuzzCtx;
+    RT_ZERO(ObsStats); RT_ZERO(CtxStats);
 
     int rc = RTFuzzObsQueryCtx(pFuzzRun->hFuzzObs, &hFuzzCtx);
     if (RT_SUCCESS(rc))
