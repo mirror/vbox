@@ -777,6 +777,15 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
             ( True, ktReason_Host_DriverNotUnloading,
               'Cannot unload module vboxdrv'),
         ],
+        'solaris': [
+            # ( Whether to stop on hit, reason tuple, needle text. )
+            ( True, ktReason_Host_InstallationFailed,
+              'svcadm: Couldn\'t bind to svc.configd.' ),
+            ( True, ktReason_Host_InstallationFailed,
+              'pkgadd: ERROR: postinstall script did not complete successfully' ),
+            ( True, ktReason_Host_DriverNotUnloading,
+              'can\'t unload the module: Device busy' ),
+        ],
     };
 
 
