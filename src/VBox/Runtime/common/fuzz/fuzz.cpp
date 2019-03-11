@@ -411,6 +411,7 @@ typedef RTFUZZMUTATORINTEGER *PRTFUZZMUTATORINTEGER;
 /** Pointer to constant additional integer replacing mutator data. */
 typedef const RTFUZZMUTATORINTEGER *PCRTFUZZMUTATORINTEGER;
 
+
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
