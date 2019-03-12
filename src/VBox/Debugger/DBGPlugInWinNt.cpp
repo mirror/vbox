@@ -778,7 +778,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
         uint32_t            au32[8192/4];
         IMAGE_DOS_HEADER    MzHdr;
         RTUTF16             wsz[8192/2];
-        X86DESC64GATE       a32Gates[X86_XCPT_PF + 1];
+        X86DESCGATE         a32Gates[X86_XCPT_PF + 1];
         X86DESC64GATE       a64Gates[X86_XCPT_PF + 1];
     } u;
 
@@ -831,8 +831,7 @@ static DECLCALLBACK(bool)  dbgDiggerWinNtProbe(PUVM pUVM, void *pvData)
     }
     else
     {
-        uint32_t uHandler = u.a32Gates[X86_XCPT_PF].u16OffsetLow
-                          | ((uint32_t)u.a64Gates[X86_XCPT_PF].u16OffsetHigh << 16);
+        uint32_t uHandler = RT_MAKE_U32(u.a32Gates[X86_XCPT_PF].u16OffsetLow, u.a32Gates[X86_XCPT_PF].u16OffsetHigh);
         if (uHandler < uStart || uHandler > uEnd)
             return false;
         uKrnlStart = (uHandler & ~(uint64_t)_4M) - _64M;
