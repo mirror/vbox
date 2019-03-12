@@ -473,8 +473,8 @@ static void pci_bios_init_device(PDEVPCIROOT pGlobals, PDEVPCIBUS pBus, PPDMPCID
                     && (device_id == 0x7010 || device_id == 0x7111 || device_id == 0x269e))
                 {
                     /* PIIX3, PIIX4 or ICH6 IDE */
-                    devpciR3SetWord(pPciDev, 0x40, 0x8000); /* enable IDE0 */
-                    devpciR3SetWord(pPciDev, 0x42, 0x8000); /* enable IDE1 */
+                    devpciR3SetWord(pPciDev, 0x40, 0x8011); /* enable IDE0 + fast timing */
+                    devpciR3SetWord(pPciDev, 0x42, 0x8011); /* enable IDE1 + fast timing  */
                     goto default_map;
                 }
                 else
