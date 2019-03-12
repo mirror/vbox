@@ -68,9 +68,6 @@ CoreStall (
   // 0x1999999999999999 = (2^64 - 1) / 10
   //
   if ((UINT64) Microseconds > 0x1999999999999999ULL) {
-#else
-  if (0) {
-#endif
     //
     // Microseconds is too large to multiple by 10 first.  Perform the divide
     // operation first and loop 10 times to avoid 64-bit math overflow.

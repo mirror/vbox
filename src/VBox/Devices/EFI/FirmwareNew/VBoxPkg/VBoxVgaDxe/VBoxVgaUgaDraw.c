@@ -399,8 +399,8 @@ VBoxVgaUgaDrawConstructor (
     Private->ModeData[Private->CurrentMode].VerticalResolution
     );
 
-  PcdSet32(PcdVideoHorizontalResolution, HorizontalResolution);
-  PcdSet32(PcdVideoVerticalResolution, VerticalResolution);
+  PcdSet32S(PcdVideoHorizontalResolution, HorizontalResolution);
+  PcdSet32S(PcdVideoVerticalResolution, VerticalResolution);
 
   return EFI_SUCCESS;
 }

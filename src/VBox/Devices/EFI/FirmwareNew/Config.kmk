@@ -45,6 +45,21 @@ VBOX_EFI_OUTPUT_SUBDIR = $(VBOX_EFI_BUILD_TARGET)_$(VBOX_EFI_TOOL_CHAIN)
 # VBox Yasm command
 VBOX_YASMCMD   ?= $(firstword $(wildcard $(KBUILD_DEVTOOLS_HST)/bin/yasm$(HOSTSUFF_EXE)) yasm$(HOSTSUFF_EXE))
 
+# VBox nasm command
+include $(KBUILD_PATH)/tools/NASM.kmk
+TOOL_VBoxNasm = Our version of the NASM tool
+ifndef TOOL_VBoxNasm_PATH
+ TOOL_VBoxNasm_PATH   := $(firstword $(rsort $(wildcard $(KBUILD_DEVTOOLS_HST)/nasm/v*.*)))
+ if "$(TOOL_VBoxNasm_PATH)" == "" && "$(KBUILD_DEVTOOLS_HST_ALT)" != ""
+  TOOL_VBoxNasm_PATH  := $(firstword $(rsort $(wildcard $(KBUILD_DEVTOOLS_HST_ALT)/nasm/v*.*)))
+ endif
+endif
+ifneq ($(TOOL_VBoxNasm_PATH),)
+ VBOX_NASMCMD     ?= $(TOOL_VBoxNasm_PATH)/nasm$(HOSTSUFF_EXE)
+else
+ VBOX_NASMCMD     ?= nasm$(HOSTSUFF_EXE)
+endif
+
 # EFI requires python v2.x, so provide a way to select that while using 3.x for the rest of VBox.
 ifndef VBOX_BLD_PYTHON_2X
  VBOX_BLD_PYTHON_2X = $(VBOX_BLD_PYTHON)

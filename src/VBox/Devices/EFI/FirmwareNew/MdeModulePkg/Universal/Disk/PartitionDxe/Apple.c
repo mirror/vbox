@@ -105,6 +105,7 @@ PartitionInstallAppleChildHandles (
   UINT32                    VolSpaceSize;
   UINT32                    SubBlockSize;
   UINT32                    BlkPerSec;
+  EFI_PARTITION_INFO_PROTOCOL  PartitionInfo;
 
   VBoxLogFlowFuncMarkDP(DevicePath);
   Found         = EFI_NOT_FOUND;
@@ -212,10 +213,10 @@ PartitionInstallAppleChildHandles (
               BlockIo2,
               DevicePath,
               (EFI_DEVICE_PATH_PROTOCOL *) &CdDev,
+              &PartitionInfo,
               CdDev.PartitionStart,
               CdDev.PartitionStart + CdDev.PartitionSize - 1,
-              SubBlockSize,
-              FALSE);
+              SubBlockSize);
 
           if (!EFI_ERROR (Status)) {
               Found = EFI_SUCCESS;

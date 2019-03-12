@@ -25,7 +25,8 @@
 #
 #  This flag specifies whether HII resource section is generated into PE image.
 #
-  UEFI_HII_RESOURCE_SECTION      = TRUE
+# VBOX -- 'true' requires a resource compiler (@todo).
+#  UEFI_HII_RESOURCE_SECTION      = TRUE
 
 [Sources.common]
   Tftp.uni

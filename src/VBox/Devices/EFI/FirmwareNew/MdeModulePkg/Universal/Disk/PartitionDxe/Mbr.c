@@ -231,11 +231,7 @@ PartitionInstallMbrChildHandles (
 
       ZeroMem (&PartitionInfo, sizeof (EFI_PARTITION_INFO_PROTOCOL));
       PartitionInfo.Revision = EFI_PARTITION_INFO_PROTOCOL_REVISION;
-      PartitionInfo.Type     = PARTITION_TYPE_MBR;
-      if (Mbr->Partition[Index].OSIndicator == EFI_PARTITION) {
-        PartitionInfo.System = 1;
-      }
-      CopyMem (&PartitionInfo.Info.Mbr, &Mbr->Partition[Index], sizeof (MBR_PARTITION_RECORD));
+      PartitionInfo.Type     = PARTITION_TYPE_OTHER;
 
       Status = PartitionInstallChildHandle (
                 This,

@@ -231,15 +231,15 @@ MemMapInitialization (
   UINT64        PciIoSize;
   RETURN_STATUS PcdStatus;
 
-  PciIoBase = 0xC000;
-  PciIoSize = 0x4000;
-
 #ifdef VBOX
   EFI_PHYSICAL_ADDRESS RsdPtr;
   EFI_PHYSICAL_ADDRESS AcpiTables;
   UINT64 McfgBase = 0;
   UINT64 McfgSize = 0;
 #endif
+  PciIoBase = 0xC000;
+  PciIoSize = 0x4000;
+
   //
   // Create Memory Type Information HOB
   //
