@@ -1,7 +1,7 @@
 ## @file
 # process compress section generation
 #
-#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -53,22 +53,31 @@ class CompressSection (CompressSectionClassObject) :
     #   @param  Dict        dictionary contains macro and its value
     #   @retval tuple       (Generated file name, section alignment)
     #
-    def GenSection(self, OutputPath, ModuleName, SecNum, KeyStringList, FfsInf = None, Dict = {}):
+    def GenSection(self, OutputPath, ModuleName, SecNum, KeyStringList, FfsInf = None, Dict = {}, IsMakefile = False):
 
         if FfsInf != None:
             self.CompType = FfsInf.__ExtendMacro__(self.CompType)
             self.Alignment = FfsInf.__ExtendMacro__(self.Alignment)
 
         SectFiles = tuple()
+        SectAlign = []
         Index = 0
+        MaxAlign = None
         for Sect in self.SectionList:
             Index = Index + 1
             SecIndex = '%s.%d' %(SecNum, Index)
-            ReturnSectList, AlignValue = Sect.GenSection(OutputPath, ModuleName, SecIndex, KeyStringList, FfsInf, Dict)
+            ReturnSectList, AlignValue = Sect.GenSection(OutputPath, ModuleName, SecIndex, KeyStringList, FfsInf, Dict, IsMakefile=IsMakefile)
+            if AlignValue != None:
+                if MaxAlign == None:
+                    MaxAlign = AlignValue
+                if GenFdsGlobalVariable.GetAlignment (AlignValue) > GenFdsGlobalVariable.GetAlignment (MaxAlign):
+                    MaxAlign = AlignValue
             if ReturnSectList != []:
+                if AlignValue == None:
+                    AlignValue = "1"
                 for FileData in ReturnSectList:
-                   SectFiles += (FileData,)
-
+                    SectFiles += (FileData,)
+                    SectAlign.append(AlignValue)
 
         OutputFile = OutputPath + \
                      os.sep     + \
@@ -77,9 +86,11 @@ class CompressSection (CompressSectionClassObject) :
                      SecNum     + \
                      Ffs.SectionSuffix['COMPRESS']
         OutputFile = os.path.normpath(OutputFile)
+        DummyFile = OutputFile + '.dummy'
+        GenFdsGlobalVariable.GenerateSection(DummyFile, SectFiles, InputAlign=SectAlign, IsMakefile=IsMakefile)
 
-        GenFdsGlobalVariable.GenerateSection(OutputFile, SectFiles, Section.Section.SectionType['COMPRESS'],
-                                             CompressionType=self.CompTypeDict[self.CompType])
+        GenFdsGlobalVariable.GenerateSection(OutputFile, [DummyFile], Section.Section.SectionType['COMPRESS'],
+                                             CompressionType=self.CompTypeDict[self.CompType], IsMakefile=IsMakefile)
         OutputFileList = []
         OutputFileList.append(OutputFile)
         return OutputFileList, self.Alignment

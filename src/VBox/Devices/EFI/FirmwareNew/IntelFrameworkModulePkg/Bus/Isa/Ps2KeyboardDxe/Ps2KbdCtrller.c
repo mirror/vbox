@@ -1,7 +1,7 @@
 /** @file
   Routines that access 8042 keyboard controller
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -1141,6 +1141,38 @@ UpdateStatusLights (
 }
 
 /**
+  Initialize the key state.
+
+  @param  ConsoleIn     The KEYBOARD_CONSOLE_IN_DEV instance.
+  @param  KeyState      A pointer to receive the key state information.
+**/
+VOID
+InitializeKeyState (
+  IN  KEYBOARD_CONSOLE_IN_DEV *ConsoleIn,
+  OUT EFI_KEY_STATE           *KeyState
+  )
+{
+  KeyState->KeyShiftState  = EFI_SHIFT_STATE_VALID
+                           | (ConsoleIn->LeftCtrl   ? EFI_LEFT_CONTROL_PRESSED  : 0)
+                           | (ConsoleIn->RightCtrl  ? EFI_RIGHT_CONTROL_PRESSED : 0)
+                           | (ConsoleIn->LeftAlt    ? EFI_LEFT_ALT_PRESSED      : 0)
+                           | (ConsoleIn->RightAlt   ? EFI_RIGHT_ALT_PRESSED     : 0)
+                           | (ConsoleIn->LeftShift  ? EFI_LEFT_SHIFT_PRESSED    : 0)
+                           | (ConsoleIn->RightShift ? EFI_RIGHT_SHIFT_PRESSED   : 0)
+                           | (ConsoleIn->LeftLogo   ? EFI_LEFT_LOGO_PRESSED     : 0)
+                           | (ConsoleIn->RightLogo  ? EFI_RIGHT_LOGO_PRESSED    : 0)
+                           | (ConsoleIn->Menu       ? EFI_MENU_KEY_PRESSED      : 0)
+                           | (ConsoleIn->SysReq     ? EFI_SYS_REQ_PRESSED       : 0)
+                           ;
+  KeyState->KeyToggleState = EFI_TOGGLE_STATE_VALID
+                           | (ConsoleIn->CapsLock   ? EFI_CAPS_LOCK_ACTIVE :   0)
+                           | (ConsoleIn->NumLock    ? EFI_NUM_LOCK_ACTIVE :    0)
+                           | (ConsoleIn->ScrollLock ? EFI_SCROLL_LOCK_ACTIVE : 0)
+                           | (ConsoleIn->IsSupportPartialKey ? EFI_KEY_STATE_EXPOSED : 0)
+                           ;
+}
+
+/**
   Get scancode from scancode buffer and translate into EFI-scancode and unicode defined by EFI spec.
 
   The function is always called in TPL_NOTIFY.
@@ -1352,27 +1384,9 @@ KeyGetchar (
   //
   // Save the Shift/Toggle state
   //
-  KeyData.KeyState.KeyShiftState = (UINT32) (EFI_SHIFT_STATE_VALID
-                                 | (ConsoleIn->LeftCtrl   ? EFI_LEFT_CONTROL_PRESSED  : 0)
-                                 | (ConsoleIn->RightCtrl  ? EFI_RIGHT_CONTROL_PRESSED : 0)
-                                 | (ConsoleIn->LeftAlt    ? EFI_LEFT_ALT_PRESSED      : 0)
-                                 | (ConsoleIn->RightAlt   ? EFI_RIGHT_ALT_PRESSED     : 0)
-                                 | (ConsoleIn->LeftShift  ? EFI_LEFT_SHIFT_PRESSED    : 0)
-                                 | (ConsoleIn->RightShift ? EFI_RIGHT_SHIFT_PRESSED   : 0)
-                                 | (ConsoleIn->LeftLogo   ? EFI_LEFT_LOGO_PRESSED     : 0)
-                                 | (ConsoleIn->RightLogo  ? EFI_RIGHT_LOGO_PRESSED    : 0)
-                                 | (ConsoleIn->Menu       ? EFI_MENU_KEY_PRESSED      : 0)
-                                 | (ConsoleIn->SysReq     ? EFI_SYS_REQ_PRESSED       : 0)
-                                 );
-  KeyData.KeyState.KeyToggleState = (EFI_KEY_TOGGLE_STATE) (EFI_TOGGLE_STATE_VALID
-                                  | (ConsoleIn->CapsLock   ? EFI_CAPS_LOCK_ACTIVE :   0)
-                                  | (ConsoleIn->NumLock    ? EFI_NUM_LOCK_ACTIVE :    0)
-                                  | (ConsoleIn->ScrollLock ? EFI_SCROLL_LOCK_ACTIVE : 0)
-                                  | (ConsoleIn->IsSupportPartialKey ? EFI_KEY_STATE_EXPOSED : 0)
-                                  );
-
-  KeyData.Key.ScanCode            = SCAN_NULL;
-  KeyData.Key.UnicodeChar         = CHAR_NULL;
+  InitializeKeyState (ConsoleIn, &KeyData.KeyState);
+  KeyData.Key.ScanCode    = SCAN_NULL;
+  KeyData.Key.UnicodeChar = CHAR_NULL;
 
   //
   // Key Pad "/" shares the same scancode as that of "/" except Key Pad "/" has E0 prefix
@@ -1456,7 +1470,7 @@ KeyGetchar (
   }
 
   //
-  // Invoke notification functions if exist
+  // Signal KeyNotify process event if this key pressed matches any key registered.
   //
   for (Link = GetFirstNode (&ConsoleIn->NotifyList); !IsNull (&ConsoleIn->NotifyList, Link); Link = GetNextNode (&ConsoleIn->NotifyList, Link)) {
     CurrentNotify = CR (
@@ -1466,7 +1480,13 @@ KeyGetchar (
                       KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE
                       );
     if (IsKeyRegistered (&CurrentNotify->KeyData, &KeyData)) {
-      CurrentNotify->KeyNotificationFn (&KeyData);
+      //
+      // The key notification function needs to run at TPL_CALLBACK
+      // while current TPL is TPL_NOTIFY. It will be invoked in
+      // KeyNotifyProcessHandler() which runs at TPL_CALLBACK.
+      //
+      PushEfikeyBufTail (&ConsoleIn->EfiKeyQueueForNotify, &KeyData);
+      gBS->SignalEvent (ConsoleIn->KeyNotifyProcessEvent);
     }
   }
 
@@ -1665,6 +1685,8 @@ InitKeyboard (
   ConsoleIn->ScancodeQueue.Tail = 0;
   ConsoleIn->EfiKeyQueue.Head   = 0;
   ConsoleIn->EfiKeyQueue.Tail   = 0;
+  ConsoleIn->EfiKeyQueueForNotify.Head = 0;
+  ConsoleIn->EfiKeyQueueForNotify.Tail = 0;
 
   //
   // Reset the status indicators
@@ -1685,9 +1707,9 @@ InitKeyboard (
 
   ConsoleIn->IsSupportPartialKey = FALSE;
   //
-  // For reseting keyboard is not mandatory before booting OS and sometimes keyboard responses very slow,
+  // For resetting keyboard is not mandatory before booting OS and sometimes keyboard responses very slow,
   // and to support KB hot plug, we need to let the InitKB succeed no matter whether there is a KB device connected
-  // to system. So we only do the real reseting for keyboard when user asks and there is a real KB connected t system,
+  // to system. So we only do the real resetting for keyboard when user asks and there is a real KB connected t system,
   // and normally during booting an OS, it's skipped.
   //
   if (ExtendedVerification && CheckKeyboardConnect (ConsoleIn)) {

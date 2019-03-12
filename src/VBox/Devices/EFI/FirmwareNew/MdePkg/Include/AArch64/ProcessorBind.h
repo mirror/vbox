@@ -1,7 +1,7 @@
 /** @file
   Processor or Compiler specific defines and types for AArch64.
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
   Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
   Portions copyright (c) 2011 - 2013, ARM Ltd. All rights reserved.<BR>
 
@@ -26,13 +26,13 @@
 //
 // Make sure we are using the correct packing rules per EFI specification
 //
-#ifndef __GNUC__
+#if !defined(__GNUC__) && !defined(__ASSEMBLER__)
 #pragma pack()
 #endif
 
 #if _MSC_EXTENSIONS
   //
-  // use Microsoft* C complier dependent integer width types
+  // use Microsoft* C compiler dependent integer width types
   //
   typedef unsigned __int64    UINT64;
   typedef __int64             INT64;
@@ -100,9 +100,20 @@ typedef INT64   INTN;
 #define MAX_UINTN  ((UINTN)0xFFFFFFFFFFFFFFFFULL)
 
 ///
+/// Minimum legal AArch64 INTN value.
+///
+#define MIN_INTN   (((INTN)-9223372036854775807LL) - 1)
+
+///
 /// The stack alignment required for AARCH64
 ///
 #define CPU_STACK_ALIGNMENT  16
+
+///
+/// Page allocation granularity for AARCH64
+///
+#define DEFAULT_PAGE_ALLOCATION_GRANULARITY   (0x1000)
+#define RUNTIME_PAGE_ALLOCATION_GRANULARITY   (0x10000)
 
 //
 // Modifier to ensure that all protocol member functions and EFI intrinsics
@@ -111,7 +122,9 @@ typedef INT64   INTN;
 //
 #define EFIAPI
 
-#if defined(__GNUC__)
+// When compiling with Clang, we still use GNU as for the assembler, so we still
+// need to define the GCC_ASM* macros.
+#if defined(__GNUC__) || defined(__clang__)
   ///
   /// For GNU assembly code, .global or .globl can declare global symbols.
   /// Define this macro to unify the usage.

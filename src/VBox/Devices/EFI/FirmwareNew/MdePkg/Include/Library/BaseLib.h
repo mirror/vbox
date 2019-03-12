@@ -1,8 +1,8 @@
 /** @file
   Provides string functions, linked list functions, math functions, synchronization
-  functions, and CPU architecture-specific functions.
+  functions, file path functions, and CPU architecture-specific functions.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -187,6 +187,8 @@ typedef struct {
 /**
   Returns the length of a Null-terminated Unicode string.
 
+  This function is similar as strlen_s defined in C11.
+
   If String is not aligned on a 16-bit boundary, then ASSERT().
 
   @param  String   A pointer to a Null-terminated Unicode string.
@@ -206,11 +208,44 @@ StrnLenS (
   );
 
 /**
+  Returns the size of a Null-terminated Unicode string in bytes, including the
+  Null terminator.
+
+  This function returns the size of the Null-terminated Unicode string
+  specified by String in bytes, including the Null terminator.
+
+  If String is not aligned on a 16-bit boundary, then ASSERT().
+
+  @param  String   A pointer to a Null-terminated Unicode string.
+  @param  MaxSize  The maximum number of Destination Unicode
+                   char, including the Null terminator.
+
+  @retval 0  If String is NULL.
+  @retval (sizeof (CHAR16) * (MaxSize + 1))
+             If there is no Null terminator in the first MaxSize characters of
+             String.
+  @return The size of the Null-terminated Unicode string in bytes, including
+          the Null terminator.
+
+**/
+UINTN
+EFIAPI
+StrnSizeS (
+  IN CONST CHAR16              *String,
+  IN UINTN                     MaxSize
+  );
+
+/**
   Copies the string pointed to by Source (including the terminating null char)
   to the array pointed to by Destination.
 
+  This function is similar as strcpy_s defined in C11.
+
   If Destination is not aligned on a 16-bit boundary, then ASSERT().
   If Source is not aligned on a 16-bit boundary, then ASSERT().
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then the Destination is unmodified.
 
   @param  Destination              A pointer to a Null-terminated Unicode string.
   @param  DestMax                  The maximum number of Destination Unicode
@@ -240,8 +275,13 @@ StrCpyS (
   Source to the array pointed to by Destination. If no null char is copied from
   Source, then Destination[Length] is always set to null.
 
+  This function is similar as strncpy_s defined in C11.
+
   If Length > 0 and Destination is not aligned on a 16-bit boundary, then ASSERT().
   If Length > 0 and Source is not aligned on a 16-bit boundary, then ASSERT().
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then the Destination is unmodified.
 
   @param  Destination              A pointer to a Null-terminated Unicode string.
   @param  DestMax                  The maximum number of Destination Unicode
@@ -273,8 +313,13 @@ StrnCpyS (
   Appends a copy of the string pointed to by Source (including the terminating
   null char) to the end of the string pointed to by Destination.
 
+  This function is similar as strcat_s defined in C11.
+
   If Destination is not aligned on a 16-bit boundary, then ASSERT().
   If Source is not aligned on a 16-bit boundary, then ASSERT().
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then the Destination is unmodified.
 
   @param  Destination              A pointer to a Null-terminated Unicode string.
   @param  DestMax                  The maximum number of Destination Unicode
@@ -308,8 +353,13 @@ StrCatS (
   copied from Source, then Destination[StrLen(Destination) + Length] is always
   set to null.
 
+  This function is similar as strncat_s defined in C11.
+
   If Destination is not aligned on a 16-bit boundary, then ASSERT().
-  If and Source is not aligned on a 16-bit boundary, then ASSERT().
+  If Source is not aligned on a 16-bit boundary, then ASSERT().
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then the Destination is unmodified.
 
   @param  Destination              A pointer to a Null-terminated Unicode string.
   @param  DestMax                  The maximum number of Destination Unicode
@@ -340,7 +390,243 @@ StrnCatS (
   );
 
 /**
+  Convert a Null-terminated Unicode decimal string to a value of type UINTN.
+
+  This function outputs a value of type UINTN by interpreting the contents of
+  the Unicode string specified by String as a decimal number. The format of the
+  input Unicode string String is:
+
+                  [spaces] [decimal digits].
+
+  The valid decimal digit character is in the range [0-9]. The function will
+  ignore the pad space, which includes spaces or tab characters, before
+  [decimal digits]. The running zero in the beginning of [decimal digits] will
+  be ignored. Then, the function stops at the first character that is a not a
+  valid decimal character or a Null-terminator, whichever one comes first.
+
+  If String is NULL, then ASSERT().
+  If Data is NULL, then ASSERT().
+  If String is not aligned in a 16-bit boundary, then ASSERT().
+  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
+  PcdMaximumUnicodeStringLength Unicode characters, not including the
+  Null-terminator, then ASSERT().
+
+  If String has no valid decimal digits in the above format, then 0 is stored
+  at the location pointed to by Data.
+  If the number represented by String exceeds the range defined by UINTN, then
+  MAX_UINTN is stored at the location pointed to by Data.
+
+  If EndPointer is not NULL, a pointer to the character that stopped the scan
+  is stored at the location pointed to by EndPointer. If String has no valid
+  decimal digits right after the optional pad spaces, the value of String is
+  stored at the location pointed to by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated Unicode string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Data                     Pointer to the converted value.
+
+  @retval RETURN_SUCCESS           Value is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+                                   If PcdMaximumUnicodeStringLength is not
+                                   zero, and String contains more than
+                                   PcdMaximumUnicodeStringLength Unicode
+                                   characters, not including the
+                                   Null-terminator.
+  @retval RETURN_UNSUPPORTED       If the number represented by String exceeds
+                                   the range defined by UINTN.
+
+**/
+RETURN_STATUS
+EFIAPI
+StrDecimalToUintnS (
+  IN  CONST CHAR16             *String,
+  OUT       CHAR16             **EndPointer,  OPTIONAL
+  OUT       UINTN              *Data
+  );
+
+/**
+  Convert a Null-terminated Unicode decimal string to a value of type UINT64.
+
+  This function outputs a value of type UINT64 by interpreting the contents of
+  the Unicode string specified by String as a decimal number. The format of the
+  input Unicode string String is:
+
+                  [spaces] [decimal digits].
+
+  The valid decimal digit character is in the range [0-9]. The function will
+  ignore the pad space, which includes spaces or tab characters, before
+  [decimal digits]. The running zero in the beginning of [decimal digits] will
+  be ignored. Then, the function stops at the first character that is a not a
+  valid decimal character or a Null-terminator, whichever one comes first.
+
+  If String is NULL, then ASSERT().
+  If Data is NULL, then ASSERT().
+  If String is not aligned in a 16-bit boundary, then ASSERT().
+  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
+  PcdMaximumUnicodeStringLength Unicode characters, not including the
+  Null-terminator, then ASSERT().
+
+  If String has no valid decimal digits in the above format, then 0 is stored
+  at the location pointed to by Data.
+  If the number represented by String exceeds the range defined by UINT64, then
+  MAX_UINT64 is stored at the location pointed to by Data.
+
+  If EndPointer is not NULL, a pointer to the character that stopped the scan
+  is stored at the location pointed to by EndPointer. If String has no valid
+  decimal digits right after the optional pad spaces, the value of String is
+  stored at the location pointed to by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated Unicode string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Data                     Pointer to the converted value.
+
+  @retval RETURN_SUCCESS           Value is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+                                   If PcdMaximumUnicodeStringLength is not
+                                   zero, and String contains more than
+                                   PcdMaximumUnicodeStringLength Unicode
+                                   characters, not including the
+                                   Null-terminator.
+  @retval RETURN_UNSUPPORTED       If the number represented by String exceeds
+                                   the range defined by UINT64.
+
+**/
+RETURN_STATUS
+EFIAPI
+StrDecimalToUint64S (
+  IN  CONST CHAR16             *String,
+  OUT       CHAR16             **EndPointer,  OPTIONAL
+  OUT       UINT64             *Data
+  );
+
+/**
+  Convert a Null-terminated Unicode hexadecimal string to a value of type
+  UINTN.
+
+  This function outputs a value of type UINTN by interpreting the contents of
+  the Unicode string specified by String as a hexadecimal number. The format of
+  the input Unicode string String is:
+
+                  [spaces][zeros][x][hexadecimal digits].
+
+  The valid hexadecimal digit character is in the range [0-9], [a-f] and [A-F].
+  The prefix "0x" is optional. Both "x" and "X" is allowed in "0x" prefix.
+  If "x" appears in the input string, it must be prefixed with at least one 0.
+  The function will ignore the pad space, which includes spaces or tab
+  characters, before [zeros], [x] or [hexadecimal digit]. The running zero
+  before [x] or [hexadecimal digit] will be ignored. Then, the decoding starts
+  after [x] or the first valid hexadecimal digit. Then, the function stops at
+  the first character that is a not a valid hexadecimal character or NULL,
+  whichever one comes first.
+
+  If String is NULL, then ASSERT().
+  If Data is NULL, then ASSERT().
+  If String is not aligned in a 16-bit boundary, then ASSERT().
+  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
+  PcdMaximumUnicodeStringLength Unicode characters, not including the
+  Null-terminator, then ASSERT().
+
+  If String has no valid hexadecimal digits in the above format, then 0 is
+  stored at the location pointed to by Data.
+  If the number represented by String exceeds the range defined by UINTN, then
+  MAX_UINTN is stored at the location pointed to by Data.
+
+  If EndPointer is not NULL, a pointer to the character that stopped the scan
+  is stored at the location pointed to by EndPointer. If String has no valid
+  hexadecimal digits right after the optional pad spaces, the value of String
+  is stored at the location pointed to by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated Unicode string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Data                     Pointer to the converted value.
+
+  @retval RETURN_SUCCESS           Value is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+                                   If PcdMaximumUnicodeStringLength is not
+                                   zero, and String contains more than
+                                   PcdMaximumUnicodeStringLength Unicode
+                                   characters, not including the
+                                   Null-terminator.
+  @retval RETURN_UNSUPPORTED       If the number represented by String exceeds
+                                   the range defined by UINTN.
+
+**/
+RETURN_STATUS
+EFIAPI
+StrHexToUintnS (
+  IN  CONST CHAR16             *String,
+  OUT       CHAR16             **EndPointer,  OPTIONAL
+  OUT       UINTN              *Data
+  );
+
+/**
+  Convert a Null-terminated Unicode hexadecimal string to a value of type
+  UINT64.
+
+  This function outputs a value of type UINT64 by interpreting the contents of
+  the Unicode string specified by String as a hexadecimal number. The format of
+  the input Unicode string String is:
+
+                  [spaces][zeros][x][hexadecimal digits].
+
+  The valid hexadecimal digit character is in the range [0-9], [a-f] and [A-F].
+  The prefix "0x" is optional. Both "x" and "X" is allowed in "0x" prefix.
+  If "x" appears in the input string, it must be prefixed with at least one 0.
+  The function will ignore the pad space, which includes spaces or tab
+  characters, before [zeros], [x] or [hexadecimal digit]. The running zero
+  before [x] or [hexadecimal digit] will be ignored. Then, the decoding starts
+  after [x] or the first valid hexadecimal digit. Then, the function stops at
+  the first character that is a not a valid hexadecimal character or NULL,
+  whichever one comes first.
+
+  If String is NULL, then ASSERT().
+  If Data is NULL, then ASSERT().
+  If String is not aligned in a 16-bit boundary, then ASSERT().
+  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
+  PcdMaximumUnicodeStringLength Unicode characters, not including the
+  Null-terminator, then ASSERT().
+
+  If String has no valid hexadecimal digits in the above format, then 0 is
+  stored at the location pointed to by Data.
+  If the number represented by String exceeds the range defined by UINT64, then
+  MAX_UINT64 is stored at the location pointed to by Data.
+
+  If EndPointer is not NULL, a pointer to the character that stopped the scan
+  is stored at the location pointed to by EndPointer. If String has no valid
+  hexadecimal digits right after the optional pad spaces, the value of String
+  is stored at the location pointed to by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated Unicode string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Data                     Pointer to the converted value.
+
+  @retval RETURN_SUCCESS           Value is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+                                   If PcdMaximumUnicodeStringLength is not
+                                   zero, and String contains more than
+                                   PcdMaximumUnicodeStringLength Unicode
+                                   characters, not including the
+                                   Null-terminator.
+  @retval RETURN_UNSUPPORTED       If the number represented by String exceeds
+                                   the range defined by UINT64.
+
+**/
+RETURN_STATUS
+EFIAPI
+StrHexToUint64S (
+  IN  CONST CHAR16             *String,
+  OUT       CHAR16             **EndPointer,  OPTIONAL
+  OUT       UINT64             *Data
+  );
+
+/**
   Returns the length of a Null-terminated Ascii string.
+
+  This function is similar as strlen_s defined in C11.
 
   @param  String   A pointer to a Null-terminated Ascii string.
   @param  MaxSize  The maximum number of Destination Ascii
@@ -359,8 +645,40 @@ AsciiStrnLenS (
   );
 
 /**
+  Returns the size of a Null-terminated Ascii string in bytes, including the
+  Null terminator.
+
+  This function returns the size of the Null-terminated Ascii string specified
+  by String in bytes, including the Null terminator.
+
+  @param  String   A pointer to a Null-terminated Ascii string.
+  @param  MaxSize  The maximum number of Destination Ascii
+                   char, including the Null terminator.
+
+  @retval 0  If String is NULL.
+  @retval (sizeof (CHAR8) * (MaxSize + 1))
+             If there is no Null terminator in the first MaxSize characters of
+             String.
+  @return The size of the Null-terminated Ascii string in bytes, including the
+          Null terminator.
+
+**/
+UINTN
+EFIAPI
+AsciiStrnSizeS (
+  IN CONST CHAR8               *String,
+  IN UINTN                     MaxSize
+  );
+
+/**
   Copies the string pointed to by Source (including the terminating null char)
   to the array pointed to by Destination.
+
+  This function is similar as strcpy_s defined in C11.
+
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then the Destination is unmodified.
 
   @param  Destination              A pointer to a Null-terminated Ascii string.
   @param  DestMax                  The maximum number of Destination Ascii
@@ -389,6 +707,12 @@ AsciiStrCpyS (
   Copies not more than Length successive char from the string pointed to by
   Source to the array pointed to by Destination. If no null char is copied from
   Source, then Destination[Length] is always set to null.
+
+  This function is similar as strncpy_s defined in C11.
+
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then the Destination is unmodified.
 
   @param  Destination              A pointer to a Null-terminated Ascii string.
   @param  DestMax                  The maximum number of Destination Ascii
@@ -419,6 +743,12 @@ AsciiStrnCpyS (
 /**
   Appends a copy of the string pointed to by Source (including the terminating
   null char) to the end of the string pointed to by Destination.
+
+  This function is similar as strcat_s defined in C11.
+
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then the Destination is unmodified.
 
   @param  Destination              A pointer to a Null-terminated Ascii string.
   @param  DestMax                  The maximum number of Destination Ascii
@@ -452,6 +782,12 @@ AsciiStrCatS (
   copied from Source, then Destination[StrLen(Destination) + Length] is always
   set to null.
 
+  This function is similar as strncat_s defined in C11.
+
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then the Destination is unmodified.
+
   @param  Destination              A pointer to a Null-terminated Ascii string.
   @param  DestMax                  The maximum number of Destination Ascii
                                    char, including terminating null char.
@@ -480,11 +816,239 @@ AsciiStrnCatS (
   IN     UINTN        Length
   );
 
+/**
+  Convert a Null-terminated Ascii decimal string to a value of type UINTN.
+
+  This function outputs a value of type UINTN by interpreting the contents of
+  the Ascii string specified by String as a decimal number. The format of the
+  input Ascii string String is:
+
+                  [spaces] [decimal digits].
+
+  The valid decimal digit character is in the range [0-9]. The function will
+  ignore the pad space, which includes spaces or tab characters, before
+  [decimal digits]. The running zero in the beginning of [decimal digits] will
+  be ignored. Then, the function stops at the first character that is a not a
+  valid decimal character or a Null-terminator, whichever one comes first.
+
+  If String is NULL, then ASSERT().
+  If Data is NULL, then ASSERT().
+  If PcdMaximumAsciiStringLength is not zero, and String contains more than
+  PcdMaximumAsciiStringLength Ascii characters, not including the
+  Null-terminator, then ASSERT().
+
+  If String has no valid decimal digits in the above format, then 0 is stored
+  at the location pointed to by Data.
+  If the number represented by String exceeds the range defined by UINTN, then
+  MAX_UINTN is stored at the location pointed to by Data.
+
+  If EndPointer is not NULL, a pointer to the character that stopped the scan
+  is stored at the location pointed to by EndPointer. If String has no valid
+  decimal digits right after the optional pad spaces, the value of String is
+  stored at the location pointed to by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated Ascii string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Data                     Pointer to the converted value.
+
+  @retval RETURN_SUCCESS           Value is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                   and String contains more than
+                                   PcdMaximumAsciiStringLength Ascii
+                                   characters, not including the
+                                   Null-terminator.
+  @retval RETURN_UNSUPPORTED       If the number represented by String exceeds
+                                   the range defined by UINTN.
+
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrDecimalToUintnS (
+  IN  CONST CHAR8              *String,
+  OUT       CHAR8              **EndPointer,  OPTIONAL
+  OUT       UINTN              *Data
+  );
+
+/**
+  Convert a Null-terminated Ascii decimal string to a value of type UINT64.
+
+  This function outputs a value of type UINT64 by interpreting the contents of
+  the Ascii string specified by String as a decimal number. The format of the
+  input Ascii string String is:
+
+                  [spaces] [decimal digits].
+
+  The valid decimal digit character is in the range [0-9]. The function will
+  ignore the pad space, which includes spaces or tab characters, before
+  [decimal digits]. The running zero in the beginning of [decimal digits] will
+  be ignored. Then, the function stops at the first character that is a not a
+  valid decimal character or a Null-terminator, whichever one comes first.
+
+  If String is NULL, then ASSERT().
+  If Data is NULL, then ASSERT().
+  If PcdMaximumAsciiStringLength is not zero, and String contains more than
+  PcdMaximumAsciiStringLength Ascii characters, not including the
+  Null-terminator, then ASSERT().
+
+  If String has no valid decimal digits in the above format, then 0 is stored
+  at the location pointed to by Data.
+  If the number represented by String exceeds the range defined by UINT64, then
+  MAX_UINT64 is stored at the location pointed to by Data.
+
+  If EndPointer is not NULL, a pointer to the character that stopped the scan
+  is stored at the location pointed to by EndPointer. If String has no valid
+  decimal digits right after the optional pad spaces, the value of String is
+  stored at the location pointed to by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated Ascii string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Data                     Pointer to the converted value.
+
+  @retval RETURN_SUCCESS           Value is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                   and String contains more than
+                                   PcdMaximumAsciiStringLength Ascii
+                                   characters, not including the
+                                   Null-terminator.
+  @retval RETURN_UNSUPPORTED       If the number represented by String exceeds
+                                   the range defined by UINT64.
+
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrDecimalToUint64S (
+  IN  CONST CHAR8              *String,
+  OUT       CHAR8              **EndPointer,  OPTIONAL
+  OUT       UINT64             *Data
+  );
+
+/**
+  Convert a Null-terminated Ascii hexadecimal string to a value of type UINTN.
+
+  This function outputs a value of type UINTN by interpreting the contents of
+  the Ascii string specified by String as a hexadecimal number. The format of
+  the input Ascii string String is:
+
+                  [spaces][zeros][x][hexadecimal digits].
+
+  The valid hexadecimal digit character is in the range [0-9], [a-f] and [A-F].
+  The prefix "0x" is optional. Both "x" and "X" is allowed in "0x" prefix. If
+  "x" appears in the input string, it must be prefixed with at least one 0. The
+  function will ignore the pad space, which includes spaces or tab characters,
+  before [zeros], [x] or [hexadecimal digits]. The running zero before [x] or
+  [hexadecimal digits] will be ignored. Then, the decoding starts after [x] or
+  the first valid hexadecimal digit. Then, the function stops at the first
+  character that is a not a valid hexadecimal character or Null-terminator,
+  whichever on comes first.
+
+  If String is NULL, then ASSERT().
+  If Data is NULL, then ASSERT().
+  If PcdMaximumAsciiStringLength is not zero, and String contains more than
+  PcdMaximumAsciiStringLength Ascii characters, not including the
+  Null-terminator, then ASSERT().
+
+  If String has no valid hexadecimal digits in the above format, then 0 is
+  stored at the location pointed to by Data.
+  If the number represented by String exceeds the range defined by UINTN, then
+  MAX_UINTN is stored at the location pointed to by Data.
+
+  If EndPointer is not NULL, a pointer to the character that stopped the scan
+  is stored at the location pointed to by EndPointer. If String has no valid
+  hexadecimal digits right after the optional pad spaces, the value of String
+  is stored at the location pointed to by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated Ascii string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Data                     Pointer to the converted value.
+
+  @retval RETURN_SUCCESS           Value is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                   and String contains more than
+                                   PcdMaximumAsciiStringLength Ascii
+                                   characters, not including the
+                                   Null-terminator.
+  @retval RETURN_UNSUPPORTED       If the number represented by String exceeds
+                                   the range defined by UINTN.
+
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrHexToUintnS (
+  IN  CONST CHAR8              *String,
+  OUT       CHAR8              **EndPointer,  OPTIONAL
+  OUT       UINTN              *Data
+  );
+
+/**
+  Convert a Null-terminated Ascii hexadecimal string to a value of type UINT64.
+
+  This function outputs a value of type UINT64 by interpreting the contents of
+  the Ascii string specified by String as a hexadecimal number. The format of
+  the input Ascii string String is:
+
+                  [spaces][zeros][x][hexadecimal digits].
+
+  The valid hexadecimal digit character is in the range [0-9], [a-f] and [A-F].
+  The prefix "0x" is optional. Both "x" and "X" is allowed in "0x" prefix. If
+  "x" appears in the input string, it must be prefixed with at least one 0. The
+  function will ignore the pad space, which includes spaces or tab characters,
+  before [zeros], [x] or [hexadecimal digits]. The running zero before [x] or
+  [hexadecimal digits] will be ignored. Then, the decoding starts after [x] or
+  the first valid hexadecimal digit. Then, the function stops at the first
+  character that is a not a valid hexadecimal character or Null-terminator,
+  whichever on comes first.
+
+  If String is NULL, then ASSERT().
+  If Data is NULL, then ASSERT().
+  If PcdMaximumAsciiStringLength is not zero, and String contains more than
+  PcdMaximumAsciiStringLength Ascii characters, not including the
+  Null-terminator, then ASSERT().
+
+  If String has no valid hexadecimal digits in the above format, then 0 is
+  stored at the location pointed to by Data.
+  If the number represented by String exceeds the range defined by UINT64, then
+  MAX_UINT64 is stored at the location pointed to by Data.
+
+  If EndPointer is not NULL, a pointer to the character that stopped the scan
+  is stored at the location pointed to by EndPointer. If String has no valid
+  hexadecimal digits right after the optional pad spaces, the value of String
+  is stored at the location pointed to by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated Ascii string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Data                     Pointer to the converted value.
+
+  @retval RETURN_SUCCESS           Value is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                   and String contains more than
+                                   PcdMaximumAsciiStringLength Ascii
+                                   characters, not including the
+                                   Null-terminator.
+  @retval RETURN_UNSUPPORTED       If the number represented by String exceeds
+                                   the range defined by UINT64.
+
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrHexToUint64S (
+  IN  CONST CHAR8              *String,
+  OUT       CHAR8              **EndPointer,  OPTIONAL
+  OUT       UINT64             *Data
+  );
+
 
 #ifndef DISABLE_NEW_DEPRECATED_INTERFACES
 
 /**
-  [ATTENTION] This function will be deprecated for security reason.
+  [ATTENTION] This function is deprecated for security reason.
 
   Copies one Null-terminated Unicode string to another Null-terminated Unicode
   string and returns the new Unicode string.
@@ -517,7 +1081,7 @@ StrCpy (
 
 
 /**
-  [ATTENTION] This function will be deprecated for security reason.
+  [ATTENTION] This function is deprecated for security reason.
 
   Copies up to a specified length from one Null-terminated Unicode string to
   another Null-terminated Unicode string and returns the new Unicode string.
@@ -686,7 +1250,7 @@ StrnCmp (
 #ifndef DISABLE_NEW_DEPRECATED_INTERFACES
 
 /**
-  [ATTENTION] This function will be deprecated for security reason.
+  [ATTENTION] This function is deprecated for security reason.
 
   Concatenates one Null-terminated Unicode string to another Null-terminated
   Unicode string, and returns the concatenated Unicode string.
@@ -728,7 +1292,7 @@ StrCat (
 
 
 /**
-  [ATTENTION] This function will be deprecated for security reason.
+  [ATTENTION] This function is deprecated for security reason.
 
   Concatenates up to a specified length one Null-terminated Unicode to the end
   of another Null-terminated Unicode string, and returns the concatenated
@@ -831,7 +1395,7 @@ StrStr (
   If String has no pad spaces or valid decimal digits,
   then 0 is returned.
   If the number represented by String overflows according
-  to the range defined by UINTN, then ASSERT().
+  to the range defined by UINTN, then MAX_UINTN is returned.
 
   If PcdMaximumUnicodeStringLength is not zero, and String contains
   more than PcdMaximumUnicodeStringLength Unicode characters not including
@@ -871,7 +1435,7 @@ StrDecimalToUintn (
   If String has no pad spaces or valid decimal digits,
   then 0 is returned.
   If the number represented by String overflows according
-  to the range defined by UINT64, then ASSERT().
+  to the range defined by UINT64, then MAX_UINT64 is returned.
 
   If PcdMaximumUnicodeStringLength is not zero, and String contains
   more than PcdMaximumUnicodeStringLength Unicode characters not including
@@ -913,7 +1477,7 @@ StrDecimalToUint64 (
   If String has no leading pad spaces, leading zeros or valid hexadecimal digits,
   then zero is returned.
   If the number represented by String overflows according to the range defined by
-  UINTN, then ASSERT().
+  UINTN, then MAX_UINTN is returned.
 
   If PcdMaximumUnicodeStringLength is not zero, and String contains more than
   PcdMaximumUnicodeStringLength Unicode characters not including the Null-terminator,
@@ -955,7 +1519,7 @@ StrHexToUintn (
   If String has no leading pad spaces, leading zeros or valid hexadecimal digits,
   then zero is returned.
   If the number represented by String overflows according to the range defined by
-  UINT64, then ASSERT().
+  UINT64, then MAX_UINT64 is returned.
 
   If PcdMaximumUnicodeStringLength is not zero, and String contains more than
   PcdMaximumUnicodeStringLength Unicode characters not including the Null-terminator,
@@ -973,6 +1537,241 @@ StrHexToUint64 (
   );
 
 /**
+  Convert a Null-terminated Unicode string to IPv6 address and prefix length.
+
+  This function outputs a value of type IPv6_ADDRESS and may output a value
+  of type UINT8 by interpreting the contents of the Unicode string specified
+  by String. The format of the input Unicode string String is as follows:
+
+                  X:X:X:X:X:X:X:X[/P]
+
+  X contains one to four hexadecimal digit characters in the range [0-9], [a-f] and
+  [A-F]. X is converted to a value of type UINT16, whose low byte is stored in low
+  memory address and high byte is stored in high memory address. P contains decimal
+  digit characters in the range [0-9]. The running zero in the beginning of P will
+  be ignored. /P is optional.
+
+  When /P is not in the String, the function stops at the first character that is
+  not a valid hexadecimal digit character after eight X's are converted.
+
+  When /P is in the String, the function stops at the first character that is not
+  a valid decimal digit character after P is converted.
+
+  "::" can be used to compress one or more groups of X when X contains only 0.
+  The "::" can only appear once in the String.
+
+  If String is NULL, then ASSERT().
+
+  If Address is NULL, then ASSERT().
+
+  If String is not aligned in a 16-bit boundary, then ASSERT().
+
+  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
+  PcdMaximumUnicodeStringLength Unicode characters, not including the
+  Null-terminator, then ASSERT().
+
+  If EndPointer is not NULL and Address is translated from String, a pointer
+  to the character that stopped the scan is stored at the location pointed to
+  by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated Unicode string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Address                  Pointer to the converted IPv6 address.
+  @param  PrefixLength             Pointer to the converted IPv6 address prefix
+                                   length. MAX_UINT8 is returned when /P is
+                                   not in the String.
+
+  @retval RETURN_SUCCESS           Address is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+  @retval RETURN_UNSUPPORTED       If X contains more than four hexadecimal
+                                    digit characters.
+                                   If String contains "::" and number of X
+                                    is not less than 8.
+                                   If P starts with character that is not a
+                                    valid decimal digit character.
+                                   If the decimal number converted from P
+                                    exceeds 128.
+
+**/
+RETURN_STATUS
+EFIAPI
+StrToIpv6Address (
+  IN  CONST CHAR16       *String,
+  OUT CHAR16             **EndPointer, OPTIONAL
+  OUT IPv6_ADDRESS       *Address,
+  OUT UINT8              *PrefixLength OPTIONAL
+  );
+
+/**
+  Convert a Null-terminated Unicode string to IPv4 address and prefix length.
+
+  This function outputs a value of type IPv4_ADDRESS and may output a value
+  of type UINT8 by interpreting the contents of the Unicode string specified
+  by String. The format of the input Unicode string String is as follows:
+
+                  D.D.D.D[/P]
+
+  D and P are decimal digit characters in the range [0-9]. The running zero in
+  the beginning of D and P will be ignored. /P is optional.
+
+  When /P is not in the String, the function stops at the first character that is
+  not a valid decimal digit character after four D's are converted.
+
+  When /P is in the String, the function stops at the first character that is not
+  a valid decimal digit character after P is converted.
+
+  If String is NULL, then ASSERT().
+
+  If Address is NULL, then ASSERT().
+
+  If String is not aligned in a 16-bit boundary, then ASSERT().
+
+  If PcdMaximumUnicodeStringLength is not zero, and String contains more than
+  PcdMaximumUnicodeStringLength Unicode characters, not including the
+  Null-terminator, then ASSERT().
+
+  If EndPointer is not NULL and Address is translated from String, a pointer
+  to the character that stopped the scan is stored at the location pointed to
+  by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated Unicode string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Address                  Pointer to the converted IPv4 address.
+  @param  PrefixLength             Pointer to the converted IPv4 address prefix
+                                   length. MAX_UINT8 is returned when /P is
+                                   not in the String.
+
+  @retval RETURN_SUCCESS           Address is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+  @retval RETURN_UNSUPPORTED       If String is not in the correct format.
+                                   If any decimal number converted from D
+                                    exceeds 255.
+                                   If the decimal number converted from P
+                                    exceeds 32.
+
+**/
+RETURN_STATUS
+EFIAPI
+StrToIpv4Address (
+  IN  CONST CHAR16       *String,
+  OUT CHAR16             **EndPointer, OPTIONAL
+  OUT IPv4_ADDRESS       *Address,
+  OUT UINT8              *PrefixLength OPTIONAL
+  );
+
+#define GUID_STRING_LENGTH  36
+
+/**
+  Convert a Null-terminated Unicode GUID string to a value of type
+  EFI_GUID.
+
+  This function outputs a GUID value by interpreting the contents of
+  the Unicode string specified by String. The format of the input
+  Unicode string String consists of 36 characters, as follows:
+
+                  aabbccdd-eeff-gghh-iijj-kkllmmnnoopp
+
+  The pairs aa - pp are two characters in the range [0-9], [a-f] and
+  [A-F], with each pair representing a single byte hexadecimal value.
+
+  The mapping between String and the EFI_GUID structure is as follows:
+                  aa          Data1[24:31]
+                  bb          Data1[16:23]
+                  cc          Data1[8:15]
+                  dd          Data1[0:7]
+                  ee          Data2[8:15]
+                  ff          Data2[0:7]
+                  gg          Data3[8:15]
+                  hh          Data3[0:7]
+                  ii          Data4[0:7]
+                  jj          Data4[8:15]
+                  kk          Data4[16:23]
+                  ll          Data4[24:31]
+                  mm          Data4[32:39]
+                  nn          Data4[40:47]
+                  oo          Data4[48:55]
+                  pp          Data4[56:63]
+
+  If String is NULL, then ASSERT().
+  If Guid is NULL, then ASSERT().
+  If String is not aligned in a 16-bit boundary, then ASSERT().
+
+  @param  String                   Pointer to a Null-terminated Unicode string.
+  @param  Guid                     Pointer to the converted GUID.
+
+  @retval RETURN_SUCCESS           Guid is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+  @retval RETURN_UNSUPPORTED       If String is not as the above format.
+
+**/
+RETURN_STATUS
+EFIAPI
+StrToGuid (
+  IN  CONST CHAR16       *String,
+  OUT GUID               *Guid
+  );
+
+/**
+  Convert a Null-terminated Unicode hexadecimal string to a byte array.
+
+  This function outputs a byte array by interpreting the contents of
+  the Unicode string specified by String in hexadecimal format. The format of
+  the input Unicode string String is:
+
+                  [XX]*
+
+  X is a hexadecimal digit character in the range [0-9], [a-f] and [A-F].
+  The function decodes every two hexadecimal digit characters as one byte. The
+  decoding stops after Length of characters and outputs Buffer containing
+  (Length / 2) bytes.
+
+  If String is not aligned in a 16-bit boundary, then ASSERT().
+
+  If String is NULL, then ASSERT().
+
+  If Buffer is NULL, then ASSERT().
+
+  If Length is not multiple of 2, then ASSERT().
+
+  If PcdMaximumUnicodeStringLength is not zero and Length is greater than
+  PcdMaximumUnicodeStringLength, then ASSERT().
+
+  If MaxBufferSize is less than (Length / 2), then ASSERT().
+
+  @param  String                   Pointer to a Null-terminated Unicode string.
+  @param  Length                   The number of Unicode characters to decode.
+  @param  Buffer                   Pointer to the converted bytes array.
+  @param  MaxBufferSize            The maximum size of Buffer.
+
+  @retval RETURN_SUCCESS           Buffer is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+                                   If Length is not multiple of 2.
+                                   If PcdMaximumUnicodeStringLength is not zero,
+                                    and Length is greater than
+                                    PcdMaximumUnicodeStringLength.
+  @retval RETURN_UNSUPPORTED       If Length of characters from String contain
+                                    a character that is not valid hexadecimal
+                                    digit characters, or a Null-terminator.
+  @retval RETURN_BUFFER_TOO_SMALL  If MaxBufferSize is less than (Length / 2).
+**/
+RETURN_STATUS
+EFIAPI
+StrHexToBytes (
+  IN  CONST CHAR16       *String,
+  IN  UINTN              Length,
+  OUT UINT8              *Buffer,
+  IN  UINTN              MaxBufferSize
+  );
+
+#ifndef DISABLE_NEW_DEPRECATED_INTERFACES
+
+/**
+  [ATTENTION] This function is deprecated for security reason.
+
   Convert a Null-terminated Unicode string to a Null-terminated
   ASCII string and returns the ASCII string.
 
@@ -1012,11 +1811,115 @@ UnicodeStrToAsciiStr (
   OUT     CHAR8                     *Destination
   );
 
+#endif
+
+/**
+  Convert a Null-terminated Unicode string to a Null-terminated
+  ASCII string.
+
+  This function is similar to AsciiStrCpyS.
+
+  This function converts the content of the Unicode string Source
+  to the ASCII string Destination by copying the lower 8 bits of
+  each Unicode character. The function terminates the ASCII string
+  Destination by appending a Null-terminator character at the end.
+
+  The caller is responsible to make sure Destination points to a buffer with size
+  equal or greater than ((StrLen (Source) + 1) * sizeof (CHAR8)) in bytes.
+
+  If any Unicode characters in Source contain non-zero value in
+  the upper 8 bits, then ASSERT().
+
+  If Source is not aligned on a 16-bit boundary, then ASSERT().
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then the Destination is unmodified.
+
+  @param  Source        The pointer to a Null-terminated Unicode string.
+  @param  Destination   The pointer to a Null-terminated ASCII string.
+  @param  DestMax       The maximum number of Destination Ascii
+                        char, including terminating null char.
+
+  @retval RETURN_SUCCESS           String is converted.
+  @retval RETURN_BUFFER_TOO_SMALL  If DestMax is NOT greater than StrLen(Source).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                    and DestMax is greater than
+                                    PcdMaximumAsciiStringLength.
+                                   If PcdMaximumUnicodeStringLength is not zero,
+                                    and DestMax is greater than
+                                    PcdMaximumUnicodeStringLength.
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+
+**/
+RETURN_STATUS
+EFIAPI
+UnicodeStrToAsciiStrS (
+  IN      CONST CHAR16              *Source,
+  OUT     CHAR8                     *Destination,
+  IN      UINTN                     DestMax
+  );
+
+/**
+  Convert not more than Length successive characters from a Null-terminated
+  Unicode string to a Null-terminated Ascii string. If no null char is copied
+  from Source, then Destination[Length] is always set to null.
+
+  This function converts not more than Length successive characters from the
+  Unicode string Source to the Ascii string Destination by copying the lower 8
+  bits of each Unicode character. The function terminates the Ascii string
+  Destination by appending a Null-terminator character at the end.
+
+  The caller is responsible to make sure Destination points to a buffer with size
+  equal or greater than ((StrLen (Source) + 1) * sizeof (CHAR8)) in bytes.
+
+  If any Unicode characters in Source contain non-zero value in the upper 8
+  bits, then ASSERT().
+  If Source is not aligned on a 16-bit boundary, then ASSERT().
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then the Destination is unmodified.
+
+  @param  Source             The pointer to a Null-terminated Unicode string.
+  @param  Length             The maximum number of Unicode characters to
+                             convert.
+  @param  Destination        The pointer to a Null-terminated Ascii string.
+  @param  DestMax            The maximum number of Destination Ascii
+                             char, including terminating null char.
+  @param  DestinationLength  The number of Unicode characters converted.
+
+  @retval RETURN_SUCCESS            String is converted.
+  @retval RETURN_INVALID_PARAMETER  If Destination is NULL.
+                                    If Source is NULL.
+                                    If DestinationLength is NULL.
+                                    If PcdMaximumAsciiStringLength is not zero,
+                                    and Length or DestMax is greater than
+                                    PcdMaximumAsciiStringLength.
+                                    If PcdMaximumUnicodeStringLength is not
+                                    zero, and Length or DestMax is greater than
+                                    PcdMaximumUnicodeStringLength.
+                                    If DestMax is 0.
+  @retval RETURN_BUFFER_TOO_SMALL   If DestMax is NOT greater than
+                                    MIN(StrLen(Source), Length).
+  @retval RETURN_ACCESS_DENIED      If Source and Destination overlap.
+
+**/
+RETURN_STATUS
+EFIAPI
+UnicodeStrnToAsciiStrS (
+  IN      CONST CHAR16              *Source,
+  IN      UINTN                     Length,
+  OUT     CHAR8                     *Destination,
+  IN      UINTN                     DestMax,
+  OUT     UINTN                     *DestinationLength
+  );
 
 #ifndef DISABLE_NEW_DEPRECATED_INTERFACES
 
 /**
-  [ATTENTION] This function will be deprecated for security reason.
+  [ATTENTION] This function is deprecated for security reason.
 
   Copies one Null-terminated ASCII string to another Null-terminated ASCII
   string and returns the new ASCII string.
@@ -1047,7 +1950,7 @@ AsciiStrCpy (
 
 
 /**
-  [ATTENTION] This function will be deprecated for security reason.
+  [ATTENTION] This function is deprecated for security reason.
 
   Copies up to a specified length one Null-terminated ASCII string to another
   Null-terminated ASCII string and returns the new ASCII string.
@@ -1245,7 +2148,7 @@ AsciiStrnCmp (
 #ifndef DISABLE_NEW_DEPRECATED_INTERFACES
 
 /**
-  [ATTENTION] This function will be deprecated for security reason.
+  [ATTENTION] This function is deprecated for security reason.
 
   Concatenates one Null-terminated ASCII string to another Null-terminated
   ASCII string, and returns the concatenated ASCII string.
@@ -1282,7 +2185,7 @@ AsciiStrCat (
 
 
 /**
-  [ATTENTION] This function will be deprecated for security reason.
+  [ATTENTION] This function is deprecated for security reason.
 
   Concatenates up to a specified length one Null-terminated ASCII string to
   the end of another Null-terminated ASCII string, and returns the
@@ -1379,7 +2282,7 @@ AsciiStrStr (
   If String has only pad spaces, then 0 is returned.
   If String has no pad spaces or valid decimal digits, then 0 is returned.
   If the number represented by String overflows according to the range defined by
-  UINTN, then ASSERT().
+  UINTN, then MAX_UINTN is returned.
   If String is NULL, then ASSERT().
   If PcdMaximumAsciiStringLength is not zero, and String contains more than
   PcdMaximumAsciiStringLength ASCII characters not including the Null-terminator,
@@ -1416,7 +2319,7 @@ AsciiStrDecimalToUintn (
   If String has only pad spaces, then 0 is returned.
   If String has no pad spaces or valid decimal digits, then 0 is returned.
   If the number represented by String overflows according to the range defined by
-  UINT64, then ASSERT().
+  UINT64, then MAX_UINT64 is returned.
   If String is NULL, then ASSERT().
   If PcdMaximumAsciiStringLength is not zero, and String contains more than
   PcdMaximumAsciiStringLength ASCII characters not including the Null-terminator,
@@ -1457,7 +2360,7 @@ AsciiStrDecimalToUint64 (
   0 is returned.
 
   If the number represented by String overflows according to the range defined by UINTN,
-  then ASSERT().
+  then MAX_UINTN is returned.
   If String is NULL, then ASSERT().
   If PcdMaximumAsciiStringLength is not zero,
   and String contains more than PcdMaximumAsciiStringLength ASCII characters not including
@@ -1498,7 +2401,7 @@ AsciiStrHexToUintn (
   0 is returned.
 
   If the number represented by String overflows according to the range defined by UINT64,
-  then ASSERT().
+  then MAX_UINT64 is returned.
   If String is NULL, then ASSERT().
   If PcdMaximumAsciiStringLength is not zero,
   and String contains more than PcdMaximumAsciiStringLength ASCII characters not including
@@ -1515,8 +2418,225 @@ AsciiStrHexToUint64 (
   IN      CONST CHAR8                *String
   );
 
+/**
+  Convert a Null-terminated ASCII string to IPv6 address and prefix length.
+
+  This function outputs a value of type IPv6_ADDRESS and may output a value
+  of type UINT8 by interpreting the contents of the ASCII string specified
+  by String. The format of the input ASCII string String is as follows:
+
+                  X:X:X:X:X:X:X:X[/P]
+
+  X contains one to four hexadecimal digit characters in the range [0-9], [a-f] and
+  [A-F]. X is converted to a value of type UINT16, whose low byte is stored in low
+  memory address and high byte is stored in high memory address. P contains decimal
+  digit characters in the range [0-9]. The running zero in the beginning of P will
+  be ignored. /P is optional.
+
+  When /P is not in the String, the function stops at the first character that is
+  not a valid hexadecimal digit character after eight X's are converted.
+
+  When /P is in the String, the function stops at the first character that is not
+  a valid decimal digit character after P is converted.
+
+  "::" can be used to compress one or more groups of X when X contains only 0.
+  The "::" can only appear once in the String.
+
+  If String is NULL, then ASSERT().
+
+  If Address is NULL, then ASSERT().
+
+  If EndPointer is not NULL and Address is translated from String, a pointer
+  to the character that stopped the scan is stored at the location pointed to
+  by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated ASCII string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Address                  Pointer to the converted IPv6 address.
+  @param  PrefixLength             Pointer to the converted IPv6 address prefix
+                                   length. MAX_UINT8 is returned when /P is
+                                   not in the String.
+
+  @retval RETURN_SUCCESS           Address is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+  @retval RETURN_UNSUPPORTED       If X contains more than four hexadecimal
+                                    digit characters.
+                                   If String contains "::" and number of X
+                                    is not less than 8.
+                                   If P starts with character that is not a
+                                    valid decimal digit character.
+                                   If the decimal number converted from P
+                                    exceeds 128.
+
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrToIpv6Address (
+  IN  CONST CHAR8        *String,
+  OUT CHAR8              **EndPointer, OPTIONAL
+  OUT IPv6_ADDRESS       *Address,
+  OUT UINT8              *PrefixLength OPTIONAL
+  );
 
 /**
+  Convert a Null-terminated ASCII string to IPv4 address and prefix length.
+
+  This function outputs a value of type IPv4_ADDRESS and may output a value
+  of type UINT8 by interpreting the contents of the ASCII string specified
+  by String. The format of the input ASCII string String is as follows:
+
+                  D.D.D.D[/P]
+
+  D and P are decimal digit characters in the range [0-9]. The running zero in
+  the beginning of D and P will be ignored. /P is optional.
+
+  When /P is not in the String, the function stops at the first character that is
+  not a valid decimal digit character after four D's are converted.
+
+  When /P is in the String, the function stops at the first character that is not
+  a valid decimal digit character after P is converted.
+
+  If String is NULL, then ASSERT().
+
+  If Address is NULL, then ASSERT().
+
+  If EndPointer is not NULL and Address is translated from String, a pointer
+  to the character that stopped the scan is stored at the location pointed to
+  by EndPointer.
+
+  @param  String                   Pointer to a Null-terminated ASCII string.
+  @param  EndPointer               Pointer to character that stops scan.
+  @param  Address                  Pointer to the converted IPv4 address.
+  @param  PrefixLength             Pointer to the converted IPv4 address prefix
+                                   length. MAX_UINT8 is returned when /P is
+                                   not in the String.
+
+  @retval RETURN_SUCCESS           Address is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+  @retval RETURN_UNSUPPORTED       If String is not in the correct format.
+                                   If any decimal number converted from D
+                                    exceeds 255.
+                                   If the decimal number converted from P
+                                    exceeds 32.
+
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrToIpv4Address (
+  IN  CONST CHAR8        *String,
+  OUT CHAR8              **EndPointer, OPTIONAL
+  OUT IPv4_ADDRESS       *Address,
+  OUT UINT8              *PrefixLength OPTIONAL
+  );
+
+/**
+  Convert a Null-terminated ASCII GUID string to a value of type
+  EFI_GUID.
+
+  This function outputs a GUID value by interpreting the contents of
+  the ASCII string specified by String. The format of the input
+  ASCII string String consists of 36 characters, as follows:
+
+                  aabbccdd-eeff-gghh-iijj-kkllmmnnoopp
+
+  The pairs aa - pp are two characters in the range [0-9], [a-f] and
+  [A-F], with each pair representing a single byte hexadecimal value.
+
+  The mapping between String and the EFI_GUID structure is as follows:
+                  aa          Data1[24:31]
+                  bb          Data1[16:23]
+                  cc          Data1[8:15]
+                  dd          Data1[0:7]
+                  ee          Data2[8:15]
+                  ff          Data2[0:7]
+                  gg          Data3[8:15]
+                  hh          Data3[0:7]
+                  ii          Data4[0:7]
+                  jj          Data4[8:15]
+                  kk          Data4[16:23]
+                  ll          Data4[24:31]
+                  mm          Data4[32:39]
+                  nn          Data4[40:47]
+                  oo          Data4[48:55]
+                  pp          Data4[56:63]
+
+  If String is NULL, then ASSERT().
+  If Guid is NULL, then ASSERT().
+
+  @param  String                   Pointer to a Null-terminated ASCII string.
+  @param  Guid                     Pointer to the converted GUID.
+
+  @retval RETURN_SUCCESS           Guid is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+  @retval RETURN_UNSUPPORTED       If String is not as the above format.
+
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrToGuid (
+  IN  CONST CHAR8        *String,
+  OUT GUID               *Guid
+  );
+
+/**
+  Convert a Null-terminated ASCII hexadecimal string to a byte array.
+
+  This function outputs a byte array by interpreting the contents of
+  the ASCII string specified by String in hexadecimal format. The format of
+  the input ASCII string String is:
+
+                  [XX]*
+
+  X is a hexadecimal digit character in the range [0-9], [a-f] and [A-F].
+  The function decodes every two hexadecimal digit characters as one byte. The
+  decoding stops after Length of characters and outputs Buffer containing
+  (Length / 2) bytes.
+
+  If String is NULL, then ASSERT().
+
+  If Buffer is NULL, then ASSERT().
+
+  If Length is not multiple of 2, then ASSERT().
+
+  If PcdMaximumAsciiStringLength is not zero and Length is greater than
+  PcdMaximumAsciiStringLength, then ASSERT().
+
+  If MaxBufferSize is less than (Length / 2), then ASSERT().
+
+  @param  String                   Pointer to a Null-terminated ASCII string.
+  @param  Length                   The number of ASCII characters to decode.
+  @param  Buffer                   Pointer to the converted bytes array.
+  @param  MaxBufferSize            The maximum size of Buffer.
+
+  @retval RETURN_SUCCESS           Buffer is translated from String.
+  @retval RETURN_INVALID_PARAMETER If String is NULL.
+                                   If Data is NULL.
+                                   If Length is not multiple of 2.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                    and Length is greater than
+                                    PcdMaximumAsciiStringLength.
+  @retval RETURN_UNSUPPORTED       If Length of characters from String contain
+                                    a character that is not valid hexadecimal
+                                    digit characters, or a Null-terminator.
+  @retval RETURN_BUFFER_TOO_SMALL  If MaxBufferSize is less than (Length / 2).
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrHexToBytes (
+  IN  CONST CHAR8        *String,
+  IN  UINTN              Length,
+  OUT UINT8              *Buffer,
+  IN  UINTN              MaxBufferSize
+  );
+
+#ifndef DISABLE_NEW_DEPRECATED_INTERFACES
+
+/**
+  [ATTENTION] This function is deprecated for security reason.
+
   Convert one Null-terminated ASCII string to a Null-terminated
   Unicode string and returns the Unicode string.
 
@@ -1550,6 +2670,105 @@ AsciiStrToUnicodeStr (
   OUT     CHAR16                    *Destination
   );
 
+#endif
+
+/**
+  Convert one Null-terminated ASCII string to a Null-terminated
+  Unicode string.
+
+  This function is similar to StrCpyS.
+
+  This function converts the contents of the ASCII string Source to the Unicode
+  string Destination. The function terminates the Unicode string Destination by
+  appending a Null-terminator character at the end.
+
+  The caller is responsible to make sure Destination points to a buffer with size
+  equal or greater than ((AsciiStrLen (Source) + 1) * sizeof (CHAR16)) in bytes.
+
+  If Destination is not aligned on a 16-bit boundary, then ASSERT().
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then the Destination is unmodified.
+
+  @param  Source        The pointer to a Null-terminated ASCII string.
+  @param  Destination   The pointer to a Null-terminated Unicode string.
+  @param  DestMax       The maximum number of Destination Unicode
+                        char, including terminating null char.
+
+  @retval RETURN_SUCCESS           String is converted.
+  @retval RETURN_BUFFER_TOO_SMALL  If DestMax is NOT greater than StrLen(Source).
+  @retval RETURN_INVALID_PARAMETER If Destination is NULL.
+                                   If Source is NULL.
+                                   If PcdMaximumUnicodeStringLength is not zero,
+                                    and DestMax is greater than
+                                    PcdMaximumUnicodeStringLength.
+                                   If PcdMaximumAsciiStringLength is not zero,
+                                    and DestMax is greater than
+                                    PcdMaximumAsciiStringLength.
+                                   If DestMax is 0.
+  @retval RETURN_ACCESS_DENIED     If Source and Destination overlap.
+
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrToUnicodeStrS (
+  IN      CONST CHAR8               *Source,
+  OUT     CHAR16                    *Destination,
+  IN      UINTN                     DestMax
+  );
+
+/**
+  Convert not more than Length successive characters from a Null-terminated
+  Ascii string to a Null-terminated Unicode string. If no null char is copied
+  from Source, then Destination[Length] is always set to null.
+
+  This function converts not more than Length successive characters from the
+  Ascii string Source to the Unicode string Destination. The function
+  terminates the Unicode string Destination by appending a Null-terminator
+  character at the end.
+
+  The caller is responsible to make sure Destination points to a buffer with
+  size not smaller than
+  ((MIN(AsciiStrLen(Source), Length) + 1) * sizeof (CHAR8)) in bytes.
+
+  If Destination is not aligned on a 16-bit boundary, then ASSERT().
+  If an error would be returned, then the function will also ASSERT().
+
+  If an error is returned, then Destination and DestinationLength are
+  unmodified.
+
+  @param  Source             The pointer to a Null-terminated Ascii string.
+  @param  Length             The maximum number of Ascii characters to convert.
+  @param  Destination        The pointer to a Null-terminated Unicode string.
+  @param  DestMax            The maximum number of Destination Unicode char,
+                             including terminating null char.
+  @param  DestinationLength  The number of Ascii characters converted.
+
+  @retval RETURN_SUCCESS            String is converted.
+  @retval RETURN_INVALID_PARAMETER  If Destination is NULL.
+                                    If Source is NULL.
+                                    If DestinationLength is NULL.
+                                    If PcdMaximumUnicodeStringLength is not
+                                    zero, and Length or DestMax is greater than
+                                    PcdMaximumUnicodeStringLength.
+                                    If PcdMaximumAsciiStringLength is not zero,
+                                    and Length or DestMax is greater than
+                                    PcdMaximumAsciiStringLength.
+                                    If DestMax is 0.
+  @retval RETURN_BUFFER_TOO_SMALL   If DestMax is NOT greater than
+                                    MIN(AsciiStrLen(Source), Length).
+  @retval RETURN_ACCESS_DENIED      If Source and Destination overlap.
+
+**/
+RETURN_STATUS
+EFIAPI
+AsciiStrnToUnicodeStrS (
+  IN      CONST CHAR8               *Source,
+  IN      UINTN                     Length,
+  OUT     CHAR16                    *Destination,
+  IN      UINTN                     DestMax,
+  OUT     UINTN                     *DestinationLength
+  );
 
 /**
   Converts an 8-bit value to an 8-bit BCD value.
@@ -1591,6 +2810,42 @@ BcdToDecimal8 (
   IN      UINT8                     Value
   );
 
+//
+//  File Path Manipulation Functions
+//
+
+/**
+  Removes the last directory or file entry in a path.
+
+  @param[in, out] Path    The pointer to the path to modify.
+
+  @retval FALSE     Nothing was found to remove.
+  @retval TRUE      A directory or file was removed.
+**/
+BOOLEAN
+EFIAPI
+PathRemoveLastItem(
+  IN OUT CHAR16 *Path
+  );
+
+/**
+  Function to clean up paths.
+    - Single periods in the path are removed.
+    - Double periods in the path are removed along with a single parent directory.
+    - Forward slashes L'/' are converted to backward slashes L'\'.
+
+  This will be done inline and the existing buffer may be larger than required
+  upon completion.
+
+  @param[in] Path       The pointer to the string containing the path.
+
+  @return       Returns Path, otherwise returns NULL to indicate that an error has occurred.
+**/
+CHAR16*
+EFIAPI
+PathCleanUpDirectories(
+  IN CHAR16 *Path
+  );
 
 //
 // Linked List Functions and Macros
@@ -1611,6 +2866,33 @@ BcdToDecimal8 (
 
 **/
 #define INITIALIZE_LIST_HEAD_VARIABLE(ListHead)  {&(ListHead), &(ListHead)}
+
+
+/**
+  Checks whether FirstEntry and SecondEntry are part of the same doubly-linked
+  list.
+
+  If FirstEntry is NULL, then ASSERT().
+  If FirstEntry->ForwardLink is NULL, then ASSERT().
+  If FirstEntry->BackLink is NULL, then ASSERT().
+  If SecondEntry is NULL, then ASSERT();
+  If PcdMaximumLinkedListLength is not zero, and List contains more than
+  PcdMaximumLinkedListLength nodes, then ASSERT().
+
+  @param  FirstEntry   A pointer to a node in a linked list.
+  @param  SecondEntry  A pointer to the node to locate.
+
+  @retval TRUE   SecondEntry is in the same doubly-linked list as FirstEntry.
+  @retval FALSE  SecondEntry isn't in the same doubly-linked list as FirstEntry,
+                 or FirstEntry is invalid.
+
+**/
+BOOLEAN
+EFIAPI
+IsNodeInList (
+  IN      CONST LIST_ENTRY      *FirstEntry,
+  IN      CONST LIST_ENTRY      *SecondEntry
+  );
 
 
 /**
@@ -3547,6 +4829,25 @@ CalculateCheckSum64 (
   IN      UINTN                     Length
   );
 
+/**
+  Computes and returns a 32-bit CRC for a data buffer.
+  CRC32 value bases on ITU-T V.42.
+
+  If Buffer is NULL, then ASSERT().
+  If Length is greater than (MAX_ADDRESS - Buffer + 1), then ASSERT().
+
+  @param[in]  Buffer       A pointer to the buffer on which the 32-bit CRC is to be computed.
+  @param[in]  Length       The number of bytes in the buffer Data.
+
+  @retval Crc32            The 32-bit CRC was computed for the data buffer.
+
+**/
+UINT32
+EFIAPI
+CalculateCrc32(
+  IN  VOID                         *Buffer,
+  IN  UINTN                        Length
+  );
 
 //
 // Base Library CPU Functions
@@ -5346,6 +6647,8 @@ typedef struct {
 #define IA32_IDT_GATE_TYPE_INTERRUPT_32  0x8E
 #define IA32_IDT_GATE_TYPE_TRAP_32       0x8F
 
+#define IA32_GDT_TYPE_TSS               0x9
+#define IA32_GDT_ALIGNMENT              8
 
 #if defined (MDE_CPU_IA32)
 ///
@@ -5361,6 +6664,70 @@ typedef union {
   } Bits;
   UINT64  Uint64;
 } IA32_IDT_GATE_DESCRIPTOR;
+
+#pragma pack (1)
+//
+// IA32 Task-State Segment Definition
+//
+typedef struct {
+  UINT16    PreviousTaskLink;
+  UINT16    Reserved_2;
+  UINT32    ESP0;
+  UINT16    SS0;
+  UINT16    Reserved_10;
+  UINT32    ESP1;
+  UINT16    SS1;
+  UINT16    Reserved_18;
+  UINT32    ESP2;
+  UINT16    SS2;
+  UINT16    Reserved_26;
+  UINT32    CR3;
+  UINT32    EIP;
+  UINT32    EFLAGS;
+  UINT32    EAX;
+  UINT32    ECX;
+  UINT32    EDX;
+  UINT32    EBX;
+  UINT32    ESP;
+  UINT32    EBP;
+  UINT32    ESI;
+  UINT32    EDI;
+  UINT16    ES;
+  UINT16    Reserved_74;
+  UINT16    CS;
+  UINT16    Reserved_78;
+  UINT16    SS;
+  UINT16    Reserved_82;
+  UINT16    DS;
+  UINT16    Reserved_86;
+  UINT16    FS;
+  UINT16    Reserved_90;
+  UINT16    GS;
+  UINT16    Reserved_94;
+  UINT16    LDTSegmentSelector;
+  UINT16    Reserved_98;
+  UINT16    T;
+  UINT16    IOMapBaseAddress;
+} IA32_TASK_STATE_SEGMENT;
+
+typedef union {
+  struct {
+    UINT32  LimitLow:16;    ///< Segment Limit 15..00
+    UINT32  BaseLow:16;     ///< Base Address  15..00
+    UINT32  BaseMid:8;      ///< Base Address  23..16
+    UINT32  Type:4;         ///< Type (1 0 B 1)
+    UINT32  Reserved_43:1;  ///< 0
+    UINT32  DPL:2;          ///< Descriptor Privilege Level
+    UINT32  P:1;            ///< Segment Present
+    UINT32  LimitHigh:4;    ///< Segment Limit 19..16
+    UINT32  AVL:1;          ///< Available for use by system software
+    UINT32  Reserved_52:2;  ///< 0 0
+    UINT32  G:1;            ///< Granularity
+    UINT32  BaseHigh:8;     ///< Base Address 31..24
+  } Bits;
+  UINT64  Uint64;
+} IA32_TSS_DESCRIPTOR;
+#pragma pack ()
 
 #endif
 
@@ -5383,6 +6750,46 @@ typedef union {
     UINT64  Uint64_1;
   } Uint128;
 } IA32_IDT_GATE_DESCRIPTOR;
+
+#pragma pack (1)
+//
+// IA32 Task-State Segment Definition
+//
+typedef struct {
+  UINT32    Reserved_0;
+  UINT64    RSP0;
+  UINT64    RSP1;
+  UINT64    RSP2;
+  UINT64    Reserved_28;
+  UINT64    IST[7];
+  UINT64    Reserved_92;
+  UINT16    Reserved_100;
+  UINT16    IOMapBaseAddress;
+} IA32_TASK_STATE_SEGMENT;
+
+typedef union {
+  struct {
+    UINT32  LimitLow:16;    ///< Segment Limit 15..00
+    UINT32  BaseLow:16;     ///< Base Address  15..00
+    UINT32  BaseMidl:8;     ///< Base Address  23..16
+    UINT32  Type:4;         ///< Type (1 0 B 1)
+    UINT32  Reserved_43:1;  ///< 0
+    UINT32  DPL:2;          ///< Descriptor Privilege Level
+    UINT32  P:1;            ///< Segment Present
+    UINT32  LimitHigh:4;    ///< Segment Limit 19..16
+    UINT32  AVL:1;          ///< Available for use by system software
+    UINT32  Reserved_52:2;  ///< 0 0
+    UINT32  G:1;            ///< Granularity
+    UINT32  BaseMidh:8;     ///< Base Address  31..24
+    UINT32  BaseHigh:32;    ///< Base Address  63..32
+    UINT32  Reserved_96:32; ///< Reserved
+  } Bits;
+  struct {
+    UINT64  Uint64;
+    UINT64  Uint64_1;
+  } Uint128;
+} IA32_TSS_DESCRIPTOR;
+#pragma pack ()
 
 #endif
 
@@ -7596,6 +9003,81 @@ VOID
 EFIAPI
 AsmPrepareAndThunk16 (
   IN OUT  THUNK_CONTEXT             *ThunkContext
+  );
+
+/**
+  Generates a 16-bit random number through RDRAND instruction.
+
+  if Rand is NULL, then ASSERT().
+
+  @param[out]  Rand     Buffer pointer to store the random result.
+
+  @retval TRUE          RDRAND call was successful.
+  @retval FALSE         Failed attempts to call RDRAND.
+
+ **/
+BOOLEAN
+EFIAPI
+AsmRdRand16 (
+  OUT     UINT16                    *Rand
+  );
+
+/**
+  Generates a 32-bit random number through RDRAND instruction.
+
+  if Rand is NULL, then ASSERT().
+
+  @param[out]  Rand     Buffer pointer to store the random result.
+
+  @retval TRUE          RDRAND call was successful.
+  @retval FALSE         Failed attempts to call RDRAND.
+
+**/
+BOOLEAN
+EFIAPI
+AsmRdRand32 (
+  OUT     UINT32                    *Rand
+  );
+
+/**
+  Generates a 64-bit random number through RDRAND instruction.
+
+  if Rand is NULL, then ASSERT().
+
+  @param[out]  Rand     Buffer pointer to store the random result.
+
+  @retval TRUE          RDRAND call was successful.
+  @retval FALSE         Failed attempts to call RDRAND.
+
+**/
+BOOLEAN
+EFIAPI
+AsmRdRand64  (
+  OUT     UINT64                    *Rand
+  );
+
+/**
+  Load given selector into TR register.
+
+  @param[in] Selector     Task segment selector
+**/
+VOID
+EFIAPI
+AsmWriteTr (
+  IN UINT16 Selector
+  );
+
+/**
+  Performs a serializing operation on all load-from-memory instructions that
+  were issued prior the AsmLfence function.
+
+  Executes a LFENCE instruction. This function is only available on IA-32 and x64.
+
+**/
+VOID
+EFIAPI
+AsmLfence (
+  VOID
   );
 
 #endif

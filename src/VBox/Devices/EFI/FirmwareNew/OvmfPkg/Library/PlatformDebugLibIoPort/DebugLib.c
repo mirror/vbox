@@ -15,7 +15,6 @@
 **/
 
 #include <Base.h>
-#include <Uefi.h>
 #include <Library/DebugLib.h>
 #include <Library/BaseLib.h>
 #include <Library/IoLib.h>
@@ -23,26 +22,12 @@
 #include <Library/PcdLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugPrintErrorLevelLib.h>
+#include "DebugLibDetect.h"
 
 //
 // Define the maximum debug and assert message length that this library supports
 //
 #define MAX_DEBUG_MESSAGE_LENGTH  0x100
-
-/**
-  This constructor function does not have to do anything.
-
-  @retval EFI_SUCCESS   The constructor always returns RETURN_SUCCESS.
-
-**/
-RETURN_STATUS
-EFIAPI
-PlatformDebugLibIoPortConstructor (
-  VOID
-  )
-{
-  return EFI_SUCCESS;
-}
 
 /**
   Prints a debug message to the debug output device if the specified error level is enabled.
@@ -69,7 +54,7 @@ DebugPrint (
 {
   CHAR8    Buffer[MAX_DEBUG_MESSAGE_LENGTH];
   VA_LIST  Marker;
-  UINT8    *Ptr;
+  UINTN    Length;
 
   //
   // If Format is NULL, then ASSERT().
@@ -77,9 +62,10 @@ DebugPrint (
   ASSERT (Format != NULL);
 
   //
-  // Check driver debug mask value and global mask
+  // Check if the global mask disables this message or the device is inactive
   //
-  if ((ErrorLevel & GetDebugPrintErrorLevel ()) == 0) {
+  if ((ErrorLevel & GetDebugPrintErrorLevel ()) == 0 ||
+      !PlatformDebugLibIoPortFound ()) {
     return;
   }
 
@@ -87,15 +73,13 @@ DebugPrint (
   // Convert the DEBUG() message to an ASCII String
   //
   VA_START (Marker, Format);
-  AsciiVSPrint (Buffer, sizeof (Buffer), Format, Marker);
+  Length = AsciiVSPrint (Buffer, sizeof (Buffer), Format, Marker);
   VA_END (Marker);
 
   //
   // Send the print string to the debug I/O port
   //
-  for (Ptr = (UINT8 *) Buffer; *Ptr; Ptr++) {
-    IoWrite8 (PcdGet16(PcdDebugIoPort), *Ptr);
-  }
+  IoWriteFifo8 (PcdGet16 (PcdDebugIoPort), Length, Buffer);
 }
 
 
@@ -129,18 +113,19 @@ DebugAssert (
   )
 {
   CHAR8  Buffer[MAX_DEBUG_MESSAGE_LENGTH];
-  UINT8 *Ptr;
+  UINTN  Length;
 
   //
   // Generate the ASSERT() message in Ascii format
   //
-  AsciiSPrint (Buffer, sizeof (Buffer), "ASSERT %a(%d): %a\n", FileName, LineNumber, Description);
+  Length = AsciiSPrint (Buffer, sizeof Buffer, "ASSERT %a(%Lu): %a\n",
+             FileName, (UINT64)LineNumber, Description);
 
   //
-  // Send the print string to the Console Output device
+  // Send the print string to the debug I/O port, if present
   //
-  for (Ptr = (UINT8 *) Buffer; *Ptr; Ptr++) {
-    IoWrite8 (PcdGet16(PcdDebugIoPort), *Ptr);
+  if (PlatformDebugLibIoPortFound ()) {
+    IoWriteFifo8 (PcdGet16 (PcdDebugIoPort), Length, Buffer);
   }
 
   //
@@ -283,4 +268,20 @@ DebugPrintLevelEnabled (
   )
 {
   return (BOOLEAN) ((ErrorLevel & PcdGet32(PcdFixedDebugPrintErrorLevel)) != 0);
+}
+
+/**
+  Return the result of detecting the debug I/O port device.
+
+  @retval TRUE   if the debug I/O port device was detected.
+  @retval FALSE  otherwise
+
+**/
+BOOLEAN
+EFIAPI
+PlatformDebugLibIoPortDetect (
+  VOID
+  )
+{
+  return IoRead8 (PcdGet16 (PcdDebugIoPort)) == BOCHS_DEBUG_PORT_MAGIC;
 }

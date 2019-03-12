@@ -13,6 +13,7 @@
 
 **/
 
+#include <IndustryStandard/VmwareSvga.h>
 #include "Qemu.h"
 
 
@@ -144,18 +145,18 @@ UINT16 Seq_1024_768_32bpp_60[15] = {
 /// Table of supported video modes
 ///
 QEMU_VIDEO_CIRRUS_MODES  QemuVideoCirrusModes[] = {
-//  {  640, 480, 8, 60, Crtc_640_480_256_60,  Seq_640_480_256_60,  0xe3 },
-//  {  800, 600, 8, 60, Crtc_800_600_256_60,  Seq_800_600_256_60,  0xef },
-  {  640, 480, 32, 60, Crtc_640_480_32bpp_60,  Seq_640_480_32bpp_60,  0xef },
-  {  800, 600, 32, 60, Crtc_800_600_32bpp_60,  Seq_800_600_32bpp_60,  0xef },
-//  { 1024, 768, 8, 60, Crtc_1024_768_256_60, Seq_1024_768_256_60, 0xef }
-  { 1024, 768, 24, 60, Crtc_1024_768_24bpp_60, Seq_1024_768_24bpp_60, 0xef }
-//  { 1024, 768, 32, 60, Crtc_1024_768_32bpp_60, Seq_1024_768_32bpp_60, 0xef }
-//  { 960, 720, 32, 60, Crtc_960_720_32bpp_60, Seq_1024_768_32bpp_60, 0xef }
+//  {  640, 480, 8, Crtc_640_480_256_60,  Seq_640_480_256_60,  0xe3 },
+//  {  800, 600, 8, Crtc_800_600_256_60,  Seq_800_600_256_60,  0xef },
+  {  640, 480, 32, Crtc_640_480_32bpp_60,  Seq_640_480_32bpp_60,  0xef },
+  {  800, 600, 32, Crtc_800_600_32bpp_60,  Seq_800_600_32bpp_60,  0xef },
+//  { 1024, 768, 8, Crtc_1024_768_256_60, Seq_1024_768_256_60, 0xef }
+  { 1024, 768, 24, Crtc_1024_768_24bpp_60, Seq_1024_768_24bpp_60, 0xef }
+//  { 1024, 768, 32, Crtc_1024_768_32bpp_60, Seq_1024_768_32bpp_60, 0xef }
+//  { 960, 720, 32, Crtc_960_720_32bpp_60, Seq_1024_768_32bpp_60, 0xef }
 };
 
 #define QEMU_VIDEO_CIRRUS_MODE_COUNT \
-  (sizeof (QemuVideoCirrusModes) / sizeof (QemuVideoCirrusModes[0]))
+  (ARRAY_SIZE (QemuVideoCirrusModes))
 
 /**
   Construct the valid video modes for QemuVideo.
@@ -186,15 +187,13 @@ QemuVideoCirrusModeSetup (
     ModeData->HorizontalResolution          = VideoMode->Width;
     ModeData->VerticalResolution            = VideoMode->Height;
     ModeData->ColorDepth                    = VideoMode->ColorDepth;
-    ModeData->RefreshRate                   = VideoMode->RefreshRate;
     DEBUG ((EFI_D_INFO,
-      "Adding Mode %d as Cirrus Internal Mode %d: %dx%d, %d-bit, %d Hz\n",
+      "Adding Mode %d as Cirrus Internal Mode %d: %dx%d, %d-bit\n",
       (INT32) (ModeData - Private->ModeData),
       ModeData->InternalModeIndex,
       ModeData->HorizontalResolution,
       ModeData->VerticalResolution,
-      ModeData->ColorDepth,
-      ModeData->RefreshRate
+      ModeData->ColorDepth
       ));
 
     ModeData ++ ;
@@ -249,7 +248,7 @@ QEMU_VIDEO_BOCHS_MODES  QemuVideoBochsModes[] = {
 };
 
 #define QEMU_VIDEO_BOCHS_MODE_COUNT \
-  (sizeof (QemuVideoBochsModes) / sizeof (QemuVideoBochsModes[0]))
+  (ARRAY_SIZE (QemuVideoBochsModes))
 
 EFI_STATUS
 QemuVideoBochsModeSetup (
@@ -305,7 +304,7 @@ QemuVideoBochsModeSetup (
     AvailableFbSize  = BochsRead (Private, VBE_DISPI_INDEX_VIDEO_MEMORY_64K);
     AvailableFbSize *= SIZE_64KB;
   }
-  DEBUG ((EFI_D_VERBOSE, "%a: AvailableFbSize=0x%x\n", __FUNCTION__,
+  DEBUG ((EFI_D_INFO, "%a: AvailableFbSize=0x%x\n", __FUNCTION__,
     AvailableFbSize));
 
   //
@@ -330,15 +329,13 @@ QemuVideoBochsModeSetup (
       ModeData->HorizontalResolution = VideoMode->Width;
       ModeData->VerticalResolution   = VideoMode->Height;
       ModeData->ColorDepth           = VideoMode->ColorDepth;
-      ModeData->RefreshRate          = 60;
       DEBUG ((EFI_D_INFO,
-        "Adding Mode %d as Bochs Internal Mode %d: %dx%d, %d-bit, %d Hz\n",
+        "Adding Mode %d as Bochs Internal Mode %d: %dx%d, %d-bit\n",
         (INT32) (ModeData - Private->ModeData),
         ModeData->InternalModeIndex,
         ModeData->HorizontalResolution,
         ModeData->VerticalResolution,
-        ModeData->ColorDepth,
-        ModeData->RefreshRate
+        ModeData->ColorDepth
         ));
 
       ModeData ++ ;
@@ -350,3 +347,159 @@ QemuVideoBochsModeSetup (
   return EFI_SUCCESS;
 }
 
+EFI_STATUS
+QemuVideoVmwareSvgaModeSetup (
+  QEMU_VIDEO_PRIVATE_DATA *Private
+  )
+{
+  EFI_STATUS                            Status;
+  UINT32                                FbSize;
+  UINT32                                MaxWidth, MaxHeight;
+  UINT32                                Capabilities;
+  UINT32                                BitsPerPixel;
+  UINT32                                Index;
+  QEMU_VIDEO_MODE_DATA                  *ModeData;
+  QEMU_VIDEO_BOCHS_MODES                *VideoMode;
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION  *ModeInfo;
+
+  VmwareSvgaWrite (Private, VmwareSvgaRegEnable, 0);
+
+  Private->ModeData =
+    AllocatePool (sizeof (Private->ModeData[0]) * QEMU_VIDEO_BOCHS_MODE_COUNT);
+  if (Private->ModeData == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ModeDataAllocError;
+  }
+
+  Private->VmwareSvgaModeInfo =
+    AllocatePool (
+      sizeof (Private->VmwareSvgaModeInfo[0]) * QEMU_VIDEO_BOCHS_MODE_COUNT
+      );
+  if (Private->VmwareSvgaModeInfo == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ModeInfoAllocError;
+  }
+
+  FbSize =       VmwareSvgaRead (Private, VmwareSvgaRegFbSize);
+  MaxWidth =     VmwareSvgaRead (Private, VmwareSvgaRegMaxWidth);
+  MaxHeight =    VmwareSvgaRead (Private, VmwareSvgaRegMaxHeight);
+  Capabilities = VmwareSvgaRead (Private, VmwareSvgaRegCapabilities);
+  if ((Capabilities & VMWARE_SVGA_CAP_8BIT_EMULATION) != 0) {
+    BitsPerPixel = VmwareSvgaRead (
+                     Private,
+                     VmwareSvgaRegHostBitsPerPixel
+                     );
+    VmwareSvgaWrite (
+      Private,
+      VmwareSvgaRegBitsPerPixel,
+      BitsPerPixel
+      );
+  } else {
+    BitsPerPixel = VmwareSvgaRead (
+                     Private,
+                     VmwareSvgaRegBitsPerPixel
+                     );
+  }
+
+  if (FbSize == 0       ||
+      MaxWidth == 0     ||
+      MaxHeight == 0    ||
+      BitsPerPixel == 0 ||
+      BitsPerPixel % 8 != 0) {
+    Status = EFI_DEVICE_ERROR;
+    goto Rollback;
+  }
+
+  ModeData = Private->ModeData;
+  ModeInfo = Private->VmwareSvgaModeInfo;
+  VideoMode = &QemuVideoBochsModes[0];
+  for (Index = 0; Index < QEMU_VIDEO_BOCHS_MODE_COUNT; Index++) {
+    UINTN RequiredFbSize;
+
+    RequiredFbSize = (UINTN) VideoMode->Width * VideoMode->Height *
+                     (BitsPerPixel / 8);
+    if (RequiredFbSize <= FbSize     &&
+        VideoMode->Width <= MaxWidth &&
+        VideoMode->Height <= MaxHeight) {
+      UINT32  BytesPerLine;
+      UINT32  RedMask, GreenMask, BlueMask, PixelMask;
+
+      VmwareSvgaWrite (
+        Private,
+        VmwareSvgaRegWidth,
+        VideoMode->Width
+        );
+      VmwareSvgaWrite (
+        Private,
+        VmwareSvgaRegHeight,
+        VideoMode->Height
+        );
+
+      ModeData->InternalModeIndex    = Index;
+      ModeData->HorizontalResolution = VideoMode->Width;
+      ModeData->VerticalResolution   = VideoMode->Height;
+      ModeData->ColorDepth           = BitsPerPixel;
+
+      //
+      // Setting VmwareSvgaRegWidth/VmwareSvgaRegHeight actually changes
+      // the device's display mode, so we save all properties of each mode up
+      // front to avoid inadvertent mode changes later.
+      //
+      ModeInfo->Version = 0;
+      ModeInfo->HorizontalResolution = ModeData->HorizontalResolution;
+      ModeInfo->VerticalResolution   = ModeData->VerticalResolution;
+
+      ModeInfo->PixelFormat = PixelBitMask;
+
+      RedMask   = VmwareSvgaRead (Private, VmwareSvgaRegRedMask);
+      ModeInfo->PixelInformation.RedMask = RedMask;
+
+      GreenMask = VmwareSvgaRead (Private, VmwareSvgaRegGreenMask);
+      ModeInfo->PixelInformation.GreenMask = GreenMask;
+
+      BlueMask  = VmwareSvgaRead (Private, VmwareSvgaRegBlueMask);
+      ModeInfo->PixelInformation.BlueMask = BlueMask;
+
+      //
+      // Reserved mask is whatever bits in the pixel not containing RGB data,
+      // so start with binary 1s for every bit in the pixel, then mask off
+      // bits already used for RGB. Special case 32 to avoid undefined
+      // behaviour in the shift.
+      //
+      if (BitsPerPixel == 32) {
+        if (BlueMask == 0xff && GreenMask == 0xff00 && RedMask == 0xff0000) {
+          ModeInfo->PixelFormat = PixelBlueGreenRedReserved8BitPerColor;
+        } else if (BlueMask == 0xff0000 &&
+                   GreenMask == 0xff00 &&
+                   RedMask == 0xff) {
+          ModeInfo->PixelFormat = PixelRedGreenBlueReserved8BitPerColor;
+        }
+        PixelMask = MAX_UINT32;
+      } else {
+        PixelMask = (1u << BitsPerPixel) - 1;
+      }
+      ModeInfo->PixelInformation.ReservedMask =
+        PixelMask & ~(RedMask | GreenMask | BlueMask);
+
+      BytesPerLine = VmwareSvgaRead (Private, VmwareSvgaRegBytesPerLine);
+      ModeInfo->PixelsPerScanLine = BytesPerLine / (BitsPerPixel / 8);
+
+      ModeData++;
+      ModeInfo++;
+    }
+    VideoMode++;
+  }
+  Private->MaxMode = ModeData - Private->ModeData;
+  return EFI_SUCCESS;
+
+Rollback:
+  FreePool (Private->VmwareSvgaModeInfo);
+  Private->VmwareSvgaModeInfo = NULL;
+
+ModeInfoAllocError:
+  FreePool (Private->ModeData);
+  Private->ModeData = NULL;
+
+ModeDataAllocError:
+  return Status;
+}

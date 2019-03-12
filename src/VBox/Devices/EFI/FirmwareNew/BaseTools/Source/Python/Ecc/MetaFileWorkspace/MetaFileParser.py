@@ -1,7 +1,7 @@
 ## @file
 # This file is used to parse meta files
 #
-# Copyright (c) 2008 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2008 - 2015, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -22,6 +22,7 @@ import copy
 import Common.EdkLogger as EdkLogger
 import Common.GlobalData as GlobalData
 import EccGlobalData
+import EccToolError
 
 from CommonDataClass.DataClass import *
 from Common.DataType import *
@@ -33,6 +34,7 @@ from CommonDataClass.Exceptions import *
 from MetaFileTable import MetaFileStorage
 from GenFds.FdfParser import FdfParser
 from Common.LongFilePathSupport import OpenLongFilePath as open
+from Common.LongFilePathSupport import CodecOpenLongFilePath
 
 ## A decorator used to parse macro definition
 def ParseMacro(Parser):
@@ -174,6 +176,9 @@ class MetaFileParser(object):
         self._PostProcessed = False
         # Different version of meta-file has different way to parse.
         self._Version = 0
+        # UNI object and extra UNI object
+        self._UniObj = None
+        self._UniExtraObj = None
 
     ## Store the parsed data in table
     def _Store(self, *Args):
@@ -258,8 +263,16 @@ class MetaFileParser(object):
 
     ## Skip unsupported data
     def _Skip(self):
-        EdkLogger.warn("Parser", "Unrecognized content", File=self.MetaFile,
-                        Line=self._LineIndex+1, ExtraData=self._CurrentLine);
+        if self._SectionName == TAB_USER_EXTENSIONS.upper() and self._CurrentLine.upper().endswith('.UNI'):
+            if EccGlobalData.gConfig.UniCheckHelpInfo == '1' or EccGlobalData.gConfig.UniCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+                ExtraUni = self._CurrentLine.strip()
+                ExtraUniFile = os.path.join(os.path.dirname(self.MetaFile), ExtraUni)
+                IsModuleUni = self.MetaFile.upper().endswith('.INF')
+                self._UniExtraObj = UniParser(ExtraUniFile, IsExtraUni=True, IsModuleUni=IsModuleUni)
+                self._UniExtraObj.Start()
+        else:
+            EdkLogger.warn("Parser", "Unrecognized content", File=self.MetaFile,
+                            Line=self._LineIndex + 1, ExtraData=self._CurrentLine);
         self._ValueList[0:1] = [self._CurrentLine]
 
     ## Section header parser
@@ -328,6 +341,19 @@ class MetaFileParser(object):
             except:
                 EdkLogger.error('Parser', FORMAT_INVALID, "Invalid version number",
                                 ExtraData=self._CurrentLine, File=self.MetaFile, Line=self._LineIndex+1)
+        elif Name == 'MODULE_UNI_FILE':
+            UniFile = os.path.join(os.path.dirname(self.MetaFile), Value)
+            if os.path.exists(UniFile):
+                self._UniObj = UniParser(UniFile, IsExtraUni=False, IsModuleUni=True)
+                self._UniObj.Start()
+            else:
+                EdkLogger.error('Parser', FILE_NOT_FOUND, "Module UNI file %s is missing." % Value,
+                                ExtraData=self._CurrentLine, File=self.MetaFile, Line=self._LineIndex+1,
+                                RaiseError=False)
+        elif Name == 'PACKAGE_UNI_FILE':
+            UniFile = os.path.join(os.path.dirname(self.MetaFile), Value)
+            if os.path.exists(UniFile):
+                self._UniObj = UniParser(UniFile, IsExtraUni=False, IsModuleUni=False)
 
         if type(self) == InfParser and self._Version < 0x00010005:
             # EDK module allows using defines as macros
@@ -757,6 +783,10 @@ class DscParser(MetaFileParser):
         "FIX_LOAD_TOP_MEMORY_ADDRESS"
     ]
 
+    SubSectionDefineKeywords = [
+        "FILE_GUID"
+    ]
+
     SymbolPattern = ValueExpression.SymbolPattern
 
     ## Constructor of DscParser
@@ -967,7 +997,8 @@ class DscParser(MetaFileParser):
         if not self._ValueList[2]:
             EdkLogger.error('Parser', FORMAT_INVALID, "No value specified",
                             ExtraData=self._CurrentLine, File=self.MetaFile, Line=self._LineIndex+1)
-        if not self._ValueList[1] in self.DefineKeywords:
+        if (not self._ValueList[1] in self.DefineKeywords and
+            (self._InSubsection and self._ValueList[1] not in self.SubSectionDefineKeywords)):
             EdkLogger.error('Parser', FORMAT_INVALID,
                             "Unknown keyword found: %s. "
                             "If this is a macro you must "
@@ -1286,6 +1317,9 @@ class DscParser(MetaFileParser):
                                 File=self._FileWithError, ExtraData=' '.join(self._ValueList),
                                 Line=self._LineIndex+1)
                 Result = Excpt.result
+            except BadExpression, Exc:
+                EdkLogger.debug(EdkLogger.DEBUG_5, str(Exc), self._ValueList[1])
+                Result = False
 
         if self._ItemType in [MODEL_META_DATA_CONDITIONAL_STATEMENT_IF,
                               MODEL_META_DATA_CONDITIONAL_STATEMENT_IFDEF,
@@ -1680,7 +1714,8 @@ class DecParser(MetaFileParser):
                     continue
                 else:
                     if GuidValue.startswith('{'):
-                        HexList.append('0x' + str(GuidValue[3:]))
+                        GuidValue = GuidValue.lstrip(' {')
+                        HexList.append('0x' + str(GuidValue[2:]))
                         Index += 1
             self._ValueList[1] = "{ %s, %s, %s, { %s, %s, %s, %s, %s, %s, %s, %s }}" % (HexList[0], HexList[1], HexList[2],HexList[3],HexList[4],HexList[5],HexList[6],HexList[7],HexList[8],HexList[9],HexList[10])
         else:
@@ -1757,6 +1792,89 @@ class DecParser(MetaFileParser):
         if not IsValid:
             EdkLogger.error('Parser', FORMAT_INVALID, Cause, ExtraData=self._CurrentLine,
                             File=self.MetaFile, Line=self._LineIndex+1)
+
+        if EccGlobalData.gConfig.UniCheckPCDInfo == '1' or EccGlobalData.gConfig.UniCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+            # check Description, Prompt information
+            PatternDesc = re.compile('##\s*([\x21-\x7E\s]*)', re.S)
+            PatternPrompt = re.compile('#\s+@Prompt\s+([\x21-\x7E\s]*)', re.S)
+            Description = None
+            Prompt = None
+            # check @ValidRange, @ValidList and @Expression format valid
+            ErrorCodeValid = '0x0 <= %s <= 0xFFFFFFFF'
+            PatternValidRangeIn = '(NOT)?\s*(\d+\s*-\s*\d+|0[xX][a-fA-F0-9]+\s*-\s*0[xX][a-fA-F0-9]+|LT\s*\d+|LT\s*0[xX][a-fA-F0-9]+|GT\s*\d+|GT\s*0[xX][a-fA-F0-9]+|LE\s*\d+|LE\s*0[xX][a-fA-F0-9]+|GE\s*\d+|GE\s*0[xX][a-fA-F0-9]+|XOR\s*\d+|XOR\s*0[xX][a-fA-F0-9]+|EQ\s*\d+|EQ\s*0[xX][a-fA-F0-9]+)'
+            PatternValidRng = re.compile('^' + '(NOT)?\s*' + PatternValidRangeIn + '$')
+            for Comment in self._Comments:
+                Comm = Comment[0].strip()
+                if not Comm:
+                    continue
+                if not Description:
+                    Description = PatternDesc.findall(Comm)
+                if not Prompt:
+                    Prompt = PatternPrompt.findall(Comm)
+                if Comm[0] == '#':
+                    ValidFormt = Comm.lstrip('#')
+                    ValidFormt = ValidFormt.lstrip()
+                    if ValidFormt[0:11] == '@ValidRange':
+                        ValidFormt = ValidFormt[11:]
+                        ValidFormt = ValidFormt.lstrip()
+                        try:
+                            ErrorCode, Expression = ValidFormt.split('|', 1)
+                        except ValueError:
+                            ErrorCode = '0x0'
+                            Expression = ValidFormt
+                        ErrorCode, Expression = ErrorCode.strip(), Expression.strip()
+                        try:
+                            if not eval(ErrorCodeValid % ErrorCode):
+                                EdkLogger.warn('Parser', '@ValidRange ErrorCode(%s) of PCD %s is not valid UINT32 value.' % (ErrorCode, TokenList[0]))
+                        except:
+                            EdkLogger.warn('Parser', '@ValidRange ErrorCode(%s) of PCD %s is not valid UINT32 value.' % (ErrorCode, TokenList[0]))
+                        if not PatternValidRng.search(Expression):
+                            EdkLogger.warn('Parser', '@ValidRange Expression(%s) of PCD %s is incorrect format.' % (Expression, TokenList[0]))
+                    if ValidFormt[0:10] == '@ValidList':
+                        ValidFormt = ValidFormt[10:]
+                        ValidFormt = ValidFormt.lstrip()
+                        try:
+                            ErrorCode, Expression = ValidFormt.split('|', 1)
+                        except ValueError:
+                            ErrorCode = '0x0'
+                            Expression = ValidFormt
+                        ErrorCode, Expression = ErrorCode.strip(), Expression.strip()
+                        try:
+                            if not eval(ErrorCodeValid % ErrorCode):
+                                EdkLogger.warn('Parser', '@ValidList ErrorCode(%s) of PCD %s is not valid UINT32 value.' % (ErrorCode, TokenList[0]))
+                        except:
+                            EdkLogger.warn('Parser', '@ValidList ErrorCode(%s) of PCD %s is not valid UINT32 value.' % (ErrorCode, TokenList[0]))
+                        Values = Expression.split(',')
+                        for Value in Values:
+                            Value = Value.strip()
+                            try:
+                                eval(Value)
+                            except:
+                                EdkLogger.warn('Parser', '@ValidList Expression of PCD %s include a invalid value(%s).' % (TokenList[0], Value))
+                                break
+                    if ValidFormt[0:11] == '@Expression':
+                        ValidFormt = ValidFormt[11:]
+                        ValidFormt = ValidFormt.lstrip()
+                        try:
+                            ErrorCode, Expression = ValidFormt.split('|', 1)
+                        except ValueError:
+                            ErrorCode = '0x0'
+                            Expression = ValidFormt
+                        ErrorCode, Expression = ErrorCode.strip(), Expression.strip()
+                        try:
+                            if not eval(ErrorCodeValid % ErrorCode):
+                                EdkLogger.warn('Parser', '@Expression ErrorCode(%s) of PCD %s is not valid UINT32 value.' % (ErrorCode, TokenList[0]))
+                        except:
+                            EdkLogger.warn('Parser', '@Expression ErrorCode(%s) of PCD %s is not valid UINT32 value.' % (ErrorCode, TokenList[0]))
+                        if not Expression:
+                            EdkLogger.warn('Parser', '@Expression Expression of PCD %s is incorrect format.' % TokenList[0])
+            if not Description:
+                EdkLogger.warn('Parser', 'PCD %s Description information is not provided.' % TokenList[0])
+            if not Prompt:
+                EdkLogger.warn('Parser', 'PCD %s Prompt information is not provided.' % TokenList[0])
+            # check Description, Prompt localization information
+            if self._UniObj:
+                self._UniObj.CheckPcdInfo(TokenList[0])
 
         if ValueList[0] in ['True', 'true', 'TRUE']:
             ValueList[0] = '1'
@@ -1872,6 +1990,71 @@ class Fdf(FdfObject):
                 StartLine = Fdf.Profile.InfFileLineList[Index][1]
                 BelongsToFile = self.InsertFile(FileName)
                 self.TblFdf.Insert(Model, Value1, Value2, Value3, Scope1, Scope2, BelongsToItem, BelongsToFile, StartLine, StartColumn, EndLine, EndColumn, Enabled)
+
+class UniParser(object):
+    # IsExtraUni defined the UNI file is Module UNI or extra Module UNI
+    # IsModuleUni defined the UNI file is Module UNI or Package UNI
+    def __init__(self, FilePath, IsExtraUni=False, IsModuleUni=True):
+        self.FilePath = FilePath
+        self.FileName = os.path.basename(FilePath)
+        self.IsExtraUni = IsExtraUni
+        self.IsModuleUni = IsModuleUni
+        self.FileIn = None
+        self.Missing = []
+        self.__read()
+
+    def __read(self):
+        try:
+            self.FileIn = CodecOpenLongFilePath(self.FilePath, Mode='rb', Encoding='utf_8').read()
+        except UnicodeError:
+            self.FileIn = CodecOpenLongFilePath(self.FilePath, Mode='rb', Encoding='utf_16').read()
+        except UnicodeError:
+            self.FileIn = CodecOpenLongFilePath(self.FilePath, Mode='rb', Encoding='utf_16_le').read()
+        except IOError:
+            self.FileIn = ""
+
+    def Start(self):
+        if self.IsModuleUni:
+            if self.IsExtraUni:
+                ModuleName = self.CheckKeyValid('STR_PROPERTIES_MODULE_NAME')
+                self.PrintLog('STR_PROPERTIES_MODULE_NAME', ModuleName)
+            else:
+                ModuleAbstract = self.CheckKeyValid('STR_MODULE_ABSTRACT')
+                self.PrintLog('STR_MODULE_ABSTRACT', ModuleAbstract)
+                ModuleDescription = self.CheckKeyValid('STR_MODULE_DESCRIPTION')
+                self.PrintLog('STR_MODULE_DESCRIPTION', ModuleDescription)
+        else:
+            if self.IsExtraUni:
+                PackageName = self.CheckKeyValid('STR_PROPERTIES_PACKAGE_NAME')
+                self.PrintLog('STR_PROPERTIES_PACKAGE_NAME', PackageName)
+            else:
+                PackageAbstract = self.CheckKeyValid('STR_PACKAGE_ABSTRACT')
+                self.PrintLog('STR_PACKAGE_ABSTRACT', PackageAbstract)
+                PackageDescription = self.CheckKeyValid('STR_PACKAGE_DESCRIPTION')
+                self.PrintLog('STR_PACKAGE_DESCRIPTION', PackageDescription)
+
+    def CheckKeyValid(self, Key, Contents=None):
+        if not Contents:
+            Contents = self.FileIn
+        KeyPattern = re.compile('#string\s+%s\s+.*?#language.*?".*?"' % Key, re.S)
+        if KeyPattern.search(Contents):
+            return True
+        return False
+
+    def CheckPcdInfo(self, PcdCName):
+        PromptKey = 'STR_%s_PROMPT' % PcdCName.replace('.', '_')
+        PcdPrompt = self.CheckKeyValid(PromptKey)
+        self.PrintLog(PromptKey, PcdPrompt)
+        HelpKey = 'STR_%s_HELP' % PcdCName.replace('.', '_')
+        PcdHelp = self.CheckKeyValid(HelpKey)
+        self.PrintLog(HelpKey, PcdHelp)
+
+    def PrintLog(self, Key, Value):
+        if not Value and Key not in self.Missing:
+            Msg = '%s is missing in the %s file.' % (Key, self.FileName)
+            EdkLogger.warn('Parser', Msg)
+            EccGlobalData.gDb.TblReport.Insert(EccToolError.ERROR_GENERAL_CHECK_UNI_HELP_INFO, OtherMsg=Msg, BelongsToTable='File', BelongsToItem=-2)
+            self.Missing.append(Key)
 
 ##
 #

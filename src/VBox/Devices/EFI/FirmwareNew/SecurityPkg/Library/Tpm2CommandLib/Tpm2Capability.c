@@ -1,7 +1,7 @@
 /** @file
   Implement TPM2 Capability related command.
 
-Copyright (c) 2013, Intel Corporation. All rights reserved. <BR>
+Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved. <BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -113,6 +113,14 @@ Tpm2GetCapability (
   }
 
   //
+  // Fail if command failed
+  //
+  if (SwapBytes32(RecvBuffer.Header.responseCode) != TPM_RC_SUCCESS) {
+    DEBUG ((EFI_D_ERROR, "Tpm2GetCapability: Response Code error! 0x%08x\r\n", SwapBytes32(RecvBuffer.Header.responseCode)));
+    return EFI_DEVICE_ERROR;
+  }
+
+  //
   // Return the response
   //
   *MoreData = RecvBuffer.MoreData;
@@ -189,7 +197,7 @@ Tpm2GetCapabilityManufactureID (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  *ManufactureId = SwapBytes32 (TpmCap.data.tpmProperties.tpmProperty->value);
+  *ManufactureId = TpmCap.data.tpmProperties.tpmProperty->value;
 
   return EFI_SUCCESS;
 }
@@ -329,6 +337,11 @@ Tpm2GetCapabilitySupportedAlg (
   CopyMem (AlgList, &TpmCap.data.algorithms, sizeof (TPML_ALG_PROPERTY));
 
   AlgList->count = SwapBytes32 (AlgList->count);
+  if (AlgList->count > MAX_CAP_ALGS) {
+    DEBUG ((DEBUG_ERROR, "Tpm2GetCapabilitySupportedAlg - AlgList->count error %x\n", AlgList->count));
+    return EFI_DEVICE_ERROR;
+  }
+
   for (Index = 0; Index < AlgList->count; Index++) {
     AlgList->algProperties[Index].alg = SwapBytes16 (AlgList->algProperties[Index].alg);
     WriteUnaligned32 ((UINT32 *)&AlgList->algProperties[Index].algProperties, SwapBytes32 (ReadUnaligned32 ((UINT32 *)&AlgList->algProperties[Index].algProperties)));
@@ -476,13 +489,114 @@ Tpm2GetCapabilityPcrs (
   }
 
   Pcrs->count = SwapBytes32 (TpmCap.data.assignedPCR.count);
+  if (Pcrs->count > HASH_COUNT) {
+    DEBUG ((DEBUG_ERROR, "Tpm2GetCapabilityPcrs - Pcrs->count error %x\n", Pcrs->count));
+    return EFI_DEVICE_ERROR;
+  }
+
   for (Index = 0; Index < Pcrs->count; Index++) {
     Pcrs->pcrSelections[Index].hash = SwapBytes16 (TpmCap.data.assignedPCR.pcrSelections[Index].hash);
     Pcrs->pcrSelections[Index].sizeofSelect = TpmCap.data.assignedPCR.pcrSelections[Index].sizeofSelect;
+    if (Pcrs->pcrSelections[Index].sizeofSelect > PCR_SELECT_MAX) {
+      DEBUG ((DEBUG_ERROR, "Tpm2GetCapabilityPcrs - sizeofSelect error %x\n", Pcrs->pcrSelections[Index].sizeofSelect));
+      return EFI_DEVICE_ERROR;
+    }
     CopyMem (Pcrs->pcrSelections[Index].pcrSelect, TpmCap.data.assignedPCR.pcrSelections[Index].pcrSelect, Pcrs->pcrSelections[Index].sizeofSelect);
   }
 
   return EFI_SUCCESS;
+}
+
+/**
+  This function will query the TPM to determine which hashing algorithms
+  are supported and which PCR banks are currently active.
+
+  @param[out]  TpmHashAlgorithmBitmap A bitmask containing the algorithms supported by the TPM.
+  @param[out]  ActivePcrBanks         A bitmask containing the PCRs currently allocated.
+
+  @retval     EFI_SUCCESS   TPM was successfully queried and return values can be trusted.
+  @retval     Others        An error occurred, likely in communication with the TPM.
+
+**/
+EFI_STATUS
+EFIAPI
+Tpm2GetCapabilitySupportedAndActivePcrs (
+  OUT UINT32                            *TpmHashAlgorithmBitmap,
+  OUT UINT32                            *ActivePcrBanks
+  )
+{
+  EFI_STATUS            Status;
+  TPML_PCR_SELECTION    Pcrs;
+  UINTN                 Index;
+
+  //
+  // Get supported PCR and current Active PCRs.
+  //
+  Status = Tpm2GetCapabilityPcrs (&Pcrs);
+
+  //
+  // If error, assume that we have at least SHA-1 (and return the error.)
+  //
+  if (EFI_ERROR (Status)) {
+    DEBUG ((EFI_D_ERROR, "GetSupportedAndActivePcrs - Tpm2GetCapabilityPcrs fail!\n"));
+    *TpmHashAlgorithmBitmap = HASH_ALG_SHA1;
+    *ActivePcrBanks         = HASH_ALG_SHA1;
+  }
+  //
+  // Otherwise, process the return data to determine what algorithms are supported
+  // and currently allocated.
+  //
+  else {
+    DEBUG ((EFI_D_INFO, "GetSupportedAndActivePcrs - Count = %08x\n", Pcrs.count));
+    *TpmHashAlgorithmBitmap = 0;
+    *ActivePcrBanks         = 0;
+    for (Index = 0; Index < Pcrs.count; Index++) {
+      switch (Pcrs.pcrSelections[Index].hash) {
+      case TPM_ALG_SHA1:
+        DEBUG ((EFI_D_VERBOSE, "GetSupportedAndActivePcrs - HASH_ALG_SHA1 present.\n"));
+        *TpmHashAlgorithmBitmap |= HASH_ALG_SHA1;
+        if (!IsZeroBuffer (Pcrs.pcrSelections[Index].pcrSelect, Pcrs.pcrSelections[Index].sizeofSelect)) {
+          DEBUG ((EFI_D_VERBOSE, "GetSupportedAndActivePcrs - HASH_ALG_SHA1 active.\n"));
+          *ActivePcrBanks |= HASH_ALG_SHA1;
+        }
+        break;
+      case TPM_ALG_SHA256:
+        DEBUG ((EFI_D_VERBOSE, "GetSupportedAndActivePcrs - HASH_ALG_SHA256 present.\n"));
+        *TpmHashAlgorithmBitmap |= HASH_ALG_SHA256;
+        if (!IsZeroBuffer (Pcrs.pcrSelections[Index].pcrSelect, Pcrs.pcrSelections[Index].sizeofSelect)) {
+          DEBUG ((EFI_D_VERBOSE, "GetSupportedAndActivePcrs - HASH_ALG_SHA256 active.\n"));
+          *ActivePcrBanks |= HASH_ALG_SHA256;
+        }
+        break;
+      case TPM_ALG_SHA384:
+        DEBUG ((EFI_D_VERBOSE, "GetSupportedAndActivePcrs - HASH_ALG_SHA384 present.\n"));
+        *TpmHashAlgorithmBitmap |= HASH_ALG_SHA384;
+        if (!IsZeroBuffer (Pcrs.pcrSelections[Index].pcrSelect, Pcrs.pcrSelections[Index].sizeofSelect)) {
+          DEBUG ((EFI_D_VERBOSE, "GetSupportedAndActivePcrs - HASH_ALG_SHA384 active.\n"));
+          *ActivePcrBanks |= HASH_ALG_SHA384;
+        }
+        break;
+      case TPM_ALG_SHA512:
+        DEBUG ((EFI_D_VERBOSE, "GetSupportedAndActivePcrs - HASH_ALG_SHA512 present.\n"));
+        *TpmHashAlgorithmBitmap |= HASH_ALG_SHA512;
+        if (!IsZeroBuffer (Pcrs.pcrSelections[Index].pcrSelect, Pcrs.pcrSelections[Index].sizeofSelect)) {
+          DEBUG ((EFI_D_VERBOSE, "GetSupportedAndActivePcrs - HASH_ALG_SHA512 active.\n"));
+          *ActivePcrBanks |= HASH_ALG_SHA512;
+        }
+        break;
+      case TPM_ALG_SM3_256:
+        DEBUG ((EFI_D_VERBOSE, "GetSupportedAndActivePcrs - HASH_ALG_SM3_256 present.\n"));
+        *TpmHashAlgorithmBitmap |= HASH_ALG_SM3_256;
+        if (!IsZeroBuffer (Pcrs.pcrSelections[Index].pcrSelect, Pcrs.pcrSelections[Index].sizeofSelect)) {
+          DEBUG ((EFI_D_VERBOSE, "GetSupportedAndActivePcrs - HASH_ALG_SM3_256 active.\n"));
+          *ActivePcrBanks |= HASH_ALG_SM3_256;
+        }
+        break;
+      }
+    }
+  }
+
+  return Status;
 }
 
 /**

@@ -5,7 +5,7 @@
  This library instance uses EFI_HOB_TYPE_CV defined in Intel framework HOB specification v0.9
  to implement HobLib BuildCvHob() API.
 
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -476,6 +476,62 @@ BuildGuidDataHob (
 }
 
 /**
+  Check FV alignment.
+
+  @param  BaseAddress   The base address of the Firmware Volume.
+  @param  Length        The size of the Firmware Volume in bytes.
+
+  @retval TRUE          FvImage buffer is at its required alignment.
+  @retval FALSE         FvImage buffer is not at its required alignment.
+
+**/
+BOOLEAN
+InternalCheckFvAlignment (
+  IN EFI_PHYSICAL_ADDRESS       BaseAddress,
+  IN UINT64                     Length
+  )
+{
+  EFI_FIRMWARE_VOLUME_HEADER    *FwVolHeader;
+  UINT32                        FvAlignment;
+
+  FvAlignment = 0;
+  FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) BaseAddress;
+
+  //
+  // If EFI_FVB2_WEAK_ALIGNMENT is set in the volume header then the first byte of the volume
+  // can be aligned on any power-of-two boundary. A weakly aligned volume can not be moved from
+  // its initial linked location and maintain its alignment.
+  //
+  if ((FwVolHeader->Attributes & EFI_FVB2_WEAK_ALIGNMENT) != EFI_FVB2_WEAK_ALIGNMENT) {
+    //
+    // Get FvHeader alignment
+    //
+    FvAlignment = 1 << ((FwVolHeader->Attributes & EFI_FVB2_ALIGNMENT) >> 16);
+    //
+    // FvAlignment must be greater than or equal to 8 bytes of the minimum FFS alignment value.
+    //
+    if (FvAlignment < 8) {
+      FvAlignment = 8;
+    }
+    if ((UINTN)BaseAddress % FvAlignment != 0) {
+      //
+      // FvImage buffer is not at its required alignment.
+      //
+      DEBUG ((
+        DEBUG_ERROR,
+        "Unaligned FvImage found at 0x%lx:0x%lx, the required alignment is 0x%x\n",
+        BaseAddress,
+        Length,
+        FvAlignment
+        ));
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
   Builds a Firmware Volume HOB.
 
   This function builds a Firmware Volume HOB.
@@ -483,6 +539,7 @@ BuildGuidDataHob (
   for DXE phase, it will ASSERT() since PEI HOB is read-only for DXE phase.
 
   If there is no additional space for HOB creation, then ASSERT().
+  If the FvImage buffer is not at its required alignment, then ASSERT().
 
   @param  BaseAddress   The base address of the Firmware Volume.
   @param  Length        The size of the Firmware Volume in bytes.
@@ -496,6 +553,11 @@ BuildFvHob (
   )
 {
   EFI_HOB_FIRMWARE_VOLUME  *Hob;
+
+  if (!InternalCheckFvAlignment (BaseAddress, Length)) {
+    ASSERT (FALSE);
+    return;
+  }
 
   Hob = InternalPeiCreateHob (EFI_HOB_TYPE_FV, (UINT16) sizeof (EFI_HOB_FIRMWARE_VOLUME));
   if (Hob == NULL) {
@@ -514,6 +576,7 @@ BuildFvHob (
   for DXE phase, it will ASSERT() since PEI HOB is read-only for DXE phase.
 
   If there is no additional space for HOB creation, then ASSERT().
+  If the FvImage buffer is not at its required alignment, then ASSERT().
 
   @param  BaseAddress   The base address of the Firmware Volume.
   @param  Length        The size of the Firmware Volume in bytes.
@@ -532,6 +595,11 @@ BuildFv2Hob (
 {
   EFI_HOB_FIRMWARE_VOLUME2  *Hob;
 
+  if (!InternalCheckFvAlignment (BaseAddress, Length)) {
+    ASSERT (FALSE);
+    return;
+  }
+
   Hob = InternalPeiCreateHob (EFI_HOB_TYPE_FV2, (UINT16) sizeof (EFI_HOB_FIRMWARE_VOLUME2));
   if (Hob == NULL) {
     return;
@@ -541,6 +609,60 @@ BuildFv2Hob (
   Hob->Length      = Length;
   CopyGuid (&Hob->FvName, FvName);
   CopyGuid (&Hob->FileName, FileName);
+}
+
+/**
+  Builds a EFI_HOB_TYPE_FV3 HOB.
+
+  This function builds a EFI_HOB_TYPE_FV3 HOB.
+  It can only be invoked during PEI phase;
+  for DXE phase, it will ASSERT() since PEI HOB is read-only for DXE phase.
+
+  If there is no additional space for HOB creation, then ASSERT().
+  If the FvImage buffer is not at its required alignment, then ASSERT().
+
+  @param BaseAddress            The base address of the Firmware Volume.
+  @param Length                 The size of the Firmware Volume in bytes.
+  @param AuthenticationStatus   The authentication status.
+  @param ExtractedFv            TRUE if the FV was extracted as a file within
+                                another firmware volume. FALSE otherwise.
+  @param FvName                 The name of the Firmware Volume.
+                                Valid only if IsExtractedFv is TRUE.
+  @param FileName               The name of the file.
+                                Valid only if IsExtractedFv is TRUE.
+
+**/
+VOID
+EFIAPI
+BuildFv3Hob (
+  IN          EFI_PHYSICAL_ADDRESS        BaseAddress,
+  IN          UINT64                      Length,
+  IN          UINT32                      AuthenticationStatus,
+  IN          BOOLEAN                     ExtractedFv,
+  IN CONST    EFI_GUID                    *FvName, OPTIONAL
+  IN CONST    EFI_GUID                    *FileName OPTIONAL
+  )
+{
+  EFI_HOB_FIRMWARE_VOLUME3  *Hob;
+
+  if (!InternalCheckFvAlignment (BaseAddress, Length)) {
+    ASSERT (FALSE);
+    return;
+  }
+
+  Hob = InternalPeiCreateHob (EFI_HOB_TYPE_FV3, (UINT16) sizeof (EFI_HOB_FIRMWARE_VOLUME3));
+  if (Hob == NULL) {
+    return;
+  }
+
+  Hob->BaseAddress          = BaseAddress;
+  Hob->Length               = Length;
+  Hob->AuthenticationStatus = AuthenticationStatus;
+  Hob->ExtractedFv          = ExtractedFv;
+  if (ExtractedFv) {
+    CopyGuid (&Hob->FvName, FvName);
+    CopyGuid (&Hob->FileName, FileName);
+  }
 }
 
 /**

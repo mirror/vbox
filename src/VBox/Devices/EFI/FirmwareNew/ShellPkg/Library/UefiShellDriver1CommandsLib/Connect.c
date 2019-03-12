@@ -1,7 +1,8 @@
 /** @file
   Main file for connect shell Driver1 function.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2010 - 2016, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -94,6 +95,8 @@ ShellConnectPciRootBridge (
     gBS->ConnectController (RootBridgeHandleBuffer[RootBridgeIndex], NULL, NULL, FALSE);
   }
 
+  FreePool (RootBridgeHandleBuffer);
+
   return EFI_SUCCESS;
 }
 
@@ -110,7 +113,6 @@ ShellConnectPciRootBridge (
   @retval EFI_SUCCESS             The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 ConnectControllers (
   IN CONST EFI_HANDLE ControllerHandle OPTIONAL,
   IN CONST EFI_HANDLE DriverHandle OPTIONAL,
@@ -191,8 +193,7 @@ ConnectControllers (
   @retval EFI_SUCCESS   The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
-ConnectFromDevPaths (
+ShellConnectFromDevPaths (
   IN CONST CHAR16 *Key
   )
 {
@@ -350,7 +351,6 @@ ConnectFromDevPaths (
   @retval EFI_SUCCESS           The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 ConvertAndConnectControllers (
   IN EFI_HANDLE     *Handle1 OPTIONAL,
   IN EFI_HANDLE     *Handle2 OPTIONAL,
@@ -437,7 +437,7 @@ ShellCommandRunConnect (
   Status = ShellCommandLineParse (ParamList, &Package, &ProblemParam, TRUE);
   if (EFI_ERROR(Status)) {
     if (Status == EFI_VOLUME_CORRUPTED && ProblemParam != NULL) {
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellDriver1HiiHandle, ProblemParam);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellDriver1HiiHandle, L"connect", ProblemParam);
       FreePool(ProblemParam);
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
@@ -449,44 +449,45 @@ ShellCommandRunConnect (
     //
     Count = (gInReconnect?0x4:0x3);
     if ((ShellCommandLineGetCount(Package) > Count)
-      ||((ShellCommandLineGetFlag(Package, L"-r") || ShellCommandLineGetFlag(Package, L"-c")) && ShellCommandLineGetCount(Package)>1)
+      ||(ShellCommandLineGetFlag(Package, L"-c") && ShellCommandLineGetCount(Package)>1)
+      ||(ShellCommandLineGetFlag(Package, L"-r") && ShellCommandLineGetCount(Package)>2)
       ||(ShellCommandLineGetFlag(Package, L"-r") && ShellCommandLineGetFlag(Package, L"-c") )
-     ){
+    ){
       //
       // error for too many parameters
       //
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellDriver1HiiHandle);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellDriver1HiiHandle, L"connect");
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else if (ShellCommandLineGetFlag(Package, L"-c")) {
       //
       // do the conin and conout from EFI variables
       // if the first fails dont 'loose' the error
       //
-      Status = ConnectFromDevPaths(L"ConInDev");
+      Status = ShellConnectFromDevPaths(L"ConInDev");
       if (EFI_ERROR(Status)) {
-        ConnectFromDevPaths(L"ConOutDev");
+        ShellConnectFromDevPaths(L"ConOutDev");
       } else {
-        Status = ConnectFromDevPaths(L"ConOutDev");
+        Status = ShellConnectFromDevPaths(L"ConOutDev");
       }
       if (EFI_ERROR(Status)) {
-        ConnectFromDevPaths(L"ErrOutDev");
+        ShellConnectFromDevPaths(L"ErrOutDev");
       } else {
-        Status = ConnectFromDevPaths(L"ErrOutDev");
+        Status = ShellConnectFromDevPaths(L"ErrOutDev");
       }
       if (EFI_ERROR(Status)) {
-        ConnectFromDevPaths(L"ErrOut");
+        ShellConnectFromDevPaths(L"ErrOut");
       } else {
-        Status = ConnectFromDevPaths(L"ErrOut");
+        Status = ShellConnectFromDevPaths(L"ErrOut");
       }
       if (EFI_ERROR(Status)) {
-        ConnectFromDevPaths(L"ConIn");
+        ShellConnectFromDevPaths(L"ConIn");
       } else {
-        Status = ConnectFromDevPaths(L"ConIn");
+        Status = ShellConnectFromDevPaths(L"ConIn");
       }
       if (EFI_ERROR(Status)) {
-        ConnectFromDevPaths(L"ConOut");
+        ShellConnectFromDevPaths(L"ConOut");
       } else {
-        Status = ConnectFromDevPaths(L"ConOut");
+        Status = ShellConnectFromDevPaths(L"ConOut");
       }
       if (EFI_ERROR(Status)) {
         ShellStatus = SHELL_DEVICE_ERROR;
@@ -503,7 +504,7 @@ ShellCommandRunConnect (
         Status  = ShellConvertStringToUint64(Param1, &Intermediate, TRUE, FALSE);
         Handle1 = ConvertHandleIndexToHandle((UINTN)Intermediate);
         if (EFI_ERROR(Status)) {
-          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, Param1);
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, L"connect", Param1);
           ShellStatus = SHELL_INVALID_PARAMETER;
         }
       } else {
@@ -514,7 +515,7 @@ ShellCommandRunConnect (
         Status  = ShellConvertStringToUint64(Param2, &Intermediate, TRUE, FALSE);
         Handle2 = ConvertHandleIndexToHandle((UINTN)Intermediate);
         if (EFI_ERROR(Status)) {
-          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, Param2);
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, L"connect", Param2);
           ShellStatus = SHELL_INVALID_PARAMETER;
         }
       } else {
@@ -523,13 +524,13 @@ ShellCommandRunConnect (
 
       if (ShellStatus == SHELL_SUCCESS) {
         if (Param1 != NULL && Handle1 == NULL){
-          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, Param1);
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, L"connect", Param1);
           ShellStatus = SHELL_INVALID_PARAMETER;
         } else if (Param2 != NULL && Handle2 == NULL) {
-          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, Param2);
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, L"connect", Param2);
           ShellStatus = SHELL_INVALID_PARAMETER;
         } else if (Handle2 != NULL && Handle1 != NULL && EFI_ERROR(gBS->OpenProtocol(Handle2, &gEfiDriverBindingProtocolGuid, NULL, gImageHandle, NULL, EFI_OPEN_PROTOCOL_TEST_PROTOCOL))) {
-          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, Param2);
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_INV_HANDLE), gShellDriver1HiiHandle, L"connect", Param2);
           ShellStatus = SHELL_INVALID_PARAMETER;
         } else {
           Status = ConvertAndConnectControllers(Handle1, Handle2, ShellCommandLineGetFlag(Package, L"-r"), (BOOLEAN)(Count!=0));

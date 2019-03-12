@@ -57,6 +57,7 @@ public:
 class DllExportPCCTS DLGInputStream {
 public:
 	virtual int nextChar() = 0;
+    virtual ~DLGInputStream() {};
 };
 
 /* Predefined char stream: Input from FILE */
@@ -119,6 +120,9 @@ public:
 
 /* user must subclass this */
 class DllExportPCCTS DLGLexerBase : public ANTLRTokenStream {
+private:
+    DLGLexerBase(const DLGLexerBase&);             // Prevent copy-construction
+    DLGLexerBase& operator=(const DLGLexerBase&);  // Prevent assignment
 public:
 	virtual ANTLRTokenType erraction();
 

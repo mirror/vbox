@@ -1,7 +1,7 @@
 /** @file
   Support routines for PxeBc.
 
-Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -42,6 +42,8 @@ PxeBcCommonNotify (
   @param  SubnetMask Pointer to the subnetmask of the station ip address.
   @param  Gateway    Pointer to the gateway ip address.
   @param  SrcPort    Pointer to the srouce port of the station.
+  @param  Ttl        The time to live field of the IP header.
+  @param  ToS        The type of service field of the IP header.
 
   @retval EFI_SUCCESS           The configuration settings were set, changed, or reset successfully.
   @retval EFI_NO_MAPPING        When using a default address, configuration (DHCP, BOOTP,
@@ -65,7 +67,9 @@ PxeBcConfigureUdpWriteInstance (
   IN EFI_IPv4_ADDRESS   *StationIp,
   IN EFI_IPv4_ADDRESS   *SubnetMask,
   IN EFI_IPv4_ADDRESS   *Gateway,
-  IN OUT UINT16         *SrcPort
+  IN OUT UINT16         *SrcPort,
+  IN     UINT8          Ttl,
+  IN     UINT8          ToS
   )
 {
   EFI_UDP4_CONFIG_DATA  Udp4CfgData;
@@ -74,8 +78,8 @@ PxeBcConfigureUdpWriteInstance (
   ZeroMem (&Udp4CfgData, sizeof (Udp4CfgData));
 
   Udp4CfgData.ReceiveTimeout = PXEBC_DEFAULT_LIFETIME;
-  Udp4CfgData.TypeOfService  = DEFAULT_ToS;
-  Udp4CfgData.TimeToLive     = DEFAULT_TTL;
+  Udp4CfgData.TypeOfService  = ToS;
+  Udp4CfgData.TimeToLive     = Ttl;
   Udp4CfgData.AllowDuplicatePort = TRUE;
 
   CopyMem (&Udp4CfgData.StationAddress, StationIp, sizeof (*StationIp));
@@ -110,6 +114,26 @@ PxeBcConfigureUdpWriteInstance (
   return Status;
 }
 
+/**
+  This function is to display the IPv4 address.
+
+  @param[in]  Ip        The pointer to the IPv4 address.
+
+**/
+VOID
+PxeBcShowIp4Addr (
+  IN EFI_IPv4_ADDRESS   *Ip
+  )
+{
+  UINTN                 Index;
+
+  for (Index = 0; Index < 4; Index++) {
+    AsciiPrint ("%d", Ip->Addr[Index]);
+    if (Index < 3) {
+      AsciiPrint (".");
+    }
+  }
+}
 
 /**
   Convert number to ASCII value.
@@ -128,11 +152,10 @@ CvtNum (
 {
   UINTN Remainder;
 
-  while (Length > 0) {
+  for (; Length > 0; Length--) {
     Remainder = Number % 10;
     Number /= 10;
-    Length--;
-    Buffer[Length] = (UINT8) ('0' + Remainder);
+    Buffer[Length - 1] = (UINT8) ('0' + Remainder);
   }
 }
 
@@ -140,8 +163,9 @@ CvtNum (
 /**
   Convert unsigned int number to decimal number.
 
-  @param  Number   The unsigned int number will be converted.
-  @param  Buffer   Pointer to the buffer to store the decimal number after transform.
+  @param      Number         The unsigned int number will be converted.
+  @param      Buffer         Pointer to the buffer to store the decimal number after transform.
+  @param[in]  BufferSize     The maxsize of the buffer.
 
   @return the length of the number after transform.
 
@@ -149,7 +173,8 @@ CvtNum (
 UINTN
 UtoA10 (
   IN UINTN Number,
-  IN CHAR8 *Buffer
+  IN CHAR8 *Buffer,
+  IN UINTN BufferSize
   )
 {
   UINTN Index;
@@ -164,7 +189,7 @@ UtoA10 (
     Number          = Number / 10;
   } while (Number != 0);
 
-  AsciiStrCpy (Buffer, &TempStr[Index]);
+  AsciiStrCpyS (Buffer, BufferSize, &TempStr[Index]);
 
   return AsciiStrLen (Buffer);
 }

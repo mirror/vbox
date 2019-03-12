@@ -5,7 +5,8 @@
 # This module will excute the boot script saved during last boot and after that,
 # control is passed to OS waking up handler.
 #
-# Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 #
 # This program and the accompanying materials are
 # licensed and made available under the terms and conditions of the BSD License
@@ -37,11 +38,13 @@
 
 [Sources.IA32]
   Ia32/AsmFuncs.asm
-  Ia32/AsmFuncs.S    | GCC
+  Ia32/AsmFuncs.nasm
+  Ia32/AsmFuncs.S
 
 [Sources.X64]
   X64/AsmFuncs.asm
-  X64/AsmFuncs.S     | GCC
+  X64/AsmFuncs.nasm
+  X64/AsmFuncs.S
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -70,11 +73,14 @@
 [Guids]
   gEfiBootScriptExecutorVariableGuid            ## SOMETIMES_CONSUMES ## UNDEFINED # LockBox
   gEfiBootScriptExecutorContextGuid             ## SOMETIMES_CONSUMES ## UNDEFINED # LockBox
-  gPerformanceProtocolGuid                      ## SOMETIMES_CONSUMES ## Variable:L"PerfDataMemAddr"
   ## SOMETIMES_CONSUMES ## HOB
   ## SOMETIMES_CONSUMES ## UNDEFINED # LockBox
   gEfiAcpiVariableGuid
   gEfiAcpiS3ContextGuid                         ## SOMETIMES_CONSUMES ## UNDEFINED # LockBox
+  gEdkiiEndOfS3ResumeGuid                       ## SOMETIMES_CONSUMES ## UNDEFINED # Used to do smm communication
+  ## SOMETIMES_PRODUCES ## UNDEFINED # Install PPI
+  ## SOMETIMES_CONSUMES ## UNDEFINED # Used to do smm communication
+  gEdkiiS3SmmInitDoneGuid
 
 [Ppis]
   gEfiPeiReadOnlyVariable2PpiGuid               ## CONSUMES
@@ -82,6 +88,7 @@
   gPeiSmmAccessPpiGuid                          ## SOMETIMES_CONSUMES
   gPeiPostScriptTablePpiGuid                    ## SOMETIMES_PRODUCES
   gEfiEndOfPeiSignalPpiGuid                     ## SOMETIMES_PRODUCES
+  gEfiPeiSmmCommunicationPpiGuid                ## SOMETIMES_CONSUMES
 
 [FeaturePcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode         ## CONSUMES
@@ -89,6 +96,7 @@
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdUse1GPageTable  ## SOMETIMES_CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPteMemoryEncryptionAddressOrMask    ## CONSUMES
 
 [Depex]
   TRUE

@@ -2,7 +2,7 @@
 PEIM to produce gPeiUsb2HostControllerPpiGuid based on gPeiUsbControllerPpiGuid
 which is used to enable recovery function from USB Drivers.
 
-Copyright (c) 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2014 - 2017, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -200,6 +200,8 @@ XhcPeiFreeUrb (
     return;
   }
 
+  IoMmuUnmap (Urb->DataMap);
+
   FreePool (Urb);
 }
 
@@ -227,6 +229,10 @@ XhcPeiCreateTransferTrb (
   UINTN                         TotalLen;
   UINTN                         Len;
   UINTN                         TrbNum;
+  EDKII_IOMMU_OPERATION         MapOp;
+  EFI_PHYSICAL_ADDRESS          PhyAddr;
+  VOID                          *Map;
+  EFI_STATUS                    Status;
 
   SlotId = XhcPeiBusDevAddrToSlotId (Xhc, Urb->Ep.BusAddr);
   if (SlotId == 0) {
@@ -249,7 +255,27 @@ XhcPeiCreateTransferTrb (
     EPType  = (UINT8) ((DEVICE_CONTEXT_64 *)OutputContext)->EP[Dci-1].EPType;
   }
 
-  Urb->DataPhy = Urb->Data;
+  //
+  // No need to remap.
+  //
+  if ((Urb->Data != NULL) && (Urb->DataMap == NULL)) {
+    if (((UINT8) (Urb->Ep.Direction)) == EfiUsbDataIn) {
+      MapOp = EdkiiIoMmuOperationBusMasterWrite;
+    } else {
+      MapOp = EdkiiIoMmuOperationBusMasterRead;
+    }
+
+    Len = Urb->DataLen;
+    Status = IoMmuMap (MapOp, Urb->Data, &Len, &PhyAddr, &Map);
+
+    if (EFI_ERROR (Status) || (Len != Urb->DataLen)) {
+      DEBUG ((DEBUG_ERROR, "XhcCreateTransferTrb: Fail to map Urb->Data.\n"));
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    Urb->DataPhy  = (VOID *) ((UINTN) PhyAddr);
+    Urb->DataMap  = Map;
+  }
 
   //
   // Construct the TRB
@@ -444,12 +470,8 @@ XhcPeiRecoverHaltedEndpoint (
   )
 {
   EFI_STATUS                  Status;
-  EVT_TRB_COMMAND_COMPLETION  *EvtTrb;
-  CMD_TRB_RESET_ENDPOINT      CmdTrbResetED;
-  CMD_SET_TR_DEQ_POINTER      CmdSetTRDeq;
   UINT8                       Dci;
   UINT8                       SlotId;
-  EFI_PHYSICAL_ADDRESS        PhyAddr;
 
   Status = EFI_SUCCESS;
   SlotId = XhcPeiBusDevAddrToSlotId (Xhc, Urb->Ep.BusAddr);
@@ -463,17 +485,7 @@ XhcPeiRecoverHaltedEndpoint (
   //
   // 1) Send Reset endpoint command to transit from halt to stop state
   //
-  ZeroMem (&CmdTrbResetED, sizeof (CmdTrbResetED));
-  CmdTrbResetED.CycleBit = 1;
-  CmdTrbResetED.Type     = TRB_TYPE_RESET_ENDPOINT;
-  CmdTrbResetED.EDID     = Dci;
-  CmdTrbResetED.SlotId   = SlotId;
-  Status = XhcPeiCmdTransfer (
-             Xhc,
-             (TRB_TEMPLATE *) (UINTN) &CmdTrbResetED,
-             XHC_GENERIC_TIMEOUT,
-             (TRB_TEMPLATE **) (UINTN) &EvtTrb
-             );
+  Status = XhcPeiResetEndpoint (Xhc, SlotId, Dci);
   if (EFI_ERROR(Status)) {
     DEBUG ((EFI_D_ERROR, "XhcPeiRecoverHaltedEndpoint: Reset Endpoint Failed, Status = %r\n", Status));
     goto Done;
@@ -482,22 +494,68 @@ XhcPeiRecoverHaltedEndpoint (
   //
   // 2) Set dequeue pointer
   //
-  ZeroMem (&CmdSetTRDeq, sizeof (CmdSetTRDeq));
-  PhyAddr = UsbHcGetPciAddrForHostAddr (Xhc->MemPool, Urb->Ring->RingEnqueue, sizeof (CMD_SET_TR_DEQ_POINTER));
-  CmdSetTRDeq.PtrLo    = XHC_LOW_32BIT (PhyAddr) | Urb->Ring->RingPCS;
-  CmdSetTRDeq.PtrHi    = XHC_HIGH_32BIT (PhyAddr);
-  CmdSetTRDeq.CycleBit = 1;
-  CmdSetTRDeq.Type     = TRB_TYPE_SET_TR_DEQUE;
-  CmdSetTRDeq.Endpoint = Dci;
-  CmdSetTRDeq.SlotId   = SlotId;
-  Status = XhcPeiCmdTransfer (
-             Xhc,
-             (TRB_TEMPLATE *) (UINTN) &CmdSetTRDeq,
-             XHC_GENERIC_TIMEOUT,
-             (TRB_TEMPLATE **) (UINTN) &EvtTrb
-             );
+  Status = XhcPeiSetTrDequeuePointer (Xhc, SlotId, Dci, Urb);
   if (EFI_ERROR(Status)) {
     DEBUG ((EFI_D_ERROR, "XhcPeiRecoverHaltedEndpoint: Set Dequeue Pointer Failed, Status = %r\n", Status));
+    goto Done;
+  }
+
+  //
+  // 3) Ring the doorbell to transit from stop to active
+  //
+  XhcPeiRingDoorBell (Xhc, SlotId, Dci);
+
+Done:
+  return Status;
+}
+
+/**
+  System software shall use a Stop Endpoint Command (section 4.6.9) and the Set TR Dequeue Pointer
+  Command (section 4.6.10) to remove the timed-out TDs from the xHC transfer ring. The next write to
+  the Doorbell of the Endpoint will transition the Endpoint Context from the Stopped to the Running
+  state.
+
+  @param  Xhc                   The XHCI device.
+  @param  Urb                   The urb which doesn't get completed in a specified timeout range.
+
+  @retval EFI_SUCCESS           The dequeuing of the TDs is successful.
+  @retval Others                Failed to stop the endpoint and dequeue the TDs.
+
+**/
+EFI_STATUS
+XhcPeiDequeueTrbFromEndpoint (
+  IN PEI_XHC_DEV        *Xhc,
+  IN URB                *Urb
+  )
+{
+  EFI_STATUS                  Status;
+  UINT8                       Dci;
+  UINT8                       SlotId;
+
+  Status = EFI_SUCCESS;
+  SlotId = XhcPeiBusDevAddrToSlotId (Xhc, Urb->Ep.BusAddr);
+  if (SlotId == 0) {
+    return EFI_DEVICE_ERROR;
+  }
+  Dci = XhcPeiEndpointToDci (Urb->Ep.EpAddr, (UINT8) (Urb->Ep.Direction));
+
+  DEBUG ((EFI_D_INFO, "XhcPeiDequeueTrbFromEndpoint: Stop Slot = %x, Dci = %x\n", SlotId, Dci));
+
+  //
+  // 1) Send Stop endpoint command to stop endpoint.
+  //
+  Status = XhcPeiStopEndpoint (Xhc, SlotId, Dci);
+  if (EFI_ERROR(Status)) {
+    DEBUG ((EFI_D_ERROR, "XhcPeiDequeueTrbFromEndpoint: Stop Endpoint Failed, Status = %r\n", Status));
+    goto Done;
+  }
+
+  //
+  // 2) Set dequeue pointer
+  //
+  Status = XhcPeiSetTrDequeuePointer (Xhc, SlotId, Dci, Urb);
+  if (EFI_ERROR(Status)) {
+    DEBUG ((EFI_D_ERROR, "XhcPeiDequeueTrbFromEndpoint: Set Dequeue Pointer Failed, Status = %r\n", Status));
     goto Done;
   }
 
@@ -553,7 +611,7 @@ XhcPeiIsTransferRingTrb (
   @return Whether the result of URB transfer is finialized.
 
 **/
-EFI_STATUS
+BOOLEAN
 XhcPeiCheckUrbResult (
   IN PEI_XHC_DEV            *Xhc,
   IN URB                    *Urb
@@ -582,7 +640,6 @@ XhcPeiCheckUrbResult (
 
   if (XhcPeiIsHalt (Xhc) || XhcPeiIsSysError (Xhc)) {
     Urb->Result |= EFI_USB_ERR_SYSTEM;
-    Status       = EFI_DEVICE_ERROR;
     goto EXIT;
   }
 
@@ -652,14 +709,14 @@ XhcPeiCheckUrbResult (
       case TRB_COMPLETION_SHORT_PACKET:
       case TRB_COMPLETION_SUCCESS:
         if (EvtTrb->Completecode == TRB_COMPLETION_SHORT_PACKET) {
-          DEBUG ((EFI_D_ERROR, "XhcPeiCheckUrbResult: short packet happens!\n"));
+          DEBUG ((EFI_D_VERBOSE, "XhcPeiCheckUrbResult: short packet happens!\n"));
         }
 
         TRBType = (UINT8) (TRBPtr->Type);
         if ((TRBType == TRB_TYPE_DATA_STAGE) ||
             (TRBType == TRB_TYPE_NORMAL) ||
             (TRBType == TRB_TYPE_ISOCH)) {
-          CheckedUrb->Completed += (CheckedUrb->DataLen - EvtTrb->Length);
+          CheckedUrb->Completed += (((TRANSFER_TRB_NORMAL*)TRBPtr)->Length - EvtTrb->Length);
         }
 
         break;
@@ -711,7 +768,7 @@ EXIT:
     XhcPeiWriteRuntimeReg (Xhc, XHC_ERDP_OFFSET + 4, XHC_HIGH_32BIT (PhyAddr));
   }
 
-  return Status;
+  return Urb->Finished;
 }
 
 /**
@@ -737,9 +794,10 @@ XhcPeiExecTransfer (
 {
   EFI_STATUS    Status;
   UINTN         Index;
-  UINTN         Loop;
+  UINT64        Loop;
   UINT8         SlotId;
   UINT8         Dci;
+  BOOLEAN       Finished;
 
   if (CmdTransfer) {
     SlotId = 0;
@@ -761,8 +819,8 @@ XhcPeiExecTransfer (
   XhcPeiRingDoorBell (Xhc, SlotId, Dci);
 
   for (Index = 0; Index < Loop; Index++) {
-    Status = XhcPeiCheckUrbResult (Xhc, Urb);
-    if (Urb->Finished) {
+    Finished = XhcPeiCheckUrbResult (Xhc, Urb);
+    if (Finished) {
       break;
     }
     MicroSecondDelay (XHC_1_MICROSECOND);
@@ -770,6 +828,9 @@ XhcPeiExecTransfer (
 
   if (Index == Loop) {
     Urb->Result = EFI_USB_ERR_TIMEOUT;
+    Status      = EFI_TIMEOUT;
+  } else if (Urb->Result != EFI_USB_NOERROR) {
+    Status      = EFI_DEVICE_ERROR;
   }
 
   return Status;
@@ -1160,6 +1221,10 @@ XhcPeiInitializeDeviceSlot (
   // 8) Issue an Address Device Command for the Device Slot, where the command points to the Input
   //    Context data structure described above.
   //
+  // Delay 10ms to meet TRSTRCY delay requirement in usb 2.0 spec chapter 7.1.7.5 before sending SetAddress() request
+  // to device.
+  //
+  MicroSecondDelay (XHC_RESET_RECOVERY_DELAY);
   ZeroMem (&CmdTrbAddr, sizeof (CmdTrbAddr));
   PhyAddr = UsbHcGetPciAddrForHostAddr (Xhc->MemPool, Xhc->UsbDevContext[SlotId].InputContext, sizeof (INPUT_CONTEXT));
   CmdTrbAddr.PtrLo    = XHC_LOW_32BIT (PhyAddr);
@@ -1367,6 +1432,10 @@ XhcPeiInitializeDeviceSlot64 (
   // 8) Issue an Address Device Command for the Device Slot, where the command points to the Input
   //    Context data structure described above.
   //
+  // Delay 10ms to meet TRSTRCY delay requirement in usb 2.0 spec chapter 7.1.7.5 before sending SetAddress() request
+  // to device.
+  //
+  MicroSecondDelay (XHC_RESET_RECOVERY_DELAY);
   ZeroMem (&CmdTrbAddr, sizeof (CmdTrbAddr));
   PhyAddr = UsbHcGetPciAddrForHostAddr (Xhc->MemPool, Xhc->UsbDevContext[SlotId].InputContext, sizeof (INPUT_CONTEXT_64));
   CmdTrbAddr.PtrLo    = XHC_LOW_32BIT (PhyAddr);
@@ -1707,6 +1776,20 @@ XhcPeiSetConfigCmd (
             InputContext->EP[Dci-1].EPType = ED_ISOCH_OUT;
           }
           //
+          // Get the bInterval from descriptor and init the the interval field of endpoint context.
+          // Refer to XHCI 1.1 spec section 6.2.3.6.
+          //
+          if (DeviceSpeed == EFI_USB_SPEED_FULL) {
+            Interval = EpDesc->Interval;
+            ASSERT (Interval >= 1 && Interval <= 16);
+            InputContext->EP[Dci-1].Interval = Interval + 2;
+          } else if ((DeviceSpeed == EFI_USB_SPEED_HIGH) || (DeviceSpeed == EFI_USB_SPEED_SUPER)) {
+            Interval = EpDesc->Interval;
+            ASSERT (Interval >= 1 && Interval <= 16);
+            InputContext->EP[Dci-1].Interval = Interval - 1;
+          }
+
+          //
           // Do not support isochronous transfer now.
           //
           DEBUG ((EFI_D_INFO, "XhcPeiSetConfigCmd: Unsupport ISO EP found, Transfer ring is not allocated.\n"));
@@ -1909,6 +1992,20 @@ XhcPeiSetConfigCmd64 (
             InputContext->EP[Dci-1].CErr   = 0;
             InputContext->EP[Dci-1].EPType = ED_ISOCH_OUT;
           }
+          //
+          // Get the bInterval from descriptor and init the the interval field of endpoint context.
+          // Refer to XHCI 1.1 spec section 6.2.3.6.
+          //
+          if (DeviceSpeed == EFI_USB_SPEED_FULL) {
+            Interval = EpDesc->Interval;
+            ASSERT (Interval >= 1 && Interval <= 16);
+            InputContext->EP[Dci-1].Interval = Interval + 2;
+          } else if ((DeviceSpeed == EFI_USB_SPEED_HIGH) || (DeviceSpeed == EFI_USB_SPEED_SUPER)) {
+            Interval = EpDesc->Interval;
+            ASSERT (Interval >= 1 && Interval <= 16);
+            InputContext->EP[Dci-1].Interval = Interval - 1;
+          }
+
           //
           // Do not support isochronous transfer now.
           //
@@ -2247,6 +2344,151 @@ XhcPeiConfigHubContext64 (
   if (EFI_ERROR (Status)) {
     DEBUG ((EFI_D_ERROR, "XhcConfigHubContext64: Config Endpoint Failed, Status = %r\n", Status));
   }
+  return Status;
+}
+
+/**
+  Stop endpoint through XHCI's Stop_Endpoint cmd.
+
+  @param  Xhc           The XHCI device.
+  @param  SlotId        The slot id of the target device.
+  @param  Dci           The device context index of the target slot or endpoint.
+
+  @retval EFI_SUCCESS   Stop endpoint successfully.
+  @retval Others        Failed to stop endpoint.
+
+**/
+EFI_STATUS
+EFIAPI
+XhcPeiStopEndpoint (
+  IN PEI_XHC_DEV        *Xhc,
+  IN UINT8              SlotId,
+  IN UINT8              Dci
+  )
+{
+  EFI_STATUS                    Status;
+  EVT_TRB_COMMAND_COMPLETION    *EvtTrb;
+  CMD_TRB_STOP_ENDPOINT         CmdTrbStopED;
+
+  DEBUG ((EFI_D_INFO, "XhcPeiStopEndpoint: Slot = 0x%x, Dci = 0x%x\n", SlotId, Dci));
+
+  //
+  // Send stop endpoint command to transit Endpoint from running to stop state
+  //
+  ZeroMem (&CmdTrbStopED, sizeof (CmdTrbStopED));
+  CmdTrbStopED.CycleBit = 1;
+  CmdTrbStopED.Type     = TRB_TYPE_STOP_ENDPOINT;
+  CmdTrbStopED.EDID     = Dci;
+  CmdTrbStopED.SlotId   = SlotId;
+  Status = XhcPeiCmdTransfer (
+             Xhc,
+             (TRB_TEMPLATE *) (UINTN) &CmdTrbStopED,
+             XHC_GENERIC_TIMEOUT,
+             (TRB_TEMPLATE **) (UINTN) &EvtTrb
+             );
+  if (EFI_ERROR(Status)) {
+    DEBUG ((EFI_D_ERROR, "XhcPeiStopEndpoint: Stop Endpoint Failed, Status = %r\n", Status));
+  }
+
+  return Status;
+}
+
+/**
+  Reset endpoint through XHCI's Reset_Endpoint cmd.
+
+  @param  Xhc           The XHCI device.
+  @param  SlotId        The slot id of the target device.
+  @param  Dci           The device context index of the target slot or endpoint.
+
+  @retval EFI_SUCCESS   Reset endpoint successfully.
+  @retval Others        Failed to reset endpoint.
+
+**/
+EFI_STATUS
+EFIAPI
+XhcPeiResetEndpoint (
+  IN PEI_XHC_DEV        *Xhc,
+  IN UINT8              SlotId,
+  IN UINT8              Dci
+  )
+{
+  EFI_STATUS                  Status;
+  EVT_TRB_COMMAND_COMPLETION  *EvtTrb;
+  CMD_TRB_RESET_ENDPOINT      CmdTrbResetED;
+
+  DEBUG ((EFI_D_INFO, "XhcPeiResetEndpoint: Slot = 0x%x, Dci = 0x%x\n", SlotId, Dci));
+
+  //
+  // Send stop endpoint command to transit Endpoint from running to stop state
+  //
+  ZeroMem (&CmdTrbResetED, sizeof (CmdTrbResetED));
+  CmdTrbResetED.CycleBit = 1;
+  CmdTrbResetED.Type     = TRB_TYPE_RESET_ENDPOINT;
+  CmdTrbResetED.EDID     = Dci;
+  CmdTrbResetED.SlotId   = SlotId;
+  Status = XhcPeiCmdTransfer (
+             Xhc,
+             (TRB_TEMPLATE *) (UINTN) &CmdTrbResetED,
+             XHC_GENERIC_TIMEOUT,
+             (TRB_TEMPLATE **) (UINTN) &EvtTrb
+             );
+  if (EFI_ERROR(Status)) {
+    DEBUG ((EFI_D_ERROR, "XhcPeiResetEndpoint: Reset Endpoint Failed, Status = %r\n", Status));
+  }
+
+  return Status;
+}
+
+/**
+  Set transfer ring dequeue pointer through XHCI's Set_Tr_Dequeue_Pointer cmd.
+
+  @param  Xhc           The XHCI device.
+  @param  SlotId        The slot id of the target device.
+  @param  Dci           The device context index of the target slot or endpoint.
+  @param  Urb           The dequeue pointer of the transfer ring specified
+                        by the urb to be updated.
+
+  @retval EFI_SUCCESS   Set transfer ring dequeue pointer succeeds.
+  @retval Others        Failed to set transfer ring dequeue pointer.
+
+**/
+EFI_STATUS
+EFIAPI
+XhcPeiSetTrDequeuePointer (
+  IN PEI_XHC_DEV        *Xhc,
+  IN UINT8              SlotId,
+  IN UINT8              Dci,
+  IN URB                *Urb
+  )
+{
+  EFI_STATUS                  Status;
+  EVT_TRB_COMMAND_COMPLETION  *EvtTrb;
+  CMD_SET_TR_DEQ_POINTER      CmdSetTRDeq;
+  EFI_PHYSICAL_ADDRESS        PhyAddr;
+
+  DEBUG ((EFI_D_INFO, "XhcPeiSetTrDequeuePointer: Slot = 0x%x, Dci = 0x%x, Urb = 0x%x\n", SlotId, Dci, Urb));
+
+  //
+  // Send stop endpoint command to transit Endpoint from running to stop state
+  //
+  ZeroMem (&CmdSetTRDeq, sizeof (CmdSetTRDeq));
+  PhyAddr = UsbHcGetPciAddrForHostAddr (Xhc->MemPool, Urb->Ring->RingEnqueue, sizeof (CMD_SET_TR_DEQ_POINTER));
+  CmdSetTRDeq.PtrLo    = XHC_LOW_32BIT (PhyAddr) | Urb->Ring->RingPCS;
+  CmdSetTRDeq.PtrHi    = XHC_HIGH_32BIT (PhyAddr);
+  CmdSetTRDeq.CycleBit = 1;
+  CmdSetTRDeq.Type     = TRB_TYPE_SET_TR_DEQUE;
+  CmdSetTRDeq.Endpoint = Dci;
+  CmdSetTRDeq.SlotId   = SlotId;
+  Status = XhcPeiCmdTransfer (
+             Xhc,
+             (TRB_TEMPLATE *) (UINTN) &CmdSetTRDeq,
+             XHC_GENERIC_TIMEOUT,
+             (TRB_TEMPLATE **) (UINTN) &EvtTrb
+             );
+  if (EFI_ERROR(Status)) {
+    DEBUG ((EFI_D_ERROR, "XhcPeiSetTrDequeuePointer: Set TR Dequeue Pointer Failed, Status = %r\n", Status));
+  }
+
   return Status;
 }
 
@@ -2596,6 +2838,7 @@ XhcPeiInitSched (
   UINT64                *ScratchEntry;
   EFI_PHYSICAL_ADDRESS  ScratchEntryPhy;
   UINT32                Index;
+  UINTN                 *ScratchEntryMap;
   EFI_STATUS            Status;
 
   //
@@ -2632,6 +2875,13 @@ XhcPeiInitSched (
   ASSERT (MaxScratchpadBufs <= 1023);
   if (MaxScratchpadBufs != 0) {
     //
+    // Allocate the buffer to record the Mapping for each scratch buffer in order to Unmap them
+    //
+    ScratchEntryMap = AllocateZeroPool (sizeof (UINTN) * MaxScratchpadBufs);
+    ASSERT (ScratchEntryMap != NULL);
+    Xhc->ScratchEntryMap = ScratchEntryMap;
+
+    //
     // Allocate the buffer to record the host address for each entry
     //
     ScratchEntry = AllocateZeroPool (sizeof (UINT64) * MaxScratchpadBufs);
@@ -2643,7 +2893,8 @@ XhcPeiInitSched (
                EFI_SIZE_TO_PAGES (MaxScratchpadBufs * sizeof (UINT64)),
                Xhc->PageSize,
                (VOID **) &ScratchBuf,
-               &ScratchPhy
+               &ScratchPhy,
+               &Xhc->ScratchMap
                );
     ASSERT_EFI_ERROR (Status);
 
@@ -2659,7 +2910,8 @@ XhcPeiInitSched (
                  EFI_SIZE_TO_PAGES (Xhc->PageSize),
                  Xhc->PageSize,
                  (VOID **) &ScratchEntry[Index],
-                 &ScratchEntryPhy
+                 &ScratchEntryPhy,
+                 (VOID **) &ScratchEntryMap[Index]
                  );
       ASSERT_EFI_ERROR (Status);
       ZeroMem ((VOID *) (UINTN) ScratchEntry[Index], Xhc->PageSize);
@@ -2751,12 +3003,13 @@ XhcPeiFreeSched (
       //
       // Free Scratchpad Buffers
       //
-      UsbHcFreeAlignedPages ((VOID*) (UINTN) ScratchEntry[Index], EFI_SIZE_TO_PAGES (Xhc->PageSize));
+      UsbHcFreeAlignedPages ((VOID*) (UINTN) ScratchEntry[Index], EFI_SIZE_TO_PAGES (Xhc->PageSize), (VOID *) Xhc->ScratchEntryMap[Index]);
     }
     //
     // Free Scratchpad Buffer Array
     //
-    UsbHcFreeAlignedPages (Xhc->ScratchBuf, EFI_SIZE_TO_PAGES (Xhc->MaxScratchpadBufs * sizeof (UINT64)));
+    UsbHcFreeAlignedPages (Xhc->ScratchBuf, EFI_SIZE_TO_PAGES (Xhc->MaxScratchpadBufs * sizeof (UINT64)), Xhc->ScratchMap);
+    FreePool (Xhc->ScratchEntryMap);
     FreePool (Xhc->ScratchEntry);
   }
 

@@ -1,7 +1,7 @@
 /** @file
   Implement IP4 pesudo interface.
 
-Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2005 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -423,12 +423,12 @@ Ip4CancelFrameArp (
   either queued on ARP queues or that have already been delivered to
   MNP and not yet recycled.
 
-  @param[in]  Interface         Interface to remove the frames from
+  @param[in]  Interface         Interface to remove the frames from.
   @param[in]  IoStatus          The transmit status returned to the frames'
-                                callback
+                                callback.
   @param[in]  FrameToCancel     Function to select the frame to cancel, NULL to
-                                select all
-  @param[in]  Context           Opaque parameters passed to FrameToCancel
+                                select all.
+  @param[in]  Context           Opaque parameters passed to FrameToCancel.
 
 **/
 VOID
@@ -476,10 +476,10 @@ Ip4CancelFrames (
   the interface is configured.
 
   @param[in]  Mnp               The shared MNP child of this IP4 service binding
-                                instance
+                                instance.
   @param[in]  Controller        The controller this IP4 service binding instance
                                 is installed. Most like the UNDI handle.
-  @param[in]  ImageHandle       This driver's image handle
+  @param[in]  ImageHandle       This driver's image handle.
 
   @return Point to the created IP4_INTERFACE, otherwise NULL.
 
@@ -542,9 +542,9 @@ Ip4CreateInterface (
   Set the interface's address, create and configure
   the ARP child if necessary.
 
-  @param  Interface         The interface to set the address
-  @param  IpAddr            The interface's IP address
-  @param  SubnetMask        The interface's netmask
+  @param  Interface         The interface to set the address.
+  @param  IpAddr            The interface's IP address.
+  @param  SubnetMask        The interface's netmask.
 
   @retval EFI_SUCCESS           The interface is configured with Ip/netmask pair,
                                 and a ARP is created for it.
@@ -560,13 +560,8 @@ Ip4SetAddress (
 {
   EFI_ARP_CONFIG_DATA       ArpConfig;
   EFI_STATUS                Status;
-  INTN                      Type;
-  INTN                      Len;
-  IP4_ADDR                  Netmask;
 
   NET_CHECK_SIGNATURE (Interface, IP4_INTERFACE_SIGNATURE);
-
-  ASSERT (!Interface->Configured);
 
   //
   // Set the ip/netmask, then compute the subnet broadcast
@@ -579,21 +574,37 @@ Ip4SetAddress (
   Interface->Ip             = IpAddr;
   Interface->SubnetMask     = SubnetMask;
   Interface->SubnetBrdcast  = (IpAddr | ~SubnetMask);
+  Interface->NetBrdcast     = (IpAddr | ~SubnetMask);
 
-  Type                      = NetGetIpClass (IpAddr);
-  ASSERT (Type <= IP4_ADDR_CLASSC);
-  Len                       = NetGetMaskLength (SubnetMask);
-  ASSERT (Len < IP4_MASK_NUM);
-  Netmask                   = gIp4AllMasks[MIN (Len, Type << 3)];
-  Interface->NetBrdcast     = (IpAddr | ~Netmask);
+  //
+  // Do clean up for Arp child
+  //
+  if (Interface->ArpHandle != NULL) {
+    if (Interface->Arp != NULL) {
+      gBS->CloseProtocol (
+             Interface->ArpHandle,
+             &gEfiArpProtocolGuid,
+             Interface->Image,
+             Interface->Controller
+             );
+
+      Interface->Arp = NULL;
+    }
+
+    NetLibDestroyServiceChild (
+      Interface->Controller,
+      Interface->Image,
+      &gEfiArpServiceBindingProtocolGuid,
+      &Interface->ArpHandle
+      );
+
+    Interface->ArpHandle = NULL;
+  }
 
   //
   // If the address is NOT all zero, create then configure an ARP child.
   // Pay attention: DHCP configures its station address as 0.0.0.0/0
   //
-  Interface->Arp            = NULL;
-  Interface->ArpHandle      = NULL;
-
   if (IpAddr != IP4_ALLZERO_ADDRESS) {
     Status = NetLibCreateServiceChild (
                Interface->Controller,
@@ -603,7 +614,7 @@ Ip4SetAddress (
                );
 
     if (EFI_ERROR (Status)) {
-      return Status;;
+      return Status;
     }
 
     Status = gBS->OpenProtocol (
@@ -631,11 +642,11 @@ Ip4SetAddress (
 
     if (EFI_ERROR (Status)) {
       gBS->CloseProtocol (
-            Interface->ArpHandle,
-            &gEfiArpProtocolGuid,
-            Interface->Image,
-            Interface->Controller
-            );
+             Interface->ArpHandle,
+             &gEfiArpProtocolGuid,
+             Interface->Image,
+             Interface->Controller
+             );
 
       goto ON_ERROR;
     }
@@ -721,7 +732,7 @@ Ip4CancelReceive (
   Because the IpInstance is optional, the caller must remove
   IpInstance from the interface's instance list itself.
 
-  @param[in]  Interface         The interface used by the IpInstance
+  @param[in]  Interface         The interface used by the IpInstance.
   @param[in]  IpInstance        The Ip instance that free the interface. NULL if
                                 the Ip driver is releasing the default interface.
 
@@ -844,7 +855,7 @@ Ip4OnArpResolvedDpc (
 
     Status = Interface->Mnp->Transmit (Interface->Mnp, &Token->MnpToken);
     if (EFI_ERROR (Status)) {
-      RemoveEntryList (Entry);
+      RemoveEntryList (&Token->Link);
       Token->CallBack (Token->IpInstance, Token->Packet, Status, 0, Token->Context);
 
       Ip4FreeLinkTxToken (Token);
@@ -1070,7 +1081,7 @@ SEND_NOW:
   InsertTailList (&Interface->SentFrames, &Token->Link);
   Status = Interface->Mnp->Transmit (Interface->Mnp, &Token->MnpToken);
   if (EFI_ERROR (Status)) {
-    RemoveEntryList (&Interface->SentFrames);
+    RemoveEntryList (&Token->Link);
     goto ON_ERROR;
   }
 
@@ -1197,14 +1208,14 @@ Ip4OnFrameReceived (
 /**
   Request to receive the packet from the interface.
 
-  @param[in]  Interface         The interface to receive the frames from
+  @param[in]  Interface         The interface to receive the frames from.
   @param[in]  IpInstance        The instance that requests the receive. NULL for
                                 the driver itself.
   @param[in]  CallBack          Function to call when receive finished.
-  @param[in]  Context           Opaque parameter to the callback
+  @param[in]  Context           Opaque parameter to the callback.
 
   @retval EFI_ALREADY_STARTED   There is already a pending receive request.
-  @retval EFI_OUT_OF_RESOURCES  Failed to allocate resource to receive
+  @retval EFI_OUT_OF_RESOURCES  Failed to allocate resource to receive.
   @retval EFI_SUCCESS           The recieve request has been started.
   @retval other                 Other error occurs.
 

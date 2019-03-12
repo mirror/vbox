@@ -2,7 +2,7 @@
 PEIM to produce gPeiUsb2HostControllerPpiGuid based on gPeiUsbControllerPpiGuid
 which is used to enable recovery function from USB Drivers.
 
-Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -411,12 +411,20 @@ EhcPowerOnAllPorts (
   IN PEI_USB2_HC_DEV          *Ehc
   )
 {
-  UINT8 PortNumber;
-  UINT8 Index;
+  UINT8     PortNumber;
+  UINT8     Index;
+  UINT32    RegVal;
 
   PortNumber = (UINT8)(Ehc->HcStructParams & HCSP_NPORTS);
   for (Index = 0; Index < PortNumber; Index++) {
-    EhcSetOpRegBit (Ehc, EHC_PORT_STAT_OFFSET + 4 * Index, PORTSC_POWER);
+    //
+    // Do not clear port status bits on initialization.  Otherwise devices will
+    // not enumerate properly at startup.
+    //
+    RegVal  = EhcReadOpReg(Ehc, EHC_PORT_STAT_OFFSET + 4 * Index);
+    RegVal &= ~PORTSC_CHANGE_MASK;
+    RegVal |= PORTSC_POWER;
+    EhcWriteOpReg (Ehc, EHC_PORT_STAT_OFFSET + 4 * Index, RegVal);
   }
 }
 
@@ -1133,6 +1141,36 @@ ON_EXIT:
 }
 
 /**
+  One notified function to stop the Host Controller at the end of PEI
+
+  @param[in]  PeiServices        Pointer to PEI Services Table.
+  @param[in]  NotifyDescriptor   Pointer to the descriptor for the Notification event that
+                                 caused this function to execute.
+  @param[in]  Ppi                Pointer to the PPI data associated with this function.
+
+  @retval     EFI_SUCCESS  The function completes successfully
+  @retval     others
+**/
+EFI_STATUS
+EFIAPI
+EhcEndOfPei (
+  IN EFI_PEI_SERVICES           **PeiServices,
+  IN EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyDescriptor,
+  IN VOID                       *Ppi
+  )
+{
+  PEI_USB2_HC_DEV   *Ehc;
+
+  Ehc = PEI_RECOVERY_USB_EHC_DEV_FROM_THIS_NOTIFY (NotifyDescriptor);
+
+  EhcHaltHC (Ehc, EHC_GENERIC_TIMEOUT);
+
+  EhcFreeSched (Ehc);
+
+  return EFI_SUCCESS;
+}
+
+/**
   @param  FileHandle  Handle of the file being invoked.
   @param  PeiServices Describes the list of possible PEI Services.
 
@@ -1211,6 +1249,8 @@ EhcPeimEntry (
 
     EhcDev->Signature = USB2_HC_DEV_SIGNATURE;
 
+    IoMmuInit (&EhcDev->IoMmu);
+
     EhcDev->UsbHostControllerBaseAddress = (UINT32) BaseAddress;
 
 
@@ -1241,6 +1281,12 @@ EhcPeimEntry (
       Index++;
       continue;
     }
+
+    EhcDev->EndOfPeiNotifyList.Flags = (EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST);
+    EhcDev->EndOfPeiNotifyList.Guid = &gEfiEndOfPeiSignalPpiGuid;
+    EhcDev->EndOfPeiNotifyList.Notify = EhcEndOfPei;
+
+    PeiServicesNotifyPpi (&EhcDev->EndOfPeiNotifyList);
 
     Index++;
   }

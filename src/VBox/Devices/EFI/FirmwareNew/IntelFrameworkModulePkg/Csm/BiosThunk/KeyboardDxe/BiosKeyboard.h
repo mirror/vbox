@@ -1,6 +1,6 @@
 /** @file
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -18,6 +18,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 
 #include <FrameworkDxe.h>
+#include <Pi/PiDxeCis.h>
 
 #include <Guid/StatusCodeDataTypeId.h>
 #include <Protocol/SimpleTextIn.h>
@@ -33,6 +34,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/DxeServicesTableLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/BaseLib.h>
 #include <Library/PcdLib.h>
@@ -219,15 +221,18 @@ typedef struct {
   UINT16                                      CommandRegisterAddress;
   BOOLEAN                                     ExtendedKeyboard;
 
+  EFI_KEY_STATE                               KeyState;
   //
   // Buffer storing EFI_KEY_DATA
   //
   SIMPLE_QUEUE                                Queue;
+  SIMPLE_QUEUE                                QueueForNotify;
 
   //
   // Notification Function List
   //
   LIST_ENTRY                                  NotifyList;
+  EFI_EVENT                                   KeyNotifyProcessEvent;
   EFI_EVENT                                   TimerEvent;
 
 } BIOS_KEYBOARD_DEV;
@@ -447,7 +452,7 @@ BiosKeyboardComponentNameGetControllerName (
   @param  ExtendedVerification  Whether perform the extra validation of keyboard. True: perform; FALSE: skip.
 
   @retval EFI_SUCCESS           The command byte is written successfully.
-  @retval EFI_DEVICE_ERROR      Errors occurred during reseting keyboard.
+  @retval EFI_DEVICE_ERROR      Errors occurred during resetting keyboard.
 
 **/
 EFI_STATUS
@@ -555,6 +560,19 @@ BiosKeyboardTimerHandler (
   );
 
 /**
+  Process key notify.
+
+  @param  Event                 Indicates the event that invoke this function.
+  @param  Context               Indicates the calling context.
+**/
+VOID
+EFIAPI
+KeyNotifyProcessHandler (
+  IN  EFI_EVENT                 Event,
+  IN  VOID                      *Context
+  );
+
+/**
   Reset the input device and optionaly run diagnostics
 
   @param  This                  Protocol instance pointer.
@@ -620,9 +638,13 @@ BiosKeyboardSetState (
 
   @param  This                    Protocol instance pointer.
   @param  KeyData                 A pointer to a buffer that is filled in with the keystroke
-                                  information data for the key that was pressed.
+                                  information data for the key that was pressed. If KeyData.Key,
+                                  KeyData.KeyState.KeyToggleState and KeyData.KeyState.KeyShiftState
+                                  are 0, then any incomplete keystroke will trigger a notification of
+                                  the KeyNotificationFunction.
   @param  KeyNotificationFunction Points to the function to be called when the key
-                                  sequence is typed specified by KeyData.
+                                  sequence is typed specified by KeyData. This notification function
+                                  should be called at <=TPL_CALLBACK.
   @param  NotifyHandle            Points to the unique handle assigned to the registered notification.
 
 

@@ -1,7 +1,7 @@
 ## @file
 # GNU/Linux makefile for 'VfrCompile' module build.
 #
-# Copyright (c) 2008 - 2010, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #
 
-ARCH ?= IA32
 MAKEROOT ?= ..
 
 APPNAME = VfrCompile
@@ -24,9 +23,9 @@ TOOL_INCLUDE = -I Pccts/h
 OBJECTS = AParser.o DLexerBase.o ATokenBuffer.o EfiVfrParser.o VfrLexer.o VfrSyntax.o \
           VfrFormPkg.o VfrError.o VfrUtilityLib.o VfrCompiler.o
 
-VFR_CPPFLAGS = -DPCCTS_USE_NAMESPACE_STD $(CPPFLAGS)
+VFR_CPPFLAGS = -DPCCTS_USE_NAMESPACE_STD $(BUILD_CPPFLAGS)
 
-LINKER = $(CXX)
+LINKER = $(BUILD_CXX)
 
 EXTRA_CLEAN_OBJECTS = EfiVfrParser.cpp EfiVfrParser.h VfrParser.dlg VfrTokens.h VfrLexer.cpp VfrLexer.h VfrSyntax.cpp tokens.h
 
@@ -59,16 +58,16 @@ Pccts/dlg/dlg:
 	BIN_DIR='.' $(MAKE) -C Pccts/dlg
 
 ATokenBuffer.o: Pccts/h/ATokenBuffer.cpp
-	$(CXX) -c $(VFR_CPPFLAGS) $(INC) $? -o $@
+	$(BUILD_CXX) -c $(VFR_CPPFLAGS) $(INC) $? -o $@
 
 DLexerBase.o: Pccts/h/DLexerBase.cpp
-	$(CXX) -c $(VFR_CPPFLAGS) $(INC) $? -o $@
+	$(BUILD_CXX) -c $(VFR_CPPFLAGS) $(INC) $? -o $@
 
 AParser.o: Pccts/h/AParser.cpp
-	$(CXX) -c $(VFR_CPPFLAGS) $(INC) $? -o $@
+	$(BUILD_CXX) -c $(VFR_CPPFLAGS) $(INC) $? -o $@
 
 VfrSyntax.o: VfrSyntax.cpp
-	$(CXX) -c $(VFR_CPPFLAGS) $(INC) $? -o $@
+	$(BUILD_CXX) -c $(VFR_CPPFLAGS) $(INC) $? -o $@
 
 clean: localClean
 

@@ -1,7 +1,7 @@
 /** @file
   Definitions for ASIX AX88772 Ethernet adapter.
 
-  Copyright (c) 2011, Intel Corporation
+  Copyright (c) 2011 - 2015, Intel Corporation
   All rights reserved. This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -18,7 +18,6 @@
 #include <Uefi.h>
 
 #include <Guid/EventGroup.h>
-#include <Guid/NicIp4ConfigNvData.h>
 
 #include <IndustryStandard/Pci.h>
 
@@ -141,9 +140,6 @@
 #define FreeQueueSize     10
 
 #define DEV_SIGNATURE     SIGNATURE_32 ('A','X','8','8')  ///<  Signature of data structures in memory
-
-#define VENDOR_ID         0x0B95  ///<  Vendor ID for Asix
-#define PRODUCT_ID        0x772B  ///<  Product ID for the AX88772 USB 10/100 Ethernet controller
 
 #define RESET_MSEC        1000    ///<  Reset duration
 #define PHY_RESET_MSEC     500    ///<  PHY reset duration
@@ -298,11 +294,22 @@
 #define AN_10_HDX                       0x0020  ///<  1 = 10BASE-T support
 #define AN_CSMA_CD                      0x0001  ///<  1 = IEEE 802.3 CSMA/CD support
 
-
+// asix_flags defines
+#define FLAG_NONE               0
+#define FLAG_TYPE_AX88172       BIT0
+#define FLAG_TYPE_AX88772       BIT1
+#define FLAG_TYPE_AX88772B      BIT2
+#define FLAG_EEPROM_MAC         BIT3  // initial mac address in eeprom
 
 //------------------------------------------------------------------------------
 //  Data Types
 //------------------------------------------------------------------------------
+
+typedef struct {
+   UINT16  VendorId;
+   UINT16  ProductId;
+   INT32   Flags;
+}ASIX_DONGLE;
 
 /**
   Ethernet header layout
@@ -397,6 +404,8 @@ typedef struct {
   RX_PKT * pFirstFill;
   UINTN   PktCntInQueue;
   UINT8 * pBulkInBuff;
+
+  INT32 Flags;
 
 } NIC_DEVICE;
 

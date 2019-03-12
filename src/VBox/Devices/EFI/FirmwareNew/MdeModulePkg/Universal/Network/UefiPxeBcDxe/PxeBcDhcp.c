@@ -2,7 +2,7 @@
   Support for PxeBc dhcp functions.
 
 Copyright (c) 2013, Red Hat, Inc.
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -20,13 +20,13 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // This is a map from the interested DHCP4 option tags' index to the tag value.
 //
 UINT8 mInterestedDhcp4Tags[PXEBC_DHCP4_TAG_INDEX_MAX] = {
-  PXEBC_DHCP4_TAG_BOOTFILE_LEN,
-  PXEBC_DHCP4_TAG_VENDOR,
-  PXEBC_DHCP4_TAG_OVERLOAD,
-  PXEBC_DHCP4_TAG_MSG_TYPE,
-  PXEBC_DHCP4_TAG_SERVER_ID,
-  PXEBC_DHCP4_TAG_CLASS_ID,
-  PXEBC_DHCP4_TAG_BOOTFILE
+  DHCP4_TAG_BOOTFILE_LEN,
+  DHCP4_TAG_VENDOR,
+  DHCP4_TAG_OVERLOAD,
+  DHCP4_TAG_MSG_TYPE,
+  DHCP4_TAG_SERVER_ID,
+  DHCP4_TAG_VENDOR_CLASS_ID,
+  DHCP4_TAG_BOOTFILE
 };
 
 
@@ -62,27 +62,33 @@ PxeBcInitSeedPacket (
   CopyMem (Header->ClientHwAddr, &Mode.CurrentAddress, Header->HwAddrLen);
 
   Seed->Dhcp4.Magik     = PXEBC_DHCP4_MAGIC;
-  Seed->Dhcp4.Option[0] = PXEBC_DHCP4_TAG_EOP;
+  Seed->Dhcp4.Option[0] = DHCP4_TAG_EOP;
 }
 
 
 /**
   Copy the DCHP4 packet from srouce to destination.
 
-  @param  Dst   Pointer to the EFI_DHCP4_PROTOCOL instance.
-  @param  Src   Pointer to the EFI_DHCP4_PROTOCOL instance.
+  @param[in]  Dst          Pointer to the cache buffer for DHCPv4 packet.
+  @param[in]  Src          Pointer to the DHCPv4 packet to be cached.
+
+  @retval     EFI_SUCCESS                Packet is copied.
+  @retval     EFI_BUFFER_TOO_SMALL       Cache buffer is not big enough to hold the packet.
 
 **/
-VOID
+EFI_STATUS
 PxeBcCopyEfiDhcp4Packet (
   IN EFI_DHCP4_PACKET  *Dst,
   IN EFI_DHCP4_PACKET  *Src
   )
 {
-  ASSERT (Dst->Size >= Src->Length);
+  if (Dst->Size < Src->Length) {
+    return EFI_BUFFER_TOO_SMALL;
+  }
 
   CopyMem (&Dst->Dhcp4, &Src->Dhcp4, Src->Length);
   Dst->Length = Src->Length;
+  return EFI_SUCCESS;
 }
 
 
@@ -93,8 +99,11 @@ PxeBcCopyEfiDhcp4Packet (
   @param  OfferIndex    Index of cached packets as complements of pxe mode data,
                         the index is maximum offer number.
 
+  @retval     EFI_SUCCESS                Cache and parse the packet successfully.
+  @retval     EFI_BUFFER_TOO_SMALL       Cache buffer is not big enough to hold the packet.
+
 **/
-VOID
+EFI_STATUS
 PxeBcCopyProxyOffer (
   IN PXEBC_PRIVATE_DATA  *Private,
   IN UINT32              OfferIndex
@@ -102,6 +111,7 @@ PxeBcCopyProxyOffer (
 {
   EFI_PXE_BASE_CODE_MODE  *Mode;
   EFI_DHCP4_PACKET        *Offer;
+  EFI_STATUS              Status;
 
   ASSERT (OfferIndex < Private->NumOffers);
   ASSERT (OfferIndex < PXEBC_MAX_OFFER_NUM);
@@ -109,11 +119,15 @@ PxeBcCopyProxyOffer (
   Mode  = Private->PxeBc.Mode;
   Offer = &Private->Dhcp4Offers[OfferIndex].Packet.Offer;
 
-  PxeBcCopyEfiDhcp4Packet (&Private->ProxyOffer.Packet.Offer, Offer);
+  Status = PxeBcCopyEfiDhcp4Packet (&Private->ProxyOffer.Packet.Offer, Offer);
+  if (EFI_ERROR(Status)) {
+    return Status;
+  }
   CopyMem (&Mode->ProxyOffer, &Offer->Dhcp4, Offer->Length);
   Mode->ProxyOfferReceived = TRUE;
 
   PxeBcParseCachedDhcpPacket (&Private->ProxyOffer);
+  return EFI_SUCCESS;
 }
 
 
@@ -228,9 +242,13 @@ PxeBcParseCachedDhcpPacket (
     // If the bootfile is not present and bootfilename is present in dhcp packet, just parse it.
     // And do not count dhcp option header, or else will destroy the serverhostname.
     //
-    Options[PXEBC_DHCP4_TAG_INDEX_BOOTFILE] = (EFI_DHCP4_PACKET_OPTION *) (&Offer->Dhcp4.Header.BootFileName[0] -
+    // Make sure "BootFileName" is not overloaded.
+    //
+    if (Options[PXEBC_DHCP4_TAG_INDEX_OVERLOAD] == NULL ||
+        (Options[PXEBC_DHCP4_TAG_INDEX_OVERLOAD]->Data[0] & PXEBC_DHCP4_OVERLOAD_FILE) == 0) {
+      Options[PXEBC_DHCP4_TAG_INDEX_BOOTFILE] = (EFI_DHCP4_PACKET_OPTION *) (&Offer->Dhcp4.Header.BootFileName[0] -
                                             OFFSET_OF (EFI_DHCP4_PACKET_OPTION, Data[0]));
-
+    }
   }
 
   //
@@ -407,8 +425,9 @@ PxeBcTryBinlProxy (
 
   @param  Private          Pointer to PxeBc private data.
 
-  @retval EFI_SUCCESS      Operational successful.
-  @retval EFI_NO_RESPONSE  Offer dhcp service failed.
+  @retval EFI_SUCCESS                Operational successful.
+  @retval EFI_NO_RESPONSE            Offer dhcp service failed.
+  @retval EFI_BUFFER_TOO_SMALL       Failed to copy the packet to Pxe base code mode.
 
 **/
 EFI_STATUS
@@ -511,7 +530,7 @@ PxeBcCheckSelectedOffer (
         //
         // Copy the proxy offer to Mode and set the flag
         //
-        PxeBcCopyProxyOffer (Private, ProxyOfferIndex);
+        Status = PxeBcCopyProxyOffer (Private, ProxyOfferIndex);
       }
     } else {
       //
@@ -539,7 +558,7 @@ PxeBcCheckSelectedOffer (
       // Other type of ACK is already cached. Bootp is special that we should
       // use the bootp reply as the ACK and put it into the DHCP_ONLY buffer.
       //
-      PxeBcCopyEfiDhcp4Packet (&Private->Dhcp4Ack.Packet.Ack, Offer);
+      Status = PxeBcCopyEfiDhcp4Packet (&Private->Dhcp4Ack.Packet.Ack, Offer);
     }
 
     PxeBcParseCachedDhcpPacket (&Private->Dhcp4Ack);
@@ -562,8 +581,11 @@ PxeBcCheckSelectedOffer (
   @param  Private    Pointer to PxeBc private data.
   @param  RcvdOffer  Pointer to the received Dhcp proxy offer packet.
 
+  @retval     EFI_SUCCESS      Cache and parse the packet successfully.
+  @retval     Others           Operation failed.
+
 **/
-VOID
+EFI_STATUS
 PxeBcCacheDhcpOffer (
   IN PXEBC_PRIVATE_DATA  *Private,
   IN EFI_DHCP4_PACKET    *RcvdOffer
@@ -572,6 +594,7 @@ PxeBcCacheDhcpOffer (
   PXEBC_CACHED_DHCP4_PACKET *CachedOffer;
   EFI_DHCP4_PACKET          *Offer;
   UINT8                     OfferType;
+  EFI_STATUS                Status;
 
   CachedOffer = &Private->Dhcp4Offers[Private->NumOffers];
   Offer       = &CachedOffer->Packet.Offer;
@@ -579,18 +602,21 @@ PxeBcCacheDhcpOffer (
   //
   // Cache the orignal dhcp packet
   //
-  PxeBcCopyEfiDhcp4Packet (Offer, RcvdOffer);
+  Status = PxeBcCopyEfiDhcp4Packet (Offer, RcvdOffer);
+  if (EFI_ERROR(Status)) {
+    return Status;
+  }
 
   //
   // Parse and validate the options (including dhcp option and vendor option)
   //
   if (!PxeBcParseCachedDhcpPacket (CachedOffer)) {
-    return ;
+    return EFI_ABORTED;
   }
 
   OfferType = CachedOffer->OfferType;
   if (OfferType >= DHCP4_PACKET_TYPE_MAX) {
-    return ;
+    return EFI_ABORTED;
   }
 
   if (OfferType == DHCP4_PACKET_TYPE_BOOTP) {
@@ -599,7 +625,7 @@ PxeBcCacheDhcpOffer (
       //
       // Only cache the first bootp offer, discard others.
       //
-      return ;
+      return EFI_ABORTED;
     } else {
       //
       // Take as a dhcp only offer, but record index specifically.
@@ -624,7 +650,7 @@ PxeBcCacheDhcpOffer (
         //
         // Only cache the first pxe10/wfm11a offers each, discard the others.
         //
-        return ;
+        return EFI_ABORTED;
       } else {
         //
         // Record index of the proxy dhcp offer with type other than binl.
@@ -645,6 +671,55 @@ PxeBcCacheDhcpOffer (
   // Count the accepted offers.
   //
   Private->NumOffers++;
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Switch the Ip4 policy to static.
+
+  @param[in]  Private             The pointer to PXEBC_PRIVATE_DATA.
+
+  @retval     EFI_SUCCESS         The policy is already configured to static.
+  @retval     Others              Other error as indicated..
+
+**/
+EFI_STATUS
+PxeBcSetIp4Policy (
+  IN PXEBC_PRIVATE_DATA            *Private
+  )
+{
+  EFI_STATUS                   Status;
+  EFI_IP4_CONFIG2_PROTOCOL     *Ip4Config2;
+  EFI_IP4_CONFIG2_POLICY       Policy;
+  UINTN                        DataSize;
+
+  Ip4Config2 = Private->Ip4Config2;
+  DataSize = sizeof (EFI_IP4_CONFIG2_POLICY);
+  Status = Ip4Config2->GetData (
+                       Ip4Config2,
+                       Ip4Config2DataTypePolicy,
+                       &DataSize,
+                       &Policy
+                       );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (Policy != Ip4Config2PolicyStatic) {
+    Policy = Ip4Config2PolicyStatic;
+    Status= Ip4Config2->SetData (
+                          Ip4Config2,
+                          Ip4Config2DataTypePolicy,
+                          sizeof (EFI_IP4_CONFIG2_POLICY),
+                          &Policy
+                          );
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+  }
+
+  return  EFI_SUCCESS;
 }
 
 
@@ -834,7 +909,7 @@ PxeBcDhcpCallBack (
   MaxMsgSize = PxeBcParseExtendOptions (
                 Packet->Dhcp4.Option,
                 GET_OPTION_BUFFER_LEN (Packet),
-                PXEBC_DHCP4_TAG_MAXMSG
+                DHCP4_TAG_MAXMSG
                 );
   if (MaxMsgSize != NULL) {
     Value = HTONS (PXEBC_DHCP4_MAX_PACKET_SIZE);
@@ -861,6 +936,14 @@ PxeBcDhcpCallBack (
 
   case Dhcp4SendDiscover:
   case Dhcp4SendRequest:
+    if (Packet->Length > PXEBC_DHCP4_MAX_PACKET_SIZE) {
+      //
+      // If the to be sent packet exceeds the maximum length, abort the DHCP process.
+      //
+      Status = EFI_ABORTED;
+      break;
+    }
+
     if (Mode->SendGUID) {
       //
       // send the system GUID instead of the MAC address as the hardware address
@@ -874,6 +957,7 @@ PxeBcDhcpCallBack (
         // SetMem(DHCPV4_OPTIONS_BUFFER.DhcpPlatformId.Guid, sizeof(EFI_GUID), 0xff);
         // GUID not yet set - send all 0's to show not programable
         //
+        DEBUG ((EFI_D_WARN, "PXE: Failed to read system GUID from the smbios table!\n"));
         ZeroMem (DhcpHeader->ClientHwAddr, sizeof (EFI_GUID));
       }
 
@@ -891,9 +975,17 @@ PxeBcDhcpCallBack (
 
   case Dhcp4RcvdOffer:
     Status = EFI_NOT_READY;
+    if (Packet->Length > PXEBC_DHCP4_MAX_PACKET_SIZE) {
+      //
+      // Ignore the incoming Offers which exceed the maximum length.
+      //
+      break;
+    }
+
     if (Private->NumOffers < PXEBC_MAX_OFFER_NUM) {
       //
       // Cache the dhcp offers in Private->Dhcp4Offers[]
+      // If error happens, just ignore this packet and continue to wait more offer.
       //
       PxeBcCacheDhcpOffer (Private, Packet);
     }
@@ -921,7 +1013,10 @@ PxeBcDhcpCallBack (
     //
     ASSERT (Private->SelectedOffer != 0);
 
-    PxeBcCopyEfiDhcp4Packet (&Private->Dhcp4Ack.Packet.Ack, Packet);
+    Status = PxeBcCopyEfiDhcp4Packet (&Private->Dhcp4Ack.Packet.Ack, Packet);
+    if (EFI_ERROR (Status)) {
+      return EFI_ABORTED;
+    }
     break;
 
   default:
@@ -961,7 +1056,7 @@ PxeBcBuildDhcpOptions (
     //
     // Append message type.
     //
-    OptList[Index]->OpCode  = PXEBC_DHCP4_TAG_MSG_TYPE;
+    OptList[Index]->OpCode  = DHCP4_TAG_MSG_TYPE;
     OptList[Index]->Length  = 1;
     OptEnt.Mesg             = (PXEBC_DHCP4_OPTION_MESG *) OptList[Index]->Data;
     OptEnt.Mesg->Type       = PXEBC_DHCP4_MSG_TYPE_REQUEST;
@@ -971,7 +1066,7 @@ PxeBcBuildDhcpOptions (
     //
     // Append max message size.
     //
-    OptList[Index]->OpCode  = PXEBC_DHCP4_TAG_MAXMSG;
+    OptList[Index]->OpCode  = DHCP4_TAG_MAXMSG;
     OptList[Index]->Length  = (UINT8) sizeof (PXEBC_DHCP4_OPTION_MAX_MESG_SIZE);
     OptEnt.MaxMesgSize      = (PXEBC_DHCP4_OPTION_MAX_MESG_SIZE *) OptList[Index]->Data;
     Value                   = NTOHS (PXEBC_DHCP4_MAX_PACKET_SIZE);
@@ -982,36 +1077,36 @@ PxeBcBuildDhcpOptions (
   //
   // Parameter request list option.
   //
-  OptList[Index]->OpCode    = PXEBC_DHCP4_TAG_PARA_LIST;
+  OptList[Index]->OpCode    = DHCP4_TAG_PARA_LIST;
   OptList[Index]->Length    = 35;
   OptEnt.Para               = (PXEBC_DHCP4_OPTION_PARA *) OptList[Index]->Data;
-  OptEnt.Para->ParaList[0]  = PXEBC_DHCP4_TAG_NETMASK;
-  OptEnt.Para->ParaList[1]  = PXEBC_DHCP4_TAG_TIME_OFFSET;
-  OptEnt.Para->ParaList[2]  = PXEBC_DHCP4_TAG_ROUTER;
-  OptEnt.Para->ParaList[3]  = PXEBC_DHCP4_TAG_TIME_SERVER;
-  OptEnt.Para->ParaList[4]  = PXEBC_DHCP4_TAG_NAME_SERVER;
-  OptEnt.Para->ParaList[5]  = PXEBC_DHCP4_TAG_DNS_SERVER;
-  OptEnt.Para->ParaList[6]  = PXEBC_DHCP4_TAG_HOSTNAME;
-  OptEnt.Para->ParaList[7]  = PXEBC_DHCP4_TAG_BOOTFILE_LEN;
-  OptEnt.Para->ParaList[8]  = PXEBC_DHCP4_TAG_DOMAINNAME;
-  OptEnt.Para->ParaList[9]  = PXEBC_DHCP4_TAG_ROOTPATH;
-  OptEnt.Para->ParaList[10] = PXEBC_DHCP4_TAG_EXTEND_PATH;
-  OptEnt.Para->ParaList[11] = PXEBC_DHCP4_TAG_EMTU;
-  OptEnt.Para->ParaList[12] = PXEBC_DHCP4_TAG_TTL;
-  OptEnt.Para->ParaList[13] = PXEBC_DHCP4_TAG_BROADCAST;
-  OptEnt.Para->ParaList[14] = PXEBC_DHCP4_TAG_NIS_DOMAIN;
-  OptEnt.Para->ParaList[15] = PXEBC_DHCP4_TAG_NIS_SERVER;
-  OptEnt.Para->ParaList[16] = PXEBC_DHCP4_TAG_NTP_SERVER;
-  OptEnt.Para->ParaList[17] = PXEBC_DHCP4_TAG_VENDOR;
-  OptEnt.Para->ParaList[18] = PXEBC_DHCP4_TAG_REQUEST_IP;
-  OptEnt.Para->ParaList[19] = PXEBC_DHCP4_TAG_LEASE;
-  OptEnt.Para->ParaList[20] = PXEBC_DHCP4_TAG_SERVER_ID;
-  OptEnt.Para->ParaList[21] = PXEBC_DHCP4_TAG_T1;
-  OptEnt.Para->ParaList[22] = PXEBC_DHCP4_TAG_T2;
-  OptEnt.Para->ParaList[23] = PXEBC_DHCP4_TAG_CLASS_ID;
-  OptEnt.Para->ParaList[24] = PXEBC_DHCP4_TAG_TFTP;
-  OptEnt.Para->ParaList[25] = PXEBC_DHCP4_TAG_BOOTFILE;
-  OptEnt.Para->ParaList[26] = PXEBC_PXE_DHCP4_TAG_UUID;
+  OptEnt.Para->ParaList[0]  = DHCP4_TAG_NETMASK;
+  OptEnt.Para->ParaList[1]  = DHCP4_TAG_TIME_OFFSET;
+  OptEnt.Para->ParaList[2]  = DHCP4_TAG_ROUTER;
+  OptEnt.Para->ParaList[3]  = DHCP4_TAG_TIME_SERVER;
+  OptEnt.Para->ParaList[4]  = DHCP4_TAG_NAME_SERVER;
+  OptEnt.Para->ParaList[5]  = DHCP4_TAG_DNS_SERVER;
+  OptEnt.Para->ParaList[6]  = DHCP4_TAG_HOSTNAME;
+  OptEnt.Para->ParaList[7]  = DHCP4_TAG_BOOTFILE_LEN;
+  OptEnt.Para->ParaList[8]  = DHCP4_TAG_DOMAINNAME;
+  OptEnt.Para->ParaList[9]  = DHCP4_TAG_ROOTPATH;
+  OptEnt.Para->ParaList[10] = DHCP4_TAG_EXTEND_PATH;
+  OptEnt.Para->ParaList[11] = DHCP4_TAG_EMTU;
+  OptEnt.Para->ParaList[12] = DHCP4_TAG_TTL;
+  OptEnt.Para->ParaList[13] = DHCP4_TAG_BROADCAST;
+  OptEnt.Para->ParaList[14] = DHCP4_TAG_NIS_DOMAIN;
+  OptEnt.Para->ParaList[15] = DHCP4_TAG_NIS_SERVER;
+  OptEnt.Para->ParaList[16] = DHCP4_TAG_NTP_SERVER;
+  OptEnt.Para->ParaList[17] = DHCP4_TAG_VENDOR;
+  OptEnt.Para->ParaList[18] = DHCP4_TAG_REQUEST_IP;
+  OptEnt.Para->ParaList[19] = DHCP4_TAG_LEASE;
+  OptEnt.Para->ParaList[20] = DHCP4_TAG_SERVER_ID;
+  OptEnt.Para->ParaList[21] = DHCP4_TAG_T1;
+  OptEnt.Para->ParaList[22] = DHCP4_TAG_T2;
+  OptEnt.Para->ParaList[23] = DHCP4_TAG_VENDOR_CLASS_ID;
+  OptEnt.Para->ParaList[24] = DHCP4_TAG_TFTP;
+  OptEnt.Para->ParaList[25] = DHCP4_TAG_BOOTFILE;
+  OptEnt.Para->ParaList[26] = DHCP4_TAG_UUID;
   OptEnt.Para->ParaList[27] = 0x80;
   OptEnt.Para->ParaList[28] = 0x81;
   OptEnt.Para->ParaList[29] = 0x82;
@@ -1026,7 +1121,7 @@ PxeBcBuildDhcpOptions (
   //
   // Append UUID/Guid-based client identifier option
   //
-  OptList[Index]->OpCode  = PXEBC_PXE_DHCP4_TAG_UUID;
+  OptList[Index]->OpCode  = DHCP4_TAG_UUID;
   OptList[Index]->Length  = (UINT8) sizeof (PXEBC_DHCP4_OPTION_UUID);
   OptEnt.Uuid             = (PXEBC_DHCP4_OPTION_UUID *) OptList[Index]->Data;
   OptEnt.Uuid->Type       = 0;
@@ -1039,13 +1134,14 @@ PxeBcBuildDhcpOptions (
     // SetMem(DHCPV4_OPTIONS_BUFFER.DhcpPlatformId.Guid, sizeof(EFI_GUID), 0xff);
     // GUID not yet set - send all 0's to show not programable
     //
+    DEBUG ((EFI_D_WARN, "PXE: Failed to read system GUID from the smbios table!\n"));
     ZeroMem (OptEnt.Uuid->Guid, sizeof (EFI_GUID));
   }
 
   //
   // Append client network device interface option
   //
-  OptList[Index]->OpCode  = PXEBC_PXE_DHCP4_TAG_UNDI;
+  OptList[Index]->OpCode  = DHCP4_TAG_UNDI;
   OptList[Index]->Length  = (UINT8) sizeof (PXEBC_DHCP4_OPTION_UNDI);
   OptEnt.Undi             = (PXEBC_DHCP4_OPTION_UNDI *) OptList[Index]->Data;
   if (Private->Nii != NULL) {
@@ -1064,7 +1160,7 @@ PxeBcBuildDhcpOptions (
   //
   // Append client system architecture option
   //
-  OptList[Index]->OpCode  = PXEBC_PXE_DHCP4_TAG_ARCH;
+  OptList[Index]->OpCode  = DHCP4_TAG_ARCH;
   OptList[Index]->Length  = (UINT8) sizeof (PXEBC_DHCP4_OPTION_ARCH);
   OptEnt.Arch             = (PXEBC_DHCP4_OPTION_ARCH *) OptList[Index]->Data;
   Value                   = HTONS (EFI_PXE_CLIENT_SYSTEM_ARCHITECTURE);
@@ -1075,7 +1171,7 @@ PxeBcBuildDhcpOptions (
   //
   // Append client system architecture option
   //
-  OptList[Index]->OpCode  = PXEBC_DHCP4_TAG_CLASS_ID;
+  OptList[Index]->OpCode  = DHCP4_TAG_VENDOR_CLASS_ID;
   OptList[Index]->Length  = (UINT8) sizeof (PXEBC_DHCP4_OPTION_CLID);
   OptEnt.Clid             = (PXEBC_DHCP4_OPTION_CLID *) OptList[Index]->Data;
   CopyMem (OptEnt.Clid, DEFAULT_CLASS_ID_DATA, sizeof (PXEBC_DHCP4_OPTION_CLID));
@@ -1178,7 +1274,7 @@ PxeBcDiscvBootService (
       return EFI_OUT_OF_RESOURCES;
     }
 
-    OptList[OptCount]->OpCode     = PXEBC_DHCP4_TAG_VENDOR;
+    OptList[OptCount]->OpCode     = DHCP4_TAG_VENDOR;
     OptList[OptCount]->Length     = (UINT8) (VendorOptLen - 2);
     PxeOpt                        = (EFI_DHCP4_PACKET_OPTION *) OptList[OptCount]->Data;
     PxeOpt->OpCode                = PXEBC_VENDOR_TAG_BOOT_ITEM;
@@ -1186,7 +1282,7 @@ PxeBcDiscvBootService (
     PxeBootItem                   = (PXEBC_OPTION_BOOT_ITEM *) PxeOpt->Data;
     PxeBootItem->Type             = HTONS (Type);
     PxeBootItem->Layer            = HTONS (*Layer);
-    PxeOpt->Data[PxeOpt->Length]  = PXEBC_DHCP4_TAG_EOP;
+    PxeOpt->Data[PxeOpt->Length]  = DHCP4_TAG_EOP;
 
     OptCount++;
   }
@@ -1207,6 +1303,7 @@ PxeBcDiscvBootService (
       //
       // GUID not yet set - send all 0's to show not programable
       //
+      DEBUG ((EFI_D_WARN, "PXE: Failed to read system GUID from the smbios table!\n"));
       ZeroMem (DhcpHeader->ClientHwAddr, sizeof (EFI_GUID));
     }
 
@@ -1266,6 +1363,12 @@ PxeBcDiscvBootService (
     Response  = Token.ResponseList;
 
     while (RepIndex < Token.ResponseCount) {
+      if (Response->Length > PXEBC_DHCP4_MAX_PACKET_SIZE) {
+        SrvIndex = 0;
+        RepIndex++;
+        Response = (EFI_DHCP4_PACKET *) ((UINT8 *) Response + Response->Size);
+        continue;
+      }
 
       while (SrvIndex < IpCount) {
 
@@ -1286,14 +1389,16 @@ PxeBcDiscvBootService (
 
       SrvIndex = 0;
       RepIndex++;
-
       Response = (EFI_DHCP4_PACKET *) ((UINT8 *) Response + Response->Size);
     }
 
     if (RepIndex < Token.ResponseCount) {
 
       if (Reply != NULL) {
-        PxeBcCopyEfiDhcp4Packet (Reply, Response);
+        Status = PxeBcCopyEfiDhcp4Packet (Reply, Response);
+        if (EFI_ERROR(Status)) {
+          goto ON_EXIT;
+        }
       }
 
       if (IsDiscv) {
@@ -1306,18 +1411,21 @@ PxeBcDiscvBootService (
     } else {
       Status = EFI_NOT_FOUND;
     }
+  }
 
-    //
-    // free the responselist
-    //
-    if (Token.ResponseList != NULL) {
-      FreePool (Token.ResponseList);
-    }
+ON_EXIT:
+  //
+  // free the responselist
+  //
+  if (Token.ResponseList != NULL) {
+    FreePool (Token.ResponseList);
   }
   //
   // Free the dhcp packet
   //
-  FreePool (Token.Packet);
+  if (Token.Packet != NULL) {
+    FreePool (Token.Packet);
+  }
 
   return Status;
 }
@@ -1331,7 +1439,7 @@ PxeBcDiscvBootService (
   @param  OptTag     The option OpCode.
 
   @return NULL if the buffer length is 0 and OpCode is not
-          PXEBC_DHCP4_TAG_EOP, or the pointer to the buffer.
+          DHCP4_TAG_EOP, or the pointer to the buffer.
 
 **/
 EFI_DHCP4_PACKET_OPTION *
@@ -1347,14 +1455,14 @@ PxeBcParseExtendOptions (
   Option  = (EFI_DHCP4_PACKET_OPTION *) Buffer;
   Offset  = 0;
 
-  while (Offset < Length && Option->OpCode != PXEBC_DHCP4_TAG_EOP) {
+  while (Offset < Length && Option->OpCode != DHCP4_TAG_EOP) {
 
     if (Option->OpCode == OptTag) {
 
       return Option;
     }
 
-    if (Option->OpCode == PXEBC_DHCP4_TAG_PAD) {
+    if (Option->OpCode == DHCP4_TAG_PAD) {
       Offset++;
     } else {
       Offset += Option->Length + 2;
@@ -1392,7 +1500,7 @@ PxeBcParseVendorOptions (
   PxeOption       = (EFI_DHCP4_PACKET_OPTION *) &Dhcp4Option->Data[0];
   Offset          = 0;
 
-  while ((Offset < VendorOptionLen) && (PxeOption->OpCode != PXEBC_DHCP4_TAG_EOP)) {
+  while ((Offset < VendorOptionLen) && (PxeOption->OpCode != DHCP4_TAG_EOP)) {
     //
     // Parse every Vendor Option and set its BitMap
     //
@@ -1473,7 +1581,7 @@ PxeBcParseVendorOptions (
 
     SET_VENDOR_OPTION_BIT_MAP (BitMap, PxeOption->OpCode);
 
-    if (PxeOption->OpCode == PXEBC_DHCP4_TAG_PAD) {
+    if (PxeOption->OpCode == DHCP4_TAG_PAD) {
       Offset++;
     } else {
       Offset = (UINT8) (Offset + PxeOption->Length + 2);
@@ -1605,7 +1713,7 @@ PxeBcSelectBootPrompt (
   Status = gBS->SetTimer (
                   TimeoutEvent,
                   TimerRelative,
-                  Timeout * TICKS_PER_SECOND
+                  MultU64x32 (Timeout, TICKS_PER_SECOND)
                   );
 
   if (EFI_ERROR (Status)) {
@@ -1740,7 +1848,7 @@ PxeBcSelectBootMenu (
   PXEBC_BOOT_MENU_ENTRY      *MenuArray[PXEBC_MAX_MENU_NUM];
 
   Finish  = FALSE;
-  Select  = 1;
+  Select  = 0;
   Index   = 0;
   *Type   = 0;
 
@@ -1809,7 +1917,7 @@ PxeBcSelectBootMenu (
       gBS->Stall (10 * TICKS_PER_MS);
     }
 
-    if (InputKey.ScanCode != 0) {
+    if (InputKey.ScanCode == 0) {
       switch (InputKey.UnicodeChar) {
       case CTRL ('c'):
         InputKey.ScanCode = SCAN_ESC;

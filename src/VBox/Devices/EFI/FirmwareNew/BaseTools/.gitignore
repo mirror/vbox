@@ -1,5 +1,9 @@
 *.d
 *.o
+*.obj
+*.pdb
+*.ilk
+*.exe
 *.pyc
 Source/C/VfrCompile/EfiVfrParser.cpp
 Source/C/VfrCompile/EfiVfrParser.h
@@ -12,3 +16,5 @@ Source/C/VfrCompile/VfrSyntax.cpp
 Source/C/VfrCompile/VfrTokens.h
 Source/C/bin/
 Source/C/libs/
+Bin/Win32
+Lib

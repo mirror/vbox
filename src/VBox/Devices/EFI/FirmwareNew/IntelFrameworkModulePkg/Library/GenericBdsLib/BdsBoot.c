@@ -1,7 +1,7 @@
 /** @file
   BDS Lib functions which relate with create or process the boot option.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -25,6 +25,29 @@ CHAR16 CONST *maBdsLibBootFiles[] = {
   EFI_REMOVABLE_MEDIA_FILE_NAME,
 };
 #endif
+
+/**
+
+  End Perf entry of BDS
+
+  @param  Event                 The triggered event.
+  @param  Context               Context for this event.
+
+**/
+VOID
+EFIAPI
+BmEndOfBdsPerfCode (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  //
+  // Record the performance data for End of BDS
+  //
+  PERF_END(NULL, "BDS", NULL, 0);
+
+  return ;
+}
 
 /**
   The constructor function register UNI strings into imageHandle.
@@ -235,7 +258,7 @@ BdsBuildLegacyDevNameString (
   //
   // If current BBS entry has its description then use it.
   //
-  StringDesc = (UINT8 *) (UINTN) ((CurBBSEntry->DescStringSegment << 4) + CurBBSEntry->DescStringOffset);
+  StringDesc = (UINT8 *) (((UINTN) CurBBSEntry->DescStringSegment << 4) + CurBBSEntry->DescStringOffset);
   if (NULL != StringDesc) {
     //
     // Only get fisrt 32 characters, this is suggested by BBS spec
@@ -338,7 +361,7 @@ BdsCreateLegacyBootOption (
   //
   // Create new BBS device path node with description string
   //
-  UnicodeStrToAsciiStr (BootDesc, HelpString);
+  UnicodeStrToAsciiStrS (BootDesc, HelpString, sizeof (HelpString));
 
   StringLen = AsciiStrLen (HelpString);
   NewBbsDevPathNode = AllocateZeroPool (sizeof (BBS_BBS_DEVICE_PATH) + StringLen);
@@ -1042,7 +1065,7 @@ BdsCreateDevOrder (
   DevOrderPtr->Length  = (UINT16) (sizeof (UINT16) + BEVCount * sizeof (UINT16));
   DevOrderPtr          = (LEGACY_DEV_ORDER_ENTRY *) BdsFillDevOrderBuf (BbsTable, BBS_BEV_DEVICE, BbsCount, DevOrderPtr->Data);
 
-  ASSERT (TotalSize == (UINTN) ((UINT8 *) DevOrderPtr - (UINT8 *) DevOrder));
+  ASSERT (TotalSize == ((UINTN) DevOrderPtr - (UINTN) DevOrder));
 
   //
   // Save device order for legacy boot device to variable.
@@ -1703,7 +1726,7 @@ BdsLibDoLegacyBoot (
     //
     Status = EfiCreateEventLegacyBootEx(
                TPL_NOTIFY,
-               WriteBootToOsPerformanceData,
+               BmEndOfBdsPerfCode,
                NULL,
                &LegacyBootEvent
                );
@@ -2266,7 +2289,6 @@ BdsLibBootViaBootOption (
   EFI_DEVICE_PATH_PROTOCOL  *FilePath;
   EFI_LOADED_IMAGE_PROTOCOL *ImageInfo;
   EFI_DEVICE_PATH_PROTOCOL  *WorkingDevicePath;
-  EFI_ACPI_S3_SAVE_PROTOCOL *AcpiS3Save;
   LIST_ENTRY                TempBootLists;
   EFI_BOOT_LOGO_PROTOCOL    *BootLogo;
 
@@ -2275,18 +2297,10 @@ BdsLibBootViaBootOption (
            Option->BootCurrent, Option->OptionName, Option->Description, Option->StatusString, Option->Attribute, Option->LoadOptionsSize));
 #endif
 
+  Status        = EFI_SUCCESS;
   *ExitDataSize = 0;
   *ExitData     = NULL;
 
-  //
-  // Notes: this code can be remove after the s3 script table
-  // hook on the event EVT_SIGNAL_READY_TO_BOOT or
-  // EVT_SIGNAL_LEGACY_BOOT
-  //
-  Status = gBS->LocateProtocol (&gEfiAcpiS3SaveProtocolGuid, NULL, (VOID **) &AcpiS3Save);
-  if (!EFI_ERROR (Status)) {
-    AcpiS3Save->S3Save (AcpiS3Save, NULL);
-  }
   //
   // If it's Device Path that starts with a hard drive path, append it with the front part to compose a
   // full device path
@@ -2321,14 +2335,14 @@ BdsLibBootViaBootOption (
   }
 
   //
-  // Report Status Code to indicate ReadyToBoot event will be signalled
-  //
-  REPORT_STATUS_CODE (EFI_PROGRESS_CODE, (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_PC_READY_TO_BOOT_EVENT));
-
-  //
   // Signal the EVT_SIGNAL_READY_TO_BOOT event
   //
   EfiSignalEventReadyToBoot();
+
+  //
+  // Report Status Code to indicate ReadyToBoot event was signalled
+  //
+  REPORT_STATUS_CODE (EFI_PROGRESS_CODE, (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_PC_READY_TO_BOOT_EVENT));
 
   //
   // Expand USB Class or USB WWID device path node to be full device path of a USB
@@ -2579,7 +2593,7 @@ BdsLibBootViaBootOption (
   // Write boot to OS performance data for UEFI boot
   //
   PERF_CODE (
-    WriteBootToOsPerformanceData (NULL, NULL);
+    BmEndOfBdsPerfCode (NULL, NULL);
   );
 
   //

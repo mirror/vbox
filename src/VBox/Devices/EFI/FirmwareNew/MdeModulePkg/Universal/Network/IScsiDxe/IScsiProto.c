@@ -1,7 +1,7 @@
 /** @file
   The implementation of iSCSI protocol based on RFC3720.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -289,16 +289,16 @@ IScsiSessionLogin (
   ISCSI_SESSION     *Session;
   ISCSI_CONNECTION  *Conn;
   EFI_TCP4_PROTOCOL *Tcp4;
-  BOOLEAN           MediaPresent;
+  EFI_STATUS        MediaStatus;
 
   Session = &Private->Session;
 
   //
   // Check media status before session login
   //
-  MediaPresent = TRUE;
-  NetLibDetectMedia (Private->Controller, &MediaPresent);
-  if (!MediaPresent) {
+  MediaStatus = EFI_SUCCESS;
+  NetLibDetectMediaWaitTimeout (Private->Controller, ISCSI_CHECK_MEDIA_LOGIN_WAITING_TIME, &MediaStatus);
+  if (MediaStatus != EFI_SUCCESS) {
     return EFI_NO_MEDIA;
   }
 
@@ -1225,12 +1225,14 @@ IScsiCheckOpParams (
   //
   // InitialR2T, result function is OR.
   //
-  Value = IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_INITIAL_R2T);
-  if (Value == NULL) {
-    goto ON_ERROR;
-  }
+  if (!Session->InitialR2T) {
+    Value = IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_INITIAL_R2T);
+    if (Value == NULL) {
+      goto ON_ERROR;
+    }
 
-  Session->InitialR2T = (BOOLEAN) (Session->InitialR2T || (AsciiStrCmp (Value, "Yes") == 0));
+    Session->InitialR2T = (BOOLEAN) (AsciiStrCmp (Value, "Yes") == 0);
+  }
 
   //
   // ImmediateData, result function is AND.
@@ -1240,7 +1242,7 @@ IScsiCheckOpParams (
     goto ON_ERROR;
   }
 
-  Session->ImmediateData = (BOOLEAN) (Session->ImmediateData && (AsciiStrCmp (Value, "Yes") == 0));
+  Session->ImmediateData = (BOOLEAN) (Session->ImmediateData && (BOOLEAN) (AsciiStrCmp (Value, "Yes") == 0));
 
   //
   // MaxRecvDataSegmentLength is declarative.
@@ -1265,13 +1267,15 @@ IScsiCheckOpParams (
   // ImmediateData=No.
   // This Key/Value is negotiation type.
   //
-  Value = IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_FIRST_BURST_LENGTH);
-  if (Value == NULL) {
-    goto ON_ERROR;
-  }
+  if (!(Session->InitialR2T && !Session->ImmediateData)) {
+    Value = IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_FIRST_BURST_LENGTH);
+    if (Value == NULL) {
+      goto ON_ERROR;
+    }
 
-  NumericValue              = AsciiStrDecimalToUintn (Value);
-  Session->FirstBurstLength = (UINT32) MIN (Session->FirstBurstLength, NumericValue);
+    NumericValue              = AsciiStrDecimalToUintn (Value);
+    Session->FirstBurstLength = (UINT32) MIN (Session->FirstBurstLength, NumericValue);
+  }
 
   //
   // MaxConnections, result function is Minimum.
@@ -1291,22 +1295,26 @@ IScsiCheckOpParams (
   //
   // DataPDUInOrder, result function is OR.
   //
-  Value = IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_DATA_PDU_IN_ORDER);
-  if (Value == NULL) {
-    goto ON_ERROR;
-  }
+  if (!Session->DataPDUInOrder) {
+    Value = IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_DATA_PDU_IN_ORDER);
+    if (Value == NULL) {
+      goto ON_ERROR;
+    }
 
-  Session->DataPDUInOrder = (BOOLEAN) (Session->DataPDUInOrder || (AsciiStrCmp (Value, "Yes") == 0));
+    Session->DataPDUInOrder = (BOOLEAN) (AsciiStrCmp (Value, "Yes") == 0);
+  }
 
   //
   // DataSequenceInorder, result function is OR.
   //
-  Value = IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_DATA_SEQUENCE_IN_ORDER);
-  if (Value == NULL) {
-    goto ON_ERROR;
-  }
+  if (!Session->DataSequenceInOrder) {
+    Value = IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_DATA_SEQUENCE_IN_ORDER);
+    if (Value == NULL) {
+      goto ON_ERROR;
+    }
 
-  Session->DataSequenceInOrder = (BOOLEAN) (Session->DataSequenceInOrder || (AsciiStrCmp (Value, "Yes") == 0));
+    Session->DataSequenceInOrder = (BOOLEAN) (AsciiStrCmp (Value, "Yes") == 0);
+  }
 
   //
   // DefaultTime2Wait, result function is Maximum.
@@ -1356,11 +1364,24 @@ IScsiCheckOpParams (
   Session->MaxOutstandingR2T = (UINT16) MIN (Session->MaxOutstandingR2T, NumericValue);
 
   //
-  // Remove declarative key-value paris if any.
+  // Remove declarative key-value pairs, if any.
   //
   IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_SESSION_TYPE);
   IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_TARGET_ALIAS);
   IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_TARGET_PORTAL_GROUP_TAG);
+  //
+  // Remove the key-value that may not needed for result function is OR.
+  //
+  IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_INITIAL_R2T);
+  IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_DATA_PDU_IN_ORDER);
+  IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_DATA_SEQUENCE_IN_ORDER);
+
+  //
+  // Remove irrelevant parameter, if any.
+  //
+  if (Session->InitialR2T && !Session->ImmediateData) {
+    IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_FIRST_BURST_LENGTH);
+  }
 
   if (IsListEmpty (KeyValueList)) {
     //
@@ -1794,7 +1815,7 @@ IScsiNewDataSegment (
 
   @param[in]  Packet The EXT SCSI PASS THRU request packet containing the SCSI command.
   @param[in]  Lun    The LUN.
-  @param[in]  Tcb    The tcb assocated with this SCSI command.
+  @param[in]  Tcb    The tcb associated with this SCSI command.
 
   @return The  created iSCSI SCSI command PDU.
   @retval NULL Other errors as indicated.

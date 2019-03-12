@@ -32,7 +32,7 @@
 // identification, and 8 bytes for LUN identification.
 //
 // EFI_EXT_SCSI_PASS_THRU_MODE.AdapterId is also a target identifier,
-// consisting of 4 bytes. Make sure TARGET_MAX_BYTES can accomodate both
+// consisting of 4 bytes. Make sure TARGET_MAX_BYTES can accommodate both
 // AdapterId and our target identifiers.
 //
 #if TARGET_MAX_BYTES < 4
@@ -52,6 +52,7 @@ typedef struct {
   //                              ----------------   ------------------  ----------
   UINT32                          Signature;      // DriverBindingStart  0
   VIRTIO_DEVICE_PROTOCOL          *VirtIo;        // DriverBindingStart  0
+  EFI_EVENT                       ExitBoot;       // DriverBindingStart  0
   BOOLEAN                         InOutSupported; // VirtioScsiInit      1
   UINT16                          MaxTarget;      // VirtioScsiInit      1
   UINT32                          MaxLun;         // VirtioScsiInit      1
@@ -59,6 +60,7 @@ typedef struct {
   VRING                           Ring;           // VirtioRingInit      2
   EFI_EXT_SCSI_PASS_THRU_PROTOCOL PassThru;       // VirtioScsiInit      1
   EFI_EXT_SCSI_PASS_THRU_MODE     PassThruMode;   // VirtioScsiInit      1
+  VOID                            *RingMap;       // VirtioRingMap       2
 } VSCSI_DEV;
 
 #define VIRTIO_SCSI_FROM_PASS_THRU(PassThruPointer) \

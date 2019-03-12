@@ -14,106 +14,16 @@
 
 **/
 
-#include <Base.h>
-#include <Library/TimerLib.h>
-#include <Library/BaseLib.h>
-#include <Library/IoLib.h>
-#include <Library/PciLib.h>
 #include <Library/DebugLib.h>
-#include <Library/PcdLib.h>
-#include <IndustryStandard/Pci22.h>
+#include <Library/BaseLib.h>
 #include <IndustryStandard/Acpi.h>
 
-//
-// PCI Location of PIIX4 Power Management PCI Configuration Registers
-//
-#define PIIX4_POWER_MANAGEMENT_BUS       0x00
-#define PIIX4_POWER_MANAGEMENT_DEVICE    0x01
-#define PIIX4_POWER_MANAGEMENT_FUNCTION  0x03
-
-//
-// Macro to access PIIX4 Power Management PCI Configuration Registers
-//
-#define PIIX4_PCI_POWER_MANAGEMENT_REGISTER(Register) \
-  PCI_LIB_ADDRESS (                                   \
-    PIIX4_POWER_MANAGEMENT_BUS,                       \
-    PIIX4_POWER_MANAGEMENT_DEVICE,                    \
-    PIIX4_POWER_MANAGEMENT_FUNCTION,                  \
-    Register                                          \
-    )
-
-//
-// PCI Location of Q35 Power Management PCI Configuration Registers
-//
-#define Q35_POWER_MANAGEMENT_BUS       0x00
-#define Q35_POWER_MANAGEMENT_DEVICE    0x1f
-#define Q35_POWER_MANAGEMENT_FUNCTION  0x00
-
-//
-// Macro to access Q35 Power Management PCI Configuration Registers
-//
-#define Q35_PCI_POWER_MANAGEMENT_REGISTER(Register) \
-  PCI_LIB_ADDRESS (                                 \
-    Q35_POWER_MANAGEMENT_BUS,                       \
-    Q35_POWER_MANAGEMENT_DEVICE,                    \
-    Q35_POWER_MANAGEMENT_FUNCTION,                  \
-    Register                                        \
-    )
-
-//
-// PCI Location of Host Bridge PCI Configuration Registers
-//
-#define HOST_BRIDGE_BUS       0x00
-#define HOST_BRIDGE_DEVICE    0x00
-#define HOST_BRIDGE_FUNCTION  0x00
-
-//
-// Macro to access Host Bridge Configuration Registers
-//
-#define HOST_BRIDGE_REGISTER(Register) \
-  PCI_LIB_ADDRESS (                    \
-    HOST_BRIDGE_BUS,                   \
-    HOST_BRIDGE_DEVICE,                \
-    HOST_BRIDGE_FUNCTION,              \
-    Register                           \
-    )
-
-//
-// Host Bridge Device ID (DID) Register
-//
-#define HOST_BRIDGE_DID  HOST_BRIDGE_REGISTER (0x02)
-
-//
-// Host Bridge DID Register values
-//
-#define PCI_DEVICE_ID_INTEL_82441    0x1237  // DID value for PIIX4
-#define PCI_DEVICE_ID_INTEL_Q35_MCH  0x29C0  // DID value for Q35
-
-//
-// Access Power Management PCI Config Regs based on Host Bridge type
-//
-#define PCI_POWER_MANAGEMENT_REGISTER(Register)                   \
-  ((PciRead16 (HOST_BRIDGE_DID) == PCI_DEVICE_ID_INTEL_Q35_MCH) ? \
-    Q35_PCI_POWER_MANAGEMENT_REGISTER (Register) :                \
-    PIIX4_PCI_POWER_MANAGEMENT_REGISTER (Register))
-
-//
-// Power Management PCI Configuration Registers
-//
-#define PMBA                PCI_POWER_MANAGEMENT_REGISTER (0x40)
-#define   PMBA_RTE          BIT0
-#define PMREGMISC           PCI_POWER_MANAGEMENT_REGISTER (0x80)
-#define   PMIOSE            BIT0
+#include "AcpiTimerLib.h"
 
 //
 // The ACPI Time is a 24-bit counter
 //
 #define ACPI_TIMER_COUNT_SIZE  BIT24
-
-//
-// Offset in the Power Management Base Address to the ACPI Timer
-//
-#define ACPI_TIMER_OFFSET      0x8
 
 #ifdef VBOX
 UINT32 mPmba = 0x4000;
@@ -216,6 +126,7 @@ InternalAcpiGetTimerTick (
 }
 
 /**
+  Stalls the CPU for at least the given number of ticks.
   Stalls the CPU for at least the given number of ticks.
 
   Stalls the CPU for at least the given number of ticks. It's invoked by

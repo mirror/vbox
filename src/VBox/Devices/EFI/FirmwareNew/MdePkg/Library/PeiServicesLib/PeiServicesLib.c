@@ -1,7 +1,7 @@
 /** @file
   Implementation for PEI Services Library.
 
-  Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -357,16 +357,16 @@ PeiServicesInstallPeiMemory (
 }
 
 /**
-  This service enables PEIMs to allocate memory after the permanent memory has been
-   installed by a PEIM.
+  This service enables PEIMs to allocate memory.
 
   @param  MemoryType            Type of memory to allocate.
   @param  Pages                 The number of pages to allocate.
   @param  Memory                Pointer of memory allocated.
 
   @retval EFI_SUCCESS           The memory range was successfully allocated.
-  @retval EFI_INVALID_PARAMETER Type is not equal to AllocateAnyPages.
-  @retval EFI_NOT_AVAILABLE_YET Called with permanent memory not available.
+  @retval EFI_INVALID_PARAMETER Type is not equal to EfiLoaderCode, EfiLoaderData, EfiRuntimeServicesCode,
+                                EfiRuntimeServicesData, EfiBootServicesCode, EfiBootServicesData,
+                                EfiACPIReclaimMemory, EfiReservedMemoryType, or EfiACPIMemoryNVS.
   @retval EFI_OUT_OF_RESOURCES  The pages could not be allocated.
 
 **/
@@ -382,6 +382,31 @@ PeiServicesAllocatePages (
 
   PeiServices = GetPeiServicesTablePointer ();
   return (*PeiServices)->AllocatePages (PeiServices, MemoryType, Pages, Memory);
+}
+
+/**
+  This service enables PEIMs to free memory.
+
+  @param Memory                 Memory to be freed.
+  @param Pages                  The number of pages to free.
+
+  @retval EFI_SUCCESS           The requested pages were freed.
+  @retval EFI_INVALID_PARAMETER Memory is not a page-aligned address or Pages is invalid.
+  @retval EFI_NOT_FOUND         The requested memory pages were not allocated with
+                                AllocatePages().
+
+**/
+EFI_STATUS
+EFIAPI
+PeiServicesFreePages (
+  IN EFI_PHYSICAL_ADDRESS       Memory,
+  IN UINTN                      Pages
+  )
+{
+  CONST EFI_PEI_SERVICES **PeiServices;
+
+  PeiServices = GetPeiServicesTablePointer ();
+  return (*PeiServices)->FreePages (PeiServices, Memory, Pages);
 }
 
 /**
@@ -574,6 +599,7 @@ PeiServicesFfsGetVolumeInfo (
   the parameters passed in to initialize the fields of the EFI_PEI_FIRMWARE_VOLUME_INFO(2)_PPI instance.
   If the resources can not be allocated for EFI_PEI_FIRMWARE_VOLUME_INFO(2)_PPI, then ASSERT().
   If the EFI_PEI_FIRMWARE_VOLUME_INFO(2)_PPI can not be installed, then ASSERT().
+  If NULL is specified for FvFormat, but FvInfo does not have the firmware file system 2 format, then ASSERT.
 
   @param  InstallFvInfoPpi     Install FvInfo Ppi if it is TRUE. Otherwise, install FvInfo2 Ppi.
   @param  FvFormat             Unique identifier of the format of the memory-mapped
@@ -640,6 +666,16 @@ InternalPeiServicesInstallFvInfoPpi (
     CopyGuid (&FvInfoPpi->FvFormat, FvFormat);
   } else {
     CopyGuid (&FvInfoPpi->FvFormat, &gEfiFirmwareFileSystem2Guid);
+    //
+    // Since the EFI_FIRMWARE_FILE_SYSTEM2_GUID format is assumed if NULL is specified for FvFormat,
+    // check the FileSystemGuid pointed by FvInfo against EFI_FIRMWARE_FILE_SYSTEM2_GUID to make sure
+    // FvInfo has the firmware file system 2 format.
+    // If the ASSERT really appears, FvFormat needs to be specified correctly, for example,
+    // EFI_FIRMWARE_FILE_SYSTEM3_GUID can be used for firmware file system 3 format, or
+    // ((EFI_FIRMWARE_VOLUME_HEADER *) FvInfo)->FileSystemGuid can be just used for both
+    // firmware file system 2 and 3 format.
+    //
+    ASSERT (CompareGuid (&(((EFI_FIRMWARE_VOLUME_HEADER *) FvInfo)->FileSystemGuid), &gEfiFirmwareFileSystem2Guid));
   }
   FvInfoPpi->FvInfo = (VOID *) FvInfo;
   FvInfoPpi->FvInfoSize = FvInfoSize;
@@ -672,6 +708,7 @@ InternalPeiServicesInstallFvInfoPpi (
   the parameters passed in to initialize the fields of the EFI_PEI_FIRMWARE_VOLUME_INFO_PPI instance.
   If the resources can not be allocated for EFI_PEI_FIRMWARE_VOLUME_INFO_PPI, then ASSERT().
   If the EFI_PEI_FIRMWARE_VOLUME_INFO_PPI can not be installed, then ASSERT().
+  If NULL is specified for FvFormat, but FvInfo does not have the firmware file system 2 format, then ASSERT.
 
   @param  FvFormat             Unique identifier of the format of the memory-mapped
                                firmware volume.  This parameter is optional and
@@ -714,6 +751,7 @@ PeiServicesInstallFvInfoPpi (
   the parameters passed in to initialize the fields of the EFI_PEI_FIRMWARE_VOLUME_INFO2_PPI instance.
   If the resources can not be allocated for EFI_PEI_FIRMWARE_VOLUME_INFO2_PPI, then ASSERT().
   If the EFI_PEI_FIRMWARE_VOLUME_INFO2_PPI can not be installed, then ASSERT().
+  If NULL is specified for FvFormat, but FvInfo does not have the firmware file system 2 format, then ASSERT.
 
   @param  FvFormat             Unique identifier of the format of the memory-mapped
                                firmware volume.  This parameter is optional and
@@ -751,3 +789,29 @@ PeiServicesInstallFvInfo2Ppi (
   InternalPeiServicesInstallFvInfoPpi (FALSE, FvFormat, FvInfo, FvInfoSize, ParentFvName, ParentFileName, AuthenticationStatus);
 }
 
+/**
+  Resets the entire platform.
+
+  @param[in] ResetType      The type of reset to perform.
+  @param[in] ResetStatus    The status code for the reset.
+  @param[in] DataSize       The size, in bytes, of ResetData.
+  @param[in] ResetData      For a ResetType of EfiResetCold, EfiResetWarm, or EfiResetShutdown
+                            the data buffer starts with a Null-terminated string, optionally
+                            followed by additional binary data. The string is a description
+                            that the caller may use to further indicate the reason for the
+                            system reset. ResetData is only valid if ResetStatus is something
+                            other than EFI_SUCCESS unless the ResetType is EfiResetPlatformSpecific
+                            where a minimum amount of ResetData is always required.
+
+**/
+VOID
+EFIAPI
+PeiServicesResetSystem2 (
+  IN EFI_RESET_TYPE     ResetType,
+  IN EFI_STATUS         ResetStatus,
+  IN UINTN              DataSize,
+  IN VOID               *ResetData OPTIONAL
+  )
+{
+  (*GetPeiServicesTablePointer())->ResetSystem2 (ResetType, ResetStatus, DataSize, ResetData);
+}

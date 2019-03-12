@@ -1,7 +1,8 @@
 ## @file
 # parse FDF file
 #
-#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2015, Hewlett Packard Enterprise Development, L.P.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -51,12 +52,13 @@ import Common.GlobalData as GlobalData
 from Common.Expression import *
 from Common import GlobalData
 from Common.String import ReplaceMacro
-
+import uuid
 from Common.Misc import tdict
-
-import re
+from Common.MultipleWorkspace import MultipleWorkspace as mws
 import Common.LongFilePathOs as os
 from Common.LongFilePathSupport import OpenLongFilePath as open
+from Capsule import EFI_CERT_TYPE_PKCS7_GUID
+from Capsule import EFI_CERT_TYPE_RSA2048_SHA256_GUID
 
 ##define T_CHAR_SPACE                ' '
 ##define T_CHAR_NULL                 '\0'
@@ -81,16 +83,31 @@ RegionSizeGuidPattern = re.compile("\s*(?P<base>\w+\.\w+)\s*\|\s*(?P<size>\w+\.\
 RegionOffsetPcdPattern = re.compile("\s*(?P<base>\w+\.\w+)\s*$")
 ShortcutPcdPattern = re.compile("\s*\w+\s*=\s*(?P<value>(?:0x|0X)?[a-fA-F0-9]+)\s*\|\s*(?P<name>\w+\.\w+)\s*")
 
-IncludeFileList = []
+AllIncludeFileList = []
+
+# Get the closest parent
+def GetParentAtLine (Line):
+    for Profile in AllIncludeFileList:
+        if Profile.IsLineInFile(Line):
+            return Profile
+    return None
+
+# Check include loop
+def IsValidInclude (File, Line):
+    for Profile in AllIncludeFileList:
+        if Profile.IsLineInFile(Line) and Profile.FileName == File:
+            return False
+
+    return True
 
 def GetRealFileLine (File, Line):
 
     InsertedLines = 0
-    for Profile in IncludeFileList:
-        if Line >= Profile.InsertStartLineNumber and Line < Profile.InsertStartLineNumber + Profile.InsertAdjust + len(Profile.FileLinesList):
-            return (Profile.FileName, Line - Profile.InsertStartLineNumber + 1)
-        if Line >= Profile.InsertStartLineNumber + Profile.InsertAdjust + len(Profile.FileLinesList):
-            InsertedLines += Profile.InsertAdjust + len(Profile.FileLinesList)
+    for Profile in AllIncludeFileList:
+        if Profile.IsLineInFile(Line):
+            return Profile.GetLineInFile(Line)
+        elif Line >= Profile.InsertStartLineNumber and Profile.Level == 1:
+            InsertedLines += Profile.GetTotalLines()
 
     return (File, Line - InsertedLines)
 
@@ -111,6 +128,7 @@ class Warning (Exception):
         FileLineTuple = GetRealFileLine(File, Line)
         self.FileName = FileLineTuple[0]
         self.LineNumber = FileLineTuple[1]
+        self.OriginalLineNumber = Line
         self.Message = Str
         self.ToolName = 'FdfParser'
 
@@ -149,6 +167,10 @@ class IncludeFileProfile :
             fsock = open(FileName, "rb", 0)
             try:
                 self.FileLinesList = fsock.readlines()
+                for index, line in enumerate(self.FileLinesList):
+                    if not line.endswith('\n'):
+                        self.FileLinesList[index] += '\n'
+
             finally:
                 fsock.close()
 
@@ -157,6 +179,38 @@ class IncludeFileProfile :
 
         self.InsertStartLineNumber = None
         self.InsertAdjust = 0
+        self.IncludeFileList = []
+        self.Level = 1 # first level include file
+
+    def GetTotalLines(self):
+        TotalLines = self.InsertAdjust + len(self.FileLinesList)
+
+        for Profile in self.IncludeFileList:
+            TotalLines += Profile.GetTotalLines()
+
+        return TotalLines
+
+    def IsLineInFile(self, Line):
+        if Line >= self.InsertStartLineNumber and Line < self.InsertStartLineNumber + self.GetTotalLines():
+            return True
+
+        return False
+
+    def GetLineInFile(self, Line):
+        if not self.IsLineInFile (Line):
+            return (self.FileName, -1)
+
+        InsertedLines = self.InsertStartLineNumber
+
+        for Profile in self.IncludeFileList:
+            if Profile.IsLineInFile(Line):
+                return Profile.GetLineInFile(Line)
+            elif Line >= Profile.InsertStartLineNumber:
+                InsertedLines += Profile.GetTotalLines()
+
+        return (self.FileName, Line - InsertedLines + 1)
+
+
 
 ## The FDF content class that used to record file data when parsing FDF
 #
@@ -183,6 +237,7 @@ class FileProfile :
 
         self.PcdDict = {}
         self.InfList = []
+        self.InfDict = {'ArchTBD':[]}
         # ECC will use this Dict and List information
         self.PcdFileLineDict = {}
         self.InfFileLineList = []
@@ -194,6 +249,7 @@ class FileProfile :
         self.VtfList = []
         self.RuleDict = {}
         self.OptRomDict = {}
+        self.FmpPayloadDict = {}
 
 ## The syntax parser for FDF
 #
@@ -305,10 +361,12 @@ class FdfParser:
     #   Reset file data buffer to the initial state
     #
     #   @param  self        The object pointer
+    #   @param  DestLine    Optional new destination line number.
+    #   @param  DestOffset  Optional new destination offset.
     #
-    def Rewind(self):
-        self.CurrentLineNumber = 1
-        self.CurrentOffsetWithinLine = 0
+    def Rewind(self, DestLine = 1, DestOffset = 0):
+        self.CurrentLineNumber = DestLine
+        self.CurrentOffsetWithinLine = DestOffset
 
     ## __UndoOneChar() method
     #
@@ -564,27 +622,48 @@ class FdfParser:
     #   @param  self        The object pointer
     #
     def PreprocessIncludeFile(self):
-
+	    # nested include support
+        Processed = False
+        MacroDict = {}
         while self.__GetNextToken():
 
-            if self.__Token == '!include':
+            if self.__Token == 'DEFINE':
+                if not self.__GetNextToken():
+                    raise Warning("expected Macro name", self.FileName, self.CurrentLineNumber)
+                Macro = self.__Token
+                if not self.__IsToken( "="):
+                    raise Warning("expected '='", self.FileName, self.CurrentLineNumber)
+                Value = self.__GetExpression()
+                MacroDict[Macro] = Value
+
+            elif self.__Token == '!include':
+                Processed = True
                 IncludeLine = self.CurrentLineNumber
                 IncludeOffset = self.CurrentOffsetWithinLine - len('!include')
                 if not self.__GetNextToken():
                     raise Warning("expected include file name", self.FileName, self.CurrentLineNumber)
                 IncFileName = self.__Token
-                __IncludeMacros = {}
-                for Macro in ['WORKSPACE', 'ECP_SOURCE', 'EFI_SOURCE', 'EDK_SOURCE']:
+                PreIndex = 0
+                StartPos = IncFileName.find('$(', PreIndex)
+                EndPos = IncFileName.find(')', StartPos+2)
+                while StartPos != -1 and EndPos != -1:
+                    Macro = IncFileName[StartPos+2 : EndPos]
                     MacroVal = self.__GetMacroValue(Macro)
-                    if MacroVal:
-                        __IncludeMacros[Macro] = MacroVal
+                    if not MacroVal:
+                        if Macro in MacroDict:
+                            MacroVal = MacroDict[Macro]
+                    if MacroVal != None:
+                        IncFileName = IncFileName.replace('$(' + Macro + ')', MacroVal, 1)
+                        if MacroVal.find('$(') != -1:
+                            PreIndex = StartPos
+                        else:
+                            PreIndex = StartPos + len(MacroVal)
+                    else:
+                        raise Warning("The Macro %s is not defined" %Macro, self.FileName, self.CurrentLineNumber)
+                    StartPos = IncFileName.find('$(', PreIndex)
+                    EndPos = IncFileName.find(')', StartPos+2)
 
-                try:
-                    IncludedFile = NormPath(ReplaceMacro(IncFileName, __IncludeMacros, RaiseError=True))
-                except:
-                    raise Warning("only these system environment variables are permitted to start the path of the included file: "
-                                  "$(WORKSPACE), $(ECP_SOURCE), $(EFI_SOURCE), $(EDK_SOURCE)",
-                                  self.FileName, self.CurrentLineNumber)
+                IncludedFile = NormPath(IncFileName)
                 #
                 # First search the include file under the same directory as FDF file
                 #
@@ -611,12 +690,19 @@ class FdfParser:
                             raise Warning("The include file does not exist under below directories: \n%s\n%s\n%s\n"%(os.path.dirname(self.FileName), PlatformDir, GlobalData.gWorkspace),
                                           self.FileName, self.CurrentLineNumber)
 
+                if not IsValidInclude (IncludedFile1.Path, self.CurrentLineNumber):
+                    raise Warning("The include file {0} is causing a include loop.\n".format (IncludedFile1.Path), self.FileName, self.CurrentLineNumber)
+
                 IncFileProfile = IncludeFileProfile(IncludedFile1.Path)
 
                 CurrentLine = self.CurrentLineNumber
                 CurrentOffset = self.CurrentOffsetWithinLine
                 # list index of the insertion, note that line number is 'CurrentLine + 1'
                 InsertAtLine = CurrentLine
+                ParentProfile = GetParentAtLine (CurrentLine)
+                if ParentProfile != None:
+                    ParentProfile.IncludeFileList.insert(0, IncFileProfile)
+                    IncFileProfile.Level = ParentProfile.Level + 1
                 IncFileProfile.InsertStartLineNumber = InsertAtLine + 1
                 # deal with remaining portions after "!include filename", if exists.
                 if self.__GetNextToken():
@@ -632,13 +718,17 @@ class FdfParser:
                     self.CurrentLineNumber += 1
                     InsertAtLine += 1
 
-                IncludeFileList.append(IncFileProfile)
+                # reversely sorted to better determine error in file
+                AllIncludeFileList.insert(0, IncFileProfile)
 
                 # comment out the processed include file statement
                 TempList = list(self.Profile.FileLinesList[IncludeLine - 1])
                 TempList.insert(IncludeOffset, '#')
                 self.Profile.FileLinesList[IncludeLine - 1] = ''.join(TempList)
-
+            if Processed: # Nested and back-to-back support
+                self.Rewind(DestLine = IncFileProfile.InsertStartLineNumber - 1)
+                Processed = False
+        # Preprocess done.
         self.Rewind()
 
     def __GetIfListCurrentItemStat(self, IfList):
@@ -835,6 +925,13 @@ class FdfParser:
 
         MacroDict.update(GlobalData.gGlobalDefines)
         MacroDict.update(GlobalData.gCommandLineDefines)
+        if GlobalData.BuildOptionPcd:
+            for Item in GlobalData.BuildOptionPcd:
+                if type(Item) is tuple:
+                    continue
+                PcdName, TmpValue = Item.split("=")
+                TmpValue = BuildOptionValue(TmpValue, {})
+                MacroDict[PcdName.strip()] = TmpValue
         # Highest priority
 
         return MacroDict
@@ -1058,6 +1155,26 @@ class FdfParser:
         else:
             self.__UndoToken()
             return False
+
+    def __Verify(self, Name, Value, Scope):
+        if Scope in ['UINT64', 'UINT8']:
+            ValueNumber = 0
+            try:
+                if Value.upper().startswith('0X'):
+                    ValueNumber = int (Value, 16)
+                else:
+                    ValueNumber = int (Value)
+            except:
+                EdkLogger.error("FdfParser", FORMAT_INVALID, "The value is not valid dec or hex number for %s." % Name)
+            if ValueNumber < 0:
+                EdkLogger.error("FdfParser", FORMAT_INVALID, "The value can't be set to negative value for %s." % Name)
+            if Scope == 'UINT64':
+                if ValueNumber >= 0x10000000000000000:
+                    EdkLogger.error("FdfParser", FORMAT_INVALID, "Too large value for %s." % Name)
+            if Scope == 'UINT8':
+                if ValueNumber >= 0x100:
+                    EdkLogger.error("FdfParser", FORMAT_INVALID, "Too large value for %s." % Name)
+            return True
 
     ## __UndoToken() method
     #
@@ -1298,31 +1415,39 @@ class FdfParser:
 
         try:
             self.Preprocess()
-            while self.__GetFd():
-                pass
-
-            while self.__GetFv():
-                pass
-
-            while self.__GetCapsule():
-                pass
-
-            while self.__GetVtf():
-                pass
-
-            while self.__GetRule():
-                pass
-
-            while self.__GetOptionRom():
+            #
+            # Keep processing sections of the FDF until no new sections or a syntax error is found
+            #
+            while self.__GetFd() or self.__GetFv() or self.__GetFmp() or self.__GetCapsule() or self.__GetVtf() or self.__GetRule() or self.__GetOptionRom():
                 pass
 
         except Warning, X:
             self.__UndoToken()
-            FileLineTuple = GetRealFileLine(self.FileName, self.CurrentLineNumber)
             #'\n\tGot Token: \"%s\" from File %s\n' % (self.__Token, FileLineTuple[0]) + \
-            X.Message += ' near line %d, column %d: %s' \
+            # At this point, the closest parent would be the included file itself
+            Profile = GetParentAtLine(X.OriginalLineNumber)
+            if Profile != None:
+                X.Message += ' near line %d, column %d: %s' \
+                % (X.LineNumber, 0, Profile.FileLinesList[X.LineNumber-1])
+            else:
+                FileLineTuple = GetRealFileLine(self.FileName, self.CurrentLineNumber)
+                X.Message += ' near line %d, column %d: %s' \
                 % (FileLineTuple[1], self.CurrentOffsetWithinLine + 1, self.Profile.FileLinesList[self.CurrentLineNumber - 1][self.CurrentOffsetWithinLine :].rstrip('\n').rstrip('\r'))
             raise
+
+    ## SectionParser() method
+    #
+    #   Parse the file section info
+    #   Exception will be raised if syntax error found
+    #
+    #   @param  self          The object pointer
+    #   @param  section       The section string
+
+    def SectionParser(self, section):
+        S = section.upper()
+        if not S.startswith("[DEFINES") and not S.startswith("[FD.") and not S.startswith("[FV.") and not S.startswith("[CAPSULE.") \
+            and not S.startswith("[VTF.") and not S.startswith("[RULE.") and not S.startswith("[OPTIONROM.") and not S.startswith('[FMPPAYLOAD.'):
+            raise Warning("Unknown section or section appear sequence error (The correct sequence should be [DEFINES], [FD.], [FV.], [Capsule.], [VTF.], [Rule.], [OptionRom.], [FMPPAYLOAD.])", self.FileName, self.CurrentLineNumber)
 
     ## __GetDefines() method
     #
@@ -1339,9 +1464,7 @@ class FdfParser:
 
         S = self.__Token.upper()
         if S.startswith("[") and not S.startswith("[DEFINES"):
-            if not S.startswith("[FD.") and not S.startswith("[FV.") and not S.startswith("[CAPSULE.") \
-                and not S.startswith("[VTF.") and not S.startswith("[RULE.") and not S.startswith("[OPTIONROM."):
-                raise Warning("Unknown section or section appear sequence error (The correct sequence should be [DEFINES], [FD.], [FV.], [Capsule.], [VTF.], [Rule.], [OptionRom.])", self.FileName, self.CurrentLineNumber)
+            self.SectionParser(S)
             self.__UndoToken()
             return False
 
@@ -1387,7 +1510,7 @@ class FdfParser:
 
         S = self.__Token.upper()
         if S.startswith("[") and not S.startswith("[FD."):
-            if not S.startswith("[FV.") and not S.startswith("[CAPSULE.") \
+            if not S.startswith("[FV.") and not S.startswith('[FMPPAYLOAD.') and not S.startswith("[CAPSULE.") \
                 and not S.startswith("[VTF.") and not S.startswith("[RULE.") and not S.startswith("[OPTIONROM."):
                 raise Warning("Unknown section", self.FileName, self.CurrentLineNumber)
             self.__UndoToken()
@@ -1772,7 +1895,7 @@ class FdfParser:
         if not self.__GetNextWord():
             return True
 
-        if not self.__Token in ("SET", "FV", "FILE", "DATA", "CAPSULE"):
+        if not self.__Token in ("SET", "FV", "FILE", "DATA", "CAPSULE", "INF"):
             #
             # If next token is a word which is not a valid FV type, it might be part of [PcdOffset[|PcdSize]]
             # Or it might be next region's offset described by an expression which starts with a PCD.
@@ -1813,17 +1936,27 @@ class FdfParser:
 
         elif self.__Token == "FILE":
             self.__UndoToken()
-            self.__GetRegionFileType( RegionObj)
+            self.__GetRegionFileType(RegionObj)
+
+        elif self.__Token == "INF":
+            self.__UndoToken()
+            RegionObj.RegionType = "INF"
+            while self.__IsKeyword("INF"):
+                self.__UndoToken()
+                ffsInf = self.__ParseInfStatement()
+                if not ffsInf:
+                    break
+                RegionObj.RegionDataList.append(ffsInf)
 
         elif self.__Token == "DATA":
             self.__UndoToken()
-            self.__GetRegionDataType( RegionObj)
+            self.__GetRegionDataType(RegionObj)
         else:
             self.__UndoToken()
             if self.__GetRegionLayout(Fd):
                 return True
             raise Warning("A valid region type was not found. "
-                          "Valid types are [SET, FV, CAPSULE, FILE, DATA]. This error occurred",
+                          "Valid types are [SET, FV, CAPSULE, FILE, DATA, INF]. This error occurred",
                           self.FileName, self.CurrentLineNumber)
 
         return True
@@ -1847,7 +1980,7 @@ class FdfParser:
             raise Warning("expected FV name", self.FileName, self.CurrentLineNumber)
 
         RegionObj.RegionType = "FV"
-        RegionObj.RegionDataList.append(self.__Token)
+        RegionObj.RegionDataList.append((self.__Token).upper())
 
         while self.__IsKeyword( "FV"):
 
@@ -1857,7 +1990,7 @@ class FdfParser:
             if not self.__GetNextToken():
                 raise Warning("expected FV name", self.FileName, self.CurrentLineNumber)
 
-            RegionObj.RegionDataList.append(self.__Token)
+            RegionObj.RegionDataList.append((self.__Token).upper())
 
     ## __GetRegionCapType() method
     #
@@ -2024,9 +2157,7 @@ class FdfParser:
 
         S = self.__Token.upper()
         if S.startswith("[") and not S.startswith("[FV."):
-            if not S.startswith("[CAPSULE.") \
-                and not S.startswith("[VTF.") and not S.startswith("[RULE.") and not S.startswith("[OPTIONROM."):
-                raise Warning("Unknown section or section appear sequence error (The correct sequence should be [FD.], [FV.], [Capsule.], [VTF.], [Rule.], [OptionRom.])", self.FileName, self.CurrentLineNumber)
+            self.SectionParser(S)
             self.__UndoToken()
             return False
 
@@ -2064,8 +2195,11 @@ class FdfParser:
             if not (self.__GetBlockStatement(FvObj) or self.__GetFvBaseAddress(FvObj) or
                 self.__GetFvForceRebase(FvObj) or self.__GetFvAlignment(FvObj) or
                 self.__GetFvAttributes(FvObj) or self.__GetFvNameGuid(FvObj) or
-                self.__GetFvExtEntryStatement(FvObj)):
+                self.__GetFvExtEntryStatement(FvObj) or self.__GetFvNameString(FvObj)):
                 break
+
+        if FvObj.FvNameString == 'TRUE' and not FvObj.FvNameGuid:
+            raise Warning("FvNameString found but FvNameGuid was not found", self.FileName, self.CurrentLineNumber)
 
         self.__GetAprioriSection(FvObj, FvObj.DefineVarDict.copy())
         self.__GetAprioriSection(FvObj, FvObj.DefineVarDict.copy())
@@ -2184,7 +2318,7 @@ class FdfParser:
                            "WRITE_DISABLED_CAP", "WRITE_STATUS", "READ_ENABLED_CAP", \
                            "READ_DISABLED_CAP", "READ_STATUS", "READ_LOCK_CAP", \
                            "READ_LOCK_STATUS", "WRITE_LOCK_CAP", "WRITE_LOCK_STATUS", \
-                           "WRITE_POLICY_RELIABLE", "WEAK_ALIGNMENT"):
+                           "WRITE_POLICY_RELIABLE", "WEAK_ALIGNMENT", "FvUsedSizeEnable"):
                 self.__UndoToken()
                 return False
 
@@ -2221,9 +2355,24 @@ class FdfParser:
 
         return True
 
+    def __GetFvNameString(self, FvObj):
+
+        if not self.__IsKeyword( "FvNameString"):
+            return False
+
+        if not self.__IsToken( "="):
+            raise Warning("expected '='", self.FileName, self.CurrentLineNumber)
+
+        if not self.__GetNextToken() or self.__Token not in ('TRUE', 'FALSE'):
+            raise Warning("expected TRUE or FALSE for FvNameString", self.FileName, self.CurrentLineNumber)
+
+        FvObj.FvNameString = self.__Token
+
+        return True
+
     def __GetFvExtEntryStatement(self, FvObj):
 
-        if not self.__IsKeyword( "FV_EXT_ENTRY"):
+        if not (self.__IsKeyword( "FV_EXT_ENTRY") or self.__IsKeyword( "FV_EXT_ENTRY_TYPE")):
             return False
 
         if not self.__IsKeyword ("TYPE"):
@@ -2334,27 +2483,18 @@ class FdfParser:
         FvObj.AprioriSectionList.append(AprSectionObj)
         return True
 
-    ## __GetInfStatement() method
-    #
-    #   Get INF statements
-    #
-    #   @param  self        The object pointer
-    #   @param  Obj         for whom inf statement is got
-    #   @param  MacroDict   dictionary used to replace macro
-    #   @retval True        Successfully find inf statement
-    #   @retval False       Not able to find inf statement
-    #
-    def __GetInfStatement(self, Obj, ForCapsule = False, MacroDict = {}):
-
-        if not self.__IsKeyword( "INF"):
-            return False
+    def __ParseInfStatement(self):
+        if not self.__IsKeyword("INF"):
+            return None
 
         ffsInf = FfsInfStatement.FfsInfStatement()
-        self.__GetInfOptions( ffsInf)
+        self.__GetInfOptions(ffsInf)
 
         if not self.__GetNextToken():
             raise Warning("expected INF file path", self.FileName, self.CurrentLineNumber)
         ffsInf.InfFileName = self.__Token
+        if not ffsInf.InfFileName.endswith('.inf'):
+            raise Warning("expected .inf file path", self.FileName, self.CurrentLineNumber)
 
         ffsInf.CurrentLineNum = self.CurrentLineNumber
         ffsInf.CurrentLineContent = self.__CurrentLine()
@@ -2372,6 +2512,13 @@ class FdfParser:
             self.Profile.InfList.append(ffsInf.InfFileName)
             FileLineTuple = GetRealFileLine(self.FileName, self.CurrentLineNumber)
             self.Profile.InfFileLineList.append(FileLineTuple)
+            if ffsInf.UseArch:
+                if ffsInf.UseArch not in self.Profile.InfDict:
+                    self.Profile.InfDict[ffsInf.UseArch] = [ffsInf.InfFileName]
+                else:
+                    self.Profile.InfDict[ffsInf.UseArch].append(ffsInf.InfFileName)
+            else:
+                self.Profile.InfDict['ArchTBD'].append(ffsInf.InfFileName)
 
         if self.__IsToken('|'):
             if self.__IsKeyword('RELOCS_STRIPPED'):
@@ -2380,6 +2527,22 @@ class FdfParser:
                 ffsInf.KeepReloc = True
             else:
                 raise Warning("Unknown reloc strip flag '%s'" % self.__Token, self.FileName, self.CurrentLineNumber)
+        return ffsInf
+
+    ## __GetInfStatement() method
+    #
+    #   Get INF statements
+    #
+    #   @param  self        The object pointer
+    #   @param  Obj         for whom inf statement is got
+    #   @param  MacroDict   dictionary used to replace macro
+    #   @retval True        Successfully find inf statement
+    #   @retval False       Not able to find inf statement
+    #
+    def __GetInfStatement(self, Obj, ForCapsule=False, MacroDict={}):
+        ffsInf = self.__ParseInfStatement()
+        if not ffsInf:
+            return False
 
         if ForCapsule:
             capsuleFfs = CapsuleData.CapsuleFfs()
@@ -2585,6 +2748,11 @@ class FdfParser:
         elif self.__Token in ("DEFINE", "APRIORI", "SECTION"):
             self.__UndoToken()
             self.__GetSectionData( FfsFileObj, MacroDict)
+
+        elif hasattr(FfsFileObj, 'FvFileType') and FfsFileObj.FvFileType == 'RAW':
+            self.__UndoToken()
+            self.__GetRAWData(FfsFileObj, MacroDict)
+
         else:
             FfsFileObj.CurrentLineNum = self.CurrentLineNumber
             FfsFileObj.CurrentLineContent = self.__CurrentLine()
@@ -2593,6 +2761,48 @@ class FdfParser:
 
         if not self.__IsToken( "}"):
             raise Warning("expected '}'", self.FileName, self.CurrentLineNumber)
+
+    ## __GetRAWData() method
+    #
+    #   Get RAW data for FILE statement
+    #
+    #   @param  self         The object pointer
+    #   @param  FfsFileObj   for whom section is got
+    #   @param  MacroDict    dictionary used to replace macro
+    #
+    def __GetRAWData(self, FfsFileObj, MacroDict = {}):
+        FfsFileObj.FileName = []
+        FfsFileObj.SubAlignment = []
+        while True:
+            AlignValue = None
+            if self.__GetAlignment():
+                if self.__Token not in ("Auto", "8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K", "128K",
+                                        "256K", "512K", "1M", "2M", "4M", "8M", "16M"):
+                    raise Warning("Incorrect alignment '%s'" % self.__Token, self.FileName, self.CurrentLineNumber)
+                #For FFS, Auto is default option same to ""
+                if not self.__Token == "Auto":
+                    AlignValue = self.__Token
+            if not self.__GetNextToken():
+                raise Warning("expected Filename value", self.FileName, self.CurrentLineNumber)
+
+            FileName = self.__Token.replace('$(SPACE)', ' ')
+            if FileName == '}':
+                self.__UndoToken()
+                raise Warning("expected Filename value", self.FileName, self.CurrentLineNumber)
+
+            self.__VerifyFile(FileName)
+            File = PathClass(NormPath(FileName), GenFdsGlobalVariable.WorkSpaceDir)
+            FfsFileObj.FileName.append(File.Path)
+            FfsFileObj.SubAlignment.append(AlignValue)
+
+            if self.__IsToken( "}"):
+                self.__UndoToken()
+                break
+
+        if len(FfsFileObj.SubAlignment) == 1:
+            FfsFileObj.SubAlignment = FfsFileObj.SubAlignment[0]
+        if len(FfsFileObj.FileName) == 1:
+            FfsFileObj.FileName = FfsFileObj.FileName[0]
 
     ## __GetFileOpts() method
     #
@@ -2626,7 +2836,8 @@ class FdfParser:
             FfsFileObj.CheckSum = True
 
         if self.__GetAlignment():
-            if self.__Token not in ("Auto", "8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K"):
+            if self.__Token not in ("Auto", "8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K", "128K",
+                                    "256K", "512K", "1M", "2M", "4M", "8M", "16M"):
                 raise Warning("Incorrect alignment '%s'" % self.__Token, self.FileName, self.CurrentLineNumber)
             #For FFS, Auto is default option same to ""
             if not self.__Token == "Auto":
@@ -2697,7 +2908,8 @@ class FdfParser:
 
         AlignValue = None
         if self.__GetAlignment():
-            if self.__Token not in ("Auto", "8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K"):
+            if self.__Token not in ("Auto", "8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K", "128K",
+                                    "256K", "512K", "1M", "2M", "4M", "8M", "16M"):
                 raise Warning("Incorrect alignment '%s'" % self.__Token, self.FileName, self.CurrentLineNumber)
             AlignValue = self.__Token
 
@@ -2986,7 +3198,8 @@ class FdfParser:
 
         AlignValue = None
         if self.__GetAlignment():
-            if self.__Token not in ("8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K"):
+            if self.__Token not in ("8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K", "128K",
+                                    "256K", "512K", "1M", "2M", "4M", "8M", "16M"):
                 raise Warning("Incorrect alignment '%s'" % self.__Token, self.FileName, self.CurrentLineNumber)
             AlignValue = self.__Token
 
@@ -2995,6 +3208,86 @@ class FdfParser:
             return False
         else:
             return True
+
+    def __GetFmp(self):
+        if not self.__GetNextToken():
+            return False
+        S = self.__Token.upper()
+        if S.startswith("[") and not S.startswith("[FMPPAYLOAD."):
+            self.SectionParser(S)
+            self.__UndoToken()
+            return False
+
+        self.__UndoToken()
+        self.__SkipToToken("[FMPPAYLOAD.", True)
+        FmpUiName = self.__GetUiName().upper()
+        if FmpUiName in self.Profile.FmpPayloadDict:
+            raise Warning("Duplicated FMP UI name found: %s" % FmpUiName, self.FileName, self.CurrentLineNumber)
+
+        FmpData = CapsuleData.CapsulePayload()
+        FmpData.UiName = FmpUiName
+
+        if not self.__IsToken( "]"):
+            raise Warning("expected ']'", self.FileName, self.CurrentLineNumber)
+
+        if not self.__GetNextToken():
+            raise Warning("The FMP payload section is empty!", self.FileName, self.CurrentLineNumber)
+        FmpKeyList = ['IMAGE_HEADER_INIT_VERSION', 'IMAGE_TYPE_ID', 'IMAGE_INDEX', 'HARDWARE_INSTANCE', 'CERTIFICATE_GUID', 'MONOTONIC_COUNT']
+        while self.__Token in FmpKeyList:
+            Name = self.__Token
+            FmpKeyList.remove(Name)
+            if not self.__IsToken("="):
+                raise Warning("expected '='", self.FileName, self.CurrentLineNumber)
+            if Name == 'IMAGE_TYPE_ID':
+                if not self.__GetNextGuid():
+                    raise Warning("expected GUID value for IMAGE_TYPE_ID.", self.FileName, self.CurrentLineNumber)
+                FmpData.ImageTypeId = self.__Token
+            elif Name == 'CERTIFICATE_GUID':
+                if not self.__GetNextGuid():
+                    raise Warning("expected GUID value for CERTIFICATE_GUID.", self.FileName, self.CurrentLineNumber)
+                FmpData.Certificate_Guid = self.__Token
+                if uuid.UUID(FmpData.Certificate_Guid) != EFI_CERT_TYPE_RSA2048_SHA256_GUID and uuid.UUID(FmpData.Certificate_Guid) != EFI_CERT_TYPE_PKCS7_GUID:
+                    raise Warning("Only support EFI_CERT_TYPE_RSA2048_SHA256_GUID or EFI_CERT_TYPE_PKCS7_GUID for CERTIFICATE_GUID.", self.FileName, self.CurrentLineNumber)
+            else:
+                if not self.__GetNextToken():
+                    raise Warning("expected value of %s" % Name, self.FileName, self.CurrentLineNumber)
+                Value = self.__Token
+                if Name == 'IMAGE_HEADER_INIT_VERSION':
+                    if self.__Verify(Name, Value, 'UINT8'):
+                        FmpData.Version = Value
+                elif Name == 'IMAGE_INDEX':
+                    if self.__Verify(Name, Value, 'UINT8'):
+                        FmpData.ImageIndex = Value
+                elif Name == 'HARDWARE_INSTANCE':
+                    if self.__Verify(Name, Value, 'UINT8'):
+                        FmpData.HardwareInstance = Value
+                elif Name == 'MONOTONIC_COUNT':
+                    if self.__Verify(Name, Value, 'UINT64'):
+                        FmpData.MonotonicCount = Value
+                        if FmpData.MonotonicCount.upper().startswith('0X'):
+                            FmpData.MonotonicCount = (long)(FmpData.MonotonicCount, 16)
+                        else:
+                            FmpData.MonotonicCount = (long)(FmpData.MonotonicCount)
+            if not self.__GetNextToken():
+                break
+        else:
+            self.__UndoToken()
+
+        if (FmpData.MonotonicCount and not FmpData.Certificate_Guid) or (not FmpData.MonotonicCount and FmpData.Certificate_Guid):
+            EdkLogger.error("FdfParser", FORMAT_INVALID, "CERTIFICATE_GUID and MONOTONIC_COUNT must be work as a pair.")
+
+        # Only the IMAGE_TYPE_ID is required item
+        if FmpKeyList and 'IMAGE_TYPE_ID' in FmpKeyList:
+            raise Warning("Missing keywords IMAGE_TYPE_ID in FMP payload section.", self.FileName, self.CurrentLineNumber)
+        # get the Image file and Vendor code file
+        self.__GetFMPCapsuleData(FmpData)
+        if not FmpData.ImageFile:
+            raise Warning("Missing image file in FMP payload section.", self.FileName, self.CurrentLineNumber)
+        # check whether more than one Vendor code file
+        if len(FmpData.VendorCodeFile) > 1:
+            raise Warning("At most one Image file and one Vendor code file are allowed in FMP payload section.", self.FileName, self.CurrentLineNumber)
+        self.Profile.FmpPayloadDict[FmpUiName] = FmpData
+        return True
 
     ## __GetCapsule() method
     #
@@ -3011,8 +3304,7 @@ class FdfParser:
 
         S = self.__Token.upper()
         if S.startswith("[") and not S.startswith("[CAPSULE."):
-            if not S.startswith("[VTF.") and not S.startswith("[RULE.") and not S.startswith("[OPTIONROM."):
-                raise Warning("Unknown section or section appear sequence error (The correct sequence should be [FD.], [FV.], [Capsule.], [VTF.], [Rule.], [OptionRom.])", self.FileName, self.CurrentLineNumber)
+            self.SectionParser(S)
             self.__UndoToken()
             return False
 
@@ -3070,7 +3362,7 @@ class FdfParser:
     def __GetCapsuleTokens(self, Obj):
         if not self.__GetNextToken():
             return False
-        while self.__Token in ("CAPSULE_GUID", "CAPSULE_HEADER_SIZE", "CAPSULE_FLAGS", "OEM_CAPSULE_FLAGS"):
+        while self.__Token in ("CAPSULE_GUID", "CAPSULE_HEADER_SIZE", "CAPSULE_FLAGS", "OEM_CAPSULE_FLAGS", "CAPSULE_HEADER_INIT_VERSION"):
             Name = self.__Token.strip()
             if not self.__IsToken("="):
                 raise Warning("expected '='", self.FileName, self.CurrentLineNumber)
@@ -3121,7 +3413,24 @@ class FdfParser:
             IsFd = self.__GetFdStatement(Obj)
             IsAnyFile = self.__GetAnyFileStatement(Obj)
             IsAfile = self.__GetAfileStatement(Obj)
-            if not (IsInf or IsFile or IsFv or IsFd or IsAnyFile or IsAfile):
+            IsFmp = self.__GetFmpStatement(Obj)
+            if not (IsInf or IsFile or IsFv or IsFd or IsAnyFile or IsAfile or IsFmp):
+                break
+
+    ## __GetFMPCapsuleData() method
+    #
+    #   Get capsule data for FMP capsule
+    #
+    #   @param  self        The object pointer
+    #   @param  Obj         for whom capsule data are got
+    #
+    def __GetFMPCapsuleData(self, Obj):
+
+        while True:
+            IsFv = self.__GetFvStatement(Obj, True)
+            IsFd = self.__GetFdStatement(Obj, True)
+            IsAnyFile = self.__GetAnyFileStatement(Obj, True)
+            if not (IsFv or IsFd or IsAnyFile):
                 break
 
     ## __GetFvStatement() method
@@ -3133,7 +3442,7 @@ class FdfParser:
     #   @retval True        Successfully find a FV statement
     #   @retval False       Not able to find a FV statement
     #
-    def __GetFvStatement(self, CapsuleObj):
+    def __GetFvStatement(self, CapsuleObj, FMPCapsule = False):
 
         if not self.__IsKeyword("FV"):
             return False
@@ -3149,7 +3458,13 @@ class FdfParser:
 
         CapsuleFv = CapsuleData.CapsuleFv()
         CapsuleFv.FvName = self.__Token
-        CapsuleObj.CapsuleDataList.append(CapsuleFv)
+        if FMPCapsule:
+            if not CapsuleObj.ImageFile:
+                CapsuleObj.ImageFile.append(CapsuleFv)
+            else:
+                CapsuleObj.VendorCodeFile.append(CapsuleFv)
+        else:
+            CapsuleObj.CapsuleDataList.append(CapsuleFv)
         return True
 
     ## __GetFdStatement() method
@@ -3161,7 +3476,7 @@ class FdfParser:
     #   @retval True        Successfully find a FD statement
     #   @retval False       Not able to find a FD statement
     #
-    def __GetFdStatement(self, CapsuleObj):
+    def __GetFdStatement(self, CapsuleObj, FMPCapsule = False):
 
         if not self.__IsKeyword("FD"):
             return False
@@ -3177,8 +3492,56 @@ class FdfParser:
 
         CapsuleFd = CapsuleData.CapsuleFd()
         CapsuleFd.FdName = self.__Token
-        CapsuleObj.CapsuleDataList.append(CapsuleFd)
+        if FMPCapsule:
+            if not CapsuleObj.ImageFile:
+                CapsuleObj.ImageFile.append(CapsuleFd)
+            else:
+                CapsuleObj.VendorCodeFile.append(CapsuleFd)
+        else:
+            CapsuleObj.CapsuleDataList.append(CapsuleFd)
         return True
+
+    def __GetFmpStatement(self, CapsuleObj):
+        if not self.__IsKeyword("FMP_PAYLOAD"):
+            if not self.__IsKeyword("FMP"):
+                return False
+
+            if not self.__IsKeyword("PAYLOAD"):
+                self.__UndoToken()
+                return False
+
+        if not self.__IsToken("="):
+            raise Warning("expected '='", self.FileName, self.CurrentLineNumber)
+
+        if not self.__GetNextToken():
+            raise Warning("expected payload name after FMP_PAYLOAD =", self.FileName, self.CurrentLineNumber)
+        Payload = self.__Token.upper()
+        if Payload not in self.Profile.FmpPayloadDict:
+            raise Warning("This FMP Payload does not exist: %s" % self.__Token, self.FileName, self.CurrentLineNumber)
+        CapsuleObj.FmpPayloadList.append(self.Profile.FmpPayloadDict[Payload])
+        return True
+
+    def __ParseRawFileStatement(self):
+        if not self.__IsKeyword("FILE"):
+            return None
+
+        if not self.__IsKeyword("DATA"):
+            self.__UndoToken()
+            return None
+
+        if not self.__IsToken("="):
+            raise Warning("expected '='", self.FileName, self.CurrentLineNumber)
+
+        if not self.__GetNextToken():
+            raise Warning("expected File name", self.FileName, self.CurrentLineNumber)
+
+        AnyFileName = self.__Token
+        self.__VerifyFile(AnyFileName)
+
+        if not os.path.isabs(AnyFileName):
+            AnyFileName = mws.join(GenFdsGlobalVariable.WorkSpaceDir, AnyFileName)
+
+        return AnyFileName
 
     ## __GetAnyFileStatement() method
     #
@@ -3189,29 +3552,20 @@ class FdfParser:
     #   @retval True        Successfully find a Anyfile statement
     #   @retval False       Not able to find a AnyFile statement
     #
-    def __GetAnyFileStatement(self, CapsuleObj):
-
-        if not self.__IsKeyword("FILE"):
+    def __GetAnyFileStatement(self, CapsuleObj, FMPCapsule = False):
+        AnyFileName = self.__ParseRawFileStatement()
+        if not AnyFileName:
             return False
-
-        if not self.__IsKeyword("DATA"):
-            self.__UndoToken()
-            return False
-
-        if not self.__IsToken("="):
-            raise Warning("expected '='", self.FileName, self.CurrentLineNumber)
-
-        if not self.__GetNextToken():
-            raise Warning("expected File name", self.FileName, self.CurrentLineNumber)
-
-        AnyFileName = self.__Token
-        AnyFileName = GenFdsGlobalVariable.ReplaceWorkspaceMacro(AnyFileName)
-        if not os.path.exists(AnyFileName):
-            raise Warning("File %s not exists"%AnyFileName, self.FileName, self.CurrentLineNumber)
 
         CapsuleAnyFile = CapsuleData.CapsuleAnyFile()
         CapsuleAnyFile.FileName = AnyFileName
-        CapsuleObj.CapsuleDataList.append(CapsuleAnyFile)
+        if FMPCapsule:
+            if not CapsuleObj.ImageFile:
+                CapsuleObj.ImageFile.append(CapsuleAnyFile)
+            else:
+                CapsuleObj.VendorCodeFile.append(CapsuleAnyFile)
+        else:
+            CapsuleObj.CapsuleDataList.append(CapsuleAnyFile)
         return True
 
     ## __GetAfileStatement() method
@@ -3270,8 +3624,7 @@ class FdfParser:
 
         S = self.__Token.upper()
         if S.startswith("[") and not S.startswith("[RULE."):
-            if not S.startswith("[OPTIONROM."):
-                raise Warning("Unknown section or section appear sequence error (The correct sequence should be [FD.], [FV.], [Capsule.], [VTF.], [Rule.], [OptionRom.])", self.FileName, self.CurrentLineNumber)
+            self.SectionParser(S)
             self.__UndoToken()
             return False
         self.__UndoToken()
@@ -3336,7 +3689,7 @@ class FdfParser:
                              "DXE_SMM_DRIVER", "DXE_RUNTIME_DRIVER", \
                              "UEFI_DRIVER", "UEFI_APPLICATION", "USER_DEFINED", "DEFAULT", "BASE", \
                              "SECURITY_CORE", "COMBINED_PEIM_DRIVER", "PIC_PEIM", "RELOCATABLE_PEIM", \
-                             "PE32_PEIM", "BS_DRIVER", "RT_DRIVER", "SAL_RT_DRIVER", "APPLICATION", "ACPITABLE", "SMM_CORE"):
+                                        "PE32_PEIM", "BS_DRIVER", "RT_DRIVER", "SAL_RT_DRIVER", "APPLICATION", "ACPITABLE", "SMM_CORE", "MM_STANDALONE", "MM_CORE_STANDALONE"):
             raise Warning("Unknown Module type '%s'" % self.__Token, self.FileName, self.CurrentLineNumber)
         return self.__Token
 
@@ -3349,7 +3702,7 @@ class FdfParser:
     #
     def __GetFileExtension(self):
         if not self.__IsToken("."):
-                raise Warning("expected '.'", self.FileName, self.CurrentLineNumber)
+            raise Warning("expected '.'", self.FileName, self.CurrentLineNumber)
 
         Ext = ""
         if self.__GetNextToken():
@@ -3380,7 +3733,7 @@ class FdfParser:
 
         Type = self.__Token.strip().upper()
         if Type not in ("RAW", "FREEFORM", "SEC", "PEI_CORE", "PEIM",\
-                             "PEI_DXE_COMBO", "DRIVER", "DXE_CORE", "APPLICATION", "FV_IMAGE", "SMM", "SMM_CORE"):
+                             "PEI_DXE_COMBO", "DRIVER", "DXE_CORE", "APPLICATION", "FV_IMAGE", "SMM", "SMM_CORE", "MM_STANDALONE", "MM_CORE_STANDALONE"):
             raise Warning("Unknown FV type '%s'" % self.__Token, self.FileName, self.CurrentLineNumber)
 
         if not self.__IsToken("="):
@@ -3437,7 +3790,8 @@ class FdfParser:
 
         AlignValue = ""
         if self.__GetAlignment():
-            if self.__Token not in ("Auto", "8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K"):
+            if self.__Token not in ("Auto", "8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K", "128K",
+                                    "256K", "512K", "1M", "2M", "4M", "8M", "16M"):
                 raise Warning("Incorrect alignment '%s'" % self.__Token, self.FileName, self.CurrentLineNumber)
             #For FFS, Auto is default option same to ""
             if not self.__Token == "Auto":
@@ -3486,7 +3840,8 @@ class FdfParser:
 
             SectAlignment = ""
             if self.__GetAlignment():
-                if self.__Token not in ("Auto", "8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K"):
+                if self.__Token not in ("Auto", "8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K", "128K",
+                                        "256K", "512K", "1M", "2M", "4M", "8M", "16M"):
                     raise Warning("Incorrect alignment '%s'" % self.__Token, self.FileName, self.CurrentLineNumber)
                 if self.__Token == 'Auto' and (not SectionName == 'PE32') and (not SectionName == 'TE'):
                     raise Warning("Auto alignment can only be used in PE32 or TE section ", self.FileName, self.CurrentLineNumber)
@@ -3565,7 +3920,8 @@ class FdfParser:
                 FvImageSectionObj.FvFileType = self.__Token
 
                 if self.__GetAlignment():
-                    if self.__Token not in ("8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K"):
+                    if self.__Token not in ("8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K", "128K",
+                                            "256K", "512K", "1M", "2M", "4M", "8M", "16M"):
                         raise Warning("Incorrect alignment '%s'" % self.__Token, self.FileName, self.CurrentLineNumber)
                     FvImageSectionObj.Alignment = self.__Token
 
@@ -3632,7 +3988,8 @@ class FdfParser:
                 EfiSectionObj.BuildNum = self.__Token
 
         if self.__GetAlignment():
-            if self.__Token not in ("Auto", "8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K"):
+            if self.__Token not in ("Auto", "8", "16", "32", "64", "128", "512", "1K", "4K", "32K" ,"64K", "128K",
+                                    "256K", "512K", "1M", "2M", "4M", "8M", "16M"):
                 raise Warning("Incorrect alignment '%s'" % self.__Token, self.FileName, self.CurrentLineNumber)
             if self.__Token == 'Auto' and (not SectionName == 'PE32') and (not SectionName == 'TE'):
                 raise Warning("Auto alignment can only be used in PE32 or TE section ", self.FileName, self.CurrentLineNumber)
@@ -3847,8 +4204,7 @@ class FdfParser:
 
         S = self.__Token.upper()
         if S.startswith("[") and not S.startswith("[VTF."):
-            if not S.startswith("[RULE.") and not S.startswith("[OPTIONROM."):
-                raise Warning("Unknown section or section appear sequence error (The correct sequence should be [FD.], [FV.], [Capsule.], [VTF.], [Rule.], [OptionRom.])", self.FileName, self.CurrentLineNumber)
+            self.SectionParser(S)
             self.__UndoToken()
             return False
 
@@ -4054,7 +4410,9 @@ class FdfParser:
 
         S = self.__Token.upper()
         if S.startswith("[") and not S.startswith("[OPTIONROM."):
-            raise Warning("Unknown section or section appear sequence error (The correct sequence should be [FD.], [FV.], [Capsule.], [VTF.], [Rule.], [OptionRom.])", self.FileName, self.CurrentLineNumber)
+            self.SectionParser(S)
+            self.__UndoToken()
+            return False
 
         self.__UndoToken()
         if not self.__IsToken("[OptionRom.", True):
@@ -4107,6 +4465,13 @@ class FdfParser:
             self.Profile.InfList.append(ffsInf.InfFileName)
             FileLineTuple = GetRealFileLine(self.FileName, self.CurrentLineNumber)
             self.Profile.InfFileLineList.append(FileLineTuple)
+            if ffsInf.UseArch:
+                if ffsInf.UseArch not in self.Profile.InfDict:
+                    self.Profile.InfDict[ffsInf.UseArch] = [ffsInf.InfFileName]
+                else:
+                    self.Profile.InfDict[ffsInf.UseArch].append(ffsInf.InfFileName)
+            else:
+                self.Profile.InfDict['ArchTBD'].append(ffsInf.InfFileName)
 
 
         self.__GetOptRomOverrides (ffsInf)
@@ -4452,6 +4817,10 @@ class FdfParser:
                         FvAnalyzedList.append(RefFvName)
 
         return False
+
+    def GetAllIncludedFile (self):
+        global AllIncludeFileList
+        return AllIncludeFileList
 
 if __name__ == "__main__":
     import sys

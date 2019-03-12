@@ -1,7 +1,7 @@
 /** @file
   Implement TPM2 EnhancedAuthorization related command.
 
-Copyright (c) 2014, Intel Corporation. All rights reserved. <BR>
+Copyright (c) 2014 - 2018, Intel Corporation. All rights reserved. <BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -161,16 +161,18 @@ Tpm2PolicySecret (
   RecvBufferSize = sizeof (RecvBuffer);
   Status = Tpm2SubmitCommand (SendBufferSize, (UINT8 *)&SendBuffer, &RecvBufferSize, (UINT8 *)&RecvBuffer);
   if (EFI_ERROR (Status)) {
-    return Status;
+    goto Done;
   }
 
   if (RecvBufferSize < sizeof (TPM2_RESPONSE_HEADER)) {
     DEBUG ((EFI_D_ERROR, "Tpm2PolicySecret - RecvBufferSize Error - %x\n", RecvBufferSize));
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
   }
   if (SwapBytes32(RecvBuffer.Header.responseCode) != TPM_RC_SUCCESS) {
     DEBUG ((EFI_D_ERROR, "Tpm2PolicySecret - responseCode - %x\n", SwapBytes32(RecvBuffer.Header.responseCode)));
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
   }
 
   //
@@ -178,6 +180,12 @@ Tpm2PolicySecret (
   //
   Buffer = (UINT8 *)&RecvBuffer.Timeout;
   Timeout->size = SwapBytes16(ReadUnaligned16 ((UINT16 *)Buffer));
+  if (Timeout->size > sizeof(UINT64)) {
+    DEBUG ((DEBUG_ERROR, "Tpm2PolicySecret - Timeout->size error %x\n", Timeout->size));
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
+  }
+
   Buffer += sizeof(UINT16);
   CopyMem (Timeout->buffer, Buffer, Timeout->size);
 
@@ -187,9 +195,21 @@ Tpm2PolicySecret (
   Buffer += sizeof(UINT32);
   PolicyTicket->digest.size = SwapBytes16(ReadUnaligned16 ((UINT16 *)Buffer));
   Buffer += sizeof(UINT16);
+  if (PolicyTicket->digest.size > sizeof(TPMU_HA)) {
+    DEBUG ((DEBUG_ERROR, "Tpm2PolicySecret - digest.size error %x\n", PolicyTicket->digest.size));
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
+  }
+
   CopyMem (PolicyTicket->digest.buffer, Buffer, PolicyTicket->digest.size);
 
-  return EFI_SUCCESS;
+Done:
+  //
+  // Clear AuthSession Content
+  //
+  ZeroMem (&SendBuffer, sizeof(SendBuffer));
+  ZeroMem (&RecvBuffer, sizeof(RecvBuffer));
+  return Status;
 }
 
 /**
@@ -371,6 +391,11 @@ Tpm2PolicyGetDigest (
   // Return the response
   //
   PolicyHash->size = SwapBytes16 (RecvBuffer.PolicyHash.size);
+  if (PolicyHash->size > sizeof(TPMU_HA)) {
+    DEBUG ((DEBUG_ERROR, "Tpm2PolicyGetDigest - PolicyHash->size error %x\n", PolicyHash->size));
+    return EFI_DEVICE_ERROR;
+  }
+
   CopyMem (PolicyHash->buffer, &RecvBuffer.PolicyHash.buffer, PolicyHash->size);
 
   return EFI_SUCCESS;

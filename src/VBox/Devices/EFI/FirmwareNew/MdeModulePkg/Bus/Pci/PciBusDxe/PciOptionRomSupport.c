@@ -1,7 +1,7 @@
 /** @file
   PCI Rom supporting funtions implementation for PCI Bus module.
 
-Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -305,7 +305,7 @@ GetOpRomInfo (
     return EFI_NOT_FOUND;
   }
 
-  PciIoDevice->RomSize = (UINT64) ((~AllOnes) + 1);
+  PciIoDevice->RomSize = (~AllOnes) + 1;
   return EFI_SUCCESS;
 }
 
@@ -551,7 +551,7 @@ LoadOpRomImage (
     PciDevice->BusNumber,
     PciDevice->DeviceNumber,
     PciDevice->FunctionNumber,
-    (UINT64) (UINTN) PciDevice->PciIo.RomImage,
+    PciDevice->PciIo.RomImage,
     PciDevice->PciIo.RomSize
     );
 
@@ -753,30 +753,37 @@ ProcessOpRomImage (
                     BufferSize,
                     &ImageHandle
                     );
-
-    FreePool (PciOptionRomImageDevicePath);
-
-    if (!EFI_ERROR (Status)) {
+    if (EFI_ERROR (Status)) {
+      //
+      // Record the Option ROM Image device path when LoadImage fails.
+      // PciOverride.GetDriver() will try to look for the Image Handle using the device path later.
+      //
+      AddDriver (PciDevice, NULL, PciOptionRomImageDevicePath);
+    } else {
       Status = gBS->StartImage (ImageHandle, NULL, NULL);
       if (!EFI_ERROR (Status)) {
-        AddDriver (PciDevice, ImageHandle);
+        //
+        // Record the Option ROM Image Handle
+        //
+        AddDriver (PciDevice, ImageHandle, NULL);
         PciRomAddImageMapping (
           ImageHandle,
           PciDevice->PciRootBridgeIo->SegmentNumber,
           PciDevice->BusNumber,
           PciDevice->DeviceNumber,
           PciDevice->FunctionNumber,
-          (UINT64) (UINTN) PciDevice->PciIo.RomImage,
+          PciDevice->PciIo.RomImage,
           PciDevice->PciIo.RomSize
           );
         RetStatus = EFI_SUCCESS;
       }
     }
+    FreePool (PciOptionRomImageDevicePath);
 
 NextImage:
     RomBarOffset += ImageSize;
 
-  } while (((Indicator & 0x80) == 0x00) && ((UINTN) (RomBarOffset - (UINT8 *) RomBar) < PciDevice->RomSize));
+  } while (((Indicator & 0x80) == 0x00) && (((UINTN) RomBarOffset - (UINTN) RomBar) < PciDevice->RomSize));
 
   return RetStatus;
 }

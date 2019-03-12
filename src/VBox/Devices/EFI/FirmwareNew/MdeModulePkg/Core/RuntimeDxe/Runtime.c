@@ -35,7 +35,7 @@ Revision History:
   Table now contains an item named CalculateCrc32.
 
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -280,7 +280,7 @@ RuntimeDriverSetVirtualAddressMap (
   REPORT_STATUS_CODE (EFI_PROGRESS_CODE, (EFI_SOFTWARE_EFI_RUNTIME_SERVICE | EFI_SW_RS_PC_SET_VIRTUAL_ADDRESS_MAP));
 
   //
-  // Report Status Code here since EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE event will be signaled.
+  // Report Status Code here since EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE event will be signalled.
   //
   REPORT_STATUS_CODE (EFI_PROGRESS_CODE, (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_PC_VIRTUAL_ADDRESS_CHANGE_EVENT));
 
@@ -399,11 +399,6 @@ RuntimeDriverInitialize (
                   );
   ASSERT_EFI_ERROR (Status);
   mMyImageBase = MyLoadedImage->ImageBase;
-
-  //
-  // Initialize the table used to compute 32-bit CRCs
-  //
-  RuntimeDriverInitializeCrc32Table ();
 
   //
   // Fill in the entries of the EFI Boot Services and EFI Runtime Services Tables

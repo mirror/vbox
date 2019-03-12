@@ -1,7 +1,7 @@
 /** @file
   EFI PEI Core PPI services
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -38,9 +38,9 @@ InitializePpiServices (
 
 /**
 
-  Migrate Single PPI Pointer from the temporary memory to PEI installed memory.
+  Migrate Pointer from the temporary memory to PEI installed memory.
 
-  @param PpiPointer      Pointer to Ppi
+  @param Pointer         Pointer to the Pointer needs to be converted.
   @param TempBottom      Base of old temporary memory
   @param TempTop         Top of old temporary memory
   @param Offset          Offset of new memory to old temporary memory.
@@ -48,62 +48,136 @@ InitializePpiServices (
 
 **/
 VOID
-ConverSinglePpiPointer (
-  IN PEI_PPI_LIST_POINTERS *PpiPointer,
+ConvertPointer (
+  IN OUT VOID              **Pointer,
   IN UINTN                 TempBottom,
   IN UINTN                 TempTop,
   IN UINTN                 Offset,
   IN BOOLEAN               OffsetPositive
   )
 {
-  if (((UINTN)PpiPointer->Raw < TempTop) &&
-      ((UINTN)PpiPointer->Raw >= TempBottom)) {
-    //
-    // Convert the pointer to the PPI descriptor from the old TempRam
-    // to the relocated physical memory.
-    //
+  if (((UINTN) *Pointer < TempTop) &&
+    ((UINTN) *Pointer >= TempBottom)) {
     if (OffsetPositive) {
-      PpiPointer->Raw = (VOID *) ((UINTN)PpiPointer->Raw + Offset);
+      *Pointer = (VOID *) ((UINTN) *Pointer + Offset);
     } else {
-      PpiPointer->Raw = (VOID *) ((UINTN)PpiPointer->Raw - Offset);
-    }
-
-    //
-    // Only when the PEIM descriptor is in the old TempRam should it be necessary
-    // to try to convert the pointers in the PEIM descriptor
-    //
-
-    if (((UINTN)PpiPointer->Ppi->Guid < TempTop) &&
-        ((UINTN)PpiPointer->Ppi->Guid >= TempBottom)) {
-      //
-      // Convert the pointer to the GUID in the PPI or NOTIFY descriptor
-      // from the old TempRam to the relocated physical memory.
-      //
-      if (OffsetPositive) {
-        PpiPointer->Ppi->Guid = (VOID *) ((UINTN)PpiPointer->Ppi->Guid + Offset);
-      } else {
-        PpiPointer->Ppi->Guid = (VOID *) ((UINTN)PpiPointer->Ppi->Guid - Offset);
-      }
-    }
-
-    //
-    // Convert the pointer to the PPI interface structure in the PPI descriptor
-    // from the old TempRam to the relocated physical memory.
-    //
-    if ((UINTN)PpiPointer->Ppi->Ppi < TempTop &&
-        (UINTN)PpiPointer->Ppi->Ppi >= TempBottom) {
-      if (OffsetPositive) {
-        PpiPointer->Ppi->Ppi = (VOID *) ((UINTN)PpiPointer->Ppi->Ppi + Offset);
-      } else {
-        PpiPointer->Ppi->Ppi = (VOID *) ((UINTN)PpiPointer->Ppi->Ppi - Offset);
-      }
+      *Pointer = (VOID *) ((UINTN) *Pointer - Offset);
     }
   }
 }
 
 /**
 
-  Migrate PPI Pointers from the temporary memory stack to PEI installed memory.
+  Migrate Pointer in ranges of the temporary memory to PEI installed memory.
+
+  @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size
+                         and location of temporary RAM, the stack location and the BFV location.
+  @param PrivateData     Pointer to PeiCore's private data structure.
+  @param Pointer         Pointer to the Pointer needs to be converted.
+
+**/
+VOID
+ConvertPointerInRanges (
+  IN CONST EFI_SEC_PEI_HAND_OFF  *SecCoreData,
+  IN PEI_CORE_INSTANCE           *PrivateData,
+  IN OUT VOID                    **Pointer
+  )
+{
+  UINT8                 IndexHole;
+
+  if (PrivateData->MemoryPages.Size != 0) {
+    //
+    // Convert PPI pointer in old memory pages
+    // It needs to be done before Convert PPI pointer in old Heap
+    //
+    ConvertPointer (
+      Pointer,
+      (UINTN)PrivateData->MemoryPages.Base,
+      (UINTN)PrivateData->MemoryPages.Base + PrivateData->MemoryPages.Size,
+      PrivateData->MemoryPages.Offset,
+      PrivateData->MemoryPages.OffsetPositive
+      );
+  }
+
+  //
+  // Convert PPI pointer in old Heap
+  //
+  ConvertPointer (
+    Pointer,
+    (UINTN)SecCoreData->PeiTemporaryRamBase,
+    (UINTN)SecCoreData->PeiTemporaryRamBase + SecCoreData->PeiTemporaryRamSize,
+    PrivateData->HeapOffset,
+    PrivateData->HeapOffsetPositive
+    );
+
+  //
+  // Convert PPI pointer in old Stack
+  //
+  ConvertPointer (
+    Pointer,
+    (UINTN)SecCoreData->StackBase,
+    (UINTN)SecCoreData->StackBase + SecCoreData->StackSize,
+    PrivateData->StackOffset,
+    PrivateData->StackOffsetPositive
+    );
+
+  //
+  // Convert PPI pointer in old TempRam Hole
+  //
+  for (IndexHole = 0; IndexHole < HOLE_MAX_NUMBER; IndexHole ++) {
+    if (PrivateData->HoleData[IndexHole].Size == 0) {
+      continue;
+    }
+
+    ConvertPointer (
+      Pointer,
+      (UINTN)PrivateData->HoleData[IndexHole].Base,
+      (UINTN)PrivateData->HoleData[IndexHole].Base + PrivateData->HoleData[IndexHole].Size,
+      PrivateData->HoleData[IndexHole].Offset,
+      PrivateData->HoleData[IndexHole].OffsetPositive
+      );
+  }
+}
+
+/**
+
+  Migrate Single PPI Pointer from the temporary memory to PEI installed memory.
+
+  @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size
+                         and location of temporary RAM, the stack location and the BFV location.
+  @param PrivateData     Pointer to PeiCore's private data structure.
+  @param PpiPointer      Pointer to Ppi
+
+**/
+VOID
+ConvertSinglePpiPointer (
+  IN CONST EFI_SEC_PEI_HAND_OFF  *SecCoreData,
+  IN PEI_CORE_INSTANCE           *PrivateData,
+  IN PEI_PPI_LIST_POINTERS       *PpiPointer
+  )
+{
+  //
+  // 1. Convert the pointer to the PPI descriptor from the old TempRam
+  //    to the relocated physical memory.
+  // It (for the pointer to the PPI descriptor) needs to be done before 2 (for
+  // the pointer to the GUID) and 3 (for the pointer to the PPI interface structure).
+  //
+  ConvertPointerInRanges (SecCoreData, PrivateData, &PpiPointer->Raw);
+  //
+  // 2. Convert the pointer to the GUID in the PPI or NOTIFY descriptor
+  //    from the old TempRam to the relocated physical memory.
+  //
+  ConvertPointerInRanges (SecCoreData, PrivateData, (VOID **) &PpiPointer->Ppi->Guid);
+  //
+  // 3. Convert the pointer to the PPI interface structure in the PPI descriptor
+  //    from the old TempRam to the relocated physical memory.
+  //
+  ConvertPointerInRanges (SecCoreData, PrivateData, (VOID **) &PpiPointer->Ppi->Ppi);
+}
+
+/**
+
+  Migrate PPI Pointers from the temporary memory to PEI installed memory.
 
   @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size
                          and location of temporary RAM, the stack location and the BFV location.
@@ -117,48 +191,14 @@ ConvertPpiPointers (
   )
 {
   UINT8                 Index;
-  UINT8                 IndexHole;
 
   for (Index = 0; Index < PcdGet32 (PcdPeiCoreMaxPpiSupported); Index++) {
     if (Index < PrivateData->PpiData.PpiListEnd || Index > PrivateData->PpiData.NotifyListEnd) {
-      //
-      // Convert PPI pointer in old Heap
-      //
-      ConverSinglePpiPointer (
-        &PrivateData->PpiData.PpiListPtrs[Index],
-        (UINTN)SecCoreData->PeiTemporaryRamBase,
-        (UINTN)SecCoreData->PeiTemporaryRamBase + SecCoreData->PeiTemporaryRamSize,
-        PrivateData->HeapOffset,
-        PrivateData->HeapOffsetPositive
+      ConvertSinglePpiPointer (
+        SecCoreData,
+        PrivateData,
+        &PrivateData->PpiData.PpiListPtrs[Index]
         );
-
-      //
-      // Convert PPI pointer in old Stack
-      //
-      ConverSinglePpiPointer (
-        &PrivateData->PpiData.PpiListPtrs[Index],
-        (UINTN)SecCoreData->StackBase,
-        (UINTN)SecCoreData->StackBase + SecCoreData->StackSize,
-        PrivateData->StackOffset,
-        PrivateData->StackOffsetPositive
-        );
-
-      //
-      // Convert PPI pointer in old TempRam Hole
-      //
-      for (IndexHole = 0; IndexHole < HOLE_MAX_NUMBER; IndexHole ++) {
-        if (PrivateData->HoleData[IndexHole].Size == 0) {
-          continue;
-        }
-
-        ConverSinglePpiPointer (
-          &PrivateData->PpiData.PpiListPtrs[Index],
-          (UINTN)PrivateData->HoleData[IndexHole].Base,
-          (UINTN)PrivateData->HoleData[IndexHole].Base + PrivateData->HoleData[IndexHole].Size,
-          PrivateData->HoleData[IndexHole].Offset,
-          PrivateData->HoleData[IndexHole].OffsetPositive
-          );
-      }
     }
   }
 }
@@ -171,6 +211,9 @@ ConvertPpiPointers (
 
   @param PeiServices                An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
   @param PpiList                    Pointer to a list of PEI PPI Descriptors.
+  @param Single                     TRUE if only single entry in the PpiList.
+                                    FALSE if the PpiList is ended with an entry which has the
+                                    EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST flag set in its Flags field.
 
   @retval EFI_SUCCESS              if all PPIs in PpiList are successfully installed.
   @retval EFI_INVALID_PARAMETER    if PpiList is NULL pointer
@@ -179,10 +222,10 @@ ConvertPpiPointers (
 
 **/
 EFI_STATUS
-EFIAPI
-PeiInstallPpi (
+InternalPeiInstallPpi (
   IN CONST EFI_PEI_SERVICES        **PeiServices,
-  IN CONST EFI_PEI_PPI_DESCRIPTOR  *PpiList
+  IN CONST EFI_PEI_PPI_DESCRIPTOR  *PpiList,
+  IN BOOLEAN                       Single
   )
 {
   PEI_CORE_INSTANCE *PrivateData;
@@ -229,11 +272,16 @@ PeiInstallPpi (
     PrivateData->PpiData.PpiListPtrs[Index].Ppi = (EFI_PEI_PPI_DESCRIPTOR*) PpiList;
     PrivateData->PpiData.PpiListEnd++;
 
-    //
-    // Continue until the end of the PPI List.
-    //
-    if ((PpiList->Flags & EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) ==
-        EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) {
+    if (Single) {
+      //
+      // Only single entry in the PpiList.
+      //
+      break;
+    } else if ((PpiList->Flags & EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) ==
+               EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) {
+      //
+      // Continue until the end of the PPI List.
+      //
       break;
     }
     PpiList++;
@@ -254,6 +302,31 @@ PeiInstallPpi (
 
 
   return EFI_SUCCESS;
+}
+
+/**
+
+  This function installs an interface in the PEI PPI database by GUID.
+  The purpose of the service is to publish an interface that other parties
+  can use to call additional PEIMs.
+
+  @param PeiServices                An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param PpiList                    Pointer to a list of PEI PPI Descriptors.
+
+  @retval EFI_SUCCESS              if all PPIs in PpiList are successfully installed.
+  @retval EFI_INVALID_PARAMETER    if PpiList is NULL pointer
+                                   if any PPI in PpiList is not valid
+  @retval EFI_OUT_OF_RESOURCES     if there is no more memory resource to install PPI
+
+**/
+EFI_STATUS
+EFIAPI
+PeiInstallPpi (
+  IN CONST EFI_PEI_SERVICES        **PeiServices,
+  IN CONST EFI_PEI_PPI_DESCRIPTOR  *PpiList
+  )
+{
+  return InternalPeiInstallPpi (PeiServices, PpiList, FALSE);
 }
 
 /**
@@ -409,17 +482,20 @@ PeiLocatePpi (
 
   @param PeiServices        An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
   @param NotifyList         Pointer to list of Descriptors to notify upon.
+  @param Single             TRUE if only single entry in the NotifyList.
+                            FALSE if the NotifyList is ended with an entry which has the
+                            EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST flag set in its Flags field.
 
   @retval EFI_SUCCESS           if successful
   @retval EFI_OUT_OF_RESOURCES  if no space in the database
-  @retval EFI_INVALID_PARAMETER if not a good decriptor
+  @retval EFI_INVALID_PARAMETER if not a good descriptor
 
 **/
 EFI_STATUS
-EFIAPI
-PeiNotifyPpi (
+InternalPeiNotifyPpi (
   IN CONST EFI_PEI_SERVICES           **PeiServices,
-  IN CONST EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyList
+  IN CONST EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyList,
+  IN BOOLEAN                          Single
   )
 {
   PEI_CORE_INSTANCE                *PrivateData;
@@ -474,8 +550,16 @@ PeiNotifyPpi (
 
     PrivateData->PpiData.NotifyListEnd--;
     DEBUG((EFI_D_INFO, "Register PPI Notify: %g\n", NotifyList->Guid));
-    if ((NotifyList->Flags & EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) ==
-        EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) {
+    if (Single) {
+      //
+      // Only single entry in the NotifyList.
+      //
+      break;
+    } else if ((NotifyList->Flags & EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) ==
+               EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) {
+      //
+      // Continue until the end of the Notify List.
+      //
       break;
     }
     //
@@ -517,6 +601,30 @@ PeiNotifyPpi (
     );
 
   return  EFI_SUCCESS;
+}
+
+/**
+
+  This function installs a notification service to be called back when a given
+  interface is installed or reinstalled. The purpose of the service is to publish
+  an interface that other parties can use to call additional PPIs that may materialize later.
+
+  @param PeiServices        An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param NotifyList         Pointer to list of Descriptors to notify upon.
+
+  @retval EFI_SUCCESS           if successful
+  @retval EFI_OUT_OF_RESOURCES  if no space in the database
+  @retval EFI_INVALID_PARAMETER if not a good descriptor
+
+**/
+EFI_STATUS
+EFIAPI
+PeiNotifyPpi (
+  IN CONST EFI_PEI_SERVICES           **PeiServices,
+  IN CONST EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyList
+  )
+{
+  return InternalPeiNotifyPpi (PeiServices, NotifyList, FALSE);
 }
 
 
@@ -640,6 +748,65 @@ DispatchNotify (
                             (PrivateData->PpiData.PpiListPtrs[Index2].Ppi)->Ppi
                             );
       }
+    }
+  }
+}
+
+/**
+  Process PpiList from SEC phase.
+
+  @param PeiServices    An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param PpiList        Points to a list of one or more PPI descriptors to be installed initially by the PEI core.
+                        These PPI's will be installed and/or immediately signaled if they are notification type.
+
+**/
+VOID
+ProcessPpiListFromSec (
+  IN CONST EFI_PEI_SERVICES         **PeiServices,
+  IN CONST EFI_PEI_PPI_DESCRIPTOR   *PpiList
+  )
+{
+  EFI_STATUS                Status;
+  EFI_SEC_HOB_DATA_PPI      *SecHobDataPpi;
+  EFI_HOB_GENERIC_HEADER    *SecHobList;
+
+  for (;;) {
+    if ((PpiList->Flags & EFI_PEI_PPI_DESCRIPTOR_NOTIFY_TYPES) != 0) {
+      //
+      // It is a notification PPI.
+      //
+      Status = InternalPeiNotifyPpi (PeiServices, (CONST EFI_PEI_NOTIFY_DESCRIPTOR *) PpiList, TRUE);
+      ASSERT_EFI_ERROR (Status);
+    } else {
+      //
+      // It is a normal PPI.
+      //
+      Status = InternalPeiInstallPpi (PeiServices, PpiList, TRUE);
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    if ((PpiList->Flags & EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) == EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST) {
+      //
+      // Continue until the end of the PPI List.
+      //
+      break;
+    }
+
+    PpiList++;
+  }
+
+  //
+  // If the EFI_SEC_HOB_DATA_PPI is in the list of PPIs passed to the PEI entry point,
+  // the PEI Foundation will call the GetHobs() member function and install all HOBs
+  // returned into the HOB list. It does this after installing all PPIs passed from SEC
+  // into the PPI database and before dispatching any PEIMs.
+  //
+  Status = PeiLocatePpi (PeiServices, &gEfiSecHobDataPpiGuid, 0, NULL, (VOID **) &SecHobDataPpi);
+  if (!EFI_ERROR (Status)) {
+    Status = SecHobDataPpi->GetHobs (SecHobDataPpi, &SecHobList);
+    if (!EFI_ERROR (Status)) {
+      Status = PeiInstallSecHobData (PeiServices, SecHobList);
+      ASSERT_EFI_ERROR (Status);
     }
   }
 }

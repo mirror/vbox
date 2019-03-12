@@ -4,7 +4,7 @@
 # This driver produces all required HII serivces that includes HiiDataBase, HiiString,
 # HiiFont, HiiConfigRouting. To support UEFI HII, this driver is required.
 #
-# Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -35,11 +35,13 @@
 [Sources]
   HiiDatabaseEntry.c
   Image.c
+  ImageEx.c
   HiiDatabase.h
   ConfigRouting.c
   String.c
   Database.c
   Font.c
+  ConfigKeywordHandler.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -62,17 +64,22 @@
 [Protocols]
   gEfiDevicePathProtocolGuid                                            ## SOMETIMES_CONSUMES
   gEfiHiiStringProtocolGuid                                             ## PRODUCES
-  gEfiHiiImageProtocolGuid |gEfiMdeModulePkgTokenSpaceGuid.PcdSupportHiiImageProtocol  ## SOMETIMES_PRODUCES
+  gEfiHiiImageProtocolGuid        |gEfiMdeModulePkgTokenSpaceGuid.PcdSupportHiiImageProtocol  ## SOMETIMES_PRODUCES
+  gEfiHiiImageExProtocolGuid      |gEfiMdeModulePkgTokenSpaceGuid.PcdSupportHiiImageProtocol  ## SOMETIMES_PRODUCES
+  gEfiHiiImageDecoderProtocolGuid |gEfiMdeModulePkgTokenSpaceGuid.PcdSupportHiiImageProtocol  ## SOMETIMES_CONSUMES
   gEfiHiiConfigRoutingProtocolGuid                                      ## PRODUCES
   gEfiHiiDatabaseProtocolGuid                                           ## PRODUCES
   gEfiHiiFontProtocolGuid                                               ## PRODUCES
   gEfiHiiConfigAccessProtocolGuid                                       ## SOMETIMES_CONSUMES
+  gEfiConfigKeywordHandlerProtocolGuid                                  ## PRODUCES
 
 [FeaturePcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportHiiImageProtocol   ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHiiOsRuntimeSupport       ## CONSUMES
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultPlatformLang ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNvStoreDefaultValueBuffer ## CONSUMES
 
 [Guids]
   #
@@ -82,6 +89,9 @@
   ## CONSUMES  ## Event
   ## PRODUCES  ## Event
   gEfiHiiKeyBoardLayoutGuid
+  gEfiHiiImageDecoderNameJpegGuid |gEfiMdeModulePkgTokenSpaceGuid.PcdSupportHiiImageProtocol  ## SOMETIMES_CONSUMES ## GUID
+  gEfiHiiImageDecoderNamePngGuid  |gEfiMdeModulePkgTokenSpaceGuid.PcdSupportHiiImageProtocol  ## SOMETIMES_CONSUMES ## GUID
+  gEdkiiIfrBitVarstoreGuid                                                                    ## SOMETIMES_CONSUMES ## GUID
 
 [Depex]
   TRUE

@@ -1,7 +1,7 @@
 /** @file
   Legacy Region Support
 
-  Copyright (c) 2008 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2008 - 2016, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials are
   licensed and made available under the terms and conditions of the BSD License
@@ -21,24 +21,14 @@
 #include <Protocol/LegacyRegion2.h>
 
 #include <IndustryStandard/Pci.h>
+#include <IndustryStandard/Q35MchIch9.h>
+#include <IndustryStandard/I440FxPiix4.h>
 
 #include <Library/PciLib.h>
 #include <Library/PcdLib.h>
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
-
-#define PAM_PCI_BUS        0
-#define PAM_PCI_DEV        0
-#define PAM_PCI_FUNC       0
-
-#define REG_PAM0_OFFSET    0x59    // Programmable Attribute Map 0
-#define REG_PAM1_OFFSET    0x5a    // Programmable Attribute Map 1
-#define REG_PAM2_OFFSET    0x5b    // Programmable Attribute Map 2
-#define REG_PAM3_OFFSET    0x5c    // Programmable Attribute Map 3
-#define REG_PAM4_OFFSET    0x5d    // Programmable Attribute Map 4
-#define REG_PAM5_OFFSET    0x5e    // Programmable Attribute Map 5
-#define REG_PAM6_OFFSET    0x5f    // Programmable Attribute Map 6
 
 #define PAM_BASE_ADDRESS   0xc0000
 #define PAM_LIMIT_ADDRESS  BASE_1MB
@@ -57,7 +47,7 @@ typedef struct {
 // Provides a map of the PAM registers and bits used to set Read/Write access.
 //
 typedef struct {
-  UINT8   PAMRegOffset;
+  UINTN   PAMRegPciLibAddress;
   UINT8   ReadEnableData;
   UINT8   WriteEnableData;
 } PAM_REGISTER_VALUE;

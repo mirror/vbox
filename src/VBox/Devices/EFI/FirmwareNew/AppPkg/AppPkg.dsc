@@ -23,8 +23,8 @@
   PLATFORM_VERSION               = 0.01
   DSC_SPECIFICATION              = 0x00010006
   OUTPUT_DIRECTORY               = Build/AppPkg
-  SUPPORTED_ARCHITECTURES        = IA32|IPF|X64|ARM|AARCH64
-  BUILD_TARGETS                  = DEBUG|RELEASE
+  SUPPORTED_ARCHITECTURES        = IA32|X64|ARM|AARCH64
+  BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
 #
@@ -78,11 +78,10 @@
   UefiHiiServicesLib|MdeModulePkg/Library/UefiHiiServicesLib/UefiHiiServicesLib.inf
   PerformanceLib|MdeModulePkg/Library/DxePerformanceLib/DxePerformanceLib.inf
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
+  FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
+  SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
 
   ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
-  FileHandleLib|ShellPkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
-  SortLib|ShellPkg/Library/UefiSortLib/UefiSortLib.inf
-  PathLib|ShellPkg/Library/BasePathLib/BasePathLib.inf
 
   CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
 
@@ -127,8 +126,14 @@
       gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80400040
   }
 
-#### Un-comment the following line to build Python.
+#### Un-comment the following line to build Python 2.7.2.
 #  AppPkg/Applications/Python/PythonCore.inf
+
+#### Un-comment the following line to build Python 2.7.10.
+# AppPkg/Applications/Python/Python-2.7.10/Python2710.inf
+
+#### Un-comment the following line to build Lua.
+#  AppPkg/Applications/Lua/Lua.inf
 
 
 ##############################################################################

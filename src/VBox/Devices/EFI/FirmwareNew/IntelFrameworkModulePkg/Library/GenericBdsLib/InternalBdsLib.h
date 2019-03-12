@@ -33,7 +33,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/SimpleNetwork.h>
 #include <Protocol/FirmwareVolume2.h>
 #include <Protocol/PciIo.h>
-#include <Protocol/AcpiS3Save.h>
 #include <Protocol/OEMBadging.h>
 #include <Protocol/GraphicsOutput.h>
 #include <Protocol/UgaDraw.h>
@@ -46,7 +45,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Guid/FileInfo.h>
 #include <Guid/GlobalVariable.h>
 #include <Guid/PcAnsi.h>
-#include <Guid/Performance.h>
 #include <Guid/BdsLibHii.h>
 #include <Guid/HdBootVariable.h>
 #include <Guid/LastEnumLang.h>
@@ -93,22 +91,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
     **/
     #define VBOX_EFI_APPLE_MEDIA_FILE_NAME L"\\System\\Library\\CoreServices\\boot.efi"
 #endif
-
-/**
-
-  Writes performance data of booting into the allocated memory.
-  OS can process these records.
-
-  @param  Event                 The triggered event.
-  @param  Context               Context for this event.
-
-**/
-VOID
-EFIAPI
-WriteBootToOsPerformanceData (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
-  );
 
 /**
   Get the headers (dos, image, optional header) from an image

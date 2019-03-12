@@ -3,7 +3,8 @@
 @REM   however it may be executed directly from the BaseTools project folder
 @REM   if the file is not executed within a WORKSPACE\BaseTools folder.
 @REM
-@REM Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
+@REM Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+@REM (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 @REM
 @REM This program and the accompanying materials are licensed and made available
 @REM under the terms and conditions of the BSD License which accompanies this
@@ -33,6 +34,9 @@ if /I "%1"=="/?" goto Usage
 :loop
   if "%1"=="" goto setup_workspace
   if /I "%1"=="--nt32" (
+    if /I "%2" == "X64" (
+      shift
+    )
     @REM Ignore --nt32 flag
     shift
     goto loop
@@ -113,30 +117,39 @@ if /I "%1"=="/?" goto Usage
 
 :set_PATH
   if defined WORKSPACE_TOOLS_PATH goto check_PATH
-  set PATH=%EDK_TOOLS_PATH%\Bin;%EDK_TOOLS_PATH%\Bin\Win32;%PATH%
+  if not defined EDK_TOOLS_BIN (
+    set EDK_TOOLS_BIN=%EDK_TOOLS_PATH%\Bin\Win32
+    if not exist %EDK_TOOLS_PATH%\Bin\Win32 (
+      echo.
+      echo !!! ERROR !!! Cannot find BaseTools Bin Win32!!!
+      echo Please check the directory %EDK_TOOLS_PATH%\Bin\Win32
+      echo Or configure EDK_TOOLS_BIN env to point Win32 directory.
+      echo.
+    )
+  )
+  set PATH=%EDK_TOOLS_BIN%;%PATH%
   set WORKSPACE_TOOLS_PATH=%EDK_TOOLS_PATH%
   goto PATH_ok
 
 :check_PATH
   if "%EDK_TOOLS_PATH%"=="%WORKSPACE_TOOLS_PATH%" goto PATH_ok
-  set PATH=%EDK_TOOLS_PATH%\Bin;%EDK_TOOLS_PATH%\Bin\Win32;%PATH%
+  if not defined EDK_TOOLS_BIN (
+    set EDK_TOOLS_BIN=%EDK_TOOLS_PATH%\Bin\Win32
+    if not exist %EDK_TOOLS_PATH%\Bin\Win32 (
+      echo.
+      echo !!! ERROR !!! Cannot find BaseTools Bin Win32!!!
+      echo Please check the directory %EDK_TOOLS_PATH%\Bin\Win32
+      echo Or configure EDK_TOOLS_BIN env to point Win32 directory.
+      echo.
+    )
+  )
+  set PATH=%EDK_TOOLS_BIN%;%PATH%
   set WORKSPACE_TOOLS_PATH=%EDK_TOOLS_PATH%
   echo Resetting the PATH variable to include the EDK_TOOLS_PATH for this session.
 
 :PATH_ok
-  echo           PATH      = %PATH%
-  echo.
-  if defined WORKSPACE (
-    echo      WORKSPACE      = %WORKSPACE%
-  )
-  echo EDK_TOOLS_PATH      = %EDK_TOOLS_PATH%
-  if defined BASE_TOOLS_PATH (
-    echo BASE_TOOLS_PATH     = %BASE_TOOLS_PATH%
-  )
-  echo.
-
 REM
-REM copy *.template to %WORKSPACE%\Conf
+REM copy *.template to %CONF_PATH%
 REM
 if not defined WORKSPACE (
    if defined RECONFIG (
@@ -147,49 +160,91 @@ if not defined WORKSPACE (
    goto skip_reconfig
 )
 
-if NOT exist %WORKSPACE%\Conf (
-  mkdir %WORKSPACE%\Conf
+IF NOT exist "%EDK_TOOLS_PATH%\set_vsprefix_envs.bat" (
+  @echo.
+  @echo !!! ERROR !!! The set_vsprefix_envs.bat was not found !!!
+  @echo.
+  goto end
+)
+call %EDK_TOOLS_PATH%\set_vsprefix_envs.bat
+
+if not defined CONF_PATH (
+  set CONF_PATH=%WORKSPACE%\Conf
+)
+
+if NOT exist %CONF_PATH% (
+  if defined PACKAGES_PATH (
+    for %%i IN (%PACKAGES_PATH%) DO (
+      if exist %%~fi\Conf (
+        set CONF_PATH=%%i\Conf
+        goto CopyConf
+      )
+    )
+  )
+)
+
+:CopyConf
+if NOT exist %CONF_PATH% (
+  mkdir %CONF_PATH%
 ) else (
   if defined RECONFIG (
     echo.
-    echo  Over-writing the files in the WORKSPACE\Conf directory
+    echo  Over-writing the files in the CONF_PATH directory
     echo  using the default template files
     echo.
   )
 )
 
-if NOT exist %WORKSPACE%\Conf\target.txt (
-  echo copying ... target.template to %WORKSPACE%\Conf\target.txt
+if NOT exist %CONF_PATH%\target.txt (
+  echo copying ... target.template to %CONF_PATH%\target.txt
   if NOT exist %EDK_TOOLS_PATH%\Conf\target.template (
     echo Error: target.template is missing at folder %EDK_TOOLS_PATH%\Conf\
   )
-  copy %EDK_TOOLS_PATH%\Conf\target.template %WORKSPACE%\Conf\target.txt > nul
+  copy %EDK_TOOLS_PATH%\Conf\target.template %CONF_PATH%\target.txt > nul
 ) else (
-  if defined RECONFIG echo over-write ... target.template to %WORKSPACE%\Conf\target.txt
-  if defined RECONFIG copy /Y %EDK_TOOLS_PATH%\Conf\target.template %WORKSPACE%\Conf\target.txt > nul
+  if defined RECONFIG echo over-write ... target.template to %CONF_PATH%\target.txt
+  if defined RECONFIG copy /Y %EDK_TOOLS_PATH%\Conf\target.template %CONF_PATH%\target.txt > nul
 )
 
-if NOT exist %WORKSPACE%\Conf\tools_def.txt (
-  echo copying ... tools_def.template to %WORKSPACE%\Conf\tools_def.txt
+if NOT exist %CONF_PATH%\tools_def.txt (
+  echo copying ... tools_def.template to %CONF_PATH%\tools_def.txt
   if NOT exist %EDK_TOOLS_PATH%\Conf\tools_def.template (
     echo Error: tools_def.template is missing at folder %EDK_TOOLS_PATH%\Conf\
   )
-  copy %EDK_TOOLS_PATH%\Conf\tools_def.template %WORKSPACE%\Conf\tools_def.txt > nul
+  copy %EDK_TOOLS_PATH%\Conf\tools_def.template %CONF_PATH%\tools_def.txt > nul
 ) else (
-  if defined RECONFIG echo over-write ... tools_def.template to %WORKSPACE%\Conf\tools_def.txt
-  if defined RECONFIG copy /Y %EDK_TOOLS_PATH%\Conf\tools_def.template %WORKSPACE%\Conf\tools_def.txt > nul
+  if defined RECONFIG echo over-write ... tools_def.template to %CONF_PATH%\tools_def.txt
+  if defined RECONFIG copy /Y %EDK_TOOLS_PATH%\Conf\tools_def.template %CONF_PATH%\tools_def.txt > nul
 )
 
-if NOT exist %WORKSPACE%\Conf\build_rule.txt (
-  echo copying ... build_rule.template to %WORKSPACE%\Conf\build_rule.txt
+if NOT exist %CONF_PATH%\build_rule.txt (
+  echo copying ... build_rule.template to %CONF_PATH%\build_rule.txt
   if NOT exist %EDK_TOOLS_PATH%\Conf\build_rule.template (
     echo Error: build_rule.template is missing at folder %EDK_TOOLS_PATH%\Conf\
   )
-  copy %EDK_TOOLS_PATH%\Conf\build_rule.template %WORKSPACE%\Conf\build_rule.txt > nul
+  copy %EDK_TOOLS_PATH%\Conf\build_rule.template %CONF_PATH%\build_rule.txt > nul
 ) else (
-  if defined RECONFIG echo over-write ... build_rule.template to %WORKSPACE%\Conf\build_rule.txt
-  if defined RECONFIG copy /Y %EDK_TOOLS_PATH%\Conf\build_rule.template %WORKSPACE%\Conf\build_rule.txt > nul
+  if defined RECONFIG echo over-write ... build_rule.template to %CONF_PATH%\build_rule.txt
+  if defined RECONFIG copy /Y %EDK_TOOLS_PATH%\Conf\build_rule.template %CONF_PATH%\build_rule.txt > nul
 )
+
+echo           PATH      = %PATH%
+echo.
+if defined WORKSPACE (
+  echo      WORKSPACE      = %WORKSPACE%
+)
+if defined PACKAGES_PATH (
+  echo  PACKAGES_PATH      = %PACKAGES_PATH%
+)
+echo EDK_TOOLS_PATH      = %EDK_TOOLS_PATH%
+if defined BASE_TOOLS_PATH (
+  echo BASE_TOOLS_PATH     = %BASE_TOOLS_PATH%
+)
+if defined EDK_TOOLS_BIN (
+  echo  EDK_TOOLS_BIN      = %EDK_TOOLS_BIN%
+)
+echo      CONF_PATH      = %CONF_PATH%
+echo.
 
 :skip_reconfig
 
@@ -198,43 +253,42 @@ if NOT exist %WORKSPACE%\Conf\build_rule.txt (
 @REM
 if defined FORCE_REBUILD goto check_build_environment
 if defined REBUILD goto check_build_environment
-if not exist "%EDK_TOOLS_PATH%\Bin" goto check_build_environment
+if not exist "%EDK_TOOLS_PATH%" goto check_build_environment
+if not exist "%EDK_TOOLS_BIN%"  goto check_build_environment
 
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\BootSectImage.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\build.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\EfiLdrImage.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\EfiRom.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\GenBootSector.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\GenFds.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\GenFfs.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\GenFv.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\GenFw.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\GenPage.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\GenSec.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\GenVtf.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\MigrationMsa2Inf.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\Split.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\TargetTool.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\TianoCompress.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\Trim.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\VfrCompile.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\Fpd2Dsc.exe" goto check_build_environment
-IF NOT EXIST "%EDK_TOOLS_PATH%\Bin\Win32\VolInfo.exe" goto check_build_environment
+IF NOT EXIST "%EDK_TOOLS_BIN%\BootSectImage.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\EfiLdrImage.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\EfiRom.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\GenBootSector.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\GenFfs.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\GenFv.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\GenFw.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\GenPage.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\GenSec.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\GenVtf.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\Split.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\TianoCompress.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\VfrCompile.exe" goto check_c_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\VolInfo.exe" goto check_c_tools
+
+goto check_python_tools
+
+:check_c_tools
+  echo.
+  echo !!! ERROR !!! Binary C tools are missing. They are requried to be built from BaseTools Source.
+  echo.
+  goto check_build_environment
+
+:check_python_tools
+IF NOT EXIST "%EDK_TOOLS_BIN%\build.exe" goto check_build_environment
+IF NOT EXIST "%EDK_TOOLS_BIN%\GenFds.exe" goto check_build_environment
+IF NOT EXIST "%EDK_TOOLS_BIN%\TargetTool.exe" goto check_build_environment
+IF NOT EXIST "%EDK_TOOLS_BIN%\Trim.exe" goto check_build_environment
 
 goto end
 
 :check_build_environment
-
-  if not defined FORCE_REBUILD (
-    echo.
-    echo Rebuilding of tools is not required.  Binaries of the latest,
-    echo tested versions of the tools have been tested and included in the
-    echo EDK II repository.
-    echo.
-    echo If you really want to build the tools, use the ForceRebuild option.
-    echo.
-    goto end
-  )
+  if defined BASETOOLS_PYTHON_SOURCE goto VisualStudioAvailable
 
   if not defined BASE_TOOLS_PATH (
      if not exist "Source\C\Makefile" (
@@ -244,17 +298,14 @@ goto end
        set BASE_TOOLS_PATH=%CD%
      )
   )
-  set PATH=%BASE_TOOLS_PATH%\Bin\Win32;%PATH%
-
-  set BASETOOLS_PYTHON_SOURCE=%BASE_TOOLS_PATH%\Source\Python
-  set PYTHONPATH=%BASETOOLS_PYTHON_SOURCE%;%PYTHONPATH%
 
   if not defined PYTHON_HOME (
     if defined PYTHONHOME (
       set PYTHON_HOME=%PYTHONHOME%
     ) else (
       echo.
-      echo  !!! ERROR !!! PYTHON_HOME is required to build or execute the tools, please set it. !!!
+      echo !!! ERROR !!! Binary python tools are missing. PYTHON_HOME environment variable is not set.
+      echo PYTHON_HOME is required to build or execute the python tools.
       echo.
       goto end
     )
@@ -262,36 +313,30 @@ goto end
 
   @REM We have Python, now test for FreezePython application
   if not defined PYTHON_FREEZER_PATH (
-    @REM see if we can find FreezePython.ex
-    if exist "%PYTHON_HOME%\Tools\cx_Freeze-3.0.3\FreezePython.exe" (
-      set PYTHON_FREEZER_PATH=%PYTHON_HOME%\Tools\cx_Freeze-3.0.3
-    )
-    if exist "%PYTHON_HOME%\Tools\cx_Freeze\FreezePython.exe" (
-      set PYTHON_FREEZER_PATH=%PYTHON_HOME%\Tools\cx_Freeze
-    )
-    if exist "C:\cx_Freeze\FreezePython.exe" (
-        set PYTHON_FREEZER_PATH=C:\cx_Freeze
-    )
-    if exist "C:\cx_Freeze-3.0.3" (
-        set PYTHON_FREEZER_PATH=C:\cx_Freeze-3.0.3
-    )
-    if not defined PYTHON_FREEZER_PATH (
-      echo.
-      echo !!! WARNING !!! Will not be able to compile Python programs to .exe
-      echo Will setup environment to run Python scripts directly.
-      echo.
-      set PATH=%BASETOOLS_PYTHON_SOURCE%\Trim;%PATH%
-      set PATH=%BASETOOLS_PYTHON_SOURCE%\GenFds;%PATH%
-      set PATH=%BASETOOLS_PYTHON_SOURCE%\build;%PATH%
-      set PATHEXT=%PATHEXT%;.py
-    )
+    echo.
+    echo !!! WARNING !!! PYTHON_FREEZER_PATH environment variable is not set.
+    echo Setup environment to run Python scripts directly.
+    echo.
+    set "PATH=%BASE_TOOLS_PATH%\BinWrappers\WindowsLike;%PATH%"
   )
 
-  echo BASE_TOOLS_PATH     = %BASE_TOOLS_PATH%
-  echo     PYTHON_PATH     = %PYTHON_PATH%
-  echo PYTHON_FREEZER_PATH = %PYTHON_FREEZER_PATH%
+  set BASETOOLS_PYTHON_SOURCE=%BASE_TOOLS_PATH%\Source\Python
+  set PYTHONPATH=%BASETOOLS_PYTHON_SOURCE%;%PYTHONPATH%
+
+  echo                PATH = %PATH%
+  echo         PYTHON_HOME = %PYTHON_HOME%
+  echo          PYTHONPATH = %PYTHONPATH%
+  if defined PYTHON_FREEZER_PATH (
+    echo PYTHON_FREEZER_PATH = %PYTHON_FREEZER_PATH%
+  )
   echo.
 
+:VisualStudioAvailable
+  if not defined FORCE_REBUILD (
+    if not defined REBUILD (
+      goto end
+    )
+  )
   call "%EDK_TOOLS_PATH%\get_vsvars.bat"
   if not defined VCINSTALLDIR (
     @echo.
@@ -299,8 +344,6 @@ goto end
     @echo.
     goto end
   )
-
-:VisualStudioAvailable
   if not defined FORCE_REBUILD goto IncrementalBuild
 
 :CleanAndBuild

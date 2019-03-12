@@ -47,9 +47,11 @@ if defined SRC_CONF @goto SetEnv
 @echo #############################################################################
 @if defined WORKSPACE @echo     WORKSPACE            = %WORKSPACE%
 @if not defined WORKSPACE @echo     WORKSPACE            = Not Set
+@if defined PACKAGES_PATH @echo     PACKAGES_PATH        = %PACKAGES_PATH%
 @if defined EDK_TOOLS_PATH @echo     EDK_TOOLS_PATH       = %EDK_TOOLS_PATH%
 @if not defined EDK_TOOLS_PATH @echo     EDK_TOOLS_PATH       = Not Set
 @if defined BASE_TOOLS_PATH @echo     BASE_TOOLS_PATH      = %BASE_TOOLS_PATH%
+@if defined EDK_TOOLS_BIN @echo     EDK_TOOLS_BIN        = %EDK_TOOLS_BIN%
 @if defined PYTHON_FREEZER_PATH @echo     PYTHON_FREEZER_PATH  = %PYTHON_FREEZER_PATH%
 @if "%NT32PKG%"=="TRUE" (
     @echo.
@@ -126,6 +128,17 @@ if defined SRC_CONF @goto SetEnv
 @set "TEST_VS=C:\Program Files\Microsoft Visual Studio 12.0\"
 @if "%VSINSTALLDIR%"=="%TEST_VS%" (
     @echo     TOOL_CHAIN_TAG       = VS2013
+    @goto :EOF
+)
+
+@set "TEST_VS=C:\Program Files (x86)\Microsoft Visual Studio 14.0\"
+@if "%VSINSTALLDIR%"=="%TEST_VS%" (
+    @echo     TOOL_CHAIN_TAG       = VS2015x86
+    @goto :EOF
+)
+@set "TEST_VS=C:\Program Files\Microsoft Visual Studio 14.0\"
+@if "%VSINSTALLDIR%"=="%TEST_VS%" (
+    @echo     TOOL_CHAIN_TAG       = VS2015
     @goto :EOF
 )
 @goto :EOF

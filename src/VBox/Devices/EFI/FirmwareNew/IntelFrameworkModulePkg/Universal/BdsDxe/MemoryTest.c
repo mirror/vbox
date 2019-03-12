@@ -1,7 +1,7 @@
 /** @file
   Perform the platform memory test
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -318,13 +318,18 @@ BdsMemoryTest (
                               TempData
                               );
       if (TestPercent != PreviousValue) {
-        UnicodeValueToString (StrPercent, 0, TestPercent, 0);
+        UnicodeValueToStringS (StrPercent, sizeof (StrPercent), 0, TestPercent, 0);
         TmpStr = GetStringById (STRING_TOKEN (STR_MEMORY_TEST_PERCENT));
         if (TmpStr != NULL) {
           //
           // TmpStr size is 64, StrPercent is reserved to 16.
           //
-          StrnCat (StrPercent, TmpStr, sizeof (StrPercent) / sizeof (CHAR16) - StrLen (StrPercent) - 1);
+          StrnCatS (
+            StrPercent,
+            sizeof (StrPercent) / sizeof (CHAR16),
+            TmpStr,
+            sizeof (StrPercent) / sizeof (CHAR16) - StrLen (StrPercent) - 1
+            );
           PrintXY (10, 10, NULL, NULL, StrPercent);
           FreePool (TmpStr);
         }
@@ -381,7 +386,7 @@ BdsMemoryTest (
 
 Done:
   if (!FeaturePcdGet(PcdBootlogoOnlyEnable)) {
-    UnicodeValueToString (StrTotalMemory, COMMA_TYPE, TotalMemorySize, 0);
+    UnicodeValueToStringS (StrTotalMemory, StrTotalMemorySize, COMMA_TYPE, TotalMemorySize, 0);
     if (StrTotalMemory[0] == L',') {
       StrTotalMemory++;
       StrTotalMemorySize -= sizeof (CHAR16);
@@ -389,7 +394,12 @@ Done:
 
     TmpStr = GetStringById (STRING_TOKEN (STR_MEM_TEST_COMPLETED));
     if (TmpStr != NULL) {
-      StrnCat (StrTotalMemory, TmpStr, StrTotalMemorySize / sizeof (CHAR16) - StrLen (StrTotalMemory) - 1);
+      StrnCatS (
+        StrTotalMemory,
+        StrTotalMemorySize / sizeof (CHAR16),
+        TmpStr,
+        StrTotalMemorySize / sizeof (CHAR16) - StrLen (StrTotalMemory) - 1
+        );
       FreePool (TmpStr);
     }
 
@@ -416,7 +426,10 @@ Done:
   //
   IsFirstBoot = PcdGetBool(PcdBootState);
   if (IsFirstBoot) {
-    PcdSetBool(PcdBootState, FALSE);
+    Status = PcdSetBoolS(PcdBootState, FALSE);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "Set PcdBootState to FALSE failed.\n"));
+    }
   }
 
   return ReturnStatus;

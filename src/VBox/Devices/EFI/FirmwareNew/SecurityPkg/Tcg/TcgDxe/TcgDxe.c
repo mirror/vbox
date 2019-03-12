@@ -8,7 +8,8 @@ buffer overflow, integer overflow.
 
 TcgDxePassThroughToTpm() will receive untrusted input and do basic validation.
 
-Copyright (c) 2005 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2005 - 2017, Intel Corporation. All rights reserved.<BR>
+(C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -23,11 +24,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <IndustryStandard/Tpm12.h>
 #include <IndustryStandard/Acpi.h>
 #include <IndustryStandard/PeImage.h>
-#include <IndustryStandard/SmBios.h>
 #include <IndustryStandard/TcpaAcpi.h>
 
 #include <Guid/GlobalVariable.h>
-#include <Guid/SmBios.h>
 #include <Guid/HobList.h>
 #include <Guid/TcgEventHob.h>
 #include <Guid/EventGroup.h>
@@ -48,14 +47,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/BaseLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PrintLib.h>
-#include <Library/TpmCommLib.h>
+#include <Library/Tpm12DeviceLib.h>
 #include <Library/PcdLib.h>
 #include <Library/UefiLib.h>
 #include <Library/ReportStatusCodeLib.h>
-
-#include "TpmComm.h"
-
-#define  EFI_TCG_LOG_AREA_SIZE        0x10000
+#include <Library/Tpm12CommandLib.h>
+#include <Library/BaseCryptLib.h>
 
 #define TCG_DXE_DATA_FROM_THIS(this)  \
   BASE_CR (this, TCG_DXE_DATA, TcgProtocol)
@@ -67,7 +64,6 @@ typedef struct _TCG_DXE_DATA {
   EFI_TCG_SERVER_ACPI_TABLE         *TcgServerAcpiTable;
   UINTN                             EventLogSize;
   UINT8                             *LastEvent;
-  TIS_TPM_HANDLE                    TpmHandle;
 } TCG_DXE_DATA;
 
 
@@ -107,8 +103,8 @@ EFI_TCG_SERVER_ACPI_TABLE           mTcgServerAcpiTemplate = {
   0,                          // Reserved
   0,                          // Log Area Max Length
   (EFI_PHYSICAL_ADDRESS) (SIZE_4GB - 1), // Log Area Start Address
-  0x0100,                     // TCG Specification revision 1.0
-  2,                          // Device Flags
+  0x0120,                     // TCG Specification revision 1.2
+  0,                          // Device Flags
   0,                          // Interrupt Flags
   0,                          // GPE
   {0},                        // Reserved 3 bytes
@@ -118,7 +114,7 @@ EFI_TCG_SERVER_ACPI_TABLE           mTcgServerAcpiTemplate = {
     0,
     0,
     EFI_ACPI_3_0_BYTE,
-    TPM_BASE_ADDRESS          // Base Address
+    0                         // Base Address
   },
   0,                          // Reserved
   {0},                        // Configuration Address
@@ -276,6 +272,40 @@ TcgDxeStatusCheck (
 }
 
 /**
+Single function calculates SHA1 digest value for all raw data. It
+combines Sha1Init(), Sha1Update() and Sha1Final().
+
+@param[in]  Data          Raw data to be digested.
+@param[in]  DataLen       Size of the raw data.
+@param[out] Digest        Pointer to a buffer that stores the final digest.
+
+@retval     EFI_SUCCESS   Always successfully calculate the final digest.
+**/
+EFI_STATUS
+EFIAPI
+TpmCommHashAll (
+  IN  CONST UINT8       *Data,
+  IN        UINTN       DataLen,
+  OUT       TPM_DIGEST  *Digest
+  )
+{
+  VOID   *Sha1Ctx;
+  UINTN  CtxSize;
+
+  CtxSize = Sha1GetContextSize ();
+  Sha1Ctx = AllocatePool (CtxSize);
+  ASSERT (Sha1Ctx != NULL);
+
+  Sha1Init (Sha1Ctx);
+  Sha1Update (Sha1Ctx, Data, DataLen);
+  Sha1Final (Sha1Ctx, (UINT8 *)Digest);
+
+  FreePool (Sha1Ctx);
+
+  return EFI_SUCCESS;
+}
+
+/**
   This service abstracts the capability to do a hash operation on a data buffer.
 
   @param[in]      This             Indicates the calling context
@@ -324,9 +354,9 @@ TcgDxeHashAll (
       }
       *HashedDataLen = sizeof (TPM_DIGEST);
 
-	  if (*HashedDataResult == NULL) {
-	  	*HashedDataResult = AllocatePool ((UINTN) *HashedDataLen);
-	  }
+      if (*HashedDataResult == NULL) {
+        *HashedDataResult = AllocatePool ((UINTN) *HashedDataLen);
+      }
 
       return TpmCommHashAll (
                HashData,
@@ -336,6 +366,53 @@ TcgDxeHashAll (
     default:
       return EFI_UNSUPPORTED;
   }
+}
+
+/**
+Add a new entry to the Event Log.
+
+@param[in, out] EventLogPtr   Pointer to the Event Log data.
+@param[in, out] LogSize       Size of the Event Log.
+@param[in]      MaxSize       Maximum size of the Event Log.
+@param[in]      NewEventHdr   Pointer to a TCG_PCR_EVENT_HDR data structure.
+@param[in]      NewEventData  Pointer to the new event data.
+
+@retval EFI_SUCCESS           The new event log entry was added.
+@retval EFI_OUT_OF_RESOURCES  No enough memory to log the new event.
+
+**/
+EFI_STATUS
+TpmCommLogEvent (
+  IN OUT  UINT8                     **EventLogPtr,
+  IN OUT  UINTN                     *LogSize,
+  IN      UINTN                     MaxSize,
+  IN      TCG_PCR_EVENT_HDR         *NewEventHdr,
+  IN      UINT8                     *NewEventData
+  )
+{
+  UINTN                            NewLogSize;
+
+  //
+  // Prevent Event Overflow
+  //
+  if ((UINTN) NewEventHdr->EventSize > MAX_UINTN - sizeof (*NewEventHdr)) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  NewLogSize = sizeof (*NewEventHdr) + NewEventHdr->EventSize;
+  if (NewLogSize > MaxSize - *LogSize) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  *EventLogPtr += *LogSize;
+  *LogSize += NewLogSize;
+  CopyMem (*EventLogPtr, NewEventHdr, sizeof (*NewEventHdr));
+  CopyMem (
+    *EventLogPtr + sizeof (*NewEventHdr),
+    NewEventData,
+    NewEventHdr->EventSize
+    );
+  return EFI_SUCCESS;
 }
 
 /**
@@ -447,8 +524,6 @@ TcgDxePassThroughToTpm (
   IN      UINT8                     *TpmOutputParameterBlock
   )
 {
-  TCG_DXE_DATA                      *TcgData;
-
   if (TpmInputParameterBlock == NULL ||
       TpmOutputParameterBlock == NULL ||
       TpmInputParameterBlockSize == 0 ||
@@ -456,15 +531,11 @@ TcgDxePassThroughToTpm (
     return EFI_INVALID_PARAMETER;
   }
 
-  TcgData = TCG_DXE_DATA_FROM_THIS (This);
-
-  return TisPcExecute (
-           TcgData->TpmHandle,
-           "%r%/%r",
+  return Tpm12SubmitCommand (
+           TpmInputParameterBlockSize,
            TpmInputParameterBlock,
-           (UINTN) TpmInputParameterBlockSize,
-           TpmOutputParameterBlock,
-           (UINTN) TpmOutputParameterBlockSize
+           &TpmOutputParameterBlockSize,
+           TpmOutputParameterBlock
            );
 }
 
@@ -512,8 +583,7 @@ TcgDxeHashLogExtendEventI (
     }
   }
 
-  Status = TpmCommExtend (
-             TcgData->TpmHandle,
+  Status = Tpm12Extend (
              &NewEventHdr->Digest,
              NewEventHdr->PCRIndex,
              NULL
@@ -627,7 +697,6 @@ TCG_DXE_DATA                 mTcgDxeData = {
   &mTcgClientAcpiTemplate,
   &mTcgServerAcpiTemplate,
   0,
-  NULL,
   NULL
 };
 
@@ -655,7 +724,7 @@ SetupEventLog (
     Status = gBS->AllocatePages (
                     AllocateMaxAddress,
                     EfiACPIMemoryNVS,
-                    EFI_SIZE_TO_PAGES (EFI_TCG_LOG_AREA_SIZE),
+                    EFI_SIZE_TO_PAGES (PcdGet32 (PcdTcgLogAreaMinLen)),
                     &Lasa
                     );
     if (EFI_ERROR (Status)) {
@@ -666,8 +735,8 @@ SetupEventLog (
     // To initialize them as 0xFF is recommended
     // because the OS can know the last entry for that.
     //
-    SetMem ((VOID *)(UINTN)mTcgClientAcpiTemplate.Lasa, EFI_TCG_LOG_AREA_SIZE, 0xFF);
-    mTcgClientAcpiTemplate.Laml = EFI_TCG_LOG_AREA_SIZE;
+    SetMem ((VOID *)(UINTN)mTcgClientAcpiTemplate.Lasa, PcdGet32 (PcdTcgLogAreaMinLen), 0xFF);
+    mTcgClientAcpiTemplate.Laml = PcdGet32 (PcdTcgLogAreaMinLen);
 
   } else {
     Lasa = mTcgServerAcpiTemplate.Lasa;
@@ -675,7 +744,7 @@ SetupEventLog (
     Status = gBS->AllocatePages (
                     AllocateMaxAddress,
                     EfiACPIMemoryNVS,
-                    EFI_SIZE_TO_PAGES (EFI_TCG_LOG_AREA_SIZE),
+                    EFI_SIZE_TO_PAGES (PcdGet32 (PcdTcgLogAreaMinLen)),
                     &Lasa
                     );
     if (EFI_ERROR (Status)) {
@@ -686,8 +755,8 @@ SetupEventLog (
     // To initialize them as 0xFF is recommended
     // because the OS can know the last entry for that.
     //
-    SetMem ((VOID *)(UINTN)mTcgServerAcpiTemplate.Lasa, EFI_TCG_LOG_AREA_SIZE, 0xFF);
-    mTcgServerAcpiTemplate.Laml = EFI_TCG_LOG_AREA_SIZE;
+    SetMem ((VOID *)(UINTN)mTcgServerAcpiTemplate.Lasa, PcdGet32 (PcdTcgLogAreaMinLen), 0xFF);
+    mTcgServerAcpiTemplate.Laml = PcdGet32 (PcdTcgLogAreaMinLen);
   }
 
   GuidHob.Raw = GetHobList ();
@@ -748,42 +817,13 @@ MeasureHandoffTables (
   )
 {
   EFI_STATUS                        Status;
-  SMBIOS_TABLE_ENTRY_POINT          *SmbiosTable;
   TCG_PCR_EVENT_HDR                 TcgEvent;
   EFI_HANDOFF_TABLE_POINTERS        HandoffTables;
   UINTN                             ProcessorNum;
   EFI_CPU_PHYSICAL_LOCATION         *ProcessorLocBuf;
 
   ProcessorLocBuf = NULL;
-
-  //
-  // Measure SMBIOS with EV_EFI_HANDOFF_TABLES to PCR[1]
-  //
-  Status = EfiGetSystemConfigurationTable (
-             &gEfiSmbiosTableGuid,
-             (VOID **) &SmbiosTable
-             );
-
-  if (!EFI_ERROR (Status) && SmbiosTable != NULL) {
-    TcgEvent.PCRIndex  = 1;
-    TcgEvent.EventType = EV_EFI_HANDOFF_TABLES;
-    TcgEvent.EventSize = sizeof (HandoffTables);
-
-    HandoffTables.NumberOfTables = 1;
-    HandoffTables.TableEntry[0].VendorGuid  = gEfiSmbiosTableGuid;
-    HandoffTables.TableEntry[0].VendorTable = SmbiosTable;
-
-    DEBUG ((DEBUG_INFO, "The Smbios Table starts at: 0x%x\n", SmbiosTable->TableAddress));
-    DEBUG ((DEBUG_INFO, "The Smbios Table size: 0x%x\n", SmbiosTable->TableLength));
-
-    Status = TcgDxeHashLogExtendEventI (
-               &mTcgDxeData,
-               (UINT8*)(UINTN)SmbiosTable->TableAddress,
-               SmbiosTable->TableLength,
-               &TcgEvent,
-               (UINT8*)&HandoffTables
-               );
-  }
+  Status = EFI_SUCCESS;
 
   if (PcdGet8 (PcdTpmPlatformClass) == TCG_PLATFORM_TYPE_SERVER) {
     //
@@ -959,8 +999,8 @@ MeasureVariable (
 
   Status = TcgDxeHashLogExtendEventI (
              &mTcgDxeData,
-             (UINT8*)VarData,
-             VarSize,
+             (UINT8*)VarLog,
+             TcgEvent.EventSize,
              &TcgEvent,
              (UINT8*)VarLog
              );
@@ -1111,7 +1151,7 @@ OnReadyToBoot (
                EFI_CALLING_EFI_APPLICATION
                );
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "%s not Measured. Error!\n", EFI_CALLING_EFI_APPLICATION));
+      DEBUG ((EFI_D_ERROR, "%a not Measured. Error!\n", EFI_CALLING_EFI_APPLICATION));
     }
 
     //
@@ -1120,7 +1160,7 @@ OnReadyToBoot (
     for (PcrIndex = 0; PcrIndex < 8; PcrIndex++) {
       Status = MeasureSeparatorEvent (PcrIndex);
       if (EFI_ERROR (Status)) {
-        DEBUG ((EFI_D_ERROR, "Seperator Event not Measured. Error!\n"));
+        DEBUG ((DEBUG_ERROR, "Separator Event not Measured. Error!\n"));
       }
     }
 
@@ -1143,7 +1183,7 @@ OnReadyToBoot (
                EFI_RETURNING_FROM_EFI_APPLICATOIN
                );
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "%s not Measured. Error!\n", EFI_RETURNING_FROM_EFI_APPLICATOIN));
+      DEBUG ((EFI_D_ERROR, "%a not Measured. Error!\n", EFI_RETURNING_FROM_EFI_APPLICATOIN));
     }
   }
 
@@ -1216,6 +1256,7 @@ InstallAcpiTable (
     Checksum = CalculateCheckSum8 ((UINT8 *)&mTcgServerAcpiTemplate, sizeof (mTcgServerAcpiTemplate));
     mTcgServerAcpiTemplate.Header.Checksum = Checksum;
 
+    mTcgServerAcpiTemplate.BaseAddress.Address = PcdGet64 (PcdTpmBaseAddress);
     Status = AcpiTable->InstallAcpiTable (
                             AcpiTable,
                             &mTcgServerAcpiTemplate,
@@ -1254,7 +1295,7 @@ OnExitBootServices (
              EFI_EXIT_BOOT_SERVICES_INVOCATION
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_ERROR, "%s not Measured. Error!\n", EFI_EXIT_BOOT_SERVICES_INVOCATION));
+    DEBUG ((EFI_D_ERROR, "%a not Measured. Error!\n", EFI_EXIT_BOOT_SERVICES_INVOCATION));
   }
 
   //
@@ -1264,7 +1305,7 @@ OnExitBootServices (
              EFI_EXIT_BOOT_SERVICES_SUCCEEDED
              );
   if (EFI_ERROR (Status)){
-    DEBUG ((EFI_D_ERROR, "%s not Measured. Error!\n", EFI_EXIT_BOOT_SERVICES_SUCCEEDED));
+    DEBUG ((EFI_D_ERROR, "%a not Measured. Error!\n", EFI_EXIT_BOOT_SERVICES_SUCCEEDED));
   }
 }
 
@@ -1293,7 +1334,7 @@ OnExitBootServicesFailed (
              EFI_EXIT_BOOT_SERVICES_FAILED
              );
   if (EFI_ERROR (Status)){
-    DEBUG ((EFI_D_ERROR, "%s not Measured. Error!\n", EFI_EXIT_BOOT_SERVICES_FAILED));
+    DEBUG ((EFI_D_ERROR, "%a not Measured. Error!\n", EFI_EXIT_BOOT_SERVICES_FAILED));
   }
 }
 
@@ -1308,20 +1349,15 @@ OnExitBootServicesFailed (
 **/
 EFI_STATUS
 GetTpmStatus (
-     OUT  BOOLEAN                   *TPMDeactivatedFlag
+  OUT BOOLEAN  *TPMDeactivatedFlag
   )
 {
-  EFI_STATUS                        Status;
-  TPM_STCLEAR_FLAGS                 VFlags;
+  EFI_STATUS         Status;
+  TPM_STCLEAR_FLAGS  VolatileFlags;
 
-  Status = TpmCommGetFlags (
-             mTcgDxeData.TpmHandle,
-             TPM_CAP_FLAG_VOLATILE,
-             &VFlags,
-             sizeof (VFlags)
-             );
+  Status = Tpm12GetCapabilityFlagVolatile (&VolatileFlags);
   if (!EFI_ERROR (Status)) {
-    *TPMDeactivatedFlag = VFlags.deactivated;
+    *TPMDeactivatedFlag = VolatileFlags.deactivated;
   }
 
   return Status;
@@ -1360,8 +1396,7 @@ DriverEntry (
     return EFI_DEVICE_ERROR;
   }
 
-  mTcgDxeData.TpmHandle = (TIS_TPM_HANDLE)(UINTN)TPM_BASE_ADDRESS;
-  Status = TisPcRequestUseTpm (mTcgDxeData.TpmHandle);
+  Status = Tpm12RequestUseTpm ();
   if (EFI_ERROR (Status)) {
     DEBUG ((EFI_D_ERROR, "TPM not detected!\n"));
     return Status;
@@ -1371,9 +1406,7 @@ DriverEntry (
   if (EFI_ERROR (Status)) {
     DEBUG ((
       EFI_D_ERROR,
-      "Line %d in file " __FILE__ ":\n    "
-      "DriverEntry: TPM not working properly\n",
-      __LINE__
+      "DriverEntry: TPM not working properly\n"
       ));
     return Status;
   }

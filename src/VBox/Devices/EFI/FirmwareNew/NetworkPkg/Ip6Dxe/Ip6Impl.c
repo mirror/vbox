@@ -1,7 +1,8 @@
 /** @file
   Implementation of EFI_IP6_PROTOCOL protocol interfaces.
 
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2009 - 2016, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -841,7 +842,7 @@ EfiIp6Routes (
   EFI_TPL                   OldTpl;
   IP6_SERVICE               *IpSb;
 
-  if ((This == NULL) || (PrefixLength >= IP6_PREFIX_NUM)) {
+  if ((This == NULL) || (PrefixLength > IP6_PREFIX_MAX)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1761,7 +1762,6 @@ EfiIp6Cancel (
   )
 {
   IP6_PROTOCOL              *IpInstance;
-  IP6_SERVICE               *IpSb;
   EFI_STATUS                Status;
   EFI_TPL                   OldTpl;
 
@@ -1770,7 +1770,6 @@ EfiIp6Cancel (
   }
 
   IpInstance = IP6_INSTANCE_FROM_PROTOCOL (This);
-  IpSb       = IpInstance->Service;
 
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 

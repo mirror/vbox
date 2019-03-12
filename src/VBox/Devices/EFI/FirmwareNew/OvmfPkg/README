@@ -5,7 +5,7 @@ The Open Virtual Machine Firmware (OVMF) project aims
 to support firmware for Virtual Machines using the edk2
 code base.  More information can be found at:
 
-http://sourceforge.net/apps/mediawiki/tianocore/index.php?title=OVMF
+http://www.tianocore.org/ovmf/
 
 === STATUS ===
 
@@ -55,7 +55,7 @@ these binary outputs:
 
 More information on building OVMF can be found at:
 
-http://sourceforge.net/apps/mediawiki/tianocore/index.php?title=How_to_build_OVMF
+https://github.com/tianocore/tianocore.github.io/wiki/How%20to%20build%20OVMF
 
 === RUNNING OVMF on QEMU ===
 
@@ -66,6 +66,8 @@ http://sourceforge.net/apps/mediawiki/tianocore/index.php?title=How_to_build_OVM
   - Option 1: QEMU 1.6 or newer; Use QEMU -pflash parameter
     * QEMU/OVMF will use emulated flash, and fully support UEFI variables
     * Run qemu with: -pflash path/to/OVMF.fd
+    * Note that this option is required for running SecureBoot-enabled builds
+      (-D SECURE_BOOT_ENABLE).
   - Option 2: Use QEMU -bios parameter
     * Note that UEFI variables will be partially emulated, and non-volatile
       variables may lose their contents after a reboot
@@ -115,6 +117,58 @@ $ OvmfPkg/build.sh -a X64 qemu -cdrom /path/to/disk-image.iso
 
 To build a 32-bit OVMF without debug messages using GCC 4.5:
 $ OvmfPkg/build.sh -a IA32 -b RELEASE -t GCC45
+
+=== SMM support ===
+
+Requirements:
+* SMM support requires QEMU 2.5.
+* The minimum required QEMU machine type is "pc-q35-2.5".
+* SMM with KVM requires Linux 4.4 (host).
+
+OVMF is capable of utilizing SMM if the underlying QEMU or KVM hypervisor
+emulates SMM. SMM is put to use in the S3 suspend and resume infrastructure,
+and in the UEFI variable driver stack. The purpose is (virtual) hardware
+separation between the runtime guest OS and the firmware (OVMF), with the
+intent to make Secure Boot actually secure, by preventing the runtime guest OS
+from tampering with the variable store and S3 areas.
+
+For SMM support, OVMF must be built with the "-D SMM_REQUIRE" option. The
+resultant firmware binary will check if QEMU actually provides SMM emulation;
+if it doesn't, then OVMF will log an error and trigger an assertion failure
+during boot (even in RELEASE builds). Both the naming of the flag (SMM_REQUIRE,
+instead of SMM_ENABLE), and this behavior are consistent with the goal
+described above: this is supposed to be a security feature, and fallbacks are
+not allowed. Similarly, a pflash-backed variable store is a requirement.
+
+QEMU should be started with the options listed below (in addition to any other
+guest-specific flags). The command line should be gradually composed from the
+hints below. '\' is used to extend the command line to multiple lines, and '^'
+can be used on Windows.
+
+* QEMU binary and options specific to 32-bit guests:
+
+  $ qemu-system-i386 -cpu coreduo,-nx \
+
+  or
+
+  $ qemu-system-x86_64 -cpu <MODEL>,-lm,-nx \
+
+* QEMU binary for running 64-bit guests (no particular options):
+
+  $ qemu-system-x86_64 \
+
+* Flags common to all SMM scenarios (only the Q35 machine type is supported):
+
+  -machine q35,smm=on,accel=(tcg|kvm) \
+  -m ... \
+  -smp ... \
+  -global driver=cfi.pflash01,property=secure,value=on \
+  -drive if=pflash,format=raw,unit=0,file=OVMF_CODE.fd,readonly=on \
+  -drive if=pflash,format=raw,unit=1,file=copy_of_OVMF_VARS.fd \
+
+* In order to disable S3, add:
+
+  -global ICH9-LPC.disable_s3=1 \
 
 === Network Support ===
 
@@ -170,36 +224,52 @@ longer.)
   basic virtio-net driver, located in OvmfPkg/VirtioNetDxe.
 
 * Also independently of the iPXE NIC drivers, Intel's proprietary E1000 NIC
-  driver (PROEFI) can be embedded in the OVMF image at build time:
+  driver (from the BootUtil distribution) can be embedded in the OVMF image at
+  build time:
 
-  - Download UEFI drivers for the e1000 NIC
-    - http://downloadcenter.intel.com/Detail_Desc.aspx?agr=Y&DwnldID=17515&lang=eng
-    - Install the drivers into a directory called Intel3.5 in your WORKSPACE.
+  - Download BootUtil:
+    - Navigate to
+      https://downloadcenter.intel.com/download/19186/Ethernet-Intel-Ethernet-Connections-Boot-Utility-Preboot-Images-and-EFI-Drivers
+    - Click the download link for "PREBOOT.EXE".
+    - Accept the Intel Software License Agreement that appears.
+    - Unzip "PREBOOT.EXE" into a separate directory (this works with the
+      "unzip" utility on platforms different from Windows as well).
+    - Copy the "APPS/EFI/EFIx64/E3522X2.EFI" driver binary to
+      "Intel3.5/EFIX64/E3522X2.EFI" in your WORKSPACE.
+    - Intel have stopped distributing an IA32 driver binary (which used to
+      match the filename pattern "E35??E2.EFI"), thus this method will only
+      work for the IA32X64 and X64 builds of OVMF.
 
   - Include the driver in OVMF during the build:
-    - Add "-D E1000_ENABLE -D FD_SIZE_2MB" to your build command,
-    - For example: "build -D E1000_ENABLE -D FD_SIZE_2MB".
+    - Add "-D E1000_ENABLE" to your build command (only when building
+      "OvmfPkg/OvmfPkgIa32X64.dsc" or "OvmfPkg/OvmfPkgX64.dsc").
+    - For example: "build -D E1000_ENABLE".
 
 * When a matching iPXE driver is configured for a NIC as described above, it
   takes priority over other drivers that could possibly drive the card too:
 
-                 | e1000  ne2k_pci  pcnet  rtl8139  virtio-net-pci
-    -------------+------------------------------------------------
-    iPXE         |   x       x        x       x           x
-    VirtioNetDxe |                                        x
-    Intel PROEFI |   x
+                         | e1000  ne2k_pci  pcnet  rtl8139  virtio-net-pci
+    ---------------------+------------------------------------------------
+    iPXE                 |   x       x        x       x           x
+    VirtioNetDxe         |                                        x
+    Intel BootUtil (X64) |   x
 
 === OVMF Flash Layout ===
 
-Like all current IA32/X64 system designs, OVMF's firmware
-device (rom/flash) appears in QEMU's physical address space
-just below 4GB (0x100000000).
+Like all current IA32/X64 system designs, OVMF's firmware device (rom/flash)
+appears in QEMU's physical address space just below 4GB (0x100000000).
 
-The layout of the firmware device in memory looks like:
+OVMF supports building a 1MB, 2MB or 4MB flash image (see the DSC files for the
+FD_SIZE_1MB, FD_SIZE_2MB, FD_SIZE_4MB build defines). The base address for the
+1MB image in QEMU physical memory is 0xfff00000. The base address for the 2MB
+image is 0xffe00000. The base address for the 4MB image is 0xffc00000.
+
+Using the 1MB or 2MB image, the layout of the firmware device in memory looks
+like:
 
 +--------------------------------------- 4GB (0x100000000)
 | VTF0 (16-bit reset code) and OVMF SEC
-| (SECFV)
+| (SECFV, 208KB/0x34000)
 +--------------------------------------- varies based on flash size
 |
 | Compressed main firmware image
@@ -217,9 +287,27 @@ The layout of the firmware device in memory looks like:
 | area (56KB/0xe000)
 +--------------------------------------- base address
 
-OVMF supports building a 1MB or a 2MB flash image. The base address for
-a 1MB image in QEMU physical memory is 0xfff00000. The base address for
-a 2MB image is 0xffe00000.
+Using the 4MB image, the layout of the firmware device in memory looks like:
+
++--------------------------------------- base + 0x400000 (4GB/0x100000000)
+| VTF0 (16-bit reset code) and OVMF SEC
+| (SECFV, 208KB/0x34000)
++--------------------------------------- base + 0x3cc000
+|
+| Compressed main firmware image
+| (FVMAIN_COMPACT, 3360KB/0x348000)
+|
++--------------------------------------- base + 0x84000
+| Fault-tolerant write (FTW)
+| Spare blocks (264KB/0x42000)
++--------------------------------------- base + 0x42000
+| FTW Work block (4KB/0x1000)
++--------------------------------------- base + 0x41000
+| Event log area (4KB/0x1000)
++--------------------------------------- base + 0x40000
+| Non-volatile variable storage
+| area (256KB/0x40000)
++--------------------------------------- base address (0xffc00000)
 
 The code in SECFV locates FVMAIN_COMPACT, and decompresses the
 main firmware (MAINFV) into RAM memory at address 0x800000. The
@@ -236,11 +324,11 @@ If you must use UNIXGCC, then you can override the build options for
 particular libraries and modules in the .dsc to re-enable debugging
 selectively. For example:
   [Components]
-  OvmfPkg/Library/PlatformBdsLib/PlatformBdsLib.inf {
+  OvmfPkg/Library/PlatformBootManagerLib/PlatformBootManagerLib.inf {
     <BuildOptions>
       GCC:*_*_*_CC_FLAGS             = -UMDEPKG_NDEBUG
   }
-  IntelFrameworkModulePkg/Universal/BdsDxe/BdsDxe.inf {
+  MdeModulePkg/Universal/BdsDxe/BdsDxe.inf {
     <BuildOptions>
       GCC:*_*_*_CC_FLAGS             = -UMDEPKG_NDEBUG
   }

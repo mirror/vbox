@@ -25,6 +25,7 @@
 
 #include <Guid/GuidHobFspEas.h>
 #include <Guid/MemoryTypeInformation.h>
+#include <Guid/PcdDataBaseHobGuid.h>
 #include <Ppi/Capsule.h>
 
 //
@@ -45,14 +46,13 @@ GetMemorySizeInMemoryTypeInformation (
   IN EFI_PEI_SERVICES **PeiServices
   )
 {
-  EFI_STATUS                  Status;
   EFI_PEI_HOB_POINTERS        Hob;
   EFI_MEMORY_TYPE_INFORMATION *MemoryData;
   UINT8                       Index;
   UINTN                       TempPageNum;
 
   MemoryData = NULL;
-  Status     = (*PeiServices)->GetHobList ((CONST EFI_PEI_SERVICES**)PeiServices, (VOID **) &Hob.Raw);
+  (*PeiServices)->GetHobList ((CONST EFI_PEI_SERVICES**)PeiServices, (VOID **) &Hob.Raw);
   while (!END_OF_HOB_LIST (Hob)) {
     if (Hob.Header->HobType == EFI_HOB_TYPE_GUID_EXTENSION &&
       CompareGuid (&Hob.Guid->Name, &gEfiMemoryTypeInformationGuid)) {
@@ -155,7 +155,7 @@ FspHobProcessForMemoryResource (
   BOOLEAN              FoundFspMemHob;
   EFI_STATUS           Status;
   EFI_BOOT_MODE        BootMode;
-  PEI_CAPSULE_PPI      *Capsule;
+  EFI_PEI_CAPSULE_PPI  *Capsule;
   VOID                 *CapsuleBuffer;
   UINTN                CapsuleBufferLength;
   UINT64               RequiredMemSize;
@@ -246,7 +246,7 @@ FspHobProcessForMemoryResource (
 
     S3PeiMemBase = 0;
     S3PeiMemSize = 0;
-    Status = GetS3MemoryInfo (&S3PeiMemBase, &S3PeiMemSize);
+    Status = GetS3MemoryInfo (&S3PeiMemSize, &S3PeiMemBase);
     ASSERT_EFI_ERROR (Status);
     DEBUG((DEBUG_INFO, "S3 memory %Xh - %Xh bytes\n", S3PeiMemBase, S3PeiMemSize));
 
@@ -271,7 +271,7 @@ FspHobProcessForMemoryResource (
     CapsuleBufferLength = 0;
     if (BootMode == BOOT_ON_FLASH_UPDATE) {
       Status = PeiServicesLocatePpi (
-                 &gPeiCapsulePpiGuid,
+                 &gEfiPeiCapsulePpiGuid,
                  0,
                  NULL,
                  (VOID **) &Capsule
@@ -335,6 +335,41 @@ FspHobProcessForMemoryResource (
 }
 
 /**
+  Process FSP HOB list
+
+  @param[in] FspHobList  Pointer to the HOB data structure produced by FSP.
+
+**/
+VOID
+ProcessFspHobList (
+  IN VOID                 *FspHobList
+  )
+{
+  EFI_PEI_HOB_POINTERS  FspHob;
+
+  FspHob.Raw = FspHobList;
+
+  //
+  // Add all the HOBs from FSP binary to FSP wrapper
+  //
+  while (!END_OF_HOB_LIST (FspHob)) {
+    if (FspHob.Header->HobType == EFI_HOB_TYPE_GUID_EXTENSION) {
+      //
+      // Skip FSP binary creates PcdDataBaseHobGuid
+      //
+      if (!CompareGuid(&FspHob.Guid->Name, &gPcdDataBaseHobGuid)) {
+        BuildGuidDataHob (
+          &FspHob.Guid->Name,
+          GET_GUID_HOB_DATA(FspHob),
+          GET_GUID_HOB_DATA_SIZE(FspHob)
+        );
+      }
+    }
+    FspHob.Raw = GET_NEXT_HOB (FspHob);
+  }
+}
+
+/**
   BIOS process FspBobList for other data (not Memory Resource Descriptor).
 
   @param[in] FspHobList  Pointer to the HOB data structure produced by FSP.
@@ -347,6 +382,8 @@ FspHobProcessForOtherData (
   IN VOID                 *FspHobList
   )
 {
+  ProcessFspHobList (FspHobList);
+
   return EFI_SUCCESS;
 }
 

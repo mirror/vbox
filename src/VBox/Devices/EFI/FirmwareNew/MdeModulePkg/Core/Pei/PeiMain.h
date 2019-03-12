@@ -1,7 +1,7 @@
 /** @file
   Definition of Pei Core Structures and Services
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -20,6 +20,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Ppi/MemoryDiscovered.h>
 #include <Ppi/StatusCode.h>
 #include <Ppi/Reset.h>
+#include <Ppi/Reset2.h>
 #include <Ppi/FirmwareVolume.h>
 #include <Ppi/FirmwareVolumeInfo.h>
 #include <Ppi/FirmwareVolumeInfo2.h>
@@ -29,6 +30,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Ppi/Security2.h>
 #include <Ppi/TemporaryRamSupport.h>
 #include <Ppi/TemporaryRamDone.h>
+#include <Ppi/SecHobData.h>
 #include <Library/DebugLib.h>
 #include <Library/PeiCoreEntryPoint.h>
 #include <Library/BaseLib.h>
@@ -231,6 +233,10 @@ struct _PEI_CORE_INSTANCE {
   BOOLEAN                            HeapOffsetPositive;
   UINTN                              StackOffset;
   BOOLEAN                            StackOffsetPositive;
+  //
+  // Information for migrating memory pages allocated in pre-memory phase.
+  //
+  HOLE_MEMORY_DATA                   MemoryPages;
   PEICORE_FUNCTION_POINTER           ShadowedPeiCore;
   CACHE_SECTION_DATA                 CacheSection;
   //
@@ -261,7 +267,7 @@ struct _PEI_CORE_INSTANCE {
 
   //
   // Temp Memory Range is not covered by PeiTempMem and Stack.
-  // Those Memory Range will be migrated into phisical memory.
+  // Those Memory Range will be migrated into physical memory.
   //
   HOLE_MEMORY_DATA                  HoleData[HOLE_MAX_NUMBER];
 };
@@ -421,7 +427,7 @@ InitializePpiServices (
 
 /**
 
-  Migrate the Hob list from the temporary memory stack to PEI installed memory.
+  Migrate the Hob list from the temporary memory to PEI installed memory.
 
   @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size
                          and location of temporary RAM, the stack location and the BFV location.
@@ -554,6 +560,20 @@ DispatchNotify (
   IN INTN                InstallStopIndex,
   IN INTN                NotifyStartIndex,
   IN INTN                NotifyStopIndex
+  );
+
+/**
+  Process PpiList from SEC phase.
+
+  @param PeiServices    An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param PpiList        Points to a list of one or more PPI descriptors to be installed initially by the PEI core.
+                        These PPI's will be installed and/or immediately signaled if they are notification type.
+
+**/
+VOID
+ProcessPpiListFromSec (
+  IN CONST EFI_PEI_SERVICES         **PeiServices,
+  IN CONST EFI_PEI_PPI_DESCRIPTOR   *PpiList
   );
 
 //
@@ -706,6 +726,22 @@ PeiCoreBuildHobHandoffInfoTable (
   IN UINT64                MemoryLength
   );
 
+/**
+  Install SEC HOB data to the HOB List.
+
+  @param PeiServices    An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param SecHobList     Pointer to SEC HOB List.
+
+  @return EFI_SUCCESS           Success to install SEC HOB data.
+  @retval EFI_OUT_OF_RESOURCES  If there is no more memory to grow the Hoblist.
+
+**/
+EFI_STATUS
+PeiInstallSecHobData (
+  IN CONST EFI_PEI_SERVICES     **PeiServices,
+  IN EFI_HOB_GENERIC_HEADER     *SecHobList
+  );
+
 
 //
 // FFS Fw Volume support functions
@@ -845,30 +881,81 @@ PeiInstallPeiMemory (
   );
 
 /**
+  Migrate memory pages allocated in pre-memory phase.
+  Copy memory pages at temporary heap top to permanent heap top.
 
-  Memory allocation service on permanent memory,
-  not usable prior to the memory installation.
+  @param[in] Private                Pointer to the private data passed in from caller.
+  @param[in] TemporaryRamMigrated   Temporary memory has been migrated to permanent memory.
 
+**/
+VOID
+MigrateMemoryPages (
+  IN PEI_CORE_INSTANCE      *Private,
+  IN BOOLEAN                TemporaryRamMigrated
+  );
 
-  @param PeiServices               An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
-  @param MemoryType                Type of memory to allocate.
-  @param Pages                     Number of pages to allocate.
-  @param Memory                    Pointer of memory allocated.
+/**
+  Migrate MemoryBaseAddress in memory allocation HOBs
+  from the temporary memory to PEI installed memory.
 
-  @retval EFI_SUCCESS              The allocation was successful
-  @retval EFI_INVALID_PARAMETER    Only AllocateAnyAddress is supported.
-  @retval EFI_NOT_AVAILABLE_YET    Called with permanent memory not available
-  @retval EFI_OUT_OF_RESOURCES     There is not enough HOB heap to satisfy the requirement
-                                   to allocate the number of pages.
+  @param[in] PrivateData        Pointer to PeiCore's private data structure.
+
+**/
+VOID
+ConvertMemoryAllocationHobs (
+  IN PEI_CORE_INSTANCE          *PrivateData
+  );
+
+/**
+  The purpose of the service is to publish an interface that allows
+  PEIMs to allocate memory ranges that are managed by the PEI Foundation.
+
+  Prior to InstallPeiMemory() being called, PEI will allocate pages from the heap.
+  After InstallPeiMemory() is called, PEI will allocate pages within the region
+  of memory provided by InstallPeiMemory() service in a best-effort fashion.
+  Location-specific allocations are not managed by the PEI foundation code.
+
+  @param  PeiServices      An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param  MemoryType       The type of memory to allocate.
+  @param  Pages            The number of contiguous 4 KB pages to allocate.
+  @param  Memory           Pointer to a physical address. On output, the address is set to the base
+                           of the page range that was allocated.
+
+  @retval EFI_SUCCESS           The memory range was successfully allocated.
+  @retval EFI_OUT_OF_RESOURCES  The pages could not be allocated.
+  @retval EFI_INVALID_PARAMETER Type is not equal to EfiLoaderCode, EfiLoaderData, EfiRuntimeServicesCode,
+                                EfiRuntimeServicesData, EfiBootServicesCode, EfiBootServicesData,
+                                EfiACPIReclaimMemory, EfiReservedMemoryType, or EfiACPIMemoryNVS.
 
 **/
 EFI_STATUS
 EFIAPI
 PeiAllocatePages (
-  IN CONST EFI_PEI_SERVICES           **PeiServices,
-  IN EFI_MEMORY_TYPE            MemoryType,
-  IN UINTN                      Pages,
-  OUT EFI_PHYSICAL_ADDRESS      *Memory
+  IN CONST EFI_PEI_SERVICES     **PeiServices,
+  IN       EFI_MEMORY_TYPE      MemoryType,
+  IN       UINTN                Pages,
+  OUT      EFI_PHYSICAL_ADDRESS *Memory
+  );
+
+/**
+  Frees memory pages.
+
+  @param[in] PeiServices        An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param[in] Memory             The base physical address of the pages to be freed.
+  @param[in] Pages              The number of contiguous 4 KB pages to free.
+
+  @retval EFI_SUCCESS           The requested pages were freed.
+  @retval EFI_INVALID_PARAMETER Memory is not a page-aligned address or Pages is invalid.
+  @retval EFI_NOT_FOUND         The requested memory pages were not allocated with
+                                AllocatePages().
+
+**/
+EFI_STATUS
+EFIAPI
+PeiFreePages (
+  IN CONST EFI_PEI_SERVICES     **PeiServices,
+  IN EFI_PHYSICAL_ADDRESS       Memory,
+  IN UINTN                      Pages
   );
 
 /**
@@ -961,6 +1048,30 @@ EFI_STATUS
 EFIAPI
 PeiResetSystem (
   IN CONST EFI_PEI_SERVICES   **PeiServices
+  );
+
+/**
+  Resets the entire platform.
+
+  @param[in] ResetType      The type of reset to perform.
+  @param[in] ResetStatus    The status code for the reset.
+  @param[in] DataSize       The size, in bytes, of ResetData.
+  @param[in] ResetData      For a ResetType of EfiResetCold, EfiResetWarm, or EfiResetShutdown
+                            the data buffer starts with a Null-terminated string, optionally
+                            followed by additional binary data. The string is a description
+                            that the caller may use to further indicate the reason for the
+                            system reset. ResetData is only valid if ResetStatus is something
+                            other than EFI_SUCCESS unless the ResetType is EfiResetPlatformSpecific
+                            where a minimum amount of ResetData is always required.
+
+**/
+VOID
+EFIAPI
+PeiResetSystem2 (
+  IN EFI_RESET_TYPE     ResetType,
+  IN EFI_STATUS         ResetStatus,
+  IN UINTN              DataSize,
+  IN VOID               *ResetData OPTIONAL
   );
 
 /**
@@ -1094,7 +1205,7 @@ PeiRegisterForShadow (
   @param OldCoreData     Pointer to Old PeiCore's private data.
                          If NULL, PeiCore is entered at first time, stack/heap in temporary memory.
                          If not NULL, PeiCore is entered at second time, stack/heap has been moved
-                         to permenent memory.
+                         to permanent memory.
 
 **/
 VOID
@@ -1707,7 +1818,7 @@ extern EFI_PEI_PCI_CFG2_PPI gPeiDefaultPciCfg2Ppi;
 /**
   After PeiCore image is shadowed into permanent memory, all build-in FvPpi should
   be re-installed with the instance in permanent memory and all cached FvPpi pointers in
-  PrivateData->Fv[] array should be fixed up to be pointed to the one in permenant
+  PrivateData->Fv[] array should be fixed up to be pointed to the one in permanent
   memory.
 
   @param PrivateData   Pointer to PEI_CORE_INSTANCE.

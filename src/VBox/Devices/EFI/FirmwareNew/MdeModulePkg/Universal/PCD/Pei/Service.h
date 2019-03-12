@@ -1,7 +1,7 @@
 /** @file
   The internal header file declares the private functions used by PeiPcd driver.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -23,6 +23,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Ppi/PiPcdInfo.h>
 #include <Guid/PcdDataBaseHobGuid.h>
 #include <Guid/PcdDataBaseSignatureGuid.h>
+#include <Guid/VariableFormat.h>
 #include <Library/DebugLib.h>
 #include <Library/PeimEntryPoint.h>
 #include <Library/BaseLib.h>
@@ -36,7 +37,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // Please make sure the PCD Serivce PEIM Version is consistent with
 // the version of the generated PEIM PCD Database by build tool.
 //
-#define PCD_SERVICE_PEIM_VERSION      4
+#define PCD_SERVICE_PEIM_VERSION      7
 
 //
 // PCD_PEI_SERVICE_DRIVER_VERSION is defined in Autogen.h.
@@ -993,21 +994,6 @@ GetExPcdTokenNumber (
   );
 
 /**
-  Find the local token number according to system SKU ID.
-
-  @param LocalTokenNumber PCD token number
-  @param Size             The size of PCD entry.
-
-  @return Token number according to system SKU ID.
-
-**/
-UINT32
-GetSkuEnabledTokenNumber (
-  UINT32 LocalTokenNumber,
-  UINTN  Size
-  );
-
-/**
   The function registers the CallBackOnSet fucntion
   according to TokenNumber and EFI_GUID space.
 
@@ -1040,21 +1026,6 @@ PeiRegisterCallBackWorker (
 PEI_PCD_DATABASE *
 BuildPcdDatabase (
   IN EFI_PEI_FILE_HANDLE    FileHandle
-  );
-
-/**
-  Get SKU ID tabble from PCD database.
-
-  @param LocalTokenNumberTableIdx Index of local token number in token number table.
-  @param Database                 PCD Database in PEI phase
-
-  @return Pointer to SKU ID array table
-
-**/
-SKU_ID *
-GetSkuIdArray (
-  IN    UINTN             LocalTokenNumberTableIdx,
-  IN    PEI_PCD_DATABASE  *Database
   );
 
 /**

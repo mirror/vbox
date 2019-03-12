@@ -1,7 +1,7 @@
 ## @file
 # This file is used to define class Configuration
 #
-# Copyright (c) 2008 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2008 - 2017, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -220,6 +220,8 @@ class Configuration(object):
         self.MetaDataFileCheckLibraryInstanceOrder = 1
         # Check whether the unnecessary inclusion of library classes in the INF file
         self.MetaDataFileCheckLibraryNoUse = 1
+        # Check the header file in Include\Library directory whether be defined in the package DEC file.
+        self.MetaDataFileCheckLibraryDefinedInDec = 1
         # Check whether an INF file is specified in the FDF file, but not in the DSC file, then the INF file must be for a Binary module only
         self.MetaDataFileCheckBinaryInfInFdf = 1
         # Not to report error and warning related OS include file such as "windows.h" and "stdio.h"
@@ -247,6 +249,18 @@ class Configuration(object):
         # Check Pcd Format in INF files
         self.MetaDataFileCheckModuleFilePcdFormat = 1
 
+        # Check UNI file
+        self.UniCheckAll = 0
+        # Check INF or DEC file whether defined the localized information in the associated UNI file.
+        self.UniCheckHelpInfo = 1
+        # Check PCD whether defined the prompt, help in the DEC file and localized information in the associated UNI file.
+        self.UniCheckPCDInfo = 1
+
+        # Check SMM communication function parameter
+        self.SmmCommParaCheckAll = 0
+        # Check if the EFI_SMM_COMMUNICATION_PROTOCOL parameter buffer type is Reserved / ACPI NVS or UEFI RT code/data
+        self.SmmCommParaCheckBufferType = -1
+
         #
         # The check points in this section are reserved
         #
@@ -257,11 +271,17 @@ class Configuration(object):
         # The directory listed here will not be parsed, split with ','
         self.SkipDirList = []
 
+        # The file listed here will not be parsed, split with ','
+        self.SkipFileList = []
+
         # A list for binary file ext name
         self.BinaryExtList = []
 
         # A list for only scanned folders
         self.ScanOnlyDirList = []
+
+        # A list for Copyright format
+        self.Copyright = []
 
         self.ParseConfig()
 
@@ -286,7 +306,11 @@ class Configuration(object):
                     continue
                 if List[0] == 'SkipDirList':
                     List[1] = GetSplitValueList(List[1], TAB_COMMA_SPLIT)
+                if List[0] == 'SkipFileList':
+                    List[1] = GetSplitValueList(List[1], TAB_COMMA_SPLIT)
                 if List[0] == 'BinaryExtList':
+                    List[1] = GetSplitValueList(List[1], TAB_COMMA_SPLIT)
+                if List[0] == 'Copyright':
                     List[1] = GetSplitValueList(List[1], TAB_COMMA_SPLIT)
                 self.__dict__[List[0]] = List[1]
 

@@ -2,7 +2,8 @@
   This file implements I2C Host Protocol which provides callers with the ability to
   do I/O transactions to all of the devices on the I2C bus.
 
-  Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2014, Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2013 - 2015, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -672,6 +673,10 @@ I2cHostI2cBusConfigurationAvailable (
                         I2cHostContext->I2cEvent,
                         &I2cHostContext->Status
                         );
+
+  if (EFI_ERROR (Status)) {
+    DEBUG((DEBUG_ERROR, "I2cHostI2cBusConfigurationAvailable: Error starting I2C operation, %r\n", Status));
+  }
 }
 
 /**
@@ -891,8 +896,6 @@ I2cHostRequestEnable (
                               completion status
 
   @retval EFI_SUCCESS           The operation completed successfully.
-  @retval EFI_ABORTED           The request did not complete because the driver
-                                was shutdown.
   @retval EFI_BAD_BUFFER_SIZE   The WriteBytes or ReadBytes buffer size is too large.
   @retval EFI_DEVICE_ERROR      There was an I2C error (NACK) during the operation.
                                 This could indicate the slave device is not present.

@@ -5,7 +5,7 @@
   EFI Driver Model related protocols, manage Unicode string tables for UEFI Drivers,
   and print messages on the console output and standard error devices.
 
-  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -302,6 +302,67 @@ EfiNamedEventSignal (
   ASSERT_EFI_ERROR (Status);
 
   return Status;
+}
+
+/**
+  Signals an event group by placing a new event in the group temporarily and
+  signaling it.
+
+  @param[in] EventGroup          Supplies the unique identifier of the event
+                                 group to signal.
+
+  @retval EFI_SUCCESS            The event group was signaled successfully.
+  @retval EFI_INVALID_PARAMETER  EventGroup is NULL.
+  @return                        Error codes that report problems about event
+                                 creation or signaling.
+**/
+EFI_STATUS
+EFIAPI
+EfiEventGroupSignal (
+  IN CONST EFI_GUID *EventGroup
+  )
+{
+  EFI_STATUS Status;
+  EFI_EVENT  Event;
+
+  if (EventGroup == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_CALLBACK,
+                  EfiEventEmptyFunction,
+                  NULL,
+                  EventGroup,
+                  &Event
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = gBS->SignalEvent (Event);
+  gBS->CloseEvent (Event);
+
+  return Status;
+}
+
+/**
+  An empty function that can be used as NotifyFunction parameter of
+  CreateEvent() or CreateEventEx().
+
+  @param Event              Event whose notification function is being invoked.
+  @param Context            The pointer to the notification function's context,
+                            which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+EfiEventEmptyFunction (
+  IN EFI_EVENT              Event,
+  IN VOID                   *Context
+  )
+{
 }
 
 /**
@@ -1545,3 +1606,116 @@ GetBestLanguage (
   return NULL;
 }
 
+/**
+  Returns an array of protocol instance that matches the given protocol.
+
+  @param[in]  Protocol      Provides the protocol to search for.
+  @param[out] NoProtocols   The number of protocols returned in Buffer.
+  @param[out] Buffer        A pointer to the buffer to return the requested
+                            array of protocol instances that match Protocol.
+                            The returned buffer is allocated using
+                            EFI_BOOT_SERVICES.AllocatePool().  The caller is
+                            responsible for freeing this buffer with
+                            EFI_BOOT_SERVICES.FreePool().
+
+  @retval EFI_SUCCESS            The array of protocols was returned in Buffer,
+                                 and the number of protocols in Buffer was
+                                 returned in NoProtocols.
+  @retval EFI_NOT_FOUND          No protocols found.
+  @retval EFI_OUT_OF_RESOURCES   There is not enough pool memory to store the
+                                 matching results.
+  @retval EFI_INVALID_PARAMETER  Protocol is NULL.
+  @retval EFI_INVALID_PARAMETER  NoProtocols is NULL.
+  @retval EFI_INVALID_PARAMETER  Buffer is NULL.
+
+**/
+EFI_STATUS
+EFIAPI
+EfiLocateProtocolBuffer (
+  IN  EFI_GUID  *Protocol,
+  OUT UINTN     *NoProtocols,
+  OUT VOID      ***Buffer
+  )
+{
+  EFI_STATUS  Status;
+  UINTN       NoHandles;
+  EFI_HANDLE  *HandleBuffer;
+  UINTN       Index;
+
+  //
+  // Check input parameters
+  //
+  if (Protocol == NULL || NoProtocols == NULL || Buffer == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Initialze output parameters
+  //
+  *NoProtocols = 0;
+  *Buffer = NULL;
+
+  //
+  // Retrieve the array of handles that support Protocol
+  //
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  Protocol,
+                  NULL,
+                  &NoHandles,
+                  &HandleBuffer
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Allocate array of protocol instances
+  //
+  Status = gBS->AllocatePool (
+                  EfiBootServicesData,
+                  NoHandles * sizeof (VOID *),
+                  (VOID **)Buffer
+                  );
+  if (EFI_ERROR (Status)) {
+    //
+    // Free the handle buffer
+    //
+    gBS->FreePool (HandleBuffer);
+    return EFI_OUT_OF_RESOURCES;
+  }
+  ZeroMem (*Buffer, NoHandles * sizeof (VOID *));
+
+  //
+  // Lookup Protocol on each handle in HandleBuffer to fill in the array of
+  // protocol instances.  Handle case where protocol instance was present when
+  // LocateHandleBuffer() was called, but is not present when HandleProtocol()
+  // is called.
+  //
+  for (Index = 0, *NoProtocols = 0; Index < NoHandles; Index++) {
+    Status = gBS->HandleProtocol (
+                    HandleBuffer[Index],
+                    Protocol,
+                    &((*Buffer)[*NoProtocols])
+                    );
+    if (!EFI_ERROR (Status)) {
+      (*NoProtocols)++;
+    }
+  }
+
+  //
+  // Free the handle buffer
+  //
+  gBS->FreePool (HandleBuffer);
+
+  //
+  // Make sure at least one protocol instance was found
+  //
+  if (*NoProtocols == 0) {
+    gBS->FreePool (*Buffer);
+    *Buffer = NULL;
+    return EFI_NOT_FOUND;
+  }
+
+  return EFI_SUCCESS;
+}

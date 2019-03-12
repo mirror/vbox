@@ -1,7 +1,8 @@
 /** @file
   Interface routine for Mtftp4.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+(C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -191,7 +192,7 @@ Mtftp4OverrideValid (
   IP4_ADDR                  Gateway;
 
   CopyMem (&Ip, &Override->ServerIp, sizeof (IP4_ADDR));
-  if (!NetIp4IsUnicast (NTOHL (Ip), 0)) {
+  if (IP4_IS_UNSPECIFIED (NTOHL (Ip)) || IP4_IS_LOCAL_BROADCAST (NTOHL (Ip))) {
     return FALSE;
   }
 
@@ -207,7 +208,7 @@ Mtftp4OverrideValid (
     Netmask = NTOHL (Netmask);
     Ip      = NTOHL (Ip);
 
-    if (!NetIp4IsUnicast (Gateway, Netmask) || !IP4_NET_EQUAL (Gateway, Ip, Netmask)) {
+    if ((Netmask != 0 && !NetIp4IsUnicast (Gateway, Netmask)) || !IP4_NET_EQUAL (Gateway, Ip, Netmask)) {
       return FALSE;
     }
   }
@@ -257,7 +258,7 @@ Mtftp4GetMapping (
     return FALSE;
   }
 
-  while (!EFI_ERROR (gBS->CheckEvent (Service->TimerToGetMap))) {
+  while (EFI_ERROR (gBS->CheckEvent (Service->TimerToGetMap))) {
     Udp->Poll (Udp);
 
     if (!EFI_ERROR (Udp->GetModeData (Udp, NULL, &Ip4Mode, NULL, NULL)) &&
@@ -305,13 +306,13 @@ Mtftp4ConfigUnicastPort (
   UdpConfig.ReceiveTimeout     = 0;
   UdpConfig.TransmitTimeout    = 0;
   UdpConfig.UseDefaultAddress  = Config->UseDefaultSetting;
-  UdpConfig.StationAddress     = Config->StationIp;
-  UdpConfig.SubnetMask         = Config->SubnetMask;
+  IP4_COPY_ADDRESS (&UdpConfig.StationAddress, &Config->StationIp);
+  IP4_COPY_ADDRESS (&UdpConfig.SubnetMask, &Config->SubnetMask);
   UdpConfig.StationPort        = 0;
   UdpConfig.RemotePort         = 0;
 
   Ip = HTONL (Instance->ServerIp);
-  CopyMem (&UdpConfig.RemoteAddress, &Ip, sizeof (EFI_IPv4_ADDRESS));
+  IP4_COPY_ADDRESS (&UdpConfig.RemoteAddress, &Ip);
 
   Status = UdpIo->Protocol.Udp4->Configure (UdpIo->Protocol.Udp4, &UdpConfig);
 
@@ -365,6 +366,7 @@ Mtftp4Start (
   EFI_MTFTP4_CONFIG_DATA    *Config;
   EFI_TPL                   OldTpl;
   EFI_STATUS                Status;
+  EFI_STATUS                TokenStatus;
 
   //
   // Validate the parameters
@@ -392,7 +394,9 @@ Mtftp4Start (
 
   Instance = MTFTP4_PROTOCOL_FROM_THIS (This);
 
-  Status = EFI_SUCCESS;
+  Status      = EFI_SUCCESS;
+  TokenStatus = EFI_SUCCESS;
+
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 
   if (Instance->State != MTFTP4_STATE_CONFIGED) {
@@ -401,6 +405,10 @@ Mtftp4Start (
 
   if (Instance->Operation != 0) {
     Status = EFI_ACCESS_DENIED;
+  }
+
+  if ((Token->OverrideData != NULL) && !Mtftp4OverrideValid (Instance, Token->OverrideData)) {
+    Status = EFI_INVALID_PARAMETER;
   }
 
   if (EFI_ERROR (Status)) {
@@ -415,11 +423,6 @@ Mtftp4Start (
   Instance->Operation = Operation;
   Override            = Token->OverrideData;
 
-  if ((Override != NULL) && !Mtftp4OverrideValid (Instance, Override)) {
-    Status = EFI_INVALID_PARAMETER;
-    goto ON_ERROR;
-  }
-
   if (Token->OptionCount != 0) {
     Status = Mtftp4ParseOption (
                Token->OptionList,
@@ -429,6 +432,7 @@ Mtftp4Start (
                );
 
     if (EFI_ERROR (Status)) {
+      TokenStatus = EFI_DEVICE_ERROR;
       goto ON_ERROR;
     }
   }
@@ -481,8 +485,8 @@ Mtftp4Start (
   // Config the unicast UDP child to send initial request
   //
   Status = Mtftp4ConfigUnicastPort (Instance->UnicastPort, Instance);
-
   if (EFI_ERROR (Status)) {
+    TokenStatus = EFI_DEVICE_ERROR;
     goto ON_ERROR;
   }
 
@@ -500,13 +504,13 @@ Mtftp4Start (
     Status = Mtftp4RrqStart (Instance, Operation);
   }
 
-  gBS->RestoreTPL (OldTpl);
-
   if (EFI_ERROR (Status)) {
+    TokenStatus = EFI_DEVICE_ERROR;
     goto ON_ERROR;
   }
 
   if (Token->Event != NULL) {
+    gBS->RestoreTPL (OldTpl);
     return EFI_SUCCESS;
   }
 
@@ -518,10 +522,11 @@ Mtftp4Start (
     This->Poll (This);
   }
 
+  gBS->RestoreTPL (OldTpl);
   return Token->Status;
 
 ON_ERROR:
-  Mtftp4CleanOperation (Instance, Status);
+  Mtftp4CleanOperation (Instance, TokenStatus);
   gBS->RestoreTPL (OldTpl);
 
   return Status;
@@ -666,18 +671,18 @@ EfiMtftp4Configure (
     Gateway  = NTOHL (Gateway);
     ServerIp = NTOHL (ServerIp);
 
-    if (!NetIp4IsUnicast (ServerIp, 0)) {
+    if (ServerIp == 0 || IP4_IS_LOCAL_BROADCAST (ServerIp)) {
       return EFI_INVALID_PARAMETER;
     }
 
     if (!ConfigData->UseDefaultSetting &&
-       ((!IP4_IS_VALID_NETMASK (Netmask) || !NetIp4IsUnicast (Ip, Netmask)))) {
+        ((!IP4_IS_VALID_NETMASK (Netmask) || (Netmask != 0 && !NetIp4IsUnicast (Ip, Netmask))))) {
 
       return EFI_INVALID_PARAMETER;
     }
 
     if ((Gateway != 0) &&
-        (!IP4_NET_EQUAL (Gateway, Ip, Netmask) || !NetIp4IsUnicast (Gateway, Netmask))) {
+        (!IP4_NET_EQUAL (Gateway, Ip, Netmask) || (Netmask != 0 && !NetIp4IsUnicast (Gateway, Netmask)))) {
 
       return EFI_INVALID_PARAMETER;
     }
@@ -1077,6 +1082,7 @@ EfiMtftp4Poll (
 {
   MTFTP4_PROTOCOL           *Instance;
   EFI_UDP4_PROTOCOL         *Udp;
+  EFI_STATUS                Status;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -1091,7 +1097,9 @@ EfiMtftp4Poll (
   }
 
   Udp = Instance->UnicastPort->Protocol.Udp4;
-  return Udp->Poll (Udp);
+  Status = Udp->Poll (Udp);
+  Mtftp4OnTimerTick (NULL, Instance->Service);
+  return Status;
 }
 
 EFI_MTFTP4_PROTOCOL gMtftp4ProtocolTemplate = {

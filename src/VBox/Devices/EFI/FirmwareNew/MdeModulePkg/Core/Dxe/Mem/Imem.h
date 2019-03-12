@@ -1,7 +1,7 @@
 /** @file
   Data structure and functions to allocate and free memory space.
 
-Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -15,22 +15,21 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #ifndef _IMEM_H_
 #define _IMEM_H_
 
-#if defined (MDE_CPU_IPF)
-///
-/// For Itanium machines make the default allocations 8K aligned
-///
-#define EFI_ACPI_RUNTIME_PAGE_ALLOCATION_ALIGNMENT  (EFI_PAGE_SIZE * 2)
-#define DEFAULT_PAGE_ALLOCATION                     (EFI_PAGE_SIZE * 2)
-
-#else
-///
-/// For genric EFI machines make the default allocations 4K aligned
-///
-#define EFI_ACPI_RUNTIME_PAGE_ALLOCATION_ALIGNMENT  (EFI_PAGE_SIZE)
-#define DEFAULT_PAGE_ALLOCATION                     (EFI_PAGE_SIZE)
-
-#endif
-
+//
+// +---------------------------------------------------+
+// | 0..(EfiMaxMemoryType - 1)    - Normal memory type |
+// +---------------------------------------------------+
+// | EfiMaxMemoryType..0x6FFFFFFF - Invalid            |
+// +---------------------------------------------------+
+// | 0x70000000..0x7FFFFFFF       - OEM reserved       |
+// +---------------------------------------------------+
+// | 0x80000000..0xFFFFFFFF       - OS reserved        |
+// +---------------------------------------------------+
+//
+#define MEMORY_TYPE_OS_RESERVED_MIN                 0x80000000
+#define MEMORY_TYPE_OS_RESERVED_MAX                 0xFFFFFFFF
+#define MEMORY_TYPE_OEM_RESERVED_MIN                0x70000000
+#define MEMORY_TYPE_OEM_RESERVED_MAX                0x7FFFFFFF
 
 //
 // MEMORY_MAP_ENTRY
@@ -62,6 +61,7 @@ typedef struct {
   @param  PoolType               The type of memory for the new pool pages
   @param  NumberOfPages          No of pages to allocate
   @param  Alignment              Bits to align.
+  @param  NeedGuard              Flag to indicate Guard page is needed or not
 
   @return The allocated memory, or NULL
 
@@ -70,7 +70,8 @@ VOID *
 CoreAllocatePoolPages (
   IN EFI_MEMORY_TYPE    PoolType,
   IN UINTN              NumberOfPages,
-  IN UINTN              Alignment
+  IN UINTN              Alignment,
+  IN BOOLEAN            NeedGuard
   );
 
 
@@ -96,6 +97,7 @@ CoreFreePoolPages (
 
   @param  PoolType               Type of pool to allocate
   @param  Size                   The amount of pool to allocate
+  @param  NeedGuard              Flag to indicate Guard page is needed or not
 
   @return The allocate pool, or NULL
 
@@ -103,7 +105,8 @@ CoreFreePoolPages (
 VOID *
 CoreAllocatePoolI (
   IN EFI_MEMORY_TYPE  PoolType,
-  IN UINTN            Size
+  IN UINTN            Size,
+  IN BOOLEAN          NeedGuard
   );
 
 
@@ -113,6 +116,7 @@ CoreAllocatePoolI (
   Caller must have the memory lock held
 
   @param  Buffer                 The allocated pool entry to free
+  @param  PoolType               Pointer to pool type
 
   @retval EFI_INVALID_PARAMETER  Buffer not valid
   @retval EFI_SUCCESS            Buffer successfully freed.
@@ -120,7 +124,8 @@ CoreAllocatePoolI (
 **/
 EFI_STATUS
 CoreFreePoolI (
-  IN VOID       *Buffer
+  IN VOID               *Buffer,
+  OUT EFI_MEMORY_TYPE   *PoolType OPTIONAL
   );
 
 
@@ -144,6 +149,34 @@ CoreReleaseMemoryLock (
   VOID
   );
 
+/**
+  Allocates pages from the memory map.
+
+  @param  Type                   The type of allocation to perform
+  @param  MemoryType             The type of memory to turn the allocated pages
+                                 into
+  @param  NumberOfPages          The number of pages to allocate
+  @param  Memory                 A pointer to receive the base allocated memory
+                                 address
+  @param  NeedGuard              Flag to indicate Guard page is needed or not
+
+  @return Status. On success, Memory is filled in with the base address allocated
+  @retval EFI_INVALID_PARAMETER  Parameters violate checking rules defined in
+                                 spec.
+  @retval EFI_NOT_FOUND          Could not allocate pages match the requirement.
+  @retval EFI_OUT_OF_RESOURCES   No enough pages to allocate.
+  @retval EFI_SUCCESS            Pages successfully allocated.
+
+**/
+EFI_STATUS
+EFIAPI
+CoreInternalAllocatePages (
+  IN EFI_ALLOCATE_TYPE      Type,
+  IN EFI_MEMORY_TYPE        MemoryType,
+  IN UINTN                  NumberOfPages,
+  IN OUT EFI_PHYSICAL_ADDRESS  *Memory,
+  IN BOOLEAN                NeedGuard
+  );
 
 //
 // Internal Global data

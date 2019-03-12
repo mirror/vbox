@@ -1,7 +1,7 @@
 ## @file
 # process FFS generation from FILE statement
 #
-#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -28,6 +28,8 @@ from Common.BuildToolError import *
 from Common.Misc import GuidStructureByteArrayToGuidString
 from GuidSection import GuidSection
 from FvImageSection import FvImageSection
+from Common.Misc import SaveFileOnChange
+from struct import *
 
 ## generate FFS from FILE
 #
@@ -43,6 +45,7 @@ class FileStatement (FileStatementClassObject) :
         self.CurrentLineContent = None
         self.FileName = None
         self.InfFileName = None
+        self.SubAlignment = None
 
     ## GenFfs() method
     #
@@ -54,7 +57,7 @@ class FileStatement (FileStatementClassObject) :
     #   @param  FvParentAddr Parent Fv base address
     #   @retval string       Generated FFS file name
     #
-    def GenFfs(self, Dict = {}, FvChildAddr=[], FvParentAddr=None):
+    def GenFfs(self, Dict = {}, FvChildAddr=[], FvParentAddr=None, IsMakefile=False, FvName=None):
 
         if self.NameGuid != None and self.NameGuid.startswith('PCD('):
             PcdValue = GenFdsGlobalVariable.GetPcdValue(self.NameGuid)
@@ -69,7 +72,10 @@ class FileStatement (FileStatementClassObject) :
                             % (self.NameGuid))
             self.NameGuid = RegistryGuidStr
 
-        OutputDir = os.path.join(GenFdsGlobalVariable.FfsDir, self.NameGuid)
+        Str = self.NameGuid
+        if FvName:
+            Str += FvName
+        OutputDir = os.path.join(GenFdsGlobalVariable.FfsDir, Str)
         if not os.path.exists(OutputDir):
             os.makedirs(OutputDir)
 
@@ -91,6 +97,42 @@ class FileStatement (FileStatementClassObject) :
             SectionFiles = [FileName]
 
         elif self.FileName != None:
+            if hasattr(self, 'FvFileType') and self.FvFileType == 'RAW':
+                if isinstance(self.FileName, list) and isinstance(self.SubAlignment, list) and len(self.FileName) == len(self.SubAlignment):
+                    FileContent = ''
+                    MaxAlignIndex = 0
+                    MaxAlignValue = 1
+                    for Index, File in enumerate(self.FileName):
+                        try:
+                            f = open(File, 'rb')
+                        except:
+                            GenFdsGlobalVariable.ErrorLogger("Error opening RAW file %s." % (File))
+                        Content = f.read()
+                        f.close()
+                        AlignValue = 1
+                        if self.SubAlignment[Index] != None:
+                            AlignValue = GenFdsGlobalVariable.GetAlignment(self.SubAlignment[Index])
+                        if AlignValue > MaxAlignValue:
+                            MaxAlignIndex = Index
+                            MaxAlignValue = AlignValue
+                        FileContent += Content
+                        if len(FileContent) % AlignValue != 0:
+                            Size = AlignValue - len(FileContent) % AlignValue
+                            for i in range(0, Size):
+                                FileContent += pack('B', 0xFF)
+
+                    if FileContent:
+                        OutputRAWFile = os.path.join(GenFdsGlobalVariable.FfsDir, self.NameGuid, self.NameGuid + '.raw')
+                        SaveFileOnChange(OutputRAWFile, FileContent, True)
+                        self.FileName = OutputRAWFile
+                        self.SubAlignment = self.SubAlignment[MaxAlignIndex]
+
+                if self.Alignment and self.SubAlignment:
+                    if GenFdsGlobalVariable.GetAlignment (self.Alignment) < GenFdsGlobalVariable.GetAlignment (self.SubAlignment):
+                        self.Alignment = self.SubAlignment
+                elif self.SubAlignment:
+                    self.Alignment = self.SubAlignment
+
             self.FileName = GenFdsGlobalVariable.ReplaceWorkspaceMacro(self.FileName)
             #Replace $(SAPCE) with real space
             self.FileName = self.FileName.replace('$(SPACE)', ' ')

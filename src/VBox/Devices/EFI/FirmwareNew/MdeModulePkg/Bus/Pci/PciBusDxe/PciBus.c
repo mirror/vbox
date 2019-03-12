@@ -8,7 +8,7 @@
   PCI Root Bridges. So it means platform needs install PCI Root Bridge IO protocol for each
   PCI Root Bus and install PCI Host Bridge Resource Allocation Protocol.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -34,7 +34,7 @@ EFI_DRIVER_BINDING_PROTOCOL                   gPciBusDriverBinding = {
 };
 
 EFI_HANDLE                                    gPciHostBrigeHandles[PCI_MAX_HOST_BRIDGE_NUM];
-EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL  *gEfiIncompatiblePciDeviceSupport = NULL;
+EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL  *gIncompatiblePciDeviceSupport = NULL;
 UINTN                                         gPciHostBridgeNumber = 0;
 BOOLEAN                                       gFullEnumeration     = TRUE;
 UINT64                                        gAllOne              = 0xFFFFFFFFFFFFFFFFULL;
@@ -42,6 +42,7 @@ UINT64                                        gAllZero             = 0;
 
 EFI_PCI_PLATFORM_PROTOCOL                     *gPciPlatformProtocol;
 EFI_PCI_OVERRIDE_PROTOCOL                     *gPciOverrideProtocol;
+EDKII_IOMMU_PROTOCOL                          *mIoMmuProtocol;
 
 
 GLOBAL_REMOVE_IF_UNREFERENCED EFI_PCI_HOTPLUG_REQUEST_PROTOCOL mPciHotPlugRequest = {
@@ -113,7 +114,7 @@ PciBusEntryPoint (
 
   @param  This                Protocol instance pointer.
   @param  Controller          Handle of device to test.
-  @param  RemainingDevicePath Optional parameter use to pick a specific child.
+  @param  RemainingDevicePath Optional parameter use to pick a specific child
                               device to start.
 
   @retval EFI_SUCCESS         This driver supports this device.
@@ -223,7 +224,7 @@ PciBusDriverBindingSupported (
 
   @param  This                 Protocol instance pointer.
   @param  Controller           Handle of device to bind driver to.
-  @param  RemainingDevicePath  Optional parameter use to pick a specific child.
+  @param  RemainingDevicePath  Optional parameter use to pick a specific child
                                device to start.
 
   @retval EFI_SUCCESS          This driver is added to ControllerHandle.
@@ -239,8 +240,14 @@ PciBusDriverBindingStart (
   IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath
   )
 {
-  EFI_STATUS                Status;
-  EFI_DEVICE_PATH_PROTOCOL  *ParentDevicePath;
+  EFI_STATUS                      Status;
+  EFI_DEVICE_PATH_PROTOCOL        *ParentDevicePath;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL *PciRootBridgeIo;
+
+  //
+  // Initialize PciRootBridgeIo to suppress incorrect compiler warning.
+  //
+  PciRootBridgeIo = NULL;
 
   //
   // Check RemainingDevicePath validation
@@ -255,11 +262,11 @@ PciBusDriverBindingStart (
     }
   }
 
-  Status = gBS->LocateProtocol (
-                  &gEfiIncompatiblePciDeviceSupportProtocolGuid,
-                  NULL,
-                  (VOID **) &gEfiIncompatiblePciDeviceSupport
-                  );
+  gBS->LocateProtocol (
+         &gEfiIncompatiblePciDeviceSupportProtocolGuid,
+         NULL,
+         (VOID **) &gIncompatiblePciDeviceSupport
+         );
 
   //
   // If PCI Platform protocol is available, get it now.
@@ -281,6 +288,14 @@ PciBusDriverBindingStart (
           &gEfiPciOverrideProtocolGuid,
           NULL,
           (VOID **) &gPciOverrideProtocol
+          );
+  }
+
+  if (mIoMmuProtocol == NULL) {
+    gBS->LocateProtocol (
+          &gEdkiiIoMmuProtocolGuid,
+          NULL,
+          (VOID **) &mIoMmuProtocol
           );
   }
 
@@ -312,12 +327,34 @@ PciBusDriverBindingStart (
     ParentDevicePath
     );
 
+  Status = EFI_SUCCESS;
   //
   // Enumerate the entire host bridge
   // After enumeration, a database that records all the device information will be created
   //
   //
-  Status = PciEnumerator (Controller);
+  if (gFullEnumeration) {
+    //
+    // Get the rootbridge Io protocol to find the host bridge handle
+    //
+    Status = gBS->OpenProtocol (
+                    Controller,
+                    &gEfiPciRootBridgeIoProtocolGuid,
+                    (VOID **) &PciRootBridgeIo,
+                    gPciBusDriverBinding.DriverBindingHandle,
+                    Controller,
+                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                    );
+
+    if (!EFI_ERROR (Status)) {
+      Status = PciEnumerator (Controller, PciRootBridgeIo->ParentHandle);
+    }
+  } else {
+    //
+    // If PCI bus has already done the full enumeration, never do it again
+    //
+    Status = PciEnumeratorLight (Controller);
+  }
 
   if (EFI_ERROR (Status)) {
     return Status;
@@ -328,11 +365,23 @@ PciBusDriverBindingStart (
   //
   StartPciDevices (Controller);
 
-  return EFI_SUCCESS;
+  if (gFullEnumeration) {
+    gFullEnumeration = FALSE;
+
+    Status = gBS->InstallProtocolInterface (
+                    &PciRootBridgeIo->ParentHandle,
+                    &gEfiPciEnumerationCompleteProtocolGuid,
+                    EFI_NATIVE_INTERFACE,
+                    NULL
+                    );
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  return Status;
 }
 
 /**
-  Stop this driver on ControllerHandle. Support stoping any child handles
+  Stop this driver on ControllerHandle. Support stopping any child handles
   created by this driver.
 
   @param  This              Protocol instance pointer.

@@ -1,7 +1,7 @@
 /** @file
   Implementation of the Socket.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -522,7 +522,7 @@ SockWakeListenToken (
 
     Parent->ConnCnt--;
     DEBUG (
-      (EFI_D_INFO,
+      (EFI_D_NET,
       "SockWakeListenToken: accept a socket, now conncnt is %d",
       Parent->ConnCnt)
       );
@@ -572,6 +572,69 @@ SockWakeRcvToken (
     FreePool (SockToken);
     RcvdBytes -= TokenRcvdBytes;
   }
+}
+
+/**
+  Cancel the tokens in the specific token list.
+
+  @param[in]       Token                 Pointer to the Token. If NULL, all tokens
+                                         in SpecifiedTokenList will be canceled.
+  @param[in, out]  SpecifiedTokenList    Pointer to the token list to be checked.
+
+  @retval EFI_SUCCESS          Cancel the tokens in the specific token listsuccessfully.
+  @retval EFI_NOT_FOUND        The Token is not found in SpecifiedTokenList.
+
+**/
+EFI_STATUS
+SockCancelToken (
+  IN     SOCK_COMPLETION_TOKEN  *Token,
+  IN OUT LIST_ENTRY             *SpecifiedTokenList
+  )
+{
+  EFI_STATUS     Status;
+  LIST_ENTRY     *Entry;
+  SOCK_TOKEN     *SockToken;
+
+  Status    = EFI_SUCCESS;
+  Entry     = NULL;
+  SockToken = NULL;
+
+  if (IsListEmpty (SpecifiedTokenList) && Token != NULL) {
+    return EFI_NOT_FOUND;
+  }
+
+  //
+  // Iterate through the SpecifiedTokenList.
+  //
+  Entry = SpecifiedTokenList->ForwardLink;
+  while (Entry != SpecifiedTokenList) {
+    SockToken = NET_LIST_USER_STRUCT (Entry, SOCK_TOKEN, TokenList);
+
+    if (Token == NULL) {
+      SIGNAL_TOKEN (SockToken->Token, EFI_ABORTED);
+      RemoveEntryList (&SockToken->TokenList);
+      FreePool (SockToken);
+
+      Entry = SpecifiedTokenList->ForwardLink;
+      Status = EFI_SUCCESS;
+    } else {
+      if (Token == (VOID *) SockToken->Token) {
+        SIGNAL_TOKEN (Token, EFI_ABORTED);
+        RemoveEntryList (&(SockToken->TokenList));
+        FreePool (SockToken);
+
+        return EFI_SUCCESS;
+      }
+
+      Status = EFI_NOT_FOUND;
+
+      Entry = Entry->ForwardLink;
+    }
+  }
+
+  ASSERT (IsListEmpty (SpecifiedTokenList) || Token != NULL);
+
+  return Status;
 }
 
 /**
@@ -713,7 +776,7 @@ SockCreate (
     Parent->ConnCnt++;
 
     DEBUG (
-      (EFI_D_INFO,
+      (EFI_D_NET,
       "SockCreate: Create a new socket and add to parent, now conncnt is %d\n",
       Parent->ConnCnt)
       );
@@ -765,15 +828,7 @@ SockDestroy (
   IN OUT SOCKET *Sock
   )
 {
-  VOID        *SockProtocol;
-  EFI_GUID    *TcpProtocolGuid;
-  EFI_STATUS  Status;
-
   ASSERT (SockStream == Sock->Type);
-
-  if (Sock->DestroyCallback != NULL) {
-    Sock->DestroyCallback (Sock, Sock->Context);
-  }
 
   //
   // Flush the completion token buffered
@@ -808,52 +863,6 @@ SockDestroy (
 
     Sock->Parent = NULL;
   }
-
-  //
-  // Set the protocol guid and driver binding handle
-  // in the light of Sock->SockType
-  //
-  if (Sock->IpVersion == IP_VERSION_4) {
-    TcpProtocolGuid = &gEfiTcp4ProtocolGuid;
-  } else {
-    TcpProtocolGuid = &gEfiTcp6ProtocolGuid;
-  }
-
-  //
-  // Retrieve the protocol installed on this sock
-  //
-  Status = gBS->OpenProtocol (
-                  Sock->SockHandle,
-                  TcpProtocolGuid,
-                  &SockProtocol,
-                  Sock->DriverBinding,
-                  Sock->SockHandle,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
-
-  if (EFI_ERROR (Status)) {
-
-    DEBUG (
-      (EFI_D_ERROR,
-      "SockDestroy: Open protocol installed on socket failed with %r\n",
-      Status)
-      );
-
-    goto FreeSock;
-  }
-
-  //
-  // Uninstall the protocol installed on this sock
-  // in the light of Sock->SockType
-  //
-  gBS->UninstallMultipleProtocolInterfaces (
-        Sock->SockHandle,
-        TcpProtocolGuid,
-        SockProtocol,
-        NULL
-        );
-
-FreeSock:
 
   FreePool (Sock);
 }

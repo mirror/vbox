@@ -2,7 +2,7 @@
   This file implements I2C IO Protocol which enables the user to manipulate a single
   I2C device independent of the host controller and I2C design.
 
-  Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2013 - 2015, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -1108,14 +1108,11 @@ RegisterI2cDevice (
                                 queued when Event is not NULL.
   @retval EFI_SUCCESS           The transaction completed successfully when
                                 Event is NULL.
-  @retval EFI_ABORTED           The request did not complete because the driver
-                                binding Stop() routine was called.
   @retval EFI_BAD_BUFFER_SIZE   The RequestPacket->LengthInBytes value is too
                                 large.
   @retval EFI_DEVICE_ERROR      There was an I2C error (NACK) during the
                                 transaction.
   @retval EFI_INVALID_PARAMETER RequestPacket is NULL
-  @retval EFI_NOT_FOUND         Reserved bit set in the SlaveAddress parameter
   @retval EFI_NO_MAPPING        The EFI_I2C_HOST_PROTOCOL could not set the
                                 bus configuration required to access this I2C
                                 device.

@@ -4,7 +4,7 @@
   Abstraction of a basic serial device. Targeted at 16550 UART, but
   could be much more generic.
 
-  Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -105,7 +105,7 @@ EFI_STATUS
 
 /**
   Sets the baud rate, receive FIFO depth, transmit/receice time out, parity,
-  data buts, and stop bits on a serial device.
+  data bits, and stop bits on a serial device.
 
   @param  This             Protocol instance pointer.
   @param  BaudRate         The requested baud rate. A BaudRate value of 0 will use the
@@ -125,8 +125,9 @@ EFI_STATUS
                            value of DefaultStopBits will use the device's default number of
                            stop bits.
 
-  @retval EFI_SUCCESS      The device was reset.
-  @retval EFI_DEVICE_ERROR The serial device could not be reset.
+  @retval EFI_SUCCESS           The device was reset.
+  @retval EFI_INVALID_PARAMETER One or more attributes has an unsupported value.
+  @retval EFI_DEVICE_ERROR      The serial device is not functioning correctly.
 
 **/
 typedef

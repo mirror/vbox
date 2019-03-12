@@ -1,7 +1,7 @@
 /** @file
   EFI PCI IO protocol functions implementation for PCI Bus module.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -13,6 +13,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 
 #include "PciBus.h"
+
+extern EDKII_IOMMU_PROTOCOL                          *mIoMmuProtocol;
 
 //
 // Pci Io Protocol Interface
@@ -965,8 +967,10 @@ PciIoMap (
   OUT    VOID                           **Mapping
   )
 {
-  EFI_STATUS    Status;
-  PCI_IO_DEVICE *PciIoDevice;
+  EFI_STATUS                                 Status;
+  PCI_IO_DEVICE                              *PciIoDevice;
+  UINT64                                     IoMmuAttribute;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION  RootBridgeIoOperation;
 
   PciIoDevice = PCI_IO_DEVICE_FROM_PCI_IO_THIS (This);
 
@@ -978,13 +982,14 @@ PciIoMap (
     return EFI_INVALID_PARAMETER;
   }
 
+  RootBridgeIoOperation = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION)Operation;
   if ((PciIoDevice->Attributes & EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE) != 0) {
-    Operation = (EFI_PCI_IO_PROTOCOL_OPERATION) (Operation + EfiPciOperationBusMasterRead64);
+    RootBridgeIoOperation = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION)(Operation + EfiPciOperationBusMasterRead64);
   }
 
   Status = PciIoDevice->PciRootBridgeIo->Map (
                                           PciIoDevice->PciRootBridgeIo,
-                                          (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION) Operation,
+                                          RootBridgeIoOperation,
                                           HostAddress,
                                           NumberOfBytes,
                                           DeviceAddress,
@@ -997,6 +1002,31 @@ PciIoMap (
       EFI_IO_BUS_PCI | EFI_IOB_EC_CONTROLLER_ERROR,
       PciIoDevice->DevicePath
       );
+  }
+
+  if (mIoMmuProtocol != NULL) {
+    if (!EFI_ERROR (Status)) {
+      switch (Operation) {
+      case EfiPciIoOperationBusMasterRead:
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_READ;
+        break;
+      case EfiPciIoOperationBusMasterWrite:
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_WRITE;
+        break;
+      case EfiPciIoOperationBusMasterCommonBuffer:
+        IoMmuAttribute = EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE;
+        break;
+      default:
+        ASSERT(FALSE);
+        return EFI_INVALID_PARAMETER;
+      }
+      mIoMmuProtocol->SetAttribute (
+                        mIoMmuProtocol,
+                        PciIoDevice->Handle,
+                        *Mapping,
+                        IoMmuAttribute
+                        );
+    }
   }
 
   return Status;
@@ -1024,6 +1054,15 @@ PciIoUnmap (
 
   PciIoDevice = PCI_IO_DEVICE_FROM_PCI_IO_THIS (This);
 
+  if (mIoMmuProtocol != NULL) {
+    mIoMmuProtocol->SetAttribute (
+                      mIoMmuProtocol,
+                      PciIoDevice->Handle,
+                      Mapping,
+                      0
+                      );
+  }
+
   Status = PciIoDevice->PciRootBridgeIo->Unmap (
                                           PciIoDevice->PciRootBridgeIo,
                                           Mapping
@@ -1042,7 +1081,7 @@ PciIoUnmap (
 
 /**
   Allocates pages that are suitable for an EfiPciIoOperationBusMasterCommonBuffer
-  mapping.
+  or EfiPciOperationBusMasterCommonBuffer64 mapping.
 
   @param  This                  A pointer to the EFI_PCI_IO_PROTOCOL instance.
   @param  Type                  This parameter is not used and must be ignored.
@@ -1055,7 +1094,7 @@ PciIoUnmap (
 
   @retval EFI_SUCCESS           The requested memory pages were allocated.
   @retval EFI_UNSUPPORTED       Attributes is unsupported. The only legal attribute bits are
-                                MEMORY_WRITE_COMBINE and MEMORY_CACHED.
+                                MEMORY_WRITE_COMBINE, MEMORY_CACHED and DUAL_ADDRESS_CYCLE.
   @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
   @retval EFI_OUT_OF_RESOURCES  The memory pages could not be allocated.
 
@@ -1374,9 +1413,9 @@ SupportPaletteSnoopAttributes (
   }
 
   //
-  // Get the boot VGA on the same segement
+  // Get the boot VGA on the same Host Bridge
   //
-  Temp = ActiveVGADeviceOnTheSameSegment (PciIoDevice);
+  Temp = LocateVgaDeviceOnHostBridge (PciIoDevice->PciRootBridgeIo->ParentHandle);
 
   if (Temp == NULL) {
     //
@@ -1568,15 +1607,10 @@ PciIoAttributes (
   //
   // Check VGA and VGA16, they can not be set at the same time
   //
-  if (((Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_IO) != 0         &&
-       (Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_IO_16) != 0)         ||
-      ((Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_IO) != 0         &&
-       (Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO_16) != 0) ||
-      ((Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO) != 0 &&
-       (Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_IO_16) != 0)         ||
-      ((Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO) != 0 &&
-       (Attributes & EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO_16) != 0) ) {
-    return EFI_UNSUPPORTED;
+  if ((Attributes & (EFI_PCI_IO_ATTRIBUTE_VGA_IO | EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO)) != 0) {
+    if ((Attributes & (EFI_PCI_IO_ATTRIBUTE_VGA_IO_16 | EFI_PCI_IO_ATTRIBUTE_VGA_PALETTE_IO_16)) != 0) {
+      return EFI_UNSUPPORTED;
+    }
   }
 
   //
@@ -1634,9 +1668,9 @@ PciIoAttributes (
       //
       if (Operation == EfiPciIoAttributeOperationEnable) {
         //
-        // Check if there have been an active VGA device on the same segment
+        // Check if there have been an active VGA device on the same Host Bridge
         //
-        Temp = ActiveVGADeviceOnTheSameSegment (PciIoDevice);
+        Temp = LocateVgaDeviceOnHostBridge (PciIoDevice->PciRootBridgeIo->ParentHandle);
         if (Temp != NULL && Temp != PciIoDevice) {
           //
           // An active VGA has been detected, so can not enable another
@@ -1749,6 +1783,53 @@ PciIoAttributes (
 }
 
 /**
+  Retrieve the AddrTranslationOffset from RootBridgeIo for the
+  specified range.
+
+  @param RootBridgeIo    Root Bridge IO instance.
+  @param AddrRangeMin    The base address of the MMIO.
+  @param AddrLen         The length of the MMIO.
+
+  @retval The AddrTranslationOffset from RootBridgeIo for the
+          specified range, or (UINT64) -1 if the range is not
+          found in RootBridgeIo.
+**/
+UINT64
+GetMmioAddressTranslationOffset (
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL   *RootBridgeIo,
+  UINT64                            AddrRangeMin,
+  UINT64                            AddrLen
+  )
+{
+  EFI_STATUS                        Status;
+  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *Configuration;
+
+  Status = RootBridgeIo->Configuration (
+                           RootBridgeIo,
+                           (VOID **) &Configuration
+                           );
+  if (EFI_ERROR (Status)) {
+    return (UINT64) -1;
+  }
+
+  while (Configuration->Desc == ACPI_ADDRESS_SPACE_DESCRIPTOR) {
+    if ((Configuration->ResType == ACPI_ADDRESS_SPACE_TYPE_MEM) &&
+        (Configuration->AddrRangeMin <= AddrRangeMin) &&
+        (Configuration->AddrRangeMin + Configuration->AddrLen >= AddrRangeMin + AddrLen)
+        ) {
+      return Configuration->AddrTranslationOffset;
+    }
+    Configuration++;
+  }
+
+  //
+  // The resource occupied by BAR should be in the range reported by RootBridge.
+  //
+  ASSERT (FALSE);
+  return (UINT64) -1;
+}
+
+/**
   Gets the attributes that this PCI controller supports setting on a BAR using
   SetBarAttributes(), and retrieves the list of resource descriptors for a BAR.
 
@@ -1757,12 +1838,12 @@ PciIoAttributes (
                                 base address for resource range. The legal range for this field is 0..5.
   @param  Supports              A pointer to the mask of attributes that this PCI controller supports
                                 setting for this BAR with SetBarAttributes().
-  @param  Resources             A pointer to the ACPI 2.0 resource descriptors that describe the current
+  @param  Resources             A pointer to the resource descriptors that describe the current
                                 configuration of this BAR of the PCI controller.
 
   @retval EFI_SUCCESS           If Supports is not NULL, then the attributes that the PCI
                                 controller supports are returned in Supports. If Resources
-                                is not NULL, then the ACPI 2.0 resource descriptors that the PCI
+                                is not NULL, then the resource descriptors that the PCI
                                 controller is currently using are returned in Resources.
   @retval EFI_INVALID_PARAMETER Both Supports and Attributes are NULL.
   @retval EFI_UNSUPPORTED       BarIndex not valid for this PCI controller.
@@ -1779,9 +1860,8 @@ PciIoGetBarAttributes (
   OUT VOID                           **Resources OPTIONAL
   )
 {
-  UINT8                             *Configuration;
   PCI_IO_DEVICE                     *PciIoDevice;
-  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *AddressSpace;
+  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *Descriptor;
   EFI_ACPI_END_TAG_DESCRIPTOR       *End;
 
   PciIoDevice = PCI_IO_DEVICE_FROM_PCI_IO_THIS (This);
@@ -1803,19 +1883,18 @@ PciIoGetBarAttributes (
   }
 
   if (Resources != NULL) {
-    Configuration = AllocateZeroPool (sizeof (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR) + sizeof (EFI_ACPI_END_TAG_DESCRIPTOR));
-    if (Configuration == NULL) {
+    Descriptor = AllocateZeroPool (sizeof (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR) + sizeof (EFI_ACPI_END_TAG_DESCRIPTOR));
+    if (Descriptor == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
 
-    AddressSpace = (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *) Configuration;
+    *Resources   = Descriptor;
 
-    AddressSpace->Desc         = ACPI_ADDRESS_SPACE_DESCRIPTOR;
-    AddressSpace->Len          = (UINT16) (sizeof (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR) - 3);
-
-    AddressSpace->AddrRangeMin = PciIoDevice->PciBar[BarIndex].BaseAddress;
-    AddressSpace->AddrLen      = PciIoDevice->PciBar[BarIndex].Length;
-    AddressSpace->AddrRangeMax = PciIoDevice->PciBar[BarIndex].Alignment;
+    Descriptor->Desc         = ACPI_ADDRESS_SPACE_DESCRIPTOR;
+    Descriptor->Len          = (UINT16) (sizeof (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR) - 3);
+    Descriptor->AddrRangeMin = PciIoDevice->PciBar[BarIndex].BaseAddress;
+    Descriptor->AddrLen      = PciIoDevice->PciBar[BarIndex].Length;
+    Descriptor->AddrRangeMax = PciIoDevice->PciBar[BarIndex].Alignment;
 
     switch (PciIoDevice->PciBar[BarIndex].BarType) {
     case PciBarTypeIo16:
@@ -1823,59 +1902,45 @@ PciIoGetBarAttributes (
       //
       // Io
       //
-      AddressSpace->ResType = ACPI_ADDRESS_SPACE_TYPE_IO;
-      break;
-
-    case PciBarTypeMem32:
-      //
-      // Mem
-      //
-      AddressSpace->ResType = ACPI_ADDRESS_SPACE_TYPE_MEM;
-      //
-      // 32 bit
-      //
-      AddressSpace->AddrSpaceGranularity = 32;
+      Descriptor->ResType = ACPI_ADDRESS_SPACE_TYPE_IO;
       break;
 
     case PciBarTypePMem32:
       //
-      // Mem
-      //
-      AddressSpace->ResType = ACPI_ADDRESS_SPACE_TYPE_MEM;
-      //
       // prefechable
       //
-      AddressSpace->SpecificFlag = 0x6;
+      Descriptor->SpecificFlag = EFI_ACPI_MEMORY_RESOURCE_SPECIFIC_FLAG_CACHEABLE_PREFETCHABLE;
+      //
+      // Fall through
+      //
+    case PciBarTypeMem32:
+      //
+      // Mem
+      //
+      Descriptor->ResType = ACPI_ADDRESS_SPACE_TYPE_MEM;
       //
       // 32 bit
       //
-      AddressSpace->AddrSpaceGranularity = 32;
-      break;
-
-    case PciBarTypeMem64:
-      //
-      // Mem
-      //
-      AddressSpace->ResType = ACPI_ADDRESS_SPACE_TYPE_MEM;
-      //
-      // 64 bit
-      //
-      AddressSpace->AddrSpaceGranularity = 64;
+      Descriptor->AddrSpaceGranularity = 32;
       break;
 
     case PciBarTypePMem64:
       //
-      // Mem
-      //
-      AddressSpace->ResType = ACPI_ADDRESS_SPACE_TYPE_MEM;
-      //
       // prefechable
       //
-      AddressSpace->SpecificFlag = 0x6;
+      Descriptor->SpecificFlag = EFI_ACPI_MEMORY_RESOURCE_SPECIFIC_FLAG_CACHEABLE_PREFETCHABLE;
+      //
+      // Fall through
+      //
+    case PciBarTypeMem64:
+      //
+      // Mem
+      //
+      Descriptor->ResType = ACPI_ADDRESS_SPACE_TYPE_MEM;
       //
       // 64 bit
       //
-      AddressSpace->AddrSpaceGranularity = 64;
+      Descriptor->AddrSpaceGranularity = 64;
       break;
 
     default:
@@ -1885,11 +1950,24 @@ PciIoGetBarAttributes (
     //
     // put the checksum
     //
-    End           = (EFI_ACPI_END_TAG_DESCRIPTOR *) (AddressSpace + 1);
+    End           = (EFI_ACPI_END_TAG_DESCRIPTOR *) (Descriptor + 1);
     End->Desc     = ACPI_END_TAG_DESCRIPTOR;
     End->Checksum = 0;
 
-    *Resources    = Configuration;
+    //
+    // Get the Address Translation Offset
+    //
+    if (Descriptor->ResType == ACPI_ADDRESS_SPACE_TYPE_MEM) {
+      Descriptor->AddrTranslationOffset = GetMmioAddressTranslationOffset (
+                                            PciIoDevice->PciRootBridgeIo,
+                                            Descriptor->AddrRangeMin,
+                                            Descriptor->AddrLen
+                                            );
+      if (Descriptor->AddrTranslationOffset == (UINT64) -1) {
+        FreePool (Descriptor);
+        return EFI_UNSUPPORTED;
+      }
+    }
   }
 
   return EFI_SUCCESS;

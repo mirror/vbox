@@ -1,7 +1,7 @@
 /** @file
   UEFI Decompress Library implementation refer to UEFI specification.
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
   Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -40,14 +40,14 @@ FillBuf (
   //
   // Left shift NumOfBits of bits in advance
   //
-  Sd->mBitBuf = (UINT32) (Sd->mBitBuf << NumOfBits);
+  Sd->mBitBuf = (UINT32) LShiftU64 (((UINT64)Sd->mBitBuf), NumOfBits);
 
   //
   // Copy data needed in bytes into mSbuBitBuf
   //
   while (NumOfBits > Sd->mBitCount) {
-
-    Sd->mBitBuf |= (UINT32) (Sd->mSubBitBuf << (NumOfBits = (UINT16) (NumOfBits - Sd->mBitCount)));
+    NumOfBits = (UINT16) (NumOfBits - Sd->mBitCount);
+    Sd->mBitBuf |= (UINT32) LShiftU64 (((UINT64)Sd->mSubBitBuf), NumOfBits);
 
     if (Sd->mCompSize > 0) {
       //
@@ -68,7 +68,7 @@ FillBuf (
   }
 
   //
-  // Caculate additional bit count read to update mBitCount
+  // Calculate additional bit count read to update mBitCount
   //
   Sd->mBitCount = (UINT16) (Sd->mBitCount - NumOfBits);
 
@@ -152,6 +152,7 @@ MakeTable (
   UINT16  Mask;
   UINT16  WordOfStart;
   UINT16  WordOfCount;
+  UINT16  MaxTableLength;
 
   //
   // The maximum mapping table width supported by this internal
@@ -164,6 +165,9 @@ MakeTable (
   }
 
   for (Index = 0; Index < NumOfChar; Index++) {
+    if (BitLen[Index] > 16) {
+      return (UINT16) BAD_TABLE;
+    }
     Count[BitLen[Index]]++;
   }
 
@@ -205,6 +209,7 @@ MakeTable (
 
   Avail = NumOfChar;
   Mask  = (UINT16) (1U << (15 - TableBits));
+  MaxTableLength = (UINT16) (1U << TableBits);
 
   for (Char = 0; Char < NumOfChar; Char++) {
 
@@ -218,6 +223,9 @@ MakeTable (
     if (Len <= TableBits) {
 
       for (Index = Start[Len]; Index < NextCode; Index++) {
+        if (Index >= MaxTableLength) {
+          return (UINT16) BAD_TABLE;
+        }
         Table[Index] = Char;
       }
 
@@ -308,7 +316,7 @@ DecodeP (
 /**
   Reads code lengths for the Extra Set or the Position Set.
 
-  Read in the Extra Set or Pointion Set Length Arrary, then
+  Read in the Extra Set or Position Set Length Array, then
   generate the Huffman code mapping for them.
 
   @param  Sd      The global scratch data.
@@ -508,7 +516,7 @@ DecodeC (
     Sd->mBlockSize    = (UINT16) GetBits (Sd, 16);
 
     //
-    // Read in the Extra Set Code Length Arrary,
+    // Read in the Extra Set Code Length Array,
     // Generate the Huffman code mapping table for Extra Set.
     //
     Sd->mBadTableFlag = ReadPTLen (Sd, NT, TBIT, 3);
@@ -517,13 +525,13 @@ DecodeC (
     }
 
     //
-    // Read in and decode the Char&Len Set Code Length Arrary,
+    // Read in and decode the Char&Len Set Code Length Array,
     // Generate the Huffman code mapping table for Char&Len Set.
     //
     ReadCLen (Sd);
 
     //
-    // Read in the Position Set Code Length Arrary,
+    // Read in the Position Set Code Length Array,
     // Generate the Huffman code mapping table for the Position Set.
     //
     Sd->mBadTableFlag = ReadPTLen (Sd, MAXNP, Sd->mPBit, (UINT16) (-1));
@@ -620,13 +628,24 @@ Decode (
       // Write BytesRemain of bytes into mDstBase
       //
       BytesRemain--;
+
       while ((INT16) (BytesRemain) >= 0) {
-        Sd->mDstBase[Sd->mOutBuf++] = Sd->mDstBase[DataIdx++];
         if (Sd->mOutBuf >= Sd->mOrigSize) {
           goto Done;
         }
+        if (DataIdx >= Sd->mOrigSize) {
+          Sd->mBadTableFlag = (UINT16) BAD_TABLE;
+          goto Done;
+        }
+        Sd->mDstBase[Sd->mOutBuf++] = Sd->mDstBase[DataIdx++];
 
         BytesRemain--;
+      }
+      //
+      // Once mOutBuf is fully filled, directly return
+      //
+      if (Sd->mOutBuf >= Sd->mOrigSize) {
+        goto Done;
       }
     }
   }
@@ -694,7 +713,7 @@ UefiDecompressGetInfo (
   }
 
   CompressedSize   = ReadUnaligned32 ((UINT32 *)Source);
-  if (SourceSize < (CompressedSize + 8)) {
+  if (SourceSize < (CompressedSize + 8) || (CompressedSize + 8) < 8) {
     return RETURN_INVALID_PARAMETER;
   }
 
@@ -777,7 +796,7 @@ UefiDecompress (
   Sd->mSrcBase  = (UINT8 *)Src;
   Sd->mDstBase  = Dst;
   //
-  // CompSize and OrigSize are caculated in bytes
+  // CompSize and OrigSize are calculated in bytes
   //
   Sd->mCompSize = CompSize;
   Sd->mOrigSize = OrigSize;

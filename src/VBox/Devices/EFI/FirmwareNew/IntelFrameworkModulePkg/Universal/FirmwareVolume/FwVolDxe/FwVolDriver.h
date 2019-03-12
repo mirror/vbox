@@ -1,7 +1,7 @@
 /** @file
   Common defines and definitions for a FwVolDxe driver.
 
-  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions
@@ -33,6 +33,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/HobLib.h>
 
 #define FV_DEVICE_SIGNATURE           SIGNATURE_32 ('_', 'F', 'V', '_')
 
@@ -52,7 +53,7 @@
 #define MAX_FILES 32
 
 //
-// Used to caculate from address -> Lba
+// Used to calculate from address -> Lba
 //
 typedef struct {
   LIST_ENTRY      Link;
@@ -484,6 +485,8 @@ IsValidFFSFile (
   @retval EFI_SUCCESS           Successfully read volume header to the allocated
                                 buffer.
   @retval EFI_ACCESS_DENIED     Read status of FV is not enabled.
+  @retval EFI_INVALID_PARAMETER The FV Header signature is not as expected or
+                                the file system could not be understood.
 **/
 EFI_STATUS
 GetFwVolHeader (
@@ -614,9 +617,9 @@ FvCreateMultipleFiles (
   );
 
 /**
-  Caculate the checksum for the FFS header.
+  Calculate the checksum for the FFS header.
 
-  @param FfsHeader   FFS File Header which needs to caculate the checksum
+  @param FfsHeader   FFS File Header which needs to calculate the checksum
 
 **/
 VOID
@@ -625,9 +628,9 @@ SetHeaderChecksum (
   );
 
 /**
-  Caculate the checksum for the FFS File.
+  Calculate the checksum for the FFS File.
 
-  @param FfsHeader       FFS File Header which needs to caculate the checksum
+  @param FfsHeader       FFS File Header which needs to calculate the checksum
   @param ActualFileSize  The whole Ffs File Length.
 
 **/

@@ -2,7 +2,7 @@
   Implementation of reading the current interrupt status and recycled transmit
   buffer status from a network interface.
 
-Copyright (c) 2004 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed
 and made available under the terms and conditions of the BSD License which
 accompanies this distribution. The full text of the license may be found at
@@ -16,38 +16,43 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "Snp.h"
 
 /**
-  Call undi to get the status of the interrupts, get the list of transmit
-  buffers that completed transmitting.
+  Call undi to get the status of the interrupts, get the list of recycled transmit
+  buffers that completed transmitting. The recycled transmit buffer address will
+  be saved into Snp->RecycledTxBuf. This function will also update the MediaPresent
+  field of EFI_SIMPLE_NETWORK_MODE if UNDI support it.
 
-  @param  Snp                     Pointer to snp driver structure.
-  @param  InterruptStatusPtr      A non null pointer to contain the interrupt
-                                  status.
-  @param  TransmitBufferListPtrs  A non null pointer to contain the list of
-                                  pointers of previous transmitted buffers whose
-                                  transmission was completed asynchrnously.
+  @param[in]   Snp                     Pointer to snp driver structure.
+  @param[out]  InterruptStatusPtr      A non null pointer to contain the interrupt
+                                       status.
+  @param[in]   GetTransmittedBuf       Set to TRUE to retrieve the recycled transmit
+                                       buffer address.
 
-  @retval EFI_SUCCESS         The status of the network interface was retrieved.
-  @retval EFI_DEVICE_ERROR    The command could not be sent to the network
-                              interface.
+  @retval      EFI_SUCCESS             The status of the network interface was retrieved.
+  @retval      EFI_DEVICE_ERROR        The command could not be sent to the network
+                                       interface.
 
 **/
 EFI_STATUS
 PxeGetStatus (
-  SNP_DRIVER *Snp,
-  UINT32     *InterruptStatusPtr,
-  VOID       **TransmitBufferListPtr
+  IN     SNP_DRIVER *Snp,
+     OUT UINT32     *InterruptStatusPtr,
+  IN     BOOLEAN    GetTransmittedBuf
   )
 {
   PXE_DB_GET_STATUS *Db;
   UINT16            InterruptFlags;
+  UINT32            Index;
+  UINT64            *Tmp;
 
+  Tmp               = NULL;
   Db                = Snp->Db;
   Snp->Cdb.OpCode   = PXE_OPCODE_GET_STATUS;
 
   Snp->Cdb.OpFlags  = 0;
 
-  if (TransmitBufferListPtr != NULL) {
+  if (GetTransmittedBuf) {
     Snp->Cdb.OpFlags |= PXE_OPFLAGS_GET_TRANSMITTED_BUFFERS;
+    ZeroMem (Db->TxBuffer, sizeof (Db->TxBuffer));
   }
 
   if (InterruptStatusPtr != NULL) {
@@ -61,11 +66,7 @@ PxeGetStatus (
   Snp->Cdb.CPBsize  = PXE_CPBSIZE_NOT_USED;
   Snp->Cdb.CPBaddr  = PXE_CPBADDR_NOT_USED;
 
-  //
-  // size DB for return of one buffer
-  //
-  Snp->Cdb.DBsize     = (UINT16) ((sizeof (PXE_DB_GET_STATUS) - sizeof (Db->TxBuffer)) + sizeof (Db->TxBuffer[0]));
-
+  Snp->Cdb.DBsize     = (UINT16) sizeof (PXE_DB_GET_STATUS);
   Snp->Cdb.DBaddr     = (UINT64)(UINTN) Db;
 
   Snp->Cdb.StatCode   = PXE_STATCODE_INITIALIZE;
@@ -80,12 +81,12 @@ PxeGetStatus (
 
   (*Snp->IssueUndi32Command) ((UINT64)(UINTN) &Snp->Cdb);
 
-  if (Snp->Cdb.StatCode != EFI_SUCCESS) {
+  if (Snp->Cdb.StatCode != PXE_STATCODE_SUCCESS) {
     DEBUG (
       (EFI_D_NET,
       "\nSnp->undi.get_status()  %xh:%xh\n",
       Snp->Cdb.StatFlags,
-      Snp->Cdb.StatFlags)
+      Snp->Cdb.StatCode)
       );
 
     return EFI_DEVICE_ERROR;
@@ -116,13 +117,34 @@ PxeGetStatus (
 
   }
 
-  if (TransmitBufferListPtr != NULL) {
-    *TransmitBufferListPtr =
-      (
-        ((Snp->Cdb.StatFlags & PXE_STATFLAGS_GET_STATUS_NO_TXBUFS_WRITTEN) != 0) ||
-        ((Snp->Cdb.StatFlags & PXE_STATFLAGS_GET_STATUS_TXBUF_QUEUE_EMPTY) != 0)
-      ) ? 0 : (VOID *) (UINTN) Db->TxBuffer[0];
-
+  if (GetTransmittedBuf) {
+    if ((Snp->Cdb.StatFlags & PXE_STATFLAGS_GET_STATUS_NO_TXBUFS_WRITTEN) == 0) {
+      //
+      // UNDI has written some transmitted buffer addresses into the DB. Store them into Snp->RecycledTxBuf.
+      //
+      for (Index = 0; Index < MAX_XMIT_BUFFERS; Index++) {
+        if (Db->TxBuffer[Index] != 0) {
+          if (Snp->RecycledTxBufCount == Snp->MaxRecycledTxBuf) {
+            //
+            // Snp->RecycledTxBuf is full, reallocate a new one.
+            //
+            if ((Snp->MaxRecycledTxBuf + SNP_TX_BUFFER_INCREASEMENT) >= SNP_MAX_TX_BUFFER_NUM) {
+              return EFI_DEVICE_ERROR;
+            }
+            Tmp = AllocatePool (sizeof (UINT64) * (Snp->MaxRecycledTxBuf + SNP_TX_BUFFER_INCREASEMENT));
+            if (Tmp == NULL) {
+              return EFI_DEVICE_ERROR;
+            }
+            CopyMem (Tmp, Snp->RecycledTxBuf, sizeof (UINT64) * Snp->RecycledTxBufCount);
+            FreePool (Snp->RecycledTxBuf);
+            Snp->RecycledTxBuf    =  Tmp;
+            Snp->MaxRecycledTxBuf += SNP_TX_BUFFER_INCREASEMENT;
+          }
+          Snp->RecycledTxBuf[Snp->RecycledTxBufCount] = Db->TxBuffer[Index];
+          Snp->RecycledTxBufCount++;
+        }
+      }
+    }
   }
 
   //
@@ -216,7 +238,23 @@ SnpUndi32GetStatus (
     goto ON_EXIT;
   }
 
-  Status = PxeGetStatus (Snp, InterruptStatus, TxBuf);
+  if (Snp->RecycledTxBufCount == 0 && TxBuf != NULL) {
+    Status = PxeGetStatus (Snp, InterruptStatus, TRUE);
+  } else {
+    Status = PxeGetStatus (Snp, InterruptStatus, FALSE);
+  }
+
+  if (TxBuf != NULL) {
+    //
+    // Get a recycled buf from Snp->RecycledTxBuf
+    //
+    if (Snp->RecycledTxBufCount == 0) {
+      *TxBuf = NULL;
+    } else {
+      Snp->RecycledTxBufCount--;
+      *TxBuf = (VOID *) (UINTN) Snp->RecycledTxBuf[Snp->RecycledTxBufCount];
+    }
+  }
 
 ON_EXIT:
   gBS->RestoreTPL (OldTpl);

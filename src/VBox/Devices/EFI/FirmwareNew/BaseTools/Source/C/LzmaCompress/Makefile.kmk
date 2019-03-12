@@ -33,8 +33,10 @@ LzmaCompress_SOURCES = \
 	LzmaCompress.c \
 	Sdk/C/Alloc.c \
 	Sdk/C/LzFind.c \
+	Sdk/C/LzFindMt.c \
 	Sdk/C/LzmaDec.c \
 	Sdk/C/LzmaEnc.c \
+	Sdk/C/Threads.c \
 	Sdk/C/7zFile.c \
 	Sdk/C/7zStream.c \
 	Sdk/C/Bra86.c

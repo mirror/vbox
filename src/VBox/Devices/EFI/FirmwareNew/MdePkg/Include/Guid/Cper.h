@@ -1,7 +1,8 @@
 /** @file
   GUIDs and definitions used for Common Platform Error Record.
 
-  Copyright (c) 2011 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2011 - 2017, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -11,7 +12,7 @@
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
   @par Revision Reference:
-  GUIDs introduced from UEFI 2.3.1 Specification.
+  GUIDs defined in UEFI 2.7 Specification.
 
 **/
 
@@ -22,6 +23,8 @@
 
 #define EFI_ERROR_RECORD_SIGNATURE_START   SIGNATURE_32('C', 'P', 'E', 'R')
 #define EFI_ERROR_RECORD_SIGNATURE_END     0xFFFFFFFF
+
+#define EFI_ERROR_RECORD_REVISION          0x0101
 
 ///
 /// Error Severity in Error Record Header and Error Section Descriptor
@@ -137,6 +140,8 @@ typedef struct {
   ///
 } EFI_COMMON_ERROR_RECORD_HEADER;
 
+#define EFI_ERROR_SECTION_REVISION  0x0100
+
 ///
 /// Validity Fields in Error Section Descriptor.
 ///
@@ -165,9 +170,21 @@ typedef struct {
   { \
     0xdc3ea0b0, 0xa144, 0x4797, { 0xb9, 0x5b, 0x53, 0xfa, 0x24, 0x2b, 0x6e, 0x1d } \
   }
+#define EFI_ERROR_SECTION_PROCESSOR_SPECIFIC_IA32X64_GUID \
+  { \
+    0xdc3ea0b0, 0xa144, 0x4797, { 0xb9, 0x5b, 0x53, 0xfa, 0x24, 0x2b, 0x6e, 0x1d } \
+  }
+#define EFI_ERROR_SECTION_PROCESSOR_SPECIFIC_ARM_GUID \
+  { \
+    0xe19e3d16, 0xbc11, 0x11e4, { 0x9c, 0xaa, 0xc2, 0x05, 0x1d, 0x5d, 0x46, 0xb0 } \
+  }
 #define EFI_ERROR_SECTION_PLATFORM_MEMORY_GUID \
   { \
     0xa5bc1114, 0x6f64, 0x4ede, { 0xb8, 0x63, 0x3e, 0x83, 0xed, 0x7c, 0x83, 0xb1 } \
+  }
+#define EFI_ERROR_SECTION_PLATFORM_MEMORY2_GUID \
+  { \
+    0x61EC04FC, 0x48E6, 0xD813, { 0x25, 0xC9, 0x8D, 0xAA, 0x44, 0x75, 0x0B, 0x12 } \
   }
 #define EFI_ERROR_SECTION_PCIE_GUID \
   { \
@@ -328,6 +345,23 @@ typedef struct {
     0x48AB7F57, 0xDC34, 0x4f6c, {0xA7, 0xD3, 0xB0, 0xB5, 0xB0, 0xA7, 0x43, 0x14 } \
   }
 ///@}
+
+///
+/// The validation bit mask indicates which fields in the IA32/X64 Processor
+/// Error Record structure are valid.
+///@{
+#define EFI_IA32_X64_PROCESSOR_ERROR_APIC_ID_VALID         BIT0
+#define EFI_IA32_X64_PROCESSOR_ERROR_CPU_ID_INFO_VALID     BIT1
+///@}
+
+///
+/// IA32/X64 Processor Error Record
+///
+typedef struct {
+  UINT64             ValidFields;
+  UINT64             ApicId;
+  UINT8              CpuIdInfo[48];
+} EFI_IA32_X64_PROCESSOR_ERROR_RECORD;
 
 ///
 /// The validation bit mask indicates which fields in the Cache Check structure
@@ -765,6 +799,10 @@ typedef enum {
 #define EFI_PLATFORM_MEMORY_ERROR_RANK_NUM_VALID               BIT15
 #define EFI_PLATFORM_MEMORY_ERROR_CARD_HANDLE_VALID            BIT16
 #define EFI_PLATFORM_MEMORY_ERROR_MODULE_HANDLE_VALID          BIT17
+#define EFI_PLATFORM_MEMORY_ERROR_EXTENDED_ROW_BIT_16_17_VALID BIT18
+#define EFI_PLATFORM_MEMORY_ERROR_BANK_GROUP_VALID             BIT19
+#define EFI_PLATFORM_MEMORY_ERROR_BANK_ADDRESS_VALID           BIT20
+#define EFI_PLATFORM_MEMORY_ERROR_CHIP_IDENTIFICATION_VALID    BIT21
 ///@}
 
 ///
@@ -809,11 +847,89 @@ typedef struct {
   UINT64                   ResponderId;
   UINT64                   TargetId;
   UINT8                    ErrorType;
-  UINT8                    Resv1;
+  UINT8                    Extended;
   UINT16                   RankNum;
   UINT16                   CardHandle;
   UINT16                   ModuleHandle;
 } EFI_PLATFORM_MEMORY_ERROR_DATA;
+
+///
+/// Validation bit mask indicates which fields in the memory error record 2 are valid
+/// in Memory Error section 2
+///@{
+#define EFI_PLATFORM_MEMORY2_ERROR_STATUS_VALID                 BIT0
+#define EFI_PLATFORM_MEMORY2_PHY_ADDRESS_VALID                  BIT1
+#define EFI_PLATFORM_MEMORY2_PHY_ADDRESS_MASK_VALID             BIT2
+#define EFI_PLATFORM_MEMORY2_NODE_VALID                         BIT3
+#define EFI_PLATFORM_MEMORY2_CARD_VALID                         BIT4
+#define EFI_PLATFORM_MEMORY2_MODULE_VALID                       BIT5
+#define EFI_PLATFORM_MEMORY2_BANK_VALID                         BIT6
+#define EFI_PLATFORM_MEMORY2_DEVICE_VALID                       BIT7
+#define EFI_PLATFORM_MEMORY2_ROW_VALID                          BIT8
+#define EFI_PLATFORM_MEMORY2_COLUMN_VALID                       BIT9
+#define EFI_PLATFORM_MEMORY2_RANK_VALID                         BIT10
+#define EFI_PLATFORM_MEMORY2_BIT_POS_VALID                      BIT11
+#define EFI_PLATFORM_MEMORY2_CHIP_ID_VALID                      BIT12
+#define EFI_PLATFORM_MEMORY2_MEMORY_ERROR_TYPE_VALID            BIT13
+#define EFI_PLATFORM_MEMORY2_STATUS_VALID                       BIT14
+#define EFI_PLATFORM_MEMORY2_REQUESTOR_ID_VALID                 BIT15
+#define EFI_PLATFORM_MEMORY2_RESPONDER_ID_VALID                 BIT16
+#define EFI_PLATFORM_MEMORY2_TARGET_ID_VALID                    BIT17
+#define EFI_PLATFORM_MEMORY2_CARD_HANDLE_VALID                  BIT18
+#define EFI_PLATFORM_MEMORY2_MODULE_HANDLE_VALID                BIT19
+#define EFI_PLATFORM_MEMORY2_BANK_GROUP_VALID                   BIT20
+#define EFI_PLATFORM_MEMORY2_BANK_ADDRESS_VALID                 BIT21
+///@}
+
+///
+/// Memory Error Type identifies the type of error that occurred in Memory
+/// Error section 2
+///@{
+#define EFI_PLATFORM_MEMORY2_ERROR_UNKNOWN                      0x00
+#define EFI_PLATFORM_MEMORY2_ERROR_NONE                         0x01
+#define EFI_PLATFORM_MEMORY2_ERROR_SINGLEBIT_ECC                0x02
+#define EFI_PLATFORM_MEMORY2_ERROR_MLTIBIT_ECC                  0x03
+#define EFI_PLATFORM_MEMORY2_ERROR_SINGLESYMBOL_CHIPKILL        0x04
+#define EFI_PLATFORM_MEMORY2_ERROR_MULTISYMBOL_CHIPKILL         0x05
+#define EFI_PLATFORM_MEMORY2_ERROR_MASTER_ABORT                 0x06
+#define EFI_PLATFORM_MEMORY2_ERROR_TARGET_ABORT                 0x07
+#define EFI_PLATFORM_MEMORY2_ERROR_PARITY                       0x08
+#define EFI_PLATFORM_MEMORY2_ERROR_WDT                          0x09
+#define EFI_PLATFORM_MEMORY2_ERROR_INVALID_ADDRESS              0x0A
+#define EFI_PLATFORM_MEMORY2_ERROR_MIRROR_BROKEN                0x0B
+#define EFI_PLATFORM_MEMORY2_ERROR_MEMORY_SPARING               0x0C
+#define EFI_PLATFORM_MEMORY2_ERROR_SCRUB_CORRECTED              0x0D
+#define EFI_PLATFORM_MEMORY2_ERROR_SCRUB_UNCORRECTED            0x0E
+#define EFI_PLATFORM_MEMORY2_ERROR_MEMORY_MAP_EVENT             0x0F
+///@}
+
+///
+/// Memory Error Section 2
+///
+typedef struct {
+  UINT64                    ValidFields;
+  EFI_GENERIC_ERROR_STATUS  ErrorStatus;
+  UINT64                    PhysicalAddress;      // Error physical address
+  UINT64                    PhysicalAddressMask;  // Grnaularity
+  UINT16                    Node;                 // Node #
+  UINT16                    Card;
+  UINT16                    Module;               // Module or Rank#
+  UINT16                    Bank;
+  UINT32                    Device;
+  UINT32                    Row;
+  UINT32                    Column;
+  UINT32                    Rank;
+  UINT32                    BitPosition;
+  UINT8                     ChipId;
+  UINT8                     MemErrorType;
+  UINT8                     Status;
+  UINT8                     Reserved;
+  UINT64                    RequestorId;
+  UINT64                    ResponderId;
+  UINT64                    TargetId;
+  UINT32                    CardHandle;
+  UINT32                    ModuleHandle;
+} EFI_PLATFORM_MEMORY2_ERROR_DATA;
 
 ///
 /// Validation bits mask indicates which of the following fields is valid
@@ -972,16 +1088,21 @@ typedef struct {
 
 ///
 /// Identifies the type of firmware error record
-///
+///@{
 #define EFI_FIRMWARE_ERROR_TYPE_IPF_SAL              0x00
+#define EFI_FIRMWARE_ERROR_TYPE_SOC_TYPE1            0x01
+#define EFI_FIRMWARE_ERROR_TYPE_SOC_TYPE2            0x02
+///@}
 
 ///
 /// Firmware Error Record Section
 ///
 typedef struct {
   UINT8       ErrorType;
-  UINT8       Resv1[7];
+  UINT8       Revision;
+  UINT8       Resv1[6];
   UINT64      RecordId;
+  EFI_GUID    RecordIdGuid;
 } EFI_FIRMWARE_ERROR_DATA;
 
 ///
@@ -1092,7 +1213,10 @@ extern EFI_GUID gEfiEventNotificationTypeDmarGuid;
 
 extern EFI_GUID gEfiProcessorGenericErrorSectionGuid;
 extern EFI_GUID gEfiProcessorSpecificErrorSectionGuid;
+extern EFI_GUID gEfiIa32X64ProcessorErrorSectionGuid;
+extern EFI_GUID gEfiArmProcessorErrorSectionGuid ;
 extern EFI_GUID gEfiPlatformMemoryErrorSectionGuid;
+extern EFI_GUID gEfiPlatformMemory2ErrorSectionGuid;
 extern EFI_GUID gEfiPcieErrorSectionGuid;
 extern EFI_GUID gEfiFirmwareErrorSectionGuid;
 extern EFI_GUID gEfiPciBusErrorSectionGuid;

@@ -1,11 +1,11 @@
 /** @file
-  Performance library instance used in DXE phase to dump SMM performance data.
+  Performance library instance used in DXE phase to dump both PEI/DXE and SMM performance data.
 
-  This library instance allows a DXE driver or UEFI application to dump the SMM performance data.
+  This library instance allows a DXE driver or UEFI application to dump both PEI/DXE and SMM performance data.
   StartPerformanceMeasurement(), EndPerformanceMeasurement(), StartPerformanceMeasurementEx()
   and EndPerformanceMeasurementEx() are not implemented.
 
-  Copyright (c) 2011 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2011 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -32,16 +32,26 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include <Protocol/SmmCommunication.h>
 
+#include <Guid/PiSmmCommunicationRegionTable.h>
+#include <Library/UefiLib.h>
+
 #define SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE (OFFSET_OF (EFI_SMM_COMMUNICATE_HEADER, Data)  + sizeof (SMM_PERF_COMMUNICATE))
-//
-// The cached performance protocol interface.
-//
+
 EFI_SMM_COMMUNICATION_PROTOCOL  *mSmmCommunication = NULL;
-UINT8                           mSmmPerformanceBuffer[SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE];
+UINT8                           *mSmmPerformanceBuffer;
 GAUGE_DATA_ENTRY                *mGaugeData = NULL;
 UINTN                           mGaugeNumberOfEntries = 0;
 GAUGE_DATA_ENTRY_EX             *mGaugeDataEx = NULL;
 UINTN                           mGaugeNumberOfEntriesEx = 0;
+
+BOOLEAN                         mNoSmmPerfHandler = FALSE;
+BOOLEAN                         mNoSmmPerfExHandler = FALSE;
+
+//
+// The cached Performance Protocol and PerformanceEx Protocol interface.
+//
+PERFORMANCE_PROTOCOL            *mPerformance = NULL;
+PERFORMANCE_EX_PROTOCOL         *mPerformanceEx = NULL;
 
 /**
   The function caches the pointer to SMM Communication protocol.
@@ -74,6 +84,51 @@ GetCommunicationProtocol (
   }
 
   return Status;
+}
+
+/**
+  The function caches the pointers to PerformanceEx protocol and Performance Protocol.
+
+  The function locates PerformanceEx protocol and Performance Protocol from protocol database.
+
+  @retval EFI_SUCCESS     PerformanceEx protocol or Performance Protocol is successfully located.
+  @retval EFI_NOT_FOUND   Both PerformanceEx protocol and Performance Protocol are not located to log performance.
+
+**/
+EFI_STATUS
+GetPerformanceProtocol (
+  VOID
+  )
+{
+  EFI_STATUS                Status;
+  PERFORMANCE_PROTOCOL      *Performance;
+  PERFORMANCE_EX_PROTOCOL   *PerformanceEx;
+
+  if (mPerformanceEx != NULL || mPerformance != NULL) {
+    return EFI_SUCCESS;
+  }
+
+  Status = gBS->LocateProtocol (&gPerformanceExProtocolGuid, NULL, (VOID **) &PerformanceEx);
+  if (!EFI_ERROR (Status)) {
+    ASSERT (PerformanceEx != NULL);
+    //
+    // Cache PerformanceEx Protocol.
+    //
+    mPerformanceEx = PerformanceEx;
+    return EFI_SUCCESS;
+  }
+
+  Status = gBS->LocateProtocol (&gPerformanceProtocolGuid, NULL, (VOID **) &Performance);
+  if (!EFI_ERROR (Status)) {
+    ASSERT (Performance != NULL);
+    //
+    // Cache performance protocol.
+    //
+    mPerformance = Performance;
+    return EFI_SUCCESS;
+  }
+
+  return EFI_NOT_FOUND;
 }
 
 /**
@@ -114,7 +169,7 @@ StartPerformanceMeasurementEx (
 /**
   Fills in the end time of a performance measurement.
 
-  Looks up the record that matches Handle, Token, Module and Identifier.
+  Looks up the record that matches Handle, Token and Module.
   If the record can not be found then return RETURN_NOT_FOUND.
   If the record is found and TimeStamp is not zero,
   then TimeStamp is added to the record as the end time.
@@ -215,31 +270,184 @@ EndPerformanceMeasurement (
 }
 
 /**
+  Attempts to retrieve a performance measurement log entry from the performance measurement log.
+  It can also retrieve the log created by StartPerformanceMeasurement and EndPerformanceMeasurement,
+  and then assign the Identifier with 0.
+
+  Attempts to retrieve the performance log entry specified by LogEntryKey.  If LogEntryKey is
+  zero on entry, then an attempt is made to retrieve the first entry from the performance log,
+  and the key for the second entry in the log is returned.  If the performance log is empty,
+  then no entry is retrieved and zero is returned.  If LogEntryKey is not zero, then the performance
+  log entry associated with LogEntryKey is retrieved, and the key for the next entry in the log is
+  returned.  If LogEntryKey is the key for the last entry in the log, then the last log entry is
+  retrieved and an implementation specific non-zero key value that specifies the end of the performance
+  log is returned.  If LogEntryKey is equal this implementation specific non-zero key value, then no entry
+  is retrieved and zero is returned.  In the cases where a performance log entry can be returned,
+  the log entry is returned in Handle, Token, Module, StartTimeStamp, EndTimeStamp and Identifier.
+  If LogEntryKey is not a valid log entry key for the performance measurement log, then ASSERT().
+  If Handle is NULL, then ASSERT().
+  If Token is NULL, then ASSERT().
+  If Module is NULL, then ASSERT().
+  If StartTimeStamp is NULL, then ASSERT().
+  If EndTimeStamp is NULL, then ASSERT().
+  If Identifier is NULL, then ASSERT().
+
+  @param  LogEntryKey             On entry, the key of the performance measurement log entry to retrieve.
+                                  0, then the first performance measurement log entry is retrieved.
+                                  On exit, the key of the next performance log entry.
+  @param  Handle                  Pointer to environment specific context used to identify the component
+                                  being measured.
+  @param  Token                   Pointer to a Null-terminated ASCII string that identifies the component
+                                  being measured.
+  @param  Module                  Pointer to a Null-terminated ASCII string that identifies the module
+                                  being measured.
+  @param  StartTimeStamp          Pointer to the 64-bit time stamp that was recorded when the measurement
+                                  was started.
+  @param  EndTimeStamp            Pointer to the 64-bit time stamp that was recorded when the measurement
+                                  was ended.
+  @param  Identifier              Pointer to the 32-bit identifier that was recorded.
+
+  @return The key for the next performance log entry (in general case).
+
+**/
+UINTN
+EFIAPI
+GetByPerformanceProtocol (
+  IN  UINTN       LogEntryKey,
+  OUT CONST VOID  **Handle,
+  OUT CONST CHAR8 **Token,
+  OUT CONST CHAR8 **Module,
+  OUT UINT64      *StartTimeStamp,
+  OUT UINT64      *EndTimeStamp,
+  OUT UINT32      *Identifier
+  )
+{
+  EFI_STATUS            Status;
+  GAUGE_DATA_ENTRY_EX   *GaugeData;
+
+  Status = GetPerformanceProtocol ();
+  if (EFI_ERROR (Status)) {
+    return 0;
+  }
+
+  if (mPerformanceEx != NULL) {
+    Status = mPerformanceEx->GetGaugeEx (LogEntryKey++, &GaugeData);
+  } else if (mPerformance != NULL) {
+    Status = mPerformance->GetGauge (LogEntryKey++, (GAUGE_DATA_ENTRY **) &GaugeData);
+  } else {
+    ASSERT (FALSE);
+    return 0;
+  }
+
+  //
+  // Make sure that LogEntryKey is a valid log entry key,
+  //
+  ASSERT (Status != EFI_INVALID_PARAMETER);
+
+  if (EFI_ERROR (Status)) {
+    //
+    // The LogEntryKey is the last entry (equals to the total entry number).
+    //
+    return 0;
+  }
+
+  ASSERT (GaugeData != NULL);
+
+  *Handle         = (VOID *) (UINTN) GaugeData->Handle;
+  *Token          = GaugeData->Token;
+  *Module         = GaugeData->Module;
+  *StartTimeStamp = GaugeData->StartTimeStamp;
+  *EndTimeStamp   = GaugeData->EndTimeStamp;
+  if (mPerformanceEx != NULL) {
+    *Identifier   = GaugeData->Identifier;
+  } else {
+    *Identifier   = 0;
+  }
+
+  return LogEntryKey;
+}
+
+
+/**
   Retrieves all previous logged performance measurement.
   Function will use SMM communicate protocol to get all previous SMM performance measurement data.
   If success, data buffer will be returned. If fail function will return NULL.
 
+  @param  LogEntryKey             On entry, the key of the performance measurement log entry to retrieve.
+                                  0, then the first performance measurement log entry is retrieved.
+                                  On exit, the key of the next performance log entry.
+
   @retval !NULL           Get all gauge data success.
-  @retval NULL            Get all guage data failed.
+  @retval NULL            Get all gauge data failed.
 **/
 GAUGE_DATA_ENTRY *
 EFIAPI
-GetAllSmmGaugeData (VOID)
+GetAllSmmGaugeData (
+  IN UINTN      LogEntryKey
+  )
 {
-  EFI_STATUS                  Status;
-  EFI_SMM_COMMUNICATE_HEADER  *SmmCommBufferHeader;
-  SMM_PERF_COMMUNICATE        *SmmPerfCommData;
-  UINTN                       CommSize;
-  UINTN                       DataSize;
+  EFI_STATUS                                Status;
+  EFI_SMM_COMMUNICATE_HEADER                *SmmCommBufferHeader;
+  SMM_PERF_COMMUNICATE                      *SmmPerfCommData;
+  UINTN                                     CommSize;
+  UINTN                                     DataSize;
+  EDKII_PI_SMM_COMMUNICATION_REGION_TABLE   *PiSmmCommunicationRegionTable;
+  UINT32                                    Index;
+  EFI_MEMORY_DESCRIPTOR                     *Entry;
+  UINT8                                     *Buffer;
+  UINTN                                     Size;
+  UINTN                                     NumberOfEntries;
+  UINTN                                     EntriesGot;
 
-  if (mGaugeData != NULL) {
-    return mGaugeData;
+  if (mNoSmmPerfHandler) {
+    //
+    // Not try to get the SMM gauge data again
+    // if no SMM Performance handler found.
+    //
+    return NULL;
+  }
+
+  if (LogEntryKey != 0) {
+    if (mGaugeData != NULL) {
+      return mGaugeData;
+    }
+  } else {
+    //
+    // Reget the SMM gauge data at the first entry get.
+    //
+    if (mGaugeData != NULL) {
+      FreePool (mGaugeData);
+      mGaugeData = NULL;
+      mGaugeNumberOfEntries = 0;
+    }
   }
 
   Status = GetCommunicationProtocol ();
   if (EFI_ERROR (Status)) {
     return NULL;
   }
+
+  Status = EfiGetSystemConfigurationTable (
+             &gEdkiiPiSmmCommunicationRegionTableGuid,
+             (VOID **) &PiSmmCommunicationRegionTable
+             );
+  if (EFI_ERROR (Status)) {
+    return NULL;
+  }
+  ASSERT (PiSmmCommunicationRegionTable != NULL);
+  Entry = (EFI_MEMORY_DESCRIPTOR *) (PiSmmCommunicationRegionTable + 1);
+  Size = 0;
+  for (Index = 0; Index < PiSmmCommunicationRegionTable->NumberOfEntries; Index++) {
+    if (Entry->Type == EfiConventionalMemory) {
+      Size = EFI_PAGES_TO_SIZE ((UINTN) Entry->NumberOfPages);
+      if (Size >= (SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE + sizeof (GAUGE_DATA_ENTRY))) {
+        break;
+      }
+    }
+    Entry = (EFI_MEMORY_DESCRIPTOR *) ((UINT8 *) Entry + PiSmmCommunicationRegionTable->DescriptorSize);
+  }
+  ASSERT (Index < PiSmmCommunicationRegionTable->NumberOfEntries);
+  mSmmPerformanceBuffer = (UINT8 *) (UINTN) Entry->PhysicalStart;
 
   //
   // Initialize communicate buffer
@@ -253,16 +461,21 @@ GetAllSmmGaugeData (VOID)
   CommSize = SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE;
 
   //
-  // Get totol number of SMM gauge entries
+  // Get total number of SMM gauge entries
   //
   SmmPerfCommData->Function = SMM_PERF_FUNCTION_GET_GAUGE_ENTRY_NUMBER;
   Status = mSmmCommunication->Communicate (mSmmCommunication, mSmmPerformanceBuffer, &CommSize);
+  if (Status == EFI_NOT_FOUND) {
+    mNoSmmPerfHandler = TRUE;
+  }
   if (EFI_ERROR (Status) || EFI_ERROR (SmmPerfCommData->ReturnStatus) || SmmPerfCommData->NumberOfEntries == 0) {
     return NULL;
   }
 
   mGaugeNumberOfEntries = SmmPerfCommData->NumberOfEntries;
 
+  Buffer = mSmmPerformanceBuffer + SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE;
+  NumberOfEntries = (Size - SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE) / sizeof (GAUGE_DATA_ENTRY);
   DataSize = mGaugeNumberOfEntries * sizeof(GAUGE_DATA_ENTRY);
   mGaugeData = AllocateZeroPool(DataSize);
   ASSERT (mGaugeData != NULL);
@@ -271,15 +484,26 @@ GetAllSmmGaugeData (VOID)
   // Get all SMM gauge data
   //
   SmmPerfCommData->Function = SMM_PERF_FUNCTION_GET_GAUGE_DATA;
-  SmmPerfCommData->LogEntryKey = 0;
-  SmmPerfCommData->NumberOfEntries = mGaugeNumberOfEntries;
-  SmmPerfCommData->GaugeData = mGaugeData;
-  Status = mSmmCommunication->Communicate (mSmmCommunication, mSmmPerformanceBuffer, &CommSize);
-  if (EFI_ERROR (Status) || EFI_ERROR (SmmPerfCommData->ReturnStatus)) {
-    FreePool (mGaugeData);
-    mGaugeData = NULL;
-    mGaugeNumberOfEntries = 0;
-  }
+  SmmPerfCommData->GaugeData = (GAUGE_DATA_ENTRY *) Buffer;
+  EntriesGot = 0;
+  do {
+    SmmPerfCommData->LogEntryKey = EntriesGot;
+    if ((mGaugeNumberOfEntries - EntriesGot) >= NumberOfEntries) {
+      SmmPerfCommData->NumberOfEntries = NumberOfEntries;
+    } else {
+      SmmPerfCommData->NumberOfEntries = mGaugeNumberOfEntries - EntriesGot;
+    }
+    Status = mSmmCommunication->Communicate (mSmmCommunication, mSmmPerformanceBuffer, &CommSize);
+    if (EFI_ERROR (Status) || EFI_ERROR (SmmPerfCommData->ReturnStatus)) {
+      FreePool (mGaugeData);
+      mGaugeData = NULL;
+      mGaugeNumberOfEntries = 0;
+      return NULL;
+    } else {
+      CopyMem (&mGaugeData[EntriesGot], Buffer, SmmPerfCommData->NumberOfEntries * sizeof (GAUGE_DATA_ENTRY));
+    }
+    EntriesGot += SmmPerfCommData->NumberOfEntries;
+  } while (EntriesGot < mGaugeNumberOfEntries);
 
   return mGaugeData;
 }
@@ -289,21 +513,53 @@ GetAllSmmGaugeData (VOID)
   Function will use SMM communicate protocol to get all previous SMM performance measurement data.
   If success, data buffer will be returned. If fail function will return NULL.
 
+  @param  LogEntryKey             On entry, the key of the performance measurement log entry to retrieve.
+                                  0, then the first performance measurement log entry is retrieved.
+                                  On exit, the key of the next performance log entry.
+
   @retval !NULL           Get all gauge data success.
-  @retval NULL            Get all guage data failed.
+  @retval NULL            Get all gauge data failed.
 **/
 GAUGE_DATA_ENTRY_EX *
 EFIAPI
-GetAllSmmGaugeDataEx (VOID)
+GetAllSmmGaugeDataEx (
+  IN UINTN      LogEntryKey
+  )
 {
-  EFI_STATUS                  Status;
-  EFI_SMM_COMMUNICATE_HEADER  *SmmCommBufferHeader;
-  SMM_PERF_COMMUNICATE_EX     *SmmPerfCommData;
-  UINTN                       CommSize;
-  UINTN                       DataSize;
+  EFI_STATUS                                Status;
+  EFI_SMM_COMMUNICATE_HEADER                *SmmCommBufferHeader;
+  SMM_PERF_COMMUNICATE_EX                   *SmmPerfCommData;
+  UINTN                                     CommSize;
+  UINTN                                     DataSize;
+  EDKII_PI_SMM_COMMUNICATION_REGION_TABLE   *PiSmmCommunicationRegionTable;
+  UINT32                                    Index;
+  EFI_MEMORY_DESCRIPTOR                     *Entry;
+  UINT8                                     *Buffer;
+  UINTN                                     Size;
+  UINTN                                     NumberOfEntries;
+  UINTN                                     EntriesGot;
 
-  if (mGaugeDataEx != NULL) {
-    return mGaugeDataEx;
+  if (mNoSmmPerfExHandler) {
+    //
+    // Not try to get the SMM gauge data again
+    // if no SMM PerformanceEx handler found.
+    //
+    return NULL;
+  }
+
+  if (LogEntryKey != 0) {
+    if (mGaugeDataEx != NULL) {
+      return mGaugeDataEx;
+    }
+  } else {
+    //
+    // Reget the SMM gauge data at the first entry get.
+    //
+    if (mGaugeDataEx != NULL) {
+      FreePool (mGaugeDataEx);
+      mGaugeDataEx = NULL;
+      mGaugeNumberOfEntriesEx = 0;
+    }
   }
 
   Status = GetCommunicationProtocol ();
@@ -311,6 +567,27 @@ GetAllSmmGaugeDataEx (VOID)
     return NULL;
   }
 
+  Status = EfiGetSystemConfigurationTable (
+             &gEdkiiPiSmmCommunicationRegionTableGuid,
+             (VOID **) &PiSmmCommunicationRegionTable
+             );
+  if (EFI_ERROR (Status)) {
+    return NULL;
+  }
+  ASSERT (PiSmmCommunicationRegionTable != NULL);
+  Entry = (EFI_MEMORY_DESCRIPTOR *) (PiSmmCommunicationRegionTable + 1);
+  Size = 0;
+  for (Index = 0; Index < PiSmmCommunicationRegionTable->NumberOfEntries; Index++) {
+    if (Entry->Type == EfiConventionalMemory) {
+      Size = EFI_PAGES_TO_SIZE ((UINTN) Entry->NumberOfPages);
+      if (Size >= (SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE + sizeof (GAUGE_DATA_ENTRY_EX))) {
+        break;
+      }
+    }
+    Entry = (EFI_MEMORY_DESCRIPTOR *) ((UINT8 *) Entry + PiSmmCommunicationRegionTable->DescriptorSize);
+  }
+  ASSERT (Index < PiSmmCommunicationRegionTable->NumberOfEntries);
+  mSmmPerformanceBuffer = (UINT8 *) (UINTN) Entry->PhysicalStart;
   //
   // Initialize communicate buffer
   //
@@ -323,16 +600,21 @@ GetAllSmmGaugeDataEx (VOID)
   CommSize = SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE;
 
   //
-  // Get totol number of SMM gauge entries
+  // Get total number of SMM gauge entries
   //
   SmmPerfCommData->Function = SMM_PERF_FUNCTION_GET_GAUGE_ENTRY_NUMBER;
   Status = mSmmCommunication->Communicate (mSmmCommunication, mSmmPerformanceBuffer, &CommSize);
+  if (Status == EFI_NOT_FOUND) {
+    mNoSmmPerfExHandler = TRUE;
+  }
   if (EFI_ERROR (Status) || EFI_ERROR (SmmPerfCommData->ReturnStatus) || SmmPerfCommData->NumberOfEntries == 0) {
     return NULL;
   }
 
   mGaugeNumberOfEntriesEx = SmmPerfCommData->NumberOfEntries;
 
+  Buffer = mSmmPerformanceBuffer + SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE;
+  NumberOfEntries = (Size - SMM_PERFORMANCE_COMMUNICATION_BUFFER_SIZE) / sizeof (GAUGE_DATA_ENTRY_EX);
   DataSize = mGaugeNumberOfEntriesEx * sizeof(GAUGE_DATA_ENTRY_EX);
   mGaugeDataEx = AllocateZeroPool(DataSize);
   ASSERT (mGaugeDataEx != NULL);
@@ -341,15 +623,26 @@ GetAllSmmGaugeDataEx (VOID)
   // Get all SMM gauge data
   //
   SmmPerfCommData->Function = SMM_PERF_FUNCTION_GET_GAUGE_DATA;
-  SmmPerfCommData->LogEntryKey = 0;
-  SmmPerfCommData->NumberOfEntries = mGaugeNumberOfEntriesEx;
-  SmmPerfCommData->GaugeDataEx = mGaugeDataEx;
-  Status = mSmmCommunication->Communicate (mSmmCommunication, mSmmPerformanceBuffer, &CommSize);
-  if (EFI_ERROR (Status) || EFI_ERROR (SmmPerfCommData->ReturnStatus)) {
-    FreePool (mGaugeDataEx);
-    mGaugeDataEx = NULL;
-    mGaugeNumberOfEntriesEx = 0;
-  }
+  SmmPerfCommData->GaugeDataEx = (GAUGE_DATA_ENTRY_EX *) Buffer;
+  EntriesGot = 0;
+  do {
+    SmmPerfCommData->LogEntryKey = EntriesGot;
+    if ((mGaugeNumberOfEntriesEx - EntriesGot) >= NumberOfEntries) {
+      SmmPerfCommData->NumberOfEntries = NumberOfEntries;
+    } else {
+      SmmPerfCommData->NumberOfEntries = mGaugeNumberOfEntriesEx - EntriesGot;
+    }
+    Status = mSmmCommunication->Communicate (mSmmCommunication, mSmmPerformanceBuffer, &CommSize);
+    if (EFI_ERROR (Status) || EFI_ERROR (SmmPerfCommData->ReturnStatus)) {
+      FreePool (mGaugeDataEx);
+      mGaugeDataEx = NULL;
+      mGaugeNumberOfEntriesEx = 0;
+      return NULL;
+    } else {
+      CopyMem (&mGaugeDataEx[EntriesGot], Buffer, SmmPerfCommData->NumberOfEntries * sizeof (GAUGE_DATA_ENTRY_EX));
+    }
+    EntriesGot += SmmPerfCommData->NumberOfEntries;
+  } while (EntriesGot < mGaugeNumberOfEntriesEx);
 
   return mGaugeDataEx;
 }
@@ -418,35 +711,73 @@ GetPerformanceMeasurementEx (
   ASSERT (EndTimeStamp != NULL);
   ASSERT (Identifier != NULL);
 
-  mGaugeDataEx = GetAllSmmGaugeDataEx();
+  mGaugeDataEx = GetAllSmmGaugeDataEx (LogEntryKey);
   if (mGaugeDataEx != NULL) {
-    //
-    // Make sure that LogEntryKey is a valid log entry key.
-    //
-    ASSERT (LogEntryKey <= mGaugeNumberOfEntriesEx);
-
-    if (LogEntryKey == mGaugeNumberOfEntriesEx) {
-      return 0;
+    if (LogEntryKey >= mGaugeNumberOfEntriesEx) {
+      //
+      // Try to get the data by Performance Protocol.
+      //
+      LogEntryKey = LogEntryKey - mGaugeNumberOfEntriesEx;
+      LogEntryKey = GetByPerformanceProtocol (
+                      LogEntryKey,
+                      Handle,
+                      Token,
+                      Module,
+                      StartTimeStamp,
+                      EndTimeStamp,
+                      Identifier
+                      );
+      if (LogEntryKey == 0) {
+        //
+        // Last entry.
+        //
+        return LogEntryKey;
+      } else {
+        return (LogEntryKey + mGaugeNumberOfEntriesEx);
+      }
     }
 
     GaugeData = &mGaugeDataEx[LogEntryKey++];
     *Identifier = GaugeData->Identifier;
   } else {
-    mGaugeData = GetAllSmmGaugeData();
+    mGaugeData = GetAllSmmGaugeData (LogEntryKey);
     if (mGaugeData != NULL) {
-      //
-      // Make sure that LogEntryKey is a valid log entry key.
-      //
-      ASSERT (LogEntryKey <= mGaugeNumberOfEntries);
-
-      if (LogEntryKey == mGaugeNumberOfEntries) {
-        return 0;
+      if (LogEntryKey >= mGaugeNumberOfEntries) {
+        //
+        // Try to get the data by Performance Protocol.
+        //
+        LogEntryKey = LogEntryKey - mGaugeNumberOfEntries;
+        LogEntryKey = GetByPerformanceProtocol (
+                        LogEntryKey,
+                        Handle,
+                        Token,
+                        Module,
+                        StartTimeStamp,
+                        EndTimeStamp,
+                        Identifier
+                        );
+        if (LogEntryKey == 0) {
+          //
+          // Last entry.
+          //
+          return LogEntryKey;
+        } else {
+          return (LogEntryKey + mGaugeNumberOfEntries);
+        }
       }
 
       GaugeData = (GAUGE_DATA_ENTRY_EX *) &mGaugeData[LogEntryKey++];
       *Identifier = 0;
     } else {
-      return 0;
+      return GetByPerformanceProtocol (
+               LogEntryKey,
+               Handle,
+               Token,
+               Module,
+               StartTimeStamp,
+               EndTimeStamp,
+               Identifier
+               );
     }
   }
 

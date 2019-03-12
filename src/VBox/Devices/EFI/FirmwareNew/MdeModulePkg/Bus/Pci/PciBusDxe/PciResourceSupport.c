@@ -1,7 +1,7 @@
 /** @file
   PCI resouces support functions implemntation for PCI Bus module.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -196,6 +196,7 @@ CalculateApertureIo16 (
   PCI_RESOURCE_NODE       *Node;
   UINT64                  Offset;
   EFI_PCI_PLATFORM_POLICY PciPolicy;
+  UINT64                  PaddingAperture;
 
   if (!mPolicyDetermined) {
     //
@@ -228,21 +229,27 @@ CalculateApertureIo16 (
     mPolicyDetermined = TRUE;
   }
 
-  Aperture = 0;
+  Aperture        = 0;
+  PaddingAperture = 0;
 
   if (Bridge == NULL) {
     return ;
   }
 
-  CurrentLink = Bridge->ChildList.ForwardLink;
-
   //
   // Assume the bridge is aligned
   //
-  while (CurrentLink != &Bridge->ChildList) {
+  for ( CurrentLink = GetFirstNode (&Bridge->ChildList)
+      ; !IsNull (&Bridge->ChildList, CurrentLink)
+      ; CurrentLink = GetNextNode (&Bridge->ChildList, CurrentLink)
+      ) {
 
     Node = RESOURCE_NODE_FROM_LINK (CurrentLink);
-
+    if (Node->ResourceUsage == PciResUsagePadding) {
+      ASSERT (PaddingAperture == 0);
+      PaddingAperture = Node->Length;
+      continue;
+    }
     //
     // Consider the aperture alignment
     //
@@ -293,13 +300,10 @@ CalculateApertureIo16 (
     // Increment aperture by the length of node
     //
     Aperture += Node->Length;
-
-    CurrentLink = CurrentLink->ForwardLink;
   }
 
   //
-  // At last, adjust the aperture with the bridge's
-  // alignment
+  // Adjust the aperture with the bridge's alignment
   //
   Offset = Aperture & (Bridge->Alignment);
 
@@ -319,6 +323,12 @@ CalculateApertureIo16 (
       Bridge->Alignment = Node->Alignment;
     }
   }
+
+  //
+  // Hotplug controller needs padding resources.
+  // Use the larger one between the padding resource and actual occupied resource.
+  //
+  Bridge->Length = MAX (Bridge->Length, PaddingAperture);
 }
 
 /**
@@ -333,13 +343,9 @@ CalculateResourceAperture (
   IN PCI_RESOURCE_NODE    *Bridge
   )
 {
-  UINT64            Aperture;
+  UINT64            Aperture[2];
   LIST_ENTRY        *CurrentLink;
   PCI_RESOURCE_NODE *Node;
-
-  UINT64            Offset;
-
-  Aperture = 0;
 
   if (Bridge == NULL) {
     return ;
@@ -351,64 +357,51 @@ CalculateResourceAperture (
     return ;
   }
 
-  CurrentLink = Bridge->ChildList.ForwardLink;
-
+  Aperture[PciResUsageTypical] = 0;
+  Aperture[PciResUsagePadding] = 0;
   //
   // Assume the bridge is aligned
   //
-  while (CurrentLink != &Bridge->ChildList) {
-
+  for ( CurrentLink = GetFirstNode (&Bridge->ChildList)
+      ; !IsNull (&Bridge->ChildList, CurrentLink)
+      ; CurrentLink = GetNextNode (&Bridge->ChildList, CurrentLink)
+      ) {
     Node = RESOURCE_NODE_FROM_LINK (CurrentLink);
 
     //
-    // Apply padding resource if available
+    // It's possible for a bridge to contain multiple padding resource
+    // nodes due to DegradeResource().
     //
-    Offset = Aperture & (Node->Alignment);
-
-    if (Offset != 0) {
-
-      Aperture = Aperture + (Node->Alignment + 1) - Offset;
-
-    }
-
+    ASSERT ((Node->ResourceUsage == PciResUsageTypical) ||
+            (Node->ResourceUsage == PciResUsagePadding));
+    ASSERT (Node->ResourceUsage < ARRAY_SIZE (Aperture));
     //
     // Recode current aperture as a offset
-    // this offset will be used in future real allocation
+    // Apply padding resource to meet alignment requirement
+    // Node offset will be used in future real allocation
     //
-    Node->Offset = Aperture;
+    Node->Offset = ALIGN_VALUE (Aperture[Node->ResourceUsage], Node->Alignment + 1);
 
     //
-    // Increment aperture by the length of node
+    // Record the total aperture.
     //
-    Aperture += Node->Length;
-
-    //
-    // Consider the aperture alignment
-    //
-    CurrentLink = CurrentLink->ForwardLink;
+    Aperture[Node->ResourceUsage] = Node->Offset + Node->Length;
   }
 
   //
-  // At last, adjust the aperture with the bridge's
-  // alignment
+  // Adjust the aperture with the bridge's alignment
   //
-  Offset = Aperture & (Bridge->Alignment);
-  if (Offset != 0) {
-    Aperture = Aperture + (Bridge->Alignment + 1) - Offset;
-  }
+  Aperture[PciResUsageTypical] = ALIGN_VALUE (Aperture[PciResUsageTypical], Bridge->Alignment + 1);
+  Aperture[PciResUsagePadding] = ALIGN_VALUE (Aperture[PciResUsagePadding], Bridge->Alignment + 1);
 
   //
-  // If the bridge has already padded the resource and the
-  // amount of padded resource is larger, then keep the
-  // padded resource
+  // Hotplug controller needs padding resources.
+  // Use the larger one between the padding resource and actual occupied resource.
   //
-  if (Bridge->Length < Aperture) {
-    Bridge->Length = Aperture;
-  }
+  Bridge->Length = MAX (Aperture[PciResUsageTypical], Aperture[PciResUsagePadding]);
 
   //
-  // At last, adjust the bridge's alignment to the first child's alignment
-  // if the bridge has at least one child
+  // Adjust the bridge's alignment to the MAX (first) alignment of all children.
   //
   CurrentLink = Bridge->ChildList.ForwardLink;
   if (CurrentLink != &Bridge->ChildList) {
@@ -1034,50 +1027,56 @@ DegradeResource (
   IN PCI_RESOURCE_NODE *PMem64Node
   )
 {
-  PCI_IO_DEVICE        *Temp;
+  PCI_IO_DEVICE        *PciIoDevice;
   LIST_ENTRY           *ChildDeviceLink;
   LIST_ENTRY           *ChildNodeLink;
   LIST_ENTRY           *NextChildNodeLink;
-  PCI_RESOURCE_NODE    *TempNode;
+  PCI_RESOURCE_NODE    *ResourceNode;
 
-  //
-  // If any child device has both option ROM and 64-bit BAR, degrade its PMEM64/MEM64
-  // requests in case that if a legacy option ROM image can not access 64-bit resources.
-  //
-  ChildDeviceLink = Bridge->ChildList.ForwardLink;
-  while (ChildDeviceLink != NULL && ChildDeviceLink != &Bridge->ChildList) {
-    Temp = PCI_IO_DEVICE_FROM_LINK (ChildDeviceLink);
-    if (Temp->RomSize != 0) {
-      if (!IsListEmpty (&Mem64Node->ChildList)) {
-        ChildNodeLink = Mem64Node->ChildList.ForwardLink;
-        while (ChildNodeLink != &Mem64Node->ChildList) {
-          TempNode = RESOURCE_NODE_FROM_LINK (ChildNodeLink);
-          NextChildNodeLink = ChildNodeLink->ForwardLink;
+  if (FeaturePcdGet (PcdPciDegradeResourceForOptionRom)) {
+    //
+    // If any child device has both option ROM and 64-bit BAR, degrade its PMEM64/MEM64
+    // requests in case that if a legacy option ROM image can not access 64-bit resources.
+    //
+    ChildDeviceLink = Bridge->ChildList.ForwardLink;
+    while (ChildDeviceLink != NULL && ChildDeviceLink != &Bridge->ChildList) {
+      PciIoDevice = PCI_IO_DEVICE_FROM_LINK (ChildDeviceLink);
+      if (PciIoDevice->RomSize != 0) {
+        if (!IsListEmpty (&Mem64Node->ChildList)) {
+          ChildNodeLink = Mem64Node->ChildList.ForwardLink;
+          while (ChildNodeLink != &Mem64Node->ChildList) {
+            ResourceNode = RESOURCE_NODE_FROM_LINK (ChildNodeLink);
+            NextChildNodeLink = ChildNodeLink->ForwardLink;
 
-          if (TempNode->PciDev == Temp) {
-            RemoveEntryList (ChildNodeLink);
-            InsertResourceNode (Mem32Node, TempNode);
+            if ((ResourceNode->PciDev == PciIoDevice) &&
+                (ResourceNode->Virtual || !PciIoDevice->PciBar[ResourceNode->Bar].BarTypeFixed)
+                ) {
+              RemoveEntryList (ChildNodeLink);
+              InsertResourceNode (Mem32Node, ResourceNode);
+            }
+            ChildNodeLink = NextChildNodeLink;
           }
-          ChildNodeLink = NextChildNodeLink;
         }
-      }
 
-      if (!IsListEmpty (&PMem64Node->ChildList)) {
-        ChildNodeLink = PMem64Node->ChildList.ForwardLink;
-        while (ChildNodeLink != &PMem64Node->ChildList) {
-          TempNode = RESOURCE_NODE_FROM_LINK (ChildNodeLink);
-          NextChildNodeLink = ChildNodeLink->ForwardLink;
+        if (!IsListEmpty (&PMem64Node->ChildList)) {
+          ChildNodeLink = PMem64Node->ChildList.ForwardLink;
+          while (ChildNodeLink != &PMem64Node->ChildList) {
+            ResourceNode = RESOURCE_NODE_FROM_LINK (ChildNodeLink);
+            NextChildNodeLink = ChildNodeLink->ForwardLink;
 
-          if (TempNode->PciDev == Temp) {
-            RemoveEntryList (ChildNodeLink);
-            InsertResourceNode (PMem32Node, TempNode);
+            if ((ResourceNode->PciDev == PciIoDevice) &&
+                (ResourceNode->Virtual || !PciIoDevice->PciBar[ResourceNode->Bar].BarTypeFixed)
+                ) {
+              RemoveEntryList (ChildNodeLink);
+              InsertResourceNode (PMem32Node, ResourceNode);
+            }
+            ChildNodeLink = NextChildNodeLink;
           }
-          ChildNodeLink = NextChildNodeLink;
         }
-      }
 
+      }
+      ChildDeviceLink = ChildDeviceLink->ForwardLink;
     }
-    ChildDeviceLink = ChildDeviceLink->ForwardLink;
   }
 
   //

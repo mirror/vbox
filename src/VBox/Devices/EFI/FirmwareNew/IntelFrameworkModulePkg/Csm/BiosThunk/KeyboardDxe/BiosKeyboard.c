@@ -1,7 +1,7 @@
 /** @file
   ConsoleOut Routines that speak VGA.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -270,8 +270,12 @@ BiosKeyboardDriverBindingStart (
   BiosKeyboardPrivate->CommandRegisterAddress     = KEYBOARD_8042_COMMAND_REGISTER;
   BiosKeyboardPrivate->ExtendedKeyboard           = TRUE;
 
+  BiosKeyboardPrivate->KeyState.KeyShiftState     = 0;
+  BiosKeyboardPrivate->KeyState.KeyToggleState    = 0;
   BiosKeyboardPrivate->Queue.Front                = 0;
   BiosKeyboardPrivate->Queue.Rear                 = 0;
+  BiosKeyboardPrivate->QueueForNotify.Front       = 0;
+  BiosKeyboardPrivate->QueueForNotify.Rear        = 0;
   BiosKeyboardPrivate->SimpleTextInputEx.Reset               = BiosKeyboardResetEx;
   BiosKeyboardPrivate->SimpleTextInputEx.ReadKeyStrokeEx     = BiosKeyboardReadKeyStrokeEx;
   BiosKeyboardPrivate->SimpleTextInputEx.SetState            = BiosKeyboardSetState;
@@ -333,6 +337,19 @@ BiosKeyboardDriverBindingStart (
                   BiosKeyboardPrivate->TimerEvent,
                   TimerPeriodic,
                   KEYBOARD_TIMER_INTERVAL
+                  );
+  if (EFI_ERROR (Status)) {
+    Status      = EFI_OUT_OF_RESOURCES;
+    StatusCode  = EFI_PERIPHERAL_KEYBOARD | EFI_P_EC_CONTROLLER_ERROR;
+    goto Done;
+  }
+
+  Status = gBS->CreateEvent (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_CALLBACK,
+                  KeyNotifyProcessHandler,
+                  BiosKeyboardPrivate,
+                  &BiosKeyboardPrivate->KeyNotifyProcessEvent
                   );
   if (EFI_ERROR (Status)) {
     Status      = EFI_OUT_OF_RESOURCES;
@@ -403,7 +420,7 @@ BiosKeyboardDriverBindingStart (
     // Check bit 6 of Feature Byte 2.
     // If it is set, then Int 16 Func 09 is supported
     //
-    if (*(UINT8 *)(UINTN) ((Regs.X.ES << 4) + Regs.X.BX + 0x06) & 0x40) {
+    if (*(UINT8 *) (((UINTN) Regs.X.ES << 4) + Regs.X.BX + 0x06) & 0x40) {
       //
       // Get Keyboard Functionality
       //
@@ -462,6 +479,11 @@ Done:
       if ((BiosKeyboardPrivate->SimpleTextInputEx).WaitForKeyEx != NULL) {
         gBS->CloseEvent ((BiosKeyboardPrivate->SimpleTextInputEx).WaitForKeyEx);
       }
+
+      if (BiosKeyboardPrivate->KeyNotifyProcessEvent != NULL) {
+        gBS->CloseEvent (BiosKeyboardPrivate->KeyNotifyProcessEvent);
+      }
+
       BiosKeyboardFreeNotifyList (&BiosKeyboardPrivate->NotifyList);
 
       if (BiosKeyboardPrivate->TimerEvent != NULL) {
@@ -566,6 +588,7 @@ BiosKeyboardDriverBindingStop (
   gBS->CloseEvent ((BiosKeyboardPrivate->SimpleTextIn).WaitForKey);
   gBS->CloseEvent (BiosKeyboardPrivate->TimerEvent);
   gBS->CloseEvent (BiosKeyboardPrivate->SimpleTextInputEx.WaitForKeyEx);
+  gBS->CloseEvent (BiosKeyboardPrivate->KeyNotifyProcessEvent);
   BiosKeyboardFreeNotifyList (&BiosKeyboardPrivate->NotifyList);
 
   FreePool (BiosKeyboardPrivate);
@@ -934,7 +957,7 @@ KeyboardReadKeyStrokeWorker (
   }
 
   //
-  // Use TimerEvent callback funciton to check whether there's any key pressed
+  // Use TimerEvent callback function to check whether there's any key pressed
   //
 
   //
@@ -957,6 +980,8 @@ KeyboardReadKeyStrokeWorker (
   //
   Status = CheckQueue (&BiosKeyboardPrivate->Queue);
   if (EFI_ERROR (Status)) {
+    ZeroMem (&KeyData->Key, sizeof (KeyData->Key));
+    CopyMem (&KeyData->KeyState, &BiosKeyboardPrivate->KeyState, sizeof (EFI_KEY_STATE));
     gBS->RestoreTPL (OldTpl);
     return EFI_NOT_READY;
   }
@@ -978,7 +1003,7 @@ KeyboardReadKeyStrokeWorker (
   @param  ExtendedVerification  Whether perform the extra validation of keyboard. True: perform; FALSE: skip.
 
   @retval EFI_SUCCESS           The command byte is written successfully.
-  @retval EFI_DEVICE_ERROR      Errors occurred during reseting keyboard.
+  @retval EFI_DEVICE_ERROR      Errors occurred during resetting keyboard.
 
 **/
 EFI_STATUS
@@ -1176,8 +1201,8 @@ BiosKeyboardReset (
              );
 
   //
-  // For reseting keyboard is not mandatory before booting OS and sometimes keyboard responses very slow,
-  // so we only do the real reseting for keyboard when user asks, and normally during booting an OS, it's skipped.
+  // For resetting keyboard is not mandatory before booting OS and sometimes keyboard responses very slow,
+  // so we only do the real resetting for keyboard when user asks, and normally during booting an OS, it's skipped.
   // Call CheckKeyboardConnect() to check whether keyboard is connected, if it is not connected,
   // Real reset will not do.
   //
@@ -1431,7 +1456,7 @@ BiosKeyboardWaitForKey (
   //
   gBS->Stall (1000);
   //
-  // Use TimerEvent callback funciton to check whether there's any key pressed
+  // Use TimerEvent callback function to check whether there's any key pressed
   //
   BiosKeyboardTimerHandler (NULL, BIOS_KEYBOARD_DEV_FROM_THIS (Context));
 
@@ -1795,7 +1820,7 @@ BiosKeyboardTimerHandler (
   // will be disabled after the thunk call finish, which means if user crazy input during int 9 being disabled, some keystrokes will be lost when
   // KB device own hardware buffer overflows. And if the lost keystroke code is CTRL or ALT or SHIFT release code, these function key flags bit
   // in BDA will not be updated. So the Int 16 will believe the CTRL or ALT or SHIFT is still pressed, and Int 16 will translate later scancode
-  // to wrong ASCII code. We can increase the Thunk frequence to let Int 9 response in time, but this way will much hurt other dirvers
+  // to wrong ASCII code. We can increase the Thunk frequence to let Int 9 response in time, but this way will much hurt other drivers
   // performance, like USB.
   //
   // 1. If CTRL or ALT release code is missed,  all later input keys will be translated to wrong ASCII codes which the Tiano cannot support. In
@@ -1821,8 +1846,10 @@ BiosKeyboardTimerHandler (
   //
   // Clear the CTRL and ALT BDA flag
   //
-  KbFlag1 = *((UINT8 *) (UINTN) 0x417);  // read the STATUS FLAGS 1
-  KbFlag2 = *((UINT8 *) (UINTN) 0x418); // read STATUS FLAGS 2
+  ACCESS_PAGE0_CODE (
+    KbFlag1 = *((UINT8 *) (UINTN) 0x417); // read the STATUS FLAGS 1
+    KbFlag2 = *((UINT8 *) (UINTN) 0x418); // read STATUS FLAGS 2
+  );
 
   DEBUG_CODE (
     {
@@ -1890,11 +1917,12 @@ BiosKeyboardTimerHandler (
   //
   // Clear left alt and left ctrl BDA flag
   //
-  KbFlag2 &= ~(KB_LEFT_ALT_PRESSED | KB_LEFT_CTRL_PRESSED);
-  *((UINT8 *) (UINTN) 0x418) = KbFlag2;
-  KbFlag1 &= ~0x0C;
-  *((UINT8 *) (UINTN) 0x417) = KbFlag1;
-
+  ACCESS_PAGE0_CODE (
+    KbFlag2 &= ~(KB_LEFT_ALT_PRESSED | KB_LEFT_CTRL_PRESSED);
+    *((UINT8 *) (UINTN) 0x418) = KbFlag2;
+    KbFlag1 &= ~0x0C;
+    *((UINT8 *) (UINTN) 0x417) = KbFlag1;
+  );
 
   //
   // Output EFI input key and shift/toggle state
@@ -1941,7 +1969,7 @@ BiosKeyboardTimerHandler (
   }
 
   //
-  // Invoke notification functions if exist
+  // Signal KeyNotify process event if this key pressed matches any key registered.
   //
   for (Link = BiosKeyboardPrivate->NotifyList.ForwardLink; Link != &BiosKeyboardPrivate->NotifyList; Link = Link->ForwardLink) {
     CurrentNotify = CR (
@@ -1951,17 +1979,78 @@ BiosKeyboardTimerHandler (
                       BIOS_KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE
                       );
     if (IsKeyRegistered (&CurrentNotify->KeyData, &KeyData)) {
-      CurrentNotify->KeyNotificationFn (&KeyData);
+      //
+      // The key notification function needs to run at TPL_CALLBACK
+      // while current TPL is TPL_NOTIFY. It will be invoked in
+      // KeyNotifyProcessHandler() which runs at TPL_CALLBACK.
+      //
+      Enqueue (&BiosKeyboardPrivate->QueueForNotify, &KeyData);
+      gBS->SignalEvent (BiosKeyboardPrivate->KeyNotifyProcessEvent);
     }
   }
 
   Enqueue (&BiosKeyboardPrivate->Queue, &KeyData);
+
+  //
+  // Save the current key state
+  //
+  CopyMem (&BiosKeyboardPrivate->KeyState, &KeyData.KeyState, sizeof (EFI_KEY_STATE));
+
   //
   // Leave critical section and return
   //
   gBS->RestoreTPL (OldTpl);
 
   return ;
+}
+
+/**
+  Process key notify.
+
+  @param  Event                 Indicates the event that invoke this function.
+  @param  Context               Indicates the calling context.
+**/
+VOID
+EFIAPI
+KeyNotifyProcessHandler (
+  IN  EFI_EVENT                 Event,
+  IN  VOID                      *Context
+  )
+{
+  EFI_STATUS                            Status;
+  BIOS_KEYBOARD_DEV                     *BiosKeyboardPrivate;
+  EFI_KEY_DATA                          KeyData;
+  LIST_ENTRY                            *Link;
+  LIST_ENTRY                            *NotifyList;
+  BIOS_KEYBOARD_CONSOLE_IN_EX_NOTIFY    *CurrentNotify;
+  EFI_TPL                               OldTpl;
+
+  BiosKeyboardPrivate = (BIOS_KEYBOARD_DEV *) Context;
+
+  //
+  // Invoke notification functions.
+  //
+  NotifyList = &BiosKeyboardPrivate->NotifyList;
+  while (TRUE) {
+    //
+    // Enter critical section
+    //
+    OldTpl = gBS->RaiseTPL (TPL_NOTIFY);
+    Status = Dequeue (&BiosKeyboardPrivate->QueueForNotify, &KeyData);
+    //
+    // Leave critical section
+    //
+    gBS->RestoreTPL (OldTpl);
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+    for (Link = GetFirstNode (NotifyList); !IsNull (NotifyList, Link); Link = GetNextNode (NotifyList, Link)) {
+      CurrentNotify = CR (Link, BIOS_KEYBOARD_CONSOLE_IN_EX_NOTIFY, NotifyEntry, BIOS_KEYBOARD_CONSOLE_IN_EX_NOTIFY_SIGNATURE);
+      if (IsKeyRegistered (&CurrentNotify->KeyData, &KeyData)) {
+        CurrentNotify->KeyNotificationFn (&KeyData);
+      }
+    }
+  }
 }
 
 /**
@@ -2202,15 +2291,18 @@ BiosKeyboardSetState (
 
   Status = KeyboardWrite (BiosKeyboardPrivate, 0xed);
   if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Exit;
   }
   Status = KeyboardWaitForValue (BiosKeyboardPrivate, 0xfa, KEYBOARD_WAITFORVALUE_TIMEOUT);
   if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Exit;
   }
   Status = KeyboardWrite (BiosKeyboardPrivate, Command);
   if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Exit;
   }
   //
   // Call Legacy BIOS Protocol to set whatever is necessary
@@ -2219,6 +2311,7 @@ BiosKeyboardSetState (
 
   Status = EFI_SUCCESS;
 
+Exit:
   //
   // Leave critical section and return
   //
@@ -2233,11 +2326,14 @@ BiosKeyboardSetState (
 
   @param  This                    Protocol instance pointer.
   @param  KeyData                 A pointer to a buffer that is filled in with the keystroke
-                                  information data for the key that was pressed.
+                                  information data for the key that was pressed. If KeyData.Key,
+                                  KeyData.KeyState.KeyToggleState and KeyData.KeyState.KeyShiftState
+                                  are 0, then any incomplete keystroke will trigger a notification of
+                                  the KeyNotificationFunction.
   @param  KeyNotificationFunction Points to the function to be called when the key
-                                  sequence is typed specified by KeyData.
+                                  sequence is typed specified by KeyData. This notification function
+                                  should be called at <=TPL_CALLBACK.
   @param  NotifyHandle            Points to the unique handle assigned to the registered notification.
-
 
   @retval EFI_SUCCESS             The notification function was registered successfully.
   @retval EFI_OUT_OF_RESOURCES    Unable to allocate resources for necesssary data structures.

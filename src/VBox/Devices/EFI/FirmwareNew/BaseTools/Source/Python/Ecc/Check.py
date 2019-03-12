@@ -1,7 +1,7 @@
 ## @file
 # This file is used to define checkpoints used by ECC tool
 #
-# Copyright (c) 2008 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2008 - 2017, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -19,6 +19,7 @@ from MetaDataParser import ParseHeaderCommentSection
 import EccGlobalData
 import c
 from Common.LongFilePathSupport import OpenLongFilePath as open
+from Common.MultipleWorkspace import MultipleWorkspace as mws
 
 ## Check
 #
@@ -40,6 +41,134 @@ class Check(object):
         self.DeclAndDataTypeCheck()
         self.FunctionLayoutCheck()
         self.NamingConventionCheck()
+        self.SmmCommParaCheck()
+
+    def SmmCommParaCheck(self):
+        self.SmmCommParaCheckBufferType()
+
+
+    # Check if SMM communication function has correct parameter type
+    # 1. Get function calling with instance./->Communicate() interface
+    # and make sure the protocol instance is of type EFI_SMM_COMMUNICATION_PROTOCOL.
+    # 2. Find the origin of the 2nd parameter of Communicate() interface, if -
+    #    a. it is a local buffer on stack
+    #       report error.
+    #    b. it is a global buffer, check the driver that holds the global buffer is of type DXE_RUNTIME_DRIVER
+    #       report success.
+    #    c. it is a buffer by AllocatePage/AllocatePool (may be wrapped by nested function calls),
+    #       check the EFI_MEMORY_TYPE to be EfiRuntimeServicesCode,EfiRuntimeServicesData,
+    #       EfiACPIMemoryNVS or EfiReservedMemoryType
+    #       report success.
+    #    d. it is a buffer located via EFI_SYSTEM_TABLE.ConfigurationTable (may be wrapped by nested function calls)
+    #       report warning to indicate human code review.
+    #    e. it is a buffer from other kind of pointers (may need to trace into nested function calls to locate),
+    #       repeat checks in a.b.c and d.
+    def SmmCommParaCheckBufferType(self):
+        if EccGlobalData.gConfig.SmmCommParaCheckBufferType == '1' or EccGlobalData.gConfig.SmmCommParaCheckAll == '1':
+            EdkLogger.quiet("Checking SMM communication parameter type ...")
+            # Get all EFI_SMM_COMMUNICATION_PROTOCOL interface
+            CommApiList = []
+            for IdentifierTable in EccGlobalData.gIdentifierTableList:
+                SqlCommand = """select ID, Name, BelongsToFile from %s
+                                where Modifier = 'EFI_SMM_COMMUNICATION_PROTOCOL*' """ % (IdentifierTable)
+                RecordSet = EccGlobalData.gDb.TblFile.Exec(SqlCommand)
+                if RecordSet:
+                    for Record in RecordSet:
+                        if Record[1] not in CommApiList:
+                            CommApiList.append(Record[1])
+            # For each interface, check the second parameter
+            for CommApi in CommApiList:
+                for IdentifierTable in EccGlobalData.gIdentifierTableList:
+                    SqlCommand = """select ID, Name, Value, BelongsToFile, StartLine from %s
+                    where Name = '%s->Communicate' and Model = %s""" \
+                    % (IdentifierTable, CommApi, MODEL_IDENTIFIER_FUNCTION_CALLING)
+                    RecordSet = EccGlobalData.gDb.TblFile.Exec(SqlCommand)
+                    if RecordSet:
+                        # print IdentifierTable
+                        for Record in RecordSet:
+                            # Get the second parameter for Communicate function
+                            SecondPara = Record[2].split(',')[1].strip()
+                            SecondParaIndex = None
+                            if SecondPara.startswith('&'):
+                                SecondPara = SecondPara[1:]
+                            if SecondPara.endswith(']'):
+                                SecondParaIndex = SecondPara[SecondPara.find('[') + 1:-1]
+                                SecondPara = SecondPara[:SecondPara.find('[')]
+                            # Get the ID
+                            Id = Record[0]
+                            # Get the BelongsToFile
+                            BelongsToFile = Record[3]
+                            # Get the source file path
+                            SqlCommand = """select FullPath from File where ID = %s""" % BelongsToFile
+                            NewRecordSet = EccGlobalData.gDb.TblFile.Exec(SqlCommand)
+                            FullPath = NewRecordSet[0][0]
+                            # Get the line no of function calling
+                            StartLine = Record[4]
+                            # Get the module type
+                            SqlCommand = """select Value3 from INF where BelongsToFile = (select ID from File
+                                            where Path = (select Path from File where ID = %s) and Model = 1011)
+                                            and Value2 = 'MODULE_TYPE'""" % BelongsToFile
+                            NewRecordSet = EccGlobalData.gDb.TblFile.Exec(SqlCommand)
+                            ModuleType = NewRecordSet[0][0] if NewRecordSet else None
+
+                            # print BelongsToFile, FullPath, StartLine, ModuleType, SecondPara
+
+                            Value = FindPara(FullPath, SecondPara, StartLine)
+                            # Find the value of the parameter
+                            if Value:
+                                if 'AllocatePage' in Value \
+                                    or 'AllocatePool' in Value \
+                                    or 'AllocateRuntimePool' in Value \
+                                    or 'AllocateZeroPool' in Value:
+                                    pass
+                                else:
+                                    if '->' in Value:
+                                        if not EccGlobalData.gException.IsException(
+                                               ERROR_SMM_COMM_PARA_CHECK_BUFFER_TYPE, Value):
+                                            EccGlobalData.gDb.TblReport.Insert(ERROR_SMM_COMM_PARA_CHECK_BUFFER_TYPE,
+                                                                               OtherMsg="Please review the buffer type"
+                                                                               + "is correct or not. If it is correct" +
+                                                                               " please add [%s] to exception list"
+                                                                               % Value,
+                                                                               BelongsToTable=IdentifierTable,
+                                                                               BelongsToItem=Id)
+                                    else:
+                                        if not EccGlobalData.gException.IsException(
+                                               ERROR_SMM_COMM_PARA_CHECK_BUFFER_TYPE, Value):
+                                            EccGlobalData.gDb.TblReport.Insert(ERROR_SMM_COMM_PARA_CHECK_BUFFER_TYPE,
+                                                                               OtherMsg="Please review the buffer type"
+                                                                               + "is correct or not. If it is correct" +
+                                                                               " please add [%s] to exception list"
+                                                                               % Value,
+                                                                               BelongsToTable=IdentifierTable,
+                                                                               BelongsToItem=Id)
+
+
+                            # Not find the value of the parameter
+                            else:
+                                SqlCommand = """select ID, Modifier, Name, Value, Model, BelongsToFunction from %s
+                                                where Name = '%s' and StartLine < %s order by StartLine DESC""" \
+                                                % (IdentifierTable, SecondPara, StartLine)
+                                NewRecordSet = EccGlobalData.gDb.TblFile.Exec(SqlCommand)
+                                if NewRecordSet:
+                                    Value = NewRecordSet[0][1]
+                                    if 'AllocatePage' in Value \
+                                        or 'AllocatePool' in Value \
+                                        or 'AllocateRuntimePool' in Value \
+                                        or 'AllocateZeroPool' in Value:
+                                        pass
+                                    else:
+                                        if not EccGlobalData.gException.IsException(
+                                            ERROR_SMM_COMM_PARA_CHECK_BUFFER_TYPE, Value):
+                                            EccGlobalData.gDb.TblReport.Insert(ERROR_SMM_COMM_PARA_CHECK_BUFFER_TYPE,
+                                                                               OtherMsg="Please review the buffer type"
+                                                                               + "is correct or not. If it is correct" +
+                                                                               " please add [%s] to exception list"
+                                                                               % Value,
+                                                                               BelongsToTable=IdentifierTable,
+                                                                               BelongsToItem=Id)
+                                else:
+                                    pass
 
     # Check UNI files
     def UniCheck(self):
@@ -100,6 +229,9 @@ class Check(object):
                         Dirnames.append(Dirname)
             if IgnoredPattern.match(Dirpath.upper()):
                 continue
+            for f in Filenames[:]:
+                if f.lower() in EccGlobalData.gConfig.SkipFileList:
+                    Filenames.remove(f)
             yield (Dirpath, Dirnames, Filenames)
 
     # Check whether return type exists and in the first line
@@ -377,9 +509,7 @@ class Check(object):
             for Key in RecordDict:
                 if len(RecordDict[Key]) > 1:
                     for Item in RecordDict[Key]:
-                        Path = Item[1].replace(EccGlobalData.gWorkspace, '')
-                        if Path.startswith('\\') or Path.startswith('/'):
-                            Path = Path[1:]
+                        Path = mws.relpath(Item[1], EccGlobalData.gWorkspace)
                         if not EccGlobalData.gException.IsException(ERROR_INCLUDE_FILE_CHECK_NAME, Path):
                             EccGlobalData.gDb.TblReport.Insert(ERROR_INCLUDE_FILE_CHECK_NAME, OtherMsg="The file name for [%s] is duplicate" % Path, BelongsToTable='File', BelongsToItem=Item[0])
 
@@ -561,6 +691,7 @@ class Check(object):
         self.MetaDataFileCheckLibraryInstanceDependent()
         self.MetaDataFileCheckLibraryInstanceOrder()
         self.MetaDataFileCheckLibraryNoUse()
+        self.MetaDataFileCheckLibraryDefinedInDec()
         self.MetaDataFileCheckBinaryInfInFdf()
         self.MetaDataFileCheckPcdDuplicate()
         self.MetaDataFileCheckPcdFlash()
@@ -649,7 +780,11 @@ class Check(object):
                 if LibraryClass[1].upper() == 'NULL' or LibraryClass[1].startswith('!ifdef') or LibraryClass[1].startswith('!ifndef') or LibraryClass[1].endswith('!endif'):
                     continue
                 else:
-                    LibraryIns = os.path.normpath(os.path.join(EccGlobalData.gWorkspace, LibraryClass[2]))
+                    LibraryIns = os.path.normpath(mws.join(EccGlobalData.gWorkspace, LibraryClass[2]))
+                    SkipDirString = '|'.join(EccGlobalData.gConfig.SkipDirList)
+                    p = re.compile(r'.*[\\/](?:%s^\S)[\\/]?.*' % SkipDirString)
+                    if p.match(os.path.split(LibraryIns)[0].upper()):
+                        continue
                     SqlCommand = """select Value3 from Inf where BelongsToFile =
                                     (select ID from File where lower(FullPath) = lower('%s'))
                                     and Value2 = '%s'""" % (LibraryIns, 'LIBRARY_CLASS')
@@ -693,6 +828,23 @@ class Check(object):
                         if not EccGlobalData.gException.IsException(ERROR_META_DATA_FILE_CHECK_LIBRARY_NAME_DUPLICATE, Record[1]):
                             EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_LIBRARY_NAME_DUPLICATE, OtherMsg="The Library Class [%s] is duplicated in '%s' line %s and line %s." % (Record[1], FilePath, Record[3], Record[4]), BelongsToTable='Dsc', BelongsToItem=Record[0])
 
+    # Check the header file in Include\Library directory whether be defined in the package DEC file.
+    def MetaDataFileCheckLibraryDefinedInDec(self):
+        if EccGlobalData.gConfig.MetaDataFileCheckLibraryDefinedInDec == '1' or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+            EdkLogger.quiet("Checking for library instance whether be defined in the package dec file ...")
+            SqlCommand = """
+                    select A.Value1, A.StartLine, A.ID, B.Value1 from Inf as A left join Dec as B
+                    on A.Model = B.Model and A.Value1 = B.Value1 where A.Model=%s
+                    """ % MODEL_EFI_LIBRARY_CLASS
+            RecordSet = EccGlobalData.gDb.TblDsc.Exec(SqlCommand)
+            for Record in RecordSet:
+                LibraryInInf, Line, ID, LibraryDec = Record
+                if not LibraryDec:
+                    if not EccGlobalData.gException.IsException(ERROR_META_DATA_FILE_CHECK_LIBRARY_NOT_DEFINED, LibraryInInf):
+                        EccGlobalData.gDb.TblReport.Insert(ERROR_META_DATA_FILE_CHECK_LIBRARY_NOT_DEFINED, \
+                                            OtherMsg="The Library Class [%s] in %s line is not defined in the associated package file." % (LibraryInInf, Line),
+                                            BelongsToTable='Inf', BelongsToItem=ID)
+
     # Check whether an Inf file is specified in the FDF file, but not in the Dsc file, then the Inf file must be for a Binary module only
     def MetaDataFileCheckBinaryInfInFdf(self):
         if EccGlobalData.gConfig.MetaDataFileCheckBinaryInfInFdf == '1' or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
@@ -708,7 +860,7 @@ class Check(object):
             for Record in RecordSet:
                 FdfID = Record[0]
                 FilePath = Record[1]
-                FilePath = os.path.normpath(os.path.join(EccGlobalData.gWorkspace, FilePath))
+                FilePath = os.path.normpath(mws.join(EccGlobalData.gWorkspace, FilePath))
                 SqlCommand = """select ID from Inf where Model = %s and BelongsToFile = (select ID from File where FullPath like '%s')
                                 """ % (MODEL_EFI_SOURCE_FILE, FilePath)
                 NewRecordSet = EccGlobalData.gDb.TblFile.Exec(SqlCommand)
@@ -892,9 +1044,7 @@ class Check(object):
         RecordSet = Table.Exec(SqlCommand)
         Path = ""
         for Record in RecordSet:
-            Path = Record[0].replace(EccGlobalData.gWorkspace, '')
-            if Path.startswith('\\') or Path.startswith('/'):
-                Path = Path[1:]
+            Path = mws.relpath(Record[0], EccGlobalData.gWorkspace)
         return Path
 
     # Check whether two module INFs under one workspace has the same FILE_GUID value
@@ -919,7 +1069,7 @@ class Check(object):
 
     # Check Guid Format in module INF
     def MetaDataFileCheckModuleFileGuidFormat(self):
-        if EccGlobalData.gConfig.MetaDataFileCheckModuleFileGuidFormat or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+        if EccGlobalData.gConfig.MetaDataFileCheckModuleFileGuidFormat == '1' or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
             EdkLogger.quiet("Check Guid Format in module INF ...")
             Table = EccGlobalData.gDb.TblInf
             SqlCommand = """
@@ -962,7 +1112,7 @@ class Check(object):
 
     # Check Protocol Format in module INF
     def MetaDataFileCheckModuleFileProtocolFormat(self):
-        if EccGlobalData.gConfig.MetaDataFileCheckModuleFileProtocolFormat or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+        if EccGlobalData.gConfig.MetaDataFileCheckModuleFileProtocolFormat == '1' or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
             EdkLogger.quiet("Check Protocol Format in module INF ...")
             Table = EccGlobalData.gDb.TblInf
             SqlCommand = """
@@ -993,7 +1143,7 @@ class Check(object):
 
     # Check Ppi Format in module INF
     def MetaDataFileCheckModuleFilePpiFormat(self):
-        if EccGlobalData.gConfig.MetaDataFileCheckModuleFilePpiFormat or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+        if EccGlobalData.gConfig.MetaDataFileCheckModuleFilePpiFormat == '1' or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
             EdkLogger.quiet("Check Ppi Format in module INF ...")
             Table = EccGlobalData.gDb.TblInf
             SqlCommand = """
@@ -1021,7 +1171,7 @@ class Check(object):
 
     # Check Pcd Format in module INF
     def MetaDataFileCheckModuleFilePcdFormat(self):
-        if EccGlobalData.gConfig.MetaDataFileCheckModuleFilePcdFormat or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+        if EccGlobalData.gConfig.MetaDataFileCheckModuleFilePcdFormat == '1' or EccGlobalData.gConfig.MetaDataFileCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
             EdkLogger.quiet("Check Pcd Format in module INF ...")
             Table = EccGlobalData.gDb.TblInf
             SqlCommand = """
@@ -1065,7 +1215,7 @@ class Check(object):
         SqlCommand = """
                      select A.ID, A.Value1 from %s as A, %s as B
                      where A.Model = %s and B.Model = %s
-                     and A.Value1 = B.Value1 and A.ID <> B.ID
+                     and A.Value1 like B.Value1 and A.ID <> B.ID
                      and A.Scope1 = B.Scope1
                      and A.Enabled > -1
                      and B.Enabled > -1
@@ -1089,13 +1239,13 @@ class Check(object):
         SqlCommand = """
                      select A.ID, A.Value1, A.Value2 from %s as A, %s as B
                      where A.Model = %s and B.Model = %s
-                     and A.Value2 = B.Value2 and A.ID <> B.ID
+                     and A.Value2 like B.Value2 and A.ID <> B.ID
                      and A.Scope1 = B.Scope1 and A.Value1 <> B.Value1
                      group by A.ID
                      """ % (Table.Table, Table.Table, Model, Model)
         RecordSet = Table.Exec(SqlCommand)
         for Record in RecordSet:
-            if not EccGlobalData.gException.IsException(ErrorID, Record[1] + ':' + Record[2]):
+            if not EccGlobalData.gException.IsException(ErrorID, Record[2]):
                 EccGlobalData.gDb.TblReport.Insert(ErrorID, OtherMsg="The %s value [%s] is used more than one time" % (Name.upper(), Record[2]), BelongsToTable=Table.Table, BelongsToItem=Record[0])
 
     # Naming Convention Check
@@ -1117,9 +1267,10 @@ class Check(object):
                         FileTable = 'Identifier' + str(Id)
                         self.NamingConventionCheckDefineStatement(FileTable)
                         self.NamingConventionCheckTypedefStatement(FileTable)
-                        self.NamingConventionCheckIfndefStatement(FileTable)
                         self.NamingConventionCheckVariableName(FileTable)
                         self.NamingConventionCheckSingleCharacterVariable(FileTable)
+                        if os.path.splitext(F)[1] in ('.h'):
+                            self.NamingConventionCheckIfndefStatement(FileTable)
 
         self.NamingConventionCheckPathName()
         self.NamingConventionCheckFunctionName()
@@ -1161,7 +1312,7 @@ class Check(object):
 
     # Check whether the #ifndef at the start of an include file uses both prefix and postfix underscore characters, '_'.
     def NamingConventionCheckIfndefStatement(self, FileTable):
-        if EccGlobalData.gConfig.NamingConventionCheckTypedefStatement == '1' or EccGlobalData.gConfig.NamingConventionCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
+        if EccGlobalData.gConfig.NamingConventionCheckIfndefStatement == '1' or EccGlobalData.gConfig.NamingConventionCheckAll == '1' or EccGlobalData.gConfig.CheckAll == '1':
             EdkLogger.quiet("Checking naming covention of #ifndef statement ...")
 
             SqlCommand = """select ID, Value from %s where Model = %s""" % (FileTable, MODEL_IDENTIFIER_MACRO_IFNDEF)
@@ -1202,7 +1353,10 @@ class Check(object):
             SqlCommand = """select ID, Name from %s where Model = %s""" % (FileTable, MODEL_IDENTIFIER_VARIABLE)
             RecordSet = EccGlobalData.gDb.TblFile.Exec(SqlCommand)
             for Record in RecordSet:
-                if not Pattern.match(Record[1]):
+                Var = Record[1]
+                if Var.startswith('CONST'):
+                    Var = Var[5:].lstrip()
+                if not Pattern.match(Var):
                     if not EccGlobalData.gException.IsException(ERROR_NAMING_CONVENTION_CHECK_VARIABLE_NAME, Record[1]):
                         EccGlobalData.gDb.TblReport.Insert(ERROR_NAMING_CONVENTION_CHECK_VARIABLE_NAME, OtherMsg="The variable name [%s] does not follow the rules" % (Record[1]), BelongsToTable=FileTable, BelongsToItem=Record[0])
 
@@ -1234,6 +1388,19 @@ class Check(object):
                 if len(Variable) == 1:
                     if not EccGlobalData.gException.IsException(ERROR_NAMING_CONVENTION_CHECK_SINGLE_CHARACTER_VARIABLE, Record[1]):
                         EccGlobalData.gDb.TblReport.Insert(ERROR_NAMING_CONVENTION_CHECK_SINGLE_CHARACTER_VARIABLE, OtherMsg="The variable name [%s] does not follow the rules" % (Record[1]), BelongsToTable=FileTable, BelongsToItem=Record[0])
+
+def FindPara(FilePath, Para, CallingLine):
+    Lines = open(FilePath).readlines()
+    Line = ''
+    for Index in range(CallingLine - 1, 0, -1):
+        # Find the nearest statement for Para
+        Line = Lines[Index].strip()
+        if Line.startswith('%s = ' % Para):
+            Line = Line.strip()
+            return Line
+            break
+
+    return ''
 
 ##
 #

@@ -1,7 +1,7 @@
 /** @file
   Implements editor interface functions.
 
-  Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved. <BR>
+  Copyright (c) 2005 - 2018, Intel Corporation. All rights reserved. <BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -1362,7 +1362,9 @@ MainCommandDisplayHelp (
 {
   INT32           CurrentLine;
   CHAR16          *InfoString;
-  EFI_INPUT_KEY   Key;
+  EFI_KEY_DATA    KeyData;
+  EFI_STATUS      Status;
+  UINTN           EventIndex;
 
   //
   // print helpInfo
@@ -1375,10 +1377,37 @@ MainCommandDisplayHelp (
   //
   // scan for ctrl+w
   //
-  do {
-    gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
-  } while(SCAN_CONTROL_W != Key.UnicodeChar);
+  while (TRUE) {
+    Status = gBS->WaitForEvent (1, &MainEditor.TextInputEx->WaitForKeyEx, &EventIndex);
+    if (EFI_ERROR (Status) || (EventIndex != 0)) {
+      continue;
+    }
+    Status = MainEditor.TextInputEx->ReadKeyStrokeEx (MainEditor.TextInputEx, &KeyData);
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
 
+    if (((KeyData.KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) == 0) ||
+        (KeyData.KeyState.KeyShiftState == EFI_SHIFT_STATE_VALID)) {
+      //
+      // For consoles that don't support/report shift state,
+      // CTRL+W is translated to L'W' - L'A' + 1.
+      //
+      if (KeyData.Key.UnicodeChar == L'W' - L'A' + 1) {
+        break;
+      }
+    } else if (((KeyData.KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) != 0) &&
+               ((KeyData.KeyState.KeyShiftState & (EFI_LEFT_CONTROL_PRESSED | EFI_RIGHT_CONTROL_PRESSED)) != 0) &&
+               ((KeyData.KeyState.KeyShiftState & ~(EFI_SHIFT_STATE_VALID | EFI_LEFT_CONTROL_PRESSED | EFI_RIGHT_CONTROL_PRESSED)) == 0)) {
+      //
+      // For consoles that supports/reports shift state,
+      // make sure that only CONTROL shift key is pressed.
+      //
+      if ((KeyData.Key.UnicodeChar == 'w') || (KeyData.Key.UnicodeChar == 'W')) {
+        break;
+      }
+    }
+  }
   //
   // update screen with file buffer's info
   //
@@ -1407,6 +1436,7 @@ EFI_EDITOR_GLOBAL_EDITOR      MainEditorConst = {
     0
   },
   NULL,
+  NULL,
   FALSE,
   NULL
 };
@@ -1418,7 +1448,6 @@ EFI_EDITOR_GLOBAL_EDITOR      MainEditorConst = {
   @retval EFI_LOAD_ERROR          A load error occured.
 **/
 EFI_STATUS
-EFIAPI
 MainEditorInit (
   VOID
   )
@@ -1454,10 +1483,23 @@ MainEditorInit (
         );
 
   //
+  // Find TextInEx in System Table ConsoleInHandle
+  // Per UEFI Spec, TextInEx is required for a console capable platform.
+  //
+  Status = gBS->HandleProtocol (
+              gST->ConsoleInHandle,
+              &gEfiSimpleTextInputExProtocolGuid,
+              (VOID**)&MainEditor.TextInputEx
+              );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
   // Find mouse in System Table ConsoleInHandle
   //
   Status = gBS->HandleProtocol (
-                gST->ConIn,
+                gST->ConsoleInHandle,
                 &gEfiSimplePointerProtocolGuid,
                 (VOID**)&MainEditor.MouseInterface
                 );
@@ -1522,7 +1564,7 @@ MainEditorInit (
     return EFI_LOAD_ERROR;
   }
 
-  InputBarInit ();
+  InputBarInit (MainEditor.TextInputEx);
 
   Status = FileBufferInit ();
   if (EFI_ERROR (Status)) {
@@ -1552,7 +1594,6 @@ MainEditorInit (
   @retval EFI_LOAD_ERROR          A load error occured.
 **/
 EFI_STATUS
-EFIAPI
 MainEditorCleanup (
   VOID
   )
@@ -1596,7 +1637,6 @@ MainEditorCleanup (
   Refresh the main editor component.
 **/
 VOID
-EFIAPI
 MainEditorRefresh (
   VOID
   )
@@ -1617,8 +1657,8 @@ MainEditorRefresh (
 
     MainTitleBarRefresh (MainEditor.FileBuffer->FileName, MainEditor.FileBuffer->FileType, MainEditor.FileBuffer->ReadOnly, MainEditor.FileBuffer->FileModified, MainEditor.ScreenSize.Column, MainEditor.ScreenSize.Row, 0, 0);
     FileBufferRestorePosition ();
-    FileBufferRefresh ();
   }
+
   if (EditorFirst
     || FileBufferBackupVar.FilePosition.Row != FileBuffer.FilePosition.Row
     || FileBufferBackupVar.FilePosition.Column != FileBuffer.FilePosition.Column
@@ -1627,12 +1667,13 @@ MainEditorRefresh (
 
     StatusBarRefresh (EditorFirst, MainEditor.ScreenSize.Row, MainEditor.ScreenSize.Column, MainEditor.FileBuffer->FilePosition.Row, MainEditor.FileBuffer->FilePosition.Column, MainEditor.FileBuffer->ModeInsert);
     FileBufferRestorePosition ();
-    FileBufferRefresh ();
   }
 
   if (EditorFirst) {
     FileBufferRestorePosition ();
   }
+
+  FileBufferRefresh ();
 
   //
   // EditorFirst is now set to FALSE
@@ -1648,7 +1689,6 @@ MainEditorRefresh (
   @return The X location of the mouse.
 **/
 INT32
-EFIAPI
 GetTextX (
   IN INT32 GuidX
   )
@@ -1670,7 +1710,6 @@ GetTextX (
   @return The Y location of the mouse.
 **/
 INT32
-EFIAPI
 GetTextY (
   IN INT32 GuidY
   )
@@ -1694,7 +1733,6 @@ GetTextY (
   @retval EFI_NOT_FOUND     There was no mouse support found.
 **/
 EFI_STATUS
-EFIAPI
 MainEditorHandleMouseInput (
   IN EFI_SIMPLE_POINTER_STATE       MouseState
   )
@@ -1795,14 +1833,14 @@ MainEditorHandleMouseInput (
   @retval EFI_OUT_OF_RESOURCES    A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 MainEditorKeyInput (
   VOID
   )
 {
-  EFI_INPUT_KEY             Key;
+  EFI_KEY_DATA              KeyData;
   EFI_STATUS                Status;
   EFI_SIMPLE_POINTER_STATE  MouseState;
+  BOOLEAN                   NoShiftState;
 
   do {
 
@@ -1837,41 +1875,50 @@ MainEditorKeyInput (
       }
     }
 
-    Status = gST->ConIn->ReadKeyStroke (gST->ConIn, &Key);
+    //
+    // CheckEvent() returns Success when non-partial key is pressed.
+    //
+    Status = gBS->CheckEvent (MainEditor.TextInputEx->WaitForKeyEx);
     if (!EFI_ERROR (Status)) {
-      //
-      // dispatch to different components' key handling function
-      // so not everywhere has to set this variable
-      //
-      FileBufferMouseNeedRefresh = TRUE;
-      //
-      // clear previous status string
-      //
-      StatusBarSetRefresh();
-
-      //
-      // dispatch to different components' key handling function
-      //
-      if (EFI_NOT_FOUND != MenuBarDispatchControlHotKey(&Key)) {
-        Status = EFI_SUCCESS;
-      } else if ((Key.ScanCode == SCAN_NULL) || ((Key.ScanCode >= SCAN_UP) && (Key.ScanCode <= SCAN_PAGE_DOWN))) {
-        Status = FileBufferHandleInput (&Key);
-      } else if ((Key.ScanCode >= SCAN_F1) && (Key.ScanCode <= SCAN_F12)) {
-        Status = MenuBarDispatchFunctionKey (&Key);
-      } else {
-        StatusBarSetStatusString (L"Unknown Command");
-        FileBufferMouseNeedRefresh = FALSE;
-      }
-
-      if (Status != EFI_SUCCESS && Status != EFI_OUT_OF_RESOURCES) {
+      Status = MainEditor.TextInputEx->ReadKeyStrokeEx (MainEditor.TextInputEx, &KeyData);
+      if (!EFI_ERROR (Status)) {
         //
-        // not already has some error status
+        // dispatch to different components' key handling function
+        // so not everywhere has to set this variable
         //
-        if (StatusBarGetString() != NULL && StrCmp (L"", StatusBarGetString()) == 0) {
-          StatusBarSetStatusString (L"Disk Error. Try Again");
+        FileBufferMouseNeedRefresh = TRUE;
+        //
+        // clear previous status string
+        //
+        StatusBarSetRefresh();
+        //
+        // NoShiftState: TRUE when no shift key is pressed.
+        //
+        NoShiftState = ((KeyData.KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) == 0) || (KeyData.KeyState.KeyShiftState == EFI_SHIFT_STATE_VALID);
+        //
+        // dispatch to different components' key handling function
+        //
+        if (EFI_NOT_FOUND != MenuBarDispatchControlHotKey(&KeyData)) {
+          Status = EFI_SUCCESS;
+        } else if (NoShiftState && ((KeyData.Key.ScanCode == SCAN_NULL) || ((KeyData.Key.ScanCode >= SCAN_UP) && (KeyData.Key.ScanCode <= SCAN_PAGE_DOWN)))) {
+          Status = FileBufferHandleInput (&KeyData.Key);
+        } else if (NoShiftState && (KeyData.Key.ScanCode >= SCAN_F1) && (KeyData.Key.ScanCode <= SCAN_F12)) {
+          Status = MenuBarDispatchFunctionKey (&KeyData.Key);
+        } else {
+          StatusBarSetStatusString (L"Unknown Command");
+          FileBufferMouseNeedRefresh = FALSE;
         }
-      }
 
+        if (Status != EFI_SUCCESS && Status != EFI_OUT_OF_RESOURCES) {
+          //
+          // not already has some error status
+          //
+          if (StatusBarGetString() != NULL && StrCmp (L"", StatusBarGetString()) == 0) {
+            StatusBarSetStatusString (L"Disk Error. Try Again");
+          }
+        }
+
+      }
     }
     //
     // after handling, refresh editor
@@ -1892,7 +1939,6 @@ MainEditorKeyInput (
   @retval EFI_OUT_OF_RESOURCES A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 MainEditorSetCutLine (
   EFI_EDITOR_LINE *Line
   )
@@ -1924,7 +1970,6 @@ MainEditorSetCutLine (
   @retval EFI_SUCCESS The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 MainEditorBackup (
   VOID
   )

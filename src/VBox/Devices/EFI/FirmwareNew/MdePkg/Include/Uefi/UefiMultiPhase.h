@@ -1,7 +1,7 @@
 /** @file
   This includes some definitions introduced in UEFI that will be used in both PEI and DXE phases.
 
-Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available under
 the terms and conditions of the BSD License that accompanies this distribution.
 The full text of the license may be found at
@@ -91,6 +91,39 @@ typedef enum {
 } EFI_MEMORY_TYPE;
 
 ///
+/// Enumeration of reset types.
+///
+typedef enum {
+  ///
+  /// Used to induce a system-wide reset. This sets all circuitry within the
+  /// system to its initial state.  This type of reset is asynchronous to system
+  /// operation and operates withgout regard to cycle boundaries.  EfiColdReset
+  /// is tantamount to a system power cycle.
+  ///
+  EfiResetCold,
+  ///
+  /// Used to induce a system-wide initialization. The processors are set to their
+  /// initial state, and pending cycles are not corrupted.  If the system does
+  /// not support this reset type, then an EfiResetCold must be performed.
+  ///
+  EfiResetWarm,
+  ///
+  /// Used to induce an entry into a power state equivalent to the ACPI G2/S5 or G3
+  /// state.  If the system does not support this reset type, then when the system
+  /// is rebooted, it should exhibit the EfiResetCold attributes.
+  ///
+  EfiResetShutdown,
+  ///
+  /// Used to induce a system-wide reset. The exact type of the reset is defined by
+  /// the EFI_GUID that follows the Null-terminated Unicode string passed into
+  /// ResetData. If the platform does not recognize the EFI_GUID in ResetData the
+  /// platform must pick a supported reset type to perform. The platform may
+  /// optionally log the parameters from any non-normal reset that occurs.
+  ///
+  EfiResetPlatformSpecific
+} EFI_RESET_TYPE;
+
+///
 /// Data structure that precedes all of the standard EFI table types.
 ///
 typedef struct {
@@ -136,10 +169,12 @@ typedef struct {
 ///
 /// Attributes of Authenticated Variable
 ///
-#define EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS              0x00000010
 #define EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS   0x00000020
 #define EFI_VARIABLE_APPEND_WRITE                            0x00000040
-
+///
+/// NOTE: EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS is deprecated and should be considered reserved.
+///
+#define EFI_VARIABLE_AUTHENTICATED_WRITE_ACCESS              0x00000010
 
 ///
 /// AuthInfo is a WIN_CERTIFICATE using the wCertificateType

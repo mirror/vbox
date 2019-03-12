@@ -1968,7 +1968,7 @@ ActionNode *p;
                     (p->pred_fail == NULL ?                          /* MR23/MR27 */
                        	"0 /* report */" : "1 /* user action */"),   /* MR23/MR27 */
                     (p->pred_fail == NULL ?                          /* MR23 */
-                        "0; /* no user action */" : p->pred_fail));  /* MR23 */
+                        "; /* no user action */" : p->pred_fail));   /* MR23 */
 			tabs--;
 		}
 		else    /* not a predicate */
@@ -2618,7 +2618,7 @@ TokNode *p;
                     (a->pred_fail == NULL ?                          /* MR23/MR27 */
                        	"0 /* report */" : "1 /* user action */"),   /* MR23/MR27 */
                     (a->pred_fail == NULL ?                          /* MR23 */
-                        "0; /* no user action */" : a->pred_fail));  /* MR23 */
+                        "; /* no user action */" : a->pred_fail));   /* MR23 */
 			tabs--;
 /* Disabled in MR30 ************************************************************
    And moved into genAction
@@ -3866,7 +3866,7 @@ int file;
 /* MR10 */    _gen(" *  ");
 /* MR10 */    for (i=0 ; i < Save_argc ; i++) {
 /* MR10 */      _gen(" ");
-/* MR10 */      _gen(Save_argv[i]);
+/* MR10 */      _gen1("%s", Save_argv[i]);
 /* MR10 */    };
 	_gen("\n");
 	_gen(" *\n");
@@ -3911,7 +3911,7 @@ int file;
 	}
 #endif
 	/* ###WARNING: This will have to change when SetWordSize changes */
-	if ( !GenCC ) _gen1("#define zzSET_SIZE %d\n", NumWords(TokenNum-1)*sizeof(unsigned));
+	if ( !GenCC ) _gen1("#define zzSET_SIZE %lu\n", NumWords(TokenNum-1)*sizeof(unsigned));
     if (TraceGen) {
       _gen("#ifndef zzTRACE_RULES\n");  /* MR20 */
       _gen("#define zzTRACE_RULES\n");  /* MR20 */
@@ -4125,7 +4125,7 @@ char * gate;                                    /* MR10 */
 	if ( LexGen ) fprintf(f, "#define zzEOF_TOKEN %d\n", (TokenInd!=NULL?TokenInd[EofToken]:EofToken));
 #endif
 	/* ###WARNING: This will have to change when SetWordSize changes */
-	fprintf(f, "#define zzSET_SIZE %d\n", NumWords(TokenNum-1)*sizeof(unsigned));
+	fprintf(f, "#define zzSET_SIZE %lu\n", NumWords(TokenNum-1)*sizeof(unsigned));
     if (TraceGen) {
       fprintf(f,"#ifndef zzTRACE_RULES\n");  /* MR20 */
       fprintf(f,"#define zzTRACE_RULES\n");  /* MR20 */

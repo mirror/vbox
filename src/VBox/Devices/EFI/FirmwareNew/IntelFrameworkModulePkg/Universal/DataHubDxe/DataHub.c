@@ -2,7 +2,7 @@
   This code produces the Data Hub protocol. It preloads the data hub
   with status information copied in from PEI HOBs.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -14,8 +14,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 
 #include "DataHub.h"
-
-CONST EFI_GUID gZeroGuid  = { 0, 0, 0, { 0, 0, 0, 0, 0, 0, 0, 0 } };
 
 //
 //  Since this driver will only ever produce one instance of the Logging Hub
@@ -141,7 +139,7 @@ DataHubLogData (
   for (Link = GetFirstNode(Head); Link != Head; Link = GetNextNode(Head, Link)) {
     FilterEntry = FILTER_ENTRY_FROM_LINK (Link);
     if (((FilterEntry->ClassFilter & DataRecordClass) != 0) &&
-        (CompareGuid (&FilterEntry->FilterDataRecordGuid, &gZeroGuid) ||
+        (IsZeroGuid (&FilterEntry->FilterDataRecordGuid) ||
          CompareGuid (&FilterEntry->FilterDataRecordGuid, DataRecordGuid))) {
       gBS->SignalEvent (FilterEntry->Event);
     }
@@ -257,7 +255,7 @@ FindFilterDriverByEvent (
 /**
 
   Get a previously logged data record and the MonotonicCount for the next
-  availible Record. This allows all records or all records later
+  available Record. This allows all records or all records later
   than a give MonotonicCount to be returned. If an optional FilterDriverEvent
   is passed in with a MonotonicCout of zero return the first record
   not yet read by the filter driver. If FilterDriverEvent is NULL and
@@ -266,7 +264,7 @@ FindFilterDriverByEvent (
   @param This                     Pointer to the EFI_DATA_HUB_PROTOCOL instance.
   @param MonotonicCount           Specifies the Record to return. On input, zero means
                                   return the first record. On output, contains the next
-                                  record to availible. Zero indicates no more records.
+                                  record to available. Zero indicates no more records.
   @param FilterDriverEvent        If FilterDriverEvent is not passed in a MonotonicCount
                                   of zero, it means to return the first data record.
                                   If FilterDriverEvent is passed in, then a MonotonicCount

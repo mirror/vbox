@@ -282,7 +282,7 @@ RegisterPciDevice (
           PciIoDevice->BusNumber,
           PciIoDevice->DeviceNumber,
           PciIoDevice->FunctionNumber,
-          (UINT64) (UINTN) PciIoDevice->PciIo.RomImage,
+          PciIoDevice->PciIo.RomImage,
           PciIoDevice->PciIo.RomSize
           );
       }
@@ -308,7 +308,7 @@ RegisterPciDevice (
           PciIoDevice->BusNumber,
           PciIoDevice->DeviceNumber,
           PciIoDevice->FunctionNumber,
-          (UINT64) (UINTN) PciIoDevice->PciIo.RomImage,
+          PciIoDevice->PciIo.RomImage,
           PciIoDevice->PciIo.RomSize
           );
       }
@@ -989,33 +989,33 @@ PciDeviceExisted (
 }
 
 /**
-  Get the active VGA device on the same segment.
+  Get the active VGA device on the specified Host Bridge.
 
-  @param VgaDevice    PCI IO instance for the VGA device.
+  @param HostBridgeHandle    Host Bridge handle.
 
-  @return The active VGA device on the same segment.
+  @return The active VGA device on the specified Host Bridge.
 
 **/
 PCI_IO_DEVICE *
-ActiveVGADeviceOnTheSameSegment (
-  IN PCI_IO_DEVICE        *VgaDevice
+LocateVgaDeviceOnHostBridge (
+  IN EFI_HANDLE           HostBridgeHandle
   )
 {
   LIST_ENTRY      *CurrentLink;
-  PCI_IO_DEVICE   *Temp;
+  PCI_IO_DEVICE   *PciIoDevice;
 
   CurrentLink = mPciDevicePool.ForwardLink;
 
   while (CurrentLink != NULL && CurrentLink != &mPciDevicePool) {
 
-    Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
+    PciIoDevice = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
 
-    if (Temp->PciRootBridgeIo->SegmentNumber == VgaDevice->PciRootBridgeIo->SegmentNumber) {
+    if (PciIoDevice->PciRootBridgeIo->ParentHandle== HostBridgeHandle) {
 
-      Temp = ActiveVGADeviceOnTheRootBridge (Temp);
+      PciIoDevice = LocateVgaDevice (PciIoDevice);
 
-      if (Temp != NULL) {
-        return Temp;
+      if (PciIoDevice != NULL) {
+        return PciIoDevice;
       }
     }
 
@@ -1026,41 +1026,41 @@ ActiveVGADeviceOnTheSameSegment (
 }
 
 /**
-  Get the active VGA device on the root bridge.
+  Locate the active VGA device under the bridge.
 
-  @param RootBridge  PCI IO instance for the root bridge.
+  @param Bridge  PCI IO instance for the bridge.
 
   @return The active VGA device.
 
 **/
 PCI_IO_DEVICE *
-ActiveVGADeviceOnTheRootBridge (
-  IN PCI_IO_DEVICE        *RootBridge
+LocateVgaDevice (
+  IN PCI_IO_DEVICE        *Bridge
   )
 {
   LIST_ENTRY      *CurrentLink;
-  PCI_IO_DEVICE   *Temp;
+  PCI_IO_DEVICE   *PciIoDevice;
 
-  CurrentLink = RootBridge->ChildList.ForwardLink;
+  CurrentLink = Bridge->ChildList.ForwardLink;
 
-  while (CurrentLink != NULL && CurrentLink != &RootBridge->ChildList) {
+  while (CurrentLink != NULL && CurrentLink != &Bridge->ChildList) {
 
-    Temp = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
+    PciIoDevice = PCI_IO_DEVICE_FROM_LINK (CurrentLink);
 
-    if (IS_PCI_VGA(&Temp->Pci) &&
-        (Temp->Attributes &
+    if (IS_PCI_VGA(&PciIoDevice->Pci) &&
+        (PciIoDevice->Attributes &
          (EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY |
           EFI_PCI_IO_ATTRIBUTE_VGA_IO     |
           EFI_PCI_IO_ATTRIBUTE_VGA_IO_16)) != 0) {
-      return Temp;
+      return PciIoDevice;
     }
 
-    if (IS_PCI_BRIDGE (&Temp->Pci)) {
+    if (IS_PCI_BRIDGE (&PciIoDevice->Pci)) {
 
-      Temp = ActiveVGADeviceOnTheRootBridge (Temp);
+      PciIoDevice = LocateVgaDevice (PciIoDevice);
 
-      if (Temp != NULL) {
-        return Temp;
+      if (PciIoDevice != NULL) {
+        return PciIoDevice;
       }
     }
 

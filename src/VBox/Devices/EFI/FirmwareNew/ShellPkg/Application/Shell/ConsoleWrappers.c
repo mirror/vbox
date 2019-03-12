@@ -1,8 +1,8 @@
 /** @file
   Function definitions for shell simple text in and out on top of file handles.
 
-  Copyright (c) 2013 Hewlett-Packard Development Company, L.P.
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2013 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2010 - 2015, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -14,6 +14,8 @@
 **/
 
 #include "Shell.h"
+
+extern BOOLEAN AsciiRedirection;
 
 typedef struct {
   EFI_SIMPLE_TEXT_INPUT_PROTOCOL  SimpleTextIn;
@@ -81,6 +83,7 @@ FileBasedSimpleTextInReadKeyStroke(
   )
 {
   UINTN Size;
+  UINTN CharSize;
 
   //
   // Verify the parameters
@@ -98,11 +101,16 @@ FileBasedSimpleTextInReadKeyStroke(
 
   Size = sizeof(CHAR16);
 
+  if(!AsciiRedirection) {
+    CharSize = sizeof(CHAR16);
+  } else {
+    CharSize = sizeof(CHAR8);
+  }
   //
   // Decrement the amount of free space by Size or set to zero (for odd length files)
   //
-  if (((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)This)->RemainingBytesOfInputFile > Size) {
-    ((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)This)->RemainingBytesOfInputFile -= Size;
+  if (((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)This)->RemainingBytesOfInputFile > CharSize) {
+    ((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)This)->RemainingBytesOfInputFile -= CharSize;
   } else {
     ((SHELL_EFI_SIMPLE_TEXT_INPUT_PROTOCOL *)This)->RemainingBytesOfInputFile = 0;
   }
@@ -125,7 +133,6 @@ FileBasedSimpleTextInReadKeyStroke(
   @return                     A pointer to the allocated protocol structure;
 **/
 EFI_SIMPLE_TEXT_INPUT_PROTOCOL*
-EFIAPI
 CreateSimpleTextInOnFile(
   IN SHELL_FILE_HANDLE  FileHandleToUse,
   IN EFI_HANDLE         *HandleLocation
@@ -192,7 +199,6 @@ CreateSimpleTextInOnFile(
   @retval EFI_SUCCESS         The object was closed.
 **/
 EFI_STATUS
-EFIAPI
 CloseSimpleTextInOnFile(
   IN EFI_SIMPLE_TEXT_INPUT_PROTOCOL  *SimpleTextIn
   )
@@ -426,7 +432,6 @@ FileBasedSimpleTextOutOutputString (
   @return                     A pointer to the allocated protocol structure;
 **/
 EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL*
-EFIAPI
 CreateSimpleTextOutOnFile(
   IN SHELL_FILE_HANDLE               FileHandleToUse,
   IN EFI_HANDLE                      *HandleLocation,
@@ -476,7 +481,8 @@ CreateSimpleTextOutOnFile(
     *HandleLocation = ProtocolToReturn->TheHandle;
     return ((EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL*)ProtocolToReturn);
   } else {
-    FreePool(ProtocolToReturn);
+    SHELL_FREE_NON_NULL(ProtocolToReturn->SimpleTextOut.Mode);
+    SHELL_FREE_NON_NULL(ProtocolToReturn);
     return (NULL);
   }
 }
@@ -490,7 +496,6 @@ CreateSimpleTextOutOnFile(
   @retval EFI_SUCCESS         The object was closed.
 **/
 EFI_STATUS
-EFIAPI
 CloseSimpleTextOutOnFile(
   IN EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *SimpleTextOut
   )
@@ -503,6 +508,7 @@ CloseSimpleTextOutOnFile(
     ((SHELL_EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL*)SimpleTextOut)->TheHandle,
     &gEfiSimpleTextOutProtocolGuid,
     &(((SHELL_EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL*)SimpleTextOut)->SimpleTextOut));
+  FreePool(SimpleTextOut->Mode);
   FreePool(SimpleTextOut);
   return (Status);
 }

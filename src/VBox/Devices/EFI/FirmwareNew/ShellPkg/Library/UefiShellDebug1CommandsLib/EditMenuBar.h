@@ -1,7 +1,7 @@
 /** @file
   Declares menubar interface functions.
 
-  Copyright (c) 2005 - 2011, Intel Corporation. All rights reserved. <BR>
+  Copyright (c) 2005 - 2018, Intel Corporation. All rights reserved. <BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -50,7 +50,6 @@ typedef struct _EDITOR_MENU_ITEM {
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 MenuBarInit (
   IN CONST EDITOR_MENU_ITEM  *Items
   );
@@ -63,7 +62,6 @@ MenuBarInit (
   @retval EFI_SUCCESS           The initialization was correct.
 **/
 EFI_STATUS
-EFIAPI
 ControlHotKeyInit (
   IN MENU_ITEM_FUNCTION  *Items
   );
@@ -72,7 +70,6 @@ ControlHotKeyInit (
   Cleanup function for a menu bar.  frees all allocated memory.
 **/
 VOID
-EFIAPI
 MenuBarCleanup (
   VOID
   );
@@ -86,7 +83,6 @@ MenuBarCleanup (
   @retval EFI_SUCCESS           The refresh was successful.
 **/
 EFI_STATUS
-EFIAPI
 MenuBarRefresh (
   IN CONST UINTN LastRow,
   IN CONST UINTN LastCol
@@ -102,7 +98,6 @@ MenuBarRefresh (
   @return The return value from the called dispatch function.
 **/
 EFI_STATUS
-EFIAPI
 MenuBarDispatchFunctionKey (
   IN CONST EFI_INPUT_KEY   *Key
   );
@@ -110,16 +105,15 @@ MenuBarDispatchFunctionKey (
 /**
   Function to dispatch the correct function based on a control-based key (ctrl+o...)
 
-  @param[in] Key                The pressed key.
+  @param[in] KeyData                The pressed key.
 
   @retval EFI_NOT_FOUND         The key was not a valid control-based key
                                 (an error was sent to the status bar).
   @return EFI_SUCCESS.
 **/
 EFI_STATUS
-EFIAPI
 MenuBarDispatchControlHotKey (
-  IN CONST EFI_INPUT_KEY   *Key
+  IN CONST EFI_KEY_DATA   *KeyData
   );
 
 #endif

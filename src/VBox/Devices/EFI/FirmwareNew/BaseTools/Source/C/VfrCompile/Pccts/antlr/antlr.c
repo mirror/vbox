@@ -41,6 +41,13 @@ ANTLR_INFO
 #pragma warn -aus  /* unused assignment of 'xxx' */
 #endif
 
+#ifdef VBOX
+#  ifdef _MSC_VER
+#    pragma warning(disable : 4068) /* Unguarded '#pragma clang' below */
+#  endif
+#endif
+
+#pragma clang diagnostic ignored "-Wparentheses-equality"
 
 #ifdef __USE_PROTOS
 static void chkToken(char *, char *, char *, int);
@@ -3252,7 +3259,7 @@ enum_def(fname)
         zzMake0;
         {
         if ( (LA(1)==ID)&&(isDLGmaxToken(LATEXT(1))) ) {
-          if (!(isDLGmaxToken(LATEXT(1)))            ) {zzfailed_pred("  isDLGmaxToken(LATEXT(1))",0 /* report */, { 0; /* no user action */ } );}
+          if (!(isDLGmaxToken(LATEXT(1)))            ) {zzfailed_pred("  isDLGmaxToken(LATEXT(1))",0 /* report */, { ; /* no user action */ } );}
           zzmatch(ID); zzCONSUME;
           {
             zzBLOCK(zztasp4);

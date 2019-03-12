@@ -1,7 +1,7 @@
 /** @file
   Miscellaneous definitions for iSCSI driver.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -18,6 +18,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/BaseLib.h>
 
 typedef struct _ISCSI_SESSION_CONFIG_DATA ISCSI_SESSION_CONFIG_DATA;
+
+///
+/// IPv4 Device Path Node Length
+///
+#define IP4_NODE_LEN_NEW_VERSIONS    27
 
 #pragma pack(1)
 typedef struct {
@@ -214,9 +219,12 @@ IScsiCreateDriverData (
 /**
   Clean the iSCSI driver data.
 
-  @param[in]  Private The iSCSI driver data.
+  @param[in]               Private The iSCSI driver data.
+
+  @retval EFI_SUCCES       The clean operation is successful.
+  @retval Others           Other errors as indicated.
 **/
-VOID
+EFI_STATUS
 IScsiCleanDriverData (
   IN ISCSI_DRIVER_DATA  *Private
   );

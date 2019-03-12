@@ -1,7 +1,7 @@
 ## @file
 # process data section generation
 #
-#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -48,7 +48,7 @@ class DataSection (DataSectionClassObject):
     #   @param  Dict        dictionary contains macro and its value
     #   @retval tuple       (Generated file name list, section alignment)
     #
-    def GenSection(self, OutputPath, ModuleName, SecNum, keyStringList, FfsFile = None, Dict = {}):
+    def GenSection(self, OutputPath, ModuleName, SecNum, keyStringList, FfsFile = None, Dict = {}, IsMakefile = False):
         #
         # Prepare the parameter of GenSection
         #
@@ -69,18 +69,26 @@ class DataSection (DataSectionClassObject):
         Filename = GenFdsGlobalVariable.MacroExtend(self.SectFileName)
         if Filename[(len(Filename)-4):] == '.efi':
             MapFile = Filename.replace('.efi', '.map')
-            if os.path.exists(MapFile):
-                CopyMapFile = os.path.join(OutputPath, ModuleName + '.map')
-                if not os.path.exists(CopyMapFile) or (os.path.getmtime(MapFile) > os.path.getmtime(CopyMapFile)):
-                    CopyLongFilePath(MapFile, CopyMapFile)
+            CopyMapFile = os.path.join(OutputPath, ModuleName + '.map')
+            if IsMakefile:
+                if GenFdsGlobalVariable.CopyList == []:
+                    GenFdsGlobalVariable.CopyList = [(MapFile, CopyMapFile)]
+                else:
+                    GenFdsGlobalVariable.CopyList.append((MapFile, CopyMapFile))
+            else:
+                if os.path.exists(MapFile):
+                    if not os.path.exists(CopyMapFile) or (os.path.getmtime(MapFile) > os.path.getmtime(CopyMapFile)):
+                        CopyLongFilePath(MapFile, CopyMapFile)
 
         #Get PE Section alignment when align is set to AUTO
         if self.Alignment == 'Auto' and self.SecType in ('TE', 'PE32'):
             ImageObj = PeImageClass (Filename)
             if ImageObj.SectionAlignment < 0x400:
                 self.Alignment = str (ImageObj.SectionAlignment)
-            else:
+            elif ImageObj.SectionAlignment < 0x100000:
                 self.Alignment = str (ImageObj.SectionAlignment / 0x400) + 'K'
+            else:
+                self.Alignment = str (ImageObj.SectionAlignment / 0x100000) + 'M'
 
         NoStrip = True
         if self.SecType in ('TE', 'PE32'):
@@ -94,24 +102,25 @@ class DataSection (DataSectionClassObject):
                 CopyLongFilePath(self.SectFileName, FileBeforeStrip)
             StrippedFile = os.path.join(OutputPath, ModuleName + '.stripped')
             GenFdsGlobalVariable.GenerateFirmwareImage(
-                                    StrippedFile,
-                                    [GenFdsGlobalVariable.MacroExtend(self.SectFileName, Dict)],
-                                    Strip=True
-                                    )
+                    StrippedFile,
+                    [GenFdsGlobalVariable.MacroExtend(self.SectFileName, Dict)],
+                    Strip=True,
+                    IsMakefile = IsMakefile
+                )
             self.SectFileName = StrippedFile
 
         if self.SecType == 'TE':
             TeFile = os.path.join( OutputPath, ModuleName + 'Te.raw')
             GenFdsGlobalVariable.GenerateFirmwareImage(
-                                    TeFile,
-                                    [GenFdsGlobalVariable.MacroExtend(self.SectFileName, Dict)],
-                                    Type='te'
-                                    )
+                    TeFile,
+                    [GenFdsGlobalVariable.MacroExtend(self.SectFileName, Dict)],
+                    Type='te',
+                    IsMakefile = IsMakefile
+                )
             self.SectFileName = TeFile
 
         OutputFile = os.path.join (OutputPath, ModuleName + 'SEC' + SecNum + Ffs.SectionSuffix.get(self.SecType))
         OutputFile = os.path.normpath(OutputFile)
-
-        GenFdsGlobalVariable.GenerateSection(OutputFile, [self.SectFileName], Section.Section.SectionType.get(self.SecType))
+        GenFdsGlobalVariable.GenerateSection(OutputFile, [self.SectFileName], Section.Section.SectionType.get(self.SecType), IsMakefile = IsMakefile)
         FileList = [OutputFile]
         return FileList, self.Alignment

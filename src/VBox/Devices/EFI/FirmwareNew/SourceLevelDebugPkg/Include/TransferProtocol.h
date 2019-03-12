@@ -2,7 +2,7 @@
   Transfer protocol defintions used by debug agent and host. It is only
   intended to be used by Debug related module implementation.
 
-  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -20,12 +20,14 @@
 
 //
 // Current revision of transfer protocol
+// 0.4: Packet compression and decompression.
 //
-#define DEBUG_AGENT_REVISION            ((0 << 16) | 03)
+#define DEBUG_AGENT_REVISION_03         ((0 << 16) | 03)
+#define DEBUG_AGENT_REVISION_04         ((0 << 16) | 04)
 #define DEBUG_AGENT_CAPABILITIES        0
 
 //
-// Definitions for attach command
+// Definitions for the (A)ttach command
 //
 #define DEBUG_STARTING_SYMBOL_ATTACH    (0xFA)
 
@@ -34,10 +36,15 @@
 //
 #define DEBUG_STARTING_SYMBOL_NORMAL    (0xFE)
 
+//
+// Definition for starting symbol of a (C)ompressed debug packet. Choose a non-ASCII to avoid conflict with other serial output.
+//
+#define DEBUG_STARTING_SYMBOL_COMPRESS  (0xFC)
+
 #pragma pack(1)
 
 //
-// Definition for debug packet header for normal debug packets (not including break/attach command)
+// Definition for debug packet header for debug packets (not including attach command)
 //
 typedef struct {
   UINT8                      StartSymbol;
@@ -52,6 +59,8 @@ typedef struct {
 //
 #define DEBUG_COMMAND_REQUEST      (0 << 7)
 #define DEBUG_COMMAND_RESPONSE     (1 << 7)
+
+#define IS_REQUEST(x)              (((x)->Command & DEBUG_COMMAND_RESPONSE) == 0)
 
 //
 // HOST initiated commands

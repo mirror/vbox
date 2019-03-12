@@ -2,7 +2,7 @@
 //
 //    Sample Inventory Data
 //
-//  Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
+//  Copyright (c) 2004 - 2015, Intel Corporation. All rights reserved.<BR>
 //  This program and the accompanying materials
 //  are licensed and made available under the terms and conditions of the BSD License
 //  which accompanies this distribution.  The full text of the license may be found at
@@ -19,8 +19,6 @@ formset
   guid     = DRIVER_SAMPLE_INVENTORY_GUID,
   title    = STRING_TOKEN(STR_INV_FORM_SET_TITLE),
   help     = STRING_TOKEN(STR_INV_FORM_SET_HELP),
-  class    = 0x04,
-  subclass = 0x03,
 
   form formid = 1,
        title  = STRING_TOKEN(STR_INV_FORM1_TITLE);  // note formid is a variable (for readability) (UINT16) - also added Form to the line to signify the Op-Code
@@ -103,6 +101,12 @@ formset
 	    text   = STRING_TOKEN(STR_INV_EMPTY_STRING),
       flags  = 0,
       key    = 0;
+
+    text
+      help   = STRING_TOKEN(STR_CHECK_KEYWORD_SUPPORT),
+      text   = STRING_TOKEN(STR_CHECK_KEYWORD_SUPPORT),
+      flags  = INTERACTIVE,
+      key    = 0x1231;
 
     subtitle text = STRING_TOKEN(STR_INV_EMPTY_STRING);
 

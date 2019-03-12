@@ -3,7 +3,7 @@
 #
 #  It provides an implementation of DXE Core that is compliant with DXE CIS.
 #
-#  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
 #  which accompanies this distribution.  The full text of the license may be found at
@@ -40,6 +40,9 @@
   Misc/Stall.c
   Misc/SetWatchdogTimer.c
   Misc/InstallConfigurationTable.c
+  Misc/PropertiesTable.c
+  Misc/MemoryAttributesTable.c
+  Misc/MemoryProtection.c
   Library/Library.c
   Hand/DriverSupport.c
   Hand/Notify.c
@@ -53,6 +56,8 @@
   Mem/MemData.c
   Mem/Imem.h
   Mem/MemoryProfileRecord.c
+  Mem/HeapGuard.c
+  Mem/HeapGuard.h
   FwVolBlock/FwVolBlock.c
   FwVolBlock/FwVolBlock.h
   FwVol/FwVolWrite.c
@@ -104,7 +109,7 @@
   ## CONSUMES   ## Event
   ## PRODUCES   ## Event
   gEfiEventExitBootServicesGuid
-  gEfiHobMemoryAllocModuleGuid                  ## CONSUMES             ## HOB
+  gEfiHobMemoryAllocModuleGuid                  ## SOMETIMES_CONSUMES   ## HOB
   gEfiFirmwareFileSystem2Guid                   ## CONSUMES             ## GUID # Used to compare with FV's file system guid and get the FV's file system format
   gEfiFirmwareFileSystem3Guid                   ## CONSUMES             ## GUID # Used to compare with FV's file system guid and get the FV's file system format
   gAprioriGuid                                  ## SOMETIMES_CONSUMES   ## File
@@ -122,7 +127,10 @@
   gEventExitBootServicesFailedGuid              ## SOMETIMES_PRODUCES   ## Event
   gEfiVectorHandoffTableGuid                    ## SOMETIMES_PRODUCES   ## SystemTable
   gEdkiiMemoryProfileGuid                       ## SOMETIMES_PRODUCES   ## GUID # Install protocol
-  gZeroGuid                                     ## SOMETIMES_CONSUMES   ## GUID
+  gEfiPropertiesTableGuid                       ## SOMETIMES_PRODUCES   ## SystemTable
+  gEfiMemoryAttributesTableGuid                 ## SOMETIMES_PRODUCES   ## SystemTable
+  gEfiEndOfDxeEventGroupGuid                    ## SOMETIMES_CONSUMES   ## Event
+  gEfiHobMemoryAllocStackGuid                   ## SOMETIMES_CONSUMES   ## SystemTable
 
 [Ppis]
   gEfiVectorHandoffInfoPpiGuid                  ## UNDEFINED # HOB
@@ -155,6 +163,7 @@
   gEfiHiiPackageListProtocolGuid                ## SOMETIMES_PRODUCES
   gEfiEbcProtocolGuid                           ## SOMETIMES_CONSUMES
   gEfiSmmBase2ProtocolGuid                      ## SOMETIMES_CONSUMES
+  gEfiBlockIoProtocolGuid                       ## SOMETIMES_CONSUMES
 
   # Arch Protocols
   gEfiBdsArchProtocolGuid                       ## CONSUMES
@@ -182,6 +191,15 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxEfiSystemTablePointerAddress         ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfileMemoryType                 ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfilePropertyMask               ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMemoryProfileDriverPath                 ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPropertiesTableEnable                   ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdImageProtectionPolicy                   ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy             ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask        ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPageType                       ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPoolType                       ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask                   ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                           ## CONSUMES
 
 # [Hob]
 # RESOURCE_DESCRIPTOR   ## CONSUMES

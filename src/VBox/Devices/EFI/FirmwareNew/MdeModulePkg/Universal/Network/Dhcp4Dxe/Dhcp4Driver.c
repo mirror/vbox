@@ -1,6 +1,6 @@
 /** @file
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -531,7 +531,7 @@ DhcpInitProtocol (
 
   @retval EFI_SUCCES            The protocol was added to ChildHandle.
   @retval EFI_INVALID_PARAMETER ChildHandle is NULL.
-  @retval EFI_OUT_OF_RESOURCES  There are not enough resources availabe to create
+  @retval EFI_OUT_OF_RESOURCES  There are not enough resources available to create
                                 the child
   @retval other                 The child handle was not created
 
@@ -717,6 +717,19 @@ Dhcp4ServiceBindingDestroyChild (
 
   RemoveEntryList (&Instance->Link);
   DhcpSb->NumChildren--;
+
+  if (Instance->UdpIo != NULL) {
+    UdpIoCleanIo (Instance->UdpIo);
+    gBS->CloseProtocol (
+           Instance->UdpIo->UdpHandle,
+           &gEfiUdp4ProtocolGuid,
+           Instance->Service->Image,
+           Instance->Handle
+           );
+    UdpIoFreeIo (Instance->UdpIo);
+    Instance->UdpIo = NULL;
+    Instance->Token = NULL;
+  }
 
   gBS->RestoreTPL (OldTpl);
 

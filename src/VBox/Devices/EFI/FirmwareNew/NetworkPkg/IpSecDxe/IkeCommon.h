@@ -1,7 +1,7 @@
 /** @file
   Common operation of the IKE.
 
-  Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2016, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -18,7 +18,7 @@
 
 #include <Protocol/Udp4.h>
 #include <Protocol/Udp6.h>
-#include <Protocol/Ip4Config.h>
+#include <Protocol/Ip4Config2.h>
 
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -39,7 +39,7 @@
 #define IKE_DEFAULT_TIMEOUT_INTERVAL  10000 // 10s
 #define IKE_NONCE_SIZE                16
 #define IKE_MAX_RETRY                 4
-#define IKE_SPI_BASE                  0x10000
+#define IKE_SPI_BASE                  0x100
 #define IKE_PAYLOAD_SIGNATURE         SIGNATURE_32('I','K','E','P')
 #define IKE_PAYLOAD_BY_PACKET(a)      CR(a,IKE_PAYLOAD,ByPacket,IKE_PAYLOAD_SIGNATURE)
 
@@ -130,14 +130,20 @@ IkePayloadFree (
   );
 
 /**
-  Generate an unused SPI
+  Generate an new SPI.
 
-  @return a SPI in 4 bytes.
+  @param[in]       IkeSaSession   Pointer to IKEV2_SA_SESSION related to this Child SA
+                                  Session.
+  @param[in, out]  SpiValue       Pointer to the new generated SPI value.
+
+  @retval EFI_SUCCESS         The operation performs successfully.
+  @retval Otherwise           The operation is failed.
 
 **/
-UINT32
+EFI_STATUS
 IkeGenerateSpi (
-  VOID
+  IN     IKEV2_SA_SESSION         *IkeSaSession,
+  IN OUT UINT32                   *SpiValue
   );
 
 /**
@@ -181,7 +187,6 @@ IkeSearchSpdEntry (
   IN EFI_IPSEC_SPD_SELECTOR             *SpdSel
   );
 
-extern EFI_GUID               mZeroGuid;
 extern MODP_GROUP             OakleyModpGroup[];
 extern IKE_ALG_GUID_INFO      mIPsecEncrAlgInfo[];
 extern IKE_ALG_GUID_INFO      mIPsecAuthAlgInfo[];

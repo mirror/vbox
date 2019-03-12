@@ -2,7 +2,7 @@
   Implementation of the USB mass storage Bulk-Only Transport protocol,
   according to USB Mass Storage Class Bulk-Only Transport, Revision 1.0.
 
-Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -392,7 +392,7 @@ UsbBotGetStatus (
   @param  CmdStatus             The result of high level command execution
 
   @retval EFI_SUCCESS           The command is executed successfully.
-  @retval Other                 Failed to excute command
+  @retval Other                 Failed to execute command
 
 **/
 EFI_STATUS
@@ -552,7 +552,9 @@ UsbBotGetMaxLun (
   UINT32                  Result;
   UINT32                  Timeout;
 
-  ASSERT (Context);
+  if (Context == NULL || MaxLun == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   UsbBot = (USB_BOT_PROTOCOL *) Context;
 
@@ -576,13 +578,20 @@ UsbBotGetMaxLun (
                             1,
                             &Result
                             );
-
-  // It is possible for the request to fail and return garbage in MaxLun.
-  if (Status != EFI_SUCCESS) {
+  if (EFI_ERROR (Status) || *MaxLun > USB_BOT_MAX_LUN) {
+    //
+    // If the Get LUN request returns an error or the MaxLun is larger than
+    // the maximum LUN value (0x0f) supported by the USB Mass Storage Class
+    // Bulk-Only Transport Spec, then set MaxLun to 0.
+    //
+    // This improves compatibility with USB FLASH drives that have a single LUN
+    // and either do not return a max LUN value or return an invalid maximum LUN
+    // value.
+    //
     *MaxLun = 0;
   }
 
-  return Status;
+  return EFI_SUCCESS;
 }
 
 /**

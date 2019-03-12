@@ -13,7 +13,7 @@
   4. It save all the mapping info in NV variables which will be consumed
      by platform override protocol driver to publish the platform override protocol.
 
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -333,6 +333,7 @@ UpdateDeviceSelectPage (
   EFI_STATUS                                Status;
   UINTN                                     Index;
   UINTN                                     DevicePathHandleCount;
+  UINTN                                     NewStrSize;
   CHAR16                                    *NewString;
   EFI_STRING_ID                             NewStringToken;
   CHAR16                                    *ControllerName;
@@ -489,14 +490,15 @@ UpdateDeviceSelectPage (
     // Export the driver name string and create item in set options page
     //
     Len = StrSize (ControllerName);
-    NewString = AllocateZeroPool (Len + StrSize (L"--"));
+    NewStrSize = Len + StrSize (L"--");
+    NewString = AllocateZeroPool (NewStrSize);
     ASSERT (NewString != NULL);
     if (EFI_ERROR (CheckMapping (ControllerDevicePath,NULL, &mMappingDataBase, NULL, NULL))) {
-      StrCat (NewString, L"--");
+      StrCatS (NewString, NewStrSize/sizeof(CHAR16), L"--");
     } else {
-      StrCat (NewString, L"**");
+      StrCatS (NewString, NewStrSize/sizeof(CHAR16), L"**");
     }
-    StrCat (NewString, ControllerName);
+    StrCatS (NewString, NewStrSize/sizeof(CHAR16), ControllerName);
 
     NewStringToken = HiiSetString (Private->RegisteredHandle, mControllerToken[Index], NewString, NULL);
     ASSERT (NewStringToken != 0);
@@ -539,7 +541,7 @@ UpdateDeviceSelectPage (
   @param  ImageHandle          The Image handle
 
   @return                      Handle to Driver binding
-  @retval NULL                 The paramter is not valid or the driver binding handle is not found.
+  @retval NULL                 The parameter is not valid or the driver binding handle is not found.
 
 **/
 EFI_HANDLE
@@ -622,6 +624,7 @@ UpdateBindingDriverSelectPage (
 {
   EFI_STATUS                                Status;
   UINTN                                     Index;
+  UINTN                                     NewStrSize;
   CHAR16                                    *NewString;
   EFI_STRING_ID                             NewStringToken;
   EFI_STRING_ID                             NewStringHelpToken;
@@ -814,7 +817,8 @@ UpdateBindingDriverSelectPage (
     //
     // First create the driver image name
     //
-    NewString = AllocateZeroPool (StrSize (DriverName));
+    NewStrSize = StrSize (DriverName);
+    NewString = AllocateZeroPool (NewStrSize);
     ASSERT (NewString != NULL);
     if (EFI_ERROR (CheckMapping (mControllerDevicePathProtocol[mSelectedCtrIndex], LoadedImageDevicePath, &mMappingDataBase, NULL, NULL))) {
       mDriSelection[Index] = FALSE;
@@ -822,7 +826,7 @@ UpdateBindingDriverSelectPage (
       mDriSelection[Index] = TRUE;
       mLastSavedDriverImageNum++;
     }
-    StrCat (NewString, DriverName);
+    StrCatS (NewString, NewStrSize/sizeof(CHAR16), DriverName);
     NewStringToken = HiiSetString (Private->RegisteredHandle, mDriverImageToken[Index], NewString, NULL);
     ASSERT (NewStringToken != 0);
     mDriverImageToken[Index] = NewStringToken;
@@ -836,9 +840,10 @@ UpdateBindingDriverSelectPage (
     //
     DriverName = DevicePathToStr (LoadedImageDevicePath);
 
-    NewString = AllocateZeroPool (StrSize (DriverName));
+    NewStrSize = StrSize (DriverName);
+    NewString = AllocateZeroPool (NewStrSize);
     ASSERT (NewString != NULL);
-    StrCat (NewString, DriverName);
+    StrCatS (NewString, NewStrSize/sizeof(CHAR16), DriverName);
     NewStringHelpToken = HiiSetString (Private->RegisteredHandle, DriverImageFilePathToken[Index], NewString, NULL);
     ASSERT (NewStringHelpToken != 0);
     DriverImageFilePathToken[Index] = NewStringHelpToken;
@@ -1495,7 +1500,7 @@ GetDriver (
 
     Status = InitOverridesMapping (&mMappingDataBase);
     if (EFI_ERROR (Status)){
-      DEBUG ((DEBUG_ERROR, "The status to Get Platform Driver Override Variable is %r\n", Status));
+      DEBUG ((DEBUG_INFO, "The status to Get Platform Driver Override Variable is %r\n", Status));
       InitializeListHead (&mMappingDataBase);
       return EFI_NOT_FOUND;
     }
@@ -1572,7 +1577,7 @@ DriverLoaded (
 }
 
 /**
-  The driver Entry Point. The funciton will export a disk device class formset and
+  The driver Entry Point. The function will export a disk device class formset and
   its callback function to hii database.
 
   @param  ImageHandle    The firmware allocated handle for the EFI image.
@@ -1635,6 +1640,19 @@ PlatDriOverrideDxeInit (
   mCallbackInfo->PlatformDriverOverride.GetDriver      = GetDriver;
   mCallbackInfo->PlatformDriverOverride.GetDriverPath  = GetDriverPath;
   mCallbackInfo->PlatformDriverOverride.DriverLoaded   = DriverLoaded;
+
+  //
+  // Locate ConfigRouting protocol
+  //
+  Status = gBS->LocateProtocol (
+                  &gEfiHiiConfigRoutingProtocolGuid,
+                  NULL,
+                  (VOID **) &mCallbackInfo->HiiConfigRouting
+                  );
+  if (EFI_ERROR (Status)) {
+    goto Finish;
+  }
+
   //
   // Install Device Path Protocol and Config Access protocol to driver handle
   // Install Platform Driver Override Protocol to driver handle
@@ -1665,18 +1683,6 @@ PlatDriOverrideDxeInit (
                                      );
   if (mCallbackInfo->RegisteredHandle == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
-    goto Finish;
-  }
-
-  //
-  // Locate ConfigRouting protocol
-  //
-  Status = gBS->LocateProtocol (
-                  &gEfiHiiConfigRoutingProtocolGuid,
-                  NULL,
-                  (VOID **) &mCallbackInfo->HiiConfigRouting
-                  );
-  if (EFI_ERROR (Status)) {
     goto Finish;
   }
 

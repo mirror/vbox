@@ -1,7 +1,7 @@
 /** @file
   CPU Exception Handler Library common functions.
 
-  Copyright (c) 2012 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2012 - 2017, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -20,13 +20,58 @@
 //
 // 1 means an error code will be pushed, otherwise 0
 //
-CONST UINT32 mErrorCodeFlag             = 0x00027d00;
-RESERVED_VECTORS_DATA *mReservedVectors = NULL;
+CONST UINT32 mErrorCodeFlag = 0x00027d00;
 
 //
 // Define the maximum message length
 //
 #define MAX_DEBUG_MESSAGE_LENGTH  0x100
+
+CONST CHAR8 mExceptionReservedStr[] = "Reserved";
+CONST CHAR8 *mExceptionNameStr[] = {
+  "#DE - Divide Error",
+  "#DB - Debug",
+  "NMI Interrupt",
+  "#BP - Breakpoint",
+  "#OF - Overflow",
+  "#BR - BOUND Range Exceeded",
+  "#UD - Invalid Opcode",
+  "#NM - Device Not Available",
+  "#DF - Double Fault",
+  "Coprocessor Segment Overrun",
+  "#TS - Invalid TSS",
+  "#NP - Segment Not Present",
+  "#SS - Stack Fault Fault",
+  "#GP - General Protection",
+  "#PF - Page-Fault",
+  "Reserved",
+  "#MF - x87 FPU Floating-Point Error",
+  "#AC - Alignment Check",
+  "#MC - Machine-Check",
+  "#XM - SIMD floating-point",
+  "#VE - Virtualization"
+};
+
+#define EXCEPTION_KNOWN_NAME_NUM  (sizeof (mExceptionNameStr) / sizeof (CHAR8 *))
+
+/**
+  Get ASCII format string exception name by exception type.
+
+  @param ExceptionType  Exception type.
+
+  @return  ASCII format string exception name.
+**/
+CONST CHAR8 *
+GetExceptionNameStr (
+  IN EFI_EXCEPTION_TYPE          ExceptionType
+  )
+{
+  if ((UINTN) ExceptionType < EXCEPTION_KNOWN_NAME_NUM) {
+    return mExceptionNameStr[ExceptionType];
+  } else {
+    return mExceptionReservedStr;
+  }
+}
 
 /**
   Prints a message to the serial port.
@@ -63,80 +108,42 @@ InternalPrintMessage (
   Find and display image base address and return image base and its entry point.
 
   @param CurrentEip      Current instruction pointer.
-  @param EntryPoint      Return module entry point if module header is found.
 
-  @return !0     Image base address.
-  @return 0      Image header cannot be found.
 **/
-UINTN
-FindModuleImageBase (
-  IN  UINTN              CurrentEip,
-  OUT UINTN              *EntryPoint
+VOID
+DumpModuleImageInfo (
+  IN  UINTN              CurrentEip
   )
 {
+  EFI_STATUS                           Status;
   UINTN                                Pe32Data;
-  EFI_IMAGE_DOS_HEADER                 *DosHdr;
-  EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION  Hdr;
   VOID                                 *PdbPointer;
+  VOID                                 *EntryPoint;
 
-  //
-  // Find Image Base
-  //
-  Pe32Data = CurrentEip & ~(mImageAlignSize - 1);
-  while (Pe32Data != 0) {
-    DosHdr = (EFI_IMAGE_DOS_HEADER *) Pe32Data;
-    if (DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
-      //
-      // DOS image header is present, so read the PE header after the DOS image header.
-      //
-      Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *)(Pe32Data + (UINTN) ((DosHdr->e_lfanew) & 0x0ffff));
-      //
-      // Make sure PE header address does not overflow and is less than the initial address.
-      //
-      if (((UINTN)Hdr.Pe32 > Pe32Data) && ((UINTN)Hdr.Pe32 < CurrentEip)) {
-        if (Hdr.Pe32->Signature == EFI_IMAGE_NT_SIGNATURE) {
-          //
-          // It's PE image.
-          //
-          InternalPrintMessage ("!!!! Find PE image ");
-          *EntryPoint = (UINTN)Pe32Data + (UINTN)(Hdr.Pe32->OptionalHeader.AddressOfEntryPoint & 0x0ffffffff);
-          break;
-        }
-      }
-    } else {
-      //
-      // DOS image header is not present, TE header is at the image base.
-      //
-      Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *)Pe32Data;
-      if ((Hdr.Te->Signature == EFI_TE_IMAGE_HEADER_SIGNATURE) &&
-          ((Hdr.Te->Machine == IMAGE_FILE_MACHINE_I386) || Hdr.Te->Machine == IMAGE_FILE_MACHINE_X64)) {
-        //
-        // It's TE image, it TE header and Machine type match
-        //
-        InternalPrintMessage ("!!!! Find TE image ");
-        *EntryPoint = (UINTN)Pe32Data + (UINTN)(Hdr.Te->AddressOfEntryPoint & 0x0ffffffff) + sizeof(EFI_TE_IMAGE_HEADER) - Hdr.Te->StrippedSize;
-        break;
-      }
+  Pe32Data = PeCoffSearchImageBase (CurrentEip);
+  if (Pe32Data == 0) {
+    InternalPrintMessage ("!!!! Can't find image information. !!!!\n");
+  } else {
+    //
+    // Find Image Base entry point
+    //
+    Status = PeCoffLoaderGetEntryPoint ((VOID *) Pe32Data, &EntryPoint);
+    if (EFI_ERROR (Status)) {
+      EntryPoint = NULL;
     }
-
-    //
-    // Not found the image base, check the previous aligned address
-    //
-    Pe32Data -= mImageAlignSize;
-  }
-
-  if (Pe32Data != 0) {
+    InternalPrintMessage ("!!!! Find image based on IP(0x%x) ", CurrentEip);
     PdbPointer = PeCoffLoaderGetPdbPointer ((VOID *) Pe32Data);
     if (PdbPointer != NULL) {
       InternalPrintMessage ("%a", PdbPointer);
     } else {
       InternalPrintMessage ("(No PDB) " );
     }
-  } else {
-    InternalPrintMessage ("!!!! Can't find image information. !!!!\n");
+    InternalPrintMessage (
+      " (ImageBase=%016lp, EntryPoint=%016p) !!!!\n",
+      (VOID *) Pe32Data,
+      EntryPoint
+      );
   }
-
-  return Pe32Data;
 }
 
 /**

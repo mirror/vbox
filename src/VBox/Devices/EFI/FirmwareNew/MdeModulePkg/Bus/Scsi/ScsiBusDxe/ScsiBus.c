@@ -2,7 +2,7 @@
   SCSI Bus driver that layers on every SCSI Pass Thru and
   Extended SCSI Pass Thru protocol in the system.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -986,13 +986,35 @@ ScsiExecuteSCSICommand (
 
   if (ScsiIoDevice->ExtScsiSupport) {
     ExtRequestPacket = (EFI_EXT_SCSI_PASS_THRU_SCSI_REQUEST_PACKET *) Packet;
-    Status = ScsiIoDevice->ExtScsiPassThru->PassThru (
-                                          ScsiIoDevice->ExtScsiPassThru,
-                                          Target,
-                                          ScsiIoDevice->Lun,
-                                          ExtRequestPacket,
-                                          Event
-                                          );
+
+    if (((ScsiIoDevice->ExtScsiPassThru->Mode->Attributes & EFI_SCSI_PASS_THRU_ATTRIBUTES_NONBLOCKIO) != 0) && (Event !=  NULL)) {
+      Status = ScsiIoDevice->ExtScsiPassThru->PassThru (
+                                                ScsiIoDevice->ExtScsiPassThru,
+                                                Target,
+                                                ScsiIoDevice->Lun,
+                                                ExtRequestPacket,
+                                                Event
+                                                );
+    } else {
+      //
+      // If there's no event or the SCSI Device doesn't support NON-BLOCKING,
+      // let the 'Event' parameter for PassThru() be NULL.
+      //
+      Status = ScsiIoDevice->ExtScsiPassThru->PassThru (
+                                                ScsiIoDevice->ExtScsiPassThru,
+                                                Target,
+                                                ScsiIoDevice->Lun,
+                                                ExtRequestPacket,
+                                                NULL
+                                                );
+      if ((!EFI_ERROR(Status)) && (Event != NULL)) {
+        //
+        // Signal Event to tell caller to pick up the SCSI IO packet if the
+        // PassThru() succeeds.
+        //
+        gBS->SignalEvent (Event);
+      }
+    }
   } else {
 
     mWorkingBuffer = AllocatePool (sizeof(EFI_SCSI_PASS_THRU_SCSI_REQUEST_PACKET));
@@ -1018,7 +1040,7 @@ ScsiExecuteSCSICommand (
       //
       Status = gBS->CreateEvent (
                        EVT_NOTIFY_SIGNAL,
-                       TPL_CALLBACK,
+                       TPL_NOTIFY,
                        NotifyFunction,
                        &EventData,
                        &PacketEvent
@@ -1052,7 +1074,7 @@ ScsiExecuteSCSICommand (
                                           ScsiIoDevice->Pun.ScsiId.Scsi,
                                           ScsiIoDevice->Lun,
                                           mWorkingBuffer,
-                                          Event
+                                          NULL
                                           );
       if (EFI_ERROR(Status)) {
         FreePool(mWorkingBuffer);
@@ -1065,6 +1087,13 @@ ScsiExecuteSCSICommand (
       // free mWorkingBuffer.
       //
       FreePool(mWorkingBuffer);
+
+      //
+      // Signal Event to tell caller to pick up the SCSI IO Packet.
+      //
+      if (Event != NULL) {
+        gBS->SignalEvent (Event);
+      }
     }
   }
   return Status;
@@ -1269,15 +1298,26 @@ DiscoverScsiDevice (
   UINT8                 HostAdapterStatus;
   UINT8                 TargetStatus;
   EFI_SCSI_INQUIRY_DATA *InquiryData;
+  EFI_SCSI_SENSE_DATA   *SenseData;
   UINT8                 MaxRetry;
   UINT8                 Index;
   BOOLEAN               ScsiDeviceFound;
 
   HostAdapterStatus = 0;
   TargetStatus      = 0;
+  SenseData         = NULL;
 
   InquiryData = AllocateAlignedBuffer (ScsiIoDevice, sizeof (EFI_SCSI_INQUIRY_DATA));
   if (InquiryData == NULL) {
+    ScsiDeviceFound = FALSE;
+    goto Done;
+  }
+
+  SenseData = AllocateAlignedBuffer (
+                ScsiIoDevice,
+                sizeof (EFI_SCSI_SENSE_DATA)
+                );
+  if (SenseData == NULL) {
     ScsiDeviceFound = FALSE;
     goto Done;
   }
@@ -1286,15 +1326,16 @@ DiscoverScsiDevice (
   // Using Inquiry command to scan for the device
   //
   InquiryDataLength = sizeof (EFI_SCSI_INQUIRY_DATA);
-  SenseDataLength   = 0;
+  SenseDataLength   = sizeof (EFI_SCSI_SENSE_DATA);
   ZeroMem (InquiryData, InquiryDataLength);
+  ZeroMem (SenseData, SenseDataLength);
 
   MaxRetry = 2;
   for (Index = 0; Index < MaxRetry; Index++) {
     Status = ScsiInquiryCommand (
               &ScsiIoDevice->ScsiIo,
               SCSI_BUS_TIMEOUT,
-              NULL,
+              SenseData,
               &SenseDataLength,
               &HostAdapterStatus,
               &TargetStatus,
@@ -1303,10 +1344,18 @@ DiscoverScsiDevice (
               FALSE
               );
     if (!EFI_ERROR (Status)) {
+      if ((HostAdapterStatus == EFI_SCSI_IO_STATUS_HOST_ADAPTER_OK) &&
+          (TargetStatus == EFI_SCSI_IO_STATUS_TARGET_CHECK_CONDITION) &&
+          (SenseData->Error_Code == 0x70) &&
+          (SenseData->Sense_Key == EFI_SCSI_SK_ILLEGAL_REQUEST)) {
+        ScsiDeviceFound = FALSE;
+        goto Done;
+      }
       break;
-    } else if ((Status == EFI_BAD_BUFFER_SIZE) ||
-               (Status == EFI_INVALID_PARAMETER) ||
-               (Status == EFI_UNSUPPORTED)) {
+    }
+    if ((Status == EFI_BAD_BUFFER_SIZE) ||
+        (Status == EFI_INVALID_PARAMETER) ||
+        (Status == EFI_UNSUPPORTED)) {
       ScsiDeviceFound = FALSE;
       goto Done;
     }
@@ -1320,17 +1369,9 @@ DiscoverScsiDevice (
   //
   // Retrieved inquiry data successfully
   //
-  if ((InquiryData->Peripheral_Qualifier != 0) &&
-      (InquiryData->Peripheral_Qualifier != 3)) {
+  if (InquiryData->Peripheral_Qualifier != 0) {
     ScsiDeviceFound = FALSE;
     goto Done;
-  }
-
-  if (InquiryData->Peripheral_Qualifier == 3) {
-    if (InquiryData->Peripheral_Type != 0x1f) {
-      ScsiDeviceFound = FALSE;
-      goto Done;
-    }
   }
 
   if (0x1e >= InquiryData->Peripheral_Type && InquiryData->Peripheral_Type >= 0xa) {
@@ -1355,6 +1396,7 @@ DiscoverScsiDevice (
   ScsiDeviceFound = TRUE;
 
 Done:
+  FreeAlignedBuffer (SenseData, sizeof (EFI_SCSI_SENSE_DATA));
   FreeAlignedBuffer (InquiryData, sizeof (EFI_SCSI_INQUIRY_DATA));
 
   return ScsiDeviceFound;

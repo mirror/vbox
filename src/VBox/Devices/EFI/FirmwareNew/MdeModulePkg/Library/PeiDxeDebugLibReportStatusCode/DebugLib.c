@@ -4,7 +4,7 @@
   Note that if the debug message length is larger than the maximum allowable
   record length, then the debug message will be ignored directly.
 
-  Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -96,7 +96,7 @@ DebugPrint (
   // If the TotalSize is larger than the maximum record size, then return
   //
   if (TotalSize > sizeof (Buffer)) {
-    return;
+    TotalSize = sizeof (Buffer);
   }
 
   //
@@ -113,9 +113,12 @@ DebugPrint (
   FormatString          = (CHAR8 *)((UINT64 *)(DebugInfo + 1) + 12);
 
   //
-  // Copy the Format string into the record
+  // Copy the Format string into the record. It will be truncated if it's too long.
   //
-  AsciiStrCpy (FormatString, Format);
+  AsciiStrnCpyS (
+    FormatString, sizeof(Buffer) - (4 + sizeof(EFI_DEBUG_INFO) + 12 * sizeof(UINT64)),
+    Format,       sizeof(Buffer) - (4 + sizeof(EFI_DEBUG_INFO) + 12 * sizeof(UINT64)) - 1
+    );
 
   //
   // The first 12 * sizeof (UINT64) bytes following EFI_DEBUG_INFO are for variable arguments
@@ -123,6 +126,11 @@ DebugPrint (
   // Here we will process the variable arguments and pack them in this area.
   //
   VA_START (VaListMarker, Format);
+
+  //
+  // Use the actual format string.
+  //
+  Format = FormatString;
   for (; *Format != '\0'; Format++) {
     //
     // Only format with prefix % is processed.
@@ -182,7 +190,7 @@ DebugPrint (
     if ((*Format == 'p') && (sizeof (VOID *) > 4)) {
       Long = TRUE;
     }
-    if (*Format == 'p' || *Format == 'X' || *Format == 'x' || *Format == 'd') {
+    if (*Format == 'p' || *Format == 'X' || *Format == 'x' || *Format == 'd' || *Format == 'u') {
       if (Long) {
         BASE_ARG (BaseListMarker, INT64) = VA_ARG (VaListMarker, INT64);
       } else {
@@ -261,6 +269,7 @@ DebugAssert (
   UINTN                  HeaderSize;
   UINTN                  TotalSize;
   CHAR8                  *Temp;
+  UINTN                  ModuleNameSize;
   UINTN                  FileNameSize;
   UINTN                  DescriptionSize;
 
@@ -268,31 +277,40 @@ DebugAssert (
   // Get string size
   //
   HeaderSize       = sizeof (EFI_DEBUG_ASSERT_DATA);
+  //
+  // Compute string size of module name enclosed by []
+  //
+  ModuleNameSize   = 2 + AsciiStrSize (gEfiCallerBaseName);
   FileNameSize     = AsciiStrSize (FileName);
   DescriptionSize  = AsciiStrSize (Description);
 
   //
   // Make sure it will all fit in the passed in buffer.
   //
-  if (HeaderSize + FileNameSize + DescriptionSize > sizeof (Buffer)) {
+  if (HeaderSize + ModuleNameSize + FileNameSize + DescriptionSize > sizeof (Buffer)) {
     //
-    // FileName + Description is too long to be filled into buffer.
+    // remove module name if it's too long to be filled into buffer
     //
-    if (HeaderSize + FileNameSize < sizeof (Buffer)) {
+    ModuleNameSize = 0;
+    if (HeaderSize + FileNameSize + DescriptionSize > sizeof (Buffer)) {
       //
-      // Description has enough buffer to be truncated.
+      // FileName + Description is too long to be filled into buffer.
       //
-      DescriptionSize = sizeof (Buffer) - HeaderSize - FileNameSize;
-    } else {
-      //
-      // FileName is too long to be filled into buffer.
-      // FileName will be truncated. Reserved one byte for Description NULL terminator.
-      //
-      DescriptionSize = 1;
-      FileNameSize    = sizeof (Buffer) - HeaderSize - DescriptionSize;
+      if (HeaderSize + FileNameSize < sizeof (Buffer)) {
+        //
+        // Description has enough buffer to be truncated.
+        //
+        DescriptionSize = sizeof (Buffer) - HeaderSize - FileNameSize;
+      } else {
+        //
+        // FileName is too long to be filled into buffer.
+        // FileName will be truncated. Reserved one byte for Description NULL terminator.
+        //
+        DescriptionSize = 1;
+        FileNameSize    = sizeof (Buffer) - HeaderSize - DescriptionSize;
+      }
     }
   }
-
   //
   // Fill in EFI_DEBUG_ASSERT_DATA
   //
@@ -300,12 +318,23 @@ DebugAssert (
   AssertData->LineNumber = (UINT32)LineNumber;
   TotalSize  = sizeof (EFI_DEBUG_ASSERT_DATA);
 
+  Temp = (CHAR8 *)(AssertData + 1);
+
+  //
+  // Copy Ascii [ModuleName].
+  //
+  if (ModuleNameSize != 0) {
+    CopyMem(Temp, "[", 1);
+    CopyMem(Temp + 1, gEfiCallerBaseName, ModuleNameSize - 3);
+    CopyMem(Temp + ModuleNameSize - 2, "] ", 2);
+  }
+
   //
   // Copy Ascii FileName including NULL terminator.
   //
-  Temp = CopyMem (AssertData + 1, FileName, FileNameSize);
+  Temp = CopyMem (Temp + ModuleNameSize, FileName, FileNameSize);
   Temp[FileNameSize - 1] = 0;
-  TotalSize += FileNameSize;
+  TotalSize += (ModuleNameSize + FileNameSize);
 
   //
   // Copy Ascii Description include NULL terminator.

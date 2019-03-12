@@ -1,7 +1,7 @@
 /** @file
   ACPI Sdt Protocol Driver
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved. <BR>
+  Copyright (c) 2010 - 2016, Intel Corporation. All rights reserved. <BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -19,7 +19,7 @@
 
 GLOBAL_REMOVE_IF_UNREFERENCED
 EFI_ACPI_SDT_PROTOCOL  mAcpiSdtProtocolTemplate = {
-  EFI_ACPI_TABLE_VERSION_NONE | EFI_ACPI_TABLE_VERSION_1_0B | EFI_ACPI_TABLE_VERSION_2_0 | EFI_ACPI_TABLE_VERSION_3_0 | EFI_ACPI_TABLE_VERSION_4_0,
+  EFI_ACPI_TABLE_VERSION_NONE,
   GetAcpiTable2,
   RegisterNotify,
   Open,
@@ -204,16 +204,18 @@ SdtNotifyAcpiList (
   - Root System Description Table (RSDT)
   - Extended System Description Table (XSDT)
   Version is updated with a bit map containing all the versions of ACPI of which the table is a
-  member.
+  member. For tables installed via the EFI_ACPI_TABLE_PROTOCOL.InstallAcpiTable() interface,
+  the function returns the value of EFI_ACPI_STD_PROTOCOL.AcpiVersion.
 
   @param[in]    Index       The zero-based index of the table to retrieve.
   @param[out]   Table       Pointer for returning the table buffer.
   @param[out]   Version     On return, updated with the ACPI versions to which this table belongs. Type
                             EFI_ACPI_TABLE_VERSION is defined in "Related Definitions" in the
                             EFI_ACPI_SDT_PROTOCOL.
-  @param[out]   TableKey    On return, points to the table key for the specified ACPI system definition table. This
-                            is identical to the table key used in the EFI_ACPI_TABLE_PROTOCOL.
-
+  @param[out]   TableKey    On return, points to the table key for the specified ACPI system definition table.
+                            This is identical to the table key used in the EFI_ACPI_TABLE_PROTOCOL.
+                            The TableKey can be passed to EFI_ACPI_TABLE_PROTOCOL.UninstallAcpiTable()
+                            to uninstall the table.
   @retval EFI_SUCCESS       The function completed successfully.
   @retval EFI_NOT_FOUND     The requested index is too large and a table was not found.
 **/
@@ -1039,54 +1041,6 @@ FindPath (
 }
 
 /**
-  ExitPmAuth Protocol notification event handler.
-
-  @param[in] Event    Event whose notification function is being invoked.
-  @param[in] Context  Pointer to the notification function's context.
-**/
-VOID
-EFIAPI
-ExitPmAuthNotification (
-  IN EFI_EVENT  Event,
-  IN VOID       *Context
-  )
-{
-  EFI_STATUS Status;
-  VOID       *DxeSmmReadyToLock;
-
-  //
-  // Add more check to locate protocol after got event, because
-  // the library will signal this event immediately once it is register
-  // just in case it is already installed.
-  //
-  Status = gBS->LocateProtocol (
-                  &gEfiDxeSmmReadyToLockProtocolGuid,
-                  NULL,
-                  &DxeSmmReadyToLock
-                  );
-  if (EFI_ERROR (Status)) {
-    return ;
-  }
-
-  //
-  // Uninstall ACPI SDT protocol, so that we can make sure no one update ACPI table from API level.
-  //
-  Status = gBS->UninstallProtocolInterface (
-                  mHandle,
-                  &gEfiAcpiSdtProtocolGuid,
-                  &mPrivateData->AcpiSdtProtocol
-                  );
-  ASSERT_EFI_ERROR (Status);
-
-  //
-  // Close event, so it will not be invoked again.
-  //
-  gBS->CloseEvent (Event);
-
-  return ;
-}
-
-/**
   This function initializes AcpiSdt protocol in ACPI table instance.
 
   @param[in]  AcpiTableInstance       Instance to construct
@@ -1096,21 +1050,10 @@ SdtAcpiTableAcpiSdtConstructor (
   IN EFI_ACPI_TABLE_INSTANCE   *AcpiTableInstance
   )
 {
-  VOID *Registration;
 
   InitializeListHead (&AcpiTableInstance->NotifyList);
   CopyMem (&AcpiTableInstance->AcpiSdtProtocol, &mAcpiSdtProtocolTemplate, sizeof(mAcpiSdtProtocolTemplate));
-
-  //
-  // Register event for ExitPmAuth, so that we can uninstall ACPI SDT protocol after ExitPmAuth.
-  //
-  EfiCreateProtocolNotifyEvent (
-    &gEfiDxeSmmReadyToLockProtocolGuid,
-    TPL_CALLBACK,
-    ExitPmAuthNotification,
-    NULL,
-    &Registration
-    );
+  AcpiTableInstance->AcpiSdtProtocol.AcpiVersion = (EFI_ACPI_TABLE_VERSION)PcdGet32 (PcdAcpiExposedTableVersions);
 
   return ;
 }

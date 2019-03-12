@@ -1,7 +1,7 @@
 /** @file
   Implementation of synchronization functions.
 
-  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -104,7 +104,11 @@ AcquireSpinLock (
   INT64   Cycle;
   INT64   Delta;
 
-  if (PcdGet32 (PcdSpinLockTimeout) > 0) {
+  if (PcdGet32 (PcdSpinLockTimeout) == 0) {
+    while (!AcquireSpinLockOrFail (SpinLock)) {
+      CpuPause ();
+    }
+  } else if (!AcquireSpinLockOrFail (SpinLock)) {
     //
     // Get the current timer value
     //
@@ -147,10 +151,6 @@ AcquireSpinLock (
       }
       Total += Delta;
       ASSERT (Total < Timeout);
-    }
-  } else {
-    while (!AcquireSpinLockOrFail (SpinLock)) {
-      CpuPause ();
     }
   }
   return SpinLock;
@@ -244,7 +244,7 @@ ReleaseSpinLock (
 UINT32
 EFIAPI
 InterlockedIncrement (
-  IN      UINT32                    *Value
+  IN      volatile UINT32           *Value
   )
 {
   ASSERT (Value != NULL);
@@ -269,11 +269,42 @@ InterlockedIncrement (
 UINT32
 EFIAPI
 InterlockedDecrement (
-  IN      UINT32                    *Value
+  IN      volatile UINT32           *Value
   )
 {
   ASSERT (Value != NULL);
   return InternalSyncDecrement (Value);
+}
+
+/**
+  Performs an atomic compare exchange operation on a 16-bit unsigned integer.
+
+  Performs an atomic compare exchange operation on the 16-bit unsigned integer
+  specified by Value.  If Value is equal to CompareValue, then Value is set to
+  ExchangeValue and CompareValue is returned.  If Value is not equal to CompareValue,
+  then Value is returned.  The compare exchange operation must be performed using
+  MP safe mechanisms.
+
+  If Value is NULL, then ASSERT().
+
+  @param  Value         A pointer to the 16-bit value for the compare exchange
+                        operation.
+  @param  CompareValue  16-bit value used in compare operation.
+  @param  ExchangeValue 16-bit value used in exchange operation.
+
+  @return The original *Value before exchange.
+
+**/
+UINT16
+EFIAPI
+InterlockedCompareExchange16 (
+  IN OUT  volatile UINT16           *Value,
+  IN      UINT16                    CompareValue,
+  IN      UINT16                    ExchangeValue
+  )
+{
+  ASSERT (Value != NULL);
+  return InternalSyncCompareExchange16 (Value, CompareValue, ExchangeValue);
 }
 
 /**
@@ -298,7 +329,7 @@ InterlockedDecrement (
 UINT32
 EFIAPI
 InterlockedCompareExchange32 (
-  IN OUT  UINT32                    *Value,
+  IN OUT  volatile UINT32           *Value,
   IN      UINT32                    CompareValue,
   IN      UINT32                    ExchangeValue
   )
@@ -328,7 +359,7 @@ InterlockedCompareExchange32 (
 UINT64
 EFIAPI
 InterlockedCompareExchange64 (
-  IN OUT  UINT64                    *Value,
+  IN OUT  volatile UINT64           *Value,
   IN      UINT64                    CompareValue,
   IN      UINT64                    ExchangeValue
   )
@@ -358,7 +389,7 @@ InterlockedCompareExchange64 (
 VOID *
 EFIAPI
 InterlockedCompareExchangePointer (
-  IN OUT  VOID                      **Value,
+  IN OUT  VOID                      * volatile *Value,
   IN      VOID                      *CompareValue,
   IN      VOID                      *ExchangeValue
   )
@@ -370,13 +401,13 @@ InterlockedCompareExchangePointer (
   switch (SizeOfValue) {
     case sizeof (UINT32):
       return (VOID*)(UINTN)InterlockedCompareExchange32 (
-                             (UINT32*)Value,
+                             (volatile UINT32 *)Value,
                              (UINT32)(UINTN)CompareValue,
                              (UINT32)(UINTN)ExchangeValue
                              );
     case sizeof (UINT64):
       return (VOID*)(UINTN)InterlockedCompareExchange64 (
-                             (UINT64*)Value,
+                             (volatile UINT64 *)Value,
                              (UINT64)(UINTN)CompareValue,
                              (UINT64)(UINTN)ExchangeValue
                              );

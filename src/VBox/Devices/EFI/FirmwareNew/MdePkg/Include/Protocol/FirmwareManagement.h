@@ -8,7 +8,7 @@
   CheckImage(), GetPackageInfo(), and SetPackageInfo() shall return
   EFI_UNSUPPORTED if not supported by the driver.
 
-  Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2013 - 2014, Hewlett-Packard Development Company, L.P.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -154,6 +154,7 @@ typedef struct {
 //
 // Image Compatibility Definitions
 //
+///
 /// Values from 0x0000000000000002 thru 0x000000000000FFFF are reserved for future assignments.
 /// Values from 0x0000000000010000 thru 0xFFFFFFFFFFFFFFFF are used by firmware vendor for
 /// compatibility check.
@@ -167,7 +168,7 @@ typedef struct {
 
 
 ///
-/// Image Attribute -Authentication Required
+/// Image Attribute - Authentication Required
 ///
 typedef struct {
   ///
@@ -191,7 +192,9 @@ typedef struct {
 //
 ///
 /// IMAGE_UPDATABLE_VALID indicates SetImage() will accept the new image and update the
-/// device with the new image.
+/// device with the new image. The version of the new image could be higher or lower than
+/// the current image. SetImage VendorCode is optional but can be used for vendor
+/// specific action.
 ///
 #define  IMAGE_UPDATABLE_VALID                     0x0000000000000001
 ///
@@ -211,6 +214,12 @@ typedef struct {
 /// version downgrade.
 ///
 #define  IMAGE_UPDATABLE_INVALID_OLD               0x0000000000000008
+///
+/// IMAGE_UPDATABLE_VALID_WITH_VENDOR_CODE indicates SetImage() will accept and update
+/// the new image only if a correct VendorCode is provided or else image would be
+/// rejected and SetImage will return appropriate error.
+///
+#define IMAGE_UPDATABLE_VALID_WITH_VENDOR_CODE     0x0000000000000010
 
 
 //
@@ -233,7 +242,7 @@ typedef struct {
 #define  PACKAGE_ATTRIBUTE_AUTHENTICATION_REQUIRED 0x0000000000000004
 
 /**
-  Callback funtion to report the process of the firmware updating.
+  Callback function to report the process of the firmware updating.
 
   @param[in]  Completion    A value between 1 and 100 indicating the current completion
                             progress of the firmware update. Completion progress is
@@ -308,11 +317,11 @@ EFI_STATUS
   This function allows a copy of the current firmware image to be created and saved.
   The saved copy could later been used, for example, in firmware image recovery or rollback.
 
-  @param[in]  This               A pointer to the EFI_FIRMWARE_MANAGEMENT_PROTOCOL instance.
-  @param[in]  ImageIndex         A unique number identifying the firmware image(s) within the device.
+  @param[in]      This           A pointer to the EFI_FIRMWARE_MANAGEMENT_PROTOCOL instance.
+  @param[in]      ImageIndex     A unique number identifying the firmware image(s) within the device.
                                  The number is between 1 and DescriptorCount.
-  @param[out] Image              Points to the buffer where the current image is copied to.
-  @param[out] ImageSize          On entry, points to the size of the buffer pointed to by Image, in bytes.
+  @param[in, out] Image          Points to the buffer where the current image is copied to.
+  @param[in, out] ImageSize      On entry, points to the size of the buffer pointed to by Image, in bytes.
                                  On return, points to the length of the image, in bytes.
 
   @retval EFI_SUCCESS            The device was successfully updated with the new image.
@@ -322,7 +331,7 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER  The Image was NULL.
   @retval EFI_NOT_FOUND          The current image is not copied to the buffer.
   @retval EFI_UNSUPPORTED        The operation is not supported.
-  @retval EFI_SECURITY_VIOLATIO  The operation could not be performed due to an authentication failure.
+  @retval EFI_SECURITY_VIOLATION The operation could not be performed due to an authentication failure.
 
 **/
 typedef
@@ -377,7 +386,7 @@ EFI_STATUS
   @retval EFI_ABORTED            The operation is aborted.
   @retval EFI_INVALID_PARAMETER  The Image was NULL.
   @retval EFI_UNSUPPORTED        The operation is not supported.
-  @retval EFI_SECURITY_VIOLATIO  The operation could not be performed due to an authentication failure.
+  @retval EFI_SECURITY_VIOLATION The operation could not be performed due to an authentication failure.
 
 **/
 typedef
@@ -409,7 +418,7 @@ EFI_STATUS
   @retval EFI_SUCCESS            The image was successfully checked.
   @retval EFI_INVALID_PARAMETER  The Image was NULL.
   @retval EFI_UNSUPPORTED        The operation is not supported.
-  @retval EFI_SECURITY_VIOLATIO  The operation could not be performed due to an authentication failure.
+  @retval EFI_SECURITY_VIOLATION The operation could not be performed due to an authentication failure.
 
 **/
 typedef
@@ -493,7 +502,7 @@ EFI_STATUS
   @retval EFI_INVALID_PARAMETER  The PackageVersionName length is longer than the value
                                  returned in PackageVersionNameMaxLen.
   @retval EFI_UNSUPPORTED        The operation is not supported.
-  @retval EFI_SECURITY_VIOLATIO  The operation could not be performed due to an authentication failure.
+  @retval EFI_SECURITY_VIOLATION The operation could not be performed due to an authentication failure.
 
 **/
 typedef

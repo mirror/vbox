@@ -1,7 +1,7 @@
 /** @file
   QEMU Video Controller Driver
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -35,8 +35,10 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/DevicePathLib.h>
 #include <Library/TimerLib.h>
+#include <Library/FrameBufferBltLib.h>
 
 #include <IndustryStandard/Pci.h>
+#include <IndustryStandard/Acpi.h>
 
 //
 // QEMU Video PCI Configuration Header values
@@ -54,7 +56,6 @@ typedef struct {
   UINT32  HorizontalResolution;
   UINT32  VerticalResolution;
   UINT32  ColorDepth;
-  UINT32  RefreshRate;
 } QEMU_VIDEO_MODE_DATA;
 
 #define PIXEL_RED_SHIFT   0
@@ -91,6 +92,7 @@ typedef enum {
   QEMU_VIDEO_CIRRUS_5446,
   QEMU_VIDEO_BOCHS,
   QEMU_VIDEO_BOCHS_MMIO,
+  QEMU_VIDEO_VMWARE_SVGA,
 } QEMU_VIDEO_VARIANT;
 
 typedef struct {
@@ -109,16 +111,18 @@ typedef struct {
   EFI_DEVICE_PATH_PROTOCOL              *GopDevicePath;
 
   //
-  // The next three fields match the client-visible
-  // EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE.Mode and
-  // EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE.MaxMode fields.
+  // The next two fields match the client-visible
+  // EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE.MaxMode field.
   //
-  UINTN                                 CurrentMode;
   UINTN                                 MaxMode;
   QEMU_VIDEO_MODE_DATA                  *ModeData;
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION  *VmwareSvgaModeInfo;
 
-  UINT8                                 *LineBuffer;
   QEMU_VIDEO_VARIANT                    Variant;
+  FRAME_BUFFER_CONFIGURE                *FrameBufferBltConfigure;
+  UINTN                                 FrameBufferBltConfigureSize;
+  UINT8                                 FrameBufferVramBarIndex;
+  UINT16                                VmwareSvgaBasePort;
 } QEMU_VIDEO_PRIVATE_DATA;
 
 ///
@@ -128,7 +132,6 @@ typedef struct {
   UINT32  Width;
   UINT32  Height;
   UINT32  ColorDepth;
-  UINT32  RefreshRate;
   UINT8   *CrtcSettings;
   UINT16  *SeqSettings;
   UINT8   MiscSetting;
@@ -503,9 +506,34 @@ QemuVideoBochsModeSetup (
   BOOLEAN                  IsQxl
   );
 
+EFI_STATUS
+QemuVideoVmwareSvgaModeSetup (
+  QEMU_VIDEO_PRIVATE_DATA *Private
+  );
+
 VOID
 InstallVbeShim (
   IN CONST CHAR16         *CardName,
   IN EFI_PHYSICAL_ADDRESS FrameBufferBase
   );
+
+VOID
+VmwareSvgaWrite (
+  QEMU_VIDEO_PRIVATE_DATA *Private,
+  UINT16                  Register,
+  UINT32                  Value
+  );
+
+UINT32
+VmwareSvgaRead (
+  QEMU_VIDEO_PRIVATE_DATA *Private,
+  UINT16                  Register
+  );
+
+VOID
+InitializeVmwareSvgaGraphicsMode (
+  QEMU_VIDEO_PRIVATE_DATA  *Private,
+  QEMU_VIDEO_BOCHS_MODES   *ModeData
+  );
+
 #endif

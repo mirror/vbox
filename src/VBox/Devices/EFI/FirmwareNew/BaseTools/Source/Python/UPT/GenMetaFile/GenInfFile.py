@@ -2,7 +2,7 @@
 #
 # This file contained the logical of transfer package object to INF files.
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2017, Intel Corporation. All rights reserved.<BR>
 #
 # This program and the accompanying materials are licensed and made available
 # under the terms and conditions of the BSD License which accompanies this
@@ -41,6 +41,7 @@ import Logger.Log as Logger
 from Library import DataType as DT
 from GenMetaFile import GenMetaFileMisc
 from Library.UniClassObject import FormatUniEntry
+from Library.String import GetUniFileName
 
 
 ## Transfer Module Object to Inf files
@@ -139,7 +140,9 @@ def ModuleToInf(ModuleObject, PackageObject=None, DistHeader=None):
     #
     FileHeader = GenHeaderCommentSection(ModuleAbstract, ModuleDescription, ModuleCopyright, ModuleLicense, False, \
                                          DT.TAB_COMMENT_EDK1_SPLIT)
-    GenModuleUNIEncodeFile(ModuleObject, FileHeader)
+    ModuleUniFile = GenModuleUNIEncodeFile(ModuleObject, FileHeader)
+    if ModuleUniFile:
+        ModuleObject.SetModuleUniFile(os.path.basename(ModuleUniFile))
 
     #
     # Judge whether the INF file is an AsBuild INF.
@@ -168,15 +171,16 @@ def ModuleToInf(ModuleObject, PackageObject=None, DistHeader=None):
     Content += GenGuidSections(ModuleObject.GetGuidList())
     Content += GenBinaries(ModuleObject)
     Content += GenDepex(ModuleObject)
-    Content += GenUserExtensions(ModuleObject)
+    __UserExtensionsContent = GenUserExtensions(ModuleObject)
+    Content += __UserExtensionsContent
     if ModuleObject.GetEventList() or ModuleObject.GetBootModeList() or ModuleObject.GetHobList():
         Content += '\n'
     #
     # generate [Event], [BootMode], [Hob] section
     #
-    Content += GenSpecialSections(ModuleObject.GetEventList(), 'Event')
-    Content += GenSpecialSections(ModuleObject.GetBootModeList(), 'BootMode')
-    Content += GenSpecialSections(ModuleObject.GetHobList(), 'Hob')
+    Content += GenSpecialSections(ModuleObject.GetEventList(), 'Event', __UserExtensionsContent)
+    Content += GenSpecialSections(ModuleObject.GetBootModeList(), 'BootMode', __UserExtensionsContent)
+    Content += GenSpecialSections(ModuleObject.GetHobList(), 'Hob', __UserExtensionsContent)
     SaveFileOnChange(ContainerFile, Content, False)
     if DistHeader.ReadOnly:
         os.chmod(ContainerFile, stat.S_IRUSR|stat.S_IRGRP|stat.S_IROTH)
@@ -225,8 +229,8 @@ def GenModuleUNIEncodeFile(ModuleObject, UniFileHeader='', Encoding=DT.TAB_ENCOD
         return
     else:
         ModuleObject.UNIFlag = True
-    ContainerFile = os.path.normpath(os.path.join(os.path.dirname(ModuleObject.GetFullPath()),
-                                                  (ModuleObject.GetBaseName() + '.uni')))
+    ContainerFile = GetUniFileName(os.path.dirname(ModuleObject.GetFullPath()), ModuleObject.GetBaseName())
+
     if not os.path.exists(os.path.dirname(ModuleObject.GetFullPath())):
         os.makedirs(os.path.dirname(ModuleObject.GetFullPath()))
 
@@ -308,7 +312,7 @@ def GenDefines(ModuleObject):
     # TAB_INF_DEFINES_VERSION_STRING
     if ModuleObject.UNIFlag:
         Statement = (u'%s ' % DT.TAB_INF_DEFINES_MODULE_UNI_FILE).ljust(LeftOffset) + \
-                    u'= %s' % ModuleObject.GetBaseName() + '.uni'
+                    u'= %s' % ModuleObject.GetModuleUniFile()
         SpecialStatementList.append(Statement)
 
     # TAB_INF_DEFINES_MODULE_TYPE
@@ -566,8 +570,9 @@ def GenUserExtensions(ModuleObject):
         if UserExtension.GetIdentifier() == 'Depex':
             continue
         Statement = UserExtension.GetStatement()
-        if not Statement:
-            continue
+# Comment the code to support user extension without any statement just the section header in []
+#         if not Statement:
+#             continue
         ArchList = UserExtension.GetSupArchList()
         for Index in xrange(0, len(ArchList)):
             ArchList[Index] = ConvertArchForInstall(ArchList[Index])
@@ -978,7 +983,7 @@ def GenAsBuiltPcdExSections(ModuleObject):
 ## GenSpecialSections
 #  generate special sections for Event/BootMode/Hob
 #
-def GenSpecialSections(ObjectList, SectionName):
+def GenSpecialSections(ObjectList, SectionName, UserExtensionsContent=''):
     #
     # generate section
     #
@@ -1001,6 +1006,11 @@ def GenSpecialSections(ObjectList, SectionName):
         else:
             assert(SectionName)
         Usage = Obj.GetUsage()
+
+        # If the content already in UserExtensionsContent then ignore
+        if '[%s]' % SectionName in UserExtensionsContent and Type in UserExtensionsContent:
+            return ''
+
         Statement = ' ' + Type + ' ## ' + Usage
         if CommentStr in ['#\n', '#\n#\n']:
             CommentStr = '#\n#\n#\n'

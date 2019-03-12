@@ -1,7 +1,7 @@
 /** @file
   Image signature database are defined for the signed image validation.
 
-  Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2016, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -11,13 +11,14 @@
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
   @par Revision Reference:
-  GUIDs defined in UEFI 2.3.1 spec.
+  GUIDs defined in UEFI 2.5 spec.
 **/
 
 #ifndef __IMAGE_AUTHTICATION_H__
 #define __IMAGE_AUTHTICATION_H__
 
 #include <Guid/GlobalVariable.h>
+#include <Protocol/Hash.h>
 
 #define EFI_IMAGE_SECURITY_DATABASE_GUID \
   { \
@@ -34,12 +35,17 @@
 /// for the forbidden signature database.
 ///
 #define EFI_IMAGE_SECURITY_DATABASE1      L"dbx"
+///
+/// Variable name with guid EFI_IMAGE_SECURITY_DATABASE_GUID
+/// for the timestamp signature database.
+///
+#define EFI_IMAGE_SECURITY_DATABASE2      L"dbt"
 
 #define SECURE_BOOT_MODE_ENABLE           1
 #define SECURE_BOOT_MODE_DISABLE          0
+
 #define SETUP_MODE                        1
 #define USER_MODE                         0
-
 
 //***********************************************************************
 // Signature Database
@@ -86,6 +92,39 @@ typedef struct {
   /// EFI_SIGNATURE_DATA Signatures[][SignatureSize];
   ///
 } EFI_SIGNATURE_LIST;
+
+typedef struct {
+  ///
+  /// The SHA256 hash of an X.509 certificate's To-Be-Signed contents.
+  ///
+  EFI_SHA256_HASH     ToBeSignedHash;
+  ///
+  /// The time that the certificate shall be considered to be revoked.
+  ///
+  EFI_TIME            TimeOfRevocation;
+} EFI_CERT_X509_SHA256;
+
+typedef struct {
+  ///
+  /// The SHA384 hash of an X.509 certificate's To-Be-Signed contents.
+  ///
+  EFI_SHA384_HASH     ToBeSignedHash;
+  ///
+  /// The time that the certificate shall be considered to be revoked.
+  ///
+  EFI_TIME            TimeOfRevocation;
+} EFI_CERT_X509_SHA384;
+
+typedef struct {
+  ///
+  /// The SHA512 hash of an X.509 certificate's To-Be-Signed contents.
+  ///
+  EFI_SHA512_HASH     ToBeSignedHash;
+  ///
+  /// The time that the certificate shall be considered to be revoked.
+  ///
+  EFI_TIME            TimeOfRevocation;
+} EFI_CERT_X509_SHA512;
 
 #pragma pack()
 
@@ -185,6 +224,45 @@ typedef struct {
   }
 
 ///
+/// This identifies a signature containing the SHA256 hash of an X.509 certificate's
+/// To-Be-Signed contents, and a time of revocation. The SignatureHeader size shall
+/// always be 0. The SignatureSize shall always be 16 (size of the SignatureOwner component)
+/// + 48 bytes for an EFI_CERT_X509_SHA256 structure. If the TimeOfRevocation is non-zero,
+/// the certificate should be considered to be revoked from that time and onwards, and
+/// otherwise the certificate shall be considered to always be revoked.
+///
+#define EFI_CERT_X509_SHA256_GUID \
+  { \
+    0x3bd2a492, 0x96c0, 0x4079, {0xb4, 0x20, 0xfc, 0xf9, 0x8e, 0xf1, 0x03, 0xed } \
+  }
+
+///
+/// This identifies a signature containing the SHA384 hash of an X.509 certificate's
+/// To-Be-Signed contents, and a time of revocation. The SignatureHeader size shall
+/// always be 0. The SignatureSize shall always be 16 (size of the SignatureOwner component)
+/// + 64 bytes for an EFI_CERT_X509_SHA384 structure. If the TimeOfRevocation is non-zero,
+/// the certificate should be considered to be revoked from that time and onwards, and
+/// otherwise the certificate shall be considered to always be revoked.
+///
+#define EFI_CERT_X509_SHA384_GUID \
+  { \
+    0x7076876e, 0x80c2, 0x4ee6, {0xaa, 0xd2, 0x28, 0xb3, 0x49, 0xa6, 0x86, 0x5b } \
+  }
+
+///
+/// This identifies a signature containing the SHA512 hash of an X.509 certificate's
+/// To-Be-Signed contents, and a time of revocation. The SignatureHeader size shall
+/// always be 0. The SignatureSize shall always be 16 (size of the SignatureOwner component)
+/// + 80 bytes for an EFI_CERT_X509_SHA512 structure. If the TimeOfRevocation is non-zero,
+/// the certificate should be considered to be revoked from that time and onwards, and
+/// otherwise the certificate shall be considered to always be revoked.
+///
+#define EFI_CERT_X509_SHA512_GUID \
+  { \
+    0x446dbf63, 0x2502, 0x4cda, {0xbc, 0xfa, 0x24, 0x65, 0xd2, 0xb0, 0xfe, 0x9d } \
+  }
+
+///
 /// This identifies a signature containing a DER-encoded PKCS #7 version 1.5 [RFC2315]
 /// SignedData value.
 ///
@@ -240,8 +318,8 @@ typedef struct {
   ///
   /// Zero or more image signatures. If the image contained no signatures,
   /// then this field is empty.
+  /// EFI_SIGNATURE_LIST            Signature;
   ///
-  EFI_SIGNATURE_LIST            Signature;
 } EFI_IMAGE_EXECUTION_INFO;
 
 
@@ -266,6 +344,9 @@ extern EFI_GUID gEfiCertX509Guid;
 extern EFI_GUID gEfiCertSha224Guid;
 extern EFI_GUID gEfiCertSha384Guid;
 extern EFI_GUID gEfiCertSha512Guid;
+extern EFI_GUID gEfiCertX509Sha256Guid;
+extern EFI_GUID gEfiCertX509Sha384Guid;
+extern EFI_GUID gEfiCertX509Sha512Guid;
 extern EFI_GUID gEfiCertPkcs7Guid;
 
 #endif

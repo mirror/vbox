@@ -1,7 +1,7 @@
 /** @file
   Helper functions for configuring or getting the parameters relating to iSCSI.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -684,7 +684,7 @@ IScsiFormCallback (
 
   Private   = ISCSI_FORM_CALLBACK_INFO_FROM_FORM_CALLBACK (This);
   //
-  // Retrive uncommitted data from Browser
+  // Retrieve uncommitted data from Browser
   //
   IfrNvData = AllocateZeroPool (sizeof (ISCSI_CONFIG_IFR_NVDATA));
   ASSERT (IfrNvData != NULL);
@@ -727,7 +727,9 @@ IScsiFormCallback (
     case KEY_LOCAL_IP:
       IScsiUnicodeStrToAsciiStr (IfrNvData->LocalIp, Ip4String);
       Status = IScsiAsciiStrToIp (Ip4String, &HostIp.v4);
-      if (EFI_ERROR (Status) || !NetIp4IsUnicast (NTOHL (HostIp.Addr[0]), 0)) {
+      if (EFI_ERROR (Status) ||
+          ((Private->Current->SessionConfigData.SubnetMask.Addr[0] != 0) &&
+           !NetIp4IsUnicast (NTOHL (HostIp.Addr[0]), NTOHL(*(UINT32*)Private->Current->SessionConfigData.SubnetMask.Addr)))) {
         CreatePopUp (EFI_LIGHTGRAY | EFI_BACKGROUND_BLUE, &Key, L"Invalid IP address!", NULL);
         Status = EFI_INVALID_PARAMETER;
       } else {
@@ -751,7 +753,10 @@ IScsiFormCallback (
     case KEY_GATE_WAY:
       IScsiUnicodeStrToAsciiStr (IfrNvData->Gateway, Ip4String);
       Status = IScsiAsciiStrToIp (Ip4String, &Gateway.v4);
-      if (EFI_ERROR (Status) || ((Gateway.Addr[0] != 0) && !NetIp4IsUnicast (NTOHL (Gateway.Addr[0]), 0))) {
+      if (EFI_ERROR (Status) ||
+          ((Gateway.Addr[0] != 0) &&
+           (Private->Current->SessionConfigData.SubnetMask.Addr[0] != 0) &&
+           !NetIp4IsUnicast (NTOHL (Gateway.Addr[0]), NTOHL(*(UINT32*)Private->Current->SessionConfigData.SubnetMask.Addr)))) {
         CreatePopUp (EFI_LIGHTGRAY | EFI_BACKGROUND_BLUE, &Key, L"Invalid Gateway!", NULL);
         Status = EFI_INVALID_PARAMETER;
       } else {
@@ -763,7 +768,7 @@ IScsiFormCallback (
     case KEY_TARGET_IP:
       IScsiUnicodeStrToAsciiStr (IfrNvData->TargetIp, Ip4String);
       Status = IScsiAsciiStrToIp (Ip4String, &HostIp.v4);
-      if (EFI_ERROR (Status) || !NetIp4IsUnicast (NTOHL (HostIp.Addr[0]), 0)) {
+      if (EFI_ERROR (Status) || IP4_IS_LOCAL_BROADCAST (EFI_NTOHL(HostIp.v4)) || IP4_IS_UNSPECIFIED (EFI_NTOHL(HostIp.v4))) {
         CreatePopUp (EFI_LIGHTGRAY | EFI_BACKGROUND_BLUE, &Key, L"Invalid IP address!", NULL);
         Status = EFI_INVALID_PARAMETER;
       } else {
@@ -778,7 +783,7 @@ IScsiFormCallback (
       if (EFI_ERROR (Status)) {
         CreatePopUp (EFI_LIGHTGRAY | EFI_BACKGROUND_BLUE, &Key, L"Invalid iSCSI Name!", NULL);
       } else {
-        AsciiStrCpy (Private->Current->SessionConfigData.TargetName, IScsiName);
+        AsciiStrCpyS (Private->Current->SessionConfigData.TargetName, ISCSI_NAME_MAX_SIZE, IScsiName);
       }
 
       break;
@@ -867,11 +872,28 @@ IScsiFormCallback (
         //
         if (!Private->Current->SessionConfigData.TargetInfoFromDhcp) {
           CopyMem (&HostIp.v4, &Private->Current->SessionConfigData.TargetIp, sizeof (HostIp.v4));
-          if (!NetIp4IsUnicast (NTOHL (HostIp.Addr[0]), 0)) {
+          if (IP4_IS_UNSPECIFIED (NTOHL (HostIp.Addr[0])) || IP4_IS_LOCAL_BROADCAST (NTOHL (HostIp.Addr[0]))) {
             CreatePopUp (EFI_LIGHTGRAY | EFI_BACKGROUND_BLUE, &Key, L"Target IP is invalid!", NULL);
             Status = EFI_INVALID_PARAMETER;
             break;
           }
+
+          //
+          // Validate iSCSI target name configuration again:
+          // The format of iSCSI target name is already verified when user input the name;
+          // here we only check the case user does not input the name.
+          //
+          if (Private->Current->SessionConfigData.TargetName[0] == '\0') {
+            CreatePopUp (
+              EFI_LIGHTGRAY | EFI_BACKGROUND_BLUE,
+              &Key,
+              L"iSCSI target name is NULL!",
+              NULL
+              );
+            Status = EFI_INVALID_PARAMETER;
+            break;
+          }
+
         }
 
         if (IfrNvData->CHAPType != ISCSI_CHAP_NONE) {
@@ -1054,6 +1076,7 @@ IScsiConfigUpdateForm (
     mNumberOfIScsiDevices--;
     RemoveEntryList (&ConfigFormEntry->Link);
     FreePool (ConfigFormEntry);
+    mCallbackInfo->Current = NULL;
   }
   //
   // Allocate space for creation of Buffer

@@ -1,7 +1,7 @@
 /** @file
   Processor or Compiler specific defines and types for ARM.
 
-  Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
   Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -24,13 +24,20 @@
 //
 // Make sure we are using the correct packing rules per EFI specification
 //
-#ifndef __GNUC__
+#if !defined(__GNUC__) && !defined(__ASSEMBLER__)
 #pragma pack()
+#endif
+
+//
+// RVCT does not support the __builtin_unreachable() macro
+//
+#ifdef __ARMCC_VERSION
+#define UNREACHABLE()
 #endif
 
 #if _MSC_EXTENSIONS
   //
-  // use Microsoft* C complier dependent integer width types
+  // use Microsoft* C compiler dependent integer width types
   //
   typedef unsigned __int64    UINT64;
   typedef __int64             INT64;
@@ -99,9 +106,20 @@ typedef INT32   INTN;
 #define MAX_UINTN  ((UINTN)0xFFFFFFFF)
 
 ///
+/// Minimum legal ARM INTN value.
+///
+#define MIN_INTN   (((INTN)-2147483647) - 1)
+
+///
 /// The stack alignment required for ARM
 ///
 #define CPU_STACK_ALIGNMENT  sizeof(UINT64)
+
+///
+/// Page allocation granularity for ARM
+///
+#define DEFAULT_PAGE_ALLOCATION_GRANULARITY   (0x1000)
+#define RUNTIME_PAGE_ALLOCATION_GRANULARITY   (0x1000)
 
 //
 // Modifier to ensure that all protocol member functions and EFI intrinsics
@@ -110,7 +128,9 @@ typedef INT32   INTN;
 //
 #define EFIAPI
 
-#if defined(__GNUC__)
+// When compiling with Clang, we still use GNU as for the assembler, so we still
+// need to define the GCC_ASM* macros.
+#if defined(__GNUC__) || defined(__clang__)
   ///
   /// For GNU assembly code, .global or .globl can declare global symbols.
   /// Define this macro to unify the usage.

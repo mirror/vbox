@@ -1,8 +1,9 @@
 /** @file
   Provides interface to shell console logger.
 
-  Copyright (c) 2013 Hewlett-Packard Development Company, L.P.
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2013 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2016 Hewlett-Packard Development Company, L.P.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -28,7 +29,6 @@
   @sa InstallProtocolInterface
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerInstall(
   IN CONST UINTN ScreensToSave,
   OUT CONSOLE_LOGGER_PRIVATE_DATA **ConsoleInfo
@@ -91,6 +91,15 @@ ConsoleLoggerInstall(
   gST->ConsoleOutHandle = gImageHandle;
   gST->ConOut           = &(*ConsoleInfo)->OurConOut;
 
+  //
+  // Update the CRC32 in the EFI System Table header
+  //
+  gST->Hdr.CRC32 = 0;
+  gBS->CalculateCrc32 (
+        (UINT8 *)&gST->Hdr,
+        gST->Hdr.HeaderSize,
+        &gST->Hdr.CRC32
+        );
   return (Status);
 }
 
@@ -104,7 +113,6 @@ ConsoleLoggerInstall(
   @return other           The operation failed.  This was from UninstallProtocolInterface.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerUninstall(
   IN CONSOLE_LOGGER_PRIVATE_DATA *ConsoleInfo
   )
@@ -126,6 +134,16 @@ ConsoleLoggerUninstall(
   gST->ConsoleOutHandle = ConsoleInfo->OldConHandle;
   gST->ConOut = ConsoleInfo->OldConOut;
 
+  //
+  // Update the CRC32 in the EFI System Table header
+  //
+  gST->Hdr.CRC32 = 0;
+  gBS->CalculateCrc32 (
+        (UINT8 *)&gST->Hdr,
+        gST->Hdr.HeaderSize,
+        &gST->Hdr.CRC32
+        );
+
   return (gBS->UninstallProtocolInterface(gImageHandle, &gEfiSimpleTextOutProtocolGuid, (VOID*)&ConsoleInfo->OurConOut));
 }
 
@@ -142,7 +160,6 @@ ConsoleLoggerUninstall(
   @param[in] ConsoleInfo  The pointer to the instance of the console logger information.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerDisplayHistory(
   IN CONST BOOLEAN  Forward,
   IN CONST UINTN    Rows,
@@ -218,7 +235,6 @@ ConsoleLoggerDisplayHistory(
   @sa UpdateDisplayFromHistory
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerStopHistory(
   IN CONSOLE_LOGGER_PRIVATE_DATA *ConsoleInfo
   )
@@ -227,6 +243,12 @@ ConsoleLoggerStopHistory(
   if (ConsoleInfo->CurrentStartRow == ConsoleInfo->OriginalStartRow) {
     return (EFI_SUCCESS);
   }
+
+  //
+  // Clear the screen
+  //
+  ConsoleInfo->OldConOut->ClearScreen(ConsoleInfo->OldConOut);
+
   ConsoleInfo->CurrentStartRow = ConsoleInfo->OriginalStartRow;
   return (UpdateDisplayFromHistory(ConsoleInfo));
 }
@@ -239,7 +261,6 @@ ConsoleLoggerStopHistory(
   @return other           The operation failed.
 **/
 EFI_STATUS
-EFIAPI
 UpdateDisplayFromHistory(
   IN CONSOLE_LOGGER_PRIVATE_DATA *ConsoleInfo
   )
@@ -301,7 +322,7 @@ UpdateDisplayFromHistory(
         //
         StringSegmentEndChar = CHAR_NULL;
         for ( StringSegmentEnd = StringSegment
-            ; StringSegmentEnd != CHAR_NULL
+            ; *StringSegmentEnd != CHAR_NULL
             ; StringSegmentEnd++
             , Column++
            ){
@@ -410,6 +431,10 @@ ConsoleLoggerReset (
   //
   if (!EFI_ERROR (Status)) {
     ConsoleLoggerResetBuffers(ConsoleInfo);
+    if (ExtendedVerification) {
+      ConsoleInfo->OriginalStartRow = 0;
+      ConsoleInfo->CurrentStartRow = 0;
+    }
   }
 
   return Status;
@@ -424,7 +449,6 @@ ConsoleLoggerReset (
   @param[in] ConsoleInfo  The pointer to the instance of the console logger information.
 **/
 EFI_STATUS
-EFIAPI
 AppendStringToHistory(
   IN CONST CHAR16 *String,
   IN CONSOLE_LOGGER_PRIVATE_DATA *ConsoleInfo
@@ -579,7 +603,6 @@ AppendStringToHistory(
                                   rendered and were skipped.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerOutputStringSplit(
   IN CONST CHAR16   *String,
   IN CONSOLE_LOGGER_PRIVATE_DATA *ConsoleInfo
@@ -608,7 +631,6 @@ ConsoleLoggerOutputStringSplit(
   @return other         Break was choosen
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerDoPageBreak(
   VOID
   )
@@ -667,7 +689,6 @@ ConsoleLoggerDoPageBreak(
                                   rendered and were skipped.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerPrintWithPageBreak(
   IN CONST CHAR16   *String,
   IN CONSOLE_LOGGER_PRIVATE_DATA *ConsoleInfo
@@ -963,8 +984,11 @@ ConsoleLoggerSetMode (
   // Check that the buffers are still correct for logging
   //
   if (!EFI_ERROR (Status)) {
-    ConsoleInfo->OurConOut.Mode = gST->ConOut->Mode;
+    ConsoleInfo->OurConOut.Mode = ConsoleInfo->OldConOut->Mode;
     ConsoleLoggerResetBuffers(ConsoleInfo);
+    ConsoleInfo->OriginalStartRow = 0;
+    ConsoleInfo->CurrentStartRow = 0;
+    ConsoleInfo->OurConOut.ClearScreen (&ConsoleInfo->OurConOut);
   }
 
   return Status;
@@ -1175,7 +1199,6 @@ ConsoleLoggerEnableCursor (
   history buffers.
 **/
 EFI_STATUS
-EFIAPI
 ConsoleLoggerResetBuffers(
   IN CONSOLE_LOGGER_PRIVATE_DATA *ConsoleInfo
   )

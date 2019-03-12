@@ -1,7 +1,7 @@
 /**@file
   Xen Platform PEI support
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2011, Andrei Warkentin <andreiw@motorola.com>
 
   This program and the accompanying materials
@@ -171,6 +171,7 @@ XenPublishRamRegions (
   //
   // Parse RAM in E820 map
   //
+  E820EntriesCount = 0;
   Status = XenGetE820Map (&E820Map, &E820EntriesCount);
 
   ASSERT_EFI_ERROR (Status);
@@ -189,11 +190,7 @@ XenPublishRamRegions (
         continue;
       }
 
-      if (Entry->BaseAddr >= BASE_4GB) {
-        AddUntestedMemoryBaseSizeHob (Entry->BaseAddr, Entry->Length);
-      } else {
-        AddMemoryBaseSizeHob (Entry->BaseAddr, Entry->Length);
-      }
+      AddMemoryBaseSizeHob (Entry->BaseAddr, Entry->Length);
 
       MtrrSetMemoryAttribute (Entry->BaseAddr, Entry->Length, CacheWriteBack);
     }
@@ -213,6 +210,8 @@ InitializeXen (
   VOID
   )
 {
+  RETURN_STATUS PcdStatus;
+
   if (mXenLeaf == 0) {
     return EFI_NOT_FOUND;
   }
@@ -223,9 +222,10 @@ InitializeXen (
   // Reserve away HVMLOADER reserved memory [0xFC000000,0xFD000000).
   // This needs to match HVMLOADER RESERVED_MEMBASE/RESERVED_MEMSIZE.
   //
-  AddReservedMemoryBaseSizeHob (0xFC000000, 0x1000000);
+  AddReservedMemoryBaseSizeHob (0xFC000000, 0x1000000, FALSE);
 
-  PcdSetBool (PcdPciDisableBusEnumeration, TRUE);
+  PcdStatus = PcdSetBoolS (PcdPciDisableBusEnumeration, TRUE);
+  ASSERT_RETURN_ERROR (PcdStatus);
 
   return EFI_SUCCESS;
 }

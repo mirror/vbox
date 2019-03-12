@@ -1,7 +1,9 @@
 /** @file
   Ip4 internal functions and type defintions.
 
-Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2005 - 2018, Intel Corporation. All rights reserved.<BR>
+(C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -19,9 +21,14 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include <Protocol/IpSec.h>
 #include <Protocol/Ip4.h>
-#include <Protocol/Ip4Config.h>
+#include <Protocol/Ip4Config2.h>
 #include <Protocol/Arp.h>
 #include <Protocol/ManagedNetwork.h>
+#include <Protocol/Dhcp4.h>
+#include <Protocol/HiiConfigRouting.h>
+#include <Protocol/HiiConfigAccess.h>
+
+#include <IndustryStandard/Dhcp.h>
 
 #include <Library/DebugLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
@@ -34,6 +41,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/MemoryAllocationLib.h>
 #include <Library/DpcLib.h>
 #include <Library/PrintLib.h>
+#include <Library/DevicePathLib.h>
+#include <Library/HiiLib.h>
+#include <Library/UefiHiiServicesLib.h>
 
 #include "Ip4Common.h"
 #include "Ip4Driver.h"
@@ -44,6 +54,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "Ip4Route.h"
 #include "Ip4Input.h"
 #include "Ip4Output.h"
+#include "Ip4Config2Impl.h"
+#include "Ip4Config2Nv.h"
+#include "Ip4NvData.h"
 
 #define IP4_PROTOCOL_SIGNATURE  SIGNATURE_32 ('I', 'P', '4', 'P')
 #define IP4_SERVICE_SIGNATURE   SIGNATURE_32 ('I', 'P', '4', 'S')
@@ -51,12 +64,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 // The state of IP4 protocol. It starts from UNCONFIGED. if it is
 // successfully configured, it goes to CONFIGED. if configure NULL
-// is called, it becomes UNCONFIGED again. If (partly) destroyed, it
-// becomes DESTROY.
+// is called, it becomes UNCONFIGED again.
 //
 #define IP4_STATE_UNCONFIGED    0
 #define IP4_STATE_CONFIGED      1
-#define IP4_STATE_DESTROY       2
 
 //
 // The state of IP4 service. It starts from UNSTARTED. It transits
@@ -122,6 +133,8 @@ struct _IP4_PROTOCOL {
   EFI_IP4_PROTOCOL          Ip4Proto;
   EFI_HANDLE                Handle;
   INTN                      State;
+
+  BOOLEAN                   InDestroy;
 
   IP4_SERVICE               *Service;
   LIST_ENTRY                Link;       // Link to all the IP protocol from the service
@@ -193,14 +206,22 @@ struct _IP4_SERVICE {
   EFI_SIMPLE_NETWORK_MODE         SnpMode;
 
   EFI_EVENT                       Timer;
+  EFI_EVENT                       ReconfigCheckTimer;
+  EFI_EVENT                       ReconfigEvent;
+
+  BOOLEAN                         Reconfig;
 
   //
-  // Auto configure staff
+  // Underlying media present status.
   //
-  EFI_IP4_CONFIG_PROTOCOL         *Ip4Config;
-  EFI_EVENT                       DoneEvent;
-  EFI_EVENT                       ReconfigEvent;
-  EFI_EVENT                       ActiveEvent;
+  BOOLEAN                         MediaPresent;
+
+  //
+  // IPv4 Configuration II Protocol instance
+  //
+  IP4_CONFIG2_INSTANCE            Ip4Config2Instance;
+
+  CHAR16                          *MacString;
 
   UINT32                          MaxPacketSize;
   UINT32                          OldMaxPacketSize; ///< The MTU before IPsec enable.
@@ -211,6 +232,10 @@ struct _IP4_SERVICE {
 
 #define IP4_SERVICE_FROM_PROTOCOL(Sb)   \
           CR ((Sb), IP4_SERVICE, ServiceBinding, IP4_SERVICE_SIGNATURE)
+
+#define IP4_SERVICE_FROM_CONFIG2_INSTANCE(This) \
+  CR (This, IP4_SERVICE, Ip4Config2Instance, IP4_SERVICE_SIGNATURE)
+
 
 #define IP4_NO_MAPPING(IpInstance) (!(IpInstance)->Interface->Configured)
 
@@ -258,8 +283,8 @@ Ip4InitProtocol (
 
   @param[in]  IpInstance         The IP4 child to clean up.
 
-  @retval EFI_SUCCESS            The IP4 child is cleaned up
-  @retval EFI_DEVICE_ERROR       Some resources failed to be released
+  @retval EFI_SUCCESS            The IP4 child is cleaned up.
+  @retval EFI_DEVICE_ERROR       Some resources failed to be released.
 
 **/
 EFI_STATUS
@@ -270,13 +295,13 @@ Ip4CleanProtocol (
 /**
   Cancel the user's receive/transmit request.
 
-  @param[in]  IpInstance         The IP4 child
+  @param[in]  IpInstance         The IP4 child.
   @param[in]  Token              The token to cancel. If NULL, all token will be
                                  cancelled.
 
-  @retval EFI_SUCCESS            The token is cancelled
+  @retval EFI_SUCCESS            The token is cancelled.
   @retval EFI_NOT_FOUND          The token isn't found on either the
-                                 transmit/receive queue
+                                 transmit/receive queue.
   @retval EFI_DEVICE_ERROR       Not all token is cancelled when Token is NULL.
 
 **/
@@ -309,10 +334,9 @@ Ip4Groups (
   );
 
 /**
-  The heart beat timer of IP4 service instance. It times out
-  all of its IP4 children's received-but-not-delivered and
-  transmitted-but-not-recycle packets, and provides time input
-  for its IGMP protocol.
+  This heart beat timer of IP4 service instance times out all of its IP4 children's
+  received-but-not-delivered and transmitted-but-not-recycle packets, and provides
+  time input for its IGMP protocol.
 
   @param[in]  Event                  The IP4 service instance's heart beat timer.
   @param[in]  Context                The IP4 service instance.
@@ -326,6 +350,25 @@ Ip4TimerTicking (
   );
 
 /**
+  This dedicated timer is used to poll underlying network media status. In case
+  of cable swap or wireless network switch, a new round auto configuration will
+  be initiated. The timer will signal the IP4 to run DHCP configuration again.
+  IP4 driver will free old IP address related resource, such as route table and
+  Interface, then initiate a DHCP process to acquire new IP, eventually create
+  route table for new IP address.
+
+  @param[in]  Event                  The IP4 service instance's heart beat timer.
+  @param[in]  Context                The IP4 service instance.
+
+**/
+VOID
+EFIAPI
+Ip4TimerReconfigChecking (
+  IN EFI_EVENT              Event,
+  IN VOID                   *Context
+  );
+
+/**
   Decrease the life of the transmitted packets. If it is
   decreased to zero, cancel the packet. This function is
   called by Ip4PacketTimerTicking which time out both the
@@ -333,10 +376,10 @@ Ip4TimerTicking (
   packets.
 
   @param[in]  Map                    The IP4 child's transmit map.
-  @param[in]  Item                   Current transmitted packet
+  @param[in]  Item                   Current transmitted packet.
   @param[in]  Context                Not used.
 
-  @retval EFI_SUCCESS            Always returns EFI_SUCCESS
+  @retval EFI_SUCCESS            Always returns EFI_SUCCESS.
 
 **/
 EFI_STATUS
@@ -365,7 +408,7 @@ Ip4SentPacketTicking (
   are bound together. Check the comments in Ip4Output for information
   about IP fragmentation.
 
-  @param[in]  Context                The token's wrap
+  @param[in]  Context                The token's wrap.
 
 **/
 VOID
@@ -375,5 +418,6 @@ Ip4FreeTxToken (
   );
 
 extern EFI_IPSEC2_PROTOCOL   *mIpSec;
+extern BOOLEAN               mIpSec2Installed;
 
 #endif

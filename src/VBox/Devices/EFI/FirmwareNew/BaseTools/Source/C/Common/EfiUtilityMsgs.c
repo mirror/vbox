@@ -1,7 +1,7 @@
 /** @file
 EFI tools utility functions to display warning, error, and informational messages
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -451,19 +451,22 @@ Notes:
     //
     time (&CurrentTime);
     NewTime = localtime (&CurrentTime);
-    fprintf (stdout, "%04d-%02d-%02d %02d:%02d:%02d",
-                     NewTime->tm_year + 1900,
-                     NewTime->tm_mon + 1,
-                     NewTime->tm_mday,
-                     NewTime->tm_hour,
-                     NewTime->tm_min,
-                     NewTime->tm_sec
-                     );
+    if (NewTime != NULL) {
+      fprintf (stdout, "%04d-%02d-%02d %02d:%02d:%02d",
+                       NewTime->tm_year + 1900,
+                       NewTime->tm_mon + 1,
+                       NewTime->tm_mday,
+                       NewTime->tm_hour,
+                       NewTime->tm_min,
+                       NewTime->tm_sec
+                       );
+    }
     if (Cptr != NULL) {
-      sprintf (Line, ": %s", Cptr);
+      strcpy (Line, ": ");
+      strncat (Line, Cptr, MAX_LINE_LEN - strlen (Line) - 1);
       if (LineNumber != 0) {
         sprintf (Line2, "(%u)", (unsigned) LineNumber);
-        strcat (Line, Line2);
+        strncat (Line, Line2, MAX_LINE_LEN - strlen (Line) - 1);
       }
     }
   } else {
@@ -474,14 +477,16 @@ Notes:
       if (mUtilityName[0] != '\0') {
         fprintf (stdout, "%s...\n", mUtilityName);
       }
-      sprintf (Line, "%s", Cptr);
+      strncpy (Line, Cptr, MAX_LINE_LEN - 1);
+      Line[MAX_LINE_LEN - 1] = 0;
       if (LineNumber != 0) {
         sprintf (Line2, "(%u)", (unsigned) LineNumber);
-        strcat (Line, Line2);
+        strncat (Line, Line2, MAX_LINE_LEN - strlen (Line) - 1);
       }
     } else {
       if (mUtilityName[0] != '\0') {
-        sprintf (Line, "%s", mUtilityName);
+        strncpy (Line, mUtilityName, MAX_LINE_LEN - 1);
+        Line[MAX_LINE_LEN - 1] = 0;
       }
     }
 
@@ -499,12 +504,12 @@ Notes:
   // Have to print an error code or Visual Studio won't find the
   // message for you. It has to be decimal digits too.
   //
+  strncat (Line, ": ", MAX_LINE_LEN - strlen (Line) - 1);
+  strncat (Line, Type, MAX_LINE_LEN - strlen (Line) - 1);
   if (MessageCode != 0) {
-    sprintf (Line2, ": %s %04u", Type, (unsigned) MessageCode);
-  } else {
-    sprintf (Line2, ": %s", Type);
+    sprintf (Line2, " %04u", (unsigned) MessageCode);
+    strncat (Line, Line2, MAX_LINE_LEN - strlen (Line) - 1);
   }
-  strcat (Line, Line2);
   fprintf (stdout, "%s", Line);
   //
   // If offending text was provided, then print it
@@ -606,12 +611,9 @@ Returns:
   if (UtilityName != NULL) {
     if (strlen (UtilityName) >= sizeof (mUtilityName)) {
       Error (UtilityName, 0, 0, "application error", "utility name length exceeds internal buffer size");
-      strncpy (mUtilityName, UtilityName, sizeof (mUtilityName) - 1);
-      mUtilityName[sizeof (mUtilityName) - 1] = 0;
-      return ;
-    } else {
-      strcpy (mUtilityName, UtilityName);
     }
+    strncpy (mUtilityName, UtilityName, sizeof (mUtilityName) - 1);
+    mUtilityName[sizeof (mUtilityName) - 1] = 0;
   } else {
     Error (NULL, 0, 0, "application error", "SetUtilityName() called with NULL utility name");
   }

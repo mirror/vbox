@@ -2,7 +2,7 @@
 This file contains functions required to generate a boot strap file (BSF) also
 known as the Volume Top File (VTF)
 
-Copyright (c) 1999 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 1999 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available
 under the terms and conditions of the BSD License which accompanies this
 distribution.  The full text of the license may be found at
@@ -112,8 +112,8 @@ Returns:
 --*/
 {
   CHAR8  TemStr[5] = "0000";
-  unsigned Major;
-  unsigned Minor;
+  int    Major;
+  int    Minor;
   UINTN Length;
 
   Major = 0;
@@ -362,10 +362,20 @@ Returns:
       }
     } else if (strnicmp (*TokenStr, "COMP_BIN", 8) == 0) {
       TokenStr++;
-      strcpy (VtfInfo->CompBinName, *TokenStr);
+      if (strlen (*TokenStr) >= FILE_NAME_SIZE) {
+        Error (NULL, 0, 3000, "Invalid", "The 'COMP_BIN' name is too long.");
+        return ;
+      }
+      strncpy (VtfInfo->CompBinName, *TokenStr, FILE_NAME_SIZE - 1);
+      VtfInfo->CompBinName[FILE_NAME_SIZE - 1] = 0;
     } else if (strnicmp (*TokenStr, "COMP_SYM", 8) == 0) {
       TokenStr++;
-      strcpy (VtfInfo->CompSymName, *TokenStr);
+      if (strlen (*TokenStr) >= FILE_NAME_SIZE) {
+        Error (NULL, 0, 3000, "Invalid", "The 'COMP_SYM' name is too long.");
+        return ;
+      }
+      strncpy (VtfInfo->CompSymName, *TokenStr, FILE_NAME_SIZE - 1);
+      VtfInfo->CompSymName[FILE_NAME_SIZE - 1] = 0;
     } else if (strnicmp (*TokenStr, "COMP_SIZE", 9) == 0) {
       TokenStr++;
       if (strnicmp (*TokenStr, "-", 1) == 0) {
@@ -444,14 +454,24 @@ Returns:
     if (SectionOptionFlag) {
       if (stricmp (*TokenStr, "IA32_RST_BIN") == 0) {
         TokenStr++;
-        strcpy (IA32BinFile, *TokenStr);
+        if (strlen (*TokenStr) >= FILE_NAME_SIZE) {
+          Error (NULL, 0, 3000, "Invalid", "The 'IA32_RST_BIN' name is too long.");
+          break;
+        }
+        strncpy (IA32BinFile, *TokenStr, FILE_NAME_SIZE - 1);
+        IA32BinFile[FILE_NAME_SIZE - 1] = 0;
       }
     }
 
     if (SectionCompFlag) {
       if (stricmp (*TokenStr, "COMP_NAME") == 0) {
         TokenStr++;
-        strcpy (FileListPtr->CompName, *TokenStr);
+        if (strlen (*TokenStr) >= COMPONENT_NAME_SIZE) {
+          Error (NULL, 0, 3000, "Invalid", "The 'COMP_NAME' name is too long.");
+          break;
+        }
+        strncpy (FileListPtr->CompName, *TokenStr, COMPONENT_NAME_SIZE - 1);
+        FileListPtr->CompName[COMPONENT_NAME_SIZE - 1] = 0;
         TokenStr++;
         ParseAndUpdateComponents (FileListPtr);
       }
@@ -796,6 +816,7 @@ Returns:
 
   TmpFitPtr         = (FIT_TABLE *) RelativeAddress;
   NumFitComponents  = TmpFitPtr->CompSize;
+  *FitPtr           = NULL;
 
   for (Index = 0; Index < NumFitComponents; Index++) {
     if ((TmpFitPtr->CvAndType & FIT_TYPE_MASK) == COMP_TYPE_FIT_UNUSED) {
@@ -1061,6 +1082,7 @@ Returns:
   CHAR8   Buff4[10];
   CHAR8   Buff5[10];
   CHAR8   Token[50];
+  CHAR8   FormatString[MAX_LINE_LEN];
 
   Fp = fopen (LongFilePath (VtfInfo->CompSymName), "rb");
 
@@ -1069,10 +1091,25 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
+  //
+  // Generate the format string for fscanf
+  //
+  sprintf (
+    FormatString,
+    "%%%us %%%us %%%us %%%us %%%us %%%us %%%us",
+    (unsigned) sizeof (Buff1) - 1,
+    (unsigned) sizeof (Buff2) - 1,
+    (unsigned) sizeof (OffsetStr) - 1,
+    (unsigned) sizeof (Buff3) - 1,
+    (unsigned) sizeof (Buff4) - 1,
+    (unsigned) sizeof (Buff5) - 1,
+    (unsigned) sizeof (Token) - 1
+    );
+
   while (fgets (Buff, sizeof (Buff), Fp) != NULL) {
     fscanf (
       Fp,
-      "%s %s %s %s %s %s %s",
+      FormatString,
       Buff1,
       Buff2,
       OffsetStr,
@@ -1124,6 +1161,7 @@ Returns:
   EFI_ABORTED      - Aborted due to one of the many reasons like:
                       (a) Component Size greater than the specified size.
                       (b) Error opening files.
+                      (c) Fail to get the FIT table address.
 
   EFI_INVALID_PARAMETER     Value returned from call to UpdateEntryPoint()
   EFI_OUT_OF_RESOURCES      Memory allocation failure.
@@ -1162,6 +1200,7 @@ Returns:
 
   if (VtfInfo->PreferredSize) {
     if (FileSize > VtfInfo->CompSize) {
+      fclose (Fp);
       Error (NULL, 0, 2000, "Invalid parameter", "The component size is more than specified size.");
       return EFI_ABORTED;
     }
@@ -1171,6 +1210,7 @@ Returns:
 
   Buffer = malloc ((UINTN) FileSize);
   if (Buffer == NULL) {
+    fclose (Fp);
     return EFI_OUT_OF_RESOURCES;
   }
   memset (Buffer, 0, (UINTN) FileSize);
@@ -1230,18 +1270,25 @@ Returns:
     Vtf1TotalSize += (UINT32) (FileSize + NumAdjustByte);
     Status = UpdateVtfBuffer (CompStartAddress, Buffer, FileSize, FIRST_VTF);
   } else {
+    free (Buffer);
     Error (NULL, 0, 2000,"Invalid Parameter", "There's component in second VTF so second BaseAddress and Size must be specified!");
     return EFI_INVALID_PARAMETER;
   }
 
   if (EFI_ERROR (Status)) {
+    free (Buffer);
     return EFI_ABORTED;
   }
 
   GetNextAvailableFitPtr (&CompFitPtr);
+  if (CompFitPtr == NULL) {
+    free (Buffer);
+    return EFI_ABORTED;
+  }
 
   CompFitPtr->CompAddress = CompStartAddress | IPF_CACHE_BIT;
   if ((FileSize % 16) != 0) {
+    free (Buffer);
     Error (NULL, 0, 2000, "Invalid parameter", "Binary FileSize must be a multiple of 16.");
     return EFI_INVALID_PARAMETER;
   }
@@ -1333,6 +1380,7 @@ Returns:
 
   FileSize = _filelength (fileno (Fp));
   if (FileSize < 64) {
+    fclose (Fp);
     Error (NULL, 0, 2000, "Invalid parameter", "PAL_A bin header is 64 bytes, so the Bin size must be larger than 64 bytes!");
     return EFI_INVALID_PARAMETER;
   }
@@ -1341,6 +1389,7 @@ Returns:
 
   if (VtfInfo->PreferredSize) {
     if (FileSize > VtfInfo->CompSize) {
+      fclose (Fp);
       Error (NULL, 0, 2000, "Invalid parameter", "The PAL_A Size is more than the specified size.");
       return EFI_ABORTED;
     }
@@ -1350,6 +1399,7 @@ Returns:
 
   Buffer = malloc ((UINTN) FileSize);
   if (Buffer == NULL) {
+    fclose (Fp);
     return EFI_OUT_OF_RESOURCES;
   }
   memset (Buffer, 0, (UINTN) FileSize);
@@ -1383,6 +1433,7 @@ Returns:
   PalFitPtr->CompAddress  = PalStartAddress | IPF_CACHE_BIT;
   //assert ((FileSize % 16) == 0);
   if ((FileSize % 16) != 0) {
+    free (Buffer);
     Error (NULL, 0, 2000, "Invalid parameter", "Binary FileSize must be a multiple of 16.");
     return EFI_INVALID_PARAMETER;
   }
@@ -1765,11 +1816,13 @@ Returns:
   FileSize = _filelength (fileno (Fp));
 
   if (FileSize > 16) {
+    fclose (Fp);
     return EFI_ABORTED;
   }
 
   Buffer = malloc (FileSize);
   if (Buffer == NULL) {
+    fclose (Fp);
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -2181,6 +2234,7 @@ Returns:
   CHAR8   Section[MAX_LONG_FILE_PATH];
   CHAR8   Token[MAX_LONG_FILE_PATH];
   CHAR8   BaseToken[MAX_LONG_FILE_PATH];
+  CHAR8   FormatString[MAX_LINE_LEN];
   UINT64  TokenAddress;
   long    StartLocation;
 
@@ -2206,9 +2260,20 @@ Returns:
   //
   // Use the file name minus extension as the base for tokens
   //
-  strcpy (BaseToken, SourceFileName);
+  if (strlen (SourceFileName) >= MAX_LONG_FILE_PATH) {
+    fclose (SourceFile);
+    Error (NULL, 0, 2000, "Invalid parameter", "The source file name is too long.");
+    return EFI_ABORTED;
+  }
+  strncpy (BaseToken, SourceFileName, MAX_LONG_FILE_PATH - 1);
+  BaseToken[MAX_LONG_FILE_PATH - 1] = 0;
   strtok (BaseToken, ". \t\n");
-  strcat (BaseToken, "__");
+  if (strlen (BaseToken) + strlen ("__") >= MAX_LONG_FILE_PATH) {
+    fclose (SourceFile);
+    Error (NULL, 0, 2000, "Invalid parameter", "The source file name is too long.");
+    return EFI_ABORTED;
+  }
+  strncat (BaseToken, "__", MAX_LONG_FILE_PATH - strlen (BaseToken) - 1);
 
   //
   // Open the destination file
@@ -2259,6 +2324,18 @@ Returns:
   }
 
   //
+  // Generate the format string for fscanf
+  //
+  sprintf (
+    FormatString,
+    "%%%us | %%%us | %%%us | %%%us\n",
+    (unsigned) sizeof (Type) - 1,
+    (unsigned) sizeof (Address) - 1,
+    (unsigned) sizeof (Section) - 1,
+    (unsigned) sizeof (Token) - 1
+    );
+
+  //
   // Read in the file
   //
   while (feof (SourceFile) == 0) {
@@ -2266,7 +2343,7 @@ Returns:
     //
     // Read a line
     //
-    if (fscanf (SourceFile, "%s | %s | %s | %s\n", Type, Address, Section, Token) == 4) {
+    if (fscanf (SourceFile, FormatString, Type, Address, Section, Token) == 4) {
 
       //
       // Get the token address
@@ -2538,6 +2615,12 @@ Returns:
       // Get the input VTF file name
       //
       VtfFileName = argv[Index+1];
+      if (VtfFP != NULL) {
+        //
+        // VTF file name has been given previously, override with the new value
+        //
+        fclose (VtfFP);
+      }
       VtfFP = fopen (LongFilePath (VtfFileName), "rb");
       if (VtfFP == NULL) {
         Error (NULL, 0, 0001, "Error opening file", VtfFileName);
@@ -2651,21 +2734,28 @@ Returns:
     }
     SymFileName = VTF_SYM_FILE;
   } else {
-    INTN OutFileNameLen = strlen(OutFileName1);
-    INTN Index;
+    INTN OutFileNameLen;
+    INTN NewIndex;
 
-    for (Index = OutFileNameLen; Index > 0; --Index) {
-      if (OutFileName1[Index] == '/' || OutFileName1[Index] == '\\') {
+    assert (OutFileName1);
+    OutFileNameLen = strlen(OutFileName1);
+
+    for (NewIndex = OutFileNameLen; NewIndex > 0; --NewIndex) {
+      if (OutFileName1[NewIndex] == '/' || OutFileName1[NewIndex] == '\\') {
         break;
       }
     }
-    if (Index == 0) {
+    if (NewIndex == 0) {
       SymFileName = VTF_SYM_FILE;
     } else {
-      INTN SymFileNameLen = Index + 1 + strlen(VTF_SYM_FILE);
+      INTN SymFileNameLen = NewIndex + 1 + strlen(VTF_SYM_FILE);
       SymFileName = malloc(SymFileNameLen + 1);
-      memcpy(SymFileName, OutFileName1, Index + 1);
-      memcpy(SymFileName + Index + 1, VTF_SYM_FILE, strlen(VTF_SYM_FILE));
+      if (SymFileName == NULL) {
+        Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+        goto ERROR;
+      }
+      memcpy(SymFileName, OutFileName1, NewIndex + 1);
+      memcpy(SymFileName + NewIndex + 1, VTF_SYM_FILE, strlen(VTF_SYM_FILE));
       SymFileName[SymFileNameLen] = '\0';
     }
     if (DebugMode) {

@@ -1,7 +1,7 @@
 /** @file
 Private functions used by PCD DXE driver.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -22,6 +22,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/PiPcd.h>
 #include <Protocol/PcdInfo.h>
 #include <Protocol/PiPcdInfo.h>
+#include <Protocol/VarCheck.h>
+#include <Protocol/VariableLock.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
 #include <Library/UefiLib.h>
@@ -37,7 +39,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // Please make sure the PCD Serivce DXE Version is consistent with
 // the version of the generated DXE PCD Database by build tool.
 //
-#define PCD_SERVICE_DXE_VERSION      4
+#define PCD_SERVICE_DXE_VERSION      7
 
 //
 // PCD_DXE_SERVICE_DRIVER_VERSION is defined in Autogen.h.
@@ -960,24 +962,6 @@ ExGetWorker (
   );
 
 /**
-  Find the local token number according to system SKU ID.
-
-  @param LocalTokenNumber PCD token number
-  @param Size             The size of PCD entry.
-  @param IsPeiDb          If TRUE, the PCD entry is initialized in PEI phase.
-                          If False, the PCD entry is initialized in DXE phase.
-
-  @return Token number according to system SKU ID.
-
-**/
-UINT32
-GetSkuEnabledTokenNumber (
-  UINT32 LocalTokenNumber,
-  UINTN  Size,
-  BOOLEAN IsPeiDb
-  );
-
-/**
   Get Variable which contains HII type PCD entry.
 
   @param VariableGuid    Variable's guid
@@ -1003,6 +987,7 @@ GetHiiVariable (
 
   @param VariableGuid    Guid of variable which stored value of a HII-type PCD.
   @param VariableName    Unicode name of variable which stored value of a HII-type PCD.
+  @param SetAttributes   Attributes bitmask to set for the variable.
   @param Data            Value want to be set.
   @param DataSize        Size of value
   @param Offset          Value offset of HII-type PCD in variable.
@@ -1014,6 +999,7 @@ EFI_STATUS
 SetHiiVariable (
   IN  EFI_GUID     *VariableGuid,
   IN  UINT16       *VariableName,
+  IN  UINT32       SetAttributes,
   IN  CONST VOID   *Data,
   IN  UINTN        DataSize,
   IN  UINTN        Offset
@@ -1156,6 +1142,36 @@ BOOLEAN
 SetPtrTypeSize (
   IN          UINTN             LocalTokenNumberTableIdx,
   IN    OUT   UINTN             *CurrentSize
+  );
+
+/**
+  VariableLockProtocol callback
+  to lock the variables referenced by DynamicHii PCDs with RO property set in *.dsc.
+
+  @param[in] Event      Event whose notification function is being invoked.
+  @param[in] Context    Pointer to the notification function's context.
+
+**/
+VOID
+EFIAPI
+VariableLockCallBack (
+  IN EFI_EVENT          Event,
+  IN VOID               *Context
+  );
+
+/**
+  Update PCD database base on current SkuId
+
+  @param   SkuId     Current SkuId
+  @param   IsPeiDb   Whether to update PEI PCD database.
+
+  @retval EFI_SUCCESS    Update PCD database successfully.
+  @retval EFI_NOT_FOUND  Not found PCD database for current SkuId.
+**/
+EFI_STATUS
+UpdatePcdDatabase (
+  IN SKU_ID        SkuId,
+  IN BOOLEAN       IsPeiDb
   );
 
 extern  PCD_DATABASE   mPcdDatabase;

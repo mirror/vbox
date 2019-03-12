@@ -1,7 +1,7 @@
 /** @file
   Ia32 arch definition for CPU Exception Handler Library.
 
-  Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -40,5 +40,13 @@ typedef struct {
   UINTN       ExceptionData;
   UINT8       HookAfterStubHeaderCode[HOOKAFTER_STUB_SIZE];
 } RESERVED_VECTORS_DATA;
+
+#define CPU_TSS_DESC_SIZE \
+  (sizeof (IA32_TSS_DESCRIPTOR) * \
+   (FixedPcdGetSize (PcdCpuStackSwitchExceptionList) + 1))
+
+#define CPU_TSS_SIZE \
+  (sizeof (IA32_TASK_STATE_SEGMENT) * \
+   (FixedPcdGetSize (PcdCpuStackSwitchExceptionList) + 1))
 
 #endif

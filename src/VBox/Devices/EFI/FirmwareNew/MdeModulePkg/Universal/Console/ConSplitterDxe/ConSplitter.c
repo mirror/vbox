@@ -16,7 +16,8 @@
   never removed. Such design ensures sytem function well during none console
   device situation.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+(C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -66,6 +67,10 @@ GLOBAL_REMOVE_IF_UNREFERENCED TEXT_IN_SPLITTER_PRIVATE_DATA  mConIn = {
     (LIST_ENTRY *) NULL,
     (LIST_ENTRY *) NULL
   },
+  (EFI_KEY_DATA *) NULL,
+  0,
+  0,
+  FALSE,
 
   {
     ConSplitterSimplePointerReset,
@@ -300,6 +305,122 @@ EFI_DRIVER_BINDING_PROTOCOL           gConSplitterAbsolutePointerDriverBinding =
 };
 
 /**
+  Key notify for toggle state sync.
+
+  @param KeyData        A pointer to a buffer that is filled in with
+                        the keystroke information for the key that was
+                        pressed.
+
+  @retval EFI_SUCCESS   Toggle state sync successfully.
+
+**/
+EFI_STATUS
+EFIAPI
+ToggleStateSyncKeyNotify (
+  IN EFI_KEY_DATA   *KeyData
+  )
+{
+  UINTN     Index;
+
+  if (((KeyData->KeyState.KeyToggleState & KEY_STATE_VALID_EXPOSED) == KEY_STATE_VALID_EXPOSED) &&
+      (KeyData->KeyState.KeyToggleState != mConIn.PhysicalKeyToggleState)) {
+    //
+    // There is toggle state change, sync to other console input devices.
+    //
+    for (Index = 0; Index < mConIn.CurrentNumberOfExConsoles; Index++) {
+      mConIn.TextInExList[Index]->SetState (
+                                    mConIn.TextInExList[Index],
+                                    &KeyData->KeyState.KeyToggleState
+                                    );
+    }
+    mConIn.PhysicalKeyToggleState = KeyData->KeyState.KeyToggleState;
+    DEBUG ((EFI_D_INFO, "Current toggle state is 0x%02x\n", mConIn.PhysicalKeyToggleState));
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Initialization for toggle state sync.
+
+  @param Private                    Text In Splitter pointer.
+
+**/
+VOID
+ToggleStateSyncInitialization (
+  IN TEXT_IN_SPLITTER_PRIVATE_DATA  *Private
+  )
+{
+  EFI_KEY_DATA      KeyData;
+  VOID              *NotifyHandle;
+
+  //
+  // Initialize PhysicalKeyToggleState that will be synced to new console
+  // input device to turn on physical TextInEx partial key report for
+  // toggle state sync.
+  //
+  Private->PhysicalKeyToggleState = KEY_STATE_VALID_EXPOSED;
+
+  //
+  // Initialize VirtualKeyStateExported to let the virtual TextInEx not report
+  // the partial key even though the physical TextInEx turns on the partial
+  // key report. The virtual TextInEx will report the partial key after it is
+  // required by calling SetState(X | KEY_STATE_VALID_EXPOSED) explicitly.
+  //
+  Private->VirtualKeyStateExported = FALSE;
+
+  //
+  // Register key notify for toggle state sync.
+  //
+  KeyData.Key.ScanCode = SCAN_NULL;
+  KeyData.Key.UnicodeChar = CHAR_NULL;
+  KeyData.KeyState.KeyShiftState = 0;
+  KeyData.KeyState.KeyToggleState = 0;
+  Private->TextInEx.RegisterKeyNotify (
+                      &Private->TextInEx,
+                      &KeyData,
+                      ToggleStateSyncKeyNotify,
+                      &NotifyHandle
+                      );
+}
+
+/**
+  Reinitialization for toggle state sync.
+
+  @param Private                    Text In Splitter pointer.
+
+**/
+VOID
+ToggleStateSyncReInitialization (
+  IN TEXT_IN_SPLITTER_PRIVATE_DATA  *Private
+  )
+{
+  UINTN             Index;
+
+  //
+  // Reinitialize PhysicalKeyToggleState that will be synced to new console
+  // input device to turn on physical TextInEx partial key report for
+  // toggle state sync.
+  //
+  Private->PhysicalKeyToggleState = KEY_STATE_VALID_EXPOSED;
+
+  //
+  // Reinitialize VirtualKeyStateExported to let the virtual TextInEx not report
+  // the partial key even though the physical TextInEx turns on the partial
+  // key report. The virtual TextInEx will report the partial key after it is
+  // required by calling SetState(X | KEY_STATE_VALID_EXPOSED) explicitly.
+  //
+  Private->VirtualKeyStateExported = FALSE;
+
+  for (Index = 0; Index < Private->CurrentNumberOfExConsoles; Index++) {
+    Private->TextInExList[Index]->SetState (
+                                    Private->TextInExList[Index],
+                                    &Private->PhysicalKeyToggleState
+                                    );
+  }
+}
+
+/**
   The Entry Point for module ConSplitter. The user code starts with this function.
 
   Installs driver module protocols and. Creates virtual device handles for ConIn,
@@ -487,6 +608,7 @@ ConSplitterTextInConstructor (
   )
 {
   EFI_STATUS  Status;
+  UINTN       TextInExListCount;
 
   //
   // Allocate buffer for Simple Text Input device
@@ -513,6 +635,19 @@ ConSplitterTextInConstructor (
   ASSERT_EFI_ERROR (Status);
 
   //
+  // Allocate buffer for KeyQueue
+  //
+  TextInExListCount = ConInPrivate->TextInExListCount;
+  Status = ConSplitterGrowBuffer (
+             sizeof (EFI_KEY_DATA),
+             &TextInExListCount,
+             (VOID **) &ConInPrivate->KeyQueue
+             );
+  if (EFI_ERROR (Status)) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
   // Allocate buffer for Simple Text Input Ex device
   //
   Status = ConSplitterGrowBuffer (
@@ -536,6 +671,8 @@ ConSplitterTextInConstructor (
   ASSERT_EFI_ERROR (Status);
 
   InitializeListHead (&ConInPrivate->NotifyList);
+
+  ToggleStateSyncInitialization (ConInPrivate);
 
   ConInPrivate->AbsolutePointer.Mode = &ConInPrivate->AbsolutePointerMode;
   //
@@ -590,7 +727,7 @@ ConSplitterTextInConstructor (
   Status = gBS->CreateEventEx (
                   EVT_NOTIFY_SIGNAL,
                   TPL_CALLBACK,
-                  ConSplitterEmptyCallbackFunction,
+                  EfiEventEmptyFunction,
                   NULL,
                   &gConnectConInEventGuid,
                   &ConInPrivate->ConnectConInEvent
@@ -1344,9 +1481,6 @@ ConSplitterStdErrDriverBindingStart (
   //
   Status = ConSplitterTextOutAddDevice (&mStdErr, TextOut, NULL, NULL);
   ConSplitterTextOutSetAttribute (&mStdErr.TextOut, EFI_TEXT_ATTR (EFI_MAGENTA, EFI_BLACK));
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
 
   return Status;
 }
@@ -1850,6 +1984,17 @@ ConSplitterTextInExAddDevice (
         return EFI_OUT_OF_RESOURCES;
       }
     }
+
+    TextInExListCount = Private->TextInExListCount;
+    Status = ConSplitterGrowBuffer (
+               sizeof (EFI_KEY_DATA),
+               &TextInExListCount,
+               (VOID **) &Private->KeyQueue
+               );
+    if (EFI_ERROR (Status)) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
     Status = ConSplitterGrowBuffer (
               sizeof (EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL *),
               &Private->TextInExListCount,
@@ -1888,6 +2033,11 @@ ConSplitterTextInExAddDevice (
   //
   Private->TextInExList[Private->CurrentNumberOfExConsoles] = TextInEx;
   Private->CurrentNumberOfExConsoles++;
+
+  //
+  // Sync current toggle state to this new console input device.
+  //
+  TextInEx->SetState (TextInEx, &Private->PhysicalKeyToggleState);
 
   //
   // Extra CheckEvent added to reduce the double CheckEvent().
@@ -2515,7 +2665,7 @@ ConSplitterGetIntersectionBetweenConOutAndStrErr (
 
   //
   // Find the intersection of the two set of modes. If they actually intersect, the
-  // correponding entry in the map table is set to 1.
+  // corresponding entry in the map table is set to 1.
   //
   Mode = 0;
   while (Mode < ConOutMaxMode) {
@@ -2946,8 +3096,10 @@ ConsplitterSetConsoleOutMode (
     Status = TextOut->SetMode (TextOut, BaseMode);
     ASSERT(!EFI_ERROR(Status));
 
-    PcdSet32 (PcdConOutColumn, 80);
-    PcdSet32 (PcdConOutRow, 25);
+    Status = PcdSet32S (PcdConOutColumn, 80);
+    ASSERT(!EFI_ERROR(Status));
+    Status = PcdSet32S (PcdConOutRow, 25);
+    ASSERT(!EFI_ERROR(Status));
   }
 
   return ;
@@ -3318,9 +3470,48 @@ ConSplitterTextInReset (
     }
   }
 
+  if (!EFI_ERROR (ReturnStatus)) {
+    ToggleStateSyncReInitialization (Private);
+    //
+    // Empty the key queue.
+    //
+    Private->CurrentNumberOfKeys = 0;
+  }
+
   return ReturnStatus;
 }
 
+/**
+  Dequeue the saved key from internal key queue.
+
+  @param  Private                  Protocol instance pointer.
+  @param  KeyData                  A pointer to a buffer that is filled in with the
+                                   keystroke state data for the key that was
+                                   pressed.
+  @retval EFI_NOT_FOUND            Queue is empty.
+  @retval EFI_SUCCESS              First key is dequeued and returned.
+**/
+EFI_STATUS
+ConSplitterTextInExDequeueKey (
+  IN  TEXT_IN_SPLITTER_PRIVATE_DATA   *Private,
+  OUT EFI_KEY_DATA                    *KeyData
+  )
+{
+  if (Private->CurrentNumberOfKeys == 0) {
+    return EFI_NOT_FOUND;
+  }
+  //
+  // Return the first saved key.
+  //
+  CopyMem (KeyData, &Private->KeyQueue[0], sizeof (EFI_KEY_DATA));
+  Private->CurrentNumberOfKeys--;
+  CopyMem (
+    &Private->KeyQueue[0],
+    &Private->KeyQueue[1],
+    Private->CurrentNumberOfKeys * sizeof (EFI_KEY_DATA)
+    );
+  return EFI_SUCCESS;
+}
 
 /**
   Reads the next keystroke from the input device. The WaitForKey Event can
@@ -3344,7 +3535,21 @@ ConSplitterTextInPrivateReadKeyStroke (
 {
   EFI_STATUS    Status;
   UINTN         Index;
-  EFI_INPUT_KEY CurrentKey;
+  EFI_KEY_DATA  KeyData;
+
+  //
+  // Return the first saved non-NULL key.
+  //
+  while (TRUE) {
+    Status = ConSplitterTextInExDequeueKey (Private, &KeyData);
+    if (EFI_ERROR (Status)) {
+      break;
+    }
+    if ((KeyData.Key.ScanCode != CHAR_NULL) || (KeyData.Key.UnicodeChar != SCAN_NULL)) {
+      CopyMem (Key, &KeyData.Key, sizeof (EFI_INPUT_KEY));
+      return Status;
+    }
+  }
 
   Key->UnicodeChar  = 0;
   Key->ScanCode     = SCAN_NULL;
@@ -3354,14 +3559,25 @@ ConSplitterTextInPrivateReadKeyStroke (
   // if any physical console input device has key input,
   // return the key and EFI_SUCCESS.
   //
-  for (Index = 0; Index < Private->CurrentNumberOfConsoles; Index++) {
+  for (Index = 0; Index < Private->CurrentNumberOfConsoles;) {
     Status = Private->TextInList[Index]->ReadKeyStroke (
                                           Private->TextInList[Index],
-                                          &CurrentKey
+                                          &KeyData.Key
                                           );
     if (!EFI_ERROR (Status)) {
-      *Key = CurrentKey;
-      return Status;
+      //
+      // If it is not partial keystorke, return the key. Otherwise, continue
+      // to read key from THIS physical console input device.
+      //
+      if ((KeyData.Key.ScanCode != CHAR_NULL) || (KeyData.Key.UnicodeChar != SCAN_NULL)) {
+        CopyMem (Key, &KeyData.Key, sizeof (EFI_INPUT_KEY));
+        return Status;
+      }
+    } else {
+      //
+      // Continue to read key from NEXT physical console input device.
+      //
+      Index++;
     }
   }
 
@@ -3539,6 +3755,14 @@ ConSplitterTextInResetEx (
     }
   }
 
+  if (!EFI_ERROR (ReturnStatus)) {
+    ToggleStateSyncReInitialization (Private);
+    //
+    // Empty the key queue.
+    //
+    Private->CurrentNumberOfKeys = 0;
+  }
+
   return ReturnStatus;
 
 }
@@ -3570,6 +3794,7 @@ ConSplitterTextInReadKeyStrokeEx (
   TEXT_IN_SPLITTER_PRIVATE_DATA *Private;
   EFI_STATUS                    Status;
   UINTN                         Index;
+  EFI_KEY_STATE                 KeyState;
   EFI_KEY_DATA                  CurrentKeyData;
 
 
@@ -3581,9 +3806,6 @@ ConSplitterTextInReadKeyStrokeEx (
 
   Private->KeyEventSignalState = FALSE;
 
-  KeyData->Key.UnicodeChar  = 0;
-  KeyData->Key.ScanCode     = SCAN_NULL;
-
   //
   // Signal ConnectConIn event on first call in Lazy ConIn mode
   //
@@ -3594,21 +3816,81 @@ ConSplitterTextInReadKeyStrokeEx (
   }
 
   //
-  // if no physical console input device exists, return EFI_NOT_READY;
-  // if any physical console input device has key input,
-  // return the key and EFI_SUCCESS.
+  // Return the first saved key.
+  //
+  Status = ConSplitterTextInExDequeueKey (Private, KeyData);
+  if (!EFI_ERROR (Status)) {
+    return Status;
+  }
+  ASSERT (Private->CurrentNumberOfKeys == 0);
+
+  ZeroMem (&KeyState, sizeof (KeyState));
+
+  //
+  // Iterate through all physical consoles to get key state.
+  // Some physical consoles may return valid key.
+  // Queue the valid keys.
   //
   for (Index = 0; Index < Private->CurrentNumberOfExConsoles; Index++) {
+    ZeroMem (&CurrentKeyData, sizeof (EFI_KEY_DATA));
     Status = Private->TextInExList[Index]->ReadKeyStrokeEx (
-                                          Private->TextInExList[Index],
-                                          &CurrentKeyData
-                                          );
+                                             Private->TextInExList[Index],
+                                             &CurrentKeyData
+                                             );
+    if (EFI_ERROR (Status) && (Status != EFI_NOT_READY)) {
+      continue;
+    }
+
+    //
+    // Consolidate the key state from all physical consoles.
+    //
+    if ((CurrentKeyData.KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) != 0) {
+      KeyState.KeyShiftState |= CurrentKeyData.KeyState.KeyShiftState;
+    }
+    if ((CurrentKeyData.KeyState.KeyToggleState & EFI_TOGGLE_STATE_VALID) != 0) {
+      KeyState.KeyToggleState |= CurrentKeyData.KeyState.KeyToggleState;
+    }
+
     if (!EFI_ERROR (Status)) {
-      CopyMem (KeyData, &CurrentKeyData, sizeof (CurrentKeyData));
-      return Status;
+      //
+      // If virtual KeyState has been required to be exposed, or it is not
+      // partial keystorke, queue the key.
+      // It's possible that user presses at multiple keyboards at the same moment,
+      // Private->KeyQueue[] are the storage to save all the keys.
+      //
+      if ((Private->VirtualKeyStateExported) ||
+          (CurrentKeyData.Key.ScanCode != CHAR_NULL) ||
+          (CurrentKeyData.Key.UnicodeChar != SCAN_NULL)) {
+        CopyMem (
+          &Private->KeyQueue[Private->CurrentNumberOfKeys],
+          &CurrentKeyData,
+          sizeof (EFI_KEY_DATA)
+          );
+        Private->CurrentNumberOfKeys++;
+      }
     }
   }
 
+  //
+  // Consolidate the key state for all keys in Private->KeyQueue[]
+  //
+  for (Index = 0; Index < Private->CurrentNumberOfKeys; Index++) {
+    CopyMem (&Private->KeyQueue[Index].KeyState, &KeyState, sizeof (EFI_KEY_STATE));
+  }
+
+  //
+  // Return the first saved key.
+  //
+  Status = ConSplitterTextInExDequeueKey (Private, KeyData);
+  if (!EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Always return the key state even there is no key pressed.
+  //
+  ZeroMem (&KeyData->Key, sizeof (KeyData->Key));
+  CopyMem (&KeyData->KeyState, &KeyState, sizeof (KeyData->KeyState));
   return EFI_NOT_READY;
 }
 
@@ -3638,6 +3920,7 @@ ConSplitterTextInSetState (
   TEXT_IN_SPLITTER_PRIVATE_DATA *Private;
   EFI_STATUS                    Status;
   UINTN                         Index;
+  EFI_KEY_TOGGLE_STATE          PhysicalKeyToggleState;
 
   if (KeyToggleState == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -3646,18 +3929,33 @@ ConSplitterTextInSetState (
   Private = TEXT_IN_EX_SPLITTER_PRIVATE_DATA_FROM_THIS (This);
 
   //
+  // Always turn on physical TextInEx partial key report for
+  // toggle state sync.
+  //
+  PhysicalKeyToggleState = *KeyToggleState | EFI_KEY_STATE_EXPOSED;
+
+  //
   // if no physical console input device exists, return EFI_SUCCESS;
   // otherwise return the status of setting state of physical console input device
   //
   for (Index = 0; Index < Private->CurrentNumberOfExConsoles; Index++) {
     Status = Private->TextInExList[Index]->SetState (
                                              Private->TextInExList[Index],
-                                             KeyToggleState
+                                             &PhysicalKeyToggleState
                                              );
     if (EFI_ERROR (Status)) {
       return Status;
     }
   }
+
+  //
+  // Record the physical KeyToggleState.
+  //
+  Private->PhysicalKeyToggleState = PhysicalKeyToggleState;
+  //
+  // Get if virtual KeyState has been required to be exposed.
+  //
+  Private->VirtualKeyStateExported = (((*KeyToggleState) & EFI_KEY_STATE_EXPOSED) != 0);
 
   return EFI_SUCCESS;
 
@@ -3668,11 +3966,14 @@ ConSplitterTextInSetState (
   Register a notification function for a particular keystroke for the input device.
 
   @param  This                     Protocol instance pointer.
-  @param  KeyData                  A pointer to a buffer that is filled in with the
-                                   keystroke information data for the key that was
-                                   pressed.
+  @param  KeyData                  A pointer to a buffer that is filled in with
+                                   the keystroke information for the key that was
+                                   pressed. If KeyData.Key, KeyData.KeyState.KeyToggleState
+                                   and KeyData.KeyState.KeyShiftState are 0, then any incomplete
+                                   keystroke will trigger a notification of the KeyNotificationFunction.
   @param  KeyNotificationFunction  Points to the function to be called when the key
-                                   sequence is typed specified by KeyData.
+                                   sequence is typed specified by KeyData. This notification function
+                                   should be called at <=TPL_CALLBACK.
   @param  NotifyHandle             Points to the unique handle assigned to the
                                    registered notification.
 
@@ -3762,7 +4063,7 @@ ConSplitterTextInRegisterKeyNotify (
     }
   }
 
-  InsertTailList (&mConIn.NotifyList, &NewNotify->NotifyEntry);
+  InsertTailList (&Private->NotifyList, &NewNotify->NotifyEntry);
 
   *NotifyHandle                = NewNotify;
 
@@ -4094,7 +4395,18 @@ ConSplitterAbsolutePointerGetState (
   EFI_STATUS                    ReturnStatus;
   UINTN                         Index;
   EFI_ABSOLUTE_POINTER_STATE    CurrentState;
-
+  UINT64                        MinX;
+  UINT64                        MinY;
+  UINT64                        MinZ;
+  UINT64                        MaxX;
+  UINT64                        MaxY;
+  UINT64                        MaxZ;
+  UINT64                        VirtualMinX;
+  UINT64                        VirtualMinY;
+  UINT64                        VirtualMinZ;
+  UINT64                        VirtualMaxX;
+  UINT64                        VirtualMaxY;
+  UINT64                        VirtualMaxZ;
 
   Private = TEXT_IN_SPLITTER_PRIVATE_DATA_FROM_ABSOLUTE_POINTER_THIS (This);
 
@@ -4104,6 +4416,13 @@ ConSplitterAbsolutePointerGetState (
   State->CurrentY                        = 0;
   State->CurrentZ                        = 0;
   State->ActiveButtons                   = 0;
+
+  VirtualMinX = Private->AbsolutePointerMode.AbsoluteMinX;
+  VirtualMinY = Private->AbsolutePointerMode.AbsoluteMinY;
+  VirtualMinZ = Private->AbsolutePointerMode.AbsoluteMinZ;
+  VirtualMaxX = Private->AbsolutePointerMode.AbsoluteMaxX;
+  VirtualMaxY = Private->AbsolutePointerMode.AbsoluteMaxY;
+  VirtualMaxZ = Private->AbsolutePointerMode.AbsoluteMaxZ;
 
   //
   // if no physical pointer device exists, return EFI_NOT_READY;
@@ -4122,16 +4441,47 @@ ConSplitterAbsolutePointerGetState (
         ReturnStatus = EFI_SUCCESS;
       }
 
+      MinX = Private->AbsolutePointerList[Index]->Mode->AbsoluteMinX;
+      MinY = Private->AbsolutePointerList[Index]->Mode->AbsoluteMinY;
+      MinZ = Private->AbsolutePointerList[Index]->Mode->AbsoluteMinZ;
+      MaxX = Private->AbsolutePointerList[Index]->Mode->AbsoluteMaxX;
+      MaxY = Private->AbsolutePointerList[Index]->Mode->AbsoluteMaxY;
+      MaxZ = Private->AbsolutePointerList[Index]->Mode->AbsoluteMaxZ;
+
       State->ActiveButtons = CurrentState.ActiveButtons;
 
-      if (!(Private->AbsolutePointerMode.AbsoluteMinX == 0 && Private->AbsolutePointerMode.AbsoluteMaxX == 0)) {
-        State->CurrentX = CurrentState.CurrentX;
+      //
+      // Rescale to Con Splitter virtual Absolute Pointer's resolution.
+      //
+      if (!(MinX == 0 && MaxX == 0)) {
+        State->CurrentX = VirtualMinX + DivU64x64Remainder (
+                                          MultU64x64 (
+                                            CurrentState.CurrentX,
+                                            VirtualMaxX - VirtualMinX
+                                            ),
+                                          MaxX - MinX,
+                                          NULL
+                                          );
       }
-      if (!(Private->AbsolutePointerMode.AbsoluteMinY == 0 && Private->AbsolutePointerMode.AbsoluteMaxY == 0)) {
-        State->CurrentY = CurrentState.CurrentY;
+      if (!(MinY == 0 && MaxY == 0)) {
+        State->CurrentY = VirtualMinY + DivU64x64Remainder (
+                                          MultU64x64 (
+                                            CurrentState.CurrentY,
+                                            VirtualMaxY - VirtualMinY
+                                            ),
+                                          MaxY - MinY,
+                                          NULL
+                                          );
       }
-      if (!(Private->AbsolutePointerMode.AbsoluteMinZ == 0 && Private->AbsolutePointerMode.AbsoluteMaxZ == 0)) {
-        State->CurrentZ = CurrentState.CurrentZ;
+      if (!(MinZ == 0 && MaxZ == 0)) {
+        State->CurrentZ = VirtualMinZ + DivU64x64Remainder (
+                                          MultU64x64 (
+                                            CurrentState.CurrentZ,
+                                            VirtualMaxZ - VirtualMinZ
+                                            ),
+                                          MaxZ - MinZ,
+                                          NULL
+                                          );
       }
 
     } else if (Status == EFI_DEVICE_ERROR) {
@@ -4755,22 +5105,4 @@ ConSplitterTextOutEnableCursor (
   Private->TextOutMode.CursorVisible = Visible;
 
   return ReturnStatus;
-}
-
-
-/**
-  An empty function to pass error checking of CreateEventEx ().
-
-  @param  Event                 Event whose notification function is being invoked.
-  @param  Context               Pointer to the notification function's context,
-                                which is implementation-dependent.
-
-**/
-VOID
-EFIAPI
-ConSplitterEmptyCallbackFunction (
-  IN EFI_EVENT                Event,
-  IN VOID                     *Context
-  )
-{
 }

@@ -98,15 +98,8 @@ class CParser(Parser):
         Parser.__init__(self, input)
         self.ruleMemo = {}
 
-	self.function_definition_stack = []
-	self.postfix_expression_stack = []
-
-
-
-
-
-
-
+        self.function_definition_stack = []
+        self.postfix_expression_stack = []
 
     def printTokenInfo(self, line, offset, tokenText):
     	print str(line)+ ',' + str(offset) + ':' + str(tokenText)

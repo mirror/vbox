@@ -1,7 +1,7 @@
 /** @file
   Implements filebuffer interface functions.
 
-  Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved. <BR>
+  Copyright (c) 2005 - 2016, Intel Corporation. All rights reserved. <BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -72,7 +72,6 @@ extern BOOLEAN          EditorMouseAction;
   @param EFI_OUT_OF_RESOURCES   A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferInit (
   VOID
   )
@@ -121,7 +120,6 @@ FileBufferInit (
   @retval EFI_SUCCESS           The backup operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferBackup (
   VOID
   )
@@ -155,7 +153,6 @@ FileBufferBackup (
   @return  The line structure after the advance.
 **/
 EFI_EDITOR_LINE *
-EFIAPI
 InternalEditorMiscLineAdvance (
   IN CONST UINTN            Count,
   IN CONST EFI_EDITOR_LINE  *CurrentLine,
@@ -195,7 +192,6 @@ InternalEditorMiscLineAdvance (
   @return  The line structure after the retreat.
 **/
 EFI_EDITOR_LINE *
-EFIAPI
 InternalEditorMiscLineRetreat (
   IN CONST UINTN            Count,
   IN CONST EFI_EDITOR_LINE  *CurrentLine,
@@ -262,7 +258,6 @@ MoveLine (
   @retval EFI_SUCCESS           The backup operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferRestoreMousePosition (
   VOID
   )
@@ -406,7 +401,6 @@ FileBufferRestoreMousePosition (
   @retval EFI_SUCCESS     The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferFreeLines (
   VOID
   )
@@ -450,7 +444,6 @@ FileBufferFreeLines (
   @retval EFI_SUCCESS   The cleanup was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferCleanup (
   VOID
   )
@@ -505,29 +498,28 @@ FileBufferPrintLine (
 
   BufLen = (MainEditor.ScreenSize.Column + 1) * sizeof (CHAR16);
   PrintLine = AllocatePool (BufLen);
-  ASSERT (PrintLine != NULL);
+  if (PrintLine != NULL) {
+    StrnCpyS (PrintLine, BufLen/sizeof(CHAR16), Buffer, MIN(Limit, MainEditor.ScreenSize.Column));
+    for (; Limit < MainEditor.ScreenSize.Column; Limit++) {
+      PrintLine[Limit] = L' ';
+    }
 
-  StrnCpy (PrintLine, Buffer, MIN(Limit, MainEditor.ScreenSize.Column));
-  for (; Limit < MainEditor.ScreenSize.Column; Limit++) {
-    PrintLine[Limit] = L' ';
+    PrintLine[MainEditor.ScreenSize.Column] = CHAR_NULL;
+
+    PrintLine2 = AllocatePool (BufLen * 2);
+    if (PrintLine2 != NULL) {
+      ShellCopySearchAndReplace(PrintLine, PrintLine2, BufLen * 2, L"%", L"^%", FALSE, FALSE);
+
+      ShellPrintEx (
+        0,
+        (INT32)Row - 1,
+        L"%s",
+        PrintLine2
+        );
+      FreePool (PrintLine2);
+    }
+    FreePool (PrintLine);
   }
-
-  PrintLine[MainEditor.ScreenSize.Column] = CHAR_NULL;
-
-  PrintLine2 = AllocatePool (BufLen * 2);
-  ASSERT (PrintLine2 != NULL);
-
-  ShellCopySearchAndReplace(PrintLine, PrintLine2, BufLen * 2, L"%", L"^%", FALSE, FALSE);
-
-  ShellPrintEx (
-    0,
-    (INT32)Row - 1,
-    L"%s",
-    PrintLine2
-    );
-
-  FreePool (PrintLine);
-  FreePool (PrintLine2);
 
   return EFI_SUCCESS;
 }
@@ -538,7 +530,6 @@ FileBufferPrintLine (
   @retval EFI_SUCCESS           The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferRestorePosition (
   VOID
   )
@@ -560,7 +551,6 @@ FileBufferRestorePosition (
   @retval EFI_LOAD_ERROR  There was an error finding what to write.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferRefresh (
   VOID
   )
@@ -672,7 +662,6 @@ FileBufferRefresh (
   @return         The line created.
 **/
 EFI_EDITOR_LINE *
-EFIAPI
 FileBufferCreateLine (
   VOID
   )
@@ -727,7 +716,6 @@ FileBufferCreateLine (
   @retval EFI_INVALID_PARAMETER Str is not a valid filename.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferSetFileName (
   IN CONST CHAR16 *Str
   )
@@ -759,7 +747,6 @@ FileBufferSetFileName (
   @retval EFI_SUCCESS           The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferFree (
   VOID
   )
@@ -786,7 +773,6 @@ FileBufferFree (
   @retval EFI_INVALID_PARAMETER  FileName is a directory.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferRead (
   IN CONST CHAR16  *FileName,
   IN CONST BOOLEAN Recover
@@ -1281,7 +1267,6 @@ Done:
   @param[out] Size              The amount of the buffer used on return.
 **/
 VOID
-EFIAPI
 GetNewLine (
   IN CONST EE_NEWLINE_TYPE Type,
   OUT CHAR8           *Buffer,
@@ -1388,7 +1373,6 @@ GetNewLine (
   @return The actuall length.
 **/
 UINTN
-EFIAPI
 UnicodeToAscii (
   IN CONST CHAR16   *UStr,
   IN CONST UINTN    Length,
@@ -1417,7 +1401,6 @@ UnicodeToAscii (
   @retval EFI_OUT_OF_RESOURCES  There were not enough resources to write the file.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferSave (
   IN CONST CHAR16 *FileName
   )
@@ -1657,7 +1640,6 @@ FileBufferSave (
   @retval EFI_SUCCESS     The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferScrollLeft (
   VOID
   )
@@ -1704,7 +1686,6 @@ FileBufferScrollLeft (
   @param[in] Pos         Position to delete the char at ( start from 0 ).
 **/
 VOID
-EFIAPI
 LineDeleteAt (
   IN  OUT EFI_EDITOR_LINE       *Line,
   IN      UINTN                 Pos
@@ -1729,7 +1710,6 @@ LineDeleteAt (
   @param[in] Src         Src String.
 **/
 VOID
-EFIAPI
 LineCat (
   IN  OUT EFI_EDITOR_LINE *Dest,
   IN      EFI_EDITOR_LINE *Src
@@ -1770,7 +1750,6 @@ LineCat (
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferDoBackspace (
   VOID
   )
@@ -1842,7 +1821,6 @@ FileBufferDoBackspace (
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferDoReturn (
   VOID
   )
@@ -1939,7 +1917,6 @@ FileBufferDoReturn (
   @retval EFI_SUCCESS
 **/
 EFI_STATUS
-EFIAPI
 FileBufferDoDelete (
   VOID
   )
@@ -2002,7 +1979,6 @@ FileBufferDoDelete (
   @retval EFI_SUCCESS     The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferScrollRight (
   VOID
   )
@@ -2056,7 +2032,6 @@ FileBufferScrollRight (
   @return The new string size ( include CHAR_NULL ) ( unit is Unicode character ).
 **/
 UINTN
-EFIAPI
 LineStrInsert (
   IN      EFI_EDITOR_LINE  *Line,
   IN      CHAR16           Char,
@@ -2109,7 +2084,6 @@ LineStrInsert (
   @retval EFI_SUCCESS           The input was succesful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferAddChar (
   IN  CHAR16  Char
   )
@@ -2157,7 +2131,6 @@ FileBufferAddChar (
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferDoCharInput (
   IN CONST CHAR16 Char
   )
@@ -2208,7 +2181,6 @@ FileBufferDoCharInput (
   @retval EFI_SUCCESS     The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferScrollDown (
   VOID
   )
@@ -2254,7 +2226,6 @@ FileBufferScrollDown (
   @retval EFI_SUCCESS     The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferScrollUp (
   VOID
   )
@@ -2297,7 +2268,6 @@ FileBufferScrollUp (
   @retval EFI_SUCCESS     The operation wa successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferPageDown (
   VOID
   )
@@ -2348,7 +2318,6 @@ FileBufferPageDown (
   @retval EFI_SUCCESS     The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferPageUp (
   VOID
   )
@@ -2404,7 +2373,6 @@ FileBufferPageUp (
   @retval EFI_SUCCESS       The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferEnd (
   VOID
   )
@@ -2442,7 +2410,6 @@ FileBufferEnd (
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferHandleInput (
   IN CONST EFI_INPUT_KEY *Key
   )
@@ -2558,7 +2525,6 @@ FileBufferHandleInput (
   @retval FALSE   It is not above the current screen.
 **/
 BOOLEAN
-EFIAPI
 AboveCurrentScreen (
   IN UINTN FileRow
   )
@@ -2582,7 +2548,6 @@ AboveCurrentScreen (
   @retval FALSE     It is not under the current screen.
 **/
 BOOLEAN
-EFIAPI
 UnderCurrentScreen (
   IN UINTN FileRow
   )
@@ -2606,7 +2571,6 @@ UnderCurrentScreen (
   @retval FALSE   It is not to the left.
 **/
 BOOLEAN
-EFIAPI
 LeftCurrentScreen (
   IN UINTN FileCol
   )
@@ -2630,7 +2594,6 @@ LeftCurrentScreen (
   @retval FALSE   It is not to the right.
 **/
 BOOLEAN
-EFIAPI
 RightCurrentScreen (
   IN UINTN FileCol
   )
@@ -2656,7 +2619,6 @@ RightCurrentScreen (
   @return The line after advance/retreat.
 **/
 EFI_EDITOR_LINE *
-EFIAPI
 MoveCurrentLine (
   IN  INTN Count
   )
@@ -2687,7 +2649,6 @@ MoveCurrentLine (
   @param[in] NewFilePosCol    The column of file position ( start from 1 ).
 **/
 VOID
-EFIAPI
 FileBufferMovePosition (
   IN CONST UINTN NewFilePosRow,
   IN CONST UINTN NewFilePosCol
@@ -2803,7 +2764,6 @@ FileBufferMovePosition (
   @retval EFI_OUT_OF_RESOURCES    A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferCutLine (
   OUT EFI_EDITOR_LINE **CutLine
   )
@@ -2883,7 +2843,6 @@ FileBufferCutLine (
   @retval EFI_OUT_OF_RESOURCES    A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferPasteLine (
   VOID
   )
@@ -2955,7 +2914,6 @@ FileBufferPasteLine (
   @retval EFI_NOT_FOUND     The string Str was not found.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferSearch (
   IN CONST CHAR16  *Str,
   IN CONST UINTN Offset
@@ -3061,7 +3019,6 @@ FileBufferSearch (
   @retval EFI_OUT_OF_RESOURCES    A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferReplace (
   IN CONST CHAR16   *Replace,
   IN CONST UINTN    SearchLen
@@ -3166,7 +3123,6 @@ FileBufferReplace (
   @param[in] TextY      The new y-coordinate.
 **/
 VOID
-EFIAPI
 FileBufferAdjustMousePosition (
   IN CONST INT32 TextX,
   IN CONST INT32 TextY
@@ -3243,7 +3199,6 @@ FileBufferAdjustMousePosition (
   @param[in] Offset       The column to start at.
 **/
 EFI_STATUS
-EFIAPI
 FileBufferReplaceAll (
   IN CHAR16 *SearchStr,
   IN CHAR16 *ReplaceStr,
@@ -3361,7 +3316,6 @@ FileBufferReplaceAll (
   Set the modified state to TRUE.
 **/
 VOID
-EFIAPI
 FileBufferSetModified (
   VOID
   )

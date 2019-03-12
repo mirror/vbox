@@ -17,8 +17,8 @@
     .model  flat,C
     .code
 
-EXTERNDEF   AsmFixAddress16:DWORD
-EXTERNDEF   AsmJmpAddr32:DWORD
+PUBLIC   AsmFixAddress16
+PUBLIC   AsmJmpAddr32
 
 ;-----------------------------------------
 ;VOID
@@ -40,7 +40,7 @@ AsmTransferControl  PROC
     shrd  ebx, ecx, 20
     and   ecx, 0fh
     mov   bx, cx
-    mov   @jmp_addr, ebx
+    mov   [@jmp_addr], ebx
     retf
 @@:
     DB    0b8h, 30h, 0      ; mov ax, 30h as selector

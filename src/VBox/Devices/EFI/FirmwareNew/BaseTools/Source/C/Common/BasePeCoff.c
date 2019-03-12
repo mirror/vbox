@@ -2,7 +2,7 @@
 
   Functions to get info and load PE/COFF image.
 
-Copyright (c) 2004 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
 Portions Copyright (c) 2011 - 2013, ARM Ltd. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -57,14 +57,6 @@ PeCoffLoaderRelocateIa32Image (
   );
 
 RETURN_STATUS
-PeCoffLoaderRelocateX64Image (
-  IN UINT16      *Reloc,
-  IN OUT CHAR8   *Fixup,
-  IN OUT CHAR8   **FixupData,
-  IN UINT64      Adjust
-  );
-
-RETURN_STATUS
 PeCoffLoaderRelocateIpfImage (
   IN UINT16      *Reloc,
   IN OUT CHAR8   *Fixup,
@@ -75,14 +67,6 @@ PeCoffLoaderRelocateIpfImage (
 RETURN_STATUS
 PeCoffLoaderRelocateArmImage (
   IN UINT16      **Reloc,
-  IN OUT CHAR8   *Fixup,
-  IN OUT CHAR8   **FixupData,
-  IN UINT64      Adjust
-  );
-
-RETURN_STATUS
-PeCoffLoaderRelocateAArch64Image (
-  IN UINT16      *Reloc,
   IN OUT CHAR8   *Fixup,
   IN OUT CHAR8   **FixupData,
   IN UINT64      Adjust
@@ -352,7 +336,7 @@ Returns:
   //
   if ((!(ImageContext->IsTeImage)) && ((PeHdr->Pe32.FileHeader.Characteristics & EFI_IMAGE_FILE_RELOCS_STRIPPED) != 0)) {
     ImageContext->RelocationsStripped = TRUE;
-  } else if ((ImageContext->IsTeImage) && (TeHdr->DataDirectory[0].Size == 0)) {
+  } else if ((ImageContext->IsTeImage) && (TeHdr->DataDirectory[0].Size == 0) && (TeHdr->DataDirectory[0].VirtualAddress == 0)) {
     ImageContext->RelocationsStripped = TRUE;
   } else {
     ImageContext->RelocationsStripped = FALSE;
@@ -619,6 +603,7 @@ Returns:
   CHAR8                                 *FixupBase;
   UINT16                                *F16;
   UINT32                                *F32;
+  UINT64                                *F64;
   CHAR8                                 *FixupData;
   PHYSICAL_ADDRESS                      BaseAddress;
   UINT16                                MachineType;
@@ -660,11 +645,22 @@ Returns:
       //
       if (OptionHeader.Optional32->NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC) {
         RelocDir  = &OptionHeader.Optional32->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC];
-        RelocBase = PeCoffLoaderImageAddress (ImageContext, RelocDir->VirtualAddress);
-        RelocBaseEnd = PeCoffLoaderImageAddress (
-                        ImageContext,
-                        RelocDir->VirtualAddress + RelocDir->Size - 1
-                        );
+        if ((RelocDir != NULL) && (RelocDir->Size > 0)) {
+          RelocBase = PeCoffLoaderImageAddress (ImageContext, RelocDir->VirtualAddress);
+          RelocBaseEnd = PeCoffLoaderImageAddress (
+                           ImageContext,
+                           RelocDir->VirtualAddress + RelocDir->Size - 1
+                           );
+          if (RelocBase == NULL || RelocBaseEnd == NULL || RelocBaseEnd < RelocBase) {
+            ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
+            return RETURN_LOAD_ERROR;
+          }
+        } else {
+          //
+          // Set base and end to bypass processing below.
+          //
+          RelocBase = RelocBaseEnd = 0;
+        }
       } else {
         //
         // Set base and end to bypass processing below.
@@ -684,11 +680,22 @@ Returns:
       //
       if (OptionHeader.Optional64->NumberOfRvaAndSizes > EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC) {
         RelocDir  = &OptionHeader.Optional64->DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_BASERELOC];
-        RelocBase = PeCoffLoaderImageAddress (ImageContext, RelocDir->VirtualAddress);
-        RelocBaseEnd = PeCoffLoaderImageAddress (
-                        ImageContext,
-                        RelocDir->VirtualAddress + RelocDir->Size - 1
-                        );
+        if ((RelocDir != NULL) && (RelocDir->Size > 0)) {
+          RelocBase = PeCoffLoaderImageAddress (ImageContext, RelocDir->VirtualAddress);
+          RelocBaseEnd = PeCoffLoaderImageAddress (
+                           ImageContext,
+                           RelocDir->VirtualAddress + RelocDir->Size - 1
+                          );
+          if (RelocBase == NULL || RelocBaseEnd == NULL || RelocBaseEnd < RelocBase) {
+            ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
+            return RETURN_LOAD_ERROR;
+          }
+        } else {
+          //
+          // Set base and end to bypass processing below.
+          //
+          RelocBase = RelocBaseEnd = 0;
+        }
       } else {
         //
         // Set base and end to bypass processing below.
@@ -725,6 +732,10 @@ Returns:
     RelocEnd  = (UINT16 *) ((CHAR8 *) RelocBase + RelocBase->SizeOfBlock);
     if (!(ImageContext->IsTeImage)) {
       FixupBase = PeCoffLoaderImageAddress (ImageContext, RelocBase->VirtualAddress);
+      if (FixupBase == NULL) {
+        ImageContext->ImageError = IMAGE_ERROR_FAILED_RELOCATION;
+        return RETURN_LOAD_ERROR;
+      }
     } else {
       FixupBase = (CHAR8 *)(UINTN)(ImageContext->ImageAddress +
                     RelocBase->VirtualAddress +
@@ -778,6 +789,16 @@ Returns:
         }
         break;
 
+      case EFI_IMAGE_REL_BASED_DIR64:
+        F64   = (UINT64 *) Fixup;
+        *F64  = *F64 + (UINT64) Adjust;
+        if (FixupData != NULL) {
+          FixupData             = ALIGN_POINTER (FixupData, sizeof (UINT64));
+          *(UINT64 *) FixupData = *F64;
+          FixupData             = FixupData + sizeof (UINT64);
+        }
+        break;
+
       case EFI_IMAGE_REL_BASED_HIGHADJ:
         //
         // Return the same EFI_UNSUPPORTED return code as
@@ -795,14 +816,8 @@ Returns:
         case EFI_IMAGE_MACHINE_ARMT:
           Status = PeCoffLoaderRelocateArmImage (&Reloc, Fixup, &FixupData, Adjust);
           break;
-        case EFI_IMAGE_MACHINE_X64:
-          Status = PeCoffLoaderRelocateX64Image (Reloc, Fixup, &FixupData, Adjust);
-          break;
         case EFI_IMAGE_MACHINE_IA64:
           Status = PeCoffLoaderRelocateIpfImage (Reloc, Fixup, &FixupData, Adjust);
-          break;
-        case EFI_IMAGE_MACHINE_AARCH64:
-          Status = PeCoffLoaderRelocateAArch64Image (Reloc, Fixup, &FixupData, Adjust);
           break;
         default:
           Status = RETURN_UNSUPPORTED;
@@ -1065,12 +1080,10 @@ Returns:
                                                                 PeHdr->Pe32.OptionalHeader.AddressOfEntryPoint
                                                                 );
   } else {
-    ImageContext->EntryPoint =  (PHYSICAL_ADDRESS) (
-                       (UINTN)ImageContext->ImageAddress +
-                       (UINTN)TeHdr->AddressOfEntryPoint +
-                       (UINTN)sizeof(EFI_TE_IMAGE_HEADER) -
-          (UINTN) TeHdr->StrippedSize
-      );
+    ImageContext->EntryPoint = (UINTN)ImageContext->ImageAddress +
+                               (UINTN)TeHdr->AddressOfEntryPoint +
+                               (UINTN)sizeof(EFI_TE_IMAGE_HEADER) -
+                               (UINTN) TeHdr->StrippedSize;
   }
 
   //

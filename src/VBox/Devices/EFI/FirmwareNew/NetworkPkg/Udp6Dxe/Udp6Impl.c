@@ -1,7 +1,7 @@
 /** @file
   Udp6 driver's whole implementation.
 
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -57,6 +57,9 @@ Udp6FindInstanceByPort (
   interface. It's called to signal the udp TxToken when the IpIo layer completes
   transmitting of the udp datagram.
 
+  If Context is NULL, then ASSERT().
+  If NotifyData is NULL, then ASSERT().
+
   @param[in]  Status            The completion status of the output udp datagram.
   @param[in]  Context           Pointer to the context data.
   @param[in]  Sender            Specify a EFI_IP6_PROTOCOL for sending.
@@ -74,6 +77,10 @@ Udp6DgramSent (
 
 /**
   This function processes the received datagram passed up by the IpIo layer.
+
+  If NetSession is NULL, then ASSERT().
+  If Packet is NULL, then ASSERT().
+  If Context is NULL, then ASSERT().
 
   @param[in]  Status            The status of this udp datagram.
   @param[in]  IcmpError         The IcmpError code, only available when Status is
@@ -158,7 +165,8 @@ Udp6RecycleRxDataWrap (
   @param[in]  RxData             Pointer to the EFI_UDP6_RECEIVE_DATA of this
                                  datagram.
 
-  @return Pointer to the structure wrapping the RxData and the Packet.
+  @return Pointer to the structure wrapping the RxData and the Packet. NULL will
+          be returned if any error occurs.
 
 **/
 UDP6_RXDATA_WRAP *
@@ -199,10 +207,10 @@ Udp6DeliverDgram (
   );
 
 /**
-  This function demultiplexes the received udp datagram to the apropriate instances.
+  This function demultiplexes the received udp datagram to the appropriate instances.
 
   @param[in]  Udp6Service        Pointer to the udp service context data.
-  @param[in]  NetSession         Pointer to the EFI_NET_SESSION_DATA abstrated from
+  @param[in]  NetSession         Pointer to the EFI_NET_SESSION_DATA abstracted from
                                  the received datagram.
   @param[in]  Packet             Pointer to the buffer containing the received udp
                                  datagram.
@@ -976,6 +984,9 @@ Udp6RemoveToken (
   interface. It's called to signal the udp TxToken when IpIo layer completes the
   transmitting of the udp datagram.
 
+  If Context is NULL, then ASSERT().
+  If NotifyData is NULL, then ASSERT().
+
   @param[in]  Status            The completion status of the output udp datagram.
   @param[in]  Context           Pointer to the context data.
   @param[in]  Sender            Specify a EFI_IP6_PROTOCOL for sending.
@@ -994,6 +1005,8 @@ Udp6DgramSent (
   UDP6_INSTANCE_DATA         *Instance;
   EFI_UDP6_COMPLETION_TOKEN  *Token;
 
+  ASSERT (Context != NULL && NotifyData != NULL);
+
   Instance = (UDP6_INSTANCE_DATA *) Context;
   Token    = (EFI_UDP6_COMPLETION_TOKEN *) NotifyData;
 
@@ -1010,6 +1023,10 @@ Udp6DgramSent (
 
 /**
   This function processes the received datagram passed up by the IpIo layer.
+
+  If NetSession is NULL, then ASSERT().
+  If Packet is NULL, then ASSERT().
+  If Context is NULL, then ASSERT().
 
   @param[in]  Status            The status of this udp datagram.
   @param[in]  IcmpError         The IcmpError code, only available when Status is
@@ -1030,6 +1047,7 @@ Udp6DgramRcvd (
   IN VOID                  *Context
   )
 {
+  ASSERT (NetSession != NULL && Packet != NULL && Context != NULL);
   NET_CHECK_SIGNATURE (Packet, NET_BUF_SIGNATURE);
 
   //
@@ -1374,7 +1392,8 @@ Udp6RecycleRxDataWrap (
   @param[in]  RxData             Pointer to the EFI_UDP6_RECEIVE_DATA of this
                                  datagram.
 
-  @return Pointer to the structure wrapping the RxData and the Packet.
+  @return Pointer to the structure wrapping the RxData and the Packet. NULL will
+          be returned if any error occurs.
 
 **/
 UDP6_RXDATA_WRAP *
@@ -1579,7 +1598,7 @@ Udp6DeliverDgram (
   This function demultiplexes the received udp datagram to the appropriate instances.
 
   @param[in]  Udp6Service        Pointer to the udp service context data.
-  @param[in]  NetSession         Pointer to the EFI_NET_SESSION_DATA abstrated from
+  @param[in]  NetSession         Pointer to the EFI_NET_SESSION_DATA abstracted from
                                  the received datagram.
   @param[in]  Packet             Pointer to the buffer containing the received udp
                                  datagram.
@@ -1598,11 +1617,20 @@ Udp6Demultiplex (
   EFI_UDP6_SESSION_DATA  *Udp6Session;
   UINTN                  Enqueued;
 
+  if (Packet->TotalSize < UDP6_HEADER_SIZE) {
+    NetbufFree (Packet);
+    return;
+  }
+
   //
   // Get the datagram header from the packet buffer.
   //
   Udp6Header = (EFI_UDP_HEADER *) NetbufGetByte (Packet, 0, NULL);
   ASSERT (Udp6Header != NULL);
+  if (Udp6Header == NULL) {
+    NetbufFree (Packet);
+    return;
+  }
 
   if (Udp6Header->Checksum != 0) {
     //
@@ -1619,6 +1647,7 @@ Udp6Demultiplex (
       //
       // Wrong checksum.
       //
+      NetbufFree (Packet);
       return;
     }
   }
@@ -1712,6 +1741,9 @@ Udp6SendPortUnreach (
   //
   Ip6ModeData = AllocateZeroPool (sizeof (EFI_IP6_MODE_DATA));
   ASSERT (Ip6ModeData != NULL);
+  if (Ip6ModeData == NULL) {
+    goto EXIT;
+  }
 
   //
   // If not finding the related IpSender use the default IpIo to send out
@@ -1760,6 +1792,9 @@ Udp6SendPortUnreach (
   //
   IcmpErrHdr = (IP6_ICMP_ERROR_HEAD *) NetbufAllocSpace (Packet, Len, FALSE);
   ASSERT (IcmpErrHdr != NULL);
+  if (IcmpErrHdr == NULL) {
+    goto EXIT;
+  }
 
   //
   // Set the required fields for the icmp port unreachable message.
@@ -1834,8 +1869,17 @@ Udp6IcmpHandler (
   LIST_ENTRY             *Entry;
   UDP6_INSTANCE_DATA     *Instance;
 
+  if (Packet->TotalSize < UDP6_HEADER_SIZE) {
+    NetbufFree (Packet);
+    return;
+  }
+
   Udp6Header = (EFI_UDP_HEADER *) NetbufGetByte (Packet, 0, NULL);
   ASSERT (Udp6Header != NULL);
+  if (Udp6Header == NULL) {
+    NetbufFree (Packet);
+    return;
+  }
 
   IP6_COPY_ADDRESS (&Udp6Session.SourceAddress, &NetSession->Source);
   IP6_COPY_ADDRESS (&Udp6Session.DestinationAddress, &NetSession->Dest);

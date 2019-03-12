@@ -16,6 +16,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "EbcInt.h"
 #include "EbcExecute.h"
+#include "EbcDebuggerHook.h"
 
 //
 // We'll keep track of all thunks we create in a linked list. Each
@@ -496,6 +497,8 @@ InitializeEbcDriver (
   DEBUG_CODE_BEGIN ();
     InitEbcVmTestProtocol (&ImageHandle);
   DEBUG_CODE_END ();
+
+  EbcDebuggerHookInit (ImageHandle, EbcDebugProtocol);
 
   return EFI_SUCCESS;
 
@@ -1094,6 +1097,9 @@ EbcUnloadImage (
   // Now free up the image list element
   //
   FreePool (ImageList);
+
+  EbcDebuggerHookEbcUnloadImage (ImageHandle);
+
   return EFI_SUCCESS;
 }
 
@@ -1404,3 +1410,26 @@ EbcVmTestUnsupported (
   return EFI_UNSUPPORTED;
 }
 
+/**
+  Allocates a buffer of type EfiBootServicesCode.
+
+  @param  AllocationSize        The number of bytes to allocate.
+
+  @return A pointer to the allocated buffer or NULL if allocation fails.
+
+**/
+VOID *
+EFIAPI
+EbcAllocatePoolForThunk (
+  IN UINTN  AllocationSize
+  )
+{
+  VOID        *Buffer;
+  EFI_STATUS  Status;
+
+  Status = gBS->AllocatePool (EfiBootServicesCode, AllocationSize, &Buffer);
+  if (EFI_ERROR (Status)) {
+    return NULL;
+  }
+  return Buffer;
+}

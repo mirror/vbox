@@ -1,7 +1,7 @@
 /** @file
   PKCS#7 SignedData Sign Wrapper Implementation over OpenSSL.
 
-Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -17,7 +17,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <openssl/objects.h>
 #include <openssl/x509.h>
 #include <openssl/pkcs7.h>
-
 
 /**
   Creates a PKCS#7 signedData as described in "PKCS #7: Cryptographic Message
@@ -35,7 +34,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   @param[in]  OtherCerts       Pointer to an optional additional set of certificates to
                                include in the PKCS#7 signedData (e.g. any intermediate
                                CAs in the chain).
-  @param[out] SignedData       Pointer to output PKCS#7 signedData.
+  @param[out] SignedData       Pointer to output PKCS#7 signedData. It's caller's
+                               responsibility to free the buffer with FreePool().
   @param[out] SignedDataSize   Size of SignedData in bytes.
 
   @retval     TRUE             PKCS#7 data signing succeeded.
@@ -168,7 +168,7 @@ Pkcs7Sign (
   // is totally 19 bytes.
   //
   *SignedDataSize = P7DataSize - 19;
-  *SignedData     = malloc (*SignedDataSize);
+  *SignedData     = AllocatePool (*SignedDataSize);
   if (*SignedData == NULL) {
     OPENSSL_free (P7Data);
     goto _Exit;
@@ -184,13 +184,6 @@ _Exit:
   //
   // Release Resources
   //
-  if (RsaContext != NULL) {
-    RsaFree (RsaContext);
-    if (Key != NULL) {
-      Key->pkey.rsa = NULL;
-    }
-  }
-
   if (Key != NULL) {
     EVP_PKEY_free (Key);
   }

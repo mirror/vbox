@@ -9,7 +9,7 @@
 # on STDOUT.
 # This tool has been tested with OpenSSL 1.0.1e 11 Feb 2013
 #
-# Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2013 - 2017, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -64,6 +64,8 @@ if __name__ == '__main__':
   try:
     OpenSslPath = os.environ['OPENSSL_PATH']
     OpenSslCommand = os.path.join(OpenSslPath, OpenSslCommand)
+    if ' ' in OpenSslCommand:
+      OpenSslCommand = '"' + OpenSslCommand + '"'
   except:
     pass
 
@@ -71,7 +73,7 @@ if __name__ == '__main__':
   # Verify that Open SSL command is available
   #
   try:
-    Process = subprocess.Popen('%s version' % (OpenSslCommand), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    Process = subprocess.Popen('%s version' % (OpenSslCommand), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
   except:
     print 'ERROR: Open SSL command not available.  Please verify PATH or set OPENSSL_PATH'
     sys.exit(1)
@@ -98,7 +100,7 @@ if __name__ == '__main__':
       #
       # Generate private key and save it to output file in a PEM file format
       #
-      Process = subprocess.Popen('%s genrsa -out %s 2048' % (OpenSslCommand, Item.name), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      Process = subprocess.Popen('%s genrsa -out %s 2048' % (OpenSslCommand, Item.name), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
       Process.communicate()
       if Process.returncode <> 0:
         print 'ERROR: RSA 2048 key generation failed'
@@ -120,7 +122,7 @@ if __name__ == '__main__':
     #
     # Extract public key from private key into STDOUT
     #
-    Process = subprocess.Popen('%s rsa -in %s -modulus -noout' % (OpenSslCommand, Item), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    Process = subprocess.Popen('%s rsa -in %s -modulus -noout' % (OpenSslCommand, Item), stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     PublicKeyHexString = Process.communicate()[0].split('=')[1].strip()
     if Process.returncode <> 0:
       print 'ERROR: Unable to extract public key from private key'
@@ -132,7 +134,7 @@ if __name__ == '__main__':
     #
     # Generate SHA 256 hash of RSA 2048 bit public key into STDOUT
     #
-    Process = subprocess.Popen('%s dgst -sha256 -binary' % (OpenSslCommand), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    Process = subprocess.Popen('%s dgst -sha256 -binary' % (OpenSslCommand), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     Process.stdin.write (PublicKey)
     PublicKeyHash = PublicKeyHash + Process.communicate()[0]
     if Process.returncode <> 0:

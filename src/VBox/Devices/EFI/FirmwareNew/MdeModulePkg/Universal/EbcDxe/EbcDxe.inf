@@ -5,6 +5,7 @@
 #  platform and processor-independent mechanisms for loading and executing EFI
 #  device drivers.
 #
+#  Copyright (c) 2015, The Linux Foundation. All rights reserved.
 #  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -28,10 +29,12 @@
 #
 # The following information is for reference only and not required by the build tools.
 #
-#  VALID_ARCHITECTURES           = IA32 X64 IPF
+#  VALID_ARCHITECTURES           = IA32 X64 IPF AARCH64
 #
 
 [Sources]
+  EbcDebuggerHook.h
+  EbcDebuggerHook.c
   EbcExecute.h
   EbcExecute.c
   EbcInt.h
@@ -39,11 +42,13 @@
 
 [Sources.Ia32]
   Ia32/EbcSupport.c
+  Ia32/EbcLowLevel.nasm
   Ia32/EbcLowLevel.S
   Ia32/EbcLowLevel.asm
 
 [Sources.X64]
   X64/EbcSupport.c
+  X64/EbcLowLevel.nasm
   X64/EbcLowLevel.S
   X64/EbcLowLevel.asm
 
@@ -52,6 +57,9 @@
   Ipf/EbcSupport.c
   Ipf/EbcLowLevel.s
 
+[Sources.AARCH64]
+  AArch64/EbcSupport.c
+  AArch64/EbcLowLevel.S
 
 [Packages]
   MdePkg/MdePkg.dec

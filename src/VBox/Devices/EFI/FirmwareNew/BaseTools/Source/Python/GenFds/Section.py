@@ -1,7 +1,7 @@
 ## @file
 # section base class
 #
-#  Copyright (c) 2007-2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007-2017, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -110,7 +110,7 @@ class Section (SectionClassObject):
     #   @param  Dict        dictionary contains macro and its value
     #   @retval tuple       (File list, boolean)
     #
-    def GetFileList(FfsInf, FileType, FileExtension, Dict = {}):
+    def GetFileList(FfsInf, FileType, FileExtension, Dict = {}, IsMakefile=False):
         if FileType in Section.SectFileType.keys() :
             IsSect = True
         else :
@@ -141,10 +141,27 @@ class Section (SectionClassObject):
                 else:
                     GenFdsGlobalVariable.InfLogger ("\nCurrent ARCH \'%s\' of File %s is not in the Support Arch Scope of %s specified by INF %s in FDF" %(FfsInf.CurrentArch, File.File, File.Arch, FfsInf.InfFileName))
 
-        if Suffix != None:
-            SuffixMap = FfsInf.GetFinalTargetSuffixMap()
-            if Suffix in SuffixMap:
-                FileList.extend(SuffixMap[Suffix])
+        if (not IsMakefile and Suffix != None and os.path.exists(FfsInf.EfiOutputPath)) or (IsMakefile and Suffix != None):
+            #
+            # Get Makefile path and time stamp
+            #
+            MakefileDir = FfsInf.EfiOutputPath[:-len('OUTPUT')]
+            Makefile = os.path.join(MakefileDir, 'Makefile')
+            if not os.path.exists(Makefile):
+                Makefile = os.path.join(MakefileDir, 'GNUmakefile')
+            if os.path.exists(Makefile):
+                # Update to search files with suffix in all sub-dirs.
+                Tuple = os.walk(FfsInf.EfiOutputPath)
+                for Dirpath, Dirnames, Filenames in Tuple:
+                    for F in Filenames:
+                        if os.path.splitext(F)[1] == Suffix:
+                            FullName = os.path.join(Dirpath, F)
+                            if os.path.getmtime(FullName) > os.path.getmtime(Makefile):
+                                FileList.append(FullName)
+            if not FileList:
+                SuffixMap = FfsInf.GetFinalTargetSuffixMap()
+                if Suffix in SuffixMap:
+                    FileList.extend(SuffixMap[Suffix])
 
         #Process the file lists is alphabetical for a same section type
         if len (FileList) > 1:

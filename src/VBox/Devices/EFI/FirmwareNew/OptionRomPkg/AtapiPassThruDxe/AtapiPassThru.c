@@ -300,7 +300,7 @@ AtapiScsiPassThruDriverBindingStop (
 
 Routine Description:
 
-  Stop this driver on ControllerHandle. Support stoping any child handles
+  Stop this driver on ControllerHandle. Support stopping any child handles
   created by this driver.
 
 Arguments:
@@ -1752,7 +1752,7 @@ Returns:
   UINT8 ArrayLen;
 
   OpCode = (UINT8 *) (Packet->Cdb);
-  ArrayLen = (UINT8) (sizeof (gSupportedATAPICommands) / sizeof (gSupportedATAPICommands[0]));
+  ArrayLen = (UINT8) (ARRAY_SIZE (gSupportedATAPICommands));
 
   for (Index = 0; (Index < ArrayLen) && (CompareMem (&gSupportedATAPICommands[Index], &gEndTable, sizeof (SCSI_COMMAND_SET)) != 0); Index++) {
 
@@ -1885,11 +1885,11 @@ RequestSenseCommand (
 
 Routine Description:
 
-  Sumbit request sense command
+  Submit request sense command
 
 Arguments:
 
-  AtapiScsiPrivate  - The pionter of ATAPI_SCSI_PASS_THRU_DEV
+  AtapiScsiPrivate  - The pointer of ATAPI_SCSI_PASS_THRU_DEV
   Target            - The target ID
   Timeout           - The time to complete the command
   SenseData         - The buffer to fill in sense data
@@ -1995,7 +1995,7 @@ Returns:
   UINT8 ArrayLen;
 
   OpCode = (UINT8 *) (Packet->Cdb);
-  ArrayLen = (UINT8) (sizeof (gSupportedATAPICommands) / sizeof (gSupportedATAPICommands[0]));
+  ArrayLen = (UINT8) (ARRAY_SIZE (gSupportedATAPICommands));
 
   for (Index = 0; (Index < ArrayLen) && (CompareMem (&gSupportedATAPICommands[Index], &gEndTable, sizeof (SCSI_COMMAND_SET)) != 0); Index++) {
 

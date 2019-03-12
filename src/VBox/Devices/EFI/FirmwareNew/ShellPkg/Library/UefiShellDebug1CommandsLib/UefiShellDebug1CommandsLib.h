@@ -1,7 +1,7 @@
 /** @file
   Main file for NULL named library for Profile1 shell command functions.
 
-  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -16,7 +16,6 @@
 #define _UEFI_SHELL_DEBUG1_COMMANDS_LIB_H_
 
 #include <Uefi.h>
-#include <ShellBase.h>
 
 #include <Guid/GlobalVariable.h>
 #include <Guid/ConsoleInDevice.h>
@@ -24,8 +23,8 @@
 #include <Guid/FileSystemInfo.h>
 #include <Guid/ShellLibHiiGuid.h>
 
-#include <Protocol/EfiShell.h>
-#include <Protocol/EfiShellParameters.h>
+#include <Protocol/Shell.h>
+#include <Protocol/ShellParameters.h>
 #include <Protocol/DevicePath.h>
 #include <Protocol/LoadedImage.h>
 #include <Protocol/UnicodeCollation.h>
@@ -38,6 +37,7 @@
 #include <Protocol/DriverFamilyOverride.h>
 #include <Protocol/DriverHealth.h>
 #include <Protocol/SimplePointer.h>
+#include <Protocol/CpuIo2.h>
 #include <Protocol/PciRootBridgeIo.h>
 
 #include <Library/BaseLib.h>
@@ -61,22 +61,6 @@
 extern        EFI_HANDLE                        gShellDebug1HiiHandle;
 
 /**
-  Function printing hex output to the console.
-
-  @param[in] Indent       Number of spaces to indent.
-  @param[in] Offset       Offset to start with.
-  @param[in] DataSize     Length of data.
-  @param[in] UserData     Pointer to some data.
-**/
-VOID
-DumpHex (
-  IN UINTN        Indent,
-  IN UINTN        Offset,
-  IN UINTN        DataSize,
-  IN VOID         *UserData
-  );
-
-/**
   Function returns a system configuration table that is stored in the
   EFI System Table based on the provided GUID.
 
@@ -87,42 +71,9 @@ DumpHex (
   @retval EFI_NOT_FOUND    A configuration table matching TableGuid was not found.
 **/
 EFI_STATUS
-EFIAPI
 GetSystemConfigurationTable (
   IN EFI_GUID *TableGuid,
   IN OUT VOID **Table
-  );
-
-/**
-  Convert a string representation of a GUID to the GUID value.
-
-  @param[in]  StringGuid   The pointer to the string containing a GUID printed.
-  @param[in, out] Guid     The pointer to the buffer to get the GUID value.
-**/
-EFI_STATUS
-EFIAPI
-ConvertStringToGuid (
-  IN CONST CHAR16 *StringGuid,
-  IN OUT EFI_GUID *Guid
-  );
-
-/**
-  Convert a Unicode character to numerical value.
-
-  This internal function only deal with Unicode character
-  which maps to a valid hexadecimal ASII character, i.e.
-  L'0' to L'9', L'a' to L'f' or L'A' to L'F'. For other
-  Unicode character, the value returned does not make sense.
-
-  @param  Char  The character to convert.
-
-  @return The numerical value converted.
-
-**/
-UINTN
-EFIAPI
-HexCharToUintn (
-  IN      CHAR16                    Char
   );
 
 /**
@@ -367,7 +318,6 @@ ShellCommandRunHexEdit (
   @param[in] LastRow            The last printable row.
 **/
 VOID
-EFIAPI
 EditorClearLine (
   IN UINTN Row,
   IN UINTN LastCol,
@@ -383,7 +333,6 @@ EditorClearLine (
   @retval FALSE     The filename is not ok.
 **/
 BOOLEAN
-EFIAPI
 IsValidFileName (
   IN CONST CHAR16 *Name
   );
@@ -397,7 +346,6 @@ IsValidFileName (
   @return the valid filename.
 **/
 CHAR16 *
-EFIAPI
 EditGetDefaultFileName (
   IN CONST CHAR16 *Extension
   );
@@ -425,7 +373,6 @@ EditGetDefaultFileName (
   @retval EFI_INVALID_PARAMETER FileName was a directory.
 **/
 EFI_STATUS
-EFIAPI
 ReadFileIntoBuffer (
   IN CONST CHAR16 *FileName,
   OUT VOID        **Buffer,

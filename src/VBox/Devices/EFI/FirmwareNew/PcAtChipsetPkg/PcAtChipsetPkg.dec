@@ -5,6 +5,7 @@
 # PcAt defacto standard.
 #
 # Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2017, AMD Inc. All rights reserved.<BR>
 #
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
@@ -33,6 +34,11 @@
 
 [Guids]
   gPcAtChipsetPkgTokenSpaceGuid = { 0x326ae723, 0xae32, 0x4589, { 0x98, 0xb8, 0xca, 0xc2, 0x3c, 0xdc, 0xc1, 0xb1 } }
+
+#
+# [Error.gPcAtChipsetPkgTokenSpaceGuid]
+#   0x80000001 | Invalid value provided.
+#
 
 [PcdsFeatureFlag]
   ## Indicates the HPET Timer will be configured to use MSI interrupts if the HPET timer supports them, or use I/O APIC interrupts.<BR><BR>
@@ -123,7 +129,8 @@
 
   ## This PCD specifies the maximal valid year in RTC.
   # @Prompt Maximal valid year in RTC.
-  gPcAtChipsetPkgTokenSpaceGuid.PcdMaximalValidYear|2099|UINT16|0x0000000E
+  # @Expression 0x80000001 | gPcAtChipsetPkgTokenSpaceGuid.PcdMaximalValidYear < gPcAtChipsetPkgTokenSpaceGuid.PcdMinimalValidYear + 100
+  gPcAtChipsetPkgTokenSpaceGuid.PcdMaximalValidYear|2097|UINT16|0x0000000E
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Defines the ACPI register set base address.
@@ -166,6 +173,26 @@
   ## Defines the bit mask to retrieve ACPI IO Port Base Address
   # @Prompt ACPI IO Port Base Address Mask
   gPcAtChipsetPkgTokenSpaceGuid.PcdAcpiIoPortBaseAddressMask     |0xFFFE|UINT16|0x00000018
+
+  ## Reset Control Register address in I/O space.
+  # @Prompt Reset Control Register address
+  gPcAtChipsetPkgTokenSpaceGuid.PcdResetControlRegister|0x64|UINT64|0x00000019
+
+  ## 8bit Reset Control Register value for cold reset.
+  # @Prompt Reset Control Register value for cold reset
+  gPcAtChipsetPkgTokenSpaceGuid.PcdResetControlValueColdReset|0xFE|UINT8|0x0000001A
+
+  ## Specifies the initial value for Register_A in RTC.
+  # @Prompt Initial value for Register_A in RTC.
+  gPcAtChipsetPkgTokenSpaceGuid.PcdInitialValueRtcRegisterA|0x26|UINT8|0x0000001B
+
+  ## Specifies the initial value for Register_B in RTC.
+  # @Prompt Initial value for Register_B in RTC.
+  gPcAtChipsetPkgTokenSpaceGuid.PcdInitialValueRtcRegisterB|0x02|UINT8|0x0000001C
+
+  ## Specifies the initial value for Register_D in RTC.
+  # @Prompt Initial value for Register_D in RTC.
+  gPcAtChipsetPkgTokenSpaceGuid.PcdInitialValueRtcRegisterD|0x00|UINT8|0x0000001D
 
 [UserExtensions.TianoCore."ExtraFiles"]
   PcAtChipsetPkgExtra.uni

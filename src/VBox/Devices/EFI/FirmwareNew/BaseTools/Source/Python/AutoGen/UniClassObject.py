@@ -4,7 +4,7 @@
 #
 # Copyright (c) 2014 Hewlett-Packard Development Company, L.P.<BR>
 #
-# Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2016, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -19,6 +19,7 @@
 import Common.LongFilePathOs as os, codecs, re
 import distutils.util
 import Common.EdkLogger as EdkLogger
+import StringIO
 from Common.BuildToolError import *
 from Common.String import GetLineNo
 from Common.Misc import PathClass
@@ -147,6 +148,37 @@ def GetLanguageCode(LangName, IsCompatibleMode, File):
 
     EdkLogger.error("Unicode File Parser", FORMAT_INVALID, "Invalid RFC 4646 language code : %s" % LangName, File)
 
+## Ucs2Codec
+#
+# This is only a partial codec implementation. It only supports
+# encoding, and is primarily used to check that all the characters are
+# valid for UCS-2.
+#
+class Ucs2Codec(codecs.Codec):
+    def __init__(self):
+        self.__utf16 = codecs.lookup('utf-16')
+
+    def encode(self, input, errors='strict'):
+        for Char in input:
+            CodePoint = ord(Char)
+            if CodePoint >= 0xd800 and CodePoint <= 0xdfff:
+                raise ValueError("Code Point is in range reserved for " +
+                                 "UTF-16 surrogate pairs")
+            elif CodePoint > 0xffff:
+                raise ValueError("Code Point too large to encode in UCS-2")
+        return self.__utf16.encode(input)
+
+TheUcs2Codec = Ucs2Codec()
+def Ucs2Search(name):
+    if name == 'ucs-2':
+        return codecs.CodecInfo(
+            name=name,
+            encode=TheUcs2Codec.encode,
+            decode=TheUcs2Codec.decode)
+    else:
+        return None
+codecs.register(Ucs2Search)
+
 ## StringDefClassObject
 #
 # A structure for language definition
@@ -209,14 +241,14 @@ class UniFileClassObject(object):
         Lang = distutils.util.split_quoted((Line.split(u"//")[0]))
         if len(Lang) != 3:
             try:
-                FileIn = codecs.open(LongFilePath(File.Path), mode='rb', encoding='utf-16').read()
+                FileIn = self.OpenUniFile(LongFilePath(File.Path))
             except UnicodeError, X:
                 EdkLogger.error("build", FILE_READ_FAILURE, "File read failure: %s" % str(X), ExtraData=File);
             except:
                 EdkLogger.error("build", FILE_OPEN_FAILURE, ExtraData=File);
             LineNo = GetLineNo(FileIn, Line, False)
             EdkLogger.error("Unicode File Parser", PARSER_ERROR, "Wrong language definition",
-                            ExtraData="""%s\n\t*Correct format is like '#langdef en-US "English"'""" % Line, File = File, Line = LineNo)
+                            ExtraData="""%s\n\t*Correct format is like '#langdef en-US "English"'""" % Line, File=File, Line=LineNo)
         else:
             LangName = GetLanguageCode(Lang[1], self.IsCompatibleMode, self.File)
             LangPrintName = Lang[2]
@@ -253,6 +285,61 @@ class UniFileClassObject(object):
                     self.OrderedStringDict[LangName][Item.StringName] = len(self.OrderedStringList[LangName]) - 1
         return True
 
+    def OpenUniFile(self, FileName):
+        #
+        # Read file
+        #
+        try:
+            UniFile = open(FileName, mode='rb')
+            FileIn = UniFile.read()
+            UniFile.close()
+        except:
+            EdkLogger.Error("build", FILE_OPEN_FAILURE, ExtraData=File)
+
+        #
+        # Detect Byte Order Mark at beginning of file.  Default to UTF-8
+        #
+        Encoding = 'utf-8'
+        if (FileIn.startswith(codecs.BOM_UTF16_BE) or
+            FileIn.startswith(codecs.BOM_UTF16_LE)):
+            Encoding = 'utf-16'
+
+        self.VerifyUcs2Data(FileIn, FileName, Encoding)
+
+        UniFile = StringIO.StringIO(FileIn)
+        Info = codecs.lookup(Encoding)
+        (Reader, Writer) = (Info.streamreader, Info.streamwriter)
+        return codecs.StreamReaderWriter(UniFile, Reader, Writer)
+
+    def VerifyUcs2Data(self, FileIn, FileName, Encoding):
+        Ucs2Info = codecs.lookup('ucs-2')
+        #
+        # Convert to unicode
+        #
+        try:
+            FileDecoded = codecs.decode(FileIn, Encoding)
+            Ucs2Info.encode(FileDecoded)
+        except:
+            UniFile = StringIO.StringIO(FileIn)
+            Info = codecs.lookup(Encoding)
+            (Reader, Writer) = (Info.streamreader, Info.streamwriter)
+            File = codecs.StreamReaderWriter(UniFile, Reader, Writer)
+            LineNumber = 0
+            ErrMsg = lambda Encoding, LineNumber: \
+                     '%s contains invalid %s characters on line %d.' % \
+                     (FileName, Encoding, LineNumber)
+            while True:
+                LineNumber = LineNumber + 1
+                try:
+                    Line = File.readline()
+                    if Line == '':
+                        EdkLogger.error('Unicode File Parser', PARSER_ERROR,
+                                        ErrMsg(Encoding, LineNumber))
+                    Ucs2Info.encode(Line)
+                except:
+                    EdkLogger.error('Unicode File Parser', PARSER_ERROR,
+                                    ErrMsg('UCS-2', LineNumber))
+
     #
     # Get String name and value
     #
@@ -261,11 +348,11 @@ class UniFileClassObject(object):
         Value = ''
 
         Name = Item.split()[1]
-        # Check the string name is the upper character
+        # Check the string name
         if Name != '':
-            MatchString = re.match('[A-Z0-9_]+', Name, re.UNICODE)
+            MatchString = re.match('^[a-zA-Z][a-zA-Z0-9_]*$', Name, re.UNICODE)
             if MatchString == None or MatchString.end(0) != len(Name):
-                EdkLogger.error('Unicode File Parser', FORMAT_INVALID, 'The string token name %s defined in UNI file %s contains the invalid lower case character.' %(Name, self.File))
+                EdkLogger.error('Unicode File Parser', FORMAT_INVALID, 'The string token name %s defined in UNI file %s contains the invalid character.' % (Name, self.File))
         LanguageList = Item.split(u'#language ')
         for IndexI in range(len(LanguageList)):
             if IndexI == 0:
@@ -293,8 +380,8 @@ class UniFileClassObject(object):
             if ((Line.count(u'"', 0, CommentPos) - Line.count(u'\\"', 0, CommentPos)) & 1) == 1:
                 CommentPos = Line.find (Comment, CommentPos + 1)
             else:
-                return Line[:CommentPos]
-        return Line
+                return Line[:CommentPos].strip()
+        return Line.strip()
 
 
     #
@@ -305,7 +392,7 @@ class UniFileClassObject(object):
             EdkLogger.error("Unicode File Parser", FILE_NOT_FOUND, ExtraData=File.Path)
 
         try:
-            FileIn = codecs.open(LongFilePath(File.Path), mode='rb', encoding='utf-16')
+            FileIn = self.OpenUniFile(LongFilePath(File.Path))
         except UnicodeError, X:
             EdkLogger.error("build", FILE_READ_FAILURE, "File read failure: %s" % str(X), ExtraData=File.Path);
         except:
@@ -345,9 +432,19 @@ class UniFileClassObject(object):
             Line = Line.replace(u"\\'", u"'")
             Line = Line.replace(BACK_SLASH_PLACEHOLDER, u'\\')
 
-#           if Line.find(u'\\x'):
-#               hex = Line[Line.find(u'\\x') + 2 : Line.find(u'\\x') + 6]
-#               hex = "u'\\u" + hex + "'"
+            StartPos = Line.find(u'\\x')
+            while (StartPos != -1):
+                EndPos = Line.find(u'\\', StartPos + 1, StartPos + 7)
+                if EndPos != -1 and EndPos - StartPos == 6 :
+                    if re.match('[a-fA-F0-9]{4}', Line[StartPos + 2 : EndPos], re.UNICODE):
+                        EndStr = Line[EndPos: ]
+                        UniStr = ('\u' + (Line[StartPos + 2 : EndPos])).decode('unicode_escape')
+                        if EndStr.startswith(u'\\x') and len(EndStr) >= 7:
+                            if EndStr[6] == u'\\' and re.match('[a-fA-F0-9]{4}', EndStr[2 : 6], re.UNICODE):
+                                Line = Line[0 : StartPos] + UniStr + EndStr
+                        else:
+                            Line = Line[0 : StartPos] + UniStr + EndStr[1:]
+                StartPos = Line.find(u'\\x', StartPos + 1)
 
             IncList = gIncludePattern.findall(Line)
             if len(IncList) == 1:
@@ -421,11 +518,11 @@ class UniFileClassObject(object):
                         break
                 # Value = Value.replace(u'\r\n', u'')
                 Language = GetLanguageCode(Language, self.IsCompatibleMode, self.File)
-                # Check the string name is the upper character
+                # Check the string name
                 if not self.IsCompatibleMode and Name != '':
-                    MatchString = re.match('[A-Z0-9_]+', Name, re.UNICODE)
+                    MatchString = re.match('^[a-zA-Z][a-zA-Z0-9_]*$', Name, re.UNICODE)
                     if MatchString == None or MatchString.end(0) != len(Name):
-                        EdkLogger.error('Unicode File Parser', FORMAT_INVALID, 'The string token name %s defined in UNI file %s contains the invalid lower case character.' %(Name, self.File))
+                        EdkLogger.error('Unicode File Parser', FORMAT_INVALID, 'The string token name %s defined in UNI file %s contains the invalid character.' % (Name, self.File))
                 self.AddStringToList(Name, Language, Value)
                 continue
 

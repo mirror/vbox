@@ -1,7 +1,7 @@
 ## @file
 # Generate AutoGen.h, AutoGen.c and *.depex files
 #
-# Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -17,6 +17,7 @@ import Common.LongFilePathOs as os
 import re
 import os.path as path
 import copy
+import uuid
 
 import GenC
 import GenMake
@@ -39,8 +40,12 @@ from GenPatchPcdTable.GenPatchPcdTable import parsePcdInfoFromMapFile
 import Common.VpdInfoFile as VpdInfoFile
 from GenPcdDb import CreatePcdDatabaseCode
 from Workspace.MetaFileCommentParser import UsageList
-
+from Common.MultipleWorkspace import MultipleWorkspace as mws
 import InfSectionParser
+import datetime
+import hashlib
+from GenVar import VariableMgr,var_info
+from collections import OrderedDict
 
 ## Regular expression for splitting Dependency Expression string into tokens
 gDepexTokenPattern = re.compile("(\(|\)|\w+| \S+\.inf)")
@@ -60,7 +65,10 @@ gMakeTypeMap = {"MSFT":"nmake", "GCC":"gmake"}
 
 
 ## Build rule configuration file
-gDefaultBuildRuleFile = 'Conf/build_rule.txt'
+gDefaultBuildRuleFile = 'build_rule.txt'
+
+## Tools definition configuration file
+gDefaultToolsDefFile = 'tools_def.txt'
 
 ## Build rule default version
 AutoGenReqBuildRuleVerNum = "0.1"
@@ -71,7 +79,8 @@ gAutoGenHeaderFileName = "AutoGen.h"
 gAutoGenStringFileName = "%(module_name)sStrDefs.h"
 gAutoGenStringFormFileName = "%(module_name)sStrDefs.hpk"
 gAutoGenDepexFileName = "%(module_name)s.depex"
-
+gAutoGenImageDefFileName = "%(module_name)sImgDefs.h"
+gAutoGenIdfFileName = "%(module_name)sIdf.hpk"
 gInfSpecVersion = "0x00010017"
 
 #
@@ -136,6 +145,8 @@ ${END}
 #  ${libraryclasses_item}${END}
 
 ${depexsection_item}
+
+${userextension_tianocore_item}
 
 ${tail_comments}
 
@@ -257,6 +268,11 @@ class WorkspaceAutoGen(AutoGen):
         self.FvTargetList   = Fvs
         self.CapTargetList  = Caps
         self.AutoGenObjectList = []
+        self._BuildDir      = None
+        self._FvDir         = None
+        self._MakeFileDir   = None
+        self._BuildCommand  = None
+        self._GuidDict = {}
 
         # there's many relative directory operations, so ...
         os.chdir(self.WorkspaceDir)
@@ -292,7 +308,7 @@ class WorkspaceAutoGen(AutoGen):
         if self.ArchList:
             EdkLogger.info('%-16s = %s' % ("Architecture(s)", ' '.join(self.ArchList)))
         EdkLogger.info('%-16s = %s' % ("Build target", self.BuildTarget))
-        EdkLogger.info('%-16s = %s' % ("Toolchain",self.ToolChain))
+        EdkLogger.info('%-16s = %s' % ("Toolchain", self.ToolChain))
 
         EdkLogger.info('\n%-24s = %s' % ("Active Platform", self.Platform))
         if BuildModule:
@@ -316,12 +332,55 @@ class WorkspaceAutoGen(AutoGen):
             GlobalData.gFdfParser = Fdf
             GlobalData.gAutoGenPhase = False
             PcdSet = Fdf.Profile.PcdDict
+            if Fdf.CurrentFdName and Fdf.CurrentFdName in Fdf.Profile.FdDict:
+                FdDict = Fdf.Profile.FdDict[Fdf.CurrentFdName]
+                for FdRegion in FdDict.RegionList:
+                    if str(FdRegion.RegionType) is 'FILE' and self.Platform.VpdToolGuid in str(FdRegion.RegionDataList):
+                        if int(FdRegion.Offset) % 8 != 0:
+                            EdkLogger.error("build", FORMAT_INVALID, 'The VPD Base Address %s must be 8-byte aligned.' % (FdRegion.Offset))
             ModuleList = Fdf.Profile.InfList
             self.FdfProfile = Fdf.Profile
             for fvname in self.FvTargetList:
                 if fvname.upper() not in self.FdfProfile.FvDict:
                     EdkLogger.error("build", OPTION_VALUE_INVALID,
                                     "No such an FV in FDF file: %s" % fvname)
+
+            # In DSC file may use FILE_GUID to override the module, then in the Platform.Modules use FILE_GUIDmodule.inf as key,
+            # but the path (self.MetaFile.Path) is the real path
+            for key in self.FdfProfile.InfDict:
+                if key == 'ArchTBD':
+                    Platform_cache = {}
+                    MetaFile_cache = {}
+                    for Arch in self.ArchList:
+                        Platform_cache[Arch] = self.BuildDatabase[self.MetaFile, Arch, Target, Toolchain]
+                        MetaFile_cache[Arch] = []
+                        for Pkey in Platform_cache[Arch].Modules.keys():
+                            MetaFile_cache[Arch].append(Platform_cache[Arch].Modules[Pkey].MetaFile)
+                    for Inf in self.FdfProfile.InfDict[key]:
+                        ModuleFile = PathClass(NormPath(Inf), GlobalData.gWorkspace, Arch)
+                        for Arch in self.ArchList:
+                            if ModuleFile in MetaFile_cache[Arch]:
+                                break
+                        else:
+                            ModuleData = self.BuildDatabase[ModuleFile, Arch, Target, Toolchain]
+                            if not ModuleData.IsBinaryModule:
+                                EdkLogger.error('build', PARSER_ERROR, "Module %s NOT found in DSC file; Is it really a binary module?" % ModuleFile)
+
+                else:
+                    for Arch in self.ArchList:
+                        if Arch == key:
+                            Platform = self.BuildDatabase[self.MetaFile, Arch, Target, Toolchain]
+                            MetaFileList = []
+                            for Pkey in Platform.Modules.keys():
+                                MetaFileList.append(Platform.Modules[Pkey].MetaFile)
+                            for Inf in self.FdfProfile.InfDict[key]:
+                                ModuleFile = PathClass(NormPath(Inf), GlobalData.gWorkspace, Arch)
+                                if ModuleFile in MetaFileList:
+                                    continue
+                                ModuleData = self.BuildDatabase[ModuleFile, Arch, Target, Toolchain]
+                                if not ModuleData.IsBinaryModule:
+                                    EdkLogger.error('build', PARSER_ERROR, "Module %s NOT found in DSC file; Is it really a binary module?" % ModuleFile)
+
         else:
             PcdSet = {}
             ModuleList = []
@@ -339,10 +398,166 @@ class WorkspaceAutoGen(AutoGen):
         # apply SKU and inject PCDs from Flash Definition file
         for Arch in self.ArchList:
             Platform = self.BuildDatabase[self.MetaFile, Arch, Target, Toolchain]
+            PlatformPcds = Platform.Pcds
+            self._GuidDict = Platform._GuidDict
+            SourcePcdDict = {'DynamicEx':[], 'PatchableInModule':[],'Dynamic':[],'FixedAtBuild':[]}
+            BinaryPcdDict = {'DynamicEx':[], 'PatchableInModule':[]}
+            SourcePcdDict_Keys = SourcePcdDict.keys()
+            BinaryPcdDict_Keys = BinaryPcdDict.keys()
 
-            DecPcds = {}
-            DecPcdsKey = set()
+            # generate the SourcePcdDict and BinaryPcdDict
             PGen = PlatformAutoGen(self, self.MetaFile, Target, Toolchain, Arch)
+            for BuildData in PGen.BuildDatabase._CACHE_.values():
+                if BuildData.Arch != Arch:
+                    continue
+                if BuildData.MetaFile.Ext == '.inf':
+                    for key in BuildData.Pcds:
+                        if BuildData.Pcds[key].Pending:
+                            if key in Platform.Pcds:
+                                PcdInPlatform = Platform.Pcds[key]
+                                if PcdInPlatform.Type not in [None, '']:
+                                    BuildData.Pcds[key].Type = PcdInPlatform.Type
+                                    BuildData.Pcds[key].Pending = False
+
+                            if BuildData.MetaFile in Platform.Modules:
+                                PlatformModule = Platform.Modules[str(BuildData.MetaFile)]
+                                if key in PlatformModule.Pcds:
+                                    PcdInPlatform = PlatformModule.Pcds[key]
+                                    if PcdInPlatform.Type not in [None, '']:
+                                        BuildData.Pcds[key].Type = PcdInPlatform.Type
+                                        BuildData.Pcds[key].Pending = False
+                            else:
+                                #Pcd used in Library, Pcd Type from reference module if Pcd Type is Pending
+                                if BuildData.Pcds[key].Pending:
+                                    MGen = ModuleAutoGen(self, BuildData.MetaFile, Target, Toolchain, Arch, self.MetaFile)
+                                    if MGen and MGen.IsLibrary:
+                                        if MGen in PGen.LibraryAutoGenList:
+                                            ReferenceModules = MGen._ReferenceModules
+                                            for ReferenceModule in ReferenceModules:
+                                                if ReferenceModule.MetaFile in Platform.Modules:
+                                                    RefPlatformModule = Platform.Modules[str(ReferenceModule.MetaFile)]
+                                                    if key in RefPlatformModule.Pcds:
+                                                        PcdInReferenceModule = RefPlatformModule.Pcds[key]
+                                                        if PcdInReferenceModule.Type:
+                                                            BuildData.Pcds[key].Type = PcdInReferenceModule.Type
+                                                            BuildData.Pcds[key].Pending = False
+                                                            break
+
+                        if 'DynamicEx' in BuildData.Pcds[key].Type:
+                            if BuildData.IsBinaryModule:
+                                if (BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName) not in BinaryPcdDict['DynamicEx']:
+                                    BinaryPcdDict['DynamicEx'].append((BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName))
+                            else:
+                                if (BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName) not in SourcePcdDict['DynamicEx']:
+                                    SourcePcdDict['DynamicEx'].append((BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName))
+
+                        elif 'PatchableInModule' in BuildData.Pcds[key].Type:
+                            if BuildData.MetaFile.Ext == '.inf':
+                                if BuildData.IsBinaryModule:
+                                    if (BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName) not in BinaryPcdDict['PatchableInModule']:
+                                        BinaryPcdDict['PatchableInModule'].append((BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName))
+                                else:
+                                    if (BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName) not in SourcePcdDict['PatchableInModule']:
+                                        SourcePcdDict['PatchableInModule'].append((BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName))
+
+                        elif 'Dynamic' in BuildData.Pcds[key].Type:
+                            if (BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName) not in SourcePcdDict['Dynamic']:
+                                SourcePcdDict['Dynamic'].append((BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName))
+                        elif 'FixedAtBuild' in BuildData.Pcds[key].Type:
+                            if (BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName) not in SourcePcdDict['FixedAtBuild']:
+                                SourcePcdDict['FixedAtBuild'].append((BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName))
+                else:
+                    pass
+            #
+            # A PCD can only use one type for all source modules
+            #
+            for i in SourcePcdDict_Keys:
+                for j in SourcePcdDict_Keys:
+                    if i != j:
+                        IntersectionList = list(set(SourcePcdDict[i]).intersection(set(SourcePcdDict[j])))
+                        if len(IntersectionList) > 0:
+                            EdkLogger.error(
+                            'build',
+                            FORMAT_INVALID,
+                            "Building modules from source INFs, following PCD use %s and %s access method. It must be corrected to use only one access method." % (i, j),
+                            ExtraData="%s" % '\n\t'.join([str(P[1]+'.'+P[0]) for P in IntersectionList])
+                            )
+                    else:
+                        pass
+
+            #
+            # intersection the BinaryPCD for Mixed PCD
+            #
+            for i in BinaryPcdDict_Keys:
+                for j in BinaryPcdDict_Keys:
+                    if i != j:
+                        IntersectionList = list(set(BinaryPcdDict[i]).intersection(set(BinaryPcdDict[j])))
+                        for item in IntersectionList:
+                            NewPcd1 = (item[0] + '_' + i, item[1])
+                            NewPcd2 = (item[0] + '_' + j, item[1])
+                            if item not in GlobalData.MixedPcd:
+                                GlobalData.MixedPcd[item] = [NewPcd1, NewPcd2]
+                            else:
+                                if NewPcd1 not in GlobalData.MixedPcd[item]:
+                                    GlobalData.MixedPcd[item].append(NewPcd1)
+                                if NewPcd2 not in GlobalData.MixedPcd[item]:
+                                    GlobalData.MixedPcd[item].append(NewPcd2)
+                    else:
+                        pass
+
+            #
+            # intersection the SourcePCD and BinaryPCD for Mixed PCD
+            #
+            for i in SourcePcdDict_Keys:
+                for j in BinaryPcdDict_Keys:
+                    if i != j:
+                        IntersectionList = list(set(SourcePcdDict[i]).intersection(set(BinaryPcdDict[j])))
+                        for item in IntersectionList:
+                            NewPcd1 = (item[0] + '_' + i, item[1])
+                            NewPcd2 = (item[0] + '_' + j, item[1])
+                            if item not in GlobalData.MixedPcd:
+                                GlobalData.MixedPcd[item] = [NewPcd1, NewPcd2]
+                            else:
+                                if NewPcd1 not in GlobalData.MixedPcd[item]:
+                                    GlobalData.MixedPcd[item].append(NewPcd1)
+                                if NewPcd2 not in GlobalData.MixedPcd[item]:
+                                    GlobalData.MixedPcd[item].append(NewPcd2)
+                    else:
+                        pass
+
+            for BuildData in PGen.BuildDatabase._CACHE_.values():
+                if BuildData.Arch != Arch:
+                    continue
+                for key in BuildData.Pcds:
+                    for SinglePcd in GlobalData.MixedPcd:
+                        if (BuildData.Pcds[key].TokenCName, BuildData.Pcds[key].TokenSpaceGuidCName) == SinglePcd:
+                            for item in GlobalData.MixedPcd[SinglePcd]:
+                                Pcd_Type = item[0].split('_')[-1]
+                                if (Pcd_Type == BuildData.Pcds[key].Type) or (Pcd_Type == TAB_PCDS_DYNAMIC_EX and BuildData.Pcds[key].Type in GenC.gDynamicExPcd) or \
+                                   (Pcd_Type == TAB_PCDS_DYNAMIC and BuildData.Pcds[key].Type in GenC.gDynamicPcd):
+                                    Value = BuildData.Pcds[key]
+                                    Value.TokenCName = BuildData.Pcds[key].TokenCName + '_' + Pcd_Type
+                                    if len(key) == 2:
+                                        newkey = (Value.TokenCName, key[1])
+                                    elif len(key) == 3:
+                                        newkey = (Value.TokenCName, key[1], key[2])
+                                    del BuildData.Pcds[key]
+                                    BuildData.Pcds[newkey] = Value
+                                    break
+                                else:
+                                    pass
+                            break
+                        else:
+                            pass
+
+            # handle the mixed pcd in FDF file
+            for key in PcdSet:
+                if key in GlobalData.MixedPcd:
+                    Value = PcdSet[key]
+                    del PcdSet[key]
+                    for item in GlobalData.MixedPcd[key]:
+                        PcdSet[item] = Value
+
             #Collect package set information from INF of FDF
             PkgSet = set()
             for Inf in ModuleList:
@@ -352,6 +567,8 @@ class WorkspaceAutoGen(AutoGen):
                 ModuleData = self.BuildDatabase[ModuleFile, Arch, Target, Toolchain]
                 PkgSet.update(ModuleData.Packages)
             Pkgs = list(PkgSet) + list(PGen.PackageList)
+            DecPcds = {}
+            DecPcdsKey = set()
             for Pkg in Pkgs:
                 for Pcd in Pkg.Pcds:
                     DecPcds[Pcd[0], Pcd[1]] = Pkg.Pcds[Pcd]
@@ -391,6 +608,14 @@ class WorkspaceAutoGen(AutoGen):
             Pa.CollectFixedAtBuildPcds()
             self.AutoGenObjectList.append(Pa)
 
+            #
+            # Generate Package level hash value
+            #
+            GlobalData.gPackageHash[Arch] = {}
+            if GlobalData.gUseHashCache:
+                for Pkg in Pkgs:
+                    self._GenPkgLevelHash(Pkg)
+
         #
         # Check PCDs token value conflict in each DEC file.
         #
@@ -404,12 +629,147 @@ class WorkspaceAutoGen(AutoGen):
 #         if self.FdfFile:
 #             self._CheckDuplicateInFV(Fdf)
 
-        self._BuildDir = None
-        self._FvDir = None
-        self._MakeFileDir = None
-        self._BuildCommand = None
+        #
+        # Create BuildOptions Macro & PCD metafile, also add the Active Platform and FDF file.
+        #
+        content = 'gCommandLineDefines: '
+        content += str(GlobalData.gCommandLineDefines)
+        content += os.linesep
+        content += 'BuildOptionPcd: '
+        content += str(GlobalData.BuildOptionPcd)
+        content += os.linesep
+        content += 'Active Platform: '
+        content += str(self.Platform)
+        content += os.linesep
+        if self.FdfFile:
+            content += 'Flash Image Definition: '
+            content += str(self.FdfFile)
+            content += os.linesep
+        SaveFileOnChange(os.path.join(self.BuildDir, 'BuildOptions'), content, False)
 
+        #
+        # Create PcdToken Number file for Dynamic/DynamicEx Pcd.
+        #
+        PcdTokenNumber = 'PcdTokenNumber: '
+        if Pa.PcdTokenNumber:
+            if Pa.DynamicPcdList:
+                for Pcd in Pa.DynamicPcdList:
+                    PcdTokenNumber += os.linesep
+                    PcdTokenNumber += str((Pcd.TokenCName, Pcd.TokenSpaceGuidCName))
+                    PcdTokenNumber += ' : '
+                    PcdTokenNumber += str(Pa.PcdTokenNumber[Pcd.TokenCName, Pcd.TokenSpaceGuidCName])
+        SaveFileOnChange(os.path.join(self.BuildDir, 'PcdTokenNumber'), PcdTokenNumber, False)
+
+        #
+        # Get set of workspace metafiles
+        #
+        AllWorkSpaceMetaFiles = self._GetMetaFiles(Target, Toolchain, Arch)
+
+        #
+        # Retrieve latest modified time of all metafiles
+        #
+        SrcTimeStamp = 0
+        for f in AllWorkSpaceMetaFiles:
+            if os.stat(f)[8] > SrcTimeStamp:
+                SrcTimeStamp = os.stat(f)[8]
+        self._SrcTimeStamp = SrcTimeStamp
+
+        if GlobalData.gUseHashCache:
+            m = hashlib.md5()
+            for files in AllWorkSpaceMetaFiles:
+                if files.endswith('.dec'):
+                    continue
+                f = open(files, 'r')
+                Content = f.read()
+                f.close()
+                m.update(Content)
+            SaveFileOnChange(os.path.join(self.BuildDir, 'AutoGen.hash'), m.hexdigest(), True)
+            GlobalData.gPlatformHash = m.hexdigest()
+
+        #
+        # Write metafile list to build directory
+        #
+        AutoGenFilePath = os.path.join(self.BuildDir, 'AutoGen')
+        if os.path.exists (AutoGenFilePath):
+            os.remove(AutoGenFilePath)
+        if not os.path.exists(self.BuildDir):
+            os.makedirs(self.BuildDir)
+        with open(os.path.join(self.BuildDir, 'AutoGen'), 'w+') as file:
+            for f in AllWorkSpaceMetaFiles:
+                print >> file, f
         return True
+
+    def _GenPkgLevelHash(self, Pkg):
+        PkgDir = os.path.join(self.BuildDir, Pkg.Arch, Pkg.PackageName)
+        CreateDirectory(PkgDir)
+        HashFile = os.path.join(PkgDir, Pkg.PackageName + '.hash')
+        m = hashlib.md5()
+        # Get .dec file's hash value
+        f = open(Pkg.MetaFile.Path, 'r')
+        Content = f.read()
+        f.close()
+        m.update(Content)
+        # Get include files hash value
+        if Pkg.Includes:
+            for inc in Pkg.Includes:
+                for Root, Dirs, Files in os.walk(str(inc)):
+                    for File in Files:
+                        File_Path = os.path.join(Root, File)
+                        f = open(File_Path, 'r')
+                        Content = f.read()
+                        f.close()
+                        m.update(Content)
+        SaveFileOnChange(HashFile, m.hexdigest(), True)
+        if Pkg.PackageName not in GlobalData.gPackageHash[Pkg.Arch]:
+            GlobalData.gPackageHash[Pkg.Arch][Pkg.PackageName] = m.hexdigest()
+
+    def _GetMetaFiles(self, Target, Toolchain, Arch):
+        AllWorkSpaceMetaFiles = set()
+        #
+        # add fdf
+        #
+        if self.FdfFile:
+            AllWorkSpaceMetaFiles.add (self.FdfFile.Path)
+            if self.FdfFile:
+                FdfFiles = GlobalData.gFdfParser.GetAllIncludedFile()
+                for f in FdfFiles:
+                    AllWorkSpaceMetaFiles.add (f.FileName)
+        #
+        # add dsc
+        #
+        AllWorkSpaceMetaFiles.add(self.MetaFile.Path)
+
+        #
+        # add build_rule.txt & tools_def.txt
+        #
+        AllWorkSpaceMetaFiles.add(os.path.join(GlobalData.gConfDirectory, gDefaultBuildRuleFile))
+        AllWorkSpaceMetaFiles.add(os.path.join(GlobalData.gConfDirectory, gDefaultToolsDefFile))
+
+        # add BuildOption metafile
+        #
+        AllWorkSpaceMetaFiles.add(os.path.join(self.BuildDir, 'BuildOptions'))
+
+        # add PcdToken Number file for Dynamic/DynamicEx Pcd
+        #
+        AllWorkSpaceMetaFiles.add(os.path.join(self.BuildDir, 'PcdTokenNumber'))
+
+        for Arch in self.ArchList:
+            Platform = self.BuildDatabase[self.MetaFile, Arch, Target, Toolchain]
+            PGen = PlatformAutoGen(self, self.MetaFile, Target, Toolchain, Arch)
+
+            #
+            # add dec
+            #
+            for Package in PGen.PackageList:
+                AllWorkSpaceMetaFiles.add(Package.MetaFile.Path)
+
+            #
+            # add included dsc
+            #
+            for filePath in Platform._RawData.IncludedFiles:
+                AllWorkSpaceMetaFiles.add(filePath.Path)
+
+        return AllWorkSpaceMetaFiles
 
     ## _CheckDuplicateInFV() method
     #
@@ -437,7 +797,7 @@ class WorkspaceAutoGen(AutoGen):
                                 else:
                                     EdkLogger.error("build",
                                                     FORMAT_INVALID,
-                                                    "Duplicate GUID found for these lines: Line %d: %s and Line %d: %s. GUID: %s"%(FfsFile.CurrentLineNum,
+                                                    "Duplicate GUID found for these lines: Line %d: %s and Line %d: %s. GUID: %s" % (FfsFile.CurrentLineNum,
                                                                                                                                    FfsFile.CurrentLineContent,
                                                                                                                                    _GuidDict[Module.Guid.upper()].CurrentLineNum,
                                                                                                                                    _GuidDict[Module.Guid.upper()].CurrentLineContent,
@@ -463,7 +823,7 @@ class WorkspaceAutoGen(AutoGen):
                             else:
                                 EdkLogger.error("build",
                                                 FORMAT_INVALID,
-                                                "Duplicate GUID found for these lines: Line %d: %s and Line %d: %s. GUID: %s"%(FfsFile.CurrentLineNum,
+                                                "Duplicate GUID found for these lines: Line %d: %s and Line %d: %s. GUID: %s" % (FfsFile.CurrentLineNum,
                                                                                                                                FfsFile.CurrentLineContent,
                                                                                                                                _GuidDict[InfObj.Guid.upper()].CurrentLineNum,
                                                                                                                                _GuidDict[InfObj.Guid.upper()].CurrentLineContent,
@@ -505,7 +865,7 @@ class WorkspaceAutoGen(AutoGen):
                                             #
                                             EdkLogger.error("build",
                                                             FORMAT_INVALID,
-                                                            "The format of PCD value is incorrect. PCD: %s , Value: %s\n"%(_PcdName, PcdItem.DefaultValue),
+                                                            "The format of PCD value is incorrect. PCD: %s , Value: %s\n" % (_PcdName, PcdItem.DefaultValue),
                                                             ExtraData=self.FdfFile)
 
                                         if not _PcdGuidString.upper() in _GuidDict.keys():
@@ -515,7 +875,7 @@ class WorkspaceAutoGen(AutoGen):
                                         else:
                                             EdkLogger.error("build",
                                                             FORMAT_INVALID,
-                                                            "Duplicate GUID found for these lines: Line %d: %s and Line %d: %s. GUID: %s"%(FfsFile.CurrentLineNum,
+                                                            "Duplicate GUID found for these lines: Line %d: %s and Line %d: %s. GUID: %s" % (FfsFile.CurrentLineNum,
                                                                                                                                            FfsFile.CurrentLineContent,
                                                                                                                                            _GuidDict[_PcdGuidString.upper()].CurrentLineNum,
                                                                                                                                            _GuidDict[_PcdGuidString.upper()].CurrentLineContent,
@@ -530,7 +890,7 @@ class WorkspaceAutoGen(AutoGen):
                         #
                         EdkLogger.error("build",
                                         FORMAT_INVALID,
-                                        "Duplicate GUID found for these lines: Line %d: %s and Line %d: %s. GUID: %s"%(FfsFile.CurrentLineNum,
+                                        "Duplicate GUID found for these lines: Line %d: %s and Line %d: %s. GUID: %s" % (FfsFile.CurrentLineNum,
                                                                                                                        FfsFile.CurrentLineContent,
                                                                                                                        _GuidDict[FfsFile.NameGuid.upper()].CurrentLineNum,
                                                                                                                        _GuidDict[FfsFile.NameGuid.upper()].CurrentLineContent,
@@ -603,7 +963,8 @@ class WorkspaceAutoGen(AutoGen):
 
     ## Return the directory to store all intermediate and final files built
     def _GetBuildDir(self):
-        return self.AutoGenObjectList[0].BuildDir
+        if self._BuildDir == None:
+            return self.AutoGenObjectList[0].BuildDir
 
     ## Return the build output directory platform specifies
     def _GetOutputDir(self):
@@ -654,7 +1015,7 @@ class WorkspaceAutoGen(AutoGen):
         for Pa in self.AutoGenObjectList:
             for Package in Pa.PackageList:
                 PcdList = Package.Pcds.values()
-                PcdList.sort(lambda x, y: cmp(x.TokenValue, y.TokenValue))
+                PcdList.sort(lambda x, y: cmp(int(x.TokenValue, 0), int(y.TokenValue, 0)))
                 Count = 0
                 while (Count < len(PcdList) - 1) :
                     Item = PcdList[Count]
@@ -662,39 +1023,45 @@ class WorkspaceAutoGen(AutoGen):
                     #
                     # Make sure in the same token space the TokenValue should be unique
                     #
-                    if (Item.TokenValue == ItemNext.TokenValue):
+                    if (int(Item.TokenValue, 0) == int(ItemNext.TokenValue, 0)):
                         SameTokenValuePcdList = []
                         SameTokenValuePcdList.append(Item)
                         SameTokenValuePcdList.append(ItemNext)
                         RemainPcdListLength = len(PcdList) - Count - 2
                         for ValueSameCount in range(RemainPcdListLength):
-                            if PcdList[len(PcdList) - RemainPcdListLength + ValueSameCount].TokenValue == Item.TokenValue:
+                            if int(PcdList[len(PcdList) - RemainPcdListLength + ValueSameCount].TokenValue, 0) == int(Item.TokenValue, 0):
                                 SameTokenValuePcdList.append(PcdList[len(PcdList) - RemainPcdListLength + ValueSameCount])
                             else:
                                 break;
                         #
                         # Sort same token value PCD list with TokenGuid and TokenCName
                         #
-                        SameTokenValuePcdList.sort(lambda x, y: cmp("%s.%s"%(x.TokenSpaceGuidCName, x.TokenCName), "%s.%s"%(y.TokenSpaceGuidCName, y.TokenCName)))
+                        SameTokenValuePcdList.sort(lambda x, y: cmp("%s.%s" % (x.TokenSpaceGuidCName, x.TokenCName), "%s.%s" % (y.TokenSpaceGuidCName, y.TokenCName)))
                         SameTokenValuePcdListCount = 0
                         while (SameTokenValuePcdListCount < len(SameTokenValuePcdList) - 1):
-                            TemListItem     = SameTokenValuePcdList[SameTokenValuePcdListCount]
+                            Flag = False
+                            TemListItem = SameTokenValuePcdList[SameTokenValuePcdListCount]
                             TemListItemNext = SameTokenValuePcdList[SameTokenValuePcdListCount + 1]
 
                             if (TemListItem.TokenSpaceGuidCName == TemListItemNext.TokenSpaceGuidCName) and (TemListItem.TokenCName != TemListItemNext.TokenCName):
-                                EdkLogger.error(
-                                            'build',
-                                            FORMAT_INVALID,
-                                            "The TokenValue [%s] of PCD [%s.%s] is conflict with: [%s.%s] in %s"\
-                                            % (TemListItem.TokenValue, TemListItem.TokenSpaceGuidCName, TemListItem.TokenCName, TemListItemNext.TokenSpaceGuidCName, TemListItemNext.TokenCName, Package),
-                                            ExtraData=None
-                                            )
+                                for PcdItem in GlobalData.MixedPcd:
+                                    if (TemListItem.TokenCName, TemListItem.TokenSpaceGuidCName) in GlobalData.MixedPcd[PcdItem] or \
+                                        (TemListItemNext.TokenCName, TemListItemNext.TokenSpaceGuidCName) in GlobalData.MixedPcd[PcdItem]:
+                                        Flag = True
+                                if not Flag:
+                                    EdkLogger.error(
+                                                'build',
+                                                FORMAT_INVALID,
+                                                "The TokenValue [%s] of PCD [%s.%s] is conflict with: [%s.%s] in %s"\
+                                                % (TemListItem.TokenValue, TemListItem.TokenSpaceGuidCName, TemListItem.TokenCName, TemListItemNext.TokenSpaceGuidCName, TemListItemNext.TokenCName, Package),
+                                                ExtraData=None
+                                                )
                             SameTokenValuePcdListCount += 1
                         Count += SameTokenValuePcdListCount
                     Count += 1
 
                 PcdList = Package.Pcds.values()
-                PcdList.sort(lambda x, y: cmp("%s.%s"%(x.TokenSpaceGuidCName, x.TokenCName), "%s.%s"%(y.TokenSpaceGuidCName, y.TokenCName)))
+                PcdList.sort(lambda x, y: cmp("%s.%s" % (x.TokenSpaceGuidCName, x.TokenCName), "%s.%s" % (y.TokenSpaceGuidCName, y.TokenCName)))
                 Count = 0
                 while (Count < len(PcdList) - 1) :
                     Item = PcdList[Count]
@@ -702,7 +1069,7 @@ class WorkspaceAutoGen(AutoGen):
                     #
                     # Check PCDs with same TokenSpaceGuidCName.TokenCName have same token value as well.
                     #
-                    if (Item.TokenSpaceGuidCName == ItemNext.TokenSpaceGuidCName) and (Item.TokenCName == ItemNext.TokenCName) and (Item.TokenValue != ItemNext.TokenValue):
+                    if (Item.TokenSpaceGuidCName == ItemNext.TokenSpaceGuidCName) and (Item.TokenCName == ItemNext.TokenCName) and (int(Item.TokenValue, 0) != int(ItemNext.TokenValue, 0)):
                         EdkLogger.error(
                                     'build',
                                     FORMAT_INVALID,
@@ -769,6 +1136,7 @@ class PlatformAutoGen(AutoGen):
     #
     _DynaPcdList_ = []
     _NonDynaPcdList_ = []
+    _PlatformPcds = {}
 
     #
     # The priority list while override build option
@@ -819,6 +1187,8 @@ class PlatformAutoGen(AutoGen):
         self.AllPcdList = []
         # get the original module/package/platform objects
         self.BuildDatabase = Workspace.BuildDatabase
+        self.DscBuildDataObj = Workspace.Platform
+        self._GuidDict = Workspace._GuidDict
 
         # flag indicating if the makefile/C-code file has been created or not
         self.IsMakeFileCreated  = False
@@ -855,6 +1225,9 @@ class PlatformAutoGen(AutoGen):
         self._BuildCommand = None
         self._AsBuildInfList = []
         self._AsBuildModuleList = []
+
+        self.VariableInfo = None
+
         if GlobalData.gFdfParser != None:
             self._AsBuildInfList = GlobalData.gFdfParser.Profile.InfList
             for Inf in self._AsBuildInfList:
@@ -866,6 +1239,7 @@ class PlatformAutoGen(AutoGen):
         # get library/modules for build
         self.LibraryBuildDirectoryList = []
         self.ModuleBuildDirectoryList = []
+
         return True
 
     def __repr__(self):
@@ -899,12 +1273,15 @@ class PlatformAutoGen(AutoGen):
     #   @param      CreateModuleMakeFile    Flag indicating if the makefile for
     #                                       modules will be created as well
     #
-    def CreateMakeFile(self, CreateModuleMakeFile=False):
+    def CreateMakeFile(self, CreateModuleMakeFile=False, FfsCommand = {}):
         if CreateModuleMakeFile:
             for ModuleFile in self.Platform.Modules:
                 Ma = ModuleAutoGen(self.Workspace, ModuleFile, self.BuildTarget,
                                    self.ToolChain, self.Arch, self.MetaFile)
-                Ma.CreateMakeFile(True)
+                if (ModuleFile.File, self.Arch) in FfsCommand:
+                    Ma.CreateMakeFile(True, FfsCommand[ModuleFile.File, self.Arch])
+                else:
+                    Ma.CreateMakeFile(True)
                 #Ma.CreateAsBuiltInf()
 
         # no need to create makefile for the platform more than once
@@ -925,13 +1302,18 @@ class PlatformAutoGen(AutoGen):
             FixedAtBuildPcds = {}
             ShareFixedAtBuildPcdsSameValue = {}
             for Module in LibAuto._ReferenceModules:
-                for Pcd in Module.FixedAtBuildPcds + LibAuto.FixedAtBuildPcds:
+                for Pcd in set(Module.FixedAtBuildPcds + LibAuto.FixedAtBuildPcds):
+                    DefaultValue = Pcd.DefaultValue
+                    # Cover the case: DSC component override the Pcd value and the Pcd only used in one Lib
+                    if Pcd in Module.LibraryPcdList:
+                        Index = Module.LibraryPcdList.index(Pcd)
+                        DefaultValue = Module.LibraryPcdList[Index].DefaultValue
                     key = ".".join((Pcd.TokenSpaceGuidCName,Pcd.TokenCName))
                     if key not in FixedAtBuildPcds:
                         ShareFixedAtBuildPcdsSameValue[key] = True
-                        FixedAtBuildPcds[key] = Pcd.DefaultValue
+                        FixedAtBuildPcds[key] = DefaultValue
                     else:
-                        if FixedAtBuildPcds[key] != Pcd.DefaultValue:
+                        if FixedAtBuildPcds[key] != DefaultValue:
                             ShareFixedAtBuildPcdsSameValue[key] = False
             for Pcd in LibAuto.FixedAtBuildPcds:
                 key = ".".join((Pcd.TokenSpaceGuidCName,Pcd.TokenCName))
@@ -942,7 +1324,67 @@ class PlatformAutoGen(AutoGen):
                     if DscPcd.Type != "FixedAtBuild":
                         continue
                 if key in ShareFixedAtBuildPcdsSameValue and ShareFixedAtBuildPcdsSameValue[key]:
-                    LibAuto.ConstPcd[key] = Pcd.DefaultValue
+                    LibAuto.ConstPcd[key] = FixedAtBuildPcds[key]
+
+    def CollectVariables(self, DynamicPcdSet):
+
+        VpdRegionSize = 0
+        VpdRegionBase = 0
+        if self.Workspace.FdfFile:
+            FdDict = self.Workspace.FdfProfile.FdDict[GlobalData.gFdfParser.CurrentFdName]
+            for FdRegion in FdDict.RegionList:
+                for item in FdRegion.RegionDataList:
+                    if self.Platform.VpdToolGuid.strip() and self.Platform.VpdToolGuid in item:
+                        VpdRegionSize = FdRegion.Size
+                        VpdRegionBase = FdRegion.Offset
+                        break
+
+
+        VariableInfo = VariableMgr(self.DscBuildDataObj._GetDefaultStores(),self.DscBuildDataObj._GetSkuIds())
+        VariableInfo.SetVpdRegionMaxSize(VpdRegionSize)
+        VariableInfo.SetVpdRegionOffset(VpdRegionBase)
+        Index = 0
+        for Pcd in DynamicPcdSet:
+            pcdname = ".".join((Pcd.TokenSpaceGuidCName,Pcd.TokenCName))
+            for SkuName in Pcd.SkuInfoList:
+                Sku = Pcd.SkuInfoList[SkuName]
+                SkuId = Sku.SkuId
+                if SkuId == None or SkuId == '':
+                    continue
+                if len(Sku.VariableName) > 0:
+                    VariableGuidStructure = Sku.VariableGuidValue
+                    VariableGuid = GuidStructureStringToGuidString(VariableGuidStructure)
+                    for StorageName in Sku.DefaultStoreDict:
+                        VariableInfo.append_variable(var_info(Index,pcdname,StorageName,SkuName, StringToArray(Sku.VariableName),VariableGuid, Sku.VariableOffset, Sku.VariableAttribute , Sku.HiiDefaultValue,Sku.DefaultStoreDict[StorageName],Pcd.DatumType))
+            Index += 1
+        return VariableInfo
+
+    def UpdateNVStoreMaxSize(self,OrgVpdFile):
+        if self.VariableInfo:
+            VpdMapFilePath = os.path.join(self.BuildDir, "FV", "%s.map" % self.Platform.VpdToolGuid)
+            PcdNvStoreDfBuffer = [item for item in self._DynamicPcdList if item.TokenCName == "PcdNvStoreDefaultValueBuffer" and item.TokenSpaceGuidCName == "gEfiMdeModulePkgTokenSpaceGuid"]
+
+            if PcdNvStoreDfBuffer:
+                if os.path.exists(VpdMapFilePath):
+                    OrgVpdFile.Read(VpdMapFilePath)
+                    PcdItems = OrgVpdFile.GetOffset(PcdNvStoreDfBuffer[0])
+                    NvStoreOffset = PcdItems.values()[0].strip() if PcdItems else '0'
+                else:
+                    EdkLogger.error("build", FILE_READ_FAILURE, "Can not find VPD map file %s to fix up VPD offset." % VpdMapFilePath)
+
+                NvStoreOffset = int(NvStoreOffset,16) if NvStoreOffset.upper().startswith("0X") else int(NvStoreOffset)
+                default_skuobj = PcdNvStoreDfBuffer[0].SkuInfoList.get("DEFAULT")
+                maxsize = self.VariableInfo.VpdRegionSize  - NvStoreOffset if self.VariableInfo.VpdRegionSize else len(default_skuobj.DefaultValue.split(","))
+                var_data = self.VariableInfo.PatchNVStoreDefaultMaxSize(maxsize)
+
+                if var_data and default_skuobj:
+                    default_skuobj.DefaultValue = var_data
+                    PcdNvStoreDfBuffer[0].DefaultValue = var_data
+                    PcdNvStoreDfBuffer[0].SkuInfoList.clear()
+                    PcdNvStoreDfBuffer[0].SkuInfoList['DEFAULT'] = default_skuobj
+                    PcdNvStoreDfBuffer[0].MaxDatumSize = str(len(default_skuobj.DefaultValue.split(",")))
+
+        return OrgVpdFile
 
     ## Collect dynamic PCDs
     #
@@ -950,13 +1392,36 @@ class PlatformAutoGen(AutoGen):
     #  This interface should be invoked explicitly when platform action is created.
     #
     def CollectPlatformDynamicPcds(self):
+
+        for key in self.Platform.Pcds:
+            for SinglePcd in GlobalData.MixedPcd:
+                if (self.Platform.Pcds[key].TokenCName, self.Platform.Pcds[key].TokenSpaceGuidCName) == SinglePcd:
+                    for item in GlobalData.MixedPcd[SinglePcd]:
+                        Pcd_Type = item[0].split('_')[-1]
+                        if (Pcd_Type == self.Platform.Pcds[key].Type) or (Pcd_Type == TAB_PCDS_DYNAMIC_EX and self.Platform.Pcds[key].Type in GenC.gDynamicExPcd) or \
+                           (Pcd_Type == TAB_PCDS_DYNAMIC and self.Platform.Pcds[key].Type in GenC.gDynamicPcd):
+                            Value = self.Platform.Pcds[key]
+                            Value.TokenCName = self.Platform.Pcds[key].TokenCName + '_' + Pcd_Type
+                            if len(key) == 2:
+                                newkey = (Value.TokenCName, key[1])
+                            elif len(key) == 3:
+                                newkey = (Value.TokenCName, key[1], key[2])
+                            del self.Platform.Pcds[key]
+                            self.Platform.Pcds[newkey] = Value
+                            break
+                        else:
+                            pass
+                    break
+                else:
+                    pass
+
         # for gathering error information
         NoDatumTypePcdList = set()
         PcdNotInDb = []
         self._GuidValue = {}
         FdfModuleList = []
         for InfName in self._AsBuildInfList:
-            InfName = os.path.join(self.WorkspaceDir, InfName)
+            InfName = mws.join(self.WorkspaceDir, InfName)
             FdfModuleList.append(os.path.normpath(InfName))
         for F in self.Platform.Modules.keys():
             M = ModuleAutoGen(self.Workspace, F, self.BuildTarget, self.ToolChain, self.Arch, self.MetaFile)
@@ -964,7 +1429,7 @@ class PlatformAutoGen(AutoGen):
 
             self.Platform.Modules[F].M = M
 
-            for PcdFromModule in M.ModulePcdList+M.LibraryPcdList:
+            for PcdFromModule in M.ModulePcdList + M.LibraryPcdList:
                 # make sure that the "VOID*" kind of datum has MaxDatumSize set
                 if PcdFromModule.DatumType == "VOID*" and PcdFromModule.MaxDatumSize in [None, '']:
                     NoDatumTypePcdList.add("%s.%s [%s]" % (PcdFromModule.TokenSpaceGuidCName, PcdFromModule.TokenCName, F))
@@ -1104,44 +1569,94 @@ class PlatformAutoGen(AutoGen):
         #
         # The reason of sorting is make sure the unicode string is in double-byte alignment in string table.
         #
-        UnicodePcdArray = []
-        HiiPcdArray     = []
-        OtherPcdArray   = []
+        UnicodePcdArray = set()
+        HiiPcdArray     = set()
+        OtherPcdArray   = set()
         VpdPcdDict      = {}
         VpdFile               = VpdInfoFile.VpdInfoFile()
         NeedProcessVpdMapFile = False
 
+        for pcd in self.Platform.Pcds.keys():
+            if pcd not in self._PlatformPcds.keys():
+                self._PlatformPcds[pcd] = self.Platform.Pcds[pcd]
+
+        for item in self._PlatformPcds:
+            if self._PlatformPcds[item].DatumType and self._PlatformPcds[item].DatumType not in [TAB_UINT8, TAB_UINT16, TAB_UINT32, TAB_UINT64, TAB_VOID, "BOOLEAN"]:
+                self._PlatformPcds[item].DatumType = "VOID*"
+
         if (self.Workspace.ArchList[-1] == self.Arch):
             for Pcd in self._DynamicPcdList:
                 # just pick the a value to determine whether is unicode string type
-                Sku      = Pcd.SkuInfoList[Pcd.SkuInfoList.keys()[0]]
+                Sku = Pcd.SkuInfoList[Pcd.SkuInfoList.keys()[0]]
                 Sku.VpdOffset = Sku.VpdOffset.strip()
 
-                PcdValue = Sku.DefaultValue
-                if Pcd.DatumType == 'VOID*' and PcdValue.startswith("L"):
+                if Pcd.DatumType not in [TAB_UINT8, TAB_UINT16, TAB_UINT32, TAB_UINT64, TAB_VOID, "BOOLEAN"]:
+                    Pcd.DatumType = "VOID*"
+
                     # if found PCD which datum value is unicode string the insert to left size of UnicodeIndex
-                    UnicodePcdArray.append(Pcd)
-                elif len(Sku.VariableName) > 0:
                     # if found HII type PCD then insert to right of UnicodeIndex
-                    HiiPcdArray.append(Pcd)
-                else:
-                    OtherPcdArray.append(Pcd)
                 if Pcd.Type in [TAB_PCDS_DYNAMIC_VPD, TAB_PCDS_DYNAMIC_EX_VPD]:
                     VpdPcdDict[(Pcd.TokenCName, Pcd.TokenSpaceGuidCName)] = Pcd
 
-            PlatformPcds = self.Platform.Pcds.keys()
+            #Collect DynamicHii PCD values and assign it to DynamicExVpd PCD gEfiMdeModulePkgTokenSpaceGuid.PcdNvStoreDefaultValueBuffer
+            PcdNvStoreDfBuffer = VpdPcdDict.get(("PcdNvStoreDefaultValueBuffer","gEfiMdeModulePkgTokenSpaceGuid"))
+            if PcdNvStoreDfBuffer:
+                self.VariableInfo = self.CollectVariables(self._DynamicPcdList)
+                vardump = self.VariableInfo.dump()
+                if vardump:
+                    PcdNvStoreDfBuffer.DefaultValue = vardump
+                    for skuname in PcdNvStoreDfBuffer.SkuInfoList:
+                        PcdNvStoreDfBuffer.SkuInfoList[skuname].DefaultValue = vardump
+                        PcdNvStoreDfBuffer.MaxDatumSize = str(len(vardump.split(",")))
+
+            PlatformPcds = self._PlatformPcds.keys()
             PlatformPcds.sort()
             #
             # Add VPD type PCD into VpdFile and determine whether the VPD PCD need to be fixed up.
             #
+            VpdSkuMap = {}
             for PcdKey in PlatformPcds:
-                Pcd = self.Platform.Pcds[PcdKey]
+                Pcd = self._PlatformPcds[PcdKey]
                 if Pcd.Type in [TAB_PCDS_DYNAMIC_VPD, TAB_PCDS_DYNAMIC_EX_VPD] and \
                    PcdKey in VpdPcdDict:
                     Pcd = VpdPcdDict[PcdKey]
+                    SkuValueMap = {}
+                    DefaultSku = Pcd.SkuInfoList.get('DEFAULT')
+                    if DefaultSku:
+                        PcdValue = DefaultSku.DefaultValue
+                        if PcdValue not in SkuValueMap:
+                            SkuValueMap[PcdValue] = []
+                            VpdFile.Add(Pcd, 'DEFAULT',DefaultSku.VpdOffset)
+                        SkuValueMap[PcdValue].append(DefaultSku)
+
                     for (SkuName,Sku) in Pcd.SkuInfoList.items():
                         Sku.VpdOffset = Sku.VpdOffset.strip()
-                        VpdFile.Add(Pcd, Sku.VpdOffset)
+                        PcdValue = Sku.DefaultValue
+                        if PcdValue == "":
+                            PcdValue  = Pcd.DefaultValue
+                        if Sku.VpdOffset != '*':
+                            if PcdValue.startswith("{"):
+                                Alignment = 8
+                            elif PcdValue.startswith("L"):
+                                Alignment = 2
+                            else:
+                                Alignment = 1
+                            try:
+                                VpdOffset = int(Sku.VpdOffset)
+                            except:
+                                try:
+                                    VpdOffset = int(Sku.VpdOffset, 16)
+                                except:
+                                    EdkLogger.error("build", FORMAT_INVALID, "Invalid offset value %s for PCD %s.%s." % (Sku.VpdOffset, Pcd.TokenSpaceGuidCName, Pcd.TokenCName))
+                            if VpdOffset % Alignment != 0:
+                                if PcdValue.startswith("{"):
+                                    EdkLogger.warn("build", "The offset value of PCD %s.%s is not 8-byte aligned!" %(Pcd.TokenSpaceGuidCName, Pcd.TokenCName), File=self.MetaFile)
+                                else:
+                                    EdkLogger.error("build", FORMAT_INVALID, 'The offset value of PCD %s.%s should be %s-byte aligned.' % (Pcd.TokenSpaceGuidCName, Pcd.TokenCName, Alignment))
+                        if PcdValue not in SkuValueMap:
+                            SkuValueMap[PcdValue] = []
+                            VpdFile.Add(Pcd, SkuName,Sku.VpdOffset)
+                        SkuValueMap[PcdValue].append(Sku)
                         # if the offset of a VPD is *, then it need to be fixed up by third party tool.
                         if not NeedProcessVpdMapFile and Sku.VpdOffset == "*":
                             NeedProcessVpdMapFile = True
@@ -1149,13 +1664,13 @@ class PlatformAutoGen(AutoGen):
                                 EdkLogger.error("Build", FILE_NOT_FOUND, \
                                                 "Fail to find third-party BPDG tool to process VPD PCDs. BPDG Guid tool need to be defined in tools_def.txt and VPD_TOOL_GUID need to be provided in DSC file.")
 
-
+                    VpdSkuMap[PcdKey] = SkuValueMap
             #
             # Fix the PCDs define in VPD PCD section that never referenced by module.
             # An example is PCD for signature usage.
             #
             for DscPcd in PlatformPcds:
-                DscPcdEntry = self.Platform.Pcds[DscPcd]
+                DscPcdEntry = self._PlatformPcds[DscPcd]
                 if DscPcdEntry.Type in [TAB_PCDS_DYNAMIC_VPD, TAB_PCDS_DYNAMIC_EX_VPD]:
                     if not (self.Platform.VpdToolGuid == None or self.Platform.VpdToolGuid == ''):
                         FoundFlag = False
@@ -1168,7 +1683,13 @@ class PlatformAutoGen(AutoGen):
                         # Not found, it should be signature
                         if not FoundFlag :
                             # just pick the a value to determine whether is unicode string type
-                            for (SkuName,Sku) in DscPcdEntry.SkuInfoList.items():
+                            SkuValueMap = {}
+                            SkuObjList = DscPcdEntry.SkuInfoList.items()
+                            DefaultSku = DscPcdEntry.SkuInfoList.get('DEFAULT')
+                            if DefaultSku:
+                                defaultindex = SkuObjList.index(('DEFAULT',DefaultSku))
+                                SkuObjList[0],SkuObjList[defaultindex] = SkuObjList[defaultindex],SkuObjList[0]
+                            for (SkuName,Sku) in SkuObjList:
                                 Sku.VpdOffset = Sku.VpdOffset.strip()
 
                                 # Need to iterate DEC pcd information to get the value & datumtype
@@ -1193,57 +1714,54 @@ class PlatformAutoGen(AutoGen):
 
                                 if DscPcdEntry not in self._DynamicPcdList:
                                     self._DynamicPcdList.append(DscPcdEntry)
-#                                Sku = DscPcdEntry.SkuInfoList[DscPcdEntry.SkuInfoList.keys()[0]]
                                 Sku.VpdOffset = Sku.VpdOffset.strip()
                                 PcdValue = Sku.DefaultValue
-                                VpdFile.Add(DscPcdEntry, Sku.VpdOffset)
+                                if PcdValue == "":
+                                    PcdValue  = DscPcdEntry.DefaultValue
+                                if Sku.VpdOffset != '*':
+                                    if PcdValue.startswith("{"):
+                                        Alignment = 8
+                                    elif PcdValue.startswith("L"):
+                                        Alignment = 2
+                                    else:
+                                        Alignment = 1
+                                    try:
+                                        VpdOffset = int(Sku.VpdOffset)
+                                    except:
+                                        try:
+                                            VpdOffset = int(Sku.VpdOffset, 16)
+                                        except:
+                                            EdkLogger.error("build", FORMAT_INVALID, "Invalid offset value %s for PCD %s.%s." % (Sku.VpdOffset, DscPcdEntry.TokenSpaceGuidCName, DscPcdEntry.TokenCName))
+                                    if VpdOffset % Alignment != 0:
+                                        if PcdValue.startswith("{"):
+                                            EdkLogger.warn("build", "The offset value of PCD %s.%s is not 8-byte aligned!" %(DscPcdEntry.TokenSpaceGuidCName, DscPcdEntry.TokenCName), File=self.MetaFile)
+                                        else:
+                                            EdkLogger.error("build", FORMAT_INVALID, 'The offset value of PCD %s.%s should be %s-byte aligned.' % (DscPcdEntry.TokenSpaceGuidCName, DscPcdEntry.TokenCName, Alignment))
+                                if PcdValue not in SkuValueMap:
+                                    SkuValueMap[PcdValue] = []
+                                    VpdFile.Add(DscPcdEntry, SkuName,Sku.VpdOffset)
+                                SkuValueMap[PcdValue].append(Sku)
                                 if not NeedProcessVpdMapFile and Sku.VpdOffset == "*":
                                     NeedProcessVpdMapFile = True
                             if DscPcdEntry.DatumType == 'VOID*' and PcdValue.startswith("L"):
-                                UnicodePcdArray.append(DscPcdEntry)
+                                UnicodePcdArray.add(DscPcdEntry)
                             elif len(Sku.VariableName) > 0:
-                                HiiPcdArray.append(DscPcdEntry)
+                                HiiPcdArray.add(DscPcdEntry)
                             else:
-                                OtherPcdArray.append(DscPcdEntry)
+                                OtherPcdArray.add(DscPcdEntry)
 
                                 # if the offset of a VPD is *, then it need to be fixed up by third party tool.
-
-
-
+                            VpdSkuMap[DscPcd] = SkuValueMap
             if (self.Platform.FlashDefinition == None or self.Platform.FlashDefinition == '') and \
                VpdFile.GetCount() != 0:
                 EdkLogger.error("build", ATTRIBUTE_NOT_AVAILABLE,
                                 "Fail to get FLASH_DEFINITION definition in DSC file %s which is required when DSC contains VPD PCD." % str(self.Platform.MetaFile))
 
             if VpdFile.GetCount() != 0:
-                DscTimeStamp = self.Platform.MetaFile.TimeStamp
-                FvPath = os.path.join(self.BuildDir, "FV")
-                if not os.path.exists(FvPath):
-                    try:
-                        os.makedirs(FvPath)
-                    except:
-                        EdkLogger.error("build", FILE_WRITE_FAILURE, "Fail to create FV folder under %s" % self.BuildDir)
 
+                self.FixVpdOffset(VpdFile)
 
-                VpdFilePath = os.path.join(FvPath, "%s.txt" % self.Platform.VpdToolGuid)
-
-
-                if not os.path.exists(VpdFilePath) or os.path.getmtime(VpdFilePath) < DscTimeStamp:
-                    VpdFile.Write(VpdFilePath)
-
-                    # retrieve BPDG tool's path from tool_def.txt according to VPD_TOOL_GUID defined in DSC file.
-                    BPDGToolName = None
-                    for ToolDef in self.ToolDefinition.values():
-                        if ToolDef.has_key("GUID") and ToolDef["GUID"] == self.Platform.VpdToolGuid:
-                            if not ToolDef.has_key("PATH"):
-                                EdkLogger.error("build", ATTRIBUTE_NOT_AVAILABLE, "PATH attribute was not provided for BPDG guid tool %s in tools_def.txt" % self.Platform.VpdToolGuid)
-                            BPDGToolName = ToolDef["PATH"]
-                            break
-                    # Call third party GUID BPDG tool.
-                    if BPDGToolName != None:
-                        VpdInfoFile.CallExtenalBPDGTool(BPDGToolName, VpdFilePath)
-                    else:
-                        EdkLogger.error("Build", FILE_NOT_FOUND, "Fail to find third-party BPDG tool to process VPD PCDs. BPDG Guid tool need to be defined in tools_def.txt and VPD_TOOL_GUID need to be provided in DSC file.")
+                self.FixVpdOffset(self.UpdateNVStoreMaxSize(VpdFile))
 
                 # Process VPD map file generated by third party BPDG tool
                 if NeedProcessVpdMapFile:
@@ -1252,22 +1770,75 @@ class PlatformAutoGen(AutoGen):
                         VpdFile.Read(VpdMapFilePath)
 
                         # Fixup "*" offset
-                        for Pcd in self._DynamicPcdList:
+                        for pcd in VpdSkuMap:
+                            vpdinfo = VpdFile.GetVpdInfo(pcd)
+                            if vpdinfo is None:
                             # just pick the a value to determine whether is unicode string type
-                            i = 0
-                            for (SkuName,Sku) in Pcd.SkuInfoList.items():
-                                if Sku.VpdOffset == "*":
-                                    Sku.VpdOffset = VpdFile.GetOffset(Pcd)[i].strip()
-                                i += 1
+                                continue
+                            for pcdvalue in VpdSkuMap[pcd]:
+                                for sku in VpdSkuMap[pcd][pcdvalue]:
+                                    for item in vpdinfo:
+                                        if item[2] == pcdvalue:
+                                            sku.VpdOffset = item[1]
                     else:
                         EdkLogger.error("build", FILE_READ_FAILURE, "Can not find VPD map file %s to fix up VPD offset." % VpdMapFilePath)
 
             # Delete the DynamicPcdList At the last time enter into this function
+            for Pcd in self._DynamicPcdList:
+                # just pick the a value to determine whether is unicode string type
+                Sku = Pcd.SkuInfoList[Pcd.SkuInfoList.keys()[0]]
+                Sku.VpdOffset = Sku.VpdOffset.strip()
+
+                if Pcd.DatumType not in [TAB_UINT8, TAB_UINT16, TAB_UINT32, TAB_UINT64, TAB_VOID, "BOOLEAN"]:
+                    Pcd.DatumType = "VOID*"
+
+                PcdValue = Sku.DefaultValue
+                if Pcd.DatumType == 'VOID*' and PcdValue.startswith("L"):
+                    # if found PCD which datum value is unicode string the insert to left size of UnicodeIndex
+                    UnicodePcdArray.add(Pcd)
+                elif len(Sku.VariableName) > 0:
+                    # if found HII type PCD then insert to right of UnicodeIndex
+                    HiiPcdArray.add(Pcd)
+                else:
+                    OtherPcdArray.add(Pcd)
             del self._DynamicPcdList[:]
-        self._DynamicPcdList.extend(UnicodePcdArray)
-        self._DynamicPcdList.extend(HiiPcdArray)
-        self._DynamicPcdList.extend(OtherPcdArray)
+        self._DynamicPcdList.extend(list(UnicodePcdArray))
+        self._DynamicPcdList.extend(list(HiiPcdArray))
+        self._DynamicPcdList.extend(list(OtherPcdArray))
+        allskuset = [(SkuName,Sku.SkuId) for pcd in self._DynamicPcdList for (SkuName,Sku) in pcd.SkuInfoList.items()]
+        for pcd in self._DynamicPcdList:
+            if len(pcd.SkuInfoList) == 1:
+                for (SkuName,SkuId) in allskuset:
+                    if type(SkuId) in (str,unicode) and eval(SkuId) == 0 or SkuId == 0:
+                        continue
+                    pcd.SkuInfoList[SkuName] = copy.deepcopy(pcd.SkuInfoList['DEFAULT'])
+                    pcd.SkuInfoList[SkuName].SkuId = SkuId
         self.AllPcdList = self._NonDynamicPcdList + self._DynamicPcdList
+
+    def FixVpdOffset(self,VpdFile ):
+        FvPath = os.path.join(self.BuildDir, "FV")
+        if not os.path.exists(FvPath):
+            try:
+                os.makedirs(FvPath)
+            except:
+                EdkLogger.error("build", FILE_WRITE_FAILURE, "Fail to create FV folder under %s" % self.BuildDir)
+
+        VpdFilePath = os.path.join(FvPath, "%s.txt" % self.Platform.VpdToolGuid)
+
+        if VpdFile.Write(VpdFilePath):
+            # retrieve BPDG tool's path from tool_def.txt according to VPD_TOOL_GUID defined in DSC file.
+            BPDGToolName = None
+            for ToolDef in self.ToolDefinition.values():
+                if ToolDef.has_key("GUID") and ToolDef["GUID"] == self.Platform.VpdToolGuid:
+                    if not ToolDef.has_key("PATH"):
+                        EdkLogger.error("build", ATTRIBUTE_NOT_AVAILABLE, "PATH attribute was not provided for BPDG guid tool %s in tools_def.txt" % self.Platform.VpdToolGuid)
+                    BPDGToolName = ToolDef["PATH"]
+                    break
+            # Call third party GUID BPDG tool.
+            if BPDGToolName != None:
+                VpdInfoFile.CallExtenalBPDGTool(BPDGToolName, VpdFilePath)
+            else:
+                EdkLogger.error("Build", FILE_NOT_FOUND, "Fail to find third-party BPDG tool to process VPD PCDs. BPDG Guid tool need to be defined in tools_def.txt and VPD_TOOL_GUID need to be provided in DSC file.")
 
     ## Return the platform build data object
     def _GetPlatform(self):
@@ -1291,7 +1862,7 @@ class PlatformAutoGen(AutoGen):
     def _GetFdfFile(self):
         if self._FdfFile == None:
             if self.Workspace.FdfFile != "":
-                self._FdfFile= path.join(self.WorkspaceDir, self.Workspace.FdfFile)
+                self._FdfFile= mws.join(self.WorkspaceDir, self.Workspace.FdfFile)
             else:
                 self._FdfFile = ''
         return self._FdfFile
@@ -1314,6 +1885,7 @@ class PlatformAutoGen(AutoGen):
                                             self.OutputDir,
                                             self.BuildTarget + "_" + self.ToolChain,
                                             )
+            GlobalData.gBuildDirectory = self._BuildDir
         return self._BuildDir
 
     ## Return directory of platform makefile
@@ -1338,6 +1910,13 @@ class PlatformAutoGen(AutoGen):
                     NewOption = self.ToolDefinition["MAKE"]["FLAGS"].strip()
                     if NewOption != '':
                         self._BuildCommand += SplitOption(NewOption)
+                if "MAKE" in self.EdkIIBuildOption:
+                    if "FLAGS" in self.EdkIIBuildOption["MAKE"]:
+                        Flags = self.EdkIIBuildOption["MAKE"]["FLAGS"]
+                        if Flags.startswith('='):
+                            self._BuildCommand = [self._BuildCommand[0]] + [Flags[1:]]
+                        else:
+                            self._BuildCommand += [Flags]
         return self._BuildCommand
 
     ## Get tool chain definition
@@ -1382,7 +1961,10 @@ class PlatformAutoGen(AutoGen):
                         if self.BuildOption[Tool][Attr].startswith('='):
                             Value = self.BuildOption[Tool][Attr][1:]
                         else:
-                            Value += " " + self.BuildOption[Tool][Attr]
+                            if Attr != 'PATH':
+                                Value += " " + self.BuildOption[Tool][Attr]
+                            else:
+                                Value = self.BuildOption[Tool][Attr]
 
                     if Attr == "PATH":
                         # Don't put MAKE definition in the file
@@ -1616,6 +2198,10 @@ class PlatformAutoGen(AutoGen):
     #   @retval library_list    List of library instances sorted
     #
     def ApplyLibraryInstance(self, Module):
+        # Cover the case that the binary INF file is list in the FDF file but not DSC file, return empty list directly
+        if str(Module) not in self.Platform.Modules:
+            return []
+
         ModuleType = Module.ModuleType
 
         # for overridding library instances with module specific setting
@@ -1778,12 +2364,17 @@ class PlatformAutoGen(AutoGen):
     #   @param  ToPcd       The PCD to be overrided
     #   @param  FromPcd     The PCD overrideing from
     #
-    def _OverridePcd(self, ToPcd, FromPcd, Module=""):
+    def _OverridePcd(self, ToPcd, FromPcd, Module="", Msg="", Library=""):
         #
         # in case there's PCDs coming from FDF file, which have no type given.
         # at this point, ToPcd.Type has the type found from dependent
         # package
         #
+        TokenCName = ToPcd.TokenCName
+        for PcdItem in GlobalData.MixedPcd:
+            if (ToPcd.TokenCName, ToPcd.TokenSpaceGuidCName) in GlobalData.MixedPcd[PcdItem]:
+                TokenCName = PcdItem[0]
+                break
         if FromPcd != None:
             if ToPcd.Pending and FromPcd.Type not in [None, '']:
                 ToPcd.Type = FromPcd.Type
@@ -1793,14 +2384,17 @@ class PlatformAutoGen(AutoGen):
                     ToPcd.Type = FromPcd.Type
             elif ToPcd.Type not in [None, ''] and FromPcd.Type not in [None, ''] \
                 and ToPcd.Type != FromPcd.Type:
+                if Library:
+                    Module = str(Module) + " 's library file (" + str(Library) + ")"
                 EdkLogger.error("build", OPTION_CONFLICT, "Mismatched PCD type",
-                                ExtraData="%s.%s is defined as [%s] in module %s, but as [%s] in platform."\
-                                          % (ToPcd.TokenSpaceGuidCName, ToPcd.TokenCName,
-                                             ToPcd.Type, Module, FromPcd.Type),
+                                ExtraData="%s.%s is used as [%s] in module %s, but as [%s] in %s."\
+                                          % (ToPcd.TokenSpaceGuidCName, TokenCName,
+                                             ToPcd.Type, Module, FromPcd.Type, Msg),
                                           File=self.MetaFile)
 
             if FromPcd.MaxDatumSize not in [None, '']:
                 ToPcd.MaxDatumSize = FromPcd.MaxDatumSize
+                ToPcd.MaxSizeUserSet = FromPcd.MaxDatumSize
             if FromPcd.DefaultValue not in [None, '']:
                 ToPcd.DefaultValue = FromPcd.DefaultValue
             if FromPcd.TokenValue not in [None, '']:
@@ -1811,16 +2405,26 @@ class PlatformAutoGen(AutoGen):
                 ToPcd.DatumType = FromPcd.DatumType
             if FromPcd.SkuInfoList not in [None, '', []]:
                 ToPcd.SkuInfoList = FromPcd.SkuInfoList
+            # Add Flexible PCD format parse
+            if ToPcd.DefaultValue:
+                try:
+                    ToPcd.DefaultValue = ValueExpressionEx(ToPcd.DefaultValue, ToPcd.DatumType, self._GuidDict)(True)
+                except BadExpression, Value:
+                    EdkLogger.error('Parser', FORMAT_INVALID, 'PCD [%s.%s] Value "%s", %s' %(ToPcd.TokenSpaceGuidCName, ToPcd.TokenCName, ToPcd.DefaultValue, Value),
+                                        File=self.MetaFile)
 
             # check the validation of datum
             IsValid, Cause = CheckPcdDatum(ToPcd.DatumType, ToPcd.DefaultValue)
             if not IsValid:
                 EdkLogger.error('build', FORMAT_INVALID, Cause, File=self.MetaFile,
-                                ExtraData="%s.%s" % (ToPcd.TokenSpaceGuidCName, ToPcd.TokenCName))
+                                ExtraData="%s.%s" % (ToPcd.TokenSpaceGuidCName, TokenCName))
+            ToPcd.validateranges = FromPcd.validateranges
+            ToPcd.validlists = FromPcd.validlists
+            ToPcd.expressions = FromPcd.expressions
 
-        if ToPcd.DatumType == "VOID*" and ToPcd.MaxDatumSize in ['', None]:
+        if FromPcd != None and ToPcd.DatumType == "VOID*" and ToPcd.MaxDatumSize in ['', None]:
             EdkLogger.debug(EdkLogger.DEBUG_9, "No MaxDatumSize specified for PCD %s.%s" \
-                            % (ToPcd.TokenSpaceGuidCName, ToPcd.TokenCName))
+                            % (ToPcd.TokenSpaceGuidCName, TokenCName))
             Value = ToPcd.DefaultValue
             if Value in [None, '']:
                 ToPcd.MaxDatumSize = '1'
@@ -1839,7 +2443,7 @@ class PlatformAutoGen(AutoGen):
             else:
                 SkuName = 'DEFAULT'
             ToPcd.SkuInfoList = {
-                SkuName : SkuInfoClass(SkuName, self.Platform.SkuIds[SkuName], '', '', '', '', '', ToPcd.DefaultValue)
+                SkuName : SkuInfoClass(SkuName, self.Platform.SkuIds[SkuName][0], '', '', '', '', '', ToPcd.DefaultValue)
             }
 
     ## Apply PCD setting defined platform to a module
@@ -1848,22 +2452,22 @@ class PlatformAutoGen(AutoGen):
     #
     #   @retval PCD_list    The list PCDs with settings from platform
     #
-    def ApplyPcdSetting(self, Module, Pcds):
+    def ApplyPcdSetting(self, Module, Pcds, Library=""):
         # for each PCD in module
-        for Name,Guid in Pcds:
-            PcdInModule = Pcds[Name,Guid]
+        for Name, Guid in Pcds:
+            PcdInModule = Pcds[Name, Guid]
             # find out the PCD setting in platform
-            if (Name,Guid) in self.Platform.Pcds:
-                PcdInPlatform = self.Platform.Pcds[Name,Guid]
+            if (Name, Guid) in self.Platform.Pcds:
+                PcdInPlatform = self.Platform.Pcds[Name, Guid]
             else:
                 PcdInPlatform = None
             # then override the settings if any
-            self._OverridePcd(PcdInModule, PcdInPlatform, Module)
+            self._OverridePcd(PcdInModule, PcdInPlatform, Module, Msg="DSC PCD sections", Library=Library)
             # resolve the VariableGuid value
             for SkuId in PcdInModule.SkuInfoList:
                 Sku = PcdInModule.SkuInfoList[SkuId]
                 if Sku.VariableGuid == '': continue
-                Sku.VariableGuidValue = GuidValue(Sku.VariableGuid, self.PackageList)
+                Sku.VariableGuidValue = GuidValue(Sku.VariableGuid, self.PackageList, self.MetaFile.Path)
                 if Sku.VariableGuidValue == None:
                     PackageList = "\n\t".join([str(P) for P in self.PackageList])
                     EdkLogger.error(
@@ -1879,8 +2483,32 @@ class PlatformAutoGen(AutoGen):
         if Module in self.Platform.Modules:
             PlatformModule = self.Platform.Modules[str(Module)]
             for Key  in PlatformModule.Pcds:
+                Flag = False
                 if Key in Pcds:
-                    self._OverridePcd(Pcds[Key], PlatformModule.Pcds[Key], Module)
+                    ToPcd = Pcds[Key]
+                    Flag = True
+                elif Key in GlobalData.MixedPcd:
+                    for PcdItem in GlobalData.MixedPcd[Key]:
+                        if PcdItem in Pcds:
+                            ToPcd = Pcds[PcdItem]
+                            Flag = True
+                            break
+                if Flag:
+                    self._OverridePcd(ToPcd, PlatformModule.Pcds[Key], Module, Msg="DSC Components Module scoped PCD section", Library=Library)
+        # use PCD value to calculate the MaxDatumSize when it is not specified
+        for Name, Guid in Pcds:
+            Pcd = Pcds[Name, Guid]
+            if Pcd.DatumType == "VOID*" and Pcd.MaxDatumSize in ['', None]:
+                Pcd.MaxSizeUserSet = None
+                Value = Pcd.DefaultValue
+                if Value in [None, '']:
+                    Pcd.MaxDatumSize = '1'
+                elif Value[0] == 'L':
+                    Pcd.MaxDatumSize = str((len(Value) - 2) * 2)
+                elif Value[0] == '{':
+                    Pcd.MaxDatumSize = str(len(Value.split(',')))
+                else:
+                    Pcd.MaxDatumSize = str(len(Value) - 1)
         return Pcds.values()
 
     ## Resolve library names to library modules
@@ -1940,7 +2568,7 @@ class PlatformAutoGen(AutoGen):
         if Attr == "*":
             PriorityValue &= 0x11110
 
-        return self.PrioList["0x%0.5x"%PriorityValue]
+        return self.PrioList["0x%0.5x" % PriorityValue]
 
 
     ## Expand * in build option key
@@ -1963,7 +2591,8 @@ class PlatformAutoGen(AutoGen):
             # Key[0] -- tool family
             # Key[1] -- TARGET_TOOLCHAIN_ARCH_COMMANDTYPE_ATTRIBUTE
             #
-            if Key[0] == self.BuildRuleFamily :
+            if (Key[0] == self.BuildRuleFamily and
+                (ModuleStyle == None or len(Key) < 3 or (len(Key) > 2 and Key[2] == ModuleStyle))):
                 Target, ToolChain, Arch, CommandType, Attr = Key[1].split('_')
                 if Target == self.BuildTarget or Target == "*":
                     if ToolChain == self.ToolChain or ToolChain == "*":
@@ -1977,9 +2606,9 @@ class PlatformAutoGen(AutoGen):
         # Use the highest priority value.
         #
         if (len(OverrideList) >= 2):
-            KeyList   = OverrideList.keys()
+            KeyList = OverrideList.keys()
             for Index in range(len(KeyList)):
-                NowKey      = KeyList[Index]
+                NowKey = KeyList[Index]
                 Target1, ToolChain1, Arch1, CommandType1, Attr1 = NowKey.split("_")
                 for Index1 in range(len(KeyList) - Index - 1):
                     NextKey = KeyList[Index1 + Index + 1]
@@ -1998,7 +2627,6 @@ class PlatformAutoGen(AutoGen):
                                         else:
                                             if Options.get((self.BuildRuleFamily, NowKey)) != None:
                                                 Options.pop((self.BuildRuleFamily, NowKey))
-
 
         for Key in Options:
             if ModuleStyle != None and len (Key) > 2:
@@ -2025,11 +2653,14 @@ class PlatformAutoGen(AutoGen):
                     if Arch == "*" or Arch == self.Arch:
                         if Tool not in BuildOptions:
                             BuildOptions[Tool] = {}
-                        if Attr != "FLAGS" or Attr not in BuildOptions[Tool]:
+                        if Attr != "FLAGS" or Attr not in BuildOptions[Tool] or Options[Key].startswith('='):
                             BuildOptions[Tool][Attr] = Options[Key]
                         else:
-                            # append options for the same tool
-                            BuildOptions[Tool][Attr] += " " + Options[Key]
+                            # append options for the same tool except PATH
+                            if Attr != 'PATH':
+                                BuildOptions[Tool][Attr] += " " + Options[Key]
+                            else:
+                                BuildOptions[Tool][Attr] = Options[Key]
         # Build Option Family has been checked, which need't to be checked again for family.
         if FamilyMatch or FamilyIsNull:
             return BuildOptions
@@ -2045,7 +2676,7 @@ class PlatformAutoGen(AutoGen):
             Family = Key[0]
             Target, Tag, Arch, Tool, Attr = Key[1].split("_")
             # if tool chain family doesn't match, skip it
-            if Tool not in self.ToolDefinition or Family =="":
+            if Tool not in self.ToolDefinition or Family == "":
                 continue
             # option has been added before
             if Family != self.ToolDefinition[Tool][TAB_TOD_DEFINES_FAMILY]:
@@ -2057,11 +2688,14 @@ class PlatformAutoGen(AutoGen):
                     if Arch == "*" or Arch == self.Arch:
                         if Tool not in BuildOptions:
                             BuildOptions[Tool] = {}
-                        if Attr != "FLAGS" or Attr not in BuildOptions[Tool]:
+                        if Attr != "FLAGS" or Attr not in BuildOptions[Tool] or Options[Key].startswith('='):
                             BuildOptions[Tool][Attr] = Options[Key]
                         else:
-                            # append options for the same tool
-                            BuildOptions[Tool][Attr] += " " + Options[Key]
+                            # append options for the same tool except PATH
+                            if Attr != 'PATH':
+                                BuildOptions[Tool][Attr] += " " + Options[Key]
+                            else:
+                                BuildOptions[Tool][Attr] = Options[Key]
         return BuildOptions
 
     ## Append build options in platform to a module
@@ -2074,8 +2708,11 @@ class PlatformAutoGen(AutoGen):
         # Get the different options for the different style module
         if Module.AutoGenVersion < 0x00010005:
             PlatformOptions = self.EdkBuildOption
+            ModuleTypeOptions = self.Platform.GetBuildOptionsByModuleType(EDK_NAME, Module.ModuleType)
         else:
             PlatformOptions = self.EdkIIBuildOption
+            ModuleTypeOptions = self.Platform.GetBuildOptionsByModuleType(EDKII_NAME, Module.ModuleType)
+        ModuleTypeOptions = self._ExpandBuildOption(ModuleTypeOptions)
         ModuleOptions = self._ExpandBuildOption(Module.BuildOptions)
         if Module in self.Platform.Modules:
             PlatformModule = self.Platform.Modules[str(Module)]
@@ -2083,24 +2720,44 @@ class PlatformAutoGen(AutoGen):
         else:
             PlatformModuleOptions = {}
 
-        AllTools = set(ModuleOptions.keys() + PlatformOptions.keys() + PlatformModuleOptions.keys() + self.ToolDefinition.keys())
+        BuildRuleOrder = None
+        for Options in [self.ToolDefinition, ModuleOptions, PlatformOptions, ModuleTypeOptions, PlatformModuleOptions]:
+            for Tool in Options:
+                for Attr in Options[Tool]:
+                    if Attr == TAB_TOD_DEFINES_BUILDRULEORDER:
+                        BuildRuleOrder = Options[Tool][Attr]
+
+        AllTools = set(ModuleOptions.keys() + PlatformOptions.keys() +
+                       PlatformModuleOptions.keys() + ModuleTypeOptions.keys() +
+                       self.ToolDefinition.keys())
         BuildOptions = {}
         for Tool in AllTools:
             if Tool not in BuildOptions:
                 BuildOptions[Tool] = {}
 
-            for Options in [self.ToolDefinition, ModuleOptions, PlatformOptions, PlatformModuleOptions]:
+            for Options in [self.ToolDefinition, ModuleOptions, PlatformOptions, ModuleTypeOptions, PlatformModuleOptions]:
                 if Tool not in Options:
                     continue
                 for Attr in Options[Tool]:
                     Value = Options[Tool][Attr]
+                    #
+                    # Do not generate it in Makefile
+                    #
+                    if Attr == TAB_TOD_DEFINES_BUILDRULEORDER:
+                        continue
                     if Attr not in BuildOptions[Tool]:
                         BuildOptions[Tool][Attr] = ""
                     # check if override is indicated
                     if Value.startswith('='):
-                        BuildOptions[Tool][Attr] = Value[1:]
+                        ToolPath = Value[1:]
+                        ToolPath = mws.handleWsMacro(ToolPath)
+                        BuildOptions[Tool][Attr] = ToolPath
                     else:
-                        BuildOptions[Tool][Attr] += " " + Value
+                        Value = mws.handleWsMacro(Value)
+                        if Attr != 'PATH':
+                            BuildOptions[Tool][Attr] += " " + Value
+                        else:
+                            BuildOptions[Tool][Attr] = Value
         if Module.AutoGenVersion < 0x00010005 and self.Workspace.UniFlag != None:
             #
             # Override UNI flag only for EDK module.
@@ -2108,7 +2765,7 @@ class PlatformAutoGen(AutoGen):
             if 'BUILD' not in BuildOptions:
                 BuildOptions['BUILD'] = {}
             BuildOptions['BUILD']['FLAGS'] = self.Workspace.UniFlag
-        return BuildOptions
+        return BuildOptions, BuildRuleOrder
 
     Platform            = property(_GetPlatform)
     Name                = property(_GetName)
@@ -2147,6 +2804,10 @@ class PlatformAutoGen(AutoGen):
 # to the [depex] section in module's inf file.
 #
 class ModuleAutoGen(AutoGen):
+    ## Cache the timestamps of metafiles of every module in a class variable
+    #
+    TimeDict = {}
+
     ## The real constructor of ModuleAutoGen
     #
     #  This method is not supposed to be called by users of ModuleAutoGen. It's
@@ -2167,6 +2828,7 @@ class ModuleAutoGen(AutoGen):
         self.Workspace = Workspace
         self.WorkspaceDir = Workspace.WorkspaceDir
 
+        self._GuidDict = Workspace._GuidDict
         self.MetaFile = ModuleFile
         self.PlatformInfo = PlatformAutoGen(Workspace, PlatformFile, Target, Toolchain, Arch)
         # check if this module is employed by active platform
@@ -2176,8 +2838,7 @@ class ModuleAutoGen(AutoGen):
             return False
 
         self.SourceDir = self.MetaFile.SubDir
-        if self.SourceDir.upper().find(self.WorkspaceDir.upper()) == 0:
-            self.SourceDir = self.SourceDir[len(self.WorkspaceDir) + 1:]
+        self.SourceDir = mws.relpath(self.SourceDir, self.WorkspaceDir)
 
         self.SourceOverrideDir = None
         # use overrided path defined in DSC file
@@ -2196,6 +2857,8 @@ class ModuleAutoGen(AutoGen):
         self.DepexGenerated = False
 
         self.BuildDatabase = self.Workspace.BuildDatabase
+        self.BuildRuleOrder = None
+        self.BuildTime      = 0
 
         self._Module          = None
         self._Name            = None
@@ -2211,12 +2874,16 @@ class ModuleAutoGen(AutoGen):
 
         self._BuildDir        = None
         self._OutputDir       = None
+        self._FfsOutputDir    = None
         self._DebugDir        = None
         self._MakeFileDir     = None
 
         self._IncludePathList = None
+        self._IncludePathLength = 0
         self._AutoGenFileList = None
         self._UnicodeFileList = None
+        self._VfrFileList = None
+        self._IdfFileList = None
         self._SourceFileList  = None
         self._ObjectFileList  = None
         self._BinaryFileList  = None
@@ -2245,6 +2912,11 @@ class ModuleAutoGen(AutoGen):
         self._FileTypes               = None
         self._BuildRules              = None
 
+        self._TimeStampPath           = None
+
+        self.AutoGenDepSet = set()
+
+
         ## The Modules referenced to this Library
         #  Only Library has this attribute
         self._ReferenceModules        = []
@@ -2263,15 +2935,24 @@ class ModuleAutoGen(AutoGen):
         if self._FixedAtBuildPcds:
             return self._FixedAtBuildPcds
         for Pcd in self.ModulePcdList:
-            if self.IsLibrary:
-                if not (Pcd.Pending == False and Pcd.Type == "FixedAtBuild"):
-                    continue
-            elif Pcd.Type != "FixedAtBuild":
+            if Pcd.Type != "FixedAtBuild":
                 continue
             if Pcd not in self._FixedAtBuildPcds:
                 self._FixedAtBuildPcds.append(Pcd)
 
         return self._FixedAtBuildPcds
+
+    def _GetUniqueBaseName(self):
+        BaseName = self.Name
+        for Module in self.PlatformInfo.ModuleAutoGenList:
+            if Module.MetaFile == self.MetaFile:
+                continue
+            if Module.Name == self.Name:
+                if uuid.UUID(Module.Guid) == uuid.UUID(self.Guid):
+                    EdkLogger.error("build", FILE_DUPLICATED, 'Modules have same BaseName and FILE_GUID:\n'
+                                    '  %s\n  %s' % (Module.MetaFile, self.MetaFile))
+                BaseName = '%s_%s' % (self.Name, self.Guid)
+        return BaseName
 
     # Macros could be used in build_rule.txt (also Makefile)
     def _GetMacros(self):
@@ -2279,6 +2960,7 @@ class ModuleAutoGen(AutoGen):
             self._Macro = sdict()
             self._Macro["WORKSPACE"             ] = self.WorkspaceDir
             self._Macro["MODULE_NAME"           ] = self.Name
+            self._Macro["MODULE_NAME_GUID"      ] = self._GetUniqueBaseName()
             self._Macro["MODULE_GUID"           ] = self.Guid
             self._Macro["MODULE_VERSION"        ] = self.Version
             self._Macro["MODULE_TYPE"           ] = self.ModuleType
@@ -2301,6 +2983,15 @@ class ModuleAutoGen(AutoGen):
             self._Macro["MODULE_BUILD_DIR"      ] = self.BuildDir
             self._Macro["OUTPUT_DIR"            ] = self.OutputDir
             self._Macro["DEBUG_DIR"             ] = self.DebugDir
+            self._Macro["DEST_DIR_OUTPUT"       ] = self.OutputDir
+            self._Macro["DEST_DIR_DEBUG"        ] = self.DebugDir
+            self._Macro["PLATFORM_NAME"         ] = self.PlatformInfo.Name
+            self._Macro["PLATFORM_GUID"         ] = self.PlatformInfo.Guid
+            self._Macro["PLATFORM_VERSION"      ] = self.PlatformInfo.Version
+            self._Macro["PLATFORM_RELATIVE_DIR" ] = self.PlatformInfo.SourceDir
+            self._Macro["PLATFORM_DIR"          ] = mws.join(self.WorkspaceDir, self.PlatformInfo.SourceDir)
+            self._Macro["PLATFORM_OUTPUT_DIR"   ] = self.PlatformInfo.OutputDir
+            self._Macro["FFS_OUTPUT_DIR"        ] = self.FfsOutputDir
         return self._Macro
 
     ## Return the module build data object
@@ -2391,6 +3082,15 @@ class ModuleAutoGen(AutoGen):
             CreateDirectory(self._OutputDir)
         return self._OutputDir
 
+    ## Return the directory to store ffs file
+    def _GetFfsOutputDir(self):
+        if self._FfsOutputDir == None:
+            if GlobalData.gFdfParser != None:
+                self._FfsOutputDir = path.join(self.PlatformInfo.BuildDir, "FV", "Ffs", self.Guid + self.Name)
+            else:
+                self._FfsOutputDir = ''
+        return self._FfsOutputDir
+
     ## Return the directory to store auto-gened source files of the mdoule
     def _GetDebugDir(self):
         if self._DebugDir == None:
@@ -2459,17 +3159,18 @@ class ModuleAutoGen(AutoGen):
             for DepexExpresion in DepexExpresionList:
                 for key in DepexExpresion.keys():
                     Arch, ModuleType = key
+                    DepexExpr = [x for x in DepexExpresion[key] if not str(x).startswith('#')]
                     # the type of build module is USER_DEFINED.
                     # All different DEPEX section tags would be copied into the As Built INF file
                     # and there would be separate DEPEX section tags
                     if self.ModuleType.upper() == SUP_MODULE_USER_DEFINED:
                         if (Arch.upper() == self.Arch.upper()) and (ModuleType.upper() != TAB_ARCH_COMMON):
-                            DepexList.append({(Arch, ModuleType): DepexExpresion[key][:]})
+                            DepexList.append({(Arch, ModuleType): DepexExpr})
                     else:
                         if Arch.upper() == TAB_ARCH_COMMON or \
                           (Arch.upper() == self.Arch.upper() and \
                           ModuleType.upper() in [TAB_ARCH_COMMON, self.ModuleType.upper()]):
-                            DepexList.append({(Arch, ModuleType): DepexExpresion[key][:]})
+                            DepexList.append({(Arch, ModuleType): DepexExpr})
 
         #the type of build module is USER_DEFINED.
         if self.ModuleType.upper() == SUP_MODULE_USER_DEFINED:
@@ -2574,6 +3275,30 @@ class ModuleAutoGen(AutoGen):
                 self._DepexExpressionList[ModuleType] = DepexExpressionList
         return self._DepexExpressionList
 
+    # Get the tiano core user extension, it is contain dependent library.
+    # @retval: a list contain tiano core userextension.
+    #
+    def _GetTianoCoreUserExtensionList(self):
+        TianoCoreUserExtentionList = []
+        for M in [self.Module] + self.DependentLibraryList:
+            Filename = M.MetaFile.Path
+            InfObj = InfSectionParser.InfSectionParser(Filename)
+            TianoCoreUserExtenList = InfObj.GetUserExtensionTianoCore()
+            for TianoCoreUserExtent in TianoCoreUserExtenList:
+                for Section in TianoCoreUserExtent.keys():
+                    ItemList = Section.split(TAB_SPLIT)
+                    Arch = self.Arch
+                    if len(ItemList) == 4:
+                        Arch = ItemList[3]
+                    if Arch.upper() == TAB_ARCH_COMMON or Arch.upper() == self.Arch.upper():
+                        TianoCoreList = []
+                        TianoCoreList.extend([TAB_SECTION_START + Section + TAB_SECTION_END])
+                        TianoCoreList.extend(TianoCoreUserExtent[Section][:])
+                        TianoCoreList.append('\n')
+                        TianoCoreUserExtentionList.append(TianoCoreList)
+
+        return TianoCoreUserExtentionList
+
     ## Return the list of specification version required for the module
     #
     #   @retval     list    The list of specification defined in module file
@@ -2588,7 +3313,9 @@ class ModuleAutoGen(AutoGen):
     #
     def _GetModuleBuildOption(self):
         if self._BuildOption == None:
-            self._BuildOption = self.PlatformInfo.ApplyBuildOption(self.Module)
+            self._BuildOption, self.BuildRuleOrder = self.PlatformInfo.ApplyBuildOption(self.Module)
+            if self.BuildRuleOrder:
+                self.BuildRuleOrder = ['.%s' % Ext for Ext in self.BuildRuleOrder.split()]
         return self._BuildOption
 
     ## Get include path list from tool option for the module build
@@ -2602,9 +3329,9 @@ class ModuleAutoGen(AutoGen):
             # is the former use /I , the Latter used -I to specify include directories
             #
             if self.PlatformInfo.ToolChainFamily in ('MSFT'):
-                gBuildOptIncludePattern = re.compile(r"(?:.*?)/I[ \t]*([^ ]*)", re.MULTILINE|re.DOTALL)
+                gBuildOptIncludePattern = re.compile(r"(?:.*?)/I[ \t]*([^ ]*)", re.MULTILINE | re.DOTALL)
             elif self.PlatformInfo.ToolChainFamily in ('INTEL', 'GCC', 'RVCT'):
-                gBuildOptIncludePattern = re.compile(r"(?:.*?)-I[ \t]*([^ ]*)", re.MULTILINE|re.DOTALL)
+                gBuildOptIncludePattern = re.compile(r"(?:.*?)-I[ \t]*([^ ]*)", re.MULTILINE | re.DOTALL)
             else:
                 #
                 # New ToolChainFamily, don't known whether there is option to specify include directories
@@ -2641,8 +3368,8 @@ class ModuleAutoGen(AutoGen):
                             ErrMsg = "The include directory for the EDK II module in this line is invalid %s specified in %s FLAGS '%s'" % (Path, Tool, FlagOption)
                             EdkLogger.error("build",
                                             PARAMETER_INVALID,
-                                            ExtraData = ErrMsg,
-                                            File = str(self.MetaFile))
+                                            ExtraData=ErrMsg,
+                                            File=str(self.MetaFile))
 
 
                 BuildOptionIncPathList += IncPathList
@@ -2665,21 +3392,48 @@ class ModuleAutoGen(AutoGen):
                     EdkLogger.debug(EdkLogger.DEBUG_9, "The toolchain [%s] for processing file [%s] is found, "
                                     "but [%s] is needed" % (F.TagName, str(F), self.ToolChain))
                     continue
-                # match tool chain family
-                if F.ToolChainFamily not in ("", "*", self.ToolChainFamily):
+                # match tool chain family or build rule family
+                if F.ToolChainFamily not in ("", "*", self.ToolChainFamily, self.BuildRuleFamily):
                     EdkLogger.debug(
                                 EdkLogger.DEBUG_0,
                                 "The file [%s] must be built by tools of [%s], " \
-                                "but current toolchain family is [%s]" \
-                                    % (str(F), F.ToolChainFamily, self.ToolChainFamily))
+                                "but current toolchain family is [%s], buildrule family is [%s]" \
+                                    % (str(F), F.ToolChainFamily, self.ToolChainFamily, self.BuildRuleFamily))
                     continue
 
                 # add the file path into search path list for file including
                 if F.Dir not in self.IncludePathList and self.AutoGenVersion >= 0x00010005:
                     self.IncludePathList.insert(0, F.Dir)
                 self._SourceFileList.append(F)
+
+            self._MatchBuildRuleOrder(self._SourceFileList)
+
+            for F in self._SourceFileList:
                 self._ApplyBuildRule(F, TAB_UNKNOWN_FILE)
         return self._SourceFileList
+
+    def _MatchBuildRuleOrder(self, FileList):
+        Order_Dict = {}
+        self._GetModuleBuildOption()
+        for SingleFile in FileList:
+            if self.BuildRuleOrder and SingleFile.Ext in self.BuildRuleOrder and SingleFile.Ext in self.BuildRules:
+                key = SingleFile.Path.split(SingleFile.Ext)[0]
+                if key in Order_Dict:
+                    Order_Dict[key].append(SingleFile.Ext)
+                else:
+                    Order_Dict[key] = [SingleFile.Ext]
+
+        RemoveList = []
+        for F in Order_Dict:
+            if len(Order_Dict[F]) > 1:
+                Order_Dict[F].sort(key=lambda i: self.BuildRuleOrder.index(i))
+                for Ext in Order_Dict[F][1:]:
+                    RemoveList.append(F + Ext)
+
+        for item in RemoveList:
+            FileList.remove(item)
+
+        return FileList
 
     ## Return the list of unicode files
     def _GetUnicodeFileList(self):
@@ -2689,6 +3443,24 @@ class ModuleAutoGen(AutoGen):
             else:
                 self._UnicodeFileList = []
         return self._UnicodeFileList
+
+    ## Return the list of vfr files
+    def _GetVfrFileList(self):
+        if self._VfrFileList == None:
+            if TAB_VFR_FILE in self.FileTypes:
+                self._VfrFileList = self.FileTypes[TAB_VFR_FILE]
+            else:
+                self._VfrFileList = []
+        return self._VfrFileList
+
+    ## Return the list of Image Definition files
+    def _GetIdfFileList(self):
+        if self._IdfFileList == None:
+            if TAB_IMAGE_FILE in self.FileTypes:
+                self._IdfFileList = self.FileTypes[TAB_IMAGE_FILE]
+            else:
+                self._IdfFileList = []
+        return self._IdfFileList
 
     ## Return a list of files which can be built from binary
     #
@@ -2747,6 +3519,11 @@ class ModuleAutoGen(AutoGen):
         RuleChain = []
         SourceList = [File]
         Index = 0
+        #
+        # Make sure to get build rule order value
+        #
+        self._GetModuleBuildOption()
+
         while Index < len(SourceList):
             Source = SourceList[Index]
             Index = Index + 1
@@ -2780,7 +3557,7 @@ class ModuleAutoGen(AutoGen):
                     self._FinalBuildTargetList.add(LastTarget)
                 break
 
-            Target = RuleObject.Apply(Source)
+            Target = RuleObject.Apply(Source, self.BuildRuleOrder)
             if not Target:
                 if LastTarget:
                     self._FinalBuildTargetList.add(LastTarget)
@@ -2847,15 +3624,19 @@ class ModuleAutoGen(AutoGen):
     #
     def _GetAutoGenFileList(self):
         UniStringAutoGenC = True
+        IdfStringAutoGenC = True
         UniStringBinBuffer = StringIO()
+        IdfGenBinBuffer = StringIO()
         if self.BuildType == 'UEFI_HII':
             UniStringAutoGenC = False
+            IdfStringAutoGenC = False
         if self._AutoGenFileList == None:
             self._AutoGenFileList = {}
             AutoGenC = TemplateString()
             AutoGenH = TemplateString()
             StringH = TemplateString()
-            GenC.CreateCode(self, AutoGenC, AutoGenH, StringH, UniStringAutoGenC, UniStringBinBuffer)
+            StringIdf = TemplateString()
+            GenC.CreateCode(self, AutoGenC, AutoGenH, StringH, UniStringAutoGenC, UniStringBinBuffer, StringIdf, IdfStringAutoGenC, IdfGenBinBuffer)
             #
             # AutoGen.c is generated if there are library classes in inf, or there are object files
             #
@@ -2879,6 +3660,17 @@ class ModuleAutoGen(AutoGen):
                 self._ApplyBuildRule(AutoFile, TAB_UNKNOWN_FILE)
             if UniStringBinBuffer != None:
                 UniStringBinBuffer.close()
+            if str(StringIdf) != "":
+                AutoFile = PathClass(gAutoGenImageDefFileName % {"module_name":self.Name}, self.DebugDir)
+                self._AutoGenFileList[AutoFile] = str(StringIdf)
+                self._ApplyBuildRule(AutoFile, TAB_UNKNOWN_FILE)
+            if IdfGenBinBuffer != None and IdfGenBinBuffer.getvalue() != "":
+                AutoFile = PathClass(gAutoGenIdfFileName % {"module_name":self.Name}, self.OutputDir)
+                self._AutoGenFileList[AutoFile] = IdfGenBinBuffer.getvalue()
+                AutoFile.IsBinary = True
+                self._ApplyBuildRule(AutoFile, TAB_UNKNOWN_FILE)
+            if IdfGenBinBuffer != None:
+                IdfGenBinBuffer.close()
         return self._AutoGenFileList
 
     ## Return the list of library modules explicitly or implicityly used by this module
@@ -2920,15 +3712,17 @@ class ModuleAutoGen(AutoGen):
             Pcds = sdict()
             if not self.IsLibrary:
                 # get PCDs from dependent libraries
+                self._LibraryPcdList = []
                 for Library in self.DependentLibraryList:
+                    PcdsInLibrary = OrderedDict()
                     self.UpdateComments(self._PcdComments, Library.PcdComments)
                     for Key in Library.Pcds:
                         # skip duplicated PCDs
                         if Key in self.Module.Pcds or Key in Pcds:
                             continue
                         Pcds[Key] = copy.copy(Library.Pcds[Key])
-                # apply PCD settings from platform
-                self._LibraryPcdList = self.PlatformInfo.ApplyPcdSetting(self.Module, Pcds)
+                        PcdsInLibrary[Key] = Pcds[Key]
+                    self._LibraryPcdList.extend(self.PlatformInfo.ApplyPcdSetting(self.Module, PcdsInLibrary, Library=Library))
             else:
                 self._LibraryPcdList = []
         return self._LibraryPcdList
@@ -3004,13 +3798,24 @@ class ModuleAutoGen(AutoGen):
                 self._IncludePathList.append(self.DebugDir)
 
             for Package in self.Module.Packages:
-                PackageDir = path.join(self.WorkspaceDir, Package.MetaFile.Dir)
+                PackageDir = mws.join(self.WorkspaceDir, Package.MetaFile.Dir)
                 if PackageDir not in self._IncludePathList:
                     self._IncludePathList.append(PackageDir)
-                for Inc in Package.Includes:
+                IncludesList = Package.Includes
+                if Package._PrivateIncludes:
+                    if not self.MetaFile.Path.startswith(PackageDir):
+                        IncludesList = list(set(Package.Includes).difference(set(Package._PrivateIncludes)))
+                for Inc in IncludesList:
                     if Inc not in self._IncludePathList:
                         self._IncludePathList.append(str(Inc))
         return self._IncludePathList
+
+    def _GetIncludePathLength(self):
+        self._IncludePathLength = 0
+        if self._IncludePathList:
+            for inc in self._IncludePathList:
+                self._IncludePathLength += len(' ' + inc)
+        return self._IncludePathLength
 
     ## Get HII EX PCDs which maybe used by VFR
     #
@@ -3067,7 +3872,7 @@ class ModuleAutoGen(AutoGen):
             for SkuName in Pcd.SkuInfoList:
                 SkuInfo = Pcd.SkuInfoList[SkuName]
                 Name = ConvertStringToByteArray(SkuInfo.VariableName)
-                Value = GuidValue(SkuInfo.VariableGuid, self.PlatformInfo.PackageList)
+                Value = GuidValue(SkuInfo.VariableGuid, self.PlatformInfo.PackageList, self.MetaFile.Path)
                 if not Value:
                     continue
                 Guid = GuidStructureStringToGuidString(Value)
@@ -3077,9 +3882,85 @@ class ModuleAutoGen(AutoGen):
 
         return HiiExPcds
 
+    def _GenOffsetBin(self):
+        VfrUniBaseName = {}
+        for SourceFile in self.Module.Sources:
+            if SourceFile.Type.upper() == ".VFR" :
+                #
+                # search the .map file to find the offset of vfr binary in the PE32+/TE file.
+                #
+                VfrUniBaseName[SourceFile.BaseName] = (SourceFile.BaseName + "Bin")
+            if SourceFile.Type.upper() == ".UNI" :
+                #
+                # search the .map file to find the offset of Uni strings binary in the PE32+/TE file.
+                #
+                VfrUniBaseName["UniOffsetName"] = (self.Name + "Strings")
+
+        if len(VfrUniBaseName) == 0:
+            return None
+        MapFileName = os.path.join(self.OutputDir, self.Name + ".map")
+        EfiFileName = os.path.join(self.OutputDir, self.Name + ".efi")
+        VfrUniOffsetList = GetVariableOffset(MapFileName, EfiFileName, VfrUniBaseName.values())
+        if not VfrUniOffsetList:
+            return None
+
+        OutputName = '%sOffset.bin' % self.Name
+        UniVfrOffsetFileName    =  os.path.join( self.OutputDir, OutputName)
+
+        try:
+            fInputfile = open(UniVfrOffsetFileName, "wb+", 0)
+        except:
+            EdkLogger.error("build", FILE_OPEN_FAILURE, "File open failed for %s" % UniVfrOffsetFileName,None)
+
+        # Use a instance of StringIO to cache data
+        fStringIO = StringIO('')
+
+        for Item in VfrUniOffsetList:
+            if (Item[0].find("Strings") != -1):
+                #
+                # UNI offset in image.
+                # GUID + Offset
+                # { 0x8913c5e0, 0x33f6, 0x4d86, { 0x9b, 0xf1, 0x43, 0xef, 0x89, 0xfc, 0x6, 0x66 } }
+                #
+                UniGuid = [0xe0, 0xc5, 0x13, 0x89, 0xf6, 0x33, 0x86, 0x4d, 0x9b, 0xf1, 0x43, 0xef, 0x89, 0xfc, 0x6, 0x66]
+                UniGuid = [chr(ItemGuid) for ItemGuid in UniGuid]
+                fStringIO.write(''.join(UniGuid))
+                UniValue = pack ('Q', int (Item[1], 16))
+                fStringIO.write (UniValue)
+            else:
+                #
+                # VFR binary offset in image.
+                # GUID + Offset
+                # { 0xd0bc7cb4, 0x6a47, 0x495f, { 0xaa, 0x11, 0x71, 0x7, 0x46, 0xda, 0x6, 0xa2 } };
+                #
+                VfrGuid = [0xb4, 0x7c, 0xbc, 0xd0, 0x47, 0x6a, 0x5f, 0x49, 0xaa, 0x11, 0x71, 0x7, 0x46, 0xda, 0x6, 0xa2]
+                VfrGuid = [chr(ItemGuid) for ItemGuid in VfrGuid]
+                fStringIO.write(''.join(VfrGuid))
+                type (Item[1])
+                VfrValue = pack ('Q', int (Item[1], 16))
+                fStringIO.write (VfrValue)
+        #
+        # write data into file.
+        #
+        try :
+            fInputfile.write (fStringIO.getvalue())
+        except:
+            EdkLogger.error("build", FILE_WRITE_FAILURE, "Write data to file %s failed, please check whether the "
+                            "file been locked or using by other applications." %UniVfrOffsetFileName,None)
+
+        fStringIO.close ()
+        fInputfile.close ()
+        return OutputName
+
     ## Create AsBuilt INF file the module
     #
-    def CreateAsBuiltInf(self):
+    def CreateAsBuiltInf(self, IsOnlyCopy = False):
+        self.OutputFile = []
+        if IsOnlyCopy:
+            if GlobalData.gBinCacheDest:
+                self.CopyModuleToCache()
+                return
+
         if self.IsAsBuiltInfCreated:
             return
 
@@ -3104,13 +3985,13 @@ class ModuleAutoGen(AutoGen):
         # Find all DynamicEx and PatchableInModule PCDs used by this module and dependent libraries
         # Also find all packages that the DynamicEx PCDs depend on
         Pcds = []
-        PatchablePcds = {}
+        PatchablePcds = []
         Packages = []
         PcdCheckList = []
         PcdTokenSpaceList = []
         for Pcd in self.ModulePcdList + self.LibraryPcdList:
             if Pcd.Type == TAB_PCDS_PATCHABLE_IN_MODULE:
-                PatchablePcds[Pcd.TokenCName] = Pcd
+                PatchablePcds += [Pcd]
                 PcdCheckList.append((Pcd.TokenCName, Pcd.TokenSpaceGuidCName, 'PatchableInModule'))
             elif Pcd.Type in GenC.gDynamicExPcd:
                 if Pcd not in Pcds:
@@ -3182,7 +4063,7 @@ class ModuleAutoGen(AutoGen):
           'module_uefi_hii_resource_section'  : [MDefs['UEFI_HII_RESOURCE_SECTION']] if 'UEFI_HII_RESOURCE_SECTION' in MDefs else [],
           'module_uni_file'                   : [MDefs['MODULE_UNI_FILE']] if 'MODULE_UNI_FILE' in MDefs else [],
           'module_arch'                       : self.Arch,
-          'package_item'                      : ['%s' % (Package.MetaFile.File.replace('\\','/')) for Package in Packages],
+          'package_item'                      : ['%s' % (Package.MetaFile.File.replace('\\', '/')) for Package in Packages],
           'binary_item'                       : [],
           'patchablepcd_item'                 : [],
           'pcd_item'                          : [],
@@ -3193,6 +4074,11 @@ class ModuleAutoGen(AutoGen):
           'libraryclasses_item'               : []
         }
 
+        if 'MODULE_UNI_FILE' in MDefs:
+            UNIFile = os.path.join(self.MetaFile.Dir, MDefs['MODULE_UNI_FILE'])
+            if os.path.isfile(UNIFile):
+                shutil.copy2(UNIFile, self.OutputDir)
+
         if self.AutoGenVersion > int(gInfSpecVersion, 0):
             AsBuiltInfDict['module_inf_version'] = '0x%08x' % self.AutoGenVersion
         else:
@@ -3202,39 +4088,48 @@ class ModuleAutoGen(AutoGen):
             AsBuiltInfDict['pcd_is_driver_string'] += [DriverType]
 
         if 'UEFI_SPECIFICATION_VERSION' in self.Specification:
-          AsBuiltInfDict['module_uefi_specification_version'] += [self.Specification['UEFI_SPECIFICATION_VERSION']]
+            AsBuiltInfDict['module_uefi_specification_version'] += [self.Specification['UEFI_SPECIFICATION_VERSION']]
         if 'PI_SPECIFICATION_VERSION' in self.Specification:
-          AsBuiltInfDict['module_pi_specification_version'] += [self.Specification['PI_SPECIFICATION_VERSION']]
+            AsBuiltInfDict['module_pi_specification_version'] += [self.Specification['PI_SPECIFICATION_VERSION']]
 
-        OutputDir = self.OutputDir.replace('\\','/').strip('/')
-        if self.ModuleType in ['BASE', 'USER_DEFINED']:
-          for Item in self.CodaTargetList:
-            File = Item.Target.Path.replace('\\','/').strip('/').replace(OutputDir,'').strip('/')
+        OutputDir = self.OutputDir.replace('\\', '/').strip('/')
+        DebugDir = self.DebugDir.replace('\\', '/').strip('/')
+        for Item in self.CodaTargetList:
+            File = Item.Target.Path.replace('\\', '/').strip('/').replace(DebugDir, '').replace(OutputDir, '').strip('/')
+            if File not in self.OutputFile:
+                self.OutputFile.append(File)
+            if os.path.isabs(File):
+                File = File.replace('\\', '/').strip('/').replace(OutputDir, '').strip('/')
             if Item.Target.Ext.lower() == '.aml':
-              AsBuiltInfDict['binary_item'] += ['ASL|' + File]
+                AsBuiltInfDict['binary_item'] += ['ASL|' + File]
             elif Item.Target.Ext.lower() == '.acpi':
-              AsBuiltInfDict['binary_item'] += ['ACPI|' + File]
+                AsBuiltInfDict['binary_item'] += ['ACPI|' + File]
+            elif Item.Target.Ext.lower() == '.efi':
+                AsBuiltInfDict['binary_item'] += ['PE32|' + self.Name + '.efi']
             else:
-              AsBuiltInfDict['binary_item'] += ['BIN|' + File]
-        else:
-          for Item in self.CodaTargetList:
-            File = Item.Target.Path.replace('\\','/').strip('/').replace(OutputDir,'').strip('/')
-            if Item.Target.Ext.lower() == '.efi':
-              AsBuiltInfDict['binary_item'] += ['PE32|' + self.Name + '.efi']
-            else:
-              AsBuiltInfDict['binary_item'] += ['BIN|' + File]
-          if self.DepexGenerated:
+                AsBuiltInfDict['binary_item'] += ['BIN|' + File]
+        if self.DepexGenerated:
+            if self.Name + '.depex' not in self.OutputFile:
+                self.OutputFile.append(self.Name + '.depex')
             if self.ModuleType in ['PEIM']:
-              AsBuiltInfDict['binary_item'] += ['PEI_DEPEX|' + self.Name + '.depex']
-            if self.ModuleType in ['DXE_DRIVER','DXE_RUNTIME_DRIVER','DXE_SAL_DRIVER','UEFI_DRIVER']:
-              AsBuiltInfDict['binary_item'] += ['DXE_DEPEX|' + self.Name + '.depex']
+                AsBuiltInfDict['binary_item'] += ['PEI_DEPEX|' + self.Name + '.depex']
+            if self.ModuleType in ['DXE_DRIVER', 'DXE_RUNTIME_DRIVER', 'DXE_SAL_DRIVER', 'UEFI_DRIVER']:
+                AsBuiltInfDict['binary_item'] += ['DXE_DEPEX|' + self.Name + '.depex']
             if self.ModuleType in ['DXE_SMM_DRIVER']:
-              AsBuiltInfDict['binary_item'] += ['SMM_DEPEX|' + self.Name + '.depex']
+                AsBuiltInfDict['binary_item'] += ['SMM_DEPEX|' + self.Name + '.depex']
+
+        Bin = self._GenOffsetBin()
+        if Bin:
+            AsBuiltInfDict['binary_item'] += ['BIN|%s' % Bin]
+            if Bin not in self.OutputFile:
+                self.OutputFile.append(Bin)
 
         for Root, Dirs, Files in os.walk(OutputDir):
             for File in Files:
                 if File.lower().endswith('.pdb'):
                     AsBuiltInfDict['binary_item'] += ['DISPOSABLE|' + File]
+                    if File not in self.OutputFile:
+                        self.OutputFile.append(File)
         HeaderComments = self.Module.HeaderComments
         StartPos = 0
         for Index in range(len(HeaderComments)):
@@ -3264,12 +4159,26 @@ class ModuleAutoGen(AutoGen):
                             os.path.join(self.OutputDir, self.Name + '.efi')
                         )
         if PatchList:
-            for PatchPcd in PatchList:
-                if PatchPcd[0] not in PatchablePcds:
+            for Pcd in PatchablePcds:
+                TokenCName = Pcd.TokenCName
+                for PcdItem in GlobalData.MixedPcd:
+                    if (Pcd.TokenCName, Pcd.TokenSpaceGuidCName) in GlobalData.MixedPcd[PcdItem]:
+                        TokenCName = PcdItem[0]
+                        break
+                for PatchPcd in PatchList:
+                    if TokenCName == PatchPcd[0]:
+                        break
+                else:
                     continue
-                Pcd = PatchablePcds[PatchPcd[0]]
                 PcdValue = ''
-                if Pcd.DatumType != 'VOID*':
+                if Pcd.DatumType == 'BOOLEAN':
+                    BoolValue = Pcd.DefaultValue.upper()
+                    if BoolValue == 'TRUE':
+                        Pcd.DefaultValue = '1'
+                    elif BoolValue == 'FALSE':
+                        Pcd.DefaultValue = '0'
+
+                if Pcd.DatumType in ['UINT8', 'UINT16', 'UINT32', 'UINT64', 'BOOLEAN']:
                     HexFormat = '0x%02x'
                     if Pcd.DatumType == 'UINT16':
                         HexFormat = '0x%04x'
@@ -3281,7 +4190,7 @@ class ModuleAutoGen(AutoGen):
                 else:
                     if Pcd.MaxDatumSize == None or Pcd.MaxDatumSize == '':
                         EdkLogger.error("build", AUTOGEN_ERROR,
-                                        "Unknown [MaxDatumSize] of PCD [%s.%s]" % (Pcd.TokenSpaceGuidCName, Pcd.TokenCName)
+                                        "Unknown [MaxDatumSize] of PCD [%s.%s]" % (Pcd.TokenSpaceGuidCName, TokenCName)
                                         )
                     ArraySize = int(Pcd.MaxDatumSize, 0)
                     PcdValue = Pcd.DefaultValue
@@ -3304,9 +4213,12 @@ class ModuleAutoGen(AutoGen):
                             Padding = Padding * 2
                             ArraySize = ArraySize / 2
                         if ArraySize < (len(PcdValue) + 1):
-                            EdkLogger.error("build", AUTOGEN_ERROR,
-                                            "The maximum size of VOID* type PCD '%s.%s' is less than its actual size occupied." % (Pcd.TokenSpaceGuidCName, Pcd.TokenCName)
+                            if Pcd.MaxSizeUserSet:
+                                EdkLogger.error("build", AUTOGEN_ERROR,
+                                            "The maximum size of VOID* type PCD '%s.%s' is less than its actual size occupied." % (Pcd.TokenSpaceGuidCName, TokenCName)
                                             )
+                            else:
+                                ArraySize = len(PcdValue) + 1
                         if ArraySize > len(PcdValue) + 1:
                             NewValue = NewValue + Padding * (ArraySize - len(PcdValue) - 1)
                         PcdValue = NewValue + Padding.strip().rstrip(',') + '}'
@@ -3314,11 +4226,14 @@ class ModuleAutoGen(AutoGen):
                         PcdValue = PcdValue.rstrip('}') + ', 0x00' * (ArraySize - len(PcdValue.split(',')))
                         PcdValue += '}'
                     else:
-                        EdkLogger.error("build", AUTOGEN_ERROR,
-                                        "The maximum size of VOID* type PCD '%s.%s' is less than its actual size occupied." % (Pcd.TokenSpaceGuidCName, Pcd.TokenCName)
+                        if Pcd.MaxSizeUserSet:
+                            EdkLogger.error("build", AUTOGEN_ERROR,
+                                        "The maximum size of VOID* type PCD '%s.%s' is less than its actual size occupied." % (Pcd.TokenSpaceGuidCName, TokenCName)
                                         )
+                        else:
+                            ArraySize = len(PcdValue) + 1
                 PcdItem = '%s.%s|%s|0x%X' % \
-                    (Pcd.TokenSpaceGuidCName, Pcd.TokenCName, PcdValue, PatchPcd[1])
+                    (Pcd.TokenSpaceGuidCName, TokenCName, PcdValue, PatchPcd[1])
                 PcdComments = ''
                 if (Pcd.TokenSpaceGuidCName, Pcd.TokenCName) in self._PcdComments:
                     PcdComments = '\n  '.join(self._PcdComments[Pcd.TokenSpaceGuidCName, Pcd.TokenCName])
@@ -3332,6 +4247,11 @@ class ModuleAutoGen(AutoGen):
             PcdCommentList = []
             HiiInfo = ''
             SkuId = ''
+            TokenCName = Pcd.TokenCName
+            for PcdItem in GlobalData.MixedPcd:
+                if (Pcd.TokenCName, Pcd.TokenSpaceGuidCName) in GlobalData.MixedPcd[PcdItem]:
+                    TokenCName = PcdItem[0]
+                    break
             if Pcd.Type == TAB_PCDS_DYNAMIC_EX_HII:
                 for SkuName in Pcd.SkuInfoList:
                     SkuInfo = Pcd.SkuInfoList[SkuName]
@@ -3362,17 +4282,27 @@ class ModuleAutoGen(AutoGen):
                 else:
                     PcdCommentList.append('## UNDEFINED ' + HiiInfo)
             PcdComments = '\n  '.join(PcdCommentList)
-            PcdEntry = Pcd.TokenSpaceGuidCName + '.' + Pcd.TokenCName
+            PcdEntry = Pcd.TokenSpaceGuidCName + '.' + TokenCName
             if PcdComments:
                 PcdEntry = PcdComments + '\n  ' + PcdEntry
             AsBuiltInfDict['pcd_item'] += [PcdEntry]
         for Item in self.BuildOption:
-          if 'FLAGS' in self.BuildOption[Item]:
-            AsBuiltInfDict['flags_item'] += ['%s:%s_%s_%s_%s_FLAGS = %s' % (self.ToolChainFamily, self.BuildTarget, self.ToolChain, self.Arch, Item, self.BuildOption[Item]['FLAGS'].strip())]
+            if 'FLAGS' in self.BuildOption[Item]:
+                AsBuiltInfDict['flags_item'] += ['%s:%s_%s_%s_%s_FLAGS = %s' % (self.ToolChainFamily, self.BuildTarget, self.ToolChain, self.Arch, Item, self.BuildOption[Item]['FLAGS'].strip())]
 
         # Generated LibraryClasses section in comments.
         for Library in self.LibraryAutoGenList:
             AsBuiltInfDict['libraryclasses_item'] += [Library.MetaFile.File.replace('\\', '/')]
+
+        # Generated UserExtensions TianoCore section.
+        # All tianocore user extensions are copied.
+        UserExtStr = ''
+        for TianoCore in self._GetTianoCoreUserExtensionList():
+            UserExtStr += '\n'.join(TianoCore)
+            ExtensionFile = os.path.join(self.MetaFile.Dir, TianoCore[1])
+            if os.path.isfile(ExtensionFile):
+                shutil.copy2(ExtensionFile, self.OutputDir)
+        AsBuiltInfDict['userextension_tianocore_item'] = UserExtStr
 
         # Generated depex expression section in comments.
         AsBuiltInfDict['depexsection_item'] = ''
@@ -3386,23 +4316,71 @@ class ModuleAutoGen(AutoGen):
         SaveFileOnChange(os.path.join(self.OutputDir, self.Name + '.inf'), str(AsBuiltInf), False)
 
         self.IsAsBuiltInfCreated = True
+        if GlobalData.gBinCacheDest:
+            self.CopyModuleToCache()
+
+    def CopyModuleToCache(self):
+        FileDir = path.join(GlobalData.gBinCacheDest, self.Arch, self.SourceDir, self.MetaFile.BaseName)
+        CreateDirectory (FileDir)
+        HashFile = path.join(self.BuildDir, self.Name + '.hash')
+        ModuleFile = path.join(self.OutputDir, self.Name + '.inf')
+        if os.path.exists(HashFile):
+            shutil.copy2(HashFile, FileDir)
+        if os.path.exists(ModuleFile):
+            shutil.copy2(ModuleFile, FileDir)
+        if not self.OutputFile:
+            Ma = self.Workspace.BuildDatabase[PathClass(ModuleFile), self.Arch, self.BuildTarget, self.ToolChain]
+            self.OutputFile = Ma.Binaries
+        if self.OutputFile:
+            for File in self.OutputFile:
+                File = str(File)
+                if not os.path.isabs(File):
+                    File = os.path.join(self.OutputDir, File)
+                if os.path.exists(File):
+                    shutil.copy2(File, FileDir)
+
+    def AttemptModuleCacheCopy(self):
+        if self.IsBinaryModule:
+            return False
+        FileDir = path.join(GlobalData.gBinCacheSource, self.Arch, self.SourceDir, self.MetaFile.BaseName)
+        HashFile = path.join(FileDir, self.Name + '.hash')
+        if os.path.exists(HashFile):
+            f = open(HashFile, 'r')
+            CacheHash = f.read()
+            f.close()
+            if GlobalData.gModuleHash[self.Arch][self.Name]:
+                if CacheHash == GlobalData.gModuleHash[self.Arch][self.Name]:
+                    for root, dir, files in os.walk(FileDir):
+                        for f in files:
+                            if self.Name + '.hash' in f:
+                                shutil.copy2(HashFile, self.BuildDir)
+                            else:
+                                File = path.join(root, f)
+                                shutil.copy2(File, self.OutputDir)
+                    if self.Name == "PcdPeim" or self.Name == "PcdDxe":
+                        CreatePcdDatabaseCode(self, TemplateString(), TemplateString())
+                    return True
+        return False
 
     ## Create makefile for the module and its dependent libraries
     #
     #   @param      CreateLibraryMakeFile   Flag indicating if or not the makefiles of
     #                                       dependent libraries will be created
     #
-    def CreateMakeFile(self, CreateLibraryMakeFile=True):
+    def CreateMakeFile(self, CreateLibraryMakeFile=True, GenFfsList = []):
         # Ignore generating makefile when it is a binary module
         if self.IsBinaryModule:
             return
 
         if self.IsMakeFileCreated:
             return
-
+        self.GenFfsList = GenFfsList
         if not self.IsLibrary and CreateLibraryMakeFile:
             for LibraryAutoGen in self.LibraryAutoGenList:
                 LibraryAutoGen.CreateMakeFile()
+
+        if self.CanSkip():
+            return
 
         if len(self.CustomMakefile) == 0:
             Makefile = GenMake.ModuleMakefile(self)
@@ -3415,6 +4393,7 @@ class ModuleAutoGen(AutoGen):
             EdkLogger.debug(EdkLogger.DEBUG_9, "Skipped the generation of makefile for module %s [%s]" %
                             (self.Name, self.Arch))
 
+        self.CreateTimeStamp(Makefile)
         self.IsMakeFileCreated = True
 
     def CopyBinaryFiles(self):
@@ -3443,6 +4422,9 @@ class ModuleAutoGen(AutoGen):
         if not self.IsLibrary and CreateLibraryCodeFile:
             for LibraryAutoGen in self.LibraryAutoGenList:
                 LibraryAutoGen.CreateCodeFile()
+
+        if self.CanSkip():
+            return
 
         AutoGenList = []
         IgoredAutoGenList = []
@@ -3509,6 +4491,101 @@ class ModuleAutoGen(AutoGen):
                         self._ApplyBuildRule(Lib.Target, TAB_UNKNOWN_FILE)
         return self._LibraryAutoGenList
 
+    def GenModuleHash(self):
+        if self.Arch not in GlobalData.gModuleHash:
+            GlobalData.gModuleHash[self.Arch] = {}
+        m = hashlib.md5()
+        # Add Platform level hash
+        m.update(GlobalData.gPlatformHash)
+        # Add Package level hash
+        if self.DependentPackageList:
+            for Pkg in self.DependentPackageList:
+                if Pkg.PackageName in GlobalData.gPackageHash[self.Arch]:
+                    m.update(GlobalData.gPackageHash[self.Arch][Pkg.PackageName])
+
+        # Add Library hash
+        if self.LibraryAutoGenList:
+            for Lib in self.LibraryAutoGenList:
+                if Lib.Name not in GlobalData.gModuleHash[self.Arch]:
+                    Lib.GenModuleHash()
+                m.update(GlobalData.gModuleHash[self.Arch][Lib.Name])
+
+        # Add Module self
+        f = open(str(self.MetaFile), 'r')
+        Content = f.read()
+        f.close()
+        m.update(Content)
+        # Add Module's source files
+        if self.SourceFileList:
+            for File in self.SourceFileList:
+                f = open(str(File), 'r')
+                Content = f.read()
+                f.close()
+                m.update(Content)
+
+        ModuleHashFile = path.join(self.BuildDir, self.Name + ".hash")
+        if self.Name not in GlobalData.gModuleHash[self.Arch]:
+            GlobalData.gModuleHash[self.Arch][self.Name] = m.hexdigest()
+        if GlobalData.gBinCacheSource:
+            CacheValid = self.AttemptModuleCacheCopy()
+            if CacheValid:
+                return False
+        return SaveFileOnChange(ModuleHashFile, m.hexdigest(), True)
+
+    ## Decide whether we can skip the ModuleAutoGen process
+    def CanSkipbyHash(self):
+        if GlobalData.gUseHashCache:
+            return not self.GenModuleHash()
+
+    ## Decide whether we can skip the ModuleAutoGen process
+    #  If any source file is newer than the module than we cannot skip
+    #
+    def CanSkip(self):
+        if not os.path.exists(self.GetTimeStampPath()):
+            return False
+        #last creation time of the module
+        DstTimeStamp = os.stat(self.GetTimeStampPath())[8]
+
+        SrcTimeStamp = self.Workspace._SrcTimeStamp
+        if SrcTimeStamp > DstTimeStamp:
+            return False
+
+        with open(self.GetTimeStampPath(),'r') as f:
+            for source in f:
+                source = source.rstrip('\n')
+                if not os.path.exists(source):
+                    return False
+                if source not in ModuleAutoGen.TimeDict :
+                    ModuleAutoGen.TimeDict[source] = os.stat(source)[8]
+                if ModuleAutoGen.TimeDict[source] > DstTimeStamp:
+                    return False
+        return True
+
+    def GetTimeStampPath(self):
+        if self._TimeStampPath == None:
+            self._TimeStampPath = os.path.join(self.MakeFileDir, 'AutoGenTimeStamp')
+        return self._TimeStampPath
+    def CreateTimeStamp(self, Makefile):
+
+        FileSet = set()
+
+        FileSet.add (self.MetaFile.Path)
+
+        for SourceFile in self.Module.Sources:
+            FileSet.add (SourceFile.Path)
+
+        for Lib in self.DependentLibraryList:
+            FileSet.add (Lib.MetaFile.Path)
+
+        for f in self.AutoGenDepSet:
+            FileSet.add (f.Path)
+
+        if os.path.exists (self.GetTimeStampPath()):
+            os.remove (self.GetTimeStampPath())
+        with open(self.GetTimeStampPath(), 'w+') as file:
+            for f in FileSet:
+                print >> file, f
+
     Module          = property(_GetModule)
     Name            = property(_GetBaseName)
     Guid            = property(_GetGuid)
@@ -3525,13 +4602,16 @@ class ModuleAutoGen(AutoGen):
     IsBinaryModule  = property(_IsBinaryModule)
     BuildDir        = property(_GetBuildDir)
     OutputDir       = property(_GetOutputDir)
+    FfsOutputDir    = property(_GetFfsOutputDir)
     DebugDir        = property(_GetDebugDir)
     MakeFileDir     = property(_GetMakeFileDir)
     CustomMakefile  = property(_GetCustomMakefile)
 
     IncludePathList = property(_GetIncludePathList)
+    IncludePathLength = property(_GetIncludePathLength)
     AutoGenFileList = property(_GetAutoGenFileList)
     UnicodeFileList = property(_GetUnicodeFileList)
+    VfrFileList     = property(_GetVfrFileList)
     SourceFileList  = property(_GetSourceFileList)
     BinaryFileList  = property(_GetBinaryFiles) # FileType : [File List]
     Targets         = property(_GetTargets)
@@ -3539,6 +4619,7 @@ class ModuleAutoGen(AutoGen):
     CodaTargetList  = property(_GetFinalTargetList)
     FileTypes       = property(_GetFileTypes)
     BuildRules      = property(_GetBuildRules)
+    IdfFileList     = property(_GetIdfFileList)
 
     DependentPackageList    = property(_GetDependentPackageList)
     DependentLibraryList    = property(_GetLibraryList)

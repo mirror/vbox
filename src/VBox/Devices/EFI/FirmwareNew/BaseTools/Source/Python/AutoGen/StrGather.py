@@ -19,7 +19,7 @@ import Common.EdkLogger as EdkLogger
 from Common.BuildToolError import *
 from UniClassObject import *
 from StringIO import StringIO
-from struct import pack
+from struct import pack, unpack
 from Common.LongFilePathSupport import OpenLongFilePath as open
 
 ##
@@ -113,7 +113,7 @@ def DecToHexStr(Dec, Digit = 8):
 # @retval:       A list for formatted hex string
 #
 def DecToHexList(Dec, Digit = 8):
-    Hex = eval("'%0" + str(Digit) + "X' % int(Dec)" )
+    Hex = eval("'%0" + str(Digit) + "X' % int(Dec)")
     List = []
     for Bit in range(Digit - 2, -1, -2):
         List.append(HexHeader + Hex[Bit:Bit + 2])
@@ -131,7 +131,7 @@ def DecToHexList(Dec, Digit = 8):
 def AscToHexList(Ascii):
     List = []
     for Item in Ascii:
-        List.append('0x%2X' % ord(Item))
+        List.append('0x%02X' % ord(Item))
 
     return List
 
@@ -192,7 +192,7 @@ def CreateHFileContent(BaseName, UniObjectClass, IsCompatibleMode, UniGenCFlag):
                     Line = COMMENT_DEFINE_STR + ' ' + Name + ' ' * (ValueStartPtr - len(DEFINE_STR + Name)) + DecToHexStr(Token, 4) + COMMENT_NOT_REFERENCED
                 UnusedStr = WriteLine(UnusedStr, Line)
 
-    Str = ''.join([Str,UnusedStr])
+    Str = ''.join([Str, UnusedStr])
 
     Str = WriteLine(Str, '')
     if IsCompatibleMode or UniGenCFlag:
@@ -235,7 +235,7 @@ def CreateCFileHeader():
 #
 def CreateBinBuffer(BinBuffer, Array):
     for Item in Array:
-        BinBuffer.write(pack("B", int(Item,16)))
+        BinBuffer.write(pack("B", int(Item, 16)))
 
 ## Create a formatted string all items in an array
 #
@@ -258,7 +258,7 @@ def CreateArrayItem(Array, Width = 16):
             Index = Index + 1
         else:
             ArrayItem = WriteLine(ArrayItem, Line)
-            Line = '  ' + Item +  ',  '
+            Line = '  ' + Item + ',  '
             Index = 1
     ArrayItem = Write(ArrayItem, Line.rstrip())
 
@@ -450,14 +450,14 @@ def CreateCFileContent(BaseName, UniObjectClass, IsCompatibleMode, UniBinBuffer,
         if UniBinBuffer:
             CreateBinBuffer (UniBinBuffer, List)
             UniBinBuffer.write (StringBuffer.getvalue())
-            UniBinBuffer.write (pack("B", int(EFI_HII_SIBT_END,16)))
+            UniBinBuffer.write (pack("B", int(EFI_HII_SIBT_END, 16)))
         StringBuffer.close()
 
     #
     # Create line for string variable name
     # "unsigned char $(BaseName)Strings[] = {"
     #
-    AllStr = WriteLine('', CHAR_ARRAY_DEFIN + ' ' + BaseName + COMMON_FILE_NAME + '[] = {\n' )
+    AllStr = WriteLine('', CHAR_ARRAY_DEFIN + ' ' + BaseName + COMMON_FILE_NAME + '[] = {\n')
 
     if IsCompatibleMode:
         #
@@ -618,13 +618,13 @@ def GetStringFiles(UniFilList, SourceFileList, IncludeList, IncludePathList, Ski
 # Write an item
 #
 def Write(Target, Item):
-    return ''.join([Target,Item])
+    return ''.join([Target, Item])
 
 #
 # Write an item with a break line
 #
 def WriteLine(Target, Item):
-    return ''.join([Target,Item,'\n'])
+    return ''.join([Target, Item, '\n'])
 
 # This acts like the main() function for the script, unless it is 'import'ed into another
 # script.

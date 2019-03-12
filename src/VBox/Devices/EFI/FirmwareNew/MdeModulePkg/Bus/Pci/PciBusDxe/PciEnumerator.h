@@ -1,7 +1,7 @@
 /** @file
   PCI bus enumeration logic function declaration for PCI bus module.
 
-Copyright (c) 2006 - 2009, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -21,7 +21,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   This routine is used to enumerate entire pci bus system
   in a given platform.
 
-  @param Controller  Parent controller handle.
+  @param Controller          Parent controller handle.
+  @param HostBridgeHandle    Host bridge handle.
 
   @retval EFI_SUCCESS    PCI enumeration finished successfully.
   @retval other          Some error occurred when enumerating the pci bus system.
@@ -29,7 +30,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 EFI_STATUS
 PciEnumerator (
-  IN EFI_HANDLE                    Controller
+  IN EFI_HANDLE                    Controller,
+  IN EFI_HANDLE                    HostBridgeHandle
   );
 
 /**
@@ -218,7 +220,7 @@ GetMaxResourceConsumerDevice (
   @param Mem64ResStatus   Status of 64-bit memory resource node.
   @param PMem64ResStatus  Status of 64-bit Prefetchable memory resource node.
 
-  @retval EFI_SUCCESS     Successfully adjusted resoruce on host bridge.
+  @retval EFI_SUCCESS     Successfully adjusted resource on host bridge.
   @retval EFI_ABORTED     Host bridge hasn't this resource type or no resource be adjusted.
 
 **/
@@ -237,7 +239,7 @@ PciHostBridgeAdjustAllocation (
   );
 
 /**
-  Summary requests for all resource type, and contruct ACPI resource
+  Summary requests for all resource type, and construct ACPI resource
   requestor instance.
 
   @param Bridge           detecting bridge
@@ -249,7 +251,7 @@ PciHostBridgeAdjustAllocation (
   @param Config           Output buffer holding new constructed APCI resource requestor
 
   @retval EFI_SUCCESS           Successfully constructed ACPI resource.
-  @retval EFI_OUT_OF_RESOURCES  No memory availabe.
+  @retval EFI_OUT_OF_RESOURCES  No memory available.
 
 **/
 EFI_STATUS

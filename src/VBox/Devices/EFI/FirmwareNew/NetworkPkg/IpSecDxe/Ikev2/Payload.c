@@ -1,7 +1,8 @@
 /** @file
   The implementation of Payloads Creation.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -51,7 +52,10 @@ Ikev2GenerateSaPayload (
   UINTN         SaDataSize;
 
   SaPayload = IkePayloadAlloc ();
-  ASSERT (SaPayload != NULL);
+  if (SaPayload == NULL) {
+    return NULL;
+  }
+
   //
   // TODO: Get the Proposal Number and Transform Number from IPsec Config,
   // after the Ipsecconfig Application is support it.
@@ -69,7 +73,10 @@ Ikev2GenerateSaPayload (
   }
 
   SaData = AllocateZeroPool (SaDataSize);
-  ASSERT (SaData != NULL);
+  if (SaData == NULL) {
+    IkePayloadFree (SaPayload);
+    return NULL;
+  }
 
   CopyMem (SaData, SessionSaData, SaDataSize);
   SaData->SaHeader.Header.NextPayload = NextPayload;
@@ -117,14 +124,20 @@ Ikev2GenerateNoncePayload (
   NonceBlock  = NonceBuf;
 
   Nonce       = AllocateZeroPool (Size);
-  ASSERT (Nonce != NULL);
+  if (Nonce == NULL) {
+    return NULL;
+  }
+
   CopyMem (Nonce + 1, NonceBlock, Size - sizeof (IKEV2_NONCE));
 
   Nonce->Header.NextPayload   = NextPayload;
   Nonce->Header.PayloadLength = (UINT16) Size;
   NoncePayload                = IkePayloadAlloc ();
+  if (NoncePayload == NULL) {
+    FreePool (Nonce);
+    return NULL;
+  }
 
-  ASSERT (NoncePayload != NULL);
   NoncePayload->PayloadType = IKEV2_PAYLOAD_TYPE_NONCE;
   NoncePayload->PayloadBuf  = (UINT8 *) Nonce;
   NoncePayload->PayloadSize = Size;
@@ -179,7 +192,9 @@ Ikev2GenerateKePayload (
   // Allocate buffer for Key Exchange
   //
   Ke = AllocateZeroPool (KeSize);
-  ASSERT (Ke != NULL);
+  if (Ke == NULL) {
+    return NULL;
+  }
 
   Ke->Header.NextPayload    = NextPayload;
   Ke->Header.PayloadLength  = (UINT16) KeSize;
@@ -191,7 +206,10 @@ Ikev2GenerateKePayload (
   // Create IKE_PAYLOAD to point to Key Exchange payload
   //
   KePayload = IkePayloadAlloc ();
-  ASSERT (KePayload != NULL);
+  if (KePayload == NULL) {
+    FreePool (Ke);
+    return NULL;
+  }
 
   KePayload->PayloadType = IKEV2_PAYLOAD_TYPE_KE;
   KePayload->PayloadBuf  = (UINT8 *) Ke;
@@ -240,10 +258,15 @@ Ikev2GenerateIdPayload (
   IdSize    = sizeof (IKEV2_ID) + AddrSize;
 
   Id = (IKEV2_ID *) AllocateZeroPool (IdSize);
-  ASSERT (Id != NULL);
+  if (Id == NULL) {
+    return NULL;
+  }
 
   IdPayload = IkePayloadAlloc ();
-  ASSERT (IdPayload != NULL);
+  if (IdPayload == NULL) {
+    FreePool (Id);
+    return NULL;
+  }
 
   IdPayload->PayloadType  = (UINT8) ((CommonSession->IsInitiator) ? IKEV2_PAYLOAD_TYPE_ID_INIT : IKEV2_PAYLOAD_TYPE_ID_RSP);
   IdPayload->PayloadBuf   = (UINT8 *) Id;
@@ -284,7 +307,6 @@ Ikev2GenerateCertIdPayload (
   IKE_PAYLOAD    *IdPayload;
   IKEV2_ID       *Id;
   UINTN          IdSize;
-  UINT8          IpVersion;
   UINTN          SubjectSize;
   UINT8          *CertSubject;
 
@@ -304,7 +326,6 @@ Ikev2GenerateCertIdPayload (
 
   SubjectSize = 0;
   CertSubject = NULL;
-  IpVersion = CommonSession->UdpService->IpVersion;
   IpSecCryptoIoGetSubjectFromCert (
     InCert,
     CertSize,
@@ -318,10 +339,15 @@ Ikev2GenerateCertIdPayload (
   IdSize = sizeof (IKEV2_ID) + SubjectSize;
 
   Id = (IKEV2_ID *) AllocateZeroPool (IdSize);
-  ASSERT (Id != NULL);
+  if (Id == NULL) {
+    return NULL;
+  }
 
   IdPayload = IkePayloadAlloc ();
-  ASSERT (IdPayload != NULL);
+  if (IdPayload == NULL) {
+    FreePool (Id);
+    return NULL;
+  }
 
   IdPayload->PayloadType  = (UINT8) ((CommonSession->IsInitiator) ? IKEV2_PAYLOAD_TYPE_ID_INIT : IKEV2_PAYLOAD_TYPE_ID_RSP);
   IdPayload->PayloadBuf   = (UINT8 *) Id;
@@ -399,13 +425,14 @@ Ikev2PskGenerateAuthPayload (
 
   DigestSize = IpSecGetHmacDigestLength ((UINT8)IkeSaSession->SessionCommon.SaParams->Prf);
   Digest     = AllocateZeroPool (DigestSize);
-
   if (Digest == NULL) {
     return NULL;
   }
+
   if (IdPayload == NULL) {
     return NULL;
   }
+
   //
   // Calcualte Prf(Seceret, "Key Pad for IKEv2");
   //
@@ -429,7 +456,11 @@ Ikev2PskGenerateAuthPayload (
   // Store the AuthKey into KeyBuf
   //
   KeyBuf = AllocateZeroPool (DigestSize);
-  ASSERT (KeyBuf != NULL);
+  if (KeyBuf == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto EXIT;
+  }
+
   CopyMem (KeyBuf, Digest, DigestSize);
   KeySize = DigestSize;
 
@@ -487,6 +518,11 @@ Ikev2PskGenerateAuthPayload (
   // Copy the result of Prf(SK_Pr, IDi/r) to Fragments[2].
   //
   Fragments[2].Data     = AllocateZeroPool (DigestSize);
+  if (Fragments[2].Data == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto EXIT;
+  }
+
   Fragments[2].DataSize = DigestSize;
   CopyMem (Fragments[2].Data, Digest, DigestSize);
 
@@ -510,11 +546,18 @@ Ikev2PskGenerateAuthPayload (
   // Allocate buffer for Auth Payload
   //
   AuthPayload               = IkePayloadAlloc ();
-  ASSERT (AuthPayload != NULL);
+  if (AuthPayload == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto EXIT;
+  }
 
   AuthPayload->PayloadSize  = sizeof (IKEV2_AUTH) + DigestSize;
   PayloadBuf                = (IKEV2_AUTH *) AllocateZeroPool (AuthPayload->PayloadSize);
-  ASSERT (PayloadBuf != NULL);
+  if (PayloadBuf == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto EXIT;
+  }
+
   //
   // Fill in Auth payload.
   //
@@ -614,8 +657,6 @@ Ikev2CertGenerateAuthPayload (
   UINT8              *Digest;
   UINTN              DigestSize;
   PRF_DATA_FRAGMENT  Fragments[3];
-  UINT8              *KeyBuf;
-  UINTN              KeySize;
   IKE_PAYLOAD        *AuthPayload;
   IKEV2_AUTH         *PayloadBuf;
   EFI_STATUS         Status;
@@ -640,7 +681,6 @@ Ikev2CertGenerateAuthPayload (
   //
   // Initial point
   //
-  KeyBuf      = NULL;
   AuthPayload = NULL;
   Digest      = NULL;
   Signature   = NULL;
@@ -651,19 +691,9 @@ Ikev2CertGenerateAuthPayload (
   }
   DigestSize = IpSecGetHmacDigestLength ((UINT8)IkeSaSession->SessionCommon.SaParams->Prf);
   Digest     = AllocateZeroPool (DigestSize);
-
   if (Digest == NULL) {
     return NULL;
   }
-
-  //
-  // Store the AuthKey into KeyBuf
-  //
-  KeyBuf  = AllocateZeroPool (DigestSize);
-  ASSERT (KeyBuf != NULL);
-
-  CopyMem (KeyBuf, Digest, DigestSize);
-  KeySize = DigestSize;
 
   //
   // Calculate Prf(SK_Pi/r, IDi/r)
@@ -727,6 +757,11 @@ Ikev2CertGenerateAuthPayload (
   // Copy the result of Prf(SK_Pr, IDi/r) to Fragments[2].
   //
   Fragments[2].Data     = AllocateZeroPool (DigestSize);
+  if (Fragments[2].Data == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto EXIT;
+  }
+
   Fragments[2].DataSize = DigestSize;
   CopyMem (Fragments[2].Data, Digest, DigestSize);
 
@@ -769,7 +804,10 @@ Ikev2CertGenerateAuthPayload (
   // Allocate buffer for Auth Payload
   //
   AuthPayload = IkePayloadAlloc ();
-  ASSERT (AuthPayload != NULL);
+  if (AuthPayload == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto EXIT;
+  }
 
   if (!IsVerify) {
     AuthPayload->PayloadSize  = sizeof (IKEV2_AUTH) + SigSize;
@@ -778,7 +816,11 @@ Ikev2CertGenerateAuthPayload (
   }
 
   PayloadBuf = (IKEV2_AUTH *) AllocateZeroPool (AuthPayload->PayloadSize);
-  ASSERT (PayloadBuf != NULL);
+  if (PayloadBuf == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto EXIT;
+  }
+
   //
   // Fill in Auth payload.
   //
@@ -808,9 +850,6 @@ Ikev2CertGenerateAuthPayload (
   AuthPayload->PayloadType  = IKEV2_PAYLOAD_TYPE_AUTH;
 
 EXIT:
-  if (KeyBuf != NULL) {
-    FreePool (KeyBuf);
-  }
   if (Digest != NULL) {
     FreePool (Digest);
   }
@@ -882,7 +921,9 @@ Ikev2GenerateTsPayload (
   //
 
   TsPayload    = IkePayloadAlloc();
-  ASSERT (TsPayload != NULL);
+  if (TsPayload == NULL) {
+    return NULL;
+  }
 
   IpVersion    = ChildSa->SessionCommon.UdpService->IpVersion;
   //
@@ -893,7 +934,9 @@ Ikev2GenerateTsPayload (
   SelectorSize  = sizeof (TRAFFIC_SELECTOR) + 2 * AddrSize;
   TsPayloadSize = sizeof (IKEV2_TS) + SelectorSize;
   TsPayloadBuf = AllocateZeroPool (TsPayloadSize);
-  ASSERT (TsPayloadBuf != NULL);
+  if (TsPayloadBuf == NULL) {
+    goto ON_ERROR;
+  }
 
   TsPayload->PayloadBuf = (UINT8 *) TsPayloadBuf;
   TsSelector            = (TRAFFIC_SELECTOR*)(TsPayloadBuf + 1);
@@ -1149,7 +1192,9 @@ Ikev2GenerateNotifyPayload (
   //
   NotifyPayloadLen  = (UINT16) (sizeof (IKEV2_NOTIFY) + NotifyDataSize + SpiSize);
   Notify            = (IKEV2_NOTIFY *) AllocateZeroPool (NotifyPayloadLen);
-  ASSERT (Notify != NULL);
+  if (Notify == NULL) {
+    return NULL;
+  }
 
   //
   // Set Delete Payload's Generic Header
@@ -1180,7 +1225,11 @@ Ikev2GenerateNotifyPayload (
   // Create Payload for and set type as IKEV2_PAYLOAD_TYPE_NOTIFY
   //
   NotifyPayload = IkePayloadAlloc ();
-  ASSERT (NotifyPayload != NULL);
+  if (NotifyPayload == NULL) {
+    FreePool (Notify);
+    return NULL;
+  }
+
   NotifyPayload->PayloadType  = IKEV2_PAYLOAD_TYPE_NOTIFY;
   NotifyPayload->PayloadBuf   = (UINT8 *) Notify;
   NotifyPayload->PayloadSize  = NotifyPayloadLen;
@@ -1241,7 +1290,9 @@ Ikev2GenerateDeletePayload (
   DelPayloadLen = (UINT16) (sizeof (IKEV2_DELETE) + SpiBufSize);
 
   Del           = AllocateZeroPool (DelPayloadLen);
-  ASSERT (Del != NULL);
+  if (Del == NULL) {
+    return NULL;
+  }
 
   //
   // Set Delete Payload's Generic Header
@@ -1265,7 +1316,11 @@ Ikev2GenerateDeletePayload (
   //
   CopyMem (Del + 1, SpiBuf, SpiBufSize);
   DelPayload = IkePayloadAlloc ();
-  ASSERT (DelPayload != NULL);
+  if (DelPayload == NULL) {
+    FreePool (Del);
+    return NULL;
+  }
+
   DelPayload->PayloadType = IKEV2_PAYLOAD_TYPE_DELETE;
   DelPayload->PayloadBuf  = (UINT8 *) Del;
   DelPayload->PayloadSize = DelPayloadLen;
@@ -1421,7 +1476,7 @@ Ikev2ParserNotifyCookiePayload (
                                 in RFC 4306.
   @param[in]  IsRequest         To indicate create Certificate Payload or Certificate
                                 Request Payload. If it is TURE, create Certificate
-                                Payload. Otherwise, create Certificate Request Payload.
+                                Request Payload. Otherwise, create Certificate Payload.
 
   @retval  a Pointer to IKE Payload whose payload buffer containing the Certificate
            payload or Certificated Request payload.
@@ -1614,7 +1669,7 @@ Ikev2EncodeSa (
   //
   TotalTransforms = 0;
   //
-  // Caculate the Proposal numbers and Transform numbers.
+  // Calculate the Proposal numbers and Transform numbers.
   //
   for (ProposalIndex = 0; ProposalIndex < SaData->NumProposals; ProposalIndex++) {
 
@@ -1629,7 +1684,10 @@ Ikev2EncodeSa (
   // Allocate buffer for IKE_SA.
   //
   Sa = AllocateZeroPool (SaSize);
-  ASSERT (Sa != NULL);
+  if (Sa == NULL) {
+    return NULL;
+  }
+
   CopyMem (Sa, SaData, sizeof (IKEV2_SA));
   Sa->Header.PayloadLength  = (UINT16) sizeof (IKEV2_SA);
   ProposalsSize             = 0;
@@ -1690,7 +1748,7 @@ Ikev2EncodeSa (
       Transform->Header.NextPayload   = IKE_TRANSFORM_NEXT_PAYLOAD_MORE;
       Transform->Header.PayloadLength = HTONS ((UINT16)TransformSize);
 
-      if (TransformIndex == (UINTN)(ProposalData->NumTransforms - 1)) {
+      if (TransformIndex == ((UINT32)ProposalData->NumTransforms - 1)) {
         Transform->Header.NextPayload = IKE_TRANSFORM_NEXT_PAYLOAD_NONE;
       }
 
@@ -1777,7 +1835,7 @@ Ikev2DecodeSa (
   Proposal               = (IKEV2_PROPOSAL *)((IKEV2_SA *)(Sa)+1);
 
   //
-  // Caculate the number of Proposal payload and the total numbers of
+  // Calculate the number of Proposal payload and the total numbers of
   // Transforms payload (the transforms in all proposal payload).
   //
   while (SaRemaining > sizeof (IKEV2_PROPOSAL)) {
@@ -1822,7 +1880,11 @@ Ikev2DecodeSa (
                                TotalProposals * sizeof (IKEV2_PROPOSAL_DATA) +
                                TotalTransforms * sizeof (IKEV2_TRANSFORM_DATA)
                                );
-  ASSERT (SaData != NULL);
+  if (SaData == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
   CopyMem (SaData, Sa, sizeof (IKEV2_SA));
   SaData->NumProposals        = TotalProposals;
   ProposalData                = (IKEV2_PROPOSAL_DATA *) (SaData + 1);
@@ -1855,7 +1917,11 @@ Ikev2DecodeSa (
       // SpiSize == 4
       //
       Spi = AllocateZeroPool (Proposal->SpiSize);
-      ASSERT (Spi != NULL);
+      if (Spi == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Exit;
+      }
+
       CopyMem (Spi, (UINT32 *) (Proposal + 1), Proposal->SpiSize);
       *((UINT32*) Spi) = NTOHL (*((UINT32*) Spi));
       ProposalData->Spi = Spi;
@@ -2287,7 +2353,11 @@ Ikev2DecodePacket (
   //
   if (IkePacket->Header->ExchangeType == IKEV2_EXCHANGE_TYPE_INIT) {
     IkeHeader = AllocateZeroPool (sizeof (IKE_HEADER));
-    ASSERT (IkeHeader != NULL);
+    if (IkeHeader == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Exit;
+    }
+
     CopyMem (IkeHeader, IkePacket->Header, sizeof (IKE_HEADER));
 
     //
@@ -2361,7 +2431,10 @@ Ikev2DecodePacket (
     // Initial IkePayload
     //
     IkePayload = IkePayloadAlloc ();
-    ASSERT (IkePayload != NULL);
+    if (IkePayload == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Exit;
+    }
 
     IkePayload->PayloadType     = PayloadType;
     IkePayload->PayloadBuf      = (UINT8 *) PayloadHdr;
@@ -2469,6 +2542,9 @@ Ikev2EncodePacket (
     // Encrypt all payload and transfer IKE packet header from Host order to Network order.
     //
     Status = Ikev2EncryptPacket (SessionCommon, IkePacket);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
   } else {
     //
     // Fill in the lenght into IkePacket header and transfer Host order to Network order.
@@ -2486,7 +2562,10 @@ Ikev2EncodePacket (
     if (SessionCommon->IsInitiator) {
       IkeSaSession->InitPacketSize = IkePacket->PayloadTotalSize + sizeof (IKE_HEADER);
       IkeSaSession->InitPacket     = AllocateZeroPool (IkeSaSession->InitPacketSize);
-      ASSERT (IkeSaSession->InitPacket != NULL);
+      if (IkeSaSession->InitPacket == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+
       CopyMem (IkeSaSession->InitPacket, IkePacket->Header, sizeof (IKE_HEADER));
       PayloadTotalSize = 0;
       for (Entry = IkePacket->PayloadList.ForwardLink; Entry != &(IkePacket->PayloadList);) {
@@ -2502,7 +2581,10 @@ Ikev2EncodePacket (
     } else {
       IkeSaSession->RespPacketSize = IkePacket->PayloadTotalSize + sizeof(IKE_HEADER);
       IkeSaSession->RespPacket     = AllocateZeroPool (IkeSaSession->RespPacketSize);
-      ASSERT (IkeSaSession->RespPacket != NULL);
+      if (IkeSaSession->RespPacket == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+
       CopyMem (IkeSaSession->RespPacket, IkePacket->Header, sizeof (IKE_HEADER));
       PayloadTotalSize = 0;
       for (Entry = IkePacket->PayloadList.ForwardLink; Entry != &(IkePacket->PayloadList);) {
@@ -2558,14 +2640,12 @@ Ikev2DecryptPacket (
   IKEV2_CHILD_SA_SESSION *ChildSaSession;
   EFI_STATUS             Status;
   UINT8                  PadLen;
-  UINTN                  CryptKeyLength;
   HASH_DATA_FRAGMENT     Fragments[1];
 
   IvSize         = 0;
   IkeSaSession   = NULL;
   CryptBlockSize = 0;
   CheckSumSize   = 0;
-  CryptKeyLength = 0;
 
   //
   // Check if the first payload is the Encrypted payload
@@ -2583,7 +2663,7 @@ Ikev2DecryptPacket (
   if (SessionCommon->IkeSessionType == IkeSessionTypeIkeSa) {
 
     CryptBlockSize = (UINT8) IpSecGetEncryptBlockSize ((UINT8) SessionCommon->SaParams->EncAlgId);
-    CryptKeyLength = IpSecGetEncryptKeyLength ((UINT8) SessionCommon->SaParams->EncAlgId);
+
     CheckSumSize   = (UINT8) IpSecGetIcvLength ((UINT8) SessionCommon->SaParams->IntegAlgId);
     IkeSaSession   = IKEV2_SA_SESSION_FROM_COMMON (SessionCommon);
 
@@ -2592,7 +2672,6 @@ Ikev2DecryptPacket (
     ChildSaSession = IKEV2_CHILD_SA_SESSION_FROM_COMMON (SessionCommon);
     IkeSaSession   = ChildSaSession->IkeSaSession;
     CryptBlockSize = (UINT8) IpSecGetEncryptBlockSize ((UINT8) IkeSaSession->SessionCommon.SaParams->EncAlgId);
-    CryptKeyLength = IpSecGetEncryptKeyLength ((UINT8) IkeSaSession->SessionCommon.SaParams->EncAlgId);
     CheckSumSize   = (UINT8) IpSecGetIcvLength ((UINT8) IkeSaSession->SessionCommon.SaParams->IntegAlgId);
   } else {
     //
@@ -2602,14 +2681,21 @@ Ikev2DecryptPacket (
   }
 
   CheckSumData = AllocateZeroPool (CheckSumSize);
-  ASSERT (CheckSumData != NULL);
+  if (CheckSumData == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
 
   //
   // Fill in the Integrity buffer
   //
   IntegritySize   = IkePacket->PayloadTotalSize + sizeof (IKE_HEADER);
   IntegrityBuffer = AllocateZeroPool (IntegritySize);
-  ASSERT (IntegrityBuffer != NULL);
+  if (IntegrityBuffer == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
+
   CopyMem (IntegrityBuffer, IkePacket->Header, sizeof(IKE_HEADER));
   CopyMem (IntegrityBuffer + sizeof (IKE_HEADER), IkePacket->PayloadsBuf, IkePacket->PayloadTotalSize);
 
@@ -2670,7 +2756,10 @@ Ikev2DecryptPacket (
   //
   DecryptedSize = IkePacket->PayloadTotalSize - sizeof (IKEV2_COMMON_PAYLOAD_HEADER) - IvSize - CheckSumSize;
   DecryptedBuf  = AllocateZeroPool (DecryptedSize);
-  ASSERT (DecryptedBuf != NULL);
+  if (DecryptedBuf == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
 
   CopyMem (
     DecryptedBuf,
@@ -2768,7 +2857,6 @@ Ikev2EncryptPacket (
   UINT8                  *EncryptPayloadBuf;  // Contain whole Encrypted Payload
   UINTN                  EncryptPayloadSize;  // Total size of the Encrypted payload
   UINT8                  *IntegrityBuf;       // Buffer to be intergity
-  UINT32                 IntegrityBufSize;    // Buffer size of IntegrityBuf
   UINT8                  *IvBuffer;           // Initialization Vector
   UINT8                  IvSize;              // Iv Size
   UINT8                  CheckSumSize;        // Integrity Check Sum Size depends on intergrity Auth
@@ -2780,7 +2868,6 @@ Ikev2EncryptPacket (
   EFI_STATUS             Status;
   LIST_ENTRY             *Entry;
   IKE_PAYLOAD            *IkePayload;
-  UINTN                  CryptKeyLength;
   HASH_DATA_FRAGMENT     Fragments[1];
 
   Status = EFI_SUCCESS;
@@ -2795,7 +2882,6 @@ Ikev2EncryptPacket (
   IkeSaSession      = NULL;
   CryptBlockSize    = 0;
   CheckSumSize      = 0;
-  CryptKeyLength    = 0;
   IntegrityBuf      = NULL;
   //
   // Get the Block Size
@@ -2803,7 +2889,6 @@ Ikev2EncryptPacket (
   if (SessionCommon->IkeSessionType == IkeSessionTypeIkeSa) {
 
     CryptBlockSize = (UINT8) IpSecGetEncryptBlockSize ((UINT8) SessionCommon->SaParams->EncAlgId);
-    CryptKeyLength = IpSecGetEncryptKeyLength ((UINT8) SessionCommon->SaParams->EncAlgId);
     CheckSumSize   = (UINT8) IpSecGetIcvLength ((UINT8) SessionCommon->SaParams->IntegAlgId);
     IkeSaSession   = IKEV2_SA_SESSION_FROM_COMMON (SessionCommon);
 
@@ -2812,7 +2897,6 @@ Ikev2EncryptPacket (
     ChildSaSession = IKEV2_CHILD_SA_SESSION_FROM_COMMON (SessionCommon);
     IkeSaSession   = ChildSaSession->IkeSaSession;
     CryptBlockSize = (UINT8) IpSecGetEncryptBlockSize ((UINT8) IkeSaSession->SessionCommon.SaParams->EncAlgId);
-    CryptKeyLength = IpSecGetEncryptKeyLength ((UINT8) IkeSaSession->SessionCommon.SaParams->EncAlgId);
     CheckSumSize   = (UINT8) IpSecGetIcvLength ((UINT8) IkeSaSession->SessionCommon.SaParams->IntegAlgId);
   }
 
@@ -2822,7 +2906,10 @@ Ikev2EncryptPacket (
   CryptBlockSizeMask  = (UINT8) (CryptBlockSize - 1);
   EncryptedSize       = (IkePacket->PayloadTotalSize + sizeof (IKEV2_PAD_LEN) + CryptBlockSizeMask) & ~CryptBlockSizeMask;
   EncryptedBuf        = (UINT8 *) AllocateZeroPool (EncryptedSize);
-  ASSERT (EncryptedBuf != NULL);
+  if (EncryptedBuf == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
 
   //
   // Copy all payload into EncryptedIkePayload
@@ -2889,7 +2976,10 @@ Ikev2EncryptPacket (
   //
   EncryptPayloadSize = sizeof(IKEV2_ENCRYPTED) + IvSize + EncryptedSize + CheckSumSize;
   EncryptPayloadBuf  = AllocateZeroPool (EncryptPayloadSize);
-  ASSERT (EncryptPayloadBuf != NULL);
+  if (EncryptPayloadBuf == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
 
   //
   // Fill in Header of  Encrypted Payload
@@ -2919,7 +3009,6 @@ Ikev2EncryptPacket (
     Status = EFI_OUT_OF_RESOURCES;
     goto ON_EXIT;
   }
-  IntegrityBufSize               = IkePacket->Header->Length;
   IkeHdrHostToNet (IkePacket->Header);
 
   CopyMem (IntegrityBuf, IkePacket->Header, sizeof (IKE_HEADER));
@@ -2977,7 +3066,10 @@ Ikev2EncryptPacket (
   // Create Encrypted Payload and add into IkePacket->PayloadList
   //
   EncryptPayload = IkePayloadAlloc ();
-  ASSERT (EncryptPayload != NULL);
+  if (EncryptPayload == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
 
   //
   // Fill the encrypted payload into the IKE_PAYLOAD structure.
@@ -3223,7 +3315,9 @@ Ikev2SendIkePacket (
   // Transform IkePacke to NetBuf
   //
   IkePacketNetbuf = IkeNetbufFromPacket ((UINT8 *) SessionCommon, IkePacket, IkeType);
-  ASSERT (IkePacketNetbuf != NULL);
+  if (IkePacketNetbuf == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   ZeroMem (&EndPoint, sizeof (UDP_END_POINT));
   EndPoint.RemotePort = IKE_DEFAULT_PORT;

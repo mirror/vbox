@@ -1,8 +1,8 @@
 ## @file
 # process FFS generation from INF statement
 #
-#  Copyright (c) 2007 - 2015, Intel Corporation. All rights reserved.<BR>
-#  Copyright (c) 2014 Hewlett-Packard Development Company, L.P.<BR>
+#  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2014-2016 Hewlett-Packard Development Company, L.P.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -28,6 +28,7 @@ import Section
 import RuleSimpleFile
 import RuleComplexFile
 from CommonDataClass.FdfClass import FfsInfStatementClassObject
+from Common.MultipleWorkspace import MultipleWorkspace as mws
 from Common.String import *
 from Common.Misc import PathClass
 from Common.Misc import GuidStructureByteArrayToGuidString
@@ -42,6 +43,10 @@ from AutoGen.GenDepex import DependencyExpression
 from PatchPcdValue.PatchPcdValue import PatchBinaryFile
 from Common.LongFilePathSupport import CopyLongFilePath
 from Common.LongFilePathSupport import OpenLongFilePath as open
+import Common.GlobalData as GlobalData
+from DepexSection import DepexSection
+from Common.Misc import SaveFileOnChange
+from Common.Expression import *
 
 ## generate FFS from INF
 #
@@ -70,6 +75,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
         self.OverrideGuid = None
         self.PatchedBinFile = ''
         self.MacroDict = {}
+        self.Depex = False
 
     ## GetFinalTargetSuffixMap() method
     #
@@ -173,6 +179,10 @@ class FfsInfStatement(FfsInfStatementClassObject):
         if ErrorCode != 0:
             EdkLogger.error("GenFds", ErrorCode, ExtraData=ErrorInfo)
 
+        #
+        # Cache lower case version of INF path before processing FILE_GUID override
+        #
+        InfLowerPath = str(PathClassObj).lower()
         if self.OverrideGuid:
             PathClassObj = ProcessDuplicatedInf(PathClassObj, self.OverrideGuid, GenFdsGlobalVariable.WorkSpaceDir)
         if self.CurrentArch != None:
@@ -218,6 +228,9 @@ class FfsInfStatement(FfsInfStatementClassObject):
         if self.ModuleType == 'SMM_CORE' and int(self.PiSpecVersion, 16) < 0x0001000A:
             EdkLogger.error("GenFds", FORMAT_NOT_SUPPORTED, "SMM_CORE module type can't be used in the module with PI_SPECIFICATION_VERSION less than 0x0001000A", File=self.InfFileName)
 
+        if self.ModuleType == 'MM_CORE_STANDALONE' and int(self.PiSpecVersion, 16) < 0x00010032:
+            EdkLogger.error("GenFds", FORMAT_NOT_SUPPORTED, "MM_CORE_STANDALONE module type can't be used in the module with PI_SPECIFICATION_VERSION less than 0x00010032", File=self.InfFileName)
+
         if Inf._Defs != None and len(Inf._Defs) > 0:
             self.OptRomDefs.update(Inf._Defs)
 
@@ -225,6 +238,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
         InfPcds = Inf.Pcds
         Platform = GenFdsGlobalVariable.WorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, self.CurrentArch, GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
         FdfPcdDict = GenFdsGlobalVariable.FdfParser.Profile.PcdDict
+        PlatformPcds = Platform.Pcds
 
         # Workaround here: both build and GenFds tool convert the workspace path to lower case
         # But INF file path in FDF and DSC file may have real case characters.
@@ -240,7 +254,6 @@ class FfsInfStatement(FfsInfStatementClassObject):
                 continue
             # Override Patchable PCD value by the value from DSC
             PatchPcd = None
-            InfLowerPath = str(PathClassObj).lower()
             if InfLowerPath in DscModules and PcdKey in DscModules[InfLowerPath].Pcds:
                 PatchPcd = DscModules[InfLowerPath].Pcds[PcdKey]
             elif PcdKey in Platform.Pcds:
@@ -256,11 +269,36 @@ class FfsInfStatement(FfsInfStatementClassObject):
                 DefaultValue = FdfPcdDict[PcdKey]
                 FdfOverride = True
 
-            if not DscOverride and not FdfOverride:
+            # Override Patchable PCD value by the value from Build Option
+            BuildOptionOverride = False
+            if GlobalData.BuildOptionPcd:
+                for pcd in GlobalData.BuildOptionPcd:
+                    if PcdKey == (pcd[1], pcd[0]):
+                        if pcd[2]:
+                            continue
+                        DefaultValue = pcd[3]
+                        BuildOptionOverride = True
+                        break
+
+            if not DscOverride and not FdfOverride and not BuildOptionOverride:
                 continue
+
+            # Support Flexible PCD format
+            if DefaultValue:
+                try:
+                    DefaultValue = ValueExpressionEx(DefaultValue, Pcd.DatumType, Platform._GuidDict)(True)
+                except BadExpression:
+                    EdkLogger.error("GenFds", GENFDS_ERROR, 'PCD [%s.%s] Value "%s"' %(Pcd.TokenSpaceGuidCName, Pcd.TokenCName, DefaultValue), File=self.InfFileName)
+
+            if Pcd.InfDefaultValue:
+                try:
+                    Pcd.InfDefaultValue = ValueExpressionEx(Pcd.InfDefaultValue, Pcd.DatumType, Platform._GuidDict)(True)
+                except BadExpression:
+                    EdkLogger.error("GenFds", GENFDS_ERROR, 'PCD [%s.%s] Value "%s"' %(Pcd.TokenSpaceGuidCName, Pcd.TokenCName, Pcd.DefaultValue),File=self.InfFileName)
+
             # Check value, if value are equal, no need to patch
             if Pcd.DatumType == "VOID*":
-                if Pcd.DefaultValue == DefaultValue or DefaultValue in [None, '']:
+                if Pcd.InfDefaultValue == DefaultValue or DefaultValue in [None, '']:
                     continue
                 # Get the string size from FDF or DSC
                 if DefaultValue[0] == 'L':
@@ -274,15 +312,15 @@ class FfsInfStatement(FfsInfStatementClassObject):
                     Pcd.MaxDatumSize = PatchPcd.MaxDatumSize
                 # If no defined the maximum size in DSC, try to get current size from INF
                 if Pcd.MaxDatumSize in ['', None]:
-                    Pcd.MaxDatumSize = str(len(Pcd.DefaultValue.split(',')))
+                    Pcd.MaxDatumSize = str(len(Pcd.InfDefaultValue.split(',')))
             else:
                 Base1 = Base2 = 10
-                if Pcd.DefaultValue.upper().startswith('0X'):
+                if Pcd.InfDefaultValue.upper().startswith('0X'):
                     Base1 = 16
                 if DefaultValue.upper().startswith('0X'):
                     Base2 = 16
                 try:
-                    PcdValueInImg = int(Pcd.DefaultValue, Base1)
+                    PcdValueInImg = int(Pcd.InfDefaultValue, Base1)
                     PcdValueInDscOrFdf = int(DefaultValue, Base2)
                     if PcdValueInImg == PcdValueInDscOrFdf:
                         continue
@@ -303,6 +341,11 @@ class FfsInfStatement(FfsInfStatementClassObject):
         self.InfModule = Inf
         self.PcdIsDriver = Inf.PcdIsDriver
         self.IsBinaryModule = Inf.IsBinaryModule
+        Inf._GetDepex()
+        Inf._GetDepexExpression()
+        if len(Inf._Depex.data) > 0 and len(Inf._DepexExpression.data) > 0:
+            self.Depex = True
+
         GenFdsGlobalVariable.VerboseLogger("BaseName : %s" % self.BaseName)
         GenFdsGlobalVariable.VerboseLogger("ModuleGuid : %s" % self.ModuleGuid)
         GenFdsGlobalVariable.VerboseLogger("ModuleType : %s" % self.ModuleType)
@@ -318,7 +361,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
         if not os.path.exists(self.OutputPath) :
             os.makedirs(self.OutputPath)
 
-        self.EfiOutputPath = self.__GetEFIOutPutPath__()
+        self.EfiOutputPath, self.EfiDebugPath = self.__GetEFIOutPutPath__()
         GenFdsGlobalVariable.VerboseLogger( "ModuelEFIPath: " + self.EfiOutputPath)
 
     ## PatchEfiFile
@@ -330,25 +373,63 @@ class FfsInfStatement(FfsInfStatementClassObject):
     #           If passed in file does not end with efi, return as is
     #
     def PatchEfiFile(self, EfiFile, FileType):
+        #
+        # If the module does not have any patches, then return path to input file
+        #
         if not self.PatchPcds:
             return EfiFile
+
+        #
+        # Only patch file if FileType is PE32 or ModuleType is USER_DEFINED
+        #
         if FileType != 'PE32' and self.ModuleType != "USER_DEFINED":
             return EfiFile
+
+        #
+        # Generate path to patched output file
+        #
+        Basename = os.path.basename(EfiFile)
+        Output = os.path.normpath (os.path.join(self.OutputPath, Basename))
+
+        #
+        # If this file has already been patched, then return the path to the patched file
+        #
+        if self.PatchedBinFile == Output:
+          return Output
+
+        #
+        # If a different file from the same module has already been patched, then generate an error
+        #
         if self.PatchedBinFile:
             EdkLogger.error("GenFds", GENFDS_ERROR,
                             'Only one binary file can be patched:\n'
                             '  a binary file has been patched: %s\n'
                             '  current file: %s' % (self.PatchedBinFile, EfiFile),
                             File=self.InfFileName)
-        Basename = os.path.basename(EfiFile)
-        Output = os.path.join(self.OutputPath, Basename)
+
+        #
+        # Copy unpatched file contents to output file location to perform patching
+        #
         CopyLongFilePath(EfiFile, Output)
+
+        #
+        # Apply patches to patched output file
+        #
         for Pcd, Value in self.PatchPcds:
             RetVal, RetStr = PatchBinaryFile(Output, int(Pcd.Offset, 0), Pcd.DatumType, Value, Pcd.MaxDatumSize)
             if RetVal:
                 EdkLogger.error("GenFds", GENFDS_ERROR, RetStr, File=self.InfFileName)
-        self.PatchedBinFile = os.path.normpath(EfiFile)
+
+        #
+        # Save the path of the patched output file
+        #
+        self.PatchedBinFile = Output
+
+        #
+        # Return path to patched output file
+        #
         return Output
+
     ## GenFfs() method
     #
     #   Generate FFS
@@ -359,13 +440,14 @@ class FfsInfStatement(FfsInfStatementClassObject):
     #   @param  FvParentAddr Parent Fv base address
     #   @retval string       Generated FFS file name
     #
-    def GenFfs(self, Dict = {}, FvChildAddr = [], FvParentAddr=None):
+    def GenFfs(self, Dict = {}, FvChildAddr = [], FvParentAddr=None, IsMakefile=False, FvName=None):
         #
         # Parse Inf file get Module related information
         #
 
         self.__InfParse__(Dict)
-        SrcFile = os.path.join( GenFdsGlobalVariable.WorkSpaceDir , self.InfFileName);
+        Arch = self.GetCurrentArch()
+        SrcFile = mws.join( GenFdsGlobalVariable.WorkSpaceDir , self.InfFileName);
         DestFile = os.path.join( self.OutputPath, self.ModuleGuid + '.ffs')
 
         SrcFileDir = "."
@@ -397,6 +479,8 @@ class FfsInfStatement(FfsInfStatementClassObject):
             if self.Rule == None or self.Rule == "":
                 self.Rule = "BINARY"
 
+        if not IsMakefile and GenFdsGlobalVariable.EnableGenfdsMultiThread and self.Rule != 'BINARY':
+            IsMakefile = True
         #
         # Get the rule of how to generate Ffs file
         #
@@ -417,17 +501,19 @@ class FfsInfStatement(FfsInfStatementClassObject):
         #
         # For the rule only has simpleFile
         #
+        MakefilePath = None
+        if IsMakefile:
+            MakefilePath = self.InfFileName, Arch
         if isinstance (Rule, RuleSimpleFile.RuleSimpleFile) :
-            SectionOutputList = self.__GenSimpleFileSection__(Rule)
-            FfsOutput = self.__GenSimpleFileFfs__(Rule, SectionOutputList)
+            SectionOutputList = self.__GenSimpleFileSection__(Rule, IsMakefile=IsMakefile)
+            FfsOutput = self.__GenSimpleFileFfs__(Rule, SectionOutputList, MakefilePath=MakefilePath)
             return FfsOutput
         #
         # For Rule has ComplexFile
         #
         elif isinstance(Rule, RuleComplexFile.RuleComplexFile):
-            InputSectList, InputSectAlignments = self.__GenComplexFileSection__(Rule, FvChildAddr, FvParentAddr)
-            FfsOutput = self.__GenComplexFileFfs__(Rule, InputSectList, InputSectAlignments)
-
+            InputSectList, InputSectAlignments = self.__GenComplexFileSection__(Rule, FvChildAddr, FvParentAddr, IsMakefile=IsMakefile)
+            FfsOutput = self.__GenComplexFileFfs__(Rule, InputSectList, InputSectAlignments, MakefilePath=MakefilePath)
             return FfsOutput
 
     ## __ExtendMacro__() method
@@ -511,37 +597,23 @@ class FfsInfStatement(FfsInfStatementClassObject):
     #
     def __GetPlatformArchList__(self):
 
-        InfFileKey = os.path.normpath(os.path.join(GenFdsGlobalVariable.WorkSpaceDir, self.InfFileName))
+        InfFileKey = os.path.normpath(mws.join(GenFdsGlobalVariable.WorkSpaceDir, self.InfFileName))
         DscArchList = []
-        PlatformDataBase = GenFdsGlobalVariable.WorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, 'IA32', GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
-        if  PlatformDataBase != None:
-            if InfFileKey in PlatformDataBase.Modules:
-                DscArchList.append ('IA32')
-
-        PlatformDataBase = GenFdsGlobalVariable.WorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, 'X64', GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
-        if  PlatformDataBase != None:
-            if InfFileKey in PlatformDataBase.Modules:
-                DscArchList.append ('X64')
-
-        PlatformDataBase = GenFdsGlobalVariable.WorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, 'IPF', GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
-        if PlatformDataBase != None:
-            if InfFileKey in (PlatformDataBase.Modules):
-                DscArchList.append ('IPF')
-
-        PlatformDataBase = GenFdsGlobalVariable.WorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, 'ARM', GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
-        if PlatformDataBase != None:
-            if InfFileKey in (PlatformDataBase.Modules):
-                DscArchList.append ('ARM')
-
-        PlatformDataBase = GenFdsGlobalVariable.WorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, 'EBC', GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
-        if PlatformDataBase != None:
-            if InfFileKey in (PlatformDataBase.Modules):
-                DscArchList.append ('EBC')
-
-        PlatformDataBase = GenFdsGlobalVariable.WorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, 'AARCH64', GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
-        if PlatformDataBase != None:
-            if InfFileKey in (PlatformDataBase.Modules):
-                DscArchList.append ('AARCH64')
+        for Arch in GenFdsGlobalVariable.ArchList :
+            PlatformDataBase = GenFdsGlobalVariable.WorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, Arch, GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
+            if  PlatformDataBase != None:
+                if InfFileKey in PlatformDataBase.Modules:
+                    DscArchList.append (Arch)
+                else:
+                    #
+                    # BaseTools support build same module more than once, the module path with FILE_GUID overridden has
+                    # the file name FILE_GUIDmodule.inf, then PlatformDataBase.Modules use FILE_GUIDmodule.inf as key,
+                    # but the path (self.MetaFile.Path) is the real path
+                    #
+                    for key in PlatformDataBase.Modules.keys():
+                        if InfFileKey == str((PlatformDataBase.Modules[key]).MetaFile.Path):
+                            DscArchList.append (Arch)
+                            break
 
         return DscArchList
 
@@ -610,6 +682,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
     def __GetEFIOutPutPath__(self):
         Arch = ''
         OutputPath = ''
+        DebugPath = ''
         (ModulePath, FileName) = os.path.split(self.InfFileName)
         Index = FileName.rfind('.')
         FileName = FileName[0:Index]
@@ -625,8 +698,15 @@ class FfsInfStatement(FfsInfStatementClassObject):
                                   FileName,
                                   'OUTPUT'
                                   )
+        DebugPath = os.path.join(GenFdsGlobalVariable.OutputDirDict[Arch],
+                                  Arch ,
+                                  ModulePath,
+                                  FileName,
+                                  'DEBUG'
+                                  )
         OutputPath = os.path.realpath(OutputPath)
-        return OutputPath
+        DebugPath = os.path.realpath(DebugPath)
+        return OutputPath, DebugPath
 
     ## __GenSimpleFileSection__() method
     #
@@ -636,7 +716,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
     #   @param  Rule        The rule object used to generate section
     #   @retval string      File name of the generated section file
     #
-    def __GenSimpleFileSection__(self, Rule):
+    def __GenSimpleFileSection__(self, Rule, IsMakefile = False):
         #
         # Prepare the parameter of GenSection
         #
@@ -690,8 +770,10 @@ class FfsInfStatement(FfsInfStatementClassObject):
                     ImageObj = PeImageClass (File)
                     if ImageObj.SectionAlignment < 0x400:
                         self.Alignment = str (ImageObj.SectionAlignment)
-                    else:
+                    elif ImageObj.SectionAlignment < 0x100000:
                         self.Alignment = str (ImageObj.SectionAlignment / 0x400) + 'K'
+                    else:
+                        self.Alignment = str (ImageObj.SectionAlignment / 0x100000) + 'M'
 
                 if not NoStrip:
                     FileBeforeStrip = os.path.join(self.OutputPath, ModuleName + '.reloc')
@@ -700,22 +782,23 @@ class FfsInfStatement(FfsInfStatementClassObject):
                         CopyLongFilePath(File, FileBeforeStrip)
                     StrippedFile = os.path.join(self.OutputPath, ModuleName + '.stipped')
                     GenFdsGlobalVariable.GenerateFirmwareImage(
-                                            StrippedFile,
-                                            [File],
-                                            Strip=True
-                                            )
+                            StrippedFile,
+                            [File],
+                            Strip=True,
+                            IsMakefile=IsMakefile
+                        )
                     File = StrippedFile
 
                 if SectionType == 'TE':
                     TeFile = os.path.join( self.OutputPath, self.ModuleGuid + 'Te.raw')
                     GenFdsGlobalVariable.GenerateFirmwareImage(
-                                            TeFile,
-                                            [File],
-                                            Type='te'
-                                            )
+                            TeFile,
+                            [File],
+                            Type='te',
+                            IsMakefile=IsMakefile
+                        )
                     File = TeFile
-
-                GenFdsGlobalVariable.GenerateSection(OutputFile, [File], Section.Section.SectionType[SectionType])
+                GenFdsGlobalVariable.GenerateSection(OutputFile, [File], Section.Section.SectionType[SectionType], IsMakefile=IsMakefile)
                 OutputFileList.append(OutputFile)
         else:
             SecNum = '%d' %Index
@@ -729,8 +812,10 @@ class FfsInfStatement(FfsInfStatementClassObject):
                 ImageObj = PeImageClass (GenSecInputFile)
                 if ImageObj.SectionAlignment < 0x400:
                     self.Alignment = str (ImageObj.SectionAlignment)
-                else:
+                elif ImageObj.SectionAlignment < 0x100000:
                     self.Alignment = str (ImageObj.SectionAlignment / 0x400) + 'K'
+                else:
+                    self.Alignment = str (ImageObj.SectionAlignment / 0x100000) + 'M'
 
             if not NoStrip:
                 FileBeforeStrip = os.path.join(self.OutputPath, ModuleName + '.reloc')
@@ -740,22 +825,23 @@ class FfsInfStatement(FfsInfStatementClassObject):
 
                 StrippedFile = os.path.join(self.OutputPath, ModuleName + '.stipped')
                 GenFdsGlobalVariable.GenerateFirmwareImage(
-                                        StrippedFile,
-                                        [GenSecInputFile],
-                                        Strip=True
-                                        )
+                        StrippedFile,
+                        [GenSecInputFile],
+                        Strip=True,
+                        IsMakefile=IsMakefile
+                    )
                 GenSecInputFile = StrippedFile
 
             if SectionType == 'TE':
                 TeFile = os.path.join( self.OutputPath, self.ModuleGuid + 'Te.raw')
                 GenFdsGlobalVariable.GenerateFirmwareImage(
-                                        TeFile,
-                                        [GenSecInputFile],
-                                        Type='te'
-                                        )
+                        TeFile,
+                        [GenSecInputFile],
+                        Type='te',
+                        IsMakefile=IsMakefile
+                    )
                 GenSecInputFile = TeFile
-
-            GenFdsGlobalVariable.GenerateSection(OutputFile, [GenSecInputFile], Section.Section.SectionType[SectionType])
+            GenFdsGlobalVariable.GenerateSection(OutputFile, [GenSecInputFile], Section.Section.SectionType[SectionType], IsMakefile=IsMakefile)
             OutputFileList.append(OutputFile)
 
         return OutputFileList
@@ -769,7 +855,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
     #   @param  InputFileList        The output file list from GenSection
     #   @retval string      Generated FFS file name
     #
-    def __GenSimpleFileFfs__(self, Rule, InputFileList):
+    def __GenSimpleFileFfs__(self, Rule, InputFileList, MakefilePath = None):
         FfsOutput = self.OutputPath                     + \
                     os.sep                              + \
                     self.__ExtendMacro__(Rule.NameGuid) + \
@@ -795,12 +881,13 @@ class FfsInfStatement(FfsInfStatementClassObject):
                             % (Rule.NameGuid))
             self.ModuleGuid = RegistryGuidStr
 
-        GenFdsGlobalVariable.GenerateFfs(FfsOutput, InputSection,
-                                         Ffs.Ffs.FdfFvFileTypeToFileType[Rule.FvFileType],
-                                         self.ModuleGuid, Fixed=Rule.Fixed,
-                                         CheckSum=Rule.CheckSum, Align=Rule.Alignment,
-                                         SectionAlign=SectionAlignments
-                                        )
+            GenFdsGlobalVariable.GenerateFfs(FfsOutput, InputSection,
+                                             Ffs.Ffs.FdfFvFileTypeToFileType[Rule.FvFileType],
+                                             self.ModuleGuid, Fixed=Rule.Fixed,
+                                             CheckSum=Rule.CheckSum, Align=Rule.Alignment,
+                                             SectionAlign=SectionAlignments,
+                                             MakefilePath=MakefilePath
+                                             )
         return FfsOutput
 
     ## __GenComplexFileSection__() method
@@ -813,14 +900,14 @@ class FfsInfStatement(FfsInfStatementClassObject):
     #   @param  FvParentAddr Parent Fv base address
     #   @retval string       File name of the generated section file
     #
-    def __GenComplexFileSection__(self, Rule, FvChildAddr, FvParentAddr):
+    def __GenComplexFileSection__(self, Rule, FvChildAddr, FvParentAddr, IsMakefile = False):
         if self.ModuleType in ('SEC', 'PEI_CORE', 'PEIM'):
             if Rule.KeepReloc != None:
                 self.KeepRelocFromRule = Rule.KeepReloc
         SectFiles = []
         SectAlignments = []
         Index = 1
-        HasGneratedFlag = False
+        HasGeneratedFlag = False
         if self.PcdIsDriver == 'PEI_PCD_DRIVER':
             if self.IsBinaryModule:
                 PcdExDbFileName = os.path.join(GenFdsGlobalVariable.FvDir, "PEIPcdDataBase.raw")
@@ -830,6 +917,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
             GenFdsGlobalVariable.GenerateSection(PcdExDbSecName,
                                                  [PcdExDbFileName],
                                                  "EFI_SECTION_RAW",
+                                                 IsMakefile = IsMakefile
                                                  )
             SectFiles.append(PcdExDbSecName)
             SectAlignments.append(None)
@@ -840,9 +928,10 @@ class FfsInfStatement(FfsInfStatementClassObject):
                 PcdExDbFileName = os.path.join(self.EfiOutputPath, "DXEPcdDataBase.raw")
             PcdExDbSecName = os.path.join(self.OutputPath, "DXEPcdDataBaseSec.raw")
             GenFdsGlobalVariable.GenerateSection(PcdExDbSecName,
-                                                 [PcdExDbFileName],
-                                                 "EFI_SECTION_RAW",
-                                                 )
+                                                [PcdExDbFileName],
+                                                "EFI_SECTION_RAW",
+                                                IsMakefile = IsMakefile
+                                                )
             SectFiles.append(PcdExDbSecName)
             SectAlignments.append(None)
         for Sect in Rule.SectionList:
@@ -872,13 +961,13 @@ class FfsInfStatement(FfsInfStatementClassObject):
                 Sect.FvParentAddr = FvParentAddr
 
             if Rule.KeyStringList != []:
-                SectList, Align = Sect.GenSection(self.OutputPath , self.ModuleGuid, SecIndex, Rule.KeyStringList, self)
+                SectList, Align = Sect.GenSection(self.OutputPath , self.ModuleGuid, SecIndex, Rule.KeyStringList, self, IsMakefile = IsMakefile)
             else :
-                SectList, Align = Sect.GenSection(self.OutputPath , self.ModuleGuid, SecIndex, self.KeyStringList, self)
+                SectList, Align = Sect.GenSection(self.OutputPath , self.ModuleGuid, SecIndex, self.KeyStringList, self, IsMakefile = IsMakefile)
 
-            if not HasGneratedFlag:
+            if not HasGeneratedFlag:
                 UniVfrOffsetFileSection = ""
-                ModuleFileName = os.path.join(GenFdsGlobalVariable.WorkSpaceDir, self.InfFileName)
+                ModuleFileName = mws.join(GenFdsGlobalVariable.WorkSpaceDir, self.InfFileName)
                 InfData = GenFdsGlobalVariable.WorkSpace.BuildObject[PathClass(ModuleFileName), self.CurrentArch]
                 #
                 # Search the source list in InfData to find if there are .vfr file exist.
@@ -899,26 +988,40 @@ class FfsInfStatement(FfsInfStatementClassObject):
 
 
                 if len(VfrUniBaseName) > 0:
-                    VfrUniOffsetList = self.__GetBuildOutputMapFileVfrUniInfo(VfrUniBaseName)
-                    #
-                    # Generate the Raw data of raw section
-                    #
-                    os.path.join( self.OutputPath, self.BaseName + '.offset')
-                    UniVfrOffsetFileName    =  os.path.join( self.OutputPath, self.BaseName + '.offset')
-                    UniVfrOffsetFileSection =  os.path.join( self.OutputPath, self.BaseName + 'Offset' + '.raw')
+                    if IsMakefile:
+                        if InfData.BuildType != 'UEFI_HII':
+                            UniVfrOffsetFileName = os.path.join(self.OutputPath, self.BaseName + '.offset')
+                            UniVfrOffsetFileSection = os.path.join(self.OutputPath, self.BaseName + 'Offset' + '.raw')
+                            UniVfrOffsetFileNameList = []
+                            UniVfrOffsetFileNameList.append(UniVfrOffsetFileName)
+                            TrimCmd = "Trim --Vfr-Uni-Offset -o %s --ModuleName=%s --DebugDir=%s " % (UniVfrOffsetFileName, self.BaseName, self.EfiDebugPath)
+                            GenFdsGlobalVariable.SecCmdList.append(TrimCmd)
+                            GenFdsGlobalVariable.GenerateSection(UniVfrOffsetFileSection,
+                                                                [UniVfrOffsetFileName],
+                                                                "EFI_SECTION_RAW",
+                                                                IsMakefile = True
+                                                                )
+                    else:
+                        VfrUniOffsetList = self.__GetBuildOutputMapFileVfrUniInfo(VfrUniBaseName)
+                        #
+                        # Generate the Raw data of raw section
+                        #
+                        if VfrUniOffsetList:
+                            UniVfrOffsetFileName = os.path.join(self.OutputPath, self.BaseName + '.offset')
+                            UniVfrOffsetFileSection = os.path.join(self.OutputPath, self.BaseName + 'Offset' + '.raw')
+                            self.__GenUniVfrOffsetFile (VfrUniOffsetList, UniVfrOffsetFileName)
+                            UniVfrOffsetFileNameList = []
+                            UniVfrOffsetFileNameList.append(UniVfrOffsetFileName)
+                            """Call GenSection"""
 
-                    self.__GenUniVfrOffsetFile (VfrUniOffsetList, UniVfrOffsetFileName)
-
-                    UniVfrOffsetFileNameList = []
-                    UniVfrOffsetFileNameList.append(UniVfrOffsetFileName)
-                    """Call GenSection"""
-                    GenFdsGlobalVariable.GenerateSection(UniVfrOffsetFileSection,
-                                                         UniVfrOffsetFileNameList,
-                                                         "EFI_SECTION_RAW"
-                                                         )
-                    os.remove(UniVfrOffsetFileName)
-                    SectList.append(UniVfrOffsetFileSection)
-                    HasGneratedFlag = True
+                            GenFdsGlobalVariable.GenerateSection(UniVfrOffsetFileSection,
+                                                                 UniVfrOffsetFileNameList,
+                                                                 "EFI_SECTION_RAW"
+                                                                 )
+                            #os.remove(UniVfrOffsetFileName)
+                    if UniVfrOffsetFileSection:
+                        SectList.append(UniVfrOffsetFileSection)
+                        HasGeneratedFlag = True
 
             for SecName in  SectList :
                 SectFiles.append(SecName)
@@ -935,7 +1038,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
     #   @param  InputFileList        The output file list from GenSection
     #   @retval string      Generated FFS file name
     #
-    def __GenComplexFileFfs__(self, Rule, InputFile, Alignments):
+    def __GenComplexFileFfs__(self, Rule, InputFile, Alignments, MakefilePath = None):
 
         if Rule.NameGuid != None and Rule.NameGuid.startswith('PCD('):
             PcdValue = GenFdsGlobalVariable.GetPcdValue(Rule.NameGuid)
@@ -952,11 +1055,12 @@ class FfsInfStatement(FfsInfStatementClassObject):
 
         FfsOutput = os.path.join( self.OutputPath, self.ModuleGuid + '.ffs')
         GenFdsGlobalVariable.GenerateFfs(FfsOutput, InputFile,
-                                         Ffs.Ffs.FdfFvFileTypeToFileType[Rule.FvFileType],
-                                         self.ModuleGuid, Fixed=Rule.Fixed,
-                                         CheckSum=Rule.CheckSum, Align=Rule.Alignment,
-                                         SectionAlign=Alignments
-                                        )
+                                             Ffs.Ffs.FdfFvFileTypeToFileType[Rule.FvFileType],
+                                             self.ModuleGuid, Fixed=Rule.Fixed,
+                                             CheckSum=Rule.CheckSum, Align=Rule.Alignment,
+                                             SectionAlign=Alignments,
+                                             MakefilePath=MakefilePath
+                                             )
         return FfsOutput
 
     ## __GetGenFfsCmdParameter__() method
@@ -1003,11 +1107,6 @@ class FfsInfStatement(FfsInfStatementClassObject):
     #
     def __GenUniVfrOffsetFile(self, VfrUniOffsetList, UniVfrOffsetFileName):
 
-        try:
-            fInputfile = open(UniVfrOffsetFileName, "wb+", 0)
-        except:
-            EdkLogger.error("GenFds", FILE_OPEN_FAILURE, "File open failed for %s" %UniVfrOffsetFileName,None)
-
         # Use a instance of StringIO to cache data
         fStringIO = StringIO.StringIO('')
 
@@ -1040,17 +1139,10 @@ class FfsInfStatement(FfsInfStatementClassObject):
         # write data into file.
         #
         try :
-            fInputfile.write (fStringIO.getvalue())
+            SaveFileOnChange(UniVfrOffsetFileName, fStringIO.getvalue())
         except:
             EdkLogger.error("GenFds", FILE_WRITE_FAILURE, "Write data to file %s failed, please check whether the file been locked or using by other applications." %UniVfrOffsetFileName,None)
 
         fStringIO.close ()
-        fInputfile.close ()
-
-
-
-
-
-
 
 

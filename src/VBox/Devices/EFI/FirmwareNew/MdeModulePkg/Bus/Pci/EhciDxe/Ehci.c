@@ -11,7 +11,7 @@
   and companion host controller when UHCI or OHCI gets attached earlier than EHCI and a
   USB 2.0 device inserts.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -89,7 +89,7 @@ EhcGetCapability (
 
   *MaxSpeed       = EFI_USB_SPEED_HIGH;
   *PortNumber     = (UINT8) (Ehc->HcStructParams & HCSP_NPORTS);
-  *Is64BitCapable = (UINT8) (Ehc->HcCapParams & HCCP_64BIT);
+  *Is64BitCapable = (UINT8) Ehc->Support64BitDma;
 
   DEBUG ((EFI_D_INFO, "EhcGetCapability: %d ports, 64 bit %d\n", *PortNumber, *Is64BitCapable));
 
@@ -1159,10 +1159,6 @@ EhcSyncInterruptTransfer (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (!EHCI_IS_DATAIN (EndPointAddress)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
   if ((*DataToggle != 1) && (*DataToggle != 0)) {
     return EFI_INVALID_PARAMETER;
   }
@@ -1224,6 +1220,7 @@ EhcSyncInterruptTransfer (
     Status = EFI_SUCCESS;
   }
 
+  EhcFreeUrb (Ehc, Urb);
 ON_EXIT:
   Ehc->PciIo->Flush (Ehc->PciIo);
   gBS->RestoreTPL (OldTpl);
@@ -1619,7 +1616,7 @@ EhcCreateUsb2Hc (
   //
   Status = gBS->CreateEvent (
                   EVT_TIMER | EVT_NOTIFY_SIGNAL,
-                  TPL_CALLBACK,
+                  TPL_NOTIFY,
                   EhcMonitorAsyncRequests,
                   Ehc,
                   &Ehc->PollTimer
@@ -1881,6 +1878,26 @@ EhcDriverBindingStart (
     goto CLOSE_PCIIO;
   }
 
+  //
+  // Enable 64-bit DMA support in the PCI layer if this controller
+  // supports it.
+  //
+  if (EHC_BIT_IS_SET (Ehc->HcCapParams, HCCP_64BIT)) {
+    Status = PciIo->Attributes (
+                      PciIo,
+                      EfiPciIoAttributeOperationEnable,
+                      EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE,
+                      NULL
+                      );
+    if (!EFI_ERROR (Status)) {
+      Ehc->Support64BitDma = TRUE;
+    } else {
+      DEBUG ((EFI_D_WARN,
+        "%a: failed to enable 64-bit DMA on 64-bit capable controller @ %p (%r)\n",
+        __FUNCTION__, Controller, Status));
+    }
+  }
+
   Status = gBS->InstallProtocolInterface (
                   &Controller,
                   &gEfiUsb2HcProtocolGuid,
@@ -2002,7 +2019,7 @@ CLOSE_PCIIO:
 
 
 /**
-  Stop this driver on ControllerHandle. Support stoping any child handles
+  Stop this driver on ControllerHandle. Support stopping any child handles
   created by this driver.
 
   @param  This                 Protocol instance pointer.

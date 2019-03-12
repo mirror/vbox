@@ -1,7 +1,7 @@
 /** @file
     Declaration of strctures and functions for SnpDxe driver.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed
 and made available under the terms and conditions of the BSD License which
 accompanies this distribution. The full text of the license may be found at
@@ -48,6 +48,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define PCI_BAR_MEM_MASK      0x0000000F
 #define PCI_BAR_MEM_MODE      0x00000000
 #define PCI_BAR_MEM_64BIT     0x00000004
+
+#define SNP_TX_BUFFER_INCREASEMENT    MAX_XMIT_BUFFERS
+#define SNP_MAX_TX_BUFFER_NUM         65536
 
 typedef
 EFI_STATUS
@@ -127,9 +130,30 @@ typedef struct {
 
   //
   // Whether UNDI support reporting media status from GET_STATUS command,
-  // i.e. PXE_STATFLAGS_GET_STATUS_NO_MEDIA_SUPPORTED
+  // i.e. PXE_STATFLAGS_GET_STATUS_NO_MEDIA_SUPPORTED or
+  //      PXE_STATFLAGS_GET_STATUS_NO_MEDIA_NOT_SUPPORTED
   //
   BOOLEAN                MediaStatusSupported;
+
+  //
+  // Whether UNDI support cable detect for INITIALIZE command,
+  // i.e. PXE_STATFLAGS_CABLE_DETECT_SUPPORTED or
+  //      PXE_STATFLAGS_CABLE_DETECT_NOT_SUPPORTED
+  //
+  BOOLEAN                CableDetectSupported;
+
+  //
+  // Array of the recycled transmit buffer address from UNDI.
+  //
+  UINT64                 *RecycledTxBuf;
+  //
+  // The maximum number of recycled buffer pointers in RecycledTxBuf.
+  //
+  UINT32                 MaxRecycledTxBuf;
+  //
+  // Current number of recycled buffer pointers in RecycledTxBuf.
+  //
+  UINT32                 RecycledTxBufCount;
 } SNP_DRIVER;
 
 #define EFI_SIMPLE_NETWORK_DEV_FROM_THIS(a) CR (a, SNP_DRIVER, Snp, SNP_DRIVER_SIGNATURE)
@@ -215,6 +239,30 @@ PxeShutdown (
 EFI_STATUS
 PxeGetStnAddr (
   SNP_DRIVER *Snp
+  );
+
+/**
+  Call undi to get the status of the interrupts, get the list of recycled transmit
+  buffers that completed transmitting. The recycled transmit buffer address will
+  be saved into Snp->RecycledTxBuf. This function will also update the MediaPresent
+  field of EFI_SIMPLE_NETWORK_MODE if UNDI support it.
+
+  @param[in]   Snp                     Pointer to snp driver structure.
+  @param[out]  InterruptStatusPtr      A non null pointer to contain the interrupt
+                                       status.
+  @param[in]   GetTransmittedBuf       Set to TRUE to retrieve the recycled transmit
+                                       buffer address.
+
+  @retval      EFI_SUCCESS             The status of the network interface was retrieved.
+  @retval      EFI_DEVICE_ERROR        The command could not be sent to the network
+                                       interface.
+
+**/
+EFI_STATUS
+PxeGetStatus (
+  IN     SNP_DRIVER *Snp,
+     OUT UINT32     *InterruptStatusPtr,
+  IN     BOOLEAN    GetTransmittedBuf
   );
 
 /**

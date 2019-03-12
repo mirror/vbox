@@ -1,7 +1,7 @@
 /** @file
   Header file for CD recovery PEIM
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -21,6 +21,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <PiPei.h>
 
 #include <Ppi/BlockIo.h>
+#include <Ppi/BlockIo2.h>
 #include <Guid/RecoveryDevice.h>
 #include <Ppi/DeviceRecoveryModule.h>
 
@@ -42,11 +43,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define PEI_MEMMORY_PAGE_SIZE             0x1000
 
 //
-// Recovery file name (in root directory)
-//
-#define PEI_RECOVERY_FILE_NAME  "FVMAIN.FV"
-
-//
 // Following are defined according to ISO-9660 specification
 //
 #define PEI_CD_STANDARD_ID                      "CD001"
@@ -65,8 +61,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 typedef struct {
   UINTN                           CapsuleStartLBA;
   UINTN                           CapsuleSize;
+  UINTN                           CapsuleBlockAlignedSize;
   UINTN                           IndexBlock;
   EFI_PEI_RECOVERY_BLOCK_IO_PPI   *BlockIo;
+  EFI_PEI_RECOVERY_BLOCK_IO2_PPI  *BlockIo2;
 } PEI_CD_EXPRESS_CAPSULE_DATA;
 
 #define PEI_CD_EXPRESS_PRIVATE_DATA_SIGNATURE SIGNATURE_32 ('p', 'c', 'd', 'e')
@@ -77,6 +75,7 @@ typedef struct {
   EFI_PEI_DEVICE_RECOVERY_MODULE_PPI    DeviceRecoveryPpi;
   EFI_PEI_PPI_DESCRIPTOR                PpiDescriptor;
   EFI_PEI_NOTIFY_DESCRIPTOR             NotifyDescriptor;
+  EFI_PEI_NOTIFY_DESCRIPTOR             NotifyDescriptor2;
 
   UINT8                                 *BlockBuffer;
   UINTN                                 CapsuleCount;
@@ -130,13 +129,15 @@ BlockIoNotifyEntry (
   Finds out all the current Block IO PPIs in the system and add them into private data.
 
   @param PrivateData                    The private data structure that contains recovery module information.
+  @param BlockIo2                       Boolean to show whether using BlockIo2 or BlockIo.
 
   @retval EFI_SUCCESS                   The blocks and volumes are updated successfully.
 
 **/
 EFI_STATUS
 UpdateBlocksAndVolumes (
-  IN OUT PEI_CD_EXPRESS_PRIVATE_DATA     *PrivateData
+  IN OUT PEI_CD_EXPRESS_PRIVATE_DATA     *PrivateData,
+  IN     BOOLEAN                         BlockIo2
   );
 
 /**
@@ -253,6 +254,7 @@ FindRecoveryCapsules (
 
   @param PrivateData                    The private data structure that contains recovery module information.
   @param BlockIoPpi                     The Block IO PPI used to access the volume.
+  @param BlockIo2Ppi                    The Block IO 2 PPI used to access the volume.
   @param IndexBlockDevice               The index of current block device.
   @param Lba                            The starting logic block address to retrieve capsule.
 
@@ -266,6 +268,7 @@ EFIAPI
 RetrieveCapsuleFileFromRoot (
   IN OUT PEI_CD_EXPRESS_PRIVATE_DATA        *PrivateData,
   IN EFI_PEI_RECOVERY_BLOCK_IO_PPI          *BlockIoPpi,
+  IN EFI_PEI_RECOVERY_BLOCK_IO2_PPI         *BlockIo2Ppi,
   IN UINTN                                  IndexBlockDevice,
   IN UINT32                                 Lba
   );

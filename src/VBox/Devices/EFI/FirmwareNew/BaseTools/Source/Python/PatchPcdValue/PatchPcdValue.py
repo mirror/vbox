@@ -48,7 +48,7 @@ def PatchBinaryFile(FileName, ValueOffset, TypeName, ValueString, MaxSize=0):
     #
     # Length of Binary File
     #
-    FileHandle = open (FileName, 'rb')
+    FileHandle = open(FileName, 'rb')
     FileHandle.seek (0, 2)
     FileLength = FileHandle.tell()
     FileHandle.close()
@@ -75,7 +75,7 @@ def PatchBinaryFile(FileName, ValueOffset, TypeName, ValueString, MaxSize=0):
             return OPTION_MISSING, "PcdMaxSize is not specified for VOID* type PCD."
         ValueLength = int(MaxSize)
     else:
-        return PARAMETER_INVALID,  "PCD type %s is not valid." %(CommandOptions.PcdTypeName)
+        return PARAMETER_INVALID, "PCD type %s is not valid." % (CommandOptions.PcdTypeName)
     #
     # Check PcdValue is in the input binary file.
     #
@@ -84,7 +84,7 @@ def PatchBinaryFile(FileName, ValueOffset, TypeName, ValueString, MaxSize=0):
     #
     # Read binary file into array
     #
-    FileHandle = open (FileName, 'rb')
+    FileHandle = open(FileName, 'rb')
     ByteArray = array.array('B')
     ByteArray.fromfile(FileHandle, FileLength)
     FileHandle.close()
@@ -117,7 +117,7 @@ def PatchBinaryFile(FileName, ValueOffset, TypeName, ValueString, MaxSize=0):
             if ValueNumber != 0:
                 ValueNumber = 1
         except:
-            return PARAMETER_INVALID, "PCD Value %s is not valid dec or hex string." %(ValueString)
+            return PARAMETER_INVALID, "PCD Value %s is not valid dec or hex string." % (ValueString)
         #
         # Set PCD value into binary data
         #
@@ -132,7 +132,7 @@ def PatchBinaryFile(FileName, ValueOffset, TypeName, ValueString, MaxSize=0):
             else:
                 ValueNumber = int (ValueString)
         except:
-            return PARAMETER_INVALID, "PCD Value %s is not valid dec or hex string." %(ValueString)
+            return PARAMETER_INVALID, "PCD Value %s is not valid dec or hex string." % (ValueString)
         #
         # Set PCD value into binary data
         #
@@ -161,10 +161,11 @@ def PatchBinaryFile(FileName, ValueOffset, TypeName, ValueString, MaxSize=0):
             #
             # Patch {0x1, 0x2, ...} byte by byte
             #
-            ValueList = ValueString[1 : len(ValueString) - 1].split(', ')
+            ValueList = ValueString[1 : len(ValueString) - 1].split(',')
             Index = 0
             try:
                 for ByteString in ValueList:
+                    ByteString = ByteString.strip()
                     if ByteString.upper().startswith('0X'):
                         ByteValue = int(ByteString, 16)
                     else:
@@ -174,7 +175,7 @@ def PatchBinaryFile(FileName, ValueOffset, TypeName, ValueString, MaxSize=0):
                     if Index >= ValueLength:
                         break
             except:
-                return PARAMETER_INVALID, "PCD Value %s is not valid dec or hex string array." %(ValueString)
+                return PARAMETER_INVALID, "PCD Value %s is not valid dec or hex string array." % (ValueString)
         else:
             #
             # Patch ascii string
@@ -197,10 +198,10 @@ def PatchBinaryFile(FileName, ValueOffset, TypeName, ValueString, MaxSize=0):
     if ByteList != OrigByteList:
         ByteArray = array.array('B')
         ByteArray.fromlist(ByteList)
-        FileHandle = open (FileName, 'wb')
+        FileHandle = open(FileName, 'wb')
         ByteArray.tofile(FileHandle)
         FileHandle.close()
-    return 0, "Patch Value into File %s successfully." %(FileName)
+    return 0, "Patch Value into File %s successfully." % (FileName)
 
 ## Parse command line options
 #
@@ -270,7 +271,7 @@ def Main():
             EdkLogger.error("PatchPcdValue", OPTION_MISSING, ExtraData="PcdOffset or PcdValue of PcdTypeName is not specified.")
             return 1
         if CommandOptions.PcdTypeName.upper() not in ["BOOLEAN", "UINT8", "UINT16", "UINT32", "UINT64", "VOID*"]:
-            EdkLogger.error("PatchPcdValue", PARAMETER_INVALID, ExtraData="PCD type %s is not valid." %(CommandOptions.PcdTypeName))
+            EdkLogger.error("PatchPcdValue", PARAMETER_INVALID, ExtraData="PCD type %s is not valid." % (CommandOptions.PcdTypeName))
             return 1
         if CommandOptions.PcdTypeName.upper() == "VOID*" and CommandOptions.PcdMaxSize == None:
             EdkLogger.error("PatchPcdValue", OPTION_MISSING, ExtraData="PcdMaxSize is not specified for VOID* type PCD.")

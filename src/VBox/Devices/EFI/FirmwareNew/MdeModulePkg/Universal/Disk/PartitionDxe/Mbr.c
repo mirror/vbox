@@ -11,7 +11,8 @@
         always on the first sector of a media. The first sector also contains
         the legacy boot strap code.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2014, Hewlett-Packard Development Company, L.P.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -74,6 +75,9 @@ PartitionValidMbr (
       // return FALSE since no block devices on a system are implemented
       // with INT 13h
       //
+
+      DEBUG((EFI_D_INFO, "PartitionValidMbr: Bad MBR partition size EndingLBA(%1x) > LastLBA(%1x)\n", EndingLBA, LastLba));
+
       return FALSE;
     }
 
@@ -125,19 +129,19 @@ PartitionInstallMbrChildHandles (
   IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
   )
 {
-  EFI_STATUS                Status;
-  MASTER_BOOT_RECORD        *Mbr;
-  UINT32                    ExtMbrStartingLba;
-  UINTN                     Index;
-  HARDDRIVE_DEVICE_PATH     HdDev;
-  HARDDRIVE_DEVICE_PATH     ParentHdDev;
-  EFI_STATUS                Found;
-  UINT32                    PartitionNumber;
-  EFI_DEVICE_PATH_PROTOCOL  *DevicePathNode;
-  EFI_DEVICE_PATH_PROTOCOL  *LastDevicePathNode;
-  UINT32                    BlockSize;
-  UINT32                    MediaId;
-  EFI_LBA                   LastBlock;
+  EFI_STATUS                   Status;
+  MASTER_BOOT_RECORD           *Mbr;
+  UINT32                       ExtMbrStartingLba;
+  UINT32                       Index;
+  HARDDRIVE_DEVICE_PATH        HdDev;
+  HARDDRIVE_DEVICE_PATH        ParentHdDev;
+  EFI_STATUS                   Found;
+  EFI_DEVICE_PATH_PROTOCOL     *DevicePathNode;
+  EFI_DEVICE_PATH_PROTOCOL     *LastDevicePathNode;
+  UINT32                       BlockSize;
+  UINT32                       MediaId;
+  EFI_LBA                      LastBlock;
+  EFI_PARTITION_INFO_PROTOCOL  PartitionInfo;
 
   Found           = EFI_NOT_FOUND;
 
@@ -191,8 +195,6 @@ PartitionInstallMbrChildHandles (
     }
   }
 
-  PartitionNumber = 1;
-
   ZeroMem (&HdDev, sizeof (HdDev));
   HdDev.Header.Type     = MEDIA_DEVICE_PATH;
   HdDev.Header.SubType  = MEDIA_HARDDRIVE_DP;
@@ -222,10 +224,18 @@ PartitionInstallMbrChildHandles (
         continue;
       }
 
-      HdDev.PartitionNumber = PartitionNumber ++;
+      HdDev.PartitionNumber = Index + 1;
       HdDev.PartitionStart  = UNPACK_UINT32 (Mbr->Partition[Index].StartingLBA);
       HdDev.PartitionSize   = UNPACK_UINT32 (Mbr->Partition[Index].SizeInLBA);
       CopyMem (HdDev.Signature, &(Mbr->UniqueMbrSignature[0]), sizeof (Mbr->UniqueMbrSignature));
+
+      ZeroMem (&PartitionInfo, sizeof (EFI_PARTITION_INFO_PROTOCOL));
+      PartitionInfo.Revision = EFI_PARTITION_INFO_PROTOCOL_REVISION;
+      PartitionInfo.Type     = PARTITION_TYPE_MBR;
+      if (Mbr->Partition[Index].OSIndicator == EFI_PARTITION) {
+        PartitionInfo.System = 1;
+      }
+      CopyMem (&PartitionInfo.Info.Mbr, &Mbr->Partition[Index], sizeof (MBR_PARTITION_RECORD));
 
       Status = PartitionInstallChildHandle (
                 This,
@@ -236,10 +246,10 @@ PartitionInstallMbrChildHandles (
                 BlockIo2,
                 DevicePath,
                 (EFI_DEVICE_PATH_PROTOCOL *) &HdDev,
+                &PartitionInfo,
                 HdDev.PartitionStart,
                 HdDev.PartitionStart + HdDev.PartitionSize - 1,
-                MBR_SIZE,
-                (BOOLEAN) (Mbr->Partition[Index].OSIndicator == EFI_PARTITION)
+                MBR_SIZE
                 );
 
       if (!EFI_ERROR (Status)) {
@@ -251,6 +261,7 @@ PartitionInstallMbrChildHandles (
     // It's an extended partition. Follow the extended partition
     // chain to get all the logical drives
     //
+    Index             = 0;
     ExtMbrStartingLba = 0;
 
     do {
@@ -276,7 +287,7 @@ PartitionInstallMbrChildHandles (
         ExtMbrStartingLba = UNPACK_UINT32 (Mbr->Partition[0].StartingLBA);
         continue;
       }
-      HdDev.PartitionNumber = PartitionNumber ++;
+      HdDev.PartitionNumber = ++Index;
       HdDev.PartitionStart  = UNPACK_UINT32 (Mbr->Partition[0].StartingLBA) + ExtMbrStartingLba + ParentHdDev.PartitionStart;
       HdDev.PartitionSize   = UNPACK_UINT32 (Mbr->Partition[0].SizeInLBA);
       if ((HdDev.PartitionStart + HdDev.PartitionSize - 1 >= ParentHdDev.PartitionStart + ParentHdDev.PartitionSize) ||
@@ -289,6 +300,14 @@ PartitionInstallMbrChildHandles (
       //
       *((UINT32 *) &HdDev.Signature[0]) = 0;
 
+      ZeroMem (&PartitionInfo, sizeof (EFI_PARTITION_INFO_PROTOCOL));
+      PartitionInfo.Revision = EFI_PARTITION_INFO_PROTOCOL_REVISION;
+      PartitionInfo.Type     = PARTITION_TYPE_MBR;
+      if (Mbr->Partition[0].OSIndicator == EFI_PARTITION) {
+        PartitionInfo.System = 1;
+      }
+      CopyMem (&PartitionInfo.Info.Mbr, &Mbr->Partition[0], sizeof (MBR_PARTITION_RECORD));
+
       Status = PartitionInstallChildHandle (
                  This,
                  Handle,
@@ -298,10 +317,10 @@ PartitionInstallMbrChildHandles (
                  BlockIo2,
                  DevicePath,
                  (EFI_DEVICE_PATH_PROTOCOL *) &HdDev,
+                 &PartitionInfo,
                  HdDev.PartitionStart - ParentHdDev.PartitionStart,
                  HdDev.PartitionStart - ParentHdDev.PartitionStart + HdDev.PartitionSize - 1,
-                 MBR_SIZE,
-                 (BOOLEAN) (Mbr->Partition[0].OSIndicator == EFI_PARTITION)
+                 MBR_SIZE
                  );
       if (!EFI_ERROR (Status)) {
         Found = EFI_SUCCESS;

@@ -57,7 +57,8 @@ LegacyBiosInt86 (
   IN  EFI_IA32_REGISTER_SET         *Regs
   )
 {
-  UINT32  *VectorBase;
+  UINT16                Segment;
+  UINT16                Offset;
 
   Regs->X.Flags.Reserved1 = 1;
   Regs->X.Flags.Reserved2 = 0;
@@ -72,12 +73,15 @@ LegacyBiosInt86 (
   // The base address of legacy interrupt vector table is 0.
   // We use this base address to get the legacy interrupt handler.
   //
-  VectorBase              = 0;
+  ACCESS_PAGE0_CODE (
+    Segment               = (UINT16)(((UINT32 *)0)[BiosInt] >> 16);
+    Offset                = (UINT16)((UINT32 *)0)[BiosInt];
+  );
 
   return InternalLegacyBiosFarCall (
            This,
-           (UINT16) ((VectorBase)[BiosInt] >> 16),
-           (UINT16) (VectorBase)[BiosInt],
+           Segment,
+           Offset,
            Regs,
            &Regs->X.Flags,
            sizeof (Regs->X.Flags)
@@ -282,23 +286,6 @@ InternalLegacyBiosFarCall (
 
   AsmThunk16 (&mThunkContext);
 
-  //
-  // OPROM may allocate EBDA range by itself and change EBDA base and EBDA size.
-  // Get the current EBDA base address, and compared with pre-allocate minimum
-  // EBDA base address, if the current EBDA base address is smaller, it indicates
-  // PcdEbdaReservedMemorySize should be adjusted to larger for more OPROMs.
-  //
-  DEBUG_CODE (
-    {
-      UINTN                 EbdaBaseAddress;
-      UINTN                 ReservedEbdaBaseAddress;
-
-      EbdaBaseAddress = (*(UINT16 *) (UINTN) 0x40E) << 4;
-      ReservedEbdaBaseAddress = CONVENTIONAL_MEMORY_TOP - PcdGet32 (PcdEbdaReservedMemorySize);
-      ASSERT (ReservedEbdaBaseAddress <= EbdaBaseAddress);
-    }
-  );
-
   if (Stack != NULL && StackSize != 0) {
     //
     // Copy low memory stack to Stack
@@ -323,6 +310,26 @@ InternalLegacyBiosFarCall (
   // End critical section
   //
   gBS->RestoreTPL (OriginalTpl);
+
+  //
+  // OPROM may allocate EBDA range by itself and change EBDA base and EBDA size.
+  // Get the current EBDA base address, and compared with pre-allocate minimum
+  // EBDA base address, if the current EBDA base address is smaller, it indicates
+  // PcdEbdaReservedMemorySize should be adjusted to larger for more OPROMs.
+  //
+  DEBUG_CODE (
+    {
+      UINTN                 EbdaBaseAddress;
+      UINTN                 ReservedEbdaBaseAddress;
+
+      ACCESS_PAGE0_CODE (
+        EbdaBaseAddress = (*(UINT16 *) (UINTN) 0x40E) << 4;
+        ReservedEbdaBaseAddress = CONVENTIONAL_MEMORY_TOP
+                                  - PcdGet32 (PcdEbdaReservedMemorySize);
+        ASSERT (ReservedEbdaBaseAddress <= EbdaBaseAddress);
+      );
+    }
+  );
 
   //
   // Restore interrupt of debug timer

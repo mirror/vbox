@@ -1,7 +1,7 @@
 /** @file
   Common head file for TCP socket.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -361,7 +361,7 @@ typedef enum {
 ///
 typedef struct _SOCK_BUFFER {
   UINT32        HighWater;  ///< The buffersize upper limit of sock_buffer
-  UINT32        LowWater;   ///< The low warter mark of sock_buffer
+  UINT32        LowWater;   ///< The low water mark of sock_buffer
   NET_BUF_QUEUE *DataQueue; ///< The queue to buffer data
 } SOCK_BUFFER;
 
@@ -425,8 +425,8 @@ typedef struct _SOCK_INIT_DATA {
 
   SOCKET                 *Parent;        ///< The parent of this socket
   UINT32                 BackLog;        ///< The connection limit for listening socket
-  UINT32                 SndBufferSize;  ///< The high warter mark of send buffer
-  UINT32                 RcvBufferSize;  ///< The high warter mark of receive buffer
+  UINT32                 SndBufferSize;  ///< The high water mark of send buffer
+  UINT32                 RcvBufferSize;  ///< The high water mark of receive buffer
   UINT8                  IpVersion;
   VOID                   *Protocol;      ///< The pointer to protocol function template
                                          ///< wanted to install on socket
@@ -450,7 +450,7 @@ typedef struct _SOCK_INIT_DATA {
 } SOCK_INIT_DATA;
 
 ///
-///  The union type of TCP and UDP protocol.
+///  The union type of TCP4 and TCP6 protocol.
 ///
 typedef union _NET_PROTOCOL {
   EFI_TCP4_PROTOCOL      Tcp4Protocol;    ///< Tcp4 protocol
@@ -502,7 +502,7 @@ struct _TCP_SOCKET {
   SOCK_PROTO_HANDLER        ProtoHandler;     ///< The request handler of protocol
   UINT8                     ProtoReserved[PROTO_RESERVED_LEN];  ///< Data fields reserved for protocol
   UINT8                     IpVersion;
-  NET_PROTOCOL              NetProtocol;                        ///< TCP or UDP protocol socket used
+  NET_PROTOCOL              NetProtocol;                        ///< TCP4 or TCP6 protocol socket used
   //
   // Callbacks after socket is created and before socket is to be destroyed.
   //
@@ -865,6 +865,24 @@ SockClose (
   );
 
 /**
+  Abort the socket associated connection, listen, transmission or receive request.
+
+  @param[in, out]  Sock        Pointer to the socket to abort.
+  @param[in]       Token       Pointer to a token that has been issued by
+                               Connect(), Accept(), Transmit() or Receive(). If
+                               NULL, all pending tokens issued by the four
+                               functions listed above will be aborted.
+
+  @retval EFI_UNSUPPORTED      The operation is not supported in the current
+                               implementation.
+**/
+EFI_STATUS
+SockCancel (
+  IN OUT SOCKET  *Sock,
+  IN     VOID    *Token
+  );
+
+/**
   Get the mode data of the low layer protocol.
 
   @param[in]       Sock        Pointer to the socket to get mode data from.
@@ -879,25 +897,6 @@ EFI_STATUS
 SockGetMode (
   IN     SOCKET *Sock,
   IN OUT VOID   *Mode
-  );
-
-/**
-  Configure the low level protocol to join a multicast group for
-  this socket's connection.
-
-  @param[in]  Sock             Pointer to the socket of the connection to join the
-                               specific multicast group.
-  @param[in]  GroupInfo        Pointer to the multicast group information.
-
-  @retval EFI_SUCCESS          The configuration completed successfully.
-  @retval EFI_ACCESS_DENIED    Failed to get the lock to access the socket.
-  @retval EFI_NOT_STARTED      The socket is not configured.
-
-**/
-EFI_STATUS
-SockGroup (
-  IN SOCKET *Sock,
-  IN VOID   *GroupInfo
   );
 
 /**

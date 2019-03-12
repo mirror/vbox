@@ -1,6 +1,6 @@
 /** @file
 
-Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -91,7 +91,7 @@ PrintBbsTable (
     //
     // Print DescString
     //
-    String = (CHAR8 *)(UINTN)((BbsTable[Index].DescStringSegment << 4) + BbsTable[Index].DescStringOffset);
+    String = (CHAR8 *)(((UINTN)BbsTable[Index].DescStringSegment << 4) + BbsTable[Index].DescStringOffset);
     if (String != NULL) {
       DEBUG ((EFI_D_INFO," ("));
       for (SubIndex = 0; String[SubIndex] != 0; SubIndex++) {
@@ -1041,7 +1041,9 @@ GenericLegacyBoot (
   //
   // Setup BDA and EBDA standard areas before Legacy Boot
   //
-  LegacyBiosCompleteBdaBeforeBoot (Private);
+  ACCESS_PAGE0_CODE (
+    LegacyBiosCompleteBdaBeforeBoot (Private);
+  );
   LegacyBiosCompleteStandardCmosBeforeBoot (Private);
 
   //
@@ -1073,8 +1075,10 @@ GenericLegacyBoot (
   // Use 182/10 to avoid floating point math.
   //
   LocalTime = (LocalTime * 182) / 10;
-  BdaPtr    = (UINT32 *) (UINTN)0x46C;
-  *BdaPtr   = LocalTime;
+  ACCESS_PAGE0_CODE (
+    BdaPtr    = (UINT32 *) (UINTN)0x46C;
+    *BdaPtr   = LocalTime;
+  );
 
   //
   // Shadow PCI ROMs. We must do this near the end since this will kick
@@ -1238,6 +1242,24 @@ GenericLegacyBoot (
                            0x40000,
                            &Granularity
                            );
+
+  if ((Private->Legacy16Table->TableLength >= OFFSET_OF (EFI_COMPATIBILITY16_TABLE, HiPermanentMemoryAddress)) &&
+      ((Private->Legacy16Table->UmaAddress != 0) && (Private->Legacy16Table->UmaSize != 0))) {
+    //
+    // Here we could reduce UmaAddress down as far as Private->OptionRom, taking into
+    // account the granularity of the access control.
+    //
+    DEBUG((EFI_D_INFO, "Unlocking UMB RAM region 0x%x-0x%x\n", Private->Legacy16Table->UmaAddress,
+                        Private->Legacy16Table->UmaAddress + Private->Legacy16Table->UmaSize));
+
+    Private->LegacyRegion->UnLock (
+                             Private->LegacyRegion,
+                             Private->Legacy16Table->UmaAddress,
+                             Private->Legacy16Table->UmaSize,
+                             &Granularity
+                             );
+  }
+
   //
   // Lock attributes of the Legacy Region if chipset supports
   //
@@ -1253,18 +1275,20 @@ GenericLegacyBoot (
   //
   EnableAllControllers (Private);
   if ((mBootMode == BOOT_LEGACY_OS) || (mBootMode == BOOT_UNCONVENTIONAL_DEVICE)) {
+
     //
-    // Report Status Code to indicate legacy boot event will be signalled
+    // Signal all the events that are waiting on EVT_SIGNAL_LEGACY_BOOT
+    //
+    EfiSignalEventLegacyBoot ();
+
+    //
+    // Report Status Code to indicate legacy boot event was signalled
     //
     REPORT_STATUS_CODE (
       EFI_PROGRESS_CODE,
       (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_PC_LEGACY_BOOT_EVENT)
       );
 
-    //
-    // Signal all the events that are waiting on EVT_SIGNAL_LEGACY_BOOT
-    //
-    EfiSignalEventLegacyBoot ();
     DEBUG ((EFI_D_INFO, "Legacy INT19 Boot...\n"));
 
     //
@@ -1300,13 +1324,15 @@ GenericLegacyBoot (
     //          set of TIANO vectors) or takes it over.
     //
     //
-    BaseVectorMaster = (UINT32 *) (sizeof (UINT32) * PROTECTED_MODE_BASE_VECTOR_MASTER);
-    for (Index = 0; Index < 8; Index++) {
-      Private->ThunkSavedInt[Index] = BaseVectorMaster[Index];
-      if (Private->ThunkSeg == (UINT16) (BaseVectorMaster[Index] >> 16)) {
-        BaseVectorMaster[Index] = (UINT32) (Private->BiosUnexpectedInt);
+    ACCESS_PAGE0_CODE (
+      BaseVectorMaster = (UINT32 *) (sizeof (UINT32) * PROTECTED_MODE_BASE_VECTOR_MASTER);
+      for (Index = 0; Index < 8; Index++) {
+        Private->ThunkSavedInt[Index] = BaseVectorMaster[Index];
+        if (Private->ThunkSeg == (UINT16) (BaseVectorMaster[Index] >> 16)) {
+          BaseVectorMaster[Index] = (UINT32) (Private->BiosUnexpectedInt);
+        }
       }
-    }
+    );
 
     ZeroMem (&Regs, sizeof (EFI_IA32_REGISTER_SET));
     Regs.X.AX = Legacy16Boot;
@@ -1320,10 +1346,12 @@ GenericLegacyBoot (
       0
       );
 
-    BaseVectorMaster = (UINT32 *) (sizeof (UINT32) * PROTECTED_MODE_BASE_VECTOR_MASTER);
-    for (Index = 0; Index < 8; Index++) {
-      BaseVectorMaster[Index] = Private->ThunkSavedInt[Index];
-    }
+    ACCESS_PAGE0_CODE (
+      BaseVectorMaster = (UINT32 *) (sizeof (UINT32) * PROTECTED_MODE_BASE_VECTOR_MASTER);
+      for (Index = 0; Index < 8; Index++) {
+        BaseVectorMaster[Index] = Private->ThunkSavedInt[Index];
+      }
+    );
   }
   Private->LegacyBootEntered = TRUE;
   if ((mBootMode == BOOT_LEGACY_OS) || (mBootMode == BOOT_UNCONVENTIONAL_DEVICE)) {
@@ -1593,6 +1621,12 @@ EfiMemoryTypeToE820Type (
   case EfiBootServicesCode:
   case EfiBootServicesData:
   case EfiConventionalMemory:
+  //
+  // The memory of EfiRuntimeServicesCode and EfiRuntimeServicesData are
+  // usable memory for legacy OS, because legacy OS is not aware of EFI runtime concept.
+  // In ACPI specification, EfiRuntimeServiceCode and EfiRuntimeServiceData
+  // should be mapped to AddressRangeReserved. This statement is for UEFI OS, not for legacy OS.
+  //
   case EfiRuntimeServicesCode:
   case EfiRuntimeServicesData:
     return EfiAcpiAddressRangeMemory;
@@ -1705,9 +1739,11 @@ LegacyBiosBuildE820 (
   //
   // First entry is 0 to (640k - EBDA)
   //
-  E820Table[0].BaseAddr  = 0;
-  E820Table[0].Length    = (UINT64) ((*(UINT16 *) (UINTN)0x40E) << 4);
-  E820Table[0].Type      = EfiAcpiAddressRangeMemory;
+  ACCESS_PAGE0_CODE (
+    E820Table[0].BaseAddr  = 0;
+    E820Table[0].Length    = (UINT64) ((*(UINT16 *) (UINTN)0x40E) << 4);
+    E820Table[0].Type      = EfiAcpiAddressRangeMemory;
+  );
 
   //
   // Second entry is (640k - EBDA) to 640k
@@ -2023,15 +2059,18 @@ LegacyBiosUpdateKeyboardLedStatus (
   UINT8                 LocalLeds;
   EFI_IA32_REGISTER_SET Regs;
 
-  Bda                 = (BDA_STRUC *) ((UINTN) 0x400);
-
   Private             = LEGACY_BIOS_INSTANCE_FROM_THIS (This);
-  LocalLeds           = Leds;
-  Bda->LedStatus      = (UINT8) ((Bda->LedStatus &~0x07) | LocalLeds);
-  LocalLeds           = (UINT8) (LocalLeds << 4);
-  Bda->ShiftStatus    = (UINT8) ((Bda->ShiftStatus &~0x70) | LocalLeds);
-  LocalLeds           = (UINT8) (Leds & 0x20);
-  Bda->KeyboardStatus = (UINT8) ((Bda->KeyboardStatus &~0x20) | LocalLeds);
+
+  ACCESS_PAGE0_CODE (
+    Bda                 = (BDA_STRUC *) ((UINTN) 0x400);
+    LocalLeds           = Leds;
+    Bda->LedStatus      = (UINT8) ((Bda->LedStatus &~0x07) | LocalLeds);
+    LocalLeds           = (UINT8) (LocalLeds << 4);
+    Bda->ShiftStatus    = (UINT8) ((Bda->ShiftStatus &~0x70) | LocalLeds);
+    LocalLeds           = (UINT8) (Leds & 0x20);
+    Bda->KeyboardStatus = (UINT8) ((Bda->KeyboardStatus &~0x20) | LocalLeds);
+  );
+
   //
   // Call into Legacy16 code to allow it to do any processing
   //
@@ -2076,7 +2115,9 @@ LegacyBiosCompleteStandardCmosBeforeBoot (
   //            to large capacity drives
   // CMOS 14 = BDA 40:10 plus bit 3(display enabled)
   //
-  Bda = (UINT8)(*((UINT8 *)((UINTN)0x410)) | BIT3);
+  ACCESS_PAGE0_CODE (
+    Bda = (UINT8)(*((UINT8 *)((UINTN)0x410)) | BIT3);
+  );
 
   //
   // Force display enabled

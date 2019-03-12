@@ -1,7 +1,9 @@
 /** @file
   Main file for Dmem shell Debug1 function.
 
-  Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2016, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+  (C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -29,7 +31,6 @@
   @return A printable character representing Char.
 **/
 CHAR16
-EFIAPI
 MakePrintable(
   IN CONST CHAR16 Char
   )
@@ -47,7 +48,6 @@ MakePrintable(
   @param[in] Size       The length of memory to display.
 **/
 SHELL_STATUS
-EFIAPI
 DisplayMmioMemory(
   IN CONST VOID   *Address,
   IN CONST UINTN  Size
@@ -62,15 +62,17 @@ DisplayMmioMemory(
 
   Status = gBS->LocateProtocol(&gEfiPciRootBridgeIoProtocolGuid, NULL, (VOID**)&PciRbIo);
   if (EFI_ERROR(Status)) {
-    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PCIRBIO_NF), gShellDebug1HiiHandle);
+    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PCIRBIO_NF), gShellDebug1HiiHandle, L"dmem");
     return (SHELL_NOT_FOUND);
   }
   Buffer = AllocateZeroPool(Size);
-  ASSERT(Buffer != NULL);
+  if (Buffer == NULL) {
+    return SHELL_OUT_OF_RESOURCES;
+  }
 
   Status = PciRbIo->Mem.Read(PciRbIo, EfiPciWidthUint8, (UINT64)(UINTN)Address, Size, Buffer);
   if (EFI_ERROR(Status)) {
-    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PCIRBIO_ER), gShellDebug1HiiHandle, Status);
+    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PCIRBIO_ER), gShellDebug1HiiHandle, L"dmem");
     ShellStatus = SHELL_NOT_FOUND;
   } else {
     ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_DMEM_MMIO_HEADER_ROW), gShellDebug1HiiHandle, (UINT64)(UINTN)Address, Size);
@@ -133,7 +135,7 @@ ShellCommandRunDmem (
   Status = ShellCommandLineParse (ParamList, &Package, &ProblemParam, TRUE);
   if (EFI_ERROR(Status)) {
     if (Status == EFI_VOLUME_CORRUPTED && ProblemParam != NULL) {
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellDebug1HiiHandle, ProblemParam);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellDebug1HiiHandle, L"dmem", ProblemParam);
       FreePool(ProblemParam);
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
@@ -141,7 +143,7 @@ ShellCommandRunDmem (
     }
   } else {
     if (ShellCommandLineGetCount(Package) > 3) {
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellDebug1HiiHandle);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellDebug1HiiHandle, L"dmem");
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
       Temp1 = ShellCommandLineGetRawValue(Package, 1);
@@ -150,7 +152,7 @@ ShellCommandRunDmem (
         Size = 512;
       } else {
         if (!ShellIsHexOrDecimalNumber(Temp1, TRUE, FALSE) || EFI_ERROR(ShellConvertStringToUint64(Temp1, (UINT64*)&Address, TRUE, FALSE))) {
-          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellDebug1HiiHandle, Temp1);
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"dmem", Temp1);
           ShellStatus = SHELL_INVALID_PARAMETER;
         }
         Temp1 = ShellCommandLineGetRawValue(Package, 2);
@@ -158,7 +160,7 @@ ShellCommandRunDmem (
           Size = 512;
         } else {
           if (!ShellIsHexOrDecimalNumber(Temp1, FALSE, FALSE) || EFI_ERROR(ShellConvertStringToUint64(Temp1, &Size, TRUE, FALSE))) {
-            ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellDebug1HiiHandle, Temp1);
+            ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"dmem", Temp1);
             ShellStatus = SHELL_INVALID_PARAMETER;
           }
         }
@@ -190,6 +192,10 @@ ShellCommandRunDmem (
             }
             if (CompareGuid(&gST->ConfigurationTable[TableWalker].VendorGuid, &gEfiSmbiosTableGuid)) {
               SmbiosTableAddress = (UINT64)(UINTN)gST->ConfigurationTable[TableWalker].VendorTable;
+              continue;
+            }
+            if (CompareGuid (&gST->ConfigurationTable[TableWalker].VendorGuid, &gEfiSmbios3TableGuid)) {
+              SmbiosTableAddress = (UINT64) (UINTN) gST->ConfigurationTable[TableWalker].VendorTable;
               continue;
             }
             if (CompareGuid(&gST->ConfigurationTable[TableWalker].VendorGuid, &gEfiMpsTableGuid)) {

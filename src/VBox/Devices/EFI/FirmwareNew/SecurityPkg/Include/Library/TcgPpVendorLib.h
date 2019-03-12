@@ -1,5 +1,5 @@
 /** @file
-  Ihis library is to support TCG Physical Presence Interface (PPI) specification
+  This library is to support TCG Physical Presence Interface (PPI) specification
   >= 128 Vendor Specific PPI Operation.
 
   The Vendor Specific PPI operation may change TPM state, BIOS TPM management
@@ -7,7 +7,7 @@
 
   Caution: This function may receive untrusted input.
 
-Copyright (c) 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2015 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -42,8 +42,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define TCG_PP_OPERATION_RESPONSE_BIOS_FAILURE         0xFFFFFFF1
 
 //
-// The return code for Sumbit TPM Request to Pre-OS Environment
-// and Sumbit TPM Request to Pre-OS Environment 2
+// The return code for Submit TPM Request to Pre-OS Environment
+// and Submit TPM Request to Pre-OS Environment 2
 //
 #define TCG_PP_SUBMIT_REQUEST_TO_PREOS_SUCCESS                                  0
 #define TCG_PP_SUBMIT_REQUEST_TO_PREOS_NOT_IMPLEMENTED                          1

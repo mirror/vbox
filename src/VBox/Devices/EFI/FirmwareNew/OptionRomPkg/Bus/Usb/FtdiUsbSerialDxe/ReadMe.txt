@@ -17,7 +17,7 @@ The default operating mode is:
 	Flow Control: None
 	Data Bits:    8
 	Stop Bits:    1
-Notes: 
+Notes:
 	Data Bits setting of 6,7,8 can not be combined with a Stop Bits setting of 1.5
 
         At baudrates less than 9600 some of the characters may be transmitted incorrectly.
@@ -25,8 +25,8 @@ Notes:
 === COMPATIBILITY ===
 
 Tested with:
-An FTDI8U232AM based USB-To-Serial adapter, the UEFI Shell, and the SerialTest application 
+An FTDI8U232AM based USB-To-Serial adapter, the UEFI Shell, and the SerialTest application
 using a PuTTY Terminal
 
-See CompatibleDevices.txt for a list of devices which have been confirmed to work with this 
+See CompatibleDevices.txt for a list of devices which have been confirmed to work with this
 driver.

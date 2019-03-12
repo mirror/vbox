@@ -2,7 +2,7 @@
 # build a platform or a module
 #
 #  Copyright (c) 2014, Hewlett-Packard Development Company, L.P.<BR>
-#  Copyright (c) 2007 - 2015, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -25,6 +25,8 @@ import time
 import platform
 import traceback
 import encodings.ascii
+import itertools
+import multiprocessing
 
 from struct import *
 from threading import *
@@ -41,6 +43,7 @@ from Common.BuildVersion import gBUILD_VERSION
 from AutoGen.AutoGen import *
 from Common.BuildToolError import *
 from Workspace.WorkspaceDatabase import *
+from Common.MultipleWorkspace import MultipleWorkspace as mws
 
 from BuildReport import BuildReport
 from GenPatchPcdTable.GenPatchPcdTable import *
@@ -48,11 +51,12 @@ from PatchPcdValue.PatchPcdValue import *
 
 import Common.EdkLogger
 import Common.GlobalData as GlobalData
+from GenFds.GenFds import GenFds
 
 # Version and Copyright
 VersionNumber = "0.60" + ' ' + gBUILD_VERSION
 __version__ = "%prog Version " + VersionNumber
-__copyright__ = "Copyright (c) 2007 - 2014, Intel Corporation  All rights reserved."
+__copyright__ = "Copyright (c) 2007 - 2017, Intel Corporation  All rights reserved."
 
 ## standard targets of build command
 gSupportedTarget = ['all', 'genc', 'genmake', 'modules', 'libraries', 'fds', 'clean', 'cleanall', 'cleanlib', 'run']
@@ -105,11 +109,21 @@ def CheckEnvVariable():
                         ExtraData=WorkspaceDir)
     os.environ["WORKSPACE"] = WorkspaceDir
 
+    # set multiple workspace
+    PackagesPath = os.getenv("PACKAGES_PATH")
+    mws.setWs(WorkspaceDir, PackagesPath)
+    if mws.PACKAGES_PATH:
+        for Path in mws.PACKAGES_PATH:
+            if not os.path.exists(Path):
+                EdkLogger.error("build", FILE_NOT_FOUND, "One Path in PACKAGES_PATH doesn't exist", ExtraData="%s" % Path)
+            elif ' ' in Path:
+                EdkLogger.error("build", FORMAT_NOT_SUPPORTED, "No space is allowed in PACKAGES_PATH", ExtraData=Path)
+
     #
     # Check EFI_SOURCE (Edk build convention). EDK_SOURCE will always point to ECP
     #
     if "ECP_SOURCE" not in os.environ:
-        os.environ["ECP_SOURCE"] = os.path.join(WorkspaceDir, GlobalData.gEdkCompatibilityPkg)
+        os.environ["ECP_SOURCE"] = mws.join(WorkspaceDir, GlobalData.gEdkCompatibilityPkg)
     if "EFI_SOURCE" not in os.environ:
         os.environ["EFI_SOURCE"] = os.environ["ECP_SOURCE"]
     if "EDK_SOURCE" not in os.environ:
@@ -151,16 +165,18 @@ def CheckEnvVariable():
         EdkLogger.error("build", FORMAT_NOT_SUPPORTED, "No space is allowed in EFI_SOURCE path",
                         ExtraData=EfiSourceDir)
 
-    # change absolute path to relative path to WORKSPACE
-    if EfiSourceDir.upper().find(WorkspaceDir.upper()) != 0:
-        EdkLogger.error("build", PARAMETER_INVALID, "EFI_SOURCE is not under WORKSPACE",
-                        ExtraData="WORKSPACE = %s\n    EFI_SOURCE = %s" % (WorkspaceDir, EfiSourceDir))
-    if EdkSourceDir.upper().find(WorkspaceDir.upper()) != 0:
-        EdkLogger.error("build", PARAMETER_INVALID, "EDK_SOURCE is not under WORKSPACE",
-                        ExtraData="WORKSPACE = %s\n    EDK_SOURCE = %s" % (WorkspaceDir, EdkSourceDir))
-    if EcpSourceDir.upper().find(WorkspaceDir.upper()) != 0:
-        EdkLogger.error("build", PARAMETER_INVALID, "ECP_SOURCE is not under WORKSPACE",
-                        ExtraData="WORKSPACE = %s\n    ECP_SOURCE = %s" % (WorkspaceDir, EcpSourceDir))
+    # check those variables on single workspace case
+    if not PackagesPath:
+        # change absolute path to relative path to WORKSPACE
+        if EfiSourceDir.upper().find(WorkspaceDir.upper()) != 0:
+            EdkLogger.error("build", PARAMETER_INVALID, "EFI_SOURCE is not under WORKSPACE",
+                            ExtraData="WORKSPACE = %s\n    EFI_SOURCE = %s" % (WorkspaceDir, EfiSourceDir))
+        if EdkSourceDir.upper().find(WorkspaceDir.upper()) != 0:
+            EdkLogger.error("build", PARAMETER_INVALID, "EDK_SOURCE is not under WORKSPACE",
+                            ExtraData="WORKSPACE = %s\n    EDK_SOURCE = %s" % (WorkspaceDir, EdkSourceDir))
+        if EcpSourceDir.upper().find(WorkspaceDir.upper()) != 0:
+            EdkLogger.error("build", PARAMETER_INVALID, "ECP_SOURCE is not under WORKSPACE",
+                            ExtraData="WORKSPACE = %s\n    ECP_SOURCE = %s" % (WorkspaceDir, EcpSourceDir))
 
     # check EDK_TOOLS_PATH
     if "EDK_TOOLS_PATH" not in os.environ:
@@ -198,11 +214,12 @@ def NormFile(FilePath, Workspace):
     if os.path.isabs(FilePath):
         FileFullPath = os.path.normpath(FilePath)
     else:
-        FileFullPath = os.path.normpath(os.path.join(Workspace, FilePath))
+        FileFullPath = os.path.normpath(mws.join(Workspace, FilePath))
+        Workspace = mws.getWs(Workspace, FilePath)
 
     # check if the file path exists or not
     if not os.path.isfile(FileFullPath):
-        EdkLogger.error("build", FILE_NOT_FOUND, ExtraData="\t%s (Please give file in absolute path or relative to WORKSPACE)"  % FileFullPath)
+        EdkLogger.error("build", FILE_NOT_FOUND, ExtraData="\t%s (Please give file in absolute path or relative to WORKSPACE)" % FileFullPath)
 
     # remove workspace directory from the beginning part of the file path
     if Workspace[-1] in ["\\", "/"]:
@@ -242,6 +259,7 @@ def ReadMessage(From, To, ExitFlag):
 # @param  WorkingDir            The directory in which the program will be running
 #
 def LaunchCommand(Command, WorkingDir):
+    BeginTime = time.time()
     # if working directory doesn't exist, Popen() will raise an exception
     if not os.path.isdir(WorkingDir):
         EdkLogger.error("build", FILE_NOT_FOUND, ExtraData=WorkingDir)
@@ -250,19 +268,17 @@ def LaunchCommand(Command, WorkingDir):
     # It could be a string or sequence. We find that if command is a string in following Popen(),
     # ubuntu may fail with an error message that the command is not found.
     # So here we may need convert command from string to list instance.
-    if not isinstance(Command, list):
-        if platform.system() != 'Windows' or True: # VBox: Added 'or True' (for the hack below).
+    if platform.system() != 'Windows':
+        if not isinstance(Command, list):
             Command = Command.split()
-    # VBox: Ugly hack! python 2.7.6 on Windows doesn't seem to correctly search for GenFds (should find GenFds.cmd).
-    if Command[0] in ['GenFds',] and platform.system() == 'Windows':
-        Command = [Command[0] + '.cmd'] + Command[1:];
+        Command = ' '.join(Command)
 
     EdkLogger.info("Launching: '%s'; CWD=%s" % ("' '".join(Command), WorkingDir));
     Proc = None
     EndOfProcedure = None
     try:
         # launch the command
-        Proc = Popen(Command, stdout=PIPE, stderr=PIPE, env=os.environ, cwd=WorkingDir, bufsize=-1)
+        Proc = Popen(Command, stdout=PIPE, stderr=PIPE, env=os.environ, cwd=WorkingDir, bufsize=-1, shell=True)
 
         # launch two threads to read the STDOUT and STDERR
         EndOfProcedure = Event()
@@ -283,6 +299,7 @@ def LaunchCommand(Command, WorkingDir):
         Proc.wait()
     except: # in case of aborting
         # terminate the threads redirecting the program output
+        EdkLogger.quiet("(Python %s on %s) " % (platform.python_version(), sys.platform) + traceback.format_exc())
         if EndOfProcedure != None:
             EndOfProcedure.set()
         if Proc == None:
@@ -299,7 +316,16 @@ def LaunchCommand(Command, WorkingDir):
     if Proc.returncode != 0:
         if type(Command) != type(""):
             Command = " ".join(Command)
+        # print out the Response file and its content when make failure
+        RespFile = os.path.join(WorkingDir, 'OUTPUT', 'respfilelist.txt')
+        if os.path.isfile(RespFile):
+            f = open(RespFile)
+            RespContent = f.read()
+            f.close()
+            EdkLogger.info(RespContent)
+
         EdkLogger.error("build", COMMAND_FAILURE, ExtraData="%s [%s]" % (Command, WorkingDir))
+    return "%dms" % (int(round((time.time() - BeginTime) * 1000)))
 
 ## The smallest unit that can be built in multi-thread build mode
 #
@@ -644,7 +670,7 @@ class BuildTask:
     #
     def _CommandThread(self, Command, WorkingDir):
         try:
-            LaunchCommand(Command, WorkingDir)
+            self.BuildItem.BuildObject.BuildTime = LaunchCommand(Command, WorkingDir)
             self.CompleteFlag = True
         except:
             #
@@ -737,13 +763,50 @@ class Build():
         self.SkipAutoGen    = BuildOptions.SkipAutoGen
         self.Reparse        = BuildOptions.Reparse
         self.SkuId          = BuildOptions.SkuId
+        if self.SkuId:
+            GlobalData.gSKUID_CMD = self.SkuId
         self.ConfDirectory = BuildOptions.ConfDirectory
         self.SpawnMode      = True
         self.BuildReport    = BuildReport(BuildOptions.ReportFile, BuildOptions.ReportType)
         self.TargetTxt      = TargetTxtClassObject()
         self.ToolDef        = ToolDefClassObject()
+        self.AutoGenTime    = 0
+        self.MakeTime       = 0
+        self.GenFdsTime     = 0
+        GlobalData.BuildOptionPcd     = BuildOptions.OptionPcd if BuildOptions.OptionPcd else []
         #Set global flag for build mode
         GlobalData.gIgnoreSource = BuildOptions.IgnoreSources
+        GlobalData.gUseHashCache = BuildOptions.UseHashCache
+        GlobalData.gBinCacheDest   = BuildOptions.BinCacheDest
+        GlobalData.gBinCacheSource = BuildOptions.BinCacheSource
+        GlobalData.gEnableGenfdsMultiThread = BuildOptions.GenfdsMultiThread
+
+        if GlobalData.gBinCacheDest and not GlobalData.gUseHashCache:
+            EdkLogger.error("build", OPTION_NOT_SUPPORTED, ExtraData="--binary-destination must be used together with --hash.")
+
+        if GlobalData.gBinCacheSource and not GlobalData.gUseHashCache:
+            EdkLogger.error("build", OPTION_NOT_SUPPORTED, ExtraData="--binary-source must be used together with --hash.")
+
+        if GlobalData.gBinCacheDest and GlobalData.gBinCacheSource:
+            EdkLogger.error("build", OPTION_NOT_SUPPORTED, ExtraData="--binary-destination can not be used together with --binary-source.")
+
+        if GlobalData.gBinCacheSource:
+            BinCacheSource = os.path.normpath(GlobalData.gBinCacheSource)
+            if not os.path.isabs(BinCacheSource):
+                BinCacheSource = mws.join(self.WorkspaceDir, BinCacheSource)
+            GlobalData.gBinCacheSource = BinCacheSource
+        else:
+            if GlobalData.gBinCacheSource != None:
+                EdkLogger.error("build", OPTION_VALUE_INVALID, ExtraData="Invalid value of option --binary-source.")
+
+        if GlobalData.gBinCacheDest:
+            BinCacheDest = os.path.normpath(GlobalData.gBinCacheDest)
+            if not os.path.isabs(BinCacheDest):
+                BinCacheDest = mws.join(self.WorkspaceDir, BinCacheDest)
+            GlobalData.gBinCacheDest = BinCacheDest
+        else:
+            if GlobalData.gBinCacheDest != None:
+                EdkLogger.error("build", OPTION_VALUE_INVALID, ExtraData="Invalid value of option --binary-destination.")
 
         if self.ConfDirectory:
             # Get alternate Conf location, if it is absolute, then just use the absolute directory name
@@ -752,10 +815,13 @@ class Build():
             if not os.path.isabs(ConfDirectoryPath):
                 # Since alternate directory name is not absolute, the alternate directory is located within the WORKSPACE
                 # This also handles someone specifying the Conf directory in the workspace. Using --conf=Conf
-                ConfDirectoryPath = os.path.join(self.WorkspaceDir, ConfDirectoryPath)
+                ConfDirectoryPath = mws.join(self.WorkspaceDir, ConfDirectoryPath)
         else:
-            # Get standard WORKSPACE/Conf use the absolute path to the WORKSPACE/Conf
-            ConfDirectoryPath = os.path.join(self.WorkspaceDir, 'Conf')
+            if "CONF_PATH" in os.environ:
+                ConfDirectoryPath = os.path.normcase(os.path.normpath(os.environ["CONF_PATH"]))
+            else:
+                # Get standard WORKSPACE/Conf use the absolute path to the WORKSPACE/Conf
+                ConfDirectoryPath = mws.join(self.WorkspaceDir, 'Conf')
         GlobalData.gConfDirectory = ConfDirectoryPath
         GlobalData.gDatabasePath = os.path.normpath(os.path.join(ConfDirectoryPath, GlobalData.gDatabasePath))
 
@@ -765,24 +831,46 @@ class Build():
             self.Db = WorkspaceDatabase(GlobalData.gDatabasePath, self.Reparse)
         self.BuildDatabase = self.Db.BuildObject
         self.Platform = None
+        self.ToolChainFamily = None
         self.LoadFixAddress = 0
         self.UniFlag        = BuildOptions.Flag
         self.BuildModules = []
+        self.HashSkipModules = []
+        self.Db_Flag = False
+        self.LaunchPrebuildFlag = False
+        self.PlatformBuildPath = os.path.join(GlobalData.gConfDirectory,'.cache', '.PlatformBuild')
+        if BuildOptions.CommandLength:
+            GlobalData.gCommandMaxLength = BuildOptions.CommandLength
 
         # print dot character during doing some time-consuming work
         self.Progress = Utils.Progressor()
-
-        self.InitBuild()
-
         # print current build environment and configuration
         EdkLogger.quiet("%-16s = %s" % ("WORKSPACE", os.environ["WORKSPACE"]))
+        if "PACKAGES_PATH" in os.environ:
+            # WORKSPACE env has been converted before. Print the same path style with WORKSPACE env.
+            EdkLogger.quiet("%-16s = %s" % ("PACKAGES_PATH", os.path.normcase(os.path.normpath(os.environ["PACKAGES_PATH"]))))
         EdkLogger.quiet("%-16s = %s" % ("ECP_SOURCE", os.environ["ECP_SOURCE"]))
         EdkLogger.quiet("%-16s = %s" % ("EDK_SOURCE", os.environ["EDK_SOURCE"]))
         EdkLogger.quiet("%-16s = %s" % ("EFI_SOURCE", os.environ["EFI_SOURCE"]))
         EdkLogger.quiet("%-16s = %s" % ("EDK_TOOLS_PATH", os.environ["EDK_TOOLS_PATH"]))
+        if "EDK_TOOLS_BIN" in os.environ:
+            # Print the same path style with WORKSPACE env.
+            EdkLogger.quiet("%-16s = %s" % ("EDK_TOOLS_BIN", os.path.normcase(os.path.normpath(os.environ["EDK_TOOLS_BIN"]))))
+        EdkLogger.quiet("%-16s = %s" % ("CONF_PATH", GlobalData.gConfDirectory))
+        self.InitPreBuild()
+        self.InitPostBuild()
+        if self.Prebuild:
+            EdkLogger.quiet("%-16s = %s" % ("PREBUILD", self.Prebuild))
+        if self.Postbuild:
+            EdkLogger.quiet("%-16s = %s" % ("POSTBUILD", self.Postbuild))
+        if self.Prebuild:
+            self.LaunchPrebuild()
+            self.TargetTxt = TargetTxtClassObject()
+            self.ToolDef   = ToolDefClassObject()
+        if not (self.LaunchPrebuildFlag and os.path.exists(self.PlatformBuildPath)):
+            self.InitBuild()
 
         EdkLogger.info("")
-
         os.chdir(self.WorkspaceDir)
 
     ## Load configuration
@@ -800,7 +888,7 @@ class Build():
             ToolDefinitionFile = self.TargetTxt.TargetTxtDictionary[DataType.TAB_TAT_DEFINES_TOOL_CHAIN_CONF]
             if ToolDefinitionFile == '':
                 ToolDefinitionFile = gToolsDefinition
-                ToolDefinitionFile = os.path.normpath(os.path.join(self.WorkspaceDir, 'Conf', ToolDefinitionFile))
+                ToolDefinitionFile = os.path.normpath(mws.join(self.WorkspaceDir, 'Conf', ToolDefinitionFile))
             if os.path.isfile(ToolDefinitionFile) == True:
                 StatusCode = self.ToolDef.LoadToolDefFile(ToolDefinitionFile)
             else:
@@ -837,6 +925,17 @@ class Build():
         else:
             self.ToolChainList = NewToolChainList
 
+        ToolChainFamily = []
+        ToolDefinition = self.ToolDef.ToolsDefTxtDatabase
+        for Tool in self.ToolChainList:
+            if TAB_TOD_DEFINES_FAMILY not in ToolDefinition or Tool not in ToolDefinition[TAB_TOD_DEFINES_FAMILY] \
+               or not ToolDefinition[TAB_TOD_DEFINES_FAMILY][Tool]:
+                EdkLogger.warn("build", "No tool chain family found in configuration for %s. Default to MSFT." % Tool)
+                ToolChainFamily.append("MSFT")
+            else:
+                ToolChainFamily.append(ToolDefinition[TAB_TOD_DEFINES_FAMILY][Tool])
+        self.ToolChainFamily = ToolChainFamily
+
         if self.ThreadNumber == None:
             self.ThreadNumber = self.TargetTxt.TargetTxtDictionary[DataType.TAB_TAT_DEFINES_MAX_CONCURRENT_THREAD_NUMBER]
             if self.ThreadNumber == '':
@@ -845,7 +944,10 @@ class Build():
                 self.ThreadNumber = int(self.ThreadNumber, 0)
 
         if self.ThreadNumber == 0:
-            self.ThreadNumber = 1
+            try:
+                self.ThreadNumber = multiprocessing.cpu_count()
+            except (ImportError, NotImplementedError):
+                self.ThreadNumber = 1
 
         if not self.PlatformFile:
             PlatformFile = self.TargetTxt.TargetTxtDictionary[DataType.TAB_TAT_DEFINES_ACTIVE_PLATFORM]
@@ -880,8 +982,232 @@ class Build():
             EdkLogger.error("build", ErrorCode, ExtraData=ErrorInfo)
 
         # create metafile database
-        self.Db.InitDatabase()
+        if not self.Db_Flag:
+            self.Db.InitDatabase()
 
+    def InitPreBuild(self):
+        self.LoadConfiguration()
+        ErrorCode, ErrorInfo = self.PlatformFile.Validate(".dsc", False)
+        if ErrorCode != 0:
+            EdkLogger.error("build", ErrorCode, ExtraData=ErrorInfo)
+        if self.BuildTargetList:
+            GlobalData.gGlobalDefines['TARGET'] = self.BuildTargetList[0]
+        if self.ArchList:
+            GlobalData.gGlobalDefines['ARCH'] = self.ArchList[0]
+        if self.ToolChainList:
+            GlobalData.gGlobalDefines['TOOLCHAIN'] = self.ToolChainList[0]
+            GlobalData.gGlobalDefines['TOOL_CHAIN_TAG'] = self.ToolChainList[0]
+        if self.ToolChainFamily:
+            GlobalData.gGlobalDefines['FAMILY'] = self.ToolChainFamily[0]
+        if 'PREBUILD' in GlobalData.gCommandLineDefines.keys():
+            self.Prebuild   = GlobalData.gCommandLineDefines.get('PREBUILD')
+        else:
+            self.Db.InitDatabase()
+            self.Db_Flag = True
+            Platform = self.Db._MapPlatform(str(self.PlatformFile))
+            self.Prebuild = str(Platform.Prebuild)
+        if self.Prebuild:
+            PrebuildList = []
+            #
+            # Evaluate all arguments and convert arguments that are WORKSPACE
+            # relative paths to absolute paths.  Filter arguments that look like
+            # flags or do not follow the file/dir naming rules to avoid false
+            # positives on this conversion.
+            #
+            for Arg in self.Prebuild.split():
+                #
+                # Do not modify Arg if it looks like a flag or an absolute file path
+                #
+                if Arg.startswith('-')  or os.path.isabs(Arg):
+                    PrebuildList.append(Arg)
+                    continue
+                #
+                # Do not modify Arg if it does not look like a Workspace relative
+                # path that starts with a valid package directory name
+                #
+                if not Arg[0].isalpha() or os.path.dirname(Arg) == '':
+                    PrebuildList.append(Arg)
+                    continue
+                #
+                # If Arg looks like a WORKSPACE relative path, then convert to an
+                # absolute path and check to see if the file exists.
+                #
+                Temp = mws.join(self.WorkspaceDir, Arg)
+                if os.path.isfile(Temp):
+                    Arg = Temp
+                PrebuildList.append(Arg)
+            self.Prebuild       = ' '.join(PrebuildList)
+            self.Prebuild += self.PassCommandOption(self.BuildTargetList, self.ArchList, self.ToolChainList, self.PlatformFile, self.Target)
+
+    def InitPostBuild(self):
+        if 'POSTBUILD' in GlobalData.gCommandLineDefines.keys():
+            self.Postbuild = GlobalData.gCommandLineDefines.get('POSTBUILD')
+        else:
+            Platform = self.Db._MapPlatform(str(self.PlatformFile))
+            self.Postbuild = str(Platform.Postbuild)
+        if self.Postbuild:
+            PostbuildList = []
+            #
+            # Evaluate all arguments and convert arguments that are WORKSPACE
+            # relative paths to absolute paths.  Filter arguments that look like
+            # flags or do not follow the file/dir naming rules to avoid false
+            # positives on this conversion.
+            #
+            for Arg in self.Postbuild.split():
+                #
+                # Do not modify Arg if it looks like a flag or an absolute file path
+                #
+                if Arg.startswith('-')  or os.path.isabs(Arg):
+                    PostbuildList.append(Arg)
+                    continue
+                #
+                # Do not modify Arg if it does not look like a Workspace relative
+                # path that starts with a valid package directory name
+                #
+                if not Arg[0].isalpha() or os.path.dirname(Arg) == '':
+                    PostbuildList.append(Arg)
+                    continue
+                #
+                # If Arg looks like a WORKSPACE relative path, then convert to an
+                # absolute path and check to see if the file exists.
+                #
+                Temp = mws.join(self.WorkspaceDir, Arg)
+                if os.path.isfile(Temp):
+                    Arg = Temp
+                PostbuildList.append(Arg)
+            self.Postbuild       = ' '.join(PostbuildList)
+            self.Postbuild += self.PassCommandOption(self.BuildTargetList, self.ArchList, self.ToolChainList, self.PlatformFile, self.Target)
+
+    def PassCommandOption(self, BuildTarget, TargetArch, ToolChain, PlatformFile, Target):
+        BuildStr = ''
+        if GlobalData.gCommand and isinstance(GlobalData.gCommand, list):
+            BuildStr += ' ' + ' '.join(GlobalData.gCommand)
+        TargetFlag = False
+        ArchFlag = False
+        ToolChainFlag = False
+        PlatformFileFlag = False
+
+        if GlobalData.gOptions and not GlobalData.gOptions.BuildTarget:
+            TargetFlag = True
+        if GlobalData.gOptions and not GlobalData.gOptions.TargetArch:
+            ArchFlag = True
+        if GlobalData.gOptions and not GlobalData.gOptions.ToolChain:
+            ToolChainFlag = True
+        if GlobalData.gOptions and not GlobalData.gOptions.PlatformFile:
+            PlatformFileFlag = True
+
+        if TargetFlag and BuildTarget:
+            if isinstance(BuildTarget, list) or isinstance(BuildTarget, tuple):
+                BuildStr += ' -b ' + ' -b '.join(BuildTarget)
+            elif isinstance(BuildTarget, str):
+                BuildStr += ' -b ' + BuildTarget
+        if ArchFlag and TargetArch:
+            if isinstance(TargetArch, list) or isinstance(TargetArch, tuple):
+                BuildStr += ' -a ' + ' -a '.join(TargetArch)
+            elif isinstance(TargetArch, str):
+                BuildStr += ' -a ' + TargetArch
+        if ToolChainFlag and ToolChain:
+            if isinstance(ToolChain, list) or isinstance(ToolChain, tuple):
+                BuildStr += ' -t ' + ' -t '.join(ToolChain)
+            elif isinstance(ToolChain, str):
+                BuildStr += ' -t ' + ToolChain
+        if PlatformFileFlag and PlatformFile:
+            if isinstance(PlatformFile, list) or isinstance(PlatformFile, tuple):
+                BuildStr += ' -p ' + ' -p '.join(PlatformFile)
+            elif isinstance(PlatformFile, str):
+                BuildStr += ' -p' + PlatformFile
+        BuildStr += ' --conf=' + GlobalData.gConfDirectory
+        if Target:
+            BuildStr += ' ' + Target
+
+        return BuildStr
+
+    def LaunchPrebuild(self):
+        if self.Prebuild:
+            EdkLogger.info("\n- Prebuild Start -\n")
+            self.LaunchPrebuildFlag = True
+            #
+            # The purpose of .PrebuildEnv file is capture environment variable settings set by the prebuild script
+            # and preserve them for the rest of the main build step, because the child process environment will
+            # evaporate as soon as it exits, we cannot get it in build step.
+            #
+            PrebuildEnvFile = os.path.join(GlobalData.gConfDirectory,'.cache','.PrebuildEnv')
+            if os.path.isfile(PrebuildEnvFile):
+                os.remove(PrebuildEnvFile)
+            if os.path.isfile(self.PlatformBuildPath):
+                os.remove(self.PlatformBuildPath)
+            if sys.platform == "win32":
+                args = ' && '.join((self.Prebuild, 'set > ' + PrebuildEnvFile))
+                Process = Popen(args, stdout=PIPE, stderr=PIPE, shell=True)
+            else:
+                args = ' && '.join((self.Prebuild, 'env > ' + PrebuildEnvFile))
+                Process = Popen(args, stdout=PIPE, stderr=PIPE, shell=True)
+
+            # launch two threads to read the STDOUT and STDERR
+            EndOfProcedure = Event()
+            EndOfProcedure.clear()
+            if Process.stdout:
+                StdOutThread = Thread(target=ReadMessage, args=(Process.stdout, EdkLogger.info, EndOfProcedure))
+                StdOutThread.setName("STDOUT-Redirector")
+                StdOutThread.setDaemon(False)
+                StdOutThread.start()
+
+            if Process.stderr:
+                StdErrThread = Thread(target=ReadMessage, args=(Process.stderr, EdkLogger.quiet, EndOfProcedure))
+                StdErrThread.setName("STDERR-Redirector")
+                StdErrThread.setDaemon(False)
+                StdErrThread.start()
+            # waiting for program exit
+            Process.wait()
+
+            if Process.stdout:
+                StdOutThread.join()
+            if Process.stderr:
+                StdErrThread.join()
+            if Process.returncode != 0 :
+                EdkLogger.error("Prebuild", PREBUILD_ERROR, 'Prebuild process is not success!')
+
+            if os.path.exists(PrebuildEnvFile):
+                f = open(PrebuildEnvFile)
+                envs = f.readlines()
+                f.close()
+                envs = itertools.imap(lambda l: l.split('=',1), envs)
+                envs = itertools.ifilter(lambda l: len(l) == 2, envs)
+                envs = itertools.imap(lambda l: [i.strip() for i in l], envs)
+                os.environ.update(dict(envs))
+            EdkLogger.info("\n- Prebuild Done -\n")
+
+    def LaunchPostbuild(self):
+        if self.Postbuild:
+            EdkLogger.info("\n- Postbuild Start -\n")
+            if sys.platform == "win32":
+                Process = Popen(self.Postbuild, stdout=PIPE, stderr=PIPE, shell=True)
+            else:
+                Process = Popen(self.Postbuild, stdout=PIPE, stderr=PIPE, shell=True)
+            # launch two threads to read the STDOUT and STDERR
+            EndOfProcedure = Event()
+            EndOfProcedure.clear()
+            if Process.stdout:
+                StdOutThread = Thread(target=ReadMessage, args=(Process.stdout, EdkLogger.info, EndOfProcedure))
+                StdOutThread.setName("STDOUT-Redirector")
+                StdOutThread.setDaemon(False)
+                StdOutThread.start()
+
+            if Process.stderr:
+                StdErrThread = Thread(target=ReadMessage, args=(Process.stderr, EdkLogger.quiet, EndOfProcedure))
+                StdErrThread.setName("STDERR-Redirector")
+                StdErrThread.setDaemon(False)
+                StdErrThread.start()
+            # waiting for program exit
+            Process.wait()
+
+            if Process.stdout:
+                StdOutThread.join()
+            if Process.stderr:
+                StdErrThread.join()
+            if Process.returncode != 0 :
+                EdkLogger.error("Postbuild", POSTBUILD_ERROR, 'Postbuild process is not success!')
+            EdkLogger.info("\n- Postbuild Done -\n")
     ## Build a module or platform
     #
     # Create autogen code and makefile for a module or platform, and the launch
@@ -898,7 +1224,7 @@ class Build():
     #   @param  CreateDepModuleMakeFile     Flag used to indicate creating makefile
     #                                       for dependent modules/Libraries
     #
-    def _BuildPa(self, Target, AutoGenObject, CreateDepsCodeFile=True, CreateDepsMakeFile=True, BuildModule=False):
+    def _BuildPa(self, Target, AutoGenObject, CreateDepsCodeFile=True, CreateDepsMakeFile=True, BuildModule=False, FfsCommand={}):
         if AutoGenObject == None:
             return False
 
@@ -914,7 +1240,7 @@ class Build():
 
             if not self.SkipAutoGen or Target == 'genmake':
                 self.Progress.Start("Generating makefile")
-                AutoGenObject.CreateMakeFile(CreateDepsMakeFile)
+                AutoGenObject.CreateMakeFile(CreateDepsMakeFile, FfsCommand)
                 self.Progress.Stop("done!")
             if Target == "genmake":
                 return True
@@ -1058,7 +1384,7 @@ class Build():
         if BuildModule:
             if Target != 'fds':
                 BuildCommand = BuildCommand + [Target]
-            LaunchCommand(BuildCommand, AutoGenObject.MakeFileDir)
+            AutoGenObject.BuildTime = LaunchCommand(BuildCommand, AutoGenObject.MakeFileDir)
             self.CreateAsBuiltInf()
             return True
 
@@ -1112,13 +1438,13 @@ class Build():
                 # Update Image to new BaseAddress by GenFw tool
                 #
                 LaunchCommand(["GenFw", "--rebase", str(BaseAddress), "-r", ModuleOutputImage], ModuleInfo.OutputDir)
-                LaunchCommand(["GenFw", "--rebase", str(BaseAddress), "-r", ModuleDebugImage],  ModuleInfo.DebugDir)
+                LaunchCommand(["GenFw", "--rebase", str(BaseAddress), "-r", ModuleDebugImage], ModuleInfo.DebugDir)
             else:
                 #
                 # Set new address to the section header only for SMM driver.
                 #
                 LaunchCommand(["GenFw", "--address", str(BaseAddress), "-r", ModuleOutputImage], ModuleInfo.OutputDir)
-                LaunchCommand(["GenFw", "--address", str(BaseAddress), "-r", ModuleDebugImage],  ModuleInfo.DebugDir)
+                LaunchCommand(["GenFw", "--address", str(BaseAddress), "-r", ModuleDebugImage], ModuleInfo.DebugDir)
             #
             # Collect funtion address from Map file
             #
@@ -1126,7 +1452,7 @@ class Build():
             FunctionList = []
             if os.path.exists(ImageMapTable):
                 OrigImageBaseAddress = 0
-                ImageMap = open (ImageMapTable, 'r')
+                ImageMap = open(ImageMapTable, 'r')
                 for LinStr in ImageMap:
                     if len (LinStr.strip()) == 0:
                         continue
@@ -1139,7 +1465,7 @@ class Build():
 
                     StrList = LinStr.split()
                     if len (StrList) > 4:
-                        if StrList[3] == 'f' or StrList[3] =='F':
+                        if StrList[3] == 'f' or StrList[3] == 'F':
                             Name = StrList[1]
                             RelativeAddress = int (StrList[2], 16) - OrigImageBaseAddress
                             FunctionList.append ((Name, RelativeAddress))
@@ -1263,7 +1589,7 @@ class Build():
                     if not ImageClass.IsValid:
                         EdkLogger.error("build", FILE_PARSE_FAILURE, ExtraData=ImageClass.ErrorInfo)
                     ImageInfo = PeImageInfo(Module.Name, Module.Guid, Module.Arch, Module.OutputDir, Module.DebugDir, ImageClass)
-                    if Module.ModuleType in ['PEI_CORE', 'PEIM', 'COMBINED_PEIM_DRIVER','PIC_PEIM', 'RELOCATABLE_PEIM', 'DXE_CORE']:
+                    if Module.ModuleType in ['PEI_CORE', 'PEIM', 'COMBINED_PEIM_DRIVER', 'PIC_PEIM', 'RELOCATABLE_PEIM', 'DXE_CORE']:
                         PeiModuleList[Module.MetaFile] = ImageInfo
                         PeiSize += ImageInfo.Image.Size
                     elif Module.ModuleType in ['BS_DRIVER', 'DXE_DRIVER', 'UEFI_DRIVER']:
@@ -1275,7 +1601,7 @@ class Build():
                         if IsIpfPlatform and ImageInfo.Image.Size % 0x2000 != 0:
                             ImageInfo.Image.Size = (ImageInfo.Image.Size / 0x2000 + 1) * 0x2000
                         RtSize += ImageInfo.Image.Size
-                    elif Module.ModuleType in ['SMM_CORE', 'DXE_SMM_DRIVER']:
+                    elif Module.ModuleType in ['SMM_CORE', 'DXE_SMM_DRIVER', 'MM_STANDALONE', 'MM_CORE_STANDALONE']:
                         SmmModuleList[Module.MetaFile] = ImageInfo
                         SmmSize += ImageInfo.Image.Size
                         if Module.ModuleType == 'DXE_SMM_DRIVER':
@@ -1344,21 +1670,21 @@ class Build():
             for PcdInfo in PcdTable:
                 ReturnValue = 0
                 if PcdInfo[0] == TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_PEI_PAGE_SIZE:
-                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_PEI_PAGE_SIZE_DATA_TYPE, str (PeiSize/0x1000))
+                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_PEI_PAGE_SIZE_DATA_TYPE, str (PeiSize / 0x1000))
                 elif PcdInfo[0] == TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_DXE_PAGE_SIZE:
-                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_DXE_PAGE_SIZE_DATA_TYPE, str (BtSize/0x1000))
+                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_DXE_PAGE_SIZE_DATA_TYPE, str (BtSize / 0x1000))
                 elif PcdInfo[0] == TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_RUNTIME_PAGE_SIZE:
-                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_RUNTIME_PAGE_SIZE_DATA_TYPE, str (RtSize/0x1000))
+                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_RUNTIME_PAGE_SIZE_DATA_TYPE, str (RtSize / 0x1000))
                 elif PcdInfo[0] == TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_SMM_PAGE_SIZE and len (SmmModuleList) > 0:
-                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_SMM_PAGE_SIZE_DATA_TYPE, str (SmmSize/0x1000))
+                    ReturnValue, ErrorInfo = PatchBinaryFile (EfiImage, PcdInfo[1], TAB_PCDS_PATCHABLE_LOAD_FIX_ADDRESS_SMM_PAGE_SIZE_DATA_TYPE, str (SmmSize / 0x1000))
                 if ReturnValue != 0:
                     EdkLogger.error("build", PARAMETER_INVALID, "Patch PCD value failed", ExtraData=ErrorInfo)
 
-        MapBuffer.write('PEI_CODE_PAGE_NUMBER      = 0x%x\n' % (PeiSize/0x1000))
-        MapBuffer.write('BOOT_CODE_PAGE_NUMBER     = 0x%x\n' % (BtSize/0x1000))
-        MapBuffer.write('RUNTIME_CODE_PAGE_NUMBER  = 0x%x\n' % (RtSize/0x1000))
+        MapBuffer.write('PEI_CODE_PAGE_NUMBER      = 0x%x\n' % (PeiSize / 0x1000))
+        MapBuffer.write('BOOT_CODE_PAGE_NUMBER     = 0x%x\n' % (BtSize / 0x1000))
+        MapBuffer.write('RUNTIME_CODE_PAGE_NUMBER  = 0x%x\n' % (RtSize / 0x1000))
         if len (SmmModuleList) > 0:
-            MapBuffer.write('SMM_CODE_PAGE_NUMBER      = 0x%x\n' % (SmmSize/0x1000))
+            MapBuffer.write('SMM_CODE_PAGE_NUMBER      = 0x%x\n' % (SmmSize / 0x1000))
 
         PeiBaseAddr = TopMemoryAddress - RtSize - BtSize
         BtBaseAddr  = TopMemoryAddress - RtSize
@@ -1367,7 +1693,7 @@ class Build():
         self._RebaseModule (MapBuffer, PeiBaseAddr, PeiModuleList, TopMemoryAddress == 0)
         self._RebaseModule (MapBuffer, BtBaseAddr, BtModuleList, TopMemoryAddress == 0)
         self._RebaseModule (MapBuffer, RtBaseAddr, RtModuleList, TopMemoryAddress == 0)
-        self._RebaseModule (MapBuffer, 0x1000, SmmModuleList, AddrIsOffset = False, ModeIsSmm = True)
+        self._RebaseModule (MapBuffer, 0x1000, SmmModuleList, AddrIsOffset=False, ModeIsSmm=True)
         MapBuffer.write('\n\n')
         sys.stdout.write ("\n")
         sys.stdout.flush()
@@ -1385,17 +1711,21 @@ class Build():
         SaveFileOnChange(MapFilePath, MapBuffer.getvalue(), False)
         MapBuffer.close()
         if self.LoadFixAddress != 0:
-            sys.stdout.write ("\nLoad Module At Fix Address Map file can be found at %s\n" %(MapFilePath))
+            sys.stdout.write ("\nLoad Module At Fix Address Map file can be found at %s\n" % (MapFilePath))
         sys.stdout.flush()
 
     ## Build active platform for different build targets and different tool chains
     #
     def _BuildPlatform(self):
+        SaveFileOnChange(self.PlatformBuildPath, '# DO NOT EDIT \n# FILE auto-generated\n', False)
         for BuildTarget in self.BuildTargetList:
             GlobalData.gGlobalDefines['TARGET'] = BuildTarget
+            index = 0
             for ToolChain in self.ToolChainList:
                 GlobalData.gGlobalDefines['TOOLCHAIN'] = ToolChain
                 GlobalData.gGlobalDefines['TOOL_CHAIN_TAG'] = ToolChain
+                GlobalData.gGlobalDefines['FAMILY'] = self.ToolChainFamily[index]
+                index += 1
                 Wa = WorkspaceAutoGen(
                         self.WorkspaceDir,
                         self.PlatformFile,
@@ -1417,6 +1747,12 @@ class Build():
                 self.LoadFixAddress = Wa.Platform.LoadFixAddress
                 self.BuildReport.AddPlatformReport(Wa)
                 self.Progress.Stop("done!")
+
+                # Add ffs build to makefile
+                CmdListDict = {}
+                if GlobalData.gEnableGenfdsMultiThread and self.Fdf:
+                    CmdListDict = self._GenFfsCmd()
+
                 for Arch in Wa.ArchList:
                     GlobalData.gGlobalDefines['ARCH'] = Arch
                     Pa = PlatformAutoGen(Wa, self.PlatformFile, BuildTarget, ToolChain, Arch)
@@ -1426,7 +1762,7 @@ class Build():
                         if Ma == None:
                             continue
                         self.BuildModules.append(Ma)
-                    self._BuildPa(self.Target, Pa)
+                    self._BuildPa(self.Target, Pa, FfsCommand=CmdListDict)
 
                 # Create MAP file when Load Fix Address is enabled.
                 if self.Target in ["", "all", "fds"]:
@@ -1473,9 +1809,13 @@ class Build():
     def _BuildModule(self):
         for BuildTarget in self.BuildTargetList:
             GlobalData.gGlobalDefines['TARGET'] = BuildTarget
+            index = 0
             for ToolChain in self.ToolChainList:
+                WorkspaceAutoGenTime = time.time()
                 GlobalData.gGlobalDefines['TOOLCHAIN'] = ToolChain
                 GlobalData.gGlobalDefines['TOOL_CHAIN_TAG'] = ToolChain
+                GlobalData.gGlobalDefines['FAMILY'] = self.ToolChainFamily[index]
+                index += 1
                 #
                 # module build needs platform build information, so get platform
                 # AutoGen first
@@ -1501,16 +1841,76 @@ class Build():
                 self.Fdf = Wa.FdfFile
                 self.LoadFixAddress = Wa.Platform.LoadFixAddress
                 Wa.CreateMakeFile(False)
+                # Add ffs build to makefile
+                CmdListDict = None
+                if GlobalData.gEnableGenfdsMultiThread and self.Fdf:
+                    CmdListDict = self._GenFfsCmd()
                 self.Progress.Stop("done!")
                 MaList = []
+                ExitFlag = threading.Event()
+                ExitFlag.clear()
+                self.AutoGenTime += int(round((time.time() - WorkspaceAutoGenTime)))
                 for Arch in Wa.ArchList:
+                    AutoGenStart = time.time()
                     GlobalData.gGlobalDefines['ARCH'] = Arch
-                    Ma = ModuleAutoGen(Wa, self.ModuleFile, BuildTarget, ToolChain, Arch, self.PlatformFile)
-                    if Ma == None: continue
-                    MaList.append(Ma)
-                    self.BuildModules.append(Ma)
-                    if not Ma.IsBinaryModule:
-                        self._Build(self.Target, Ma, BuildModule=True)
+                    Pa = PlatformAutoGen(Wa, self.PlatformFile, BuildTarget, ToolChain, Arch)
+                    for Module in Pa.Platform.Modules:
+                        if self.ModuleFile.Dir == Module.Dir and self.ModuleFile.Name == Module.Name:
+                            Ma = ModuleAutoGen(Wa, Module, BuildTarget, ToolChain, Arch, self.PlatformFile)
+                            if Ma == None: continue
+                            MaList.append(Ma)
+                            if Ma.CanSkipbyHash():
+                                self.HashSkipModules.append(Ma)
+                                continue
+                            # Not to auto-gen for targets 'clean', 'cleanlib', 'cleanall', 'run', 'fds'
+                            if self.Target not in ['clean', 'cleanlib', 'cleanall', 'run', 'fds']:
+                                # for target which must generate AutoGen code and makefile
+                                if not self.SkipAutoGen or self.Target == 'genc':
+                                    self.Progress.Start("Generating code")
+                                    Ma.CreateCodeFile(True)
+                                    self.Progress.Stop("done!")
+                                if self.Target == "genc":
+                                    return True
+                                if not self.SkipAutoGen or self.Target == 'genmake':
+                                    self.Progress.Start("Generating makefile")
+                                    if CmdListDict and self.Fdf and (Module.File, Arch) in CmdListDict:
+                                        Ma.CreateMakeFile(True, CmdListDict[Module.File, Arch])
+                                        del CmdListDict[Module.File, Arch]
+                                    else:
+                                        Ma.CreateMakeFile(True)
+                                    self.Progress.Stop("done!")
+                                if self.Target == "genmake":
+                                    return True
+                            self.BuildModules.append(Ma)
+                    self.AutoGenTime += int(round((time.time() - AutoGenStart)))
+                    MakeStart = time.time()
+                    for Ma in self.BuildModules:
+                        if not Ma.IsBinaryModule:
+                            Bt = BuildTask.New(ModuleMakeUnit(Ma, self.Target))
+                        # Break build if any build thread has error
+                        if BuildTask.HasError():
+                            # we need a full version of makefile for platform
+                            ExitFlag.set()
+                            BuildTask.WaitForComplete()
+                            Pa.CreateMakeFile(False)
+                            EdkLogger.error("build", BUILD_ERROR, "Failed to build module", ExtraData=GlobalData.gBuildingModule)
+                        # Start task scheduler
+                        if not BuildTask.IsOnGoing():
+                            BuildTask.StartScheduler(self.ThreadNumber, ExitFlag)
+
+                    # in case there's an interruption. we need a full version of makefile for platform
+                    Pa.CreateMakeFile(False)
+                    if BuildTask.HasError():
+                        EdkLogger.error("build", BUILD_ERROR, "Failed to build module", ExtraData=GlobalData.gBuildingModule)
+                    self.MakeTime += int(round((time.time() - MakeStart)))
+
+                MakeContiue = time.time()
+                ExitFlag.set()
+                BuildTask.WaitForComplete()
+                self.CreateAsBuiltInf()
+                self.MakeTime += int(round((time.time() - MakeContiue)))
+                if BuildTask.HasError():
+                    EdkLogger.error("build", BUILD_ERROR, "Failed to build module", ExtraData=GlobalData.gBuildingModule)
 
                 self.BuildReport.AddPlatformReport(Wa, MaList)
                 if MaList == []:
@@ -1519,7 +1919,7 @@ class Build():
                                 BUILD_ERROR,
                                 "Module for [%s] is not a component of active platform."\
                                 " Please make sure that the ARCH and inf file path are"\
-                                " given in the same as in [%s]" %\
+                                " given in the same as in [%s]" % \
                                     (', '.join(Wa.ArchList), self.PlatformFile),
                                 ExtraData=self.ModuleFile
                                 )
@@ -1551,7 +1951,9 @@ class Build():
                     #
                     # create FDS again for the updated EFI image
                     #
+                    GenFdsStart = time.time()
                     self._Build("fds", Wa)
+                    self.GenFdsTime += int(round((time.time() - GenFdsStart)))
                     #
                     # Create MAP file for all platform FVs after GenFds.
                     #
@@ -1561,14 +1963,30 @@ class Build():
                     #
                     self._SaveMapFile (MapBuffer, Wa)
 
+    def _GenFfsCmd(self):
+        CmdListDict = {}
+        GenFfsDict = GenFds.GenFfsMakefile('', GlobalData.gFdfParser, self, self.ArchList, GlobalData)
+        for Cmd in GenFfsDict:
+            tmpInf, tmpArch = GenFfsDict[Cmd]
+            if (tmpInf, tmpArch) not in CmdListDict.keys():
+                CmdListDict[tmpInf, tmpArch] = [Cmd]
+            else:
+                CmdListDict[tmpInf, tmpArch].append(Cmd)
+        return CmdListDict
+
     ## Build a platform in multi-thread mode
     #
     def _MultiThreadBuildPlatform(self):
+        SaveFileOnChange(self.PlatformBuildPath, '# DO NOT EDIT \n# FILE auto-generated\n', False)
         for BuildTarget in self.BuildTargetList:
             GlobalData.gGlobalDefines['TARGET'] = BuildTarget
+            index = 0
             for ToolChain in self.ToolChainList:
+                WorkspaceAutoGenTime = time.time()
                 GlobalData.gGlobalDefines['TOOLCHAIN'] = ToolChain
                 GlobalData.gGlobalDefines['TOOL_CHAIN_TAG'] = ToolChain
+                GlobalData.gGlobalDefines['FAMILY'] = self.ToolChainFamily[index]
+                index += 1
                 Wa = WorkspaceAutoGen(
                         self.WorkspaceDir,
                         self.PlatformFile,
@@ -1591,10 +2009,17 @@ class Build():
                 self.BuildReport.AddPlatformReport(Wa)
                 Wa.CreateMakeFile(False)
 
+                # Add ffs build to makefile
+                CmdListDict = None
+                if GlobalData.gEnableGenfdsMultiThread and self.Fdf:
+                    CmdListDict = self._GenFfsCmd()
+
                 # multi-thread exit flag
                 ExitFlag = threading.Event()
                 ExitFlag.clear()
+                self.AutoGenTime += int(round((time.time() - WorkspaceAutoGenTime)))
                 for Arch in Wa.ArchList:
+                    AutoGenStart = time.time()
                     GlobalData.gGlobalDefines['ARCH'] = Arch
                     Pa = PlatformAutoGen(Wa, self.PlatformFile, BuildTarget, ToolChain, Arch)
                     if Pa == None:
@@ -1615,6 +2040,10 @@ class Build():
 
                         if Ma == None:
                             continue
+                        if Ma.CanSkipbyHash():
+                            self.HashSkipModules.append(Ma)
+                            continue
+
                         # Not to auto-gen for targets 'clean', 'cleanlib', 'cleanall', 'run', 'fds'
                         if self.Target not in ['clean', 'cleanlib', 'cleanall', 'run', 'fds']:
                             # for target which must generate AutoGen code and makefile
@@ -1624,12 +2053,17 @@ class Build():
                                 continue
 
                             if not self.SkipAutoGen or self.Target == 'genmake':
-                                Ma.CreateMakeFile(True)
+                                if CmdListDict and self.Fdf and (Module.File, Arch) in CmdListDict:
+                                    Ma.CreateMakeFile(True, CmdListDict[Module.File, Arch])
+                                    del CmdListDict[Module.File, Arch]
+                                else:
+                                    Ma.CreateMakeFile(True)
                             if self.Target == "genmake":
                                 continue
                         self.BuildModules.append(Ma)
                     self.Progress.Stop("done!")
-
+                    self.AutoGenTime += int(round((time.time() - AutoGenStart)))
+                    MakeStart = time.time()
                     for Ma in self.BuildModules:
                         # Generate build task for the module
                         if not Ma.IsBinaryModule:
@@ -1649,7 +2083,9 @@ class Build():
                     Pa.CreateMakeFile(False)
                     if BuildTask.HasError():
                         EdkLogger.error("build", BUILD_ERROR, "Failed to build module", ExtraData=GlobalData.gBuildingModule)
+                    self.MakeTime += int(round((time.time() - MakeStart)))
 
+                MakeContiue = time.time()
                 #
                 # Save temp tables to a TmpTableDict.
                 #
@@ -1665,7 +2101,7 @@ class Build():
                 ExitFlag.set()
                 BuildTask.WaitForComplete()
                 self.CreateAsBuiltInf()
-
+                self.MakeTime += int(round((time.time() - MakeContiue)))
                 #
                 # Check for build error, and raise exception if one
                 # has been signaled.
@@ -1702,12 +2138,14 @@ class Build():
                         #
                         # Generate FD image if there's a FDF file found
                         #
+                        GenFdsStart = time.time()
                         LaunchCommand(Wa.GenFdsCommand, os.getcwd())
 
                         #
                         # Create MAP file for all platform FVs after GenFds.
                         #
                         self._CollectFvMapBuffer(MapBuffer, Wa, ModuleList)
+                        self.GenFdsTime += int(round((time.time() - GenFdsStart)))
                     #
                     # Save MAP buffer into MAP file.
                     #
@@ -1802,7 +2240,10 @@ class Build():
     def CreateAsBuiltInf(self):
         for Module in self.BuildModules:
             Module.CreateAsBuiltInf()
+        for Module in self.HashSkipModules:
+            Module.CreateAsBuiltInf(True)
         self.BuildModules = []
+        self.HashSkipModules = []
     ## Do some clean-up works when error occurred
     def Relinquish(self):
         OldLogLevel = EdkLogger.GetLevel()
@@ -1856,6 +2297,18 @@ def SingleCheckCallback(option, opt_str, value, parser):
     else:
         parser.error("Option %s only allows one instance in command line!" % option)
 
+def LogBuildTime(Time):
+    if Time:
+        TimeDurStr = ''
+        TimeDur = time.gmtime(Time)
+        if TimeDur.tm_yday > 1:
+            TimeDurStr = time.strftime("%H:%M:%S", TimeDur) + ", %d day(s)" % (TimeDur.tm_yday - 1)
+        else:
+            TimeDurStr = time.strftime("%H:%M:%S", TimeDur)
+        return TimeDurStr
+    else:
+        return None
+
 ## Parse command line options
 #
 # Using standard Python module optparse to parse command line option of this tool.
@@ -1864,8 +2317,8 @@ def SingleCheckCallback(option, opt_str, value, parser):
 #   @retval Args  Target of build command
 #
 def MyOptionParser():
-    Parser = OptionParser(description=__copyright__,version=__version__,prog="build.exe",usage="%prog [options] [all|fds|genc|genmake|clean|cleanall|cleanlib|modules|libraries|run]")
-    Parser.add_option("-a", "--arch", action="append", type="choice", choices=['IA32','X64','IPF','EBC','ARM', 'AARCH64'], dest="TargetArch",
+    Parser = OptionParser(description=__copyright__, version=__version__, prog="build.exe", usage="%prog [options] [all|fds|genc|genmake|clean|cleanall|cleanlib|modules|libraries|run]")
+    Parser.add_option("-a", "--arch", action="append", type="choice", choices=['IA32', 'X64', 'IPF', 'EBC', 'ARM', 'AARCH64'], dest="TargetArch",
         help="ARCHS is one of list: IA32, X64, IPF, ARM, AARCH64 or EBC, which overrides target.txt's TARGET_ARCH definition. To specify more archs, please repeat this option.")
     Parser.add_option("-p", "--platform", action="callback", type="string", dest="PlatformFile", callback=SingleCheckCallback,
         help="Build the platform specified by the DSC file name argument, overriding target.txt's ACTIVE_PLATFORM definition.")
@@ -1879,7 +2332,8 @@ def MyOptionParser():
         help="Using this name of SKU ID to build the platform, overriding SKUID_IDENTIFIER in DSC file.")
 
     Parser.add_option("-n", action="callback", type="int", dest="ThreadNumber", callback=SingleCheckCallback,
-        help="Build the platform using multi-threaded compiler. The value overrides target.txt's MAX_CONCURRENT_THREAD_NUMBER. Less than 2 will disable multi-thread builds.")
+        help="Build the platform using multi-threaded compiler. The value overrides target.txt's MAX_CONCURRENT_THREAD_NUMBER. When value is set to 0, tool automatically detect number of "\
+             "processor threads, set value to 1 means disable multi-thread build, and set value to more than 1 means user specify the threads number to build.")
 
     Parser.add_option("-f", "--fdf", action="callback", type="string", dest="FdfFile", callback=SingleCheckCallback,
         help="The name of the FDF file to use, which overrides the setting in the DSC file.")
@@ -1907,9 +2361,9 @@ def MyOptionParser():
     Parser.add_option("-D", "--define", action="append", type="string", dest="Macros", help="Macro: \"Name [= Value]\".")
 
     Parser.add_option("-y", "--report-file", action="store", dest="ReportFile", help="Create/overwrite the report to the specified filename.")
-    Parser.add_option("-Y", "--report-type", action="append", type="choice", choices=['PCD','LIBRARY','FLASH','DEPEX','BUILD_FLAGS','FIXED_ADDRESS', 'EXECUTION_ORDER'], dest="ReportType", default=[],
-        help="Flags that control the type of build report to generate.  Must be one of: [PCD, LIBRARY, FLASH, DEPEX, BUILD_FLAGS, FIXED_ADDRESS, EXECUTION_ORDER].  "\
-             "To specify more than one flag, repeat this option on the command line and the default flag set is [PCD, LIBRARY, FLASH, DEPEX, BUILD_FLAGS, FIXED_ADDRESS]")
+    Parser.add_option("-Y", "--report-type", action="append", type="choice", choices=['PCD','LIBRARY','FLASH','DEPEX','BUILD_FLAGS','FIXED_ADDRESS','HASH','EXECUTION_ORDER'], dest="ReportType", default=[],
+        help="Flags that control the type of build report to generate.  Must be one of: [PCD, LIBRARY, FLASH, DEPEX, BUILD_FLAGS, FIXED_ADDRESS, HASH, EXECUTION_ORDER].  "\
+             "To specify more than one flag, repeat this option on the command line and the default flag set is [PCD, LIBRARY, FLASH, DEPEX, HASH, BUILD_FLAGS, FIXED_ADDRESS]")
     Parser.add_option("-F", "--flag", action="store", type="string", dest="Flag",
         help="Specify the specific option to parse EDK UNI file. Must be one of: [-c, -s]. -c is for EDK framework UNI file, and -s is for EDK UEFI UNI file. "\
              "This option can also be specified by setting *_*_*_BUILD_FLAGS in [BuildOptions] section of platform DSC. If they are both specified, this value "\
@@ -1918,22 +2372,13 @@ def MyOptionParser():
     Parser.add_option("--conf", action="store", type="string", dest="ConfDirectory", help="Specify the customized Conf directory.")
     Parser.add_option("--check-usage", action="store_true", dest="CheckUsage", default=False, help="Check usage content of entries listed in INF file.")
     Parser.add_option("--ignore-sources", action="store_true", dest="IgnoreSources", default=False, help="Focus to a binary build and ignore all source files")
-    # VBox start
-    global gBuildConfiguration;
-    TargetTxtFile = gBuildConfiguration;
-    if 'VBOX_TARGET_CONF' in os.environ:
-        TargetTxtFile = os.path.abspath(os.environ['VBOX_TARGET_CONF']);
-    Parser.add_option("--vbox-target-conf", action="store", dest="VBoxTargetConf", default=TargetTxtFile,
-                      help="Override %s location." % (gBuildConfiguration,), metavar="VBoxTargetConf")
-    # VBox end
-
-    (Opt, Args)=Parser.parse_args()
-
-    # VBox start - again
-    if TargetTxtFile != Opt.VBoxTargetConf:
-        gBuildConfiguration = os.path.abspath(Opt.VBoxTargetConf)
-        os.environ['VBOX_TARGET_CONF'] = gBuildConfiguration # for the other tools.
-    # VBox end
+    Parser.add_option("--pcd", action="append", dest="OptionPcd", help="Set PCD value by command line. Format: \"PcdName=Value\" ")
+    Parser.add_option("-l", "--cmd-len", action="store", type="int", dest="CommandLength", help="Specify the maximum line length of build command. Default is 4096.")
+    Parser.add_option("--hash", action="store_true", dest="UseHashCache", default=False, help="Enable hash-based caching during build process.")
+    Parser.add_option("--binary-destination", action="store", type="string", dest="BinCacheDest", help="Generate a cache of binary files in the specified directory.")
+    Parser.add_option("--binary-source", action="store", type="string", dest="BinCacheSource", help="Consume a cache of binary files from the specified directory.")
+    Parser.add_option("--genfds-multi-thread", action="store_true", dest="GenfdsMultiThread", default=False, help="Enable GenFds multi thread to generate ffs file.")
+    (Opt, Args) = Parser.parse_args()
     return (Opt, Args)
 
 ## Tool entrance method
@@ -1950,7 +2395,7 @@ def Main():
 
     # Initialize log system
     EdkLogger.Initialize()
-
+    GlobalData.gCommand = sys.argv[1:]
     #
     # Parse the options and args
     #
@@ -1983,18 +2428,19 @@ def Main():
     EdkLogger.quiet(time.strftime("Build start time: %H:%M:%S, %b.%d %Y\n", time.localtime()));
     ReturnCode = 0
     MyBuild = None
+    BuildError = True
     try:
         if len(Target) == 0:
             Target = "all"
         elif len(Target) >= 2:
             EdkLogger.error("build", OPTION_NOT_SUPPORTED, "More than one targets are not supported.",
-                            ExtraData="Please select one of: %s" %(' '.join(gSupportedTarget)))
+                            ExtraData="Please select one of: %s" % (' '.join(gSupportedTarget)))
         else:
             Target = Target[0].lower()
 
         if Target not in gSupportedTarget:
             EdkLogger.error("build", OPTION_NOT_SUPPORTED, "Not supported target [%s]." % Target,
-                            ExtraData="Please select one of: %s" %(' '.join(gSupportedTarget)))
+                            ExtraData="Please select one of: %s" % (' '.join(gSupportedTarget)))
 
         #
         # Check environment variable: EDK_TOOLS_PATH, WORKSPACE, PATH
@@ -2047,12 +2493,17 @@ def Main():
 
         MyBuild = Build(Target, Workspace, Option)
         GlobalData.gCommandLineDefines['ARCH'] = ' '.join(MyBuild.ArchList)
-        MyBuild.Launch()
+        if not (MyBuild.LaunchPrebuildFlag and os.path.exists(MyBuild.PlatformBuildPath)):
+            MyBuild.Launch()
         # Drop temp tables to avoid database locked.
         for TmpTableName in TmpTableDict:
             SqlCommand = """drop table IF EXISTS %s""" % TmpTableName
             TmpTableDict[TmpTableName].execute(SqlCommand)
         #MyBuild.DumpBuildData()
+        #
+        # All job done, no error found and no exception raised
+        #
+        BuildError = False
     except FatalError, X:
         if MyBuild != None:
             # for multi-thread build exits safely
@@ -2068,7 +2519,7 @@ def Main():
         if Option != None and Option.debug != None:
             EdkLogger.quiet("(Python %s on %s) " % (platform.python_version(), sys.platform) + traceback.format_exc())
         else:
-            EdkLogger.error(X.ToolName, FORMAT_INVALID, File=X.FileName, Line=X.LineNumber, ExtraData=X.Message, RaiseError = False)
+            EdkLogger.error(X.ToolName, FORMAT_INVALID, File=X.FileName, Line=X.LineNumber, ExtraData=X.Message, RaiseError=False)
         ReturnCode = FORMAT_INVALID
     except KeyboardInterrupt:
         ReturnCode = ABORT_ERROR
@@ -2090,7 +2541,7 @@ def Main():
                     "\nbuild",
                     CODE_ERROR,
                     "Unknown fatal error when processing [%s]" % MetaFile,
-                    ExtraData="\n(Please send email to edk2-devel@lists.sourceforge.net for help, attaching following call stack trace!)\n",
+                    ExtraData="\n(Please send email to edk2-devel@lists.01.org for help, attaching following call stack trace!)\n",
                     RaiseError=False
                     )
         EdkLogger.quiet("(Python %s on %s) " % (platform.python_version(), sys.platform) + traceback.format_exc())
@@ -2100,7 +2551,11 @@ def Main():
         Utils.ClearDuplicatedInf()
 
     if ReturnCode == 0:
-        Conclusion = "Done"
+        try:
+            MyBuild.LaunchPostbuild()
+            Conclusion = "Done"
+        except:
+            Conclusion = "Failed"
     elif ReturnCode == ABORT_ERROR:
         Conclusion = "Aborted"
     else:
@@ -2109,11 +2564,12 @@ def Main():
     BuildDuration = time.gmtime(int(round(FinishTime - StartTime)))
     BuildDurationStr = ""
     if BuildDuration.tm_yday > 1:
-        BuildDurationStr = time.strftime("%H:%M:%S", BuildDuration) + ", %d day(s)"%(BuildDuration.tm_yday - 1)
+        BuildDurationStr = time.strftime("%H:%M:%S", BuildDuration) + ", %d day(s)" % (BuildDuration.tm_yday - 1)
     else:
         BuildDurationStr = time.strftime("%H:%M:%S", BuildDuration)
     if MyBuild != None:
-        MyBuild.BuildReport.GenerateReport(BuildDurationStr)
+        if not BuildError:
+            MyBuild.BuildReport.GenerateReport(BuildDurationStr, LogBuildTime(MyBuild.AutoGenTime), LogBuildTime(MyBuild.MakeTime), LogBuildTime(MyBuild.GenFdsTime))
         MyBuild.Db.Close()
     EdkLogger.SetLevel(EdkLogger.QUIET)
     EdkLogger.quiet("\n- %s -" % Conclusion)

@@ -2,7 +2,7 @@
 #  This driver is a sample implementation of the Graphics Output Protocol for
 #  the QEMU (Cirrus Logic 5446) video controller.
 #
-#  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -38,19 +38,29 @@
   DriverSupportedEfiVersion.c
   Gop.c
   Initialize.c
+
+[Sources.Ia32, Sources.X64]
   VbeShim.c
+  UnalignedIoGcc.c    | GCC
+  UnalignedIoMsc.c    | MSFT
+  UnalignedIoIcc.c    | INTEL
+
+[Sources.IPF, Sources.EBC]
+  UnalignedIoUnsupported.c
 
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
   OptionRomPkg/OptionRomPkg.dec
   OvmfPkg/OvmfPkg.dec
 
 [LibraryClasses]
   BaseMemoryLib
-  BltLib
+  FrameBufferBltLib
   DebugLib
   DevicePathLib
   MemoryAllocationLib
+  PcdLib
   PciLib
   PrintLib
   TimerLib
@@ -66,4 +76,5 @@
 
 [Pcd]
   gOptionRomPkgTokenSpaceGuid.PcdDriverSupportedEfiVersion
-
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfHostBridgePciDevId
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask

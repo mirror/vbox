@@ -7,13 +7,13 @@
 #  buffer overflow or integer overflow.
 #
 #  Note: MD4 Digest functions, SHA-384 Digest functions, SHA-512 Digest functions,
-#  HMAC-MD5 functions, HMAC-SHA1 functions, AES/TDES/ARC4 functions, RSA external
+#  HMAC-MD5 functions, HMAC-SHA1/SHA256 functions, AES/TDES/ARC4 functions, RSA external
 #  functions, PKCS#7 SignedData sign functions, Diffie-Hellman functions, X.509
 #  certificate handler functions, authenticode signature verification functions,
 #  PEM handler functions, and pseudorandom number generator functions are not
 #  supported in this instance.
 #
-#  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
 #  which accompanies this distribution.  The full text of the license may be found at
@@ -47,12 +47,14 @@
   Hash/CryptSha512Null.c
   Hmac/CryptHmacMd5Null.c
   Hmac/CryptHmacSha1Null.c
+  Hmac/CryptHmacSha256Null.c
   Cipher/CryptAesNull.c
   Cipher/CryptTdesNull.c
   Cipher/CryptArc4Null.c
 
   Pk/CryptRsaBasic.c
   Pk/CryptRsaExtNull.c
+  Pk/CryptPkcs5Pbkdf2Null.c
   Pk/CryptPkcs7SignNull.c
   Pk/CryptPkcs7Verify.c
 
@@ -84,4 +86,15 @@
 # Remove these [BuildOptions] after this library is cleaned up
 #
 [BuildOptions]
+  #
+  # suppress the following warnings so we do not break the build with warnings-as-errors:
+  # C4090: 'function' : different 'const' qualifiers
+  # C4718: 'function call' : recursive call has no side effects, deleting
+  #
+  MSFT:*_*_*_CC_FLAGS = /wd4090 /wd4718
+
   GCC:*_GCC44_IA32_CC_FLAGS = "-D__cdecl=__attribute__((cdecl))" "-D__declspec(t)=__attribute__((t))"
+
+  # -JCryptoPkg/Include : To disable the use of the system includes provided by RVCT
+  # --diag_remark=1     : Reduce severity of "#1-D: last line of file ends without a newline"
+  RVCT:*_*_ARM_CC_FLAGS = -JCryptoPkg/Include --diag_remark=1

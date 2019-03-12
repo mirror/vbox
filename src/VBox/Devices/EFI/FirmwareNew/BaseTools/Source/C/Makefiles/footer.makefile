@@ -1,7 +1,7 @@
 ## @file
 # Makefile
 #
-# Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2016, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.    The full text of the license may be found at
@@ -13,21 +13,21 @@
 
 DEPFILES = $(OBJECTS:%.o=%.d)
 
-$(MAKEROOT)/libs-$(ARCH):
-	mkdir -p $(MAKEROOT)/libs-$(ARCH)
+$(MAKEROOT)/libs-$(HOST_ARCH):
+	mkdir -p $(MAKEROOT)/libs-$(HOST_ARCH)
 
 .PHONY: install
-install: $(MAKEROOT)/libs-$(ARCH) $(LIBRARY)
-	cp $(LIBRARY) $(MAKEROOT)/libs-$(ARCH)
+install: $(MAKEROOT)/libs-$(HOST_ARCH) $(LIBRARY)
+	cp $(LIBRARY) $(MAKEROOT)/libs-$(HOST_ARCH)
 
 $(LIBRARY): $(OBJECTS)
-	$(AR) crs $@ $^
+	$(BUILD_AR) crs $@ $^
 
 %.o : %.c
-	$(CC)  -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+	$(BUILD_CC)  -c $(BUILD_CFLAGS) $(BUILD_CPPFLAGS) $< -o $@
 
-%.o : %.S
-	$(AS) -c $(ASFLAGS) $< -o $@
+%.o : %.cpp
+	$(BUILD_CXX) -c $(BUILD_CPPFLAGS) $(BUILD_CXXFLAGS) $< -o $@
 
 .PHONY: clean
 clean:

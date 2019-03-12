@@ -1,7 +1,7 @@
 /** @file
   FrontPage routines to handle the callbacks and browser calls
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -300,6 +300,7 @@ InitializeFrontPage (
   EFI_STATUS                  Status;
   CHAR8                       *LangCode;
   CHAR8                       *Lang;
+  UINTN                       LangSize;
   CHAR8                       *CurrentLang;
   UINTN                       OptionCount;
   CHAR16                      *StringBuffer;
@@ -395,13 +396,13 @@ InitializeFrontPage (
   //
   HiiHandle = gFrontPagePrivate.HiiHandle;
 
-  CurrentLang = GetEfiGlobalVariable (L"PlatformLang");
+  GetEfiGlobalVariable2 (L"PlatformLang", (VOID**)&CurrentLang, NULL);
 
   //
   // Get Support language list from variable.
   //
   if (mLanguageString == NULL){
-    mLanguageString = GetEfiGlobalVariable (L"PlatformLangCodes");
+    GetEfiGlobalVariable2 (L"PlatformLangCodes", (VOID**)&mLanguageString, NULL);
     if (mLanguageString == NULL) {
       mLanguageString = AllocateCopyPool (
                                  AsciiStrSize ((CHAR8 *) PcdGetPtr (PcdUefiVariableDefaultPlatformLangCodes)),
@@ -448,9 +449,10 @@ InitializeFrontPage (
       }
 
       if (EFI_ERROR (Status)) {
-        StringBuffer = AllocatePool (AsciiStrSize (Lang) * sizeof (CHAR16));
+        LangSize = AsciiStrSize (Lang);
+        StringBuffer = AllocatePool (LangSize * sizeof (CHAR16));
         ASSERT (StringBuffer != NULL);
-        AsciiStrToUnicodeStr (Lang, StringBuffer);
+        AsciiStrToUnicodeStrS (Lang, StringBuffer, LangSize);
       }
 
       ASSERT (StringBuffer != NULL);
@@ -618,7 +620,7 @@ ConvertProcessorToString (
 
   if (Base10Exponent >= 6) {
     FreqMhz = ProcessorFrequency;
-    for (Index = 0; Index < (UINTN) (Base10Exponent - 6); Index++) {
+    for (Index = 0; Index < ((UINT32)Base10Exponent - 6); Index++) {
       FreqMhz *= 10;
     }
   } else {
@@ -627,10 +629,17 @@ ConvertProcessorToString (
 
   StringBuffer = AllocateZeroPool (0x20);
   ASSERT (StringBuffer != NULL);
-  Index = UnicodeValueToString (StringBuffer, LEFT_JUSTIFY, FreqMhz / 1000, 3);
-  StrCat (StringBuffer, L".");
-  UnicodeValueToString (StringBuffer + Index + 1, PREFIX_ZERO, (FreqMhz % 1000) / 10, 2);
-  StrCat (StringBuffer, L" GHz");
+  UnicodeValueToStringS (StringBuffer, 0x20, LEFT_JUSTIFY, FreqMhz / 1000, 3);
+  Index = StrnLenS (StringBuffer, 0x20 / sizeof (CHAR16));
+  StrCatS (StringBuffer, 0x20 / sizeof (CHAR16), L".");
+  UnicodeValueToStringS (
+    StringBuffer + Index + 1,
+    0x20 - sizeof (CHAR16) * (Index + 1),
+    PREFIX_ZERO,
+    (FreqMhz % 1000) / 10,
+    2
+    );
+  StrCatS (StringBuffer, 0x20 / sizeof (CHAR16), L" GHz");
   *String = (CHAR16 *) StringBuffer;
   return ;
 }
@@ -653,8 +662,8 @@ ConvertMemorySizeToString (
 
   StringBuffer = AllocateZeroPool (0x20);
   ASSERT (StringBuffer != NULL);
-  UnicodeValueToString (StringBuffer, LEFT_JUSTIFY, MemorySize, 6);
-  StrCat (StringBuffer, L" MB RAM");
+  UnicodeValueToStringS (StringBuffer, 0x20, LEFT_JUSTIFY, MemorySize, 6);
+  StrCatS (StringBuffer, 0x20 / sizeof (CHAR16), L" MB RAM");
 
   *String = (CHAR16 *) StringBuffer;
 
@@ -702,7 +711,7 @@ GetOptionalStringByIndex (
     *String = GetStringById (STRING_TOKEN (STR_MISSING_STRING));
   } else {
     *String = AllocatePool (StrSize * sizeof (CHAR16));
-    AsciiStrToUnicodeStr (OptionalStrStart, *String);
+    AsciiStrToUnicodeStrS (OptionalStrStart, *String, StrSize);
   }
 
   return EFI_SUCCESS;
@@ -720,7 +729,6 @@ UpdateFrontPageStrings (
 {
   UINT8                             StrIndex;
   CHAR16                            *NewString;
-  BOOLEAN                           Find[5];
   EFI_STATUS                        Status;
   EFI_STRING_ID                     TokenToUpdate;
   EFI_SMBIOS_HANDLE                 SmbiosHandle;
@@ -730,8 +738,9 @@ UpdateFrontPageStrings (
   SMBIOS_TABLE_TYPE4                *Type4Record;
   SMBIOS_TABLE_TYPE19               *Type19Record;
   EFI_SMBIOS_TABLE_HEADER           *Record;
+  UINT64                            InstalledMemory;
 
-  ZeroMem (Find, sizeof (Find));
+  InstalledMemory = 0;
 
   //
   // Update Front Page strings
@@ -741,66 +750,66 @@ UpdateFrontPageStrings (
                   NULL,
                   (VOID **) &Smbios
                   );
-  ASSERT_EFI_ERROR (Status);
-
-  SmbiosHandle = SMBIOS_HANDLE_PI_RESERVED;
-  do {
+  if (!EFI_ERROR (Status)) {
+    SmbiosHandle = SMBIOS_HANDLE_PI_RESERVED;
     Status = Smbios->GetNext (Smbios, &SmbiosHandle, NULL, &Record, NULL);
-    if (EFI_ERROR(Status)) {
-      break;
+    while (!EFI_ERROR(Status)) {
+      if (Record->Type == SMBIOS_TYPE_BIOS_INFORMATION) {
+        Type0Record = (SMBIOS_TABLE_TYPE0 *) Record;
+        StrIndex = Type0Record->BiosVersion;
+        GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type0Record + Type0Record->Hdr.Length), StrIndex, &NewString);
+        TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_BIOS_VERSION);
+        HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
+        FreePool (NewString);
+      }
+
+      if (Record->Type == SMBIOS_TYPE_SYSTEM_INFORMATION) {
+        Type1Record = (SMBIOS_TABLE_TYPE1 *) Record;
+        StrIndex = Type1Record->ProductName;
+        GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type1Record + Type1Record->Hdr.Length), StrIndex, &NewString);
+        TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_COMPUTER_MODEL);
+        HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
+        FreePool (NewString);
+      }
+
+      if (Record->Type == SMBIOS_TYPE_PROCESSOR_INFORMATION) {
+        Type4Record = (SMBIOS_TABLE_TYPE4 *) Record;
+        StrIndex = Type4Record->ProcessorVersion;
+        GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type4Record + Type4Record->Hdr.Length), StrIndex, &NewString);
+        TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_CPU_MODEL);
+        HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
+        FreePool (NewString);
+      }
+
+      if (Record->Type == SMBIOS_TYPE_PROCESSOR_INFORMATION) {
+        Type4Record = (SMBIOS_TABLE_TYPE4 *) Record;
+        ConvertProcessorToString(Type4Record->CurrentSpeed, 6, &NewString);
+        TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_CPU_SPEED);
+        HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
+        FreePool (NewString);
+      }
+
+      if ( Record->Type == SMBIOS_TYPE_MEMORY_ARRAY_MAPPED_ADDRESS ) {
+        Type19Record = (SMBIOS_TABLE_TYPE19 *) Record;
+        if (Type19Record->StartingAddress != 0xFFFFFFFF ) {
+          InstalledMemory += RShiftU64(Type19Record->EndingAddress -
+                                       Type19Record->StartingAddress + 1, 10);
+        } else {
+          InstalledMemory += RShiftU64(Type19Record->ExtendedEndingAddress -
+                                       Type19Record->ExtendedStartingAddress + 1, 20);
+        }
+      }
+
+      Status = Smbios->GetNext (Smbios, &SmbiosHandle, NULL, &Record, NULL);
     }
 
-    if (Record->Type == EFI_SMBIOS_TYPE_BIOS_INFORMATION) {
-      Type0Record = (SMBIOS_TABLE_TYPE0 *) Record;
-      StrIndex = Type0Record->BiosVersion;
-      GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type0Record + Type0Record->Hdr.Length), StrIndex, &NewString);
-      TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_BIOS_VERSION);
-      HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
-      FreePool (NewString);
-      Find[0] = TRUE;
-    }
+    // now update the total installed RAM size
+    ConvertMemorySizeToString ((UINT32)InstalledMemory, &NewString );
+    TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_MEMORY_SIZE);
+    HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
+    FreePool (NewString);
+  }
 
-    if (Record->Type == EFI_SMBIOS_TYPE_SYSTEM_INFORMATION) {
-      Type1Record = (SMBIOS_TABLE_TYPE1 *) Record;
-      StrIndex = Type1Record->ProductName;
-      GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type1Record + Type1Record->Hdr.Length), StrIndex, &NewString);
-      TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_COMPUTER_MODEL);
-      HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
-      FreePool (NewString);
-      Find[1] = TRUE;
-    }
-
-    if (Record->Type == EFI_SMBIOS_TYPE_PROCESSOR_INFORMATION) {
-      Type4Record = (SMBIOS_TABLE_TYPE4 *) Record;
-      StrIndex = Type4Record->ProcessorVersion;
-      GetOptionalStringByIndex ((CHAR8*)((UINT8*)Type4Record + Type4Record->Hdr.Length), StrIndex, &NewString);
-      TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_CPU_MODEL);
-      HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
-      FreePool (NewString);
-      Find[2] = TRUE;
-    }
-
-    if (Record->Type == EFI_SMBIOS_TYPE_PROCESSOR_INFORMATION) {
-      Type4Record = (SMBIOS_TABLE_TYPE4 *) Record;
-      ConvertProcessorToString(Type4Record->CurrentSpeed, 6, &NewString);
-      TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_CPU_SPEED);
-      HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
-      FreePool (NewString);
-      Find[3] = TRUE;
-    }
-
-    if ( Record->Type == EFI_SMBIOS_TYPE_MEMORY_ARRAY_MAPPED_ADDRESS ) {
-      Type19Record = (SMBIOS_TABLE_TYPE19 *) Record;
-      ConvertMemorySizeToString (
-        (UINT32)(RShiftU64((Type19Record->EndingAddress - Type19Record->StartingAddress + 1), 10)),
-        &NewString
-        );
-      TokenToUpdate = STRING_TOKEN (STR_FRONT_PAGE_MEMORY_SIZE);
-      HiiSetString (gFrontPagePrivate.HiiHandle, TokenToUpdate, NewString, NULL);
-      FreePool (NewString);
-      Find[4] = TRUE;
-    }
-  } while ( !(Find[0] && Find[1] && Find[2] && Find[3] && Find[4]));
   return ;
 }
 
@@ -891,64 +900,62 @@ ShowProgress (
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL Background;
   EFI_GRAPHICS_OUTPUT_BLT_PIXEL Color;
 
-  if (TimeoutDefault == 0) {
-    return EFI_TIMEOUT;
-  }
+  if (TimeoutDefault != 0) {
+    DEBUG ((EFI_D_INFO, "\n\nStart showing progress bar... Press any key to stop it! ...Zzz....\n"));
 
-  DEBUG ((EFI_D_INFO, "\n\nStart showing progress bar... Press any key to stop it! ...Zzz....\n"));
+    SetMem (&Foreground, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
+    SetMem (&Background, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0x0);
+    SetMem (&Color, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
 
-  SetMem (&Foreground, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
-  SetMem (&Background, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0x0);
-  SetMem (&Color, sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL), 0xff);
-
-  TmpStr = GetStringById (STRING_TOKEN (STR_START_BOOT_OPTION));
-
-  if (!FeaturePcdGet(PcdBootlogoOnlyEnable)) {
-    //
-    // Clear the progress status bar first
-    //
-    if (TmpStr != NULL) {
-      PlatformBdsShowProgress (Foreground, Background, TmpStr, Color, 0, 0);
-    }
-  }
-
-
-  TimeoutRemain = TimeoutDefault;
-  while (TimeoutRemain != 0) {
-    DEBUG ((EFI_D_INFO, "Showing progress bar...Remaining %d second!\n", TimeoutRemain));
-
-    Status = WaitForSingleEvent (gST->ConIn->WaitForKey, ONE_SECOND);
-    if (Status != EFI_TIMEOUT) {
-      break;
-    }
-    TimeoutRemain--;
+    TmpStr = GetStringById (STRING_TOKEN (STR_START_BOOT_OPTION));
 
     if (!FeaturePcdGet(PcdBootlogoOnlyEnable)) {
       //
-      // Show progress
+      // Clear the progress status bar first
       //
       if (TmpStr != NULL) {
-        PlatformBdsShowProgress (
-          Foreground,
-          Background,
-          TmpStr,
-          Color,
-          ((TimeoutDefault - TimeoutRemain) * 100 / TimeoutDefault),
-          0
-          );
+        PlatformBdsShowProgress (Foreground, Background, TmpStr, Color, 0, 0);
       }
     }
-  }
 
-  if (TmpStr != NULL) {
-    gBS->FreePool (TmpStr);
-  }
 
-  //
-  // Timeout expired
-  //
-  if (TimeoutRemain == 0) {
-    return EFI_TIMEOUT;
+    TimeoutRemain = TimeoutDefault;
+    while (TimeoutRemain != 0) {
+      DEBUG ((EFI_D_INFO, "Showing progress bar...Remaining %d second!\n", TimeoutRemain));
+
+      Status = WaitForSingleEvent (gST->ConIn->WaitForKey, ONE_SECOND);
+      if (Status != EFI_TIMEOUT) {
+        break;
+      }
+      TimeoutRemain--;
+
+      if (!FeaturePcdGet(PcdBootlogoOnlyEnable)) {
+        //
+        // Show progress
+        //
+        if (TmpStr != NULL) {
+          PlatformBdsShowProgress (
+            Foreground,
+            Background,
+            TmpStr,
+            Color,
+            ((TimeoutDefault - TimeoutRemain) * 100 / TimeoutDefault),
+            0
+            );
+        }
+      }
+    }
+
+    if (TmpStr != NULL) {
+      gBS->FreePool (TmpStr);
+    }
+
+    //
+    // Timeout expired
+    //
+    if (TimeoutRemain == 0) {
+      return EFI_TIMEOUT;
+    }
   }
 
   //
@@ -1327,7 +1334,7 @@ BdsSetConsoleMode (
 
   if (IsSetupMode) {
     //
-    // The requried resolution and text mode is setup mode.
+    // The required resolution and text mode is setup mode.
     //
     NewHorizontalResolution = mSetupHorizontalResolution;
     NewVerticalResolution   = mSetupVerticalResolution;
@@ -1383,7 +1390,7 @@ BdsSetConsoleMode (
             return EFI_SUCCESS;
           } else {
             //
-            // If current text mode is different from requried text mode.  Set new video mode
+            // If current text mode is different from required text mode.  Set new video mode
             //
             for (Index = 0; Index < MaxTextMode; Index++) {
               Status = SimpleTextOut->QueryMode (SimpleTextOut, Index, &CurrentColumn, &CurrentRow);
@@ -1397,8 +1404,10 @@ BdsSetConsoleMode (
                   //
                   // Update text mode PCD.
                   //
-                  PcdSet32 (PcdConOutColumn, mSetupTextModeColumn);
-                  PcdSet32 (PcdConOutRow, mSetupTextModeRow);
+                  Status = PcdSet32S (PcdConOutColumn, mSetupTextModeColumn);
+                  ASSERT_EFI_ERROR (Status);
+                  Status = PcdSet32S (PcdConOutRow, mSetupTextModeRow);
+                  ASSERT_EFI_ERROR (Status);
                   FreePool (Info);
                   return EFI_SUCCESS;
                 }
@@ -1406,7 +1415,7 @@ BdsSetConsoleMode (
             }
             if (Index == MaxTextMode) {
               //
-              // If requried text mode is not supported, return error.
+              // If required text mode is not supported, return error.
               //
               FreePool (Info);
               return EFI_UNSUPPORTED;
@@ -1439,10 +1448,14 @@ BdsSetConsoleMode (
   // Set PCD to Inform GraphicsConsole to change video resolution.
   // Set PCD to Inform Consplitter to change text mode.
   //
-  PcdSet32 (PcdVideoHorizontalResolution, NewHorizontalResolution);
-  PcdSet32 (PcdVideoVerticalResolution, NewVerticalResolution);
-  PcdSet32 (PcdConOutColumn, NewColumns);
-  PcdSet32 (PcdConOutRow, NewRows);
+  Status = PcdSet32S (PcdVideoHorizontalResolution, NewHorizontalResolution);
+  ASSERT_EFI_ERROR (Status);
+  Status = PcdSet32S (PcdVideoVerticalResolution, NewVerticalResolution);
+  ASSERT_EFI_ERROR (Status);
+  Status = PcdSet32S (PcdConOutColumn, NewColumns);
+  ASSERT_EFI_ERROR (Status);
+  Status = PcdSet32S (PcdConOutRow, NewRows);
+  ASSERT_EFI_ERROR (Status);
 
 
   //

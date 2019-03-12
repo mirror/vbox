@@ -1,5 +1,5 @@
 /** @file
-  Internal data structure defintions for Base UEFI Decompress Libary.
+  Internal data structure defintions for Base UEFI Decompress Library.
 
   Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
@@ -146,7 +146,7 @@ DecodeP (
 /**
   Reads code lengths for the Extra Set or the Position Set.
 
-  Read in the Extra Set or Pointion Set Length Arrary, then
+  Read in the Extra Set or Position Set Length Array, then
   generate the Huffman code mapping for them.
 
   @param  Sd      The global scratch data.

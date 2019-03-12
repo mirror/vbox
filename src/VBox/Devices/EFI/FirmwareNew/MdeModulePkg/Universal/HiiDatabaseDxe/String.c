@@ -2,7 +2,8 @@
 Implementation for EFI_HII_STRING_PROTOCOL.
 
 
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2016, Intel Corporation. All rights reserved.<BR>
+(C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -105,7 +106,7 @@ ReferFontInfoLocally (
   @param  StringSrc              Points to current null-terminated string.
   @param  BufferSize             Length of the buffer.
 
-  @retval EFI_SUCCESS            The string text was outputed successfully.
+  @retval EFI_SUCCESS            The string text was outputted successfully.
   @retval EFI_BUFFER_TOO_SMALL   Buffer is insufficient to store the found string
                                  text. BufferSize is updated to the required buffer
                                  size.
@@ -149,7 +150,7 @@ ConvertToUnicodeText (
   @param  StringSrc              Points to current null-terminated string.
   @param  BufferSize             Length of the buffer.
 
-  @retval EFI_SUCCESS            The string text was outputed successfully.
+  @retval EFI_SUCCESS            The string text was outputted successfully.
   @retval EFI_BUFFER_TOO_SMALL   Buffer is insufficient to store the found string
                                  text. BufferSize is updated to the required buffer
                                  size.
@@ -198,7 +199,7 @@ GetUnicodeStringTextOrSize (
   @param  StringFontInfo         Buffer to record the output font info. It's
                                  caller's responsibility to free this buffer.
 
-  @retval EFI_SUCCESS            The string font is outputed successfully.
+  @retval EFI_SUCCESS            The string font is outputted successfully.
   @retval EFI_NOT_FOUND          The specified font id does not exist.
 
 **/
@@ -295,6 +296,7 @@ FindStringBlock (
   ASSERT (StringPackage->Signature == HII_STRING_PACKAGE_SIGNATURE);
 
   CurrentStringId = 1;
+  StringSize = 0;
 
   if (StringId != (EFI_STRING_ID) (-1) && StringId != 0) {
     ASSERT (BlockType != NULL && StringBlockAddr != NULL && StringTextOffset != NULL);
@@ -717,7 +719,7 @@ GetStringWorker (
   @param  StringBlockAddr         Output the block address of found string block.
   @param  FontBlock               whether this string block has font info.
 
-  @retval EFI_SUCCESS            The string font is outputed successfully.
+  @retval EFI_SUCCESS            The string font is outputted successfully.
   @retval EFI_OUT_OF_RESOURCES   NO resource for the memory to save the new string block.
 
 **/
@@ -1333,7 +1335,7 @@ HiiNewString (
     StringPackage->StringPkgHdr->StringInfoOffset = HeaderSize;
     CopyMem (StringPackage->StringPkgHdr->LanguageWindow, mLanguageWindow, 16 * sizeof (CHAR16));
     StringPackage->StringPkgHdr->LanguageName     = 1;
-    AsciiStrCpy (StringPackage->StringPkgHdr->Language, (CHAR8 *) Language);
+    AsciiStrCpyS (StringPackage->StringPkgHdr->Language, (HeaderSize - OFFSET_OF(EFI_HII_STRING_PACKAGE_HDR,Language)) / sizeof (CHAR8), (CHAR8 *) Language);
 
     //
     // Calculate the length of the string blocks, including string block to record
@@ -1558,6 +1560,18 @@ Done:
     FreePool (StringPackage->StringPkgHdr);
     FreePool (StringPackage);
   }
+  //
+  // The contents of HiiDataBase may updated,need to check.
+  //
+  //
+  // Check whether need to get the contents of HiiDataBase.
+  // Only after ReadyToBoot to do the export.
+  //
+  if (gExportAfterReadyToBoot) {
+    if (!EFI_ERROR (Status)) {
+      HiiGetDatabaseInfo(&Private->HiiDatabase);
+    }
+  }
 
   return Status;
 }
@@ -1753,6 +1767,13 @@ HiiSetString (
           return Status;
         }
         PackageListNode->PackageListHdr.PackageLength += StringPackage->StringPkgHdr->Header.Length - OldPackageLen;
+        //
+        // Check whether need to get the contents of HiiDataBase.
+        // Only after ReadyToBoot to do the export.
+        //
+        if (gExportAfterReadyToBoot) {
+          HiiGetDatabaseInfo(&Private->HiiDatabase);
+        }
         return EFI_SUCCESS;
       }
     }
@@ -1836,7 +1857,7 @@ HiiGetLanguages (
     StringPackage = CR (Link, HII_STRING_PACKAGE_INSTANCE, StringEntry, HII_STRING_PACKAGE_SIGNATURE);
     ResultSize += AsciiStrSize (StringPackage->StringPkgHdr->Language);
     if (ResultSize <= *LanguagesSize) {
-      AsciiStrCpy (Languages, StringPackage->StringPkgHdr->Language);
+      AsciiStrCpyS (Languages, *LanguagesSize / sizeof (CHAR8), StringPackage->StringPkgHdr->Language);
       Languages += AsciiStrSize (StringPackage->StringPkgHdr->Language);
       *(Languages - 1) = L';';
     }
@@ -1953,7 +1974,7 @@ HiiGetSecondaryLanguages (
 
       ResultSize = AsciiStrSize (Languages);
       if (ResultSize <= *SecondaryLanguagesSize) {
-        AsciiStrCpy (SecondaryLanguages, Languages);
+        AsciiStrCpyS (SecondaryLanguages, *SecondaryLanguagesSize / sizeof (CHAR8), Languages);
       } else {
         *SecondaryLanguagesSize = ResultSize;
         return EFI_BUFFER_TOO_SMALL;
@@ -2018,13 +2039,13 @@ HiiCompareLanguage (
   StrLen = AsciiStrSize (Language1);
   Lan1   = AllocateZeroPool (StrLen);
   ASSERT (Lan1 != NULL);
-  AsciiStrCpy(Lan1, Language1);
+  AsciiStrCpyS(Lan1, StrLen / sizeof (CHAR8), Language1);
   AsciiHiiToLower (Lan1);
 
   StrLen = AsciiStrSize (Language2);
   Lan2   = AllocateZeroPool (StrLen);
   ASSERT (Lan2 != NULL);
-  AsciiStrCpy(Lan2, Language2);
+  AsciiStrCpyS(Lan2, StrLen / sizeof (CHAR8), Language2);
   AsciiHiiToLower (Lan2);
 
   //

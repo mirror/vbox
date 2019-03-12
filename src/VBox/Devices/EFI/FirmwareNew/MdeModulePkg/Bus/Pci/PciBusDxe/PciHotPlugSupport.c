@@ -300,7 +300,7 @@ IsSHPC (
   Offset = 0;
   Status = LocateCapabilityRegBlock (
             PciIoDevice,
-            EFI_PCI_CAPABILITY_ID_HOTPLUG,
+            EFI_PCI_CAPABILITY_ID_SHPC,
             &Offset,
             NULL
             );
@@ -313,6 +313,94 @@ IsSHPC (
     return TRUE;
   }
 
+  return FALSE;
+}
+
+/**
+  Check whether PciIoDevice supports PCIe hotplug.
+
+  This is equivalent to the following condition:
+  - the device is either a PCIe switch downstream port or a root port,
+  - and the device has the SlotImplemented bit set in its PCIe capability
+    register,
+  - and the device has the HotPlugCapable bit set in its slot capabilities
+    register.
+
+  @param[in] PciIoDevice  The device being checked.
+
+  @retval TRUE   PciIoDevice is a PCIe port that accepts a hotplugged device.
+  @retval FALSE  Otherwise.
+
+**/
+BOOLEAN
+SupportsPcieHotplug (
+  IN PCI_IO_DEVICE                      *PciIoDevice
+  )
+{
+  UINT32                       Offset;
+  EFI_STATUS                   Status;
+  PCI_REG_PCIE_CAPABILITY      Capability;
+  PCI_REG_PCIE_SLOT_CAPABILITY SlotCapability;
+
+  if (PciIoDevice == NULL) {
+    return FALSE;
+  }
+
+  //
+  // Read the PCI Express Capabilities Register
+  //
+  if (!PciIoDevice->IsPciExp) {
+    return FALSE;
+  }
+  Offset = PciIoDevice->PciExpressCapabilityOffset +
+           OFFSET_OF (PCI_CAPABILITY_PCIEXP, Capability);
+  Status = PciIoDevice->PciIo.Pci.Read (
+                                    &PciIoDevice->PciIo,
+                                    EfiPciIoWidthUint16,
+                                    Offset,
+                                    1,
+                                    &Capability
+                                    );
+  if (EFI_ERROR (Status)) {
+    return FALSE;
+  }
+
+  //
+  // Check the contents of the register
+  //
+  switch (Capability.Bits.DevicePortType) {
+  case PCIE_DEVICE_PORT_TYPE_ROOT_PORT:
+  case PCIE_DEVICE_PORT_TYPE_DOWNSTREAM_PORT:
+    break;
+  default:
+    return FALSE;
+  }
+  if (!Capability.Bits.SlotImplemented) {
+    return FALSE;
+  }
+
+  //
+  // Read the Slot Capabilities Register
+  //
+  Offset = PciIoDevice->PciExpressCapabilityOffset +
+           OFFSET_OF (PCI_CAPABILITY_PCIEXP, SlotCapability);
+  Status = PciIoDevice->PciIo.Pci.Read (
+                                    &PciIoDevice->PciIo,
+                                    EfiPciIoWidthUint32,
+                                    Offset,
+                                    1,
+                                    &SlotCapability
+                                    );
+  if (EFI_ERROR (Status)) {
+    return FALSE;
+  }
+
+  //
+  // Check the contents of the register
+  //
+  if (SlotCapability.Bits.HotPlugCapable) {
+    return TRUE;
+  }
   return FALSE;
 }
 
@@ -378,6 +466,14 @@ IsPciHotPlugBus (
     //
     // If the PPB has the hot plug controller build-in,
     // then return TRUE;
+    //
+    return TRUE;
+  }
+
+  if (SupportsPcieHotplug (PciIoDevice)) {
+    //
+    // If the PPB is a PCIe root complex port or a switch downstream port, and
+    // implements a hot-plug capable slot, then also return TRUE.
     //
     return TRUE;
   }

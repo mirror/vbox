@@ -5,7 +5,7 @@
   for Firmware Basic Boot Performance Record and other boot performance records,
   and install FPDT to ACPI table.
 
-  Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -20,7 +20,6 @@
 
 #include <Protocol/ReportStatusCodeHandler.h>
 #include <Protocol/AcpiTable.h>
-#include <Protocol/SmmCommunication.h>
 #include <Protocol/LockBox.h>
 #include <Protocol/Variable.h>
 
@@ -41,8 +40,7 @@
 #include <Library/LockBoxLib.h>
 #include <Library/UefiLib.h>
 
-#define EXTENSION_RECORD_SIZE     0x10000
-#define SMM_BOOT_RECORD_COMM_SIZE OFFSET_OF (EFI_SMM_COMMUNICATE_HEADER, Data) + sizeof(SMM_BOOT_RECORD_COMMUNICATE)
+#define SMM_BOOT_RECORD_COMM_SIZE (OFFSET_OF (EFI_SMM_COMMUNICATE_HEADER, Data) + sizeof(SMM_BOOT_RECORD_COMMUNICATE))
 
 EFI_RSC_HANDLER_PROTOCOL    *mRscHandlerProtocol = NULL;
 
@@ -51,12 +49,10 @@ EFI_EVENT                   mReadyToBootEvent;
 EFI_EVENT                   mLegacyBootEvent;
 EFI_EVENT                   mExitBootServicesEvent;
 UINTN                       mFirmwarePerformanceTableTemplateKey  = 0;
-UINT32                      mBootRecordSize = 0;
-UINT32                      mBootRecordMaxSize = 0;
-UINT8                       *mBootRecordBuffer = NULL;
 BOOLEAN                     mDxeCoreReportStatusCodeEnable = FALSE;
 
 BOOT_PERFORMANCE_TABLE                      *mAcpiBootPerformanceTable = NULL;
+BOOT_PERFORMANCE_TABLE                      *mReceivedAcpiBootPerformanceTable = NULL;
 S3_PERFORMANCE_TABLE                        *mAcpiS3PerformanceTable   = NULL;
 
 FIRMWARE_PERFORMANCE_TABLE  mFirmwarePerformanceTableTemplate = {
@@ -328,15 +324,9 @@ InstallFirmwarePerformanceDataTable (
 {
   EFI_STATUS                    Status;
   EFI_ACPI_TABLE_PROTOCOL       *AcpiTableProtocol;
-  UINTN                         Size;
-  UINT8                         *SmmBootRecordCommBuffer;
-  EFI_SMM_COMMUNICATE_HEADER    *SmmCommBufferHeader;
-  SMM_BOOT_RECORD_COMMUNICATE   *SmmCommData;
-  UINTN                         CommSize;
   UINTN                         BootPerformanceDataSize;
-  UINT8                         *BootPerformanceData;
-  EFI_SMM_COMMUNICATION_PROTOCOL  *Communication;
   FIRMWARE_PERFORMANCE_VARIABLE PerformanceVariable;
+  UINTN                         Size;
 
   //
   // Get AcpiTable Protocol.
@@ -346,129 +336,50 @@ InstallFirmwarePerformanceDataTable (
     return Status;
   }
 
-  //
-  // Collect boot records from SMM drivers.
-  //
-  SmmBootRecordCommBuffer = NULL;
-  SmmCommData             = NULL;
-  Status = gBS->LocateProtocol (&gEfiSmmCommunicationProtocolGuid, NULL, (VOID **) &Communication);
-  if (!EFI_ERROR (Status)) {
+  if (mReceivedAcpiBootPerformanceTable != NULL) {
+    mAcpiBootPerformanceTable = mReceivedAcpiBootPerformanceTable;
+    mAcpiBootPerformanceTable->BasicBoot.ResetEnd = mBootPerformanceTableTemplate.BasicBoot.ResetEnd;
+  } else {
     //
-    // Initialize communicate buffer
+    // Try to allocate the same runtime buffer as last time boot.
     //
-    SmmBootRecordCommBuffer = AllocateZeroPool (SMM_BOOT_RECORD_COMM_SIZE);
-    ASSERT (SmmBootRecordCommBuffer != NULL);
-    SmmCommBufferHeader = (EFI_SMM_COMMUNICATE_HEADER*)SmmBootRecordCommBuffer;
-    SmmCommData = (SMM_BOOT_RECORD_COMMUNICATE*)SmmCommBufferHeader->Data;
-    ZeroMem((UINT8*)SmmCommData, sizeof(SMM_BOOT_RECORD_COMMUNICATE));
-
-    CopyGuid (&SmmCommBufferHeader->HeaderGuid, &gEfiFirmwarePerformanceGuid);
-    SmmCommBufferHeader->MessageLength = sizeof(SMM_BOOT_RECORD_COMMUNICATE);
-    CommSize = SMM_BOOT_RECORD_COMM_SIZE;
-
-    //
-    // Get the size of boot records.
-    //
-    SmmCommData->Function       = SMM_FPDT_FUNCTION_GET_BOOT_RECORD_SIZE;
-    SmmCommData->BootRecordData = NULL;
-    Status = Communication->Communicate (Communication, SmmBootRecordCommBuffer, &CommSize);
-    ASSERT_EFI_ERROR (Status);
-
-    if (!EFI_ERROR (SmmCommData->ReturnStatus) && SmmCommData->BootRecordSize != 0) {
-      //
-      // Get all boot records
-      //
-      SmmCommData->Function       = SMM_FPDT_FUNCTION_GET_BOOT_RECORD_DATA;
-      SmmCommData->BootRecordData = AllocateZeroPool(SmmCommData->BootRecordSize);
-      ASSERT (SmmCommData->BootRecordData != NULL);
-
-      Status = Communication->Communicate (Communication, SmmBootRecordCommBuffer, &CommSize);
-      ASSERT_EFI_ERROR (Status);
-      ASSERT_EFI_ERROR(SmmCommData->ReturnStatus);
-    }
-  }
-
-  //
-  // Prepare memory for Boot Performance table.
-  // Boot Performance table includes BasicBoot record, and one or more appended Boot Records.
-  //
-  BootPerformanceDataSize = sizeof (BOOT_PERFORMANCE_TABLE) + mBootRecordSize + PcdGet32 (PcdExtFpdtBootRecordPadSize);
-  if (SmmCommData != NULL) {
-    BootPerformanceDataSize += SmmCommData->BootRecordSize;
-  }
-
-  //
-  // Try to allocate the same runtime buffer as last time boot.
-  //
-  ZeroMem (&PerformanceVariable, sizeof (PerformanceVariable));
-  Size = sizeof (PerformanceVariable);
-  Status = gRT->GetVariable (
-                  EFI_FIRMWARE_PERFORMANCE_VARIABLE_NAME,
-                  &gEfiFirmwarePerformanceGuid,
-                  NULL,
-                  &Size,
-                  &PerformanceVariable
-                  );
-  if (!EFI_ERROR (Status)) {
-    Status = gBS->AllocatePages (
-                    AllocateAddress,
-                    EfiReservedMemoryType,
-                    EFI_SIZE_TO_PAGES (BootPerformanceDataSize),
-                    &PerformanceVariable.BootPerformanceTablePointer
+    BootPerformanceDataSize = sizeof (BOOT_PERFORMANCE_TABLE);
+    ZeroMem (&PerformanceVariable, sizeof (PerformanceVariable));
+    Size = sizeof (PerformanceVariable);
+    Status = gRT->GetVariable (
+                    EFI_FIRMWARE_PERFORMANCE_VARIABLE_NAME,
+                    &gEfiFirmwarePerformanceGuid,
+                    NULL,
+                    &Size,
+                    &PerformanceVariable
                     );
     if (!EFI_ERROR (Status)) {
-      mAcpiBootPerformanceTable = (BOOT_PERFORMANCE_TABLE *) (UINTN) PerformanceVariable.BootPerformanceTablePointer;
+      Status = gBS->AllocatePages (
+                      AllocateAddress,
+                      EfiReservedMemoryType,
+                      EFI_SIZE_TO_PAGES (BootPerformanceDataSize),
+                      &PerformanceVariable.BootPerformanceTablePointer
+                      );
+      if (!EFI_ERROR (Status)) {
+         mAcpiBootPerformanceTable = (BOOT_PERFORMANCE_TABLE *) (UINTN) PerformanceVariable.BootPerformanceTablePointer;
+      }
     }
-  }
-
-  if (mAcpiBootPerformanceTable == NULL) {
-    //
-    // Fail to allocate at specified address, continue to allocate at any address.
-    //
-    mAcpiBootPerformanceTable = (BOOT_PERFORMANCE_TABLE *) FpdtAllocateReservedMemoryBelow4G (BootPerformanceDataSize);
-  }
-  DEBUG ((EFI_D_INFO, "FPDT: ACPI Boot Performance Table address = 0x%x\n", mAcpiBootPerformanceTable));
-
-  if (mAcpiBootPerformanceTable == NULL) {
-    if (SmmCommData != NULL && SmmCommData->BootRecordData != NULL) {
-      FreePool (SmmCommData->BootRecordData);
+    if (mAcpiBootPerformanceTable == NULL) {
+      //
+      // Fail to allocate at specified address, continue to allocate at any address.
+      //
+      mAcpiBootPerformanceTable = (BOOT_PERFORMANCE_TABLE *) FpdtAllocateReservedMemoryBelow4G (BootPerformanceDataSize);
     }
-    if (SmmBootRecordCommBuffer != NULL) {
-      FreePool (SmmBootRecordCommBuffer);
+    DEBUG ((DEBUG_INFO, "FPDT: ACPI Boot Performance Table address = 0x%x\n", mAcpiBootPerformanceTable));
+    if (mAcpiBootPerformanceTable == NULL) {
+      return EFI_OUT_OF_RESOURCES;
     }
-    if (mAcpiS3PerformanceTable != NULL) {
-      FreePages (mAcpiS3PerformanceTable, EFI_SIZE_TO_PAGES (sizeof (S3_PERFORMANCE_TABLE)));
-    }
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  //
-  // Prepare Boot Performance Table.
-  //
-  BootPerformanceData = (UINT8 *) mAcpiBootPerformanceTable;
-  //
-  // Fill Basic Boot record to Boot Performance Table.
-  //
-  CopyMem (mAcpiBootPerformanceTable, &mBootPerformanceTableTemplate, sizeof (mBootPerformanceTableTemplate));
-  BootPerformanceData = BootPerformanceData + mAcpiBootPerformanceTable->Header.Length;
-  //
-  // Fill Boot records from boot drivers.
-  //
-  CopyMem (BootPerformanceData, mBootRecordBuffer, mBootRecordSize);
-  mAcpiBootPerformanceTable->Header.Length += mBootRecordSize;
-  BootPerformanceData = BootPerformanceData + mBootRecordSize;
-  if (SmmCommData != NULL && SmmCommData->BootRecordData != NULL) {
     //
-    // Fill Boot records from SMM drivers.
+    // Fill Basic Boot record to Boot Performance Table.
     //
-    CopyMem (BootPerformanceData, SmmCommData->BootRecordData, SmmCommData->BootRecordSize);
-    FreePool (SmmCommData->BootRecordData);
-    mAcpiBootPerformanceTable->Header.Length = (UINT32) (mAcpiBootPerformanceTable->Header.Length + SmmCommData->BootRecordSize);
-    BootPerformanceData = BootPerformanceData + SmmCommData->BootRecordSize;
+    CopyMem (mAcpiBootPerformanceTable, &mBootPerformanceTableTemplate, sizeof (mBootPerformanceTableTemplate));
   }
-  if (SmmBootRecordCommBuffer != NULL) {
-    FreePool (SmmBootRecordCommBuffer);
-  }
+  BootPerformanceDataSize   = mAcpiBootPerformanceTable->Header.Length;
 
   //
   // Save Boot Performance Table address to Variable for use in S4 resume.
@@ -510,7 +421,9 @@ InstallFirmwarePerformanceDataTable (
                                 &mFirmwarePerformanceTableTemplateKey
                                 );
   if (EFI_ERROR (Status)) {
-    FreePages (mAcpiBootPerformanceTable, EFI_SIZE_TO_PAGES (BootPerformanceDataSize));
+    if (mAcpiBootPerformanceTable != NULL) {
+      FreePages (mAcpiBootPerformanceTable, EFI_SIZE_TO_PAGES (BootPerformanceDataSize));
+    }
     if (mAcpiS3PerformanceTable != NULL) {
       FreePages (mAcpiS3PerformanceTable, EFI_SIZE_TO_PAGES (sizeof (S3_PERFORMANCE_TABLE)));
     }
@@ -518,81 +431,7 @@ InstallFirmwarePerformanceDataTable (
     mAcpiS3PerformanceTable = NULL;
     return Status;
   }
-
-  //
-  // Free temp Boot record, and update Boot Record to point to Basic Boot performance table.
-  //
-  if (mBootRecordBuffer != NULL) {
-    FreePool (mBootRecordBuffer);
-  }
-  mBootRecordBuffer  = (UINT8 *) mAcpiBootPerformanceTable;
-  mBootRecordSize    = mAcpiBootPerformanceTable->Header.Length;
-  mBootRecordMaxSize = mBootRecordSize + PcdGet32 (PcdExtFpdtBootRecordPadSize);
-
   return EFI_SUCCESS;
-}
-
-/**
-  Notify function for event group EFI_EVENT_GROUP_READY_TO_BOOT. This is used to
-  install the Firmware Performance Data Table.
-
-  @param[in]  Event   The Event that is being processed.
-  @param[in]  Context The Event Context.
-
-**/
-VOID
-EFIAPI
-FpdtReadyToBootEventNotify (
-  IN EFI_EVENT        Event,
-  IN VOID             *Context
-  )
-{
-  if (mAcpiBootPerformanceTable == NULL) {
-    //
-    // ACPI Firmware Performance Data Table not installed yet, install it now.
-    //
-    InstallFirmwarePerformanceDataTable ();
-  }
-}
-
-/**
-  Notify function for event group EFI_EVENT_LEGACY_BOOT_GUID. This is used to
-  record performance data for OsLoaderLoadImageStart in FPDT for legacy boot.
-
-  @param[in]  Event   The Event that is being processed.
-  @param[in]  Context The Event Context.
-
-**/
-VOID
-EFIAPI
-FpdtLegacyBootEventNotify (
-  IN EFI_EVENT        Event,
-  IN VOID             *Context
-  )
-{
-  if (mAcpiBootPerformanceTable == NULL) {
-    //
-    // Firmware Performance Data Table not installed, do nothing.
-    //
-    return ;
-  }
-
-  //
-  // Update Firmware Basic Boot Performance Record for legacy boot.
-  //
-  mAcpiBootPerformanceTable->BasicBoot.OsLoaderLoadImageStart  = 0;
-  mAcpiBootPerformanceTable->BasicBoot.OsLoaderStartImageStart = GetTimeInNanoSecond (GetPerformanceCounter ());
-  mAcpiBootPerformanceTable->BasicBoot.ExitBootServicesEntry   = 0;
-  mAcpiBootPerformanceTable->BasicBoot.ExitBootServicesExit    = 0;
-
-  //
-  // Dump FPDT Boot Performance record.
-  //
-  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - ResetEnd                = %ld\n", mAcpiBootPerformanceTable->BasicBoot.ResetEnd));
-  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - OsLoaderLoadImageStart  = 0\n"));
-  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - OsLoaderStartImageStart = %ld\n", mAcpiBootPerformanceTable->BasicBoot.OsLoaderStartImageStart));
-  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - ExitBootServicesEntry   = 0\n"));
-  DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - ExitBootServicesExit    = 0\n"));
 }
 
 /**
@@ -682,42 +521,39 @@ FpdtStatusCodeListenerDxe (
     // Update ExitBootServicesExit for UEFI boot.
     //
     mAcpiBootPerformanceTable->BasicBoot.ExitBootServicesExit = GetTimeInNanoSecond (GetPerformanceCounter ());
-  } else if (Data != NULL && CompareGuid (&Data->Type, &gEfiFirmwarePerformanceGuid)) {
-    //
-    // Append one or more Boot records
-    //
+  } else if (Value == (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_PC_LEGACY_BOOT_EVENT)) {
     if (mAcpiBootPerformanceTable == NULL) {
       //
-      // Append Boot records before FPDT ACPI table is installed.
+      // Firmware Performance Data Table not installed, do nothing.
       //
-      if (mBootRecordSize + Data->Size > mBootRecordMaxSize) {
-        mBootRecordBuffer = ReallocatePool (mBootRecordSize, mBootRecordSize + Data->Size + EXTENSION_RECORD_SIZE, mBootRecordBuffer);
-        ASSERT (mBootRecordBuffer != NULL);
-        mBootRecordMaxSize = mBootRecordSize + Data->Size + EXTENSION_RECORD_SIZE;
-      }
-      //
-      // Save boot record into the temp memory space.
-      //
-      CopyMem (mBootRecordBuffer + mBootRecordSize, Data + 1, Data->Size);
-      mBootRecordSize += Data->Size;
-    } else {
-      //
-      // Append Boot records after FPDT ACPI table is installed.
-      //
-      if (mBootRecordSize + Data->Size > mBootRecordMaxSize) {
-        //
-        // No enough space to save boot record.
-        //
-        Status = EFI_OUT_OF_RESOURCES;
-      } else {
-        //
-        // Save boot record into BootPerformance table
-        //
-        CopyMem (mBootRecordBuffer + mBootRecordSize, Data + 1, Data->Size);
-        mBootRecordSize += Data->Size;
-        mAcpiBootPerformanceTable->Header.Length = mBootRecordSize;
-      }
+      return Status;
     }
+
+    //
+    // Update Firmware Basic Boot Performance Record for legacy boot.
+    //
+    mAcpiBootPerformanceTable->BasicBoot.OsLoaderStartImageStart = GetTimeInNanoSecond (GetPerformanceCounter ());
+
+    //
+    // Dump FPDT Boot Performance record.
+    //
+    DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - ResetEnd                = %ld\n", mAcpiBootPerformanceTable->BasicBoot.ResetEnd));
+    DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - OsLoaderLoadImageStart  = 0\n"));
+    DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - OsLoaderStartImageStart = %ld\n", mAcpiBootPerformanceTable->BasicBoot.OsLoaderStartImageStart));
+    DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - ExitBootServicesEntry   = 0\n"));
+    DEBUG ((EFI_D_INFO, "FPDT: Boot Performance - ExitBootServicesExit    = 0\n"));
+  } else if (Value == (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_PC_READY_TO_BOOT_EVENT)) {
+    if (mAcpiBootPerformanceTable == NULL) {
+      //
+      // ACPI Firmware Performance Data Table not installed yet, install it now.
+      //
+      InstallFirmwarePerformanceDataTable ();
+    }
+  } else if (Data != NULL && CompareGuid (&Data->Type, &gEdkiiFpdtExtendedFirmwarePerformanceGuid)) {
+    //
+    // Get the Boot performance table and then install it to ACPI table.
+    //
+    CopyMem (&mReceivedAcpiBootPerformanceTable, Data + 1, Data->Size);
   } else {
     //
     // Ignore else progress code.
@@ -836,32 +672,6 @@ FirmwarePerformanceDxeEntryPoint (
   ASSERT_EFI_ERROR (Status);
 
   //
-  // Create ready to boot event to install ACPI FPDT table.
-  //
-  Status = gBS->CreateEventEx (
-                  EVT_NOTIFY_SIGNAL,
-                  TPL_NOTIFY,
-                  FpdtReadyToBootEventNotify,
-                  NULL,
-                  &gEfiEventReadyToBootGuid,
-                  &mReadyToBootEvent
-                  );
-  ASSERT_EFI_ERROR (Status);
-
-  //
-  // Create legacy boot event to log OsLoaderStartImageStart for legacy boot.
-  //
-  Status = gBS->CreateEventEx (
-                  EVT_NOTIFY_SIGNAL,
-                  TPL_NOTIFY,
-                  FpdtLegacyBootEventNotify,
-                  NULL,
-                  &gEfiEventLegacyBootGuid,
-                  &mLegacyBootEvent
-                  );
-  ASSERT_EFI_ERROR (Status);
-
-  //
   // Retrieve GUID HOB data that contains the ResetEnd.
   //
   GuidHob = GetFirstGuidHob (&gEfiFirmwarePerformanceGuid);
@@ -872,7 +682,7 @@ FirmwarePerformanceDxeEntryPoint (
     //
     // SEC Performance Data Hob not found, ResetEnd in ACPI FPDT table will be 0.
     //
-    DEBUG ((EFI_D_ERROR, "FPDT: WARNING: SEC Performance Data Hob not found, ResetEnd will be set to 0!\n"));
+    DEBUG ((DEBUG_WARN, "FPDT: WARNING: SEC Performance Data Hob not found, ResetEnd will be set to 0!\n"));
   }
 
   if (FeaturePcdGet (PcdFirmwarePerformanceDataTableS3Support)) {

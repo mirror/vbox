@@ -1,7 +1,7 @@
 /** @file
   Header file for AHCI mode of ATA host controller.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2015, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -467,9 +467,18 @@ DRQClear2 (
   @param IdeRegisters     A pointer to EFI_IDE_REGISTERS data structure.
   @param Timeout          The time to complete the command, uses 100ns as a unit.
 
-  @retval EFI_SUCCESS          DRQ bit set within the time out.
-  @retval EFI_TIMEOUT          DRQ bit not set within the time out.
-  @retval EFI_ABORTED          DRQ bit not set caused by the command abort.
+  @retval EFI_SUCCESS           BSY bit cleared and DRQ bit set within the
+                                timeout.
+
+  @retval EFI_TIMEOUT           BSY bit not cleared within the timeout.
+
+  @retval EFI_ABORTED           Polling abandoned due to command abort.
+
+  @retval EFI_DEVICE_ERROR      Polling abandoned due to a non-abort error.
+
+  @retval EFI_NOT_READY         BSY bit cleared within timeout, and device
+                                reported "command complete" by clearing DRQ
+                                bit.
 
   @note  Read Status Register will clear interrupt status.
 
@@ -542,9 +551,19 @@ DRQReady (
   @param IdeRegisters     A pointer to EFI_IDE_REGISTERS data structure.
   @param Timeout          The time to complete the command, uses 100ns as a unit.
 
-  @retval EFI_SUCCESS           DRQ bit set within the time out.
-  @retval EFI_TIMEOUT           DRQ bit not set within the time out.
-  @retval EFI_ABORTED           DRQ bit not set caused by the command abort.
+  @retval EFI_SUCCESS           BSY bit cleared and DRQ bit set within the
+                                timeout.
+
+  @retval EFI_TIMEOUT           BSY bit not cleared within the timeout.
+
+  @retval EFI_ABORTED           Polling abandoned due to command abort.
+
+  @retval EFI_DEVICE_ERROR      Polling abandoned due to a non-abort error.
+
+  @retval EFI_NOT_READY         BSY bit cleared within timeout, and device
+                                reported "command complete" by clearing DRQ
+                                bit.
+
   @note  Read Alternate Status Register will not clear interrupt status.
 
 **/
@@ -1529,7 +1548,7 @@ AtaUdmaInOut (
   UINTN                         PrdTableSize;
   EFI_PHYSICAL_ADDRESS          PrdTableMapAddr;
   VOID                          *PrdTableMap;
-  EFI_ATA_DMA_PRD               *PrdBaseAddr;
+  EFI_PHYSICAL_ADDRESS          PrdTableBaseAddr;
   EFI_ATA_DMA_PRD               *TempPrdBaseAddr;
   UINTN                         PrdTableNum;
 
@@ -1547,12 +1566,17 @@ AtaUdmaInOut (
   EFI_PCI_IO_PROTOCOL           *PciIo;
   EFI_TPL                       OldTpl;
 
+  UINTN                         AlignmentMask;
+  UINTN                         RealPageCount;
+  EFI_PHYSICAL_ADDRESS          BaseAddr;
+  EFI_PHYSICAL_ADDRESS          BaseMapAddr;
 
   Status        = EFI_SUCCESS;
-  PrdBaseAddr   = NULL;
   PrdTableMap   = NULL;
   BufferMap     = NULL;
   PageCount     = 0;
+  RealPageCount = 0;
+  BaseAddr      = 0;
   PciIo         = Instance->PciIo;
 
   if ((PciIo == NULL) || (IdeRegisters == NULL) || (DataBuffer == NULL) || (AtaCommandBlock == NULL)) {
@@ -1610,40 +1634,56 @@ AtaUdmaInOut (
 
     //
     // Allocate buffer for PRD table initialization.
+    // Note Ide Bus Master spec said the descriptor table must be aligned on a 4 byte
+    // boundary and the table cannot cross a 64K boundary in memory.
     //
-    PageCount = EFI_SIZE_TO_PAGES (PrdTableSize);
+    PageCount     = EFI_SIZE_TO_PAGES (PrdTableSize);
+    RealPageCount = PageCount + EFI_SIZE_TO_PAGES (SIZE_64KB);
+
+    //
+    // Make sure that PageCount plus EFI_SIZE_TO_PAGES (SIZE_64KB) does not overflow.
+    //
+    ASSERT (RealPageCount > PageCount);
+
     Status    = PciIo->AllocateBuffer (
                          PciIo,
                          AllocateAnyPages,
                          EfiBootServicesData,
-                         PageCount,
-                         (VOID **)&PrdBaseAddr,
+                         RealPageCount,
+                         (VOID **)&BaseAddr,
                          0
                          );
     if (EFI_ERROR (Status)) {
       return EFI_OUT_OF_RESOURCES;
     }
 
-    ByteCount = EFI_PAGES_TO_SIZE (PageCount);
+    ByteCount = EFI_PAGES_TO_SIZE (RealPageCount);
     Status    = PciIo->Map (
                          PciIo,
                          EfiPciIoOperationBusMasterCommonBuffer,
-                         PrdBaseAddr,
+                         (VOID*)(UINTN)BaseAddr,
                          &ByteCount,
-                         &PrdTableMapAddr,
+                         &BaseMapAddr,
                          &PrdTableMap
                          );
-    if (EFI_ERROR (Status) || (ByteCount != EFI_PAGES_TO_SIZE (PageCount))) {
+    if (EFI_ERROR (Status) || (ByteCount != EFI_PAGES_TO_SIZE (RealPageCount))) {
       //
       // If the data length actually mapped is not equal to the requested amount,
       // it means the DMA operation may be broken into several discontinuous smaller chunks.
       // Can't handle this case.
       //
-      PciIo->FreeBuffer (PciIo, PageCount, PrdBaseAddr);
+      PciIo->FreeBuffer (PciIo, RealPageCount, (VOID*)(UINTN)BaseAddr);
       return EFI_OUT_OF_RESOURCES;
     }
 
-    ZeroMem ((VOID *) ((UINTN) PrdBaseAddr), ByteCount);
+    ZeroMem ((VOID *) ((UINTN) BaseAddr), ByteCount);
+
+    //
+    // Calculate the 64K align address as PRD Table base address.
+    //
+    AlignmentMask    = SIZE_64KB - 1;
+    PrdTableBaseAddr = ((UINTN) BaseAddr + AlignmentMask) & ~AlignmentMask;
+    PrdTableMapAddr  = ((UINTN) BaseMapAddr + AlignmentMask) & ~AlignmentMask;
 
     //
     // Map the host address of DataBuffer to DMA master address.
@@ -1665,7 +1705,7 @@ AtaUdmaInOut (
                          );
     if (EFI_ERROR (Status) || (ByteCount != DataLength)) {
       PciIo->Unmap (PciIo, PrdTableMap);
-      PciIo->FreeBuffer (PciIo, PageCount, PrdBaseAddr);
+      PciIo->FreeBuffer (PciIo, RealPageCount, (VOID*)(UINTN)BaseAddr);
       return EFI_OUT_OF_RESOURCES;
     }
 
@@ -1679,7 +1719,7 @@ AtaUdmaInOut (
     // Fill the PRD table with appropriate bus master address of data buffer and data length.
     //
     ByteRemaining   = ByteCount;
-    TempPrdBaseAddr = PrdBaseAddr;
+    TempPrdBaseAddr = (EFI_ATA_DMA_PRD*)(UINTN)PrdTableBaseAddr;
     while (ByteRemaining != 0) {
       if (ByteRemaining <= 0x10000) {
         TempPrdBaseAddr->RegionBaseAddr = (UINT32) ((UINTN) BufferMapAddress);
@@ -1735,8 +1775,8 @@ AtaUdmaInOut (
     if (Task != NULL) {
       Task->Map            = BufferMap;
       Task->TableMap       = PrdTableMap;
-      Task->MapBaseAddress = PrdBaseAddr;
-      Task->PageCount      = PageCount;
+      Task->MapBaseAddress = (EFI_ATA_DMA_PRD*)(UINTN)BaseAddr;
+      Task->PageCount      = RealPageCount;
       Task->IsStart        = TRUE;
     }
 
@@ -1827,7 +1867,7 @@ Exit:
       PciIo->Unmap (PciIo, Task->Map);
     } else {
       PciIo->Unmap (PciIo, PrdTableMap);
-      PciIo->FreeBuffer (PciIo, PageCount, PrdBaseAddr);
+      PciIo->FreeBuffer (PciIo, RealPageCount, (VOID*)(UINTN)BaseAddr);
       PciIo->Unmap (PciIo, BufferMap);
     }
 
@@ -1904,7 +1944,7 @@ AtaPacketReadWrite (
   IN     EFI_PCI_IO_PROTOCOL       *PciIo,
   IN     EFI_IDE_REGISTERS         *IdeRegisters,
   IN OUT VOID                      *Buffer,
-  IN     UINT64                    ByteCount,
+  IN OUT UINT32                    *ByteCount,
   IN     BOOLEAN                   Read,
   IN     UINT64                    Timeout
   )
@@ -1915,17 +1955,18 @@ AtaPacketReadWrite (
   EFI_STATUS  Status;
   UINT16      *PtrBuffer;
 
+  PtrBuffer         = Buffer;
+  RequiredWordCount = *ByteCount >> 1;
+
   //
   // No data transfer is premitted.
   //
-  if (ByteCount == 0) {
+  if (RequiredWordCount == 0) {
     return EFI_SUCCESS;
   }
 
-  PtrBuffer         = Buffer;
-  RequiredWordCount = (UINT32)RShiftU64(ByteCount, 1);
   //
-  // ActuralWordCount means the word count of data really transferred.
+  // ActualWordCount means the word count of data really transferred.
   //
   ActualWordCount = 0;
 
@@ -1936,7 +1977,15 @@ AtaPacketReadWrite (
     //
     Status = DRQReady2 (PciIo, IdeRegisters, Timeout);
     if (EFI_ERROR (Status)) {
-      return CheckStatusRegister (PciIo, IdeRegisters);
+      if (Status == EFI_NOT_READY) {
+        //
+        // Device provided less data than we intended to read, or wanted less
+        // data than we intended to write, but it may still be successful.
+        //
+        break;
+      } else {
+        return Status;
+      }
     }
 
     //
@@ -2002,6 +2051,7 @@ AtaPacketReadWrite (
     return EFI_DEVICE_ERROR;
   }
 
+  *ByteCount = ActualWordCount << 1;
   return Status;
 }
 
@@ -2104,7 +2154,7 @@ AtaPacketCommandExecute (
                PciIo,
                IdeRegisters,
                Packet->InDataBuffer,
-               Packet->InTransferLength,
+               &Packet->InTransferLength,
                TRUE,
                Packet->Timeout
                );
@@ -2113,7 +2163,7 @@ AtaPacketCommandExecute (
                PciIo,
                IdeRegisters,
                Packet->OutDataBuffer,
-               Packet->OutTransferLength,
+               &Packet->OutTransferLength,
                FALSE,
                Packet->Timeout
                );
@@ -2604,6 +2654,11 @@ DetectAndConfigIdeDevice (
   PciIo        = Instance->PciIo;
 
   for (IdeDevice = 0; IdeDevice < EfiIdeMaxDevice; IdeDevice++) {
+    //
+    // Select Master or Slave device to get the return signature for ATA DEVICE DIAGNOSTIC cmd.
+    //
+    IdeWritePortB (PciIo, IdeRegisters->Head, (UINT8)((IdeDevice << 4) | 0xe0));
+
     //
     // Send ATA Device Execut Diagnostic command.
     // This command should work no matter DRDY is ready or not

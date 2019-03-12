@@ -1,7 +1,7 @@
 /** @file
   The implementation of the Udp4 protocol.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -200,10 +200,10 @@ Udp4DeliverDgram (
   );
 
 /**
-  This function demultiplexes the received udp datagram to the apropriate instances.
+  This function demultiplexes the received udp datagram to the appropriate instances.
 
   @param[in]  Udp4Service            Pointer to the udp service context data.
-  @param[in]  NetSession             Pointer to the EFI_NET_SESSION_DATA abstrated from
+  @param[in]  NetSession             Pointer to the EFI_NET_SESSION_DATA abstracted from
                                      the received datagram.
   @param[in]  Packet                 Pointer to the buffer containing the received udp
                                      datagram.
@@ -827,7 +827,9 @@ Udp4ValidateTxToken (
   if (TxData->GatewayAddress != NULL) {
     CopyMem (&GatewayAddress, TxData->GatewayAddress, sizeof (IP4_ADDR));
 
-    if (!NetIp4IsUnicast (NTOHL (GatewayAddress), 0)) {
+    if (!Instance->ConfigData.UseDefaultAddress &&
+        (EFI_NTOHL(Instance->ConfigData.SubnetMask) != 0) &&
+        !NetIp4IsUnicast (NTOHL (GatewayAddress), EFI_NTOHL(Instance->ConfigData.SubnetMask))) {
       //
       // The specified GatewayAddress is not a unicast IPv4 address while it's not 0.
       //
@@ -842,7 +844,10 @@ Udp4ValidateTxToken (
 
     CopyMem (&SourceAddress, &UdpSessionData->SourceAddress, sizeof (IP4_ADDR));
 
-    if ((SourceAddress != 0) && !NetIp4IsUnicast (HTONL (SourceAddress), 0)) {
+    if ((SourceAddress != 0) &&
+        !Instance->ConfigData.UseDefaultAddress &&
+        (EFI_NTOHL(Instance->ConfigData.SubnetMask) != 0) &&
+        !NetIp4IsUnicast (HTONL (SourceAddress), EFI_NTOHL(Instance->ConfigData.SubnetMask))) {
       //
       // Check whether SourceAddress is a valid IPv4 address in case it's not zero.
       // The configured station address is used if SourceAddress is zero.
@@ -1586,10 +1591,10 @@ Udp4DeliverDgram (
 
 
 /**
-  This function demultiplexes the received udp datagram to the apropriate instances.
+  This function demultiplexes the received udp datagram to the appropriate instances.
 
   @param[in]  Udp4Service            Pointer to the udp service context data.
-  @param[in]  NetSession             Pointer to the EFI_NET_SESSION_DATA abstrated from
+  @param[in]  NetSession             Pointer to the EFI_NET_SESSION_DATA abstracted from
                                      the received datagram.
   @param[in]  Packet                 Pointer to the buffer containing the received udp
                                      datagram.
@@ -1607,6 +1612,11 @@ Udp4Demultiplex (
   EFI_UDP4_RECEIVE_DATA  RxData;
   EFI_UDP4_SESSION_DATA  *Udp4Session;
   UINTN                  Enqueued;
+
+  if (Packet->TotalSize < sizeof (EFI_UDP_HEADER)) {
+    NetbufFree (Packet);
+    return;
+  }
 
   //
   // Get the datagram header from the packet buffer.
@@ -1629,6 +1639,7 @@ Udp4Demultiplex (
       //
       // Wrong checksum.
       //
+      NetbufFree (Packet);
       return;
     }
   }
@@ -1701,7 +1712,7 @@ Udp4SendPortUnreach (
   IpSender = IpIoFindSender (&IpIo, NetSession->IpVersion, &NetSession->Dest);
   if (IpSender == NULL) {
     //
-    // No apropriate sender, since we cannot send out the ICMP message through
+    // No appropriate sender, since we cannot send out the ICMP message through
     // the default zero station address IP instance, abort.
     //
     return;
@@ -1710,7 +1721,7 @@ Udp4SendPortUnreach (
   IpHdr = NetSession->IpHdr.Ip4Hdr;
 
   //
-  // Calculate the requried length of the icmp error message.
+  // Calculate the required length of the icmp error message.
   //
   Len = sizeof (IP4_ICMP_ERROR_HEAD) + (EFI_IP4_HEADER_LEN (IpHdr) -
         sizeof (IP4_HEAD)) + ICMP_ERROR_PACKET_LENGTH;
@@ -1796,6 +1807,11 @@ Udp4IcmpHandler (
   EFI_UDP4_SESSION_DATA  Udp4Session;
   LIST_ENTRY             *Entry;
   UDP4_INSTANCE_DATA     *Instance;
+
+  if (Packet->TotalSize < sizeof (EFI_UDP_HEADER)) {
+    NetbufFree (Packet);
+    return;
+  }
 
   Udp4Header = (EFI_UDP_HEADER *) NetbufGetByte (Packet, 0, NULL);
   ASSERT (Udp4Header != NULL);

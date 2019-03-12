@@ -1,7 +1,8 @@
 /** @file
   The Common operations used by IKE Exchange Process.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -56,7 +57,9 @@ Ikev2SaSessionAlloc (
   IKEV2_SA_SESSION      *IkeSaSession;
 
   IkeSaSession = AllocateZeroPool (sizeof (IKEV2_SA_SESSION));
-  ASSERT (IkeSaSession != NULL);
+  if (IkeSaSession == NULL) {
+    return NULL;
+  }
 
   //
   // Initialize the fields of IkeSaSession and its SessionCommon.
@@ -522,7 +525,16 @@ Ikev2ChildSaSessionAlloc (
   ChildSaSession->Signature          = IKEV2_CHILD_SA_SESSION_SIGNATURE;
   ChildSaSession->IkeSaSession       = IkeSaSession;
   ChildSaSession->MessageId          = IkeSaSession->MessageId;
-  ChildSaSession->LocalPeerSpi       = IkeGenerateSpi ();
+
+  //
+  // Generate an new SPI.
+  //
+  Status = IkeGenerateSpi (IkeSaSession, &(ChildSaSession->LocalPeerSpi));
+  if (EFI_ERROR (Status)) {
+    FreePool (ChildSaSession);
+    return NULL;
+  }
+
   ChildSaCommon                      = &ChildSaSession->SessionCommon;
   ChildSaCommon->UdpService          = UdpService;
   ChildSaCommon->Private             = IkeSaSession->SessionCommon.Private;
@@ -571,7 +583,6 @@ Ikev2ChildSaSessionReg (
   IKEV2_SESSION_COMMON         *SessionCommon;
   IKEV2_CHILD_SA_SESSION       *OldChildSaSession;
   IKEV2_SA_SESSION             *IkeSaSession;
-  IKEV2_SA_PARAMS              *SaParams;
   EFI_STATUS                   Status;
   UINT64                       Lifetime;
 
@@ -624,7 +635,6 @@ Ikev2ChildSaSessionReg (
   //
   // Start to count the lifetime of the IKE SA.
   //
-  SaParams = SessionCommon->SaParams;
   if (ChildSaSession->Spd->Data->ProcessingPolicy->SaLifetime.HardLifetime != 0){
     Lifetime = ChildSaSession->Spd->Data->ProcessingPolicy->SaLifetime.HardLifetime;
   } else {
@@ -878,7 +888,6 @@ Ikev2ChildSaSilentDelete (
   IKEV2_CHILD_SA_SESSION    *ChildSession;
   EFI_IPSEC_CONFIG_SELECTOR *LocalSelector;
   EFI_IPSEC_CONFIG_SELECTOR *RemoteSelector;
-  IKE_UDP_SERVICE           *UdpService;
   IPSEC_PRIVATE_DATA        *Private;
 
   if (IkeSaSession == NULL) {
@@ -890,11 +899,8 @@ Ikev2ChildSaSilentDelete (
   ChildSession    = NULL;
   LocalSelector   = NULL;
   RemoteSelector  = NULL;
-  UdpService      = IkeSaSession->SessionCommon.UdpService;
 
-  Private  = (UdpService->IpVersion == IP_VERSION_4) ?
-             IPSEC_PRIVATE_DATA_FROM_UDP4LIST(UdpService->ListHead) :
-             IPSEC_PRIVATE_DATA_FROM_UDP6LIST(UdpService->ListHead);
+  Private = IkeSaSession->SessionCommon.Private;
 
   //
   // Remove the Established SA from ChildSaEstablishlist.
@@ -913,9 +919,9 @@ Ikev2ChildSaSilentDelete (
 
   SelectorSize  = sizeof (EFI_IPSEC_CONFIG_SELECTOR);
   Selector      = AllocateZeroPool (SelectorSize);
-  ASSERT (Selector != NULL);
-
-
+  if (Selector == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   while (1) {
     Status = EfiIpSecConfigGetNextSelector (
@@ -928,7 +934,11 @@ Ikev2ChildSaSilentDelete (
       FreePool (Selector);
 
       Selector = AllocateZeroPool (SelectorSize);
-      ASSERT (Selector != NULL);
+      if (Selector == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        break;
+      }
+
       Status   = EfiIpSecConfigGetNextSelector (
                    &Private->IpSecConfig,
                    IPsecConfigDataTypeSad,
@@ -948,7 +958,11 @@ Ikev2ChildSaSilentDelete (
       //
       IsRemoteFound   = TRUE;
       RemoteSelector  = AllocateZeroPool (SelectorSize);
-      ASSERT (RemoteSelector != NULL);
+      if (RemoteSelector == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        break;
+      }
+
       CopyMem (RemoteSelector, Selector, SelectorSize);
     }
 
@@ -959,7 +973,11 @@ Ikev2ChildSaSilentDelete (
       //
       IsLocalFound  = TRUE;
       LocalSelector = AllocateZeroPool (SelectorSize);
-      ASSERT (LocalSelector != NULL);
+      if (LocalSelector == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        break;
+      }
+
       CopyMem (LocalSelector, Selector, SelectorSize);
     }
   }
@@ -1275,7 +1293,11 @@ Ikev2InitializeSaData (
     ChildSaSession              = IKEV2_CHILD_SA_SESSION_FROM_COMMON (SessionCommon);
     ProposalData->ProtocolId    = IPSEC_PROTO_IPSEC_ESP;
     ProposalData->Spi           = AllocateZeroPool (sizeof (ChildSaSession->LocalPeerSpi));
-    ASSERT (ProposalData->Spi != NULL);
+    if (ProposalData->Spi == NULL) {
+      FreePool (SaData);
+      return NULL;
+    }
+
     CopyMem (
       ProposalData->Spi,
       &ChildSaSession->LocalPeerSpi,
@@ -1343,7 +1365,12 @@ Ikev2InitializeSaData (
     ProposalData->ProtocolId    = IPSEC_PROTO_IPSEC_ESP;
     ProposalData->NumTransforms = 3;
     ProposalData->Spi           = AllocateZeroPool (sizeof (ChildSaSession->LocalPeerSpi));
-    ASSERT (ProposalData->Spi != NULL);
+    if (ProposalData->Spi == NULL) {
+      FreePool (((IKEV2_PROPOSAL_DATA *) (SaData + 1))->Spi);
+      FreePool (SaData);
+      return NULL;
+    }
+
     CopyMem (
       ProposalData->Spi,
       &ChildSaSession->LocalPeerSpi,
@@ -1737,16 +1764,26 @@ Ikev2ResendNotify (
 
   @param[in, out]  ChildSaSession  Pointer to IKEV2_CHILD_SA_SESSION related to.
 
+  @retval EFI_SUCCESS            The operation complete successfully.
+  @retval EFI_OUT_OF_RESOURCES   If the required resource can't be allocated.
+
 **/
-VOID
+EFI_STATUS
 Ikev2ChildSaSessionSpdSelectorCreate (
   IN OUT IKEV2_CHILD_SA_SESSION *ChildSaSession
   )
 {
+  EFI_STATUS          Status;
+
+  Status = EFI_SUCCESS;
+
   if (ChildSaSession->Spd != NULL && ChildSaSession->Spd->Selector != NULL) {
     if (ChildSaSession->SpdSelector == NULL) {
       ChildSaSession->SpdSelector = AllocateZeroPool (sizeof (EFI_IPSEC_SPD_SELECTOR));
-      ASSERT (ChildSaSession->SpdSelector != NULL);
+      if (ChildSaSession->SpdSelector == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        return Status;
+      }
     }
     CopyMem (
       ChildSaSession->SpdSelector,
@@ -1758,18 +1795,34 @@ Ikev2ChildSaSessionSpdSelectorCreate (
                                                    sizeof (EFI_IP_ADDRESS_INFO),
                                                    ChildSaSession->Spd->Selector->RemoteAddress
                                                    );
+    if (ChildSaSession->SpdSelector->RemoteAddress == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+
+      FreePool (ChildSaSession->SpdSelector);
+
+      return Status;
+    }
+
     ChildSaSession->SpdSelector->LocalAddress = AllocateCopyPool (
                                                   ChildSaSession->Spd->Selector->LocalAddressCount *
                                                   sizeof (EFI_IP_ADDRESS_INFO),
                                                   ChildSaSession->Spd->Selector->LocalAddress
                                                   );
+    if (ChildSaSession->SpdSelector->LocalAddress == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
 
-    ASSERT (ChildSaSession->SpdSelector->LocalAddress != NULL);
-    ASSERT (ChildSaSession->SpdSelector->RemoteAddress != NULL);
+      FreePool (ChildSaSession->SpdSelector->RemoteAddress);
+
+      FreePool (ChildSaSession->SpdSelector);
+
+      return Status;
+    }
 
     ChildSaSession->SpdSelector->RemoteAddressCount = ChildSaSession->Spd->Selector->RemoteAddressCount;
     ChildSaSession->SpdSelector->LocalAddressCount = ChildSaSession->Spd->Selector->LocalAddressCount;
   }
+
+  return Status;
 }
 
 /**
@@ -1794,7 +1847,9 @@ Ikev2ChildSaSessionCreate (
   // Create a new ChildSaSession.Insert it into processing list and initiate the common parameters.
   //
   ChildSaSession = Ikev2ChildSaSessionAlloc (UdpService, IkeSaSession);
-  ASSERT (ChildSaSession != NULL);
+  if (ChildSaSession == NULL) {
+    return NULL;
+  }
 
   //
   // Set the specific parameters.
@@ -1815,18 +1870,29 @@ Ikev2ChildSaSessionCreate (
   // The ChildSaSession->SpdSelector might be changed after the traffic selector
   // negoniation and it will be copied into the SAData after ChildSA established.
   //
-  Ikev2ChildSaSessionSpdSelectorCreate (ChildSaSession);
+  if (EFI_ERROR (Ikev2ChildSaSessionSpdSelectorCreate (ChildSaSession))) {
+    Ikev2ChildSaSessionFree (ChildSaSession);
+    return NULL;
+  }
 
   //
   // Copy first NiBlock and NrBlock to ChildSa Session
   //
   ChildSaSession->NiBlock   = AllocateZeroPool (IkeSaSession->NiBlkSize);
-  ASSERT (ChildSaSession->NiBlock != NULL);
+  if (ChildSaSession->NiBlock == NULL) {
+    Ikev2ChildSaSessionFree (ChildSaSession);
+    return NULL;
+  }
+
   ChildSaSession->NiBlkSize = IkeSaSession->NiBlkSize;
   CopyMem (ChildSaSession->NiBlock, IkeSaSession->NiBlock, IkeSaSession->NiBlkSize);
 
   ChildSaSession->NrBlock   = AllocateZeroPool (IkeSaSession->NrBlkSize);
-  ASSERT (ChildSaSession->NrBlock != NULL);
+  if (ChildSaSession->NrBlock == NULL) {
+    Ikev2ChildSaSessionFree (ChildSaSession);
+    return NULL;
+  }
+
   ChildSaSession->NrBlkSize = IkeSaSession->NrBlkSize;
   CopyMem (ChildSaSession->NrBlock, IkeSaSession->NrBlock, IkeSaSession->NrBlkSize);
 
@@ -2199,7 +2265,10 @@ Ikev2SaParseSaPayload (
             // Find the matched one.
             //
             IkeSaSession->SessionCommon.SaParams = AllocateZeroPool (sizeof (IKEV2_SA_PARAMS));
-            ASSERT (IkeSaSession->SessionCommon.SaParams != NULL);
+            if (IkeSaSession->SessionCommon.SaParams == NULL) {
+              return FALSE;
+            }
+
             IkeSaSession->SessionCommon.SaParams->EncAlgId   = PreferEncryptAlgorithm;
             IkeSaSession->SessionCommon.SaParams->EnckeyLen  = PreferEncryptKeylength;
             IkeSaSession->SessionCommon.SaParams->DhGroup    = PreferDhGroup;
@@ -2214,7 +2283,10 @@ Ikev2SaParseSaPayload (
                                    sizeof (IKEV2_PROPOSAL_DATA) +
                                    sizeof (IKEV2_TRANSFORM_DATA) * 4;
             IkeSaSession->SaData = AllocateZeroPool (SaDataSize);
-            ASSERT (IkeSaSession->SaData != NULL);
+            if (IkeSaSession->SaData == NULL) {
+              FreePool (IkeSaSession->SessionCommon.SaParams);
+              return FALSE;
+            }
 
             IkeSaSession->SaData->NumProposals  = 1;
 
@@ -2230,6 +2302,7 @@ Ikev2SaParseSaPayload (
               );
 
             ((IKEV2_PROPOSAL_DATA *) (IkeSaSession->SaData + 1))->ProposalIndex = 1;
+
             return TRUE;
           } else {
             PreferEncryptAlgorithm   = 0;
@@ -2305,7 +2378,10 @@ Ikev2SaParseSaPayload (
 
     if (IsMatch) {
         IkeSaSession->SessionCommon.SaParams = AllocateZeroPool (sizeof (IKEV2_SA_PARAMS));
-        ASSERT (IkeSaSession->SessionCommon.SaParams != NULL);
+        if (IkeSaSession->SessionCommon.SaParams == NULL) {
+          return FALSE;
+        }
+
         IkeSaSession->SessionCommon.SaParams->EncAlgId   = PreferEncryptAlgorithm;
         IkeSaSession->SessionCommon.SaParams->EnckeyLen  = PreferEncryptKeylength;
         IkeSaSession->SessionCommon.SaParams->DhGroup    = PreferDhGroup;
@@ -2316,6 +2392,7 @@ Ikev2SaParseSaPayload (
         return TRUE;
     }
   }
+
   return FALSE;
 }
 
@@ -2396,7 +2473,10 @@ Ikev2ChildSaParseSaPayload (
           // Find the matched one.
           //
           ChildSaSession->SessionCommon.SaParams = AllocateZeroPool (sizeof (IKEV2_SA_PARAMS));
-          ASSERT (ChildSaSession->SessionCommon.SaParams != NULL);
+          if (ChildSaSession->SessionCommon.SaParams == NULL) {
+            return FALSE;
+          }
+
           ChildSaSession->SessionCommon.SaParams->EncAlgId   = PreferEncryptAlgorithm;
           ChildSaSession->SessionCommon.SaParams->EnckeyLen  = PreferEncryptKeylength;
           ChildSaSession->SessionCommon.SaParams->IntegAlgId = PreferIntegrityAlgorithm;
@@ -2410,7 +2490,10 @@ Ikev2ChildSaParseSaPayload (
                                  sizeof (IKEV2_TRANSFORM_DATA) * 4;
 
           ChildSaSession->SaData = AllocateZeroPool (SaDataSize);
-          ASSERT (ChildSaSession->SaData != NULL);
+          if (ChildSaSession->SaData == NULL) {
+            FreePool (ChildSaSession->SessionCommon.SaParams);
+            return FALSE;
+          }
 
           ChildSaSession->SaData->NumProposals  = 1;
 
@@ -2431,7 +2514,14 @@ Ikev2ChildSaParseSaPayload (
                                                                           sizeof (ChildSaSession->LocalPeerSpi),
                                                                           &ChildSaSession->LocalPeerSpi
                                                                           );
-          ASSERT (((IKEV2_PROPOSAL_DATA *) (ChildSaSession->SaData + 1))->Spi != NULL);
+          if (((IKEV2_PROPOSAL_DATA *) (ChildSaSession->SaData + 1))->Spi == NULL) {
+            FreePool (ChildSaSession->SessionCommon.SaParams);
+
+            FreePool (ChildSaSession->SaData );
+
+            return FALSE;
+          }
+
           return TRUE;
 
         } else {
@@ -2501,7 +2591,10 @@ Ikev2ChildSaParseSaPayload (
     ProposalData  = (IKEV2_PROPOSAL_DATA *)((IKEV2_SA_DATA *)SaPayload->PayloadBuf + 1);
     if (IsMatch) {
         ChildSaSession->SessionCommon.SaParams = AllocateZeroPool (sizeof (IKEV2_SA_PARAMS));
-        ASSERT (ChildSaSession->SessionCommon.SaParams != NULL);
+        if (ChildSaSession->SessionCommon.SaParams == NULL) {
+          return FALSE;
+        }
+
         ChildSaSession->SessionCommon.SaParams->EncAlgId   = PreferEncryptAlgorithm;
         ChildSaSession->SessionCommon.SaParams->EnckeyLen  = PreferEncryptKeylength;
         ChildSaSession->SessionCommon.SaParams->IntegAlgId = PreferIntegrityAlgorithm;
@@ -2534,6 +2627,8 @@ Ikev2ChildSaParseSaPayload (
 
   @retval EFI_SUCCESS            The operation complete successfully.
   @retval EFI_INVALID_PARAMETER  If NumFragments is zero.
+                                 If the authentication algorithm given by HashAlgId
+                                 cannot be found.
   @retval EFI_OUT_OF_RESOURCES   If the required resource can't be allocated.
   @retval Others                 The operation is failed.
 
@@ -2570,6 +2665,10 @@ Ikev2SaGenerateKey (
   LocalFragments[2].Data = NULL;
 
   AuthKeyLength = IpSecGetHmacDigestLength (HashAlgId);
+  if (AuthKeyLength == 0) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   DigestSize    = AuthKeyLength;
   Digest        = AllocateZeroPool (AuthKeyLength);
 
@@ -2610,7 +2709,11 @@ Ikev2SaGenerateKey (
   }
 
   LocalFragments[1].Data     = AllocateZeroPool (FragmentsSize);
-  ASSERT (LocalFragments[1].Data != NULL);
+  if (LocalFragments[1].Data == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
   LocalFragments[1].DataSize = FragmentsSize;
 
   //
@@ -2636,7 +2739,11 @@ Ikev2SaGenerateKey (
   // Allocate buffer for the first fragment
   //
   LocalFragments[0].Data     = AllocateZeroPool (AuthKeyLength);
-  ASSERT (LocalFragments[0].Data != NULL);
+  if (LocalFragments[0].Data == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Exit;
+  }
+
   LocalFragments[0].DataSize = AuthKeyLength;
 
   Round = (OutputKeyLength - 1) / AuthKeyLength + 1;

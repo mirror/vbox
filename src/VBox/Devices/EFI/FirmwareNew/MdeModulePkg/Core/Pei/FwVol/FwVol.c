@@ -1,7 +1,8 @@
 /** @file
   Pei Core Firmware File System service routines.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2015 HP Development Company, L.P.
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -74,18 +75,27 @@ EFI_PEI_PPI_DESCRIPTOR  mPeiFfs3FvPpiList = {
 };
 
 /**
-Required Alignment             Alignment Value in FFS         Alignment Value in
-(bytes)                        Attributes Field               Firmware Volume Interfaces
-1                                    0                                     0
-16                                   1                                     4
-128                                  2                                     7
-512                                  3                                     9
-1 KB                                 4                                     10
-4 KB                                 5                                     12
-32 KB                                6                                     15
-64 KB                                7                                     16
+Required Alignment   Alignment Value in FFS   FFS_ATTRIB_DATA_ALIGNMENT2   Alignment Value in
+(bytes)              Attributes Field         in FFS Attributes Field      Firmware Volume Interfaces
+1                               0                          0                            0
+16                              1                          0                            4
+128                             2                          0                            7
+512                             3                          0                            9
+1 KB                            4                          0                            10
+4 KB                            5                          0                            12
+32 KB                           6                          0                            15
+64 KB                           7                          0                            16
+128 KB                          0                          1                            17
+256 KB                          1                          1                            18
+512 KB                          2                          1                            19
+1 MB                            3                          1                            20
+2 MB                            4                          1                            21
+4 MB                            5                          1                            22
+8 MB                            6                          1                            23
+16 MB                           7                          1                            24
 **/
 UINT8 mFvAttributes[] = {0, 4, 7, 9, 10, 12, 15, 16};
+UINT8 mFvAttributes2[] = {17, 18, 19, 20, 21, 22, 23, 24};
 
 /**
   Convert the FFS File Attributes to FV File Attributes
@@ -106,7 +116,11 @@ FfsAttributes2FvFileAttributes (
   DataAlignment = (UINT8) ((FfsAttributes & FFS_ATTRIB_DATA_ALIGNMENT) >> 3);
   ASSERT (DataAlignment < 8);
 
-  FileAttribute = (EFI_FV_FILE_ATTRIBUTES) mFvAttributes[DataAlignment];
+  if ((FfsAttributes & FFS_ATTRIB_DATA_ALIGNMENT_2) != 0) {
+    FileAttribute = (EFI_FV_FILE_ATTRIBUTES) mFvAttributes2[DataAlignment];
+  } else {
+    FileAttribute = (EFI_FV_FILE_ATTRIBUTES) mFvAttributes[DataAlignment];
+  }
 
   if ((FfsAttributes & FFS_ATTRIB_FIXED) == FFS_ATTRIB_FIXED) {
     FileAttribute |= EFI_FV_FILE_ATTRIB_FIXED;
@@ -203,16 +217,34 @@ FileHandleToVolume (
   UINTN                       Index;
   PEI_CORE_INSTANCE           *PrivateData;
   EFI_FIRMWARE_VOLUME_HEADER  *FwVolHeader;
+  UINTN                       BestIndex;
 
   PrivateData = PEI_CORE_INSTANCE_FROM_PS_THIS (GetPeiServicesTablePointer ());
+  BestIndex   = PrivateData->FvCount;
 
+  //
+  // Find the best matched FV image that includes this FileHandle.
+  // FV may include the child FV, and they are in the same continuous space.
+  // If FileHandle is from the child FV, the updated logic can find its matched FV.
+  //
   for (Index = 0; Index < PrivateData->FvCount; Index++) {
     FwVolHeader = PrivateData->Fv[Index].FvHeader;
     if (((UINT64) (UINTN) FileHandle > (UINT64) (UINTN) FwVolHeader ) &&   \
         ((UINT64) (UINTN) FileHandle <= ((UINT64) (UINTN) FwVolHeader + FwVolHeader->FvLength - 1))) {
-      return &PrivateData->Fv[Index];
+      if (BestIndex == PrivateData->FvCount) {
+        BestIndex = Index;
+      } else {
+        if ((UINT64) (UINTN) PrivateData->Fv[BestIndex].FvHeader < (UINT64) (UINTN) FwVolHeader) {
+          BestIndex = Index;
+        }
+      }
     }
   }
+
+  if (BestIndex < PrivateData->FvCount) {
+    return &PrivateData->Fv[BestIndex];
+  }
+
   return NULL;
 }
 
@@ -482,7 +514,7 @@ PeiInitializeFv (
     "The %dth FV start address is 0x%11p, size is 0x%08x, handle is 0x%p\n",
     (UINT32) PrivateData->FvCount,
     (VOID *) BfvHeader,
-    BfvHeader->FvLength,
+    (UINT32) BfvHeader->FvLength,
     FvHandle
     ));
   PrivateData->FvCount ++;
@@ -526,6 +558,7 @@ FirmwareVolmeInfoPpiNotifyCallback (
   EFI_PEI_FILE_HANDLE                   FileHandle;
   VOID                                  *DepexData;
   BOOLEAN                               IsFvInfo2;
+  UINTN                                 CurFvCount;
 
   Status       = EFI_SUCCESS;
   PrivateData  = PEI_CORE_INSTANCE_FROM_PS_THIS (PeiServices);
@@ -543,6 +576,20 @@ FirmwareVolmeInfoPpiNotifyCallback (
     CopyMem (&FvInfo2Ppi, Ppi, sizeof (EFI_PEI_FIRMWARE_VOLUME_INFO_PPI));
     FvInfo2Ppi.AuthenticationStatus = 0;
     IsFvInfo2 = FALSE;
+  }
+
+  if (CompareGuid (&FvInfo2Ppi.FvFormat, &gEfiFirmwareFileSystem2Guid)) {
+    //
+    // gEfiFirmwareFileSystem2Guid is specified for FvFormat, then here to check the
+    // FileSystemGuid pointed by FvInfo against gEfiFirmwareFileSystem2Guid to make sure
+    // FvInfo has the firmware file system 2 format.
+    //
+    // If the ASSERT really appears, FvFormat needs to be specified correctly, for example,
+    // gEfiFirmwareFileSystem3Guid can be used for firmware file system 3 format, or
+    // ((EFI_FIRMWARE_VOLUME_HEADER *) FvInfo)->FileSystemGuid can be just used for both
+    // firmware file system 2 and 3 format.
+    //
+    ASSERT (CompareGuid (&(((EFI_FIRMWARE_VOLUME_HEADER *) FvInfo2Ppi.FvInfo)->FileSystemGuid), &gEfiFirmwareFileSystem2Guid));
   }
 
   //
@@ -591,10 +638,11 @@ FirmwareVolmeInfoPpiNotifyCallback (
     PrivateData->Fv[PrivateData->FvCount].FvPpi    = FvPpi;
     PrivateData->Fv[PrivateData->FvCount].FvHandle = FvHandle;
     PrivateData->Fv[PrivateData->FvCount].AuthenticationStatus = FvInfo2Ppi.AuthenticationStatus;
+    CurFvCount = PrivateData->FvCount;
     DEBUG ((
       EFI_D_INFO,
       "The %dth FV start address is 0x%11p, size is 0x%08x, handle is 0x%p\n",
-      (UINT32) PrivateData->FvCount,
+      (UINT32) CurFvCount,
       (VOID *) FvInfo2Ppi.FvInfo,
       FvInfo2Ppi.FvInfoSize,
       FvHandle
@@ -628,8 +676,8 @@ FirmwareVolmeInfoPpiNotifyCallback (
           }
         }
 
-        DEBUG ((EFI_D_INFO, "Found firmware volume Image File %p in FV[%d] %p\n", FileHandle, PrivateData->FvCount - 1, FvHandle));
-        ProcessFvFile (PrivateData, &PrivateData->Fv[PrivateData->FvCount - 1], FileHandle);
+        DEBUG ((EFI_D_INFO, "Found firmware volume Image File %p in FV[%d] %p\n", FileHandle, CurFvCount, FvHandle));
+        ProcessFvFile (PrivateData, &PrivateData->Fv[CurFvCount], FileHandle);
       }
     } while (FileHandle != NULL);
   } else {
@@ -878,17 +926,19 @@ ProcessSection (
         }
 
         if (!EFI_ERROR (Status)) {
-          //
-          // Update cache section data.
-          //
-          if (PrivateData->CacheSection.AllSectionCount < CACHE_SETION_MAX_NUMBER) {
-            PrivateData->CacheSection.AllSectionCount ++;
+          if ((Authentication & EFI_AUTH_STATUS_NOT_TESTED) == 0) {
+            //
+            // Update cache section data.
+            //
+            if (PrivateData->CacheSection.AllSectionCount < CACHE_SETION_MAX_NUMBER) {
+              PrivateData->CacheSection.AllSectionCount ++;
+            }
+            PrivateData->CacheSection.Section [PrivateData->CacheSection.SectionIndex]     = Section;
+            PrivateData->CacheSection.SectionData [PrivateData->CacheSection.SectionIndex] = PpiOutput;
+            PrivateData->CacheSection.SectionSize [PrivateData->CacheSection.SectionIndex] = PpiOutputSize;
+            PrivateData->CacheSection.AuthenticationStatus [PrivateData->CacheSection.SectionIndex] = Authentication;
+            PrivateData->CacheSection.SectionIndex = (PrivateData->CacheSection.SectionIndex + 1)%CACHE_SETION_MAX_NUMBER;
           }
-          PrivateData->CacheSection.Section [PrivateData->CacheSection.SectionIndex]     = Section;
-          PrivateData->CacheSection.SectionData [PrivateData->CacheSection.SectionIndex] = PpiOutput;
-          PrivateData->CacheSection.SectionSize [PrivateData->CacheSection.SectionIndex] = PpiOutputSize;
-          PrivateData->CacheSection.AuthenticationStatus [PrivateData->CacheSection.SectionIndex] = Authentication;
-          PrivateData->CacheSection.SectionIndex = (PrivateData->CacheSection.SectionIndex + 1)%CACHE_SETION_MAX_NUMBER;
 
           TempAuthenticationStatus = 0;
           Status = ProcessSection (
@@ -1245,6 +1295,68 @@ PeiFfsGetVolumeInfo (
 }
 
 /**
+  Find USED_SIZE FV_EXT_TYPE entry in FV extension header and get the FV used size.
+
+  @param[in]  FvHeader      Pointer to FV header.
+  @param[out] FvUsedSize    Pointer to FV used size returned,
+                            only valid if USED_SIZE FV_EXT_TYPE entry is found.
+  @param[out] EraseByte     Pointer to erase byte returned,
+                            only valid if USED_SIZE FV_EXT_TYPE entry is found.
+
+  @retval TRUE              USED_SIZE FV_EXT_TYPE entry is found,
+                            FV used size and erase byte are returned.
+  @retval FALSE             No USED_SIZE FV_EXT_TYPE entry found.
+
+**/
+BOOLEAN
+GetFvUsedSize (
+  IN EFI_FIRMWARE_VOLUME_HEADER     *FvHeader,
+  OUT UINT32                        *FvUsedSize,
+  OUT UINT8                         *EraseByte
+  )
+{
+  UINT16                                        ExtHeaderOffset;
+  EFI_FIRMWARE_VOLUME_EXT_HEADER                *ExtHeader;
+  EFI_FIRMWARE_VOLUME_EXT_ENTRY                 *ExtEntryList;
+  EFI_FIRMWARE_VOLUME_EXT_ENTRY_USED_SIZE_TYPE  *ExtEntryUsedSize;
+
+  ExtHeaderOffset = ReadUnaligned16 (&FvHeader->ExtHeaderOffset);
+  if (ExtHeaderOffset != 0) {
+    ExtHeader    = (EFI_FIRMWARE_VOLUME_EXT_HEADER *) ((UINT8 *) FvHeader + ExtHeaderOffset);
+    ExtEntryList = (EFI_FIRMWARE_VOLUME_EXT_ENTRY *) (ExtHeader + 1);
+    while ((UINTN) ExtEntryList < ((UINTN) ExtHeader + ReadUnaligned32 (&ExtHeader->ExtHeaderSize))) {
+      if (ReadUnaligned16 (&ExtEntryList->ExtEntryType) == EFI_FV_EXT_TYPE_USED_SIZE_TYPE) {
+        //
+        // USED_SIZE FV_EXT_TYPE entry is found.
+        //
+        ExtEntryUsedSize = (EFI_FIRMWARE_VOLUME_EXT_ENTRY_USED_SIZE_TYPE *) ExtEntryList;
+        *FvUsedSize = ReadUnaligned32 (&ExtEntryUsedSize->UsedSize);
+        if ((ReadUnaligned32 (&FvHeader->Attributes) & EFI_FVB2_ERASE_POLARITY) != 0) {
+          *EraseByte = 0xFF;
+        } else {
+          *EraseByte = 0;
+        }
+        DEBUG ((
+          DEBUG_INFO,
+          "FV at 0x%x has 0x%x used size, and erase byte is 0x%02x\n",
+          FvHeader,
+          *FvUsedSize,
+          *EraseByte
+          ));
+        return TRUE;
+      }
+      ExtEntryList = (EFI_FIRMWARE_VOLUME_EXT_ENTRY *)
+                     ((UINT8 *) ExtEntryList + ReadUnaligned16 (&ExtEntryList->ExtEntrySize));
+    }
+  }
+
+  //
+  // No USED_SIZE FV_EXT_TYPE entry found.
+  //
+  return FALSE;
+}
+
+/**
   Get Fv image from the FV type file, then install FV INFO(2) ppi, Build FV hob.
 
   @param PrivateData          PeiCore's private data structure
@@ -1276,6 +1388,8 @@ ProcessFvFile (
   EFI_FV_FILE_INFO              FileInfo;
   UINT64                        FvLength;
   UINT32                        AuthenticationStatus;
+  UINT32                        FvUsedSize;
+  UINT8                         EraseByte;
 
   //
   // Check if this EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE file has already
@@ -1341,8 +1455,16 @@ ProcessFvFile (
       FvAlignment = 8;
     }
 
+    DEBUG ((
+      DEBUG_INFO,
+      "%a() FV at 0x%x, FvAlignment required is 0x%x\n",
+      __FUNCTION__,
+      FvHeader,
+      FvAlignment
+      ));
+
     //
-    // Check FvImage
+    // Check FvImage alignment.
     //
     if ((UINTN) FvHeader % FvAlignment != 0) {
       FvLength    = ReadUnaligned64 (&FvHeader->FvLength);
@@ -1350,7 +1472,19 @@ ProcessFvFile (
       if (NewFvBuffer == NULL) {
         return EFI_OUT_OF_RESOURCES;
       }
-      CopyMem (NewFvBuffer, FvHeader, (UINTN) FvLength);
+      if (GetFvUsedSize (FvHeader, &FvUsedSize, &EraseByte)) {
+        //
+        // Copy the used bytes and fill the rest with the erase value.
+        //
+        CopyMem (NewFvBuffer, FvHeader, (UINTN) FvUsedSize);
+        SetMem (
+          (UINT8 *) NewFvBuffer + FvUsedSize,
+          (UINTN) (FvLength - FvUsedSize),
+          EraseByte
+          );
+      } else {
+        CopyMem (NewFvBuffer, FvHeader, (UINTN) FvLength);
+      }
       FvHeader = (EFI_FIRMWARE_VOLUME_HEADER*) NewFvBuffer;
     }
   }
@@ -1363,22 +1497,24 @@ ProcessFvFile (
 
   //
   // Install FvInfo(2) Ppi
+  // NOTE: FvInfo2 must be installed before FvInfo so that recursive processing of encapsulated
+  // FVs inherit the proper AuthenticationStatus.
   //
+  PeiServicesInstallFvInfo2Ppi(
+    &FvHeader->FileSystemGuid,
+    (VOID**)FvHeader,
+    (UINT32)FvHeader->FvLength,
+    &ParentFvImageInfo.FvName,
+    &FileInfo.FileName,
+    AuthenticationStatus
+    );
+
   PeiServicesInstallFvInfoPpi (
     &FvHeader->FileSystemGuid,
     (VOID**) FvHeader,
     (UINT32) FvHeader->FvLength,
     &ParentFvImageInfo.FvName,
     &FileInfo.FileName
-    );
-
-  PeiServicesInstallFvInfo2Ppi (
-    &FvHeader->FileSystemGuid,
-    (VOID**) FvHeader,
-    (UINT32) FvHeader->FvLength,
-    &ParentFvImageInfo.FvName,
-    &FileInfo.FileName,
-    AuthenticationStatus
     );
 
   //
@@ -1396,6 +1532,18 @@ ProcessFvFile (
   BuildFv2Hob (
     (EFI_PHYSICAL_ADDRESS) (UINTN) FvHeader,
     FvHeader->FvLength,
+    &ParentFvImageInfo.FvName,
+    &FileInfo.FileName
+    );
+
+  //
+  // Build FV3 HOB with authentication status to be propagated to DXE.
+  //
+  BuildFv3Hob (
+    (EFI_PHYSICAL_ADDRESS) (UINTN) FvHeader,
+    FvHeader->FvLength,
+    AuthenticationStatus,
+    TRUE,
     &ParentFvImageInfo.FvName,
     &FileInfo.FileName
     );
@@ -1996,7 +2144,7 @@ FindNextCoreFvHandle (
 /**
   After PeiCore image is shadowed into permanent memory, all build-in FvPpi should
   be re-installed with the instance in permanent memory and all cached FvPpi pointers in
-  PrivateData->Fv[] array should be fixed up to be pointed to the one in permenant
+  PrivateData->Fv[] array should be fixed up to be pointed to the one in permanent
   memory.
 
   @param PrivateData   Pointer to PEI_CORE_INSTANCE.
@@ -2195,6 +2343,7 @@ ThirdPartyFvPpiNotifyCallback (
   UINTN                        FvIndex;
   EFI_PEI_FILE_HANDLE          FileHandle;
   VOID                         *DepexData;
+  UINTN                        CurFvCount;
 
   PrivateData  = PEI_CORE_INSTANCE_FROM_PS_THIS (PeiServices);
   FvPpi = (EFI_PEI_FIRMWARE_VOLUME_PPI*) Ppi;
@@ -2243,10 +2392,11 @@ ThirdPartyFvPpiNotifyCallback (
     PrivateData->Fv[PrivateData->FvCount].FvPpi    = FvPpi;
     PrivateData->Fv[PrivateData->FvCount].FvHandle = FvHandle;
     PrivateData->Fv[PrivateData->FvCount].AuthenticationStatus = AuthenticationStatus;
+    CurFvCount = PrivateData->FvCount;
     DEBUG ((
       EFI_D_INFO,
       "The %dth FV start address is 0x%11p, size is 0x%08x, handle is 0x%p\n",
-      (UINT32) PrivateData->FvCount,
+      (UINT32) CurFvCount,
       (VOID *) FvInfo,
       FvInfoSize,
       FvHandle
@@ -2280,8 +2430,8 @@ ThirdPartyFvPpiNotifyCallback (
           }
         }
 
-        DEBUG ((EFI_D_INFO, "Found firmware volume Image File %p in FV[%d] %p\n", FileHandle, PrivateData->FvCount - 1, FvHandle));
-        ProcessFvFile (PrivateData, &PrivateData->Fv[PrivateData->FvCount - 1], FileHandle);
+        DEBUG ((EFI_D_INFO, "Found firmware volume Image File %p in FV[%d] %p\n", FileHandle, CurFvCount, FvHandle));
+        ProcessFvFile (PrivateData, &PrivateData->Fv[CurFvCount], FileHandle);
       }
     } while (FileHandle != NULL);
   } while (TRUE);

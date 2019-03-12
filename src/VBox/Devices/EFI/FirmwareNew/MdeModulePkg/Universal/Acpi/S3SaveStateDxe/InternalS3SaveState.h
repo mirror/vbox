@@ -1,7 +1,7 @@
 /** @file
   Internal header file for S3 Boot Script Saver state driver.
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions
@@ -26,7 +26,24 @@
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/S3BootScriptLib.h>
 #include <Library/SmbusLib.h>
+#include <Library/PcdLib.h>
 #include <IndustryStandard/SmBus.h>
+#include <Guid/EventGroup.h>
+
+/**
+  Callback function executed when the EndOfDxe event group is signaled.
+
+  @param[in] Event      Event whose notification function is being invoked.
+  @param[in] Context    The pointer to the notification function's context, which
+                        is implementation-dependent.
+**/
+VOID
+EFIAPI
+AcpiS3ContextSaveOnEndOfDxe (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  );
+
 /**
   Adds a record into S3 boot script table.
 

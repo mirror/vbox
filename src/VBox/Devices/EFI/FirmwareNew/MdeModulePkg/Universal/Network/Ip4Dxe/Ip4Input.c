@@ -1,7 +1,9 @@
 /** @file
   IP4 input process.
 
-Copyright (c) 2005 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2005 - 2017, Intel Corporation. All rights reserved.<BR>
+(C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -512,6 +514,12 @@ Ip4IpSecProcessPacket (
   IP4_HEAD                  ZeroHead;
 
   Status        = EFI_SUCCESS;
+
+  if (!mIpSec2Installed) {
+    goto ON_EXIT;
+  }
+  ASSERT (mIpSec != NULL);
+
   Packet        = *Netbuf;
   RecycleEvent  = NULL;
   IpSecWrap     = NULL;
@@ -520,13 +528,6 @@ Ip4IpSecProcessPacket (
   FragmentCount = Packet->BlockOpNum;
 
   ZeroMem (&ZeroHead, sizeof (IP4_HEAD));
-
-  if (mIpSec == NULL) {
-    gBS->LocateProtocol (&gEfiIpSec2ProtocolGuid, NULL, (VOID **) &mIpSec);
-    if (mIpSec == NULL) {
-      goto ON_EXIT;
-    }
-  }
 
   //
   // Check whether the IPsec enable variable is set.

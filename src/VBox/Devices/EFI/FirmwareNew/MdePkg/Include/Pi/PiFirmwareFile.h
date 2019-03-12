@@ -1,7 +1,7 @@
 /** @file
   The firmware file related definitions in PI.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available under
 the terms and conditions of the BSD License that accompanies this distribution.
 The full text of the license may be found at
@@ -11,7 +11,7 @@ THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
   @par Revision Reference:
-  PI Version 1.2.
+  PI Version 1.6.
 
 **/
 
@@ -86,6 +86,7 @@ typedef UINT8 EFI_FFS_FILE_STATE;
 /// FFS File Attributes.
 ///
 #define FFS_ATTRIB_LARGE_FILE         0x01
+#define FFS_ATTRIB_DATA_ALIGNMENT_2   0x02
 #define FFS_ATTRIB_FIXED              0x04
 #define FFS_ATTRIB_DATA_ALIGNMENT     0x38
 #define FFS_ATTRIB_CHECKSUM           0x40
@@ -173,7 +174,7 @@ typedef struct {
   /// If FFS_ATTRIB_LARGE_FILE is set in Attributes, then ExtendedSize exists and Size must be set to zero.
   /// If FFS_ATTRIB_LARGE_FILE is not set then EFI_FFS_FILE_HEADER is used.
   ///
-  UINT32                    ExtendedSize;
+  UINT64                    ExtendedSize;
 } EFI_FFS_FILE_HEADER2;
 
 #define IS_FFS_FILE2(FfsFileHeaderPtr) \
@@ -183,7 +184,7 @@ typedef struct {
     ((UINT32) (*((UINT32 *) ((EFI_FFS_FILE_HEADER *) (UINTN) FfsFileHeaderPtr)->Size) & 0x00ffffff))
 
 #define FFS_FILE2_SIZE(FfsFileHeaderPtr) \
-    (((EFI_FFS_FILE_HEADER2 *) (UINTN) FfsFileHeaderPtr)->ExtendedSize)
+    ((UINT32) (((EFI_FFS_FILE_HEADER2 *) (UINTN) FfsFileHeaderPtr)->ExtendedSize))
 
 typedef UINT8 EFI_SECTION_TYPE;
 

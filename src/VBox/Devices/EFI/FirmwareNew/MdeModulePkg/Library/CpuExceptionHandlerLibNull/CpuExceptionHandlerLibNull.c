@@ -1,7 +1,7 @@
 /** @file
   CPU Exception Handler library implementition with empty functions.
 
-  Copyright (c) 2012 - 2013, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2012 - 2017, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -94,6 +94,54 @@ RegisterCpuInterruptHandler (
   IN EFI_CPU_INTERRUPT_HANDLER     InterruptHandler
   )
 {
-  return EFI_SUCCESS;
+  return EFI_UNSUPPORTED;
+}
+
+/**
+  Display processor context.
+
+  @param[in] ExceptionType  Exception type.
+  @param[in] SystemContext  Processor context to be display.
+**/
+VOID
+EFIAPI
+DumpCpuContext (
+  IN EFI_EXCEPTION_TYPE   ExceptionType,
+  IN EFI_SYSTEM_CONTEXT   SystemContext
+  )
+{
+}
+
+/**
+  Initializes all CPU exceptions entries with optional extra initializations.
+
+  By default, this method should include all functionalities implemented by
+  InitializeCpuExceptionHandlers(), plus extra initialization works, if any.
+  This could be done by calling InitializeCpuExceptionHandlers() directly
+  in this method besides the extra works.
+
+  InitData is optional and its use and content are processor arch dependent.
+  The typical usage of it is to convey resources which have to be reserved
+  elsewhere and are necessary for the extra initializations of exception.
+
+  @param[in]  VectorInfo    Pointer to reserved vector list.
+  @param[in]  InitData      Pointer to data optional for extra initializations
+                            of exception.
+
+  @retval EFI_SUCCESS             The exceptions have been successfully
+                                  initialized.
+  @retval EFI_INVALID_PARAMETER   VectorInfo or InitData contains invalid
+                                  content.
+  @retval EFI_UNSUPPORTED         This function is not supported.
+
+**/
+EFI_STATUS
+EFIAPI
+InitializeCpuExceptionHandlersEx (
+  IN EFI_VECTOR_HANDOFF_INFO            *VectorInfo OPTIONAL,
+  IN CPU_EXCEPTION_INIT_DATA            *InitData OPTIONAL
+  )
+{
+  return InitializeCpuExceptionHandlers (VectorInfo);
 }
 

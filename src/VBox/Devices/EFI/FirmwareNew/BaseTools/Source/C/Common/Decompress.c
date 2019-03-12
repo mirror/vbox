@@ -2,7 +2,7 @@
 Decompressor. Algorithm Ported from OPSD code (Decomp.asm) for Efi and Tiano
 compress algorithm.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -15,6 +15,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "Decompress.h"
 
 //
@@ -88,11 +89,11 @@ Returns: (VOID)
 
 --*/
 {
-  Sd->mBitBuf = (UINT32) (Sd->mBitBuf << NumOfBits);
+  Sd->mBitBuf = (UINT32) (((UINT64)Sd->mBitBuf) << NumOfBits);
 
   while (NumOfBits > Sd->mBitCount) {
 
-    Sd->mBitBuf |= (UINT32) (Sd->mSubBitBuf << (NumOfBits = (UINT16) (NumOfBits - Sd->mBitCount)));
+    Sd->mBitBuf |= (UINT32) (((UINT64)Sd->mSubBitBuf) << (NumOfBits = (UINT16) (NumOfBits - Sd->mBitCount)));
 
     if (Sd->mCompSize > 0) {
       //
@@ -193,12 +194,16 @@ Returns:
   UINT16  Avail;
   UINT16  NextCode;
   UINT16  Mask;
+  UINT16  MaxTableLength;
 
   for (Index = 1; Index <= 16; Index++) {
     Count[Index] = 0;
   }
 
   for (Index = 0; Index < NumOfChar; Index++) {
+    if (BitLen[Index] > 16) {
+      return (UINT16) BAD_TABLE;
+    }
     Count[BitLen[Index]]++;
   }
 
@@ -236,11 +241,12 @@ Returns:
 
   Avail = NumOfChar;
   Mask  = (UINT16) (1U << (15 - TableBits));
+  MaxTableLength = (UINT16) (1U << TableBits);
 
   for (Char = 0; Char < NumOfChar; Char++) {
 
     Len = BitLen[Char];
-    if (Len == 0) {
+    if (Len == 0 || Len >= 17) {
       continue;
     }
 
@@ -249,6 +255,9 @@ Returns:
     if (Len <= TableBits) {
 
       for (Index = Start[Len]; Index < NextCode; Index++) {
+        if (Index >= MaxTableLength) {
+          return (UINT16) BAD_TABLE;
+        }
         Table[Index] = Char;
       }
 
@@ -373,6 +382,8 @@ Returns:
   UINT16  Index;
   UINT32  Mask;
 
+  assert (nn <= NPT);
+
   Number = (UINT16) GetBits (Sd, nbit);
 
   if (Number == 0) {
@@ -391,7 +402,7 @@ Returns:
 
   Index = 0;
 
-  while (Index < Number) {
+  while (Index < Number && Index < NPT) {
 
     CharC = (UINT16) (Sd->mBitBuf >> (BITBUFSIZ - 3));
 
@@ -410,14 +421,14 @@ Returns:
     if (Index == Special) {
       CharC = (UINT16) GetBits (Sd, 2);
       CharC--;
-      while ((INT16) (CharC) >= 0) {
+      while ((INT16) (CharC) >= 0 && Index < NPT) {
         Sd->mPTLen[Index++] = 0;
         CharC--;
       }
     }
   }
 
-  while (Index < nn) {
+  while (Index < nn && Index < NPT) {
     Sd->mPTLen[Index++] = 0;
   }
 
@@ -640,12 +651,22 @@ Returns: (VOID)
 
       BytesRemain--;
       while ((INT16) (BytesRemain) >= 0) {
-        Sd->mDstBase[Sd->mOutBuf++] = Sd->mDstBase[DataIdx++];
         if (Sd->mOutBuf >= Sd->mOrigSize) {
           return ;
         }
+        if (DataIdx >= Sd->mOrigSize) {
+          Sd->mBadTableFlag = (UINT16) BAD_TABLE;
+          return ;
+        }
+        Sd->mDstBase[Sd->mOutBuf++] = Sd->mDstBase[DataIdx++];
 
         BytesRemain--;
+      }
+      //
+      // Once mOutBuf is fully filled, directly return
+      //
+      if (Sd->mOutBuf >= Sd->mOrigSize) {
+        return ;
       }
     }
   }
@@ -675,12 +696,13 @@ Arguments:
 
 Returns:
 
-  EFI_SUCCESS           - The size of destination buffer and the size of scratch buffer are successull retrieved.
+  EFI_SUCCESS           - The size of destination buffer and the size of scratch buffer are successfully retrieved.
   EFI_INVALID_PARAMETER - The source data is corrupted
 
 --*/
 {
   UINT8 *Src;
+  UINT32 CompSize;
 
   *ScratchSize  = sizeof (SCRATCH_DATA);
 
@@ -689,7 +711,13 @@ Returns:
     return EFI_INVALID_PARAMETER;
   }
 
+  CompSize = Src[0] + (Src[1] << 8) + (Src[2] << 16) + (Src[3] << 24);
   *DstSize = Src[4] + (Src[5] << 8) + (Src[6] << 16) + (Src[7] << 24);
+
+  if (SrcSize < CompSize + 8 || (CompSize + 8) < 8) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   return EFI_SUCCESS;
 }
 
@@ -749,7 +777,7 @@ Returns:
   CompSize  = Src[0] + (Src[1] << 8) + (Src[2] << 16) + (Src[3] << 24);
   OrigSize  = Src[4] + (Src[5] << 8) + (Src[6] << 16) + (Src[7] << 24);
 
-  if (SrcSize < CompSize + 8) {
+  if (SrcSize < CompSize + 8 || (CompSize + 8) < 8) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -810,7 +838,7 @@ Arguments:
 
 Returns:
 
-  EFI_SUCCESS           - The size of destination buffer and the size of scratch buffer are successull retrieved.
+  EFI_SUCCESS           - The size of destination buffer and the size of scratch buffer are successfully retrieved.
   EFI_INVALID_PARAMETER - The source data is corrupted
 
 --*/
@@ -840,7 +868,7 @@ Arguments:
 
 Returns:
 
-  EFI_SUCCESS           - The size of destination buffer and the size of scratch buffer are successull retrieved.
+  EFI_SUCCESS           - The size of destination buffer and the size of scratch buffer are successfully retrieved.
   EFI_INVALID_PARAMETER - The source data is corrupted
 
 --*/
@@ -931,7 +959,9 @@ Extract (
   UINT32        ScratchSize;
   EFI_STATUS    Status;
 
-  Status = EFI_SUCCESS;
+  Scratch = NULL;
+  Status  = EFI_SUCCESS;
+
   switch (Algorithm) {
   case 0:
     *Destination = (VOID *)malloc(SrcSize);
@@ -945,28 +975,42 @@ Extract (
     Status = EfiGetInfo(Source, SrcSize, DstSize, &ScratchSize);
     if (Status == EFI_SUCCESS) {
       Scratch = (VOID *)malloc(ScratchSize);
-      *Destination = (VOID *)malloc(*DstSize);
-      if (Scratch != NULL && *Destination != NULL) {
-        Status = EfiDecompress(Source, SrcSize, *Destination, *DstSize, Scratch, ScratchSize);
-      } else {
-        Status = EFI_OUT_OF_RESOURCES;
+      if (Scratch == NULL) {
+        return EFI_OUT_OF_RESOURCES;
       }
+
+      *Destination = (VOID *)malloc(*DstSize);
+      if (*Destination == NULL) {
+        free (Scratch);
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      Status = EfiDecompress(Source, SrcSize, *Destination, *DstSize, Scratch, ScratchSize);
     }
     break;
   case 2:
     Status = TianoGetInfo(Source, SrcSize, DstSize, &ScratchSize);
     if (Status == EFI_SUCCESS) {
       Scratch = (VOID *)malloc(ScratchSize);
-      *Destination = (VOID *)malloc(*DstSize);
-      if (Scratch != NULL && *Destination != NULL) {
-        Status = TianoDecompress(Source, SrcSize, *Destination, *DstSize, Scratch, ScratchSize);
-      } else {
-        Status = EFI_OUT_OF_RESOURCES;
+      if (Scratch == NULL) {
+        return EFI_OUT_OF_RESOURCES;
       }
+
+      *Destination = (VOID *)malloc(*DstSize);
+      if (*Destination == NULL) {
+        free (Scratch);
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      Status = TianoDecompress(Source, SrcSize, *Destination, *DstSize, Scratch, ScratchSize);
     }
     break;
   default:
     Status = EFI_INVALID_PARAMETER;
+  }
+
+  if (Scratch != NULL) {
+    free (Scratch);
   }
 
   return Status;

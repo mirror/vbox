@@ -2,6 +2,7 @@
   Internal include file for Status Code Handler Driver.
 
   Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -36,15 +37,6 @@
 // Define the maximum message length
 //
 #define MAX_DEBUG_MESSAGE_LENGTH 0x100
-
-//
-// Runtime memory status code worker definition
-//
-typedef struct {
-  UINT32   RecordIndex;
-  UINT32   NumberOfRecords;
-  UINT32   MaxRecordsNumber;
-} RUNTIME_MEMORY_STATUSCODE_HEADER;
 
 extern RUNTIME_MEMORY_STATUSCODE_HEADER  *mSmmMemoryStatusCodeTable;
 

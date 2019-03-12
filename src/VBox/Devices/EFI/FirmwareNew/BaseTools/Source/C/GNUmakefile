@@ -1,7 +1,7 @@
 ## @file
 #  GNU/Linux makefile for C tools build.
 #
-#  Copyright (c) 2007 - 2012, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 #
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -12,38 +12,47 @@
 #  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #
 
-ifndef ARCH
+ifndef HOST_ARCH
   #
-  # If ARCH is not defined, then we use 'uname -m' to attempt
-  # try to figure out the appropriate ARCH.
+  # If HOST_ARCH is not defined, then we use 'uname -m' to attempt
+  # try to figure out the appropriate HOST_ARCH.
   #
   uname_m = $(shell uname -m)
-  $(info Attempting to detect ARCH from 'uname -m': $(uname_m))
+  $(info Attempting to detect HOST_ARCH from 'uname -m': $(uname_m))
   ifneq (,$(strip $(filter $(uname_m), x86_64 amd64)))
-    ARCH=X64
+    HOST_ARCH=X64
   endif
   ifeq ($(patsubst i%86,IA32,$(uname_m)),IA32)
-    ARCH=IA32
+    HOST_ARCH=IA32
   endif
-  ifndef ARCH
-    $(info Could not detected ARCH from uname results)
-    $(error ARCH is not defined!)
+  ifneq (,$(findstring aarch64,$(uname_m)))
+    HOST_ARCH=AARCH64
   endif
-  $(info Detected ARCH of $(ARCH) using uname.)
+  ifneq (,$(findstring arm,$(uname_m)))
+    HOST_ARCH=ARM
+  endif
+  ifndef HOST_ARCH
+    $(info Could not detected HOST_ARCH from uname results)
+    $(error HOST_ARCH is not defined!)
+  endif
+  $(info Detected HOST_ARCH of $(HOST_ARCH) using uname.)
 endif
 
-export ARCH
+export HOST_ARCH
 
 MAKEROOT = .
 
 include Makefiles/header.makefile
 
-all: makerootdir subdirs $(MAKEROOT)/libs
-	@echo Finished building BaseTools C Tools with ARCH=$(ARCH)
+all: makerootdir subdirs
+	@echo Finished building BaseTools C Tools with HOST_ARCH=$(HOST_ARCH)
 
 LIBRARIES = Common
+VFRAUTOGEN = VfrCompile/VfrLexer.h
 # NON_BUILDABLE_APPLICATIONS = GenBootSector BootSectImage
 APPLICATIONS = \
+  BrotliCompress \
+  VfrCompile \
   GnuGenBootSector \
   BootSectImage \
   EfiLdrImage \
@@ -59,9 +68,12 @@ APPLICATIONS = \
   Split \
   TianoCompress \
   VolInfo \
-  VfrCompile
+  DevicePath
 
 SUBDIRS := $(LIBRARIES) $(APPLICATIONS)
+
+$(LIBRARIES): $(MAKEROOT)/libs
+$(APPLICATIONS): $(LIBRARIES) $(MAKEROOT)/bin $(VFRAUTOGEN)
 
 .PHONY: outputdirs
 makerootdir:
@@ -75,6 +87,9 @@ $(SUBDIRS):
 .PHONY: $(patsubst %,%-clean,$(sort $(SUBDIRS)))
 $(patsubst %,%-clean,$(sort $(SUBDIRS))):
 	-$(MAKE) -C $(@:-clean=) clean
+
+$(VFRAUTOGEN): VfrCompile/VfrSyntax.g
+	$(MAKE) -C VfrCompile VfrLexer.h
 
 clean:  $(patsubst %,%-clean,$(sort $(SUBDIRS)))
 

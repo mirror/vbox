@@ -1,7 +1,7 @@
 /** @file
   iSCSI DHCP6 related configuration routines.
 
-Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -50,7 +50,7 @@ IScsiDhcp6ExtractRootPath (
   UINT8                       IpMode;
 
   ConfigNvData = &ConfigData->SessionConfigData;
-
+  ConfigNvData->DnsMode = FALSE;
   //
   // "iscsi:"<servername>":"<protocol>":"<port>":"<LUN>":"<targetname>
   //
@@ -82,23 +82,36 @@ IScsiDhcp6ExtractRootPath (
   // Extract SERVERNAME field in the Root Path option.
   //
   if (TmpStr[Index] != ISCSI_ROOT_PATH_ADDR_START_DELIMITER) {
-    Status = EFI_INVALID_PARAMETER;
-    goto ON_EXIT;
+    //
+    // The servername is expressed as domain name.
+    //
+    ConfigNvData->DnsMode = TRUE;
   } else {
     Index++;
   }
 
   Fields[RP_FIELD_IDX_SERVERNAME].Str = &TmpStr[Index];
 
-  while ((TmpStr[Index] != ISCSI_ROOT_PATH_ADDR_END_DELIMITER) && (Index < Length)) {
-    Index++;
-  }
+  if (!ConfigNvData->DnsMode) {
+    while ((TmpStr[Index] != ISCSI_ROOT_PATH_ADDR_END_DELIMITER)&& (Index < Length)) {
+      Index++;
+    }
 
-  //
-  // Skip ']' and ':'.
-  //
-  TmpStr[Index] = '\0';
-  Index += 2;
+    //
+    // Skip ']' and ':'.
+    //
+    TmpStr[Index] = '\0';
+    Index += 2;
+  } else {
+    while ((TmpStr[Index] != ISCSI_ROOT_PATH_FIELD_DELIMITER) && (Index < Length)) {
+      Index++;
+    }
+    //
+    // Skip ':'.
+    //
+    TmpStr[Index] = '\0';
+    Index += 1;
+  }
 
   Fields[RP_FIELD_IDX_SERVERNAME].Len = (UINT8) AsciiStrLen (Fields[RP_FIELD_IDX_SERVERNAME].Str);
 
@@ -150,13 +163,25 @@ IScsiDhcp6ExtractRootPath (
     IpMode = ConfigData->AutoConfigureMode;
   }
 
-  Status = IScsiAsciiStrToIp (Field->Str, IpMode, &Ip);
-  CopyMem (&ConfigNvData->TargetIp, &Ip, sizeof (EFI_IP_ADDRESS));
+  //
+  // Server name is expressed as domain name, just save it.
+  //
+  if (ConfigNvData->DnsMode) {
+    if (Field->Len > sizeof (ConfigNvData->TargetUrl)) {
+      return EFI_INVALID_PARAMETER;
+    }
+    CopyMem (&ConfigNvData->TargetUrl, Field->Str, Field->Len);
+    ConfigNvData->TargetUrl[Field->Len + 1] = '\0';
+  } else {
+    ZeroMem(&ConfigNvData->TargetUrl, sizeof (ConfigNvData->TargetUrl));
+    Status = IScsiAsciiStrToIp (Field->Str, IpMode, &Ip);
+    CopyMem (&ConfigNvData->TargetIp, &Ip, sizeof (EFI_IP_ADDRESS));
 
-
-  if (EFI_ERROR (Status)) {
-    goto ON_EXIT;
+    if (EFI_ERROR (Status)) {
+      goto ON_EXIT;
+    }
   }
+
   //
   // Check the protocol type.
   //
@@ -203,7 +228,7 @@ IScsiDhcp6ExtractRootPath (
     goto ON_EXIT;
   }
 
-  AsciiStrCpy (ConfigNvData->TargetName, Field->Str);
+  AsciiStrCpyS (ConfigNvData->TargetName, ISCSI_NAME_MAX_SIZE, Field->Str);
 
 ON_EXIT:
 
@@ -303,7 +328,7 @@ IScsiDhcp6ParseReply (
       // The server sends this option to inform the client about an URL to a boot file.
       //
       BootFileOpt = OptionList[Index];
-    } else if (OptionList[Index]->OpCode == DHCP6_OPT_BOOT_FILE_PARA) {
+    } else if (OptionList[Index]->OpCode == DHCP6_OPT_BOOT_FILE_PARAM) {
       //
       // The server sends this option to inform the client about DHCP6 server address.
       //
@@ -376,14 +401,15 @@ IScsiDoDhcp6 (
   EFI_DHCP6_PACKET_OPTION   *Oro;
   EFI_DHCP6_RETRANSMISSION  InfoReqReXmit;
   EFI_EVENT                 Timer;
-  BOOLEAN                   MediaPresent;
+  EFI_STATUS                MediaStatus;
 
   //
   // Check media status before doing DHCP.
   //
-  MediaPresent = TRUE;
-  NetLibDetectMedia (Controller, &MediaPresent);
-  if (!MediaPresent) {
+  MediaStatus = EFI_SUCCESS;
+  NetLibDetectMediaWaitTimeout (Controller, ISCSI_CHECK_MEDIA_GET_DHCP_WAITING_TIME, &MediaStatus);
+  if (MediaStatus != EFI_SUCCESS) {
+    AsciiPrint ("\n  Error: Could not detect network connection.\n");
     return EFI_NO_MEDIA;
   }
 
@@ -434,11 +460,11 @@ IScsiDoDhcp6 (
   // Ask the server to reply with DNS and Boot File URL options by info request.
   // All members in EFI_DHCP6_PACKET_OPTION are in network order.
   //
-  Oro->OpCode  = HTONS (DHCP6_OPT_REQUEST_OPTION);
+  Oro->OpCode  = HTONS (DHCP6_OPT_ORO);
   Oro->OpLen   = HTONS (2 * 3);
   Oro->Data[1] = DHCP6_OPT_DNS_SERVERS;
   Oro->Data[3] = DHCP6_OPT_BOOT_FILE_URL;
-  Oro->Data[5] = DHCP6_OPT_BOOT_FILE_PARA;
+  Oro->Data[5] = DHCP6_OPT_BOOT_FILE_PARAM;
 
   InfoReqReXmit.Irt = 4;
   InfoReqReXmit.Mrc = 1;

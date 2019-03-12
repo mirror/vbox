@@ -1,7 +1,7 @@
 /** @file
   Interface routines for PxeBc.
 
-Copyright (c) 2007 - 2013, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -166,17 +166,21 @@ IcmpErrorListenHandlerDpc (
     return;
   }
 
-  if (EFI_ERROR (Status) || (RxData == NULL)) {
-    //
-    // Only process the normal packets and the icmp error packets, if RxData is NULL
-    // with Status == EFI_SUCCESS or EFI_ICMP_ERROR, just resume the receive although
-    // this should be a bug of the low layer (IP).
-    //
+  if (RxData == NULL) {
     goto Resume;
   }
 
+  if (Status != EFI_ICMP_ERROR) {
+    //
+    // The return status should be recognized as EFI_ICMP_ERROR.
+    //
+    goto CleanUp;
+  }
+
   if (EFI_IP4 (RxData->Header->SourceAddress) != 0 &&
-      !NetIp4IsUnicast (EFI_NTOHL (RxData->Header->SourceAddress), 0)) {
+      (NTOHL (Mode->SubnetMask.Addr[0]) != 0) &&
+      IP4_NET_EQUAL (NTOHL(Mode->StationIp.Addr[0]), EFI_NTOHL (RxData->Header->SourceAddress), NTOHL (Mode->SubnetMask.Addr[0])) &&
+      !NetIp4IsUnicast (EFI_NTOHL (RxData->Header->SourceAddress), NTOHL (Mode->SubnetMask.Addr[0]))) {
     //
     // The source address is not zero and it's not a unicast IP address, discard it.
     //
@@ -213,8 +217,6 @@ IcmpErrorListenHandlerDpc (
     }
     CopiedPointer += CopiedLen;
   }
-
-  goto Resume;
 
 CleanUp:
   gBS->SignalEvent (RxData->RecycleSignal);
@@ -336,6 +338,8 @@ EfiPxeBcStart (
     return EFI_UNSUPPORTED;
   }
 
+  AsciiPrint ("\n>>Start PXE over IPv4");
+
   //
   // Configure the udp4 instance to let it receive data
   //
@@ -351,8 +355,8 @@ EfiPxeBcStart (
   //
   // Configure block size for TFTP as a default value to handle all link layers.
   //
-  Private->BlockSize   = (UINTN) (MIN (Private->Ip4MaxPacketSize, PXEBC_DEFAULT_PACKET_SIZE) -
-                           PXEBC_DEFAULT_UDP_OVERHEAD_SIZE - PXEBC_DEFAULT_TFTP_OVERHEAD_SIZE);
+  Private->BlockSize   = MIN (Private->Ip4MaxPacketSize, PXEBC_DEFAULT_PACKET_SIZE) -
+                           PXEBC_DEFAULT_UDP_OVERHEAD_SIZE - PXEBC_DEFAULT_TFTP_OVERHEAD_SIZE;
   //
   // If PcdTftpBlockSize is set to non-zero, override the default value.
   //
@@ -406,6 +410,18 @@ EfiPxeBcStart (
                   Private,
                   &(Private->IcmpErrorRcvToken.Event)
                   );
+  if (EFI_ERROR (Status)) {
+    goto ON_EXIT;
+  }
+
+  //
+  //DHCP4 service allows only one of its children to be configured in
+  //the active state, If the DHCP4 D.O.R.A started by IP4 auto
+  //configuration and has not been completed, the Dhcp4 state machine
+  //will not be in the right state for the PXE to start a new round D.O.R.A.
+  //so we need to switch it's policy to static.
+  //
+  Status = PxeBcSetIp4Policy (Private);
   if (EFI_ERROR (Status)) {
     goto ON_EXIT;
   }
@@ -626,7 +642,7 @@ EfiPxeBcDhcp (
   ZeroMem (Private->ProxyIndex, sizeof (Private->ProxyIndex));
 
   Status = Dhcp4->Start (Dhcp4, NULL);
-  if (EFI_ERROR (Status)) {
+  if (EFI_ERROR (Status) && Status != EFI_ALREADY_STARTED) {
     if (Status == EFI_ICMP_ERROR) {
       Mode->IcmpErrorReceived = TRUE;
     }
@@ -652,6 +668,11 @@ EfiPxeBcDhcp (
   // finished, set the various Mode members.
   //
   Status = PxeBcCheckSelectedOffer (Private);
+
+  AsciiPrint ("\n  Station IP address is ");
+
+  PxeBcShowIp4Addr (&Private->StationIp.v4);
+  AsciiPrint ("\n");
 
 ON_EXIT:
   if (EFI_ERROR (Status)) {
@@ -1151,7 +1172,9 @@ EfiPxeBcMtftp (
   if ((This == NULL)                                                          ||
       (Filename == NULL)                                                      ||
       (BufferSize == NULL)                                                    ||
-      ((ServerIp == NULL) || !NetIp4IsUnicast (NTOHL (ServerIp->Addr[0]), 0)) ||
+      ((ServerIp == NULL) ||
+       (IP4_IS_UNSPECIFIED (NTOHL (ServerIp->Addr[0])) ||
+        IP4_IS_LOCAL_BROADCAST (NTOHL (ServerIp->Addr[0]))))                  ||
       ((BufferPtr == NULL) && DontUseBuffer)                                  ||
       ((BlockSize != NULL) && (*BlockSize < 512))) {
 
@@ -1366,7 +1389,7 @@ EfiPxeBcUdpWrite (
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((GatewayIp != NULL) && !NetIp4IsUnicast (NTOHL (GatewayIp->Addr[0]), 0)) {
+  if ((GatewayIp != NULL) && (IP4_IS_UNSPECIFIED (NTOHL (GatewayIp->Addr[0])) || IP4_IS_LOCAL_BROADCAST (NTOHL (GatewayIp->Addr[0])))) {
     //
     // Gateway is provided but it's not a unicast IP address.
     //
@@ -1423,7 +1446,9 @@ EfiPxeBcUdpWrite (
              &Private->StationIp.v4,
              &Private->SubnetMask.v4,
              &Private->GatewayIp.v4,
-             &Private->CurrentUdpSrcPort
+             &Private->CurrentUdpSrcPort,
+             Private->Mode.TTL,
+             Private->Mode.ToS
              );
   if (EFI_ERROR (Status)) {
     Private->CurrentUdpSrcPort = 0;
@@ -1950,9 +1975,11 @@ EfiPxeBcSetIpFilter (
       DEBUG ((EFI_D_ERROR, "There is broadcast address in NewFilter.\n"));
       return EFI_INVALID_PARAMETER;
     }
-    if (NetIp4IsUnicast (EFI_IP4 (NewFilter->IpList[Index].v4), 0) &&
-        ((NewFilter->Filters & EFI_PXE_BASE_CODE_IP_FILTER_STATION_IP) != 0)
-       ) {
+    if ((EFI_NTOHL(Mode->StationIp) != 0) &&
+        (EFI_NTOHL(Mode->SubnetMask) != 0) &&
+        IP4_NET_EQUAL(EFI_NTOHL(Mode->StationIp), EFI_NTOHL(NewFilter->IpList[Index].v4), EFI_NTOHL(Mode->SubnetMask)) &&
+        NetIp4IsUnicast (EFI_IP4 (NewFilter->IpList[Index].v4), EFI_NTOHL(Mode->SubnetMask)) &&
+        ((NewFilter->Filters & EFI_PXE_BASE_CODE_IP_FILTER_STATION_IP) != 0)) {
       //
       // If EFI_PXE_BASE_CODE_IP_FILTER_STATION_IP is set and IP4 address is in IpList,
       // promiscuous mode is needed.
@@ -2294,12 +2321,16 @@ EfiPxeBcSetStationIP (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (NewStationIp != NULL && !NetIp4IsUnicast (NTOHL (NewStationIp->Addr[0]), 0)) {
+  if (NewSubnetMask != NULL && !IP4_IS_VALID_NETMASK (NTOHL (NewSubnetMask->Addr[0]))) {
     return EFI_INVALID_PARAMETER;
   }
 
-  if (NewSubnetMask != NULL && !IP4_IS_VALID_NETMASK (NTOHL (NewSubnetMask->Addr[0]))) {
-    return EFI_INVALID_PARAMETER;
+  if (NewStationIp != NULL) {
+    if (IP4_IS_UNSPECIFIED(NTOHL (NewStationIp->Addr[0])) ||
+        IP4_IS_LOCAL_BROADCAST(NTOHL (NewStationIp->Addr[0])) ||
+        (NewSubnetMask != NULL && NewSubnetMask->Addr[0] != 0 && !NetIp4IsUnicast (NTOHL (NewStationIp->Addr[0]), NTOHL (NewSubnetMask->Addr[0])))) {
+      return EFI_INVALID_PARAMETER;
+    }
   }
 
   Private = PXEBC_PRIVATE_DATA_FROM_PXEBC (This);
@@ -2716,6 +2747,14 @@ DiscoverBootFile (
 
   Private->FileSize = (UINTN) *BufferSize;
 
+  //
+  // Display all the information: boot server address, boot file name and boot file size.
+  //
+  AsciiPrint ("\n  Server IP address is ");
+  PxeBcShowIp4Addr (&Private->ServerIp.v4);
+  AsciiPrint ("\n  NBP filename is %a", Private->BootFileName);
+  AsciiPrint ("\n  NBP filesize is %d Bytes", Private->FileSize);
+
   return Status;
 }
 
@@ -2762,7 +2801,11 @@ EfiPxeLoadFile (
   BOOLEAN                     NewMakeCallback;
   EFI_STATUS                  Status;
   UINT64                      TmpBufSize;
-  BOOLEAN                     MediaPresent;
+  EFI_STATUS                  MediaStatus;
+
+  if (FilePath == NULL || !IsDevicePathEnd (FilePath)) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   Private         = PXEBC_PRIVATE_DATA_FROM_LOADFILE (This);
   PxeBc           = &Private->PxeBc;
@@ -2784,9 +2827,9 @@ EfiPxeLoadFile (
   //
   // Check media status before PXE start
   //
-  MediaPresent = TRUE;
-  NetLibDetectMedia (Private->Controller, &MediaPresent);
-  if (!MediaPresent) {
+  MediaStatus = EFI_SUCCESS;
+  NetLibDetectMediaWaitTimeout (Private->Controller, PXEBC_CHECK_MEDIA_WAITING_TIME, &MediaStatus);
+  if (MediaStatus != EFI_SUCCESS) {
     return EFI_NO_MEDIA;
   }
 
@@ -2827,6 +2870,7 @@ EfiPxeLoadFile (
     if (sizeof (UINTN) < sizeof (UINT64) && (TmpBufSize > 0xFFFFFFFF)) {
       Status = EFI_DEVICE_ERROR;
     } else if (TmpBufSize > 0 && *BufferSize >= (UINTN) TmpBufSize && Buffer != NULL) {
+      AsciiPrint ("\n Downloading NBP file...\n");
       *BufferSize = (UINTN) TmpBufSize;
       Status = PxeBc->Mtftp (
                         PxeBc,
@@ -2851,6 +2895,7 @@ EfiPxeLoadFile (
     //
     // Download the file.
     //
+    AsciiPrint ("\n Downloading NBP file...\n");
     TmpBufSize = (UINT64) (*BufferSize);
     Status = PxeBc->Mtftp (
                       PxeBc,
@@ -2885,10 +2930,16 @@ EfiPxeLoadFile (
   // Check download status
   //
   if (Status == EFI_SUCCESS) {
+    AsciiPrint ("\n  NBP file downloaded successfully.\n");
     //
+    // The DHCP4 can have only one configured child instance so we need to stop
+    // reset the DHCP4 child before we return. Otherwise the other programs which
+    // also need to use DHCP4 will be impacted.
     // The functionality of PXE Base Code protocol will not be stopped,
     // when downloading is successfully.
     //
+    Private->Dhcp4->Stop (Private->Dhcp4);
+    Private->Dhcp4->Configure (Private->Dhcp4, NULL);
     return EFI_SUCCESS;
 
   } else if (Status == EFI_BUFFER_TOO_SMALL) {

@@ -1,7 +1,7 @@
 /** @file
   implements menubar interface functions.
 
-  Copyright (c) 2005 - 2011, Intel Corporation. All rights reserved. <BR>
+  Copyright (c) 2005 - 2018, Intel Corporation. All rights reserved. <BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -24,7 +24,6 @@ UINTN                 NumItems;
   Cleanup function for a menu bar.  frees all allocated memory.
 **/
 VOID
-EFIAPI
 MenuBarCleanup (
   VOID
   )
@@ -41,7 +40,6 @@ MenuBarCleanup (
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 MenuBarInit (
   IN CONST EDITOR_MENU_ITEM  *Items
   )
@@ -66,7 +64,6 @@ MenuBarInit (
   @retval EFI_SUCCESS           The initialization was correct.
 **/
 EFI_STATUS
-EFIAPI
 ControlHotKeyInit (
   IN MENU_ITEM_FUNCTION  *Items
   )
@@ -83,7 +80,6 @@ ControlHotKeyInit (
   @retval EFI_SUCCESS           The refresh was successful.
 **/
 EFI_STATUS
-EFIAPI
 MenuBarRefresh (
   IN CONST UINTN LastRow,
   IN CONST UINTN LastCol
@@ -147,7 +143,6 @@ MenuBarRefresh (
   @return The return value from the called dispatch function.
 **/
 EFI_STATUS
-EFIAPI
 MenuBarDispatchFunctionKey (
   IN CONST EFI_INPUT_KEY   *Key
   )
@@ -170,26 +165,51 @@ MenuBarDispatchFunctionKey (
 /**
   Function to dispatch the correct function based on a control-based key (ctrl+o...)
 
-  @param[in] Key                The pressed key.
+  @param[in] KeyData                The pressed key.
 
   @retval EFI_NOT_FOUND         The key was not a valid control-based key
                                 (an error was sent to the status bar).
   @return EFI_SUCCESS.
 **/
 EFI_STATUS
-EFIAPI
 MenuBarDispatchControlHotKey (
-  IN CONST EFI_INPUT_KEY   *Key
+  IN CONST EFI_KEY_DATA   *KeyData
   )
 {
+  UINT16                  ControlIndex;
 
-  if ((SCAN_CONTROL_Z < Key->UnicodeChar)
-    ||(NULL == ControlBasedMenuFunctions[Key->UnicodeChar]))
+  //
+  // Set to invalid value first.
+  //
+  ControlIndex = MAX_UINT16;
+
+  if (((KeyData->KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) == 0) ||
+      (KeyData->KeyState.KeyShiftState == EFI_SHIFT_STATE_VALID)) {
+    //
+    // For consoles that don't support/report shift state,
+    // Ctrl+A is translated to 1 (UnicodeChar).
+    //
+    ControlIndex = KeyData->Key.UnicodeChar;
+  } else if (((KeyData->KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) != 0) &&
+             ((KeyData->KeyState.KeyShiftState & (EFI_RIGHT_CONTROL_PRESSED | EFI_LEFT_CONTROL_PRESSED)) != 0) &&
+             ((KeyData->KeyState.KeyShiftState & ~(EFI_SHIFT_STATE_VALID | EFI_RIGHT_CONTROL_PRESSED | EFI_LEFT_CONTROL_PRESSED)) == 0)) {
+    //
+    // For consoles that supports/reports shift state,
+    // make sure only CONTROL is pressed.
+    //
+    if ((KeyData->Key.UnicodeChar >= L'A') && (KeyData->Key.UnicodeChar <= L'Z')) {
+      ControlIndex = KeyData->Key.UnicodeChar - L'A' + 1;
+    } else if ((KeyData->Key.UnicodeChar >= L'a') && (KeyData->Key.UnicodeChar <= L'z')) {
+      ControlIndex = KeyData->Key.UnicodeChar - L'a' + 1;
+    }
+  }
+  if ((SCAN_CONTROL_Z < ControlIndex)
+    ||(NULL == ControlBasedMenuFunctions[ControlIndex]))
   {
       return EFI_NOT_FOUND;
   }
 
-  ControlBasedMenuFunctions[Key->UnicodeChar]();
+  ControlBasedMenuFunctions[ControlIndex]();
   return EFI_SUCCESS;
 }
 

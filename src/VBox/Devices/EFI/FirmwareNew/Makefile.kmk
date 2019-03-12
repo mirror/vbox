@@ -105,8 +105,10 @@ VBoxEfiFirmware_BLDDIRS = \
 	$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/
 VBoxEfiFirmware_CLEAN = \
 	$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt \
+	$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/build_rule.txt \
 	$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt \
 	$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/target.txt \
+	$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/build_rule.txt \
 	$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt
 
 # Install the debug info.
@@ -184,7 +186,6 @@ VBOX_EFI_DEPENDENCIES = \
 	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/GenericBdsLib.inf \
 	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/GenericBdsStrings.uni \
 	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/InternalBdsLib.h \
-	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/Performance.c \
 	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/String.c \
 	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/String.h \
 
@@ -212,6 +213,7 @@ VBOX_EFI_BUILD_CMD += \
 	-E 'PYTHONDONTWRITEBYTECODE=1' \
 	-E 'IASL_BIN=$(VBOX_IASLCMD)' \
 	-E 'NASM_BIN=$(VBOX_YASMCMD)' \
+	-E 'CONF_PATH=$(abspath $(@D)/../../Conf)' \
 	-E 'WORKSPACE=$(VBOX_PATH_EFI_FIRMWARE)' \
 	-E 'EDK_TOOLS_PATH=$(VBOX_PATH_EFI_FIRMWARE)/BaseTools' \
 	-E 'EFI_SOURCE$(VBOX_EFI_REDIRECT_E_EQUAL)' \
@@ -268,6 +270,29 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
                \
 		--output $@ $<
 
+# This may not really need sed, just a plain file copy.
+$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/build_rule.txt \
+$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/build_rule.txt: \
+               $(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Conf/build_rule.template \
+		$(MAKEFILE) | $$(dir $$@)
+	$(RM) -f -- "$@"
+	$(SED) \
+		-e 's,@VBOX_IASLCMD@,$(VBOX_IASLCMD),' \
+		-e 's,@VBOX_YASMCMD@,$(VBOX_YASMCMD),' \
+		-e 's,@KMK@,$(MAKE),' \
+               \
+		-e 's,@VBOX_PATH_PREFIX_MINGW32@,$(VBOX_PATH_PREFIX_MINGW32),' \
+		-e 's,@VBOX_PATH_PREFIX_MINGW64@,$(VBOX_PATH_PREFIX_MINGW64),' \
+		-e 's,@VBOX_MINGW32_Wno@,-Wno-address $(VBOX_MINGW32_Wno-unused-but-set-variable) $(VBOX_MINGW32_Wno-maybe-uninitialized) $(VBOX_MINGW32_Wno-array-bounds),' \
+		-e 's,@VBOX_MINGW64_Wno@,-Wno-address $(VBOX_MINGW64_Wno-unused-but-set-variable) $(VBOX_MINGW64_Wno-maybe-uninitialized) $(VBOX_MINGW64_Wno-array-bounds),' \
+		-e 's,@VBOX_MINGW64_USER_LABEL_PREFIX@,$(VBOX_MINGW64_USER_LABEL_PREFIX),' \
+               \
+		-e 's,@PATH_VS2010@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
+		-e 's,@PATH_VS2010_AMD64_BIN@,$(PATH_TOOL_$(VBOX_VCC_TOOL))/bin/$(subst x86,x86_amd64,$(KBUILD_HOST_ARCH)),' \
+               \
+		--output $@ $<
+
+
 #
 # VBoxEFI32
 #
@@ -290,12 +315,12 @@ $(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 + $(VBoxEfiFirmwareDbg32_SOURCES): \
 		$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt \
 		$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt \
+		$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/build_rule.txt \
 		$$(VBoxEfiResetVector-x86_1_TARGET) \
 		$(VBOX_EFI_DEPENDENCIES) \
 		$(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkgIa32.dsc \
 		$(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkgIa32.fdf
 	+ $(VBOX_EFI_BUILD_CMD) \
-		--vbox-target-conf "$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt" \
 		--arch IA32 \
 		--platform OvmfPkg/OvmfPkgIa32.dsc
 
@@ -321,12 +346,12 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 + $(VBoxEfiFirmwareDbg64_SOURCES): \
 		$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/target.txt \
 		$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt \
+		$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/build_rule.txt \
 		$$(VBoxEfiResetVector-amd64_1_TARGET) \
 		$(VBOX_EFI_DEPENDENCIES) \
 		$(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkgX64.dsc \
 		$(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkgX64.fdf
 	+ $(VBOX_EFI_BUILD_CMD) \
-		--vbox-target-conf "$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/target.txt" \
 		--arch X64 \
 		--platform OvmfPkg/OvmfPkgX64.dsc
 

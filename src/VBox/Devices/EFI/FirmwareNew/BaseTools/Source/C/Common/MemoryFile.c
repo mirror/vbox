@@ -1,7 +1,7 @@
 /** @file
 This contains some useful functions for accessing files.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -69,6 +69,7 @@ Returns:
 
   NewMemoryFile = malloc (sizeof (*NewMemoryFile));
   if (NewMemoryFile == NULL) {
+    free (InputFileImage);
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -194,7 +195,7 @@ Returns:
     CharsToCopy = EndOfLine - InputFile->CurrentFilePointer;
   }
 
-  OutputString = malloc (CharsToCopy);
+  OutputString = malloc (CharsToCopy + 1);
   if (OutputString == NULL) {
     return NULL;
   }
@@ -221,6 +222,9 @@ Returns:
   // Increment the current file pointer (include the 0x0A)
   //
   InputFile->CurrentFilePointer += CharsToCopy + 1;
+  if (InputFile->CurrentFilePointer > InputFile->Eof) {
+    InputFile->CurrentFilePointer = InputFile->Eof;
+  }
   CheckMemoryFileState (InputMemoryFile);
 
   //

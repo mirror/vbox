@@ -25,6 +25,11 @@
 
 :CheckLatest
 echo.
+@if defined VS140COMNTOOLS (
+   @set "COMMONTOOLSx64=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64"
+   @goto SetVs
+)
+
 @if defined VS120COMNTOOLS (
    @set "COMMONTOOLSx64=C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\x86_amd64"
    @goto SetVs
@@ -68,7 +73,7 @@ if not exist "%COMMONTOOLSx64%\vcvarsx86_amd64.bat" (
 @goto End
 
 :RebuildTools
-@call python "%WORKSPACE%\BaseTools\Scripts\UpdateBuildVersions.py"
+@call python "%BASE_TOOLS_PATH%\Scripts\UpdateBuildVersions.py"
 @set "BIN_DIR=%EDK_TOOLS_PATH%\Bin\Win32"
 if not exist "%BIN_DIR%" @mkdir "%BIN_DIR%"
 @echo Removing temporary and binary files

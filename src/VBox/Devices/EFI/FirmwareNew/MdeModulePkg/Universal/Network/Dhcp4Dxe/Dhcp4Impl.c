@@ -1,7 +1,7 @@
 /** @file
   This file implement the EFI_DHCP4_PROTOCOL interface.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -660,9 +660,7 @@ EfiDhcp4Configure (
     }
 
     CopyMem (&Ip, &Dhcp4CfgData->ClientAddress, sizeof (IP4_ADDR));
-
-    if ((Ip != 0) && !NetIp4IsUnicast (NTOHL (Ip), 0)) {
-
+    if (IP4_IS_LOCAL_BROADCAST(NTOHL (Ip))) {
       return EFI_INVALID_PARAMETER;
     }
   }
@@ -784,6 +782,7 @@ EfiDhcp4Start (
   DHCP_SERVICE              *DhcpSb;
   EFI_STATUS                Status;
   EFI_TPL                   OldTpl;
+  EFI_STATUS                MediaStatus;
 
   //
   // First validate the parameters
@@ -808,6 +807,16 @@ EfiDhcp4Start (
 
   if ((DhcpSb->DhcpState != Dhcp4Init) && (DhcpSb->DhcpState != Dhcp4InitReboot)) {
     Status = EFI_ALREADY_STARTED;
+    goto ON_ERROR;
+  }
+
+  //
+  // Check Media Satus.
+  //
+  MediaStatus = EFI_SUCCESS;
+  NetLibDetectMediaWaitTimeout (DhcpSb->Controller, DHCP_CHECK_MEDIA_WAITING_TIME, &MediaStatus);
+  if (MediaStatus != EFI_SUCCESS) {
+    Status = EFI_NO_MEDIA;
     goto ON_ERROR;
   }
 
@@ -1177,8 +1186,10 @@ EfiDhcp4Build (
   @param[in] UdpIo      The UdpIo being created.
   @param[in] Context    Dhcp4 instance.
 
-  @retval EFI_SUCCESS   UdpIo is configured successfully.
-  @retval other         Other error occurs.
+  @retval EFI_SUCCESS              UdpIo is configured successfully.
+  @retval EFI_INVALID_PARAMETER    Class E IP address is not supported or other parameters
+                                   are not valid.
+  @retval other                    Other error occurs.
 **/
 EFI_STATUS
 EFIAPI
@@ -1191,7 +1202,10 @@ Dhcp4InstanceConfigUdpIo (
   DHCP_SERVICE                      *DhcpSb;
   EFI_DHCP4_TRANSMIT_RECEIVE_TOKEN  *Token;
   EFI_UDP4_CONFIG_DATA              UdpConfigData;
+  IP4_ADDR                          ClientAddr;
   IP4_ADDR                          Ip;
+  INTN                              Class;
+  IP4_ADDR                          SubnetMask;
 
   Instance = (DHCP_PROTOCOL *) Context;
   DhcpSb   = Instance->Service;
@@ -1204,10 +1218,33 @@ Dhcp4InstanceConfigUdpIo (
   UdpConfigData.TimeToLive         = 64;
   UdpConfigData.DoNotFragment      = TRUE;
 
-  Ip = HTONL (DhcpSb->ClientAddr);
+  ClientAddr = EFI_NTOHL (Token->Packet->Dhcp4.Header.ClientAddr);
+  Ip = HTONL (ClientAddr);
   CopyMem (&UdpConfigData.StationAddress, &Ip, sizeof (EFI_IPv4_ADDRESS));
 
-  Ip = HTONL (DhcpSb->Netmask);
+  if (DhcpSb->Netmask == 0) {
+    //
+    // The Dhcp4.TransmitReceive() API should be able to used at any time according to
+    // UEFI spec, while in classless addressing network, the netmask must be explicitly
+    // provided together with the station address.
+    // If the DHCP instance haven't be configured with a valid netmask, we could only
+    // compute it according to the classful addressing rule.
+    //
+    Class = NetGetIpClass (ClientAddr);
+    //
+    //  Class E IP address is not supported here!
+    //
+    ASSERT (Class < IP4_ADDR_CLASSE);
+    if (Class >= IP4_ADDR_CLASSE) {
+      return EFI_INVALID_PARAMETER;
+    }
+
+    SubnetMask = gIp4AllMasks[Class << 3];
+  } else {
+    SubnetMask = DhcpSb->Netmask;
+  }
+
+  Ip = HTONL (SubnetMask);
   CopyMem (&UdpConfigData.SubnetMask, &Ip, sizeof (EFI_IPv4_ADDRESS));
 
   if ((Token->ListenPointCount == 0) || (Token->ListenPoints[0].ListenPort == 0)) {
@@ -1302,7 +1339,6 @@ PxeDhcpInput (
   )
 {
   DHCP_PROTOCOL                     *Instance;
-  DHCP_SERVICE                      *DhcpSb;
   EFI_DHCP4_HEADER                  *Head;
   NET_BUF                           *Wrap;
   EFI_DHCP4_PACKET                  *Packet;
@@ -1313,7 +1349,6 @@ PxeDhcpInput (
   Wrap     = NULL;
   Instance = (DHCP_PROTOCOL *) Context;
   Token    = Instance->Token;
-  DhcpSb   = Instance->Service;
 
   //
   // Don't restart receive if error occurs or DHCP is destroyed.
@@ -1357,7 +1392,7 @@ PxeDhcpInput (
   //
   if ((Head->OpCode != BOOTP_REPLY) ||
       (Head->Xid != Token->Packet->Dhcp4.Header.Xid) ||
-      (CompareMem (DhcpSb->ClientAddressSendOut, Head->ClientHwAddr, Head->HwAddrLen) != 0)) {
+      (CompareMem (&Token->Packet->Dhcp4.Header.ClientHwAddr[0], Head->ClientHwAddr, Head->HwAddrLen) != 0)) {
     goto RESTART;
   }
 
@@ -1481,7 +1516,7 @@ EfiDhcp4TransmitReceive (
   IP4_ADDR       Ip;
   DHCP_SERVICE   *DhcpSb;
   EFI_IP_ADDRESS Gateway;
-  IP4_ADDR       SubnetMask;
+  IP4_ADDR       ClientAddr;
 
   if ((This == NULL) || (Token == NULL) || (Token->Packet == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -1512,8 +1547,9 @@ EfiDhcp4TransmitReceive (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (DhcpSb->ClientAddr == 0) {
+  ClientAddr = EFI_NTOHL (Token->Packet->Dhcp4.Header.ClientAddr);
 
+  if (ClientAddr == 0) {
     return EFI_NO_MAPPING;
   }
 
@@ -1573,9 +1609,8 @@ EfiDhcp4TransmitReceive (
   //
   // Get the gateway.
   //
-  SubnetMask = DhcpSb->Netmask;
   ZeroMem (&Gateway, sizeof (Gateway));
-  if (!IP4_NET_EQUAL (DhcpSb->ClientAddr, EndPoint.RemoteAddr.Addr[0], SubnetMask)) {
+  if (!IP4_NET_EQUAL (ClientAddr, EndPoint.RemoteAddr.Addr[0], DhcpSb->Netmask)) {
     CopyMem (&Gateway.v4, &Token->GatewayAddress, sizeof (EFI_IPv4_ADDRESS));
     Gateway.Addr[0] = NTOHL (Gateway.Addr[0]);
   }

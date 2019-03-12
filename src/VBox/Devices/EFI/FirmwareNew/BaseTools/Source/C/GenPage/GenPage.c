@@ -15,7 +15,7 @@
                           Directory-Ptr Directory {512}
                         ) {4}
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -146,6 +146,10 @@ Return:
   X64_PAGE_TABLE_ENTRY_2M                       *PageDirectoryEntry2MB;
 
   PageTable = (void *)malloc (EFI_PAGE_NUMBER * EFI_SIZE_OF_PAGE);
+  if (PageTable == NULL) {
+    Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+    return NULL;
+  }
   memset (PageTable, 0, (EFI_PAGE_NUMBER * EFI_SIZE_OF_PAGE));
   PageTablePtr = PageTable;
 
@@ -401,7 +405,7 @@ main (
     }
 
     //
-    // Don't recognize the paramter.
+    // Don't recognize the parameter.
     //
     InputFile = argv[0];
     argc--;
@@ -417,15 +421,21 @@ main (
   // Create X64 page table
   //
   BaseMemory = CreateIdentityMappingPageTables ();
+  if (BaseMemory == NULL) {
+    Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+    return STATUS_ERROR;
+  }
 
   //
   // Add page table to binary file
   //
   result = GenBinPage (BaseMemory, InputFile, OutputFile);
   if (result < 0) {
+    free (BaseMemory);
     return STATUS_ERROR;
   }
 
+  free (BaseMemory);
   return 0;
 }
 

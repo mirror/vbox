@@ -4,7 +4,7 @@
   Layers on top of Firmware Block protocol to produce a file abstraction
   of FV based files.
 
-  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions
@@ -34,6 +34,8 @@
   @retval EFI_SUCCESS           Successfully read volume header to the allocated
                                 buffer.
   @retval EFI_ACCESS_DENIED     Read status of FV is not enabled.
+  @retval EFI_INVALID_PARAMETER The FV Header signature is not as expected or
+                                the file system could not be understood.
 **/
 EFI_STATUS
 GetFwVolHeader (
@@ -88,6 +90,22 @@ GetFwVolHeader (
                     &FvhLength,
                     (UINT8 *) &TempFvh
                     );
+  }
+
+  //
+  // Validate FV Header signature, if not as expected, continue.
+  //
+  if (TempFvh.Signature != EFI_FVH_SIGNATURE) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Check to see that the file system is indeed formatted in a way we can
+  // understand it...
+  //
+  if ((!CompareGuid (&TempFvh.FileSystemGuid, &gEfiFirmwareFileSystem2Guid)) &&
+      (!CompareGuid (&TempFvh.FileSystemGuid, &gEfiFirmwareFileSystem3Guid))) {
+    return EFI_INVALID_PARAMETER;
   }
 
   *FwVolHeader = AllocatePool (TempFvh.HeaderLength);
@@ -177,7 +195,7 @@ FreeFvDeviceResource (
 /**
 
   Firmware volume inherits authentication status from the FV image file and section(in another firmware volume)
-  where it came from.
+  where it came from or propagated from PEI-phase.
 
   @param  FvDevice              A pointer to the FvDevice.
 
@@ -187,24 +205,28 @@ FwVolInheritAuthenticationStatus (
   IN FV_DEVICE  *FvDevice
   )
 {
-  EFI_STATUS                        Status;
-  EFI_FIRMWARE_VOLUME_HEADER        *CachedFvHeader;
-  EFI_FIRMWARE_VOLUME_EXT_HEADER    *CachedFvExtHeader;
-  EFI_FIRMWARE_VOLUME2_PROTOCOL     *ParentFvProtocol;
-  UINTN                             Key;
-  EFI_GUID                          FileNameGuid;
-  EFI_FV_FILETYPE                   FileType;
-  EFI_FV_FILE_ATTRIBUTES            FileAttributes;
-  UINTN                             FileSize;
-  EFI_SECTION_TYPE                  SectionType;
-  UINT32                            AuthenticationStatus;
-  EFI_FIRMWARE_VOLUME_HEADER        *FvHeader;
-  EFI_FIRMWARE_VOLUME_EXT_HEADER    *FvExtHeader;
-  UINTN                             BufferSize;
-
-  CachedFvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) FvDevice->CachedFv;
+  EFI_STATUS                            Status;
+  EFI_FIRMWARE_VOLUME_HEADER            *CachedFvHeader;
+  EFI_FIRMWARE_VOLUME_EXT_HEADER        *CachedFvExtHeader;
+  EFI_FIRMWARE_VOLUME2_PROTOCOL         *ParentFvProtocol;
+  UINTN                                 Key;
+  EFI_GUID                              FileNameGuid;
+  EFI_FV_FILETYPE                       FileType;
+  EFI_FV_FILE_ATTRIBUTES                FileAttributes;
+  UINTN                                 FileSize;
+  EFI_SECTION_TYPE                      SectionType;
+  UINT32                                AuthenticationStatus;
+  EFI_FIRMWARE_VOLUME_HEADER            *FvHeader;
+  EFI_FIRMWARE_VOLUME_EXT_HEADER        *FvExtHeader;
+  UINTN                                 BufferSize;
+  EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL    *Fvb;
+  EFI_FVB_ATTRIBUTES_2                  FvbAttributes;
+  EFI_PHYSICAL_ADDRESS                  BaseAddress;
+  EFI_PEI_HOB_POINTERS                  Fv3Hob;
 
   if (FvDevice->Fv.ParentHandle != NULL) {
+    CachedFvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) (UINTN) FvDevice->CachedFv;
+
     //
     // By Parent Handle, find out the FV image file and section(in another firmware volume) where the firmware volume came from
     //
@@ -240,7 +262,7 @@ FwVolInheritAuthenticationStatus (
         if (!EFI_ERROR (Status)) {
           if ((FvHeader->FvLength == CachedFvHeader->FvLength) &&
               (FvHeader->ExtHeaderOffset == CachedFvHeader->ExtHeaderOffset)) {
-            if (FvHeader->ExtHeaderOffset !=0) {
+            if (FvHeader->ExtHeaderOffset != 0) {
               //
               // Both FVs contain extension header, then compare their FV Name GUID
               //
@@ -273,6 +295,35 @@ FwVolInheritAuthenticationStatus (
           FreePool ((VOID *) FvHeader);
         }
       } while (TRUE);
+    }
+  } else {
+    Fvb = FvDevice->Fvb;
+
+    Status  = Fvb->GetAttributes (Fvb, &FvbAttributes);
+    if (EFI_ERROR (Status)) {
+      return;
+    }
+
+    if ((FvbAttributes & EFI_FVB2_MEMORY_MAPPED) != 0) {
+      //
+      // Get volume base address
+      //
+      Status = Fvb->GetPhysicalAddress (Fvb, &BaseAddress);
+      if (EFI_ERROR (Status)) {
+        return;
+      }
+
+      //
+      // Get the authentication status propagated from PEI-phase to DXE.
+      //
+      Fv3Hob.Raw = GetHobList ();
+      while ((Fv3Hob.Raw = GetNextHob (EFI_HOB_TYPE_FV3, Fv3Hob.Raw)) != NULL) {
+        if (Fv3Hob.FirmwareVolume3->BaseAddress == BaseAddress) {
+          FvDevice->AuthenticationStatus = Fv3Hob.FirmwareVolume3->AuthenticationStatus;
+          return;
+        }
+        Fv3Hob.Raw = GET_NEXT_HOB (Fv3Hob);
+      }
     }
   }
 }
@@ -511,7 +562,7 @@ FvCheck (
       continue;
     }
     //
-    // double check boundry
+    // double check boundary
     //
     if (TestLength < sizeof (EFI_FFS_FILE_HEADER)) {
       break;
@@ -552,7 +603,7 @@ FvCheck (
         DEBUG ((EFI_D_ERROR, "Found a FFS3 formatted file: %g in a non-FFS3 formatted FV.\n", &((EFI_FFS_FILE_HEADER *) Ptr)->Name));
         Ptr = Ptr + FFS_FILE2_SIZE (Ptr);
         //
-        // Adjust Ptr to the next 8-byte aligned boundry.
+        // Adjust Ptr to the next 8-byte aligned boundary.
         //
         while (((UINTN) Ptr & 0x07) != 0) {
           Ptr++;
@@ -591,7 +642,7 @@ FvCheck (
       }
 
       //
-      // Adjust Ptr to the next 8-byte aligned boundry.
+      // Adjust Ptr to the next 8-byte aligned boundary.
       //
       while (((UINTN) Ptr & 0x07) != 0) {
         Ptr++;
@@ -669,15 +720,6 @@ FwVolDriverInit (
       continue;
     }
     ASSERT (FwVolHeader != NULL);
-    //
-    // Check to see that the file system is indeed formatted in a way we can
-    // understand it...
-    //
-    if ((!CompareGuid (&FwVolHeader->FileSystemGuid, &gEfiFirmwareFileSystem2Guid)) &&
-        (!CompareGuid (&FwVolHeader->FileSystemGuid, &gEfiFirmwareFileSystem3Guid))) {
-      FreePool (FwVolHeader);
-      continue;
-    }
     FreePool (FwVolHeader);
 
     Reinstall = FALSE;

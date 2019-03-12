@@ -1,7 +1,7 @@
 /** @file
   Implementation of Neighbor Discovery support routines.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2016, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -198,7 +198,7 @@ Ip6CreatePrefixListEntry (
   LIST_ENTRY                *Entry;
   IP6_PREFIX_LIST_ENTRY     *TmpPrefixEntry;
 
-  if (Prefix == NULL || PreferredLifetime > ValidLifetime || PrefixLength >= IP6_PREFIX_NUM) {
+  if (Prefix == NULL || PreferredLifetime > ValidLifetime || PrefixLength > IP6_PREFIX_MAX) {
     return NULL;
   }
 
@@ -853,9 +853,9 @@ Ip6OnDADFinished (
         // with DNS SERVERS.
         //
         Oro         = (EFI_DHCP6_PACKET_OPTION *) OptBuf;
-        Oro->OpCode = HTONS (IP6_CONFIG_DHCP6_OPTION_ORO);
+        Oro->OpCode = HTONS (DHCP6_OPT_ORO);
         Oro->OpLen  = HTONS (2);
-        *((UINT16 *) &Oro->Data[0]) = HTONS (IP6_CONFIG_DHCP6_OPTION_DNS_SERVERS);
+        *((UINT16 *) &Oro->Data[0]) = HTONS (DHCP6_OPT_DNS_SERVERS);
 
         InfoReqReXmit.Irt = 4;
         InfoReqReXmit.Mrc = 64;
@@ -981,6 +981,13 @@ Ip6InitDADProcess (
 
   NET_CHECK_SIGNATURE (IpIf, IP6_INTERFACE_SIGNATURE);
   ASSERT (AddressInfo != NULL);
+
+  //
+  // Do nothing if we have already started DAD on the address.
+  //
+  if (Ip6FindDADEntry (IpIf->Service, &AddressInfo->Address, NULL) != NULL) {
+    return EFI_SUCCESS;
+  }
 
   Status   = EFI_SUCCESS;
   IpSb     = IpIf->Service;
@@ -1577,16 +1584,6 @@ Ip6ProcessNeighborSolicit (
   if (IsDAD && !IsMaintained) {
     DupAddrDetect = Ip6FindDADEntry (IpSb, &Target, &IpIf);
     if (DupAddrDetect != NULL) {
-      if (DupAddrDetect->Transmit == 0) {
-        //
-        // The NS is from another node to performing DAD on the same address since
-        // we haven't send out any NS yet. Fail DAD for the tentative address.
-        //
-        Ip6OnDADFinished (FALSE, IpIf, DupAddrDetect);
-        Status = EFI_ICMP_ERROR;
-        goto Exit;
-      }
-
       //
       // Check the MAC address of the incoming packet.
       //
@@ -2863,7 +2860,7 @@ Ip6NdFasterTimerTicking (
           //
           Flag = FALSE;
           if ((DupAddrDetect->Receive == 0) ||
-              (DupAddrDetect->Transmit == DupAddrDetect->Receive)) {
+              (DupAddrDetect->Transmit <= DupAddrDetect->Receive)) {
             Flag = TRUE;
           }
 

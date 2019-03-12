@@ -2,7 +2,7 @@
 
   VfrCompiler internal defintions.
 
-Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -23,7 +23,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "ParseInf.h"
 
 #define PROGRAM_NAME                       "VfrCompile"
-#define VFR_COMPILER_VERSION               " 2.00 (UEFI 2.4) "
+#define VFR_COMPILER_VERSION               " 2.01 (UEFI 2.4) "
 //
 // This is how we invoke the C preprocessor on the VFR source file
 // to resolve #defines, #includes, etc. To make C source files
@@ -41,15 +41,15 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define VFR_RECORDLIST_FILENAME_EXTENSION   ".lst"
 
 typedef struct {
-  CHAR8   VfrFileName[MAX_PATH];
-  CHAR8   RecordListFile[MAX_PATH];
-  CHAR8   PkgOutputFileName[MAX_PATH];
-  CHAR8   COutputFileName[MAX_PATH];
+  CHAR8   *VfrFileName;
+  CHAR8   *RecordListFile;
+  CHAR8   *PkgOutputFileName;
+  CHAR8   *COutputFileName;
   bool    CreateRecordListFile;
   bool    CreateIfrPkgFile;
-  CHAR8   OutputDirectory[MAX_PATH];
-  CHAR8   PreprocessorOutputFileName[MAX_PATH];
-  CHAR8   VfrBaseFileName[MAX_PATH];  // name of input VFR file with no path or extension
+  CHAR8   *OutputDirectory;
+  CHAR8   *PreprocessorOutputFileName;
+  CHAR8   *VfrBaseFileName;  // name of input VFR file with no path or extension
   CHAR8   *IncludePaths;
   bool    SkipCPreprocessor;
   CHAR8   *CPreprocessorOptions;
@@ -57,6 +57,8 @@ typedef struct {
   BOOLEAN HasOverrideClassGuid;
   EFI_GUID OverrideClassGuid;
   BOOLEAN WarningAsError;
+  BOOLEAN AutoDefault;
+  BOOLEAN CheckDefault;
 } OPTIONS;
 
 typedef enum {
@@ -88,7 +90,6 @@ private:
 
   VOID    SET_RUN_STATUS (IN COMPILER_RUN_STATUS);
   BOOLEAN IS_RUN_STATUS (IN COMPILER_RUN_STATUS);
-  VOID    UpdateInfoForDynamicOpcode (VOID);
 
 public:
   COMPILER_RUN_STATUS RunStatus (VOID) {

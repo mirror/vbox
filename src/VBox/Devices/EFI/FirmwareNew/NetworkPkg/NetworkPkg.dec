@@ -3,7 +3,8 @@
 #
 # This package provides network modules that conform to UEFI 2.4 specification.
 #
-# Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+# (C) Copyright 2015-2017 Hewlett Packard Enterprise Development LP<BR>
 #
 # This program and the accompanying materials are licensed and made available under
 # the terms and conditions of the BSD License which accompanies this distribution.
@@ -19,7 +20,7 @@
   DEC_SPECIFICATION              = 0x00010005
   PACKAGE_NAME                   = NetworkPkg
   PACKAGE_GUID                   = 947988BE-8D5C-471a-893D-AD181C46BEBB
-  PACKAGE_VERSION                = 0.95
+  PACKAGE_VERSION                = 0.98
   PACKAGE_UNI_FILE               = NetworkPkg.uni
 
 [Includes]
@@ -35,6 +36,20 @@
 
   # Include/Guid/IscsiConfigHii.h
   gIScsiConfigGuid              = { 0x4b47d616, 0xa8d6, 0x4552, { 0x9d, 0x44, 0xcc, 0xad, 0x2e, 0xf, 0x4c, 0xf9}}
+
+  # Include/Guid/HttpBootConfigHii.h
+  gHttpBootConfigGuid           = { 0x4d20583a, 0x7765, 0x4e7a, { 0x8a, 0x67, 0xdc, 0xde, 0x74, 0xee, 0x3e, 0xc5 }}
+
+  # Include/Guid/TlsAuthConfigHii.h
+  gTlsAuthConfigGuid            = { 0xb0eae4f8, 0x9a04, 0x4c6d, { 0xa7, 0x48, 0x79, 0x3d, 0xaa, 0xf, 0x65, 0xdf }}
+
+  # Include/Guid/TlsAuthentication.h
+  gEfiTlsCaCertificateGuid      = { 0xfd2340D0, 0x3dab, 0x4349, { 0xa6, 0xc7, 0x3b, 0x4f, 0x12, 0xb4, 0x8e, 0xae }}
+
+[PcdsFixedAtBuild]
+  ## The max attempt number will be created by iSCSI driver.
+  # @Prompt Max attempt number.
+  gEfiNetworkPkgTokenSpaceGuid.PcdMaxIScsiAttemptNumber|0x08|UINT8|0x0000000D
 
 [PcdsFeatureFlag]
   ## Indicates if the IPsec IKEv2 Certificate Authentication feature is enabled or not.<BR><BR>
@@ -67,6 +82,34 @@
   ## Private Key's size.
   # @Prompt Private Key's size.
   gEfiNetworkPkgTokenSpaceGuid.PcdIpsecUefiCertificateKeySize|0x3d5|UINT32|0x00000006
+
+  ## Indicates whether HTTP connections (i.e., unsecured) are permitted or not.
+  # TRUE  - HTTP connections are allowed. Both the "https://" and "http://" URI schemes are permitted.
+  # FALSE - HTTP connections are denied. Only the "https://" URI scheme is permitted.
+  # @Prompt Indicates whether HTTP connections are permitted or not.
+  gEfiNetworkPkgTokenSpaceGuid.PcdAllowHttpConnections|FALSE|BOOLEAN|0x00000008
+
+[PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
+  ## IPv6 DHCP Unique Identifier (DUID) Type configuration (From RFCs 3315 and 6355).
+  # 01 = DUID Based on Link-layer Address Plus Time [DUID-LLT]
+  # 04 = UUID-Based DHCPv6 Unique Identifier (DUID-UUID)
+  # 02 = DUID Assigned by Vendor Based on Enterprise Number [DUID-EN] (not supported)
+  # 03 = DUID Based on Link-layer Address [DUID-LL] (not supported)
+  # @Prompt Type Value of Dhcp6 Unique Identifier (DUID).
+  gEfiNetworkPkgTokenSpaceGuid.PcdDhcp6UidType|4|UINT8|0x10000001
+
+  ## Network boot policy to stop UEFI iSCSI if applicable.
+  # 0x00 = Always use UEFI iSCSI and ignore iSCSI HBA.
+  # 0x01 = Stop UEFI iSCSI if iSCSI HBA adapter produces AIP protocol with Network Boot.
+  # 0x02 = Stop UEFI iSCSI if iSCSI HBA adapter supports booting from iSCSI IPv4 targets.
+  # 0x04 = Stop UEFI iSCSI if iSCSI HBA adapter supports booting from iSCSI IPv6 targets.
+  # 0x08 = Stop UEFI iSCSI if iSCSI HBA adapter supports an offload engine for iSCSI boot.
+  # 0x10 = Stop UEFI iSCSI if iSCSI HBA adapter supports multipath I/O for iSCSI boot.
+  # 0x20 = Stop UEFI iSCSI if iSCSI HBA adapter is currently configured to boot from iSCSI IPv4 targets.
+  # 0x40 = Stop UEFI iSCSI if iSCSI HBA adapter is currently configured to boot from iSCSI IPv6 targets.
+  # 0xFF = Always use iSCSI HBA and ignore UEFI iSCSI.
+  # @Prompt Type Value of network boot policy used in iSCSI.
+  gEfiNetworkPkgTokenSpaceGuid.PcdIScsiAIPNetworkBootPolicy|0x08|UINT8|0x10000007
 
 [UserExtensions.TianoCore."ExtraFiles"]
   NetworkPkgExtra.uni

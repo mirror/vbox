@@ -1,7 +1,7 @@
 /** @file
   Processor or Compiler specific defines and types for Intel Itanium(TM) processors.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available
 under the terms and conditions of the BSD License which accompanies this
 distribution.  The full text of the license may be found at
@@ -84,7 +84,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #pragma warning ( disable : 4054 )
 
 //
-// ASSERT(FALSE) or while (TRUE) are legal constructes so supress this warning
+// ASSERT(FALSE) or while (TRUE) are legal constructs so suppress this warning
 //
 #pragma warning ( disable : 4127 )
 
@@ -243,10 +243,21 @@ typedef INT64   INTN;
 #define MAX_UINTN  ((UINTN)0xFFFFFFFFFFFFFFFFULL)
 
 ///
+/// Minimum legal Itanium-based INTN value.
+///
+#define MIN_INTN   (((INTN)-9223372036854775807LL) - 1)
+
+///
 /// Per the Itanium Software Conventions and Runtime Architecture Guide,
 /// section 3.3.4, IPF stack must always be 16-byte aligned.
 ///
 #define CPU_STACK_ALIGNMENT   16
+
+///
+/// Page allocation granularity for Itanium
+///
+#define DEFAULT_PAGE_ALLOCATION_GRANULARITY   (0x1000)
+#define RUNTIME_PAGE_ALLOCATION_GRANULARITY   (0x2000)
 
 //
 // Modifier to ensure that all protocol member functions and EFI intrinsics

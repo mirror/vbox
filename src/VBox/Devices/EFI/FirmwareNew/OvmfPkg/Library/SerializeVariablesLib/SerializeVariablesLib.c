@@ -218,9 +218,9 @@ IterateVariablesInBuffer (
   if (TotalSizeUsed != MaxSize) {
     DEBUG ((
       EFI_D_ERROR,
-      "Deserialize variables error: TotalSizeUsed(%d) != MaxSize(%d)\n",
-      TotalSizeUsed,
-      MaxSize
+      "Deserialize variables error: TotalSizeUsed(%Lu) != MaxSize(%Lu)\n",
+      (UINT64)TotalSizeUsed,
+      (UINT64)MaxSize
       ));
     return EFI_INVALID_PARAMETER;
   }
@@ -300,6 +300,11 @@ IterateVariablesCallbackSetSystemVariable (
   if (Status == EFI_SECURITY_VIOLATION && (Attributes & AuthMask) != 0) {
     DEBUG ((DEBUG_WARN, "%a: setting authenticated variable \"%s\" "
             "failed with EFI_SECURITY_VIOLATION, ignoring\n", __FUNCTION__,
+            VariableName));
+    Status = EFI_SUCCESS;
+  } else if (Status == EFI_WRITE_PROTECTED) {
+    DEBUG ((DEBUG_WARN, "%a: setting ReadOnly variable \"%s\" "
+            "failed with EFI_WRITE_PROTECTED, ignoring\n", __FUNCTION__,
             VariableName));
     Status = EFI_SUCCESS;
   }

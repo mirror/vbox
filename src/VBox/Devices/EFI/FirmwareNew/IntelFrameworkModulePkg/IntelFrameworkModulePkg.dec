@@ -4,7 +4,7 @@
 # This package contains the definitions and module implementation
 # which follows Intel EFI Framework Specification.
 #
-# Copyright (c) 2007 - 2015, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2016, Intel Corporation. All rights reserved.<BR>
 #
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
@@ -21,7 +21,7 @@
   PACKAGE_NAME                   = IntelFrameworkModulePkg
   PACKAGE_UNI_FILE               = IntelFrameworkModulePkg.uni
   PACKAGE_GUID                   = 88894582-7553-4822-B484-624E24B6DECF
-  PACKAGE_VERSION                = 0.94
+  PACKAGE_VERSION                = 0.96
 
 [Includes]
   Include                        # Root include for the package
@@ -91,10 +91,6 @@
   #  Include/Protocol/IsaAcpi.h
   gEfiIsaAcpiProtocolGuid        = { 0x64a892dc, 0x5561, 0x4536, { 0x92, 0xc7, 0x79, 0x9b, 0xfc, 0x18, 0x33, 0x55 }}
 
-  ## PS/2 policy protocol abstracts the specific platform initialization and setting.
-  #  Include/Protocol/Ps2Policy.h
-  gEfiPs2PolicyProtocolGuid      = { 0x4DF19259, 0xDC71, 0x4D46, { 0xBE, 0xF1, 0x35, 0x7B, 0xB5, 0x78, 0xC4, 0x18 }}
-
   ## OEM Badging Protocol defines the interface to get the OEM badging image with the dispaly attribute.
   #  Include/Protocol/OEMBadging.h
   gEfiOEMBadgingProtocolGuid     = { 0x170E13C0, 0xBF1B, 0x4218, { 0x87, 0x1D, 0x2A, 0xBD, 0xC6, 0xF8, 0x87, 0xBC }}
@@ -134,26 +130,11 @@
   # @Prompt Turn on Legacy Support in S3 Boot
   gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdPlatformCsmSupport|TRUE|BOOLEAN|0x00010044
 
-  ## Indicates if PS2 keyboard does a extended verification during start.
-  #  Extended verification will take some performance. It can be set to FALSE for boot performance.<BR><BR>
-  #   TRUE  - Turn on PS2 keyboard extended verification.<BR>
-  #   FALSE - Turn off PS2 keyboard extended verification.<BR>
-  # @Prompt Turn on PS2 Keyboard Extended Verification
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdPs2KbdExtendedVerification|TRUE|BOOLEAN|0x00010045
-
   ## Indicates if Framework Acpi Support protocol is installed.<BR><BR>
   #   TRUE  - Install Framework Acpi Support protocol.<BR>
   #   FALSE - Doesn't install Framework Acpi Support protocol.<BR>
   # @Prompt Enable Framework Acpi Support
   gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdInstallAcpiSupportProtocol|TRUE|BOOLEAN|0x00010046
-
-
-  ## Indicates if PS2 mouse does a extended verification during start.
-  #  Extended verification will take some performance. It can be set to FALSE for boot performance.<BR><BR>
-  #   TRUE  - Turn on PS2 mouse extended verification. <BR>
-  #   FALSE - Turn off PS2 mouse extended verification. <BR>
-  # @Prompt Turn on PS2 Mouse Extended Verification
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdPs2MouseExtendedVerification|TRUE|BOOLEAN|0x00010047
 
   ## Indicates if only Boot logo is showed and all message output is disabled in BDS.<BR><BR>
   #   TRUE  - Only Boot Logo is showed in boot.<BR>
@@ -187,41 +168,6 @@
   #   FALSE - The complete boot cycle has happened before.<BR>
   # @Prompt Boot State Flag
   gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdBootState|TRUE|BOOLEAN|0x0001002f
-
-  ## The number of seconds that the firmware will wait before initiating the original default boot selection.
-  #  A value of 0 indicates that the default boot selection is to be initiated immediately on boot.
-  #  The value of 0xFFFF then firmware will wait for user input before booting.
-  # @Prompt Boot Timeout (s)
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdPlatformBootTimeOut|0xffff|UINT16|0x40000001
-
-  ## Error level for hardware recorder.
-  #  If value 0, platform does not support feature of hardware error record.
-  # @Prompt Error Level For Hardware Recorder
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdHardwareErrorRecordLevel|0|UINT16|0x40000002
-
-[PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
-  #  The 4 PCDs below are used to specify the video resolution and text mode of text setup.
-  #  To make text setup work in this resolution, PcdVideoHorizontalResolution, PcdVideoVerticalResolution,
-  #  PcdConOutColumn and PcdConOutRow in MdeModulePkg.dec should be created as PcdsDynamic or PcdsDynamicEx
-  #  in platform DSC file. Then BDS setup will update these PCDs defined in MdeModulePkg.dec and reconnect
-  #  console drivers (GraphicsConsole, Terminal, Consplitter) to make the video resolution and text mode work
-  #  for text setup.
-
-  ## Specify the video horizontal resolution of text setup.
-  # @Prompt Video Horizontal Resolution of Text Setup
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdSetupVideoHorizontalResolution|800|UINT32|0x50000001
-
-  ## Specify the video vertical resolution of text setup.
-  # @Prompt Video Vertical Resolution of Text Setup
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdSetupVideoVerticalResolution|600|UINT32|0x50000002
-
-  ## Specify the console output column of text setup.
-  # @Prompt Console Output Column of Text Setup
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdSetupConOutColumn|80|UINT32|0x50000003
-
-  ## Specify the console output row of text setup.
-  # @Prompt Console Output Row of Text Setup
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdSetupConOutRow|25|UINT32|0x50000004
 
 [PcdsFixedAtBuild, PcdsDynamic, PcdsDynamicEx, PcdsPatchableInModule]
   ## I/O Base address of floppy device controller.
@@ -266,11 +212,15 @@
   # The value should be a multiple of 4KB.
   # The range should be below the EBDA reserved range from
   # (CONVENTIONAL_MEMORY_TOP - Reserved EBDA Memory Size) to CONVENTIONAL_MEMORY_TOP.
+  # @Prompt Reserved Memory Base Address for OPROM
+  # @Expression 0x80000001 | (gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdOpromReservedMemoryBase >= 0x20000) AND ((gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdOpromReservedMemoryBase & 0x1000) == 0)
   gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdOpromReservedMemoryBase|0x60000|UINT32|0x3000000c
 
   ## Specify memory size with bytes for OPROM to find free memory.
   #  The value should be a multiple of 4KB. And the range should be below the EBDA reserved range from
   # (CONVENTIONAL_MEMORY_TOP - Reserved EBDA Memory Size) to CONVENTIONAL_MEMORY_TOP.
+  # @Prompt Reserved Memory Size for OPROM
+  # @Expression 0x80000001 | (gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdOpromReservedMemorySize < 0x80000) AND ((gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdOpromReservedMemorySize & 0x1000) == 0)
   gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdOpromReservedMemorySize|0x28000|UINT32|0x3000000d
 
   ## Specify memory size with page number for a pre-allocated reserved memory to be used
@@ -278,12 +228,6 @@
   #  is large enough to meet PEI requirement in the S3 phase.
   # @Prompt Reserved S3 Boot ACPI Memory Size
   gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdS3AcpiReservedMemorySize|0x8000|UINT32|0x30000006
-
-  ## Specify memory size for boot script executor stack usage in S3 phase.
-  #  The default size 32K. When changing the value make sure the memory size is large enough
-  #  to meet boot script executor requirement in the S3 phase.
-  # @Prompt Reserved S3 Boot Script Stack ACPI Memory Size
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdS3BootScriptStackSize|0x8000|UINT32|0x30000007
 
   ## Specify the end of address below 1MB for the OPROM.
   #  The last shadowed OpROM should not exceed this address.
@@ -302,13 +246,6 @@
   # @Prompt High PMM (Post Memory Manager) Size
   # @Expression 0x80000001 | (gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdHighPmmMemorySize & 0x1000) == 0
   gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdHighPmmMemorySize|0x400000|UINT32|0x3000000a
-
-  ## Indicates if to use the optimized timing for best PS2 detection performance.
-  #  Note this PCD could be set to TRUE for best boot performance and set to FALSE for best device compatibility.<BR><BR>
-  #   TRUE  - Use the optimized timing for best PS2 detection performance.<BR>
-  #   FALSE - Use the normal timing to detect PS2.<BR>
-  # @Prompt Enable fast PS2 detection
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdFastPS2Detection|FALSE|BOOLEAN|0x3000000b
 
 [UserExtensions.TianoCore."ExtraFiles"]
   IntelFrameworkModulePkgExtra.uni

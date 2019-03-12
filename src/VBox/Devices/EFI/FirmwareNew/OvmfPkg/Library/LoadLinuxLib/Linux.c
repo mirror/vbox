@@ -1,6 +1,6 @@
 /** @file
 
-  Copyright (c) 2011 - 2013, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -143,7 +143,8 @@ LoadLinuxInitializeKernelSetup (
   //
   ZeroMem (KernelSetup, 0x1f1);
   ZeroMem (((UINT8 *)KernelSetup) + SetupEnd, 4096 - SetupEnd);
-  DEBUG ((EFI_D_INFO, "Cleared kernel setup 0-0x1f1, 0x%x-0x1000\n", SetupEnd));
+  DEBUG ((EFI_D_INFO, "Cleared kernel setup 0-0x1f1, 0x%Lx-0x1000\n",
+    (UINT64)SetupEnd));
 
   return EFI_SUCCESS;
 }
@@ -356,7 +357,7 @@ SetupLinuxMemmap (
       LastE820->size += EFI_PAGES_TO_SIZE ((UINTN) MemoryMap->NumberOfPages);
       LastEndAddr += EFI_PAGES_TO_SIZE ((UINTN) MemoryMap->NumberOfPages);
     } else {
-      if (E820EntryCount >= (sizeof (Bp->e820_map) / sizeof (Bp->e820_map[0]))) {
+      if (E820EntryCount >= ARRAY_SIZE (Bp->e820_map)) {
         break;
       }
       E820->type = (UINT32) E820Type;
@@ -384,8 +385,8 @@ SetupLinuxMemmap (
 #ifdef MDE_CPU_IA32
   Efi->efi_loader_signature = SIGNATURE_32 ('E', 'L', '3', '2');
 #else
-  Efi->efi_systab_hi = ((UINT64)(UINTN) gST) >> 32;
-  Efi->efi_memmap_hi = ((UINT64)(UINTN) MemoryMapPtr) >> 32;
+  Efi->efi_systab_hi = (UINT32) (((UINT64)(UINTN) gST) >> 32);
+  Efi->efi_memmap_hi = (UINT32) (((UINT64)(UINTN) MemoryMapPtr) >> 32);
   Efi->efi_loader_signature = SIGNATURE_32 ('E', 'L', '6', '4');
 #endif
 

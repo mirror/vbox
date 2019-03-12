@@ -2,7 +2,8 @@
   NvmExpressDxe driver is used to manage non-volatile memory subsystem which follows
   NVM Express specification.
 
-  Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2013 - 2017, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -19,6 +20,7 @@
 #include <Uefi.h>
 
 #include <IndustryStandard/Pci.h>
+#include <IndustryStandard/Nvme.h>
 
 #include <Protocol/ComponentName.h>
 #include <Protocol/ComponentName2.h>
@@ -26,9 +28,13 @@
 #include <Protocol/LoadedImage.h>
 #include <Protocol/DevicePath.h>
 #include <Protocol/PciIo.h>
+#include <Protocol/NvmExpressPassthru.h>
 #include <Protocol/BlockIo.h>
+#include <Protocol/BlockIo2.h>
 #include <Protocol/DiskInfo.h>
 #include <Protocol/DriverSupportedEfiVersion.h>
+#include <Protocol/StorageSecurityCommand.h>
+#include <Protocol/ResetNotification.h>
 
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -43,7 +49,6 @@
 typedef struct _NVME_CONTROLLER_PRIVATE_DATA NVME_CONTROLLER_PRIVATE_DATA;
 typedef struct _NVME_DEVICE_PRIVATE_DATA     NVME_DEVICE_PRIVATE_DATA;
 
-#include "NvmExpressPassthru.h"
 #include "NvmExpressBlockIo.h"
 #include "NvmExpressDiskInfo.h"
 #include "NvmExpressHci.h"
@@ -62,7 +67,18 @@ extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gNvmExpressDriverSupportedEfiV
 #define NVME_CSQ_SIZE                             1     // Number of I/O submission queue entries, which is 0-based
 #define NVME_CCQ_SIZE                             1     // Number of I/O completion queue entries, which is 0-based
 
-#define NVME_MAX_IO_QUEUES                        2     // Number of I/O queues supported by the driver
+//
+// Number of asynchronous I/O submission queue entries, which is 0-based.
+// The asynchronous I/O submission queue size is 4kB in total.
+//
+#define NVME_ASYNC_CSQ_SIZE                       63
+//
+// Number of asynchronous I/O completion queue entries, which is 0-based.
+// The asynchronous I/O completion queue size is 4kB in total.
+//
+#define NVME_ASYNC_CCQ_SIZE                       255
+
+#define NVME_MAX_QUEUES                           3     // Number of queues supported by the driver
 
 #define NVME_CONTROLLER_ID                        0
 
@@ -70,6 +86,11 @@ extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gNvmExpressDriverSupportedEfiV
 // Time out value for Nvme transaction execution
 //
 #define NVME_GENERIC_TIMEOUT                      EFI_TIMER_PERIOD_SECONDS (5)
+
+//
+// Nvme async transfer timer interval, set by experience.
+//
+#define NVME_HC_ASYNC_TIMER                       EFI_TIMER_PERIOD_MILLISECONDS (1)
 
 //
 // Unique signature for private data structure.
@@ -80,60 +101,68 @@ extern EFI_DRIVER_SUPPORTED_EFI_VERSION_PROTOCOL  gNvmExpressDriverSupportedEfiV
 // Nvme private data structure.
 //
 struct _NVME_CONTROLLER_PRIVATE_DATA {
-  UINT32                          Signature;
+  UINT32                              Signature;
 
-  EFI_HANDLE                      ControllerHandle;
-  EFI_HANDLE                      ImageHandle;
-  EFI_HANDLE                      DriverBindingHandle;
+  EFI_HANDLE                          ControllerHandle;
+  EFI_HANDLE                          ImageHandle;
+  EFI_HANDLE                          DriverBindingHandle;
 
-  EFI_PCI_IO_PROTOCOL             *PciIo;
-  UINT64                          PciAttributes;
+  EFI_PCI_IO_PROTOCOL                 *PciIo;
+  UINT64                              PciAttributes;
 
-  EFI_DEVICE_PATH_PROTOCOL        *ParentDevicePath;
+  EFI_DEVICE_PATH_PROTOCOL            *ParentDevicePath;
 
-  NVM_EXPRESS_PASS_THRU_MODE      PassThruMode;
-  NVM_EXPRESS_PASS_THRU_PROTOCOL  Passthru;
+  EFI_NVM_EXPRESS_PASS_THRU_MODE      PassThruMode;
+  EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL  Passthru;
 
   //
   // pointer to identify controller data
   //
-  NVME_ADMIN_CONTROLLER_DATA      *ControllerData;
+  NVME_ADMIN_CONTROLLER_DATA          *ControllerData;
 
   //
   // 6 x 4kB aligned buffers will be carved out of this buffer.
   // 1st 4kB boundary is the start of the admin submission queue.
-  // 2nd 4kB boundary is the start of submission queue #1.
-  // 3rd 4kB boundary is the start of the admin completion queue.
-  // 4th 4kB boundary is the start of completion queue #1.
-  // 5th 4kB boundary is the start of the first PRP list page.
-  // 6th 4kB boundary is the start of the second PRP list page.
+  // 2nd 4kB boundary is the start of the admin completion queue.
+  // 3rd 4kB boundary is the start of I/O submission queue #1.
+  // 4th 4kB boundary is the start of I/O completion queue #1.
+  // 5th 4kB boundary is the start of I/O submission queue #2.
+  // 6th 4kB boundary is the start of I/O completion queue #2.
   //
-  UINT8                           *Buffer;
-  UINT8                           *BufferPciAddr;
+  UINT8                               *Buffer;
+  UINT8                               *BufferPciAddr;
 
   //
   // Pointers to 4kB aligned submission & completion queues.
   //
-  NVME_SQ                         *SqBuffer[NVME_MAX_IO_QUEUES];
-  NVME_CQ                         *CqBuffer[NVME_MAX_IO_QUEUES];
-  NVME_SQ                         *SqBufferPciAddr[NVME_MAX_IO_QUEUES];
-  NVME_CQ                         *CqBufferPciAddr[NVME_MAX_IO_QUEUES];
+  NVME_SQ                             *SqBuffer[NVME_MAX_QUEUES];
+  NVME_CQ                             *CqBuffer[NVME_MAX_QUEUES];
+  NVME_SQ                             *SqBufferPciAddr[NVME_MAX_QUEUES];
+  NVME_CQ                             *CqBufferPciAddr[NVME_MAX_QUEUES];
 
   //
   // Submission and completion queue indices.
   //
-  NVME_SQTDBL                     SqTdbl[NVME_MAX_IO_QUEUES];
-  NVME_CQHDBL                     CqHdbl[NVME_MAX_IO_QUEUES];
+  NVME_SQTDBL                         SqTdbl[NVME_MAX_QUEUES];
+  NVME_CQHDBL                         CqHdbl[NVME_MAX_QUEUES];
+  UINT16                              AsyncSqHead;
 
-  UINT8                           Pt[2];
-  UINT16                          Cid[2];
+  UINT8                               Pt[NVME_MAX_QUEUES];
+  UINT16                              Cid[NVME_MAX_QUEUES];
 
   //
   // Nvme controller capabilities
   //
-  NVME_CAP                        Cap;
+  NVME_CAP                            Cap;
 
-  VOID                            *Mapping;
+  VOID                                *Mapping;
+
+  //
+  // For Non-blocking operations.
+  //
+  EFI_EVENT                           TimerEvent;
+  LIST_ENTRY                          AsyncPassThruQueue;
+  LIST_ENTRY                          UnsubmittedSubtasks;
 };
 
 #define NVME_CONTROLLER_PRIVATE_DATA_FROM_PASS_THRU(a) \
@@ -152,29 +181,33 @@ struct _NVME_CONTROLLER_PRIVATE_DATA {
 // Nvme device private data structure
 //
 struct _NVME_DEVICE_PRIVATE_DATA {
-  UINT32                            Signature;
+  UINT32                                   Signature;
 
-  EFI_HANDLE                        DeviceHandle;
-  EFI_HANDLE                        ControllerHandle;
-  EFI_HANDLE                        DriverBindingHandle;
+  EFI_HANDLE                               DeviceHandle;
+  EFI_HANDLE                               ControllerHandle;
+  EFI_HANDLE                               DriverBindingHandle;
 
-  EFI_DEVICE_PATH_PROTOCOL          *DevicePath;
+  EFI_DEVICE_PATH_PROTOCOL                 *DevicePath;
 
-  EFI_UNICODE_STRING_TABLE          *ControllerNameTable;
+  EFI_UNICODE_STRING_TABLE                 *ControllerNameTable;
 
-  UINT32                            NamespaceId;
-  UINT64                            NamespaceUuid;
+  UINT32                                   NamespaceId;
+  UINT64                                   NamespaceUuid;
 
-  EFI_BLOCK_IO_MEDIA                Media;
-  EFI_BLOCK_IO_PROTOCOL             BlockIo;
-  EFI_DISK_INFO_PROTOCOL            DiskInfo;
+  EFI_BLOCK_IO_MEDIA                       Media;
+  EFI_BLOCK_IO_PROTOCOL                    BlockIo;
+  EFI_BLOCK_IO2_PROTOCOL                   BlockIo2;
+  EFI_DISK_INFO_PROTOCOL                   DiskInfo;
+  EFI_STORAGE_SECURITY_COMMAND_PROTOCOL    StorageSecurity;
 
-  EFI_LBA                           NumBlocks;
+  LIST_ENTRY                               AsyncQueue;
 
-  CHAR16                            ModelName[80];
-  NVME_ADMIN_NAMESPACE_DATA         NamespaceData;
+  EFI_LBA                                  NumBlocks;
 
-  NVME_CONTROLLER_PRIVATE_DATA      *Controller;
+  CHAR16                                   ModelName[80];
+  NVME_ADMIN_NAMESPACE_DATA                NamespaceData;
+
+  NVME_CONTROLLER_PRIVATE_DATA             *Controller;
 
 };
 
@@ -188,11 +221,91 @@ struct _NVME_DEVICE_PRIVATE_DATA {
       NVME_DEVICE_PRIVATE_DATA_SIGNATURE \
       )
 
+#define NVME_DEVICE_PRIVATE_DATA_FROM_BLOCK_IO2(a) \
+  CR (a, \
+      NVME_DEVICE_PRIVATE_DATA, \
+      BlockIo2, \
+      NVME_DEVICE_PRIVATE_DATA_SIGNATURE \
+      )
+
 #define NVME_DEVICE_PRIVATE_DATA_FROM_DISK_INFO(a) \
   CR (a, \
       NVME_DEVICE_PRIVATE_DATA, \
       DiskInfo, \
       NVME_DEVICE_PRIVATE_DATA_SIGNATURE \
+      )
+
+#define NVME_DEVICE_PRIVATE_DATA_FROM_STORAGE_SECURITY(a)\
+  CR (a,                                                 \
+      NVME_DEVICE_PRIVATE_DATA,                          \
+      StorageSecurity,                                   \
+      NVME_DEVICE_PRIVATE_DATA_SIGNATURE                 \
+      )
+
+//
+// Nvme block I/O 2 request.
+//
+#define NVME_BLKIO2_REQUEST_SIGNATURE      SIGNATURE_32 ('N', 'B', '2', 'R')
+
+typedef struct {
+  UINT32                                   Signature;
+  LIST_ENTRY                               Link;
+
+  EFI_BLOCK_IO2_TOKEN                      *Token;
+  UINTN                                    UnsubmittedSubtaskNum;
+  BOOLEAN                                  LastSubtaskSubmitted;
+  //
+  // The queue for Nvme read/write sub-tasks of a BlockIo2 request.
+  //
+  LIST_ENTRY                               SubtasksQueue;
+} NVME_BLKIO2_REQUEST;
+
+#define NVME_BLKIO2_REQUEST_FROM_LINK(a) \
+  CR (a, NVME_BLKIO2_REQUEST, Link, NVME_BLKIO2_REQUEST_SIGNATURE)
+
+#define NVME_BLKIO2_SUBTASK_SIGNATURE      SIGNATURE_32 ('N', 'B', '2', 'S')
+
+typedef struct {
+  UINT32                                   Signature;
+  LIST_ENTRY                               Link;
+
+  BOOLEAN                                  IsLast;
+  UINT32                                   NamespaceId;
+  EFI_EVENT                                Event;
+  EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET *CommandPacket;
+  //
+  // The BlockIo2 request this subtask belongs to
+  //
+  NVME_BLKIO2_REQUEST                      *BlockIo2Request;
+} NVME_BLKIO2_SUBTASK;
+
+#define NVME_BLKIO2_SUBTASK_FROM_LINK(a) \
+  CR (a, NVME_BLKIO2_SUBTASK, Link, NVME_BLKIO2_SUBTASK_SIGNATURE)
+
+//
+// Nvme asynchronous passthru request.
+//
+#define NVME_PASS_THRU_ASYNC_REQ_SIG       SIGNATURE_32 ('N', 'P', 'A', 'R')
+
+typedef struct {
+  UINT32                                   Signature;
+  LIST_ENTRY                               Link;
+
+  EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET *Packet;
+  UINT16                                   CommandId;
+  VOID                                     *MapPrpList;
+  UINTN                                    PrpListNo;
+  VOID                                     *PrpListHost;
+  VOID                                     *MapData;
+  VOID                                     *MapMeta;
+  EFI_EVENT                                CallerEvent;
+} NVME_PASS_THRU_ASYNC_REQ;
+
+#define NVME_PASS_THRU_ASYNC_REQ_FROM_THIS(a) \
+  CR (a,                                                 \
+      NVME_PASS_THRU_ASYNC_REQ,                          \
+      Link,                                              \
+      NVME_PASS_THRU_ASYNC_REQ_SIG                       \
       )
 
 /**
@@ -453,13 +566,10 @@ NvmExpressDriverBindingStop (
   both blocking I/O and nonblocking I/O. The blocking I/O functionality is required, and the nonblocking
   I/O functionality is optional.
 
-  @param[in]     This                A pointer to the NVM_EXPRESS_PASS_THRU_PROTOCOL instance.
+  @param[in]     This                A pointer to the EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL instance.
   @param[in]     NamespaceId         Is a 32 bit Namespace ID to which the Express HCI command packet will be sent.
                                      A value of 0 denotes the NVM Express controller, a value of all 0FFh in the namespace
                                      ID specifies that the command packet should be sent to all valid namespaces.
-  @param[in]     NamespaceUuid       Is a 64 bit Namespace UUID to which the Express HCI command packet will be sent.
-                                     A value of 0 denotes the NVM Express controller, a value of all 0FFh in the namespace
-                                     UUID specifies that the command packet should be sent to all valid namespaces.
   @param[in,out] Packet              A pointer to the NVM Express HCI Command Packet to send to the NVMe namespace specified
                                      by NamespaceId.
   @param[in]     Event               If nonblocking I/O is not supported then Event is ignored, and blocking I/O is performed.
@@ -474,7 +584,7 @@ NvmExpressDriverBindingStop (
   @retval EFI_NOT_READY              The NVM Express Command Packet could not be sent because the controller is not ready. The caller
                                      may retry again later.
   @retval EFI_DEVICE_ERROR           A device error occurred while attempting to send the NVM Express Command Packet.
-  @retval EFI_INVALID_PARAMETER      Namespace, or the contents of NVM_EXPRESS_PASS_THRU_COMMAND_PACKET are invalid. The NVM
+  @retval EFI_INVALID_PARAMETER      Namespace, or the contents of EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET are invalid. The NVM
                                      Express Command Packet was not sent, so no additional status information is available.
   @retval EFI_UNSUPPORTED            The command described by the NVM Express Command Packet is not supported by the host adapter.
                                      The NVM Express Command Packet was not sent, so no additional status information is available.
@@ -484,97 +594,91 @@ NvmExpressDriverBindingStop (
 EFI_STATUS
 EFIAPI
 NvmExpressPassThru (
-  IN     NVM_EXPRESS_PASS_THRU_PROTOCOL              *This,
+  IN     EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL          *This,
   IN     UINT32                                      NamespaceId,
-  IN     UINT64                                      NamespaceUuid,
-  IN OUT NVM_EXPRESS_PASS_THRU_COMMAND_PACKET        *Packet,
+  IN OUT EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET    *Packet,
   IN     EFI_EVENT                                   Event OPTIONAL
   );
 
 /**
-  Used to retrieve the list of namespaces defined on an NVM Express controller.
+  Used to retrieve the next namespace ID for this NVM Express controller.
 
-  The NVM_EXPRESS_PASS_THRU_PROTOCOL.GetNextNamespace() function retrieves a list of namespaces
-  defined on an NVM Express controller. If on input a NamespaceID is specified by all 0xFF in the
-  namespace buffer, then the first namespace defined on the NVM Express controller is returned in
-  NamespaceID, and a status of EFI_SUCCESS is returned.
+  The EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL.GetNextNamespace() function retrieves the next valid
+  namespace ID on this NVM Express controller.
 
-  If NamespaceId is a Namespace value that was returned on a previous call to GetNextNamespace(),
-  then the next valid NamespaceId  for an NVM Express SSD namespace on the NVM Express controller
-  is returned in NamespaceId, and EFI_SUCCESS is returned.
+  If on input the value pointed to by NamespaceId is 0xFFFFFFFF, then the first valid namespace
+  ID defined on the NVM Express controller is returned in the location pointed to by NamespaceId
+  and a status of EFI_SUCCESS is returned.
 
-  If Namespace array is not a 0xFFFFFFFF and NamespaceId was not returned on a previous call to
-  GetNextNamespace(), then EFI_INVALID_PARAMETER is returned.
+  If on input the value pointed to by NamespaceId is an invalid namespace ID other than 0xFFFFFFFF,
+  then EFI_INVALID_PARAMETER is returned.
 
-  If NamespaceId is the NamespaceId of the last SSD namespace on the NVM Express controller, then
-  EFI_NOT_FOUND is returned
+  If on input the value pointed to by NamespaceId is a valid namespace ID, then the next valid
+  namespace ID on the NVM Express controller is returned in the location pointed to by NamespaceId,
+  and EFI_SUCCESS is returned.
 
-  @param[in]     This           A pointer to the NVM_EXPRESS_PASS_THRU_PROTOCOL instance.
+  If the value pointed to by NamespaceId is the namespace ID of the last namespace on the NVM
+  Express controller, then EFI_NOT_FOUND is returned.
+
+  @param[in]     This           A pointer to the EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL instance.
   @param[in,out] NamespaceId    On input, a pointer to a legal NamespaceId for an NVM Express
                                 namespace present on the NVM Express controller. On output, a
                                 pointer to the next NamespaceId of an NVM Express namespace on
                                 an NVM Express controller. An input value of 0xFFFFFFFF retrieves
                                 the first NamespaceId for an NVM Express namespace present on an
                                 NVM Express controller.
-  @param[out]    NamespaceUuid  On output, the UUID associated with the next namespace, if a UUID
-                                is defined for that NamespaceId, otherwise, zero is returned in
-                                this parameter. If the caller does not require a UUID, then a NULL
-                                pointer may be passed.
 
-  @retval EFI_SUCCESS           The NamespaceId of the next Namespace was returned.
+  @retval EFI_SUCCESS           The Namespace ID of the next Namespace was returned.
   @retval EFI_NOT_FOUND         There are no more namespaces defined on this controller.
-  @retval EFI_INVALID_PARAMETER Namespace array is not a 0xFFFFFFFF and NamespaceId was not returned
-                                on a previous call to GetNextNamespace().
+  @retval EFI_INVALID_PARAMETER NamespaceId is an invalid value other than 0xFFFFFFFF.
 
 **/
 EFI_STATUS
 EFIAPI
 NvmExpressGetNextNamespace (
-  IN     NVM_EXPRESS_PASS_THRU_PROTOCOL              *This,
-  IN OUT UINT32                                      *NamespaceId,
-     OUT UINT64                                      *NamespaceUuid  OPTIONAL
+  IN     EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL          *This,
+  IN OUT UINT32                                      *NamespaceId
   );
 
 /**
-  Used to translate a device path node to a Target ID and LUN.
+  Used to translate a device path node to a namespace ID.
 
-  The NVM_EXPRESS_PASS_THRU_PROTOCOL.GetNamwspace() function determines the Namespace ID and Namespace UUID
-  associated with the NVM Express SSD namespace described by DevicePath. If DevicePath is a device path node type
-  that the NVM Express Pass Thru driver supports, then the NVM Express Pass Thru driver will attempt to translate
-  the contents DevicePath into a Namespace ID and UUID. If this translation is successful, then that Namespace ID
-  and UUID are returned in NamespaceID and NamespaceUUID, and EFI_SUCCESS is returned.
+  The EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL.GetNamespace() function determines the namespace ID associated with the
+  namespace described by DevicePath.
 
-  @param[in]  This                A pointer to the NVM_EXPRESS_PASS_THRU_PROTOCOL instance.
+  If DevicePath is a device path node type that the NVM Express Pass Thru driver supports, then the NVM Express
+  Pass Thru driver will attempt to translate the contents DevicePath into a namespace ID.
+
+  If this translation is successful, then that namespace ID is returned in NamespaceId, and EFI_SUCCESS is returned
+
+  @param[in]  This                A pointer to the EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL instance.
   @param[in]  DevicePath          A pointer to the device path node that describes an NVM Express namespace on
                                   the NVM Express controller.
   @param[out] NamespaceId         The NVM Express namespace ID contained in the device path node.
-  @param[out] NamespaceUuid       The NVM Express namespace contained in the device path node.
 
-  @retval EFI_SUCCESS             DevicePath was successfully translated to NamespaceId and NamespaceUuid.
-  @retval EFI_INVALID_PARAMETER   If DevicePath, NamespaceId, or NamespaceUuid are NULL, then EFI_INVALID_PARAMETER
-                                  is returned.
+  @retval EFI_SUCCESS             DevicePath was successfully translated to NamespaceId.
+  @retval EFI_INVALID_PARAMETER   If DevicePath or NamespaceId are NULL, then EFI_INVALID_PARAMETER is returned.
   @retval EFI_UNSUPPORTED         If DevicePath is not a device path node type that the NVM Express Pass Thru driver
                                   supports, then EFI_UNSUPPORTED is returned.
-  @retval EFI_NOT_FOUND           If DevicePath is a device path node type that the Nvm Express Pass Thru driver
-                                  supports, but there is not a valid translation from DevicePath to a NamespaceID
-                                  and NamespaceUuid, then EFI_NOT_FOUND is returned.
+  @retval EFI_NOT_FOUND           If DevicePath is a device path node type that the NVM Express Pass Thru driver
+                                  supports, but there is not a valid translation from DevicePath to a namespace ID,
+                                  then EFI_NOT_FOUND is returned.
 **/
 EFI_STATUS
 EFIAPI
 NvmExpressGetNamespace (
-  IN     NVM_EXPRESS_PASS_THRU_PROTOCOL              *This,
+  IN     EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL          *This,
   IN     EFI_DEVICE_PATH_PROTOCOL                    *DevicePath,
-     OUT UINT32                                      *NamespaceId,
-     OUT UINT64                                      *NamespaceUuid
+     OUT UINT32                                      *NamespaceId
   );
 
 /**
   Used to allocate and build a device path node for an NVM Express namespace on an NVM Express controller.
 
-  The NVM_EXPRESS_PASS_THRU_PROTOCOL.BuildDevicePath() function allocates and builds a single device
+  The EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL.BuildDevicePath() function allocates and builds a single device
   path node for the NVM Express namespace specified by NamespaceId.
 
-  If the namespace device specified by NamespaceId is not valid , then EFI_NOT_FOUND is returned.
+  If the NamespaceId is not valid, then EFI_NOT_FOUND is returned.
 
   If DevicePath is NULL, then EFI_INVALID_PARAMETER is returned.
 
@@ -583,12 +687,10 @@ NvmExpressGetNamespace (
   Otherwise, DevicePath is allocated with the boot service AllocatePool(), the contents of DevicePath are
   initialized to describe the NVM Express namespace specified by NamespaceId, and EFI_SUCCESS is returned.
 
-  @param[in]     This                A pointer to the NVM_EXPRESS_PASS_THRU_PROTOCOL instance.
+  @param[in]     This                A pointer to the EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL instance.
   @param[in]     NamespaceId         The NVM Express namespace ID  for which a device path node is to be
                                      allocated and built. Caller must set the NamespaceId to zero if the
                                      device path node will contain a valid UUID.
-  @param[in]     NamespaceUuid       The NVM Express namespace UUID for which a device path node is to be
-                                     allocated and built. UUID will only be valid of the Namespace ID is zero.
   @param[in,out] DevicePath          A pointer to a single device path node that describes the NVM Express
                                      namespace specified by NamespaceId. This function is responsible for
                                      allocating the buffer DevicePath with the boot service AllocatePool().
@@ -596,8 +698,7 @@ NvmExpressGetNamespace (
                                      is finished with DevicePath.
   @retval EFI_SUCCESS                The device path node that describes the NVM Express namespace specified
                                      by NamespaceId was allocated and returned in DevicePath.
-  @retval EFI_NOT_FOUND              The NVM Express namespace specified by NamespaceId does not exist on the
-                                     NVM Express controller.
+  @retval EFI_NOT_FOUND              The NamespaceId is not valid.
   @retval EFI_INVALID_PARAMETER      DevicePath is NULL.
   @retval EFI_OUT_OF_RESOURCES       There are not enough resources to allocate the DevicePath node.
 
@@ -605,10 +706,40 @@ NvmExpressGetNamespace (
 EFI_STATUS
 EFIAPI
 NvmExpressBuildDevicePath (
-  IN     NVM_EXPRESS_PASS_THRU_PROTOCOL              *This,
+  IN     EFI_NVM_EXPRESS_PASS_THRU_PROTOCOL          *This,
   IN     UINT32                                      NamespaceId,
-  IN     UINT64                                      NamespaceUuid,
   IN OUT EFI_DEVICE_PATH_PROTOCOL                    **DevicePath
+  );
+
+/**
+  Dump the execution status from a given completion queue entry.
+
+  @param[in]     Cq               A pointer to the NVME_CQ item.
+
+**/
+VOID
+NvmeDumpStatus (
+  IN NVME_CQ             *Cq
+  );
+
+/**
+  Register the shutdown notification through the ResetNotification protocol.
+
+  Register the shutdown notification when mNvmeControllerNumber increased from 0 to 1.
+**/
+VOID
+NvmeRegisterShutdownNotification (
+  VOID
+  );
+
+/**
+  Unregister the shutdown notification through the ResetNotification protocol.
+
+  Unregister the shutdown notification when mNvmeControllerNumber decreased from 1 to 0.
+**/
+VOID
+NvmeUnregisterShutdownNotification (
+  VOID
   );
 
 #endif

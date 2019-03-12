@@ -37,7 +37,7 @@ endif
 #
 # Globals.
 #
-VBOX_PATH_EFI_FIRMWARE = $(PATH_ROOT)/src/VBox/Devices/EFI/Firmware
+VBOX_PATH_EFI_FIRMWARE = $(PATH_ROOT)/src/VBox/Devices/EFI/FirmwareNew
 VBOX_PATH_STAGE_EFI_BLDPROGS = $(PATH_STAGE)/EfiBldProgs
 VBOX_EFI_BUILD_TARGET  = $(if-expr $(intersects release profile, $(KBUILD_TYPE)),RELEASE,DEBUG)
 VBOX_EFI_OUTPUT_SUBDIR = $(VBOX_EFI_BUILD_TARGET)_$(VBOX_EFI_TOOL_CHAIN)
@@ -93,12 +93,15 @@ TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4555 # warning C4555: expression has no
 TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4701 # warning C4701: potentially uninitialized local variable 'save_line' used
 TEMPLATE_VBoxEfiBldProg_CFLAGS.win += -wd4702 # warning C4702: unreachable code
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win  = $(TEMPLATE_VBoxBldProg_CXXFLAGS.win)
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4018 # warning C4018: '>' : signed/unsigned mismatch
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4101 # warning C4101: 'LineBuf' : unreferenced local variable
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4102 # warning C4102: 'fail' : unreferenced label
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4189 # warning C4189: 'zzpf' : local variable is initialized but not referenced
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4267 # warning C4267: '=' : conversion from 'size_t' to 'UINT32', possible loss of data
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4370 # warning C4370: 'ANTLRParser' : layout of class has changed from a previous version of the compiler due to better packing
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4555 # warning C4555: expression has no effect; expected expression with side-effect
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4625 # warning C4625: 'EfiVfrParser' : copy constructor could not be generated because a base class copy constructor is inaccessible
+TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4626 # warning C4626: 'EfiVfrParser' : assignment operator could not be generated because a base class assignment operator is inaccessible
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4701 # warning C4701: potentially uninitialized local variable 'save_line' used
 TEMPLATE_VBoxEfiBldProg_CXXFLAGS.win += -wd4702 # warning C4702: unreachable code
 

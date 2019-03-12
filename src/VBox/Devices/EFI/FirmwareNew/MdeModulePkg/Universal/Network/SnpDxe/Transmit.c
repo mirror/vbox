@@ -1,7 +1,7 @@
 /** @file
     Implementation of transmitting a packet.
 
-Copyright (c) 2004 - 2007, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed
 and made available under the terms and conditions of the BSD License which
 accompanies this distribution. The full text of the license may be found at
@@ -186,7 +186,6 @@ PxeTransmit (
   (*Snp->IssueUndi32Command) ((UINT64) (UINTN) &Snp->Cdb);
 
   DEBUG ((EFI_D_NET, "\nexit Snp->undi.transmit()  "));
-  DEBUG ((EFI_D_NET, "\nSnp->Cdb.StatCode == %r", Snp->Cdb.StatCode));
 
   //
   // we will unmap the buffers in get_status call, not here
@@ -195,21 +194,27 @@ PxeTransmit (
   case PXE_STATCODE_SUCCESS:
     return EFI_SUCCESS;
 
+  case PXE_STATCODE_BUFFER_FULL:
   case PXE_STATCODE_QUEUE_FULL:
   case PXE_STATCODE_BUSY:
     Status = EFI_NOT_READY;
+    DEBUG (
+      (EFI_D_NET,
+      "\nSnp->undi.transmit()  %xh:%xh\n",
+      Snp->Cdb.StatFlags,
+      Snp->Cdb.StatCode)
+      );
     break;
 
   default:
+    DEBUG (
+      (EFI_D_ERROR,
+      "\nSnp->undi.transmit()  %xh:%xh\n",
+      Snp->Cdb.StatFlags,
+      Snp->Cdb.StatCode)
+      );
     Status = EFI_DEVICE_ERROR;
   }
-
-  DEBUG (
-    (EFI_D_ERROR,
-    "\nSnp->undi.transmit()  %xh:%xh\n",
-    Snp->Cdb.StatFlags,
-    Snp->Cdb.StatCode)
-    );
 
   return Status;
 }

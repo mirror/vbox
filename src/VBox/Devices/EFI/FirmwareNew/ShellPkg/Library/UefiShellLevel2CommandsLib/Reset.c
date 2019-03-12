@@ -1,7 +1,8 @@
 /** @file
   Main file for attrib shell level 2 function.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2009 - 2016, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -15,10 +16,11 @@
 #include "UefiShellLevel2CommandsLib.h"
 
 STATIC CONST SHELL_PARAM_ITEM ResetParamList[] = {
-  {L"-w", TypeValue},
-  {L"-s", TypeValue},
-  {L"-c", TypeValue},
-  {NULL, TypeMax}
+  {L"-w",    TypeValue},
+  {L"-s",    TypeValue},
+  {L"-c",    TypeValue},
+  {L"-fwui", TypeFlag },
+  {NULL,     TypeMax  }
   };
 
 /**
@@ -39,6 +41,9 @@ ShellCommandRunReset (
   CONST CHAR16  *String;
   CHAR16        *ProblemParam;
   SHELL_STATUS  ShellStatus;
+  UINT64        OsIndications;
+  UINT32        Attr;
+  UINTN         DataSize;
 
   ShellStatus = SHELL_SUCCESS;
   ProblemParam = NULL;
@@ -55,7 +60,7 @@ ShellCommandRunReset (
   Status = ShellCommandLineParse (ResetParamList, &Package, &ProblemParam, TRUE);
   if (EFI_ERROR(Status)) {
     if (Status == EFI_VOLUME_CORRUPTED && ProblemParam != NULL) {
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellLevel2HiiHandle, ProblemParam);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellLevel2HiiHandle, L"reset", ProblemParam);
       FreePool(ProblemParam);
       return (SHELL_INVALID_PARAMETER);
     } else {
@@ -68,15 +73,48 @@ ShellCommandRunReset (
     if (ShellCommandLineGetFlag(Package, L"-?")) {
       ASSERT(FALSE);
     } else if (ShellCommandLineGetRawValue(Package, 1) != NULL) {
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel2HiiHandle);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel2HiiHandle, L"reset");
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
+
+      if (ShellCommandLineGetFlag (Package, L"-fwui")) {
+
+        DataSize  = sizeof (OsIndications);
+        Status = gRT->GetVariable (
+                        EFI_OS_INDICATIONS_SUPPORT_VARIABLE_NAME, &gEfiGlobalVariableGuid,
+                        &Attr, &DataSize, &OsIndications
+                        );
+        if (!EFI_ERROR (Status)) {
+          if ((OsIndications & EFI_OS_INDICATIONS_BOOT_TO_FW_UI) != 0) {
+            DataSize = sizeof (OsIndications);
+            Status = gRT->GetVariable (
+                            EFI_OS_INDICATIONS_VARIABLE_NAME, &gEfiGlobalVariableGuid,
+                            &Attr, &DataSize, &OsIndications
+                            );
+            if (!EFI_ERROR (Status)) {
+              OsIndications |= EFI_OS_INDICATIONS_BOOT_TO_FW_UI;
+            } else {
+              OsIndications = EFI_OS_INDICATIONS_BOOT_TO_FW_UI;
+            }
+            Status = gRT->SetVariable (
+                            EFI_OS_INDICATIONS_VARIABLE_NAME, &gEfiGlobalVariableGuid,
+                            EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                            sizeof (OsIndications), &OsIndications
+                            );
+          }
+        }
+        if (EFI_ERROR (Status)) {
+          ShellStatus = SHELL_UNSUPPORTED;
+          goto Error;
+        }
+      }
+
       //
       // check for warm reset flag, then shutdown reset flag, then cold (default) reset flag
       //
       if (ShellCommandLineGetFlag(Package, L"-w")) {
         if (ShellCommandLineGetFlag(Package, L"-s") || ShellCommandLineGetFlag(Package, L"-c")) {
-          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel2HiiHandle);
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel2HiiHandle, L"reset");
           ShellStatus = SHELL_INVALID_PARAMETER;
         } else {
           String = ShellCommandLineGetValue(Package, L"-w");
@@ -88,7 +126,7 @@ ShellCommandRunReset (
         }
       } else if (ShellCommandLineGetFlag(Package, L"-s")) {
         if (ShellCommandLineGetFlag(Package, L"-c")) {
-          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel2HiiHandle);
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel2HiiHandle, L"reset");
           ShellStatus = SHELL_INVALID_PARAMETER;
         } else {
           String = ShellCommandLineGetValue(Package, L"-s");
@@ -118,6 +156,7 @@ ShellCommandRunReset (
   // as the ResetSystem function should not return...
   //
 
+Error:
   //
   // free the command line package
   //

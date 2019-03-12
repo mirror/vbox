@@ -122,6 +122,34 @@
 
 #endif
 
+#ifndef GUID_DEFINED
+#define GUID_DEFINED
+///
+/// 128 bit buffer containing a unique identifier value.
+/// Unless otherwise specified, aligned on a 64 bit boundary.
+///
+typedef struct {
+  UINT32  Data1;
+  UINT16  Data2;
+  UINT16  Data3;
+  UINT8   Data4[8];
+} GUID;
+#endif
+
+///
+/// 4-byte buffer. An IPv4 internet protocol address.
+///
+typedef struct {
+  UINT8 Addr[4];
+} IPv4_ADDRESS;
+
+///
+/// 16-byte buffer. An IPv6 internet protocol address.
+///
+typedef struct {
+  UINT8 Addr[16];
+} IPv6_ADDRESS;
+
 //
 // Macro that returns the byte offset of a field in a data structure.
 //
@@ -170,15 +198,15 @@
 // EFI Error Codes common to all execution phases
 //
 
-typedef INTN RETURN_STATUS;
+typedef UINTN RETURN_STATUS;
 
 ///
 /// Set the upper bit to indicate EFI Error.
 ///
-#define ENCODE_ERROR(a)              (MAX_BIT | (a))
+#define ENCODE_ERROR(a)              ((RETURN_STATUS)(MAX_BIT | (a)))
 
-#define ENCODE_WARNING(a)            (a)
-#define RETURN_ERROR(a)              ((a) < 0)
+#define ENCODE_WARNING(a)            ((RETURN_STATUS)(a))
+#define RETURN_ERROR(a)              (((INTN)(RETURN_STATUS)(a)) < 0)
 
 #define RETURN_SUCCESS               0
 #define RETURN_LOAD_ERROR            ENCODE_ERROR (1)

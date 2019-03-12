@@ -1,7 +1,7 @@
 /** @file
   A Ps2MouseAbsolutePointer driver header file
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #ifndef __PS2MOUSEABSOLUTEPOINTER_H__
 #define __PS2MOUSEABSOLUTEPOINTER_H__
 
-#include <FrameworkDxe.h>
+#include <Uefi.h>
 
 #include <Protocol/AbsolutePointer.h>
 #include <Protocol/IsaIo.h>
@@ -151,7 +151,7 @@ PS2MouseAbsolutePointerDriverStart (
   );
 
 /**
-  Stop this driver on ControllerHandle. Support stoping any child handles
+  Stop this driver on ControllerHandle. Support stopping any child handles
   created by this driver.
 
   @param  This              Protocol instance pointer.
@@ -303,14 +303,14 @@ Ps2MouseAbsolutePointerComponentNameGetControllerName (
   );
 
 /**
-  Reset the Mouse and do BAT test for it, if ExtendedVerification isTRUE and there is a mouse device connectted to system.
+  Reset the Mouse and do BAT test for it, if ExtendedVerification is TRUE and there is a mouse device connected to system.
 
   @param This                 - Pointer of simple pointer Protocol.
   @param ExtendedVerification - Whether configure mouse parameters. True: do; FALSE: skip.
 
 
   @retval EFI_SUCCESS         - The command byte is written successfully.
-  @retval EFI_DEVICE_ERROR    - Errors occurred during reseting keyboard.
+  @retval EFI_DEVICE_ERROR    - Errors occurred during resetting keyboard.
 
 **/
 EFI_STATUS
@@ -374,7 +374,7 @@ PollMouseAbsolutePointer (
   @param IsaIo   Pointer to instance of EFI_ISA_IO_PROTOCOL
   @param Data    Data value
 
-  @retval EFI_SUCCESS Success to excute I/O work flow
+  @retval EFI_SUCCESS Success to execute I/O work flow
   @retval EFI_TIMEOUT Keyboard controller time out.
 **/
 EFI_STATUS

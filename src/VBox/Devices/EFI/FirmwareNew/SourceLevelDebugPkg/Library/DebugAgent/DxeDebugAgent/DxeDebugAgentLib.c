@@ -1,7 +1,7 @@
 /** @file
   Debug Agent library implementition for Dxe Core and Dxr modules.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -235,19 +235,24 @@ GetDebugPortHandle (
 }
 
 /**
-  Worker function to setup IDT table and initialize the IDT entries.
+  Worker function to set up Debug Agent environment.
+
+  This function will set up IDT table and initialize the IDT entries and
+  initialize CPU LOCAL APIC timer.
+  It also tries to connect HOST if Debug Agent was not initialized before.
 
   @param[in] Mailbox        Pointer to Mailbox.
 
 **/
 VOID
-SetupDebugAgentEnviroment (
+SetupDebugAgentEnvironment (
   IN DEBUG_AGENT_MAILBOX       *Mailbox
   )
 {
   IA32_DESCRIPTOR              Idtr;
   UINT16                       IdtEntryCount;
   UINT64                       DebugPortHandle;
+  UINT32                       DebugTimerFrequency;
 
   if (mMultiProcessorDebugSupport) {
     InitializeSpinLock (&mDebugMpContext.MpContextSpinLock);
@@ -299,6 +304,11 @@ SetupDebugAgentEnviroment (
   }
 
   //
+  // Initialize Debug Timer hardware and save its initial count and frequency
+  //
+  mDebugMpContext.DebugTimerInitCount = InitializeDebugTimer (&DebugTimerFrequency, TRUE);
+  UpdateMailboxContent (mMailboxPointer, DEBUG_MAILBOX_DEBUG_TIMER_FREQUENCY, DebugTimerFrequency);
+  //
   // Initialize debug communication port
   //
   DebugPortHandle = (UINT64) (UINTN)DebugPortInitialize ((VOID *)(UINTN)mMailboxPointer->DebugPortHandle, NULL);
@@ -326,7 +336,7 @@ SetupDebugAgentEnviroment (
 /**
   Initialize debug agent.
 
-  This function is used to set up debug enviroment for DXE phase.
+  This function is used to set up debug environment for DXE phase.
 
   If this function is called by DXE Core, Context must be the pointer
   to HOB list which will be used to get GUIDed HOB. It will enable
@@ -355,8 +365,19 @@ InitializeDebugAgent (
   IA32_DESCRIPTOR              IdtDescriptor;
   IA32_DESCRIPTOR              *Ia32Idtr;
   IA32_IDT_ENTRY               *Ia32IdtEntry;
+  BOOLEAN                      PeriodicMode;
+  UINTN                        TimerCycle;
 
   if (InitFlag == DEBUG_AGENT_INIT_DXE_AP) {
+    //
+    // Check if CPU APIC Timer is working, otherwise initialize it.
+    //
+    InitializeLocalApicSoftwareEnable (TRUE);
+    GetApicTimerState (NULL, &PeriodicMode, NULL);
+    TimerCycle = GetApicTimerInitCount ();
+    if (!PeriodicMode || TimerCycle == 0) {
+      InitializeDebugTimer (NULL, FALSE);
+    }
     //
     // Invoked by AP, enable interrupt to let AP could receive IPI from other processors
     //
@@ -398,10 +419,6 @@ InitializeDebugAgent (
     mSaveIdtTableSize = IdtDescriptor.Limit + 1;
     mSavedIdtTable    = AllocateCopyPool (mSaveIdtTableSize, (VOID *) IdtDescriptor.Base);
     //
-    // Initialize Debug Timer hardware and save its initial count
-    //
-    mDebugMpContext.DebugTimerInitCount = InitializeDebugTimer ();
-    //
     // Check if Debug Agent initialized in DXE phase
     //
     Mailbox = GetMailboxFromConfigurationTable ();
@@ -413,14 +430,18 @@ InitializeDebugAgent (
       Mailbox = GetMailboxFromHob (HobList);
     }
     //
-    // Set up IDT table and prepare for IDT entries
+    // Set up Debug Agent Environment and try to connect HOST if required
     //
-    SetupDebugAgentEnviroment (Mailbox);
+    SetupDebugAgentEnvironment (Mailbox);
     //
     // For DEBUG_AGENT_INIT_S3, needn't to install configuration table and EFI Serial IO protocol
     // For DEBUG_AGENT_INIT_DXE_CORE, InternalConstructorWorker() will invoked in Constructor()
     //
     InternalConstructorWorker ();
+    //
+    // Enable Debug Timer interrupt
+    //
+    SaveAndSetDebugTimerInterrupt (TRUE);
     //
     // Enable interrupt to receive Debug Timer interrupt
     //
@@ -431,39 +452,11 @@ InitializeDebugAgent (
 
     *(EFI_STATUS *)Context = EFI_SUCCESS;
 
-    if (gST->ConOut != NULL) {
-      Print (L"Debug Agent: Initialized successfully!\r\n");
-      Print (L"If the Debug Port is serial port, please make sure this serial port isn't connected by ISA Serial driver\r\n");
-      Print (L"You could do the following steps to disconnect the serial port:\r\n");
-      Print (L"1: Shell> drivers\r\n");
-      Print (L"   ...\r\n");
-      Print (L"   V  VERSION  E G G #D #C DRIVER NAME                         IMAGE NAME\r\n");
-      Print (L"   == ======== = = = == == =================================== ===================\r\n");
-      Print (L"   8F 0000000A B - -  1 14 PCI Bus Driver                      PciBusDxe\r\n");
-      Print (L"   91 00000010 ? - -  -  - ATA Bus Driver                      AtaBusDxe\r\n");
-      Print (L"   ...\r\n");
-      Print (L"   A7 0000000A B - -  1  1 ISA Serial Driver                   IsaSerialDxe\r\n");
-      Print (L"   ...\r\n");
-      Print (L"2: Shell> dh -d A7\r\n");
-      Print (L"   A7: Image(IsaSerialDxe) ImageDevPath (..9FB3-11D4-9A3A-0090273FC14D))DriverBinding ComponentName ComponentName2\r\n");
-      Print (L"        Driver Name    : ISA Serial Driver\r\n");
-      Print (L"        Image Name     : FvFile(93B80003-9FB3-11D4-9A3A-0090273FC14D)\r\n");
-      Print (L"        Driver Version : 0000000A\r\n");
-      Print (L"        Driver Type    : BUS\r\n");
-      Print (L"        Configuration  : NO\r\n");
-      Print (L"        Diagnostics    : NO\r\n");
-      Print (L"        Managing       :\r\n");
-      Print (L"          Ctrl[EA] : PciRoot(0x0)/Pci(0x1F,0x0)/Serial(0x0)\r\n");
-      Print (L"            Child[EB] : PciRoot(0x0)/Pci(0x1F,0x0)/Serial(0x0)/Uart(115200,8,N,1)\r\n");
-      Print (L"3: Shell> disconnect EA\r\n");
-      Print (L"4: Shell> load -nc DebugAgentDxe.efi\r\n\r\n");
-    }
     break;
 
   case DEBUG_AGENT_INIT_DXE_UNLOAD:
     if (mDebugAgentInitialized) {
       if (IsHostAttached ()) {
-        Print (L"Debug Agent: Host is still connected, please de-attach TARGET firstly!\r\n");
         *(EFI_STATUS *)Context = EFI_ACCESS_DENIED;
         //
         // Enable Debug Timer interrupt again
@@ -482,7 +475,6 @@ InitializeDebugAgent (
         *(EFI_STATUS *)Context = EFI_SUCCESS;
       }
     } else {
-      Print (L"Debug Agent: It hasn't been initialized, cannot unload it!\r\n");
       *(EFI_STATUS *)Context = EFI_NOT_STARTED;
     }
 
@@ -496,18 +488,18 @@ InitializeDebugAgent (
     mDxeCoreFlag                = TRUE;
     mMultiProcessorDebugSupport = TRUE;
     //
-    // Initialize Debug Timer hardware and its initial count
-    //
-    mDebugMpContext.DebugTimerInitCount = InitializeDebugTimer ();
-    //
     // Try to get mailbox from GUIDed HOB build in PEI
     //
     HobList = Context;
     Mailbox = GetMailboxFromHob (HobList);
     //
-    // Set up IDT table and prepare for IDT entries
+    // Set up Debug Agent Environment and try to connect HOST if required
     //
-    SetupDebugAgentEnviroment (Mailbox);
+    SetupDebugAgentEnvironment (Mailbox);
+    //
+    // Enable Debug Timer interrupt
+    //
+    SaveAndSetDebugTimerInterrupt (TRUE);
     //
     // Enable interrupt to receive Debug Timer interrupt
     //
@@ -520,8 +512,8 @@ InitializeDebugAgent (
     if (Context != NULL) {
       Ia32Idtr =  (IA32_DESCRIPTOR *) Context;
       Ia32IdtEntry = (IA32_IDT_ENTRY *)(Ia32Idtr->Base);
-      MailboxLocation = (UINT64 *) (UINTN) (Ia32IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetLow +
-                                           (Ia32IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetHigh << 16));
+      MailboxLocation = (UINT64 *) ((UINTN) Ia32IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetLow +
+                                   ((UINTN) Ia32IdtEntry[DEBUG_MAILBOX_VECTOR].Bits.OffsetHigh << 16));
       Mailbox = (DEBUG_AGENT_MAILBOX *)(UINTN)(*MailboxLocation);
       VerifyMailboxChecksum (Mailbox);
     }
@@ -530,9 +522,9 @@ InitializeDebugAgent (
     //
     mMailboxPointer = Mailbox;
     //
-    // Set up IDT table and prepare for IDT entries
+    // Set up Debug Agent Environment and try to connect HOST if required
     //
-    SetupDebugAgentEnviroment (Mailbox);
+    SetupDebugAgentEnvironment (Mailbox);
     //
     // Disable interrupt
     //

@@ -1,7 +1,7 @@
 /** @file
   Support routines for Mtftp.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -278,13 +278,16 @@ Mtftp4SendRequest (
   EFI_MTFTP4_PACKET         *Packet;
   EFI_MTFTP4_OPTION         *Options;
   EFI_MTFTP4_TOKEN          *Token;
+  RETURN_STATUS             Status;
   NET_BUF                   *Nbuf;
   UINT8                     *Mode;
   UINT8                     *Cur;
-  UINT32                    Len;
   UINTN                     Index;
-  UINT32                    Len1;
-  UINT32                    Len2;
+  UINT32                    BufferLength;
+  UINTN                     FileNameLength;
+  UINTN                     ModeLength;
+  UINTN                     OptionStrLength;
+  UINTN                     ValueStrLength;
 
   Token   = Instance->Token;
   Options = Token->OptionList;
@@ -297,39 +300,52 @@ Mtftp4SendRequest (
   //
   // Compute the packet length
   //
-  Len1 = (UINT32) AsciiStrLen ((CHAR8 *) Token->Filename);
-  Len2 = (UINT32) AsciiStrLen ((CHAR8 *) Mode);
-  Len  = (Len1 + Len2 + 4);
+  FileNameLength = AsciiStrLen ((CHAR8 *) Token->Filename);
+  ModeLength     = AsciiStrLen ((CHAR8 *) Mode);
+  BufferLength   = (UINT32) FileNameLength + (UINT32) ModeLength + 4;
 
   for (Index = 0; Index < Token->OptionCount; Index++) {
-    Len1 = (UINT32) AsciiStrLen ((CHAR8 *) Options[Index].OptionStr);
-    Len2 = (UINT32) AsciiStrLen ((CHAR8 *) Options[Index].ValueStr);
-    Len += Len1 + Len2 + 2;
+    OptionStrLength = AsciiStrLen ((CHAR8 *) Options[Index].OptionStr);
+    ValueStrLength  = AsciiStrLen ((CHAR8 *) Options[Index].ValueStr);
+    BufferLength   += (UINT32) OptionStrLength + (UINT32) ValueStrLength + 2;
   }
-
   //
   // Allocate a packet then copy the data over
   //
-  if ((Nbuf = NetbufAlloc (Len)) == NULL) {
+  if ((Nbuf = NetbufAlloc (BufferLength)) == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  Packet         = (EFI_MTFTP4_PACKET *) NetbufAllocSpace (Nbuf, Len, FALSE);
+  Packet         = (EFI_MTFTP4_PACKET *) NetbufAllocSpace (Nbuf, BufferLength, FALSE);
   ASSERT (Packet != NULL);
 
   Packet->OpCode = HTONS (Instance->Operation);
+  BufferLength  -= sizeof (Packet->OpCode);
+
   Cur            = Packet->Rrq.Filename;
-  Cur            = (UINT8 *) AsciiStrCpy ((CHAR8 *) Cur, (CHAR8 *) Token->Filename);
-  Cur           += AsciiStrLen ((CHAR8 *) Token->Filename) + 1;
-  Cur            = (UINT8 *) AsciiStrCpy ((CHAR8 *) Cur, (CHAR8 *) Mode);
-  Cur           += AsciiStrLen ((CHAR8 *) Mode) + 1;
+  Status         = AsciiStrCpyS ((CHAR8 *) Cur, BufferLength, (CHAR8 *) Token->Filename);
+  ASSERT_EFI_ERROR (Status);
+  BufferLength  -= (UINT32) (FileNameLength + 1);
+  Cur           += FileNameLength + 1;
+  Status         = AsciiStrCpyS ((CHAR8 *) Cur, BufferLength, (CHAR8 *) Mode);
+  ASSERT_EFI_ERROR (Status);
+  BufferLength  -= (UINT32) (ModeLength + 1);
+  Cur           += ModeLength + 1;
 
   for (Index = 0; Index < Token->OptionCount; ++Index) {
-    Cur  = (UINT8 *) AsciiStrCpy ((CHAR8 *) Cur, (CHAR8 *) Options[Index].OptionStr);
-    Cur += AsciiStrLen ((CHAR8 *) Options[Index].OptionStr) + 1;
+    OptionStrLength = AsciiStrLen ((CHAR8 *) Options[Index].OptionStr);
+    ValueStrLength  = AsciiStrLen ((CHAR8 *) Options[Index].ValueStr);
 
-    Cur  = (UINT8 *) AsciiStrCpy ((CHAR8 *) Cur, (CHAR8 *) Options[Index].ValueStr);
-    Cur += AsciiStrLen ((CHAR8 *) (CHAR8 *) Options[Index].ValueStr) + 1;
+    Status          = AsciiStrCpyS ((CHAR8 *) Cur, BufferLength, (CHAR8 *) Options[Index].OptionStr);
+    ASSERT_EFI_ERROR (Status);
+    BufferLength   -= (UINT32) (OptionStrLength + 1);
+    Cur            += OptionStrLength + 1;
+
+    Status          = AsciiStrCpyS ((CHAR8 *) Cur, BufferLength, (CHAR8 *) Options[Index].ValueStr);
+    ASSERT_EFI_ERROR (Status);
+    BufferLength   -= (UINT32) (ValueStrLength + 1);
+    Cur            += ValueStrLength + 1;
+
   }
 
   return Mtftp4SendPacket (Instance, Nbuf);
@@ -371,7 +387,7 @@ Mtftp4SendError (
   TftpError->OpCode = HTONS (EFI_MTFTP4_OPCODE_ERROR);
   TftpError->Error.ErrorCode = HTONS (ErrCode);
 
-  AsciiStrCpy ((CHAR8 *) TftpError->Error.ErrorMessage, (CHAR8 *) ErrInfo);
+  AsciiStrCpyS ((CHAR8 *) TftpError->Error.ErrorMessage, Len, (CHAR8 *) ErrInfo);
 
   return Mtftp4SendPacket (Instance, Packet);
 }
@@ -553,6 +569,42 @@ Mtftp4Retransmit (
 
 
 /**
+  The timer ticking function in TPL_NOTIFY level for the Mtftp service instance.
+
+  @param  Event                 The ticking event
+  @param  Context               The Mtftp service instance
+
+**/
+VOID
+EFIAPI
+Mtftp4OnTimerTickNotifyLevel (
+  IN EFI_EVENT              Event,
+  IN VOID                   *Context
+  )
+{
+  MTFTP4_SERVICE            *MtftpSb;
+  LIST_ENTRY                *Entry;
+  LIST_ENTRY                *Next;
+  MTFTP4_PROTOCOL           *Instance;
+
+  MtftpSb = (MTFTP4_SERVICE *) Context;
+
+  //
+  // Iterate through all the children of the Mtftp service instance. Time
+  // out the current packet transmit.
+  //
+  NET_LIST_FOR_EACH_SAFE (Entry, Next, &MtftpSb->Children) {
+    Instance = NET_LIST_USER_STRUCT (Entry, MTFTP4_PROTOCOL, Link);
+    if ((Instance->PacketToLive == 0) || (--Instance->PacketToLive > 0)) {
+      Instance->HasTimeout = FALSE;
+    } else {
+      Instance->HasTimeout = TRUE;
+    }
+  }
+}
+
+
+/**
   The timer ticking function for the Mtftp service instance.
 
   @param  Event                 The ticking event
@@ -575,29 +627,28 @@ Mtftp4OnTimerTick (
   MtftpSb = (MTFTP4_SERVICE *) Context;
 
   //
-  // Iterate through all the children of the Mtftp service instance. Time
-  // out the packet. If maximum retries reached, clean the session up.
+  // Iterate through all the children of the Mtftp service instance.
   //
   NET_LIST_FOR_EACH_SAFE (Entry, Next, &MtftpSb->Children) {
     Instance = NET_LIST_USER_STRUCT (Entry, MTFTP4_PROTOCOL, Link);
-
-    if ((Instance->PacketToLive == 0) || (--Instance->PacketToLive > 0)) {
+    if (!Instance->HasTimeout) {
       continue;
     }
+
+    Instance->HasTimeout = FALSE;
 
     //
     // Call the user's time out handler
     //
     Token = Instance->Token;
 
-    if ((Token->TimeoutCallback != NULL) &&
+    if (Token != NULL && Token->TimeoutCallback != NULL &&
         EFI_ERROR (Token->TimeoutCallback (&Instance->Mtftp4, Token))) {
-
       Mtftp4SendError (
-         Instance,
-         EFI_MTFTP4_ERRORCODE_REQUEST_DENIED,
-         (UINT8 *) "User aborted the transfer in time out"
-         );
+        Instance,
+        EFI_MTFTP4_ERRORCODE_REQUEST_DENIED,
+        (UINT8 *) "User aborted the transfer in time out"
+        );
 
       Mtftp4CleanOperation (Instance, EFI_ABORTED);
       continue;

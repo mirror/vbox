@@ -1,7 +1,7 @@
 /** @file
   ConsoleOut Routines that speak VGA.
 
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -1257,16 +1257,15 @@ HasChildHandle (
   EFI_OPEN_PROTOCOL_INFORMATION_ENTRY  *OpenInfoBuffer;
   UINTN                                EntryCount;
   BOOLEAN                              HasChild;
-  EFI_STATUS                           Status;
 
   EntryCount = 0;
   HasChild   = FALSE;
-  Status = gBS->OpenProtocolInformation (
-                  Controller,
-                  &gEfiPciIoProtocolGuid,
-                  &OpenInfoBuffer,
-                  &EntryCount
-                  );
+  gBS->OpenProtocolInformation (
+         Controller,
+         &gEfiPciIoProtocolGuid,
+         &OpenInfoBuffer,
+         &EntryCount
+         );
   for (Index = 0; Index < EntryCount; Index++) {
     if ((OpenInfoBuffer[Index].Attributes & EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER) != 0) {
       HasChild = TRUE;
@@ -1715,7 +1714,7 @@ BiosVideoCheckForVbe (
     //
     // Make sure the FrameBufferSize does not exceed the max available frame buffer size reported by VEB.
     //
-    ASSERT (CurrentModeData->FrameBufferSize <= (UINTN)(BiosVideoPrivate->VbeInformationBlock->TotalMemory * 64 * 1024));
+    ASSERT (CurrentModeData->FrameBufferSize <= ((UINT32)BiosVideoPrivate->VbeInformationBlock->TotalMemory * 64 * 1024));
 
     BiosVideoPrivate->ModeData = ModeBuffer;
   }

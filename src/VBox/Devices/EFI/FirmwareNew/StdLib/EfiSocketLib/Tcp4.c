@@ -1,11 +1,11 @@
 /** @file
   Implement the TCP4 driver support for the socket layer.
 
-  Copyright (c) 2011, Intel Corporation
-  All rights reserved. This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
+  Copyright (c) 2011 - 2015, Intel Corporation. All rights reserved.<BR>
+  This program and the accompanying materials are licensed and made available
+  under the terms and conditions of the BSD License which accompanies this
+  distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php.
 
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
@@ -840,7 +840,6 @@ EslTcp4ListenComplete (
   EFI_HANDLE ChildHandle;
   struct sockaddr_in LocalAddress;
   EFI_TCP4_CONFIG_DATA * pConfigData;
-  ESL_LAYER * pLayer;
   ESL_PORT * pNewPort;
   ESL_SOCKET * pNewSocket;
   ESL_SOCKET * pSocket;
@@ -869,7 +868,6 @@ EslTcp4ListenComplete (
     //  Allocate a socket for this connection
     //
     ChildHandle = NULL;
-    pLayer = &mEslLayer;
     Status = EslSocketAllocate ( &ChildHandle,
                                  DEBUG_CONNECTION,
                                  &pNewSocket );
@@ -1924,7 +1922,6 @@ EslTcp4TxBuffer (
   ESL_PACKET ** ppQueueHead;
   ESL_PACKET ** ppQueueTail;
   ESL_PACKET * pPreviousPacket;
-  ESL_TCP4_CONTEXT * pTcp4;
   size_t * pTxBytes;
   EFI_TCP4_TRANSMIT_DATA * pTxData;
   EFI_STATUS Status;
@@ -1951,7 +1948,6 @@ EslTcp4TxBuffer (
       //
       //  Determine the queue head
       //
-      pTcp4 = &pPort->Context.Tcp4;
       bUrgent = (BOOLEAN)( 0 != ( Flags & MSG_OOB ));
       bUrgentQueue = bUrgent
                     && ( !pSocket->bOobInLine )
@@ -2251,8 +2247,8 @@ EslTcp4VerifyLocalIpAddress (
 {
   UINTN DataSize;
   EFI_TCP4_ACCESS_POINT * pAccess;
-  EFI_IP4_IPCONFIG_DATA * pIpConfigData;
-  EFI_IP4_CONFIG_PROTOCOL * pIpConfigProtocol;
+  EFI_IP4_CONFIG2_INTERFACE_INFO * pIfInfo;
+  EFI_IP4_CONFIG2_PROTOCOL * pIpConfig2Protocol;
   ESL_SERVICE * pService;
   EFI_STATUS Status;
 
@@ -2261,7 +2257,7 @@ EslTcp4VerifyLocalIpAddress (
   //
   //  Use break instead of goto
   //
-  pIpConfigData = NULL;
+  pIfInfo = NULL;
   for ( ; ; ) {
     //
     //  Determine if the IP address is specified
@@ -2290,12 +2286,14 @@ EslTcp4VerifyLocalIpAddress (
     //  Open the configuration protocol
     //
     pService = pPort->pService;
-    Status = gBS->OpenProtocol ( pService->Controller,
-                                 &gEfiIp4ConfigProtocolGuid,
-                                 (VOID **)&pIpConfigProtocol,
-                                 NULL,
-                                 NULL,
-                                 EFI_OPEN_PROTOCOL_GET_PROTOCOL );
+    Status = gBS->OpenProtocol (
+                    pService->Controller,
+                    &gEfiIp4Config2ProtocolGuid,
+                    (VOID **)&pIpConfig2Protocol,
+                    NULL,
+                    NULL,
+                    EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                    );
     if ( EFI_ERROR ( Status )) {
       DEBUG (( DEBUG_ERROR,
                 "ERROR - IP Configuration Protocol not available, Status: %r\r\n",
@@ -2304,39 +2302,45 @@ EslTcp4VerifyLocalIpAddress (
     }
 
     //
-    //  Get the IP configuration data size
+    // Get the interface information size.
     //
     DataSize = 0;
-    Status = pIpConfigProtocol->GetData ( pIpConfigProtocol,
-                                          &DataSize,
-                                          NULL );
+    Status = pIpConfig2Protocol->GetData (
+                                   pIpConfig2Protocol,
+                                   Ip4Config2DataTypeInterfaceInfo,
+                                   &DataSize,
+                                   NULL
+                                   );
     if ( EFI_BUFFER_TOO_SMALL != Status ) {
       DEBUG (( DEBUG_ERROR,
-                "ERROR - Failed to get IP Configuration data size, Status: %r\r\n",
+                "ERROR - Failed to get the interface information size, Status: %r\r\n",
                 Status ));
       break;
     }
 
     //
-    //  Allocate the configuration data buffer
+    //  Allocate the interface information buffer
     //
-    pIpConfigData = AllocatePool ( DataSize );
-    if ( NULL == pIpConfigData ) {
+    pIfInfo = AllocatePool ( DataSize );
+    if ( NULL == pIfInfo ) {
       DEBUG (( DEBUG_ERROR,
-                "ERROR - Not enough memory to allocate IP Configuration data!\r\n" ));
+                "ERROR - Not enough memory to allocate the interface information buffer!\r\n" ));
       Status = EFI_OUT_OF_RESOURCES;
       break;
     }
 
     //
-    //  Get the IP configuration
+    // Get the interface info.
     //
-    Status = pIpConfigProtocol->GetData ( pIpConfigProtocol,
-                                          &DataSize,
-                                          pIpConfigData );
+    Status = pIpConfig2Protocol->GetData (
+                                  pIpConfig2Protocol,
+                                  Ip4Config2DataTypeInterfaceInfo,
+                                  &DataSize,
+                                  pIfInfo
+                                  );
     if ( EFI_ERROR ( Status )) {
       DEBUG (( DEBUG_ERROR,
-                "ERROR - Failed to return IP Configuration data, Status: %r\r\n",
+                "ERROR - Failed to return the interface info, Status: %r\r\n",
                 Status ));
       break;
     }
@@ -2346,19 +2350,19 @@ EslTcp4VerifyLocalIpAddress (
     //
     DEBUG (( DEBUG_BIND,
               "Actual adapter IP address: %d.%d.%d.%d\r\n",
-              pIpConfigData->StationAddress.Addr [ 0 ],
-              pIpConfigData->StationAddress.Addr [ 1 ],
-              pIpConfigData->StationAddress.Addr [ 2 ],
-              pIpConfigData->StationAddress.Addr [ 3 ]));
+              pIfInfo->StationAddress.Addr [ 0 ],
+              pIfInfo->StationAddress.Addr [ 1 ],
+              pIfInfo->StationAddress.Addr [ 2 ],
+              pIfInfo->StationAddress.Addr [ 3 ]));
 
     //
     //  Assume the port is not configured
     //
     Status = EFI_SUCCESS;
-    if (( pAccess->StationAddress.Addr [ 0 ] == pIpConfigData->StationAddress.Addr [ 0 ])
-      && ( pAccess->StationAddress.Addr [ 1 ] == pIpConfigData->StationAddress.Addr [ 1 ])
-      && ( pAccess->StationAddress.Addr [ 2 ] == pIpConfigData->StationAddress.Addr [ 2 ])
-      && ( pAccess->StationAddress.Addr [ 3 ] == pIpConfigData->StationAddress.Addr [ 3 ])) {
+    if (( pAccess->StationAddress.Addr [ 0 ] == pIfInfo->StationAddress.Addr [ 0 ])
+      && ( pAccess->StationAddress.Addr [ 1 ] == pIfInfo->StationAddress.Addr [ 1 ])
+      && ( pAccess->StationAddress.Addr [ 2 ] == pIfInfo->StationAddress.Addr [ 2 ])
+      && ( pAccess->StationAddress.Addr [ 3 ] == pIfInfo->StationAddress.Addr [ 3 ])) {
       break;
     }
 
@@ -2372,8 +2376,8 @@ EslTcp4VerifyLocalIpAddress (
   //
   //  Free the buffer if necessary
   //
-  if ( NULL != pIpConfigData ) {
-    FreePool ( pIpConfigData );
+  if ( NULL != pIfInfo ) {
+    FreePool ( pIfInfo );
   }
 
   //

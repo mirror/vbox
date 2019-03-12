@@ -1,7 +1,8 @@
 /** @file
   Main file for Ver shell level 3 function.
 
-  Copyright (c) 2013, Hewlett-Packard Development Company, L.P.
+  (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
+  (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.<BR>
   Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -69,7 +70,7 @@ ShellCommandRunVer (
   Status = ShellCommandLineParse (ParamList, &Package, &ProblemParam, TRUE);
   if (EFI_ERROR(Status)) {
     if (Status == EFI_VOLUME_CORRUPTED && ProblemParam != NULL) {
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellLevel3HiiHandle, ProblemParam);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellLevel3HiiHandle, L"ver", ProblemParam);
       FreePool(ProblemParam);
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
@@ -86,19 +87,24 @@ ShellCommandRunVer (
       //
       // we have too many parameters
       //
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel3HiiHandle);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel3HiiHandle, L"ver");
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
       if (ShellCommandLineGetFlag(Package, L"-s")) {
-        ShellPrintHiiEx (
-          0,
-          gST->ConOut->Mode->CursorRow,
-          NULL,
-          STRING_TOKEN (STR_VER_OUTPUT_SIMPLE),
-          gShellLevel3HiiHandle,
-          gEfiShellProtocol->MajorVersion,
-          gEfiShellProtocol->MinorVersion
-         );
+        if (ShellCommandLineGetFlag(Package, L"-terse") || ShellCommandLineGetFlag(Package, L"-t")){
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_CONFLICT), gShellLevel3HiiHandle, L"ver", L"-t or -terse", L"-s");
+          ShellStatus = SHELL_INVALID_PARAMETER;
+        } else {
+          ShellPrintHiiEx (
+            0,
+            gST->ConOut->Mode->CursorRow,
+            NULL,
+            STRING_TOKEN (STR_VER_OUTPUT_SIMPLE),
+            gShellLevel3HiiHandle,
+            gEfiShellProtocol->MajorVersion,
+            gEfiShellProtocol->MinorVersion
+           );
+        }
       } else {
         ShellPrintHiiEx (
           0,

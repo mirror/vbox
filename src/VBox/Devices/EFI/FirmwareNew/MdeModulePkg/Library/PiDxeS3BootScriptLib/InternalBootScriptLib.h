@@ -2,7 +2,7 @@
   Support for S3 boot script lib. This file defined some internal macro and internal
   data structure
 
-  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions
@@ -23,6 +23,8 @@
 #include <Protocol/SmmBase2.h>
 #include <Protocol/DxeSmmReadyToLock.h>
 #include <Protocol/SmmReadyToLock.h>
+#include <Protocol/SmmExitBootServices.h>
+#include <Protocol/SmmLegacyBoot.h>
 
 #include <Library/S3BootScriptLib.h>
 
@@ -31,7 +33,7 @@
 #include <Library/PcdLib.h>
 #include <Library/SmbusLib.h>
 #include <Library/IoLib.h>
-#include <Library/PciLib.h>
+#include <Library/PciSegmentLib.h>
 #include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/TimerLib.h>
@@ -43,13 +45,15 @@
 #define MAX_IO_ADDRESS 0xFFFF
 
 //
-// Macro to convert a UEFI PCI address to a PCI Library PCI address
+// Macro to convert a UEFI PCI address + segment to a PCI Segment Library PCI address
 //
-#define PCI_ADDRESS_ENCODE(A) (UINTN)PCI_LIB_ADDRESS( \
-        ((((UINTN)(A))& 0xff000000) >> 24), ((((UINTN)(A)) &0x00ff0000) >> 16), ((((UINTN)(A)) & 0xff00) >> 8), ((RShiftU64 ((A), 32) & 0xfff) | ((A)& 0xff)) \
-        )
-
-
+#define PCI_ADDRESS_ENCODE(S, A) PCI_SEGMENT_LIB_ADDRESS( \
+                                   S, \
+                                   ((((UINTN)(A)) & 0xff000000) >> 24), \
+                                   ((((UINTN)(A)) & 0x00ff0000) >> 16), \
+                                   ((((UINTN)(A)) & 0xff00) >> 8), \
+                                   ((RShiftU64 ((A), 32) & 0xfff) | ((A) & 0xff)) \
+                                   )
 
 typedef union {
   UINT8 volatile  *Buf;
@@ -70,11 +74,14 @@ typedef union {
 // The boot script private data.
 //
 typedef struct {
-  UINT8           *TableBase;
-  UINT32          TableLength;               // Record the actual memory length
-  UINT16          TableMemoryPageNumber;     // Record the page number Allocated for the table
-  BOOLEAN         AtRuntime;                 // Record if current state is after SmmReadyToLock
-  BOOLEAN         InSmm;                     // Record if this library is in SMM.
+  UINT8     *TableBase;
+  UINT32    TableLength;            // Record the actual memory length
+  UINT16    TableMemoryPageNumber;  // Record the page number Allocated for the table
+  BOOLEAN   InSmm;                  // Record if this library is in SMM.
+  BOOLEAN   AtRuntime;              // Record if current state is after SmmExitBootServices or SmmLegacyBoot.
+  UINT32    BootTimeScriptLength;   // Maintain boot time script length in LockBox after SmmReadyToLock in SMM.
+  BOOLEAN   SmmLocked;              // Record if current state is after SmmReadyToLock
+  BOOLEAN   BackFromS3;             // Indicate that the system is back from S3.
 } SCRIPT_TABLE_PRIVATE_DATA;
 
 typedef

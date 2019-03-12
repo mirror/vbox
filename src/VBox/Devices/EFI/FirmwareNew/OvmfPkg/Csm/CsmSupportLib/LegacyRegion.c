@@ -1,7 +1,7 @@
 /** @file
   Legacy Region Support
 
-  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials are
   licensed and made available under the terms and conditions of the BSD License
@@ -16,23 +16,24 @@
 #include "LegacyRegion.h"
 
 //
-// 440 PAM map.
+// 440/Q35 PAM map.
 //
-// PAM Range       Offset  Bits  Operation
-// =============== ======  ====  ===============================================================
-// 0xC0000-0xC3FFF  0x5a   1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xC4000-0xC7FFF  0x5a   5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xC8000-0xCBFFF  0x5b   1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xCC000-0xCFFFF  0x5b   5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xD0000-0xD3FFF  0x5c   1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xD4000-0xD7FFF  0x5c   5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xD8000-0xDBFFF  0x5d   1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xDC000-0xDFFFF  0x5d   5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xE0000-0xE3FFF  0x5e   1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xE4000-0xE7FFF  0x5e   5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xE8000-0xEBFFF  0x5f   1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xEC000-0xEFFFF  0x5f   5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
-// 0xF0000-0xFFFFF  0x59   5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// PAM Range          Offset    Bits  Operation
+//                  440   Q35
+// ===============  ====  ====  ====  ===============================================================
+// 0xC0000-0xC3FFF  0x5a  0x91  1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xC4000-0xC7FFF  0x5a  0x91  5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xC8000-0xCBFFF  0x5b  0x92  1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xCC000-0xCFFFF  0x5b  0x92  5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xD0000-0xD3FFF  0x5c  0x93  1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xD4000-0xD7FFF  0x5c  0x93  5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xD8000-0xDBFFF  0x5d  0x94  1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xDC000-0xDFFFF  0x5d  0x94  5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xE0000-0xE3FFF  0x5e  0x95  1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xE4000-0xE7FFF  0x5e  0x95  5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xE8000-0xEBFFF  0x5f  0x96  1:0   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xEC000-0xEFFFF  0x5f  0x96  5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
+// 0xF0000-0xFFFFF  0x59  0x90  5:4   00 = DRAM Disabled, 01= Read Only, 10 = Write Only, 11 = Normal
 //
 STATIC LEGACY_MEMORY_SECTION_INFO   mSectionArray[] = {
   {0xC0000, SIZE_16KB, FALSE, FALSE},
@@ -50,21 +51,39 @@ STATIC LEGACY_MEMORY_SECTION_INFO   mSectionArray[] = {
   {0xF0000, SIZE_64KB, FALSE, FALSE}
 };
 
-STATIC PAM_REGISTER_VALUE  mRegisterValues[] = {
-  {REG_PAM1_OFFSET, 0x01, 0x02},
-  {REG_PAM1_OFFSET, 0x10, 0x20},
-  {REG_PAM2_OFFSET, 0x01, 0x02},
-  {REG_PAM2_OFFSET, 0x10, 0x20},
-  {REG_PAM3_OFFSET, 0x01, 0x02},
-  {REG_PAM3_OFFSET, 0x10, 0x20},
-  {REG_PAM4_OFFSET, 0x01, 0x02},
-  {REG_PAM4_OFFSET, 0x10, 0x20},
-  {REG_PAM5_OFFSET, 0x01, 0x02},
-  {REG_PAM5_OFFSET, 0x10, 0x20},
-  {REG_PAM6_OFFSET, 0x01, 0x02},
-  {REG_PAM6_OFFSET, 0x10, 0x20},
-  {REG_PAM0_OFFSET, 0x10, 0x20}
+STATIC PAM_REGISTER_VALUE  mRegisterValues440[] = {
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM1), 0x01, 0x02},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM1), 0x10, 0x20},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM2), 0x01, 0x02},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM2), 0x10, 0x20},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM3), 0x01, 0x02},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM3), 0x10, 0x20},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM4), 0x01, 0x02},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM4), 0x10, 0x20},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM5), 0x01, 0x02},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM5), 0x10, 0x20},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM6), 0x01, 0x02},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM6), 0x10, 0x20},
+  {PMC_REGISTER_PIIX4 (PIIX4_PAM0), 0x10, 0x20}
 };
+
+STATIC PAM_REGISTER_VALUE  mRegisterValuesQ35[] = {
+  {DRAMC_REGISTER_Q35 (MCH_PAM1), 0x01, 0x02},
+  {DRAMC_REGISTER_Q35 (MCH_PAM1), 0x10, 0x20},
+  {DRAMC_REGISTER_Q35 (MCH_PAM2), 0x01, 0x02},
+  {DRAMC_REGISTER_Q35 (MCH_PAM2), 0x10, 0x20},
+  {DRAMC_REGISTER_Q35 (MCH_PAM3), 0x01, 0x02},
+  {DRAMC_REGISTER_Q35 (MCH_PAM3), 0x10, 0x20},
+  {DRAMC_REGISTER_Q35 (MCH_PAM4), 0x01, 0x02},
+  {DRAMC_REGISTER_Q35 (MCH_PAM4), 0x10, 0x20},
+  {DRAMC_REGISTER_Q35 (MCH_PAM5), 0x01, 0x02},
+  {DRAMC_REGISTER_Q35 (MCH_PAM5), 0x10, 0x20},
+  {DRAMC_REGISTER_Q35 (MCH_PAM6), 0x01, 0x02},
+  {DRAMC_REGISTER_Q35 (MCH_PAM6), 0x10, 0x20},
+  {DRAMC_REGISTER_Q35 (MCH_PAM0), 0x10, 0x20}
+};
+
+STATIC PAM_REGISTER_VALUE *mRegisterValues;
 
 //
 // Handle used to install the Legacy Region Protocol
@@ -111,27 +130,27 @@ LegacyRegionManipulationInternal (
   // Loop to find the start PAM.
   //
   StartIndex = 0;
-  for (Index = 0; Index < (sizeof(mSectionArray) / sizeof (mSectionArray[0])); Index++) {
+  for (Index = 0; Index < ARRAY_SIZE (mSectionArray); Index++) {
     if ((Start >= mSectionArray[Index].Start) && (Start < (mSectionArray[Index].Start + mSectionArray[Index].Length))) {
       StartIndex = Index;
       break;
     }
   }
-  ASSERT (Index < (sizeof(mSectionArray) / sizeof (mSectionArray[0])));
+  ASSERT (Index < ARRAY_SIZE (mSectionArray));
 
   //
   // Program PAM until end PAM is encountered
   //
-  for (Index = StartIndex; Index < (sizeof(mSectionArray) / sizeof (mSectionArray[0])); Index++) {
+  for (Index = StartIndex; Index < ARRAY_SIZE (mSectionArray); Index++) {
     if (ReadEnable != NULL) {
       if (*ReadEnable) {
         PciOr8 (
-          PCI_LIB_ADDRESS(PAM_PCI_BUS, PAM_PCI_DEV, PAM_PCI_FUNC, mRegisterValues[Index].PAMRegOffset),
+          mRegisterValues[Index].PAMRegPciLibAddress,
           mRegisterValues[Index].ReadEnableData
           );
       } else {
         PciAnd8 (
-          PCI_LIB_ADDRESS(PAM_PCI_BUS, PAM_PCI_DEV, PAM_PCI_FUNC, mRegisterValues[Index].PAMRegOffset),
+          mRegisterValues[Index].PAMRegPciLibAddress,
           (UINT8) (~mRegisterValues[Index].ReadEnableData)
           );
       }
@@ -139,12 +158,12 @@ LegacyRegionManipulationInternal (
     if (WriteEnable != NULL) {
       if (*WriteEnable) {
         PciOr8 (
-          PCI_LIB_ADDRESS(PAM_PCI_BUS, PAM_PCI_DEV, PAM_PCI_FUNC, mRegisterValues[Index].PAMRegOffset),
+          mRegisterValues[Index].PAMRegPciLibAddress,
           mRegisterValues[Index].WriteEnableData
           );
       } else {
         PciAnd8 (
-          PCI_LIB_ADDRESS(PAM_PCI_BUS, PAM_PCI_DEV, PAM_PCI_FUNC, mRegisterValues[Index].PAMRegOffset),
+          mRegisterValues[Index].PAMRegPciLibAddress,
           (UINT8) (~mRegisterValues[Index].WriteEnableData)
           );
       }
@@ -158,7 +177,7 @@ LegacyRegionManipulationInternal (
       break;
     }
   }
-  ASSERT (Index < (sizeof(mSectionArray) / sizeof (mSectionArray[0])));
+  ASSERT (Index < ARRAY_SIZE (mSectionArray));
 
   return EFI_SUCCESS;
 }
@@ -185,7 +204,7 @@ LegacyRegionGetInfoInternal (
   //
   *DescriptorCount = sizeof(mSectionArray) / sizeof (mSectionArray[0]);
   for (Index = 0; Index < *DescriptorCount; Index++) {
-    PamValue = PciRead8 (PCI_LIB_ADDRESS(PAM_PCI_BUS, PAM_PCI_DEV, PAM_PCI_FUNC, mRegisterValues[Index].PAMRegOffset));
+    PamValue = PciRead8 (mRegisterValues[Index].PAMRegPciLibAddress);
     mSectionArray[Index].ReadEnabled = FALSE;
     if ((PamValue & mRegisterValues[Index].ReadEnableData) != 0) {
       mSectionArray[Index].ReadEnabled = TRUE;
@@ -450,6 +469,25 @@ LegacyRegionInit (
   )
 {
   EFI_STATUS  Status;
+  UINT16      HostBridgeDevId;
+
+  //
+  // Query Host Bridge DID to determine platform type
+  //
+  HostBridgeDevId = PcdGet16 (PcdOvmfHostBridgePciDevId);
+  switch (HostBridgeDevId) {
+  case INTEL_82441_DEVICE_ID:
+    mRegisterValues = mRegisterValues440;
+    break;
+  case INTEL_Q35_MCH_DEVICE_ID:
+    mRegisterValues = mRegisterValuesQ35;
+    break;
+  default:
+    DEBUG ((EFI_D_ERROR, "%a: Unknown Host Bridge Device ID: 0x%04x\n",
+            __FUNCTION__, HostBridgeDevId));
+    ASSERT (FALSE);
+    return RETURN_UNSUPPORTED;
+  }
 
   //
   // Install the Legacy Region Protocol on a new handle

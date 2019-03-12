@@ -6,7 +6,7 @@
   RFC 1534: Interoperation Between DHCP and BOOTP
   RFC 3396: Encoding Long Options in DHCP.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -26,7 +26,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include <Protocol/Dhcp4.h>
 #include <Protocol/Udp4.h>
-
+#include <IndustryStandard/Dhcp.h>
 #include <Library/DebugLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -43,6 +43,7 @@ typedef struct _DHCP_PROTOCOL DHCP_PROTOCOL;
 #define DHCP_SERVICE_SIGNATURE   SIGNATURE_32 ('D', 'H', 'C', 'P')
 #define DHCP_PROTOCOL_SIGNATURE  SIGNATURE_32 ('d', 'h', 'c', 'p')
 
+#define DHCP_CHECK_MEDIA_WAITING_TIME    EFI_TIMER_PERIOD_SECONDS(20)
 
 //
 // The state of the DHCP service. It starts as UNCONFIGED. If
@@ -181,6 +182,18 @@ PxeDhcpDone (
 VOID
 DhcpCleanConfigure (
   IN OUT EFI_DHCP4_CONFIG_DATA  *Config
+  );
+
+/**
+  Callback of Dhcp packet. Does nothing.
+
+  @param Arg           The context.
+
+**/
+VOID
+EFIAPI
+DhcpDummyExtFree (
+  IN VOID                   *Arg
   );
 
 /**

@@ -57,6 +57,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <PiSmm.h>
 #include <Library/SmmServicesTableLib.h>
 #include <Library/SmmMemLib.h>
+#include <Library/BaseLib.h>
 #include <Protocol/SmmSwapAddressRange.h>
 #include "FaultTolerantWrite.h"
 #include "FaultTolerantWriteSmmCommon.h"
@@ -71,7 +72,7 @@ EFI_FTW_DEVICE                            *mFtwDevice      = NULL;
 BOOLEAN                                   mEndOfDxe = FALSE;
 
 /**
-  Retrive the SMM FVB protocol interface by HANDLE.
+  Retrieve the SMM FVB protocol interface by HANDLE.
 
   @param[in]  FvBlockHandle     The handle of SMM FVB protocol that provides services for
                                 reading, writing, and erasing the target block.
@@ -99,7 +100,7 @@ FtwGetFvbByHandle (
 }
 
 /**
-  Retrive the SMM Swap Address Range protocol interface.
+  Retrieve the SMM Swap Address Range protocol interface.
 
   @param[out] SarProtocol       The interface of SMM SAR protocol
 
@@ -417,6 +418,12 @@ SmmFaultTolerantWriteHandler (
                  &SmmFvbHandle
                  );
       if (!EFI_ERROR (Status)) {
+        //
+        // The AsmLfence() call here is to ensure the previous range/content
+        // checks for the CommBuffer have been completed before calling into
+        // FtwWrite().
+        //
+        AsmLfence ();
         Status = FtwWrite(
                    &mFtwDevice->FtwInstance,
                    SmmFtwWriteHeader->Lba,

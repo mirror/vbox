@@ -1,11 +1,11 @@
 /** @file
   Implement the TCP6 driver support for the socket layer.
 
-  Copyright (c) 2011, Intel Corporation
-  All rights reserved. This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
+  Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+  This program and the accompanying materials are licensed and made available
+  under the terms and conditions of the BSD License which accompanies this
+  distribution.  The full text of the license may be found at
+  http://opensource.org/licenses/bsd-license.php.
 
   THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
@@ -871,7 +871,6 @@ EslTcp6ListenComplete (
   EFI_HANDLE ChildHandle;
   struct sockaddr_in6 LocalAddress;
   EFI_TCP6_CONFIG_DATA * pConfigData;
-  ESL_LAYER * pLayer;
   ESL_PORT * pNewPort;
   ESL_SOCKET * pNewSocket;
   ESL_SOCKET * pSocket;
@@ -900,7 +899,6 @@ EslTcp6ListenComplete (
     //  Allocate a socket for this connection
     //
     ChildHandle = NULL;
-    pLayer = &mEslLayer;
     Status = EslSocketAllocate ( &ChildHandle,
                                  DEBUG_CONNECTION,
                                  &pNewSocket );
@@ -1993,7 +1991,6 @@ EslTcp6TxBuffer (
   ESL_PACKET ** ppQueueHead;
   ESL_PACKET ** ppQueueTail;
   ESL_PACKET * pPreviousPacket;
-  ESL_TCP6_CONTEXT * pTcp6;
   size_t * pTxBytes;
   EFI_TCP6_TRANSMIT_DATA * pTxData;
   EFI_STATUS Status;
@@ -2020,7 +2017,6 @@ EslTcp6TxBuffer (
       //
       //  Determine the queue head
       //
-      pTcp6 = &pPort->Context.Tcp6;
       bUrgent = (BOOLEAN)( 0 != ( Flags & MSG_OOB ));
       bUrgentQueue = bUrgent
                     && ( !pSocket->bOobInLine )

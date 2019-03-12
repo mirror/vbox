@@ -1,7 +1,7 @@
 /** @file
   Main file for NULL named library for Profile1 shell command functions.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2016, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -16,7 +16,6 @@
 #define _UEFI_SHELL_DRIVER1_COMMANDS_LIB_H_
 
 #include <Uefi.h>
-#include <ShellBase.h>
 
 #include <Guid/GlobalVariable.h>
 #include <Guid/ConsoleInDevice.h>
@@ -25,8 +24,12 @@
 
 #include <IndustryStandard/Pci.h>
 
-#include <Protocol/EfiShell.h>
-#include <Protocol/EfiShellParameters.h>
+#include <Pi/PiFirmwareVolume.h>
+#include <Pi/PiFirmwareFile.h>
+#include <Protocol/FirmwareVolume2.h>
+
+#include <Protocol/Shell.h>
+#include <Protocol/ShellParameters.h>
 #include <Protocol/DevicePath.h>
 #include <Protocol/LoadedImage.h>
 #include <Protocol/UnicodeCollation.h>
@@ -206,6 +209,20 @@ ShellCommandRunUnload (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
   );
+
+/**
+  Do a connect from an EFI variable via it's key name.
+
+  @param[in] Key      The name of the EFI Variable.
+
+  @retval EFI_SUCCESS   The operation was successful.
+**/
+EFI_STATUS
+ShellConnectFromDevPaths (
+  IN CONST CHAR16 *Key
+  );
+
+
 
 #endif
 

@@ -29,7 +29,11 @@
 [Sources]
   AcpiPlatform.c
   Qemu.c
+  QemuFwCfgAcpi.c
   Xen.c
+  EntryPoint.c
+  PciDecoding.c
+  BootScript.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -48,22 +52,26 @@
   UefiDriverEntryPoint
   HobLib
   QemuFwCfgLib
+  QemuFwCfgS3Lib
   MemoryAllocationLib
   BaseLib
   DxeServicesTableLib
+  OrderedCollectionLib
 
 [Protocols]
   gEfiAcpiTableProtocolGuid                     # PROTOCOL ALWAYS_CONSUMED
+  gEfiPciIoProtocolGuid                         # PROTOCOL SOMETIMES_CONSUMED
 
 [Guids]
   gEfiXenInfoGuid
+  gRootBridgesConnectedEventGroupGuid
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiTableStorageFile
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration
   gUefiCpuPkgTokenSpaceGuid.PcdCpuLocalApicBaseAddress
   gPcAtChipsetPkgTokenSpaceGuid.Pcd8259LegacyModeEdgeLevel
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFdBaseAddress
 
 [Depex]
   gEfiAcpiTableProtocolGuid
-

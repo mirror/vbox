@@ -1,7 +1,7 @@
 /** @file
   The general interfaces of the IKEv2.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2016, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -330,7 +330,7 @@ Ikev2NegotiateInfo (
     //
     // Send out the Packet
     //
-    if (UdpService != NULL) {
+    if (UdpService != NULL && UdpService->Output != NULL) {
       Status = Ikev2SendIkePacket (UdpService, (UINT8 *) SaCommon, IkePacket, 0);
 
       if (EFI_ERROR (Status)) {
@@ -357,7 +357,7 @@ Ikev2NegotiateInfo (
       //
       // Send out the Packet
       //
-      if (UdpService != NULL) {
+      if (UdpService != NULL && UdpService->Output != NULL) {
         Status = Ikev2SendIkePacket (UdpService, (UINT8 *) &ChildSaSession->SessionCommon, IkePacket, 0);
 
         if (EFI_ERROR (Status)) {
@@ -495,6 +495,10 @@ Ikev2HandleSa (
             IsListEmpty (&IkeSaSession->ChildSaEstablishSessionList));
 
     ChildSaSession = Ikev2ChildSaSessionCreate (IkeSaSession, UdpService);
+    if (ChildSaSession == NULL) {
+      goto ON_ERROR;
+    }
+
     ChildSaCommon  = &ChildSaSession->SessionCommon;
   }
 
@@ -519,6 +523,10 @@ Ikev2HandleSa (
             IsListEmpty (&IkeSaSession->ChildSaEstablishSessionList));
 
     ChildSaSession = Ikev2ChildSaSessionCreate (IkeSaSession, UdpService);
+    if (ChildSaSession == NULL) {
+      goto ON_ERROR;
+    }
+
     ChildSaCommon  = &ChildSaSession->SessionCommon;
 
     //
@@ -697,7 +705,7 @@ ON_REPLY:
   //
   // Generate the reply packet if needed and send it out.
   //
-  if (IkePacket->Header->Flags != IKE_HEADER_FLAGS_RESPOND) {
+  if (!(IkePacket->Header->Flags & IKE_HEADER_FLAGS_RESPOND)) {
     Reply = mIkev2CreateChild.Generator ((UINT8 *) IkeSaSession, &IkePacket->Header->MessageId);
     if (Reply != NULL) {
       Status = Ikev2SendIkePacket (UdpService, (UINT8 *) &(IkeSaSession->SessionCommon), Reply, 0);

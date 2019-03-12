@@ -1,7 +1,7 @@
 /** @file
   Socket implementation header file.
 
-Copyright (c) 2005 - 2006, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2005 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -16,6 +16,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define _SOCK_IMPL_H_
 
 #include "Socket.h"
+#include "Tcp4Main.h"
 
 /**
   Signal a event with the given status.
@@ -66,7 +67,7 @@ SockProcessTcpSndData (
   @param  Sock                  Pointer to the socket.
   @param  TcpRxData             Pointer to the application provided receive buffer.
   @param  RcvdBytes             The maximum length of the data can be copied.
-  @param  IsOOB                 If TURE the data is OOB, else the data is normal.
+  @param  IsOOB                 If TRUE the data is OOB, else the data is normal.
 
 **/
 VOID

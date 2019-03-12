@@ -2,7 +2,7 @@
   Library instance that implement UEFI Device Path Library class based on protocol
   gEfiDevicePathUtilitiesProtocolGuid.
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -103,17 +103,33 @@ IsDevicePathValid (
 
   ASSERT (DevicePath != NULL);
 
+  if (MaxSize == 0) {
+    MaxSize = MAX_UINTN;
+  }
+
+  //
+  // Validate the input size big enough to touch the first node.
+  //
+  if (MaxSize < sizeof (EFI_DEVICE_PATH_PROTOCOL)) {
+    return FALSE;
+  }
+
   for (Count = 0, Size = 0; !IsDevicePathEnd (DevicePath); DevicePath = NextDevicePathNode (DevicePath)) {
     NodeLength = DevicePathNodeLength (DevicePath);
     if (NodeLength < sizeof (EFI_DEVICE_PATH_PROTOCOL)) {
       return FALSE;
     }
 
-    if (MaxSize > 0) {
-      Size += NodeLength;
-      if (Size + END_DEVICE_PATH_LENGTH > MaxSize) {
-        return FALSE;
-      }
+    if (NodeLength > MAX_UINTN - Size) {
+      return FALSE;
+    }
+    Size += NodeLength;
+
+    //
+    // Validate next node before touch it.
+    //
+    if (Size > MaxSize - END_DEVICE_PATH_LENGTH ) {
+      return FALSE;
     }
 
     if (PcdGet32 (PcdMaximumDevicePathNodeCount) > 0) {

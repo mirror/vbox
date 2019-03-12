@@ -2,7 +2,7 @@
 
     Usb bus enumeration support.
 
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -53,28 +53,33 @@ UsbGetEndpointDesc (
 
   @param  UsbIf                 The USB interface to free.
 
+  @retval EFI_ACCESS_DENIED     The interface is still occupied.
+  @retval EFI_SUCCESS           The interface is freed.
 **/
-VOID
+EFI_STATUS
 UsbFreeInterface (
   IN USB_INTERFACE        *UsbIf
   )
 {
+  EFI_STATUS              Status;
+
   UsbCloseHostProtoByChild (UsbIf->Device->Bus, UsbIf->Handle);
 
-  gBS->UninstallMultipleProtocolInterfaces (
-         UsbIf->Handle,
-         &gEfiDevicePathProtocolGuid,
-         UsbIf->DevicePath,
-         &gEfiUsbIoProtocolGuid,
-         &UsbIf->UsbIo,
-         NULL
-         );
-
-  if (UsbIf->DevicePath != NULL) {
-    FreePool (UsbIf->DevicePath);
+  Status = gBS->UninstallMultipleProtocolInterfaces (
+                  UsbIf->Handle,
+                  &gEfiDevicePathProtocolGuid, UsbIf->DevicePath,
+                  &gEfiUsbIoProtocolGuid,      &UsbIf->UsbIo,
+                  NULL
+                  );
+  if (!EFI_ERROR (Status)) {
+    if (UsbIf->DevicePath != NULL) {
+      FreePool (UsbIf->DevicePath);
+    }
+    FreePool (UsbIf);
+  } else {
+    UsbOpenHostProtoByChild (UsbIf->Device->Bus, UsbIf->Handle);
   }
-
-  FreePool (UsbIf);
+  return Status;
 }
 
 
@@ -435,7 +440,11 @@ UsbSelectConfig (
     Status = UsbConnectDriver (UsbIf);
 
     if (EFI_ERROR (Status)) {
-      DEBUG ((EFI_D_ERROR, "UsbSelectConfig: failed to connect driver %r, ignored\n", Status));
+      DEBUG ((
+        DEBUG_WARN,
+        "UsbSelectConfig: failed to connect driver %r, ignored\n",
+        Status
+        ));
     }
   }
 
@@ -525,7 +534,13 @@ UsbRemoveConfig (
 
     Status = UsbDisconnectDriver (UsbIf);
     if (!EFI_ERROR (Status)) {
-      UsbFreeInterface (UsbIf);
+      Status = UsbFreeInterface (UsbIf);
+      if (EFI_ERROR (Status)) {
+        UsbConnectDriver (UsbIf);
+      }
+    }
+
+    if (!EFI_ERROR (Status)) {
       Device->Interfaces[Index] = NULL;
     } else {
       ReturnStatus = Status;
@@ -643,6 +658,7 @@ UsbFindChild (
 
   @param  HubIf                 The HUB that has the device connected.
   @param  Port                  The port index of the hub (started with zero).
+  @param  ResetIsNeeded         The boolean to control whether skip the reset of the port.
 
   @retval EFI_SUCCESS           The device is enumerated (added or removed).
   @retval EFI_OUT_OF_RESOURCES  Failed to allocate resource for the device.
@@ -652,7 +668,8 @@ UsbFindChild (
 EFI_STATUS
 UsbEnumerateNewDev (
   IN USB_INTERFACE        *HubIf,
-  IN UINT8                Port
+  IN UINT8                Port,
+  IN BOOLEAN              ResetIsNeeded
   )
 {
   USB_BUS                 *Bus;
@@ -677,15 +694,17 @@ UsbEnumerateNewDev (
   // and the hub is a EHCI root hub, ResetPort will release
   // the device to its companion UHCI and return an error.
   //
-  Status = HubApi->ResetPort (HubIf, Port);
+  if (ResetIsNeeded) {
+    Status = HubApi->ResetPort (HubIf, Port);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_ERROR, "UsbEnumerateNewDev: failed to reset port %d - %r\n", Port, Status));
 
-  if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_ERROR, "UsbEnumerateNewDev: failed to reset port %d - %r\n", Port, Status));
-
-    return Status;
+      return Status;
+    }
+    DEBUG (( EFI_D_INFO, "UsbEnumerateNewDev: hub port %d is reset\n", Port));
+  } else {
+    DEBUG (( EFI_D_INFO, "UsbEnumerateNewDev: hub port %d reset is skipped\n", Port));
   }
-
-  DEBUG (( EFI_D_INFO, "UsbEnumerateNewDev: hub port %d is reset\n", Port));
 
   Child = UsbCreateDevice (HubIf, Port);
 
@@ -964,7 +983,11 @@ UsbEnumeratePort (
     // Now, new device connected, enumerate and configure the device
     //
     DEBUG (( EFI_D_INFO, "UsbEnumeratePort: new device connected at port %d\n", Port));
-    Status = UsbEnumerateNewDev (HubIf, Port);
+    if (USB_BIT_IS_SET (PortState.PortChangeStatus, USB_PORT_STAT_C_RESET)) {
+      Status = UsbEnumerateNewDev (HubIf, Port, FALSE);
+    } else {
+      Status = UsbEnumerateNewDev (HubIf, Port, TRUE);
+    }
 
   } else {
     DEBUG (( EFI_D_INFO, "UsbEnumeratePort: device disconnected event on port %d\n", Port));

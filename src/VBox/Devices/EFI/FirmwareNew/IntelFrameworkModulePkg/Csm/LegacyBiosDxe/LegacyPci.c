@@ -1,6 +1,6 @@
 /** @file
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -41,7 +41,7 @@ BOOLEAN                             mIgnoreBbsUpdateFlag;
 BOOLEAN                             mVgaInstallationInProgress  = FALSE;
 UINT32                              mRomCount                   = 0x00;
 ROM_INSTANCE_ENTRY                  mRomEntry[ROM_MAX_ENTRIES];
-
+EDKII_IOMMU_PROTOCOL                *mIoMmu;
 
 /**
   Query shadowed legacy ROM parameters registered by RomShadow() previously.
@@ -318,7 +318,7 @@ GetPciLegacyRom (
       break;
     }
 
-    if ((UINTN)(RomHeader.Raw - (UINT8 *) *Rom) + Pcir->ImageLength * 512 > *ImageSize) {
+    if (((UINTN)RomHeader.Raw - (UINTN)*Rom) + Pcir->ImageLength * 512 > *ImageSize) {
       break;
     }
 
@@ -1812,7 +1812,7 @@ PciShadowRoms (
   @param  RomSize                Size of ROM Image
   @param  Flags                  Indicates if ROM found and if PC-AT.
 
-  @retval EFI_SUCCESS            Legacy Option ROM availible for this device
+  @retval EFI_SUCCESS            Legacy Option ROM available for this device
   @retval EFI_UNSUPPORTED        Legacy Option ROM not supported.
 
 **/
@@ -1854,7 +1854,7 @@ LegacyBiosCheckPciRom (
     @param[out] OpromRevision          Revision of the PCI Rom
     @param[out] ConfigUtilityCodeHeaderPointer of Configuration Utility Code Header
 
-    @return EFI_SUCCESS            Legacy Option ROM availible for this device
+    @return EFI_SUCCESS            Legacy Option ROM available for this device
     @return EFI_ALREADY_STARTED    This device is already managed by its Oprom
     @return EFI_UNSUPPORTED        Legacy Option ROM not supported.
 
@@ -2279,11 +2279,13 @@ LegacyBiosInstallRom (
   UINTN                 Function;
   EFI_IA32_REGISTER_SET Regs;
   UINT8                 VideoMode;
+  UINT8                 OldVideoMode;
   EFI_TIME              BootTime;
   UINT32                *BdaPtr;
   UINT32                LocalTime;
   UINT32                StartBbsIndex;
   UINT32                EndBbsIndex;
+  UINT32                MaxRomAddr;
   UINTN                 TempData;
   UINTN                 InitAddress;
   UINTN                 RuntimeAddress;
@@ -2298,7 +2300,17 @@ LegacyBiosInstallRom (
   Device          = 0;
   Function        = 0;
   VideoMode       = 0;
+  OldVideoMode    = 0;
   PhysicalAddress = 0;
+  MaxRomAddr      = PcdGet32 (PcdEndOpromShadowAddress);
+
+  if ((Private->Legacy16Table->TableLength >= OFFSET_OF(EFI_COMPATIBILITY16_TABLE, HiPermanentMemoryAddress)) &&
+      (Private->Legacy16Table->UmaAddress != 0) &&
+      (Private->Legacy16Table->UmaSize != 0) &&
+      (MaxRomAddr > (Private->Legacy16Table->UmaAddress))) {
+    MaxRomAddr = Private->Legacy16Table->UmaAddress;
+  }
+
 
   PciProgramAllInterruptLineRegisters (Private);
 
@@ -2331,7 +2343,7 @@ LegacyBiosInstallRom (
     //   then test if there is enough space for its RT code
     //
     RuntimeAddress = Private->OptionRom;
-    if (RuntimeAddress + *RuntimeImageLength > PcdGet32 (PcdEndOpromShadowAddress)) {
+    if (RuntimeAddress + *RuntimeImageLength > MaxRomAddr) {
       DEBUG ((EFI_D_ERROR, "return LegacyBiosInstallRom(%d): EFI_OUT_OF_RESOURCES (no more space for OpROM)\n", __LINE__));
       gBS->FreePages (PhysicalAddress, EFI_SIZE_TO_PAGES (ImageSize));
       //
@@ -2349,7 +2361,7 @@ LegacyBiosInstallRom (
     //   test if there is enough space for its INIT code
     //
     InitAddress    = PCI_START_ADDRESS (Private->OptionRom);
-    if (InitAddress + ImageSize > PcdGet32 (PcdEndOpromShadowAddress)) {
+    if (InitAddress + ImageSize > MaxRomAddr) {
       DEBUG ((EFI_D_ERROR, "return LegacyBiosInstallRom(%d): EFI_OUT_OF_RESOURCES (no more space for OpROM)\n", __LINE__));
       //
       // Report Status Code to indicate that there is no enough space for OpROM
@@ -2391,31 +2403,34 @@ LegacyBiosInstallRom (
   // 2. BBS compliants drives will not change 40:75 until boot time.
   // 3. Onboard IDE controllers will change 40:75
   //
-  LocalDiskStart = (UINT8) ((*(UINT8 *) ((UINTN) 0x475)) + 0x80);
-  if ((Private->Disk4075 + 0x80) < LocalDiskStart) {
-    //
-    // Update table since onboard IDE drives found
-    //
-    Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].PciSegment        = 0xff;
-    Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].PciBus            = 0xff;
-    Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].PciDevice         = 0xff;
-    Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].PciFunction       = 0xff;
-    Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].StartDriveNumber  = (UINT8) (Private->Disk4075 + 0x80);
-    Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].EndDriveNumber    = LocalDiskStart;
-    Private->LegacyEfiHddTableIndex ++;
-    Private->Disk4075 = (UINT8) (LocalDiskStart & 0x7f);
-    Private->DiskEnd  = LocalDiskStart;
-  }
+  ACCESS_PAGE0_CODE (
+    LocalDiskStart = (UINT8) ((*(UINT8 *) ((UINTN) 0x475)) + 0x80);
+    if ((Private->Disk4075 + 0x80) < LocalDiskStart) {
+      //
+      // Update table since onboard IDE drives found
+      //
+      Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].PciSegment        = 0xff;
+      Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].PciBus            = 0xff;
+      Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].PciDevice         = 0xff;
+      Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].PciFunction       = 0xff;
+      Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].StartDriveNumber  = (UINT8) (Private->Disk4075 + 0x80);
+      Private->LegacyEfiHddTable[Private->LegacyEfiHddTableIndex].EndDriveNumber    = LocalDiskStart;
+      Private->LegacyEfiHddTableIndex ++;
+      Private->Disk4075 = (UINT8) (LocalDiskStart & 0x7f);
+      Private->DiskEnd  = LocalDiskStart;
+    }
 
-  if (PciHandle != mVgaHandle) {
+    if (PciHandle != mVgaHandle) {
 
-    EnablePs2Keyboard ();
+      EnablePs2Keyboard ();
 
-    //
-    // Store current mode settings since PrepareToScanRom may change mode.
-    //
-    VideoMode = *(UINT8 *) ((UINTN) (0x400 + BDA_VIDEO_MODE));
-  }
+      //
+      // Store current mode settings since PrepareToScanRom may change mode.
+      //
+      VideoMode = *(UINT8 *) ((UINTN) (0x400 + BDA_VIDEO_MODE));
+    }
+  );
+
   //
   // Notify the platform that we are about to scan the ROM
   //
@@ -2456,9 +2471,11 @@ LegacyBiosInstallRom (
   // Multiply result by 18.2 for number of ticks since midnight.
   // Use 182/10 to avoid floating point math.
   //
-  LocalTime = (LocalTime * 182) / 10;
-  BdaPtr    = (UINT32 *) ((UINTN) 0x46C);
-  *BdaPtr   = LocalTime;
+  ACCESS_PAGE0_CODE (
+    LocalTime = (LocalTime * 182) / 10;
+    BdaPtr    = (UINT32 *) ((UINTN) 0x46C);
+    *BdaPtr   = LocalTime;
+  );
 
   //
   // Pass in handoff data
@@ -2554,7 +2571,11 @@ LegacyBiosInstallRom (
     //
     // Set mode settings since PrepareToScanRom may change mode
     //
-    if (VideoMode != *(UINT8 *) ((UINTN) (0x400 + BDA_VIDEO_MODE))) {
+    ACCESS_PAGE0_CODE ({
+      OldVideoMode = *(UINT8 *) ((UINTN) (0x400 + BDA_VIDEO_MODE));
+    });
+
+    if (VideoMode != OldVideoMode) {
       //
       // The active video mode is changed, restore it to original mode.
       //
@@ -2594,7 +2615,9 @@ LegacyBiosInstallRom (
     }
   }
 
-  LocalDiskEnd = (UINT8) ((*(UINT8 *) ((UINTN) 0x475)) + 0x80);
+  ACCESS_PAGE0_CODE (
+    LocalDiskEnd = (UINT8) ((*(UINT8 *) ((UINTN) 0x475)) + 0x80);
+  );
 
   //
   // Allow platform to perform any required actions after the
@@ -2683,6 +2706,61 @@ Done:
                            &Granularity
                            );
 
+  return Status;
+}
+
+/**
+  Let IOMMU grant DMA access for the PCI device.
+
+  @param  PciHandle             The EFI handle for the PCI device.
+  @param  HostAddress           The system memory address to map to the PCI controller.
+  @param  NumberOfBytes         The number of bytes to map.
+
+  @retval EFI_SUCCESS  The DMA access is granted.
+**/
+EFI_STATUS
+IoMmuGrantAccess (
+  IN  EFI_HANDLE                        PciHandle,
+  IN  EFI_PHYSICAL_ADDRESS              HostAddress,
+  IN  UINTN                             NumberOfBytes
+  )
+{
+  EFI_PHYSICAL_ADDRESS            DeviceAddress;
+  VOID                            *Mapping;
+  EFI_STATUS                      Status;
+
+  if (PciHandle == NULL) {
+    return EFI_UNSUPPORTED;
+  }
+
+  Status = EFI_SUCCESS;
+  if (mIoMmu == NULL) {
+    gBS->LocateProtocol (&gEdkiiIoMmuProtocolGuid, NULL, (VOID **)&mIoMmu);
+  }
+  if (mIoMmu != NULL) {
+    Status = mIoMmu->Map (
+                       mIoMmu,
+                       EdkiiIoMmuOperationBusMasterCommonBuffer,
+                       (VOID *)(UINTN)HostAddress,
+                       &NumberOfBytes,
+                       &DeviceAddress,
+                       &Mapping
+                       );
+    if (EFI_ERROR(Status)) {
+      DEBUG ((DEBUG_ERROR, "LegacyPci - IoMmuMap - %r\n", Status));
+    } else {
+      ASSERT (DeviceAddress == HostAddress);
+      Status = mIoMmu->SetAttribute (
+                         mIoMmu,
+                         PciHandle,
+                         Mapping,
+                         EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE
+                         );
+      if (EFI_ERROR(Status)) {
+        DEBUG ((DEBUG_ERROR, "LegacyPci - IoMmuSetAttribute - %r\n", Status));
+      }
+    }
+  }
   return Status;
 }
 
@@ -2968,6 +3046,21 @@ LegacyBiosInstallPciRom (
       RuntimeImageLength = Pcir->MaxRuntimeImageLength * 512;
     }
   }
+
+  //
+  // Grant access for below 1M
+  // BDA/EBDA/LowPMM and scratch memory for OPROM.
+  //
+  IoMmuGrantAccess (PciHandle, 0, SIZE_1MB);
+  //
+  // Grant access for HiPmm
+  //
+  IoMmuGrantAccess (
+    PciHandle,
+    Private->IntThunk->EfiToLegacy16InitTable.HiPmmMemory,
+    Private->IntThunk->EfiToLegacy16InitTable.HiPmmMemorySizeInBytes
+    );
+
   //
   // Shadow and initialize the OpROM.
   //

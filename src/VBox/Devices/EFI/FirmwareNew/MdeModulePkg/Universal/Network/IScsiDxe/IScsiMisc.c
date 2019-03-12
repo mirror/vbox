@@ -1,7 +1,7 @@
 /** @file
   Miscellaneous routines for iSCSI driver.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -204,7 +204,7 @@ IScsiLunToUnicodeStr (
   for (Index = 0; Index < 4; Index++) {
 
     if ((Lun[2 * Index] | Lun[2 * Index + 1]) == 0) {
-      StrCpy (TempStr, L"0-");
+      CopyMem(TempStr, L"0-", sizeof (L"0-"));
     } else {
       TempStr[0]  = (CHAR16) IScsiHexString[Lun[2 * Index] >> 4];
       TempStr[1]  = (CHAR16) IScsiHexString[Lun[2 * Index] & 0x0F];
@@ -587,34 +587,49 @@ IScsiCreateDriverData (
 /**
   Clean the iSCSI driver data.
 
-  @param[in]  Private The iSCSI driver data.
+  @param[in]              Private The iSCSI driver data.
+
+  @retval EFI_SUCCESS     The clean operation is successful.
+  @retval Others          Other errors as indicated.
+
 **/
-VOID
+EFI_STATUS
 IScsiCleanDriverData (
   IN ISCSI_DRIVER_DATA  *Private
   )
 {
+  EFI_STATUS             Status;
+
+  Status = EFI_SUCCESS;
+
   if (Private->DevicePath != NULL) {
-    gBS->UninstallProtocolInterface (
-          Private->ExtScsiPassThruHandle,
-          &gEfiDevicePathProtocolGuid,
-          Private->DevicePath
-          );
+    Status = gBS->UninstallProtocolInterface (
+                    Private->ExtScsiPassThruHandle,
+                    &gEfiDevicePathProtocolGuid,
+                    Private->DevicePath
+                    );
+    if (EFI_ERROR (Status)) {
+      goto EXIT;
+    }
 
     FreePool (Private->DevicePath);
   }
 
   if (Private->ExtScsiPassThruHandle != NULL) {
-    gBS->UninstallProtocolInterface (
-          Private->ExtScsiPassThruHandle,
-          &gEfiExtScsiPassThruProtocolGuid,
-          &Private->IScsiExtScsiPassThru
-          );
+    Status = gBS->UninstallProtocolInterface (
+                    Private->ExtScsiPassThruHandle,
+                    &gEfiExtScsiPassThruProtocolGuid,
+                    &Private->IScsiExtScsiPassThru
+                    );
   }
 
-  gBS->CloseEvent (Private->ExitBootServiceEvent);
+EXIT:
+  if (Private->ExitBootServiceEvent != NULL) {
+    gBS->CloseEvent (Private->ExitBootServiceEvent);
+  }
 
   FreePool (Private);
+  return Status;
 }
 
 /**
@@ -814,15 +829,24 @@ IScsiGetTcpConnDevicePath (
       DPathNode->Ipv4.StaticIpAddress =
         (BOOLEAN) (!Session->ConfigData.NvData.InitiatorInfoFromDhcp);
 
-      IP4_COPY_ADDRESS (
-        &DPathNode->Ipv4.GatewayIpAddress,
-        &Session->ConfigData.NvData.Gateway
-        );
+      //
+      //  Add a judgement here to support previous versions of IPv4_DEVICE_PATH.
+      //  In previous versions of IPv4_DEVICE_PATH, GatewayIpAddress and SubnetMask
+      //  do not exist.
+      //  In new version of IPv4_DEVICE_PATH, structcure length is 27.
+      //
+      if (DevicePathNodeLength (&DPathNode->Ipv4) == IP4_NODE_LEN_NEW_VERSIONS) {
 
-      IP4_COPY_ADDRESS (
-        &DPathNode->Ipv4.SubnetMask,
-        &Session->ConfigData.NvData.SubnetMask
-        );
+        IP4_COPY_ADDRESS (
+          &DPathNode->Ipv4.GatewayIpAddress,
+          &Session->ConfigData.NvData.Gateway
+          );
+
+        IP4_COPY_ADDRESS (
+          &DPathNode->Ipv4.SubnetMask,
+          &Session->ConfigData.NvData.SubnetMask
+          );
+      }
 
       break;
     }
@@ -849,7 +873,9 @@ IScsiOnExitBootService (
   ISCSI_DRIVER_DATA *Private;
 
   Private = (ISCSI_DRIVER_DATA *) Context;
+
   gBS->CloseEvent (Private->ExitBootServiceEvent);
+  Private->ExitBootServiceEvent = NULL;
 
   IScsiSessionAbort (&Private->Session);
 }

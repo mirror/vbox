@@ -3,7 +3,7 @@
   Implment all four UEFI runtime variable services and
   install variable architeture protocol.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -93,7 +93,8 @@ static UINT32 VBoxWriteNVRAMDoOp(UINT32 u32Operation)
   @param Attributes                 Attribute value of the variable found.
   @param DataSize                   Size of Data found. If size is less than the
                                     data, this value contains the required size.
-  @param Data                       Data pointer.
+  @param Data                       The buffer to return the contents of the variable. May be NULL
+                                    with a zero DataSize in order to determine the size buffer needed.
 
   @return EFI_INVALID_PARAMETER     Invalid parameter
   @return EFI_SUCCESS               Find the specified variable
@@ -108,7 +109,7 @@ RuntimeServiceGetVariable (
   IN EFI_GUID      *VendorGuid,
   OUT UINT32       *Attributes OPTIONAL,
   IN OUT UINTN     *DataSize,
-  OUT VOID         *Data
+  OUT VOID         *Data OPTIONAL
   )
 {
 #ifndef VBOX
@@ -181,14 +182,22 @@ RuntimeServiceGetVariable (
 
   This code Finds the Next available variable.
 
-  @param VariableNameSize           Size of the variable name
-  @param VariableName               Pointer to variable name
-  @param VendorGuid                 Variable Vendor Guid
+  @param  VariableNameSize       The size of the VariableName buffer. The size must be large enough to fit input
+                                 string supplied in VariableName buffer.
+  @param  VariableName           On input, supplies the last VariableName that was returned by GetNextVariableName().
+                                 On output, returns the Null-terminated Unicode string of the current variable.
+  @param  VendorGuid             On input, supplies the last VendorGuid that was returned by GetNextVariableName().
+                                 On output, returns the VendorGuid of the current variable.
 
-  @return EFI_INVALID_PARAMETER     Invalid parameter
-  @return EFI_SUCCESS               Find the specified variable
-  @return EFI_NOT_FOUND             Not found
-  @return EFI_BUFFER_TO_SMALL       DataSize is too small for the result
+  @retval EFI_SUCCESS            The function completed successfully.
+  @retval EFI_NOT_FOUND          The next variable was not found.
+  @retval EFI_BUFFER_TOO_SMALL   The VariableNameSize is too small for the result.
+                                 VariableNameSize has been updated with the size needed to complete the request.
+  @retval EFI_INVALID_PARAMETER  VariableNameSize or VariableName or VendorGuid is NULL.
+  @retval EFI_INVALID_PARAMETER  The input values of VariableName and VendorGuid are not a name and
+                                 GUID of an existing variable.
+  @retval EFI_INVALID_PARAMETER  Null-terminator is not found in the first VariableNameSize bytes of
+                                 the input VariableName buffer.
 
 **/
 EFI_STATUS

@@ -1,7 +1,7 @@
 ## @file
 # This file is used to define common string related functions used in parsing process
 #
-# Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2015, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -24,6 +24,7 @@ import GlobalData
 from BuildToolError import *
 from CommonDataClass.Exceptions import *
 from Common.LongFilePathSupport import OpenLongFilePath as open
+from Common.MultipleWorkspace import MultipleWorkspace as mws
 
 gHexVerPatt = re.compile('0x[a-f0-9]{4}[a-f0-9]{4}$', re.IGNORECASE)
 gHumanReadableVerPatt = re.compile(r'([1-9][0-9]*|0)\.[0-9]{1,2}$')
@@ -44,25 +45,36 @@ def GetSplitValueList(String, SplitTag=DataType.TAB_VALUE_SPLIT, MaxSplit= -1):
     ValueList = []
     Last = 0
     Escaped = False
-    InString = False
+    InSingleQuoteString = False
+    InDoubleQuoteString = False
+    InParenthesis = 0
     for Index in range(0, len(String)):
         Char = String[Index]
 
         if not Escaped:
             # Found a splitter not in a string, split it
-            if not InString and Char == SplitTag:
+            if (not InSingleQuoteString or not InDoubleQuoteString) and InParenthesis == 0 and Char == SplitTag:
                 ValueList.append(String[Last:Index].strip())
                 Last = Index + 1
                 if MaxSplit > 0 and len(ValueList) >= MaxSplit:
                     break
 
-            if Char == '\\' and InString:
+            if Char == '\\' and (InSingleQuoteString or InDoubleQuoteString):
                 Escaped = True
-            elif Char == '"':
-                if not InString:
-                    InString = True
+            elif Char == '"' and not InSingleQuoteString:
+                if not InDoubleQuoteString:
+                    InDoubleQuoteString = True
                 else:
-                    InString = False
+                    InDoubleQuoteString = False
+            elif Char == "'" and not InDoubleQuoteString:
+                if not InSingleQuoteString:
+                    InSingleQuoteString = True
+                else:
+                    InSingleQuoteString = False
+            elif Char == '(':
+                InParenthesis = InParenthesis + 1
+            elif Char == ')':
+                InParenthesis = InParenthesis - 1
         else:
             Escaped = False
 
@@ -272,7 +284,8 @@ def ReplaceMacro(String, MacroDefinitions={}, SelfReplacement=False, RaiseError=
                 if SelfReplacement:
                     String = String.replace("$(%s)" % Macro, '')
                 continue
-            String = String.replace("$(%s)" % Macro, MacroDefinitions[Macro])
+            if "$(%s)" % Macro not in MacroDefinitions[Macro]:
+                String = String.replace("$(%s)" % Macro, MacroDefinitions[Macro])
         # in case there's macro not defined
         if String == LastString:
             break
@@ -304,6 +317,11 @@ def NormPath(Path, Defines={}):
         # To local path format
         #
         Path = os.path.normpath(Path)
+        if Path.startswith(GlobalData.gWorkspace) and not Path.startswith(GlobalData.gBuildDirectory) and not os.path.exists(Path):
+            Path = Path[len (GlobalData.gWorkspace):]
+            if Path[0] == os.path.sep:
+                Path = Path[1:]
+            Path = mws.join(GlobalData.gWorkspace, Path)
 
     if IsRelativePath and Path[0] != '.':
         Path = os.path.join('.', Path)
@@ -333,14 +351,17 @@ def CleanString(Line, CommentCharacter=DataType.TAB_COMMENT_SPLIT, AllowCppStyle
     #
     # remove comments, but we should escape comment character in string
     #
-    InString = False
+    InDoubleQuoteString = False
+    InSingleQuoteString = False
     CommentInString = False
     for Index in range(0, len(Line)):
-        if Line[Index] == '"':
-            InString = not InString
-        elif Line[Index] == CommentCharacter and InString :
+        if Line[Index] == '"' and not InSingleQuoteString:
+            InDoubleQuoteString = not InDoubleQuoteString
+        elif Line[Index] == "'" and not InDoubleQuoteString:
+            InSingleQuoteString = not InSingleQuoteString
+        elif Line[Index] == CommentCharacter and (InSingleQuoteString or InDoubleQuoteString):
             CommentInString = True
-        elif Line[Index] == CommentCharacter and not InString :
+        elif Line[Index] == CommentCharacter and not (InSingleQuoteString or InDoubleQuoteString):
             Line = Line[0: Index]
             break
 
@@ -390,15 +411,18 @@ def CleanString2(Line, CommentCharacter=DataType.TAB_COMMENT_SPLIT, AllowCppStyl
     #
     # separate comments and statements, but we should escape comment character in string
     #
-    InString = False
+    InDoubleQuoteString = False
+    InSingleQuoteString = False
     CommentInString = False
     Comment = ''
     for Index in range(0, len(Line)):
-        if Line[Index] == '"':
-            InString = not InString
-        elif Line[Index] == CommentCharacter and InString:
+        if Line[Index] == '"' and not InSingleQuoteString:
+            InDoubleQuoteString = not InDoubleQuoteString
+        elif Line[Index] == "'" and not InDoubleQuoteString:
+            InSingleQuoteString = not InSingleQuoteString
+        elif Line[Index] == CommentCharacter and (InDoubleQuoteString or InSingleQuoteString):
             CommentInString = True
-        elif Line[Index] == CommentCharacter and not InString:
+        elif Line[Index] == CommentCharacter and not (InDoubleQuoteString or InSingleQuoteString):
             Comment = Line[Index:].strip()
             Line = Line[0:Index].strip()
             break
@@ -701,7 +725,7 @@ def RaiseParserError(Line, Section, File, Format='', LineNo= -1):
 # @retval string A full path
 #
 def WorkspaceFile(WorkspaceDir, Filename):
-    return os.path.join(NormPath(WorkspaceDir), NormPath(Filename))
+    return mws.join(NormPath(WorkspaceDir), NormPath(Filename))
 
 ## Split string
 #
@@ -793,34 +817,34 @@ def GetHelpTextList(HelpTextClassList):
 def StringToArray(String):
     if isinstance(String, unicode):
         if len(unicode) == 0:
-            return "{0x00, 0x00}"
-        return "{%s, 0x00, 0x00}" % ", ".join(["0x%02x, 0x00" % ord(C) for C in String])
+            return "{0x00,0x00}"
+        return "{%s,0x00,0x00}" % ",".join(["0x%02x,0x00" % ord(C) for C in String])
     elif String.startswith('L"'):
         if String == "L\"\"":
-            return "{0x00, 0x00}"
+            return "{0x00,0x00}"
         else:
-            return "{%s, 0x00, 0x00}" % ", ".join(["0x%02x, 0x00" % ord(C) for C in String[2:-1]])
+            return "{%s,0x00,0x00}" % ",".join(["0x%02x,0x00" % ord(C) for C in String[2:-1]])
     elif String.startswith('"'):
         if String == "\"\"":
             return "{0x00,0x00}"
         else:
             StringLen = len(String[1:-1])
             if StringLen % 2:
-                return "{%s, 0x00}" % ", ".join(["0x%02x" % ord(C) for C in String[1:-1]])
+                return "{%s,0x00}" % ",".join(["0x%02x" % ord(C) for C in String[1:-1]])
             else:
-                return "{%s, 0x00,0x00}" % ", ".join(["0x%02x" % ord(C) for C in String[1:-1]])
+                return "{%s,0x00,0x00}" % ",".join(["0x%02x" % ord(C) for C in String[1:-1]])
     elif String.startswith('{'):
         StringLen = len(String.split(","))
         if StringLen % 2:
-            return "{%s, 0x00}" % ", ".join([ C for C in String[1:-1].split(',')])
+            return "{%s,0x00}" % ",".join([ C.strip() for C in String[1:-1].split(',')])
         else:
-            return "{%s}" % ", ".join([ C for C in String[1:-1].split(',')])
+            return "{%s}" % ",".join([ C.strip() for C in String[1:-1].split(',')])
 
     else:
         if len(String.split()) % 2:
-            return '{%s, 0}' % ', '.join(String.split())
+            return '{%s,0}' % ','.join(String.split())
         else:
-            return '{%s, 0,0}' % ', '.join(String.split())
+            return '{%s,0,0}' % ','.join(String.split())
 
 def StringArrayLength(String):
     if isinstance(String, unicode):

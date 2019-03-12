@@ -6,7 +6,7 @@
   environment and also encapsulates knowledge of at least the
   location of the Boot Firmware Volume (BFV).
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available under
 the terms and conditions of the BSD License that accompanies this distribution.
 The full text of the license may be found at
@@ -22,6 +22,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #ifndef __SEC_PLATFORM_INFORMATION_PPI_H__
 #define __SEC_PLATFORM_INFORMATION_PPI_H__
+
+#include <Pi/PiPeiCis.h>
 
 #define EFI_SEC_PLATFORM_INFORMATION_GUID \
   { \

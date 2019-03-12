@@ -1,6 +1,6 @@
 /** @file
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -40,6 +40,7 @@ VOID                  *mRuntimeSmbiosEntryPoint = NULL;
 EFI_PHYSICAL_ADDRESS  mReserveSmbiosEntryPoint = 0;
 EFI_PHYSICAL_ADDRESS  mStructureTableAddress   = 0;
 UINTN                 mStructureTablePages     = 0;
+BOOLEAN               mEndOfDxe                = FALSE;
 
 /**
   Do an AllocatePages () of type AllocateMaxAddress for EfiBootServicesCode
@@ -144,7 +145,7 @@ LegacyBiosGetLegacyRegion (
      );
 
   if (Regs.X.AX == 0) {
-    *LegacyMemoryAddress  = (VOID *) (UINTN) ((Regs.X.DS << 4) + Regs.X.BX);
+    *LegacyMemoryAddress  = (VOID *) (((UINTN) Regs.X.DS << 4) + Regs.X.BX);
     Status = EFI_SUCCESS;
   } else {
     Status = EFI_OUT_OF_RESOURCES;
@@ -728,7 +729,7 @@ InstallSmbiosEventCallback (
   }
 
   if ((mStructureTableAddress != 0) &&
-      (mStructureTablePages < (UINTN) EFI_SIZE_TO_PAGES (EntryPointStructure->TableLength))) {
+      (mStructureTablePages < EFI_SIZE_TO_PAGES ((UINT32)EntryPointStructure->TableLength))) {
     //
     // If original buffer is not enough for the new SMBIOS table, free original buffer and re-allocate
     //
@@ -763,6 +764,26 @@ InstallSmbiosEventCallback (
     }
     DEBUG ((EFI_D_INFO, "Allocate memory for Smbios Structure Table\n"));
   }
+}
+
+/**
+  Callback function to toggle EndOfDxe status. NULL pointer detection needs
+  this status to decide if it's necessary to change attributes of page 0.
+
+  @param  Event            Event whose notification function is being invoked.
+  @param  Context          The pointer to the notification function's context,
+                           which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+ToggleEndOfDxeStatus (
+  IN EFI_EVENT                Event,
+  IN VOID                     *Context
+  )
+{
+  mEndOfDxe = TRUE;
+  return;
 }
 
 /**
@@ -802,6 +823,7 @@ LegacyBiosInstall (
   UINT64                             Length;
   UINT8                              *SecureBoot;
   EFI_EVENT                          InstallSmbiosEvent;
+  EFI_EVENT                          EndOfDxeEvent;
 
   //
   // Load this driver's image to memory
@@ -964,8 +986,10 @@ LegacyBiosInstall (
   // Initialize region from 0x0000 to 4k. This initializes interrupt vector
   // range.
   //
-  gBS->SetMem ((VOID *) ClearPtr, 0x400, INITIAL_VALUE_BELOW_1K);
-  ZeroMem ((VOID *) ((UINTN)ClearPtr + 0x400), 0xC00);
+  ACCESS_PAGE0_CODE (
+    gBS->SetMem ((VOID *) ClearPtr, 0x400, INITIAL_VALUE_BELOW_1K);
+    ZeroMem ((VOID *) ((UINTN)ClearPtr + 0x400), 0xC00);
+  );
 
   //
   // Allocate pages for OPROM usage
@@ -1104,12 +1128,15 @@ LegacyBiosInstall (
   //
   // Save Unexpected interrupt vector so can restore it just prior to boot
   //
-  BaseVectorMaster = (UINT32 *) (sizeof (UINT32) * PROTECTED_MODE_BASE_VECTOR_MASTER);
-  Private->BiosUnexpectedInt = BaseVectorMaster[0];
-  IntRedirCode = (UINT32) (UINTN) Private->IntThunk->InterruptRedirectionCode;
-  for (Index = 0; Index < 8; Index++) {
-    BaseVectorMaster[Index] = (EFI_SEGMENT (IntRedirCode + Index * 4) << 16) | EFI_OFFSET (IntRedirCode + Index * 4);
-  }
+  ACCESS_PAGE0_CODE (
+    BaseVectorMaster = (UINT32 *) (sizeof (UINT32) * PROTECTED_MODE_BASE_VECTOR_MASTER);
+    Private->BiosUnexpectedInt = BaseVectorMaster[0];
+    IntRedirCode = (UINT32) (UINTN) Private->IntThunk->InterruptRedirectionCode;
+    for (Index = 0; Index < 8; Index++) {
+      BaseVectorMaster[Index] = (EFI_SEGMENT (IntRedirCode + Index * 4) << 16) | EFI_OFFSET (IntRedirCode + Index * 4);
+    }
+  );
+
   //
   // Save EFI value
   //
@@ -1130,6 +1157,20 @@ LegacyBiosInstall (
                   NULL,
                   &gEfiSmbiosTableGuid,
                   &InstallSmbiosEvent
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  //
+  // Create callback to update status of EndOfDxe, which is needed by NULL
+  // pointer detection
+  //
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_NOTIFY,
+                  ToggleEndOfDxeStatus,
+                  NULL,
+                  &gEfiEndOfDxeEventGroupGuid,
+                  &EndOfDxeEvent
                   );
   ASSERT_EFI_ERROR (Status);
 

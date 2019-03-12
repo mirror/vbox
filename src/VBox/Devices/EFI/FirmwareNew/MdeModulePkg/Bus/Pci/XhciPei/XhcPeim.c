@@ -2,7 +2,7 @@
 PEIM to produce gPeiUsb2HostControllerPpiGuid based on gPeiUsbControllerPpiGuid
 which is used to enable recovery function from USB Drivers.
 
-Copyright (c) 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2014 - 2017, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -161,7 +161,7 @@ XhcPeiClearOpRegBit (
   @param  Offset        The offset of the operational register.
   @param  Bit           The bit mask of the register to wait for.
   @param  WaitToSet     Wait the bit to set or clear.
-  @param  Timeout       The time to wait before abort (in microsecond, us).
+  @param  Timeout       The time to wait before abort (in millisecond, ms).
 
   @retval EFI_SUCCESS   The bit successfully changed by host controller.
   @retval EFI_TIMEOUT   The time out occurred.
@@ -176,14 +176,14 @@ XhcPeiWaitOpRegBit (
   IN UINT32             Timeout
   )
 {
-  UINT32                Index;
+  UINT64                Index;
 
-  for (Index = 0; Index < Timeout / XHC_POLL_DELAY + 1; Index++) {
+  for (Index = 0; Index < Timeout * XHC_1_MILLISECOND; Index++) {
     if (XHC_REG_BIT_IS_SET (Xhc, Offset, Bit) == WaitToSet) {
       return EFI_SUCCESS;
     }
 
-    MicroSecondDelay (XHC_POLL_DELAY);
+    MicroSecondDelay (XHC_1_MICROSECOND);
   }
 
   return EFI_TIMEOUT;
@@ -381,7 +381,7 @@ XhcPeiIsSysError (
   Reset the host controller.
 
   @param  Xhc           The XHCI device.
-  @param  Timeout       Time to wait before abort (in microsecond, us).
+  @param  Timeout       Time to wait before abort (in millisecond, ms).
 
   @retval EFI_TIMEOUT   The transfer failed due to time out.
   @retval Others        Failed to reset the host.
@@ -407,6 +407,12 @@ XhcPeiResetHC (
   }
 
   XhcPeiSetOpRegBit (Xhc, XHC_USBCMD_OFFSET, XHC_USBCMD_RESET);
+  //
+  // Some XHCI host controllers require to have extra 1ms delay before accessing any MMIO register during reset.
+  // Otherwise there may have the timeout case happened.
+  // The below is a workaround to solve such problem.
+  //
+  MicroSecondDelay (1000);
   Status = XhcPeiWaitOpRegBit (Xhc, XHC_USBCMD_OFFSET, XHC_USBCMD_RESET, FALSE, Timeout);
 ON_EXIT:
   DEBUG ((EFI_D_INFO, "XhcPeiResetHC: %r\n", Status));
@@ -648,18 +654,36 @@ XhcPeiControlTransfer (
   *TransferResult = Urb->Result;
   *DataLength     = Urb->Completed;
 
-  if (*TransferResult == EFI_USB_NOERROR) {
-    Status = EFI_SUCCESS;
-  } else if (*TransferResult == EFI_USB_ERR_STALL) {
-    RecoveryStatus = XhcPeiRecoverHaltedEndpoint(Xhc, Urb);
-    if (EFI_ERROR (RecoveryStatus)) {
-      DEBUG ((EFI_D_ERROR, "XhcPeiControlTransfer: XhcPeiRecoverHaltedEndpoint failed\n"));
+  if (Status == EFI_TIMEOUT) {
+    //
+    // The transfer timed out. Abort the transfer by dequeueing of the TD.
+    //
+    RecoveryStatus = XhcPeiDequeueTrbFromEndpoint(Xhc, Urb);
+    if (EFI_ERROR(RecoveryStatus)) {
+      DEBUG((EFI_D_ERROR, "XhcPeiControlTransfer: XhcPeiDequeueTrbFromEndpoint failed\n"));
     }
-    Status = EFI_DEVICE_ERROR;
-    goto FREE_URB;
+    XhcPeiFreeUrb (Xhc, Urb);
+    goto ON_EXIT;
   } else {
-    goto FREE_URB;
+    if (*TransferResult == EFI_USB_NOERROR) {
+      Status = EFI_SUCCESS;
+    } else if ((*TransferResult == EFI_USB_ERR_STALL) || (*TransferResult == EFI_USB_ERR_BABBLE)) {
+      RecoveryStatus = XhcPeiRecoverHaltedEndpoint(Xhc, Urb);
+      if (EFI_ERROR (RecoveryStatus)) {
+        DEBUG ((EFI_D_ERROR, "XhcPeiControlTransfer: XhcPeiRecoverHaltedEndpoint failed\n"));
+      }
+      Status = EFI_DEVICE_ERROR;
+      XhcPeiFreeUrb (Xhc, Urb);
+      goto ON_EXIT;
+    } else {
+      XhcPeiFreeUrb (Xhc, Urb);
+      goto ON_EXIT;
+    }
   }
+  //
+  // Unmap data before consume.
+  //
+  XhcPeiFreeUrb (Xhc, Urb);
 
   //
   // Hook Get_Descriptor request from UsbBus as we need evaluate context and configure endpoint.
@@ -676,7 +700,7 @@ XhcPeiControlTransfer (
       // Store a copy of device scriptor as hub device need this info to configure endpoint.
       //
       CopyMem (&Xhc->UsbDevContext[SlotId].DevDesc, Data, *DataLength);
-      if (Xhc->UsbDevContext[SlotId].DevDesc.BcdUSB == 0x0300) {
+      if (Xhc->UsbDevContext[SlotId].DevDesc.BcdUSB >= 0x0300) {
         //
         // If it's a usb3.0 device, then its max packet size is a 2^n.
         //
@@ -687,7 +711,7 @@ XhcPeiControlTransfer (
       Xhc->UsbDevContext[SlotId].ConfDesc = AllocateZeroPool (Xhc->UsbDevContext[SlotId].DevDesc.NumConfigurations * sizeof (EFI_USB_CONFIG_DESCRIPTOR *));
       if (Xhc->UsbDevContext[SlotId].ConfDesc == NULL) {
         Status = EFI_OUT_OF_RESOURCES;
-        goto FREE_URB;
+        goto ON_EXIT;
       }
       if (Xhc->HcCParams.Data.Csz == 0) {
         Status = XhcPeiEvaluateContext (Xhc, SlotId, MaxPacket0);
@@ -705,7 +729,7 @@ XhcPeiControlTransfer (
         Xhc->UsbDevContext[SlotId].ConfDesc[Index] = AllocateZeroPool (*DataLength);
         if (Xhc->UsbDevContext[SlotId].ConfDesc[Index] == NULL) {
           Status = EFI_OUT_OF_RESOURCES;
-          goto FREE_URB;
+          goto ON_EXIT;
         }
         CopyMem (Xhc->UsbDevContext[SlotId].ConfDesc[Index], Data, *DataLength);
       }
@@ -826,9 +850,6 @@ XhcPeiControlTransfer (
 
     *(UINT32 *) Data = *(UINT32 *) &PortStatus;
   }
-
-FREE_URB:
-  XhcPeiFreeUrb (Xhc, Urb);
 
 ON_EXIT:
 
@@ -960,14 +981,24 @@ XhcPeiBulkTransfer (
   *TransferResult = Urb->Result;
   *DataLength     = Urb->Completed;
 
-  if (*TransferResult == EFI_USB_NOERROR) {
-    Status = EFI_SUCCESS;
-  } else if (*TransferResult == EFI_USB_ERR_STALL) {
-    RecoveryStatus = XhcPeiRecoverHaltedEndpoint(Xhc, Urb);
-    if (EFI_ERROR (RecoveryStatus)) {
-      DEBUG ((EFI_D_ERROR, "XhcPeiBulkTransfer: XhcPeiRecoverHaltedEndpoint failed\n"));
+  if (Status == EFI_TIMEOUT) {
+    //
+    // The transfer timed out. Abort the transfer by dequeueing of the TD.
+    //
+    RecoveryStatus = XhcPeiDequeueTrbFromEndpoint(Xhc, Urb);
+    if (EFI_ERROR(RecoveryStatus)) {
+      DEBUG((EFI_D_ERROR, "XhcPeiBulkTransfer: XhcPeiDequeueTrbFromEndpoint failed\n"));
     }
-    Status = EFI_DEVICE_ERROR;
+  } else {
+    if (*TransferResult == EFI_USB_NOERROR) {
+      Status = EFI_SUCCESS;
+    } else if ((*TransferResult == EFI_USB_ERR_STALL) || (*TransferResult == EFI_USB_ERR_BABBLE)) {
+      RecoveryStatus = XhcPeiRecoverHaltedEndpoint(Xhc, Urb);
+      if (EFI_ERROR (RecoveryStatus)) {
+        DEBUG ((EFI_D_ERROR, "XhcPeiBulkTransfer: XhcPeiRecoverHaltedEndpoint failed\n"));
+      }
+      Status = EFI_DEVICE_ERROR;
+    }
   }
 
   XhcPeiFreeUrb (Xhc, Urb);
@@ -1372,6 +1403,36 @@ XhcPeiGetRootHubPortStatus (
 }
 
 /**
+  One notified function to stop the Host Controller at the end of PEI
+
+  @param[in]  PeiServices        Pointer to PEI Services Table.
+  @param[in]  NotifyDescriptor   Pointer to the descriptor for the Notification event that
+                                 caused this function to execute.
+  @param[in]  Ppi                Pointer to the PPI data associated with this function.
+
+  @retval     EFI_SUCCESS  The function completes successfully
+  @retval     others
+**/
+EFI_STATUS
+EFIAPI
+XhcEndOfPei (
+  IN EFI_PEI_SERVICES           **PeiServices,
+  IN EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyDescriptor,
+  IN VOID                       *Ppi
+  )
+{
+  PEI_XHC_DEV    *Xhc;
+
+  Xhc = PEI_RECOVERY_USB_XHC_DEV_FROM_THIS_NOTIFY(NotifyDescriptor);
+
+  XhcPeiHaltHC (Xhc, XHC_GENERIC_TIMEOUT);
+
+  XhcPeiFreeSched (Xhc);
+
+  return EFI_SUCCESS;
+}
+
+/**
   @param FileHandle     Handle of the file being invoked.
   @param PeiServices    Describes the list of possible PEI Services.
 
@@ -1411,6 +1472,8 @@ XhcPeimEntry (
   if (EFI_ERROR (Status)) {
     return EFI_UNSUPPORTED;
   }
+
+  IoMmuInit ();
 
   Index = 0;
   while (TRUE) {
@@ -1503,7 +1566,12 @@ XhcPeimEntry (
     XhcDev->PpiDescriptor.Guid = &gPeiUsb2HostControllerPpiGuid;
     XhcDev->PpiDescriptor.Ppi = &XhcDev->Usb2HostControllerPpi;
 
+    XhcDev->EndOfPeiNotifyList.Flags = (EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST);
+    XhcDev->EndOfPeiNotifyList.Guid = &gEfiEndOfPeiSignalPpiGuid;
+    XhcDev->EndOfPeiNotifyList.Notify = XhcEndOfPei;
+
     PeiServicesInstallPpi (&XhcDev->PpiDescriptor);
+    PeiServicesNotifyPpi (&XhcDev->EndOfPeiNotifyList);
 
     Index++;
   }

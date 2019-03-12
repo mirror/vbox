@@ -1,7 +1,7 @@
 /** @file
   Support functions implementation for UefiPxeBc Driver.
 
-  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -30,22 +30,22 @@
 EFI_STATUS
 PxeBcFlushStationIp (
   PXEBC_PRIVATE_DATA       *Private,
-  EFI_IP_ADDRESS           *StationIp,
+  EFI_IP_ADDRESS           *StationIp,     OPTIONAL
   EFI_IP_ADDRESS           *SubnetMask     OPTIONAL
   )
 {
   EFI_PXE_BASE_CODE_MODE   *Mode;
   EFI_STATUS               Status;
 
-  ASSERT (StationIp != NULL);
-
   Mode   = Private->PxeBc.Mode;
   Status = EFI_SUCCESS;
 
   if (Mode->UsingIpv6) {
 
-    CopyMem (&Private->Udp6CfgData.StationAddress, StationIp, sizeof (EFI_IPv6_ADDRESS));
-    CopyMem (&Private->Ip6CfgData.StationAddress, StationIp, sizeof (EFI_IPv6_ADDRESS));
+    if (StationIp != NULL) {
+      CopyMem (&Private->Udp6CfgData.StationAddress, StationIp, sizeof (EFI_IPv6_ADDRESS));
+      CopyMem (&Private->Ip6CfgData.StationAddress, StationIp, sizeof (EFI_IPv6_ADDRESS));
+    }
 
     //
     // Reconfigure the Ip6 instance to capture background ICMP6 packets with new station Ip address.
@@ -60,11 +60,15 @@ PxeBcFlushStationIp (
 
     Status = Private->Ip6->Receive (Private->Ip6, &Private->Icmp6Token);
   } else {
-    ASSERT (SubnetMask != NULL);
-    CopyMem (&Private->Udp4CfgData.StationAddress, StationIp, sizeof (EFI_IPv4_ADDRESS));
-    CopyMem (&Private->Udp4CfgData.SubnetMask, SubnetMask, sizeof (EFI_IPv4_ADDRESS));
-    CopyMem (&Private->Ip4CfgData.StationAddress, StationIp, sizeof (EFI_IPv4_ADDRESS));
-    CopyMem (&Private->Ip4CfgData.SubnetMask, SubnetMask, sizeof (EFI_IPv4_ADDRESS));
+    if (StationIp != NULL) {
+      CopyMem (&Private->Udp4CfgData.StationAddress, StationIp, sizeof (EFI_IPv4_ADDRESS));
+      CopyMem (&Private->Ip4CfgData.StationAddress, StationIp, sizeof (EFI_IPv4_ADDRESS));
+    }
+
+    if (SubnetMask != NULL) {
+      CopyMem (&Private->Udp4CfgData.SubnetMask, SubnetMask, sizeof (EFI_IPv4_ADDRESS));
+      CopyMem (&Private->Ip4CfgData.SubnetMask, SubnetMask, sizeof (EFI_IPv4_ADDRESS));
+    }
 
     //
     // Reconfigure the Ip4 instance to capture background ICMP packets with new station Ip address.
@@ -253,34 +257,30 @@ PxeBcIcmpErrorDpcHandle (
     //
     // The return status should be recognized as EFI_ICMP_ERROR.
     //
-    gBS->SignalEvent (RxData->RecycleSignal);
-    goto ON_EXIT;
+    goto ON_RECYCLE;
   }
 
   if (EFI_IP4 (RxData->Header->SourceAddress) != 0 &&
-      !NetIp4IsUnicast (EFI_NTOHL (RxData->Header->SourceAddress), 0)) {
+      (NTOHL (Mode->SubnetMask.Addr[0]) != 0) &&
+      IP4_NET_EQUAL (NTOHL(Mode->StationIp.Addr[0]), EFI_NTOHL (RxData->Header->SourceAddress), NTOHL (Mode->SubnetMask.Addr[0])) &&
+      !NetIp4IsUnicast (EFI_NTOHL (RxData->Header->SourceAddress), NTOHL (Mode->SubnetMask.Addr[0]))) {
     //
     // The source address of the received packet should be a valid unicast address.
     //
-    gBS->SignalEvent (RxData->RecycleSignal);
-    goto ON_EXIT;
+    goto ON_RECYCLE;
   }
 
   if (!EFI_IP4_EQUAL (&RxData->Header->DestinationAddress, &Mode->StationIp.v4)) {
     //
     // The destination address of the received packet should be equal to the host address.
     //
-    gBS->SignalEvent (RxData->RecycleSignal);
-    goto ON_EXIT;
+    goto ON_RECYCLE;
   }
 
-  if (RxData->Header->Protocol != EFI_IP_PROTO_ICMP) {
-    //
-    // The protocol value in the header of the receveid packet should be EFI_IP_PROTO_ICMP.
-    //
-    gBS->SignalEvent (RxData->RecycleSignal);
-    goto ON_EXIT;
-  }
+  //
+  // The protocol has been configured to only receive ICMP packet.
+  //
+  ASSERT (RxData->Header->Protocol == EFI_IP_PROTO_ICMP);
 
   Type = *((UINT8 *) RxData->FragmentTable[0].FragmentBuffer);
 
@@ -292,8 +292,7 @@ PxeBcIcmpErrorDpcHandle (
     //
     // The type of the receveid ICMP message should be ICMP_ERROR_MESSAGE.
     //
-    gBS->SignalEvent (RxData->RecycleSignal);
-    goto ON_EXIT;
+    goto ON_RECYCLE;
   }
 
   //
@@ -319,6 +318,9 @@ PxeBcIcmpErrorDpcHandle (
     }
     IcmpError += CopiedLen;
   }
+
+ON_RECYCLE:
+  gBS->SignalEvent (RxData->RecycleSignal);
 
 ON_EXIT:
   Private->IcmpToken.Status = EFI_NOT_READY;
@@ -389,16 +391,14 @@ PxeBcIcmp6ErrorDpcHandle (
     //
     // The return status should be recognized as EFI_ICMP_ERROR.
     //
-    gBS->SignalEvent (RxData->RecycleSignal);
-    goto ON_EXIT;
+    goto ON_RECYCLE;
   }
 
   if (!NetIp6IsValidUnicast (&RxData->Header->SourceAddress)) {
     //
     // The source address of the received packet should be a valid unicast address.
     //
-    gBS->SignalEvent (RxData->RecycleSignal);
-    goto ON_EXIT;
+    goto ON_RECYCLE;
   }
 
   if (!NetIp6IsUnspecifiedAddr (&Mode->StationIp.v6) &&
@@ -406,29 +406,24 @@ PxeBcIcmp6ErrorDpcHandle (
     //
     // The destination address of the received packet should be equal to the host address.
     //
-    gBS->SignalEvent (RxData->RecycleSignal);
-    goto ON_EXIT;
+    goto ON_RECYCLE;
   }
 
-  if (RxData->Header->NextHeader != IP6_ICMP) {
-    //
-    // The nextheader in the header of the receveid packet should be IP6_ICMP.
-    //
-    gBS->SignalEvent (RxData->RecycleSignal);
-    goto ON_EXIT;
-  }
+  //
+  // The protocol has been configured to only receive ICMP packet.
+  //
+  ASSERT (RxData->Header->NextHeader == IP6_ICMP);
 
   Type = *((UINT8 *) RxData->FragmentTable[0].FragmentBuffer);
 
   if (Type != ICMP_V6_DEST_UNREACHABLE &&
       Type != ICMP_V6_PACKET_TOO_BIG &&
-      Type != ICMP_V6_PACKET_TOO_BIG &&
+      Type != ICMP_V6_TIME_EXCEEDED &&
       Type != ICMP_V6_PARAMETER_PROBLEM) {
     //
     // The type of the receveid packet should be an ICMP6 error message.
     //
-    gBS->SignalEvent (RxData->RecycleSignal);
-    goto ON_EXIT;
+    goto ON_RECYCLE;
   }
 
   //
@@ -454,6 +449,9 @@ PxeBcIcmp6ErrorDpcHandle (
     }
     Icmp6Error += CopiedLen;
   }
+
+ON_RECYCLE:
+  gBS->SignalEvent (RxData->RecycleSignal);
 
 ON_EXIT:
   Private->Icmp6Token.Status = EFI_NOT_READY;
@@ -489,6 +487,8 @@ PxeBcIcmp6ErrorUpdate (
   @param[in, out]  SrcPort              The pointer to the source port.
   @param[in]       DoNotFragment        If TRUE, fragment is not enabled.
                                         Otherwise, fragment is enabled.
+  @param[in]       Ttl                  The time to live field of the IP header.
+  @param[in]       ToS                  The type of service field of the IP header.
 
   @retval          EFI_SUCCESS          Successfully configured this instance.
   @retval          Others               Failed to configure this instance.
@@ -501,7 +501,9 @@ PxeBcConfigUdp4Write (
   IN     EFI_IPv4_ADDRESS   *SubnetMask,
   IN     EFI_IPv4_ADDRESS   *Gateway,
   IN OUT UINT16             *SrcPort,
-  IN     BOOLEAN            DoNotFragment
+  IN     BOOLEAN            DoNotFragment,
+  IN     UINT8              Ttl,
+  IN     UINT8              ToS
   )
 {
   EFI_UDP4_CONFIG_DATA  Udp4CfgData;
@@ -511,8 +513,8 @@ PxeBcConfigUdp4Write (
 
   Udp4CfgData.TransmitTimeout    = PXEBC_DEFAULT_LIFETIME;
   Udp4CfgData.ReceiveTimeout     = PXEBC_DEFAULT_LIFETIME;
-  Udp4CfgData.TypeOfService      = DEFAULT_ToS;
-  Udp4CfgData.TimeToLive         = DEFAULT_TTL;
+  Udp4CfgData.TypeOfService      = ToS;
+  Udp4CfgData.TimeToLive         = Ttl;
   Udp4CfgData.AllowDuplicatePort = TRUE;
   Udp4CfgData.DoNotFragment      = DoNotFragment;
 
@@ -1377,11 +1379,10 @@ PxeBcUintnToAscDecWithFormat (
 {
   UINTN                          Remainder;
 
-  while (Length > 0) {
-    Length--;
+  for (; Length > 0; Length--) {
     Remainder      = Number % 10;
     Number        /= 10;
-    Buffer[Length] = (UINT8) ('0' + Remainder);
+    Buffer[Length - 1] = (UINT8) ('0' + Remainder);
   }
 }
 
@@ -1392,6 +1393,7 @@ PxeBcUintnToAscDecWithFormat (
 
   @param[in]  Number         Numeric value to be converted.
   @param[in]  Buffer         The pointer to the buffer for ASCII string.
+  @param[in]  BufferSize     The maxsize of the buffer.
 
   @return     Length         The actual length of the ASCII string.
 
@@ -1399,7 +1401,8 @@ PxeBcUintnToAscDecWithFormat (
 UINTN
 PxeBcUintnToAscDec (
   IN UINTN               Number,
-  IN UINT8               *Buffer
+  IN UINT8               *Buffer,
+  IN UINTN               BufferSize
   )
 {
   UINTN           Index;
@@ -1415,7 +1418,7 @@ PxeBcUintnToAscDec (
     Number         = (UINTN) (Number / 10);
   } while (Number != 0);
 
-  AsciiStrCpy ((CHAR8 *) Buffer, &TempStr[Index]);
+  AsciiStrCpyS ((CHAR8 *) Buffer, BufferSize, &TempStr[Index]);
 
   Length = AsciiStrLen ((CHAR8 *) Buffer);
 

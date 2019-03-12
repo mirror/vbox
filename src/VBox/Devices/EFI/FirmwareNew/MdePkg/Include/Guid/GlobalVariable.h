@@ -1,7 +1,7 @@
 /** @file
   GUID for EFI (NVRAM) Variables.
 
-  Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -36,6 +36,7 @@ extern EFI_GUID gEfiGlobalVariableGuid;
 // Note: except the globally defined variables defined below, the spec also defines
 // L"Boot####"      - A boot load option.
 // L"Driver####"    - A driver load option.
+// L"SysPrep####"   - A System Prep application load option.
 // L"Key####"       - Describes hot key relationship with a Boot#### load option.
 // The attribute for them is NV+BS+RT, #### is a printed hex value, and no 0x or h
 // is included in the hex value. They can not be expressed as a #define like other globally
@@ -106,6 +107,11 @@ extern EFI_GUID gEfiGlobalVariableGuid;
 /// Its attribute is NV+BS+RT.
 ///
 #define EFI_DRIVER_ORDER_VARIABLE_NAME              L"DriverOrder"
+///
+/// The ordered System Prep Application load option list.
+/// Its attribute is NV+BS+RT.
+///
+#define EFI_SYS_PREP_ORDER_VARIABLE_NAME            L"SysPrepOrder"
 ///
 /// Identifies the level of hardware error record persistence
 /// support implemented by the platform. This variable is

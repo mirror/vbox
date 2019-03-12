@@ -1,7 +1,7 @@
 /** @file
   The main process for IpSecConfig application.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2016, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -26,6 +26,11 @@
 #include "Helper.h"
 
 //
+// String token ID of IpSecConfig command help message text.
+//
+GLOBAL_REMOVE_IF_UNREFERENCED EFI_STRING_ID mStringIpSecHelpTokenId = STRING_TOKEN (STR_IPSEC_CONFIG_HELP);
+
+//
 // Used for ShellCommandLineParseEx only
 // and to ensure user inputs are in valid format
 //
@@ -40,7 +45,6 @@ SHELL_PARAM_ITEM    mIpSecConfigParamList[] = {
   { L"-enable",               TypeFlag },
   { L"-disable",              TypeFlag },
   { L"-status",               TypeFlag },
-  { L"-?",                    TypeFlag },
 
   //
   // SPD Selector
@@ -622,11 +626,36 @@ InitializeIpSecConfig (
   CONST CHAR16                  *ValueStr;
   CHAR16                        *ProblemParam;
   UINTN                         NonOptionCount;
+  EFI_HII_PACKAGE_LIST_HEADER   *PackageList;
 
   //
-  // Register our string package with HII and return the handle to it.
+  // Retrieve HII package list from ImageHandle
   //
-  mHiiHandle = HiiAddPackages (&gEfiCallerIdGuid, ImageHandle, IpSecConfigStrings, NULL);
+  Status = gBS->OpenProtocol (
+                  ImageHandle,
+                  &gEfiHiiPackageListProtocolGuid,
+                  (VOID **) &PackageList,
+                  ImageHandle,
+                  NULL,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Publish HII package list to HII Database.
+  //
+  Status = gHiiDatabase->NewPackageList (
+                          gHiiDatabase,
+                          PackageList,
+                          NULL,
+                          &mHiiHandle
+                          );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
   ASSERT (mHiiHandle != NULL);
 
   Status = ShellCommandLineParseEx (mIpSecConfigParamList, &ParamPackage, &ProblemParam, TRUE, FALSE);
@@ -726,33 +755,6 @@ InitializeIpSecConfig (
       ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_IPSEC_CONFIG_INCORRECT_DB), mHiiHandle, mAppName, ValueStr);
       goto Done;
     }
-  }
-
-  if (ShellCommandLineGetFlag (ParamPackage, L"-?")) {
-    if (DataType == -1) {
-      ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_IPSEC_CONFIG_HELP), mHiiHandle);
-      goto Done;
-    }
-
-    switch (DataType) {
-      case IPsecConfigDataTypeSpd:
-        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_IPSEC_CONFIG_SPD_HELP), mHiiHandle);
-        break;
-
-      case IPsecConfigDataTypeSad:
-        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_IPSEC_CONFIG_SAD_HELP), mHiiHandle);
-        break;
-
-      case IPsecConfigDataTypePad:
-        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_IPSEC_CONFIG_PAD_HELP), mHiiHandle);
-        break;
-
-      default:
-        ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_IPSEC_CONFIG_INCORRECT_DB), mHiiHandle);
-        break;
-    }
-
-    goto Done;
   }
 
   NonOptionCount = ShellCommandLineGetCount (ParamPackage);

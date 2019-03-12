@@ -8,7 +8,7 @@
   of size reduction when compiler optimization is disabled. If MDEPKG_NDEBUG is
   defined, then debug and assert related macros wrapped by it are the NULL implementations.
 
-Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials are licensed and made available under
 the terms and conditions of the BSD License that accompanies this distribution.
 The full text of the license may be found at
@@ -39,20 +39,21 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define DEBUG_WARN      0x00000002  // Warnings
 #define DEBUG_LOAD      0x00000004  // Load events
 #define DEBUG_FS        0x00000008  // EFI File system
-#define DEBUG_POOL      0x00000010  // Alloc & Free's
-#define DEBUG_PAGE      0x00000020  // Alloc & Free's
+#define DEBUG_POOL      0x00000010  // Alloc & Free (pool)
+#define DEBUG_PAGE      0x00000020  // Alloc & Free (page)
 #define DEBUG_INFO      0x00000040  // Informational debug messages
 #define DEBUG_DISPATCH  0x00000080  // PEI/DXE/SMM Dispatchers
 #define DEBUG_VARIABLE  0x00000100  // Variable
 #define DEBUG_BM        0x00000400  // Boot Manager
 #define DEBUG_BLKIO     0x00001000  // BlkIo Driver
-#define DEBUG_NET       0x00004000  // SNI Driver
+#define DEBUG_NET       0x00004000  // Network Io Driver
 #define DEBUG_UNDI      0x00010000  // UNDI Driver
-#define DEBUG_LOADFILE  0x00020000  // UNDI Driver
+#define DEBUG_LOADFILE  0x00020000  // LoadFile
 #define DEBUG_EVENT     0x00080000  // Event messages
 #define DEBUG_GCD       0x00100000  // Global Coherency Database changes
 #define DEBUG_CACHE     0x00200000  // Memory range cachability changes
-#define DEBUG_VERBOSE   0x00400000  // Detailed debug messages that may significantly impact boot performance
+#define DEBUG_VERBOSE   0x00400000  // Detailed debug messages that may
+                                    // significantly impact boot performance
 #define DEBUG_ERROR     0x80000000  // Error
 
 //
@@ -252,7 +253,7 @@ DebugPrintLevelEnabled (
 
   This macro calls DebugPrint() passing in the debug error level, a format
   string, and a variable argument list.
-  __VA_ARGS__ is not supported by ECB compiler, Microsoft Visual Studio .NET 2003
+  __VA_ARGS__ is not supported by EBC compiler, Microsoft Visual Studio .NET 2003
   and Microsoft Windows Server 2003 Driver Development Kit (Microsoft WINDDK) version 3790.1830.
 
   @param  Expression  Expression containing an error level, a format string,
@@ -260,7 +261,7 @@ DebugPrintLevelEnabled (
 
 **/
 
-#if !defined(MDE_CPU_EBC) && (!defined (_MSC_VER) || _MSC_VER >= 1400)
+#if !defined(MDE_CPU_EBC) && (!defined (_MSC_VER) || _MSC_VER > 1400)
   #define _DEBUG_PRINT(PrintLevel, ...)              \
     do {                                             \
       if (DebugPrintLevelEnabled (PrintLevel)) {     \
@@ -290,6 +291,7 @@ DebugPrintLevelEnabled (
       if (DebugAssertEnabled ()) {  \
         if (!(Expression)) {        \
           _ASSERT (Expression);     \
+          ANALYZER_UNREACHABLE ();  \
         }                           \
       }                             \
     } while (FALSE)
@@ -344,6 +346,33 @@ DebugPrintLevelEnabled (
     } while (FALSE)
 #else
   #define ASSERT_EFI_ERROR(StatusParameter)
+#endif
+
+/**
+  Macro that calls DebugAssert() if a RETURN_STATUS evaluates to an error code.
+
+  If MDEPKG_NDEBUG is not defined and the DEBUG_PROPERTY_DEBUG_ASSERT_ENABLED
+  bit of PcdDebugProperyMask is set, then this macro evaluates the
+  RETURN_STATUS value specified by StatusParameter.  If StatusParameter is an
+  error code, then DebugAssert() is called passing in the source filename,
+  source line number, and StatusParameter.
+
+  @param  StatusParameter  RETURN_STATUS value to evaluate.
+
+**/
+#if !defined(MDEPKG_NDEBUG)
+  #define ASSERT_RETURN_ERROR(StatusParameter)                          \
+    do {                                                                \
+      if (DebugAssertEnabled ()) {                                      \
+        if (RETURN_ERROR (StatusParameter)) {                           \
+          DEBUG ((DEBUG_ERROR, "\nASSERT_RETURN_ERROR (Status = %r)\n", \
+            StatusParameter));                                          \
+          _ASSERT (!RETURN_ERROR (StatusParameter));                    \
+        }                                                               \
+      }                                                                 \
+    } while (FALSE)
+#else
+  #define ASSERT_RETURN_ERROR(StatusParameter)
 #endif
 
 /**

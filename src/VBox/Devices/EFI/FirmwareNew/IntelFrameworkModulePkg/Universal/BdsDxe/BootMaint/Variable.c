@@ -1,7 +1,7 @@
 /** @file
   Variable operation that will be used by bootmaint
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -448,7 +448,7 @@ Var_UpdateConsoleOption (
       Vendor.Header.Type    = MESSAGING_DEVICE_PATH;
       Vendor.Header.SubType = MSG_VENDOR_DP;
 
-      ASSERT (NewTerminalContext->TerminalType < (sizeof (TerminalTypeGuid) / sizeof (TerminalTypeGuid[0])));
+      ASSERT (NewTerminalContext->TerminalType < (ARRAY_SIZE (TerminalTypeGuid)));
       CopyMem (
         &Vendor.Guid,
         &TerminalTypeGuid[NewTerminalContext->TerminalType],
@@ -579,7 +579,7 @@ Var_UpdateDriverOption (
     );
 
   if (*DescriptionData == 0x0000) {
-    StrCpy (DescriptionData, DriverString);
+    StrCpyS (DescriptionData, DESCRIPTION_DATA_SIZE, DriverString);
   }
 
   BufferSize = sizeof (UINT32) + sizeof (UINT16) + StrSize (DescriptionData);
@@ -763,7 +763,11 @@ Var_UpdateBootOption (
   UnicodeSPrint (BootString, sizeof (BootString), L"Boot%04x", Index);
 
   if (NvRamMap->BootDescriptionData[0] == 0x0000) {
-    StrCpy (NvRamMap->BootDescriptionData, BootString);
+    StrCpyS (
+      NvRamMap->BootDescriptionData,
+      sizeof (NvRamMap->BootDescriptionData) / sizeof (NvRamMap->BootDescriptionData[0]),
+      BootString
+      );
   }
 
   BufferSize = sizeof (UINT32) + sizeof (UINT16) + StrSize (NvRamMap->BootDescriptionData);
@@ -1366,9 +1370,11 @@ Var_UpdateConMode (
 
   Status = gST->ConOut->QueryMode (gST->ConOut, Mode, &(ModeInfo.Column), &(ModeInfo.Row));
   if (!EFI_ERROR(Status)) {
-    PcdSet32 (PcdSetupConOutColumn, (UINT32) ModeInfo.Column);
-    PcdSet32 (PcdSetupConOutRow, (UINT32) ModeInfo.Row);
+    Status = PcdSet32S (PcdSetupConOutColumn, (UINT32) ModeInfo.Column);
+    if (!EFI_ERROR (Status)){
+      Status = PcdSet32S (PcdSetupConOutRow, (UINT32) ModeInfo.Row);
+    }
   }
 
-  return EFI_SUCCESS;
+  return Status;
 }

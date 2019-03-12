@@ -1,7 +1,7 @@
 /** @file
   Locate handle functions
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -560,12 +560,8 @@ CoreLocateProtocol (
   PROTOCOL_NOTIFY         *ProtNotify;
   IHANDLE                 *Handle;
 
-  if (Interface == NULL) {
+  if ((Interface == NULL) || (Protocol == NULL)) {
     return EFI_INVALID_PARAMETER;
-  }
-
-  if (Protocol == NULL) {
-    return EFI_NOT_FOUND;
   }
 
   *Interface = NULL;
@@ -581,7 +577,10 @@ CoreLocateProtocol (
   //
   // Lock the protocol database
   //
-  CoreAcquireProtocolLock ();
+  Status = CoreAcquireLockOrFail (&gProtocolDatabaseLock);
+  if (EFI_ERROR (Status)) {
+    return EFI_NOT_FOUND;
+  }
 
   mEfiLocateHandleRequest += 1;
 
@@ -637,7 +636,7 @@ Done:
   @retval EFI_NOT_FOUND          No handles match the search.
   @retval EFI_OUT_OF_RESOURCES   There is not enough pool memory to store the
                                  matching results.
-  @retval EFI_INVALID_PARAMETER  One or more paramters are not valid.
+  @retval EFI_INVALID_PARAMETER  One or more parameters are not valid.
 
 **/
 EFI_STATUS

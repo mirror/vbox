@@ -1,7 +1,7 @@
 /** @file
   Function definitions for shell simple text in and out on top of file handles.
 
-  Copyright (c) 2013 Hewlett-Packard Development Company, L.P.
+  (C) Copyright 2013 Hewlett-Packard Development Company, L.P.<BR>
   Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -27,7 +27,6 @@
   @return                     A pointer to the allocated protocol structure;
 **/
 EFI_SIMPLE_TEXT_INPUT_PROTOCOL*
-EFIAPI
 CreateSimpleTextInOnFile(
   IN SHELL_FILE_HANDLE  FileHandleToUse,
   IN EFI_HANDLE         *HandleLocation
@@ -42,7 +41,6 @@ CreateSimpleTextInOnFile(
   @retval EFI_SUCCESS         The object was closed.
 **/
 EFI_STATUS
-EFIAPI
 CloseSimpleTextInOnFile(
   IN EFI_SIMPLE_TEXT_INPUT_PROTOCOL  *SimpleTextIn
   );
@@ -59,7 +57,6 @@ CloseSimpleTextInOnFile(
   @return                     A pointer to the allocated protocol structure;
 **/
 EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL*
-EFIAPI
 CreateSimpleTextOutOnFile(
   IN SHELL_FILE_HANDLE               FileHandleToUse,
   IN EFI_HANDLE                      *HandleLocation,
@@ -75,7 +72,6 @@ CreateSimpleTextOutOnFile(
   @retval EFI_SUCCESS         The object was closed.
 **/
 EFI_STATUS
-EFIAPI
 CloseSimpleTextOutOnFile(
   IN EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *SimpleTextOut
   );

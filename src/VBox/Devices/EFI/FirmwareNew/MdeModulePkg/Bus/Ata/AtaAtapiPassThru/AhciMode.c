@@ -1,7 +1,8 @@
 /** @file
   The file for AHCI mode of ATA host controller.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -370,6 +371,7 @@ AhciClearPortStatus (
   in the Status Register, the Error Register's value is also be dumped.
 
   @param  PciIo            The PCI IO protocol instance.
+  @param  AhciRegisters    The pointer to the EFI_AHCI_REGISTERS.
   @param  Port             The number of port.
   @param  AtaStatusBlock   A pointer to EFI_ATA_STATUS_BLOCK data structure.
 
@@ -378,24 +380,42 @@ VOID
 EFIAPI
 AhciDumpPortStatus (
   IN     EFI_PCI_IO_PROTOCOL        *PciIo,
+  IN     EFI_AHCI_REGISTERS         *AhciRegisters,
   IN     UINT8                      Port,
   IN OUT EFI_ATA_STATUS_BLOCK       *AtaStatusBlock
   )
 {
-  UINT32               Offset;
+  UINTN                Offset;
   UINT32               Data;
+  UINTN                FisBaseAddr;
+  EFI_STATUS           Status;
 
   ASSERT (PciIo != NULL);
-
-  Offset = EFI_AHCI_PORT_START + Port * EFI_AHCI_PORT_REG_WIDTH + EFI_AHCI_PORT_TFD;
-  Data   = AhciReadReg (PciIo, Offset);
 
   if (AtaStatusBlock != NULL) {
     ZeroMem (AtaStatusBlock, sizeof (EFI_ATA_STATUS_BLOCK));
 
-    AtaStatusBlock->AtaStatus  = (UINT8)Data;
-    if ((AtaStatusBlock->AtaStatus & BIT0) != 0) {
-      AtaStatusBlock->AtaError = (UINT8)(Data >> 8);
+    FisBaseAddr = (UINTN)AhciRegisters->AhciRFis + Port * sizeof (EFI_AHCI_RECEIVED_FIS);
+    Offset      = FisBaseAddr + EFI_AHCI_D2H_FIS_OFFSET;
+
+    Status = AhciCheckMemSet (Offset, EFI_AHCI_FIS_TYPE_MASK, EFI_AHCI_FIS_REGISTER_D2H, NULL);
+    if (!EFI_ERROR (Status)) {
+      //
+      // If D2H FIS is received, update StatusBlock with its content.
+      //
+      CopyMem (AtaStatusBlock, (UINT8 *)Offset, sizeof (EFI_ATA_STATUS_BLOCK));
+    } else {
+      //
+      // If D2H FIS is not received, only update Status & Error field through PxTFD
+      // as there is no other way to get the content of the Shadow Register Block.
+      //
+      Offset = EFI_AHCI_PORT_START + Port * EFI_AHCI_PORT_REG_WIDTH + EFI_AHCI_PORT_TFD;
+      Data   = AhciReadReg (PciIo, (UINT32)Offset);
+
+      AtaStatusBlock->AtaStatus  = (UINT8)Data;
+      if ((AtaStatusBlock->AtaStatus & BIT0) != 0) {
+        AtaStatusBlock->AtaError = (UINT8)(Data >> 8);
+      }
     }
   }
 }
@@ -426,13 +446,7 @@ AhciEnableFisReceive (
   Offset = EFI_AHCI_PORT_START + Port * EFI_AHCI_PORT_REG_WIDTH + EFI_AHCI_PORT_CMD;
   AhciOrReg (PciIo, Offset, EFI_AHCI_PORT_CMD_FRE);
 
-  return AhciWaitMmioSet (
-           PciIo,
-           Offset,
-           EFI_AHCI_PORT_CMD_FR,
-           EFI_AHCI_PORT_CMD_FR,
-           Timeout
-           );
+  return EFI_SUCCESS;
 }
 
 /**
@@ -871,7 +885,7 @@ Exit:
     Map
     );
 
-  AhciDumpPortStatus (PciIo, Port, AtaStatusBlock);
+  AhciDumpPortStatus (PciIo, AhciRegisters, Port, AtaStatusBlock);
 
   return Status;
 }
@@ -1090,7 +1104,7 @@ Exit:
     }
   }
 
-  AhciDumpPortStatus (PciIo, Port, AtaStatusBlock);
+  AhciDumpPortStatus (PciIo, AhciRegisters, Port, AtaStatusBlock);
   return Status;
 }
 
@@ -1206,7 +1220,7 @@ Exit:
     Timeout
     );
 
-  AhciDumpPortStatus (PciIo, Port, AtaStatusBlock);
+  AhciDumpPortStatus (PciIo, AhciRegisters, Port, AtaStatusBlock);
 
   return Status;
 }
@@ -1407,6 +1421,7 @@ AhciPortReset (
              );
 
   if (EFI_ERROR (Status)) {
+    DEBUG ((EFI_D_ERROR, "Port %d COMRESET failed: %r\n", Port, Status));
     return Status;
   }
 
@@ -1436,17 +1451,13 @@ AhciReset (
 {
   UINT64                 Delay;
   UINT32                 Value;
-  UINT32                 Capability;
 
   //
-  // Collect AHCI controller information
+  // Make sure that GHC.AE bit is set before accessing any AHCI registers.
   //
-  Capability = AhciReadReg (PciIo, EFI_AHCI_CAPABILITY_OFFSET);
+  Value = AhciReadReg(PciIo, EFI_AHCI_GHC_OFFSET);
 
-  //
-  // Enable AE before accessing any AHCI registers if Supports AHCI Mode Only is not set
-  //
-  if ((Capability & EFI_AHCI_CAP_SAM) == 0) {
+  if ((Value & EFI_AHCI_GHC_ENABLE) == 0) {
     AhciOrReg (PciIo, EFI_AHCI_GHC_OFFSET, EFI_AHCI_GHC_ENABLE);
   }
 
@@ -1482,7 +1493,7 @@ AhciReset (
   @param  PciIo               The PCI IO protocol instance.
   @param  AhciRegisters       The pointer to the EFI_AHCI_REGISTERS.
   @param  Port                The number of port.
-  @param  PortMultiplier      The timeout value of stop.
+  @param  PortMultiplier      The port multiplier port number.
   @param  AtaStatusBlock      A pointer to EFI_ATA_STATUS_BLOCK data structure.
 
   @retval EFI_SUCCESS     Successfully get the return status of S.M.A.R.T command execution.
@@ -1580,7 +1591,7 @@ AhciAtaSmartReturnStatusCheck (
   @param  PciIo               The PCI IO protocol instance.
   @param  AhciRegisters       The pointer to the EFI_AHCI_REGISTERS.
   @param  Port                The number of port.
-  @param  PortMultiplier      The timeout value of stop.
+  @param  PortMultiplier      The port multiplier port number.
   @param  IdentifyData        A pointer to data buffer which is used to contain IDENTIFY data.
   @param  AtaStatusBlock      A pointer to EFI_ATA_STATUS_BLOCK data structure.
 
@@ -1696,7 +1707,7 @@ AhciAtaSmartSupport (
   @param  PciIo               The PCI IO protocol instance.
   @param  AhciRegisters       The pointer to the EFI_AHCI_REGISTERS.
   @param  Port                The number of port.
-  @param  PortMultiplier      The timeout value of stop.
+  @param  PortMultiplier      The port multiplier port number.
   @param  Buffer              The data buffer to store IDENTIFY PACKET data.
 
   @retval EFI_DEVICE_ERROR    The cmd abort with error occurs.
@@ -1754,7 +1765,7 @@ AhciIdentify (
   @param  PciIo               The PCI IO protocol instance.
   @param  AhciRegisters       The pointer to the EFI_AHCI_REGISTERS.
   @param  Port                The number of port.
-  @param  PortMultiplier      The timeout value of stop.
+  @param  PortMultiplier      The port multiplier port number.
   @param  Buffer              The data buffer to store IDENTIFY PACKET data.
 
   @retval EFI_DEVICE_ERROR    The cmd abort with error occurs.
@@ -1812,7 +1823,7 @@ AhciIdentifyPacket (
   @param  PciIo               The PCI IO protocol instance.
   @param  AhciRegisters       The pointer to the EFI_AHCI_REGISTERS.
   @param  Port                The number of port.
-  @param  PortMultiplier      The timeout value of stop.
+  @param  PortMultiplier      The port multiplier port number.
   @param  Feature             The data to send Feature register.
   @param  FeatureSpecificData The specific data for SET FEATURE cmd.
 
@@ -2237,6 +2248,7 @@ AhciModeInitialization (
   EFI_ATA_COLLECTIVE_MODE          *SupportedModes;
   EFI_ATA_TRANSFER_MODE            TransferMode;
   UINT32                           PhyDetectDelay;
+  UINT32                           Value;
 
   if (Instance == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -2257,10 +2269,30 @@ AhciModeInitialization (
   Capability = AhciReadReg (PciIo, EFI_AHCI_CAPABILITY_OFFSET);
 
   //
-  // Enable AE before accessing any AHCI registers if Supports AHCI Mode Only is not set
+  // Make sure that GHC.AE bit is set before accessing any AHCI registers.
   //
-  if ((Capability & EFI_AHCI_CAP_SAM) == 0) {
+  Value = AhciReadReg(PciIo, EFI_AHCI_GHC_OFFSET);
+
+  if ((Value & EFI_AHCI_GHC_ENABLE) == 0) {
     AhciOrReg (PciIo, EFI_AHCI_GHC_OFFSET, EFI_AHCI_GHC_ENABLE);
+  }
+
+  //
+  // Enable 64-bit DMA support in the PCI layer if this controller
+  // supports it.
+  //
+  if ((Capability & EFI_AHCI_CAP_S64A) != 0) {
+    Status = PciIo->Attributes (
+                      PciIo,
+                      EfiPciIoAttributeOperationEnable,
+                      EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE,
+                      NULL
+                      );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((EFI_D_WARN,
+        "AhciModeInitialization: failed to enable 64-bit DMA on 64-bit capable controller (%r)\n",
+        Status));
+    }
   }
 
   //
@@ -2282,7 +2314,7 @@ AhciModeInitialization (
   }
 
   for (Port = 0; Port < EFI_AHCI_MAX_PORTS; Port ++) {
-    if ((PortImplementBitMap & (BIT0 << Port)) != 0) {
+    if ((PortImplementBitMap & (((UINT32)BIT0) << Port)) != 0) {
       //
       // According to AHCI spec, MaxPortNumber should be equal or greater than the number of implemented ports.
       //
@@ -2342,20 +2374,9 @@ AhciModeInitialization (
       //
       Offset = EFI_AHCI_PORT_START + Port * EFI_AHCI_PORT_REG_WIDTH + EFI_AHCI_PORT_CMD;
       AhciOrReg (PciIo, Offset, EFI_AHCI_PORT_CMD_FRE);
-      Status = AhciWaitMmioSet (
-                 PciIo,
-                 Offset,
-                 EFI_AHCI_PORT_CMD_FR,
-                 EFI_AHCI_PORT_CMD_FR,
-                 EFI_AHCI_PORT_CMD_FR_CLEAR_TIMEOUT
-                 );
-      if (EFI_ERROR (Status)) {
-        continue;
-      }
 
       //
-      // Wait no longer than 10 ms to wait the Phy to detect the presence of a device.
-      // It's the requirment from SATA1.0a spec section 5.2.
+      // Wait for the Phy to detect the presence of a device.
       //
       PhyDetectDelay = EFI_AHCI_BUS_PHY_DETECT_TIMEOUT;
       Offset = EFI_AHCI_PORT_START + Port * EFI_AHCI_PORT_REG_WIDTH + EFI_AHCI_PORT_SSTS;
@@ -2401,6 +2422,7 @@ AhciModeInitialization (
       } while (PhyDetectDelay > 0);
 
       if (PhyDetectDelay == 0) {
+        DEBUG ((EFI_D_ERROR, "Port %d Device presence detected but phy not ready (TFD=0x%X)\n", Port, Data));
         continue;
       }
 
@@ -2510,7 +2532,7 @@ AhciModeInitialization (
       //
       // Found a ATA or ATAPI device, add it into the device list.
       //
-      CreateNewDeviceInfo (Instance, Port, 0, DeviceType, &Buffer);
+      CreateNewDeviceInfo (Instance, Port, 0xFFFF, DeviceType, &Buffer);
       if (DeviceType == EfiIdeHarddisk) {
         REPORT_STATUS_CODE (EFI_PROGRESS_CODE, (EFI_PERIPHERAL_FIXED_MEDIA | EFI_P_PC_ENABLE));
       }

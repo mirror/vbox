@@ -1,7 +1,7 @@
 /** @file
   Provides Set/Get time operations.
 
-Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -17,7 +17,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 PC_RTC_MODULE_GLOBALS  mModuleGlobal;
 
 EFI_HANDLE             mHandle = NULL;
-
 
 /**
   Returns the current time and date information, and the time-keeping capabilities
@@ -133,10 +132,32 @@ InitializePcRtc (
   )
 {
   EFI_STATUS  Status;
+  EFI_EVENT   Event;
 
   EfiInitializeLock (&mModuleGlobal.RtcLock, TPL_CALLBACK);
+  mModuleGlobal.CenturyRtcAddress = GetCenturyRtcAddress ();
 
   Status = PcRtcInit (&mModuleGlobal);
+  ASSERT_EFI_ERROR (Status);
+
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_CALLBACK,
+                  PcRtcAcpiTableChangeCallback,
+                  NULL,
+                  &gEfiAcpi10TableGuid,
+                  &Event
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_CALLBACK,
+                  PcRtcAcpiTableChangeCallback,
+                  NULL,
+                  &gEfiAcpiTableGuid,
+                  &Event
+                  );
   ASSERT_EFI_ERROR (Status);
 
   gRT->GetTime       = PcRtcEfiGetTime;

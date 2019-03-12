@@ -5,7 +5,9 @@
 #  PPI to discover and dispatch the DXE Foundation and components that are
 #  needed to run the DXE Foundation.
 #
-#  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
+#
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
 #  which accompanies this distribution.  The full text of the license may be found at
@@ -37,11 +39,12 @@
   DxeLoad.c
 
 [Sources.Ia32]
-  X64/VirtualMemory.h  ||||gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode
-  X64/VirtualMemory.c  ||||gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode
+  X64/VirtualMemory.h
+  X64/VirtualMemory.c
   Ia32/DxeLoadFunc.c
-  Ia32/IdtVectorAsm.asm||||gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode
-  Ia32/IdtVectorAsm.S  ||||gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode
+  Ia32/IdtVectorAsm.nasm
+  Ia32/IdtVectorAsm.asm
+  Ia32/IdtVectorAsm.S
 
 [Sources.X64]
   X64/VirtualMemory.h
@@ -61,6 +64,9 @@
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
 
+[Packages.ARM, Packages.AARCH64]
+  ArmPkg/ArmPkg.dec
+
 [LibraryClasses]
   PcdLib
   MemoryAllocationLib
@@ -76,6 +82,9 @@
   DebugAgentLib
   PeiServicesTablePointerLib
 
+[LibraryClasses.ARM, LibraryClasses.AARCH64]
+  ArmMmuLib
+
 [Ppis]
   gEfiDxeIplPpiGuid                 ## PRODUCES
   gEfiPeiDecompressPpiGuid          ## PRODUCES
@@ -87,6 +96,7 @@
   ## SOMETIMES_CONSUMES
   ## UNDEFINED # HOB
   gEfiVectorHandoffInfoPpiGuid
+  gEfiPeiMemoryDiscoveredPpiGuid    ## SOMETIMES_CONSUMES
 
 [Guids]
   ## SOMETIMES_CONSUMES ## Variable:L"MemoryTypeInformation"
@@ -103,10 +113,17 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSupportUefiDecompress ## CONSUMES
 
 [Pcd.IA32,Pcd.X64]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdUse1GPageTable              ## SOMETIMES_CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdUse1GPageTable                      ## SOMETIMES_CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPteMemoryEncryptionAddressOrMask    ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask    ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard                       ## CONSUMES
+
+[Pcd.IA32,Pcd.X64,Pcd.ARM,Pcd.AARCH64]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSetNxForStack               ## SOMETIMES_CONSUMES
 
 [Depex]
-  gEfiPeiMemoryDiscoveredPpiGuid AND gEfiPeiLoadFilePpiGuid AND gEfiPeiMasterBootModePpiGuid
+  gEfiPeiLoadFilePpiGuid AND gEfiPeiMasterBootModePpiGuid
 
 #
 # [BootMode]
