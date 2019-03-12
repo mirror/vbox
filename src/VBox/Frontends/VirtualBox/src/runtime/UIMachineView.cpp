@@ -296,8 +296,12 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
 
     /* Record the hint to extra data, needed for guests using VMSVGA: */
     /* This should be done before the actual hint is sent in case the guest overrides it. */
+    /* Do not send a hint if nothing has changed to prevent the guest being notified about its own changes. */
     if (   !isFullscreenOrSeamless()
-        && uisession()->isGuestSupportsGraphics())
+        && uisession()->isGuestSupportsGraphics()
+        && (   (int)m_pFrameBuffer->width() != size.width()
+            || (int)m_pFrameBuffer->height() != size.height()
+            || uisession()->isScreenVisible(screenId()) != uisession()->isScreenVisibleHostDesires(screenId())))
         storeGuestSizeHint(size);
 
     /* If auto-mount of guest-screens (auto-pilot) enabled: */
