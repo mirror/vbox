@@ -30,7 +30,6 @@ from Workspace.DscBuildData import DscBuildData
 from Workspace.InfBuildData import InfBuildData
 
 ## Database
-## Database
 #
 #   This class defined the build database for all modules, packages and platform.
 # It will call corresponding parser for the given file if it cannot find it in

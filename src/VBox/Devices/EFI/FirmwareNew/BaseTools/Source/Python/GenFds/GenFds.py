@@ -166,10 +166,6 @@ def main():
         if not GlobalData.gConfDirectory:
             GlobalData.gConfDirectory = GenFdsGlobalVariable.ConfDir
         BuildConfigurationFile = os.path.normpath(os.path.join(ConfDirectoryPath, "target.txt"))
-        # VBox - begin
-        if 'VBOX_TARGET_CONF' in os.environ:
-            BuildConfigurationFile = os.path.abspath(os.environ['VBOX_TARGET_CONF']);
-        # VBox - end
         if os.path.isfile(BuildConfigurationFile) == True:
             TargetTxt = TargetTxtClassObject.TargetTxtClassObject()
             TargetTxt.LoadTargetTxtFile(BuildConfigurationFile)

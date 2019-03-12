@@ -97,10 +97,6 @@ class GenFdsGlobalVariable:
         if GenFdsGlobalVariable.__BuildRuleDatabase:
             return GenFdsGlobalVariable.__BuildRuleDatabase
         BuildConfigurationFile = os.path.normpath(os.path.join(GenFdsGlobalVariable.ConfDir, "target.txt"))
-        # VBox - begin
-        if 'VBOX_TARGET_CONF' in os.environ:
-            BuildConfigurationFile = os.path.abspath(os.environ['VBOX_TARGET_CONF']);
-        # VBox - end
         TargetTxt = TargetTxtClassObject()
         if os.path.isfile(BuildConfigurationFile) == True:
             TargetTxt.LoadTargetTxtFile(BuildConfigurationFile)

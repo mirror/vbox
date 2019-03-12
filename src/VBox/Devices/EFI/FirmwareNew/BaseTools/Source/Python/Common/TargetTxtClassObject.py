@@ -174,11 +174,6 @@ class TargetTxtClassObject(object):
 #
 def TargetTxtDict(ConfDir):
     Target = TargetTxtClassObject()
-    # VBox begin
-    if 'VBOX_TARGET_CONF' in os.environ:
-        Target.LoadTargetTxtFile(os.path.abspath(os.environ['VBOX_TARGET_CONF']))
-        return Target
-    # VBox end
     Target.LoadTargetTxtFile(os.path.normpath(os.path.join(ConfDir, gDefaultTargetTxtFile)))
     return Target
 

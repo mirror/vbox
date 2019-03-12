@@ -31,10 +31,6 @@ class TargetTool():
         self.Opt       = opt
         self.Arg       = args[0]
         self.FileName  = os.path.normpath(os.path.join(self.WorkSpace, 'Conf', 'target.txt'))
-        # VBox - begin
-        if 'VBOX_TARGET_CONF' in os.environ:
-            self.FileName = os.path.abspath(os.environ['VBOX_TARGET_CONF']);
-        # VBox - end
         if os.path.isfile(self.FileName) == False:
             print "%s does not exist." % self.FileName
             sys.exit(1)

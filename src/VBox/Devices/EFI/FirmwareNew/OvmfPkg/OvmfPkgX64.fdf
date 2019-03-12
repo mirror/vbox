@@ -280,9 +280,6 @@ INF VBoxPkg/VBoxSysTables/VBoxSysTables.inf
 INF VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
  # we need it for VBoxAppleSim
 INF IntelFrameworkModulePkg/Universal/DataHubDxe/DataHubDxe.inf
-INF MdeModulePkg/Universal/StatusCodeHandler/RuntimeDxe/StatusCodeHandlerRuntimeDxe.inf
-INF MdeModulePkg/Universal/ReportStatusCodeRouter/RuntimeDxe/ReportStatusCodeRouterRuntimeDxe.inf
-INF MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
 !endif
 
 INF  PcAtChipsetPkg/IsaAcpiDxe/IsaAcpi.inf
