@@ -278,9 +278,12 @@ void HostDnsMonitorProxy::init(VirtualBox* aParent)
 
 void HostDnsMonitorProxy::uninit()
 {
-    m->monitor->shutdown();
-    delete m;
-    m = NULL;
+    if (m)
+    {
+        m->monitor->shutdown();
+        delete m;
+        m = NULL;
+    }
 }
 
 void HostDnsMonitorProxy::notify(const HostDnsInformation &info)

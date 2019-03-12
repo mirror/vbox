@@ -33,6 +33,9 @@
 
 struct HostDnsServiceDarwin::Data
 {
+    Data()
+        : m_fStop(false) { }
+
     SCDynamicStoreRef m_store;
     CFRunLoopSourceRef m_DnsWatcher;
     CFRunLoopRef m_RunLoopRef;
@@ -251,5 +254,6 @@ HRESULT HostDnsServiceDarwin::updateInfo()
 void HostDnsServiceDarwin::Data::performShutdownCallback(void *info)
 {
     HostDnsServiceDarwin::Data *pThis = static_cast<HostDnsServiceDarwin::Data *>(info);
+    AssertPtrReturnVoid(pThis);
     pThis->m_fStop = true;
 }
