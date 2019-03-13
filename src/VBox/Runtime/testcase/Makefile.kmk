@@ -69,6 +69,7 @@ PROGRAMS += \
 	tstRTFileGetSize-1 \
 	tstRTFileModeStringToFlags \
 	tstFileLock \
+	tstRTFileOpenEx-1 \
 	tstFork \
 	tstRTFsQueries \
 	tstRTFilesystem \
@@ -159,8 +160,7 @@ PROGRAMS.win += \
 	tstFileAppendWin-1 \
 	tstRTNtPath-1 \
 	ntGetTimerResolution \
-	tstRTDarwinMachKernel \
-	tstRTFileOpenEx-1
+	tstRTDarwinMachKernel
 
 PROGRAMS.linux += \
 	tstRTProcWait \

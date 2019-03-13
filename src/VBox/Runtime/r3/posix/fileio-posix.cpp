@@ -63,6 +63,7 @@
 #include <iprt/string.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
+#include <iprt/thread.h>
 #include "internal/file.h"
 #include "internal/fs.h"
 #include "internal/path.h"
@@ -78,6 +79,15 @@
 #else
 # define RT_FILE_PERMISSION  (00600)
 #endif
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#ifdef O_CLOEXEC
+static int volatile g_fHave_O_CLOEXEC = 0; /* {-1,0,1}; since Linux 2.6.23 */
+#endif
+
 
 
 RTDECL(bool) RTFileExists(const char *pszPath)
@@ -99,13 +109,45 @@ RTDECL(bool) RTFileExists(const char *pszPath)
 }
 
 
+#ifdef O_CLOEXEC
+/** Worker for RTFileOpenEx that detects whether the kernel supports
+ *  O_CLOEXEC or not, setting g_fHave_O_CLOEXEC to 1 or -1 accordingly. */
+static int rtFileOpenExDetectCloExecSupport(void)
+{
+    /*
+     * Open /dev/null with O_CLOEXEC and see if FD_CLOEXEC is set or not.
+     */
+    int fHave_O_CLOEXEC = -1;
+    int fd = open("/dev/null", O_RDONLY | O_CLOEXEC, 0);
+    if (fd >= 0)
+    {
+        int fFlags = fcntl(fd, F_GETFD, 0);
+        fHave_O_CLOEXEC = fFlags > 0 && (fFlags & FD_CLOEXEC) ? 1 : -1;
+        close(fd);
+    }
+    else
+        AssertMsg(errno == EINVAL, ("%d\n", errno));
+    g_fHave_O_CLOEXEC = fHave_O_CLOEXEC;
+    return fHave_O_CLOEXEC;
+}
+#endif
+
+
 RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
+{
+    return RTFileOpenEx(pszFilename, fOpen, pFile, NULL);
+}
+
+
+RTDECL(int)  RTFileOpenEx(const char *pszFilename, uint64_t fOpen, PRTFILE phFile, PRTFILEACTION penmActionTaken)
 {
     /*
      * Validate input.
      */
-    AssertPtrReturn(pFile, VERR_INVALID_POINTER);
-    *pFile = NIL_RTFILE;
+    AssertPtrReturn(phFile, VERR_INVALID_POINTER);
+    *phFile = NIL_RTFILE;
+    if (penmActionTaken)
+        *penmActionTaken = RTFILEACTION_INVALID;
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
 
     /*
@@ -115,11 +157,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
     if (RT_FAILURE(rc))
         return rc;
 #ifndef O_NONBLOCK
-    if (fOpen & RTFILE_O_NON_BLOCK)
-    {
-        AssertMsgFailed(("Invalid parameters! fOpen=%#llx\n", fOpen));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(!(fOpen & RTFILE_O_NON_BLOCK), VERR_INVALID_FLAGS);
 #endif
 
     /*
@@ -137,8 +175,11 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
         fOpenMode |= O_NOINHERIT;
 #endif
 #ifdef O_CLOEXEC
-    static int s_fHave_O_CLOEXEC = 0; /* {-1,0,1}; since Linux 2.6.23 */
-    if (!(fOpen & RTFILE_O_INHERIT) && s_fHave_O_CLOEXEC >= 0)
+    int fHave_O_CLOEXEC = g_fHave_O_CLOEXEC;
+    if (   !(fOpen & RTFILE_O_INHERIT)
+        && (   fHave_O_CLOEXEC > 0
+            || (   fHave_O_CLOEXEC == 0
+                && (fHave_O_CLOEXEC = rtFileOpenExDetectCloExecSupport()) > 0)))
         fOpenMode |= O_CLOEXEC;
 #endif
 #ifdef O_NONBLOCK
@@ -167,8 +208,14 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
         case RTFILE_O_OPEN_CREATE:      fOpenMode |= O_CREAT; break;
         case RTFILE_O_CREATE:           fOpenMode |= O_CREAT | O_EXCL; break;
         case RTFILE_O_CREATE_REPLACE:   fOpenMode |= O_CREAT | O_TRUNC; break; /** @todo replacing needs fixing, this is *not* a 1:1 mapping! */
+        default:
+            AssertMsgFailed(("fOpen=%#llx\n", fOpen));
+            fOpen = (fOpen & ~RTFILE_O_ACTION_MASK) | RTFILE_O_OPEN;
+            break;
+
     }
-    if (fOpen & RTFILE_O_TRUNCATE)
+    if (   (fOpen & RTFILE_O_TRUNCATE)
+        && (fOpen & RTFILE_O_ACTION_MASK) != RTFILE_O_CREATE)
         fOpenMode |= O_TRUNC;
 
     switch (fOpen & RTFILE_O_ACCESS_MASK)
@@ -183,8 +230,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
             fOpenMode |= fOpen & RTFILE_O_APPEND ? O_APPEND | O_RDWR   : O_RDWR;
             break;
         default:
-            AssertMsgFailed(("RTFileOpen received an invalid RW value, fOpen=%#llx\n", fOpen));
-            return VERR_INVALID_PARAMETER;
+            AssertMsgFailedReturn(("RTFileOpen received an invalid RW value, fOpen=%#llx\n", fOpen), VERR_INVALID_FLAGS);
     }
 
     /* File mode. */
@@ -192,7 +238,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
               ? (fOpen & RTFILE_O_CREATE_MODE_MASK) >> RTFILE_O_CREATE_MODE_SHIFT
               : RT_FILE_PERMISSION;
 
-    /** @todo sharing! */
+    /** @todo sharing? */
 
     /*
      * Open/create the file.
@@ -202,23 +248,95 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
     if (RT_FAILURE(rc))
         return (rc);
 
-    int fh = open(pszNativeFilename, fOpenMode, fMode);
-    int iErr = errno;
-
-#ifdef O_CLOEXEC
-    if (   (fOpenMode & O_CLOEXEC)
-        && s_fHave_O_CLOEXEC == 0)
+    int fh;
+    int iErr;
+    if (!penmActionTaken)
     {
-        if (fh < 0 && iErr == EINVAL)
-        {
-            s_fHave_O_CLOEXEC = -1;
-            fh = open(pszNativeFilename, fOpenMode, fMode);
-            iErr = errno;
-        }
-        else if (fh >= 0)
-            s_fHave_O_CLOEXEC = fcntl(fh, F_GETFD, 0) > 0 ? 1 : -1;
+        fh   = open(pszNativeFilename, fOpenMode, fMode);
+        iErr = errno;
     }
-#endif
+    else
+    {
+        /* We need to know exactly which action was taken by open, Windows &
+           OS/2 style.  Can be tedious and subject to races:  */
+        switch (fOpen & RTFILE_O_ACTION_MASK)
+        {
+            case RTFILE_O_OPEN:
+                Assert(!(fOpenMode & O_CREAT));
+                Assert(!(fOpenMode & O_EXCL));
+                fh   = open(pszNativeFilename, fOpenMode, fMode);
+                iErr = errno;
+                if (fh >= 0)
+                    *penmActionTaken = fOpenMode & O_TRUNC ? RTFILEACTION_TRUNCATED : RTFILEACTION_OPENED;
+                break;
+
+            case RTFILE_O_CREATE:
+                Assert(fOpenMode & O_CREAT);
+                Assert(fOpenMode & O_EXCL);
+                fh   = open(pszNativeFilename, fOpenMode, fMode);
+                iErr = errno;
+                if (fh >= 0)
+                    *penmActionTaken = RTFILEACTION_CREATED;
+                else if (iErr == EEXIST)
+                    *penmActionTaken = RTFILEACTION_ALREADY_EXISTS;
+                break;
+
+            case RTFILE_O_OPEN_CREATE:
+            case RTFILE_O_CREATE_REPLACE:
+            {
+                Assert(fOpenMode & O_CREAT);
+                Assert(!(fOpenMode & O_EXCL));
+                int iTries = 64;
+                while (iTries-- > 0)
+                {
+                    /* Yield the CPU if we've raced too long. */
+                    if (iTries < 4)
+                        RTThreadSleep(2 - (iTries & 1));
+
+                    /* Try exclusive creation first: */
+                    fh   = open(pszNativeFilename, fOpenMode | O_EXCL, fMode);
+                    iErr = errno;
+                    if (fh >= 0)
+                    {
+                        *penmActionTaken = RTFILEACTION_CREATED;
+                        break;
+                    }
+                    if (iErr != EEXIST)
+                        break;
+
+                    /* If the file exists, try open it: */
+                    fh   = open(pszNativeFilename, fOpenMode & ~O_CREAT, fMode);
+                    iErr = errno;
+                    if (fh >= 0)
+                    {
+                        if ((fOpen & RTFILE_O_ACTION_MASK) == RTFILE_O_OPEN_CREATE)
+                            *penmActionTaken = fOpenMode & O_TRUNC ? RTFILEACTION_TRUNCATED : RTFILEACTION_OPENED;
+                        else
+                            *penmActionTaken = RTFILEACTION_REPLACED;
+                        break;
+                    }
+                    if (iErr != ENOENT)
+                        break;
+                }
+                Assert(iTries >= 0);
+                if (iTries < 0)
+                {
+                    /* Thanks for the race, but we need to get on with things.  */
+                    fh   = open(pszNativeFilename, fOpenMode, fMode);
+                    iErr = errno;
+                    if (fh >= 0)
+                        *penmActionTaken = RTFILEACTION_OPENED;
+                }
+                break;
+            }
+
+            default:
+                AssertMsgFailed(("fOpen=%#llx fOpenMode=%#x\n", fOpen, fOpenMode));
+                iErr = EINVAL;
+                fh = -1;
+                break;
+        }
+    }
 
     rtPathFreeNative(pszNativeFilename, pszFilename);
     if (fh >= 0)
@@ -233,7 +351,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
             &&  !(fOpenMode & O_NOINHERIT)  /* Take care since it might be a zero value dummy. */
 #endif
 #ifdef O_CLOEXEC
-            &&  s_fHave_O_CLOEXEC <= 0
+            &&  fHave_O_CLOEXEC <= 0
 #endif
             )
             iErr = fcntl(fh, F_SETFD, FD_CLOEXEC) >= 0 ? 0 : errno;
@@ -328,10 +446,10 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
          */
         if (iErr == 0)
         {
-            *pFile = (RTFILE)(uintptr_t)fh;
-            Assert((intptr_t)*pFile == fh);
+            *phFile = (RTFILE)(uintptr_t)fh;
+            Assert((intptr_t)*phFile == fh);
             LogFlow(("RTFileOpen(%p:{%RTfile}, %p:{%s}, %#llx): returns %Rrc\n",
-                     pFile, *pFile, pszFilename, pszFilename, fOpen, rc));
+                     phFile, *phFile, pszFilename, pszFilename, fOpen, rc));
             return VINF_SUCCESS;
         }
 
