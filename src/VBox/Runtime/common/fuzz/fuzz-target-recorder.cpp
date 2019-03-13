@@ -34,6 +34,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/avl.h>
+#include <iprt/crc.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
@@ -75,6 +76,8 @@ typedef struct RTFUZZTGTSTATEINT
 {
     /** Node for the list of states. */
     RTLISTNODE                  NdStates;
+    /** Checksum for the state. */
+    uint64_t                    uChkSum;
     /** Magic identifying the structure. */
     uint32_t                    u32Magic;
     /** Reference counter. */
@@ -89,6 +92,12 @@ typedef struct RTFUZZTGTSTATEINT
     RTFUZZTGTSTDOUTERRBUF       StdOutBuf;
     /** The stderr data buffer. */
     RTFUZZTGTSTDOUTERRBUF       StdErrBuf;
+    /** Coverage report buffer. */
+    void                        *pvCovReport;
+    /** Size of the coverage report in bytes. */
+    size_t                      cbCovReport;
+    /** Number of traced edges. */
+    size_t                      cEdges;
 } RTFUZZTGTSTATEINT;
 /** Pointer to an internal fuzzed target state. */
 typedef RTFUZZTGTSTATEINT *PRTFUZZTGTSTATEINT;
@@ -99,13 +108,27 @@ typedef RTFUZZTGTSTATEINT *PRTFUZZTGTSTATEINT;
  */
 typedef struct RTFUZZTGTRECNODE
 {
-    /** The AVL tree core (keyed by stdout/stderr buffer sizes). */
+    /** The AVL tree core (keyed by checksum). */
     AVLU64NODECORE              Core;
     /** The list anchor for the individual states. */
     RTLISTANCHOR                LstStates;
 } RTFUZZTGTRECNODE;
 /** Pointer to a recorder states node. */
 typedef RTFUZZTGTRECNODE *PRTFUZZTGTRECNODE;
+
+
+/**
+ * Edge information node.
+ */
+typedef struct RTFUZZTGTEDGE
+{
+    /** The AVL tree core (keyed by offset). */
+    AVLU64NODECORE              Core;
+    /** Number of times the edge was hit. */
+    volatile uint64_t           cHits;
+} RTFUZZTGTEDGE;
+/** Pointer to a edge information node. */
+typedef RTFUZZTGTEDGE *PRTFUZZTGTEDGE;
 
 
 /**
@@ -121,7 +144,21 @@ typedef struct RTFUZZTGTRECINT
     RTSEMRW                     hSemRwStates;
     /** The AVL tree for indexing the recorded state (keyed by stdout/stderr buffer size). */
     AVLU64TREE                  TreeStates;
+    /** Semaphore protecting the edges tree. */
+    RTSEMRW                     hSemRwEdges;
+    /** The AVL tree for discovered edges when coverage reports are collected. */
+    AVLU64TREE                  TreeEdges;
+    /** Number of edges discovered so far. */
+    volatile uint64_t           cEdges;
+    /** The discovered offset width. */
+    volatile uint32_t           cbCovOff;
 } RTFUZZTGTRECINT;
+
+
+/** SanCov magic for 64bit offsets. */
+#define SANCOV_MAGIC_64         UINT64_C(0xc0bfffffffffff64)
+/** SanCov magic for 32bit offsets. */
+#define SANCOV_MAGIC_32         UINT64_C(0xc0bfffffffffff32)
 
 
 /*********************************************************************************************************************************
@@ -199,6 +236,84 @@ static int rtFuzzTgtStdOutErrBufFillFromPipe(PRTFUZZTGTSTDOUTERRBUF pBuf, RTPIPE
 
 
 /**
+ * Scans the given target state for newly discovered edges in the coverage report.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The fuzzer target recorder instance.
+ * @param   pTgtState           The target state to check.
+ */
+static int rtFuzzTgtRecScanStateForNewEdges(PRTFUZZTGTRECINT pThis, PRTFUZZTGTSTATEINT pTgtState)
+{
+    int rc = VINF_SUCCESS;
+
+    if (pTgtState->pvCovReport)
+    {
+        rc = RTSemRWRequestRead(pThis->hSemRwEdges, RT_INDEFINITE_WAIT); AssertRC(rc);
+
+        uint32_t cbCovOff = ASMAtomicReadU32(&pThis->cbCovOff);
+        Assert(cbCovOff != 0);
+
+        uint8_t *pbCovCur = (uint8_t *)pTgtState->pvCovReport;
+        size_t cEdgesLeft = pTgtState->cbCovReport / cbCovOff;
+        while (cEdgesLeft)
+        {
+            uint64_t offCur =   cbCovOff == sizeof(uint64_t)
+                              ? *(uint64_t *)pbCovCur
+                              : *(uint32_t *)pbCovCur;
+
+            PRTFUZZTGTEDGE pEdge = (PRTFUZZTGTEDGE)RTAvlU64Get(&pThis->TreeEdges, offCur);
+            if (!pEdge)
+            {
+                /* New edge discovered, allocate and add. */
+                rc = RTSemRWReleaseRead(pThis->hSemRwEdges); AssertRC(rc);
+
+                pEdge = (PRTFUZZTGTEDGE)RTMemAllocZ(sizeof(RTFUZZTGTEDGE));
+                if (RT_LIKELY(pEdge))
+                {
+                    pEdge->Core.Key = offCur;
+                    pEdge->cHits    = 1;
+                    rc = RTSemRWRequestWrite(pThis->hSemRwEdges, RT_INDEFINITE_WAIT); AssertRC(rc);
+
+                    bool fIns = RTAvlU64Insert(&pThis->TreeEdges, &pEdge->Core);
+                    if (!fIns)
+                    {
+                        /* Someone raced us, free and query again. */
+                        RTMemFree(pEdge);
+                        pEdge = (PRTFUZZTGTEDGE)RTAvlU64Get(&pThis->TreeEdges, offCur);
+                        AssertPtr(pEdge);
+
+                        ASMAtomicIncU64(&pEdge->cHits);
+                    }
+                    else
+                        ASMAtomicIncU64(&pThis->cEdges);
+
+                    rc = RTSemRWReleaseWrite(pThis->hSemRwEdges); AssertRC(rc);
+                    rc = RTSemRWRequestRead(pThis->hSemRwEdges, RT_INDEFINITE_WAIT); AssertRC(rc);
+                }
+                else
+                {
+                    rc = RTSemRWRequestRead(pThis->hSemRwEdges, RT_INDEFINITE_WAIT);
+                    AssertRC(rc);
+
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+            }
+            else
+                ASMAtomicIncU64(&pEdge->cHits);
+
+            pbCovCur += cbCovOff;
+            cEdgesLeft--;
+        }
+
+        rc = RTSemRWReleaseRead(pThis->hSemRwEdges); AssertRC(rc);
+    }
+
+    return rc;
+}
+
+
+/**
  * Destorys the given fuzzer target recorder freeing all allocated resources.
  *
  * @returns nothing.
@@ -211,7 +326,7 @@ static void rtFuzzTgtRecDestroy(PRTFUZZTGTRECINT pThis)
 
 
 /**
- * Destorys the given fuzzer target recorder freeing all allocated resources.
+ * Destroys the given fuzzer target state freeing all allocated resources.
  *
  * @returns nothing.
  * @param   pThis               The fuzzed target state instance.
@@ -234,12 +349,20 @@ RTDECL(int) RTFuzzTgtRecorderCreate(PRTFUZZTGTREC phFuzzTgtRec)
         pThis->u32Magic         = 0; /** @todo */
         pThis->cRefs            = 1;
         pThis->TreeStates       = NULL;
+        pThis->TreeEdges        = NULL;
+        pThis->cbCovOff         = 0;
 
         rc = RTSemRWCreate(&pThis->hSemRwStates);
         if (RT_SUCCESS(rc))
         {
-            *phFuzzTgtRec = pThis;
-            return VINF_SUCCESS;
+            rc = RTSemRWCreate(&pThis->hSemRwEdges);
+            if (RT_SUCCESS(rc))
+            {
+                *phFuzzTgtRec = pThis;
+                return VINF_SUCCESS;
+            }
+
+            RTSemRWDestroy(pThis->hSemRwStates);
         }
 
         RTMemFree(pThis);
@@ -338,6 +461,9 @@ RTDECL(int) RTFuzzTgtStateReset(RTFUZZTGTSTATE hFuzzTgtState)
     /* Clear the buffers. */
     pThis->StdOutBuf.cbBuf = 0;
     pThis->StdErrBuf.cbBuf = 0;
+    if (pThis->pvCovReport)
+        RTMemFree(pThis->pvCovReport);
+    pThis->pvCovReport     = NULL;
     pThis->fFinalized      = false;
     return VINF_SUCCESS;
 }
@@ -348,15 +474,16 @@ RTDECL(int) RTFuzzTgtStateFinalize(RTFUZZTGTSTATE hFuzzTgtState)
     PRTFUZZTGTSTATEINT pThis = hFuzzTgtState;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
 
-    /*
-     * As we key both the stdout and stderr sizes in one 64bit
-     * AVL tree core we only have 32bit for each and refuse buffers
-     * exceeding this size (very unlikely for now).
-     */
-    if (RT_UNLIKELY(   pThis->StdOutBuf.cbBuf > UINT32_MAX
-                    || pThis->StdErrBuf.cbBuf > UINT32_MAX))
-        return VERR_BUFFER_OVERFLOW;
+    /* Create the checksum. */
+    uint64_t uChkSum = RTCrc64Start();
+    if (pThis->StdOutBuf.cbBuf)
+        uChkSum = RTCrc64Process(uChkSum, pThis->StdOutBuf.pbBase, pThis->StdOutBuf.cbBuf);
+    if (pThis->StdErrBuf.cbBuf)
+        uChkSum = RTCrc64Process(uChkSum, pThis->StdErrBuf.pbBase, pThis->StdErrBuf.cbBuf);
+    if (pThis->pvCovReport)
+        uChkSum = RTCrc64Process(uChkSum, pThis->pvCovReport, pThis->cbCovReport);
 
+    pThis->uChkSum = RTCrc64Finish(uChkSum);
     pThis->fFinalized = true;
     return VINF_SUCCESS;
 }
@@ -375,11 +502,10 @@ RTDECL(int) RTFuzzTgtStateAddToRecorder(RTFUZZTGTSTATE hFuzzTgtState)
     }
 
     PRTFUZZTGTRECINT pTgtRec = pThis->pTgtRec;
-    uint64_t uKey = ((uint64_t)pThis->StdOutBuf.cbBuf << 32) | pThis->StdErrBuf.cbBuf;
 
     /* Try to find a node matching the stdout and sterr sizes first. */
     int rc = RTSemRWRequestRead(pTgtRec->hSemRwStates, RT_INDEFINITE_WAIT); AssertRC(rc);
-    PRTFUZZTGTRECNODE pNode = (PRTFUZZTGTRECNODE)RTAvlU64Get(&pTgtRec->TreeStates, uKey);
+    PRTFUZZTGTRECNODE pNode = (PRTFUZZTGTRECNODE)RTAvlU64Get(&pTgtRec->TreeStates, pThis->uChkSum);
     if (pNode)
     {
         /* Traverse the states and check if any matches the stdout and stderr buffers exactly. */
@@ -392,7 +518,10 @@ RTDECL(int) RTFuzzTgtStateAddToRecorder(RTFUZZTGTSTATE hFuzzTgtState)
             if (   (   !pThis->StdOutBuf.cbBuf
                     || !memcmp(pThis->StdOutBuf.pbBase, pIt->StdOutBuf.pbBase, pThis->StdOutBuf.cbBuf))
                 && (   !pThis->StdErrBuf.cbBuf
-                    || !memcmp(pThis->StdErrBuf.pbBase, pIt->StdErrBuf.pbBase, pThis->StdErrBuf.cbBuf)))
+                    || !memcmp(pThis->StdErrBuf.pbBase, pIt->StdErrBuf.pbBase, pThis->StdErrBuf.cbBuf))
+                && (   pThis->cbCovReport != pIt->cbCovReport
+                    || (   pThis->cbCovReport > 0
+                        && !memcmp(pThis->pvCovReport, pIt->pvCovReport, pThis->cbCovReport))))
             {
                 fMatchFound = true;
                 break;
@@ -418,7 +547,7 @@ RTDECL(int) RTFuzzTgtStateAddToRecorder(RTFUZZTGTSTATE hFuzzTgtState)
         pNode = (PRTFUZZTGTRECNODE)RTMemAllocZ(sizeof(*pNode));
         if (RT_LIKELY(pNode))
         {
-            pNode->Core.Key = uKey;
+            pNode->Core.Key = pThis->uChkSum;
             RTListInit(&pNode->LstStates);
             RTListAppend(&pNode->LstStates, &pThis->NdStates);
             rc = RTSemRWRequestWrite(pTgtRec->hSemRwStates, RT_INDEFINITE_WAIT); AssertRC(rc);
@@ -427,7 +556,7 @@ RTDECL(int) RTFuzzTgtStateAddToRecorder(RTFUZZTGTSTATE hFuzzTgtState)
             {
                 /* Someone raced us, get the new node and append there. */
                 RTMemFree(pNode);
-                pNode = (PRTFUZZTGTRECNODE)RTAvlU64Get(&pTgtRec->TreeStates, uKey);
+                pNode = (PRTFUZZTGTRECNODE)RTAvlU64Get(&pTgtRec->TreeStates, pThis->uChkSum);
                 AssertPtr(pNode);
                 RTListAppend(&pNode->LstStates, &pThis->NdStates);
             }
@@ -437,6 +566,10 @@ RTDECL(int) RTFuzzTgtStateAddToRecorder(RTFUZZTGTSTATE hFuzzTgtState)
         else
             rc = VERR_NO_MEMORY;
     }
+
+    if (   RT_SUCCESS(rc)
+        && pThis->fInRecSet)
+        rc = rtFuzzTgtRecScanStateForNewEdges(pTgtRec, pThis);
 
     return rc;
 }
@@ -481,5 +614,66 @@ RTDECL(int) RTFuzzTgtStateAppendStderrFromPipe(RTFUZZTGTSTATE hFuzzTgtState, RTP
     AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
 
     return rtFuzzTgtStdOutErrBufFillFromPipe(&pThis->StdErrBuf, hPipe);
+}
+
+
+RTDECL(int) RTFuzzTgtStateAddSanCovReportFromFile(RTFUZZTGTSTATE hFuzzTgtState, const char *pszFilename)
+{
+    PRTFUZZTGTSTATEINT pThis = hFuzzTgtState;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
+
+    uint8_t *pbSanCov = NULL;
+    size_t cbSanCov = 0;
+    int rc = RTFileReadAll(pszFilename, (void **)&pbSanCov, &cbSanCov);
+    if (RT_SUCCESS(rc))
+    {
+        /* Check for the magic identifying whether the offsets are 32bit or 64bit. */
+        if (   cbSanCov >= sizeof(uint64_t)
+            && (   *(uint64_t *)pbSanCov == SANCOV_MAGIC_64
+                || *(uint64_t *)pbSanCov == SANCOV_MAGIC_32))
+        {
+            uint32_t cbCovOff = sizeof(uint32_t);
+            if (*(uint64_t *)pbSanCov == SANCOV_MAGIC_64)
+                cbCovOff = sizeof(uint64_t);
+
+            uint32_t cbCovDet = ASMAtomicReadU32(&pThis->pTgtRec->cbCovOff);
+            if (!cbCovDet)
+            {
+                /* Set the detected offset width. */
+                if (!ASMAtomicCmpXchgU32(&pThis->pTgtRec->cbCovOff, cbCovOff, 0))
+                {
+                    /* Someone raced us, check again. */
+                    cbCovDet = ASMAtomicReadU32(&pThis->pTgtRec->cbCovOff);
+                    Assert(cbCovDet != 0);
+                }
+                else
+                    cbCovDet = cbCovOff;
+            }
+
+            if (cbCovDet == cbCovOff)
+            {
+                /*
+                 * Just copy the offsets into the state for now. Now further analysis
+                 * is happening right now, just checking whether the content changed for
+                 * the states.to spot newly discovered edges.
+                 */
+                pThis->cbCovReport = cbSanCov - sizeof(uint64_t);
+                pThis->pvCovReport = RTMemDup(pbSanCov + sizeof(uint64_t), pThis->cbCovReport);
+                if (!pThis->pvCovReport)
+                {
+                    pThis->cbCovReport = 0;
+                    rc = VERR_NO_MEMORY;
+                }
+            }
+            else
+                rc = VERR_INVALID_STATE; /* Mixing 32bit and 64bit offsets shouldn't happen, is not supported. */
+        }
+        else
+            rc = VERR_INVALID_STATE;
+        RTFileReadAllFree(pbSanCov, cbSanCov);
+    }
+    return rc;
 }
 

@@ -111,8 +111,16 @@ typedef struct RTFUZZOBSINT
     char                       *pszResultsDir;
     /** The binary to run. */
     char                       *pszBinary;
+    /** The filename path of the binary. */
+    const char                 *pszBinaryFilename;
     /** Arguments to run the binary with, terminated by a NULL entry. */
     char                      **papszArgs;
+    /** The environment to use for the target. */
+    RTENV                       hEnv;
+    /** Any configured sanitizers. */
+    uint32_t                    fSanitizers;
+    /** Sanitizer related options set in the environment block. */
+    char                       *pszSanitizerOpts;
     /** Number of arguments. */
     uint32_t                    cArgs;
     /** Maximum time to wait for the client to terminate until it is considered hung and killed. */
@@ -166,6 +174,8 @@ typedef struct RTFUZZOBSEXECCTX
     RTHANDLE                    StdinHandle;
     /** The pollset to monitor. */
     RTPOLLSET                   hPollSet;
+    /** The environment block to use. */
+    RTENV                       hEnv;
     /** The process to monitor. */
     RTPROCESS                   hProc;
     /** Execution time of the process. */
@@ -334,70 +344,76 @@ static int rtFuzzObsExecCtxCreate(PPRTFUZZOBSEXECCTX ppExecCtx, PRTFUZZOBSINT pT
         pExecCtx->hProc            = NIL_RTPROCESS;
         pExecCtx->msExec           = 0;
 
-        rc = RTFuzzTgtRecorderCreateNewState(pThis->hTgtRec, &pExecCtx->hTgtState);
+        rc = RTEnvClone(&pExecCtx->hEnv, pThis->hEnv);
         if (RT_SUCCESS(rc))
         {
-            rc = RTPollSetCreate(&pExecCtx->hPollSet);
+            rc = RTFuzzTgtRecorderCreateNewState(pThis->hTgtRec, &pExecCtx->hTgtState);
             if (RT_SUCCESS(rc))
             {
-                rc = RTPipeCreate(&pExecCtx->hPipeStdoutR, &pExecCtx->hPipeStdoutW, RTPIPE_C_INHERIT_WRITE);
+                rc = RTPollSetCreate(&pExecCtx->hPollSet);
                 if (RT_SUCCESS(rc))
                 {
-                    RTHANDLE Handle;
-                    Handle.enmType = RTHANDLETYPE_PIPE;
-                    Handle.u.hPipe = pExecCtx->hPipeStdoutR;
-                    rc = RTPollSetAdd(pExecCtx->hPollSet, &Handle, RTPOLL_EVT_READ, RTFUZZOBS_EXEC_CTX_POLL_ID_STDOUT);
-                    AssertRC(rc);
-
-                    rc = RTPipeCreate(&pExecCtx->hPipeStderrR, &pExecCtx->hPipeStderrW, RTPIPE_C_INHERIT_WRITE);
+                    rc = RTPipeCreate(&pExecCtx->hPipeStdoutR, &pExecCtx->hPipeStdoutW, RTPIPE_C_INHERIT_WRITE);
                     if (RT_SUCCESS(rc))
                     {
-                        Handle.u.hPipe = pExecCtx->hPipeStderrR;
-                        rc = RTPollSetAdd(pExecCtx->hPollSet, &Handle, RTPOLL_EVT_READ, RTFUZZOBS_EXEC_CTX_POLL_ID_STDERR);
+                        RTHANDLE Handle;
+                        Handle.enmType = RTHANDLETYPE_PIPE;
+                        Handle.u.hPipe = pExecCtx->hPipeStdoutR;
+                        rc = RTPollSetAdd(pExecCtx->hPollSet, &Handle, RTPOLL_EVT_READ, RTFUZZOBS_EXEC_CTX_POLL_ID_STDOUT);
                         AssertRC(rc);
 
-                        /* Create the stdin pipe handles if not a file input. */
-                        if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_STDIN || pThis->enmInputChan == RTFUZZOBSINPUTCHAN_FUZZING_AWARE_CLIENT)
-                        {
-                            rc = RTPipeCreate(&pExecCtx->hPipeStdinR, &pExecCtx->hPipeStdinW, RTPIPE_C_INHERIT_READ);
-                            if (RT_SUCCESS(rc))
-                            {
-                                pExecCtx->StdinHandle.enmType = RTHANDLETYPE_PIPE;
-                                pExecCtx->StdinHandle.u.hPipe = pExecCtx->hPipeStdinR;
-
-                                Handle.u.hPipe = pExecCtx->hPipeStdinW;
-                                rc = RTPollSetAdd(pExecCtx->hPollSet, &Handle, RTPOLL_EVT_WRITE, RTFUZZOBS_EXEC_CTX_POLL_ID_STDIN);
-                                AssertRC(rc);
-                            }
-                        }
-                        else
-                        {
-                            pExecCtx->StdinHandle.enmType = RTHANDLETYPE_PIPE;
-                            pExecCtx->StdinHandle.u.hPipe = NIL_RTPIPE;
-                        }
-
+                        rc = RTPipeCreate(&pExecCtx->hPipeStderrR, &pExecCtx->hPipeStderrW, RTPIPE_C_INHERIT_WRITE);
                         if (RT_SUCCESS(rc))
                         {
-                            pExecCtx->StdoutHandle.enmType = RTHANDLETYPE_PIPE;
-                            pExecCtx->StdoutHandle.u.hPipe = pExecCtx->hPipeStdoutW;
-                            pExecCtx->StderrHandle.enmType = RTHANDLETYPE_PIPE;
-                            pExecCtx->StderrHandle.u.hPipe = pExecCtx->hPipeStderrW;
-                            *ppExecCtx = pExecCtx;
-                            return VINF_SUCCESS;
+                            Handle.u.hPipe = pExecCtx->hPipeStderrR;
+                            rc = RTPollSetAdd(pExecCtx->hPollSet, &Handle, RTPOLL_EVT_READ, RTFUZZOBS_EXEC_CTX_POLL_ID_STDERR);
+                            AssertRC(rc);
+
+                            /* Create the stdin pipe handles if not a file input. */
+                            if (pThis->enmInputChan == RTFUZZOBSINPUTCHAN_STDIN || pThis->enmInputChan == RTFUZZOBSINPUTCHAN_FUZZING_AWARE_CLIENT)
+                            {
+                                rc = RTPipeCreate(&pExecCtx->hPipeStdinR, &pExecCtx->hPipeStdinW, RTPIPE_C_INHERIT_READ);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    pExecCtx->StdinHandle.enmType = RTHANDLETYPE_PIPE;
+                                    pExecCtx->StdinHandle.u.hPipe = pExecCtx->hPipeStdinR;
+
+                                    Handle.u.hPipe = pExecCtx->hPipeStdinW;
+                                    rc = RTPollSetAdd(pExecCtx->hPollSet, &Handle, RTPOLL_EVT_WRITE, RTFUZZOBS_EXEC_CTX_POLL_ID_STDIN);
+                                    AssertRC(rc);
+                                }
+                            }
+                            else
+                            {
+                                pExecCtx->StdinHandle.enmType = RTHANDLETYPE_PIPE;
+                                pExecCtx->StdinHandle.u.hPipe = NIL_RTPIPE;
+                            }
+
+                            if (RT_SUCCESS(rc))
+                            {
+                                pExecCtx->StdoutHandle.enmType = RTHANDLETYPE_PIPE;
+                                pExecCtx->StdoutHandle.u.hPipe = pExecCtx->hPipeStdoutW;
+                                pExecCtx->StderrHandle.enmType = RTHANDLETYPE_PIPE;
+                                pExecCtx->StderrHandle.u.hPipe = pExecCtx->hPipeStderrW;
+                                *ppExecCtx = pExecCtx;
+                                return VINF_SUCCESS;
+                            }
+
+                            RTPipeClose(pExecCtx->hPipeStderrR);
+                            RTPipeClose(pExecCtx->hPipeStderrW);
                         }
 
-                        RTPipeClose(pExecCtx->hPipeStderrR);
-                        RTPipeClose(pExecCtx->hPipeStderrW);
+                        RTPipeClose(pExecCtx->hPipeStdoutR);
+                        RTPipeClose(pExecCtx->hPipeStdoutW);
                     }
 
-                    RTPipeClose(pExecCtx->hPipeStdoutR);
-                    RTPipeClose(pExecCtx->hPipeStdoutW);
+                    RTPollSetDestroy(pExecCtx->hPollSet);
                 }
 
-                RTPollSetDestroy(pExecCtx->hPollSet);
+                RTFuzzTgtStateRelease(pExecCtx->hTgtState);
             }
 
-            RTFuzzTgtStateRelease(pExecCtx->hTgtState);
+            RTEnvDestroy(pExecCtx->hEnv);
         }
 
         RTMemFree(pExecCtx);
@@ -440,6 +456,7 @@ static void rtFuzzObsExecCtxDestroy(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExec
 
     if (pExecCtx->hTgtState != NIL_RTFUZZTGTSTATE)
         RTFuzzTgtStateRelease(pExecCtx->hTgtState);
+    RTEnvDestroy(pExecCtx->hEnv);
     RTMemFree(pExecCtx);
 }
 
@@ -455,7 +472,7 @@ static void rtFuzzObsExecCtxDestroy(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExec
  */
 static int rtFuzzObsExecCtxClientRun(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExecCtx, PRTPROCSTATUS pProcStat)
 {
-    int rc = RTProcCreateEx(pThis->pszBinary, &pExecCtx->apszArgs[0], RTENV_DEFAULT, 0 /*fFlags*/, &pExecCtx->StdinHandle,
+    int rc = RTProcCreateEx(pThis->pszBinary, &pExecCtx->apszArgs[0], pExecCtx->hEnv, 0 /*fFlags*/, &pExecCtx->StdinHandle,
                             &pExecCtx->StdoutHandle, &pExecCtx->StderrHandle, NULL, NULL, &pExecCtx->hProc);
     if (RT_SUCCESS(rc))
     {
@@ -471,14 +488,33 @@ static int rtFuzzObsExecCtxClientRun(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExe
                 if (idEvt == RTFUZZOBS_EXEC_CTX_POLL_ID_STDOUT)
                 {
                     Assert(fEvtsRecv & RTPOLL_EVT_READ);
-                    rc = RTFuzzTgtStateAppendStdoutFromPipe(pExecCtx->hTgtState, pExecCtx->hPipeStdoutR);
-                    AssertRC(rc);
+                    //rc = RTFuzzTgtStateAppendStdoutFromPipe(pExecCtx->hTgtState, pExecCtx->hPipeStdoutR);
+                    //AssertRC(rc);
                 }
                 else if (idEvt == RTFUZZOBS_EXEC_CTX_POLL_ID_STDERR)
                 {
                     Assert(fEvtsRecv & RTPOLL_EVT_READ);
-                    rc = RTFuzzTgtStateAppendStderrFromPipe(pExecCtx->hTgtState, pExecCtx->hPipeStderrR);
-                    AssertRC(rc);
+
+                    /*
+                     * Can't add the stderr buffer with sancov enabled as it dumps the resulting report file path
+                     * (which includes the always changing pid) to stderr...
+                     */
+                    if (!(pThis->fSanitizers & RTFUZZOBS_SANITIZER_F_SANCOV))
+                    {
+                        rc = RTFuzzTgtStateAppendStderrFromPipe(pExecCtx->hTgtState, pExecCtx->hPipeStderrR);
+                        AssertRC(rc);
+                    }
+                    else
+                    {
+                        /* Dump to /dev/null. */
+                        char abBitBucket[_4K];
+                        size_t cbRead = 0;
+                        do
+                        {
+                            rc = RTPipeRead(pExecCtx->hPipeStderrR, &abBitBucket[0], sizeof(abBitBucket), &cbRead);
+                        } while (   RT_SUCCESS(rc)
+                                 && cbRead == sizeof(abBitBucket));
+                    }
                 }
                 else if (idEvt == RTFUZZOBS_EXEC_CTX_POLL_ID_STDIN)
                 {
@@ -507,7 +543,21 @@ static int rtFuzzObsExecCtxClientRun(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExe
             /* Check the process status. */
             rc = RTProcWait(pExecCtx->hProc, RTPROCWAIT_FLAGS_NOBLOCK, pProcStat);
             if (RT_SUCCESS(rc))
+            {
+                /* Add the coverage report to the sanitizer if enabled. */
+                if (pThis->fSanitizers & RTFUZZOBS_SANITIZER_F_SANCOV)
+                {
+                    char szSanCovReport[RTPATH_MAX];
+                    ssize_t cch = RTStrPrintf2(&szSanCovReport[0], sizeof(szSanCovReport),
+                                               "%s%c%s.%u.sancov",
+                                               pThis->pszTmpDir, RTPATH_SLASH,
+                                               pThis->pszBinaryFilename, pExecCtx->hProc);
+                    Assert(cch > 0); RT_NOREF(cch);
+                    rc = RTFuzzTgtStateAddSanCovReportFromFile(pExecCtx->hTgtState, &szSanCovReport[0]);
+                    RTFileDelete(&szSanCovReport[0]);
+                }
                 break;
+            }
             else
             {
                 Assert(rc == VERR_PROCESS_RUNNING);
@@ -543,7 +593,7 @@ static int rtFuzzObsExecCtxClientRun(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExe
  */
 static int rtFuzzObsExecCtxClientRunFuzzingAware(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExecCtx, PRTPROCSTATUS pProcStat)
 {
-    int rc = RTProcCreateEx(pThis->pszBinary, &pExecCtx->apszArgs[0], RTENV_DEFAULT, 0 /*fFlags*/, &pExecCtx->StdinHandle,
+    int rc = RTProcCreateEx(pThis->pszBinary, &pExecCtx->apszArgs[0], pExecCtx->hEnv, 0 /*fFlags*/, &pExecCtx->StdinHandle,
                             &pExecCtx->StdoutHandle, &pExecCtx->StderrHandle, NULL, NULL, &pExecCtx->hProc);
     if (RT_SUCCESS(rc))
     {
@@ -1000,6 +1050,63 @@ static int rtFuzzObsMasterCreate(PRTFUZZOBSINT pThis)
 }
 
 
+/**
+ * Sets up any configured sanitizers to cooperate with the observer.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The internal fuzzing observer state.
+ */
+static int rtFuzzObsSetupSanitizerCfg(PRTFUZZOBSINT pThis)
+{
+    int rc = VINF_SUCCESS;
+    bool fSep = false;
+
+    if (pThis->fSanitizers & RTFUZZOBS_SANITIZER_F_ASAN)
+    {
+        /*
+         * Need to set abort_on_error=1 in ASAN_OPTIONS or
+         * the sanitizer will call exit() instead of abort() and we
+         * don't catch invalid memory accesses.
+         */
+        rc = RTStrAAppend(&pThis->pszSanitizerOpts, "abort_on_error=1");
+        fSep = true;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && (pThis->fSanitizers & RTFUZZOBS_SANITIZER_F_SANCOV))
+    {
+        /*
+         * The coverage sanitizer will dump coverage information into a file
+         * on process exit. Need to configure the directory where to dump it.
+         */
+        char aszSanCovCfg[_4K];
+        ssize_t cch = RTStrPrintf2(&aszSanCovCfg[0], sizeof(aszSanCovCfg),
+                                   "%scoverage=1:coverage_dir=%s",
+                                   fSep ? ":" : "", pThis->pszTmpDir);
+        if (cch > 0)
+            rc = RTStrAAppend(&pThis->pszSanitizerOpts, &aszSanCovCfg[0]);
+        else
+            rc = VERR_BUFFER_OVERFLOW;
+        fSep = true;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && pThis->pszSanitizerOpts)
+    {
+        /* Add it to the environment. */
+        if (pThis->hEnv == RTENV_DEFAULT)
+        {
+            /* Clone the environment to keep the default one untouched. */
+            rc = RTEnvClone(&pThis->hEnv, RTENV_DEFAULT);
+        }
+        if (RT_SUCCESS(rc))
+            rc = RTEnvSetEx(pThis->hEnv, "ASAN_OPTIONS", pThis->pszSanitizerOpts);
+    }
+
+    return rc;
+}
+
+
 RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs, RTFUZZCTXTYPE enmType)
 {
     AssertPtrReturn(phFuzzObs, VERR_INVALID_POINTER);
@@ -1008,15 +1115,17 @@ RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs, RTFUZZCTXTYPE enmType)
     PRTFUZZOBSINT pThis = (PRTFUZZOBSINT)RTMemAllocZ(sizeof(*pThis));
     if (RT_LIKELY(pThis))
     {
-        pThis->pszBinary     = NULL;
-        pThis->papszArgs     = NULL;
-        pThis->msWaitMax     = 1000;
-        pThis->hThreadGlobal = NIL_RTTHREAD;
-        pThis->hEvtGlobal    = NIL_RTSEMEVENT;
-        pThis->bmEvt         = 0;
-        pThis->cThreads      = 0;
-        pThis->paObsThreads  = NULL;
-        pThis->tsLastStats   = RTTimeMilliTS();
+        pThis->pszBinary         = NULL;
+        pThis->pszBinaryFilename = NULL;
+        pThis->papszArgs         = NULL;
+        pThis->hEnv              = RTENV_DEFAULT;
+        pThis->msWaitMax         = 1000;
+        pThis->hThreadGlobal     = NIL_RTTHREAD;
+        pThis->hEvtGlobal        = NIL_RTSEMEVENT;
+        pThis->bmEvt             = 0;
+        pThis->cThreads          = 0;
+        pThis->paObsThreads      = NULL;
+        pThis->tsLastStats       = RTTimeMilliTS();
         pThis->Stats.cFuzzedInputsPerSec = 0;
         pThis->Stats.cFuzzedInputs       = 0;
         pThis->Stats.cFuzzedInputsHang   = 0;
@@ -1064,6 +1173,13 @@ RTDECL(int) RTFuzzObsDestroy(RTFUZZOBS hFuzzObs)
         RTStrFree(pThis->pszTmpDir);
     if (pThis->pszBinary)
         RTStrFree(pThis->pszBinary);
+    if (pThis->pszSanitizerOpts)
+        RTStrFree(pThis->pszSanitizerOpts);
+    if (pThis->hEnv != RTENV_DEFAULT)
+    {
+        RTEnvDestroy(pThis->hEnv);
+        pThis->hEnv = RTENV_DEFAULT;
+    }
     RTFuzzTgtRecorderRelease(pThis->hTgtRec);
     RTFuzzCtxRelease(pThis->hFuzzCtx);
     RTMemFree(pThis);
@@ -1147,6 +1263,8 @@ RTDECL(int) RTFuzzObsSetTestBinary(RTFUZZOBS hFuzzObs, const char *pszBinary, RT
     pThis->pszBinary    = RTStrDup(pszBinary);
     if (RT_UNLIKELY(!pThis->pszBinary))
         rc = VERR_NO_STR_MEMORY;
+    else
+        pThis->pszBinaryFilename = RTPathFilename(pThis->pszBinary);
     return rc;
 }
 
@@ -1208,6 +1326,36 @@ RTDECL(int) RTFuzzObsSetTestBinaryArgs(RTFUZZOBS hFuzzObs, const char * const *p
 }
 
 
+RTDECL(int) RTFuzzObsSetTestBinaryEnv(RTFUZZOBS hFuzzObs, RTENV hEnv)
+{
+    PRTFUZZOBSINT pThis = hFuzzObs;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    pThis->hEnv = hEnv;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTFuzzObsSetTestBinarySanitizers(RTFUZZOBS hFuzzObs, uint32_t fSanitizers)
+{
+    PRTFUZZOBSINT pThis = hFuzzObs;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    pThis->fSanitizers = fSanitizers;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTFuzzObsSetTestBinaryTimeout(RTFUZZOBS hFuzzObs, RTMSINTERVAL msTimeoutMax)
+{
+    PRTFUZZOBSINT pThis = hFuzzObs;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+
+    pThis->msWaitMax = msTimeoutMax;
+    return VINF_SUCCESS;
+}
+
+
 RTDECL(int) RTFuzzObsExecStart(RTFUZZOBS hFuzzObs, uint32_t cProcs)
 {
     PRTFUZZOBSINT pThis = hFuzzObs;
@@ -1221,12 +1369,16 @@ RTDECL(int) RTFuzzObsExecStart(RTFUZZOBS hFuzzObs, uint32_t cProcs)
     if (!cProcs)
         cProcs = RT_MIN(RTMpGetPresentCoreCount(), sizeof(uint64_t) * 8);
 
-    /* Spin up the worker threads first. */
-    rc = rtFuzzObsWorkersCreate(pThis, cProcs);
+    rc = rtFuzzObsSetupSanitizerCfg(pThis);
     if (RT_SUCCESS(rc))
     {
-        /* Spin up the global thread. */
-        rc = rtFuzzObsMasterCreate(pThis);
+        /* Spin up the worker threads first. */
+        rc = rtFuzzObsWorkersCreate(pThis, cProcs);
+        if (RT_SUCCESS(rc))
+        {
+            /* Spin up the global thread. */
+            rc = rtFuzzObsMasterCreate(pThis);
+        }
     }
 
     return rc;

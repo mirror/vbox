@@ -115,6 +115,16 @@ typedef RTFUZZCTXSTATS *PRTFUZZCTXSTATS;
 /** @} */
 
 
+/** @name RTFUZZOBS_SANITIZER_F_XXX - Flags for RTFuzzObsSetTestBinarySanitizers().
+ * @{ */
+/** ASAN is compiled and enabled (observer needs to configure to abort on error to catch memory errors). */
+#define RTFUZZOBS_SANITIZER_F_ASAN                 UINT32_C(0x00000001)
+/** A converage sanitizer is compiled in which can be used to produce coverage reports aiding in the
+ * fuzzing process. */
+#define RTFUZZOBS_SANITIZER_F_SANCOV               UINT32_C(0x00000002)
+/** @} */
+
+
 /**
  * Fuzzing context state export callback.
  *
@@ -537,6 +547,15 @@ RTDECL(int) RTFuzzTgtStateAppendStdoutFromPipe(RTFUZZTGTSTATE hFuzzTgtState, RTP
  */
 RTDECL(int) RTFuzzTgtStateAppendStderrFromPipe(RTFUZZTGTSTATE hFuzzTgtState, RTPIPE hPipe);
 
+/**
+ * Adds the SanCov coverage information from the given file to the given target state.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ * @param   pszFilename         Filename of the coverage report.
+ */
+RTDECL(int) RTFuzzTgtStateAddSanCovReportFromFile(RTFUZZTGTSTATE hFuzzTgtState, const char *pszFilename);
+
 
 /**
  * Fuzzed binary input channel.
@@ -655,6 +674,42 @@ RTDECL(int) RTFuzzObsSetTestBinary(RTFUZZOBS hFuzzObs, const char *pszBinary, RT
  * @param   cArgs               Number of arguments.
  */
 RTDECL(int) RTFuzzObsSetTestBinaryArgs(RTFUZZOBS hFuzzObs, const char * const *papszArgs, unsigned cArgs);
+
+/**
+ * Sets an environment block to run the binary in.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzObs            The fuzzing observer handle.
+ * @param   hEnv                The environment block to set for the test binary.
+ *                              Use RTENV_DEFAULT for the default process environment or
+ *                              NULL for an empty environment.
+ *
+ * @note Upon successful return of this function the observer has taken ownership over the
+ *       environment block and can alter it in unexpected ways. It also destroys the environment
+ *       block when the observer gets destroyed. So don't touch the environment block after
+ *       calling this function.
+ */
+RTDECL(int) RTFuzzObsSetTestBinaryEnv(RTFUZZOBS hFuzzObs, RTENV hEnv);
+
+/**
+ * Makes the observer aware of any configured sanitizers for the test binary.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzObs            The fuzzing observer handle.
+ * @param   fSanitizers         Bitmask of compiled and enabled sanitiziers in the
+ *                              target binary.
+ */
+RTDECL(int) RTFuzzObsSetTestBinarySanitizers(RTFUZZOBS hFuzzObs, uint32_t fSanitizers);
+
+/**
+ * Sets maximum timeout until a process is considered hung and killed.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzObs            The fuzzing observer handle.
+ * @param   papszArgs           Pointer to the array of arguments.
+ * @param   cArgs               Number of arguments.
+ */
+RTDECL(int) RTFuzzObsSetTestBinaryTimeout(RTFUZZOBS hFuzzObs, RTMSINTERVAL msTimeoutMax);
 
 /**
  * Starts fuzzing the set binary.

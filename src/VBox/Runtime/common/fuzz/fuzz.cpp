@@ -1120,7 +1120,8 @@ static DECLCALLBACK(int) rtFuzzCtxMutatorByteSequenceDeletePrep(PRTFUZZCTXINT pT
                                                                 PPRTFUZZMUTATION ppMutation)
 {
     int rc = VINF_SUCCESS;
-    if (pMutationParent->cbInput > offStart)
+    if (   pMutationParent->cbInput > offStart
+        && pMutationParent->cbInput > 1)
     {
         size_t cbInputMutated = (size_t)RTRandAdvU64Ex(pThis->hRand, offStart, pMutationParent->cbInput - 1);
 
@@ -1991,7 +1992,7 @@ RTDECL(int) RTFuzzCtxInputGenerate(RTFUZZCTX hFuzzCtx, PRTFUZZINPUT phFuzzInput)
 
         uint64_t offStart = 0;
         if (!(pMutator->fFlags & RTFUZZMUTATOR_F_END_OF_BUF))
-            offStart = RTRandAdvU64Ex(pThis->hRand, 0, pMutationParent->cbInput);
+            offStart = RTRandAdvU64Ex(pThis->hRand, 0, pMutationParent->cbInput - 1);
         else
             offStart = pMutationParent->cbInput;
 
