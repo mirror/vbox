@@ -708,6 +708,102 @@ DECL_FORCE_INLINE(int) fsPerfOpenExistingOnceWriteonly(const char *pszFile)
 }
 
 
+/** @note tstRTFileOpenEx-1.cpp has a copy of this code.   */
+static void tstOpenExTest(unsigned uLine, int cbExist, int cbNext, const char *pszFilename, uint64_t fAction,
+                          int rcExpect, RTFILEACTION enmActionExpected)
+{
+    uint64_t const  fCreateMode = (0644 << RTFILE_O_CREATE_MODE_SHIFT);
+    RTFILE          hFile;
+    int             rc;
+
+    /*
+     * File existence and size.
+     */
+    bool fOkay = false;
+    RTFSOBJINFO ObjInfo;
+    rc = RTPathQueryInfoEx(pszFilename, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+    if (RT_SUCCESS(rc))
+        fOkay = cbExist == (int64_t)ObjInfo.cbObject;
+    else
+        fOkay = rc == VERR_FILE_NOT_FOUND && cbExist < 0;
+    if (!fOkay)
+    {
+        if (cbExist >= 0)
+        {
+            rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | fCreateMode);
+            if (RT_SUCCESS(rc))
+            {
+                while (cbExist > 0)
+                {
+                    size_t cbToWrite = strlen(pszFilename);
+                    if ((ssize_t)cbToWrite > cbExist)
+                        cbToWrite = cbExist;
+                    rc = RTFileWrite(hFile, pszFilename, cbToWrite, NULL);
+                    if (RT_FAILURE(rc))
+                    {
+                        RTTestIFailed("%u: RTFileWrite(%s,%#x) -> %Rrc\n", uLine, pszFilename, cbToWrite, rc);
+                        break;
+                    }
+                    cbExist -= cbToWrite;
+                }
+
+                RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+            }
+            else
+                RTTestIFailed("%u: RTFileDelete(%s) -> %Rrc\n", uLine, pszFilename, rc);
+
+        }
+        else
+        {
+            rc = RTFileDelete(pszFilename);
+            if (rc != VINF_SUCCESS && rc != VERR_FILE_NOT_FOUND)
+                RTTestIFailed("%u: RTFileDelete(%s) -> %Rrc\n", uLine, pszFilename, rc);
+        }
+    }
+
+    /*
+     * The actual test.
+     */
+    RTFILEACTION enmActuallyTaken = RTFILEACTION_END;
+    hFile = NIL_RTFILE;
+    rc = RTFileOpenEx(pszFilename, fAction | RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | fCreateMode, &hFile, &enmActuallyTaken);
+    if (   rc != rcExpect
+        || enmActuallyTaken != enmActionExpected
+        || (RT_SUCCESS(rc) ? hFile == NIL_RTFILE : hFile != NIL_RTFILE))
+        RTTestIFailed("%u: RTFileOpenEx(%s, %#llx) -> %Rrc + %d  (hFile=%p), expected %Rrc + %d\n",
+                      uLine, pszFilename, fAction, rc, enmActuallyTaken, hFile, rcExpect, enmActionExpected);
+    if (RT_SUCCESS(rc))
+    {
+        if (   enmActionExpected == RTFILEACTION_REPLACED
+            || enmActionExpected == RTFILEACTION_TRUNCATED)
+        {
+            uint8_t abBuf[16];
+            rc = RTFileRead(hFile, abBuf, 1, NULL);
+            if (rc != VERR_EOF)
+                RTTestIFailed("%u: RTFileRead(%s,,1,) -> %Rrc, expected VERR_EOF\n", uLine, pszFilename, rc);
+        }
+
+        while (cbNext > 0)
+        {
+            size_t cbToWrite = strlen(pszFilename);
+            if ((ssize_t)cbToWrite > cbNext)
+                cbToWrite = cbNext;
+            rc = RTFileWrite(hFile, pszFilename, cbToWrite, NULL);
+            if (RT_FAILURE(rc))
+            {
+                RTTestIFailed("%u: RTFileWrite(%s,%#x) -> %Rrc\n", uLine, pszFilename, cbToWrite, rc);
+                break;
+            }
+            cbNext -= cbToWrite;
+        }
+
+        rc = RTFileClose(hFile);
+        if (RT_FAILURE(rc))
+            RTTestIFailed("%u: RTFileClose(%p) -> %Rrc\n", uLine, hFile, rc);
+    }
+}
+
+
 void fsPerfOpen(void)
 {
     RTTestISub("open");
@@ -720,6 +816,34 @@ void fsPerfOpen(void)
                                 RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), FSPERF_VERR_PATH_NOT_FOUND);
     RTTESTI_CHECK_RC(RTFileOpen(&hFile, InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file")),
                                 RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VERR_PATH_NOT_FOUND);
+
+    /*
+     * The following is copied from tstRTFileOpenEx-1.cpp:
+     */
+    InDir(RT_STR_TUPLE("file1"));
+    tstOpenExTest(__LINE__, -1, -1, g_szDir, RTFILE_O_OPEN,                        VERR_FILE_NOT_FOUND, RTFILEACTION_INVALID);
+    tstOpenExTest(__LINE__, -1, -1, g_szDir, RTFILE_O_OPEN_CREATE,                        VINF_SUCCESS, RTFILEACTION_CREATED);
+    tstOpenExTest(__LINE__,  0,  0, g_szDir, RTFILE_O_OPEN_CREATE,                        VINF_SUCCESS, RTFILEACTION_OPENED);
+    tstOpenExTest(__LINE__,  0,  0, g_szDir, RTFILE_O_OPEN,                               VINF_SUCCESS, RTFILEACTION_OPENED);
+
+    tstOpenExTest(__LINE__,  0,  0, g_szDir, RTFILE_O_OPEN | RTFILE_O_TRUNCATE,           VINF_SUCCESS, RTFILEACTION_TRUNCATED);
+    tstOpenExTest(__LINE__,  0, 10, g_szDir, RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE,    VINF_SUCCESS, RTFILEACTION_TRUNCATED);
+    tstOpenExTest(__LINE__, 10, 10, g_szDir, RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE,    VINF_SUCCESS, RTFILEACTION_TRUNCATED);
+    tstOpenExTest(__LINE__, 10, -1, g_szDir, RTFILE_O_OPEN | RTFILE_O_TRUNCATE,           VINF_SUCCESS, RTFILEACTION_TRUNCATED);
+    tstOpenExTest(__LINE__, -1, -1, g_szDir, RTFILE_O_OPEN | RTFILE_O_TRUNCATE,    VERR_FILE_NOT_FOUND, RTFILEACTION_INVALID);
+    tstOpenExTest(__LINE__, -1,  0, g_szDir, RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE,    VINF_SUCCESS, RTFILEACTION_CREATED);
+
+    tstOpenExTest(__LINE__,  0, -1, g_szDir, RTFILE_O_CREATE_REPLACE,                     VINF_SUCCESS, RTFILEACTION_REPLACED);
+    tstOpenExTest(__LINE__, -1,  0, g_szDir, RTFILE_O_CREATE_REPLACE,                     VINF_SUCCESS, RTFILEACTION_CREATED);
+    tstOpenExTest(__LINE__,  0, -1, g_szDir, RTFILE_O_CREATE,                      VERR_ALREADY_EXISTS, RTFILEACTION_ALREADY_EXISTS);
+    tstOpenExTest(__LINE__, -1, -1, g_szDir, RTFILE_O_CREATE,                             VINF_SUCCESS, RTFILEACTION_CREATED);
+
+    tstOpenExTest(__LINE__, -1, 10, g_szDir, RTFILE_O_CREATE | RTFILE_O_TRUNCATE,         VINF_SUCCESS, RTFILEACTION_CREATED);
+    tstOpenExTest(__LINE__, 10, 10, g_szDir, RTFILE_O_CREATE | RTFILE_O_TRUNCATE,  VERR_ALREADY_EXISTS, RTFILEACTION_ALREADY_EXISTS);
+    tstOpenExTest(__LINE__, 10, -1, g_szDir, RTFILE_O_CREATE_REPLACE | RTFILE_O_TRUNCATE, VINF_SUCCESS, RTFILEACTION_REPLACED);
+    tstOpenExTest(__LINE__, -1, -1, g_szDir, RTFILE_O_CREATE_REPLACE | RTFILE_O_TRUNCATE, VINF_SUCCESS, RTFILEACTION_CREATED);
+
+    RTTESTI_CHECK_RC(RTFileDelete(g_szDir), VINF_SUCCESS);
 
     /*
      * Create file1 and then try exclusivly creating it again.
