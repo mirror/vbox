@@ -1028,14 +1028,8 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
     const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
     const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
 
-    /* Selected item foreground: */
-    if (model()->currentItems().contains(unconst(this)))
-    {
-        QPalette pal = palette();
-        pPainter->setPen(pal.color(QPalette::HighlightedText));
-    }
-    /* Hovered item foreground: */
-    else if (isHovered())
+    /* Selected or hovered item foreground: */
+    if (model()->currentItems().contains(unconst(this)) || isHovered())
     {
         /* Prepare color: */
         QPalette pal = palette();
