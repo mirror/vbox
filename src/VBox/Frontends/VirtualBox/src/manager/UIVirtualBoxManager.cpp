@@ -295,7 +295,6 @@ void UIVirtualBoxManager::sltHandleMediumEnumerationFinish()
             break;
         }
     }
-    printf("Aaaaaaaaaaaaaaaaaaaaaaaaaaxxxxaaaaaaaa\n");
     /* Warn the user about inaccessible medium, propose to open MM window/tool: */
     if (fIsThereAnyInaccessibleMedium && msgCenter().warnAboutInaccessibleMedia())
     {
