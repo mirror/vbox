@@ -25564,7 +25564,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="ICloudClient" extends="$unknown"
     uuid="3d9aacbe-b3bc-4126-9633-5634bad24ad7"
-    wsmap="managed" reservedMethods="16" reservedAttributes="8"
+    wsmap="managed" reservedMethods="15" reservedAttributes="8"
     >
 
     <method name="getExportLaunchParameters" const="yes">
@@ -25588,6 +25588,25 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="virtualBox" type="IVirtualBox" dir="in">
         <desc>Reference to the server-side API root object.</desc>
+      </param>
+    </method>
+
+    <method name="getExportLaunchDescriptionForm">
+      <desc>
+        Returns a form for editing the virtual system description.
+        Since the data for the form are fetched from the cloud a
+        progress object is also returned to indicate if/when the form
+        is ready to be used.
+      </desc>
+      <param name="form" type="IVirtualSystemDescriptionForm" dir="out">
+        <desc>
+          An IForm instance for editing the virtual system description.
+        </desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
       </param>
     </method>
   </interface>
