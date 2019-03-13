@@ -42,263 +42,172 @@
 static const char g_szTestFile[] = "tstFileOpenEx-1.tst";
 
 
+/** @note FsPerf have a copy of this code.   */
+static void tstOpenExTest(unsigned uLine, int cbExist, int cbNext, const char *pszFilename, uint64_t fAction,
+                          int rcExpect, RTFILEACTION enmActionExpected)
+{
+    uint64_t const  fCreateMode = (0644 << RTFILE_O_CREATE_MODE_SHIFT);
+    RTFILE          hFile;
+    int             rc;
+
+    /*
+     * File existence and size.
+     */
+    bool fOkay = false;
+    RTFSOBJINFO ObjInfo;
+    rc = RTPathQueryInfoEx(pszFilename, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+    if (RT_SUCCESS(rc))
+        fOkay = cbExist == (int64_t)ObjInfo.cbObject;
+    else
+        fOkay = rc == VERR_FILE_NOT_FOUND && cbExist < 0;
+    if (!fOkay)
+    {
+        if (cbExist >= 0)
+        {
+            rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | fCreateMode);
+            if (RT_SUCCESS(rc))
+            {
+                while (cbExist > 0)
+                {
+                    size_t cbToWrite = strlen(pszFilename);
+                    if ((ssize_t)cbToWrite > cbExist)
+                        cbToWrite = cbExist;
+                    rc = RTFileWrite(hFile, pszFilename, cbToWrite, NULL);
+                    if (RT_FAILURE(rc))
+                    {
+                        RTTestIFailed("%u: RTFileWrite(%s,%#x) -> %Rrc\n", uLine, pszFilename, cbToWrite, rc);
+                        break;
+                    }
+                    cbExist -= cbToWrite;
+                }
+
+                RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+            }
+            else
+                RTTestIFailed("%u: RTFileDelete(%s) -> %Rrc\n", uLine, pszFilename, rc);
+
+        }
+        else
+        {
+            rc = RTFileDelete(pszFilename);
+            if (rc != VINF_SUCCESS && rc != VERR_FILE_NOT_FOUND)
+                RTTestIFailed("%u: RTFileDelete(%s) -> %Rrc\n", uLine, pszFilename, rc);
+        }
+    }
+
+    /*
+     * The actual test.
+     */
+    RTFILEACTION enmActuallyTaken = RTFILEACTION_END;
+    hFile = NIL_RTFILE;
+    rc = RTFileOpenEx(pszFilename, fAction | RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | fCreateMode, &hFile, &enmActuallyTaken);
+    if (   rc != rcExpect
+        || enmActuallyTaken != enmActionExpected
+        || (RT_SUCCESS(rc) ? hFile == NIL_RTFILE : hFile != NIL_RTFILE))
+        RTTestIFailed("%u: RTFileOpenEx(%s, %#llx) -> %Rrc + %d  (hFile=%p), expected %Rrc + %d\n",
+                      uLine, pszFilename, fAction, rc, enmActuallyTaken, hFile, rcExpect, enmActionExpected);
+    if (RT_SUCCESS(rc))
+    {
+        if (   enmActionExpected == RTFILEACTION_REPLACED
+            || enmActionExpected == RTFILEACTION_TRUNCATED)
+        {
+            uint8_t abBuf[16];
+            rc = RTFileRead(hFile, abBuf, 1, NULL);
+            if (rc != VERR_EOF)
+                RTTestIFailed("%u: RTFileRead(%s,,1,) -> %Rrc, expected VERR_EOF\n", uLine, pszFilename, rc);
+        }
+
+        while (cbNext > 0)
+        {
+            size_t cbToWrite = strlen(pszFilename);
+            if ((ssize_t)cbToWrite > cbNext)
+                cbToWrite = cbNext;
+            rc = RTFileWrite(hFile, pszFilename, cbToWrite, NULL);
+            if (RT_FAILURE(rc))
+            {
+                RTTestIFailed("%u: RTFileWrite(%s,%#x) -> %Rrc\n", uLine, pszFilename, cbToWrite, rc);
+                break;
+            }
+            cbNext -= cbToWrite;
+        }
+
+        rc = RTFileClose(hFile);
+        if (RT_FAILURE(rc))
+            RTTestIFailed("%u: RTFileClose(%p) -> %Rrc\n", uLine, hFile, rc);
+    }
+}
+
+
+/** @note FsPerf have a copy of this code.   */
 void tstFileActionTaken(RTTEST hTest)
 {
-    uint64_t const  fMode = (0644 << RTFILE_O_CREATE_MODE_SHIFT);
-    RTFILE          hFile;
-    RTFILEACTION    enmTaken;
-    int             rc;
-    uint8_t         abBuf[512];
-
     RTTestSub(hTest, "Action taken");
-    RTFileDelete(g_szTestFile);
 
     /*
      * RTFILE_O_OPEN and RTFILE_O_OPEN_CREATE.
      */
     /* RTFILE_O_OPEN - non-existing: */
-    RTTEST_CHECK(hTest, !RTPathExists(g_szTestFile));
-    hFile = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, &hFile, &enmTaken);
-    if (rc != VERR_FILE_NOT_FOUND && rc != VERR_OPEN_FAILED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN(#1) -> %Rrc, expected VERR_FILE_NOT_FOUND or VERR_OPEN_FAILED", rc);
-    if (enmTaken != RTFILEACTION_INVALID)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN(#1) -> enmTaken=%d, expected %d (RTFILEACTION_INVALID)",
-                     enmTaken, RTFILEACTION_INVALID);
-    if (hFile != NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN(#1) -> hFile=%p, expected %p (NIL_RTFILE)", hFile, NIL_RTFILE);
+    tstOpenExTest(__LINE__, -1, -1, g_szTestFile, RTFILE_O_OPEN,                         VERR_FILE_NOT_FOUND, RTFILEACTION_INVALID);
 
     /* RTFILE_O_OPEN_CREATE - non-existing: */
-    RTTEST_CHECK(hTest, !RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_NONE | fMode, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE(#1) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_CREATED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE(#1) -> enmTaken=%d, expected %d (RTFILEACTION_CREATED)",
-                     enmTaken, RTFILEACTION_CREATED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE(#1) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    tstOpenExTest(__LINE__, -1, -1, g_szTestFile, RTFILE_O_OPEN_CREATE,                         VINF_SUCCESS, RTFILEACTION_CREATED);
 
     /* RTFILE_O_OPEN_CREATE - existing: */
-    RTTEST_CHECK(hTest, RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_NONE | fMode, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE(#2) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_OPENED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE(#2) -> enmTaken=%d, expected %d (RTFILEACTION_OPENED)",
-                     enmTaken, RTFILEACTION_OPENED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE(#2) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    tstOpenExTest(__LINE__,  0,  0, g_szTestFile, RTFILE_O_OPEN_CREATE,                         VINF_SUCCESS, RTFILEACTION_OPENED);
 
     /* RTFILE_O_OPEN - existing: */
-    RTTEST_CHECK(hTest, RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN(#2) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_OPENED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN(#2) -> enmTaken=%d, expected %d (RTFILEACTION_OPENED)",
-                     enmTaken, RTFILEACTION_OPENED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN(#3) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
-
+    tstOpenExTest(__LINE__,  0,  0, g_szTestFile, RTFILE_O_OPEN,                                VINF_SUCCESS, RTFILEACTION_OPENED);
 
     /*
      * RTFILE_O_OPEN and RTFILE_O_OPEN_CREATE w/ TRUNCATE variations.
      */
     /* RTFILE_O_OPEN + TRUNCATE - existing zero sized file: */
-    RTTEST_CHECK(hTest, RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_TRUNCATE | RTFILE_O_DENY_NONE, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN+TRUNCATE(#1) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_TRUNCATED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN+TRUNCATE(#1) -> enmTaken=%d, expected %d (RTFILEACTION_TRUNCATED)",
-                     enmTaken, RTFILEACTION_TRUNCATED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN+TRUNCATE(#1) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    tstOpenExTest(__LINE__,  0,  0, g_szTestFile, RTFILE_O_OPEN | RTFILE_O_TRUNCATE,            VINF_SUCCESS, RTFILEACTION_TRUNCATED);
 
     /* RTFILE_O_OPEN_CREATE + TRUNCATE - existing zero sized file: */
-    RTTEST_CHECK(hTest, RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_NONE, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE+TRUNCATE(#1) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_TRUNCATED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE+TRUNCATE(#1) -> enmTaken=%d, expected %d (RTFILEACTION_TRUNCATED)",
-                     enmTaken, RTFILEACTION_TRUNCATED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE+TRUNCATE(#1) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileRead(hFile, abBuf, 1, NULL), VERR_EOF); /* check that it was truncated */
-    RTTESTI_CHECK_RC(RTFileWrite(hFile, RT_STR_TUPLE("test"),  NULL), VINF_SUCCESS); /* for the trunction in the next test  */
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    tstOpenExTest(__LINE__,  0, 10, g_szTestFile, RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE,     VINF_SUCCESS, RTFILEACTION_TRUNCATED);
 
     /* RTFILE_O_OPEN_CREATE + TRUNCATE - existing non-zero sized file: */
-    RTTEST_CHECK(hTest, RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_NONE, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE+TRUNCATE(#2) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_TRUNCATED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE+TRUNCATE(#2) -> enmTaken=%d, expected %d (RTFILEACTION_TRUNCATED)",
-                     enmTaken, RTFILEACTION_TRUNCATED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE+TRUNCATE(#2) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileRead(hFile, abBuf, 1, NULL), VERR_EOF); /* check that it was truncated */
-    RTTESTI_CHECK_RC(RTFileWrite(hFile, RT_STR_TUPLE("test"),  NULL), VINF_SUCCESS); /* for the trunction in the next test  */
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
-
-    /* RTFILE_O_OPEN_CREATE + TRUNCATE - non-existing file: */
-    RTTEST_CHECK_RC(hTest, RTFileDelete(g_szTestFile), VINF_SUCCESS);
-    RTTEST_CHECK(hTest, !RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_NONE, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE+TRUNCATE(#2) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_CREATED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE+TRUNCATE(#2) -> enmTaken=%d, expected %d (RTFILEACTION_CREATED)",
-                     enmTaken, RTFILEACTION_CREATED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN_CREATE+TRUNCATE(#2) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileWrite(hFile, RT_STR_TUPLE("test"),  NULL), VINF_SUCCESS); /* for the trunction in the next test  */
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    tstOpenExTest(__LINE__, 10, 10, g_szTestFile, RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE,     VINF_SUCCESS, RTFILEACTION_TRUNCATED);
 
     /* RTFILE_O_OPEN + TRUNCATE - existing non-zero sized file: */
-    RTTEST_CHECK(hTest, RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_TRUNCATE | RTFILE_O_DENY_NONE, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN+TRUNCATE(#2) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_TRUNCATED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN+TRUNCATE(#2) -> enmTaken=%d, expected %d (RTFILEACTION_TRUNCATED)",
-                     enmTaken, RTFILEACTION_TRUNCATED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_OPEN+TRUNCATE(#2) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileRead(hFile, abBuf, 1, NULL), VERR_EOF); /* check that it was truncated */
-    RTTESTI_CHECK_RC(RTFileWrite(hFile, RT_STR_TUPLE("test"),  NULL), VINF_SUCCESS); /* for the replacement in the next test  */
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    tstOpenExTest(__LINE__, 10, -1, g_szTestFile, RTFILE_O_OPEN | RTFILE_O_TRUNCATE,            VINF_SUCCESS, RTFILEACTION_TRUNCATED);
 
+    /* RTFILE_O_OPEN + TRUNCATE - non-existing file: */
+    tstOpenExTest(__LINE__, -1, -1, g_szTestFile, RTFILE_O_OPEN | RTFILE_O_TRUNCATE,     VERR_FILE_NOT_FOUND, RTFILEACTION_INVALID);
+
+    /* RTFILE_O_OPEN_CREATE + TRUNCATE - non-existing file: */
+    tstOpenExTest(__LINE__, -1,  0, g_szTestFile, RTFILE_O_OPEN_CREATE | RTFILE_O_TRUNCATE,     VINF_SUCCESS, RTFILEACTION_CREATED);
 
     /*
      * RTFILE_O_CREATE and RTFILE_O_CREATE_REPLACE.
      */
     /* RTFILE_O_CREATE_REPLACE - existing: */
-    RTTEST_CHECK(hTest, RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | fMode, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE_REPLACE(#1) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_REPLACED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE_REPLACE(#1) -> enmTaken=%d, expected %d (RTFILEACTION_REPLACED)",
-                     enmTaken, RTFILEACTION_REPLACED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE_REPLACE(#1) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileRead(hFile, abBuf, 1, NULL), VERR_EOF); /* check that it was replaced */
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    tstOpenExTest(__LINE__,  0, -1, g_szTestFile, RTFILE_O_CREATE_REPLACE,                      VINF_SUCCESS, RTFILEACTION_REPLACED);
 
     /* RTFILE_O_CREATE_REPLACE - non-existing: */
-    RTTESTI_CHECK_RC(RTFileDelete(g_szTestFile), VINF_SUCCESS);
-    RTTEST_CHECK(hTest, !RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | fMode, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE_REPLACE(#2) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_CREATED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE_REPLACE(#2) -> enmTaken=%d, expected %d (RTFILEACTION_CREATED)",
-                     enmTaken, RTFILEACTION_CREATED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE_REPLACE(#2) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    tstOpenExTest(__LINE__, -1,  0, g_szTestFile, RTFILE_O_CREATE_REPLACE,                      VINF_SUCCESS, RTFILEACTION_CREATED);
 
     /* RTFILE_O_CREATE - existing: */
-    RTTEST_CHECK(hTest, RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE | fMode, &hFile, &enmTaken);
-    if (rc != VERR_ALREADY_EXISTS && rc != VERR_OPEN_FAILED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE(#1) -> %Rrc, expected VERR_ALREADY_EXISTS or VERR_OPEN_FAILED", rc);
-    if (enmTaken != RTFILEACTION_ALREADY_EXISTS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE(#1) -> enmTaken=%d, expected %d (RTFILEACTION_ALREADY_EXISTS)",
-                     enmTaken, RTFILEACTION_ALREADY_EXISTS);
-    if (hFile != NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE(#1) -> hFile=%p, expected %p (NIL_RTFILE)", hFile, NIL_RTFILE);
+    tstOpenExTest(__LINE__,  0, -1, g_szTestFile, RTFILE_O_CREATE,                       VERR_ALREADY_EXISTS, RTFILEACTION_ALREADY_EXISTS);
 
     /* RTFILE_O_CREATE - non-existing: */
-    RTTESTI_CHECK_RC(RTFileDelete(g_szTestFile), VINF_SUCCESS);
-    RTTEST_CHECK(hTest, !RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_NONE | fMode, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE(#2) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_CREATED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE(#2) -> enmTaken=%d, expected %d (RTFILEACTION_CREATED)",
-                     enmTaken, RTFILEACTION_CREATED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE(#2) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    tstOpenExTest(__LINE__, -1, -1, g_szTestFile, RTFILE_O_CREATE,                              VINF_SUCCESS, RTFILEACTION_CREATED);
 
     /*
      * RTFILE_O_CREATE and RTFILE_O_CREATE_REPLACE w/ TRUNCATE variations.
      */
     /* RTFILE_O_CREATE+TRUNCATE - non-existing: */
-    RTTESTI_CHECK_RC(RTFileDelete(g_szTestFile), VINF_SUCCESS);
-    RTTEST_CHECK(hTest, !RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_NONE | fMode, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE+TRUNCATE(#1) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_CREATED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE+TRUNCATE(#1) -> enmTaken=%d, expected %d (RTFILEACTION_CREATED)",
-                     enmTaken, RTFILEACTION_CREATED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE+TRUNCATE(#1) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    tstOpenExTest(__LINE__, -1, 10, g_szTestFile, RTFILE_O_CREATE | RTFILE_O_TRUNCATE,          VINF_SUCCESS, RTFILEACTION_CREATED);
 
     /* RTFILE_O_CREATE+TRUNCATE - existing: */
-    RTTEST_CHECK(hTest, RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_NONE | fMode, &hFile, &enmTaken);
-    if (rc != VERR_ALREADY_EXISTS && rc != VERR_OPEN_FAILED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE+TRUNCATE(#2) -> %Rrc, expected VERR_ALREADY_EXISTS or VERR_OPEN_FAILED", rc);
-    if (enmTaken != RTFILEACTION_ALREADY_EXISTS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE+TRUNCATE(#2) -> enmTaken=%d, expected %d (RTFILEACTION_ALREADY_EXISTS)",
-                     enmTaken, RTFILEACTION_ALREADY_EXISTS);
-    if (hFile != NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE+TRUNCATE(#2) -> hFile=%p, expected %p (NIL_RTFILE)", hFile, NIL_RTFILE);
+    tstOpenExTest(__LINE__, 10, 10, g_szTestFile,  RTFILE_O_CREATE | RTFILE_O_TRUNCATE,  VERR_ALREADY_EXISTS, RTFILEACTION_ALREADY_EXISTS);
 
     /* RTFILE_O_CREATE_REPLACE+TRUNCATE - existing: */
-    RTTEST_CHECK(hTest, RTPathExists(g_szTestFile));
-    hFile    = NIL_RTFILE;
-    enmTaken = RTFILEACTION_END;
-    rc = RTFileOpenEx(g_szTestFile, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_NONE | fMode, &hFile, &enmTaken);
-    if (rc != VINF_SUCCESS)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE_REPLACE+TRUNCATE(#1) -> %Rrc, expected VINF_SUCCESS", rc);
-    if (enmTaken != RTFILEACTION_REPLACED)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE_REPLACE+TRUNCATE(#1) -> enmTaken=%d, expected %d (RTFILEACTION_REPLACED)",
-                     enmTaken, RTFILEACTION_REPLACED);
-    if (hFile == NIL_RTFILE)
-        RTTestFailed(hTest, "RTFileOpenEx+RTFILE_O_CREATE_REPLACE+TRUNCATE(#1) -> hFile=%p (NIL_RTFILE)", hFile);
-    RTTESTI_CHECK_RC(RTFileClose(hFile), VINF_SUCCESS);
+    tstOpenExTest(__LINE__, 10, -1, g_szTestFile,  RTFILE_O_CREATE_REPLACE | RTFILE_O_TRUNCATE, VINF_SUCCESS, RTFILEACTION_REPLACED);
+
+    /* RTFILE_O_CREATE_REPLACE+TRUNCATE - non-existing: */
+    tstOpenExTest(__LINE__, -1, -1, g_szTestFile, RTFILE_O_CREATE_REPLACE | RTFILE_O_TRUNCATE,  VINF_SUCCESS, RTFILEACTION_CREATED);
 
     RTTESTI_CHECK_RC(RTFileDelete(g_szTestFile), VINF_SUCCESS);
 }
