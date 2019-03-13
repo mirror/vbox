@@ -457,7 +457,7 @@ void UIChooserModel::performSearch(const QString &strSearchTerm, int iItemSearch
         return;
 
     QList<UIChooserNode*> matchedItems;
-    m_pInvisibleRootNode->searchForNodes(strSearchTerm,  iItemSearchFlags, matchedItems);
+    m_pInvisibleRootNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
 }
 
 UIChooserNode *UIChooserModel::invisibleRoot() const

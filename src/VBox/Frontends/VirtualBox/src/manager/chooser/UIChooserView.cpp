@@ -136,7 +136,6 @@ void UIChooserView::sltRedoSearch(const QString &strSearchTerm, int iItemSearchF
         return;
 
     pModel->performSearch(strSearchTerm, iItemSearchFlags);
-
 }
 
 void UIChooserView::retranslateUi()
@@ -150,7 +149,7 @@ void UIChooserView::retranslateUi()
 void UIChooserView::prepare()
 {
     /* Install Chooser-view accessibility interface factory: */
-     QAccessible::installFactory(UIAccessibilityInterfaceForUIChooserView::pFactory);
+    QAccessible::installFactory(UIAccessibilityInterfaceForUIChooserView::pFactory);
 
     /* Prepare palette: */
     preparePalette();
