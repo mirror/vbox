@@ -43,14 +43,12 @@ VBOX_EFI_MODULES = \
 	IntelFrameworkModulePkg/Bus/Isa/IsaSerialDxe/IsaSerialDxe/$(VBOX_EFI_DEBUG_DIR)/IsaSerialDxe \
 	IntelFrameworkModulePkg/Bus/Isa/Ps2KeyboardDxe/Ps2keyboardDxe/$(VBOX_EFI_DEBUG_DIR)/Ps2KeyboardDxe \
 	IntelFrameworkModulePkg/Bus/Pci/IdeBusDxe/IdeBusDxe/$(VBOX_EFI_DEBUG_DIR)/IdeBusDxe \
-	IntelFrameworkModulePkg/Universal/BdsDxe/BdsDxe/$(VBOX_EFI_DEBUG_DIR)/BdsDxe \
 	IntelFrameworkModulePkg/Universal/DataHubDxe/DataHubDxe/$(VBOX_EFI_DEBUG_DIR)/DataHubDxe \
-	IntelFrameworkModulePkg/Universal/StatusCode/Pei/StatusCodePei/$(VBOX_EFI_DEBUG_DIR)/StatusCodePei \
-	IntelFrameworkModulePkg/Universal/StatusCode/RuntimeDxe/StatusCodeRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/StatusCodeRuntimeDxe \
 	MdeModulePkg/Bus/Ata/AtaAtapiPassThru/AtaAtapiPassThru/$(VBOX_EFI_DEBUG_DIR)/AtaAtapiPassThruDxe \
 	MdeModulePkg/Bus/Ata/AtaBusDxe/AtaBusDxe/$(VBOX_EFI_DEBUG_DIR)/AtaBusDxe \
 	MdeModulePkg/Bus/Pci/EhciDxe/EhciDxe/$(VBOX_EFI_DEBUG_DIR)/EhciDxe \
 	MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe/$(VBOX_EFI_DEBUG_DIR)/PciBusDxe \
+	MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe/$(VBOX_EFI_DEBUG_DIR)/PciHostBridgeDxe \
 	MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe/$(VBOX_EFI_DEBUG_DIR)/NvmExpressDxe \
 	MdeModulePkg/Bus/Scsi/ScsiBusDxe/ScsiBusDxe/$(VBOX_EFI_DEBUG_DIR)/ScsiBus \
 	MdeModulePkg/Bus/Scsi/ScsiDiskDxe/ScsiDiskDxe/$(VBOX_EFI_DEBUG_DIR)/ScsiDisk \
@@ -95,9 +93,7 @@ VBOX_EFI_MODULES = \
 	PcAtChipsetPkg/8259InterruptControllerDxe/8259/$(VBOX_EFI_DEBUG_DIR)/Legacy8259 \
 	PcAtChipsetPkg/Bus/Pci/IdeControllerDxe/IdeControllerDxe/$(VBOX_EFI_DEBUG_DIR)/IdeController \
 	PcAtChipsetPkg/IsaAcpiDxe/IsaAcpi/$(VBOX_EFI_DEBUG_DIR)/IsaAcpi \
-	PcAtChipsetPkg/KbcResetDxe/Reset/$(VBOX_EFI_DEBUG_DIR)/KbcReset \
 	PcAtChipsetPkg/PcatRealTimeClockRuntimeDxe/PcatRealTimeClockRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/PcRtc \
-	PcAtChipsetPkg/PciHostBridgeDxe/PciHostBridgeDxe/$(VBOX_EFI_DEBUG_DIR)/PciHostBridge \
 	ShellPkg/Application/Shell/Shell/$(VBOX_EFI_DEBUG_DIR)/Shell \
 	UefiCpuPkg/CpuDxe/CpuDxe/$(VBOX_EFI_DEBUG_DIR)/CpuDxe \
 	UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe/$(VBOX_EFI_DEBUG_DIR)/CpuIo2Dxe \
