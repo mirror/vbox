@@ -356,10 +356,14 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_BANDWIDTHGROUPCHANGEDEVENT,
     /** Main group, IBIOSSettings. */
     LOG_GROUP_MAIN_BIOSSETTINGS,
+    /** Main group, IBooleanFormValue. */
+    LOG_GROUP_MAIN_BOOLEANFORMVALUE,
     /** Main group, ICanShowWindowEvent. */
     LOG_GROUP_MAIN_CANSHOWWINDOWEVENT,
     /** Main group, ICertificate. */
     LOG_GROUP_MAIN_CERTIFICATE,
+    /** Main group, IChoiceFormValue. */
+    LOG_GROUP_MAIN_CHOICEFORMVALUE,
     /** Main group, IClipboardModeChangedEvent. */
     LOG_GROUP_MAIN_CLIPBOARDMODECHANGEDEVENT,
     /** Main group, ICloudClient. */
@@ -424,6 +428,10 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_EXTRADATACHANGEDEVENT,
     /** Main group, IFile. */
     LOG_GROUP_MAIN_FILE,
+    /** Main group, IForm. */
+    LOG_GROUP_MAIN_FORM,
+    /** Main group, IFormValue. */
+    LOG_GROUP_MAIN_FORMVALUE,
     /** Main group, IFramebuffer. */
     LOG_GROUP_MAIN_FRAMEBUFFER,
     /** Main group, IFramebufferOverlay. */
@@ -640,6 +648,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_STORAGECONTROLLERCHANGEDEVENT,
     /** Main group, IStorageDeviceChangedEvent. */
     LOG_GROUP_MAIN_STORAGEDEVICECHANGEDEVENT,
+    /** Main group, IStringFormValue. */
+    LOG_GROUP_MAIN_STRINGFORMVALUE,
     /** Main group, ISystemProperties. */
     LOG_GROUP_MAIN_SYSTEMPROPERTIES,
     /** Main group, threaded tasks. */
@@ -678,6 +688,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_VIRTUALBOXSDS,
     /** Main group, IVirtualSystemDescription. */
     LOG_GROUP_MAIN_VIRTUALSYSTEMDESCRIPTION,
+    /** Main group, IVirtualSystemDescriptionForm. */
+    LOG_GROUP_MAIN_VIRTUALSYSTEMDESCRIPTIONFORM,
     /** Main group, VMM device interfaces. */
     LOG_GROUP_MAIN_VMMDEVINTERFACES,
     /** Main group, IVRDEServer. */
@@ -1004,8 +1016,10 @@ typedef enum LOGGROUP
     "MAIN_BANDWIDTHGROUP", \
     "MAIN_BANDWIDTHGROUPCHANGEDEVENT", \
     "MAIN_BIOSSETTINGS", \
+    "MAIN_BOOLEANFORMVALUE", \
     "MAIN_CANSHOWWINDOWEVENT", \
     "MAIN_CERTIFICATE", \
+    "MAIN_CHOICEFORMVALUE", \
     "MAIN_CLIPBOARDMODECHANGEDEVENT", \
     "MAIN_CLOUDCLIENT", \
     "MAIN_CLOUDPROFILE", \
@@ -1038,6 +1052,8 @@ typedef enum LOGGROUP
     "MAIN_EXTRADATACANCHANGEEVENT", \
     "MAIN_EXTRADATACHANGEDEVENT", \
     "MAIN_FILE",    \
+    "MAIN_FORM", \
+    "MAIN_FORMVALUE", \
     "MAIN_FRAMEBUFFER", \
     "MAIN_FRAMEBUFFEROVERLAY", \
     "MAIN_FSOBJINFO", \
@@ -1146,6 +1162,7 @@ typedef enum LOGGROUP
     "MAIN_STORAGECONTROLLER", \
     "MAIN_STORAGECONTROLLERCHANGEDEVENT", \
     "MAIN_STORAGEDEVICECHANGEDEVENT", \
+    "MAIN_STRINGFORMVALUE", \
     "MAIN_SYSTEMPROPERTIES", \
     "MAIN_THREAD_TASK", \
     "MAIN_TOKEN", \
@@ -1165,6 +1182,7 @@ typedef enum LOGGROUP
     "MAIN_VIRTUALBOXCLIENT", \
     "MAIN_VIRTUALBOXSDS", \
     "MAIN_VIRTUALSYSTEMDESCRIPTION", \
+    "MAIN_VIRTUALSYSTEMDESCRIPTIONFORM", \
     "MAIN_VMMDEVINTERFACES", \
     "MAIN_VRDESERVER", \
     "MAIN_VRDESERVERCHANGEDEVENT", \

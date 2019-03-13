@@ -25477,6 +25477,81 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <!--
+  // IForm
+  //////////////////////////////////////////////////////////////////////////
+  -->
+  <enum name="FormValueType"
+        uuid="56ad9e8e-3e78-11e9-b661-bfeead3ff066">
+    <const name="Boolean" value="0"/>
+    <const name="String" value="1"/>
+    <const name="Choice" value="2"/>
+  </enum>
+
+  <interface name="IFormValue" extends="$unknown"
+             uuid="67c50afe-3e78-11e9-b25e-7768f80c0e07"
+             reservedMethods="4" reservedAttributes="8">
+    <attribute name="type" type="FormValueType" readonly="yes"/>
+    <attribute name="generation" type="long" readonly="yes"/>
+    <attribute name="enabled" type="boolean" readonly="yes"/>
+    <attribute name="visible" type="boolean" readonly="yes"/>
+    <attribute name="label" type="wstring" readonly="yes"/>
+    <attribute name="description" type="wstring" readonly="yes"/>
+    <attribute name="help" type="wstring" readonly="yes"/>
+  </interface>
+
+  <interface name="IBooleanFormValue" extends="IFormValue"
+             uuid="4f4adcf6-3e87-11e9-8af2-576e84223953"
+             reservedMethods="4" reservedAttributes="4">
+    <method name="getSelected">
+      <param name="selected" type="boolean" dir="return"/>
+    </method>
+    <method name="setSelected">
+      <param name="selected" type="boolean" dir="in"/>
+      <param name="progress" type="IProgress" dir="return"/>
+    </method>
+  </interface>
+
+  <interface name="IStringFormValue" extends="IFormValue"
+             uuid="4378aa22-3e8a-11e9-8ce9-03940555aae1"
+             reservedMethods="4" reservedAttributes="4">
+    <method name="getString">
+      <param name="text" type="wstring" dir="return"/>
+    </method>
+    <method name="setString">
+      <param name="text" type="wstring" dir="in"/>
+      <param name="progress" type="IProgress" dir="return"/>
+    </method>    
+  </interface>
+
+  <interface name="IChoiceFormValue" extends="IFormValue"
+             uuid="7191cf38-3e8a-11e9-825c-ab7b2cabce23"
+             reservedMethods="4" reservedAttributes="4">
+    <attribute name="values" type="wstring" safearray="yes" readonly="yes"/>
+    <method name="getSelectedIndex">
+      <param name="index" type="long" dir="return"/>
+    </method>
+    <method name="setSelectedIndex">
+      <param name="index" type="long" dir="in"/>
+      <param name="progress" type="IProgress" dir="return"/>
+    </method>    
+  </interface>
+
+  <interface name="IForm" extends="$unknown"
+             uuid="d05c91e2-3e8a-11e9-8082-db8ae479ef87"
+             reservedMethods="4" reservedAttributes="4">
+    <attribute name="values" type="IFormValue" safearray="yes" readonly="yes"/>
+  </interface>
+
+  <interface name="IVirtualSystemDescriptionForm" extends="IForm"
+             uuid="14c2db8a-3ee4-11e9-b872-cb9447aad965"
+             reservedMethods="4" reservedAttributes="4">
+    <method name="getVirtualSystemDescription">
+      <param name="description" type="IVirtualSystemDescription" dir="return"/>
+    </method>
+  </interface>
+
+
+  <!--
   // ICloudClient
   //////////////////////////////////////////////////////////////////////////
   -->
