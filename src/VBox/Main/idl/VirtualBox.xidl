@@ -25489,6 +25489,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface name="IFormValue" extends="$unknown"
              uuid="67c50afe-3e78-11e9-b25e-7768f80c0e07"
+             wsmap="managed"
              reservedMethods="4" reservedAttributes="8">
     <attribute name="type" type="FormValueType" readonly="yes"/>
     <attribute name="generation" type="long" readonly="yes"/>
@@ -25501,6 +25502,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface name="IBooleanFormValue" extends="IFormValue"
              uuid="4f4adcf6-3e87-11e9-8af2-576e84223953"
+             wsmap="managed"
              reservedMethods="4" reservedAttributes="4">
     <method name="getSelected">
       <param name="selected" type="boolean" dir="return"/>
@@ -25513,6 +25515,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface name="IStringFormValue" extends="IFormValue"
              uuid="4378aa22-3e8a-11e9-8ce9-03940555aae1"
+             wsmap="managed"
              reservedMethods="4" reservedAttributes="4">
     <method name="getString">
       <param name="text" type="wstring" dir="return"/>
@@ -25525,6 +25528,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface name="IChoiceFormValue" extends="IFormValue"
              uuid="7191cf38-3e8a-11e9-825c-ab7b2cabce23"
+             wsmap="managed"
              reservedMethods="4" reservedAttributes="4">
     <attribute name="values" type="wstring" safearray="yes" readonly="yes"/>
     <method name="getSelectedIndex">
@@ -25538,12 +25542,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface name="IForm" extends="$unknown"
              uuid="d05c91e2-3e8a-11e9-8082-db8ae479ef87"
+             wsmap="managed"
              reservedMethods="4" reservedAttributes="4">
     <attribute name="values" type="IFormValue" safearray="yes" readonly="yes"/>
   </interface>
 
   <interface name="IVirtualSystemDescriptionForm" extends="IForm"
              uuid="14c2db8a-3ee4-11e9-b872-cb9447aad965"
+             wsmap="managed"
              reservedMethods="4" reservedAttributes="4">
     <method name="getVirtualSystemDescription">
       <param name="description" type="IVirtualSystemDescription" dir="return"/>
