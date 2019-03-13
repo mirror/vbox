@@ -210,9 +210,9 @@ static int vbsfCheckHandleAccess(SHFLCLIENTDATA *pClient, SHFLROOT root,
  * @param  handleInitial initial handle
  * @retval pfOpen     iprt create flags
  */
-static int vbsfConvertFileOpenFlags(bool fWritable, unsigned fShflFlags, RTFMODE fMode, SHFLHANDLE handleInitial, uint32_t *pfOpen)
+static int vbsfConvertFileOpenFlags(bool fWritable, unsigned fShflFlags, RTFMODE fMode, SHFLHANDLE handleInitial, uint64_t *pfOpen)
 {
-    uint32_t fOpen = 0;
+    uint64_t fOpen = 0;
     int rc = VINF_SUCCESS;
 
     if (   (fMode & RTFS_DOS_MASK) != 0
@@ -331,97 +331,97 @@ static int vbsfConvertFileOpenFlags(bool fWritable, unsigned fShflFlags, RTFMODE
     /* Sharing mask */
     switch (BIT_FLAG(fShflFlags, SHFL_CF_ACCESS_MASK_DENY))
     {
-    default:
-    case SHFL_CF_ACCESS_DENYNONE:
-        fOpen |= RTFILE_O_DENY_NONE;
-        Log(("FLAG: SHFL_CF_ACCESS_DENYNONE\n"));
-        break;
+        default:
+        case SHFL_CF_ACCESS_DENYNONE:
+            fOpen |= RTFILE_O_DENY_NONE;
+            Log(("FLAG: SHFL_CF_ACCESS_DENYNONE\n"));
+            break;
 
-    case SHFL_CF_ACCESS_DENYREAD:
-        fOpen |= RTFILE_O_DENY_READ;
-        Log(("FLAG: SHFL_CF_ACCESS_DENYREAD\n"));
-        break;
+        case SHFL_CF_ACCESS_DENYREAD:
+            fOpen |= RTFILE_O_DENY_READ;
+            Log(("FLAG: SHFL_CF_ACCESS_DENYREAD\n"));
+            break;
 
-    case SHFL_CF_ACCESS_DENYWRITE:
-        fOpen |= RTFILE_O_DENY_WRITE;
-        Log(("FLAG: SHFL_CF_ACCESS_DENYWRITE\n"));
-        break;
+        case SHFL_CF_ACCESS_DENYWRITE:
+            fOpen |= RTFILE_O_DENY_WRITE;
+            Log(("FLAG: SHFL_CF_ACCESS_DENYWRITE\n"));
+            break;
 
-    case SHFL_CF_ACCESS_DENYALL:
-        fOpen |= RTFILE_O_DENY_ALL;
-        Log(("FLAG: SHFL_CF_ACCESS_DENYALL\n"));
-        break;
+        case SHFL_CF_ACCESS_DENYALL:
+            fOpen |= RTFILE_O_DENY_ALL;
+            Log(("FLAG: SHFL_CF_ACCESS_DENYALL\n"));
+            break;
     }
 
     /* Open/Create action mask */
     switch (BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_EXISTS))
     {
-    case SHFL_CF_ACT_OPEN_IF_EXISTS:
-        if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
-        {
-            fOpen |= RTFILE_O_OPEN_CREATE;
-            Log(("FLAGS: SHFL_CF_ACT_OPEN_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
-        }
-        else if (SHFL_CF_ACT_FAIL_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
-        {
-            fOpen |= RTFILE_O_OPEN;
-            Log(("FLAGS: SHFL_CF_ACT_OPEN_IF_EXISTS and SHFL_CF_ACT_FAIL_IF_NEW\n"));
-        }
-        else
-        {
-            Log(("FLAGS: invalid open/create action combination\n"));
+        case SHFL_CF_ACT_OPEN_IF_EXISTS:
+            if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_OPEN_CREATE;
+                Log(("FLAGS: SHFL_CF_ACT_OPEN_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
+            }
+            else if (SHFL_CF_ACT_FAIL_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_OPEN;
+                Log(("FLAGS: SHFL_CF_ACT_OPEN_IF_EXISTS and SHFL_CF_ACT_FAIL_IF_NEW\n"));
+            }
+            else
+            {
+                Log(("FLAGS: invalid open/create action combination\n"));
+                rc = VERR_INVALID_PARAMETER;
+            }
+            break;
+        case SHFL_CF_ACT_FAIL_IF_EXISTS:
+            if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_CREATE;
+                Log(("FLAGS: SHFL_CF_ACT_FAIL_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
+            }
+            else
+            {
+                Log(("FLAGS: invalid open/create action combination\n"));
+                rc = VERR_INVALID_PARAMETER;
+            }
+            break;
+        case SHFL_CF_ACT_REPLACE_IF_EXISTS:
+            if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_CREATE_REPLACE;
+                Log(("FLAGS: SHFL_CF_ACT_REPLACE_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
+            }
+            else if (SHFL_CF_ACT_FAIL_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_OPEN | RTFILE_O_TRUNCATE;
+                Log(("FLAGS: SHFL_CF_ACT_REPLACE_IF_EXISTS and SHFL_CF_ACT_FAIL_IF_NEW\n"));
+            }
+            else
+            {
+                Log(("FLAGS: invalid open/create action combination\n"));
+                rc = VERR_INVALID_PARAMETER;
+            }
+            break;
+        case SHFL_CF_ACT_OVERWRITE_IF_EXISTS:
+            if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_CREATE_REPLACE;
+                Log(("FLAGS: SHFL_CF_ACT_OVERWRITE_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
+            }
+            else if (SHFL_CF_ACT_FAIL_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
+            {
+                fOpen |= RTFILE_O_OPEN | RTFILE_O_TRUNCATE;
+                Log(("FLAGS: SHFL_CF_ACT_OVERWRITE_IF_EXISTS and SHFL_CF_ACT_FAIL_IF_NEW\n"));
+            }
+            else
+            {
+                Log(("FLAGS: invalid open/create action combination\n"));
+                rc = VERR_INVALID_PARAMETER;
+            }
+            break;
+        default:
             rc = VERR_INVALID_PARAMETER;
-        }
-        break;
-    case SHFL_CF_ACT_FAIL_IF_EXISTS:
-        if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
-        {
-            fOpen |= RTFILE_O_CREATE;
-            Log(("FLAGS: SHFL_CF_ACT_FAIL_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
-        }
-        else
-        {
-            Log(("FLAGS: invalid open/create action combination\n"));
-            rc = VERR_INVALID_PARAMETER;
-        }
-        break;
-    case SHFL_CF_ACT_REPLACE_IF_EXISTS:
-        if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
-        {
-            fOpen |= RTFILE_O_CREATE_REPLACE;
-            Log(("FLAGS: SHFL_CF_ACT_REPLACE_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
-        }
-        else if (SHFL_CF_ACT_FAIL_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
-        {
-            fOpen |= RTFILE_O_OPEN | RTFILE_O_TRUNCATE;
-            Log(("FLAGS: SHFL_CF_ACT_REPLACE_IF_EXISTS and SHFL_CF_ACT_FAIL_IF_NEW\n"));
-        }
-        else
-        {
-            Log(("FLAGS: invalid open/create action combination\n"));
-            rc = VERR_INVALID_PARAMETER;
-        }
-        break;
-    case SHFL_CF_ACT_OVERWRITE_IF_EXISTS:
-        if (SHFL_CF_ACT_CREATE_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
-        {
-            fOpen |= RTFILE_O_CREATE_REPLACE;
-            Log(("FLAGS: SHFL_CF_ACT_OVERWRITE_IF_EXISTS and SHFL_CF_ACT_CREATE_IF_NEW\n"));
-        }
-        else if (SHFL_CF_ACT_FAIL_IF_NEW == BIT_FLAG(fShflFlags, SHFL_CF_ACT_MASK_IF_NEW))
-        {
-            fOpen |= RTFILE_O_OPEN | RTFILE_O_TRUNCATE;
-            Log(("FLAGS: SHFL_CF_ACT_OVERWRITE_IF_EXISTS and SHFL_CF_ACT_FAIL_IF_NEW\n"));
-        }
-        else
-        {
-            Log(("FLAGS: invalid open/create action combination\n"));
-            rc = VERR_INVALID_PARAMETER;
-        }
-        break;
-    default:
-        rc = VERR_INVALID_PARAMETER;
-        Log(("FLAG: SHFL_CF_ACT_MASK_IF_EXISTS - invalid parameter\n"));
+            Log(("FLAG: SHFL_CF_ACT_MASK_IF_EXISTS - invalid parameter\n"));
     }
 
     if (RT_SUCCESS(rc))
@@ -455,12 +455,9 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszP
     LogFlow(("vbsfOpenFile: pszPath = %s, pParms = %p\n", pszPath, pParms));
     Log(("SHFL create flags %08x\n", pParms->CreateFlags));
 
-    SHFLHANDLE      handle = SHFL_HANDLE_NIL;
-    SHFLFILEHANDLE *pHandle = 0;
-    /* Open or create a file. */
-    uint32_t fOpen = 0;
-    bool fNoError = false;
-    static int cErrors;
+    RTFILEACTION    enmActionTaken = RTFILEACTION_INVALID;
+    SHFLHANDLE      handle         = SHFL_HANDLE_NIL;
+    SHFLFILEHANDLE *pHandle        = NULL;
 
     /* is the guest allowed to write to this share? */
     bool fWritable;
@@ -468,6 +465,7 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszP
     if (RT_FAILURE(rc))
         fWritable = false;
 
+    uint64_t fOpen = 0;
     rc = vbsfConvertFileOpenFlags(fWritable, pParms->CreateFlags, pParms->Info.Attr.fMode, pParms->Handle, &fOpen);
     if (RT_SUCCESS(rc))
     {
@@ -480,84 +478,97 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, const char *pszP
             {
                 pHandle->root = root;
                 pHandle->file.fOpenFlags = fOpen;
-                rc = RTFileOpen(&pHandle->file.Handle, pszPath, fOpen);
+                rc = RTFileOpenEx(pszPath, fOpen, &pHandle->file.Handle, &enmActionTaken);
             }
         }
     }
+    bool fNoError = false;
     if (RT_FAILURE(rc))
     {
         switch (rc)
         {
-        case VERR_FILE_NOT_FOUND:
-            pParms->Result = SHFL_FILE_NOT_FOUND;
+            case VERR_FILE_NOT_FOUND:
+                pParms->Result = SHFL_FILE_NOT_FOUND;
 
-            /* This actually isn't an error, so correct the rc before return later,
-               because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
-            fNoError = true;
-            break;
-        case VERR_PATH_NOT_FOUND:
-            pParms->Result = SHFL_PATH_NOT_FOUND;
+                /* This actually isn't an error, so correct the rc before return later,
+                   because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
+                fNoError = true;
+                break;
 
-            /* This actually isn't an error, so correct the rc before return later,
-               because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
-            fNoError = true;
-            break;
-        case VERR_ALREADY_EXISTS:
-            RTFSOBJINFO info;
+            case VERR_PATH_NOT_FOUND:
+                pParms->Result = SHFL_PATH_NOT_FOUND;
+                fNoError = true; /* Not an error either (see above). */
+                break;
 
-            /** @todo Possible race left here. */
-            if (RT_SUCCESS(RTPathQueryInfoEx(pszPath, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient))))
+            case VERR_ALREADY_EXISTS:
             {
+                RTFSOBJINFO info;
+
+                /** @todo Possible race left here. */
+                if (RT_SUCCESS(RTPathQueryInfoEx(pszPath, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient))))
+                {
 #ifdef RT_OS_WINDOWS
-                info.Attr.fMode |= 0111;
+                    info.Attr.fMode |= 0111;
 #endif
-                vbfsCopyFsObjInfoFromIprt(&pParms->Info, &info);
-            }
-            pParms->Result = SHFL_FILE_EXISTS;
+                    vbfsCopyFsObjInfoFromIprt(&pParms->Info, &info);
+                }
+                pParms->Result = SHFL_FILE_EXISTS;
 
-            /* This actually isn't an error, so correct the rc before return later,
-               because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
-            fNoError = true;
-            break;
-        case VERR_TOO_MANY_OPEN_FILES:
-            if (cErrors < 32)
-            {
-                LogRel(("SharedFolders host service: Cannot open '%s' -- too many open files.\n", pszPath));
-#if defined RT_OS_LINUX || defined(RT_OS_SOLARIS)
-                if (cErrors < 1)
-                    LogRel(("SharedFolders host service: Try to increase the limit for open files (ulimit -n)\n"));
-#endif
-                cErrors++;
+                /* This actually isn't an error, so correct the rc before return later,
+                   because the driver (VBoxSF.sys) expects rc = VINF_SUCCESS and checks the result code. */
+                fNoError = true;
+                break;
             }
-            pParms->Result = SHFL_NO_RESULT;
-            break;
-        default:
-            pParms->Result = SHFL_NO_RESULT;
+
+            case VERR_TOO_MANY_OPEN_FILES:
+            {
+                static int s_cErrors;
+                if (s_cErrors < 32)
+                {
+                    LogRel(("SharedFolders host service: Cannot open '%s' -- too many open files.\n", pszPath));
+#if defined RT_OS_LINUX || defined(RT_OS_SOLARIS)
+                    if (s_cErrors < 1)
+                        LogRel(("SharedFolders host service: Try to increase the limit for open files (ulimit -n)\n"));
+#endif
+                    s_cErrors++;
+                }
+                pParms->Result = SHFL_NO_RESULT;
+                break;
+            }
+
+            default:
+                pParms->Result = SHFL_NO_RESULT;
         }
     }
     else
     {
-        /** @note The shared folder status code is very approximate, as the runtime
-          *       does not really provide this information. */
-        pParms->Result = SHFL_FILE_EXISTS;  /* We lost the information as to whether it was
-                                               created when we eliminated the race. */
-        if (   (   SHFL_CF_ACT_REPLACE_IF_EXISTS
-                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS))
-            || (   SHFL_CF_ACT_OVERWRITE_IF_EXISTS
-                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS)))
+        switch (enmActionTaken)
+        {
+            default:
+                AssertFailed();
+                RT_FALL_THRU();
+            case RTFILEACTION_OPENED:
+                pParms->Result = SHFL_FILE_EXISTS;
+                break;
+            case RTFILEACTION_CREATED:
+                pParms->Result = SHFL_FILE_CREATED;
+                break;
+            case RTFILEACTION_REPLACED:
+            case RTFILEACTION_TRUNCATED: /* not quite right */
+                pParms->Result = SHFL_FILE_REPLACED;
+                break;
+        }
+
+        if (   (pParms->CreateFlags & SHFL_CF_ACT_MASK_IF_EXISTS) == SHFL_CF_ACT_REPLACE_IF_EXISTS
+            || (pParms->CreateFlags & SHFL_CF_ACT_MASK_IF_EXISTS) == SHFL_CF_ACT_OVERWRITE_IF_EXISTS)
         {
             /* For now, we do not treat a failure here as fatal. */
-            /** @todo Also set the size for SHFL_CF_ACT_CREATE_IF_NEW if
-                     SHFL_CF_ACT_FAIL_IF_EXISTS is set. */
+            /** @todo Also set the size for SHFL_CF_ACT_CREATE_IF_NEW if SHFL_CF_ACT_FAIL_IF_EXISTS is set. */
+            /** @todo r=bird: Exactly document cbObject usage and see what we can get
+             *        away with here.  I suspect it is only needed for windows and only
+             *        with SHFL_FILE_CREATED and SHFL_FILE_REPLACED, and only if
+             *        cbObject is non-zero. */
             RTFileSetSize(pHandle->file.Handle, pParms->Info.cbObject);
-            pParms->Result = SHFL_FILE_REPLACED;
-        }
-        if (   (   SHFL_CF_ACT_FAIL_IF_EXISTS
-                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_EXISTS))
-            || (   SHFL_CF_ACT_CREATE_IF_NEW
-                == BIT_FLAG(pParms->CreateFlags, SHFL_CF_ACT_MASK_IF_NEW)))
-        {
-            pParms->Result = SHFL_FILE_CREATED;
         }
 #if 0
         /** @todo */

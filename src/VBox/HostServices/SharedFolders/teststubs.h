@@ -27,6 +27,7 @@
 #endif
 
 #include <iprt/dir.h>
+#include <iprt/file.h>
 #include <iprt/time.h>
 
 #define RTDirClose           testRTDirClose
@@ -53,8 +54,8 @@ extern int testRTFileDelete(const char *pszFilename);
 extern int testRTFileFlush(RTFILE hFile);
 #define RTFileLock           testRTFileLock
 extern int testRTFileLock(RTFILE hFile, unsigned fLock, int64_t offLock, uint64_t cbLock);
-#define RTFileOpen           testRTFileOpen
-extern int testRTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen);
+#define RTFileOpenEx         testRTFileOpenEx
+extern int testRTFileOpenEx(const char *pszFilename, uint64_t fOpen, PRTFILE phFile, PRTFILEACTION penmActionTaken);
 #define RTFileQueryInfo      testRTFileQueryInfo
 extern int testRTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs);
 #define RTFileRead           testRTFileRead
