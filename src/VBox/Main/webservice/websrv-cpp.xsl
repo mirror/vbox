@@ -930,7 +930,7 @@ const char *g_pcszIUnknown = "IUnknown";
         </xsl:when>
         <xsl:otherwise>
           <xsl:call-template name="fatalError">
-            <xsl:with-param name="msg" select="concat('emitOutputArgBackConverter2: Type &quot;', $type, '&quot; in arg &quot;', $name, '&quot; of method &quot;', $ifname, '::', $method, '&quot; has invalid wsmap attribute value &quot;', $wsmap, '&quot; in XIDL.')" />
+            <xsl:with-param name="msg" select="concat('emitOutputArgBackConverter2: Type &quot;', $type, '&quot; in arg &quot;', $name, '&quot; of method &quot;', $thatifname, '::', $method, '&quot; has invalid wsmap attribute value &quot;', $wsmap, '&quot; in XIDL.')" />
           </xsl:call-template>
         </xsl:otherwise>
       </xsl:choose>
