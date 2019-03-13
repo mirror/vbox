@@ -276,6 +276,8 @@ private slots:
         void sltEditGroupName();
         /** Handles group sort request. */
         void sltSortGroup();
+        /** Handles machine search request. */
+        void sltMachineSearch();
         /** Handles group destroy request. */
         void sltUngroupSelectedGroup();
 

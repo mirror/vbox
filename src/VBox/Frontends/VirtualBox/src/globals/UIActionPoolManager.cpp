@@ -805,6 +805,40 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Machine Search' action class. */
+class UIActionSimpleSelectorMachinePerformSearch : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleSelectorMachinePerformSearch(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/sort_16px.png", ":/sort_disabled_16px.png")
+    {}
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("SearchVM");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+F");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "S&earch"));
+        setStatusTip(QApplication::translate("UIActionPool", "Search virtual machines with respect to a search term"));
+    }
+};
+
 
 /** Menu action extension, used as 'Start or Show' menu class. */
 class UIActionStateSelectorCommonStartOrShow : public UIActionPolymorphicMenu
@@ -2711,6 +2745,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Machine_S_ShowInFileManager] = new UIActionSimpleSelectorCommonShowInFileManager(this);
     m_pool[UIActionIndexST_M_Machine_S_CreateShortcut] = new UIActionSimpleSelectorCommonPerformCreateShortcut(this);
     m_pool[UIActionIndexST_M_Machine_S_SortParent] = new UIActionSimpleSelectorMachinePerformSortParent(this);
+    m_pool[UIActionIndexST_M_Machine_S_Search] = new UIActionSimpleSelectorMachinePerformSearch(this);
 
     /* Global Tools actions: */
     m_pool[UIActionIndexST_M_Tools_M_Global] = new UIActionMenuSelectorToolsGlobal(this);
@@ -3051,6 +3086,7 @@ void UIActionPoolManager::updateMenuMachine()
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_CreateShortcut));
     pMenu->addSeparator();
     pMenu->addAction(action(UIActionIndexST_M_Machine_S_SortParent));
+    pMenu->addAction(action(UIActionIndexST_M_Machine_S_Search));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexST_M_Machine);

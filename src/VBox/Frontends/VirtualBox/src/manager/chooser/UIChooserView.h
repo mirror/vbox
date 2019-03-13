@@ -27,6 +27,7 @@
 
 /* Forward declarations: */
 class UIChooser;
+class UIChooserSearchWidget;
 
 /** QIGraphicsView extension used as VM chooser pane view. */
 class UIChooserView : public QIWithRetranslateUI<QIGraphicsView>
@@ -48,6 +49,8 @@ public:
       * @{ */
         /** Returns the chooser reference. */
         UIChooser *chooser() const { return m_pChooser; }
+        /** Shows/hides machine search widget. */
+        void toggleSearchWidget();
     /** @} */
 
 public slots:
@@ -83,12 +86,17 @@ private:
       * @{ */
         /** Updates scene rectangle. */
         void updateSceneRect();
+        /** Updates search widget's geometry. */
+        void updateSearchWidget();
     /** @} */
+
 
     /** @name General stuff.
       * @{ */
         /** Holds the chooser pane reference. */
         UIChooser *m_pChooser;
+        /** Holds the search widget instance reference. */
+        UIChooserSearchWidget *m_pSearchWidget;
     /** @} */
 
     /** @name Layout stuff.

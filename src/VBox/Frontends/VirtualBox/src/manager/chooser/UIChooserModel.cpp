@@ -38,6 +38,7 @@
 #include "UIChooserNodeGroup.h"
 #include "UIChooserNodeGlobal.h"
 #include "UIChooserNodeMachine.h"
+#include "UIChooserView.h"
 #include "UIExtraDataManager.h"
 #include "UIMessageCenter.h"
 #include "UIModalWindowManager.h"
@@ -777,6 +778,14 @@ void UIChooserModel::sltSortGroup()
     currentItem()->sortItems();
 }
 
+void UIChooserModel::sltMachineSearch()
+{
+    UIChooserView *pChooserView = qobject_cast<UIChooserView*>(scene()->views()[0]);
+    if (!pChooserView)
+        return;
+    pChooserView->toggleSearchWidget();
+}
+
 void UIChooserModel::sltUngroupSelectedGroup()
 {
     /* Check if action is enabled: */
@@ -1335,6 +1344,7 @@ void UIChooserModel::prepareContextMenu()
         m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut));
         m_pContextMenuMachine->addSeparator();
         m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent));
+        m_pContextMenuMachine->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Search));
     }
 }
 
@@ -1399,6 +1409,8 @@ void UIChooserModel::prepareConnections()
             this, SLOT(sltSortParentGroup()));
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Sort), SIGNAL(triggered()),
             this, SLOT(sltSortGroup()));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Search), SIGNAL(triggered()),
+            this, SLOT(sltMachineSearch()));
 
     /* Setup group saving connections: */
     connect(this, &UIChooserModel::sigGroupSavingStarted,

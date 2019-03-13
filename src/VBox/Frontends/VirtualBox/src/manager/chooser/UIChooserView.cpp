@@ -23,6 +23,7 @@
 #include "UIChooser.h"
 #include "UIChooserItem.h"
 #include "UIChooserModel.h"
+#include "UIChooserSearchWidget.h"
 #include "UIChooserView.h"
 
 /* Other VBox includes: */
@@ -93,10 +94,20 @@ private:
 UIChooserView::UIChooserView(UIChooser *pParent)
     : QIWithRetranslateUI<QIGraphicsView>(pParent)
     , m_pChooser(pParent)
+    , m_pSearchWidget(0)
     , m_iMinimumWidthHint(0)
 {
     /* Prepare: */
     prepare();
+}
+
+void UIChooserView::toggleSearchWidget()
+{
+    if (!m_pSearchWidget)
+        return;
+    m_pSearchWidget->setVisible(!m_pSearchWidget->isVisible());
+    if (m_pSearchWidget->isVisible())
+        updateSearchWidget();
 }
 
 void UIChooserView::sltMinimumWidthHintChanged(int iHint)
@@ -140,8 +151,15 @@ void UIChooserView::prepare()
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
+    /* Create the search widget (hidden): */
+    m_pSearchWidget = new UIChooserSearchWidget(this);
+    m_pSearchWidget->hide();
+
     /* Update scene-rect: */
     updateSceneRect();
+
+    /* Update the location and size of the search widget: */
+    updateSearchWidget();
 
     /* Apply language settings: */
     retranslateUi();
@@ -165,9 +183,20 @@ void UIChooserView::resizeEvent(QResizeEvent *pEvent)
 
     /* Update scene-rect: */
     updateSceneRect();
+    updateSearchWidget();
 }
 
 void UIChooserView::updateSceneRect()
 {
     setSceneRect(0, 0, m_iMinimumWidthHint, height());
+}
+
+void UIChooserView::updateSearchWidget()
+{
+    if (!m_pSearchWidget || !m_pSearchWidget->isVisible())
+        return;
+    int iHeight = m_pSearchWidget->height();
+    QRect widgetRect(0, height() - iHeight,
+                     width(), iHeight);
+    m_pSearchWidget->setGeometry(widgetRect);
 }
