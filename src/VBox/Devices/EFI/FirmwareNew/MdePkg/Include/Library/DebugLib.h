@@ -527,10 +527,6 @@ DebugPrintLevelEnabled (
 #endif
 
 #if defined(VBOX)
-# ifdef __EFI_DEVICE_PATH_PROTOCOL_H__
-CHAR16 *VBoxDebugDevicePath2Str(IN EFI_DEVICE_PATH_PROTOCOL *pDevicePath);
-CHAR16 *VBoxDebugHandleDevicePath2Str(IN EFI_HANDLE hHandle);
-# endif
 VOID EFIAPI VBoxLogWorker(const char *pszFormat, ...);
 
 /** See RT_XSTR */
@@ -553,10 +549,6 @@ VOID EFIAPI VBoxLogWorker(const char *pszFormat, ...);
         EFI_STATUS rcLog = (rc); \
         VBoxLog(("%a:" VBOX_XSTR(__LINE__) ": " #rc "=0x%x (%r)\n", __FUNCTION__, rcLog, rcLog)); \
     } while (0)
-#  define VBoxLogFlowFuncMarkDP(dp) \
-    VBoxLog(("%a:" VBOX_XSTR(__LINE__) ": " #dp "=%s\n", __FUNCTION__, VBoxDebugDevicePath2Str(dp)))
-#  define VBoxLogFlowFuncMarkHandleDP(dp)\
-    VBoxLog(("%a:" VBOX_XSTR(__LINE__) ": " #dp "=%s\n", __FUNCTION__, VBoxDebugHandleDevicePath2Str(dp)))
 #  define VBoxLog(a)                            VBoxLogWorker a
 # else  /* !EFI_LOG_ENABLED */
 #  define VBoxLogFlowFuncEnter()                do {} while (0)
@@ -565,8 +557,6 @@ VOID EFIAPI VBoxLogWorker(const char *pszFormat, ...);
 #  define VBoxLogFlowFuncMark()                 do {} while (0)
 #  define VBoxLogFlowFuncMarkVar(var, varfmt)   do {} while (0)
 #  define VBoxLogFlowFuncMarkRC(rc)             do {} while (0)
-#  define VBoxLogFlowFuncMarkDP(dp)             do {} while (0)
-#  define VBoxLogLogFlowFuncMarkHandleDP(dp)    do {} while (0)
 #  define VBoxLog(a)                            do {} while (0)
 # endif /* !EFI_LOG_ENABLED */
 #endif /* VBOX */

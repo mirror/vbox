@@ -220,9 +220,6 @@ PartitionInstallGptChildHandles (
   UINT32                       MediaId;
   EFI_PARTITION_INFO_PROTOCOL  PartitionInfo;
 
-#ifdef VBOX
-  VBoxLogFlowFuncMarkDP(DevicePath);
-#endif
   ProtectiveMbr = NULL;
   PrimaryHeader = NULL;
   BackupHeader  = NULL;

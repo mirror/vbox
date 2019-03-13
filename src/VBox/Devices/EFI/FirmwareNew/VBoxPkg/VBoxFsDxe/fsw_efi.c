@@ -230,7 +230,6 @@ EFI_STATUS EFIAPI fsw_efi_DriverBinding_Supported(IN EFI_DRIVER_BINDING_PROTOCOL
 
     // first, open DiskIO
     VBoxLogFlowFuncEnter();
-    VBoxLogFlowFuncMarkDP(RemainingDevicePath);
 
     Status = BS->OpenProtocol(ControllerHandle,
                               &PROTO_NAME(DiskIoProtocol),

@@ -90,9 +90,6 @@ PartitionDriverBindingSupported (
     // Check if RemainingDevicePath is the End of Device Path Node,
     // if yes, go on checking other conditions
     //
-#ifdef VBOX
-    VBoxLogFlowFuncMarkDP(RemainingDevicePath);
-#endif
     if (!IsDevicePathEnd (RemainingDevicePath)) {
       //
       // If RemainingDevicePath isn't the End of Device Path Node,
@@ -163,9 +160,6 @@ PartitionDriverBindingSupported (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (Status == EFI_ALREADY_STARTED) {
-#ifdef VBOX
-    VBoxLogFlowFuncMarkDP(ParentDevicePath);
-#endif
     return EFI_SUCCESS;
   }
 

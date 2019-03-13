@@ -149,9 +149,6 @@ PartitionInstallMbrChildHandles (
   MediaId   = BlockIo->Media->MediaId;
   LastBlock = BlockIo->Media->LastBlock;
 
-#ifdef VBOX
-  VBoxLogFlowFuncMarkDP(DevicePath);
-#endif
   Mbr = AllocatePool (BlockSize);
   if (Mbr == NULL) {
     return Found;
@@ -231,7 +228,11 @@ PartitionInstallMbrChildHandles (
 
       ZeroMem (&PartitionInfo, sizeof (EFI_PARTITION_INFO_PROTOCOL));
       PartitionInfo.Revision = EFI_PARTITION_INFO_PROTOCOL_REVISION;
-      PartitionInfo.Type     = PARTITION_TYPE_OTHER;
+      PartitionInfo.Type     = PARTITION_TYPE_MBR;
+      if (Mbr->Partition[Index].OSIndicator == EFI_PARTITION) {
+        PartitionInfo.System = 1;
+      }
+      CopyMem (&PartitionInfo.Info.Mbr, &Mbr->Partition[Index], sizeof (MBR_PARTITION_RECORD));
 
       Status = PartitionInstallChildHandle (
                 This,

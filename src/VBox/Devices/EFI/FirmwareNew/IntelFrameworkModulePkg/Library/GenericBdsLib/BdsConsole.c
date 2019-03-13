@@ -216,8 +216,6 @@ BdsLibUpdateConsoleVariable (
 
   VBoxLogFlowFuncEnter();
   VBoxLogFlowFuncMarkVar(ConVarName, "%s");
-  VBoxLogFlowFuncMarkDP(CustomizedConDevicePath);
-  VBoxLogFlowFuncMarkDP(ExclusiveDevicePath);
   VarConsole      = NULL;
   DevicePathSize  = 0;
 

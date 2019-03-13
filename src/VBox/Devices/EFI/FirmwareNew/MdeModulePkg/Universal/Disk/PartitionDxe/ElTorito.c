@@ -62,9 +62,6 @@ PartitionInstallElToritoChildHandles (
   UINT32                       VolSpaceSize;
   EFI_PARTITION_INFO_PROTOCOL  PartitionInfo;
 
-#ifdef VBOX
-  VBoxLogFlowFuncMarkDP(DevicePath);
-#endif
   Found         = EFI_NOT_FOUND;
   Media         = BlockIo->Media;
 

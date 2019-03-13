@@ -41,10 +41,6 @@
 #include "DevEFI.h"
 #include "iprt/asm.h"
 
-#if 0
-static EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *g_DevPath2Txt;
-#endif
-
 
 VOID EFIAPI
 DebugPrint(IN UINTN ErrorLevel, IN CONST CHAR8 *Format, ...)
@@ -167,76 +163,11 @@ DebugAssert(IN CONST CHAR8 *FileName, IN UINTN LineNumber, IN CONST CHAR8 *Descr
     VBoxPanicMsgString(FileName ? FileName : "<NULL>");
     VBoxPanicMsgString("\nLine:  ");
     VBoxPanicMsgDecimalU32((uint32_t)LineNumber);
-    VBoxPanicMsgString("\nEDescription: ");
+    VBoxPanicMsgString("\nDescription: ");
     VBoxPanicMsgString(Description ? Description : "<NULL>");
     ASMOutU8(EFI_PANIC_PORT, EFI_PANIC_CMD_END_MSG);
 
     SetInterruptState(InterruptState);
-}
-
-CHAR16 *VBoxDebugDevicePath2Str(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)
-{
-#if 0
-    EFI_STATUS rc;
-    if (!g_DevPath2Txt)
-    {
-        rc = gBS->LocateProtocol(&gEfiDevicePathToTextProtocolGuid, NULL, (VOID **)&g_DevPath2Txt);
-        if (EFI_ERROR(rc))
-        {
-            DEBUG((DEBUG_INFO, "gEfiDevicePathToTextProtocolGuid:%g isn't instantied\n", gEfiDevicePathToTextProtocolGuid));
-            return NULL;
-        }
-    }
-    return g_DevPath2Txt->ConvertDevicePathToText(pDevicePath, TRUE, FALSE);
-#else
-    return NULL;
-#endif
-}
-
-CHAR16 *VBoxDebugHandleDevicePath2Str(IN EFI_HANDLE hHandle)
-{
-#if 0
-    EFI_STATUS rc;
-    EFI_DEVICE_PATH_PROTOCOL *pDevicePath = NULL;
-    CHAR16 *psz16TxtDevicePath;
-    rc = gBS->OpenProtocol(hHandle,
-                           &gEfiDevicePathProtocolGuid,
-                           (VOID **)pDevicePath,
-                           NULL,
-                           hHandle,
-                           EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-    if (EFI_ERROR(rc))
-    {
-        DEBUG((DEBUG_INFO, "%a:%d failed(%r) to open Device Path Protocol for Handle %p\n",
-                __FUNCTION__,
-                __LINE__,
-                rc,
-                hHandle));
-        return NULL;
-    }
-    psz16TxtDevicePath = VBoxDebugHandleDevicePath2Str(pDevicePath);
-    return psz16TxtDevicePath;
-#else
-    return NULL;
-#endif
-}
-CHAR16 *VBoxDebugPrintDevicePath(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)
-{
-#if 0
-    EFI_STATUS rc;
-    if (!g_DevPath2Txt)
-    {
-        rc = gBS->LocateProtocol(&gEfiDevicePathToTextProtocolGuid, NULL, (VOID **)&g_DevPath2Txt);
-        if (EFI_ERROR(rc))
-        {
-            DEBUG((DEBUG_INFO, "gEfiDevicePathToTextProtocolGuid:%g isn't instantied\n", gEfiDevicePathToTextProtocolGuid));
-            return NULL;
-        }
-    }
-    return g_DevPath2Txt->ConvertDevicePathToText(pDevicePath, TRUE, FALSE);
-#else
-    return NULL;
-#endif
 }
 
 
