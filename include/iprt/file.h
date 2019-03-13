@@ -139,7 +139,7 @@ RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
 /** Sharing mode mask. */
 #define RTFILE_O_DENY_MASK              UINT32_C(0x000000f0)
 
-/** Action: Open an existing file (the default action). */
+/** Action: Open an existing file. */
 #define RTFILE_O_OPEN                   UINT32_C(0x00000700)
 /** Action: Create a new file or open an existing one. */
 #define RTFILE_O_OPEN_CREATE            UINT32_C(0x00000100)
@@ -242,6 +242,32 @@ RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
 /** @} */
 
 
+/** Action taken by RTFileOpenEx. */
+typedef enum RTFILEACTION
+{
+    /** Invalid zero value.   */
+    RTFILEACTION_INVALID = 0,
+    /** Existing file was opened (returned by RTFILE_O_OPEN and
+     * RTFILE_O_OPEN_CREATE). */
+    RTFILEACTION_OPENED,
+    /** New file was created (returned by RTFILE_O_CREATE and
+     * RTFILE_O_OPEN_CREATE). */
+    RTFILEACTION_CREATED,
+    /** Existing file was replaced (returned by RTFILE_O_CREATE_REPLACE). */
+    RTFILEACTION_REPLACED,
+    /** Existing file was truncated (returned if RTFILE_O_TRUNCATE take effect). */
+    RTFILEACTION_TRUNCATED,
+    /** The file already exists (returned by RTFILE_O_CREATE on failure). */
+    RTFILEACTION_ALREADY_EXISTS,
+    /** End of valid values. */
+    RTFILEACTION_END,
+    /** Type size hack.   */
+    RTFILEACTION_32BIT_HACK = 0x7fffffff
+} RTFILEACTION;
+/** Pointer to action taken value (RTFileOpenEx).    */
+typedef RTFILEACTION *PRTFILEACTION;
+
+
 #ifdef IN_RING3
 /**
  * Force the use of open flags for all files opened after the setting is
@@ -291,6 +317,21 @@ RTDECL(int)  RTFileOpenF(PRTFILE pFile, uint64_t fOpen, const char *pszFilenameF
  * @param   va              Arguments to the format string.
  */
 RTDECL(int)  RTFileOpenV(PRTFILE pFile, uint64_t fOpen, const char *pszFilenameFmt, va_list va) RT_IPRT_FORMAT_ATTR(3, 0);
+
+/**
+ * Open a file, extended version.
+ *
+ * @returns iprt status code.
+ * @param   pszFilename     Path to the file which is to be opened. (UTF-8)
+ * @param   fOpen           Open flags, i.e a combination of the RTFILE_O_* defines.
+ *                          The ACCESS, ACTION and DENY flags are mandatory!
+ * @param   phFile          Where to store the handle to the opened file.
+ * @param   penmActionTaken Where to return an indicator of which action was
+ *                          taken.  This is optional and it is recommended to
+ *                          pass NULL when not strictly needed as it adds
+ *                          complexity (slower) on posix systems.
+ */
+RTDECL(int)  RTFileOpenEx(const char *pszFilename, uint64_t fOpen, PRTFILE phFile, PRTFILEACTION penmActionTaken);
 
 /**
  * Open the bit bucket (aka /dev/null or nul).

@@ -934,6 +934,7 @@
 # define RTFileMove                                     RT_MANGLER(RTFileMove)
 # define RTFileOpen                                     RT_MANGLER(RTFileOpen)
 # define RTFileOpenBitBucket                            RT_MANGLER(RTFileOpenBitBucket)
+# define RTFileOpenEx                                   RT_MANGLER(RTFileOpenEx)
 # define RTFileOpenF                                    RT_MANGLER(RTFileOpenF)
 # define RTFileOpenV                                    RT_MANGLER(RTFileOpenV)
 # define RTFileOpenTemp                                 RT_MANGLER(RTFileOpenTemp)

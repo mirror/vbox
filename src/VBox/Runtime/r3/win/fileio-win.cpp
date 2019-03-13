@@ -165,20 +165,20 @@ RTR3DECL(RTHCINTPTR) RTFileToNative(RTFILE hFile)
 
 RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
 {
+    return RTFileOpenEx(pszFilename, fOpen, pFile, NULL);
+}
+
+
+RTDECL(int) RTFileOpenEx(const char *pszFilename, uint64_t fOpen, PRTFILE phFile, PRTFILEACTION penmActionTaken)
+{
     /*
      * Validate input.
      */
-    if (!pFile)
-    {
-        AssertMsgFailed(("Invalid pFile\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-    *pFile = NIL_RTFILE;
-    if (!pszFilename)
-    {
-        AssertMsgFailed(("Invalid pszFilename\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(phFile, VERR_INVALID_PARAMETER);
+    *phFile = NIL_RTFILE;
+    if (penmActionTaken)
+        *penmActionTaken = RTFILEACTION_INVALID;
+    AssertReturn(pszFilename, VERR_INVALID_PARAMETER);
 
     /*
      * Merge forced open flags and validate them.
@@ -207,8 +207,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
             dwCreationDisposition = CREATE_ALWAYS;
             break;
         default:
-            AssertMsgFailed(("Impossible fOpen=%#llx\n", fOpen));
-            return VERR_INVALID_PARAMETER;
+            AssertMsgFailedReturn(("Impossible fOpen=%#llx\n", fOpen), VERR_INVALID_FLAGS);
     }
 
     DWORD dwDesiredAccess;
@@ -235,8 +234,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
             }
             RT_FALL_THRU();
         default:
-            AssertMsgFailed(("Impossible fOpen=%#llx\n", fOpen));
-            return VERR_INVALID_PARAMETER;
+            AssertMsgFailedReturn(("Impossible fOpen=%#llx\n", fOpen), VERR_INVALID_FLAGS);
     }
     if (dwCreationDisposition == TRUNCATE_EXISTING)
         /* Required for truncating the file (see MSDN), it is *NOT* part of FILE_GENERIC_WRITE. */
@@ -256,8 +254,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
                 case RTFILE_O_WRITE:         dwDesiredAccess |= FILE_WRITE_ATTRIBUTES | SYNCHRONIZE; break;
                 case RTFILE_O_READWRITE:     dwDesiredAccess |= FILE_READ_ATTRIBUTES | FILE_WRITE_ATTRIBUTES | SYNCHRONIZE; break;
                 default:
-                    AssertMsgFailed(("Impossible fOpen=%#llx\n", fOpen));
-                    return VERR_INVALID_PARAMETER;
+                    AssertMsgFailedReturn(("Impossible fOpen=%#llx\n", fOpen), VERR_INVALID_FLAGS);
             }
     }
 
@@ -274,8 +271,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
         case RTFILE_O_DENY_NOT_DELETE | RTFILE_O_DENY_WRITE:    dwShareMode = FILE_SHARE_DELETE | FILE_SHARE_READ; break;
         case RTFILE_O_DENY_NOT_DELETE | RTFILE_O_DENY_READWRITE:dwShareMode = FILE_SHARE_DELETE; break;
         default:
-            AssertMsgFailed(("Impossible fOpen=%#llx\n", fOpen));
-            return VERR_INVALID_PARAMETER;
+            AssertMsgFailedReturn(("Impossible fOpen=%#llx\n", fOpen), VERR_INVALID_FLAGS);
     }
 
     SECURITY_ATTRIBUTES  SecurityAttributes;
@@ -314,35 +310,67 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
                                    dwCreationDisposition,
                                    dwFlagsAndAttributes,
                                    NULL);
+        DWORD const dwErr = GetLastError();
         if (hFile != INVALID_HANDLE_VALUE)
         {
-            bool fCreated = dwCreationDisposition == CREATE_ALWAYS
-                         || dwCreationDisposition == CREATE_NEW
-                         || (dwCreationDisposition == OPEN_ALWAYS && GetLastError() == 0);
+            /*
+             * Calculate the action taken value.
+             */
+            RTFILEACTION enmActionTaken;
+            switch (dwCreationDisposition)
+            {
+                case CREATE_NEW:
+                    enmActionTaken = RTFILEACTION_CREATED;
+                    break;
+                case CREATE_ALWAYS:
+                    AssertMsg(dwErr == ERROR_ALREADY_EXISTS || dwErr == NO_ERROR, ("%u\n", dwErr));
+                    enmActionTaken = dwErr == ERROR_ALREADY_EXISTS ? RTFILEACTION_REPLACED : RTFILEACTION_CREATED;
+                    break;
+                case OPEN_EXISTING:
+                    enmActionTaken = RTFILEACTION_OPENED;
+                    break;
+                case OPEN_ALWAYS:
+                    AssertMsg(dwErr == ERROR_ALREADY_EXISTS || dwErr == NO_ERROR, ("%u\n", dwErr));
+                    enmActionTaken = dwErr == ERROR_ALREADY_EXISTS ? RTFILEACTION_OPENED : RTFILEACTION_CREATED;
+                    break;
+                case TRUNCATE_EXISTING:
+                    enmActionTaken = RTFILEACTION_TRUNCATED;
+                    break;
+                default:
+                    AssertMsgFailed(("%d %#x\n", dwCreationDisposition, dwCreationDisposition));
+                    enmActionTaken = RTFILEACTION_INVALID;
+                    break;
+            }
 
             /*
-             * Turn off indexing of directory through Windows Indexing Service.
+             * Turn off indexing of directory through Windows Indexing Service if
+             * we created a new file or replaced an existing one.
              */
-            if (    fCreated
-                &&  (fOpen & RTFILE_O_NOT_CONTENT_INDEXED))
+            if (   (fOpen & RTFILE_O_NOT_CONTENT_INDEXED)
+                && (   enmActionTaken == RTFILEACTION_CREATED
+                    || enmActionTaken == RTFILEACTION_REPLACED) )
             {
+                /** @todo there must be a way to do this via the handle! */
                 if (!SetFileAttributesW(pwszFilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
                     rc = RTErrConvertFromWin32(GetLastError());
             }
             /*
-             * Do we need to truncate the file?
+             * If RTFILEACTION_OPENED, we may need to truncate the file.
              */
-            else if (    !fCreated
-                     &&     (fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_ACTION_MASK))
-                         == (RTFILE_O_TRUNCATE | RTFILE_O_OPEN_CREATE))
+            else if (  (fOpen & (RTFILE_O_TRUNCATE | RTFILE_O_ACTION_MASK)) == (RTFILE_O_TRUNCATE | RTFILE_O_OPEN_CREATE)
+                     && enmActionTaken == RTFILEACTION_OPENED)
             {
-                if (!SetEndOfFile(hFile))
+                if (SetEndOfFile(hFile))
+                    enmActionTaken = RTFILEACTION_TRUNCATED;
+                else
                     rc = RTErrConvertFromWin32(GetLastError());
             }
+            if (penmActionTaken)
+                *penmActionTaken = enmActionTaken;
             if (RT_SUCCESS(rc))
             {
-                *pFile = (RTFILE)hFile;
-                Assert((HANDLE)*pFile == hFile);
+                *phFile = (RTFILE)hFile;
+                Assert((HANDLE)*phFile == hFile);
                 RTPathWinFree(pwszFilename);
                 return VINF_SUCCESS;
             }
@@ -350,7 +378,13 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint64_t fOpen)
             CloseHandle(hFile);
         }
         else
-            rc = RTErrConvertFromWin32(GetLastError());
+        {
+            if (   penmActionTaken
+                && dwCreationDisposition == CREATE_NEW
+                && dwErr == ERROR_FILE_EXISTS)
+                *penmActionTaken = RTFILEACTION_ALREADY_EXISTS;
+            rc = RTErrConvertFromWin32(dwErr);
+        }
         RTPathWinFree(pwszFilename);
     }
     return rc;
