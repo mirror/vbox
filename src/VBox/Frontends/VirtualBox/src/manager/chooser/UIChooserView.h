@@ -72,6 +72,10 @@ protected:
         virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
     /** @} */
 
+private slots:
+
+    void sltRedoSearch(const QString &strSearchTerm, int iItemSearchFlags);
+
 private:
 
     /** @name Prepare/Cleanup cascade.

@@ -79,6 +79,9 @@ public:
     /** Returns position of specified node inside this one. */
     virtual int positionOf(UIChooserNode *pNode) /* override */;
 
+    /** Updates the @a matchedItems wrt. @strSearchTerm and @a iItemSearchFlags. */
+    virtual void searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems) /* override */;
+
 protected:
 
     /** Handles translation event. */

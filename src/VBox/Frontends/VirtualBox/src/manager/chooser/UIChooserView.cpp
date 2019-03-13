@@ -126,6 +126,19 @@ void UIChooserView::sltMinimumWidthHintChanged(int iHint)
     updateSceneRect();
 }
 
+void UIChooserView::sltRedoSearch(const QString &strSearchTerm, int iItemSearchFlags)
+{
+    if (!m_pChooser)
+        return;
+
+    UIChooserModel *pModel =  m_pChooser->model();
+    if (!pModel)
+        return;
+
+    pModel->performSearch(strSearchTerm, iItemSearchFlags);
+
+}
+
 void UIChooserView::retranslateUi()
 {
     /* Translate this: */
@@ -137,7 +150,7 @@ void UIChooserView::retranslateUi()
 void UIChooserView::prepare()
 {
     /* Install Chooser-view accessibility interface factory: */
-    QAccessible::installFactory(UIAccessibilityInterfaceForUIChooserView::pFactory);
+     QAccessible::installFactory(UIAccessibilityInterfaceForUIChooserView::pFactory);
 
     /* Prepare palette: */
     preparePalette();
@@ -154,6 +167,8 @@ void UIChooserView::prepare()
     /* Create the search widget (hidden): */
     m_pSearchWidget = new UIChooserSearchWidget(this);
     m_pSearchWidget->hide();
+    connect(m_pSearchWidget, &UIChooserSearchWidget::sigRedoSearch,
+                this, &UIChooserView::sltRedoSearch);
 
     /* Update scene-rect: */
     updateSceneRect();

@@ -106,6 +106,9 @@ public:
     /** Returns linked item. */
     UIChooserItem *item() const { return m_pItem.data(); }
 
+    /** Performs search wrt.  @a strSearchTerm and @a iItemSearchFlags and updates @a matchedItems. */
+    virtual void searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems) = 0;
+
 protected:
 
     /** Holds the parent node reference. */

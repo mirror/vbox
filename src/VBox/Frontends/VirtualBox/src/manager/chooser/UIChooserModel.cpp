@@ -451,6 +451,15 @@ void UIChooserModel::updateNavigation()
     m_navigationList = createNavigationList(root());
 }
 
+void UIChooserModel::performSearch(const QString &strSearchTerm, int iItemSearchFlags)
+{
+    if (!m_pInvisibleRootNode || strSearchTerm.isEmpty())
+        return;
+
+    QList<UIChooserNode*> matchedItems;
+    m_pInvisibleRootNode->searchForNodes(strSearchTerm,  iItemSearchFlags, matchedItems);
+}
+
 UIChooserNode *UIChooserModel::invisibleRoot() const
 {
     return m_pInvisibleRootNode;
@@ -778,7 +787,7 @@ void UIChooserModel::sltSortGroup()
     currentItem()->sortItems();
 }
 
-void UIChooserModel::sltMachineSearch()
+void UIChooserModel::sltShowHideSearchWidget()
 {
     UIChooserView *pChooserView = qobject_cast<UIChooserView*>(scene()->views()[0]);
     if (!pChooserView)
@@ -1410,7 +1419,7 @@ void UIChooserModel::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Group_S_Sort), SIGNAL(triggered()),
             this, SLOT(sltSortGroup()));
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_Search), SIGNAL(triggered()),
-            this, SLOT(sltMachineSearch()));
+            this, SLOT(sltShowHideSearchWidget()));
 
     /* Setup group saving connections: */
     connect(this, &UIChooserModel::sigGroupSavingStarted,

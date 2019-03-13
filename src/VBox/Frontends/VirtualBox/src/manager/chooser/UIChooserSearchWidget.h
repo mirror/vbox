@@ -38,7 +38,7 @@ class UIChooserSearchWidget : public QIWithRetranslateUI<QWidget>
 
 signals:
 
-    void sigSearchTermChanged(const QString &strSearchTerm);
+    void sigRedoSearch(const QString &strSearchTerm, int iItemSearchFlags);
 
 public:
 
@@ -52,6 +52,8 @@ protected:
 public slots:
 
 private slots:
+
+    void sltHandleSearchTermChange(const QString &strSearchTerm);
 
 private:
 

@@ -186,6 +186,12 @@ public:
         void updateNavigation();
     /** @} */
 
+    /** @name Virtual Machine/Group search stuff.
+      * @{ */
+        /** Performs a search starting from the m_pInvisibleRootNode. */
+        void performSearch(const QString &strSearchTerm, int iItemSearchFlags);
+    /** @} */
+
     /** @name Children stuff.
       * @{ */
         /** Returns invisible root node instance. */
@@ -276,8 +282,8 @@ private slots:
         void sltEditGroupName();
         /** Handles group sort request. */
         void sltSortGroup();
-        /** Handles machine search request. */
-        void sltMachineSearch();
+        /** Handles machine search widget show/hide request. */
+        void sltShowHideSearchWidget();
         /** Handles group destroy request. */
         void sltUngroupSelectedGroup();
 

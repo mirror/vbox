@@ -130,6 +130,21 @@ int UIChooserNodeMachine::positionOf(UIChooserNode *pNode)
     AssertFailedReturn(0);
 }
 
+void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags,
+                                          QList<UIChooserNode*> &matchedItems)
+{
+    if (!(iItemSearchFlags & UIChooserItemSearchFlag_Machine))
+        return;
+    if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+    {
+        if (name() == strSearchTerm)
+            matchedItems << this;
+        return;
+    }
+    if (name().contains(strSearchTerm, Qt::CaseInsensitive))
+        matchedItems << this;
+}
+
 void UIChooserNodeMachine::retranslateUi()
 {
     /* Update description: */

@@ -187,6 +187,36 @@ void UIChooserNodeGroup::setName(const QString &strName)
         item()->updateItem();
 }
 
+
+void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems)
+{
+
+    if (iItemSearchFlags & UIChooserItemSearchFlag_Group)
+    {
+        if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+        {
+            if (name() == strSearchTerm)
+                matchedItems << this;
+        }
+        else
+        {
+            if (name().contains(strSearchTerm, Qt::CaseInsensitive))
+                matchedItems << this;
+        }
+    }
+
+    foreach (UIChooserNode* pNode, m_nodesGroup)
+        pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
+
+    foreach (UIChooserNode* pNode, m_nodesGlobal)
+        pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
+
+    foreach (UIChooserNode* pNode, m_nodesMachine)
+        pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
+
+}
+
+
 void UIChooserNodeGroup::retranslateUi()
 {
     /* Update description: */

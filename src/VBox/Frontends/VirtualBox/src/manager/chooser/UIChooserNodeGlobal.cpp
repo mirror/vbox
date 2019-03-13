@@ -114,6 +114,22 @@ int UIChooserNodeGlobal::positionOf(UIChooserNode *pNode)
     AssertFailedReturn(0);
 }
 
+void UIChooserNodeGlobal::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems)
+{
+    if (!(iItemSearchFlags & UIChooserItemSearchFlag_Global))
+        return;
+    if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
+    {
+        if (name() == strSearchTerm)
+            matchedItems << this;
+    }
+    else
+    {
+        if (name().contains(strSearchTerm, Qt::CaseInsensitive))
+            matchedItems << this;
+    }
+}
+
 void UIChooserNodeGlobal::retranslateUi()
 {
     /* Translate name: */

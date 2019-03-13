@@ -20,6 +20,7 @@
 
 /* GUI includes: */
 #include "QILineEdit.h"
+#include "UIChooserDefs.h"
 #include "UIChooserSearchWidget.h"
 
 UIChooserSearchWidget::UIChooserSearchWidget(QWidget *pParent)
@@ -53,7 +54,7 @@ void UIChooserSearchWidget::prepareConnections()
     if (m_pLineEdit)
     {
         connect(m_pLineEdit, &QILineEdit::textEdited,
-                this, &UIChooserSearchWidget::sigSearchTermChanged);
+                this, &UIChooserSearchWidget::sltHandleSearchTermChange);
     }
 }
 
@@ -66,4 +67,9 @@ void UIChooserSearchWidget::showEvent(QShowEvent *pEvent)
 
 void UIChooserSearchWidget::retranslateUi()
 {
+}
+
+void UIChooserSearchWidget::sltHandleSearchTermChange(const QString &strSearchTerm)
+{
+    emit sigRedoSearch(strSearchTerm, UIChooserItemSearchFlag_Machine);
 }
