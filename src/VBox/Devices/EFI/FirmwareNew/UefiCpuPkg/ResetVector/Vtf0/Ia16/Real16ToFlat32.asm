@@ -43,11 +43,7 @@ o32 lgdt    [cs:bx]
     mov     eax, SEC_DEFAULT_CR0
     mov     cr0, eax
 
-%ifdef __YASM__ ; VBox
-    jmp     dword LINEAR_CODE_SEL:ADDR_OF(jumpTo32BitAndLandHere)
-%else
     jmp     LINEAR_CODE_SEL:dword ADDR_OF(jumpTo32BitAndLandHere)
-%endif
 BITS    32
 jumpTo32BitAndLandHere:
 

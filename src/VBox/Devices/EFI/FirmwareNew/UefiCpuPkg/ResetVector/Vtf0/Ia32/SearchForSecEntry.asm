@@ -168,11 +168,7 @@ getEntryPointOfFfsFileFoundPe32Section:
     add     ebx, eax
 
     ; if (Hdr.Pe32->Signature == EFI_IMAGE_NT_SIGNATURE)
-%ifdef __YASM__ ; VBox
-    cmp     dword [ebx], 0x00004550
-%else
     cmp     dword [ebx], `PE\x00\x00`
-%endif
     jne     getEntryPointOfFfsFileErrorReturn
 
     ; *EntryPoint = (VOID *)((UINTN)Pe32Data +
