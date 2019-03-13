@@ -735,8 +735,8 @@ static void tstOpenExTest(unsigned uLine, int cbExist, int cbNext, const char *p
             {
                 while (cbExist > 0)
                 {
-                    size_t cbToWrite = strlen(pszFilename);
-                    if ((ssize_t)cbToWrite > cbExist)
+                    int cbToWrite = (int)strlen(pszFilename);
+                    if (cbToWrite > cbExist)
                         cbToWrite = cbExist;
                     rc = RTFileWrite(hFile, pszFilename, cbToWrite, NULL);
                     if (RT_FAILURE(rc))
@@ -785,8 +785,8 @@ static void tstOpenExTest(unsigned uLine, int cbExist, int cbNext, const char *p
 
         while (cbNext > 0)
         {
-            size_t cbToWrite = strlen(pszFilename);
-            if ((ssize_t)cbToWrite > cbNext)
+            int cbToWrite = (int)strlen(pszFilename);
+            if (cbToWrite > cbNext)
                 cbToWrite = cbNext;
             rc = RTFileWrite(hFile, pszFilename, cbToWrite, NULL);
             if (RT_FAILURE(rc))
