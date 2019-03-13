@@ -89,4 +89,9 @@ SET gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize = $(BLOCK_SIZ
 SET gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashNvStorageFtwSpareBase = gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashNvStorageFtwWorkingBase + gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingSize
 SET gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwSpareSize = $(VARS_SPARE_SIZE)
 
+!ifndef $(VBOX)
 DEFINE MEMFD_BASE_ADDRESS = 0x800000
+!else
+# Need to relocate this or it interferes with certain OS X bootloaders breaking OS X guests
+DEFINE MEMFD_BASE_ADDRESS = 0x2000000
+!endif
