@@ -109,7 +109,7 @@ DEFINE MSFT_ASLDLINK_FLAGS     = /NODEFAULTLIB /ENTRY:ReferenceAcpiTable /SUBSYS
 
 *_VS2010_*_MAKE_PATH            = DEF(VS2010_BIN)/nmake.exe
 *_VS2010_*_MAKE_FLAGS           = /nologo
-*_VS2010_*_RC_PATH              = DEF(WINSDK_BIN)/rc.exe
+*_VS2010_*_RC_PATH              = rc.exe
 
 *_VS2010_*_SLINK_FLAGS          = /NOLOGO /LTCG
 *_VS2010_*_APP_FLAGS            = /nologo /E /TC

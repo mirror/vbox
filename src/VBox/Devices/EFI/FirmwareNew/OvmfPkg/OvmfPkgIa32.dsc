@@ -291,7 +291,8 @@
   DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
 !else
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
-!endif  PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
+!endif
+  PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
 !else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
   PeCoffLib|VBoxPkg/Library/VBoxPeCoffLib/VBoxPeCoffLib.inf
@@ -783,7 +784,6 @@
  VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
  # we need it for VBoxAppleSim
  IntelFrameworkModulePkg/Universal/DataHubDxe/DataHubDxe.inf
- MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
 !endif
 
   #
@@ -814,10 +814,10 @@
   OvmfPkg/AcpiTables/AcpiTables.inf
   MdeModulePkg/Universal/Acpi/S3SaveStateDxe/S3SaveStateDxe.inf
   MdeModulePkg/Universal/Acpi/BootScriptExecutorDxe/BootScriptExecutorDxe.inf
-  MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
 !else
   MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatformDxe.inf
 !endif
+  MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
 
   #
   # Network Support
@@ -859,9 +859,7 @@
   #
   # Usb Support
   #
-!ifndef $(VBOX)
   MdeModulePkg/Bus/Pci/UhciDxe/UhciDxe.inf
-!endif
   MdeModulePkg/Bus/Pci/EhciDxe/EhciDxe.inf
   MdeModulePkg/Bus/Pci/XhciDxe/XhciDxe.inf
   MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf
