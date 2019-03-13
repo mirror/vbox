@@ -25523,7 +25523,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="setString">
       <param name="text" type="wstring" dir="in"/>
       <param name="progress" type="IProgress" dir="return"/>
-    </method>    
+    </method>
   </interface>
 
   <interface name="IChoiceFormValue" extends="IFormValue"
@@ -25537,7 +25537,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="setSelectedIndex">
       <param name="index" type="long" dir="in"/>
       <param name="progress" type="IProgress" dir="return"/>
-    </method>    
+    </method>
   </interface>
 
   <interface name="IForm" extends="$unknown"
