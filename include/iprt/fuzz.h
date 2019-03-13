@@ -706,8 +706,8 @@ RTDECL(int) RTFuzzObsSetTestBinarySanitizers(RTFUZZOBS hFuzzObs, uint32_t fSanit
  *
  * @returns IPRT status code.
  * @param   hFuzzObs            The fuzzing observer handle.
- * @param   papszArgs           Pointer to the array of arguments.
- * @param   cArgs               Number of arguments.
+ * @param   msTimeoutMax        The maximum number of milliseconds to wait until the process
+ *                              is considered hung.
  */
 RTDECL(int) RTFuzzObsSetTestBinaryTimeout(RTFUZZOBS hFuzzObs, RTMSINTERVAL msTimeoutMax);
 
