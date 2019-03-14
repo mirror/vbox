@@ -35,6 +35,11 @@
 #include "vfsmod.h"
 #include <iprt/err.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
+# define d_in_lookup(a_pDirEntry)  (d_unhashed(a_pDirEntry))
+#endif
+
+
 
 /**
  * Open a directory (implements file_operations::open).
@@ -902,7 +907,12 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
  * an open call.  We've got this horrid vbsf_inode_info::handle member because
  * of that approach.  The call combines the lookup and open.
  */
-static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry, struct file *file,  unsigned fOpen, umode_t fMode)
+static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry, struct file *file,  unsigned fOpen,
+                                  umode_t fMode
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0)
+                                  , int *opened
+# endif
+                                  )
 {
     SFLOGFLOW(("vbsf_inode_atomic_open: pDirInode=%p dentry=%p file=%p fOpen=%#x, fMode=%#x\n", pDirInode, dentry, file, fOpen, fMode));
     int rc;
@@ -951,9 +961,15 @@ static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry
                  * Set FMODE_CREATED according to the action taken by SHFL_CREATE
                  * and call finish_open() to do the remaining open() work.
                  */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
                 if (fCreated)
                     file->f_mode |= FMODE_CREATED;
                 rc = finish_open(file, dentry, generic_file_open);
+# else
+                if (fCreated)
+                    *opened |= FILE_CREATED;
+                rc = finish_open(file, dentry, generic_file_open, opened);
+# endif
                 if (rc == 0) {
                     /*
                      * Now that the file is fully opened, associate sf_r with it
@@ -1012,21 +1028,27 @@ static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry
 static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, umode_t mode, bool excl)
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
 static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, umode_t mode, struct nameidata *nd)
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 75)
 static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mode, struct nameidata *nd)
 #else
 static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mode)
 #endif
 {
-/** @todo @a nd (struct nameidata) contains intent with partial open flags for
- *        2.6.0-3.5.999.  In 3.6.0 atomic_open was introduced and stuff
- *        changed (investigate)... */
+    uint32_t fCreateFlags = SHFL_CF_ACT_CREATE_IF_NEW
+                          | SHFL_CF_ACT_FAIL_IF_EXISTS
+                          | SHFL_CF_ACCESS_READWRITE;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 75)
+    /* Clear the RD flag if write-only access requested.  Otherwise assume we
+       need write access to create stuff. */
+    if (!(nd->intent.open.flags & 1) ) {
+        fCreateFlags &= SHFL_CF_ACCESS_READWRITE;
+        fCreateFlags |= SHFL_CF_ACCESS_WRITE;
+    }
+    /* (file since 2.6.15) */
+#endif
     TRACE();
     AssertMsg(!(mode & S_IFMT) || (mode & S_IFMT) == S_IFREG, ("0%o\n", mode));
-    return vbsf_create_worker(parent, dentry, (mode & ~S_IFMT) | S_IFREG,
-                                SHFL_CF_ACT_CREATE_IF_NEW
-                              | SHFL_CF_ACT_FAIL_IF_EXISTS
-                              | SHFL_CF_ACCESS_READWRITE,
+    return vbsf_create_worker(parent, dentry, (mode & ~S_IFMT) | S_IFREG, fCreateFlags,
                               true /*fStashHandle*/, false /*fDoLookup*/, NULL /*phHandle*/, NULL /*fCreated*/);
 }
 

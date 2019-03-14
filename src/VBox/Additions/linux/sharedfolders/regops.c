@@ -54,6 +54,10 @@
 # define SEEK_END 2
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+# define iter_is_iovec(a_pIter) ( !((a_pIter)->type & (ITER_KVEC | ITER_BVEC)) )
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -1794,7 +1798,11 @@ static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
      */
     /** @todo This should be handled by the host, it returning the new file
      *        offset when appending.  We may have an outdated i_size value here! */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
     if (kio->ki_flags & IOCB_APPEND)
+#else
+    if (kio->ki_filp->f_flags & O_APPEND)
+#endif
         kio->ki_pos = offFile = i_size_read(inode);
 
     /*
