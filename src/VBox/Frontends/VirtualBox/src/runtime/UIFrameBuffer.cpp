@@ -765,10 +765,10 @@ STDMETHODIMP UIFrameBufferPrivate::NotifyChange(ULONG uScreenId, ULONG uX, ULONG
 
     /* Widget resize is NOT thread-safe and *probably* never will be,
      * We have to notify machine-view with the async-signal to perform resize operation. */
-    LogRel(("GUI: UIFrameBufferPrivate::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
-            (unsigned long)uScreenId,
-            (unsigned long)uX, (unsigned long)uY,
-            (unsigned long)uWidth, (unsigned long)uHeight));
+    LogRel2(("GUI: UIFrameBufferPrivate::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
+             (unsigned long)uScreenId,
+             (unsigned long)uX, (unsigned long)uY,
+             (unsigned long)uWidth, (unsigned long)uHeight));
     emit sigNotifyChange(uWidth, uHeight);
 
     /* Unlock access to frame-buffer: */
@@ -1067,7 +1067,7 @@ STDMETHODIMP UIFrameBufferPrivate::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYT
 
 void UIFrameBufferPrivate::handleNotifyChange(int iWidth, int iHeight)
 {
-    LogRel(("GUI: UIFrameBufferPrivate::handleNotifyChange: Size=%dx%d\n", iWidth, iHeight));
+    LogRel2(("GUI: UIFrameBufferPrivate::handleNotifyChange: Size=%dx%d\n", iWidth, iHeight));
 
     /* Make sure machine-view is assigned: */
     AssertPtrReturnVoid(m_pMachineView);
@@ -1179,8 +1179,8 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
     /* If source-bitmap invalid: */
     if (m_sourceBitmap.isNull())
     {
-        LogRel(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d, "
-                "Using fallback buffer since no source bitmap is provided\n", iWidth, iHeight));
+        LogRel(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d, Using fallback buffer since no source bitmap is provided\n",
+                iWidth, iHeight));
 
         /* Remember new size came from hint: */
         m_iWidth = iWidth;
@@ -1193,8 +1193,8 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
     /* If source-bitmap valid: */
     else
     {
-        LogRel(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d, "
-                "Directly using source bitmap content\n", iWidth, iHeight));
+        LogRel2(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d, Directly using source bitmap content\n",
+                 iWidth, iHeight));
 
         /* Acquire source-bitmap attributes: */
         BYTE *pAddress = NULL;

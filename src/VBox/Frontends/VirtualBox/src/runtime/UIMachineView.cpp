@@ -337,8 +337,8 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
 
 void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 {
-    LogRel(("GUI: UIMachineView::sltHandleNotifyChange: Screen=%d, Size=%dx%d\n",
-            (unsigned long)m_uScreenId, iWidth, iHeight));
+    LogRel2(("GUI: UIMachineView::sltHandleNotifyChange: Screen=%d, Size=%dx%d\n",
+             (unsigned long)m_uScreenId, iWidth, iHeight));
 
     /* Some situations require frame-buffer resize-events to be ignored at all,
      * leaving machine-window, machine-view and frame-buffer sizes preserved: */
@@ -1034,9 +1034,8 @@ QSize UIMachineView::guestScreenSizeHint() const
 void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
 {
     /* Save guest-screen size-hint: */
-    LogRel(("GUI: UIMachineView::storeGuestSizeHint: "
-            "Storing guest-screen size-hint for screen %d as %dx%d\n",
-            (int)screenId(), sizeHint.width(), sizeHint.height()));
+    LogRel2(("GUI: UIMachineView::storeGuestSizeHint: Storing guest-screen size-hint for screen %d as %dx%d\n",
+             (int)screenId(), sizeHint.width(), sizeHint.height()));
     gEDataManager->setLastGuestScreenSizeHint(m_uScreenId, sizeHint, vboxGlobal().managedVMUuid());
 }
 

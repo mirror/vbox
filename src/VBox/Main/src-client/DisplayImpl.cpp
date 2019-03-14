@@ -918,8 +918,8 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
                                    uint32_t cbLine, uint32_t w, uint32_t h, uint16_t flags,
                                    int32_t xOrigin, int32_t yOrigin, bool fVGAResize)
 {
-    LogRel(("Display::handleDisplayResize: uScreenId=%d pvVRAM=%p w=%d h=%d bpp=%d cbLine=0x%X flags=0x%X\n", uScreenId,
-            pvVRAM, w, h, bpp, cbLine, flags));
+    LogRel2(("Display::i_handleDisplayResize: uScreenId=%d pvVRAM=%p w=%d h=%d bpp=%d cbLine=0x%X flags=0x%X\n", uScreenId,
+             pvVRAM, w, h, bpp, cbLine, flags));
 
     /* Caller must not hold the object lock. */
     AssertReturn(!isWriteLockOnCurrentThread(), VERR_INVALID_STATE);
@@ -956,7 +956,11 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (uScreenId >= mcMonitors)
+    {
+        LogRel(("Display::i_handleDisplayResize: mcMonitors=%u < uScreenId=%u (pvVRAM=%p w=%u h=%u bpp=%d cbLine=0x%X flags=0x%X)\n",
+                mcMonitors, uScreenId, pvVRAM, w, h, bpp, cbLine, flags));
         return VINF_SUCCESS;
+    }
 
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[uScreenId];
 
@@ -992,6 +996,18 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
         w = pFBInfo->w;
         h = pFBInfo->h;
     }
+
+    /* Log changes. */
+    if (   pFBInfo->w != w
+        || pFBInfo->h != h
+        || pFBInfo->u32LineSize != cbLine
+        /*|| pFBInfo->pu8FramebufferVRAM != (uint8_t *)pvVRAM - too noisy */
+        || (   !fVGAResize
+            && (   pFBInfo->xOrigin != xOrigin
+                || pFBInfo->yOrigin != yOrigin
+                || pFBInfo->flags != flags)))
+        LogRel(("Display::i_handleDisplayResize: uScreenId=%d pvVRAM=%p w=%d h=%d bpp=%d cbLine=0x%X flags=0x%X origin=%d,%d\n",
+                uScreenId, pvVRAM, w, h, bpp, cbLine, flags, xOrigin, yOrigin));
 
     /* Update the video mode information. */
     pFBInfo->w = w;

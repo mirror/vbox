@@ -2215,10 +2215,10 @@ int VBVAInfoScreen(PVGASTATE pVGAState, const VBVAINFOSCREEN RT_UNTRUSTED_VOLATI
     VBVAINFOSCREEN screen;
     RT_COPY_VOLATILE(screen, *pScreen);
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
-    LogRel(("VBVA: InfoScreen: [%d] @%d,%d %dx%d, line 0x%x, BPP %d, flags 0x%x\n",
-            screen.u32ViewIndex, screen.i32OriginX, screen.i32OriginY,
-            screen.u32Width, screen.u32Height,
-            screen.u32LineSize, screen.u16BitsPerPixel, screen.u16Flags));
+    LogRel2(("VBVA: InfoScreen: [%d] @%d,%d %dx%d, line 0x%x, BPP %d, flags 0x%x\n",
+             screen.u32ViewIndex, screen.i32OriginX, screen.i32OriginY,
+             screen.u32Width, screen.u32Height,
+             screen.u32LineSize, screen.u16BitsPerPixel, screen.u16Flags));
 
     /*
      * Validate input.
