@@ -72,15 +72,15 @@ void UIImageTools::dimImage(QImage &image)
     }
 }
 
-void UIImageTools::blurImage(const QImage &source, QImage &destinatiion, int iRadius)
+void UIImageTools::blurImage(const QImage &source, QImage &destination, int iRadius)
 {
     /* Blur in two steps, first horizontal and then vertical: */
     QImage tmpImage(source.size(), QImage::Format_ARGB32);
     blurImageHorizontal(source, tmpImage, iRadius);
-    blurImageVertical(tmpImage, destinatiion, iRadius);
+    blurImageVertical(tmpImage, destination, iRadius);
 }
 
-void UIImageTools::blurImageHorizontal(const QImage &source, QImage &destinatiion, int iRadius)
+void UIImageTools::blurImageHorizontal(const QImage &source, QImage &destination, int iRadius)
 {
     QSize s = source.size();
     for (int y = 0; y < s.height(); ++y)
@@ -94,7 +94,7 @@ void UIImageTools::blurImageHorizontal(const QImage &source, QImage &destinatiio
          * much faster than accessing every pixel with the QImage::pixel
          * method. Unfortunately this doesn't work in the vertical case. */
         QRgb *ssl = (QRgb*)source.scanLine(y);
-        QRgb *dsl = (QRgb*)destinatiion.scanLine(y);
+        QRgb *dsl = (QRgb*)destination.scanLine(y);
         /* First process the horizontal zero line at once: */
         int b = iRadius + 1;
         for (int x1 = 0; x1 <= iRadius; ++x1)
@@ -142,9 +142,10 @@ void UIImageTools::blurImageHorizontal(const QImage &source, QImage &destinatiio
     }
 }
 
-void UIImageTools::blurImageVertical(const QImage &source, QImage &destinatiion, int iRadius)
+void UIImageTools::blurImageVertical(const QImage &source, QImage &destination, int iRadius)
 {
     QSize s = source.size();
+    destination = QImage(s, source.format());
     for (int x = 0; x < s.width(); ++x)
     {
         int rt = 0;
@@ -163,7 +164,7 @@ void UIImageTools::blurImageVertical(const QImage &source, QImage &destinatiion,
             at += qAlpha(rgba);
         }
         /* Set the new weighted pixel: */
-        destinatiion.setPixel(x, 0, qRgba(rt / b, gt / b, bt / b, at / b));
+        destination.setPixel(x, 0, qRgba(rt / b, gt / b, bt / b, at / b));
 
         /* Now process the rest: */
         for (int y = 1; y < s.height(); ++y)
@@ -192,7 +193,7 @@ void UIImageTools::blurImageVertical(const QImage &source, QImage &destinatiion,
                 at += qAlpha(rgba);
             }
             /* Set the new weighted pixel: */
-            destinatiion.setPixel(x, y, qRgba(rt / b, gt / b, bt / b, at / b));
+            destination.setPixel(x, y, qRgba(rt / b, gt / b, bt / b, at / b));
         }
     }
 }

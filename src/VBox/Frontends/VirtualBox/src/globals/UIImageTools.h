@@ -38,11 +38,11 @@ namespace UIImageTools
     SHARED_LIBRARY_STUFF void dimImage(QImage &image);
 
     /** Blurs passed @a source image to @a destination cropping by certain @a iRadius. */
-    void blurImage(const QImage &source, QImage &destination, int iRadius);
+    SHARED_LIBRARY_STUFF void blurImage(const QImage &source, QImage &destination, int iRadius);
     /** Blurs passed @a source image horizontally to @a destination cropping by certain @a iRadius. */
-    void blurImageHorizontal(const QImage &source, QImage &destination, int iRadius);
+    SHARED_LIBRARY_STUFF void blurImageHorizontal(const QImage &source, QImage &destination, int iRadius);
     /** Blurs passed @a source image vertically to @a destination cropping by certain @a iRadius. */
-    void blurImageVertical(const QImage &source, QImage &destination, int iRadius);
+    SHARED_LIBRARY_STUFF void blurImageVertical(const QImage &source, QImage &destination, int iRadius);
 
     /** Applies BET-label of passed @a size. */
     SHARED_LIBRARY_STUFF QPixmap betaLabel(const QSize &size = QSize(80, 16));

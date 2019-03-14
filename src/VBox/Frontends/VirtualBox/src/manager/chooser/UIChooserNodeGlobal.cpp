@@ -118,6 +118,13 @@ void UIChooserNodeGlobal::searchForNodes(const QString &strSearchTerm, int iItem
 {
     if (!(iItemSearchFlags & UIChooserItemSearchFlag_Global))
         return;
+
+    if (strSearchTerm.isEmpty())
+    {
+        matchedItems << this;
+        return;
+    }
+
     if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
     {
         if (name() == strSearchTerm)

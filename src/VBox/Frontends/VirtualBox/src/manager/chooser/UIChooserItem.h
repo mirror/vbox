@@ -22,6 +22,7 @@
 #endif
 
 /* Qt includes: */
+#include <QGraphicsEffect>
 #include <QMimeData>
 #include <QRectF>
 #include <QString>
@@ -47,6 +48,21 @@ class UIChooserItemGlobal;
 class UIChooserItemMachine;
 class UIChooserModel;
 class UIChooserNode;
+
+/** A simple QGraphicsEffect extension to mark disabled UIChooserItems. Applies blur and gray scale filters. */
+class UIChooserDisabledItemEffect : public QGraphicsEffect
+{
+    Q_OBJECT;
+
+public:
+
+    UIChooserDisabledItemEffect(int iBlurRadius, QObject *pParent = 0);
+
+protected:
+
+    virtual void draw(QPainter *painter);
+    int m_iBlurRadius;
+};
 
 
 /** QIGraphicsWidget extension used as interface
@@ -141,6 +157,8 @@ public:
         /** Installs event-filter for @a pSource object.
           * @note  Base-class implementation does nothing. */
         virtual void installEventFilterHelper(QObject *pSource) { Q_UNUSED(pSource); }
+        /** Enables the visual effect for disabled item. */
+        void disableEnableItem(bool fDisabled);
     /** @} */
 
     /** @name Children stuff.
@@ -317,6 +335,8 @@ private:
         int                 m_iHoveredValue;
         /** Holds the animated value. */
         int                 m_iAnimatedValue;
+        /** Holds the pointer to blur effect instance. */
+        UIChooserDisabledItemEffect *m_pDisabledEffect;
     /** @} */
 
     /** @name Layout stuff.

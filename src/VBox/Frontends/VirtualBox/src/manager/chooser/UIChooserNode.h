@@ -106,8 +106,14 @@ public:
     /** Returns linked item. */
     UIChooserItem *item() const { return m_pItem.data(); }
 
-    /** Performs search wrt. @a strSearchTerm and @a iItemSearchFlags and updates @a matchedItems. */
+    /** Performs search wrt. @a strSearchTerm and @a iItemSearchFlags and updates @a matchedItems. For an empty
+      * @a strSearchTerm all items are added wrt. node type from @a iItemSearchFlags. */
     virtual void searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems) = 0;
+
+    /** Returns if node is disabled. */
+    bool isDisabled() const;
+    /** Sets the disabled flag. */
+    void setDisabled(bool fDisabled);
 
 protected:
 
@@ -121,6 +127,10 @@ protected:
 
     /** Holds item description. */
     QString  m_strDescription;
+
+    /** Holds the flag to indicate whether the node is disabled or not. */
+    bool m_fDisabled;
+
 };
 
 

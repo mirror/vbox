@@ -135,6 +135,13 @@ void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iIte
 {
     if (!(iItemSearchFlags & UIChooserItemSearchFlag_Machine))
         return;
+
+    if (strSearchTerm.isEmpty())
+    {
+        matchedItems << this;
+        return;
+    }
+
     if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
     {
         if (name() == strSearchTerm)
