@@ -890,6 +890,7 @@ VBoxGlobal_QT_MOCHDRS = \
 	src/widgets/UISlidingToolBar.h \
 	src/widgets/UISpecialControls.h \
 	src/widgets/UIStatusBarEditorWindow.h \
+	src/widgets/UISearchLineEdit.h \
 	src/widgets/UIToolBar.h \
 	src/widgets/UIWarningPane.h \
 	src/wizards/UIWizard.h \
@@ -977,7 +978,6 @@ VBoxGlobal_QT_MOCSRCS = \
 	src/logviewer/UIVMLogViewerSearchPanel.cpp \
 	src/logviewer/UIVMLogViewerTextEdit.cpp \
 	src/medium/UIMediumEnumerator.cpp \
-	src/medium/UIMediumSearchWidget.cpp \
 	src/medium/viso/UIVisoContentBrowser.cpp \
 	src/medium/viso/UIVisoHostBrowser.cpp \
 	src/medium/viso/UIVisoBrowserBase.cpp \
@@ -1365,6 +1365,7 @@ VBoxGlobal_SOURCES = \
 	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UIScaleFactorEditor.cpp \
+	src/widgets/UISearchLineEdit.cpp \
 	src/widgets/UISlidingToolBar.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIStatusBarEditorWindow.cpp \

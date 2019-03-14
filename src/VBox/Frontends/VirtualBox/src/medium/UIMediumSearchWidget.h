@@ -31,7 +31,6 @@ class QIToolButton;
 class QITreeWidget;
 class UISearchLineEdit;
 
-
 /** QWidget extension providing a simple way to enter a earch term and search type for medium searching
  *  in virtual media manager, medium selection dialog, etc. */
 class  SHARED_LIBRARY_STUFF UIMediumSearchWidget : public QIWithRetranslateUI<QWidget>
