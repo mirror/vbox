@@ -561,10 +561,15 @@ struct file_operations vbsf_dir_fops = {
 #endif
 };
 
-/* iops */
+
+
+/*********************************************************************************************************************************
+*   Directory Inode Operations                                                                                                   *
+*********************************************************************************************************************************/
 
 /**
- * Worker for vbsf_inode_lookup() and vbsf_inode_instantiate().
+ * Worker for vbsf_inode_lookup(), vbsf_create_worker() and
+ * vbsf_inode_instantiate().
  */
 static struct inode *vbsf_create_inode(struct inode *parent, struct dentry *dentry, PSHFLSTRING path,
                                        PSHFLFSOBJINFO pObjInfo, struct vbsf_super_info *sf_g, bool fInstantiate)
@@ -613,6 +618,20 @@ static struct inode *vbsf_create_inode(struct inode *parent, struct dentry *dent
         LogRelFunc(("could not allocate memory for new inode info\n"));
     return NULL;
 }
+
+
+/** Helper for vbsf_create_worker() and vbsf_inode_lookup() that wraps
+ *  d_add() and setting d_op. */
+DECLINLINE(void) vbsf_d_add_inode(struct dentry *dentry, struct inode *pNewInode)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
+    Assert(dentry->d_op == &vbsf_dentry_ops); /* (taken from the superblock) */
+#else
+    dentry->d_op = &vbsf_dentry_ops;
+#endif
+    d_add(dentry, pNewInode);
+}
+
 
 /**
  * This is called when vfs failed to locate dentry in the cache. The
@@ -701,12 +720,7 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
              */
             if (dret == dentry) {
                 vbsf_dentry_set_update_jiffies(dentry, jiffies);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
-                Assert(dentry->d_op == &vbsf_dentry_ops); /* (taken from the superblock) */
-#else
-                dentry->d_op = &vbsf_dentry_ops;
-#endif
-                d_add(dentry, pInode);
+                vbsf_d_add_inode(dentry, pInode);
                 dret = NULL;
             }
         } else
@@ -717,6 +731,7 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
         dret = (struct dentry *)ERR_PTR(rc);
     return dret;
 }
+
 
 /**
  * This should allocate memory for vbsf_inode_info, compute a unique inode
@@ -744,106 +759,245 @@ static int vbsf_inode_instantiate(struct inode *parent, struct dentry *dentry, P
     return -ENOMEM;
 }
 
+
 /**
  * Create a new regular file / directory.
  *
  * @param parent        inode of the directory
  * @param dentry        directory cache entry
  * @param mode          file mode
- * @param fDirectory    true if directory, false otherwise
+ * @param fCreateFlags  SHFL_CF_XXX.
  * @returns 0 on success, Linux error code otherwise
  */
-static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode_t mode, int fDirectory)
+static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode_t mode, uint32_t fCreateFlags,
+                              bool fStashHandle, bool fDoLookup, SHFLHANDLE *phHostFile, bool *pfCreated)
+
 {
-    int rc, err;
+#ifdef SFLOG_ENABLED
+    const char * const      pszPrefix   = S_ISDIR(mode) ? "vbsf_create_worker/dir:" : "vbsf_create_worker/file:";
+#endif
     struct vbsf_inode_info *sf_parent_i = VBSF_GET_INODE_INFO(parent);
-    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
-    SHFLSTRING *path;
-    union CreateAuxReq
-    {
-        VBOXSFCREATEREQ Create;
-        VBOXSFCLOSEREQ  Close;
-    } *pReq;
+    struct vbsf_super_info *sf_g        = VBSF_GET_SUPER_INFO(parent->i_sb);
+    PSHFLSTRING             path;
+    int                     rc;
 
-    TRACE();
-    BUG_ON(!sf_parent_i);
-    BUG_ON(!sf_g);
-
-    err = vbsf_path_from_dentry(__func__, sf_g, sf_parent_i, dentry, &path);
-    if (err)
-        goto fail0;
-
-    /** @todo combine with vbsf_path_from_dentry? */
-    pReq = (union CreateAuxReq *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + path->u16Size);
-    if (pReq) {
-        memcpy(&pReq->Create.StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
-    } else {
-        err = -ENOMEM;
-        goto fail1;
-    }
-
-    RT_ZERO(pReq->Create.CreateParms);
-    pReq->Create.CreateParms.Handle                  = SHFL_HANDLE_NIL;
-    pReq->Create.CreateParms.CreateFlags             = SHFL_CF_ACT_CREATE_IF_NEW
-                                                     | SHFL_CF_ACT_FAIL_IF_EXISTS
-                                                     | SHFL_CF_ACCESS_READWRITE
-                                                     | (fDirectory ? SHFL_CF_DIRECTORY : 0);
-    pReq->Create.CreateParms.Info.Attr.fMode         = (fDirectory ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE)
-                                                     | sf_access_permissions_to_vbox(mode);
-    pReq->Create.CreateParms.Info.Attr.enmAdditional = RTFSOBJATTRADD_NOTHING;
-
-    LogFunc(("calling VbglR0SfHostReqCreate, folder %s, flags %#x\n", path->String.ach, pReq->Create.CreateParms.CreateFlags));
-    rc = VbglR0SfHostReqCreate(sf_g->map.root, &pReq->Create);
-    if (RT_FAILURE(rc)) {
-        err = -RTErrConvertToErrno(rc);
-        LogFunc(("(%d): SHFL_FN_CREATE(%s) failed rc=%Rrc err=%d\n", fDirectory, sf_parent_i->path->String.utf8, rc, err));
-        goto fail2;
-    }
-
-    if (pReq->Create.CreateParms.Result != SHFL_FILE_CREATED) {
-        err = -EPERM;
-        LogFunc(("(%d): could not create file %s result=%d\n",
-             fDirectory, sf_parent_i->path->String.utf8, pReq->Create.CreateParms.Result));
-        goto fail2;
-    }
-
-    vbsf_dentry_chain_increase_parent_ttl(dentry);
-
-    err = vbsf_inode_instantiate(parent, dentry, path, &pReq->Create.CreateParms.Info,
-                                 fDirectory ? SHFL_HANDLE_NIL : pReq->Create.CreateParms.Handle);
-    if (err) {
-        LogFunc(("(%d): could not instantiate dentry for %s err=%d\n", fDirectory, path->String.utf8, err));
-        goto fail3;
-    }
+    AssertReturn(sf_parent_i, -EINVAL);
+    AssertReturn(sf_g, -EINVAL);
 
     /*
-     * Don't close this handle right now. We assume that the same file is
-     * opened with vbsf_reg_open() and later closed with sf_reg_close(). Save
-     * the handle in between. Does not apply to directories. True?
+     * Build a path.  We'll donate this to the inode on success.
      */
-    if (fDirectory) {
-        AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
-        rc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pReq->Create.CreateParms.Handle);
-        if (RT_FAILURE(rc))
-            LogFunc(("(%d): VbglR0SfHostReqClose failed rc=%Rrc\n", fDirectory, rc));
+    rc = vbsf_path_from_dentry(__func__, sf_g, sf_parent_i, dentry, &path);
+    if (rc == 0) {
+        /*
+         * Allocate, initialize and issue the SHFL_CREATE request.
+         */
+        /** @todo combine with vbsf_path_from_dentry? */
+        union CreateAuxReq
+        {
+            VBOXSFCREATEREQ Create;
+            VBOXSFCLOSEREQ  Close;
+        } *pReq = (union CreateAuxReq *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + path->u16Size);
+        if (pReq) {
+            memcpy(&pReq->Create.StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
+
+            RT_ZERO(pReq->Create.CreateParms);
+            pReq->Create.CreateParms.Handle                  = SHFL_HANDLE_NIL;
+            pReq->Create.CreateParms.CreateFlags             = fCreateFlags;
+            pReq->Create.CreateParms.Info.Attr.fMode         = (S_ISDIR(mode) ? RTFS_TYPE_DIRECTORY : RTFS_TYPE_FILE)
+                                                             | sf_access_permissions_to_vbox(mode);
+            pReq->Create.CreateParms.Info.Attr.enmAdditional = RTFSOBJATTRADD_NOTHING;
+
+            SFLOGFLOW(("%s calling VbglR0SfHostReqCreate(%s, %#x)\n", pszPrefix, path->String.ach, pReq->Create.CreateParms.CreateFlags));
+            rc = VbglR0SfHostReqCreate(sf_g->map.root, &pReq->Create);
+            if (RT_SUCCESS(rc)) {
+                SFLOGFLOW(("%s VbglR0SfHostReqCreate returned %Rrc Result=%d Handle=%#llx\n",
+                           pszPrefix, rc, pReq->Create.CreateParms.Result, pReq->Create.CreateParms.Handle));
+
+                /*
+                 * Work the dentry cache and inode restatting.
+                 */
+                if (   pReq->Create.CreateParms.Result == SHFL_FILE_CREATED
+                    || pReq->Create.CreateParms.Result == SHFL_FILE_REPLACED) {
+                    vbsf_dentry_chain_increase_parent_ttl(dentry);
+                    sf_parent_i->force_restat = 1;
+                } else if (   pReq->Create.CreateParms.Result == SHFL_FILE_EXISTS
+                           || pReq->Create.CreateParms.Result == SHFL_FILE_NOT_FOUND)
+                    vbsf_dentry_chain_increase_parent_ttl(dentry);
+
+                /*
+                 * If we got a handle back, we're good.  Create an inode for it and return.
+                 */
+                if (pReq->Create.CreateParms.Handle != SHFL_HANDLE_NIL) {
+                    struct inode *pNewInode = vbsf_create_inode(parent, dentry, path, &pReq->Create.CreateParms.Info, sf_g,
+                                                                !fDoLookup /*fInstantiate*/);
+                    if (pNewInode) {
+                        struct vbsf_inode_info *sf_new_i = VBSF_GET_INODE_INFO(pNewInode);
+                        if (phHostFile) {
+                            *phHostFile = pReq->Create.CreateParms.Handle;
+                            pReq->Create.CreateParms.Handle = SHFL_HANDLE_NIL;
+                        } else if (fStashHandle) {
+                            sf_new_i->handle = pReq->Create.CreateParms.Handle;
+                            pReq->Create.CreateParms.Handle = SHFL_HANDLE_NIL;
+                        }
+                        if (fDoLookup)
+                            vbsf_d_add_inode(dentry, pNewInode);
+                        path = NULL;
+                    } else {
+                        SFLOGFLOW(("%s vbsf_create_inode failed: -ENOMEM (path %s)\n", pszPrefix, rc, path->String.ach));
+                        rc = -ENOMEM;
+                    }
+                } else if (pReq->Create.CreateParms.Result == SHFL_FILE_EXISTS) {
+                    /*
+                     * For atomic_open (at least), we should create an inode and
+                     * convert the dentry from a negative to a positive one.
+                     */
+                    SFLOGFLOW(("%s SHFL_FILE_EXISTS for %s\n", pszPrefix, sf_parent_i->path->String.ach));
+                    if (fDoLookup) {
+                        struct inode *pNewInode = vbsf_create_inode(parent, dentry, path, &pReq->Create.CreateParms.Info,
+                                                                    sf_g, false /*fInstantiate*/);
+                        if (pNewInode)
+                            vbsf_d_add_inode(dentry, pNewInode);
+                        path = NULL;
+                    }
+                    rc = -EEXIST;
+                } else if (pReq->Create.CreateParms.Result == SHFL_FILE_NOT_FOUND) {
+                    SFLOGFLOW(("%s SHFL_FILE_NOT_FOUND for %s\n", pszPrefix, sf_parent_i->path->String.ach));
+                    rc = -ENOENT;
+                } else if (pReq->Create.CreateParms.Result == SHFL_PATH_NOT_FOUND) {
+                    SFLOGFLOW(("%s SHFL_PATH_NOT_FOUND for %s\n", pszPrefix, sf_parent_i->path->String.ach));
+                    rc = -ENOENT;
+                } else {
+                    AssertMsgFailed(("result=%d creating '%s'\n", pReq->Create.CreateParms.Result, sf_parent_i->path->String.ach));
+                    rc = -EPERM;
+                }
+            } else {
+                int const vrc = rc;
+                rc = -RTErrConvertToErrno(vrc);
+                SFLOGFLOW(("%s SHFL_FN_CREATE(%s) failed vrc=%Rrc rc=%d\n", pszPrefix, path->String.ach, vrc, rc));
+            }
+
+            /* Cleanups. */
+            if (pReq->Create.CreateParms.Handle != SHFL_HANDLE_NIL) {
+                AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
+                int rc2 = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pReq->Create.CreateParms.Handle);
+                if (RT_FAILURE(rc2))
+                    SFLOGFLOW(("%s VbglR0SfHostReqCloseSimple failed rc=%Rrc\n", pszPrefix, rc2));
+            }
+            VbglR0PhysHeapFree(pReq);
+        } else
+            rc = -ENOMEM;
+        if (path)
+            kfree(path);
     }
-
-    sf_parent_i->force_restat = 1;
-    VbglR0PhysHeapFree(pReq);
-    return 0;
-
- fail3:
-    rc = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pReq->Create.CreateParms.Handle);
-    if (RT_FAILURE(rc))
-        LogFunc(("(%d): VbglR0SfHostReqCloseSimple failed rc=%Rrc\n", fDirectory, rc));
- fail2:
-    VbglR0PhysHeapFree(pReq);
- fail1:
-    kfree(path);
-
- fail0:
-    return err;
+    return rc;
 }
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+/**
+ * More atomic way of handling creation.
+ *
+ * Older kernels would first to a lookup that created the file, followed by
+ * an open call.  We've got this horrid vbsf_inode_info::handle member because
+ * of that approach.  The call combines the lookup and open.
+ */
+static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry, struct file *file,  unsigned fOpen, umode_t fMode)
+{
+    SFLOGFLOW(("vbsf_inode_atomic_open: pDirInode=%p dentry=%p file=%p fOpen=%#x, fMode=%#x\n", pDirInode, dentry, file, fOpen, fMode));
+    int rc;
+
+    /* Code assumes negative dentry. */
+    Assert(dentry->d_inode == NULL);
+
+    /** @todo see if we can do this for non-create calls too, as it may save us a
+     *        host call to revalidate the dentry. (Can't see anyone else doing
+     *        this, so playing it safe for now.) */
+    if (fOpen & O_CREAT) {
+        /*
+         * Prepare our file info structure.
+         */
+        struct vbsf_reg_info *sf_r = kmalloc(sizeof(*sf_r), GFP_KERNEL);
+        if (sf_r) {
+            bool     fCreated = false;
+            uint32_t fCreateFlags;
+
+            RTListInit(&sf_r->Handle.Entry);
+            sf_r->Handle.cRefs  = 1;
+            sf_r->Handle.fFlags = !(fOpen & O_DIRECTORY)
+                                 ? VBSF_HANDLE_F_FILE | VBSF_HANDLE_F_MAGIC
+                                 : VBSF_HANDLE_F_DIR  | VBSF_HANDLE_F_MAGIC;
+            sf_r->Handle.hHost  = SHFL_HANDLE_NIL;
+
+            /*
+             * Try create it.
+             */
+            /* vbsf_create_worker uses the type from fMode, so match it up to O_DIRECTORY. */
+            AssertMsg(!(fMode & S_IFMT) || (fMode & S_IFMT) == (fOpen & O_DIRECTORY ? S_IFDIR : S_IFREG), ("0%o\n", fMode));
+            if (!(fOpen & O_DIRECTORY))
+                fMode = (fMode & ~S_IFMT) | S_IFREG;
+            else
+                fMode = (fMode & ~S_IFMT) | S_IFDIR;
+
+            fCreateFlags = vbsf_linux_oflags_to_vbox(fOpen, &sf_r->Handle.fFlags, __FUNCTION__);
+
+            rc = vbsf_create_worker(pDirInode, dentry, fMode, fCreateFlags, false /*fStashHandle*/, true /*fDoLookup*/,
+                                    &sf_r->Handle.hHost, &fCreated);
+            if (rc == 0) {
+                struct inode           *inode = dentry->d_inode;
+                struct vbsf_inode_info *sf_i  = VBSF_GET_INODE_INFO(inode);
+
+                /*
+                 * Set FMODE_CREATED according to the action taken by SHFL_CREATE
+                 * and call finish_open() to do the remaining open() work.
+                 */
+                if (fCreated)
+                    file->f_mode |= FMODE_CREATED;
+                rc = finish_open(file, dentry, generic_file_open);
+                if (rc == 0) {
+                    /*
+                     * Now that the file is fully opened, associate sf_r with it
+                     * and link the handle to the inode.
+                     */
+                    vbsf_handle_append(sf_i, &sf_r->Handle);
+                    file->private_data = sf_r;
+                    SFLOGFLOW(("vbsf_inode_atomic_open: create succeeded; hHost=%#llx path='%s'\n",
+                               rc, sf_r->Handle.hHost, sf_i->path->String.ach));
+                    sf_r = NULL; /* don't free it */
+                } else {
+                    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(pDirInode->i_sb);
+                    SFLOGFLOW(("vbsf_inode_atomic_open: finish_open failed: %d (path='%s'\n", rc, sf_i->path->String.ach));
+                    VbglR0SfHostReqCloseSimple(sf_g->map.root, sf_r->Handle.hHost);
+                    sf_r->Handle.hHost = SHFL_HANDLE_NIL;
+                }
+            } else
+                SFLOGFLOW(("vbsf_inode_atomic_open: vbsf_create_worker failed: %d\n", rc));
+            if (sf_r)
+                kfree(sf_r);
+        } else {
+            LogRelMaxFunc(64, ("could not allocate reg info\n"));
+            rc = -ENOMEM;
+        }
+    }
+    /*
+     * Not creating anything.
+     * Do we need to do a lookup or should we just fail?
+     */
+    else if (d_in_lookup(dentry)) {
+        struct dentry *pResult = vbsf_inode_lookup(pDirInode, dentry, 0 /*fFlags*/);
+        if (!IS_ERR(pResult))
+            rc = finish_no_open(file, pResult);
+        else
+            rc = PTR_ERR(pResult);
+        SFLOGFLOW(("vbsf_inode_atomic_open: open -> %d (%p)\n", rc, pResult));
+    } else {
+        SFLOGFLOW(("vbsf_inode_atomic_open: open -> -ENOENT\n"));
+        rc = -ENOENT;
+    }
+    return rc;
+}
+#endif /* 3.6.0 */
+
 
 /**
  * Create a new regular file.
@@ -868,7 +1022,12 @@ static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mo
  *        2.6.0-3.5.999.  In 3.6.0 atomic_open was introduced and stuff
  *        changed (investigate)... */
     TRACE();
-    return vbsf_create_worker(parent, dentry, mode, 0 /*fDirectory*/);
+    AssertMsg(!(mode & S_IFMT) || (mode & S_IFMT) == S_IFREG, ("0%o\n", mode));
+    return vbsf_create_worker(parent, dentry, (mode & ~S_IFMT) | S_IFREG,
+                                SHFL_CF_ACT_CREATE_IF_NEW
+                              | SHFL_CF_ACT_FAIL_IF_EXISTS
+                              | SHFL_CF_ACCESS_READWRITE,
+                              true /*fStashHandle*/, false /*fDoLookup*/, NULL /*phHandle*/, NULL /*fCreated*/);
 }
 
 /**
@@ -886,7 +1045,13 @@ static int vbsf_inode_mkdir(struct inode *parent, struct dentry *dentry, int mod
 #endif
 {
     TRACE();
-    return vbsf_create_worker(parent, dentry, mode, 1 /*fDirectory*/);
+    AssertMsg(!(mode & S_IFMT) || (mode & S_IFMT) == S_IFDIR, ("0%o\n", mode));
+    return vbsf_create_worker(parent, dentry, (mode & ~S_IFMT) | S_IFDIR,
+                                SHFL_CF_ACT_CREATE_IF_NEW
+                              | SHFL_CF_ACT_FAIL_IF_EXISTS
+                              | SHFL_CF_ACCESS_READWRITE
+                              | SHFL_CF_DIRECTORY,
+                              false /*fStashHandle*/, false /*fDoLookup*/, NULL /*phHandle*/, NULL /*fCreated*/);
 }
 
 /**
@@ -929,10 +1094,10 @@ static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int f
                 err = 0;
             } else if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND) {
                 LogFunc(("(%d): VbglR0SfRemove(%s) failed rc=%Rrc; calling d_drop on %p\n",
-                         fDirectory, path->String.utf8, rc, dentry));
+                         fDirectory, path->String.ach, rc, dentry));
                 d_drop(dentry);
             } else {
-                LogFunc(("(%d): VbglR0SfRemove(%s) failed rc=%Rrc\n", fDirectory, path->String.utf8, rc));
+                LogFunc(("(%d): VbglR0SfRemove(%s) failed rc=%Rrc\n", fDirectory, path->String.ach, rc));
                 err = -RTErrConvertToErrno(rc);
             }
             VbglR0PhysHeapFree(pReq);
@@ -1109,6 +1274,9 @@ static int vbsf_ino_symlink(struct inode *parent, struct dentry *dentry, const c
 
 struct inode_operations vbsf_dir_iops = {
     .lookup = vbsf_inode_lookup,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+    .atomic_open = vbsf_inode_atomic_open,
+#endif
     .create = vbsf_inode_create,
     .mkdir = vbsf_inode_mkdir,
     .rmdir = vbsf_inode_rmdir,

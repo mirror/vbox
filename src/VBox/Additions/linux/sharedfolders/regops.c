@@ -1873,6 +1873,81 @@ static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
 #endif /* >= 3.16.0 */
 
 /**
+ * Used by vbsf_reg_open() and vbsf_inode_atomic_open() to
+ *
+ * @returns shared folders create flags.
+ * @param   fLnxOpen    The linux O_XXX flags to convert.
+ * @param   pfHandle    Pointer to vbsf_handle::fFlags.
+ * @param   pszCaller   Caller, for logging purposes.
+ */
+uint32_t vbsf_linux_oflags_to_vbox(unsigned fLnxOpen, uint32_t *pfHandle, const char *pszCaller)
+{
+    uint32_t fVBoxFlags = SHFL_CF_ACCESS_DENYNONE;
+
+    /*
+     * Disposition.
+     */
+    if (fLnxOpen & O_CREAT) {
+        Log(("%s: O_CREAT set\n", pszCaller));
+        fVBoxFlags |= SHFL_CF_ACT_CREATE_IF_NEW;
+        if (fLnxOpen & O_EXCL) {
+            Log(("%s: O_EXCL set\n", pszCaller));
+            fVBoxFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS;
+        } else if (fLnxOpen & O_TRUNC) {
+            Log(("%s: O_TRUNC set\n", pszCaller));
+            fVBoxFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
+        } else
+            fVBoxFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
+    } else {
+        fVBoxFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
+        if (fLnxOpen & O_TRUNC) {
+            Log(("%s: O_TRUNC set\n", pszCaller));
+            fVBoxFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
+        }
+    }
+
+    /*
+     * Access.
+     */
+    switch (fLnxOpen & O_ACCMODE) {
+        case O_RDONLY:
+            fVBoxFlags |= SHFL_CF_ACCESS_READ;
+            *pfHandle  |= VBSF_HANDLE_F_READ;
+            break;
+
+        case O_WRONLY:
+            fVBoxFlags |= SHFL_CF_ACCESS_WRITE;
+            *pfHandle  |= VBSF_HANDLE_F_WRITE;
+            break;
+
+        case O_RDWR:
+            fVBoxFlags |= SHFL_CF_ACCESS_READWRITE;
+            *pfHandle  |= VBSF_HANDLE_F_READ | VBSF_HANDLE_F_WRITE;
+            break;
+
+        default:
+            BUG();
+    }
+
+    if (fLnxOpen & O_APPEND) {
+        Log(("%s: O_APPEND set\n", pszCaller));
+        fVBoxFlags |= SHFL_CF_ACCESS_APPEND;
+        *pfHandle  |= VBSF_HANDLE_F_APPEND;
+    }
+
+    /*
+     * Only directories?
+     */
+    if (fLnxOpen & O_DIRECTORY) {
+        Log(("%s: O_DIRECTORY set\n", pszCaller));
+        fVBoxFlags |= SHFL_CF_DIRECTORY;
+    }
+
+    return fVBoxFlags;
+}
+
+
+/**
  * Open a regular file.
  *
  * @param inode         the inode
@@ -1938,50 +2013,9 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
      * Furthermore, we must set pReq->CreateParms.Handle to SHFL_HANDLE_NIL
      * to make the shared folders host service use our fMode parameter */
 
-    if (file->f_flags & O_CREAT) {
-        LogFunc(("O_CREAT set\n"));
-        pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_CREATE_IF_NEW;
-        /* We ignore O_EXCL, as the Linux kernel seems to call create
-           beforehand itself, so O_EXCL should always fail. */
-        if (file->f_flags & O_TRUNC) {
-            LogFunc(("O_TRUNC set\n"));
-            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
-        } else
-            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS;
-    } else {
-        pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_FAIL_IF_NEW;
-        if (file->f_flags & O_TRUNC) {
-            LogFunc(("O_TRUNC set\n"));
-            pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS;
-        }
-    }
-
-    switch (file->f_flags & O_ACCMODE) {
-        case O_RDONLY:
-            pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_READ;
-            sf_r->Handle.fFlags |= VBSF_HANDLE_F_READ;
-            break;
-
-        case O_WRONLY:
-            pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_WRITE;
-            sf_r->Handle.fFlags |= VBSF_HANDLE_F_WRITE;
-            break;
-
-        case O_RDWR:
-            pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_READWRITE;
-            sf_r->Handle.fFlags |= VBSF_HANDLE_F_READ | VBSF_HANDLE_F_WRITE;
-            break;
-
-        default:
-            BUG();
-    }
-
-    if (file->f_flags & O_APPEND) {
-        LogFunc(("O_APPEND set\n"));
-        pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_APPEND;
-        sf_r->Handle.fFlags |= VBSF_HANDLE_F_APPEND;
-    }
-
+    /* We ignore O_EXCL, as the Linux kernel seems to call create
+       beforehand itself, so O_EXCL should always fail. */
+    pReq->CreateParms.CreateFlags = vbsf_linux_oflags_to_vbox(file->f_flags & ~O_EXCL, &sf_r->Handle.fFlags, __FUNCTION__);
     pReq->CreateParms.Info.Attr.fMode = inode->i_mode;
     LogFunc(("vbsf_reg_open: calling VbglR0SfHostReqCreate, file %s, flags=%#x, %#x\n",
              sf_i->path->String.utf8, file->f_flags, pReq->CreateParms.CreateFlags));
@@ -2035,33 +2069,31 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
  */
 static int vbsf_reg_release(struct inode *inode, struct file *file)
 {
-    struct vbsf_reg_info *sf_r;
-    struct vbsf_super_info *sf_g;
     struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
+    struct vbsf_reg_info   *sf_r = file->private_data;
 
     SFLOGFLOW(("vbsf_reg_release: inode=%p file=%p\n", inode, file));
-    sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    sf_r = file->private_data;
-
-    BUG_ON(!sf_g);
-    BUG_ON(!sf_r);
+    if (sf_r) {
+        struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
+        Assert(sf_g);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-    /* See the smbfs source (file.c). mmap in particular can cause data to be
-     * written to the file after it is closed, which we can't cope with.  We
-     * copy and paste the body of filemap_write_and_wait() here as it was not
-     * defined before 2.6.6 and not exported until quite a bit later. */
-    /* filemap_write_and_wait(inode->i_mapping); */
-    if (inode->i_mapping->nrpages
-        && filemap_fdatawrite(inode->i_mapping) != -EIO)
-        filemap_fdatawait(inode->i_mapping);
+        /* See the smbfs source (file.c). mmap in particular can cause data to be
+         * written to the file after it is closed, which we can't cope with.  We
+         * copy and paste the body of filemap_write_and_wait() here as it was not
+         * defined before 2.6.6 and not exported until quite a bit later. */
+        /* filemap_write_and_wait(inode->i_mapping); */
+        if (inode->i_mapping->nrpages
+            && filemap_fdatawrite(inode->i_mapping) != -EIO)
+            filemap_fdatawait(inode->i_mapping);
 #endif
 
-    /* Release sf_r, closing the handle if we're the last user. */
-    file->private_data = NULL;
-    vbsf_handle_release(&sf_r->Handle, sf_g, "vbsf_reg_release");
+        /* Release sf_r, closing the handle if we're the last user. */
+        file->private_data = NULL;
+        vbsf_handle_release(&sf_r->Handle, sf_g, "vbsf_reg_release");
 
-    sf_i->handle = SHFL_HANDLE_NIL;
+        sf_i->handle = SHFL_HANDLE_NIL;
+    }
     return 0;
 }
 

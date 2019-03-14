@@ -285,6 +285,8 @@ struct vbsf_reg_info {
     struct vbsf_handle  Handle;
 };
 
+uint32_t vbsf_linux_oflags_to_vbox(unsigned fLnxOpen, uint32_t *pfHandle, const char *pszCaller);
+
 
 /**
  * VBox specific information for an open directory.
