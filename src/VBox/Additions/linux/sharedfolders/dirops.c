@@ -812,7 +812,6 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
         } *pReq = (union CreateAuxReq *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFCREATEREQ, StrPath.String) + path->u16Size);
         if (pReq) {
             memcpy(&pReq->Create.StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
-
             RT_ZERO(pReq->Create.CreateParms);
             pReq->Create.CreateParms.Handle                  = SHFL_HANDLE_NIL;
             pReq->Create.CreateParms.CreateFlags             = fCreateFlags;

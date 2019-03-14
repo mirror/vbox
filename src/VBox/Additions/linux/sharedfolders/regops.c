@@ -1091,6 +1091,78 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
     return vbsf_reg_write_locking(file, buf, size, off, pos, inode, sf_i, sf_g, sf_r);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+/*
+ * Hide missing uio.h functionality in older kernsl.
+ */
+
+static size_t copy_from_iter(uint8_t *pbDst, size_t cbToCopy, struct iov_iter *pSrcIter)
+{
+    size_t const cbTotal = cbToCopy;
+    Assert(iov_iter_count(pSrcIter) >= cbToCopy);
+    if (pSrcIter->type & ITER_BVEC) {
+        while (cbToCopy > 0) {
+            size_t const offPage    = (uintptr_t)pbDst & PAGE_OFFSET_MASK;
+            size_t const cbThisCopy = RT_MIN(PAGE_SIZE - offPage, cbToCopy);
+            struct page *pPage      = rtR0MemObjLinuxVirtToPage(pbDst);
+            size_t       cbCopied   = copy_page_from_iter(pPage, offPage, cbThisCopy, pSrcIter);
+            AssertStmt(cbCopied <= cbThisCopy, cbCopied = cbThisCopy);
+            pbDst    += cbCopied;
+            cbToCopy -= cbCopied;
+            if (cbCopied != cbToCopy)
+                break;
+        }
+    } else {
+        while (cbToCopy > 0) {
+            size_t cbThisCopy = iov_iter_single_seg_count(pSrcIter);
+            if (cbThisCopy > cbToCopy)
+                cbThisCopy = cbToCopy;
+            if (pSrcIter->type & ITER_KVEC)
+                memcpy(pbDst, (void *)pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy);
+            else if (!copy_from_user(pbDst, pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy))
+                break;
+            pbDst    += cbThisCopy;
+            cbToCopy -= cbThisCopy;
+            iov_iter_advance(pSrcIter, cbThisCopy);
+        }
+    }
+    return cbTotal - cbToCopy;
+}
+
+static size_t copy_to_iter(uint8_t const *pbSrc, size_t cbToCopy, struct iov_iter *pDstIter)
+{
+    size_t const cbTotal = cbToCopy;
+    Assert(iov_iter_count(pDstIter) >= cbToCopy);
+    if (pDstIter->type & ITER_BVEC) {
+        while (cbToCopy > 0) {
+            size_t const offPage    = (uintptr_t)pbSrc & PAGE_OFFSET_MASK;
+            size_t const cbThisCopy = RT_MIN(PAGE_SIZE - offPage, cbToCopy);
+            struct page *pPage      = rtR0MemObjLinuxVirtToPage((void *)pbSrc);
+            size_t       cbCopied   = copy_page_to_iter(pPage, offPage, cbThisCopy, pDstIter);
+            AssertStmt(cbCopied <= cbThisCopy, cbCopied = cbThisCopy);
+            pbSrc    += cbCopied;
+            cbToCopy -= cbCopied;
+            if (cbCopied != cbToCopy)
+                break;
+        }
+    } else {
+        while (cbToCopy > 0) {
+            size_t cbThisCopy = iov_iter_single_seg_count(pDstIter);
+            if (cbThisCopy > cbToCopy)
+                cbThisCopy = cbToCopy;
+            if (pDstIter->type & ITER_KVEC)
+                memcpy((void *)pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy);
+            else if (!copy_to_user(pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy))
+                break;
+            pbSrc    += cbThisCopy;
+            cbToCopy -= cbThisCopy;
+            iov_iter_advance(pDstIter, cbThisCopy);
+        }
+    }
+    return cbTotal - cbToCopy;
+}
+
+#endif /* 3.16.0 >= linux < 3.18.0 */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
 
 /**
