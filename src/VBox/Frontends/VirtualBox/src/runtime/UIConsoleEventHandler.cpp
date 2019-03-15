@@ -43,6 +43,9 @@ signals:
     void sigMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
     /** Notifies about mouse capability change to @a fSupportsAbsolute, @a fSupportsRelative, @a fSupportsMultiTouch and @a fNeedsHostCursor. */
     void sigMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor);
+    /** Notifies about guest request to change the cursor position to @a uX * @a uY.
+      * @param  fContainsData  Brings whether the @a uX and @a uY values are valid and could be used by the GUI now. */
+    void sigCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
     /** Notifies about keyboard LEDs change for @a fNumLock, @a fCapsLock and @a fScrollLock. */
     void sigKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
     /** Notifies about machine @a state change. */
@@ -173,6 +176,7 @@ void UIConsoleEventHandlerProxy::prepareListener()
     eventTypes
         << KVBoxEventType_OnMousePointerShapeChanged
         << KVBoxEventType_OnMouseCapabilityChanged
+        << KVBoxEventType_OnCursorPositionChanged
         << KVBoxEventType_OnKeyboardLedsChanged
         << KVBoxEventType_OnStateChanged
         << KVBoxEventType_OnAdditionsStateChanged
@@ -190,8 +194,7 @@ void UIConsoleEventHandlerProxy::prepareListener()
         << KVBoxEventType_OnRuntimeError
         << KVBoxEventType_OnCanShowWindow
         << KVBoxEventType_OnShowWindow
-        << KVBoxEventType_OnAudioAdapterChanged
-        << KVBoxEventType_OnCursorPositionChanged;
+        << KVBoxEventType_OnAudioAdapterChanged;
 
     /* Register event listener for console event source: */
     comEventSourceConsole.RegisterListener(m_comEventListener, eventTypes,
@@ -214,6 +217,9 @@ void UIConsoleEventHandlerProxy::prepareConnections()
             Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
             this, SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
+            Qt::DirectConnection);
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigCursorPositionChange(bool, unsigned long, unsigned long)),
+            this, SIGNAL(sigCursorPositionChange(bool, unsigned long, unsigned long)),
             Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
             this, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
@@ -373,6 +379,9 @@ void UIConsoleEventHandler::prepareConnections()
             Qt::QueuedConnection);
     connect(m_pProxy, SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
             this, SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
+            Qt::QueuedConnection);
+    connect(m_pProxy, SIGNAL(sigCursorPositionChange(bool, unsigned long, unsigned long)),
+            this, SIGNAL(sigCursorPositionChange(bool, unsigned long, unsigned long)),
             Qt::QueuedConnection);
     connect(m_pProxy, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
             this, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
