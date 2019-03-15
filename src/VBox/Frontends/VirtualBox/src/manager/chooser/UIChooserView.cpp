@@ -107,7 +107,15 @@ void UIChooserView::toggleSearchWidget()
         return;
     m_pSearchWidget->setVisible(!m_pSearchWidget->isVisible());
     if (m_pSearchWidget->isVisible())
-        updateSearchWidget();
+        updateSearchWidgetGeometry();
+}
+
+void UIChooserView::setSearchResultsCount(int iTotalMacthCount, int iCurrentlyScrolledItemIndex)
+{
+    if (!m_pSearchWidget)
+        return;
+    m_pSearchWidget->setMatchCount(iTotalMacthCount);
+    m_pSearchWidget->setScroolToIndex(iCurrentlyScrolledItemIndex);
 }
 
 void UIChooserView::sltMinimumWidthHintChanged(int iHint)
@@ -134,8 +142,28 @@ void UIChooserView::sltRedoSearch(const QString &strSearchTerm, int iItemSearchF
     UIChooserModel *pModel =  m_pChooser->model();
     if (!pModel)
         return;
-
     pModel->performSearch(strSearchTerm, iItemSearchFlags);
+}
+
+void UIChooserView::sltHandleScrollToSearchResult(bool fIsNext)
+{
+    UIChooserModel *pModel =  m_pChooser->model();
+    if (!pModel)
+        return;
+    pModel->scrollToSearchResult(fIsNext);
+}
+
+void UIChooserView::sltHandleSearchWidgetVisibilityToggle(bool fIsVisible)
+{
+    if (!m_pSearchWidget)
+        return;
+    if (m_pSearchWidget->isVisible() == fIsVisible)
+        return;
+    m_pSearchWidget->setVisible(fIsVisible);
+    UIChooserModel *pModel =  m_pChooser->model();
+    if (!pModel)
+        return;
+    pModel->resetSearch();
 }
 
 void UIChooserView::retranslateUi()
@@ -168,12 +196,16 @@ void UIChooserView::prepare()
     m_pSearchWidget->hide();
     connect(m_pSearchWidget, &UIChooserSearchWidget::sigRedoSearch,
                 this, &UIChooserView::sltRedoSearch);
+    connect(m_pSearchWidget, &UIChooserSearchWidget::sigScrollToMatch,
+                this, &UIChooserView::sltHandleScrollToSearchResult);
+    connect(m_pSearchWidget, &UIChooserSearchWidget::sigToggleVisibility,
+                this, &UIChooserView::sltHandleSearchWidgetVisibilityToggle);
 
     /* Update scene-rect: */
     updateSceneRect();
 
     /* Update the location and size of the search widget: */
-    updateSearchWidget();
+    updateSearchWidgetGeometry();
 
     /* Apply language settings: */
     retranslateUi();
@@ -197,7 +229,7 @@ void UIChooserView::resizeEvent(QResizeEvent *pEvent)
 
     /* Update scene-rect: */
     updateSceneRect();
-    updateSearchWidget();
+    updateSearchWidgetGeometry();
 }
 
 void UIChooserView::updateSceneRect()
@@ -205,7 +237,7 @@ void UIChooserView::updateSceneRect()
     setSceneRect(0, 0, m_iMinimumWidthHint, height());
 }
 
-void UIChooserView::updateSearchWidget()
+void UIChooserView::updateSearchWidgetGeometry()
 {
     if (!m_pSearchWidget || !m_pSearchWidget->isVisible())
         return;

@@ -67,6 +67,7 @@ UIChooserModel:: UIChooserModel(UIChooser *pParent)
     , m_pContextMenuGlobal(0)
     , m_pContextMenuGroup(0)
     , m_pContextMenuMachine(0)
+    , m_iCurrentScrolledIndex(-1)
     , m_pInvisibleRootNode(0)
     , m_iScrollingTokenSize(30)
     , m_fIsScrollingInProgress(false)
@@ -130,6 +131,14 @@ UIActionPool *UIChooserModel::actionPool() const
 QGraphicsScene *UIChooserModel::scene() const
 {
     return m_pScene;
+}
+
+UIChooserView *UIChooserModel::view()
+{
+    if (!scene())
+        return 0;
+    UIChooserView *pChooserView = qobject_cast<UIChooserView*>(scene()->views()[0]);
+    return pChooserView;
 }
 
 QPaintDevice *UIChooserModel::paintDevice() const
@@ -425,8 +434,9 @@ void UIChooserModel::setFocusItem(UIChooserItem *pItem)
         connect(m_pFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
 
     /* If dialog is visible and item exists => make it visible as well: */
-    if (scene()->views()[0]->window()->isVisible() && pItem)
-        root()->makeSureItemIsVisible(pItem);
+    if (view() && view()->window() && root())
+        if (view()->window()->isVisible() && pItem)
+            root()->makeSureItemIsVisible(pItem);
 }
 
 UIChooserItem *UIChooserModel::focusItem() const
@@ -458,9 +468,28 @@ void UIChooserModel::performSearch(const QString &strSearchTerm, int iItemSearch
 
     /* Currently we perform the search only for machines. when this to be changed make sure the disabled flags
        of the other item types are also managed correctly: */
+
+    QList<UIChooserNode*> allNodes = resetSearch();
+    if (strSearchTerm.isEmpty())
+        return;
+
+    m_pInvisibleRootNode->searchForNodes(strSearchTerm, iItemSearchFlags, m_searchResults);
+
+    foreach (UIChooserNode* pNode, allNodes)
+    {
+        if (!pNode)
+            continue;
+        pNode->setDisabled(!m_searchResults.contains(pNode));
+    }
+
+    scrollToSearchResult(true);
+}
+
+QList<UIChooserNode*> UIChooserModel::resetSearch()
+{
     QList<UIChooserNode*> allNodes;
     /* Calling UIChooserNode::searchForNodes with an empty search string returns a list all nodes (of the whole treee) of the required type: */
-    m_pInvisibleRootNode->searchForNodes(QString(), iItemSearchFlags, allNodes);
+    m_pInvisibleRootNode->searchForNodes(QString(), UIChooserItemSearchFlag_Machine, allNodes);
 
     /* Reset the disabled flag of the node items first. */
     foreach (UIChooserNode* pNode, allNodes)
@@ -469,19 +498,47 @@ void UIChooserModel::performSearch(const QString &strSearchTerm, int iItemSearch
             continue;
         pNode->setDisabled(false);
     }
+    /* Reset the search result relate data: */
+    m_searchResults.clear();
+    m_iCurrentScrolledIndex = -1;
+    return allNodes;
+}
 
-    if (strSearchTerm.isEmpty())
-        return;
-
-    QList<UIChooserNode*> matchedNodes;
-    m_pInvisibleRootNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedNodes);
-
-    foreach (UIChooserNode* pNode, allNodes)
+void UIChooserModel::scrollToSearchResult(bool fIsNext)
+{
+    if (m_searchResults.isEmpty())
     {
-        if (!pNode)
-            continue;
-        pNode->setDisabled(!matchedNodes.contains(pNode));
+        m_iCurrentScrolledIndex = -1;
+        if (view())
+            view()->setSearchResultsCount(m_searchResults.size(), m_iCurrentScrolledIndex);
+        return;
     }
+
+    if (fIsNext)
+    {
+        if (++m_iCurrentScrolledIndex >= m_searchResults.size())
+            m_iCurrentScrolledIndex = 0;
+    }
+    else
+    {
+        if (m_iCurrentScrolledIndex < 0)
+            m_iCurrentScrolledIndex = m_searchResults.size() - 1;
+    }
+
+    if (m_searchResults.at(m_iCurrentScrolledIndex))
+    {
+        UIChooserItem *pItem = m_searchResults.at(m_iCurrentScrolledIndex)->item();
+        if (pItem)
+        {
+            pItem->makeSureItsVisible();
+        }
+    }
+
+
+    /* Update the search widget's match count(s): */
+    if (view())
+        view()->setSearchResultsCount(m_searchResults.size(), m_iCurrentScrolledIndex);
+
 }
 
 UIChooserNode *UIChooserModel::invisibleRoot() const
@@ -618,8 +675,11 @@ QString UIChooserModel::uniqueGroupName(UIChooserItem *pRoot)
 
 void UIChooserModel::updateLayout()
 {
+    if (!view() || !root())
+        return;
+
     /* Initialize variables: */
-    const QSize viewportSize = scene()->views()[0]->size();
+    const QSize viewportSize = view()->size();
     const int iViewportWidth = viewportSize.width();
     const int iViewportHeight = viewportSize.height();
 
@@ -813,7 +873,7 @@ void UIChooserModel::sltSortGroup()
 
 void UIChooserModel::sltShowHideSearchWidget()
 {
-    UIChooserView *pChooserView = qobject_cast<UIChooserView*>(scene()->views()[0]);
+    UIChooserView *pChooserView = view();
     if (!pChooserView)
         return;
     pChooserView->toggleSearchWidget();
@@ -1181,7 +1241,7 @@ void UIChooserModel::sltStartScrolling()
     m_fIsScrollingInProgress = false;
 
     /* Get view/scrollbar: */
-    QGraphicsView *pView = scene()->views()[0];
+    QGraphicsView *pView = view();
     QScrollBar *pVerticalScrollBar = pView->verticalScrollBar();
 
     /* Convert mouse position to view co-ordinates: */
@@ -1946,7 +2006,7 @@ void UIChooserModel::buildTreeForMainRoot()
 
     /* Install root as event-filter for scene view,
      * we need QEvent::Scroll events from it: */
-    root()->installEventFilterHelper(scene()->views()[0]);
+    root()->installEventFilterHelper(view());
 }
 
 void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
@@ -2048,7 +2108,7 @@ bool UIChooserModel::processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)
         return false;
 
     /* Get view: */
-    QGraphicsView *pView = scene()->views()[0];
+    QGraphicsView *pView = view();
 
     /* Check scroll-area: */
     const QPoint eventPoint = pView->mapFromGlobal(pEvent->screenPos());

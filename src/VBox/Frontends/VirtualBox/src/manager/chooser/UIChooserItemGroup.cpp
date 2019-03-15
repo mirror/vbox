@@ -143,6 +143,19 @@ QString UIChooserItemGroup::className()
     return "UIChooserItemGroup";
 }
 
+void UIChooserItemGroup::makeSureItemIsVisible(UIChooserItem *pItem)
+{
+    /* Make sure item exists: */
+    AssertPtrReturnVoid(pItem);
+
+    /* Convert child rectangle to local coordinates for this group. This also
+     * works for a child at any sub-level, doesn't necessary of this group. */
+    const QPointF positionInScene = pItem->mapToScene(QPointF(0, 0));
+    const QPointF positionInGroup = mapFromScene(positionInScene);
+    const QRectF itemRectInGroup = QRectF(positionInGroup, pItem->size());
+    m_pScrollArea->makeSureRectIsVisible(itemRectInGroup);
+}
+
 void UIChooserItemGroup::retranslateUi()
 {
     /* Update button tool-tips: */
@@ -694,19 +707,6 @@ QSizeF UIChooserItemGroup::sizeHint(Qt::SizeHint enmWhich, const QSizeF &constra
         return minimumSizeHintForGroup(isOpened());
     /* Else call to base-class: */
     return UIChooserItem::sizeHint(enmWhich, constraint);
-}
-
-void UIChooserItemGroup::makeSureItemIsVisible(UIChooserItem *pItem)
-{
-    /* Make sure item exists: */
-    AssertPtrReturnVoid(pItem);
-
-    /* Convert child rectangle to local coordinates for this group. This also
-     * works for a child at any sub-level, doesn't necessary of this group. */
-    const QPointF positionInScene = pItem->mapToScene(QPointF(0, 0));
-    const QPointF positionInGroup = mapFromScene(positionInScene);
-    const QRectF itemRectInGroup = QRectF(positionInGroup, pItem->size());
-    m_pScrollArea->makeSureRectIsVisible(itemRectInGroup);
 }
 
 QPixmap UIChooserItemGroup::toPixmap()

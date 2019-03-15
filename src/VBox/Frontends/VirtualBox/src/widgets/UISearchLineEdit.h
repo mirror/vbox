@@ -31,8 +31,7 @@
 /** A QLineEdit extension with an overlay label drawn on the right hand side of it.
   * mostly used for entering a search term and then label show total number of matched items
   * and currently selected, scrolled item. */
-class SHARED_LIBRARY_STUFF
-UISearchLineEdit : public QLineEdit
+class SHARED_LIBRARY_STUFF UISearchLineEdit : public QLineEdit
 {
 
     Q_OBJECT;
@@ -49,7 +48,10 @@ protected:
 
 private:
 
+    /** Stores the total number of matched items. */
     int m_iMatchCount;
+    /** Stores the index of the currently scrolled/made-visible item withing the list of search results.
+      * Must be smaller that or equal to m_iMatchCount. */
     int m_iScrollToIndex;
 };
 

@@ -30,6 +30,8 @@
 /* Forward declarations: */
 class QHBoxLayout;
 class QILineEdit;
+class QIToolButton;
+class UISearchLineEdit;
 
 /** QWidget extension used as virtual machine search widget in the VM Chooser-pane. */
 class UIChooserSearchWidget : public QIWithRetranslateUI<QWidget>
@@ -39,29 +41,41 @@ class UIChooserSearchWidget : public QIWithRetranslateUI<QWidget>
 signals:
 
     void sigRedoSearch(const QString &strSearchTerm, int iItemSearchFlags);
+    /** Is being signalled as next/prev tool buttons are pressed. @a fIsNext is true
+      * for the next and false for the previous case. */
+    void sigScrollToMatch(bool fIsNext);
+    /** Is used for signalling show/hide event from this to parent. */
+    void sigToggleVisibility(bool fIsVisible);
 
 public:
 
     UIChooserSearchWidget(QWidget *pParent);
+    void setMatchCount(int iMatchCount);
+    void setScroolToIndex(int iScrollToIndex);
 
 protected:
 
-    void showEvent(QShowEvent *pEvent);
+    virtual void showEvent(QShowEvent *pEvent) /* override */;
+    virtual void hideEvent(QHideEvent *pEvent) /* override */;
     virtual void retranslateUi() /* override */;
+    virtual bool eventFilter(QObject *pWatched, QEvent *pEvent) /* override */;
 
 public slots:
 
 private slots:
 
     void sltHandleSearchTermChange(const QString &strSearchTerm);
+    void sltHandleScroolToButtonClick();
 
 private:
 
     void prepareWidgets();
     void prepareConnections();
 
-    QILineEdit  *m_pLineEdit;
-    QHBoxLayout *m_pMainLayout;
+    UISearchLineEdit  *m_pLineEdit;
+    QHBoxLayout       *m_pMainLayout;
+    QIToolButton      *m_pScrollToNextMatchButton;
+    QIToolButton      *m_pScrollToPreviousMatchButton;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserSearchWidget_h */

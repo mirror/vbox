@@ -41,6 +41,7 @@ class UIChooserHandlerMouse;
 class UIChooserHandlerKeyboard;
 class UIChooserItem;
 class UIChooserNode;
+class UIChooserView;
 class UIVirtualMachineItem;
 class CMachine;
 
@@ -190,6 +191,10 @@ public:
       * @{ */
         /** Performs a search starting from the m_pInvisibleRootNode. */
         void performSearch(const QString &strSearchTerm, int iItemSearchFlags);
+        /** Clean the search result data members and disables item's visual effects. Also returns a list of
+          * all nodes which may be utilized by the calling code. */
+        QList<UIChooserNode*> resetSearch();
+        void scrollToSearchResult(bool fIsNext);
     /** @} */
 
     /** @name Children stuff.
@@ -358,6 +363,8 @@ private:
         bool processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
         /** Popups context-menu of certain @a enmType in specified @a point. */
         void popupContextMenu(UIGraphicsSelectorContextMenuType enmType, QPoint point);
+        /** Returns the reference of the first view of the scene(). */
+        UIChooserView *view();
     /** @} */
 
     /** @name Selection stuff.
@@ -461,6 +468,14 @@ private:
       * @{ */
         /** Holds the focus item reference. */
         QPointer<UIChooserItem>  m_pFocusItem;
+    /** @} */
+
+    /** @name Virtual Machine/Group search stuff.
+      * @{ */
+        /** Stores the results of the current search. */
+        QList<UIChooserNode*> m_searchResults;
+        /** Stores the index (within the m_searchResults) of the currently scrolled item. */
+        int m_iCurrentScrolledIndex;
     /** @} */
 
     /** @name Children stuff.

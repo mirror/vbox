@@ -33,10 +33,11 @@ void UISearchLineEdit::paintEvent(QPaintEvent *pEvent)
 {
     QLineEdit::paintEvent(pEvent);
 
-    /* No search terms. no search. nothing to show here. mone along please: */
+    /* No search terms. no search. nothing to show here: */
     if (text().isEmpty())
         return;
 
+    /* Draw the total match count and the current scrolled item's index on the right hand side of the line edit: */
     QPainter painter(this);
     QFont pfont = font();
     QString strText = QString("%1/%2").arg(QString::number(m_iScrollToIndex + 1)).arg(QString::number(m_iMatchCount));
@@ -48,7 +49,6 @@ void UISearchLineEdit::paintEvent(QPaintEvent *pEvent)
         return;
     int iTopMargin = (height() - textSize.height()) / 2;
     int iRightMargin = iTopMargin;
-
 
     QColor fontColor(Qt::darkGray);
     painter.setPen(fontColor);

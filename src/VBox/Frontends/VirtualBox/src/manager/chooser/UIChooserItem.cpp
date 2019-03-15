@@ -462,19 +462,21 @@ void UIChooserItem::updateGeometry()
 
 void UIChooserItem::makeSureItsVisible()
 {
-    /* If item is not visible: */
+    /* Get parrent item: */
+    UIChooserItemGroup *pParentItem = parentItem()->toGroupItem();
+    if (!pParentItem)
+        return;
+    /* If item is not visible. That is all the parent group(s) are opened (expanded): */
     if (!isVisible())
     {
-        /* Get parrent item, assert if can't: */
-        if (UIChooserItemGroup *pParentItem = parentItem()->toGroupItem())
-        {
-            /* We should make parent visible: */
-            pParentItem->makeSureItsVisible();
-            /* And make sure its opened: */
-            if (pParentItem->isClosed())
-                pParentItem->open(false);
-        }
+        /* We should make parent visible: */
+        pParentItem->makeSureItsVisible();
+        /* And make sure its opened: */
+        if (pParentItem->isClosed())
+            pParentItem->open(false);
     }
+    /* Make sure we scroll to the item's rectangle: */
+    pParentItem->makeSureItemIsVisible(this);
 }
 
 UIChooserItemDragToken UIChooserItem::dragTokenPlace() const

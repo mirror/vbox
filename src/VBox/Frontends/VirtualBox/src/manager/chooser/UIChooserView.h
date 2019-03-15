@@ -49,8 +49,14 @@ public:
       * @{ */
         /** Returns the chooser reference. */
         UIChooser *chooser() const { return m_pChooser; }
+    /** @} */
+
+    /** @name Virtual Machine search stuff.
+      * @{ */
         /** Shows/hides machine search widget. */
         void toggleSearchWidget();
+        /** Updates the search widget's counts. */
+        void setSearchResultsCount(int iTotalMacthCount, int iCurrentlyScrolledItemIndex);
     /** @} */
 
 public slots:
@@ -74,7 +80,11 @@ protected:
 
 private slots:
 
+    /** Is connected to search widget's signal for a new search. */
     void sltRedoSearch(const QString &strSearchTerm, int iItemSearchFlags);
+    /** Is connected to search widget's scroll to next/prev search result signal. */
+    void sltHandleScrollToSearchResult(bool fIsNext);
+    void sltHandleSearchWidgetVisibilityToggle(bool fIsVisible);
 
 private:
 
@@ -90,10 +100,13 @@ private:
       * @{ */
         /** Updates scene rectangle. */
         void updateSceneRect();
-        /** Updates search widget's geometry. */
-        void updateSearchWidget();
     /** @} */
 
+    /** @name Virtual Machine search stuff.
+      * @{ */
+        /** Updates search widget's geometry. */
+        void updateSearchWidgetGeometry();
+    /** @} */
 
     /** @name General stuff.
       * @{ */
