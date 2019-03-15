@@ -2106,7 +2106,6 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PVMCPU pVCpu, PCCPUMCTX p
     Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
     return pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u64AddrApicAccess.u;
 }
-
 # endif /* !IN_RC */
 
 #endif /* IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS */
@@ -2266,13 +2265,8 @@ typedef enum CPUMINTERRUPTIBILITY
     CPUMINTERRUPTIBILITY_32BIT_HACK = 0x7fffffff
 } CPUMINTERRUPTIBILITY;
 
-/**
- * Calculates the interruptiblity of the guest.
- *
- * @returns Interruptibility level.
- * @param   pVCpu               The cross context virtual CPU structure.
- */
 VMM_INT_DECL(CPUMINTERRUPTIBILITY) CPUMGetGuestInterruptibility(PVMCPU pVCpu);
+VMM_INT_DECL(bool)                 CPUMIsGuestNmiBlocking(PVMCPU pVCpu);
 
 
 /** @name Typical scalable bus frequency values.
