@@ -48,6 +48,10 @@ AcpiTimerLibConstructor (
   HostBridgeDevId = PciRead16 (OVMF_HOSTBRIDGE_DID);
   switch (HostBridgeDevId) {
     case INTEL_82441_DEVICE_ID:
+#ifdef VBOX
+    // HACK ALERT! There is no host bridge device in the PCIe chipset, and the same PIIX4 PM device is used.
+    case 0xffff:
+#endif
       Pmba       = POWER_MGMT_REGISTER_PIIX4 (PIIX4_PMBA);
       PmbaAndVal = ~(UINT32)PIIX4_PMBA_MASK;
       PmbaOrVal  = PIIX4_PMBA_VALUE;

@@ -50,12 +50,18 @@ AcpiTimerLibConstructor (
   //
   HostBridgeDevId = PcdGet16 (PcdOvmfHostBridgePciDevId);
   switch (HostBridgeDevId) {
+#ifdef VBOX
+    // HACK ALERT! In the PCIe chipset, the same PIIX4 PM device is used.
+    case INTEL_Q35_MCH_DEVICE_ID:
+#endif
     case INTEL_82441_DEVICE_ID:
       Pmba = POWER_MGMT_REGISTER_PIIX4 (PIIX4_PMBA);
       break;
+#ifndef VBOX
     case INTEL_Q35_MCH_DEVICE_ID:
       Pmba = POWER_MGMT_REGISTER_Q35 (ICH9_PMBASE);
       break;
+#endif
     default:
       DEBUG ((EFI_D_ERROR, "%a: Unknown Host Bridge Device ID: 0x%04x\n",
         __FUNCTION__, HostBridgeDevId));

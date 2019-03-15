@@ -525,6 +525,7 @@
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x2F
 !endif
 
+!ifndef $(VBOX)
   # This PCD is used to set the base address of the PCI express hierarchy. It
   # is only consulted when OVMF runs on Q35. In that case it is programmed into
   # the PCIEXBAR register.
@@ -532,6 +533,7 @@
   # On Q35 machine types that QEMU intends to support in the long term, QEMU
   # never lets the RAM below 4 GB exceed 2 GB.
   gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0x80000000
+!endif
 
 !ifdef $(SOURCE_DEBUG_ENABLE)
   gEfiSourceLevelDebugPkgTokenSpaceGuid.PcdDebugLoadImageMethod|0x2
@@ -612,6 +614,18 @@
 !endif
 
   gEfiSecurityPkgTokenSpaceGuid.PcdOptionRomImageVerificationPolicy|0x00
+
+!ifdef $(VBOX)
+  # This PCD is used to set the base address of the PCI express hierarchy. It
+  # is only consulted when OVMF runs on Q35. In that case it is programmed into
+  # the PCIEXBAR register.
+  #
+  # On Q35 machine types that QEMU intends to support in the long term, QEMU
+  # never lets the RAM below 4 GB exceed 2 GB.
+  #
+  # On VirtualBox it is dynamic.
+  gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0x80000000
+!endif
 
 ################################################################################
 #

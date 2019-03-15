@@ -270,7 +270,7 @@ MemMapInitialization (
       // The MMCONFIG area is expected to fall between the top of low RAM and
       // the base of the 32-bit PCI host aperture.
       //
-      PciExBarBase = FixedPcdGet64 (PcdPciExpressBaseAddress);
+      PciExBarBase = PcdGet64 (PcdPciExpressBaseAddress);
       ASSERT (TopOfLowRam <= PciExBarBase);
       ASSERT (PciExBarBase <= MAX_UINT32 - SIZE_256MB);
       PciBase = (UINT32)(PciExBarBase + SIZE_256MB);
@@ -308,6 +308,7 @@ MemMapInitialization (
     if (TopOfLowRam < McfgBase)
       AddIoMemoryRangeHob (TopOfLowRam, McfgBase);
     AddIoMemoryRangeHob (McfgBase + McfgSize, 0xFC000000);
+    PcdSet64S (PcdPciExpressBaseAddress, McfgBase);
 #else
     AddIoMemoryRangeHob (TopOfLowRam < BASE_2GB ?
                          BASE_2GB : TopOfLowRam, 0xFC000000);
@@ -469,7 +470,7 @@ PciExBarInitialization (
   // determined in AddressWidthInitialization(), i.e., 36 bits, will suffice
   // for DXE's page tables to cover the MMCONFIG area.
   //
-  PciExBarBase.Uint64 = FixedPcdGet64 (PcdPciExpressBaseAddress);
+  PciExBarBase.Uint64 = PcdGet64 (PcdPciExpressBaseAddress);
   ASSERT ((PciExBarBase.Uint32[1] & MCH_PCIEXBAR_HIGHMASK) == 0);
   ASSERT ((PciExBarBase.Uint32[0] & MCH_PCIEXBAR_LOWMASK) == 0);
 
@@ -754,6 +755,11 @@ InitializePlatform (
   // Query Host Bridge DID
   //
   mHostBridgeDevId = PciRead16 (OVMF_HOSTBRIDGE_DID);
+#ifdef VBOX
+  // HACK ALERT! There is no host bridge device in the PCIe chipset, but we pretend it's a 3 Series chip.
+  if (mHostBridgeDevId == 0xffff)
+        mHostBridgeDevId = INTEL_Q35_MCH_DEVICE_ID;
+#endif
 
   if (FeaturePcdGet (PcdSmmSmramRequire)) {
     Q35TsegMbytesInitialization ();

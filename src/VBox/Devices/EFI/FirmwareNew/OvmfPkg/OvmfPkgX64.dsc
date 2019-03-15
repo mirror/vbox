@@ -44,6 +44,8 @@
   DEFINE SMM_REQUIRE             = FALSE
   DEFINE TLS_ENABLE              = FALSE
 
+  DEFINE SOURCE_DEBUG_ENABLE     = TRUE
+
   #
   # Flash size selection. Setting FD_SIZE_IN_KB on the command line directly to
   # one of the supported values, in place of any of the convenience macros, is
@@ -103,6 +105,12 @@
     GCC:*_*_*_CC_FLAGS = -DVBOX -DIPRT_NO_CRT -DRT_OS_UEFI -DARCH_BITS=64 -DHC_ARCH_BITS=64 -DVBOX_REV=$(VBOX_REV)
    MSFT:*_*_*_CC_FLAGS = -DVBOX -DIPRT_NO_CRT -DRT_OS_UEFI -DARCH_BITS=64 -DHC_ARCH_BITS=64 -DVBOX_REV=$(VBOX_REV)
   INTEL:*_*_*_CC_FLAGS = -DVBOX -DIPRT_NO_CRT -DRT_OS_UEFI -DARCH_BITS=64 -DHC_ARCH_BITS=64 -DVBOX_REV=$(VBOX_REV)
+
+!ifdef $(SOURCE_DEBUG_ENABLE)
+   # Get much better source-level debugging
+   MSFT:DEBUG_*_*_CC_FLAGS = /Od
+!endif
+
 !endif
 
 
@@ -133,7 +141,11 @@
 !ifndef $(VBOX)
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
 !else
+!ifdef $(SOURCE_DEBUG_ENABLE)
+  PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
+!else
   PeCoffLib|VBoxPkg/Library/VBoxPeCoffLib/VBoxPeCoffLib.inf
+!endif
 !endif
   CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
   UefiDecompressLib|MdePkg/Library/BaseUefiDecompressLib/BaseUefiDecompressLib.inf
@@ -181,13 +193,13 @@
   CustomizedDisplayLib|MdeModulePkg/Library/CustomizedDisplayLib/CustomizedDisplayLib.inf
   FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
 
-!ifdef $(VBOX)
-  PeCoffExtraActionLib|VBoxPkg/Library/VBoxPeCoffExtraActionLib/VBoxPeCoffExtraActionLib.inf
-  DebugAgentLib|VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.inf
-!else
 !ifdef $(SOURCE_DEBUG_ENABLE)
   PeCoffExtraActionLib|SourceLevelDebugPkg/Library/PeCoffExtraActionLibDebug/PeCoffExtraActionLibDebug.inf
   DebugCommunicationLib|SourceLevelDebugPkg/Library/DebugCommunicationLibSerialPort/DebugCommunicationLibSerialPort.inf
+!else
+!ifdef $(VBOX)
+  PeCoffExtraActionLib|VBoxPkg/Library/VBoxPeCoffExtraActionLib/VBoxPeCoffExtraActionLib.inf
+  DebugAgentLib|VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.inf
 !else
   PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
   DebugAgentLib|MdeModulePkg/Library/DebugAgentLibNull/DebugAgentLibNull.inf
@@ -246,14 +258,16 @@
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformRomDebugLibIoPort.inf
 !endif
 !else
+!ifdef $(SOURCE_DEBUG_ENABLE)
+  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
+!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
+!endif
 !endif
   ReportStatusCodeLib|MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
   ExtractGuidedSectionLib|MdePkg/Library/BaseExtractGuidedSectionLib/BaseExtractGuidedSectionLib.inf
-!ifdef $(VBOX)
 !ifdef $(SOURCE_DEBUG_ENABLE)
   DebugAgentLib|SourceLevelDebugPkg/Library/DebugAgent/SecPeiDebugAgentLib.inf
-!endif
 !endif
   HobLib|MdePkg/Library/PeiHobLib/PeiHobLib.inf
   PeiServicesLib|MdePkg/Library/PeiServicesLib/PeiServicesLib.inf
@@ -278,8 +292,13 @@
 !endif
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
 !else
+!ifdef $(SOURCE_DEBUG_ENABLE)
+  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
+  PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
+!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
   PeCoffLib|VBoxPkg/Library/VBoxPeCoffLib/VBoxPeCoffLib.inf
+!endif
 !endif
 
 [LibraryClasses.common.PEIM]
@@ -296,10 +315,16 @@
   DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
 !else
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
-!endif  PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
+!endif
+  PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
+!else
+!ifdef $(SOURCE_DEBUG_ENABLE)
+  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
+  PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
 !else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
   PeCoffLib|VBoxPkg/Library/VBoxPeCoffLib/VBoxPeCoffLib.inf
+!endif
 !endif
   PeiResourcePublicationLib|MdePkg/Library/PeiResourcePublicationLib/PeiResourcePublicationLib.inf
   ExtractGuidedSectionLib|MdePkg/Library/PeiExtractGuidedSectionLib/PeiExtractGuidedSectionLib.inf
@@ -324,7 +349,11 @@
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
 !endif
 !else
+!ifdef $(SOURCE_DEBUG_ENABLE)
+  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
+!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
+!endif
 !endif
   ExtractGuidedSectionLib|MdePkg/Library/DxeExtractGuidedSectionLib/DxeExtractGuidedSectionLib.inf
 !ifdef $(SOURCE_DEBUG_ENABLE)
@@ -347,7 +376,11 @@
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
 !endif
 !else
+!ifdef $(SOURCE_DEBUG_ENABLE)
+  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
+!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
+!endif
 !endif
   UefiRuntimeLib|MdePkg/Library/UefiRuntimeLib/UefiRuntimeLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/RuntimeCryptLib.inf
@@ -368,7 +401,11 @@
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
 !endif
 !else
+!ifdef $(SOURCE_DEBUG_ENABLE)
+  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
+!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
+!endif
 !endif
   UefiScsiLib|MdePkg/Library/UefiScsiLib/UefiScsiLib.inf
   PciLib|OvmfPkg/Library/DxePciLibI440FxQ35/DxePciLibI440FxQ35.inf
@@ -387,7 +424,11 @@
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
 !endif
 !else
+!ifdef $(SOURCE_DEBUG_ENABLE)
+  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
+!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
+!endif
 !endif
   NetLib|MdeModulePkg/Library/DxeNetLib/DxeNetLib.inf
   IpIoLib|MdeModulePkg/Library/DxeIpIoLib/DxeIpIoLib.inf
@@ -421,7 +462,11 @@
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
 !endif
 !else
+!ifdef $(SOURCE_DEBUG_ENABLE)
+  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
+!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
+!endif
 !endif
   PciLib|OvmfPkg/Library/DxePciLibI440FxQ35/DxePciLibI440FxQ35.inf
 
@@ -529,6 +574,7 @@
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x2F
 !endif
 
+!ifndef $(VBOX)
   # This PCD is used to set the base address of the PCI express hierarchy. It
   # is only consulted when OVMF runs on Q35. In that case it is programmed into
   # the PCIEXBAR register.
@@ -536,6 +582,7 @@
   # On Q35 machine types that QEMU intends to support in the long term, QEMU
   # never lets the RAM below 4 GB exceed 2 GB.
   gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0x80000000
+!endif
 
 !ifdef $(SOURCE_DEBUG_ENABLE)
   gEfiSourceLevelDebugPkgTokenSpaceGuid.PcdDebugLoadImageMethod|0x2
@@ -618,6 +665,15 @@
 !endif
 
   gEfiSecurityPkgTokenSpaceGuid.PcdOptionRomImageVerificationPolicy|0x00
+
+!ifdef $(VBOX)
+  # This PCD is used to set the base address of the PCI express hierarchy. It
+  # is only consulted when OVMF runs on Q35. In that case it is programmed into
+  # the PCIEXBAR register.
+  #
+  # On VirtualBox it is dynamic.
+  gEfiMdePkgTokenSpaceGuid.PcdPciExpressBaseAddress|0x80000000
+!endif
 
 ################################################################################
 #
