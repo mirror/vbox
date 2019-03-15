@@ -1115,14 +1115,16 @@ static size_t copy_from_iter(uint8_t *pbDst, size_t cbToCopy, struct iov_iter *p
     } else {
         while (cbToCopy > 0) {
             size_t cbThisCopy = iov_iter_single_seg_count(pSrcIter);
-            if (cbThisCopy > cbToCopy)
-                cbThisCopy = cbToCopy;
-            if (pSrcIter->type & ITER_KVEC)
-                memcpy(pbDst, (void *)pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy);
-            else if (!copy_from_user(pbDst, pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy))
-                break;
-            pbDst    += cbThisCopy;
-            cbToCopy -= cbThisCopy;
+            if (cbThisCopy > 0) {
+                if (cbThisCopy > cbToCopy)
+                    cbThisCopy = cbToCopy;
+                if (pSrcIter->type & ITER_KVEC)
+                    memcpy(pbDst, (void *)pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy);
+                else if (!copy_from_user(pbDst, pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy))
+                    break;
+                pbDst    += cbThisCopy;
+                cbToCopy -= cbThisCopy;
+            }
             iov_iter_advance(pSrcIter, cbThisCopy);
         }
     }
@@ -1148,14 +1150,17 @@ static size_t copy_to_iter(uint8_t const *pbSrc, size_t cbToCopy, struct iov_ite
     } else {
         while (cbToCopy > 0) {
             size_t cbThisCopy = iov_iter_single_seg_count(pDstIter);
-            if (cbThisCopy > cbToCopy)
-                cbThisCopy = cbToCopy;
-            if (pDstIter->type & ITER_KVEC)
-                memcpy((void *)pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy);
-            else if (!copy_to_user(pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy))
-                break;
-            pbSrc    += cbThisCopy;
-            cbToCopy -= cbThisCopy;
+            if (cbThisCopy > 0) {
+                if (cbThisCopy > cbToCopy)
+                    cbThisCopy = cbToCopy;
+                if (pDstIter->type & ITER_KVEC)
+                    memcpy((void *)pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy);
+                else if (!copy_to_user(pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy)) {
+                    break;
+                }
+                pbSrc    += cbThisCopy;
+                cbToCopy -= cbThisCopy;
+            }
             iov_iter_advance(pDstIter, cbThisCopy);
         }
     }
@@ -1250,6 +1255,10 @@ static int vbsf_iter_lock_pages(struct iov_iter *iter, bool fWrite, struct vbsf_
              */
             ssize_t cbSegRet;
             if (cPages == 0) {
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+                while (!iov_iter_single_seg_count(iter)) /* Old code didn't skip empty segments which caused EFAULTs. */
+                    iov_iter_advance(iter, 0);
+# endif
                 cbSegRet = iov_iter_get_pages(iter, papPages, iov_iter_count(iter), cMaxPages, &offPage0);
                 if (cbSegRet > 0) {
                     iov_iter_advance(iter, cbSegRet);
