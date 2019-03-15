@@ -350,7 +350,7 @@ static VBGLPHYSHEAPBLOCK *vbglPhysHeapChunkAlloc (uint32_t cbSize)
 }
 
 
-void vbglPhysHeapChunkDelete (VBGLPHYSHEAPCHUNK *pChunk)
+static void vbglPhysHeapChunkDelete (VBGLPHYSHEAPCHUNK *pChunk)
 {
     char *p;
     VBGL_PH_ASSERT(pChunk != NULL);
