@@ -3179,9 +3179,11 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
 /** @name VMX_V_VMCS_STATE_XXX - Virtual VMCS state.
  * @{ */
 /** VMCS state clear. */
-#define VMX_V_VMCS_STATE_CLEAR          RT_BIT(1)
+#define VMX_V_VMCS_STATE_CLEAR                                  RT_BIT(0)
+/** VMCS state active. */
+#define VMX_V_VMCS_STATE_ACTIVE                                 RT_BIT(1)
 /** VMCS state launched. */
-#define VMX_V_VMCS_STATE_LAUNCHED       RT_BIT(2)
+#define VMX_V_VMCS_STATE_LAUNCHED                               RT_BIT(2)
 /** @} */
 
 /** CR0 bits set here must always be set when in VMX operation. */
