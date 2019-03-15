@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "UIActionPool.h"
 #include "UIActionPoolRuntime.h"
+#include "UIConsoleEventHandler.h"
 #include "UIFrameBuffer.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
@@ -273,6 +274,12 @@ public:
     virtual void viewportScrolled(int, int) {}
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
+protected slots:
+
+    /** Handles guest request to change the cursor position to @a uX * @a uY.
+      * @param  fContainsData  Brings whether the @a uX and @a uY values are valid and could be used by the GUI now. */
+    void sltCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
+
 protected:
 
     /** Prepare connections routine. */
@@ -387,6 +394,11 @@ private:
 #endif /* Q_OS_WIN */
      /** Identifier returned by AttachFramebuffer. Used in DetachFramebuffer. */
      QUuid m_uFramebufferId;
+
+     /** Holds whether cursor position is valid. */
+     bool   m_fCursorPositionValid;
+     /** Holds the last cursor rectangle. */
+     QRect  m_cursorRectangle;
 };
 
 
@@ -529,6 +541,7 @@ UIFrameBufferPrivate::UIFrameBufferPrivate()
     , m_dDevicePixelRatio(1.0)
     , m_dDevicePixelRatioActual(1.0)
     , m_fUseUnscaledHiDPIOutput(false)
+    , m_fCursorPositionValid(false)
 {
     /* Update coordinate-system: */
     updateCoordinateSystem();
@@ -1289,6 +1302,41 @@ void UIFrameBufferPrivate::performRescale()
 //           scaleFactor(), scaledSize().width(), scaledSize().height());
 }
 
+void UIFrameBufferPrivate::sltCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY)
+{
+    /* Remember whether cursor position is valid: */
+    m_fCursorPositionValid = fContainsData;
+
+    /* Do we have view and valid cursor position? */
+    if (m_pMachineView && m_fCursorPositionValid)
+    {
+        /* Acquire cursor position and size: */
+        QPoint cursorPosition = QPoint(uX, uY);
+        QSize cursorSize = m_pMachineView->uisession()->cursorSize();
+
+        /* Apply the scale-factor if necessary: */
+        cursorPosition *= scaleFactor();
+        cursorSize *= scaleFactor();
+
+        /* Take the device-pixel-ratio into account: */
+        if (!useUnscaledHiDPIOutput())
+        {
+            cursorPosition *= devicePixelRatioActual();
+            cursorSize *= devicePixelRatioActual();
+        }
+        cursorPosition /= devicePixelRatio();
+        cursorSize /= devicePixelRatio();
+
+        /* Call for a viewport update, we need to update cumulative
+         * region containing previous and current cursor rectagles. */
+        const QRect cursorRectangle = QRect(cursorPosition, cursorSize);
+        m_pMachineView->viewport()->update(QRegion(m_cursorRectangle) + cursorRectangle);
+
+        /* Remember current cursor rectangle: */
+        m_cursorRectangle = cursorRectangle;
+    }
+}
+
 void UIFrameBufferPrivate::prepareConnections()
 {
     /* Attach EMT connections: */
@@ -1304,6 +1352,10 @@ void UIFrameBufferPrivate::prepareConnections()
     connect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
             m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)),
             Qt::QueuedConnection);
+
+    /* Attach GUI connections: */
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigCursorPositionChange,
+            this, &UIFrameBufferPrivate::sltCursorPositionChange);
 }
 
 void UIFrameBufferPrivate::cleanupConnections()
@@ -1317,6 +1369,10 @@ void UIFrameBufferPrivate::cleanupConnections()
                m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)));
     disconnect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
                m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)));
+
+    /* Detach GUI connections: */
+    disconnect(gConsoleEvents, &UIConsoleEventHandler::sigCursorPositionChange,
+               this, &UIFrameBufferPrivate::sltCursorPositionChange);
 }
 
 void UIFrameBufferPrivate::updateCoordinateSystem()
@@ -1405,6 +1461,19 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
         /* Wipe out copied image: */
         delete pSourceImage;
         pSourceImage = 0;
+    }
+
+    /* Paint cursor if it has valid shape and position: */
+    if (m_pMachineView->uisession()->isValidPointerShapePresent() && m_fCursorPositionValid)
+    {
+        /* Acquire session cursor pixmap: */
+        QPixmap cursorPixmap = m_pMachineView->uisession()->cursorPixmap();
+
+        /* Take the device-pixel-ratio into account: */
+        cursorPixmap.setDevicePixelRatio(devicePixelRatio());
+
+        /* Draw sub-pixmap: */
+        painter.drawPixmap(m_cursorRectangle.topLeft(), cursorPixmap);
     }
 }
 
@@ -1495,6 +1564,19 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
         /* Wipe out copied image: */
         delete pSourceImage;
         pSourceImage = 0;
+    }
+
+    /* Paint cursor if it has valid shape and position: */
+    if (m_pMachineView->uisession()->isValidPointerShapePresent() && m_fCursorPositionValid)
+    {
+        /* Acquire session cursor pixmap: */
+        QPixmap cursorPixmap = m_pMachineView->uisession()->cursorPixmap();
+
+        /* Take the device-pixel-ratio into account: */
+        cursorPixmap.setDevicePixelRatio(devicePixelRatio());
+
+        /* Draw sub-pixmap: */
+        painter.drawPixmap(m_cursorRectangle.topLeft(), cursorPixmap);
     }
 }
 

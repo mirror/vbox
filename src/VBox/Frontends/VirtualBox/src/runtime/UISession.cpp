@@ -627,7 +627,6 @@ void UISession::sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint ho
 
     /* Notify listeners about mouse capability changed: */
     emit sigMousePointerShapeChange();
-
 }
 
 void UISession::sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor)
@@ -1830,6 +1829,10 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 # warning "port me"
 
 #endif
+
+    /* Cache cursor pixmap data: */
+    m_cursorPixmap = m_cursor.pixmap();
+    m_cursorSize = m_cursorPixmap.size();
 }
 
 bool UISession::preprocessInitialization()

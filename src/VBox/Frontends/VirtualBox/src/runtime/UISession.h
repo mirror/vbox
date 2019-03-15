@@ -26,6 +26,7 @@
 #include <QCursor>
 #include <QEvent>
 #include <QMap>
+#include <QPixmap>
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
@@ -131,7 +132,13 @@ public:
     QWidget* mainMachineWindow() const;
     WId mainMachineWindowId() const;
     UIMachineWindow *activeMachineWindow() const;
+
+    /** Returns currently cached mouse cursor. */
     QCursor cursor() const { return m_cursor; }
+    /** Returns currently cached mouse cursor pixmap. */
+    QPixmap cursorPixmap() const { return m_cursorPixmap; }
+    /** Returns currently cached mouse cursor size. */
+    QSize cursorSize() const { return m_cursorSize; }
 
     /** @name Branding stuff.
      ** @{ */
@@ -475,7 +482,13 @@ private:
     /* Common variables: */
     KMachineState m_machineStatePrevious;
     KMachineState m_machineState;
-    QCursor m_cursor;
+
+    /** Holds cached mouse cursor. */
+    QCursor  m_cursor;
+    /** Holds cached mouse cursor pixmap. */
+    QPixmap  m_cursorPixmap;
+    /** Holds cached mouse cursor size. */
+    QSize    m_cursorSize;
 
     /** @name Branding variables.
      ** @{ */
