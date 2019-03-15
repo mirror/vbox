@@ -67,6 +67,11 @@
 # define VBOX_USE_PAE_HACK
 #endif
 
+/* gfp_t was introduced in 2.6.14, define it for earlier. */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 14)
+# define gfp_t  unsigned
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -287,7 +292,7 @@ static void rtR0MemObjLinuxDoMunmap(void *pv, size_t cb, struct task_struct *pTa
  * @param   rcNoMem     What to return when we're out of pages.
  */
 static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE enmType, size_t cb,
-                                     size_t uAlignment, unsigned fFlagsLnx, bool fContiguous, int rcNoMem)
+                                     size_t uAlignment, gfp_t fFlagsLnx, bool fContiguous, int rcNoMem)
 {
     size_t          iPage;
     size_t const    cPages = cb >> PAGE_SHIFT;
@@ -783,7 +788,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
  * @param   fGfp        The Linux GFP flags to use for the allocation.
  */
 static int rtR0MemObjLinuxAllocPhysSub2(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYPE enmType,
-                                        size_t cb, size_t uAlignment, RTHCPHYS PhysHighest, unsigned fGfp)
+                                        size_t cb, size_t uAlignment, RTHCPHYS PhysHighest, gfp_t fGfp)
 {
     PRTR0MEMOBJLNX pMemLnx;
     int rc;
