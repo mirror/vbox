@@ -215,8 +215,8 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static int      VBoxNetFltLinuxInit(void);
-static void     VBoxNetFltLinuxUnload(void);
+static int      __init VBoxNetFltLinuxInit(void);
+static void     __exit VBoxNetFltLinuxUnload(void);
 static void     vboxNetFltLinuxForwardToIntNet(PVBOXNETFLTINS pThis, struct sk_buff *pBuf);
 
 
