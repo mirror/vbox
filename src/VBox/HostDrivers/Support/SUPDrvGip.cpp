@@ -1012,7 +1012,7 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
  *      RTMpOnSpecific callback for reading TSC and time on the CPU we started
  *      the measurements on.}
  */
-DECLCALLBACK(void) supdrvGipInitReadTscAndNanoTsOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+static DECLCALLBACK(void) supdrvGipInitReadTscAndNanoTsOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     RTCCUINTREG fEFlags   = ASMIntDisableFlags();
     uint64_t   *puTscStop = (uint64_t *)pvUser1;
@@ -3418,7 +3418,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
             for (i = 0; i < RT_ELEMENTS(pArgs->uMaster.Verify.auTscs); i += 2)
             {
                 /* Read, kick & wait #1. */
-                uint64_t register uTsc = ASMReadTSC();
+                uint64_t uTsc = ASMReadTSC();
                 ASMAtomicWriteU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_GO_GO);
                 ASMSerializeInstruction();
                 pArgs->uMaster.Verify.auTscs[i] = uTsc;
@@ -3509,7 +3509,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
 
             for (i = 0; i < RT_ELEMENTS(pArgs->uWorker.Verify.auTscs); i += 2)
             {
-                uint64_t register uTsc;
+                uint64_t uTsc;
 
                 /* Wait, Read and Kick #1. */
                 TSCDELTA_DBG_START_LOOP();
@@ -4172,7 +4172,6 @@ static int supdrvTscDeltaThreadButchered(PSUPDRVDEVEXT pDevExt, bool fSpinlockHe
 static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
 {
     PSUPDRVDEVEXT     pDevExt = (PSUPDRVDEVEXT)pvUser;
-    uint32_t          cConsecutiveTimeouts = 0;
     int               rc = VERR_INTERNAL_ERROR_2;
     for (;;)
     {
@@ -4224,7 +4223,6 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
 
             case kTscDeltaThreadState_Measuring:
             {
-                cConsecutiveTimeouts = 0;
                 if (pDevExt->fTscThreadRecomputeAllDeltas)
                 {
                     int cTries = 8;

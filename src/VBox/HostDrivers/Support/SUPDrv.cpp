@@ -4486,7 +4486,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
  *
  * @param   puRevision      Where to store the microcode revision.
  */
-int VBOXCALL supdrvQueryUcodeRev(uint32_t *puRevision)
+static int VBOXCALL supdrvQueryUcodeRev(uint32_t *puRevision)
 {
     int  rc = VERR_UNSUPPORTED_CPU;
     RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;

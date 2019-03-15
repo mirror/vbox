@@ -139,7 +139,7 @@ static pgprot_t rtR0MemObjLinuxConvertProt(unsigned fProt, bool fKernel)
     switch (fProt)
     {
         default:
-            AssertMsgFailed(("%#x %d\n", fProt, fKernel));
+            AssertMsgFailed(("%#x %d\n", fProt, fKernel)); RT_FALL_THRU();
         case RTMEM_PROT_NONE:
             return PAGE_NONE;
 

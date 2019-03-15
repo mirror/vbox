@@ -182,7 +182,7 @@ static int vboxNetAdpLinuxXmit(struct sk_buff *pSkb, struct net_device *pNetDev)
     return 0;
 }
 
-struct net_device_stats *vboxNetAdpLinuxGetStats(struct net_device *pNetDev)
+static struct net_device_stats *vboxNetAdpLinuxGetStats(struct net_device *pNetDev)
 {
     PVBOXNETADPPRIV pPriv = netdev_priv(pNetDev);
     return &pPriv->Stats;

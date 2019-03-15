@@ -3606,6 +3606,32 @@ DECLINLINE(char *) rtLogStPNCpyPad(char *pszDst, const char *pszSrc, size_t cchS
 }
 
 
+/**
+ * stpncpy implementation for use in rtLogOutputPrefixed w/ padding.
+ *
+ * @returns Pointer to the destination buffer byte following the copied string.
+ * @param   pszDst              The destination buffer.
+ * @param   pszSrc              The source string.
+ * @param   cchSrc              The number of characters to copy from the
+ *                              source.  Equal or less than string length.
+ * @param   cchMinWidth         The minimum field with, padd with spaces to
+ *                              reach this.
+ */
+DECLINLINE(char *) rtLogStPNCpyPad2(char *pszDst, const char *pszSrc, size_t cchSrc, size_t cchMinWidth)
+{
+    Assert(pszSrc);
+    Assert(strlen(pszSrc) >= cchSrc);
+
+    memcpy(pszDst, pszSrc, cchSrc);
+    pszDst += cchSrc;
+    do
+        *pszDst++ = ' ';
+    while (cchSrc++ < cchMinWidth);
+
+    return pszDst;
+}
+
+
 
 /**
  * Callback for RTLogFormatV which writes to the logger instance.
@@ -3915,28 +3941,28 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                 {
                     const unsigned fGrp = pLogger->afGroups[pArgs->iGroup != ~0U ? pArgs->iGroup : 0];
                     const char *pszGroup;
-                    size_t cch;
+                    size_t cchGroup;
                     switch (pArgs->fFlags & fGrp)
                     {
-                        case 0:                         pszGroup = "--------";  cch = sizeof("--------") - 1; break;
-                        case RTLOGGRPFLAGS_ENABLED:     pszGroup = "enabled" ;  cch = sizeof("enabled" ) - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_1:     pszGroup = "level 1" ;  cch = sizeof("level 1" ) - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_2:     pszGroup = "level 2" ;  cch = sizeof("level 2" ) - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_3:     pszGroup = "level 3" ;  cch = sizeof("level 3" ) - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_4:     pszGroup = "level 4" ;  cch = sizeof("level 4" ) - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_5:     pszGroup = "level 5" ;  cch = sizeof("level 5" ) - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_6:     pszGroup = "level 6" ;  cch = sizeof("level 6" ) - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_7:     pszGroup = "level 7" ;  cch = sizeof("level 7" ) - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_8:     pszGroup = "level 8" ;  cch = sizeof("level 8" ) - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_9:     pszGroup = "level 9" ;  cch = sizeof("level 9" ) - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_10:    pszGroup = "level 10";  cch = sizeof("level 10") - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_11:    pszGroup = "level 11";  cch = sizeof("level 11") - 1; break;
-                        case RTLOGGRPFLAGS_LEVEL_12:    pszGroup = "level 12";  cch = sizeof("level 12") - 1; break;
-                        case RTLOGGRPFLAGS_FLOW:        pszGroup = "flow"    ;  cch = sizeof("flow"    ) - 1; break;
-                        case RTLOGGRPFLAGS_WARN:        pszGroup = "warn"    ;  cch = sizeof("warn"    ) - 1; break;
-                        default:                        pszGroup = "????????";  cch = sizeof("????????") - 1; break;
+                        case 0:                         pszGroup = "--------";  cchGroup = sizeof("--------") - 1; break;
+                        case RTLOGGRPFLAGS_ENABLED:     pszGroup = "enabled" ;  cchGroup = sizeof("enabled" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_1:     pszGroup = "level 1" ;  cchGroup = sizeof("level 1" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_2:     pszGroup = "level 2" ;  cchGroup = sizeof("level 2" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_3:     pszGroup = "level 3" ;  cchGroup = sizeof("level 3" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_4:     pszGroup = "level 4" ;  cchGroup = sizeof("level 4" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_5:     pszGroup = "level 5" ;  cchGroup = sizeof("level 5" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_6:     pszGroup = "level 6" ;  cchGroup = sizeof("level 6" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_7:     pszGroup = "level 7" ;  cchGroup = sizeof("level 7" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_8:     pszGroup = "level 8" ;  cchGroup = sizeof("level 8" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_9:     pszGroup = "level 9" ;  cchGroup = sizeof("level 9" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_10:    pszGroup = "level 10";  cchGroup = sizeof("level 10") - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_11:    pszGroup = "level 11";  cchGroup = sizeof("level 11") - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_12:    pszGroup = "level 12";  cchGroup = sizeof("level 12") - 1; break;
+                        case RTLOGGRPFLAGS_FLOW:        pszGroup = "flow"    ;  cchGroup = sizeof("flow"    ) - 1; break;
+                        case RTLOGGRPFLAGS_WARN:        pszGroup = "warn"    ;  cchGroup = sizeof("warn"    ) - 1; break;
+                        default:                        pszGroup = "????????";  cchGroup = sizeof("????????") - 1; break;
                     }
-                    psz = rtLogStPNCpyPad(psz, pszGroup, 16, 8);
+                    psz = rtLogStPNCpyPad2(psz, pszGroup, RT_MIN(cchGroup, 16), 8);
                 }
 #define CCH_PREFIX_16   CCH_PREFIX_15 + 17
 
