@@ -1131,7 +1131,7 @@ DECLASM(int) hmR0SVMRunWrapXMM(RTHCPHYS pVmcbHostPhys, RTHCPHYS pVmcbPhys, PCPUM
 # endif
 #endif /* IN_RING0 */
 
-int hmEmulateSvmMovTpr(PVMCPU pVCpu);
+VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCPU pVCpu);
 
 /** @} */
 

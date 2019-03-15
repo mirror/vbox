@@ -50,7 +50,7 @@
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   pCtx                Pointer to the guest-CPU context.
  */
-int hmEmulateSvmMovTpr(PVMCPU pVCpu)
+VMM_INT_DECL(int) hmEmulateSvmMovTpr(PVMCPU pVCpu)
 {
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     Log4(("Emulated VMMCall TPR access replacement at RIP=%RGv\n", pCtx->rip));
