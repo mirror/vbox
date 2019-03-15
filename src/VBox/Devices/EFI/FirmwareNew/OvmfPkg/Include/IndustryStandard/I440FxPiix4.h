@@ -43,7 +43,11 @@
 //
 // B/D/F/Type: 0/1/3/PCI
 //
+#ifdef VBOX
+#define POWER_MGMT_REGISTER_PIIX4(Offset) PCI_LIB_ADDRESS (0, 7, 0, (Offset))
+#else
 #define POWER_MGMT_REGISTER_PIIX4(Offset) PCI_LIB_ADDRESS (0, 1, 3, (Offset))
+#endif
 
 #define PIIX4_PMBA             0x40
 #define PIIX4_PMBA_MASK          (BIT15 | BIT14 | BIT13 | BIT12 | BIT11 | \
