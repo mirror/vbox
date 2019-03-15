@@ -52,7 +52,6 @@
 #endif
 #include <linux/seq_file.h>
 #include <linux/vfs.h>
-#include <linux/nfs_fs.h> /* for NFS_SUPER_MAGIC */
 #include <iprt/path.h>
 
 
@@ -576,20 +575,20 @@ static int vbsf_statfs(struct super_block *sb, struct statfs *stat)
         struct vbsf_super_info *sf_g     = VBSF_GET_SUPER_INFO(sb);
         rc = VbglR0SfHostReqQueryVolInfo(sf_g->map.root, pReq, SHFL_HANDLE_ROOT);
         if (RT_SUCCESS(rc)) {
-            stat->f_type   = NFS_SUPER_MAGIC; /** @todo vboxsf type? */
+            stat->f_type   = UINT32_C(0x786f4256); /* 'VBox' little endian */
             stat->f_bsize  = pVolInfo->ulBytesPerAllocationUnit;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 73)
             stat->f_frsize = pVolInfo->ulBytesPerAllocationUnit;
 #endif
             stat->f_blocks = pVolInfo->ullTotalAllocationBytes
-                       / pVolInfo->ulBytesPerAllocationUnit;
+                           / pVolInfo->ulBytesPerAllocationUnit;
             stat->f_bfree  = pVolInfo->ullAvailableAllocationBytes
-                       / pVolInfo->ulBytesPerAllocationUnit;
+                           / pVolInfo->ulBytesPerAllocationUnit;
             stat->f_bavail = pVolInfo->ullAvailableAllocationBytes
-                       / pVolInfo->ulBytesPerAllocationUnit;
+                           / pVolInfo->ulBytesPerAllocationUnit;
             stat->f_files  = 1000;
-            stat->f_ffree  = 1000; /* don't return 0 here since the guest may think
-                        * that it is not possible to create any more files */
+            stat->f_ffree  = 1000000; /* don't return 0 here since the guest may think
+                                       * that it is not possible to create any more files */
             stat->f_fsid.val[0] = 0;
             stat->f_fsid.val[1] = 0;
             stat->f_namelen = 255;
