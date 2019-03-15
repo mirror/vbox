@@ -1311,7 +1311,7 @@ void UIFrameBufferPrivate::sltCursorPositionChange(bool fContainsData, unsigned 
     if (m_pMachineView && m_fCursorPositionValid)
     {
         /* Acquire cursor position and size: */
-        QPoint cursorPosition = QPoint(uX, uY);
+        QPoint cursorPosition = QPoint(uX, uY) - m_pMachineView->uisession()->cursorHotspot();
         QSize cursorSize = m_pMachineView->uisession()->cursorSize();
 
         /* Apply the scale-factor if necessary: */
