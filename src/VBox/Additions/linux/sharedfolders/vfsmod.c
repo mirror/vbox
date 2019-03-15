@@ -298,7 +298,10 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
                       | BDI_CAP_EXEC_MAP    /* can be mapped for execution */
 #  endif
 #  ifdef BDI_CAP_STRICTLIMIT
+#   if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) /* Trouble with 3.16.x/debian8.  Process stops after dirty page throttling.
+                                                       * Only tested successfully with 4.19.  Maybe skip altogether? */
                       | BDI_CAP_STRICTLIMIT;
+#   endif
 #  endif
               ;
 #  ifdef BDI_CAP_STRICTLIMIT

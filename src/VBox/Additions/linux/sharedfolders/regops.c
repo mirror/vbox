@@ -58,6 +58,10 @@
 # define iter_is_iovec(a_pIter) ( !((a_pIter)->type & (ITER_KVEC | ITER_BVEC)) )
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
+# define vm_fault_t int
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -2280,6 +2284,175 @@ static int vbsf_reg_fsync(struct file *file, struct dentry *dentry, int datasync
 #endif /* < 2.6.35 */
 
 
+#ifdef SFLOG_ENABLED
+/*
+ * This is just for logging page faults and such.
+ */
+
+/** Pointer to the ops generic_file_mmap returns the first time it's called. */
+static struct vm_operations_struct const *g_pGenericFileVmOps = NULL;
+/** Merge of g_LoggingVmOpsTemplate and g_pGenericFileVmOps. */
+static struct vm_operations_struct        g_LoggingVmOps;
+
+
+/* Generic page fault callback: */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+static vm_fault_t vbsf_vmlog_fault(struct vm_fault *vmf)
+{
+    vm_fault_t rc;
+    SFLOGFLOW(("vbsf_vmlog_fault: vmf=%p flags=%#x addr=%p\n", vmf, vmf->flags, vmf->address));
+    rc = g_pGenericFileVmOps->fault(vmf);
+    SFLOGFLOW(("vbsf_vmlog_fault: returns %d\n", rc));
+    return rc;
+}
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+static int vbsf_vmlog_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
+{
+    int rc;
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+    SFLOGFLOW(("vbsf_vmlog_fault: vma=%p vmf=%p flags=%#x addr=%p\n", vma, vmf, vmf->flags, vmf->address));
+#  else
+    SFLOGFLOW(("vbsf_vmlog_fault: vma=%p vmf=%p flags=%#x addr=%p\n", vma, vmf, vmf->flags, vmf->virtual_address));
+#  endif
+    rc = g_pGenericFileVmOps->fault(vma, vmf);
+    SFLOGFLOW(("vbsf_vmlog_fault: returns %d\n", rc));
+    return rc;
+}
+# endif
+
+
+/* Special/generic page fault handler: */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 1)
+static struct page *vbsf_vmlog_nopage(struct vm_area_struct *vma, unsigned long address, int *type)
+{
+    struct page *page;
+    SFLOGFLOW(("vbsf_vmlog_nopage: vma=%p address=%p type=%p:{%#x}\n", vma, address, type, type ? *type : 0));
+    page = g_pGenericFileVmOps->nopage(vma, address, type);
+    SFLOGFLOW(("vbsf_vmlog_nopage: returns %p\n", page));
+    return page;
+}
+# else
+static struct page *vbsf_vmlog_nopage(struct vm_area_struct *vma, unsigned long address, int write_access_or_unused)
+{
+    struct page *page;
+    SFLOGFLOW(("vbsf_vmlog_nopage: vma=%p address=%p wau=%d\n", vma, address, write_access_or_unused));
+    page = g_pGenericFileVmOps->nopage(vma, address, write_access_or_unused);
+    SFLOGFLOW(("vbsf_vmlog_nopage: returns %p\n", page));
+    return page;
+}
+# endif /* < 2.6.26 */
+
+
+/* Special page fault callback for making something writable: */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+static vm_fault_t vbsf_vmlog_page_mkwrite(struct vm_fault *vmf)
+{
+    vm_fault_t rc;
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+    SFLOGFLOW(("vbsf_vmlog_page_mkwrite: vmf=%p flags=%#x addr=%p\n", vmf, vmf->flags, vmf->address));
+#  else
+    SFLOGFLOW(("vbsf_vmlog_page_mkwrite: vmf=%p flags=%#x addr=%p\n", vmf, vmf->flags, vmf->virtual_address));
+#  endif
+    rc = g_pGenericFileVmOps->page_mkwrite(vmf);
+    SFLOGFLOW(("vbsf_vmlog_page_mkwrite: returns %d\n", rc));
+    return rc;
+}
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+static int vbsf_vmlog_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+{
+    int rc;
+    SFLOGFLOW(("vbsf_vmlog_page_mkwrite: vma=%p vmf=%p flags=%#x addr=%p\n", vma, vmf, vmf->flags, vmf->virtual_address));
+    rc = g_pGenericFileVmOps->page_mkwrite(vma, vmf);
+    SFLOGFLOW(("vbsf_vmlog_page_mkwrite: returns %d\n", rc));
+    return rc;
+}
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+static int vbsf_vmlog_page_mkwrite(struct vm_area_struct *vma, struct page *page)
+{
+    int rc;
+    SFLOGFLOW(("vbsf_vmlog_page_mkwrite: vma=%p page=%p\n", vma, page));
+    rc = g_pGenericFileVmOps->page_mkwrite(vma, page);
+    SFLOGFLOW(("vbsf_vmlog_page_mkwrite: returns %d\n", rc));
+    return rc;
+}
+# endif
+
+
+/* Special page fault callback for mapping pages: */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+static void vbsf_vmlog_map_pages(struct vm_fault *vmf, pgoff_t start, pgoff_t end)
+{
+    SFLOGFLOW(("vbsf_vmlog_map_pages: vmf=%p (flags=%#x addr=%p) start=%p end=%p\n", vmf, vmf->flags, vmf->address, start, end));
+    g_pGenericFileVmOps->map_pages(vmf, start, end);
+    SFLOGFLOW(("vbsf_vmlog_map_pages: returns\n"));
+}
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+static void vbsf_vmlog_map_pages(struct fault_env *fenv, pgoff_t start, pgoff_t end)
+{
+    SFLOGFLOW(("vbsf_vmlog_map_pages: fenv=%p (flags=%#x addr=%p) start=%p end=%p\n", fenv, vmf->flags, vmf->address, start, end));
+    g_pGenericFileVmOps->map_pages(fenv, start, end);
+    SFLOGFLOW(("vbsf_vmlog_map_pages: returns\n"));
+}
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+static void vbsf_vmlog_map_pages(struct vm_area_struct *vma, struct vm_fault *vmf)
+{
+    SFLOGFLOW(("vbsf_vmlog_map_pages: vma=%p vmf=%p (flags=%#x addr=%p)\n", vma, vmf, vmf->flags, vmf->virtual_address));
+    g_pGenericFileVmOps->map_pages(vma, vmf);
+    SFLOGFLOW(("vbsf_vmlog_map_pages: returns\n"));
+}
+# endif
+
+
+/** Overload template. */
+static struct vm_operations_struct const g_LoggingVmOpsTemplate = {
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+    .fault = vbsf_vmlog_fault,
+# endif
+# if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 25)
+    .nopage = vbsf_vmlog_nopage,
+# endif
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
+    .page_mkwrite = vbsf_vmlog_page_mkwrite,
+# endif
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+    .map_pages = vbsf_vmlog_map_pages,
+# endif
+};
+
+/** file_operations::mmap wrapper for logging purposes. */
+extern int vbsf_reg_mmap(struct file *file, struct vm_area_struct *vma)
+{
+    int rc;
+    SFLOGFLOW(("vbsf_reg_mmap: file=%p vma=%p\n", file, vma));
+    rc = generic_file_mmap(file, vma);
+    if (rc == 0) {
+        /* Merge the ops and template the first time thru (there's a race here). */
+        if (g_pGenericFileVmOps == NULL) {
+            uintptr_t const    *puSrc1 = (uintptr_t *)vma->vm_ops;
+            uintptr_t const    *puSrc2 = (uintptr_t *)&g_LoggingVmOpsTemplate;
+            uintptr_t volatile *puDst  = (uintptr_t *)&g_LoggingVmOps;
+            size_t              cbLeft = sizeof(g_LoggingVmOps) / sizeof(*puDst);
+            while (cbLeft-- > 0) {
+                *puDst = *puSrc2 && *puSrc1 ? *puSrc2 : *puSrc1;
+                puSrc1++;
+                puSrc2++;
+                puDst++;
+            }
+            g_pGenericFileVmOps = vma->vm_ops;
+            vma->vm_ops = &g_LoggingVmOps;
+        } else if (g_pGenericFileVmOps == vma->vm_ops)
+            vma->vm_ops = &g_LoggingVmOps;
+        else
+            SFLOGFLOW(("vbsf_reg_mmap: Warning: vm_ops=%p, expected %p!\n", vma->vm_ops, g_pGenericFileVmOps));
+    }
+    SFLOGFLOW(("vbsf_reg_mmap: returns %d\n", rc));
+    return rc;
+}
+
+#endif /* SFLOG_ENABLED */
+
+
 /**
  * File operations for regular files.
  */
@@ -2292,7 +2465,11 @@ struct file_operations vbsf_reg_fops = {
     .write_iter  = vbsf_reg_write_iter,
 #endif
     .release     = vbsf_reg_release,
+#ifdef SFLOG_ENABLED
+    .mmap        = vbsf_reg_mmap,
+#else
     .mmap        = generic_file_mmap,
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 /** @todo This code is known to cause caching of data which should not be
