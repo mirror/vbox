@@ -3913,6 +3913,24 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool f
 
 
 /**
+ * VMX VM-exit handler for VM-exits due to NMIs.
+ *
+ * @returns VBox strict status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ *
+ * @remarks This function might import externally kept DR6 if necessary.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitNmi(PVMCPU pVCpu)
+{
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(pVmcs->u32PinCtls & VMX_PIN_CTLS_NMI_EXIT);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents);
+    return iemVmxVmexitEvent(pVCpu, X86_XCPT_NMI, IEM_XCPT_FLAGS_T_CPU_XCPT, 0 /* uErrCode */, 0 /* uCr2 */, 0 /* cbInstr */);
+}
+
+
+/**
  * VMX VM-exit handler for VM-exits due to startup-IPIs (SIPI).
  *
  * @returns VBox strict status code.
