@@ -799,7 +799,6 @@ typedef VMXVMCSINFO *PVMXVMCSINFO;
 /** Pointer to a VMXVMCSINFO struct. */
 typedef const VMXVMCSINFO *PCVMXVMCSINFO;
 AssertCompileSizeAlignment(VMXVMCSINFO, 8);
-AssertCompileSize(VMXVMCSINFO, 208);
 
 /**
  * HM VMCPU Instance data.
