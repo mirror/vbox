@@ -713,6 +713,95 @@ typedef const VMXVMCSCTLSCACHE *PCVMXVMCSCTLSCACHE;
 AssertCompileSizeAlignment(VMXVMCSCTLSCACHE, 8);
 
 /**
+ * VMX VMCS information.
+ *
+ * This structure provides information maintained for and during the executing of a
+ * guest (or nested-guest) VMCS (VM control structure) using hardware-assisted VMX.
+ */
+typedef struct VMXVMCSINFO
+{
+    /** @name VMCS and related data structures.
+     *  @{ */
+    /** Host-physical address of the VMCS. */
+    RTHCPHYS                    HCPhysVmcs;
+    /** R0 memory object for the VMCS. */
+    RTR0MEMOBJ                  hMemObjVmcs;
+    /** Host-virtual address of the VMCS. */
+    R0PTRTYPE(void *)           pvVmcs;
+
+    /** Host-physical address of the virtual APIC page. */
+    RTHCPHYS                    HCPhysVirtApic;
+    /** Padding. */
+    R0PTRTYPE(void *)           pvAlignment0;
+    /** Host-virtual address of the virtual-APIC page. */
+    R0PTRTYPE(uint8_t *)        pbVirtApic;
+
+    /** Host-physical address of the MSR bitmap. */
+    RTHCPHYS                    HCPhysMsrBitmap;
+    /** R0 memory object for the MSR bitmap. */
+    RTR0MEMOBJ                  hMemObjMsrBitmap;
+    /** Host-virtual address of the MSR bitmap. */
+    R0PTRTYPE(void *)           pvMsrBitmap;
+
+    /** Host-physical address of the VM-entry MSR-load and VM-exit MSR-store area. */
+    RTHCPHYS                    HCPhysGuestMsr;
+    /** R0 memory object of the VM-entry MSR-load and VM-exit MSR-store area. */
+    RTR0MEMOBJ                  hMemObjGuestMsr;
+    /** Host-virtual address of the VM-entry MSR-load and VM-exit MSR-store area. */
+    R0PTRTYPE(void *)           pvGuestMsr;
+
+    /** Host-physical address of the VM-exit MSR-load area. */
+    RTHCPHYS                    HCPhysHostMsr;
+    /** R0 memory object for the VM-exit MSR-load area. */
+    RTR0MEMOBJ                  hMemObjHostMsr;
+    /** Host-virtual address of the VM-exit MSR-load area. */
+    R0PTRTYPE(void *)           pvHostMsr;
+
+    /** Host-physical address of the EPTP. */
+    RTHCPHYS                    HCPhysEPTP;
+    /** @} */
+
+    /** @name Auxiliary information.
+     * @{ */
+    /** Number of guest/host MSR pairs in the auto-load/store area. */
+    uint32_t                    cMsrs;
+    /** The VMCS state, see VMX_V_VMCS_STATE_XXX. */
+    uint32_t                    fVmcsState;
+    /** @} */
+
+    /** @name Cache of execution related VMCS fields.
+     *  @{ */
+    /** Pin-based VM-execution controls. */
+    uint32_t                    u32PinCtls;
+    /** Processor-based VM-execution controls. */
+    uint32_t                    u32ProcCtls;
+    /** Secondary processor-based VM-execution controls. */
+    uint32_t                    u32ProcCtls2;
+    /** VM-entry controls. */
+    uint32_t                    u32EntryCtls;
+    /** VM-exit controls. */
+    uint32_t                    u32ExitCtls;
+    /** CR0 guest/host mask. */
+    uint32_t                    u32Cr0Mask;
+    /** CR4 guset/host mask. */
+    uint32_t                    u32Cr4Mask;
+    /** Exception bitmap. */
+    uint32_t                    u32XcptBitmap;
+    /** TSC offset. */
+    uint64_t                    u64TscOffset;
+    /** @} */
+
+    /** Padding. */
+    uint64_t                    u64Padding[4];
+} VMXVMCSINFO;
+/** Pointer to a VMXVMCSINFO struct. */
+typedef VMXVMCSINFO *PVMXVMCSINFO;
+/** Pointer to a VMXVMCSINFO struct. */
+typedef const VMXVMCSINFO *PCVMXVMCSINFO;
+AssertCompileSizeAlignment(VMXVMCSINFO, 8);
+AssertCompileSize(VMXVMCSINFO, 208);
+
+/**
  * HM VMCPU Instance data.
  *
  * Note! If you change members of this struct, make sure to check if the
