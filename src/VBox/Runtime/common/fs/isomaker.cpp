@@ -2708,7 +2708,8 @@ static int rtFsIsoMakerObjRemoveWorker(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ 
     if (pObj->enmType == RTFSISOMAKEROBJTYPE_FILE)
     {
         PRTFSISOMAKERFILE pFile = (PRTFSISOMAKERFILE)pObj;
-        AssertReturn(pFile->enmSrcType != RTFSISOMAKERSRCTYPE_TRANS_TBL, VERR_ACCESS_DENIED);
+        if (pFile->enmSrcType == RTFSISOMAKERSRCTYPE_TRANS_TBL)
+            return VWRN_DANGLING_OBJECTS; /* HACK ALERT! AssertReturn(pFile->enmSrcType != RTFSISOMAKERSRCTYPE_TRANS_TBL, VERR_ACCESS_DENIED); */
         AssertReturn(pFile != pThis->pBootCatFile, VERR_ACCESS_DENIED);
     }
 
@@ -3082,7 +3083,6 @@ static int rtFsIsoMakerInitCommonObj(PRTFSISOMAKERINT pThis, PRTFSISOMAKEROBJ pO
         pObj->ChangeTime        = pObjInfo->ChangeTime;
         pObj->ModificationTime  = pObjInfo->ModificationTime;
         pObj->AccessedTime      = pObjInfo->AccessTime;
-        pObj->fMode             = pObjInfo->Attr.fMode;
         if (!pThis->fStrictAttributeStyle)
         {
             if (enmType == RTFSISOMAKEROBJTYPE_DIR)
@@ -3236,7 +3236,7 @@ static int rtFsIsoMakerAddUnnamedFileWorker(PRTFSISOMAKERINT pThis, PCRTFSOBJINF
     if (RT_SUCCESS(rc))
     {
         pFile->cbData       = pObjInfo ? pObjInfo->cbObject : 0;
-        pThis->cbData += RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE);
+        pThis->cbData      += RT_ALIGN_64(pFile->cbData, RTFSISOMAKER_SECTOR_SIZE);
         pFile->offData      = UINT64_MAX;
         pFile->enmSrcType   = RTFSISOMAKERSRCTYPE_INVALID;
         pFile->u.pszSrcPath = NULL;
@@ -4361,7 +4361,10 @@ static int rtFsIsoMakerFinalizeRemoveOrphans(PRTFSISOMAKERINT pThis)
                       pCur->enmType == RTFSISOMAKEROBJTYPE_FILE ? ((PRTFSISOMAKERFILE)(pCur))->cbData : 0));
                 int rc = rtFsIsoMakerObjRemoveWorker(pThis, pCur);
                 if (RT_SUCCESS(rc))
-                    cRemoved++;
+                {
+                    if (rc != VWRN_DANGLING_OBJECTS) /** */
+                        cRemoved++;
+                }
                 else
                     return rc;
             }
