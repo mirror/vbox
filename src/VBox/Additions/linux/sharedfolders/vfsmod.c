@@ -52,6 +52,7 @@
 #endif
 #include <linux/seq_file.h>
 #include <linux/vfs.h>
+#include <iprt/err.h>
 #include <iprt/path.h>
 
 
@@ -76,7 +77,8 @@ static struct super_operations sf_super_ops;
 /**
  * Copies options from the mount info structure into @a sf_g.
  *
- * This is used both by vbsf_super_info_alloc() and vbsf_remount_fs().
+ * This is used both by vbsf_super_info_alloc_and_map_it() and
+ * vbsf_remount_fs().
  */
 static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *sf_g, struct vbsf_mount_info_new *info)
 {
@@ -129,110 +131,126 @@ static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *sf_g, s
     }
 }
 
-/* allocate super info, try to map host share */
-static int vbsf_super_info_alloc(struct vbsf_mount_info_new *info, struct vbsf_super_info **sf_gp)
+/**
+ * Allocate the super info structure and try map the host share.
+ */
+static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, struct vbsf_super_info **sf_gp)
 {
-    int err, rc;
+    int rc;
     SHFLSTRING *str_name;
     size_t name_len, str_len;
     struct vbsf_super_info *sf_g;
 
     TRACE();
-    sf_g = kmalloc(sizeof(*sf_g), GFP_KERNEL);
-    if (!sf_g) {
-        err = -ENOMEM;
-        LogRelFunc(("could not allocate memory for super info\n"));
-        goto fail0;
-    }
 
-    RT_ZERO(*sf_g);
-
-    if (info->nullchar != '\0'
+    /*
+     * Validate info.
+     */
+    if (   info->nullchar != '\0'
         || info->signature[0] != VBSF_MOUNT_SIGNATURE_BYTE_0
         || info->signature[1] != VBSF_MOUNT_SIGNATURE_BYTE_1
         || info->signature[2] != VBSF_MOUNT_SIGNATURE_BYTE_2) {
-        err = -EINVAL;
-        goto fail1;
+        SFLOGRELBOTH(("vboxsf: Invalid info signature: %#x %#x %#x %#x!\n",
+                      info->nullchar, info->signature[0], info->signature[1], info->signature[2]));
+        return -EINVAL;
+    }
+    name_len = RTStrNLen(info->name, sizeof(info->name));
+    if (name_len >= sizeof(info->name)) {
+        SFLOGRELBOTH(("vboxsf: Specified shared folder name is not zero terminated!\n"));
+        return -EINVAL;
+    }
+    if (RTStrNLen(info->nls_name, sizeof(info->nls_name)) >= sizeof(info->nls_name)) {
+        SFLOGRELBOTH(("vboxsf: Specified nls name is not zero terminated!\n"));
+        return -EINVAL;
     }
 
-    info->name[sizeof(info->name) - 1] = 0;
-    info->nls_name[sizeof(info->nls_name) - 1] = 0;
-
-    name_len = strlen(info->name);
-    str_len = offsetof(SHFLSTRING, String.utf8) + name_len + 1;
+    /*
+     * Allocate memory.
+     */
+    str_len  = offsetof(SHFLSTRING, String.utf8) + name_len + 1;
     str_name = kmalloc(str_len, GFP_KERNEL);
-    if (!str_name) {
-        err = -ENOMEM;
-        LogRelFunc(("could not allocate memory for host name\n"));
-        goto fail1;
-    }
+    sf_g     = kmalloc(sizeof(*sf_g), GFP_KERNEL);
+    if (sf_g && str_name) {
+        RT_ZERO(*sf_g);
 
-    str_name->u16Length = name_len;
-    str_name->u16Size = name_len + 1;
-    memcpy(str_name->String.utf8, info->name, name_len + 1);
+        str_name->u16Length = name_len;
+        str_name->u16Size = name_len + 1;
+        memcpy(str_name->String.utf8, info->name, name_len + 1);
 
+        /*
+         * Init the NLS support, if needed.
+         */
+        rc = 0;
 #define _IS_UTF8(_str)  (strcmp(_str, "utf8") == 0)
 #define _IS_EMPTY(_str) (strcmp(_str, "") == 0)
 
-    /* Check if NLS charset is valid and not points to UTF8 table */
-    sf_g->fNlsIsUtf8 = true;
-    if (info->nls_name[0]) {
-        if (_IS_UTF8(info->nls_name)) {
-            sf_g->nls = NULL;
-        } else {
-            sf_g->fNlsIsUtf8 = false;
-            sf_g->nls = load_nls(info->nls_name);
-            if (!sf_g->nls) {
-                err = -EINVAL;
-                LogFunc(("failed to load nls %s\n",
-                     info->nls_name));
-                kfree(str_name);
-                goto fail1;
+        /* Check if NLS charset is valid and not points to UTF8 table */
+        sf_g->fNlsIsUtf8 = true;
+        if (info->nls_name[0]) {
+            if (_IS_UTF8(info->nls_name)) {
+                sf_g->nls = NULL;
+            } else {
+                sf_g->fNlsIsUtf8 = false;
+                sf_g->nls = load_nls(info->nls_name);
+                if (!sf_g->nls) {
+                    SFLOGRELBOTH(("vboxsf: Failed to load nls '%s'!\n", info->nls_name));
+                    rc = -EINVAL;
+                }
             }
-        }
-    } else {
+        } else {
 #ifdef CONFIG_NLS_DEFAULT
-        /* If no NLS charset specified, try to load the default
-         * one if it's not points to UTF8. */
-        if (!_IS_UTF8(CONFIG_NLS_DEFAULT)
-            && !_IS_EMPTY(CONFIG_NLS_DEFAULT)) {
-            sf_g->fNlsIsUtf8 = false;
-            sf_g->nls = load_nls_default();
-        } else
-            sf_g->nls = NULL;
+            /* If no NLS charset specified, try to load the default
+             * one if it's not points to UTF8. */
+            if (!_IS_UTF8(CONFIG_NLS_DEFAULT)
+                && !_IS_EMPTY(CONFIG_NLS_DEFAULT)) {
+                sf_g->fNlsIsUtf8 = false;
+                sf_g->nls = load_nls_default();
+            } else
+                sf_g->nls = NULL;
 #else
-        sf_g->nls = NULL;
+            sf_g->nls = NULL;
 #endif
-    }
-
+        }
 #undef _IS_UTF8
 #undef _IS_EMPTY
+        if (rc == 0) {
+            /*
+             * Try mount it.
+             */
+            rc = VbglR0SfHostReqMapFolderWithContigSimple(str_name, virt_to_phys(str_name), RTPATH_DELIMITER,
+                                                          true /*fCaseSensitive*/, &sf_g->map.root);
+            if (RT_SUCCESS(rc)) {
+                kfree(str_name);
 
-    rc = VbglR0SfHostReqMapFolderWithContigSimple(str_name, virt_to_phys(str_name), RTPATH_DELIMITER,
-                              true /*fCaseSensitive*/, &sf_g->map.root);
-    kfree(str_name);
+                /* The rest is shared with remount. */
+                vbsf_super_info_copy_remount_options(sf_g, info);
 
-    if (RT_FAILURE(rc)) {
-        err = -EPROTO;
-        LogFunc(("SHFL_FN_MAP_FOLDER failed rc=%Rrc\n", rc));
-        goto fail2;
+                *sf_gp = sf_g;
+                return 0;
+            }
+
+            /*
+             * bail out:
+             */
+            if (rc == VERR_FILE_NOT_FOUND) {
+                LogRel(("vboxsf: SHFL_FN_MAP_FOLDER failed for '%s': share not found\n", info->name));
+                rc = -ENXIO;
+            } else {
+                LogRel(("vboxsf: SHFL_FN_MAP_FOLDER failed for '%s': %Rrc\n", info->name, rc));
+                rc = -EPROTO;
+            }
+            if (sf_g->nls)
+                unload_nls(sf_g->nls);
+        }
+    } else {
+        SFLOGRELBOTH(("vboxsf: Could not allocate memory for super info!\n"));
+        rc = -ENOMEM;
     }
-
-    /* The rest is shared with remount. */
-    vbsf_super_info_copy_remount_options(sf_g, info);
-
-    *sf_gp = sf_g;
-    return 0;
-
- fail2:
-    if (sf_g->nls)
-        unload_nls(sf_g->nls);
-
- fail1:
-    kfree(sf_g);
-
- fail0:
-    return err;
+    if (str_name)
+        kfree(str_name);
+    if (sf_g)
+        kfree(sf_g);
+    return rc;
 }
 
 /* unmap the share and free super info [sf_g] */
@@ -259,7 +277,7 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
 {
     int rc = 0;
 /** @todo this needs sorting out between 3.19 and 4.11   */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) //&& LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     /* Each new shared folder map gets a new uint64_t identifier,
      * allocated in sequence.  We ASSUME the sequence will not wrap. */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
@@ -283,7 +301,7 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
     bdi->capabilities = 0
 #  ifdef BDI_CAP_MAP_DIRECT
-                  | BDI_CAP_MAP_DIRECT  /* MAP_SHARED */
+                      | BDI_CAP_MAP_DIRECT  /* MAP_SHARED */
 #  endif
 #  ifdef BDI_CAP_MAP_COPY
                       | BDI_CAP_MAP_COPY    /* MAP_PRIVATE */
@@ -305,7 +323,10 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
 #  endif
               ;
 #  ifdef BDI_CAP_STRICTLIMIT
-    /* Smalles possible amount of dirty pages: %1 of RAM */
+    /* Smalles possible amount of dirty pages: %1 of RAM.  We set this to
+       try reduce amount of data that's out of sync with the host side.
+       Besides, writepages isn't implemented, so flushing is extremely slow.
+       Note! Extremely slow linux 3.0.0 msync doesn't seem to be related to this setting. */
     bdi_set_max_ratio(bdi, 1);
 #  endif
 # endif /* >= 2.6.12 */
@@ -314,10 +335,9 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
     rc = bdi_init(&sf_g->bdi);
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
     if (!rc)
-        rc = bdi_register(&sf_g->bdi, NULL, "vboxsf-%llu",
-                  (unsigned long long)u64CurrentSequence);
+        rc = bdi_register(&sf_g->bdi, NULL, "vboxsf-%llu", (unsigned long long)u64CurrentSequence);
 #  endif /* >= 2.6.26 */
-# endif  /* >= 2.6.24 */
+# endif  /* 4.11.0 > version >= 2.6.24 */
 #endif   /* >= 2.6.0 */
     return rc;
 }
@@ -335,11 +355,104 @@ static void vbsf_done_backing_dev(struct super_block *sb, struct vbsf_super_info
 
 
 /**
+ * Creates the root inode and attaches it to the super block.
+ *
+ * @returns 0 on success, negative errno on failure.
+ * @param   sb      The super block.
+ * @param   sf_g    Our super block info.
+ */
+static int vbsf_create_root_inode(struct super_block *sb, struct vbsf_super_info *sf_g)
+{
+    SHFLFSOBJINFO fsinfo;
+    int rc;
+
+    /*
+     * Allocate and initialize the memory for our inode info structure.
+     */
+    struct vbsf_inode_info *sf_i = kmalloc(sizeof(*sf_i), GFP_KERNEL);
+    SHFLSTRING             *path = kmalloc(sizeof(SHFLSTRING) + 1, GFP_KERNEL);
+    if (sf_i && path) {
+        sf_i->handle = SHFL_HANDLE_NIL;
+        sf_i->force_restat = false;
+        RTListInit(&sf_i->HandleList);
+#ifdef VBOX_STRICT
+        sf_i->u32Magic = SF_INODE_INFO_MAGIC;
+#endif
+        sf_i->path = path;
+
+        path->u16Length = 1;
+        path->u16Size = 2;
+        path->String.utf8[0] = '/';
+        path->String.utf8[1] = 0;
+
+        /*
+         * Stat the root directory (for inode info).
+         */
+        rc = vbsf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
+        if (rc == 0) {
+            /*
+             * Create the actual inode structure.
+             * Note! ls -la does display '.' and '..' entries with st_ino == 0, so root is #1.
+             */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
+            struct inode *iroot = iget_locked(sb, 1);
+#else
+            struct inode *iroot = iget(sb, 1);
+#endif
+            if (iroot) {
+                vbsf_init_inode(iroot, sf_i, &fsinfo, sf_g);
+                VBSF_SET_INODE_INFO(iroot, sf_i);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
+                unlock_new_inode(iroot);
+#endif
+
+                /*
+                 * Now make it a root inode.
+                 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
+                sb->s_root = d_make_root(iroot);
+#else
+                sb->s_root = d_alloc_root(iroot);
+#endif
+                if (sb->s_root) {
+
+                    return 0;
+                }
+
+                SFLOGRELBOTH(("vboxsf: d_make_root failed!\n"));
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0) /* d_make_root calls iput */
+                iput(iroot);
+#endif
+                /* iput() will call vbsf_evict_inode()/vbsf_clear_inode(). */
+                sf_i = NULL;
+                path = NULL;
+
+                rc = -ENOMEM;
+            } else {
+                SFLOGRELBOTH(("vboxsf: failed to allocate root inode!\n"));
+                rc = -ENOMEM;
+            }
+        } else
+            SFLOGRELBOTH(("vboxsf: could not stat root of share: %d\n", rc));
+    } else {
+        SFLOGRELBOTH(("vboxsf: Could not allocate memory for root inode info!\n"));
+        rc = -ENOMEM;
+    }
+    if (sf_i)
+        kfree(sf_i);
+    if (path)
+        kfree(path);
+    return rc;
+}
+
+
+/**
  * This is called by vbsf_read_super_24() and vbsf_read_super_26() when vfs mounts
  * the fs and wants to read super_block.
  *
- * Calls vbsf_super_info_alloc() to map the folder and allocate super information
- * structure.
+ * Calls vbsf_super_info_alloc_and_map_it() to map the folder and allocate super
+ * information structure.
  *
  * Initializes @a sb, initializes root inode and dentry.
  *
@@ -347,144 +460,67 @@ static void vbsf_done_backing_dev(struct super_block *sb, struct vbsf_super_info
  */
 static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
 {
-    int err;
-    struct dentry *droot;
-    struct inode *iroot;
-    struct vbsf_inode_info *sf_i;
+    int rc;
     struct vbsf_super_info *sf_g;
-    SHFLFSOBJINFO fsinfo;
-    struct vbsf_mount_info_new *info;
-    bool fInodePut = true;
 
     TRACE();
     if (!data) {
-        LogFunc(("no mount info specified\n"));
+        SFLOGRELBOTH(("vboxsf: No mount data. Is mount.vboxsf installed (typically in /sbin)?\n"));
         return -EINVAL;
     }
 
-    info = data;
-
     if (flags & MS_REMOUNT) {
-        LogFunc(("remounting is not supported\n"));
+        SFLOGRELBOTH(("vboxsf: Remounting is not supported!\n"));
         return -ENOSYS;
     }
 
-    err = vbsf_super_info_alloc(info, &sf_g);
-    if (err)
-        goto fail0;
-
-    sf_i = kmalloc(sizeof(*sf_i), GFP_KERNEL);
-    if (!sf_i) {
-        err = -ENOMEM;
-        LogRelFunc(("could not allocate memory for root inode info\n"));
-        goto fail1;
-    }
-
-    sf_i->handle = SHFL_HANDLE_NIL;
-    sf_i->path = kmalloc(sizeof(SHFLSTRING) + 1, GFP_KERNEL);
-    if (!sf_i->path) {
-        err = -ENOMEM;
-        LogRelFunc(("could not allocate memory for root inode path\n"));
-        goto fail2;
-    }
-
-    sf_i->path->u16Length = 1;
-    sf_i->path->u16Size = 2;
-    sf_i->path->String.utf8[0] = '/';
-    sf_i->path->String.utf8[1] = 0;
-    sf_i->force_restat = false;
-    RTListInit(&sf_i->HandleList);
-#ifdef VBOX_STRICT
-    sf_i->u32Magic = SF_INODE_INFO_MAGIC;
-#endif
-
-    err = vbsf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
-    if (err) {
-        LogFunc(("could not stat root of share\n"));
-        goto fail3;
-    }
-
-    sb->s_magic = 0xface;
-    sb->s_blocksize = 1024;
+    /*
+     * Create our super info structure and map the shared folder.
+     */
+    rc = vbsf_super_info_alloc_and_map_it((struct vbsf_mount_info_new *)data, &sf_g);
+    if (rc == 0) {
+        /*
+         * Initialize the super block structure (must be done before
+         * root inode creation).
+         */
+        sb->s_magic = 0xface;
+        sb->s_blocksize = 1024;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 3)
-    /* Required for seek/sendfile (see 'loff_t max' in fs/read_write.c / do_sendfile()). */
+        /* Required for seek/sendfile (see 'loff_t max' in fs/read_write.c / do_sendfile()). */
 # if defined MAX_LFS_FILESIZE
-    sb->s_maxbytes = MAX_LFS_FILESIZE;
+        sb->s_maxbytes = MAX_LFS_FILESIZE;
 # elif BITS_PER_LONG == 32
-    sb->s_maxbytes = (loff_t)ULONG_MAX << PAGE_SHIFT;
+        sb->s_maxbytes = (loff_t)ULONG_MAX << PAGE_SHIFT;
 # else
-    sb->s_maxbytes = INT64_MAX;
+        sb->s_maxbytes = INT64_MAX;
 # endif
 #endif
-    sb->s_op = &sf_super_ops;
+        sb->s_op = &sf_super_ops;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
-    sb->s_d_op = &vbsf_dentry_ops;
+        sb->s_d_op = &vbsf_dentry_ops;
 #endif
 
-    /* Note! ls -la does display '.' and '..' entries with st_ino == 0, so root is #1. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-    iroot = iget_locked(sb, 1);
-#else
-    iroot = iget(sb, 1);
-#endif
-    if (!iroot) {
-        err = -ENOMEM;  /* XXX */
-        LogFunc(("could not get root inode\n"));
-        goto fail3;
+        /*
+         * Initialize the backing device.  This is important for memory mapped
+         * files among other things.
+         */
+        rc = vbsf_init_backing_dev(sb, sf_g);
+        if (rc == 0) {
+            /*
+             * Create the root inode and we're done.
+             */
+            rc = vbsf_create_root_inode(sb, sf_g);
+            if (rc == 0) {
+                VBSF_SET_SUPER_INFO(sb, sf_g);
+                SFLOGFLOW(("vbsf_read_super_aux: returns successfully\n"));
+                return 0;
+            }
+            vbsf_done_backing_dev(sb, sf_g);
+        } else
+            SFLOGRELBOTH(("vboxsf: backing device information initialization failed: %d\n", rc));
+        vbsf_super_info_free(sf_g);
     }
-
-    if (vbsf_init_backing_dev(sb, sf_g)) {
-        err = -EINVAL;
-        LogFunc(("could not init bdi\n"));
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-        unlock_new_inode(iroot);
-#endif
-        goto fail4;
-    }
-
-    vbsf_init_inode(iroot, sf_i, &fsinfo, sf_g);
-    VBSF_SET_INODE_INFO(iroot, sf_i);
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-    unlock_new_inode(iroot);
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
-    droot = d_make_root(iroot);
-#else
-    droot = d_alloc_root(iroot);
-#endif
-    if (!droot) {
-        err = -ENOMEM;  /* XXX */
-        LogFunc(("d_alloc_root failed\n"));
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
-        fInodePut = false;
-#endif
-        goto fail5;
-    }
-
-    sb->s_root = droot;
-    VBSF_SET_SUPER_INFO(sb, sf_g);
-    return 0;
-
- fail5:
-    vbsf_done_backing_dev(sb, sf_g);
-
- fail4:
-    if (fInodePut)
-        iput(iroot);
-
- fail3:
-    kfree(sf_i->path);
-
- fail2:
-    kfree(sf_i);
-
- fail1:
-    vbsf_super_info_free(sf_g);
-
- fail0:
-    return err;
+    return rc;
 }
 
 

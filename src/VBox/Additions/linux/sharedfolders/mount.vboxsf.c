@@ -377,6 +377,7 @@ main(int argc, char **argv)
 {
     int c;
     int err;
+    int saved_errno;
     int nomtab = 0;
     unsigned long flags = MS_NODEV;
     char *host_name;
@@ -496,26 +497,42 @@ main(int argc, char **argv)
      *       to keep this code here slick without having VbglR3.
      */
     err = mount(host_name, mount_point, "vboxsf", flags, &mntinf);
-    if (err == -1 && errno == EPROTO)
+    saved_errno = errno;
+
+    /* Some versions of the mount utility (unknown which, if any) will turn the
+       shared folder name into an absolute path.  So, we check if it starts with
+       the CWD and removes it.  We must do this after failing, because there is
+       not actual restrictions on the shared folder name wrt to slashes and such. */
+    if (err == -1 && errno == ENXIO && host_name[0] == '/')
     {
-        /* Sometimes the mount utility messes up the share name.  Try to
-         * un-mangle it again. */
         char szCWD[4096];
-        size_t cchCWD;
-        if (!getcwd(szCWD, sizeof(szCWD)))
-            panic_err("%s: failed to get the current working directory", argv[0]);
-        cchCWD = strlen(szCWD);
-        if (!strncmp(host_name, szCWD, cchCWD))
+        if (getcwd(szCWD, sizeof(szCWD)) != NULL)
         {
-            while (host_name[cchCWD] == '/')
-                ++cchCWD;
-            /* We checked before that we have enough space */
-            strcpy(mntinf.name, host_name + cchCWD);
+            size_t cchCWD = strlen(szCWD);
+            if (!strncmp(host_name, szCWD, cchCWD))
+            {
+                while (host_name[cchCWD] == '/')
+                    ++cchCWD;
+                if (host_name[cchCWD])
+                {
+                    /* We checked before that we have enough space. */
+                    strcpy(mntinf.name, host_name + cchCWD);
+                    err = mount(host_name, mount_point, "vboxsf", flags, &mntinf);
+                    saved_errno = errno;
+                }
+            }
         }
-        err = mount(host_name, mount_point, "vboxsf", flags, &mntinf);
+        else
+            fprintf(stderr, "%s: failed to get the current working directory: %s", argv[0], strerror(errno));
+        errno = saved_errno;
     }
     if (err)
-        panic_err("%s: mounting failed with the error", argv[0]);
+    {
+        if (saved_errno == ENXIO)
+            panic("%s: shared folder '%s' was not found (check VM settings / spelling)\n", argv[0], host_name);
+        else
+            panic_err("%s: mounting failed with the error", argv[0]);
+    }
 
     if (!nomtab)
     {
