@@ -38,49 +38,46 @@
 
 int vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len, const unsigned char *utf8_name, size_t utf8_len)
 {
+    Assert(RTStrNLen(utf8_name, utf8_len) == utf8_len);
+
     if (sf_g->nls) {
-        const char *in;
-        char *out;
-        size_t out_len;
-        size_t out_bound_len;
-        size_t in_bound_len;
-
-        in = utf8_name;
-        in_bound_len = utf8_len;
-
-        out = name;
-        out_len = 0;
-        out_bound_len = name_bound_len;
+        const char *in              = utf8_name;
+        size_t      in_bound_len    = utf8_len;
+        char       *out             = name;
+        size_t      out_bound_len   = name_bound_len;
+        size_t      out_len         = 0;
 
         while (in_bound_len) {
-            int nb;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
             unicode_t uni;
-
-            nb = utf8_to_utf32(in, in_bound_len, &uni);
+            int cbInEnc = utf8_to_utf32(in, in_bound_len, &uni);
 #else
             linux_wchar_t uni;
-
-            nb = utf8_mbtowc(&uni, in, in_bound_len);
+            int cbInEnc = utf8_mbtowc(&uni, in, in_bound_len);
 #endif
-            if (nb < 0) {
-                LogFunc(("utf8_mbtowc failed(%s) %x:%d\n", (const char *)utf8_name, *in, in_bound_len));
+            if (cbInEnc >= 0) {
+                int cbOutEnc = sf_g->nls->uni2char(uni, out, out_bound_len);
+                if (cbOutEnc >= 0) {
+                    /*SFLOG3(("vbsf_nlscpy: cbOutEnc=%d cbInEnc=%d uni=%#x in_bound_len=%u\n", cbOutEnc, cbInEnc, uni, in_bound_len));*/
+                    out           += cbOutEnc;
+                    out_bound_len -= cbOutEnc;
+                    out_len       += cbOutEnc;
+
+                    in            += cbInEnc;
+                    in_bound_len  -= cbInEnc;
+                } else {
+                    SFLOG(("vbsf_nlscpy: nls->uni2char failed with %d on %#x (pos %u in '%s'), out_bound_len=%u\n",
+                           cbOutEnc, uni, in - (const char *)utf8_name, (const char *)utf8_name, (unsigned)out_bound_len));
+                    return cbOutEnc;
+                }
+            } else {
+                SFLOG(("vbsf_nlscpy: utf8_to_utf32/utf8_mbtowc failed with %d on %x (pos %u in '%s'), in_bound_len=%u!\n",
+                       cbInEnc, *in, in - (const char *)utf8_name, (const char *)utf8_name, (unsigned)in_bound_len));
                 return -EINVAL;
             }
-            in += nb;
-            in_bound_len -= nb;
-
-            nb = sf_g->nls->uni2char(uni, out, out_bound_len);
-            if (nb < 0) {
-                LogFunc(("nls->uni2char failed(%s) %x:%d\n", utf8_name, uni, out_bound_len));
-                return nb;
-            }
-            out += nb;
-            out_bound_len -= nb;
-            out_len += nb;
         }
 
-        *out = 0;
+        *out = '\0';
     } else {
         if (utf8_len + 1 > name_bound_len)
             return -ENAMETOOLONG;

@@ -544,7 +544,7 @@ DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWr
 {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
     ssize_t cPagesLocked = get_user_pages_unlocked(uPtrFrom, cPages, papPages,
-                               fWrite ? FOLL_WRITE | FOLL_FORCE : FOLL_FORCE);
+                                                   fWrite ? FOLL_WRITE | FOLL_FORCE : FOLL_FORCE);
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
     ssize_t cPagesLocked = get_user_pages_unlocked(uPtrFrom, cPages, fWrite, 1 /*force*/, papPages);
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
@@ -843,7 +843,10 @@ DECLINLINE(void) vbsf_reg_write_invalidate_mapping_range(struct address_space *m
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
     if (mapping)
         invalidate_inode_pages2_range(mapping, offStart >> PAGE_SHIFT, (offEnd - 1) >> PAGE_SHIFT);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 60)
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 21)
+    if (mapping && mapping->nrpages > 0)
+        invalidate_mapping_pages(mapping, offStart >> PAGE_SHIFT, (offEnd - 1) >> PAGE_SHIFT);
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 60) && 0 /** @todo invalidate_mapping_pages was added in 2.5.60, but exported in 2.6.21 */
     if (mapping && mapping->nrpages > 0)
         invalidate_mapping_pages(mapping, offStart >> PAGE_SHIFT, (offEnd - 1) >> PAGE_SHIFT);
 # else
@@ -2691,6 +2694,8 @@ static int vbsf_direct_IO(int rw, struct inode *inode, struct kiobuf *, unsigned
 
 /**
  * Address space (for the page cache) operations for regular files.
+ *
+ * @todo the FsPerf touch/flush (mmap) test fails on 4.4.0 (ubuntu 16.04 lts).
  */
 struct address_space_operations vbsf_reg_aops = {
     .readpage = vbsf_readpage,

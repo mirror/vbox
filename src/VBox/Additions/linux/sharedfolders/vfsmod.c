@@ -192,7 +192,9 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
             } else {
                 sf_g->fNlsIsUtf8 = false;
                 sf_g->nls = load_nls(info->nls_name);
-                if (!sf_g->nls) {
+                if (sf_g->nls) {
+                    SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: nls=%s -> %p\n", info->nls_name, sf_g->nls));
+                } else {
                     SFLOGRELBOTH(("vboxsf: Failed to load nls '%s'!\n", info->nls_name));
                     rc = -EINVAL;
                 }
@@ -205,6 +207,7 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
                 && !_IS_EMPTY(CONFIG_NLS_DEFAULT)) {
                 sf_g->fNlsIsUtf8 = false;
                 sf_g->nls = load_nls_default();
+                SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: CONFIG_NLS_DEFAULT=%s -> %p\n", CONFIG_NLS_DEFAULT, sf_g->nls));
             } else
                 sf_g->nls = NULL;
 #else

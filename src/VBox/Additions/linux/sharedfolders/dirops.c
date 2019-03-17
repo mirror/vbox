@@ -287,7 +287,7 @@ DECL_NO_INLINE(static, bool) vbsf_dir_emit_nls(
                                                struct vbsf_super_info *sf_g)
 {
     char szDstName[NAME_MAX];
-    int rc = vbsf_nlscpy(sf_g, szDstName, sizeof(szDstName), pszSrcName, cchSrcName + 1);
+    int rc = vbsf_nlscpy(sf_g, szDstName, sizeof(szDstName), pszSrcName, cchSrcName);
     if (rc == 0) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
         return dir_emit(ctx, szDstName, strlen(szDstName), d_ino, d_type);
