@@ -109,7 +109,7 @@ ifeq ($(KERNELRELEASE),)
     $(error The kernel build folder path must end in <version>/build, or the variable KERN_VER must be set)
    endif
   endif
- KERN_VER ?= $(shell uname -r)
+  KERN_VER ?= $(shell uname -r)
  endif
 
  ifeq ($(KERN_DIR),)
@@ -131,6 +131,15 @@ ifeq ($(KERNELRELEASE),)
    VBOX_KERN_GROKS_SUBDIRS := yes
   endif
  endif
+
+ #
+ # Hack for Ubuntu 4.10 where we determine 2.6.8.1-3-generic-amd64 here, but the
+ # the next invocation (M/SUBDIR) ends up with KERNELRELEASE=2.6.8.1-3.
+ #
+ ifeq ($(shell if grep '"[2]\.' $(KERN_DIR)/include/linux/version.h > /dev/null 2>&1; then echo yes; fi),yes)
+  export KERN_VER KERN_DIR
+ endif
+
 else # neq($(KERNELRELEASE),)
 
  #
@@ -170,7 +179,7 @@ endif # neq($(KERNELRELEASE),)
 
 # Kernel build folder
 ifneq ($(shell if test -d $(KERN_DIR); then echo yes; fi),yes)
- $(error Error: unable to find the headers of the Linux kernel to build against. \
+ $(error Error: unable to find the headers of the Linux kernel to build against (KERN_DIR=$(KERN_DIR)). \
           Specify KERN_VER=<version> (currently $(KERN_VER)) and run Make again)
 endif
 # Kernel include folder
