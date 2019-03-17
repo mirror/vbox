@@ -394,7 +394,7 @@ extern int  vbsf_stat(const char *caller, struct vbsf_super_info *sf_g, SHFLSTRI
 extern int  vbsf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i,
                                   struct dentry *dentry, SHFLSTRING ** result);
 extern int  vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len,
-                       const unsigned char *utf8_name, size_t utf8_len);
+                        const unsigned char *utf8_name, size_t utf8_len);
 
 
 /**
