@@ -58,7 +58,7 @@
 /*
  * Logging wrappers.
  */
-#if 0
+#if 1
 # define TRACE()                LogFunc(("tracepoint\n"))
 # define SFLOG(aArgs)           Log(aArgs)
 # define SFLOGFLOW(aArgs)       LogFlow(aArgs)
