@@ -559,6 +559,7 @@ static void *rtFuzzCtxMemoryAlloc(PRTFUZZCTXINT pThis, size_t cb)
  */
 static void rtFuzzCtxMemoryFree(PRTFUZZCTXINT pThis, void *pv)
 {
+    AssertReturnVoid(pv != NULL);
     PRTFUZZMEMHDR pMemHdr = ((PRTFUZZMEMHDR)pv) - 1;
 
     size_t cbIgn = ASMAtomicSubZ(&pThis->cbMemTotal, pMemHdr->cb + sizeof(RTFUZZMEMHDR)); RT_NOREF(cbIgn);
@@ -707,10 +708,10 @@ static uint32_t rtFuzzMutationRelease(PRTFUZZMUTATION pMutation)
 
     if (cRefs == 0)
     {
-        rtFuzzCtxMutationMaybeEnterCache(pMutation->pFuzzer, pMutation);
-
         if (!pMutation->fInTree)
             rtFuzzMutationDestroy(pMutation);
+        else
+            rtFuzzCtxMutationMaybeEnterCache(pMutation->pFuzzer, pMutation);
     }
 
     return cRefs;

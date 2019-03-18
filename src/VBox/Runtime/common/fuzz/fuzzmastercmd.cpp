@@ -66,6 +66,8 @@ typedef struct RTFUZZRUN
     char                        *pszId;
     /** Number of processes. */
     uint32_t                    cProcs;
+    /** Target recorder flags. */
+    uint32_t                    fTgtRecFlags;
     /** The fuzzing observer state handle. */
     RTFUZZOBS                   hFuzzObs;
     /** Flag whether fuzzing was started. */
@@ -784,6 +786,76 @@ static int rtFuzzCmdMasterFuzzRunProcessMiscCfg(PRTFUZZRUN pFuzzRun, RTJSONVAL h
 
 
 /**
+ * Processes target recording related configs for the given fuzzing run.
+ *
+ * @returns IPRT status code.
+ * @param   pFuzzRun            The fuzzing run.
+ * @param   hJsonRoot           The root node of the JSON request.
+ * @param   pErrInfo            Where to store the error information on failure, optional.
+ */
+static int rtFuzzCmdMasterFuzzRunProcessTgtRecFlags(PRTFUZZRUN pFuzzRun, RTJSONVAL hJsonRoot, PRTERRINFO pErrInfo)
+{
+    RTJSONVAL hJsonValTgt;
+    int rc = RTJsonValueQueryByName(hJsonRoot, "TgtRec", &hJsonValTgt);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t fTgtRecFlags = 0;
+        RTJSONIT hTgtIt;
+        rc = RTJsonIteratorBeginArray(hJsonValTgt, &hTgtIt);
+        if (RT_SUCCESS(rc))
+        {
+            do
+            {
+                RTJSONVAL hVal;
+                rc = RTJsonIteratorQueryValue(hTgtIt, &hVal, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    const char *pszTgtRec = RTJsonValueGetString(hVal);
+                    if (!RTStrICmp(pszTgtRec, "StdOut"))
+                        fTgtRecFlags |= RTFUZZTGT_REC_STATE_F_STDOUT;
+                    else if (!RTStrICmp(pszTgtRec, "StdErr"))
+                        fTgtRecFlags |= RTFUZZTGT_REC_STATE_F_STDERR;
+                    else if (!RTStrICmp(pszTgtRec, "ProcSts"))
+                        fTgtRecFlags |= RTFUZZTGT_REC_STATE_F_PROCSTATUS;
+                    else if (!RTStrICmp(pszTgtRec, "SanCov"))
+                        fTgtRecFlags |= RTFUZZTGT_REC_STATE_F_SANCOV;
+                    else
+                        rc = rtFuzzCmdMasterErrorRc(pErrInfo, VERR_NOT_FOUND, "JSON request malformed: The recording flags '%s' is not known", pszTgtRec);
+                    RTJsonValueRelease(hVal);
+                }
+                rc = RTJsonIteratorNext(hTgtIt);
+            } while (RT_SUCCESS(rc));
+
+            if (   rc == VERR_JSON_IS_EMPTY
+                || rc == VERR_JSON_ITERATOR_END)
+                rc = VINF_SUCCESS;
+            else
+                rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "JSON request malformed: Failed to parse target recording flags");
+
+            RTJsonIteratorFree(hTgtIt);
+        }
+        else if (rc == VERR_JSON_IS_EMPTY)
+            rc = VINF_SUCCESS;
+        else
+            rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "JSON request malformed: \"TgtRec\" is not an array");
+
+        pFuzzRun->fTgtRecFlags = fTgtRecFlags;
+
+        RTJsonValueRelease(hJsonValTgt);
+    }
+    else if (rc == VERR_NOT_FOUND)
+    {
+        pFuzzRun->fTgtRecFlags = RTFUZZTGT_REC_STATE_F_PROCSTATUS;
+        rc = VINF_SUCCESS; /* Just keep using the defaults. */
+    }
+    else
+        rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "JSON request malformed: Failed to query \"TgtRec\"");
+
+    return rc;
+}
+
+
+/**
  * Sets up the directories for the given fuzzing run.
  *
  * @returns IPRT status code.
@@ -851,38 +923,42 @@ static int rtFuzzCmdMasterCreateFuzzRunWithId(PRTFUZZCMDMASTER pThis, const char
         pFuzzRun->pszId = RTStrDup(pszId);
         if (RT_LIKELY(pFuzzRun->pszId))
         {
-            rc = RTFuzzObsCreate(&pFuzzRun->hFuzzObs, RTFUZZCTXTYPE_BLOB);
+            rc = rtFuzzCmdMasterFuzzRunProcessTgtRecFlags(pFuzzRun, hJsonRoot, pErrInfo);
             if (RT_SUCCESS(rc))
             {
-                rc = rtFuzzCmdMasterFuzzRunProcessBinaryCfg(pFuzzRun, hJsonRoot, pErrInfo);
-                if (RT_SUCCESS(rc))
-                    rc = rtFuzzCmdMasterFuzzRunProcessArgCfg(pFuzzRun, hJsonRoot, pErrInfo);
-                if (RT_SUCCESS(rc))
-                    rc = rtFuzzCmdMasterFuzzRunProcessEnvironment(pFuzzRun, hJsonRoot, pErrInfo);
-                if (RT_SUCCESS(rc))
-                    rc = rtFuzzCmdMasterFuzzRunProcessInputSeeds(pFuzzRun, hJsonRoot, pErrInfo);
-                if (RT_SUCCESS(rc))
-                    rc = rtFuzzCmdMasterFuzzRunProcessMiscCfg(pFuzzRun, hJsonRoot, pErrInfo);
-                if (RT_SUCCESS(rc))
-                    rc = rtFuzzCmdMasterFuzzRunProcessSanitizers(pFuzzRun, hJsonRoot, pErrInfo);
-                if (RT_SUCCESS(rc))
-                    rc = rtFuzzCmdMasterFuzzRunSetupDirectories(pThis, pFuzzRun, pErrInfo);
-
+                rc = RTFuzzObsCreate(&pFuzzRun->hFuzzObs, RTFUZZCTXTYPE_BLOB, pFuzzRun->fTgtRecFlags);
                 if (RT_SUCCESS(rc))
                 {
-                    /* Start fuzzing. */
-                    RTListAppend(&pThis->LstFuzzed, &pFuzzRun->NdFuzzed);
-                    rc = RTFuzzObsExecStart(pFuzzRun->hFuzzObs, pFuzzRun->cProcs);
+                    rc = rtFuzzCmdMasterFuzzRunProcessBinaryCfg(pFuzzRun, hJsonRoot, pErrInfo);
+                    if (RT_SUCCESS(rc))
+                        rc = rtFuzzCmdMasterFuzzRunProcessArgCfg(pFuzzRun, hJsonRoot, pErrInfo);
+                    if (RT_SUCCESS(rc))
+                        rc = rtFuzzCmdMasterFuzzRunProcessEnvironment(pFuzzRun, hJsonRoot, pErrInfo);
+                    if (RT_SUCCESS(rc))
+                        rc = rtFuzzCmdMasterFuzzRunProcessInputSeeds(pFuzzRun, hJsonRoot, pErrInfo);
+                    if (RT_SUCCESS(rc))
+                        rc = rtFuzzCmdMasterFuzzRunProcessMiscCfg(pFuzzRun, hJsonRoot, pErrInfo);
+                    if (RT_SUCCESS(rc))
+                        rc = rtFuzzCmdMasterFuzzRunProcessSanitizers(pFuzzRun, hJsonRoot, pErrInfo);
+                    if (RT_SUCCESS(rc))
+                        rc = rtFuzzCmdMasterFuzzRunSetupDirectories(pThis, pFuzzRun, pErrInfo);
+
                     if (RT_SUCCESS(rc))
                     {
-                        RTTIMESPEC TimeSpec;
-                        RTTimeNow(&TimeSpec);
-                        RTTimeLocalExplode(&pFuzzRun->TimeCreated, &TimeSpec);
-                        pFuzzRun->tsCreatedMs = RTTimeMilliTS();
-                        pFuzzRun->fStarted = true;
+                        /* Start fuzzing. */
+                        RTListAppend(&pThis->LstFuzzed, &pFuzzRun->NdFuzzed);
+                        rc = RTFuzzObsExecStart(pFuzzRun->hFuzzObs, pFuzzRun->cProcs);
+                        if (RT_SUCCESS(rc))
+                        {
+                            RTTIMESPEC TimeSpec;
+                            RTTimeNow(&TimeSpec);
+                            RTTimeLocalExplode(&pFuzzRun->TimeCreated, &TimeSpec);
+                            pFuzzRun->tsCreatedMs = RTTimeMilliTS();
+                            pFuzzRun->fStarted = true;
+                        }
+                        else
+                            rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Failed to start fuzzing with %Rrc", rc);
                     }
-                    else
-                        rc = rtFuzzCmdMasterErrorRc(pErrInfo, rc, "Request error: Failed to start fuzzing with %Rrc", rc);
                 }
             }
         }

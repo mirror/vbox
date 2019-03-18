@@ -488,33 +488,15 @@ static int rtFuzzObsExecCtxClientRun(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExe
                 if (idEvt == RTFUZZOBS_EXEC_CTX_POLL_ID_STDOUT)
                 {
                     Assert(fEvtsRecv & RTPOLL_EVT_READ);
-                    //rc = RTFuzzTgtStateAppendStdoutFromPipe(pExecCtx->hTgtState, pExecCtx->hPipeStdoutR);
-                    //AssertRC(rc);
+                    rc = RTFuzzTgtStateAppendStdoutFromPipe(pExecCtx->hTgtState, pExecCtx->hPipeStdoutR);
+                    AssertRC(rc);
                 }
                 else if (idEvt == RTFUZZOBS_EXEC_CTX_POLL_ID_STDERR)
                 {
                     Assert(fEvtsRecv & RTPOLL_EVT_READ);
 
-                    /*
-                     * Can't add the stderr buffer with sancov enabled as it dumps the resulting report file path
-                     * (which includes the always changing pid) to stderr...
-                     */
-                    if (!(pThis->fSanitizers & RTFUZZOBS_SANITIZER_F_SANCOV))
-                    {
-                        rc = RTFuzzTgtStateAppendStderrFromPipe(pExecCtx->hTgtState, pExecCtx->hPipeStderrR);
-                        AssertRC(rc);
-                    }
-                    else
-                    {
-                        /* Dump to /dev/null. */
-                        char abBitBucket[_4K];
-                        size_t cbRead = 0;
-                        do
-                        {
-                            rc = RTPipeRead(pExecCtx->hPipeStderrR, &abBitBucket[0], sizeof(abBitBucket), &cbRead);
-                        } while (   RT_SUCCESS(rc)
-                                 && cbRead == sizeof(abBitBucket));
-                    }
+                    rc = RTFuzzTgtStateAppendStderrFromPipe(pExecCtx->hTgtState, pExecCtx->hPipeStderrR);
+                    AssertRC(rc);
                 }
                 else if (idEvt == RTFUZZOBS_EXEC_CTX_POLL_ID_STDIN)
                 {
@@ -730,21 +712,7 @@ static int rtFuzzObsAddInputToResults(PRTFUZZOBSINT pThis, RTFUZZINPUT hFuzzInpu
 
             rc = RTFuzzInputWriteToFile(hFuzzInput, &szTmp[0]);
             if (RT_SUCCESS(rc))
-            {
-                RT_NOREF(pExecCtx);
-#if 0
-                /* Stdout and Stderr. */
-                rc = RTPathJoin(szTmp, sizeof(szTmp), &szPath[0], "stdout");
-                AssertRC(rc);
-                rc = rtFuzzStdOutErrBufWriteToFile(&pExecCtx->StdOutBuf, &szTmp[0]);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = RTPathJoin(szTmp, sizeof(szTmp), &szPath[0], "stderr");
-                    AssertRC(rc);
-                    rc = rtFuzzStdOutErrBufWriteToFile(&pExecCtx->StdOutBuf, &szTmp[0]);
-                }
-#endif
-            }
+                rc = RTFuzzTgtStateDumpToDir(pExecCtx->hTgtState, &szPath[0]);
         }
     }
 
@@ -837,6 +805,9 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
 
             if (RT_SUCCESS(rc))
             {
+                rc = RTFuzzTgtStateAddProcSts(pExecCtx->hTgtState, &ProcSts);
+                AssertRC(rc);
+
                 if (ProcSts.enmReason != RTPROCEXITREASON_NORMAL)
                 {
                     ASMAtomicIncU32(&pThis->Stats.cFuzzedInputsCrash);
@@ -852,7 +823,7 @@ static DECLCALLBACK(int) rtFuzzObsWorkerLoop(RTTHREAD hThrd, void *pvUser)
                 AssertFailed();
 
             /*
-             * Check whether we reached a known target state and add the input to the
+             * Check whether we reached an unknown target state and add the input to the
              * corpus in that case.
              */
             rc = RTFuzzTgtStateAddToRecorder(pExecCtx->hTgtState);
@@ -1107,7 +1078,7 @@ static int rtFuzzObsSetupSanitizerCfg(PRTFUZZOBSINT pThis)
 }
 
 
-RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs, RTFUZZCTXTYPE enmType)
+RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs, RTFUZZCTXTYPE enmType, uint32_t fTgtRecFlags)
 {
     AssertPtrReturn(phFuzzObs, VERR_INVALID_POINTER);
 
@@ -1133,7 +1104,7 @@ RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs, RTFUZZCTXTYPE enmType)
         rc = RTFuzzCtxCreate(&pThis->hFuzzCtx, enmType);
         if (RT_SUCCESS(rc))
         {
-            rc = RTFuzzTgtRecorderCreate(&pThis->hTgtRec);
+            rc = RTFuzzTgtRecorderCreate(&pThis->hTgtRec, fTgtRecFlags);
             if (RT_SUCCESS(rc))
             {
                 *phFuzzObs = pThis;

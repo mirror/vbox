@@ -30,6 +30,7 @@
 #endif
 
 #include <iprt/cdefs.h>
+#include <iprt/process.h>
 #include <iprt/types.h>
 
 RT_C_DECLS_BEGIN
@@ -122,6 +123,21 @@ typedef RTFUZZCTXSTATS *PRTFUZZCTXSTATS;
 /** A converage sanitizer is compiled in which can be used to produce coverage reports aiding in the
  * fuzzing process. */
 #define RTFUZZOBS_SANITIZER_F_SANCOV               UINT32_C(0x00000002)
+/** @} */
+
+
+/** @name RTFUZZTGT_REC_STATE_F_XXX - Flags for RTFuzzTgtRecorderCreate().
+ * @{ */
+/** The output from stdout is used to compare states. */
+#define RTFUZZTGT_REC_STATE_F_STDOUT               RT_BIT_32(0)
+/** The output from stderr is used to compare states. */
+#define RTFUZZTGT_REC_STATE_F_STDERR               RT_BIT_32(1)
+/** The process status is used to compare states. */
+#define RTFUZZTGT_REC_STATE_F_PROCSTATUS           RT_BIT_32(2)
+/** The coverage report is used to compare states. */
+#define RTFUZZTGT_REC_STATE_F_SANCOV               RT_BIT_32(3)
+/** Mask of all valid flags. */
+#define RTFUZZTGT_REC_STATE_F_VALID                UINT32_C(0x0000000f)
 /** @} */
 
 
@@ -436,8 +452,10 @@ RTDECL(int) RTFuzzInputRemoveFromCtxCorpus(RTFUZZINPUT hFuzzInput);
  *
  * @returns IPRT status code.
  * @param   phFuzzTgtRec        Where to store the handle to the fuzzed target recorder on success.
+ * @param   fRecFlags           What to take into account when checking for equal states.
+ *                              Combination of RTFUZZTGT_REC_STATE_F_*
  */
-RTDECL(int) RTFuzzTgtRecorderCreate(PRTFUZZTGTREC phFuzzTgtRec);
+RTDECL(int) RTFuzzTgtRecorderCreate(PRTFUZZTGTREC phFuzzTgtRec, uint32_t fRecFlags);
 
 /**
  * Retains a reference to the given fuzzed target recorder handle.
@@ -556,6 +574,24 @@ RTDECL(int) RTFuzzTgtStateAppendStderrFromPipe(RTFUZZTGTSTATE hFuzzTgtState, RTP
  */
 RTDECL(int) RTFuzzTgtStateAddSanCovReportFromFile(RTFUZZTGTSTATE hFuzzTgtState, const char *pszFilename);
 
+/**
+ * Adds the given process status to the target state.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ * @param   pProcSts            The process status to add.
+ */
+RTDECL(int) RTFuzzTgtStateAddProcSts(RTFUZZTGTSTATE hFuzzTgtState, PCRTPROCSTATUS pProcSts);
+
+/**
+ * Dumps the given target state to the given directory.
+ *
+ * @returns IPRT status code.
+ * @param   hFuzzTgtState       The fuzzed target state handle.
+ * @param   pszDirPath          The directory to dump to.
+ */
+RTDECL(int) RTFuzzTgtStateDumpToDir(RTFUZZTGTSTATE hFuzzTgtState, const char *pszDirPath);
+
 
 /**
  * Fuzzed binary input channel.
@@ -606,8 +642,9 @@ typedef RTFUZZOBSSTATS *PRTFUZZOBSSTATS;
  * @returns IPRT status code.
  * @param   phFuzzObs           Where to store the fuzzing observer handle on success.
  * @param   enmType             Fuzzing context data type.
+ * @param   fTgtRecFlags        Flags to pass to the target state recorder, see RTFuzzTgtRecorderCreate().
  */
-RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs, RTFUZZCTXTYPE enmType);
+RTDECL(int) RTFuzzObsCreate(PRTFUZZOBS phFuzzObs, RTFUZZCTXTYPE enmType, uint32_t fTgtRecFlags);
 
 /**
  * Destroys a previously created fuzzing observer.

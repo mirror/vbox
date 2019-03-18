@@ -40,7 +40,9 @@
 #include <iprt/file.h>
 #include <iprt/list.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
 #include <iprt/pipe.h>
+#include <iprt/process.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 
@@ -92,6 +94,8 @@ typedef struct RTFUZZTGTSTATEINT
     RTFUZZTGTSTDOUTERRBUF       StdOutBuf;
     /** The stderr data buffer. */
     RTFUZZTGTSTDOUTERRBUF       StdErrBuf;
+    /** Process status. */
+    RTPROCSTATUS                ProcSts;
     /** Coverage report buffer. */
     void                        *pvCovReport;
     /** Size of the coverage report in bytes. */
@@ -140,6 +144,8 @@ typedef struct RTFUZZTGTRECINT
     uint32_t                    u32Magic;
     /** Reference counter. */
     volatile uint32_t           cRefs;
+    /** Flags passed when the recorder was created. */
+    uint32_t                    fRecFlags;
     /** Semaphore protecting the states tree. */
     RTSEMRW                     hSemRwStates;
     /** The AVL tree for indexing the recorded state (keyed by stdout/stderr buffer size). */
@@ -230,6 +236,31 @@ static int rtFuzzTgtStdOutErrBufFillFromPipe(PRTFUZZTGTSTDOUTERRBUF pBuf, RTPIPE
             rc = VERR_NO_MEMORY;
     } while (   RT_SUCCESS(rc)
              && cbRead == cbThisRead);
+
+    return rc;
+}
+
+
+/**
+ * Writes the given buffer to the given file.
+ *
+ * @returns IPRT status code.
+ * @param   pBuf                The buffer to write.
+ * @param   pszFilename         Where to write the buffer.
+ */
+static int rtFuzzTgtStateStdOutErrBufWriteToFile(PRTFUZZTGTSTDOUTERRBUF pBuf, const char *pszFilename)
+{
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pszFilename, RTFILE_O_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileWrite(hFile, pBuf->pbBase, pBuf->cbBuf, NULL);
+        AssertRC(rc);
+        RTFileClose(hFile);
+
+        if (RT_FAILURE(rc))
+            RTFileDelete(pszFilename);
+    }
 
     return rc;
 }
@@ -340,8 +371,49 @@ static void rtFuzzTgtStateDestroy(PRTFUZZTGTSTATEINT pThis)
 }
 
 
-RTDECL(int) RTFuzzTgtRecorderCreate(PRTFUZZTGTREC phFuzzTgtRec)
+/**
+ * Compares two given target states, checking whether they match.
+ *
+ * @returns Flag whether the states are identical.
+ * @param   pThis               Target state 1.
+ * @param   pThat               Target state 2.
+ */
+static bool rtFuzzTgtStateDoMatch(PRTFUZZTGTSTATEINT pThis, PRTFUZZTGTSTATEINT pThat)
 {
+    PRTFUZZTGTRECINT pTgtRec = pThis->pTgtRec;
+    Assert(pTgtRec == pThat->pTgtRec);
+
+    if (   (pTgtRec->fRecFlags & RTFUZZTGT_REC_STATE_F_STDOUT)
+        && (   pThis->StdOutBuf.cbBuf != pThat->StdOutBuf.cbBuf
+            || (   pThis->StdOutBuf.cbBuf > 0
+                && memcmp(pThis->StdOutBuf.pbBase, pThat->StdOutBuf.pbBase, pThis->StdOutBuf.cbBuf))))
+        return false;
+
+    if (   (pTgtRec->fRecFlags & RTFUZZTGT_REC_STATE_F_STDERR)
+        && (   pThis->StdErrBuf.cbBuf != pThat->StdErrBuf.cbBuf
+            || (   pThis->StdErrBuf.cbBuf > 0
+                && memcmp(pThis->StdErrBuf.pbBase, pThat->StdErrBuf.pbBase, pThis->StdErrBuf.cbBuf))))
+        return false;
+
+    if (   (pTgtRec->fRecFlags & RTFUZZTGT_REC_STATE_F_PROCSTATUS)
+        && memcmp(&pThis->ProcSts, &pThat->ProcSts, sizeof(RTPROCSTATUS)))
+        return false;
+
+    if (   (pTgtRec->fRecFlags & RTFUZZTGT_REC_STATE_F_SANCOV)
+        && (   pThis->cbCovReport != pThat->cbCovReport
+            || (   pThis->cbCovReport > 0
+                && memcmp(pThis->pvCovReport, pThat->pvCovReport, pThis->cbCovReport))))
+        return false;
+
+    return true;
+}
+
+
+RTDECL(int) RTFuzzTgtRecorderCreate(PRTFUZZTGTREC phFuzzTgtRec, uint32_t fRecFlags)
+{
+    AssertPtrReturn(phFuzzTgtRec, VERR_INVALID_POINTER);
+    AssertReturn(!(fRecFlags & ~RTFUZZTGT_REC_STATE_F_VALID), VERR_INVALID_PARAMETER);
+
     int rc;
     PRTFUZZTGTRECINT pThis = (PRTFUZZTGTRECINT)RTMemAllocZ(sizeof(*pThis));
     if (RT_LIKELY(pThis))
@@ -351,6 +423,7 @@ RTDECL(int) RTFuzzTgtRecorderCreate(PRTFUZZTGTREC phFuzzTgtRec)
         pThis->TreeStates       = NULL;
         pThis->TreeEdges        = NULL;
         pThis->cbCovOff         = 0;
+        pThis->fRecFlags        = fRecFlags;
 
         rc = RTSemRWCreate(&pThis->hSemRwStates);
         if (RT_SUCCESS(rc))
@@ -461,6 +534,7 @@ RTDECL(int) RTFuzzTgtStateReset(RTFUZZTGTSTATE hFuzzTgtState)
     /* Clear the buffers. */
     pThis->StdOutBuf.cbBuf = 0;
     pThis->StdErrBuf.cbBuf = 0;
+    RT_ZERO(pThis->ProcSts);
     if (pThis->pvCovReport)
         RTMemFree(pThis->pvCovReport);
     pThis->pvCovReport     = NULL;
@@ -475,12 +549,18 @@ RTDECL(int) RTFuzzTgtStateFinalize(RTFUZZTGTSTATE hFuzzTgtState)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
 
     /* Create the checksum. */
+    PRTFUZZTGTRECINT pTgtRec = pThis->pTgtRec;
     uint64_t uChkSum = RTCrc64Start();
-    if (pThis->StdOutBuf.cbBuf)
+    if (   (pTgtRec->fRecFlags & RTFUZZTGT_REC_STATE_F_STDOUT)
+        && pThis->StdOutBuf.cbBuf)
         uChkSum = RTCrc64Process(uChkSum, pThis->StdOutBuf.pbBase, pThis->StdOutBuf.cbBuf);
-    if (pThis->StdErrBuf.cbBuf)
+    if (   (pTgtRec->fRecFlags & RTFUZZTGT_REC_STATE_F_STDERR)
+        && pThis->StdErrBuf.cbBuf)
         uChkSum = RTCrc64Process(uChkSum, pThis->StdErrBuf.pbBase, pThis->StdErrBuf.cbBuf);
-    if (pThis->pvCovReport)
+    if (pTgtRec->fRecFlags & RTFUZZTGT_REC_STATE_F_PROCSTATUS)
+        uChkSum = RTCrc64Process(uChkSum, &pThis->ProcSts, sizeof(RTPROCSTATUS));
+    if (   (pTgtRec->fRecFlags & RTFUZZTGT_REC_STATE_F_SANCOV)
+        && pThis->pvCovReport)
         uChkSum = RTCrc64Process(uChkSum, pThis->pvCovReport, pThis->cbCovReport);
 
     pThis->uChkSum = RTCrc64Finish(uChkSum);
@@ -513,15 +593,7 @@ RTDECL(int) RTFuzzTgtStateAddToRecorder(RTFUZZTGTSTATE hFuzzTgtState)
         bool fMatchFound = false;
         RTListForEach(&pNode->LstStates, pIt, RTFUZZTGTSTATEINT, NdStates)
         {
-            Assert(   pThis->StdOutBuf.cbBuf == pIt->StdOutBuf.cbBuf
-                   && pThis->StdErrBuf.cbBuf == pIt->StdErrBuf.cbBuf);
-            if (   (   !pThis->StdOutBuf.cbBuf
-                    || !memcmp(pThis->StdOutBuf.pbBase, pIt->StdOutBuf.pbBase, pThis->StdOutBuf.cbBuf))
-                && (   !pThis->StdErrBuf.cbBuf
-                    || !memcmp(pThis->StdErrBuf.pbBase, pIt->StdErrBuf.pbBase, pThis->StdErrBuf.cbBuf))
-                && (   pThis->cbCovReport != pIt->cbCovReport
-                    || (   pThis->cbCovReport > 0
-                        && !memcmp(pThis->pvCovReport, pIt->pvCovReport, pThis->cbCovReport))))
+            if (rtFuzzTgtStateDoMatch(pThis, pIt))
             {
                 fMatchFound = true;
                 break;
@@ -674,6 +746,46 @@ RTDECL(int) RTFuzzTgtStateAddSanCovReportFromFile(RTFUZZTGTSTATE hFuzzTgtState, 
             rc = VERR_INVALID_STATE;
         RTFileReadAllFree(pbSanCov, cbSanCov);
     }
+    return rc;
+}
+
+
+RTDECL(int) RTFuzzTgtStateAddProcSts(RTFUZZTGTSTATE hFuzzTgtState, PCRTPROCSTATUS pProcSts)
+{
+    PRTFUZZTGTSTATEINT pThis = hFuzzTgtState;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pProcSts, VERR_INVALID_POINTER);
+    AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
+
+    pThis->ProcSts = *pProcSts;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTFuzzTgtStateDumpToDir(RTFUZZTGTSTATE hFuzzTgtState, const char *pszDirPath)
+{
+    PRTFUZZTGTSTATEINT pThis = hFuzzTgtState;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszDirPath, VERR_INVALID_POINTER);
+    AssertReturn(!pThis->fFinalized, VERR_WRONG_ORDER);
+
+    int rc = VINF_SUCCESS;
+    char szPath[RTPATH_MAX];
+    if (pThis->StdOutBuf.cbBuf)
+    {
+        rc = RTPathJoin(szPath, sizeof(szPath), pszDirPath, "stdout"); AssertRC(rc);
+        if (RT_SUCCESS(rc))
+            rc = rtFuzzTgtStateStdOutErrBufWriteToFile(&pThis->StdOutBuf, &szPath[0]);
+    }
+
+    if (   RT_SUCCESS(rc)
+        && pThis->StdErrBuf.cbBuf)
+    {
+        rc = RTPathJoin(szPath, sizeof(szPath), pszDirPath, "stderr"); AssertRC(rc);
+        if (RT_SUCCESS(rc))
+            rc = rtFuzzTgtStateStdOutErrBufWriteToFile(&pThis->StdErrBuf, &szPath[0]);
+    }
+
     return rc;
 }
 
