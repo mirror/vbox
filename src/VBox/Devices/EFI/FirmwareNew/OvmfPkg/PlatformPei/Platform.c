@@ -567,6 +567,7 @@ MiscInitialization (
     PciOr8 (AcpiCtlReg, AcpiEnBit);
   }
 
+#ifndef VBOX    // The RCBA is not really there, and MCFG is already in place
   if (mHostBridgeDevId == INTEL_Q35_MCH_DEVICE_ID) {
     //
     // Set Root Complex Register Block BAR
@@ -581,6 +582,7 @@ MiscInitialization (
     //
     PciExBarInitialization ();
   }
+#endif
 }
 
 
