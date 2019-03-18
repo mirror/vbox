@@ -79,6 +79,7 @@ VBOX_HDRS_R3_ONLY := \
 	iprt/linux/sysfs.h \
 	iprt/socket.h \
 	iprt/udp.h \
+	iprt/fuzz.h \
        iprt/linux/symvers.h
 
 # Ring-0 driver only headers.
