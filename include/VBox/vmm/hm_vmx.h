@@ -3176,14 +3176,16 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
 #define VMX_V_MSEG_REV_ID                                       0
 /** @} */
 
-/** @name VMX_V_VMCS_STATE_XXX - Virtual VMCS state.
+/** @name VMX_V_VMCS_STATE_XXX - Virtual VMCS launch state.
  * @{ */
-/** VMCS state clear. */
-#define VMX_V_VMCS_STATE_CLEAR                                  RT_BIT(0)
-/** VMCS state active. */
-#define VMX_V_VMCS_STATE_ACTIVE                                 RT_BIT(1)
-/** VMCS state launched. */
-#define VMX_V_VMCS_STATE_LAUNCHED                               RT_BIT(2)
+/** VMCS launch state clear. */
+#define VMX_V_VMCS_LAUNCH_STATE_CLEAR                           RT_BIT(0)
+/** VMCS launch state active. */
+#define VMX_V_VMCS_LAUNCH_STATE_ACTIVE                          RT_BIT(1)
+/** VMCS launch state current. */
+#define VMX_V_VMCS_LAUNCH_STATE_CURRENT                         RT_BIT(2)
+/** VMCS launch state launched. */
+#define VMX_V_VMCS_LAUNCH_STATE_LAUNCHED                        RT_BIT(3)
 /** @} */
 
 /** CR0 bits set here must always be set when in VMX operation. */
@@ -3304,7 +3306,7 @@ typedef struct
     VMXVMCSREVID    u32VmcsRevId;
     /** 0x4 - VMX-abort indicator. */
     VMXABORT        enmVmxAbort;
-    /** 0x8 - VMCS state, see VMX_V_VMCS_STATE_XXX. */
+    /** 0x8 - VMCS launch state, see VMX_V_VMCS_LAUNCH_STATE_XXX. */
     uint8_t         fVmcsState;
     /** 0x9 - Reserved for future. */
     uint8_t         au8Padding0[3];

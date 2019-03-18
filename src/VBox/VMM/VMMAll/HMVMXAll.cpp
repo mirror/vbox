@@ -412,9 +412,9 @@ VMM_INT_DECL(const char *) HMGetVmxVmcsStateDesc(uint8_t fVmcsState)
 {
     switch (fVmcsState)
     {
-        case VMX_V_VMCS_STATE_CLEAR:        return "Clear";
-        case VMX_V_VMCS_STATE_LAUNCHED:     return "Launched";
-        default:                            return "Unknown";
+        case VMX_V_VMCS_LAUNCH_STATE_CLEAR:     return "Clear";
+        case VMX_V_VMCS_LAUNCH_STATE_LAUNCHED:  return "Launched";
+        default:                                return "Unknown";
     }
 }
 
