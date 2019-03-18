@@ -1622,6 +1622,9 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     const uchar *srcShapePtr = pShapeData + ((andMaskSize + 3) & ~3);
     uint srcShapePtrScan = uWidth * 4;
 
+    /* Remember initial cursor hotspot: */
+    m_cursorHotspot = QPoint(uXHot, uYHot);
+
 #if defined (VBOX_WS_WIN)
 
     /* Create a ARGB image out of the shape data: */
@@ -1833,8 +1836,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 
 #endif
 
-    /* Cache cursor pixmap data: */
-    m_cursorHotspot = QPoint(uXHot, uYHot);
+    /* Cache cursor pixmap size: */
     m_cursorSize = m_cursorPixmap.size();
 }
 

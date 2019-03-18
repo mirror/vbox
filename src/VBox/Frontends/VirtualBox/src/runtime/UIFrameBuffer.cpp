@@ -1310,8 +1310,20 @@ void UIFrameBufferPrivate::sltCursorPositionChange(bool fContainsData, unsigned 
     /* Do we have view and valid cursor position? */
     if (m_pMachineView && m_fCursorPositionValid)
     {
+        /* Acquire cursor hotspot: */
+        QPoint cursorHotspot = m_pMachineView->uisession()->cursorHotspot();
+
+#ifdef VBOX_WS_MAC
+        /* Apply the scale-factor if necessary: */
+        cursorHotspot /= scaleFactor();
+
+        /* Take the device-pixel-ratio into account: */
+        if (!useUnscaledHiDPIOutput())
+            cursorHotspot /= devicePixelRatioActual();
+#endif
+
         /* Acquire cursor position and size: */
-        QPoint cursorPosition = QPoint(uX, uY) - m_pMachineView->uisession()->cursorHotspot();
+        QPoint cursorPosition = QPoint(uX, uY) - cursorHotspot;
         QSize cursorSize = m_pMachineView->uisession()->cursorSize();
 
         /* Apply the scale-factor if necessary: */
