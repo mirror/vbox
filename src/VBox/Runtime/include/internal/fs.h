@@ -34,6 +34,9 @@
 #ifndef RT_OS_WINDOWS
 # include <sys/stat.h>
 #endif
+#ifdef RT_OS_FREEBSD
+# include <osreldate.h>
+#endif
 
 RT_C_DECLS_BEGIN
 
@@ -61,6 +64,20 @@ int     rtNtQueryFsType(HANDLE hHandle, PRTFSTYPE penmType);
 #  define HAVE_STAT_TIMESPEC_BRIEF
 # else
 #  define HAVE_STAT_NSEC
+# endif
+#endif
+
+#ifdef RT_OS_FREEBSD
+# if __FreeBSD_version >= 500000 /* 5.0 */
+#  define HAVE_STAT_BIRTHTIME
+# endif
+# if __FreeBSD_version >= 900000 /* 9.0 */
+#  define HAVE_STAT_TIMESPEC_BRIEF
+# else
+#  ifndef __BSD_VISIBLE
+#   define __BSD_VISIBLE
+#  endif
+#  define HAVE_STAT_TIMESPEC
 # endif
 #endif
 
