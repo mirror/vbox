@@ -301,6 +301,12 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             /* Pass event to other items: */
             return false;
         }
+        case Qt::Key_Escape:
+        {
+            /* Make sure that vm search widget is hidden: */
+            model()->setSearchWidgetVisible(false);
+            break;
+        }
         default:
         {
             /* Start lookup: */
@@ -378,4 +384,3 @@ void UIChooserHandlerKeyboard::shift(UIItemShiftDirection direction, UIItemShift
     model()->updateLayout();
 #endif
 }
-

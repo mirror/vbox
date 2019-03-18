@@ -194,7 +194,10 @@ public:
         /** Clean the search result data members and disables item's visual effects. Also returns a list of
           * all nodes which may be utilized by the calling code. */
         QList<UIChooserNode*> resetSearch();
+        /** Scrolls to next/prev (wrt. @a fIsNext) search result. */
         void scrollToSearchResult(bool fIsNext);
+        /** Shows/hides machine search widget. */
+        void setSearchWidgetVisible(bool fVisible);
     /** @} */
 
     /** @name Children stuff.

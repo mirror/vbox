@@ -535,11 +535,15 @@ void UIChooserModel::scrollToSearchResult(bool fIsNext)
         }
     }
 
-
     /* Update the search widget's match count(s): */
     if (view())
         view()->setSearchResultsCount(m_searchResults.size(), m_iCurrentScrolledIndex);
+}
 
+void UIChooserModel::setSearchWidgetVisible(bool fVisible)
+{
+    if (view())
+        view()->setSearchWidgetVisible(fVisible);
 }
 
 UIChooserNode *UIChooserModel::invisibleRoot() const
