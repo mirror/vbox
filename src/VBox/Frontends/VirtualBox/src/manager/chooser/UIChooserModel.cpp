@@ -531,6 +531,7 @@ void UIChooserModel::scrollToSearchResult(bool fIsNext)
         if (pItem)
         {
             pItem->makeSureItsVisible();
+            setCurrentItem(pItem);
         }
     }
 
