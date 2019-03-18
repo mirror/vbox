@@ -258,8 +258,8 @@ void UIChooserItemGroup::startEditing()
         return;
 
     /* Make sure item visible: */
-    AssertPtrReturnVoid(parentItem());
-    parentItem()->toGroupItem()->makeSureItemIsVisible(this);
+    if (model()->root())
+        model()->root()->makeSureItemIsVisible(this);
 
     /* Assign name-editor text: */
     m_pNameEditorWidget->setText(name());

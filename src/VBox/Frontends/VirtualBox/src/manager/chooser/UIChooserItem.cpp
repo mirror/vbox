@@ -475,8 +475,6 @@ void UIChooserItem::makeSureItsVisible()
         if (pParentItem->isClosed())
             pParentItem->open(false);
     }
-    /* Make sure we scroll to the item's rectangle: */
-    pParentItem->makeSureItemIsVisible(this);
 }
 
 UIChooserItemDragToken UIChooserItem::dragTokenPlace() const
