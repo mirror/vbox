@@ -44,7 +44,7 @@
   DEFINE SMM_REQUIRE             = FALSE
   DEFINE TLS_ENABLE              = FALSE
 
-  DEFINE SOURCE_DEBUG_ENABLE     = TRUE
+#  DEFINE SOURCE_DEBUG_ENABLE     = TRUE
 
   #
   # Flash size selection. Setting FD_SIZE_IN_KB on the command line directly to
