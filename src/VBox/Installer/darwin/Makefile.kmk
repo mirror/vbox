@@ -240,7 +240,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 ifdef VBOX_SIGNING_MODE
- ifdef VBOX_WITH_CORP_CODE_SIGNING
+ if $(intersects darwin all,$(VBOX_WITH_CORP_CODE_SIGNING))
 	@# Sign the created pkg.
 	$(call VBOX_SIGN_PKG_FN,$@,org.VirtualBox.mpkg.virtualbox)
  endif
@@ -332,7 +332,7 @@ endif
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 ifdef VBOX_SIGNING_MODE
- ifdef VBOX_WITH_CORP_CODE_SIGNING
+ if $(intersects darwin all,$(VBOX_WITH_CORP_CODE_SIGNING))
 	@# Sign the created pkg.
 	$(call VBOX_SIGN_PKG_FN,$@,org.virtualbox.pkg.vboxkexts)
  endif
@@ -813,7 +813,7 @@ endif
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 ifdef VBOX_SIGNING_MODE
- ifdef VBOX_WITH_CORP_CODE_SIGNING
+ if $(intersects darwin all,$(VBOX_WITH_CORP_CODE_SIGNING))
 	@# Sign the created pkg.
 	$(call VBOX_SIGN_PKG_FN,$@,org.virtualbox.pkg.virtualbox)
  endif
@@ -900,7 +900,7 @@ endif
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 ifdef VBOX_SIGNING_MODE
- ifdef VBOX_WITH_CORP_CODE_SIGNING
+ if $(intersects darwin all,$(VBOX_WITH_CORP_CODE_SIGNING))
 	@# Sign the created pkg.
 	$(call VBOX_SIGN_PKG_FN,$@,org.virtualbox.pkg.virtualboxcli)
  endif
