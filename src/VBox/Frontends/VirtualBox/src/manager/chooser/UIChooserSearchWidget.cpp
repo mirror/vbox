@@ -51,6 +51,13 @@ void UIChooserSearchWidget::setScroolToIndex(int iScrollToIndex)
     m_pLineEdit->setScroolToIndex(iScrollToIndex);
 }
 
+void UIChooserSearchWidget::appendToSearchString(const QString &strSearchText)
+{
+    if (!m_pLineEdit)
+        return;
+    m_pLineEdit->setText(m_pLineEdit->text().append(strSearchText));
+}
+
 void UIChooserSearchWidget::prepareWidgets()
 {
     m_pMainLayout = new QHBoxLayout;

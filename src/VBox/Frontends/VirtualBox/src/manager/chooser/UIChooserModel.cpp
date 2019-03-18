@@ -579,61 +579,10 @@ void UIChooserModel::setCurrentDragObject(QDrag *pDragObject)
 
 void UIChooserModel::lookFor(const QString &strLookupSymbol)
 {
-    /* Restart timer to reset lookup-string: */
-    m_pLookupTimer->start();
-
-    /* Prepare item: */
-    UIChooserItem *pItem = 0;
-
-    /* We are starting to look from the current position: */
-    int iCurrentIndex = navigationList().indexOf(currentItem());
-
-    /* Are we looking for the 1. same symbol or for the 2. composed word? */
-    const QString strLookupString = m_strLookupString.isEmpty() || m_strLookupString == strLookupSymbol ?
-                                    strLookupSymbol : m_strLookupString + strLookupSymbol;
-    /* Are we looking from the 1. subsequent position or from the 2. same one? */
-    const int     iFirstIndex     = m_strLookupString.isEmpty() || m_strLookupString == strLookupSymbol ?
-                                    iCurrentIndex + 1 : iCurrentIndex;
-
-    /* If first position feats the bounds: */
-    if (iFirstIndex < navigationList().size())
+    if (view())
     {
-        /* We have to look starting from the first position: */
-        for (int iIndex = iFirstIndex; iIndex < navigationList().size(); ++iIndex)
-        {
-            UIChooserItem *pIteratedItem = navigationList().at(iIndex);
-            if (pIteratedItem->name().startsWith(strLookupString, Qt::CaseInsensitive))
-            {
-                pItem = pIteratedItem;
-                break;
-            }
-        }
-    }
-
-    /* If the item was not found: */
-    if (!pItem && iFirstIndex > 0)
-    {
-        /* We have to try to look from the beginning of the list: */
-        for (int iIndex = 0; iIndex < iFirstIndex; ++iIndex)
-        {
-            UIChooserItem *pIteratedItem = navigationList().at(iIndex);
-            if (pIteratedItem->name().startsWith(strLookupString, Qt::CaseInsensitive))
-            {
-                pItem = pIteratedItem;
-                break;
-            }
-        }
-    }
-
-    /* If that item was found: */
-    if (pItem)
-    {
-        /* Choose it: */
-        pItem->makeSureItsVisible();
-        setCurrentItem(pItem);
-        /* Append lookup symbol: */
-        if (m_strLookupString != strLookupSymbol)
-            m_strLookupString += strLookupSymbol;
+        view()->setSearchWidgetVisible(true);
+        view()->appendToSearchString(strLookupSymbol);
     }
 }
 

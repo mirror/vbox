@@ -105,9 +105,24 @@ void UIChooserView::toggleSearchWidget()
 {
     if (!m_pSearchWidget)
         return;
-    m_pSearchWidget->setVisible(!m_pSearchWidget->isVisible());
+    bool fVisible = m_pSearchWidget->isVisible();
+    setSearchWidgetVisible(!fVisible);
+}
+
+void UIChooserView::setSearchWidgetVisible(bool fVisible)
+{
+    if (!m_pSearchWidget)
+        return;
+    if (m_pSearchWidget->isVisible() == fVisible)
+        return;
+    m_pSearchWidget->setVisible(fVisible);
     if (m_pSearchWidget->isVisible())
         updateSearchWidgetGeometry();
+
+    UIChooserModel *pModel =  m_pChooser->model();
+    if (!pModel)
+        return;
+    pModel->resetSearch();
 }
 
 void UIChooserView::setSearchResultsCount(int iTotalMacthCount, int iCurrentlyScrolledItemIndex)
@@ -116,6 +131,12 @@ void UIChooserView::setSearchResultsCount(int iTotalMacthCount, int iCurrentlySc
         return;
     m_pSearchWidget->setMatchCount(iTotalMacthCount);
     m_pSearchWidget->setScroolToIndex(iCurrentlyScrolledItemIndex);
+}
+
+void UIChooserView::appendToSearchString(const QString &strSearchText)
+{
+    if (m_pSearchWidget)
+        m_pSearchWidget->appendToSearchString(strSearchText);
 }
 
 void UIChooserView::sltMinimumWidthHintChanged(int iHint)
@@ -155,15 +176,7 @@ void UIChooserView::sltHandleScrollToSearchResult(bool fIsNext)
 
 void UIChooserView::sltHandleSearchWidgetVisibilityToggle(bool fIsVisible)
 {
-    if (!m_pSearchWidget)
-        return;
-    if (m_pSearchWidget->isVisible() == fIsVisible)
-        return;
-    m_pSearchWidget->setVisible(fIsVisible);
-    UIChooserModel *pModel =  m_pChooser->model();
-    if (!pModel)
-        return;
-    pModel->resetSearch();
+    setSearchWidgetVisible(fIsVisible);
 }
 
 void UIChooserView::retranslateUi()

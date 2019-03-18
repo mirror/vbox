@@ -52,6 +52,8 @@ public:
     UIChooserSearchWidget(QWidget *pParent);
     void setMatchCount(int iMatchCount);
     void setScroolToIndex(int iScrollToIndex);
+    /** Appends the @a strSearchText to the current (if any) search text. */
+    void appendToSearchString(const QString &strSearchText);
 
 protected:
 

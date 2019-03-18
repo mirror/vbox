@@ -55,8 +55,12 @@ public:
       * @{ */
         /** Shows/hides machine search widget. */
         void toggleSearchWidget();
+        /** Shows/hides machine search widget. */
+        void setSearchWidgetVisible(bool fVisible);
         /** Updates the search widget's counts. */
         void setSearchResultsCount(int iTotalMacthCount, int iCurrentlyScrolledItemIndex);
+        /** Forwards @a strSearchText to the search widget which in turn appends it to the current (if any) search term. */
+        void appendToSearchString(const QString &strSearchText);
     /** @} */
 
 public slots:
