@@ -3826,11 +3826,11 @@ int Console::i_configGraphicsController(PCFGMNODE pDevices,
                 InsertConfigInteger(pCfg, "VMSVGAPciBarLayout", true);
                 InsertConfigInteger(pCfg, "VMSVGAPciId", true);
             }
-#ifdef VBOX_WITH_VMSVGA3D
+# ifdef VBOX_WITH_VMSVGA3D
             InsertConfigInteger(pCfg, "VMSVGA3dEnabled", f3DEnabled);
-#else
+# else
             LogRel(("VMSVGA3d not available in this build!\n"));
-#endif
+# endif
         }
 #endif
 
