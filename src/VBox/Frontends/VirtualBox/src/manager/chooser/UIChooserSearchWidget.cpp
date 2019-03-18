@@ -33,6 +33,8 @@ UIChooserSearchWidget::UIChooserSearchWidget(QWidget *pParent)
     , m_pScrollToNextMatchButton(0)
     , m_pScrollToPreviousMatchButton(0)
 {
+    /** Have a background. In some cases having no background causes strange artefacts in Cinnamon themes. */
+    setAutoFillBackground(true);
     prepareWidgets();
     prepareConnections();
 }
