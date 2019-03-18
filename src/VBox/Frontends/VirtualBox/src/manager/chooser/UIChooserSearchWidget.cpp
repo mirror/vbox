@@ -32,11 +32,13 @@ UIChooserSearchWidget::UIChooserSearchWidget(QWidget *pParent)
     , m_pMainLayout(0)
     , m_pScrollToNextMatchButton(0)
     , m_pScrollToPreviousMatchButton(0)
+    , m_pCloseButton(0)
 {
     /** Have a background. In some cases having no background causes strange artefacts in Cinnamon themes. */
     setAutoFillBackground(true);
     prepareWidgets();
     prepareConnections();
+    retranslateUi();
 }
 
 void UIChooserSearchWidget::setMatchCount(int iMatchCount)
@@ -67,6 +69,14 @@ void UIChooserSearchWidget::prepareWidgets()
         return;
     m_pMainLayout->setSpacing(2);
     m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+
+    m_pCloseButton = new QIToolButton;
+    if (m_pCloseButton)
+    {
+        m_pCloseButton->setIcon(UIIconPool::iconSet(":/close_16px.png"));
+        m_pMainLayout->addWidget(m_pCloseButton, 0, Qt::AlignLeft);
+    }
+
     m_pLineEdit = new UISearchLineEdit;
     if (m_pLineEdit)
     {
@@ -77,13 +87,15 @@ void UIChooserSearchWidget::prepareWidgets()
     m_pScrollToPreviousMatchButton = new QIToolButton;
     if (m_pScrollToPreviousMatchButton)
     {
-        m_pScrollToPreviousMatchButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_backward_16px.png", ":/log_viewer_search_backward_disabled_16px.png"));
+        m_pScrollToPreviousMatchButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_backward_16px.png",
+                                                                    ":/log_viewer_search_backward_disabled_16px.png"));
         m_pMainLayout->addWidget(m_pScrollToPreviousMatchButton);
     }
     m_pScrollToNextMatchButton = new QIToolButton;
     if (m_pScrollToNextMatchButton)
     {
-        m_pScrollToNextMatchButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_forward_16px.png", ":/log_viewer_search_forward_disabled_16px.png"));
+        m_pScrollToNextMatchButton->setIcon(UIIconPool::iconSet(":/log_viewer_search_forward_16px.png",
+                                                                ":/log_viewer_search_forward_disabled_16px.png"));
         m_pMainLayout->addWidget(m_pScrollToNextMatchButton);
     }
 
@@ -97,6 +109,8 @@ void UIChooserSearchWidget::prepareConnections()
         connect(m_pLineEdit, &QILineEdit::textEdited,
                 this, &UIChooserSearchWidget::sltHandleSearchTermChange);
     }
+    if (m_pCloseButton)
+        connect(m_pCloseButton, &QIToolButton::clicked, this, &UIChooserSearchWidget::sltHandleCloseButtonClick);
     if (m_pScrollToPreviousMatchButton)
         connect(m_pScrollToPreviousMatchButton, &QIToolButton::clicked, this, &UIChooserSearchWidget::sltHandleScroolToButtonClick);
     if (m_pScrollToNextMatchButton)
@@ -119,6 +133,14 @@ void UIChooserSearchWidget::hideEvent(QHideEvent *pEvent)
 
 void UIChooserSearchWidget::retranslateUi()
 {
+    if (m_pScrollToNextMatchButton)
+        m_pScrollToNextMatchButton->setToolTip(tr("Navigate to the next item among the search results"));
+    if (m_pScrollToPreviousMatchButton)
+        m_pScrollToPreviousMatchButton->setToolTip(tr("Navigate to the previous item among the search results"));
+    if (m_pLineEdit)
+        m_pLineEdit->setToolTip(tr("Enter a search term to be used during virtual machine search"));
+    if (m_pCloseButton)
+        m_pCloseButton->setToolTip(tr("Close the search widget"));
 }
 
 bool UIChooserSearchWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -147,4 +169,9 @@ void UIChooserSearchWidget::sltHandleScroolToButtonClick()
         emit sigScrollToMatch(true);
     else if (sender() == m_pScrollToPreviousMatchButton)
         emit sigScrollToMatch(false);
+}
+
+void UIChooserSearchWidget::sltHandleCloseButtonClick()
+{
+    emit sigToggleVisibility(false);
 }

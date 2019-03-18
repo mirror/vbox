@@ -50,7 +50,9 @@ signals:
 public:
 
     UIChooserSearchWidget(QWidget *pParent);
+    /** Forward @a iMatchCount to UISearchLineEdit. */
     void setMatchCount(int iMatchCount);
+    /** Forward @a iScrollToIndex to UISearchLineEdit. */
     void setScroolToIndex(int iScrollToIndex);
     /** Appends the @a strSearchText to the current (if any) search text. */
     void appendToSearchString(const QString &strSearchText);
@@ -66,18 +68,25 @@ public slots:
 
 private slots:
 
+    /** Emits sigRedoSearch thuse causes a re-search. */
     void sltHandleSearchTermChange(const QString &strSearchTerm);
     void sltHandleScroolToButtonClick();
+    /** Emits sigToggleVisibility, */
+    void sltHandleCloseButtonClick();
 
 private:
 
     void prepareWidgets();
     void prepareConnections();
 
-    UISearchLineEdit  *m_pLineEdit;
-    QHBoxLayout       *m_pMainLayout;
-    QIToolButton      *m_pScrollToNextMatchButton;
-    QIToolButton      *m_pScrollToPreviousMatchButton;
+    /** @name Member widgets.
+      * @{ */
+        UISearchLineEdit  *m_pLineEdit;
+        QHBoxLayout       *m_pMainLayout;
+        QIToolButton      *m_pScrollToNextMatchButton;
+        QIToolButton      *m_pScrollToPreviousMatchButton;
+        QIToolButton      *m_pCloseButton;
+    /** @} */
 };
 
 #endif /* !FEQT_INCLUDED_SRC_manager_chooser_UIChooserSearchWidget_h */
