@@ -7568,7 +7568,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     if (uInstrId == VMXINSTRID_VMLAUNCH)
     {
         /* VMLAUNCH with non-clear VMCS. */
-        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState == VMX_V_VMCS_STATE_CLEAR)
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState == VMX_V_VMCS_LAUNCH_STATE_CLEAR)
         { /* likely */ }
         else
         {
@@ -7582,7 +7582,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
     else
     {
         /* VMRESUME with non-launched VMCS. */
-        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState == VMX_V_VMCS_STATE_LAUNCHED)
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState == VMX_V_VMCS_LAUNCH_STATE_LAUNCHED)
         { /* likely */ }
         else
         {
@@ -7642,7 +7642,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
                                 /* VMLAUNCH instruction must update the VMCS launch state. */
                                 if (uInstrId == VMXINSTRID_VMLAUNCH)
-                                    pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = VMX_V_VMCS_STATE_LAUNCHED;
+                                    pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;
 
                                 /* Perform the VMX transition (PGM updates). */
                                 VBOXSTRICTRC rcStrict = iemVmxWorldSwitch(pVCpu);
@@ -8298,21 +8298,21 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmclear(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
      * to guest memory. Otherwise, set the state of the VMCS referenced in guest memory
      * to 'clear'.
      */
-    uint8_t const fVmcsStateClear = VMX_V_VMCS_STATE_CLEAR;
+    uint8_t const fVmcsLaunchStateClear = VMX_V_VMCS_LAUNCH_STATE_CLEAR;
     if (   IEM_VMX_HAS_CURRENT_VMCS(pVCpu)
         && IEM_VMX_GET_CURRENT_VMCS(pVCpu) == GCPhysVmcs)
     {
         Assert(GCPhysVmcs != NIL_RTGCPHYS);                     /* Paranoia. */
         Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
-        pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = fVmcsStateClear;
+        pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->fVmcsState = fVmcsLaunchStateClear;
         iemVmxCommitCurrentVmcsToMemory(pVCpu);
         Assert(!IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
     }
     else
     {
-        AssertCompileMemberSize(VMXVVMCS, fVmcsState, sizeof(fVmcsStateClear));
+        AssertCompileMemberSize(VMXVVMCS, fVmcsState, sizeof(fVmcsLaunchStateClear));
         rcStrict = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmcs + RT_UOFFSETOF(VMXVVMCS, fVmcsState),
-                                            (const void *)&fVmcsStateClear, sizeof(fVmcsStateClear));
+                                            (const void *)&fVmcsLaunchStateClear, sizeof(fVmcsLaunchStateClear));
         if (RT_FAILURE(rcStrict))
             return rcStrict;
     }
