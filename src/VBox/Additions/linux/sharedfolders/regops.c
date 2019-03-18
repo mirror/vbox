@@ -48,6 +48,9 @@
  && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
 # include <linux/splice.h>
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+# include <linux/swap.h> /* for mark_page_accessed */
+#endif
 #include <iprt/err.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 18)
@@ -60,6 +63,10 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)
 # define vm_fault_t int
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 20)
+# define pgoff_t    unsigned long
 #endif
 
 
@@ -826,33 +833,79 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
 
 
 /**
- * Wrapper around invalidate_mapping_pages() for page cache invalidation so that
- * the changes written via vbsf_reg_write are made visible to mmap users.
+ * Helper the synchronizes the page cache content with something we just wrote
+ * to the host.
  */
-DECLINLINE(void) vbsf_reg_write_invalidate_mapping_range(struct address_space *mapping, loff_t offStart, loff_t offEnd)
+void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t offFile, uint32_t cbRange,
+                                    uint8_t const *pbSrcBuf, struct page **papSrcPages, uint32_t offSrcPage)
 {
-    /*
-     * Only bother with this if the mapping has any pages in it.
-     *
-     * Note! According to the docs, the last parameter, end, is inclusive (we
-     *       would have named it 'last' to indicate this).
-     *
-     * Note! The pre-2.6.12 function might not do enough to sure consistency
-     *       when any of the pages in the range is already mapped.
-     */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
-    if (mapping)
-        invalidate_inode_pages2_range(mapping, offStart >> PAGE_SHIFT, (offEnd - 1) >> PAGE_SHIFT);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 21)
-    if (mapping && mapping->nrpages > 0)
-        invalidate_mapping_pages(mapping, offStart >> PAGE_SHIFT, (offEnd - 1) >> PAGE_SHIFT);
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 60) && 0 /** @todo invalidate_mapping_pages was added in 2.5.60, but exported in 2.6.21 */
-    if (mapping && mapping->nrpages > 0)
-        invalidate_mapping_pages(mapping, offStart >> PAGE_SHIFT, (offEnd - 1) >> PAGE_SHIFT);
-# else
-    /** @todo ... */
-    RT_NOREF(mapping, offStart, offEnd);
+    if (mapping && mapping->nrpages > 0) {
+        /*
+         * Work the pages in the write range.
+         */
+        while (cbRange > 0) {
+            /*
+             * Lookup the page at offFile.  We're fine if there aren't
+             * any there.  We're skip if it's dirty or is being written
+             * back, at least for now.
+             */
+            size_t const  offDstPage = offFile & PAGE_OFFSET_MASK;
+            size_t const  cbToCopy   = RT_MIN(PAGE_SIZE - offDstPage, cbRange);
+            pgoff_t const idxPage    = offFile >> PAGE_SHIFT;
+            struct page  *pDstPage   = find_lock_page(mapping, idxPage);
+            if (pDstPage) {
+                if (   pDstPage->mapping == mapping /* ignore if re-purposed (paranoia) */
+                    && pDstPage->index == idxPage
+                    && !PageDirty(pDstPage)         /* ignore if dirty */
+                    && !PageWriteback(pDstPage)     /* ignore if being written back */ ) {
+                    /*
+                     * Map the page and do the copying.
+                     */
+                    uint8_t *pbDst = (uint8_t *)kmap(pDstPage);
+                    if (pbSrcBuf)
+                        memcpy(&pbDst[offDstPage], pbSrcBuf, cbToCopy);
+                    else {
+                        uint32_t const cbSrc0 = PAGE_SIZE - offSrcPage;
+                        uint8_t const *pbSrc  = (uint8_t const *)kmap(papSrcPages[0]);
+                        memcpy(&pbDst[offDstPage], &pbSrc[offSrcPage], RT_MIN(cbToCopy, cbSrc0));
+                        kunmap(papSrcPages[0]);
+                        if (cbToCopy > cbSrc0) {
+                            pbSrc = (uint8_t const *)kmap(papSrcPages[1]);
+                            memcpy(&pbDst[offDstPage + cbSrc0], pbSrc, cbToCopy - cbSrc0);
+                            kunmap(papSrcPages[1]);
+                        }
+                    }
+                    kunmap(pDstPage);
+                    flush_dcache_page(pDstPage);
+                    if (cbToCopy == PAGE_SIZE)
+                        SetPageUptodate(pDstPage);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+                    mark_page_accessed(pDstPage);
 # endif
+                } else
+                    SFLOGFLOW(("vbsf_reg_write_sync_page_cache: Skipping page %p: mapping=%p (vs %p) writeback=%d offset=%#lx (vs%#lx)\n",
+                               pDstPage, pDstPage->mapping, mapping, PageWriteback(pDstPage), pDstPage->index, idxPage));
+                unlock_page(pDstPage);
+                vbsf_put_page(pDstPage);
+            }
+
+            /*
+             * Advance.
+             */
+            cbRange -= cbToCopy;
+            offFile += cbToCopy;
+            if (pbSrcBuf)
+                pbSrcBuf += cbToCopy;
+            else
+            {
+                offSrcPage += cbToCopy;
+                if (offSrcPage >= PAGE_SIZE) {
+                    offSrcPage &= PAGE_OFFSET_MASK;
+                    papSrcPages++;
+                }
+            }
+        }
+    }
 }
 
 
@@ -917,22 +970,23 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
              * Issue the request and unlock the pages.
              */
             rc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
-
-            vbsf_unlock_user_pages(papPages, cPages, false /*fSetDirty*/, fLockPgHack);
-
             if (RT_SUCCESS(rc)) {
                 /*
                  * Success, advance position and buffer.
                  */
                 uint32_t cbActual = pReq->Parms.cb32Write.u.value32;
                 AssertStmt(cbActual <= cbChunk, cbActual = cbChunk);
+
+                vbsf_reg_write_sync_page_cache(inode->i_mapping, offFile, cbActual, NULL /*pbKrnlBuf*/,
+                                               papPages, (uintptr_t)buf & PAGE_OFFSET_MASK);
+                vbsf_unlock_user_pages(papPages, cPages, false /*fSetDirty*/, fLockPgHack);
+
                 cbRet   += cbActual;
                 offFile += cbActual;
                 buf      = (uint8_t *)buf + cbActual;
                 size    -= cbActual;
                 if (offFile > i_size_read(inode))
                     i_size_write(inode, offFile);
-                vbsf_reg_write_invalidate_mapping_range(inode->i_mapping, offFile - cbActual, offFile);
                 sf_i->force_restat = 1; /* mtime (and size) may have changed */
 
                 /*
@@ -942,23 +996,26 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
                     *off = offFile;
                     break;
                 }
-            } else if (rc == VERR_NO_MEMORY && cMaxPages > 4) {
-                /*
-                 * The host probably doesn't have enough heap to handle the
-                 * request, reduce the page count and retry.
-                 */
-                cMaxPages /= 4;
-                Assert(cMaxPages > 0);
             } else {
-                /*
-                 * If we've successfully written stuff, return it rather than
-                 * the error.  (Not sure if this is such a great idea...)
-                 */
-                if (cbRet > 0)
-                    *off = offFile;
-                else
-                    cbRet = -EPROTO;
-                break;
+                vbsf_unlock_user_pages(papPages, cPages, false /*fSetDirty*/, fLockPgHack);
+                if (rc == VERR_NO_MEMORY && cMaxPages > 4) {
+                    /*
+                     * The host probably doesn't have enough heap to handle the
+                     * request, reduce the page count and retry.
+                     */
+                    cMaxPages /= 4;
+                    Assert(cMaxPages > 0);
+                } else {
+                    /*
+                     * If we've successfully written stuff, return it rather than
+                     * the error.  (Not sure if this is such a great idea...)
+                     */
+                    if (cbRet > 0)
+                        *off = offFile;
+                    else
+                        cbRet = -EPROTO;
+                    break;
+                }
             }
         }
     }
@@ -1040,11 +1097,12 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
                 if (RT_SUCCESS(vrc)) {
                     cbRet = pReq->Parms.cb32Write.u.value32;
                     AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
+                    vbsf_reg_write_sync_page_cache(mapping, pos, (uint32_t)cbRet, pReq->abData,
+                                                   NULL /*papSrcPages*/, 0 /*offSrcPage0*/);
                     pos += cbRet;
                     *off = pos;
                     if (pos > i_size_read(inode))
                         i_size_write(inode, pos);
-                    vbsf_reg_write_invalidate_mapping_range(mapping, pos - cbRet, pos);
                 } else
                     cbRet = -EPROTO;
                 sf_i->force_restat = 1; /* mtime (and size) may have changed */
@@ -1074,11 +1132,12 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
                     if (RT_SUCCESS(vrc)) {
                         cbRet = pReq->Parms.cb32Write.u.value32;
                         AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
+                        vbsf_reg_write_sync_page_cache(mapping, pos, (uint32_t)cbRet, (uint8_t const *)pvBounce,
+                                                       NULL /*papSrcPages*/, 0 /*offSrcPage0*/);
                         pos += cbRet;
                         *off = pos;
                         if (pos > i_size_read(inode))
                             i_size_write(inode, pos);
-                        vbsf_reg_write_invalidate_mapping_range(mapping, pos - cbRet, pos);
                     } else
                         cbRet = -EPROTO;
                     sf_i->force_restat = 1; /* mtime (and size) may have changed */
@@ -1793,22 +1852,22 @@ static ssize_t vbsf_reg_write_iter_locking(struct kiocb *kio, struct iov_iter *i
             rc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
             SFLOGFLOW(("vbsf_reg_write_iter_locking: VbglR0SfHostReqWritePgLst -> %d (cbActual=%#x cbChunk=%#zx of %#zx cPages=%#zx offPage0=%#x\n",
                        rc, pReq->Parms.cb32Write.u.value32, cbChunk, cbToWrite, cPages, offPage0));
-
-            vbsf_iter_unlock_pages(iter, papPages, cPages, false /*fSetDirty*/);
-
             if (RT_SUCCESS(rc)) {
                 /*
                  * Success, advance position and buffer.
                  */
                 uint32_t cbActual = pReq->Parms.cb32Write.u.value32;
                 AssertStmt(cbActual <= cbChunk, cbActual = cbChunk);
+
+                vbsf_reg_write_sync_page_cache(mapping, offFile, (uint32_t)cbRet, NULL /*pbSrcBuf*/, papPages, offPage0);
+                vbsf_iter_unlock_pages(iter, papPages, cPages, false /*fSetDirty*/);
+
                 cbRet      += cbActual;
                 offFile    += cbActual;
                 kio->ki_pos = offFile;
                 cbToWrite  -= cbActual;
                 if (offFile > i_size_read(inode))
                     i_size_write(inode, offFile);
-                vbsf_reg_write_invalidate_mapping_range(mapping, offFile - cbActual, offFile);
                 sf_i->force_restat = 1; /* mtime (and size) may have changed */
 
                 /*
@@ -1825,7 +1884,9 @@ static ssize_t vbsf_reg_write_iter_locking(struct kiocb *kio, struct iov_iter *i
                 /*
                  * Try rewind the iter structure.
                  */
-                bool const fRewindOkay = vbsf_iter_rewind(iter, &Stash, cbChunk, cbChunk);
+                bool fRewindOkay;
+                vbsf_iter_unlock_pages(iter, papPages, cPages, false /*fSetDirty*/);
+                fRewindOkay = vbsf_iter_rewind(iter, &Stash, cbChunk, cbChunk);
                 if (rc == VERR_NO_MEMORY && cMaxPages > 4 && fRewindOkay) {
                     /*
                      * The host probably doesn't have enough heap to handle the
@@ -1939,10 +2000,11 @@ static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
                     if (RT_SUCCESS(vrc)) {
                         cbRet = pReq->Parms.cb32Write.u.value32;
                         AssertStmt(cbRet <= (ssize_t)cbToWrite, cbRet = cbToWrite);
+                        vbsf_reg_write_sync_page_cache(mapping, offFile, (uint32_t)cbRet, pReq->abData,
+                                                       NULL /*papSrcPages*/, 0 /*offSrcPage0*/);
                         kio->ki_pos = offFile += cbRet;
                         if (offFile > i_size_read(inode))
                             i_size_write(inode, offFile);
-                        vbsf_reg_write_invalidate_mapping_range(mapping, offFile - cbRet, offFile);
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
                         if ((size_t)cbRet < cbToWrite)
                             iov_iter_revert(iter, cbToWrite - cbRet);
