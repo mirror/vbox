@@ -36,6 +36,31 @@
 #define ASSERT_INVALID_PCI_ADDRESS(A) \
   ASSERT (((A) & ~0xfffffff) == 0)
 
+#ifdef VBOX
+
+STATIC UINT64 mPciExpressBaseAddress;
+
+RETURN_STATUS
+EFIAPI
+PciExpressLibConstructor (
+  VOID
+  )
+{
+  //
+  // Accessing PciExpressBaseAddress as a dynamic PCD does not work
+  // because LibPcdGet64() worker tries to raise the TPL to 16 when
+  // it was already set to 31 by caller further up the chain. We need
+  // to read the value (which won't change) and cache it here.
+  //
+  mPciExpressBaseAddress = PcdGet64 (PcdPciExpressBaseAddress);
+  if (!mPciExpressBaseAddress)
+    return RETURN_LOAD_ERROR;
+
+  return RETURN_SUCCESS;
+}
+#endif
+
+
 /**
   Registers a PCI device so PCI configuration registers may be accessed after
   SetVirtualAddressMap().
@@ -82,7 +107,11 @@ GetPciExpressBaseAddress (
   VOID
   )
 {
+#ifdef VBOX
+  return (VOID*)(UINTN) mPciExpressBaseAddress;
+#else
   return (VOID*)(UINTN) PcdGet64 (PcdPciExpressBaseAddress);
+#endif
 }
 
 /**
