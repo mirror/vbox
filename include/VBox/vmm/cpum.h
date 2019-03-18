@@ -2021,6 +2021,48 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32
 }
 
 /**
+ * Checks whether one of the given VM-exit controls are set when executing a
+ * nested-guest.
+ *
+ * @returns @c true if set, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ * @param   uExitCtls   The VM-exit controls to check.
+ *
+ * @remarks This does not check if all given controls are set if more than one
+ *          control is passed in @a uExitCtls.
+ */
+DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uExitCtls)
+{
+    RT_NOREF(pVCpu);
+    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
+    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
+    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
+    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ExitCtls & uExitCtls);
+}
+
+/**
+ * Checks whether one of the given VM-entry controls are set when executing a
+ * nested-guest.
+ *
+ * @returns @c true if set, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ * @param   uEntryCtls  The VM-entry controls to check.
+ *
+ * @remarks This does not check if all given controls are set if more than one
+ *          control is passed in @a uEntryCtls.
+ */
+DECLINLINE(bool) CPUMIsGuestVmxEntryCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uEntryCtls)
+{
+    RT_NOREF(pVCpu);
+    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
+    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
+    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
+    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32EntryCtls & uEntryCtls);
+}
+
+/**
  * Implements VMSucceed for VMX instruction success.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -2067,28 +2109,6 @@ DECLINLINE(void) CPUMSetGuestVmxVmFail(PCPUMCTX pCtx, VMXINSTRERR enmInsErr)
     else
         CPUMSetGuestVmxVmFailInvalid(pCtx);
 }
-
-/**
- * Checks whether one of the given VM-exit controls are set when executing a
- * nested-guest.
- *
- * @returns @c true if set, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx        Pointer to the context.
- * @param   uExitCtls   The VM-exit controls to check.
- *
- * @remarks This does not check if all given controls are set if more than one
- *          control is passed in @a uExitCtls.
- */
-DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uExitCtls)
-{
-    RT_NOREF(pVCpu);
-    Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
-    Assert(pCtx->hwvirt.vmx.fInVmxNonRootMode);
-    Assert(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs));
-    return RT_BOOL(pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u32ExitCtls & uExitCtls);
-}
-
 
 /**
  * Returns the guest-physical address of the APIC-access page when executing a
