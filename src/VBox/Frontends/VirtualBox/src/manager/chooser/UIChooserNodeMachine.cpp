@@ -148,7 +148,8 @@ void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iIte
             matchedItems << this;
         return;
     }
-    if (name().contains(strSearchTerm, Qt::CaseInsensitive))
+    QRegExp searchRegEx(strSearchTerm, Qt::CaseInsensitive, QRegExp::WildcardUnix);
+    if (name().contains(searchRegEx))
         matchedItems << this;
 }
 
