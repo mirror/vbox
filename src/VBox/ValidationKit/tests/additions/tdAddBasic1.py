@@ -89,8 +89,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             self.asTests = asArgs[iArg].split(':');
             for s in self.asTests:
                 if s not in self.asTestsDef:
-                    raise base.InvalidOption('The "--tests" value "%s" is not valid; valid values are: %s' \
-                        % (s, ' '.join(self.asTestsDef)));
+                    raise base.InvalidOption('The "--tests" value "%s" is not valid; valid values are: %s'
+                                             % (s, ' '.join(self.asTestsDef),));
 
         elif asArgs[iArg] == '--quick':
             self.parseOption(['--virt-modes', 'hwvirt'], 0);
@@ -182,7 +182,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             (fRc, oTxsSession) = self.testLinuxInstallAdditions(oSession, oTxsSession, oTestVm);
         else:
             reporter.error('Guest Additions installation not implemented for %s yet! (%s)' % \
-                           (oTestVm.sKind, oTestVm.sVmName));
+                           (oTestVm.sKind, oTestVm.sVmName,));
             fRc = False;
 
         #
@@ -222,7 +222,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         Installs the Windows guest additions using the test execution service.
         Since this involves rebooting the guest, we will have to create a new TXS session.
         """
-        asLogFile = [];
+        asLogFiles = [];
 
         fHaveSetupApiDevLog = False;
 
@@ -231,18 +231,19 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             sWinDir = 'C:/WinNT/';
         else:
             sWinDir = 'C:/Windows/';
-            asLogFile = [sWinDir+'setupapi.log', sWinDir+'setupact.log', sWinDir+'setuperr.log'];
+            asLogFiles = [sWinDir + 'setupapi.log', sWinDir + 'setupact.log', sWinDir + 'setuperr.log'];
 
             # Apply The SetupAPI logging level so that we also get the (most verbose) setupapi.dev.log file.
             ## @todo !!! HACK ALERT !!! Add the value directly into the testing source image. Later.
-            fHaveSetupApiDevLog = self.txsRunTest(oTxsSession, 'Enabling setupapi.dev.log', 30 * 1000, \
-                'c:\\Windows\\System32\\reg.exe', ('c:\\Windows\\System32\\reg.exe', \
-                'add', '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup"', '/v', 'LogLevel', '/t', 'REG_DWORD', \
-                '/d', '0xFF'));
+            fHaveSetupApiDevLog = self.txsRunTest(oTxsSession, 'Enabling setupapi.dev.log', 30 * 1000,
+                                                  'c:\\Windows\\System32\\reg.exe',
+                                                  ('c:\\Windows\\System32\\reg.exe', 'add',
+                                                   '"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Setup"',
+                                                   '/v', 'LogLevel', '/t', 'REG_DWORD', '/d', '0xFF'));
 
         # On some guests the files in question still can be locked by the OS, so ignore deletion
         # errors from the guest side (e.g. sharing violations) and just continue.
-        for sFile in asLogFile:
+        for sFile in asLogFiles:
             self.txsRmFile(oSession, oTxsSession, sFile, 10 * 1000, fIgnoreErrors = True);
 
         # Install the public signing key.
@@ -255,8 +256,8 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
         # Enable installing the optional auto-logon modules (VBoxGINA/VBoxCredProv) + (Direct)3D support.
         # Also tell the installer to produce the appropriate log files.
         #
-        fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 5 * 60 * 1000, \
-            '${CDROM}/VBoxWindowsAdditions.exe', ('${CDROM}/VBoxWindowsAdditions.exe', '/S', '/l', '/with_autologon'));
+        fRc = self.txsRunTest(oTxsSession, 'VBoxWindowsAdditions.exe', 5 * 60 * 1000, '${CDROM}/VBoxWindowsAdditions.exe',
+                              ('${CDROM}/VBoxWindowsAdditions.exe', '/S', '/l', '/with_autologon'));
         ## @todo For testing the installation (D)3D stuff ('/with_d3d') we need to boot up in safe mode.
 
         #
@@ -269,21 +270,21 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                 # Add the Windows Guest Additions installer files to the files we want to download
                 # from the guest.
                 sGuestAddsDir = 'C:/Program Files/Oracle/VirtualBox Guest Additions/';
-                asLogFile.append(sGuestAddsDir + 'install.log');
+                asLogFiles.append(sGuestAddsDir + 'install.log');
                 # Note: There won't be a install_ui.log because of the silent installation.
-                asLogFile.append(sGuestAddsDir + 'install_drivers.log');
-                asLogFile.append('C:/Windows/setupapi.log');
+                asLogFiles.append(sGuestAddsDir + 'install_drivers.log');
+                asLogFiles.append('C:/Windows/setupapi.log');
 
                 # Note: setupapi.dev.log only is available since Windows 2000.
                 if fHaveSetupApiDevLog:
-                    asLogFile.append('C:/Windows/setupapi.dev.log');
+                    asLogFiles.append('C:/Windows/setupapi.dev.log');
 
                 #
                 # Download log files.
                 # Ignore errors as all files above might not be present (or in different locations)
                 # on different Windows guests.
                 #
-                self.txsDownloadFiles(oSession, oTxsSession, asLogFile, fIgnoreErrors = True);
+                self.txsDownloadFiles(oSession, oTxsSession, asLogFiles, fIgnoreErrors = True);
 
         return (fRc, oTxsSession);
 
