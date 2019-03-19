@@ -674,6 +674,104 @@ RTDECL(int) RTFileCopyEx(const char *pszSrc, const char *pszDst, uint32_t fFlags
  */
 RTDECL(int) RTFileCopyByHandlesEx(RTFILE FileSrc, RTFILE FileDst, PFNRTPROGRESS pfnProgress, void *pvUser);
 
+/**
+ * Copies a part of a file to another one.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_EOF if @a pcbCopied is NULL and the end-of-file is reached
+ *          before @a cbToCopy bytes have been copied.
+ *
+ * @param   hFileSrc    Handle to the source file.  Must be readable.
+ * @param   offSrc      The source file offset.
+ * @param   hFileDst    Handle to the destination file.  Must be writable and
+ *                      RTFILE_O_APPEND must be be in effect.
+ * @param   offDst      The destination file offset.
+ * @param   cbToCopy    How many bytes to copy.
+ * @param   fFlags      Reserved for the future, must be zero.
+ * @param   pcbCopied   Where to return the exact number of bytes copied.
+ *                      Optional.
+ *
+ * @note    The file positions of @a hFileSrc and @a hFileDst are undefined
+ *          upon return of this function.
+ *
+ * @sa      RTFileCopyPartEx.
+ */
+RTDECL(int) RTFileCopyPart(RTFILE hFileSrc, RTFOFF offSrc, RTFILE hFileDst, RTFOFF offDst, uint64_t cbToCopy,
+                           uint32_t fFlags, uint64_t *pcbCopied);
+
+
+/** Copy buffer state for RTFileCopyPartEx.
+ * @note The fields are considered internal!
+ */
+typedef struct RTFILECOPYPARTBUFSTATE
+{
+    /** Magic value (RTFILECOPYPARTBUFSTATE_MAGIC).
+     * @internal */
+    uint32_t    uMagic;
+    /** Allocation type (internal).
+     * @internal */
+    int32_t     iAllocType;
+    /** Buffer pointer.
+     * @internal */
+    uint8_t    *pbBuf;
+    /** Buffer size.
+     * @internal */
+    size_t      cbBuf;
+    /** Reserved.
+     * @internal */
+    void       *papReserved[3];
+} RTFILECOPYPARTBUFSTATE;
+/** Pointer to copy buffer state for RTFileCopyPartEx(). */
+typedef RTFILECOPYPARTBUFSTATE *PRTFILECOPYPARTBUFSTATE;
+/** Magic value for the RTFileCopyPartEx() buffer state structure (Stephen John Fry). */
+#define RTFILECOPYPARTBUFSTATE_MAGIC   UINT32_C(0x19570857)
+
+/**
+ * Prepares buffer state for one or more RTFileCopyPartEx() calls.
+ *
+ * Caller must call RTFileCopyPartCleanup() after the final RTFileCopyPartEx()
+ * call.
+ *
+ * @returns IPRT status code.
+ * @param   pBufState   The buffer state to prepare.
+ * @param   cbToCopy    The number of bytes we typically to copy in one
+ *                      RTFileCopyPartEx call.
+ */
+RTDECL(int) RTFileCopyPartPrep(PRTFILECOPYPARTBUFSTATE pBufState, uint64_t cbToCopy);
+
+/**
+ * Cleans up after RTFileCopyPartPrep() once the final RTFileCopyPartEx()
+ * call has been made.
+ *
+ * @param   pBufState   The buffer state to clean up.
+ */
+RTDECL(void) RTFileCopyPartCleanup(PRTFILECOPYPARTBUFSTATE pBufState);
+
+/**
+ * Copies a part of a file to another one, extended version.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_EOF if @a pcbCopied is NULL and the end-of-file is reached
+ *          before @a cbToCopy bytes have been copied.
+ *
+ * @param   hFileSrc    Handle to the source file.  Must be readable.
+ * @param   offSrc      The source file offset.
+ * @param   hFileDst    Handle to the destination file.  Must be writable and
+ *                      RTFILE_O_APPEND must be be in effect.
+ * @param   offDst      The destination file offset.
+ * @param   cbToCopy    How many bytes to copy.
+ * @param   fFlags      Reserved for the future, must be zero.
+ * @param   pBufState   Copy buffer state prepared by RTFileCopyPartPrep().
+ * @param   pcbCopied   Where to return the exact number of bytes copied.
+ *                      Optional.
+ *
+ * @note    The file positions of @a hFileSrc and @a hFileDst are undefined
+ *          upon return of this function.
+ *
+ * @sa      RTFileCopyPartEx.
+ */
+RTDECL(int) RTFileCopyPartEx(RTFILE hFileSrc, RTFOFF offSrc, RTFILE hFileDst, RTFOFF offDst, uint64_t cbToCopy,
+                             uint32_t fFlags, PRTFILECOPYPARTBUFSTATE pBufState, uint64_t *pcbCopied);
 
 /**
  * Compares two file given the paths to both files.

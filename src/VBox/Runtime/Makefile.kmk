@@ -665,6 +665,8 @@ RuntimeR3_SOURCES       = \
 	generic/RTDirCreateUniqueNumbered-generic.cpp \
 	generic/RTEnvDupEx-generic.cpp \
 	generic/RTFileCopy-generic.cpp \
+	generic/RTFileCopyRange-generic.cpp \
+	generic/RTFileCopyRangeEx-generic.cpp \
 	generic/RTFileQuerySize-generic.cpp \
 	generic/RTFileReadAll-generic.cpp \
 	generic/RTFileReadAllEx-generic.cpp \
