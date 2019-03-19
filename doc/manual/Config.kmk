@@ -264,6 +264,7 @@ ifdef VBOX_XML_CATALOG
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/html/docbook.xsl"                              uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK)/html/docbook.xsl"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/html/chunk.xsl"                                uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK)/html/chunk.xsl"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/htmlhelp/htmlhelp.xsl"                         uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK)/htmlhelp/htmlhelp.xsl"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/manpages/docbook.xsl"                          uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_DOCBOOK)/manpages/docbook.xsl"/>' \
 		'</catalog>'
 
 endif # VBOX_XML_CATALOG
