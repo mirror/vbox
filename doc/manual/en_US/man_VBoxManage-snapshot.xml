@@ -49,7 +49,7 @@
 
       <arg choice="plain"><replaceable>snapshot-name</replaceable></arg>
 
-      <arg>--description <replaceable>description</replaceable></arg>
+      <arg>--description=<replaceable>description</replaceable></arg>
 
       <arg>--live</arg>
 
@@ -89,9 +89,9 @@
 
       <arg choice="plain"><replaceable>snapshot-name</replaceable> | --current</arg>
 
-      <arg>--description <replaceable>description</replaceable></arg>
+      <arg>--description=<replaceable>description</replaceable></arg>
 
-      <arg>--name <replaceable>new-name</replaceable></arg>
+      <arg>--name=<replaceable>new-name</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-list">
@@ -166,7 +166,7 @@
 [--uniquename Number,Timestamp,Space,Force]</screen>
       <variablelist>
         <varlistentry>
-          <term><option>--description <replaceable>description</replaceable></option></term>
+          <term><option>--description=<replaceable>description</replaceable></option></term>
           <listitem><para>
               Specifies a description of the snapshot.
             </para></listitem>
@@ -272,13 +272,13 @@
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--description <replaceable>description</replaceable></option></term>
+          <term><option>--description=<replaceable>description</replaceable></option></term>
           <listitem><para>
               Specifies a new description for the snapshot.
             </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--name <replaceable>new-name</replaceable></option></term>
+          <term><option>--name=<replaceable>new-name</replaceable></option></term>
           <listitem><para>
               Specifies a new name for the snapshot.
             </para></listitem>
@@ -357,7 +357,7 @@
     </para>
 <screen>
 $ VBoxManage snapshot ol7u4 take ol7u4-snap-001 \
---description "Oracle Linux 7.4"
+--description="Oracle Linux 7.4"
 </screen>
     <para>
       The following command lists the snapshots for the
@@ -373,7 +373,7 @@ $ VBoxManage snapshot ol7u4 list
     </para>
 <screen>
 $ VBoxManage snapshot ol7u4 edit ol7u4-snap-001 \
---description "Oracle Linux 7.4 with UEK4 kernel"
+--description="Oracle Linux 7.4 with UEK4 kernel"
 </screen>
     <para>
       The following command shows VM settings for the
