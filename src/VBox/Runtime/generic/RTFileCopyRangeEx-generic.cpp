@@ -84,7 +84,7 @@ RTDECL(void) RTFileCopyPartCleanup(PRTFILECOPYPARTBUFSTATE pBufState)
 
 
 RTDECL(int) RTFileCopyPartEx(RTFILE hFileSrc, RTFOFF offSrc, RTFILE hFileDst, RTFOFF offDst, uint64_t cbToCopy,
-                             uint32_t fFlags, uint64_t *pcbCopied, PRTFILECOPYPARTBUFSTATE pBufState)
+                             uint32_t fFlags, PRTFILECOPYPARTBUFSTATE pBufState, uint64_t *pcbCopied)
 {
     /*
      * Validate input.
