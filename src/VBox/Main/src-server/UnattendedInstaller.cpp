@@ -912,9 +912,31 @@ HRESULT UnattendedLinuxInstaller::editIsoLinuxCfg(GeneralTextScript *pEditor)
 */
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Helper for checking if a file exists.
+ * @todo promote to IPRT?
+ */
+static bool hlpVfsFileExists(RTVFS hVfs, const char *pszPath)
+{
+    RTFSOBJINFO ObjInfo;
+    int vrc = RTVfsQueryPathInfo(hVfs, pszPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_FOLLOW_LINK);
+    return RT_SUCCESS(vrc) && RTFS_IS_FILE(ObjInfo.Attr.fMode);
+}
+
 HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &rVecArgs, RTCList<RTCString> &rVecFiles,
                                                             RTVFS hVfsOrgIso, bool fOverwrite)
 {
+    /*
+     * The txt.cfg file used to be called isolinux.txt (ubuntu 4.10
+     * and possible others).
+     */
+    /** @todo Ubuntu 4.10 does not work, as we generate too long command lines
+     *        and the kernel crashes immediately. */
+    const char *pszIsoLinuxTxtCfg = "/isolinux/txt.cfg";
+    if (   !hlpVfsFileExists(hVfsOrgIso, pszIsoLinuxTxtCfg)
+        && hlpVfsFileExists(hVfsOrgIso, "/isolinux/isolinux.txt"))
+        pszIsoLinuxTxtCfg             = "/isolinux/isolinux.txt";
+
     /*
      * VISO bits and filenames.
      */
@@ -934,7 +956,7 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
 
         /* Remove the two isolinux configure files we'll be replacing. */
         rVecArgs.append() = "isolinux/isolinux.cfg=:must-remove:";
-        rVecArgs.append() = "isolinux/txt.cfg=:must-remove:";
+        rVecArgs.append().assign(&pszIsoLinuxTxtCfg[1]).append("=:must-remove:");
 
         /* Add the replacement files. */
         strIsoLinuxCfg = mpParent->i_getAuxiliaryBasePath();
@@ -943,7 +965,7 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
 
         strTxtCfg = mpParent->i_getAuxiliaryBasePath();
         strTxtCfg.append("isolinux-txt.cfg");
-        rVecArgs.append().append("isolinux/txt.cfg=").append(strTxtCfg);
+        rVecArgs.append().assign(&pszIsoLinuxTxtCfg[1]).append("=").append(strTxtCfg);
     }
     catch (std::bad_alloc &)
     {
@@ -983,7 +1005,7 @@ HRESULT UnattendedDebianInstaller::addFilesToAuxVisoVectors(RTCList<RTCString> &
      */
     {
         GeneralTextScript Editor(mpParent);
-        HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, "/isolinux/txt.cfg", &Editor);
+        HRESULT hrc = loadAndParseFileFromIso(hVfsOrgIso, pszIsoLinuxTxtCfg, &Editor);
         if (SUCCEEDED(hrc))
             hrc = editDebianTxtCfg(&Editor);
         if (SUCCEEDED(hrc))
