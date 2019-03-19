@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QStyle>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -67,8 +68,17 @@ void UIChooserSearchWidget::prepareWidgets()
     m_pMainLayout = new QHBoxLayout;
     if (!m_pMainLayout)
         return;
+
+#ifdef VBOX_WS_MAC
+    m_pMainLayout->setContentsMargins(0, 5, 0, 5);
     m_pMainLayout->setSpacing(2);
-    m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+#else
+    m_pMainLayout->setContentsMargins(qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin) / 2,
+                                      qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin) / 4,
+                                      qApp->style()->pixelMetric(QStyle::PM_LayoutRightMargin) / 2,
+                                      qApp->style()->pixelMetric(QStyle::PM_LayoutBottomMargin) / 4);
+    m_pMainLayout->setSpacing(qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing) / 2);
+#endif
 
     m_pCloseButton = new QIToolButton;
     if (m_pCloseButton)
