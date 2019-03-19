@@ -185,7 +185,7 @@ static RTEXITCODE handleSnapshotList(HandlerArg *pArgs, ComPtr<IMachine> &pMachi
         {
             case 'D':   enmDetails = VMINFO_FULL; break;
             case 'M':   enmDetails = VMINFO_MACHINEREADABLE; break;
-            default:    return errorGetOpt(USAGE_SNAPSHOT, c, &ValueUnion);
+            default:    return errorGetOpt(c, &ValueUnion);
         }
     }
 
@@ -315,9 +315,16 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
 {
     HRESULT rc;
 
+/** @todo r=bird: sub-standard command line parsing here!
+ *
+ * 'VBoxManage snapshot empty take --help' takes a snapshot rather than display
+ * help as you would expect.
+ *
+ */
+
     /* we need at least a VM and a command */
     if (a->argc < 2)
-        return errorSyntax(USAGE_SNAPSHOT, "Not enough parameters");
+        return errorSyntax("Not enough parameters");
 
     /* the first argument must be the VM */
     Bstr bstrMachine(a->argv[0]);
@@ -342,10 +349,12 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
 
         if (!strcmp(a->argv[1], "take"))
         {
+            setCurrentSubcommand(HELP_SCOPE_SNAPSHOT_TAKE);
+
             /* there must be a name */
             if (a->argc < 3)
             {
-                errorSyntax(USAGE_SNAPSHOT, "Missing snapshot name");
+                errorSyntax("Missing snapshot name");
                 rc = E_FAIL;
                 break;
             }
@@ -394,7 +403,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                         break;
 
                     default:
-                        errorGetOpt(USAGE_SNAPSHOT, ch, &Value);
+                        errorGetOpt(ch, &Value);
                         rc = E_FAIL;
                         break;
                 }
@@ -478,11 +487,15 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                   || (fRestoreCurrent = !strcmp(a->argv[1], "restorecurrent"))
                 )
         {
+            setCurrentSubcommand(fDelete    ? HELP_SCOPE_SNAPSHOT_DELETE
+                                 : fRestore ? HELP_SCOPE_SNAPSHOT_RESTORE
+                                            : HELP_SCOPE_SNAPSHOT_RESTORECURRENT);
+
             if (fRestoreCurrent)
             {
                 if (a->argc > 2)
                 {
-                    errorSyntax(USAGE_SNAPSHOT, "Too many arguments");
+                    errorSyntax("Too many arguments");
                     rc = E_FAIL;
                     break;
                 }
@@ -490,7 +503,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             /* exactly one parameter: snapshot name */
             else if (a->argc != 3)
             {
-                errorSyntax(USAGE_SNAPSHOT, "Expecting snapshot name only");
+                errorSyntax("Expecting snapshot name only");
                 rc = E_FAIL;
                 break;
             }
@@ -540,9 +553,10 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "edit"))
         {
+            setCurrentSubcommand(HELP_SCOPE_SNAPSHOT_EDIT);
             if (a->argc < 3)
             {
-                errorSyntax(USAGE_SNAPSHOT, "Missing snapshot name");
+                errorSyntax("Missing snapshot name");
                 rc = E_FAIL;
                 break;
             }
@@ -596,7 +610,7 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
                 }
                 else
                 {
-                    errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
+                    errorSyntax("Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
                     rc = E_FAIL;
                     break;
                 }
@@ -605,10 +619,12 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
         }
         else if (!strcmp(a->argv[1], "showvminfo"))
         {
+            setCurrentSubcommand(HELP_SCOPE_SNAPSHOT_SHOWVMINFO);
+
             /* exactly one parameter: snapshot name */
             if (a->argc != 3)
             {
-                errorSyntax(USAGE_SNAPSHOT, "Expecting snapshot name only");
+                errorSyntax("Expecting snapshot name only");
                 rc = E_FAIL;
                 break;
             }
@@ -624,12 +640,15 @@ RTEXITCODE handleSnapshot(HandlerArg *a)
             showVMInfo(a->virtualBox, pMachine2, NULL, VMINFO_NONE);
         }
         else if (!strcmp(a->argv[1], "list"))
+        {
+            setCurrentSubcommand(HELP_SCOPE_SNAPSHOT_LIST);
             rc = handleSnapshotList(a, sessionMachine) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+        }
         else if (!strcmp(a->argv[1], "dump"))          // undocumented parameter to debug snapshot info
             DumpSnapshot(sessionMachine);
         else
         {
-            errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[1]).c_str());
+            errorSyntax("Invalid parameter '%s'", Utf8Str(a->argv[1]).c_str());
             rc = E_FAIL;
         }
     } while (0);

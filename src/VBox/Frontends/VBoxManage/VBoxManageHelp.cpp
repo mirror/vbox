@@ -897,21 +897,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                            "%s adoptstate %s      <uuid|vmname> <state_file>\n"
                      "\n", SEP);
 
-    if (enmCommand == USAGE_SNAPSHOT || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s snapshot %s        <uuid|vmname>\n"
-                     "                            take <name> [--description <desc>] [--live]\n"
-                     "                                 [--uniquename Number,Timestamp,Space,Force] |\n"
-                     "                            delete <uuid|snapname> |\n"
-                     "                            restore <uuid|snapname> |\n"
-                     "                            restorecurrent |\n"
-                     "                            edit <uuid|snapname>|--current\n"
-                     "                                 [--name <name>]\n"
-                     "                                 [--description <desc>] |\n"
-                     "                            list [--details|--machinereadable] |\n"
-                     "                            showvminfo <uuid|snapname>\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_CLOSEMEDIUM || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s closemedium %s     [disk|dvd|floppy] <uuid|filename>\n"
