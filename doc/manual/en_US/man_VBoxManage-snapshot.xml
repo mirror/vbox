@@ -37,78 +37,78 @@
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-snapshot">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
-      <command>VBoxManage snapshot</command> 
+      <command>VBoxManage snapshot</command>
       <arg choice="plain"><replaceable>vm</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-take">
-      <command>VBoxManage snapshot</command> 
+      <command>VBoxManage snapshot</command>
       <arg choice="plain"><replaceable>vm</replaceable></arg>
-       
+
       <arg choice="plain">take</arg>
-       
+
       <arg choice="plain"><replaceable>snapshot-name</replaceable></arg>
-       
+
       <arg>--description <replaceable>description</replaceable></arg>
-       
+
       <arg>--live</arg>
-       
+
       <arg>--uniquename Number,Timestamp,Space,Force</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-delete">
-      <command>VBoxManage snapshot</command> 
+      <command>VBoxManage snapshot</command>
       <arg choice="plain"><replaceable>vm</replaceable></arg>
-       
+
       <arg choice="plain">delete</arg>
-       
+
       <arg choice="plain"><replaceable>snapshot-name</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-restore">
-      <command>VBoxManage snapshot</command> 
+      <command>VBoxManage snapshot</command>
       <arg choice="plain"><replaceable>vm</replaceable></arg>
-       
+
       <arg choice="plain">restore</arg>
-       
+
       <arg choice="plain"><replaceable>snapshot-name</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-restorecurrent">
-      <command>VBoxManage snapshot</command> 
+      <command>VBoxManage snapshot</command>
       <arg choice="plain"><replaceable>vm</replaceable></arg>
-       
+
       <arg choice="plain">restorecurrent</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-edit">
-      <command>VBoxManage snapshot</command> 
+      <command>VBoxManage snapshot</command>
       <arg choice="plain"><replaceable>vm</replaceable></arg>
-       
+
       <arg choice="plain">edit</arg>
-       
+
       <arg choice="plain"><replaceable>snapshot-name</replaceable> | --current</arg>
-       
+
       <arg>--description <replaceable>description</replaceable></arg>
-       
+
       <arg>--name <replaceable>new-name</replaceable></arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-list">
-      <command>VBoxManage snapshot</command> 
+      <command>VBoxManage snapshot</command>
       <arg choice="plain"><replaceable>vm</replaceable></arg>
-       
+
       <arg choice="plain">list</arg>
-       
+
       <arg>--details | --machinereadable</arg>
     </cmdsynopsis>
-     
+
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-showvminfo">
-      <command>VBoxManage snapshot</command> 
+      <command>VBoxManage snapshot</command>
       <arg choice="plain"><replaceable>vm</replaceable></arg>
-       
+
       <arg choice="plain">showvminfo</arg>
-       
+
       <arg choice="plain"><replaceable>snapshot-name</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>

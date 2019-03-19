@@ -37,23 +37,23 @@
   <refsynopsisdiv>
     <cmdsynopsis id="synopsis-vboxmanage-clonevm">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
-      <command>VBoxManage clonevm</command> 
+      <command>VBoxManage clonevm</command>
       <arg choice="plain"><replaceable>vm</replaceable></arg>
-       
+
       <arg>--basefolder <replaceable>basefolder</replaceable></arg>
-       
+
       <arg>--group <replaceable>group</replaceable>, ...</arg>
-       
+
       <arg>--mode machine | machinechildren | all</arg>
-       
+
       <arg>--name <replaceable>name</replaceable></arg>
-       
+
       <arg>--options link | keepallmacs | keepnatmacs | keepdisknames | keephwuuids</arg>
-       
+
       <arg>--register</arg>
-       
+
       <arg>--snapshot <replaceable>snapshot-name</replaceable></arg>
-       
+
       <arg>--uuid <replaceable>uuid</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
