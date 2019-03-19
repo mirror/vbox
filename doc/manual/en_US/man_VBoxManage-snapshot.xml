@@ -347,7 +347,7 @@
 
   <refsect1>
     <title>Examples</title>
-    <remark role="help-scope"/>
+    <remark role="help-scope" condition="GLOBAL"/>
     <para>
       The following command creates a snapshot of the
       <computeroutput>ol7u4</computeroutput> VM. The snapshot is called
