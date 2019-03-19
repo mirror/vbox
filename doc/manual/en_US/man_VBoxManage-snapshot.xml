@@ -87,7 +87,10 @@
 
       <arg choice="plain">edit</arg>
 
-      <arg choice="plain"><replaceable>snapshot-name</replaceable> | --current</arg>
+      <group choice="req">
+        <arg choice="plain"><replaceable>snapshot-name</replaceable></arg>
+        <arg choice="plain">--current</arg>
+      </group>
 
       <arg>--description=<replaceable>description</replaceable></arg>
 
@@ -100,7 +103,7 @@
 
       <arg choice="plain">list</arg>
 
-      <arg>--details | --machinereadable</arg>
+      <group><arg choice="plain">--details</arg><arg choice="plain">--machinereadable</arg></group>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-showvminfo">
@@ -256,6 +259,15 @@
       </para>
       <variablelist>
         <varlistentry>
+          <term><replaceable>snapshot-name</replaceable></term>
+          <listitem><para>
+              Specifies the UUID or name of the snapshot to edit.
+            </para><para>
+              This option is mutually exclusive with the
+              <option>--current</option> option.
+            </para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><option>--current</option></term>
           <listitem><para>
               Specifies that you update the current version of the
@@ -275,15 +287,6 @@
           <term><option>--name=<replaceable>new-name</replaceable></option></term>
           <listitem><para>
               Specifies a new name for the snapshot.
-            </para></listitem>
-        </varlistentry>
-        <varlistentry>
-          <term><replaceable>snapshot-name</replaceable></term>
-          <listitem><para>
-              Specifies the UUID or name of the snapshot to edit.
-            </para><para>
-              This option is mutually exclusive with the
-              <option>--current</option> option.
             </para></listitem>
         </varlistentry>
       </variablelist>
