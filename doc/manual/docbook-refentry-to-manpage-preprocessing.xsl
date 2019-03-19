@@ -67,5 +67,12 @@ Only supported on: refsect2</xsl:message>
     -->
   <xsl:template match="remark[@role='help-manual']"/>
 
+  <!--
+   Remove remarks without a role.
+   These are used for leaving questions and such while working with the documentation team.
+  -->
+  <xsl:template match="remark[not(@role)]"/>
+
+
 </xsl:stylesheet>
 
