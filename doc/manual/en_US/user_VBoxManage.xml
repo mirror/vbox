@@ -4310,92 +4310,6 @@ Virtual system 0:
 
   </sect1>
 
-  <sect1 id="vboxmanage-snapshot">
-
-    <title>VBoxManage snapshot</title>
-
-    <para>
-      This command is used to control snapshots from the command line. A
-      snapshot consists of a complete copy of the virtual machine
-      settings, copied at the time when the snapshot was taken, and
-      optionally a virtual machine saved state file if the snapshot was
-      taken while the machine was running. After a snapshot has been
-      taken, &product-name; creates a differencing hard disk for each
-      normal hard disk associated with the machine so that when a
-      snapshot is restored, the contents of the virtual machine's
-      virtual hard disks can be quickly reset by simply dropping the
-      preexisting differencing files.
-    </para>
-
-<screen>VBoxManage snapshot         &lt;uuid|vmname&gt;
-                            take &lt;name&gt; [--description &lt;desc&gt;] [--live]
-                                 [--uniquename Number,Timestamp,Space,Force] |
-                            delete &lt;uuid|snapname&gt; |
-                            restore &lt;uuid|snapname&gt; |
-                            restorecurrent |
-                            edit &lt;uuid|snapname&gt;|--current
-                                 [--name &lt;name&gt;]
-                                 [--description &lt;desc&gt;] |
-                            list [--details|--machinereadable]
-                            showvminfo &lt;uuid|snapname&gt;</screen>
-
-    <para>
-      The <command>take</command> operation takes a snapshot of the
-      current state of the virtual machine. You must supply a name for
-      the snapshot and can optionally supply a description. The new
-      snapshot is inserted into the snapshots tree as a child of the
-      current snapshot and then becomes the new current snapshot. The
-      <computeroutput>--description</computeroutput> parameter enables
-      you to describe the snapshot. If
-      <computeroutput>--live</computeroutput> is specified, the VM will
-      not be stopped during the snapshot creation. This is called live
-      snapshotting.
-    </para>
-
-    <para>
-      The <command>delete</command> operation deletes a snapshot,
-      specified by name or by UUID. This can take a while to finish
-      since the differencing images associated with the snapshot might
-      need to be merged with their child differencing images.
-    </para>
-
-    <para>
-      The <command>restore</command> operation will restore the given
-      snapshot, specified by name or by UUID, by resetting the virtual
-      machine's settings and current state to that of the snapshot. The
-      previous current state of the machine will be lost. After this,
-      the given snapshot becomes the new current snapshot so that
-      subsequent snapshots are inserted under the snapshot from which
-      was restored.
-    </para>
-
-    <para>
-      The <command>restorecurrent</command> operation is a shortcut to
-      restore the current snapshot, which is the snapshot from which the
-      current state is derived. This subcommand is equivalent to using
-      the <command>restore</command> subcommand with the name or UUID of
-      the current snapshot, except that it avoids the extra step of
-      determining that name or UUID.
-    </para>
-
-    <para>
-      With the <command>edit</command> operation, you can change the
-      name or description of an existing snapshot.
-    </para>
-
-    <para>
-      The <command>list</command> operation shows all snapshots of a
-      virtual machine.
-    </para>
-
-    <para>
-      With the <command>showvminfo</command> operation, you can view the
-      virtual machine settings that were stored with an existing
-      snapshot.
-    </para>
-
-  </sect1>
-
   <sect1 id="vboxmanage-closemedium">
 
     <title>VBoxManage closemedium</title>
@@ -9268,5 +9182,6 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
   <xi:include href="user_man_VBoxManage-unattended.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <xi:include href="user_man_VBoxManage-cloudprofile.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-snapshot.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 
 </chapter>
