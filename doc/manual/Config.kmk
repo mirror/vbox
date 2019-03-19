@@ -191,7 +191,7 @@ ifdef VBOX_XML_CATALOG
  # entity IDs to local files.  (Obviously, only done when we have local files.)
  #
  # Create a catalog file for xsltproc that points to docbook catalog.
- $(VBOX_XML_CATALOG): $(MAKEFILE_CURRENT) | $$(dir $$@)
+ $(VBOX_XML_CATALOG): $(VBOX_PATH_MANUAL_SRC)/Config.kmk | $$(dir $$@)
 	$(call MSG_L1,Creating catalog $@)
 	$(QUIET)$(APPEND) -tn "$@" \
 		'<?xml version="1.0"?>' \
@@ -208,7 +208,7 @@ ifdef VBOX_XML_CATALOG
 		'</catalog>'
 
  # Create a docbook catalog file for xsltproc that points to the local docbook files.
- $(VBOX_XML_CATALOG_DOCBOOK): $(MAKEFILE_CURRENT) | $$(dir $$@)
+ $(VBOX_XML_CATALOG_DOCBOOK): $(VBOX_PATH_MANUAL_SRC)/Config.kmk | $$(dir $$@)
 	$(call MSG_L1,Creating catalog $@)
 	$(QUIET)$(APPEND) -tn "$@" \
 		'<?xml version="1.0"?>' \
@@ -246,7 +246,7 @@ ifdef VBOX_XML_CATALOG
 		'</catalog>'
 
  # Create a docbook catalog file for xsltproc that points to the local manual files in non-default locations
- $(VBOX_XML_CATALOG_MANUAL): $(MAKEFILE_CURRENT) | $$(dir $$@)
+ $(VBOX_XML_CATALOG_MANUAL): $(VBOX_PATH_MANUAL_SRC)/Config.kmk | $$(dir $$@)
 	$(call MSG_L1,Creating catalog $@)
 	$(QUIET)$(APPEND) -tn "$@" \
 		'<?xml version="1.0"?>' \
@@ -276,7 +276,7 @@ endif # VBOX_XML_CATALOG
 
 ifdef VBOX_XML_ENTITIES
 
- $(VBOX_XML_ENTITIES): $(MAKEFILE_CURRENT) | $$(dir $$@)
+ $(VBOX_XML_ENTITIES): $(VBOX_PATH_MANUAL_SRC)/Config.kmk | $$(dir $$@)
 	$(call MSG_L1,Creating entities $@)
 	$(QUIET)$(APPEND) -tn "$@" \
 		'<!-- Entities for product names -->' \
