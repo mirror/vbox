@@ -48,7 +48,8 @@ AcpiTimerLibConstructor (
     case INTEL_82441_DEVICE_ID:
 #ifdef VBOX
     // HACK ALERT! There is no host bridge device in the PCIe chipset, and the same PIIX4 PM device is used.
-    case 0xffff:
+    // But there might be some other device at 0:0.0.
+    default:
 #endif
       Pmba       = POWER_MGMT_REGISTER_PIIX4 (PIIX4_PMBA);
       PmbaAndVal = ~(UINT32)PIIX4_PMBA_MASK;
@@ -63,11 +64,13 @@ AcpiTimerLibConstructor (
       AcpiCtlReg = POWER_MGMT_REGISTER_Q35 (ICH9_ACPI_CNTL);
       AcpiEnBit  = ICH9_ACPI_CNTL_ACPI_EN;
       break;
+#ifndef VBOX
     default:
       DEBUG ((EFI_D_ERROR, "%a: Unknown Host Bridge Device ID: 0x%04x\n",
         __FUNCTION__, HostBridgeDevId));
       ASSERT (FALSE);
       return RETURN_UNSUPPORTED;
+#endif
   }
 
   //

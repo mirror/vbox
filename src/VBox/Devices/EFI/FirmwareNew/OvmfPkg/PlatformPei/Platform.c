@@ -519,6 +519,11 @@ MiscInitialization (
   // Determine platform type and save Host Bridge DID to PCD
   //
   switch (mHostBridgeDevId) {
+#ifdef VBOX
+    // This is really hacky but so it goes. The PCIe chipset might have nothing at 0:0.0,
+    // or it might be some random device. But it's not going to be the 440FX host bridge.
+    default:
+#endif
     case INTEL_82441_DEVICE_ID:
       PmCmd      = POWER_MGMT_REGISTER_PIIX4 (PCI_COMMAND_OFFSET);
       Pmba       = POWER_MGMT_REGISTER_PIIX4 (PIIX4_PMBA);
@@ -527,6 +532,7 @@ MiscInitialization (
       AcpiCtlReg = POWER_MGMT_REGISTER_PIIX4 (PIIX4_PMREGMISC);
       AcpiEnBit  = PIIX4_PMREGMISC_PMIOSE;
       break;
+#ifndef VBOX
     case INTEL_Q35_MCH_DEVICE_ID:
       PmCmd      = POWER_MGMT_REGISTER_Q35 (PCI_COMMAND_OFFSET);
       Pmba       = POWER_MGMT_REGISTER_Q35 (ICH9_PMBASE);
@@ -540,7 +546,15 @@ MiscInitialization (
         __FUNCTION__, mHostBridgeDevId));
       ASSERT (FALSE);
       return;
+#endif
   }
+
+#ifdef VBOX
+  // If it's not 440FX, it must be the PCIe chipset.
+  if (mHostBridgeDevId != INTEL_82441_DEVICE_ID)
+      mHostBridgeDevId = INTEL_Q35_MCH_DEVICE_ID;
+
+#endif
   PcdStatus = PcdSet16S (PcdOvmfHostBridgePciDevId, mHostBridgeDevId);
   ASSERT_RETURN_ERROR (PcdStatus);
 
@@ -759,7 +773,8 @@ InitializePlatform (
   mHostBridgeDevId = PciRead16 (OVMF_HOSTBRIDGE_DID);
 #ifdef VBOX
   // HACK ALERT! There is no host bridge device in the PCIe chipset, but we pretend it's a 3 Series chip.
-  if (mHostBridgeDevId == 0xffff)
+  // There may or not be some device at 0:0.0 so anything not 440FX must be PCIe.
+  if (mHostBridgeDevId != INTEL_82441_DEVICE_ID)
         mHostBridgeDevId = INTEL_Q35_MCH_DEVICE_ID;
 #endif
 
