@@ -686,10 +686,10 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
                                aSymbols[i].pvVar,  aSymbols[i].cbGuest);
             if (RT_SUCCESS(rc))
                 continue;
-            Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Reading '%s' at %RGv: %Rrc\n", aSymbols[i].pszSymbol, Addr.FlatPtr, rc));
+            LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Reading '%s' at %RGv: %Rrc\n", aSymbols[i].pszSymbol, Addr.FlatPtr, rc));
         }
         else
-            Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error looking up '%s': %Rrc\n", aSymbols[i].pszSymbol, rc));
+            LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error looking up '%s': %Rrc\n", aSymbols[i].pszSymbol, rc));
         rc = VERR_NOT_FOUND;
         break;
     }
@@ -712,14 +712,14 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
      */
     if (pThis->f64Bit ? !LNX64_VALID_ADDRESS(GCPtrLogBuf) : !LNX32_VALID_ADDRESS(GCPtrLogBuf))
     {
-        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf' value %RGv is not valid.\n", GCPtrLogBuf));
+        LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf' value %RGv is not valid.\n", GCPtrLogBuf));
         return VERR_NOT_FOUND;
     }
     if (   cbLogBuf < 4096
         || !RT_IS_POWER_OF_TWO(cbLogBuf)
         || cbLogBuf > 16*_1M)
     {
-        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf_len' value %#x is not valid.\n", cbLogBuf));
+        LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf_len' value %#x is not valid.\n", cbLogBuf));
         return VERR_NOT_FOUND;
     }
 
@@ -729,15 +729,15 @@ static int dbgDiggerLinuxLogBufferQueryAscii(PDBGDIGGERLINUX pThis, PUVM pUVM, R
     uint8_t *pbLogBuf = (uint8_t *)RTMemAlloc(cbLogBuf);
     if (!pbLogBuf)
     {
-        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Failed to allocate %#x bytes for log buffer\n", cbLogBuf));
+        LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Failed to allocate %#x bytes for log buffer\n", cbLogBuf));
         return VERR_NO_MEMORY;
     }
     DBGFADDRESS Addr;
     rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrLogBuf), pbLogBuf, cbLogBuf);
     if (RT_FAILURE(rc))
     {
-        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error reading %#x bytes of log buffer at %RGv: %Rrc\n",
-             cbLogBuf, Addr.FlatPtr, rc));
+        LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error reading %#x bytes of log buffer at %RGv: %Rrc\n",
+                cbLogBuf, Addr.FlatPtr, rc));
         RTMemFree(pbLogBuf);
         return VERR_NOT_FOUND;
     }
@@ -804,10 +804,10 @@ static int dbgDiggerLinuxLogBufferQueryRecords(PDBGDIGGERLINUX pThis, PUVM pUVM,
                                aSymbols[i].pvVar,  aSymbols[i].cbGuest);
             if (RT_SUCCESS(rc))
                 continue;
-            Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Reading '%s' at %RGv: %Rrc\n", aSymbols[i].pszSymbol, Addr.FlatPtr, rc));
+            LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Reading '%s' at %RGv: %Rrc\n", aSymbols[i].pszSymbol, Addr.FlatPtr, rc));
         }
         else
-            Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error looking up '%s': %Rrc\n", aSymbols[i].pszSymbol, rc));
+            LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error looking up '%s': %Rrc\n", aSymbols[i].pszSymbol, rc));
         rc = VERR_NOT_FOUND;
         break;
     }
@@ -832,27 +832,27 @@ static int dbgDiggerLinuxLogBufferQueryRecords(PDBGDIGGERLINUX pThis, PUVM pUVM,
      */
     if (pThis->f64Bit ? !LNX64_VALID_ADDRESS(GCPtrLogBuf) : !LNX32_VALID_ADDRESS(GCPtrLogBuf))
     {
-        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf' value %RGv is not valid.\n", GCPtrLogBuf));
+        LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf' value %RGv is not valid.\n", GCPtrLogBuf));
         return VERR_NOT_FOUND;
     }
     if (   cbLogBuf < 4096
         || !RT_IS_POWER_OF_TWO(cbLogBuf)
         || cbLogBuf > 16*_1M)
     {
-        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf_len' value %#x is not valid.\n", cbLogBuf));
+        LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_buf_len' value %#x is not valid.\n", cbLogBuf));
         return VERR_NOT_FOUND;
     }
     uint32_t const cbLogAlign = 4;
     if (   idxFirst > cbLogBuf - sizeof(LNXPRINTKHDR)
         || (idxFirst & (cbLogAlign - 1)) != 0)
     {
-        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_first_idx' value %#x is not valid.\n", idxFirst));
+        LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_first_idx' value %#x is not valid.\n", idxFirst));
         return VERR_NOT_FOUND;
     }
     if (   idxNext > cbLogBuf - sizeof(LNXPRINTKHDR)
         || (idxNext & (cbLogAlign - 1)) != 0)
     {
-        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_next_idx' value %#x is not valid.\n", idxNext));
+        LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: 'log_next_idx' value %#x is not valid.\n", idxNext));
         return VERR_NOT_FOUND;
     }
 
@@ -862,15 +862,15 @@ static int dbgDiggerLinuxLogBufferQueryRecords(PDBGDIGGERLINUX pThis, PUVM pUVM,
     uint8_t *pbLogBuf = (uint8_t *)RTMemAlloc(cbLogBuf);
     if (!pbLogBuf)
     {
-        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Failed to allocate %#x bytes for log buffer\n", cbLogBuf));
+        LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Failed to allocate %#x bytes for log buffer\n", cbLogBuf));
         return VERR_NO_MEMORY;
     }
     DBGFADDRESS Addr;
     rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrLogBuf), pbLogBuf, cbLogBuf);
     if (RT_FAILURE(rc))
     {
-        Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error reading %#x bytes of log buffer at %RGv: %Rrc\n",
-             cbLogBuf, Addr.FlatPtr, rc));
+        LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Error reading %#x bytes of log buffer at %RGv: %Rrc\n",
+                cbLogBuf, Addr.FlatPtr, rc));
         RTMemFree(pbLogBuf);
         return VERR_NOT_FOUND;
     }
@@ -900,8 +900,8 @@ static int dbgDiggerLinuxLogBufferQueryRecords(PDBGDIGGERLINUX pThis, PUVM pUVM,
                         || (pHdr->cbTotal & (cbLogAlign - 1)) != 0
                         || pHdr->cbTotal < (uint32_t)pHdr->cbText + (uint32_t)pHdr->cbDict + sizeof(*pHdr) ))
         {
-            Log(("dbgDiggerLinuxIDmsg_QueryKernelLog: Invalid printk_log record at %#x: cbTotal=%#x cbText=%#x cbDict=%#x cbLogBuf=%#x cbLeft=%#x\n",
-                 offCur, pHdr->cbTotal, pHdr->cbText, pHdr->cbDict, cbLogBuf, cbLeft));
+            LogRel(("dbgDiggerLinuxIDmsg_QueryKernelLog: Invalid printk_log record at %#x: cbTotal=%#x cbText=%#x cbDict=%#x cbLogBuf=%#x cbLeft=%#x\n",
+                    offCur, pHdr->cbTotal, pHdr->cbText, pHdr->cbDict, cbLogBuf, cbLeft));
             rc = VERR_INVALID_STATE;
             break;
         }
@@ -1012,17 +1012,17 @@ static DECLCALLBACK(int) dbgDiggerLinuxIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis,
     RTDBGAS  hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
     RTDBGMOD hMod;
     int rc = RTDbgAsModuleByName(hAs, "vmlinux", 0, &hMod);
+    RTDbgAsRelease(hAs);
     if (RT_FAILURE(rc))
         return VERR_NOT_FOUND;
-    RTDbgAsRelease(hAs);
 
-    size_t cbActual;
     /*
      * Check whether the kernel log buffer is a simple char buffer or the newer
      * record based implementation.
      * The record based implementation was presumably introduced with kernel 3.4,
      * see: http://thread.gmane.org/gmane.linux.kernel/1284184
      */
+    size_t cbActual;
     if (dbgDiggerLinuxLogBufferIsAsciiBuffer(pData, pUVM))
         rc = dbgDiggerLinuxLogBufferQueryAscii(pData, pUVM, hMod, fFlags, cMessages, pszBuf, cbBuf, &cbActual);
     else
