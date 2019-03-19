@@ -38,16 +38,16 @@
     <cmdsynopsis id="synopsis-vboxmanage-snapshot">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage snapshot</command>
-      <arg choice="plain"><replaceable>vm</replaceable></arg>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-take">
       <command>VBoxManage snapshot</command>
-      <arg choice="plain"><replaceable>vm</replaceable></arg>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
 
       <arg choice="plain">take</arg>
 
-      <arg choice="plain"><replaceable>snapshot-name</replaceable></arg>
+      <arg choice="req"><replaceable>snapshot-name</replaceable></arg>
 
       <arg>--description=<replaceable>description</replaceable></arg>
 
@@ -58,32 +58,32 @@
 
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-delete">
       <command>VBoxManage snapshot</command>
-      <arg choice="plain"><replaceable>vm</replaceable></arg>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
 
       <arg choice="plain">delete</arg>
 
-      <arg choice="plain"><replaceable>snapshot-name</replaceable></arg>
+      <arg choice="req"><replaceable>snapshot-name</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-restore">
       <command>VBoxManage snapshot</command>
-      <arg choice="plain"><replaceable>vm</replaceable></arg>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
 
       <arg choice="plain">restore</arg>
 
-      <arg choice="plain"><replaceable>snapshot-name</replaceable></arg>
+      <arg choice="req"><replaceable>snapshot-name</replaceable></arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-restorecurrent">
       <command>VBoxManage snapshot</command>
-      <arg choice="plain"><replaceable>vm</replaceable></arg>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
 
       <arg choice="plain">restorecurrent</arg>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-edit">
       <command>VBoxManage snapshot</command>
-      <arg choice="plain"><replaceable>vm</replaceable></arg>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
 
       <arg choice="plain">edit</arg>
 
@@ -99,7 +99,7 @@
 
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-list">
       <command>VBoxManage snapshot</command>
-      <arg choice="plain"><replaceable>vm</replaceable></arg>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
 
       <arg choice="plain">list</arg>
 
@@ -108,11 +108,11 @@
 
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-showvminfo">
       <command>VBoxManage snapshot</command>
-      <arg choice="plain"><replaceable>vm</replaceable></arg>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
 
       <arg choice="plain">showvminfo</arg>
 
-      <arg choice="plain"><replaceable>snapshot-name</replaceable></arg>
+      <arg choice="req"><replaceable>snapshot-name</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -148,7 +148,7 @@
       <title>General Command Operand</title>
       <variablelist>
         <varlistentry>
-          <term><replaceable>vm</replaceable></term>
+          <term><replaceable>uuid|vmname</replaceable></term>
           <listitem><para>
               Specifies the UUID or name of the VM.
             </para></listitem>
