@@ -103,7 +103,7 @@
 
       <arg choice="plain">list</arg>
 
-      <group><arg choice="plain">--details</arg><arg choice="plain">--machinereadable</arg></group>
+      <group choice="opt"><arg choice="opt">--details</arg><arg choice="opt">--machinereadable</arg></group>
     </cmdsynopsis>
 
     <cmdsynopsis id="synopsis-vboxmanage-snapshot-showvminfo">
