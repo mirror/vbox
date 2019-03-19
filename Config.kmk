@@ -3467,8 +3467,10 @@ ifdef VBOX_SIGNING_MODE
    VBOX_CERTIFICATE_SUBJECT_NAME ?= Oracle Corporation
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= /n "$(VBOX_CERTIFICATE_SUBJECT_NAME)" /a
    #VBOX_CERTIFICATE_FINGERPRINT ?= 7e 92 b6 6b e5 1b 79 d8 ce 3f f2 5c 15 c2 df 6a b8 c7 f2 f2
-   VBOX_CERTIFICATE_FINGERPRINT ?= 5b de fe 58 0a 81 66 61 cd b5 7a 57 10 7b f4 18 74 86 ef cc
-   VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/VeriSign Class 3 Public Primary Certification Authority - G5.cer
+   #VBOX_CERTIFICATE_FINGERPRINT ?= 5b de fe 58 0a 81 66 61 cd b5 7a 57 10 7b f4 18 74 86 ef cc
+   VBOX_CERTIFICATE_FINGERPRINT ?= 6f 47 42 06 bc bb 39 1b b8 2b a9 e5 dc 03 02 de f3 7a eb be
+   #VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/VeriSign Class 3 Public Primary Certification Authority - G5.cer
+   VBOX_CROSS_CERTIFICATE_FILE ?= $(VBOX_PATH_SELFSIGN)/DigiCert Assured ID Root CA.crt
    VBOX_TSA_URL ?= http://timestamp.verisign.com/scripts/timestamp.dll
   endif
   if !defined(VBOX_CROSS_CERTIFICATE_FILE_ARGS) && defined(VBOX_CROSS_CERTIFICATE_FILE)
@@ -3489,7 +3491,8 @@ ifdef VBOX_SIGNING_MODE
    VBOX_CERTIFICATE_SHA2_SUBJECT_NAME ?= Oracle Corporation
    VBOX_CERTIFICATE_SHA2_SUBJECT_NAME_ARGS ?= /n "$(VBOX_CERTIFICATE_SHA2_SUBJECT_NAME)" /a
    #VBOX_CERTIFICATE_SHA2_FINGERPRINT ?= 31 31 bb 58 8b 19 9e 6e 85 0f d3 35 82 b0 c5 82 55 e1 6c 49
-   VBOX_CERTIFICATE_SHA2_FINGERPRINT ?= 22 05 6a 4d 46 2e 3d 2b b2 c3 2f bf b0 5b 84 c4 65 9c f7 fe
+   #VBOX_CERTIFICATE_SHA2_FINGERPRINT ?= 22 05 6a 4d 46 2e 3d 2b b2 c3 2f bf b0 5b 84 c4 65 9c f7 fe
+   VBOX_CERTIFICATE_SHA2_FINGERPRINT ?= 17 3a 19 bf 8e 62 72 be 25 04 d3 08 aa 68 b1 b0 0e 03 33 2c
    VBOX_CROSS_CERTIFICATE_SHA2_FILE ?= $(VBOX_PATH_SELFSIGN)/VeriSign Class 3 Public Primary Certification Authority - G5.cer
    VBOX_TSA_SHA2_URL ?= http://sha256timestamp.ws.symantec.com/sha256/timestamp
   endif
