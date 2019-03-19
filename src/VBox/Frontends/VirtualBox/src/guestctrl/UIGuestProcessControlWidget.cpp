@@ -135,6 +135,7 @@ UIGuestControlTreeWidget::UIGuestControlTreeWidget(QWidget *pParent /* = 0 */)
     :QITreeWidget(pParent)
 {
     setSelectionMode(QAbstractItemView::SingleSelection);
+    setAlternatingRowColors(true);
 }
 
 UIGuestControlTreeItem *UIGuestControlTreeWidget::selectedItem()
