@@ -891,6 +891,7 @@ static int vhdOpenImage(PVHDIMAGE pImage, unsigned uOpenFlags)
             pImage->uImageFlags &= ~VD_IMAGE_FLAGS_FIXED;
             break;
         default:
+            vhdFreeImage(pImage, false);
             return VERR_NOT_IMPLEMENTED;
     }
 
