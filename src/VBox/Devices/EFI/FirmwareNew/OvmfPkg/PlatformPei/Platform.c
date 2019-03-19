@@ -265,6 +265,7 @@ MemMapInitialization (
 
     TopOfLowRam = GetSystemMemorySizeBelow4gb ();
     PciExBarBase = 0;
+#ifndef VBOX
     if (mHostBridgeDevId == INTEL_Q35_MCH_DEVICE_ID) {
       //
       // The MMCONFIG area is expected to fall between the top of low RAM and
@@ -298,7 +299,9 @@ MemMapInitialization (
     PcdStatus = PcdSet64S (PcdPciMmio32Size, PciSize);
     ASSERT_RETURN_ERROR (PcdStatus);
 
-#ifdef VBOX
+    AddIoMemoryRangeHob (TopOfLowRam < BASE_2GB ?
+                         BASE_2GB : TopOfLowRam, 0xFC000000);
+#else
     GetVmVariable(EFI_INFO_INDEX_MCFG_BASE, (CHAR8 *)&McfgBase, sizeof(McfgBase));
     GetVmVariable(EFI_INFO_INDEX_MCFG_SIZE, (CHAR8 *)&McfgSize, sizeof(McfgSize));
     if (TopOfLowRam < BASE_2GB)
@@ -308,13 +311,23 @@ MemMapInitialization (
     if (TopOfLowRam < McfgBase)
       AddIoMemoryRangeHob (TopOfLowRam, McfgBase);
     AddIoMemoryRangeHob (McfgBase + McfgSize, 0xFC000000);
+
     PcdSet64S (PcdPciExpressBaseAddress, McfgBase);
-#else
-    AddIoMemoryRangeHob (TopOfLowRam < BASE_2GB ?
-                         BASE_2GB : TopOfLowRam, 0xFC000000);
+
+    ASSERT (McfgBase == (UINT32)McfgBase);
+    ASSERT (McfgBase + McfgSize < 0xFC000000);
+
+    PciBase = (UINT32)(McfgBase + McfgSize);
+    PciSize = 0xFC000000 - PciBase;
+    PcdStatus = PcdSet64S (PcdPciMmio32Base, PciBase);
+    ASSERT_RETURN_ERROR (PcdStatus);
+    PcdStatus = PcdSet64S (PcdPciMmio32Size, PciSize);
+    ASSERT_RETURN_ERROR (PcdStatus);
 #endif
+
     AddIoMemoryBaseSizeHob (0xFEC00000, SIZE_4KB);
     AddIoMemoryBaseSizeHob (0xFED00000, SIZE_1KB);
+#ifndef VBOX
     if (mHostBridgeDevId == INTEL_Q35_MCH_DEVICE_ID) {
       AddIoMemoryBaseSizeHob (ICH9_ROOT_COMPLEX_BASE, SIZE_16KB);
       //
@@ -342,6 +355,7 @@ MemMapInitialization (
       BuildMemoryAllocationHob (PciExBarBase, SIZE_256MB,
         EfiReservedMemoryType);
     }
+#endif
     AddIoMemoryBaseSizeHob (PcdGet32(PcdCpuLocalApicBaseAddress), SIZE_1MB);
 
     //
