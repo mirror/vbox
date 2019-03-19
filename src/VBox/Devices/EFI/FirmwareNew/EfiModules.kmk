@@ -99,7 +99,6 @@ VBOX_EFI_MODULES = \
 	UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe/$(VBOX_EFI_DEBUG_DIR)/CpuIo2Dxe \
 	VBoxPkg/VBoxAppleSim/VBoxAppleSim/$(VBOX_EFI_DEBUG_DIR)/VBoxAppleSim \
 	VBoxPkg/VBoxFsDxe/VBoxHfs/$(VBOX_EFI_DEBUG_DIR)/VBoxHfs \
-	VBoxPkg/VBoxFsDxe/VBoxIso9660/$(VBOX_EFI_DEBUG_DIR)/VBoxIso9600 \
 	VBoxPkg/VBoxSysTables/VBoxSysTables/$(VBOX_EFI_DEBUG_DIR)/VBoxSysTables \
 	VBoxPkg/VBoxVgaDxe/VBoxVgaDxe/$(VBOX_EFI_DEBUG_DIR)/VBoxVgaDxe \
 	VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe/$(VBOX_EFI_DEBUG_DIR)/VBoxVgaMiniPortDxe

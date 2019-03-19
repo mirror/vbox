@@ -269,7 +269,7 @@ INF IntelFrameworkModulePkg/Bus/Pci/IdeBusDxe/IdeBusDxe.inf
 INF PcAtChipsetPkg/Bus/Pci/IdeControllerDxe/IdeControllerDxe.inf
 INF VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
 INF VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
-INF VBoxPkg/VBoxFsDxe/VBoxIso9660.inf
+#INF VBoxPkg/VBoxFsDxe/VBoxIso9660.inf
 INF VBoxPkg/VBoxFsDxe/VBoxHfs.inf
 INF VBoxPkg/VBoxSysTables/VBoxSysTables.inf
 INF VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
