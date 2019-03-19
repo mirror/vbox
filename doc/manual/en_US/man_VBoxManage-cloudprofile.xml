@@ -78,7 +78,7 @@
     <refsect2 id="vboxmanage-cloudprofile-common-options">
       <title>Common options</title>
       <remark role="help-scope" condition="GLOBAL"/>
-      <para>The subcommands of <command>cloudprofile</command> realize the standard CRUD operations for a cloud profile. 
+      <para>The subcommands of <command>cloudprofile</command> realize the standard CRUD operations for a cloud profile.
         The following common options can be placed before the sub-command:</para>
       <variablelist>
         <varlistentry>
