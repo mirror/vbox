@@ -30,7 +30,7 @@ PROG= dtrace
 
 include ../Makefile.cmd
 
-M=	$(MACH) demo test
+SUBDIRS=	$(MACH) demo test
 $(BUILD64)SUBDIRS += $(MACH64)
 
 all	:=	TARGET = all

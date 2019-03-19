@@ -27,7 +27,7 @@
 
 include $(SRC)/Makefile.master
 
-M= common $(MACH:i386=i386 i86xpv)
+SUBDIRS= common $(MACH:i386=i386 i86xpv)
 include ../Makefile.subdirs
 
 dstyle := TARGET += dstyle
