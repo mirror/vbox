@@ -17,7 +17,7 @@ import os,sys
 from distutils.version import StrictVersion
 
 versions = ["2.6", "2.7", "3.1", "3.2", "3.2m", "3.3", "3.3m", "3.4", "3.4m", "3.5", "3.5m", "3.6", "3.6m", "3.7", "3.7m"]
-prefixes = ["/usr", "/usr/local", "/opt", "/opt/local"]
+prefixes = ["/usr", "/usr/local", "/usr/bin", "/opt", "/opt/local"]
 known = {}
 
 def checkPair(p, v, dllpre, dllsuff, bitness_magic):
@@ -26,7 +26,8 @@ def checkPair(p, v, dllpre, dllsuff, bitness_magic):
     if not os.path.isfile(incfile):
         return None
 
-    lib = os.path.join(p, "lib/i386-linux-gnu", dllpre+"python"+v+dllsuff)
+    lib = os.path.join(p, "lib/x86_64-linux-gnu", dllpre+"python"+v+dllsuff)
+    ##lib = os.path.join(p, "lib/i386-linux-gnu", dllpre+"python"+v+dllsuff)
     if not os.path.isfile(lib):
         lib = os.path.join(p, "lib", dllpre+"python"+v+dllsuff)
         if not os.path.isfile(lib):

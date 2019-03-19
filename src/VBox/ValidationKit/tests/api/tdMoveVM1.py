@@ -559,6 +559,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             return False
 
         fSupported = self.checkAPIVersion()
+        reporter.log('ValidationKit folder is "%s"' % (g_ksValidationKitDir,))
 
         if fSupported is False:
             reporter.log('API version %s is too old. Just skip this test.' % (self.oTstDrv.fpApiVer))

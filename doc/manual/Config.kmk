@@ -38,7 +38,8 @@ VBOX_MANUAL_XML_REFENTRY_FILES := \
 	man_VBoxManage-mediumio.xml \
 	man_VBoxManage-debugvm.xml \
 	man_VBoxManage-extpack.xml \
-	man_VBoxManage-unattended.xml
+	man_VBoxManage-unattended.xml \
+	man_VBoxManage-cloudprofile.xml
 
 ## List of user manual XML files.
 VBOX_MANUAL_XML_FILES = \
@@ -260,6 +261,7 @@ ifdef VBOX_XML_CATALOG
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-debugvm.xml"         uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-debugvm.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-extpack.xml"         uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-extpack.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-unattended.xml"      uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-unattended.xml"/>' \
+		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_man_VBoxManage-cloudprofile.xml"    uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_man_VBoxManage-cloudprofile.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/user_isomakercmd-man.xml"                uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_isomakercmd-man.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/SDKRef_apiref.xml"                       uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef_apiref.xml"/>' \
 		'  <system systemId="$(VBOX_PATH_MANUAL_SRC)/en_US/all-entities.ent"                        uri="file://$(VBOX_FILE_URL_MAYBE_SLASH)$(VBOX_PATH_MANUAL_OUTBASE)/all-entities.ent"/>' \
