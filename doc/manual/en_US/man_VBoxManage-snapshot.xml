@@ -162,8 +162,6 @@
         new snapshot is inserted into the snapshots tree as a child of
         the current snapshot and then becomes the new current snapshot.
       </para>
-<screen role="virtdocs">VBoxManage snapshot <replaceable>vm</replaceable> take <replaceable>snapshot-name</replaceable> [--description <replaceable>description</replaceable>] [--live]
-[--uniquename Number,Timestamp,Space,Force]</screen>
       <variablelist>
         <varlistentry>
           <term><option>--description=<replaceable>description</replaceable></option></term>
@@ -207,7 +205,6 @@
         snapshot may need to be merged with their child differencing
         images.
       </para>
-<screen role="virtdocs">VBoxManage snapshot <replaceable>vm</replaceable> delete <replaceable>snapshot-name</replaceable></screen>
       <variablelist>
         <varlistentry>
           <term><replaceable>snapshot-name</replaceable></term>
@@ -228,7 +225,6 @@
         the specified snapshot becomes the new current snapshot and
         subsequent snapshots are children of that snapshot.
       </para>
-<screen role="virtdocs">VBoxManage snapshot <replaceable>vm</replaceable> restore <replaceable>snapshot-name</replaceable></screen>
       <variablelist>
         <varlistentry>
           <term><replaceable>snapshot-name</replaceable></term>
@@ -249,7 +245,6 @@
         restore</command> command and specifying the name or UUID of the
         current snapshot.
       </para>
-<screen role="virtdocs">VBoxManage snapshot <replaceable>vm</replaceable> restorecurrent</screen>
     </refsect2>
     <refsect2 id="vboxmanage-snapshot-edit">
       <title>Change the Name or Description of an Existing Snapshot</title>
@@ -259,7 +254,6 @@
         you to change the name or the description of a specified
         snapshot.
       </para>
-<screen role="virtdocs">VBoxManage snapshot <replaceable>vm</replaceable> edit <replaceable>snapshot-name</replaceable> | --current [--description <replaceable>description</replaceable>] [--name <replaceable>new-name</replaceable>]</screen>
       <variablelist>
         <varlistentry>
           <term><option>--current</option></term>
@@ -301,7 +295,6 @@
         The <command>VBoxManage snapshot list</command> command lists
         all the snapshots for a VM.
       </para>
-<screen role="virtdocs">VBoxManage snapshot <replaceable>vm</replaceable> list [--details | --machinereadable]</screen>
       <variablelist>
         <varlistentry>
           <term><option>--details</option></term>
@@ -333,7 +326,6 @@
         enables you to view the VM settings that are part of an existing
         snapshot.
       </para>
-<screen role="virtdocs">VBoxManage snapshot <replaceable>vm</replaceable> showvminfo <replaceable>snapshot-name</replaceable></screen>
       <variablelist>
         <varlistentry>
           <term><replaceable>snapshot-name</replaceable></term>
