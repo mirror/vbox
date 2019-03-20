@@ -1239,8 +1239,8 @@ static int rtAsn1String_CheckSanity(PCRTASN1STRING pThis, PRTERRINFO pErrInfo, c
             rc = RTStrValidateEncodingEx(pch, cch, 0);
             if (RT_SUCCESS(rc))
                 break;
-            return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_UTF8_STRING_ENCODING,
-                                 "%s: Bad UTF-8 encoding (%Rrc)", pszErrorTag, rc);
+            return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_UTF8_STRING_ENCODING, "%s: Bad UTF-8 encoding (%Rrc, %.*Rhxs)",
+                                 pszErrorTag, rc, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch);
 
         case ASN1_TAG_NUMERIC_STRING:
             while (cch-- > 0)
@@ -1249,7 +1249,8 @@ static int rtAsn1String_CheckSanity(PCRTASN1STRING pThis, PRTERRINFO pErrInfo, c
                 if (   !RT_C_IS_DIGIT(ch)
                     && ch != ' ')
                     return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_NUMERIC_STRING_ENCODING,
-                                         "%s: Bad numberic string: ch=%#x", pszErrorTag, ch);
+                                         "%s: Bad numeric string: ch=%#x (pos %u in %.*Rhxs)", pszErrorTag, ch,
+                                         pThis->Asn1Core.cb - cch + 1, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch);
             }
             break;
 
@@ -1272,7 +1273,8 @@ static int rtAsn1String_CheckSanity(PCRTASN1STRING pThis, PRTERRINFO pErrInfo, c
                     && ch != '?'
                    )
                     return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_PRINTABLE_STRING_ENCODING,
-                                         "%s: Bad printable string: ch=%#x", pszErrorTag, ch);
+                                         "%s: Bad printable string: ch=%#x (pos %u in %.*Rhxs)", pszErrorTag, ch,
+                                         pThis->Asn1Core.cb - cch + 1, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch);
             }
             break;
 
@@ -1281,8 +1283,16 @@ static int rtAsn1String_CheckSanity(PCRTASN1STRING pThis, PRTERRINFO pErrInfo, c
             {
                 unsigned char ch = *pch++;
                 if (ch == 0 || ch >= 0x80)
-                    return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_IA5_STRING_ENCODING,
-                                         "%s: Bad IA5 string: ch=%#x", pszErrorTag, ch);
+                {
+                    /* Ignore C-style zero terminator as the "Microsoft ECC Product Root Certificate Authority 2018"
+                       for instance, has a policy qualifier string "http://www.microsoft.com/pkiops/Docs/Repository.htm\0" */
+                    /** @todo should '\0' really be excluded above? */
+                    if (ch != 0 || cch != 0)
+                        return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_IA5_STRING_ENCODING,
+                                             "%s: Bad IA5 string: ch=%#x (pos %u in %.*Rhxs)", pszErrorTag, ch,
+                                             pThis->Asn1Core.cb - cch + 1, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch);
+                    break;
+                }
             }
             break;
 
@@ -1312,7 +1322,8 @@ static int rtAsn1String_CheckSanity(PCRTASN1STRING pThis, PRTERRINFO pErrInfo, c
                 unsigned char ch = *pch++;
                 if (ch < 0x20 || ch >= 0x7f)
                     return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_VISIBLE_STRING_ENCODING,
-                                         "%s: Bad visible string: ch=%#x", pszErrorTag, ch);
+                                         "%s: Bad visible string: ch=%#x (pos %u in %.*Rhxs)", pszErrorTag, ch,
+                                         pThis->Asn1Core.cb - cch + 1, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch);
             }
             break;
 
@@ -1329,7 +1340,8 @@ static int rtAsn1String_CheckSanity(PCRTASN1STRING pThis, PRTERRINFO pErrInfo, c
                     RTUNICP uc = RT_MAKE_U32_FROM_U8(pb[3], pb[2], pb[1], pb[0]); /* big endian */
                     if (!RTUniCpIsValid(uc))
                         return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_UNIVERSAL_STRING_ENCODING,
-                                             "%s: Bad universal string: uc=%#x", pszErrorTag, uc);
+                                             "%s: Bad universal string: uc=%#x (pos %u in %.*Rhxs)", pszErrorTag, uc,
+                                             pThis->Asn1Core.cb - cch + 1, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch);
                     cchUtf8 += RTUniCpCalcUtf8Len(uc);
 
                     /* next */
@@ -1339,7 +1351,8 @@ static int rtAsn1String_CheckSanity(PCRTASN1STRING pThis, PRTERRINFO pErrInfo, c
                 break;
             }
             return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_UNIVERSAL_STRING_ENCODING,
-                                 "%s: Bad universal string: size not a multiple of 4: cch=%#x", pszErrorTag, cch);
+                                 "%s: Bad universal string: size not a multiple of 4: cch=%#x (%.*Rhxs)",
+                                 pszErrorTag, cch, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch);
 
         case ASN1_TAG_BMP_STRING:
             if (!(cch & 1))
@@ -1351,7 +1364,8 @@ static int rtAsn1String_CheckSanity(PCRTASN1STRING pThis, PRTERRINFO pErrInfo, c
                     RTUNICP uc = RT_MAKE_U32_FROM_U8(pb[1], pb[0], 0, 0); /* big endian */
                     if (!RTUniCpIsValid(uc))
                         return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_BMP_STRING_ENCODING,
-                                             "%s: Bad BMP string: uc=%#x", pszErrorTag, uc);
+                                             "%s: Bad BMP string: uc=%#x (pos %u in %.*Rhxs)", pszErrorTag, uc,
+                                             pThis->Asn1Core.cb - cch + 1, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch);
                     cchUtf8 += RTUniCpCalcUtf8Len(uc);
 
                     /* next */
@@ -1361,7 +1375,8 @@ static int rtAsn1String_CheckSanity(PCRTASN1STRING pThis, PRTERRINFO pErrInfo, c
                 break;
             }
             return RTErrInfoSetF(pErrInfo, VERR_ASN1_INVALID_BMP_STRING_ENCODING,
-                                 "%s: Bad BMP string: odd number of bytes cch=%#x", pszErrorTag, cch);
+                                 "%s: Bad BMP string: odd number of bytes cch=%#x (pos %u in %.*Rhxs)",
+                                 pszErrorTag, cch, pThis->Asn1Core.cb, pThis->Asn1Core.uData.pch);
 
         default:
             AssertMsgFailedReturn(("uTag=%#x\n", uTag), VERR_INTERNAL_ERROR_3);
