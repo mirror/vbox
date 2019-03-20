@@ -113,7 +113,7 @@ void UIChooserView::setSearchWidgetVisible(bool fVisible)
     if (!m_pSearchWidget)
         return;
 
-    /** Make sure keyboard focus is managed ccorectly. */
+    /* Make sure keyboard focus is managed ccorectly: */
     if (fVisible)
         m_pSearchWidget->setFocus();
     else

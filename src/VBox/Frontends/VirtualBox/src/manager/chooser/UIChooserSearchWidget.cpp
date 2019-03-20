@@ -35,7 +35,7 @@ UIChooserSearchWidget::UIChooserSearchWidget(QWidget *pParent)
     , m_pScrollToPreviousMatchButton(0)
     , m_pCloseButton(0)
 {
-    /** Have a background. In some cases having no background causes strange artefacts in Cinnamon themes. */
+    /* Have a background. In some cases having no background causes strange artefacts in Cinnamon themes: */
     setAutoFillBackground(true);
     prepareWidgets();
     prepareConnections();
