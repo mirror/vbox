@@ -4,4 +4,6 @@
 ((c++-mode
   (indent-tabs-mode))
  (c-mode
+  (indent-tabs-mode))
+ (nxml-mode
   (indent-tabs-mode)))
