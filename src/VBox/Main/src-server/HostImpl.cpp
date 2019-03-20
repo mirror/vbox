@@ -53,9 +53,7 @@
 # include <HostHardwareLinux.h>
 #endif
 
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
-# include <set>
-#endif
+#include <set>
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 # include "PerformanceImpl.h"
@@ -185,7 +183,8 @@ struct Host::Data
     Data()
         :
           fDVDDrivesListBuilt(false),
-          fFloppyDrivesListBuilt(false)
+          fFloppyDrivesListBuilt(false),
+          fPersistentConfigUpToDate(false)
     {};
 
     VirtualBox              *pParent;
@@ -230,6 +229,9 @@ struct Host::Data
     HostPowerService        *pHostPowerService;
     /** Host's DNS informaton fetching */
     HostDnsMonitorProxy     hostDnsMonitorProxy;
+
+    /** Startup syncing of persistent config in extra data */
+    bool                    fPersistentConfigUpToDate;
 };
 
 
@@ -643,6 +645,152 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
 }
 #endif /* defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT) */
 
+#if defined(RT_OS_WINDOWS)
+struct HostOnlyInfo
+{
+    HostOnlyInfo() : fDhcpEnabled(false), uIPv6PrefixLength(0) {};
+
+    Bstr bstrName;
+    bool fDhcpEnabled;
+    Bstr strIPv4Address;
+    Bstr strIPv4NetMask;
+    Bstr strIPv6Address;
+    ULONG uIPv6PrefixLength;
+};
+
+typedef std::map<Utf8Str, HostOnlyInfo*> GUID_TO_HOST_ONLY_INFO;
+
+HRESULT Host::i_updatePersistentConfigForHostOnlyAdapters(void)
+{
+    /* No need to do the sync twice */
+    if (m->fPersistentConfigUpToDate)
+        return S_OK;
+    m->fPersistentConfigUpToDate = true;
+    bool fChangesMade = false;
+
+    /* Extract the list of configured host-only interfaces */
+    GUID_TO_HOST_ONLY_INFO aSavedAdapters;
+    SafeArray<BSTR> aGlobalExtraDataKeys;
+    HRESULT hrc = m->pParent->GetExtraDataKeys(ComSafeArrayAsOutParam(aGlobalExtraDataKeys));
+    AssertMsg(SUCCEEDED(hrc), ("VirtualBox::GetExtraDataKeys failed with %Rhrc\n", hrc));
+    for (size_t i = 0; i < aGlobalExtraDataKeys.size(); ++i)
+    {
+        Utf8Str strKey = aGlobalExtraDataKeys[i];
+
+        if (strKey.startsWith("HostOnly/{"))
+        {
+            Bstr bstrValue;
+            HRESULT hrc = m->pParent->GetExtraData(aGlobalExtraDataKeys[i], bstrValue.asOutParam());
+            if (hrc != S_OK)
+                continue;
+
+            Utf8Str strGuid = strKey.substr(10, 36); /* Skip "HostOnly/{" */
+            if (aSavedAdapters.find(strGuid) == aSavedAdapters.end())
+                aSavedAdapters[strGuid] = new HostOnlyInfo();
+
+            if (strKey.endsWith("}/Name"))
+                aSavedAdapters[strGuid]->bstrName = bstrValue;
+            else if (strKey.endsWith("}/IPAddress"))
+            {
+                if (bstrValue == "DHCP")
+                    aSavedAdapters[strGuid]->fDhcpEnabled = true;
+                else
+                    aSavedAdapters[strGuid]->strIPv4Address = bstrValue;
+            }
+            else if (strKey.endsWith("}/IPNetMask"))
+                aSavedAdapters[strGuid]->strIPv4NetMask = bstrValue;
+            else if (strKey.endsWith("}/IPV6Address"))
+                aSavedAdapters[strGuid]->strIPv6Address = bstrValue;
+            else if (strKey.endsWith("}/IPV6PrefixLen"))
+                aSavedAdapters[strGuid]->uIPv6PrefixLength = Utf8Str(bstrValue).toUInt32();
+        }
+    }
+
+    /* Go over the list of existing adapters and update configs saved in extra data */
+    std::set<Bstr> aKnownNames;
+    for (HostNetworkInterfaceList::iterator it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
+    {
+        /* Get type */
+        HostNetworkInterfaceType_T t;
+        hrc = (*it)->COMGETTER(InterfaceType)(&t);
+        if (FAILED(hrc) || t != HostNetworkInterfaceType_HostOnly)
+            continue;
+        /* Get id */
+        Bstr bstrGuid;
+        hrc = (*it)->COMGETTER(Id)(bstrGuid.asOutParam());
+        if (FAILED(hrc))
+            continue;
+        /* Get name */
+        Bstr bstrName;
+        hrc = (*it)->COMGETTER(Name)(bstrName.asOutParam());
+        if (FAILED(hrc))
+            continue;
+
+        /* Remove adapter from map as it does not need any further processing */
+        aSavedAdapters.erase(Utf8Str(bstrGuid));
+        /* Add adapter name to the list of known names, so we won't attempt to create adapters with the same name */
+        aKnownNames.insert(bstrName);
+        /* Make sure our extra data contains the latest config */
+        hrc = (*it)->i_updatePersistentConfig();
+        if (hrc != S_OK)
+            break;
+    }
+
+    /* The following loop not only creates missing adapters, it destroys HostOnlyInfo objects contained in the map as well */
+    for (GUID_TO_HOST_ONLY_INFO::iterator it = aSavedAdapters.begin(); it != aSavedAdapters.end(); ++it)
+    {
+        Utf8Str strGuid = (*it).first;
+        HostOnlyInfo *pInfo = (*it).second;
+        /* We create adapters only if we haven't seen one with the same name */
+        if (aKnownNames.find(pInfo->bstrName) == aKnownNames.end())
+        {
+            /* There is no adapter with such name yet, create it */
+            ComPtr<IHostNetworkInterface> hif;
+            ComPtr<IProgress> progress;
+
+            int rc = NetIfCreateHostOnlyNetworkInterface(m->pParent, hif.asOutParam(), progress.asOutParam(), pInfo->bstrName.raw());
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("Failed to create host-only adapter (%d)\n", rc));
+                hrc = E_UNEXPECTED;
+                break;
+            }
+            /* Wait for the adapter to get configured completely, before we modify IP addresses. */
+            progress->WaitForCompletion(-1);
+            fChangesMade = true;
+            if (pInfo->fDhcpEnabled)
+            {
+                hrc = hif->EnableDynamicIPConfig();
+                LogRel(("EnableDynamicIPConfig returned 0x%x\n", hrc));
+            }
+            else
+            {
+                hrc = hif->EnableStaticIPConfig(pInfo->strIPv4Address.raw(), pInfo->strIPv4NetMask.raw());
+                LogRel(("EnableStaticIpConfig returned 0x%x\n", hrc));
+            }
+# if 0
+            /* Somehow HostNetworkInterface::EnableStaticIPConfigV6 is not implemented yet. */
+            if (SUCCEEDED(hrc))
+            {
+                hrc = hif->EnableStaticIPConfigV6(pInfo->strIPv6Address.raw(), pInfo->uIPv6PrefixLength);
+                LogRel(("EnableStaticIPConfigV6 returned 0x%x\n", hrc));
+            }
+# endif
+            /* Now we have seen this name */
+            aKnownNames.insert(pInfo->bstrName);
+            /* Drop the old config as the newly created adapter has different GUID */
+            i_removePersistentConfig(strGuid);
+        }
+        delete pInfo;
+    }
+    /* Update the list again if we have created some adapters */
+    if (SUCCEEDED(hrc) && fChangesMade)
+        hrc = i_updateNetIfList();
+
+    return hrc;
+}
+#endif /* defined(RT_OS_WINDOWS) */
+
 /**
  * Returns a list of host network interfaces.
  *
@@ -659,6 +807,14 @@ HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &
         Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
         return rc;
     }
+#if defined(RT_OS_WINDOWS)
+    rc = i_updatePersistentConfigForHostOnlyAdapters();
+    if (FAILED(rc))
+    {
+        LogRel(("Failed to update persistent config for host-only adapters with rc=%Rhrc\n", rc));
+        return rc;
+    }
+#endif /* defined(RT_OS_WINDOWS) */
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1333,7 +1489,7 @@ HRESULT Host::createHostOnlyNetworkInterface(ComPtr<IHostNetworkInterface> &aHos
                                                tmpName.raw()).raw(),
                                                tmpMask.raw());
         ComAssertComRCRet(hrc, hrc);
-#endif
+#endif /* !defined(RT_OS_WINDOWS) */
     }
 
     return S_OK;
@@ -1341,6 +1497,19 @@ HRESULT Host::createHostOnlyNetworkInterface(ComPtr<IHostNetworkInterface> &aHos
     return E_NOTIMPL;
 #endif
 }
+
+
+#ifdef RT_OS_WINDOWS
+HRESULT Host::i_removePersistentConfig(const Bstr &bstrGuid)
+{
+    HRESULT hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/{%ls}/Name", bstrGuid.raw()).raw(), NULL);
+    if (SUCCEEDED(hrc)) hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/{%ls}/IPAddress", bstrGuid.raw()).raw(), NULL);
+    if (SUCCEEDED(hrc)) hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/{%ls}/IPNetMask", bstrGuid.raw()).raw(), NULL);
+    if (SUCCEEDED(hrc)) hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/{%ls}/IPV6Address", bstrGuid.raw()).raw(), NULL);
+    if (SUCCEEDED(hrc)) hrc = m->pParent->SetExtraData(BstrFmt("HostOnly/{%ls}/IPV6PrefixLen", bstrGuid.raw()).raw(), NULL);
+    return hrc;
+}
+#endif /* RT_OS_WINDOWS */
 
 HRESULT Host::removeHostOnlyNetworkInterface(const com::Guid &aId,
                                              ComPtr<IProgress> &aProgress)
@@ -1370,10 +1539,15 @@ HRESULT Host::removeHostOnlyNetworkInterface(const com::Guid &aId,
     if (RT_SUCCESS(r))
     {
         /* Drop configuration parameters for removed interface */
+#ifdef RT_OS_WINDOWS
+        rc = i_removePersistentConfig(Utf8StrFmt("%RTuuid", &aId));
+        LogRel(("i_removePersistentConfig(%RTuuid) returned %d\n", &aId, r));
+#else /* !RT_OS_WINDOWS */
         rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", name.raw()).raw(), NULL);
         rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", name.raw()).raw(), NULL);
         rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPV6Address", name.raw()).raw(), NULL);
         rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPV6NetMask", name.raw()).raw(), NULL);
+#endif /* !RT_OS_WINDOWS */
 
         return S_OK;
     }
@@ -1562,6 +1736,14 @@ HRESULT Host::findHostNetworkInterfaceByName(const com::Utf8Str &aName,
         Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
         return rc;
     }
+#if defined(RT_OS_WINDOWS)
+    rc = i_updatePersistentConfigForHostOnlyAdapters();
+    if (FAILED(rc))
+    {
+        LogRel(("Failed to update persistent config for host-only adapters with rc=%Rhrc\n", rc));
+        return rc;
+    }
+#endif /* defined(RT_OS_WINDOWS) */
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1597,6 +1779,14 @@ HRESULT Host::findHostNetworkInterfaceById(const com::Guid &aId,
         Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
         return rc;
     }
+#if defined(RT_OS_WINDOWS)
+    rc = i_updatePersistentConfigForHostOnlyAdapters();
+    if (FAILED(rc))
+    {
+        LogRel(("Failed to update persistent config for host-only adapters with rc=%Rhrc\n", rc));
+        return rc;
+    }
+#endif /* defined(RT_OS_WINDOWS) */
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1627,6 +1817,14 @@ HRESULT Host::findHostNetworkInterfacesOfType(HostNetworkInterfaceType_T aType,
         Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
         return rc;
     }
+#if defined(RT_OS_WINDOWS)
+    rc = i_updatePersistentConfigForHostOnlyAdapters();
+    if (FAILED(rc))
+    {
+        LogRel(("Failed to update persistent config for host-only adapters with rc=%Rhrc\n", rc));
+        return rc;
+    }
+#endif /* defined(RT_OS_WINDOWS) */
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 

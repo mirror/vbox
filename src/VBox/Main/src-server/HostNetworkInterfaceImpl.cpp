@@ -156,6 +156,90 @@ void HostNetworkInterface::i_unregisterMetrics(PerformanceCollector *aCollector,
 
 #ifdef VBOX_WITH_HOSTNETIF_API
 
+#if defined(RT_OS_WINDOWS)
+HRESULT HostNetworkInterface::saveAdapterConfigParameter(const char *szParamName, const Utf8Str &strValue)
+{
+    AssertReturn(mVirtualBox != NULL, E_POINTER);
+    return mVirtualBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/{%RTuuid}/%s", mGuid, szParamName)).raw(), Bstr(strValue).raw());
+}
+
+HRESULT HostNetworkInterface::eraseAdapterConfigParameter(const char *szParamName)
+{
+    AssertReturn(mVirtualBox != NULL, E_POINTER);
+    return mVirtualBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/{%RTuuid}/%s", mGuid, szParamName)).raw(), NULL);
+}
+
+HRESULT HostNetworkInterface::saveAdapterConfigIPv4Dhcp()
+{
+    HRESULT hrc = saveAdapterConfigParameter("IPAddress", "DHCP");
+    if (hrc == S_OK)
+        hrc = eraseAdapterConfigParameter("IPNetMask");
+    return hrc;
+}
+
+HRESULT HostNetworkInterface::saveAdapterConfigIPv4(ULONG addr, ULONG mask)
+{
+    HRESULT hrc = saveAdapterConfigParameter("IPAddress", Utf8StrFmt("%RTnaipv4", addr));
+    if (hrc == S_OK)
+        hrc = saveAdapterConfigParameter("IPNetMask", Utf8StrFmt("%RTnaipv4", mask));
+    return hrc;
+}
+
+HRESULT HostNetworkInterface::saveAdapterConfigIPv6(const Utf8Str& addr, ULONG prefix)
+{
+    HRESULT hrc = saveAdapterConfigParameter("IPV6Address", addr);
+    if (hrc == S_OK)
+        hrc = saveAdapterConfigParameter("IPV6PrefixLen", Utf8StrFmt("%u", prefix));
+    return hrc;
+}
+
+bool HostNetworkInterface::isInConfigFile(void)
+{
+    /* We care about host-only adapters only */
+    if (mIfType != HostNetworkInterfaceType_HostOnly)
+        return true;
+
+    Assert(mVirtualBox != NULL);
+    if (mVirtualBox == NULL)
+        return false; /* Trigger config update, which will fail with proper return code */
+    Bstr tmpName;
+    mVirtualBox->GetExtraData(Bstr(Utf8StrFmt("HostOnly/{%RTuuid}/Name", mGuid)).raw(), tmpName.asOutParam());
+    return (tmpName.isNotEmpty() && tmpName == mInterfaceName);
+
+}
+
+HRESULT HostNetworkInterface::saveAdapterConfig(void)
+{
+    /* We care about host-only adapters only */
+    if (mIfType != HostNetworkInterfaceType_HostOnly)
+        return true;
+
+    HRESULT hrc = saveAdapterConfigParameter("Name", mInterfaceName.c_str());
+    if (FAILED(hrc))
+        return hrc;
+    if (m.dhcpEnabled)
+        hrc = saveAdapterConfigIPv4Dhcp();
+    else
+        hrc = saveAdapterConfigIPv4(m.IPAddress, m.networkMask);
+    if (SUCCEEDED(hrc))
+        hrc = saveAdapterConfigIPv6(m.IPV6Address.c_str(), m.IPV6NetworkMaskPrefixLength);
+    return hrc;
+}
+
+HRESULT HostNetworkInterface::i_updatePersistentConfig(void)
+{
+    if (mVirtualBox == NULL)
+        return E_POINTER;
+
+    HRESULT hrc = S_OK;
+    if (!isInConfigFile())
+    {
+        hrc = saveAdapterConfig();
+    }
+    return hrc;
+}
+#endif /* defined(RT_OS_WINDOWS) */
+
 HRESULT HostNetworkInterface::updateConfig()
 {
     NETIFINFO info;
@@ -464,12 +548,17 @@ HRESULT HostNetworkInterface::enableStaticIPConfig(const com::Utf8Str &aIPAddres
             if (RT_SUCCESS(rc))
             {
                 m.realIPAddress = 0;
+#if defined(RT_OS_WINDOWS)
+                eraseAdapterConfigParameter("IPAddress");
+                eraseAdapterConfigParameter("IPNetMask");
+#else /* !defined(RT_OS_WINDOWS) */
                 if (FAILED(mVirtualBox->SetExtraData(BstrFmt("HostOnly/%s/IPAddress",
                                                              mInterfaceName.c_str()).raw(), NULL)))
                     return E_FAIL;
                 if (FAILED(mVirtualBox->SetExtraData(BstrFmt("HostOnly/%s/IPNetMask",
                                                              mInterfaceName.c_str()).raw(), NULL)))
                     return E_FAIL;
+#endif /* !defined(RT_OS_WINDOWS) */
                 return S_OK;
             }
         }
@@ -494,6 +583,9 @@ HRESULT HostNetworkInterface::enableStaticIPConfig(const com::Utf8Str &aIPAddres
             {
                 m.realIPAddress   = ip;
                 m.realNetworkMask = mask;
+#if defined(RT_OS_WINDOWS)
+                saveAdapterConfigIPv4(ip, mask);
+#else /* !defined(RT_OS_WINDOWS) */
                 if (FAILED(mVirtualBox->SetExtraData(BstrFmt("HostOnly/%s/IPAddress",
                                                              mInterfaceName.c_str()).raw(),
                                                      Bstr(aIPAddress).raw())))
@@ -502,6 +594,7 @@ HRESULT HostNetworkInterface::enableStaticIPConfig(const com::Utf8Str &aIPAddres
                                                              mInterfaceName.c_str()).raw(),
                                                      Bstr(aNetworkMask).raw())))
                     return E_FAIL;
+#endif /* !defined(RT_OS_WINDOWS) */
                 return S_OK;
             }
             else
@@ -565,6 +658,9 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
         {
             m.realIPV6Address = aIPV6Address;
             m.realIPV6PrefixLength = aIPV6NetworkMaskPrefixLength;
+#if defined(RT_OS_WINDOWS)
+            saveAdapterConfigIPv6(Bstr(aIPV6Address).raw(), aIPV6NetworkMaskPrefixLength);
+#else /* !defined(RT_OS_WINDOWS) */
             if (FAILED(mVirtualBox->SetExtraData(BstrFmt("HostOnly/%s/IPV6Address",
                                                          mInterfaceName.c_str()).raw(),
                                                  Bstr(aIPV6Address).raw())))
@@ -572,6 +668,7 @@ HRESULT HostNetworkInterface::enableStaticIPConfigV6(const com::Utf8Str &aIPV6Ad
             if (FAILED(mVirtualBox->SetExtraData(BstrFmt("HostOnly/%s/IPV6NetMask",
                                                          mInterfaceName.c_str()).raw(),
                                                  BstrFmt("%u", aIPV6NetworkMaskPrefixLength).raw())))
+#endif /* !defined(RT_OS_WINDOWS) */
                 return E_FAIL;
         }
 
