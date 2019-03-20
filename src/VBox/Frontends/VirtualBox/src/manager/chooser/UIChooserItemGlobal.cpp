@@ -56,9 +56,9 @@ bool UIChooserItemGlobal::isToolButtonArea(const QPoint &position, int iMarginMu
 {
     const int iFullWidth = geometry().width();
     const int iFullHeight = geometry().height();
-    const int iMargin = data(GlobalItemData_Margin).toInt();
+    const int iMarginHR = data(GlobalItemData_MarginHR).toInt();
     const int iButtonMargin = data(GlobalItemData_ButtonMargin).toInt();
-    const int iToolPixmapX = iFullWidth - iMargin - 1
+    const int iToolPixmapX = iFullWidth - iMarginHR - 1
                            - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio();
     const int iToolPixmapY = (iFullHeight - m_toolPixmap.height() / m_toolPixmap.devicePixelRatio()) / 2;
     QRect rect = QRect(iToolPixmapX,
@@ -74,13 +74,13 @@ bool UIChooserItemGlobal::isPinButtonArea(const QPoint &position, int iMarginMul
 {
     const int iFullWidth = geometry().width();
     const int iFullHeight = geometry().height();
-    const int iMargin = data(GlobalItemData_Margin).toInt();
+    const int iMarginHR = data(GlobalItemData_MarginHR).toInt();
     const int iSpacing = data(GlobalItemData_Spacing).toInt();
     const int iButtonMargin = data(GlobalItemData_ButtonMargin).toInt();
-    const int iPinPixmapX = iFullWidth - iMargin - 1
-                            - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio()
-                            - iSpacing
-                            - m_pinPixmap.width() / m_pinPixmap.devicePixelRatio();
+    const int iPinPixmapX = iFullWidth - iMarginHR - 1
+                          - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio()
+                          - iSpacing
+                          - m_pinPixmap.width() / m_pinPixmap.devicePixelRatio();
     const int iPinPixmapY = (iFullHeight - m_pinPixmap.height() / m_pinPixmap.devicePixelRatio()) / 2;
     QRect rect = QRect(iPinPixmapX,
                        iPinPixmapY,
@@ -232,14 +232,15 @@ void UIChooserItemGlobal::updateLayout()
 int UIChooserItemGlobal::minimumWidthHint() const
 {
     /* Prepare variables: */
-    const int iMargin = data(GlobalItemData_Margin).toInt();
+    const int iMarginHL = data(GlobalItemData_MarginHL).toInt();
+    const int iMarginHR = data(GlobalItemData_MarginHR).toInt();
     const int iSpacing = data(GlobalItemData_Spacing).toInt();
 
     /* Calculating proposed width: */
     int iProposedWidth = 0;
 
     /* Two margins: */
-    iProposedWidth += 2 * iMargin;
+    iProposedWidth += iMarginHL + iMarginHR;
     /* And global-item content width: */
     iProposedWidth += (m_pixmapSize.width() +
                        iSpacing +
@@ -256,7 +257,7 @@ int UIChooserItemGlobal::minimumWidthHint() const
 int UIChooserItemGlobal::minimumHeightHint() const
 {
     /* Prepare variables: */
-    const int iMargin = data(GlobalItemData_Margin).toInt();
+    const int iMarginV = data(GlobalItemData_MarginV).toInt();
 
     /* Calculating proposed height: */
     int iProposedHeight = 0;
@@ -276,7 +277,7 @@ int UIChooserItemGlobal::minimumHeightHint() const
     else
     {
         /* Two margins: */
-        iProposedHeight += 2 * iMargin;
+        iProposedHeight += 2 * iMarginV;
         /* And content height: */
         iProposedHeight += iContentHeight;
     }
@@ -400,7 +401,9 @@ QVariant UIChooserItemGlobal::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case GlobalItemData_Margin:       return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 3 * 2;
+        case GlobalItemData_MarginHL:     return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        case GlobalItemData_MarginHR:     return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4 * 5;
+        case GlobalItemData_MarginV:      return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4 * 3;
         case GlobalItemData_Spacing:      return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case GlobalItemData_ButtonMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
 
@@ -507,15 +510,16 @@ void UIChooserItemGlobal::updateMinimumNameWidth()
 void UIChooserItemGlobal::updateMaximumNameWidth()
 {
     /* Prepare variables: */
-    const int iMargin = data(GlobalItemData_Margin).toInt();
+    const int iMarginHL = data(GlobalItemData_MarginHL).toInt();
+    const int iMarginHR = data(GlobalItemData_MarginHR).toInt();
     const int iSpacing = data(GlobalItemData_Spacing).toInt();
 
     /* Calculate new maximum name width: */
     int iMaximumNameWidth = (int)geometry().width();
-    iMaximumNameWidth -= iMargin; /* left margin */
+    iMaximumNameWidth -= iMarginHL; /* left margin */
     iMaximumNameWidth -= m_pixmapSize.width(); /* pixmap width */
     iMaximumNameWidth -= iSpacing; /* spacing between pixmap and name */
-    iMaximumNameWidth -= iMargin; /* right margin */
+    iMaximumNameWidth -= iMarginHR; /* right margin */
 
     /* Is there something changed? */
     if (m_iMaximumNameWidth == iMaximumNameWidth)
@@ -692,7 +696,8 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
     /* Prepare variables: */
     const int iFullWidth = rectangle.width();
     const int iFullHeight = rectangle.height();
-    const int iMargin = data(GlobalItemData_Margin).toInt();
+    const int iMarginHL = data(GlobalItemData_MarginHL).toInt();
+    const int iMarginHR = data(GlobalItemData_MarginHR).toInt();
     const int iSpacing = data(GlobalItemData_Spacing).toInt();
     const int iButtonMargin = data(GlobalItemData_ButtonMargin).toInt();
 
@@ -716,7 +721,7 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
     }
 
     /* Calculate indents: */
-    int iLeftColumnIndent = iMargin;
+    int iLeftColumnIndent = iMarginHL;
 
     /* Paint left column: */
     {
@@ -761,7 +766,7 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
     QGraphicsView *pView = model()->scene()->views().first();
     const QPointF sceneCursorPosition = pView->mapToScene(pView->mapFromGlobal(QCursor::pos()));
     const QPoint itemCursorPosition = mapFromScene(sceneCursorPosition).toPoint();
-    int iRightColumnIndent = iFullWidth - iMargin - 1 - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio();
+    int iRightColumnIndent = iFullWidth - iMarginHR - 1 - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio();
 
     /* Paint right column: */
     if (   model()->currentItem() == this

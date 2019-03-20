@@ -178,7 +178,9 @@ private:
     enum MachineItemData
     {
         /* Layout hints: */
-        MachineItemData_Margin,
+        MachineItemData_MarginHL,
+        MachineItemData_MarginHR,
+        MachineItemData_MarginV,
         MachineItemData_MajorSpacing,
         MachineItemData_MinorSpacing,
         MachineItemData_TextSpacing,

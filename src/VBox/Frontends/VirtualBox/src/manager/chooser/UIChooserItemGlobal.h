@@ -167,7 +167,9 @@ private:
     enum GlobalItemData
     {
         /* Layout hints: */
-        GlobalItemData_Margin,
+        GlobalItemData_MarginHL,
+        GlobalItemData_MarginHR,
+        GlobalItemData_MarginV,
         GlobalItemData_Spacing,
         GlobalItemData_ButtonMargin,
     };

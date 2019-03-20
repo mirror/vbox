@@ -85,9 +85,9 @@ bool UIChooserItemMachine::isToolButtonArea(const QPoint &position, int iMarginM
 {
     const int iFullWidth = geometry().width();
     const int iFullHeight = geometry().height();
-    const int iMargin = data(MachineItemData_Margin).toInt();
+    const int iMarginHR = data(MachineItemData_MarginHR).toInt();
     const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
-    const int iToolPixmapX = iFullWidth - iMargin - 1 - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio();
+    const int iToolPixmapX = iFullWidth - iMarginHR - 1 - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio();
     const int iToolPixmapY = (iFullHeight - m_toolPixmap.height() / m_toolPixmap.devicePixelRatio()) / 2;
     QRect rect = QRect(iToolPixmapX,
                        iToolPixmapY,
@@ -280,7 +280,8 @@ void UIChooserItemMachine::updateLayout()
 int UIChooserItemMachine::minimumWidthHint() const
 {
     /* Prepare variables: */
-    const int iMargin = data(MachineItemData_Margin).toInt();
+    const int iMarginHL = data(MachineItemData_MarginHL).toInt();
+    const int iMarginHR = data(MachineItemData_MarginHR).toInt();
     const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     const int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
     const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
@@ -290,7 +291,7 @@ int UIChooserItemMachine::minimumWidthHint() const
     int iProposedWidth = 0;
 
     /* Two margins: */
-    iProposedWidth += 2 * iMargin + iParentIndent * level();
+    iProposedWidth += iMarginHL + iMarginHR + iParentIndent * level();
     /* And machine-item content to take into account: */
     int iTopLineWidth = m_iMinimumNameWidth;
     if (!node()->toMachineNode()->snapshotName().isEmpty())
@@ -314,7 +315,7 @@ int UIChooserItemMachine::minimumWidthHint() const
 int UIChooserItemMachine::minimumHeightHint() const
 {
     /* Prepare variables: */
-    const int iMargin = data(MachineItemData_Margin).toInt();
+    const int iMarginV = data(MachineItemData_MarginV).toInt();
     const int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
     const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
 
@@ -322,7 +323,7 @@ int UIChooserItemMachine::minimumHeightHint() const
     int iProposedHeight = 0;
 
     /* Two margins: */
-    iProposedHeight += 2 * iMargin;
+    iProposedHeight += 2 * iMarginV;
     /* And machine-item content to take into account: */
     int iTopLineHeight = qMax(m_visibleNameSize.height(), m_visibleSnapshotNameSize.height());
     int iBottomLineHeight = qMax(m_statePixmapSize.height(), m_stateTextSize.height());
@@ -565,11 +566,13 @@ QVariant UIChooserItemMachine::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case MachineItemData_Margin:       return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 3 * 2;
+        case MachineItemData_MarginHL:       return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        case MachineItemData_MarginHR:       return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4 * 5;
+        case MachineItemData_MarginV:       return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4 * 3;
         case MachineItemData_MajorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case MachineItemData_MinorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
         case MachineItemData_TextSpacing:  return 0;
-        case MachineItemData_ParentIndent: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 3;
+        case MachineItemData_ParentIndent: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         case MachineItemData_ButtonMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
 
         /* Pixmaps: */
@@ -660,7 +663,8 @@ void UIChooserItemMachine::updateToolPixmap()
 void UIChooserItemMachine::updateFirstRowMaximumWidth()
 {
     /* Prepare variables: */
-    const int iMargin = data(MachineItemData_Margin).toInt();
+    const int iMarginHL = data(MachineItemData_MarginHL).toInt();
+    const int iMarginHR = data(MachineItemData_MarginHR).toInt();
     const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
     const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
@@ -668,7 +672,7 @@ void UIChooserItemMachine::updateFirstRowMaximumWidth()
     /* Calculate new maximum width for the first row: */
     int iFirstRowMaximumWidth = (int)geometry().width();
     iFirstRowMaximumWidth -= iParentIndent * level();
-    iFirstRowMaximumWidth -= iMargin; /* left margin */
+    iFirstRowMaximumWidth -= iMarginHL; /* left margin */
     iFirstRowMaximumWidth -= m_pixmapSize.width(); /* left pixmap width */
     iFirstRowMaximumWidth -= iMajorSpacing; /* spacing between left pixmap and name(s) */
     if (   model()->currentItem() == this
@@ -677,7 +681,7 @@ void UIChooserItemMachine::updateFirstRowMaximumWidth()
         iFirstRowMaximumWidth -= iMajorSpacing; /* spacing between name(s) and right pixmap */
         iFirstRowMaximumWidth -= m_toolPixmapSize.width() + 2 * iButtonMargin; /* right pixmap width */
     }
-    iFirstRowMaximumWidth -= iMargin; /* right margin */
+    iFirstRowMaximumWidth -= iMarginHR; /* right margin */
 
     /* Is there something changed? */
     if (m_iFirstRowMaximumWidth == iFirstRowMaximumWidth)
@@ -1021,7 +1025,8 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
     /* Prepare variables: */
     const int iFullWidth = rectangle.width();
     const int iFullHeight = rectangle.height();
-    const int iMargin = data(MachineItemData_Margin).toInt();
+    const int iMarginHL = data(MachineItemData_MarginHL).toInt();
+    const int iMarginHR = data(MachineItemData_MarginHR).toInt();
     const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     const int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
     const int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
@@ -1042,7 +1047,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
     }
 
     /* Calculate indents: */
-    int iLeftColumnIndent = iMargin + iParentIndent * level();
+    int iLeftColumnIndent = iMarginHL + iParentIndent * level();
 
     /* Paint left column: */
     {
@@ -1164,7 +1169,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
     QGraphicsView *pView = model()->scene()->views().first();
     const QPointF sceneCursorPosition = pView->mapToScene(pView->mapFromGlobal(QCursor::pos()));
     const QPoint itemCursorPosition = mapFromScene(sceneCursorPosition).toPoint();
-    int iRightColumnIndent = iFullWidth - iMargin - 1 - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio();
+    int iRightColumnIndent = iFullWidth - iMarginHR - 1 - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio();
 
     /* Paint right column: */
     if (   model()->currentItem() == this
