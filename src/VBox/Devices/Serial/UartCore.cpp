@@ -671,7 +671,6 @@ static void uartR3ByteFetch(PUARTCORE pThis)
 {
     if (ASMAtomicReadU32(&pThis->cbAvailRdr))
     {
-        AssertPtr(pThis->pDrvSerial);
         size_t cbRead = 0;
         int rc2 = pThis->pDrvSerial->pfnReadRdr(pThis->pDrvSerial, &pThis->uRegRbr, 1, &cbRead);
         AssertMsg(RT_SUCCESS(rc2) && cbRead == 1, ("This shouldn't fail and always return one byte!\n")); RT_NOREF(rc2);
@@ -689,6 +688,8 @@ static void uartR3ByteFetch(PUARTCORE pThis)
  */
 static void uartR3DataFetch(PUARTCORE pThis)
 {
+    AssertPtrReturnVoid(pThis->pDrvSerial);
+
     if (pThis->uRegFcr & UART_REG_FCR_FIFO_EN)
         uartR3RecvFifoFill(pThis);
     else
