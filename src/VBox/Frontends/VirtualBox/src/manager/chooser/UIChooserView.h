@@ -53,9 +53,9 @@ public:
 
     /** @name Virtual Machine search stuff.
       * @{ */
-        /** Shows/hides machine search widget. */
-        void toggleSearchWidget();
-        /** Shows/hides machine search widget. */
+        /** Returns if the search widget is visible or not. */
+        bool isSearchWidgetVisible() const;
+        /** Shows/hides wrt. @a fVisible machine search widget. */
         void setSearchWidgetVisible(bool fVisible);
         /** Updates the search widget's counts. */
         void setSearchResultsCount(int iTotalMacthCount, int iCurrentlyScrolledItemIndex);

@@ -116,7 +116,7 @@ void UIChooserSearchWidget::prepareConnections()
 {
     if (m_pLineEdit)
     {
-        connect(m_pLineEdit, &QILineEdit::textEdited,
+        connect(m_pLineEdit, &QILineEdit::textChanged,
                 this, &UIChooserSearchWidget::sltHandleSearchTermChange);
     }
     if (m_pCloseButton)
@@ -162,7 +162,15 @@ bool UIChooserSearchWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
         if (pKeyEvent)
         {
             if (pKeyEvent->key() == Qt::Key_Escape)
+            {
                 emit sigToggleVisibility(false);
+                return true;
+            }
+            else if (pKeyEvent->key() == Qt::Key_Up || pKeyEvent->key() == Qt::Key_Down)
+            {
+                emit sigScrollToMatch(pKeyEvent->key() == Qt::Key_Down);
+                return true;
+            }
         }
     }
     return false;

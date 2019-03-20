@@ -521,7 +521,7 @@ void UIChooserModel::scrollToSearchResult(bool fIsNext)
     }
     else
     {
-        if (m_iCurrentScrolledIndex < 0)
+        if (--m_iCurrentScrolledIndex < 0)
             m_iCurrentScrolledIndex = m_searchResults.size() - 1;
     }
 
@@ -827,10 +827,8 @@ void UIChooserModel::sltSortGroup()
 
 void UIChooserModel::sltShowHideSearchWidget()
 {
-    UIChooserView *pChooserView = view();
-    if (!pChooserView)
-        return;
-    pChooserView->toggleSearchWidget();
+    if (view())
+        setSearchWidgetVisible(!view()->isSearchWidgetVisible());
 }
 
 void UIChooserModel::sltUngroupSelectedGroup()

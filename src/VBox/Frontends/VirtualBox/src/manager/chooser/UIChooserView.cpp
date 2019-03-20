@@ -101,18 +101,24 @@ UIChooserView::UIChooserView(UIChooser *pParent)
     prepare();
 }
 
-void UIChooserView::toggleSearchWidget()
+bool UIChooserView::isSearchWidgetVisible() const
 {
     if (!m_pSearchWidget)
-        return;
-    bool fVisible = m_pSearchWidget->isVisible();
-    setSearchWidgetVisible(!fVisible);
+        return false;
+    return m_pSearchWidget->isVisible();
 }
 
 void UIChooserView::setSearchWidgetVisible(bool fVisible)
 {
     if (!m_pSearchWidget)
         return;
+
+    /** Make sure keyboard focus is managed ccorectly. */
+    if (fVisible)
+        m_pSearchWidget->setFocus();
+    else
+        setFocus();
+
     if (m_pSearchWidget->isVisible() == fVisible)
         return;
     m_pSearchWidget->setVisible(fVisible);
@@ -120,9 +126,8 @@ void UIChooserView::setSearchWidgetVisible(bool fVisible)
         updateSearchWidgetGeometry();
 
     UIChooserModel *pModel =  m_pChooser->model();
-    if (!pModel)
-        return;
-    pModel->resetSearch();
+    if (pModel)
+        pModel->resetSearch();
 }
 
 void UIChooserView::setSearchResultsCount(int iTotalMacthCount, int iCurrentlyScrolledItemIndex)
