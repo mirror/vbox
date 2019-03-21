@@ -1840,7 +1840,6 @@ ifneq ($(KBUILD_HOST),win)
 endif
 RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	generic/cdrom-generic.cpp \
-	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
