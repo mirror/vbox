@@ -138,6 +138,14 @@
 /** Sets the file size.
  * @since VBox 6.0  */
 #define SHFL_FN_SET_FILE_SIZE       (24)
+/** Queries supported features.
+ * @since VBox 6.0.6  */
+#define SHFL_FN_QUERY_FEATURES      (25)
+/** Copies part of a file to another.
+ * @since VBox 6.0.6  */
+#define SHFL_FN_COPY_FILE_PART      (26)
+/** The last function number. */
+#define SHFL_FN_LAST                SHFL_FN_COPY_FILE_PART
 /** @} */
 
 
@@ -1919,6 +1927,52 @@ typedef struct VBoxSFParmSetFileSize
 /** @} */
 
 
+/** @name SHFL_FN_QUERY_FEATURES
+ * @{ */
+/** SHFL_FN_QUERY_FEATURES parameters. */
+typedef struct VBoxSFParmQueryFeatures
+{
+    /** value64, out: Feature flags, SHFL_FEATURE_XXX. */
+    HGCMFunctionParameter f64Features;
+    /** value32, out: The ordinal of the last valid function */
+    HGCMFunctionParameter u32LastFunction;
+} VBoxSFParmQueryFeatures;
+/** Number of parameters for SHFL_FN_QUERY_FEATURES. */
+#define SHFL_CPARMS_QUERY_FEATURES (2)
+
+/** The write functions updates the file offset upon return.
+ * This can be helpful for files open in append mode. */
+#define SHFL_FEATURE_WRITE_UPDATES_OFFSET       RT_BIT_64(0)
+/** @} */
+
+
+/** @name SHFL_FN_COPY_FILE_PART
+ * @{ */
+/** SHFL_FN_COPY_FILE_PART parameters. */
+typedef struct VBoxSFParmCopyFilePart
+{
+    /** value32, in: SHFLROOT of the mapping the source handle belongs to. */
+    HGCMFunctionParameter id32RootSrc;
+    /** value64, in: SHFLHANDLE of the source file. */
+    HGCMFunctionParameter u64HandleSrc;
+    /** value64, in: The source file offset. */
+    HGCMFunctionParameter off64Src;
+
+    /** value32, in: SHFLROOT of the mapping the destination handle belongs to. */
+    HGCMFunctionParameter id32RootDst;
+    /** value64, in: SHFLHANDLE of the destination file. */
+    HGCMFunctionParameter u64HandleDst;
+    /** value64, in: The destination file offset. */
+    HGCMFunctionParameter off64Dst;
+
+    /** value64, in/out: The number of bytes to copy on input / bytes actually copied. */
+    HGCMFunctionParameter cb64ToCopy;
+    /** value32, in: Reserved for the future, must be zero. */
+    HGCMFunctionParameter f32Flags;
+} VBoxSFParmCopyFilePart;
+/** Number of parameters for SHFL_FN_COPY_FILE_PART. */
+#define SHFL_CPARMS_COPY_FILE_PART (8)
+/** @} */
 
 
 

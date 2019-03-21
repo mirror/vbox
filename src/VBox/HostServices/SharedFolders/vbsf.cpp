@@ -1367,6 +1367,39 @@ int vbsfWritePages(SHFLCLIENTDATA *pClient, SHFLROOT idRoot, SHFLHANDLE hFile, u
     return rc;
 }
 
+/** Implements SHFL_FN_COPY_FILE_PART (wrapping RTFileCopyPart).   */
+int vbsfCopyFilePart(SHFLCLIENTDATA *pClient, SHFLROOT idRootSrc, SHFLHANDLE hFileSrc, uint64_t offSrc,
+                     SHFLROOT idRootDst, SHFLHANDLE hFileDst, uint64_t offDst, uint64_t *pcbToCopy, uint32_t fFlags)
+{
+    /*
+     * Validate and translates handles.
+     */
+    uint64_t const cbToCopy = *pcbToCopy;
+    *pcbToCopy = 0;
+    LogFunc(("pClient %p, idRootSrc %#RX32, hFileSrc %#RX64, offSrc %#RX64, idRootSrc %#RX32, hFileSrc %#RX64, offSrc %#RX64, cbToCopy %#RX64, fFlags %#x\n",
+             pClient, idRootSrc, hFileSrc, offSrc, idRootDst, hFileDst, offDst, cbToCopy, fFlags));
+
+    AssertPtrReturn(pClient, VERR_INVALID_PARAMETER);
+
+    size_t cbTotal = 0;
+
+    SHFLFILEHANDLE *pHandleSrc = vbsfQueryFileHandle(pClient, hFileSrc);
+    int rc = vbsfCheckHandleAccess(pClient, idRootSrc, pHandleSrc, VBSF_CHECK_ACCESS_READ);
+    if (RT_SUCCESS(rc))
+    {
+        SHFLFILEHANDLE *pHandleDst = vbsfQueryFileHandle(pClient, hFileDst);
+        rc = vbsfCheckHandleAccess(pClient, idRootDst, pHandleDst, VBSF_CHECK_ACCESS_WRITE);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileCopyPart(pHandleSrc->file.Handle, offSrc, pHandleDst->file.Handle, offDst, cbToCopy, 0, &cbTotal);
+            *pcbToCopy = cbTotal;
+        }
+    }
+
+    RT_NOREF(fFlags);
+    LogFunc(("%Rrc bytes written %#zx\n", rc, cbTotal));
+    return rc;
+}
 
 #ifdef UNITTEST
 /** Unit test the SHFL_FN_FLUSH API.  Located here as a form of API

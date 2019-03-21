@@ -96,6 +96,9 @@ static STAMPROFILE g_StatSymlink;
 static STAMPROFILE g_StatSymlinkFail;
 static STAMPROFILE g_StatSetSymlinks;
 static STAMPROFILE g_StatQueryMapInfo;
+static STAMPROFILE g_StatQueryFeatures;
+static STAMPROFILE g_StatCopyFilePart;
+static STAMPROFILE g_StatCopyFilePartFail;
 static STAMPROFILE g_StatWaitForMappingsChanges;
 static STAMPROFILE g_StatWaitForMappingsChangesFail;
 static STAMPROFILE g_StatCancelMappingsChangesWait;
@@ -1484,6 +1487,51 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             break;
         }
 
+        case SHFL_FN_QUERY_FEATURES:
+        {
+            pStat = pStatFail = &g_StatQueryFeatures;
+
+            /* Validate input: */
+            ASSERT_GUEST_STMT_BREAK(cParms == SHFL_CPARMS_QUERY_FEATURES, rc = VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_STMT_BREAK(paParms[0].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* f64Features */
+            ASSERT_GUEST_STMT_BREAK(paParms[1].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* u32LastFunction */
+
+            /* Execute the function: */
+            paParms[0].u.uint64 = SHFL_FEATURE_WRITE_UPDATES_OFFSET;
+            paParms[1].u.uint32 = SHFL_FN_LAST;
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        case SHFL_FN_COPY_FILE_PART:
+        {
+            pStat     = &g_StatCopyFilePart;
+            pStatFail = &g_StatCopyFilePartFail;
+
+            /* Validate input: */
+            ASSERT_GUEST_STMT_BREAK(cParms == SHFL_CPARMS_COPY_FILE_PART, rc = VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_STMT_BREAK(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* i32RootSrc  */
+            ASSERT_GUEST_STMT_BREAK(paParms[1].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* u64HandleSrc */
+            ASSERT_GUEST_STMT_BREAK(paParms[2].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* off64Src */
+            ASSERT_GUEST_STMT_BREAK((int64_t)paParms[2].u.uint64 < 0, rc = VERR_NEGATIVE_SEEK);
+            ASSERT_GUEST_STMT_BREAK(paParms[3].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* i32RootDst  */
+            ASSERT_GUEST_STMT_BREAK(paParms[4].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* u64HandleDst */
+            ASSERT_GUEST_STMT_BREAK(paParms[5].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* off64Dst */
+            ASSERT_GUEST_STMT_BREAK((int64_t)paParms[5].u.uint64 < 0, rc = VERR_NEGATIVE_SEEK);
+            ASSERT_GUEST_STMT_BREAK(paParms[6].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* cb64ToCopy */
+            ASSERT_GUEST_STMT_BREAK(paParms[6].u.uint64 < _1E, rc = VERR_OUT_OF_RANGE);
+            ASSERT_GUEST_STMT_BREAK(paParms[7].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* f32Flags */
+            ASSERT_GUEST_STMT_BREAK(paParms[7].u.uint32 == 0, rc = VERR_INVALID_FLAGS);
+
+            /* Execute the function: */
+            rc = vbsfCopyFilePart(pClient,
+                                  paParms[0].u.uint32, paParms[1].u.uint64, paParms[2].u.uint64,
+                                  paParms[3].u.uint32, paParms[4].u.uint64, paParms[5].u.uint64,
+                                  &paParms[6].u.uint64, paParms[7].u.uint64);
+            break;
+        }
+
+
         default:
         {
             pStatFail = pStat = &g_StatUnknown;
@@ -1791,6 +1839,9 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatSymlinkFail,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_SYMLINK failures",                  "/HGCM/VBoxSharedFolders/FnSymlinkFail");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatSetSymlinks,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_SET_SYMLINKS",                      "/HGCM/VBoxSharedFolders/FnSetSymlink");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatQueryMapInfo,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_QUERY_MAP_INFO",                    "/HGCM/VBoxSharedFolders/FnQueryMapInfo");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatQueryFeatures,             STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_QUERY_FEATURES",                    "/HGCM/VBoxSharedFolders/FnQueryFeatures");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatCopyFilePart,              STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_COPY_FILE_PART successes",          "/HGCM/VBoxSharedFolders/FnCopyFilePart");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatCopyFilePartFail,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_COPY_FILE_PART failures",           "/HGCM/VBoxSharedFolders/FnCopyFilePartFail");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatWaitForMappingsChanges,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES successes", "/HGCM/VBoxSharedFolders/FnWaitForMappingsChanges");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatWaitForMappingsChangesFail,STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES failures","/HGCM/VBoxSharedFolders/FnWaitForMappingsChangesFail");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatCancelMappingsChangesWait, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS",     "/HGCM/VBoxSharedFolders/FnCancelMappingsChangesWaits");
