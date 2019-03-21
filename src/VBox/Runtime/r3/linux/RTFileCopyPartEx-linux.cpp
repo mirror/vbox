@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - RTFileCopyPartEx, generic implementation.
+ * IPRT - RTFileCopyPartEx, linux specific implementation.
  */
 
 /*
