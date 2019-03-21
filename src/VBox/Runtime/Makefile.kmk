@@ -665,6 +665,8 @@ RuntimeR3_SOURCES       = \
 	generic/RTDirCreateUniqueNumbered-generic.cpp \
 	generic/RTEnvDupEx-generic.cpp \
 	generic/RTFileCopy-generic.cpp \
+	generic/RTFileCopyEx-generic.cpp \
+	generic/RTFileCopyByHandlesEx-generic.cpp \
 	generic/RTFileCopyRange-generic.cpp \
 	generic/RTFileCopyRangeEx-generic.cpp \
 	generic/RTFileQuerySize-generic.cpp \
@@ -1787,6 +1789,8 @@ RuntimeBldProg_SOURCES         = \
 	generic/mempool-generic.cpp \
 	generic/RTEnvDupEx-generic.cpp \
 	generic/RTFileCopy-generic.cpp \
+	generic/RTFileCopyEx-generic.cpp \
+	generic/RTFileCopyByHandlesEx-generic.cpp \
 	generic/RTFileQuerySize-generic.cpp \
 	generic/RTFileReadAll-generic.cpp \
 	generic/RTFileReadAllByHandle-generic.cpp \
