@@ -55,10 +55,10 @@
  *                      RTUtf16Free to free what the Buffer member points to.
  *                      This is all zeros and NULL on failure.
  */
-RTDECL(int) RTNtPathExpand8dot3PathA(PCUNICODE_STRING pShort, bool fPathOnly, PUNICODE_STRING pUniStrDst)
+RTDECL(int) RTNtPathExpand8dot3PathA(PCUNICODE_STRING pUniStrSrc, bool fPathOnly, PUNICODE_STRING pUniStrDst)
 {
     /* Guess a reasonable size for the final version. */
-    size_t const cbShort = pShort->Length;
+    size_t const cbShort = pUniStrSrc->Length;
     size_t       cbLong  = RT_MIN(_64K - 1, cbShort * 8);
     if (cbLong < RTPATH_MAX)
         cbLong = RTPATH_MAX * 2;
@@ -70,7 +70,7 @@ RTDECL(int) RTNtPathExpand8dot3PathA(PCUNICODE_STRING pShort, bool fPathOnly, PU
         /* Copy over the short name and fix it up. */
         pUniStrDst->MaximumLength = (uint16_t)cbLong;
         pUniStrDst->Length        = (uint16_t)cbShort;
-        memcpy(pUniStrDst->Buffer, pShort->Buffer, cbShort);
+        memcpy(pUniStrDst->Buffer, pUniStrSrc->Buffer, cbShort);
         pUniStrDst->Buffer[cbShort / sizeof(WCHAR)] = '\0';
         int rc = RTNtPathExpand8dot3Path(pUniStrDst, fPathOnly);
         if (RT_SUCCESS(rc))
