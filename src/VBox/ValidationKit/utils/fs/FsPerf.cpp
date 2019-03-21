@@ -283,6 +283,8 @@ enum
     kCmdOpt_IoFileSize,
     kCmdOpt_SetBlockSize,
     kCmdOpt_AddBlockSize,
+    kCmdOpt_Copy,
+    kCmdOpt_NoCopy,
 
     kCmdOpt_ShowDuration,
     kCmdOpt_NoShowDuration,
@@ -363,6 +365,8 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--io-file-size",     kCmdOpt_IoFileSize,     RTGETOPT_REQ_UINT64 },
     { "--set-block-size",   kCmdOpt_SetBlockSize,   RTGETOPT_REQ_UINT32 },
     { "--add-block-size",   kCmdOpt_AddBlockSize,   RTGETOPT_REQ_UINT32 },
+    { "--copy",             kCmdOpt_Copy,           RTGETOPT_REQ_NOTHING },
+    { "--no-copy",          kCmdOpt_NoCopy,         RTGETOPT_REQ_NOTHING },
 
     { "--show-duration",        kCmdOpt_ShowDuration,       RTGETOPT_REQ_NOTHING },
     { "--no-show-duration",     kCmdOpt_NoShowDuration,     RTGETOPT_REQ_NOTHING },
@@ -413,6 +417,7 @@ static bool         g_fWritePerf = true;
 static bool         g_fSeek      = true;
 static bool         g_fFSync     = true;
 static bool         g_fMMap      = true;
+static bool         g_fCopy      = true;
 /** @} */
 
 /** The length of each test run. */
@@ -450,6 +455,8 @@ static size_t       g_cchDeepDir;
 
 /** The test directory (absolute).  This will always have a trailing slash. */
 static char         g_szDir[RTPATH_MAX];
+/** The test directory (absolute), 2nd copy for use with InDir2().  */
+static char         g_szDir2[RTPATH_MAX];
 /** The empty test directory (absolute). This will always have a trailing slash. */
 static char         g_szEmptyDir[RTPATH_MAX];
 /** The deep test directory (absolute). This will always have a trailing slash. */
@@ -507,6 +514,23 @@ DECLINLINE(char *) InDir(const char *pszAppend, size_t cchAppend)
     memcpy(&g_szDir[g_cchDir], pszAppend, cchAppend);
     g_szDir[g_cchDir + cchAppend] = '\0';
     return &g_szDir[0];
+}
+
+
+/**
+ * Construct a path relative to the base test directory, 2nd copy.
+ *
+ * @returns g_szDir2.
+ * @param   pszAppend           What to append.
+ * @param   cchAppend           How much to append.
+ */
+DECLINLINE(char *) InDir2(const char *pszAppend, size_t cchAppend)
+{
+    Assert(g_szDir[g_cchDir - 1] == RTPATH_SLASH);
+    memcpy(g_szDir2, g_szDir, g_cchDir);
+    memcpy(&g_szDir2[g_cchDir], pszAppend, cchAppend);
+    g_szDir2[g_cchDir + cchAppend] = '\0';
+    return &g_szDir2[0];
 }
 
 
@@ -3069,13 +3093,13 @@ void fsPerfIo(void)
     uint64_t cbFile = g_cbIoFile;
     if (cbFile + _16M < (uint64_t)cbFree)
         cbFile = RT_ALIGN_64(cbFile, _64K);
+    else if (cbFree < _32M)
+    {
+        RTTestSkipped(g_hTest, "Insufficent free space: %'RU64 bytes, requires >= 32MB", cbFree);
+        return;
+    }
     else
     {
-        if (cbFree < _32M)
-        {
-            RTTestSkipped(g_hTest, "Insufficent free space: %'RU64 bytes, requires >= 32MB", cbFree);
-            return;
-        }
         cbFile = cbFree - (cbFree > _128M ? _64M : _16M);
         cbFile = RT_ALIGN_64(cbFile, _64K);
         RTTestIPrintf(RTTESTLVL_ALWAYS,  "Adjusted file size to %'RU64 bytes, due to %'RU64 bytes free.\n", cbFile, cbFree);
@@ -3147,6 +3171,186 @@ void fsPerfIo(void)
     if (hFileNoCache != NIL_RTFILE || !g_fIgnoreNoCache)
         RTTESTI_CHECK_RC(RTFileClose(hFileNoCache), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileClose(hFileWriteThru), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileDelete(g_szDir), VINF_SUCCESS);
+}
+
+
+DECL_FORCE_INLINE(int) fsPerfCopyWorker1(const char *pszSrc, const char *pszDst)
+{
+    RTFileDelete(pszDst);
+    return RTFileCopy(pszSrc, pszDst);
+}
+
+
+static void fsPerfCopy(void)
+{
+    RTTestISub("copy");
+
+    /*
+     * Non-existing files.
+     */
+    RTTESTI_CHECK_RC(RTFileCopy(InEmptyDir(RT_STR_TUPLE("no-such-file")),
+                                InDir2(RT_STR_TUPLE("whatever"))), VERR_FILE_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTFileCopy(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")),
+                                InDir2(RT_STR_TUPLE("no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTFileCopy(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file")),
+                                InDir2(RT_STR_TUPLE("whatever"))), VERR_PATH_NOT_FOUND);
+
+    RTTESTI_CHECK_RC(RTFileCopy(InDir(RT_STR_TUPLE("known-file")),
+                                InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTFileCopy(InDir(RT_STR_TUPLE("known-file")),
+                                InDir2(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
+
+    /*
+     * Determin the size of the test file.
+     * We want to be able to make 1 copy of it.
+     */
+    g_szDir[g_cchDir] = '\0';
+    RTFOFF cbFree = 0;
+    RTTESTI_CHECK_RC_RETV(RTFsQuerySizes(g_szDir, NULL, &cbFree, NULL, NULL), VINF_SUCCESS);
+    uint64_t cbFile = g_cbIoFile;
+    if (cbFile + _16M < (uint64_t)cbFree)
+        cbFile = RT_ALIGN_64(cbFile, _64K);
+    else if (cbFree < _32M)
+    {
+        RTTestSkipped(g_hTest, "Insufficent free space: %'RU64 bytes, requires >= 32MB", cbFree);
+        return;
+    }
+    else
+    {
+        cbFile = cbFree - (cbFree > _128M ? _64M : _16M);
+        cbFile = RT_ALIGN_64(cbFile, _64K);
+        RTTestIPrintf(RTTESTLVL_ALWAYS,  "Adjusted file size to %'RU64 bytes, due to %'RU64 bytes free.\n", cbFile, cbFree);
+    }
+    if (cbFile < _512K * 2)
+    {
+        RTTestSkipped(g_hTest, "Specified test file size too small: %'RU64 bytes, requires >= 1MB", cbFile);
+        return;
+    }
+    cbFile /= 2;
+
+    /*
+     * Create a cbFile sized test file.
+     */
+    RTFILE hFile1;
+    RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file22")),
+                                     RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE), VINF_SUCCESS);
+    uint8_t *pbFree = NULL;
+    int rc = fsPerfIoPrepFile(hFile1, cbFile, &pbFree);
+    RTMemFree(pbFree);
+    RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Make copies.
+         */
+        /* plain */
+        RTFileDelete(InDir2(RT_STR_TUPLE("file23")));
+        RTTESTI_CHECK_RC(RTFileCopy(g_szDir, g_szDir2), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileCopy(g_szDir, g_szDir2), VERR_ALREADY_EXISTS);
+        RTTESTI_CHECK_RC(RTFileCompare(g_szDir, g_szDir2), VINF_SUCCESS);
+
+        /* by handle */
+        hFile1 = NIL_RTFILE;
+        RTTESTI_CHECK_RC(RTFileOpen(&hFile1, g_szDir, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VINF_SUCCESS);
+        RTFILE hFile2 = NIL_RTFILE;
+        RTTESTI_CHECK_RC(RTFileOpen(&hFile2, g_szDir2, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileCopyByHandles(hFile1, hFile2), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileCompare(g_szDir, g_szDir2), VINF_SUCCESS);
+
+        /* copy part */
+        hFile1 = NIL_RTFILE;
+        RTTESTI_CHECK_RC(RTFileOpen(&hFile1, g_szDir, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VINF_SUCCESS);
+        hFile2 = NIL_RTFILE;
+        RTTESTI_CHECK_RC(RTFileOpen(&hFile2, g_szDir2, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileCopyPart(hFile1, 0, hFile2, 0, cbFile / 2, 0, NULL), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileCopyPart(hFile1, cbFile / 2, hFile2, cbFile / 2, cbFile - cbFile / 2, 0, NULL), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileCompare(g_szDir, g_szDir2), VINF_SUCCESS);
+
+        /*
+         * Do some benchmarking.
+         */
+#define PROFILE_COPY_FN(a_szOperation, a_fnCall) \
+            do \
+            { \
+                /* Estimate how many iterations we need to fill up the given timeslot: */ \
+                fsPerfYield(); \
+                uint64_t nsStart = RTTimeNanoTS(); \
+                uint64_t ns; \
+                do \
+                    ns = RTTimeNanoTS(); \
+                while (ns == nsStart); \
+                nsStart = ns; \
+                \
+                uint64_t iIteration = 0; \
+                do \
+                { \
+                    RTTESTI_CHECK_RC(a_fnCall, VINF_SUCCESS); \
+                    iIteration++; \
+                    ns = RTTimeNanoTS() - nsStart; \
+                } while (ns < RT_NS_10MS); \
+                ns /= iIteration; \
+                if (ns > g_nsPerNanoTSCall + 32) \
+                    ns -= g_nsPerNanoTSCall; \
+                uint64_t cIterations = g_nsTestRun / ns; \
+                if (cIterations < 2) \
+                    cIterations = 2; \
+                else if (cIterations & 1) \
+                    cIterations++; \
+                \
+                /* Do the actual profiling: */ \
+                iIteration = 0; \
+                fsPerfYield(); \
+                nsStart = RTTimeNanoTS(); \
+                for (uint32_t iAdjust = 0; iAdjust < 4; iAdjust++) \
+                { \
+                    for (; iIteration < cIterations; iIteration++)\
+                        RTTESTI_CHECK_RC(a_fnCall, VINF_SUCCESS); \
+                    ns = RTTimeNanoTS() - nsStart;\
+                    if (ns >= g_nsTestRun - (g_nsTestRun / 10)) \
+                        break; \
+                    cIterations += cIterations / 4; \
+                    if (cIterations & 1) \
+                        cIterations++; \
+                    nsStart += g_nsPerNanoTSCall; \
+                } \
+                RTTestIValueF(ns / iIteration, \
+                              RTTESTUNIT_NS_PER_OCCURRENCE, a_szOperation " latency"); \
+                RTTestIValueF((uint64_t)((uint64_t)iIteration * cbFile / ((double)ns / RT_NS_1SEC)), \
+                              RTTESTUNIT_BYTES_PER_SEC,     a_szOperation " throughput"); \
+                RTTestIValueF((uint64_t)iIteration * cbFile, \
+                              RTTESTUNIT_BYTES,             a_szOperation " bytes"); \
+                RTTestIValueF(iIteration, \
+                              RTTESTUNIT_OCCURRENCES,       a_szOperation " iterations"); \
+                if (g_fShowDuration) \
+                    RTTestIValueF(ns, RTTESTUNIT_NS,        a_szOperation " duration"); \
+            } while (0)
+
+        PROFILE_COPY_FN("RTFileCopy/Replace",           fsPerfCopyWorker1(g_szDir, g_szDir2));
+
+        hFile1 = NIL_RTFILE;
+        RTTESTI_CHECK_RC(RTFileOpen(&hFile1, g_szDir, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VINF_SUCCESS);
+        RTFileDelete(g_szDir2);
+        hFile2 = NIL_RTFILE;
+        RTTESTI_CHECK_RC(RTFileOpen(&hFile2, g_szDir2, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
+        PROFILE_COPY_FN("RTFileCopyByHandles/Overwrite", RTFileCopyByHandles(hFile1, hFile2));
+        RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+
+        /* We could benchmark RTFileCopyPart with various block sizes and whatnot...
+           But it's currently well covered by the two previous operations. */
+    }
+
+    /*
+     * Clean up.
+     */
+    RTFileDelete(InDir2(RT_STR_TUPLE("file22c1")));
+    RTFileDelete(InDir2(RT_STR_TUPLE("file22c2")));
+    RTFileDelete(InDir2(RT_STR_TUPLE("file22c3")));
     RTTESTI_CHECK_RC(RTFileDelete(g_szDir), VINF_SUCCESS);
 }
 
@@ -3310,6 +3514,7 @@ int main(int argc, char *argv[])
                 g_fSeek      = true;
                 g_fFSync     = true;
                 g_fMMap      = true;
+                g_fCopy      = true;
                 break;
 
             case 'z':
@@ -3335,6 +3540,7 @@ int main(int argc, char *argv[])
                 g_fSeek      = false;
                 g_fFSync     = false;
                 g_fMMap      = false;
+                g_fCopy      = false;
                 break;
 
 #define CASE_OPT(a_Stem) \
@@ -3362,6 +3568,7 @@ int main(int argc, char *argv[])
             CASE_OPT(FSync);
             CASE_OPT(MMap);
             CASE_OPT(IgnoreNoCache);
+            CASE_OPT(Copy);
 
             CASE_OPT(ShowDuration);
             CASE_OPT(ShowIterations);
@@ -3515,6 +3722,8 @@ int main(int argc, char *argv[])
                     fsPerfChSize();
                 if (g_fReadPerf || g_fReadTests || g_fWritePerf || g_fWriteTests || g_fSeek || g_fFSync || g_fMMap)
                     fsPerfIo();
+                if (g_fCopy)
+                    fsPerfCopy();
             }
 
             /* Cleanup: */
