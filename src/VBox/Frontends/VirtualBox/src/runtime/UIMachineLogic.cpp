@@ -1179,6 +1179,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltLoggingToggled(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowLogDialog), SIGNAL(triggered()),
             this, SLOT(sltShowLogDialog()));
+    connect(actionPool()->action(UIActionIndexRT_M_Debug_S_GuestControlConsole), SIGNAL(triggered()),
+            this, SLOT(sltShowGuestControlConsoleDialog()));
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef VBOX_WS_MAC
@@ -2481,6 +2483,42 @@ void UIMachineLogic::sltCloseLogViewerWindow()
     UIVMLogViewerDialogFactory().cleanup(pDialog);
 }
 
+void UIMachineLogic::sltShowGuestControlConsoleDialog()
+{
+    if (machine().isNull() || !activeMachineWindow())
+        return;
+
+    /* Create a logviewer only if we don't have one already */
+    if (m_pProcessControlDialog)
+        return;
+
+    QIManagerDialog *pProcessControlDialog;
+    UIGuestProcessControlDialogFactory dialogFactory(actionPool(), console().GetGuest(), machine().GetName());
+    dialogFactory.prepare(pProcessControlDialog, activeMachineWindow());
+    if (pProcessControlDialog)
+    {
+        m_pProcessControlDialog = pProcessControlDialog;
+
+        /* Show instance: */
+        pProcessControlDialog->show();
+        pProcessControlDialog->setWindowState(pProcessControlDialog->windowState() & ~Qt::WindowMinimized);
+        pProcessControlDialog->activateWindow();
+        connect(pProcessControlDialog, &QIManagerDialog::sigClose,
+                this, &UIMachineLogic::sltCloseGuestControlConsoleDialog);
+    }
+}
+
+void UIMachineLogic::sltCloseGuestControlConsoleDialog()
+{
+    QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
+    if (m_pProcessControlDialog != pDialog || !pDialog)
+        return;
+
+    /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
+    m_pProcessControlDialog = 0;
+    pDialog->close();
+    UIGuestProcessControlDialogFactory().cleanup(pDialog);
+}
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef VBOX_WS_MAC

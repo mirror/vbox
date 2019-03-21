@@ -23,8 +23,8 @@
 #include "UIDesktopWidgetWatchdog.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
+#include "UIGuestControlConsole.h"
 #include "UIGuestProcessControlDialog.h"
-#include "UIGuestProcessControlWidget.h"
 #include "VBoxGlobal.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
@@ -70,7 +70,7 @@ void UIGuestProcessControlDialog::retranslateUi()
     /* Translate window title: */
     setWindowTitle(tr("%1 - Guest Control").arg(m_strMachineName));
     /* Translate buttons: */
-    button(ButtonType_Close)->setText(UIGuestProcessControlWidget::tr("Close"));
+    button(ButtonType_Close)->setText(tr("Close"));
 }
 
 void UIGuestProcessControlDialog::configure()
@@ -82,18 +82,18 @@ void UIGuestProcessControlDialog::configure()
 void UIGuestProcessControlDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UIGuestProcessControlWidget *pWidget = new UIGuestProcessControlWidget(EmbedTo_Dialog, m_comGuest, this, m_strMachineName);
+    UIGuestControlConsole *pConsole = new UIGuestControlConsole(m_comGuest);
 
-    if (pWidget)
+    if (pConsole)
     {
         /* Configure widget: */
-        setWidget(pWidget);
+        setWidget(pConsole);
         //setWidgetMenu(pWidget->menu());
 #ifdef VBOX_WS_MAC
         //setWidgetToolbar(pWidget->toolbar());
 #endif
         /* Add into layout: */
-        centralWidget()->layout()->addWidget(pWidget);
+        centralWidget()->layout()->addWidget(pConsole);
     }
 }
 

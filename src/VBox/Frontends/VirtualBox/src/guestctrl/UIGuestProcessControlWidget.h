@@ -65,11 +65,8 @@ protected:
 private slots:
 
     void sltGuestSessionsUpdated();
-    void sltConsoleCommandEntered(const QString &strCommand);
-    void sltConsoleOutputReceived(const QString &strOutput);
     void sltGuestSessionRegistered(CGuestSession guestSession);
     void sltGuestSessionUnregistered(CGuestSession guestSession);
-    void sltGuestControlErrorText(QString strError);
     void sltTreeItemUpdated();
     void sltCloseSessionOrProcess();
     void sltShowProperties();
@@ -91,8 +88,6 @@ private:
     QVBoxLayout              *m_pMainLayout;
     QSplitter                *m_pSplitter;
     UIGuestControlTreeWidget *m_pTreeWidget;
-    UIGuestControlConsole    *m_pConsole;
-    UIGuestControlInterface  *m_pControlInterface;
     const EmbedTo             m_enmEmbedding;
     UIToolBar                *m_pToolBar;
 

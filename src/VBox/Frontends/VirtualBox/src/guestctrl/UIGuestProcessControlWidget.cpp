@@ -297,8 +297,6 @@ UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, c
     , m_pMainLayout(0)
     , m_pSplitter(0)
     , m_pTreeWidget(0)
-    , m_pConsole(0)
-    , m_pControlInterface(0)
     , m_enmEmbedding(enmEmbedding)
     , m_pToolBar(0)
     , m_pQtListener(0)
@@ -332,8 +330,6 @@ void UIGuestProcessControlWidget::retranslateUi()
 
 void UIGuestProcessControlWidget::prepareObjects()
 {
-    m_pControlInterface = new UIGuestControlInterface(this, m_comGuest);
-
     /* Create layout: */
     m_pMainLayout = new QVBoxLayout(this);
     if (!m_pMainLayout)
@@ -360,17 +356,6 @@ void UIGuestProcessControlWidget::prepareObjects()
         m_pTreeWidget->setColumnCount(3);
     }
 
-    /* Disable the CLI for now (and maybe forever): */
-#ifdef WITH_GUEST_CONTROL_CLI
-    m_pConsole = new UIGuestControlConsole;
-#endif
-
-    if (m_pConsole)
-    {
-        m_pSplitter->addWidget(m_pConsole);
-        setFocusProxy(m_pConsole);
-    }
-
     m_pSplitter->setStretchFactor(0, 2);
     m_pSplitter->setStretchFactor(1, 1);
 
@@ -390,11 +375,6 @@ void UIGuestProcessControlWidget::updateTreeWidget()
 void UIGuestProcessControlWidget::prepareConnections()
 {
     qRegisterMetaType<QVector<int> >();
-    connect(m_pControlInterface, &UIGuestControlInterface::sigOutputString,
-            this, &UIGuestProcessControlWidget::sltConsoleOutputReceived);
-    if (m_pConsole)
-        connect(m_pConsole, &UIGuestControlConsole::commandEntered,
-                this, &UIGuestProcessControlWidget::sltConsoleCommandEntered);
 
     if (m_pTreeWidget)
     {
@@ -416,22 +396,6 @@ void UIGuestProcessControlWidget::prepareConnections()
 void UIGuestProcessControlWidget::sltGuestSessionsUpdated()
 {
     updateTreeWidget();
-}
-
-void UIGuestProcessControlWidget::sltConsoleCommandEntered(const QString &strCommand)
-{
-    if (m_pControlInterface)
-    {
-        m_pControlInterface->putCommand(strCommand);
-    }
-}
-
-void UIGuestProcessControlWidget::sltConsoleOutputReceived(const QString &strOutput)
-{
-    if (m_pConsole)
-    {
-        m_pConsole->putOutput(strOutput);
-    }
 }
 
 void UIGuestProcessControlWidget::sltCloseSessionOrProcess()
@@ -587,16 +551,6 @@ void UIGuestProcessControlWidget::addGuestSession(CGuestSession guestSession)
     UIGuestSessionTreeItem* sessionTreeItem = new UIGuestSessionTreeItem(m_pTreeWidget, guestSession);
     connect(sessionTreeItem, &UIGuestSessionTreeItem::sigGuessSessionUpdated,
             this, &UIGuestProcessControlWidget::sltTreeItemUpdated);
-    connect(sessionTreeItem, &UIGuestSessionTreeItem::sigGuestSessionErrorText,
-            this, &UIGuestProcessControlWidget::sltGuestControlErrorText);
-}
-
-void UIGuestProcessControlWidget::sltGuestControlErrorText(QString strError)
-{
-    if (m_pConsole)
-    {
-        m_pConsole->putOutput(strError);
-    }
 }
 
 void UIGuestProcessControlWidget::sltTreeItemUpdated()

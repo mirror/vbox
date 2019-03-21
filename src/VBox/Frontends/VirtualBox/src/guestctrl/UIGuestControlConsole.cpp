@@ -22,14 +22,21 @@
 
 /* GUI includes: */
 #include "UIGuestControlConsole.h"
+#include "UIGuestControlInterface.h"
 
-
-UIGuestControlConsole::UIGuestControlConsole(QWidget* parent /* = 0 */)
+UIGuestControlConsole::UIGuestControlConsole(const CGuest &comGuest, QWidget* parent /* = 0 */)
     :QPlainTextEdit(parent)
+    , m_comGuest(comGuest)
     , m_strGreet("Welcome to 'Guest Control Console'. Type 'help' for help\n")
     , m_strPrompt("$>")
     , m_uCommandHistoryIndex(0)
+    , m_pControlInterface(0)
 {
+    m_pControlInterface = new UIGuestControlInterface(this, m_comGuest);
+
+    connect(m_pControlInterface, &UIGuestControlInterface::sigOutputString,
+            this, &UIGuestControlConsole::sltOutputReceived);
+
     /* Configure this: */
     setUndoRedoEnabled(false);
     setWordWrapMode(QTextOption::NoWrap);
@@ -45,6 +52,17 @@ UIGuestControlConsole::UIGuestControlConsole(QWidget* parent /* = 0 */)
     m_tabDictinary.insert("start", 0);
     m_tabDictinary.insert("ls", 0);
     m_tabDictinary.insert("stat", 0);
+}
+
+void UIGuestControlConsole::commandEntered(const QString &strCommand)
+{
+    if (m_pControlInterface)
+        m_pControlInterface->putCommand(strCommand);
+}
+
+void UIGuestControlConsole::sltOutputReceived(const QString &strOutput)
+{
+    putOutput(strOutput);
 }
 
 void UIGuestControlConsole::reset()
@@ -123,7 +141,7 @@ void UIGuestControlConsole::keyPressEvent(QKeyEvent *pEvent)
                 QString strCommand(getCommandString());
                 if (!strCommand.isEmpty())
                 {
-                    emit commandEntered(strCommand);
+                    commandEntered(strCommand);
                     if (!m_tCommandHistory.contains(strCommand))
                         m_tCommandHistory.push_back(strCommand);
                     m_uCommandHistoryIndex = m_tCommandHistory.size()-1;
@@ -296,4 +314,3 @@ QList<QString> UIGuestControlConsole::matchedWords(const QString &strSearch) con
     }
     return list;
 }
-

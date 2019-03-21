@@ -60,7 +60,6 @@ public:
        static QString getFsObjTypeString(KFsObjType type);
     /** @} */
 
-
 private slots:
 
 private:
@@ -92,7 +91,6 @@ private:
     template<typename T>
     QString getFsObjInfoString(const T &fsObjectInfo) const;
 
-
     CGuest        m_comGuest;
     const QString m_strHelp;
     QString       m_strStatus;
@@ -101,4 +99,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_guestctrl_UIGuestControlInterface_h */
-

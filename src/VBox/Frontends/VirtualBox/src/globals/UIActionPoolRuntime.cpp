@@ -2900,6 +2900,49 @@ protected:
         setName(QApplication::translate("UIActionPool", "Show &Log...", "debug action"));
     }
 };
+
+/** Simple action extension, used as 'Guest Control Terminal' action class. */
+class UIActionSimpleRuntimeGuestControlConsole : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionSimpleRuntimeGuestControlConsole(UIActionPool *pParent)
+        : UIActionSimple(pParent, true)
+    {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const /* override */
+    {
+        return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_GuestControlConsole;
+    }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const /* override */
+    {
+        return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_GuestControlConsole);
+    }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const /* override */
+    {
+        return actionPool()->toRuntime()->isAllowedInMenuDebug(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_GuestControlConsole);
+    }
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("GuestControlConsole");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setName(QApplication::translate("UIActionPool", "Guest Control Terminal...", "debug action"));
+    }
+};
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef VBOX_WS_MAC
@@ -3341,6 +3384,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Debug_S_ShowCommandLine] = new UIActionSimpleRuntimeShowCommandLine(this);
     m_pool[UIActionIndexRT_M_Debug_T_Logging] = new UIActionToggleRuntimeLogging(this);
     m_pool[UIActionIndexRT_M_Debug_S_ShowLogDialog] = new UIActionSimpleRuntimeShowLogs(this);
+    m_pool[UIActionIndexRT_M_Debug_S_GuestControlConsole] = new UIActionSimpleRuntimeGuestControlConsole(this);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef VBOX_WS_MAC
@@ -4253,6 +4297,8 @@ void UIActionPoolRuntime::updateMenuDebug()
     addAction(pMenu, action(UIActionIndexRT_M_Debug_T_Logging));
     /* 'Log Dialog' action: */
     addAction(pMenu, action(UIActionIndexRT_M_Debug_S_ShowLogDialog));
+    /* 'Guest Control Terminal' action: */
+    addAction(pMenu, action(UIActionIndexRT_M_Debug_S_GuestControlConsole));
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Debug);

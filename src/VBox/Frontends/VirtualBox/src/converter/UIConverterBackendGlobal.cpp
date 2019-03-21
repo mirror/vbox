@@ -806,11 +806,12 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDebugg
     QString strResult;
     switch (runtimeMenuDebuggerActionType)
     {
-        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics:  strResult = "Statistics"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine: strResult = "CommandLine"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging:     strResult = "Logging"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog:   strResult = "LogDialog"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All:         strResult = "All"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics:            strResult = "Statistics"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine:           strResult = "CommandLine"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging:               strResult = "Logging"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog:             strResult = "LogDialog"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_GuestControlConsole:   strResult = "GuestControlConsole"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All:                   strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuDebuggerActionType));
@@ -826,11 +827,12 @@ template<> UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType fromInternalString
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;      QList<UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType> values;
-    keys << "Statistics";  values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics;
-    keys << "CommandLine"; values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine;
-    keys << "Logging";     values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging;
-    keys << "LogDialog";   values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog;
-    keys << "All";         values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All;
+    keys << "Statistics";           values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Statistics;
+    keys << "CommandLine";          values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_CommandLine;
+    keys << "Logging";              values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Logging;
+    keys << "LogDialog";            values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_LogDialog;
+    keys << "GuestControlConsole";  values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_GuestControlConsole;
+    keys << "All";                  values << UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuDebuggerActionType, Qt::CaseInsensitive))
         return UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType_Invalid;

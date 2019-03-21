@@ -121,6 +121,7 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Debug_S_ShowCommandLine,
     UIActionIndexRT_M_Debug_T_Logging,
     UIActionIndexRT_M_Debug_S_ShowLogDialog,
+    UIActionIndexRT_M_Debug_S_GuestControlConsole,
 #endif
 
 #ifdef VBOX_WS_MAC

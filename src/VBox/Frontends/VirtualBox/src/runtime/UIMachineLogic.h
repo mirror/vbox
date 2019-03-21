@@ -319,6 +319,8 @@ private slots:
     void sltShowLogDialog();
     /** Handles close signal from the log viewer dialog. */
     void sltCloseLogViewerWindow();
+    void sltShowGuestControlConsoleDialog();
+    void sltCloseGuestControlConsoleDialog();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef RT_OS_DARWIN /* Something is *really* broken in regards of the moc here */

@@ -605,12 +605,13 @@ public:
     /** Runtime UI: Menu "Debugger": Action types. */
     enum RuntimeMenuDebuggerActionType
     {
-        RuntimeMenuDebuggerActionType_Invalid     = 0,
-        RuntimeMenuDebuggerActionType_Statistics  = RT_BIT(0),
-        RuntimeMenuDebuggerActionType_CommandLine = RT_BIT(1),
-        RuntimeMenuDebuggerActionType_Logging     = RT_BIT(2),
-        RuntimeMenuDebuggerActionType_LogDialog   = RT_BIT(3),
-        RuntimeMenuDebuggerActionType_All         = 0xFFFF
+        RuntimeMenuDebuggerActionType_Invalid              = 0,
+        RuntimeMenuDebuggerActionType_Statistics           = RT_BIT(0),
+        RuntimeMenuDebuggerActionType_CommandLine          = RT_BIT(1),
+        RuntimeMenuDebuggerActionType_Logging              = RT_BIT(2),
+        RuntimeMenuDebuggerActionType_LogDialog            = RT_BIT(3),
+        RuntimeMenuDebuggerActionType_GuestControlConsole  = RT_BIT(4),
+        RuntimeMenuDebuggerActionType_All                  = 0xFFFF
     };
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 

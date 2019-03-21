@@ -167,7 +167,7 @@ UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &
     :QObject(parent)
     , m_comGuest(comGuest)
     , m_strHelp("[common-options]               [--username <name>] [--domain <domain>]\n"
-                "                                   [--passwordfile <file> | --password <password>]\n"
+                "                               [--passwordfile <file> | --password <password>]\n"
                 "start                           [common-options]\n"
                 "                                   [--exe <path to executable>] [--timeout <msec>]\n"
                 "                                   [--sessionid <id> |  [sessionname <name>]]\n"
@@ -178,7 +178,7 @@ UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &
                 "mkdir                            [common-options]\n"
                 "                                   [-P|--parents] [<guest directory>\n"
                 "                                   [--sessionid <id> |  [sessionname <name>]]\n"
-                "[stat|ls                          [common-options]\n"
+                "stat|ls                          [common-options]\n"
                 "                                   [--sessionid <id> |  [sessionname <name>]]\n"
                 )
 {
@@ -539,7 +539,7 @@ void UIGuestControlInterface::putCommand(const QString &strCommand)
 {
     if (!isGuestAdditionsAvailable(m_comGuest))
     {
-        emit sigOutputString("No guest addtions detected. Guest control needs guest additions");
+        emit sigOutputString("No guest addtions detected. Guest control requires guest additions");
         return;
     }
 
@@ -675,4 +675,3 @@ QString UIGuestControlInterface::getFsObjInfoString(const T &fsObjectInfo) const
 
     return strObjectInfo;
 }
-
