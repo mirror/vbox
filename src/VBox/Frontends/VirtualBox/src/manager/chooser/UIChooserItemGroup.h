@@ -50,6 +50,12 @@ signals:
         void sigToggleFinished();
     /** @} */
 
+    /** @name Layout stuff.
+      * @{ */
+        /** Notifies listeners about @a iMinimumWidthHint change. */
+        void sigMinimumWidthHintChanged(int iMinimumWidthHint);
+    /** @} */
+
 public:
 
     /** RTTI required for qgraphicsitem_cast. */
@@ -362,6 +368,9 @@ private:
 
     /** @name Layout stuff.
       * @{ */
+        /** Holds previous minimum width hint. */
+        int  m_iPreviousMinimumWidthHint;
+
         /** Holds cached visible name size. */
         QSize  m_visibleNameSize;
         /** Holds cached group children pixmap size. */

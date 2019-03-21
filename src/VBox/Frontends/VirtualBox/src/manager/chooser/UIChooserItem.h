@@ -82,12 +82,6 @@ signals:
         void sigHoverLeave();
     /** @} */
 
-    /** @name Layout stuff.
-      * @{ */
-        /** Notifies listeners about @a iMinimumWidthHint change. */
-        void sigMinimumWidthHintChanged(int iMinimumWidthHint);
-    /** @} */
-
 public:
 
     /** Constructs item passing @a pParent to the base-class.
@@ -340,9 +334,6 @@ private:
       * @{ */
         /** Holds previous geometry. */
         QRectF  m_previousGeometry;
-
-        /** Holds previous minimum width hint. */
-        int  m_iPreviousMinimumWidthHint;
     /** @} */
 
     /** @name Navigation stuff.

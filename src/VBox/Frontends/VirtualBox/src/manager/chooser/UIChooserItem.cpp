@@ -230,7 +230,6 @@ UIChooserItem::UIChooserItem(UIChooserItem *pParent, UIChooserNode *pNode,
     , m_iHoveredValue(iHoveredValue)
     , m_iAnimatedValue(m_iDefaultValue)
     , m_pDisabledEffect(0)
-    , m_iPreviousMinimumWidthHint(0)
     , m_enmDragTokenPlace(UIChooserItemDragToken_Off)
     , m_iDragTokenDarkness(110)
 {
@@ -422,19 +421,6 @@ void UIChooserItem::updateGeometry()
     /* Update parent's geometry: */
     if (parentItem())
         parentItem()->updateGeometry();
-
-    /* Special handling for root-items: */
-    if (isRoot())
-    {
-        /* Root-item should notify chooser-view if minimum-width-hint was changed: */
-        const int iMinimumWidthHint = minimumWidthHint();
-        if (m_iPreviousMinimumWidthHint != iMinimumWidthHint)
-        {
-            /* Save new minimum-width-hint, notify listener: */
-            m_iPreviousMinimumWidthHint = iMinimumWidthHint;
-            emit sigMinimumWidthHintChanged(m_iPreviousMinimumWidthHint);
-        }
-    }
 }
 
 void UIChooserItem::makeSureItsVisible()

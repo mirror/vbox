@@ -60,6 +60,7 @@ UIChooserItemGroup::UIChooserItemGroup(QGraphicsScene *pScene, UIChooserNodeGrou
     , m_pLayoutGlobal(0)
     , m_pLayoutGroup(0)
     , m_pLayoutMachine(0)
+    , m_iPreviousMinimumWidthHint(0)
 {
     prepare();
 }
@@ -81,6 +82,7 @@ UIChooserItemGroup::UIChooserItemGroup(UIChooserItem *pParent, UIChooserNodeGrou
     , m_pLayoutGlobal(0)
     , m_pLayoutGroup(0)
     , m_pLayoutMachine(0)
+    , m_iPreviousMinimumWidthHint(0)
 {
     prepare();
 }
@@ -567,6 +569,19 @@ void UIChooserItemGroup::updateGeometry()
 
     /* Call to base-class: */
     UIChooserItem::updateGeometry();
+
+    /* Special handling for root-groups: */
+    if (isRoot())
+    {
+        /* Root-group should notify chooser-view if minimum-width-hint was changed: */
+        const int iMinimumWidthHint = minimumWidthHint();
+        if (m_iPreviousMinimumWidthHint != iMinimumWidthHint)
+        {
+            /* Save new minimum-width-hint, notify listener: */
+            m_iPreviousMinimumWidthHint = iMinimumWidthHint;
+            emit sigMinimumWidthHintChanged(m_iPreviousMinimumWidthHint);
+        }
+    }
 }
 
 void UIChooserItemGroup::updateLayout()
@@ -1187,6 +1202,12 @@ void UIChooserItemGroup::prepare()
         connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
                 this, &UIChooserItemGroup::sltHandleWindowRemapped);
     }
+
+    /* Invalidate minimum width hint
+     * after we isntalled listener: */
+    m_iPreviousMinimumWidthHint = 0;
+    /* Update geometry finally: */
+    updateGeometry();
 }
 
 void UIChooserItemGroup::cleanup()
