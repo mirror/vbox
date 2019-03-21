@@ -37,119 +37,125 @@
 #include <iprt/errcore.h>
 
 
-RTDECL(int) RTFileCopyByHandlesEx(RTFILE FileSrc, RTFILE FileDst, PFNRTPROGRESS pfnProgress, void *pvUser)
+RTDECL(int) RTFileCopyByHandlesEx(RTFILE hFileSrc, RTFILE hFileDst, PFNRTPROGRESS pfnProgress, void *pvUser)
 {
     /*
      * Validate input.
      */
-    AssertMsgReturn(RTFileIsValid(FileSrc), ("FileSrc=%RTfile\n", FileSrc), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(RTFileIsValid(FileDst), ("FileDst=%RTfile\n", FileDst), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(RTFileIsValid(hFileSrc), ("hFileSrc=%RTfile\n", hFileSrc), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(RTFileIsValid(hFileDst), ("hFileDst=%RTfile\n", hFileDst), VERR_INVALID_PARAMETER);
     AssertMsgReturn(!pfnProgress || VALID_PTR(pfnProgress), ("pfnProgress=%p\n", pfnProgress), VERR_INVALID_PARAMETER);
 
     /*
      * Save file offset.
      */
-    RTFOFF offSrcSaved;
-    int rc = RTFileSeek(FileSrc, 0, RTFILE_SEEK_CURRENT, (uint64_t *)&offSrcSaved);
+    uint64_t offSrcSaved;
+    int rc = RTFileSeek(hFileSrc, 0, RTFILE_SEEK_CURRENT, &offSrcSaved);
     if (RT_FAILURE(rc))
         return rc;
 
     /*
-     * Get the file size.
+     * Get the file size and figure out how much we'll copy at a time.
      */
-    RTFOFF cbSrc;
-    rc = RTFileSeek(FileSrc, 0, RTFILE_SEEK_END, (uint64_t *)&cbSrc);
+    uint64_t cbSrc;
+    rc = RTFileGetSize(hFileSrc, &cbSrc);
     if (RT_FAILURE(rc))
         return rc;
 
+    uint64_t cbChunk = cbSrc;
+    if (pfnProgress && cbSrc > _1M)
+    {
+        cbChunk /= 100;
+        if (cbChunk > _64M)
+            cbChunk = RT_ALIGN_64(cbChunk, _2M);
+        else
+            cbChunk = RT_ALIGN_64(cbChunk, _128K);
+    }
+
     /*
-     * Allocate buffer.
+     * Prepare buffers.
      */
-    size_t      cbBuf;
-    uint8_t    *pbBufFree = NULL;
-    uint8_t    *pbBuf;
-    if (cbSrc < _512K)
-    {
-        cbBuf = 8*_1K;
-        pbBuf = (uint8_t *)alloca(cbBuf);
-    }
-    else
-    {
-        cbBuf = _128K;
-        pbBuf = pbBufFree = (uint8_t *)RTMemTmpAlloc(cbBuf);
-    }
-    if (pbBuf)
+    RTFILECOPYPARTBUFSTATE BufState;
+    rc = RTFileCopyPartPrep(&BufState, cbChunk);
+    if (RT_SUCCESS(rc))
     {
         /*
-         * Seek to the start of each file
-         * and set the size of the destination file.
+         * Prepare the destination file.
          */
-        rc = RTFileSeek(FileSrc, 0, RTFILE_SEEK_BEGIN, NULL);
+        uint64_t cbDst;
+        rc = RTFileGetSize(hFileDst, &cbDst);
+        if (RT_SUCCESS(rc) && cbDst > cbSrc)
+            rc = RTFileSetSize(hFileDst, cbSrc);
+        if (RT_SUCCESS(rc) && cbDst < cbSrc)
+        {
+            rc = RTFileSetAllocationSize(hFileDst, cbSrc, RTFILE_ALLOC_SIZE_F_DEFAULT);
+            if (rc == VERR_NOT_SUPPORTED)
+                rc = RTFileSetSize(hFileDst, cbSrc);
+        }
         if (RT_SUCCESS(rc))
         {
-            rc = RTFileSeek(FileDst, 0, RTFILE_SEEK_BEGIN, NULL);
-            if (RT_SUCCESS(rc))
-                rc = RTFileSetSize(FileDst, cbSrc);
-            if (RT_SUCCESS(rc) && pfnProgress)
-                rc = pfnProgress(0, pvUser);
-            if (RT_SUCCESS(rc))
+            /*
+             * Copy loop that works till we reach EOF.
+             */
+            RTFOFF      off            = 0;
+            RTFOFF      cbPercent      = cbSrc / 100;
+            RTFOFF      offNextPercent = pfnProgress ? cbPercent : RTFOFF_MAX;
+            unsigned    uPercentage    = pfnProgress ? 0         : 100;
+            for (;;)
             {
                 /*
-                 * Copy loop.
+                 * Copy a block.
                  */
-                unsigned    uPercentage = 0;
-                RTFOFF      off = 0;
-                RTFOFF      cbPercent = cbSrc / 100;
-                RTFOFF      offNextPercent = cbPercent;
-                while (off < cbSrc)
+                uint64_t cbCopied = 0;
+                rc = RTFileCopyPartEx(hFileSrc, off, hFileDst, off, cbChunk, 0 /*fFlags*/, &BufState, &cbCopied);
+                if (RT_FAILURE(rc))
+                    break;
+                if (cbCopied == 0)
                 {
-                    /* copy block */
-                    RTFOFF cbLeft = cbSrc - off;
-                    size_t cbBlock = cbLeft >= (RTFOFF)cbBuf ? cbBuf : (size_t)cbLeft;
-                    rc = RTFileRead(FileSrc, pbBuf, cbBlock, NULL);
-                    if (RT_FAILURE(rc))
-                        break;
-                    rc = RTFileWrite(FileDst, pbBuf, cbBlock, NULL);
-                    if (RT_FAILURE(rc))
-                        break;
-
-                    /* advance */
-                    off += cbBlock;
-                    if (pfnProgress && offNextPercent < off && uPercentage < 100)
-                    {
-                        do
-                        {
-                            uPercentage++;
-                            offNextPercent += cbPercent;
-                        } while (offNextPercent < off && uPercentage < 100);
-                        rc = pfnProgress(uPercentage, pvUser);
-                        if (RT_FAILURE(rc))
-                            break;
-                    }
+                    /*
+                     * We reached the EOF.  Complete the copy operation.
+                     */
+                    rc = RTFileSetSize(hFileDst, off);
+                    if (RT_SUCCESS(rc))
+                        rc = RTFileCopyAttributes(hFileSrc, hFileDst, 0);
+                    break;
                 }
 
-#if 0
                 /*
-                 * Copy OS specific data (EAs and stuff).
+                 * Advance and work the progress callback.
                  */
-                rtFileCopyOSStuff(FileSrc, FileDst);
-#endif
-
-                /* 100% */
-                if (pfnProgress && uPercentage < 100 && RT_SUCCESS(rc))
-                    rc = pfnProgress(100, pvUser);
+                off += cbCopied;
+                if (   off >= offNextPercent
+                    && pfnProgress
+                    && uPercentage < 99)
+                {
+                    do
+                    {
+                        uPercentage++;
+                        offNextPercent += cbPercent;
+                    } while (   offNextPercent <= off
+                             && uPercentage < 99);
+                    rc = pfnProgress(uPercentage, pvUser);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
             }
         }
-        RTMemTmpFree(pbBufFree);
+
+        RTFileCopyPartCleanup(&BufState);
+
+        /*
+         * 100%.
+         */
+        if (   pfnProgress
+            && RT_SUCCESS(rc))
+            rc = pfnProgress(100, pvUser);
     }
-    else
-        rc = VERR_NO_MEMORY;
 
     /*
      * Restore source position.
      */
-    RTFileSeek(FileSrc, offSrcSaved, RTFILE_SEEK_BEGIN, NULL);
-
+    RTFileSeek(hFileSrc, offSrcSaved, RTFILE_SEEK_BEGIN, NULL);
     return rc;
 }
 

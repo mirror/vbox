@@ -768,10 +768,20 @@ RTDECL(void) RTFileCopyPartCleanup(PRTFILECOPYPARTBUFSTATE pBufState);
  * @note    The file positions of @a hFileSrc and @a hFileDst are undefined
  *          upon return of this function.
  *
- * @sa      RTFileCopyPartEx.
+ * @sa      RTFileCopyPart.
  */
 RTDECL(int) RTFileCopyPartEx(RTFILE hFileSrc, RTFOFF offSrc, RTFILE hFileDst, RTFOFF offDst, uint64_t cbToCopy,
                              uint32_t fFlags, PRTFILECOPYPARTBUFSTATE pBufState, uint64_t *pcbCopied);
+
+/**
+ * Copy file attributes from @a hFileSrc to @a hFileDst.
+ *
+ * @returns IPRT status code.
+ * @param   hFileSrc    Handle to the source file.
+ * @param   hFileDst    Handle to the destination file.
+ * @param   fFlags      Reserved, pass zero.
+ */
+RTDECL(int) RTFileCopyAttributes(RTFILE hFileSrc, RTFILE hFileDst, uint32_t fFlags);
 
 /**
  * Compares two file given the paths to both files.

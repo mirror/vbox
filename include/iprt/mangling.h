@@ -914,6 +914,7 @@
 # define RTFileCompareByHandlesEx                       RT_MANGLER(RTFileCompareByHandlesEx)
 # define RTFileCompareEx                                RT_MANGLER(RTFileCompareEx)
 # define RTFileCopy                                     RT_MANGLER(RTFileCopy)
+# define RTFileCopyAttributes                           RT_MANGLER(RTFileCopyAttributes)
 # define RTFileCopyByHandles                            RT_MANGLER(RTFileCopyByHandles)
 # define RTFileCopyByHandlesEx                          RT_MANGLER(RTFileCopyByHandlesEx)
 # define RTFileCopyEx                                   RT_MANGLER(RTFileCopyEx)
