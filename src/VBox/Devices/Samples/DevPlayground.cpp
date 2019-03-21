@@ -199,13 +199,63 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
     /*
      * Validate and read the configuration.
      */
-    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Whatever1|Whatever2", "");
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Whatever1|NumFunctions|BigBAR0MB|BigBAR0GB|BigBAR2MB|BigBAR2GB", "");
+
+    uint8_t uNumFunctions;
+    rc = CFGMR3QueryU8Def(pCfg, "NumFunctions", &uNumFunctions, RT_ELEMENTS(pThis->aPciFuns));
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"NumFunctions\""));
+    if ((uNumFunctions < 1) || (uNumFunctions > RT_ELEMENTS(pThis->aPciFuns)))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Invalid \"NumFunctions\" value (must be between 1 and 8)"));
+
+    RTGCPHYS cbFirstBAR;
+    uint16_t uBigBAR0GB;
+    rc = CFGMR3QueryU16Def(pCfg, "BigBAR0GB", &uBigBAR0GB, 0);  /* Default to nothing. */
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"BigBAR0GB\""));
+    if (uBigBAR0GB > 512)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Invalid \"BigBAR0GB\" value (must be 512 or less)"));
+
+    if (uBigBAR0GB)
+        cbFirstBAR = uBigBAR0GB * _1G64;
+    else
+    {
+        uint16_t uBigBAR0MB;
+        rc = CFGMR3QueryU16Def(pCfg, "BigBAR0MB", &uBigBAR0MB, 8);  /* 8 MB default. */
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"BigBAR0MB\""));
+        if (uBigBAR0MB < 1 || uBigBAR0MB > 4095)
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Invalid \"BigBAR0MB\" value (must be between 1 and 4095)"));
+        cbFirstBAR = uBigBAR0MB * _1M;
+    }
+
+    RTGCPHYS cbSecondBAR;
+    uint16_t uBigBAR2GB;
+    rc = CFGMR3QueryU16Def(pCfg, "BigBAR2GB", &uBigBAR2GB, 0);  /* Default to nothing. */
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"BigBAR2GB\""));
+    if (uBigBAR2GB > 512)
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Invalid \"BigBAR2GB\" value (must be 512 or less)"));
+
+    if (uBigBAR2GB)
+        cbSecondBAR = uBigBAR2GB * _1G64;
+    else
+    {
+        uint16_t uBigBAR2MB;
+        rc = CFGMR3QueryU16Def(pCfg, "BigBAR2MB", &uBigBAR2MB, 16); /* 16 MB default. */
+        if (RT_FAILURE(rc))
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"BigBAR2MB\""));
+        if (uBigBAR2MB < 1 || uBigBAR2MB > 4095)
+            return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Invalid \"BigBAR2MB\" value (must be between 1 and 4095)"));
+        cbSecondBAR = uBigBAR2MB * _1M;
+    }
+
 
     /*
      * PCI device setup.
      */
     uint32_t iPciDevNo = PDMPCIDEVREG_DEV_NO_FIRST_UNUSED;
-    for (uint32_t iPciFun = 0; iPciFun < RT_ELEMENTS(pThis->aPciFuns); iPciFun++)
+    for (uint32_t iPciFun = 0; iPciFun < uNumFunctions; iPciFun++)
     {
         PVBOXPLAYGROUNDDEVICEFUNCTION pFun = &pThis->aPciFuns[iPciFun];
         RTStrPrintf(pFun->szName, sizeof(pThis->aPciFuns[iPciFun].PciDev), "playground%u", iPciFun);
@@ -219,11 +269,11 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
             PCIDevSetHeaderType(&pFun->PciDev, 0x80); /* normal, multifunction device */
 
         rc = PDMDevHlpPCIRegisterEx(pDevIns, &pFun->PciDev, iPciFun, 0 /*fFlags*/, iPciDevNo, iPciFun,
-                                        pThis->aPciFuns[iPciFun].szName);
+                                    pThis->aPciFuns[iPciFun].szName);
         AssertLogRelRCReturn(rc, rc);
 
         /* First region. */
-        RTGCPHYS const cbFirst = iPciFun == 0 ? 8*_1M : iPciFun * _4K;
+        RTGCPHYS const cbFirst = iPciFun == 0 ? cbFirstBAR : iPciFun * _4K;
         rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, &pFun->PciDev, 0, cbFirst,
                                             (PCIADDRESSSPACE)(  PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64
                                                               | (iPciFun == 0 ? PCI_ADDRESS_SPACE_MEM_PREFETCH : 0)),
@@ -240,7 +290,7 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
         AssertLogRelRCReturn(rc, rc);
 
         /* Second region. */
-        RTGCPHYS const cbSecond = iPciFun == 0  ? 32*_1M : iPciFun * _32K;
+        RTGCPHYS const cbSecond = iPciFun == 0  ? cbSecondBAR : iPciFun * _32K;
         rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, &pFun->PciDev, 2, cbSecond,
                                             (PCIADDRESSSPACE)(  PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64
                                                               | (iPciFun == 0 ? PCI_ADDRESS_SPACE_MEM_PREFETCH : 0)),
