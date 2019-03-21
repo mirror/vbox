@@ -1083,7 +1083,12 @@ static DECLCALLBACK(int) supHardNtViCallback(RTLDRMOD hLdrMod, RTLDRSIGNATURETYP
         if (!RTCrX509Certificate_MatchIssuerAndSerialNumber(&g_BuildX509Cert,
                                                             &pSignerInfo->IssuerAndSerialNumber.Name,
                                                             &pSignerInfo->IssuerAndSerialNumber.SerialNumber))
-            return RTErrInfoSet(pErrInfo, VERR_SUP_VP_NOT_SIGNED_WITH_BUILD_CERT, "Not signed with the build certificate.");
+            return RTErrInfoSetF(pErrInfo, VERR_SUP_VP_NOT_SIGNED_WITH_BUILD_CERT,
+                                 "Not signed with the build certificate (serial %.*Rhxs, expected %.*Rhxs)",
+                                 pSignerInfo->IssuerAndSerialNumber.SerialNumber.Asn1Core.cb,
+                                 pSignerInfo->IssuerAndSerialNumber.SerialNumber.Asn1Core.uData.pv,
+                                 g_BuildX509Cert.TbsCertificate.SerialNumber.Asn1Core.cb,
+                                 g_BuildX509Cert.TbsCertificate.SerialNumber.Asn1Core.uData.pv);
     }
 
     /*
