@@ -566,9 +566,9 @@ QVariant UIChooserItemMachine::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case MachineItemData_MarginHL:       return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
-        case MachineItemData_MarginHR:       return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4 * 5;
-        case MachineItemData_MarginV:       return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4 * 3;
+        case MachineItemData_MarginHL:     return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        case MachineItemData_MarginHR:     return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4 * 5;
+        case MachineItemData_MarginV:      return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4 * 3;
         case MachineItemData_MajorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case MachineItemData_MinorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
         case MachineItemData_TextSpacing:  return 0;
@@ -577,9 +577,9 @@ QVariant UIChooserItemMachine::data(int iKey) const
 
         /* Pixmaps: */
         case MachineItemData_SettingsButtonPixmap: return UIIconPool::iconSet(":/vm_settings_16px.png");
-        case MachineItemData_StartButtonPixmap: return UIIconPool::iconSet(":/vm_start_16px.png");
-        case MachineItemData_PauseButtonPixmap: return UIIconPool::iconSet(":/vm_pause_16px.png");
-        case MachineItemData_CloseButtonPixmap: return UIIconPool::iconSet(":/exit_16px.png");
+        case MachineItemData_StartButtonPixmap:    return UIIconPool::iconSet(":/vm_start_16px.png");
+        case MachineItemData_PauseButtonPixmap:    return UIIconPool::iconSet(":/vm_pause_16px.png");
+        case MachineItemData_CloseButtonPixmap:    return UIIconPool::iconSet(":/exit_16px.png");
 
         /* Default: */
         default: break;

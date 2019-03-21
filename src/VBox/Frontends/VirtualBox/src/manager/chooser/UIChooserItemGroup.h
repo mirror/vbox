@@ -215,8 +215,9 @@ private:
     enum GroupItemData
     {
         /* Layout hints: */
-        GroupItemData_HorizonalMargin,
-        GroupItemData_VerticalMargin,
+        GroupItemData_MarginHL,
+        GroupItemData_MarginHR,
+        GroupItemData_MarginV,
         GroupItemData_HeaderSpacing,
         GroupItemData_ChildrenSpacing,
         GroupItemData_ParentIndent,

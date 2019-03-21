@@ -199,9 +199,9 @@ void UIChooserItemGroup::hoverMoveEvent(QGraphicsSceneHoverEvent *pEvent)
 
     /* Prepare variables: */
     const QPoint pos = pEvent->pos().toPoint();
-    const int iMargin = data(GroupItemData_VerticalMargin).toInt();
+    const int iMarginV = data(GroupItemData_MarginV).toInt();
     const int iHeaderHeight = m_minimumHeaderSize.height();
-    const int iFullHeaderHeight = 2 * iMargin + iHeaderHeight;
+    const int iFullHeaderHeight = 2 * iMarginV + iHeaderHeight;
     /* Skip if hovered part out of the header: */
     if (pos.y() >= iFullHeaderHeight)
         return;
@@ -265,8 +265,8 @@ void UIChooserItemGroup::startEditing()
     m_pNameEditorWidget->setText(name());
 
     /* Layout name-editor: */
-    const int iMargin = data(GroupItemData_VerticalMargin).toInt();
-    const int iHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
+    const int iMarginV = data(GroupItemData_MarginV).toInt();
+    const int iHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();
     const QSize headerSize = QSize(geometry().width(), iHeaderHeight);
     const QGraphicsView *pView = model()->scene()->views().first();
     const QPointF viewPoint = pView->mapFromScene(mapToScene(QPointF(0, 0)));
@@ -572,8 +572,9 @@ void UIChooserItemGroup::updateGeometry()
 void UIChooserItemGroup::updateLayout()
 {
     /* Prepare variables: */
-    const int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
-    const int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
+    const int iMarginHL = data(GroupItemData_MarginHL).toInt();
+    const int iMarginHR = data(GroupItemData_MarginHR).toInt();
+    const int iMarginV = data(GroupItemData_MarginV).toInt();
     const int iParentIndent = data(GroupItemData_ParentIndent).toInt();
     const int iFullHeaderHeight = m_minimumHeaderSize.height();
     int iPreviousVerticalIndent = 0;
@@ -601,15 +602,15 @@ void UIChooserItemGroup::updateLayout()
                 int iExitButtonHeight = m_exitButtonSize.height();
                 /* Layout exit-button: */
                 int iExitButtonX = iHorizontalMargin;
-                int iExitButtonY = iExitButtonHeight == iFullHeaderHeight ? iVerticalMargin :
-                                   iVerticalMargin + (iFullHeaderHeight - iExitButtonHeight) / 2;
+                int iExitButtonY = iExitButtonHeight == iFullHeaderHeight ? iMarginV :
+                                   iMarginV + (iFullHeaderHeight - iExitButtonHeight) / 2;
                 m_pExitButton->setPos(iExitButtonX, iExitButtonY);
                 /* Show exit-button: */
                 m_pExitButton->show();
             }
 
             /* Prepare body indent: */
-            iPreviousVerticalIndent = iVerticalMargin + iFullHeaderHeight + iVerticalMargin;
+            iPreviousVerticalIndent = iMarginV + iFullHeaderHeight + iMarginV;
         }
 #endif
 
@@ -637,9 +638,9 @@ void UIChooserItemGroup::updateLayout()
             /* Prepare variables: */
             int iToggleButtonHeight = m_toggleButtonSize.height();
             /* Layout toggle-button: */
-            int iToggleButtonX = iHorizontalMargin + iParentIndent * level();
-            int iToggleButtonY = iToggleButtonHeight == iFullHeaderHeight ? iVerticalMargin :
-                                 iVerticalMargin + (iFullHeaderHeight - iToggleButtonHeight) / 2;
+            int iToggleButtonX = iMarginHL + iParentIndent * level();;
+            int iToggleButtonY = iToggleButtonHeight == iFullHeaderHeight ? iMarginV :
+                                 iMarginV + (iFullHeaderHeight - iToggleButtonHeight) / 2;
             m_pToggleButton->setPos(iToggleButtonX, iToggleButtonY);
             /* Show toggle-button: */
             m_pToggleButton->show();
@@ -653,14 +654,14 @@ void UIChooserItemGroup::updateLayout()
             int iEnterButtonWidth = m_enterButtonSize.width();
             int iEnterButtonHeight = m_enterButtonSize.height();
             /* Layout enter-button: */
-            int iEnterButtonX = iFullWidth - iHorizontalMargin - iEnterButtonWidth;
-            int iEnterButtonY = iEnterButtonHeight == iFullHeaderHeight ? iVerticalMargin :
-                                iVerticalMargin + (iFullHeaderHeight - iEnterButtonHeight) / 2;
+            int iEnterButtonX = iFullWidth - iMarginHR - iEnterButtonWidth;
+            int iEnterButtonY = iEnterButtonHeight == iFullHeaderHeight ? iMarginV :
+                                iMarginV + (iFullHeaderHeight - iEnterButtonHeight) / 2;
             m_pEnterButton->setPos(iEnterButtonX, iEnterButtonY);
         }
 
         /* Prepare body indent: */
-        iPreviousVerticalIndent = 2 * iVerticalMargin + iFullHeaderHeight;
+        iPreviousVerticalIndent = 2 * iMarginV + iFullHeaderHeight;
 
         /* Adjust scroll-view geometry: */
         QSize itemSize = size().toSize();
@@ -1229,8 +1230,9 @@ QVariant UIChooserItemGroup::data(int iKey) const
     switch (iKey)
     {
         /* Layout hints: */
-        case GroupItemData_HorizonalMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
-        case GroupItemData_VerticalMargin:  return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
+        case GroupItemData_MarginHL:        return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
+        case GroupItemData_MarginHR:        return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4 * 5;
+        case GroupItemData_MarginV:         return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case GroupItemData_HeaderSpacing:   return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case GroupItemData_ChildrenSpacing: return 1;
         case GroupItemData_ParentIndent:    return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
@@ -1372,7 +1374,8 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
     else
     {
         /* Prepare variables: */
-        const int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
+        const int iMarginHL = data(GroupItemData_MarginHL).toInt();
+        const int iMarginHR = data(GroupItemData_MarginHR).toInt();
         const int iParentIndent = data(GroupItemData_ParentIndent).toInt();
 
         /* Basically we have to take header width into account: */
@@ -1387,7 +1390,7 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
         }
 
         /* And 2 margins at last - left and right: */
-        iProposedWidth += 2 * iHorizontalMargin + iParentIndent * level();
+        iProposedWidth += iMarginHL + iMarginHR + iParentIndent * level();
     }
 
     /* Return result: */
@@ -1414,10 +1417,10 @@ int UIChooserItemGroup::minimumHeightHintForGroup(bool fGroupOpened) const
     else
     {
         /* Prepare variables: */
-        const int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
+        const int iMarginV = data(GroupItemData_MarginV).toInt();
 
         /* Group-item header have 2 margins - top and bottom: */
-        iProposedHeight += 2 * iVerticalMargin;
+        iProposedHeight += 2 * iMarginV;
         /* And header content height to take into account: */
         iProposedHeight += m_minimumHeaderSize.height();
 
@@ -1450,7 +1453,8 @@ void UIChooserItemGroup::updateVisibleName()
         return;
 
     /* Prepare variables: */
-    int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
+    int iMarginHL = data(GroupItemData_MarginHL).toInt();
+    int iMarginHR = data(GroupItemData_MarginHR).toInt();
     int iHeaderSpacing = data(GroupItemData_HeaderSpacing).toInt();
     int iToggleButtonWidth = m_toggleButtonSize.width();
     int iEnterButtonWidth = m_enterButtonSize.width();
@@ -1462,7 +1466,7 @@ void UIChooserItemGroup::updateVisibleName()
     int iMaximumWidth = (int)geometry().width();
 
     /* Left margin: */
-    iMaximumWidth -= iHorizontalMargin;
+    iMaximumWidth -= iMarginHL;
     /* Button width: */
     if (isRoot())
         iMaximumWidth -= iExitButtonWidth;
@@ -1485,7 +1489,7 @@ void UIChooserItemGroup::updateVisibleName()
             iMaximumWidth -= iEnterButtonWidth;
     }
     /* Right margin: */
-    iMaximumWidth -= iHorizontalMargin;
+    iMaximumWidth -= iMarginHR;
     /* Calculate new visible name and name-size: */
     QPaintDevice *pPaintDevice = model()->paintDevice();
     QString strVisibleName = compressText(m_nameFont, pPaintDevice, name(), iMaximumWidth);
@@ -1613,8 +1617,8 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         if (!isMainRoot())
         {
             /* Prepare variables: */
-            const int iMargin = data(GroupItemData_VerticalMargin).toInt();
-            const int iFullHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
+            const int iMarginV = data(GroupItemData_MarginV).toInt();
+            const int iFullHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();
             QRect headerRect = QRect(0, 0, rect.width(), iFullHeaderHeight);
 
             /* Fill background: */
@@ -1629,8 +1633,8 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     else
     {
         /* Prepare variables: */
-        const int iMargin = data(GroupItemData_VerticalMargin).toInt();
-        const int iFullHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
+        const int iMarginV = data(GroupItemData_MarginV).toInt();
+        const int iFullHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();
 
         /* Calculate top rectangle: */
         QRect tRect = rect;
@@ -1682,8 +1686,8 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
     pPainter->save();
 
     /* Prepare variables: */
-    const int iMargin = data(GroupItemData_VerticalMargin).toInt();
-    const int iFullHeaderHeight = 2 * iMargin + m_minimumHeaderSize.height();
+    const int iMarginV = data(GroupItemData_MarginV).toInt();
+    const int iFullHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();
 
     /* Prepare color: */
     const QPalette pal = palette();
@@ -1716,8 +1720,9 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
         return;
 
     /* Prepare variables: */
-    const int iHorizontalMargin = data(GroupItemData_HorizonalMargin).toInt();
-    const int iVerticalMargin = data(GroupItemData_VerticalMargin).toInt();
+    const int iMarginHL = data(GroupItemData_MarginHL).toInt();
+    const int iMarginHR = data(GroupItemData_MarginHR).toInt();
+    const int iMarginV = data(GroupItemData_MarginV).toInt();
     const int iHeaderSpacing = data(GroupItemData_HeaderSpacing).toInt();
     const int iParentIndent = data(GroupItemData_ParentIndent).toInt();
     const int iFullHeaderHeight = m_minimumHeaderSize.height();
@@ -1728,14 +1733,14 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
                                      QPalette::HighlightedText : QPalette::ButtonText));
 
     /* Paint name: */
-    int iNameX = iHorizontalMargin + iParentIndent * level();
+    int iNameX = iMarginHL + iParentIndent * level();
     if (isRoot())
         iNameX += m_exitButtonSize.width();
     else
         iNameX += m_toggleButtonSize.width();
     iNameX += iHeaderSpacing;
-    int iNameY = m_visibleNameSize.height() == iFullHeaderHeight ? iVerticalMargin :
-                 iVerticalMargin + (iFullHeaderHeight - m_visibleNameSize.height()) / 2;
+    int iNameY = m_visibleNameSize.height() == iFullHeaderHeight ? iMarginV :
+                 iMarginV + (iFullHeaderHeight - m_visibleNameSize.height()) / 2;
     paintText(/* Painter: */
               pPainter,
               /* Point to paint in: */
@@ -1754,7 +1759,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
         int iEnterButtonWidth = m_enterButtonSize.width();
 
         /* Indent: */
-        int iHorizontalIndent = rect.right() - iHorizontalMargin;
+        int iHorizontalIndent = rect.right() - iMarginHR;
         if (!isRoot())
             iHorizontalIndent -= iEnterButtonWidth;
 
@@ -1764,7 +1769,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
             iHorizontalIndent -= m_infoSizeMachines.width();
             int iMachineCountTextX = iHorizontalIndent;
             int iMachineCountTextY = m_infoSizeMachines.height() == iFullHeaderHeight ?
-                                     iVerticalMargin : iVerticalMargin + (iFullHeaderHeight - m_infoSizeMachines.height()) / 2;
+                                     iMarginV : iMarginV + (iFullHeaderHeight - m_infoSizeMachines.height()) / 2;
             paintText(/* Painter: */
                       pPainter,
                       /* Point to paint in: */
@@ -1779,7 +1784,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
             iHorizontalIndent -= m_pixmapSizeMachines.width();
             int iMachinePixmapX = iHorizontalIndent;
             int iMachinePixmapY = m_pixmapSizeMachines.height() == iFullHeaderHeight ?
-                                  iVerticalMargin : iVerticalMargin + (iFullHeaderHeight - m_pixmapSizeMachines.height()) / 2;
+                                  iMarginV : iMarginV + (iFullHeaderHeight - m_pixmapSizeMachines.height()) / 2;
             paintPixmap(/* Painter: */
                         pPainter,
                         /* Point to paint in: */
@@ -1794,7 +1799,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
             iHorizontalIndent -= m_infoSizeGroups.width();
             int iGroupCountTextX = iHorizontalIndent;
             int iGroupCountTextY = m_infoSizeGroups.height() == iFullHeaderHeight ?
-                                   iVerticalMargin : iVerticalMargin + (iFullHeaderHeight - m_infoSizeGroups.height()) / 2;
+                                   iMarginV : iMarginV + (iFullHeaderHeight - m_infoSizeGroups.height()) / 2;
             paintText(/* Painter: */
                       pPainter,
                       /* Point to paint in: */
@@ -1809,7 +1814,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
             iHorizontalIndent -= m_pixmapSizeGroups.width();
             int iGroupPixmapX = iHorizontalIndent;
             int iGroupPixmapY = m_pixmapSizeGroups.height() == iFullHeaderHeight ?
-                                iVerticalMargin : iVerticalMargin + (iFullHeaderHeight - m_pixmapSizeGroups.height()) / 2;
+                                iMarginV : iMarginV + (iFullHeaderHeight - m_pixmapSizeGroups.height()) / 2;
             paintPixmap(/* Painter: */
                         pPainter,
                         /* Point to paint in: */
