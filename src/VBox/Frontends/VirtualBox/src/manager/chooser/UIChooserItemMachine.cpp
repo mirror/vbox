@@ -284,14 +284,13 @@ int UIChooserItemMachine::minimumWidthHint() const
     const int iMarginHR = data(MachineItemData_MarginHR).toInt();
     const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     const int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
-    const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
     const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
 
     /* Calculating proposed width: */
     int iProposedWidth = 0;
 
     /* Two margins: */
-    iProposedWidth += iMarginHL + iMarginHR + iParentIndent * level();
+    iProposedWidth += iMarginHL + iMarginHR;
     /* And machine-item content to take into account: */
     int iTopLineWidth = m_iMinimumNameWidth;
     if (!node()->toMachineNode()->snapshotName().isEmpty())
@@ -572,7 +571,6 @@ QVariant UIChooserItemMachine::data(int iKey) const
         case MachineItemData_MajorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case MachineItemData_MinorSpacing: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
         case MachineItemData_TextSpacing:  return 0;
-        case MachineItemData_ParentIndent: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         case MachineItemData_ButtonMargin: return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 4;
 
         /* Pixmaps: */
@@ -666,12 +664,10 @@ void UIChooserItemMachine::updateFirstRowMaximumWidth()
     const int iMarginHL = data(MachineItemData_MarginHL).toInt();
     const int iMarginHR = data(MachineItemData_MarginHR).toInt();
     const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
-    const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
     const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
 
     /* Calculate new maximum width for the first row: */
     int iFirstRowMaximumWidth = (int)geometry().width();
-    iFirstRowMaximumWidth -= iParentIndent * level();
     iFirstRowMaximumWidth -= iMarginHL; /* left margin */
     iFirstRowMaximumWidth -= m_pixmapSize.width(); /* left pixmap width */
     iFirstRowMaximumWidth -= iMajorSpacing; /* spacing between left pixmap and name(s) */
@@ -1030,7 +1026,6 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
     const int iMajorSpacing = data(MachineItemData_MajorSpacing).toInt();
     const int iMinorSpacing = data(MachineItemData_MinorSpacing).toInt();
     const int iMachineItemTextSpacing = data(MachineItemData_TextSpacing).toInt();
-    const int iParentIndent = data(MachineItemData_ParentIndent).toInt();
     const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
 
     /* Selected or hovered item foreground: */
@@ -1047,7 +1042,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
     }
 
     /* Calculate indents: */
-    int iLeftColumnIndent = iMarginHL + iParentIndent * level();
+    int iLeftColumnIndent = iMarginHL;
 
     /* Paint left column: */
     {

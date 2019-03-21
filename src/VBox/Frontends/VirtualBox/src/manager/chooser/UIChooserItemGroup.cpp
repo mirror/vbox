@@ -638,7 +638,7 @@ void UIChooserItemGroup::updateLayout()
             /* Prepare variables: */
             int iToggleButtonHeight = m_toggleButtonSize.height();
             /* Layout toggle-button: */
-            int iToggleButtonX = iMarginHL + iParentIndent * level();;
+            int iToggleButtonX = iMarginHL;
             int iToggleButtonY = iToggleButtonHeight == iFullHeaderHeight ? iMarginV :
                                  iMarginV + (iFullHeaderHeight - iToggleButtonHeight) / 2;
             m_pToggleButton->setPos(iToggleButtonX, iToggleButtonY);
@@ -667,12 +667,12 @@ void UIChooserItemGroup::updateLayout()
         QSize itemSize = size().toSize();
         itemSize.setHeight(itemSize.height() - iPreviousVerticalIndent);
         /* Adjust favorite children container: */
-        m_pContainerFavorite->resize(itemSize.width(), m_pContainerFavorite->minimumSizeHint().height());
-        m_pContainerFavorite->setPos(0, iPreviousVerticalIndent);
+        m_pContainerFavorite->resize(itemSize.width() - iParentIndent, m_pContainerFavorite->minimumSizeHint().height());
+        m_pContainerFavorite->setPos(iParentIndent, iPreviousVerticalIndent);
         iPreviousVerticalIndent += m_pContainerFavorite->minimumSizeHint().height();
         /* Adjust other children scroll-area: */
-        m_pScrollArea->resize(itemSize.width(), itemSize.height() - m_pContainerFavorite->minimumSizeHint().height());
-        m_pScrollArea->setPos(0, iPreviousVerticalIndent);
+        m_pScrollArea->resize(itemSize.width() - iParentIndent, itemSize.height() - m_pContainerFavorite->minimumSizeHint().height());
+        m_pScrollArea->setPos(iParentIndent, iPreviousVerticalIndent);
     }
 
     /* No body for closed group: */
@@ -1235,7 +1235,7 @@ QVariant UIChooserItemGroup::data(int iKey) const
         case GroupItemData_MarginV:         return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case GroupItemData_HeaderSpacing:   return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
         case GroupItemData_ChildrenSpacing: return 1;
-        case GroupItemData_ParentIndent:    return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+        case GroupItemData_ParentIndent:    return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize) / 2;
 
         /* Default: */
         default: break;
@@ -1376,7 +1376,6 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
         /* Prepare variables: */
         const int iMarginHL = data(GroupItemData_MarginHL).toInt();
         const int iMarginHR = data(GroupItemData_MarginHR).toInt();
-        const int iParentIndent = data(GroupItemData_ParentIndent).toInt();
 
         /* Basically we have to take header width into account: */
         iProposedWidth += m_minimumHeaderSize.width();
@@ -1390,7 +1389,7 @@ int UIChooserItemGroup::minimumWidthHintForGroup(bool fGroupOpened) const
         }
 
         /* And 2 margins at last - left and right: */
-        iProposedWidth += iMarginHL + iMarginHR + iParentIndent * level();
+        iProposedWidth += iMarginHL + iMarginHR;
     }
 
     /* Return result: */
@@ -1649,6 +1648,16 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
         /* Fill top rectangle: */
         pPainter->fillRect(tRect, tGradient);
 
+        /* Calculate bottom rectangle: */
+        if (node()->toGroupNode()->isOpened())
+        {
+            QRect bRect = rect;
+            bRect.setTop(bRect.top() + iFullHeaderHeight);
+
+            /* Fill top rectangle: */
+            pPainter->fillRect(bRect, headerColor.darker(headerDarkness()));
+        }
+
         /* Paint drag token UP? */
         if (dragTokenPlace() != UIChooserItemDragToken_Off)
         {
@@ -1687,6 +1696,7 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
 
     /* Prepare variables: */
     const int iMarginV = data(GroupItemData_MarginV).toInt();
+    const int iParentIndent = data(GroupItemData_ParentIndent).toInt();
     const int iFullHeaderHeight = 2 * iMarginV + m_minimumHeaderSize.height();
 
     /* Prepare color: */
@@ -1706,8 +1716,11 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
         topRect.setBottom(topRect.top() + iFullHeaderHeight - 1);
 
     /* Draw borders: */
-    pPainter->drawLine(topRect.bottomLeft(), topRect.bottomRight() + QPoint(1, 0));
-    pPainter->drawLine(topRect.topLeft(),    topRect.bottomLeft());
+    if (node()->hasNodes() && node()->toGroupNode()->isOpened())
+        pPainter->drawLine(topRect.bottomLeft() + QPoint(iParentIndent, 0), topRect.bottomRight() + QPoint(1, 0));
+    else
+        pPainter->drawLine(topRect.bottomLeft(), topRect.bottomRight() + QPoint(1, 0));
+    pPainter->drawLine(rectangle.topLeft(), rectangle.bottomLeft());
 
     /* Restore painter: */
     pPainter->restore();
@@ -1724,7 +1737,6 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
     const int iMarginHR = data(GroupItemData_MarginHR).toInt();
     const int iMarginV = data(GroupItemData_MarginV).toInt();
     const int iHeaderSpacing = data(GroupItemData_HeaderSpacing).toInt();
-    const int iParentIndent = data(GroupItemData_ParentIndent).toInt();
     const int iFullHeaderHeight = m_minimumHeaderSize.height();
 
     /* Configure painter color: */
@@ -1733,7 +1745,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
                                      QPalette::HighlightedText : QPalette::ButtonText));
 
     /* Paint name: */
-    int iNameX = iMarginHL + iParentIndent * level();
+    int iNameX = iMarginHL;
     if (isRoot())
         iNameX += m_exitButtonSize.width();
     else

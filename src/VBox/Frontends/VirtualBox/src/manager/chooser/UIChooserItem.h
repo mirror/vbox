@@ -136,11 +136,6 @@ public:
         /** Returns item position. */
         int position() const;
 
-        /** Returns a level of item. */
-        int level() const;
-        /** Defines a @a iLevel of item. */
-        void setLevel(int iLevel);
-
         /** Returns whether item is hovered. */
         bool isHovered() const;
         /** Defines whether item is @a fHovered. */
@@ -320,9 +315,6 @@ private:
         UIChooserItem *m_pParent;
         /** Holds the node this item is built for. */
         UIChooserNode *m_pNode;
-
-        /** Holds the item level according to root. */
-        int  m_iLevel;
 
         /** Holds whether item is hovered. */
         bool                m_fHovered;

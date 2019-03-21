@@ -184,7 +184,6 @@ private:
         MachineItemData_MajorSpacing,
         MachineItemData_MinorSpacing,
         MachineItemData_TextSpacing,
-        MachineItemData_ParentIndent,
         MachineItemData_ButtonMargin,
         /* Pixmaps: */
         MachineItemData_SettingsButtonPixmap,
