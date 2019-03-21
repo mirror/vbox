@@ -29,7 +29,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #ifdef IN_RING0
-# define IPRT_NT_MAP_TO_ZW
+# ifndef IPRT_NT_MAP_TO_ZW
+#  define IPRT_NT_MAP_TO_ZW
+# endif
 # include <iprt/nt/nt.h>
 # include <ntimage.h>
 #else

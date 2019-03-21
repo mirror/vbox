@@ -29,6 +29,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP RTLOGGROUP_FS
+#if !defined(IPRT_NT_MAP_TO_ZW) && defined(IN_RING0)
+# define IPRT_NT_MAP_TO_ZW
+#endif
 #ifdef IN_SUP_HARDENED_R3
 # include <iprt/nt/nt-and-windows.h>
 #else

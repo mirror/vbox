@@ -84,6 +84,7 @@ RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode)
         case STATUS_DIRECTORY_NOT_EMPTY:    return VERR_DIR_NOT_EMPTY;
         case STATUS_SHARING_VIOLATION:      return VERR_SHARING_VIOLATION;
         case STATUS_NO_MEDIA_IN_DEVICE:     return VERR_DRIVE_IS_EMPTY;
+        case STATUS_ACCESS_VIOLATION:       return VERR_INVALID_POINTER;
 
         case STATUS_REPARSE_POINT_NOT_RESOLVED:
                                             return VERR_TOO_MANY_SYMLINKS;

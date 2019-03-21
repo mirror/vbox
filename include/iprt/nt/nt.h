@@ -39,6 +39,7 @@
 #endif
 
 #ifdef IPRT_NT_MAP_TO_ZW
+# define NtQueryDirectoryFile           ZwQueryDirectoryFile
 # define NtQueryInformationFile         ZwQueryInformationFile
 # define NtQueryInformationProcess      ZwQueryInformationProcess
 # define NtQueryInformationThread       ZwQueryInformationThread
@@ -387,6 +388,21 @@ RTDECL(PRTUTF16) RTNtPathFindPossible8dot3Name(PCRTUTF16 pwszPath);
  *                      as passed in.
  */
 RTDECL(int) RTNtPathExpand8dot3Path(struct _UNICODE_STRING *pUniStr, bool fPathOnly);
+
+/**
+ * Wrapper around RTNtPathExpand8dot3Path that allocates a buffer instead of
+ * working on the input buffer.
+ *
+ * @returns IPRT status code, see RTNtPathExpand8dot3Path().
+ * @param   pUniStrSrc  The path to fix up. MaximumLength is the max buffer
+ *                      length.
+ * @param   fPathOnly   Whether to only process the path and leave the filename
+ *                      as passed in.
+ * @param   pUniStrDst  Output string.  On success, the caller must use
+ *                      RTUtf16Free to free what the Buffer member points to.
+ *                      This is all zeros and NULL on failure.
+ */
+RTDECL(int) RTNtPathExpand8dot3PathA(struct _UNICODE_STRING const *pShort, bool fPathOnly, struct _UNICODE_STRING *pUniStrDst);
 
 
 RT_C_DECLS_END

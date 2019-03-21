@@ -839,6 +839,7 @@ RuntimeR3_SOURCES.win = \
 	generic/RTThreadGetNativeState-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	nt/RTNtPathExpand8dot3Path.cpp \
+	nt/RTNtPathExpand8dot3PathA.cpp \
 	nt/RTNtPathFindPossible8dot3Name.cpp \
 	nt/fileioutils-nt.cpp \
 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
@@ -2929,6 +2930,7 @@ RuntimeR0Drv_SOURCES.win = \
 	generic/rtStrFormatKernelAddress-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	nt/RTNtPathExpand8dot3Path.cpp \
+	nt/RTNtPathExpand8dot3PathA.cpp \
 	nt/RTNtPathFindPossible8dot3Name.cpp \
 	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/alloc-ef-r0drv.cpp \

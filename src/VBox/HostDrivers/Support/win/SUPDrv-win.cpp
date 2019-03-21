@@ -28,7 +28,9 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define IPRT_NT_MAP_TO_ZW
+#ifndef IPRT_NT_MAP_TO_ZW
+# define IPRT_NT_MAP_TO_ZW
+#endif
 #define LOG_GROUP LOG_GROUP_SUP_DRV
 #include "../SUPDrvInternal.h"
 #include <excpt.h>

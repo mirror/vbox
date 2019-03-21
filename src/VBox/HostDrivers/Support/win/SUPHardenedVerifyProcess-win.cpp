@@ -29,7 +29,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #ifdef IN_RING0
-# define IPRT_NT_MAP_TO_ZW
+# ifndef IPRT_NT_MAP_TO_ZW
+#  define IPRT_NT_MAP_TO_ZW
+# endif
 # include <iprt/nt/nt.h>
 # include <ntimage.h>
 #else
@@ -1169,6 +1171,53 @@ static bool supHardNtVpAreNamesEqual(const char *pszName1, PCRTUTF16 pwszName2)
 
 
 /**
+ * Compares two paths, expanding 8.3 short names as needed.
+ *
+ * @returns true / false.
+ * @param   pUniStr1        The first path.  Must be zero terminated!
+ * @param   pUniStr2        The second path.  Must be zero terminated!
+ */
+static bool supHardNtVpArePathsEqual(PCUNICODE_STRING pUniStr1, PCUNICODE_STRING pUniStr2)
+{
+    /* Both strings must be null terminated. */
+    Assert(pUniStr1->Buffer[pUniStr1->Length / sizeof(WCHAR)] == '\0');
+    Assert(pUniStr2->Buffer[pUniStr1->Length / sizeof(WCHAR)] == '\0');
+
+    /* Simple compare first.*/
+    if (supHardNtVpAreUniStringsEqual(pUniStr1, pUniStr2))
+        return true;
+
+    /* Make long names if needed. */
+    UNICODE_STRING UniStrLong1 = { 0, 0, NULL };
+    if (RTNtPathFindPossible8dot3Name(pUniStr1->Buffer))
+    {
+        int rc = RTNtPathExpand8dot3PathA(pUniStr1, false /*fPathOnly*/, &UniStrLong1);
+        if (RT_SUCCESS(rc))
+            pUniStr1 = &UniStrLong1;
+    }
+
+    UNICODE_STRING UniStrLong2 = { 0, 0, NULL };
+    if (RTNtPathFindPossible8dot3Name(pUniStr2->Buffer))
+    {
+        int rc = RTNtPathExpand8dot3PathA(pUniStr2, false /*fPathOnly*/, &UniStrLong2);
+        if (RT_SUCCESS(rc))
+            pUniStr2 = &UniStrLong2;
+    }
+
+    /* Compare again. */
+    bool fCompare = supHardNtVpAreUniStringsEqual(pUniStr1, pUniStr2);
+
+    /* Clean up. */
+    if (UniStrLong1.Buffer)
+        RTUtf16Free(UniStrLong1.Buffer);
+    if (UniStrLong2.Buffer)
+        RTUtf16Free(UniStrLong2.Buffer);
+
+    return fCompare;
+}
+
+
+/**
  * Records an additional memory region for an image.
  *
  * May trash pThis->abMemory.
@@ -2263,15 +2312,13 @@ static int supHardNtVpCheckExe(PSUPHNTVPSTATE pThis)
     NTSTATUS rcNt = NtQueryInformationProcess(pThis->hProcess, ProcessImageFileName, pUniStr, cbUniStr - sizeof(WCHAR), &cbIgn);
     if (NT_SUCCESS(rcNt))
     {
-        if (supHardNtVpAreUniStringsEqual(pUniStr, &pImage->Name.UniStr))
+        pUniStr->Buffer[pUniStr->Length / sizeof(WCHAR)] = '\0';
+        if (supHardNtVpArePathsEqual(pUniStr, &pImage->Name.UniStr))
             rc = VINF_SUCCESS;
         else
-        {
-            pUniStr->Buffer[pUniStr->Length / sizeof(WCHAR)] = '\0';
             rc = supHardNtVpSetInfo2(pThis, VERR_SUP_VP_EXE_VS_PROC_NAME_MISMATCH,
                                      "Process image name does not match the exectuable we found: %ls vs %ls.",
                                      pUniStr->Buffer, pImage->Name.UniStr.Buffer);
-        }
     }
     else
         rc = supHardNtVpSetInfo2(pThis, VERR_SUP_VP_NT_QI_PROCESS_NM_ERROR,

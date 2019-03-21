@@ -392,6 +392,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
  	$(VBOX_PATH_RUNTIME_SRC)/nt/RTErrConvertFromNtStatus.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/nt/RTNtPathFindPossible8dot3Name.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/nt/RTNtPathExpand8dot3Path.cpp \
+ 	$(VBOX_PATH_RUNTIME_SRC)/nt/RTNtPathExpand8dot3PathA.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/r3/nt/pathint-nt.cpp \
  	$(VBOX_PATH_RUNTIME_SRC)/win/RTErrConvertFromWin32.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/win/errmsgwin.cpp

@@ -34,7 +34,9 @@
 #define PIMAGE_NT_HEADERS   NT_PIMAGE_NT_HEADERS
 #define PIMAGE_NT_HEADERS32 NT_PIMAGE_NT_HEADERS32
 #define PIMAGE_NT_HEADERS64 NT_PIMAGE_NT_HEADERS64
-#define IPRT_NT_MAP_TO_ZW
+#ifndef IPRT_NT_MAP_TO_ZW
+# define IPRT_NT_MAP_TO_ZW
+#endif
 #include "the-nt-kernel.h"
 #include <iprt/dbg.h>
 
