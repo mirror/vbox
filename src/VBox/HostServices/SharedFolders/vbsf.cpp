@@ -1381,7 +1381,7 @@ int vbsfCopyFilePart(SHFLCLIENTDATA *pClient, SHFLROOT idRootSrc, SHFLHANDLE hFi
 
     AssertPtrReturn(pClient, VERR_INVALID_PARAMETER);
 
-    size_t cbTotal = 0;
+    uint64_t cbTotal = 0;
 
     SHFLFILEHANDLE *pHandleSrc = vbsfQueryFileHandle(pClient, hFileSrc);
     int rc = vbsfCheckHandleAccess(pClient, idRootSrc, pHandleSrc, VBSF_CHECK_ACCESS_READ);
