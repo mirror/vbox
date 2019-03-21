@@ -39,6 +39,10 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
+#ifndef __NR_copy_file_range
+# define __NR_copy_file_range       285
+#endif
+
 /* Include the generic code as a fallback since copy_file_range is rather new . */
 #define IPRT_FALLBACK_VERSION
 #include "../../generic/RTFileCopyPartEx-generic.cpp"
