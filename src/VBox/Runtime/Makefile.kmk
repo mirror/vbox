@@ -669,7 +669,6 @@ RuntimeR3_SOURCES       = \
 	generic/RTFileCopyEx-generic.cpp \
 	generic/RTFileCopyByHandlesEx-generic.cpp \
 	generic/RTFileCopyPart-generic.cpp \
-	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileQuerySize-generic.cpp \
 	generic/RTFileReadAll-generic.cpp \
 	generic/RTFileReadAllEx-generic.cpp \
@@ -821,6 +820,7 @@ RuntimeR3_SOURCES.win = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/fileio-sg-generic.cpp \
 	generic/fileio-sg-at-generic.cpp \
+	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileExists-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTMpGetCurFrequency-generic.cpp \
@@ -941,6 +941,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/linux/sysfs.cpp \
 	r3/linux/time-linux.cpp \
 	r3/linux/thread-affinity-linux.cpp \
+	r3/linux/RTFileCopyPartEx-linux.cpp \
 	r3/linux/RTFileSetAllocationSize-linux.cpp \
 	r3/linux/RTProcIsRunningByName-linux.cpp \
 	r3/linux/RTSystemQueryDmiString-linux.cpp \
@@ -1017,6 +1018,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \
 	generic/fileio-sg-at-generic.cpp \
+	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1098,6 +1100,7 @@ RuntimeR3_SOURCES.darwin = \
 	generic/cdrom-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1183,6 +1186,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1266,6 +1270,7 @@ RuntimeR3_SOURCES.netbsd = \
 	generic/cdrom-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTPathAbs-generic.cpp \
@@ -1347,6 +1352,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTPathAbs-generic.cpp \
@@ -1442,6 +1448,7 @@ RuntimeR3_SOURCES.haiku = \
 	generic/fileio-at-generic.cpp \
 	generic/fileio-sg-generic.cpp \
 	generic/fileio-sg-at-generic.cpp \
+	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
@@ -1793,7 +1800,6 @@ RuntimeBldProg_SOURCES         = \
 	generic/RTFileCopyAttributes-generic.cpp \
 	generic/RTFileCopyEx-generic.cpp \
 	generic/RTFileCopyByHandlesEx-generic.cpp \
-	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileQuerySize-generic.cpp \
 	generic/RTFileReadAll-generic.cpp \
 	generic/RTFileReadAllByHandle-generic.cpp \
@@ -1834,6 +1840,7 @@ ifneq ($(KBUILD_HOST),win)
 endif
 RuntimeBldProg_SOURCES.darwin = $(filter-out \
 	generic/cdrom-generic.cpp \
+	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
@@ -1873,6 +1880,7 @@ RuntimeBldProg_SOURCES.win = \
 	generic/mppresent-generic-online.cpp \
 	generic/RTDirExists-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
+	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileExists-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTPathAbs-generic.cpp \
@@ -1941,6 +1949,7 @@ RuntimeBldProg_SOURCES.os2 += \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/fileio-at-generic.cpp \
+	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \

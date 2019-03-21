@@ -37,7 +37,11 @@
 #include <iprt/mem.h>
 
 
+#ifndef IPRT_FALLBACK_VERSION
 RTDECL(int) RTFileCopyPartPrep(PRTFILECOPYPARTBUFSTATE pBufState, uint64_t cbToCopy)
+#else
+static int rtFileCopyPartPrepFallback(PRTFILECOPYPARTBUFSTATE pBufState, uint64_t cbToCopy)
+#endif
 {
     /*
      * Allocate a fitting buffer.
@@ -70,7 +74,11 @@ RTDECL(int) RTFileCopyPartPrep(PRTFILECOPYPARTBUFSTATE pBufState, uint64_t cbToC
 }
 
 
+#ifndef IPRT_FALLBACK_VERSION
 RTDECL(void) RTFileCopyPartCleanup(PRTFILECOPYPARTBUFSTATE pBufState)
+#else
+static void rtFileCopyPartCleanupFallback(PRTFILECOPYPARTBUFSTATE pBufState)
+#endif
 {
     AssertReturnVoid(pBufState->uMagic == RTFILECOPYPARTBUFSTATE_MAGIC);
     if (pBufState->iAllocType == 1)
@@ -83,8 +91,13 @@ RTDECL(void) RTFileCopyPartCleanup(PRTFILECOPYPARTBUFSTATE pBufState)
 }
 
 
+#ifndef IPRT_FALLBACK_VERSION
 RTDECL(int) RTFileCopyPartEx(RTFILE hFileSrc, RTFOFF offSrc, RTFILE hFileDst, RTFOFF offDst, uint64_t cbToCopy,
                              uint32_t fFlags, PRTFILECOPYPARTBUFSTATE pBufState, uint64_t *pcbCopied)
+#else
+static int rtFileCopyPartExFallback(RTFILE hFileSrc, RTFOFF offSrc, RTFILE hFileDst, RTFOFF offDst, uint64_t cbToCopy,
+                                    uint32_t fFlags, PRTFILECOPYPARTBUFSTATE pBufState, uint64_t *pcbCopied)
+#endif
 {
     /*
      * Validate input.
@@ -116,7 +129,7 @@ RTDECL(int) RTFileCopyPartEx(RTFILE hFileSrc, RTFOFF offSrc, RTFILE hFileDst, RT
     int      rc       = VINF_SUCCESS;
     do
     {
-        size_t cbThisCopy = (size_t)RT_MIN(cbToCopy, pBufState->cbBuf);
+        size_t cbThisCopy = (size_t)RT_MIN(cbToCopy - cbCopied, pBufState->cbBuf);
         size_t cbActual   = 0;
         rc = RTFileReadAt(hFileSrc, offSrc + cbCopied, pBufState->pbBuf, cbThisCopy, &cbActual);
         if (RT_FAILURE(rc))
@@ -140,5 +153,4 @@ RTDECL(int) RTFileCopyPartEx(RTFILE hFileSrc, RTFOFF offSrc, RTFILE hFileDst, RT
 
     return rc;
 }
-RT_EXPORT_SYMBOL(RTFileCopyPartEx);
 
