@@ -40,13 +40,19 @@
 #include <sys/syscall.h>
 
 #ifndef __NR_copy_file_range
-# define __NR_copy_file_range       285
+# if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+#  define __NR_copy_file_range      285
+# endif
 #endif
 
+
+#ifndef __NR_copy_file_range
+# include "../../generic/RTFileCopyPartEx-generic.cpp"
+#else  /* __NR_copy_file_range - whole file */
 /* Include the generic code as a fallback since copy_file_range is rather new . */
-#define IPRT_FALLBACK_VERSION
-#include "../../generic/RTFileCopyPartEx-generic.cpp"
-#undef  IPRT_FALLBACK_VERSION
+# define IPRT_FALLBACK_VERSION
+# include "../../generic/RTFileCopyPartEx-generic.cpp"
+# undef  IPRT_FALLBACK_VERSION
 
 
 /*********************************************************************************************************************************
@@ -166,6 +172,6 @@ RTDECL(int) RTFileCopyPartEx(RTFILE hFileSrc, RTFOFF offSrc, RTFILE hFileDst, RT
 
     return rc;
 }
-RT_EXPORT_SYMBOL(RTFileCopyPartEx);
 
+#endif /* __NR_copy_file_range */
 
