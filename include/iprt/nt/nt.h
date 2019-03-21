@@ -402,7 +402,7 @@ RTDECL(int) RTNtPathExpand8dot3Path(struct _UNICODE_STRING *pUniStr, bool fPathO
  *                      RTUtf16Free to free what the Buffer member points to.
  *                      This is all zeros and NULL on failure.
  */
-RTDECL(int) RTNtPathExpand8dot3PathA(struct _UNICODE_STRING const *pShort, bool fPathOnly, struct _UNICODE_STRING *pUniStrDst);
+RTDECL(int) RTNtPathExpand8dot3PathA(struct _UNICODE_STRING const *pUniStrSrc, bool fPathOnly, struct _UNICODE_STRING *pUniStrDst);
 
 
 RT_C_DECLS_END
