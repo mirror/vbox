@@ -22,6 +22,9 @@
 #include "UIChooserHandlerKeyboard.h"
 #include "UIChooserModel.h"
 #include "UIChooserItemGroup.h"
+#include "UIChooserItemMachine.h"
+#include "UIChooserNodeGroup.h"
+#include "UIChooserNodeMachine.h"
 
 
 UIChooserHandlerKeyboard::UIChooserHandlerKeyboard(UIChooserModel *pParent)
@@ -326,61 +329,74 @@ bool UIChooserHandlerKeyboard::handleKeyRelease(QKeyEvent*) const
     return false;
 }
 
-void UIChooserHandlerKeyboard::shift(UIItemShiftDirection direction, UIItemShiftSize size) const
+void UIChooserHandlerKeyboard::shift(UIItemShiftDirection enmDirection, UIItemShiftType enmShiftType) const
 {
-    Q_UNUSED(direction);
-    Q_UNUSED(size);
-    /// @todo implement item shifting
+    /* Get focus-node and its parent: */
+    UIChooserNode *pFocusNode = model()->focusItem()->node();
+    UIChooserNode *pParentNode = pFocusNode->parentNode();
+    /* Get focus-node position: */
+    const int iFocusNodePosition = pFocusNode->position();
 
-#if 0
-    /* Get focus-item and his parent: */
-    UIChooserItem *pFocusItem = model()->focusItem();
-    UIChooserItem *pParentItem = pFocusItem->parentItem();
-    /* Get the list of focus-item neighbours: */
-    UIChooserItemType type = (UIChooserItemType)pFocusItem->type();
-    QList<UIChooserItem*> items = pParentItem->items(type);
-    /* Get focus-item position: */
-    int iFocusPosition = items.indexOf(pFocusItem);
-
-    /* Depending on direction: */
-    switch (direction)
+    /* Calculate new position: */
+    int iNewFocusNodePosition = -1;
+    switch (enmDirection)
     {
         case UIItemShiftDirection_Up:
         {
-            /* Is focus-item shiftable? */
-            if (iFocusPosition == 0)
-                return;
-            /* Shift item: */
-            switch (size)
-            {
-                case UIItemShiftSize_Item: items.move(iFocusPosition, iFocusPosition - 1); break;
-                case UIItemShiftSize_Full: items.move(iFocusPosition, 0); break;
-                default: break;
-            }
+            if (iFocusNodePosition > 0)
+                switch (enmShiftType)
+                {
+                    case UIItemShiftSize_Item: iNewFocusNodePosition = iFocusNodePosition - 1; break;
+                    case UIItemShiftSize_Full: iNewFocusNodePosition = 0; break;
+                    default: break;
+                }
             break;
         }
         case UIItemShiftDirection_Down:
         {
-            /* Is focus-item shiftable? */
-            if (iFocusPosition == items.size() - 1)
-                return;
-            /* Shift item: */
-            switch (size)
-            {
-                case UIItemShiftSize_Item: items.move(iFocusPosition, iFocusPosition + 1); break;
-                case UIItemShiftSize_Full: items.move(iFocusPosition, items.size() - 1); break;
-                default: break;
-            }
+            if (iFocusNodePosition < pParentNode->nodes(pFocusNode->type()).size() - 1)
+                switch (enmShiftType)
+                {
+                    case UIItemShiftSize_Item: iNewFocusNodePosition = iFocusNodePosition + 2; break;
+                    case UIItemShiftSize_Full: iNewFocusNodePosition = pParentNode->nodes(pFocusNode->type()).size();  break;
+                    default: break;
+                }
+            break;
+        }
+        default:
+            break;
+    }
+    /* Filter out invalid requests: */
+    if (iNewFocusNodePosition == -1)
+        return;
+
+    /* Create shifted node/item: */
+    UIChooserItem *pShiftedItem = 0;
+    switch (pFocusNode->type())
+    {
+        case UIChooserItemType_Group:
+        {
+            UIChooserNodeGroup *pNewNode = new UIChooserNodeGroup(pParentNode, pFocusNode->toGroupNode(), iNewFocusNodePosition);
+            pShiftedItem = new UIChooserItemGroup(pParentNode->item(), pNewNode);
+            break;
+        }
+        case UIChooserItemType_Machine:
+        {
+            UIChooserNodeMachine *pNewNode = new UIChooserNodeMachine(pParentNode, pFocusNode->toMachineNode(), iNewFocusNodePosition);
+            pShiftedItem = new UIChooserItemMachine(pParentNode->item(), pNewNode);
             break;
         }
         default:
             break;
     }
 
-    /* Reassign items: */
-    pParentItem->setItems(items, type);
+    /* Delete old node/item: */
+    delete pFocusNode;
+
     /* Update model: */
+    model()->wipeOutEmptyGroups();
     model()->updateNavigation();
     model()->updateLayout();
-#endif
+    model()->setCurrentItem(pShiftedItem);
+    model()->saveGroupSettings();
 }
