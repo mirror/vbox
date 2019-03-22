@@ -137,10 +137,10 @@ public:
     QCursor cursor() const { return m_cursor; }
     /** Returns currently cached mouse cursor pixmap. */
     QPixmap cursorPixmap() const { return m_cursorPixmap; }
-    /** Returns currently cached mouse cursor hotspot. */
-    QPoint cursorHotspot() const { return m_cursorHotspot; }
     /** Returns currently cached mouse cursor size. */
     QSize cursorSize() const { return m_cursorSize; }
+    /** Returns currently cached mouse cursor hotspot. */
+    QPoint cursorHotspot() const { return m_cursorHotspot; }
 
     /** @name Branding stuff.
      ** @{ */
@@ -305,7 +305,9 @@ signals:
     void sigKeyboardStateChange(int iState);
     /** Notifies listeners about mouse state-change. */
     void sigMouseStateChange(int iState);
+    /** Notifies listeners about mouse pointer shape change. */
     void sigMousePointerShapeChange();
+    /** Notifies listeners about mouse capability change. */
     void sigMouseCapabilityChange();
     void sigKeyboardLedsChange();
     void sigMachineStateChange();
@@ -362,7 +364,9 @@ private slots:
 #endif /* RT_OS_DARWIN */
 
     /* Console events slots */
+    /** Handles signal about mouse pointer become @a fVisible and his shape changed to @a fAlpha, @a hotCorner, @a size and @a shape. */
     void sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
+    /** Handles signal about mouse capability change to @a fSupportsAbsolute, @a fSupportsRelative, @a fSupportsMultiTouch and @a fNeedsHostCursor. */
     void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor);
     void sltKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
     void sltStateChange(KMachineState state);
@@ -489,10 +493,10 @@ private:
     QCursor  m_cursor;
     /** Holds cached mouse cursor pixmap. */
     QPixmap  m_cursorPixmap;
-    /** Holds cached mouse cursor hotspot. */
-    QPoint   m_cursorHotspot;
     /** Holds cached mouse cursor size. */
     QSize    m_cursorSize;
+    /** Holds cached mouse cursor hotspot. */
+    QPoint   m_cursorHotspot;
 
     /** @name Branding variables.
      ** @{ */
