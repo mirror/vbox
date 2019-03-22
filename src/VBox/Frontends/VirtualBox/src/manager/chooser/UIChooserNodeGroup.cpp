@@ -189,14 +189,11 @@ void UIChooserNodeGroup::setName(const QString &strName)
 
 void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems)
 {
-
     if (iItemSearchFlags & UIChooserItemSearchFlag_Group)
     {
         /* if the search term is empty we just add the node to the matched list: */
         if (strSearchTerm.isEmpty())
-        {
             matchedItems << this;
-        }
         else
         {
             if (iItemSearchFlags & UIChooserItemSearchFlag_ExactName)
@@ -212,16 +209,15 @@ void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iItemS
         }
     }
 
-    foreach (UIChooserNode* pNode, m_nodesGroup)
+    foreach (UIChooserNode *pNode, m_nodesGroup)
         pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
 
-    foreach (UIChooserNode* pNode, m_nodesGlobal)
+    foreach (UIChooserNode *pNode, m_nodesGlobal)
         pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
 
-    foreach (UIChooserNode* pNode, m_nodesMachine)
+    foreach (UIChooserNode *pNode, m_nodesMachine)
         pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
 }
-
 
 void UIChooserNodeGroup::retranslateUi()
 {

@@ -130,8 +130,7 @@ int UIChooserNodeMachine::positionOf(UIChooserNode *pNode)
     AssertFailedReturn(0);
 }
 
-void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags,
-                                          QList<UIChooserNode*> &matchedItems)
+void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems)
 {
     if (!(iItemSearchFlags & UIChooserItemSearchFlag_Machine))
         return;
