@@ -24,7 +24,6 @@
 /* GUI includes: */
 #include "UIActionPool.h"
 #include "UIActionPoolRuntime.h"
-#include "UIConsoleEventHandler.h"
 #include "UIFrameBuffer.h"
 #include "UISession.h"
 #include "UIMachineLogic.h"
@@ -276,9 +275,8 @@ public:
 
 protected slots:
 
-    /** Handles guest request to change the cursor position to @a uX * @a uY.
-      * @param  fContainsData  Brings whether the @a uX and @a uY values are valid and could be used by the GUI now. */
-    void sltCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
+    /** Handles guest request to change the cursor position. */
+    void sltCursorPositionChange();
 
 protected:
 
@@ -395,8 +393,6 @@ private:
      /** Identifier returned by AttachFramebuffer. Used in DetachFramebuffer. */
      QUuid m_uFramebufferId;
 
-     /** Holds whether cursor position is valid. */
-     bool   m_fCursorPositionValid;
      /** Holds the last cursor rectangle. */
      QRect  m_cursorRectangle;
 };
@@ -541,7 +537,6 @@ UIFrameBufferPrivate::UIFrameBufferPrivate()
     , m_dDevicePixelRatio(1.0)
     , m_dDevicePixelRatioActual(1.0)
     , m_fUseUnscaledHiDPIOutput(false)
-    , m_fCursorPositionValid(false)
 {
     /* Update coordinate-system: */
     updateCoordinateSystem();
@@ -1302,32 +1297,25 @@ void UIFrameBufferPrivate::performRescale()
 //           scaleFactor(), scaledSize().width(), scaledSize().height());
 }
 
-void UIFrameBufferPrivate::sltCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY)
+void UIFrameBufferPrivate::sltCursorPositionChange()
 {
-    /* Remember whether cursor position is valid: */
-    m_fCursorPositionValid = fContainsData;
-
     /* Do we have view and valid cursor position? */
-    if (m_pMachineView && m_fCursorPositionValid)
+    if (m_pMachineView && m_pMachineView->uisession()->isValidCursorPositionPresent())
     {
         /* Acquire cursor hotspot: */
         QPoint cursorHotspot = m_pMachineView->uisession()->cursorHotspot();
-
         /* Apply the scale-factor if necessary: */
         cursorHotspot /= scaleFactor();
-
         /* Take the device-pixel-ratio into account: */
         if (!useUnscaledHiDPIOutput())
             cursorHotspot /= devicePixelRatioActual();
 
         /* Acquire cursor position and size: */
-        QPoint cursorPosition = QPoint(uX, uY) - cursorHotspot;
+        QPoint cursorPosition = m_pMachineView->uisession()->cursorPosition() - cursorHotspot;
         QSize cursorSize = m_pMachineView->uisession()->cursorSize();
-
         /* Apply the scale-factor if necessary: */
         cursorPosition *= scaleFactor();
         cursorSize *= scaleFactor();
-
         /* Take the device-pixel-ratio into account: */
         if (!useUnscaledHiDPIOutput())
         {
@@ -1364,7 +1352,7 @@ void UIFrameBufferPrivate::prepareConnections()
             Qt::QueuedConnection);
 
     /* Attach GUI connections: */
-    connect(gConsoleEvents, &UIConsoleEventHandler::sigCursorPositionChange,
+    connect(m_pMachineView->uisession(), &UISession::sigCursorPositionChange,
             this, &UIFrameBufferPrivate::sltCursorPositionChange);
 }
 
@@ -1381,7 +1369,7 @@ void UIFrameBufferPrivate::cleanupConnections()
                m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)));
 
     /* Detach GUI connections: */
-    disconnect(gConsoleEvents, &UIConsoleEventHandler::sigCursorPositionChange,
+    disconnect(m_pMachineView->uisession(), &UISession::sigCursorPositionChange,
                this, &UIFrameBufferPrivate::sltCursorPositionChange);
 }
 
@@ -1474,7 +1462,7 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     }
 
     /* Paint cursor if it has valid shape and position: */
-    if (m_pMachineView->uisession()->isValidPointerShapePresent() && m_fCursorPositionValid)
+    if (m_pMachineView->uisession()->isValidPointerShapePresent() && m_pMachineView->uisession()->isValidCursorPositionPresent())
     {
         /* Acquire session cursor pixmap: */
         QPixmap cursorPixmap = m_pMachineView->uisession()->cursorPixmap();
@@ -1577,7 +1565,7 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     }
 
     /* Paint cursor if it has valid shape and position: */
-    if (m_pMachineView->uisession()->isValidPointerShapePresent() && m_fCursorPositionValid)
+    if (m_pMachineView->uisession()->isValidPointerShapePresent() && m_pMachineView->uisession()->isValidCursorPositionPresent())
     {
         /* Acquire session cursor pixmap: */
         QPixmap cursorPixmap = m_pMachineView->uisession()->cursorPixmap();
