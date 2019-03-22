@@ -141,6 +141,8 @@ public:
     QSize cursorSize() const { return m_cursorSize; }
     /** Returns currently cached mouse cursor hotspot. */
     QPoint cursorHotspot() const { return m_cursorHotspot; }
+    /** Returns currently cached mouse cursor position. */
+    QPoint cursorPosition() const { return m_cursorPosition; }
 
     /** @name Branding stuff.
      ** @{ */
@@ -224,6 +226,8 @@ public:
     bool isMouseIntegrated() const { return m_fIsMouseIntegrated; }
     bool isValidPointerShapePresent() const { return m_fIsValidPointerShapePresent; }
     bool isHidingHostPointer() const { return m_fIsHidingHostPointer; }
+    /** Returns whether the @a cursorPosition() is valid and could be used by the GUI now. */
+    bool isValidCursorPositionPresent() const { return m_fIsValidCursorPositionPresent; }
 
     /* Common setters: */
     bool pause() { return setPause(true); }
@@ -309,6 +313,8 @@ signals:
     void sigMousePointerShapeChange();
     /** Notifies listeners about mouse capability change. */
     void sigMouseCapabilityChange();
+    /** Notifies listeners about cursor position change. */
+    void sigCursorPositionChange();
     void sigKeyboardLedsChange();
     void sigMachineStateChange();
     void sigAdditionsStateChange();
@@ -368,6 +374,9 @@ private slots:
     void sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
     /** Handles signal about mouse capability change to @a fSupportsAbsolute, @a fSupportsRelative, @a fSupportsMultiTouch and @a fNeedsHostCursor. */
     void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor);
+    /** Handles signal about guest request to change the cursor position to @a uX * @a uY.
+      * @param  fContainsData  Brings whether the @a uX and @a uY values are valid and could be used by the GUI now. */
+    void sltCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY);
     void sltKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
@@ -497,6 +506,8 @@ private:
     QSize    m_cursorSize;
     /** Holds cached mouse cursor hotspot. */
     QPoint   m_cursorHotspot;
+    /** Holds cached mouse cursor position. */
+    QPoint   m_cursorPosition;
 
     /** @name Branding variables.
      ** @{ */
@@ -569,6 +580,8 @@ private:
     bool m_fIsMouseIntegrated : 1;
     bool m_fIsValidPointerShapePresent : 1;
     bool m_fIsHidingHostPointer : 1;
+    /** Holds whether the @a m_cursorPosition is valid and could be used by the GUI now. */
+    bool m_fIsValidCursorPositionPresent : 1;
 
     /** Copy of IMachineDebugger::ExecutionEngine */
     KVMExecutionEngine m_enmVMExecutionEngine;

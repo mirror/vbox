@@ -654,6 +654,26 @@ void UISession::sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsR
     }
 }
 
+void UISession::sltCursorPositionChange(bool fContainsData, unsigned long uX, unsigned long uY)
+{
+    LogRelFlow(("GUI: UISession::sltCursorPositionChange: "
+                "Cursor position valid: %d, Cursor position: %dx%d\n",
+                fContainsData ? "TRUE" : "FALSE", uX, uY));
+
+    /* Check if something had changed: */
+    if (   m_fIsValidCursorPositionPresent != fContainsData
+        || m_cursorPosition.x() != (int)uX
+        || m_cursorPosition.y() != (int)uY)
+    {
+        /* Store new data: */
+        m_fIsValidCursorPositionPresent = fContainsData;
+        m_cursorPosition = QPoint(uX, uY);
+
+        /* Notify listeners about cursor position changed: */
+        emit sigCursorPositionChange();
+    }
+}
+
 void UISession::sltKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock)
 {
     /* Check if something had changed: */
@@ -953,6 +973,7 @@ UISession::UISession(UIMachine *pMachine)
     , m_fIsMouseIntegrated(true)
     , m_fIsValidPointerShapePresent(false)
     , m_fIsHidingHostPointer(true)
+    , m_fIsValidCursorPositionPresent(false)
     , m_enmVMExecutionEngine(KVMExecutionEngine_NotSet)
     /* CPU hardware virtualization features for VM: */
     , m_fIsHWVirtExNestedPagingEnabled(false)
@@ -1114,6 +1135,9 @@ void UISession::prepareConsoleEventHandlers()
 
     connect(gConsoleEvents, SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
             this, SLOT(sltMouseCapabilityChange(bool, bool, bool, bool)));
+
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigCursorPositionChange,
+            this, &UISession::sltCursorPositionChange);
 
     connect(gConsoleEvents, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
             this, SLOT(sltKeyboardLedsChangeEvent(bool, bool, bool)));
