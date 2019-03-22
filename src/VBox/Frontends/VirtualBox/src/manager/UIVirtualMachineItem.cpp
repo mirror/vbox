@@ -155,7 +155,7 @@ bool UIVirtualMachineItem::recache()
             m_configurationAccessLevel = ConfigurationAccessLevel_Null;
 
         /* Should we show details for this item? */
-        m_fHasDetails = gEDataManager->showMachineInSelectorDetails(m_uId);
+        m_fHasDetails = gEDataManager->showMachineInVirtualBoxManagerDetails(m_uId);
     }
     else
     {

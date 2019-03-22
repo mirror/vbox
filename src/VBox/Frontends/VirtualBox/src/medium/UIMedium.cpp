@@ -339,7 +339,7 @@ void UIMedium::refresh()
                 }
 
                 /* Finally we can precisely check if current machine is 'hidden': */
-                if (gEDataManager->showMachineInSelectorChooser(uMachineID))
+                if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineID))
                     m_fUsedByHiddenMachinesOnly = false;
 
                 /* Prepare snapshot usage: */

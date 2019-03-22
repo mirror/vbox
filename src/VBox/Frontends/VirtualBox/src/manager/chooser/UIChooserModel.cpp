@@ -740,7 +740,7 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
     {
         /* Show machine if we should: */
         CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uId.toString());
-        if (gEDataManager->showMachineInSelectorChooser(uId))
+        if (gEDataManager->showMachineInVirtualBoxManagerChooser(uId))
         {
             /* Add new machine-item: */
             addMachineIntoTheTree(comMachine, true /* make it visible */);
@@ -1040,7 +1040,7 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
 
     /* Show machine if we should: */
     CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uId.toString());
-    if (gEDataManager->showMachineInSelectorChooser(uId))
+    if (gEDataManager->showMachineInVirtualBoxManagerChooser(uId))
     {
         /* Add new machine-item: */
         addMachineIntoTheTree(comMachine);
@@ -1689,8 +1689,7 @@ void UIChooserModel::loadTree()
         foreach (const CMachine &comMachine, vboxGlobal().virtualBox().GetMachines())
         {
             const QUuid uMachineID = comMachine.GetId();
-            /// @todo rename showMachineInSelectorChooser to showMachineInVirtualBoxManager
-            if (!uMachineID.isNull() && gEDataManager->showMachineInSelectorChooser(uMachineID))
+            if (!uMachineID.isNull() && gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineID))
                 addMachineIntoTheTree(comMachine);
         }
         LogRelFlow(("UIChooserModel: VMs loaded.\n"));
