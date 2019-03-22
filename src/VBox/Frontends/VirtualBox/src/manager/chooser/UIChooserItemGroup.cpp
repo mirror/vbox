@@ -538,29 +538,6 @@ UIChooserItem *UIChooserItemGroup::firstMachineItem()
     return 0;
 }
 
-void UIChooserItemGroup::sortItems()
-{
-    /// @todo implement manual sorting
-
-#if 0
-    /* Sort group-items: */
-    QMap<QString, UIChooserItem*> sorter;
-    foreach (UIChooserItem *pItem, items(UIChooserItemType_Group))
-        sorter.insert(pItem->name().toLower(), pItem);
-    setItems(sorter.values(), UIChooserItemType_Group);
-
-    /* Sort machine-items: */
-    sorter.clear();
-    foreach (UIChooserItem *pItem, items(UIChooserItemType_Machine))
-        sorter.insert(pItem->name().toLower(), pItem);
-    setItems(sorter.values(), UIChooserItemType_Machine);
-#endif
-
-    /* Update model: */
-    model()->updateNavigation();
-    model()->updateLayout();
-}
-
 void UIChooserItemGroup::updateGeometry()
 {
     /* Update/activate children layout: */

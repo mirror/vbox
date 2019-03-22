@@ -82,6 +82,9 @@ public:
     /** Updates the @a matchedItems wrt. @strSearchTerm and @a iItemSearchFlags. */
     virtual void searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems) /* override */;
 
+    /** Performs sorting of children nodes. */
+    virtual void sortNodes() /* override */;
+
 protected:
 
     /** Handles translation event. */

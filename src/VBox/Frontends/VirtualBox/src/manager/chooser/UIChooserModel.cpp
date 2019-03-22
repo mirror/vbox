@@ -821,8 +821,8 @@ void UIChooserModel::sltSortGroup()
     if (!isSingleGroupSelected())
         return;
 
-    /* Sorting group: */
-    currentItem()->sortItems();
+    /* Sort group-node: */
+    sortNodes(currentItem()->node());
 }
 
 void UIChooserModel::sltShowHideSearchWidget()
@@ -1076,8 +1076,8 @@ void UIChooserModel::sltSortParentGroup()
     if (!currentItem())
         return;
 
-    /* Sorting parent group: */
-    currentItem()->parentItem()->sortItems();
+    /* Sort parent group-node: */
+    sortNodes(currentItem()->parentItem()->node());
 }
 
 void UIChooserModel::sltPerformRefreshAction()
@@ -2087,6 +2087,17 @@ bool UIChooserModel::processDragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent)
 
     /* Pass event: */
     return false;
+}
+
+void UIChooserModel::sortNodes(UIChooserNode *pNode)
+{
+    /* Sort nodes: */
+    pNode->sortNodes();
+
+    /* Rebuild tree for main root: */
+    buildTreeForMainRoot();
+    updateNavigation();
+    updateLayout();
 }
 
 void UIChooserModel::saveGroupDefinitions()

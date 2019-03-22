@@ -219,11 +219,6 @@ UIChooserItem *UIChooserItemGlobal::firstMachineItem()
     return 0;
 }
 
-void UIChooserItemGlobal::sortItems()
-{
-    AssertMsgFailed(("Global graphics item do NOT support children!"));
-}
-
 void UIChooserItemGlobal::updateLayout()
 {
     // Just do nothing ..

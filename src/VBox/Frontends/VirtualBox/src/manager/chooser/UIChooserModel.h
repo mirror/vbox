@@ -422,6 +422,9 @@ private:
         bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);
         /** Processes drag leave @a pEvent. */
         bool processDragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent);
+
+        /** Performs sorting for @a pNode. */
+        void sortNodes(UIChooserNode *pNode);
     /** @} */
 
     /** @name Group saving stuff.

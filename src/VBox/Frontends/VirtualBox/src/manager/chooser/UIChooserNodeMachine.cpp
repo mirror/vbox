@@ -152,6 +152,11 @@ void UIChooserNodeMachine::searchForNodes(const QString &strSearchTerm, int iIte
         matchedItems << this;
 }
 
+void UIChooserNodeMachine::sortNodes()
+{
+    AssertFailedReturnVoid();
+}
+
 void UIChooserNodeMachine::retranslateUi()
 {
     /* Update description: */

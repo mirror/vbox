@@ -219,6 +219,24 @@ void UIChooserNodeGroup::searchForNodes(const QString &strSearchTerm, int iItemS
         pNode->searchForNodes(strSearchTerm, iItemSearchFlags, matchedItems);
 }
 
+void UIChooserNodeGroup::sortNodes()
+{
+    QMap<QString, UIChooserNode*> mapGroup;
+    foreach (UIChooserNode *pNode, m_nodesGroup)
+        mapGroup[pNode->name()] = pNode;
+    m_nodesGroup = mapGroup.values();
+
+    QMap<QString, UIChooserNode*> mapGlobal;
+    foreach (UIChooserNode *pNode, m_nodesGlobal)
+        mapGlobal[pNode->name()] = pNode;
+    m_nodesGlobal = mapGlobal.values();
+
+    QMap<QString, UIChooserNode*> mapMachine;
+    foreach (UIChooserNode *pNode, m_nodesMachine)
+        mapMachine[pNode->name()] = pNode;
+    m_nodesMachine = mapMachine.values();
+}
+
 void UIChooserNodeGroup::retranslateUi()
 {
     /* Update description: */

@@ -110,6 +110,9 @@ public:
       * @a strSearchTerm all items are added wrt. node type from @a iItemSearchFlags. */
     virtual void searchForNodes(const QString &strSearchTerm, int iItemSearchFlags, QList<UIChooserNode*> &matchedItems) = 0;
 
+    /** Performs sorting of children nodes. */
+    virtual void sortNodes() = 0;
+
     /** Returns if node is disabled. */
     bool isDisabled() const;
     /** Sets the disabled flag. */

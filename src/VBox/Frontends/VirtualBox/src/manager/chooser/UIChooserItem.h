@@ -165,9 +165,6 @@ public:
 
         /** Searches for a first machine child item. */
         virtual UIChooserItem *firstMachineItem() = 0;
-
-        /** Sorts children items. */
-        virtual void sortItems() = 0;
     /** @} */
 
     /** @name Layout stuff.

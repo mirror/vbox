@@ -137,6 +137,11 @@ void UIChooserNodeGlobal::searchForNodes(const QString &strSearchTerm, int iItem
     }
 }
 
+void UIChooserNodeGlobal::sortNodes()
+{
+    AssertFailedReturnVoid();
+}
+
 void UIChooserNodeGlobal::retranslateUi()
 {
     /* Translate name: */

@@ -267,11 +267,6 @@ UIChooserItem *UIChooserItemMachine::firstMachineItem()
     return this;
 }
 
-void UIChooserItemMachine::sortItems()
-{
-    AssertMsgFailed(("Machine graphics item do NOT support children!"));
-}
-
 void UIChooserItemMachine::updateLayout()
 {
     // Just do nothing ..
