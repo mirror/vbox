@@ -166,20 +166,21 @@ public:
 UIGuestControlInterface::UIGuestControlInterface(QObject* parent, const CGuest &comGuest)
     :QObject(parent)
     , m_comGuest(comGuest)
-    , m_strHelp("[common-options]               [--username <name>] [--domain <domain>]\n"
-                "                               [--passwordfile <file> | --password <password>]\n"
-                "start                           [common-options]\n"
-                "                                   [--exe <path to executable>] [--timeout <msec>]\n"
-                "                                   [--sessionid <id> |  [sessionname <name>]]\n"
-                "                                   [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
-                "                                   [--ignore-operhaned-processes] [--profile]\n"
-                "                                   -- <program/arg0> [argument1] ... [argumentN]]\n"
-                "createsession                  [common-options]  [--sessionname <name>]\n"
-                "mkdir                            [common-options]\n"
-                "                                   [-P|--parents] [<guest directory>\n"
-                "                                   [--sessionid <id> |  [sessionname <name>]]\n"
-                "stat|ls                          [common-options]\n"
-                "                                   [--sessionid <id> |  [sessionname <name>]]\n"
+    , m_strHelp("[common-options]\t[--username <name>] [--domain <domain>]\n"
+                "\t\t[--passwordfile <file> | --password <password>]\n"
+                "start\t\t[common-options]\n"
+                "\t\t[--exe <path to executable>] [--timeout <msec>]\n"
+                "\t\t[--sessionid <id> |  [sessionname <name>]]\n"
+                "\t\t[-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
+                "\t\t[--ignore-operhaned-processes] [--profile]\n"
+                "\t\t-- <program/arg0> [argument1] ... [argumentN]]\n"
+                "createsession\t\t[common-options]  [--sessionname <name>]\n"
+                "mkdir\t\t[common-options]\n"
+                "\t\t[-P|--parents] [<guest directory>\n"
+                "\t\t[--sessionid <id> |  --sessionname <name>]\n"
+                "stat|ls\t\t[common-options]\n"
+                "\t\t[--sessionid <id> |  --sessionname <name>]\n"
+                "list\n"
                 )
 {
     prepareSubCommandHandlers();
@@ -257,7 +258,6 @@ bool UIGuestControlInterface::handleMkdir(int argc , char** argv)
 
 bool UIGuestControlInterface::handleStat(int argc, char** argv)
 {
-
     CommandData commandData;
 
     static const RTGETOPTDEF s_aOptions[] =
@@ -347,6 +347,36 @@ bool UIGuestControlInterface::handleStat(int argc, char** argv)
     RETURN_MESSAGE(strObjectInfo);
 }
 
+bool UIGuestControlInterface::handleList(int, char**)
+{
+    if (!m_comGuest.isOk())
+        RETURN_ERROR("The guest session is not valid");
+
+    QString strSessionInfo;
+    QVector<CGuestSession> sessions = m_comGuest.GetSessions();
+    if (sessions.isEmpty())
+    {
+        strSessionInfo.append("No guest sessions");
+        RETURN_MESSAGE(strSessionInfo);
+    }
+    strSessionInfo += QString("Listing %1 guest sessions in total:\n").arg(QString::number(sessions.size()));
+    //strSessionInfo += QString("\t%1\t%2\n").arg("Session Name").arg("Session Id");
+
+    for (int i = 0; i < sessions.size(); ++i)
+    {
+        strSessionInfo += QString("\tName: %1\t\tID: %2\n").arg(sessions[i].GetName()).arg(QString::number(sessions[i].GetId()));
+        QVector<CGuestProcess> processes = sessions[i].GetProcesses();
+        strSessionInfo += QString("\t%1 guest prcesses for this session:\n").arg(QString::number(processes.size()));
+
+        for (int j = 0; j < processes.size(); ++j)
+        {
+            strSessionInfo += QString("\t\tName: %1\t\tID: %2\n").arg(processes[j].GetName()).arg(QString::number(processes[j].GetPID()));
+
+        }
+    }
+    RETURN_MESSAGE(strSessionInfo);
+}
+
 bool UIGuestControlInterface::handleStart(int argc, char** argv)
 {
     enum kGstCtrlRunOpt
@@ -428,6 +458,8 @@ bool UIGuestControlInterface::findOrCreateSession(const CommandData &commandData
         {
             RETURN_ERROR(QString(m_strHelp).append("No session with id %1 found.\n").arg(commandData.m_uSessionId));
         }
+        else
+            return true;
     }
     /* If sessionname is given then look for the session. if not try to create a session with the provided name: */
     else if (!commandData.m_bSessionIdGiven && commandData.m_bSessionNameGiven)
@@ -436,7 +468,11 @@ bool UIGuestControlInterface::findOrCreateSession(const CommandData &commandData
         {
             if (!createSession(commandData, outGuestSession))
                 return false;
+            else
+                return true;
         }
+        else
+            return true;
     }
     /* search within the existing CGuestSessions and return a valid one if found: */
     if (findAValidGuestSession(outGuestSession))
@@ -510,7 +546,6 @@ bool UIGuestControlInterface::startProcess(const CommandData &commandData, CGues
 {
     QVector<KProcessCreateFlag>  createFlags;
     createFlags.push_back(KProcessCreateFlag_WaitForProcessStartOnly);
-
     CGuestProcess process = guestSession.ProcessCreate(commandData.m_strExePath,
                                                        commandData.m_arguments,
                                                        commandData.m_environmentChanges,
@@ -533,6 +568,7 @@ void UIGuestControlInterface::prepareSubCommandHandlers()
     m_subCommandHandlers.insert("mkdir" , &UIGuestControlInterface::handleMkdir);
     m_subCommandHandlers.insert("stat" , &UIGuestControlInterface::handleStat);
     m_subCommandHandlers.insert("ls" , &UIGuestControlInterface::handleStat);
+    m_subCommandHandlers.insert("list" , &UIGuestControlInterface::handleList);
 }
 
 void UIGuestControlInterface::putCommand(const QString &strCommand)

@@ -88,6 +88,8 @@ private:
     /** Handles the 'mkdir' session command to create guest directories */
     bool handleMkdir(int, char**);
     bool handleStat(int, char**);
+    /** Handles the list command and lists all the guest sessions and processes. */
+    bool handleList(int, char**);
     template<typename T>
     QString getFsObjInfoString(const T &fsObjectInfo) const;
 
