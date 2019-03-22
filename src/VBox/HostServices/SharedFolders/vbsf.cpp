@@ -120,7 +120,7 @@ void vbsfStripLastComponent(char *pszFullPath, uint32_t cbFullPathRoot)
     LogFlowFunc(("%s, %s, %s\n", pszFullPath, delimLast, delimSecondLast));
 }
 
-static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING pPath,
+static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PCSHFLSTRING pPath,
                              uint32_t cbPath, char **ppszFullPath, uint32_t *pcbFullPathRoot,
                              bool fWildCard = false, bool fPreserveLastComponent = false)
 {
@@ -1367,7 +1367,9 @@ int vbsfWritePages(SHFLCLIENTDATA *pClient, SHFLROOT idRoot, SHFLHANDLE hFile, u
     return rc;
 }
 
-/** Implements SHFL_FN_COPY_FILE_PART (wrapping RTFileCopyPart).   */
+/**
+ * Implements SHFL_FN_COPY_FILE_PART (wrapping RTFileCopyPart).
+ */
 int vbsfCopyFilePart(SHFLCLIENTDATA *pClient, SHFLROOT idRootSrc, SHFLHANDLE hFileSrc, uint64_t offSrc,
                      SHFLROOT idRootDst, SHFLHANDLE hFileDst, uint64_t offDst, uint64_t *pcbToCopy, uint32_t fFlags)
 {
@@ -1391,6 +1393,9 @@ int vbsfCopyFilePart(SHFLCLIENTDATA *pClient, SHFLROOT idRootSrc, SHFLHANDLE hFi
         rc = vbsfCheckHandleAccess(pClient, idRootDst, pHandleDst, VBSF_CHECK_ACCESS_WRITE);
         if (RT_SUCCESS(rc))
         {
+            /*
+             * Do the job.
+             */
             rc = RTFileCopyPart(pHandleSrc->file.Handle, offSrc, pHandleDst->file.Handle, offDst, cbToCopy, 0, &cbTotal);
             *pcbToCopy = cbTotal;
         }
@@ -2288,6 +2293,47 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
     }
     /* free the path string */
     vbsfFreeFullPath(pszFullPathSrc);
+    return rc;
+}
+
+/**
+ * Implements SHFL_FN_COPY_FILE (wrapping RTFileCopy).
+ */
+int vbsfCopyFile(SHFLCLIENTDATA *pClient, SHFLROOT idRootSrc, PCSHFLSTRING pStrPathSrc,
+                 SHFLROOT idRootDst, PCSHFLSTRING pStrPathDst, uint32_t fFlags)
+{
+    AssertPtrReturn(pClient, VERR_INVALID_PARAMETER);
+    if (pClient->fu32Flags & SHFL_CF_UTF8)
+        LogFunc(("pClient %p, idRootSrc %#RX32, '%.*s', idRootSrc %#RX32, '%.*s', fFlags %#x\n", pClient, idRootSrc,
+                 pStrPathSrc->u16Length, pStrPathSrc->String.ach, idRootDst, pStrPathDst->u16Length, pStrPathDst->String.ach, fFlags));
+    else
+        LogFunc(("pClient %p, idRootSrc %#RX32, '%.*ls', idRootSrc %#RX32, '%.*ls', fFlags %#x\n", pClient,
+                 idRootSrc, pStrPathSrc->u16Length / sizeof(RTUTF16), pStrPathSrc->String.ach,
+                 idRootDst, pStrPathDst->u16Length / sizeof(RTUTF16), pStrPathDst->String.ach, fFlags));
+
+    /*
+     * Build host paths.
+     */
+    char *pszPathSrc = NULL;
+    int rc = vbsfBuildFullPath(pClient, idRootSrc, pStrPathSrc, pStrPathSrc->u16Size + SHFLSTRING_HEADER_SIZE, &pszPathSrc, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        char *pszPathDst = NULL;
+        rc = vbsfBuildFullPath(pClient, idRootDst, pStrPathDst, pStrPathDst->u16Size + SHFLSTRING_HEADER_SIZE, &pszPathDst, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Do the job.
+             */
+            rc = RTFileCopy(pszPathSrc, pszPathDst);
+
+            vbsfFreeFullPath(pszPathDst);
+        }
+        vbsfFreeFullPath(pszPathSrc);
+    }
+
+    RT_NOREF(fFlags);
+    LogFunc(("returns %Rrc\n", rc));
     return rc;
 }
 

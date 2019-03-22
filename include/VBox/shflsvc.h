@@ -141,9 +141,12 @@
 /** Queries supported features.
  * @since VBox 6.0.6  */
 #define SHFL_FN_QUERY_FEATURES      (25)
+/** Copies a file to another.
+ * @since VBox 6.0.6  */
+#define SHFL_FN_COPY_FILE           (26)
 /** Copies part of a file to another.
  * @since VBox 6.0.6  */
-#define SHFL_FN_COPY_FILE_PART      (26)
+#define SHFL_FN_COPY_FILE_PART      (27)
 /** The last function number. */
 #define SHFL_FN_LAST                SHFL_FN_COPY_FILE_PART
 /** @} */
@@ -1946,10 +1949,33 @@ typedef struct VBoxSFParmQueryFeatures
 /** @} */
 
 
+/** @name SHFL_FN_COPY_FILE
+ * @{ */
+/** SHFL_FN_COPY_FILE parameters. */
+typedef struct VBoxSFParmCopyFile
+{
+    /** value32, in: SHFLROOT of the mapping the source handle belongs to. */
+    HGCMFunctionParameter id32RootSrc;
+    /** pointer, in: SHFLSTRING giving the source file path. */
+    HGCMFunctionParameter pStrPathSrc;
+
+    /** value32, in: SHFLROOT of the mapping the destination handle belongs to. */
+    HGCMFunctionParameter id32RootDst;
+    /** pointer, in: SHFLSTRING giving the destination file path. */
+    HGCMFunctionParameter pStrPathDst;
+
+    /** value32, in: Reserved for the future, must be zero. */
+    HGCMFunctionParameter f32Flags;
+} VBoxSFParmCopyFile;
+/** Number of parameters for SHFL_FN_COPY_FILE. */
+#define SHFL_CPARMS_COPY_FILE (5)
+/** @} */
+
+
 /** @name SHFL_FN_COPY_FILE_PART
  * @{ */
 /** SHFL_FN_COPY_FILE_PART parameters. */
-typedef struct VBoxSFParmCopyFilePart
+typedef struct VBoxSFParmCopyFilePar
 {
     /** value32, in: SHFLROOT of the mapping the source handle belongs to. */
     HGCMFunctionParameter id32RootSrc;

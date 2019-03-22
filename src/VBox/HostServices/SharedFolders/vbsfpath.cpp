@@ -428,7 +428,7 @@ static bool vbsfPathIsWildcardChar(char c)
 }
 
 int vbsfPathGuestToHost(SHFLCLIENTDATA *pClient, SHFLROOT hRoot,
-                        PSHFLSTRING pGuestString, uint32_t cbGuestString,
+                        PCSHFLSTRING pGuestString, uint32_t cbGuestString,
                         char **ppszHostPath, uint32_t *pcbHostPathRoot,
                         uint32_t fu32Options,
                         uint32_t *pfu32PathFlags)
@@ -471,23 +471,21 @@ int vbsfPathGuestToHost(SHFLCLIENTDATA *pClient, SHFLROOT hRoot,
     {
         /* UTF-8 */
         cbGuestPath = pGuestString->u16Length;
-        pchGuestPath = (char *)&pGuestString->String.utf8[0];
+        pchGuestPath = pGuestString->String.ach;
     }
     else
     {
         /* UTF-16 */
-        uint32_t cwcSrc;
-        PRTUTF16 pwszSrc;
 
 #ifdef RT_OS_DARWIN /* Misplaced hack! See todo! */
-        cwcSrc = 0;
-        pwszSrc = NULL;
+        uint32_t cwcSrc  = 0;
+        PRTUTF16 pwszSrc = NULL;
         rc = vbsfNormalizeStringDarwin(&pGuestString->String.ucs2[0],
                                        pGuestString->u16Length / sizeof(RTUTF16),
                                        &pwszSrc, &cwcSrc);
 #else
-        cwcSrc  = pGuestString->u16Length / sizeof(RTUTF16);
-        pwszSrc = &pGuestString->String.ucs2[0];
+        uint32_t  const cwcSrc  = pGuestString->u16Length / sizeof(RTUTF16);
+        PCRTUTF16 const pwszSrc = &pGuestString->String.ucs2[0];
 #endif
 
         if (RT_SUCCESS(rc))
