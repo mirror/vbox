@@ -1543,11 +1543,11 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             ASSERT_GUEST_STMT_BREAK(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* i32RootSrc  */
             ASSERT_GUEST_STMT_BREAK(paParms[1].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* u64HandleSrc */
             ASSERT_GUEST_STMT_BREAK(paParms[2].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* off64Src */
-            ASSERT_GUEST_STMT_BREAK((int64_t)paParms[2].u.uint64 < 0, rc = VERR_NEGATIVE_SEEK);
+            ASSERT_GUEST_STMT_BREAK((int64_t)paParms[2].u.uint64 >= 0, rc = VERR_NEGATIVE_SEEK);
             ASSERT_GUEST_STMT_BREAK(paParms[3].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* i32RootDst  */
             ASSERT_GUEST_STMT_BREAK(paParms[4].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* u64HandleDst */
             ASSERT_GUEST_STMT_BREAK(paParms[5].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* off64Dst */
-            ASSERT_GUEST_STMT_BREAK((int64_t)paParms[5].u.uint64 < 0, rc = VERR_NEGATIVE_SEEK);
+            ASSERT_GUEST_STMT_BREAK((int64_t)paParms[5].u.uint64 >= 0, rc = VERR_NEGATIVE_SEEK);
             ASSERT_GUEST_STMT_BREAK(paParms[6].type == VBOX_HGCM_SVC_PARM_64BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* cb64ToCopy */
             ASSERT_GUEST_STMT_BREAK(paParms[6].u.uint64 < _1E, rc = VERR_OUT_OF_RANGE);
             ASSERT_GUEST_STMT_BREAK(paParms[7].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* f32Flags */
