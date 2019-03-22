@@ -67,6 +67,7 @@ public:
 
     UIGuestControlFileView(QWidget * parent = 0);
     bool hasSelection() const;
+    bool isInEditState() const;
 
 protected:
 
@@ -198,6 +199,11 @@ bool UIGuestControlFileView::hasSelection() const
     if (!pSelectionModel)
         return false;
     return pSelectionModel->hasSelection();
+}
+
+bool UIGuestControlFileView::isInEditState() const
+{
+    return state() == QAbstractItemView::EditingState;
 }
 
 void UIGuestControlFileView::selectionChanged(const QItemSelection & selected, const QItemSelection & deselected)
@@ -971,7 +977,7 @@ bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* overri
         {
             if (pKeyEvent->key() == Qt::Key_Enter || pKeyEvent->key() == Qt::Key_Return)
             {
-                if (m_pView && m_pModel)
+                if (m_pView && m_pModel && !m_pView->isInEditState())
                 {
                     /* Get the selected item. If there are 0 or more than 1 selection do nothing: */
                     QItemSelectionModel *selectionModel =  m_pView->selectionModel();
