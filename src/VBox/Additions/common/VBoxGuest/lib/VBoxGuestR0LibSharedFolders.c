@@ -50,9 +50,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define SHFL_CPARMS_SET_UTF8 0
-#define SHFL_CPARMS_SET_SYMLINKS 0
-
 #define VBOX_INIT_CALL(a, b, c) \
     LogFunc(("%s, idClient=%d\n", "SHFL_FN_" # b, (c)->idClient)); \
     VBGL_HGCM_HDR_INIT(a, (c)->idClient, SHFL_FN_##b, SHFL_CPARMS_##b); \
@@ -100,6 +97,8 @@ DECLVBGL(void) VbglR0SfDisconnect(PVBGLSFCLIENT pClient)
     return;
 }
 
+#if !defined(RT_OS_LINUX)
+
 DECLVBGL(int) VbglR0SfSetUtf8(PVBGLSFCLIENT pClient)
 {
     int rc;
@@ -110,8 +109,6 @@ DECLVBGL(int) VbglR0SfSetUtf8(PVBGLSFCLIENT pClient)
 /*    Log(("VBOXSF: VbglR0SfSetUtf8: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
     return rc;
 }
-
-#if !defined(RT_OS_LINUX)
 
 /** @name       Deprecated VBGL shared folder helpers.
  *
@@ -392,8 +389,6 @@ DECLVBGL(int) VbglR0SfReadPageList(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLH
     return rc;
 }
 
-#endif /* !RT_OS_LINUX */
-
 DECLVBGL(int) VbglR0SfWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                             uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked)
 {
@@ -424,8 +419,6 @@ DECLVBGL(int) VbglR0SfWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE h
     }
     return rc;
 }
-
-#ifndef RT_OS_LINUX
 
 DECLVBGL(int) VbglR0SfWritePhysCont(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile, uint64_t offset,
                                     uint32_t *pcbBuffer, RTCCPHYS PhysBuffer)
@@ -696,6 +689,8 @@ DECLVBGL(int) VbglR0SfSymlink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRIN
     return rc;
 }
 
+#if !defined(RT_OS_LINUX)
+
 DECLVBGL(int) VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient)
 {
     int rc;
@@ -707,6 +702,7 @@ DECLVBGL(int) VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient)
     return rc;
 }
 
+#endif /* !RT_OS_LINUX */
 
 /** @} */
 

@@ -52,7 +52,7 @@
 #endif
 #include <linux/seq_file.h>
 #include <linux/vfs.h>
-#include <iprt/err.h>
+#include <VBox/err.h>
 #include <iprt/path.h>
 
 
@@ -74,7 +74,7 @@ static int   g_fFollowSymlinks = 0;
 #endif
 
 /* forward declaration */
-static struct super_operations sf_super_ops;
+static struct super_operations g_vbsf_super_ops;
 
 
 
@@ -502,7 +502,7 @@ static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
         sb->s_maxbytes = INT64_MAX;
 # endif
 #endif
-        sb->s_op = &sf_super_ops;
+        sb->s_op = &g_vbsf_super_ops;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
         sb->s_d_op = &vbsf_dentry_ops;
 #endif
@@ -722,25 +722,26 @@ static int vbsf_show_options(struct seq_file *m, struct dentry *root)
 /**
  * Super block operations.
  */
-static struct super_operations sf_super_ops = {
+static struct super_operations g_vbsf_super_ops = {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
-    .clear_inode = vbsf_clear_inode,
+    .clear_inode  = vbsf_clear_inode,
 #else
-    .evict_inode = vbsf_evict_inode,
+    .evict_inode  = vbsf_evict_inode,
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 25)
-    .read_inode = vbsf_read_inode,
+    .read_inode   = vbsf_read_inode,
 #endif
-    .put_super = vbsf_put_super,
-    .statfs = vbsf_statfs,
-    .remount_fs = vbsf_remount_fs,
+    .put_super    = vbsf_put_super,
+    .statfs       = vbsf_statfs,
+    .remount_fs   = vbsf_remount_fs,
     .show_options = vbsf_show_options
 };
 
 
-/*
- * File system type related stuff.
- */
+
+/*********************************************************************************************************************************
+*   File system type related stuff.                                                                                              *
+*********************************************************************************************************************************/
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 4)
 
@@ -776,7 +777,10 @@ static struct dentry *sf_mount(struct file_system_type *fs_type, int flags, cons
 }
 # endif /* LINUX_VERSION_CODE >= 2.6.39 */
 
-static struct file_system_type vboxsf_fs_type = {
+/**
+ * File system registration structure.
+ */
+static struct file_system_type g_vboxsf_fs_type = {
     .owner = THIS_MODULE,
     .name = "vboxsf",
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
@@ -803,105 +807,118 @@ static struct super_block *vbsf_read_super_24(struct super_block *sb, void *data
     return sb;
 }
 
-static DECLARE_FSTYPE(vboxsf_fs_type, "vboxsf", vbsf_read_super_24, 0);
+static DECLARE_FSTYPE(g_vboxsf_fs_type, "vboxsf", vbsf_read_super_24, 0);
 
 #endif /* LINUX_VERSION_CODE < 2.5.4 */
 
 
-/* Module initialization/finalization handlers */
+
+/*********************************************************************************************************************************
+*   Module stuff                                                                                                                 *
+*********************************************************************************************************************************/
+
+/**
+ * Called on module initialization.
+ */
 static int __init init(void)
 {
-    int rcRet = 0;
-    int vrc;
-    int err;
+    int rc;
+    SFLOGFLOW(("vboxsf: init\n"));
 
-    TRACE();
-
+    /*
+     * Must be paranoid about the vbsf_mount_info_new size.
+     */
     AssertCompile(sizeof(struct vbsf_mount_info_new) <= PAGE_SIZE);
     if (sizeof(struct vbsf_mount_info_new) > PAGE_SIZE) {
         printk(KERN_ERR
-               "Mount information structure is too large %lu\n"
-               "Must be less than or equal to %lu\n",
+               "vboxsf: Mount information structure is too large %lu\n"
+               "vboxsf: Must be less than or equal to %lu\n",
                (unsigned long)sizeof(struct vbsf_mount_info_new),
                (unsigned long)PAGE_SIZE);
         return -EINVAL;
     }
 
-    /** @todo Init order is wrong, file system reigstration is the very last
-     *        thing we should do. */
+    /*
+     * Initialize stuff.
+     */
     spin_lock_init(&g_SfHandleLock);
-    err = register_filesystem(&vboxsf_fs_type);
-    if (err) {
-        LogFunc(("register_filesystem err=%d\n", err));
-        return err;
-    }
+    rc = VbglR0SfInit();
+    if (RT_SUCCESS(rc)) {
+        /*
+         * Try connect to the shared folder HGCM service.
+         * It is possible it is not there.
+         */
+        rc = VbglR0SfConnect(&g_SfClient);
+        if (RT_SUCCESS(rc)) {
+            /*
+             * Query host HGCM features and afterwards (must be last) shared folder features.
+             */
+            rc = VbglR0QueryHostFeatures(&g_fHostFeatures);
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("vboxsf: VbglR0QueryHostFeatures failed: rc=%Rrc (ignored)\n", rc));
+                g_fHostFeatures = 0;
+            }
+            VbglR0SfHostReqQueryFeaturesSimple(&g_fSfFeatures, &g_uSfLastFunction);
+            LogRel(("vboxsf: g_fHostFeatures=%#x g_fSfFeatures=%#RX64 g_uSfLastFunction=%u\n",
+                    g_fHostFeatures, g_fSfFeatures, g_uSfLastFunction));
 
-    vrc = VbglR0SfInit();
-    if (RT_FAILURE(vrc)) {
-        LogRelFunc(("VbglR0SfInit failed, vrc=%Rrc\n", vrc));
-        rcRet = -EPROTO;
-        goto fail0;
-    }
-
-    vrc = VbglR0SfConnect(&g_SfClient);
-    if (RT_FAILURE(vrc)) {
-        LogRelFunc(("VbglR0SfConnect failed, vrc=%Rrc\n", vrc));
-        rcRet = -EPROTO;
-        goto fail1;
-    }
-
-    vrc = VbglR0QueryHostFeatures(&g_fHostFeatures);
-    if (RT_FAILURE(vrc))
-    {
-        LogRelFunc(("VbglR0QueryHostFeatures failed: vrc=%Rrc (ignored)\n", vrc));
-        g_fHostFeatures = 0;
-    }
-
-    VbglR0SfHostReqQueryFeaturesSimple(&g_fSfFeatures, &g_uSfLastFunction);
-    LogRelFunc(("g_fHostFeatures=%#x g_fSfFeatures=%#RX64 g_uSfLastFunction=%u\n",
-                g_fHostFeatures, g_fSfFeatures, g_uSfLastFunction));
-
-    vrc = VbglR0SfSetUtf8(&g_SfClient);
-    if (RT_FAILURE(vrc)) {
-        LogRelFunc(("VbglR0SfSetUtf8 failed, vrc=%Rrc\n", vrc));
-        rcRet = -EPROTO;
-        goto fail2;
-    }
+            /*
+             * Tell the shared folder service about our expectations:
+             *      - UTF-8 strings (rather than UTF-16)
+             *      - Wheter to return or follow (default) symbolic links.
+             */
+            rc = VbglR0SfHostReqSetUtf8Simple();
+            if (RT_SUCCESS(rc)) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    if (!g_fFollowSymlinks) {
-        vrc = VbglR0SfSetSymlinks(&g_SfClient);
-        if (RT_FAILURE(vrc)) {
-            printk(KERN_WARNING
-                   "vboxsf: Host unable to show symlinks, vrc=%d\n",
-                   vrc);
-        }
-    }
+                if (!g_fFollowSymlinks) {
+                    rc = VbglR0SfHostReqSetSymlinksSimple();
+                    if (RT_FAILURE(rc))
+                        printk(KERN_WARNING "vboxsf: Host unable to show symlinks, rc=%d\n", rc);
+                }
 #endif
+                /*
+                 * Now that we're ready for action, try register the
+                 * file system with the kernel.
+                 */
+                rc = register_filesystem(&g_vboxsf_fs_type);
+                if (rc == 0) {
+                    printk(KERN_INFO "vboxsf: Successfully loaded version " VBOX_VERSION_STRING "\n");
+                    return 0;
+                }
 
-    printk(KERN_DEBUG
-           "vboxsf: Successfully loaded version " VBOX_VERSION_STRING
-           " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
-
-    return 0;
-
- fail2:
-    VbglR0SfDisconnect(&g_SfClient);
-
- fail1:
-    VbglR0SfTerm();
-
- fail0:
-    unregister_filesystem(&vboxsf_fs_type);
-    return rcRet;
+                /*
+                 * Failed. Bail out.
+                 */
+                LogRel(("vboxsf: register_filesystem failed: rc=%d\n", rc));
+            } else  {
+                LogRel(("vboxsf: VbglR0SfSetUtf8 failed, rc=%Rrc\n", rc));
+                rc = -EPROTO;
+            }
+            VbglR0SfDisconnect(&g_SfClient);
+        } else {
+            LogRel(("vboxsf: VbglR0SfConnect failed, rc=%Rrc\n", rc));
+            rc = rc == VERR_HGCM_SERVICE_NOT_FOUND ? -EHOSTDOWN : -ECONNREFUSED;
+        }
+        VbglR0SfTerm();
+    } else {
+        LogRel(("vboxsf: VbglR0SfInit failed, rc=%Rrc\n", rc));
+        rc = -EPROTO;
+    }
+    return rc;
 }
 
+
+/**
+ * Called on module finalization.
+ */
 static void __exit fini(void)
 {
-    TRACE();
+    SFLOGFLOW(("vboxsf: fini\n"));
 
+    unregister_filesystem(&g_vboxsf_fs_type);
     VbglR0SfDisconnect(&g_SfClient);
     VbglR0SfTerm();
-    unregister_filesystem(&vboxsf_fs_type);
 }
 
 

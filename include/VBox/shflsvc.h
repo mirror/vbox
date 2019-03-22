@@ -1510,6 +1510,13 @@ typedef struct _VBoxSFFlush
 /** @} */
 
 
+/** @name SHFL_FN_SET_UTF8
+ * @{ */
+/** NUmber of parameters for SHFL_FN_SET_UTF8.   */
+#define SHFL_CPARMS_SET_UTF8 (0)
+/** @} */
+
+
 /** @name SHFL_FN_LIST
  * @remarks Listing information includes variable length RTDIRENTRY[EX]
  *          structures.
@@ -1838,6 +1845,13 @@ typedef struct _VBoxSFSymlink
 } VBoxSFSymlink;
 
 #define SHFL_CPARMS_SYMLINK  (4)
+/** @} */
+
+
+/** @name SHFL_FN_SET_SYMLINKS
+ * @{ */
+/** NUmber of parameters for SHFL_FN_SET_SYMLINKS.   */
+#define SHFL_CPARMS_SET_SYMLINKS (0)
 /** @} */
 
 

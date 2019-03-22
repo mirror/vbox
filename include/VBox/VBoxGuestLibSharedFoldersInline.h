@@ -103,7 +103,6 @@ DECLINLINE(int) VbglR0SfHostReqQueryFeatures(VBOXSFQUERYFEATURES *pReq)
     return vrc;
 }
 
-
 /**
  * SHFL_FN_QUERY_FEATURES request, simplified version.
  */
@@ -124,6 +123,76 @@ DECLINLINE(int) VbglR0SfHostReqQueryFeaturesSimple(uint64_t *pfFeatures, uint32_
     return VERR_NO_MEMORY;
 }
 
+
+/** Request structure for VbglR0SfHostReqSetUtf8 and VbglR0SfHostReqSetSymlink. */
+typedef struct VBOXSFNOPARMS
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    /* no parameters */
+} VBOXSFNOPARMS;
+
+/**
+ * Worker for request without any parameters.
+ */
+DECLINLINE(int) VbglR0SfHostReqNoParms(VBOXSFNOPARMS *pReq, uint32_t uFunction, uint32_t cParms)
+{
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                uFunction, cParms, sizeof(*pReq));
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, sizeof(*pReq));
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
+
+/**
+ * Worker for request without any parameters, simplified.
+ */
+DECLINLINE(int) VbglR0SfHostReqNoParmsSimple(uint32_t uFunction, uint32_t cParms)
+{
+    VBOXSFNOPARMS *pReq = (VBOXSFNOPARMS *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
+    {
+        int vrc = VbglR0SfHostReqNoParms(pReq, uFunction, cParms);
+        VbglR0PhysHeapFree(pReq);
+        return vrc;
+    }
+    return VERR_NO_MEMORY;
+}
+
+
+/**
+ * SHFL_F_SET_UTF8 request.
+ */
+DECLINLINE(int) VbglR0SfHostReqSetUtf8(VBOXSFNOPARMS *pReq)
+{
+    return VbglR0SfHostReqNoParms(pReq, SHFL_FN_SET_UTF8, SHFL_CPARMS_SET_UTF8);
+}
+
+/**
+ * SHFL_F_SET_UTF8 request, simplified version.
+ */
+DECLINLINE(int) VbglR0SfHostReqSetUtf8Simple(void)
+{
+    return VbglR0SfHostReqNoParmsSimple(SHFL_FN_SET_UTF8, SHFL_CPARMS_SET_UTF8);
+}
+
+
+/**
+ * SHFL_F_SET_SYMLINKS request.
+ */
+DECLINLINE(int) VbglR0SfHostReqSetSymlinks(VBOXSFNOPARMS *pReq)
+{
+    return VbglR0SfHostReqNoParms(pReq, SHFL_FN_SET_SYMLINKS, SHFL_CPARMS_SET_SYMLINKS);
+}
+
+/**
+ * SHFL_F_SET_SYMLINKS request, simplified version.
+ */
+DECLINLINE(int) VbglR0SfHostReqSetSymlinksSimple(void)
+{
+    return VbglR0SfHostReqNoParmsSimple(SHFL_FN_SET_SYMLINKS, SHFL_CPARMS_SET_SYMLINKS);
+}
 
 
 /** Request structure for VbglR0SfHostReqMapFolderWithBuf.  */
