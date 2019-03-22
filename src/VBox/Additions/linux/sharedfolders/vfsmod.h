@@ -109,6 +109,8 @@ DECLINLINE(void) set_nlink(struct inode *pInode, unsigned int cLinks)
 /* global variables */
 extern VBGLSFCLIENT                    g_SfClient;
 extern spinlock_t                      g_SfHandleLock;
+extern uint32_t                        g_uSfLastFunction;
+extern uint64_t                        g_fSfFeatures;
 
 extern struct inode_operations         vbsf_dir_iops;
 extern struct inode_operations         vbsf_lnk_iops;

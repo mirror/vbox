@@ -837,8 +837,9 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
  * to the host.
  */
 void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t offFile, uint32_t cbRange,
-                                    uint8_t const *pbSrcBuf, struct page **papSrcPages, uint32_t offSrcPage)
+                                    uint8_t const *pbSrcBuf, struct page **papSrcPages, uint32_t offSrcPage, size_t cSrcPages)
 {
+    Assert(offSrcPage < PAGE_SIZE);
     if (mapping && mapping->nrpages > 0) {
         /*
          * Work the pages in the write range.
@@ -867,9 +868,11 @@ void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t offFil
                     else {
                         uint32_t const cbSrc0 = PAGE_SIZE - offSrcPage;
                         uint8_t const *pbSrc  = (uint8_t const *)kmap(papSrcPages[0]);
+                        AssertMsg(cSrcPages >= 1, ("offFile=%#llx cbRange=%#zx cbToCopy=%#zx\n", offFile, cbRange, cbToCopy));
                         memcpy(&pbDst[offDstPage], &pbSrc[offSrcPage], RT_MIN(cbToCopy, cbSrc0));
                         kunmap(papSrcPages[0]);
                         if (cbToCopy > cbSrc0) {
+                            AssertMsg(cSrcPages >= 2, ("offFile=%#llx cbRange=%#zx cbToCopy=%#zx\n", offFile, cbRange, cbToCopy));
                             pbSrc = (uint8_t const *)kmap(papSrcPages[1]);
                             memcpy(&pbDst[offDstPage + cbSrc0], pbSrc, cbToCopy - cbSrc0);
                             kunmap(papSrcPages[1]);
@@ -892,20 +895,26 @@ void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t offFil
             /*
              * Advance.
              */
-            cbRange -= cbToCopy;
-            offFile += cbToCopy;
             if (pbSrcBuf)
                 pbSrcBuf += cbToCopy;
             else
             {
                 offSrcPage += cbToCopy;
+                Assert(offSrcPage < PAGE_SIZE * 2);
                 if (offSrcPage >= PAGE_SIZE) {
                     offSrcPage &= PAGE_OFFSET_MASK;
                     papSrcPages++;
+# ifdef VBOX_STRICT
+                    Assert(cSrcPages > 0);
+                    cSrcPages--;
+# endif
                 }
             }
+            offFile += cbToCopy;
+            cbRange -= cbToCopy;
         }
     }
+    RT_NOREF(cSrcPages);
 }
 
 
@@ -978,7 +987,7 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
                 AssertStmt(cbActual <= cbChunk, cbActual = cbChunk);
 
                 vbsf_reg_write_sync_page_cache(inode->i_mapping, offFile, cbActual, NULL /*pbKrnlBuf*/,
-                                               papPages, (uintptr_t)buf & PAGE_OFFSET_MASK);
+                                               papPages, (uintptr_t)buf & PAGE_OFFSET_MASK, cPages);
                 vbsf_unlock_user_pages(papPages, cPages, false /*fSetDirty*/, fLockPgHack);
 
                 cbRet   += cbActual;
@@ -1098,7 +1107,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
                     cbRet = pReq->Parms.cb32Write.u.value32;
                     AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
                     vbsf_reg_write_sync_page_cache(mapping, pos, (uint32_t)cbRet, pReq->abData,
-                                                   NULL /*papSrcPages*/, 0 /*offSrcPage0*/);
+                                                   NULL /*papSrcPages*/, 0 /*offSrcPage0*/, 0 /*cSrcPages*/);
                     pos += cbRet;
                     *off = pos;
                     if (pos > i_size_read(inode))
@@ -1133,7 +1142,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
                         cbRet = pReq->Parms.cb32Write.u.value32;
                         AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
                         vbsf_reg_write_sync_page_cache(mapping, pos, (uint32_t)cbRet, (uint8_t const *)pvBounce,
-                                                       NULL /*papSrcPages*/, 0 /*offSrcPage0*/);
+                                                       NULL /*papSrcPages*/, 0 /*offSrcPage0*/, 0 /*cSrcPages*/);
                         pos += cbRet;
                         *off = pos;
                         if (pos > i_size_read(inode))
@@ -1859,7 +1868,7 @@ static ssize_t vbsf_reg_write_iter_locking(struct kiocb *kio, struct iov_iter *i
                 uint32_t cbActual = pReq->Parms.cb32Write.u.value32;
                 AssertStmt(cbActual <= cbChunk, cbActual = cbChunk);
 
-                vbsf_reg_write_sync_page_cache(mapping, offFile, (uint32_t)cbRet, NULL /*pbSrcBuf*/, papPages, offPage0);
+                vbsf_reg_write_sync_page_cache(mapping, offFile, cbActual, NULL /*pbSrcBuf*/, papPages, offPage0, cPages);
                 vbsf_iter_unlock_pages(iter, papPages, cPages, false /*fSetDirty*/);
 
                 cbRet      += cbActual;
@@ -2001,7 +2010,7 @@ static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
                         cbRet = pReq->Parms.cb32Write.u.value32;
                         AssertStmt(cbRet <= (ssize_t)cbToWrite, cbRet = cbToWrite);
                         vbsf_reg_write_sync_page_cache(mapping, offFile, (uint32_t)cbRet, pReq->abData,
-                                                       NULL /*papSrcPages*/, 0 /*offSrcPage0*/);
+                                                       NULL /*papSrcPages*/, 0 /*offSrcPage0*/, 0 /*cSrcPages*/);
                         kio->ki_pos = offFile += cbRet;
                         if (offFile > i_size_read(inode))
                             i_size_write(inode, offFile);
@@ -2349,6 +2358,64 @@ static int vbsf_reg_fsync(struct file *file, struct dentry *dentry, int datasync
 #endif /* < 2.6.35 */
 
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+/**
+ * Copy a datablock from one file to another on the host side.
+ */
+static ssize_t vbsf_reg_copy_file_range(struct file *pFileSrc, loff_t offSrc, struct file *pFileDst, loff_t offDst,
+                                        size_t cbRange, unsigned int fFlags)
+{
+    ssize_t cbRet;
+    if (g_uSfLastFunction >= SHFL_FN_COPY_FILE_PART) {
+        struct inode           *pInodeSrc     = pFileSrc->f_inode;
+        struct vbsf_inode_info *pInodeInfoSrc = VBSF_GET_INODE_INFO(pInodeSrc);
+        struct vbsf_super_info *pSuperInfoSrc = VBSF_GET_SUPER_INFO(pInodeSrc->i_sb);
+        struct vbsf_reg_info   *pFileInfoSrc  = (struct vbsf_reg_info *)pFileSrc->private_data;
+        struct inode           *pInodeDst     = pInodeSrc;
+        struct vbsf_inode_info *pInodeInfoDst = VBSF_GET_INODE_INFO(pInodeDst);
+        struct vbsf_super_info *pSuperInfoDst = VBSF_GET_SUPER_INFO(pInodeDst->i_sb);
+        struct vbsf_reg_info   *pFileInfoDst  = (struct vbsf_reg_info *)pFileDst->private_data;
+        VBOXSFCOPYFILEPARTREQ  *pReq;
+
+        /*
+         * Some extra validation.
+         */
+        AssertPtrReturn(pInodeInfoSrc, -EOPNOTSUPP);
+        Assert(pInodeInfoSrc->u32Magic == SF_INODE_INFO_MAGIC);
+        AssertPtrReturn(pInodeInfoDst, -EOPNOTSUPP);
+        Assert(pInodeInfoDst->u32Magic == SF_INODE_INFO_MAGIC);
+
+# if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+        if (!S_ISREG(pInodeSrc->i_mode) || !S_ISREG(pInodeDst->i_mode))
+            return S_ISDIR(pInodeSrc->i_mode) || S_ISDIR(pInodeDst->i_mode) ? -EISDIR : -EINVAL;
+# endif
+
+        /*
+         * Allocate the request and issue it.
+         */
+        pReq = (VBOXSFCOPYFILEPARTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+        if (pReq) {
+            int vrc = VbglR0SfHostReqCopyFilePart(pSuperInfoSrc->map.root, pFileInfoSrc->Handle.hHost, offSrc,
+                                                  pSuperInfoDst->map.root, pFileInfoDst->Handle.hHost, offDst,
+                                                  cbRange, 0 /*fFlags*/, pReq);
+            if (RT_SUCCESS(vrc))
+                cbRet = pReq->Parms.cb64ToCopy.u.value64;
+            else if (vrc == VERR_NOT_IMPLEMENTED)
+                cbRet = -EOPNOTSUPP;
+            else
+                cbRet = -RTErrConvertToErrno(vrc);
+
+            VbglR0PhysHeapFree(pReq);
+        } else
+            cbRet = -ENOMEM;
+    } else {
+        cbRet = -EOPNOTSUPP;
+    }
+    SFLOGFLOW(("vbsf_reg_copy_file_range: returns %zd\n", cbRet));
+    return cbRet;
+}
+#endif /* > 4.5 */
+
 #ifdef SFLOG_ENABLED
 /*
  * This is just for logging page faults and such.
@@ -2522,34 +2589,37 @@ extern int vbsf_reg_mmap(struct file *file, struct vm_area_struct *vma)
  * File operations for regular files.
  */
 struct file_operations vbsf_reg_fops = {
-    .open        = vbsf_reg_open,
-    .read        = vbsf_reg_read,
-    .write       = vbsf_reg_write,
+    .open            = vbsf_reg_open,
+    .read            = vbsf_reg_read,
+    .write           = vbsf_reg_write,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
-    .read_iter   = vbsf_reg_read_iter,
-    .write_iter  = vbsf_reg_write_iter,
+    .read_iter       = vbsf_reg_read_iter,
+    .write_iter      = vbsf_reg_write_iter,
 #endif
-    .release     = vbsf_reg_release,
+    .release         = vbsf_reg_release,
 #ifdef SFLOG_ENABLED
-    .mmap        = vbsf_reg_mmap,
+    .mmap            = vbsf_reg_mmap,
 #else
-    .mmap        = generic_file_mmap,
+    .mmap            = generic_file_mmap,
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 /** @todo This code is known to cause caching of data which should not be
  * cached.  Investigate. */
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
-    .splice_read = vbsf_splice_read,
+    .splice_read     = vbsf_splice_read,
 # else
-    .sendfile    = generic_file_sendfile,
+    .sendfile        = generic_file_sendfile,
 # endif
-    .aio_read    = generic_file_aio_read,
-    .aio_write   = generic_file_aio_write,
+    .aio_read        = generic_file_aio_read,
+    .aio_write       = generic_file_aio_write,
 # endif
 #endif
-    .llseek      = vbsf_reg_llseek,
-    .fsync       = vbsf_reg_fsync,
+    .llseek          = vbsf_reg_llseek,
+    .fsync           = vbsf_reg_fsync,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+    .copy_file_range = vbsf_reg_copy_file_range,
+#endif
 };
 
 struct inode_operations vbsf_reg_iops = {

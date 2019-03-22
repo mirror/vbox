@@ -62,6 +62,70 @@
 extern uint32_t g_fHostFeatures;
 extern VBGLSFCLIENT g_SfClient; /**< Move this into the parameters? */
 
+/** Request structure for VbglR0SfHostReqQueryFeatures. */
+typedef struct VBOXSFQUERYFEATURES
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmQueryFeatures Parms;
+} VBOXSFQUERYFEATURES;
+
+/**
+ * SHFL_FN_QUERY_FEATURES request.
+ */
+DECLINLINE(int) VbglR0SfHostReqQueryFeatures(VBOXSFQUERYFEATURES *pReq)
+{
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_QUERY_FEATURES, SHFL_CPARMS_QUERY_FEATURES, sizeof(*pReq));
+
+    pReq->Parms.f64Features.type          = VMMDevHGCMParmType_64bit;
+    pReq->Parms.f64Features.u.value64     = 0;
+
+    pReq->Parms.u32LastFunction.type      = VMMDevHGCMParmType_32bit;
+    pReq->Parms.u32LastFunction.u.value32 = 0;
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, sizeof(*pReq));
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+
+    /*
+     * Provide fallback values based on g_fHostFeatures to simplify
+     * compatibility with older hosts and avoid duplicating this logic.
+     */
+    if (RT_FAILURE(vrc))
+    {
+        pReq->Parms.f64Features.u.value64     = 0;
+        pReq->Parms.u32LastFunction.u.value32 = g_fHostFeatures & VMMDEV_HVF_HGCM_NO_BOUNCE_PAGE_LIST
+                                              ?  SHFL_FN_SET_FILE_SIZE : SHFL_FN_SET_SYMLINKS;
+        if (vrc == VERR_NOT_SUPPORTED)
+            vrc = VINF_NOT_SUPPORTED;
+    }
+    return vrc;
+}
+
+
+/**
+ * SHFL_FN_QUERY_FEATURES request, simplified version.
+ */
+DECLINLINE(int) VbglR0SfHostReqQueryFeaturesSimple(uint64_t *pfFeatures, uint32_t *puLastFunction)
+{
+    VBOXSFQUERYFEATURES *pReq = (VBOXSFQUERYFEATURES *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
+    {
+        int rc = VbglR0SfHostReqQueryFeatures(pReq);
+        if (pfFeatures)
+            *pfFeatures = pReq->Parms.f64Features.u.value64;
+        if (puLastFunction)
+            *puLastFunction = pReq->Parms.u32LastFunction.u.value32;
+
+        VbglR0PhysHeapFree(pReq);
+        return rc;
+    }
+    return VERR_NO_MEMORY;
+}
+
+
+
 /** Request structure for VbglR0SfHostReqMapFolderWithBuf.  */
 typedef struct VBOXSFMAPFOLDERWITHBUFREQ
 {
@@ -1028,6 +1092,57 @@ DECLINLINE(int) VbglR0SfHostReqWriteContig(SHFLROOT idRoot, VBOXSFWRITEPGLSTREQ 
         vrc = pReq->Call.header.result;
     return vrc;
 }
+
+
+/** Request structure for VbglR0SfHostReqCopyFilePart.  */
+typedef struct VBOXSFCOPYFILEPARTREQ
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmCopyFilePart  Parms;
+} VBOXSFCOPYFILEPARTREQ;
+
+/**
+ * SHFL_FN_CREATE request.
+ */
+DECLINLINE(int) VbglR0SfHostReqCopyFilePart(SHFLROOT idRootSrc, SHFLHANDLE hHostFileSrc, uint64_t offSrc,
+                                            SHFLROOT idRootDst, SHFLHANDLE hHostFileDst, uint64_t offDst,
+                                            uint64_t cbToCopy, uint32_t fFlags, VBOXSFCOPYFILEPARTREQ *pReq)
+{
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_COPY_FILE_PART, SHFL_CPARMS_COPY_FILE_PART, sizeof(*pReq));
+
+    pReq->Parms.id32RootSrc.type        = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32RootSrc.u.value32   = idRootSrc;
+
+    pReq->Parms.u64HandleSrc.type       = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64HandleSrc.u.value64  = hHostFileSrc;
+
+    pReq->Parms.off64Src.type           = VMMDevHGCMParmType_64bit;
+    pReq->Parms.off64Src.u.value64      = offSrc;
+
+    pReq->Parms.id32RootDst.type        = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32RootDst.u.value32   = idRootDst;
+
+    pReq->Parms.u64HandleDst.type       = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64HandleDst.u.value64  = hHostFileDst;
+
+    pReq->Parms.off64Dst.type           = VMMDevHGCMParmType_64bit;
+    pReq->Parms.off64Dst.u.value64      = offDst;
+
+    pReq->Parms.cb64ToCopy.type         = VMMDevHGCMParmType_64bit;
+    pReq->Parms.cb64ToCopy.u.value64    = cbToCopy;
+
+    pReq->Parms.f32Flags.type           = VMMDevHGCMParmType_32bit;
+    pReq->Parms.f32Flags.u.value32      = fFlags;
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, sizeof(*pReq));
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
+
+
 
 /** Request structure for VbglR0SfHostReqListDirContig2x() and
  *  VbglR0SfHostReqListDir(). */

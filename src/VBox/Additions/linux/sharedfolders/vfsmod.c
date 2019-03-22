@@ -61,6 +61,10 @@
 *********************************************************************************************************************************/
 VBGLSFCLIENT g_SfClient;
 uint32_t     g_fHostFeatures = 0;
+/** Last valid shared folders function number. */
+uint32_t     g_uSfLastFunction = SHFL_FN_SET_FILE_SIZE;
+/** Shared folders features. */
+uint64_t     g_fSfFeatures = 0;
 
 /** Protects all the vbsf_inode_info::HandleList lists. */
 spinlock_t   g_SfHandleLock;
@@ -852,7 +856,10 @@ static int __init init(void)
         LogRelFunc(("VbglR0QueryHostFeatures failed: vrc=%Rrc (ignored)\n", vrc));
         g_fHostFeatures = 0;
     }
-    LogRelFunc(("g_fHostFeatures=%#x\n", g_fHostFeatures));
+
+    VbglR0SfHostReqQueryFeaturesSimple(&g_fSfFeatures, &g_uSfLastFunction);
+    LogRelFunc(("g_fHostFeatures=%#x g_fSfFeatures=%#RX64 g_uSfLastFunction=%u\n",
+                g_fHostFeatures, g_fSfFeatures, g_uSfLastFunction));
 
     vrc = VbglR0SfSetUtf8(&g_SfClient);
     if (RT_FAILURE(vrc)) {
