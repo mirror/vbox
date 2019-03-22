@@ -451,8 +451,10 @@ void UIMouseHandler::sltMousePointerShapeChanged()
     /* First of all, we should check if the host pointer should be visible.
      * We should hide host pointer in case of:
      * 1. mouse is 'captured' or
-     * 2. machine is NOT 'paused' and mouse is NOT 'captured' and 'integrated' and 'absolute' but host pointer is 'hidden' by the guest. */
+     * 2. valid guest mouse cursor position provided to override host cursor with more actual coordinates
+     * 3. machine is NOT 'paused' and mouse is NOT 'captured' and 'integrated' and 'absolute' but host pointer is 'hidden' by the guest. */
     if (uisession()->isMouseCaptured() ||
+        uisession()->isValidCursorPositionPresent() ||
         (!uisession()->isPaused() &&
          uisession()->isMouseIntegrated() &&
          uisession()->isMouseSupportsAbsolute() &&
@@ -525,6 +527,9 @@ UIMouseHandler::UIMouseHandler(UIMachineLogic *pMachineLogic)
     /* Mouse pointer shape state-change updaters: */
     connect(uisession(), SIGNAL(sigMousePointerShapeChange()), this, SLOT(sltMousePointerShapeChanged()));
     connect(this, SIGNAL(sigStateChange(int)), this, SLOT(sltMousePointerShapeChanged()));
+
+    /* Mouse cursor position state-change updater: */
+    connect(uisession(), &UISession::sigCursorPositionChange, this, &UIMouseHandler::sltMousePointerShapeChanged);
 
     /* Initialize: */
     sltMachineStateChanged();
