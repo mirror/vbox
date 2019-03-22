@@ -605,6 +605,7 @@ int vbox_dumb_destroy(struct drm_file *file,
 }
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
 static void vbox_bo_unref(struct vbox_bo **bo)
 {
 	struct ttm_buffer_object *tbo;
@@ -617,12 +618,17 @@ static void vbox_bo_unref(struct vbox_bo **bo)
 	if (!tbo)
 		*bo = NULL;
 }
+#endif
 
 void vbox_gem_free_object(struct drm_gem_object *obj)
 {
 	struct vbox_bo *vbox_bo = gem_to_vbox_bo(obj);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
 	vbox_bo_unref(&vbox_bo);
+#else
+	ttm_bo_put(&vbox_bo->bo);
+#endif
 }
 
 static inline u64 vbox_bo_mmap_offset(struct vbox_bo *bo)
@@ -657,7 +663,7 @@ vbox_dumb_mmap_offset(struct drm_file *file,
 	bo = gem_to_vbox_bo(obj);
 	*offset = vbox_bo_mmap_offset(bo);
 
-	drm_gem_object_unreference(obj);
+	drm_gem_object_put(obj);
 	ret = 0;
 
 out_unlock:

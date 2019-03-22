@@ -42,6 +42,9 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_72)
 #include <drm/drm_plane_helper.h>
 #endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
+#include <drm/drm_probe_helper.h>
+#endif
 
 #include "VBoxVideo.h"
 
