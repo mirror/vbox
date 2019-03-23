@@ -1393,6 +1393,36 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
 VBOXDDU_DECL(int) VDCreateVfsFileFromDisk(PVDISK pDisk, uint32_t fFlags,
                                           PRTVFSFILE phVfsFile);
 
+
+
+/** @defgroup grp_vd_ifs_def    Default implementations for certain VD interfaces.
+ * @{
+ */
+/** Internal per interface instance data. */
+typedef struct VDIFINSTINT *VDIFINST;
+/** Pointer to the per instance interface data. */
+typedef VDIFINST *PVDIFINST;
+
+/**
+ * Creates a new VD TCP/IP interface instance and adds it to the given interface list.
+ *
+ * @returns VBox status code.
+ * @param   phTcpNetInst        Where to store the TCP/IP interface handle on success.
+ * @param   ppVdIfs             Pointer to the VD interface list.
+ */
+VBOXDDU_DECL(int) VDIfTcpNetInstDefaultCreate(PVDIFINST phTcpNetInst, PVDINTERFACE *ppVdIfs);
+
+/**
+ * Destroys the given VD TCP/IP interface instance.
+ *
+ * @returns nothing.
+ * @param   hTcpNetInst         The TCP/IP interface instance handle.
+ */
+VBOXDDU_DECL(void) VDIfTcpNetInstDefaultDestroy(VDIFINST hTcpNetInst);
+/** @} */
+
+
+
 /** @defgroup grp_vd_ioiter     I/O iterator
  * @{
  */
@@ -1607,8 +1637,8 @@ VBOXDDU_DECL(int) VDIoBufMgrCreate(PVDIOBUFMGR phIoBufMgr, size_t cbMax, uint32_
  */
 VBOXDDU_DECL(int) VDIoBufMgrDestroy(VDIOBUFMGR hIoBufMgr);
 
-/**-
- * Allocate a new I/O buffer.
+/**
+ * Allocate a new I/O buffer handle.
  *
  * @returns VBox status code.
  * @param   hIoBufMgr       The I/O buffer manager to use.

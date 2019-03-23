@@ -40,6 +40,7 @@ if !defined(VBOX_ONLY_EXTPACKS)
  	VDVfs.cpp \
  	VDIfVfs.cpp \
  	VDIfVfs2.cpp \
+ 	VDIfTcpNet.cpp \
  	VDI.cpp \
  	VMDK.cpp \
  	VHD.cpp \
