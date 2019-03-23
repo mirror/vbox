@@ -36,7 +36,6 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/file.h>
-#include <iprt/tcp.h>
 #include <iprt/cpp/utils.h>
 #include <iprt/memsafer.h>
 #include <iprt/base64.h>
@@ -189,7 +188,8 @@ struct Medium::Data
 
     VDINTERFACECONFIG vdIfConfig;
 
-    VDINTERFACETCPNET vdIfTcpNet;
+    /** The handle to the default VD TCP/IP interface. */
+    VDIFINST          hTcpNetInst;
 
     PVDINTERFACE vdDiskIfaces;
     PVDINTERFACE vdImageIfaces;
@@ -898,24 +898,6 @@ HRESULT Medium::FinalConstruct()
     m->vdIfConfig.pfnQuery = i_vdConfigQuery;
     m->vdIfConfig.pfnQueryBytes = NULL;
 
-    /* Initialize the callbacks of the VD TCP interface (we always use the host
-     * IP stack for now) */
-    m->vdIfTcpNet.pfnSocketCreate = i_vdTcpSocketCreate;
-    m->vdIfTcpNet.pfnSocketDestroy = i_vdTcpSocketDestroy;
-    m->vdIfTcpNet.pfnClientConnect = i_vdTcpClientConnect;
-    m->vdIfTcpNet.pfnClientClose = i_vdTcpClientClose;
-    m->vdIfTcpNet.pfnIsClientConnected = i_vdTcpIsClientConnected;
-    m->vdIfTcpNet.pfnSelectOne = i_vdTcpSelectOne;
-    m->vdIfTcpNet.pfnRead = i_vdTcpRead;
-    m->vdIfTcpNet.pfnWrite = i_vdTcpWrite;
-    m->vdIfTcpNet.pfnSgWrite = i_vdTcpSgWrite;
-    m->vdIfTcpNet.pfnFlush = i_vdTcpFlush;
-    m->vdIfTcpNet.pfnSetSendCoalescing = i_vdTcpSetSendCoalescing;
-    m->vdIfTcpNet.pfnGetLocalAddress = i_vdTcpGetLocalAddress;
-    m->vdIfTcpNet.pfnGetPeerAddress = i_vdTcpGetPeerAddress;
-    m->vdIfTcpNet.pfnSelectOneEx = NULL;
-    m->vdIfTcpNet.pfnPoke = NULL;
-
     /* Initialize the per-disk interface chain (could be done more globally,
      * but it's not wasting much time or space so it's not worth it). */
     int vrc;
@@ -932,10 +914,9 @@ HRESULT Medium::FinalConstruct()
                          sizeof(VDINTERFACECONFIG), &m->vdImageIfaces);
     AssertRCReturn(vrc, E_FAIL);
 
-    vrc = VDInterfaceAdd(&m->vdIfTcpNet.Core,
-                         "Medium::vdInterfaceTcpNet",
-                         VDINTERFACETYPE_TCPNET, this,
-                         sizeof(VDINTERFACETCPNET), &m->vdImageIfaces);
+    /* Initialize the callbacks of the VD TCP interface (we always use the host
+     * IP stack for now) */
+    vrc = VDIfTcpNetInstDefaultCreate(&m->hTcpNetInst, &m->vdImageIfaces);
     AssertRCReturn(vrc, E_FAIL);
 
     return BaseFinalConstruct();
@@ -945,6 +926,7 @@ void Medium::FinalRelease()
 {
     uninit();
 
+    VDIfTcpNetInstDefaultDestroy(m->hTcpNetInst);
     delete m;
 
     BaseFinalRelease();
@@ -8021,106 +8003,6 @@ DECLCALLBACK(int) Medium::i_vdConfigQuery(void *pvUser,
     memcpy(pszValue, value.c_str(), value.length() + 1);
 
     return VINF_SUCCESS;
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock)
-{
-    PVDSOCKETINT pSocketInt = NULL;
-
-    if ((fFlags & VD_INTERFACETCPNET_CONNECT_EXTENDED_SELECT) != 0)
-        return VERR_NOT_SUPPORTED;
-
-    pSocketInt = (PVDSOCKETINT)RTMemAllocZ(sizeof(VDSOCKETINT));
-    if (!pSocketInt)
-        return VERR_NO_MEMORY;
-
-    pSocketInt->hSocket = NIL_RTSOCKET;
-    *pSock = pSocketInt;
-    return VINF_SUCCESS;
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpSocketDestroy(VDSOCKET Sock)
-{
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-
-    if (pSocketInt->hSocket != NIL_RTSOCKET)
-        RTTcpClientCloseEx(pSocketInt->hSocket, false /*fGracefulShutdown*/);
-
-    RTMemFree(pSocketInt);
-
-    return VINF_SUCCESS;
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort,
-                                               RTMSINTERVAL cMillies)
-{
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-
-    return RTTcpClientConnectEx(pszAddress, uPort, &pSocketInt->hSocket, cMillies, NULL);
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpClientClose(VDSOCKET Sock)
-{
-    int rc = VINF_SUCCESS;
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-
-    rc = RTTcpClientCloseEx(pSocketInt->hSocket, false /*fGracefulShutdown*/);
-    pSocketInt->hSocket = NIL_RTSOCKET;
-    return rc;
-}
-
-DECLCALLBACK(bool) Medium::i_vdTcpIsClientConnected(VDSOCKET Sock)
-{
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-    return pSocketInt->hSocket != NIL_RTSOCKET;
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies)
-{
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-    return RTTcpSelectOne(pSocketInt->hSocket, cMillies);
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpRead(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead)
-{
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-    return RTTcpRead(pSocketInt->hSocket, pvBuffer, cbBuffer, pcbRead);
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpWrite(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
-{
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-    return RTTcpWrite(pSocketInt->hSocket, pvBuffer, cbBuffer);
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf)
-{
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-    return RTTcpSgWrite(pSocketInt->hSocket, pSgBuf);
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpFlush(VDSOCKET Sock)
-{
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-    return RTTcpFlush(pSocketInt->hSocket);
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpSetSendCoalescing(VDSOCKET Sock, bool fEnable)
-{
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-    return RTTcpSetSendCoalescing(pSocketInt->hSocket, fEnable);
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr)
-{
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-    return RTTcpGetLocalAddress(pSocketInt->hSocket, pAddr);
-}
-
-DECLCALLBACK(int) Medium::i_vdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
-{
-    PVDSOCKETINT pSocketInt = (PVDSOCKETINT)Sock;
-    return RTTcpGetPeerAddress(pSocketInt->hSocket, pAddr);
 }
 
 DECLCALLBACK(bool) Medium::i_vdCryptoConfigAreKeysValid(void *pvUser, const char *pszzValid)

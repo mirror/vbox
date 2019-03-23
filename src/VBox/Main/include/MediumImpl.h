@@ -351,20 +351,6 @@ private:
                                                  size_t *pcbValue);
     static DECLCALLBACK(int) i_vdConfigQuery(void *pvUser, const char *pszName,
                                              char *pszValue, size_t cchValue);
-    static DECLCALLBACK(int) i_vdTcpSocketCreate(uint32_t fFlags, PVDSOCKET pSock);
-    static DECLCALLBACK(int) i_vdTcpSocketDestroy(VDSOCKET Sock);
-    static DECLCALLBACK(int) i_vdTcpClientConnect(VDSOCKET Sock, const char *pszAddress, uint32_t uPort,
-                                                  RTMSINTERVAL cMillies);
-    static DECLCALLBACK(int) i_vdTcpClientClose(VDSOCKET Sock);
-    static DECLCALLBACK(bool) i_vdTcpIsClientConnected(VDSOCKET Sock);
-    static DECLCALLBACK(int) i_vdTcpSelectOne(VDSOCKET Sock, RTMSINTERVAL cMillies);
-    static DECLCALLBACK(int) i_vdTcpRead(VDSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead);
-    static DECLCALLBACK(int) i_vdTcpWrite(VDSOCKET Sock, const void *pvBuffer, size_t cbBuffer);
-    static DECLCALLBACK(int) i_vdTcpSgWrite(VDSOCKET Sock, PCRTSGBUF pSgBuf);
-    static DECLCALLBACK(int) i_vdTcpFlush(VDSOCKET Sock);
-    static DECLCALLBACK(int) i_vdTcpSetSendCoalescing(VDSOCKET Sock, bool fEnable);
-    static DECLCALLBACK(int) i_vdTcpGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr);
-    static DECLCALLBACK(int) i_vdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr);
 
     static DECLCALLBACK(bool) i_vdCryptoConfigAreKeysValid(void *pvUser,
                                                            const char *pszzValid);
