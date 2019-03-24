@@ -1702,10 +1702,14 @@ int vbsfReadLink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint
         if (RT_SUCCESS(rc))
         {
             /* Convert the slashes in the link target to the guest path separator characters. */
+            /** @todo r=bird: for some messed up reason, we return UTF-8 here rather than
+             * the character set selected by the client.  We also don't return the
+             * length, so the clients are paranoid about the zero termination behavior. */
+            char ch;
             char *psz = (char *)pBuffer;
-            while (*psz != '\0')
+            while ((ch = *psz) != '\0')
             {
-                if (*psz == RTPATH_DELIMITER)
+                if (RTPATH_IS_SLASH(ch))
                     *psz = pClient->PathDelimiter;
                 psz++;
             }
@@ -2383,7 +2387,7 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
     if (RT_SUCCESS(rc))
     {
         RTFSOBJINFO info;
-        rc = RTPathQueryInfoEx(pszFullNewPath, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
+        rc = RTPathQueryInfoEx(pszFullNewPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
         if (RT_SUCCESS(rc))
             vbfsCopyFsObjInfoFromIprt(pInfo, &info);
     }
