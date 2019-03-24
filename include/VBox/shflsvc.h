@@ -118,7 +118,7 @@
 #define SHFL_FN_MAP_FOLDER          (17)
 /** Read symlink destination.
  * @since VBox 4.0  */
-#define SHFL_FN_READLINK            (18)
+#define SHFL_FN_READLINK            (18) /**< @todo rename to SHFL_FN_READ_LINK (see struct capitalization) */
 /** Create symlink.
  * @since VBox 4.0  */
 #define SHFL_FN_SYMLINK             (19)
@@ -1612,6 +1612,22 @@ typedef struct _VBoxSFList
  * @{
  */
 
+/** SHFL_FN_READLINK parameters. */
+typedef struct VBoxSFParmReadLink
+{
+    /** value32, in: SHFLROOT of the mapping which the symlink is read. */
+    HGCMFunctionParameter id32Root;
+    /** pointer, in: SHFLSTRING full path to the symlink. */
+    HGCMFunctionParameter pStrPath;
+    /** pointer, out: Buffer to place the symlink target into.
+     * @note Buffer contains UTF-8 characters on success, regardless of the
+     *       UTF-8/UTF-16 setting of the connection.  Will be zero terminated.
+     *
+     * @todo r=bird: This should've been a string!
+     * @todo r=bird: There should've been a byte count returned! */
+    HGCMFunctionParameter pBuffer;
+} VBoxSFParmReadLink;
+
 /** Parameters structure. */
 typedef struct _VBoxSFReadLink
 {
@@ -1629,6 +1645,8 @@ typedef struct _VBoxSFReadLink
 
     /** pointer, out:
      * Buffer to place data to.
+     * @note Buffer contains UTF-8 characters on success, regardless of the
+     *       UTF-8/UTF-16 setting of the connection.  Will be zero terminated.
      */
     HGCMFunctionParameter buffer;
 
@@ -1816,6 +1834,19 @@ typedef struct _VBoxSFRename
 /** @name SHFL_FN_SYMLINK
  * @{
  */
+
+/** Parameters structure. */
+typedef struct VBoxSFParmCreateSymlink
+{
+    /** value32, in: SHFLROOT of the mapping the symlink should be created on. */
+    HGCMFunctionParameter id32Root;
+    /** pointer, in: SHFLSTRING giving the path to the symlink. */
+    HGCMFunctionParameter pStrSymlink;
+    /** pointer, in: SHFLSTRING giving the target. */
+    HGCMFunctionParameter pStrTarget;
+    /** pointer, out: SHFLFSOBJINFO buffer to be filled with info about the created symlink. */
+    HGCMFunctionParameter pInfo;
+} VBoxSFParmCreateSymlink;
 
 /** Parameters structure. */
 typedef struct _VBoxSFSymlink

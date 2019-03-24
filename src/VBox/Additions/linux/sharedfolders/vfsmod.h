@@ -393,10 +393,11 @@ DECLINLINE(void) vbsf_dentry_chain_increase_parent_ttl(struct dentry *pDirEntry)
 #endif
 
 extern int  vbsf_stat(const char *caller, struct vbsf_super_info *sf_g, SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
-extern int  vbsf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i,
-                                  struct dentry *dentry, SHFLSTRING ** result);
+extern int  vbsf_path_from_dentry(struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i, struct dentry *dentry,
+                                  SHFLSTRING ** result, const char *caller);
 extern int  vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len,
                         const unsigned char *utf8_name, size_t utf8_len);
+extern int  vbsf_nls_to_shflstring(struct vbsf_super_info *sf_g, const char *pszNls, PSHFLSTRING *ppString);
 
 
 /**

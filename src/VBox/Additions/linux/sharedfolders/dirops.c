@@ -273,6 +273,7 @@ static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info
     return rc;
 }
 
+
 /**
  * Helper function for when we need to convert the name, avoids wasting stack in
  * the UTF-8 code path.
@@ -547,22 +548,23 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
     }
 }
 
+
 /**
  * Directory file operations.
  */
 struct file_operations vbsf_dir_fops = {
-    .open = vbsf_dir_open,
+    .open           = vbsf_dir_open,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
     .iterate_shared = vbsf_dir_iterate,
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-    .iterate = vbsf_dir_iterate,
+    .iterate        = vbsf_dir_iterate,
 #else
-    .readdir = vbsf_dir_read,
+    .readdir        = vbsf_dir_read,
 #endif
-    .release = vbsf_dir_release,
-    .read = generic_read_dir
+    .release        = vbsf_dir_release,
+    .read           = generic_read_dir,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
-    , .llseek = generic_file_llseek
+    .llseek       = generic_file_llseek
 #endif
 };
 
@@ -675,7 +677,7 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
     /*
      * Build the path.  We'll associate the path with dret's inode on success.
      */
-    rc = vbsf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
+    rc = vbsf_path_from_dentry(sf_g, sf_i, dentry, &path, __func__);
     if (rc == 0) {
         /*
          * Do a lookup on the host side.
@@ -799,7 +801,7 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
     /*
      * Build a path.  We'll donate this to the inode on success.
      */
-    rc = vbsf_path_from_dentry(__func__, sf_g, sf_parent_i, dentry, &path);
+    rc = vbsf_path_from_dentry(sf_g, sf_parent_i, dentry, &path, __func__);
     if (rc == 0) {
         /*
          * Allocate, initialize and issue the SHFL_CREATE request.
@@ -1058,6 +1060,7 @@ static int vbsf_inode_create(struct inode *parent, struct dentry *dentry, int mo
                               true /*fStashHandle*/, false /*fDoLookup*/, NULL /*phHandle*/, NULL /*fCreated*/);
 }
 
+
 /**
  * Create a new directory.
  *
@@ -1082,6 +1085,7 @@ static int vbsf_inode_mkdir(struct inode *parent, struct dentry *dentry, int mod
                               false /*fStashHandle*/, false /*fDoLookup*/, NULL /*phHandle*/, NULL /*fCreated*/);
 }
 
+
 /**
  * Remove a regular file / directory.
  *
@@ -1100,7 +1104,7 @@ static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int f
     TRACE();
     BUG_ON(!sf_g);
 
-    err = vbsf_path_from_dentry(__func__, sf_g, sf_parent_i, dentry, &path);
+    err = vbsf_path_from_dentry(sf_g, sf_parent_i, dentry, &path, __func__);
     if (!err) {
         VBOXSFREMOVEREQ *pReq = (VBOXSFREMOVEREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String)
                                            + path->u16Size);
@@ -1136,6 +1140,7 @@ static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int f
     return err;
 }
 
+
 /**
  * Remove a regular file.
  *
@@ -1149,6 +1154,7 @@ static int vbsf_inode_unlink(struct inode *parent, struct dentry *dentry)
     return vbsf_unlink_worker(parent, dentry, false /*fDirectory*/);
 }
 
+
 /**
  * Remove a directory.
  *
@@ -1161,6 +1167,7 @@ static int vbsf_inode_rmdir(struct inode *parent, struct dentry *dentry)
     TRACE();
     return vbsf_unlink_worker(parent, dentry, true /*fDirectory*/);
 }
+
 
 /**
  * Rename a regular file / directory.
@@ -1193,7 +1200,7 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
 
     if (sf_g != VBSF_GET_SUPER_INFO(new_parent->i_sb)) {
         LogFunc(("rename with different roots\n"));
-        err = -EINVAL;
+        err = -EXDEV;
     } else {
         struct vbsf_inode_info *sf_old_i = VBSF_GET_INODE_INFO(old_parent);
         struct vbsf_inode_info *sf_new_i = VBSF_GET_INODE_INFO(new_parent);
@@ -1208,7 +1215,7 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
         BUG_ON(!sf_file_i);
 
         old_path = sf_file_i->path;
-        err = vbsf_path_from_dentry(__func__, sf_g, sf_new_i, new_dentry, &new_path);
+        err = vbsf_path_from_dentry(sf_g, sf_new_i, new_dentry, &new_path, __func__);
         if (err)
             LogFunc(("failed to create new path\n"));
         else {
@@ -1242,82 +1249,90 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
     return err;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-static int vbsf_ino_symlink(struct inode *parent, struct dentry *dentry, const char *symname)
+
+/**
+ * Create a symbolic link.
+ */
+static int vbsf_inode_symlink(struct inode *parent, struct dentry *dentry, const char *target)
 {
-    int err;
-    int rc;
-    struct vbsf_inode_info *sf_i;
-    struct vbsf_super_info *sf_g;
-    SHFLSTRING *path, *ssymname;
-    SHFLFSOBJINFO info;
-    int symname_len = strlen(symname) + 1;
+    /*
+     * Turn the target into a string (contiguous physcial memory).
+     */
+    /** @todo we can save a kmalloc here if we switch to embedding the target rather
+     * than the symlink path into the request.  Will require more NLS helpers. */
+    struct vbsf_super_info *sf_g    = VBSF_GET_SUPER_INFO(parent->i_sb);
+    PSHFLSTRING             pTarget = NULL;
+    int rc = vbsf_nls_to_shflstring(sf_g, target, &pTarget);
+    if (rc == 0) {
+        /*
+         * Create a full path for the symlink name.
+         */
+        struct vbsf_inode_info *sf_i  = VBSF_GET_INODE_INFO(parent);
+        PSHFLSTRING             pPath = NULL;
+        rc = vbsf_path_from_dentry(sf_g, sf_i, dentry, &pPath, __func__);
+        if (rc == 0) {
+            /*
+             * Create the request and issue it.
+             */
+            uint32_t const          cbReq = RT_UOFFSETOF(VBOXSFCREATESYMLINKREQ, StrSymlinkPath.String) + pPath->u16Size;
+            VBOXSFCREATESYMLINKREQ *pReq  = (VBOXSFCREATESYMLINKREQ *)VbglR0PhysHeapAlloc(cbReq);
+            if (pReq) {
+                RT_ZERO(*pReq);
+                memcpy(&pReq->StrSymlinkPath, pPath, SHFLSTRING_HEADER_SIZE + pPath->u16Size);
 
-    TRACE();
-    sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
-    sf_i = VBSF_GET_INODE_INFO(parent);
+                rc = VbglR0SfHostReqCreateSymlinkContig(sf_g->map.root, pTarget, virt_to_phys(pTarget), pReq);
+                if (RT_SUCCESS(rc)) {
+                    sf_i->force_restat = 1;
 
-    BUG_ON(!sf_g);
-    BUG_ON(!sf_i);
-
-    err = vbsf_path_from_dentry(__func__, sf_g, sf_i, dentry, &path);
-    if (err)
-        goto fail0;
-
-    ssymname = kmalloc(offsetof(SHFLSTRING, String.utf8) + symname_len, GFP_KERNEL);
-    if (!ssymname) {
-        LogRelFunc(("kmalloc failed, caller=sf_symlink\n"));
-        err = -ENOMEM;
-        goto fail1;
+                    /*
+                     * Instantiate a new inode for the symlink.
+                     */
+                    rc = vbsf_inode_instantiate(parent, dentry, pPath, &pReq->ObjInfo, SHFL_HANDLE_NIL);
+                    if (rc == 0) {
+                        SFLOGFLOW(("vbsf_inode_symlink: Successfully created '%s' -> '%s'\n", pPath->String.ach, pTarget->String.ach));
+                        pPath = NULL; /* consumed by inode */
+                    } else {
+                        SFLOGFLOW(("vbsf_inode_symlink: Failed to create inode for '%s': %d\n", pPath->String.ach, rc));
+                    }
+                } else {
+                    int const vrc = rc;
+                    rc = -RTErrConvertToErrno(rc);
+                    SFLOGFLOW(("vbsf_inode_symlink: VbglR0SfHostReqCreateSymlinkContig failed for '%s' -> '%s': %Rrc (-> %d)\n",
+                               pPath->String.ach, pTarget->String.ach, vrc, rc));
+                }
+                VbglR0PhysHeapFree(pReq);
+            } else {
+                SFLOGFLOW(("vbsf_inode_symlink: failed to allocate %u phys heap for the request!\n", cbReq));
+                rc = -ENOMEM;
+            }
+            if (pPath)
+                kfree(pPath);
+        }
+        kfree(pTarget);
     }
-
-    ssymname->u16Length = symname_len - 1;
-    ssymname->u16Size = symname_len;
-    memcpy(ssymname->String.utf8, symname, symname_len);
-
-    rc = VbglR0SfSymlink(&g_SfClient, &sf_g->map, path, ssymname, &info);
-    kfree(ssymname);
-
-    if (RT_FAILURE(rc)) {
-        err = RTErrConvertFromErrno(rc);
-        LogFunc(("VbglR0SfSymlink(%s) failed rc=%Rrc\n", sf_i->path->String.utf8, rc));
-        goto fail1;
-    }
-
-    err = vbsf_inode_instantiate(parent, dentry, path, &info, SHFL_HANDLE_NIL);
-    if (err) {
-        LogFunc(("could not instantiate dentry for %s err=%d\n", sf_i->path->String.utf8, err));
-        goto fail1;
-    }
-
-    sf_i->force_restat = 1;
-    return 0;
-
- fail1:
-    kfree(path);
- fail0:
-    return err;
+    return rc;
 }
-#endif /* LINUX_VERSION_CODE >= 2.6.0 */
 
+
+/**
+ * Directory inode operations.
+ */
 struct inode_operations vbsf_dir_iops = {
-    .lookup = vbsf_inode_lookup,
+    .lookup         = vbsf_inode_lookup,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
-    .atomic_open = vbsf_inode_atomic_open,
+    .atomic_open    = vbsf_inode_atomic_open,
 #endif
-    .create = vbsf_inode_create,
-    .mkdir = vbsf_inode_mkdir,
-    .rmdir = vbsf_inode_rmdir,
-    .unlink = vbsf_inode_unlink,
-    .rename = vbsf_inode_rename,
+    .create         = vbsf_inode_create,
+    .symlink        = vbsf_inode_symlink,
+    .mkdir          = vbsf_inode_mkdir,
+    .rmdir          = vbsf_inode_rmdir,
+    .unlink         = vbsf_inode_unlink,
+    .rename         = vbsf_inode_rename,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
-    .getattr = vbsf_inode_getattr,
+    .getattr        = vbsf_inode_getattr,
 #else
-    .revalidate = vbsf_inode_revalidate,
+    .revalidate     = vbsf_inode_revalidate,
 #endif
-    .setattr = vbsf_inode_setattr,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    .symlink = vbsf_ino_symlink,
-#endif
+    .setattr        = vbsf_inode_setattr,
 };
 

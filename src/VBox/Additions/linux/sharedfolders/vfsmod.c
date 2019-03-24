@@ -69,9 +69,9 @@ uint64_t     g_fSfFeatures = 0;
 /** Protects all the vbsf_inode_info::HandleList lists. */
 spinlock_t   g_SfHandleLock;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 52)
+/** The 'follow_symlinks' module parameter.
+ * @todo Figure out how do this for 2.4.x! */
 static int   g_fFollowSymlinks = 0;
-#endif
 
 /* forward declaration */
 static struct super_operations g_vbsf_super_ops;
@@ -870,13 +870,11 @@ static int __init init(void)
              */
             rc = VbglR0SfHostReqSetUtf8Simple();
             if (RT_SUCCESS(rc)) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
                 if (!g_fFollowSymlinks) {
                     rc = VbglR0SfHostReqSetSymlinksSimple();
                     if (RT_FAILURE(rc))
-                        printk(KERN_WARNING "vboxsf: Host unable to show symlinks, rc=%d\n", rc);
+                        printk(KERN_WARNING "vboxsf: Host unable to enable showing symlinks, rc=%d\n", rc);
                 }
-#endif
                 /*
                  * Now that we're ready for action, try register the
                  * file system with the kernel.
@@ -928,7 +926,7 @@ static void __exit fini(void)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 52)
 module_param_named(follow_symlinks, g_fFollowSymlinks, int, 0);
 MODULE_PARM_DESC(follow_symlinks,
-         "Let host resolve symlinks rather than showing them");
+                 "Let host resolve symlinks rather than showing them");
 #endif
 
 

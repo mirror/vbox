@@ -41,7 +41,7 @@
 #include <VBox/VBoxGuestLibSharedFolders.h>
 #include <VBox/VMMDev.h>
 #include <VBox/shflsvc.h>
-#include <iprt/errcore.h>
+#include <iprt/err.h>
 
 
 /** @defgroup grp_vboxguest_lib_r0_sf_inline    Shared Folders Host Request Helpers
@@ -733,7 +733,7 @@ DECLINLINE(int) VbglR0SfHostReqRenameWithSrcContig(SHFLROOT idRoot, VBOXSFRENAME
         pReq->Parms.pStrSrcPath.u.PageList.offset   = RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ, PgLst)
                                                     - sizeof(VBGLIOCIDCHGCMFASTCALL);
         pReq->PgLst.flags                           = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
-        pReq->PgLst.offFirstPage                    = ((uint16_t)PhysSrcStr) & (uint16_t)(PAGE_OFFSET_MASK);
+        pReq->PgLst.offFirstPage                    = (uint16_t)PhysSrcStr & (uint16_t)(PAGE_OFFSET_MASK);
         pReq->PgLst.aPages[0]                       = PhysSrcStr & ~(RTGCPHYS64)PAGE_OFFSET_MASK;
         pReq->PgLst.cPages                          = 1;
     }
@@ -1315,6 +1315,200 @@ DECLINLINE(int) VbglR0SfHostReqListDir(SHFLROOT idRoot, VBOXSFLISTDIRREQ *pReq, 
                                           pBuffer,
                                           VbglR0PhysHeapGetPhysAddr(pBuffer),
                                           cbBuffer);
+}
+
+
+/** Request structure for VbglR0SfHostReqReadLink.  */
+typedef struct VBOXSFREADLINKREQ
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmReadLink      Parms;
+    HGCMPageListInfo        PgLst;
+    SHFLSTRING              StrPath;
+} VBOXSFREADLINKREQ;
+
+/**
+ * SHFL_FN_READLINK request.
+ *
+ * @note Buffer contains UTF-8 characters on success, regardless of the
+ *       UTF-8/UTF-16 setting of the connection.
+ */
+DECLINLINE(int) VbglR0SfHostReqReadLinkContig(SHFLROOT idRoot, void *pvBuffer, RTGCPHYS64 PhysBuffer, uint32_t cbBuffer,
+                                              VBOXSFREADLINKREQ *pReq)
+{
+    uint32_t const cbReq = g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS
+                         ? RT_UOFFSETOF(VBOXSFREADLINKREQ, StrPath.String) + pReq->StrPath.u16Size
+                         :    cbBuffer <= PAGE_SIZE - (PhysBuffer & PAGE_OFFSET_MASK)
+                           || (g_fHostFeatures & VMMDEV_HVF_HGCM_CONTIGUOUS_PAGE_LIST)
+                         ? RT_UOFFSETOF(VBOXSFREADLINKREQ, StrPath.String)
+                         : RT_UOFFSETOF(VBOXSFREADLINKREQ, PgLst);
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_READLINK, SHFL_CPARMS_READLINK, cbReq);
+
+    pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32              = idRoot;
+
+    if (g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS)
+    {
+        pReq->Parms.pStrPath.type               = VMMDevHGCMParmType_Embedded;
+        pReq->Parms.pStrPath.u.Embedded.cbData  = SHFLSTRING_HEADER_SIZE + pReq->StrPath.u16Size;
+        pReq->Parms.pStrPath.u.Embedded.offData = RT_UOFFSETOF(VBOXSFREADLINKREQ, StrPath)
+                                                - sizeof(VBGLIOCIDCHGCMFASTCALL);
+        pReq->Parms.pStrPath.u.Embedded.fFlags  = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
+    }
+    else
+    {
+        pReq->Parms.pStrPath.type               = VMMDevHGCMParmType_LinAddr_In;
+        pReq->Parms.pStrPath.u.LinAddr.cb       = SHFLSTRING_HEADER_SIZE + pReq->StrPath.u16Size;
+        pReq->Parms.pStrPath.u.LinAddr.uAddr    = (uintptr_t)&pReq->StrPath;
+    }
+
+    if (   cbBuffer <= PAGE_SIZE - (PhysBuffer & PAGE_OFFSET_MASK)
+        || (g_fHostFeatures & VMMDEV_HVF_HGCM_CONTIGUOUS_PAGE_LIST))
+    {
+        pReq->Parms.pBuffer.type                = cbBuffer <= PAGE_SIZE - (PhysBuffer & PAGE_OFFSET_MASK)
+                                                ? VMMDevHGCMParmType_PageList
+                                                : VMMDevHGCMParmType_ContiguousPageList;
+        pReq->Parms.pBuffer.u.PageList.size     = cbBuffer;
+        pReq->Parms.pBuffer.u.PageList.offset   = RT_UOFFSETOF(VBOXSFREADLINKREQ, PgLst)
+                                                - sizeof(VBGLIOCIDCHGCMFASTCALL);
+        pReq->PgLst.flags                       = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+        pReq->PgLst.offFirstPage                = (uint16_t)PhysBuffer & (uint16_t)(PAGE_OFFSET_MASK);
+        pReq->PgLst.aPages[0]                   = PhysBuffer & ~(RTGCPHYS64)PAGE_OFFSET_MASK;
+        pReq->PgLst.cPages                      = 1;
+    }
+    else
+    {
+        pReq->Parms.pBuffer.type                = VMMDevHGCMParmType_LinAddr_Out;
+        pReq->Parms.pBuffer.u.LinAddr.cb        = cbBuffer;
+        pReq->Parms.pBuffer.u.LinAddr.uAddr     = (uintptr_t)pvBuffer;
+    }
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, cbReq);
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
+
+/**
+ * SHFL_FN_READLINK request, simplified version.
+ *
+ *
+ * @note Buffer contains UTF-8 characters on success, regardless of the
+ *       UTF-8/UTF-16 setting of the connection.
+ */
+DECLINLINE(int) VbglR0SfHostReqReadLinkContigSimple(SHFLROOT idRoot, const char *pszPath, size_t cchPath, void *pvBuf,
+                                                    RTGCPHYS64 PhysBuffer, uint32_t cbBuffer)
+{
+    if (cchPath < _64K - 1)
+    {
+        VBOXSFREADLINKREQ *pReq = (VBOXSFREADLINKREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFREADLINKREQ, StrPath.String)
+                                                                           + SHFLSTRING_HEADER_SIZE + cchPath);
+        if (pReq)
+        {
+            pReq->StrPath.u16Length = (uint16_t)cchPath;
+            pReq->StrPath.u16Size   = (uint16_t)cchPath + 1;
+            memcpy(pReq->StrPath.String.ach, pszPath, cchPath);
+            pReq->StrPath.String.ach[cchPath] = '\0';
+
+            {
+                int vrc = VbglR0SfHostReqReadLinkContig(idRoot, pvBuf, PhysBuffer, cbBuffer, pReq);
+                VbglR0PhysHeapFree(pReq);
+                return vrc;
+            }
+        }
+        return VERR_NO_MEMORY;
+    }
+    return VERR_FILENAME_TOO_LONG;
+}
+
+
+/** Request structure for VbglR0SfHostReqCreateSymlink.  */
+typedef struct VBOXSFCREATESYMLINKREQ
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmCreateSymlink Parms;
+    HGCMPageListInfo        PgLstTarget;
+    SHFLFSOBJINFO           ObjInfo;
+    SHFLSTRING              StrSymlinkPath;
+} VBOXSFCREATESYMLINKREQ;
+
+/**
+ * SHFL_FN_SYMLINK request.
+ *
+ * Caller fills in the symlink string and supplies a physical contiguous
+ * target string
+ */
+DECLINLINE(int) VbglR0SfHostReqCreateSymlinkContig(SHFLROOT idRoot, PCSHFLSTRING pStrTarget, RTGCPHYS64 PhysTarget,
+                                                   VBOXSFCREATESYMLINKREQ *pReq)
+{
+    uint32_t const cbTarget = SHFLSTRING_HEADER_SIZE + pStrTarget->u16Size;
+    uint32_t const cbReq    = g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS
+                            ? RT_UOFFSETOF(VBOXSFCREATESYMLINKREQ, StrSymlinkPath.String) + pReq->StrSymlinkPath.u16Size
+                            : RT_UOFFSETOF(VBOXSFCREATESYMLINKREQ, ObjInfo) /*simplified*/;
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_SYMLINK, SHFL_CPARMS_SYMLINK, cbReq);
+
+    pReq->Parms.id32Root.type                          = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32                     = idRoot;
+
+    if (g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS)
+    {
+        pReq->Parms.pStrSymlink.type               = VMMDevHGCMParmType_Embedded;
+        pReq->Parms.pStrSymlink.u.Embedded.cbData  = SHFLSTRING_HEADER_SIZE + pReq->StrSymlinkPath.u16Size;
+        pReq->Parms.pStrSymlink.u.Embedded.offData = RT_UOFFSETOF(VBOXSFCREATESYMLINKREQ, StrSymlinkPath)
+                                                   - sizeof(VBGLIOCIDCHGCMFASTCALL);
+        pReq->Parms.pStrSymlink.u.Embedded.fFlags  = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
+    }
+    else
+    {
+        pReq->Parms.pStrSymlink.type               = VMMDevHGCMParmType_LinAddr_In;
+        pReq->Parms.pStrSymlink.u.LinAddr.cb       = SHFLSTRING_HEADER_SIZE + pReq->StrSymlinkPath.u16Size;
+        pReq->Parms.pStrSymlink.u.LinAddr.uAddr    = (uintptr_t)&pReq->StrSymlinkPath;
+    }
+
+    if (   cbTarget <= PAGE_SIZE - (PhysTarget & PAGE_OFFSET_MASK)
+        || (g_fHostFeatures & VMMDEV_HVF_HGCM_CONTIGUOUS_PAGE_LIST))
+    {
+        pReq->Parms.pStrTarget.type                = cbTarget <= PAGE_SIZE - (PhysTarget & PAGE_OFFSET_MASK)
+                                                   ? VMMDevHGCMParmType_PageList
+                                                   : VMMDevHGCMParmType_ContiguousPageList;
+        pReq->Parms.pStrTarget.u.PageList.size     = cbTarget;
+        pReq->Parms.pStrTarget.u.PageList.offset   = RT_UOFFSETOF(VBOXSFCREATESYMLINKREQ, PgLstTarget)
+                                                   - sizeof(VBGLIOCIDCHGCMFASTCALL);
+        pReq->PgLstTarget.flags                    = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
+        pReq->PgLstTarget.offFirstPage             = (uint16_t)PhysTarget & (uint16_t)(PAGE_OFFSET_MASK);
+        pReq->PgLstTarget.aPages[0]                = PhysTarget & ~(RTGCPHYS64)PAGE_OFFSET_MASK;
+        pReq->PgLstTarget.cPages                   = 1;
+    }
+    else
+    {
+        pReq->Parms.pStrTarget.type                = VMMDevHGCMParmType_LinAddr_In;
+        pReq->Parms.pStrTarget.u.LinAddr.cb        = cbTarget;
+        pReq->Parms.pStrTarget.u.LinAddr.uAddr     = (uintptr_t)pStrTarget;
+    }
+
+    if (g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS)
+    {
+        pReq->Parms.pInfo.type                     = VMMDevHGCMParmType_Embedded;
+        pReq->Parms.pInfo.u.Embedded.cbData        = sizeof(pReq->ObjInfo);
+        pReq->Parms.pInfo.u.Embedded.offData       = RT_UOFFSETOF(VBOXSFCREATESYMLINKREQ, ObjInfo)
+                                                   - sizeof(VBGLIOCIDCHGCMFASTCALL);
+        pReq->Parms.pInfo.u.Embedded.fFlags        = VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+    }
+    else
+    {
+        pReq->Parms.pInfo.type                     = VMMDevHGCMParmType_LinAddr_Out;
+        pReq->Parms.pInfo.u.LinAddr.cb             = sizeof(pReq->ObjInfo);
+        pReq->Parms.pInfo.u.LinAddr.uAddr          = (uintptr_t)&pReq->ObjInfo;
+    }
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, cbReq);
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
 }
 
 /** @} */

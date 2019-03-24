@@ -38,13 +38,14 @@
 
 int vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len, const unsigned char *utf8_name, size_t utf8_len)
 {
+    Assert(name_bound_len > 1);
     Assert(RTStrNLen(utf8_name, utf8_len) == utf8_len);
 
     if (sf_g->nls) {
         const char *in              = utf8_name;
         size_t      in_bound_len    = utf8_len;
         char       *out             = name;
-        size_t      out_bound_len   = name_bound_len;
+        size_t      out_bound_len   = name_bound_len - 1;
         size_t      out_len         = 0;
 
         while (in_bound_len) {
@@ -85,6 +86,127 @@ int vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len,
         memcpy(name, utf8_name, utf8_len + 1);
     }
     return 0;
+}
+
+
+/**
+ * Converts the given NLS string to a host one, kmalloc'ing
+ * the output buffer (use kfree on result).
+ */
+int vbsf_nls_to_shflstring(struct vbsf_super_info *sf_g, const char *pszNls, PSHFLSTRING *ppString)
+{
+    int          rc;
+    size_t const cchNls = strlen(pszNls);
+    PSHFLSTRING  pString = NULL;
+    if (sf_g->nls) {
+        /*
+         * NLS -> UTF-8 w/ SHLF string header.
+         */
+        /* Calc length first: */
+        size_t cchUtf8 = 0;
+        size_t offNls  = 0;
+        while (offNls < cchNls) {
+            linux_wchar_t uc; /* Note! We renamed the type due to clashes. */
+            int const cbNlsCodepoint = sf_g->nls->char2uni(&pszNls[offNls], cchNls - offNls, &uc);
+            if (cbNlsCodepoint >= 0) {
+                char achTmp[16];
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+                int cbUtf8Codepoint = utf32_to_utf8(uc, achTmp, sizeof(achTmp));
+#else
+                int cbUtf8Codepoint = utf8_wctomb(achTmp, uc, sizeof(achTmp));
+#endif
+                if (cbUtf8Codepoint > 0) {
+                    cchUtf8 += cbUtf8Codepoint;
+                    offNls  += cbNlsCodepoint;
+                } else {
+                    Log(("vbsf_nls_to_shflstring: nls->uni2char(%#x) failed: %d\n", uc, cbUtf8Codepoint));
+                    return -EINVAL;
+                }
+            } else {
+                Log(("vbsf_nls_to_shflstring: nls->char2uni(%.*Rhxs) failed: %d\n",
+                     RT_MIN(8, cchNls - offNls), &pszNls[offNls], cbNlsCodepoint));
+                return -EINVAL;
+            }
+        }
+        if (cchUtf8 + 1 < _64K) {
+            /* Allocate: */
+            pString = (PSHFLSTRING)kmalloc(SHFLSTRING_HEADER_SIZE + cchUtf8 + 1, GFP_KERNEL);
+            if (pString) {
+                char *pchDst = pString->String.ach;
+                pString->u16Length = (uint16_t)cchUtf8;
+                pString->u16Size   = (uint16_t)(cchUtf8 + 1);
+
+                /* Do the conversion (cchUtf8 is counted down): */
+                rc     = 0;
+                offNls = 0;
+                while (offNls < cchNls) {
+                    linux_wchar_t uc; /* Note! We renamed the type due to clashes. */
+                    int const cbNlsCodepoint = sf_g->nls->char2uni(&pszNls[offNls], cchNls - offNls, &uc);
+                    if (cbNlsCodepoint >= 0) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+                        int cbUtf8Codepoint = utf32_to_utf8(uc, pchDst, cchUtf8);
+#else
+                        int cbUtf8Codepoint = utf8_wctomb(pchDst, uc, cchUtf8);
+#endif
+                        if (cbUtf8Codepoint > 0) {
+                            AssertBreakStmt(cbUtf8Codepoint <= cchUtf8, rc = -EINVAL);
+                            cchUtf8 -= cbUtf8Codepoint;
+                            pchDst  += cbUtf8Codepoint;
+                            offNls  += cbNlsCodepoint;
+                        } else {
+                            Log(("vbsf_nls_to_shflstring: nls->uni2char(%#x) failed! %d, cchUtf8=%zu\n",
+                                 uc, cbUtf8Codepoint, cchUtf8));
+                            rc = -EINVAL;
+                            break;
+                        }
+                    } else {
+                        Log(("vbsf_nls_to_shflstring: nls->char2uni(%.*Rhxs) failed! %d\n",
+                             RT_MIN(8, cchNls - offNls), &pszNls[offNls], cbNlsCodepoint));
+                        rc = -EINVAL;
+                        break;
+                    }
+                }
+                if (rc == 0) {
+                    /*
+                     * Succeeded.  Just terminate the string and we're good.
+                     */
+                    Assert(pchDst - pString->String.ach == pString->u16Length);
+                    *pchDst = '\0';
+                } else {
+                    kfree(pString);
+                    pString = NULL;
+                }
+            } else {
+                Log(("vbsf_nls_to_shflstring: failed to allocate %u bytes\n", SHFLSTRING_HEADER_SIZE + cchUtf8 + 1));
+                rc = -ENOMEM;
+            }
+        } else {
+            Log(("vbsf_nls_to_shflstring: too long: %zu bytes (%zu nls bytes)\n", cchUtf8, cchNls));
+            rc = -ENAMETOOLONG;
+        }
+    } else {
+        /*
+         * UTF-8 -> UTF-8 w/ SHLF string header.
+         */
+        if (cchNls + 1 < _64K) {
+            pString = (PSHFLSTRING)kmalloc(SHFLSTRING_HEADER_SIZE + cchNls + 1, GFP_KERNEL);
+            if (pString) {
+                pString->u16Length = (uint16_t)cchNls;
+                pString->u16Size   = (uint16_t)(cchNls + 1);
+                memcpy(pString->String.ach, pszNls, cchNls);
+                pString->String.ach[cchNls] = '\0';
+                rc = 0;
+            } else {
+                Log(("vbsf_nls_to_shflstring: failed to allocate %u bytes\n", SHFLSTRING_HEADER_SIZE + cchNls + 1));
+                rc = -ENOMEM;
+            }
+        } else {
+            Log(("vbsf_nls_to_shflstring: too long: %zu bytes\n", cchNls));
+            rc = -ENAMETOOLONG;
+        }
+    }
+    *ppString = pString;
+    return rc;
 }
 
 
@@ -196,16 +318,13 @@ void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSO
            in the directory plus two (. ..) */
         set_nlink(inode, 1);
     }
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
     else if (RTFS_IS_SYMLINK(pAttr->fMode)) {
         /** @todo r=bird: Aren't System V symlinks w/o any mode mask? IIRC there is
          *        no lchmod on Linux. */
         inode->i_mode = sf_file_mode_to_linux(pAttr->fMode, sf_g->fmode, sf_g->fmask, S_IFLNK);
         inode->i_op = &vbsf_lnk_iops;
         set_nlink(inode, 1);
-    }
-#endif
-    else {
+    } else {
         inode->i_mode = sf_file_mode_to_linux(pAttr->fMode, sf_g->fmode, sf_g->fmask, S_IFREG);
         inode->i_op = &vbsf_reg_iops;
         inode->i_fop = &vbsf_reg_fops;
@@ -260,12 +379,10 @@ void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo,
      */
     if (RTFS_IS_DIRECTORY(pAttr->fMode))
         fMode = sf_file_mode_to_linux(pAttr->fMode, sf_g->dmode, sf_g->dmask, S_IFDIR);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
     else if (RTFS_IS_SYMLINK(pAttr->fMode))
         /** @todo r=bird: Aren't System V symlinks w/o any mode mask? IIRC there is
          *        no lchmod on Linux. */
         fMode = sf_file_mode_to_linux(pAttr->fMode, sf_g->fmode, sf_g->fmask, S_IFLNK);
-#endif
     else
         fMode = sf_file_mode_to_linux(pAttr->fMode, sf_g->fmode, sf_g->fmask, S_IFREG);
 
@@ -827,8 +944,8 @@ static int vbsf_make_path(const char *caller, struct vbsf_inode_info *sf_i,
  * to [sf_g]->nls, we must convert it to UTF8 here and pass down to
  * [vbsf_make_path] which will allocate SHFLSTRING and fill it in
  */
-int vbsf_path_from_dentry(const char *caller, struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i,
-                          struct dentry *dentry, SHFLSTRING **result)
+int vbsf_path_from_dentry(struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i, struct dentry *dentry, SHFLSTRING **result,
+                          const char *caller)
 {
     int err;
     const char *d_name;
