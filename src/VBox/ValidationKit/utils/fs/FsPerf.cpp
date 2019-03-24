@@ -1129,6 +1129,10 @@ void fsPerfRename(void)
     RTTestISub("rename");
     char szPath[RTPATH_MAX];
 
+/** @todo rename directories too!   */
+/** @todo check overwriting files and directoris (empty ones should work on
+ *        unix). */
+
     /* Non-existing files. */
     strcpy(szPath, InEmptyDir(RT_STR_TUPLE("other-no-such-file")));
     RTTESTI_CHECK_RC(RTPathRename(InEmptyDir(RT_STR_TUPLE("no-such-file")), szPath, 0), VERR_FILE_NOT_FOUND);
