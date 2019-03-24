@@ -2382,6 +2382,9 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
         return rc;
     }
 
+    /** @todo r=bird: We _must_ perform slash conversion on the target (what this
+     *        code calls 'pOldPath' for some peculiar reason)! */
+
     rc = RTSymlinkCreate(pszFullNewPath, (const char *)pOldPath->String.utf8,
                          RTSYMLINKTYPE_UNKNOWN, 0);
     if (RT_SUCCESS(rc))
