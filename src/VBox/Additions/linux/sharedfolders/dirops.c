@@ -1296,7 +1296,11 @@ static int vbsf_inode_symlink(struct inode *parent, struct dentry *dentry, const
                     }
                 } else {
                     int const vrc = rc;
-                    rc = -RTErrConvertToErrno(rc);
+                    if (vrc == VERR_WRITE_PROTECT)
+                        rc = -EPERM; /* EPERM: Symlink creation not supported according to the linux manpage as of 2017-09-15.
+                                        "VBoxInternal2/SharedFoldersEnableSymlinksCreate/<share>" is not 1. */
+                    else
+                        rc = -RTErrConvertToErrno(vrc);
                     SFLOGFLOW(("vbsf_inode_symlink: VbglR0SfHostReqCreateSymlinkContig failed for '%s' -> '%s': %Rrc (-> %d)\n",
                                pPath->String.ach, pTarget->String.ach, vrc, rc));
                 }

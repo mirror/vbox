@@ -192,6 +192,7 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
         sf_g->fNlsIsUtf8 = true;
         if (info->nls_name[0]) {
             if (_IS_UTF8(info->nls_name)) {
+                SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: nls=utf8\n"));
                 sf_g->nls = NULL;
             } else {
                 sf_g->fNlsIsUtf8 = false;
@@ -212,9 +213,12 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
                 sf_g->fNlsIsUtf8 = false;
                 sf_g->nls = load_nls_default();
                 SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: CONFIG_NLS_DEFAULT=%s -> %p\n", CONFIG_NLS_DEFAULT, sf_g->nls));
-            } else
+            } else {
+                SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: nls=utf8 (default %s)\n", CONFIG_NLS_DEFAULT));
                 sf_g->nls = NULL;
+            }
 #else
+            SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: nls=utf8 (no default)\n"));
             sf_g->nls = NULL;
 #endif
         }
@@ -707,9 +711,16 @@ static int vbsf_show_options(struct seq_file *m, struct dentry *root)
 #endif
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(sb);
     if (sf_g) {
-        seq_printf(m, ",uid=%u,gid=%u,ttl=%d,dmode=0%o,fmode=0%o,dmask=0%o,fmask=0%o,maxiopages=%u",
-               sf_g->uid, sf_g->gid, sf_g->ttl_msec, sf_g->dmode, sf_g->fmode, sf_g->dmask,
-               sf_g->fmask, sf_g->cMaxIoPages);
+        seq_printf(m, ",uid=%u,gid=%u,ttl=%d,maxiopages=%u,iocharset=%s",
+                   sf_g->uid, sf_g->gid, sf_g->ttl_msec, sf_g->cMaxIoPages, sf_g->nls ? sf_g->nls->charset : "utf8");
+        if (sf_g->dmode != ~0)
+            seq_printf(m, ",dmode=0%o", sf_g->dmode);
+        if (sf_g->fmode != ~0)
+            seq_printf(m, ",fmode=0%o", sf_g->fmode);
+        if (sf_g->dmask != 0)
+            seq_printf(m, ",dmask=0%o", sf_g->dmask);
+        if (sf_g->fmask != 0)
+            seq_printf(m, ",fmask=0%o", sf_g->fmask);
         if (sf_g->tag[0] != '\0') {
             seq_puts(m, ",tag=");
             seq_escape(m, sf_g->tag, " \t\n\\");

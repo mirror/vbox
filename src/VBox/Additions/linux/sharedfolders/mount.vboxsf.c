@@ -81,11 +81,14 @@ safe_atoi(const char *s, size_t size, int base)
     char *endptr;
     long long int val = strtoll(s, &endptr, base);
 
-    if (val < INT_MIN || val > INT_MAX || endptr < s + size)
+    if (   val < INT_MIN
+        || (   val > INT_MAX
+            && (base != 8 || val != UINT_MAX) ) /* hack for printf("%o", -1) - 037777777777 */
+        || endptr < s + size)
     {
         errno = ERANGE;
-        panic_err("could not convert %.*s to integer, result = %d",
-                   (int)size, s, (int) val);
+        panic_err("could not convert %.*s to integer, result = %lld (%d)",
+                  (int)size, s, val, (int)val);
     }
     return (int)val;
 }
