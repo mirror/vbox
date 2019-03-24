@@ -223,10 +223,9 @@ static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info
     if (sf_d->pBuf) {
         /* Likely, except for the first time. */
     } else {
-        /** @todo make the buffer size configurable. */
-        sf_d->pBuf = (PSHFLDIRINFO)kmalloc(_64K, GFP_KERNEL);
+        sf_d->pBuf = (PSHFLDIRINFO)kmalloc(sf_g->cbDirBuf, GFP_KERNEL);
         if (sf_d->pBuf)
-            sf_d->cbBuf = _64K;
+            sf_d->cbBuf = sf_g->cbDirBuf;
         else {
             sf_d->pBuf = (PSHFLDIRINFO)kmalloc(_4K, GFP_KERNEL);
             if (!sf_d->pBuf) {
@@ -943,8 +942,8 @@ static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry
             RTListInit(&sf_r->Handle.Entry);
             sf_r->Handle.cRefs  = 1;
             sf_r->Handle.fFlags = !(fOpen & O_DIRECTORY)
-                                 ? VBSF_HANDLE_F_FILE | VBSF_HANDLE_F_MAGIC
-                                 : VBSF_HANDLE_F_DIR  | VBSF_HANDLE_F_MAGIC;
+                                ? VBSF_HANDLE_F_FILE | VBSF_HANDLE_F_MAGIC
+                                : VBSF_HANDLE_F_DIR  | VBSF_HANDLE_F_MAGIC;
             sf_r->Handle.hHost  = SHFL_HANDLE_NIL;
 
             /*
@@ -1107,7 +1106,7 @@ static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int f
     err = vbsf_path_from_dentry(sf_g, sf_parent_i, dentry, &path, __func__);
     if (!err) {
         VBOXSFREMOVEREQ *pReq = (VBOXSFREMOVEREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String)
-                                           + path->u16Size);
+                                                                       + path->u16Size);
         if (pReq) {
             memcpy(&pReq->StrPath, path, SHFLSTRING_HEADER_SIZE + path->u16Size);
             uint32_t fFlags = fDirectory ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE;
@@ -1180,74 +1179,106 @@ static int vbsf_inode_rmdir(struct inode *parent, struct dentry *dentry)
  * @returns 0 on success, Linux error code otherwise
  */
 static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry,
-                             struct inode *new_parent, struct dentry *new_dentry
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
-                             , unsigned flags
-#endif
-                             )
+                             struct inode *new_parent, struct dentry *new_dentry, unsigned flags)
 {
-    int err = 0, rc = VINF_SUCCESS;
-    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(old_parent->i_sb);
-
-    TRACE();
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
-    if (flags) {
-        LogFunc(("rename with flags=%x\n", flags));
-        return -EINVAL;
-    }
+    /*
+     * Deal with flags.
+     */
+    int      rc;
+    uint32_t fRename = (old_dentry->d_inode->i_mode & S_IFDIR ? SHFL_RENAME_DIR : SHFL_RENAME_FILE)
+                     | SHFL_RENAME_REPLACE_IF_EXISTS;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+    if (!(flags & ~RENAME_NOREPLACE)) {
+        if (flags & RENAME_NOREPLACE)
+            fRename &= ~SHFL_RENAME_REPLACE_IF_EXISTS;
 #endif
+        /*
+         * Check that they are on the same mount.
+         */
+        struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(old_parent->i_sb);
+        if (sf_g == VBSF_GET_SUPER_INFO(new_parent->i_sb)) {
+            /*
+             * Build the new path.
+             */
+            struct vbsf_inode_info *sf_new_parent_i = VBSF_GET_INODE_INFO(new_parent);
+            PSHFLSTRING             pNewPath;
+            rc = vbsf_path_from_dentry(sf_g, sf_new_parent_i, new_dentry, &pNewPath, __func__);
+            if (rc == 0) {
+                /*
+                 * Create and issue the rename request.
+                 */
+                VBOXSFRENAMEWITHSRCBUFREQ *pReq;
+                pReq = (VBOXSFRENAMEWITHSRCBUFREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ, StrDstPath.String)
+                                                                        + pNewPath->u16Size);
+                if (pReq) {
+                    struct vbsf_inode_info *sf_file_i = VBSF_GET_INODE_INFO(old_dentry->d_inode);
+                    PSHFLSTRING             pOldPath = sf_file_i->path;
 
-    if (sf_g != VBSF_GET_SUPER_INFO(new_parent->i_sb)) {
-        LogFunc(("rename with different roots\n"));
-        err = -EXDEV;
-    } else {
-        struct vbsf_inode_info *sf_old_i = VBSF_GET_INODE_INFO(old_parent);
-        struct vbsf_inode_info *sf_new_i = VBSF_GET_INODE_INFO(new_parent);
-        /* As we save the relative path inside the inode structure, we need to change
-           this if the rename is successful. */
-        struct vbsf_inode_info *sf_file_i = VBSF_GET_INODE_INFO(old_dentry->d_inode);
-        SHFLSTRING *old_path;
-        SHFLSTRING *new_path;
+                    memcpy(&pReq->StrDstPath, pNewPath, SHFLSTRING_HEADER_SIZE + pNewPath->u16Size);
+                    rc = VbglR0SfHostReqRenameWithSrcContig(sf_g->map.root, pReq, pOldPath, virt_to_phys(pOldPath), fRename);
+                    VbglR0PhysHeapFree(pReq);
+                    if (RT_SUCCESS(rc)) {
+                        /*
+                         * On success we replace the path in the inode and trigger
+                         * restatting of both parent directories.
+                         */
+                        struct vbsf_inode_info *sf_old_parent_i = VBSF_GET_INODE_INFO(old_parent);
+                        SFLOGFLOW(("vbsf_inode_rename: %s -> %s (%#x)\n", pOldPath->String.ach, pNewPath->String.ach, fRename));
 
-        BUG_ON(!sf_old_i);
-        BUG_ON(!sf_new_i);
-        BUG_ON(!sf_file_i);
+                        sf_file_i->path = pNewPath;
+                        kfree(pOldPath);
+                        pNewPath = NULL;
 
-        old_path = sf_file_i->path;
-        err = vbsf_path_from_dentry(sf_g, sf_new_i, new_dentry, &new_path, __func__);
-        if (err)
-            LogFunc(("failed to create new path\n"));
-        else {
-            VBOXSFRENAMEWITHSRCBUFREQ *pReq;
-            pReq = (VBOXSFRENAMEWITHSRCBUFREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ, StrDstPath.String)
-                                                                    + new_path->u16Size);
-            if (pReq) {
-                memcpy(&pReq->StrDstPath, new_path, SHFLSTRING_HEADER_SIZE + new_path->u16Size);
-                rc = VbglR0SfHostReqRenameWithSrcContig(sf_g->map.root, pReq,
-                                                        old_path, virt_to_phys(old_path),
-                                                        old_dentry->d_inode->i_mode & S_IFDIR ? SHFL_RENAME_DIR
-                                                        : SHFL_RENAME_FILE | SHFL_RENAME_REPLACE_IF_EXISTS);
-                VbglR0PhysHeapFree(pReq);
+                        sf_new_parent_i->force_restat = 1;
+                        sf_old_parent_i->force_restat = 1;
+
+                        vbsf_dentry_chain_increase_parent_ttl(old_dentry);
+                        vbsf_dentry_chain_increase_parent_ttl(new_dentry);
+
+                        rc = 0;
+                    } else {
+                        SFLOGFLOW(("vbsf_inode_rename: VbglR0SfHostReqRenameWithSrcContig(%s,%s,%#x) failed -> %d\n",
+                                   pOldPath->String.ach, pNewPath->String.ach, fRename, rc));
+                        if (rc == VERR_IS_A_DIRECTORY || rc == VERR_IS_A_FILE)
+                            vbsf_dentry_set_update_jiffies(old_dentry, jiffies + INT_MAX / 2);
+                        rc = -RTErrConvertToErrno(rc);
+                    }
+                } else {
+                    SFLOGFLOW(("vbsf_inode_rename: failed to allocate request (%#x bytes)\n",
+                               RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ, StrDstPath.String) + pNewPath->u16Size));
+                    rc = -ENOMEM;
+                }
+                if (pNewPath)
+                    kfree(pNewPath);
             } else
-                rc = VERR_NO_MEMORY;
-            if (RT_SUCCESS(rc)) {
-                kfree(old_path);
-                sf_new_i->force_restat = 1;
-                sf_old_i->force_restat = 1; /* XXX: needed? */
-
-                /* Set the new relative path in the inode. */
-                sf_file_i->path = new_path;
-            } else {
-                LogFunc(("VbglR0SfRename failed rc=%Rrc\n",
-                     rc));
-                err = -RTErrConvertToErrno(rc);
-                kfree(new_path);
-            }
+                SFLOGFLOW(("vbsf_inode_rename: vbsf_path_from_dentry failed: %d\n", rc));
+        } else {
+            SFLOGFLOW(("vbsf_inode_rename: rename with different roots (%#x vs %#x)\n",
+                       sf_g->map.root, VBSF_GET_SUPER_INFO(new_parent->i_sb)->map.root));
+            rc = -EXDEV;
         }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+    } else {
+        SFLOGFLOW(("vbsf_inode_rename: Unsupported flags: %#x\n", flags));
+        rc = -EINVAL;
     }
-    return err;
+#else
+    RT_NOREF(flags);
+#endif
+    return rc;
 }
+
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+/**
+ * The traditional rename interface without any flags.
+ */
+static int vbsf_inode_rename_no_flags(struct inode *old_parent, struct dentry *old_dentry,
+                                      struct inode *new_parent, struct dentry *new_dentry)
+{
+    return vbsf_inode_rename(old_parent, old_dentry, new_parent, new_dentry, 0);
+}
+#endif
 
 
 /**
@@ -1331,7 +1362,14 @@ struct inode_operations vbsf_dir_iops = {
     .mkdir          = vbsf_inode_mkdir,
     .rmdir          = vbsf_inode_rmdir,
     .unlink         = vbsf_inode_unlink,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
     .rename         = vbsf_inode_rename,
+#else
+    .rename         = vbsf_inode_rename_no_flags,
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
+    .rename2        = vbsf_inode_rename,
+# endif
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
     .getattr        = vbsf_inode_getattr,
 #else

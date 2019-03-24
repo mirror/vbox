@@ -133,6 +133,8 @@ static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *sf_g, s
             printk(KERN_WARNING "vboxsf: max I/O page count (%#x) is out of range, using default (%#x) instead.\n",
                    info->cMaxIoPages, sf_g->cMaxIoPages);
     }
+
+    sf_g->cbDirBuf = _64K; /** @todo make configurable. */
 }
 
 /**

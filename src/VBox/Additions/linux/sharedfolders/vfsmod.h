@@ -143,6 +143,8 @@ struct vbsf_super_info {
     /** Maximum number of pages to allow in an I/O buffer with the host.
      * This applies to read and write operations.  */
     uint32_t cMaxIoPages;
+    /** The default directory buffer size. */
+    uint32_t cbDirBuf;
     /** Mount tag for VBoxService automounter.  @since 6.0 */
     char tag[32];
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
