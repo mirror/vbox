@@ -658,8 +658,6 @@ DECLVBGL(int) VbglR0SfReadLink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRI
     return rc;
 }
 
-#endif /* !RT_OS_LINUX */
-
 DECLVBGL(int) VbglR0SfSymlink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pNewPath, PSHFLSTRING pOldPath,
                               PSHFLFSOBJINFO pBuffer)
 {
@@ -687,8 +685,6 @@ DECLVBGL(int) VbglR0SfSymlink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRIN
 /*    Log(("VBOXSF: VbglR0SfSymlink: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
     return rc;
 }
-
-#if !defined(RT_OS_LINUX)
 
 DECLVBGL(int) VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient)
 {
