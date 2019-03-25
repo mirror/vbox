@@ -186,12 +186,10 @@ void UIFileManagerHostTable::prepareToolbar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_CreateNewDirectory));
-        /* Hide cut, copy, and paste for now. We will implement those
-           when we have an API for host file operations: */
         // m_pToolBar->addSeparator();
-        // m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Copy));
-        // m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Cut));
-        // m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Paste));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Copy));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Cut));
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Paste));
         m_pToolBar->addSeparator();
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_SelectAll));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_InvertSelection));
@@ -201,6 +199,13 @@ void UIFileManagerHostTable::prepareToolbar()
         m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete));
         m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename));
         m_selectionDependentActions.insert(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_ShowProperties));
+
+        /* Hide cut, copy, and paste for now. We will implement those
+           when we have an API for host file operations: */
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Copy)->setVisible(false);
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Cut)->setVisible(false);
+        m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Paste)->setVisible(false);
+
     }
 
     setSelectionDependentActionsEnabled(false);
@@ -220,12 +225,10 @@ void UIFileManagerHostTable::createFileViewContextMenu(const QWidget *pWidget, c
     menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Delete));
     menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Rename));
     menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_CreateNewDirectory));
-    /* Hide cut, copy, and paste for now. We will implement those
-       when we have an API for host file operations: */
     // menu.addSeparator();
-    // menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Copy));
-    // menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Cut));
-    // menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Paste));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Copy));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Cut));
+    menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_Paste));
     menu.addSeparator();
     menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_SelectAll));
     menu.addAction(m_pActionPool->action(UIActionIndex_M_FileManager_S_Host_InvertSelection));
