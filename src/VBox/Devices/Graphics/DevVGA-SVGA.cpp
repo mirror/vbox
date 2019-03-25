@@ -3334,7 +3334,7 @@ void vmsvgaFIFOWatchdogTimer(PVGASTATE pThis)
        to recheck it before doing the signalling. */
     uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const pFIFO = pThis->svga.pFIFOR3;
     AssertReturnVoid(pThis->svga.pFIFOR3);
-    if (   vmsvgaFIFOHasWork(pFIFO, pThis->svga.uLastCursorUpdateCount)
+    if (   vmsvgaFIFOHasWork(pFIFO, ASMAtomicReadU32(&pThis->svga.uLastCursorUpdateCount))
         && pThis->svga.fFIFOThreadSleeping)
     {
         int rc = SUPSemEventSignal(pThis->svga.pSupDrvSession, pThis->svga.FIFORequestSem);
@@ -3403,10 +3403,14 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
     /*
      * Cursor update state (SVGA_FIFO_CAP_CURSOR_BYPASS_3).
-     * Initialize with values that will trigger an update as soon as maybe.
+     *
+     * Initialize with values that will detect an update from the guest.
+     * Make sure that if the guest never updates the cursor position, then the device does not report it.
+     * The guest has to change the value of uLastCursorUpdateCount, when the cursor position is actually updated.
+     * xLastCursor, yLastCursor and fLastCursorVisible are set to report the first update.
      */
     uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const pFIFO = pThis->svga.pFIFOR3;
-    uint32_t uLastCursorCount   = pThis->svga.uLastCursorUpdateCount = ~pFIFO[SVGA_FIFO_CURSOR_COUNT];
+    pThis->svga.uLastCursorUpdateCount = pFIFO[SVGA_FIFO_CURSOR_COUNT];
     uint32_t xLastCursor        = ~pFIFO[SVGA_FIFO_CURSOR_X];
     uint32_t yLastCursor        = ~pFIFO[SVGA_FIFO_CURSOR_Y];
     uint32_t fLastCursorVisible = ~pFIFO[SVGA_FIFO_CURSOR_ON];
@@ -3431,7 +3435,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
          * (See polling/sleep interval config above.)
          */
         if (   fBadOrDisabledFifo
-            || !vmsvgaFIFOHasWork(pFIFO, uLastCursorCount))
+            || !vmsvgaFIFOHasWork(pFIFO, pThis->svga.uLastCursorUpdateCount))
         {
             ASMAtomicWriteBool(&pThis->svga.fFIFOThreadSleeping, true);
             Assert(pThis->cMilliesRefreshInterval > 0);
@@ -3444,7 +3448,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 AssertRC(rc2); /* No break. Racing EMTs unmapping and remapping the region. */
 # endif
                 if (   !fBadOrDisabledFifo
-                    && vmsvgaFIFOHasWork(pFIFO, uLastCursorCount))
+                    && vmsvgaFIFOHasWork(pFIFO, pThis->svga.uLastCursorUpdateCount))
                     rc = VINF_SUCCESS;
                 else
                 {
@@ -3466,7 +3470,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         fBadOrDisabledFifo = false;
         if (rc == VERR_TIMEOUT)
         {
-            if (!vmsvgaFIFOHasWork(pFIFO, uLastCursorCount))
+            if (!vmsvgaFIFOHasWork(pFIFO, pThis->svga.uLastCursorUpdateCount))
             {
                 cMsSleep = RT_MIN(cMsSleep + cMsIncSleep, cMsMaxSleep);
                 continue;
@@ -3475,7 +3479,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
             Log(("vmsvgaFIFOLoop: timeout\n"));
         }
-        else if (vmsvgaFIFOHasWork(pFIFO, uLastCursorCount))
+        else if (vmsvgaFIFOHasWork(pFIFO, pThis->svga.uLastCursorUpdateCount))
             STAM_REL_COUNTER_INC(&pSVGAState->StatFifoTodoWoken);
         cMsSleep = cMsMinSleep;
 
@@ -3543,12 +3547,12 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         if (VMSVGA_IS_VALID_FIFO_REG(SVGA_FIFO_CURSOR_LAST_UPDATED, offFifoMin))
         {
             uint32_t const uCursorUpdateCount = pFIFO[SVGA_FIFO_CURSOR_COUNT];
-            if (uCursorUpdateCount == uLastCursorCount)
+            if (uCursorUpdateCount == pThis->svga.uLastCursorUpdateCount)
             { /* halfways likely */ }
             else
             {
-                uLastCursorCount = vmsvgaFIFOUpdateCursor(pThis, pSVGAState, pFIFO, offFifoMin, uCursorUpdateCount,
-                                                          &xLastCursor, &yLastCursor, &fLastCursorVisible);
+                uint32_t const uLastCursorCount = vmsvgaFIFOUpdateCursor(pThis, pSVGAState, pFIFO, offFifoMin, uCursorUpdateCount,
+                                                                         &xLastCursor, &yLastCursor, &fLastCursorVisible);
                 ASMAtomicWriteU32(&pThis->svga.uLastCursorUpdateCount, uLastCursorCount);
             }
         }
