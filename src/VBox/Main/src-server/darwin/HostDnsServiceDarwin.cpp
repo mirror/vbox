@@ -19,6 +19,7 @@
 #include <VBox/com/ptr.h>
 
 
+#include <iprt/asm.h>
 #include <iprt/errcore.h>
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>
@@ -40,7 +41,7 @@ struct HostDnsServiceDarwin::Data
     CFRunLoopSourceRef m_DnsWatcher;
     CFRunLoopRef m_RunLoopRef;
     CFRunLoopSourceRef m_Stopper;
-    bool m_fStop;
+    volatile bool m_fStop;
     RTSEMEVENT m_evtStop;
     static void performShutdownCallback(void *);
 };
@@ -121,8 +122,9 @@ void HostDnsServiceDarwin::monitorThreadShutdown()
     RTCLock grab(m_LockMtx);
     if (!m->m_fStop)
     {
+        ASMAtomicXchgBool(&m->m_fStop, true);
         CFRunLoopSourceSignal(m->m_Stopper);
-        CFRunLoopWakeUp(m->m_RunLoopRef);
+        CFRunLoopStop(m->m_RunLoopRef);
 
         RTSemEventWait(m->m_evtStop, RT_INDEFINITE_WAIT);
     }
@@ -152,7 +154,7 @@ int HostDnsServiceDarwin::monitorWorker()
 
     monitorThreadInitializationDone();
 
-    while (!m->m_fStop)
+    while (!ASMAtomicReadBool(&m->m_fStop))
     {
         CFRunLoopRun();
     }
