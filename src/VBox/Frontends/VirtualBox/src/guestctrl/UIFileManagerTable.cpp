@@ -786,20 +786,37 @@ void UIFileManagerTable::sltCreateNewDirectory()
     QModelIndex currentIndex = currentRootIndex();
     if (!currentIndex.isValid())
         return;
-    UICustomFileSystemItem *item = static_cast<UICustomFileSystemItem*>(currentIndex.internalPointer());
-    if (!item)
+    UICustomFileSystemItem *parentFolderItem = static_cast<UICustomFileSystemItem*>(currentIndex.internalPointer());
+    if (!parentFolderItem)
         return;
 
-    QString newDirectoryName = getNewDirectoryName();
-    if (newDirectoryName.isEmpty())
+    QString newDirectoryName(UICustomFileSystemModel::tr("NewDirectory"));
+
+    if (!createDirectory(parentFolderItem->path(), newDirectoryName))
         return;
 
-    if (createDirectory(item->path(), newDirectoryName))
+    /* Refesh the current directory so that we correctly populate the child list of parentFolderItem: */
+    /** @todo instead of refreshing here (an overkill) just add the
+        rows and update the tabel view: */
+    sltRefresh();
+
+    /* Now we try to edit the newly created item thereby enabling the user to rename the new item: */
+    QList<UICustomFileSystemItem*> content = parentFolderItem->children();
+    UICustomFileSystemItem* newItem = 0;
+    /* Search the new item: */
+    foreach (UICustomFileSystemItem* childItem, content)
     {
-        /** @todo instead of refreshing here (an overkill) just add the
-           rows and update the tabel view: */
-        sltRefresh();
+
+        if (childItem && newDirectoryName == childItem->name())
+            newItem = childItem;
     }
+
+    if (!newItem)
+        return;
+    QModelIndex newItemIndex = m_pProxyModel->mapFromSource(m_pModel->index(newItem));
+    if (!newItemIndex.isValid())
+        return;
+    m_pView->edit(newItemIndex);
 }
 
 void UIFileManagerTable::sltCopy()
@@ -1034,20 +1051,6 @@ UICustomFileSystemItem *UIFileManagerTable::getStartDirectoryItem()
     if (pRootItem->childCount() <= 0)
         return 0;
     return pRootItem->child(0);
-}
-
-
-QString UIFileManagerTable::getNewDirectoryName()
-{
-    UIStringInputDialog *dialog = new UIStringInputDialog();
-    if (dialog->execute())
-    {
-        QString strDialog = dialog->getString();
-        delete dialog;
-        return strDialog;
-    }
-    delete dialog;
-    return QString();
 }
 
 QString UIFileManagerTable::currentDirectoryPath() const

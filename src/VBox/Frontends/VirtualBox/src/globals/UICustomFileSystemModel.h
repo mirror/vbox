@@ -57,7 +57,7 @@ public:
     /** Searches for the child by path and returns it if found. */
     UICustomFileSystemItem *child(const QString &path) const;
     int childCount() const;
-    QList<const UICustomFileSystemItem*> children() const;
+    QList<UICustomFileSystemItem*> children() const;
     /** Removes the item from the list of children and !!DELETES!! the item. */
     void removeChild(UICustomFileSystemItem *pItem);
     void removeChildren();

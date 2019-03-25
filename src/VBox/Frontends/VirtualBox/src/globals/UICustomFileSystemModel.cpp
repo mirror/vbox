@@ -89,9 +89,9 @@ int UICustomFileSystemItem::childCount() const
     return m_childItems.count();
 }
 
-QList<const UICustomFileSystemItem*> UICustomFileSystemItem::children() const
+QList<UICustomFileSystemItem*> UICustomFileSystemItem::children() const
 {
-    QList<const UICustomFileSystemItem*> childList;
+    QList<UICustomFileSystemItem*> childList;
     foreach (UICustomFileSystemItem *child, m_childItems)
         childList << child;
     return childList;

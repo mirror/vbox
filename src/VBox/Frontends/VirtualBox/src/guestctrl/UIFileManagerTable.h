@@ -266,8 +266,6 @@ private:
     void             deleteByIndex(const QModelIndex &itemIndex);
     /** Returns the UICustomFileSystemItem for path / which is a direct (and single) child of m_pRootItem */
     UICustomFileSystemItem *getStartDirectoryItem();
-    /** Shows a modal dialog with a line edit for user to enter a new directory name and return the entered string*/
-    QString         getNewDirectoryName();
     void            deSelectUpDirectoryItem();
     void            setSelectionForAll(QItemSelectionModel::SelectionFlags flags);
     void            setSelection(const QModelIndex &indexInProxyModel);
