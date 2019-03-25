@@ -717,6 +717,9 @@ void UIFileManager::restorePanelVisibility()
             }
         }
     }
+    /* Make sure Session panel is visible: */
+    if (m_pSessionPanel && !m_pSessionPanel->isVisible())
+        showPanel(m_pSessionPanel);
 }
 
 void UIFileManager::loadOptions()

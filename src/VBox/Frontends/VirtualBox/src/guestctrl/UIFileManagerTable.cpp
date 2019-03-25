@@ -481,7 +481,7 @@ void UIFileManagerTable::prepareObjects()
     {
         m_pMainLayout->addWidget(m_pWarningLabel, 2, 0, 5, 5);
         QFont labelFont = m_pWarningLabel->font();
-        float fSizeMultiplier = 2.5;
+        float fSizeMultiplier = 1.5f;
         if (labelFont.pointSize() != -1)
             labelFont.setPointSize(fSizeMultiplier * labelFont.pointSize());
         else
@@ -981,7 +981,7 @@ void UIFileManagerTable::retranslateUi()
         pRootItem->setData(UICustomFileSystemModel::tr("Permissions"), UICustomFileSystemModelColumn_Permissions);
     }
     if (m_pWarningLabel)
-        m_pWarningLabel->setText(UIFileManager::tr("No Guest Session"));
+        m_pWarningLabel->setText(UIFileManager::tr("No Guest Session\nPlease use the Session Panel to start \na guest session"));
 }
 
 bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */
