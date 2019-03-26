@@ -48,8 +48,8 @@ signals:
 
     /** @name Group saving stuff.
       * @{ */
-        /** Notifies about group saving started. */
-        void sigGroupSavingStarted();
+        /** Commands to start group saving. */
+        void sigStartGroupSaving();
         /** Notifies about group saving state changed. */
         void sigGroupSavingStateChanged();
     /** @} */
@@ -114,7 +114,7 @@ private slots:
     /** @name Group saving stuff.
       * @{ */
         /** Handles request to start group saving. */
-        void sltGroupSavingStart();
+        void sltStartGroupSaving();
         /** Handles group definition saving complete. */
         void sltGroupDefinitionsSaveComplete();
         /** Handles group order saving complete. */
@@ -142,19 +142,19 @@ private:
           * @param  pParentNode       Brings the parent we starting to look for a group from.
           * @param  fAllGroupsOpened  Brings whether we should open all the groups till the required one. */
         UIChooserNode *getGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened);
-        /** Returns whether group with certain @a strName should be opened, searching starting from the passed @a pParentItem. */
-        bool shouldBeGroupOpened(UIChooserNode *pParentNode, const QString &strName);
+        /** Returns whether group node with certain @a strName should be opened, searching starting from the passed @a pParentItem. */
+        bool shouldGroupNodeBeOpened(UIChooserNode *pParentNode, const QString &strName);
 
         /** Wipes out empty groups starting from @a pParentItem. */
-        void wipeOutEmptyGroups(UIChooserNode *pParentNode);
+        void wipeOutEmptyGroupsStartingFrom(UIChooserNode *pParentNode);
 
         /** Returns whether global node within the @a pParentNode is favorite. */
         bool isGlobalNodeFavorite(UIChooserNode *pParentNode) const;
 
         /** Acquires desired position for a child of @a pParentNode with specified @a enmType and @a strName. */
-        int getDesiredPosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName);
-        /** Acquires saved position for a child of @a pParentNode with specified @a enmType and @a strName. */
-        int positionFromDefinitions(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName);
+        int getDesiredNodePosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName);
+        /** Acquires defined position for a child of @a pParentNode with specified @a enmType and @a strName. */
+        int getDefinedNodePosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName);
 
         /** Creates machine node based on certain @a comMachine as a child of specified @a pParentNode. */
         void createMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine);
@@ -180,6 +180,12 @@ private:
         /** Returns QString representation for passed @a uId, wiping out {} symbols.
           * @note  Required for backward compatibility after QString=>QUuid change. */
         static QString toOldStyleUuid(const QUuid &uId);
+    /** @} */
+
+    /** @name General stuff.
+      * @{ */
+        /** Holds the parent widget reference. */
+        UIChooser *m_pParent;
     /** @} */
 
     /** @name Children stuff.

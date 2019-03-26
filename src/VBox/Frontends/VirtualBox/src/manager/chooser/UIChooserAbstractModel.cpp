@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - UIChooserModel class implementation.
+ * VBox Qt GUI - UIChooserAbstractModel class implementation.
  */
 
 /*
@@ -37,6 +37,7 @@ typedef QSet<QString> UIStringSet;
 
 UIChooserAbstractModel:: UIChooserAbstractModel(UIChooser *pParent)
     : QObject(pParent)
+    , m_pParent(pParent)
     , m_pInvisibleRootNode(0)
 {
     prepare();
@@ -50,10 +51,11 @@ void UIChooserAbstractModel::init()
 
 void UIChooserAbstractModel::deinit()
 {
-    /* Currently we are not saving group descriptors
-     * (which reflecting group toggle-state) on-the-fly,
-     * so, for now we are additionally save group orders
-     * when exiting application: */
+    // WORKAROUND:
+    // Currently we are not saving group descriptors
+    // (which reflecting group toggle-state) on-the-fly,
+    // so for now we are additionally save group orders
+    // when exiting application:
     saveGroupOrders();
 
     /* Make sure all saving steps complete: */
@@ -72,7 +74,7 @@ UIChooserNode *UIChooserAbstractModel::invisibleRoot() const
 
 void UIChooserAbstractModel::wipeOutEmptyGroups()
 {
-    wipeOutEmptyGroups(invisibleRoot());
+    wipeOutEmptyGroupsStartingFrom(invisibleRoot());
 }
 
 /* static */
@@ -100,7 +102,7 @@ QString UIChooserAbstractModel::uniqueGroupName(UIChooserNode *pRoot)
             iMinimumPossibleNumber = qMax(iMinimumPossibleNumber, fullRegExp.cap(1).toInt() + 1);
     }
 
-    /* Prepare result: */
+    /* Prepare/return result: */
     QString strResult = strMinimumName;
     if (iMinimumPossibleNumber)
         strResult += " " + QString::number(iMinimumPossibleNumber);
@@ -109,7 +111,7 @@ QString UIChooserAbstractModel::uniqueGroupName(UIChooserNode *pRoot)
 
 void UIChooserAbstractModel::saveGroupSettings()
 {
-    emit sigGroupSavingStarted();
+    emit sigStartGroupSaving();
 }
 
 bool UIChooserAbstractModel::isGroupSavingInProgress() const
@@ -181,7 +183,7 @@ void UIChooserAbstractModel::sltReloadMachine(const QUuid &uId)
     }
 }
 
-void UIChooserAbstractModel::sltGroupSavingStart()
+void UIChooserAbstractModel::sltStartGroupSaving()
 {
     saveGroupDefinitions();
     saveGroupOrders();
@@ -207,30 +209,30 @@ void UIChooserAbstractModel::prepare()
 void UIChooserAbstractModel::prepareConnections()
 {
     /* Setup parent connections: */
-    connect(this, SIGNAL(sigGroupSavingStateChanged()),
-            parent(), SIGNAL(sigGroupSavingStateChanged()));
+    connect(this, &UIChooserAbstractModel::sigGroupSavingStateChanged,
+            m_pParent, &UIChooser::sigGroupSavingStateChanged);
 
     /* Setup global connections: */
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
-            this, SLOT(sltMachineStateChanged(QUuid, KMachineState)));
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QUuid)),
-            this, SLOT(sltMachineDataChanged(QUuid)));
-    connect(gVBoxEvents, SIGNAL(sigMachineRegistered(QUuid, bool)),
-            this, SLOT(sltMachineRegistered(QUuid, bool)));
-    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QUuid, KSessionState)),
-            this, SLOT(sltSessionStateChanged(QUuid, KSessionState)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QUuid, QUuid)),
-            this, SLOT(sltSnapshotChanged(QUuid, QUuid)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QUuid, QUuid)),
-            this, SLOT(sltSnapshotChanged(QUuid, QUuid)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QUuid, QUuid)),
-            this, SLOT(sltSnapshotChanged(QUuid, QUuid)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QUuid, QUuid)),
-            this, SLOT(sltSnapshotChanged(QUuid, QUuid)));
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+            this, &UIChooserAbstractModel::sltMachineStateChanged);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
+            this, &UIChooserAbstractModel::sltMachineDataChanged);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
+            this, &UIChooserAbstractModel::sltMachineRegistered);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange,
+            this, &UIChooserAbstractModel::sltSessionStateChanged);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotTake,
+            this, &UIChooserAbstractModel::sltSnapshotChanged);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotDelete,
+            this, &UIChooserAbstractModel::sltSnapshotChanged);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotChange,
+            this, &UIChooserAbstractModel::sltSnapshotChanged);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotRestore,
+            this, &UIChooserAbstractModel::sltSnapshotChanged);
 
     /* Setup group saving connections: */
-    connect(this, &UIChooserAbstractModel::sigGroupSavingStarted,
-            this, &UIChooserAbstractModel::sltGroupSavingStart,
+    connect(this, &UIChooserAbstractModel::sigStartGroupSaving,
+            this, &UIChooserAbstractModel::sltStartGroupSaving,
             Qt::QueuedConnection);
 }
 
@@ -341,13 +343,13 @@ UIChooserNode *UIChooserAbstractModel::getGroupNode(const QString &strName, UICh
     UIChooserNodeGroup *pNewGroupNode =
         new UIChooserNodeGroup(pParentNode,
                                false /* favorite */,
-                               getDesiredPosition(pParentNode, UIChooserItemType_Group, strSecondSubName),
+                               getDesiredNodePosition(pParentNode, UIChooserItemType_Group, strSecondSubName),
                                strSecondSubName,
-                               fAllGroupsOpened || shouldBeGroupOpened(pParentNode, strSecondSubName));
+                               fAllGroupsOpened || shouldGroupNodeBeOpened(pParentNode, strSecondSubName));
     return strSecondSuffix.isEmpty() ? pNewGroupNode : getGroupNode(strFirstSuffix, pNewGroupNode, fAllGroupsOpened);
 }
 
-bool UIChooserAbstractModel::shouldBeGroupOpened(UIChooserNode *pParentNode, const QString &strName)
+bool UIChooserAbstractModel::shouldGroupNodeBeOpened(UIChooserNode *pParentNode, const QString &strName)
 {
     /* Read group definitions: */
     const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
@@ -375,11 +377,11 @@ bool UIChooserAbstractModel::shouldBeGroupOpened(UIChooserNode *pParentNode, con
     return false;
 }
 
-void UIChooserAbstractModel::wipeOutEmptyGroups(UIChooserNode *pParent)
+void UIChooserAbstractModel::wipeOutEmptyGroupsStartingFrom(UIChooserNode *pParent)
 {
     /* Cleanup all the group-items recursively first: */
     foreach (UIChooserNode *pNode, pParent->nodes(UIChooserItemType_Group))
-        wipeOutEmptyGroups(pNode);
+        wipeOutEmptyGroupsStartingFrom(pNode);
     /* If parent has no nodes: */
     if (!pParent->hasNodes())
     {
@@ -420,12 +422,12 @@ bool UIChooserAbstractModel::isGlobalNodeFavorite(UIChooserNode *pParentNode) co
     return false;
 }
 
-int UIChooserAbstractModel::getDesiredPosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName)
+int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName)
 {
     /* End of list (by default)? */
     int iNewNodeDesiredPosition = -1;
     /* Which position should be new node placed by definitions: */
-    int iNewNodeDefinitionPosition = positionFromDefinitions(pParentNode, enmType, strName);
+    int iNewNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmType, strName);
     /* If some position wanted: */
     if (iNewNodeDefinitionPosition != -1)
     {
@@ -442,7 +444,7 @@ int UIChooserAbstractModel::getDesiredPosition(UIChooserNode *pParentNode, UICho
                                         pNode->type() == UIChooserItemType_Machine ? toOldStyleUuid(pNode->toMachineNode()->id()) :
                                         QString();
             AssertMsg(!strDefinitionName.isEmpty(), ("Wrong definition name!"));
-            int iNodeDefinitionPosition = positionFromDefinitions(pParentNode, enmType, strDefinitionName);
+            int iNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmType, strDefinitionName);
             /* If some position wanted: */
             if (iNodeDefinitionPosition != -1)
             {
@@ -459,7 +461,7 @@ int UIChooserAbstractModel::getDesiredPosition(UIChooserNode *pParentNode, UICho
     return iNewNodeDesiredPosition;
 }
 
-int UIChooserAbstractModel::positionFromDefinitions(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName)
+int UIChooserAbstractModel::getDefinedNodePosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName)
 {
     /* Read group definitions: */
     const QStringList definitions = gEDataManager->selectorWindowGroupsDefinitions(pParentNode->fullName());
@@ -508,7 +510,7 @@ void UIChooserAbstractModel::createMachineNode(UIChooserNode *pParentNode, const
     /* Create machine node: */
     new UIChooserNodeMachine(pParentNode,
                              false /* favorite */,
-                             getDesiredPosition(pParentNode, UIChooserItemType_Machine, toOldStyleUuid(comMachine.GetId())),
+                             getDesiredNodePosition(pParentNode, UIChooserItemType_Machine, toOldStyleUuid(comMachine.GetId())),
                              comMachine);
 }
 
