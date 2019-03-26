@@ -83,8 +83,8 @@ struct vbsf_iov_iter {
     size_t              nr_segs;
     struct iovec const *iov;
 # ifdef VBOX_STRICT
-    struct iovec const * const iov_org;
-    size_t              const nr_segs_org;
+    struct iovec const *iov_org;
+    size_t              nr_segs_org;
 # endif
 };
 # ifdef VBOX_STRICT
