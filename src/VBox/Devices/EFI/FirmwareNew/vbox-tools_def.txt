@@ -211,7 +211,7 @@ DEBUG_*_*_OBJCOPY_ADDDEBUGFLAG     = --add-gnu-debuglink=$(DEBUG_DIR)\$(MODULE_N
 # todo: RELEASE_*_*_OBJCOPY_ADDDEBUGFLAG   = --add-gnu-debuglink=$(DEBUG_DIR)\$(MODULE_NAME).debug
 RELEASE_*_*_OBJCOPY_ADDDEBUGFLAG   =
 
-DEFINE GCC_ALL_CC_FLAGS            = -g -Os -fshort-wchar -fno-strict-aliasing -Wall -Werror -Wno-missing-braces -c -include AutoGen.h
+DEFINE GCC_ALL_CC_FLAGS            = -g -Os -fshort-wchar -fno-strict-aliasing -Wall -Werror -Wno-missing-braces -Wno-unused-but-set-variable -c -include AutoGen.h
 DEFINE GCC_IA32_CC_FLAGS           = DEF(GCC_ALL_CC_FLAGS) -m32 -malign-double -freorder-blocks -freorder-blocks-and-partition -mno-stack-arg-probe @VBOX_MINGW32_Wno@
 DEFINE GCC_X64_CC_FLAGS            = DEF(GCC_ALL_CC_FLAGS) -mno-red-zone -Wno-address -mno-stack-arg-probe @VBOX_MINGW64_Wno@
 DEFINE GCC_DLINK_FLAGS_COMMON      = -nostdlib --pie --fatal-warnings
@@ -273,6 +273,7 @@ DEFINE GCC_X64_RC_FLAGS            = -I binary -O elf64-x86-64      -B i386 --re
 RELEASE_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -Os -fno-omit-frame-pointer
 *_UNIXGCC_IA32_RC_FLAGS             = DEF(GCC_IA32_RC_FLAGS)
 *_UNIXGCC_IA32_OBJCOPY_FLAGS        =
+*_UNIXGCC_IA32_NASM_FLAGS           = -f win32
 
 ##################
 # X64 definitions
@@ -292,6 +293,7 @@ RELEASE_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -Os -fno-omit-frame
 *_UNIXGCC_X64_CC_FLAGS              = DEF(GCC_X64_CC_FLAGS) -fno-omit-frame-pointer
 *_UNIXGCC_X64_RC_FLAGS              = DEF(GCC_X64_RC_FLAGS)
 *_UNIXGCC_X64_OBJCOPY_FLAGS         =
+*_UNIXGCC_X64_NASM_FLAGS            = -f win64
 
 
 ####################################################################################
