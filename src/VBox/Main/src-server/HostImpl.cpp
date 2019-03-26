@@ -761,19 +761,22 @@ HRESULT Host::i_updatePersistentConfigForHostOnlyAdapters(void)
             if (pInfo->fDhcpEnabled)
             {
                 hrc = hif->EnableDynamicIPConfig();
-                LogRel(("EnableDynamicIPConfig returned 0x%x\n", hrc));
+                if (FAILED(hrc))
+                    LogRel(("EnableDynamicIPConfig failed with 0x%x\n", hrc));
             }
             else
             {
                 hrc = hif->EnableStaticIPConfig(pInfo->strIPv4Address.raw(), pInfo->strIPv4NetMask.raw());
-                LogRel(("EnableStaticIpConfig returned 0x%x\n", hrc));
+                if (FAILED(hrc))
+                    LogRel(("EnableStaticIpConfig failed with 0x%x\n", hrc));
             }
 # if 0
             /* Somehow HostNetworkInterface::EnableStaticIPConfigV6 is not implemented yet. */
             if (SUCCEEDED(hrc))
             {
                 hrc = hif->EnableStaticIPConfigV6(pInfo->strIPv6Address.raw(), pInfo->uIPv6PrefixLength);
-                LogRel(("EnableStaticIPConfigV6 returned 0x%x\n", hrc));
+                if (FAILED(hrc))
+                    LogRel(("EnableStaticIPConfigV6 failed with 0x%x\n", hrc));
             }
 # endif
             /* Now we have seen this name */
@@ -1541,7 +1544,8 @@ HRESULT Host::removeHostOnlyNetworkInterface(const com::Guid &aId,
         /* Drop configuration parameters for removed interface */
 #ifdef RT_OS_WINDOWS
         rc = i_removePersistentConfig(Utf8StrFmt("%RTuuid", &aId));
-        LogRel(("i_removePersistentConfig(%RTuuid) returned %d\n", &aId, r));
+        if (FAILED(rc))
+            LogRel(("i_removePersistentConfig(%RTuuid) failed with 0x%x\n", &aId, rc));
 #else /* !RT_OS_WINDOWS */
         rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", name.raw()).raw(), NULL);
         rc = m->pParent->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", name.raw()).raw(), NULL);
