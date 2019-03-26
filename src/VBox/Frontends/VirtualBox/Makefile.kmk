@@ -612,6 +612,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/manager/UIVirtualMachineItem.h \
 	src/manager/UIWelcomePane.h \
 	src/manager/chooser/UIChooser.h \
+	src/manager/chooser/UIChooserAbstractModel.h \
 	src/manager/chooser/UIChooserModel.h \
 	src/manager/chooser/UIChooserView.h \
 	src/manager/chooser/UIChooserHandlerMouse.h \
@@ -1038,6 +1039,7 @@ VirtualBox_SOURCES = \
 	src/manager/UIVirtualMachineItem.cpp \
 	src/manager/UIWelcomePane.cpp \
 	src/manager/chooser/UIChooser.cpp \
+	src/manager/chooser/UIChooserAbstractModel.cpp \
 	src/manager/chooser/UIChooserModel.cpp \
 	src/manager/chooser/UIChooserView.cpp \
 	src/manager/chooser/UIChooserHandlerMouse.cpp \
