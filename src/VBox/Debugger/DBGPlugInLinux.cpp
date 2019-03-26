@@ -991,8 +991,7 @@ static int dbgDiggerLinuxLogBufferQueryRecords(PDBGDIGGERLINUX pThis, PUVM pUVM,
 
     if (offDst <= cbBuf)
         return VINF_SUCCESS;
-    else
-        return VERR_BUFFER_OVERFLOW;
+    return VERR_BUFFER_OVERFLOW;
 }
 
 /**
@@ -1148,11 +1147,37 @@ static DECLCALLBACK(int)  dbgDiggerLinuxQueryVersion(PUVM pUVM, void *pvData, ch
  */
 static DECLCALLBACK(void)  dbgDiggerLinuxTerm(PUVM pUVM, void *pvData)
 {
-    RT_NOREF1(pUVM);
     PDBGDIGGERLINUX pThis = (PDBGDIGGERLINUX)pvData;
     Assert(pThis->fValid);
 
+    /*
+     * Destroy configuration database.
+     */
     dbgDiggerLinuxCfgDbDestroy(pThis);
+
+    /*
+     * Unlink and release our modules.
+     */
+    RTDBGAS hDbgAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+    if (hDbgAs != NIL_RTDBGAS)
+    {
+        uint32_t iMod = RTDbgAsModuleCount(hDbgAs);
+        while (iMod-- > 0)
+        {
+            RTDBGMOD hMod = RTDbgAsModuleByIndex(hDbgAs, iMod);
+            if (hMod != NIL_RTDBGMOD)
+            {
+                if (RTDbgModGetTag(hMod) == DIG_LNX_MOD_TAG)
+                {
+                    int rc = RTDbgAsModuleUnlink(hDbgAs, hMod);
+                    AssertRC(rc);
+                }
+                RTDbgModRelease(hMod);
+            }
+        }
+        RTDbgAsRelease(hDbgAs);
+    }
+
     pThis->fValid = false;
 }
 
@@ -1904,11 +1929,171 @@ static int dbgDiggerLinuxLoadKernelSymbolsRelative(PUVM pUVM, PDBGDIGGERLINUX pT
  */
 static int dbgDiggerLinuxLoadKernelSymbols(PUVM pUVM, PDBGDIGGERLINUX pThis)
 {
+    /*
+     * First the kernel itself.
+     */
     if (pThis->fRelKrnlAddr)
         return dbgDiggerLinuxLoadKernelSymbolsRelative(pUVM, pThis);
-    else
-        return dbgDiggerLinuxLoadKernelSymbolsAbsolute(pUVM, pThis);
+    return dbgDiggerLinuxLoadKernelSymbolsAbsolute(pUVM, pThis);
 }
+
+
+/*
+ * The module structure changed it was easier to produce different code for
+ * each version of the structure.  The C preprocessor rules!
+ */
+#define LNX_TEMPLATE_HEADER "DBGPlugInLinuxModuleCodeTmpl.cpp.h"
+
+#define LNX_BIT_SUFFIX      _amd64
+#define LNX_PTR_T           uint64_t
+#define LNX_64BIT           1
+#include "DBGPlugInLinuxModuleVerTmpl.cpp.h"
+
+#define LNX_BIT_SUFFIX      _x86
+#define LNX_PTR_T           uint32_t
+#define LNX_64BIT           0
+#include "DBGPlugInLinuxModuleVerTmpl.cpp.h"
+
+#undef  LNX_TEMPLATE_HEADER
+
+static const struct
+{
+    uint32_t    uVersion;
+    bool        f64Bit;
+    uint64_t  (*pfnProcessModule)(PDBGDIGGERLINUX pThis, PUVM pUVM, PDBGFADDRESS pAddrModule);
+} g_aModVersions[] =
+{
+#define LNX_TEMPLATE_HEADER "DBGPlugInLinuxModuleTableEntryTmpl.cpp.h"
+
+#define LNX_BIT_SUFFIX      _amd64
+#define LNX_64BIT           1
+#include "DBGPlugInLinuxModuleVerTmpl.cpp.h"
+
+#define LNX_BIT_SUFFIX      _x86
+#define LNX_64BIT           0
+#include "DBGPlugInLinuxModuleVerTmpl.cpp.h"
+
+#undef  LNX_TEMPLATE_HEADER
+};
+
+
+/**
+ * Tries to find and process the module list.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The Linux digger data.
+ * @param   pUVM                The user mode VM handle.
+ */
+static int dbgDiggerLinuxLoadModules(PDBGDIGGERLINUX pThis, PUVM pUVM)
+{
+    /*
+     * Locate the list head.
+     */
+    RTDBGAS     hAs = DBGFR3AsResolveAndRetain(pUVM, DBGF_AS_KERNEL);
+    RTDBGSYMBOL SymInfo;
+    int rc = RTDbgAsSymbolByName(hAs, "vmlinux!modules", &SymInfo, NULL);
+    RTDbgAsRelease(hAs);
+    if (RT_FAILURE(rc))
+        return VERR_NOT_FOUND;
+
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("dbgDiggerLinuxLoadModules: Failed to locate the module list (%Rrc).\n", rc));
+        return VERR_NOT_FOUND;
+    }
+
+    /*
+     * Read the list anchor.
+     */
+    union
+    {
+        uint32_t volatile u32Pair[2];
+        uint64_t u64Pair[2];
+    } uListAnchor;
+    DBGFADDRESS Addr;
+    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, SymInfo.Value),
+                       &uListAnchor, pThis->f64Bit ? sizeof(uListAnchor.u64Pair) : sizeof(uListAnchor.u32Pair));
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("dbgDiggerLinuxLoadModules: Error reading list anchor at %RX64: %Rrc\n", SymInfo.Value, rc));
+        return VERR_NOT_FOUND;
+    }
+    if (!pThis->f64Bit)
+    {
+        uListAnchor.u64Pair[1] = uListAnchor.u32Pair[1];
+        ASMCompilerBarrier();
+        uListAnchor.u64Pair[0] = uListAnchor.u32Pair[0];
+    }
+
+    /*
+     * Get a numerical version number.
+     */
+    char szVersion[256] = "Linux version 4.19.0";
+    bool fValid = pThis->fValid;
+    pThis->fValid = true;
+    dbgDiggerLinuxQueryVersion(pUVM, pThis, szVersion, sizeof(szVersion));
+    pThis->fValid = fValid;
+
+    const char *pszVersion = szVersion;
+    while (*pszVersion && !RT_C_IS_DIGIT(*pszVersion))
+        pszVersion++;
+
+    size_t   offVersion = 0;
+    uint32_t uMajor = 0;
+    while (pszVersion[offVersion] && RT_C_IS_DIGIT(pszVersion[offVersion]))
+        uMajor = uMajor * 10 + pszVersion[offVersion++] - '0';
+
+    if (pszVersion[offVersion] == '.')
+        offVersion++;
+
+    uint32_t uMinor = 0;
+    while (pszVersion[offVersion] && RT_C_IS_DIGIT(pszVersion[offVersion]))
+        uMinor = uMinor * 10 + pszVersion[offVersion++] - '0';
+
+    if (pszVersion[offVersion] == '.')
+        offVersion++;
+
+    uint32_t uBuild = 0;
+    while (pszVersion[offVersion] && RT_C_IS_DIGIT(pszVersion[offVersion]))
+        uBuild = uBuild * 10 + pszVersion[offVersion++] - '0';
+
+    uint32_t const uGuestVer = LNX_MK_VER(uMajor, uMinor, uBuild);
+    if (uGuestVer == 0)
+    {
+        LogRel(("dbgDiggerLinuxLoadModules: Failed to parse version string: %s\n", pszVersion));
+        return VERR_NOT_FOUND;
+    }
+
+    /*
+     * Find the g_aModVersion entry that fits the best.
+     * ASSUMES strict descending order by bitcount and version.
+     */
+    Assert(g_aModVersions[0].f64Bit == true);
+    unsigned i = 0;
+    if (!pThis->f64Bit)
+        while (i < RT_ELEMENTS(g_aModVersions) && g_aModVersions[i].f64Bit)
+            i++;
+    while (   i < RT_ELEMENTS(g_aModVersions)
+           && g_aModVersions[i].f64Bit == pThis->f64Bit
+           && uGuestVer < g_aModVersions[i].uVersion)
+        i++;
+    if (i >= RT_ELEMENTS(g_aModVersions))
+    {
+        LogRel(("dbgDiggerLinuxLoadModules: Failed to find anything matching version: %u.%u.%u (%s)\n",
+                uMajor, uMinor, uBuild, pszVersion));
+        return VERR_NOT_FOUND;
+    }
+
+    /*
+     * Walk the list.
+     */
+    uint64_t uModAddr = uListAnchor.u64Pair[0];
+    for (size_t iModule = 0; iModule < 4096 && uModAddr != SymInfo.Value && uModAddr != 0; iModule++)
+        uModAddr = g_aModVersions[i].pfnProcessModule(pThis, pUVM, DBGFR3AddrFromFlat(pUVM, &Addr, uModAddr));
+
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Checks if there is a likely kallsyms_names fragment at pHitAddr.
@@ -2016,7 +2201,10 @@ static int dbgDiggerLinuxFindSymbolTableFromNeedle(PDBGDIGGERLINUX pThis, PUVM p
                 if (RT_SUCCESS(rc))
                     rc = dbgDiggerLinuxLoadKernelSymbols(pUVM, pThis);
                 if (RT_SUCCESS(rc))
+                {
+                    rc = dbgDiggerLinuxLoadModules(pThis, pUVM);
                     break;
+                }
             }
         }
 
