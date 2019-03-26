@@ -42,13 +42,13 @@
 
       <arg>--basefolder=<replaceable>basefolder</replaceable></arg>
 
-      <arg>--group=<replaceable>group</replaceable>, ...</arg>
+      <arg rep="repeat">--group=<replaceable>group</replaceable>,</arg>
 
       <arg>--mode=<group choice='plain'><arg choice='plain'>machine</arg><arg choice='plain'>machinechildren</arg><arg choice='plain'>all</arg></group></arg>
 
       <arg>--name=<replaceable>name</replaceable></arg>
 
-      <arg>--options=<group choice='plain'><arg choice='plain'>link</arg><arg choice='plain'>keepallmacs</arg><arg choice='plain'>keepnatmacs</arg><arg choice='plain'>keepdisknames</arg><arg choice='plain'>keephwuuids</arg></group></arg>
+      <arg rep="repeat">--options=<replaceable>option</replaceable>,</arg>
 
       <arg>--register</arg>
 
@@ -92,7 +92,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--groups=<replaceable>group</replaceable>, ...</option></term>
+        <term><option>--groups=<replaceable>group</replaceable>,...</option></term>
         <listitem><para>
             Assigns the clone to the specified group or groups. If you
             specify more than one group, separate each group name with a
@@ -138,18 +138,22 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--options=option</option></term>
+        <term><option>--options=<replaceable>option</replaceable>,...</option></term>
         <listitem><para>
-            Specifies how to create a new clone.
-          </para><variablelist>
+            Specifies how to create the new clone.</para>
+          <para>The <option>--options</option> argument can be used multiple
+            times to enable multiple options, or the options can be given as a
+            comma separated list.  The options are case insensitive.</para>
+          <para>The following options (case-insensitive) are recognized:</para>
+          <variablelist>
             <varlistentry>
-              <term><option>--options=link</option></term>
+              <term><option>Link</option></term>
               <listitem><para>
                   Creates a linked clone from a snapshot only.
                 </para></listitem>
             </varlistentry>
             <varlistentry>
-              <term><option>--options=keepallmacs</option></term>
+              <term><option>KeepAllMACs</option></term>
               <listitem><para>
                   Specifies that the new clone reuses the MAC addresses
                   of each virtual network card from the existing VM.
@@ -161,20 +165,20 @@
                 </para></listitem>
             </varlistentry>
             <varlistentry>
-              <term><option>--options=keepnatmacs</option></term>
+              <term><option>KeepNATMACs</option></term>
               <listitem><para>
                   Specifies that the new clone reuses the MAC addresses
                   of each virtual network card from the existing VM when
                   the network type is NAT.
                 </para><para>
                   If you do not specify this option or the
-                  <option>--options=keepallmacs</option> option, the
+                  <option>KeepAllMACs</option> option, the
                   default behavior is to reinitialize the MAC addresses
                   of each virtual network card.
                 </para></listitem>
             </varlistentry>
             <varlistentry>
-              <term><option>--option=keepdisknames</option></term>
+              <term><option>KeepDiskNames</option></term>
               <listitem><para>
                   Specifies that the new clone reuses the disk image
                   names from the existing VM. By default, disk images
@@ -182,7 +186,7 @@
                 </para></listitem>
             </varlistentry>
             <varlistentry>
-              <term><option>--option=keephwuuids</option></term>
+              <term><option>KeepHwUUIDs</option></term>
               <listitem><para>
                   Specifies that the new clone reuses the hardware IDs
                   from the existing VM. By default, new UUIDs are used.
