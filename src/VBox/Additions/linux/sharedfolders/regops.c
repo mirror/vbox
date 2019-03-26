@@ -57,7 +57,9 @@
 # define SEEK_END 2
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
+# define iter_is_iovec(a_pIter) ( !((a_pIter)->type & ITER_KVEC) )
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
 # define iter_is_iovec(a_pIter) ( !((a_pIter)->type & (ITER_KVEC | ITER_BVEC)) )
 #endif
 
@@ -73,7 +75,28 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
+struct vbsf_iov_iter {
+    unsigned int        type;
+    unsigned int        v_write : 1;
+    size_t              iov_offset;
+    size_t              nr_segs;
+    struct iovec const *iov;
+# ifdef VBOX_STRICT
+    struct iovec const * const iov_org;
+    size_t              const nr_segs_org;
+# endif
+};
+# ifdef VBOX_STRICT
+#  define VBSF_IOV_ITER_INITIALIZER(a_cSegs, a_pIov, a_fWrite) { 0, a_fWrite, 0, a_cSegs, a_pIov, a_pIov, a_cSegs }
+# else
+#  define VBSF_IOV_ITER_INITIALIZER(a_cSegs, a_pIov, a_fWrite) { 0, a_fWrite, 0, a_cSegs, a_pIov }
+# endif
+# define ITER_KVEC 1
+# define iov_iter vbsf_iov_iter
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
 /** Used by vbsf_iter_lock_pages() to keep the first page of the next segment. */
 struct vbsf_iter_stash {
     struct page    *pPage;
@@ -93,6 +116,242 @@ struct vbsf_iter_stash {
 #endif
 
 
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
+DECLINLINE(void) vbsf_unlock_user_pages(struct page **papPages, size_t cPages, bool fSetDirty, bool fLockPgHack);
+
+
+/*********************************************************************************************************************************
+*   Provide more recent uio.h functionality to older kernels.                                                                    *
+*********************************************************************************************************************************/
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+
+# undef  iov_iter_count
+# define iov_iter_count(a_pIter)                vbsf_iov_iter_count(a_pIter)
+static size_t vbsf_iov_iter_count(struct vbsf_iov_iter const *iter)
+{
+    size_t              cbRet = 0;
+    size_t              cLeft = iter->nr_segs;
+    struct iovec const *iov   = iter->iov;
+    while (cLeft-- > 0) {
+        cbRet += iov->iov_len;
+        iov++;
+    }
+    return cbRet - iter->iov_offset;
+}
+
+
+# undef  iov_iter_single_seg_count
+# define iov_iter_single_seg_count(a_pIter)     vbsf_iov_iter_single_seg_count(a_pIter)
+static size_t vbsf_iov_iter_single_seg_count(struct vbsf_iov_iter const *iter)
+{
+    if (iter->nr_segs > 0)
+        return iter->iov->iov_len - iter->iov_offset;
+    return 0;
+}
+
+
+# undef  iov_iter_advance
+# define iov_iter_advance(a_pIter, a_cbSkip)    vbsf_iov_iter_advance(a_pIter, a_cbSkip)
+static void vbsf_iov_iter_advance(struct vbsf_iov_iter *iter, size_t cbSkip)
+{
+    SFLOG2(("vbsf_iov_iter_advance: cbSkip=%#zx\n", cbSkip));
+    if (iter->nr_segs > 0) {
+        size_t const cbLeftCur = iter->iov->iov_len - iter->iov_offset;
+        Assert(iter->iov_offset <= iter->iov->iov_len);
+        if (cbLeftCur > cbSkip) {
+            iter->iov_offset += cbSkip;
+        } else {
+            cbSkip -= cbLeftCur;
+            iter->iov_offset = 0;
+            iter->iov++;
+            iter->nr_segs--;
+            while (iter->nr_segs > 0) {
+                size_t const cbSeg = iter->iov->iov_len;
+                if (cbSeg > cbSkip) {
+                    iter->iov_offset = cbSkip;
+                    break;
+                }
+                cbSkip -= cbSeg;
+                iter->iov++;
+                iter->nr_segs--;
+            }
+        }
+    }
+}
+
+
+# undef  iov_iter_get_pages
+# define iov_iter_get_pages(a_pIter, a_papPages, a_cbMax, a_cMaxPages, a_poffPg0) \
+    vbsf_iov_iter_get_pages(a_pIter, a_papPages, a_cbMax, a_cMaxPages, a_poffPg0)
+static ssize_t vbsf_iov_iter_get_pages(struct vbsf_iov_iter *iter, struct page **papPages,
+                                       size_t cbMax, unsigned cMaxPages, size_t *poffPg0)
+{
+    while (iter->nr_segs > 0) {
+        size_t const cbLeft = iter->iov->iov_len - iter->iov_offset;
+        Assert(iter->iov->iov_len >= iter->iov_offset);
+        if (cbLeft > 0) {
+            uintptr_t           uPtrFrom   = (uintptr_t)iter->iov->iov_base + iter->iov_offset;
+            size_t              offPg0     = *poffPg0 = uPtrFrom & PAGE_OFFSET_MASK;
+            size_t              cPagesLeft = RT_ALIGN_Z(offPg0 + cbLeft, PAGE_SIZE) >> PAGE_SHIFT;
+            size_t              cPages     = RT_MIN(cPagesLeft, cMaxPages);
+            struct task_struct *pTask      = current;
+            size_t              cPagesLocked;
+
+            down_read(&pTask->mm->mmap_sem);
+            cPagesLocked = get_user_pages(pTask, pTask->mm, uPtrFrom, cPages, iter->v_write, 1 /*force*/, papPages, NULL);
+            up_read(&pTask->mm->mmap_sem);
+            if (cPagesLocked == cPages) {
+                size_t cbRet = (cPages << PAGE_SHIFT) - offPg0;
+                if (cPages == cPagesLeft) {
+                    size_t offLastPg = (uPtrFrom + cbLeft) & PAGE_OFFSET_MASK;
+                    if (offLastPg)
+                        cbRet -= PAGE_SIZE - offLastPg;
+                }
+                Assert(cbRet <= cbLeft);
+                return cbRet;
+            }
+            if (cPagesLocked > 0)
+                vbsf_unlock_user_pages(papPages, cPagesLocked, false /*fSetDirty*/, false /*fLockPgHack*/);
+            return -EFAULT;
+        }
+        iter->iov_offset = 0;
+        iter->iov++;
+        iter->nr_segs--;
+    }
+    AssertFailed();
+    return 0;
+}
+
+
+# undef  iov_iter_truncate
+# define iov_iter_truncate(iter, cbNew)         vbsf_iov_iter_truncate(iter, cbNew)
+static void vbsf_iov_iter_truncate(struct vbsf_iov_iter *iter, size_t cbNew)
+{
+    /* we have no counter or stuff, so it's a no-op. */
+    RT_NOREF(iter, cbNew);
+}
+
+
+# undef  iov_iter_revert
+# define iov_iter_revert(a_pIter, a_cbRewind) vbsf_iov_iter_revert(a_pIter, a_cbRewind)
+void vbsf_iov_iter_revert(struct vbsf_iov_iter *iter, size_t cbRewind)
+{
+    SFLOG2(("vbsf_iov_iter_revert: cbRewind=%#zx\n", cbRewind));
+    if (iter->iov_offset > 0) {
+        if (cbRewind <= iter->iov_offset) {
+            iter->iov_offset -= cbRewind;
+            return;
+        }
+        cbRewind -= iter->iov_offset;
+        iter->iov_offset = 0;
+    }
+
+    while (cbRewind > 0) {
+        struct iovec const *pIov  = --iter->iov;
+        size_t const        cbSeg = pIov->iov_len;
+        iter->nr_segs++;
+
+        Assert((uintptr_t)pIov >= (uintptr_t)iter->iov_org);
+        Assert(iter->nr_segs <= iter->iter->nr_segs_org);
+
+        if (cbRewind <= cbSeg) {
+            iter->iov_offset = cbSeg - cbRewind;
+            break;
+        }
+        cbRewind -= cbSeg;
+    }
+}
+
+#endif /* 2.6.19 <= linux < 3.16.0 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+
+static size_t copy_from_iter(uint8_t *pbDst, size_t cbToCopy, struct iov_iter *pSrcIter)
+{
+    size_t const cbTotal = cbToCopy;
+    Assert(iov_iter_count(pSrcIter) >= cbToCopy);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+    if (pSrcIter->type & ITER_BVEC) {
+        while (cbToCopy > 0) {
+            size_t const offPage    = (uintptr_t)pbDst & PAGE_OFFSET_MASK;
+            size_t const cbThisCopy = RT_MIN(PAGE_SIZE - offPage, cbToCopy);
+            struct page *pPage      = rtR0MemObjLinuxVirtToPage(pbDst);
+            size_t       cbCopied   = copy_page_from_iter(pPage, offPage, cbThisCopy, pSrcIter);
+            AssertStmt(cbCopied <= cbThisCopy, cbCopied = cbThisCopy);
+            pbDst    += cbCopied;
+            cbToCopy -= cbCopied;
+            if (cbCopied != cbToCopy)
+                break;
+        }
+    } else
+# endif
+    {
+        while (cbToCopy > 0) {
+            size_t cbThisCopy = iov_iter_single_seg_count(pSrcIter);
+            if (cbThisCopy > 0) {
+                if (cbThisCopy > cbToCopy)
+                    cbThisCopy = cbToCopy;
+                if (pSrcIter->type & ITER_KVEC)
+                    memcpy(pbDst, (void *)pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy);
+                else if (!copy_from_user(pbDst, pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy))
+                    break;
+                pbDst    += cbThisCopy;
+                cbToCopy -= cbThisCopy;
+            }
+            iov_iter_advance(pSrcIter, cbThisCopy);
+        }
+    }
+    return cbTotal - cbToCopy;
+}
+
+
+static size_t copy_to_iter(uint8_t const *pbSrc, size_t cbToCopy, struct iov_iter *pDstIter)
+{
+    size_t const cbTotal = cbToCopy;
+    Assert(iov_iter_count(pDstIter) >= cbToCopy);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+    if (pDstIter->type & ITER_BVEC) {
+        while (cbToCopy > 0) {
+            size_t const offPage    = (uintptr_t)pbSrc & PAGE_OFFSET_MASK;
+            size_t const cbThisCopy = RT_MIN(PAGE_SIZE - offPage, cbToCopy);
+            struct page *pPage      = rtR0MemObjLinuxVirtToPage((void *)pbSrc);
+            size_t       cbCopied   = copy_page_to_iter(pPage, offPage, cbThisCopy, pDstIter);
+            AssertStmt(cbCopied <= cbThisCopy, cbCopied = cbThisCopy);
+            pbSrc    += cbCopied;
+            cbToCopy -= cbCopied;
+            if (cbCopied != cbToCopy)
+                break;
+        }
+    } else
+# endif
+    {
+        while (cbToCopy > 0) {
+            size_t cbThisCopy = iov_iter_single_seg_count(pDstIter);
+            if (cbThisCopy > 0) {
+                if (cbThisCopy > cbToCopy)
+                    cbThisCopy = cbToCopy;
+                if (pDstIter->type & ITER_KVEC)
+                    memcpy((void *)pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy);
+                else if (!copy_to_user(pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy)) {
+                    break;
+                }
+                pbSrc    += cbThisCopy;
+                cbToCopy -= cbThisCopy;
+            }
+            iov_iter_advance(pDstIter, cbThisCopy);
+        }
+    }
+    return cbTotal - cbToCopy;
+}
+
+#endif /* 3.16.0 <= linux < 3.18.0 */
+
+
+
+/*********************************************************************************************************************************
+*   Handle management                                                                                                            *
+*********************************************************************************************************************************/
 
 /**
  * Called when an inode is released to unlink all handles that might impossibly
@@ -236,6 +495,11 @@ void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *
     spin_unlock_irqrestore(&g_SfHandleLock, fSavedFlags);
 }
 
+
+
+/*********************************************************************************************************************************
+*   Pipe / splice stuff for 2.6.23 >= linux < 2.6.31 (figure out why we need this)                                               *
+*********************************************************************************************************************************/
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
  && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
@@ -389,6 +653,11 @@ ssize_t vbsf_splice_read(struct file *in, loff_t * poffset, struct pipe_inode_in
 }
 
 #endif /* 2.6.23 <= LINUX_VERSION_CODE < 2.6.31 */
+
+
+/*********************************************************************************************************************************
+*   File operations on regular files                                                                                             *
+*********************************************************************************************************************************/
 
 /**
  * Helper for deciding wheter we should do a read via the page cache or not.
@@ -560,7 +829,7 @@ DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWr
     struct task_struct *pTask = current;
     size_t cPagesLocked;
     down_read(&pTask->mm->mmap_sem);
-    cPagesLocked = get_user_pages(current, current->mm, uPtrFrom, cPages, fWrite, 1 /*force*/, papPages, NULL);
+    cPagesLocked = get_user_pages(pTask, pTask->mm, uPtrFrom, cPages, fWrite, 1 /*force*/, papPages, NULL);
     up_read(&pTask->mm->mmap_sem);
 # endif
     *pfLockPgHack = false;
@@ -1166,84 +1435,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
     return vbsf_reg_write_locking(file, buf, size, off, pos, inode, sf_i, sf_g, sf_r);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-/*
- * Hide missing uio.h functionality in older kernsl.
- */
-
-static size_t copy_from_iter(uint8_t *pbDst, size_t cbToCopy, struct iov_iter *pSrcIter)
-{
-    size_t const cbTotal = cbToCopy;
-    Assert(iov_iter_count(pSrcIter) >= cbToCopy);
-    if (pSrcIter->type & ITER_BVEC) {
-        while (cbToCopy > 0) {
-            size_t const offPage    = (uintptr_t)pbDst & PAGE_OFFSET_MASK;
-            size_t const cbThisCopy = RT_MIN(PAGE_SIZE - offPage, cbToCopy);
-            struct page *pPage      = rtR0MemObjLinuxVirtToPage(pbDst);
-            size_t       cbCopied   = copy_page_from_iter(pPage, offPage, cbThisCopy, pSrcIter);
-            AssertStmt(cbCopied <= cbThisCopy, cbCopied = cbThisCopy);
-            pbDst    += cbCopied;
-            cbToCopy -= cbCopied;
-            if (cbCopied != cbToCopy)
-                break;
-        }
-    } else {
-        while (cbToCopy > 0) {
-            size_t cbThisCopy = iov_iter_single_seg_count(pSrcIter);
-            if (cbThisCopy > 0) {
-                if (cbThisCopy > cbToCopy)
-                    cbThisCopy = cbToCopy;
-                if (pSrcIter->type & ITER_KVEC)
-                    memcpy(pbDst, (void *)pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy);
-                else if (!copy_from_user(pbDst, pSrcIter->iov->iov_base + pSrcIter->iov_offset, cbThisCopy))
-                    break;
-                pbDst    += cbThisCopy;
-                cbToCopy -= cbThisCopy;
-            }
-            iov_iter_advance(pSrcIter, cbThisCopy);
-        }
-    }
-    return cbTotal - cbToCopy;
-}
-
-static size_t copy_to_iter(uint8_t const *pbSrc, size_t cbToCopy, struct iov_iter *pDstIter)
-{
-    size_t const cbTotal = cbToCopy;
-    Assert(iov_iter_count(pDstIter) >= cbToCopy);
-    if (pDstIter->type & ITER_BVEC) {
-        while (cbToCopy > 0) {
-            size_t const offPage    = (uintptr_t)pbSrc & PAGE_OFFSET_MASK;
-            size_t const cbThisCopy = RT_MIN(PAGE_SIZE - offPage, cbToCopy);
-            struct page *pPage      = rtR0MemObjLinuxVirtToPage((void *)pbSrc);
-            size_t       cbCopied   = copy_page_to_iter(pPage, offPage, cbThisCopy, pDstIter);
-            AssertStmt(cbCopied <= cbThisCopy, cbCopied = cbThisCopy);
-            pbSrc    += cbCopied;
-            cbToCopy -= cbCopied;
-            if (cbCopied != cbToCopy)
-                break;
-        }
-    } else {
-        while (cbToCopy > 0) {
-            size_t cbThisCopy = iov_iter_single_seg_count(pDstIter);
-            if (cbThisCopy > 0) {
-                if (cbThisCopy > cbToCopy)
-                    cbThisCopy = cbToCopy;
-                if (pDstIter->type & ITER_KVEC)
-                    memcpy((void *)pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy);
-                else if (!copy_to_user(pDstIter->iov->iov_base + pDstIter->iov_offset, pbSrc, cbThisCopy)) {
-                    break;
-                }
-                pbSrc    += cbThisCopy;
-                cbToCopy -= cbThisCopy;
-            }
-            iov_iter_advance(pDstIter, cbThisCopy);
-        }
-    }
-    return cbTotal - cbToCopy;
-}
-
-#endif /* 3.16.0 >= linux < 3.18.0 */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
 
 /**
  * Companion to vbsf_iter_lock_pages().
@@ -1503,7 +1695,7 @@ static bool vbsf_iter_rewind(struct iov_iter *iter, struct vbsf_iter_stash *pSta
         pStash->off   = 0;
     }
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0) || LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
     iov_iter_revert(iter, cbToRewind + cbExtra);
     return true;
 # else
@@ -1533,7 +1725,9 @@ DECLINLINE(void) vbsf_iter_cleanup_stash(struct iov_iter *iter, struct vbsf_iter
 static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
 {
     size_t cPages;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
     if (iter_is_iovec(iter) || (iter->type & ITER_KVEC)) {
+#endif
         const struct iovec *pCurIov    = iter->iov;
         size_t              cLeft      = iter->nr_segs;
         size_t              cPagesSpan = 0;
@@ -1591,12 +1785,14 @@ static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
         }
         if (cPagesSpan > cPages)
             cPages = cPagesSpan;
-    } else  {
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+    } else {
         /* Won't bother with accurate counts for the next two types, just make
            some rough estimates (does pipes have segments?): */
         size_t cSegs = iter->type & ITER_BVEC ? RT_MAX(1, iter->nr_segs) : 1;
         cPages = (iov_iter_count(iter) + (PAGE_SIZE * 2 - 2) * cSegs) >> PAGE_SHIFT;
     }
+# endif
     SFLOGFLOW(("vbsf_iter_max_span_of_pages: returns %#zx\n", cPages));
     return cPages;
 }
@@ -1728,8 +1924,16 @@ static ssize_t vbsf_reg_read_iter_locking(struct kiocb *kio, struct iov_iter *it
  * @param   kio         The kernel I/O control block (or something like that).
  * @param   iter        The I/O vector iterator describing the buffer.
  */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
 static ssize_t vbsf_reg_read_iter(struct kiocb *kio, struct iov_iter *iter)
+# else
+static ssize_t vbsf_reg_aio_read(struct kiocb *kio, const struct iovec *iov, unsigned long cSegs, loff_t offFile)
+# endif
 {
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
+    struct vbsf_iov_iter    fake_iter = VBSF_IOV_ITER_INITIALIZER(cSegs, iov, 0 /*write*/);
+    struct vbsf_iov_iter   *iter      = &fake_iter;
+# endif
     size_t                  cbToRead = iov_iter_count(iter);
     struct inode           *inode    = VBSF_GET_F_DENTRY(kio->ki_filp)->d_inode;
     struct address_space   *mapping  = inode->i_mapping;
@@ -1753,8 +1957,13 @@ static ssize_t vbsf_reg_read_iter(struct kiocb *kio, struct iov_iter *iter)
      * though, we just do page cache reading when there are writable
      * mappings around with any kind of pages loaded.
      */
-    if (vbsf_should_use_cached_read(kio->ki_filp, mapping, sf_g))
+    if (vbsf_should_use_cached_read(kio->ki_filp, mapping, sf_g)) {
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
         return generic_file_read_iter(kio, iter);
+# else
+        return generic_file_aio_read(kio, iov, cSegs, offFile);
+# endif
+    }
 
     /*
      * Now now we reject async I/O requests.
@@ -1928,7 +2137,6 @@ static ssize_t vbsf_reg_write_iter_locking(struct kiocb *kio, struct iov_iter *i
 }
 
 
-
 /**
  * Write from I/O vector iterator.
  *
@@ -1936,8 +2144,16 @@ static ssize_t vbsf_reg_write_iter_locking(struct kiocb *kio, struct iov_iter *i
  * @param   kio         The kernel I/O control block (or something like that).
  * @param   iter        The I/O vector iterator describing the buffer.
  */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
 static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
+# else
+static ssize_t vbsf_reg_aio_write(struct kiocb *kio, const struct iovec *iov, unsigned long cSegs, loff_t offFile)
+# endif
 {
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
+    struct vbsf_iov_iter    fake_iter = VBSF_IOV_ITER_INITIALIZER(cSegs, iov, 1 /*write*/);
+    struct vbsf_iov_iter   *iter      = &fake_iter;
+# endif
     size_t                  cbToWrite = iov_iter_count(iter);
     struct inode           *inode     = VBSF_GET_F_DENTRY(kio->ki_filp)->d_inode;
     struct vbsf_inode_info *sf_i      = VBSF_GET_INODE_INFO(inode);
@@ -1945,7 +2161,9 @@ static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
 
     struct vbsf_reg_info   *sf_r      = kio->ki_filp->private_data;
     struct vbsf_super_info *sf_g      = VBSF_GET_SUPER_INFO(inode->i_sb);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
     loff_t                  offFile   = kio->ki_pos;
+# endif
 
     SFLOGFLOW(("vbsf_reg_write_iter: inode=%p file=%p size=%#zx off=%#llx type=%#x\n",
                inode, kio->ki_filp, cbToWrite, offFile, iter->type));
@@ -1956,11 +2174,11 @@ static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
      */
     /** @todo This should be handled by the host, it returning the new file
      *        offset when appending.  We may have an outdated i_size value here! */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
     if (kio->ki_flags & IOCB_APPEND)
-#else
+# else
     if (kio->ki_filp->f_flags & O_APPEND)
-#endif
+# endif
         kio->ki_pos = offFile = i_size_read(inode);
 
     /*
@@ -1984,13 +2202,13 @@ static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
     if (   mapping
         && mapping->nrpages > 0
         && mapping_writably_mapped(mapping)) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 32)
         int err = filemap_fdatawait_range(mapping, offFile, offFile + cbToWrite - 1);
         if (err)
             return err;
-#else
+# else
         /** @todo ... */
-#endif
+# endif
     }
 
     /*
@@ -2037,7 +2255,7 @@ static ssize_t vbsf_reg_write_iter(struct kiocb *kio, struct iov_iter *iter)
     return vbsf_reg_write_iter_locking(kio, iter, cbToWrite, offFile, sf_g, sf_r, inode, sf_i, mapping);
 }
 
-#endif /* >= 3.16.0 */
+#endif /* >= 2.6.19 */
 
 /**
  * Used by vbsf_reg_open() and vbsf_inode_atomic_open() to
@@ -2126,9 +2344,9 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
     int rc, rc_linux = 0;
     struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
     struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
-    struct vbsf_reg_info *sf_r;
-    struct dentry *dentry = VBSF_GET_F_DENTRY(file);
-    VBOXSFCREATEREQ *pReq;
+    struct dentry          *dentry = VBSF_GET_F_DENTRY(file);
+    struct vbsf_reg_info   *sf_r;
+    VBOXSFCREATEREQ        *pReq;
 
     SFLOGFLOW(("vbsf_reg_open: inode=%p file=%p flags=%#x %s\n", inode, file, file->f_flags, sf_i ? sf_i->path->String.ach : NULL));
     BUG_ON(!sf_g);
@@ -2264,6 +2482,7 @@ static int vbsf_reg_release(struct inode *inode, struct file *file)
     return 0;
 }
 
+
 /**
  * Wrapper around generic/default seek function that ensures that we've got
  * the up-to-date file size when doing anything relative to EOF.
@@ -2298,6 +2517,7 @@ static loff_t vbsf_reg_llseek(struct file *file, loff_t off, int whence)
     return default_llseek(file, off, whence);
 #endif
 }
+
 
 /**
  * Flush region of file - chiefly mmap/msync.
@@ -2415,6 +2635,7 @@ static ssize_t vbsf_reg_copy_file_range(struct file *pFileSrc, loff_t offSrc, st
     return cbRet;
 }
 #endif /* > 4.5 */
+
 
 #ifdef SFLOG_ENABLED
 /*
@@ -2595,6 +2816,9 @@ struct file_operations vbsf_reg_fops = {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
     .read_iter       = vbsf_reg_read_iter,
     .write_iter      = vbsf_reg_write_iter,
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+    .aio_read        = vbsf_reg_aio_read,
+    .aio_write       = vbsf_reg_aio_write,
 #endif
     .release         = vbsf_reg_release,
 #ifdef SFLOG_ENABLED
@@ -2602,17 +2826,15 @@ struct file_operations vbsf_reg_fops = {
 #else
     .mmap            = generic_file_mmap,
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
 /** @todo This code is known to cause caching of data which should not be
- * cached.  Investigate. */
+ * cached.  Investigate --
+ * bird: Part of this was using generic page cache functions for
+ * implementing .aio_read/write.  Fixed that (see above). */
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
     .splice_read     = vbsf_splice_read,
 # else
     .sendfile        = generic_file_sendfile,
-# endif
-    .aio_read        = generic_file_aio_read,
-    .aio_write       = generic_file_aio_write,
 # endif
 #endif
     .llseek          = vbsf_reg_llseek,
@@ -2622,14 +2844,24 @@ struct file_operations vbsf_reg_fops = {
 #endif
 };
 
+
+/**
+ * Inodes operations for regular files.
+ */
 struct inode_operations vbsf_reg_iops = {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
-    .getattr = vbsf_inode_getattr,
+    .getattr    = vbsf_inode_getattr,
 #else
     .revalidate = vbsf_inode_revalidate,
 #endif
-    .setattr = vbsf_inode_setattr,
+    .setattr    = vbsf_inode_setattr,
 };
+
+
+
+/*********************************************************************************************************************************
+*   Address Space Operations on Regular Files (for mmap)                                                                         *
+*********************************************************************************************************************************/
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
@@ -2769,6 +3001,7 @@ static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
     return err;
 }
 
+
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 /**
  * Called when writing thru the page cache (which we shouldn't be doing).
@@ -2793,6 +3026,7 @@ int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t po
     return simple_write_begin(file, mapping, pos, len, flags, pagep, fsdata);
 }
 # endif /* KERNEL_VERSION >= 2.6.24 */
+
 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
 /**
@@ -2830,21 +3064,21 @@ static int vbsf_direct_IO(int rw, struct inode *inode, struct kiobuf *, unsigned
  * @todo the FsPerf touch/flush (mmap) test fails on 4.4.0 (ubuntu 16.04 lts).
  */
 struct address_space_operations vbsf_reg_aops = {
-    .readpage = vbsf_readpage,
-    .writepage = vbsf_writepage,
+    .readpage       = vbsf_readpage,
+    .writepage      = vbsf_writepage,
     /** @todo Need .writepages if we want msync performance...  */
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
     .set_page_dirty = __set_page_dirty_buffers,
 # endif
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
-    .write_begin = vbsf_write_begin,
-    .write_end = simple_write_end,
+    .write_begin    = vbsf_write_begin,
+    .write_end      = simple_write_end,
 # else
-    .prepare_write = simple_prepare_write,
-    .commit_write = simple_commit_write,
+    .prepare_write  = simple_prepare_write,
+    .commit_write   = simple_commit_write,
 # endif
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
-    .direct_IO = vbsf_direct_IO,
+    .direct_IO      = vbsf_direct_IO,
 # endif
 };
 

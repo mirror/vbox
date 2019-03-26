@@ -355,9 +355,19 @@ DECLINLINE(unsigned long) vbsf_dentry_get_update_jiffies(struct dentry *pDirEntr
 }
 
 /**
+ * Invalidates the update TTL for the given directory entry so that it is
+ * revalidate the next time it is used.
+ * @param   pDirEntry   The directory entry cache entry to invalidate.
+ */
+DECLINLINE(void) vbsf_dentry_invalidate_ttl(struct dentry *pDirEntry)
+{
+    vbsf_dentry_set_update_jiffies(pDirEntry, jiffies - INT32_MAX / 2);
+}
+
+/**
  * Increase the time-to-live of @a pDirEntry and all ancestors.
- * @param   pDirEntry           The directory entry cache entry which ancestors
- *                  we should increase the TTL for.
+ * @param   pDirEntry   The directory entry cache entry which ancestors
+ *                      we should increase the TTL for.
  */
 DECLINLINE(void) vbsf_dentry_chain_increase_ttl(struct dentry *pDirEntry)
 {
@@ -374,8 +384,8 @@ DECLINLINE(void) vbsf_dentry_chain_increase_ttl(struct dentry *pDirEntry)
 
 /**
  * Increase the time-to-live of all ancestors.
- * @param   pDirEntry           The directory entry cache entry which ancestors
- *                  we should increase the TTL for.
+ * @param   pDirEntry   The directory entry cache entry which ancestors
+ *                      we should increase the TTL for.
  */
 DECLINLINE(void) vbsf_dentry_chain_increase_parent_ttl(struct dentry *pDirEntry)
 {

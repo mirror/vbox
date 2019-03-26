@@ -117,7 +117,7 @@ static int vbsf_dir_open(struct inode *inode, struct file *file)
                  * dir cache and inode info.
                  */
                 /** @todo do more to invalidate dentry and inode here. */
-                vbsf_dentry_set_update_jiffies(dentry, jiffies + INT_MAX / 2);
+                vbsf_dentry_invalidate_ttl(dentry);
                 sf_i->force_restat = true;
                 rc = -ENOENT;
             } else
@@ -563,7 +563,7 @@ struct file_operations vbsf_dir_fops = {
     .release        = vbsf_dir_release,
     .read           = generic_read_dir,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
-    .llseek       = generic_file_llseek
+    .llseek         = generic_file_llseek
 #endif
 };
 
@@ -1123,10 +1123,12 @@ static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int f
                 sf_parent_i->force_restat = true; /* directory access/change time changed */
                 rc = 0;
             } else if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND) {
+                /* Probably deleted on the host while the guest had it cached, so don't complain: */
                 LogFunc(("(%d): VbglR0SfRemove(%s) failed rc=%Rrc; calling d_drop on %p\n",
                          fDirectory, path->String.ach, rc, dentry));
+                sf_parent_i->force_restat = true;
                 d_drop(dentry);
-                rc = 0; /** @todo ??? */
+                rc = 0;
             } else {
                 LogFunc(("(%d): VbglR0SfRemove(%s) failed rc=%Rrc\n", fDirectory, path->String.ach, rc));
                 rc = -RTErrConvertToErrno(rc);
@@ -1240,7 +1242,7 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
                         SFLOGFLOW(("vbsf_inode_rename: VbglR0SfHostReqRenameWithSrcContig(%s,%s,%#x) failed -> %d\n",
                                    pOldPath->String.ach, pNewPath->String.ach, fRename, rc));
                         if (rc == VERR_IS_A_DIRECTORY || rc == VERR_IS_A_FILE)
-                            vbsf_dentry_set_update_jiffies(old_dentry, jiffies + INT_MAX / 2);
+                            vbsf_dentry_invalidate_ttl(old_dentry);
                         rc = -RTErrConvertToErrno(rc);
                     }
                 } else {
@@ -1322,8 +1324,11 @@ static int vbsf_inode_symlink(struct inode *parent, struct dentry *dentry, const
                     if (rc == 0) {
                         SFLOGFLOW(("vbsf_inode_symlink: Successfully created '%s' -> '%s'\n", pPath->String.ach, pTarget->String.ach));
                         pPath = NULL; /* consumed by inode */
+                        vbsf_dentry_chain_increase_ttl(dentry);
                     } else {
                         SFLOGFLOW(("vbsf_inode_symlink: Failed to create inode for '%s': %d\n", pPath->String.ach, rc));
+                        vbsf_dentry_chain_increase_parent_ttl(dentry);
+                        vbsf_dentry_invalidate_ttl(dentry);
                     }
                 } else {
                     int const vrc = rc;
