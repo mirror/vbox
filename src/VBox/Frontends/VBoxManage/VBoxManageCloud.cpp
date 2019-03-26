@@ -51,13 +51,13 @@ typedef struct
 typedef CLOUDCOMMONOPT *PCLOUDCOMMONOPT;
 
 /**
- * List all available cloud instances for the specified cloud provider. 
- * Available cloud instance is one which state whether "running" or "stopped". 
- *  
+ * List all available cloud instances for the specified cloud provider.
+ * Available cloud instance is one which state whether "running" or "stopped".
+ *
  * @returns RTEXITCODE
- * @param a is the list of passed arguments 
- * @param iFirst is the position of the first unparsed argument in the arguments list 
- * @param pCommonOpts is a pointer to the structure CLOUDCOMMONOPT with some common 
+ * @param a is the list of passed arguments
+ * @param iFirst is the position of the first unparsed argument in the arguments list
+ * @param pCommonOpts is a pointer to the structure CLOUDCOMMONOPT with some common
  * arguments which have been already parsed before
  */
 static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
@@ -139,7 +139,7 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
                                    ComSafeArrayAsOutParam(arrayVMNames),
                                    ComSafeArrayAsOutParam(arrayVMIds)),
                      RTEXITCODE_FAILURE);
-    RTPrintf("List of available instances for the cloud profile \'%ls\' \nand compartment \'%s\':\n", 
+    RTPrintf("List of available instances for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cIds = arrayVMIds.size();
     size_t cNames = arrayVMNames.size();
@@ -172,9 +172,9 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
  * List all available cloud images for the specified cloud provider.
  *
  * @returns RTEXITCODE
- * @param a is the list of passed arguments 
- * @param iFirst is the position of the first unparsed argument in the arguments list 
- * @param pCommonOpts is a pointer to the structure CLOUDCOMMONOPT with some common 
+ * @param a is the list of passed arguments
+ * @param iFirst is the position of the first unparsed argument in the arguments list
+ * @param pCommonOpts is a pointer to the structure CLOUDCOMMONOPT with some common
  * arguments which have been already parsed before
  */
 static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
@@ -244,7 +244,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
-                     RTEXITCODE_FAILURE);    
+                     RTEXITCODE_FAILURE);
     com::SafeArray<BSTR> arrayVMNames;
     com::SafeArray<BSTR> arrayVMIds;
     RTPrintf("Getting a list of available cloud images...\n");
@@ -254,7 +254,7 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
                                 ComSafeArrayAsOutParam(arrayVMNames),
                                 ComSafeArrayAsOutParam(arrayVMIds)),
                      RTEXITCODE_FAILURE);
-    RTPrintf("List of available images for the cloud profile \'%ls\' \nand compartment \'%s\':\n", 
+    RTPrintf("List of available images for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cNames = arrayVMNames.size();
     size_t cIds = arrayVMIds.size();
@@ -269,14 +269,13 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-
 /**
  * General function which handles the "list" commands
  *
  * @returns RTEXITCODE
- * @param a is the list of passed arguments 
- * @param iFirst is the position of the first unparsed argument in the arguments list 
- * @param pCommonOpts is a pointer to the structure CLOUDCOMMONOPT with some common 
+ * @param a is the list of passed arguments
+ * @param iFirst is the position of the first unparsed argument in the arguments list
+ * @param pCommonOpts is a pointer to the structure CLOUDCOMMONOPT with some common
  * arguments which have been already parsed before
  */
 static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
