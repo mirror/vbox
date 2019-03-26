@@ -254,7 +254,7 @@ void vbsf_iov_iter_revert(struct vbsf_iov_iter *iter, size_t cbRewind)
         iter->nr_segs++;
 
         Assert((uintptr_t)pIov >= (uintptr_t)iter->iov_org);
-        Assert(iter->nr_segs <= iter->iter->nr_segs_org);
+        Assert(iter->nr_segs <= iter->nr_segs_org);
 
         if (cbRewind <= cbSeg) {
             iter->iov_offset = cbSeg - cbRewind;
