@@ -1404,7 +1404,7 @@ DECLINLINE(int) VbglR0SfHostReqReadLinkContigSimple(SHFLROOT idRoot, const char 
     if (cchPath < _64K - 1)
     {
         VBOXSFREADLINKREQ *pReq = (VBOXSFREADLINKREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFREADLINKREQ, StrPath.String)
-                                                                           + SHFLSTRING_HEADER_SIZE + cchPath);
+                                                                           + SHFLSTRING_HEADER_SIZE + (uint32_t)cchPath);
         if (pReq)
         {
             pReq->StrPath.u16Length = (uint16_t)cchPath;
