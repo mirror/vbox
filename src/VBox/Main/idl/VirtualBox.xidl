@@ -25556,6 +25556,67 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
   </interface>
 
+ <enum
+    name="CloudMachineState"
+    uuid="67b6d054-0154-4f5d-b71b-6ac406e1ff78"
+    >
+    <desc>Cloud instance execution state</desc>
+    <const name="Invalid"                    value="0">
+      <desc>Invalid state</desc>
+    </const>
+    <const name="Provisioning"               value="1">
+      <desc>The machine is in the process of provisioning</desc>
+    </const>
+    <const name="Running"                    value="2">
+      <desc>The machine runs</desc>
+    </const>
+    <const name="Starting"                   value="3">
+      <desc>The machine is in the process of starting</desc>
+    </const>
+    <const name="Stopping"                   value="4">
+      <desc>The machine is in the process of stopping</desc>
+    </const>
+    <const name="Stopped"                    value="5">
+      <desc>The machine was stopped</desc>
+    </const>
+    <const name="CreatingImage"              value="6">
+      <desc>The machine is in the process of creating image</desc>
+    </const>
+    <const name="Terminating"               value="7">
+      <desc>The machine is in the process of terminating</desc>
+    </const>
+    <const name="Terminated"                 value="8">
+      <desc>The machine was terminated</desc>
+    </const>
+</enum>
+
+  <enum
+    name="CloudImageState"
+    uuid="6e5d6762-eea2-4f2c-b104-2952d0aa8a0a"
+    >
+    <desc>Cloud image state</desc>
+    <const name="Invalid"                    value="0">
+      <desc>Invalid state</desc>
+    </const>
+    <const name="Provisioning"               value="1">
+      <desc>The image is in the process of provisioning</desc>
+    </const>
+    <const name="Importing"                  value="2">
+      <desc>The image is in the process of importing</desc>
+    </const>
+    <const name="Available"                  value="3">
+      <desc>The image is avalable</desc>
+    </const>
+    <const name="Exporting"                  value="4">
+      <desc>The image is in the process of exporting</desc>
+    </const>
+    <const name="Disabled"                   value="5">
+      <desc>The image is disabled</desc>
+    </const>
+    <const name="Deleted"                    value="6">
+      <desc>The image was deleted</desc>
+    </const>
+</enum>
 
   <!--
   // ICloudClient
@@ -25563,8 +25624,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="3d9aacbe-b3bc-4126-9633-5634bad24ad7"
-    wsmap="managed" reservedMethods="15" reservedAttributes="8"
+    uuid="07c04464-981c-4418-8fcf-5ad12aed7c38"
+    wsmap="managed" reservedMethods="13" reservedAttributes="8"
     >
 
     <method name="getExportLaunchParameters" const="yes">
@@ -25609,6 +25670,33 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </desc>
       </param>
     </method>
+
+    <method name="listInstances" const="yes">
+      <desc>
+        Returns the list of the instances in the Cloud.
+      </desc>
+      <param name="machineState" type="CloudMachineState" dir="in"/>
+      <param name="returnNames" type="wstring" safearray="yes" dir="out">
+        <desc>VM names.</desc>
+      </param>
+      <param name="returnIds" type="wstring" safearray="yes" dir="return">
+        <desc>VM ids.</desc>
+      </param>
+    </method>
+
+    <method name="listImages" const="yes">
+      <desc>
+        Returns the list of the images in the Cloud.
+      </desc>
+      <param name="imageState" type="CloudImageState" dir="in"/>
+      <param name="returnNames" type="wstring" safearray="yes" dir="out">
+        <desc>Images names.</desc>
+      </param>
+      <param name="returnIds" type="wstring" safearray="yes" dir="return">
+        <desc>Images ids.</desc>
+      </param>
+    </method>
+
   </interface>
 
   <!--

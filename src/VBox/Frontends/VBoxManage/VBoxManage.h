@@ -340,6 +340,9 @@ RTEXITCODE handleNATNetwork(HandlerArg *a);
 /* VBoxManageBandwidthControl.cpp */
 RTEXITCODE handleBandwidthControl(HandlerArg *a);
 
+/* VBoxManageCloud.cpp */
+RTEXITCODE handleCloud(HandlerArg *a);
+
 #endif /* !VBOX_ONLY_DOCS */
 
 #endif /* !VBOX_INCLUDED_SRC_VBoxManage_VBoxManage_h */

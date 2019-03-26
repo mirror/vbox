@@ -92,7 +92,8 @@ ifndef VBOX_ONLY_DOCS
  	VBoxManageStorageController.cpp \
  	VBoxManageUSB.cpp \
  	$(if $(VBOX_WITH_NAT_SERVICE),VBoxManageNATNetwork.cpp,) \
- 	$(if $(VBOX_WITH_NAT_SERVICE),../../NetworkServices/NetLib/VBoxNetPortForwardString.cpp,)
+ 	$(if $(VBOX_WITH_NAT_SERVICE),../../NetworkServices/NetLib/VBoxNetPortForwardString.cpp,) \
+ 	VBoxManageCloud.cpp
  VBoxManage_SOURCES.win = \
  	VBoxManage.rc
  VBoxManage_LIBS      += $(LIB_DDU)
