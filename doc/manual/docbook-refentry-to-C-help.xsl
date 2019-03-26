@@ -37,6 +37,8 @@
     <xsl:text>-------------------------------------------------------------------------------------------------------------------</xsl:text>
   </xsl:variable>
 
+  <!-- Sub-command style command (true) or single command (false). -->
+  <xsl:variable name="g_fSubCommands" select="not(not(//refsect2[@id]))" />
 
   <!-- Default action, do nothing. -->
   <xsl:template match="node()|@*"/>
@@ -87,7 +89,7 @@ static const RTMSGREFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><
       <xsl:if test="not(starts-with(substring-after(@id, '-'), $sBaseId))">
         <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>The refsynopsisdiv/cmdsynopsis elements @id is expected to include the refentry @id.</xsl:message>
       </xsl:if>
-      <xsl:if test="not(../../refsect1/refsect2[@id=./@id])">
+      <xsl:if test="not(../../refsect1/refsect2[@id=./@id]) and $g_fSubCommands">
         <xsl:message terminate="yes"><xsl:call-template name="error-prefix"/>No refsect2 with id="<xsl:value-of select="@id"/>" found.</xsl:message>
       </xsl:if>
 
