@@ -55,8 +55,169 @@ enum UIGraphicsSelectorContextMenuType
 };
 
 
-/** QObject extension used as VM Chooser-pane model: */
-class UIChooserModel : public QObject
+/** QObject extension used as VM Chooser-pane abstract model.
+  * This class is used to load/save a tree of abstract invisible
+  * nodes representing VMs and their groups from/to extra-data. */
+class UIChooserAbstractModel : public QObject
+{
+    Q_OBJECT;
+
+signals:
+
+    /** @name Group saving stuff.
+      * @{ */
+        /** Notifies about group saving started. */
+        void sigGroupSavingStarted();
+        /** Notifies about group saving state changed. */
+        void sigGroupSavingStateChanged();
+    /** @} */
+
+public:
+
+    /** Constructs abstract Chooser-model passing @a pParent to the base-class. */
+    UIChooserAbstractModel(UIChooser *pParent);
+
+    /** @name General stuff.
+      * @{ */
+        /** Inits model. */
+        void init();
+        /** Deinits model. */
+        void deinit();
+    /** @} */
+
+    /** @name Children stuff.
+      * @{ */
+        /** Returns invisible root node instance. */
+        UIChooserNode *invisibleRoot() const;
+
+        /** Wipes out empty groups. */
+        void wipeOutEmptyGroups();
+
+        /** Generates unique group name traversing recursively starting from @a pRoot. */
+        static QString uniqueGroupName(UIChooserNode *pRoot);
+    /** @} */
+
+    /** @name Group saving stuff.
+      * @{ */
+        /** Commands to save group settings. */
+        void saveGroupSettings();
+        /** Returns whether group saving is in progress. */
+        bool isGroupSavingInProgress() const;
+    /** @} */
+
+protected slots:
+
+    /** @name Main event handling stuff.
+      * @{ */
+        /** Handles machine @a enmState change for machine with certain @a uId. */
+        virtual void sltMachineStateChanged(const QUuid &uId, const KMachineState enmState);
+        /** Handles machine data change for machine with certain @a uId. */
+        virtual void sltMachineDataChanged(const QUuid &uId);
+        /** Handles machine registering/unregistering for machine with certain @a uId. */
+        virtual void sltMachineRegistered(const QUuid &uId, const bool fRegistered);
+        /** Handles session @a enmState change for machine with certain @a uId. */
+        virtual void sltSessionStateChanged(const QUuid &uId, const KSessionState enmState);
+        /** Handles snapshot change for machine/snapshot with certain @a uId / @a uSnapshotId. */
+        virtual void sltSnapshotChanged(const QUuid &uId, const QUuid &uSnapshotId);
+    /** @} */
+
+    /** @name Children stuff.
+      * @{ */
+        /** Handles reload machine with certain @a uId request. */
+        virtual void sltReloadMachine(const QUuid &uId);
+    /** @} */
+
+private slots:
+
+    /** @name Group saving stuff.
+      * @{ */
+        /** Handles request to start group saving. */
+        void sltGroupSavingStart();
+        /** Handles group definition saving complete. */
+        void sltGroupDefinitionsSaveComplete();
+        /** Handles group order saving complete. */
+        void sltGroupOrdersSaveComplete();
+    /** @} */
+
+private:
+
+    /** @name Prepare/Cleanup cascade.
+      * @{ */
+        /** Prepares all. */
+        void prepare();
+        /** Prepares connections. */
+        void prepareConnections();
+    /** @} */
+
+    /** @name Children stuff.
+      * @{ */
+        /** Loads tree. */
+        void loadTree();
+        /** Adds machine item based on certain @a comMachine and optionally @a fMakeItVisible. */
+        void addMachineIntoTheTree(const CMachine &comMachine, bool fMakeItVisible = false);
+        /** Acquires group node, creates one if necessary.
+          * @param  strName           Brings the name of group we looking for.
+          * @param  pParentNode       Brings the parent we starting to look for a group from.
+          * @param  fAllGroupsOpened  Brings whether we should open all the groups till the required one. */
+        UIChooserNode *getGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened);
+        /** Returns whether group with certain @a strName should be opened, searching starting from the passed @a pParentItem. */
+        bool shouldBeGroupOpened(UIChooserNode *pParentNode, const QString &strName);
+
+        /** Wipes out empty groups starting from @a pParentItem. */
+        void wipeOutEmptyGroups(UIChooserNode *pParentNode);
+
+        /** Returns whether global node within the @a pParentNode is favorite. */
+        bool isGlobalNodeFavorite(UIChooserNode *pParentNode) const;
+
+        /** Acquires desired position for a child of @a pParentNode with specified @a enmType and @a strName. */
+        int getDesiredPosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName);
+        /** Acquires saved position for a child of @a pParentNode with specified @a enmType and @a strName. */
+        int positionFromDefinitions(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName);
+
+        /** Creates machine node based on certain @a comMachine as a child of specified @a pParentNode. */
+        void createMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine);
+    /** @} */
+
+    /** @name Group saving stuff.
+      * @{ */
+        /** Saves group definitions. */
+        void saveGroupDefinitions();
+        /** Saves group orders. */
+        void saveGroupOrders();
+
+        /** Gathers group @a definitions of @a pParentGroup. */
+        void gatherGroupDefinitions(QMap<QString, QStringList> &definitions, UIChooserNode *pParentGroup);
+        /** Gathers group @a orders of @a pParentGroup. */
+        void gatherGroupOrders(QMap<QString, QStringList> &orders, UIChooserNode *pParentItem);
+
+        /** Makes sure group definitions saving is finished. */
+        void makeSureGroupDefinitionsSaveIsFinished();
+        /** Makes sure group orders saving is finished. */
+        void makeSureGroupOrdersSaveIsFinished();
+
+        /** Returns QString representation for passed @a uId, wiping out {} symbols.
+          * @note  Required for backward compatibility after QString=>QUuid change. */
+        static QString toOldStyleUuid(const QUuid &uId);
+    /** @} */
+
+    /** @name Children stuff.
+      * @{ */
+        /** Holds the invisible root node instance. */
+        UIChooserNode *m_pInvisibleRootNode;
+    /** @} */
+
+    /** @name Group saving stuff.
+      * @{ */
+        /** Holds the consolidated map of group definitions/orders. */
+        QMap<QString, QStringList>  m_groups;
+    /** @} */
+};
+
+
+/** UIChooserAbstractModel extension used as VM Chooser-pane model.
+  * This class is used to operate on tree of visible tree items
+  * representing VMs and their groups. */
+class UIChooserModel : public UIChooserAbstractModel
 {
     Q_OBJECT;
 
@@ -85,14 +246,6 @@ signals:
       * @{ */
         /** Notifies about root item minimum width @a iHint changed. */
         void sigRootItemMinimumWidthHintChanged(int iHint);
-    /** @} */
-
-    /** @name Group saving stuff.
-      * @{ */
-        /** Notifies about group saving started. */
-        void sigGroupSavingStarted();
-        /** Notifies about group saving state changed. */
-        void sigGroupSavingStateChanged();
     /** @} */
 
 public:
@@ -202,17 +355,11 @@ public:
 
     /** @name Children stuff.
       * @{ */
-        /** Returns invisible root node instance. */
-        UIChooserNode *invisibleRoot() const;
-
         /** Returns the root instance. */
         UIChooserItem *root() const;
 
         /** Starts editing group name. */
         void startEditingGroupItemName();
-
-        /** Wipes out empty groups. */
-        void wipeOutEmptyGroups();
 
         /** Activates machine item. */
         void activateMachineItem();
@@ -224,9 +371,6 @@ public:
         void lookFor(const QString &strLookupSymbol);
         /** Returns whether looking is in progress. */
         bool isLookupInProgress() const;
-
-        /** Generates unique group name traversing recursively starting from @a pRoot. */
-        static QString uniqueGroupName(UIChooserItem *pRoot);
     /** @} */
 
     /** @name Layout stuff.
@@ -236,14 +380,6 @@ public:
 
         /** Defines global item height @a iHint. */
         void setGlobalItemHeightHint(int iHint);
-    /** @} */
-
-    /** @name Group saving stuff.
-      * @{ */
-        /** Commands to save group settings. */
-        void saveGroupSettings();
-        /** Returns whether group saving is in progress. */
-        bool isGroupSavingInProgress() const;
     /** @} */
 
 public slots:
@@ -262,21 +398,21 @@ protected:
         virtual bool eventFilter(QObject *pObject, QEvent *pEvent) /* override */;
     /** @} */
 
-private slots:
+protected slots:
 
     /** @name Main event handling stuff.
       * @{ */
-        /** Handles machine @a enmState change for machine with certain @a uId. */
-        void sltMachineStateChanged(const QUuid &uId, const KMachineState enmState);
-        /** Handles machine data change for machine with certain @a uId. */
-        void sltMachineDataChanged(const QUuid &uId);
         /** Handles machine registering/unregistering for machine with certain @a uId. */
-        void sltMachineRegistered(const QUuid &uId, const bool fRegistered);
-        /** Handles session @a enmState change for machine with certain @a uId. */
-        void sltSessionStateChanged(const QUuid &uId, const KSessionState enmState);
-        /** Handles snapshot change for machine/snapshot with certain @a uId / @a uSnapshotId. */
-        void sltSnapshotChanged(const QUuid &uId, const QUuid &uSnapshotId);
+        virtual void sltMachineRegistered(const QUuid &uId, const bool fRegistered) /* override */;
     /** @} */
+
+    /** @name Children stuff.
+      * @{ */
+        /** Handles reload machine with certain @a uId request. */
+        virtual void sltReloadMachine(const QUuid &uId) /* override */;
+    /** @} */
+
+private slots:
 
     /** @name Selection stuff.
       * @{ */
@@ -299,8 +435,6 @@ private slots:
         void sltCreateNewMachine();
         /** Handles group selected machines request. */
         void sltGroupSelectedMachines();
-        /** Handles reload machine with certain @a uId request. */
-        void sltReloadMachine(const QUuid &uId);
         /** Handles sort parent group request. */
         void sltSortParentGroup();
         /** Handles refresh request. */
@@ -315,16 +449,6 @@ private slots:
 
         /** Handles request to erase lookup timer. */
         void sltEraseLookupTimer();
-    /** @} */
-
-    /** @name Group saving stuff.
-      * @{ */
-        /** Handles request to start group saving. */
-        void sltGroupSavingStart();
-        /** Handles group definition saving complete. */
-        void sltGroupDefinitionsSaveComplete();
-        /** Handles group order saving complete. */
-        void sltGroupOrdersSaveComplete();
     /** @} */
 
 private:
@@ -384,32 +508,6 @@ private:
 
     /** @name Children stuff.
       * @{ */
-        /** Loads tree. */
-        void loadTree();
-        /** Adds machine item based on certain @a comMachine and optionally @a fMakeItVisible. */
-        void addMachineIntoTheTree(const CMachine &comMachine, bool fMakeItVisible = false);
-        /** Acquires group node, creates one if necessary.
-          * @param  strName           Brings the name of group we looking for.
-          * @param  pParentNode       Brings the parent we starting to look for a group from.
-          * @param  fAllGroupsOpened  Brings whether we should open all the groups till the required one. */
-        UIChooserNode *getGroupNode(const QString &strName, UIChooserNode *pParentNode, bool fAllGroupsOpened);
-        /** Returns whether group with certain @a strName should be opened, searching starting from the passed @a pParentItem. */
-        bool shouldBeGroupOpened(UIChooserNode *pParentNode, const QString &strName);
-
-        /** Wipes out empty groups starting from @a pParentItem. */
-        void wipeOutEmptyGroups(UIChooserNode *pParentNode);
-
-        /** Returns whether global node within the @a pParentNode is favorite. */
-        bool isGlobalNodeFavorite(UIChooserNode *pParentNode) const;
-
-        /** Acquires desired position for a child of @a pParentNode with specified @a enmType and @a strName. */
-        int getDesiredPosition(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName);
-        /** Acquires saved position for a child of @a pParentNode with specified @a enmType and @a strName. */
-        int positionFromDefinitions(UIChooserNode *pParentNode, UIChooserItemType enmType, const QString &strName);
-
-        /** Creates machine node based on certain @a comMachine as a child of specified @a pParentNode. */
-        void createMachineNode(UIChooserNode *pParentNode, const CMachine &comMachine);
-
         /** Build tree for main root. */
         void buildTreeForMainRoot();
 
@@ -425,28 +523,6 @@ private:
 
         /** Performs sorting for @a pNode. */
         void sortNodes(UIChooserNode *pNode);
-    /** @} */
-
-    /** @name Group saving stuff.
-      * @{ */
-        /** Saves group definitions. */
-        void saveGroupDefinitions();
-        /** Saves group orders. */
-        void saveGroupOrders();
-
-        /** Gathers group @a definitions of @a pParentGroup. */
-        void gatherGroupDefinitions(QMap<QString, QStringList> &definitions, UIChooserNode *pParentGroup);
-        /** Gathers group @a orders of @a pParentGroup. */
-        void gatherGroupOrders(QMap<QString, QStringList> &orders, UIChooserNode *pParentItem);
-
-        /** Makes sure group definitions saving is finished. */
-        void makeSureGroupDefinitionsSaveIsFinished();
-        /** Makes sure group orders saving is finished. */
-        void makeSureGroupOrdersSaveIsFinished();
-
-        /** Returns QString representation for passed @a uId, wiping out {} symbols.
-          * @note  Required for backward compatibility after QString=>QUuid change. */
-        static QString toOldStyleUuid(const QUuid &uId);
     /** @} */
 
     /** @name General stuff.
@@ -486,9 +562,6 @@ private:
 
     /** @name Children stuff.
       * @{ */
-        /** Holds the invisible root node instance. */
-        UIChooserNode  *m_pInvisibleRootNode;
-
         /** Holds the root instance. */
         QPointer<UIChooserItem>  m_pRoot;
 
@@ -507,12 +580,6 @@ private:
         QTimer  *m_pLookupTimer;
         /** Holds the item lookup string. */
         QString  m_strLookupString;
-    /** @} */
-
-    /** @name Group saving stuff.
-      * @{ */
-        /** Holds the consolidated map of group definitions/orders. */
-        QMap<QString, QStringList>  m_groups;
     /** @} */
 };
 

@@ -418,7 +418,7 @@ void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UICh
                 UIChooserNodeGroup *pNewGroupNode = new UIChooserNodeGroup(parentItem()->node(),
                                                                            false /* favorite */,
                                                                            parentItem()->node()->nodes().size(),
-                                                                           UIChooserModel::uniqueGroupName(parentItem()),
+                                                                           UIChooserModel::uniqueGroupName(parentItem()->node()),
                                                                            true /* true */);
                 UIChooserItemGroup *pNewGroupItem = new UIChooserItemGroup(parentItem(), pNewGroupNode);
                 UIChooserNodeMachine *pNewMachineNode1 = new UIChooserNodeMachine(pNewGroupNode,
