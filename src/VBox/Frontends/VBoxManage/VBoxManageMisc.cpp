@@ -1350,7 +1350,7 @@ RTEXITCODE handleExtPack(HandlerArg *a)
                     return RTEXITCODE_FAILURE;
                 }
                 if (szDigest[0])
-                    RTPrintf("License accepted. For batch installaltion add\n"
+                    RTPrintf("License accepted. For batch installation add\n"
                              "--accept-license=%s\n"
                              "to the VBoxManage command line.\n\n", szDigest);
             }
