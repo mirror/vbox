@@ -245,6 +245,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
     <xsl:if test="position() > 1">
       <xsl:choose>
         <xsl:when test="parent::group"><xsl:value-of select="$arg.or.sep"/></xsl:when>
+        <xsl:when test="parent::arg and self::group"></xsl:when>
         <xsl:when test="ancestor-or-self::*/@sepchar"><xsl:value-of select="ancestor-or-self::*/@sepchar"/></xsl:when>
         <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
       </xsl:choose>
@@ -366,7 +367,7 @@ static const RTMSGREFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl
 
   <xsl:template match="varlistentry/listitem">
     <xsl:call-template name="check-children">
-      <xsl:with-param name="UnsupportedNodes" select="*[not(self::para or self::itemizedlist or self::orderedlist)]|text()"/>
+      <xsl:with-param name="UnsupportedNodes" select="*[not(self::para or self::itemizedlist or self::orderedlist or self::variablelist)]|text()"/>
       <xsl:with-param name="SupportedNames">para, itemizedlist and orderedlist</xsl:with-param>
     </xsl:call-template>
 
@@ -910,14 +911,13 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     -->
   <xsl:template name="list-nodes">
     <xsl:param name="Nodes" select="node()"/>
-
-    <for-each select="$Nodes">
-      <xsl:if test="posision() != 1">
+    <xsl:for-each select="$Nodes">
+      <xsl:if test="position() != 1">
         <xsl:text>, </xsl:text>
       </xsl:if>
       <xsl:choose>
         <xsl:when test="name(.) = ''">
-          <xsl:text>text()</xsl:text>
+          <xsl:text>text:text()</xsl:text>
         </xsl:when>
         <xsl:otherwise>
           <xsl:value-of select="name(.)"/>
@@ -928,8 +928,7 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
           </xsl:if>
         </xsl:otherwise>
       </xsl:choose>
-    </for-each>
-
+    </xsl:for-each>
   </xsl:template>
 
   <xsl:template name="check-children">
@@ -943,7 +942,8 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
         </xsl:call-template>
         <!-- -->: error: Only <xsl:value-of select="$SupportedNames"/> are supported as children to <!-- -->
         <xsl:value-of select="name($Node)"/>
-        <!-- -->Unsupported children: <!-- -->
+        <!-- -->
+Unsupported children: <!-- -->
         <xsl:call-template name="list-nodes">
           <xsl:with-param name="Nodes" select="$UnsupportedNodes"/>
         </xsl:call-template>

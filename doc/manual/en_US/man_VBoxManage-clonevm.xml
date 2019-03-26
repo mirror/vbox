@@ -38,23 +38,23 @@
     <cmdsynopsis id="synopsis-vboxmanage-clonevm">
 <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage clonevm</command>
-      <arg choice="plain"><replaceable>vm</replaceable></arg>
+      <arg choice="req"><replaceable>vmname|uuid</replaceable></arg>
 
-      <arg>--basefolder <replaceable>basefolder</replaceable></arg>
+      <arg>--basefolder=<replaceable>basefolder</replaceable></arg>
 
-      <arg>--group <replaceable>group</replaceable>, ...</arg>
+      <arg>--group=<replaceable>group</replaceable>, ...</arg>
 
-      <arg>--mode machine | machinechildren | all</arg>
+      <arg>--mode=<group choice='plain'><arg choice='plain'>machine</arg><arg choice='plain'>machinechildren</arg><arg choice='plain'>all</arg></group></arg>
 
-      <arg>--name <replaceable>name</replaceable></arg>
+      <arg>--name=<replaceable>name</replaceable></arg>
 
-      <arg>--options link | keepallmacs | keepnatmacs | keepdisknames | keephwuuids</arg>
+      <arg>--options=<group choice='plain'><arg choice='plain'>link</arg><arg choice='plain'>keepallmacs</arg><arg choice='plain'>keepnatmacs</arg><arg choice='plain'>keepdisknames</arg><arg choice='plain'>keephwuuids</arg></group></arg>
 
       <arg>--register</arg>
 
-      <arg>--snapshot <replaceable>snapshot-name</replaceable></arg>
+      <arg>--snapshot=<replaceable>snapshot-name</replaceable></arg>
 
-      <arg>--uuid <replaceable>uuid</replaceable></arg>
+      <arg>--uuid=<replaceable>uuid</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
 
@@ -79,20 +79,20 @@
     </para>
     <variablelist>
       <varlistentry>
-        <term><replaceable>vm</replaceable></term>
+        <term><replaceable>vmname|uuid</replaceable></term>
         <listitem><para>
             Specifies the name or UUID of the VM to clone.
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--basefolder <replaceable>basefolder</replaceable></option></term>
+        <term><option>--basefolder=<replaceable>basefolder</replaceable></option></term>
         <listitem><para>
             Specifies the name of the folder in which to save the
             configuration for the new VM.
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--groups <replaceable>group</replaceable>, ...</option></term>
+        <term><option>--groups=<replaceable>group</replaceable>, ...</option></term>
         <listitem><para>
             Assigns the clone to the specified group or groups. If you
             specify more than one group, separate each group name with a
@@ -106,7 +106,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--mode machine|machineandchildren|all</option></term>
+        <term><option>--mode=machine|machineandchildren|all</option></term>
         <listitem><para>
             Specifies which of the following cloning modes to use:
           </para><itemizedlist>
@@ -128,7 +128,7 @@
           </itemizedlist></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--name <replaceable>name</replaceable></option></term>
+        <term><option>--name=<replaceable>name</replaceable></option></term>
         <listitem><para>
             Specifies a new name for the new VM. The default value is
             <computeroutput><replaceable>original-name</replaceable>
@@ -138,43 +138,43 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--options</option></term>
+        <term><option>--options=option</option></term>
         <listitem><para>
             Specifies how to create a new clone.
           </para><variablelist>
             <varlistentry>
-              <term><option>--options link</option></term>
+              <term><option>--options=link</option></term>
               <listitem><para>
                   Creates a linked clone from a snapshot only.
                 </para></listitem>
             </varlistentry>
             <varlistentry>
-              <term><option>--options keepallmacs</option></term>
+              <term><option>--options=keepallmacs</option></term>
               <listitem><para>
                   Specifies that the new clone reuses the MAC addresses
                   of each virtual network card from the existing VM.
                 </para><para>
                   If you do not specify this option or the
-                  <option>--options keepnatmacs</option> option, the
+                  <option>--options=keepnatmacs</option> option, the
                   default behavior is to reinitialize the MAC addresses
                   of each virtual network card.
                 </para></listitem>
             </varlistentry>
             <varlistentry>
-              <term><option>--options keepnatmacs</option></term>
+              <term><option>--options=keepnatmacs</option></term>
               <listitem><para>
                   Specifies that the new clone reuses the MAC addresses
                   of each virtual network card from the existing VM when
                   the network type is NAT.
                 </para><para>
                   If you do not specify this option or the
-                  <option>--options keepallmacs</option> option, the
+                  <option>--options=keepallmacs</option> option, the
                   default behavior is to reinitialize the MAC addresses
                   of each virtual network card.
                 </para></listitem>
             </varlistentry>
             <varlistentry>
-              <term><option>--option keepdisknames</option></term>
+              <term><option>--option=keepdisknames</option></term>
               <listitem><para>
                   Specifies that the new clone reuses the disk image
                   names from the existing VM. By default, disk images
@@ -182,7 +182,7 @@
                 </para></listitem>
             </varlistentry>
             <varlistentry>
-              <term><option>--option keephwuuids</option></term>
+              <term><option>--option=keephwuuids</option></term>
               <listitem><para>
                   Specifies that the new clone reuses the hardware IDs
                   from the existing VM. By default, new UUIDs are used.
@@ -200,7 +200,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--snapshot <replaceable>snapshot-name</replaceable></option></term>
+        <term><option>--snapshot=<replaceable>snapshot-name</replaceable></option></term>
         <listitem><para>
             Specifies the snapshot on which to base the new VM. By
             default, the clone is created from the current state of the
@@ -208,7 +208,7 @@
           </para></listitem>
       </varlistentry>
       <varlistentry>
-        <term><option>--uuid <replaceable>uuid</replaceable></option></term>
+        <term><option>--uuid=<replaceable>uuid</replaceable></option></term>
         <listitem><para>
             Specifies the UUID for the new VM. Ensure that this ID is
             unique for the &product-name; instance if you decide to
@@ -221,7 +221,6 @@
 
   <refsect1>
     <title>Examples</title>
-    <remark role="help-scope"/>
     <para>
       The following command creates and registers an exact clone of the
       <computeroutput>ol7</computeroutput> VM. The clone is called
@@ -233,8 +232,8 @@
       and UUIDs from the source VM.
     </para>
 <screen>
-$ VBoxManage clonevm ol7 --name "ol7-dev-001" --register --mode all \
---options keepallmacs --options keepdisknames --options keephwuuids
+$ VBoxManage clonevm ol7 --name="ol7-dev-001" --register --mode=all \
+    --options=keepallmacs --options=keepdisknames --options=keephwuuids
 </screen>
     <para>
       The following command creates and registers a clone of the
@@ -243,7 +242,7 @@ $ VBoxManage clonevm ol7 --name "ol7-dev-001" --register --mode all \
       <computeroutput>ol7-dev-002</computeroutput>.
     </para>
 <screen>
-$ VBoxManage clonevm ol7 --name "ol7-dev-002" --register --snapshot "Snapshot 1"
+$ VBoxManage clonevm ol7 --name="ol7-dev-002" --register --snapshot="Snapshot 1"
 </screen>
   </refsect1>
 

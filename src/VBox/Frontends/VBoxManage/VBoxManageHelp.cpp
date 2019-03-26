@@ -733,20 +733,6 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "\n");
     }
 
-    if (enmCommand == USAGE_CLONEVM || enmCommand == USAGE_S_ALL)
-        RTStrmPrintf(pStrm,
-                           "%s clonevm %s         <uuid|vmname>\n"
-                     "                            [--snapshot <uuid>|<name>]\n"
-                     "                            [--mode machine|machineandchildren|all]\n"
-                     "                            [--options link|keepallmacs|keepnatmacs|\n"
-                     "                                       keepdisknames|keephwuuids]\n"
-                     "                            [--name <name>]\n"
-                     "                            [--groups <group>, ...]\n"
-                     "                            [--basefolder <basefolder>]\n"
-                     "                            [--uuid <uuid>]\n"
-                     "                            [--register]\n"
-                     "\n", SEP);
-
     if (enmCommand == USAGE_MOVEVM || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
                            "%s movevm %s          <uuid|vmname>\n"

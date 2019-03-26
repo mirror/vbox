@@ -540,17 +540,17 @@ RTEXITCODE handleCloneVM(HandlerArg *a)
                 if (!pszSrcName)
                     pszSrcName = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_CLONEVM, "Invalid parameter '%s'", ValueUnion.psz);
+                    return errorSyntax("Invalid parameter '%s'", ValueUnion.psz);
                 break;
 
             default:
-                return errorGetOpt(USAGE_CLONEVM, c, &ValueUnion);
+                return errorGetOpt(c, &ValueUnion);
         }
     }
 
     /* Check for required options */
     if (!pszSrcName)
-        return errorSyntax(USAGE_CLONEVM, "VM name required");
+        return errorSyntax("VM name required");
 
     /* Get the machine object */
     ComPtr<IMachine> srcMachine;
