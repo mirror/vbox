@@ -279,9 +279,8 @@ AssertCompileSize(VMMDevRequestHeader, 24);
 /** Requestor process belongs to user on the physical console, but cannot
  * ascertain that it is associated with that login. */
 #define VMMDEV_REQUESTOR_CON_USER                   UINT32_C(0x00000030)
-/** Requestor process belongs to user on the physical console, but cannot
- * ascertain that it is associated with that login. */
-#define VMMDEV_REQUESTOR_CON_MASK                   UINT32_C(0x00000040)
+/** Mask the physical console state of the request. */
+#define VMMDEV_REQUESTOR_CON_MASK                   UINT32_C(0x00000030)
 
 /** Requestor is member of special VirtualBox user group (not on windows). */
 #define VMMDEV_REQUESTOR_GRP_VBOX                   UINT32_C(0x00000080)
