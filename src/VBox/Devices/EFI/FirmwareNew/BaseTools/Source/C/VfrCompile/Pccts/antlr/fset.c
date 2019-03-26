@@ -1527,7 +1527,7 @@ int *max_k;
 					*max_k = CLL_k;
                     save_maintainBackTrace=MR_MaintainBackTrace;
                     if (AlphaBetaTrace) MR_MaintainBackTrace=0;
-					HandleAmbiguity(j, alt1, alt2, jtype);
+		    HandleAmbiguity(j, alt1, alt2, jtype);
                     MR_MaintainBackTrace=save_maintainBackTrace;
 					break;
 				}

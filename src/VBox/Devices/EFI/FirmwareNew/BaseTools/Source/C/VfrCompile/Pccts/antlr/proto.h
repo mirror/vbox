@@ -391,6 +391,11 @@ extern char * outnameX( char *, char *);
 extern char * outname( char * );
 extern void fatalFL( char *, char *, int );
 extern void fatal_intern( char *, char *, int );
+#ifdef VBOX
+#  ifdef __GNUC__
+extern void __attribute__((noreturn)) fatal_intern( char *, char *, int );
+#  endif
+#endif
 extern void cleanUp( void );
 extern char * eMsg3( char *, char *, char *, char * );
 extern char * eMsgd( char *, int );

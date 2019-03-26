@@ -46,6 +46,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include "GenFw.h"
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wlogical-op"
+#endif
+
 //
 // Version of this utility
 //

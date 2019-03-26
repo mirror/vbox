@@ -44,6 +44,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "ParseInf.h"
 #include "PeCoffLib.h"
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+
 //
 // Utility global variables
 //

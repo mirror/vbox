@@ -689,6 +689,7 @@ CVfrVarDataTypeDB::ExtractFieldNameAndArrary (
   switch (*VarStr) {
   case '.' :
     VarStr++;
+    /* fall through */
   case '\0':
     return VFR_RETURN_SUCCESS;
   case '[' :

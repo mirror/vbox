@@ -29,21 +29,20 @@ include $(KBUILD_PATH)/subheader.kmk
 
 BLDPROGS += LzmaCompress
 LzmaCompress_TEMPLATE = VBoxEfiBldProg
+LzmaCompress_DEFS = _7ZIP_ST
 LzmaCompress_SOURCES = \
 	LzmaCompress.c \
 	Sdk/C/Alloc.c \
 	Sdk/C/LzFind.c \
-	Sdk/C/LzFindMt.c \
 	Sdk/C/LzmaDec.c \
 	Sdk/C/LzmaEnc.c \
-	Sdk/C/Threads.c \
 	Sdk/C/7zFile.c \
 	Sdk/C/7zStream.c \
 	Sdk/C/Bra86.c
 
 BLDPROGS += LzmaF86Compress
 LzmaF86Compress_EXTENDS = LzmaCompress
-LzmaF86Compress_DEFS = VBOX_LZMA_F86_COMPRESS
+LzmaF86Compress_DEFS = VBOX_LZMA_F86_COMPRESS _7ZIP_ST
 
 include $(FILE_KBUILD_SUB_FOOTER)
 

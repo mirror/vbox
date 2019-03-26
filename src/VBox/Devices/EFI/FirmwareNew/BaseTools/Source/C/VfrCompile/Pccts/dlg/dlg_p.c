@@ -43,6 +43,9 @@ Fix for Borland C++ 4.x & 5.x compiling with ALL warnings enabled
 #  ifdef _MSC_VER
 #    pragma warning(disable : 4068) /* Unguarded '#pragma clang' below */
 #  endif
+#  ifdef __GNUC__
+#    pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#  endif
 #endif
 
 #pragma clang diagnostic ignored "-Wparentheses-equality"
