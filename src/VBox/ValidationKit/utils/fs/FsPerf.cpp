@@ -67,7 +67,9 @@
 #  include <sys/mman.h>
 #  include <sys/uio.h>
 # endif
-# include <sys/sendfile.h>
+# ifdef RT_OS_LINUX
+#  include <sys/sendfile.h>
+# endif
 #endif
 
 
