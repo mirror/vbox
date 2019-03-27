@@ -46,6 +46,9 @@
 #include <iprt/message.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#ifdef RT_OS_LINUX
+# include <iprt/pipe.h>
+#endif
 #include <iprt/process.h>
 #include <iprt/rand.h>
 #include <iprt/string.h>
@@ -72,6 +75,7 @@
 # include <signal.h>
 # ifdef RT_OS_LINUX
 #  include <sys/sendfile.h>
+#  include <sys/syscall.h>
 # endif
 #endif
 
@@ -277,6 +281,10 @@ enum
     kCmdOpt_NoReadTests,
     kCmdOpt_SendFile,
     kCmdOpt_NoSendFile,
+#ifdef RT_OS_LINUX
+    kCmdOpt_Splice,
+    kCmdOpt_NoSplice,
+#endif
     kCmdOpt_WritePerf,
     kCmdOpt_NoWritePerf,
     kCmdOpt_WriteTests,
@@ -361,6 +369,10 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--no-read-perf",     kCmdOpt_NoReadPerf,     RTGETOPT_REQ_NOTHING },
     { "--sendfile",         kCmdOpt_SendFile,       RTGETOPT_REQ_NOTHING },
     { "--no-sendfile",      kCmdOpt_NoSendFile,     RTGETOPT_REQ_NOTHING },
+#ifdef RT_OS_LINUX
+    { "--splice",           kCmdOpt_Splice,         RTGETOPT_REQ_NOTHING },
+    { "--no-splice",        kCmdOpt_NoSplice,       RTGETOPT_REQ_NOTHING },
+#endif
     { "--write-tests",      kCmdOpt_WriteTests,     RTGETOPT_REQ_NOTHING },
     { "--no-write-tests",   kCmdOpt_NoWriteTests,   RTGETOPT_REQ_NOTHING },
     { "--write-perf",       kCmdOpt_WritePerf,      RTGETOPT_REQ_NOTHING },
@@ -424,6 +436,9 @@ static bool         g_fChSize    = true;
 static bool         g_fReadTests = true;
 static bool         g_fReadPerf  = true;
 static bool         g_fSendFile  = true;
+#ifdef RT_OS_LINUX
+static bool         g_fSplice    = true;
+#endif
 static bool         g_fWriteTests= true;
 static bool         g_fWritePerf = true;
 static bool         g_fSeek      = true;
@@ -1917,7 +1932,8 @@ void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
 
 }
 
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX)
+
 /**
  * Send file thread arguments.
  */
@@ -1939,6 +1955,9 @@ static DECLCALLBACK(int) fsPerfSendFileThread(RTTHREAD hSelf, void *pvUser)
 {
     FSPERFSENDFILEARGS *pArgs = (FSPERFSENDFILEARGS *)pvUser;
     int                 rc    = VINF_SUCCESS;
+
+    if (pArgs->fCheckBuf)
+        RTTestSetDefault(g_hTest, NULL);
 
     uint64_t cbReceived = 0;
     while (cbReceived < pArgs->cbSent)
@@ -2053,7 +2072,7 @@ static void fsPerfSendFile(RTFILE hFile1, uint64_t cbFile)
      * Allocate a buffer.
      */
     FSPERFSENDFILEARGS Args;
-    Args.cbBuf = _16M;
+    Args.cbBuf = RT_MIN(cbFileMax, _16M);
     Args.pbBuf = (uint8_t *)RTMemAlloc(Args.cbBuf);
     while (!Args.pbBuf)
     {
@@ -2127,6 +2146,443 @@ static void fsPerfSendFile(RTFILE hFile1, uint64_t cbFile)
     RTTestIValue("latency",    nsElapsed / cIterations,                                 RTTESTUNIT_NS_PER_CALL);
     RTTestIValue("throughput", (uint64_t)(cbTotal / ((double)nsElapsed / RT_NS_1SEC)),  RTTESTUNIT_BYTES_PER_SEC);
     RTTestIValue("calls",      cIterations,                                             RTTESTUNIT_CALLS);
+    RTTestIValue("bytes",      cbTotal,                                                 RTTESTUNIT_BYTES);
+    if (g_fShowDuration)
+        RTTestIValue("duration", nsElapsed,                                             RTTESTUNIT_NS);
+
+    /*
+     * Cleanup.
+     */
+    RTMemFree(Args.pbBuf);
+}
+
+#endif /* RT_OS_LINUX */
+#ifdef RT_OS_LINUX
+
+/**
+ * Send file thread arguments.
+ */
+typedef struct FSPERFSPLICEARGS
+{
+    uint64_t            offFile;
+    size_t              cbSend;
+    uint64_t            cbSent;
+    size_t              cbBuf;
+    uint8_t            *pbBuf;
+    uint8_t             bFiller;
+    bool                fCheckBuf;
+    uint32_t            cCalls;
+    RTPIPE              hPipe;
+    uint64_t volatile   tsThreadDone;
+} FSPERFSPLICEARGS;
+
+
+/** Thread receiving the bytes from a splice() call. */
+static DECLCALLBACK(int) fsPerfSpliceRecvThread(RTTHREAD hSelf, void *pvUser)
+{
+    FSPERFSPLICEARGS *pArgs = (FSPERFSPLICEARGS *)pvUser;
+    int               rc    = VINF_SUCCESS;
+
+    if (pArgs->fCheckBuf)
+        RTTestSetDefault(g_hTest, NULL);
+
+    uint64_t cbReceived = 0;
+    while (cbReceived < pArgs->cbSent)
+    {
+        size_t const cbToRead = RT_MIN(pArgs->cbBuf, pArgs->cbSent - cbReceived);
+        size_t       cbActual = 0;
+        RTTEST_CHECK_RC_BREAK(g_hTest, rc = RTPipeReadBlocking(pArgs->hPipe, pArgs->pbBuf, cbToRead, &cbActual), VINF_SUCCESS);
+        RTTEST_CHECK_BREAK(g_hTest, cbActual != 0);
+        RTTEST_CHECK(g_hTest, cbActual <= cbToRead);
+        if (pArgs->fCheckBuf)
+            fsPerfCheckReadBuf(__LINE__, pArgs->offFile + cbReceived, pArgs->pbBuf, cbActual, pArgs->bFiller);
+        cbReceived += cbActual;
+    }
+
+    pArgs->tsThreadDone = RTTimeNanoTS();
+
+    if (cbReceived == pArgs->cbSent && RT_SUCCESS(rc))
+    {
+        size_t cbActual = 0;
+        rc = RTPipeRead(pArgs->hPipe, pArgs->pbBuf, 1, &cbActual);
+        if (rc != VINF_SUCCESS && rc != VINF_TRY_AGAIN && rc != VERR_BROKEN_PIPE)
+            RTTestFailed(g_hTest, "RTPipeReadBlocking() -> %Rrc; expected VINF_SUCCESS or VINF_TRY_AGAIN\n", rc);
+        else if (cbActual != 0)
+            RTTestFailed(g_hTest, "splice read pipe still contains data when done!\n");
+    }
+
+    RTTEST_CHECK_RC(g_hTest, RTPipeClose(pArgs->hPipe), VINF_SUCCESS);
+    pArgs->hPipe = NIL_RTPIPE;
+
+    RT_NOREF(hSelf);
+    return rc;
+}
+
+
+/** Sends hFile1 to a pipe via the Linux-specific splice() syscall. */
+static uint64_t fsPerfSpliceSendFile(FSPERFSPLICEARGS *pArgs, RTFILE hFile1, uint64_t offFile,
+                                     size_t cbSend, uint64_t cbSent, uint8_t bFiller, bool fCheckBuf, unsigned iLine)
+{
+    /* Copy parameters to the argument structure: */
+    pArgs->offFile   = offFile;
+    pArgs->cbSend    = cbSend;
+    pArgs->cbSent    = cbSent;
+    pArgs->bFiller   = bFiller;
+    pArgs->fCheckBuf = fCheckBuf;
+
+    /* Create a socket pair. */
+    pArgs->hPipe     = NIL_RTPIPE;
+    RTPIPE hPipeW    = NIL_RTPIPE;
+    RTTESTI_CHECK_RC_RET(RTPipeCreate(&pArgs->hPipe, &hPipeW, 0 /*fFlags*/), VINF_SUCCESS, 0);
+
+    /* Create the receiving thread: */
+    int rc;
+    RTTHREAD hThread = NIL_RTTHREAD;
+    RTTESTI_CHECK_RC(rc = RTThreadCreate(&hThread, fsPerfSpliceRecvThread, pArgs, 0,
+                                         RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "splicerecv"), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t const  tsStart   = RTTimeNanoTS();
+        size_t          cbLeft    = cbSend;
+        size_t          cbTotal   = 0;
+        do
+        {
+            loff_t offFileIn = offFile;
+            ssize_t cbActual = splice((int)RTFileToNative(hFile1), &offFileIn, (int)RTPipeToNative(hPipeW), NULL,
+                                      cbLeft, 0 /*fFlags*/);
+            int const iErr = errno;
+            if (RT_UNLIKELY(cbActual < 0))
+            {
+                RTTestIFailed("%u: splice(file, &%#RX64, pipe, NULL, %#zx, 0) failed (%zd): %d (%Rrc), offFileIn=%#RX64\n",
+                              iLine, offFile, cbLeft, cbActual, iErr, RTErrConvertFromErrno(iErr), (uint64_t)offFileIn);
+                break;
+            }
+            RTTESTI_CHECK_BREAK((uint64_t)cbActual <= cbLeft);
+            if ((uint64_t)offFileIn != offFile + (uint64_t)cbActual)
+            {
+                RTTestIFailed("%u: splice(file, &%#RX64, pipe, NULL, %#zx, 0): %#zx; offFileIn=%#RX64, expected %#RX64\n",
+                              iLine, offFile, cbLeft, cbActual, (uint64_t)offFileIn, offFile + (uint64_t)cbActual);
+                break;
+            }
+            if (cbActual > 0)
+            {
+                pArgs->cCalls++;
+                offFile += (size_t)cbActual;
+                cbTotal += (size_t)cbActual;
+                cbLeft  -= (size_t)cbActual;
+            }
+            else
+                break;
+        } while (cbLeft > 0);
+
+        if (cbTotal != pArgs->cbSent)
+            RTTestIFailed("%u: spliced a total of %#zx bytes, expected %#zx!\n", iLine, cbTotal, pArgs->cbSent);
+
+        RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTThreadWait(hThread, 30 * RT_NS_1SEC, NULL), VINF_SUCCESS);
+
+        if (pArgs->tsThreadDone >= tsStart)
+            return RT_MAX(pArgs->tsThreadDone - tsStart, 1);
+    }
+    return 0;
+}
+
+
+static void fsPerfSpliceToPipe(RTFILE hFile1, uint64_t cbFile)
+{
+    RTTestISub("splice/to-pipe");
+
+    /*
+     * splice was introduced in 2.6.17 according to the man-page.
+     */
+    char szRelease[64];
+    RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szRelease, sizeof(szRelease));
+    if (RTStrVersionCompare(szRelease, "2.6.17") < 0)
+    {
+        RTTestPassed(g_hTest, "too old kernel (%s)", szRelease);
+        return;
+    }
+
+    uint64_t const cbFileMax = RT_MIN(cbFile, UINT32_MAX - PAGE_OFFSET_MASK);
+    signal(SIGPIPE, SIG_IGN);
+
+    /*
+     * Allocate a buffer.
+     */
+    FSPERFSPLICEARGS Args;
+    Args.cbBuf = RT_MIN(cbFileMax, _16M);
+    Args.pbBuf = (uint8_t *)RTMemAlloc(Args.cbBuf);
+    while (!Args.pbBuf)
+    {
+        Args.cbBuf /= 8;
+        RTTESTI_CHECK_RETV(Args.cbBuf >= _64K);
+        Args.pbBuf = (uint8_t *)RTMemAlloc(Args.cbBuf);
+    }
+
+    /*
+     * First iteration with default buffer content.
+     */
+    fsPerfSpliceSendFile(&Args, hFile1, 0, cbFileMax, cbFileMax, 0xf6, true /*fCheckBuf*/, __LINE__);
+    if (cbFileMax == cbFile)
+        fsPerfSpliceSendFile(&Args, hFile1, 63, cbFileMax, cbFileMax - 63, 0xf6, true /*fCheckBuf*/, __LINE__);
+    else
+        fsPerfSpliceSendFile(&Args, hFile1, 63, cbFileMax - 63, cbFileMax - 63, 0xf6, true /*fCheckBuf*/, __LINE__);
+
+    /*
+     * Write a block using the regular API and then send it, checking that
+     * the any caching that sendfile does is correctly updated.
+     */
+    uint8_t bFiller = 0xf6;
+    size_t cbToSend = RT_MIN(cbFileMax, Args.cbBuf);
+    do
+    {
+        fsPerfSpliceSendFile(&Args, hFile1, 0, cbToSend, cbToSend, bFiller, true /*fCheckBuf*/, __LINE__); /* prime cache */
+
+        bFiller += 1;
+        fsPerfFillWriteBuf(0, Args.pbBuf, cbToSend, bFiller);
+        RTTESTI_CHECK_RC(RTFileWriteAt(hFile1, 0, Args.pbBuf, cbToSend, NULL), VINF_SUCCESS);
+
+        fsPerfSpliceSendFile(&Args, hFile1, 0, cbToSend, cbToSend, bFiller, true /*fCheckBuf*/, __LINE__);
+
+        cbToSend /= 2;
+    } while (cbToSend >= PAGE_SIZE && ((unsigned)bFiller - 0xf7U) < 64);
+
+    /*
+     * Restore buffer content
+     */
+    bFiller = 0xf6;
+    fsPerfFillWriteBuf(0, Args.pbBuf, Args.cbBuf, bFiller);
+    RTTESTI_CHECK_RC(RTFileWriteAt(hFile1, 0, Args.pbBuf, Args.cbBuf, NULL), VINF_SUCCESS);
+
+    /*
+     * Do 128 random sends.
+     */
+    uint64_t const cbSmall = RT_MIN(_256K, cbFileMax / 16);
+    for (uint32_t iTest = 0; iTest < 128; iTest++)
+    {
+        cbToSend                     = (size_t)RTRandU64Ex(1, iTest < 64 ? cbSmall : cbFileMax);
+        uint64_t const offToSendFrom = RTRandU64Ex(0, cbFile - 1);
+        uint64_t const cbSent        = offToSendFrom + cbToSend <= cbFile ? cbToSend : cbFile - offToSendFrom;
+
+        fsPerfSpliceSendFile(&Args, hFile1, offToSendFrom, cbToSend, cbSent, bFiller, true /*fCheckBuf*/, __LINE__);
+    }
+
+    /*
+     * Benchmark it.
+     */
+    Args.cCalls          = 0;
+    uint32_t cIterations = 0;
+    uint64_t nsElapsed   = 0;
+    for (;;)
+    {
+        uint64_t cNsThis = fsPerfSpliceSendFile(&Args, hFile1, 0, cbFileMax, cbFileMax, 0xf6, false /*fCheckBuf*/, __LINE__);
+        nsElapsed += cNsThis;
+        cIterations++;
+        if (!cNsThis || nsElapsed >= g_nsTestRun)
+            break;
+    }
+    uint64_t cbTotal = cbFileMax * cIterations;
+    RTTestIValue("latency",    nsElapsed / Args.cCalls,                                 RTTESTUNIT_NS_PER_CALL);
+    RTTestIValue("throughput", (uint64_t)(cbTotal / ((double)nsElapsed / RT_NS_1SEC)),  RTTESTUNIT_BYTES_PER_SEC);
+    RTTestIValue("calls",      Args.cCalls,                                             RTTESTUNIT_CALLS);
+    RTTestIValue("bytes/call", cbTotal / Args.cCalls,                                   RTTESTUNIT_BYTES);
+    RTTestIValue("iterations", cIterations,                                             RTTESTUNIT_NONE);
+    RTTestIValue("bytes",      cbTotal,                                                 RTTESTUNIT_BYTES);
+    if (g_fShowDuration)
+        RTTestIValue("duration", nsElapsed,                                             RTTESTUNIT_NS);
+
+    /*
+     * Cleanup.
+     */
+    RTMemFree(Args.pbBuf);
+}
+
+
+/** Thread sending the bytes to a splice() call. */
+static DECLCALLBACK(int) fsPerfSpliceSendThread(RTTHREAD hSelf, void *pvUser)
+{
+    FSPERFSPLICEARGS *pArgs = (FSPERFSPLICEARGS *)pvUser;
+    int               rc    = VINF_SUCCESS;
+
+    uint64_t offFile     = pArgs->offFile;
+    uint64_t cbTotalSent = 0;
+    while (cbTotalSent < pArgs->cbSent)
+    {
+        size_t const cbToSend = RT_MIN(pArgs->cbBuf, pArgs->cbSent - cbTotalSent);
+        fsPerfFillWriteBuf(offFile, pArgs->pbBuf, cbToSend, pArgs->bFiller);
+        RTTEST_CHECK_RC_BREAK(g_hTest, rc = RTPipeWriteBlocking(pArgs->hPipe, pArgs->pbBuf, cbToSend, NULL), VINF_SUCCESS);
+        offFile     += cbToSend;
+        cbTotalSent += cbToSend;
+    }
+
+    pArgs->tsThreadDone = RTTimeNanoTS();
+
+    RTTEST_CHECK_RC(g_hTest, RTPipeClose(pArgs->hPipe), VINF_SUCCESS);
+    pArgs->hPipe = NIL_RTPIPE;
+
+    RT_NOREF(hSelf);
+    return rc;
+}
+
+
+/** Fill hFile1 via a pipe and the Linux-specific splice() syscall. */
+static uint64_t fsPerfSpliceWriteFile(FSPERFSPLICEARGS *pArgs, RTFILE hFile1, uint64_t offFile,
+                                      size_t cbSend, uint64_t cbSent, uint8_t bFiller, bool fCheckFile, unsigned iLine)
+{
+    /* Copy parameters to the argument structure: */
+    pArgs->offFile   = offFile;
+    pArgs->cbSend    = cbSend;
+    pArgs->cbSent    = cbSent;
+    pArgs->bFiller   = bFiller;
+    pArgs->fCheckBuf = false;
+
+    /* Create a socket pair. */
+    pArgs->hPipe     = NIL_RTPIPE;
+    RTPIPE hPipeR    = NIL_RTPIPE;
+    RTTESTI_CHECK_RC_RET(RTPipeCreate(&hPipeR, &pArgs->hPipe, 0 /*fFlags*/), VINF_SUCCESS, 0);
+
+    /* Create the receiving thread: */
+    int rc;
+    RTTHREAD hThread = NIL_RTTHREAD;
+    RTTESTI_CHECK_RC(rc = RTThreadCreate(&hThread, fsPerfSpliceSendThread, pArgs, 0,
+                                         RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "splicerecv"), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Do the splicing.
+         */
+        uint64_t const  tsStart   = RTTimeNanoTS();
+        size_t          cbLeft    = cbSend;
+        size_t          cbTotal   = 0;
+        do
+        {
+            loff_t offFileOut = offFile;
+            ssize_t cbActual  = splice((int)RTPipeToNative(hPipeR), NULL, (int)RTFileToNative(hFile1), &offFileOut,
+                                       cbLeft, 0 /*fFlags*/);
+            int const iErr = errno;
+            if (RT_UNLIKELY(cbActual < 0))
+            {
+                RTTestIFailed("%u: splice(pipe, NULL, file, &%#RX64, %#zx, 0) failed (%zd): %d (%Rrc), offFileOut=%#RX64\n",
+                              iLine, offFile, cbLeft, cbActual, iErr, RTErrConvertFromErrno(iErr), (uint64_t)offFileOut);
+                break;
+            }
+            RTTESTI_CHECK_BREAK((uint64_t)cbActual <= cbLeft);
+            if ((uint64_t)offFileOut != offFile + (uint64_t)cbActual)
+            {
+                RTTestIFailed("%u: splice(pipe, NULL, file, &%#RX64, %#zx, 0): %#zx; offFileOut=%#RX64, expected %#RX64\n",
+                              iLine, offFile, cbLeft, cbActual, (uint64_t)offFileOut, offFile + (uint64_t)cbActual);
+                break;
+            }
+            if (cbActual > 0)
+            {
+                pArgs->cCalls++;
+                offFile += (size_t)cbActual;
+                cbTotal += (size_t)cbActual;
+                cbLeft  -= (size_t)cbActual;
+            }
+            else
+                break;
+        } while (cbLeft > 0);
+        uint64_t const nsElapsed = RTTimeNanoTS() - tsStart;
+
+        if (cbTotal != pArgs->cbSent)
+            RTTestIFailed("%u: spliced a total of %#zx bytes, expected %#zx!\n", iLine, cbTotal, pArgs->cbSent);
+
+        RTTESTI_CHECK_RC(RTPipeClose(hPipeR), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTThreadWait(hThread, 30 * RT_NS_1SEC, NULL), VINF_SUCCESS);
+
+        /* Check the file content. */
+        if (fCheckFile && cbTotal == pArgs->cbSent)
+        {
+            offFile = pArgs->offFile;
+            cbLeft  = cbSent;
+            while (cbLeft > 0)
+            {
+                size_t cbToRead = RT_MIN(cbLeft, pArgs->cbBuf);
+                RTTESTI_CHECK_RC_BREAK(RTFileReadAt(hFile1, offFile, pArgs->pbBuf, cbToRead, NULL), VINF_SUCCESS);
+                if (!fsPerfCheckReadBuf(iLine, offFile, pArgs->pbBuf, cbToRead, pArgs->bFiller))
+                    break;
+                offFile += cbToRead;
+                cbLeft  -= cbToRead;
+            }
+        }
+        return nsElapsed;
+    }
+    return 0;
+}
+
+
+static void fsPerfSpliceToFile(RTFILE hFile1, uint64_t cbFile)
+{
+    RTTestISub("splice/to-file");
+
+    /*
+     * splice was introduced in 2.6.17 according to the man-page.
+     */
+    char szRelease[64];
+    RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szRelease, sizeof(szRelease));
+    if (RTStrVersionCompare(szRelease, "2.6.17") < 0)
+    {
+        RTTestPassed(g_hTest, "too old kernel (%s)", szRelease);
+        return;
+    }
+
+    uint64_t const cbFileMax = RT_MIN(cbFile, UINT32_MAX - PAGE_OFFSET_MASK);
+    signal(SIGPIPE, SIG_IGN);
+
+    /*
+     * Allocate a buffer.
+     */
+    FSPERFSPLICEARGS Args;
+    Args.cbBuf = RT_MIN(cbFileMax, _16M);
+    Args.pbBuf = (uint8_t *)RTMemAlloc(Args.cbBuf);
+    while (!Args.pbBuf)
+    {
+        Args.cbBuf /= 8;
+        RTTESTI_CHECK_RETV(Args.cbBuf >= _64K);
+        Args.pbBuf = (uint8_t *)RTMemAlloc(Args.cbBuf);
+    }
+
+    /*
+     * Do the whole file.
+     */
+    uint8_t bFiller = 0x76;
+    fsPerfSpliceWriteFile(&Args, hFile1, 0, cbFileMax, cbFileMax, bFiller, true /*fCheckFile*/, __LINE__);
+
+    /*
+     * Do 64 random chunks (this is slower).
+     */
+    uint64_t const cbSmall = RT_MIN(_256K, cbFileMax / 16);
+    for (uint32_t iTest = 0; iTest < 64; iTest++)
+    {
+        size_t const   cbToWrite    = (size_t)RTRandU64Ex(1, iTest < 24 ? cbSmall : cbFileMax);
+        uint64_t const offToWriteAt = RTRandU64Ex(0, cbFile - cbToWrite);
+        uint64_t const cbTryRead    = cbToWrite + (iTest & 1 ? RTRandU32Ex(0, _64K) : 0);
+
+        bFiller++;
+        fsPerfSpliceWriteFile(&Args, hFile1, offToWriteAt, cbTryRead, cbToWrite, bFiller, true /*fCheckFile*/, __LINE__);
+    }
+
+    /*
+     * Benchmark it.
+     */
+    Args.cCalls          = 0;
+    uint32_t cIterations = 0;
+    uint64_t nsElapsed   = 0;
+    for (;;)
+    {
+        uint64_t cNsThis = fsPerfSpliceWriteFile(&Args, hFile1, 0, cbFileMax, cbFileMax, 0xf6, false /*fCheckBuf*/, __LINE__);
+        nsElapsed += cNsThis;
+        cIterations++;
+        if (!cNsThis || nsElapsed >= g_nsTestRun)
+            break;
+    }
+    uint64_t cbTotal = cbFileMax * cIterations;
+    RTTestIValue("latency",    nsElapsed / Args.cCalls,                                 RTTESTUNIT_NS_PER_CALL);
+    RTTestIValue("throughput", (uint64_t)(cbTotal / ((double)nsElapsed / RT_NS_1SEC)),  RTTESTUNIT_BYTES_PER_SEC);
+    RTTestIValue("calls",      Args.cCalls,                                             RTTESTUNIT_CALLS);
+    RTTestIValue("bytes/call", cbTotal / Args.cCalls,                                   RTTESTUNIT_BYTES);
+    RTTestIValue("iterations", cIterations,                                             RTTESTUNIT_NONE);
     RTTestIValue("bytes",      cbTotal,                                                 RTTESTUNIT_BYTES);
     if (g_fShowDuration)
         RTTestIValue("duration", nsElapsed,                                             RTTESTUNIT_NS);
@@ -3443,16 +3899,14 @@ void fsPerfIo(void)
         if (g_fReadPerf)
             for (unsigned i = 0; i < g_cIoBlocks; i++)
                 fsPerfIoReadBlockSize(hFile1, cbFile, g_acbIoBlocks[i]);
-
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX)
         if (g_fSendFile)
             fsPerfSendFile(hFile1, cbFile);
 #endif
 #ifdef RT_OS_LINUX
-        //if (g_fSplice)
-        //    fsPerfSpliceOut(hFile1, cbFile);
+        if (g_fSplice)
+            fsPerfSpliceToPipe(hFile1, cbFile);
 #endif
-
         if (g_fMMap)
             fsPerfMMap(hFile1, hFileNoCache, cbFile);
 
@@ -3462,7 +3916,10 @@ void fsPerfIo(void)
         if (g_fWritePerf)
             for (unsigned i = 0; i < g_cIoBlocks; i++)
                 fsPerfIoWriteBlockSize(hFile1, cbFile, g_acbIoBlocks[i]);
-
+#ifdef RT_OS_LINUX
+        if (g_fSplice)
+            fsPerfSpliceToFile(hFile1, cbFile);
+#endif
         if (g_fFSync)
             fsPerfFSync(hFile1, cbFile);
     }
@@ -3923,6 +4380,9 @@ int main(int argc, char *argv[])
                 g_fReadTests = true;
                 g_fReadPerf  = true;
                 g_fSendFile  = true;
+#ifdef RT_OS_LINUX
+                g_fSplice    = true;
+#endif
                 g_fWriteTests= true;
                 g_fWritePerf = true;
                 g_fSeek      = true;
@@ -3950,6 +4410,9 @@ int main(int argc, char *argv[])
                 g_fReadTests = false;
                 g_fReadPerf  = false;
                 g_fSendFile  = false;
+#ifdef RT_OS_LINUX
+                g_fSplice    = false;
+#endif
                 g_fWriteTests= false;
                 g_fWritePerf = false;
                 g_fSeek      = false;
@@ -3978,6 +4441,9 @@ int main(int argc, char *argv[])
             CASE_OPT(ReadTests);
             CASE_OPT(ReadPerf);
             CASE_OPT(SendFile);
+#ifdef RT_OS_LINUX
+            CASE_OPT(Splice);
+#endif
             CASE_OPT(WriteTests);
             CASE_OPT(WritePerf);
             CASE_OPT(Seek);
@@ -4137,6 +4603,9 @@ int main(int argc, char *argv[])
                 if (g_fChSize)
                     fsPerfChSize();
                 if (   g_fReadPerf || g_fReadTests || g_fSendFile || g_fWritePerf || g_fWriteTests
+#ifdef RT_OS_LINUX
+                    || g_fSplice
+#endif
                     || g_fSeek || g_fFSync || g_fMMap)
                     fsPerfIo();
                 if (g_fCopy)
