@@ -131,6 +131,8 @@ typedef QCowHeader *PQCowHeader;
 #define QCOW_V2_COPIED_FLAG                   RT_BIT_64(63)
 /** Cluster is compressed flag for QCOW2 images. */
 #define QCOW_V2_COMPRESSED_FLAG               RT_BIT_64(62)
+/** The mask for extracting the offset from either the L1 or L2 table. */
+#define QCOW_V2_TBL_OFFSET_MASK               UINT64_C(0x00fffffffffffe00)
 
 
 /*********************************************************************************************************************************
@@ -822,7 +824,10 @@ static int qcowConvertToImageOffset(PQCOWIMAGE pImage, PVDIOCTX pIoCtx,
     {
         PQCOWL2CACHEENTRY pL2Entry;
 
-        rc = qcowL2TblCacheFetch(pImage, pIoCtx, pImage->paL1Table[idxL1], &pL2Entry);
+        uint64_t offL2Tbl = pImage->paL1Table[idxL1];
+        if (pImage->uVersion == 2)
+            offL2Tbl &= QCOW_V2_TBL_OFFSET_MASK;
+        rc = qcowL2TblCacheFetch(pImage, pIoCtx, offL2Tbl, &pL2Entry);
         if (RT_SUCCESS(rc))
         {
             /* Get real file offset. */
@@ -836,7 +841,7 @@ static int qcowConvertToImageOffset(PQCOWIMAGE pImage, PVDIOCTX pIoCtx,
                     if (RT_UNLIKELY(off & QCOW_V2_COMPRESSED_FLAG))
                         rc = VERR_NOT_SUPPORTED;
                     else
-                        off &= ~(QCOW_V2_COMPRESSED_FLAG | QCOW_V2_COPIED_FLAG);
+                        off &= QCOW_V2_TBL_OFFSET_MASK;
                 }
                 else
                 {
@@ -967,6 +972,10 @@ static int qcowFreeImage(PQCOWIMAGE pImage, bool fDelete)
             rc = vdIfIoIntFileClose(pImage->pIfIo, pImage->pStorage);
             pImage->pStorage = NULL;
         }
+
+        if (pImage->paRefcountTable)
+            RTMemFree(pImage->paRefcountTable);
+        pImage->paRefcountTable = NULL;
 
         if (pImage->paL1Table)
             RTMemFree(pImage->paL1Table);
