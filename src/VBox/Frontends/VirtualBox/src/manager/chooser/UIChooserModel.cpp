@@ -108,7 +108,7 @@ UIChooser *UIChooserModel::chooser() const
 
 UIActionPool *UIChooserModel::actionPool() const
 {
-    return chooser()->actionPool();
+    return chooser() ? chooser()->actionPool() : 0;
 }
 
 QGraphicsScene *UIChooserModel::scene() const
@@ -116,24 +116,19 @@ QGraphicsScene *UIChooserModel::scene() const
     return m_pScene;
 }
 
-UIChooserView *UIChooserModel::view()
+UIChooserView *UIChooserModel::view() const
 {
-    if (!scene())
-        return 0;
-    UIChooserView *pChooserView = qobject_cast<UIChooserView*>(scene()->views()[0]);
-    return pChooserView;
+    return scene() && !scene()->views().isEmpty() ? qobject_cast<UIChooserView*>(scene()->views().first()) : 0;
 }
 
 QPaintDevice *UIChooserModel::paintDevice() const
 {
-    if (scene() && !scene()->views().isEmpty())
-        return scene()->views().first();
-    return 0;
+    return scene() && !scene()->views().isEmpty() ? scene()->views().first() : 0;
 }
 
 QGraphicsItem *UIChooserModel::itemAt(const QPointF &position, const QTransform &deviceTransform /* = QTransform() */) const
 {
-    return scene()->itemAt(position, deviceTransform);
+    return scene() ? scene()->itemAt(position, deviceTransform) : 0;
 }
 
 void UIChooserModel::handleToolButtonClick(UIChooserItem *pItem)
@@ -388,8 +383,8 @@ UIChooserItem *UIChooserModel::findClosestUnselectedItem() const
 
 void UIChooserModel::makeSureSomeItemIsSelected()
 {
-    /* Make sure selection item list is never empty
-     * if at least one item (for example 'focus') present: */
+    /* Make sure selection list is never empty if at
+     * least one item (for example 'focus') present: */
     if (!currentItem() && focusItem())
         setCurrentItem(focusItem());
 }
@@ -446,51 +441,65 @@ void UIChooserModel::updateNavigation()
 
 void UIChooserModel::performSearch(const QString &strSearchTerm, int iItemSearchFlags)
 {
-    if (!invisibleRoot())
-        return;
+    /* Invisible root always exists: */
+    AssertPtrReturnVoid(invisibleRoot());
 
-    /* Currently we perform the search only for machines. when this to be changed make sure the disabled flags
-       of the other item types are also managed correctly: */
+    /* Currently we perform the search only for machines, when this to be changed make
+     * sure the disabled flags of the other item types are also managed correctly. */
 
-    QList<UIChooserNode*> allNodes = resetSearch();
+    /* Reset the search first to erase the disabled flag: */
+    const QList<UIChooserNode*> nodes = resetSearch();
+
+    /* Stop here if no search conditions specified: */
     if (strSearchTerm.isEmpty())
         return;
 
+    /* Search for all the nodes matching required condition: */
     invisibleRoot()->searchForNodes(strSearchTerm, iItemSearchFlags, m_searchResults);
 
-    foreach (UIChooserNode* pNode, allNodes)
+    /* Assign/reset the disabled flag for required nodes: */
+    foreach (UIChooserNode* pNode, nodes)
     {
         if (!pNode)
             continue;
         pNode->setDisabled(!m_searchResults.contains(pNode));
     }
 
+    /* Make sure 1st item visible: */
     scrollToSearchResult(true);
 }
 
 QList<UIChooserNode*> UIChooserModel::resetSearch()
 {
-    QList<UIChooserNode*> allNodes;
-    /* Calling UIChooserNode::searchForNodes with an empty search string returns a list all nodes (of the whole treee) of the required type: */
-    invisibleRoot()->searchForNodes(QString(), UIChooserItemSearchFlag_Machine, allNodes);
+    QList<UIChooserNode*> nodes;
 
-    /* Reset the disabled flag of the node items first. */
-    foreach (UIChooserNode* pNode, allNodes)
+    /* Invisible root always exists: */
+    AssertPtrReturn(invisibleRoot(), nodes);
+
+    /* Calling UIChooserNode::searchForNodes with an empty search string
+     * returns a list all nodes (of the whole tree) of the required type: */
+    invisibleRoot()->searchForNodes(QString(), UIChooserItemSearchFlag_Machine, nodes);
+
+    /* Reset the disabled flag of the nodes first: */
+    foreach (UIChooserNode *pNode, nodes)
     {
         if (!pNode)
             continue;
         pNode->setDisabled(false);
     }
-    /* Reset the search result relate data: */
+
+    /* Reset the search result related data: */
     m_searchResults.clear();
     m_iCurrentScrolledIndex = -1;
-    return allNodes;
+    return nodes;
 }
 
 void UIChooserModel::scrollToSearchResult(bool fIsNext)
 {
+    /* If nothing was found: */
     if (m_searchResults.isEmpty())
     {
+        /* Clear the search widget's match count(s): */
         m_iCurrentScrolledIndex = -1;
         if (view())
             view()->setSearchResultsCount(m_searchResults.size(), m_iCurrentScrolledIndex);
@@ -551,7 +560,8 @@ void UIChooserModel::setCurrentDragObject(QDrag *pDragObject)
 
     /* Remember new drag-object: */
     m_pCurrentDragObject = pDragObject;
-    connect(m_pCurrentDragObject, SIGNAL(destroyed(QObject*)), this, SLOT(sltCurrentDragObjectDestroyed()));
+    connect(m_pCurrentDragObject, &QDrag::destroyed,
+            this, &UIChooserModel::sltCurrentDragObjectDestroyed);
 }
 
 void UIChooserModel::lookFor(const QString &strLookupSymbol)
@@ -659,8 +669,7 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
     /* Existing VM unregistered? */
     if (!fRegistered)
     {
-        /* Rebuild tree for main root: */
-        buildTreeForMainRoot();
+        /* Update tree for main root: */
         updateNavigation();
         updateLayout();
 
@@ -733,7 +742,6 @@ void UIChooserModel::sltEditGroupName()
     /* Check if action is enabled: */
     if (!actionPool()->action(UIActionIndexST_M_Group_S_Rename)->isEnabled())
         return;
-
     /* Only for single selected group: */
     if (!isSingleGroupSelected())
         return;
@@ -747,19 +755,17 @@ void UIChooserModel::sltSortGroup()
     /* Check if action is enabled: */
     if (!actionPool()->action(UIActionIndexST_M_Group_S_Sort)->isEnabled())
         return;
-
     /* Only for single selected group: */
     if (!isSingleGroupSelected())
         return;
 
-    /* Sort group-node: */
-    sortNodes(currentItem()->node());
-}
+    /* Sort nodes: */
+    currentItem()->node()->sortNodes();
 
-void UIChooserModel::sltShowHideSearchWidget()
-{
-    if (view())
-        setSearchWidgetVisible(!view()->isSearchWidgetVisible());
+    /* Rebuild tree for main root: */
+    buildTreeForMainRoot();
+    updateNavigation();
+    updateLayout();
 }
 
 void UIChooserModel::sltUngroupSelectedGroup()
@@ -972,8 +978,13 @@ void UIChooserModel::sltSortParentGroup()
     if (!currentItem())
         return;
 
-    /* Sort parent group-node: */
-    sortNodes(currentItem()->parentItem()->node());
+    /* Sort nodes: */
+    currentItem()->parentItem()->node()->sortNodes();
+
+    /* Rebuild tree for main root: */
+    buildTreeForMainRoot();
+    updateNavigation();
+    updateLayout();
 }
 
 void UIChooserModel::sltPerformRefreshAction()
@@ -1127,6 +1138,12 @@ void UIChooserModel::sltStartScrolling()
 void UIChooserModel::sltCurrentDragObjectDestroyed()
 {
     root()->resetDragToken();
+}
+
+void UIChooserModel::sltShowHideSearchWidget()
+{
+    if (view())
+        setSearchWidgetVisible(!view()->isSearchWidgetVisible());
 }
 
 void UIChooserModel::sltEraseLookupTimer()
@@ -1646,15 +1663,4 @@ bool UIChooserModel::processDragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent)
 
     /* Pass event: */
     return false;
-}
-
-void UIChooserModel::sortNodes(UIChooserNode *pNode)
-{
-    /* Sort nodes: */
-    pNode->sortNodes();
-
-    /* Rebuild tree for main root: */
-    buildTreeForMainRoot();
-    updateNavigation();
-    updateLayout();
 }

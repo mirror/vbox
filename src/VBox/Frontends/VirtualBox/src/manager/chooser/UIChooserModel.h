@@ -103,6 +103,8 @@ public:
         UIActionPool *actionPool() const;
         /** Returns the scene reference. */
         QGraphicsScene *scene() const;
+        /** Returns the reference of the first view of the scene(). */
+        UIChooserView *view() const;
         /** Returns the paint device reference. */
         QPaintDevice *paintDevice() const;
 
@@ -179,8 +181,8 @@ public:
       * @{ */
         /** Performs a search starting from the m_pInvisibleRootNode. */
         void performSearch(const QString &strSearchTerm, int iItemSearchFlags);
-        /** Clean the search result data members and disables item's visual effects. Also returns a list of
-          * all nodes which may be utilized by the calling code. */
+        /** Cleans the search result data members and disables item's visual effects.
+          * Also returns a list of all nodes which may be utilized by the calling code. */
         QList<UIChooserNode*> resetSearch();
         /** Scrolls to next/prev (wrt. @a fIsNext) search result. */
         void scrollToSearchResult(bool fIsNext);
@@ -261,8 +263,6 @@ private slots:
         void sltEditGroupName();
         /** Handles group sort request. */
         void sltSortGroup();
-        /** Handles machine search widget show/hide request. */
-        void sltShowHideSearchWidget();
         /** Handles group destroy request. */
         void sltUngroupSelectedGroup();
 
@@ -282,6 +282,8 @@ private slots:
         /** Handles D&D object destruction. */
         void sltCurrentDragObjectDestroyed();
 
+        /** Handles machine search widget show/hide request. */
+        void sltShowHideSearchWidget();
         /** Handles request to erase lookup timer. */
         void sltEraseLookupTimer();
     /** @} */
@@ -325,8 +327,6 @@ private:
         bool processContextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
         /** Popups context-menu of certain @a enmType in specified @a point. */
         void popupContextMenu(UIGraphicsSelectorContextMenuType enmType, QPoint point);
-        /** Returns the reference of the first view of the scene(). */
-        UIChooserView *view();
     /** @} */
 
     /** @name Selection stuff.
@@ -355,9 +355,6 @@ private:
         bool processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent);
         /** Processes drag leave @a pEvent. */
         bool processDragLeaveEvent(QGraphicsSceneDragDropEvent *pEvent);
-
-        /** Performs sorting for @a pNode. */
-        void sortNodes(UIChooserNode *pNode);
     /** @} */
 
     /** @name General stuff.
