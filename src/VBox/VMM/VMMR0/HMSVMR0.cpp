@@ -3586,7 +3586,7 @@ static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu)
 
     uint8_t   uVector     = Event.n.u8Vector;
     uint8_t   uVectorType = Event.n.u3Type;
-    TRPMEVENT enmTrapType = HMSvmEventToTrpmEventType(&Event);
+    TRPMEVENT enmTrapType = HMSvmEventToTrpmEventType(&Event, uVector);
 
     Log4(("HM event->TRPM: uVector=%#x enmTrapType=%d\n", uVector, uVectorType));
 
@@ -3596,19 +3596,14 @@ static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu)
     if (Event.n.u1ErrorCodeValid)
         TRPMSetErrorCode(pVCpu, Event.n.u32ErrorCode);
 
-    if (   uVectorType == SVM_EVENT_EXCEPTION
+    if (   enmTrapType == TRPM_TRAP
         && uVector     == X86_XCPT_PF)
     {
         TRPMSetFaultAddress(pVCpu, pVCpu->hm.s.Event.GCPtrFaultAddress);
         Assert(pVCpu->hm.s.Event.GCPtrFaultAddress == CPUMGetGuestCR2(pVCpu));
     }
-    else if (uVectorType == SVM_EVENT_SOFTWARE_INT)
-    {
-        AssertMsg(   uVectorType == SVM_EVENT_SOFTWARE_INT
-                  || (uVector == X86_XCPT_BP || uVector == X86_XCPT_OF),
-                  ("Invalid vector: uVector=%#x uVectorType=%#x\n", uVector, uVectorType));
+    else if (enmTrapType == TRPM_SOFTWARE_INT)
         TRPMSetInstrLength(pVCpu, pVCpu->hm.s.Event.cbInstr);
-    }
     pVCpu->hm.s.Event.fPending = false;
 }
 

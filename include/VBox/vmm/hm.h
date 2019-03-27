@@ -165,7 +165,7 @@ VMM_INT_DECL(bool)              HMCanExecuteVmxGuest(PVMCPU pVCpu, PCCPUMCTX pCt
  * based purely on the AMD SVM specification (used by IEM/REM and HM) can be found
  * in CPUM.
  * @{ */
-VMM_INT_DECL(TRPMEVENT)         HMSvmEventToTrpmEventType(PCSVMEVENT pSvmEvent);
+VMM_INT_DECL(TRPMEVENT)         HMSvmEventToTrpmEventType(PCSVMEVENT pSvmEvent, uint8_t uVector);
 /** @} */
 
 #ifndef IN_RC
