@@ -65,6 +65,7 @@
 #else
 # include <errno.h>
 # include <unistd.h>
+# include <limits.h>
 # include <sys/types.h>
 # include <sys/fcntl.h>
 # ifndef RT_OS_OS2
@@ -77,12 +78,21 @@
 #  include <sys/sendfile.h>
 #  include <sys/syscall.h>
 # endif
+# ifdef RT_OS_DARWIN
+#  include <sys/uio.h>
+# endif
 #endif
 
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** @def FSPERF_TEST_SENDFILE
+ * Whether to enable the sendfile() tests. */
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
+# define FSPERF_TEST_SENDFILE
+#endif
+
 /**
  * Macro for profiling @a a_fnCall (typically forced inline) for about @a a_cNsTarget ns.
  *
@@ -1932,7 +1942,7 @@ void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
 
 }
 
-#if defined(RT_OS_LINUX)
+#ifdef FSPERF_TEST_SENDFILE
 
 /**
  * Send file thread arguments.
@@ -2039,7 +2049,11 @@ static uint64_t fsPerfSendFileOne(FSPERFSENDFILEARGS *pArgs, RTFILE hFile1, uint
 #  endif
         off_t cbActual = pArgs->cbSend;
         rc = sendfile((int)RTFileToNative(hFile1), (int)RTSocketToNative(hServer),
+#  ifdef RT_OS_DARWIN
+                      pArgs->offFile, &cbActual, NULL, fSfFlags);
+#  else
                       pArgs->offFile, cbActual, NULL,  &cbActual, fSfFlags);
+#  endif
         int const iErr = errno;
         if (rc != 0)
             RTTestIFailed("%u: sendfile(file, socket, %#RX64, %#zx, NULL,, %#x) failed (%d): %d (%Rrc), cbActual=%#RX64\n",
@@ -2156,7 +2170,7 @@ static void fsPerfSendFile(RTFILE hFile1, uint64_t cbFile)
     RTMemFree(Args.pbBuf);
 }
 
-#endif /* RT_OS_LINUX */
+#endif /* FSPERF_TEST_SENDFILE */
 #ifdef RT_OS_LINUX
 
 /**
@@ -3899,7 +3913,7 @@ void fsPerfIo(void)
         if (g_fReadPerf)
             for (unsigned i = 0; i < g_cIoBlocks; i++)
                 fsPerfIoReadBlockSize(hFile1, cbFile, g_acbIoBlocks[i]);
-#if defined(RT_OS_LINUX)
+#ifdef FSPERF_TEST_SENDFILE
         if (g_fSendFile)
             fsPerfSendFile(hFile1, cbFile);
 #endif
