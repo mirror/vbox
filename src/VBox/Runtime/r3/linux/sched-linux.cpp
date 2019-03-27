@@ -63,7 +63,7 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
-#include <iprt/err.h>
+#include <iprt/errcore.h>
 #include "internal/sched.h"
 #include "internal/thread.h"
 
