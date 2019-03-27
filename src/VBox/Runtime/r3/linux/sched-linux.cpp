@@ -625,7 +625,7 @@ DECLHIDDEN(int) rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
          * If we've lowered priority since the process started, it may be impossible
          * to raise it again for existing thread (new threads will work fine).
          */
-        rc = SchedNativeCheckThreadTypes(&g_aDefaultPriority);
+        rc = rtSchedNativeCheckThreadTypes(&g_aDefaultPriority, fHavePriorityProxy);
         if (RT_SUCCESS(rc))
             g_pProcessPriority = &g_aDefaultPriority;
     }
