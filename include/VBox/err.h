@@ -2119,6 +2119,8 @@
 #define VINF_VMX_MODIFIES_BEHAVIOR                  4036
 /** VMLAUNCH/VMRESUME succeeded, can enter nested-guest execution. */
 #define VINF_VMX_VMLAUNCH_VMRESUME                  4037
+/** VT-x VMCS launch state invalid. */
+#define VERR_VMX_INVALID_VMCS_LAUNCH_STATE          (-4038)
 /** @} */
 
 
