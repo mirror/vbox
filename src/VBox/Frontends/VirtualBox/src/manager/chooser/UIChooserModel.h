@@ -204,10 +204,8 @@ public:
         /** Defines current @a pDragObject. */
         void setCurrentDragObject(QDrag *pDragObject);
 
-        /** Looks for item with certain @a strLookupSymbol. */
-        void lookFor(const QString &strLookupSymbol);
-        /** Returns whether looking is in progress. */
-        bool isLookupInProgress() const;
+        /** Looks for item with certain @a strLookupText. */
+        void lookFor(const QString &strLookupText);
     /** @} */
 
     /** @name Layout stuff.
@@ -284,8 +282,6 @@ private slots:
 
         /** Handles machine search widget show/hide request. */
         void sltShowHideSearchWidget();
-        /** Handles request to erase lookup timer. */
-        void sltEraseLookupTimer();
     /** @} */
 
 private:
@@ -296,8 +292,6 @@ private:
         void prepare();
         /** Prepares scene. */
         void prepareScene();
-        /** Prepares lookup. */
-        void prepareLookup();
         /** Prepares context-menu. */
         void prepareContextMenu();
         /** Prepares handlers. */
@@ -313,8 +307,6 @@ private:
         void cleanupHandlers();
         /** Cleanups context-menu. */
         void cleanupContextMenu();
-        /** Cleanups lookup. */
-        void cleanupLookup();
         /** Cleanups scene. */
         void cleanupScene();
         /** Cleanups all. */
@@ -407,11 +399,6 @@ private:
         int              m_iScrollingTokenSize;
         /** Holds whether drag scrolling is in progress. */
         bool             m_fIsScrollingInProgress;
-
-        /** Holds the item lookup timer instance. */
-        QTimer  *m_pLookupTimer;
-        /** Holds the item lookup string. */
-        QString  m_strLookupString;
     /** @} */
 };
 

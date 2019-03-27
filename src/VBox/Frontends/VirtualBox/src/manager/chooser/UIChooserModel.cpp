@@ -65,7 +65,6 @@ UIChooserModel:: UIChooserModel(UIChooser *pParent)
     , m_iCurrentScrolledIndex(-1)
     , m_iScrollingTokenSize(30)
     , m_fIsScrollingInProgress(false)
-    , m_pLookupTimer(0)
 {
     prepare();
 }
@@ -564,18 +563,13 @@ void UIChooserModel::setCurrentDragObject(QDrag *pDragObject)
             this, &UIChooserModel::sltCurrentDragObjectDestroyed);
 }
 
-void UIChooserModel::lookFor(const QString &strLookupSymbol)
+void UIChooserModel::lookFor(const QString &strLookupText)
 {
     if (view())
     {
         view()->setSearchWidgetVisible(true);
-        view()->appendToSearchString(strLookupSymbol);
+        view()->appendToSearchString(strLookupText);
     }
-}
-
-bool UIChooserModel::isLookupInProgress() const
-{
-    return m_pLookupTimer->isActive();
 }
 
 void UIChooserModel::updateLayout()
@@ -1146,16 +1140,9 @@ void UIChooserModel::sltShowHideSearchWidget()
         setSearchWidgetVisible(!view()->isSearchWidgetVisible());
 }
 
-void UIChooserModel::sltEraseLookupTimer()
-{
-    m_pLookupTimer->stop();
-    m_strLookupString = QString();
-}
-
 void UIChooserModel::prepare()
 {
     prepareScene();
-    prepareLookup();
     prepareContextMenu();
     prepareHandlers();
     prepareConnections();
@@ -1166,17 +1153,6 @@ void UIChooserModel::prepareScene()
     m_pScene = new QGraphicsScene(this);
     if (m_pScene)
         m_pScene->installEventFilter(this);
-}
-
-void UIChooserModel::prepareLookup()
-{
-    m_pLookupTimer = new QTimer(this);
-    if (m_pLookupTimer)
-    {
-        m_pLookupTimer->setInterval(1000);
-        m_pLookupTimer->setSingleShot(true);
-        connect(m_pLookupTimer, SIGNAL(timeout()), this, SLOT(sltEraseLookupTimer()));
-    }
 }
 
 void UIChooserModel::prepareContextMenu()
@@ -1356,12 +1332,6 @@ void UIChooserModel::cleanupContextMenu()
     m_pContextMenuMachine = 0;
 }
 
-void UIChooserModel::cleanupLookup()
-{
-    delete m_pLookupTimer;
-    m_pLookupTimer = 0;
-}
-
 void UIChooserModel::cleanupScene()
 {
     delete m_pScene;
@@ -1372,7 +1342,6 @@ void UIChooserModel::cleanup()
 {
     cleanupHandlers();
     cleanupContextMenu();
-    cleanupLookup();
     cleanupScene();
 }
 

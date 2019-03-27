@@ -277,16 +277,8 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         }
         case Qt::Key_Space:
         {
-            /* If model is performing lookup: */
-            if (model()->isLookupInProgress())
-            {
-                /* Continue lookup: */
-                QString strText = pEvent->text();
-                if (!strText.isEmpty())
-                    model()->lookFor(strText);
-            }
             /* If there is a focus item: */
-            else if (UIChooserItem *pFocusItem = model()->focusItem())
+            if (UIChooserItem *pFocusItem = model()->focusItem())
             {
                 /* Of the group type: */
                 if (pFocusItem->type() == UIChooserItemType_Group)
@@ -313,7 +305,7 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         default:
         {
             /* Start lookup: */
-            QString strText = pEvent->text();
+            const QString strText = pEvent->text();
             if (!strText.isEmpty())
                 model()->lookFor(strText);
             break;
