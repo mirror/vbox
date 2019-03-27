@@ -413,7 +413,7 @@ void UIChooserModel::setFocusItem(UIChooserItem *pItem)
     /* If dialog is visible and item exists => make it visible as well: */
     if (view() && view()->window() && root())
         if (view()->window()->isVisible() && pItem)
-            root()->makeSureItemIsVisible(pItem);
+            root()->toGroupItem()->makeSureItemIsVisible(pItem);
 }
 
 UIChooserItem *UIChooserModel::focusItem() const

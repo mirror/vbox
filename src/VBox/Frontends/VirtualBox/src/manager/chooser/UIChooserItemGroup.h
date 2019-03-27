@@ -89,10 +89,16 @@ public:
 
     /** @name Navigation stuff.
       * @{ */
+        /** Makes sure passed @a pItem is visible within the current root item.
+          * @note Please keep in mind that any group item can be a root, but there
+          * is just one model root item at the same time, accessible via model's
+          * root() getter, and this API can be called for current root item only,
+          * because this is root item who performs actual scrolling, while
+          * @a pItem itself can be on any level of embedding. */
+        void makeSureItemIsVisible(UIChooserItem *pItem) /* override */;
+
         /** Class-name used for drag&drop mime-data format. */
         static QString className();
-        /** Makes sure passed child @a pItem is visible. */
-        virtual void makeSureItemIsVisible(UIChooserItem *pItem) /* override */;
     /** @} */
 
 protected:
