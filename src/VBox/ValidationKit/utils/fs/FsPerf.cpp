@@ -51,6 +51,7 @@
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/system.h>
+#include <iprt/tcp.h>
 #include <iprt/test.h>
 #include <iprt/time.h>
 #include <iprt/thread.h>
@@ -67,6 +68,8 @@
 #  include <sys/mman.h>
 #  include <sys/uio.h>
 # endif
+# include <sys/socket.h>
+# include <signal.h>
 # ifdef RT_OS_LINUX
 #  include <sys/sendfile.h>
 # endif
@@ -272,6 +275,8 @@ enum
     kCmdOpt_NoReadPerf,
     kCmdOpt_ReadTests,
     kCmdOpt_NoReadTests,
+    kCmdOpt_SendFile,
+    kCmdOpt_NoSendFile,
     kCmdOpt_WritePerf,
     kCmdOpt_NoWritePerf,
     kCmdOpt_WriteTests,
@@ -354,6 +359,8 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--no-read-tests",    kCmdOpt_NoReadTests,    RTGETOPT_REQ_NOTHING },
     { "--read-perf",        kCmdOpt_ReadPerf,       RTGETOPT_REQ_NOTHING },
     { "--no-read-perf",     kCmdOpt_NoReadPerf,     RTGETOPT_REQ_NOTHING },
+    { "--sendfile",         kCmdOpt_SendFile,       RTGETOPT_REQ_NOTHING },
+    { "--no-sendfile",      kCmdOpt_NoSendFile,     RTGETOPT_REQ_NOTHING },
     { "--write-tests",      kCmdOpt_WriteTests,     RTGETOPT_REQ_NOTHING },
     { "--no-write-tests",   kCmdOpt_NoWriteTests,   RTGETOPT_REQ_NOTHING },
     { "--write-perf",       kCmdOpt_WritePerf,      RTGETOPT_REQ_NOTHING },
@@ -416,6 +423,7 @@ static bool         g_fRm        = true;
 static bool         g_fChSize    = true;
 static bool         g_fReadTests = true;
 static bool         g_fReadPerf  = true;
+static bool         g_fSendFile  = true;
 static bool         g_fWriteTests= true;
 static bool         g_fWritePerf = true;
 static bool         g_fSeek      = true;
@@ -1909,6 +1917,227 @@ void fsPerfIoSeek(RTFILE hFile1, uint64_t cbFile)
 
 }
 
+#ifdef RT_OS_LINUX
+/**
+ * Send file thread arguments.
+ */
+typedef struct FSPERFSENDFILEARGS
+{
+    uint64_t            offFile;
+    size_t              cbSend;
+    uint64_t            cbSent;
+    size_t              cbBuf;
+    uint8_t            *pbBuf;
+    uint8_t             bFiller;
+    bool                fCheckBuf;
+    RTSOCKET            hSocket;
+    uint64_t volatile   tsThreadDone;
+} FSPERFSENDFILEARGS;
+
+/** Thread receiving the bytes from a sendfile() call. */
+static DECLCALLBACK(int) fsPerfSendFileThread(RTTHREAD hSelf, void *pvUser)
+{
+    FSPERFSENDFILEARGS *pArgs = (FSPERFSENDFILEARGS *)pvUser;
+    int                 rc    = VINF_SUCCESS;
+
+    uint64_t cbReceived = 0;
+    while (cbReceived < pArgs->cbSent)
+    {
+        size_t const cbToRead = RT_MIN(pArgs->cbBuf, pArgs->cbSent - cbReceived);
+        size_t       cbActual = 0;
+        RTTEST_CHECK_RC_BREAK(g_hTest, rc = RTTcpRead(pArgs->hSocket, pArgs->pbBuf, cbToRead, &cbActual), VINF_SUCCESS);
+        RTTEST_CHECK_BREAK(g_hTest, cbActual != 0);
+        RTTEST_CHECK(g_hTest, cbActual <= cbToRead);
+        if (pArgs->fCheckBuf)
+            fsPerfCheckReadBuf(__LINE__, pArgs->offFile + cbReceived, pArgs->pbBuf, cbActual, pArgs->bFiller);
+        cbReceived += cbActual;
+    }
+
+    pArgs->tsThreadDone = RTTimeNanoTS();
+
+    if (cbReceived == pArgs->cbSent && RT_SUCCESS(rc))
+    {
+        size_t cbActual = 0;
+        rc = RTSocketReadNB(pArgs->hSocket, pArgs->pbBuf, 1, &cbActual);
+        if (rc != VINF_SUCCESS && rc != VINF_TRY_AGAIN)
+            RTTestFailed(g_hTest, "RTSocketReadNB(sendfile client socket) -> %Rrc; expected VINF_SUCCESS or VINF_TRY_AGAIN\n", rc);
+        else if (cbActual != 0)
+            RTTestFailed(g_hTest, "sendfile client socket still contains data when done!\n");
+    }
+
+    RTTEST_CHECK_RC(g_hTest, RTSocketClose(pArgs->hSocket), VINF_SUCCESS);
+    pArgs->hSocket = NIL_RTSOCKET;
+
+    RT_NOREF(hSelf);
+    return rc;
+}
+
+
+static uint64_t fsPerfSendFileOne(FSPERFSENDFILEARGS *pArgs, RTFILE hFile1, uint64_t offFile,
+                                  size_t cbSend, uint64_t cbSent, uint8_t bFiller, bool fCheckBuf, unsigned iLine)
+{
+    /* Copy parameters to the argument structure: */
+    pArgs->offFile   = offFile;
+    pArgs->cbSend    = cbSend;
+    pArgs->cbSent    = cbSent;
+    pArgs->bFiller   = bFiller;
+    pArgs->fCheckBuf = fCheckBuf;
+
+    /* Create a socket pair. */
+    pArgs->hSocket   = NIL_RTSOCKET;
+    RTSOCKET hServer = NIL_RTSOCKET;
+    RTTESTI_CHECK_RC_RET(RTTcpCreatePair(&hServer, &pArgs->hSocket, 0), VINF_SUCCESS, 0);
+
+    /* Create the receiving thread: */
+    int rc;
+    RTTHREAD hThread = NIL_RTTHREAD;
+    RTTESTI_CHECK_RC(rc = RTThreadCreate(&hThread, fsPerfSendFileThread, pArgs, 0,
+                                         RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "sendfile"), VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t const tsStart = RTTimeNanoTS();
+
+# if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
+        /* SystemV sendfile: */
+        loff_t offFileSf = pArgs->offFile;
+        ssize_t cbActual = sendfile((int)RTSocketToNative(hServer), (int)RTFileToNative(hFile1), &offFileSf, pArgs->cbSend);
+        int const iErr = errno;
+        if (cbActual < 0)
+            RTTestIFailed("%u: sendfile(socket, file, &%#X64, %#zx) failed (%zd): %d (%Rrc), offFileSf=%#RX64\n",
+                          iLine, pArgs->offFile, pArgs->cbSend, cbActual, iErr, RTErrConvertFromErrno(iErr), (uint64_t)offFileSf);
+        else if ((uint64_t)cbActual != pArgs->cbSent)
+            RTTestIFailed("%u: sendfile(socket, file, &%#RX64, %#zx): %#zx, expected %#RX64 (offFileSf=%#RX64)\n",
+                          iLine, pArgs->offFile, pArgs->cbSend, cbActual, pArgs->cbSent, (uint64_t)offFileSf);
+        else if ((uint64_t)offFileSf != pArgs->offFile + pArgs->cbSent)
+            RTTestIFailed("%u: sendfile(socket, file, &%#RX64, %#zx): %#zx; offFileSf=%#RX64, expected %#RX64\n",
+                          iLine, pArgs->offFile, pArgs->cbSend, cbActual, (uint64_t)offFileSf, pArgs->offFile + pArgs->cbSent);
+#else
+        /* BSD sendfile: */
+#  ifdef SF_SYNC
+        int fSfFlags = SF_SYNC;
+#  else
+        int fSfFlags = 0;
+#  endif
+        off_t cbActual = pArgs->cbSend;
+        rc = sendfile((int)RTFileToNative(hFile1), (int)RTSocketToNative(hServer),
+                      pArgs->offFile, cbActual, NULL,  &cbActual, fSfFlags);
+        int const iErr = errno;
+        if (rc != 0)
+            RTTestIFailed("%u: sendfile(file, socket, %#RX64, %#zx, NULL,, %#x) failed (%d): %d (%Rrc), cbActual=%#RX64\n",
+                          iLine, pArgs->offFile, (size_t)pArgs->cbSend, rc, iErr, RTErrConvertFromErrno(iErr), (uint64_t)cbActual);
+        if ((uint64_t)cbActual != pArgs->cbSent)
+            RTTestIFailed("%u: sendfile(file, socket, %#RX64, %#zx, NULL,, %#x): cbActual=%#RX64, expected %#RX64 (rc=%d, errno=%d)\n",
+                          iLine, pArgs->offFile, (size_t)pArgs->cbSend, (uint64_t)cbActual, pArgs->cbSent, rc, iErr);
+# endif
+        RTTESTI_CHECK_RC(RTSocketClose(hServer), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTThreadWait(hThread, 30 * RT_NS_1SEC, NULL), VINF_SUCCESS);
+
+        if (pArgs->tsThreadDone >= tsStart)
+            return RT_MAX(pArgs->tsThreadDone - tsStart, 1);
+    }
+    return 0;
+}
+
+
+static void fsPerfSendFile(RTFILE hFile1, uint64_t cbFile)
+{
+    RTTestISub("sendfile");
+# ifdef RT_OS_LINUX
+    uint64_t const cbFileMax = RT_MIN(cbFile, UINT32_MAX - PAGE_OFFSET_MASK);
+# else
+    uint64_t const cbFileMax = RT_MIN(cbFile, SSIZE_MAX - PAGE_OFFSET_MASK);
+# endif
+    signal(SIGPIPE, SIG_IGN);
+
+    /*
+     * Allocate a buffer.
+     */
+    FSPERFSENDFILEARGS Args;
+    Args.cbBuf = _16M;
+    Args.pbBuf = (uint8_t *)RTMemAlloc(Args.cbBuf);
+    while (!Args.pbBuf)
+    {
+        Args.cbBuf /= 8;
+        RTTESTI_CHECK_RETV(Args.cbBuf >= _64K);
+        Args.pbBuf = (uint8_t *)RTMemAlloc(Args.cbBuf);
+    }
+
+    /*
+     * First iteration with default buffer content.
+     */
+    fsPerfSendFileOne(&Args, hFile1, 0, cbFileMax, cbFileMax, 0xf6, true /*fCheckBuf*/, __LINE__);
+    if (cbFileMax == cbFile)
+        fsPerfSendFileOne(&Args, hFile1, 63, cbFileMax, cbFileMax - 63, 0xf6, true /*fCheckBuf*/, __LINE__);
+    else
+        fsPerfSendFileOne(&Args, hFile1, 63, cbFileMax - 63, cbFileMax - 63, 0xf6, true /*fCheckBuf*/, __LINE__);
+
+    /*
+     * Write a block using the regular API and then send it, checking that
+     * the any caching that sendfile does is correctly updated.
+     */
+    uint8_t bFiller = 0xf6;
+    size_t cbToSend = RT_MIN(cbFileMax, Args.cbBuf);
+    do
+    {
+        fsPerfSendFileOne(&Args, hFile1, 0, cbToSend, cbToSend, bFiller, true /*fCheckBuf*/, __LINE__); /* prime cache */
+
+        bFiller += 1;
+        fsPerfFillWriteBuf(0, Args.pbBuf, cbToSend, bFiller);
+        RTTESTI_CHECK_RC(RTFileWriteAt(hFile1, 0, Args.pbBuf, cbToSend, NULL), VINF_SUCCESS);
+
+        fsPerfSendFileOne(&Args, hFile1, 0, cbToSend, cbToSend, bFiller, true /*fCheckBuf*/, __LINE__);
+
+        cbToSend /= 2;
+    } while (cbToSend >= PAGE_SIZE && ((unsigned)bFiller - 0xf7U) < 64);
+
+    /*
+     * Restore buffer content
+     */
+    bFiller = 0xf6;
+    fsPerfFillWriteBuf(0, Args.pbBuf, Args.cbBuf, bFiller);
+    RTTESTI_CHECK_RC(RTFileWriteAt(hFile1, 0, Args.pbBuf, Args.cbBuf, NULL), VINF_SUCCESS);
+
+    /*
+     * Do 128 random sends.
+     */
+    uint64_t const cbSmall = RT_MIN(_256K, cbFileMax / 16);
+    for (uint32_t iTest = 0; iTest < 128; iTest++)
+    {
+        cbToSend                     = (size_t)RTRandU64Ex(1, iTest < 64 ? cbSmall : cbFileMax);
+        uint64_t const offToSendFrom = RTRandU64Ex(0, cbFile - 1);
+        uint64_t const cbSent        = offToSendFrom + cbToSend <= cbFile ? cbToSend : cbFile - offToSendFrom;
+
+        fsPerfSendFileOne(&Args, hFile1, offToSendFrom, cbToSend, cbSent, bFiller, true /*fCheckBuf*/, __LINE__);
+    }
+
+    /*
+     * Benchmark it.
+     */
+    uint32_t cIterations = 0;
+    uint64_t nsElapsed   = 0;
+    for (;;)
+    {
+        uint64_t cNsThis = fsPerfSendFileOne(&Args, hFile1, 0, cbFileMax, cbFileMax, 0xf6, false /*fCheckBuf*/, __LINE__);
+        nsElapsed += cNsThis;
+        cIterations++;
+        if (!cNsThis || nsElapsed >= g_nsTestRun)
+            break;
+    }
+    uint64_t cbTotal = cbFileMax * cIterations;
+    RTTestIValue("latency",    nsElapsed / cIterations,                                 RTTESTUNIT_NS_PER_CALL);
+    RTTestIValue("throughput", (uint64_t)(cbTotal / ((double)nsElapsed / RT_NS_1SEC)),  RTTESTUNIT_BYTES_PER_SEC);
+    RTTestIValue("calls",      cIterations,                                             RTTESTUNIT_CALLS);
+    RTTestIValue("bytes",      cbTotal,                                                 RTTESTUNIT_BYTES);
+    if (g_fShowDuration)
+        RTTestIValue("duration", nsElapsed,                                             RTTESTUNIT_NS);
+
+    /*
+     * Cleanup.
+     */
+    RTMemFree(Args.pbBuf);
+}
+
+#endif /* RT_OS_LINUX */
 
 /** For fsPerfIoRead and fsPerfIoWrite. */
 #define PROFILE_IO_FN(a_szOperation, a_fnCall) \
@@ -2977,7 +3206,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
         }
 
         /*
-         * Obsever how regular writes affects a read-only or readwrite mapping.
+         * Observe how regular writes affects a read-only or readwrite mapping.
          * These should ideally be immediately visible in the mapping, at least
          * when not performed thru an no-cache handle.
          */
@@ -3215,6 +3444,15 @@ void fsPerfIo(void)
             for (unsigned i = 0; i < g_cIoBlocks; i++)
                 fsPerfIoReadBlockSize(hFile1, cbFile, g_acbIoBlocks[i]);
 
+#ifdef RT_OS_LINUX
+        if (g_fSendFile)
+            fsPerfSendFile(hFile1, cbFile);
+#endif
+#ifdef RT_OS_LINUX
+        //if (g_fSplice)
+        //    fsPerfSpliceOut(hFile1, cbFile);
+#endif
+
         if (g_fMMap)
             fsPerfMMap(hFile1, hFileNoCache, cbFile);
 
@@ -3362,6 +3600,7 @@ static void fsPerfCopy(void)
         /*
          * On linux we can also use sendfile between two files, except for 2.5.x to 2.6.33.
          */
+        uint64_t const cbFileMax = RT_MIN(cbFile, UINT32_C(0x7ffff000));
         char szRelease[64];
         RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szRelease, sizeof(szRelease));
         bool const fSendFileBetweenFiles = RTStrVersionCompare(szRelease, "2.5.0") < 0
@@ -3378,37 +3617,40 @@ static void fsPerfCopy(void)
             if (cbSent < 0)
                 RTTestIFailed("sendfile(file,file,NULL,%#zx) failed (%zd): %d (%Rrc)",
                               cbFile, cbSent, errno, RTErrConvertFromErrno(errno));
-            else if ((size_t)cbSent != cbFile)
+            else if ((size_t)cbSent != cbFileMax)
                 RTTestIFailed("sendfile(file,file,NULL,%#zx) returned %#zx, expected %#zx (diff %zd)",
-                              cbFile, cbSent, cbFile, cbSent - cbFile);
+                              cbFile, cbSent, cbFileMax, cbSent - cbFileMax);
             RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
             RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
             RTTESTI_CHECK_RC(RTFileCompare(g_szDir, g_szDir2), VINF_SUCCESS);
 
             /* Try copy a little bit too much: */
-            hFile1 = NIL_RTFILE;
-            RTTESTI_CHECK_RC(RTFileOpen(&hFile1, g_szDir, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VINF_SUCCESS);
-            RTFileDelete(g_szDir2);
-            hFile2 = NIL_RTFILE;
-            RTTESTI_CHECK_RC(RTFileOpen(&hFile2, g_szDir2, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
-            size_t cbToCopy = cbFile + RTRandU32Ex(1, _64M);
-            cbSent = sendfile((int)RTFileToNative(hFile2), (int)RTFileToNative(hFile1), NULL, cbToCopy);
-            if (cbSent < 0)
-                RTTestIFailed("sendfile(file,file,NULL,%#zx) failed (%zd): %d (%Rrc)",
-                              cbToCopy, cbSent, errno, RTErrConvertFromErrno(errno));
-            else if ((size_t)cbSent != cbFile)
-                RTTestIFailed("sendfile(file,file,NULL,%#zx) returned %#zx, expected %#zx (diff %zd)",
-                              cbToCopy, cbSent, cbFile, cbSent - cbFile);
-            RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
-            RTTESTI_CHECK_RC(RTFileCompare(g_szDir, g_szDir2), VINF_SUCCESS);
+            if (cbFile == cbFileMax)
+            {
+                hFile1 = NIL_RTFILE;
+                RTTESTI_CHECK_RC(RTFileOpen(&hFile1, g_szDir, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VINF_SUCCESS);
+                RTFileDelete(g_szDir2);
+                hFile2 = NIL_RTFILE;
+                RTTESTI_CHECK_RC(RTFileOpen(&hFile2, g_szDir2, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
+                size_t cbToCopy = cbFile + RTRandU32Ex(1, _64M);
+                cbSent = sendfile((int)RTFileToNative(hFile2), (int)RTFileToNative(hFile1), NULL, cbToCopy);
+                if (cbSent < 0)
+                    RTTestIFailed("sendfile(file,file,NULL,%#zx) failed (%zd): %d (%Rrc)",
+                                  cbToCopy, cbSent, errno, RTErrConvertFromErrno(errno));
+                else if ((size_t)cbSent != cbFile)
+                    RTTestIFailed("sendfile(file,file,NULL,%#zx) returned %#zx, expected %#zx (diff %zd)",
+                                  cbToCopy, cbSent, cbFile, cbSent - cbFile);
+                RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+                RTTESTI_CHECK_RC(RTFileCompare(g_szDir, g_szDir2), VINF_SUCCESS);
+            }
 
             /* Do partial copy: */
             hFile2 = NIL_RTFILE;
             RTTESTI_CHECK_RC(RTFileOpen(&hFile2, g_szDir2, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
             for (uint32_t i = 0; i < 64; i++)
             {
-                cbToCopy = RTRandU32Ex(0, cbFile - 1);
-                uint32_t const offFile  = RTRandU32Ex(1, (uint64_t)RT_MIN(cbFile - cbToCopy, UINT32_MAX));
+                size_t cbToCopy = RTRandU32Ex(0, cbFileMax - 1);
+                uint32_t const offFile  = RTRandU32Ex(1, (uint64_t)RT_MIN(cbFileMax - cbToCopy, UINT32_MAX));
                 RTTESTI_CHECK_RC_BREAK(RTFileSeek(hFile2, offFile, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
                 loff_t offFile2 = offFile;
                 cbSent = sendfile((int)RTFileToNative(hFile2), (int)RTFileToNative(hFile1), &offFile2, cbToCopy);
@@ -3509,12 +3751,11 @@ static void fsPerfCopy(void)
             RTFileDelete(g_szDir2);
             hFile2 = NIL_RTFILE;
             RTTESTI_CHECK_RC(RTFileOpen(&hFile2, g_szDir2, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
-            PROFILE_COPY_FN("sendfile/overwrite", fsPerfCopyWorkerSendFile(hFile1, hFile2, cbFile));
+            PROFILE_COPY_FN("sendfile/overwrite", fsPerfCopyWorkerSendFile(hFile1, hFile2, cbFileMax));
             RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
             RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
         }
 #endif
-
     }
 
     /*
@@ -3681,6 +3922,7 @@ int main(int argc, char *argv[])
                 g_fChSize    = true;
                 g_fReadTests = true;
                 g_fReadPerf  = true;
+                g_fSendFile  = true;
                 g_fWriteTests= true;
                 g_fWritePerf = true;
                 g_fSeek      = true;
@@ -3707,6 +3949,7 @@ int main(int argc, char *argv[])
                 g_fChSize    = false;
                 g_fReadTests = false;
                 g_fReadPerf  = false;
+                g_fSendFile  = false;
                 g_fWriteTests= false;
                 g_fWritePerf = false;
                 g_fSeek      = false;
@@ -3734,6 +3977,7 @@ int main(int argc, char *argv[])
             CASE_OPT(ChSize);
             CASE_OPT(ReadTests);
             CASE_OPT(ReadPerf);
+            CASE_OPT(SendFile);
             CASE_OPT(WriteTests);
             CASE_OPT(WritePerf);
             CASE_OPT(Seek);
@@ -3892,7 +4136,8 @@ int main(int argc, char *argv[])
                     fsPerfRm(); /* deletes manyfiles and manytree */
                 if (g_fChSize)
                     fsPerfChSize();
-                if (g_fReadPerf || g_fReadTests || g_fWritePerf || g_fWriteTests || g_fSeek || g_fFSync || g_fMMap)
+                if (   g_fReadPerf || g_fReadTests || g_fSendFile || g_fWritePerf || g_fWriteTests
+                    || g_fSeek || g_fFSync || g_fMMap)
                     fsPerfIo();
                 if (g_fCopy)
                     fsPerfCopy();
