@@ -2339,9 +2339,64 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
         else
         {
             RTTestIFailed("myFileSgReadAt failed: %Rrc - cSegs=%#x cbToRead=%#zx", rc, cSegs, cbToRead);
+            for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+                RTTestIFailureDetails("aSeg[%u] = %p LB %#zx (last %p)\n", iSeg, aSegs[iSeg].pvSeg, aSegs[iSeg].cbSeg,
+                                      (uint8_t *)aSegs[iSeg].pvSeg + aSegs[iSeg].cbSeg - 1);
             break;
         }
     }
+
+    /* reading beyond the end of the file */
+    for (uint32_t cSegs = 1; cSegs < 6; cSegs++)
+        for (uint32_t iTest = 0; iTest < 128; iTest++)
+        {
+            uint32_t const cbToRead  = RTRandU32Ex(0, cbBuf);
+            uint32_t const cbBeyond  = cbToRead ? RTRandU32Ex(0, cbToRead) : 0;
+            uint32_t const cbSeg     = cbToRead / cSegs;
+            uint32_t       cbLeft    = cbToRead;
+            uint8_t       *pbCur     = &pbBuf[cbToRead];
+            for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+            {
+                aSegs[iSeg].cbSeg = iSeg + 1 < cSegs ? cbSeg : cbLeft;
+                aSegs[iSeg].pvSeg = pbCur -= aSegs[iSeg].cbSeg;
+                cbLeft -= aSegs[iSeg].cbSeg;
+            }
+            Assert(pbCur == pbBuf);
+
+            uint64_t offFile = cbFile + cbBeyond - cbToRead;
+            RTSgBufInit(&SgBuf, &aSegs[0], cSegs);
+            int rcExpect = cbBeyond == 0 || cbToRead == 0 ? VINF_SUCCESS : VERR_EOF;
+            int rc = myFileSgReadAt(hFile1, offFile, &SgBuf, cbToRead, NULL);
+            if (rc != rcExpect)
+            {
+                RTTestIFailed("myFileSgReadAt failed: %Rrc - cSegs=%#x cbToRead=%#zx cbBeyond=%#zx\n", rc, cSegs, cbToRead, cbBeyond);
+                for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+                    RTTestIFailureDetails("aSeg[%u] = %p LB %#zx (last %p)\n", iSeg, aSegs[iSeg].pvSeg, aSegs[iSeg].cbSeg,
+                                          (uint8_t *)aSegs[iSeg].pvSeg + aSegs[iSeg].cbSeg - 1);
+            }
+
+            RTSgBufInit(&SgBuf, &aSegs[0], cSegs);
+            size_t cbActual = 0;
+            rc = myFileSgReadAt(hFile1, offFile, &SgBuf, cbToRead, &cbActual);
+            if (rc != VINF_SUCCESS || cbActual != cbToRead - cbBeyond)
+                RTTestIFailed("myFileSgReadAt failed: %Rrc cbActual=%#zu - cSegs=%#x cbToRead=%#zx cbBeyond=%#zx expected %#zx\n",
+                              rc, cbActual, cSegs, cbToRead, cbBeyond, cbToRead - cbBeyond);
+            if (RT_SUCCESS(rc) && cbActual > 0)
+                for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+                {
+                    if (!fsPerfCheckReadBuf(__LINE__, offFile, (uint8_t *)aSegs[iSeg].pvSeg, RT_MIN(cbActual, aSegs[iSeg].cbSeg)))
+                    {
+                        RTTestIFailureDetails("iSeg=%#x cSegs=%#x cbSeg=%#zx cbActual%#zx cbToRead=%#zx cbBeyond=%#zx\n",
+                                              iSeg, cSegs, aSegs[iSeg].cbSeg, cbActual, cbToRead, cbBeyond);
+                        iTest = _16K;
+                        break;
+                    }
+                    if (cbActual <= aSegs[iSeg].cbSeg)
+                        break;
+                    cbActual -= aSegs[iSeg].cbSeg;
+                    offFile  += aSegs[iSeg].cbSeg;
+                }
+        }
 
 #endif
 
