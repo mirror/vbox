@@ -4702,7 +4702,8 @@ iemTaskSwitch(PVMCPU          pVCpu,
      */
     uint16_t uExt;
     if (   enmTaskSwitch == IEMTASKSWITCH_INT_XCPT
-        && !(fFlags & IEM_XCPT_FLAGS_T_SOFT_INT))
+        && (   !(fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+            ||  (fFlags & IEM_XCPT_FLAGS_ICEBP_INSTR)))
     {
         uExt = 1;
     }
@@ -4891,7 +4892,8 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
          * Construct the error code masks based on what caused this task switch.
          * See Intel Instruction reference for INT.
          */
-        uint16_t const uExt     = (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT) ? 0 : 1;
+        uint16_t const uExt     = (    (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+                                   && !(fFlags & IEM_XCPT_FLAGS_ICEBP_INSTR)) ? 0 : 1;
         uint16_t const uSelMask = X86_SEL_MASK_OFF_RPL;
         RTSEL          SelTSS   = Idte.Gate.u16Sel;
 
