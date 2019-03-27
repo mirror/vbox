@@ -718,20 +718,20 @@ VirtualBoxVM_QT_MOCHDRS = \
 	src/runtime/information/UIInformationRuntime.h \
 	src/runtime/information/UIInformationView.h \
 	src/runtime/information/UIVMInformationDialog.h \
-	src/guestctrl/UIGuestControlConsole.h \
 	src/guestctrl/UIFileManager.h \
 	src/guestctrl/UIFileManagerDialog.h \
+	src/guestctrl/UIFileManagerGuestTable.h \
+	src/guestctrl/UIFileManagerHostTable.h \
 	src/guestctrl/UIFileManagerLogPanel.h \
 	src/guestctrl/UIFileManagerOperationsPanel.h \
 	src/guestctrl/UIFileManagerOptionsPanel.h \
 	src/guestctrl/UIFileManagerSessionPanel.h \
 	src/guestctrl/UIFileManagerTable.h \
+	src/guestctrl/UIGuestControlConsole.h \
 	src/guestctrl/UIGuestControlInterface.h \
 	src/guestctrl/UIGuestControlTreeItem.h \
-	src/guestctrl/UIFileManagerGuestTable.h \
 	src/guestctrl/UIGuestProcessControlDialog.h \
 	src/guestctrl/UIGuestProcessControlWidget.h \
-	src/guestctrl/UIFileManagerHostTable.h \
 	src/runtime/normal/UIKeyboardHandlerNormal.h \
 	src/runtime/normal/UIMachineLogicNormal.h \
 	src/runtime/normal/UIMachineViewNormal.h \
@@ -955,8 +955,8 @@ VirtualBoxVM_QT_MOCSRCS = \
 	src/guestctrl/UIFileManagerSessionPanel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
 	src/guestctrl/UIFileManagerGuestTable.cpp \
-	src/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/guestctrl/UIFileManagerHostTable.cpp \
+	src/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/widgets/UIMiniToolBar.cpp
 
 
@@ -1166,20 +1166,20 @@ VirtualBoxVM_SOURCES = \
 	src/runtime/information/UIInformationRuntime.cpp \
 	src/runtime/information/UIInformationView.cpp \
 	src/runtime/information/UIVMInformationDialog.cpp \
-	src/guestctrl/UIGuestControlConsole.cpp \
 	src/guestctrl/UIFileManager.cpp \
 	src/guestctrl/UIFileManagerDialog.cpp \
+	src/guestctrl/UIFileManagerGuestTable.cpp \
+	src/guestctrl/UIFileManagerHostTable.cpp \
 	src/guestctrl/UIFileManagerLogPanel.cpp \
 	src/guestctrl/UIFileManagerOperationsPanel.cpp \
 	src/guestctrl/UIFileManagerOptionsPanel.cpp \
 	src/guestctrl/UIFileManagerSessionPanel.cpp \
 	src/guestctrl/UIFileManagerTable.cpp \
+	src/guestctrl/UIGuestControlConsole.cpp \
 	src/guestctrl/UIGuestControlInterface.cpp \
 	src/guestctrl/UIGuestControlTreeItem.cpp \
-	src/guestctrl/UIFileManagerGuestTable.cpp \
 	src/guestctrl/UIGuestProcessControlWidget.cpp \
 	src/guestctrl/UIGuestProcessControlDialog.cpp \
-	src/guestctrl/UIFileManagerHostTable.cpp \
 	src/runtime/normal/UIKeyboardHandlerNormal.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \
 	src/runtime/normal/UIMachineViewNormal.cpp \
