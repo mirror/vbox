@@ -3539,6 +3539,11 @@ static void hmR0SvmTrpmTrapToPendingEvent(PVMCPU pVCpu)
                 break;
             }
 
+            case X86_XCPT_BP:
+            case X86_XCPT_OF:
+                AssertMsgFailed(("Invalid TRPM vector %d for event type %d\n", uVector, enmTrpmEvent));
+                RT_FALL_THRU();
+
             case X86_XCPT_PF:
             case X86_XCPT_DF:
             case X86_XCPT_TS:
