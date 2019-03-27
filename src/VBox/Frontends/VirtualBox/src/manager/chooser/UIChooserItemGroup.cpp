@@ -139,6 +139,11 @@ void UIChooserItemGroup::updateFavorites()
     model()->updateLayout();
 }
 
+void UIChooserItemGroup::scrollBy(int iDelta)
+{
+    m_pScrollArea->scrollBy(iDelta);
+}
+
 void UIChooserItemGroup::makeSureItemIsVisible(UIChooserItem *pItem)
 {
     /* Make sure item exists: */

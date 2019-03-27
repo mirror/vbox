@@ -97,6 +97,11 @@ QIGraphicsWidget *UIGraphicsScrollArea::viewport() const
     return m_pViewport;
 }
 
+void UIGraphicsScrollArea::scrollBy(int iDelta)
+{
+    m_pScrollBar->setValue(m_pScrollBar->value() + iDelta);
+}
+
 void UIGraphicsScrollArea::makeSureRectIsVisible(const QRectF &rect)
 {
     /* Make sure rect size is bound by the scroll-area size: */

@@ -49,6 +49,9 @@ public:
     /** Returns scroll-area viewport. */
     QIGraphicsWidget *viewport() const;
 
+    /** Performs scrolling by @a iDelta pixels. */
+    void scrollBy(int iDelta);
+
     /** Makes sure passed @a rect is visible. */
     void makeSureRectIsVisible(const QRectF &rect);
 

@@ -89,6 +89,9 @@ public:
 
     /** @name Navigation stuff.
       * @{ */
+        /** Performs scrolling by @a iDelta pixels. */
+        void scrollBy(int iDelta);
+
         /** Makes sure passed @a pItem is visible within the current root item.
           * @note Please keep in mind that any group item can be a root, but there
           * is just one model root item at the same time, accessible via model's

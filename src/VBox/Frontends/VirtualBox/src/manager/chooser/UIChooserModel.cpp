@@ -1086,6 +1086,9 @@ void UIChooserModel::sltRemoveSelectedMachine()
 
 void UIChooserModel::sltStartScrolling()
 {
+    /* Make sure view exists: */
+    AssertPtrReturnVoid(view());
+
     /* Should we scroll? */
     if (!m_fIsScrollingInProgress)
         return;
@@ -1093,39 +1096,31 @@ void UIChooserModel::sltStartScrolling()
     /* Reset scrolling progress: */
     m_fIsScrollingInProgress = false;
 
-    /* Get view/scrollbar: */
-    QGraphicsView *pView = view();
-    QScrollBar *pVerticalScrollBar = pView->verticalScrollBar();
-
     /* Convert mouse position to view co-ordinates: */
-    const QPoint mousePos = pView->mapFromGlobal(QCursor::pos());
+    const QPoint mousePos = view()->mapFromGlobal(QCursor::pos());
     /* Mouse position is at the top of view? */
     if (mousePos.y() < m_iScrollingTokenSize && mousePos.y() > 0)
     {
         int iValue = mousePos.y();
-        if (!iValue) iValue = 1;
-        int iDelta = m_iScrollingTokenSize / iValue;
-        if (pVerticalScrollBar->value() > pVerticalScrollBar->minimum())
-        {
-            /* Backward scrolling: */
-            pVerticalScrollBar->setValue(pVerticalScrollBar->value() - 2 * iDelta);
-            m_fIsScrollingInProgress = true;
-            QTimer::singleShot(10, this, SLOT(sltStartScrolling()));
-        }
+        if (!iValue)
+            iValue = 1;
+        const int iDelta = m_iScrollingTokenSize / iValue;
+        /* Backward scrolling: */
+        root()->toGroupItem()->scrollBy(- 2 * iDelta);
+        m_fIsScrollingInProgress = true;
+        QTimer::singleShot(10, this, SLOT(sltStartScrolling()));
     }
     /* Mouse position is at the bottom of view? */
-    else if (mousePos.y() > pView->height() - m_iScrollingTokenSize && mousePos.y() < pView->height())
+    else if (mousePos.y() > view()->height() - m_iScrollingTokenSize && mousePos.y() < view()->height())
     {
-        int iValue = pView->height() - mousePos.y();
-        if (!iValue) iValue = 1;
-        int iDelta = m_iScrollingTokenSize / iValue;
-        if (pVerticalScrollBar->value() < pVerticalScrollBar->maximum())
-        {
-            /* Forward scrolling: */
-            pVerticalScrollBar->setValue(pVerticalScrollBar->value() + 2 * iDelta);
-            m_fIsScrollingInProgress = true;
-            QTimer::singleShot(10, this, SLOT(sltStartScrolling()));
-        }
+        int iValue = view()->height() - mousePos.y();
+        if (!iValue)
+            iValue = 1;
+        const int iDelta = m_iScrollingTokenSize / iValue;
+        /* Forward scrolling: */
+        root()->toGroupItem()->scrollBy(2 * iDelta);
+        m_fIsScrollingInProgress = true;
+        QTimer::singleShot(10, this, SLOT(sltStartScrolling()));
     }
 }
 
@@ -1599,17 +1594,17 @@ void UIChooserModel::unregisterMachines(const QList<QUuid> &ids)
 
 bool UIChooserModel::processDragMoveEvent(QGraphicsSceneDragDropEvent *pEvent)
 {
+    /* Make sure view exists: */
+    AssertPtrReturn(view(), false);
+
     /* Do we scrolling already? */
     if (m_fIsScrollingInProgress)
         return false;
 
-    /* Get view: */
-    QGraphicsView *pView = view();
-
     /* Check scroll-area: */
-    const QPoint eventPoint = pView->mapFromGlobal(pEvent->screenPos());
-    if ((eventPoint.y() < m_iScrollingTokenSize) ||
-        (eventPoint.y() > pView->height() - m_iScrollingTokenSize))
+    const QPoint eventPoint = view()->mapFromGlobal(pEvent->screenPos());
+    if (   (eventPoint.y() < m_iScrollingTokenSize)
+        || (eventPoint.y() > view()->height() - m_iScrollingTokenSize))
     {
         /* Set scrolling in progress: */
         m_fIsScrollingInProgress = true;
