@@ -525,7 +525,9 @@ void UIFileManagerTable::changeLocation(const QModelIndex &index)
     if (!index.isValid() || !m_pView)
         return;
     m_pView->setRootIndex(m_pProxyModel->mapFromSource(index));
-    m_pView->clearSelection();
+
+    if (m_pView->selectionModel())
+        m_pView->selectionModel()->reset();
 
     UICustomFileSystemItem *item = static_cast<UICustomFileSystemItem*>(index.internalPointer());
     if (item)
