@@ -120,25 +120,25 @@ bool UIChooserAbstractModel::isGroupSavingInProgress() const
            || UIThreadGroupOrderSave::instance();
 }
 
-void UIChooserAbstractModel::sltMachineStateChanged(const QUuid &uId, const KMachineState)
+void UIChooserAbstractModel::sltMachineStateChanged(const QUuid &uMachineId, const KMachineState)
 {
     /* Update machine-nodes with passed id: */
-    invisibleRoot()->updateAllNodes(uId);
+    invisibleRoot()->updateAllNodes(uMachineId);
 }
 
-void UIChooserAbstractModel::sltMachineDataChanged(const QUuid &uId)
+void UIChooserAbstractModel::sltMachineDataChanged(const QUuid &uMachineId)
 {
     /* Update machine-nodes with passed id: */
-    invisibleRoot()->updateAllNodes(uId);
+    invisibleRoot()->updateAllNodes(uMachineId);
 }
 
-void UIChooserAbstractModel::sltMachineRegistered(const QUuid &uId, const bool fRegistered)
+void UIChooserAbstractModel::sltMachineRegistered(const QUuid &uMachineId, const bool fRegistered)
 {
     /* Existing VM unregistered? */
     if (!fRegistered)
     {
         /* Remove machine-items with passed id: */
-        invisibleRoot()->removeAllNodes(uId);
+        invisibleRoot()->removeAllNodes(uMachineId);
         /* Wipe out empty groups: */
         wipeOutEmptyGroups();
     }
@@ -146,39 +146,39 @@ void UIChooserAbstractModel::sltMachineRegistered(const QUuid &uId, const bool f
     else
     {
         /* Should we show this VM? */
-        if (gEDataManager->showMachineInVirtualBoxManagerChooser(uId))
+        if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineId))
         {
             /* Add new machine-item: */
-            CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uId.toString());
+            const CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uMachineId.toString());
             addMachineIntoTheTree(comMachine, true /* make it visible */);
         }
     }
 }
 
-void UIChooserAbstractModel::sltSessionStateChanged(const QUuid &uId, const KSessionState)
+void UIChooserAbstractModel::sltSessionStateChanged(const QUuid &uMachineId, const KSessionState)
 {
     /* Update machine-nodes with passed id: */
-    invisibleRoot()->updateAllNodes(uId);
+    invisibleRoot()->updateAllNodes(uMachineId);
 }
 
-void UIChooserAbstractModel::sltSnapshotChanged(const QUuid &uId, const QUuid &)
+void UIChooserAbstractModel::sltSnapshotChanged(const QUuid &uMachineId, const QUuid &)
 {
     /* Update machine-nodes with passed id: */
-    invisibleRoot()->updateAllNodes(uId);
+    invisibleRoot()->updateAllNodes(uMachineId);
 }
 
-void UIChooserAbstractModel::sltReloadMachine(const QUuid &uId)
+void UIChooserAbstractModel::sltReloadMachine(const QUuid &uMachineId)
 {
     /* Remove machine-items with passed id: */
-    invisibleRoot()->removeAllNodes(uId);
+    invisibleRoot()->removeAllNodes(uMachineId);
     /* Wipe out empty groups: */
     wipeOutEmptyGroups();
 
     /* Should we show this VM? */
-    if (gEDataManager->showMachineInVirtualBoxManagerChooser(uId))
+    if (gEDataManager->showMachineInVirtualBoxManagerChooser(uMachineId))
     {
         /* Add new machine-item: */
-        CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uId.toString());
+        const CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uMachineId.toString());
         addMachineIntoTheTree(comMachine, true /* make it visible */);
     }
 }
@@ -428,6 +428,7 @@ int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, U
     int iNewNodeDesiredPosition = -1;
     /* Which position should be new node placed by definitions: */
     int iNewNodeDefinitionPosition = getDefinedNodePosition(pParentNode, enmType, strName);
+
     /* If some position wanted: */
     if (iNewNodeDefinitionPosition != -1)
     {
@@ -457,6 +458,7 @@ int UIChooserAbstractModel::getDesiredNodePosition(UIChooserNode *pParentNode, U
             }
         }
     }
+
     /* Return desired node position: */
     return iNewNodeDesiredPosition;
 }

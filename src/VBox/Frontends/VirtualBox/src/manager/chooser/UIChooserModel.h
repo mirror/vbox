@@ -93,9 +93,9 @@ public:
     /** @name General stuff.
       * @{ */
         /** Inits model. */
-        void init();
+        virtual void init() /* override */;
         /** Deinits model. */
-        void deinit();
+        virtual void deinit() /* override */;
 
         /** Returns the Chooser reference. */
         UIChooser *chooser() const;

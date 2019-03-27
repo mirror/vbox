@@ -62,9 +62,9 @@ public:
     /** @name General stuff.
       * @{ */
         /** Inits model. */
-        void init();
+        virtual void init();
         /** Deinits model. */
-        void deinit();
+        virtual void deinit();
     /** @} */
 
     /** @name Children stuff.
@@ -91,22 +91,22 @@ protected slots:
 
     /** @name Main event handling stuff.
       * @{ */
-        /** Handles machine @a enmState change for machine with certain @a uId. */
-        virtual void sltMachineStateChanged(const QUuid &uId, const KMachineState enmState);
-        /** Handles machine data change for machine with certain @a uId. */
-        virtual void sltMachineDataChanged(const QUuid &uId);
-        /** Handles machine registering/unregistering for machine with certain @a uId. */
-        virtual void sltMachineRegistered(const QUuid &uId, const bool fRegistered);
-        /** Handles session @a enmState change for machine with certain @a uId. */
-        virtual void sltSessionStateChanged(const QUuid &uId, const KSessionState enmState);
-        /** Handles snapshot change for machine/snapshot with certain @a uId / @a uSnapshotId. */
-        virtual void sltSnapshotChanged(const QUuid &uId, const QUuid &uSnapshotId);
+        /** Handles machine @a enmState change for machine with certain @a uMachineId. */
+        virtual void sltMachineStateChanged(const QUuid &uMachineId, const KMachineState enmState);
+        /** Handles machine data change for machine with certain @a uMachineId. */
+        virtual void sltMachineDataChanged(const QUuid &uMachineId);
+        /** Handles machine registering/unregistering for machine with certain @a uMachineId. */
+        virtual void sltMachineRegistered(const QUuid &uMachineId, const bool fRegistered);
+        /** Handles session @a enmState change for machine with certain @a uMachineId. */
+        virtual void sltSessionStateChanged(const QUuid &uMachineId, const KSessionState enmState);
+        /** Handles snapshot change for machine/snapshot with certain @a uMachineId / @a uSnapshotId. */
+        virtual void sltSnapshotChanged(const QUuid &uMachineId, const QUuid &uSnapshotId);
     /** @} */
 
     /** @name Children stuff.
       * @{ */
-        /** Handles reload machine with certain @a uId request. */
-        virtual void sltReloadMachine(const QUuid &uId);
+        /** Handles reload machine with certain @a uMachineId request. */
+        virtual void sltReloadMachine(const QUuid &uMachineId);
     /** @} */
 
 private slots:
@@ -209,8 +209,8 @@ class UIThreadGroupDefinitionSave : public QThread
 
 signals:
 
-    /** Notifies about machine with certain @a uId to be reloaded. */
-    void sigReload(const QUuid &uId);
+    /** Notifies about machine with certain @a uMachineId to be reloaded. */
+    void sigReload(const QUuid &uMachineId);
 
     /** Notifies about task is complete. */
     void sigComplete();
