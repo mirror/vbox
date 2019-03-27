@@ -523,6 +523,7 @@ public:
     virtual HRESULT i_onCPUExecutionCapChange(ULONG /* aExecutionCap */) { return S_OK; }
     virtual HRESULT i_onMediumChange(IMediumAttachment * /* mediumAttachment */, BOOL /* force */) { return S_OK; }
     virtual HRESULT i_onSharedFolderChange() { return S_OK; }
+    virtual HRESULT i_onVMProcessPriorityChange(VMProcPriority_T /* aPriority */) { return S_OK; }
     virtual HRESULT i_onClipboardModeChange(ClipboardMode_T /* aClipboardMode */) { return S_OK; }
     virtual HRESULT i_onDnDModeChange(DnDMode_T /* aDnDMode */) { return S_OK; }
     virtual HRESULT i_onBandwidthGroupChange(IBandwidthGroup * /* aBandwidthGroup */) { return S_OK; }
@@ -969,8 +970,8 @@ private:
     HRESULT getDefaultFrontend(com::Utf8Str &aDefaultFrontend);
     HRESULT setDefaultFrontend(const com::Utf8Str &aDefaultFrontend);
     HRESULT getUSBProxyAvailable(BOOL *aUSBProxyAvailable);
-    HRESULT getVMProcessPriority(com::Utf8Str &aVMProcessPriority);
-    HRESULT setVMProcessPriority(const com::Utf8Str &aVMProcessPriority);
+    HRESULT getVMProcessPriority(VMProcPriority_T *aVMProcessPriority);
+    HRESULT setVMProcessPriority(VMProcPriority_T aVMProcessPriority);
 
     // wrapped IMachine methods
     HRESULT lockMachine(const ComPtr<ISession> &aSession,
@@ -1326,6 +1327,7 @@ public:
                                       IN_BSTR aGuestIp, LONG aGuestPort);
     HRESULT i_onStorageControllerChange();
     HRESULT i_onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce);
+    HRESULT i_onVMProcessPriorityChange(VMProcPriority_T aPriority);
     HRESULT i_onAudioAdapterChange(IAudioAdapter *audioAdapter);
     HRESULT i_onSerialPortChange(ISerialPort *serialPort);
     HRESULT i_onParallelPortChange(IParallelPort *parallelPort);

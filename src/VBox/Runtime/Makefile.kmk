@@ -1690,6 +1690,9 @@ RuntimeBldProg_SOURCES         = \
 	common/misc/RTFileOpenF.cpp \
 	common/misc/RTFileOpenV.cpp \
 	common/misc/RTMemWipeThoroughly.cpp \
+	common/misc/req.cpp \
+	common/misc/reqqueue.cpp \
+	common/misc/reqpool.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/sg.cpp \

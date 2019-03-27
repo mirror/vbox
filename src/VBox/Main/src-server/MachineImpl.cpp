@@ -7033,35 +7033,32 @@ HRESULT Machine::getUSBProxyAvailable(BOOL *aUSBProxyAvailable)
     return S_OK;
 }
 
-HRESULT Machine::getVMProcessPriority(com::Utf8Str &aVMProcessPriority)
+HRESULT Machine::getVMProcessPriority(VMProcPriority_T *aVMProcessPriority)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aVMProcessPriority = mUserData->s.strVMPriority;
+    *aVMProcessPriority = mUserData->s.enmVMPriority;
 
     return S_OK;
 }
 
-HRESULT Machine::setVMProcessPriority(const com::Utf8Str &aVMProcessPriority)
+HRESULT Machine::setVMProcessPriority(VMProcPriority_T aVMProcessPriority)
 {
     RT_NOREF(aVMProcessPriority);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT hrc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (SUCCEEDED(hrc))
     {
-        /** @todo r=klaus: currently this is marked as not implemented, as
-         * the code for setting the priority of the process is not there
-         * (neither when starting the VM nor at runtime). */
-        ReturnComNotImplemented();
-#if 0
         hrc = mUserData.backupEx();
         if (SUCCEEDED(hrc))
         {
             i_setModified(IsModified_MachineData);
-            mUserData->s.strVMPriority = aVMProcessPriority;
+            mUserData->s.enmVMPriority = aVMProcessPriority;
         }
-#endif
     }
+    alock.release();
+    if (SUCCEEDED(hrc))
+        hrc = i_onVMProcessPriorityChange(aVMProcessPriority);
     return hrc;
 }
 
@@ -14065,6 +14062,27 @@ HRESULT SessionMachine::i_onMediumChange(IMediumAttachment *aAttachment, BOOL aF
         return S_OK;
 
     return directControl->OnMediumChange(aAttachment, aForce);
+}
+
+HRESULT SessionMachine::i_onVMProcessPriorityChange(VMProcPriority_T aPriority)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnVMProcessPriorityChange(aPriority);
 }
 
 /**

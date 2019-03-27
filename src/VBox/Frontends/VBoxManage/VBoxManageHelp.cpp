@@ -524,7 +524,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--l1d-flush-on-vm-entry on|off]\n"
                      "                            [--nested-hw-virt on|off]\n"
                      "                            [--cpu-profile \"host|Intel 80[86|286|386]\"]\n"
-                     "                            [--cpuid-portability-level <0..3>\n"
+                     "                            [--cpuid-portability-level <0..3>]\n"
                      "                            [--cpuid-set <leaf[:subleaf]> <eax> <ebx> <ecx> <edx>]\n"
                      "                            [--cpuid-remove <leaf[:subleaf]>]\n"
                      "                            [--cpuidremoveall]\n"
@@ -585,7 +585,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
 #endif
                      "                            [--intnet<1-N> <network name>]\n"
                      "                            [--nat-network<1-N> <network name>]\n"
-                     "                            [--nicgenericdrv<1-N> <driver>\n"
+                     "                            [--nicgenericdrv<1-N> <driver>]\n"
                      "                            [--natnet<1-N> <network>|default]\n"
                      "                            [--natsettings<1-N> [<mtu>],[<socksnd>],\n"
                      "                                                [<sockrcv>],[<tcpsnd>],\n"
@@ -596,7 +596,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--nattftpprefix<1-N> <prefix>]\n"
                      "                            [--nattftpfile<1-N> <file>]\n"
                      "                            [--nattftpserver<1-N> <ip>]\n"
-                     "                            [--natbindip<1-N> <ip>\n"
+                     "                            [--natbindip<1-N> <ip>]\n"
                      "                            [--natdnspassdomain<1-N> on|off]\n"
                      "                            [--natdnsproxy<1-N> on|off]\n"
                      "                            [--natdnshostresolver<1-N> on|off]\n"
@@ -604,7 +604,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                                                         [sameports]]\n"
                      "                            [--macaddress<1-N> auto|<mac>]\n"
                      "                            [--mouse ps2|usb|usbtablet|usbmultitouch]\n"
-                     "                            [--keyboard ps2|usb\n"
+                     "                            [--keyboard ps2|usb]\n"
                      "                            [--uart<1-N> off|<I/O base> <IRQ>]\n"
                      "                            [--uartmode<1-N> disconnected|\n"
                      "                                             server <pipe>|\n"
@@ -613,12 +613,13 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                                             tcpclient <hostname:port>|\n"
                      "                                             file <file>|\n"
                      "                                             <devicename>]\n"
-                     "                            [--uarttype<1-N> 16450|16550A|16750\n"
+                     "                            [--uarttype<1-N> 16450|16550A|16750]\n"
 #if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
                      "                            [--lpt<1-N> off|<I/O base> <IRQ>]\n"
                      "                            [--lptmode<1-N> <devicename>]\n"
 #endif
                      "                            [--guestmemoryballoon <balloonsize in MB>]\n"
+                     "                            [--vm-process-priority default|flat|low|normal|high]\n"
                      "                            [--audio none|null", SEP);
         if (fWin)
         {
@@ -674,12 +675,12 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                                         bidirectional]\n");
         RTStrmPrintf(pStrm,
                      "                            [--vrde on|off]\n"
-                     "                            [--vrdeextpack default|<name>\n"
+                     "                            [--vrdeextpack default|<name>]\n"
                      "                            [--vrdeproperty <name=[value]>]\n"
                      "                            [--vrdeport <hostport>]\n"
                      "                            [--vrdeaddress <hostip>]\n"
                      "                            [--vrdeauthtype null|external|guest]\n"
-                     "                            [--vrdeauthlibrary default|<name>\n"
+                     "                            [--vrdeauthlibrary default|<name>]\n"
                      "                            [--vrdemulticon on|off]\n"
                      "                            [--vrdereusecon on|off]\n"
                      "                            [--vrdevideochannel on|off]\n"
@@ -692,7 +693,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--snapshotfolder default|<path>]\n"
                      "                            [--teleporter on|off]\n"
                      "                            [--teleporterport <port>]\n"
-                     "                            [--teleporteraddress <address|empty>\n"
+                     "                            [--teleporteraddress <address|empty>]\n"
                      "                            [--teleporterpassword <password>]\n"
                      "                            [--teleporterpasswordfile <file>|stdin]\n"
                      "                            [--tracing-enabled on|off]\n"
@@ -869,7 +870,8 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                                                tcpserver <port>|\n"
                      "                                                tcpclient <hostname:port>|\n"
                      "                                                file <file>|\n"
-                     "                                                <devicename>]\n"
+                     "                                                <devicename>\n"
+                     "                            vm-process-priority default|flat|low|normal|high\n"
                      "\n", SEP);
     }
 
@@ -959,8 +961,8 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
         RTStrmPrintf(pStrm,
                            "%s createmedium %s    [disk|dvd|floppy] --filename <filename>\n"
                      "                            [--size <megabytes>|--sizebyte <bytes>]\n"
-                     "                            [--diffparent <uuid>|<filename>\n"
-                     "                            [--format VDI|VMDK|VHD] (default: VDI)\n"
+                     "                            [--diffparent <uuid>|<filename>]\n"
+                     "                            [--format VDI|VMDK|VHD] (default: VDI)]\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX,\n"
                      "                                       Formatted]\n"
                      "                            [[--property <name>=<value>] --property <name>=<value]...\n"

@@ -230,7 +230,8 @@ enum
     MODIFYVM_RECORDING_OPTIONS,
 #endif
     MODIFYVM_CHIPSET,
-    MODIFYVM_DEFAULTFRONTEND
+    MODIFYVM_DEFAULTFRONTEND,
+    MODIFYVM_VMPROC_PRIORITY
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -421,6 +422,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--usbcardreader",            MODIFYVM_USBCARDREADER,             RTGETOPT_REQ_BOOL_ONOFF },
 #endif
     { "--defaultfrontend",          MODIFYVM_DEFAULTFRONTEND,           RTGETOPT_REQ_STRING },
+    { "--vm-process-priority",      MODIFYVM_VMPROC_PRIORITY,           RTGETOPT_REQ_STRING },
 };
 
 static void vrdeWarningDeprecatedOption(const char *pszOption)
@@ -501,6 +503,22 @@ static int parseNum(uint32_t uIndex, unsigned cMaxIndex, const char *pszName)
         return uIndex;
     errorArgument("Invalid %s number %u", pszName, uIndex);
     return 0;
+}
+
+VMProcPriority_T nameToVMProcPriority(const char *pszName)
+{
+    if (!RTStrICmp(pszName, "default"))
+        return VMProcPriority_Default;
+    if (!RTStrICmp(pszName, "flat"))
+        return VMProcPriority_Flat;
+    if (!RTStrICmp(pszName, "low"))
+        return VMProcPriority_Low;
+    if (!RTStrICmp(pszName, "normal"))
+        return VMProcPriority_Normal;
+    if (!RTStrICmp(pszName, "high"))
+        return VMProcPriority_High;
+
+    return VMProcPriority_Invalid;
 }
 
 RTEXITCODE handleModifyVM(HandlerArg *a)
@@ -3177,6 +3195,21 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 if (bstr == "default")
                     bstr = Bstr::Empty;
                 CHECK_ERROR(sessionMachine, COMSETTER(DefaultFrontend)(bstr.raw()));
+                break;
+            }
+
+            case MODIFYVM_VMPROC_PRIORITY:
+            {
+                VMProcPriority_T enmPriority = nameToVMProcPriority(ValueUnion.psz);
+                if (enmPriority == VMProcPriority_Invalid)
+                {
+                    errorArgument("Invalid --vm-process-priority '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                else
+                {
+                    CHECK_ERROR(sessionMachine, COMSETTER(VMProcessPriority)(enmPriority));
+                }
                 break;
             }
 

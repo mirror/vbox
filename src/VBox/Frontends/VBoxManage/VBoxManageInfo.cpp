@@ -932,6 +932,29 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_ULONG_PROP(      machine,  AutostartDelay,             "autostart-delay",          "Autostart Delay:", "");
     SHOW_STRING_PROP(     machine,  DefaultFrontend,            "defaultfrontend",          "Default Frontend:");
 
+    VMProcPriority_T enmVMProcPriority;
+    CHECK_ERROR2I_RET(machine, COMGETTER(VMProcessPriority)(&enmVMProcPriority), hrcCheck);
+    const char *pszVMProcPriority;
+    switch (enmVMProcPriority)
+    {
+        case VMProcPriority_Flat:
+            pszVMProcPriority = "flat";
+            break;
+        case VMProcPriority_Low:
+            pszVMProcPriority = "low";
+            break;
+        case VMProcPriority_Normal:
+            pszVMProcPriority = "normal";
+            break;
+        case VMProcPriority_High:
+            pszVMProcPriority = "high";
+            break;
+        default:
+            pszVMProcPriority = "default";
+            break;
+    }
+    SHOW_UTF8_STRING("vmprocpriority", "VM process priority:", pszVMProcPriority);
+
 /** @todo Convert the remainder of the function to SHOW_XXX macros and add error
  *        checking where missing. */
     /*

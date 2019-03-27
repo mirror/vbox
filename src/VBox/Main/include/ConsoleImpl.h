@@ -207,6 +207,7 @@ public:
                                 ULONG aSourceIdx, ULONG aTargetIdx,
                                 IProgress *aProgress);
     HRESULT i_reconfigureMediumAttachments(const std::vector<ComPtr<IMediumAttachment> > &aAttachments);
+    HRESULT i_onVMProcessPriorityChange(VMProcPriority_T priority);
     int i_hgcmLoadService(const char *pszServiceLibrary, const char *pszServiceName);
     VMMDev *i_getVMMDev() { return m_pVMMDev; }
 

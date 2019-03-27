@@ -98,6 +98,23 @@ typedef struct
 static const PROCPRIORITY g_aPriorities[] =
 {
     {
+        RTPROCPRIORITY_DEFAULT, "Default",
+        {
+            { RTTHREADTYPE_INVALID,                 INT_MIN, INT_MIN },
+            { RTTHREADTYPE_INFREQUENT_POLLER,       29, 29 },
+            { RTTHREADTYPE_MAIN_HEAVY_WORKER,       30, 30 },
+            { RTTHREADTYPE_EMULATION,               31, 31 }, /* the default priority */
+            { RTTHREADTYPE_DEFAULT,                 32, 32 },
+            { RTTHREADTYPE_GUI,                     32, 32 },
+            { RTTHREADTYPE_MAIN_WORKER,             32, 32 },
+            { RTTHREADTYPE_VRDP_IO,                 39, 39 },
+            { RTTHREADTYPE_DEBUGGER,                42, 42 },
+            { RTTHREADTYPE_MSG_PUMP,                47, 47 },
+            { RTTHREADTYPE_IO,                      52, 52 },
+            { RTTHREADTYPE_TIMER,                   55, 55 }
+        }
+    },
+    {
         RTPROCPRIORITY_LOW, "Low",
         {
             { RTTHREADTYPE_INVALID,                 INT_MIN, INT_MIN },
@@ -206,14 +223,15 @@ static const PROCPRIORITY *g_pProcessPriority = &g_aDefaultPriority;
  * Get's the priority information for the current thread.
  *
  * @returns The base priority
+ * @param   pThread     The thread to get it for.  NULL for current.
  */
-static int rtSchedDarwinGetBasePriority(void)
+static int rtSchedDarwinGetBasePriority(PRTTHREADINT pThread)
 {
     /* the base_priority. */
-    mach_msg_type_number_t              Count = POLICY_TIMESHARE_INFO_COUNT;
-    struct policy_timeshare_info        TSInfo = {0,0,0,0,0};
-    kern_return_t                       krc;
-    krc = thread_info(mach_thread_self(), THREAD_SCHED_TIMESHARE_INFO, (thread_info_t)&TSInfo, &Count);
+    mach_msg_type_number_t       Count  = POLICY_TIMESHARE_INFO_COUNT;
+    struct policy_timeshare_info TSInfo = {0,0,0,0,0};
+    kern_return_t krc = thread_info(!pThread ? mach_thread_self() : pthread_mach_thread_np((pthread_t)pThread->Core.Key),
+                                    THREAD_SCHED_TIMESHARE_INFO, (thread_info_t)&TSInfo, &Count);
     Assert(krc == KERN_SUCCESS);
 
     return TSInfo.base_priority;
@@ -227,7 +245,7 @@ DECLHIDDEN(int) rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
     /*
      * Get the current priority.
      */
-    int iBasePriority = rtSchedDarwinGetBasePriority();
+    int iBasePriority = rtSchedDarwinGetBasePriority(NULL);
     Assert(iBasePriority >= 0 && iBasePriority <= 63);
 
     /*
@@ -276,7 +294,6 @@ DECLHIDDEN(int) rtProcNativeSetPriority(RTPROCPRIORITY enmPriority)
 
 DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
-    Assert(pThread->Core.Key == pthread_self());
     Assert(enmType > RTTHREADTYPE_INVALID && enmType < RTTHREADTYPE_END);
     AssertMsg(g_pProcessPriority && g_pProcessPriority->aTypes[enmType].enmType == enmType,
               ("enmType=%d entry=%d\n", enmType, g_pProcessPriority->aTypes[enmType].enmType));
@@ -304,21 +321,28 @@ DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enm
         if (!err)
         {
             int i = 0;
-            int iBasePriority = rtSchedDarwinGetBasePriority();
+            int iBasePriority = rtSchedDarwinGetBasePriority(pThread);
 
-            while (!err && iBasePriority < iDesiredBasePriority && i++ < 256)
+            while (   !err
+                   && iBasePriority < iDesiredBasePriority
+                   && i++ < 256)
             {
                 SchedParam.sched_priority = ++iPriority;
                 err = pthread_setschedparam((pthread_t)pThread->Core.Key, iSchedPolicy, &SchedParam);
-                iBasePriority = rtSchedDarwinGetBasePriority();
+                iBasePriority = rtSchedDarwinGetBasePriority(pThread);
             }
 
-            while (!err && iBasePriority > iDesiredBasePriority && i++ < 256)
+            while (   !err
+                   && iPriority > 0
+                   && iBasePriority > iDesiredBasePriority
+                   && i++ < 256)
             {
                 SchedParam.sched_priority = --iPriority;
                 err = pthread_setschedparam((pthread_t)pThread->Core.Key, iSchedPolicy, &SchedParam);
-                iBasePriority = rtSchedDarwinGetBasePriority();
+                iBasePriority = rtSchedDarwinGetBasePriority(pThread);
             }
+
+            return VINF_SUCCESS;
         }
     }
     int rc = RTErrConvertFromErrno(err);

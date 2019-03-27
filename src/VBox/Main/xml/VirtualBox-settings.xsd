@@ -136,6 +136,17 @@
   </xsd:restriction>
 </xsd:simpleType>
 
+<xsd:simpleType name="TVMProcPriority">
+  <xsd:restriction base="xsd:string">
+    <xsd:enumeration value="Invalid"/>
+    <xsd:enumeration value="Default"/>
+    <xsd:enumeration value="Flat"/>
+    <xsd:enumeration value="Low"/>
+    <xsd:enumeration value="Normal"/>
+    <xsd:enumeration value="High"/>
+  </xsd:restriction>
+</xsd:simpleType>
+
 <xsd:simpleType name="TMonitorCount">
   <xsd:restriction base="xsd:unsignedInt">
     <xsd:minInclusive value="1"/>
@@ -1438,6 +1449,7 @@
   <xsd:attribute name="aborted" type="xsd:boolean" default="false"/>
   <xsd:attribute name="currentStateModified" type="xsd:boolean" default="true"/>
   <xsd:attribute name="version" type="xsd:string" default="1.15"/> <!-- Used for OVF files only, must not be present in normal settings files. The default corresponds to settings created by 5.0, which covers many older versions but not newer ones. -->
+  <xsd:attribute name="VMProcessPriority" type="TVMProcPriority"/>
 </xsd:complexType>
 
 <xsd:complexType name="TSnapshot">

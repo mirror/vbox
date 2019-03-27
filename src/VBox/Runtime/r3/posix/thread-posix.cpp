@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdlib.h>
 #if defined(RT_OS_LINUX)
 # include <unistd.h>
 # include <sys/syscall.h>
@@ -64,6 +65,11 @@
 #include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>
+#include <iprt/semaphore.h>
+#include <iprt/list.h>
+#include <iprt/once.h>
+#include <iprt/critsect.h>
+#include <iprt/req.h>
 #include "internal/thread.h"
 
 
@@ -110,6 +116,35 @@ typedef int (*PFNPTHREADSETNAME)(pthread_t hThread, const char *pszName);
 /** Pointer to pthread_setname_np if found. */
 static PFNPTHREADSETNAME g_pfnThreadSetName = NULL;
 #endif /* IPRT_MAY_HAVE_PTHREAD_SET_NAME_NP */
+
+#ifdef RTTHREAD_POSIX_WITH_CREATE_PRIORITY_PROXY
+/** Atomic indicator of whether the priority proxy thread has been (attempted) started.
+ *
+ * The priority proxy thread is started under these circumstances:
+ *      - RTThreadCreate
+ *      - RTThreadSetType
+ *      - RTProcSetPriority
+ *
+ * Which means that we'll be single threaded when this is modified.
+ *
+ * Speical values:
+ *      - VERR_TRY_AGAIN:           Not yet started.
+ *      - VERR_WRONG_ORDER:         Starting.
+ *      - VINF_SUCCESS:             Started successfully.
+ *      - VERR_PROCESS_NOT_FOUND:   Stopping or stopped
+ *      - Other error status if failed to start.
+ *
+ * @note We could potentially optimize this by only start it when we lower the
+ *       priority of ourselves, the process, or a newly created thread.  But
+ *       that would means we would need to take multi-threading into account, so
+ *       let's not do that for now.
+ */
+static int32_t volatile g_rcPriorityProxyThreadStart            = VERR_TRY_AGAIN;
+/** The IPRT thread handle for the priority proxy. */
+static RTTHREAD         g_hRTThreadPosixPriorityProxyThread     = NIL_RTTHREAD;
+/** The priority proxy queue. */
+static RTREQQUEUE       g_hRTThreadPosixPriorityProxyQueue      = NIL_RTREQQUEUE;
+#endif /* RTTHREAD_POSIX_WITH_CREATE_PRIORITY_PROXY */
 
 
 /*********************************************************************************************************************************
@@ -331,8 +366,165 @@ static void *rtThreadNativeMain(void *pvArgs)
     return (void *)(intptr_t)rc;
 }
 
+#ifdef RTTHREAD_POSIX_WITH_CREATE_PRIORITY_PROXY
 
-DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNativeThread)
+/**
+ * @callback_method_impl{FNRTTHREAD,
+ *  Priority proxy thread that services g_hRTThreadPosixPriorityProxyQueue.}
+ */
+static DECLCALLBACK(int) rtThreadPosixPriorityProxyThread(PRTTHREADINT, void *)
+{
+    for (;;)
+    {
+        RTREQQUEUE hReqQueue = g_hRTThreadPosixPriorityProxyQueue;
+        if (hReqQueue != NIL_RTREQQUEUE)
+            RTReqQueueProcess(hReqQueue, RT_INDEFINITE_WAIT);
+        else
+            break;
+
+        int32_t rc = ASMAtomicUoReadS32(&g_rcPriorityProxyThreadStart);
+        if (rc != VINF_SUCCESS && rc != VERR_WRONG_ORDER)
+            break;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Just returns a non-success status codes to force the thread to re-evaluate
+ * the global shutdown variable.
+ */
+static DECLCALLBACK(int) rtThreadPosixPriorityProxyStopper(void)
+{
+    return VERR_CANCELLED;
+}
+
+
+/**
+ * An atexit() callback that stops the proxy creation/priority thread.
+ */
+static void rtThreadStopProxyThread(void)
+{
+    /*
+     * Signal to the thread that it's time to shut down.
+     */
+    int32_t rc = ASMAtomicXchgS32(&g_rcPriorityProxyThreadStart, VERR_PROCESS_NOT_FOUND);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Grab the associated handles.
+         */
+        RTTHREAD   hThread = g_hRTThreadPosixPriorityProxyThread;
+        RTREQQUEUE hQueue  = g_hRTThreadPosixPriorityProxyQueue;
+        g_hRTThreadPosixPriorityProxyQueue  = NIL_RTREQQUEUE;
+        g_hRTThreadPosixPriorityProxyThread = NIL_RTTHREAD;
+        ASMCompilerBarrier(); /* paranoia */
+
+        AssertReturnVoid(hThread != NIL_RTTHREAD);
+        AssertReturnVoid(hQueue != NIL_RTREQQUEUE);
+
+        /*
+         * Kick the thread so it gets out of any pending RTReqQueueProcess call ASAP.
+         */
+        rc = RTReqQueueCallEx(hQueue, NULL, 0 /*cMillies*/, RTREQFLAGS_IPRT_STATUS | RTREQFLAGS_NO_WAIT,
+                              (PFNRT)rtThreadPosixPriorityProxyStopper, 0);
+
+        /*
+         * Wait for the thread to complete.
+         */
+        rc = RTThreadWait(hThread, RT_SUCCESS(rc) ? RT_MS_1SEC * 5 : 32, NULL);
+        if (RT_SUCCESS(rc))
+            RTReqQueueDestroy(hQueue);
+        /* else: just leak the stuff, we're exitting, so nobody cares... */
+    }
+}
+
+
+/**
+ * Ensure that the proxy priority proxy thread has been started.
+ *
+ * Since we will always start a proxy thread when asked to create a thread,
+ * there is no need for serialization here.
+ *
+ * @retval  true if started
+ * @retval  false if it failed to start (caller must handle this scenario).
+ */
+DECLHIDDEN(bool) rtThreadPosixPriorityProxyStart(void)
+{
+    /*
+     * Read the result.
+     */
+    int rc = ASMAtomicUoReadS32(&g_rcPriorityProxyThreadStart);
+    if (rc != VERR_TRY_AGAIN)
+        return RT_SUCCESS(rc);
+
+    /* If this triggers then there is a very unexpected race somewhere.  It
+       should be harmless though. */
+    AssertReturn(ASMAtomicCmpXchgS32(&g_rcPriorityProxyThreadStart, VERR_WRONG_ORDER, VERR_TRY_AGAIN), false);
+
+    /*
+     * Not yet started, so do that.
+     */
+    rc = RTReqQueueCreate(&g_hRTThreadPosixPriorityProxyQueue);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTThreadCreate(&g_hRTThreadPosixPriorityProxyThread, rtThreadPosixPriorityProxyThread, NULL, 0 /*cbStack*/,
+                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "RTThrdPP");
+        if (RT_SUCCESS(rc))
+        {
+            ASMAtomicWriteS32(&g_rcPriorityProxyThreadStart, VINF_SUCCESS);
+
+            atexit(rtThreadStopProxyThread);
+            return true;
+        }
+        RTReqQueueCreate(&g_hRTThreadPosixPriorityProxyQueue);
+    }
+    ASMAtomicWriteS32(&g_rcPriorityProxyThreadStart, rc != VERR_WRONG_ORDER ? rc : VERR_PROCESS_NOT_FOUND);
+    return false;
+}
+
+
+/**
+ * Calls @a pfnFunction from the priority proxy thread.
+ *
+ * Caller must have called rtThreadPosixStartProxy() to check that the priority
+ * proxy thread is running.
+ *
+ * @returns
+ * @param   pTargetThread   The target thread, NULL if not applicable.  This is
+ *                          so we can skip calls pertaining to the priority
+ *                          proxy thread itself.
+ * @param   pfnFunction     The function to call.  Must return IPRT status code.
+ * @param   cArgs           Number of arguments (see also RTReqQueueCall).
+ * @param   ...             Arguments (see also RTReqQueueCall).
+ */
+DECLHIDDEN(int) rtThreadPosixPriorityProxyCall(PRTTHREADINT pTargetThread, PFNRT pfnFunction, int cArgs, ...)
+{
+    int rc;
+    if (   !pTargetThread
+        || pTargetThread->pfnThread != rtThreadPosixPriorityProxyThread)
+    {
+        va_list va;
+        va_start(va, cArgs);
+        PRTREQ pReq;
+        rc = RTReqQueueCallV(g_hRTThreadPosixPriorityProxyQueue, &pReq, RT_INDEFINITE_WAIT, RTREQFLAGS_IPRT_STATUS,
+                             pfnFunction, cArgs, va);
+        va_end(va);
+        RTReqRelease(pReq);
+    }
+    else
+        rc = VINF_SUCCESS;
+    return rc;
+}
+
+#endif /* !RTTHREAD_POSIX_WITH_CREATE_PRIORITY_PROXY */
+
+/**
+ * Worker for rtThreadNativeCreate that's either called on the priority proxy
+ * thread or directly on the calling thread depending on the proxy state.
+ */
+static DECLCALLBACK(int) rtThreadNativeInternalCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNativeThread)
 {
     /*
      * Set the default stack size.
@@ -373,6 +565,31 @@ DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNati
         pthread_attr_destroy(&ThreadAttr);
     }
     return RTErrConvertFromErrno(rc);
+}
+
+
+DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThread, PRTNATIVETHREAD pNativeThread)
+{
+#ifdef RTTHREAD_POSIX_WITH_CREATE_PRIORITY_PROXY
+    /*
+     * If we have a priority proxy thread, use it.  Make sure to ignore the
+     * staring of the proxy thread itself.
+     */
+    if (   pThread->pfnThread != rtThreadPosixPriorityProxyThread
+        && rtThreadPosixPriorityProxyStart())
+    {
+        PRTREQ pReq;
+        int rc = RTReqQueueCall(g_hRTThreadPosixPriorityProxyQueue, &pReq, RT_INDEFINITE_WAIT,
+                                (PFNRT)rtThreadNativeInternalCreate, 2, pThread, pNativeThread);
+        RTReqRelease(pReq);
+        return rc;
+    }
+
+    /*
+     * Fall back on creating it directly without regard to priority proxying.
+     */
+#endif
+    return rtThreadNativeInternalCreate(pThread, pNativeThread);
 }
 
 

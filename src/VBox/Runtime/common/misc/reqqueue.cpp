@@ -166,7 +166,6 @@ RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies)
 
             /* Process the request. */
             rc = rtReqProcessOne(pReq);
-            AssertRC(rc);
             if (rc != VINF_SUCCESS)
             {
                 /* Propagate the return code to caller.  If more requests pending, queue them for later. */

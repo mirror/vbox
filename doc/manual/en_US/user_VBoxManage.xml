@@ -1212,6 +1212,15 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
           </para>
         </listitem>
 
+        <listitem>
+          <para>
+            <computeroutput>--vm-process-priority default|flat|low|normal|high
+            </computeroutput>: Specifies the priority scheme of the VM process
+            to be used when starting this VM and during VM execution. See
+            <xref linkend="vboxmanage-startvm" />.
+          </para>
+        </listitem>
+
       </itemizedlist>
 
     </sect2>
@@ -4078,6 +4087,14 @@ Virtual system 0:
           &lt;1-100&gt;</computeroutput>: Controls how much CPU time a
           virtual CPU can use. A value of 50 implies a single virtual
           CPU can use up to 50% of a single host CPU.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <computeroutput>vm-process-priority default|flat|low|normal|high
+          </computeroutput>: Changes the priority scheme of the VM process.
+          See <xref linkend="vboxmanage-startvm" />.
         </para>
       </listitem>
 

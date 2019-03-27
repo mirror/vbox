@@ -6551,6 +6551,41 @@ HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMedium
     return rc;
 }
 
+HRESULT Console::i_onVMProcessPriorityChange(VMProcPriority_T priority)
+{
+    HRESULT rc = S_OK;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
+
+    RTPROCPRIORITY enmProcPriority = RTPROCPRIORITY_DEFAULT;
+    switch(priority)
+    {
+        case VMProcPriority_Default:
+            enmProcPriority = RTPROCPRIORITY_DEFAULT;
+            break;
+        case VMProcPriority_Flat:
+            enmProcPriority = RTPROCPRIORITY_FLAT;
+            break;
+        case VMProcPriority_Low:
+            enmProcPriority = RTPROCPRIORITY_LOW;
+            break;
+        case VMProcPriority_Normal:
+            enmProcPriority = RTPROCPRIORITY_NORMAL;
+            break;
+        case VMProcPriority_High:
+            enmProcPriority = RTPROCPRIORITY_HIGH;
+            break;
+        default:
+            return setError(E_INVALIDARG, tr("Unsupported priority type (%d)"), priority);
+    }
+    int vrc = RTProcSetPriority(enmProcPriority);
+    if (RT_FAILURE(vrc))
+        rc = setErrorBoth(VBOX_E_VM_ERROR, vrc, tr("Could not set the priority of the process (%Rrc). Try to set it when VM is not started."), vrc);
+
+    return rc;
+}
 
 /**
  * Load an HGCM service.
@@ -10121,6 +10156,9 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
         ULONG cCpus = 1;
         pMachine->COMGETTER(CPUCount)(&cCpus);
 
+        VMProcPriority_T enmVMPriority = VMProcPriority_Default;
+        pMachine->COMGETTER(VMProcessPriority)(&enmVMPriority);
+
         /*
          * Create the VM
          *
@@ -10128,6 +10166,9 @@ void Console::i_powerUpThreadTask(VMPowerUpTask *pTask)
          *       mMachineState is either Starting or Restoring state here.
          */
         alock.release();
+
+        if (enmVMPriority != VMProcPriority_Default)
+            pConsole->i_onVMProcessPriorityChange(enmVMPriority);
 
         PVM pVM;
         vrc = VMR3Create(cCpus,

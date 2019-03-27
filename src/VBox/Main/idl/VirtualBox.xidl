@@ -5296,6 +5296,46 @@
 
   </enum>
 
+  <enum
+    name="VMProcPriority"
+    uuid="6fa72dd5-19b7-46ba-bc52-f223c98c7d80"
+  >
+    <desc>
+      Virtual machine process priorities.
+    </desc>
+
+    <const name="Invalid"               value="0">
+      <desc>Invalid priority, do not use.</desc>
+    </const>
+    <const name="Default"               value="1">
+      <desc>Default process priority determined by the OS.</desc>
+    </const>
+    <const name="Flat"                  value="2">
+      <desc>
+        Assumes a scheduling policy which puts the process at the default
+        priority and with all thread at the same priority
+      </desc>
+    </const>
+    <const name="Low"                   value="3">
+      <desc>
+        Assumes a scheduling policy which puts the process mostly below the
+        default priority of the host OS.
+      </desc>
+    </const>
+    <const name="Normal"                value="5">
+      <desc>
+        Assume a scheduling policy which shares the CPU resources fairly with
+        other processes running with the default priority of the host OS.
+      </desc>
+    </const>
+    <const name="High"                  value="6">
+      <desc>
+        Assumes a scheduling policy which puts the task above the default
+        priority of the host OS. This policy might easily cause other tasks
+        in the system to starve.
+      </desc>
+    </const>
+  </enum>
 
   <interface
     name="IMachine" extends="$unknown"
@@ -6054,15 +6094,12 @@
       </desc>
     </attribute>
 
-    <attribute name="VMProcessPriority" type="wstring">
+    <attribute name="VMProcessPriority" type="VMProcPriority">
       <desc>
         Sets the priority of the VM process. It is a VM setting which can
-        be changed both before starting the VM and at runtime. The valid
-        values are system specific, and if a value is specified which does
-        not get recognized, then it will be remembered (useful for preparing
-        VM configs for other host OSes), with a successful result.
+        be changed both before starting the VM and at runtime.
 
-        The default value is the empty string, which selects the default
+        The default value is 'Default', which selects the default
         process priority.
 
         <result name="E_NOTIMPL">
@@ -20850,7 +20887,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="B1C3994E-F8CD-4D02-94D0-1AAF884751ED"
+    uuid="f4638054-f1f8-4590-941a-cdb66075c5bf"
     internal="yes"
     wsmap="suppress"
     >
@@ -21090,6 +21127,28 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="silent" type="boolean" dir="in">
         <desc>TRUE if the device is is silently reconfigured without
           notifying the guest about it.</desc>
+      </param>
+    </method>
+
+    <method name="onVMProcessPriorityChange">
+      <desc>
+        Triggered when process priority of the
+        associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+        <result name="VBOX_E_VM_ERROR">
+          Error from underlying level. See additional error info.
+        </result>
+
+      </desc>
+
+      <param name="priority" type="VMProcPriority" dir="in">
+        <desc>The priority which set.</desc>
       </param>
     </method>
 

@@ -327,7 +327,9 @@ DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enm
               ("enmType=%d entry=%d\n", enmType, g_pProcessPriority->aTypes[enmType].enmType));
 
 #ifdef WIN32_SCHED_ENABLED
-    if (SetThreadPriority(rtThreadNativeGetHandle(pThread), g_pProcessPriority->aTypes[enmType].iThreadPriority))
+    HANDLE hThread = rtThreadNativeGetHandle(pThread);
+    if (   hThread == NULL /* No handle for alien threads. */
+        || SetThreadPriority(hThread, g_pProcessPriority->aTypes[enmType].iThreadPriority))
         return VINF_SUCCESS;
 
     DWORD dwLastError = GetLastError();

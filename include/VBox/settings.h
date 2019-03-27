@@ -1187,7 +1187,7 @@ struct MachineUserData
     uint32_t                uFaultToleranceInterval;
     bool                    fRTCUseUTC;
     IconBlob                ovIcon;
-    com::Utf8Str            strVMPriority;
+    VMProcPriority_T        enmVMPriority;
 };
 
 

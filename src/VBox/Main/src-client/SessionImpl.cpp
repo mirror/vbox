@@ -673,6 +673,23 @@ HRESULT Session::onMediumChange(const ComPtr<IMediumAttachment> &aMediumAttachme
 #endif
 }
 
+HRESULT Session::onVMProcessPriorityChange(VMProcPriority_T priority)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
+    AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
+    AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->i_onVMProcessPriorityChange(priority);
+#else
+    RT_NOREF(priority);
+    return S_OK;
+#endif
+}
+
 HRESULT Session::onCPUChange(ULONG aCpu, BOOL aAdd)
 {
     LogFlowThisFunc(("\n"));

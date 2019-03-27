@@ -3443,7 +3443,7 @@ MachineUserData::MachineUserData() :
     uFaultTolerancePort(0),
     uFaultToleranceInterval(0),
     fRTCUseUTC(false),
-    strVMPriority()
+    enmVMPriority(VMProcPriority_Default)
 {
     llGroups.push_back("/");
 }
@@ -3474,7 +3474,7 @@ bool MachineUserData::operator==(const MachineUserData &c) const
             && strFaultTolerancePassword  == c.strFaultTolerancePassword
             && fRTCUseUTC                 == c.fRTCUseUTC
             && ovIcon                     == c.ovIcon
-            && strVMPriority              == c.strVMPriority);
+            && enmVMPriority              == c.enmVMPriority);
 }
 
 
@@ -5476,7 +5476,22 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
         if (elmMachine.getAttributeValue("aborted", fAborted))
             fAborted = true;
 
-        elmMachine.getAttributeValue("processPriority", machineUserData.strVMPriority);
+        {
+            Utf8Str strVMPriority;
+            if (elmMachine.getAttributeValue("processPriority", strVMPriority))
+            {
+                if (strVMPriority == "Flat")
+                    machineUserData.enmVMPriority = VMProcPriority_Flat;
+                else if (strVMPriority == "Low")
+                    machineUserData.enmVMPriority = VMProcPriority_Low;
+                else if (strVMPriority == "Normal")
+                    machineUserData.enmVMPriority = VMProcPriority_Normal;
+                else if (strVMPriority == "High")
+                    machineUserData.enmVMPriority = VMProcPriority_High;
+                else
+                    machineUserData.enmVMPriority = VMProcPriority_Default;
+            }
+        }
 
         str.setNull();
         elmMachine.getAttributeValue("icon", str);
@@ -7152,8 +7167,24 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
     elmMachine.setAttribute("lastStateChange", stringifyTimestamp(timeLastStateChange));
     if (fAborted)
         elmMachine.setAttribute("aborted", fAborted);
-    if (machineUserData.strVMPriority.length())
-        elmMachine.setAttribute("processPriority", machineUserData.strVMPriority);
+
+    switch (machineUserData.enmVMPriority)
+    {
+        case VMProcPriority_Flat:
+            elmMachine.setAttribute("processPriority", "Flat");
+            break;
+        case VMProcPriority_Low:
+            elmMachine.setAttribute("processPriority", "Low");
+            break;
+        case VMProcPriority_Normal:
+            elmMachine.setAttribute("processPriority", "Normal");
+            break;
+        case VMProcPriority_High:
+            elmMachine.setAttribute("processPriority", "High");
+            break;
+        default:
+            break;
+    }
     // Please keep the icon last so that one doesn't have to check if there
     // is anything in the line after this very long attribute in the XML.
     if (machineUserData.ovIcon.size())
@@ -7330,6 +7361,12 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_17)
     {
+        if (machineUserData.enmVMPriority != VMProcPriority_Default)
+        {
+            m->sv = SettingsVersion_v1_17;
+            return;
+        }
+
         // VirtualBox 6.0 adds nested hardware virtualization, using native API (NEM).
         if (   hardwareMachine.fNestedHWVirt
             || hardwareMachine.fUseNativeApi)
@@ -7417,8 +7454,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
          * Check simple configuration bits first, loopy stuff afterwards.
          */
         if (   hardwareMachine.paravirtProvider != ParavirtProvider_Legacy
-            || hardwareMachine.uCpuIdPortabilityLevel != 0
-            || machineUserData.strVMPriority.length())
+            || hardwareMachine.uCpuIdPortabilityLevel != 0)
         {
             m->sv = SettingsVersion_v1_15;
             return;
