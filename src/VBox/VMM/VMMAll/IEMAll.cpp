@@ -4868,7 +4868,7 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
     }
 
     /* Check DPL against CPL if applicable. */
-    if (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_ICEBP_INSTR) == IEM_XCPT_FLAGS_T_SOFT_INT)
+    if ((fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_ICEBP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT)
     {
         if (pVCpu->iem.s.uCpl > Idte.Gate.u2Dpl)
         {
@@ -5303,7 +5303,7 @@ iemRaiseXcptOrIntInLongMode(PVMCPU      pVCpu,
     }
 
     /* Check DPL against CPL if applicable. */
-    if (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_ICEBP_INSTR) == IEM_XCPT_FLAGS_T_SOFT_INT)
+    if ((fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_ICEBP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT)
     {
         if (pVCpu->iem.s.uCpl > Idte.Gate.u2Dpl)
         {
