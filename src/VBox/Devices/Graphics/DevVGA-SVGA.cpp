@@ -1593,6 +1593,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         if (pThis->svga.uWidth != u32)
         {
             pThis->svga.uWidth = u32;
+            pThis->svga.cbScanline = pThis->svga.uWidth * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
             if (pThis->svga.fEnabled)
             {
                 ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
@@ -1624,6 +1625,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         if (pThis->svga.uBpp != u32)
         {
             pThis->svga.uBpp = u32;
+            pThis->svga.cbScanline = pThis->svga.uWidth * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
             if (pThis->svga.fEnabled)
             {
                 ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
@@ -5456,6 +5458,11 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 # ifdef VBOX_WITH_VMSVGA3D
     pHlp->pfnPrintf(pHlp, "3D enabled:         %RTbool\n", pThis->svga.f3DEnabled);
 # endif
+    if (pThis->pDrv)
+    {
+        pHlp->pfnPrintf(pHlp, "Driver mode:        %ux%u %ubpp\n", pThis->pDrv->cx, pThis->pDrv->cy, pThis->pDrv->cBits);
+        pHlp->pfnPrintf(pHlp, "Driver pitch:       %u (%#x)\n", pThis->pDrv->cbScanline, pThis->pDrv->cbScanline);
+    }
 }
 
 /** Portion of VMSVGA state which must be loaded oin the FIFO thread.
