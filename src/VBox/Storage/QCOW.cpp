@@ -36,9 +36,11 @@
 
 /** @page pg_storage_qcow   QCOW Storage Backend
  * The QCOW backend implements support for the qemu copy on write format (short QCOW).
- * There is no official specification available but the format is described
- * at http://people.gnome.org/~markmc/qcow-image-format.html for version 2
- * and http://people.gnome.org/~markmc/qcow-image-format-version-1.html for version 1.
+ *
+ * The official specification for qcow is available at
+ * https://github.com/qemu/qemu/blob/master/docs/interop/qcow2.txt version 2 and 3.
+ * For version 1 there is no official specification available but the format is described
+ * at http://people.gnome.org/~markmc/qcow-image-format-version-1.html.
  *
  * Missing things to implement:
  *    - v2 image creation and handling of the reference count table. (Blocker to enable support for V2 images)
@@ -85,7 +87,7 @@ typedef struct QCowHeader
             /** Offset of the L1 table in the image in bytes. */
             uint64_t    u64L1TableOffset;
         } v1;
-        /** Version 2. */
+        /** Version 2 (and also containing extensions for version 3). */
         struct
         {
             /** Backing file offset. */
@@ -110,6 +112,20 @@ typedef struct QCowHeader
             uint32_t    u32NbSnapshots;
             /** Offset of the first snapshot header in the image. */
             uint64_t    u64SnapshotsOffset;
+            /** Version 3 additional data. */
+            struct
+            {
+                /** Incompatible features. */
+                uint64_t    u64IncompatFeat;
+                /** Compatible features. */
+                uint64_t    u64CompatFeat;
+                /** Autoclear features. */
+                uint64_t    u64AutoClrFeat;
+                /** Width in bits of a reference count block. */
+                uint32_t    u32RefCntWidth;
+                /** Lenght of the header structure in bytes (for the header extensions). */
+                uint32_t    u32HdrLenBytes;
+            } v3;
         } v2;
     } Version;
 } QCowHeader;
@@ -133,6 +149,27 @@ typedef QCowHeader *PQCowHeader;
 #define QCOW_V2_COMPRESSED_FLAG               RT_BIT_64(62)
 /** The mask for extracting the offset from either the L1 or L2 table. */
 #define QCOW_V2_TBL_OFFSET_MASK               UINT64_C(0x00fffffffffffe00)
+
+/** Incompatible feature: Dirty bit, reference count may be inconsistent. */
+#define QCOW_V3_INCOMPAT_FEAT_F_DIRTY         RT_BIT_64(0)
+/** Incompatible feature: Image is corrupt and needs repair. */
+#define QCOW_V3_INCOMPAT_FEAT_F_CORRUPT       RT_BIT_64(1)
+/** Incompatible feature: External data file. */
+#define QCOW_V3_INCOMPAT_FEAT_F_EXTERNAL_DATA RT_BIT_64(2)
+/** The incompatible features we support currently. */
+#define QCOW_V3_INCOMPAT_FEAT_SUPPORTED_MASK  UINT64_C(0x0)
+
+/** Compatible feature: Lazy reference counters. */
+#define QCOW_V3_COMPAT_FEAT_F_LAZY_REF_COUNT  RT_BIT_64(0)
+/** The compatible features we support currently. */
+#define QCOW_V3_COMPAT_FEAT_SUPPORTED_MASK    UINT64_C(0x0)
+
+/** Auto clear feature: Bitmaps extension. */
+#define QCOW_V3_AUTOCLR_FEAT_F_BITMAPS        RT_BIT_64(0)
+/** Auto clear feature: The external data file is raw image which can be accessed standalone. */
+#define QCOW_V3_AUTOCLR_FEAT_F_EXT_RAW_DATA   RT_BIT_64(1)
+/** The autoclear features we support currently. */
+#define QCOW_V3_AUTOCLR_FEAT_SUPPORTED_MASK   UINT64_C(0x0)
 
 
 /*********************************************************************************************************************************
@@ -358,7 +395,7 @@ static bool qcowHdrConvertToHostEndianess(PQCowHeader pHeader)
         pHeader->Version.v1.u32CryptMethod           = RT_BE2H_U32(pHeader->Version.v1.u32CryptMethod);
         pHeader->Version.v1.u64L1TableOffset         = RT_BE2H_U64(pHeader->Version.v1.u64L1TableOffset);
     }
-    else if (pHeader->u32Version == 2)
+    else if (pHeader->u32Version == 2 || pHeader->u32Version == 3)
     {
         pHeader->Version.v2.u64BackingFileOffset     = RT_BE2H_U64(pHeader->Version.v2.u64BackingFileOffset);
         pHeader->Version.v2.u32BackingFileSize       = RT_BE2H_U32(pHeader->Version.v2.u32BackingFileSize);
@@ -371,6 +408,15 @@ static bool qcowHdrConvertToHostEndianess(PQCowHeader pHeader)
         pHeader->Version.v2.u32RefcountTableClusters = RT_BE2H_U32(pHeader->Version.v2.u32RefcountTableClusters);
         pHeader->Version.v2.u32NbSnapshots           = RT_BE2H_U32(pHeader->Version.v2.u32NbSnapshots);
         pHeader->Version.v2.u64SnapshotsOffset       = RT_BE2H_U64(pHeader->Version.v2.u64SnapshotsOffset);
+
+        if (pHeader->u32Version == 3)
+        {
+            pHeader->Version.v2.v3.u64IncompatFeat   = RT_BE2H_U64(pHeader->Version.v2.v3.u64IncompatFeat);
+            pHeader->Version.v2.v3.u64CompatFeat     = RT_BE2H_U64(pHeader->Version.v2.v3.u64CompatFeat);
+            pHeader->Version.v2.v3.u64AutoClrFeat    = RT_BE2H_U64(pHeader->Version.v2.v3.u64AutoClrFeat);
+            pHeader->Version.v2.v3.u32RefCntWidth    = RT_BE2H_U32(pHeader->Version.v2.v3.u32RefCntWidth);
+            pHeader->Version.v2.v3.u32HdrLenBytes    = RT_BE2H_U32(pHeader->Version.v2.v3.u32HdrLenBytes);
+        }
     }
     else
         return false;
@@ -1030,7 +1076,7 @@ static int qcowHdrValidate(PQCOWIMAGE pImage, PQCowHeader pHdr, uint64_t cbFile)
                              N_("QCOW: Overflow during L1 table size calculation for image '%s'"),
                              pImage->pszFilename);
     }
-    else if (pHdr->u32Version == 2)
+    else if (pHdr->u32Version == 2 || pHdr->u32Version == 3)
     {
         /* Check that the backing filename is contained in the file. */
         if (pHdr->Version.v2.u64BackingFileOffset + pHdr->Version.v2.u32BackingFileSize > cbFile)
@@ -1044,6 +1090,15 @@ static int qcowHdrValidate(PQCOWIMAGE pImage, PQCowHeader pHdr, uint64_t cbFile)
             return vdIfError(pImage->pIfError, VERR_INVALID_STATE, RT_SRC_POS,
                              N_("QCOW: Cluster size is too small for image  '%s' (%u vs %u)"),
                              pImage->pszFilename, RT_BIT_32(pHdr->Version.v2.u32ClusterBits), 512);
+
+        /* Some additional checks for v3 images. */
+        if (pHdr->u32Version == 3)
+        {
+            if (pHdr->Version.v2.v3.u32RefCntWidth > 6)
+                return vdIfError(pImage->pIfError, VERR_INVALID_STATE, RT_SRC_POS,
+                                 N_("QCOW: Reference count width too big for image  '%s' (%u vs %u)"),
+                                 pImage->pszFilename, RT_BIT_32(pHdr->Version.v2.v3.u32RefCntWidth), 6);
+        }
     }
     else
         return vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
@@ -1113,7 +1168,7 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
                                                N_("QCow: Encrypted image '%s' is not supported"),
                                                pImage->pszFilename);
                         }
-                        else if (Header.u32Version == 2)
+                        else if (Header.u32Version == 2 || Header.u32Version == 3)
                         {
                             if (Header.Version.v2.u32CryptMethod)
                                 rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
@@ -1137,6 +1192,16 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
                                 pImage->offRefcountTable      = Header.Version.v2.u64RefcountTableOffset;
                                 pImage->cbRefcountTable       = qcowCluster2Byte(pImage, Header.Version.v2.u32RefcountTableClusters);
                                 pImage->cRefcountTableEntries = pImage->cbRefcountTable / sizeof(uint64_t);
+
+                                if (Header.u32Version == 3)
+                                {
+                                    if (Header.Version.v2.v3.u64IncompatFeat & ~QCOW_V3_INCOMPAT_FEAT_SUPPORTED_MASK)
+                                        rc = vdIfError(pImage->pIfError, VERR_NOT_SUPPORTED, RT_SRC_POS,
+                                                       N_("QCow: Image '%s' contains unsupported incompatible features (%llx vs %llx)"),
+                                                       pImage->pszFilename, Header.Version.v2.v3.u64IncompatFeat, QCOW_V3_INCOMPAT_FEAT_SUPPORTED_MASK);
+
+                                    /** @todo Auto clear features need to be reset as soon as write support is added. */
+                                }
                             }
                         }
                         else
@@ -1144,11 +1209,14 @@ static int qcowOpenImage(PQCOWIMAGE pImage, unsigned uOpenFlags)
                                            N_("QCow: Image '%s' uses version %u which is not supported"),
                                            pImage->pszFilename, Header.u32Version);
 
-                        pImage->cbL1Table = RT_ALIGN_64(pImage->cL1TableEntries * sizeof(uint64_t), pImage->cbCluster);
-                        if ((uint64_t)pImage->cbL1Table != RT_ALIGN_64(pImage->cL1TableEntries * sizeof(uint64_t), pImage->cbCluster))
-                            rc = vdIfError(pImage->pIfError, VERR_INVALID_STATE, RT_SRC_POS,
-                                           N_("QCOW: L1 table size overflow in image '%s'"),
-                                           pImage->pszFilename);
+                        if (RT_SUCCESS(rc))
+                        {
+                            pImage->cbL1Table = RT_ALIGN_64(pImage->cL1TableEntries * sizeof(uint64_t), pImage->cbCluster);
+                            if ((uint64_t)pImage->cbL1Table != RT_ALIGN_64(pImage->cL1TableEntries * sizeof(uint64_t), pImage->cbCluster))
+                                rc = vdIfError(pImage->pIfError, VERR_INVALID_STATE, RT_SRC_POS,
+                                               N_("QCOW: L1 table size overflow in image '%s'"),
+                                               pImage->pszFilename);
+                        }
                     }
 
                     /** @todo Check that there are no compressed clusters in the image
