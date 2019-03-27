@@ -232,7 +232,7 @@ static int rtSchedDarwinGetBasePriority(PRTTHREADINT pThread)
     struct policy_timeshare_info TSInfo = {0,0,0,0,0};
     kern_return_t krc = thread_info(!pThread ? mach_thread_self() : pthread_mach_thread_np((pthread_t)pThread->Core.Key),
                                     THREAD_SCHED_TIMESHARE_INFO, (thread_info_t)&TSInfo, &Count);
-    Assert(krc == KERN_SUCCESS);
+    Assert(krc == KERN_SUCCESS); NOREF(krc);
 
     return TSInfo.base_priority;
 }
