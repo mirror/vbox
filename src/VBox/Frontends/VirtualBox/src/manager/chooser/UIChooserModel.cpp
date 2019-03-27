@@ -560,7 +560,7 @@ void UIChooserModel::setCurrentDragObject(QDrag *pDragObject)
 
     /* Remember new drag-object: */
     m_pCurrentDragObject = pDragObject;
-    connect(m_pCurrentDragObject, &QDrag::destroyed,
+    connect(m_pCurrentDragObject.data(), &QDrag::destroyed,
             this, &UIChooserModel::sltCurrentDragObjectDestroyed);
 }
 
