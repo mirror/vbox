@@ -2795,7 +2795,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     Assert(pVmcs);
 
     /* Ensure VM-entry interruption information valid bit isn't set. */
-    Assert(!VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo);
+    Assert(!VMX_ENTRY_INT_INFO_IS_VALID(pVmcs->u32EntryIntInfo));
 
     /* Update the VM-exit reason, the other relevant data fields are expected to be updated by the caller already. */
     pVmcs->u32RoExitReason = uExitReason;
@@ -7387,6 +7387,8 @@ IEM_STATIC int iemVmxVmentryInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo
  */
 IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
 {
+    PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+
     /*
      * Inject events.
      * The event that is going to be made pending for injection is not subject to VMX intercepts,
@@ -7396,7 +7398,6 @@ IEM_STATIC int iemVmxVmentryInjectEvent(PVMCPU pVCpu, const char *pszInstr)
      *
      * See Intel spec. 26.5 "Event Injection".
      */
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     uint32_t const uEntryIntInfo      = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->u32EntryIntInfo;
     bool const     fEntryIntInfoValid = VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo);
 
