@@ -4868,7 +4868,7 @@ iemRaiseXcptOrIntInProtMode(PVMCPU      pVCpu,
     }
 
     /* Check DPL against CPL if applicable. */
-    if (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+    if (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_ICEBP_INSTR) == IEM_XCPT_FLAGS_T_SOFT_INT)
     {
         if (pVCpu->iem.s.uCpl > Idte.Gate.u2Dpl)
         {
@@ -5303,7 +5303,7 @@ iemRaiseXcptOrIntInLongMode(PVMCPU      pVCpu,
     }
 
     /* Check DPL against CPL if applicable. */
-    if (fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
+    if (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_ICEBP_INSTR) == IEM_XCPT_FLAGS_T_SOFT_INT)
     {
         if (pVCpu->iem.s.uCpl > Idte.Gate.u2Dpl)
         {
@@ -5524,7 +5524,10 @@ iemRaiseXcptOrInt(PVMCPU      pVCpu,
      */
     if (   pVCpu->cpum.GstCtx.eflags.Bits.u1VM
         && pVCpu->cpum.GstCtx.eflags.Bits.u2IOPL != 3
-        && (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
+        && (fFlags & (  IEM_XCPT_FLAGS_T_SOFT_INT
+                      | IEM_XCPT_FLAGS_BP_INSTR
+                      | IEM_XCPT_FLAGS_ICEBP_INSTR
+                      | IEM_XCPT_FLAGS_OF_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
         && (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PE) )
     {
         Log(("iemRaiseXcptOrInt: V8086 IOPL check failed for int %#x -> #GP(0)\n", u8Vector));
