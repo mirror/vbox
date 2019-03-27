@@ -50,6 +50,7 @@
 #include <iprt/rand.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+#include <iprt/system.h>
 #include <iprt/test.h>
 #include <iprt/time.h>
 #include <iprt/thread.h>
@@ -66,6 +67,7 @@
 #  include <sys/mman.h>
 #  include <sys/uio.h>
 # endif
+# include <sys/sendfile.h>
 #endif
 
 
@@ -3241,6 +3243,30 @@ DECL_FORCE_INLINE(int) fsPerfCopyWorker1(const char *pszSrc, const char *pszDst)
 }
 
 
+#ifdef RT_OS_LINUX
+DECL_FORCE_INLINE(int) fsPerfCopyWorkerSendFile(RTFILE hFile1, RTFILE hFile2, size_t cbFile)
+{
+    RTTESTI_CHECK_RC_RET(RTFileSeek(hFile2, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS, rcCheck);
+
+    loff_t off = 0;
+    ssize_t cbSent = sendfile((int)RTFileToNative(hFile2), (int)RTFileToNative(hFile1), &off, cbFile);
+    if (cbSent > 0 && (size_t)cbSent == cbFile)
+        return 0;
+
+    int rc = VERR_GENERAL_FAILURE;
+    if (cbSent < 0)
+    {
+        rc = RTErrConvertFromErrno(errno);
+        RTTestIFailed("sendfile(file,file,NULL,%#zx) failed (%zd): %d (%Rrc)", cbFile, cbSent, errno, rc);
+    }
+    else
+        RTTestIFailed("sendfile(file,file,NULL,%#zx) returned %#zx, expected %#zx (diff %zd)",
+                      cbFile, cbSent, cbFile, cbSent - cbFile);
+    return rc;
+}
+#endif /* RT_OS_LINUX */
+
+
 static void fsPerfCopy(void)
 {
     RTTestISub("copy");
@@ -3330,6 +3356,76 @@ static void fsPerfCopy(void)
         RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
         RTTESTI_CHECK_RC(RTFileCompare(g_szDir, g_szDir2), VINF_SUCCESS);
 
+#ifdef RT_OS_LINUX
+        /*
+         * On linux we can also use sendfile between two files, except for 2.5.x to 2.6.33.
+         */
+        char szRelease[64];
+        RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szRelease, sizeof(szRelease));
+        bool const fSendFileBetweenFiles = RTStrVersionCompare(szRelease, "2.5.0") < 0
+                                        || RTStrVersionCompare(szRelease, "2.6.33") >= 0;
+        if (fSendFileBetweenFiles)
+        {
+            /* Copy the whole file: */
+            hFile1 = NIL_RTFILE;
+            RTTESTI_CHECK_RC(RTFileOpen(&hFile1, g_szDir, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VINF_SUCCESS);
+            RTFileDelete(g_szDir2);
+            hFile2 = NIL_RTFILE;
+            RTTESTI_CHECK_RC(RTFileOpen(&hFile2, g_szDir2, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
+            ssize_t cbSent = sendfile((int)RTFileToNative(hFile2), (int)RTFileToNative(hFile1), NULL, cbFile);
+            if (cbSent < 0)
+                RTTestIFailed("sendfile(file,file,NULL,%#zx) failed (%zd): %d (%Rrc)",
+                              cbFile, cbSent, errno, RTErrConvertFromErrno(errno));
+            else if ((size_t)cbSent != cbFile)
+                RTTestIFailed("sendfile(file,file,NULL,%#zx) returned %#zx, expected %#zx (diff %zd)",
+                              cbFile, cbSent, cbFile, cbSent - cbFile);
+            RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTFileCompare(g_szDir, g_szDir2), VINF_SUCCESS);
+
+            /* Try copy a little bit too much: */
+            hFile1 = NIL_RTFILE;
+            RTTESTI_CHECK_RC(RTFileOpen(&hFile1, g_szDir, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VINF_SUCCESS);
+            RTFileDelete(g_szDir2);
+            hFile2 = NIL_RTFILE;
+            RTTESTI_CHECK_RC(RTFileOpen(&hFile2, g_szDir2, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
+            size_t cbToCopy = cbFile + RTRandU32Ex(1, _64M);
+            cbSent = sendfile((int)RTFileToNative(hFile2), (int)RTFileToNative(hFile1), NULL, cbToCopy);
+            if (cbSent < 0)
+                RTTestIFailed("sendfile(file,file,NULL,%#zx) failed (%zd): %d (%Rrc)",
+                              cbToCopy, cbSent, errno, RTErrConvertFromErrno(errno));
+            else if ((size_t)cbSent != cbFile)
+                RTTestIFailed("sendfile(file,file,NULL,%#zx) returned %#zx, expected %#zx (diff %zd)",
+                              cbToCopy, cbSent, cbFile, cbSent - cbFile);
+            RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTFileCompare(g_szDir, g_szDir2), VINF_SUCCESS);
+
+            /* Do partial copy: */
+            hFile2 = NIL_RTFILE;
+            RTTESTI_CHECK_RC(RTFileOpen(&hFile2, g_szDir2, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
+            for (uint32_t i = 0; i < 64; i++)
+            {
+                cbToCopy = RTRandU32Ex(0, cbFile - 1);
+                uint32_t const offFile  = RTRandU32Ex(1, (uint64_t)RT_MIN(cbFile - cbToCopy, UINT32_MAX));
+                RTTESTI_CHECK_RC_BREAK(RTFileSeek(hFile2, offFile, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+                loff_t offFile2 = offFile;
+                cbSent = sendfile((int)RTFileToNative(hFile2), (int)RTFileToNative(hFile1), &offFile2, cbToCopy);
+                if (cbSent < 0)
+                    RTTestIFailed("sendfile(file,file,%#x,%#zx) failed (%zd): %d (%Rrc)",
+                                  offFile, cbToCopy, cbSent, errno, RTErrConvertFromErrno(errno));
+                else if ((size_t)cbSent != cbToCopy)
+                    RTTestIFailed("sendfile(file,file,%#x,%#zx) returned %#zx, expected %#zx (diff %zd)",
+                                  offFile, cbToCopy, cbSent, cbToCopy, cbSent - cbToCopy);
+                else if (offFile2 != (loff_t)(offFile + cbToCopy))
+                    RTTestIFailed("sendfile(file,file,%#x,%#zx) returned %#zx + off=%#RX64, expected off %#x",
+                                  offFile, cbToCopy, cbSent, offFile2, offFile + cbToCopy);
+            }
+            RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTFileCompare(g_szDir, g_szDir2), VINF_SUCCESS);
+        }
+#endif
+
         /*
          * Do some benchmarking.
          */
@@ -3402,6 +3498,21 @@ static void fsPerfCopy(void)
 
         /* We could benchmark RTFileCopyPart with various block sizes and whatnot...
            But it's currently well covered by the two previous operations. */
+
+#ifdef RT_OS_LINUX
+        if (fSendFileBetweenFiles)
+        {
+            hFile1 = NIL_RTFILE;
+            RTTESTI_CHECK_RC(RTFileOpen(&hFile1, g_szDir, RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VINF_SUCCESS);
+            RTFileDelete(g_szDir2);
+            hFile2 = NIL_RTFILE;
+            RTTESTI_CHECK_RC(RTFileOpen(&hFile2, g_szDir2, RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
+            PROFILE_COPY_FN("sendfile/overwrite", fsPerfCopyWorkerSendFile(hFile1, hFile2, cbFile));
+            RTTESTI_CHECK_RC(RTFileClose(hFile2), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+        }
+#endif
+
     }
 
     /*
