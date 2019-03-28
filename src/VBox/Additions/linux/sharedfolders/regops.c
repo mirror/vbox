@@ -40,13 +40,17 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
 # include <linux/buffer_head.h>
 #endif
-#if LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31) \
- && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12) \
+ && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
 # include <linux/writeback.h>
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
  && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
 # include <linux/splice.h>
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) \
+ && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 23)
+# include <linux/pipe_fs_i.h>
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
 # include <linux/swap.h> /* for mark_page_accessed */
@@ -519,22 +523,22 @@ DECLINLINE(bool) vbsf_should_use_cached_read(struct file *file, struct address_s
 
 
 /*********************************************************************************************************************************
-*   Pipe / splice stuff for 2.6.23 >= linux < 2.6.31 (where no fallbacks were available)                                         *
+*   Pipe / splice stuff for 2.6.17 >= linux < 2.6.31 (where no fallbacks were available)                                         *
 *********************************************************************************************************************************/
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) \
  && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
 
 
 /** Verify pipe buffer content (needed for page-cache to ensure idle page). */
-static int vbsf_pipe_buf_confirm(struct pipe_inode_info *info, struct pipe_buffer *pPipeBuf)
+static int vbsf_pipe_buf_confirm(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
 {
     /*SFLOG3(("vbsf_pipe_buf_confirm: %p\n", pPipeBuf));*/
     return 0;
 }
 
 /** Maps the buffer page. */
-static void *vbsf_pipe_buf_map(struct pipe_inode_info *pipe, struct pipe_buffer *pPipeBuf, int atomic)
+static void *vbsf_pipe_buf_map(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf, int atomic)
 {
     void *pvRet;
     if (!atomic)
@@ -548,7 +552,7 @@ static void *vbsf_pipe_buf_map(struct pipe_inode_info *pipe, struct pipe_buffer 
 }
 
 /** Unmaps the buffer page. */
-static void vbsf_pipe_buf_unmap(struct pipe_inode_info *pipe, struct pipe_buffer *pPipeBuf, void *pvMapping)
+static void vbsf_pipe_buf_unmap(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf, void *pvMapping)
 {
     /*SFLOG3(("vbsf_pipe_buf_unmap: %p/%p\n", pPipeBuf, pvMapping)); */
     if (!(pPipeBuf->flags & PIPE_BUF_FLAG_ATOMIC))
@@ -560,14 +564,14 @@ static void vbsf_pipe_buf_unmap(struct pipe_inode_info *pipe, struct pipe_buffer
 }
 
 /** Gets a reference to the page. */
-static void vbsf_pipe_buf_get(struct pipe_inode_info *pipe, struct pipe_buffer *pPipeBuf)
+static void vbsf_pipe_buf_get(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
 {
     page_cache_get(pPipeBuf->page);
     /*SFLOG3(("vbsf_pipe_buf_get: %p (return count=%d)\n", pPipeBuf, page_count(pPipeBuf->page)));*/
 }
 
 /** Release the buffer page (counter to vbsf_pipe_buf_get). */
-static void vbsf_pipe_buf_release(struct pipe_inode_info *pipe, struct pipe_buffer *pPipeBuf)
+static void vbsf_pipe_buf_release(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
 {
     /*SFLOG3(("vbsf_pipe_buf_release: %p (incoming count=%d)\n", pPipeBuf, page_count(pPipeBuf->page)));*/
     page_cache_release(pPipeBuf->page);
@@ -575,7 +579,7 @@ static void vbsf_pipe_buf_release(struct pipe_inode_info *pipe, struct pipe_buff
 
 /** Attempt to steal the page.
  * @returns 0 success, 1 on failure.  */
-static int vbsf_pipe_buf_steal(struct pipe_inode_info *pipe, struct pipe_buffer *pPipeBuf)
+static int vbsf_pipe_buf_steal(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
 {
     if (page_count(pPipeBuf->page) == 1) {
         lock_page(pPipeBuf->page);
@@ -603,8 +607,8 @@ static struct pipe_buf_operations vbsf_pipe_buf_ops = {
     .steal     = vbsf_pipe_buf_steal,
 };
 
-# define LOCK_PIPE(pipe)   do { if ((pipe)->inode) mutex_lock(&(pipe)->inode->i_mutex); } while (0)
-# define UNLOCK_PIPE(pipe) do { if ((pipe)->inode) mutex_unlock(&(pipe)->inode->i_mutex); } while (0)
+# define LOCK_PIPE(a_pPipe)   do { if ((a_pPipe)->inode) mutex_lock(&(a_pPipe)->inode->i_mutex); } while (0)
+# define UNLOCK_PIPE(a_pPipe) do { if ((a_pPipe)->inode) mutex_unlock(&(a_pPipe)->inode->i_mutex); } while (0)
 
 /** Waits for the pipe buffer status to change. */
 static void vbsf_wait_pipe(struct pipe_inode_info *pPipe)
@@ -795,7 +799,7 @@ static ssize_t vbsf_splice_read(struct file *in, loff_t * poffset, struct pipe_i
     return cbRet;
 }
 
-#endif /* 2.6.23 <= LINUX_VERSION_CODE < 2.6.31 */
+#endif /* 2.6.17 <= LINUX_VERSION_CODE < 2.6.31 */
 
 
 /*********************************************************************************************************************************
@@ -2964,7 +2968,7 @@ struct file_operations vbsf_reg_fops = {
 #else
     .mmap            = generic_file_mmap,
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
     .splice_read     = vbsf_splice_read,
     /// @todo .splice_write    = vbsf_splice_write,
 #endif
