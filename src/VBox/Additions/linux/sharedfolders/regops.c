@@ -689,7 +689,7 @@ static ssize_t vbsf_feed_pages_to_pipe(struct pipe_inode_info *pPipe, struct pag
         } else if (signal_pending(current)) {
             if (cbRet == 0)
                 cbRet = -ERESTARTSYS;
-            SFLOGFLOW(("vbsf_feed_pages_to_pipe: pending signal! (%d)\n", cbRet));
+            SFLOGFLOW(("vbsf_feed_pages_to_pipe: pending signal! (%zd)\n", cbRet));
             break;
         } else {
             if (fNeedWakeUp) {
@@ -713,15 +713,15 @@ static ssize_t vbsf_feed_pages_to_pipe(struct pipe_inode_info *pPipe, struct pag
 /**
  * For splicing from a file to a pipe.
  */
-static ssize_t vbsf_splice_read(struct file *in, loff_t * poffset, struct pipe_inode_info *pipe, size_t len, unsigned int flags)
+static ssize_t vbsf_splice_read(struct file *file, loff_t *poffset, struct pipe_inode_info *pipe, size_t len, unsigned int flags)
 {
-    struct inode           *inode = VBSF_GET_F_DENTRY(in)->d_inode;
+    struct inode           *inode = VBSF_GET_F_DENTRY(file)->d_inode;
     struct vbsf_super_info *sf_g  = VBSF_GET_SUPER_INFO(inode->i_sb);
     ssize_t                 cbRet;
 
-    SFLOGFLOW(("vbsf_splice_read: in=%p poffset=%p{%#RX64} pipe=%p len=%#zx flags=%#x\n", in, poffset, *poffset, pipe, len, flags));
-    if (vbsf_should_use_cached_read(in, inode->i_mapping, sf_g)) {
-        cbRet = generic_file_splice_read(in, poffset, pipe, len, flags);
+    SFLOGFLOW(("vbsf_splice_read: file=%p poffset=%p{%#RX64} pipe=%p len=%#zx flags=%#x\n", file, poffset, *poffset, pipe, len, flags));
+    if (vbsf_should_use_cached_read(file, inode->i_mapping, sf_g)) {
+        cbRet = generic_file_splice_read(file, poffset, pipe, len, flags);
     } else {
         /*
          * Create a read request.
@@ -758,7 +758,7 @@ static ssize_t vbsf_splice_read(struct file *in, loff_t * poffset, struct pipe_i
                  * Do the reading.
                  */
                 uint32_t const          cbToRead = RT_MIN((cPages << PAGE_SHIFT) - (offFile & PAGE_OFFSET_MASK), len);
-                struct vbsf_reg_info   *sf_r     = (struct vbsf_reg_info *)in->private_data;
+                struct vbsf_reg_info   *sf_r     = (struct vbsf_reg_info *)file->private_data;
                 int vrc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbToRead, cPages);
                 if (RT_SUCCESS(vrc)) {
                     /*
@@ -796,6 +796,164 @@ static ssize_t vbsf_splice_read(struct file *in, loff_t * poffset, struct pipe_i
         }
     }
     SFLOGFLOW(("vbsf_splice_read: returns %zd (%#zx), *poffset=%#RX64\n", cbRet, cbRet, *poffset));
+    return cbRet;
+}
+
+
+/**
+ * For splicing from a pipe to a file.
+ */
+static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *file, loff_t *poffset, size_t len, unsigned int flags)
+{
+    struct inode           *inode = VBSF_GET_F_DENTRY(file)->d_inode;
+    struct vbsf_super_info *sf_g  = VBSF_GET_SUPER_INFO(inode->i_sb);
+    ssize_t                 cbRet;
+
+    SFLOGFLOW(("vbsf_splice_write: pPipe=%p file=%p poffset=%p{%#RX64} len=%#zx flags=%#x\n", pPipe, file, poffset, *poffset, len, flags));
+    if (false /** @todo  later */) {
+        cbRet = generic_file_splice_write(pPipe, file, poffset, len, flags);
+    } else {
+        /*
+         * Prepare a write request.
+         */
+        struct vbsf_reg_info *sf_r       = (struct vbsf_reg_info *)file->private_data;
+        loff_t                offFile    = *poffset;
+        uint32_t const        cMaxPages  = RT_MIN(PIPE_BUFFERS, RT_ALIGN_Z(len, PAGE_SIZE) >> PAGE_SHIFT);
+        VBOXSFWRITEPGLSTREQ  *pReq       = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ,
+                                                                                                       PgLst.aPages[cMaxPages]));
+        if (pReq) {
+            /*
+             * Feed from the pipe.
+             */
+            bool fNeedWakeUp = false;
+            cbRet = 0;
+
+            LOCK_PIPE(pPipe);
+
+            for (;;) {
+                unsigned cBufs = pPipe->nrbufs;
+                /*SFLOG2(("vbsf_splice_write: nrbufs=%#x curbuf=%#x\n", cBufs, pPipe->curbuf));*/
+                if (cBufs) {
+                    /*
+                     * There is data available.  Write it to the file.
+                     */
+                    int                 vrc;
+                    struct pipe_buffer *pPipeBuf      = &pPipe->bufs[pPipe->curbuf];
+                    uint32_t            cPagesToWrite = 1;
+                    uint32_t            cbToWrite     = pPipeBuf->len;
+
+                    Assert(pPipeBuf->offset < PAGE_SIZE);
+                    Assert(pPipeBuf->offset + pPipeBuf->len <= PAGE_SIZE);
+
+                    pReq->PgLst.offFirstPage = pPipeBuf->offset & PAGE_OFFSET;
+                    pReq->PgLst.aPages[0]    = page_to_phys(pPipeBuf->page);
+
+                    /* Add any adjacent page buffers: */
+                    while (   cPagesToWrite < cBufs
+                           && cPagesToWrite < cMaxPages
+                           && ((pReq->PgLst.offFirstPage + cbToWrite) & PAGE_OFFSET_MASK) == 0) {
+                        struct pipe_buffer *pPipeBuf2 = &pPipe->bufs[(pPipe->curbuf + cPagesToWrite) % PIPE_BUFFERS];
+                        Assert(pPipeBuf2->len <= PAGE_SIZE);
+                        Assert(pPipeBuf2->offset < PAGE_SIZE);
+                        if (pPipeBuf2->offset != 0)
+                            break;
+                        pReq->PgLst.aPages[cPagesToWrite] = page_to_phys(pPipeBuf2->page);
+                        cbToWrite     += pPipeBuf2->len;
+                        cPagesToWrite += 1;
+                    }
+
+                    vrc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbToWrite, cPagesToWrite);
+                    if (RT_SUCCESS(vrc)) {
+                        /*
+                         * Get the number of bytes actually written, update file position
+                         * and return value, and advance the pipe buffer.
+                         */
+                        uint32_t cbActual = pReq->Parms.cb32Write.u.value32;
+                        AssertStmt(cbActual <= cbToWrite, cbActual = cbToWrite);
+                        SFLOG2(("vbsf_splice_write: write -> %#x bytes @ %#RX64\n", cbActual, offFile));
+
+                        cbRet   += cbActual;
+                        offFile += cbActual;
+                        *poffset = offFile;
+
+                        while (cbActual > 0) {
+                            uint32_t cbAdvance = RT_MIN(pPipeBuf->len, cbActual);
+                            cbActual         -= cbAdvance;
+                            pPipeBuf->offset += cbAdvance;
+                            pPipeBuf->len    -= cbAdvance;
+                            if (!pPipeBuf->len) {
+                                struct pipe_buf_operations *pOps = pPipeBuf->ops;
+                                pPipeBuf->ops = NULL;
+                                pOps->release(pPipe, pPipeBuf);
+
+                                pPipe->curbuf  = (pPipe->curbuf + 1) % PIPE_BUFFERS;
+                                pPipe->nrbufs -= 1;
+                                pPipeBuf = &pPipe->bufs[pPipe->curbuf];
+
+                                fNeedWakeUp |= pPipe->inode != NULL;
+                            } else {
+                                Assert(cbActual == 0);
+                                break;
+                            }
+                        }
+                    } else {
+                        if (cbRet == 0)
+                            cbRet = -RTErrConvertToErrno(vrc);
+                        SFLOGFLOW(("vbsf_splice_write: Write failed: %Rrc -> %zd (cbRet=%#zx)\n",
+                                   vrc, -RTErrConvertToErrno(vrc), cbRet));
+                        break;
+                    }
+                } else {
+                    /*
+                     * Wait for data to become available, if there is chance that'll happen.
+                     */
+                    /* Quit if there are no writers (think EOF): */
+                    if (pPipe->writers == 0) {
+                        SFLOGFLOW(("vbsf_splice_write: No buffers. No writers. The show is done!\n"));
+                        break;
+                    }
+
+                    /* Quit if if we've written some and no writers waiting on the lock: */
+                    if (cbRet > 0 && pPipe->waiting_writers == 0) {
+                        SFLOGFLOW(("vbsf_splice_write: No waiting writers, returning what we've got.\n"));
+                        break;
+                    }
+
+                    /* Quit with EAGAIN if non-blocking: */
+                    if (flags & SPLICE_F_NONBLOCK) {
+                        if (cbRet == 0)
+                            cbRet = -EAGAIN;
+                        break;
+                    }
+
+                    /* Quit if we've got pending signals: */
+                    if (signal_pending(current)) {
+                        if (cbRet == 0)
+                            cbRet = -ERESTARTSYS;
+                        SFLOGFLOW(("vbsf_splice_write: pending signal! (%zd)\n", cbRet));
+                        break;
+                    }
+
+                    /* Wake up writers before we start waiting: */
+                    if (fNeedWakeUp) {
+                        vbsf_wake_up_pipe(pPipe, false /*fReaders*/);
+                        fNeedWakeUp = false;
+                    }
+                    vbsf_wait_pipe(pPipe);
+                }
+            } /* feed loop */
+
+            if (fNeedWakeUp)
+                vbsf_wake_up_pipe(pPipe, false /*fReaders*/);
+
+            UNLOCK_PIPE(pPipe);
+
+            VbglR0PhysHeapFree(pReq);
+        } else {
+            cbRet = -ENOMEM;
+        }
+    }
+    SFLOGFLOW(("vbsf_splice_write: returns %zd (%#zx), *poffset=%#RX64\n", cbRet, cbRet, *poffset));
     return cbRet;
 }
 
@@ -2970,7 +3128,7 @@ struct file_operations vbsf_reg_fops = {
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
     .splice_read     = vbsf_splice_read,
-    /// @todo .splice_write    = vbsf_splice_write,
+    .splice_write    = vbsf_splice_write,
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
     .sendfile        = generic_file_sendfile, /**< @todo this goes thru page cache. */
