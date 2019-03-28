@@ -496,167 +496,8 @@ void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *
 }
 
 
-
 /*********************************************************************************************************************************
-*   Pipe / splice stuff for 2.6.23 >= linux < 2.6.31 (figure out why we need this)                                               *
-*********************************************************************************************************************************/
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
- && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
-
-/*
- * Some pipe stuff we apparently need for 2.6.23-2.6.30.
- */
-
-static void vbsf_free_pipebuf(struct page *kpage)
-{
-    kunmap(kpage);
-    __free_pages(kpage, 0);
-}
-
-static void *vbsf_pipe_buf_map(struct pipe_inode_info *pipe, struct pipe_buffer *pipe_buf, int atomic)
-{
-    return 0;
-}
-
-static void vbsf_pipe_buf_get(struct pipe_inode_info *pipe, struct pipe_buffer *pipe_buf)
-{
-}
-
-static void vbsf_pipe_buf_unmap(struct pipe_inode_info *pipe, struct pipe_buffer *pipe_buf, void *map_data)
-{
-}
-
-static int vbsf_pipe_buf_steal(struct pipe_inode_info *pipe, struct pipe_buffer *pipe_buf)
-{
-    return 0;
-}
-
-static void vbsf_pipe_buf_release(struct pipe_inode_info *pipe, struct pipe_buffer *pipe_buf)
-{
-    vbsf_free_pipebuf(pipe_buf->page);
-}
-
-static int vbsf_pipe_buf_confirm(struct pipe_inode_info *info, struct pipe_buffer *pipe_buf)
-{
-    return 0;
-}
-
-static struct pipe_buf_operations vbsf_pipe_buf_ops = {
-    .can_merge = 0,
-    .map = vbsf_pipe_buf_map,
-    .unmap = vbsf_pipe_buf_unmap,
-    .confirm = vbsf_pipe_buf_confirm,
-    .release = vbsf_pipe_buf_release,
-    .steal = vbsf_pipe_buf_steal,
-    .get = vbsf_pipe_buf_get,
-};
-
-static int vbsf_reg_read_aux(const char *caller, struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r,
-                             void *buf, uint32_t *nread, uint64_t pos)
-{
-    int rc = VbglR0SfRead(&g_SfClient, &sf_g->map, sf_r->Handle.hHost, pos, nread, buf, false /* already locked? */ );
-    if (RT_FAILURE(rc)) {
-        LogFunc(("VbglR0SfRead failed. caller=%s, rc=%Rrc\n", caller,
-             rc));
-        return -EPROTO;
-    }
-    return 0;
-}
-
-# define LOCK_PIPE(pipe)   do { if (pipe->inode) mutex_lock(&pipe->inode->i_mutex); } while (0)
-# define UNLOCK_PIPE(pipe) do { if (pipe->inode) mutex_unlock(&pipe->inode->i_mutex); } while (0)
-
-ssize_t vbsf_splice_read(struct file *in, loff_t * poffset, struct pipe_inode_info *pipe, size_t len, unsigned int flags)
-{
-    size_t bytes_remaining = len;
-    loff_t orig_offset = *poffset;
-    loff_t offset = orig_offset;
-    struct inode *inode = VBSF_GET_F_DENTRY(in)->d_inode;
-    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct vbsf_reg_info *sf_r = in->private_data;
-    ssize_t retval;
-    struct page *kpage = 0;
-    size_t nsent = 0;
-
-/** @todo rig up a FsPerf test for this code  */
-    TRACE();
-    if (!S_ISREG(inode->i_mode)) {
-        LogFunc(("read from non regular file %d\n", inode->i_mode));
-        return -EINVAL;
-    }
-    if (!len) {
-        return 0;
-    }
-
-    LOCK_PIPE(pipe);
-
-    uint32_t req_size = 0;
-    while (bytes_remaining > 0) {
-        kpage = alloc_page(GFP_KERNEL);
-        if (unlikely(kpage == NULL)) {
-            UNLOCK_PIPE(pipe);
-            return -ENOMEM;
-        }
-        req_size = 0;
-        uint32_t nread = req_size = (uint32_t) min(bytes_remaining, (size_t) PAGE_SIZE);
-        uint32_t chunk = 0;
-        void *kbuf = kmap(kpage);
-        while (chunk < req_size) {
-            retval = vbsf_reg_read_aux(__func__, sf_g, sf_r, kbuf + chunk, &nread, offset);
-            if (retval < 0)
-                goto err;
-            if (nread == 0)
-                break;
-            chunk += nread;
-            offset += nread;
-            nread = req_size - chunk;
-        }
-        if (!pipe->readers) {
-            send_sig(SIGPIPE, current, 0);
-            retval = -EPIPE;
-            goto err;
-        }
-        if (pipe->nrbufs < PIPE_BUFFERS) {
-            struct pipe_buffer *pipebuf = pipe->bufs + ((pipe->curbuf + pipe->nrbufs) & (PIPE_BUFFERS - 1));
-            pipebuf->page = kpage;
-            pipebuf->ops = &vbsf_pipe_buf_ops;
-            pipebuf->len = req_size;
-            pipebuf->offset = 0;
-            pipebuf->private = 0;
-            pipebuf->flags = 0;
-            pipe->nrbufs++;
-            nsent += req_size;
-            bytes_remaining -= req_size;
-            if (signal_pending(current))
-                break;
-        } else {    /* pipe full */
-
-            if (flags & SPLICE_F_NONBLOCK) {
-                retval = -EAGAIN;
-                goto err;
-            }
-            vbsf_free_pipebuf(kpage);
-            break;
-        }
-    }
-    UNLOCK_PIPE(pipe);
-    if (!nsent && signal_pending(current))
-        return -ERESTARTSYS;
-    *poffset += nsent;
-    return offset - orig_offset;
-
- err:
-    UNLOCK_PIPE(pipe);
-    vbsf_free_pipebuf(kpage);
-    return retval;
-}
-
-#endif /* 2.6.23 <= LINUX_VERSION_CODE < 2.6.31 */
-
-
-/*********************************************************************************************************************************
-*   File operations on regular files                                                                                             *
+*   Misc                                                                                                                         *
 *********************************************************************************************************************************/
 
 /**
@@ -674,6 +515,292 @@ DECLINLINE(bool) vbsf_should_use_cached_read(struct file *file, struct address_s
         && !(file->f_flags & O_DIRECT)
         && 1 /** @todo make this behaviour configurable at mount time (sf_g) */;
 }
+
+
+
+/*********************************************************************************************************************************
+*   Pipe / splice stuff for 2.6.23 >= linux < 2.6.31 (where no fallbacks were available)                                         *
+*********************************************************************************************************************************/
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
+ && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
+
+
+/** Verify pipe buffer content (needed for page-cache to ensure idle page). */
+static int vbsf_pipe_buf_confirm(struct pipe_inode_info *info, struct pipe_buffer *pPipeBuf)
+{
+    /*SFLOG3(("vbsf_pipe_buf_confirm: %p\n", pPipeBuf));*/
+    return 0;
+}
+
+/** Maps the buffer page. */
+static void *vbsf_pipe_buf_map(struct pipe_inode_info *pipe, struct pipe_buffer *pPipeBuf, int atomic)
+{
+    void *pvRet;
+    if (!atomic)
+        pvRet = kmap(pPipeBuf->page);
+    else {
+        pPipeBuf->flags |= PIPE_BUF_FLAG_ATOMIC;
+        pvRet = kmap_atomic(pPipeBuf->page, KM_USER0);
+    }
+    /*SFLOG3(("vbsf_pipe_buf_map: %p -> %p\n", pPipeBuf, pvRet));*/
+    return pvRet;
+}
+
+/** Unmaps the buffer page. */
+static void vbsf_pipe_buf_unmap(struct pipe_inode_info *pipe, struct pipe_buffer *pPipeBuf, void *pvMapping)
+{
+    /*SFLOG3(("vbsf_pipe_buf_unmap: %p/%p\n", pPipeBuf, pvMapping)); */
+    if (!(pPipeBuf->flags & PIPE_BUF_FLAG_ATOMIC))
+        kunmap(pPipeBuf->page);
+    else {
+        pPipeBuf->flags &= ~PIPE_BUF_FLAG_ATOMIC;
+        kunmap_atomic(pvMapping, KM_USER0);
+    }
+}
+
+/** Gets a reference to the page. */
+static void vbsf_pipe_buf_get(struct pipe_inode_info *pipe, struct pipe_buffer *pPipeBuf)
+{
+    page_cache_get(pPipeBuf->page);
+    /*SFLOG3(("vbsf_pipe_buf_get: %p (return count=%d)\n", pPipeBuf, page_count(pPipeBuf->page)));*/
+}
+
+/** Release the buffer page (counter to vbsf_pipe_buf_get). */
+static void vbsf_pipe_buf_release(struct pipe_inode_info *pipe, struct pipe_buffer *pPipeBuf)
+{
+    /*SFLOG3(("vbsf_pipe_buf_release: %p (incoming count=%d)\n", pPipeBuf, page_count(pPipeBuf->page)));*/
+    page_cache_release(pPipeBuf->page);
+}
+
+/** Attempt to steal the page.
+ * @returns 0 success, 1 on failure.  */
+static int vbsf_pipe_buf_steal(struct pipe_inode_info *pipe, struct pipe_buffer *pPipeBuf)
+{
+    if (page_count(pPipeBuf->page) == 1) {
+        lock_page(pPipeBuf->page);
+        SFLOG3(("vbsf_pipe_buf_steal: %p -> 0\n", pPipeBuf));
+        return 0;
+    }
+    SFLOG3(("vbsf_pipe_buf_steal: %p -> 1\n", pPipeBuf));
+    return 1;
+}
+
+/**
+ * Pipe buffer operations for used by vbsf_feed_pages_to_pipe.
+ */
+static struct pipe_buf_operations vbsf_pipe_buf_ops = {
+    .can_merge = 0,
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+    .confirm   = vbsf_pipe_buf_confirm,
+# else
+    .pin       = vbsf_pipe_buf_confirm,
+# endif
+    .map       = vbsf_pipe_buf_map,
+    .unmap     = vbsf_pipe_buf_unmap,
+    .get       = vbsf_pipe_buf_get,
+    .release   = vbsf_pipe_buf_release,
+    .steal     = vbsf_pipe_buf_steal,
+};
+
+# define LOCK_PIPE(pipe)   do { if ((pipe)->inode) mutex_lock(&(pipe)->inode->i_mutex); } while (0)
+# define UNLOCK_PIPE(pipe) do { if ((pipe)->inode) mutex_unlock(&(pipe)->inode->i_mutex); } while (0)
+
+/** Waits for the pipe buffer status to change. */
+static void vbsf_wait_pipe(struct pipe_inode_info *pPipe)
+{
+    DEFINE_WAIT(WaitStuff);
+# ifdef TASK_NONINTERACTIVE
+    prepare_to_wait(&pPipe->wait, &WaitStuff, TASK_INTERRUPTIBLE | TASK_NONINTERACTIVE);
+# else
+    prepare_to_wait(&pPipe->wait, &WaitStuff, TASK_INTERRUPTIBLE);
+# endif
+    UNLOCK_PIPE(pPipe);
+
+    schedule();
+
+    finish_wait(&pPipe->wait, &WaitStuff);
+    LOCK_PIPE(pPipe);
+}
+
+/** Worker for vbsf_feed_pages_to_pipe that wakes up readers. */
+static void vbsf_wake_up_pipe(struct pipe_inode_info *pPipe, bool fReaders)
+{
+    smp_mb();
+    if (waitqueue_active(&pPipe->wait))
+        wake_up_interruptible_sync(&pPipe->wait);
+    if (fReaders)
+        kill_fasync(&pPipe->fasync_readers, SIGIO, POLL_IN);
+    else
+        kill_fasync(&pPipe->fasync_writers, SIGIO, POLL_OUT);
+}
+
+/**
+ * Feeds the pages to the pipe.
+ *
+ * Pages given to the pipe are set to NULL in papPages.
+ */
+static ssize_t vbsf_feed_pages_to_pipe(struct pipe_inode_info *pPipe, struct page **papPages, size_t cPages, uint32_t offPg0,
+                                       uint32_t cbActual, unsigned fFlags)
+{
+    ssize_t cbRet       = 0;
+    size_t  iPage       = 0;
+    bool    fNeedWakeUp = false;
+
+    LOCK_PIPE(pPipe);
+    for (;;) {
+        if (   pPipe->readers > 0
+            && pPipe->nrbufs < PIPE_BUFFERS) {
+            struct pipe_buffer *pPipeBuf   = &pPipe->bufs[(pPipe->curbuf + pPipe->nrbufs) % PIPE_BUFFERS];
+            uint32_t const      cbThisPage = RT_MIN(cbActual, PAGE_SIZE - offPg0);
+            pPipeBuf->len       = cbThisPage;
+            pPipeBuf->offset    = offPg0;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+            pPipeBuf->private   = 0;
+# endif
+            pPipeBuf->ops       = &vbsf_pipe_buf_ops;
+            pPipeBuf->flags     = fFlags & SPLICE_F_GIFT ? PIPE_BUF_FLAG_GIFT : 0;
+            pPipeBuf->page      = papPages[iPage];
+
+            papPages[iPage++] = NULL;
+            pPipe->nrbufs++;
+            fNeedWakeUp |= pPipe->inode != NULL;
+            offPg0 = 0;
+            cbRet += cbThisPage;
+
+            /* done? */
+            cbActual -= cbThisPage;
+            if (!cbActual)
+                break;
+        } else if (pPipe->readers == 0) {
+            SFLOGFLOW(("vbsf_feed_pages_to_pipe: no readers!\n"));
+            send_sig(SIGPIPE, current, 0);
+            if (cbRet == 0)
+                cbRet = -EPIPE;
+            break;
+        } else if (fFlags & SPLICE_F_NONBLOCK) {
+            if (cbRet == 0)
+                cbRet = -EAGAIN;
+            break;
+        } else if (signal_pending(current)) {
+            if (cbRet == 0)
+                cbRet = -ERESTARTSYS;
+            SFLOGFLOW(("vbsf_feed_pages_to_pipe: pending signal! (%d)\n", cbRet));
+            break;
+        } else {
+            if (fNeedWakeUp) {
+                vbsf_wake_up_pipe(pPipe, true /*fReaders*/);
+                fNeedWakeUp = 0;
+            }
+            pPipe->waiting_writers++;
+            vbsf_wait_pipe(pPipe);
+            pPipe->waiting_writers--;
+        }
+    }
+    UNLOCK_PIPE(pPipe);
+
+    if (fNeedWakeUp)
+        vbsf_wake_up_pipe(pPipe, true /*fReaders*/);
+
+    return cbRet;
+}
+
+
+/**
+ * For splicing from a file to a pipe.
+ */
+static ssize_t vbsf_splice_read(struct file *in, loff_t * poffset, struct pipe_inode_info *pipe, size_t len, unsigned int flags)
+{
+    struct inode           *inode = VBSF_GET_F_DENTRY(in)->d_inode;
+    struct vbsf_super_info *sf_g  = VBSF_GET_SUPER_INFO(inode->i_sb);
+    ssize_t                 cbRet;
+
+    SFLOGFLOW(("vbsf_splice_read: in=%p poffset=%p{%#RX64} pipe=%p len=%#zx flags=%#x\n", in, poffset, *poffset, pipe, len, flags));
+    if (vbsf_should_use_cached_read(in, inode->i_mapping, sf_g)) {
+        cbRet = generic_file_splice_read(in, poffset, pipe, len, flags);
+    } else {
+        /*
+         * Create a read request.
+         */
+        loff_t              offFile = *poffset;
+        size_t              cPages  = RT_MIN(RT_ALIGN_Z((offFile & ~PAGE_CACHE_MASK) + len, PAGE_CACHE_SIZE) >> PAGE_CACHE_SHIFT,
+                                             PIPE_BUFFERS);
+        VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ,
+                                                                                              PgLst.aPages[cPages]));
+        if (pReq) {
+            /*
+             * Allocate pages.
+             */
+            struct page *apPages[PIPE_BUFFERS];
+            size_t       i;
+            pReq->PgLst.offFirstPage = (uint16_t)offFile & (uint16_t)PAGE_OFFSET_MASK;
+            cbRet = 0;
+            for (i = 0; i < cPages; i++) {
+                struct page *pPage;
+                apPages[i] = pPage = alloc_page(GFP_USER);
+                if (pPage) {
+                    pReq->PgLst.aPages[i] = page_to_phys(pPage);
+# ifdef VBOX_STRICT
+                    ASMMemFill32(kmap(pPage), PAGE_SIZE, UINT32_C(0xdeadbeef));
+                    kunmap(pPage);
+# endif
+                } else {
+                    cbRet = -ENOMEM;
+                    break;
+                }
+            }
+            if (cbRet == 0) {
+                /*
+                 * Do the reading.
+                 */
+                uint32_t const          cbToRead = RT_MIN((cPages << PAGE_SHIFT) - (offFile & PAGE_OFFSET_MASK), len);
+                struct vbsf_reg_info   *sf_r     = (struct vbsf_reg_info *)in->private_data;
+                int vrc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbToRead, cPages);
+                if (RT_SUCCESS(vrc)) {
+                    /*
+                     * Get the number of bytes read, jettison the request
+                     * and, in case of EOF, any unnecessary pages.
+                     */
+                    uint32_t cbActual = pReq->Parms.cb32Read.u.value32;
+                    AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
+                    SFLOG2(("vbsf_splice_read: read -> %#x bytes @ %#RX64\n", cbActual, offFile));
+
+                    VbglR0PhysHeapFree(pReq);
+                    pReq = NULL;
+
+                    /*
+                     * Now, feed it to the pipe thingy.
+                     * This will take ownership of the all pages no matter what happens.
+                     */
+                    cbRet = vbsf_feed_pages_to_pipe(pipe, apPages, cPages, offFile & PAGE_OFFSET_MASK, cbActual, flags);
+                    if (cbRet > 0)
+                        *poffset = offFile + cbRet;
+                } else {
+                    cbRet = -RTErrConvertToErrno(vrc);
+                    SFLOGFLOW(("vbsf_splice_read: Read failed: %Rrc -> %zd\n", vrc, cbRet));
+                }
+                i = cPages;
+            }
+
+            while (i-- > 0)
+                if (apPages[i])
+                    __free_pages(apPages[i], 0);
+            if (pReq)
+                VbglR0PhysHeapFree(pReq);
+        } else {
+            cbRet = -ENOMEM;
+        }
+    }
+    SFLOGFLOW(("vbsf_splice_read: returns %zd (%#zx), *poffset=%#RX64\n", cbRet, cbRet, *poffset));
+    return cbRet;
+}
+
+#endif /* 2.6.23 <= LINUX_VERSION_CODE < 2.6.31 */
+
+
+/*********************************************************************************************************************************
+*   File operations on regular files                                                                                             *
+*********************************************************************************************************************************/
 
 /** Wrapper around put_page / page_cache_release.  */
 DECLINLINE(void) vbsf_put_page(struct page *pPage)
@@ -2808,6 +2935,17 @@ extern int vbsf_reg_mmap(struct file *file, struct vm_area_struct *vma)
 
 /**
  * File operations for regular files.
+ *
+ * Note on splice_read/splice_write/sendfile:
+ *      - Splice was introduced in 2.6.17.  The generic_file_splice_read/write
+ *        methods go thru the page cache, which is undesirable and is why we
+ *        need to cook our own versions of the code as long as we cannot track
+ *        host-side writes and correctly invalidate the guest page-cache.
+ *      - Sendfile reimplemented using splice in 2.6.23.
+ *      - The default_file_splice_read/write no-page-cache fallback functions,
+ *        were introduced in 2.6.31.
+ *      - Since linux 4.9 the generic_file_splice_read/write functions are using
+ *        read_iter/write_iter.
  */
 struct file_operations vbsf_reg_fops = {
     .open            = vbsf_reg_open,
@@ -2826,16 +2964,12 @@ struct file_operations vbsf_reg_fops = {
 #else
     .mmap            = generic_file_mmap,
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
-/** @todo This code is known to cause caching of data which should not be
- * cached.  Investigate --
- * bird: Part of this was using generic page cache functions for
- * implementing .aio_read/write.  Fixed that (see above). */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17)
     .splice_read     = vbsf_splice_read,
-# else
-    .sendfile        = generic_file_sendfile,
-# endif
+    /// @todo .splice_write    = vbsf_splice_write,
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
+    .sendfile        = generic_file_sendfile, /**< @todo this goes thru page cache. */
 #endif
     .llseek          = vbsf_reg_llseek,
     .fsync           = vbsf_reg_fsync,
