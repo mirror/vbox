@@ -45,6 +45,7 @@ class QILabel;
 class QILineEdit;
 class QGridLayout;
 class QSortFilterProxyModel;
+class QStackedWidget;
 class QTextEdit;
 class QVBoxLayout;
 class UIActionPool;
@@ -294,6 +295,8 @@ private:
     QILineEdit      *m_pSearchLineEdit;
     QILabel         *m_pWarningLabel;
 
+    /** Contains m_pBreadCrumbsWidget and m_pLocationComboBox. */
+    QStackedWidget           *m_pNavigationWidgetWidget;
     UIFileManagerBreadCrumbs *m_pBreadCrumbsWidget;
 
     friend class     UICustomFileSystemModel;

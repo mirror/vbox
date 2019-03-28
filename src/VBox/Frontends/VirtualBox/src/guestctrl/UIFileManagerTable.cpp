@@ -22,6 +22,7 @@
 #include <QHeaderView>
 #include <QItemDelegate>
 #include <QGridLayout>
+#include <QStackedWidget>
 #include <QTextEdit>
 
 /* GUI includes: */
@@ -474,6 +475,7 @@ UIFileManagerTable::UIFileManagerTable(UIActionPool *pActionPool, QWidget *pPare
     , m_pMainLayout(0)
     , m_pLocationComboBox(0)
     , m_pWarningLabel(0)
+    , m_pNavigationWidgetWidget(0)
     , m_pBreadCrumbsWidget(0)
 {
     prepareObjects();
@@ -524,27 +526,30 @@ void UIFileManagerTable::prepareObjects()
         m_pMainLayout->addWidget(m_pLocationLabel, 1, 0, 1, 1);
     }
 
-    m_pLocationComboBox = new QComboBox;
-    if (m_pLocationComboBox)
+    m_pNavigationWidgetWidget = new QStackedWidget;
+    if (m_pNavigationWidgetWidget)
     {
-        m_pMainLayout->addWidget(m_pLocationComboBox, 1, 1, 1, 4);
-        m_pLocationComboBox->setEditable(false);
-        connect(m_pLocationComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
-                this, &UIFileManagerTable::sltLocationComboCurrentChange);
-    }
+        m_pNavigationWidgetWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
 
-    m_pBreadCrumbsWidget = new UIFileManagerBreadCrumbs;
-    if (m_pBreadCrumbsWidget)
-    {
-        m_pMainLayout->addWidget(m_pBreadCrumbsWidget, 1, 1, 1, 4);
-        m_pBreadCrumbsWidget->setReadOnly(true);
-        QSizePolicy sizePolicy;
-        sizePolicy.setControlType(QSizePolicy::ComboBox);
-        m_pBreadCrumbsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-        connect(m_pBreadCrumbsWidget, &UIFileManagerBreadCrumbs::sigNavitatePath,
-                this, &UIFileManagerTable::sltHandleBreadCrumbsClick);
-    }
+        m_pLocationComboBox = new QComboBox;
+        if (m_pLocationComboBox)
+        {
+            m_pNavigationWidgetWidget->addWidget(m_pLocationComboBox);
+            m_pLocationComboBox->setEditable(false);
+            connect(m_pLocationComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
+                    this, &UIFileManagerTable::sltLocationComboCurrentChange);
+        }
 
+        m_pBreadCrumbsWidget = new UIFileManagerBreadCrumbs;
+        if (m_pBreadCrumbsWidget)
+        {
+            m_pNavigationWidgetWidget->addWidget(m_pBreadCrumbsWidget);
+            m_pBreadCrumbsWidget->setReadOnly(true);
+            connect(m_pBreadCrumbsWidget, &UIFileManagerBreadCrumbs::sigNavitatePath,
+                    this, &UIFileManagerTable::sltHandleBreadCrumbsClick);
+        }
+        m_pMainLayout->addWidget(m_pNavigationWidgetWidget, 1, 1, 1, 4);
+    }
     UIFileManagerOptions *pOptions = UIFileManagerOptions::instance();
     if (pOptions)
         showHideBreadCrumbs(pOptions->fShowBreadCrumbs);
@@ -1381,10 +1386,12 @@ bool UIFileManagerTable::checkIfDeleteOK()
 
 void UIFileManagerTable::showHideBreadCrumbs(bool fShow)
 {
-    if (m_pLocationComboBox)
-        m_pLocationComboBox->setVisible(!fShow);
-    if (m_pBreadCrumbsWidget)
-        m_pBreadCrumbsWidget->setVisible(fShow);
+    if (!m_pNavigationWidgetWidget)
+        return;
+    if (fShow)
+        m_pNavigationWidgetWidget->setCurrentIndex(0);
+    else
+        m_pNavigationWidgetWidget->setCurrentIndex(1);
 }
 
 #include "UIFileManagerTable.moc"
