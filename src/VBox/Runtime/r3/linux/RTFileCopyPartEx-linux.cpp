@@ -40,8 +40,10 @@
 #include <sys/syscall.h>
 
 #ifndef __NR_copy_file_range
-# if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
-#  define __NR_copy_file_range      285
+# if defined(RT_ARCH_X86)
+#  define __NR_copy_file_range      377
+# elif defined(RT_ARCH_AMD64)
+#  define __NR_copy_file_range      326
 # endif
 #endif
 
