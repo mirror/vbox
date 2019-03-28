@@ -159,6 +159,32 @@ static int RTLDRELF_NAME(MapBits)(PRTLDRMODELF pModElf, bool fNeedsBits)
         if (pModElf->iStrSh != ~0U)
             pModElf->pStr   =    (const char *)(pu8 + pModElf->paShdrs[pModElf->iStrSh].sh_offset);
         pModElf->pShStr     =    (const char *)(pu8 + pModElf->paShdrs[pModElf->Ehdr.e_shstrndx].sh_offset);
+
+        /*
+         * Verify that the ends of the string tables have a zero terminator
+         * (this avoids duplicating the appropriate checks later in the code accessing the string tables).
+         *
+         * sh_offset and sh_size were verfied in RTLDRELF_NAME(ValidateSectionHeader)() already so they
+         * are safe to use.
+         */
+        AssertMsgStmt(   pModElf->iStrSh == ~0U
+                      || pModElf->pStr[pModElf->paShdrs[pModElf->iStrSh].sh_size - 1] == '\0',
+                      ("The string table is not zero terminated!\n"),
+                      rc = VERR_LDRELF_UNTERMINATED_STRING_TAB);
+        AssertMsgStmt(pModElf->pShStr[pModElf->paShdrs[pModElf->Ehdr.e_shstrndx].sh_size - 1] == '\0',
+                      ("The section header string table is not zero terminated!\n"),
+                      rc = VERR_LDRELF_UNTERMINATED_STRING_TAB);
+
+        if (RT_FAILURE(rc))
+        {
+            /* Unmap. */
+            int rc2 = pModElf->Core.pReader->pfnUnmap(pModElf->Core.pReader, pModElf->pvBits);
+            AssertRC(rc2);
+            pModElf->pvBits = NULL;
+            pModElf->paSyms = NULL;
+            pModElf->pStr   = NULL;
+            pModElf->pShStr = NULL;
+        }
     }
     return rc;
 }
@@ -747,7 +773,13 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSymbols)(PRTLDRMODINTERNAL pMod, unsi
                 AssertMsgFailed(("Arg! paSyms[%u].st_shndx=" FMT_ELF_HALF "\n", iSym, paSyms[iSym].st_shndx));
                 return VERR_BAD_EXE_FORMAT;
             }
+
+            AssertMsgReturn(paSyms[iSym].st_name < pModElf->cbStr,
+                            ("String outside string table! iSym=%d paSyms[iSym].st_name=%#x\n", iSym, paSyms[iSym].st_name),
+                            VERR_LDRELF_INVALID_SYMBOL_NAME_OFFSET);
+
             const char *pszName = ELF_STR(pModElf, paSyms[iSym].st_name);
+            /* String termination was already checked when the string table was mapped. */
             if (    (pszName && *pszName)
                 &&  (   (fFlags & RTLDR_ENUM_SYMBOL_FLAGS_ALL)
                      || ELF_ST_BIND(paSyms[iSym].st_info) == STB_GLOBAL)
@@ -1929,10 +1961,10 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                         }
                         pModElf->iSymSh = i;
                         pModElf->cSyms  = (unsigned)(paShdrs[i].sh_size / sizeof(Elf_Sym));
-                        AssertReturn(pModElf->cSyms == paShdrs[i].sh_size / sizeof(Elf_Sym), VERR_IMAGE_TOO_BIG);
+                        AssertBreakStmt(pModElf->cSyms == paShdrs[i].sh_size / sizeof(Elf_Sym), rc = VERR_IMAGE_TOO_BIG);
                         pModElf->iStrSh = paShdrs[i].sh_link;
                         pModElf->cbStr  = (unsigned)paShdrs[pModElf->iStrSh].sh_size;
-                        AssertReturn(pModElf->cbStr == paShdrs[pModElf->iStrSh].sh_size, VERR_IMAGE_TOO_BIG);
+                        AssertBreakStmt(pModElf->cbStr == paShdrs[pModElf->iStrSh].sh_size, rc = VERR_IMAGE_TOO_BIG);
                     }
 
                     /* Special checks for the section string table. */
@@ -2003,7 +2035,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
                             if (pModElf->cbImage < EndAddr)
                             {
                                 pModElf->cbImage = (size_t)EndAddr;
-                                AssertMsgReturn(pModElf->cbImage == EndAddr, (FMT_ELF_ADDR "\n", EndAddr), VERR_IMAGE_TOO_BIG);
+                                AssertMsgBreakStmt(pModElf->cbImage == EndAddr, (FMT_ELF_ADDR "\n", EndAddr), rc = VERR_IMAGE_TOO_BIG);
                             }
                             Log2(("RTLdrElf: %s: Assigned " FMT_ELF_ADDR " to section #%d\n", pszLogName, paShdrs[i].sh_addr, i));
                         }
