@@ -72,7 +72,7 @@ protected:
 
     virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
     virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
-    virtual void focusOutEvent(QFocusEvent *pEvent) /* override */;
+    virtual bool event(QEvent *pEvent) /* override */;
 
 private:
 };
@@ -217,23 +217,14 @@ void UIFileManagerBreadCrumbs::mousePressEvent(QMouseEvent *pEvent)
     emit sigNavitatePath(strPath);
 }
 
-void UIFileManagerBreadCrumbs::focusOutEvent(QFocusEvent *pEvent)
+bool UIFileManagerBreadCrumbs::event(QEvent *pEvent)
 {
-    deselect();
-    QLineEdit::focusOutEvent(pEvent);
+    if (!pEvent)
+        return false;
+    if (pEvent->type() == QEvent::Leave)
+        deselect();
+    return QLineEdit::event(pEvent);
 }
-
-
-/*********************************************************************************************************************************
-*   UIFileManagerPathButton implementation.                                                                                      *
-*********************************************************************************************************************************/
-
-// UIFileManagerPathButton::UIFileManagerPathButton(QWidget *pParent /* = 0 */, const QString &strPath /* = QString() */)
-//     :QIToolButton(pParent)
-//     , m_strPath(strPath)
-// {
-//     setText(m_strPath);
-// }
 
 
 /*********************************************************************************************************************************
@@ -1388,7 +1379,7 @@ void UIFileManagerTable::showHideBreadCrumbs(bool fShow)
 {
     if (!m_pNavigationWidgetWidget)
         return;
-    if (fShow)
+    if (!fShow)
         m_pNavigationWidgetWidget->setCurrentIndex(0);
     else
         m_pNavigationWidgetWidget->setCurrentIndex(1);
