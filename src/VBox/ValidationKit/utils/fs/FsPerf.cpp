@@ -2215,7 +2215,7 @@ typedef struct FSPERFSPLICEARGS
 
 
 /** Thread receiving the bytes from a splice() call. */
-static DECLCALLBACK(int) fsPerfSpliceRecvThread(RTTHREAD hSelf, void *pvUser)
+static DECLCALLBACK(int) fsPerfSpliceToPipeThread(RTTHREAD hSelf, void *pvUser)
 {
     FSPERFSPLICEARGS *pArgs = (FSPERFSPLICEARGS *)pvUser;
     int               rc    = VINF_SUCCESS;
@@ -2257,8 +2257,8 @@ static DECLCALLBACK(int) fsPerfSpliceRecvThread(RTTHREAD hSelf, void *pvUser)
 
 
 /** Sends hFile1 to a pipe via the Linux-specific splice() syscall. */
-static uint64_t fsPerfSpliceSendFile(FSPERFSPLICEARGS *pArgs, RTFILE hFile1, uint64_t offFile,
-                                     size_t cbSend, uint64_t cbSent, uint8_t bFiller, bool fCheckBuf, unsigned iLine)
+static uint64_t fsPerfSpliceToPipeOne(FSPERFSPLICEARGS *pArgs, RTFILE hFile1, uint64_t offFile,
+                                      size_t cbSend, uint64_t cbSent, uint8_t bFiller, bool fCheckBuf, unsigned iLine)
 {
     /* Copy parameters to the argument structure: */
     pArgs->offFile   = offFile;
@@ -2275,7 +2275,7 @@ static uint64_t fsPerfSpliceSendFile(FSPERFSPLICEARGS *pArgs, RTFILE hFile1, uin
     /* Create the receiving thread: */
     int rc;
     RTTHREAD hThread = NIL_RTTHREAD;
-    RTTESTI_CHECK_RC(rc = RTThreadCreate(&hThread, fsPerfSpliceRecvThread, pArgs, 0,
+    RTTESTI_CHECK_RC(rc = RTThreadCreate(&hThread, fsPerfSpliceToPipeThread, pArgs, 0,
                                          RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "splicerecv"), VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
@@ -2290,6 +2290,8 @@ static uint64_t fsPerfSpliceSendFile(FSPERFSPLICEARGS *pArgs, RTFILE hFile1, uin
             int const iErr = errno;
             if (RT_UNLIKELY(cbActual < 0))
             {
+                if (iErr == EPIPE && cbTotal == pArgs->cbSent)
+                    break;
                 RTTestIFailed("%u: splice(file, &%#RX64, pipe, NULL, %#zx, 0) failed (%zd): %d (%Rrc), offFileIn=%#RX64\n",
                               iLine, offFile, cbLeft, cbActual, iErr, RTErrConvertFromErrno(iErr), (uint64_t)offFileIn);
                 break;
@@ -2359,11 +2361,11 @@ static void fsPerfSpliceToPipe(RTFILE hFile1, uint64_t cbFile)
     /*
      * First iteration with default buffer content.
      */
-    fsPerfSpliceSendFile(&Args, hFile1, 0, cbFileMax, cbFileMax, 0xf6, true /*fCheckBuf*/, __LINE__);
+    fsPerfSpliceToPipeOne(&Args, hFile1, 0, cbFileMax, cbFileMax, 0xf6, true /*fCheckBuf*/, __LINE__);
     if (cbFileMax == cbFile)
-        fsPerfSpliceSendFile(&Args, hFile1, 63, cbFileMax, cbFileMax - 63, 0xf6, true /*fCheckBuf*/, __LINE__);
+        fsPerfSpliceToPipeOne(&Args, hFile1, 63, cbFileMax, cbFileMax - 63, 0xf6, true /*fCheckBuf*/, __LINE__);
     else
-        fsPerfSpliceSendFile(&Args, hFile1, 63, cbFileMax - 63, cbFileMax - 63, 0xf6, true /*fCheckBuf*/, __LINE__);
+        fsPerfSpliceToPipeOne(&Args, hFile1, 63, cbFileMax - 63, cbFileMax - 63, 0xf6, true /*fCheckBuf*/, __LINE__);
 
     /*
      * Write a block using the regular API and then send it, checking that
@@ -2373,13 +2375,13 @@ static void fsPerfSpliceToPipe(RTFILE hFile1, uint64_t cbFile)
     size_t cbToSend = RT_MIN(cbFileMax, Args.cbBuf);
     do
     {
-        fsPerfSpliceSendFile(&Args, hFile1, 0, cbToSend, cbToSend, bFiller, true /*fCheckBuf*/, __LINE__); /* prime cache */
+        fsPerfSpliceToPipeOne(&Args, hFile1, 0, cbToSend, cbToSend, bFiller, true /*fCheckBuf*/, __LINE__); /* prime cache */
 
         bFiller += 1;
         fsPerfFillWriteBuf(0, Args.pbBuf, cbToSend, bFiller);
         RTTESTI_CHECK_RC(RTFileWriteAt(hFile1, 0, Args.pbBuf, cbToSend, NULL), VINF_SUCCESS);
 
-        fsPerfSpliceSendFile(&Args, hFile1, 0, cbToSend, cbToSend, bFiller, true /*fCheckBuf*/, __LINE__);
+        fsPerfSpliceToPipeOne(&Args, hFile1, 0, cbToSend, cbToSend, bFiller, true /*fCheckBuf*/, __LINE__);
 
         cbToSend /= 2;
     } while (cbToSend >= PAGE_SIZE && ((unsigned)bFiller - 0xf7U) < 64);
@@ -2401,7 +2403,7 @@ static void fsPerfSpliceToPipe(RTFILE hFile1, uint64_t cbFile)
         uint64_t const offToSendFrom = RTRandU64Ex(0, cbFile - 1);
         uint64_t const cbSent        = offToSendFrom + cbToSend <= cbFile ? cbToSend : cbFile - offToSendFrom;
 
-        fsPerfSpliceSendFile(&Args, hFile1, offToSendFrom, cbToSend, cbSent, bFiller, true /*fCheckBuf*/, __LINE__);
+        fsPerfSpliceToPipeOne(&Args, hFile1, offToSendFrom, cbToSend, cbSent, bFiller, true /*fCheckBuf*/, __LINE__);
     }
 
     /*
@@ -2412,7 +2414,7 @@ static void fsPerfSpliceToPipe(RTFILE hFile1, uint64_t cbFile)
     uint64_t nsElapsed   = 0;
     for (;;)
     {
-        uint64_t cNsThis = fsPerfSpliceSendFile(&Args, hFile1, 0, cbFileMax, cbFileMax, 0xf6, false /*fCheckBuf*/, __LINE__);
+        uint64_t cNsThis = fsPerfSpliceToPipeOne(&Args, hFile1, 0, cbFileMax, cbFileMax, 0xf6, false /*fCheckBuf*/, __LINE__);
         nsElapsed += cNsThis;
         cIterations++;
         if (!cNsThis || nsElapsed >= g_nsTestRun)
@@ -2436,7 +2438,7 @@ static void fsPerfSpliceToPipe(RTFILE hFile1, uint64_t cbFile)
 
 
 /** Thread sending the bytes to a splice() call. */
-static DECLCALLBACK(int) fsPerfSpliceSendThread(RTTHREAD hSelf, void *pvUser)
+static DECLCALLBACK(int) fsPerfSpliceToFileThread(RTTHREAD hSelf, void *pvUser)
 {
     FSPERFSPLICEARGS *pArgs = (FSPERFSPLICEARGS *)pvUser;
     int               rc    = VINF_SUCCESS;
@@ -2463,7 +2465,7 @@ static DECLCALLBACK(int) fsPerfSpliceSendThread(RTTHREAD hSelf, void *pvUser)
 
 
 /** Fill hFile1 via a pipe and the Linux-specific splice() syscall. */
-static uint64_t fsPerfSpliceWriteFile(FSPERFSPLICEARGS *pArgs, RTFILE hFile1, uint64_t offFile,
+static uint64_t fsPerfSpliceToFileOne(FSPERFSPLICEARGS *pArgs, RTFILE hFile1, uint64_t offFile,
                                       size_t cbSend, uint64_t cbSent, uint8_t bFiller, bool fCheckFile, unsigned iLine)
 {
     /* Copy parameters to the argument structure: */
@@ -2481,7 +2483,7 @@ static uint64_t fsPerfSpliceWriteFile(FSPERFSPLICEARGS *pArgs, RTFILE hFile1, ui
     /* Create the receiving thread: */
     int rc;
     RTTHREAD hThread = NIL_RTTHREAD;
-    RTTESTI_CHECK_RC(rc = RTThreadCreate(&hThread, fsPerfSpliceSendThread, pArgs, 0,
+    RTTESTI_CHECK_RC(rc = RTThreadCreate(&hThread, fsPerfSpliceToFileThread, pArgs, 0,
                                          RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "splicerecv"), VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
@@ -2584,7 +2586,7 @@ static void fsPerfSpliceToFile(RTFILE hFile1, uint64_t cbFile)
      * Do the whole file.
      */
     uint8_t bFiller = 0x76;
-    fsPerfSpliceWriteFile(&Args, hFile1, 0, cbFileMax, cbFileMax, bFiller, true /*fCheckFile*/, __LINE__);
+    fsPerfSpliceToFileOne(&Args, hFile1, 0, cbFileMax, cbFileMax, bFiller, true /*fCheckFile*/, __LINE__);
 
     /*
      * Do 64 random chunks (this is slower).
@@ -2597,7 +2599,7 @@ static void fsPerfSpliceToFile(RTFILE hFile1, uint64_t cbFile)
         uint64_t const cbTryRead    = cbToWrite + (iTest & 1 ? RTRandU32Ex(0, _64K) : 0);
 
         bFiller++;
-        fsPerfSpliceWriteFile(&Args, hFile1, offToWriteAt, cbTryRead, cbToWrite, bFiller, true /*fCheckFile*/, __LINE__);
+        fsPerfSpliceToFileOne(&Args, hFile1, offToWriteAt, cbTryRead, cbToWrite, bFiller, true /*fCheckFile*/, __LINE__);
     }
 
     /*
@@ -2608,7 +2610,7 @@ static void fsPerfSpliceToFile(RTFILE hFile1, uint64_t cbFile)
     uint64_t nsElapsed   = 0;
     for (;;)
     {
-        uint64_t cNsThis = fsPerfSpliceWriteFile(&Args, hFile1, 0, cbFileMax, cbFileMax, 0xf6, false /*fCheckBuf*/, __LINE__);
+        uint64_t cNsThis = fsPerfSpliceToFileOne(&Args, hFile1, 0, cbFileMax, cbFileMax, 0xf6, false /*fCheckBuf*/, __LINE__);
         nsElapsed += cNsThis;
         cIterations++;
         if (!cNsThis || nsElapsed >= g_nsTestRun)
