@@ -289,8 +289,10 @@ enum
     kCmdOpt_NoReadPerf,
     kCmdOpt_ReadTests,
     kCmdOpt_NoReadTests,
+#ifdef FSPERF_TEST_SENDFILE
     kCmdOpt_SendFile,
     kCmdOpt_NoSendFile,
+#endif
 #ifdef RT_OS_LINUX
     kCmdOpt_Splice,
     kCmdOpt_NoSplice,
@@ -377,8 +379,10 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--no-read-tests",    kCmdOpt_NoReadTests,    RTGETOPT_REQ_NOTHING },
     { "--read-perf",        kCmdOpt_ReadPerf,       RTGETOPT_REQ_NOTHING },
     { "--no-read-perf",     kCmdOpt_NoReadPerf,     RTGETOPT_REQ_NOTHING },
+#ifdef FSPERF_TEST_SENDFILE
     { "--sendfile",         kCmdOpt_SendFile,       RTGETOPT_REQ_NOTHING },
     { "--no-sendfile",      kCmdOpt_NoSendFile,     RTGETOPT_REQ_NOTHING },
+#endif
 #ifdef RT_OS_LINUX
     { "--splice",           kCmdOpt_Splice,         RTGETOPT_REQ_NOTHING },
     { "--no-splice",        kCmdOpt_NoSplice,       RTGETOPT_REQ_NOTHING },
@@ -445,7 +449,9 @@ static bool         g_fRm        = true;
 static bool         g_fChSize    = true;
 static bool         g_fReadTests = true;
 static bool         g_fReadPerf  = true;
+#ifdef FSPERF_TEST_SENDFILE
 static bool         g_fSendFile  = true;
+#endif
 #ifdef RT_OS_LINUX
 static bool         g_fSplice    = true;
 #endif
@@ -2173,6 +2179,23 @@ static void fsPerfSendFile(RTFILE hFile1, uint64_t cbFile)
 #endif /* FSPERF_TEST_SENDFILE */
 #ifdef RT_OS_LINUX
 
+#ifndef __NR_splice
+# if defined(RT_ARCH_AMD64)
+#  define __NR_splice 275
+# elif defined(RT_ARCH_X86)
+#  define __NR_splice 313
+# else
+#  error "fix me"
+# endif
+#endif
+
+/** FsPerf is built against ancient glibc, so make the splice syscall ourselves. */
+DECLINLINE(ssize_t) syscall_splice(int fdIn, loff_t *poffIn, int fdOut, loff_t *poffOut, size_t cbChunk, unsigned fFlags)
+{
+    return syscall(__NR_splice, fdIn, poffIn, fdOut, poffOut, cbChunk, fFlags);
+}
+
+
 /**
  * Send file thread arguments.
  */
@@ -2262,8 +2285,8 @@ static uint64_t fsPerfSpliceSendFile(FSPERFSPLICEARGS *pArgs, RTFILE hFile1, uin
         do
         {
             loff_t offFileIn = offFile;
-            ssize_t cbActual = splice((int)RTFileToNative(hFile1), &offFileIn, (int)RTPipeToNative(hPipeW), NULL,
-                                      cbLeft, 0 /*fFlags*/);
+            ssize_t cbActual = syscall_splice((int)RTFileToNative(hFile1), &offFileIn, (int)RTPipeToNative(hPipeW), NULL,
+                                              cbLeft, 0 /*fFlags*/);
             int const iErr = errno;
             if (RT_UNLIKELY(cbActual < 0))
             {
@@ -2471,8 +2494,8 @@ static uint64_t fsPerfSpliceWriteFile(FSPERFSPLICEARGS *pArgs, RTFILE hFile1, ui
         do
         {
             loff_t offFileOut = offFile;
-            ssize_t cbActual  = splice((int)RTPipeToNative(hPipeR), NULL, (int)RTFileToNative(hFile1), &offFileOut,
-                                       cbLeft, 0 /*fFlags*/);
+            ssize_t cbActual  = syscall_splice((int)RTPipeToNative(hPipeR), NULL, (int)RTFileToNative(hFile1), &offFileOut,
+                                               cbLeft, 0 /*fFlags*/);
             int const iErr = errno;
             if (RT_UNLIKELY(cbActual < 0))
             {
@@ -4393,7 +4416,9 @@ int main(int argc, char *argv[])
                 g_fChSize    = true;
                 g_fReadTests = true;
                 g_fReadPerf  = true;
+#ifdef FSPERF_TEST_SENDFILE
                 g_fSendFile  = true;
+#endif
 #ifdef RT_OS_LINUX
                 g_fSplice    = true;
 #endif
@@ -4423,7 +4448,9 @@ int main(int argc, char *argv[])
                 g_fChSize    = false;
                 g_fReadTests = false;
                 g_fReadPerf  = false;
+#ifdef FSPERF_TEST_SENDFILE
                 g_fSendFile  = false;
+#endif
 #ifdef RT_OS_LINUX
                 g_fSplice    = false;
 #endif
@@ -4454,7 +4481,9 @@ int main(int argc, char *argv[])
             CASE_OPT(ChSize);
             CASE_OPT(ReadTests);
             CASE_OPT(ReadPerf);
+#ifdef FSPERF_TEST_SENDFILE
             CASE_OPT(SendFile);
+#endif
 #ifdef RT_OS_LINUX
             CASE_OPT(Splice);
 #endif
@@ -4616,7 +4645,10 @@ int main(int argc, char *argv[])
                     fsPerfRm(); /* deletes manyfiles and manytree */
                 if (g_fChSize)
                     fsPerfChSize();
-                if (   g_fReadPerf || g_fReadTests || g_fSendFile || g_fWritePerf || g_fWriteTests
+                if (   g_fReadPerf || g_fReadTests || g_fWritePerf || g_fWriteTests
+#ifdef FSPERF_TEST_SENDFILE
+                    || g_fSendFile
+#endif
 #ifdef RT_OS_LINUX
                     || g_fSplice
 #endif
