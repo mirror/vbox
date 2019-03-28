@@ -196,7 +196,7 @@ static void x11SendHints(struct X11CONTEXT *pContext, struct X11VMWRECT *pRects,
      * simpler code to negligeably improved efficiency, so we just always try
      * both requests instead of doing version checks or caching. */
     x11GetRequest(pContext, pContext->hVMWMajor, X11_VMW_RESOLUTION_REQUEST,
-                  sizeof(struct X11VMWTOPOLOGYREQ),
+                  sizeof(struct X11VMWRESOLUTIONREQ),
                   (struct X11REQHEADER **)&pReqResolution);
     pReqResolution->idX11Screen = DefaultScreen(pContext->pDisplay);
     pReqResolution->w = pRects[0].w;
