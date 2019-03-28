@@ -835,7 +835,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 pModel->wipeOutEmptyGroups();
                 pModel->updateNavigation();
                 pModel->updateLayout();
-                pModel->setCurrentItem(pNewGroupItem);
+                pModel->setSelectedItem(pNewGroupItem);
                 pModel->saveGroupSettings();
                 break;
             }
@@ -889,7 +889,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
                 pModel->wipeOutEmptyGroups();
                 pModel->updateNavigation();
                 pModel->updateLayout();
-                pModel->setCurrentItem(pNewMachineItem);
+                pModel->setSelectedItem(pNewMachineItem);
                 pModel->saveGroupSettings();
                 break;
             }
@@ -1203,17 +1203,17 @@ void UIChooserItemGroup::cleanup()
     while (!m_globalItems.isEmpty()) { delete m_globalItems.last(); }
     while (!m_machineItems.isEmpty()) { delete m_machineItems.last(); }
 
-    /* If that item is focused: */
-    if (model()->focusItem() == this)
+    /* If that item is current: */
+    if (model()->currentItem() == this)
     {
-        /* Unset the focus: */
-        model()->setFocusItem(0);
+        /* Unset current-item: */
+        model()->setCurrentItem(0);
     }
     /* If that item is in selection list: */
-    if (model()->currentItems().contains(this))
+    if (model()->selectedItems().contains(this))
     {
         /* Remove item from the selection list: */
-        model()->removeFromCurrentItems(this);
+        model()->removeFromSelectedItems(this);
     }
     /* If that item is in navigation list: */
     if (model()->navigationList().contains(this))
@@ -1608,7 +1608,7 @@ void UIChooserItemGroup::paintBackground(QPainter *pPainter, const QRect &rect)
     /* Prepare color: */
     const QPalette pal = palette();
     const QColor headerColor = pal.color(QPalette::Active,
-                                         model()->currentItems().contains(this) ?
+                                         model()->selectedItems().contains(this) ?
                                          QPalette::Highlight : QPalette::Midlight);
 
     /* Root-item: */
@@ -1705,7 +1705,7 @@ void UIChooserItemGroup::paintFrame(QPainter *pPainter, const QRect &rectangle)
     /* Prepare color: */
     const QPalette pal = palette();
     const QColor strokeColor = pal.color(QPalette::Active,
-                                         model()->currentItems().contains(this) ?
+                                         model()->selectedItems().contains(this) ?
                                          QPalette::Highlight : QPalette::Midlight).darker(headerDarkness() + 10);
 
     /* Create/assign pen: */
@@ -1744,7 +1744,7 @@ void UIChooserItemGroup::paintHeader(QPainter *pPainter, const QRect &rect)
 
     /* Configure painter color: */
     pPainter->setPen(palette().color(QPalette::Active,
-                                     model()->currentItems().contains(this) ?
+                                     model()->selectedItems().contains(this) ?
                                      QPalette::HighlightedText : QPalette::ButtonText));
 
     /* Paint name: */

@@ -414,7 +414,7 @@ void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UICh
                 AssertMsg(pCastedMime, ("Can't cast passed mime-data to UIChooserItemMimeData!"));
                 UIChooserNode *pNode = pCastedMime->item()->node();
 
-                /* Group passed item with current item into the new group: */
+                /* Group passed item with current-item into the new group: */
                 UIChooserNodeGroup *pNewGroupNode = new UIChooserNodeGroup(parentItem()->node(),
                                                                            false /* favorite */,
                                                                            parentItem()->node()->nodes().size(),
@@ -443,7 +443,7 @@ void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UICh
                 pModel->wipeOutEmptyGroups();
                 pModel->updateNavigation();
                 pModel->updateLayout();
-                pModel->setCurrentItem(pNewGroupItem);
+                pModel->setSelectedItem(pNewGroupItem);
                 pModel->saveGroupSettings();
                 break;
             }
@@ -530,17 +530,17 @@ void UIChooserItemMachine::prepare()
 
 void UIChooserItemMachine::cleanup()
 {
-    /* If that item is focused: */
-    if (model()->focusItem() == this)
+    /* If that item is current: */
+    if (model()->currentItem() == this)
     {
-        /* Unset the focus: */
-        model()->setFocusItem(0);
+        /* Unset current-item: */
+        model()->setCurrentItem(0);
     }
     /* If that item is in selection list: */
-    if (model()->currentItems().contains(this))
+    if (model()->selectedItems().contains(this))
     {
         /* Remove item from the selection list: */
-        model()->removeFromCurrentItems(this);
+        model()->removeFromSelectedItems(this);
     }
     /* If that item is in navigation list: */
     if (model()->navigationList().contains(this))
@@ -666,7 +666,7 @@ void UIChooserItemMachine::updateFirstRowMaximumWidth()
     iFirstRowMaximumWidth -= iMarginHL; /* left margin */
     iFirstRowMaximumWidth -= m_pixmapSize.width(); /* left pixmap width */
     iFirstRowMaximumWidth -= iMajorSpacing; /* spacing between left pixmap and name(s) */
-    if (   model()->currentItem() == this
+    if (   model()->firstSelectedItem() == this
         || isHovered())
     {
         iFirstRowMaximumWidth -= iMajorSpacing; /* spacing between name(s) and right pixmap */
@@ -833,8 +833,8 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
     /* Prepare color: */
     const QPalette pal = palette();
 
-    /* Selection background: */
-    if (model()->currentItems().contains(unconst(this)))
+    /* Selected-item background: */
+    if (model()->selectedItems().contains(unconst(this)))
     {
         /* Prepare color: */
         QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
@@ -855,7 +855,7 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
             animationColor1.setAlpha(30);
 #endif
             animationColor2.setAlpha(0);
-            /* Draw hovering animated gradient: */
+            /* Draw hovered-item animated gradient: */
             QRect animatedRect = rectangle;
             animatedRect.setWidth(animatedRect.height());
             const int iLength = 2 * animatedRect.width() + rectangle.width();
@@ -870,7 +870,7 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
             pPainter->fillRect(rectangle, bgAnimatedGrad);
         }
     }
-    /* Hovering background: */
+    /* Hovered-item background: */
     else if (isHovered())
     {
         /* Prepare color: */
@@ -890,7 +890,7 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
         animationColor1.setAlpha(50);
 #endif
         animationColor2.setAlpha(0);
-        /* Draw hovering animated gradient: */
+        /* Draw hovered-item animated gradient: */
         QRect animatedRect = rectangle;
         animatedRect.setWidth(animatedRect.height());
         const int iLength = 2 * animatedRect.width() + rectangle.width();
@@ -927,8 +927,8 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
         QRect dragTokenRect = rectangle;
         if (dragTokenPlace() == UIChooserItemDragToken_Up)
         {
-            /* Selection background: */
-            if (model()->currentItems().contains(unconst(this)))
+            /* Selected-item background: */
+            if (model()->selectedItems().contains(unconst(this)))
             {
                 QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
                 color1 = backgroundColor.lighter(m_iHighlightLightnessMax);
@@ -948,8 +948,8 @@ void UIChooserItemMachine::paintBackground(QPainter *pPainter, const QRect &rect
         }
         else if (dragTokenPlace() == UIChooserItemDragToken_Down)
         {
-            /* Selection background: */
-            if (model()->currentItems().contains(unconst(this)))
+            /* Selected-item background: */
+            if (model()->selectedItems().contains(unconst(this)))
             {
                 QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
                 color1 = backgroundColor.lighter(m_iHighlightLightnessMin);
@@ -985,10 +985,10 @@ void UIChooserItemMachine::paintFrame(QPainter *pPainter, const QRect &rectangle
     const QPalette pal = palette();
     QColor strokeColor;
 
-    /* Selection frame: */
-    if (model()->currentItems().contains(unconst(this)))
+    /* Selected-item frame: */
+    if (model()->selectedItems().contains(unconst(this)))
         strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightnessMin - 40);
-    /* Hovering frame: */
+    /* Hovered-item frame: */
     else if (isHovered())
         strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHoverLightnessMin - 50);
     /* Default frame: */
@@ -1024,7 +1024,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
     const int iButtonMargin = data(MachineItemData_ButtonMargin).toInt();
 
     /* Selected or hovered item foreground: */
-    if (model()->currentItems().contains(unconst(this)) || isHovered())
+    if (model()->selectedItems().contains(unconst(this)) || isHovered())
     {
         /* Prepare color: */
         QPalette pal = palette();
@@ -1162,7 +1162,7 @@ void UIChooserItemMachine::paintMachineInfo(QPainter *pPainter, const QRect &rec
     int iRightColumnIndent = iFullWidth - iMarginHR - 1 - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio();
 
     /* Paint right column: */
-    if (   model()->currentItem() == this
+    if (   model()->firstSelectedItem() == this
         || isHovered())
     {
         /* Prepare variables: */

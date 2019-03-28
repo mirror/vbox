@@ -119,29 +119,29 @@ public:
 
     /** @name Selection stuff.
       * @{ */
-        /** Sets a list of current @a items. */
-        void setCurrentItems(const QList<UIChooserItem*> &items);
-        /** Defines current @a pItem. */
-        void setCurrentItem(UIChooserItem *pItem);
-        /** Defines current item by @a definition. */
-        void setCurrentItem(const QString &strDefinition);
-        /** Unsets all current items. */
-        void unsetCurrentItems();
+        /** Sets a list of selected @a items. */
+        void setSelectedItems(const QList<UIChooserItem*> &items);
+        /** Defines selected @a pItem. */
+        void setSelectedItem(UIChooserItem *pItem);
+        /** Defines selected-item by @a definition. */
+        void setSelectedItem(const QString &strDefinition);
+        /** Clear selected-items list. */
+        void clearSelectedItems();
 
-        /** Adds @a pItem to list of current. */
-        void addToCurrentItems(UIChooserItem *pItem);
-        /** Removes @a pItem from list of current. */
-        void removeFromCurrentItems(UIChooserItem *pItem);
+        /** Adds @a pItem to list of selected. */
+        void addToSelectedItems(UIChooserItem *pItem);
+        /** Removes @a pItem from list of selected. */
+        void removeFromSelectedItems(UIChooserItem *pItem);
 
-        /** Returns current item. */
-        UIChooserItem *currentItem() const;
-        /** Returns a list of current items. */
-        const QList<UIChooserItem*> &currentItems() const;
+        /** Returns first selected-item. */
+        UIChooserItem *firstSelectedItem() const;
+        /** Returns a list of selected-items. */
+        const QList<UIChooserItem*> &selectedItems() const;
 
-        /** Returns current machine item. */
-        UIVirtualMachineItem *currentMachineItem() const;
-        /** Returns a list of current machine items. */
-        QList<UIVirtualMachineItem*> currentMachineItems() const;
+        /** Returns first selected machine item. */
+        UIVirtualMachineItem *firstSelectedMachineItem() const;
+        /** Returns a list of selected machine items. */
+        QList<UIVirtualMachineItem*> selectedMachineItems() const;
 
         /** Returns whether group item is selected. */
         bool isGroupItemSelected() const;
@@ -155,16 +155,16 @@ public:
         /** Returns whether all machine items of one group is selected. */
         bool isAllItemsOfOneGroupSelected() const;
 
-        /** Finds closest non-selected item. */
+        /** Finds closest non-selected-item. */
         UIChooserItem *findClosestUnselectedItem() const;
 
         /** Makes sure some item is selected. */
         void makeSureSomeItemIsSelected();
 
-        /** Defines focus @a pItem. */
-        void setFocusItem(UIChooserItem *pItem);
-        /** Returns focus item. */
-        UIChooserItem *focusItem() const;
+        /** Defines current @a pItem. */
+        void setCurrentItem(UIChooserItem *pItem);
+        /** Returns current-item. */
+        UIChooserItem *currentItem() const;
     /** @} */
 
     /** @name Navigation stuff.
@@ -251,8 +251,8 @@ private slots:
 
     /** @name Selection stuff.
       * @{ */
-        /** Handles focus item destruction. */
-        void sltFocusItemDestroyed();
+        /** Handles current-item destruction. */
+        void sltCurrentItemDestroyed();
     /** @} */
 
     /** @name Children stuff.
@@ -298,10 +298,10 @@ private:
         void prepareHandlers();
         /** Prepares connections. */
         void prepareConnections();
-        /** Loads last selected items. */
+        /** Loads last selected-items. */
         void loadLastSelectedItem();
 
-        /** Saves last selected items. */
+        /** Saves last selected-items. */
         void saveLastSelectedItem();
         /** Cleanups connections. */
         void cleanupHandlers();
@@ -372,8 +372,8 @@ private:
 
     /** @name Selection stuff.
       * @{ */
-        /** Holds the focus item reference. */
-        QPointer<UIChooserItem>  m_pFocusItem;
+        /** Holds the current-item reference. */
+        QPointer<UIChooserItem>  m_pCurrentItem;
     /** @} */
 
     /** @name Virtual Machine/Group search stuff.
@@ -391,7 +391,8 @@ private:
 
         /** Holds the navigation list. */
         QList<UIChooserItem*>  m_navigationList;
-        QList<UIChooserItem*>  m_currentItems;
+        /** Holds the selected-items. */
+        QList<UIChooserItem*>  m_selectedItems;
 
         /** Holds the current drag object instance. */
         QPointer<QDrag>  m_pCurrentDragObject;

@@ -88,11 +88,11 @@ public:
         UIChooserView *view() const { return m_pChooserView; }
     /** @} */
 
-    /** @name Current item stuff.
+    /** @name Current-item stuff.
       * @{ */
-        /** Returns current item. */
+        /** Returns current-item. */
         UIVirtualMachineItem *currentItem() const;
-        /** Returns a list of current items. */
+        /** Returns a list of current-items. */
         QList<UIVirtualMachineItem*> currentItems() const;
 
         /** Returns whether group item is selected. */

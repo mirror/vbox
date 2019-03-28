@@ -366,17 +366,17 @@ void UIChooserItemGlobal::prepare()
 
 void UIChooserItemGlobal::cleanup()
 {
-    /* If that item is focused: */
-    if (model()->focusItem() == this)
+    /* If that item is current: */
+    if (model()->currentItem() == this)
     {
-        /* Unset the focus: */
-        model()->setFocusItem(0);
+        /* Unset current-item: */
+        model()->setCurrentItem(0);
     }
     /* If that item is in selection list: */
-    if (model()->currentItems().contains(this))
+    if (model()->selectedItems().contains(this))
     {
         /* Remove item from the selection list: */
-        model()->removeFromCurrentItems(this);
+        model()->removeFromSelectedItems(this);
     }
     /* If that item is in navigation list: */
     if (model()->navigationList().contains(this))
@@ -555,8 +555,8 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
     /* Prepare color: */
     const QPalette pal = palette();
 
-    /* Selection background: */
-    if (model()->currentItems().contains(unconst(this)))
+    /* Selected-item background: */
+    if (model()->selectedItems().contains(unconst(this)))
     {
         /* Prepare color: */
         const QColor backgroundColor = pal.color(QPalette::Active, QPalette::Highlight);
@@ -577,7 +577,7 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
             animationColor1.setAlpha(30);
 #endif
             animationColor2.setAlpha(0);
-            /* Draw hovering animated gradient: */
+            /* Draw hovered-item animated gradient: */
             QRect animatedRect = rectangle;
             animatedRect.setWidth(animatedRect.height());
             const int iLength = 2 * animatedRect.width() + rectangle.width();
@@ -592,7 +592,7 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
             pPainter->fillRect(rectangle, bgAnimatedGrad);
         }
     }
-    /* Hovering background: */
+    /* Hovered-item background: */
     else if (isHovered())
     {
         /* Prepare color: */
@@ -612,7 +612,7 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
         animationColor1.setAlpha(50);
 #endif
         animationColor2.setAlpha(0);
-        /* Draw hovering animated gradient: */
+        /* Draw hovered-item animated gradient: */
         QRect animatedRect = rectangle;
         animatedRect.setWidth(animatedRect.height());
         const int iLength = 2 * animatedRect.width() + rectangle.width();
@@ -651,8 +651,8 @@ void UIChooserItemGlobal::paintBackground(QPainter *pPainter, const QRect &recta
 
 void UIChooserItemGlobal::paintFrame(QPainter *pPainter, const QRect &rectangle) const
 {
-    /* Only chosen and/or hovered item should have a frame: */
-    if (!model()->currentItems().contains(unconst(this)) && !isHovered())
+    /* Only selected and/or hovered item should have a frame: */
+    if (!model()->selectedItems().contains(unconst(this)) && !isHovered())
         return;
 
     /* Save painter: */
@@ -662,10 +662,10 @@ void UIChooserItemGlobal::paintFrame(QPainter *pPainter, const QRect &rectangle)
     const QPalette pal = palette();
     QColor strokeColor;
 
-    /* Selection frame: */
-    if (model()->currentItems().contains(unconst(this)))
+    /* Selected-item frame: */
+    if (model()->selectedItems().contains(unconst(this)))
         strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHighlightLightnessMin - 40);
-    /* Hovering frame: */
+    /* Hovered-item frame: */
     else if (isHovered())
         strokeColor = pal.color(QPalette::Active, QPalette::Highlight).lighter(m_iHoverLightnessMin - 50);
     /* Default frame: */
@@ -696,8 +696,8 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
     const int iSpacing = data(GlobalItemData_Spacing).toInt();
     const int iButtonMargin = data(GlobalItemData_ButtonMargin).toInt();
 
-    /* Selected item foreground: */
-    if (model()->currentItems().contains(unconst(this)))
+    /* Selected-item foreground: */
+    if (model()->selectedItems().contains(unconst(this)))
     {
         const QPalette pal = palette();
         pPainter->setPen(pal.color(QPalette::HighlightedText));
@@ -764,7 +764,7 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
     int iRightColumnIndent = iFullWidth - iMarginHR - 1 - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio();
 
     /* Paint right column: */
-    if (   model()->currentItem() == this
+    if (   model()->firstSelectedItem() == this
         || isHovered())
     {
         /* Prepare variables: */
@@ -799,7 +799,7 @@ void UIChooserItemGlobal::paintGlobalInfo(QPainter *pPainter, const QRect &recta
     iRightColumnIndent = iRightColumnIndent - m_toolPixmap.width() / m_toolPixmap.devicePixelRatio() - iSpacing;
 
     /* Paint right column: */
-    if (   model()->currentItem() == this
+    if (   model()->firstSelectedItem() == this
         || isHovered())
     {
         /* Prepare variables: */

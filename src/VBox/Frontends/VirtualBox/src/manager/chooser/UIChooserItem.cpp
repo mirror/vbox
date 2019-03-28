@@ -185,8 +185,8 @@ public:
         state.focusable = true;
         state.selectable = true;
 
-        /* Compose the state of current item: */
-        if (item() && item() == item()->model()->currentItem())
+        /* Compose the state of first selected-item: */
+        if (item() && item() == item()->model()->firstSelectedItem())
         {
             state.active = true;
             state.focused = true;

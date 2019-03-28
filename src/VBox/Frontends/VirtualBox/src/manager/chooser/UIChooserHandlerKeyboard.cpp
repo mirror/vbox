@@ -86,8 +86,8 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             else if (pEvent->modifiers() == Qt::ShiftModifier)
 #endif /* !VBOX_WS_MAC */
             {
-                /* Determine focus item position: */
-                int iPosition = model()->navigationList().indexOf(model()->focusItem());
+                /* Determine current-item position: */
+                int iPosition = model()->navigationList().indexOf(model()->currentItem());
                 /* Determine 'previous' item: */
                 UIChooserItem *pPreviousItem = 0;
                 if (iPosition > 0)
@@ -102,7 +102,7 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                     /* Make sure 'previous' item is visible: */
                     pPreviousItem->makeSureItsVisible();
                     /* Calculate positions: */
-                    UIChooserItem *pFirstItem = model()->currentItem();
+                    UIChooserItem *pFirstItem = model()->firstSelectedItem();
                     int iFirstPosition = model()->navigationList().indexOf(pFirstItem);
                     int iPreviousPosition = model()->navigationList().indexOf(pPreviousItem);
                     /* Populate list of items from 'first' to 'previous': */
@@ -113,10 +113,10 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                     else
                         for (int i = iFirstPosition; i >= iPreviousPosition; --i)
                             items << model()->navigationList().at(i);
-                    /* Set that list as current: */
-                    model()->setCurrentItems(items);
-                    /* Move focus to 'previous' item: */
-                    model()->setFocusItem(pPreviousItem);
+                    /* Set that list as selected: */
+                    model()->setSelectedItems(items);
+                    /* Make 'previous' item current one: */
+                    model()->setCurrentItem(pPreviousItem);
                     /* Filter-out this event: */
                     return true;
                 }
@@ -129,8 +129,8 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             else if (pEvent->modifiers() == Qt::NoModifier)
 #endif /* !VBOX_WS_MAC */
             {
-                /* Determine focus item position: */
-                int iPosition = model()->navigationList().indexOf(model()->focusItem());
+                /* Determine current-item position: */
+                int iPosition = model()->navigationList().indexOf(model()->currentItem());
                 /* Determine 'previous' item: */
                 UIChooserItem *pPreviousItem = 0;
                 if (iPosition > 0)
@@ -144,8 +144,8 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 {
                     /* Make sure 'previous' item is visible: */
                     pPreviousItem->makeSureItsVisible();
-                    /* Make 'previous' item the current one: */
-                    model()->setCurrentItem(pPreviousItem);
+                    /* Make 'previous' item the only selected: */
+                    model()->setSelectedItem(pPreviousItem);
                     /* Filter-out this event: */
                     return true;
                 }
@@ -179,8 +179,8 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             else if (pEvent->modifiers() == Qt::ShiftModifier)
 #endif /* !VBOX_WS_MAC */
             {
-                /* Determine focus item position: */
-                int iPosition = model()->navigationList().indexOf(model()->focusItem());
+                /* Determine current-item position: */
+                int iPosition = model()->navigationList().indexOf(model()->currentItem());
                 /* Determine 'next' item: */
                 UIChooserItem *pNextItem = 0;
                 if (iPosition < model()->navigationList().size() - 1)
@@ -195,7 +195,7 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                     /* Make sure 'next' item is visible: */
                     pNextItem->makeSureItsVisible();
                     /* Calculate positions: */
-                    UIChooserItem *pFirstItem = model()->currentItem();
+                    UIChooserItem *pFirstItem = model()->firstSelectedItem();
                     int iFirstPosition = model()->navigationList().indexOf(pFirstItem);
                     int iNextPosition = model()->navigationList().indexOf(pNextItem);
                     /* Populate list of items from 'first' to 'next': */
@@ -206,10 +206,10 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                     else
                         for (int i = iFirstPosition; i >= iNextPosition; --i)
                             items << model()->navigationList().at(i);
-                    /* Set that list as current: */
-                    model()->setCurrentItems(items);
-                    /* Move focus to 'next' item: */
-                    model()->setFocusItem(pNextItem);
+                    /* Set that list as selected: */
+                    model()->setSelectedItems(items);
+                    /* Make 'next' item current one: */
+                    model()->setCurrentItem(pNextItem);
                     /* Filter-out this event: */
                     return true;
                 }
@@ -222,8 +222,8 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
             else if (pEvent->modifiers() == Qt::NoModifier)
 #endif /* !VBOX_WS_MAC */
             {
-                /* Determine focus item position: */
-                int iPosition = model()->navigationList().indexOf(model()->focusItem());
+                /* Determine current-item position: */
+                int iPosition = model()->navigationList().indexOf(model()->currentItem());
                 /* Determine 'next' item: */
                 UIChooserItem *pNextItem = 0;
                 if (iPosition < model()->navigationList().size() - 1)
@@ -237,8 +237,8 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                 {
                     /* Make sure 'next' item is visible: */
                     pNextItem->makeSureItsVisible();
-                    /* Make 'next' item the current one: */
-                    model()->setCurrentItem(pNextItem);
+                    /* Make 'next' item the only selected one: */
+                    model()->setSelectedItem(pNextItem);
                     /* Filter-out this event: */
                     return true;
                 }
@@ -250,9 +250,9 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         case Qt::Key_F2:
         {
             /* If this item is of group type: */
-            if (model()->focusItem()->type() == UIChooserItemType_Group)
+            if (model()->currentItem()->type() == UIChooserItemType_Group)
             {
-                /* Start embedded editing focus item: */
+                /* Start embedded editing of current-item: */
                 model()->startEditingGroupItemName();
                 /* Filter that event out: */
                 return true;
@@ -264,8 +264,8 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         case Qt::Key_Enter:
         {
             /* If this item is of group or machine type: */
-            if (   model()->focusItem()->type() == UIChooserItemType_Group
-                || model()->focusItem()->type() == UIChooserItemType_Machine)
+            if (   model()->currentItem()->type() == UIChooserItemType_Group
+                || model()->currentItem()->type() == UIChooserItemType_Machine)
             {
                 /* Activate item: */
                 model()->activateMachineItem();
@@ -277,14 +277,14 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
         }
         case Qt::Key_Space:
         {
-            /* If there is a focus item: */
-            if (UIChooserItem *pFocusItem = model()->focusItem())
+            /* If there is a current-item: */
+            if (UIChooserItem *pCurrentItem = model()->currentItem())
             {
                 /* Of the group type: */
-                if (pFocusItem->type() == UIChooserItemType_Group)
+                if (pCurrentItem->type() == UIChooserItemType_Group)
                 {
                     /* Toggle that group: */
-                    UIChooserItemGroup *pGroupItem = pFocusItem->toGroupItem();
+                    UIChooserItemGroup *pGroupItem = pCurrentItem->toGroupItem();
                     if (pGroupItem->isClosed())
                         pGroupItem->open();
                     else if (pGroupItem->isOpened())
@@ -323,34 +323,34 @@ bool UIChooserHandlerKeyboard::handleKeyRelease(QKeyEvent*) const
 
 void UIChooserHandlerKeyboard::shift(UIItemShiftDirection enmDirection, UIItemShiftType enmShiftType) const
 {
-    /* Get focus-node and its parent: */
-    UIChooserNode *pFocusNode = model()->focusItem()->node();
-    UIChooserNode *pParentNode = pFocusNode->parentNode();
-    /* Get focus-node position: */
-    const int iFocusNodePosition = pFocusNode->position();
+    /* Get current-node and its parent: */
+    UIChooserNode *pCurrentNode = model()->currentItem()->node();
+    UIChooserNode *pParentNode = pCurrentNode->parentNode();
+    /* Get current-node position: */
+    const int iCurrentNodePosition = pCurrentNode->position();
 
     /* Calculate new position: */
-    int iNewFocusNodePosition = -1;
+    int iNewCurrentNodePosition = -1;
     switch (enmDirection)
     {
         case UIItemShiftDirection_Up:
         {
-            if (iFocusNodePosition > 0)
+            if (iCurrentNodePosition > 0)
                 switch (enmShiftType)
                 {
-                    case UIItemShiftSize_Item: iNewFocusNodePosition = iFocusNodePosition - 1; break;
-                    case UIItemShiftSize_Full: iNewFocusNodePosition = 0; break;
+                    case UIItemShiftSize_Item: iNewCurrentNodePosition = iCurrentNodePosition - 1; break;
+                    case UIItemShiftSize_Full: iNewCurrentNodePosition = 0; break;
                     default: break;
                 }
             break;
         }
         case UIItemShiftDirection_Down:
         {
-            if (iFocusNodePosition < pParentNode->nodes(pFocusNode->type()).size() - 1)
+            if (iCurrentNodePosition < pParentNode->nodes(pCurrentNode->type()).size() - 1)
                 switch (enmShiftType)
                 {
-                    case UIItemShiftSize_Item: iNewFocusNodePosition = iFocusNodePosition + 2; break;
-                    case UIItemShiftSize_Full: iNewFocusNodePosition = pParentNode->nodes(pFocusNode->type()).size();  break;
+                    case UIItemShiftSize_Item: iNewCurrentNodePosition = iCurrentNodePosition + 2; break;
+                    case UIItemShiftSize_Full: iNewCurrentNodePosition = pParentNode->nodes(pCurrentNode->type()).size();  break;
                     default: break;
                 }
             break;
@@ -359,22 +359,22 @@ void UIChooserHandlerKeyboard::shift(UIItemShiftDirection enmDirection, UIItemSh
             break;
     }
     /* Filter out invalid requests: */
-    if (iNewFocusNodePosition == -1)
+    if (iNewCurrentNodePosition == -1)
         return;
 
     /* Create shifted node/item: */
     UIChooserItem *pShiftedItem = 0;
-    switch (pFocusNode->type())
+    switch (pCurrentNode->type())
     {
         case UIChooserItemType_Group:
         {
-            UIChooserNodeGroup *pNewNode = new UIChooserNodeGroup(pParentNode, pFocusNode->toGroupNode(), iNewFocusNodePosition);
+            UIChooserNodeGroup *pNewNode = new UIChooserNodeGroup(pParentNode, pCurrentNode->toGroupNode(), iNewCurrentNodePosition);
             pShiftedItem = new UIChooserItemGroup(pParentNode->item(), pNewNode);
             break;
         }
         case UIChooserItemType_Machine:
         {
-            UIChooserNodeMachine *pNewNode = new UIChooserNodeMachine(pParentNode, pFocusNode->toMachineNode(), iNewFocusNodePosition);
+            UIChooserNodeMachine *pNewNode = new UIChooserNodeMachine(pParentNode, pCurrentNode->toMachineNode(), iNewCurrentNodePosition);
             pShiftedItem = new UIChooserItemMachine(pParentNode->item(), pNewNode);
             break;
         }
@@ -383,12 +383,12 @@ void UIChooserHandlerKeyboard::shift(UIItemShiftDirection enmDirection, UIItemSh
     }
 
     /* Delete old node/item: */
-    delete pFocusNode;
+    delete pCurrentNode;
 
     /* Update model: */
     model()->wipeOutEmptyGroups();
     model()->updateNavigation();
     model()->updateLayout();
-    model()->setCurrentItem(pShiftedItem);
+    model()->setSelectedItem(pShiftedItem);
     model()->saveGroupSettings();
 }
