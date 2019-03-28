@@ -4161,12 +4161,13 @@ TOOL_VBoxTpG_DTRACE_DEPORD          = $(VBOX_VBOXTPG)
 TOOL_VBoxTpG_DTRACE_HDR_FLAGS      := \
 		-h --host-$(VBOX_HC_ARCH_BITS)-bit #-vvv
 define TOOL_VBoxTpG_DTRACE_HDR_CMDS
-	$(QUIET)$(VBOX_VBOXTPG) $(if-expr $(intersects $(bld_trg_arch),$(KBUILD_ARCHES_64)),-64,-32) $(flags) -o "$(out)" -s "$(source)"
+	$(QUIET)$(VBOX_VBOXTPG) $(if-expr $(intersects $(bld_trg_arch),$(KBUILD_ARCHES_64)),-64,-32) \
+		$(flags) -o "$(out)" -s "$(source)"
 endef
 TOOL_VBoxTpG_DTRACE_OBJ_NOT_NEEDED :=
 TOOL_VBoxTpG_DTRACE_OBJ_FLAGS      := -G --host-$(VBOX_HC_ARCH_BITS)-bit #-vvv
 define TOOL_VBoxTpG_DTRACE_OBJ_CMDS
-	$(QUIET)$(VBOX_VBOXTPG) \
+	$(QUIET)$(VBOX_VBOXTPG) --assembler "$(TOOL_$(VBOX_ASTOOL)_AS)" \
 		$(if-expr $(intersects $(bld_trg_arch),$(KBUILD_ARCHES_64)),-64,-32) \
 		$(flags) \
 		-o "$(out)" -s "$(source)"
