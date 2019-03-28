@@ -45,7 +45,7 @@
 # include <linux/writeback.h>
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) \
- && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
+ && LINUX_VERSION_CODE <  KERNEL_VERSION(3, 16, 0)
 # include <linux/splice.h>
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) \
@@ -124,6 +124,9 @@ struct vbsf_iter_stash {
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 DECLINLINE(void) vbsf_unlock_user_pages(struct page **papPages, size_t cPages, bool fSetDirty, bool fLockPgHack);
+static void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t offFile, uint32_t cbRange,
+                                           uint8_t const *pbSrcBuf, struct page **papSrcPages,
+                                           uint32_t offSrcPage, size_t cSrcPages);
 
 
 /*********************************************************************************************************************************
@@ -527,88 +530,16 @@ DECLINLINE(bool) vbsf_should_use_cached_read(struct file *file, struct address_s
 *********************************************************************************************************************************/
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) \
- && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
+ && LINUX_VERSION_CODE <  KERNEL_VERSION(3, 16, 0)
 
-
-/** Verify pipe buffer content (needed for page-cache to ensure idle page). */
-static int vbsf_pipe_buf_confirm(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
-{
-    /*SFLOG3(("vbsf_pipe_buf_confirm: %p\n", pPipeBuf));*/
-    return 0;
-}
-
-/** Maps the buffer page. */
-static void *vbsf_pipe_buf_map(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf, int atomic)
-{
-    void *pvRet;
-    if (!atomic)
-        pvRet = kmap(pPipeBuf->page);
-    else {
-        pPipeBuf->flags |= PIPE_BUF_FLAG_ATOMIC;
-        pvRet = kmap_atomic(pPipeBuf->page, KM_USER0);
-    }
-    /*SFLOG3(("vbsf_pipe_buf_map: %p -> %p\n", pPipeBuf, pvRet));*/
-    return pvRet;
-}
-
-/** Unmaps the buffer page. */
-static void vbsf_pipe_buf_unmap(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf, void *pvMapping)
-{
-    /*SFLOG3(("vbsf_pipe_buf_unmap: %p/%p\n", pPipeBuf, pvMapping)); */
-    if (!(pPipeBuf->flags & PIPE_BUF_FLAG_ATOMIC))
-        kunmap(pPipeBuf->page);
-    else {
-        pPipeBuf->flags &= ~PIPE_BUF_FLAG_ATOMIC;
-        kunmap_atomic(pvMapping, KM_USER0);
-    }
-}
-
-/** Gets a reference to the page. */
-static void vbsf_pipe_buf_get(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
-{
-    page_cache_get(pPipeBuf->page);
-    /*SFLOG3(("vbsf_pipe_buf_get: %p (return count=%d)\n", pPipeBuf, page_count(pPipeBuf->page)));*/
-}
-
-/** Release the buffer page (counter to vbsf_pipe_buf_get). */
-static void vbsf_pipe_buf_release(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
-{
-    /*SFLOG3(("vbsf_pipe_buf_release: %p (incoming count=%d)\n", pPipeBuf, page_count(pPipeBuf->page)));*/
-    page_cache_release(pPipeBuf->page);
-}
-
-/** Attempt to steal the page.
- * @returns 0 success, 1 on failure.  */
-static int vbsf_pipe_buf_steal(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
-{
-    if (page_count(pPipeBuf->page) == 1) {
-        lock_page(pPipeBuf->page);
-        SFLOG3(("vbsf_pipe_buf_steal: %p -> 0\n", pPipeBuf));
-        return 0;
-    }
-    SFLOG3(("vbsf_pipe_buf_steal: %p -> 1\n", pPipeBuf));
-    return 1;
-}
-
-/**
- * Pipe buffer operations for used by vbsf_feed_pages_to_pipe.
- */
-static struct pipe_buf_operations vbsf_pipe_buf_ops = {
-    .can_merge = 0,
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
-    .confirm   = vbsf_pipe_buf_confirm,
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 30)
+#  define LOCK_PIPE(a_pPipe)   do { if ((a_pPipe)->inode) mutex_lock(&(a_pPipe)->inode->i_mutex); } while (0)
+#  define UNLOCK_PIPE(a_pPipe) do { if ((a_pPipe)->inode) mutex_unlock(&(a_pPipe)->inode->i_mutex); } while (0)
 # else
-    .pin       = vbsf_pipe_buf_confirm,
+#  define LOCK_PIPE(a_pPipe)   pipe_lock(a_pPipe)
+#  define UNLOCK_PIPE(a_pPipe) pipe_unlock(a_pPipe)
 # endif
-    .map       = vbsf_pipe_buf_map,
-    .unmap     = vbsf_pipe_buf_unmap,
-    .get       = vbsf_pipe_buf_get,
-    .release   = vbsf_pipe_buf_release,
-    .steal     = vbsf_pipe_buf_steal,
-};
 
-# define LOCK_PIPE(a_pPipe)   do { if ((a_pPipe)->inode) mutex_lock(&(a_pPipe)->inode->i_mutex); } while (0)
-# define UNLOCK_PIPE(a_pPipe) do { if ((a_pPipe)->inode) mutex_unlock(&(a_pPipe)->inode->i_mutex); } while (0)
 
 /** Waits for the pipe buffer status to change. */
 static void vbsf_wait_pipe(struct pipe_inode_info *pPipe)
@@ -638,6 +569,94 @@ static void vbsf_wake_up_pipe(struct pipe_inode_info *pPipe, bool fReaders)
     else
         kill_fasync(&pPipe->fasync_writers, SIGIO, POLL_OUT);
 }
+
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) \
+ && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 31)
+
+/** Verify pipe buffer content (needed for page-cache to ensure idle page). */
+static int vbsf_pipe_buf_confirm(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
+{
+    /*SFLOG3(("vbsf_pipe_buf_confirm: %p\n", pPipeBuf));*/
+    return 0;
+}
+
+
+/** Maps the buffer page. */
+static void *vbsf_pipe_buf_map(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf, int atomic)
+{
+    void *pvRet;
+    if (!atomic)
+        pvRet = kmap(pPipeBuf->page);
+    else {
+        pPipeBuf->flags |= PIPE_BUF_FLAG_ATOMIC;
+        pvRet = kmap_atomic(pPipeBuf->page, KM_USER0);
+    }
+    /*SFLOG3(("vbsf_pipe_buf_map: %p -> %p\n", pPipeBuf, pvRet));*/
+    return pvRet;
+}
+
+
+/** Unmaps the buffer page. */
+static void vbsf_pipe_buf_unmap(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf, void *pvMapping)
+{
+    /*SFLOG3(("vbsf_pipe_buf_unmap: %p/%p\n", pPipeBuf, pvMapping)); */
+    if (!(pPipeBuf->flags & PIPE_BUF_FLAG_ATOMIC))
+        kunmap(pPipeBuf->page);
+    else {
+        pPipeBuf->flags &= ~PIPE_BUF_FLAG_ATOMIC;
+        kunmap_atomic(pvMapping, KM_USER0);
+    }
+}
+
+
+/** Gets a reference to the page. */
+static void vbsf_pipe_buf_get(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
+{
+    page_cache_get(pPipeBuf->page);
+    /*SFLOG3(("vbsf_pipe_buf_get: %p (return count=%d)\n", pPipeBuf, page_count(pPipeBuf->page)));*/
+}
+
+
+/** Release the buffer page (counter to vbsf_pipe_buf_get). */
+static void vbsf_pipe_buf_release(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
+{
+    /*SFLOG3(("vbsf_pipe_buf_release: %p (incoming count=%d)\n", pPipeBuf, page_count(pPipeBuf->page)));*/
+    page_cache_release(pPipeBuf->page);
+}
+
+
+/** Attempt to steal the page.
+ * @returns 0 success, 1 on failure.  */
+static int vbsf_pipe_buf_steal(struct pipe_inode_info *pPipe, struct pipe_buffer *pPipeBuf)
+{
+    if (page_count(pPipeBuf->page) == 1) {
+        lock_page(pPipeBuf->page);
+        SFLOG3(("vbsf_pipe_buf_steal: %p -> 0\n", pPipeBuf));
+        return 0;
+    }
+    SFLOG3(("vbsf_pipe_buf_steal: %p -> 1\n", pPipeBuf));
+    return 1;
+}
+
+
+/**
+ * Pipe buffer operations for used by vbsf_feed_pages_to_pipe.
+ */
+static struct pipe_buf_operations vbsf_pipe_buf_ops = {
+    .can_merge = 0,
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+    .confirm   = vbsf_pipe_buf_confirm,
+# else
+    .pin       = vbsf_pipe_buf_confirm,
+# endif
+    .map       = vbsf_pipe_buf_map,
+    .unmap     = vbsf_pipe_buf_unmap,
+    .get       = vbsf_pipe_buf_get,
+    .release   = vbsf_pipe_buf_release,
+    .steal     = vbsf_pipe_buf_steal,
+};
+
 
 /**
  * Feeds the pages to the pipe.
@@ -799,9 +818,15 @@ static ssize_t vbsf_splice_read(struct file *file, loff_t *poffset, struct pipe_
     return cbRet;
 }
 
+#endif /* 2.6.17 <= LINUX_VERSION_CODE < 2.6.31 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) \
+ && LINUX_VERSION_CODE <  KERNEL_VERSION(3, 16, 0)
 
 /**
  * For splicing from a pipe to a file.
+ *
+ * Since we can combine buffers and request allocations, this should be faster
+ * than the default implementation.
  */
 static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *file, loff_t *poffset, size_t len, unsigned int flags)
 {
@@ -810,22 +835,28 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
     ssize_t                 cbRet;
 
     SFLOGFLOW(("vbsf_splice_write: pPipe=%p file=%p poffset=%p{%#RX64} len=%#zx flags=%#x\n", pPipe, file, poffset, *poffset, len, flags));
-    if (false /** @todo  later */) {
+    /** @todo later if (false) {
         cbRet = generic_file_splice_write(pPipe, file, poffset, len, flags);
-    } else {
+    } else */ {
         /*
          * Prepare a write request.
          */
-        struct vbsf_reg_info *sf_r       = (struct vbsf_reg_info *)file->private_data;
-        loff_t                offFile    = *poffset;
-        uint32_t const        cMaxPages  = RT_MIN(PIPE_BUFFERS, RT_ALIGN_Z(len, PAGE_SIZE) >> PAGE_SHIFT);
-        VBOXSFWRITEPGLSTREQ  *pReq       = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ,
-                                                                                                       PgLst.aPages[cMaxPages]));
+# ifdef PIPE_BUFFERS
+        uint32_t const cMaxPages  = RT_MIN(PIPE_BUFFERS, RT_ALIGN_Z(len, PAGE_SIZE) >> PAGE_SHIFT);
+# else
+        uint32_t const cMaxPages  = RT_MIN(RT_MAX(RT_MIN(pPipe->buffers, 256), PIPE_DEF_BUFFERS),
+                                           RT_ALIGN_Z(len, PAGE_SIZE) >> PAGE_SHIFT);
+# endif
+        VBOXSFWRITEPGLSTREQ *pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ,
+                                                                                                PgLst.aPages[cMaxPages]));
         if (pReq) {
             /*
              * Feed from the pipe.
              */
-            bool fNeedWakeUp = false;
+            struct vbsf_reg_info *sf_r        = (struct vbsf_reg_info *)file->private_data;
+            struct address_space *mapping     = inode->i_mapping;
+            loff_t                offFile     = *poffset;
+            bool                  fNeedWakeUp = false;
             cbRet = 0;
 
             LOCK_PIPE(pPipe);
@@ -852,7 +883,11 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
                     while (   cPagesToWrite < cBufs
                            && cPagesToWrite < cMaxPages
                            && ((pReq->PgLst.offFirstPage + cbToWrite) & PAGE_OFFSET_MASK) == 0) {
+# ifdef PIPE_BUFFERS
                         struct pipe_buffer *pPipeBuf2 = &pPipe->bufs[(pPipe->curbuf + cPagesToWrite) % PIPE_BUFFERS];
+# else
+                        struct pipe_buffer *pPipeBuf2 = &pPipe->bufs[(pPipe->curbuf + cPagesToWrite) % pPipe->buffers];
+# endif
                         Assert(pPipeBuf2->len <= PAGE_SIZE);
                         Assert(pPipeBuf2->offset < PAGE_SIZE);
                         if (pPipeBuf2->offset != 0)
@@ -862,7 +897,12 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
                         cPagesToWrite += 1;
                     }
 
-                    vrc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbToWrite, cPagesToWrite);
+                    /* Check that we don't have signals pending before we issue the write, as
+                       we'll only end up having to cancel the HGCM request 99% of the time: */
+                    if (!signal_pending(current))
+                        vrc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbToWrite, cPagesToWrite);
+                    else
+                        vrc = VERR_INTERRUPTED;
                     if (RT_SUCCESS(vrc)) {
                         /*
                          * Get the number of bytes actually written, update file position
@@ -872,33 +912,47 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
                         AssertStmt(cbActual <= cbToWrite, cbActual = cbToWrite);
                         SFLOG2(("vbsf_splice_write: write -> %#x bytes @ %#RX64\n", cbActual, offFile));
 
-                        cbRet   += cbActual;
-                        offFile += cbActual;
-                        *poffset = offFile;
+                        cbRet += cbActual;
 
                         while (cbActual > 0) {
                             uint32_t cbAdvance = RT_MIN(pPipeBuf->len, cbActual);
+
+                            vbsf_reg_write_sync_page_cache(mapping, offFile, cbAdvance, NULL,
+                                                           &pPipeBuf->page, pPipeBuf->offset, 1);
+
+                            offFile          += cbAdvance;
                             cbActual         -= cbAdvance;
                             pPipeBuf->offset += cbAdvance;
                             pPipeBuf->len    -= cbAdvance;
+
                             if (!pPipeBuf->len) {
-                                struct pipe_buf_operations *pOps = pPipeBuf->ops;
+                                struct pipe_buf_operations const *pOps = pPipeBuf->ops;
                                 pPipeBuf->ops = NULL;
                                 pOps->release(pPipe, pPipeBuf);
 
+# ifdef PIPE_BUFFERS
                                 pPipe->curbuf  = (pPipe->curbuf + 1) % PIPE_BUFFERS;
+# else
+                                pPipe->curbuf  = (pPipe->curbuf + 1) % pPipe->buffers;
+# endif
                                 pPipe->nrbufs -= 1;
                                 pPipeBuf = &pPipe->bufs[pPipe->curbuf];
 
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 30)
                                 fNeedWakeUp |= pPipe->inode != NULL;
+# else
+                                fNeedWakeUp = true;
+# endif
                             } else {
                                 Assert(cbActual == 0);
                                 break;
                             }
                         }
+
+                        *poffset = offFile;
                     } else {
                         if (cbRet == 0)
-                            cbRet = -RTErrConvertToErrno(vrc);
+                            cbRet = vrc == VERR_INTERRUPTED ? -ERESTARTSYS : -RTErrConvertToErrno(vrc);
                         SFLOGFLOW(("vbsf_splice_write: Write failed: %Rrc -> %zd (cbRet=%#zx)\n",
                                    vrc, -RTErrConvertToErrno(vrc), cbRet));
                         break;
@@ -957,7 +1011,7 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
     return cbRet;
 }
 
-#endif /* 2.6.17 <= LINUX_VERSION_CODE < 2.6.31 */
+#endif /* 2.6.17 <= LINUX_VERSION_CODE < 3.16.0 */
 
 
 /*********************************************************************************************************************************
@@ -1394,8 +1448,9 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
  * Helper the synchronizes the page cache content with something we just wrote
  * to the host.
  */
-void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t offFile, uint32_t cbRange,
-                                    uint8_t const *pbSrcBuf, struct page **papSrcPages, uint32_t offSrcPage, size_t cSrcPages)
+static void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t offFile, uint32_t cbRange,
+                                           uint8_t const *pbSrcBuf, struct page **papSrcPages,
+                                           uint32_t offSrcPage, size_t cSrcPages)
 {
     Assert(offSrcPage < PAGE_SIZE);
     if (mapping && mapping->nrpages > 0) {
@@ -3105,9 +3160,10 @@ extern int vbsf_reg_mmap(struct file *file, struct vm_area_struct *vma)
  *        host-side writes and correctly invalidate the guest page-cache.
  *      - Sendfile reimplemented using splice in 2.6.23.
  *      - The default_file_splice_read/write no-page-cache fallback functions,
- *        were introduced in 2.6.31.
- *      - Since linux 4.9 the generic_file_splice_read/write functions are using
- *        read_iter/write_iter.
+ *        were introduced in 2.6.31.  The write one work in page units.
+ *      - Since linux 3.16 there is iter_file_splice_write that uses iter_write.
+ *      - Since linux 4.9 the generic_file_splice_read function started using
+ *        read_iter.
  */
 struct file_operations vbsf_reg_fops = {
     .open            = vbsf_reg_open,
@@ -3128,6 +3184,10 @@ struct file_operations vbsf_reg_fops = {
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
     .splice_read     = vbsf_splice_read,
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+    .splice_write    = iter_file_splice_write,
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17)
     .splice_write    = vbsf_splice_write,
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
