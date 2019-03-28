@@ -51,6 +51,7 @@ class UIActionPool;
 class UICustomFileSystemItem;
 class UICustomFileSystemModel;
 class UICustomFileSystemProxyModel;
+class UIFileManagerBreadCrumbs;
 class UIGuestControlFileView;
 class UIToolBar;
 
@@ -257,6 +258,7 @@ private slots:
      *  if the file system rename fails we restore the old name of the item. See the comment of
      *  sltRename() for more details. */
     void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
+    void sltHandleBreadCrumbsClick(const QString& strPath);
 
 private:
 
@@ -281,6 +283,7 @@ private:
     /** Checks if delete confirmation dialog is shown and users choice. Returns true
      *  if deletion can continue */
     bool            checkIfDeleteOK();
+    void            showHideBreadCrumbs(bool fShow);
 
     UICustomFileSystemModel      *m_pModel;
     UIGuestControlFileView       *m_pView;
@@ -290,6 +293,8 @@ private:
     QComboBox       *m_pLocationComboBox;
     QILineEdit      *m_pSearchLineEdit;
     QILabel         *m_pWarningLabel;
+
+    UIFileManagerBreadCrumbs *m_pBreadCrumbsWidget;
 
     friend class     UICustomFileSystemModel;
 };

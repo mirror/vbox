@@ -29,6 +29,7 @@
 #include "QIDialogButtonBox.h"
 #include "QILabel.h"
 #include "QILineEdit.h"
+#include "QIToolButton.h"
 #include "VBoxGlobal.h"
 #include "UIActionPool.h"
 #include "UICustomFileSystemModel.h"
@@ -45,6 +46,35 @@
 #include "CGuestFsObjInfo.h"
 #include "CGuestDirectory.h"
 #include "CProgress.h"
+
+
+/*********************************************************************************************************************************
+*   UIFileManagerBreadCrumbs definition.                                                                                         *
+*********************************************************************************************************************************/
+/** A QLineEdit extension. It shows the current path as text and hightligts the folder name
+  *  as the mouse hovers over it. Clicking on the highlighted folder name make the file table tp
+  *  navigate to that folder. */
+class UIFileManagerBreadCrumbs : public QLineEdit
+{
+    Q_OBJECT;
+
+signals:
+
+    void sigNavitatePath(const QString &strPath);
+
+public:
+
+    UIFileManagerBreadCrumbs(QWidget *pParent = 0);
+    void setPath(const QString &strPath);
+
+protected:
+
+    virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
+    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
+    virtual void focusOutEvent(QFocusEvent *pEvent) /* override */;
+
+private:
+};
 
 
 /*********************************************************************************************************************************
@@ -137,6 +167,72 @@ private:
     QCheckBox *m_pAskNextTimeCheckBox;
     QILabel   *m_pQuestionLabel;
 };
+
+
+/*********************************************************************************************************************************
+*   UIFileManagerBreadCrumbs implementation.                                                                                     *
+*********************************************************************************************************************************/
+
+UIFileManagerBreadCrumbs::UIFileManagerBreadCrumbs(QWidget *pParent /* = 0 */)
+    :QLineEdit(pParent)
+{
+
+}
+
+void UIFileManagerBreadCrumbs::setPath(const QString &strPath)
+{
+    clear();
+    setText(strPath);
+}
+
+void UIFileManagerBreadCrumbs::mouseMoveEvent(QMouseEvent *pEvent)
+{
+    QChar cSeparator('/');
+    int iCharPos = this->cursorPositionAt(pEvent->pos());
+    QString strLeft = text().left(iCharPos);
+    int iLeftSeparator = strLeft.lastIndexOf(cSeparator);
+    int iRightSeparator = text().indexOf(cSeparator, iLeftSeparator + 1);
+    if (iRightSeparator == -1)
+        iRightSeparator = text().length();
+    /* A special case for leading sperator aka. root folder: */
+    if (iRightSeparator == 0)
+        setSelection(iLeftSeparator + 1, 1);
+    else
+        setSelection(iLeftSeparator + 1, iRightSeparator - iLeftSeparator - 1);
+}
+
+void UIFileManagerBreadCrumbs::mousePressEvent(QMouseEvent *pEvent)
+{
+    QChar cSeparator('/');
+    int iCharPos = this->cursorPositionAt(pEvent->pos());
+    // QString strLeft = text().left(iCharPos);
+    // int iLeftSeparator = strLeft.lastIndexOf(cSeparator);
+    int iRightSeparator = text().indexOf(cSeparator, iCharPos);
+    QString strPath;
+    if (iRightSeparator == 0)
+        strPath = cSeparator;
+    else
+        strPath = text().left(iRightSeparator);
+    emit sigNavitatePath(strPath);
+}
+
+void UIFileManagerBreadCrumbs::focusOutEvent(QFocusEvent *pEvent)
+{
+    deselect();
+    QLineEdit::focusOutEvent(pEvent);
+}
+
+
+/*********************************************************************************************************************************
+*   UIFileManagerPathButton implementation.                                                                                      *
+*********************************************************************************************************************************/
+
+// UIFileManagerPathButton::UIFileManagerPathButton(QWidget *pParent /* = 0 */, const QString &strPath /* = QString() */)
+//     :QIToolButton(pParent)
+//     , m_strPath(strPath)
+// {
+//     setText(m_strPath);
+// }
 
 
 /*********************************************************************************************************************************
@@ -378,6 +474,7 @@ UIFileManagerTable::UIFileManagerTable(UIActionPool *pActionPool, QWidget *pPare
     , m_pMainLayout(0)
     , m_pLocationComboBox(0)
     , m_pWarningLabel(0)
+    , m_pBreadCrumbsWidget(0)
 {
     prepareObjects();
 }
@@ -436,7 +533,23 @@ void UIFileManagerTable::prepareObjects()
                 this, &UIFileManagerTable::sltLocationComboCurrentChange);
     }
 
+    m_pBreadCrumbsWidget = new UIFileManagerBreadCrumbs;
+    if (m_pBreadCrumbsWidget)
+    {
+        m_pMainLayout->addWidget(m_pBreadCrumbsWidget, 1, 1, 1, 4);
+        m_pBreadCrumbsWidget->setReadOnly(true);
+        QSizePolicy sizePolicy;
+        sizePolicy.setControlType(QSizePolicy::ComboBox);
+        m_pBreadCrumbsWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+        connect(m_pBreadCrumbsWidget, &UIFileManagerBreadCrumbs::sigNavitatePath,
+                this, &UIFileManagerTable::sltHandleBreadCrumbsClick);
+    }
 
+    UIFileManagerOptions *pOptions = UIFileManagerOptions::instance();
+    if (pOptions)
+        showHideBreadCrumbs(pOptions->fShowBreadCrumbs);
+    else
+        showHideBreadCrumbs(false);
     m_pModel = new UICustomFileSystemModel(this);
     if (!m_pModel)
         return;
@@ -518,6 +631,11 @@ void UIFileManagerTable::updateCurrentLocationEdit(const QString& strLocation)
         itemIndex = m_pLocationComboBox->count() - 1;
     }
     m_pLocationComboBox->setCurrentIndex(itemIndex);
+
+    if (m_pBreadCrumbsWidget)
+    {
+        m_pBreadCrumbsWidget->setPath(strLocation);
+    }
 }
 
 void UIFileManagerTable::changeLocation(const QModelIndex &index)
@@ -896,6 +1014,11 @@ void UIFileManagerTable::sltHandleItemRenameAttempt(UICustomFileSystemItem *pIte
     }
 }
 
+void UIFileManagerTable::sltHandleBreadCrumbsClick(const QString& strPath)
+{
+    goIntoDirectory(UIPathOperations::pathTrail(strPath));
+}
+
 void UIFileManagerTable::sltCreateFileViewContextMenu(const QPoint &point)
 {
     QWidget *pSender = qobject_cast<QWidget*>(sender());
@@ -1169,6 +1292,7 @@ void UIFileManagerTable::optionsUpdated()
         }
         if (m_pModel)
             m_pModel->setShowHumanReadableSizes(pOptions->fShowHumanReadableSizes);
+        showHideBreadCrumbs(pOptions->fShowBreadCrumbs);
     }
     relist();
 }
@@ -1253,6 +1377,14 @@ bool UIFileManagerTable::checkIfDeleteOK()
 
     return fContinueWithDelete;
 
+}
+
+void UIFileManagerTable::showHideBreadCrumbs(bool fShow)
+{
+    if (m_pLocationComboBox)
+        m_pLocationComboBox->setVisible(!fShow);
+    if (m_pBreadCrumbsWidget)
+        m_pBreadCrumbsWidget->setVisible(fShow);
 }
 
 #include "UIFileManagerTable.moc"

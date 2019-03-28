@@ -171,7 +171,7 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
 void UIFileManagerHostTable::retranslateUi()
 {
     if (m_pLocationLabel)
-        m_pLocationLabel->setText(UIFileManager::tr("Host System"));
+        m_pLocationLabel->setText(UIFileManager::tr("Host File System"));
     UIFileManagerTable::retranslateUi();
 }
 

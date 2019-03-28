@@ -30,6 +30,7 @@ UIFileManagerOptionsPanel::UIFileManagerOptionsPanel(QWidget *pParent, UIFileMan
     , m_pDeleteConfirmationCheckBox(0)
     , m_pHumanReabableSizesCheckBox(0)
     , m_pShowHiddenObjectsCheckBox(0)
+    , m_pShowBreadCrumbsCheckBox(0)
     , m_pFileManagerOptions(pFileManagerOptions)
 {
     prepare();
@@ -81,27 +82,23 @@ void UIFileManagerOptionsPanel::prepareWidgets()
 
     m_pListDirectoriesOnTopCheckBox = new QCheckBox;
     if (m_pListDirectoriesOnTopCheckBox)
-    {
         mainLayout()->addWidget(m_pListDirectoriesOnTopCheckBox, 0, Qt::AlignLeft);
-    }
 
     m_pDeleteConfirmationCheckBox = new QCheckBox;
     if (m_pDeleteConfirmationCheckBox)
-    {
         mainLayout()->addWidget(m_pDeleteConfirmationCheckBox, 0, Qt::AlignLeft);
-    }
 
     m_pHumanReabableSizesCheckBox = new QCheckBox;
     if (m_pHumanReabableSizesCheckBox)
-    {
         mainLayout()->addWidget(m_pHumanReabableSizesCheckBox, 0, Qt::AlignLeft);
-    }
 
     m_pShowHiddenObjectsCheckBox = new QCheckBox;
     if (m_pShowHiddenObjectsCheckBox)
-    {
         mainLayout()->addWidget(m_pShowHiddenObjectsCheckBox, 0, Qt::AlignLeft);
-    }
+
+    m_pShowBreadCrumbsCheckBox = new QCheckBox;
+    if (m_pShowBreadCrumbsCheckBox)
+        mainLayout()->addWidget(m_pShowBreadCrumbsCheckBox, 0, Qt::AlignLeft);
 
     /* Set initial checkbox status wrt. options: */
     if (m_pFileManagerOptions)
@@ -114,6 +111,8 @@ void UIFileManagerOptionsPanel::prepareWidgets()
             m_pHumanReabableSizesCheckBox->setChecked(m_pFileManagerOptions->fShowHumanReadableSizes);
         if (m_pShowHiddenObjectsCheckBox)
             m_pShowHiddenObjectsCheckBox->setChecked(m_pFileManagerOptions->fShowHiddenObjects);
+        if (m_pShowBreadCrumbsCheckBox)
+            m_pShowBreadCrumbsCheckBox->setChecked(m_pFileManagerOptions->fShowBreadCrumbs);
 
     }
     retranslateUi();
@@ -152,6 +151,14 @@ void UIFileManagerOptionsPanel::sltShowHiddenObjectsCheckBoxToggled(bool bChecke
     emit sigOptionsChanged();
 }
 
+void UIFileManagerOptionsPanel::sltShowBreadCrumbsCheckBoxToggled(bool bChecked)
+{
+    if (!m_pFileManagerOptions)
+        return;
+    m_pFileManagerOptions->fShowBreadCrumbs = bChecked;
+    emit sigOptionsChanged();
+}
+
 void UIFileManagerOptionsPanel::prepareConnections()
 {
     if (m_pListDirectoriesOnTopCheckBox)
@@ -168,6 +175,9 @@ void UIFileManagerOptionsPanel::prepareConnections()
         connect(m_pShowHiddenObjectsCheckBox, &QCheckBox::toggled,
                 this, &UIFileManagerOptionsPanel::sltShowHiddenObjectsCheckBoxToggled);
 
+    if (m_pShowBreadCrumbsCheckBox)
+        connect(m_pShowBreadCrumbsCheckBox, &QCheckBox::toggled,
+                this, &UIFileManagerOptionsPanel::sltShowBreadCrumbsCheckBoxToggled);
 }
 
 void UIFileManagerOptionsPanel::retranslateUi()
@@ -197,5 +207,11 @@ void UIFileManagerOptionsPanel::retranslateUi()
     {
         m_pShowHiddenObjectsCheckBox->setText(UIFileManager::tr("Show hidden objects"));
         m_pShowHiddenObjectsCheckBox->setToolTip(UIFileManager::tr("Show hidden files/directories"));
+    }
+
+    if (m_pShowBreadCrumbsCheckBox)
+    {
+        m_pShowBreadCrumbsCheckBox->setText(UIFileManager::tr("Bread crumbs instead of location widget"));
+        m_pShowBreadCrumbsCheckBox->setToolTip(UIFileManager::tr("Bread crumbs instead of location widget"));
     }
 }

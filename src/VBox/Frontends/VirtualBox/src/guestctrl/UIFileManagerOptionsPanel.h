@@ -62,6 +62,7 @@ private slots:
     void sltDeleteConfirmationCheckBoxToogled(bool bChecked);
     void sltHumanReabableSizesCheckBoxToogled(bool bChecked);
     void sltShowHiddenObjectsCheckBoxToggled(bool bChecked);
+    void sltShowBreadCrumbsCheckBoxToggled(bool bChecked);
 
 private:
 
@@ -69,6 +70,7 @@ private:
     QCheckBox  *m_pDeleteConfirmationCheckBox;
     QCheckBox  *m_pHumanReabableSizesCheckBox;
     QCheckBox  *m_pShowHiddenObjectsCheckBox;
+    QCheckBox  *m_pShowBreadCrumbsCheckBox;
     UIFileManagerOptions *m_pFileManagerOptions;
 };
 

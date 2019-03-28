@@ -669,11 +669,13 @@ public:
         void setFileManagerOptions(bool fListDirectoriesFirst,
                                    bool fShowDeleteConfirmation,
                                    bool fshowHumanReadableSizes,
-                                   bool fShowHiddenObjects);
+                                   bool fShowHiddenObjects,
+                                   bool fShowBreadCrumbs);
         bool fileManagerListDirectoriesFirst();
         bool fileManagerShowDeleteConfirmation();
         bool fileManagerShowHumanReadableSizes();
         bool fileManagerShowHiddenObjects();
+        bool fileManagerShowBreadCrumbs();
     /** @} */
 
     /** @name Virtual Machine: Close dialog

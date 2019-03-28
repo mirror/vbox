@@ -163,13 +163,12 @@ void UIFileManagerGuestTable::initGuestFileTable(const CGuestSession &session)
 void UIFileManagerGuestTable::retranslateUi()
 {
     if (m_pLocationLabel)
-        m_pLocationLabel->setText(UIFileManager::tr("Guest System"));
+        m_pLocationLabel->setText(UIFileManager::tr("Guest File System"));
     UIFileManagerTable::retranslateUi();
 }
 
 void UIFileManagerGuestTable::readDirectory(const QString& strPath,
                                      UICustomFileSystemItem *parent, bool isStartDir /*= false*/)
-
 {
     if (!parent)
         return;
