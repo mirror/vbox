@@ -1299,8 +1299,14 @@ void UIFrameBufferPrivate::performRescale()
 
 void UIFrameBufferPrivate::sltCursorPositionChange()
 {
-    /* Do we have view and valid cursor position? */
-    if (m_pMachineView && m_pMachineView->uisession()->isValidCursorPositionPresent())
+    /* Do we have view and valid cursor position?
+     * Also, please take into account, we are not currently painting
+     * framebuffer cursor if mouse integration is supported and enabled. */
+    if (   m_pMachineView
+        && m_pMachineView->uisession()->isValidPointerShapePresent()
+        && m_pMachineView->uisession()->isValidCursorPositionPresent()
+        && (   !m_pMachineView->uisession()->isMouseIntegrated()
+            || !m_pMachineView->uisession()->isMouseSupportsAbsolute()))
     {
         /* Acquire cursor hotspot: */
         QPoint cursorHotspot = m_pMachineView->uisession()->cursorHotspot();
@@ -1461,8 +1467,13 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
         pSourceImage = 0;
     }
 
-    /* Paint cursor if it has valid shape and position: */
-    if (m_pMachineView->uisession()->isValidPointerShapePresent() && m_pMachineView->uisession()->isValidCursorPositionPresent())
+    /* Paint cursor if it has valid shape and position.
+     * Also, please take into account, we are not currently painting
+     * framebuffer cursor if mouse integration is supported and enabled. */
+    if (   m_pMachineView->uisession()->isValidPointerShapePresent()
+        && m_pMachineView->uisession()->isValidCursorPositionPresent()
+        && (   !m_pMachineView->uisession()->isMouseIntegrated()
+            || !m_pMachineView->uisession()->isMouseSupportsAbsolute()))
     {
         /* Acquire session cursor pixmap: */
         QPixmap cursorPixmap = m_pMachineView->uisession()->cursorPixmap();
@@ -1564,8 +1575,13 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
         pSourceImage = 0;
     }
 
-    /* Paint cursor if it has valid shape and position: */
-    if (m_pMachineView->uisession()->isValidPointerShapePresent() && m_pMachineView->uisession()->isValidCursorPositionPresent())
+    /* Paint cursor if it has valid shape and position.
+     * Also, please take into account, we are not currently painting
+     * framebuffer cursor if mouse integration is supported and enabled. */
+    if (   m_pMachineView->uisession()->isValidPointerShapePresent()
+        && m_pMachineView->uisession()->isValidCursorPositionPresent()
+        && (   !m_pMachineView->uisession()->isMouseIntegrated()
+            || !m_pMachineView->uisession()->isMouseSupportsAbsolute()))
     {
         /* Acquire session cursor pixmap: */
         QPixmap cursorPixmap = m_pMachineView->uisession()->cursorPixmap();
