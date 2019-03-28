@@ -169,12 +169,12 @@ public:
 
     /** @name Navigation stuff.
       * @{ */
-        /** Returns navigation item list. */
-        const QList<UIChooserItem*> &navigationList() const;
+        /** Returns a list of navigation-items. */
+        const QList<UIChooserItem*> &navigationItems() const;
         /** Removes @a pItem from navigation list. */
-        void removeFromNavigationList(UIChooserItem *pItem);
+        void removeFromNavigationItems(UIChooserItem *pItem);
         /** Updates navigation list. */
-        void updateNavigation();
+        void updateNavigationItemList();
     /** @} */
 
     /** @name Virtual Machine/Group search stuff.
@@ -330,7 +330,7 @@ private:
     /** @name Navigation stuff.
       * @{ */
         /** Creates navigation list for passed root @a pItem. */
-        QList<UIChooserItem*> createNavigationList(UIChooserItem *pItem);
+        QList<UIChooserItem*> createNavigationItemList(UIChooserItem *pItem);
     /** @} */
 
     /** @name Children stuff.
@@ -389,8 +389,8 @@ private:
         /** Holds the root instance. */
         QPointer<UIChooserItem>  m_pRoot;
 
-        /** Holds the navigation list. */
-        QList<UIChooserItem*>  m_navigationList;
+        /** Holds the navigation-items. */
+        QList<UIChooserItem*>  m_navigationItems;
         /** Holds the selected-items. */
         QList<UIChooserItem*>  m_selectedItems;
 

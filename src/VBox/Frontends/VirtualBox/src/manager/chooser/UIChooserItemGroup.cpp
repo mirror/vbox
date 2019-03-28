@@ -833,7 +833,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
 
                 /* Update model: */
                 pModel->wipeOutEmptyGroups();
-                pModel->updateNavigation();
+                pModel->updateNavigationItemList();
                 pModel->updateLayout();
                 pModel->setSelectedItem(pNewGroupItem);
                 pModel->saveGroupSettings();
@@ -887,7 +887,7 @@ void UIChooserItemGroup::processDrop(QGraphicsSceneDragDropEvent *pEvent, UIChoo
 
                 /* Update model: */
                 pModel->wipeOutEmptyGroups();
-                pModel->updateNavigation();
+                pModel->updateNavigationItemList();
                 pModel->updateLayout();
                 pModel->setSelectedItem(pNewMachineItem);
                 pModel->saveGroupSettings();
@@ -976,7 +976,7 @@ void UIChooserItemGroup::sltGroupToggleStart()
         /* Update geometry: */
         updateGeometry();
         /* Update navigation: */
-        model()->updateNavigation();
+        model()->updateNavigationItemList();
         /* Relayout model: */
         model()->updateLayout();
     }
@@ -993,7 +993,7 @@ void UIChooserItemGroup::sltGroupToggleFinish(bool fToggled)
     /* Update geometry: */
     updateGeometry();
     /* Update navigation: */
-    model()->updateNavigation();
+    model()->updateNavigationItemList();
     /* Relayout model: */
     model()->updateLayout();
     /* Update toggle-button tool-tip: */
@@ -1216,10 +1216,10 @@ void UIChooserItemGroup::cleanup()
         model()->removeFromSelectedItems(this);
     }
     /* If that item is in navigation list: */
-    if (model()->navigationList().contains(this))
+    if (model()->navigationItems().contains(this))
     {
         /* Remove item from the navigation list: */
-        model()->removeFromNavigationList(this);
+        model()->removeFromNavigationItems(this);
     }
 
     /* Remove item from the parent: */

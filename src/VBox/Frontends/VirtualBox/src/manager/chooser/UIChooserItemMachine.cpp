@@ -441,7 +441,7 @@ void UIChooserItemMachine::processDrop(QGraphicsSceneDragDropEvent *pEvent, UICh
 
                 /* Update model: */
                 pModel->wipeOutEmptyGroups();
-                pModel->updateNavigation();
+                pModel->updateNavigationItemList();
                 pModel->updateLayout();
                 pModel->setSelectedItem(pNewGroupItem);
                 pModel->saveGroupSettings();
@@ -543,10 +543,10 @@ void UIChooserItemMachine::cleanup()
         model()->removeFromSelectedItems(this);
     }
     /* If that item is in navigation list: */
-    if (model()->navigationList().contains(this))
+    if (model()->navigationItems().contains(this))
     {
         /* Remove item from the navigation list: */
-        model()->removeFromNavigationList(this);
+        model()->removeFromNavigationItems(this);
     }
 
     /* Remove item from the parent: */

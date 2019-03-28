@@ -81,7 +81,7 @@ void UIChooserModel::init()
 
     /* Build tree for main root: */
     buildTreeForMainRoot();
-    updateNavigation();
+    updateNavigationItemList();
     updateLayout();
 
     /* Load last selected-item: */
@@ -173,7 +173,7 @@ void UIChooserModel::setSelectedItems(const QList<UIChooserItem*> &items)
     foreach (UIChooserItem *pItem, items)
     {
         /* Add item to current selected-item list if navigation list contains it: */
-        if (pItem && navigationList().contains(pItem))
+        if (pItem && navigationItems().contains(pItem))
             m_selectedItems << pItem;
         else
             AssertMsgFailed(("Passed item is not in navigation list!"));
@@ -239,7 +239,7 @@ void UIChooserModel::setSelectedItem(const QString &strDefinition)
     }
 
     /* Make sure found item is in navigation list: */
-    if (!pItem || !navigationList().contains(pItem))
+    if (!pItem || !navigationItems().contains(pItem))
         return;
 
     /* Call for wrapper above: */
@@ -357,20 +357,20 @@ UIChooserItem *UIChooserModel::findClosestUnselectedItem() const
         pItem = firstSelectedItem();
     if (pItem)
     {
-        int idxBefore = navigationList().indexOf(pItem) - 1;
+        int idxBefore = navigationItems().indexOf(pItem) - 1;
         int idxAfter  = idxBefore + 2;
-        while (idxBefore >= 0 || idxAfter < navigationList().size())
+        while (idxBefore >= 0 || idxAfter < navigationItems().size())
         {
             if (idxBefore >= 0)
             {
-                pItem = navigationList().at(idxBefore);
+                pItem = navigationItems().at(idxBefore);
                 if (!selectedItems().contains(pItem) && pItem->type() == UIChooserItemType_Machine)
                     return pItem;
                 --idxBefore;
             }
-            if (idxAfter < navigationList().size())
+            if (idxAfter < navigationItems().size())
             {
-                pItem = navigationList().at(idxAfter);
+                pItem = navigationItems().at(idxAfter);
                 if (!selectedItems().contains(pItem) && pItem->type() == UIChooserItemType_Machine)
                     return pItem;
                 ++idxAfter;
@@ -421,21 +421,21 @@ UIChooserItem *UIChooserModel::currentItem() const
     return m_pCurrentItem;
 }
 
-const QList<UIChooserItem*> &UIChooserModel::navigationList() const
+const QList<UIChooserItem*> &UIChooserModel::navigationItems() const
 {
-    return m_navigationList;
+    return m_navigationItems;
 }
 
-void UIChooserModel::removeFromNavigationList(UIChooserItem *pItem)
+void UIChooserModel::removeFromNavigationItems(UIChooserItem *pItem)
 {
     AssertMsg(pItem, ("Passed item is invalid!"));
-    m_navigationList.removeAll(pItem);
+    m_navigationItems.removeAll(pItem);
 }
 
-void UIChooserModel::updateNavigation()
+void UIChooserModel::updateNavigationItemList()
 {
-    m_navigationList.clear();
-    m_navigationList = createNavigationList(root());
+    m_navigationItems.clear();
+    m_navigationItems = createNavigationItemList(root());
 }
 
 void UIChooserModel::performSearch(const QString &strSearchTerm, int iItemSearchFlags)
@@ -595,7 +595,7 @@ void UIChooserModel::updateLayout()
 void UIChooserModel::setGlobalItemHeightHint(int iHint)
 {
     /* Walk thrugh all the items of navigation list: */
-    foreach (UIChooserItem *pItem, navigationList())
+    foreach (UIChooserItem *pItem, navigationItems())
     {
         /* And for each global item: */
         if (pItem->type() == UIChooserItemType_Global)
@@ -664,12 +664,12 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
     if (!fRegistered)
     {
         /* Update tree for main root: */
-        updateNavigation();
+        updateNavigationItemList();
         updateLayout();
 
         /* Make sure selected-item present, if possible: */
-        if (!firstSelectedItem() && !navigationList().isEmpty())
-            setSelectedItem(navigationList().first());
+        if (!firstSelectedItem() && !navigationItems().isEmpty())
+            setSelectedItem(navigationItems().first());
         /* Make sure current-item present, if possible: */
         else if (!currentItem() && firstSelectedItem())
             setCurrentItem(firstSelectedItem());
@@ -684,7 +684,7 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
         {
             /* Rebuild tree for main root: */
             buildTreeForMainRoot();
-            updateNavigation();
+            updateNavigationItemList();
             updateLayout();
 
             /* Select newly added item: */
@@ -706,7 +706,7 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
     {
         /* Rebuild tree for main root: */
         buildTreeForMainRoot();
-        updateNavigation();
+        updateNavigationItemList();
         updateLayout();
 
         /* Select newly added item: */
@@ -718,8 +718,8 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
     else
     {
         /* Make sure at least one item selected after that: */
-        if (!firstSelectedItem() && !navigationList().isEmpty())
-            setSelectedItem(navigationList().first());
+        if (!firstSelectedItem() && !navigationItems().isEmpty())
+            setSelectedItem(navigationItems().first());
     }
 
     /* Notify listeners about selection change: */
@@ -758,7 +758,7 @@ void UIChooserModel::sltSortGroup()
 
     /* Rebuild tree for main root: */
     buildTreeForMainRoot();
-    updateNavigation();
+    updateNavigationItemList();
     updateLayout();
 }
 
@@ -848,7 +848,7 @@ void UIChooserModel::sltUngroupSelectedGroup()
     emit sigSelectionInvalidated();
 
     /* And update model: */
-    updateNavigation();
+    updateNavigationItemList();
     updateLayout();
     if (!copiedItems.isEmpty())
     {
@@ -856,7 +856,7 @@ void UIChooserModel::sltUngroupSelectedGroup()
         setCurrentItem(firstSelectedItem());
     }
     else
-        setSelectedItem(navigationList().first());
+        setSelectedItem(navigationItems().first());
     saveGroupSettings();
 }
 
@@ -955,7 +955,7 @@ void UIChooserModel::sltGroupSelectedMachines()
 
     /* Update model: */
     wipeOutEmptyGroups();
-    updateNavigation();
+    updateNavigationItemList();
     updateLayout();
     setSelectedItem(pNewGroupItem);
     saveGroupSettings();
@@ -976,7 +976,7 @@ void UIChooserModel::sltSortParentGroup()
 
     /* Rebuild tree for main root: */
     buildTreeForMainRoot();
-    updateNavigation();
+    updateNavigationItemList();
     updateLayout();
 }
 
@@ -1298,8 +1298,8 @@ void UIChooserModel::loadLastSelectedItem()
 {
     /* Load last selected-item (choose first if unable to load): */
     setSelectedItem(gEDataManager->selectorWindowLastItemChosen());
-    if (!firstSelectedItem() && !navigationList().isEmpty())
-        setSelectedItem(navigationList().first());
+    if (!firstSelectedItem() && !navigationItems().isEmpty())
+        setSelectedItem(navigationItems().first());
 }
 
 void UIChooserModel::saveLastSelectedItem()
@@ -1462,7 +1462,7 @@ void UIChooserModel::clearRealFocus()
     scene()->setFocusItem(0);
 }
 
-QList<UIChooserItem*> UIChooserModel::createNavigationList(UIChooserItem *pItem)
+QList<UIChooserItem*> UIChooserModel::createNavigationItemList(UIChooserItem *pItem)
 {
     /* Prepare navigation list: */
     QList<UIChooserItem*> navigationItems;
@@ -1475,7 +1475,7 @@ QList<UIChooserItem*> UIChooserModel::createNavigationList(UIChooserItem *pItem)
     {
         navigationItems << pGroupItem;
         if (pGroupItem->toGroupItem()->isOpened())
-            navigationItems << createNavigationList(pGroupItem);
+            navigationItems << createNavigationItemList(pGroupItem);
     }
     /* Iterate over all the machine-items: */
     foreach (UIChooserItem *pMachineItem, pItem->items(UIChooserItemType_Machine))
@@ -1514,10 +1514,10 @@ void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
 
     /* And update model: */
     wipeOutEmptyGroups();
-    updateNavigation();
+    updateNavigationItemList();
     updateLayout();
-    if (!navigationList().isEmpty())
-        setSelectedItem(navigationList().first());
+    if (!navigationItems().isEmpty())
+        setSelectedItem(navigationItems().first());
     else
         clearSelectedItems();
     saveGroupSettings();

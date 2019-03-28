@@ -379,10 +379,10 @@ void UIChooserItemGlobal::cleanup()
         model()->removeFromSelectedItems(this);
     }
     /* If that item is in navigation list: */
-    if (model()->navigationList().contains(this))
+    if (model()->navigationItems().contains(this))
     {
         /* Remove item from the navigation list: */
-        model()->removeFromNavigationList(this);
+        model()->removeFromNavigationItems(this);
     }
 
     /* Remove item from the parent: */

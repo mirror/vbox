@@ -87,15 +87,15 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
 #endif /* !VBOX_WS_MAC */
             {
                 /* Determine current-item position: */
-                int iPosition = model()->navigationList().indexOf(model()->currentItem());
+                int iPosition = model()->navigationItems().indexOf(model()->currentItem());
                 /* Determine 'previous' item: */
                 UIChooserItem *pPreviousItem = 0;
                 if (iPosition > 0)
                 {
                     if (pEvent->key() == Qt::Key_Up)
-                        pPreviousItem = model()->navigationList().at(iPosition - 1);
+                        pPreviousItem = model()->navigationItems().at(iPosition - 1);
                     else if (pEvent->key() == Qt::Key_Home)
-                        pPreviousItem = model()->navigationList().first();
+                        pPreviousItem = model()->navigationItems().first();
                 }
                 if (pPreviousItem)
                 {
@@ -103,16 +103,16 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                     pPreviousItem->makeSureItsVisible();
                     /* Calculate positions: */
                     UIChooserItem *pFirstItem = model()->firstSelectedItem();
-                    int iFirstPosition = model()->navigationList().indexOf(pFirstItem);
-                    int iPreviousPosition = model()->navigationList().indexOf(pPreviousItem);
+                    int iFirstPosition = model()->navigationItems().indexOf(pFirstItem);
+                    int iPreviousPosition = model()->navigationItems().indexOf(pPreviousItem);
                     /* Populate list of items from 'first' to 'previous': */
                     QList<UIChooserItem*> items;
                     if (iFirstPosition <= iPreviousPosition)
                         for (int i = iFirstPosition; i <= iPreviousPosition; ++i)
-                            items << model()->navigationList().at(i);
+                            items << model()->navigationItems().at(i);
                     else
                         for (int i = iFirstPosition; i >= iPreviousPosition; --i)
-                            items << model()->navigationList().at(i);
+                            items << model()->navigationItems().at(i);
                     /* Set that list as selected: */
                     model()->setSelectedItems(items);
                     /* Make 'previous' item current one: */
@@ -130,15 +130,15 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
 #endif /* !VBOX_WS_MAC */
             {
                 /* Determine current-item position: */
-                int iPosition = model()->navigationList().indexOf(model()->currentItem());
+                int iPosition = model()->navigationItems().indexOf(model()->currentItem());
                 /* Determine 'previous' item: */
                 UIChooserItem *pPreviousItem = 0;
                 if (iPosition > 0)
                 {
                     if (pEvent->key() == Qt::Key_Up)
-                        pPreviousItem = model()->navigationList().at(iPosition - 1);
+                        pPreviousItem = model()->navigationItems().at(iPosition - 1);
                     else if (pEvent->key() == Qt::Key_Home)
-                        pPreviousItem = model()->navigationList().first();
+                        pPreviousItem = model()->navigationItems().first();
                 }
                 if (pPreviousItem)
                 {
@@ -180,15 +180,15 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
 #endif /* !VBOX_WS_MAC */
             {
                 /* Determine current-item position: */
-                int iPosition = model()->navigationList().indexOf(model()->currentItem());
+                int iPosition = model()->navigationItems().indexOf(model()->currentItem());
                 /* Determine 'next' item: */
                 UIChooserItem *pNextItem = 0;
-                if (iPosition < model()->navigationList().size() - 1)
+                if (iPosition < model()->navigationItems().size() - 1)
                 {
                     if (pEvent->key() == Qt::Key_Down)
-                        pNextItem = model()->navigationList().at(iPosition + 1);
+                        pNextItem = model()->navigationItems().at(iPosition + 1);
                     else if (pEvent->key() == Qt::Key_End)
-                        pNextItem = model()->navigationList().last();
+                        pNextItem = model()->navigationItems().last();
                 }
                 if (pNextItem)
                 {
@@ -196,16 +196,16 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
                     pNextItem->makeSureItsVisible();
                     /* Calculate positions: */
                     UIChooserItem *pFirstItem = model()->firstSelectedItem();
-                    int iFirstPosition = model()->navigationList().indexOf(pFirstItem);
-                    int iNextPosition = model()->navigationList().indexOf(pNextItem);
+                    int iFirstPosition = model()->navigationItems().indexOf(pFirstItem);
+                    int iNextPosition = model()->navigationItems().indexOf(pNextItem);
                     /* Populate list of items from 'first' to 'next': */
                     QList<UIChooserItem*> items;
                     if (iFirstPosition <= iNextPosition)
                         for (int i = iFirstPosition; i <= iNextPosition; ++i)
-                            items << model()->navigationList().at(i);
+                            items << model()->navigationItems().at(i);
                     else
                         for (int i = iFirstPosition; i >= iNextPosition; --i)
-                            items << model()->navigationList().at(i);
+                            items << model()->navigationItems().at(i);
                     /* Set that list as selected: */
                     model()->setSelectedItems(items);
                     /* Make 'next' item current one: */
@@ -223,15 +223,15 @@ bool UIChooserHandlerKeyboard::handleKeyPress(QKeyEvent *pEvent) const
 #endif /* !VBOX_WS_MAC */
             {
                 /* Determine current-item position: */
-                int iPosition = model()->navigationList().indexOf(model()->currentItem());
+                int iPosition = model()->navigationItems().indexOf(model()->currentItem());
                 /* Determine 'next' item: */
                 UIChooserItem *pNextItem = 0;
-                if (iPosition < model()->navigationList().size() - 1)
+                if (iPosition < model()->navigationItems().size() - 1)
                 {
                     if (pEvent->key() == Qt::Key_Down)
-                        pNextItem = model()->navigationList().at(iPosition + 1);
+                        pNextItem = model()->navigationItems().at(iPosition + 1);
                     else if (pEvent->key() == Qt::Key_End)
-                        pNextItem = model()->navigationList().last();
+                        pNextItem = model()->navigationItems().last();
                 }
                 if (pNextItem)
                 {
@@ -387,7 +387,7 @@ void UIChooserHandlerKeyboard::shift(UIItemShiftDirection enmDirection, UIItemSh
 
     /* Update model: */
     model()->wipeOutEmptyGroups();
-    model()->updateNavigation();
+    model()->updateNavigationItemList();
     model()->updateLayout();
     model()->setSelectedItem(pShiftedItem);
     model()->saveGroupSettings();

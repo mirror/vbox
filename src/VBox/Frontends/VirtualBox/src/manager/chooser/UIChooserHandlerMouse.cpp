@@ -110,16 +110,16 @@ bool UIChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) c
                     {
                         /* Calculate positions: */
                         UIChooserItem *pFirstItem = model()->firstSelectedItem();
-                        int iFirstPosition = model()->navigationList().indexOf(pFirstItem);
-                        int iClickedPosition = model()->navigationList().indexOf(pClickedItem);
+                        int iFirstPosition = model()->navigationItems().indexOf(pFirstItem);
+                        int iClickedPosition = model()->navigationItems().indexOf(pClickedItem);
                         /* Populate list of items from 'first' to 'clicked': */
                         QList<UIChooserItem*> items;
                         if (iFirstPosition <= iClickedPosition)
                             for (int i = iFirstPosition; i <= iClickedPosition; ++i)
-                                items << model()->navigationList().at(i);
+                                items << model()->navigationItems().at(i);
                         else
                             for (int i = iFirstPosition; i >= iClickedPosition; --i)
-                                items << model()->navigationList().at(i);
+                                items << model()->navigationItems().at(i);
                         /* Make that list selected: */
                         model()->setSelectedItems(items);
                         /* Make clicked item current one: */
