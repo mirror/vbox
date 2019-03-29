@@ -1642,8 +1642,8 @@
             <listitem>
               <para>
                 <emphasis role="bold">VBoxSVGA:</emphasis> The default
-                graphics controller for new VMs that use Linux or
-                Windows 7 or later.
+                graphics controller for new VMs that use Windows 7 or
+                later.
               </para>
 
               <para>
@@ -1657,7 +1657,7 @@
                 <emphasis role="bold">VBoxVGA:</emphasis> Use this
                 graphics controller for legacy guest OSes. This is the
                 default graphics controller for Windows versions before
-                Windows 7.
+                Windows 7 and for Oracle Solaris.
               </para>
             </listitem>
 
@@ -1665,7 +1665,8 @@
               <para>
                 <emphasis role="bold">VMSVGA:</emphasis> Use this
                 graphics controller to emulate a VMware SVGA graphics
-                device.
+                device. This is the default graphics controller for
+                Linux guests.
               </para>
             </listitem>
 
