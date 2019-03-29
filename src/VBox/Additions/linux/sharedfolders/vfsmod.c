@@ -351,18 +351,17 @@ static void vbsf_super_info_free(struct vbsf_super_info *pSuperInfo)
 static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info *pSuperInfo)
 {
     int rc = 0;
-/** @todo this needs sorting out between 3.19 and 4.11   */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     /* Each new shared folder map gets a new uint64_t identifier,
      * allocated in sequence.  We ASSUME the sequence will not wrap. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
     static uint64_t s_u64Sequence = 0;
-    uint64_t u64CurrentSequence = ASMAtomicIncU64(&s_u64Sequence);
-#endif
+    uint64_t idSeqMine = ASMAtomicIncU64(&s_u64Sequence);
+# endif
     struct backing_dev_info *bdi;
 
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-    rc = super_setup_bdi_name(sb, "vboxsf-%llu", (unsigned long long)u64CurrentSequence);
+    rc = super_setup_bdi_name(sb, "vboxsf-%llu", (unsigned long long)idSeqMine);
     if (!rc)
         bdi = sb->s_bdi;
     else
@@ -410,7 +409,7 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
     rc = bdi_init(&pSuperInfo->bdi);
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
     if (!rc)
-        rc = bdi_register(&pSuperInfo->bdi, NULL, "vboxsf-%llu", (unsigned long long)u64CurrentSequence);
+        rc = bdi_register(&pSuperInfo->bdi, NULL, "vboxsf-%llu", (unsigned long long)idSeqMine);
 #  endif /* >= 2.6.26 */
 # endif  /* 4.11.0 > version >= 2.6.24 */
 #endif   /* >= 2.6.0 */

@@ -220,6 +220,14 @@ struct vbsf_inode_info {
     /** The birth time. */
     RTTIMESPEC              BirthTime;
 
+    /** @name Host modification detection stats.
+     *  @{  */
+    /** The raw modification time, for mapping invalidation purposes. */
+    RTTIMESPEC              ModificationTime;
+    /** Copy of ModificationTime from the last time we wrote to the the file. */
+    RTTIMESPEC              ModificationTimeAtOurLastWrite;
+    /** @} */
+
     /** handle valid if a file was created with vbsf_create_worker until it will
      * be opened with vbsf_reg_open()
      * @todo r=bird: figure this one out...  */

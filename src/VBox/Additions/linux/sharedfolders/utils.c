@@ -356,6 +356,8 @@ void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSO
     vbsf_time_to_linux(&inode->i_ctime, &pObjInfo->ChangeTime);
     vbsf_time_to_linux(&inode->i_mtime, &pObjInfo->ModificationTime);
     sf_i->BirthTime = pObjInfo->BirthTime;
+    sf_i->ModificationTime = pObjInfo->ModificationTime;
+    RTTimeSpecSetSeconds(&sf_i->ModificationTimeAtOurLastWrite, 0);
 }
 
 
@@ -368,7 +370,7 @@ void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo,
                        struct vbsf_super_info *pSuperInfo, bool fInodeLocked)
 {
     PCSHFLFSOBJATTR pAttr = &pObjInfo->Attr;
-    int fMode;
+    int             fMode;
 
     TRACE();
 
@@ -425,10 +427,61 @@ void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo,
 
     /*
      * Mark it as up to date.
+     * Best to do this before we start with any expensive map invalidation.
      */
     pInodeInfo->ts_up_to_date = jiffies;
     pInodeInfo->force_restat  = 0;
 
+    /*
+     * If the modification time changed, we may have to invalidate the page
+     * cache pages associated with this inode if we suspect the change was
+     * made by the host.  How supicious we are depends on the cache mode.
+     *
+     * Note! The invalidate_inode_pages() call is pretty weak.  It will _not_
+     *       touch pages that are already mapped into an address space, but it
+     *       will help if the file isn't currently mmap'ed or if we're in read
+     *       or read/write caching mode.
+     */
+    if (!RTTimeSpecIsEqual(&pInodeInfo->ModificationTime, &pObjInfo->ModificationTime)) {
+        if (RTFS_IS_FILE(pAttr->fMode)) {
+            bool fInvalidate;
+            if (pSuperInfo->enmCacheMode == kVbsfCacheMode_None) {
+                fInvalidate = true;      /* No-caching: always invalidate. */
+            } else {
+                /** @todo Seeing nano-seconds being chopped off by someone before we get
+                 *        here. weird weird weird.  Must be host side.   */
+                if (RTTimeSpecIsEqual(&pInodeInfo->ModificationTimeAtOurLastWrite, &pInodeInfo->ModificationTime)) {
+                    fInvalidate = false; /* Could be our write, so don't invalidate anything */
+                    RTTimeSpecSetSeconds(&pInodeInfo->ModificationTimeAtOurLastWrite, 0);
+                } else {
+                    /* RTLogBackdoorPrintf("vbsf_update_inode: Invalidating the mapping %s - %RU64 vs %RU64 vs %RU64\n",
+                       pInodeInfo->path->String.ach, RTTimeSpecGetNano(&pInodeInfo->ModificationTimeAtOurLastWrite),
+                       RTTimeSpecGetNano(&pInodeInfo->ModificationTime), RTTimeSpecGetNano(&pObjInfo->ModificationTime) ); */
+                    fInvalidate = true;  /* We haven't modified the file recently, so probably a host update. */
+                }
+            }
+            pInodeInfo->ModificationTime = pObjInfo->ModificationTime;
+
+            if (fInvalidate) {
+                struct address_space *mapping = pInode->i_mapping;
+                if (mapping && mapping->nrpages > 0) {
+                    SFLOGFLOW(("vbsf_update_inode: Invalidating the mapping (%s)\n", pInodeInfo->path->String.ach));
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
+                    invalidate_mapping_pages(mapping, 0, ~(pgoff_t)0);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 41)
+                    invalidate_inode_pages(mapping);
+#else
+                    invalidate_inode_pages(pInode);
+#endif
+                }
+            }
+        } else
+            pInodeInfo->ModificationTime = pObjInfo->ModificationTime;
+    }
+
+    /*
+     * Done.
+     */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
     if (!fInodeLocked)
         inode_unlock(pInode);
@@ -461,7 +514,7 @@ int vbsf_stat(const char *caller, struct vbsf_super_info *pSuperInfo, SHFLSTRING
             } else {
                 if (!ok_to_fail)
                     LogFunc(("VbglR0SfHostReqCreate on %s: file does not exist: %d (caller=%s)\n",
-                         path->String.utf8, pReq->CreateParms.Result, caller));
+                             path->String.utf8, pReq->CreateParms.Result, caller));
                 rc = -ENOENT;
             }
         } else if (rc == VERR_INVALID_NAME) {
@@ -1080,14 +1133,13 @@ static int vbsf_dentry_revalidate(struct dentry *dentry, int flags)
              *       current (4.19) CIFS will for instance revalidate the inode
              *       and ignore the dentry timestamp for positive entries.
              */
-            //struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(pInode);
             unsigned long const     cJiffiesAge = jiffies - vbsf_dentry_get_update_jiffies(dentry);
             struct vbsf_super_info *pSuperInfo  = VBSF_GET_SUPER_INFO(dentry->d_sb);
             if (cJiffiesAge < pSuperInfo->cJiffiesDirCacheTTL) {
                 SFLOGFLOW(("vbsf_dentry_revalidate: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, pSuperInfo->cJiffiesDirCacheTTL));
                 rc = 1;
             } else if (!vbsf_inode_revalidate_worker(dentry, true /*fForced*/, false /*fInodeLocked*/)) {
-                vbsf_dentry_set_update_jiffies(dentry, jiffies); /** @todo get jiffies from inode. */
+                vbsf_dentry_set_update_jiffies(dentry, jiffies);
                 SFLOGFLOW(("vbsf_dentry_revalidate: age: %lu vs. TTL %lu -> reval -> 1\n", cJiffiesAge, pSuperInfo->cJiffiesDirCacheTTL));
                 rc = 1;
             } else {

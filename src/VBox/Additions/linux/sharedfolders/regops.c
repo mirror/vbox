@@ -928,10 +928,11 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
 
                     /* Check that we don't have signals pending before we issue the write, as
                        we'll only end up having to cancel the HGCM request 99% of the time: */
-                    if (!signal_pending(current))
+                    if (!signal_pending(current)) {
                         vrc = VbglR0SfHostReqWritePgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, offFile,
                                                         cbToWrite, cPagesToWrite);
-                    else
+                        sf_i->ModificationTimeAtOurLastWrite = sf_i->ModificationTime;
+                    } else
                         vrc = VERR_INTERRUPTED;
                     if (RT_SUCCESS(vrc)) {
                         /*
@@ -1812,6 +1813,7 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
              * Issue the request and unlock the pages.
              */
             rc = VbglR0SfHostReqWritePgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
+            sf_i->ModificationTimeAtOurLastWrite = sf_i->ModificationTime;
             if (RT_SUCCESS(rc)) {
                 /*
                  * Success, advance position and buffer.
@@ -1938,6 +1940,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
             if (copy_from_user(pReq->abData, buf, size) == 0) {
                 int vrc = VbglR0SfHostReqWriteEmbedded(pSuperInfo->map.root, pReq, sf_r->Handle.hHost,
                                                        pos, (uint32_t)size);
+                sf_i->ModificationTimeAtOurLastWrite = sf_i->ModificationTime;
                 if (RT_SUCCESS(vrc)) {
                     cbRet = pReq->Parms.cb32Write.u.value32;
                     AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
@@ -1972,7 +1975,8 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
                 if (pReq) {
                     ssize_t cbRet;
                     int vrc = VbglR0SfHostReqWriteContig(pSuperInfo->map.root, pReq, sf_r->handle, pos,
-                                         (uint32_t)size, pvBounce, virt_to_phys(pvBounce));
+                                                         (uint32_t)size, pvBounce, virt_to_phys(pvBounce));
+                    sf_i->ModificationTimeAtOurLastWrite = sf_i->ModificationTime;
                     if (RT_SUCCESS(vrc)) {
                         cbRet = pReq->Parms.cb32Write.u.value32;
                         AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
@@ -2635,6 +2639,7 @@ static ssize_t vbsf_reg_write_iter_locking(struct kiocb *kio, struct iov_iter *i
              * Issue the request and unlock the pages.
              */
             rc = VbglR0SfHostReqWritePgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
+            sf_i->ModificationTimeAtOurLastWrite = sf_i->ModificationTime;
             SFLOGFLOW(("vbsf_reg_write_iter_locking: VbglR0SfHostReqWritePgLst -> %d (cbActual=%#x cbChunk=%#zx of %#zx cPages=%#zx offPage0=%#x\n",
                        rc, pReq->Parms.cb32Write.u.value32, cbChunk, cbToWrite, cPages, offPage0));
             if (RT_SUCCESS(rc)) {
@@ -2793,6 +2798,7 @@ static ssize_t vbsf_reg_aio_write(struct kiocb *kio, const struct iovec *iov, un
                 if (copy_from_iter(pReq->abData, cbToWrite, iter) == cbToWrite) {
                     int vrc = VbglR0SfHostReqWriteEmbedded(pSuperInfo->map.root, pReq, sf_r->Handle.hHost,
                                                            offFile, (uint32_t)cbToWrite);
+                    sf_i->ModificationTimeAtOurLastWrite = sf_i->ModificationTime;
                     if (RT_SUCCESS(vrc)) {
                         cbRet = pReq->Parms.cb32Write.u.value32;
                         AssertStmt(cbRet <= (ssize_t)cbToWrite, cbRet = cbToWrite);
@@ -3548,6 +3554,7 @@ static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
                                             offInFile,
                                             cbToWrite,
                                             1 /*cPages*/);
+            sf_i->ModificationTimeAtOurLastWrite = sf_i->ModificationTime;
             AssertMsgStmt(pReq->Parms.cb32Write.u.value32 == cbToWrite || RT_FAILURE(vrc), /* lazy bird */
                           ("%#x vs %#x\n", pReq->Parms.cb32Write, cbToWrite),
                           vrc = VERR_WRITE_ERROR);
