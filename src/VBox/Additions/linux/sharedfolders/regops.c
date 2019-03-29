@@ -123,6 +123,7 @@ struct vbsf_iter_stash {
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
+DECLINLINE(void) vbsf_put_page(struct page *pPage);
 DECLINLINE(void) vbsf_unlock_user_pages(struct page **papPages, size_t cPages, bool fSetDirty, bool fLockPgHack);
 static void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t offFile, uint32_t cbRange,
                                            uint8_t const *pbSrcBuf, struct page **papSrcPages,
@@ -1012,6 +1013,185 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
 }
 
 #endif /* 2.6.17 <= LINUX_VERSION_CODE < 3.16.0 */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 30) \
+ && LINUX_VERSION_CODE <  KERNEL_VERSION(2, 6, 23)
+/**
+ * Our own senfile implementation that does not go via the page cache like
+ * generic_file_sendfile() does.
+ */
+static ssize_t vbsf_reg_sendfile(struct file *pFile, loff_t *poffFile, size_t cbToSend, read_actor_t pfnActor, void *pvUser)
+{
+    struct inode           *inode = VBSF_GET_F_DENTRY(pFile)->d_inode;
+    struct vbsf_super_info *sf_g  = VBSF_GET_SUPER_INFO(inode->i_sb);
+    ssize_t                 cbRet;
+    SFLOGFLOW(("vbsf_reg_sendfile: pFile=%p poffFile=%p{%#RX64} cbToSend=%#zx pfnActor=%p pvUser=%p\n",
+               pFile, poffFile, poffFile ? *poffFile : 0, cbToSend, pfnActor, pvUser));
+    Assert(sf_g);
+
+    /*
+     * Return immediately if asked to send nothing.
+     */
+    if (cbToSend == 0)
+        return 0;
+
+    /*
+     * Like for vbsf_reg_read() and vbsf_reg_read_iter(), we allow going via
+     * the page cache in some cases or configs.
+     */
+    if (vbsf_should_use_cached_read(pFile, inode->i_mapping, sf_g)) {
+        cbRet = generic_file_sendfile(pFile, poffFile, cbToSend, pfnActor, pvUser);
+        SFLOGFLOW(("vbsf_reg_sendfile: returns %#zx *poffFile=%#RX64 [generic_file_sendfile]\n", cbRet, poffFile ? *poffFile : UINT64_MAX));
+    } else {
+        /*
+         * Allocate a request and a bunch of pages for reading from the file.
+         */
+        struct page        *apPages[16];
+        loff_t              offFile = poffFile ? *poffFile : 0;
+        size_t const        cPages  = cbToSend + ((size_t)offFile & PAGE_OFFSET_MASK) >= RT_ELEMENTS(apPages) * PAGE_SIZE
+                                    ? RT_ELEMENTS(apPages)
+                                    : RT_ALIGN_Z(cbToSend + ((size_t)offFile & PAGE_OFFSET_MASK), PAGE_SIZE) >> PAGE_SHIFT;
+        size_t              iPage;
+        VBOXSFREADPGLSTREQ *pReq    = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ,
+                                                                                                 PgLst.aPages[cPages]));
+        if (pReq) {
+            Assert(cPages > 0);
+            cbRet = 0;
+            for (iPage = 0; iPage < cPages; iPage++) {
+                struct page *pPage;
+                apPages[iPage] = pPage = alloc_page(GFP_USER);
+                if (pPage) {
+                    Assert(page_count(pPage) == 1);
+                    pReq->PgLst.aPages[iPage] = page_to_phys(pPage);
+                } else {
+                    while (iPage-- > 0)
+                        vbsf_put_page(apPages[iPage]);
+                    cbRet = -ENOMEM;
+                    break;
+                }
+            }
+            if (cbRet == 0) {
+                /*
+                 * Do the job.
+                 */
+                struct vbsf_reg_info *sf_r = (struct vbsf_reg_info *)pFile->private_data;
+                read_descriptor_t     RdDesc;
+                RdDesc.count    = cbToSend;
+                RdDesc.arg.data = pvUser;
+                RdDesc.written  = 0;
+                RdDesc.error    = 0;
+
+                Assert(sf_r);
+                Assert((sf_r->Handle.fFlags & VBSF_HANDLE_F_MAGIC_MASK) == VBSF_HANDLE_F_MAGIC);
+
+                while (cbToSend > 0) {
+                    /*
+                     * Read another chunk.  For paranoid reasons, we keep data where the page cache
+                     * would keep it, i.e. page offset bits corresponds to the file offset bits.
+                     */
+                    uint32_t const offPg0       = (uint32_t)offFile & (uint32_t)PAGE_OFFSET_MASK;
+                    uint32_t const cbToRead     = RT_MIN((cPages << PAGE_SHIFT) - offPg0, cbToSend);
+                    uint32_t const cPagesToRead = RT_ALIGN_Z(cbToRead + offPg0, PAGE_SIZE) >> PAGE_SHIFT;
+                    int            vrc;
+                    pReq->PgLst.offFirstPage = (uint16_t)offPg0;
+                    if (!signal_pending(current))
+                        vrc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbToRead, cPagesToRead);
+                    else
+                        vrc = VERR_INTERRUPTED;
+                    if (RT_SUCCESS(vrc)) {
+                        /*
+                         * Pass what we read to the actor.
+                         */
+                        uint32_t    off      = offPg0;
+                        uint32_t    cbActual = pReq->Parms.cb32Read.u.value32;
+                        bool const  fIsEof   = cbActual < cbToRead;
+                        AssertStmt(cbActual <= cbToRead, cbActual = cbToRead);
+                        SFLOG3(("vbsf_reg_sendfile: Read %#x bytes (offPg0=%#x), wanted %#x ...\n", cbActual, offPg0, cbToRead));
+
+                        iPage = 0;
+                        while (cbActual > 0) {
+                            uint32_t const cbPage     = RT_MIN(cbActual, PAGE_SIZE - off);
+                            int const      cbRetActor = pfnActor(&RdDesc, apPages[iPage], off, cbPage);
+                            Assert(cbRetActor >= 0); /* Returns zero on failure, with RdDesc.error holding the status code. */
+
+                            AssertMsg(iPage < cPages && iPage < cPagesToRead, ("iPage=%#x cPages=%#x cPagesToRead=%#x\n", iPage, cPages, cPagesToRead));
+
+                            offFile += cbRetActor;
+                            if ((uint32_t)cbRetActor == cbPage && RdDesc.count > 0) {
+                                cbActual -= cbPage;
+                                cbToSend -= cbPage;
+                                iPage++;
+                            } else {
+                                SFLOG3(("vbsf_reg_sendfile: cbRetActor=%#x (%d) cbPage=%#x RdDesc{count=%#lx error=%d} iPage=%#x/%#x/%#x cbToSend=%#zx\n",
+                                        cbRetActor, cbRetActor, cbPage, RdDesc.count, RdDesc.error, iPage, cPagesToRead, cPages, cbToSend));
+                                vrc = VERR_CALLBACK_RETURN;
+                                break;
+                            }
+                            off = 0;
+                        }
+
+                        /*
+                         * Are we done yet?
+                         */
+                        if (RT_FAILURE_NP(vrc) || cbToSend == 0 || RdDesc.error != 0 || fIsEof) {
+                            break;
+                        }
+
+                        /*
+                         * Replace pages held by the actor.
+                         */
+                        vrc = VINF_SUCCESS;
+                        for (iPage = 0; iPage < cPages; iPage++) {
+                            struct page *pPage = apPages[iPage];
+                            if (page_count(pPage) != 1) {
+                                struct page *pNewPage = alloc_page(GFP_USER);
+                                if (pNewPage) {
+                                    SFLOGFLOW(("vbsf_reg_sendfile: Replacing page #%x: %p -> %p\n", iPage, pPage, pNewPage));
+                                    vbsf_put_page(pPage);
+                                    apPages[iPage] = pNewPage;
+                                } else {
+                                    SFLOGFLOW(("vbsf_reg_sendfile: Failed to allocate a replacement page.\n"));
+                                    vrc = VERR_NO_MEMORY;
+                                    break;
+                                }
+                            }
+                        }
+                        if (RT_FAILURE(vrc))
+                            break; /* RdDesc.written should be non-zero, so don't bother with setting error. */
+                    } else {
+                        RdDesc.error = vrc == VERR_INTERRUPTED ? -ERESTARTSYS : -RTErrConvertToErrno(vrc);
+                        SFLOGFLOW(("vbsf_reg_sendfile: Read failed: %Rrc -> %zd (RdDesc.error=%#d)\n",
+                                   vrc, -RTErrConvertToErrno(vrc), RdDesc.error));
+                        break;
+                    }
+                }
+
+                /*
+                 * Free memory.
+                 */
+                for (iPage = 0; iPage < cPages; iPage++)
+                    vbsf_put_page(apPages[iPage]);
+
+                /*
+                 * Set the return values.
+                 */
+                if (RdDesc.written) {
+                    cbRet = RdDesc.written;
+                    if (poffFile)
+                        *poffFile = offFile;
+                } else {
+                    cbRet = RdDesc.error;
+                }
+            }
+            VbglR0PhysHeapFree(pReq);
+        } else {
+            cbRet = -ENOMEM;
+        }
+        SFLOGFLOW(("vbsf_reg_sendfile: returns %#zx offFile=%#RX64\n", cbRet, offFile));
+    }
+    return cbRet;
+}
+#endif /* 2.5.30 <= LINUX_VERSION_CODE < 2.6.23 */
 
 
 /*********************************************************************************************************************************
@@ -3191,7 +3371,7 @@ struct file_operations vbsf_reg_fops = {
     .splice_write    = vbsf_splice_write,
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
-    .sendfile        = generic_file_sendfile, /**< @todo this goes thru page cache. */
+    .sendfile        = vbsf_reg_sendfile,
 #endif
     .llseek          = vbsf_reg_llseek,
     .fsync           = vbsf_reg_fsync,
