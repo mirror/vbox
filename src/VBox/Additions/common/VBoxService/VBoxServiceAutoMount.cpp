@@ -375,9 +375,14 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
 
     struct vbsf_mount_opts Opts =
     {
+        -1,                    /* ttl */
+        -1,                    /* msDirCacheTTL */
+        -1,                    /* msInodeTTL */
+        0,                     /* cMaxIoPages */
+        0,                     /* cbDirBuf */
+        kVbsfCacheMode_Default,
         0,                     /* uid */
         (int)grp_vboxsf->gr_gid, /* gid */
-        -1,                    /* ttl */
         0770,                  /* dmode, owner and group "vboxsf" have full access */
         0770,                  /* fmode, owner and group "vboxsf" have full access */
         0,                     /* dmask */
@@ -390,7 +395,6 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
         0,                     /* remount */
         "\0",                  /* nls_name */
         NULL,                  /* convertcp */
-        0,                     /* cMaxIoPages */
     };
 
     int rc = vbsvcAutoMountPrepareMountPointOld(pszMountPoint, pszShareName, &Opts);
@@ -438,7 +442,7 @@ static int vbsvcAutoMountSharedFolderOld(const char *pszShareName, const char *p
         mntinf.dmask = Opts.dmask;
         mntinf.fmask = Opts.fmask;
         mntinf.cMaxIoPages = Opts.cMaxIoPages;
-        mntinf.tag[0] = '\0';
+        mntinf.szTag[0] = '\0';
 
         strcpy(mntinf.name, pszShareName);
         strcpy(mntinf.nls_name, "\0");
@@ -1472,15 +1476,19 @@ static int vbsvcAutomounterMountIt(PVBSVCAUTOMOUNTERENTRY pEntry)
     MntInfo.signature[1] = VBSF_MOUNT_SIGNATURE_BYTE_1;
     MntInfo.signature[2] = VBSF_MOUNT_SIGNATURE_BYTE_2;
     MntInfo.length       = sizeof(MntInfo);
-    MntInfo.ttl          = MntOpts.uid   = -1;
+    MntInfo.ttl          = MntOpts.uid              = -1 /*default*/;
+    MntInfo.msDirCacheTTL= MntOpts.msDirCacheTTL    = -1 /*default*/;
+    MntInfo.msInodeTTL   = MntOpts.msInodeTTL       = -1 /*default*/;
+    MntInfo.cMaxIoPages  = MntOpts.cMaxIoPages      = 0 /*default*/;
+    MntInfo.cbDirBuf     = MntOpts.cbDirBuf         = 0 /*default*/;
+    MntInfo.enmCacheMode = MntOpts.enmCacheMode     = kVbsfCacheMode_Default;
     MntInfo.uid          = MntOpts.uid   = 0;
     MntInfo.gid          = MntOpts.gid   = gidMount;
     MntInfo.dmode        = MntOpts.dmode = 0770;
     MntInfo.fmode        = MntOpts.fmode = 0770;
     MntInfo.dmask        = MntOpts.dmask = 0000;
     MntInfo.fmask        = MntOpts.fmask = 0000;
-    MntInfo.cMaxIoPages  = MntOpts.cMaxIoPages = 0 /*default*/;
-    memcpy(MntInfo.tag, g_szTag, sizeof(g_szTag)); AssertCompile(sizeof(MntInfo.tag) >= sizeof(g_szTag));
+    memcpy(MntInfo.szTag, g_szTag, sizeof(g_szTag)); AssertCompile(sizeof(MntInfo.szTag) >= sizeof(g_szTag));
     rc = RTStrCopy(MntInfo.name, sizeof(MntInfo.name), pEntry->pszName);
     if (RT_FAILURE(rc))
     {

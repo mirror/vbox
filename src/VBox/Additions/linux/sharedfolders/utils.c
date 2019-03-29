@@ -498,7 +498,7 @@ int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced, bool fInod
          */
         if (   !fForced
             && !sf_i->force_restat
-            && jiffies - sf_i->ts_up_to_date < pSuperInfo->ttl)
+            && jiffies - sf_i->ts_up_to_date < pSuperInfo->cJiffiesInodeTTL)
             rc = 0;
         else {
             /*
@@ -610,7 +610,7 @@ int vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFil
          */
         if (   !fForced
             && !sf_i->force_restat
-            && jiffies - sf_i->ts_up_to_date < pSuperInfo->ttl)
+            && jiffies - sf_i->ts_up_to_date < pSuperInfo->cJiffiesInodeTTL)
             err = 0;
         else {
             /*
@@ -1083,15 +1083,15 @@ static int vbsf_dentry_revalidate(struct dentry *dentry, int flags)
             //struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(pInode);
             unsigned long const     cJiffiesAge = jiffies - vbsf_dentry_get_update_jiffies(dentry);
             struct vbsf_super_info *pSuperInfo  = VBSF_GET_SUPER_INFO(dentry->d_sb);
-            if (cJiffiesAge < pSuperInfo->ttl) {
-                SFLOGFLOW(("vbsf_dentry_revalidate: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, pSuperInfo->ttl));
+            if (cJiffiesAge < pSuperInfo->cJiffiesDirCacheTTL) {
+                SFLOGFLOW(("vbsf_dentry_revalidate: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, pSuperInfo->cJiffiesDirCacheTTL));
                 rc = 1;
             } else if (!vbsf_inode_revalidate_worker(dentry, true /*fForced*/, false /*fInodeLocked*/)) {
                 vbsf_dentry_set_update_jiffies(dentry, jiffies); /** @todo get jiffies from inode. */
-                SFLOGFLOW(("vbsf_dentry_revalidate: age: %lu vs. TTL %lu -> reval -> 1\n", cJiffiesAge, pSuperInfo->ttl));
+                SFLOGFLOW(("vbsf_dentry_revalidate: age: %lu vs. TTL %lu -> reval -> 1\n", cJiffiesAge, pSuperInfo->cJiffiesDirCacheTTL));
                 rc = 1;
             } else {
-                SFLOGFLOW(("vbsf_dentry_revalidate: age: %lu vs. TTL %lu -> reval -> 0\n", cJiffiesAge, pSuperInfo->ttl));
+                SFLOGFLOW(("vbsf_dentry_revalidate: age: %lu vs. TTL %lu -> reval -> 0\n", cJiffiesAge, pSuperInfo->cJiffiesDirCacheTTL));
                 rc = 0;
             }
         } else {
@@ -1117,14 +1117,14 @@ static int vbsf_dentry_revalidate(struct dentry *dentry, int flags)
                 /* Can we skip revalidation based on TTL? */
                 unsigned long const     cJiffiesAge = vbsf_dentry_get_update_jiffies(dentry) - jiffies;
                 struct vbsf_super_info *pSuperInfo  = VBSF_GET_SUPER_INFO(dentry->d_sb);
-                if (cJiffiesAge < pSuperInfo->ttl) {
-                    SFLOGFLOW(("vbsf_dentry_revalidate: negative: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, pSuperInfo->ttl));
+                if (cJiffiesAge < pSuperInfo->cJiffiesDirCacheTTL) {
+                    SFLOGFLOW(("vbsf_dentry_revalidate: negative: age: %lu vs. TTL %lu -> 1\n", cJiffiesAge, pSuperInfo->cJiffiesDirCacheTTL));
                     rc = 1;
                 } else {
                     /* We could revalidate it here, but we could instead just
                        have the caller kick it out. */
                     /** @todo stat the direntry and see if it exists now. */
-                    SFLOGFLOW(("vbsf_dentry_revalidate: negative: age: %lu vs. TTL %lu -> 0\n", cJiffiesAge, pSuperInfo->ttl));
+                    SFLOGFLOW(("vbsf_dentry_revalidate: negative: age: %lu vs. TTL %lu -> 0\n", cJiffiesAge, pSuperInfo->cJiffiesDirCacheTTL));
                     rc = 0;
                 }
             }

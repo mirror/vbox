@@ -93,6 +93,23 @@ safe_atoi(const char *s, size_t size, int base)
     return (int)val;
 }
 
+static unsigned
+safe_atoiu(const char *s, size_t size, int base)
+{
+    char *endptr;
+    long long int val = strtoll(s, &endptr, base);
+
+    if (   val < 0
+        || val > UINT_MAX
+        || endptr < s + size)
+    {
+        errno = ERANGE;
+        panic_err("could not convert %.*s to unsigned integer, result = %lld (%#llx)",
+                  (int)size, s, val, val);
+    }
+    return (unsigned)val;
+}
+
 static void
 process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
 {
@@ -105,6 +122,11 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
         HO_UID,
         HO_GID,
         HO_TTL,
+        HO_DENTRY_TTL,
+        HO_INODE_TTL,
+        HO_MAX_IO_PAGES,
+        HO_DIR_BUF,
+        HO_CACHE,
         HO_DMODE,
         HO_FMODE,
         HO_UMASK,
@@ -112,7 +134,6 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
         HO_FMASK,
         HO_IOCHARSET,
         HO_CONVERTCP,
-        HO_MAX_IO_PAGES,
         HO_NOEXEC,
         HO_EXEC,
         HO_NODEV,
@@ -135,7 +156,12 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
         {"ro",          HO_RO,              0, "mount read only"},
         {"uid",         HO_UID,             1, "default file owner user id"},
         {"gid",         HO_GID,             1, "default file owner group id"},
-        {"ttl",         HO_TTL,             1, "time to live for dentry"},
+        {"ttl",         HO_TTL,             1, "time to live for dentries & inode info"},
+        {"dcachettl",   HO_DENTRY_TTL,      1, "time to live for dentries"},
+        {"inodettl",    HO_INODE_TTL,       1, "time to live for inode info"},
+        {"maxiopages",  HO_MAX_IO_PAGES,    1, "max buffer size for I/O with host"},
+        {"dirbuf",      HO_DIR_BUF,         1, "directory buffer size (0 for default)"},
+        {"cache",       HO_CACHE,           1, "cache mode: none, strict (default), read, readwrite"},
         {"iocharset",   HO_IOCHARSET,       1, "i/o charset (default utf8)"},
         {"convertcp",   HO_CONVERTCP,       1, "convert share name from given charset to utf8"},
         {"dmode",       HO_DMODE,           1, "mode of all directories"},
@@ -143,7 +169,6 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
         {"umask",       HO_UMASK,           1, "umask of directories and regular files"},
         {"dmask",       HO_DMASK,           1, "umask of directories"},
         {"fmask",       HO_FMASK,           1, "umask of regular files"},
-        {"maxiopages",  HO_MAX_IO_PAGES,    1, "max buffer size for I/O with host"},
         {"noexec",      HO_NOEXEC,          0, NULL}, /* don't document these options directly here */
         {"exec",        HO_EXEC,            0, NULL}, /* as they are well known and described in the */
         {"nodev",       HO_NODEV,           0, NULL}, /* usual manpages */
@@ -237,6 +262,38 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
                     case HO_REMOUNT:
                         opts->remount = 1;
                         break;
+                    case HO_TTL:
+                        opts->ttl = safe_atoi(val, val_len, 10);
+                        break;
+                    case HO_DENTRY_TTL:
+                        opts->msDirCacheTTL = safe_atoi(val, val_len, 10);
+                        break;
+                    case HO_INODE_TTL:
+                        opts->msInodeTTL = safe_atoi(val, val_len, 10);
+                        break;
+                    case HO_MAX_IO_PAGES:
+                        opts->cMaxIoPages = safe_atoiu(val, val_len, 10);
+                        break;
+                    case HO_DIR_BUF:
+                        opts->cbDirBuf = safe_atoiu(val, val_len, 10);
+                        break;
+                    case HO_CACHE:
+#define IS_EQUAL(a_sz) (val_len == sizeof(a_sz) - 1U && strncmp(val, a_sz, sizeof(a_sz) - 1U) == 0)
+                        if (IS_EQUAL("default"))
+                            opts->enmCacheMode = kVbsfCacheMode_Default;
+                        else if (IS_EQUAL("none"))
+                            opts->enmCacheMode = kVbsfCacheMode_None;
+                        else if (IS_EQUAL("strict"))
+                            opts->enmCacheMode = kVbsfCacheMode_Strict;
+                        else if (IS_EQUAL("read"))
+                            opts->enmCacheMode = kVbsfCacheMode_Read;
+                        else if (IS_EQUAL("readwrite"))
+                            opts->enmCacheMode = kVbsfCacheMode_ReadWrite;
+                        else
+                            panic("invalid cache mode '%.*s'\n"
+                                  "Valid cache modes are: default, none, strict, read, readwrite\n",
+                                  (int)val_len, val);
+                        break;
                     case HO_UID:
                         /** @todo convert string to id. */
                         opts->uid = safe_atoi(val, val_len, 10);
@@ -244,9 +301,6 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
                     case HO_GID:
                         /** @todo convert string to id. */
                         opts->gid = safe_atoi(val, val_len, 10);
-                        break;
-                    case HO_TTL:
-                        opts->ttl = safe_atoi(val, val_len, 10);
                         break;
                     case HO_DMODE:
                         opts->dmode = safe_atoi(val, val_len, 8);
@@ -262,9 +316,6 @@ process_mount_opts(const char *s, struct vbsf_mount_opts *opts)
                         break;
                     case HO_FMASK:
                         opts->fmask = safe_atoi(val, val_len, 8);
-                        break;
-                    case HO_MAX_IO_PAGES:
-                        opts->cMaxIoPages = safe_atoi(val, val_len, 10);
                         break;
                     case HO_IOCHARSET:
                         if (val_len + 1 > sizeof(opts->nls_name))
@@ -359,8 +410,28 @@ static int usage(char *argv0)
            "     rw                 mount writable (the default)\n"
            "     ro                 mount read only\n"
            "     uid=UID            set the default file owner user id to UID\n"
-           "     gid=GID            set the default file owner group id to GID\n"
-           "     ttl=TTL            set the \"time to live\" to TID for the dentry\n");
+           "     gid=GID            set the default file owner group id to GID\n");
+    printf("     ttl=MILLIESECSONDS set the \"time to live\" for both the directory cache\n"
+           "                        and inode info.  -1 for kernel default, 0 disables it.\n"
+           "     dcachettl=MILLIES  set the \"time to live\" for the directory cache,\n"
+           "                        overriding the 'ttl' option.  Ignored if negative.\n"
+           "     inodettl=MILLIES   set the \"time to live\" for the inode information,\n"
+           "                        overriding the 'ttl' option.  Ignored if negative.\n");
+    printf("     maxiopages=PAGES   set the max host I/O buffers size in pages. Uses\n"
+           "                        default if zero.\n"
+           "     dirbuf=BYTES       set the directory enumeration buffer size in bytes.\n"
+           "                        Uses default size if zero.\n");
+    printf("     cache=MODE         set the caching mode for the mount.  Allowed values:\n"
+           "                          default: use the kernel default (strict)\n"
+           "                             none: no caching; may experience guest side\n"
+           "                                   coherence issues between mmap and read.\n"
+           "                           strict: no caching, except for writably mapped\n"
+           "                                   files (for guest side coherence)\n"
+           "                             read: read via the page cache; host changes\n"
+           "                                   may be completely ignored\n"
+           "                        readwrite: read and write via the page cache; host\n"
+           "                                   changes may be completely ignored and\n"
+           "                                   guest changes takes a while to reach the host\n");
     printf("     dmode=MODE         override the mode of all directories to (octal) MODE\n"
            "     fmode=MODE         override the mode of all regular files to (octal) MODE\n"
            "     umask=UMASK        set the umask to (octal) UMASK\n");
@@ -388,9 +459,14 @@ main(int argc, char **argv)
     struct vbsf_mount_info_new mntinf;
     struct vbsf_mount_opts opts =
     {
+        -1,    /* ttl */
+        -1,    /* msDirCacheTTL */
+        -1,    /* msInodeTTL */
+        0,     /* cMaxIoPages */
+        0,     /* cbDirBuf */
+        kVbsfCacheMode_Default,
         0,     /* uid */
         0,     /* gid */
-        -1,    /* ttl */
        ~0U,    /* dmode */
        ~0U,    /* fmode*/
         0,     /* dmask */
@@ -403,7 +479,6 @@ main(int argc, char **argv)
         0,     /* remount */
         "\0",  /* nls_name */
         NULL,  /* convertcp */
-        0,     /* cMaxIoPages */
     };
     AssertCompile(sizeof(uid_t) == sizeof(int));
     AssertCompile(sizeof(gid_t) == sizeof(int));
@@ -414,7 +489,7 @@ main(int argc, char **argv)
     mntinf.signature[1] = VBSF_MOUNT_SIGNATURE_BYTE_1;
     mntinf.signature[2] = VBSF_MOUNT_SIGNATURE_BYTE_2;
     mntinf.length       = sizeof(mntinf);
-    mntinf.tag[0] = '\0';
+    mntinf.szTag[0] = '\0';
 
     if (getuid())
         panic("Only root can mount shared folders from the host.\n");
@@ -485,14 +560,19 @@ main(int argc, char **argv)
     if (opts.remount)
         flags |= MS_REMOUNT;
 
+    mntinf.ttl              = opts.ttl;
+    mntinf.msDirCacheTTL    = opts.msDirCacheTTL;
+    mntinf.msInodeTTL       = opts.msInodeTTL;
+    mntinf.cMaxIoPages      = opts.cMaxIoPages;
+    mntinf.cbDirBuf         = opts.cbDirBuf;
+    mntinf.enmCacheMode     = opts.enmCacheMode;
+
     mntinf.uid   = opts.uid;
     mntinf.gid   = opts.gid;
-    mntinf.ttl   = opts.ttl;
     mntinf.dmode = opts.dmode;
     mntinf.fmode = opts.fmode;
     mntinf.dmask = opts.dmask;
     mntinf.fmask = opts.fmask;
-    mntinf.cMaxIoPages = opts.cMaxIoPages;
 
     /*
      * Note: When adding and/or modifying parameters of the vboxsf mounting

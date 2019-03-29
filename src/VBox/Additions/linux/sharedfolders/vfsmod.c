@@ -57,6 +57,13 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define VBSF_DEFAULT_MAX_IO_PAGES RT_MIN(_16K / sizeof(RTGCPHYS64) /* => 8MB buffer */, VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT)
+#define VBSF_DEFAULT_DIR_BUF_SIZE _64K
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 VBGLSFCLIENT g_SfClient;
@@ -86,18 +93,10 @@ static struct super_operations g_vbsf_super_ops;
  */
 static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *pSuperInfo, struct vbsf_mount_info_new *info)
 {
-    pSuperInfo->ttl_msec = info->ttl;
-    if (info->ttl > 0)
-        pSuperInfo->ttl = msecs_to_jiffies(info->ttl);
-    else if (info->ttl == 0 || info->ttl != -1)
-        pSuperInfo->ttl = pSuperInfo->ttl_msec = 0;
-    else
-        pSuperInfo->ttl = msecs_to_jiffies(VBSF_DEFAULT_TTL_MS);
-
     pSuperInfo->uid = info->uid;
     pSuperInfo->gid = info->gid;
 
-    if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, tag)) {
+    if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, szTag)) {
         /* new fields */
         pSuperInfo->dmode = info->dmode;
         pSuperInfo->fmode = info->fmode;
@@ -109,11 +108,11 @@ static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *pSuperI
     }
 
     if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, cMaxIoPages)) {
-        AssertCompile(sizeof(pSuperInfo->tag) >= sizeof(info->tag));
-        memcpy(pSuperInfo->tag, info->tag, sizeof(info->tag));
-        pSuperInfo->tag[sizeof(pSuperInfo->tag) - 1] = '\0';
+        AssertCompile(sizeof(pSuperInfo->szTag) >= sizeof(info->szTag));
+        memcpy(pSuperInfo->szTag, info->szTag, sizeof(info->szTag));
+        pSuperInfo->szTag[sizeof(pSuperInfo->szTag) - 1] = '\0';
     } else {
-        pSuperInfo->tag[0] = '\0';
+        pSuperInfo->szTag[0] = '\0';
     }
 
     /* The max number of pages in an I/O request.  This must take into
@@ -123,8 +122,7 @@ static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *pSuperI
        for the I/O bytes we send/receive, so don't push the host heap
        too hard as we'd have to retry with smaller requests when this
        happens, which isn't too efficient. */
-    pSuperInfo->cMaxIoPages = RT_MIN(_16K / sizeof(RTGCPHYS64) /* => 8MB buffer */,
-                                     VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT);
+    pSuperInfo->cMaxIoPages = VBSF_DEFAULT_MAX_IO_PAGES;
     if (   (unsigned)info->length >= sizeof(struct vbsf_mount_info_new)
         && info->cMaxIoPages > 0) {
         if (info->cMaxIoPages <= VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT)
@@ -134,7 +132,71 @@ static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *pSuperI
                    info->cMaxIoPages, pSuperInfo->cMaxIoPages);
     }
 
-    pSuperInfo->cbDirBuf = _64K; /** @todo make configurable. */
+    pSuperInfo->cbDirBuf = VBSF_DEFAULT_DIR_BUF_SIZE;
+    if (   (unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, cbDirBuf)
+        && info->cbDirBuf > 0) {
+        if (info->cbDirBuf <= _16M)
+            pSuperInfo->cbDirBuf = RT_ALIGN_32(info->cbDirBuf, PAGE_SIZE);
+        else
+            printk(KERN_WARNING "vboxsf: max directory buffer size (%#x) is out of range, using default (%#x) instead.\n",
+                   info->cMaxIoPages, pSuperInfo->cMaxIoPages);
+    }
+
+    /*
+     * TTLs.
+     */
+    pSuperInfo->msTTL = info->ttl;
+    if (info->ttl > 0)
+        pSuperInfo->cJiffiesDirCacheTTL = msecs_to_jiffies(info->ttl);
+    else if (info->ttl == 0 || info->ttl != -1)
+        pSuperInfo->cJiffiesDirCacheTTL = pSuperInfo->msTTL = 0;
+    else
+        pSuperInfo->cJiffiesDirCacheTTL = msecs_to_jiffies(VBSF_DEFAULT_TTL_MS);
+    pSuperInfo->cJiffiesInodeTTL = pSuperInfo->cJiffiesDirCacheTTL;
+
+    pSuperInfo->msDirCacheTTL = -1;
+    if (   (unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, msDirCacheTTL)
+        && info->msDirCacheTTL >= 0) {
+        if (info->msDirCacheTTL > 0) {
+            pSuperInfo->msDirCacheTTL       = info->msDirCacheTTL;
+            pSuperInfo->cJiffiesDirCacheTTL = msecs_to_jiffies(info->msDirCacheTTL);
+        } else {
+            pSuperInfo->msDirCacheTTL       = 0;
+            pSuperInfo->cJiffiesDirCacheTTL = 0;
+        }
+    }
+
+    pSuperInfo->msInodeTTL = -1;
+    if (   (unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, msInodeTTL)
+        && info->msInodeTTL >= 0) {
+        if (info->msInodeTTL > 0) {
+            pSuperInfo->msInodeTTL       = info->msInodeTTL;
+            pSuperInfo->cJiffiesInodeTTL = msecs_to_jiffies(info->msInodeTTL);
+        } else {
+            pSuperInfo->msInodeTTL       = 0;
+            pSuperInfo->cJiffiesInodeTTL = 0;
+        }
+    }
+
+    /*
+     * Caching.
+     */
+    pSuperInfo->enmCacheMode = kVbsfCacheMode_Strict;
+    if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, enmCacheMode)) {
+        switch (info->enmCacheMode) {
+            case kVbsfCacheMode_Default:
+            case kVbsfCacheMode_Strict:
+                break;
+            case kVbsfCacheMode_None:
+            case kVbsfCacheMode_Read:
+            case kVbsfCacheMode_ReadWrite:
+                pSuperInfo->enmCacheMode = info->enmCacheMode;
+                break;
+            default:
+                printk(KERN_WARNING "vboxsf: cache mode (%#x) is out of range, using default instead.\n", info->enmCacheMode);
+                break;
+        }
+    }
 }
 
 /**
@@ -697,7 +759,7 @@ static int vbsf_remount_fs(struct super_block *sb, int *flags, char *data)
  * Show mount options.
  *
  * This is needed by the VBoxService automounter in order for it to pick up
- * the the 'tag' option value it sets on its mount.
+ * the the 'szTag' option value it sets on its mount.
  */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
 static int vbsf_show_options(struct seq_file *m, struct vfsmount *mnt)
@@ -712,9 +774,29 @@ static int vbsf_show_options(struct seq_file *m, struct dentry *root)
 #endif
     struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(sb);
     if (pSuperInfo) {
-        seq_printf(m, ",uid=%u,gid=%u,ttl=%d,maxiopages=%u,iocharset=%s",
-                   pSuperInfo->uid, pSuperInfo->gid, pSuperInfo->ttl_msec, pSuperInfo->cMaxIoPages,
-                   pSuperInfo->nls ? pSuperInfo->nls->charset : "utf8");
+        /* Performance related options: */
+        if (pSuperInfo->msTTL != -1)
+            seq_printf(m, ",ttl=%d", pSuperInfo->msTTL);
+        if (pSuperInfo->msDirCacheTTL >= 0)
+            seq_printf(m, ",dcachettl=%d", pSuperInfo->msDirCacheTTL);
+        if (pSuperInfo->msInodeTTL >= 0)
+            seq_printf(m, ",inodettl=%d", pSuperInfo->msInodeTTL);
+        if (pSuperInfo->cMaxIoPages != VBSF_DEFAULT_MAX_IO_PAGES)
+            seq_printf(m, ",maxiopages=%u", pSuperInfo->cMaxIoPages);
+        if (pSuperInfo->cbDirBuf != VBSF_DEFAULT_DIR_BUF_SIZE)
+            seq_printf(m, ",dirbuf=%u", pSuperInfo->cbDirBuf);
+        switch (pSuperInfo->enmCacheMode) {
+            default: AssertFailed();
+            case kVbsfCacheMode_Strict:
+                break;
+            case kVbsfCacheMode_None:       seq_puts(m, ",cache=none"); break;
+            case kVbsfCacheMode_Read:       seq_puts(m, ",cache=read"); break;
+            case kVbsfCacheMode_ReadWrite:  seq_puts(m, ",cache=readwrite"); break;
+        }
+
+        /* Attributes and NLS: */
+        seq_printf(m, ",iocharset=%s", pSuperInfo->nls ? pSuperInfo->nls->charset : "utf8");
+        seq_printf(m, ",uid=%u,gid=%u", pSuperInfo->uid, pSuperInfo->gid);
         if (pSuperInfo->dmode != ~0)
             seq_printf(m, ",dmode=0%o", pSuperInfo->dmode);
         if (pSuperInfo->fmode != ~0)
@@ -723,9 +805,11 @@ static int vbsf_show_options(struct seq_file *m, struct dentry *root)
             seq_printf(m, ",dmask=0%o", pSuperInfo->dmask);
         if (pSuperInfo->fmask != 0)
             seq_printf(m, ",fmask=0%o", pSuperInfo->fmask);
-        if (pSuperInfo->tag[0] != '\0') {
+
+        /* Misc: */
+        if (pSuperInfo->szTag[0] != '\0') {
             seq_puts(m, ",tag=");
-            seq_escape(m, pSuperInfo->tag, " \t\n\\");
+            seq_escape(m, pSuperInfo->szTag, " \t\n\\");
         }
     }
     return 0;

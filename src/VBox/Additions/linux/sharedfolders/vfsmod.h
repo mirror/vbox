@@ -129,11 +129,6 @@ struct vbsf_super_info {
     struct nls_table *nls;
     /** Set if the NLS table is UTF-8. */
     bool fNlsIsUtf8;
-    /** time-to-live value for direntry and inode info in jiffies.
-     * Zero == disabled. */
-    unsigned long ttl;
-    /** The mount option value for /proc/mounts. */
-    int ttl_msec;
     int uid;
     int gid;
     int dmode;
@@ -142,15 +137,27 @@ struct vbsf_super_info {
     int fmask;
     /** Maximum number of pages to allow in an I/O buffer with the host.
      * This applies to read and write operations.  */
-    uint32_t cMaxIoPages;
+    uint32_t                cMaxIoPages;
     /** The default directory buffer size. */
-    uint32_t cbDirBuf;
+    uint32_t                cbDirBuf;
+    /** The time to live for directory entries in jiffies, zero if disabled. */
+    uint32_t                cJiffiesDirCacheTTL;
+    /** The time to live for inode information in jiffies, zero if disabled. */
+    uint32_t                cJiffiesInodeTTL;
+    /** The cache and coherency mode. */
+    enum vbsf_cache_mode    enmCacheMode;
     /** Mount tag for VBoxService automounter.  @since 6.0 */
-    char tag[32];
+    char                    szTag[32];
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
     /** The backing device info structure. */
     struct backing_dev_info bdi;
 #endif
+    /** The mount option value for /proc/mounts. */
+    int32_t                 msTTL;
+    /** The time to live for directory entries in milliseconds, for /proc/mounts. */
+    int32_t                 msDirCacheTTL;
+    /** The time to live for inode information in milliseconds, for /proc/mounts. */
+    int32_t                 msInodeTTL;
 };
 
 /* Following casts are here to prevent assignment of void * to
@@ -334,8 +341,8 @@ struct vbsf_dir_info {
 /**
  * Sets the update-jiffies value for a dentry.
  *
- * This is used together with vbsf_super_info::ttl to reduce re-validation of
- * dentry structures while walking.
+ * This is used together with vbsf_super_info::cJiffiesDirCacheTTL to reduce
+ * re-validation of dentry structures while walking.
  *
  * This used to be living in d_time, but since 4.9.0 that seems to have become
  * unfashionable and d_fsdata is now used to for this purpose.  We do this all

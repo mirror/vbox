@@ -525,6 +525,7 @@ void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *
 }
 
 
+
 /*********************************************************************************************************************************
 *   Misc                                                                                                                         *
 *********************************************************************************************************************************/
@@ -538,17 +539,22 @@ void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *
  */
 DECLINLINE(bool) vbsf_should_use_cached_read(struct file *file, struct address_space *mapping, struct vbsf_super_info *pSuperInfo)
 {
+    if (   (file->f_flags & O_DIRECT)
+        || pSuperInfo->enmCacheMode == kVbsfCacheMode_None)
+        return false;
+    if (   pSuperInfo->enmCacheMode == kVbsfCacheMode_Read
+        || pSuperInfo->enmCacheMode == kVbsfCacheMode_ReadWrite)
+        return true;
+    Assert(pSuperInfo->enmCacheMode == kVbsfCacheMode_Strict);
     return mapping
         && mapping->nrpages > 0
-        && mapping_writably_mapped(mapping)
-        && !(file->f_flags & O_DIRECT)
-        && 1 /** @todo make this behaviour configurable at mount time (pSuperInfo) */;
+        && mapping_writably_mapped(mapping);
 }
 
 
 
 /*********************************************************************************************************************************
-*   Pipe / splice stuff for 2.6.17 >= linux < 2.6.31 (where no fallbacks were available)                                         *
+*   Pipe / splice stuff mainly for 2.6.17 >= linux < 2.6.31 (where no fallbacks were available)                                  *
 *********************************************************************************************************************************/
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17) \
@@ -579,6 +585,7 @@ static void vbsf_wait_pipe(struct pipe_inode_info *pPipe)
     finish_wait(&pPipe->wait, &WaitStuff);
     LOCK_PIPE(pPipe);
 }
+
 
 /** Worker for vbsf_feed_pages_to_pipe that wakes up readers. */
 static void vbsf_wake_up_pipe(struct pipe_inode_info *pPipe, bool fReaders)
@@ -1900,6 +1907,8 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
         return 0;
     }
 
+    /** @todo Implement the read-write caching mode. */
+
     /*
      * If there are active writable mappings, coordinate with any
      * pending writes via those.
@@ -2744,6 +2753,8 @@ static ssize_t vbsf_reg_aio_write(struct kiocb *kio, const struct iovec *iov, un
      */
     if (!cbToWrite)
         return 0;
+
+    /** @todo Implement the read-write caching mode. */
 
     /*
      * Now now we reject async I/O requests.
