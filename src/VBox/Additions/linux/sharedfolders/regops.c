@@ -1020,7 +1020,13 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
  * Our own senfile implementation that does not go via the page cache like
  * generic_file_sendfile() does.
  */
-static ssize_t vbsf_reg_sendfile(struct file *pFile, loff_t *poffFile, size_t cbToSend, read_actor_t pfnActor, void *pvUser)
+static ssize_t vbsf_reg_sendfile(struct file *pFile, loff_t *poffFile, size_t cbToSend, read_actor_t pfnActor,
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
+                                 void *pvUser
+# else
+                                 void __user *pvUser
+# endif
+                                )
 {
     struct inode           *inode = VBSF_GET_F_DENTRY(pFile)->d_inode;
     struct vbsf_super_info *sf_g  = VBSF_GET_SUPER_INFO(inode->i_sb);
@@ -1077,7 +1083,11 @@ static ssize_t vbsf_reg_sendfile(struct file *pFile, loff_t *poffFile, size_t cb
                 struct vbsf_reg_info *sf_r = (struct vbsf_reg_info *)pFile->private_data;
                 read_descriptor_t     RdDesc;
                 RdDesc.count    = cbToSend;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 8)
                 RdDesc.arg.data = pvUser;
+# else
+                RdDesc.buf      = pvUser;
+# endif
                 RdDesc.written  = 0;
                 RdDesc.error    = 0;
 
