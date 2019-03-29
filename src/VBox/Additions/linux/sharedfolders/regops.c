@@ -3370,7 +3370,7 @@ struct file_operations vbsf_reg_fops = {
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 17)
     .splice_write    = vbsf_splice_write,
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 30) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
     .sendfile        = vbsf_reg_sendfile,
 #endif
     .llseek          = vbsf_reg_llseek,
