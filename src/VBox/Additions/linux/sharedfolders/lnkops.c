@@ -261,7 +261,9 @@ static int         vbsf_follow_link(struct dentry *dentry, struct nameidata *nd)
  *
  * For kernel before 2.6.8 memory isn't being kept around.
  */
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+static void vbsf_put_link(struct dentry *dentry, void *cookie)
+#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
 static void vbsf_put_link(struct dentry *dentry, struct nameidata *nd, void *cookie)
 #  else
 static void vbsf_put_link(struct dentry *dentry, struct nameidata *nd)
