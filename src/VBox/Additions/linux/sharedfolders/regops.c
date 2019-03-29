@@ -92,9 +92,11 @@ struct vbsf_iov_iter {
 # endif
 };
 # ifdef VBOX_STRICT
-#  define VBSF_IOV_ITER_INITIALIZER(a_cSegs, a_pIov, a_fWrite) { 0, a_fWrite, 0, a_cSegs, a_pIov, a_pIov, a_cSegs }
+#  define VBSF_IOV_ITER_INITIALIZER(a_cSegs, a_pIov, a_fWrite) \
+    { vbsf_iov_iter_detect_type(a_pIov, a_cSegs), a_fWrite, 0, a_cSegs, a_pIov, a_pIov, a_cSegs }
 # else
-#  define VBSF_IOV_ITER_INITIALIZER(a_cSegs, a_pIov, a_fWrite) { 0, a_fWrite, 0, a_cSegs, a_pIov }
+#  define VBSF_IOV_ITER_INITIALIZER(a_cSegs, a_pIov, a_fWrite) \
+    { vbsf_iov_iter_detect_type(a_pIov, a_cSegs), a_fWrite, 0, a_cSegs, a_pIov }
 # endif
 # define ITER_KVEC 1
 # define iov_iter vbsf_iov_iter
@@ -134,6 +136,25 @@ static void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t
 *   Provide more recent uio.h functionality to older kernels.                                                                    *
 *********************************************************************************************************************************/
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
+
+/**
+ * Detects the vector type.
+ */
+static int vbsf_iov_iter_detect_type(struct iovec const *paIov, size_t cSegs)
+{
+    /* Check the first segment with a non-zero length. */
+    while (cSegs-- > 0) {
+        if (paIov->iov_len > 0) {
+            if (access_ok(VERIFY_READ, paIov->iov_base, paIov->iov_len))
+                return (uintptr_t)paIov->iov_base >= USER_DS.seg ? ITER_KVEC : 0;
+            AssertMsgFailed(("%p LB %#zx\n", paIov->iov_base, paIov->iov_len));
+            break;
+        }
+        paIov++;
+    }
+    return 0;
+}
+
 
 # undef  iov_iter_count
 # define iov_iter_count(a_pIter)                vbsf_iov_iter_count(a_pIter)
