@@ -32,6 +32,8 @@ VBOX_QUIET    :=
 VBOX_QUIET_SH := set -x;
  endif
 
+all: vboxguest vboxsf vboxvideo
+
 vboxguest:
 	@echo "=== Building 'vboxguest' module ==="
 	$(VBOX_QUIET)$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest
@@ -71,8 +73,6 @@ vboxvideo:
 	    fi; \
 	    echo; \
 	fi
-
-all: vboxguest vboxsf vboxvideo
 
 install:
 	$(VBOX_QUIET)$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest install
