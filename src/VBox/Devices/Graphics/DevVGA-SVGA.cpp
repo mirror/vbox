@@ -1464,7 +1464,34 @@ DECLINLINE(void) vmsvgaSafeFifoBusyRegUpdate(PVGASTATE pThis, bool fState)
         } while (cLoops-- > 0 && fState != (pThis->svga.fBusy != 0));
     }
 }
+
+
+/**
+ * Update the scanline pitch in response to the guest changing mode
+ * width/bpp.
+ *
+ * @param   pThis       VMSVGA State
+ */
+DECLINLINE(void) vmsvgaUpdatePitch(PVGASTATE pThis)
+{
+    uint32_t RT_UNTRUSTED_VOLATILE_GUEST *pFIFO = pThis->svga.CTX_SUFF(pFIFO);
+    uint32_t uFifoPitchLock = pFIFO[SVGA_FIFO_PITCHLOCK];
+    uint32_t uRegPitchLock  = pThis->svga.u32PitchLock;
+
+    /* Sanitize values. */
+    uFifoPitchLock = (uint16_t)uFifoPitchLock;
+    uRegPitchLock  = (uint16_t)uFifoPitchLock;
+
+    /* Prefer the register value to the FIFO value.*/
+    if (pThis->svga.u32PitchLock)
+        pThis->svga.cbScanline = pThis->svga.u32PitchLock;
+    if (uFifoPitchLock)
+        pThis->svga.cbScanline = uFifoPitchLock;
+    else
+        pThis->svga.cbScanline = pThis->svga.uWidth * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
+}
 #endif
+
 
 /**
  * Write port register
@@ -1592,12 +1619,16 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         STAM_REL_COUNTER_INC(&pThis->svga.StatRegWidthWr);
         if (pThis->svga.uWidth != u32)
         {
+#if defined(IN_RING3) || defined(IN_RING0)
             pThis->svga.uWidth = u32;
-            pThis->svga.cbScanline = pThis->svga.uWidth * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
+            vmsvgaUpdatePitch(pThis);
             if (pThis->svga.fEnabled)
             {
                 ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
             }
+#else
+            rc = VINF_IOM_R3_IOPORT_WRITE;
+#endif
         }
         /* else: nop */
         break;
@@ -1624,12 +1655,16 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         STAM_REL_COUNTER_INC(&pThis->svga.StatRegBitsPerPixelWr);
         if (pThis->svga.uBpp != u32)
         {
+#if defined(IN_RING3) || defined(IN_RING0)
             pThis->svga.uBpp = u32;
-            pThis->svga.cbScanline = pThis->svga.uWidth * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
+            vmsvgaUpdatePitch(pThis);
             if (pThis->svga.fEnabled)
             {
                 ASMAtomicOrU32(&pThis->svga.u32ActionFlags, VMSVGA_ACTION_CHANGEMODE);
             }
+#else
+            rc = VINF_IOM_R3_IOPORT_WRITE;
+#endif
         }
         /* else: nop */
         break;
@@ -1688,6 +1723,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
     case SVGA_REG_PITCHLOCK:           /* Fixed pitch for all modes */
         STAM_REL_COUNTER_INC(&pThis->svga.StatRegPitchLockWr);
         pThis->svga.u32PitchLock = u32;
+        /* Should this also update the FIFO pitch lock? Unclear. */
         break;
 
     case SVGA_REG_IRQMASK:             /* Interrupt mask */
@@ -5426,6 +5462,7 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     RT_NOREF(pszArgs);
     PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     PVMSVGAR3STATE  pSVGAState = pThis->svga.pSvgaR3State;
+    uint32_t RT_UNTRUSTED_VOLATILE_GUEST *pFIFO = pThis->svga.pFIFOR3;
 
     pHlp->pfnPrintf(pHlp, "Extension enabled:  %RTbool\n", pThis->svga.fEnabled);
     pHlp->pfnPrintf(pHlp, "Configured:         %RTbool\n", pThis->svga.fConfigured);
@@ -5439,7 +5476,7 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     pHlp->pfnPrintf(pHlp, "Guest ID:           %#x (%d)\n", pThis->svga.u32GuestId, pThis->svga.u32GuestId);
     pHlp->pfnPrintf(pHlp, "IRQ status:         %#x\n", pThis->svga.u32IrqStatus);
     pHlp->pfnPrintf(pHlp, "IRQ mask:           %#x\n", pThis->svga.u32IrqMask);
-    pHlp->pfnPrintf(pHlp, "Pitch lock:         %#x\n", pThis->svga.u32PitchLock);
+    pHlp->pfnPrintf(pHlp, "Pitch lock:         %#x (FIFO:%#x)\n", pThis->svga.u32PitchLock, pFIFO[SVGA_FIFO_PITCHLOCK]);
     pHlp->pfnPrintf(pHlp, "Current GMR ID:     %#x\n", pThis->svga.u32CurrentGMRId);
     pHlp->pfnPrintf(pHlp, "Capabilites reg:    %#x\n", pThis->svga.u32RegCaps);
     pHlp->pfnPrintf(pHlp, "Index reg:          %#x\n", pThis->svga.u32IndexReg);
@@ -5836,7 +5873,7 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
 # endif
 
     /* Setup FIFO capabilities. */
-    pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] = SVGA_FIFO_CAP_FENCE | SVGA_FIFO_CAP_CURSOR_BYPASS_3 | SVGA_FIFO_CAP_GMR2 | SVGA_FIFO_CAP_3D_HWVERSION_REVISED | SVGA_FIFO_CAP_SCREEN_OBJECT_2 | SVGA_FIFO_CAP_RESERVE;
+    pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] = SVGA_FIFO_CAP_FENCE | SVGA_FIFO_CAP_CURSOR_BYPASS_3 | SVGA_FIFO_CAP_GMR2 | SVGA_FIFO_CAP_3D_HWVERSION_REVISED | SVGA_FIFO_CAP_SCREEN_OBJECT_2 | SVGA_FIFO_CAP_RESERVE | SVGA_FIFO_CAP_PITCHLOCK;
 
     /* Valid with SVGA_FIFO_CAP_SCREEN_OBJECT_2 */
     pThis->svga.pFIFOR3[SVGA_FIFO_CURSOR_SCREEN_ID] = SVGA_ID_INVALID;
@@ -5965,7 +6002,7 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
 # endif
 
     /* Setup FIFO capabilities. */
-    pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] = SVGA_FIFO_CAP_FENCE | SVGA_FIFO_CAP_CURSOR_BYPASS_3 | SVGA_FIFO_CAP_GMR2 | SVGA_FIFO_CAP_3D_HWVERSION_REVISED | SVGA_FIFO_CAP_SCREEN_OBJECT_2 | SVGA_FIFO_CAP_RESERVE;
+    pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] = SVGA_FIFO_CAP_FENCE | SVGA_FIFO_CAP_CURSOR_BYPASS_3 | SVGA_FIFO_CAP_GMR2 | SVGA_FIFO_CAP_3D_HWVERSION_REVISED | SVGA_FIFO_CAP_SCREEN_OBJECT_2 | SVGA_FIFO_CAP_RESERVE | SVGA_FIFO_CAP_PITCHLOCK;
 
     /* Valid with SVGA_FIFO_CAP_SCREEN_OBJECT_2 */
     pThis->svga.pFIFOR3[SVGA_FIFO_CURSOR_SCREEN_ID] = SVGA_ID_INVALID;
