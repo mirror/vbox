@@ -1477,6 +1477,14 @@ DECLINLINE(void) vmsvgaUpdatePitch(PVGASTATE pThis)
     uint32_t RT_UNTRUSTED_VOLATILE_GUEST *pFIFO = pThis->svga.CTX_SUFF(pFIFO);
     uint32_t uFifoPitchLock = pFIFO[SVGA_FIFO_PITCHLOCK];
     uint32_t uRegPitchLock  = pThis->svga.u32PitchLock;
+    uint32_t uFifoMin       = pFIFO[SVGA_FIFO_MIN];
+
+    /* The SVGA_FIFO_PITCHLOCK register is only valid if SVGA_FIFO_MIN points past
+     * it. If SVGA_FIFO_MIN is small, there may well be data at the SVGA_FIFO_PITCHLOCK
+     * location but it has a different meaning.
+     */
+    if ((uFifoMin / sizeof(uint32_t)) <= SVGA_FIFO_PITCHLOCK)
+        uFifoPitchLock = 0;
 
     /* Sanitize values. */
     if ((uFifoPitchLock < 200) || (uFifoPitchLock > 32768))
@@ -1486,11 +1494,14 @@ DECLINLINE(void) vmsvgaUpdatePitch(PVGASTATE pThis)
 
     /* Prefer the register value to the FIFO value.*/
     if (uRegPitchLock)
-        pThis->svga.cbScanline = pThis->svga.u32PitchLock;
+        pThis->svga.cbScanline = uRegPitchLock;
     else if (uFifoPitchLock)
         pThis->svga.cbScanline = uFifoPitchLock;
     else
         pThis->svga.cbScanline = pThis->svga.uWidth * (RT_ALIGN(pThis->svga.uBpp, 8) / 8);
+
+    if ((uFifoMin / sizeof(uint32_t)) <= SVGA_FIFO_PITCHLOCK)
+        pThis->svga.u32PitchLock = pThis->svga.cbScanline;
 }
 #endif
 
@@ -1611,6 +1622,9 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
             /* bird: Whatever this is was added to make screenshot work, ask sunlover should explain... */
             for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
                 pThis->pDrv->pfnVBVADisable(pThis->pDrv, idScreen);
+
+            /* Clear the pitch lock. */
+            pThis->svga.u32PitchLock = 0;
         }
 #else  /* !IN_RING3 */
         rc = VINF_IOM_R3_IOPORT_WRITE;
@@ -5473,6 +5487,7 @@ static DECLCALLBACK(void) vmsvgaR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     pHlp->pfnPrintf(pHlp, "FIFO size:          %u (%#x)\n", pThis->svga.cbFIFO, pThis->svga.cbFIFO);
     pHlp->pfnPrintf(pHlp, "FIFO external cmd:  %#x\n", pThis->svga.u8FIFOExtCommand);
     pHlp->pfnPrintf(pHlp, "FIFO extcmd wakeup: %u\n", pThis->svga.fFifoExtCommandWakeup);
+    pHlp->pfnPrintf(pHlp, "FIFO min/max:       %u/%u\n", pFIFO[SVGA_FIFO_MIN], pFIFO[SVGA_FIFO_MAX]);
     pHlp->pfnPrintf(pHlp, "Busy:               %#x\n", pThis->svga.fBusy);
     pHlp->pfnPrintf(pHlp, "Traces:             %RTbool (effective: %RTbool)\n", pThis->svga.fTraces, pThis->svga.fVRAMTracking);
     pHlp->pfnPrintf(pHlp, "Guest ID:           %#x (%d)\n", pThis->svga.u32GuestId, pThis->svga.u32GuestId);
@@ -5874,6 +5889,9 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
     pThis->svga.u32RegCaps |= SVGA_CAP_3D;
 # endif
 
+    /* Clear the FIFO so that there's no leftover junk. */
+    RT_BZERO(pThis->svga.pFIFOR3, pThis->svga.cbFIFO);
+
     /* Setup FIFO capabilities. */
     pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] = SVGA_FIFO_CAP_FENCE | SVGA_FIFO_CAP_CURSOR_BYPASS_3 | SVGA_FIFO_CAP_GMR2 | SVGA_FIFO_CAP_3D_HWVERSION_REVISED | SVGA_FIFO_CAP_SCREEN_OBJECT_2 | SVGA_FIFO_CAP_RESERVE | SVGA_FIFO_CAP_PITCHLOCK;
 
@@ -5885,10 +5903,11 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
     pThis->svga.fEnabled      = false;
 
     /* Invalidate current settings. */
-    pThis->svga.uWidth     = VMSVGA_VAL_UNINITIALIZED;
-    pThis->svga.uHeight    = VMSVGA_VAL_UNINITIALIZED;
-    pThis->svga.uBpp       = VMSVGA_VAL_UNINITIALIZED;
-    pThis->svga.cbScanline = 0;
+    pThis->svga.uWidth       = VMSVGA_VAL_UNINITIALIZED;
+    pThis->svga.uHeight      = VMSVGA_VAL_UNINITIALIZED;
+    pThis->svga.uBpp         = VMSVGA_VAL_UNINITIALIZED;
+    pThis->svga.cbScanline   = 0;
+    pThis->svga.u32PitchLock = 0;
 
     return rc;
 }
