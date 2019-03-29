@@ -62,7 +62,7 @@ UIChooserModel:: UIChooserModel(UIChooser *pParent)
     , m_pContextMenuGlobal(0)
     , m_pContextMenuGroup(0)
     , m_pContextMenuMachine(0)
-    , m_iCurrentScrolledIndex(-1)
+    , m_iCurrentSearchResultIndex(-1)
     , m_iScrollingTokenSize(30)
     , m_fIsScrollingInProgress(false)
 {
@@ -440,95 +440,62 @@ void UIChooserModel::updateNavigationItemList()
 
 void UIChooserModel::performSearch(const QString &strSearchTerm, int iItemSearchFlags)
 {
-    /* Invisible root always exists: */
-    AssertPtrReturnVoid(invisibleRoot());
+    /* Call to base-class: */
+    UIChooserAbstractModel::performSearch(strSearchTerm, iItemSearchFlags);
 
-    /* Currently we perform the search only for machines, when this to be changed make
-     * sure the disabled flags of the other item types are also managed correctly. */
-
-    /* Reset the search first to erase the disabled flag: */
-    const QList<UIChooserNode*> nodes = resetSearch();
-
-    /* Stop here if no search conditions specified: */
-    if (strSearchTerm.isEmpty())
-        return;
-
-    /* Search for all the nodes matching required condition: */
-    invisibleRoot()->searchForNodes(strSearchTerm, iItemSearchFlags, m_searchResults);
-
-    /* Assign/reset the disabled flag for required nodes: */
-    foreach (UIChooserNode* pNode, nodes)
-    {
-        if (!pNode)
-            continue;
-        pNode->setDisabled(!m_searchResults.contains(pNode));
-    }
-
-    /* Make sure 1st item visible: */
-    scrollToSearchResult(true);
+    /* Select 1st found item: */
+    selectSearchResult(true);
 }
 
 QList<UIChooserNode*> UIChooserModel::resetSearch()
 {
-    QList<UIChooserNode*> nodes;
+    /* Reset search result index: */
+    m_iCurrentSearchResultIndex = -1;
 
-    /* Invisible root always exists: */
-    AssertPtrReturn(invisibleRoot(), nodes);
-
-    /* Calling UIChooserNode::searchForNodes with an empty search string
-     * returns a list all nodes (of the whole tree) of the required type: */
-    invisibleRoot()->searchForNodes(QString(), UIChooserItemSearchFlag_Machine, nodes);
-
-    /* Reset the disabled flag of the nodes first: */
-    foreach (UIChooserNode *pNode, nodes)
-    {
-        if (!pNode)
-            continue;
-        pNode->setDisabled(false);
-    }
-
-    /* Reset the search result related data: */
-    m_searchResults.clear();
-    m_iCurrentScrolledIndex = -1;
-    return nodes;
+    /* Call to base-class: */
+    return UIChooserAbstractModel::resetSearch();
 }
 
-void UIChooserModel::scrollToSearchResult(bool fIsNext)
+void UIChooserModel::selectSearchResult(bool fIsNext)
 {
     /* If nothing was found: */
-    if (m_searchResults.isEmpty())
+    if (searchResult().isEmpty())
     {
-        /* Clear the search widget's match count(s): */
-        m_iCurrentScrolledIndex = -1;
-        if (view())
-            view()->setSearchResultsCount(m_searchResults.size(), m_iCurrentScrolledIndex);
-        return;
+        /* Reset search result index: */
+        m_iCurrentSearchResultIndex = -1;
     }
-
-    if (fIsNext)
-    {
-        if (++m_iCurrentScrolledIndex >= m_searchResults.size())
-            m_iCurrentScrolledIndex = 0;
-    }
+    /* If something was found: */
     else
     {
-        if (--m_iCurrentScrolledIndex < 0)
-            m_iCurrentScrolledIndex = m_searchResults.size() - 1;
-    }
-
-    if (m_searchResults.at(m_iCurrentScrolledIndex))
-    {
-        UIChooserItem *pItem = m_searchResults.at(m_iCurrentScrolledIndex)->item();
-        if (pItem)
+        /* Advance index forward: */
+        if (fIsNext)
         {
-            pItem->makeSureItsVisible();
-            setSelectedItem(pItem);
+            if (++m_iCurrentSearchResultIndex >= searchResult().size())
+                m_iCurrentSearchResultIndex = 0;
+        }
+        /* Advance index backward: */
+        else
+        {
+            if (--m_iCurrentSearchResultIndex < 0)
+                m_iCurrentSearchResultIndex = searchResult().size() - 1;
+        }
+
+        /* If found item exists: */
+        if (searchResult().at(m_iCurrentSearchResultIndex))
+        {
+            /* Select curresponding found item, make sure it's visible, scroll if necessary: */
+            UIChooserItem *pItem = searchResult().at(m_iCurrentSearchResultIndex)->item();
+            if (pItem)
+            {
+                pItem->makeSureItsVisible();
+                setSelectedItem(pItem);
+            }
         }
     }
 
     /* Update the search widget's match count(s): */
     if (view())
-        view()->setSearchResultsCount(m_searchResults.size(), m_iCurrentScrolledIndex);
+        view()->setSearchResultsCount(searchResult().size(), m_iCurrentSearchResultIndex);
 }
 
 void UIChooserModel::setSearchWidgetVisible(bool fVisible)

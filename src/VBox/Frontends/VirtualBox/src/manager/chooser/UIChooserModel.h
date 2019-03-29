@@ -177,15 +177,16 @@ public:
         void updateNavigationItemList();
     /** @} */
 
-    /** @name Virtual Machine/Group search stuff.
+    /** @name Search stuff.
       * @{ */
         /** Performs a search starting from the m_pInvisibleRootNode. */
-        void performSearch(const QString &strSearchTerm, int iItemSearchFlags);
+        virtual void performSearch(const QString &strSearchTerm, int iItemSearchFlags) /* override */;
         /** Cleans the search result data members and disables item's visual effects.
           * Also returns a list of all nodes which may be utilized by the calling code. */
-        QList<UIChooserNode*> resetSearch();
-        /** Scrolls to next/prev (wrt. @a fIsNext) search result. */
-        void scrollToSearchResult(bool fIsNext);
+        virtual QList<UIChooserNode*> resetSearch() /* override */;
+
+        /** Selects next/prev (wrt. @a fIsNext) search result. */
+        void selectSearchResult(bool fIsNext);
         /** Shows/hides machine search widget. */
         void setSearchWidgetVisible(bool fVisible);
     /** @} */
@@ -376,12 +377,10 @@ private:
         QPointer<UIChooserItem>  m_pCurrentItem;
     /** @} */
 
-    /** @name Virtual Machine/Group search stuff.
+    /** @name Search stuff.
       * @{ */
-        /** Stores the results of the current search. */
-        QList<UIChooserNode*> m_searchResults;
-        /** Stores the index (within the m_searchResults) of the currently scrolled item. */
-        int m_iCurrentScrolledIndex;
+        /** Stores the index (within the m_searchResults) of the currently selected found item. */
+        int  m_iCurrentSearchResultIndex;
     /** @} */
 
     /** @name Children stuff.

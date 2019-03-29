@@ -109,6 +109,66 @@ QString UIChooserAbstractModel::uniqueGroupName(UIChooserNode *pRoot)
     return strResult;
 }
 
+void UIChooserAbstractModel::performSearch(const QString &strSearchTerm, int iItemSearchFlags)
+{
+    /* Make sure invisible root exists: */
+    AssertPtrReturnVoid(invisibleRoot());
+
+    /* Currently we perform the search only for machines, when this to be changed make
+     * sure the disabled flags of the other item types are also managed correctly. */
+
+    /* Reset the search first to erase the disabled flag,
+     * this also returns a full list of all machine nodes: */
+    const QList<UIChooserNode*> nodes = resetSearch();
+
+    /* Stop here if no search conditions specified: */
+    if (strSearchTerm.isEmpty())
+        return;
+
+    /* Search for all the nodes matching required condition: */
+    invisibleRoot()->searchForNodes(strSearchTerm, iItemSearchFlags, m_searchResults);
+
+    /* Assign/reset the disabled flag for required nodes: */
+    foreach (UIChooserNode *pNode, nodes)
+    {
+        if (!pNode)
+            continue;
+        pNode->setDisabled(!m_searchResults.contains(pNode));
+    }
+}
+
+QList<UIChooserNode*> UIChooserAbstractModel::resetSearch()
+{
+    /* Prepare resulting nodes: */
+    QList<UIChooserNode*> nodes;
+
+    /* Make sure invisible root exists: */
+    AssertPtrReturn(invisibleRoot(), nodes);
+
+    /* Calling UIChooserNode::searchForNodes with an empty search string
+     * returns a list all nodes (of the whole tree) of the required type: */
+    invisibleRoot()->searchForNodes(QString(), UIChooserItemSearchFlag_Machine, nodes);
+
+    /* Reset the disabled flag of the nodes first: */
+    foreach (UIChooserNode *pNode, nodes)
+    {
+        if (!pNode)
+            continue;
+        pNode->setDisabled(false);
+    }
+
+    /* Reset the search result related data: */
+    m_searchResults.clear();
+
+    /* Return  nodes: */
+    return nodes;
+}
+
+QList<UIChooserNode*> UIChooserAbstractModel::searchResult() const
+{
+    return m_searchResults;
+}
+
 void UIChooserAbstractModel::saveGroupSettings()
 {
     emit sigStartGroupSaving();

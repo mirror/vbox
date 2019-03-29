@@ -176,7 +176,7 @@ void UIChooserView::sltHandleScrollToSearchResult(bool fIsNext)
     UIChooserModel *pModel =  m_pChooser->model();
     if (!pModel)
         return;
-    pModel->scrollToSearchResult(fIsNext);
+    pModel->selectSearchResult(fIsNext);
 }
 
 void UIChooserView::sltHandleSearchWidgetVisibilityToggle(bool fIsVisible)

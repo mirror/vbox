@@ -79,6 +79,17 @@ public:
         static QString uniqueGroupName(UIChooserNode *pRoot);
     /** @} */
 
+    /** @name Search stuff.
+      * @{ */
+        /** Performs a search starting from the m_pInvisibleRootNode. */
+        virtual void performSearch(const QString &strSearchTerm, int iItemSearchFlags);
+        /** Cleans the search result data members and disables item's visual effects.
+          * Also returns a list of all nodes which may be utilized by the calling code. */
+        virtual QList<UIChooserNode*> resetSearch();
+        /** Returns search result. */
+        QList<UIChooserNode*> searchResult() const;
+    /** @} */
+
     /** @name Group saving stuff.
       * @{ */
         /** Commands to save group settings. */
@@ -192,6 +203,12 @@ private:
       * @{ */
         /** Holds the invisible root node instance. */
         UIChooserNode *m_pInvisibleRootNode;
+    /** @} */
+
+    /** @name Search stuff.
+      * @{ */
+        /** Stores the results of the current search. */
+        QList<UIChooserNode*>  m_searchResults;
     /** @} */
 
     /** @name Group saving stuff.
