@@ -50,14 +50,14 @@
  */
 static int vbsf_dir_open(struct inode *inode, struct file *file)
 {
-    struct vbsf_super_info *sf_g   = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct vbsf_inode_info *sf_i   = VBSF_GET_INODE_INFO(inode);
-    struct dentry          *dentry = VBSF_GET_F_DENTRY(file);
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
+    struct vbsf_inode_info *sf_i       = VBSF_GET_INODE_INFO(inode);
+    struct dentry          *dentry     = VBSF_GET_F_DENTRY(file);
     struct vbsf_dir_info   *sf_d;
     int                     rc;
 
     SFLOGFLOW(("vbsf_dir_open: inode=%p file=%p %s\n", inode, file, sf_i && sf_i->path ? sf_i->path->String.ach : NULL));
-    AssertReturn(sf_g, -EINVAL);
+    AssertReturn(pSuperInfo, -EINVAL);
     AssertReturn(sf_i, -EINVAL);
     AssertReturn(!file->private_data, 0);
 
@@ -87,7 +87,7 @@ static int vbsf_dir_open(struct inode *inode, struct file *file)
 
             LogFunc(("calling VbglR0SfHostReqCreate on folder %s, flags %#x\n",
                      sf_i->path->String.utf8, pReq->CreateParms.CreateFlags));
-            rc = VbglR0SfHostReqCreate(sf_g->map.root, pReq);
+            rc = VbglR0SfHostReqCreate(pSuperInfo->map.root, pReq);
             if (RT_SUCCESS(rc)) {
                 if (pReq->CreateParms.Result == SHFL_FILE_EXISTS) {
                     Assert(pReq->CreateParms.Handle != SHFL_HANDLE_NIL);
@@ -96,7 +96,7 @@ static int vbsf_dir_open(struct inode *inode, struct file *file)
                      * Update the inode info with fresh stats and increase the TTL for the
                      * dentry cache chain that got us here.
                      */
-                    vbsf_update_inode(inode, sf_i, &pReq->CreateParms.Info, sf_g, true /*fLocked*/ /** @todo inode locking */);
+                    vbsf_update_inode(inode, sf_i, &pReq->CreateParms.Info, pSuperInfo, true /*fLocked*/ /** @todo inode locking */);
                     vbsf_dentry_chain_increase_ttl(dentry);
 
                     sf_d->Handle.hHost  = pReq->CreateParms.Handle;
@@ -153,7 +153,7 @@ static int vbsf_dir_release(struct inode *inode, struct file *file)
     SFLOGFLOW(("vbsf_dir_release(%p,%p): sf_d=%p hHost=%#llx\n", inode, file, sf_d, sf_d ? sf_d->Handle.hHost : SHFL_HANDLE_NIL));
 
     if (sf_d) {
-        struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
+        struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
 
         /* Invalidate the non-handle part. */
         sf_d->u32Magic     = VBSF_DIR_INFO_MAGIC_DEAD;
@@ -167,7 +167,7 @@ static int vbsf_dir_release(struct inode *inode, struct file *file)
         }
 
         /* Closes the handle and frees the structure when the last reference is released. */
-        vbsf_handle_release(&sf_d->Handle, sf_g, "vbsf_dir_release");
+        vbsf_handle_release(&sf_d->Handle, pSuperInfo, "vbsf_dir_release");
     }
 
     return 0;
@@ -200,7 +200,7 @@ DECLINLINE(int) vbsf_get_d_type(RTFMODE fMode)
  *
  * @returns 0 on success, negative errno on error,
  */
-static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info *sf_g, bool fRestart)
+static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info *pSuperInfo, bool fRestart)
 {
     int               rc;
     VBOXSFLISTDIRREQ *pReq;
@@ -223,9 +223,9 @@ static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info
     if (sf_d->pBuf) {
         /* Likely, except for the first time. */
     } else {
-        sf_d->pBuf = (PSHFLDIRINFO)kmalloc(sf_g->cbDirBuf, GFP_KERNEL);
+        sf_d->pBuf = (PSHFLDIRINFO)kmalloc(pSuperInfo->cbDirBuf, GFP_KERNEL);
         if (sf_d->pBuf)
-            sf_d->cbBuf = sf_g->cbDirBuf;
+            sf_d->cbBuf = pSuperInfo->cbDirBuf;
         else {
             sf_d->pBuf = (PSHFLDIRINFO)kmalloc(_4K, GFP_KERNEL);
             if (!sf_d->pBuf) {
@@ -241,7 +241,7 @@ static int vbsf_dir_read_more(struct vbsf_dir_info *sf_d, struct vbsf_super_info
      */
     pReq = (VBOXSFLISTDIRREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
     if (pReq) {
-        rc = VbglR0SfHostReqListDirContig2x(sf_g->map.root, pReq, sf_d->Handle.hHost, NULL, NIL_RTGCPHYS64,
+        rc = VbglR0SfHostReqListDirContig2x(pSuperInfo->map.root, pReq, sf_d->Handle.hHost, NULL, NIL_RTGCPHYS64,
                                             fRestart ? SHFL_LIST_RESTART : SHFL_LIST_NONE,
                                             sf_d->pBuf, virt_to_phys(sf_d->pBuf), sf_d->cbBuf);
         if (RT_SUCCESS(rc)) {
@@ -284,10 +284,10 @@ DECL_NO_INLINE(static, bool) vbsf_dir_emit_nls(
                                                void *opaque, filldir_t filldir, loff_t offPos,
 # endif
                                                const char *pszSrcName, uint16_t cchSrcName, ino_t d_ino, int d_type,
-                                               struct vbsf_super_info *sf_g)
+                                               struct vbsf_super_info *pSuperInfo)
 {
     char szDstName[NAME_MAX];
-    int rc = vbsf_nlscpy(sf_g, szDstName, sizeof(szDstName), pszSrcName, cchSrcName);
+    int rc = vbsf_nlscpy(pSuperInfo, szDstName, sizeof(szDstName), pszSrcName, cchSrcName);
     if (rc == 0) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
         return dir_emit(ctx, szDstName, strlen(szDstName), d_ino, d_type);
@@ -336,8 +336,8 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
 #else
     loff_t                  offPos = dir->f_pos;
 #endif
-    struct vbsf_dir_info   *sf_d   = (struct vbsf_dir_info *)dir->private_data;
-    struct vbsf_super_info *sf_g   = VBSF_GET_SUPER_INFO(VBSF_GET_F_DENTRY(dir)->d_sb);
+    struct vbsf_dir_info   *sf_d       = (struct vbsf_dir_info *)dir->private_data;
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(VBSF_GET_F_DENTRY(dir)->d_sb);
     int                     rc;
 
     /*
@@ -357,7 +357,7 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
         /* Restart the search if iPos is lower than the current buffer position. */
         loff_t offCurEntry = sf_d->offPos;
         if (offPos < offCurEntry) {
-            rc = vbsf_dir_read_more(sf_d, sf_g, true /*fRestart*/);
+            rc = vbsf_dir_read_more(sf_d, pSuperInfo, true /*fRestart*/);
             if (rc == 0)
                 offCurEntry = 0;
             else {
@@ -374,7 +374,7 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
                 offCurEntry       += cEntriesLeft;
                 sf_d->offPos       = offCurEntry;
                 sf_d->cEntriesLeft = 0;
-                rc = vbsf_dir_read_more(sf_d, sf_g, false /*fRestart*/);
+                rc = vbsf_dir_read_more(sf_d, pSuperInfo, false /*fRestart*/);
                 if (rc != 0 || sf_d->cEntriesLeft == 0) {
                     up(&sf_d->Lock);
                     return rc;
@@ -458,7 +458,7 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
         uint32_t cbValid      = sf_d->cbValid;
         uint32_t cEntriesLeft = sf_d->cEntriesLeft;
         if (!cEntriesLeft) {
-            rc = vbsf_dir_read_more(sf_d, sf_g, false /*fRestart*/);
+            rc = vbsf_dir_read_more(sf_d, pSuperInfo, false /*fRestart*/);
             if (rc == 0) {
                 cEntriesLeft = sf_d->cEntriesLeft;
                 if (!cEntriesLeft) {
@@ -503,7 +503,7 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
                 int const   d_type = vbsf_get_d_type(pEntry->Info.Attr.fMode);
                 ino_t const d_ino  = (ino_t)offPos + 0xbeef; /* very fake */
                 bool        fContinue;
-                if (sf_g->fNlsIsUtf8) {
+                if (pSuperInfo->fNlsIsUtf8) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
                     fContinue = dir_emit(ctx, pEntry->name.String.ach, cchSrcName, d_ino, d_type);
 #else
@@ -511,10 +511,10 @@ static int vbsf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
 #endif
                 } else {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-                    fContinue = vbsf_dir_emit_nls(ctx, pEntry->name.String.ach, cchSrcName, d_ino, d_type, sf_g);
+                    fContinue = vbsf_dir_emit_nls(ctx, pEntry->name.String.ach, cchSrcName, d_ino, d_type, pSuperInfo);
 #else
                     fContinue = vbsf_dir_emit_nls(opaque, filldir, offPos, pEntry->name.String.ach, cchSrcName,
-                                                  d_ino, d_type, sf_g);
+                                                  d_ino, d_type, pSuperInfo);
 #endif
                 }
                 if (fContinue) {
@@ -578,7 +578,7 @@ struct file_operations vbsf_dir_fops = {
  * vbsf_inode_instantiate().
  */
 static struct inode *vbsf_create_inode(struct inode *parent, struct dentry *dentry, PSHFLSTRING path,
-                                       PSHFLFSOBJINFO pObjInfo, struct vbsf_super_info *sf_g, bool fInstantiate)
+                                       PSHFLFSOBJINFO pObjInfo, struct vbsf_super_info *pSuperInfo, bool fInstantiate)
 {
     /*
      * Allocate memory for our additional inode info and create an inode.
@@ -605,7 +605,7 @@ static struct inode *vbsf_create_inode(struct inode *parent, struct dentry *dent
             sf_new_i->handle        = SHFL_HANDLE_NIL;
 
             VBSF_SET_INODE_INFO(pInode, sf_new_i);
-            vbsf_init_inode(pInode, sf_new_i, pObjInfo, sf_g);
+            vbsf_init_inode(pInode, sf_new_i, pObjInfo, pSuperInfo);
 
             /*
              * Before we unlock the new inode, we may need to call d_instantiate.
@@ -656,7 +656,7 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
 #endif
                                         )
 {
-    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(parent->i_sb);
     struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(parent);
     SHFLSTRING             *path;
     struct dentry          *dret;
@@ -670,13 +670,13 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
     SFLOGFLOW(("vbsf_inode_lookup: parent=%p dentry=%p\n", parent, dentry));
 #endif
 
-    Assert(sf_g);
+    Assert(pSuperInfo);
     Assert(sf_i && sf_i->u32Magic == SF_INODE_INFO_MAGIC);
 
     /*
      * Build the path.  We'll associate the path with dret's inode on success.
      */
-    rc = vbsf_path_from_dentry(sf_g, sf_i, dentry, &path, __func__);
+    rc = vbsf_path_from_dentry(pSuperInfo, sf_i, dentry, &path, __func__);
     if (rc == 0) {
         /*
          * Do a lookup on the host side.
@@ -691,14 +691,14 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
             pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
 
             LogFunc(("Calling VbglR0SfHostReqCreate on %s\n", path->String.utf8));
-            rc = VbglR0SfHostReqCreate(sf_g->map.root, pReq);
+            rc = VbglR0SfHostReqCreate(pSuperInfo->map.root, pReq);
             if (RT_SUCCESS(rc)) {
                 if (pReq->CreateParms.Result == SHFL_FILE_EXISTS) {
                     /*
                      * Create an inode for the result.  Since this also confirms
                      * the existence of all parent dentries, we increase their TTL.
                      */
-                    pInode = vbsf_create_inode(parent, dentry, path, &pReq->CreateParms.Info, sf_g, false /*fInstantiate*/);
+                    pInode = vbsf_create_inode(parent, dentry, path, &pReq->CreateParms.Info, pSuperInfo, false /*fInstantiate*/);
                     if (rc == 0) {
                         path = NULL; /* given to the inode */
                         dret = dentry;
@@ -754,8 +754,8 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
 static int vbsf_inode_instantiate(struct inode *parent, struct dentry *dentry, PSHFLSTRING path,
                                   PSHFLFSOBJINFO info, SHFLHANDLE handle)
 {
-    struct vbsf_super_info *sf_g   = VBSF_GET_SUPER_INFO(parent->i_sb);
-    struct inode           *pInode = vbsf_create_inode(parent, dentry, path, info, sf_g, true /*fInstantiate*/);
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(parent->i_sb);
+    struct inode           *pInode     = vbsf_create_inode(parent, dentry, path, info, pSuperInfo, true /*fInstantiate*/);
     if (pInode) {
         /* Store this handle if we leave the handle open. */
         struct vbsf_inode_info *sf_new_i = VBSF_GET_INODE_INFO(pInode);
@@ -790,17 +790,17 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
     const char * const      pszPrefix   = S_ISDIR(mode) ? "vbsf_create_worker/dir:" : "vbsf_create_worker/file:";
 #endif
     struct vbsf_inode_info *sf_parent_i = VBSF_GET_INODE_INFO(parent);
-    struct vbsf_super_info *sf_g        = VBSF_GET_SUPER_INFO(parent->i_sb);
+    struct vbsf_super_info *pSuperInfo  = VBSF_GET_SUPER_INFO(parent->i_sb);
     PSHFLSTRING             path;
     int                     rc;
 
     AssertReturn(sf_parent_i, -EINVAL);
-    AssertReturn(sf_g, -EINVAL);
+    AssertReturn(pSuperInfo, -EINVAL);
 
     /*
      * Build a path.  We'll donate this to the inode on success.
      */
-    rc = vbsf_path_from_dentry(sf_g, sf_parent_i, dentry, &path, __func__);
+    rc = vbsf_path_from_dentry(pSuperInfo, sf_parent_i, dentry, &path, __func__);
     if (rc == 0) {
         /*
          * Allocate, initialize and issue the SHFL_CREATE request.
@@ -821,7 +821,7 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
             pReq->Create.CreateParms.Info.Attr.enmAdditional = RTFSOBJATTRADD_NOTHING;
 
             SFLOGFLOW(("%s calling VbglR0SfHostReqCreate(%s, %#x)\n", pszPrefix, path->String.ach, pReq->Create.CreateParms.CreateFlags));
-            rc = VbglR0SfHostReqCreate(sf_g->map.root, &pReq->Create);
+            rc = VbglR0SfHostReqCreate(pSuperInfo->map.root, &pReq->Create);
             if (RT_SUCCESS(rc)) {
                 SFLOGFLOW(("%s VbglR0SfHostReqCreate returned %Rrc Result=%d Handle=%#llx\n",
                            pszPrefix, rc, pReq->Create.CreateParms.Result, pReq->Create.CreateParms.Handle));
@@ -841,7 +841,7 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
                  * If we got a handle back, we're good.  Create an inode for it and return.
                  */
                 if (pReq->Create.CreateParms.Handle != SHFL_HANDLE_NIL) {
-                    struct inode *pNewInode = vbsf_create_inode(parent, dentry, path, &pReq->Create.CreateParms.Info, sf_g,
+                    struct inode *pNewInode = vbsf_create_inode(parent, dentry, path, &pReq->Create.CreateParms.Info, pSuperInfo,
                                                                 !fDoLookup /*fInstantiate*/);
                     if (pNewInode) {
                         struct vbsf_inode_info *sf_new_i = VBSF_GET_INODE_INFO(pNewInode);
@@ -867,7 +867,7 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
                     SFLOGFLOW(("%s SHFL_FILE_EXISTS for %s\n", pszPrefix, sf_parent_i->path->String.ach));
                     if (fDoLookup) {
                         struct inode *pNewInode = vbsf_create_inode(parent, dentry, path, &pReq->Create.CreateParms.Info,
-                                                                    sf_g, false /*fInstantiate*/);
+                                                                    pSuperInfo, false /*fInstantiate*/);
                         if (pNewInode)
                             vbsf_d_add_inode(dentry, pNewInode);
                         path = NULL;
@@ -892,7 +892,7 @@ static int vbsf_create_worker(struct inode *parent, struct dentry *dentry, umode
             /* Cleanups. */
             if (pReq->Create.CreateParms.Handle != SHFL_HANDLE_NIL) {
                 AssertCompile(RTASSERT_OFFSET_OF(VBOXSFCREATEREQ, CreateParms.Handle) > sizeof(VBOXSFCLOSEREQ)); /* no aliasing issues */
-                int rc2 = VbglR0SfHostReqClose(sf_g->map.root, &pReq->Close, pReq->Create.CreateParms.Handle);
+                int rc2 = VbglR0SfHostReqClose(pSuperInfo->map.root, &pReq->Close, pReq->Create.CreateParms.Handle);
                 if (RT_FAILURE(rc2))
                     SFLOGFLOW(("%s VbglR0SfHostReqCloseSimple failed rc=%Rrc\n", pszPrefix, rc2));
             }
@@ -988,9 +988,9 @@ static int vbsf_inode_atomic_open(struct inode *pDirInode, struct dentry *dentry
                                rc, sf_r->Handle.hHost, sf_i->path->String.ach));
                     sf_r = NULL; /* don't free it */
                 } else {
-                    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(pDirInode->i_sb);
+                    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(pDirInode->i_sb);
                     SFLOGFLOW(("vbsf_inode_atomic_open: finish_open failed: %d (path='%s'\n", rc, sf_i->path->String.ach));
-                    VbglR0SfHostReqCloseSimple(sf_g->map.root, sf_r->Handle.hHost);
+                    VbglR0SfHostReqCloseSimple(pSuperInfo->map.root, sf_r->Handle.hHost);
                     sf_r->Handle.hHost = SHFL_HANDLE_NIL;
                 }
             } else
@@ -1095,14 +1095,14 @@ static int vbsf_inode_mkdir(struct inode *parent, struct dentry *dentry, int mod
  */
 static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int fDirectory)
 {
-    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(parent->i_sb);
+    struct vbsf_super_info *pSuperInfo  = VBSF_GET_SUPER_INFO(parent->i_sb);
     struct vbsf_inode_info *sf_parent_i = VBSF_GET_INODE_INFO(parent);
     SHFLSTRING *path;
     int rc;
 
     TRACE();
 
-    rc = vbsf_path_from_dentry(sf_g, sf_parent_i, dentry, &path, __func__);
+    rc = vbsf_path_from_dentry(pSuperInfo, sf_parent_i, dentry, &path, __func__);
     if (!rc) {
         VBOXSFREMOVEREQ *pReq = (VBOXSFREMOVEREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String)
                                                                        + path->u16Size);
@@ -1112,7 +1112,7 @@ static int vbsf_unlink_worker(struct inode *parent, struct dentry *dentry, int f
             if (dentry->d_inode && ((dentry->d_inode->i_mode & S_IFLNK) == S_IFLNK))
                 fFlags |= SHFL_REMOVE_SYMLINK;
 
-            rc = VbglR0SfHostReqRemove(sf_g->map.root, pReq, fFlags);
+            rc = VbglR0SfHostReqRemove(pSuperInfo->map.root, pReq, fFlags);
 
             if (dentry->d_inode) {
                 struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(dentry->d_inode);
@@ -1197,14 +1197,14 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
         /*
          * Check that they are on the same mount.
          */
-        struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(old_parent->i_sb);
-        if (sf_g == VBSF_GET_SUPER_INFO(new_parent->i_sb)) {
+        struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(old_parent->i_sb);
+        if (pSuperInfo == VBSF_GET_SUPER_INFO(new_parent->i_sb)) {
             /*
              * Build the new path.
              */
             struct vbsf_inode_info *sf_new_parent_i = VBSF_GET_INODE_INFO(new_parent);
             PSHFLSTRING             pNewPath;
-            rc = vbsf_path_from_dentry(sf_g, sf_new_parent_i, new_dentry, &pNewPath, __func__);
+            rc = vbsf_path_from_dentry(pSuperInfo, sf_new_parent_i, new_dentry, &pNewPath, __func__);
             if (rc == 0) {
                 /*
                  * Create and issue the rename request.
@@ -1217,7 +1217,7 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
                     PSHFLSTRING             pOldPath = sf_file_i->path;
 
                     memcpy(&pReq->StrDstPath, pNewPath, SHFLSTRING_HEADER_SIZE + pNewPath->u16Size);
-                    rc = VbglR0SfHostReqRenameWithSrcContig(sf_g->map.root, pReq, pOldPath, virt_to_phys(pOldPath), fRename);
+                    rc = VbglR0SfHostReqRenameWithSrcContig(pSuperInfo->map.root, pReq, pOldPath, virt_to_phys(pOldPath), fRename);
                     VbglR0PhysHeapFree(pReq);
                     if (RT_SUCCESS(rc)) {
                         /*
@@ -1256,7 +1256,7 @@ static int vbsf_inode_rename(struct inode *old_parent, struct dentry *old_dentry
                 SFLOGFLOW(("vbsf_inode_rename: vbsf_path_from_dentry failed: %d\n", rc));
         } else {
             SFLOGFLOW(("vbsf_inode_rename: rename with different roots (%#x vs %#x)\n",
-                       sf_g->map.root, VBSF_GET_SUPER_INFO(new_parent->i_sb)->map.root));
+                       pSuperInfo->map.root, VBSF_GET_SUPER_INFO(new_parent->i_sb)->map.root));
             rc = -EXDEV;
         }
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
@@ -1293,16 +1293,16 @@ static int vbsf_inode_symlink(struct inode *parent, struct dentry *dentry, const
      */
     /** @todo we can save a kmalloc here if we switch to embedding the target rather
      * than the symlink path into the request.  Will require more NLS helpers. */
-    struct vbsf_super_info *sf_g    = VBSF_GET_SUPER_INFO(parent->i_sb);
-    PSHFLSTRING             pTarget = NULL;
-    int rc = vbsf_nls_to_shflstring(sf_g, target, &pTarget);
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(parent->i_sb);
+    PSHFLSTRING             pTarget    = NULL;
+    int rc = vbsf_nls_to_shflstring(pSuperInfo, target, &pTarget);
     if (rc == 0) {
         /*
          * Create a full path for the symlink name.
          */
         struct vbsf_inode_info *sf_i  = VBSF_GET_INODE_INFO(parent);
         PSHFLSTRING             pPath = NULL;
-        rc = vbsf_path_from_dentry(sf_g, sf_i, dentry, &pPath, __func__);
+        rc = vbsf_path_from_dentry(pSuperInfo, sf_i, dentry, &pPath, __func__);
         if (rc == 0) {
             /*
              * Create the request and issue it.
@@ -1313,7 +1313,7 @@ static int vbsf_inode_symlink(struct inode *parent, struct dentry *dentry, const
                 RT_ZERO(*pReq);
                 memcpy(&pReq->StrSymlinkPath, pPath, SHFLSTRING_HEADER_SIZE + pPath->u16Size);
 
-                rc = VbglR0SfHostReqCreateSymlinkContig(sf_g->map.root, pTarget, virt_to_phys(pTarget), pReq);
+                rc = VbglR0SfHostReqCreateSymlinkContig(pSuperInfo->map.root, pTarget, virt_to_phys(pTarget), pReq);
                 if (RT_SUCCESS(rc)) {
                     sf_i->force_restat = 1;
 

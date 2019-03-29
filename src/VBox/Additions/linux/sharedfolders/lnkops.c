@@ -118,14 +118,14 @@ static const char *vbsf_get_link(struct dentry *dentry, struct inode *inode, str
     if (dentry) {
         pszTarget = (char *)kzalloc(PAGE_SIZE, GFP_KERNEL);
         if (pszTarget) {
-            struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-            struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
-            int rc = VbglR0SfHostReqReadLinkContigSimple(sf_g->map.root, sf_i->path->String.ach, sf_i->path->u16Length,
+            struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
+            struct vbsf_inode_info *sf_i       = VBSF_GET_INODE_INFO(inode);
+            int rc = VbglR0SfHostReqReadLinkContigSimple(pSuperInfo->map.root, sf_i->path->String.ach, sf_i->path->u16Length,
                                                          pszTarget, virt_to_phys(pszTarget), RT_MIN(PATH_MAX, PAGE_SIZE - 1));
             if (RT_SUCCESS(rc)) {
                 pszTarget[PAGE_SIZE - 1] = '\0';
                 SFLOGFLOW(("vbsf_get_link: %s -> %s\n", sf_i->path->String.ach, pszTarget));
-                rc = vbsf_symlink_nls_convert(sf_g, pszTarget, PAGE_SIZE);
+                rc = vbsf_symlink_nls_convert(pSuperInfo, pszTarget, PAGE_SIZE);
                 if (rc == 0) {
                     vbsf_dentry_chain_increase_ttl(dentry);
                     set_delayed_call(done, kfree_link, pszTarget);
@@ -156,14 +156,14 @@ static int vbsf_readlink(struct dentry *dentry, char *buffer, int len)
     char *pszTarget = (char *)get_zeroed_page(GFP_KERNEL);
     if (pszTarget) {
         struct inode           *inode = dentry->d_inode;
-        struct vbsf_super_info *sf_g  = VBSF_GET_SUPER_INFO(inode->i_sb);
-        struct vbsf_inode_info *sf_i  = VBSF_GET_INODE_INFO(inode);
-        rc = VbglR0SfHostReqReadLinkContigSimple(sf_g->map.root, sf_i->path->String.ach, sf_i->path->u16Length,
+        struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
+        struct vbsf_inode_info *sf_i       = VBSF_GET_INODE_INFO(inode);
+        rc = VbglR0SfHostReqReadLinkContigSimple(pSuperInfo->map.root, sf_i->path->String.ach, sf_i->path->u16Length,
                                                  pszTarget, virt_to_phys(pszTarget), RT_MIN(PATH_MAX, PAGE_SIZE - 1));
         if (RT_SUCCESS(rc)) {
             pszTarget[PAGE_SIZE - 1] = '\0';
             SFLOGFLOW(("vbsf_readlink: %s -> %*s\n", sf_i->path->String.ach, pszTarget));
-            rc = vbsf_symlink_nls_convert(sf_g, pszTarget, PAGE_SIZE);
+            rc = vbsf_symlink_nls_convert(pSuperInfo, pszTarget, PAGE_SIZE);
             if (rc == 0) {
                 vbsf_dentry_chain_increase_ttl(dentry);
                 rc = vfs_readlink(dentry, buffer, len, pszTarget);
@@ -194,15 +194,15 @@ static int         vbsf_follow_link(struct dentry *dentry, struct nameidata *nd)
     char *pszTarget = (char *)get_zeroed_page(GFP_KERNEL);
     if (pszTarget) {
         struct inode           *inode = dentry->d_inode;
-        struct vbsf_super_info *sf_g  = VBSF_GET_SUPER_INFO(inode->i_sb);
-        struct vbsf_inode_info *sf_i  = VBSF_GET_INODE_INFO(inode);
+        struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
+        struct vbsf_inode_info *sf_i       = VBSF_GET_INODE_INFO(inode);
 
-        rc = VbglR0SfHostReqReadLinkContigSimple(sf_g->map.root, sf_i->path->String.ach, sf_i->path->u16Length,
+        rc = VbglR0SfHostReqReadLinkContigSimple(pSuperInfo->map.root, sf_i->path->String.ach, sf_i->path->u16Length,
                                                  pszTarget, virt_to_phys(pszTarget), RT_MIN(PATH_MAX, PAGE_SIZE - 1));
         if (RT_SUCCESS(rc)) {
             pszTarget[PAGE_SIZE - 1] = '\0';
             SFLOGFLOW(("vbsf_follow_link: %s -> %s\n", sf_i->path->String.ach, pszTarget));
-            rc = vbsf_symlink_nls_convert(sf_g, pszTarget, PAGE_SIZE);
+            rc = vbsf_symlink_nls_convert(pSuperInfo, pszTarget, PAGE_SIZE);
             if (rc == 0) {
                 /*
                  * Succeeded.  For 2.6.8 and later the page gets associated

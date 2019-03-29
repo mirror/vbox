@@ -79,41 +79,41 @@ static struct super_operations g_vbsf_super_ops;
 
 
 /**
- * Copies options from the mount info structure into @a sf_g.
+ * Copies options from the mount info structure into @a pSuperInfo.
  *
  * This is used both by vbsf_super_info_alloc_and_map_it() and
  * vbsf_remount_fs().
  */
-static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *sf_g, struct vbsf_mount_info_new *info)
+static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *pSuperInfo, struct vbsf_mount_info_new *info)
 {
-    sf_g->ttl_msec = info->ttl;
+    pSuperInfo->ttl_msec = info->ttl;
     if (info->ttl > 0)
-        sf_g->ttl = msecs_to_jiffies(info->ttl);
+        pSuperInfo->ttl = msecs_to_jiffies(info->ttl);
     else if (info->ttl == 0 || info->ttl != -1)
-        sf_g->ttl = sf_g->ttl_msec = 0;
+        pSuperInfo->ttl = pSuperInfo->ttl_msec = 0;
     else
-        sf_g->ttl = msecs_to_jiffies(VBSF_DEFAULT_TTL_MS);
+        pSuperInfo->ttl = msecs_to_jiffies(VBSF_DEFAULT_TTL_MS);
 
-    sf_g->uid = info->uid;
-    sf_g->gid = info->gid;
+    pSuperInfo->uid = info->uid;
+    pSuperInfo->gid = info->gid;
 
     if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, tag)) {
         /* new fields */
-        sf_g->dmode = info->dmode;
-        sf_g->fmode = info->fmode;
-        sf_g->dmask = info->dmask;
-        sf_g->fmask = info->fmask;
+        pSuperInfo->dmode = info->dmode;
+        pSuperInfo->fmode = info->fmode;
+        pSuperInfo->dmask = info->dmask;
+        pSuperInfo->fmask = info->fmask;
     } else {
-        sf_g->dmode = ~0;
-        sf_g->fmode = ~0;
+        pSuperInfo->dmode = ~0;
+        pSuperInfo->fmode = ~0;
     }
 
     if ((unsigned)info->length >= RT_UOFFSETOF(struct vbsf_mount_info_new, cMaxIoPages)) {
-        AssertCompile(sizeof(sf_g->tag) >= sizeof(info->tag));
-        memcpy(sf_g->tag, info->tag, sizeof(info->tag));
-        sf_g->tag[sizeof(sf_g->tag) - 1] = '\0';
+        AssertCompile(sizeof(pSuperInfo->tag) >= sizeof(info->tag));
+        memcpy(pSuperInfo->tag, info->tag, sizeof(info->tag));
+        pSuperInfo->tag[sizeof(pSuperInfo->tag) - 1] = '\0';
     } else {
-        sf_g->tag[0] = '\0';
+        pSuperInfo->tag[0] = '\0';
     }
 
     /* The max number of pages in an I/O request.  This must take into
@@ -123,18 +123,18 @@ static void vbsf_super_info_copy_remount_options(struct vbsf_super_info *sf_g, s
        for the I/O bytes we send/receive, so don't push the host heap
        too hard as we'd have to retry with smaller requests when this
        happens, which isn't too efficient. */
-    sf_g->cMaxIoPages = RT_MIN(_16K / sizeof(RTGCPHYS64) /* => 8MB buffer */,
-                               VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT);
+    pSuperInfo->cMaxIoPages = RT_MIN(_16K / sizeof(RTGCPHYS64) /* => 8MB buffer */,
+                                     VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT);
     if (   (unsigned)info->length >= sizeof(struct vbsf_mount_info_new)
         && info->cMaxIoPages > 0) {
         if (info->cMaxIoPages <= VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT)
-            sf_g->cMaxIoPages = RT_MAX(info->cMaxIoPages, 2); /* read_iter/write_iter requires a minimum of 2. */
+            pSuperInfo->cMaxIoPages = RT_MAX(info->cMaxIoPages, 2); /* read_iter/write_iter requires a minimum of 2. */
         else
             printk(KERN_WARNING "vboxsf: max I/O page count (%#x) is out of range, using default (%#x) instead.\n",
-                   info->cMaxIoPages, sf_g->cMaxIoPages);
+                   info->cMaxIoPages, pSuperInfo->cMaxIoPages);
     }
 
-    sf_g->cbDirBuf = _64K; /** @todo make configurable. */
+    pSuperInfo->cbDirBuf = _64K; /** @todo make configurable. */
 }
 
 /**
@@ -145,7 +145,7 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
     int rc;
     SHFLSTRING *str_name;
     size_t name_len, str_len;
-    struct vbsf_super_info *sf_g;
+    struct vbsf_super_info *pSuperInfo;
 
     TRACE();
 
@@ -173,11 +173,11 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
     /*
      * Allocate memory.
      */
-    str_len  = offsetof(SHFLSTRING, String.utf8) + name_len + 1;
-    str_name = kmalloc(str_len, GFP_KERNEL);
-    sf_g     = kmalloc(sizeof(*sf_g), GFP_KERNEL);
-    if (sf_g && str_name) {
-        RT_ZERO(*sf_g);
+    str_len    = offsetof(SHFLSTRING, String.utf8) + name_len + 1;
+    str_name   = (PSHFLSTRING)kmalloc(str_len, GFP_KERNEL);
+    pSuperInfo = (struct vbsf_super_info *)kmalloc(sizeof(*pSuperInfo), GFP_KERNEL);
+    if (pSuperInfo && str_name) {
+        RT_ZERO(*pSuperInfo);
 
         str_name->u16Length = name_len;
         str_name->u16Size = name_len + 1;
@@ -191,16 +191,16 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
 #define _IS_EMPTY(_str) (strcmp(_str, "") == 0)
 
         /* Check if NLS charset is valid and not points to UTF8 table */
-        sf_g->fNlsIsUtf8 = true;
+        pSuperInfo->fNlsIsUtf8 = true;
         if (info->nls_name[0]) {
             if (_IS_UTF8(info->nls_name)) {
                 SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: nls=utf8\n"));
-                sf_g->nls = NULL;
+                pSuperInfo->nls = NULL;
             } else {
-                sf_g->fNlsIsUtf8 = false;
-                sf_g->nls = load_nls(info->nls_name);
-                if (sf_g->nls) {
-                    SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: nls=%s -> %p\n", info->nls_name, sf_g->nls));
+                pSuperInfo->fNlsIsUtf8 = false;
+                pSuperInfo->nls = load_nls(info->nls_name);
+                if (pSuperInfo->nls) {
+                    SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: nls=%s -> %p\n", info->nls_name, pSuperInfo->nls));
                 } else {
                     SFLOGRELBOTH(("vboxsf: Failed to load nls '%s'!\n", info->nls_name));
                     rc = -EINVAL;
@@ -212,16 +212,16 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
              * one if it's not points to UTF8. */
             if (!_IS_UTF8(CONFIG_NLS_DEFAULT)
                 && !_IS_EMPTY(CONFIG_NLS_DEFAULT)) {
-                sf_g->fNlsIsUtf8 = false;
-                sf_g->nls = load_nls_default();
-                SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: CONFIG_NLS_DEFAULT=%s -> %p\n", CONFIG_NLS_DEFAULT, sf_g->nls));
+                pSuperInfo->fNlsIsUtf8 = false;
+                pSuperInfo->nls = load_nls_default();
+                SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: CONFIG_NLS_DEFAULT=%s -> %p\n", CONFIG_NLS_DEFAULT, pSuperInfo->nls));
             } else {
                 SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: nls=utf8 (default %s)\n", CONFIG_NLS_DEFAULT));
-                sf_g->nls = NULL;
+                pSuperInfo->nls = NULL;
             }
 #else
             SFLOGFLOW(("vbsf_super_info_alloc_and_map_it: nls=utf8 (no default)\n"));
-            sf_g->nls = NULL;
+            pSuperInfo->nls = NULL;
 #endif
         }
 #undef _IS_UTF8
@@ -231,14 +231,14 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
              * Try mount it.
              */
             rc = VbglR0SfHostReqMapFolderWithContigSimple(str_name, virt_to_phys(str_name), RTPATH_DELIMITER,
-                                                          true /*fCaseSensitive*/, &sf_g->map.root);
+                                                          true /*fCaseSensitive*/, &pSuperInfo->map.root);
             if (RT_SUCCESS(rc)) {
                 kfree(str_name);
 
                 /* The rest is shared with remount. */
-                vbsf_super_info_copy_remount_options(sf_g, info);
+                vbsf_super_info_copy_remount_options(pSuperInfo, info);
 
-                *sf_gp = sf_g;
+                *sf_gp = pSuperInfo;
                 return 0;
             }
 
@@ -252,8 +252,8 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
                 LogRel(("vboxsf: SHFL_FN_MAP_FOLDER failed for '%s': %Rrc\n", info->name, rc));
                 rc = -EPROTO;
             }
-            if (sf_g->nls)
-                unload_nls(sf_g->nls);
+            if (pSuperInfo->nls)
+                unload_nls(pSuperInfo->nls);
         }
     } else {
         SFLOGRELBOTH(("vboxsf: Could not allocate memory for super info!\n"));
@@ -261,32 +261,32 @@ static int vbsf_super_info_alloc_and_map_it(struct vbsf_mount_info_new *info, st
     }
     if (str_name)
         kfree(str_name);
-    if (sf_g)
-        kfree(sf_g);
+    if (pSuperInfo)
+        kfree(pSuperInfo);
     return rc;
 }
 
-/* unmap the share and free super info [sf_g] */
-static void vbsf_super_info_free(struct vbsf_super_info *sf_g)
+/* unmap the share and free super info [pSuperInfo] */
+static void vbsf_super_info_free(struct vbsf_super_info *pSuperInfo)
 {
     int rc;
 
     TRACE();
-    rc = VbglR0SfHostReqUnmapFolderSimple(sf_g->map.root);
+    rc = VbglR0SfHostReqUnmapFolderSimple(pSuperInfo->map.root);
     if (RT_FAILURE(rc))
         LogFunc(("VbglR0SfHostReqUnmapFolderSimple failed rc=%Rrc\n", rc));
 
-    if (sf_g->nls)
-        unload_nls(sf_g->nls);
+    if (pSuperInfo->nls)
+        unload_nls(pSuperInfo->nls);
 
-    kfree(sf_g);
+    kfree(pSuperInfo);
 }
 
 
 /**
  * Initialize backing device related matters.
  */
-static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info *sf_g)
+static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info *pSuperInfo)
 {
     int rc = 0;
 /** @todo this needs sorting out between 3.19 and 4.11   */
@@ -306,7 +306,7 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
     else
         return rc;
 #  else
-    bdi = &sf_g->bdi;
+    bdi = &pSuperInfo->bdi;
 #  endif
 
     bdi->ra_pages = 0;                      /* No readahead */
@@ -345,10 +345,10 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
 # endif /* >= 2.6.12 */
 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
-    rc = bdi_init(&sf_g->bdi);
+    rc = bdi_init(&pSuperInfo->bdi);
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
     if (!rc)
-        rc = bdi_register(&sf_g->bdi, NULL, "vboxsf-%llu", (unsigned long long)u64CurrentSequence);
+        rc = bdi_register(&pSuperInfo->bdi, NULL, "vboxsf-%llu", (unsigned long long)u64CurrentSequence);
 #  endif /* >= 2.6.26 */
 # endif  /* 4.11.0 > version >= 2.6.24 */
 #endif   /* >= 2.6.0 */
@@ -359,10 +359,10 @@ static int vbsf_init_backing_dev(struct super_block *sb, struct vbsf_super_info 
 /**
  * Undoes what vbsf_init_backing_dev did.
  */
-static void vbsf_done_backing_dev(struct super_block *sb, struct vbsf_super_info *sf_g)
+static void vbsf_done_backing_dev(struct super_block *sb, struct vbsf_super_info *pSuperInfo)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
-    bdi_destroy(&sf_g->bdi);    /* includes bdi_unregister() */
+    bdi_destroy(&pSuperInfo->bdi);    /* includes bdi_unregister() */
 #endif
 }
 
@@ -371,10 +371,10 @@ static void vbsf_done_backing_dev(struct super_block *sb, struct vbsf_super_info
  * Creates the root inode and attaches it to the super block.
  *
  * @returns 0 on success, negative errno on failure.
- * @param   sb      The super block.
- * @param   sf_g    Our super block info.
+ * @param   sb          The super block.
+ * @param   pSuperInfo  Our super block info.
  */
-static int vbsf_create_root_inode(struct super_block *sb, struct vbsf_super_info *sf_g)
+static int vbsf_create_root_inode(struct super_block *sb, struct vbsf_super_info *pSuperInfo)
 {
     SHFLFSOBJINFO fsinfo;
     int rc;
@@ -401,7 +401,7 @@ static int vbsf_create_root_inode(struct super_block *sb, struct vbsf_super_info
         /*
          * Stat the root directory (for inode info).
          */
-        rc = vbsf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
+        rc = vbsf_stat(__func__, pSuperInfo, sf_i->path, &fsinfo, 0);
         if (rc == 0) {
             /*
              * Create the actual inode structure.
@@ -413,7 +413,7 @@ static int vbsf_create_root_inode(struct super_block *sb, struct vbsf_super_info
             struct inode *iroot = iget(sb, 1);
 #endif
             if (iroot) {
-                vbsf_init_inode(iroot, sf_i, &fsinfo, sf_g);
+                vbsf_init_inode(iroot, sf_i, &fsinfo, pSuperInfo);
                 VBSF_SET_INODE_INFO(iroot, sf_i);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
@@ -474,7 +474,7 @@ static int vbsf_create_root_inode(struct super_block *sb, struct vbsf_super_info
 static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
 {
     int rc;
-    struct vbsf_super_info *sf_g;
+    struct vbsf_super_info *pSuperInfo;
 
     TRACE();
     if (!data) {
@@ -490,7 +490,7 @@ static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
     /*
      * Create our super info structure and map the shared folder.
      */
-    rc = vbsf_super_info_alloc_and_map_it((struct vbsf_mount_info_new *)data, &sf_g);
+    rc = vbsf_super_info_alloc_and_map_it((struct vbsf_mount_info_new *)data, &pSuperInfo);
     if (rc == 0) {
         /*
          * Initialize the super block structure (must be done before
@@ -517,21 +517,21 @@ static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
          * Initialize the backing device.  This is important for memory mapped
          * files among other things.
          */
-        rc = vbsf_init_backing_dev(sb, sf_g);
+        rc = vbsf_init_backing_dev(sb, pSuperInfo);
         if (rc == 0) {
             /*
              * Create the root inode and we're done.
              */
-            rc = vbsf_create_root_inode(sb, sf_g);
+            rc = vbsf_create_root_inode(sb, pSuperInfo);
             if (rc == 0) {
-                VBSF_SET_SUPER_INFO(sb, sf_g);
+                VBSF_SET_SUPER_INFO(sb, pSuperInfo);
                 SFLOGFLOW(("vbsf_read_super_aux: returns successfully\n"));
                 return 0;
             }
-            vbsf_done_backing_dev(sb, sf_g);
+            vbsf_done_backing_dev(sb, pSuperInfo);
         } else
             SFLOGRELBOTH(("vboxsf: backing device information initialization failed: %d\n", rc));
-        vbsf_super_info_free(sf_g);
+        vbsf_super_info_free(pSuperInfo);
     }
     return rc;
 }
@@ -594,15 +594,15 @@ static void vbsf_read_inode(struct inode *inode)
 
 
 /* vfs is done with [sb] (umount called) call [vbsf_super_info_free] to unmap
-   the folder and free [sf_g] */
+   the folder and free [pSuperInfo] */
 static void vbsf_put_super(struct super_block *sb)
 {
-    struct vbsf_super_info *sf_g;
+    struct vbsf_super_info *pSuperInfo;
 
-    sf_g = VBSF_GET_SUPER_INFO(sb);
-    BUG_ON(!sf_g);
-    vbsf_done_backing_dev(sb, sf_g);
-    vbsf_super_info_free(sf_g);
+    pSuperInfo = VBSF_GET_SUPER_INFO(sb);
+    BUG_ON(!pSuperInfo);
+    vbsf_done_backing_dev(sb, pSuperInfo);
+    vbsf_super_info_free(pSuperInfo);
 }
 
 
@@ -623,9 +623,9 @@ static int vbsf_statfs(struct super_block *sb, struct statfs *stat)
     int rc;
     VBOXSFVOLINFOREQ *pReq = (VBOXSFVOLINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
     if (pReq) {
-        SHFLVOLINFO            *pVolInfo = &pReq->VolInfo;
-        struct vbsf_super_info *sf_g     = VBSF_GET_SUPER_INFO(sb);
-        rc = VbglR0SfHostReqQueryVolInfo(sf_g->map.root, pReq, SHFL_HANDLE_ROOT);
+        SHFLVOLINFO            *pVolInfo   = &pReq->VolInfo;
+        struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(sb);
+        rc = VbglR0SfHostReqQueryVolInfo(pSuperInfo->map.root, pReq, SHFL_HANDLE_ROOT);
         if (RT_SUCCESS(rc)) {
             stat->f_type   = UINT32_C(0x786f4256); /* 'VBox' little endian */
             stat->f_bsize  = pVolInfo->ulBytesPerAllocationUnit;
@@ -660,21 +660,20 @@ static int vbsf_statfs(struct super_block *sb, struct statfs *stat)
 static int vbsf_remount_fs(struct super_block *sb, int *flags, char *data)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 23)
-    struct vbsf_super_info *sf_g;
+    struct vbsf_super_info *pSuperInfo = pSuperInfo = VBSF_GET_SUPER_INFO(sb);
     struct vbsf_inode_info *sf_i;
     struct inode *iroot;
     SHFLFSOBJINFO fsinfo;
     int err;
+    Assert(pSuperInfo);
 
-    sf_g = VBSF_GET_SUPER_INFO(sb);
-    BUG_ON(!sf_g);
     if (data && data[0] != 0) {
         struct vbsf_mount_info_new *info = (struct vbsf_mount_info_new *)data;
         if (   info->nullchar == '\0'
             && info->signature[0] == VBSF_MOUNT_SIGNATURE_BYTE_0
             && info->signature[1] == VBSF_MOUNT_SIGNATURE_BYTE_1
             && info->signature[2] == VBSF_MOUNT_SIGNATURE_BYTE_2) {
-            vbsf_super_info_copy_remount_options(sf_g, info);
+            vbsf_super_info_copy_remount_options(pSuperInfo, info);
         }
     }
 
@@ -683,9 +682,9 @@ static int vbsf_remount_fs(struct super_block *sb, int *flags, char *data)
         return -ENOSYS;
 
     sf_i = VBSF_GET_INODE_INFO(iroot);
-    err = vbsf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
+    err = vbsf_stat(__func__, pSuperInfo, sf_i->path, &fsinfo, 0);
     BUG_ON(err != 0);
-    vbsf_init_inode(iroot, sf_i, &fsinfo, sf_g);
+    vbsf_init_inode(iroot, sf_i, &fsinfo, pSuperInfo);
     /*unlock_new_inode(iroot); */
     return 0;
 #else  /* LINUX_VERSION_CODE < 2.4.23 */
@@ -707,25 +706,26 @@ static int vbsf_show_options(struct seq_file *m, struct dentry *root)
 #endif
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
-    struct super_block *sb = mnt->mnt_sb;
+    struct super_block     *sb         = mnt->mnt_sb;
 #else
-    struct super_block *sb = root->d_sb;
+    struct super_block     *sb         = root->d_sb;
 #endif
-    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(sb);
-    if (sf_g) {
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(sb);
+    if (pSuperInfo) {
         seq_printf(m, ",uid=%u,gid=%u,ttl=%d,maxiopages=%u,iocharset=%s",
-                   sf_g->uid, sf_g->gid, sf_g->ttl_msec, sf_g->cMaxIoPages, sf_g->nls ? sf_g->nls->charset : "utf8");
-        if (sf_g->dmode != ~0)
-            seq_printf(m, ",dmode=0%o", sf_g->dmode);
-        if (sf_g->fmode != ~0)
-            seq_printf(m, ",fmode=0%o", sf_g->fmode);
-        if (sf_g->dmask != 0)
-            seq_printf(m, ",dmask=0%o", sf_g->dmask);
-        if (sf_g->fmask != 0)
-            seq_printf(m, ",fmask=0%o", sf_g->fmask);
-        if (sf_g->tag[0] != '\0') {
+                   pSuperInfo->uid, pSuperInfo->gid, pSuperInfo->ttl_msec, pSuperInfo->cMaxIoPages,
+                   pSuperInfo->nls ? pSuperInfo->nls->charset : "utf8");
+        if (pSuperInfo->dmode != ~0)
+            seq_printf(m, ",dmode=0%o", pSuperInfo->dmode);
+        if (pSuperInfo->fmode != ~0)
+            seq_printf(m, ",fmode=0%o", pSuperInfo->fmode);
+        if (pSuperInfo->dmask != 0)
+            seq_printf(m, ",dmask=0%o", pSuperInfo->dmask);
+        if (pSuperInfo->fmask != 0)
+            seq_printf(m, ",fmask=0%o", pSuperInfo->fmask);
+        if (pSuperInfo->tag[0] != '\0') {
             seq_puts(m, ",tag=");
-            seq_escape(m, sf_g->tag, " \t\n\\");
+            seq_escape(m, pSuperInfo->tag, " \t\n\\");
         }
     }
     return 0;

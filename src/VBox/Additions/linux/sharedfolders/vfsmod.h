@@ -156,11 +156,11 @@ struct vbsf_super_info {
 /* Following casts are here to prevent assignment of void * to
    pointers of arbitrary type */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-# define VBSF_GET_SUPER_INFO(sb)       ((struct vbsf_super_info *)(sb)->u.generic_sbp)
-# define VBSF_SET_SUPER_INFO(sb, sf_g) do { (sb)->u.generic_sbp = sf_g; } while (0)
+# define VBSF_GET_SUPER_INFO(sb)                ((struct vbsf_super_info *)(sb)->u.generic_sbp)
+# define VBSF_SET_SUPER_INFO(sb, a_pSuperInfo)  do { (sb)->u.generic_sbp = a_pSuperInfo; } while (0)
 #else
-# define VBSF_GET_SUPER_INFO(sb)       ((struct vbsf_super_info *)(sb)->s_fs_info)
-# define VBSF_SET_SUPER_INFO(sb, sf_g) do { (sb)->s_fs_info = sf_g;} while (0)
+# define VBSF_GET_SUPER_INFO(sb)                ((struct vbsf_super_info *)(sb)->s_fs_info)
+# define VBSF_SET_SUPER_INFO(sb, a_pSuperInfo)  do { (sb)->s_fs_info = a_pSuperInfo;} while (0)
 #endif
 
 
@@ -237,9 +237,10 @@ struct vbsf_inode_info {
 # define VBSF_SET_INODE_INFO(i, sf_i) (i)->u.generic_ip = sf_i
 #endif
 
-extern void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSOBJINFO info, struct vbsf_super_info *sf_g);
+extern void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSOBJINFO info,
+                            struct vbsf_super_info *pSuperInfo);
 extern void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo, PSHFLFSOBJINFO pObjInfo,
-                              struct vbsf_super_info *sf_g, bool fInodeLocked);
+                              struct vbsf_super_info *pSuperInfo, bool fInodeLocked);
 extern int  vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced, bool fInodeLocked);
 extern int  vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFile, bool fForced, bool fInodeLocked);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 18)
@@ -256,7 +257,8 @@ extern int  vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr);
 
 extern void              vbsf_handle_drop_chain(struct vbsf_inode_info *pInodeInfo);
 extern struct vbsf_handle *vbsf_handle_find(struct vbsf_inode_info *pInodeInfo, uint32_t fFlagsSet, uint32_t fFlagsClear);
-extern uint32_t          vbsf_handle_release_slow(struct vbsf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller);
+extern uint32_t          vbsf_handle_release_slow(struct vbsf_handle *pHandle, struct vbsf_super_info *pSuperInfo,
+                                                  const char *pszCaller);
 extern void              vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *pHandle);
 
 /**
@@ -264,11 +266,11 @@ extern void              vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, 
  *
  * @returns New reference count.
  * @param   pHandle         The handle to release.
- * @param   sf_g            The info structure for the shared folder associated
+ * @param   pSuperInfo      The info structure for the shared folder associated
  *                          with the handle.
  * @param   pszCaller       The caller name (for logging failures).
  */
-DECLINLINE(uint32_t) vbsf_handle_release(struct vbsf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
+DECLINLINE(uint32_t) vbsf_handle_release(struct vbsf_handle *pHandle, struct vbsf_super_info *pSuperInfo, const char *pszCaller)
 {
     uint32_t cRefs;
 
@@ -280,7 +282,7 @@ DECLINLINE(uint32_t) vbsf_handle_release(struct vbsf_handle *pHandle, struct vbs
     Assert(cRefs < _64M);
     if (cRefs)
         return cRefs;
-    return vbsf_handle_release_slow(pHandle, sf_g, pszCaller);
+    return vbsf_handle_release_slow(pHandle, pSuperInfo, pszCaller);
 }
 
 
@@ -404,12 +406,13 @@ DECLINLINE(void) vbsf_dentry_chain_increase_parent_ttl(struct dentry *pDirEntry)
 # define VBSF_GET_F_DENTRY(f)   (f->f_dentry)
 #endif
 
-extern int  vbsf_stat(const char *caller, struct vbsf_super_info *sf_g, SHFLSTRING * path, PSHFLFSOBJINFO result, int ok_to_fail);
-extern int  vbsf_path_from_dentry(struct vbsf_super_info *sf_g, struct vbsf_inode_info *sf_i, struct dentry *dentry,
+extern int  vbsf_stat(const char *caller, struct vbsf_super_info *pSuperInfo, SHFLSTRING * path, PSHFLFSOBJINFO result,
+                      int ok_to_fail);
+extern int  vbsf_path_from_dentry(struct vbsf_super_info *pSuperInfo, struct vbsf_inode_info *sf_i, struct dentry *dentry,
                                   SHFLSTRING ** result, const char *caller);
-extern int  vbsf_nlscpy(struct vbsf_super_info *sf_g, char *name, size_t name_bound_len,
+extern int  vbsf_nlscpy(struct vbsf_super_info *pSuperInfo, char *name, size_t name_bound_len,
                         const unsigned char *utf8_name, size_t utf8_len);
-extern int  vbsf_nls_to_shflstring(struct vbsf_super_info *sf_g, const char *pszNls, PSHFLSTRING *ppString);
+extern int  vbsf_nls_to_shflstring(struct vbsf_super_info *pSuperInfo, const char *pszNls, PSHFLSTRING *ppString);
 
 
 /**

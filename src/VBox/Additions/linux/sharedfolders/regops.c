@@ -446,12 +446,12 @@ struct vbsf_handle *vbsf_handle_find(struct vbsf_inode_info *pInodeInfo, uint32_
  * Slow worker for vbsf_handle_release() that does the freeing.
  *
  * @returns 0 (ref count).
- * @param   pHandle         The handle to release.
- * @param   sf_g            The info structure for the shared folder associated
- *                  with the handle.
- * @param   pszCaller       The caller name (for logging failures).
+ * @param   pHandle     The handle to release.
+ * @param   pSuperInfo  The info structure for the shared folder associated with
+ *                      the handle.
+ * @param   pszCaller   The caller name (for logging failures).
  */
-uint32_t vbsf_handle_release_slow(struct vbsf_handle *pHandle, struct vbsf_super_info *sf_g, const char *pszCaller)
+uint32_t vbsf_handle_release_slow(struct vbsf_handle *pHandle, struct vbsf_super_info *pSuperInfo, const char *pszCaller)
 {
     int rc;
     unsigned long fSavedFlags;
@@ -477,7 +477,7 @@ uint32_t vbsf_handle_release_slow(struct vbsf_handle *pHandle, struct vbsf_super
     /*
      * Actually destroy it.
      */
-    rc = VbglR0SfHostReqCloseSimple(sf_g->map.root, pHandle->hHost);
+    rc = VbglR0SfHostReqCloseSimple(pSuperInfo->map.root, pHandle->hHost);
     if (RT_FAILURE(rc))
         LogFunc(("Caller %s: VbglR0SfHostReqCloseSimple %#RX64 failed with rc=%Rrc\n", pszCaller, pHandle->hHost, rc));
     pHandle->hHost  = SHFL_HANDLE_NIL;
@@ -536,13 +536,13 @@ void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *
  * mapping of the file with a chance that it may have modified any of the pages
  * already.
  */
-DECLINLINE(bool) vbsf_should_use_cached_read(struct file *file, struct address_space *mapping, struct vbsf_super_info *sf_g)
+DECLINLINE(bool) vbsf_should_use_cached_read(struct file *file, struct address_space *mapping, struct vbsf_super_info *pSuperInfo)
 {
     return mapping
         && mapping->nrpages > 0
         && mapping_writably_mapped(mapping)
         && !(file->f_flags & O_DIRECT)
-        && 1 /** @todo make this behaviour configurable at mount time (sf_g) */;
+        && 1 /** @todo make this behaviour configurable at mount time (pSuperInfo) */;
 }
 
 
@@ -756,12 +756,12 @@ static ssize_t vbsf_feed_pages_to_pipe(struct pipe_inode_info *pPipe, struct pag
  */
 static ssize_t vbsf_splice_read(struct file *file, loff_t *poffset, struct pipe_inode_info *pipe, size_t len, unsigned int flags)
 {
-    struct inode           *inode = VBSF_GET_F_DENTRY(file)->d_inode;
-    struct vbsf_super_info *sf_g  = VBSF_GET_SUPER_INFO(inode->i_sb);
+    struct inode           *inode      = VBSF_GET_F_DENTRY(file)->d_inode;
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
     ssize_t                 cbRet;
 
     SFLOGFLOW(("vbsf_splice_read: file=%p poffset=%p{%#RX64} pipe=%p len=%#zx flags=%#x\n", file, poffset, *poffset, pipe, len, flags));
-    if (vbsf_should_use_cached_read(file, inode->i_mapping, sf_g)) {
+    if (vbsf_should_use_cached_read(file, inode->i_mapping, pSuperInfo)) {
         cbRet = generic_file_splice_read(file, poffset, pipe, len, flags);
     } else {
         /*
@@ -800,7 +800,7 @@ static ssize_t vbsf_splice_read(struct file *file, loff_t *poffset, struct pipe_
                  */
                 uint32_t const          cbToRead = RT_MIN((cPages << PAGE_SHIFT) - (offFile & PAGE_OFFSET_MASK), len);
                 struct vbsf_reg_info   *sf_r     = (struct vbsf_reg_info *)file->private_data;
-                int vrc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbToRead, cPages);
+                int vrc = VbglR0SfHostReqReadPgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, offFile, cbToRead, cPages);
                 if (RT_SUCCESS(vrc)) {
                     /*
                      * Get the number of bytes read, jettison the request
@@ -852,8 +852,8 @@ static ssize_t vbsf_splice_read(struct file *file, loff_t *poffset, struct pipe_
  */
 static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *file, loff_t *poffset, size_t len, unsigned int flags)
 {
-    struct inode           *inode = VBSF_GET_F_DENTRY(file)->d_inode;
-    struct vbsf_super_info *sf_g  = VBSF_GET_SUPER_INFO(inode->i_sb);
+    struct inode           *inode      = VBSF_GET_F_DENTRY(file)->d_inode;
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
     ssize_t                 cbRet;
 
     SFLOGFLOW(("vbsf_splice_write: pPipe=%p file=%p poffset=%p{%#RX64} len=%#zx flags=%#x\n", pPipe, file, poffset, *poffset, len, flags));
@@ -922,7 +922,8 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
                     /* Check that we don't have signals pending before we issue the write, as
                        we'll only end up having to cancel the HGCM request 99% of the time: */
                     if (!signal_pending(current))
-                        vrc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbToWrite, cPagesToWrite);
+                        vrc = VbglR0SfHostReqWritePgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, offFile,
+                                                        cbToWrite, cPagesToWrite);
                     else
                         vrc = VERR_INTERRUPTED;
                     if (RT_SUCCESS(vrc)) {
@@ -1049,12 +1050,12 @@ static ssize_t vbsf_reg_sendfile(struct file *pFile, loff_t *poffFile, size_t cb
 # endif
                                 )
 {
-    struct inode           *inode = VBSF_GET_F_DENTRY(pFile)->d_inode;
-    struct vbsf_super_info *sf_g  = VBSF_GET_SUPER_INFO(inode->i_sb);
+    struct inode           *inode      = VBSF_GET_F_DENTRY(pFile)->d_inode;
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
     ssize_t                 cbRet;
     SFLOGFLOW(("vbsf_reg_sendfile: pFile=%p poffFile=%p{%#RX64} cbToSend=%#zx pfnActor=%p pvUser=%p\n",
                pFile, poffFile, poffFile ? *poffFile : 0, cbToSend, pfnActor, pvUser));
-    Assert(sf_g);
+    Assert(pSuperInfo);
 
     /*
      * Return immediately if asked to send nothing.
@@ -1066,7 +1067,7 @@ static ssize_t vbsf_reg_sendfile(struct file *pFile, loff_t *poffFile, size_t cb
      * Like for vbsf_reg_read() and vbsf_reg_read_iter(), we allow going via
      * the page cache in some cases or configs.
      */
-    if (vbsf_should_use_cached_read(pFile, inode->i_mapping, sf_g)) {
+    if (vbsf_should_use_cached_read(pFile, inode->i_mapping, pSuperInfo)) {
         cbRet = generic_file_sendfile(pFile, poffFile, cbToSend, pfnActor, pvUser);
         SFLOGFLOW(("vbsf_reg_sendfile: returns %#zx *poffFile=%#RX64 [generic_file_sendfile]\n", cbRet, poffFile ? *poffFile : UINT64_MAX));
     } else {
@@ -1126,7 +1127,8 @@ static ssize_t vbsf_reg_sendfile(struct file *pFile, loff_t *poffFile, size_t cb
                     int            vrc;
                     pReq->PgLst.offFirstPage = (uint16_t)offPg0;
                     if (!signal_pending(current))
-                        vrc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbToRead, cPagesToRead);
+                        vrc = VbglR0SfHostReqReadPgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, offFile,
+                                                       cbToRead, cPagesToRead);
                     else
                         vrc = VERR_INTERRUPTED;
                     if (RT_SUCCESS(vrc)) {
@@ -1452,7 +1454,7 @@ static ssize_t vbsf_reg_read_mapped(struct file *file, char /*__user*/ *buf, siz
  * write directly to them.
  */
 static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, size_t size, loff_t *off,
-                                     struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r)
+                                     struct vbsf_super_info *pSuperInfo, struct vbsf_reg_info *sf_r)
 {
     /*
      * Lock pages and execute the read, taking care not to pass the host
@@ -1467,7 +1469,7 @@ static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, si
     loff_t              offFile      = *off;
     ssize_t             cbRet        = -ENOMEM;
     size_t              cPages       = (((uintptr_t)buf & PAGE_OFFSET_MASK) + size + PAGE_OFFSET_MASK) >> PAGE_SHIFT;
-    size_t              cMaxPages    = RT_MIN(RT_MAX(sf_g->cMaxIoPages, 1), cPages);
+    size_t              cMaxPages    = RT_MIN(RT_MAX(pSuperInfo->cMaxIoPages, 1), cPages);
     bool                fLockPgHack;
 
     pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
@@ -1507,7 +1509,7 @@ static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, si
             /*
              * Issue the request and unlock the pages.
              */
-            rc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
+            rc = VbglR0SfHostReqReadPgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
 
             vbsf_unlock_user_pages(papPages, cPages, true /*fSetDirty*/, fLockPgHack);
 
@@ -1568,10 +1570,10 @@ static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, si
  */
 static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t size, loff_t *off)
 {
-    struct inode *inode = VBSF_GET_F_DENTRY(file)->d_inode;
-    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct vbsf_reg_info *sf_r = file->private_data;
-    struct address_space *mapping = inode->i_mapping;
+    struct inode            *inode     = VBSF_GET_F_DENTRY(file)->d_inode;
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
+    struct vbsf_reg_info   *sf_r       = file->private_data;
+    struct address_space   *mapping    = inode->i_mapping;
 
     SFLOGFLOW(("vbsf_reg_read: inode=%p file=%p buf=%p size=%#zx off=%#llx\n", inode, file, buf, size, *off));
 
@@ -1591,7 +1593,7 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
      * though, we just do page cache reading when there are writable
      * mappings around with any kind of pages loaded.
      */
-    if (vbsf_should_use_cached_read(file, mapping, sf_g))
+    if (vbsf_should_use_cached_read(file, mapping, pSuperInfo))
         return vbsf_reg_read_mapped(file, buf, size, off);
 
     /*
@@ -1604,7 +1606,7 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
         if (pReq) {
             if ((PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
                 ssize_t cbRet;
-                int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->Handle.hHost, *off, (uint32_t)size);
+                int vrc = VbglR0SfHostReqReadEmbedded(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, *off, (uint32_t)size);
                 if (RT_SUCCESS(vrc)) {
                     cbRet = pReq->Parms.cb32Read.u.value32;
                     AssertStmt(cbRet <= (ssize_t)size, cbRet = size);
@@ -1631,7 +1633,7 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
             VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
             if (pReq) {
                 ssize_t cbRet;
-                int vrc = VbglR0SfHostReqReadContig(sf_g->map.root, pReq, sf_r->Handle.hHost, *off,
+                int vrc = VbglR0SfHostReqReadContig(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, *off,
                                                     (uint32_t)size, pvBounce, virt_to_phys(pvBounce));
                 if (RT_SUCCESS(vrc)) {
                     cbRet = pReq->Parms.cb32Read.u.value32;
@@ -1651,7 +1653,7 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
     }
 #endif
 
-    return vbsf_reg_read_locking(file, buf, size, off, sf_g, sf_r);
+    return vbsf_reg_read_locking(file, buf, size, off, pSuperInfo, sf_r);
 }
 
 
@@ -1748,7 +1750,7 @@ static void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t
  */
 static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *buf, size_t size, loff_t *off, loff_t offFile,
                                       struct inode *inode, struct vbsf_inode_info *sf_i,
-                                      struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r)
+                                      struct vbsf_super_info *pSuperInfo, struct vbsf_reg_info *sf_r)
 {
     /*
      * Lock pages and execute the write, taking care not to pass the host
@@ -1762,7 +1764,7 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
     VBOXSFWRITEPGLSTREQ *pReq;
     ssize_t              cbRet        = -ENOMEM;
     size_t               cPages       = (((uintptr_t)buf & PAGE_OFFSET_MASK) + size + PAGE_OFFSET_MASK) >> PAGE_SHIFT;
-    size_t               cMaxPages    = RT_MIN(RT_MAX(sf_g->cMaxIoPages, 1), cPages);
+    size_t               cMaxPages    = RT_MIN(RT_MAX(pSuperInfo->cMaxIoPages, 1), cPages);
     bool                 fLockPgHack;
 
     pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cMaxPages]));
@@ -1802,7 +1804,7 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
             /*
              * Issue the request and unlock the pages.
              */
-            rc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
+            rc = VbglR0SfHostReqWritePgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
             if (RT_SUCCESS(rc)) {
                 /*
                  * Success, advance position and buffer.
@@ -1871,17 +1873,17 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
  */
 static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, loff_t * off)
 {
-    struct inode           *inode   = VBSF_GET_F_DENTRY(file)->d_inode;
-    struct vbsf_inode_info *sf_i    = VBSF_GET_INODE_INFO(inode);
-    struct vbsf_super_info *sf_g    = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct vbsf_reg_info   *sf_r    = file->private_data;
-    struct address_space   *mapping = inode->i_mapping;
+    struct inode           *inode      = VBSF_GET_F_DENTRY(file)->d_inode;
+    struct vbsf_inode_info *sf_i       = VBSF_GET_INODE_INFO(inode);
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
+    struct vbsf_reg_info   *sf_r       = file->private_data;
+    struct address_space   *mapping    = inode->i_mapping;
     loff_t                  pos;
 
     SFLOGFLOW(("vbsf_reg_write: inode=%p file=%p buf=%p size=%#zx off=%#llx\n", inode, file, buf, size, *off));
-    BUG_ON(!sf_i);
-    BUG_ON(!sf_g);
-    BUG_ON(!sf_r);
+    Assert(sf_i);
+    Assert(pSuperInfo);
+    Assert(sf_r);
     AssertReturn(S_ISREG(inode->i_mode), -EINVAL);
 
     pos = *off;
@@ -1925,7 +1927,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
             && (PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
             ssize_t cbRet;
             if (copy_from_user(pReq->abData, buf, size) == 0) {
-                int vrc = VbglR0SfHostReqWriteEmbedded(sf_g->map.root, pReq, sf_r->Handle.hHost,
+                int vrc = VbglR0SfHostReqWriteEmbedded(pSuperInfo->map.root, pReq, sf_r->Handle.hHost,
                                                        pos, (uint32_t)size);
                 if (RT_SUCCESS(vrc)) {
                     cbRet = pReq->Parms.cb32Write.u.value32;
@@ -1960,7 +1962,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
                 VBOXSFWRITEPGLSTREQ *pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
                 if (pReq) {
                     ssize_t cbRet;
-                    int vrc = VbglR0SfHostReqWriteContig(sf_g->map.root, pReq, sf_r->handle, pos,
+                    int vrc = VbglR0SfHostReqWriteContig(pSuperInfo->map.root, pReq, sf_r->handle, pos,
                                          (uint32_t)size, pvBounce, virt_to_phys(pvBounce));
                     if (RT_SUCCESS(vrc)) {
                         cbRet = pReq->Parms.cb32Write.u.value32;
@@ -1987,7 +1989,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
     }
 #endif
 
-    return vbsf_reg_write_locking(file, buf, size, off, pos, inode, sf_i, sf_g, sf_r);
+    return vbsf_reg_write_locking(file, buf, size, off, pos, inode, sf_i, pSuperInfo, sf_r);
 }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
@@ -2358,7 +2360,7 @@ static size_t vbsf_iter_max_span_of_pages(struct iov_iter *iter)
  * locking.
  */
 static ssize_t vbsf_reg_read_iter_locking(struct kiocb *kio, struct iov_iter *iter, size_t cbToRead,
-                                          struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r)
+                                          struct vbsf_super_info *pSuperInfo, struct vbsf_reg_info *sf_r)
 {
     /*
      * Estimate how many pages we may possible submit in a single request so
@@ -2370,7 +2372,7 @@ static ssize_t vbsf_reg_read_iter_locking(struct kiocb *kio, struct iov_iter *it
     VBOXSFREADPGLSTREQ *pReq;
     ssize_t             cbRet        = 0;
     size_t              cMaxPages    = vbsf_iter_max_span_of_pages(iter);
-    cMaxPages = RT_MIN(RT_MAX(sf_g->cMaxIoPages, 2), cMaxPages);
+    cMaxPages = RT_MIN(RT_MAX(pSuperInfo->cMaxIoPages, 2), cMaxPages);
 
     pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
     while (!pReq && cMaxPages > 4) {
@@ -2409,7 +2411,7 @@ static ssize_t vbsf_reg_read_iter_locking(struct kiocb *kio, struct iov_iter *it
             /*
              * Issue the request and unlock the pages.
              */
-            rc = VbglR0SfHostReqReadPgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, kio->ki_pos, cbChunk, cPages);
+            rc = VbglR0SfHostReqReadPgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, kio->ki_pos, cbChunk, cPages);
             SFLOGFLOW(("vbsf_reg_read_iter_locking: VbglR0SfHostReqReadPgLst -> %d (cbActual=%#x cbChunk=%#zx of %#zx cPages=%#zx offPage0=%#x\n",
                        rc, pReq->Parms.cb32Read.u.value32, cbChunk, cbToRead, cPages, offPage0));
 
@@ -2486,15 +2488,15 @@ static ssize_t vbsf_reg_aio_read(struct kiocb *kio, const struct iovec *iov, uns
 # endif
 {
 # if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
-    struct vbsf_iov_iter    fake_iter = VBSF_IOV_ITER_INITIALIZER(cSegs, iov, 0 /*write*/);
-    struct vbsf_iov_iter   *iter      = &fake_iter;
+    struct vbsf_iov_iter    fake_iter  = VBSF_IOV_ITER_INITIALIZER(cSegs, iov, 0 /*write*/);
+    struct vbsf_iov_iter   *iter       = &fake_iter;
 # endif
-    size_t                  cbToRead = iov_iter_count(iter);
-    struct inode           *inode    = VBSF_GET_F_DENTRY(kio->ki_filp)->d_inode;
-    struct address_space   *mapping  = inode->i_mapping;
+    size_t                  cbToRead   = iov_iter_count(iter);
+    struct inode           *inode      = VBSF_GET_F_DENTRY(kio->ki_filp)->d_inode;
+    struct address_space   *mapping    = inode->i_mapping;
 
-    struct vbsf_reg_info   *sf_r     = kio->ki_filp->private_data;
-    struct vbsf_super_info *sf_g     = VBSF_GET_SUPER_INFO(inode->i_sb);
+    struct vbsf_reg_info   *sf_r       = kio->ki_filp->private_data;
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
 
     SFLOGFLOW(("vbsf_reg_read_iter: inode=%p file=%p size=%#zx off=%#llx type=%#x\n",
                inode, kio->ki_filp, cbToRead, kio->ki_pos, iter->type));
@@ -2512,7 +2514,7 @@ static ssize_t vbsf_reg_aio_read(struct kiocb *kio, const struct iovec *iov, uns
      * though, we just do page cache reading when there are writable
      * mappings around with any kind of pages loaded.
      */
-    if (vbsf_should_use_cached_read(kio->ki_filp, mapping, sf_g)) {
+    if (vbsf_should_use_cached_read(kio->ki_filp, mapping, pSuperInfo)) {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
         return generic_file_read_iter(kio, iter);
 # else
@@ -2538,7 +2540,8 @@ static ssize_t vbsf_reg_aio_read(struct kiocb *kio, const struct iovec *iov, uns
         if (pReq) {
             if ((PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
                 ssize_t cbRet;
-                int vrc = VbglR0SfHostReqReadEmbedded(sf_g->map.root, pReq, sf_r->Handle.hHost, kio->ki_pos, (uint32_t)cbToRead);
+                int vrc = VbglR0SfHostReqReadEmbedded(pSuperInfo->map.root, pReq, sf_r->Handle.hHost,
+                                                      kio->ki_pos, (uint32_t)cbToRead);
                 if (RT_SUCCESS(vrc)) {
                     cbRet = pReq->Parms.cb32Read.u.value32;
                     AssertStmt(cbRet <= (ssize_t)cbToRead, cbRet = cbToRead);
@@ -2561,7 +2564,7 @@ static ssize_t vbsf_reg_aio_read(struct kiocb *kio, const struct iovec *iov, uns
     /*
      * Otherwise do the page locking thing.
      */
-    return vbsf_reg_read_iter_locking(kio, iter, cbToRead, sf_g, sf_r);
+    return vbsf_reg_read_iter_locking(kio, iter, cbToRead, pSuperInfo, sf_r);
 }
 
 
@@ -2570,7 +2573,7 @@ static ssize_t vbsf_reg_aio_read(struct kiocb *kio, const struct iovec *iov, uns
  * locking.
  */
 static ssize_t vbsf_reg_write_iter_locking(struct kiocb *kio, struct iov_iter *iter, size_t cbToWrite, loff_t offFile,
-                                           struct vbsf_super_info *sf_g, struct vbsf_reg_info *sf_r,
+                                           struct vbsf_super_info *pSuperInfo, struct vbsf_reg_info *sf_r,
                                            struct inode *inode, struct vbsf_inode_info *sf_i, struct address_space *mapping)
 {
     /*
@@ -2583,7 +2586,7 @@ static ssize_t vbsf_reg_write_iter_locking(struct kiocb *kio, struct iov_iter *i
     VBOXSFWRITEPGLSTREQ *pReq;
     ssize_t              cbRet        = 0;
     size_t               cMaxPages    = vbsf_iter_max_span_of_pages(iter);
-    cMaxPages = RT_MIN(RT_MAX(sf_g->cMaxIoPages, 2), cMaxPages);
+    cMaxPages = RT_MIN(RT_MAX(pSuperInfo->cMaxIoPages, 2), cMaxPages);
 
     pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFWRITEPGLSTREQ, PgLst.aPages[cMaxPages]));
     while (!pReq && cMaxPages > 4) {
@@ -2622,7 +2625,7 @@ static ssize_t vbsf_reg_write_iter_locking(struct kiocb *kio, struct iov_iter *i
             /*
              * Issue the request and unlock the pages.
              */
-            rc = VbglR0SfHostReqWritePgLst(sf_g->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
+            rc = VbglR0SfHostReqWritePgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
             SFLOGFLOW(("vbsf_reg_write_iter_locking: VbglR0SfHostReqWritePgLst -> %d (cbActual=%#x cbChunk=%#zx of %#zx cPages=%#zx offPage0=%#x\n",
                        rc, pReq->Parms.cb32Write.u.value32, cbChunk, cbToWrite, cPages, offPage0));
             if (RT_SUCCESS(rc)) {
@@ -2706,18 +2709,18 @@ static ssize_t vbsf_reg_aio_write(struct kiocb *kio, const struct iovec *iov, un
 # endif
 {
 # if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
-    struct vbsf_iov_iter    fake_iter = VBSF_IOV_ITER_INITIALIZER(cSegs, iov, 1 /*write*/);
-    struct vbsf_iov_iter   *iter      = &fake_iter;
+    struct vbsf_iov_iter    fake_iter  = VBSF_IOV_ITER_INITIALIZER(cSegs, iov, 1 /*write*/);
+    struct vbsf_iov_iter   *iter       = &fake_iter;
 # endif
-    size_t                  cbToWrite = iov_iter_count(iter);
-    struct inode           *inode     = VBSF_GET_F_DENTRY(kio->ki_filp)->d_inode;
-    struct vbsf_inode_info *sf_i      = VBSF_GET_INODE_INFO(inode);
-    struct address_space   *mapping   = inode->i_mapping;
+    size_t                  cbToWrite  = iov_iter_count(iter);
+    struct inode           *inode      = VBSF_GET_F_DENTRY(kio->ki_filp)->d_inode;
+    struct vbsf_inode_info *sf_i       = VBSF_GET_INODE_INFO(inode);
+    struct address_space   *mapping    = inode->i_mapping;
 
-    struct vbsf_reg_info   *sf_r      = kio->ki_filp->private_data;
-    struct vbsf_super_info *sf_g      = VBSF_GET_SUPER_INFO(inode->i_sb);
+    struct vbsf_reg_info   *sf_r       = kio->ki_filp->private_data;
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
-    loff_t                  offFile   = kio->ki_pos;
+    loff_t                  offFile    = kio->ki_pos;
 # endif
 
     SFLOGFLOW(("vbsf_reg_write_iter: inode=%p file=%p size=%#zx off=%#llx type=%#x\n",
@@ -2777,7 +2780,7 @@ static ssize_t vbsf_reg_aio_write(struct kiocb *kio, const struct iovec *iov, un
             if ((PAGE_SIZE - ((uintptr_t)pReq & PAGE_OFFSET_MASK)) >= cbReq) {
                 ssize_t cbRet;
                 if (copy_from_iter(pReq->abData, cbToWrite, iter) == cbToWrite) {
-                    int vrc = VbglR0SfHostReqWriteEmbedded(sf_g->map.root, pReq, sf_r->Handle.hHost,
+                    int vrc = VbglR0SfHostReqWriteEmbedded(pSuperInfo->map.root, pReq, sf_r->Handle.hHost,
                                                            offFile, (uint32_t)cbToWrite);
                     if (RT_SUCCESS(vrc)) {
                         cbRet = pReq->Parms.cb32Write.u.value32;
@@ -2807,7 +2810,7 @@ static ssize_t vbsf_reg_aio_write(struct kiocb *kio, const struct iovec *iov, un
     /*
      * Otherwise do the page locking thing.
      */
-    return vbsf_reg_write_iter_locking(kio, iter, cbToWrite, offFile, sf_g, sf_r, inode, sf_i, mapping);
+    return vbsf_reg_write_iter_locking(kio, iter, cbToWrite, offFile, pSuperInfo, sf_r, inode, sf_i, mapping);
 }
 
 #endif /* >= 2.6.19 */
@@ -2897,15 +2900,15 @@ uint32_t vbsf_linux_oflags_to_vbox(unsigned fLnxOpen, uint32_t *pfHandle, const 
 static int vbsf_reg_open(struct inode *inode, struct file *file)
 {
     int rc, rc_linux = 0;
-    struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-    struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
-    struct dentry          *dentry = VBSF_GET_F_DENTRY(file);
+    struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
+    struct vbsf_inode_info *sf_i       = VBSF_GET_INODE_INFO(inode);
+    struct dentry          *dentry     = VBSF_GET_F_DENTRY(file);
     struct vbsf_reg_info   *sf_r;
     VBOXSFCREATEREQ        *pReq;
 
     SFLOGFLOW(("vbsf_reg_open: inode=%p file=%p flags=%#x %s\n", inode, file, file->f_flags, sf_i ? sf_i->path->String.ach : NULL));
-    BUG_ON(!sf_g);
-    BUG_ON(!sf_i);
+    Assert(pSuperInfo);
+    Assert(sf_i);
 
     sf_r = kmalloc(sizeof(*sf_r), GFP_KERNEL);
     if (!sf_r) {
@@ -2959,7 +2962,7 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
     pReq->CreateParms.Info.Attr.fMode = inode->i_mode;
     LogFunc(("vbsf_reg_open: calling VbglR0SfHostReqCreate, file %s, flags=%#x, %#x\n",
              sf_i->path->String.utf8, file->f_flags, pReq->CreateParms.CreateFlags));
-    rc = VbglR0SfHostReqCreate(sf_g->map.root, pReq);
+    rc = VbglR0SfHostReqCreate(pSuperInfo->map.root, pReq);
     if (RT_FAILURE(rc)) {
         LogFunc(("VbglR0SfHostReqCreate failed flags=%d,%#x rc=%Rrc\n", file->f_flags, pReq->CreateParms.CreateFlags, rc));
         kfree(sf_r);
@@ -3014,8 +3017,8 @@ static int vbsf_reg_release(struct inode *inode, struct file *file)
 
     SFLOGFLOW(("vbsf_reg_release: inode=%p file=%p\n", inode, file));
     if (sf_r) {
-        struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-        Assert(sf_g);
+        struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
+        Assert(pSuperInfo);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
         /* See the smbfs source (file.c). mmap in particular can cause data to be
@@ -3030,7 +3033,7 @@ static int vbsf_reg_release(struct inode *inode, struct file *file)
 
         /* Release sf_r, closing the handle if we're the last user. */
         file->private_data = NULL;
-        vbsf_handle_release(&sf_r->Handle, sf_g, "vbsf_reg_release");
+        vbsf_handle_release(&sf_r->Handle, pSuperInfo, "vbsf_reg_release");
 
         sf_i->handle = SHFL_HANDLE_NIL;
     }
@@ -3455,14 +3458,14 @@ static int vbsf_readpage(struct file *file, struct page *page)
     if (!is_bad_inode(inode)) {
         VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
         if (pReq) {
-            struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-            struct vbsf_reg_info   *sf_r = file->private_data;
+            struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
+            struct vbsf_reg_info   *sf_r       = file->private_data;
             uint32_t                cbRead;
             int                     vrc;
 
             pReq->PgLst.offFirstPage = 0;
             pReq->PgLst.aPages[0]    = page_to_phys(page);
-            vrc = VbglR0SfHostReqReadPgLst(sf_g->map.root,
+            vrc = VbglR0SfHostReqReadPgLst(pSuperInfo->map.root,
                                            pReq,
                                            sf_r->Handle.hHost,
                                            (uint64_t)page->index << PAGE_SHIFT,
@@ -3517,18 +3520,18 @@ static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
                inode, page,(uint64_t)page->index << PAGE_SHIFT, pHandle, pHandle->hHost));
 
     if (pHandle) {
-        struct vbsf_super_info *sf_g = VBSF_GET_SUPER_INFO(inode->i_sb);
-        VBOXSFWRITEPGLSTREQ    *pReq = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+        struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
+        VBOXSFWRITEPGLSTREQ    *pReq       = (VBOXSFWRITEPGLSTREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
         if (pReq) {
-            uint64_t const cbFile    = i_size_read(inode);
-            uint64_t const offInFile = (uint64_t)page->index << PAGE_SHIFT;
-            uint32_t const cbToWrite = page->index != (cbFile >> PAGE_SHIFT) ? PAGE_SIZE
-                                     : (uint32_t)cbFile & (uint32_t)PAGE_OFFSET_MASK;
+            uint64_t const cbFile          = i_size_read(inode);
+            uint64_t const offInFile       = (uint64_t)page->index << PAGE_SHIFT;
+            uint32_t const cbToWrite       = page->index != (cbFile >> PAGE_SHIFT) ? PAGE_SIZE
+                                           : (uint32_t)cbFile & (uint32_t)PAGE_OFFSET_MASK;
             int            vrc;
 
             pReq->PgLst.offFirstPage = 0;
             pReq->PgLst.aPages[0]    = page_to_phys(page);
-            vrc = VbglR0SfHostReqWritePgLst(sf_g->map.root,
+            vrc = VbglR0SfHostReqWritePgLst(pSuperInfo->map.root,
                                             pReq,
                                             pHandle->hHost,
                                             offInFile,
@@ -3557,7 +3560,7 @@ static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
             }
         } else
             err = -ENOMEM;
-        vbsf_handle_release(pHandle, sf_g, "vbsf_writepage");
+        vbsf_handle_release(pHandle, pSuperInfo, "vbsf_writepage");
     } else {
         static uint64_t volatile s_cCalls = 0;
         if (s_cCalls++ < 16)
