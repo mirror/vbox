@@ -814,7 +814,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
          * operations will set those timestamps automatically.  Saves a host call.
          */
         unsigned fAttrs = iattr->ia_valid;
-        if (   fAttrs == (ATTR_SIZE | ATTR_MTIME | ATTR_CTIME)
+        if (   (fAttrs & ~ATTR_FILE) == (ATTR_SIZE | ATTR_MTIME | ATTR_CTIME)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
             || (fAttrs & (ATTR_OPEN | ATTR_SIZE)) == (ATTR_OPEN | ATTR_SIZE)
 #endif
@@ -872,7 +872,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
                             vbsf_dentry_chain_increase_ttl(dentry);
                         } else {
                             LogFunc(("file %s does not exist\n", sf_i->path->String.utf8));
-                            vbsf_dentry_invalidate_ttl(pDirEntry);
+                            vbsf_dentry_invalidate_ttl(dentry);
                             sf_i->force_restat = true;
                             rc = -ENOENT;
                         }
