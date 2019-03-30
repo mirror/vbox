@@ -5413,6 +5413,15 @@ static DECLCALLBACK(void) vgaPortSetRenderVRAM(PPDMIDISPLAYPORT pInterface, bool
     PDMCritSectLeave(&pThis->CritSect);
 }
 
+static DECLCALLBACK(void) vgaPortReportHostCursorPosition(PPDMIDISPLAYPORT pInterface, uint32_t x, uint32_t y, bool fOutOfRange)
+{
+    RT_NOREF(pInterface, x, y, fOutOfRange);
+}
+
+static DECLCALLBACK(void) vgaPortReportHostCursorCapabilities(PPDMIDISPLAYPORT pInterface, bool fSupportsRenderCursor, bool fSupportsMoveCursor)
+{
+    RT_NOREF(pInterface, fSupportsRenderCursor, fSupportsMoveCursor);
+}
 
 static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
@@ -6386,9 +6395,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #endif
     pThis->IPort.pfnSendModeHint        = vbvaPortSendModeHint;
     pThis->IPort.pfnReportHostCursorCapabilities
-                                        = vbvaPortReportHostCursorCapabilities;
+                                        = vgaPortReportHostCursorCapabilities;
     pThis->IPort.pfnReportHostCursorPosition
-                                        = vbvaPortReportHostCursorPosition;
+                                        = vgaPortReportHostCursorPosition;
 
 #if defined(VBOX_WITH_HGSMI)
 # if defined(VBOX_WITH_VIDEOHWACCEL)
