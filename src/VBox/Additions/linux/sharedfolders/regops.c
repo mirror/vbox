@@ -929,6 +929,7 @@ static ssize_t vbsf_splice_write(struct pipe_inode_info *pPipe, struct file *fil
                     /* Check that we don't have signals pending before we issue the write, as
                        we'll only end up having to cancel the HGCM request 99% of the time: */
                     if (!signal_pending(current)) {
+                        struct vbsf_inode_info *sf_i = VBSF_GET_INODE_INFO(inode);
                         vrc = VbglR0SfHostReqWritePgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, offFile,
                                                         cbToWrite, cPagesToWrite);
                         sf_i->ModificationTimeAtOurLastWrite = sf_i->ModificationTime;

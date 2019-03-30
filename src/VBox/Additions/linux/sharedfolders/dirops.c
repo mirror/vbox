@@ -96,7 +96,8 @@ static int vbsf_dir_open(struct inode *inode, struct file *file)
                      * Update the inode info with fresh stats and increase the TTL for the
                      * dentry cache chain that got us here.
                      */
-                    vbsf_update_inode(inode, sf_i, &pReq->CreateParms.Info, pSuperInfo, true /*fLocked*/ /** @todo inode locking */);
+                    vbsf_update_inode(inode, sf_i, &pReq->CreateParms.Info, pSuperInfo,
+                                      true /*fLocked*/ /** @todo inode locking */, 0 /*fSetAttrs*/);
                     vbsf_dentry_chain_increase_ttl(dentry);
 
                     sf_d->Handle.hHost  = pReq->CreateParms.Handle;

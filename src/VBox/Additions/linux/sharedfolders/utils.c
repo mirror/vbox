@@ -367,7 +367,7 @@ void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSO
  * Called by sf_inode_revalidate() and sf_inode_revalidate_with_handle().
  */
 void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo, PSHFLFSOBJINFO pObjInfo,
-                       struct vbsf_super_info *pSuperInfo, bool fInodeLocked)
+                       struct vbsf_super_info *pSuperInfo, bool fInodeLocked, unsigned fSetAttrs)
 {
     PCSHFLFSOBJATTR pAttr = &pObjInfo->Attr;
     int             fMode;
@@ -444,36 +444,41 @@ void vbsf_update_inode(struct inode *pInode, struct vbsf_inode_info *pInodeInfo,
      */
     if (!RTTimeSpecIsEqual(&pInodeInfo->ModificationTime, &pObjInfo->ModificationTime)) {
         if (RTFS_IS_FILE(pAttr->fMode)) {
-            bool fInvalidate;
-            if (pSuperInfo->enmCacheMode == kVbsfCacheMode_None) {
-                fInvalidate = true;      /* No-caching: always invalidate. */
-            } else {
-                /** @todo Seeing nano-seconds being chopped off by someone before we get
-                 *        here. weird weird weird.  Must be host side.   */
-                if (RTTimeSpecIsEqual(&pInodeInfo->ModificationTimeAtOurLastWrite, &pInodeInfo->ModificationTime)) {
-                    fInvalidate = false; /* Could be our write, so don't invalidate anything */
-                    RTTimeSpecSetSeconds(&pInodeInfo->ModificationTimeAtOurLastWrite, 0);
+            if (!(fSetAttrs & (ATTR_MTIME | ATTR_SIZE))) {
+                bool fInvalidate;
+                if (pSuperInfo->enmCacheMode == kVbsfCacheMode_None) {
+                    fInvalidate = true;      /* No-caching: always invalidate. */
                 } else {
-                    /* RTLogBackdoorPrintf("vbsf_update_inode: Invalidating the mapping %s - %RU64 vs %RU64 vs %RU64\n",
-                       pInodeInfo->path->String.ach, RTTimeSpecGetNano(&pInodeInfo->ModificationTimeAtOurLastWrite),
-                       RTTimeSpecGetNano(&pInodeInfo->ModificationTime), RTTimeSpecGetNano(&pObjInfo->ModificationTime) ); */
-                    fInvalidate = true;  /* We haven't modified the file recently, so probably a host update. */
+                    if (RTTimeSpecIsEqual(&pInodeInfo->ModificationTimeAtOurLastWrite, &pInodeInfo->ModificationTime)) {
+                        fInvalidate = false; /* Could be our write, so don't invalidate anything */
+                        RTTimeSpecSetSeconds(&pInodeInfo->ModificationTimeAtOurLastWrite, 0);
+                    } else {
+                        /*RTLogBackdoorPrintf("vbsf_update_inode: Invalidating the mapping %s - %RU64 vs %RU64 vs %RU64 - %#x\n",
+                                            pInodeInfo->path->String.ach,
+                                            RTTimeSpecGetNano(&pInodeInfo->ModificationTimeAtOurLastWrite),
+                                            RTTimeSpecGetNano(&pInodeInfo->ModificationTime),
+                                            RTTimeSpecGetNano(&pObjInfo->ModificationTime), fSetAttrs);*/
+                        fInvalidate = true;  /* We haven't modified the file recently, so probably a host update. */
+                    }
                 }
-            }
-            pInodeInfo->ModificationTime = pObjInfo->ModificationTime;
+                pInodeInfo->ModificationTime = pObjInfo->ModificationTime;
 
-            if (fInvalidate) {
-                struct address_space *mapping = pInode->i_mapping;
-                if (mapping && mapping->nrpages > 0) {
-                    SFLOGFLOW(("vbsf_update_inode: Invalidating the mapping (%s)\n", pInodeInfo->path->String.ach));
+                if (fInvalidate) {
+                    struct address_space *mapping = pInode->i_mapping;
+                    if (mapping && mapping->nrpages > 0) {
+                        SFLOGFLOW(("vbsf_update_inode: Invalidating the mapping %s (%#x)\n", pInodeInfo->path->String.ach, fSetAttrs));
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
-                    invalidate_mapping_pages(mapping, 0, ~(pgoff_t)0);
+                        invalidate_mapping_pages(mapping, 0, ~(pgoff_t)0);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 41)
-                    invalidate_inode_pages(mapping);
+                        invalidate_inode_pages(mapping);
 #else
-                    invalidate_inode_pages(pInode);
+                        invalidate_inode_pages(pInode);
 #endif
+                    }
                 }
+            } else {
+                RTTimeSpecSetSeconds(&pInodeInfo->ModificationTimeAtOurLastWrite, 0);
+                pInodeInfo->ModificationTime = pObjInfo->ModificationTime;
             }
         } else
             pInodeInfo->ModificationTime = pObjInfo->ModificationTime;
@@ -569,7 +574,7 @@ int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced, bool fInod
                         /*
                          * Reset the TTL and copy the info over into the inode structure.
                          */
-                        vbsf_update_inode(pInode, sf_i, &pReq->ObjInfo, pSuperInfo, fInodeLocked);
+                        vbsf_update_inode(pInode, sf_i, &pReq->ObjInfo, pSuperInfo, fInodeLocked, 0 /*fSetAttrs*/);
                     } else if (rc == VERR_INVALID_HANDLE) {
                         rc = -ENOENT; /* Restore.*/
                     } else {
@@ -597,7 +602,7 @@ int vbsf_inode_revalidate_worker(struct dentry *dentry, bool fForced, bool fInod
                             /*
                              * Reset the TTL and copy the info over into the inode structure.
                              */
-                            vbsf_update_inode(pInode, sf_i, &pReq->CreateParms.Info, pSuperInfo, fInodeLocked);
+                            vbsf_update_inode(pInode, sf_i, &pReq->CreateParms.Info, pSuperInfo, fInodeLocked, 0 /*fSetAttrs*/);
                             rc = 0;
                         } else {
                             rc = -ENOENT;
@@ -677,7 +682,7 @@ int vbsf_inode_revalidate_with_handle(struct dentry *dentry, SHFLHANDLE hHostFil
                     /*
                      * Reset the TTL and copy the info over into the inode structure.
                      */
-                    vbsf_update_inode(pInode, sf_i, &pReq->ObjInfo, pSuperInfo, fInodeLocked);
+                    vbsf_update_inode(pInode, sf_i, &pReq->ObjInfo, pSuperInfo, fInodeLocked, 0 /*fSetAttrs*/);
                 } else {
                     LogFunc(("VbglR0SfHostReqQueryObjInfo failed on %#RX64: %Rrc\n", hHostFile, err));
                     err = -RTErrConvertToErrno(err);
@@ -709,9 +714,9 @@ int vbsf_inode_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat
 # endif
 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-    SFLOGFLOW(("vbsf_inode_setattr: dentry=%p request_mask=%#x flags=%#x\n", dentry, request_mask, flags));
+    SFLOGFLOW(("vbsf_inode_getattr: dentry=%p request_mask=%#x flags=%#x\n", dentry, request_mask, flags));
 # else
-    SFLOGFLOW(("vbsf_inode_setattr: dentry=%p\n", dentry));
+    SFLOGFLOW(("vbsf_inode_getattr: dentry=%p\n", dentry));
 # endif
 
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
@@ -805,10 +810,22 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
 #endif
     if (rc == 0) {
         /*
+         * Don't modify MTIME and CTIME for open(O_TRUNC) and ftruncate, those
+         * operations will set those timestamps automatically.  Saves a host trip.
+         */
+        unsigned fAttrs = iattr->ia_valid;
+        if (   fAttrs == (ATTR_SIZE | ATTR_MTIME | ATTR_CTIME)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+            || (fAttrs & (ATTR_OPEN | ATTR_SIZE)) == (ATTR_OPEN | ATTR_SIZE)
+#endif
+           )
+            fAttrs &= ~(ATTR_MTIME | ATTR_CTIME);
+
+        /*
          * We only implement a handful of attributes, so ignore any attempts
          * at setting bits we don't support.
          */
-        if (iattr->ia_valid & (ATTR_MODE | ATTR_ATIME | ATTR_MTIME | ATTR_CTIME | ATTR_SIZE)) {
+        if (fAttrs & (ATTR_MODE | ATTR_ATIME | ATTR_MTIME | ATTR_CTIME | ATTR_SIZE)) {
             /*
              * Try find a handle which allows us to modify the attributes, otherwise
              * open the file/dir/whatever.
@@ -822,7 +839,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
             }                  *pReq;
             size_t              cbReq;
             SHFLHANDLE          hHostFile;
-            struct vbsf_handle *pHandle = iattr->ia_valid & ATTR_SIZE
+            struct vbsf_handle *pHandle = fAttrs & ATTR_SIZE
                                         ? vbsf_handle_find(sf_i, VBSF_HANDLE_F_WRITE, 0)
                                         : vbsf_handle_find(sf_i, 0, 0);
             if (pHandle) {
@@ -843,7 +860,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
                     pReq->Create.CreateParms.CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS
                                                          | SHFL_CF_ACT_FAIL_IF_NEW
                                                          | SHFL_CF_ACCESS_ATTR_WRITE;
-                    if (iattr->ia_valid & ATTR_SIZE)
+                    if (fAttrs & ATTR_SIZE)
                         pReq->Create.CreateParms.CreateFlags |= SHFL_CF_ACCESS_WRITE;
                     memcpy(&pReq->Create.StrPath, sf_i->path, SHFLSTRING_HEADER_SIZE + sf_i->path->u16Size);
                     vrc = VbglR0SfHostReqCreate(pSuperInfo->map.root, &pReq->Create);
@@ -868,12 +885,10 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
                 /*
                  * Set mode and/or timestamps.
                  */
-                if (iattr->ia_valid & (ATTR_MODE | ATTR_ATIME | ATTR_MTIME | ATTR_CTIME)) {
+                if (fAttrs & (ATTR_MODE | ATTR_ATIME | ATTR_MTIME | ATTR_CTIME)) {
                     /* Fill in the attributes.  Start by setting all to zero
                        since the host will ignore zeroed fields. */
-                    RT_ZERO(pReq->Info.ObjInfo);
-
-                    if (iattr->ia_valid & ATTR_MODE) {
+                    if (fAttrs & ATTR_MODE) {
                         pReq->Info.ObjInfo.Attr.fMode = sf_access_permissions_to_vbox(iattr->ia_mode);
                         if (iattr->ia_mode & S_IFDIR)
                             pReq->Info.ObjInfo.Attr.fMode |= RTFS_TYPE_DIRECTORY;
@@ -882,17 +897,17 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
                         else
                             pReq->Info.ObjInfo.Attr.fMode |= RTFS_TYPE_FILE;
                     }
-                    if (iattr->ia_valid & ATTR_ATIME)
+                    if (fAttrs & ATTR_ATIME)
                         vbsf_time_to_vbox(&pReq->Info.ObjInfo.AccessTime, &iattr->ia_atime);
-                    if (iattr->ia_valid & ATTR_MTIME)
+                    if (fAttrs & ATTR_MTIME)
                         vbsf_time_to_vbox(&pReq->Info.ObjInfo.ModificationTime, &iattr->ia_mtime);
-                    if (iattr->ia_valid & ATTR_CTIME)
+                    if (fAttrs & ATTR_CTIME)
                         vbsf_time_to_vbox(&pReq->Info.ObjInfo.ChangeTime, &iattr->ia_ctime);
 
                     /* Make the change. */
                     vrc = VbglR0SfHostReqSetObjInfo(pSuperInfo->map.root, &pReq->Info, hHostFile);
                     if (RT_SUCCESS(vrc)) {
-                        vbsf_update_inode(pInode, sf_i, &pReq->Info.ObjInfo, pSuperInfo, true /*fLocked*/);
+                        vbsf_update_inode(pInode, sf_i, &pReq->Info.ObjInfo, pSuperInfo, true /*fLocked*/, fAttrs);
                     } else {
                         rc = -RTErrConvertToErrno(vrc);
                         LogFunc(("VbglR0SfHostReqSetObjInfo(%s) failed vrc=%Rrc rc=%d\n", sf_i->path->String.ach, vrc, rc));
@@ -904,7 +919,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
                  * Note! Old API is more convenient here as it gives us up to date
                  *       inode info back.
                  */
-                if ((iattr->ia_valid & ATTR_SIZE) && rc == 0) {
+                if ((fAttrs & ATTR_SIZE) && rc == 0) {
                     /*vrc = VbglR0SfHostReqSetFileSize(pSuperInfo->map.root, &pReq->SetSize, hHostFile, iattr->ia_size);
                     if (RT_SUCCESS(vrc)) {
                         i_size_write(pInode, iattr->ia_size);
@@ -914,7 +929,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
                         pReq->Info.ObjInfo.cbObject = iattr->ia_size;
                         vrc = VbglR0SfHostReqSetFileSizeOld(pSuperInfo->map.root, &pReq->Info, hHostFile);
                         if (RT_SUCCESS(vrc))
-                            vbsf_update_inode(pInode, sf_i, &pReq->Info.ObjInfo, pSuperInfo, true /*fLocked*/);
+                            vbsf_update_inode(pInode, sf_i, &pReq->Info.ObjInfo, pSuperInfo, true /*fLocked*/, fAttrs);
                     }
                     if (RT_SUCCESS(vrc)) {
                         /** @todo there is potentially more to be done here if there are mappings of
@@ -940,7 +955,7 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
             if (pHandle)
                 vbsf_handle_release(pHandle, pSuperInfo, "vbsf_inode_setattr");
         } else
-            SFLOGFLOW(("vbsf_inode_setattr: Notthing to do here (%#x).\n", iattr->ia_valid));
+            SFLOGFLOW(("vbsf_inode_setattr: Nothing to do here: %#x (was %#x).\n", fAttrs, iattr->ia_valid));
     }
     return rc;
 }
