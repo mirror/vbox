@@ -557,21 +557,24 @@ static int vbsf_read_super_aux(struct super_block *sb, void *data, int flags)
          * Initialize the super block structure (must be done before
          * root inode creation).
          */
-        sb->s_magic = 0xface;
+        sb->s_magic     = 0xface;
         sb->s_blocksize = 1024;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 3)
         /* Required for seek/sendfile (see 'loff_t max' in fs/read_write.c / do_sendfile()). */
 # if defined MAX_LFS_FILESIZE
-        sb->s_maxbytes = MAX_LFS_FILESIZE;
+        sb->s_maxbytes  = MAX_LFS_FILESIZE;
 # elif BITS_PER_LONG == 32
-        sb->s_maxbytes = (loff_t)ULONG_MAX << PAGE_SHIFT;
+        sb->s_maxbytes  = (loff_t)ULONG_MAX << PAGE_SHIFT;
 # else
-        sb->s_maxbytes = INT64_MAX;
+        sb->s_maxbytes  = INT64_MAX;
 # endif
 #endif
-        sb->s_op = &g_vbsf_super_ops;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+        sb->s_time_gran = 1; /* This might be a little optimistic for windows hosts, where it should be 100. */
+#endif
+        sb->s_op        = &g_vbsf_super_ops;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 38)
-        sb->s_d_op = &vbsf_dentry_ops;
+        sb->s_d_op      = &vbsf_dentry_ops;
 #endif
 
         /*
