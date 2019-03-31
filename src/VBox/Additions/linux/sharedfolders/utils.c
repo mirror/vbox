@@ -306,12 +306,6 @@ void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSO
     sf_i->ts_up_to_date = jiffies;
     sf_i->force_restat  = 0;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    inode->i_mapping->a_ops = &vbsf_reg_aops;
-# if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
-    inode->i_mapping->backing_dev_info = &pSuperInfo->bdi; /* This is needed for mmap. */
-# endif
-#endif
     if (RTFS_IS_DIRECTORY(pAttr->fMode)) {
         inode->i_mode = sf_file_mode_to_linux(pAttr->fMode, pSuperInfo->dmode, pSuperInfo->dmask, S_IFDIR);
         inode->i_op = &vbsf_dir_iops;
@@ -331,6 +325,11 @@ void vbsf_init_inode(struct inode *inode, struct vbsf_inode_info *sf_i, PSHFLFSO
         inode->i_mode = sf_file_mode_to_linux(pAttr->fMode, pSuperInfo->fmode, pSuperInfo->fmask, S_IFREG);
         inode->i_op = &vbsf_reg_iops;
         inode->i_fop = &vbsf_reg_fops;
+        inode->i_mapping->a_ops = &vbsf_reg_aops;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 17) \
+ && LINUX_VERSION_CODE <  KERNEL_VERSION(4, 0, 0)
+        inode->i_mapping->backing_dev_info = &pSuperInfo->bdi; /* This is needed for mmap. */
+#endif
         set_nlink(inode, 1);
     }
 
@@ -814,7 +813,10 @@ int vbsf_inode_setattr(struct dentry *dentry, struct iattr *iattr)
          * operations will set those timestamps automatically.  Saves a host call.
          */
         unsigned fAttrs = iattr->ia_valid;
-        if (   (fAttrs & ~ATTR_FILE) == (ATTR_SIZE | ATTR_MTIME | ATTR_CTIME)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 15)
+        fAttrs &= ~ATTR_FILE;
+#endif
+        if (   fAttrs == (ATTR_SIZE | ATTR_MTIME | ATTR_CTIME)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
             || (fAttrs & (ATTR_OPEN | ATTR_SIZE)) == (ATTR_OPEN | ATTR_SIZE)
 #endif

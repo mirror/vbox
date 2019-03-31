@@ -75,6 +75,10 @@
 # define pgoff_t    unsigned long
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 12)
+# define PageUptodate(a_pPage) Page_Uptodate(a_pPage)
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -126,7 +130,7 @@ struct vbsf_iter_stash {
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 DECLINLINE(void) vbsf_put_page(struct page *pPage);
-DECLINLINE(void) vbsf_unlock_user_pages(struct page **papPages, size_t cPages, bool fSetDirty, bool fLockPgHack);
+static void vbsf_unlock_user_pages(struct page **papPages, size_t cPages, bool fSetDirty, bool fLockPgHack);
 static void vbsf_reg_write_sync_page_cache(struct address_space *mapping, loff_t offFile, uint32_t cbRange,
                                            uint8_t const *pbSrcBuf, struct page **papSrcPages,
                                            uint32_t offSrcPage, size_t cSrcPages);
@@ -529,6 +533,28 @@ void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *
 /*********************************************************************************************************************************
 *   Misc                                                                                                                         *
 *********************************************************************************************************************************/
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 6)
+/** Any writable mappings? */
+DECLINLINE(bool) mapping_writably_mapped(struct address_space const *mapping)
+{
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 6)
+    return !list_empty(mapping->i_mmap_shared);
+# else
+    return mapping->i_mmap_shared != NULL;
+# endif
+}
+#endif
+
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 12)
+/** Missing in 2.4.x, so just stub it for now. */
+DECLINLINE(bool) PageWriteback(struct page const *page)
+{
+    return false;
+}
+#endif
+
 
 /**
  * Helper for deciding wheter we should do a read via the page cache or not.
@@ -1272,6 +1298,7 @@ DECLINLINE(void) vbsf_unlock_user_pages(struct page **papPages, size_t cPages, b
     while (cPages-- > 0)
     {
         struct page *pPage = papPages[cPages];
+        Assert((ssize_t)cPages >= 0);
         if (fSetDirty && !PageReserved(pPage))
             SetPageDirty(pPage);
         vbsf_put_page(pPage);
@@ -1392,7 +1419,7 @@ DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWr
     ssize_t cPagesLocked = get_user_pages_unlocked(current, current->mm, uPtrFrom, cPages, fWrite, 1 /*force*/, papPages);
 # else
     struct task_struct *pTask = current;
-    size_t cPagesLocked;
+    ssize_t cPagesLocked;
     down_read(&pTask->mm->mmap_sem);
     cPagesLocked = get_user_pages(pTask, pTask->mm, uPtrFrom, cPages, fWrite, 1 /*force*/, papPages, NULL);
     up_read(&pTask->mm->mmap_sem);
@@ -1520,6 +1547,7 @@ static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, si
              */
             rc = VbglR0SfHostReqReadPgLst(pSuperInfo->map.root, pReq, sf_r->Handle.hHost, offFile, cbChunk, cPages);
 
+            Assert(cPages <= cMaxPages);
             vbsf_unlock_user_pages(papPages, cPages, true /*fSetDirty*/, fLockPgHack);
 
             if (RT_SUCCESS(rc)) {
@@ -1564,6 +1592,7 @@ static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, si
         kfree(papPages);
     if (pReq)
         VbglR0PhysHeapFree(pReq);
+    SFLOGFLOW(("vbsf_reg_read: returns %zd (%#zx), *off=%RX64 [lock]\n", cbRet, cbRet, *off));
     return cbRet;
 }
 
@@ -1626,6 +1655,7 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
                 } else
                     cbRet = -EPROTO;
                 VbglR0PhysHeapFree(pReq);
+                SFLOGFLOW(("vbsf_reg_read: returns %zd (%#zx), *off=%RX64 [embed]\n", cbRet, cbRet, *off));
                 return cbRet;
             }
             VbglR0PhysHeapFree(pReq);
@@ -1655,6 +1685,7 @@ static ssize_t vbsf_reg_read(struct file *file, char /*__user*/ *buf, size_t siz
                     cbRet = -EPROTO;
                 VbglR0PhysHeapFree(pReq);
                 kfree(pvBounce);
+                SFLOGFLOW(("vbsf_reg_read: returns %zd (%#zx), *off=%RX64 [bounce]\n", cbRet, cbRet, *off));
                 return cbRet;
             }
             kfree(pvBounce);
@@ -1824,6 +1855,7 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
 
                 vbsf_reg_write_sync_page_cache(inode->i_mapping, offFile, cbActual, NULL /*pbKrnlBuf*/,
                                                papPages, (uintptr_t)buf & PAGE_OFFSET_MASK, cPages);
+                Assert(cPages <= cMaxPages);
                 vbsf_unlock_user_pages(papPages, cPages, false /*fSetDirty*/, fLockPgHack);
 
                 cbRet   += cbActual;
@@ -1868,6 +1900,7 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
         kfree(papPages);
     if (pReq)
         VbglR0PhysHeapFree(pReq);
+    SFLOGFLOW(("vbsf_reg_write: returns %zd (%#zx), *off=%RX64 [lock]\n", cbRet, cbRet, *off));
     return cbRet;
 }
 
@@ -1958,6 +1991,7 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
                 cbRet = -EFAULT;
 
             VbglR0PhysHeapFree(pReq);
+            SFLOGFLOW(("vbsf_reg_write: returns %zd (%#zx), *off=%RX64 [embed]\n", cbRet, cbRet, *off));
             return cbRet;
         }
         if (pReq)
@@ -1992,11 +2026,13 @@ static ssize_t vbsf_reg_write(struct file *file, const char *buf, size_t size, l
                     sf_i->force_restat = 1; /* mtime (and size) may have changed */
                     VbglR0PhysHeapFree(pReq);
                     kfree(pvBounce);
+                    SFLOGFLOW(("vbsf_reg_write: returns %zd (%#zx), *off=%RX64 [bounce]\n", cbRet, cbRet, *off));
                     return cbRet;
                 }
                 kfree(pvBounce);
             } else {
                 kfree(pvBounce);
+                SFLOGFLOW(("vbsf_reg_write: returns -EFAULT, *off=%RX64 [bounce]\n", *off));
                 return -EFAULT;
             }
         }
@@ -3448,11 +3484,8 @@ struct inode_operations vbsf_reg_iops = {
 
 
 /*********************************************************************************************************************************
-*   Address Space Operations on Regular Files (for mmap)                                                                         *
+*   Address Space Operations on Regular Files (for mmap, sendfile, direct I/O)                                                   *
 *********************************************************************************************************************************/
-
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 
 /**
  * Used to read the content of a page into the page cache.
@@ -3526,7 +3559,11 @@ static int vbsf_readpage(struct file *file, struct page *page)
  * Needed for mmap and writes when the file is mmapped in a shared+writeable
  * fashion.
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 52)
 static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
+#else
+static int vbsf_writepage(struct page *page)
+#endif
 {
     struct address_space   *mapping = page->mapping;
     struct inode           *inode   = mapping->host;
@@ -3535,7 +3572,7 @@ static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
     int                     err;
 
     SFLOGFLOW(("vbsf_writepage: inode=%p page=%p off=%#llx pHandle=%p (%#llx)\n",
-               inode, page,(uint64_t)page->index << PAGE_SHIFT, pHandle, pHandle->hHost));
+               inode, page, (uint64_t)page->index << PAGE_SHIFT, pHandle, pHandle ? pHandle->hHost : 0));
 
     if (pHandle) {
         struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
@@ -3584,6 +3621,7 @@ static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
         static uint64_t volatile s_cCalls = 0;
         if (s_cCalls++ < 16)
             printk("vbsf_writepage: no writable handle for %s..\n", sf_i->path->String.ach);
+        SetPageError(page);
         err = -EPROTO;
     }
     unlock_page(page);
@@ -3591,7 +3629,7 @@ static int vbsf_writepage(struct page *page, struct writeback_control *wbc)
 }
 
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
 /**
  * Called when writing thru the page cache (which we shouldn't be doing).
  */
@@ -3608,44 +3646,46 @@ int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t po
                (unsigned long long)pos, len, flags);
         RTLogBackdoorPrintf("vboxsf: Unexpected call to vbsf_write_begin(pos=%#llx len=%#x flags=%#x)!  Please report.\n",
                     (unsigned long long)pos, len, flags);
-#  ifdef WARN_ON
+# ifdef WARN_ON
         WARN_ON(1);
-#  endif
+# endif
     }
     return simple_write_begin(file, mapping, pos, len, flags, pagep, fsdata);
 }
-# endif /* KERNEL_VERSION >= 2.6.24 */
+#endif /* KERNEL_VERSION >= 2.6.24 */
 
 
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
 /**
  * This is needed to make open accept O_DIRECT as well as dealing with direct
  * I/O requests if we don't intercept them earlier.
  */
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
 static ssize_t vbsf_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
-#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
 static ssize_t vbsf_direct_IO(struct kiocb *iocb, struct iov_iter *iter, loff_t offset)
-#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
 static ssize_t vbsf_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter, loff_t offset)
-#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 6)
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 6)
 static ssize_t vbsf_direct_IO(int rw, struct kiocb *iocb, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
-#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 55)
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 55)
 static int vbsf_direct_IO(int rw, struct kiocb *iocb, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
-#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 41)
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 41)
 static int vbsf_direct_IO(int rw, struct file *file, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
-#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 35)
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 35)
 static int vbsf_direct_IO(int rw, struct inode *inode, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
-#  elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 26)
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 26)
 static int vbsf_direct_IO(int rw, struct inode *inode, char *buf, loff_t offset, size_t count)
-#  else
-static int vbsf_direct_IO(int rw, struct inode *inode, struct kiobuf *, unsigned long, int)
-#  endif
+# elif LINUX_VERSION_CODE == KERNEL_VERSION(2, 4, 21) && defined(I_NEW) /* RHEL3 Frankenkernel.  */
+static int vbsf_direct_IO(int rw, struct file *file, struct kiobuf *buf, unsigned long whatever1, int whatever2)
+# else
+static int vbsf_direct_IO(int rw, struct inode *inode, struct kiobuf *buf, unsigned long whatever1, int whatever2)
+# endif
 {
     TRACE();
     return -EINVAL;
 }
-# endif
+#endif
 
 /**
  * Address space (for the page cache) operations for regular files.
@@ -3656,20 +3696,19 @@ struct address_space_operations vbsf_reg_aops = {
     .readpage       = vbsf_readpage,
     .writepage      = vbsf_writepage,
     /** @todo Need .writepages if we want msync performance...  */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 12)
     .set_page_dirty = __set_page_dirty_buffers,
-# endif
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
     .write_begin    = vbsf_write_begin,
     .write_end      = simple_write_end,
-# else
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 45)
     .prepare_write  = simple_prepare_write,
     .commit_write   = simple_commit_write,
-# endif
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
     .direct_IO      = vbsf_direct_IO,
-# endif
+#endif
 };
 
-#endif /* LINUX_VERSION_CODE >= 2.6.0 */
 
