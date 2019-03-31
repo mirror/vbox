@@ -539,7 +539,7 @@ void vbsf_handle_append(struct vbsf_inode_info *pInodeInfo, struct vbsf_handle *
 DECLINLINE(bool) mapping_writably_mapped(struct address_space const *mapping)
 {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 6)
-    return !list_empty(mapping->i_mmap_shared);
+    return !list_empty(&mapping->i_mmap_shared);
 # else
     return mapping->i_mmap_shared != NULL;
 # endif
@@ -1300,7 +1300,7 @@ DECLINLINE(void) vbsf_unlock_user_pages(struct page **papPages, size_t cPages, b
         struct page *pPage = papPages[cPages];
         Assert((ssize_t)cPages >= 0);
         if (fSetDirty && !PageReserved(pPage))
-            SetPageDirty(pPage);
+            set_page_dirty(pPage);
         vbsf_put_page(pPage);
     }
 }
@@ -1580,10 +1580,13 @@ static ssize_t vbsf_reg_read_locking(struct file *file, char /*__user*/ *buf, si
                  * If we've successfully read stuff, return it rather than
                  * the error.  (Not sure if this is such a great idea...)
                  */
-                if (cbRet > 0)
+                if (cbRet > 0) {
+                    SFLOGFLOW(("vbsf_reg_read: read at %#RX64 -> %Rrc; got cbRet=%#zx already\n", offFile, rc, cbRet));
                     *off = offFile;
-                else
+                } else {
+                    SFLOGFLOW(("vbsf_reg_read: read at %#RX64 -> %Rrc\n", offFile, rc));
                     cbRet = -EPROTO;
+                }
                 break;
             }
         }
@@ -1887,10 +1890,13 @@ static ssize_t vbsf_reg_write_locking(struct file *file, const char /*__user*/ *
                      * If we've successfully written stuff, return it rather than
                      * the error.  (Not sure if this is such a great idea...)
                      */
-                    if (cbRet > 0)
+                    if (cbRet > 0) {
+                        SFLOGFLOW(("vbsf_reg_write: write at %#RX64 -> %Rrc; got cbRet=%#zx already\n", offFile, rc, cbRet));
                         *off = offFile;
-                    else
+                    } else {
+                        SFLOGFLOW(("vbsf_reg_write: write at %#RX64 -> %Rrc\n", offFile, rc));
                         cbRet = -EPROTO;
+                    }
                     break;
                 }
             }
@@ -2057,7 +2063,7 @@ DECLINLINE(void) vbsf_iter_unlock_pages(struct iov_iter *iter, struct page **pap
     {
         struct page *pPage = papPages[cPages];
         if (fSetDirty && !PageReserved(pPage))
-            SetPageDirty(pPage);
+            set_page_dirty(pPage);
         vbsf_put_page(pPage);
     }
 }
@@ -3072,18 +3078,22 @@ static int vbsf_reg_release(struct inode *inode, struct file *file)
     SFLOGFLOW(("vbsf_reg_release: inode=%p file=%p\n", inode, file));
     if (sf_r) {
         struct vbsf_super_info *pSuperInfo = VBSF_GET_SUPER_INFO(inode->i_sb);
+        struct address_space   *mapping    = inode->i_mapping;
         Assert(pSuperInfo);
 
+        /* If we're closing the last handle for this inode, make sure the flush
+           the mapping or we'll end up in vbsf_writepage without a handle. */
+        if (   mapping
+            && mapping->nrpages > 0
+            /** @todo && last writable handle */ ) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
-        /* See the smbfs source (file.c). mmap in particular can cause data to be
-         * written to the file after it is closed, which we can't cope with.  We
-         * copy and paste the body of filemap_write_and_wait() here as it was not
-         * defined before 2.6.6 and not exported until quite a bit later. */
-        /* filemap_write_and_wait(inode->i_mapping); */
-        if (inode->i_mapping->nrpages
-            && filemap_fdatawrite(inode->i_mapping) != -EIO)
-            filemap_fdatawait(inode->i_mapping);
+            if (filemap_fdatawrite(mapping) != -EIO)
+#else
+            if (   filemap_fdatasync(mapping) == 0
+                && fsync_inode_data_buffers(inode) == 0)
 #endif
+                filemap_fdatawait(inode->i_mapping);
+        }
 
         /* Release sf_r, closing the handle if we're the last user. */
         file->private_data = NULL;
@@ -3178,11 +3188,19 @@ static int vbsf_reg_fsync(struct file *file, struct dentry *dentry, int datasync
         rc = sync_inode(inode, &wbc);
     }
 #  else  /* < 2.5.12 */
-    rc  = fsync_inode_buffers(inode);
+    /** @todo
+     * Somethings is buggy here or in the 2.4.21-27.EL kernel I'm testing on.
+     *
+     * In theory we shouldn't need to do anything here, since msync will call
+     * writepage() on each dirty page and we write them out synchronously.  So, the
+     * problem is elsewhere...  Doesn't happen all the time either.  Sigh.
+     */
+    rc = fsync_inode_buffers(inode);
 #   if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
-    rc |= fsync_inode_data_buffers(inode);
+    if (rc == 0 && datasync)
+        rc = fsync_inode_data_buffers(inode);
 #   endif
-    /** @todo probably need to do more here... */
+
 #  endif /* < 2.5.12 */
     return rc;
 # endif
@@ -3606,24 +3624,31 @@ static int vbsf_writepage(struct page *page)
                     && offEndOfWrite > i_size_read(inode))
                     i_size_write(inode, offEndOfWrite);
 
+                /* Update and unlock the page. */
                 if (PageError(page))
                     ClearPageError(page);
+                SetPageUptodate(page);
+                unlock_page(page);
 
-                err = 0;
-            } else {
-                ClearPageUptodate(page);
-                err = -EPROTO;
+                vbsf_handle_release(pHandle, pSuperInfo, "vbsf_writepage");
+                return 0;
             }
+
+            /*
+             * We failed.
+             */
+            err = -EIO;
         } else
             err = -ENOMEM;
         vbsf_handle_release(pHandle, pSuperInfo, "vbsf_writepage");
     } else {
+        /** @todo we could re-open the file here and deal with this... */
         static uint64_t volatile s_cCalls = 0;
         if (s_cCalls++ < 16)
             printk("vbsf_writepage: no writable handle for %s..\n", sf_i->path->String.ach);
-        SetPageError(page);
-        err = -EPROTO;
+        err = -EIO;
     }
+    SetPageError(page);
     unlock_page(page);
     return err;
 }
@@ -3645,7 +3670,7 @@ int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t po
         printk("vboxsf: Unexpected call to vbsf_write_begin(pos=%#llx len=%#x flags=%#x)! Please report.\n",
                (unsigned long long)pos, len, flags);
         RTLogBackdoorPrintf("vboxsf: Unexpected call to vbsf_write_begin(pos=%#llx len=%#x flags=%#x)!  Please report.\n",
-                    (unsigned long long)pos, len, flags);
+                            (unsigned long long)pos, len, flags);
 # ifdef WARN_ON
         WARN_ON(1);
 # endif
