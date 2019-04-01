@@ -129,7 +129,7 @@ static DECLCALLBACK(RTFOFF) rtldrRdrMem_Tell(PRTLDRREADER pReader)
 
 
 /** @interface_method_impl{RTLDRREADER,pfnSize} */
-static DECLCALLBACK(RTFOFF) rtldrRdrMem_Size(PRTLDRREADER pReader)
+static DECLCALLBACK(uint64_t) rtldrRdrMem_Size(PRTLDRREADER pReader)
 {
     PRTLDRRDRMEM pThis = (PRTLDRRDRMEM)pReader;
     return pThis->cbImage;

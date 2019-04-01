@@ -56,7 +56,7 @@ typedef struct RTLDRREADERFILE
     /** The file. */
     RTFILE          hFile;
     /** The file size. */
-    RTFOFF          cbFile;
+    uint64_t        cbFile;
     /** The current offset. */
     RTFOFF          off;
     /** Number of users or the mapping. */
@@ -108,7 +108,7 @@ static DECLCALLBACK(RTFOFF) rtldrFileTell(PRTLDRREADER pReader)
 
 
 /** @copydoc RTLDRREADER::pfnSize */
-static DECLCALLBACK(RTFOFF) rtldrFileSize(PRTLDRREADER pReader)
+static DECLCALLBACK(uint64_t) rtldrFileSize(PRTLDRREADER pReader)
 {
     PRTLDRREADERFILE pFileReader = (PRTLDRREADERFILE)pReader;
     return pFileReader->cbFile;
@@ -142,7 +142,7 @@ static DECLCALLBACK(int) rtldrFileMap(PRTLDRREADER pReader, const void **ppvBits
      * Allocate memory.
      */
     size_t cb = (size_t)pFileReader->cbFile;
-    if ((RTFOFF)cb != pFileReader->cbFile)
+    if ((uint64_t)cb != pFileReader->cbFile)
         return VERR_IMAGE_TOO_BIG;
     pFileReader->pvMapping = RTMemAlloc(cb);
     if (!pFileReader->pvMapping)
@@ -224,7 +224,7 @@ static int rtldrFileCreate(PRTLDRREADER *ppReader, const char *pszFilename)
         rc = RTFileOpen(&pFileReader->hFile, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
         if (RT_SUCCESS(rc))
         {
-            rc = RTFileGetSize(pFileReader->hFile, (uint64_t *)&pFileReader->cbFile);
+            rc = RTFileGetSize(pFileReader->hFile, &pFileReader->cbFile);
             if (RT_SUCCESS(rc))
             {
                 pFileReader->Core.uMagic     = RTLDRREADER_MAGIC;

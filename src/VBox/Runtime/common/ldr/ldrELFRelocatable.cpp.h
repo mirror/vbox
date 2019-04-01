@@ -1355,9 +1355,8 @@ static DECLCALLBACK(int) RTLDRELF_NAME(ReadDbgInfo)(PRTLDRMODINTERNAL pMod, uint
     AssertReturn(pThis->paShdrs[iDbgInfo].sh_type   == SHT_PROGBITS, VERR_INVALID_PARAMETER);
     AssertReturn(pThis->paShdrs[iDbgInfo].sh_offset == (uint64_t)off, VERR_INVALID_PARAMETER);
     AssertReturn(pThis->paShdrs[iDbgInfo].sh_size   == cb, VERR_INVALID_PARAMETER);
-    RTFOFF cbRawImage = pThis->Core.pReader->pfnSize(pThis->Core.pReader);
-    AssertReturn(cbRawImage >= 0, VERR_INVALID_PARAMETER);
-    AssertReturn(off >= 0 && cb <= (uint64_t)cbRawImage && (uint64_t)off + cb <= (uint64_t)cbRawImage, VERR_INVALID_PARAMETER);
+    uint64_t cbRawImage = pThis->Core.pReader->pfnSize(pThis->Core.pReader);
+    AssertReturn(off >= 0 && cb <= cbRawImage && (uint64_t)off + cb <= cbRawImage, VERR_INVALID_PARAMETER);
 
     /*
      * Read it from the file and look for fixup sections.
@@ -1743,7 +1742,7 @@ const char *RTLDRELF_NAME(GetSHdrName)(PRTLDRMODELF pModElf, Elf_Word offName, c
  * @param   pszLogName  The log name.
  * @param   cbRawImage  The size of the raw image.
  */
-static int RTLDRELF_NAME(ValidateSectionHeader)(PRTLDRMODELF pModElf, unsigned iShdr, const char *pszLogName, RTFOFF cbRawImage)
+static int RTLDRELF_NAME(ValidateSectionHeader)(PRTLDRMODELF pModElf, unsigned iShdr, const char *pszLogName, uint64_t cbRawImage)
 {
     const Elf_Shdr *pShdr = &pModElf->paShdrs[iShdr];
     char szSectionName[80]; NOREF(szSectionName);
@@ -1836,11 +1835,11 @@ static int RTLDRELF_NAME(ValidateSectionHeader)(PRTLDRMODELF pModElf, unsigned i
     if (    pShdr->sh_type != SHT_NOBITS
         &&  pShdr->sh_size)
     {
-        RTFOFF offEnd = pShdr->sh_offset + pShdr->sh_size;
+        uint64_t offEnd = pShdr->sh_offset + pShdr->sh_size;
         if (    offEnd > cbRawImage
-            ||  offEnd < (RTFOFF)pShdr->sh_offset)
+            ||  offEnd < (uint64_t)pShdr->sh_offset)
         {
-            Log(("RTLdrELF: %s: Shdr #%d: sh_offset (" FMT_ELF_OFF ") + sh_size (" FMT_ELF_XWORD " = %RTfoff) is beyond the end of the file (%RTfoff)!\n",
+            Log(("RTLdrELF: %s: Shdr #%d: sh_offset (" FMT_ELF_OFF ") + sh_size (" FMT_ELF_XWORD " = %RX64) is beyond the end of the file (%RX64)!\n",
                  pszLogName, iShdr, pShdr->sh_offset, pShdr->sh_size, offEnd, cbRawImage));
             return VERR_BAD_EXE_FORMAT;
         }
@@ -1869,7 +1868,7 @@ static int RTLDRELF_NAME(ValidateSectionHeader)(PRTLDRMODELF pModElf, unsigned i
 static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTLDRMOD phLdrMod)
 {
     const char *pszLogName = pReader->pfnLogName(pReader);
-    RTFOFF      cbRawImage = pReader->pfnSize(pReader);
+    uint64_t    cbRawImage = pReader->pfnSize(pReader);
     RT_NOREF_PV(fFlags);
 
     /*

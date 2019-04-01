@@ -83,7 +83,7 @@ static DECLCALLBACK(RTFOFF) rtldrVfsFileTell(PRTLDRREADER pReader)
 
 
 /** @copydoc RTLDRREADER::pfnSize */
-static DECLCALLBACK(RTFOFF) rtldrVfsFileSize(PRTLDRREADER pReader)
+static DECLCALLBACK(uint64_t) rtldrVfsFileSize(PRTLDRREADER pReader)
 {
     PRTLDRREADERVFSFILE pFileReader = (PRTLDRREADERVFSFILE)pReader;
     uint64_t cbFile;
@@ -120,9 +120,9 @@ static DECLCALLBACK(int) rtldrVfsFileMap(PRTLDRREADER pReader, const void **ppvB
     /*
      * Allocate memory.
      */
-    RTFOFF cbFile = rtldrVfsFileSize(pReader);
+    uint64_t cbFile = rtldrVfsFileSize(pReader);
     size_t cb = (size_t)cbFile;
-    if ((RTFOFF)cb != cbFile)
+    if ((uint64_t)cb != cbFile)
         return VERR_IMAGE_TOO_BIG;
     pFileReader->pvMapping = RTMemAlloc(cb);
     if (!pFileReader->pvMapping)

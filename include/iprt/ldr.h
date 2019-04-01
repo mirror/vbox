@@ -176,7 +176,7 @@ typedef struct RTLDRREADER
      * @returns size of raw image bits in bytes.
      * @param   pReader     Pointer to the reader instance.
      */
-    DECLCALLBACKMEMBER(RTFOFF, pfnSize)(PRTLDRREADER pReader);
+    DECLCALLBACKMEMBER(uint64_t, pfnSize)(PRTLDRREADER pReader);
 
     /**
      * Map the bits into memory.

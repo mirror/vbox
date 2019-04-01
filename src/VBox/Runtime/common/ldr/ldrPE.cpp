@@ -296,7 +296,7 @@ static int rtldrPEReadPartByRva(PRTLDRMODPE pThis, const void *pvBits, uint32_t 
     *ppvMem = pbMem;
 
     /* Do the reading on a per section base. */
-    RTFOFF const cbFile = pThis->Core.pReader->pfnSize(pThis->Core.pReader);
+    uint64_t const cbFile = pThis->Core.pReader->pfnSize(pThis->Core.pReader);
     for (;;)
     {
         /* Translate the RVA into a file offset. */
@@ -364,8 +364,8 @@ static int rtldrPEReadPartByRva(PRTLDRMODPE pThis, const void *pvBits, uint32_t 
             cbToRead = 0;
         if (cbToRead)
         {
-            if ((RTFOFF)offFile + cbToRead > cbFile)
-                cbToRead = (uint32_t)(cbFile - (RTFOFF)offFile);
+            if ((uint64_t)offFile + cbToRead > cbFile)
+                cbToRead = (uint32_t)(cbFile - (uint64_t)offFile);
             int rc = pThis->Core.pReader->pfnRead(pThis->Core.pReader, pbMem, cbToRead, offFile);
             if (RT_FAILURE(rc))
             {
@@ -542,7 +542,7 @@ static int rtldrPEGetBitsNoImportsNorFixups(PRTLDRMODPE pModPe, void *pvBits)
     /*
      * Read the entire image / file.
      */
-    const RTFOFF cbRawImage = pReader->pfnSize(pReader)
+    const uint64_t cbRawImage = pReader->pfnSize(pReader)
     rc = pReader->pfnRead(pReader, pvBits, RT_MIN(pModPe->cbImage, cbRawImage), 0);
     if (RT_FAILURE(rc))
         Log(("rtldrPE: %s: Reading %#x bytes at offset %#x failed, %Rrc!!! (the entire image)\n",
@@ -2213,9 +2213,9 @@ static int rtldrPe_CalcSpecialHashPlaces(PRTLDRMODPE pModPe, PRTLDRPEHASHSPECIAL
     pPlaces->cbToHash = pModPe->SecurityDir.VirtualAddress;
     if (pPlaces->cbToHash == 0)
     {
-        RTFOFF cbFile = pModPe->Core.pReader->pfnSize(pModPe->Core.pReader);
+        uint64_t cbFile = pModPe->Core.pReader->pfnSize(pModPe->Core.pReader);
         pPlaces->cbToHash = (uint32_t)cbFile;
-        if (pPlaces->cbToHash != (RTFOFF)cbFile)
+        if (pPlaces->cbToHash != (uint64_t)cbFile)
             return RTErrInfoSetF(pErrInfo, VERR_LDRVI_FILE_LENGTH_ERROR, "File is too large: %RTfoff", cbFile);
     }
 
@@ -3741,7 +3741,7 @@ static int rtldrPEValidateFileHeader(PIMAGE_FILE_HEADER pFileHdr, uint32_t fFlag
  * @param   pErrInfo    Where to return additional error information.
  */
 static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr, const char *pszLogName, RTFOFF offNtHdrs,
-                                         const IMAGE_FILE_HEADER *pFileHdr, RTFOFF cbRawImage, uint32_t fFlags, PRTERRINFO pErrInfo)
+                                         const IMAGE_FILE_HEADER *pFileHdr, uint64_t cbRawImage, uint32_t fFlags, PRTERRINFO pErrInfo)
 {
     RT_NOREF_PV(pszLogName);
 
@@ -3864,7 +3864,7 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
 
             case IMAGE_DIRECTORY_ENTRY_SECURITY:      // 4
                 /* The VirtualAddress is a PointerToRawData. */
-                cb = (size_t)cbRawImage; Assert((RTFOFF)cb == cbRawImage);
+                cb = (size_t)cbRawImage; Assert((uint64_t)cb == cbRawImage);
                 Log(("rtldrPEOpen: %s: dir no. %d (SECURITY) VirtualAddress=%#x Size=%#x\n", pszLogName, i, pDir->VirtualAddress, pDir->Size));
                 if (pDir->Size < sizeof(WIN_CERTIFICATE))
                 {
@@ -3956,7 +3956,7 @@ static int rtldrPEValidateOptionalHeader(const IMAGE_OPTIONAL_HEADER64 *pOptHdr,
  * @param   fNoCode     Verify that the image contains no code.
  */
 static int rtldrPEValidateAndTouchUpSectionHeaders(IMAGE_SECTION_HEADER *paSections, unsigned cSections, const char *pszLogName,
-                                                   const IMAGE_OPTIONAL_HEADER64 *pOptHdr, RTFOFF cbRawImage, uint32_t fFlags,
+                                                   const IMAGE_OPTIONAL_HEADER64 *pOptHdr, uint64_t cbRawImage, uint32_t fFlags,
                                                    bool fNoCode)
 {
     RT_NOREF_PV(pszLogName);
@@ -4008,7 +4008,7 @@ static int rtldrPEValidateAndTouchUpSectionHeaders(IMAGE_SECTION_HEADER *paSecti
             ||  pSH->SizeOfRawData > cbRawImage
             ||  pSH->PointerToRawData + pSH->SizeOfRawData > cbRawImage)
         {
-            Log(("rtldrPEOpen: %s: PointerToRawData=%#x SizeOfRawData=%#x - beyond end of file (%#x) - section #%d '%.*s'!!!\n",
+            Log(("rtldrPEOpen: %s: PointerToRawData=%#x SizeOfRawData=%#x - beyond end of file (%#llx) - section #%d '%.*s'!!!\n",
                  pszLogName, pSH->PointerToRawData, pSH->SizeOfRawData, cbRawImage,
                  iSH, sizeof(pSH->Name), pSH->Name));
             return VERR_BAD_EXE_FORMAT;
