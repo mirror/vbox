@@ -3335,11 +3335,7 @@ static struct page *vbsf_vmlog_nopage(struct vm_area_struct *vma, unsigned long 
 static vm_fault_t vbsf_vmlog_page_mkwrite(struct vm_fault *vmf)
 {
     vm_fault_t rc;
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
     SFLOGFLOW(("vbsf_vmlog_page_mkwrite: vmf=%p flags=%#x addr=%p\n", vmf, vmf->flags, vmf->address));
-#  else
-    SFLOGFLOW(("vbsf_vmlog_page_mkwrite: vmf=%p flags=%#x addr=%p\n", vmf, vmf->flags, vmf->virtual_address));
-#  endif
     rc = g_pGenericFileVmOps->page_mkwrite(vmf);
     SFLOGFLOW(("vbsf_vmlog_page_mkwrite: returns %d\n", rc));
     return rc;
@@ -3348,7 +3344,11 @@ static vm_fault_t vbsf_vmlog_page_mkwrite(struct vm_fault *vmf)
 static int vbsf_vmlog_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
 {
     int rc;
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+    SFLOGFLOW(("vbsf_vmlog_page_mkwrite: vma=%p vmf=%p flags=%#x addr=%p\n", vma, vmf, vmf->flags, vmf->address));
+#  else
     SFLOGFLOW(("vbsf_vmlog_page_mkwrite: vma=%p vmf=%p flags=%#x addr=%p\n", vma, vmf, vmf->flags, vmf->virtual_address));
+#  endif
     rc = g_pGenericFileVmOps->page_mkwrite(vma, vmf);
     SFLOGFLOW(("vbsf_vmlog_page_mkwrite: returns %d\n", rc));
     return rc;
