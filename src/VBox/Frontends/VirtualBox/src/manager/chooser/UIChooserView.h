@@ -51,7 +51,7 @@ public:
         UIChooser *chooser() const { return m_pChooser; }
     /** @} */
 
-    /** @name Virtual Machine search stuff.
+    /** @name Search stuff.
       * @{ */
         /** Returns if the search widget is visible or not. */
         bool isSearchWidgetVisible() const;
@@ -106,7 +106,7 @@ private:
         void updateSceneRect();
     /** @} */
 
-    /** @name Virtual Machine search stuff.
+    /** @name Search stuff.
       * @{ */
         /** Updates search widget's geometry. */
         void updateSearchWidgetGeometry();
