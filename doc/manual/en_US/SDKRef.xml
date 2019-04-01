@@ -3981,6 +3981,15 @@ AuthResult AUTHCALL AuthEntry(
           </itemizedlist>
         </para></listitem>
 
+        <listitem><para>The webservice version of the <link linkend="ISharedFolder">ISharedFolder</link>
+          interface was changed from a struct to a managed object. This causes incompatiblities on the
+          protocol level as the shared folder attributes are not returned in the responses of
+          <link linkend="IVirtualBox__sharedFolders">IVirtualBox::getSharedFolders</link> and
+          <link linkend="IMachine__sharedFolders">IMachine::getSharedFolders</link> anymore. They
+          return object UUIDs instead which need be wrapped by stub objects. The change is not visible when
+          using the appropriate client bindings from the most recent VirtualBox SDK.
+        </para></listitem>
+
       </itemizedlist>
 
     </sect1>
