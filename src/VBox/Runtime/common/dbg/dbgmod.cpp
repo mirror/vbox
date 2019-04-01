@@ -412,7 +412,6 @@ RTDECL(int) RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, c
                 rc = RTSemRWRequestRead(g_hDbgModRWSem, RT_INDEFINITE_WAIT);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = VERR_DBG_NO_MATCHING_INTERPRETER;
                     for (PRTDBGMODREGDBG pCur = g_pDbgHead; pCur; pCur = pCur->pNext)
                     {
                         if (pCur->pVt->fSupports & RT_DBGTYPE_MAP)
@@ -432,6 +431,7 @@ RTDECL(int) RTDbgModCreateFromMap(PRTDBGMOD phDbgMod, const char *pszFilename, c
                     }
 
                     /* bail out */
+                    rc = VERR_DBG_NO_MATCHING_INTERPRETER;
                     RTSemRWReleaseRead(g_hDbgModRWSem);
                 }
                 RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszName);
@@ -835,7 +835,6 @@ RTDECL(int) RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename,
                 rc = RTSemRWRequestRead(g_hDbgModRWSem, RT_INDEFINITE_WAIT);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = VERR_DBG_NO_MATCHING_INTERPRETER;
                     PRTDBGMODREGIMG pImg;
                     for (pImg = g_pImgHead; pImg; pImg = pImg->pNext)
                     {
@@ -912,6 +911,7 @@ RTDECL(int) RTDbgModCreateFromImage(PRTDBGMOD phDbgMod, const char *pszFilename,
                     }
 
                     /* bail out */
+                    rc = VERR_DBG_NO_MATCHING_INTERPRETER;
                     RTSemRWReleaseRead(g_hDbgModRWSem);
                 }
                 RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszImgFileSpecified);
@@ -979,9 +979,12 @@ static DECLCALLBACK(int) rtDbgModFromPeImageOpenCallback(RTDBGCFG hDbgCfg, const
         {
             pDbgMod->pImgVt    = pImg->pVt;
             pDbgMod->pvImgPriv = NULL;
-            rc = pImg->pVt->pfnTryOpen(pDbgMod, RTLDRARCH_WHATEVER);
-            if (RT_SUCCESS(rc))
+            int rc2 = pImg->pVt->pfnTryOpen(pDbgMod, RTLDRARCH_WHATEVER);
+            if (RT_SUCCESS(rc2))
+            {
+                rc = rc2;
                 break;
+            }
             pDbgMod->pImgVt    = NULL;
             Assert(pDbgMod->pvImgPriv == NULL);
         }
@@ -1255,9 +1258,12 @@ rtDbgModFromMachOImageOpenDsymMachOCallback(RTDBGCFG hDbgCfg, const char *pszFil
         {
             pDbgMod->pImgVt    = pImg->pVt;
             pDbgMod->pvImgPriv = NULL;
-            rc = pImg->pVt->pfnTryOpen(pDbgMod, pArgs->enmArch);
-            if (RT_SUCCESS(rc))
+            int rc2 = pImg->pVt->pfnTryOpen(pDbgMod, pArgs->enmArch);
+            if (RT_SUCCESS(rc2))
+            {
+                rc = rc2;
                 break;
+            }
             pDbgMod->pImgVt    = NULL;
             Assert(pDbgMod->pvImgPriv == NULL);
         }
