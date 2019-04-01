@@ -219,10 +219,12 @@ typedef struct RTDVMFMTOPS
      *
      * @returns IPRT status code.
      * @param   hVolFmt         The format specific volume handle.
-     * @param   poffStart       Where to store the start offset in bytes on the underlying medium.
-     * @param   poffEnd         Where to store the end offset in bytes on the underlying medium (inclusive).
+     * @param   poffStart       Where to store the start byte offset on the
+     *                          underlying medium.
+     * @param   poffLast        Where to store the last byte offset on the
+     *                          underlying medium (inclusive).
      */
-    DECLCALLBACKMEMBER(int, pfnVolumeQueryRange)(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffStart, uint64_t *poffEnd);
+    DECLCALLBACKMEMBER(int, pfnVolumeQueryRange)(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffStart, uint64_t *poffLast);
 
     /**
      * Returns whether the supplied range is at least partially intersecting

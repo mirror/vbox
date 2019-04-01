@@ -482,11 +482,11 @@ static DECLCALLBACK(uint64_t) rtDvmFmtBsdLblVolumeGetFlags(RTDVMVOLUMEFMT hVolFm
     return DVMVOLUME_F_CONTIGUOUS;
 }
 
-static DECLCALLBACK(int) rtDvmFmtBsdLblVolumeQueryRange(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffStart, uint64_t *poffEnd)
+static DECLCALLBACK(int) rtDvmFmtBsdLblVolumeQueryRange(RTDVMVOLUMEFMT hVolFmt, uint64_t *poffStart, uint64_t *poffLast)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
     *poffStart = pVol->offStart;
-    *poffEnd   = pVol->offStart + pVol->cbVolume - 1;
+    *poffLast  = pVol->offStart + pVol->cbVolume - 1;
     return VINF_SUCCESS;
 }
 
