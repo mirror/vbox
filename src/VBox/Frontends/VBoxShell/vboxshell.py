@@ -1005,7 +1005,7 @@ def infoCmd(ctx, args):
 
     print("  Keyboard [keyboardHIDType]: %s (%s)" % (asEnumElem(ctx, "KeyboardHIDType", mach.keyboardHIDType), mach.keyboardHIDType))
     print("  Pointing device [pointingHIDType]: %s (%s)" % (asEnumElem(ctx, "PointingHIDType", mach.pointingHIDType), mach.pointingHIDType))
-    print("  Last changed [n/a]: " + time.asctime(time.localtime(mach.lastStateChange/1000)))
+    print("  Last changed [n/a]: " + time.asctime(time.localtime(int(mach.lastStateChange)/1000)))
     # OSE has no VRDE
     try:
         print("  VRDE server [VRDEServer.enabled]: %s" % (asState(mach.VRDEServer.enabled)))
