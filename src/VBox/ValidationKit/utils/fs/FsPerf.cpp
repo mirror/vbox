@@ -2731,16 +2731,21 @@ DECL_FORCE_INLINE(int) fsPerfIoReadWorker(RTFILE hFile1, uint64_t cbFile, uint32
 void fsPerfIoReadBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
 {
     RTTestISubF("IO - Sequential read %RU32", cbBlock);
-
-    uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBlock);
-    if (pbBuf)
+    if (cbBlock <= cbFile)
     {
-        memset(pbBuf, 0xf7, cbBlock);
-        PROFILE_IO_FN("RTFileRead", fsPerfIoReadWorker(hFile1, cbFile, cbBlock, pbBuf, &offActual, &cSeeks));
-        RTMemPageFree(pbBuf, cbBlock);
+
+        uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBlock);
+        if (pbBuf)
+        {
+            memset(pbBuf, 0xf7, cbBlock);
+            PROFILE_IO_FN("RTFileRead", fsPerfIoReadWorker(hFile1, cbFile, cbBlock, pbBuf, &offActual, &cSeeks));
+            RTMemPageFree(pbBuf, cbBlock);
+        }
+        else
+            RTTestSkipped(g_hTest, "insufficient (virtual) memory available");
     }
     else
-        RTTestSkipped(g_hTest, "insufficient (virtual) memory available");
+        RTTestSkipped(g_hTest, "test file too small");
 }
 
 
@@ -3185,15 +3190,20 @@ void fsPerfIoWriteBlockSize(RTFILE hFile1, uint64_t cbFile, uint32_t cbBlock)
 {
     RTTestISubF("IO - Sequential write %RU32", cbBlock);
 
-    uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBlock);
-    if (pbBuf)
+    if (cbBlock <= cbFile)
     {
-        memset(pbBuf, 0xf7, cbBlock);
-        PROFILE_IO_FN("RTFileWrite", fsPerfIoWriteWorker(hFile1, cbFile, cbBlock, pbBuf, &offActual, &cSeeks));
-        RTMemPageFree(pbBuf, cbBlock);
+        uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBlock);
+        if (pbBuf)
+        {
+            memset(pbBuf, 0xf7, cbBlock);
+            PROFILE_IO_FN("RTFileWrite", fsPerfIoWriteWorker(hFile1, cbFile, cbBlock, pbBuf, &offActual, &cSeeks));
+            RTMemPageFree(pbBuf, cbBlock);
+        }
+        else
+            RTTestSkipped(g_hTest, "insufficient (virtual) memory available");
     }
     else
-        RTTestSkipped(g_hTest, "insufficient (virtual) memory available");
+        RTTestSkipped(g_hTest, "test file too small");
 }
 
 
