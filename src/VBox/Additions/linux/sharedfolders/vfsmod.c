@@ -70,7 +70,7 @@ VBGLSFCLIENT g_SfClient;
 uint32_t     g_fHostFeatures = 0;
 /** Last valid shared folders function number. */
 uint32_t     g_uSfLastFunction = SHFL_FN_SET_FILE_SIZE;
-/** Shared folders features. */
+/** Shared folders features (SHFL_FEATURE_XXX). */
 uint64_t     g_fSfFeatures = 0;
 
 /** Protects all the vbsf_inode_info::HandleList lists. */
