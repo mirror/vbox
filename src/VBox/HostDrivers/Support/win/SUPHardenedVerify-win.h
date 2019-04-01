@@ -102,7 +102,7 @@ typedef struct SUPHNTVIRDR
     /** Current file offset. */
     RTFOFF      off;
     /** The file size. */
-    RTFOFF      cbFile;
+    uint64_t    cbFile;
     /** Flags for the verification callback, SUPHNTVI_F_XXX. */
     uint32_t    fFlags;
     /** The executable timstamp in second since unix epoch. */

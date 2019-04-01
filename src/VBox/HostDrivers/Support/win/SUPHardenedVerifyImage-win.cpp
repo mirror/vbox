@@ -301,7 +301,7 @@ static DECLCALLBACK(RTFOFF) supHardNtViRdrTell(PRTLDRREADER pReader)
 
 
 /** @copydoc RTLDRREADER::pfnSize */
-static DECLCALLBACK(RTFOFF) supHardNtViRdrSize(PRTLDRREADER pReader)
+static DECLCALLBACK(uint64_t) supHardNtViRdrSize(PRTLDRREADER pReader)
 {
     PSUPHNTVIRDR pNtViRdr = (PSUPHNTVIRDR)pReader;
     Assert(pNtViRdr->Core.uMagic == RTLDRREADER_MAGIC);
@@ -439,7 +439,7 @@ DECLHIDDEN(int) supHardNtViRdrCreate(HANDLE hFile, PCRTUTF16 pwszName, uint32_t 
     pNtViRdr->hFile           = hFile;
     pNtViRdr->hEvent          = hEvent;
     pNtViRdr->off             = 0;
-    pNtViRdr->cbFile          = StdInfo.EndOfFile.QuadPart;
+    pNtViRdr->cbFile          = (uint64_t)StdInfo.EndOfFile.QuadPart;
     pNtViRdr->fFlags          = fFlags;
     *ppNtViRdr = pNtViRdr;
     return VINF_SUCCESS;
