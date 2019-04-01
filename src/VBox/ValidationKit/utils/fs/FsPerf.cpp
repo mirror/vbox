@@ -87,6 +87,12 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** Used for cutting the the -d parameter value short and avoid a number of buffer overflow checks.  */
+#define FSPERF_MAX_NEEDED_PATH  224
+/** The max path used by this code.
+ * It greatly exceeds the RTPATH_MAX so we can push the limits on windows.  */
+#define FSPERF_MAX_PATH         (_32K)
+
 /** @def FSPERF_TEST_SENDFILE
  * Whether to enable the sendfile() tests. */
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
@@ -497,13 +503,13 @@ static size_t       g_cchEmptyDir;
 static size_t       g_cchDeepDir;
 
 /** The test directory (absolute).  This will always have a trailing slash. */
-static char         g_szDir[RTPATH_MAX];
+static char         g_szDir[FSPERF_MAX_PATH];
 /** The test directory (absolute), 2nd copy for use with InDir2().  */
-static char         g_szDir2[RTPATH_MAX];
+static char         g_szDir2[FSPERF_MAX_PATH];
 /** The empty test directory (absolute). This will always have a trailing slash. */
-static char         g_szEmptyDir[RTPATH_MAX];
+static char         g_szEmptyDir[FSPERF_MAX_PATH];
 /** The deep test directory (absolute). This will always have a trailing slash. */
-static char         g_szDeepDir[RTPATH_MAX];
+static char         g_szDeepDir[FSPERF_MAX_PATH + _1K];
 
 
 /**
@@ -740,7 +746,7 @@ void fsPerfManyFiles(void)
     PFSPERFNAMEENTRY pCur;
     RTListForEach(&g_ManyTreeHead, pCur, FSPERFNAMEENTRY, Entry)
     {
-        char szPath[RTPATH_MAX];
+        char szPath[FSPERF_MAX_PATH];
         memcpy(szPath, pCur->szName, pCur->cchName);
         for (uint32_t i = 0; i < g_cManyTreeFilesPerDir; i++)
         {
@@ -935,7 +941,7 @@ void fsPerfOpen(void)
     PROFILE_FN(fsPerfOpenExistingOnceWriteonly(g_szDeepDir), g_nsTestRun, "RTFileOpen/Close/deep/writeonly");
 
     /* Manytree: */
-    char szPath[RTPATH_MAX];
+    char szPath[FSPERF_MAX_PATH];
     PROFILE_MANYTREE_FN(szPath, fsPerfOpenExistingOnceReadonly(szPath), 1, g_nsTestRun, "RTFileOpen/Close/manytree/readonly");
 }
 
@@ -1045,7 +1051,7 @@ void fsPerfStat(void)
                "RTPathQueryInfoEx/deep/UNIX");
 
     /* Manytree: */
-    char szPath[RTPATH_MAX];
+    char szPath[FSPERF_MAX_PATH];
     PROFILE_MANYTREE_FN(szPath, RTPathQueryInfoEx(szPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK),
                         1, g_nsTestRun, "RTPathQueryInfoEx/manytree/NOTHING");
     PROFILE_MANYTREE_FN(szPath, RTPathQueryInfoEx(szPath, &ObjInfo, RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK),
@@ -1086,7 +1092,7 @@ void fsPerfChmod(void)
     RTPathSetMode(g_szDeepDir, ObjInfo.Attr.fMode);
 
     /* Manytree: */
-    char szPath[RTPATH_MAX];
+    char szPath[FSPERF_MAX_PATH];
     PROFILE_MANYTREE_FN(szPath, RTPathSetMode(szPath, iIteration & 1 ? fOddMode : fEvenMode), 1, g_nsTestRun,
                         "RTPathSetMode/manytree");
     DO_MANYTREE_FN(szPath, RTPathSetMode(szPath, ObjInfo.Attr.fMode));
@@ -1150,7 +1156,7 @@ void fsPerfUtimes(void)
                g_nsTestRun, "RTPathSetTimesEx/deep");
 
     /* Manytree: */
-    char szPath[RTPATH_MAX];
+    char szPath[FSPERF_MAX_PATH];
     PROFILE_MANYTREE_FN(szPath, RTPathSetTimesEx(szPath, iIteration & 1 ? &Time1 : &Time2, iIteration & 1 ? &Time2 : &Time1,
                                                  NULL, NULL, RTPATH_F_ON_LINK),
                         1, g_nsTestRun, "RTPathSetTimesEx/manytree");
@@ -1159,7 +1165,7 @@ void fsPerfUtimes(void)
 
 DECL_FORCE_INLINE(int) fsPerfRenameMany(const char *pszFile, uint32_t iIteration)
 {
-    char szRenamed[RTPATH_MAX];
+    char szRenamed[FSPERF_MAX_PATH];
     strcat(strcpy(szRenamed, pszFile), "-renamed");
     if (!(iIteration & 1))
         return RTPathRename(pszFile, szRenamed, 0);
@@ -1170,7 +1176,7 @@ DECL_FORCE_INLINE(int) fsPerfRenameMany(const char *pszFile, uint32_t iIteration
 void fsPerfRename(void)
 {
     RTTestISub("rename");
-    char szPath[RTPATH_MAX];
+    char szPath[FSPERF_MAX_PATH];
 
 /** @todo rename directories too!   */
 /** @todo check overwriting files and directoris (empty ones should work on
@@ -1588,7 +1594,7 @@ void fsPerfRm(void)
          * Ditto for the manytree.
          */
         {
-            char szPath[RTPATH_MAX];
+            char szPath[FSPERF_MAX_PATH];
             uint64_t const nsStart = RTTimeNanoTS();
             DO_MANYTREE_FN(szPath, RTTESTI_CHECK_RC_RETV(RTFileDelete(szPath), VINF_SUCCESS));
             uint64_t const cNsElapsed = RTTimeNanoTS() - nsStart;
@@ -3775,7 +3781,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
     {
         /* Create a new file, 256 KB in size, and fill it with random bytes.
            Try uncached access if we can to force the page-in to do actual reads. */
-        char szFile2[RTPATH_MAX + 32];
+        char szFile2[FSPERF_MAX_PATH + 32];
         memcpy(szFile2, g_szDir, g_cchDir);
         RTStrPrintf(&szFile2[g_cchDir], sizeof(szFile2) - g_cchDir, "mmap-%u.noh", i);
         RTFILE hFile2 = NIL_RTFILE;
@@ -4283,7 +4289,7 @@ static void fsPerfCopy(void)
  */
 static void Usage(PRTSTREAM pStrm)
 {
-    char szExec[RTPATH_MAX];
+    char szExec[FSPERF_MAX_PATH];
     RTStrmPrintf(pStrm, "usage: %s <-d <testdir>> [options]\n",
                  RTPathFilename(RTProcGetExecutablePath(szExec, sizeof(szExec))));
     RTStrmPrintf(pStrm, "\n");
@@ -4368,9 +4374,9 @@ int main(int argc, char *argv[])
     /*
      * Default values.
      */
-    rc = RTPathGetCurrent(g_szDir, sizeof(g_szDir) / 2);
+    rc = RTPathGetCurrent(g_szDir, sizeof(g_szDir) - FSPERF_MAX_NEEDED_PATH);
     if (RT_SUCCESS(rc))
-        rc = RTPathAppend(g_szDir, sizeof(g_szDir) / 2, "fstestdir-");
+        rc = RTPathAppend(g_szDir, sizeof(g_szDir) - FSPERF_MAX_NEEDED_PATH, "fstestdir-");
     if (RT_SUCCESS(rc))
     {
         g_cchDir = strlen(g_szDir);
@@ -4390,7 +4396,7 @@ int main(int argc, char *argv[])
         switch (rc)
         {
             case 'd':
-                rc = RTPathAbs(ValueUnion.psz, g_szDir, sizeof(g_szDir) / 2);
+                rc = RTPathAbs(ValueUnion.psz, g_szDir, sizeof(g_szDir) - FSPERF_MAX_NEEDED_PATH);
                 if (RT_SUCCESS(rc))
                 {
                     RTPathEnsureTrailingSeparator(g_szDir, sizeof(g_szDir));
