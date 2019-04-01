@@ -259,7 +259,7 @@ static int         vbsf_follow_link(struct dentry *dentry, struct nameidata *nd)
 /**
  * For freeing target link buffer allocated by vbsf_follow_link.
  *
- * For kernel before 2.6.8 memory isn't being kept around.
+ * For kernels before 2.6.8 memory isn't being kept around.
  */
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
 static void vbsf_put_link(struct dentry *dentry, void *cookie)

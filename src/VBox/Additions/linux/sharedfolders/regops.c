@@ -3053,6 +3053,9 @@ static int vbsf_reg_open(struct inode *inode, struct file *file)
         }
     }
 
+/** @todo update the inode here, pReq carries the latest stats!  Very helpful
+ *        for detecting host side changes. */
+
     sf_i->force_restat = 1; /** @todo Why?!? */
     sf_r->Handle.hHost = pReq->CreateParms.Handle;
     file->private_data = sf_r;
@@ -3735,5 +3738,4 @@ struct address_space_operations vbsf_reg_aops = {
     .direct_IO      = vbsf_direct_IO,
 #endif
 };
-
 
