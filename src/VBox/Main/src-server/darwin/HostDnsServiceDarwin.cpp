@@ -50,7 +50,9 @@ struct HostDnsServiceDarwin::Data
 static const CFStringRef kStateNetworkGlobalDNSKey = CFSTR("State:/Network/Global/DNS");
 
 
-HostDnsServiceDarwin::HostDnsServiceDarwin():HostDnsMonitor(true),m(NULL)
+HostDnsServiceDarwin::HostDnsServiceDarwin()
+    : HostDnsServiceBase(true)
+    , m(NULL)
 {
     m = new HostDnsServiceDarwin::Data();
 }
@@ -85,7 +87,7 @@ void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *inf
 }
 
 
-HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *proxy)
+HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *pProxy)
 {
     SCDynamicStoreContext ctx;
     RT_ZERO(ctx);
@@ -93,8 +95,8 @@ HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *proxy)
     ctx.info = this;
 
     m->m_store = SCDynamicStoreCreate(NULL, CFSTR("org.virtualbox.VBoxSVC"),
-                                   (SCDynamicStoreCallBack)HostDnsServiceDarwin::hostDnsServiceStoreCallback,
-                                   &ctx);
+                                      (SCDynamicStoreCallBack)HostDnsServiceDarwin::hostDnsServiceStoreCallback,
+                                      &ctx);
     AssertReturn(m->m_store, E_FAIL);
 
     m->m_DnsWatcher = SCDynamicStoreCreateRunLoopSource(NULL, m->m_store, 0);
@@ -110,14 +112,14 @@ HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *proxy)
     m->m_Stopper = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sctx);
     AssertReturn(m->m_Stopper, E_FAIL);
 
-    HRESULT hrc = HostDnsMonitor::init(proxy);
+    HRESULT hrc = HostDnsServiceBase::init(pProxy);
     AssertComRCReturn(hrc, hrc);
 
     return updateInfo();
 }
 
 
-void HostDnsServiceDarwin::monitorThreadShutdown()
+void HostDnsServiceDarwin::monitorThreadShutdown(void)
 {
     RTCLock grab(m_LockMtx);
     if (!m->m_fStop)
@@ -131,7 +133,7 @@ void HostDnsServiceDarwin::monitorThreadShutdown()
 }
 
 
-int HostDnsServiceDarwin::monitorWorker()
+int HostDnsServiceDarwin::monitorWorker(void)
 {
     m->m_RunLoopRef = CFRunLoopGetCurrent();
     AssertReturn(m->m_RunLoopRef, VERR_INTERNAL_ERROR);
@@ -167,8 +169,7 @@ int HostDnsServiceDarwin::monitorWorker()
     return VINF_SUCCESS;
 }
 
-
-HRESULT HostDnsServiceDarwin::updateInfo()
+HRESULT HostDnsServiceDarwin::updateInfo(void)
 {
     CFPropertyListRef propertyRef = SCDynamicStoreCopyValue(m->m_store,
                                                             kStateNetworkGlobalDNSKey);
@@ -253,9 +254,9 @@ HRESULT HostDnsServiceDarwin::updateInfo()
     return S_OK;
 }
 
-void HostDnsServiceDarwin::Data::performShutdownCallback(void *info)
+void HostDnsServiceDarwin::Data::performShutdownCallback(void *pInfo)
 {
-    HostDnsServiceDarwin::Data *pThis = static_cast<HostDnsServiceDarwin::Data *>(info);
+    HostDnsServiceDarwin::Data *pThis = static_cast<HostDnsServiceDarwin::Data *>(pInfo);
     AssertPtrReturnVoid(pThis);
     pThis->m_fStop = true;
 }

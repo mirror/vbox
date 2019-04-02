@@ -77,34 +77,37 @@ inline static void detachVectorOfString(const std::vector<std::string>& v,
         aArray[i] = Utf8Str(it->c_str());
 }
 
-struct HostDnsMonitor::Data
+struct HostDnsServiceBase::Data
 {
     Data(bool aThreaded)
-      : proxy(NULL),
-        fThreaded(aThreaded)
+        : pProxy(NULL)
+        , fThreaded(aThreaded)
     {}
 
-    HostDnsMonitorProxy *proxy;
-
-    const bool fThreaded;
-    RTSEMEVENT hDnsInitEvent;
-    RTTHREAD hMonitoringThread;
-
-    HostDnsInformation info;
+    /** Weak pointer to parent proxy object. */
+    HostDnsMonitorProxy *pProxy;
+    /** Whether the DNS monitor implementation has a dedicated monitoring thread. Optional. */
+    const bool           fThreaded;
+    /** Event for the monitor thread, if any. */
+    RTSEMEVENT           hMonitorThreadEvent;
+    /** Handle of the monitor thread, if any. */
+    RTTHREAD             hMonitorThread;
+    /** Generic host DNS information. */
+    HostDnsInformation   info;
 };
 
 struct HostDnsMonitorProxy::Data
 {
-    Data(HostDnsMonitor *aMonitor, VirtualBox *aParent)
-      : virtualbox(aParent),
-        monitor(aMonitor),
-        uLastExtraDataPoll(0),
-        fLaxComparison(0),
-        info()
+    Data(HostDnsServiceBase *aMonitor, VirtualBox *aParent)
+        : pVirtualBox(aParent)
+        , pMonitorImpl(aMonitor)
+        , uLastExtraDataPoll(0)
+        , fLaxComparison(0)
+        , info()
     {}
 
-    VirtualBox *virtualbox;
-    HostDnsMonitor *monitor;
+    VirtualBox *pVirtualBox;
+    HostDnsServiceBase *pMonitorImpl;
 
     uint64_t uLastExtraDataPoll;
     uint32_t fLaxComparison;
@@ -112,13 +115,13 @@ struct HostDnsMonitorProxy::Data
 };
 
 
-HostDnsMonitor::HostDnsMonitor(bool fThreaded)
-  : m(NULL)
+HostDnsServiceBase::HostDnsServiceBase(bool fThreaded)
+    : m(NULL)
 {
-   m = new HostDnsMonitor::Data(fThreaded);
+    m = new HostDnsServiceBase::Data(fThreaded);
 }
 
-HostDnsMonitor::~HostDnsMonitor()
+HostDnsServiceBase::~HostDnsServiceBase()
 {
     if (m)
     {
@@ -127,69 +130,67 @@ HostDnsMonitor::~HostDnsMonitor()
     }
 }
 
-HostDnsMonitor *HostDnsMonitor::createHostDnsMonitor()
+HostDnsServiceBase *HostDnsServiceBase::createHostDnsMonitor(void)
 {
-    HostDnsMonitor *monitor = NULL;
+    HostDnsServiceBase *pMonitor = NULL;
 
 #if defined (RT_OS_DARWIN)
-    monitor = new HostDnsServiceDarwin();
+    pMonitor = new HostDnsServiceDarwin();
 #elif defined(RT_OS_WINDOWS)
-    monitor = new HostDnsServiceWin();
+    pMonitor = new HostDnsServiceWin();
 #elif defined(RT_OS_LINUX)
-    monitor = new HostDnsServiceLinux();
+    pMonitor = new HostDnsServiceLinux();
 #elif defined(RT_OS_SOLARIS)
-    monitor =  new HostDnsServiceSolaris();
+    pMonitor =  new HostDnsServiceSolaris();
 #elif defined(RT_OS_FREEBSD)
-    monitor = new HostDnsServiceFreebsd();
+    pMonitor = new HostDnsServiceFreebsd();
 #elif defined(RT_OS_OS2)
-    monitor = new HostDnsServiceOs2();
+    pMonitor = new HostDnsServiceOs2();
 #else
-    monitor = new HostDnsService();
+    pMonitor = new HostDnsServiceBase();
 #endif
 
-    return monitor;
+    return pMonitor;
 }
 
-
-void HostDnsMonitor::shutdown()
+void HostDnsServiceBase::shutdown(void)
 {
     monitorThreadShutdown();
-    int rc = RTThreadWait(m->hMonitoringThread, 5000, NULL);
+    int rc = RTThreadWait(m->hMonitorThread, 5000, NULL);
     AssertRCSuccess(rc);
 }
 
 
-void HostDnsMonitor::setInfo(const HostDnsInformation &info)
+void HostDnsServiceBase::setInfo(const HostDnsInformation &info)
 {
-    if (m->proxy != NULL)
-        m->proxy->notify(info);
+    if (m->pProxy != NULL)
+        m->pProxy->notify(info);
 }
 
-HRESULT HostDnsMonitor::init(HostDnsMonitorProxy *proxy)
+HRESULT HostDnsServiceBase::init(HostDnsMonitorProxy *pProxy)
 {
-    m->proxy = proxy;
+    m->pProxy = pProxy;
 
     if (m->fThreaded)
     {
-        int rc = RTSemEventCreate(&m->hDnsInitEvent);
+        int rc = RTSemEventCreate(&m->hMonitorThreadEvent);
         AssertRCReturn(rc, E_FAIL);
 
-        rc = RTThreadCreate(&m->hMonitoringThread,
-                            HostDnsMonitor::threadMonitoringRoutine,
+        rc = RTThreadCreate(&m->hMonitorThread,
+                            HostDnsServiceBase::threadMonitoringRoutine,
                             this, 128 * _1K, RTTHREADTYPE_IO,
                             RTTHREADFLAGS_WAITABLE, "dns-monitor");
         AssertRCReturn(rc, E_FAIL);
 
-        RTSemEventWait(m->hDnsInitEvent, RT_INDEFINITE_WAIT);
+        RTSemEventWait(m->hMonitorThreadEvent, RT_INDEFINITE_WAIT);
     }
     return S_OK;
 }
 
-
-void HostDnsMonitorProxy::pollGlobalExtraData()
+void HostDnsMonitorProxy::pollGlobalExtraData(void)
 {
-    VirtualBox *virtualbox = m->virtualbox;
-    if (RT_UNLIKELY(virtualbox == NULL))
+    VirtualBox *pVirtualBox = m->pVirtualBox;
+    if (RT_UNLIKELY(pVirtualBox == NULL))
         return;
 
     uint64_t uNow = RTTimeNanoTS();
@@ -202,7 +203,7 @@ void HostDnsMonitorProxy::pollGlobalExtraData()
          */
         const com::Bstr bstrHostDNSOrderIgnoreKey("VBoxInternal2/HostDNSOrderIgnore");
         com::Bstr bstrHostDNSOrderIgnore;
-        virtualbox->GetExtraData(bstrHostDNSOrderIgnoreKey.raw(),
+        pVirtualBox->GetExtraData(bstrHostDNSOrderIgnoreKey.raw(),
                                  bstrHostDNSOrderIgnore.asOutParam());
         uint32_t fDNSOrderIgnore = 0;
         if (bstrHostDNSOrderIgnore.isNotEmpty())
@@ -225,7 +226,7 @@ void HostDnsMonitorProxy::pollGlobalExtraData()
          */
         const com::Bstr bstrHostDNSSuffixesIgnoreKey("VBoxInternal2/HostDNSSuffixesIgnore");
         com::Bstr bstrHostDNSSuffixesIgnore;
-        virtualbox->GetExtraData(bstrHostDNSSuffixesIgnoreKey.raw(),
+        pVirtualBox->GetExtraData(bstrHostDNSSuffixesIgnoreKey.raw(),
                                  bstrHostDNSSuffixesIgnore.asOutParam());
         uint32_t fDNSSuffixesIgnore = 0;
         if (bstrHostDNSSuffixesIgnore.isNotEmpty())
@@ -245,15 +246,14 @@ void HostDnsMonitorProxy::pollGlobalExtraData()
     }
 }
 
-void HostDnsMonitor::monitorThreadInitializationDone()
+void HostDnsServiceBase::monitorThreadInitializationDone(void)
 {
-    RTSemEventSignal(m->hDnsInitEvent);
+    RTSemEventSignal(m->hMonitorThreadEvent);
 }
 
-
-DECLCALLBACK(int) HostDnsMonitor::threadMonitoringRoutine(RTTHREAD, void *pvUser)
+DECLCALLBACK(int) HostDnsServiceBase::threadMonitoringRoutine(RTTHREAD, void *pvUser)
 {
-    HostDnsMonitor *pThis = static_cast<HostDnsMonitor *>(pvUser);
+    HostDnsServiceBase *pThis = static_cast<HostDnsServiceBase *>(pvUser);
     return pThis->monitorWorker();
 }
 
@@ -270,17 +270,16 @@ HostDnsMonitorProxy::~HostDnsMonitorProxy()
 
 void HostDnsMonitorProxy::init(VirtualBox* aParent)
 {
-    HostDnsMonitor *monitor = HostDnsMonitor::createHostDnsMonitor();
-    m = new HostDnsMonitorProxy::Data(monitor, aParent);
-    m->monitor->init(this);
+    HostDnsServiceBase *pMonitor = HostDnsServiceBase::createHostDnsMonitor();
+    m = new HostDnsMonitorProxy::Data(pMonitor, aParent);
+    m->pMonitorImpl->init(this);
 }
 
-
-void HostDnsMonitorProxy::uninit()
+void HostDnsMonitorProxy::uninit(void)
 {
     if (m)
     {
-        m->monitor->shutdown();
+        m->pMonitorImpl->shutdown();
         delete m;
         m = NULL;
     }
@@ -290,7 +289,7 @@ void HostDnsMonitorProxy::notify(const HostDnsInformation &info)
 {
     bool fNotify = updateInfo(info);
     if (fNotify)
-        m->virtualbox->i_onHostNameResolutionConfigurationChange();
+        m->pVirtualBox->i_onHostNameResolutionConfigurationChange();
 }
 
 HRESULT HostDnsMonitorProxy::GetNameServers(std::vector<com::Utf8Str> &aNameServers)
@@ -361,7 +360,6 @@ bool HostDnsMonitorProxy::updateInfo(const HostDnsInformation &info)
 
     return true;
 }
-
 
 static void dumpHostDnsInformation(const HostDnsInformation& info)
 {

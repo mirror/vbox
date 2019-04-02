@@ -51,21 +51,23 @@ class HostDnsInformation
  * This class supposed to be a real DNS monitor object it should be singleton,
  * it lifecycle starts and ends together with VBoxSVC.
  */
-class HostDnsMonitor
+class HostDnsServiceBase
 {
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(HostDnsMonitor);
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(HostDnsServiceBase);
 
-  public:
-    static HostDnsMonitor *createHostDnsMonitor();
+public:
+  
+    static HostDnsServiceBase *createHostDnsMonitor(void);
     void shutdown();
 
     /* @note: method will wait till client call
        HostDnsService::monitorThreadInitializationDone() */
-    virtual HRESULT init(HostDnsMonitorProxy *proxy);
+    virtual HRESULT init(HostDnsMonitorProxy *pProxy);
 
-  protected:
-    explicit HostDnsMonitor(bool fThreaded = false);
-    virtual ~HostDnsMonitor();
+protected:
+
+    explicit HostDnsServiceBase(bool fThreaded = false);
+    virtual ~HostDnsServiceBase();
 
     void setInfo(const HostDnsInformation &);
 
@@ -74,13 +76,16 @@ class HostDnsMonitor
     virtual void monitorThreadShutdown() = 0;
     virtual int monitorWorker() = 0;
 
-  private:
+private:
+
     static DECLCALLBACK(int) threadMonitoringRoutine(RTTHREAD, void *);
 
-  protected:
+protected:
+
     mutable RTCLockMtx m_LockMtx;
 
-  public:
+public: /** @todo r=andy Why is this public? */
+
     struct Data;
     Data *m;
 };
@@ -90,9 +95,13 @@ class HostDnsMonitor
  */
 class HostDnsMonitorProxy
 {
-    public:
+public:
+
     HostDnsMonitorProxy();
-    ~HostDnsMonitorProxy();
+    virtual ~HostDnsMonitorProxy();
+
+public:
+
     void init(VirtualBox *virtualbox);
     void uninit();
     void notify(const HostDnsInformation &info);
@@ -101,31 +110,37 @@ class HostDnsMonitorProxy
     HRESULT GetDomainName(com::Utf8Str *pDomainName);
     HRESULT GetSearchStrings(std::vector<com::Utf8Str> &aSearchStrings);
 
-  private:
+private:
+
     void pollGlobalExtraData();
     bool updateInfo(const HostDnsInformation &info);
 
-  private:
+private:
+
     mutable RTCLockMtx m_LockMtx;
 
-    private:
     struct Data;
     Data *m;
 };
 
 # if defined(RT_OS_DARWIN) || defined(DOXYGEN_RUNNING)
-class HostDnsServiceDarwin : public HostDnsMonitor
+class HostDnsServiceDarwin : public HostDnsServiceBase
 {
-  public:
+public:
     HostDnsServiceDarwin();
-    ~HostDnsServiceDarwin();
-    virtual HRESULT init(HostDnsMonitorProxy *proxy);
+    virtual ~HostDnsServiceDarwin();
 
-    protected:
-    virtual void monitorThreadShutdown();
+public:
+
+    virtual HRESULT init(HostDnsMonitorProxy *pProxy);
+
+protected:
+
+  virtual void monitorThreadShutdown();
     virtual int monitorWorker();
 
-    private:
+private:
+
     HRESULT updateInfo();
     static void hostDnsServiceStoreCallback(void *store, void *arrayRef, void *info);
     struct Data;
@@ -133,18 +148,23 @@ class HostDnsServiceDarwin : public HostDnsMonitor
 };
 # endif
 # if defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
-class HostDnsServiceWin : public HostDnsMonitor
+class HostDnsServiceWin : public HostDnsServiceBase
 {
-    public:
+public:
     HostDnsServiceWin();
-    ~HostDnsServiceWin();
-    virtual HRESULT init(HostDnsMonitorProxy *proxy);
+    virtual ~HostDnsServiceWin();
 
-    protected:
+public:
+
+    virtual HRESULT init(HostDnsMonitorProxy *pProxy);
+
+protected:
+
     virtual void monitorThreadShutdown();
     virtual int monitorWorker();
 
-    private:
+private:
+
     HRESULT updateInfo();
 
     private:
@@ -154,15 +174,20 @@ class HostDnsServiceWin : public HostDnsMonitor
 # endif
 # if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) || defined(RT_OS_FREEBSD) \
     || defined(DOXYGEN_RUNNING)
-class HostDnsServiceResolvConf: public HostDnsMonitor
+class HostDnsServiceResolvConf: public HostDnsServiceBase
 {
-  public:
-    explicit HostDnsServiceResolvConf(bool fThreaded = false) : HostDnsMonitor(fThreaded), m(NULL) {}
+public:
+
+    explicit HostDnsServiceResolvConf(bool fThreaded = false) : HostDnsServiceBase(fThreaded), m(NULL) {}
     virtual ~HostDnsServiceResolvConf();
-    virtual HRESULT init(HostDnsMonitorProxy *proxy, const char *aResolvConfFileName);
+
+public:
+
+    virtual HRESULT init(HostDnsMonitorProxy *pProxy, const char *aResolvConfFileName);
     const std::string& resolvConf() const;
 
-  protected:
+protected:
+
     HRESULT readResolvConf();
     /* While not all hosts supports Hosts DNS change notifiaction
      * default implementation offers return VERR_IGNORE.
@@ -170,7 +195,8 @@ class HostDnsServiceResolvConf: public HostDnsMonitor
     virtual void monitorThreadShutdown() {}
     virtual int monitorWorker() {return VERR_IGNORED;}
 
-  protected:
+protected:
+
     struct Data;
     Data *m;
 };
@@ -180,11 +206,15 @@ class HostDnsServiceResolvConf: public HostDnsMonitor
  */
 class HostDnsServiceSolaris : public HostDnsServiceResolvConf
 {
-  public:
+public:
+
     HostDnsServiceSolaris(){}
-    ~HostDnsServiceSolaris(){}
-    virtual HRESULT init(HostDnsMonitorProxy *proxy) {
-        return HostDnsServiceResolvConf::init(proxy, "/etc/resolv.conf");
+    virtual ~HostDnsServiceSolaris(){}
+
+public:
+
+    virtual HRESULT init(HostDnsMonitorProxy *pProxy) {
+        return HostDnsServiceResolvConf::init(pProxy, "/etc/resolv.conf");
     }
 };
 
@@ -192,14 +222,19 @@ class HostDnsServiceSolaris : public HostDnsServiceResolvConf
 #  if defined(RT_OS_LINUX) || defined(DOXYGEN_RUNNING)
 class HostDnsServiceLinux : public HostDnsServiceResolvConf
 {
-  public:
-    HostDnsServiceLinux():HostDnsServiceResolvConf(true){}
-    virtual ~HostDnsServiceLinux();
-    virtual HRESULT init(HostDnsMonitorProxy *proxy) {
-        return HostDnsServiceResolvConf::init(proxy, "/etc/resolv.conf");
+public:
+
+  HostDnsServiceLinux() : HostDnsServiceResolvConf(true) {}
+  virtual ~HostDnsServiceLinux();
+
+public:
+
+    virtual HRESULT init(HostDnsMonitorProxy *pProxy) {
+        return HostDnsServiceResolvConf::init(pProxy, "/etc/resolv.conf");
     }
 
-  protected:
+protected:
+
     virtual void monitorThreadShutdown();
     virtual int monitorWorker();
 };
@@ -208,11 +243,15 @@ class HostDnsServiceLinux : public HostDnsServiceResolvConf
 #  if defined(RT_OS_FREEBSD) || defined(DOXYGEN_RUNNING)
 class HostDnsServiceFreebsd: public HostDnsServiceResolvConf
 {
-    public:
+public:
+
     HostDnsServiceFreebsd(){}
-    ~HostDnsServiceFreebsd(){}
-    virtual HRESULT init(HostDnsMonitorProxy *proxy) {
-        return HostDnsServiceResolvConf::init(proxy, "/etc/resolv.conf");
+    virtual ~HostDnsServiceFreebsd() {}
+
+public:
+
+    virtual HRESULT init(HostDnsMonitorProxy *pProxy) {
+        return HostDnsServiceResolvConf::init(pProxy, "/etc/resolv.conf");
     }
 };
 
@@ -220,12 +259,16 @@ class HostDnsServiceFreebsd: public HostDnsServiceResolvConf
 #  if defined(RT_OS_OS2) || defined(DOXYGEN_RUNNING)
 class HostDnsServiceOs2 : public HostDnsServiceResolvConf
 {
-  public:
-    HostDnsServiceOs2(){}
-    ~HostDnsServiceOs2(){}
+public:
+
+    HostDnsServiceOs2() {}
+    virtual ~HostDnsServiceOs2() {}
+
+public:
+
     /* XXX: \\MPTN\\ETC should be taken from environment variable ETC  */
-    virtual HRESULT init(HostDnsMonitorProxy *proxy) {
-        return HostDnsServiceResolvConf::init(proxy, "\\MPTN\\ETC\\RESOLV2");
+    virtual HRESULT init(HostDnsMonitorProxy *pProxy) {
+        return HostDnsServiceResolvConf::init(pProxy, "\\MPTN\\ETC\\RESOLV2");
     }
 };
 

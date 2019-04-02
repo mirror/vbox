@@ -86,7 +86,7 @@ HostDnsServiceWin::~HostDnsServiceWin()
 }
 
 
-HRESULT HostDnsServiceWin::init(HostDnsMonitorProxy *proxy)
+HRESULT HostDnsServiceWin::init(HostDnsMonitorProxy *pProxy)
 {
     if (m == NULL)
         return E_FAIL;
@@ -128,7 +128,7 @@ HRESULT HostDnsServiceWin::init(HostDnsMonitorProxy *proxy)
             return E_FAIL;
     }
 
-    HRESULT hrc = HostDnsMonitor::init(proxy);
+    HRESULT hrc = HostDnsServiceBase::init(pProxy);
     if (FAILED(hrc))
         return hrc;
 
@@ -247,7 +247,7 @@ void vappend(std::vector<std::string> &v, const std::string &s, char sep = ' ')
 }
 
 
-HRESULT HostDnsServiceWin::updateInfo()
+HRESULT HostDnsServiceWin::updateInfo(void)
 {
     HostDnsInformation info;
 
@@ -470,7 +470,7 @@ HRESULT HostDnsServiceWin::updateInfo()
     if (info.searchList.size() == 1)
         info.searchList.clear();
 
-    HostDnsMonitor::setInfo(info);
+    HostDnsServiceBase::setInfo(info);
 
     return S_OK;
 }
