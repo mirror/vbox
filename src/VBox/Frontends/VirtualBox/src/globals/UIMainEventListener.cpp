@@ -43,6 +43,8 @@
 #include "CMachineStateChangedEvent.h"
 #include "CMachineRegisteredEvent.h"
 #include "CMediumChangedEvent.h"
+#include "CMediumConfigChangedEvent.h"
+#include "CMediumRegisteredEvent.h"
 #include "CMouseCapabilityChangedEvent.h"
 #include "CMousePointerShapeChangedEvent.h"
 #include "CNetworkAdapterChangedEvent.h"
@@ -56,6 +58,7 @@
 #include "CSnapshotRestoredEvent.h"
 #include "CSnapshotTakenEvent.h"
 #include "CStateChangedEvent.h"
+#include "CStorageControllerChangedEvent.h"
 #include "CStorageDeviceChangedEvent.h"
 #include "CUSBDevice.h"
 #include "CUSBDeviceStateChangedEvent.h"
@@ -278,8 +281,6 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
             emit sigSnapshotRestore(comEventSpecific.GetMachineId(), comEventSpecific.GetSnapshotId());
             break;
         }
-//        case KVBoxEventType_OnMediumRegistered:
-//        case KVBoxEventType_OnGuestPropertyChange:
 
         case KVBoxEventType_OnExtraDataCanChange:
         {
@@ -297,6 +298,41 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         {
             CExtraDataChangedEvent comEventSpecific(pEvent);
             emit sigExtraDataChange(comEventSpecific.GetMachineId(), comEventSpecific.GetKey(), comEventSpecific.GetValue());
+            break;
+        }
+
+        case KVBoxEventType_OnStorageControllerChanged:
+        {
+            CStorageControllerChangedEvent comEventSpecific(pEvent);
+            emit sigStorageControllerChange();
+            break;
+        }
+        case KVBoxEventType_OnStorageDeviceChanged:
+        {
+            CStorageDeviceChangedEvent comEventSpecific(pEvent);
+            emit sigStorageDeviceChange(comEventSpecific.GetStorageDevice(),
+                                        comEventSpecific.GetRemoved(),
+                                        comEventSpecific.GetSilent());
+            break;
+        }
+        case KVBoxEventType_OnMediumChanged:
+        {
+            CMediumChangedEvent comEventSpecific(pEvent);
+            emit sigMediumChange(comEventSpecific.GetMediumAttachment());
+            break;
+        }
+        case KVBoxEventType_OnMediumConfigChanged:
+        {
+            CMediumConfigChangedEvent comEventSpecific(pEvent);
+            emit sigMediumConfigChange(comEventSpecific.GetMedium());
+            break;
+        }
+        case KVBoxEventType_OnMediumRegistered:
+        {
+            CMediumRegisteredEvent comEventSpecific(pEvent);
+            emit sigMediumRegistered(comEventSpecific.GetMediumId(),
+                                     comEventSpecific.GetMediumType(),
+                                     comEventSpecific.GetRegistered());
             break;
         }
 
@@ -346,20 +382,6 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         {
             CNetworkAdapterChangedEvent comEventSpecific(pEvent);
             emit sigNetworkAdapterChange(comEventSpecific.GetNetworkAdapter());
-            break;
-        }
-        case KVBoxEventType_OnStorageDeviceChanged:
-        {
-            CStorageDeviceChangedEvent comEventSpecific(pEvent);
-            emit sigStorageDeviceChange(comEventSpecific.GetStorageDevice(),
-                                        comEventSpecific.GetRemoved(),
-                                        comEventSpecific.GetSilent());
-            break;
-        }
-        case KVBoxEventType_OnMediumChanged:
-        {
-            CMediumChangedEvent comEventSpecific(pEvent);
-            emit sigMediumChange(comEventSpecific.GetMediumAttachment());
             break;
         }
         case KVBoxEventType_OnVRDEServerChanged:
@@ -439,6 +461,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
             emit sigAudioAdapterChange();
             break;
         }
+
         case KVBoxEventType_OnProgressPercentageChanged:
         {
             CProgressPercentageChangedEvent comEventSpecific(pEvent);
@@ -451,9 +474,9 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
             emit sigProgressTaskComplete(comEventSpecific.GetProgressId());
             break;
         }
+
         case KVBoxEventType_OnGuestSessionRegistered:
         {
-
             CGuestSessionRegisteredEvent comEventSpecific(pEvent);
             if (comEventSpecific.GetRegistered())
                 emit sigGuestSessionRegistered(comEventSpecific.GetSession());
@@ -488,7 +511,6 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
             emit sigGuestProcessStateChanged(comEventSpecific);
             break;
         }
-
         case KVBoxEventType_OnGuestFileRegistered:
         case KVBoxEventType_OnGuestFileStateChanged:
         case KVBoxEventType_OnGuestFileOffsetChanged:
