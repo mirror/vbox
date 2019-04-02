@@ -3928,6 +3928,7 @@
 # define g_cRTCrKeyPrivateMarkers                       RT_MANGLER(g_cRTCrKeyPrivateMarkers)
 # define g_aRTCrKeyAllMarkers                           RT_MANGLER(g_aRTCrKeyAllMarkers)
 # define g_cRTCrKeyAllMarkers                           RT_MANGLER(g_cRTCrKeyAllMarkers)
+# define g_acRTThreadTypeStats                          RT_MANGLER(g_acRTThreadTypeStats) /* internal */
 
 #if 0 /* Disabled for now as I'm not sure the assmbler supports mangling yet. */
 # define g_abRTZeroPage                                 RT_MANGLER(g_abRTZeroPage)
