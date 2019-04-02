@@ -56,7 +56,7 @@ class HostDnsServiceBase
     DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(HostDnsServiceBase);
 
 public:
-  
+
     static HostDnsServiceBase *createHostDnsMonitor(void);
     void shutdown();
 

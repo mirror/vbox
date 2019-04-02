@@ -74,7 +74,7 @@ struct HostDnsServiceWin::Data
 
 
 HostDnsServiceWin::HostDnsServiceWin()
- : HostDnsMonitor(true)
+    : HostDnsServiceBase(true)
 {
     m = new Data();
 }
