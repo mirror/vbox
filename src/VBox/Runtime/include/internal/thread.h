@@ -136,6 +136,9 @@ typedef RTTHREADINT *PRTTHREADINT;
 #define RTTHREADINT_FLAGS_MAIN       RT_BIT(3)
 /** @} */
 
+/** Counters for each thread type. */
+extern DECLHIDDEN(uint32_t volatile)   g_acRTThreadTypeStats[RTTHREADTYPE_END];
+
 
 /**
  * Initialize the native part of the thread management.

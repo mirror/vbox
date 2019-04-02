@@ -53,6 +53,7 @@
 #define LOG_GROUP RTLOGGROUP_THREAD
 #include <errno.h>
 #include <pthread.h>
+#include <limits.h>
 #include <sched.h>
 #include <unistd.h>
 #include <sys/resource.h>
@@ -541,10 +542,12 @@ static void *rtSchedNativeValidatorThread(void *pvUser)
     int rc = VINF_SUCCESS;
 
     /*
-     * Set the priority to the current value for specified thread type
+     * Set the priority to the current value for specified thread type, but
+     * only if we have any threads of this type (caller checked - INT_MAX).
      */
-    if (setpriority(PRIO_PROCESS, 0, pPrioPair->iCurrent))
-        rc = RTErrConvertFromErrno(errno);
+    if (pPrioPair->iCurrent != INT_MAX)
+        if (setpriority(PRIO_PROCESS, 0, pPrioPair->iCurrent))
+            rc = RTErrConvertFromErrno(errno);
 
     /*
      * Try set the new priority.
@@ -571,16 +574,14 @@ static void *rtSchedNativeValidatorThread(void *pvUser)
  */
 static int rtSchedNativeCheckThreadTypes(const PROCPRIORITY *pCfg, bool fHavePriorityProxy)
 {
-    /** @todo Only check transitions of thread types that actually are in use.
-     * For the others, just check we can create threads with the new priority
-     * scheme (ignoring the old). Best done by having an array of
-     * per-threadtype counters in common/misc/thread.cpp. */
     int i = RTTHREADTYPE_END;
     while (--i > RTTHREADTYPE_INVALID)
     {
         VALIDATORPRIORITYPAIR PrioPair;
         PrioPair.iCurrent = g_pProcessPriority->paTypes[i].iPriority + g_pProcessPriority->iDelta;
         PrioPair.iNew     = pCfg->paTypes[i].iPriority               + pCfg->iDelta;
+        if (g_acRTThreadTypeStats[i] == 0)
+            PrioPair.iCurrent = INT_MAX;
 
 #ifdef RT_STRICT
         int const iPriority = getpriority(PRIO_PROCESS, 0);
