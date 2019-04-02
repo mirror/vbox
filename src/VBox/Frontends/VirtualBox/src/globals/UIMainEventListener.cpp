@@ -183,6 +183,7 @@ UIMainEventListener::UIMainEventListener()
     qRegisterMetaType<KSessionState>("KSessionState");
     qRegisterMetaType< QVector<uint8_t> >("QVector<uint8_t>");
     qRegisterMetaType<CNetworkAdapter>("CNetworkAdapter");
+    qRegisterMetaType<CMedium>("CMedium");
     qRegisterMetaType<CMediumAttachment>("CMediumAttachment");
     qRegisterMetaType<CUSBDevice>("CUSBDevice");
     qRegisterMetaType<CVirtualBoxErrorInfo>("CVirtualBoxErrorInfo");
