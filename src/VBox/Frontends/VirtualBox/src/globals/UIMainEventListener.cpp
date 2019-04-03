@@ -179,6 +179,7 @@ void UIMainEventListeningThread::setShutdown(bool fShutdown)
 UIMainEventListener::UIMainEventListener()
 {
     /* Register meta-types for required enums. */
+    qRegisterMetaType<KDeviceType>("KDeviceType");
     qRegisterMetaType<KMachineState>("KMachineState");
     qRegisterMetaType<KSessionState>("KSessionState");
     qRegisterMetaType< QVector<uint8_t> >("QVector<uint8_t>");
