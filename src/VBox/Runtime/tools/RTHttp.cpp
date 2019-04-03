@@ -172,6 +172,7 @@ int main(int argc, char **argv)
         }
     }
 
+    RTHttpDestroy(hHttp);
     return rcExit;
 }
 
