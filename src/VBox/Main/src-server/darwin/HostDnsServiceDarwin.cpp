@@ -63,15 +63,6 @@ HostDnsServiceDarwin::~HostDnsServiceDarwin()
         delete m;
 }
 
-void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *info)
-{
-    HostDnsServiceDarwin *pThis = (HostDnsServiceDarwin *)info;
-
-    RTCLock grab(pThis->m_LockMtx);
-    pThis->updateInfo();
-}
-
-
 HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *pProxy)
 {
     HRESULT hrc = HostDnsServiceBase::init(pProxy);
@@ -176,8 +167,7 @@ int HostDnsServiceDarwin::monitorThreadProc(void)
 
 HRESULT HostDnsServiceDarwin::updateInfo(void)
 {
-    CFPropertyListRef propertyRef = SCDynamicStoreCopyValue(m->m_store,
-                                                            kStateNetworkGlobalDNSKey);
+    CFPropertyListRef propertyRef = SCDynamicStoreCopyValue(m->m_store, kStateNetworkGlobalDNSKey);
     /**
      * # scutil
      * \> get State:/Network/Global/DNS
@@ -201,18 +191,19 @@ HRESULT HostDnsServiceDarwin::updateInfo(void)
 
     HostDnsInformation info;
     CFStringRef domainNameRef = (CFStringRef)CFDictionaryGetValue(
-      static_cast<CFDictionaryRef>(propertyRef), CFSTR("DomainName"));
+       static_cast<CFDictionaryRef>(propertyRef), CFSTR("DomainName"));
+
     if (domainNameRef)
     {
-        const char *pszDomainName = CFStringGetCStringPtr(domainNameRef,
-                                                    CFStringGetSystemEncoding());
+        const char *pszDomainName = CFStringGetCStringPtr(domainNameRef, CFStringGetSystemEncoding());
         if (pszDomainName)
             info.domain = pszDomainName;
     }
 
     int i, arrayCount;
+
     CFArrayRef serverArrayRef = (CFArrayRef)CFDictionaryGetValue(
-      static_cast<CFDictionaryRef>(propertyRef), CFSTR("ServerAddresses"));
+       static_cast<CFDictionaryRef>(propertyRef), CFSTR("ServerAddresses"));
     if (serverArrayRef)
     {
         arrayCount = CFArrayGetCount(serverArrayRef);
@@ -222,8 +213,7 @@ HRESULT HostDnsServiceDarwin::updateInfo(void)
             if (!serverArrayRef)
                 continue;
 
-            const char *pszServerAddress = CFStringGetCStringPtr(serverAddressRef,
-                                                           CFStringGetSystemEncoding());
+            const char *pszServerAddress = CFStringGetCStringPtr(serverAddressRef, CFStringGetSystemEncoding());
             if (!pszServerAddress)
                 continue;
 
@@ -232,7 +222,8 @@ HRESULT HostDnsServiceDarwin::updateInfo(void)
     }
 
     CFArrayRef searchArrayRef = (CFArrayRef)CFDictionaryGetValue(
-      static_cast<CFDictionaryRef>(propertyRef), CFSTR("SearchDomains"));
+       static_cast<CFDictionaryRef>(propertyRef), CFSTR("SearchDomains"));
+
     if (searchArrayRef)
     {
         arrayCount = CFArrayGetCount(searchArrayRef);
@@ -243,8 +234,7 @@ HRESULT HostDnsServiceDarwin::updateInfo(void)
             if (!searchArrayRef)
                 continue;
 
-            const char *pszSearchString = CFStringGetCStringPtr(searchStringRef,
-                                                          CFStringGetSystemEncoding());
+            const char *pszSearchString = CFStringGetCStringPtr(searchStringRef, CFStringGetSystemEncoding());
             if (!pszSearchString)
                 continue;
 
@@ -259,9 +249,18 @@ HRESULT HostDnsServiceDarwin::updateInfo(void)
     return S_OK;
 }
 
+void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *info)
+{
+    HostDnsServiceDarwin *pThis = (HostDnsServiceDarwin *)info;
+
+    RTCLock grab(pThis->m_LockMtx);
+    pThis->updateInfo();
+}
+
 void HostDnsServiceDarwin::Data::performShutdownCallback(void *pInfo)
 {
     HostDnsServiceDarwin::Data *pThis = static_cast<HostDnsServiceDarwin::Data *>(pInfo);
     AssertPtrReturnVoid(pThis);
     pThis->m_fStop = true;
 }
+
