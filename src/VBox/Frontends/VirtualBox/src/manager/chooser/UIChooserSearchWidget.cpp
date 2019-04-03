@@ -155,8 +155,9 @@ void UIChooserSearchWidget::retranslateUi()
 
 bool UIChooserSearchWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-    Q_UNUSED(pWatched);
-    if (pEvent->type() == QEvent::KeyPress)
+    /* Handle KeyPress events for m_pLineEdit only: */
+    if (   pWatched == m_pLineEdit
+        && pEvent->type() == QEvent::KeyPress)
     {
         QKeyEvent *pKeyEvent = dynamic_cast<QKeyEvent*>(pEvent);
         if (pKeyEvent)
@@ -173,7 +174,9 @@ bool UIChooserSearchWidget::eventFilter(QObject *pWatched, QEvent *pEvent)
             }
         }
     }
-    return false;
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QWidget>::eventFilter(pWatched, pEvent);
 }
 
 void UIChooserSearchWidget::sltHandleSearchTermChange(const QString &strSearchTerm)
