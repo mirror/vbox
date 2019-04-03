@@ -57,26 +57,11 @@ HostDnsServiceDarwin::HostDnsServiceDarwin()
     m = new HostDnsServiceDarwin::Data();
 }
 
-
 HostDnsServiceDarwin::~HostDnsServiceDarwin()
 {
-    if (!m)
-        return;
-
-    monitorThreadShutdown();
-
-    CFRelease(m->m_RunLoopRef);
-
-    CFRelease(m->m_DnsWatcher);
-
-    CFRelease(m->m_store);
-
-    RTSemEventDestroy(m->m_evtStop);
-
-    delete m;
-    m = NULL;
+    if (m != NULL)
+        delete m;
 }
-
 
 void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *info)
 {
@@ -118,8 +103,20 @@ HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *pProxy)
     return updateInfo();
 }
 
+void HostDnsServiceDarwin::uninit(void)
+{
+    CFRelease(m->m_RunLoopRef);
 
-void HostDnsServiceDarwin::monitorThreadShutdown(void)
+    CFRelease(m->m_DnsWatcher);
+
+    CFRelease(m->m_store);
+
+    RTSemEventDestroy(m->m_evtStop);
+
+    HostDnsServiceBase::uninit();
+}
+
+void HostDnsServiceDarwin::monitorThreadShutdown(RTMSINTERVAL uTimeoutMs)
 {
     RTCLock grab(m_LockMtx);
     if (!m->m_fStop)
@@ -128,10 +125,9 @@ void HostDnsServiceDarwin::monitorThreadShutdown(void)
         CFRunLoopSourceSignal(m->m_Stopper);
         CFRunLoopStop(m->m_RunLoopRef);
 
-        RTSemEventWait(m->m_evtStop, RT_INDEFINITE_WAIT);
+        RTSemEventWait(m->m_evtStop, uTimeoutMs);
     }
 }
-
 
 int HostDnsServiceDarwin::monitorThreadProc(void)
 {

@@ -138,6 +138,7 @@ private:
 class HostDnsServiceDarwin : public HostDnsServiceBase
 {
 public:
+
     HostDnsServiceDarwin();
     virtual ~HostDnsServiceDarwin();
 
@@ -242,6 +243,7 @@ public:
 
     HRESULT init(HostDnsMonitorProxy *pProxy);
     void uninit(void);
+
 protected:
 
     int monitorThreadShutdown(RTMSINTERVAL uTimeoutMs);
