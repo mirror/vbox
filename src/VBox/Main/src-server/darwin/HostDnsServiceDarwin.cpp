@@ -51,7 +51,7 @@ static const CFStringRef kStateNetworkGlobalDNSKey = CFSTR("State:/Network/Globa
 
 
 HostDnsServiceDarwin::HostDnsServiceDarwin()
-    : HostDnsServiceBase(true)
+    : HostDnsServiceBase(true /* fThreaded */)
     , m(NULL)
 {
     m = new HostDnsServiceDarwin::Data();
@@ -89,6 +89,9 @@ void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *inf
 
 HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *pProxy)
 {
+    HRESULT hrc = HostDnsServiceBase::init(pProxy);
+    AssertComRCReturn(hrc, hrc);
+
     SCDynamicStoreContext ctx;
     RT_ZERO(ctx);
 
@@ -112,9 +115,6 @@ HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *pProxy)
     m->m_Stopper = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sctx);
     AssertReturn(m->m_Stopper, E_FAIL);
 
-    HRESULT hrc = HostDnsServiceBase::init(pProxy);
-    AssertComRCReturn(hrc, hrc);
-
     return updateInfo();
 }
 
@@ -133,7 +133,7 @@ void HostDnsServiceDarwin::monitorThreadShutdown(void)
 }
 
 
-int HostDnsServiceDarwin::monitorWorker(void)
+int HostDnsServiceDarwin::monitorThreadProc(void)
 {
     m->m_RunLoopRef = CFRunLoopGetCurrent();
     AssertReturn(m->m_RunLoopRef, VERR_INTERNAL_ERROR);
@@ -154,7 +154,7 @@ int HostDnsServiceDarwin::monitorWorker(void)
 
     CFRelease(watchingArrayRef);
 
-    monitorThreadInitializationDone();
+    onMonitorThreadInitDone();
 
     while (!ASMAtomicReadBool(&m->m_fStop))
     {

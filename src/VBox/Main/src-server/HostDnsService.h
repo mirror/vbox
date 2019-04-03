@@ -48,8 +48,9 @@ class HostDnsInformation
 };
 
 /**
- * This class supposed to be a real DNS monitor object it should be singleton,
- * it lifecycle starts and ends together with VBoxSVC.
+ * Base class for host DNS service implementations.
+ * This class supposed to be a real DNS monitor object as a singleton,
+ * so it lifecycle starts and ends together with VBoxSVC.
  */
 class HostDnsServiceBase
 {
@@ -58,11 +59,14 @@ class HostDnsServiceBase
 public:
 
     static HostDnsServiceBase *createHostDnsMonitor(void);
-    void shutdown();
+
+public:
 
     /* @note: method will wait till client call
        HostDnsService::monitorThreadInitializationDone() */
     virtual HRESULT init(HostDnsMonitorProxy *pProxy);
+
+    void uninit(void);
 
 protected:
 
@@ -72,13 +76,20 @@ protected:
     void setInfo(const HostDnsInformation &);
 
     /* this function used only if HostDnsMonitor::HostDnsMonitor(true) */
-    void monitorThreadInitializationDone();
-    virtual void monitorThreadShutdown() = 0;
-    virtual int monitorWorker() = 0;
+    void onMonitorThreadInitDone();
+
+public:
+
+    virtual int monitorThreadShutdown(RTMSINTERVAL uTimeoutMs)
+    {
+        RT_NOREF(uTimeoutMs); AssertFailed(); return VERR_NOT_IMPLEMENTED;
+    }
+
+    virtual int monitorThreadProc(void) { AssertFailed(); return VERR_NOT_IMPLEMENTED; }
 
 private:
 
-    static DECLCALLBACK(int) threadMonitoringRoutine(RTTHREAD, void *);
+    static DECLCALLBACK(int) threadMonitorProc(RTTHREAD, void *);
 
 protected:
 
@@ -102,8 +113,8 @@ public:
 
 public:
 
-    void init(VirtualBox *virtualbox);
-    void uninit();
+    HRESULT init(VirtualBox *virtualbox);
+    void uninit(void);
     void notify(const HostDnsInformation &info);
 
     HRESULT GetNameServers(std::vector<com::Utf8Str> &aNameServers);
@@ -112,7 +123,7 @@ public:
 
 private:
 
-    void pollGlobalExtraData();
+    void pollGlobalExtraData(void);
     bool updateInfo(const HostDnsInformation &info);
 
 private:
@@ -132,12 +143,13 @@ public:
 
 public:
 
-    virtual HRESULT init(HostDnsMonitorProxy *pProxy);
+    HRESULT init(HostDnsMonitorProxy *pProxy);
+    void uninit(void);
 
 protected:
 
-  virtual void monitorThreadShutdown();
-    virtual int monitorWorker();
+    int monitorThreadShutdown(RTMSINTERVAL uTimeoutMs);
+    int monitorThreadProc(void);
 
 private:
 
@@ -156,18 +168,20 @@ public:
 
 public:
 
-    virtual HRESULT init(HostDnsMonitorProxy *pProxy);
+    HRESULT init(HostDnsMonitorProxy *pProxy);
+    void uninit(void);
 
 protected:
 
-    virtual void monitorThreadShutdown();
-    virtual int monitorWorker();
+    int monitorThreadShutdown(RTMSINTERVAL uTimeoutMs);
+    int monitorThreadProc(void);
 
 private:
 
-    HRESULT updateInfo();
+    HRESULT updateInfo(void);
 
-    private:
+private:
+
     struct Data;
     Data *m;
 };
@@ -183,17 +197,14 @@ public:
 
 public:
 
-    virtual HRESULT init(HostDnsMonitorProxy *pProxy, const char *aResolvConfFileName);
-    const std::string& resolvConf() const;
+    HRESULT init(HostDnsMonitorProxy *pProxy, const char *aResolvConfFileName);
+    void uninit(void);
+
+    const std::string& getResolvConf(void) const;
 
 protected:
 
-    HRESULT readResolvConf();
-    /* While not all hosts supports Hosts DNS change notifiaction
-     * default implementation offers return VERR_IGNORE.
-     */
-    virtual void monitorThreadShutdown() {}
-    virtual int monitorWorker() {return VERR_IGNORED;}
+    HRESULT readResolvConf(void);
 
 protected:
 
@@ -208,8 +219,8 @@ class HostDnsServiceSolaris : public HostDnsServiceResolvConf
 {
 public:
 
-    HostDnsServiceSolaris(){}
-    virtual ~HostDnsServiceSolaris(){}
+    HostDnsServiceSolaris() {}
+    virtual ~HostDnsServiceSolaris() {}
 
 public:
 
@@ -224,19 +235,17 @@ class HostDnsServiceLinux : public HostDnsServiceResolvConf
 {
 public:
 
-  HostDnsServiceLinux() : HostDnsServiceResolvConf(true) {}
-  virtual ~HostDnsServiceLinux();
+    HostDnsServiceLinux() : HostDnsServiceResolvConf(true) {}
+    virtual ~HostDnsServiceLinux();
 
 public:
 
-    virtual HRESULT init(HostDnsMonitorProxy *pProxy) {
-        return HostDnsServiceResolvConf::init(pProxy, "/etc/resolv.conf");
-    }
-
+    HRESULT init(HostDnsMonitorProxy *pProxy);
+    void uninit(void);
 protected:
 
-    virtual void monitorThreadShutdown();
-    virtual int monitorWorker();
+    int monitorThreadShutdown(RTMSINTERVAL uTimeoutMs);
+    int monitorThreadProc(void);
 };
 
 #  endif
@@ -250,7 +259,8 @@ public:
 
 public:
 
-    virtual HRESULT init(HostDnsMonitorProxy *pProxy) {
+    virtual HRESULT init(HostDnsMonitorProxy *pProxy)
+    {
         return HostDnsServiceResolvConf::init(pProxy, "/etc/resolv.conf");
     }
 };
@@ -267,7 +277,8 @@ public:
 public:
 
     /* XXX: \\MPTN\\ETC should be taken from environment variable ETC  */
-    virtual HRESULT init(HostDnsMonitorProxy *pProxy) {
+    virtual HRESULT init(HostDnsMonitorProxy *pProxy)
+    {
         return HostDnsServiceResolvConf::init(pProxy, "\\MPTN\\ETC\\RESOLV2");
     }
 };

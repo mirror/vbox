@@ -41,6 +41,9 @@
 #include <string>
 #include <vector>
 
+static inline int registerNotification(const HKEY& hKey, HANDLE& hEvent);
+static void appendTokenizedStrings(std::vector<std::string> &vecStrings, const std::string &strToAppend, char chDelim = ' ');
+
 struct HostDnsServiceWin::Data
 {
     HKEY hKeyTcpipParameters;
@@ -85,48 +88,46 @@ HostDnsServiceWin::~HostDnsServiceWin()
         delete m;
 }
 
-
 HRESULT HostDnsServiceWin::init(HostDnsMonitorProxy *pProxy)
 {
     if (m == NULL)
         return E_FAIL;
 
+    bool fRc = true;
+    LONG lRc = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                             L"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters",
+                             0,
+                             KEY_READ|KEY_NOTIFY,
+                             &m->hKeyTcpipParameters);
+    if (lRc != ERROR_SUCCESS)
     {
-        bool res = true;
-        LONG lrc = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
-                            L"SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters",
-                            0,
-                            KEY_READ|KEY_NOTIFY,
-                            &m->hKeyTcpipParameters);
-        if (lrc != ERROR_SUCCESS)
-        {
-            LogRel(("HostDnsServiceWin: failed to open key Tcpip\\Parameters (error %d)\n", lrc));
-            res = false;
-        }
-        else
-        {
-            for (size_t i = 0; i < DATA_MAX_EVENT; ++i)
-            {
-                HANDLE h;
-
-                if (i ==  DATA_TIMER)
-                    h = CreateWaitableTimer(NULL, FALSE, NULL);
-                else
-                    h = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-                if (h == NULL)
-                {
-                    LogRel(("HostDnsServiceWin: failed to create event (error %d)\n", GetLastError()));
-                    res = false;
-                    break;
-                }
-
-                m->haDataEvent[i] = h;
-            }
-        }
-        if(!res)
-            return E_FAIL;
+        LogRel(("HostDnsServiceWin: failed to open key Tcpip\\Parameters (error %d)\n", lRc));
+        fRc = false;
     }
+    else
+    {
+        for (size_t i = 0; i < DATA_MAX_EVENT; ++i)
+        {
+            HANDLE h;
+
+            if (i ==  DATA_TIMER)
+                h = CreateWaitableTimer(NULL, FALSE, NULL);
+            else
+                h = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+            if (h == NULL)
+            {
+                LogRel(("HostDnsServiceWin: failed to create event (error %d)\n", GetLastError()));
+                fRc = false;
+                break;
+            }
+
+            m->haDataEvent[i] = h;
+        }
+    }
+
+    if (!fRc)
+        return E_FAIL;
 
     HRESULT hrc = HostDnsServiceBase::init(pProxy);
     if (FAILED(hrc))
@@ -135,37 +136,30 @@ HRESULT HostDnsServiceWin::init(HostDnsMonitorProxy *pProxy)
     return updateInfo();
 }
 
-
-void HostDnsServiceWin::monitorThreadShutdown()
+void HostDnsServiceWin::uninit(void)
 {
-    Assert(m != NULL);
-    SetEvent(m->haDataEvent[DATA_SHUTDOWN_EVENT]);
+    HostDnsServiceBase::uninit();
 }
 
-
-static inline int registerNotification(const HKEY& hKey, HANDLE& hEvent)
+int HostDnsServiceWin::monitorThreadShutdown(RTMSINTERVAL uTimeoutMs)
 {
-    LONG lrc = RegNotifyChangeKeyValue(hKey,
-                                       TRUE,
-                                       REG_NOTIFY_CHANGE_LAST_SET,
-                                       hEvent,
-                                       TRUE);
-    AssertMsgReturn(lrc == ERROR_SUCCESS,
-                    ("Failed to register event on the key. Please debug me!"),
-                    VERR_INTERNAL_ERROR);
+    RT_NOREF(uTimeoutMs);
+
+    AssertPtr(m);
+    SetEvent(m->haDataEvent[DATA_SHUTDOWN_EVENT]);
+    /** @todo r=andy Wait for thread? Check rc here. Timeouts? */
 
     return VINF_SUCCESS;
 }
 
-
-int HostDnsServiceWin::monitorWorker()
+int HostDnsServiceWin::monitorThreadProc(void)
 {
     Assert(m != NULL);
 
     registerNotification(m->hKeyTcpipParameters,
                          m->haDataEvent[DATA_DNS_UPDATE_EVENT]);
 
-    monitorThreadInitializationDone();
+    onMonitorThreadInitDone();
 
     for (;;)
     {
@@ -225,28 +219,6 @@ int HostDnsServiceWin::monitorWorker()
     return VINF_SUCCESS;
 }
 
-
-void vappend(std::vector<std::string> &v, const std::string &s, char sep = ' ')
-{
-    if (s.empty())
-        return;
-
-    std::istringstream stream(s);
-    std::string substr;
-
-    while (std::getline(stream, substr, sep))
-    {
-        if (substr.empty())
-            continue;
-
-        if (std::find(v.cbegin(), v.cend(), substr) != v.cend())
-            continue;
-
-        v.push_back(substr);
-    }
-}
-
-
 HRESULT HostDnsServiceWin::updateInfo(void)
 {
     HostDnsInformation info;
@@ -256,7 +228,6 @@ HRESULT HostDnsServiceWin::updateInfo(void)
 
     std::string strDomain;
     std::string strSearchList;  /* NB: comma separated, no spaces */
-
 
     /*
      * We ignore "DhcpDomain" key here since it's not stable.  If
@@ -320,10 +291,7 @@ HRESULT HostDnsServiceWin::updateInfo(void)
 
     /* statically configured search list */
     if (!strSearchList.empty())
-    {
-        vappend(info.searchList, strSearchList, ',');
-    }
-
+        appendTokenizedStrings(info.searchList, strSearchList, ',');
 
     /*
      * When name servers are configured statically it seems that the
@@ -456,7 +424,7 @@ HRESULT HostDnsServiceWin::updateInfo(void)
             AssertContinue(*pszDnsSuffix != '\0');
             LogRel2(("HostDnsServiceWin: ... suffix = \"%s\"\n", pszDnsSuffix));
 
-            vappend(info.searchList, pszDnsSuffix);
+            appendTokenizedStrings(info.searchList, pszDnsSuffix);
             RTStrFree(pszDnsSuffix);
         }
 
@@ -474,3 +442,38 @@ HRESULT HostDnsServiceWin::updateInfo(void)
 
     return S_OK;
 }
+
+static inline int registerNotification(const HKEY& hKey, HANDLE& hEvent)
+{
+    LONG lrc = RegNotifyChangeKeyValue(hKey,
+                                       TRUE,
+                                       REG_NOTIFY_CHANGE_LAST_SET,
+                                       hEvent,
+                                       TRUE);
+    AssertMsgReturn(lrc == ERROR_SUCCESS,
+                    ("Failed to register event on the key. Please debug me!"),
+                    VERR_INTERNAL_ERROR);
+
+    return VINF_SUCCESS;
+}
+
+static void appendTokenizedStrings(std::vector<std::string> &vecStrings, const std::string &strToAppend, char chDelim /* = ' ' */)
+{
+    if (strToAppend.empty())
+        return;
+
+    std::istringstream stream(strToAppend);
+    std::string substr;
+
+    while (std::getline(stream, substr, chDelim))
+    {
+        if (substr.empty())
+            continue;
+
+        if (std::find(vecStrings.cbegin(), vecStrings.cend(), substr) != vecStrings.cend())
+            continue;
+
+        vecStrings.push_back(substr);
+    }
+}
+
