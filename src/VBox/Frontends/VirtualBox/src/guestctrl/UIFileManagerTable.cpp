@@ -1107,7 +1107,10 @@ void UIFileManagerTable::retranslateUi()
 
 bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* override */
 {
-    Q_UNUSED(pObject);
+    /* Handle only events sent to m_pView: */
+    if (pObject != m_pView)
+        return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+
     if (pEvent->type() == QEvent::KeyPress)
     {
         QKeyEvent *pKeyEvent = dynamic_cast<QKeyEvent*>(pEvent);
@@ -1154,14 +1157,15 @@ bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* overri
             {
                 return true;
             }
-        }/* if (pKeyEvent) */
-    }/* if (pEvent->type() == QEvent::KeyPress) */
+        }
+    }
     else if (pEvent->type() == QEvent::FocusOut)
     {
         disableSelectionSearch();
     }
-    /* Dont hold up the @pEvent but rather send it to the target @pObject: */
-    return false;
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
 }
 
 UICustomFileSystemItem *UIFileManagerTable::getStartDirectoryItem()
