@@ -40,7 +40,7 @@ struct HostDnsServiceDarwin::Data
     SCDynamicStoreRef m_store;
     CFRunLoopSourceRef m_DnsWatcher;
     CFRunLoopRef m_RunLoopRef;
-    CFRunLoopSourceRef m_Stopper;
+    CFRunLoopSourceRef m_SourceStop;
     volatile bool m_fStop;
     RTSEMEVENT m_evtStop;
     static void performShutdownCallback(void *);
@@ -99,18 +99,18 @@ HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *pProxy)
     sctx.info    = this;
     sctx.perform = HostDnsServiceDarwin::Data::performShutdownCallback;
 
-    m->m_Stopper = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sctx);
-    AssertReturn(m->m_Stopper, E_FAIL);
+    m->m_SourceStop = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sctx);
+    AssertReturn(m->m_SourceStop, E_FAIL);
 
-    CFRunLoopAddSource(m->m_RunLoopRef, m->m_Stopper, kCFRunLoopCommonModes);
+    CFRunLoopAddSource(m->m_RunLoopRef, m->m_SourceStop, kCFRunLoopCommonModes);
 
     return updateInfo();
 }
 
 void HostDnsServiceDarwin::uninit(void)
 {
-    CFRunLoopRemoveSource(m->m_RunLoopRef, m->m_Stopper, kCFRunLoopCommonModes);
-    CFRelease(m->m_Stopper);
+    CFRunLoopRemoveSource(m->m_RunLoopRef, m->m_SourceStop, kCFRunLoopCommonModes);
+    CFRelease(m->m_SourceStop);
 
     CFRelease(m->m_RunLoopRef);
 
@@ -129,7 +129,7 @@ int HostDnsServiceDarwin::monitorThreadShutdown(RTMSINTERVAL uTimeoutMs)
     if (!m->m_fStop)
     {
         ASMAtomicXchgBool(&m->m_fStop, true);
-        CFRunLoopSourceSignal(m->m_Stopper);
+        CFRunLoopSourceSignal(m->m_SourceStop);
         CFRunLoopStop(m->m_RunLoopRef);
 
         RTSemEventWait(m->m_evtStop, uTimeoutMs);
