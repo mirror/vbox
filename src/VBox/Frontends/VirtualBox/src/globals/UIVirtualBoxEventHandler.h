@@ -29,6 +29,8 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CMedium.h"
+#include "CMediumAttachment.h"
 
 /* Forward declarations: */
 class UIVirtualBoxEventHandlerProxy;
@@ -60,6 +62,23 @@ signals:
     void sigSnapshotChange(const QUuid &uId, const QUuid &uSnapshotId);
     /** Notifies about snapshot with @a uSnapshotId was restored for the machine with @a uId. */
     void sigSnapshotRestore(const QUuid &uId, const QUuid &uSnapshotId);
+
+    /** Notifies about storage controller change. */
+    void sigStorageControllerChange();
+    /** Notifies about storage device change.
+      * @param  comAttachment  Brings corresponding attachment.
+      * @param  fRemoved       Brings whether medium is removed or added.
+      * @param  fSilent        Brings whether this change has gone silent for guest. */
+    void sigStorageDeviceChange(CMediumAttachment comAttachment, bool fRemoved, bool fSilent);
+    /** Notifies about storage medium @a comAttachment state change. */
+    void sigMediumChange(CMediumAttachment comAttachment);
+    /** Notifies about storage @a comMedium config change. */
+    void sigMediumConfigChange(CMedium comMedium);
+    /** Notifies about storage medium is (un)registered.
+      * @param  uMediumId      Brings corresponding medium ID.
+      * @param  enmMediumType  Brings corresponding medium type.
+      * @param  fRegistered    Brings whether medium is registered or unregistered. */
+    void sigMediumRegistered(const QUuid &uMediumId, KDeviceType enmMediumType, bool fRegistered);
 
 public:
 
