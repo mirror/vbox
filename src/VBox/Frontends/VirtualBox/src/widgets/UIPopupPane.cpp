@@ -323,6 +323,13 @@ void UIPopupPane::retranslateToolTips()
 
 bool UIPopupPane::eventFilter(QObject *pObject, QEvent *pEvent)
 {
+    /* Handle events for allowed widgets only: */
+    if (   pObject != this
+        && pObject != m_pMessagePane
+        && pObject != m_pButtonPane
+        && pObject != m_pDetailsPane)
+        QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+
     /* Depending on event-type: */
     switch (pEvent->type())
     {
@@ -390,8 +397,9 @@ bool UIPopupPane::eventFilter(QObject *pObject, QEvent *pEvent)
         /* Default case: */
         default: break;
     }
-    /* Do not filter anything: */
-    return false;
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
 }
 
 void UIPopupPane::showEvent(QShowEvent *pEvent)
