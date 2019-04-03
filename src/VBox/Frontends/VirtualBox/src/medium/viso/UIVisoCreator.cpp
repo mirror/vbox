@@ -307,14 +307,13 @@ void UIVisoCreator::prepareWidgets()
         m_pMainLayout->setColumnStretch(m_pMainLayout->indexOf(m_pVisoBrowser), 2);
     }
 
-    m_pConfigurationPanel = new UIVisoConfigurationPanel;
+    m_pConfigurationPanel = new UIVisoConfigurationPanel(this);
     if (m_pConfigurationPanel)
     {
         m_pMainLayout->addWidget(m_pConfigurationPanel, 2, 0, 1, 5);
         m_pConfigurationPanel->hide();
         m_pConfigurationPanel->setVisoName(m_visoOptions.m_strVisoName);
         m_pConfigurationPanel->setVisoCustomOptions(m_visoOptions.m_customOptions);
-        installEventFilter(m_pConfigurationPanel);
     }
 
     m_pCreatorOptionsPanel = new UIVisoCreatorOptionsPanel;

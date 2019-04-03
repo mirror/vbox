@@ -25,9 +25,11 @@
 #include "QILineEdit.h"
 #include "QIToolButton.h"
 #include "UIVisoConfigurationPanel.h"
+#include "UIVisoCreator.h"
 
-UIVisoConfigurationPanel::UIVisoConfigurationPanel(QWidget *pParent /* =0 */)
+UIVisoConfigurationPanel::UIVisoConfigurationPanel(UIVisoCreator *pCreator, QWidget *pParent /* =0 */)
     : UIDialogPanel(pParent)
+    , m_pCreator(pCreator)
     , m_pVisoNameLabel(0)
     , m_pCustomOptionsLabel(0)
     , m_pVisoNameLineEdit(0)
@@ -68,6 +70,9 @@ void UIVisoConfigurationPanel::prepareObjects()
 {
     if (!mainLayout())
         return;
+
+    /* Install creator's event-filter: */
+    m_pCreator->installEventFilter(this);
 
     /* Name edit and and label: */
     m_pVisoNameLabel = new QILabel(QApplication::translate("UIVisoCreator", "VISO Name:"));
@@ -110,20 +115,25 @@ void UIVisoConfigurationPanel::prepareConnections()
 
 bool UIVisoConfigurationPanel::eventFilter(QObject *pObject, QEvent *pEvent)
 {
+    /* Handle only events sent to creator only: */
+    if (pObject != m_pCreator)
+        return UIDialogPanel::eventFilter(pObject, pEvent);
+
     switch (pEvent->type())
     {
         case QEvent::KeyPress:
         {
             QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
-
-             if (pKeyEvent->key() == Qt::Key_Return && m_pCustomOptionsComboBox && m_pCustomOptionsComboBox->hasFocus())
-                 addCustomVisoOption();
+            if (pKeyEvent->key() == Qt::Key_Return && m_pCustomOptionsComboBox && m_pCustomOptionsComboBox->hasFocus())
+                addCustomVisoOption();
             return true;
             break;
         }
         default:
         break;
     }
+
+    /* Call to base-class: */
     return UIDialogPanel::eventFilter(pObject, pEvent);
 }
 

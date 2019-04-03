@@ -99,17 +99,19 @@ void UILocationSelector::retranslateUi()
 
 bool UILocationSelector::eventFilter(QObject *pObj, QEvent *pEvent)
 {
-    if (pObj == m_pLineEdit)
+    /* Handle only events sent to m_pLineEdit only: */
+    if (pObj != m_pLineEdit)
+        return QIWithRetranslateUI<QWidget>::eventFilter(pObj, pEvent);
+
+    if (pEvent->type() == QEvent::MouseButtonPress)
     {
-        if(pEvent->type() == QEvent::MouseButtonPress)
-        {
-            QMouseEvent *pMouseEvent = dynamic_cast<QMouseEvent*>(pEvent);
-            if (pMouseEvent && pMouseEvent->button() == Qt::LeftButton)
-                emit sigExpandCollapseTreeView();
-        }
+        QMouseEvent *pMouseEvent = dynamic_cast<QMouseEvent*>(pEvent);
+        if (pMouseEvent && pMouseEvent->button() == Qt::LeftButton)
+            emit sigExpandCollapseTreeView();
     }
-    /* Pass the events to event system for further processing: */
-    return false;
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QWidget>::eventFilter(pObj, pEvent);
 }
 
 void UILocationSelector::prepareWidgets()
@@ -229,24 +231,27 @@ void UIVisoBrowserBase::resizeEvent(QResizeEvent *pEvent)
 /* Close the tree view when it recieves focus-out and enter key press event: */
 bool UIVisoBrowserBase::eventFilter(QObject *pObj, QEvent *pEvent)
 {
-    if (pObj == m_pTreeView)
+    /* Handle only events sent to m_pTreeView only: */
+    if (pObj != m_pTreeView)
+        return QIWithRetranslateUI<QWidget>::eventFilter(pObj, pEvent);
+
+    if (pEvent->type() == QEvent::KeyPress)
     {
-        if(pEvent->type() == QEvent::KeyPress)
-        {
-            QKeyEvent *pKeyEvent = dynamic_cast<QKeyEvent*>(pEvent);
-            if (pKeyEvent &&
-                (pKeyEvent->key() == Qt::Key_Return ||
-                 pKeyEvent->key() == Qt::Key_Enter))
-            {
-                updateTreeViewGeometry(false);
-            }
-        }
-        else if (pEvent->type() == QEvent::FocusOut)
+        QKeyEvent *pKeyEvent = dynamic_cast<QKeyEvent*>(pEvent);
+        if (pKeyEvent &&
+            (pKeyEvent->key() == Qt::Key_Return ||
+             pKeyEvent->key() == Qt::Key_Enter))
         {
             updateTreeViewGeometry(false);
         }
     }
-    return false;
+    else if (pEvent->type() == QEvent::FocusOut)
+    {
+        updateTreeViewGeometry(false);
+    }
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QWidget>::eventFilter(pObj, pEvent);
 }
 
 void UIVisoBrowserBase::keyPressEvent(QKeyEvent *pEvent)
