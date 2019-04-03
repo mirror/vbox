@@ -96,9 +96,13 @@ HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *pProxy)
 
     CFRunLoopSourceContext sctx;
     RT_ZERO(sctx);
+    sctx.info    = this;
     sctx.perform = HostDnsServiceDarwin::Data::performShutdownCallback;
+
     m->m_Stopper = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sctx);
     AssertReturn(m->m_Stopper, E_FAIL);
+
+    CFRunLoopAddSource(m->m_RunLoopRef, m->m_Stopper, kCFRunLoopCommonModes);
 
     return updateInfo();
 }
