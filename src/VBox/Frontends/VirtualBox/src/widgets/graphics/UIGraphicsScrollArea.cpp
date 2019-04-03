@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QGraphicsScene>
+#include <QGraphicsView>
 
 /* GUI includes: */
 #include "UIGraphicsScrollArea.h"
@@ -148,8 +149,11 @@ bool UIGraphicsScrollArea::eventFilter(QObject *pObject, QEvent *pEvent)
         && pEvent->type() == QEvent::LayoutRequest)
         layoutWidgets();
 
-    /* Handle redirected wheel events: */
-    if (pEvent->type() == QEvent::Wheel)
+    /* Handle wheel events for first scene view if set: */
+    if (   scene()
+        && !scene()->views().isEmpty()
+        && pObject == scene()->views().first()
+        && pEvent->type() == QEvent::Wheel)
     {
         QWheelEvent *pWheelEvent = static_cast<QWheelEvent*>(pEvent);
         const QPoint angleDelta = pWheelEvent->angleDelta();
