@@ -571,11 +571,15 @@ void UIVMLogViewerFilterPanel::retranslateUi()
 
 bool UIVMLogViewerFilterPanel::eventFilter(QObject *pObject, QEvent *pEvent)
 {
+    /* Handle only events sent to viewer(): */
+    if (pObject != viewer())
+        return UIVMLogViewerPanel::eventFilter(pObject, pEvent);
+
     /* Depending on event-type: */
     switch (pEvent->type())
     {
         /* Process key press only: */
-    case QEvent::KeyPress:
+        case QEvent::KeyPress:
         {
             /* Cast to corresponding key press event: */
             QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
@@ -594,9 +598,10 @@ bool UIVMLogViewerFilterPanel::eventFilter(QObject *pObject, QEvent *pEvent)
 
             break;
         }
-    default:
-        break;
+        default:
+            break;
     }
+
     /* Call to base-class: */
     return UIVMLogViewerPanel::eventFilter(pObject, pEvent);
 }
