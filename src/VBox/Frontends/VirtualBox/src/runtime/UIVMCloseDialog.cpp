@@ -78,6 +78,13 @@ void UIVMCloseDialog::setIcon(const QIcon &icon)
 
 bool UIVMCloseDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 {
+    /* Handle events realted to our radio-buttons only: */
+    if (   pObject != m_pRadioButtonDetach
+        && pObject != m_pRadioButtonSave
+        && pObject != m_pRadioButtonShutdown
+        && pObject != m_pRadioButtonPowerOff)
+        return QIWithRetranslateUI<QIDialog>::eventFilter(pObject, pEvent);
+
     /* For now we are interested in double-click events only: */
     if (pEvent->type() == QEvent::MouseButtonDblClick)
     {
