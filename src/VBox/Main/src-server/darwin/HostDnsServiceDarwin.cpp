@@ -116,7 +116,7 @@ void HostDnsServiceDarwin::uninit(void)
     HostDnsServiceBase::uninit();
 }
 
-void HostDnsServiceDarwin::monitorThreadShutdown(RTMSINTERVAL uTimeoutMs)
+int HostDnsServiceDarwin::monitorThreadShutdown(RTMSINTERVAL uTimeoutMs)
 {
     RTCLock grab(m_LockMtx);
     if (!m->m_fStop)
@@ -127,6 +127,8 @@ void HostDnsServiceDarwin::monitorThreadShutdown(RTMSINTERVAL uTimeoutMs)
 
         RTSemEventWait(m->m_evtStop, uTimeoutMs);
     }
+
+    return VINF_SUCCESS;
 }
 
 int HostDnsServiceDarwin::monitorThreadProc(void)
