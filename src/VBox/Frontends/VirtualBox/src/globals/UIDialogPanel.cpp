@@ -94,14 +94,6 @@ void UIDialogPanel::retranslateUi()
         m_pCloseButton->setToolTip(QApplication::translate("UIVisoCreator", "Close the pane"));
 }
 
-bool UIDialogPanel::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    Q_UNUSED(pObject);
-    Q_UNUSED(pEvent);
-    /* Dont consume this event. Pass it back to Qt's event system: */
-    return false;
-}
-
 void UIDialogPanel::showEvent(QShowEvent *pEvent)
 {
     QWidget::showEvent(pEvent);
