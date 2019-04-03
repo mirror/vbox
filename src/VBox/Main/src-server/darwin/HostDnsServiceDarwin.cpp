@@ -82,7 +82,7 @@ HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *pProxy)
 
     ctx.info = this;
 
-    m->m_store = SCDynamicStoreCreate(NULL, CFSTR("org.virtualbox.VBoxSVC"),
+    m->m_store = SCDynamicStoreCreate(NULL, CFSTR("org.virtualbox.VBoxSVC.HostDNS"),
                                       (SCDynamicStoreCallBack)HostDnsServiceDarwin::hostDnsServiceStoreCallback,
                                       &ctx);
     AssertReturn(m->m_store, E_FAIL);
