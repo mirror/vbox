@@ -39,27 +39,27 @@ class QIWithRetranslateUI : public Base
 public:
 
     /** Constructs translatable widget passing @a pParent to the base-class. */
-    QIWithRetranslateUI(QWidget *pParent = 0) : Base(pParent) {}
+    QIWithRetranslateUI(QWidget *pParent = 0) : Base(pParent)
+    {
+        qApp->installEventFilter(this);
+    }
 
 protected:
 
-    /** Handles standard Qt change @a pEvent. */
-    virtual void changeEvent(QEvent *pEvent)
+    /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
     {
-        /* Call to base-class: */
-        Base::changeEvent(pEvent);
-        /* Handle LanguageChange events: */
-        switch (pEvent->type())
+        /* Handle LanguageChange events for qApp or this object: */
+        if (pObject == qApp || pObject == this)
         {
-            case QEvent::LanguageChange:
+            switch (pEvent->type())
             {
-                retranslateUi();
-                pEvent->accept();
-                break;
+                case QEvent::LanguageChange: retranslateUi(); break;
+                default: break;
             }
-            default:
-                break;
         }
+        /* Call to base-class: */
+        return Base::eventFilter(pObject, pEvent);
     }
 
     /** Handles translation event. */
@@ -83,27 +83,27 @@ class QIWithRetranslateUI2 : public Base
 public:
 
     /** Constructs translatable widget passing @a pParent and @a fFlags to the base-class. */
-    QIWithRetranslateUI2(QWidget *pParent = 0, Qt::WindowFlags fFlags = 0) : Base(pParent, fFlags) {}
+    QIWithRetranslateUI2(QWidget *pParent = 0, Qt::WindowFlags fFlags = 0) : Base(pParent, fFlags)
+    {
+        qApp->installEventFilter(this);
+    }
 
 protected:
 
-    /** Handles standard Qt change @a pEvent. */
-    virtual void changeEvent(QEvent *pEvent)
+    /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
+    virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
     {
-        /* Call to base-class: */
-        Base::changeEvent(pEvent);
-        /* Handle LanguageChange events: */
-        switch (pEvent->type())
+        /* Handle LanguageChange events for qApp or this object: */
+        if (pObject == qApp || pObject == this)
         {
-            case QEvent::LanguageChange:
+            switch (pEvent->type())
             {
-                retranslateUi();
-                pEvent->accept();
-                break;
+                case QEvent::LanguageChange: retranslateUi(); break;
+                default: break;
             }
-            default:
-                break;
         }
+        /* Call to base-class: */
+        return Base::eventFilter(pObject, pEvent);
     }
 
     /** Handles translation event. */
@@ -129,8 +129,8 @@ protected:
     /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
     {
-        /* Handle LanguageChange events for qApp only: */
-        if (pObject == qApp)
+        /* Handle LanguageChange events for qApp or this object: */
+        if (pObject == qApp || pObject == this)
         {
             switch (pEvent->type())
             {
@@ -174,11 +174,15 @@ protected:
     /** Pre-handles standard Qt @a pEvent for passed @a pObject. */
     virtual bool eventFilter(QObject *pObject, QEvent *pEvent)
     {
-        /* Handle LanguageChange events: */
-        switch (pEvent->type())
+        /* Handle LanguageChange events for qApp or this object: */
+        if (pObject == qApp || pObject == this)
         {
-            case QEvent::LanguageChange: retranslateUi(); break;
-            default: break;
+            /* Handle LanguageChange events: */
+            switch (pEvent->type())
+            {
+                case QEvent::LanguageChange: retranslateUi(); break;
+                default: break;
+            }
         }
         /* Call to base-class: */
         return Base::eventFilter(pObject, pEvent);
