@@ -275,6 +275,8 @@ public:
 
 protected slots:
 
+    /** Handles guest request to change the mouse pointer shape. */
+    void sltMousePointerShapeChange();
     /** Handles guest request to change the cursor position. */
     void sltCursorPositionChange();
 
@@ -1297,6 +1299,32 @@ void UIFrameBufferPrivate::performRescale()
 //           scaleFactor(), scaledSize().width(), scaledSize().height());
 }
 
+void UIFrameBufferPrivate::sltMousePointerShapeChange()
+{
+    /* Do we have view and valid cursor position?
+     * Also, please take into account, we are not currently painting
+     * framebuffer cursor if mouse integration is supported and enabled. */
+    if (   m_pMachineView
+        && !m_pMachineView->uisession()->isHidingHostPointer()
+        && m_pMachineView->uisession()->isValidPointerShapePresent()
+        && m_pMachineView->uisession()->isValidCursorPositionPresent()
+        && (   !m_pMachineView->uisession()->isMouseIntegrated()
+            || !m_pMachineView->uisession()->isMouseSupportsAbsolute()))
+    {
+        /* Call for a viewport update using known shape rectangle: */
+        m_pMachineView->viewport()->update(m_cursorRectangle);
+    }
+    /* Don't forget to clear the rectangle in opposite case: */
+    else if (   m_pMachineView
+             && m_cursorRectangle.isValid())
+    {
+        /* Call for a viewport update: */
+        m_pMachineView->viewport()->update(m_cursorRectangle);
+        /* And erase the rectangle after all: */
+        m_cursorRectangle = QRect();
+    }
+}
+
 void UIFrameBufferPrivate::sltCursorPositionChange()
 {
     /* Do we have view and valid cursor position?
@@ -1368,6 +1396,8 @@ void UIFrameBufferPrivate::prepareConnections()
             Qt::QueuedConnection);
 
     /* Attach GUI connections: */
+    connect(m_pMachineView->uisession(), &UISession::sigMousePointerShapeChange,
+            this, &UIFrameBufferPrivate::sltMousePointerShapeChange);
     connect(m_pMachineView->uisession(), &UISession::sigCursorPositionChange,
             this, &UIFrameBufferPrivate::sltCursorPositionChange);
 }
