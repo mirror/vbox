@@ -1303,6 +1303,7 @@ void UIFrameBufferPrivate::sltCursorPositionChange()
      * Also, please take into account, we are not currently painting
      * framebuffer cursor if mouse integration is supported and enabled. */
     if (   m_pMachineView
+        && !m_pMachineView->uisession()->isHidingHostPointer()
         && m_pMachineView->uisession()->isValidPointerShapePresent()
         && m_pMachineView->uisession()->isValidCursorPositionPresent()
         && (   !m_pMachineView->uisession()->isMouseIntegrated()
@@ -1338,6 +1339,15 @@ void UIFrameBufferPrivate::sltCursorPositionChange()
 
         /* Remember current cursor rectangle: */
         m_cursorRectangle = cursorRectangle;
+    }
+    /* Don't forget to clear the rectangle in opposite case: */
+    else if (   m_pMachineView
+             && m_cursorRectangle.isValid())
+    {
+        /* Call for a viewport update: */
+        m_pMachineView->viewport()->update(m_cursorRectangle);
+        /* And erase the rectangle after all: */
+        m_cursorRectangle = QRect();
     }
 }
 
@@ -1470,7 +1480,8 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* Paint cursor if it has valid shape and position.
      * Also, please take into account, we are not currently painting
      * framebuffer cursor if mouse integration is supported and enabled. */
-    if (   m_pMachineView->uisession()->isValidPointerShapePresent()
+    if (   !m_pMachineView->uisession()->isHidingHostPointer()
+        && m_pMachineView->uisession()->isValidPointerShapePresent()
         && m_pMachineView->uisession()->isValidCursorPositionPresent()
         && (   !m_pMachineView->uisession()->isMouseIntegrated()
             || !m_pMachineView->uisession()->isMouseSupportsAbsolute()))
@@ -1578,7 +1589,8 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     /* Paint cursor if it has valid shape and position.
      * Also, please take into account, we are not currently painting
      * framebuffer cursor if mouse integration is supported and enabled. */
-    if (   m_pMachineView->uisession()->isValidPointerShapePresent()
+    if (   !m_pMachineView->uisession()->isHidingHostPointer()
+        && m_pMachineView->uisession()->isValidPointerShapePresent()
         && m_pMachineView->uisession()->isValidCursorPositionPresent()
         && (   !m_pMachineView->uisession()->isMouseIntegrated()
             || !m_pMachineView->uisession()->isMouseSupportsAbsolute()))
