@@ -1418,23 +1418,16 @@ static int vmsvgaChangeMode(PVGASTATE pThis)
 
 int vmsvgaUpdateScreen(PVGASTATE pThis, VMSVGASCREENOBJECT *pScreen, int x, int y, int w, int h)
 {
-    if (pThis->svga.fGFBRegisters)
-    {
-        vgaR3UpdateDisplay(pThis, x, y, w, h);
-    }
-    else
-    {
-        VBVACMDHDR cmd;
-        cmd.x = (int16_t)(pScreen->xOrigin + x);
-        cmd.y = (int16_t)(pScreen->yOrigin + y);
-        cmd.w = (uint16_t)w;
-        cmd.h = (uint16_t)h;
+    VBVACMDHDR cmd;
+    cmd.x = (int16_t)(pScreen->xOrigin + x);
+    cmd.y = (int16_t)(pScreen->yOrigin + y);
+    cmd.w = (uint16_t)w;
+    cmd.h = (uint16_t)h;
 
-        pThis->pDrv->pfnVBVAUpdateBegin(pThis->pDrv, pScreen->idScreen);
-        pThis->pDrv->pfnVBVAUpdateProcess(pThis->pDrv, pScreen->idScreen, &cmd, sizeof(cmd));
-        pThis->pDrv->pfnVBVAUpdateEnd(pThis->pDrv, pScreen->idScreen,
-                                      pScreen->xOrigin + x, pScreen->yOrigin + y, w, h);
-    }
+    pThis->pDrv->pfnVBVAUpdateBegin(pThis->pDrv, pScreen->idScreen);
+    pThis->pDrv->pfnVBVAUpdateProcess(pThis->pDrv, pScreen->idScreen, &cmd, sizeof(cmd));
+    pThis->pDrv->pfnVBVAUpdateEnd(pThis->pDrv, pScreen->idScreen,
+                                  pScreen->xOrigin + x, pScreen->yOrigin + y, w, h);
 
     return VINF_SUCCESS;
 }
