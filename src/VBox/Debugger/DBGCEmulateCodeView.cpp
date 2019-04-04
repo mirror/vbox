@@ -68,6 +68,7 @@ static FNDBGCCMD dbgcCmdGoUp;
 static FNDBGCCMD dbgcCmdListModules;
 static FNDBGCCMD dbgcCmdListNear;
 static FNDBGCCMD dbgcCmdListSource;
+static FNDBGCCMD dbgcCmdListSymbols;
 static FNDBGCCMD dbgcCmdMemoryInfo;
 static FNDBGCCMD dbgcCmdReg;
 static FNDBGCCMD dbgcCmdRegGuest;
@@ -354,6 +355,13 @@ static const DBGCVARDESC    g_aArgUnassembleCfg[] =
     {  0,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to start disassembling." },
 };
 
+/** 'x' arguments. */
+static const DBGCVARDESC    g_aArgListSyms[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "symbols",      "The symbols to list, format is Module!Symbol with wildcards being supoprted." }
+};
+
 
 /** Command descriptors for the CodeView / WinDbg emulation.
  * The emulation isn't attempting to be identical, only somewhat similar.
@@ -466,6 +474,7 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "uv86",       0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble 16-bit code with v8086/real mode addressing." },
     { "ucfg",       0,        1,        &g_aArgUnassembleCfg[0], RT_ELEMENTS(g_aArgUnassembleCfg), 0, dbgcCmdUnassembleCfg,  "[addr]",               "Unassemble creating a control flow graph." },
     { "ucfgc",      0,        1,        &g_aArgUnassembleCfg[0], RT_ELEMENTS(g_aArgUnassembleCfg), 0, dbgcCmdUnassembleCfg,  "[addr]",               "Unassemble creating a control flow graph with colors." },
+    { "x",          1,        1,        &g_aArgListSyms[0], RT_ELEMENTS(g_aArgListSyms),    0,       dbgcCmdListSymbols,  "* | <Module!Symbol>", "Examine symbols." },
 };
 
 /** The number of commands in the CodeView/WinDbg emulation. */
@@ -6264,6 +6273,98 @@ static DECLCALLBACK(int) dbgcCmdListModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     }
 
     NOREF(pCmd);
+    return VINF_SUCCESS;
+}
+
+
+
+/**
+ * @callback_method_impl{FNDBGCCMD, The 'x' (examine symbols) command.}
+ */
+static DECLCALLBACK(int) dbgcCmdListSymbols(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    AssertReturn(cArgs == 1, VERR_DBGC_PARSE_BUG);
+    AssertReturn(paArgs[0].enmType == DBGCVAR_TYPE_STRING, VERR_DBGC_PARSE_BUG);
+
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+
+    /*
+     * Allowed is either a single * to match everything or the Module!Symbol style
+     * which requiresa ! to separate module and symbol.
+     */
+    bool fDumpAll = strcmp(paArgs[0].u.pszString, "*") == 0;
+    const char *pszModule = NULL;
+    size_t cchModule = 0;
+    const char *pszSymbol = NULL;
+    if (!fDumpAll)
+    {
+        const char *pszDelimiter = strchr(paArgs[0].u.pszString, '!');
+        if (!pszDelimiter)
+            return DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid search string '%s' for '%s'. Valid are either '*' or the form <Module>!<Symbol> where the <Module> and <Symbol> can contain wildcards",
+                              paArgs[0].u.pszString, pCmd->pszCmd);
+
+        pszModule = paArgs[0].u.pszString;
+        cchModule = pszDelimiter - pszModule;
+        pszSymbol = pszDelimiter + 1;
+    }
+
+    /*
+     * Iterate the modules in the current address space and print info about
+     * those matching the input.
+     */
+    RTDBGAS hAsCurAlias = pDbgc->hDbgAs;
+    for (uint32_t iAs = 0;; iAs++)
+    {
+        RTDBGAS     hAs         = DBGFR3AsResolveAndRetain(pUVM, hAsCurAlias);
+        uint32_t    cMods       = RTDbgAsModuleCount(hAs);
+        for (uint32_t iMod = 0; iMod < cMods; iMod++)
+        {
+            RTDBGMOD hMod = RTDbgAsModuleByIndex(hAs, iMod);
+            if (hMod != NIL_RTDBGMOD)
+            {
+                const char *pszModName = RTDbgModName(hMod);
+                if (   fDumpAll
+                    || RTStrSimplePatternNMatch(pszModule, cchModule, pszModName, strlen(pszModName)))
+                {
+                    RTDBGASMAPINFO  aMappings[128];
+                    uint32_t        cMappings = RT_ELEMENTS(aMappings);
+                    RTUINTPTR       uMapping = 0;
+
+                    /* Get the minimum mapping address of the module so we can print absolute values for the symbol later on. */
+                    int rc = RTDbgAsModuleQueryMapByIndex(hAs, iMod, &aMappings[0], &cMappings, 0 /*fFlags*/);
+                    if (RT_SUCCESS(rc))
+                    {
+                        uMapping = RTUINTPTR_MAX;
+                        for (uint32_t iMap = 0; iMap < cMappings; iMap++)
+                            if (aMappings[iMap].Address < uMapping)
+                                uMapping = aMappings[iMap].Address;
+                    }
+
+                    /* Go through the symbols and print any matches. */
+                    uint32_t cSyms = RTDbgModSymbolCount(hMod);
+                    for (uint32_t iSym = 0; iSym < cSyms; iSym++)
+                    {
+                        RTDBGSYMBOL SymInfo;
+                        rc = RTDbgModSymbolByOrdinal(hMod, iSym, &SymInfo);
+                        if (   RT_SUCCESS(rc)
+                            && (   fDumpAll
+                                || RTStrSimplePatternMatch(pszSymbol, &SymInfo.szName[0])))
+                            DBGCCmdHlpPrintf(pCmdHlp, "%RGv    %s!%s\n", uMapping + (RTGCUINTPTR)SymInfo.Value, pszModName, &SymInfo.szName[0]);
+                    }
+                }
+                RTDbgModRelease(hMod);
+            }
+        }
+        RTDbgAsRelease(hAs);
+
+        /* For DBGF_AS_RC_AND_GC_GLOBAL we're required to do more work. */
+        if (hAsCurAlias != DBGF_AS_RC_AND_GC_GLOBAL)
+            break;
+        AssertBreak(iAs == 0);
+        hAsCurAlias = DBGF_AS_GLOBAL;
+    }
+
+    RT_NOREF(pCmd);
     return VINF_SUCCESS;
 }
 
