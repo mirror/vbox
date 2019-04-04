@@ -67,7 +67,6 @@ public:
     bool fAskDeleteConfirmation;
     bool fShowHumanReadableSizes;
     bool fShowHiddenObjects;
-    bool fShowBreadCrumbs;
 
 private:
 

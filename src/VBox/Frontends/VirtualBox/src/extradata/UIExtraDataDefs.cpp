@@ -206,7 +206,6 @@ const char *UIExtraDataDefs::GUI_GuestControl_FileManagerListDirectoriesFirst = 
 const char *UIExtraDataDefs::GUI_GuestControl_FileManagerShowDeleteConfirmation = "ShowDeleteConfimation";
 const char *UIExtraDataDefs::GUI_GuestControl_FileManagerShowHumanReadableSizes = "ShowHumanReadableSizes";
 const char *UIExtraDataDefs::GUI_GuestControl_FileManagerShowHiddenObjects = "ShowHiddenObjects";
-const char *UIExtraDataDefs::GUI_GuestControl_FileManagerShowBreadCrumbs = "ShowBreadCrumbs";
 
 /* Virtual Machine: Close dialog: */
 const char *UIExtraDataDefs::GUI_DefaultCloseAction = "GUI/DefaultCloseAction";

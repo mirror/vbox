@@ -52,7 +52,7 @@ class UIActionPool;
 class UICustomFileSystemItem;
 class UICustomFileSystemModel;
 class UICustomFileSystemProxyModel;
-class UIFileManagerBreadCrumbs;
+class UIFileManagerNavigationWidget;
 class UIGuestControlFileView;
 class UIToolBar;
 
@@ -253,13 +253,12 @@ private slots:
 
     void sltCreateFileViewContextMenu(const QPoint &point);
     void sltSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
-    void sltLocationComboCurrentChange(const QString &strLocation);
     void sltSearchTextChanged(const QString &strText);
     /** m_pModel signals when an tree item is renamed. we try to apply this rename to the file system.
      *  if the file system rename fails we restore the old name of the item. See the comment of
      *  sltRename() for more details. */
     void sltHandleItemRenameAttempt(UICustomFileSystemItem *pItem, QString strOldName, QString strNewName);
-    void sltHandleBreadCrumbsClick(const QString& strPath);
+    void sltHandleNavigationWidgetPathChange(const QString& strPath);
 
 private:
 
@@ -284,20 +283,18 @@ private:
     /** Checks if delete confirmation dialog is shown and users choice. Returns true
      *  if deletion can continue */
     bool            checkIfDeleteOK();
-    void            showHideBreadCrumbs(bool fShow);
 
     UICustomFileSystemModel      *m_pModel;
     UIGuestControlFileView       *m_pView;
     UICustomFileSystemProxyModel *m_pProxyModel;
 
     QGridLayout     *m_pMainLayout;
-    QComboBox       *m_pLocationComboBox;
     QILineEdit      *m_pSearchLineEdit;
     QILabel         *m_pWarningLabel;
 
     /** Contains m_pBreadCrumbsWidget and m_pLocationComboBox. */
-    QStackedWidget           *m_pNavigationWidgetWidget;
-    UIFileManagerBreadCrumbs *m_pBreadCrumbsWidget;
+    UIFileManagerNavigationWidget           *m_pNavigationWidget;
+    //UIFileManagerBreadCrumbs *m_pBreadCrumbsWidget;
 
     friend class     UICustomFileSystemModel;
 };

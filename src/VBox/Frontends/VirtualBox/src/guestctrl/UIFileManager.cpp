@@ -93,7 +93,6 @@ UIFileManagerOptions::UIFileManagerOptions()
     , fAskDeleteConfirmation(false)
     , fShowHumanReadableSizes(true)
     , fShowHiddenObjects(true)
-    , fShowBreadCrumbs(false)
 {
 }
 
@@ -690,8 +689,7 @@ void UIFileManager::saveOptions()
         gEDataManager->setFileManagerOptions(pOptions->fListDirectoriesOnTop,
                                              pOptions->fAskDeleteConfirmation,
                                              pOptions->fShowHumanReadableSizes,
-                                             pOptions->fShowHiddenObjects,
-                                             pOptions->fShowBreadCrumbs);
+                                             pOptions->fShowHiddenObjects);
     }
 }
 
@@ -734,7 +732,6 @@ void UIFileManager::loadOptions()
         pOptions->fAskDeleteConfirmation = gEDataManager->fileManagerShowDeleteConfirmation();
         pOptions->fShowHumanReadableSizes = gEDataManager->fileManagerShowHumanReadableSizes();
         pOptions->fShowHiddenObjects = gEDataManager->fileManagerShowHiddenObjects();
-        pOptions->fShowBreadCrumbs = gEDataManager->fileManagerShowBreadCrumbs();
     }
 }
 
