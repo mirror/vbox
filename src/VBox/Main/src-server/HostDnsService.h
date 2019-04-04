@@ -241,7 +241,6 @@ public:
 public:
 
     HRESULT init(HostDnsMonitorProxy *pProxy);
-    void uninit(void);
 
 protected:
 
