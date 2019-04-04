@@ -65,8 +65,7 @@ public:
     /* @note: method will wait till client call
        HostDnsService::monitorThreadInitializationDone() */
     virtual HRESULT init(HostDnsMonitorProxy *pProxy);
-
-    void uninit(void);
+    virtual void uninit(void);
 
 protected:
 
