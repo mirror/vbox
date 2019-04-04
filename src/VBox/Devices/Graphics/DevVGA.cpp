@@ -5965,6 +5965,7 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
     {
         PDMCritSectLeave(&pThis->CritSect); /* hack around lock order issue. */
         pThis->pDrv->pfnReset(pThis->pDrv);
+        pThis->pDrv->pfnVBVAMousePointerShape(pThis->pDrv, false, false, 0, 0, 0, 0, NULL);
         PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
     }
 
