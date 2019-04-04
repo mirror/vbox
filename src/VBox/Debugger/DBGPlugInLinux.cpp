@@ -441,6 +441,7 @@ static int dbgDiggerLinuxQueryAsciiLogBufferPtrs(PDBGDIGGERLINUX pThis, PUVM pUV
                         case OP_LEA:
                         case OP_AND:
                         case OP_CBW:
+                        case OP_DEC:
                             break;
                         case OP_RETN:
                             /* emit_log_char returned, abort disassembling. */
