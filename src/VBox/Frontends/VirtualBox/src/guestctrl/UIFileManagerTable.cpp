@@ -83,6 +83,14 @@ public:
 
     UIFileManagerBreadCrumbs(QWidget *pParent = 0);
     void setPath(const QString &strPath);
+
+protected:
+
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+
+private:
+
+    QString m_strPath;
 };
 
 
@@ -105,10 +113,6 @@ public:
     void setPath(const QString &strLocation);
     void reset();
 
-protected:
-
-    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
-
 private slots:
 
     void sltHandleSwitch();
@@ -123,7 +127,6 @@ private:
     UIFileManagerBreadCrumbs     *m_pBreadCrumbs;
     UIFileManagerHistoryComboBox *m_pHistoryComboBox;
     QToolButton                  *m_pSwitchButton;
-    QString                       m_strPath;
 };
 
 
@@ -252,8 +255,6 @@ UIFileManagerNavigationWidget::UIFileManagerNavigationWidget(QWidget *pParent /*
 
 void UIFileManagerNavigationWidget::setPath(const QString &strLocation)
 {
-    m_strPath = strLocation;
-
     if (m_pBreadCrumbs)
         m_pBreadCrumbs->setPath(strLocation);
 
@@ -283,14 +284,6 @@ void UIFileManagerNavigationWidget::reset()
 
     if (m_pBreadCrumbs)
         m_pBreadCrumbs->setPath(QString());
-}
-
-void UIFileManagerNavigationWidget::resizeEvent(QResizeEvent *pEvent)
-{
-    if (m_pBreadCrumbs)
-        m_pBreadCrumbs->setPath(m_strPath);
-
-    QWidget::resizeEvent(pEvent);
 }
 
 void UIFileManagerNavigationWidget::prepare()
@@ -387,10 +380,14 @@ UIFileManagerBreadCrumbs::UIFileManagerBreadCrumbs(QWidget *pParent /* = 0 */)
     newPalette.setColor(QPalette::Background, qApp->palette().color(QPalette::Light));
 
     setPalette(newPalette);
+    /* Allow the labe become smaller than the current text. calling setpath in resizeEvent truncated the text anyway: */
+    setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 }
 
 void UIFileManagerBreadCrumbs::setPath(const QString &strPath)
 {
+    m_strPath = strPath;
+
     const QChar separator('/');
     clear();
     QStringList folderList = UIPathOperations::pathTrail(strPath);
@@ -429,6 +426,13 @@ void UIFileManagerBreadCrumbs::setPath(const QString &strPath)
 
     }
     setText(strLabelText);
+}
+
+void UIFileManagerBreadCrumbs::resizeEvent(QResizeEvent *pEvent)
+{
+    /* Truncate the text the way we want: */
+    setPath(m_strPath);
+    QLabel::resizeEvent(pEvent);
 }
 
 
