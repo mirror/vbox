@@ -65,9 +65,6 @@ HostDnsServiceDarwin::~HostDnsServiceDarwin()
 
 HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *pProxy)
 {
-    HRESULT hrc = HostDnsServiceBase::init(pProxy);
-    AssertComRCReturn(hrc, hrc);
-
     SCDynamicStoreContext ctx;
     RT_ZERO(ctx);
 
@@ -95,7 +92,8 @@ HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *pProxy)
 
     CFRunLoopAddSource(m->m_RunLoopRef, m->m_SourceStop, kCFRunLoopCommonModes);
 
-    return updateInfo();
+    HRESULT hrc = HostDnsServiceBase::init(pProxy);
+    return hrc;
 }
 
 void HostDnsServiceDarwin::uninit(void)
@@ -142,7 +140,7 @@ int HostDnsServiceDarwin::monitorThreadProc(void)
     if (!watchingArrayRef)
     {
         CFRelease(m->m_DnsWatcher);
-        return E_OUTOFMEMORY;
+        return VERR_NO_MEMORY;
     }
 
     if(SCDynamicStoreSetNotificationKeys(m->m_store, watchingArrayRef, NULL))
@@ -151,6 +149,10 @@ int HostDnsServiceDarwin::monitorThreadProc(void)
     CFRelease(watchingArrayRef);
 
     onMonitorThreadInitDone();
+
+    /* Trigger initial update. */
+    int rc = updateInfo();
+    AssertRC(rc); /* Not fatal in release builds. */
 
     while (!ASMAtomicReadBool(&m->m_fStop))
     {
@@ -163,7 +165,7 @@ int HostDnsServiceDarwin::monitorThreadProc(void)
     return VINF_SUCCESS;
 }
 
-HRESULT HostDnsServiceDarwin::updateInfo(void)
+int HostDnsServiceDarwin::updateInfo(void)
 {
     CFPropertyListRef propertyRef = SCDynamicStoreCopyValue(m->m_store, kStateNetworkGlobalDNSKey);
     /**
@@ -185,7 +187,7 @@ HRESULT HostDnsServiceDarwin::updateInfo(void)
      */
 
     if (!propertyRef)
-        return S_OK;
+        return VINF_SUCCESS;
 
     HostDnsInformation info;
     CFStringRef domainNameRef = (CFStringRef)CFDictionaryGetValue(
@@ -244,12 +246,13 @@ HRESULT HostDnsServiceDarwin::updateInfo(void)
 
     setInfo(info);
 
-    return S_OK;
+    return VINF_SUCCESS;
 }
 
-void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *info)
+void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *pInfo)
 {
-    HostDnsServiceDarwin *pThis = (HostDnsServiceDarwin *)info;
+    HostDnsServiceDarwin *pThis = (HostDnsServiceDarwin *)pInfo;
+    AssertPtrReturnVoid(pThis);
 
     RTCLock grab(pThis->m_LockMtx);
     pThis->updateInfo();
@@ -257,8 +260,10 @@ void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *inf
 
 void HostDnsServiceDarwin::Data::performShutdownCallback(void *pInfo)
 {
-    HostDnsServiceDarwin::Data *pThis = static_cast<HostDnsServiceDarwin::Data *>(pInfo);
+    HostDnsServiceDarwin *pThis = (HostDnsServiceDarwin *)pInfo;
     AssertPtrReturnVoid(pThis);
-    pThis->m_fStop = true;
+
+    AssertPtrReturnVoid(pThis->m);
+    ASMAtomicXchgBool(&pThis->m->m_fStop, true);
 }
 

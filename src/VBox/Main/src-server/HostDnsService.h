@@ -153,7 +153,7 @@ protected:
 
 private:
 
-    HRESULT updateInfo();
+    int updateInfo(void);
     static void hostDnsServiceStoreCallback(void *store, void *arrayRef, void *info);
     struct Data;
     Data *m;
