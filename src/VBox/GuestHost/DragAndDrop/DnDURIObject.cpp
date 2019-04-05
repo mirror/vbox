@@ -35,7 +35,6 @@
 DnDURIObject::DnDURIObject(void)
     : m_enmType(Type_Unknown)
     , m_enmView(View_Unknown)
-    , m_fIsOpen(false)
 {
     RT_ZERO(u);
 }
@@ -47,7 +46,6 @@ DnDURIObject::DnDURIObject(Type enmType,
     , m_enmView(View_Unknown)
     , m_strSrcPathAbs(strSrcPathAbs)
     , m_strTgtPathAbs(strDstPathAbs)
-    , m_fIsOpen(false)
 {
     RT_ZERO(u);
 }
@@ -64,9 +62,6 @@ DnDURIObject::~DnDURIObject(void)
 void DnDURIObject::closeInternal(void)
 {
     LogFlowThisFuncEnter();
-
-    if (!m_fIsOpen)
-        return;
 
     switch (m_enmType)
     {
@@ -89,8 +84,6 @@ void DnDURIObject::closeInternal(void)
         default:
             break;
     }
-
-    m_fIsOpen = false;
 }
 
 /**
@@ -189,7 +182,14 @@ bool DnDURIObject::IsComplete(void) const
  */
 bool DnDURIObject::IsOpen(void) const
 {
-    return m_fIsOpen;
+    switch (m_enmType)
+    {
+        case Type_File:      return RTFileIsValid(u.File.hFile);
+        case Type_Directory: return RTDirIsValid(u.Dir.hDir);
+        default:             break;
+    }
+
+    return false;
 }
 
 /**
@@ -222,9 +222,6 @@ int DnDURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
 {
     AssertReturn(!(fFlags & ~DNDURIOBJECT_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
     RT_NOREF1(fFlags);
-
-    if (m_fIsOpen)
-        return VINF_SUCCESS;
 
     int rc = VINF_SUCCESS;
 
@@ -300,7 +297,6 @@ int DnDURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
     if (RT_SUCCESS(rc))
     {
         m_enmView = enmView;
-        m_fIsOpen = true;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -311,7 +307,7 @@ int DnDURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
  * Queries information about the object using a specific view, internal version.
  *
  * @return  IPRT status code.
- * @param   enmView             View to use for querying information.
+ * @param   enmView             View to use for querying information. Currently ignored.
  */
 int DnDURIObject::queryInfoInternal(View enmView)
 {
@@ -322,10 +318,12 @@ int DnDURIObject::queryInfoInternal(View enmView)
     switch (m_enmType)
     {
         case Type_File:
+            AssertMsgReturn(RTFileIsValid(u.File.hFile), ("Object has invalid file handle\n"), VERR_INVALID_STATE);
             rc = RTFileQueryInfo(u.File.hFile, &u.File.objInfo, RTFSOBJATTRADD_NOTHING);
             break;
 
         case Type_Directory:
+            AssertMsgReturn(RTDirIsValid(u.Dir.hDir), ("Object has invalid directory handle\n"), VERR_INVALID_STATE);
             rc = RTDirQueryInfo(u.Dir.hDir, &u.Dir.objInfo, RTFSOBJATTRADD_NOTHING);
             break;
 
@@ -428,7 +426,6 @@ int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     /* pcbRead is optional. */
 
-    AssertMsgReturn(m_fIsOpen, ("Object not in open state\n"), VERR_INVALID_STATE);
     AssertMsgReturn(m_enmView == View_Source, ("Cannot write to an object which is not in target view\n"),
                     VERR_INVALID_STATE);
 
@@ -525,7 +522,6 @@ int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
 
-    AssertMsgReturn(m_fIsOpen, ("Object not in open state\n"), VERR_INVALID_STATE);
     AssertMsgReturn(m_enmView == View_Target, ("Cannot write to an object which is not in target view\n"),
                     VERR_INVALID_STATE);
 
