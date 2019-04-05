@@ -1249,6 +1249,7 @@ EOF
       cnf_append "VBOX_WITH_AUDIO_PULSE" "1"
     else
       cnf_append "VBOX_WITH_AUDIO_PULSE" ""
+    fi
   else
     cnf_append "VBOX_WITH_AUDIO_PULSE" ""
   fi
