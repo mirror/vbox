@@ -238,7 +238,6 @@ protected:
     UIPropertiesDialog      *m_pPropertiesDialog;
     UIActionPool            *m_pActionPool;
     UIToolBar               *m_pToolBar;
-
     /** Stores the drive letters the file system has (for windows system). For non-windows
      *  systems this is empty and for windows system it should at least contain C:/ */
     QStringList              m_driveLetterList;
