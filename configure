@@ -1244,8 +1244,13 @@ extern "C" int main(void)
 #endif
 }
 EOF
-  if test_compile "$INCPULSE $LIBPULSE -lpulse" pulse pulse; then
-    test_execute
+  if test_compile "$INCPULSE $LIBPULSE -lpulse" pulse pulse nofatal; then
+    if test_execute nofatal; then
+      cnf_append "VBOX_WITH_AUDIO_PULSE" "1"
+    else
+      cnf_append "VBOX_WITH_AUDIO_PULSE" ""
+  else
+    cnf_append "VBOX_WITH_AUDIO_PULSE" ""
   fi
 }
 
@@ -2809,13 +2814,13 @@ if [ $ONLY_ADDITIONS -eq 0 ]; then
   [ $WITH_JAVA   -eq 1 ] && check_java
 
   # PulseAudio
-  if [ "$OS" = "linux" -o "$OS" = "freebsd" -o "$OS" = "netbsd" ]; then
-    if [ $WITH_PULSE -eq 1 ]; then
-      check_pulse
-    elif [ $WITH_PULSE -eq 0 ]; then
-      cnf_append "VBOX_WITH_AUDIO_PULSE" ""
-    fi
- fi
+  if [ $WITH_PULSE -eq 1 ]; then
+    check_pulse
+  elif [ $WITH_PULSE -eq 0 ]; then # Force disabling PulseAudio.
+    cnf_append "VBOX_WITH_AUDIO_PULSE" ""
+  elif [ $WITH_PULSE -eq 2 ]; then # --enable-pulse was passed, force PulseAudio.
+    cnf_append "VBOX_WITH_AUDIO_PULSE" "1"
+  fi
 fi
 
 # Linux-specific
