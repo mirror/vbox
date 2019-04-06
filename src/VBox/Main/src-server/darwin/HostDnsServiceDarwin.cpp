@@ -90,8 +90,6 @@ HRESULT HostDnsServiceDarwin::init(HostDnsMonitorProxy *pProxy)
     m->m_SourceStop = CFRunLoopSourceCreate(kCFAllocatorDefault, 0, &sctx);
     AssertReturn(m->m_SourceStop, E_FAIL);
 
-    CFRunLoopAddSource(m->m_RunLoopRef, m->m_SourceStop, kCFRunLoopCommonModes);
-
     HRESULT hrc = HostDnsServiceBase::init(pProxy);
     return hrc;
 }
@@ -100,13 +98,9 @@ void HostDnsServiceDarwin::uninit(void)
 {
     HostDnsServiceBase::uninit();
 
-    CFRunLoopRemoveSource(m->m_RunLoopRef, m->m_SourceStop, kCFRunLoopCommonModes);
     CFRelease(m->m_SourceStop);
-
     CFRelease(m->m_RunLoopRef);
-
     CFRelease(m->m_DnsWatcher);
-
     CFRelease(m->m_store);
 
     RTSemEventDestroy(m->m_evtStop);
@@ -134,6 +128,8 @@ int HostDnsServiceDarwin::monitorThreadProc(void)
 
     CFRetain(m->m_RunLoopRef);
 
+    CFRunLoopAddSource(m->m_RunLoopRef, m->m_SourceStop, kCFRunLoopCommonModes);
+
     CFArrayRef watchingArrayRef = CFArrayCreate(NULL,
                                                 (const void **)&kStateNetworkGlobalDNSKey,
                                                 1, &kCFTypeArrayCallBacks);
@@ -158,6 +154,8 @@ int HostDnsServiceDarwin::monitorThreadProc(void)
     {
         CFRunLoopRun();
     }
+
+    CFRunLoopRemoveSource(m->m_RunLoopRef, m->m_SourceStop, kCFRunLoopCommonModes);
 
     /* We're notifying stopper thread. */
     RTSemEventSignal(m->m_evtStop);
