@@ -2944,10 +2944,12 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
                 if (RT_FAILURE(rc))
                 {
                     SUPR3PageFreeEx(pvChunk, cChunkPages);
+                    RTMemTmpFree(paChunkPages);
                     break;
                 }
                 pNew->RamRange.pSelfRC  = GCPtrChunk + RT_UOFFSETOF(PGMREGMMIORANGE, RamRange);
             }
+            RTMemTmpFree(paChunkPages);
         }
         /*
          * Not so big, do a one time hyper allocation.
