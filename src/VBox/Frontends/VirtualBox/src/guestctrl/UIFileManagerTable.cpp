@@ -303,7 +303,6 @@ void UIFileManagerNavigationWidget::prepare()
         if (m_pBreadCrumbs && m_pHistoryComboBox)
         {
             m_pBreadCrumbs->setIndent(0.5 * qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin));
-
             connect(m_pBreadCrumbs, &UIFileManagerBreadCrumbs::linkActivated,
                     this, &UIFileManagerNavigationWidget::sigPathChanged);
             connect(m_pHistoryComboBox, &UIFileManagerHistoryComboBox::sigHidePopup,
@@ -321,7 +320,6 @@ void UIFileManagerNavigationWidget::prepare()
     m_pSwitchButton = new QToolButton;
     if (m_pSwitchButton)
     {
-
         QStyle *pStyle = QApplication::style();
         QIcon buttonIcon;
         if (pStyle)
@@ -329,7 +327,6 @@ void UIFileManagerNavigationWidget::prepare()
             buttonIcon = pStyle->standardIcon(QStyle::SP_TitleBarUnshadeButton);
             m_pSwitchButton->setIcon(buttonIcon);
         }
-
         pLayout->addWidget(m_pSwitchButton);
         connect(m_pSwitchButton, &QToolButton::clicked,
                 this, &UIFileManagerNavigationWidget::sltHandleSwitch);
@@ -374,11 +371,9 @@ UIFileManagerBreadCrumbs::UIFileManagerBreadCrumbs(QWidget *pParent /* = 0 */)
 
     setFrameShape(QFrame::Box);
     setLineWidth(1);
-    //setFixedHeight(10);
     setAutoFillBackground(true);
     QPalette newPalette = palette();
     newPalette.setColor(QPalette::Background, qApp->palette().color(QPalette::Light));
-
     setPalette(newPalette);
     /* Allow the labe become smaller than the current text. calling setpath in resizeEvent truncated the text anyway: */
     setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
@@ -709,9 +704,7 @@ void UIFileManagerTable::prepareObjects()
 
     m_pToolBar = new UIToolBar;
     if (m_pToolBar)
-    {
         m_pMainLayout->addWidget(m_pToolBar, 0, 0, 1, 7);
-    }
 
     m_pLocationLabel = new QILabel;
     if (m_pLocationLabel)
