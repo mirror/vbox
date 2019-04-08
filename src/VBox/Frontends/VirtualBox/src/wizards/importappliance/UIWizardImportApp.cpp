@@ -249,5 +249,5 @@ void UIWizardImportApp::sltCustomButtonClicked(int iId)
     }
 }
 
-#include "UIWizardImportApp.moc"
 
+#include "UIWizardImportApp.moc"

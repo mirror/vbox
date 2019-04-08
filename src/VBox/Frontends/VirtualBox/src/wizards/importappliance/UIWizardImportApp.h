@@ -21,7 +21,7 @@
 # pragma once
 #endif
 
-/* GUI includes */
+/* GUI includes: */
 #include "UIWizard.h"
 
 /** Import Appliance wizard. */
