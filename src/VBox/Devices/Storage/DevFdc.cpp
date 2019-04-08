@@ -64,29 +64,15 @@
 /* debug Floppy devices */
 /* #define DEBUG_FLOPPY */
 
-#ifndef VBOX
-    #ifdef DEBUG_FLOPPY
-    #define FLOPPY_DPRINTF(fmt, args...) \
-        do { printf("FLOPPY: " fmt , ##args); } while (0)
-    #endif
-#else /* !VBOX */
-# ifdef LOG_ENABLED
-#  define FLOPPY_DPRINTF(...) Log(("floppy: " __VA_ARGS__))
-# else
-#  define FLOPPY_DPRINTF(...) do { } while (0)
-# endif
-#endif /* !VBOX */
+#ifdef LOG_ENABLED
+# define FLOPPY_DPRINTF(...) Log(("floppy: " __VA_ARGS__))
+#else
+# define FLOPPY_DPRINTF(...) do { } while (0)
+#endif
 
-#ifndef VBOX
-#define FLOPPY_ERROR(fmt, args...) \
-    do { printf("FLOPPY ERROR: %s: " fmt, __func__ , ##args); } while (0)
-#else /* VBOX */
-#   define FLOPPY_ERROR RTLogPrintf
-#endif /* VBOX */
+#define FLOPPY_ERROR RTLogPrintf
 
-#ifdef VBOX
 typedef struct fdctrl_t fdctrl_t;
-#endif /* VBOX */
 
 /********************************************************/
 /* Floppy drive emulation                               */
@@ -104,11 +90,9 @@ typedef enum fdrive_type_t {
     FDRIVE_DRV_144  = 0x00,   /* 1.44 MB 3"5 drive      */
     FDRIVE_DRV_288  = 0x01,   /* 2.88 MB 3"5 drive      */
     FDRIVE_DRV_120  = 0x02,   /* 1.2  MB 5"25 drive     */
-    FDRIVE_DRV_NONE = 0x03    /* No drive connected     */
-#ifdef VBOX
-    , FDRIVE_DRV_FAKE_15_6 = 0x0e /* Fake 15.6 MB drive. */
-    , FDRIVE_DRV_FAKE_63_5 = 0x0f /* Fake 63.5 MB drive. */
-#endif
+    FDRIVE_DRV_NONE = 0x03,   /* No drive connected     */
+    FDRIVE_DRV_FAKE_15_6 = 0x0e, /* Fake 15.6 MB drive. */
+    FDRIVE_DRV_FAKE_63_5 = 0x0f  /* Fake 63.5 MB drive. */
 } fdrive_type_t;
 
 typedef uint8_t fdrive_flags_t;
@@ -129,9 +113,6 @@ typedef enum fdrive_rate_t {
  * @implements  PDMIMOUNTNOTIFY
  */
 typedef struct fdrive_t {
-#ifndef VBOX
-    BlockDriverState *bs;
-#else /* VBOX */
     /** Pointer to the owning device instance. */
     R3PTRTYPE(PPDMDEVINS)           pDevIns;
     /** Pointer to the attached driver's base interface. */
@@ -151,7 +132,6 @@ typedef struct fdrive_t {
     RTUINT                          iLUN;
     /** The LED for this LUN. */
     PDMLED                          Led;
-#endif
     /* Drive status */
     fdrive_type_t drive;
     uint8_t perpendicular;    /* 2.88 MB access mode    */
@@ -175,9 +155,6 @@ typedef struct fdrive_t {
 static void fd_init(fdrive_t *drv, bool fInit)
 {
     /* Drive */
-#ifndef VBOX
-    drv->drive = FDRIVE_DRV_NONE;
-#else  /* VBOX */
     if (fInit) {
         /* Fixate the drive type at init time if possible. */
         if (drv->pDrvMedia) {
@@ -209,7 +186,6 @@ static void fd_init(fdrive_t *drv, bool fInit)
         }
     } /* else: The BIOS (and others) get the drive type via the CMOS, so
                don't change it after the VM has been constructed. */
-#endif /* VBOX */
     drv->perpendicular = 0;
     /* Disk */
     drv->last_sect = 0;
@@ -360,7 +336,7 @@ static fd_format_t fd_formats[] = {
     { FDRIVE_DRV_144,  9, 40, 0, FDRIVE_RATE_300K,  "180 kB 3\"1/2", },
     { FDRIVE_DRV_144,  8, 40, 1, FDRIVE_RATE_300K,  "320 kB 3\"1/2", },
     { FDRIVE_DRV_144,  8, 40, 0, FDRIVE_RATE_300K,  "160 kB 3\"1/2", },
-#ifdef VBOX /* For larger than real life floppy images (see DrvBlock.cpp). */
+    /* For larger than real life floppy images (see DrvBlock.cpp). */
     /* 15.6 MB fake floppy disk (just need something big). */
     { FDRIVE_DRV_FAKE_15_6,  63, 255, 1, FDRIVE_RATE_1M,   "15.6 MB fake 15.6", },
     { FDRIVE_DRV_FAKE_15_6,  36,  80, 1, FDRIVE_RATE_1M,   "2.88 MB fake 15.6", },
@@ -406,7 +382,6 @@ static fd_format_t fd_formats[] = {
     { FDRIVE_DRV_FAKE_63_5,  13,  80, 1, FDRIVE_RATE_250K, "1.04 MB fake 63.5", },
     { FDRIVE_DRV_FAKE_63_5,  14,  80, 1, FDRIVE_RATE_250K, "1.12 MB fake 63.5", },
     { FDRIVE_DRV_FAKE_63_5,   9,  80, 0, FDRIVE_RATE_250K,  "360 kB fake 63.5", },
-#endif
     /* end */
     { FDRIVE_DRV_NONE, (uint8_t)-1, (uint8_t)-1, 0, (fdrive_rate_t)0, NULL, },
 };
@@ -420,29 +395,17 @@ static void fd_revalidate(fdrive_t *drv)
     int nb_heads, max_track, last_sect, ro;
 
     FLOPPY_DPRINTF("revalidate\n");
-#ifndef VBOX
-    if (drv->bs != NULL && bdrv_is_inserted(drv->bs)) {
-        ro = bdrv_is_read_only(drv->bs);
-        bdrv_get_geometry_hint(drv->bs, &nb_heads, &max_track, &last_sect);
-#else /* VBOX */
     if (   drv->pDrvMedia
         && drv->pDrvMount
         && drv->pDrvMount->pfnIsMounted (drv->pDrvMount)) {
         ro = drv->pDrvMedia->pfnIsReadOnly (drv->pDrvMedia);
         nb_heads = max_track = last_sect = 0;
-#endif /* VBOX */
         if (nb_heads != 0 && max_track != 0 && last_sect != 0) {
             FLOPPY_DPRINTF("User defined disk (%d %d %d)",
                            nb_heads - 1, max_track, last_sect);
         } else {
-#ifndef VBOX
-            bdrv_get_geometry(drv->bs, &nb_sectors);
-#else /* VBOX */
-            {
-                uint64_t size2 = drv->pDrvMedia->pfnGetSize (drv->pDrvMedia);
-                nb_sectors = size2 / FD_SECTOR_LEN;
-            }
-#endif /* VBOX */
+            uint64_t size2 = drv->pDrvMedia->pfnGetSize (drv->pDrvMedia);
+            nb_sectors = size2 / FD_SECTOR_LEN;
             match = -1;
             first_match = -1;
             for (i = 0;; i++) {
@@ -472,9 +435,7 @@ static void fd_revalidate(fdrive_t *drv)
             max_track = parse->max_track;
             last_sect = parse->last_sect;
             drv->drive = parse->drive;
-#ifdef VBOX
             drv->media_rate = parse->rate;
-#endif
             FLOPPY_DPRINTF("%s floppy disk (%d h %d t %d s) %s\n", parse->str,
                            nb_heads, max_track, last_sect, ro ? "ro" : "rw");
             LogRel(("FDC: %s floppy disk (%d h %d t %d s) %s\n", parse->str,
@@ -502,16 +463,11 @@ static void fd_revalidate(fdrive_t *drv)
 
 static void fdctrl_reset(fdctrl_t *fdctrl, int do_irq);
 static void fdctrl_reset_fifo(fdctrl_t *fdctrl);
-#ifndef VBOX
-static int fdctrl_transfer_handler (void *opaque, int nchan,
-                                    int dma_pos, int dma_len);
-#else /* VBOX: */
 static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
                                                        void *opaque,
                                                        unsigned nchan,
                                                        uint32_t dma_pos,
                                                        uint32_t dma_len);
-#endif /* VBOX */
 static void fdctrl_raise_irq(fdctrl_t *fdctrl, uint8_t status0);
 static fdrive_t *get_cur_drv(fdctrl_t *fdctrl);
 
@@ -685,34 +641,20 @@ enum {
 #define FD_DID_SEEK(state) ((state) & FD_STATE_SEEK)
 #define FD_FORMAT_CMD(state) ((state) & FD_STATE_FORMAT)
 
-#ifdef VBOX
 /**
  * Floppy controller state.
  *
  * @implements  PDMILEDPORTS
  */
-#endif
 struct fdctrl_t {
-#ifndef VBOX
-    fdctrl_t *fdctrl;
-#endif
     /* Controller's identification */
     uint8_t version;
     /* HW */
-#ifndef VBOX
-    int irq;
-    int dma_chann;
-#else
     uint8_t irq_lvl;
     uint8_t dma_chann;
-#endif
     uint32_t io_base;
     /* Controller state */
-#ifndef VBOX
-    QEMUTimer *result_timer;
-#else
     struct TMTIMER *result_timer;
-#endif
     uint8_t sra;
     uint8_t srb;
     uint8_t dor;
@@ -744,7 +686,6 @@ struct fdctrl_t {
     uint8_t num_floppies;
     fdrive_t drives[MAX_FD];
     uint8_t reset_sensei;
-#ifdef VBOX
     /** Pointer to device instance. */
     PPDMDEVINS pDevIns;
 
@@ -754,7 +695,6 @@ struct fdctrl_t {
     PDMILEDPORTS ILeds;
     /** Status LUN: The Partner of ILeds. */
     PPDMILEDCONNECTORS pLedsConnector;
-#endif
 };
 
 static uint32_t fdctrl_read (void *opaque, uint32_t reg)
@@ -826,11 +766,7 @@ static void fdctrl_reset_irq(fdctrl_t *fdctrl)
     if (!(fdctrl->sra & FD_SRA_INTPEND))
         return;
     FLOPPY_DPRINTF("Reset interrupt\n");
-#ifdef VBOX
     PDMDevHlpISASetIrq (fdctrl->pDevIns, fdctrl->irq_lvl, 0);
-#else
-    qemu_set_irq(fdctrl->irq, 0);
-#endif
     fdctrl->sra &= ~FD_SRA_INTPEND;
 }
 
@@ -838,11 +774,7 @@ static void fdctrl_raise_irq(fdctrl_t *fdctrl, uint8_t status0)
 {
     if (!(fdctrl->sra & FD_SRA_INTPEND)) {
         FLOPPY_DPRINTF("Raising interrupt...\n");
-#ifdef VBOX
         PDMDevHlpISASetIrq (fdctrl->pDevIns, fdctrl->irq_lvl, 1);
-#else
-        qemu_set_irq(fdctrl->irq, 1);
-#endif
         fdctrl->sra |= FD_SRA_INTPEND;
     }
     if (status0 & FD_SR0_SEEK) {
@@ -869,11 +801,7 @@ static void fdctrl_reset(fdctrl_t *fdctrl, int do_irq)
     /* Initialise controller */
     fdctrl->sra = 0;
     fdctrl->srb = 0xc0;
-#ifdef VBOX
     if (!fdctrl->drives[1].pDrvMedia)
-#else
-    if (!fdctrl->drives[1].bs)
-#endif
         fdctrl->sra |= FD_SRA_nDRV2;
     fdctrl->cur_drv = 0;
     fdctrl->dor = FD_DOR_nRESET;
@@ -1082,19 +1010,7 @@ static void fdctrl_write_ccr(fdctrl_t *fdctrl, uint32_t value)
 
 static int fdctrl_media_changed(fdrive_t *drv)
 {
-#ifdef VBOX
     return drv->dsk_chg;
-#else
-    int ret;
-
-    if (!drv->bs)
-        return 0;
-    ret = bdrv_media_changed(drv->bs);
-    if (ret) {
-        fd_revalidate(drv);
-    }
-    return ret;
-#endif
 }
 
 /* Digital input register : 0x07 (read-only) */
@@ -1102,22 +1018,12 @@ static uint32_t fdctrl_read_dir(fdctrl_t *fdctrl)
 {
     uint32_t retval = 0;
 
-#ifdef VBOX
     /* The change line signal is reported by the currently selected
      * drive. If the corresponding motor on bit is not set, the drive
      * is *not* selected!
      */
     if (fdctrl_media_changed(get_cur_drv(fdctrl))
      && (fdctrl->dor & (0x10 << fdctrl->cur_drv)))
-#else
-    if (fdctrl_media_changed(drv0(fdctrl))
-     || fdctrl_media_changed(drv1(fdctrl))
-#if MAX_FD == 4
-     || fdctrl_media_changed(drv2(fdctrl))
-     || fdctrl_media_changed(drv3(fdctrl))
-#endif
-        )
-#endif
         retval |= FD_DIR_DSKCHG;
     if (retval != 0)
         FLOPPY_DPRINTF("Floppy digital input register: 0x%02x\n", retval);
@@ -1210,11 +1116,7 @@ static void fdctrl_stop_transfer(fdctrl_t *fdctrl, uint8_t status0,
 
     fdctrl->data_dir = FD_DIR_READ;
     if (!(fdctrl->msr & FD_MSR_NONDMA)) {
-#ifdef VBOX
         PDMDevHlpDMASetDREQ (fdctrl->pDevIns, fdctrl->dma_chann, 0);
-#else
-        DMA_release_DREQ(fdctrl->dma_chann);
-#endif
     }
     fdctrl->msr |= FD_MSR_RQM | FD_MSR_DIO;
     fdctrl->msr &= ~FD_MSR_NONDMA;
@@ -1279,7 +1181,6 @@ static void fdctrl_start_transfer(fdctrl_t *fdctrl, int direction)
     /* Check the data rate. If the programmed data rate does not match
      * the currently inserted medium, the operation has to fail.
      */
-#ifdef VBOX
     if ((fdctrl->dsr & FD_DSR_DRATEMASK) != cur_drv->media_rate) {
         FLOPPY_DPRINTF("data rate mismatch (fdc=%d, media=%d)\n",
                        fdctrl->dsr & FD_DSR_DRATEMASK, cur_drv->media_rate);
@@ -1289,7 +1190,6 @@ static void fdctrl_start_transfer(fdctrl_t *fdctrl, int direction)
         fdctrl->fifo[5] = ks;
         return;
     }
-#endif
     /* Set the FIFO state */
     fdctrl->data_dir = direction;
     fdctrl->data_pos = 0;
@@ -1316,11 +1216,7 @@ static void fdctrl_start_transfer(fdctrl_t *fdctrl, int direction)
     if (fdctrl->dor & FD_DOR_DMAEN) {
         int dma_mode;
         /* DMA transfer are enabled. Check if DMA channel is well programmed */
-#ifndef VBOX
-        dma_mode = DMA_get_channel_mode(fdctrl->dma_chann);
-#else
         dma_mode = PDMDevHlpDMAGetChannelMode (fdctrl->pDevIns, fdctrl->dma_chann);
-#endif
         dma_mode = (dma_mode >> 2) & 3;
         FLOPPY_DPRINTF("dma_mode=%d direction=%d (%d - %d)\n",
                        dma_mode, direction,
@@ -1335,13 +1231,8 @@ static void fdctrl_start_transfer(fdctrl_t *fdctrl, int direction)
             /* Now, we just have to wait for the DMA controller to
              * recall us...
              */
-#ifndef VBOX
-            DMA_hold_DREQ(fdctrl->dma_chann);
-            DMA_schedule(fdctrl->dma_chann);
-#else
             PDMDevHlpDMASetDREQ (fdctrl->pDevIns, fdctrl->dma_chann, 1);
             PDMDevHlpDMASchedule (fdctrl->pDevIns);
-#endif
             return;
         } else {
             FLOPPY_ERROR("dma_mode=%d direction=%d\n", dma_mode, direction);
@@ -1432,11 +1323,7 @@ static void fdctrl_start_format(fdctrl_t *fdctrl)
     if (fdctrl->dor & FD_DOR_DMAEN) {
         int dma_mode;
         /* DMA transfer are enabled. Check if DMA channel is well programmed */
-#ifndef VBOX
-        dma_mode = DMA_get_channel_mode(fdctrl->dma_chann);
-#else
         dma_mode = PDMDevHlpDMAGetChannelMode (fdctrl->pDevIns, fdctrl->dma_chann);
-#endif
         dma_mode = (dma_mode >> 2) & 3;
         FLOPPY_DPRINTF("dma_mode=%d direction=%d (%d - %d)\n",
                        dma_mode, fdctrl->data_dir,
@@ -1448,13 +1335,8 @@ static void fdctrl_start_format(fdctrl_t *fdctrl)
             /* Now, we just have to wait for the DMA controller to
              * recall us...
              */
-#ifndef VBOX
-            DMA_hold_DREQ(fdctrl->dma_chann);
-            DMA_schedule(fdctrl->dma_chann);
-#else
             PDMDevHlpDMASetDREQ (fdctrl->pDevIns, fdctrl->dma_chann, 1);
             PDMDevHlpDMASchedule (fdctrl->pDevIns);
-#endif
             return;
         } else {
             FLOPPY_ERROR("dma_mode=%d direction=%d\n", dma_mode, fdctrl->data_dir);
@@ -1480,7 +1362,6 @@ static void fdctrl_start_transfer_del(fdctrl_t *fdctrl, int direction)
     fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, 0x00, 0x00);
 }
 
-#ifdef VBOX
 /* Block driver read/write wrappers. */
 
 static int blk_write(fdrive_t *drv, int64_t sector_num, const uint8_t *buf, int nb_sectors)
@@ -1516,30 +1397,19 @@ static int blk_read(fdrive_t *drv, int64_t sector_num, uint8_t *buf, int nb_sect
     return rc;
 }
 
-#endif
-
 /* handlers for DMA transfers */
-#ifdef VBOX
 static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
                                                        void *opaque,
                                                        unsigned nchan,
                                                        uint32_t dma_pos,
                                                        uint32_t dma_len)
-#else
-static int fdctrl_transfer_handler (void *opaque, int nchan,
-                                    int dma_pos, int dma_len)
-#endif
 {
     RT_NOREF(pDevIns, dma_pos);
     fdctrl_t *fdctrl;
     fdrive_t *cur_drv;
-#ifdef VBOX
     int rc;
     uint32_t len = 0;
     uint32_t start_pos, rel_pos;
-#else
-    int len, start_pos, rel_pos;
-#endif
     uint8_t status0 = 0x00, status1 = 0x00, status2 = 0x00;
 
     fdctrl = (fdctrl_t *)opaque;
@@ -1553,11 +1423,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
         status2 = FD_SR2_SNS;
     if (dma_len > fdctrl->data_len)
         dma_len = fdctrl->data_len;
-#ifndef VBOX
-    if (cur_drv->bs == NULL)
-#else  /* !VBOX */
     if (cur_drv->pDrvMedia == NULL)
-#endif
     {
         if (fdctrl->data_dir == FD_DIR_WRITE)
             fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, 0x00, 0x00);
@@ -1567,22 +1433,19 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
         goto transfer_error;
     }
 
-#ifdef VBOX
-        if (cur_drv->ro)
+    if (cur_drv->ro)
+    {
+        if (fdctrl->data_dir == FD_DIR_WRITE || fdctrl->data_dir == FD_DIR_FORMAT)
         {
-            if (fdctrl->data_dir == FD_DIR_WRITE || fdctrl->data_dir == FD_DIR_FORMAT)
-            {
-                /* Handle readonly medium early, no need to do DMA, touch the
-                 * LED or attempt any writes. A real floppy doesn't attempt
-                 * to write to readonly media either. */
-                fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, FD_SR1_NW,
-                                     0x00);
-                Assert(len == 0);
-                goto transfer_error;
-            }
+            /* Handle readonly medium early, no need to do DMA, touch the
+             * LED or attempt any writes. A real floppy doesn't attempt
+             * to write to readonly media either. */
+            fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, FD_SR1_NW,
+                                 0x00);
+            Assert(len == 0);
+            goto transfer_error;
         }
-#endif
-
+    }
 
     rel_pos = fdctrl->data_pos % FD_SECTOR_LEN;
     for (start_pos = fdctrl->data_pos; fdctrl->data_pos < dma_len;) {
@@ -1598,13 +1461,8 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
             (fdctrl->data_dir != FD_DIR_WRITE ||
             len < FD_SECTOR_LEN || rel_pos != 0)) {
             /* READ & SCAN commands and realign to a sector for WRITE */
-#ifdef VBOX
             rc = blk_read(cur_drv, fd_sector(cur_drv), fdctrl->fifo, 1);
             if (RT_FAILURE(rc))
-#else
-            if (bdrv_read(cur_drv->bs, fd_sector(cur_drv),
-                          fdctrl->fifo, 1) < 0)
-#endif
             {
                 FLOPPY_DPRINTF("Floppy: error getting sector %d\n",
                                fd_sector(cur_drv));
@@ -1615,7 +1473,6 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
         switch (fdctrl->data_dir) {
         case FD_DIR_READ:
             /* READ commands */
-#ifdef VBOX
             {
                 uint32_t read;
                 int rc2 = PDMDevHlpDMAWriteMemory(fdctrl->pDevIns, nchan,
@@ -1624,16 +1481,9 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
                                                   len, &read);
                 AssertMsgRC (rc2, ("DMAWriteMemory -> %Rrc\n", rc2));
             }
-#else
-            DMA_write_memory (nchan, fdctrl->fifo + rel_pos,
-                              fdctrl->data_pos, len);
-#endif
-/*          cpu_physical_memory_write(addr + fdctrl->data_pos, */
-/*                                    fdctrl->fifo + rel_pos, len); */
             break;
         case FD_DIR_WRITE:
             /* WRITE commands */
-#ifdef VBOX
             {
                 uint32_t written;
                 int rc2 = PDMDevHlpDMAReadMemory(fdctrl->pDevIns, nchan,
@@ -1645,19 +1495,12 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
 
             rc = blk_write(cur_drv, fd_sector(cur_drv), fdctrl->fifo, 1);
             if (RT_FAILURE(rc))
-#else
-            DMA_read_memory (nchan, fdctrl->fifo + rel_pos,
-                             fdctrl->data_pos, len);
-            if (bdrv_write(cur_drv->bs, fd_sector(cur_drv),
-                           fdctrl->fifo, 1) < 0)
-#endif
             {
                 FLOPPY_ERROR("writing sector %d\n", fd_sector(cur_drv));
                 fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, 0x00, 0x00);
                 goto transfer_error;
             }
             break;
-#ifdef VBOX
         case FD_DIR_FORMAT:
             /* FORMAT command */
             {
@@ -1688,20 +1531,15 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
                 }
             }
             break;
-#endif
         default:
             /* SCAN commands */
             {
                 uint8_t tmpbuf[FD_SECTOR_LEN];
                 int ret;
-#ifdef VBOX
                 uint32_t read;
                 int rc2 = PDMDevHlpDMAReadMemory (fdctrl->pDevIns, nchan, tmpbuf,
                                                   fdctrl->data_pos, len, &read);
                 AssertMsg(RT_SUCCESS(rc2), ("DMAReadMemory -> %Rrc2\n", rc2)); NOREF(rc2);
-#else
-                DMA_read_memory (nchan, tmpbuf, fdctrl->data_pos, len);
-#endif
                 ret = memcmp(tmpbuf, fdctrl->fifo + rel_pos, len);
                 if (ret == 0) {
                     status2 = FD_SR2_SEH;
@@ -1746,9 +1584,7 @@ static uint32_t fdctrl_read_data(fdctrl_t *fdctrl)
     fdrive_t *cur_drv;
     uint32_t retval = 0;
     unsigned pos;
-#ifdef VBOX
     int rc;
-#endif
 
     cur_drv = get_cur_drv(fdctrl);
     fdctrl->dsr &= ~FD_DSR_PWRDOWN;
@@ -1765,12 +1601,8 @@ static uint32_t fdctrl_read_data(fdctrl_t *fdctrl)
                                    fd_sector(cur_drv));
                     return 0;
                 }
-#ifdef VBOX
             rc = blk_read(cur_drv, fd_sector(cur_drv), fdctrl->fifo, 1);
             if (RT_FAILURE(rc))
-#else
-            if (bdrv_read(cur_drv->bs, fd_sector(cur_drv), fdctrl->fifo, 1) < 0)
-#endif
             {
                 FLOPPY_DPRINTF("error getting sector %d\n",
                                fd_sector(cur_drv));
@@ -1801,9 +1633,7 @@ static void fdctrl_format_sector(fdctrl_t *fdctrl)
 {
     fdrive_t *cur_drv;
     uint8_t kh, kt, ks;
-#ifdef VBOX
     int ok = 0, rc;
-#endif
 
     SET_CUR_DRV(fdctrl, fdctrl->fifo[1] & FD_DOR_SELMASK);
     cur_drv = get_cur_drv(fdctrl);
@@ -1849,7 +1679,6 @@ static void fdctrl_format_sector(fdctrl_t *fdctrl)
         break;
     }
     memset(fdctrl->fifo, 0, FD_SECTOR_LEN);
-#ifdef VBOX
     if (cur_drv->pDrvMedia) {
         rc = blk_write(cur_drv, fd_sector(cur_drv), fdctrl->fifo, 1);
         if (RT_FAILURE (rc)) {
@@ -1860,13 +1689,6 @@ static void fdctrl_format_sector(fdctrl_t *fdctrl)
         }
     }
     if (ok) {
-#else
-    if (cur_drv->bs == NULL ||
-        bdrv_write(cur_drv->bs, fd_sector(cur_drv), fdctrl->fifo, 1) < 0) {
-        FLOPPY_ERROR("formatting sector %d\n", fd_sector(cur_drv));
-        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, 0x00, 0x00);
-    } else {
-#endif
         if (cur_drv->sect == cur_drv->last_sect) {
             fdctrl->data_state &= ~FD_STATE_FORMAT;
             /* Last sector done */
@@ -1995,12 +1817,7 @@ static void fdctrl_handle_readid(fdctrl_t *fdctrl, int direction)
 
     fdctrl->msr &= ~FD_MSR_RQM;
     cur_drv->head = (fdctrl->fifo[1] >> 2) & 1;
-#ifdef VBOX
     TMTimerSetMillies(fdctrl->result_timer, 1000 / 50);
-#else
-    qemu_mod_timer(fdctrl->result_timer,
-                   qemu_get_clock(vm_clock) + (get_ticks_per_sec() / 50));
-#endif
 }
 
 static void fdctrl_handle_format_track(fdctrl_t *fdctrl, int direction)
@@ -2122,7 +1939,7 @@ static void fdctrl_handle_seek(fdctrl_t *fdctrl, int direction)
     SET_CUR_DRV(fdctrl, fdctrl->fifo[1] & FD_DOR_SELMASK);
     cur_drv = get_cur_drv(fdctrl);
     fdctrl_reset_fifo(fdctrl);
-#ifdef VBOX
+
     /* The seek command just sends step pulses to the drive and doesn't care if
      * there's a medium inserted or if it's banging the head against the drive.
      */
@@ -2131,15 +1948,6 @@ static void fdctrl_handle_seek(fdctrl_t *fdctrl, int direction)
     cur_drv->head = (fdctrl->fifo[1] >> 2) & 1;
     /* Raise Interrupt */
     fdctrl_raise_irq(fdctrl, FD_SR0_SEEK | GET_CUR_DRV(fdctrl));
-#else
-    if (fdctrl->fifo[2] > cur_drv->max_track) {
-        fdctrl_raise_irq(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK);
-    } else {
-        cur_drv->track = fdctrl->fifo[2];
-        /* Raise Interrupt */
-        fdctrl_raise_irq(fdctrl, FD_SR0_SEEK);
-    }
-#endif
 }
 
 static void fdctrl_handle_perpendicular_mode(fdctrl_t *fdctrl, int direction)
@@ -2305,12 +2113,7 @@ static void fdctrl_write_data(fdctrl_t *fdctrl, uint32_t value)
         fdctrl->fifo[pos] = value;
         if (pos == FD_SECTOR_LEN - 1 ||
             fdctrl->data_pos == fdctrl->data_len) {
-#ifdef VBOX
             blk_write(cur_drv, fd_sector(cur_drv), fdctrl->fifo, 1);
-#else
-            bdrv_write(cur_drv->bs, fd_sector(cur_drv),
-                       fdctrl->fifo, 1);
-#endif
         }
         /* Switch from transfer mode to status mode
          * then from status mode to command mode
@@ -2358,7 +2161,6 @@ static void fdctrl_result_timer(void *opaque)
         cur_drv->sect = (cur_drv->sect % cur_drv->last_sect) + 1;
     }
     /* READ_ID can't automatically succeed! */
-#ifdef VBOX
     if (!cur_drv->max_track) {
         FLOPPY_DPRINTF("read id when no disk in drive\n");
         /// @todo This is wrong! Command should not complete.
@@ -2374,12 +2176,9 @@ static void fdctrl_result_timer(void *opaque)
         fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA | FD_SR1_ND, FD_SR2_MD);
     }
     else
-#endif
         fdctrl_stop_transfer(fdctrl, 0x00, 0x00, 0x00);
 }
 
-
-#ifdef VBOX
 
 /* -=-=-=-=-=-=-=-=- Timer Callback -=-=-=-=-=-=-=-=- */
 
@@ -2976,11 +2775,6 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     {
         AssertMsgFailed(("Memory mapped floppy not support by now\n"));
         return VERR_NOT_SUPPORTED;
-#if 0
-        FLOPPY_ERROR("memory mapped floppy not supported by now !\n");
-        io_mem = cpu_register_io_memory(0, fdctrl_mem_read, fdctrl_mem_write);
-        cpu_register_physical_memory(base, 0x08, io_mem);
-#endif
     }
     else
     {
@@ -3092,8 +2886,6 @@ const PDMDEVREG g_DeviceFloppyController =
     /* u32VersionEnd */
     PDM_DEVREG_VERSION
 };
-
-#endif /* VBOX */
 
 /*
  * Local Variables:
