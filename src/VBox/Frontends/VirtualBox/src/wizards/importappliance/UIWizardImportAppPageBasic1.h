@@ -21,50 +21,51 @@
 # pragma once
 #endif
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class UIEmptyFilePathSelector;
 class QIRichTextLabel;
+class UIEmptyFilePathSelector;
 
-/* 1st page of the Import Appliance wizard (base part): */
+/** UIWizardPageBase extension for 1st page of the Import Appliance wizard. */
 class UIWizardImportAppPage1 : public UIWizardPageBase
 {
 protected:
 
-    /* Constructor: */
+    /** Constructs 1st page base. */
     UIWizardImportAppPage1();
 
-    /* Widgets: */
+    /** Holds the file selector instance. */
     UIEmptyFilePathSelector *m_pFileSelector;
 };
 
-/* 1st page of the Import Appliance wizard (basic extension): */
+/** UIWizardPage extension for 1st page of the Import Appliance wizard, extends UIWizardImportAppPage1 as well. */
 class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAppPage1
 {
     Q_OBJECT;
 
 public:
 
-    /* Constructor: */
+    /** Constructs 1st basic page. */
     UIWizardImportAppPageBasic1();
 
 private:
 
-    /* Translate stuff: */
-    void retranslateUi();
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
-    /* Prepare stuff: */
-    void initializePage();
+    /** Performs page initialization. */
+    virtual void initializePage() /* override */;
 
-    /* Validation stuff: */
-    bool isComplete() const;
-    bool validatePage();
+    /** Returns whether page is complete. */
+    virtual bool isComplete() const /* override */;
 
-    /* Widgets: */
+    /** Performs page validation. */
+    virtual bool validatePage() /* override */;
+
+    /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic1_h */
-

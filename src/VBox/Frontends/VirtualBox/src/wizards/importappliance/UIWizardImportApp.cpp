@@ -137,6 +137,11 @@ private:
     QString m_strText;
 };
 
+
+/*********************************************************************************************************************************
+*   Class UIWizardImportApp implementation.                                                                                      *
+*********************************************************************************************************************************/
+
 UIWizardImportApp::UIWizardImportApp(QWidget *pParent, const QString &strFileName)
     : UIWizard(pParent, WizardType_ImportAppliance)
     , m_strFileName(strFileName)
@@ -148,6 +153,33 @@ UIWizardImportApp::UIWizardImportApp(QWidget *pParent, const QString &strFileNam
     /* Assign background image: */
     assignBackground(":/wizard_ovf_import_bg.png");
 #endif /* VBOX_WS_MAC */
+}
+
+void UIWizardImportApp::prepare()
+{
+    /* Create corresponding pages: */
+    switch (mode())
+    {
+        case WizardMode_Basic:
+        {
+            if (m_strFileName.isEmpty())
+                setPage(Page1, new UIWizardImportAppPageBasic1);
+            setPage(Page2, new UIWizardImportAppPageBasic2(m_strFileName));
+            break;
+        }
+        case WizardMode_Expert:
+        {
+            setPage(PageExpert, new UIWizardImportAppPageExpert(m_strFileName));
+            break;
+        }
+        default:
+        {
+            AssertMsgFailed(("Invalid mode: %d", mode()));
+            break;
+        }
+    }
+    /* Call to base-class: */
+    UIWizard::prepare();
 }
 
 bool UIWizardImportApp::isValid() const
@@ -181,6 +213,17 @@ bool UIWizardImportApp::importAppliance()
     return pImportApplianceWidget->import();
 }
 
+void UIWizardImportApp::retranslateUi()
+{
+    /* Call to base-class: */
+    UIWizard::retranslateUi();
+
+    /* Translate wizard: */
+    setWindowTitle(tr("Import Virtual Appliance"));
+    setButtonText(QWizard::CustomButton2, tr("Restore Defaults"));
+    setButtonText(QWizard::FinishButton, tr("Import"));
+}
+
 void UIWizardImportApp::sltCurrentIdChanged(int iId)
 {
     /* Call to base-class: */
@@ -204,44 +247,6 @@ void UIWizardImportApp::sltCustomButtonClicked(int iId)
         /* Reset it to default: */
         pApplianceWidget->restoreDefaults();
     }
-}
-
-void UIWizardImportApp::retranslateUi()
-{
-    /* Call to base-class: */
-    UIWizard::retranslateUi();
-
-    /* Translate wizard: */
-    setWindowTitle(tr("Import Virtual Appliance"));
-    setButtonText(QWizard::CustomButton2, tr("Restore Defaults"));
-    setButtonText(QWizard::FinishButton, tr("Import"));
-}
-
-void UIWizardImportApp::prepare()
-{
-    /* Create corresponding pages: */
-    switch (mode())
-    {
-        case WizardMode_Basic:
-        {
-            if (m_strFileName.isEmpty())
-                setPage(Page1, new UIWizardImportAppPageBasic1);
-            setPage(Page2, new UIWizardImportAppPageBasic2(m_strFileName));
-            break;
-        }
-        case WizardMode_Expert:
-        {
-            setPage(PageExpert, new UIWizardImportAppPageExpert(m_strFileName));
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed(("Invalid mode: %d", mode()));
-            break;
-        }
-    }
-    /* Call to base-class: */
-    UIWizard::prepare();
 }
 
 #include "UIWizardImportApp.moc"

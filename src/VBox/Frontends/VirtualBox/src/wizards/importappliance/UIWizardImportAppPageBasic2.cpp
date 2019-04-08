@@ -15,14 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QLabel>
 #include <QPointer>
 #include <QPushButton>
 #include <QTextBrowser>
 #include <QVBoxLayout>
 
-/* Local includes: */
+/* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "QIRichTextLabel.h"
 #include "UIWizardImportApp.h"
@@ -49,19 +49,35 @@ UIWizardImportAppPage2::UIWizardImportAppPage2()
 UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileName)
     : m_enmCertText(kCertText_Uninitialized)
 {
-    /* Create widgets: */
+    /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    if (pMainLayout)
     {
+        /* Create label: */
         m_pLabel = new QIRichTextLabel(this);
+        if (m_pLabel)
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pLabel);
+        }
+
+        /* Create appliance widget: */
         m_pApplianceWidget = new UIApplianceImportEditorWidget(this);
         {
             m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
             m_pApplianceWidget->setFile(strFileName);
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pApplianceWidget);
         }
+
+        /* Create certificate label: */
         m_pCertLabel = new QLabel("<cert label>", this);
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pApplianceWidget);
-        pMainLayout->addWidget(m_pCertLabel);
+        if (m_pCertLabel)
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pCertLabel);
+        }
     }
 
     /* Register classes: */
@@ -114,42 +130,45 @@ void UIWizardImportAppPageBasic2::retranslateUi()
 
 void UIWizardImportAppPageBasic2::initializePage()
 {
-    /* Acquire appliance and certificate: */
+    /* Acquire appliance: */
     CAppliance *pAppliance = m_pApplianceWidget->appliance();
-    /* Check if pAppliance is alive. If not just return here. This
-       prevents crashes when an invalid ova file is supllied: */
+
+    /* Check if pAppliance is alive. If not just return here.
+     * This prevents crashes when an invalid ova file is supllied: */
     if (!pAppliance)
     {
         if (wizard())
             wizard()->reject();
         return;
     }
-    CCertificate certificate = pAppliance->GetCertificate();
-    if (certificate.isNull())
+
+    /* Acquire certificate: */
+    CCertificate comCertificate = pAppliance->GetCertificate();
+    if (comCertificate.isNull())
         m_enmCertText = kCertText_Unsigned;
     else
     {
-        /* Pick a 'signed-by' name. */
-        m_strSignedBy = certificate.GetFriendlyName();
+        /* Pick a 'signed-by' name: */
+        m_strSignedBy = comCertificate.GetFriendlyName();
 
         /* If trusted, just select the right message: */
-        if (certificate.GetTrusted())
+        if (comCertificate.GetTrusted())
         {
-            if (certificate.GetSelfSigned())
-                m_enmCertText = !certificate.GetExpired() ? kCertText_SelfSignedTrusted : kCertText_SelfSignedExpired;
+            if (comCertificate.GetSelfSigned())
+                m_enmCertText = !comCertificate.GetExpired() ? kCertText_SelfSignedTrusted : kCertText_SelfSignedExpired;
             else
-                m_enmCertText = !certificate.GetExpired() ? kCertText_IssuedTrusted     : kCertText_IssuedExpired;
+                m_enmCertText = !comCertificate.GetExpired() ? kCertText_IssuedTrusted     : kCertText_IssuedExpired;
         }
         else
         {
             /* Not trusted!  Must ask the user whether to continue in this case: */
-            m_enmCertText = certificate.GetSelfSigned() ? kCertText_SelfSignedUnverified : kCertText_IssuedUnverified;
+            m_enmCertText = comCertificate.GetSelfSigned() ? kCertText_SelfSignedUnverified : kCertText_IssuedUnverified;
 
             /* Translate page early: */
             retranslateUi();
 
             /* Instantiate the dialog: */
-            QPointer<UIApplianceUnverifiedCertificateViewer> pDialog = new UIApplianceUnverifiedCertificateViewer(this, certificate);
+            QPointer<UIApplianceUnverifiedCertificateViewer> pDialog = new UIApplianceUnverifiedCertificateViewer(this, comCertificate);
             AssertPtrReturnVoid(pDialog.data());
 
             /* Show viewer in modal mode: */
@@ -160,7 +179,6 @@ void UIWizardImportAppPageBasic2::initializePage()
                 return;
             /* Delete viewer finally: */
             delete pDialog;
-            pDialog = 0;
 
             /* Dismiss the entire import-appliance wizard if user rejects certificate: */
             if (iResultCode == QDialog::Rejected)
@@ -204,13 +222,12 @@ bool UIWizardImportAppPageBasic2::validatePage()
 *   Class UIApplianceUnverifiedCertificateViewer implementation.                                                                 *
 *********************************************************************************************************************************/
 
-UIApplianceUnverifiedCertificateViewer::UIApplianceUnverifiedCertificateViewer(QWidget *pParent, const CCertificate &certificate)
+UIApplianceUnverifiedCertificateViewer::UIApplianceUnverifiedCertificateViewer(QWidget *pParent, const CCertificate &comCertificate)
     : QIWithRetranslateUI<QIDialog>(pParent)
-    , m_certificate(certificate)
+    , m_comCertificate(comCertificate)
     , m_pTextLabel(0)
     , m_pTextBrowser(0)
 {
-    /* Prepare: */
     prepare();
 }
 
@@ -218,42 +235,43 @@ void UIApplianceUnverifiedCertificateViewer::prepare()
 {
     /* Create layout: */
     QVBoxLayout *pLayout = new QVBoxLayout(this);
-    AssertPtrReturnVoid(pLayout);
+    if (pLayout)
     {
         /* Create text-label: */
         m_pTextLabel = new QLabel;
-        AssertPtrReturnVoid(m_pTextLabel);
+        if (m_pTextLabel)
         {
-            /* Configure text-label: */
             m_pTextLabel->setWordWrap(true);
-            /* Add text-label into layout: */
+
+            /* Add into layout: */
             pLayout->addWidget(m_pTextLabel);
         }
 
         /* Create text-browser: */
         m_pTextBrowser = new QTextBrowser;
-        AssertPtrReturnVoid(m_pTextBrowser);
+        if (m_pTextBrowser)
         {
-            /* Configure text-browser: */
             m_pTextBrowser->setMinimumSize(500, 300);
-            /* Add text-browser into layout: */
+
+            /* Add into layout: */
             pLayout->addWidget(m_pTextBrowser);
         }
 
         /* Create button-box: */
         QIDialogButtonBox *pButtonBox = new QIDialogButtonBox;
-        AssertPtrReturnVoid(pButtonBox);
+        if (pButtonBox)
         {
-            /* Configure button-box: */
             pButtonBox->setStandardButtons(QDialogButtonBox::Yes | QDialogButtonBox::No);
             pButtonBox->button(QDialogButtonBox::Yes)->setShortcut(Qt::Key_Enter);
             //pButtonBox->button(QDialogButtonBox::No)->setShortcut(Qt::Key_Esc);
             connect(pButtonBox, &QIDialogButtonBox::accepted, this, &UIApplianceUnverifiedCertificateViewer::accept);
             connect(pButtonBox, &QIDialogButtonBox::rejected, this, &UIApplianceUnverifiedCertificateViewer::reject);
-            /* Add button-box into layout: */
+
+            /* Add into layout: */
             pLayout->addWidget(pButtonBox);
         }
     }
+
     /* Translate UI: */
     retranslateUi();
 }
@@ -264,28 +282,28 @@ void UIApplianceUnverifiedCertificateViewer::retranslateUi()
     setWindowTitle(tr("Unverifiable Certificate! Continue?"));
 
     /* Translate text-label caption: */
-    if (m_certificate.GetSelfSigned())
+    if (m_comCertificate.GetSelfSigned())
         m_pTextLabel->setText(tr("<b>The appliance is signed by an unverified self signed certificate issued by '%1'. "
                                  "We recommend to only proceed with the importing if you are sure you should trust this entity.</b>"
-                                 ).arg(m_certificate.GetFriendlyName()));
+                                 ).arg(m_comCertificate.GetFriendlyName()));
     else
         m_pTextLabel->setText(tr("<b>The appliance is signed by an unverified certificate issued to '%1'. "
                                  "We recommend to only proceed with the importing if you are sure you should trust this entity.</b>"
-                                 ).arg(m_certificate.GetFriendlyName()));
+                                 ).arg(m_comCertificate.GetFriendlyName()));
 
     /* Translate text-browser contents: */
     const QString strTemplateRow = tr("<tr><td>%1:</td><td>%2</td></tr>", "key: value");
     QString strTableContent;
-    strTableContent += strTemplateRow.arg(tr("Issuer"),               QStringList(m_certificate.GetIssuerName().toList()).join(", "));
-    strTableContent += strTemplateRow.arg(tr("Subject"),              QStringList(m_certificate.GetSubjectName().toList()).join(", "));
-    strTableContent += strTemplateRow.arg(tr("Not Valid Before"),     m_certificate.GetValidityPeriodNotBefore());
-    strTableContent += strTemplateRow.arg(tr("Not Valid After"),      m_certificate.GetValidityPeriodNotAfter());
-    strTableContent += strTemplateRow.arg(tr("Serial Number"),        m_certificate.GetSerialNumber());
-    strTableContent += strTemplateRow.arg(tr("Self-Signed"),          m_certificate.GetSelfSigned() ? tr("True") : tr("False"));
-    strTableContent += strTemplateRow.arg(tr("Authority (CA)"),       m_certificate.GetCertificateAuthority() ? tr("True") : tr("False"));
-//    strTableContent += strTemplateRow.arg(tr("Trusted"),              m_certificate.GetTrusted() ? tr("True") : tr("False"));
-    strTableContent += strTemplateRow.arg(tr("Public Algorithm"),     tr("%1 (%2)", "value (clarification)").arg(m_certificate.GetPublicKeyAlgorithm()).arg(m_certificate.GetPublicKeyAlgorithmOID()));
-    strTableContent += strTemplateRow.arg(tr("Signature Algorithm"),  tr("%1 (%2)", "value (clarification)").arg(m_certificate.GetSignatureAlgorithmName()).arg(m_certificate.GetSignatureAlgorithmOID()));
-    strTableContent += strTemplateRow.arg(tr("X.509 Version Number"), QString::number(m_certificate.GetVersionNumber()));
+    strTableContent += strTemplateRow.arg(tr("Issuer"),               QStringList(m_comCertificate.GetIssuerName().toList()).join(", "));
+    strTableContent += strTemplateRow.arg(tr("Subject"),              QStringList(m_comCertificate.GetSubjectName().toList()).join(", "));
+    strTableContent += strTemplateRow.arg(tr("Not Valid Before"),     m_comCertificate.GetValidityPeriodNotBefore());
+    strTableContent += strTemplateRow.arg(tr("Not Valid After"),      m_comCertificate.GetValidityPeriodNotAfter());
+    strTableContent += strTemplateRow.arg(tr("Serial Number"),        m_comCertificate.GetSerialNumber());
+    strTableContent += strTemplateRow.arg(tr("Self-Signed"),          m_comCertificate.GetSelfSigned() ? tr("True") : tr("False"));
+    strTableContent += strTemplateRow.arg(tr("Authority (CA)"),       m_comCertificate.GetCertificateAuthority() ? tr("True") : tr("False"));
+//    strTableContent += strTemplateRow.arg(tr("Trusted"),              m_comCertificate.GetTrusted() ? tr("True") : tr("False"));
+    strTableContent += strTemplateRow.arg(tr("Public Algorithm"),     tr("%1 (%2)", "value (clarification)").arg(m_comCertificate.GetPublicKeyAlgorithm()).arg(m_comCertificate.GetPublicKeyAlgorithmOID()));
+    strTableContent += strTemplateRow.arg(tr("Signature Algorithm"),  tr("%1 (%2)", "value (clarification)").arg(m_comCertificate.GetSignatureAlgorithmName()).arg(m_comCertificate.GetSignatureAlgorithmOID()));
+    strTableContent += strTemplateRow.arg(tr("X.509 Version Number"), QString::number(m_comCertificate.GetVersionNumber()));
     m_pTextBrowser->setText(QString("<table>%1</table>").arg(strTableContent));
 }

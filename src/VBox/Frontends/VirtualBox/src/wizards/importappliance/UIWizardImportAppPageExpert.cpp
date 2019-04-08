@@ -15,54 +15,69 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QFileInfo>
-#include <QVBoxLayout>
 #include <QGroupBox>
+#include <QVBoxLayout>
 
-/* Local includes: */
-#include "UIWizardImportAppPageExpert.h"
-#include "UIWizardImportApp.h"
+/* GUI includes: */
 #include "VBoxGlobal.h"
-#include "UIEmptyFilePathSelector.h"
 #include "UIApplianceImportEditorWidget.h"
+#include "UIEmptyFilePathSelector.h"
+#include "UIWizardImportApp.h"
+#include "UIWizardImportAppPageExpert.h"
 
 
 UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileName)
 {
-    /* Create widgets: */
+    /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
+        /* Create appliance container: */
         m_pApplianceCnt = new QGroupBox(this);
         {
+            /* Create appliance container layout: */
             QVBoxLayout *pApplianceCntLayout = new QVBoxLayout(m_pApplianceCnt);
             {
+                /* Create file-path selector: */
                 m_pFileSelector = new UIEmptyFilePathSelector(m_pApplianceCnt);
                 {
                     m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
                     m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
                     m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                     m_pFileSelector->setEditable(true);
+                    m_pFileSelector->setPath(strFileName);
+
+                    /* Add into layout: */
+                    pApplianceCntLayout->addWidget(m_pFileSelector);
                 }
-                pApplianceCntLayout->addWidget(m_pFileSelector);
             }
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pApplianceCnt);
         }
+
+        /* Create settings container: */
         m_pSettingsCnt = new QGroupBox(this);
         {
+            /* Create settings container layout: */
             QVBoxLayout *pSettingsCntLayout = new QVBoxLayout(m_pSettingsCnt);
             {
+                /* Create appliance widget: */
                 m_pApplianceWidget = new UIApplianceImportEditorWidget(m_pSettingsCnt);
                 {
                     m_pApplianceWidget->setMinimumHeight(300);
                     m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
                     m_pApplianceWidget->setFile(strFileName);
+
+                    /* Add into layout: */
+                    pSettingsCntLayout->addWidget(m_pApplianceWidget);
                 }
-                pSettingsCntLayout->addWidget(m_pApplianceWidget);
             }
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pSettingsCnt);
         }
-        pMainLayout->addWidget(m_pApplianceCnt);
-        pMainLayout->addWidget(m_pSettingsCnt);
-        m_pFileSelector->setPath(strFileName);
     }
 
     /* Setup connections: */
@@ -77,8 +92,8 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileN
 void UIWizardImportAppPageExpert::sltFilePathChangeHandler()
 {
     /* Check if set file contains valid appliance: */
-    if (QFile::exists(m_pFileSelector->path()) &&
-        m_pApplianceWidget->setFile(m_pFileSelector->path()))
+    if (   QFile::exists(m_pFileSelector->path())
+        && m_pApplianceWidget->setFile(m_pFileSelector->path()))
     {
         /* Reset the modified bit if file was correctly set: */
         m_pFileSelector->resetModified();
@@ -99,16 +114,15 @@ void UIWizardImportAppPageExpert::retranslateUi()
 
 void UIWizardImportAppPageExpert::initializePage()
 {
-    /* Translate page: */
     retranslateUi();
 }
 
 bool UIWizardImportAppPageExpert::isComplete() const
 {
     /* Make sure appliance file has allowed extension and exists and appliance widget is valid: */
-    return VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts) &&
-           QFile::exists(m_pFileSelector->path()) &&
-           m_pApplianceWidget->isValid();
+    return    VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
+           && QFile::exists(m_pFileSelector->path())
+           && m_pApplianceWidget->isValid();
 }
 
 bool UIWizardImportAppPageExpert::validatePage()

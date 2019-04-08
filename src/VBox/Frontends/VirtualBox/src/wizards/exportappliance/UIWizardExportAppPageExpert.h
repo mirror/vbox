@@ -52,7 +52,7 @@ class UIWizardExportAppPageExpert : public UIWizardPage,
 
 public:
 
-    /** Constructs expert basic page.
+    /** Constructs expert page.
       * @param  selectedVMNames  Brings the list of selected VM names. */
     UIWizardExportAppPageExpert(const QStringList &selectedVMNames, bool fExportToOCIByDefault);
 

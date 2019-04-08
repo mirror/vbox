@@ -24,8 +24,8 @@
 /* GUI includes: */
 #include "QIDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "UIWizardPage.h"
 #include "UIWizardImportAppDefs.h"
+#include "UIWizardPage.h"
 
 /* Forward declarations: */
 class QLabel;
@@ -34,23 +34,22 @@ class QDialogButtonBox;
 class QIRichTextLabel;
 class CCertificate;
 
-
-/** 2nd page of the Import Appliance wizard (base part): */
+/** UIWizardPageBase extension for 2nd page of the Import Appliance wizard. */
 class UIWizardImportAppPage2 : public UIWizardPageBase
 {
 protected:
 
-    /* Constructor: */
+    /** Constructs 2nd page base. */
     UIWizardImportAppPage2();
 
-    /* Stuff for 'applianceWidget' field: */
+    /** Returns appliance widget instance. */
     ImportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
 
-    /* Widgets: */
+    /** Holds the appliance widget instance. */
     ImportAppliancePointer m_pApplianceWidget;
 };
 
-/** 2nd page of the Import Appliance wizard (basic extension): */
+/** UIWizardPage extension for 2nd page of the Import Appliance wizard, extends UIWizardImportAppPage2 as well. */
 class UIWizardImportAppPageBasic2 : public UIWizardPage, public UIWizardImportAppPage2
 {
     Q_OBJECT;
@@ -58,29 +57,37 @@ class UIWizardImportAppPageBasic2 : public UIWizardPage, public UIWizardImportAp
 
 public:
 
-    /* Constructor: */
+    /** Constructs 2nd basic page.
+      * @param  strFileName  Brings appliance file name. */
     UIWizardImportAppPageBasic2(const QString &strFileName);
 
 private:
 
-    /* Translate stuff: */
-    void retranslateUi();
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */;
 
-    /* Prepare stuff: */
-    void initializePage();
-    void cleanupPage();
+    /** Performs page initialization. */
+    virtual void initializePage() /* override */;
+    /** Performs page cleanup. */
+    virtual void cleanupPage() /* override */;
 
-    /* Validation stuff: */
-    bool validatePage();
+    /** Performs page validation. */
+    virtual bool validatePage() /* override */;
 
-    /* Widgets: */
+    /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;
-    QLabel *m_pCertLabel;       /**< Signature/certificate info label. */
+
+    /** Holds the signature/certificate info label instance. */
+    QLabel *m_pCertLabel;
+
+    /** Holds the certificate text template type. */
     enum {
         kCertText_Uninitialized = 0, kCertText_Unsigned,
         kCertText_IssuedTrusted,     kCertText_IssuedExpired,     kCertText_IssuedUnverified,
         kCertText_SelfSignedTrusted, kCertText_SelfSignedExpired, kCertText_SelfSignedUnverified
     } m_enmCertText;
+
+    /** Holds the "signed by" information. */
     QString m_strSignedBy;
 };
 
@@ -93,7 +100,7 @@ class UIApplianceUnverifiedCertificateViewer : public QIWithRetranslateUI<QIDial
 public:
 
     /** Constructs appliance @a certificate viewer for passed @a pParent. */
-    UIApplianceUnverifiedCertificateViewer(QWidget *pParent, const CCertificate &certificate);
+    UIApplianceUnverifiedCertificateViewer(QWidget *pParent, const CCertificate &comCertificate);
 
 protected:
 
@@ -106,10 +113,10 @@ protected:
 private:
 
     /** Holds the certificate reference. */
-    const CCertificate &m_certificate;
+    const CCertificate &m_comCertificate;
 
     /** Holds the text-label instance. */
-    QLabel *m_pTextLabel;
+    QLabel       *m_pTextLabel;
     /** Holds the text-browser instance. */
     QTextBrowser *m_pTextBrowser;
 };

@@ -15,38 +15,60 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes: */
+/* Qt includes: */
 #include <QFileInfo>
 #include <QVBoxLayout>
 
-/* Local includes: */
-#include "UIWizardImportAppPageBasic1.h"
-#include "UIWizardImportAppPageBasic2.h"
-#include "UIWizardImportApp.h"
+/* GUI includes: */
+#include "QIRichTextLabel.h"
 #include "VBoxGlobal.h"
 #include "UIEmptyFilePathSelector.h"
-#include "QIRichTextLabel.h"
+#include "UIWizardImportApp.h"
+#include "UIWizardImportAppPageBasic1.h"
+#include "UIWizardImportAppPageBasic2.h"
 
+
+/*********************************************************************************************************************************
+*   Class UIWizardImportAppPage1 implementation.                                                                                 *
+*********************************************************************************************************************************/
 
 UIWizardImportAppPage1::UIWizardImportAppPage1()
 {
 }
 
+
+/*********************************************************************************************************************************
+*   Class UIWizardImportAppPageBasic1 implementation.                                                                            *
+*********************************************************************************************************************************/
+
 UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
 {
-    /* Create widgets: */
+    /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    if (pMainLayout)
     {
+        /* Create label: */
         m_pLabel = new QIRichTextLabel(this);
+        if (m_pLabel)
+        {
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pLabel);
+        }
+
+        /* Create file-path selector: */
         m_pFileSelector = new UIEmptyFilePathSelector(this);
+        if (m_pFileSelector)
         {
             m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
             m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
             m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
             m_pFileSelector->setEditable(true);
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pFileSelector);
         }
-        pMainLayout->addWidget(m_pLabel);
-        pMainLayout->addWidget(m_pFileSelector);
+
+        /* Add vertical stretch finally: */
         pMainLayout->addStretch();
     }
 
@@ -70,15 +92,14 @@ void UIWizardImportAppPageBasic1::retranslateUi()
 
 void UIWizardImportAppPageBasic1::initializePage()
 {
-    /* Translate page: */
     retranslateUi();
 }
 
 bool UIWizardImportAppPageBasic1::isComplete() const
 {
     /* Make sure appliance file has allowed extension and exists: */
-    return VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts) &&
-           QFile::exists(m_pFileSelector->path());
+    return    VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
+           && QFile::exists(m_pFileSelector->path());
 }
 
 bool UIWizardImportAppPageBasic1::validatePage()
@@ -100,4 +121,3 @@ bool UIWizardImportAppPageBasic1::validatePage()
     /* If we have a valid ovf proceed to the appliance settings page: */
     return pImportApplianceWidget->isValid();
 }
-

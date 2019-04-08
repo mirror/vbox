@@ -21,11 +21,11 @@
 # pragma once
 #endif
 
-/* Global includes: */
+/* Qt includes: */
 #include <QMetaType>
 #include <QPointer>
 
-/* Local includes: */
+/* GUI includes: */
 #include "UIApplianceImportEditorWidget.h"
 
 /* Typedefs: */
@@ -33,4 +33,3 @@ typedef QPointer<UIApplianceImportEditorWidget> ImportAppliancePointer;
 Q_DECLARE_METATYPE(ImportAppliancePointer);
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppDefs_h */
-
