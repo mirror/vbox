@@ -93,7 +93,7 @@ enum eProcessStatus
 /** Only delete the content of the directory, omit the directory it self. */
 #define DIRREMOVEREC_FLAG_CONTENT_ONLY         RT_BIT(2)
 /** Mask of valid flags. */
-#define DIRREMOVEREC_FLAG_VALID_MASK           UINT32_C(0x00000003)
+#define DIRREMOVEREC_FLAG_VALID_MASK           UINT32_C(0x00000007)
 /** @}   */
 
 /** @name EXECUTEPROCESSFLAG_XXX - Guest process creation flags.
