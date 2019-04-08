@@ -29,6 +29,8 @@
 
 
 UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileName)
+    : m_pApplianceCnt(0)
+    , m_pSettingsCnt(0)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);

@@ -33,6 +33,7 @@
 *********************************************************************************************************************************/
 
 UIWizardImportAppPage1::UIWizardImportAppPage1()
+    : m_pFileSelector(0)
 {
 }
 
@@ -42,6 +43,7 @@ UIWizardImportAppPage1::UIWizardImportAppPage1()
 *********************************************************************************************************************************/
 
 UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
+    : m_pLabel(0)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
@@ -81,10 +83,12 @@ void UIWizardImportAppPageBasic1::retranslateUi()
     /* Translate page: */
     setTitle(UIWizardImportApp::tr("Appliance to import"));
 
-    /* Translate widgets: */
+    /* Translate label: */
     m_pLabel->setText(UIWizardImportApp::tr("<p>VirtualBox currently supports importing appliances "
                                             "saved in the Open Virtualization Format (OVF). "
                                             "To continue, select the file to import below.</p>"));
+
+    /* Translate file selector: */
     m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
     m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
     m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));

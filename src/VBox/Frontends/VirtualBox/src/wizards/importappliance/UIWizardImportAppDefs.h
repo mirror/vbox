@@ -28,7 +28,7 @@
 /* GUI includes: */
 #include "UIApplianceImportEditorWidget.h"
 
-/* Typedefs: */
+/** Safe pointer to import appliance editor widget. */
 typedef QPointer<UIApplianceImportEditorWidget> ImportAppliancePointer;
 Q_DECLARE_METATYPE(ImportAppliancePointer);
 
