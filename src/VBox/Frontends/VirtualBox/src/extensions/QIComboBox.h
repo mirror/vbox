@@ -86,6 +86,8 @@ public:
     /** Returns the index of the current item in the combo-box. */
     int currentIndex() const;
 
+    /** Adds the @a strText and userData (stored in the Qt::UserRole) into the combo-box. */
+    void addItem(const QString &strText, const QVariant &userData = QVariant()) const;
     /** Inserts the @a strText and userData (stored in the Qt::UserRole) into the combo-box at the given @a iIndex. */
     void insertItem(int iIndex, const QString &strText, const QVariant &userData = QVariant()) const;
     /** Removes the item from the combo-box at the given @a iIndex. */

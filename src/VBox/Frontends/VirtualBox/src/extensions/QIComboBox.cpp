@@ -208,6 +208,13 @@ int QIComboBox::currentIndex() const
     return m_pComboBox->currentIndex();
 }
 
+void QIComboBox::addItem(const QString &strText, const QVariant &userData /* = QVariant() */) const
+{
+    /* Redirect to combo-box: */
+    AssertPtrReturnVoid(m_pComboBox);
+    return m_pComboBox->addItem(strText, userData);
+}
+
 void QIComboBox::insertItem(int iIndex, const QString &strText, const QVariant &userData /* = QVariant() */) const
 {
     /* Redirect to combo-box: */
