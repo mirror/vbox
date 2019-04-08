@@ -1022,12 +1022,12 @@ int GuestSession::i_directoryUnregister(GuestDirectory *pDirectory)
     return rc;
 }
 
-int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t uFlags, int *prcGuest)
+int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t fFlags, int *prcGuest)
 {
-    AssertReturn(!(uFlags & ~DIRREMOVEREC_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~DIRREMOVEREC_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertPtrReturn(prcGuest, VERR_INVALID_POINTER);
 
-    LogFlowThisFunc(("strPath=%s, uFlags=0x%x\n", strPath.c_str(), uFlags));
+    LogFlowThisFunc(("strPath=%s, uFlags=0x%x\n", strPath.c_str(), fFlags));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1042,7 +1042,7 @@ int GuestSession::i_directoryRemove(const Utf8Str &strPath, uint32_t uFlags, int
     HGCMSvcSetU32(&paParms[i++], pEvent->ContextID());
     HGCMSvcSetPv(&paParms[i++], (void*)strPath.c_str(),
                             (ULONG)strPath.length() + 1);
-    HGCMSvcSetU32(&paParms[i++], uFlags);
+    HGCMSvcSetU32(&paParms[i++], fFlags);
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -3464,10 +3464,10 @@ HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
     LogFlowThisFuncEnter();
 
     /* No flags; only remove the directory when empty. */
-    uint32_t uFlags = 0;
+    uint32_t fFlags = DIRREMOVEREC_FLAG_NONE;
 
     int rcGuest;
-    int vrc = i_directoryRemove(aPath, uFlags, &rcGuest);
+    int vrc = i_directoryRemove(aPath, fFlags, &rcGuest);
     if (RT_FAILURE(vrc))
     {
         switch (vrc)
