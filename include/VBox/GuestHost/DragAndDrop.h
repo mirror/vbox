@@ -221,8 +221,6 @@ protected:
     RTCString m_strSrcPathAbs;
     /** Absolute path (base) for the target. */
     RTCString m_strTgtPathAbs;
-    /** Whether the object is in "opened" state. */
-    bool      m_fIsOpen;
 
     /** Union containing data depending on the object's type. */
     union
