@@ -22,11 +22,22 @@
 #endif
 
 /* GUI includes: */
+#include "UIWizardImportAppDefs.h"
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
+class QLabel;
+class QStackedLayout;
+class QIComboBox;
 class QIRichTextLabel;
 class UIEmptyFilePathSelector;
+
+/** Source type converter namespace. */
+namespace ImportSourceTypeConverter
+{
+    /** Converts QString <= ImportSourceType. */
+    QString toString(ImportSourceType enmType);
+}
 
 /** UIWizardPageBase extension for 1st page of the Import Appliance wizard. */
 class UIWizardImportAppPage1 : public UIWizardPageBase
@@ -35,6 +46,16 @@ protected:
 
     /** Constructs 1st page base. */
     UIWizardImportAppPage1();
+
+    /** Holds the source type label instance. */
+    QLabel     *m_pSourceLabel;
+    /** Holds the source type selector instance. */
+    QIComboBox *m_pSourceSelector;
+
+    /** Holds the stacked layout instance. */
+    QStackedLayout              *m_pStackedLayout;
+    /** Holds the stacked layout widget indexes map. */
+    QMap<ImportSourceType, int>  m_stackedLayoutIndexMap;
 
     /** Holds the file selector instance. */
     UIEmptyFilePathSelector *m_pFileSelector;
@@ -49,6 +70,11 @@ public:
 
     /** Constructs 1st basic page. */
     UIWizardImportAppPageBasic1();
+
+private slots:
+
+    /** Handles change of import source to one with specified @a iIndex. */
+    void sltHandleSourceChange(int iIndex);
 
 private:
 

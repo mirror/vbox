@@ -32,4 +32,13 @@
 typedef QPointer<UIApplianceImportEditorWidget> ImportAppliancePointer;
 Q_DECLARE_METATYPE(ImportAppliancePointer);
 
+/** Import source types. */
+enum ImportSourceType
+{
+    ImportSourceType_Invalid,
+    ImportSourceType_Local,
+    ImportSourceType_Cloud
+};
+Q_DECLARE_METATYPE(ImportSourceType);
+
 #endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppDefs_h */

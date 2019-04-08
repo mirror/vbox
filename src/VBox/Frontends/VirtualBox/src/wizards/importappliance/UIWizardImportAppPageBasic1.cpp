@@ -17,9 +17,12 @@
 
 /* Qt includes: */
 #include <QFileInfo>
+#include <QLabel>
+#include <QStackedLayout>
 #include <QVBoxLayout>
 
 /* GUI includes: */
+#include "QIComboBox.h"
 #include "QIRichTextLabel.h"
 #include "VBoxGlobal.h"
 #include "UIEmptyFilePathSelector.h"
@@ -29,11 +32,30 @@
 
 
 /*********************************************************************************************************************************
+*   Namespace ImportSourceTypeConverter implementation.                                                                          *
+*********************************************************************************************************************************/
+
+QString ImportSourceTypeConverter::toString(ImportSourceType enmType)
+{
+    switch (enmType)
+    {
+        case ImportSourceType_Local: return QApplication::translate("UIWizardImportApp", "Local File System");
+        case ImportSourceType_Cloud: return QApplication::translate("UIWizardImportApp", "Cloud Content Provider");
+        default: break;
+    }
+    return QString();
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIWizardImportAppPage1 implementation.                                                                                 *
 *********************************************************************************************************************************/
 
 UIWizardImportAppPage1::UIWizardImportAppPage1()
-    : m_pFileSelector(0)
+    : m_pSourceLabel(0)
+    , m_pSourceSelector(0)
+    , m_pStackedLayout(0)
+    , m_pFileSelector(0)
 {
 }
 
@@ -57,17 +79,98 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
             pMainLayout->addWidget(m_pLabel);
         }
 
-        /* Create file-path selector: */
-        m_pFileSelector = new UIEmptyFilePathSelector(this);
-        if (m_pFileSelector)
+        /* Create source selector layout: */
+        QHBoxLayout *pSourceSelectorLayout = new QHBoxLayout;
+        if (pSourceSelectorLayout)
         {
-            m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
-            m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
-            m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
-            m_pFileSelector->setEditable(true);
+            /* Create source label: */
+            m_pSourceLabel = new QLabel(this);
+            if (m_pSourceLabel)
+            {
+                m_pSourceLabel->hide();
+                m_pSourceLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
+                m_pSourceLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+
+                /* Add into layout: */
+                pSourceSelectorLayout->addWidget(m_pSourceLabel);
+            }
+
+            /* Create source selector: */
+            m_pSourceSelector = new QIComboBox(this);
+            if (m_pSourceSelector)
+            {
+                m_pSourceLabel->setBuddy(m_pSourceSelector);
+                m_pSourceSelector->hide();
+                m_pSourceSelector->addItem(QString(), QVariant::fromValue(ImportSourceType_Local));
+                m_pSourceSelector->addItem(QString(), QVariant::fromValue(ImportSourceType_Cloud));
+                connect(m_pSourceSelector, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
+                        this, static_cast<void(UIWizardImportAppPageBasic1::*)(int)>(&UIWizardImportAppPageBasic1::sltHandleSourceChange));
+
+                /* Add into layout: */
+                pSourceSelectorLayout->addWidget(m_pSourceSelector);
+            }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pFileSelector);
+            pMainLayout->addLayout(pSourceSelectorLayout);
+        }
+
+        /* Create stacked layout: */
+        m_pStackedLayout = new QStackedLayout;
+        if (m_pStackedLayout)
+        {
+            /* Create local container: */
+            QWidget *pLocalContainer = new QWidget(this);
+            if (pLocalContainer)
+            {
+                /* Create local container layout: */
+                QVBoxLayout *pLocalContainerLayout = new QVBoxLayout(pLocalContainer);
+                if (pLocalContainerLayout)
+                {
+                    pLocalContainerLayout->setContentsMargins(0, 0, 0, 0);
+                    pLocalContainerLayout->setSpacing(0);
+
+                    /* Create file-path selector: */
+                    m_pFileSelector = new UIEmptyFilePathSelector(this);
+                    if (m_pFileSelector)
+                    {
+                        m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
+                        m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
+                        m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
+                        m_pFileSelector->setEditable(true);
+
+                        /* Add into layout: */
+                        pLocalContainerLayout->addWidget(m_pFileSelector);
+                    }
+
+                    /* Add stretch: */
+                    pLocalContainerLayout->addStretch();
+                }
+
+                /* Add into layout: */
+                m_stackedLayoutIndexMap[ImportSourceType_Local] = m_pStackedLayout->addWidget(pLocalContainer);
+            }
+
+            /* Create cloud container: */
+            QWidget *pCloudContainer = new QWidget(this);
+            if (pCloudContainer)
+            {
+                /* Create cloud container layout: */
+                QVBoxLayout *pCloudContainerLayout = new QVBoxLayout(pCloudContainer);
+                if (pCloudContainerLayout)
+                {
+                    pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
+                    pCloudContainerLayout->setSpacing(0);
+
+                    /* Add stretch: */
+                    pCloudContainerLayout->addStretch();
+                }
+
+                /* Add into layout: */
+                m_stackedLayoutIndexMap[ImportSourceType_Cloud] = m_pStackedLayout->addWidget(pCloudContainer);
+            }
+
+            /* Add into layout: */
+            pMainLayout->addLayout(m_pStackedLayout);
         }
 
         /* Add vertical stretch finally: */
@@ -76,6 +179,11 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
 
     /* Setup connections: */
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardImportAppPageBasic1::completeChanged);
+}
+
+void UIWizardImportAppPageBasic1::sltHandleSourceChange(int iIndex)
+{
+    m_pStackedLayout->setCurrentIndex(m_stackedLayoutIndexMap.value(m_pSourceSelector->itemData(iIndex).value<ImportSourceType>()));
 }
 
 void UIWizardImportAppPageBasic1::retranslateUi()
@@ -87,6 +195,11 @@ void UIWizardImportAppPageBasic1::retranslateUi()
     m_pLabel->setText(UIWizardImportApp::tr("<p>VirtualBox currently supports importing appliances "
                                             "saved in the Open Virtualization Format (OVF). "
                                             "To continue, select the file to import below.</p>"));
+
+    /* Translate source selector: */
+    m_pSourceLabel->setText(tr("Source:"));
+    for (int i = 0; i < m_pSourceSelector->count(); ++i)
+        m_pSourceSelector->setItemText(i, ImportSourceTypeConverter::toString(m_pSourceSelector->itemData(i).value<ImportSourceType>()));
 
     /* Translate file selector: */
     m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
