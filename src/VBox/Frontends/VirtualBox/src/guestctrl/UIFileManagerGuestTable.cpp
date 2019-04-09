@@ -118,7 +118,7 @@ void UIGuestDirectoryDiskUsageComputer::directoryStatisticsRecursive(const QStri
     if (fileInfo.GetType() != KFsObjType_Directory)
         return;
     /* Open the directory to start reading its content: */
-    QVector<KDirectoryOpenFlag> flag(KDirectoryOpenFlag_None);
+    QVector<KDirectoryOpenFlag> flag(1, KDirectoryOpenFlag_None);
     CGuestDirectory directory = m_comGuestSession.DirectoryOpen(path, /*aFilter*/ "", flag);
     if (!m_comGuestSession.isOk())
         return;
@@ -291,7 +291,7 @@ bool UIFileManagerGuestTable::renameItem(UICustomFileSystemItem *item, QString n
     if (!item || item->isUpDirectory() || newBaseName.isEmpty())
         return false;
     QString newPath = UIPathOperations::constructNewItemPath(item->path(), newBaseName);
-    QVector<KFsObjRenameFlag> aFlags(KFsObjRenameFlag_Replace);
+    QVector<KFsObjRenameFlag> aFlags(1, KFsObjRenameFlag_Replace);
 
     m_comGuestSession.FsObjRename(item->path(), newPath, aFlags);
     if (!m_comGuestSession.isOk())
@@ -307,7 +307,7 @@ bool UIFileManagerGuestTable::renameItem(UICustomFileSystemItem *item, QString n
 bool UIFileManagerGuestTable::createDirectory(const QString &path, const QString &directoryName)
 {
     QString newDirectoryPath = UIPathOperations::mergePaths(path, directoryName);
-    QVector<KDirectoryCreateFlag> flags(KDirectoryCreateFlag_None);
+    QVector<KDirectoryCreateFlag> flags(1, KDirectoryCreateFlag_None);
 
     m_comGuestSession.DirectoryCreate(newDirectoryPath, 0/*aMode*/, flags);
 
@@ -673,17 +673,7 @@ void UIFileManagerGuestTable::setPasteActionEnabled(bool fEnabled)
 
 void UIFileManagerGuestTable::pasteCutCopiedObjects()
 {
-    /** Wait until we have a API function that would take multiple source objects
-     *  and return a single IProgress instance: */
-    // QVector<KFileCopyFlag> fileCopyFlags;
-    // QVector<KDirectoryCopyFlag> directoryCopyFlags;
-
-    // foreach (const QString &strPath, m_copyCutBuffer)
-    // {
-
-    // }
 }
-
 
 void UIFileManagerGuestTable::prepareActionConnections()
 {
