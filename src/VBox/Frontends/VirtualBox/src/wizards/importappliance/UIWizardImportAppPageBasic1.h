@@ -25,6 +25,12 @@
 #include "UIWizardImportAppDefs.h"
 #include "UIWizardPage.h"
 
+/* COM includes: */
+#include "COMEnums.h"
+#include "CCloudProfile.h"
+#include "CCloudProvider.h"
+#include "CCloudProviderManager.h"
+
 /* Forward declarations: */
 class QLabel;
 class QStackedLayout;
@@ -32,12 +38,14 @@ class QIComboBox;
 class QIRichTextLabel;
 class UIEmptyFilePathSelector;
 
-/** Source type converter namespace. */
-namespace ImportSourceTypeConverter
+/** Source combo data fields. */
+enum
 {
-    /** Converts QString <= ImportSourceType. */
-    QString toString(ImportSourceType enmType);
-}
+    SourceData_ID              = Qt::UserRole + 1,
+    SourceData_Name            = Qt::UserRole + 2,
+    SourceData_ShortName       = Qt::UserRole + 3,
+    SourceData_IsItCloudFormat = Qt::UserRole + 4
+};
 
 /** UIWizardPageBase extension for 1st page of the Import Appliance wizard. */
 class UIWizardImportAppPage1 : public UIWizardPageBase
@@ -47,15 +55,39 @@ protected:
     /** Constructs 1st page base. */
     UIWizardImportAppPage1();
 
+    /** Populates sources. */
+    void populateSources();
+
+    /** Updates page appearance. */
+    virtual void updatePageAppearance();
+
+    /** Updates source combo tool-tips. */
+    void updateSourceComboToolTip();
+
+    /** Defines @a strSource. */
+    void setSource(const QString &strSource);
+    /** Returns source. */
+    QString source() const;
+    /** Returns whether source under certain @a iIndex is cloud one. */
+    bool isSourceCloudOne(int iIndex = -1) const;
+
+    /** Holds whether default source should be Import from OCI. */
+    bool  m_fImportFromOCIByDefault;
+
+    /** Holds the Cloud Provider Manager reference. */
+    CCloudProviderManager  m_comCloudProviderManager;
+    /** Holds the Cloud Provider object reference. */
+    CCloudProvider         m_comCloudProvider;
+    /** Holds the Cloud Profile object reference. */
+    CCloudProfile          m_comCloudProfile;
+
     /** Holds the source type label instance. */
     QLabel     *m_pSourceLabel;
     /** Holds the source type combo-box instance. */
     QIComboBox *m_pSourceComboBox;
 
     /** Holds the stacked layout instance. */
-    QStackedLayout              *m_pStackedLayout;
-    /** Holds the stacked layout widget indexes map. */
-    QMap<ImportSourceType, int>  m_stackedLayoutIndexMap;
+    QStackedLayout *m_pStackedLayout;
 
     /** Holds the file selector instance. */
     UIEmptyFilePathSelector *m_pFileSelector;
@@ -65,6 +97,8 @@ protected:
 class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAppPage1
 {
     Q_OBJECT;
+    Q_PROPERTY(QString source READ source WRITE setSource);
+    Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
 
 public:
 
@@ -87,8 +121,8 @@ protected:
 
 private slots:
 
-    /** Handles change of import source to one with specified @a iIndex. */
-    void sltHandleSourceChange(int iIndex);
+    /** Handles import source change. */
+    void sltHandleSourceChange();
 
 private:
 

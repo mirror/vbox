@@ -26,25 +26,10 @@
 #include "QIRichTextLabel.h"
 #include "VBoxGlobal.h"
 #include "UIEmptyFilePathSelector.h"
+#include "UIMessageCenter.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageBasic1.h"
 #include "UIWizardImportAppPageBasic2.h"
-
-
-/*********************************************************************************************************************************
-*   Namespace ImportSourceTypeConverter implementation.                                                                          *
-*********************************************************************************************************************************/
-
-QString ImportSourceTypeConverter::toString(ImportSourceType enmType)
-{
-    switch (enmType)
-    {
-        case ImportSourceType_Local: return QApplication::translate("UIWizardImportApp", "Local File System");
-        case ImportSourceType_Cloud: return QApplication::translate("UIWizardImportApp", "Cloud Content Provider");
-        default: break;
-    }
-    return QString();
-}
 
 
 /*********************************************************************************************************************************
@@ -57,6 +42,91 @@ UIWizardImportAppPage1::UIWizardImportAppPage1()
     , m_pStackedLayout(0)
     , m_pFileSelector(0)
 {
+}
+
+void UIWizardImportAppPage1::populateSources()
+{
+    AssertReturnVoid(m_pSourceComboBox->count() == 0);
+
+    /* Compose hardcoded sources list: */
+    QStringList sources;
+    sources << "local";
+    /* Add that list to combo: */
+    foreach (const QString &strShortName, sources)
+    {
+        /* Compose empty item, fill it's data: */
+        m_pSourceComboBox->addItem(QString());
+        m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, strShortName, SourceData_ShortName);
+    }
+
+    /* Initialize Cloud Provider Manager: */
+    CVirtualBox comVBox = vboxGlobal().virtualBox();
+    m_comCloudProviderManager = comVBox.GetCloudProviderManager();
+    /* Show error message if necessary: */
+    if (!comVBox.isOk())
+        msgCenter().cannotAcquireCloudProviderManager(comVBox);
+    else
+    {
+        /* Acquire existing providers: */
+        const QVector<CCloudProvider> providers = m_comCloudProviderManager.GetProviders();
+        /* Show error message if necessary: */
+        if (!m_comCloudProviderManager.isOk())
+            msgCenter().cannotAcquireCloudProviderManagerParameter(m_comCloudProviderManager);
+        else
+        {
+            /* Iterate through existing providers: */
+            foreach (const CCloudProvider &comProvider, providers)
+            {
+                /* Skip if we have nothing to populate (file missing?): */
+                if (comProvider.isNull())
+                    continue;
+
+                /* Compose empty item, fill it's data: */
+                m_pSourceComboBox->addItem(QString());
+                m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetId(),        SourceData_ID);
+                m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetName(),      SourceData_Name);
+                m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetShortName(), SourceData_ShortName);
+                m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, true,                       SourceData_IsItCloudFormat);
+            }
+        }
+    }
+
+    /* Set default: */
+    setSource("local");
+}
+
+void UIWizardImportAppPage1::updatePageAppearance()
+{
+    /* Update page appearance according to chosen source: */
+    m_pStackedLayout->setCurrentIndex((int)isSourceCloudOne());
+}
+
+void UIWizardImportAppPage1::updateSourceComboToolTip()
+{
+    const int iCurrentIndex = m_pSourceComboBox->currentIndex();
+    const QString strCurrentToolTip = m_pSourceComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
+    AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
+    m_pSourceComboBox->setToolTip(strCurrentToolTip);
+}
+
+void UIWizardImportAppPage1::setSource(const QString &strSource)
+{
+    const int iIndex = m_pSourceComboBox->findData(strSource, SourceData_ShortName);
+    AssertMsg(iIndex != -1, ("Data not found!"));
+    m_pSourceComboBox->setCurrentIndex(iIndex);
+}
+
+QString UIWizardImportAppPage1::source() const
+{
+    const int iIndex = m_pSourceComboBox->currentIndex();
+    return m_pSourceComboBox->itemData(iIndex, SourceData_ShortName).toString();
+}
+
+bool UIWizardImportAppPage1::isSourceCloudOne(int iIndex /* = -1 */) const
+{
+    if (iIndex == -1)
+        iIndex = m_pSourceComboBox->currentIndex();
+    return m_pSourceComboBox->itemData(iIndex, SourceData_IsItCloudFormat).toBool();
 }
 
 
@@ -101,8 +171,6 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
             {
                 m_pSourceLabel->setBuddy(m_pSourceComboBox);
                 m_pSourceComboBox->hide();
-                m_pSourceComboBox->addItem(QString(), QVariant::fromValue(ImportSourceType_Local));
-                m_pSourceComboBox->addItem(QString(), QVariant::fromValue(ImportSourceType_Cloud));
                 connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
                         this, &UIWizardImportAppPageBasic1::sltHandleSourceChange);
 
@@ -147,7 +215,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
                 }
 
                 /* Add into layout: */
-                m_stackedLayoutIndexMap[ImportSourceType_Local] = m_pStackedLayout->addWidget(pLocalContainer);
+                m_pStackedLayout->addWidget(pLocalContainer);
             }
 
             /* Create cloud container: */
@@ -166,7 +234,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
                 }
 
                 /* Add into layout: */
-                m_stackedLayoutIndexMap[ImportSourceType_Cloud] = m_pStackedLayout->addWidget(pCloudContainer);
+                m_pStackedLayout->addWidget(pCloudContainer);
             }
 
             /* Add into layout: */
@@ -177,8 +245,15 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
         pMainLayout->addStretch();
     }
 
+    /* Populate sources: */
+    populateSources();
+
     /* Setup connections: */
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardImportAppPageBasic1::completeChanged);
+
+    /* Register fields: */
+    registerField("source", this, "source");
+    registerField("isSourceCloudOne", this, "isSourceCloudOne");
 }
 
 void UIWizardImportAppPageBasic1::retranslateUi()
@@ -193,15 +268,28 @@ void UIWizardImportAppPageBasic1::retranslateUi()
 
     /* Translate source label: */
     m_pSourceLabel->setText(tr("&Source:"));
+    /* Translate hardcoded values of Source combo-box: */
+    m_pSourceComboBox->setItemText(0, UIWizardImportApp::tr("Local File System"));
+    m_pSourceComboBox->setItemData(0, UIWizardImportApp::tr("Import from local file system."), Qt::ToolTipRole);
     /* Translate received values of Source combo-box.
      * We are enumerating starting from 0 for simplicity: */
     for (int i = 0; i < m_pSourceComboBox->count(); ++i)
-        m_pSourceComboBox->setItemText(i, ImportSourceTypeConverter::toString(m_pSourceComboBox->itemData(i).value<ImportSourceType>()));
+        if (isSourceCloudOne(i))
+        {
+            m_pSourceComboBox->setItemText(i, m_pSourceComboBox->itemData(i, SourceData_Name).toString());
+            m_pSourceComboBox->setItemData(i, UIWizardImportApp::tr("Import from cloud service provider."), Qt::ToolTipRole);
+        }
 
     /* Translate file selector: */
     m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
     m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
     m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
+
+    /* Update page appearance: */
+    updatePageAppearance();
+
+    /* Update tool-tips: */
+    updateSourceComboToolTip();
 }
 
 void UIWizardImportAppPageBasic1::initializePage()
@@ -237,7 +325,12 @@ bool UIWizardImportAppPageBasic1::validatePage()
     return pImportApplianceWidget->isValid();
 }
 
-void UIWizardImportAppPageBasic1::sltHandleSourceChange(int iIndex)
+void UIWizardImportAppPageBasic1::sltHandleSourceChange()
 {
-    m_pStackedLayout->setCurrentIndex(m_stackedLayoutIndexMap.value(m_pSourceComboBox->itemData(iIndex).value<ImportSourceType>()));
+    /* Update tool-tip: */
+    updateSourceComboToolTip();
+
+    /* Refresh required settings: */
+    updatePageAppearance();
+    emit completeChanged();
 }
