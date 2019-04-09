@@ -778,6 +778,16 @@ void UINetworkReplyPrivateThread::downloadMissingCertificates(RTCRSTORE hNewStor
     int rc;
 
     /*
+     * Must disable SSL certification verification here as we cannot use the
+     * SSL certificates before we've downloaded them.   We must also enable
+     * redirections in case the certificates moves around.
+     */
+    bool const     fSavedVerifyPeer   = RTHttpGetVerifyPeer(hHttp);
+    uint32_t const cSavedMaxRedirects = RTHttpGetFollowRedirects(hHttp);
+    RTHttpSetVerifyPeer(hHttp, false);
+    RTHttpSetFollowRedirects(hHttp, 8);
+
+    /*
      * Try get the roots.zip from symantec (or virtualbox.org) first.
      */
     for (uint32_t iUrl = 0; iUrl < RT_ELEMENTS(s_apszRootsZipUrls); iUrl++)
@@ -809,6 +819,8 @@ void UINetworkReplyPrivateThread::downloadMissingCertificates(RTCRSTORE hNewStor
                                 if (areAllCertsFound(pafNewFoundCerts))
                                 {
                                     RTHttpFreeResponse(pvRootsZip);
+                                    RTHttpSetVerifyPeer(hHttp, fSavedVerifyPeer);
+                                    RTHttpSetFollowRedirects(hHttp, cSavedMaxRedirects);
                                     return;
                                 }
                             }
@@ -844,6 +856,9 @@ void UINetworkReplyPrivateThread::downloadMissingCertificates(RTCRSTORE hNewStor
                     }
                 }
         }
+
+    RTHttpSetVerifyPeer(hHttp, fSavedVerifyPeer);
+    RTHttpSetFollowRedirects(hHttp, cSavedMaxRedirects);
 }
 
 /* static */

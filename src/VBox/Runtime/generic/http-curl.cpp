@@ -187,6 +187,8 @@ typedef struct RTHTTPINTERNAL
     /** Maximum number of redirects to follow.
      * Zero if not automatically following (default). */
     uint32_t            cMaxRedirects;
+    /** Whether to check if Peer lies about his SSL certificate. */
+    bool                fVerifyPeer;
     /** @} */
 
     /** Abort the current HTTP request if true. */
@@ -383,6 +385,7 @@ RTR3DECL(int) RTHttpCreate(PRTHTTP phHttp)
                 pThis->fHaveUserAgentHeader     = false;
                 pThis->fUseSystemProxySettings  = true;
                 pThis->cMaxRedirects            = 0; /* no automatic redir following */
+                pThis->fVerifyPeer              = true;
                 pThis->BodyOutput.pHttp         = pThis;
                 pThis->HeadersOutput.pHttp      = pThis;
                 pThis->uDownloadHttpStatus      = UINT32_MAX;
@@ -416,6 +419,8 @@ RTR3DECL(int) RTHttpReset(RTHTTP hHttp, uint32_t fFlags)
 
     /* This resets options, but keeps open connections, cookies, etc. */
     curl_easy_reset(pThis->pCurl);
+
+    /** @todo check if CURLOPT_SSL_VERIFYPEER is affected by curl_easy_reset. */
 
     if (!(fFlags & RTHTTP_RESET_F_KEEP_HEADERS))
         rtHttpFreeHeaders(pThis);
@@ -522,6 +527,14 @@ RTR3DECL(int) RTHttpSetFollowRedirects(RTHTTP hHttp, uint32_t cMaxRedirects)
         pThis->cMaxRedirects = cMaxRedirects;
     }
     return VINF_SUCCESS;
+}
+
+
+RTR3DECL(uint32_t) RTHttpGetFollowRedirects(RTHTTP hHttp)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN_RC(pThis, 0);
+    return pThis->cMaxRedirects;
 }
 
 
@@ -2614,7 +2627,6 @@ RTR3DECL(int) RTHttpGatherCaCertsInStore(RTCRSTORE hStore, uint32_t fFlags, PRTE
     AssertReturn(cBefore != UINT32_MAX, VERR_INVALID_HANDLE);
     RT_NOREF_PV(fFlags);
 
-
     /*
      * Add the user store, quitely ignoring any errors.
      */
@@ -2670,6 +2682,32 @@ RTR3DECL(int) RTHttpGatherCaCertsInFile(const char *pszCaFile, uint32_t fFlags, 
         RTCrStoreRelease(hStore);
     }
     return rc;
+}
+
+
+RTR3DECL(bool) RTHttpGetVerifyPeer(RTHTTP hHttp)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN_RC(pThis, false);
+    return pThis->fVerifyPeer;
+}
+
+
+RTR3DECL(int) RTHttpSetVerifyPeer(RTHTTP hHttp, bool fVerify)
+{
+    PRTHTTPINTERNAL pThis = hHttp;
+    RTHTTP_VALID_RETURN(pThis);
+    AssertReturn(!pThis->fBusy, VERR_WRONG_ORDER);
+
+    if (pThis->fVerifyPeer != fVerify)
+    {
+        int rcCurl = curl_easy_setopt(pThis->pCurl, CURLOPT_SSL_VERIFYPEER, (long)fVerify);
+        AssertMsgReturn(rcCurl == CURLE_OK, ("CURLOPT_SSL_VERIFYPEER=%RTbool: %d (%#x)\n", fVerify, rcCurl, rcCurl),
+                        VERR_HTTP_CURL_ERROR);
+        pThis->fVerifyPeer = fVerify;
+    }
+
+    return VINF_SUCCESS;
 }
 
 
