@@ -59,6 +59,8 @@
 #include "biosint.h"
 #include "ebda.h"
 #include "ata.h"
+#include "pciutil.h"
+
 
 #if DEBUG_ATA
 #  define BX_DEBUG_ATA(...) BX_DEBUG(__VA_ARGS__)
@@ -377,6 +379,22 @@ void BIOSCALL ata_detect(void)
     uint8_t         hdcount, cdcount, device, type;
     uint8_t         buffer[0x0200];
     bio_dsk_t __far *bios_dsk;
+
+    /* If we have PCI support, look for an IDE controller (it has to be a PCI device)
+     * so that we can skip silly probing. If there's no PCI, assume IDE is present.
+     *
+     * Needs an internal PCI function because the Programming Interface byte can be
+     * almost anything, and we conly care about the base-class and sub-class code.
+     */
+#if VBOX_BIOS_CPU >= 80386
+    uint16_t        busdevfn;
+
+    busdevfn = pci_find_class_noif(0x0101);
+    if (busdevfn == 0xffff) {
+        BX_INFO("No PCI IDE controller, not probing IDE\n");
+        return;
+    }
+#endif
 
     bios_dsk = ebda_seg :> &EbdaData->bdisk;
 

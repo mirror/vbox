@@ -32,6 +32,7 @@ extern  void        pci_write_config_byte(uint8_t bus, uint8_t dev_fn, uint8_t r
 extern  void        pci_write_config_word(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint16_t val);
 /* Warning: pci_write_config_dword destroys the high bits of ECX. */
 extern  void        pci_write_config_dword(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint32_t val);
+extern  uint16_t    pci_find_class_noif(uint16_t dev_class);
 
 #endif /* !VBOX_INCLUDED_SRC_PC_BIOS_pciutil_h */
 

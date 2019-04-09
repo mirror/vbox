@@ -134,6 +134,27 @@ uint16_t pci_find_classcode(uint32_t dev_class)
 
 /**
  * Returns the bus/device/function of a PCI device with
+ * the given base and sub-class code, ignoring the programming interface
+ * code.
+ *
+ * @returns bus/device/fn in a 16-bit integer where
+ *          where the upper byte contains the bus number
+ *          and lower one the device and function number.
+ *          0xffff if no device was found.
+ * @param   dev_class   The PCI class code to search for.
+ */
+uint16_t pci_find_class_noif(uint16_t dev_class)
+{
+#if VBOX_BIOS_CPU >= 80386
+    /* Internal call, not an interrupt service! */
+    return pci16_find_device(dev_class, 0 /*index*/, 1 /*search class*/, 1 /*ignore prog if*/);
+#else
+    return UINT16_C(0xffff);
+#endif
+}
+
+/**
+ * Returns the bus/device/function of a PCI device with
  * the given vendor and device id.
  *
  * @returns bus/device/fn in one 16bit integer where

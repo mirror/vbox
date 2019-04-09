@@ -211,14 +211,16 @@ void PCIxx(select_reg)(uint16_t bus_dev_fn, uint16_t ofs)
 #define INDEX_DEV_FOUND     0xFFFF
 
 /* Find a specified PCI device, either by vendor+device ID or class.
- * If index is non-zero, the n-th device will be located.
+ * If index is non-zero, the n-th device will be located. When searching
+ * by class, the ignore_if flag only compares the base and sub-class code,
+ * ignoring the programming interface code.
  *
  * Note: This function is somewhat performance critical; since it may
  * generate a high number of port I/O accesses, it can take a significant
  * amount of time in cases where the caller is looking for a number of
  * non-present devices.
  */
-uint16_t PCIxx(find_device)(uint32_t search_item, uint16_t index, int search_class)
+uint16_t PCIxx(find_device)(uint32_t search_item, uint16_t index, int search_class, int ignore_if)
 {
     uint32_t    data;
     uint16_t    bus_dev_fn;
@@ -280,9 +282,12 @@ uint16_t PCIxx(find_device)(uint32_t search_item, uint16_t index, int search_cla
         data  = inpd(PCI_CFG_DATA);
         found = 0;
 
-        /* Only 3 bytes are compared for class searches. */
+        /* Only 3 or even just 2 bytes are compared for class searches. */
         if (search_class)
-            data >>= 8;
+            if (ignore_if)
+                data >>= 16;
+            else
+                data >>= 8;
 
 #if 0
         BX_DEBUG_PCI("PCI: Data is %08lX @ %02X:%%02X:%01X\n", data,
@@ -334,7 +339,7 @@ void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
             SET_AH(BAD_VENDOR_ID);
             SET_CF();
         } else {
-            device = PCIxx(find_device)(DX | (uint32_t)CX << 16, SI, 0);
+            device = PCIxx(find_device)(DX | (uint32_t)CX << 16, SI, 0, 0);
             if (device == BUSDEVFN_NOT_FOUND) {
                 SET_AH(DEVICE_NOT_FOUND);
                 SET_CF();
@@ -344,7 +349,7 @@ void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
         }
         break;
     case FIND_PCI_CLASS_CODE:
-        device = PCIxx(find_device)(ECX, SI, 1);
+        device = PCIxx(find_device)(ECX, SI, 1, 0);
         if (device == BUSDEVFN_NOT_FOUND) {
             SET_AH(DEVICE_NOT_FOUND);
             SET_CF();
