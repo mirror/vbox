@@ -250,6 +250,15 @@ QString QIComboBox::itemText(int iIndex) const
     return m_pComboBox->itemText(iIndex);
 }
 
+int QIComboBox::findData(const QVariant &data,
+                         int iRole /* = Qt::UserRole */,
+                         Qt::MatchFlags flags /* = static_cast<Qt::MatchFlags>(Qt::MatchExactly | Qt::MatchCaseSensitive) */) const
+{
+    /* Redirect to combo-box: */
+    AssertPtrReturn(m_pComboBox, -1);
+    return m_pComboBox->findData(data, iRole, flags);
+}
+
 void QIComboBox::setIconSize(const QSize &size) const
 {
     /* Redirect to combo-box: */

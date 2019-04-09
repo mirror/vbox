@@ -100,6 +100,11 @@ public:
     /** Returns the text for the item with the given @a iIndex. */
     QString itemText(int iIndex) const;
 
+    /** Returns the index of the item containing the given @a data for the given @a iRole; otherwise returns -1.
+      * @param  flags  Specifies how the items in the combobox are searched. */
+    int findData(const QVariant &data, int iRole = Qt::UserRole,
+                 Qt::MatchFlags flags = static_cast<Qt::MatchFlags>(Qt::MatchExactly | Qt::MatchCaseSensitive)) const;
+
 public slots:
 
     /** Defines the @a size of the icons shown in the combo-box. */
