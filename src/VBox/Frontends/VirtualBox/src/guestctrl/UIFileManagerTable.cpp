@@ -1301,10 +1301,10 @@ bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* overri
             {
                 if (m_pSearchLineEdit)
                 {
+                    m_pSearchLineEdit->clear();
                     m_pSearchLineEdit->show();
-                    QString strText = m_pSearchLineEdit->text();
-                    strText.append(pKeyEvent->text());
-                    m_pSearchLineEdit->setText(strText);
+                    m_pSearchLineEdit->setFocus();
+                    m_pSearchLineEdit->setText(pKeyEvent->text());
                 }
             }
             else if (pKeyEvent->key() == Qt::Key_Tab)
