@@ -50,7 +50,7 @@ size_t rtDirNativeGetStructSize(const char *pszPath)
 }
 
 
-int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDir, void *pvNativeRelative))
+int rtDirNativeOpen(PRTDIRINTERNAL pDir, uintptr_t hRelativeDir, void *pvNativeRelative))
 {
     RT_NOREF(hRelativeDir, pvNativeRelative);
 
@@ -61,6 +61,7 @@ int rtDirNativeOpen(PRTDIRINTERNAL pDir, char *pszPathBuf, uintptr_t hRelativeDi
      * call in rtDirOpenCommon(), so all we gota do is check that we don't overflow
      * it when adding the wildcard expression.
      */
+/** @todo the pszPathBuf argument was removed in order to support paths longer than RTPATH_MAX.  Rewrite this code. */
     size_t cbExpr;
     const char *pszExpr;
     if (pDir->enmFilter == RTDIRFILTER_WINNT)

@@ -526,8 +526,7 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
      * for querying extra information about the objects we list.
      * As a sideeffect we also validate the path here.
      */
-    char   szRealPath[RTPATH_MAX + 1];
-    int    rc;
+    char  *pszAbsPath;
     size_t cbFilter;                    /* includes '\0' (thus cb and not cch). */
     size_t cucFilter0;                  /* includes U+0. */
     bool   fDirSlash = false;
@@ -543,7 +542,7 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
         }
 
         cbFilter = cucFilter0 = 0;
-        rc = RTPathAbs(pszPath, szRealPath, sizeof(szRealPath) - 1);
+        pszAbsPath = RTPathAbsDup(pszPath);
     }
     else
     {
@@ -557,23 +556,17 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
             if (!pszTmp)
                 return VERR_NO_MEMORY;
             pszTmp[pszFilter - pszPath] = '\0';
-            rc = RTPathAbs(pszTmp, szRealPath, sizeof(szRealPath) - 1);
+            pszAbsPath = RTPathAbsDup(pszTmp);
             RTStrFree(pszTmp);
         }
         else
-            rc = RTPathReal(".", szRealPath, sizeof(szRealPath) - 1);
+            pszAbsPath = RTPathAbsDup(".");
         fDirSlash = true;
     }
-    if (RT_FAILURE(rc))
-        return rc;
+    if (!pszAbsPath)
+        return VERR_NO_MEMORY;
 
-    /* add trailing '/' if missing. */
-    size_t cchRealPath = strlen(szRealPath);
-    if (!RTPATH_IS_SEP(szRealPath[cchRealPath - 1]))
-    {
-        szRealPath[cchRealPath++] = RTPATH_SLASH;
-        szRealPath[cchRealPath] = '\0';
-    }
+
 
     /*
      * Allocate and initialize the directory handle.
@@ -581,14 +574,19 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
      * The posix definition of Data.d_name allows it to be < NAME_MAX + 1,
      * thus the horrible ugliness here. Solaris uses d_name[1] for instance.
      */
-    size_t cbDir = rtDirNativeGetStructSize(szRealPath);
-    size_t const cbAllocated = cbDir
-                             + cucFilter0 * sizeof(RTUNICP)
-                             + cbFilter
-                             + cchRealPath + 1 + 4;
+    size_t const cchAbsPath      = strlen(pszAbsPath);
+    size_t const cchAbsPathExtra = !RTPATH_IS_SEP(pszAbsPath[cchAbsPath - 1]) ? 1 : 0; /* add trailing '/' if missing */
+    size_t const cbDir           = rtDirNativeGetStructSize(pszAbsPath);
+    size_t const cbAllocated     = cbDir
+                                 + cucFilter0 * sizeof(RTUNICP)
+                                 + cbFilter
+                                 + cchAbsPath + cchAbsPathExtra + 1 + 4;
     PRTDIRINTERNAL pDir = (PRTDIRINTERNAL)RTMemAllocZ(cbAllocated);
     if (!pDir)
+    {
+        RTStrFree(pszAbsPath);
         return VERR_NO_MEMORY;
+    }
     uint8_t *pb = (uint8_t *)pDir + cbDir;
 
     /* initialize it */
@@ -597,8 +595,8 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
     if (cbFilter)
     {
         pDir->puszFilter = (PRTUNICP)pb;
-        rc = RTStrToUniEx(pszFilter, RTSTR_MAX, &pDir->puszFilter, cucFilter0, &pDir->cucFilter);
-        AssertRC(rc);
+        int rc2 = RTStrToUniEx(pszFilter, RTSTR_MAX, &pDir->puszFilter, cucFilter0, &pDir->cucFilter);
+        AssertRC(rc2);
         pb += cucFilter0 * sizeof(RTUNICP);
         pDir->pszFilter = (char *)memcpy(pb, pszFilter, cbFilter);
         pDir->cchFilter = cbFilter - 1;
@@ -628,9 +626,11 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
             pDir->pfnFilter = NULL;
             break;
     }
-    pDir->cchPath       = cchRealPath;
-    pDir->pszPath       = (char *)memcpy(pb, szRealPath, cchRealPath + 1);
-    Assert(pb - (uint8_t *)pDir + cchRealPath + 1 <= cbAllocated);
+    pDir->cchPath       = cchAbsPath + cchAbsPathExtra;
+    pDir->pszPath       = (char *)memcpy(pb, pszAbsPath, cchAbsPath);
+    pb[cchAbsPath]                   = RTPATH_SLASH;
+    pb[cchAbsPath + cchAbsPathExtra] = '\0';
+    Assert(pb - (uint8_t *)pDir + cchAbsPath + cchAbsPathExtra + 1 <= cbAllocated);
     pDir->pszName       = NULL;
     pDir->cchName       = 0;
     pDir->fFlags        = fFlags;
@@ -640,12 +640,12 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
     /*
      * Hand it over to the native part.
      */
-    rc = rtDirNativeOpen(pDir, szRealPath, hRelativeDir, pvNativeRelative);
+    int rc = rtDirNativeOpen(pDir, hRelativeDir, pvNativeRelative);
     if (RT_SUCCESS(rc))
         *phDir = pDir;
     else
         RTMemFree(pDir);
-
+    RTStrFree(pszAbsPath);
     return rc;
 }
 
