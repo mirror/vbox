@@ -142,8 +142,9 @@ private:
 *   Class UIWizardImportApp implementation.                                                                                      *
 *********************************************************************************************************************************/
 
-UIWizardImportApp::UIWizardImportApp(QWidget *pParent, const QString &strFileName)
+UIWizardImportApp::UIWizardImportApp(QWidget *pParent, bool fImportFromOCIByDefault, const QString &strFileName)
     : UIWizard(pParent, WizardType_ImportAppliance)
+    , m_fImportFromOCIByDefault(fImportFromOCIByDefault)
     , m_strFileName(strFileName)
 {
 #ifndef VBOX_WS_MAC
@@ -162,14 +163,14 @@ void UIWizardImportApp::prepare()
     {
         case WizardMode_Basic:
         {
-            if (m_strFileName.isEmpty())
-                setPage(Page1, new UIWizardImportAppPageBasic1);
+            if (m_fImportFromOCIByDefault || m_strFileName.isEmpty())
+                setPage(Page1, new UIWizardImportAppPageBasic1(m_fImportFromOCIByDefault));
             setPage(Page2, new UIWizardImportAppPageBasic2(m_strFileName));
             break;
         }
         case WizardMode_Expert:
         {
-            setPage(PageExpert, new UIWizardImportAppPageExpert(m_strFileName));
+            setPage(PageExpert, new UIWizardImportAppPageExpert(m_fImportFromOCIByDefault, m_strFileName));
             break;
         }
         default:

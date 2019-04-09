@@ -28,8 +28,9 @@
 #include "UIWizardImportAppPageExpert.h"
 
 
-UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(const QString &strFileName)
-    : m_pApplianceCnt(0)
+UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDefault, const QString &strFileName)
+    : UIWizardImportAppPage1(fImportFromOCIByDefault)
+    , m_pApplianceCnt(0)
     , m_pSettingsCnt(0)
 {
     /* Create main layout: */

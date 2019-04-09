@@ -36,8 +36,9 @@
 *   Class UIWizardImportAppPage1 implementation.                                                                                 *
 *********************************************************************************************************************************/
 
-UIWizardImportAppPage1::UIWizardImportAppPage1()
-    : m_pSourceLabel(0)
+UIWizardImportAppPage1::UIWizardImportAppPage1(bool fImportFromOCIByDefault)
+    : m_fImportFromOCIByDefault(fImportFromOCIByDefault)
+    , m_pSourceLabel(0)
     , m_pSourceComboBox(0)
     , m_pStackedLayout(0)
     , m_pFileSelector(0)
@@ -60,6 +61,7 @@ void UIWizardImportAppPage1::populateSources()
     }
 
     /* Initialize Cloud Provider Manager: */
+    bool fOCIPresent = false;
     CVirtualBox comVBox = vboxGlobal().virtualBox();
     m_comCloudProviderManager = comVBox.GetCloudProviderManager();
     /* Show error message if necessary: */
@@ -87,12 +89,17 @@ void UIWizardImportAppPage1::populateSources()
                 m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetName(),      SourceData_Name);
                 m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, comProvider.GetShortName(), SourceData_ShortName);
                 m_pSourceComboBox->setItemData(m_pSourceComboBox->count() - 1, true,                       SourceData_IsItCloudFormat);
+                if (m_pSourceComboBox->itemData(m_pSourceComboBox->count() - 1, SourceData_ShortName).toString() == "OCI")
+                    fOCIPresent = true;
             }
         }
     }
 
     /* Set default: */
-    setSource("local");
+    if (m_fImportFromOCIByDefault && fOCIPresent)
+        setSource("OCI");
+    else
+        setSource("local");
 }
 
 void UIWizardImportAppPage1::updatePageAppearance()
@@ -134,8 +141,9 @@ bool UIWizardImportAppPage1::isSourceCloudOne(int iIndex /* = -1 */) const
 *   Class UIWizardImportAppPageBasic1 implementation.                                                                            *
 *********************************************************************************************************************************/
 
-UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
-    : m_pLabel(0)
+UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault)
+    : UIWizardImportAppPage1(fImportFromOCIByDefault)
+    , m_pLabel(0)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);

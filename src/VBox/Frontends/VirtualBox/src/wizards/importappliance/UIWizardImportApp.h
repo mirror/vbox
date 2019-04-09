@@ -46,7 +46,7 @@ public:
 
     /** Constructs export appliance wizard passing @a pParent to the base-class.
       * @param  strFileName  Brings appliance file name. */
-    UIWizardImportApp(QWidget *pParent, const QString &strFileName);
+    UIWizardImportApp(QWidget *pParent, bool fImportFromOCIByDefault, const QString &strFileName);
 
     /** Prepares all. */
     virtual void prepare() /* override */;
@@ -71,6 +71,8 @@ protected slots:
 
 private:
 
+    /** Holds whether default source should be Import from OCI. */
+    bool     m_fImportFromOCIByDefault;
     /** Handles the appliance file name. */
     QString  m_strFileName;
 };

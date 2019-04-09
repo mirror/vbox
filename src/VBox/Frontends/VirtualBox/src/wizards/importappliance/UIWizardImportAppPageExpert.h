@@ -40,7 +40,7 @@ public:
 
     /** Constructs expert page.
       * @param  strFileName  Brings appliance file name. */
-    UIWizardImportAppPageExpert(const QString &strFileName);
+    UIWizardImportAppPageExpert(bool fImportFromOCIByDefault, const QString &strFileName);
 
 private slots:
 
