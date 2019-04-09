@@ -282,6 +282,9 @@ private:
     /** Checks if delete confirmation dialog is shown and users choice. Returns true
      *  if deletion can continue */
     bool            checkIfDeleteOK();
+    /** Marks/umarks the search line edit to signal that there are no matches for the current search.
+      * uses m_searchLineUnmarkColor and m_searchLineMarkColor. */
+    void            markUnmarkSearchLineEdit(bool fMark);
 
     UICustomFileSystemModel      *m_pModel;
     UIGuestControlFileView       *m_pView;
@@ -289,6 +292,8 @@ private:
 
     QGridLayout     *m_pMainLayout;
     QILineEdit      *m_pSearchLineEdit;
+    QColor           m_searchLineUnmarkColor;
+    QColor           m_searchLineMarkColor;
     QILabel         *m_pWarningLabel;
 
     /** Contains m_pBreadCrumbsWidget and m_pLocationComboBox. */

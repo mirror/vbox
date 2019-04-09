@@ -782,6 +782,10 @@ void UIFileManagerTable::prepareObjects()
         m_pMainLayout->addWidget(m_pSearchLineEdit, 8, 0, 1, 7);
         m_pSearchLineEdit->hide();
         m_pSearchLineEdit->setClearButtonEnabled(true);
+        m_searchLineUnmarkColor = m_pSearchLineEdit->palette().color(QPalette::Base);
+        m_searchLineMarkColor = QColor(m_searchLineUnmarkColor.green(),
+                                       0.5 * m_searchLineUnmarkColor.green(),
+                                       0.5 * m_searchLineUnmarkColor.blue());
         connect(m_pSearchLineEdit, &QLineEdit::textChanged,
                 this, &UIFileManagerTable::sltSearchTextChanged);
     }
@@ -1301,6 +1305,7 @@ bool UIFileManagerTable::eventFilter(QObject *pObject, QEvent *pEvent) /* overri
             {
                 if (m_pSearchLineEdit)
                 {
+                    markUnmarkSearchLineEdit(false);
                     m_pSearchLineEdit->clear();
                     m_pSearchLineEdit->show();
                     m_pSearchLineEdit->setFocus();
@@ -1468,8 +1473,14 @@ QModelIndex UIFileManagerTable::currentRootIndex() const
 
 void UIFileManagerTable::performSelectionSearch(const QString &strSearchText)
 {
-    if (!m_pProxyModel | !m_pView || strSearchText.isEmpty())
+    if (!m_pProxyModel | !m_pView)
         return;
+
+    if (strSearchText.isEmpty())
+    {
+        markUnmarkSearchLineEdit(false);
+        return;
+    }
 
     int rowCount = m_pProxyModel->rowCount(m_pView->rootIndex());
     UICustomFileSystemItem *pFoundItem = 0;
@@ -1492,6 +1503,7 @@ void UIFileManagerTable::performSelectionSearch(const QString &strSearchText)
         m_pView->clearSelection();
         setSelection(index);
     }
+    markUnmarkSearchLineEdit(!pFoundItem);
 }
 
 void UIFileManagerTable::disableSelectionSearch()
@@ -1529,6 +1541,19 @@ bool UIFileManagerTable::checkIfDeleteOK()
 
     return fContinueWithDelete;
 
+}
+
+void UIFileManagerTable::markUnmarkSearchLineEdit(bool fMark)
+{
+    if (!m_pSearchLineEdit)
+        return;
+    QPalette palette = m_pSearchLineEdit->palette();
+
+    if (fMark)
+        palette.setColor(QPalette::Base, m_searchLineMarkColor);
+    else
+        palette.setColor(QPalette::Base, m_searchLineUnmarkColor);
+    m_pSearchLineEdit->setPalette(palette);
 }
 
 #include "UIFileManagerTable.moc"
