@@ -475,8 +475,8 @@ static int rtPathAbsExExRootSlash(const char *pszBase, const char *pszPath, PRTP
                     memcpy(pszAbsPath, &pszBase[uBase.Parsed.aComps[0].off], cchRootPrefix);
                 else
                 {
-                    int rc = RTPathParsedReassemble(pszPath, pParsed, fFlags & RTPATH_STR_F_STYLE_MASK, pszAbsPath, 0);
-                    Assert(rc == VERR_BUFFER_OVERFLOW); RT_NOREF(rc);
+                    rc = RTPathParsedReassemble(pszPath, pParsed, fFlags & RTPATH_STR_F_STYLE_MASK, pszAbsPath, 0);
+                    Assert(rc == VERR_BUFFER_OVERFLOW);
 
                     *pcbAbsPath = cchRootPrefix + pParsed->cchPath + 1;
                     return VERR_BUFFER_OVERFLOW;
@@ -504,8 +504,8 @@ static int rtPathAbsExExRootSlash(const char *pszBase, const char *pszPath, PRTP
                 }
                 else
                 {
-                    int rc = RTPathParsedReassemble(pszPath, pParsed, fFlags & RTPATH_STR_F_STYLE_MASK, pszAbsPath, 0);
-                    Assert(rc == VERR_BUFFER_OVERFLOW); RT_NOREF(rc);
+                    rc = RTPathParsedReassemble(pszPath, pParsed, fFlags & RTPATH_STR_F_STYLE_MASK, pszAbsPath, 0);
+                    Assert(rc == VERR_BUFFER_OVERFLOW);
 
                     *pcbAbsPath = cchRootPrefix + pParsed->cchPath + 1;
                     return VERR_BUFFER_OVERFLOW;
@@ -525,8 +525,8 @@ static int rtPathAbsExExRootSlash(const char *pszBase, const char *pszPath, PRTP
             {
                 if (rc == VERR_BUFFER_OVERFLOW)
                 {
-                    int rc = RTPathParsedReassemble(pszPath, pParsed, fFlags & RTPATH_STR_F_STYLE_MASK, pszAbsPath, 0);
-                    Assert(rc == VERR_BUFFER_OVERFLOW); RT_NOREF(rc);
+                    int rc2 = RTPathParsedReassemble(pszPath, pParsed, fFlags & RTPATH_STR_F_STYLE_MASK, pszAbsPath, 0);
+                    Assert(rc2 == VERR_BUFFER_OVERFLOW); RT_NOREF(rc2);
 
                     char *pszTmp = (char *)RTMemTmpAlloc(RTPATH_BIG_MAX);
                     if (pszTmp)
