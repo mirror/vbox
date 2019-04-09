@@ -26,6 +26,11 @@ UISearchLineEdit::UISearchLineEdit(QWidget *pParent /* = 0 */)
     :QLineEdit(pParent)
     , m_iMatchCount(0)
     , m_iScrollToIndex(-1)
+    , m_fMark(true)
+    , m_unmarkColor(palette().color(QPalette::Base))
+    , m_markColor(QColor(m_unmarkColor.red(),
+                         0.5 * m_unmarkColor.green(),
+                         0.5 * m_unmarkColor.blue()))
 {
 }
 
@@ -35,8 +40,10 @@ void UISearchLineEdit::paintEvent(QPaintEvent *pEvent)
 
     /* No search terms. no search. nothing to show here: */
     if (text().isEmpty())
+    {
+        colorBackground(false);
         return;
-
+    }
     /* Draw the total match count and the current scrolled item's index on the right hand side of the line edit: */
     QPainter painter(this);
     QFont pfont = font();
@@ -56,6 +63,7 @@ void UISearchLineEdit::paintEvent(QPaintEvent *pEvent)
 
     painter.drawText(QRect(width() - textSize.width() - iRightMargin, iTopMargin, textSize.width(), textSize.height()),
                      Qt::AlignCenter | Qt::AlignVCenter, strText);
+    colorBackground(m_iMatchCount == 0);
 }
 
 void UISearchLineEdit::setMatchCount(int iMatchCount)
@@ -72,4 +80,23 @@ void UISearchLineEdit::setScroolToIndex(int iScrollToIndex)
         return;
     m_iScrollToIndex = iScrollToIndex;
     repaint();
+}
+
+void UISearchLineEdit::colorBackground(bool fWarning)
+{
+    QPalette mPalette = palette();
+    /** Make sure we reset color. */
+    if (!fWarning || !m_fMark)
+    {
+        mPalette.setColor(QPalette::Base, m_unmarkColor);
+        setPalette(mPalette);
+        return;
+    }
+
+    if (m_fMark && fWarning)
+    {
+        mPalette.setColor(QPalette::Base, m_markColor);
+        setPalette(mPalette);
+        return;
+    }
 }
