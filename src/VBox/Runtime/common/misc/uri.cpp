@@ -879,12 +879,16 @@ RTDECL(int) RTUriFileCreateEx(const char *pszPath, uint32_t fPathStyle, char **p
      * Let the RTPath code parse the stuff (no reason to duplicate path parsing
      * and get it slightly wrong here).
      */
-    RTPATHPARSED ParsedPath;
-    int rc = RTPathParse(pszPath, &ParsedPath, sizeof(ParsedPath), fPathStyle);
+    union
+    {
+        RTPATHPARSED ParsedPath;
+        uint8_t      abPadding[sizeof(RTPATHPARSED)];
+    } u;
+    int rc = RTPathParse(pszPath, &u.ParsedPath, sizeof(u.ParsedPath), fPathStyle);
     if (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW)
     {
         /* Skip leading slashes. */
-        if (ParsedPath.fProps & RTPATH_PROP_ROOT_SLASH)
+        if (u.ParsedPath.fProps & RTPATH_PROP_ROOT_SLASH)
         {
             if (fPathStyle == RTPATH_STR_F_STYLE_DOS)
                 while (pszPath[0] == '/' || pszPath[0] == '\\')
@@ -899,7 +903,7 @@ RTDECL(int) RTUriFileCreateEx(const char *pszPath, uint32_t fPathStyle, char **p
          * Calculate the encoded length and figure destination buffering.
          */
         static const char s_szPrefix[] = "file:///";
-        size_t const      cchPrefix    = sizeof(s_szPrefix) - (ParsedPath.fProps & RTPATH_PROP_UNC ? 2 : 1);
+        size_t const      cchPrefix    = sizeof(s_szPrefix) - (u.ParsedPath.fProps & RTPATH_PROP_UNC ? 2 : 1);
         size_t cchEncoded = rtUriCalcEncodedLength(pszPath, cchPath, fPathStyle != RTPATH_STR_F_STYLE_DOS);
 
         if (pcchUri)
