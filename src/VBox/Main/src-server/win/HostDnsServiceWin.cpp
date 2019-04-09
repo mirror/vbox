@@ -183,7 +183,7 @@ int HostDnsServiceWin::monitorThreadProc(void)
                 delay.QuadPart = -2 * 1000 * 1000 * 10LL; /* relative: 2s */
 
                 BOOL ok = SetWaitableTimer(m->haDataEvent[DATA_TIMER], &delay,
-                                           0, NULL, NULL, TRUE);
+                                           0, NULL, NULL, FALSE);
                 if (ok)
                 {
                     m->fTimerArmed = true;
