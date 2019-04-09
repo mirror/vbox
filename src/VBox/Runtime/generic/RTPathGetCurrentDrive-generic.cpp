@@ -34,6 +34,7 @@
 
 #include <iprt/ctype.h>
 #include <iprt/err.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include "internal/path.h"
 
@@ -44,49 +45,65 @@ RTDECL(int) RTPathGetCurrentDrive(char *pszPath, size_t cbPath)
     /*
      * Query the current directroy and extract the wanted information from it.
      */
-    int rc = RTPathGetCurrent(pszPath, cbPath);
+    char *pszPathFree = NULL;
+    char *pszCwd = pszPath;
+    int rc = RTPathGetCurrent(pszCwd, cbPath);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else if (rc != VERR_BUFFER_OVERFLOW)
+        return rc;
+    else
+    {
+        pszPathFree = pszCwd = (char *)RTMemTmpAlloc(RTPATH_BIG_MAX);
+        AssertReturn(pszPathFree, VERR_NO_TMP_MEMORY);
+        rc = RTPathGetCurrent(pszCwd, RTPATH_BIG_MAX);
+    }
     if (RT_SUCCESS(rc))
     {
         /*
          * Drive letter? Chop off at root slash.
          */
-        if (pszPath[0] && RTPATH_IS_VOLSEP(pszPath[1]))
-        {
-            pszPath[2] = '\0';
-            return rc;
-        }
-
+        if (pszCwd[0] && RTPATH_IS_VOLSEP(pszCwd[1]))
+            pszCwd[2] = '\0';
         /*
          * UNC? Chop off after share.
          */
-        if (   RTPATH_IS_SLASH(pszPath[0])
-            && RTPATH_IS_SLASH(pszPath[1])
-            && !RTPATH_IS_SLASH(pszPath[2])
-            && pszPath[2])
+        else if (   RTPATH_IS_SLASH(pszCwd[0])
+                 && RTPATH_IS_SLASH(pszCwd[1])
+                 && !RTPATH_IS_SLASH(pszCwd[2])
+                 && pszCwd[2])
         {
             /* Work thru the server name. */
             size_t off = 3;
-            while (!RTPATH_IS_SLASH(pszPath[off]) && pszPath[off])
+            while (!RTPATH_IS_SLASH(pszCwd[off]) && pszCwd[off])
                 off++;
             size_t offServerSlash = off;
 
             /* Is there a share name? */
-            if (RTPATH_IS_SLASH(pszPath[off]))
+            if (RTPATH_IS_SLASH(pszCwd[off]))
             {
-                while (RTPATH_IS_SLASH(pszPath[off]))
+                while (RTPATH_IS_SLASH(pszCwd[off]))
                     off++;
-                if (pszPath[off])
+                if (pszCwd[off])
                 {
                     /* Work thru the share name. */
-                    while (!RTPATH_IS_SLASH(pszPath[off]) && pszPath[off])
+                    while (!RTPATH_IS_SLASH(pszCwd[off]) && pszCwd[off])
                         off++;
                 }
                 /* No share name, chop at server name. */
                 else
                     off = offServerSlash;
             }
+            pszCwd[off] = '\0';
         }
-        return VERR_INTERNAL_ERROR_4;
+        else
+            rc = VERR_INTERNAL_ERROR_4;
+    }
+    if (pszPathFree)
+    {
+        if (RT_SUCCESS(rc))
+            rc = RTStrCopy(pszPath, cbPath, pszCwd);
+        RTMemTmpFree(pszPathFree);
     }
     return rc;
 

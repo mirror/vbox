@@ -48,16 +48,17 @@
  *                          is equivalent to RTPathAbs(pszPath, ...).
  * @param   pszPath         The path to resolve.
  * @param   pszAbsPath      Where to store the absolute path.
- * @param   cchAbsPath      Size of the buffer.
+ * @param   cbAbsPath       Size of the buffer.
  */
-RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
+RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, size_t cbAbsPath)
 {
+#if 1
     if (    pszBase
         &&  pszPath
         &&  !rtPathVolumeSpecLen(pszPath)
        )
     {
-#if defined(RT_OS_WINDOWS)
+# if defined(RT_OS_WINDOWS)
         /* The format for very long paths is not supported. */
         if (    RTPATH_IS_SLASH(pszBase[0])
             &&  RTPATH_IS_SLASH(pszBase[1])
@@ -65,7 +66,7 @@ RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPa
             &&  RTPATH_IS_SLASH(pszBase[3])
            )
             return VERR_INVALID_NAME;
-#endif
+# endif
 
         /** @todo there are a couple of things which isn't 100% correct, although the
          * current code will have to do for now, no time to fix.
@@ -95,10 +96,13 @@ RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPa
             szTmpPath[cchBase] = RTPATH_DELIMITER;
             memcpy(&szTmpPath[cchBase + 1], pszPath, cchPath + 1);
         }
-        return RTPathAbs(szTmpPath, pszAbsPath, cchAbsPath);
+        return RTPathAbs(szTmpPath, pszAbsPath, cbAbsPath);
     }
 
     /* Fallback to the non *Ex version */
-    return RTPathAbs(pszPath, pszAbsPath, cchAbsPath);
+    return RTPathAbs(pszPath, pszAbsPath, cbAbsPath);
+#else
+    return RTPathAbsExEx(pszBase, pszPath, RTPATH_STR_F_STYLE_HOST, pszAbsPath, &cbAbsPath);
+#endif
 }
 

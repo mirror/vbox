@@ -49,8 +49,14 @@ RT_C_DECLS_BEGIN
  * @remarks defined both by iprt/param.h and iprt/path.h.
  */
 #if !defined(IPRT_INCLUDED_param_h) || defined(DOXYGEN_RUNNING)
-# define RTPATH_MAX         (4096 + 4)    /* (PATH_MAX + 1) on linux w/ some alignment */
+# define RTPATH_MAX                 (4096 + 4)    /* (PATH_MAX + 1) on linux w/ some alignment */
 #endif
+
+/**
+ * The absolute max host path length we are willing to support.
+ * @note Not really suitable for stack buffers.
+ */
+#define RTPATH_BIG_MAX              (_64K)
 
 /** @def RTPATH_TAG
  * The default allocation tag used by the RTPath allocation APIs.
@@ -60,7 +66,7 @@ RT_C_DECLS_BEGIN
  * this as pointer to a volatile but read-only string.
  */
 #ifndef RTPATH_TAG
-# define RTPATH_TAG     (__FILE__)
+# define RTPATH_TAG                 (__FILE__)
 #endif
 
 
@@ -304,12 +310,12 @@ RTDECL(char *) RTPathRealDup(const char *pszPath);
  * @returns iprt status code.
  * @param   pszPath         The path to resolve.
  * @param   pszAbsPath      Where to store the absolute path.
- * @param   cchAbsPath      Size of the buffer.
+ * @param   cbAbsPath       Size of the buffer.
  *
  * @note    Current implementation is buggy and will remove trailing slashes
  *          that would normally specify a directory.  Don't depend on this.
  */
-RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath);
+RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cbAbsPath);
 
 /**
  * Same as RTPathAbs only the result is RTStrDup()'ed.
@@ -334,12 +340,44 @@ RTDECL(char *) RTPathAbsDup(const char *pszPath);
  *                          is equivalent to RTPathAbs(pszPath, ...).
  * @param   pszPath         The path to resolve.
  * @param   pszAbsPath      Where to store the absolute path.
- * @param   cchAbsPath      Size of the buffer.
+ * @param   cbAbsPath       Size of the buffer.
  *
  * @note    Current implementation is buggy and will remove trailing slashes
  *          that would normally specify a directory.  Don't depend on this.
  */
-RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, size_t cchAbsPath);
+RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, size_t cbAbsPath);
+
+/**
+ * Get the absolute path (no symlinks, no . or .. components), assuming the
+ * given base path as the current directory.
+ *
+ * The resulting path doesn't have to exist.
+ *
+ * @returns iprt status code.
+ * @param   pszBase         The base path to act like a current directory.
+ *                          When NULL, the actual cwd is used (i.e. the call
+ *                          is equivalent to RTPathAbs(pszPath, ...).
+ * @param   pszPath         The path to resolve.
+ * @param   fFlags          One of the RTPATH_STR_F_STYLE_XXX flags combined
+ *                          with any of the RTPATHABS_F_XXX ones.  Most
+ *                          users will pass RTPATH_STR_F_STYLE_HOST (0).
+ * @param   pszAbsPath      Where to store the absolute path.
+ * @param   pcbAbsPath      Hold the size of the buffer when called.  The return
+ *                          value is the string length on success, and the
+ *                          required (or slightly more in some case) buffer
+ *                          size, including terminator, on VERR_BUFFER_OVERFLOW
+ *                          failures.
+ */
+RTDECL(int) RTPathAbsExEx(const char *pszBase, const char *pszPath, uint32_t fFlags, char *pszAbsPath, size_t *pcbAbsPath);
+
+/** @name RTPATHABS_F_XXX - Flags for RTPathAbsEx.
+ * @note The RTPATH_F_STR_XXX style flags also applies.
+ * @{ */
+/** Treat specified base directory as a root that cannot be ascended beyond.  */
+#define RTPATHABS_F_STOP_AT_BASE    RT_BIT_32(16)
+/** Treat CWD as a root that cannot be ascended beyond.  */
+#define RTPATHABS_F_STOP_AT_CWD     RT_BIT_32(17)
+/** @} */
 
 /**
  * Same as RTPathAbsEx only the result is RTStrDup()'ed.
@@ -618,6 +656,9 @@ RTDECL(int) RTPathCopyComponents(char *pszDst, size_t cbDst, const char *pszSrc,
 /** The path contains references to the special '..' (dot) directory link.
  * RTPATH_PROP_RELATIVE will always be set together with this.  */
 #define RTPATH_PROP_DOTDOT_REFS     UINT16_C(0x1000)
+/** Special UNC root.
+ * The share name is not sacred when this is set. */
+#define RTPATH_PROP_SPECIAL_UNC     UINT16_C(0x2000)
 
 
 /** Macro to determin whether to insert a slash after the first component when
@@ -713,11 +754,13 @@ RTDECL(int) RTPathParse(const char *pszPath, PRTPATHPARSED pParsed, size_t cbPar
  * are added.
  *
  * @returns IPRT status code.
- * @retval  VERR_BUFFER_OVERFLOW if @a cbDstPath is less than or equal to
- *          RTPATHPARSED::cchPath.
+ * @retval  VERR_BUFFER_OVERFLOW if the destination buffer is too small.
+ *          The necessary length is @a pParsed->cchPath + 1 (updated).
  *
  * @param   pszSrcPath          The source path.
- * @param   pParsed             The parser output for @a pszSrcPath.
+ * @param   pParsed             The parser output for @a pszSrcPath.  Caller may
+ *                              eliminate elements by setting their length to
+ *                              zero.  The cchPath member is updated.
  * @param   fFlags              Combination of RTPATH_STR_F_STYLE_XXX.
  *                              Most users will pass 0.
  * @param   pszDstPath          Pointer to the buffer where the path is to be

@@ -47,7 +47,40 @@ RTDECL(int) RTPathParsedReassemble(const char *pszSrcPath, PRTPATHPARSED pParsed
     AssertReturn(pParsed->cComps > 0, VERR_INVALID_PARAMETER);
     AssertReturn(RTPATH_STR_F_IS_VALID(fFlags, 0) && !(fFlags & RTPATH_STR_F_MIDDLE), VERR_INVALID_FLAGS);
     AssertPtrReturn(pszDstPath, VERR_INVALID_POINTER);
-    AssertReturn(cbDstPath > pParsed->cchPath, VERR_BUFFER_OVERFLOW);
+
+    /*
+     * Recalculate the length.
+     */
+    uint32_t const  cComps  = pParsed->cComps;
+    uint32_t        idxComp = 0;
+    uint32_t        cchPath = 0;
+    if (RTPATH_PROP_HAS_ROOT_SPEC(pParsed->fProps))
+    {
+        cchPath = pParsed->aComps[0].cch;
+        idxComp++;
+    }
+    bool fNeedSlash = false;
+    while (idxComp < cComps)
+    {
+        uint32_t const cchComp = pParsed->aComps[idxComp].cch;
+        idxComp++;
+        if (cchComp > 0)
+        {
+            cchPath += cchComp + fNeedSlash;
+            fNeedSlash = true;
+        }
+    }
+    if ((pParsed->fProps & RTPATH_PROP_DIR_SLASH) && fNeedSlash)
+        cchPath += 1;
+    pParsed->cchPath = cchPath;
+    if (cbDstPath > cchPath)
+    { /* likely */ }
+    else
+    {
+        if (cbDstPath)
+            *pszDstPath = '\0';
+        return VERR_BUFFER_OVERFLOW;
+    }
 
     /*
      * Figure which slash to use.
@@ -73,22 +106,18 @@ RTDECL(int) RTPathParsedReassemble(const char *pszSrcPath, PRTPATHPARSED pParsed
 
     /*
      * Do the joining.
+     * Note! Using memmove here as we want to support pszSrcPath == pszDstPath.
      */
-    uint32_t const  cchOrgPath = pParsed->cchPath;
-    uint32_t        cchDstPath = 0;
-    uint32_t const  cComps     = pParsed->cComps;
-    uint32_t        idxComp    = 0;
-    char           *pszDst     = pszDstPath;
-    uint32_t        cchComp;
+    char *pszDst = pszDstPath;
+    idxComp      = 0;
+    fNeedSlash   = false;
 
     if (RTPATH_PROP_HAS_ROOT_SPEC(pParsed->fProps))
     {
-        cchComp = pParsed->aComps[0].cch;
-        cchDstPath += cchComp;
-        AssertReturn(cchDstPath <= cchOrgPath, VERR_INVALID_PARAMETER);
-        memcpy(pszDst, &pszSrcPath[pParsed->aComps[0].off], cchComp);
+        uint32_t cchComp = pParsed->aComps[0].cch;
+        memmove(pszDst, &pszSrcPath[pParsed->aComps[0].off], cchComp);
 
-        /* fix the slashes */
+        /* fix the slashes (harmless for unix style) */
         char chOtherSlash = chSlash == '\\' ? '/' : '\\';
         while (cchComp-- > 0)
         {
@@ -101,20 +130,20 @@ RTDECL(int) RTPathParsedReassemble(const char *pszSrcPath, PRTPATHPARSED pParsed
 
     while (idxComp < cComps)
     {
-        cchComp = pParsed->aComps[idxComp].cch;
-        cchDstPath += cchComp;
-        AssertReturn(cchDstPath <= cchOrgPath, VERR_INVALID_PARAMETER);
-        memcpy(pszDst, &pszSrcPath[pParsed->aComps[idxComp].off], cchComp);
-        pszDst += cchComp;
-        idxComp++;
-        if (idxComp != cComps || (pParsed->fProps & RTPATH_PROP_DIR_SLASH))
+        uint32_t const cchComp = pParsed->aComps[idxComp].cch;
+        if (cchComp > 0)
         {
-            cchDstPath++;
-            AssertReturn(cchDstPath <= cchOrgPath, VERR_INVALID_PARAMETER);
-            *pszDst++ = chSlash;
+            if (fNeedSlash)
+                *pszDst++ = chSlash;
+            fNeedSlash = true;
+            memmove(pszDst, &pszSrcPath[pParsed->aComps[idxComp].off], cchComp);
+            pszDst += cchComp;
         }
+        idxComp++;
     }
 
+    if ((pParsed->fProps & RTPATH_PROP_DIR_SLASH) && fNeedSlash)
+        *pszDst++ = chSlash;
     *pszDst = '\0';
 
     return VINF_SUCCESS;

@@ -58,29 +58,26 @@ static int RTPATH_STYLE_FN(rtPathParse)(const char *pszPath, PRTPATHPARSED pPars
             cchPath = 0;
         }
 #if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
-        else if (   RTPATH_IS_SLASH(pszPath[1])
-                 && !RTPATH_IS_SLASH(pszPath[2])
-                 && pszPath[2])
+        else if (RTPATH_IS_SLASH(pszPath[1]))
         {
-            /* UNC - skip to the end of the potential namespace or computer name. */
+            /* UNC - there are exactly two prefix slashes followed by a namespace
+               or computer name, which can be empty on windows.  */
             offCur = 2;
             while (!RTPATH_IS_SLASH(pszPath[offCur]) && pszPath[offCur])
                 offCur++;
 
-            /* If there is another slash, we considered it a valid UNC path, if
-               not it's just a root path with an extra slash thrown in. */
+            /* Special fun for windows. */
+            fProps = RTPATH_PROP_UNC | RTPATH_PROP_ABSOLUTE;
+            if (   offCur == 3
+                && (pszPath[2] == '.' || pszPath[2] == '?'))
+                fProps |= RTPATH_PROP_SPECIAL_UNC;
+
             if (RTPATH_IS_SLASH(pszPath[offCur]))
             {
-                fProps = RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_UNC | RTPATH_PROP_ABSOLUTE;
+                fProps |= RTPATH_PROP_ROOT_SLASH;
                 offCur++;
-                cchPath = offCur;
             }
-            else
-            {
-                fProps = RTPATH_PROP_ROOT_SLASH | RTPATH_PROP_RELATIVE;
-                offCur = 1;
-                cchPath = 1;
-            }
+            cchPath = offCur;
         }
 #endif
         else

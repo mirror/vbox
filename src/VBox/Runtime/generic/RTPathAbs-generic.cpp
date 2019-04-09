@@ -39,6 +39,7 @@
 #include "internal/path.h"
 #include "internal/fs.h"
 
+#if 1
 
 static char *rtPathSkipRootSpec(char *pszCur)
 {
@@ -144,7 +145,7 @@ static int fsCleanPath(char *pszPath)
 }
 
 
-RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
+RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cbAbsPath)
 {
     int rc;
 
@@ -162,7 +163,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
     size_t cchPath = strlen(pszPath);
     if (cchPath >= RTPATH_MAX)
     {
-        LogFlow(("RTPathAbs(%p:{%s}, %p, %d): returns %Rrc\n", pszPath, pszPath, pszAbsPath, cchAbsPath, VERR_FILENAME_TOO_LONG));
+        LogFlow(("RTPathAbs(%p:{%s}, %p, %d): returns %Rrc\n", pszPath, pszPath, pszAbsPath, cbAbsPath, VERR_FILENAME_TOO_LONG));
         return VERR_FILENAME_TOO_LONG;
     }
 
@@ -178,7 +179,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
         if (   cchTmpPath == 1
             || (cchTmpPath == 2 && szTmpPath[1] == RTPATH_SLASH))
         {
-            rc = RTPathGetCurrent(pszAbsPath, cchAbsPath);
+            rc = RTPathGetCurrent(pszAbsPath, cbAbsPath);
             if (RT_SUCCESS(rc))
             {
                 size_t cch = fsCleanPath(pszAbsPath);
@@ -190,7 +191,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
                 if (   cchTmpPath == 2
                     && (uintptr_t)&pszAbsPath[cch - 1] > (uintptr_t)pszTop && pszAbsPath[cch - 1] != RTPATH_SLASH)
                 {
-                    if (cch + 1 < cchAbsPath)
+                    if (cch + 1 < cbAbsPath)
                     {
                         pszAbsPath[cch++] = RTPATH_SLASH;
                         pszAbsPath[cch] = '\0';
@@ -273,7 +274,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
         }
         if (RT_FAILURE(rc))
         {
-            LogFlow(("RTPathAbs(%p:{%s}, %p, %d): returns %Rrc\n", pszPath, pszPath, pszAbsPath, cchAbsPath, rc));
+            LogFlow(("RTPathAbs(%p:{%s}, %p, %d): returns %Rrc\n", pszPath, pszPath, pszAbsPath, cbAbsPath, rc));
             return rc;
         }
     }
@@ -359,7 +360,7 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
     /*
      * Copy the result to the user buffer.
      */
-    if (cchTmpPath < cchAbsPath)
+    if (cchTmpPath < cbAbsPath)
     {
         memcpy(pszAbsPath, szTmpPath, cchTmpPath + 1);
         rc = VINF_SUCCESS;
@@ -368,7 +369,16 @@ RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cchAbsPath)
         rc = VERR_BUFFER_OVERFLOW;
 
     LogFlow(("RTPathAbs(%p:{%s}, %p:{%s}, %d): returns %Rrc\n", pszPath, pszPath, pszAbsPath,
-             RT_SUCCESS(rc) ? pszAbsPath : "<failed>", cchAbsPath, rc));
+             RT_SUCCESS(rc) ? pszAbsPath : "<failed>", cbAbsPath, rc));
     return rc;
 }
+
+#else
+
+RTDECL(int) RTPathAbs(const char *pszPath, char *pszAbsPath, size_t cbAbsPath)
+{
+    return RTPathAbsExEx(NULL, pszPath, RTPATH_STR_F_STYLE_HOST, pszAbsPath, &cbAbsPath);
+}
+
+#endif
 
