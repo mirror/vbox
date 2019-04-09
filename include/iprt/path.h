@@ -714,7 +714,7 @@ typedef struct RTPATHPARSED
         uint16_t    off;
         /** The length of the component. */
         uint16_t    cch;
-    } aComps[1];
+    } aComps[RT_FLEXIBLE_ARRAY];
 } RTPATHPARSED;
 /** Pointer to to a parsed path result. */
 typedef RTPATHPARSED *PRTPATHPARSED;
@@ -797,7 +797,7 @@ typedef struct RTPATHSPLIT
      * present. */
     const char *pszSuffix;
     /** Array of component strings (variable size). */
-    char       *apszComps[1];
+    char       *apszComps[RT_FLEXIBLE_ARRAY];
 } RTPATHSPLIT;
 /** Pointer to a split path buffer. */
 typedef RTPATHSPLIT *PRTPATHSPLIT;
