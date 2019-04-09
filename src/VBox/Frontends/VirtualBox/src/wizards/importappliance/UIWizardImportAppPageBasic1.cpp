@@ -53,7 +53,7 @@ QString ImportSourceTypeConverter::toString(ImportSourceType enmType)
 
 UIWizardImportAppPage1::UIWizardImportAppPage1()
     : m_pSourceLabel(0)
-    , m_pSourceSelector(0)
+    , m_pSourceComboBox(0)
     , m_pStackedLayout(0)
     , m_pFileSelector(0)
 {
@@ -79,9 +79,9 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
             pMainLayout->addWidget(m_pLabel);
         }
 
-        /* Create source selector layout: */
-        QHBoxLayout *pSourceSelectorLayout = new QHBoxLayout;
-        if (pSourceSelectorLayout)
+        /* Create source layout: */
+        QHBoxLayout *pSourceLayout = new QHBoxLayout;
+        if (pSourceLayout)
         {
             /* Create source label: */
             m_pSourceLabel = new QLabel(this);
@@ -92,26 +92,26 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
                 m_pSourceLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
                 /* Add into layout: */
-                pSourceSelectorLayout->addWidget(m_pSourceLabel);
+                pSourceLayout->addWidget(m_pSourceLabel);
             }
 
             /* Create source selector: */
-            m_pSourceSelector = new QIComboBox(this);
-            if (m_pSourceSelector)
+            m_pSourceComboBox = new QIComboBox(this);
+            if (m_pSourceComboBox)
             {
-                m_pSourceLabel->setBuddy(m_pSourceSelector);
-                m_pSourceSelector->hide();
-                m_pSourceSelector->addItem(QString(), QVariant::fromValue(ImportSourceType_Local));
-                m_pSourceSelector->addItem(QString(), QVariant::fromValue(ImportSourceType_Cloud));
-                connect(m_pSourceSelector, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
-                        this, static_cast<void(UIWizardImportAppPageBasic1::*)(int)>(&UIWizardImportAppPageBasic1::sltHandleSourceChange));
+                m_pSourceLabel->setBuddy(m_pSourceComboBox);
+                m_pSourceComboBox->hide();
+                m_pSourceComboBox->addItem(QString(), QVariant::fromValue(ImportSourceType_Local));
+                m_pSourceComboBox->addItem(QString(), QVariant::fromValue(ImportSourceType_Cloud));
+                connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
+                        this, &UIWizardImportAppPageBasic1::sltHandleSourceChange);
 
                 /* Add into layout: */
-                pSourceSelectorLayout->addWidget(m_pSourceSelector);
+                pSourceLayout->addWidget(m_pSourceComboBox);
             }
 
             /* Add into layout: */
-            pMainLayout->addLayout(pSourceSelectorLayout);
+            pMainLayout->addLayout(pSourceLayout);
         }
 
         /* Create stacked layout: */
@@ -181,11 +181,6 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged, this, &UIWizardImportAppPageBasic1::completeChanged);
 }
 
-void UIWizardImportAppPageBasic1::sltHandleSourceChange(int iIndex)
-{
-    m_pStackedLayout->setCurrentIndex(m_stackedLayoutIndexMap.value(m_pSourceSelector->itemData(iIndex).value<ImportSourceType>()));
-}
-
 void UIWizardImportAppPageBasic1::retranslateUi()
 {
     /* Translate page: */
@@ -196,10 +191,12 @@ void UIWizardImportAppPageBasic1::retranslateUi()
                                             "saved in the Open Virtualization Format (OVF). "
                                             "To continue, select the file to import below.</p>"));
 
-    /* Translate source selector: */
-    m_pSourceLabel->setText(tr("Source:"));
-    for (int i = 0; i < m_pSourceSelector->count(); ++i)
-        m_pSourceSelector->setItemText(i, ImportSourceTypeConverter::toString(m_pSourceSelector->itemData(i).value<ImportSourceType>()));
+    /* Translate source label: */
+    m_pSourceLabel->setText(tr("&Source:"));
+    /* Translate received values of Source combo-box.
+     * We are enumerating starting from 0 for simplicity: */
+    for (int i = 0; i < m_pSourceComboBox->count(); ++i)
+        m_pSourceComboBox->setItemText(i, ImportSourceTypeConverter::toString(m_pSourceComboBox->itemData(i).value<ImportSourceType>()));
 
     /* Translate file selector: */
     m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
@@ -209,6 +206,7 @@ void UIWizardImportAppPageBasic1::retranslateUi()
 
 void UIWizardImportAppPageBasic1::initializePage()
 {
+    /* Translate page: */
     retranslateUi();
 }
 
@@ -237,4 +235,9 @@ bool UIWizardImportAppPageBasic1::validatePage()
 
     /* If we have a valid ovf proceed to the appliance settings page: */
     return pImportApplianceWidget->isValid();
+}
+
+void UIWizardImportAppPageBasic1::sltHandleSourceChange(int iIndex)
+{
+    m_pStackedLayout->setCurrentIndex(m_stackedLayoutIndexMap.value(m_pSourceComboBox->itemData(iIndex).value<ImportSourceType>()));
 }

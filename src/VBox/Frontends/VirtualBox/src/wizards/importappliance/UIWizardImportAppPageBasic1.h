@@ -49,8 +49,8 @@ protected:
 
     /** Holds the source type label instance. */
     QLabel     *m_pSourceLabel;
-    /** Holds the source type selector instance. */
-    QIComboBox *m_pSourceSelector;
+    /** Holds the source type combo-box instance. */
+    QIComboBox *m_pSourceComboBox;
 
     /** Holds the stacked layout instance. */
     QStackedLayout              *m_pStackedLayout;
@@ -71,12 +71,7 @@ public:
     /** Constructs 1st basic page. */
     UIWizardImportAppPageBasic1();
 
-private slots:
-
-    /** Handles change of import source to one with specified @a iIndex. */
-    void sltHandleSourceChange(int iIndex);
-
-private:
+protected:
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
@@ -89,6 +84,13 @@ private:
 
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
+
+private slots:
+
+    /** Handles change of import source to one with specified @a iIndex. */
+    void sltHandleSourceChange(int iIndex);
+
+private:
 
     /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;
