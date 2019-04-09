@@ -231,11 +231,13 @@ void UIFileManagerGuestTable::deleteByItem(UICustomFileSystemItem *item)
         return;
     if (item->isUpDirectory())
         return;
-    QVector<KDirectoryRemoveRecFlag> flags(KDirectoryRemoveRecFlag_ContentAndDir);
 
     if (item->isDirectory())
     {
-        m_comGuestSession.DirectoryRemoveRecursive(item->path(), flags);
+        QVector<KDirectoryRemoveRecFlag> aFlags;
+        aFlags.push_back(KDirectoryRemoveRecFlag_ContentAndDir);
+
+        m_comGuestSession.DirectoryRemoveRecursive(item->path(), aFlags);
     }
     else
         m_comGuestSession.FsObjRemove(item->path());
@@ -258,8 +260,10 @@ void UIFileManagerGuestTable::deleteByPath(const QStringList &pathList)
         }
         else if (eType == KFsObjType_Directory)
         {
-            QVector<KDirectoryRemoveRecFlag> flags(KDirectoryRemoveRecFlag_ContentAndDir);
-            m_comGuestSession.DirectoryRemoveRecursive(strPath, flags);
+            QVector<KDirectoryRemoveRecFlag> aFlags;
+            aFlags.push_back(KDirectoryRemoveRecFlag_ContentAndDir);
+
+            m_comGuestSession.DirectoryRemoveRecursive(strPath, aFlags);
         }
 
     }
