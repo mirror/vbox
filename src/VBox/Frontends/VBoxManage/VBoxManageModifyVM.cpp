@@ -2981,7 +2981,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             case MODIFYVM_RECORDING_OPTIONS:
             {
                 ComPtr<IRecordingSettings> recordingSettings;
-                CHECK_ERROR_BREAK(machine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()));
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(RecordingSettings)(recordingSettings.asOutParam()));
                 SafeIfaceArray <IRecordingScreenSettings> saRecordingScreenScreens;
                 CHECK_ERROR_BREAK(recordingSettings, COMGETTER(Screens)(ComSafeArrayAsOutParam(saRecordingScreenScreens)));
 
