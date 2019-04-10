@@ -331,24 +331,6 @@ RTDECL(char *) RTPathAbsDup(const char *pszPath);
 
 /**
  * Get the absolute path (no symlinks, no . or .. components), assuming the
- * given base path as the current directory. The resulting path doesn't have
- * to exist.
- *
- * @returns iprt status code.
- * @param   pszBase         The base path to act like a current directory.
- *                          When NULL, the actual cwd is used (i.e. the call
- *                          is equivalent to RTPathAbs(pszPath, ...).
- * @param   pszPath         The path to resolve.
- * @param   pszAbsPath      Where to store the absolute path.
- * @param   cbAbsPath       Size of the buffer.
- *
- * @note    Current implementation is buggy and will remove trailing slashes
- *          that would normally specify a directory.  Don't depend on this.
- */
-RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, size_t cbAbsPath);
-
-/**
- * Get the absolute path (no symlinks, no . or .. components), assuming the
  * given base path as the current directory.
  *
  * The resulting path doesn't have to exist.
@@ -368,7 +350,7 @@ RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPa
  *                          size, including terminator, on VERR_BUFFER_OVERFLOW
  *                          failures.
  */
-RTDECL(int) RTPathAbsExEx(const char *pszBase, const char *pszPath, uint32_t fFlags, char *pszAbsPath, size_t *pcbAbsPath);
+RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, uint32_t fFlags, char *pszAbsPath, size_t *pcbAbsPath);
 
 /** @name RTPATHABS_F_XXX - Flags for RTPathAbsEx.
  * @note The RTPATH_F_STR_XXX style flags also applies.

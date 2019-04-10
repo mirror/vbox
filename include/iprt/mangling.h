@@ -1599,7 +1599,6 @@
 # define RTPathAbs                                      RT_MANGLER(RTPathAbs)
 # define RTPathAbsDup                                   RT_MANGLER(RTPathAbsDup)
 # define RTPathAbsEx                                    RT_MANGLER(RTPathAbsEx)
-# define RTPathAbsExEx                                  RT_MANGLER(RTPathAbsExEx)
 # define RTPathAbsExDup                                 RT_MANGLER(RTPathAbsExDup)
 # define RTPathAppDocs                                  RT_MANGLER(RTPathAppDocs)
 # define RTPathAppend                                   RT_MANGLER(RTPathAppend)

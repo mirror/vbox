@@ -511,7 +511,6 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathAbsDup.cpp \
 	common/path/RTPathAbsEx.cpp \
 	common/path/RTPathAbsExDup.cpp \
-	common/path/RTPathAbsExEx.cpp \
 	common/path/RTPathAppend.cpp \
 	common/path/RTPathAppendEx.cpp \
 	common/path/RTPathCalcRelative.cpp \
@@ -826,7 +825,6 @@ RuntimeR3_SOURCES.win = \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTMpGetCurFrequency-generic.cpp \
 	generic/RTMpGetMaxFrequency-generic.cpp \
-	generic/RTPathAbs-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
 	generic/RTSemEventWait-generic.cpp \
@@ -916,7 +914,6 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTPathAbs-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
@@ -1023,7 +1020,6 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTPathAbs-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
@@ -1105,7 +1101,6 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTPathAbs-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTThreadGetAffinity-stub-generic.cpp \
@@ -1191,7 +1186,6 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTPathAbs-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
@@ -1274,7 +1268,6 @@ RuntimeR3_SOURCES.netbsd = \
 	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTPathAbs-generic.cpp \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp \
@@ -1356,7 +1349,6 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTPathAbs-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
@@ -1453,7 +1445,6 @@ RuntimeR3_SOURCES.haiku = \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTPathAbs-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
@@ -1706,7 +1697,6 @@ RuntimeBldProg_SOURCES         = \
 	common/path/RTPathAbsDup.cpp \
 	common/path/RTPathAbsEx.cpp \
 	common/path/RTPathAbsExDup.cpp \
-	common/path/RTPathAbsExEx.cpp \
 	common/path/RTPathAppend.cpp \
 	common/path/RTPathAppendEx.cpp \
 	common/path/RTPathChangeToDosSlashes.cpp \
@@ -1887,7 +1877,6 @@ RuntimeBldProg_SOURCES.win = \
 	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileExists-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
-	generic/RTPathAbs-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
@@ -1956,7 +1945,6 @@ RuntimeBldProg_SOURCES.os2 += \
 	generic/RTFileMove-generic.cpp \
 	generic/RTFileSetAllocationSize-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTPathAbs-generic.cpp \
 	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
@@ -2719,7 +2707,6 @@ RuntimeR0Drv_SOURCES    = \
 	common/path/RTPathAbsDup.cpp \
 	common/path/RTPathAbsEx.cpp \
 	common/path/RTPathAbsExDup.cpp \
-	common/path/RTPathAbsExEx.cpp \
 	common/path/RTPathAppend.cpp \
 	common/path/RTPathAppendEx.cpp \
 	common/path/RTPathExt.cpp \

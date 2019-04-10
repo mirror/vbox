@@ -266,144 +266,10 @@ int main()
     RTTESTI_CHECK_RC(RTPathTemp(szPath, cch+2), VINF_SUCCESS);
 
 
-#if 0
     /*
-     * RTPathAbsEx
+     * RTPathAbsEx.
      */
     RTTestSub(hTest, "RTPathAbsEx");
-    static const struct
-    {
-        const char *pcszInputBase;
-        const char *pcszInputPath;
-        int rc;
-        const char *pcszOutput;
-    }
-    s_aRTPathAbsExTests[] =
-    {
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
-    { NULL, "", VERR_INVALID_PARAMETER, NULL },
-    { NULL, ".", VINF_SUCCESS, "%p" },
-    { NULL, "\\", VINF_SUCCESS, "%d\\" },
-    { NULL, "\\..", VINF_SUCCESS, "%d\\" },
-    { NULL, "/absolute/..", VINF_SUCCESS, "%d\\" },
-    { NULL, "/absolute\\\\../..", VINF_SUCCESS, "%d\\" },
-    { NULL, "/absolute//../path\\", VINF_SUCCESS, "%d\\path" },
-    { NULL, "/absolute/../../path", VINF_SUCCESS, "%d\\path" },
-    { NULL, "relative/../dir\\.\\.\\.\\file.txt", VINF_SUCCESS, "%p\\dir\\file.txt" },
-    { NULL, "\\data\\", VINF_SUCCESS, "%d\\data" },
-    { "relative_base/dir\\", "\\from_root", VINF_SUCCESS, "%d\\from_root" },
-    { "relative_base/dir/", "relative_also", VINF_SUCCESS, "%p\\relative_base\\dir\\relative_also" },
-#else
-    { NULL, "", VERR_INVALID_PARAMETER, NULL },
-    { NULL, ".", VINF_SUCCESS, "%p" },
-    { NULL, "/", VINF_SUCCESS, "/" },
-    { NULL, "/..", VINF_SUCCESS, "/" },
-    { NULL, "/absolute/..", VINF_SUCCESS, "/" },
-    { NULL, "/absolute\\\\../..", VINF_SUCCESS, "/" },
-    { NULL, "/absolute//../path/", VINF_SUCCESS, "/path" },
-    { NULL, "/absolute/../../path", VINF_SUCCESS, "/path" },
-    { NULL, "relative/../dir/./././file.txt", VINF_SUCCESS, "%p/dir/file.txt" },
-    { NULL, "relative/../dir\\.\\.\\.\\file.txt", VINF_SUCCESS, "%p/dir\\.\\.\\.\\file.txt" },  /* linux-specific */
-    { NULL, "/data/", VINF_SUCCESS, "/data" },
-    { "relative_base/dir/", "/from_root", VINF_SUCCESS, "/from_root" },
-    { "relative_base/dir/", "relative_also", VINF_SUCCESS, "%p/relative_base/dir/relative_also" },
-#endif
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
-    { NULL, "C:\\", VINF_SUCCESS, "C:\\" },
-    { "C:\\", "..", VINF_SUCCESS, "C:\\" },
-    { "C:\\temp", "..", VINF_SUCCESS, "C:\\" },
-    { "C:\\VirtualBox/Machines", "..\\VirtualBox.xml", VINF_SUCCESS, "C:\\VirtualBox\\VirtualBox.xml" },
-    { "C:\\MustDie", "\\from_root/dir/..", VINF_SUCCESS, "C:\\from_root" },
-    { "C:\\temp", "D:\\data", VINF_SUCCESS, "D:\\data" },
-    { NULL, "\\\\server\\..\\share", VINF_SUCCESS, "\\\\server\\..\\share" /* kind of strange */ },
-    { NULL, "\\\\server/", VINF_SUCCESS, "\\\\server\\" },
-    { NULL, "\\\\", VINF_SUCCESS, "\\\\" },
-    { NULL, "\\\\\\something", VINF_SUCCESS, "\\\\\\something" /* kind of strange */ },
-    { "\\\\server\\share_as_base", "/from_root", VINF_SUCCESS, "\\\\server\\from_root" },
-    { "\\\\just_server", "/from_root", VINF_SUCCESS, "\\\\just_server\\from_root" },
-    { "\\\\server\\share_as_base", "relative\\data", VINF_SUCCESS, "\\\\server\\share_as_base\\relative\\data" },
-    { "base", "\\\\?\\UNC\\relative/edwef/..", VINF_SUCCESS, "\\\\?\\UNC\\relative" },
-    { "\\\\?\\UNC\\base", "/from_root", VERR_INVALID_NAME, NULL },
-#else
-    { "/temp", "..", VINF_SUCCESS, "/" },
-    { "/VirtualBox/Machines", "../VirtualBox.xml", VINF_SUCCESS, "/VirtualBox/VirtualBox.xml" },
-    { "/MustDie", "/from_root/dir/..", VINF_SUCCESS, "/from_root" },
-    { "\\temp", "\\data", VINF_SUCCESS, "%p/\\temp/\\data" },
-#endif
-    };
-
-    for (unsigned i = 0; i < RT_ELEMENTS(s_aRTPathAbsExTests); ++ i)
-    {
-        rc = RTPathAbsEx(s_aRTPathAbsExTests[i].pcszInputBase,
-                         s_aRTPathAbsExTests[i].pcszInputPath,
-                         szPath, sizeof(szPath));
-        if (rc != s_aRTPathAbsExTests[i].rc)
-        {
-            RTTestIFailed("unexpected result code!\n"
-                          "   input base: '%s'\n"
-                          "   input path: '%s'\n"
-                          "       output: '%s'\n"
-                          "           rc: %Rrc\n"
-                          "  expected rc: %Rrc",
-                          s_aRTPathAbsExTests[i].pcszInputBase,
-                          s_aRTPathAbsExTests[i].pcszInputPath,
-                          szPath, rc,
-                          s_aRTPathAbsExTests[i].rc);
-            continue;
-        }
-
-        char szTmp[RTPATH_MAX];
-        char *pszExpected = NULL;
-        if (s_aRTPathAbsExTests[i].pcszOutput != NULL)
-        {
-            if (s_aRTPathAbsExTests[i].pcszOutput[0] == '%')
-            {
-                RTTESTI_CHECK_RC(rc = RTPathGetCurrent(szTmp, sizeof(szTmp)), VINF_SUCCESS);
-                if (RT_FAILURE(rc))
-                    break;
-
-                pszExpected = szTmp;
-
-                if (s_aRTPathAbsExTests[i].pcszOutput[1] == 'p')
-                {
-                    cch = strlen(szTmp);
-                    if (cch + strlen(s_aRTPathAbsExTests[i].pcszOutput) - 2 <= sizeof(szTmp))
-                        strcpy(szTmp + cch, s_aRTPathAbsExTests[i].pcszOutput + 2);
-                }
-#if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
-                else if (s_aRTPathAbsExTests[i].pcszOutput[1] == 'd')
-                {
-                    if (2 + strlen(s_aRTPathAbsExTests[i].pcszOutput) - 2 <= sizeof(szTmp))
-                        strcpy(szTmp + 2, s_aRTPathAbsExTests[i].pcszOutput + 2);
-                }
-#endif
-            }
-            else
-            {
-                strcpy(szTmp, s_aRTPathAbsExTests[i].pcszOutput);
-                pszExpected = szTmp;
-            }
-
-            if (strcmp(szPath, pszExpected))
-            {
-                RTTestIFailed("Unexpected result\n"
-                              "   input base: '%s'\n"
-                              "   input path: '%s'\n"
-                              "       output: '%s'\n"
-                              "     expected: '%s'",
-                              s_aRTPathAbsExTests[i].pcszInputBase,
-                              s_aRTPathAbsExTests[i].pcszInputPath,
-                              szPath,
-                              s_aRTPathAbsExTests[i].pcszOutput);
-            }
-        }
-    }
-#endif
-
-    /*
-     * RTPathAbsExEx - will replace RTPathAbsEx shortly.
-     */
-    RTTestSub(hTest, "RTPathAbsExEx");
     static const struct
     {
         uint32_t    fFlags;
@@ -476,10 +342,10 @@ int main()
             RTTestDisableAssertions(hTest);
 
         size_t cbAbsPath = sizeof(szPath);
-        rc = RTPathAbsExEx(s_aRTPathAbsExExTests[i].pcszInputBase,
-                           s_aRTPathAbsExExTests[i].pcszInputPath,
-                           s_aRTPathAbsExExTests[i].fFlags,
-                           szPath, &cbAbsPath);
+        rc = RTPathAbsEx(s_aRTPathAbsExExTests[i].pcszInputBase,
+                         s_aRTPathAbsExExTests[i].pcszInputPath,
+                         s_aRTPathAbsExExTests[i].fFlags,
+                         szPath, &cbAbsPath);
 
         if (RT_FAILURE(s_aRTPathAbsExExTests[i].rc))
             RTTestRestoreAssertions(hTest);
