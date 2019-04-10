@@ -67,7 +67,7 @@ UIWizardExportAppPage2::UIWizardExportAppPage2(bool fExportToOCIByDefault)
     , m_pAdditionalLabel(0)
     , m_pManifestCheckbox(0)
     , m_pIncludeISOsCheckbox(0)
-    , m_pAccountComboBoxLabel(0)
+    , m_pAccountLabel(0)
     , m_pAccountComboBox(0)
     , m_pAccountToolButton(0)
     , m_pAccountPropertyTable(0)
@@ -929,14 +929,14 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                     m_pSettingsLayout2->setColumnStretch(0, 0);
                     m_pSettingsLayout2->setColumnStretch(1, 1);
 
-                    /* Create provider label: */
-                    m_pAccountComboBoxLabel = new QLabel;
-                    if (m_pAccountComboBoxLabel)
+                    /* Create account label: */
+                    m_pAccountLabel = new QLabel;
+                    if (m_pAccountLabel)
                     {
-                        m_pAccountComboBoxLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+                        m_pAccountLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 
                         /* Add into layout: */
-                        m_pSettingsLayout2->addWidget(m_pAccountComboBoxLabel, 0, 0);
+                        m_pSettingsLayout2->addWidget(m_pAccountLabel, 0, 0);
                     }
                     /* Create sub-layout: */
                     QHBoxLayout *pSubLayout = new QHBoxLayout;
@@ -945,16 +945,16 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
                         pSubLayout->setContentsMargins(0, 0, 0, 0);
                         pSubLayout->setSpacing(1);
 
-                        /* Create provider combo-box: */
+                        /* Create account combo-box: */
                         m_pAccountComboBox = new QComboBox;
                         if (m_pAccountComboBox)
                         {
-                            m_pAccountComboBoxLabel->setBuddy(m_pAccountComboBox);
+                            m_pAccountLabel->setBuddy(m_pAccountComboBox);
 
                             /* Add into layout: */
                             pSubLayout->addWidget(m_pAccountComboBox);
                         }
-                        /* Create provider combo-box: */
+                        /* Create account tool-button: */
                         m_pAccountToolButton = new QIToolButton;
                         if (m_pAccountToolButton)
                         {
@@ -1002,9 +1002,9 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
     populateFormats();
     /* Populate MAC address policies: */
     populateMACAddressPolicies();
-    /* Populate providers: */
+    /* Populate accounts: */
     populateAccounts();
-    /* Populate profile properties: */
+    /* Populate account properties: */
     populateAccountProperties();
 
     /* Setup connections: */
@@ -1120,8 +1120,8 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     m_pIncludeISOsCheckbox->setToolTip(UIWizardExportApp::tr("Include ISO image files in exported VM archive."));
     m_pIncludeISOsCheckbox->setText(UIWizardExportApp::tr("&Include ISO image files"));
 
-    /* Translate Account combo-box: */
-    m_pAccountComboBoxLabel->setText(UIWizardExportApp::tr("&Account:"));
+    /* Translate Account label: */
+    m_pAccountLabel->setText(UIWizardExportApp::tr("&Account:"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
@@ -1129,7 +1129,7 @@ void UIWizardExportAppPageBasic2::retranslateUi()
     labels << m_pFileSelectorLabel;
     labels << m_pMACComboBoxLabel;
     labels << m_pAdditionalLabel;
-    labels << m_pAccountComboBoxLabel;
+    labels << m_pAccountLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
