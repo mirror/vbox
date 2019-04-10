@@ -265,10 +265,10 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, GuestDnDMIMEList &aFormat
         Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
     Msg.setNextUInt32(uScreenId);
 
-    int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+    int rc = GUESTDNDINST()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
     if (RT_SUCCESS(rc))
     {
-        GuestDnDResponse *pResp = GuestDnDInst()->response();
+        GuestDnDResponse *pResp = GUESTDNDINST()->response();
         AssertPtr(pResp);
 
         bool fFetchResult = true;
@@ -347,7 +347,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
         return setError(E_INVALIDARG, tr("Another drop operation already is in progress"));
 
     /* Dito. */
-    GuestDnDResponse *pResp = GuestDnDInst()->response();
+    GuestDnDResponse *pResp = GUESTDNDINST()->response();
     AssertPtr(pResp);
 
     HRESULT hr = pResp->resetProgress(m_pGuest);
@@ -960,7 +960,7 @@ int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    GuestDnD *pInst = GuestDnDInst();
+    GuestDnD *pInst = GUESTDNDINST();
     if (!pInst)
         return VERR_INVALID_POINTER;
 
@@ -1095,7 +1095,7 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
     GuestDnDResponse *pResp = pCtx->mpResp;
     AssertPtr(pCtx->mpResp);
 
-    GuestDnD *pInst = GuestDnDInst();
+    GuestDnD *pInst = GUESTDNDINST();
     if (!pInst)
         return VERR_INVALID_POINTER;
 
@@ -1200,7 +1200,7 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
     GuestDnDResponse *pResp = pCtx->mpResp;
     AssertPtr(pCtx->mpResp);
 
-    GuestDnD *pInst = GuestDnDInst();
+    GuestDnD *pInst = GUESTDNDINST();
     if (!pInst)
         return VERR_INVALID_POINTER;
 

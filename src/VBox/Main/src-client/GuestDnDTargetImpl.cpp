@@ -306,7 +306,7 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     HRESULT hr = S_OK;
 
     /* Adjust the coordinates in a multi-monitor setup. */
-    int rc = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
+    int rc = GUESTDNDINST()->adjustScreenCoordinates(aScreenId, &aX, &aY);
     if (RT_SUCCESS(rc))
     {
         GuestDnDMsg Msg;
@@ -321,10 +321,10 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.setNextPointer((void *)strFormats.c_str(), cbFormats);
         Msg.setNextUInt32(cbFormats);
 
-        rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+        rc = GUESTDNDINST()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
         {
-            GuestDnDResponse *pResp = GuestDnDInst()->response();
+            GuestDnDResponse *pResp = GUESTDNDINST()->response();
             if (pResp && RT_SUCCESS(pResp->waitForGuestResponse()))
                 resAction = GuestDnD::toMainAction(pResp->getActionDefault());
         }
@@ -384,7 +384,7 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
 
     HRESULT hr = S_OK;
 
-    int rc = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
+    int rc = GUESTDNDINST()->adjustScreenCoordinates(aScreenId, &aX, &aY);
     if (RT_SUCCESS(rc))
     {
         GuestDnDMsg Msg;
@@ -399,10 +399,10 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.setNextPointer((void *)strFormats.c_str(), cbFormats);
         Msg.setNextUInt32(cbFormats);
 
-        rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+        rc = GUESTDNDINST()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
         {
-            GuestDnDResponse *pResp = GuestDnDInst()->response();
+            GuestDnDResponse *pResp = GUESTDNDINST()->response();
             if (pResp && RT_SUCCESS(pResp->waitForGuestResponse()))
                 resAction = GuestDnD::toMainAction(pResp->getActionDefault());
         }
@@ -439,10 +439,10 @@ HRESULT GuestDnDTarget::leave(ULONG uScreenId)
     if (mDataBase.m_uProtocolVersion >= 3)
         Msg.setNextUInt32(0); /** @todo ContextID not used yet. */
 
-    int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+    int rc = GUESTDNDINST()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
     if (RT_SUCCESS(rc))
     {
-        GuestDnDResponse *pResp = GuestDnDInst()->response();
+        GuestDnDResponse *pResp = GUESTDNDINST()->response();
         if (pResp)
             pResp->waitForGuestResponse();
     }
@@ -506,7 +506,7 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     const uint32_t cbFormats = (uint32_t)strFormats.length() + 1; /* Include terminating zero. */
 
     /* Adjust the coordinates in a multi-monitor setup. */
-    HRESULT hr = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
+    HRESULT hr = GUESTDNDINST()->adjustScreenCoordinates(aScreenId, &aX, &aY);
     if (SUCCEEDED(hr))
     {
         GuestDnDMsg Msg;
@@ -521,10 +521,10 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
         Msg.setNextPointer((void*)strFormats.c_str(), cbFormats);
         Msg.setNextUInt32(cbFormats);
 
-        int vrc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+        int vrc = GUESTDNDINST()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(vrc))
         {
-            GuestDnDResponse *pResp = GuestDnDInst()->response();
+            GuestDnDResponse *pResp = GUESTDNDINST()->response();
             AssertPtr(pResp);
 
             vrc = pResp->waitForGuestResponse();
@@ -624,7 +624,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         return setError(E_INVALIDARG, tr("Another drop operation already is in progress"));
 
     /* Ditto. */
-    GuestDnDResponse *pResp = GuestDnDInst()->response();
+    GuestDnDResponse *pResp = GUESTDNDINST()->response();
     AssertPtr(pResp);
 
     HRESULT hr = pResp->resetProgress(m_pGuest);
@@ -837,7 +837,7 @@ int GuestDnDTarget::i_sendDataBody(PSENDDATACTX pCtx, GuestDnDData *pData)
         Msg.setNextUInt32(pData->getChkSumSize());                                         /** @todo cbChecksum; not used yet. */
     }
 
-    int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+    int rc = GUESTDNDINST()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
     if (RT_SUCCESS(rc))
         rc = updateProgress(pData, pCtx->mpResp, pData->getMeta().getSize());
 
@@ -868,7 +868,7 @@ int GuestDnDTarget::i_sendDataHeader(PSENDDATACTX pCtx, GuestDnDData *pData, Gue
     Msg.setNextPointer(NULL, 0);                                         /** @todo pvChecksum; not used yet. */
     Msg.setNextUInt32(0);                                                /** @todo cbChecksum; not used yet. */
 
-    int rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+    int rc = GUESTDNDINST()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
 
     LogFlowFuncLeaveRC(rc);
     return rc;
