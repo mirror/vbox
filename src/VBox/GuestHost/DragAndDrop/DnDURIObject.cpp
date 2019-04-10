@@ -48,6 +48,24 @@ DnDURIObject::DnDURIObject(Type enmType,
     , m_strTgtPathAbs(strDstPathAbs)
 {
     RT_ZERO(u);
+
+    switch (m_enmType)
+    {
+        case Type_File:
+        {
+            u.File.hFile = NIL_RTFILE;
+            break;
+        }
+
+        case Type_Directory:
+        {
+            u.Dir.hDir = NIL_RTDIR;
+            break;
+        }
+
+        default:
+            break;
+    }
 }
 
 DnDURIObject::~DnDURIObject(void)
