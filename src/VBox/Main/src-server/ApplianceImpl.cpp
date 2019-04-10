@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_MAIN_APPLIANCE
 #include <iprt/path.h>
+#include <iprt/cpp/path.h>
 #include <iprt/cpp/utils.h>
 #include <VBox/com/array.h>
 #include <map>
@@ -914,34 +915,39 @@ HRESULT Appliance::i_searchUniqueVMName(Utf8Str& aName) const
 
 HRESULT Appliance::i_searchUniqueImageFilePath(const Utf8Str &aMachineFolder, DeviceType_T aDeviceType, Utf8Str &aName) const
 {
-    IMedium *pMedium = NULL;
-    char *tmpName = RTStrDup(aName.c_str());
-    char *tmpAbsName = RTPathAbsExDup(aMachineFolder.c_str(), tmpName);
-    int i = 1;
-    /* Check if the file exists or if a medium with this path is registered already */
-    while (    RTPathExists(tmpAbsName)
-            || mVirtualBox->OpenMedium(Bstr(tmpAbsName).raw(), aDeviceType, AccessMode_ReadWrite,
-                                       FALSE /* fForceNewUuid */,  &pMedium) != VBOX_E_OBJECT_NOT_FOUND)
+    /*
+     * Check if the file exists or if a medium with this path is registered already
+     */
+    Utf8Str strAbsName;
+    ssize_t offDashNum = -1;
+    ssize_t cchDashNum = 0;
+    for (unsigned i = 1;; i++)
     {
-        RTStrFree(tmpAbsName);
-        char *tmpDir = RTStrDup(aName.c_str());
-        RTPathStripFilename(tmpDir);
-        char *tmpFile = RTStrDup(RTPathFilename(aName.c_str()));
-        RTPathStripSuffix(tmpFile);
-        const char *pszTmpSuff = RTPathSuffix(aName.c_str());
-        if (!strcmp(tmpDir, "."))
-            RTStrAPrintf(&tmpName, "%s_%d%s", tmpFile, i, pszTmpSuff);
-        else
-            RTStrAPrintf(&tmpName, "%s%c%s_%d%s", tmpDir, RTPATH_DELIMITER, tmpFile, i, pszTmpSuff);
-        tmpAbsName = RTPathAbsExDup(aMachineFolder.c_str(), tmpName);
-        RTStrFree(tmpFile);
-        RTStrFree(tmpDir);
-        ++i;
-    }
-    aName = tmpName;
-    RTStrFree(tmpName);
+        /* Complete the path (could be relative to machine folder). */
+        int rc = RTPathAbsExCxx(strAbsName, aMachineFolder, aName);
+        AssertRCReturn(rc, Global::vboxStatusCodeToCOM(rc));  /** @todo stupid caller ignores this */
 
-    return S_OK;
+        /* Check that the file does not exist and that there is no media somehow matching the name. */
+        if (!RTPathExists(strAbsName.c_str()))
+        {
+            ComPtr<IMedium> ptrMedium;
+            HRESULT hrc = mVirtualBox->OpenMedium(Bstr(strAbsName).raw(), aDeviceType, AccessMode_ReadWrite,
+                                                  FALSE /* fForceNewUuid */, ptrMedium.asOutParam());
+            if (hrc == VBOX_E_OBJECT_NOT_FOUND)
+                return S_OK;
+        }
+
+        /* Insert '_%i' before the suffix and try again. */
+        if (offDashNum < 0)
+        {
+            const char *pszSuffix = RTPathSuffix(aName.c_str());
+            offDashNum = pszSuffix ? pszSuffix - aName.c_str() : aName.length();
+        }
+        char   szTmp[32];
+        size_t cchTmp = RTStrPrintf(szTmp, sizeof(szTmp),  "_%u", i);
+        aName.replace(offDashNum, cchDashNum, szTmp, cchTmp);
+        cchDashNum = cchTmp;
+    }
 }
 
 /**
