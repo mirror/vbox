@@ -734,11 +734,6 @@ QString UIWizardExportAppPage2::profileName() const
     return m_pAccountComboBox->itemData(iIndex, AccountData_ProfileName).toString();
 }
 
-CCloudProfile UIWizardExportAppPage2::profile() const
-{
-    return m_comCloudProfile;
-}
-
 AbstractVSDParameterList UIWizardExportAppPage2::cloudClientParameters() const
 {
     return m_cloudClientParameters;
@@ -1032,8 +1027,6 @@ UIWizardExportAppPageBasic2::UIWizardExportAppPageBasic2(bool fExportToOCIByDefa
     registerField("manifestSelected", this, "manifestSelected");
     registerField("includeISOsSelected", this, "includeISOsSelected");
     registerField("providerShortName", this, "providerShortName");
-    registerField("profileName", this, "profileName");
-    registerField("profile", this, "profile");
     registerField("cloudClientParameters", this, "cloudClientParameters");
 }
 
@@ -1176,13 +1169,10 @@ bool UIWizardExportAppPageBasic2::isComplete() const
                           || field("format").toString() == "ovf-2.0";
         const bool fCSP =    field("isFormatCloudOne").toBool();
 
-        const QString &strFile = field("path").toString().toLower();
-        const QString &strAccount = field("profileName").toString();
-
         fResult =    (   fOVF
-                      && VBoxGlobal::hasAllowedExtension(strFile, OVFFileExts))
+                      && VBoxGlobal::hasAllowedExtension(path().toLower(), OVFFileExts))
                   || (   fCSP
-                      && !strAccount.isNull());
+                      && !m_comCloudProfile.isNull());
     }
 
     return fResult;
