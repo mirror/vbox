@@ -44,7 +44,7 @@
  * RTPathAbs() wrapper for working directly on a RTCString instance.
  *
  * @returns IPRT status code.
- * @param   rStrAbs         Reference to the destiation string.
+ * @param   rStrAbs         Reference to the destination string.
  * @param   pszRelative     The relative source string.
  */
 DECLINLINE(int) RTPathAbsCxx(RTCString &rStrAbs, const char *pszRelative)
@@ -53,10 +53,23 @@ DECLINLINE(int) RTPathAbsCxx(RTCString &rStrAbs, const char *pszRelative)
     int rc = rStrAbs.reserveNoThrow(RTPATH_MAX);
     if (RT_SUCCESS(rc))
     {
-        char *pszDst = rStrAbs.mutableRaw();
-        rc = RTPathAbs(pszRelative, pszDst, rStrAbs.capacity());
-        if (RT_FAILURE(rc))
+        unsigned cTries = 8;
+        for (;;)
+        {
+            char *pszDst = rStrAbs.mutableRaw();
+            size_t cbCap = rStrAbs.capacity();
+            rc = RTPathAbsEx(NULL, pszRelative, RTPATH_STR_F_STYLE_HOST, pszDst, &cbCap);
+            if (RT_SUCCESS(rc))
+                break;
             *pszDst = '\0';
+            if (rc != VERR_BUFFER_OVERFLOW)
+                break;
+            if (--cTries == 0)
+                break;
+            rc = rStrAbs.reserveNoThrow(RT_MIN(RT_ALIGN_Z(cbCap, 64), RTPATH_MAX));
+            if (RT_FAILURE(rc))
+                break;
+        }
         rStrAbs.jolt();
     }
     return rc;
@@ -67,7 +80,7 @@ DECLINLINE(int) RTPathAbsCxx(RTCString &rStrAbs, const char *pszRelative)
  * RTPathAbs() wrapper for working directly on a RTCString instance.
  *
  * @returns IPRT status code.
- * @param   rStrAbs         Reference to the destiation string.
+ * @param   rStrAbs         Reference to the destination string.
  * @param   rStrRelative    Reference to the relative source string.
  */
 DECLINLINE(int) RTPathAbsCxx(RTCString &rStrAbs, RTCString const &rStrRelative)
@@ -76,11 +89,69 @@ DECLINLINE(int) RTPathAbsCxx(RTCString &rStrAbs, RTCString const &rStrRelative)
 }
 
 
+
+/**
+ * RTPathAbsEx() wrapper for working directly on a RTCString instance.
+ *
+ * @returns IPRT status code.
+ * @param   rStrAbs         Reference to the destination string.
+ * @param   pszBase         The base path, optional.
+ * @param   pszRelative     The relative source string.
+ * @param   fFlags          RTPATH_STR_F_STYLE_XXX and RTPATHABS_F_XXX flags.
+ */
+DECLINLINE(int) RTPathAbsExCxx(RTCString &rStrAbs, const char *pszBase, const char *pszRelative, uint32_t fFlags = RTPATH_STR_F_STYLE_HOST)
+{
+    Assert(rStrAbs.c_str() != pszRelative);
+    int rc = rStrAbs.reserveNoThrow(RTPATH_MAX);
+    if (RT_SUCCESS(rc))
+    {
+        unsigned cTries = 8;
+        for (;;)
+        {
+            char *pszDst = rStrAbs.mutableRaw();
+            size_t cbCap = rStrAbs.capacity();
+            rc = RTPathAbsEx(pszBase, pszRelative, fFlags, pszDst, &cbCap);
+            if (RT_SUCCESS(rc))
+                break;
+            *pszDst = '\0';
+            if (rc != VERR_BUFFER_OVERFLOW)
+                break;
+            if (--cTries == 0)
+                break;
+            rc = rStrAbs.reserveNoThrow(RT_MIN(RT_ALIGN_Z(cbCap, 64), RTPATH_MAX));
+            if (RT_FAILURE(rc))
+                break;
+        }
+        rStrAbs.jolt();
+    }
+    return rc;
+}
+
+
+DECLINLINE(int) RTPathAbsExCxx(RTCString &rStrAbs, RTCString const &rStrBase, RTCString const &rStrRelative, uint32_t fFlags = RTPATH_STR_F_STYLE_HOST)
+{
+    return RTPathAbsExCxx(rStrAbs, rStrBase.c_str(), rStrRelative.c_str(), fFlags);
+}
+
+
+DECLINLINE(int) RTPathAbsExCxx(RTCString &rStrAbs, const char *pszBase, RTCString const &rStrRelative, uint32_t fFlags = RTPATH_STR_F_STYLE_HOST)
+{
+    return RTPathAbsExCxx(rStrAbs, pszBase, rStrRelative.c_str(), fFlags);
+}
+
+
+DECLINLINE(int) RTPathAbsExCxx(RTCString &rStrAbs, RTCString const &rStrBase, const char *pszRelative, uint32_t fFlags = RTPATH_STR_F_STYLE_HOST)
+{
+    return RTPathAbsExCxx(rStrAbs, rStrBase.c_str(), pszRelative, fFlags);
+}
+
+
+
 /**
  * RTPathAppPrivateNoArch() wrapper for working directly on a RTCString instance.
  *
  * @returns IPRT status code.
- * @param   rStrDst         Reference to the destiation string.
+ * @param   rStrDst         Reference to the destination string.
  */
 DECLINLINE(int) RTPathAppPrivateNoArchCxx(RTCString &rStrDst)
 {
@@ -102,7 +173,7 @@ DECLINLINE(int) RTPathAppPrivateNoArchCxx(RTCString &rStrDst)
  * RTPathAppend() wrapper for working directly on a RTCString instance.
  *
  * @returns IPRT status code.
- * @param   rStrDst         Reference to the destiation string.
+ * @param   rStrDst         Reference to the destination string.
  * @param   pszAppend       One or more components to append to the path already
  *                          present in @a rStrDst.
  */
@@ -134,7 +205,7 @@ DECLINLINE(int) RTPathAppendCxx(RTCString &rStrDst, const char *pszAppend)
  * RTPathAppend() wrapper for working directly on a RTCString instance.
  *
  * @returns IPRT status code.
- * @param   rStrDst         Reference to the destiation string.
+ * @param   rStrDst         Reference to the destination string.
  * @param   rStrAppend      One or more components to append to the path already
  *                          present in @a rStrDst.
  */
