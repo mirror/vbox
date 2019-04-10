@@ -335,6 +335,7 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2Weak.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/RTAssertMsg2WeakV.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/zero.asm \
+	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathAbsEx.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathFilename.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memchr.asm \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memcmp.asm \
@@ -372,7 +373,6 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/unidata-lower.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/time/time.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/generic/RTAssertShouldPanic-generic.cpp \
-	$(VBOX_PATH_RUNTIME_SRC)/generic/RTPathAbs-generic.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/generic/RTPathGetCurrentDrive-generic.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/generic/RTPathGetCurrentOnDrive-generic.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/generic/rtStrFormatKernelAddress-generic.cpp \
