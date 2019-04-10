@@ -45,6 +45,7 @@ public:
     void switchSessionCreateMode();
     /** Makes sure certain widgets are enabled so that a guest session can be created. */
     void switchSessionCloseMode();
+    void markForError(bool fMarkForError);
 
 protected:
 
@@ -56,6 +57,7 @@ private slots:
 
     void sltCreateButtonClick();
     void sltShowHidePassword(bool flag);
+    void sltHandleTextChanged(const QString &strText);
 
 private:
 
@@ -66,6 +68,9 @@ private:
     QPushButton  *m_pCloseButton;
     QHBoxLayout  *m_pMainLayout;
     QCheckBox    *m_pShowPasswordCheckBox;
+    QColor        m_defaultBaseColor;
+    QColor        m_errorBaseColor;
+    bool          m_fMarkedForError;
 };
 
 
@@ -81,6 +86,7 @@ UIGuestSessionCreateWidget::UIGuestSessionCreateWidget(QWidget *pParent /* = 0 *
     , m_pCloseButton(0)
     , m_pMainLayout(0)
     , m_pShowPasswordCheckBox(0)
+    , m_fMarkedForError(0)
 {
     prepareWidgets();
 }
@@ -96,6 +102,12 @@ void UIGuestSessionCreateWidget::prepareWidgets()
     {
         m_pMainLayout->addWidget(m_pUserNameEdit, 2);
         m_pUserNameEdit->setPlaceholderText(QApplication::translate("UIFileManager", "User Name"));
+        m_defaultBaseColor = m_pUserNameEdit->palette().color(QPalette::Base);
+        m_errorBaseColor = QColor(m_defaultBaseColor.red(),
+                                  0.5 * m_defaultBaseColor.green(),
+                                  0.5 * m_defaultBaseColor.blue());
+        connect(m_pUserNameEdit, &QILineEdit::textChanged,
+                this, &UIGuestSessionCreateWidget::sltHandleTextChanged);
     }
 
     m_pPasswordEdit = new QILineEdit;
@@ -104,6 +116,8 @@ void UIGuestSessionCreateWidget::prepareWidgets()
         m_pMainLayout->addWidget(m_pPasswordEdit, 2);
         m_pPasswordEdit->setPlaceholderText(QApplication::translate("UIFileManager", "Password"));
         m_pPasswordEdit->setEchoMode(QLineEdit::Password);
+        connect(m_pPasswordEdit, &QILineEdit::textChanged,
+                this, &UIGuestSessionCreateWidget::sltHandleTextChanged);
     }
 
     m_pShowPasswordCheckBox = new QCheckBox;
@@ -147,6 +161,12 @@ void UIGuestSessionCreateWidget::sltShowHidePassword(bool flag)
         m_pPasswordEdit->setEchoMode(QLineEdit::Normal);
     else
         m_pPasswordEdit->setEchoMode(QLineEdit::Password);
+}
+
+void UIGuestSessionCreateWidget::sltHandleTextChanged(const QString &strText)
+{
+    Q_UNUSED(strText);
+    markForError(false);
 }
 
 void UIGuestSessionCreateWidget::retranslateUi()
@@ -212,6 +232,32 @@ void UIGuestSessionCreateWidget::switchSessionCloseMode()
         m_pCloseButton->setEnabled(true);
 }
 
+void UIGuestSessionCreateWidget::markForError(bool fMarkForError)
+{
+    if (m_fMarkedForError == fMarkForError)
+        return;
+    m_fMarkedForError = fMarkForError;
+
+        if (m_pUserNameEdit)
+        {
+            QPalette mPalette = m_pUserNameEdit->palette();
+            if (m_fMarkedForError)
+                mPalette.setColor(QPalette::Base, m_errorBaseColor);
+            else
+                mPalette.setColor(QPalette::Base, m_defaultBaseColor);
+            m_pUserNameEdit->setPalette(mPalette);
+        }
+        if (m_pPasswordEdit)
+        {
+            QPalette mPalette = m_pPasswordEdit->palette();
+            if (m_fMarkedForError)
+                mPalette.setColor(QPalette::Base, m_errorBaseColor);
+            else
+                mPalette.setColor(QPalette::Base, m_defaultBaseColor);
+            m_pPasswordEdit->setPalette(mPalette);
+        }
+}
+
 
 /*********************************************************************************************************************************
 *   UIFileManagerSessionPanel implementation.                                                                        *
@@ -241,6 +287,12 @@ QString UIFileManagerSessionPanel::panelName() const
     return "SessionPanel";
 }
 
+void UIFileManagerSessionPanel::markForError(bool fMarkForError)
+{
+    if (m_pSessionCreateWidget)
+        m_pSessionCreateWidget->markForError(fMarkForError);
+}
+
 void UIFileManagerSessionPanel::prepareWidgets()
 {
     if (!mainLayout())
@@ -265,6 +317,12 @@ void UIFileManagerSessionPanel::retranslateUi()
 {
     UIDialogPanel::retranslateUi();
 
+}
+
+void UIFileManagerSessionPanel::showEvent(QShowEvent *pEvent)
+{
+    markForError(false);
+    UIDialogPanel::showEvent(pEvent);
 }
 
 #include "UIFileManagerSessionPanel.moc"

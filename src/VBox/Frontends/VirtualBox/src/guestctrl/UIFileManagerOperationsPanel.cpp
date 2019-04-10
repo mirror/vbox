@@ -337,6 +337,9 @@ void UIFileManagerOperationsPanel::prepareWidgets()
     if (!mainLayout())
         return;
 
+    QPalette mPalette = palette();
+    mPalette.setColor(QPalette::Window, qApp->palette().color(QPalette::Light));
+    setPalette(mPalette);
 
     m_pScrollArea = new QScrollArea;
     m_pContainerWidget = new QWidget;

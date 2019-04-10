@@ -46,12 +46,14 @@ public:
         void switchSessionCreateMode();
     /** @} */
     virtual QString panelName() const /* override */;
+    void markForError(bool fMarkForError);
 
 protected:
 
     virtual void prepareWidgets() /* override */;
     virtual void prepareConnections() /* override */;
     void retranslateUi();
+    void showEvent(QShowEvent *pEvent) /* override */;
 
 private:
 

@@ -412,14 +412,19 @@ void UIFileManager::sltCreateSession(QString strUserName, QString strPassword)
     {
         appendLog("Could not find Guest Additions", FileManagerLogType_Error);
         postSessionClosed();
+        if (m_pSessionPanel)
+            m_pSessionPanel->markForError(true);
         return;
     }
     if (strUserName.isEmpty())
     {
         appendLog("No user name is given", FileManagerLogType_Error);
+        if (m_pSessionPanel)
+            m_pSessionPanel->markForError(true);
         return;
     }
-    createSession(strUserName, strPassword);
+    if (m_pSessionPanel)
+        m_pSessionPanel->markForError(!createSession(strUserName, strPassword));
 }
 
 void UIFileManager::sltCloseSession()

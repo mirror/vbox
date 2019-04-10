@@ -60,9 +60,9 @@ protected:
     void retranslateUi() /* override */;
 
     /** Handles the Qt show @a pEvent. */
-    void showEvent(QShowEvent *pEvent);
+    void showEvent(QShowEvent *pEvent) /* override */;
     /** Handles the Qt hide @a pEvent. */
-    void hideEvent(QHideEvent *pEvent);
+    void hideEvent(QHideEvent *pEvent) /* override */;
     void addVerticalSeparator();
 
 private:
