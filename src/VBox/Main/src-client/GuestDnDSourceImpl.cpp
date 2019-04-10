@@ -1017,7 +1017,7 @@ int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
         Assert(!pCtx->mFmtRecv.isEmpty());
 
         if (!pCtx->mFmtRecv.equals(pCtx->mFmtReq))
-            LogRel3(("DnD: Requested data in format '%s', receiving in intermediate format '%s' now\n",
+            LogRel2(("DnD: Requested data in format '%s', receiving in intermediate format '%s' now\n",
                      pCtx->mFmtReq.c_str(), pCtx->mFmtRecv.c_str()));
 
         /*
@@ -1035,10 +1035,10 @@ int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
     }
     else /* Just inform the user (if verbose release logging is enabled). */
     {
-        LogRel2(("DnD: The guest does not support format '%s':\n", pCtx->mFmtReq.c_str()));
-        LogRel2(("DnD: Guest offered the following formats:\n"));
+        LogRel(("DnD: The guest does not support format '%s':\n", pCtx->mFmtReq.c_str()));
+        LogRel(("DnD: Guest offered the following formats:\n"));
         for (size_t i = 0; i < pCtx->mFmtOffered.size(); i++)
-            LogRel2(("DnD:\tFormat #%zu: %s\n", i, pCtx->mFmtOffered.at(i).c_str()));
+            LogRel(("DnD:\tFormat #%zu: %s\n", i, pCtx->mFmtOffered.at(i).c_str()));
     }
 
     ASMAtomicWriteBool(&pCtx->mIsActive, false);
