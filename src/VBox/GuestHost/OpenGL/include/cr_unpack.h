@@ -82,12 +82,22 @@ DECLEXPORT(double) crReadUnalignedDouble( const void *buffer );
 
 #define SET_RETURN_PTR( offset ) do { \
         CRDBGPTR_CHECKZ(return_ptr); \
+        if (!DATA_POINTER_CHECK(offset + sizeof(*return_ptr))) \
+        { \
+             crError("%s: SET_RETURN_PTR(%u) offset out of bounds\n", __FUNCTION__, offset); \
+             return; \
+        } \
         crMemcpy( return_ptr, cr_unpackData + (offset), sizeof( *return_ptr ) ); \
     } while (0);
 
 
 #define SET_WRITEBACK_PTR( offset ) do { \
         CRDBGPTR_CHECKZ(writeback_ptr); \
+        if (!DATA_POINTER_CHECK(offset + sizeof(*writeback_ptr))) \
+        { \
+             crError("%s: SET_WRITEBACK_PTR(%u) offset out of bounds\n", __FUNCTION__, offset); \
+             return; \
+        } \
         crMemcpy( writeback_ptr, cr_unpackData + (offset), sizeof( *writeback_ptr ) ); \
     } while (0);
 
