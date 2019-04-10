@@ -365,16 +365,17 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
         m_pSourceLayout = new QGridLayout;
         if (m_pSourceLayout)
         {
+            m_pSourceLayout->setColumnStretch(0, 0);
+            m_pSourceLayout->setColumnStretch(1, 1);
+
             /* Create source label: */
             m_pSourceLabel = new QLabel(this);
             if (m_pSourceLabel)
             {
                 m_pSourceLabel->hide();
-                m_pSourceLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Minimum);
-                m_pSourceLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
 
                 /* Add into layout: */
-                m_pSourceLayout->addWidget(m_pSourceLabel, 0, 0);
+                m_pSourceLayout->addWidget(m_pSourceLabel, 0, 0, Qt::AlignRight);
             }
 
             /* Create source selector: */
@@ -437,15 +438,15 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                 if (m_pCloudContainerLayout)
                 {
                     m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
+                    m_pCloudContainerLayout->setColumnStretch(0, 0);
+                    m_pCloudContainerLayout->setColumnStretch(1, 1);
 
                     /* Create account label: */
                     m_pAccountLabel = new QLabel;
                     if (m_pAccountLabel)
                     {
-                        m_pAccountLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
-
                         /* Add into layout: */
-                        m_pCloudContainerLayout->addWidget(m_pAccountLabel, 0, 0);
+                        m_pCloudContainerLayout->addWidget(m_pAccountLabel, 0, 0, Qt::AlignRight);
                     }
 
                     /* Create sub-layout: */
