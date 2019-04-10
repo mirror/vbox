@@ -43,8 +43,8 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(Machine *parent);
-    HRESULT init(Machine *parent, RecordingSettings *that);
-    HRESULT initCopy(Machine *parent, RecordingSettings *that);
+    HRESULT init(Machine *parent, RecordingSettings *aThat);
+    HRESULT initCopy(Machine *parent, RecordingSettings *aThat);
     void uninit();
 
     // public methods only for internal purposes

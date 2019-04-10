@@ -64,7 +64,7 @@ void RecordingSettings::FinalRelease()
 }
 
 /**
- * Initializes the audio adapter object.
+ * Initializes the recording settings object.
  *
  * @returns COM result indicator
  */
@@ -100,12 +100,12 @@ HRESULT RecordingSettings::init(Machine *aParent)
  *  @note This object must be destroyed before the original object
  *  it shares data with is destroyed.
  */
-HRESULT RecordingSettings::init(Machine *aParent, RecordingSettings *that)
+HRESULT RecordingSettings::init(Machine *aParent, RecordingSettings *aThat)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
+    LogFlowThisFunc(("aParent: %p, aThat: %p\n", aParent, aThat));
 
-    ComAssertRet(aParent && that, E_INVALIDARG);
+    ComAssertRet(aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -114,12 +114,12 @@ HRESULT RecordingSettings::init(Machine *aParent, RecordingSettings *that)
     m = new Data();
 
     unconst(m->pMachine) = aParent;
-    m->pPeer = that;
+    m->pPeer = aThat;
 
-    AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.share(that->m->bd);
-    m->mapScreenObj = that->m->mapScreenObj;
+    m->bd.share(aThat->m->bd);
+    m->mapScreenObj = aThat->m->mapScreenObj;
 
     autoInitSpan.setSucceeded();
 
@@ -132,12 +132,12 @@ HRESULT RecordingSettings::init(Machine *aParent, RecordingSettings *that)
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
  */
-HRESULT RecordingSettings::initCopy(Machine *aParent, RecordingSettings *that)
+HRESULT RecordingSettings::initCopy(Machine *aParent, RecordingSettings *aThat)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
+    LogFlowThisFunc(("aParent: %p, aThat: %p\n", aParent, aThat));
 
-    ComAssertRet(aParent && that, E_INVALIDARG);
+    ComAssertRet(aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -148,10 +148,10 @@ HRESULT RecordingSettings::initCopy(Machine *aParent, RecordingSettings *that)
     unconst(m->pMachine) = aParent;
     // mPeer is left null
 
-    AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
-    m->bd.attachCopy(that->m->bd);
-    m->mapScreenObj = that->m->mapScreenObj;
+    m->bd.attachCopy(aThat->m->bd);
+    m->mapScreenObj = aThat->m->mapScreenObj;
 
     autoInitSpan.setSucceeded();
 

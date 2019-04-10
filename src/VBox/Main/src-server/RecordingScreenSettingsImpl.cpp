@@ -71,11 +71,12 @@ void RecordingScreenSettings::FinalRelease()
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Initializes the audio adapter object.
+ * Initializes the recording screen settings object.
  *
  * @returns COM result indicator
  */
-HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, uint32_t uScreenId, const settings::RecordingScreenSettings& data)
+HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, uint32_t uScreenId,
+                                      const settings::RecordingScreenSettings& aThat)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p\n", aParent));
@@ -95,7 +96,7 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, uint32_t uScre
     /* Simply copy the settings data. */
     m->uScreenId = uScreenId;
     m->bd.allocate();
-    m->bd->operator=(data);
+    m->bd->operator=(aThat);
 
     HRESULT rc = S_OK;
 
@@ -122,12 +123,12 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, uint32_t uScre
  *  @note This object must be destroyed before the original object
  *  it shares data with is destroyed.
  */
-HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, RecordingScreenSettings *that)
+HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, RecordingScreenSettings *aThat)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
+    LogFlowThisFunc(("aParent: %p, aThat: %p\n", aParent, aThat));
 
-    ComAssertRet(aParent && that, E_INVALIDARG);
+    ComAssertRet(aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -136,12 +137,12 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, RecordingScree
     m = new Data();
 
     unconst(m->pParent) = aParent;
-    m->pPeer = that;
+    m->pPeer = aThat;
 
-    AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
-    m->uScreenId = that->m->uScreenId;
-    m->bd.share(that->m->bd);
+    m->uScreenId = aThat->m->uScreenId;
+    m->bd.share(aThat->m->bd);
 
     HRESULT rc = S_OK;
 
@@ -165,12 +166,12 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, RecordingScree
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
  */
-HRESULT RecordingScreenSettings::initCopy(RecordingSettings *aParent, RecordingScreenSettings *that)
+HRESULT RecordingScreenSettings::initCopy(RecordingSettings *aParent, RecordingScreenSettings *aThat)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
+    LogFlowThisFunc(("aParent: %p, aThat: %p\n", aParent, aThat));
 
-    ComAssertRet(aParent && that, E_INVALIDARG);
+    ComAssertRet(aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -181,10 +182,10 @@ HRESULT RecordingScreenSettings::initCopy(RecordingSettings *aParent, RecordingS
     unconst(m->pParent) = aParent;
     /* mPeer is left null. */
 
-    AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
-    m->uScreenId = that->m->uScreenId;
-    m->bd.attachCopy(that->m->bd);
+    m->uScreenId = aThat->m->uScreenId;
+    m->bd.attachCopy(aThat->m->bd);
 
     HRESULT rc = S_OK;
 
