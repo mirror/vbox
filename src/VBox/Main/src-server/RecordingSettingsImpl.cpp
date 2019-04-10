@@ -551,6 +551,12 @@ void RecordingSettings::i_applyDefaults(void)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Initialize default capturing settings here. */
+    m->bd->fEnabled = false;
+
+    /* First, do a reset so that all internal screen settings objects are destroyed. */
+    i_reset();
+    /* Second, sync (again) to configured machine displays to (re-)create screen settings objects. */
+    i_syncToMachineDisplays();
 }
 
 /**
