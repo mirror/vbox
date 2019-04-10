@@ -17,16 +17,21 @@
 
 /* Qt includes: */
 #include <QFileInfo>
+#include <QHeaderView>
 #include <QLabel>
 #include <QStackedLayout>
+#include <QTableWidget>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIComboBox.h"
 #include "QIRichTextLabel.h"
+#include "QIToolButton.h"
 #include "VBoxGlobal.h"
 #include "UIEmptyFilePathSelector.h"
+#include "UIIconPool.h"
 #include "UIMessageCenter.h"
+#include "UIVirtualBoxManager.h"
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageBasic1.h"
 #include "UIWizardImportAppPageBasic2.h"
@@ -44,6 +49,10 @@ UIWizardImportAppPage1::UIWizardImportAppPage1(bool fImportFromOCIByDefault)
     , m_pStackedLayout(0)
     , m_pFileSelector(0)
     , m_pCloudContainerLayout(0)
+    , m_pAccountLabel(0)
+    , m_pAccountComboBox(0)
+    , m_pAccountToolButton(0)
+    , m_pAccountPropertyTable(0)
 {
 }
 
@@ -104,6 +113,150 @@ void UIWizardImportAppPage1::populateSources()
         setSource("local");
 }
 
+void UIWizardImportAppPage1::populateAccounts()
+{
+    /* Block signals while updating: */
+    m_pAccountComboBox->blockSignals(true);
+
+    /* Remember current item data to be able to restore it: */
+    QString strOldData;
+    if (m_pAccountComboBox->currentIndex() != -1)
+        strOldData = m_pAccountComboBox->itemData(m_pAccountComboBox->currentIndex(), AccountData_ProfileName).toString();
+
+    /* Clear combo initially: */
+    m_pAccountComboBox->clear();
+    /* Clear Cloud Provider: */
+    m_comCloudProvider = CCloudProvider();
+
+    /* If provider chosen: */
+    if (!sourceId().isNull())
+    {
+        /* (Re)initialize Cloud Provider: */
+        m_comCloudProvider = m_comCloudProviderManager.GetProviderById(sourceId());
+        /* Show error message if necessary: */
+        if (!m_comCloudProviderManager.isOk())
+            msgCenter().cannotFindCloudProvider(m_comCloudProviderManager, sourceId());
+        else
+        {
+            /* Acquire existing profile names: */
+            const QVector<QString> profileNames = m_comCloudProvider.GetProfileNames();
+            /* Show error message if necessary: */
+            if (!m_comCloudProvider.isOk())
+                msgCenter().cannotAcquireCloudProviderParameter(m_comCloudProvider);
+            else
+            {
+                /* Iterate through existing profile names: */
+                foreach (const QString &strProfileName, profileNames)
+                {
+                    /* Skip if we have nothing to show (wtf happened?): */
+                    if (strProfileName.isEmpty())
+                        continue;
+
+                    /* Compose item, fill it's data: */
+                    m_pAccountComboBox->addItem(strProfileName);
+                    m_pAccountComboBox->setItemData(m_pAccountComboBox->count() - 1, strProfileName, AccountData_ProfileName);
+                }
+            }
+        }
+
+        /* Set previous/default item if possible: */
+        int iNewIndex = -1;
+        if (   iNewIndex == -1
+            && !strOldData.isNull())
+            iNewIndex = m_pAccountComboBox->findData(strOldData, AccountData_ProfileName);
+        if (   iNewIndex == -1
+            && m_pAccountComboBox->count() > 0)
+            iNewIndex = 0;
+        if (iNewIndex != -1)
+            m_pAccountComboBox->setCurrentIndex(iNewIndex);
+    }
+
+    /* Unblock signals after update: */
+    m_pAccountComboBox->blockSignals(false);
+}
+
+void UIWizardImportAppPage1::populateAccountProperties()
+{
+    /* Clear table initially: */
+    m_pAccountPropertyTable->clear();
+    m_pAccountPropertyTable->setRowCount(0);
+    m_pAccountPropertyTable->setColumnCount(0);
+    /* Clear Cloud Profile: */
+    m_comCloudProfile = CCloudProfile();
+
+    /* If both provider and profile chosen: */
+    if (!m_comCloudProvider.isNull() && !profileName().isNull())
+    {
+        /* Acquire Cloud Profile: */
+        m_comCloudProfile = m_comCloudProvider.GetProfileByName(profileName());
+        /* Show error message if necessary: */
+        if (!m_comCloudProvider.isOk())
+            msgCenter().cannotFindCloudProfile(m_comCloudProvider, profileName());
+        else
+        {
+            /* Acquire properties: */
+            QVector<QString> keys;
+            QVector<QString> values;
+            values = m_comCloudProfile.GetProperties(QString(), keys);
+            /* Show error message if necessary: */
+            if (!m_comCloudProfile.isOk())
+                msgCenter().cannotAcquireCloudProfileParameter(m_comCloudProfile);
+            else
+            {
+                /* Configure table: */
+                m_pAccountPropertyTable->setRowCount(keys.size());
+                m_pAccountPropertyTable->setColumnCount(2);
+
+                /* Push acquired keys/values to data fields: */
+                for (int i = 0; i < m_pAccountPropertyTable->rowCount(); ++i)
+                {
+                    /* Create key item: */
+                    QTableWidgetItem *pItemK = new QTableWidgetItem(keys.at(i));
+                    if (pItemK)
+                    {
+                        /* Non-editable for sure, but non-selectable? */
+                        pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsEditable);
+                        pItemK->setFlags(pItemK->flags() & ~Qt::ItemIsSelectable);
+
+                        /* Use non-translated description as tool-tip: */
+                        const QString strToolTip = m_comCloudProvider.GetPropertyDescription(keys.at(i));
+                        /* Show error message if necessary: */
+                        if (!m_comCloudProfile.isOk())
+                            msgCenter().cannotAcquireCloudProfileParameter(m_comCloudProfile);
+                        else
+                            pItemK->setData(Qt::UserRole, strToolTip);
+
+                        /* Insert into table: */
+                        m_pAccountPropertyTable->setItem(i, 0, pItemK);
+                    }
+
+                    /* Create value item: */
+                    QTableWidgetItem *pItemV = new QTableWidgetItem(values.at(i));
+                    if (pItemV)
+                    {
+                        /* Non-editable for sure, but non-selectable? */
+                        pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsEditable);
+                        pItemV->setFlags(pItemV->flags() & ~Qt::ItemIsSelectable);
+
+                        /* Use the value as tool-tip, there can be quite long values: */
+                        const QString strToolTip = values.at(i);
+                        pItemV->setToolTip(strToolTip);
+
+                        /* Insert into table: */
+                        m_pAccountPropertyTable->setItem(i, 1, pItemV);
+                    }
+                }
+
+                /* Update table tool-tips: */
+                updateAccountPropertyTableToolTips();
+
+                /* Adjust the table: */
+                adjustAccountPropertyTable();
+            }
+        }
+    }
+}
+
 void UIWizardImportAppPage1::updatePageAppearance()
 {
     /* Update page appearance according to chosen source: */
@@ -116,6 +269,38 @@ void UIWizardImportAppPage1::updateSourceComboToolTip()
     const QString strCurrentToolTip = m_pSourceComboBox->itemData(iCurrentIndex, Qt::ToolTipRole).toString();
     AssertMsg(!strCurrentToolTip.isEmpty(), ("Data not found!"));
     m_pSourceComboBox->setToolTip(strCurrentToolTip);
+}
+
+void UIWizardImportAppPage1::updateAccountPropertyTableToolTips()
+{
+    /* Iterate through all the key items: */
+    for (int i = 0; i < m_pAccountPropertyTable->rowCount(); ++i)
+    {
+        /* Acquire current key item: */
+        QTableWidgetItem *pItemK = m_pAccountPropertyTable->item(i, 0);
+        if (pItemK)
+        {
+            const QString strToolTip = pItemK->data(Qt::UserRole).toString();
+            pItemK->setToolTip(QApplication::translate("UIWizardImportAppPageBasic1", strToolTip.toUtf8().constData()));
+        }
+    }
+}
+
+void UIWizardImportAppPage1::adjustAccountPropertyTable()
+{
+    /* Disable last column stretching temporary: */
+    m_pAccountPropertyTable->horizontalHeader()->setStretchLastSection(false);
+
+    /* Resize both columns to contents: */
+    m_pAccountPropertyTable->resizeColumnsToContents();
+    /* Then acquire full available width: */
+    const int iFullWidth = m_pAccountPropertyTable->viewport()->width();
+    /* First column should not be less than it's minimum size, last gets the rest: */
+    const int iMinimumWidth0 = qMin(m_pAccountPropertyTable->horizontalHeader()->sectionSize(0), iFullWidth / 2);
+    m_pAccountPropertyTable->horizontalHeader()->resizeSection(0, iMinimumWidth0);
+
+    /* Enable last column stretching again: */
+    m_pAccountPropertyTable->horizontalHeader()->setStretchLastSection(true);
 }
 
 void UIWizardImportAppPage1::setSource(const QString &strSource)
@@ -142,6 +327,17 @@ QUuid UIWizardImportAppPage1::sourceId() const
 {
     const int iIndex = m_pSourceComboBox->currentIndex();
     return m_pSourceComboBox->itemData(iIndex, SourceData_ID).toUuid();
+}
+
+QString UIWizardImportAppPage1::profileName() const
+{
+    const int iIndex = m_pAccountComboBox->currentIndex();
+    return m_pAccountComboBox->itemData(iIndex, AccountData_ProfileName).toString();
+}
+
+CCloudProfile UIWizardImportAppPage1::profile() const
+{
+    return m_comCloudProfile;
 }
 
 
@@ -242,6 +438,67 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                 {
                     m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
 
+                    /* Create account label: */
+                    m_pAccountLabel = new QLabel;
+                    if (m_pAccountLabel)
+                    {
+                        m_pAccountLabel->setAlignment(Qt::AlignRight | Qt::AlignTrailing | Qt::AlignVCenter);
+
+                        /* Add into layout: */
+                        m_pCloudContainerLayout->addWidget(m_pAccountLabel, 0, 0);
+                    }
+
+                    /* Create sub-layout: */
+                    QHBoxLayout *pSubLayout = new QHBoxLayout;
+                    if (pSubLayout)
+                    {
+                        pSubLayout->setContentsMargins(0, 0, 0, 0);
+                        pSubLayout->setSpacing(1);
+
+                        /* Create account combo-box: */
+                        m_pAccountComboBox = new QComboBox;
+                        if (m_pAccountComboBox)
+                        {
+                            m_pAccountLabel->setBuddy(m_pAccountComboBox);
+
+                            /* Add into layout: */
+                            pSubLayout->addWidget(m_pAccountComboBox);
+                        }
+
+                        /* Create account tool-button: */
+                        m_pAccountToolButton = new QIToolButton;
+                        if (m_pAccountToolButton)
+                        {
+                            m_pAccountToolButton->setIcon(UIIconPool::iconSet(":/cloud_profile_manager_16px.png",
+                                                                              ":/cloud_profile_manager_disabled_16px.png"));
+
+                            /* Add into layout: */
+                            pSubLayout->addWidget(m_pAccountToolButton);
+                        }
+
+                        /* Add into layout: */
+                        m_pCloudContainerLayout->addLayout(pSubLayout, 0, 1);
+                    }
+
+                    /* Create profile property table: */
+                    m_pAccountPropertyTable = new QTableWidget;
+                    if (m_pAccountPropertyTable)
+                    {
+                        const QFontMetrics fm(m_pAccountPropertyTable->font());
+                        const int iFontWidth = fm.width('x');
+                        const int iTotalWidth = 50 * iFontWidth;
+                        const int iFontHeight = fm.height();
+                        const int iTotalHeight = 4 * iFontHeight;
+                        m_pAccountPropertyTable->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+//                        m_pAccountPropertyTable->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                        m_pAccountPropertyTable->setAlternatingRowColors(true);
+                        m_pAccountPropertyTable->horizontalHeader()->setVisible(false);
+                        m_pAccountPropertyTable->verticalHeader()->setVisible(false);
+                        m_pAccountPropertyTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+                        /* Add into layout: */
+                        m_pCloudContainerLayout->addWidget(m_pAccountPropertyTable, 1, 1);
+                    }
                 }
 
                 /* Add into layout: */
@@ -258,16 +515,48 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
 
     /* Populate sources: */
     populateSources();
+    /* Populate accounts: */
+    populateAccounts();
+    /* Populate account properties: */
+    populateAccountProperties();
 
     /* Setup connections: */
+    if (gpManager)
+        connect(gpManager, &UIVirtualBoxManager::sigCloudProfileManagerChange,
+                this, &UIWizardImportAppPageBasic1::sltHandleSourceChange);
     connect(m_pSourceComboBox, static_cast<void(QIComboBox::*)(int)>(&QIComboBox::activated),
             this, &UIWizardImportAppPageBasic1::sltHandleSourceChange);
     connect(m_pFileSelector, &UIEmptyFilePathSelector::pathChanged,
             this, &UIWizardImportAppPageBasic1::completeChanged);
+    connect(m_pAccountComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIWizardImportAppPageBasic1::sltHandleAccountComboChange);
+    connect(m_pAccountToolButton, &QIToolButton::clicked,
+            this, &UIWizardImportAppPageBasic1::sltHandleAccountButtonClick);
 
     /* Register fields: */
     registerField("source", this, "source");
     registerField("isSourceCloudOne", this, "isSourceCloudOne");
+    registerField("profile", this, "profile");
+}
+
+bool UIWizardImportAppPageBasic1::event(QEvent *pEvent)
+{
+    /* Handle known event types: */
+    switch (pEvent->type())
+    {
+        case QEvent::Show:
+        case QEvent::Resize:
+        {
+            /* Adjust profile property table: */
+            adjustAccountPropertyTable();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return UIWizardPage::event(pEvent);
 }
 
 void UIWizardImportAppPageBasic1::retranslateUi()
@@ -299,9 +588,13 @@ void UIWizardImportAppPageBasic1::retranslateUi()
     m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
     m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
 
+    /* Translate Account label: */
+    m_pAccountLabel->setText(UIWizardImportApp::tr("&Account:"));
+
     /* Adjust label widths: */
     QList<QWidget*> labels;
     labels << m_pSourceLabel;
+    labels << m_pAccountLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
@@ -313,6 +606,7 @@ void UIWizardImportAppPageBasic1::retranslateUi()
 
     /* Update tool-tips: */
     updateSourceComboToolTip();
+    updateAccountPropertyTableToolTips();
 }
 
 void UIWizardImportAppPageBasic1::initializePage()
@@ -323,9 +617,22 @@ void UIWizardImportAppPageBasic1::initializePage()
 
 bool UIWizardImportAppPageBasic1::isComplete() const
 {
-    /* Make sure appliance file has allowed extension and exists: */
-    return    VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
-           && QFile::exists(m_pFileSelector->path());
+    bool fResult = true;
+
+    /* Check appliance settings: */
+    if (fResult)
+    {
+        const bool fOVF = !isSourceCloudOne();
+        const bool fCSP = !fOVF;
+
+        fResult =    (   fOVF
+                      && VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
+                      && QFile::exists(m_pFileSelector->path()))
+                  || (   fCSP
+                      && !m_comCloudProfile.isNull());
+    }
+
+    return fResult;
 }
 
 bool UIWizardImportAppPageBasic1::validatePage()
@@ -355,5 +662,20 @@ void UIWizardImportAppPageBasic1::sltHandleSourceChange()
 
     /* Refresh required settings: */
     updatePageAppearance();
+    populateAccounts();
+    populateAccountProperties();
     emit completeChanged();
+}
+
+void UIWizardImportAppPageBasic1::sltHandleAccountComboChange()
+{
+    /* Refresh required settings: */
+    populateAccountProperties();
+}
+
+void UIWizardImportAppPageBasic1::sltHandleAccountButtonClick()
+{
+    /* Open Cloud Profile Manager: */
+    if (gpManager)
+        gpManager->openCloudProfileManager();
 }

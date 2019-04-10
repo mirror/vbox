@@ -33,9 +33,11 @@
 
 /* Forward declarations: */
 class QLabel;
+class QTableWidget;
 class QStackedLayout;
 class QIComboBox;
 class QIRichTextLabel;
+class QIToolButton;
 class UIEmptyFilePathSelector;
 
 /** Source combo data fields. */
@@ -45,6 +47,12 @@ enum
     SourceData_Name            = Qt::UserRole + 2,
     SourceData_ShortName       = Qt::UserRole + 3,
     SourceData_IsItCloudFormat = Qt::UserRole + 4
+};
+
+/** Account combo data fields. */
+enum
+{
+    AccountData_ProfileName = Qt::UserRole + 1
 };
 
 /** UIWizardPageBase extension for 1st page of the Import Appliance wizard. */
@@ -57,12 +65,20 @@ protected:
 
     /** Populates sources. */
     void populateSources();
+    /** Populates accounts. */
+    void populateAccounts();
+    /** Populates account properties. */
+    void populateAccountProperties();
 
     /** Updates page appearance. */
     virtual void updatePageAppearance();
 
     /** Updates source combo tool-tips. */
     void updateSourceComboToolTip();
+    /** Updates account property table tool-tips. */
+    void updateAccountPropertyTableToolTips();
+    /** Adjusts account property table. */
+    void adjustAccountPropertyTable();
 
     /** Defines @a strSource. */
     void setSource(const QString &strSource);
@@ -73,6 +89,10 @@ protected:
 
     /** Returns source ID. */
     QUuid sourceId() const;
+    /** Returns profile name. */
+    QString profileName() const;
+    /** Returns Cloud Profile object. */
+    CCloudProfile profile() const;
 
     /** Holds whether default source should be Import from OCI. */
     bool  m_fImportFromOCIByDefault;
@@ -98,7 +118,15 @@ protected:
     UIEmptyFilePathSelector *m_pFileSelector;
 
     /** Holds the cloud container layout instance. */
-    QGridLayout *m_pCloudContainerLayout;
+    QGridLayout  *m_pCloudContainerLayout;
+    /** Holds the account label instance. */
+    QLabel       *m_pAccountLabel;
+    /** Holds the account combo-box instance. */
+    QComboBox    *m_pAccountComboBox;
+    /** Holds the account management tool-button instance. */
+    QIToolButton *m_pAccountToolButton;
+    /** Holds the account property table instance. */
+    QTableWidget *m_pAccountPropertyTable;
 };
 
 /** UIWizardPage extension for 1st page of the Import Appliance wizard, extends UIWizardImportAppPage1 as well. */
@@ -107,6 +135,7 @@ class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAp
     Q_OBJECT;
     Q_PROPERTY(QString source READ source WRITE setSource);
     Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
+    Q_PROPERTY(CCloudProfile profile READ profile);
 
 public:
 
@@ -114,6 +143,9 @@ public:
     UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault);
 
 protected:
+
+    /** Handle any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
@@ -131,6 +163,12 @@ private slots:
 
     /** Handles import source change. */
     void sltHandleSourceChange();
+
+    /** Handles change in account combo-box. */
+    void sltHandleAccountComboChange();
+
+    /** Handles account tool-button click. */
+    void sltHandleAccountButtonClick();
 
 private:
 
