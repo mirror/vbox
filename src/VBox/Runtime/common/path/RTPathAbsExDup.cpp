@@ -36,28 +36,18 @@
 
 
 
-/**
- * Same as RTPathAbsEx only the result is RTStrDup()'ed.
- *
- * @returns Pointer to the absolute path. Use RTStrFree() to free this string.
- * @returns NULL if RTPathAbsEx() or RTStrDup() fails.
- * @param   pszBase         The base path to act like a current directory.
- *                          When NULL, the actual cwd is used (i.e. the call
- *                          is equivalent to RTPathAbs(pszPath, ...).
- * @param   pszPath         The path to resolve.
- */
-RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath)
+RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath, uint32_t fFlags)
 {
     char szPath[RTPATH_MAX];
     size_t cbPath = sizeof(szPath);
-    int rc = RTPathAbsEx(pszBase, pszPath, RTPATH_STR_F_STYLE_HOST, szPath, &cbPath);
+    int rc = RTPathAbsEx(pszBase, pszPath, fFlags, szPath, &cbPath);
     if (RT_SUCCESS(rc))
         return RTStrDup(szPath);
 
     if (rc == VERR_BUFFER_OVERFLOW)
     {
         size_t   cbPrevPath = sizeof(szPath);
-        uint32_t cTries = 6;
+        uint32_t cTries = 8;
         while (cTries-- > 0)
         {
             cbPath     = RT_MAX(RT_ALIGN_Z(cbPath + 16, 64), cbPrevPath + 256);
@@ -65,7 +55,7 @@ RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath)
             char *pszAbsPath = (char *)RTStrAlloc(cbPath);
             if (pszAbsPath)
             {
-                rc = RTPathAbsEx(pszBase, pszPath, RTPATH_STR_F_STYLE_HOST, pszAbsPath, &cbPath);
+                rc = RTPathAbsEx(pszBase, pszPath, fFlags, pszAbsPath, &cbPath);
                 if (RT_SUCCESS(rc))
                     return pszAbsPath;
                 RTStrFree(pszAbsPath);

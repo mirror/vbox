@@ -1104,7 +1104,7 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
                     char *pszDir = RTStrDupN(pchDir, cchDir);
                     if (pszDir)
                     {
-                        pSettings->pszGuardRelativeToDir = RTPathAbsExDup(pszDir, pValueUnion->psz);
+                        pSettings->pszGuardRelativeToDir = RTPathAbsExDup(pszDir, pValueUnion->psz, RTPATH_STR_F_STYLE_HOST);
                         RTStrFree(pszDir);
                         if (pSettings->pszGuardRelativeToDir)
                             return VINF_SUCCESS;

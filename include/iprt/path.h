@@ -364,17 +364,18 @@ RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, uint32_t fFlag
 /**
  * Same as RTPathAbsEx only the result is RTStrDup()'ed.
  *
- * @returns Pointer to the absolute path. Use RTStrFree() to free this string.
- * @returns NULL if RTPathAbsEx() or RTStrDup() fails.
+ * @returns Pointer to the absolute path.  Use RTStrFree() to free this string.
+ * @retval  NULL if RTPathAbsEx() or RTStrDup() fails.
+ *
  * @param   pszBase         The base path to act like a current directory.
  *                          When NULL, the actual cwd is used (i.e. the call
  *                          is equivalent to RTPathAbs(pszPath, ...).
  * @param   pszPath         The path to resolve.
- *
- * @note    Current implementation is buggy and will remove trailing slashes
- *          that would normally specify a directory.  Don't depend on this.
+ * @param   fFlags          One of the RTPATH_STR_F_STYLE_XXX flags combined
+ *                          with any of the RTPATHABS_F_XXX ones.  Most
+ *                          users will pass RTPATH_STR_F_STYLE_HOST (0).
  */
-RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath);
+RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath, uint32_t fFlags);
 
 /**
  * Strips the filename from a path. Truncates the given string in-place by overwriting the

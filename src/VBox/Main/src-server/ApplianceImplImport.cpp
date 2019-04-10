@@ -18,6 +18,7 @@
 #define LOG_GROUP LOG_GROUP_MAIN_APPLIANCE
 #include <iprt/alloca.h>
 #include <iprt/path.h>
+#include <iprt/cpp/path.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/s3.h>
@@ -2393,6 +2394,8 @@ void Appliance::i_convertDiskAttachmentValues(const ovf::HardDiskController &hdc
  * @param strDstPath Where to create the target image.
  * @param pTargetMedium out: The newly created target medium. This also gets pushed on stack.llHardDisksCreated for cleanup.
  * @param stack
+ *
+ * @throws HRESULT
  */
 void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                                      const Utf8Str &strDstPath,
@@ -2400,11 +2403,10 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                                      ImportStack &stack)
 {
     HRESULT rc;
-    char *pszAbsDstPath = RTPathAbsExDup(stack.strMachineFolder.c_str(),
-                                         strDstPath.c_str());
-    Utf8Str strAbsDstPath(pszAbsDstPath);
-    RTStrFree(pszAbsDstPath);
-    pszAbsDstPath = NULL;
+
+    Utf8Str strAbsDstPath;
+    int vrc = RTPathAbsExCxx(strAbsDstPath, stack.strMachineFolder, strDstPath);
+    AssertRCStmt(vrc, throw Global::vboxStatusCodeToCOM(vrc));
 
     /* Get the system properties. */
     SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
@@ -2431,7 +2433,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
      * the right structure for importing into existing medium objects, which
      * the current code can't possibly handle. */
     RTUUID uuid;
-    int vrc = RTUuidFromStr(&uuid, strDstPath.c_str());
+    vrc = RTUuidFromStr(&uuid, strDstPath.c_str());
     if (vrc == VINF_SUCCESS)
     {
         rc = mVirtualBox->i_findHardDiskById(Guid(uuid), true, &pTargetMedium);

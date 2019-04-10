@@ -141,7 +141,7 @@ DECLINLINE(int) tftpSecurityFilenameCheck(PNATState pData, PCTFTPSESSION pcTftpS
         rc = VERR_INTERNAL_ERROR;
     else
     {
-        char *pszFullPathAbs = RTPathAbsExDup(tftp_prefix, (const char*)pcTftpSession->pszFilename);
+        char *pszFullPathAbs = RTPathAbsExDup(tftp_prefix, (const char *)pcTftpSession->pszFilename, RTPATH_STR_F_STYLE_HOST);
 
         if (   !pszFullPathAbs
             || !RTPathStartsWith(pszFullPathAbs, tftp_prefix))
