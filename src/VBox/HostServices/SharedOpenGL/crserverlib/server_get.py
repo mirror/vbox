@@ -126,6 +126,7 @@ for func_name in keys:
         local_argtype = apiutil.PointerType(lastParam[1])
         local_argname = 'local_%s' % lastParam[0]
 
+        print('\tunsigned int cComponents = 0;');
         print('\t%s %s[%d] = { 0 };' % ( local_argtype, local_argname, max_components[func_name] ))
         print('\t(void) %s;' % lastParam[0])
 
@@ -141,6 +142,6 @@ for func_name in keys:
         if func_name in no_pnames:
             print('\tcrServerReturnValue(&(%s[0]), %d*sizeof(%s));' % (local_argname, max_components[func_name], local_argtype ))
         else:
-            print('\tunsigned int cComponents = RT_MIN(crStateHlpComponentsCount(pname), RT_ELEMENTS(%s));' % local_argname)
+            print('\tcComponents = RT_MIN(crStateHlpComponentsCount(pname), RT_ELEMENTS(%s));' % local_argname)
             print('\tcrServerReturnValue(&(%s[0]), cComponents*sizeof(%s));' % (local_argname, local_argtype ))
         print ('}\n')

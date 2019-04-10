@@ -168,6 +168,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchTexEnviv( GLenum target, GLenum pn
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnvfv( GLenum target, GLenum pname, GLfloat * params )
 {
+    size_t cComponents = 0;
     GLfloat local_params[4] = {0};
     (void) params;
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
@@ -175,12 +176,13 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnvfv( GLenum target, GLenum
     else
         crStateGetTexEnvfv( target, pname, local_params );
 
-    size_t cComponents = RT_MIN(crStateHlpComponentsCount(pname), RT_ELEMENTS(local_params));
+    cComponents = RT_MIN(crStateHlpComponentsCount(pname), RT_ELEMENTS(local_params));
     crServerReturnValue( &(local_params[0]), cComponents*sizeof (GLfloat) );
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnviv( GLenum target, GLenum pname, GLint * params )
 {
+    size_t cComponents = 0;
     GLint local_params[4] = {0};
     (void) params;
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
@@ -188,7 +190,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnviv( GLenum target, GLenum
     else
         crStateGetTexEnviv( target, pname, local_params );
 
-    size_t cComponents = RT_MIN(crStateHlpComponentsCount(pname), RT_ELEMENTS(local_params));
+    cComponents = RT_MIN(crStateHlpComponentsCount(pname), RT_ELEMENTS(local_params));
     crServerReturnValue( &(local_params[0]), cComponents*sizeof (GLint) );
 }
 
