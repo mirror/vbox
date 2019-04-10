@@ -146,13 +146,13 @@ static void crFbImgFromDimPtrBGRA(void *pvVram, uint32_t width, uint32_t height,
 static int8_t crFbImgFromDimOffVramBGRA(VBOXCMDVBVAOFFSET offVRAM, uint32_t width, uint32_t height, CR_BLITTER_IMG *pImg)
 {
     uint32_t cbBuff;
-    
+
     if (width == 0 || height == 0)
     {
         WARN(("invalid param"));
         return -1;
     }
-    
+
     cbBuff = width * height * 4;
     // Check if overflow happened
     if (cbBuff / width != height * 4)
@@ -160,7 +160,7 @@ static int8_t crFbImgFromDimOffVramBGRA(VBOXCMDVBVAOFFSET offVRAM, uint32_t widt
         WARN(("invalid param"));
         return -1;
     }
-    
+
     if (offVRAM >= g_cbVRam
             || UINT32_MAX - cbBuff <= offVRAM
             || offVRAM + cbBuff >= g_cbVRam)
