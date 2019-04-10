@@ -217,6 +217,20 @@ crStateGetTextureObjectAndImage(CRContext *g, GLenum texTarget, GLint level,
 {
     CRTextureState *t = &(g->texture);
     CRTextureUnit *unit = t->unit + t->curTextureUnit;
+    
+    if (level < 0 || level > MaxTextureLevel(g, texTarget)) {
+        crWarning("Wrong texture level=%d", level);
+        *obj = NULL;
+        *img = NULL;
+        return;
+    }
+
+    if (level < 0 || level >= CR_MAX_MIPMAP_LEVELS)
+    {
+        crWarning("unexpected level 0x%x", level);
+        *obj = NULL;
+        *img = NULL;
+    }
 
     switch (texTarget) {
         case GL_TEXTURE_1D:
@@ -690,6 +704,12 @@ crStateCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x
     CRTextureObj *tobj = NULL;
     CRTextureLevel *tl = NULL;
     (void)x; (void)y;
+
+    if (level < 0 || level > MaxTextureLevel(g, target)) {
+        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+                     "crStateCopyTexImage2D: invalid level: %d", level);
+        return;
+    }
     
     crStateGetTextureObjectAndImage(g, target, level, &tobj, &tl);
     CRASSERT(tobj);

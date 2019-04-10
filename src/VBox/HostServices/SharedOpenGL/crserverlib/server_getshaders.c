@@ -358,7 +358,7 @@ GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsProgram(GLuint program)
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetObjectParameterfvARB( VBoxGLhandleARB obj, GLenum pname, GLfloat * params )
 {
-    GLfloat local_params[1];
+    GLfloat local_params[1] = {0};
     GLuint hwid = crStateGetProgramHWID(obj);
     (void) params;
 
@@ -377,7 +377,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetObjectParameterfvARB( VBoxGLhan
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetObjectParameterivARB( VBoxGLhandleARB obj, GLenum pname, GLint * params )
 {
-    GLint local_params[1];
+    GLint local_params[1] = {0};
     GLuint hwid = crStateGetProgramHWID(obj);
     if (!hwid)
     {

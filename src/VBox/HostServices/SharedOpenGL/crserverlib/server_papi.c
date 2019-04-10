@@ -31,6 +31,10 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchBarrierCreateCR( GLuint name, GLui
 	sprintf( debug_buf, "BarrierCreateCR( %d, %d )", name, count );
 	cr_server.head_spu->dispatch_table.ChromiumParametervCR( GL_PRINT_STRING_CR, GL_UNSIGNED_BYTE, sizeof(debug_buf), debug_buf );
 #endif
+
+	if (count > CR_MAX_CLIENTS)
+		count = CR_MAX_CLIENTS;
+
 	if (count == 0)
 	{
 		count = cr_server.numClients;

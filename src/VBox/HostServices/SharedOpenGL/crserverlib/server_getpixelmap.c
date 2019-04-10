@@ -79,7 +79,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapfv( GLenum map, GLfloat
         GLfloat *local_values;
 
         size *= tabsize;
-        local_values = (GLfloat*)crAlloc( size );
+        local_values = (GLfloat*)crCalloc( size );
 
         cr_server.head_spu->dispatch_table.GetPixelMapfv( map, local_values );
         crServerReturnValue( local_values, size );
@@ -106,7 +106,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapuiv( GLenum map, GLuint
         GLuint *local_values;
 
         size *= tabsize;
-        local_values = (GLuint*)crAlloc( size );
+        local_values = (GLuint*)crCalloc( size );
 
         cr_server.head_spu->dispatch_table.GetPixelMapuiv( map, local_values );
         crServerReturnValue( local_values, size );
@@ -133,7 +133,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapusv( GLenum map, GLusho
         GLushort *local_values;
 
         size *= tabsize;
-        local_values = (GLushort*)crAlloc( size );
+        local_values = (GLushort*)crCalloc( size );
 
         cr_server.head_spu->dispatch_table.GetPixelMapusv( map, local_values );
         crServerReturnValue( local_values, size );

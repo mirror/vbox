@@ -359,6 +359,22 @@ map1(GLenum target, GLfloat u1, GLfloat u2, GLint ustride,
 		return;
 	}
 
+    switch (target) {
+        case GL_MAP1_VERTEX_3:
+        case GL_MAP1_VERTEX_4:
+        case GL_MAP1_INDEX:
+        case GL_MAP1_COLOR_4:
+        case GL_MAP1_NORMAL:
+        case GL_MAP1_TEXTURE_COORD_1:
+        case GL_MAP1_TEXTURE_COORD_2:
+        case GL_MAP1_TEXTURE_COORD_3:
+        case GL_MAP1_TEXTURE_COORD_4:
+            break;
+        default:
+            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glMap1d(bad target)");
+            return;
+    }
+
 	i = target - GL_MAP1_COLOR_4;
 
 	k = gleval_sizes[i];
@@ -377,22 +393,6 @@ map1(GLenum target, GLfloat u1, GLfloat u2, GLint ustride,
 		/* See OpenGL 1.2.1 spec, section F.2.13 */
 		crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
 								 "glMap1d(current texture unit must be zero)");
-		return;
-	}
-
-	switch (target) {
-	case GL_MAP1_VERTEX_3:
-	case GL_MAP1_VERTEX_4:
-	case GL_MAP1_INDEX:
-	case GL_MAP1_COLOR_4:
-	case GL_MAP1_NORMAL:
-	case GL_MAP1_TEXTURE_COORD_1:
-	case GL_MAP1_TEXTURE_COORD_2:
-	case GL_MAP1_TEXTURE_COORD_3:
-	case GL_MAP1_TEXTURE_COORD_4:
-		break;
-	default:
-		crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glMap1d(bad target)");
 		return;
 	}
 
@@ -473,7 +473,23 @@ map2(GLenum target, GLfloat u1, GLfloat u2, GLint ustride, GLint uorder,
 		return;
 	}
 
-	if (g->extensions.NV_vertex_program) {
+    switch (target) {
+        case GL_MAP2_VERTEX_3:
+        case GL_MAP2_VERTEX_4:
+        case GL_MAP2_INDEX:
+        case GL_MAP2_COLOR_4:
+        case GL_MAP2_NORMAL:
+        case GL_MAP2_TEXTURE_COORD_1:
+        case GL_MAP2_TEXTURE_COORD_2:
+        case GL_MAP2_TEXTURE_COORD_3:
+        case GL_MAP2_TEXTURE_COORD_4:
+            break;
+        default:
+            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glMap2d()");
+            return;
+    }
+
+    if (g->extensions.NV_vertex_program) {
 /* XXX FIXME */
 		i = target - GL_MAP2_COLOR_4;
 	} else {
@@ -507,22 +523,6 @@ map2(GLenum target, GLfloat u1, GLfloat u2, GLint ustride, GLint uorder,
 		return;
 	}
 #endif
-
-	switch (target) {
-	case GL_MAP2_VERTEX_3:
-	case GL_MAP2_VERTEX_4:
-	case GL_MAP2_INDEX:
-	case GL_MAP2_COLOR_4:
-	case GL_MAP2_NORMAL:
-	case GL_MAP2_TEXTURE_COORD_1:
-	case GL_MAP2_TEXTURE_COORD_2:
-	case GL_MAP2_TEXTURE_COORD_3:
-	case GL_MAP2_TEXTURE_COORD_4:
-		break;
-	default:
-		crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glMap2d()");
-		return;
-	}
 
 	/* make copy of the control points */
 	if (type == GL_FLOAT)

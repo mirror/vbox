@@ -48,7 +48,7 @@ max_components = {
     'GetProgramParameterdvNV': 4,
     'GetProgramParameterfvNV': 4,
     'GetProgramivNV': 1,
-    'GetTrackMatrixivNV': 1,
+    'GetTrackMatrixivNV': 24,
     'GetVertexAttribPointervNV': 1,
     'GetVertexAttribdvNV': 4,
     'GetVertexAttribfvNV': 4,
@@ -126,7 +126,8 @@ for func_name in keys:
         local_argtype = apiutil.PointerType(lastParam[1])
         local_argname = 'local_%s' % lastParam[0]
 
-        print('\tunsigned int cComponents = 0;');
+        if not func_name in no_pnames:
+            print('\tunsigned int cComponents = 0;');
         print('\t%s %s[%d] = { 0 };' % ( local_argtype, local_argname, max_components[func_name] ))
         print('\t(void) %s;' % lastParam[0])
 

@@ -150,7 +150,7 @@ GLint SERVER_DISPATCH_APIENTRY crServerDispatchGetUniformLocation(GLuint program
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetProgramiv( GLuint program, GLenum pname, GLint * params )
 {
-    GLint local_params[1];
+    GLint local_params[1] = {0};
     (void) params;
     cr_server.head_spu->dispatch_table.GetProgramiv(crStateGetProgramHWID(program), pname, local_params);
     crServerReturnValue( &(local_params[0]), 1*sizeof(GLint) );
@@ -158,7 +158,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetProgramiv( GLuint program, GLen
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderiv( GLuint shader, GLenum pname, GLint * params )
 {
-    GLint local_params[1];
+    GLint local_params[1] = {0};
     (void) params;
     cr_server.head_spu->dispatch_table.GetShaderiv( crStateGetShaderHWID(shader), pname, local_params );
     crServerReturnValue( &(local_params[0]), 1*sizeof(GLint) );

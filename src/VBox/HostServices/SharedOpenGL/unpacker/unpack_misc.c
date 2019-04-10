@@ -25,6 +25,13 @@ void crUnpackExtendDeleteQueriesARB(void)
 {
     GLsizei n = READ_DATA( 8, GLsizei );
     const GLuint *ids = DATA_POINTER(12, GLuint);
+
+    if (n <= 0 || n >= INT32_MAX / sizeof(GLint) / 4 || !DATA_POINTER_CHECK(12 + n * sizeof(GLuint)))
+    {
+        crError("crUnpackExtendDeleteQueriesARB: parameter 'n' is out of range");
+        return;
+    }
+
     cr_unpackDispatch.DeleteQueriesARB(n, ids);
 }
 
@@ -83,5 +90,12 @@ void crUnpackExtendVBoxTexPresent(void)
     GLint yPos = READ_DATA( 20, GLint );
     GLint cRects = READ_DATA( 24, GLint );
     GLint *pRects = (GLint *)DATA_POINTER( 28, GLvoid );
+
+    if (cRects <= 0 || cRects >= INT32_MAX / sizeof(GLint) / 8 || !DATA_POINTER_CHECK(28 + 4 * cRects * sizeof(GLint)))
+    {
+        crError("crUnpackExtendVBoxTexPresent: parameter 'cRects' is out of range");
+        return;
+    }
+
     cr_unpackDispatch.VBoxTexPresent( texture, cfg, xPos, yPos, cRects, pRects );
 }
