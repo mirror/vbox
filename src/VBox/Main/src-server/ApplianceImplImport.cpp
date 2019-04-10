@@ -716,7 +716,7 @@ HRESULT Appliance::interpret()
                     if (di.strCompression.compare("gzip", Utf8Str::CaseInsensitive)==0)
                         strFilename.stripSuffix();
 
-                    i_searchUniqueImageFilePath(strMachineFolder, devType, strFilename);
+                    i_searchUniqueImageFilePath(strMachineFolder, devType, strFilename); /** @todo check the return code! */
 
                     /* find the description for the storage controller
                      * that has the same ID as hd.idController */
