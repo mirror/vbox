@@ -71,6 +71,9 @@ protected:
     /** Returns whether source under certain @a iIndex is cloud one. */
     bool isSourceCloudOne(int iIndex = -1) const;
 
+    /** Returns source ID. */
+    QUuid sourceId() const;
+
     /** Holds whether default source should be Import from OCI. */
     bool  m_fImportFromOCIByDefault;
 
@@ -81,16 +84,21 @@ protected:
     /** Holds the Cloud Profile object reference. */
     CCloudProfile          m_comCloudProfile;
 
+    /** Holds the source layout instance. */
+    QGridLayout *m_pSourceLayout;
     /** Holds the source type label instance. */
-    QLabel     *m_pSourceLabel;
+    QLabel      *m_pSourceLabel;
     /** Holds the source type combo-box instance. */
-    QIComboBox *m_pSourceComboBox;
+    QIComboBox  *m_pSourceComboBox;
 
     /** Holds the stacked layout instance. */
     QStackedLayout *m_pStackedLayout;
 
     /** Holds the file selector instance. */
     UIEmptyFilePathSelector *m_pFileSelector;
+
+    /** Holds the cloud container layout instance. */
+    QGridLayout *m_pCloudContainerLayout;
 };
 
 /** UIWizardPage extension for 1st page of the Import Appliance wizard, extends UIWizardImportAppPage1 as well. */
