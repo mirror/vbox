@@ -8663,7 +8663,7 @@ HRESULT Console::i_createSharedFolder(const Utf8Str &strName, const SharedFolder
      * Check whether the path is valid and exists.
      */
     char szAbsHostPath[RTPATH_MAX];
-    int vrc = RTPathAbsEx(NULL, aData.m_strHostPath.c_str(), szAbsHostPath, sizeof(szAbsHostPath));
+    int vrc = RTPathAbs(aData.m_strHostPath.c_str(), szAbsHostPath, sizeof(szAbsHostPath));
     if (RT_FAILURE(vrc))
         return setErrorBoth(E_INVALIDARG, vrc, tr("Invalid shared folder path: '%s' (%Rrc)"), aData.m_strHostPath.c_str(), vrc);
 

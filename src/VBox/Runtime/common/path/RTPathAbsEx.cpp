@@ -52,7 +52,7 @@
  */
 RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, char *pszAbsPath, size_t cbAbsPath)
 {
-#if 1
+#if 0
     if (    pszBase
         &&  pszPath
         &&  !rtPathVolumeSpecLen(pszPath)

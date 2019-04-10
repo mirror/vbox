@@ -94,7 +94,7 @@ static int rtDirRelBuildFullPath(PRTDIRINTERNAL pThis, char *pszPathDst, size_t 
      *
      * This ASSUMES that pThis->pszPath is an absolute path.
      */
-    int rc = RTPathAbsEx(pThis->pszPath, pszRelPath, pszPathDst, cbPathDst);
+    int rc = RTPathAbsExEx(pThis->pszPath, pszRelPath, RTPATH_STR_F_STYLE_HOST, pszPathDst, &cbPathDst);
     if (RT_SUCCESS(rc))
     {
         if (RTPathStartsWith(pszPathDst, pThis->pszPath))

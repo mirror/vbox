@@ -39,7 +39,7 @@
 #include "internal/path.h"
 #include "internal/fs.h"
 
-#if 1
+#if 0
 
 static char *rtPathSkipRootSpec(char *pszCur)
 {

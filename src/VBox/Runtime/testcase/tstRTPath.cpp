@@ -266,6 +266,7 @@ int main()
     RTTESTI_CHECK_RC(RTPathTemp(szPath, cch+2), VINF_SUCCESS);
 
 
+#if 0
     /*
      * RTPathAbsEx
      */
@@ -397,6 +398,7 @@ int main()
             }
         }
     }
+#endif
 
     /*
      * RTPathAbsExEx - will replace RTPathAbsEx shortly.
