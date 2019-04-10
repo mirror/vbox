@@ -168,7 +168,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchTexEnviv( GLenum target, GLenum pn
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnvfv( GLenum target, GLenum pname, GLfloat * params )
 {
-    size_t cComponents = 0;
+    unsigned int cComponents = 0;
     GLfloat local_params[4] = {0};
     (void) params;
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
@@ -182,7 +182,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnvfv( GLenum target, GLenum
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnviv( GLenum target, GLenum pname, GLint * params )
 {
-    size_t cComponents = 0;
+    unsigned int cComponents = 0;
     GLint local_params[4] = {0};
     (void) params;
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
