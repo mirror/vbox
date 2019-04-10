@@ -42,9 +42,9 @@ struct RecordingSettings::Data
         : pMachine(NULL)
     { }
 
-    Machine * const              pMachine;
-    ComObjPtr<RecordingSettings> pPeer;
-    RecordScreenSettingsMap      mapScreenObj;
+    Machine * const                    pMachine;
+    const ComObjPtr<RecordingSettings> pPeer;
+    RecordScreenSettingsMap            mapScreenObj;
 
     // use the XML settings structure in the members for simplicity
     Backupable<settings::RecordingSettings> bd;
@@ -114,7 +114,7 @@ HRESULT RecordingSettings::init(Machine *aParent, RecordingSettings *aThat)
     m = new Data();
 
     unconst(m->pMachine) = aParent;
-    m->pPeer = aThat;
+    unconst(m->pPeer)    = aThat;
 
     AutoWriteLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
