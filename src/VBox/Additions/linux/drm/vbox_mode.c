@@ -177,6 +177,8 @@ static bool vbox_set_up_input_mapping(struct vbox_private *vbox)
 			if (to_vbox_crtc(crtci)->crtc_id != 0)
 				continue;
 
+			if (!CRTC_FB(crtci))
+				break;
 			vbox->single_framebuffer = true;
 			vbox->input_mapping_width = CRTC_FB(crtci)->width;
 			vbox->input_mapping_height = CRTC_FB(crtci)->height;
