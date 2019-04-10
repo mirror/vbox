@@ -1946,7 +1946,8 @@ HRESULT Machine::getBIOSSettings(ComPtr<IBIOSSettings> &aBIOSSettings)
 
 HRESULT Machine::getRecordingSettings(ComPtr<IRecordingSettings> &aRecordingSettings)
 {
-    /* mRecordingSettings is constant during life time, no need to lock */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     aRecordingSettings = mRecordingSettings;
 
     return S_OK;

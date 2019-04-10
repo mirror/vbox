@@ -139,7 +139,10 @@ HRESULT RecordingScreenSettings::init(RecordingSettings *aParent, RecordingScree
     unconst(m->pParent) = aParent;
     unconst(m->pPeer)   = aThat;
 
-    AutoWriteLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
+    AutoCaller thatCaller(aThat);
+    AssertComRCReturnRC(thatCaller.rc());
+
+    AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
     m->uScreenId = aThat->m->uScreenId;
     m->bd.share(aThat->m->bd);
@@ -182,7 +185,10 @@ HRESULT RecordingScreenSettings::initCopy(RecordingSettings *aParent, RecordingS
     unconst(m->pParent) = aParent;
     /* mPeer is left null. */
 
-    AutoWriteLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
+    AutoCaller thatCaller(aThat);
+    AssertComRCReturnRC(thatCaller.rc());
+
+    AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
     m->uScreenId = aThat->m->uScreenId;
     m->bd.attachCopy(aThat->m->bd);

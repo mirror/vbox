@@ -99,6 +99,8 @@ HRESULT RecordingSettings::init(Machine *aParent)
  *
  *  @note This object must be destroyed before the original object
  *  it shares data with is destroyed.
+ *
+ *  @note Locks @a aThat object for reading.
  */
 HRESULT RecordingSettings::init(Machine *aParent, RecordingSettings *aThat)
 {
@@ -116,7 +118,10 @@ HRESULT RecordingSettings::init(Machine *aParent, RecordingSettings *aThat)
     unconst(m->pMachine) = aParent;
     unconst(m->pPeer)    = aThat;
 
-    AutoWriteLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
+    AutoCaller thatCaller(aThat);
+    AssertComRCReturnRC(thatCaller.rc());
+
+    AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
     m->bd.share(aThat->m->bd);
     m->mapScreenObj = aThat->m->mapScreenObj;
@@ -131,6 +136,8 @@ HRESULT RecordingSettings::init(Machine *aParent, RecordingSettings *aThat)
  *  Initializes the guest object given another guest object
  *  (a kind of copy constructor). This object makes a private copy of data
  *  of the original object passed as an argument.
+ *
+ *  @note Locks @a aThat object for reading.
  */
 HRESULT RecordingSettings::initCopy(Machine *aParent, RecordingSettings *aThat)
 {
@@ -148,7 +155,7 @@ HRESULT RecordingSettings::initCopy(Machine *aParent, RecordingSettings *aThat)
     unconst(m->pMachine) = aParent;
     // mPeer is left null
 
-    AutoWriteLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
 
     m->bd.attachCopy(aThat->m->bd);
     m->mapScreenObj = aThat->m->mapScreenObj;
@@ -200,7 +207,9 @@ HRESULT RecordingSettings::getEnabled(BOOL *enabled)
 
 HRESULT RecordingSettings::setEnabled(BOOL enable)
 {
-    LogFlowThisFuncEnter();
+    /* the machine needs to be mutable */
+    AutoMutableOrSavedOrRunningStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -214,6 +223,7 @@ HRESULT RecordingSettings::setEnabled(BOOL enable)
         m->bd->fEnabled = fEnabled;
 
         alock.release();
+
         rc = m->pMachine->i_onRecordingChange(enable);
         if (FAILED(rc))
         {
@@ -230,6 +240,10 @@ HRESULT RecordingSettings::setEnabled(BOOL enable)
         {
             AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
             m->pMachine->i_setModified(Machine::IsModified_Recording);
+
+            /* Make sure to release the mutable dependency lock from above before
+             * actually saving the settings. */
+            adep.release();
 
             /** Save settings if online - @todo why is this required? -- @bugref{6818} */
             if (Global::IsOnline(m->pMachine->i_getMachineState()))
@@ -491,6 +505,10 @@ HRESULT RecordingSettings::i_saveSettings(settings::RecordingSettings &data)
 
 void RecordingSettings::i_rollback()
 {
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     m->bd.rollback();
 }
@@ -515,7 +533,6 @@ void RecordingSettings::i_commit()
         if (m->pPeer)
         {
             /* attach new data to the peer and reshare it */
-            AutoWriteLock peerlock(m->pPeer COMMA_LOCKVAL_SRC_POS);
             m->pPeer->m->bd.attach(m->bd);
         }
     }
