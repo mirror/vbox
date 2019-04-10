@@ -915,6 +915,7 @@ DECLINLINE(int) ohciR3SetInterruptInt(POHCI ohci, int rcBusy, uint32_t intr, con
  */
 DECLINLINE(void) ohciR3RaiseUnrecoverableError(POHCI pThis)
 {
+    LogRelMax(10, ("OHCI#%d: Raising unrecoverable error\n", pThis->pDevInsR3->iInstance));
     ohciR3SetInterrupt(pThis, OHCI_INTR_UNRECOVERABLE_ERROR);
 }
 
