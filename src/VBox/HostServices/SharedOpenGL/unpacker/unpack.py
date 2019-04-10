@@ -171,11 +171,12 @@ for func_name in keys:
 
     # Verify that the provided buffer length is what we expect.
     packet_length = apiutil.PacketLength( params )
-    print("\tif(!DATA_POINTER_CHECK(%d))" % packet_length);
-    print("\t{");
-    print("\t\tcrError(\"crUnpack%s: parameters out of range\");" % func_name);
-    print("\t\treturn;");
-    print("\t}");
+    if packet_length > 0:
+        print("\tif(!DATA_POINTER_CHECK(%d))" % packet_length);
+        print("\t{");
+        print("\t\tcrError(\"crUnpack%s: parameters out of range\");" % func_name);
+        print("\t\treturn;");
+        print("\t}");
 
     vector_func = apiutil.VectorFunction(func_name)
     if (vector_func and len(apiutil.Parameters(vector_func)) == 1):
@@ -339,11 +340,12 @@ for func_name in keys:
 
             # Verify that the provided buffer length is what we expect.
             packet_length = apiutil.PacketLength( params )
-            print("\tif(!DATA_POINTER_CHECK(%d))" % packet_length);
-            print("\t{");
-            print("\t\tcrError(\"crUnpack%s: parameters out of range\");" % func_name);
-            print("\t\treturn;");
-            print("\t}");
+            if packet_length > 0:
+                print("\tif(!DATA_POINTER_CHECK(%d))" % packet_length);
+                print("\t{");
+                print("\t\tcrError(\"crUnpack%s: parameters out of range\");" % func_name);
+                print("\t\treturn;");
+                print("\t}");
 
             MakeNormalCall( return_type, func_name, params, 8 )
             print('}\n')

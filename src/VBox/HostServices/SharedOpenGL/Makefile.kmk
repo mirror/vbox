@@ -247,15 +247,15 @@ VBoxOGLcrunpacker_SOURCES  = \
 	unpacker/unpack_visibleregion.c \
 	unpacker/unpack_shaders.c \
 	unpacker/unpack_framebuffer.c \
-	$(VBOX_PATH_CROGL_GENFILES)/unpack.c
+	$(VBOX_PATH_CROGL_GENFILES)/unpack.cpp
 VBoxOGLcrunpacker_CLEAN = \
-	$(VBOX_PATH_CROGL_GENFILES)/unpack.c \
+	$(VBOX_PATH_CROGL_GENFILES)/unpack.cpp \
 	$(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h
 
 #
 # Generate files for VBoxOGLcrunpacker.
 #
-$(VBOX_PATH_CROGL_GENFILES)/unpack.c: \
+$(VBOX_PATH_CROGL_GENFILES)/unpack.cpp: \
 		$(addprefix $(PATH_SUB_CURRENT)/unpacker/, unpack.py unpacker_special) \
 		$(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h \
 		$(VBOX_CROGL_API_FILES) \
