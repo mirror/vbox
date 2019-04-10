@@ -33,6 +33,7 @@
 
 /* Forward declarations: */
 class QLabel;
+class QListWidget;
 class QTableWidget;
 class QStackedLayout;
 class QIComboBox;
@@ -69,6 +70,8 @@ protected:
     void populateAccounts();
     /** Populates account properties. */
     void populateAccountProperties();
+    /** Populates account instances. */
+    void populateAccountInstances();
 
     /** Updates page appearance. */
     virtual void updatePageAppearance();
@@ -127,6 +130,10 @@ protected:
     QIToolButton *m_pAccountToolButton;
     /** Holds the account property table instance. */
     QTableWidget *m_pAccountPropertyTable;
+    /** Holds the account instance label instance. */
+    QLabel       *m_pAccountInstanceLabel;
+    /** Holds the account instance list instance. */
+    QListWidget  *m_pAccountInstanceList;
 };
 
 /** UIWizardPage extension for 1st page of the Import Appliance wizard, extends UIWizardImportAppPage1 as well. */

@@ -19,6 +19,7 @@
 #include <QFileInfo>
 #include <QHeaderView>
 #include <QLabel>
+#include <QListWidget>
 #include <QStackedLayout>
 #include <QTableWidget>
 #include <QVBoxLayout>
@@ -35,6 +36,9 @@
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageBasic1.h"
 #include "UIWizardImportAppPageBasic2.h"
+
+/* COM includes: */
+#include "CCloudClient.h"
 
 
 /*********************************************************************************************************************************
@@ -53,6 +57,8 @@ UIWizardImportAppPage1::UIWizardImportAppPage1(bool fImportFromOCIByDefault)
     , m_pAccountComboBox(0)
     , m_pAccountToolButton(0)
     , m_pAccountPropertyTable(0)
+    , m_pAccountInstanceLabel(0)
+    , m_pAccountInstanceList(0)
 {
 }
 
@@ -257,6 +263,46 @@ void UIWizardImportAppPage1::populateAccountProperties()
     }
 }
 
+void UIWizardImportAppPage1::populateAccountInstances()
+{
+    /* Clear list initially: */
+    m_pAccountInstanceList->clear();
+
+    /* If profile chosen: */
+    if (!m_comCloudProfile.isNull())
+    {
+        /* Create Cloud Client: */
+        CCloudClient comCloudClient = m_comCloudProfile.CreateCloudClient();
+        /* Show error message if necessary: */
+        if (!m_comCloudProfile.isOk())
+            msgCenter().cannotCreateCloudClient(m_comCloudProfile);
+        else
+        {
+            /* Read Cloud Client instances: */
+            QVector<QString> vmNames;
+            /*const QVector<QString> vmIDs =*/
+            comCloudClient.ListInstances(KCloudMachineState_Running, vmNames);
+            /* Show error message if necessary: */
+            if (!comCloudClient.isOk())
+                msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
+            else
+            {
+                /* Push acquired names to list rows: */
+                for (int i = 0; i < vmNames.size(); ++i)
+                {
+                    /* Create list item: */
+                    QListWidgetItem *pItem = new QListWidgetItem(vmNames.at(i), m_pAccountInstanceList);
+                    if (pItem)
+                    {
+                        /* Make item non-editable: */
+                        pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void UIWizardImportAppPage1::updatePageAppearance()
 {
     /* Update page appearance according to chosen source: */
@@ -440,6 +486,8 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                     m_pCloudContainerLayout->setContentsMargins(0, 0, 0, 0);
                     m_pCloudContainerLayout->setColumnStretch(0, 0);
                     m_pCloudContainerLayout->setColumnStretch(1, 1);
+                    m_pCloudContainerLayout->setRowStretch(2, 0);
+                    m_pCloudContainerLayout->setRowStretch(3, 1);
 
                     /* Create account label: */
                     m_pAccountLabel = new QLabel;
@@ -500,6 +548,32 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                         /* Add into layout: */
                         m_pCloudContainerLayout->addWidget(m_pAccountPropertyTable, 1, 1);
                     }
+
+                    /* Create account instance label: */
+                    m_pAccountInstanceLabel = new QLabel;
+                    if (m_pAccountInstanceLabel)
+                    {
+                        /* Add into layout: */
+                        m_pCloudContainerLayout->addWidget(m_pAccountInstanceLabel, 2, 0, Qt::AlignRight);
+                    }
+
+                    /* Create profile instances table: */
+                    m_pAccountInstanceList = new QListWidget;
+                    if (m_pAccountInstanceList)
+                    {
+                        m_pAccountInstanceLabel->setBuddy(m_pAccountInstanceLabel);
+                        const QFontMetrics fm(m_pAccountInstanceList->font());
+                        const int iFontWidth = fm.width('x');
+                        const int iTotalWidth = 50 * iFontWidth;
+                        const int iFontHeight = fm.height();
+                        const int iTotalHeight = 4 * iFontHeight;
+                        m_pAccountInstanceList->setMinimumSize(QSize(iTotalWidth, iTotalHeight));
+//                        m_pAccountInstanceList->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+                        m_pAccountInstanceList->setAlternatingRowColors(true);
+
+                        /* Add into layout: */
+                        m_pCloudContainerLayout->addWidget(m_pAccountInstanceList, 2, 1, 2, 1);
+                    }
                 }
 
                 /* Add into layout: */
@@ -520,6 +594,8 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
     populateAccounts();
     /* Populate account properties: */
     populateAccountProperties();
+    /* Populate account instances: */
+    populateAccountInstances();
 
     /* Setup connections: */
     if (gpManager)
@@ -589,13 +665,15 @@ void UIWizardImportAppPageBasic1::retranslateUi()
     m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
     m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
 
-    /* Translate Account label: */
+    /* Translate Account labels: */
     m_pAccountLabel->setText(UIWizardImportApp::tr("&Account:"));
+    m_pAccountInstanceLabel->setText(UIWizardImportApp::tr("&Machines:"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
     labels << m_pSourceLabel;
     labels << m_pAccountLabel;
+    labels << m_pAccountInstanceLabel;
     int iMaxWidth = 0;
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
@@ -665,6 +743,7 @@ void UIWizardImportAppPageBasic1::sltHandleSourceChange()
     updatePageAppearance();
     populateAccounts();
     populateAccountProperties();
+    populateAccountInstances();
     emit completeChanged();
 }
 
@@ -672,6 +751,7 @@ void UIWizardImportAppPageBasic1::sltHandleAccountComboChange()
 {
     /* Refresh required settings: */
     populateAccountProperties();
+    populateAccountInstances();
 }
 
 void UIWizardImportAppPageBasic1::sltHandleAccountButtonClick()
