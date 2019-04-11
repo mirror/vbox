@@ -22,17 +22,12 @@
 #endif
 
 /* GUI includes: */
-#include "QIDialog.h"
-#include "QIWithRetranslateUI.h"
 #include "UIWizardImportAppDefs.h"
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
 class QLabel;
-class QTextBrowser;
-class QDialogButtonBox;
 class QIRichTextLabel;
-class CCertificate;
 
 /** UIWizardPageBase extension for 2nd page of the Import Appliance wizard. */
 class UIWizardImportAppPage2 : public UIWizardPageBase
@@ -89,36 +84,6 @@ private:
 
     /** Holds the "signed by" information. */
     QString m_strSignedBy;
-};
-
-/** QIDialog extension
-  * asking for consent to continue with unverifiable certificate. */
-class UIApplianceUnverifiedCertificateViewer : public QIWithRetranslateUI<QIDialog>
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs appliance @a certificate viewer for passed @a pParent. */
-    UIApplianceUnverifiedCertificateViewer(QWidget *pParent, const CCertificate &comCertificate);
-
-protected:
-
-    /** Prepares all. */
-    void prepare();
-
-    /** Handles translation event. */
-    virtual void retranslateUi() /* override */;
-
-private:
-
-    /** Holds the certificate reference. */
-    const CCertificate &m_comCertificate;
-
-    /** Holds the text-label instance. */
-    QLabel       *m_pTextLabel;
-    /** Holds the text-browser instance. */
-    QTextBrowser *m_pTextBrowser;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic2_h */
