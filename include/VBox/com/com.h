@@ -52,18 +52,17 @@ namespace com
 
 /**
  *  Initializes the COM runtime.
+ *
  *  Must be called on the main thread, before any COM activity in any thread, and by any thread
  *  willing to perform COM operations.
  *
- *  @param fGui             if call is performed on the GUI thread
- *  @param fAutoRegUpdate   if to do auto MS COM registration updates.
- *  @param fNoComPatching   Set this to skip the COM patching.
  *  @return COM result code
  */
 HRESULT Initialize(uint32_t fInitFlags = VBOX_COM_INIT_F_DEFAULT);
 
 /**
  *  Shuts down the COM runtime.
+ *
  *  Must be called on the main thread before termination.
  *  No COM calls may be made in any thread after this method returns.
  */
@@ -71,6 +70,7 @@ HRESULT Shutdown();
 
 /**
  *  Resolves a given interface ID to a string containing the interface name.
+ *
  *  If, for some reason, the given IID cannot be resolved to a name, a NULL
  *  string is returned. A non-NULL string returned by this function must be
  *  freed using SysFreeString().
