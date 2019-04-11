@@ -337,6 +337,8 @@ if "$(KBUILD_TARGET)" == "win" && defined(VBOX_WITH_HARDENING) ## @todo some of 
 	$(VBOX_PATH_RUNTIME_SRC)/common/misc/zero.asm \
 	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathAbsEx.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathFilename.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathParse.cpp \
+	$(VBOX_PATH_RUNTIME_SRC)/common/path/RTPathParsedReassemble.cpp \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memchr.asm \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memcmp.asm \
 	$(VBOX_PATH_RUNTIME_SRC)/common/string/memcpy.asm \
