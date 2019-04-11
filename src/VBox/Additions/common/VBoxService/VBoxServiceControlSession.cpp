@@ -120,6 +120,83 @@ static PVBOXSERVICECTRLFILE vgsvcGstCtrlSessionFileGetLocked(const PVBOXSERVICEC
 }
 
 
+/**
+ * Recursion worker for vgsvcGstCtrlSessionHandleDirRemove.
+ * Only (recursively) removes directory structures which are not empty. Will fail if not empty.
+ *
+ * @returns IPRT status code.
+ * @param   pszDir              The directory buffer.  Contains the abs path to the
+ *                              directory to recurse into.  Trailing slash.
+ * @param   cchDir              The length of the directory we're recursing into,
+ *                              including the trailing slash.
+ * @param   pDirEntry           The dir entry buffer.  (Shared to save stack.)
+ * @param   pObjInfo            The object info buffer.  (ditto)
+ */
+static int vgsvcGstCtrlSessionHandleDirRemoveSub(char *pszDir, size_t cchDir, PRTDIRENTRY pDirEntry, PRTFSOBJINFO pObjInfo)
+{
+    RTDIR hDir;
+    int rc = RTDirOpen(&hDir, pszDir);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    while (RT_SUCCESS(rc = RTDirRead(hDir, pDirEntry, NULL)))
+    {
+        if (!RTDirEntryIsStdDotLink(pDirEntry))
+        {
+            /* Construct the full name of the entry. */
+            if (cchDir + pDirEntry->cbName + 1 /* dir slash */ >= RTPATH_MAX)
+            {
+                rc = VERR_FILENAME_TOO_LONG;
+                break;
+            }
+            memcpy(&pszDir[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
+
+            /* Deal with the unknown type. */
+            if (pDirEntry->enmType == RTDIRENTRYTYPE_UNKNOWN)
+            {
+                rc = RTPathQueryInfoEx(pszDir, pObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                if (RT_SUCCESS(rc) && RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
+                    pDirEntry->enmType = RTDIRENTRYTYPE_DIRECTORY;
+                else if (RT_SUCCESS(rc) && RTFS_IS_FILE(pObjInfo->Attr.fMode))
+                    pDirEntry->enmType = RTDIRENTRYTYPE_FILE;
+                else if (RT_SUCCESS(rc) && RTFS_IS_SYMLINK(pObjInfo->Attr.fMode))
+                    pDirEntry->enmType = RTDIRENTRYTYPE_SYMLINK;
+            }
+
+            /* Try the delete the fs object. */
+            switch (pDirEntry->enmType)
+            {
+                case RTDIRENTRYTYPE_DIRECTORY:
+                {
+                    size_t cchSubDir = cchDir + pDirEntry->cbName;
+                    pszDir[cchSubDir++] = '/';
+                    pszDir[cchSubDir]   = '\0';
+                    rc = vgsvcGstCtrlSessionHandleDirRemoveSub(pszDir, cchSubDir, pDirEntry, pObjInfo);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pszDir[cchSubDir] = '\0';
+                        rc = RTDirRemove(pszDir);
+                    }
+                    break;
+                }
+
+                /** @todo Implement deleting symlinks? Play safe for now. */
+
+                default:
+                    rc = VERR_DIR_NOT_EMPTY;
+                    break;
+            }
+            if (RT_FAILURE(rc))
+               break;
+        }
+    }
+    if (rc == VERR_NO_MORE_FILES)
+        rc = VINF_SUCCESS;
+    RTDirClose(hDir);
+    return rc;
+}
+
+
 static int vgsvcGstCtrlSessionHandleDirRemove(PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
@@ -140,10 +217,22 @@ static int vgsvcGstCtrlSessionHandleDirRemove(PVBOXSERVICECTRLSESSION pSession, 
         {
             if (fFlags & DIRREMOVEREC_FLAG_RECURSIVE)
             {
-                uint32_t fFlagsRemRec = RTDIRRMREC_F_CONTENT_AND_DIR; /* Set default. */
-                if (fFlags & DIRREMOVEREC_FLAG_CONTENT_ONLY)
-                    fFlagsRemRec |= RTDIRRMREC_F_CONTENT_ONLY;
-                rc = RTDirRemoveRecursive(szDir, fFlagsRemRec);
+                if (   fFlags & DIRREMOVEREC_FLAG_CONTENT_AND_DIR
+                    || fFlags & DIRREMOVEREC_FLAG_CONTENT_ONLY)
+                {
+                    uint32_t fFlagsRemRec = 0;
+                    if (fFlags & DIRREMOVEREC_FLAG_CONTENT_AND_DIR)
+                        fFlagsRemRec |= RTDIRRMREC_F_CONTENT_AND_DIR;
+                    else if (fFlags & DIRREMOVEREC_FLAG_CONTENT_ONLY)
+                        fFlagsRemRec |= RTDIRRMREC_F_CONTENT_ONLY;
+                    rc = RTDirRemoveRecursive(szDir, fFlagsRemRec);
+                }
+                else /* Only remove empty directory structures. Will fail if non-empty. */
+                {
+                    RTDIRENTRY  dirEntry;
+                    RTFSOBJINFO objInfo;
+                    rc = vgsvcGstCtrlSessionHandleDirRemoveSub(szDir, strlen(szDir), &dirEntry, &objInfo);
+                }
                 VGSvcVerbose(4, "[Dir %s]: rmdir /s (%#x) -> rc=%Rrc\n", szDir, fFlags, rc);
             }
             else
