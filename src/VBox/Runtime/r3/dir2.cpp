@@ -49,7 +49,7 @@
  * @returns IPRT status code.
  * @param   pszBuf              The path buffer.  Contains the abs path to the
  *                              directory to recurse into.  Trailing slash.
- * @param   cchDir              The length of the directory we're cursing into,
+ * @param   cchDir              The length of the directory we're recursing into,
  *                              including the trailing slash.
  * @param   pDirEntry           The dir entry buffer.  (Shared to save stack.)
  * @param   pObjInfo            The object info buffer.  (ditto)
