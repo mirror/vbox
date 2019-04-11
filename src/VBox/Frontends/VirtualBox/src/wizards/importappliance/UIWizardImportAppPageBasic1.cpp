@@ -37,9 +37,6 @@
 #include "UIWizardImportAppPageBasic1.h"
 #include "UIWizardImportAppPageBasic2.h"
 
-/* COM includes: */
-#include "CCloudClient.h"
-
 
 /*********************************************************************************************************************************
 *   Class UIWizardImportAppPage1 implementation.                                                                                 *
@@ -267,12 +264,14 @@ void UIWizardImportAppPage1::populateAccountInstances()
 {
     /* Clear list initially: */
     m_pAccountInstanceList->clear();
+    /* Clear Cloud Client: */
+    m_comCloudClient = CCloudClient();
 
     /* If profile chosen: */
     if (!m_comCloudProfile.isNull())
     {
-        /* Create Cloud Client: */
-        CCloudClient comCloudClient = m_comCloudProfile.CreateCloudClient();
+        /* Acquire Cloud Client: */
+        m_comCloudClient = m_comCloudProfile.CreateCloudClient();
         /* Show error message if necessary: */
         if (!m_comCloudProfile.isOk())
             msgCenter().cannotCreateCloudClient(m_comCloudProfile);
@@ -281,10 +280,10 @@ void UIWizardImportAppPage1::populateAccountInstances()
             /* Read Cloud Client instances: */
             QVector<QString> vmNames;
             /*const QVector<QString> vmIDs =*/
-            comCloudClient.ListInstances(KCloudMachineState_Running, vmNames);
+            m_comCloudClient.ListInstances(KCloudMachineState_Running, vmNames);
             /* Show error message if necessary: */
-            if (!comCloudClient.isOk())
-                msgCenter().cannotAcquireCloudClientParameter(comCloudClient);
+            if (!m_comCloudClient.isOk())
+                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
             else
             {
                 /* Push acquired names to list rows: */
@@ -384,6 +383,11 @@ QString UIWizardImportAppPage1::profileName() const
 CCloudProfile UIWizardImportAppPage1::profile() const
 {
     return m_comCloudProfile;
+}
+
+CCloudClient UIWizardImportAppPage1::client() const
+{
+    return m_comCloudClient;
 }
 
 
@@ -614,6 +618,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
     registerField("source", this, "source");
     registerField("isSourceCloudOne", this, "isSourceCloudOne");
     registerField("profile", this, "profile");
+    registerField("client", this, "client");
 }
 
 bool UIWizardImportAppPageBasic1::event(QEvent *pEvent)
@@ -708,7 +713,8 @@ bool UIWizardImportAppPageBasic1::isComplete() const
                       && VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), OVFFileExts)
                       && QFile::exists(m_pFileSelector->path()))
                   || (   fCSP
-                      && !m_comCloudProfile.isNull());
+                      && !m_comCloudProfile.isNull()
+                      && !m_comCloudClient.isNull());
     }
 
     return fResult;
@@ -752,6 +758,7 @@ void UIWizardImportAppPageBasic1::sltHandleAccountComboChange()
     /* Refresh required settings: */
     populateAccountProperties();
     populateAccountInstances();
+    emit completeChanged();
 }
 
 void UIWizardImportAppPageBasic1::sltHandleAccountButtonClick()

@@ -27,6 +27,7 @@
 
 /* COM includes: */
 #include "COMEnums.h"
+#include "CCloudClient.h"
 #include "CCloudProfile.h"
 #include "CCloudProvider.h"
 #include "CCloudProviderManager.h"
@@ -96,6 +97,8 @@ protected:
     QString profileName() const;
     /** Returns Cloud Profile object. */
     CCloudProfile profile() const;
+    /** Returns Cloud Client object. */
+    CCloudClient client() const;
 
     /** Holds whether default source should be Import from OCI. */
     bool  m_fImportFromOCIByDefault;
@@ -106,6 +109,8 @@ protected:
     CCloudProvider         m_comCloudProvider;
     /** Holds the Cloud Profile object reference. */
     CCloudProfile          m_comCloudProfile;
+    /** Holds the Cloud Client object reference. */
+    CCloudClient           m_comCloudClient;
 
     /** Holds the source layout instance. */
     QGridLayout *m_pSourceLayout;
@@ -143,6 +148,7 @@ class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAp
     Q_PROPERTY(QString source READ source WRITE setSource);
     Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
     Q_PROPERTY(CCloudProfile profile READ profile);
+    Q_PROPERTY(CCloudClient client READ client);
 
 public:
 
