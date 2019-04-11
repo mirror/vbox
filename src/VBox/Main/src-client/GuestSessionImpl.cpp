@@ -3499,7 +3499,9 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to remove recursively specified"));
 
-    uint32_t fFlags = DIRREMOVEREC_FLAG_NONE;
+    /* By default only delete empty directory structures, e.g. the operation will abort if there are
+     * directories which are not empty. */
+    uint32_t fFlags = DIRREMOVEREC_FLAG_RECURSIVE;
     if (aFlags.size())
     {
         for (size_t i = 0; i < aFlags.size(); i++)
@@ -3510,11 +3512,11 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
                     continue;
 
                 case DirectoryRemoveRecFlag_ContentAndDir:
-                    fFlags = DIRREMOVEREC_FLAG_RECURSIVE | DIRREMOVEREC_FLAG_CONTENT_AND_DIR;
+                    fFlags |= DIRREMOVEREC_FLAG_CONTENT_AND_DIR;
                     break;
 
                 case DirectoryRemoveRecFlag_ContentOnly:
-                    fFlags = DIRREMOVEREC_FLAG_RECURSIVE | DIRREMOVEREC_FLAG_CONTENT_ONLY;
+                    fFlags |= DIRREMOVEREC_FLAG_CONTENT_ONLY;
                     break;
 
                 default:
