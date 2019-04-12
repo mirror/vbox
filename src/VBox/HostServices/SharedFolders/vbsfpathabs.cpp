@@ -184,5 +184,7 @@ int vbsfPathAbs(const char *pszRoot, const char *pszPath, char *pszAbsPath, size
 
     /* Fallback for the common paths. */
 
-    return RTPathAbsEx(pszRoot, pszPath, RTPATH_STR_F_STYLE_HOST, pszAbsPath, &cbAbsPath);
+    if (*pszPath != '\0')
+        return RTPathAbsEx(pszRoot, pszPath, RTPATH_STR_F_STYLE_HOST, pszAbsPath, &cbAbsPath);
+    return RTPathAbsEx(NULL, pszRoot, RTPATH_STR_F_STYLE_HOST, pszAbsPath, &cbAbsPath);
 }
