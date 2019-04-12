@@ -3799,7 +3799,7 @@ DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, bool fGso)
         pSg = &pThis->uTxFallback.Sg;
         pSg->fFlags      = PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_3;
         pSg->cbUsed      = 0;
-        pSg->cbAvailable = 0;
+        pSg->cbAvailable = sizeof(pThis->aTxPacketFallback);
         pSg->pvAllocator = pThis;
         pSg->pvUser      = NULL; /* No GSO here. */
         pSg->cSegs       = 1;
@@ -4238,8 +4238,12 @@ static int e1kFallbackAddSegment(PE1KSTATE pThis, RTGCPHYS PhysAddr, uint16_t u1
              pThis->szPrf, u16Len, pThis->u32PayRemain, pThis->u16HdrRemain, fSend));
     Assert(pThis->u32PayRemain + pThis->u16HdrRemain > 0);
 
-    PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), PhysAddr,
-                      pThis->aTxPacketFallback + pThis->u16TxPktLen, u16Len);
+    if (pThis->u16TxPktLen + u16Len <= sizeof(pThis->aTxPacketFallback))
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), PhysAddr,
+                          pThis->aTxPacketFallback + pThis->u16TxPktLen, u16Len);
+    else
+        E1kLog(("%s e1kFallbackAddSegment: writing beyond aTxPacketFallback, u16TxPktLen=%d(0x%x) + u16Len=%d(0x%x) > %d\n",
+                pThis->szPrf, pThis->u16TxPktLen, pThis->u16TxPktLen, u16Len, u16Len, sizeof(pThis->aTxPacketFallback)));
     E1kLog3(("%s Dump of the segment:\n"
             "%.*Rhxd\n"
             "%s --- End of dump ---\n",
@@ -4311,12 +4315,19 @@ static int e1kFallbackAddSegment(PE1KSTATE pThis, RTGCPHYS PhysAddr, uint16_t u1
          */
         if (pThis->CTX_SUFF(pTxSg))
         {
-            Assert(pThis->u16TxPktLen <= pThis->CTX_SUFF(pTxSg)->cbAvailable);
+            /* Make sure the packet fits into the allocated buffer */
+            size_t cbCopy = RT_MIN(pThis->u16TxPktLen, pThis->CTX_SUFF(pTxSg)->cbAvailable);
+#ifdef DEBUG
+            if (pThis->u16TxPktLen > pThis->CTX_SUFF(pTxSg)->cbAvailable)
+                E1kLog(("%s e1kFallbackAddSegment: truncating packet, u16TxPktLen=%d(0x%x) > cbAvailable=%d(0x%x)\n",
+                        pThis->szPrf, pThis->u16TxPktLen, pThis->u16TxPktLen,
+                        pThis->CTX_SUFF(pTxSg)->cbAvailable, pThis->CTX_SUFF(pTxSg)->cbAvailable));
+#endif /* DEBUG */
             Assert(pThis->CTX_SUFF(pTxSg)->cSegs == 1);
             if (pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg != pThis->aTxPacketFallback)
-                memcpy(pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->aTxPacketFallback, pThis->u16TxPktLen);
-            pThis->CTX_SUFF(pTxSg)->cbUsed         = pThis->u16TxPktLen;
-            pThis->CTX_SUFF(pTxSg)->aSegs[0].cbSeg = pThis->u16TxPktLen;
+                memcpy(pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->aTxPacketFallback, cbCopy);
+            pThis->CTX_SUFF(pTxSg)->cbUsed         = cbCopy;
+            pThis->CTX_SUFF(pTxSg)->aSegs[0].cbSeg = cbCopy;
         }
         e1kTransmitFrame(pThis, fOnWorkerThread);
 
@@ -4494,21 +4505,26 @@ static bool e1kAddToFrame(PE1KSTATE pThis, RTGCPHYS PhysAddr, uint32_t cbFragmen
     bool const          fGso     = e1kXmitIsGsoBuf(pTxSg);
     uint32_t const      cbNewPkt = cbFragment + pThis->u16TxPktLen;
 
+    LogFlow(("%s e1kAddToFrame: ENTER cbFragment=%d u16TxPktLen=%d cbUsed=%d cbAvailable=%d fGSO=%s\n",
+             pThis->szPrf, cbFragment, pThis->u16TxPktLen, pTxSg->cbUsed, pTxSg->cbAvailable,
+             fGso ? "true" : "false"));
     if (RT_UNLIKELY( !fGso && cbNewPkt > E1K_MAX_TX_PKT_SIZE ))
     {
         E1kLog(("%s Transmit packet is too large: %u > %u(max)\n", pThis->szPrf, cbNewPkt, E1K_MAX_TX_PKT_SIZE));
         return false;
     }
-    if (RT_UNLIKELY( fGso && cbNewPkt > pTxSg->cbAvailable ))
+    if (RT_UNLIKELY( cbNewPkt > pTxSg->cbAvailable ))
     {
-        E1kLog(("%s Transmit packet is too large: %u > %u(max)/GSO\n", pThis->szPrf, cbNewPkt, pTxSg->cbAvailable));
+        E1kLog(("%s Transmit packet is too large: %u > %u(max)\n", pThis->szPrf, cbNewPkt, pTxSg->cbAvailable));
         return false;
     }
 
     if (RT_LIKELY(pTxSg))
     {
         Assert(pTxSg->cSegs == 1);
-        Assert(pTxSg->cbUsed == pThis->u16TxPktLen);
+        if (pTxSg->cbUsed != pThis->u16TxPktLen)
+            E1kLog(("%s e1kAddToFrame:  pTxSg->cbUsed=%d(0x%x) != u16TxPktLen=%d(0x%x)\n",
+                    pThis->szPrf, pTxSg->cbUsed, pTxSg->cbUsed, pThis->u16TxPktLen, pThis->u16TxPktLen));
 
         PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), PhysAddr,
                           (uint8_t *)pTxSg->aSegs[0].pvSeg + pThis->u16TxPktLen, cbFragment);
@@ -4886,6 +4902,13 @@ static int e1kXmitDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr,
 
     e1kPrintTDesc(pThis, pDesc, "vvv");
 
+    if (pDesc->legacy.dw3.fDD)
+    {
+        E1kLog(("%s e1kXmitDesc: skipping bad descriptor ^^^\n", pThis->szPrf));
+        e1kDescReport(pThis, pDesc, addr);
+        return VINF_SUCCESS;
+    }
+
 //#ifdef E1K_USE_TX_TIMERS
     if (pThis->fTidEnabled)
         TMTimerStop(pThis->CTX_SUFF(pTIDTimer));
@@ -5087,9 +5110,21 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
         switch (e1kGetDescType(pDesc))
         {
             case E1K_DTYP_CONTEXT:
-                e1kUpdateTxContext(pThis, pDesc);
+                if (cbPacket == 0)
+                    e1kUpdateTxContext(pThis, pDesc);
+                else
+                    E1kLog(("%s e1kLocateTxPacket: ignoring a context descriptor in the middle of a packet, cbPacket=%d\n",
+                            pThis->szPrf, cbPacket));
                 continue;
             case E1K_DTYP_LEGACY:
+                /* Skip invalid descriptors. */
+                if (cbPacket > 0 && (pThis->fGSO || fTSE))
+                {
+                    E1kLog(("%s e1kLocateTxPacket: ignoring a legacy descriptor in the segmentation context, cbPacket=%d\n",
+                            pThis->szPrf, cbPacket));
+                    pDesc->legacy.dw3.fDD = true; /* Make sure it is skipped by processing */
+                    continue;
+                }
                 /* Skip empty descriptors. */
                 if (!pDesc->legacy.u64BufAddr || !pDesc->legacy.cmd.u16Length)
                     break;
@@ -5097,6 +5132,14 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
                 pThis->fGSO = false;
                 break;
             case E1K_DTYP_DATA:
+                /* Skip invalid descriptors. */
+                if (cbPacket > 0 && (bool)pDesc->data.cmd.fTSE != fTSE)
+                {
+                    E1kLog(("%s e1kLocateTxPacket: ignoring %sTSE descriptor in the %ssegmentation context, cbPacket=%d\n",
+                            pThis->szPrf, pDesc->data.cmd.fTSE ? "" : "non-", fTSE ? "" : "non-", cbPacket));
+                    pDesc->data.dw3.fDD = true; /* Make sure it is skipped by processing */
+                    continue;
+                }
                 /* Skip empty descriptors. */
                 if (!pDesc->data.u64BufAddr || !pDesc->data.cmd.u20DTALEN)
                     break;
@@ -5145,8 +5188,9 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
                 RT_MIN(cbPacket, pThis->contextTSE.dw3.u16MSS + pThis->contextTSE.dw3.u8HDRLEN);
             if (pThis->fVTag)
                 pThis->cbTxAlloc += 4;
-            LogFlow(("%s e1kLocateTxPacket: RET true cbTxAlloc=%d\n",
-                     pThis->szPrf, pThis->cbTxAlloc));
+            LogFlow(("%s e1kLocateTxPacket: RET true cbTxAlloc=%d cbPacket=%d%s%s\n",
+                     pThis->szPrf, pThis->cbTxAlloc, cbPacket,
+                     pThis->fGSO ? " GSO" : "", fTSE ? " TSE" : ""));
             return true;
         }
     }
@@ -5158,8 +5202,8 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
                  pThis->szPrf, pThis->cbTxAlloc));
         return true;
     }
-    LogFlow(("%s e1kLocateTxPacket: RET false cbTxAlloc=%d\n",
-             pThis->szPrf, pThis->cbTxAlloc));
+    LogFlow(("%s e1kLocateTxPacket: RET false cbTxAlloc=%d cbPacket=%d\n",
+             pThis->szPrf, pThis->cbTxAlloc, cbPacket));
     return false;
 }
 
@@ -6935,6 +6979,8 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         //SSMR3GetBool(pSSM, pThis->fDelayInts);
         //SSMR3GetBool(pSSM, pThis->fIntMaskUsed);
         SSMR3GetU16(pSSM, &pThis->u16TxPktLen);
+        if (pThis->u16TxPktLen > sizeof(pThis->aTxPacketFallback))
+            pThis->u16TxPktLen = sizeof(pThis->aTxPacketFallback);
         SSMR3GetMem(pSSM, &pThis->aTxPacketFallback[0], pThis->u16TxPktLen);
         SSMR3GetBool(pSSM, &pThis->fIPcsum);
         SSMR3GetBool(pSSM, &pThis->fTCPcsum);
