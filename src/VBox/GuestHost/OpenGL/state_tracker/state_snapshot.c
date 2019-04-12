@@ -1296,6 +1296,7 @@ static int32_t crStateLoadClientPointer(CRVertexArrays *pArrays, int32_t index, 
     {
         rc = crStateAllocAndSSMR3GetMem(pSSM, (void**)&cp->p, cp->stride*(pArrays->lockFirst+pArrays->lockCount));
         AssertRCReturn(rc, rc);
+        cp->fRealPtr = 1;
     }
 #endif
 
