@@ -121,7 +121,7 @@ def MakeNormalCall( return_type, func_name, params, counter_init = 0 ):
         print("\t(void)", end=" ")
     else:
         print("\t", end="")
-    print("cr_unpackDispatch.%s(%s);" % (func_name, apiutil.MakeCallString(params)))
+    print("cr_unpackDispatch.%s(%s);" % (func_name, apiutil.MakeCallStringForDispatcher(params)))
 
 
 def MakeVectorCall( return_type, func_name, arg_type ):

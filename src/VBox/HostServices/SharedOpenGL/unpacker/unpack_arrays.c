@@ -25,7 +25,7 @@ void crUnpackExtendVertexPointer(void)
     GLenum type = READ_DATA( 12, GLenum );
     GLsizei stride = READ_DATA( 16, GLsizei );
     GLintptrARB pointer = (GLintptrARB) READ_DATA( 20, GLuint );
-    cr_unpackDispatch.VertexPointer( size, type, stride, (void *) pointer );
+    cr_unpackDispatch.VertexPointer( size, type, stride, (void *) pointer, false /*fRealPtr*/ );
 }
 
 void crUnpackExtendTexCoordPointer(void)
@@ -34,7 +34,7 @@ void crUnpackExtendTexCoordPointer(void)
     GLenum type = READ_DATA( 12, GLenum );
     GLsizei stride = READ_DATA( 16, GLsizei );
     GLintptrARB pointer = READ_DATA( 20, GLuint );
-    cr_unpackDispatch.TexCoordPointer( size, type, stride, (void *) pointer );
+    cr_unpackDispatch.TexCoordPointer( size, type, stride, (void *) pointer, false /*fRealPtr*/ );
 }
 
 void crUnpackExtendNormalPointer(void)
@@ -42,7 +42,7 @@ void crUnpackExtendNormalPointer(void)
     GLenum type = READ_DATA( 8, GLenum );
     GLsizei stride = READ_DATA( 12, GLsizei );
     GLintptrARB pointer = READ_DATA( 16, GLuint );
-    cr_unpackDispatch.NormalPointer( type, stride, (void *) pointer );
+    cr_unpackDispatch.NormalPointer( type, stride, (void *) pointer, false /*fRealPtr*/ );
 }
 
 void crUnpackExtendIndexPointer(void)
@@ -50,14 +50,14 @@ void crUnpackExtendIndexPointer(void)
     GLenum type = READ_DATA( 8, GLenum );
     GLsizei stride = READ_DATA( 12, GLsizei );
     GLintptrARB pointer = READ_DATA( 16, GLuint );
-    cr_unpackDispatch.IndexPointer( type, stride, (void *) pointer );
+    cr_unpackDispatch.IndexPointer( type, stride, (void *) pointer, false /*fRealPtr*/ );
 }
 
 void crUnpackExtendEdgeFlagPointer(void)
 {
     GLsizei stride = READ_DATA( 8, GLsizei );
     GLintptrARB pointer = READ_DATA( 12, GLuint );
-    cr_unpackDispatch.EdgeFlagPointer( stride, (void *) pointer );
+    cr_unpackDispatch.EdgeFlagPointer( stride, (void *) pointer, false /*fRealPtr*/ );
 }
 
 void crUnpackExtendColorPointer(void)
@@ -66,7 +66,7 @@ void crUnpackExtendColorPointer(void)
     GLenum type = READ_DATA( 12, GLenum );
     GLsizei stride = READ_DATA( 16, GLsizei );
     GLintptrARB pointer = READ_DATA( 20, GLuint );
-    cr_unpackDispatch.ColorPointer( size, type, stride, (void *) pointer );
+    cr_unpackDispatch.ColorPointer( size, type, stride, (void *) pointer, false /*fRealPtr*/ );
 }
 
 void crUnpackExtendFogCoordPointerEXT(void)
@@ -74,7 +74,7 @@ void crUnpackExtendFogCoordPointerEXT(void)
     GLenum type = READ_DATA( 8, GLenum );
     GLsizei stride = READ_DATA( 12, GLsizei );
     GLintptrARB pointer = READ_DATA( 16, GLuint );
-    cr_unpackDispatch.FogCoordPointerEXT( type, stride, (void *) pointer );
+    cr_unpackDispatch.FogCoordPointerEXT( type, stride, (void *) pointer, false /*fRealPtr*/ );
 }
 
 void crUnpackExtendSecondaryColorPointerEXT(void)
@@ -83,7 +83,7 @@ void crUnpackExtendSecondaryColorPointerEXT(void)
     GLenum type = READ_DATA( 12, GLenum );
     GLsizei stride = READ_DATA( 16, GLsizei );
     GLintptrARB pointer = READ_DATA( 20, GLuint );
-    cr_unpackDispatch.SecondaryColorPointerEXT( size, type, stride, (void *) pointer );
+    cr_unpackDispatch.SecondaryColorPointerEXT( size, type, stride, (void *) pointer, false /*fRealPtr*/ );
 }
 
 void crUnpackExtendVertexAttribPointerARB(void)
@@ -94,7 +94,7 @@ void crUnpackExtendVertexAttribPointerARB(void)
     GLboolean normalized = READ_DATA( 20, GLboolean );
     GLsizei stride = READ_DATA( 24, GLsizei );
     GLintptrARB pointer = READ_DATA( 28, GLuint );
-    cr_unpackDispatch.VertexAttribPointerARB( index, size, type, normalized, stride, (void *) pointer );
+    cr_unpackDispatch.VertexAttribPointerARB( index, size, type, normalized, stride, (void *) pointer, false /*fRealPtr*/ );
 }
 
 void crUnpackExtendVertexAttribPointerNV(void)
@@ -104,7 +104,7 @@ void crUnpackExtendVertexAttribPointerNV(void)
     GLenum type = READ_DATA( 16, GLenum );
     GLsizei stride = READ_DATA( 20, GLsizei );
     GLintptrARB pointer = READ_DATA( 24, GLuint );
-    cr_unpackDispatch.VertexAttribPointerNV( index, size, type, stride, (void *) pointer );
+    cr_unpackDispatch.VertexAttribPointerNV( index, size, type, stride, (void *) pointer, false /*fRealPtr*/ );
 }
 
 void crUnpackExtendInterleavedArrays(void)
@@ -112,7 +112,7 @@ void crUnpackExtendInterleavedArrays(void)
     GLenum format = READ_DATA( 8, GLenum );
     GLsizei stride = READ_DATA( 12, GLsizei );
     GLintptrARB pointer = READ_DATA( 16, GLuint );
-    cr_unpackDispatch.InterleavedArrays( format, stride, (void *) pointer );
+    cr_unpackDispatch.InterleavedArrays( format, stride, (void *) pointer, false /*fRealPtr*/ );
 }
 
 void crUnpackExtendDrawElements(void)
@@ -161,7 +161,7 @@ void crUnpackMultiDrawElementsEXT(void)
 
 static void crUnpackSetClientPointerByIndex(int index, GLint size, 
                                             GLenum type, GLboolean normalized,
-                                            GLsizei stride, const GLvoid *pointer, CRClientState *c)
+                                            GLsizei stride, const GLvoid *pointer, CRClientState *c, int fRealPtr)
 {
     /*crDebug("crUnpackSetClientPointerByIndex: %i(s=%i, t=0x%x, n=%i, str=%i) -> %p", index, size, type, normalized, stride, pointer);*/
 
@@ -170,25 +170,25 @@ static void crUnpackSetClientPointerByIndex(int index, GLint size,
         switch (index)
         {
             case 0:
-                cr_unpackDispatch.VertexPointer(size, type, stride, pointer);
+                cr_unpackDispatch.VertexPointer(size, type, stride, pointer, fRealPtr);
                 break;
             case 1:
-                cr_unpackDispatch.ColorPointer(size, type, stride, pointer);
+                cr_unpackDispatch.ColorPointer(size, type, stride, pointer, fRealPtr);
                 break;
             case 2:
-                cr_unpackDispatch.FogCoordPointerEXT(type, stride, pointer);
+                cr_unpackDispatch.FogCoordPointerEXT(type, stride, pointer, fRealPtr);
                 break;
             case 3:
-                cr_unpackDispatch.SecondaryColorPointerEXT(size, type, stride, pointer);
+                cr_unpackDispatch.SecondaryColorPointerEXT(size, type, stride, pointer, fRealPtr);
                 break;
             case 4:
-                cr_unpackDispatch.EdgeFlagPointer(stride, pointer);
+                cr_unpackDispatch.EdgeFlagPointer(stride, pointer, fRealPtr);
                 break;
             case 5:
-                cr_unpackDispatch.IndexPointer(type, stride, pointer);
+                cr_unpackDispatch.IndexPointer(type, stride, pointer, fRealPtr);
                 break;
             case 6:
-                cr_unpackDispatch.NormalPointer(type, stride, pointer);
+                cr_unpackDispatch.NormalPointer(type, stride, pointer, fRealPtr);
                 break;
         }
     }
@@ -199,7 +199,7 @@ static void crUnpackSetClientPointerByIndex(int index, GLint size,
         {
             cr_unpackDispatch.ClientActiveTextureARB(GL_TEXTURE0_ARB+index-7);
         }
-        cr_unpackDispatch.TexCoordPointer(size, type, stride, pointer);
+        cr_unpackDispatch.TexCoordPointer(size, type, stride, pointer, fRealPtr);
         if ((index-7)!=curTexUnit)
         {
             cr_unpackDispatch.ClientActiveTextureARB(GL_TEXTURE0_ARB+curTexUnit);
@@ -208,7 +208,7 @@ static void crUnpackSetClientPointerByIndex(int index, GLint size,
     else
     {
         cr_unpackDispatch.VertexAttribPointerARB(index-7-CR_MAX_TEXTURE_UNITS,
-                                                 size, type, normalized, stride, pointer);
+                                                 size, type, normalized, stride, pointer, fRealPtr);
     }
 }
 
@@ -264,7 +264,7 @@ void crUnpackExtendLockArraysEXT(void)
                 crMemcpy(data + first * cp->bytesPerIndex, DATA_POINTER(offset, GLvoid), count * cp->bytesPerIndex);
                 /*crDebug("crUnpackExtendLockArraysEXT: old cp(%i): en/l=%i(%i) p=%p size=%i type=0x%x n=%i str=%i pp=%p pstr=%i",
                         index, cp->enabled, cp->locked, cp->p, cp->size, cp->type, cp->normalized, cp->stride, cp->prevPtr, cp->prevStride);*/
-                crUnpackSetClientPointerByIndex(index, cp->size, cp->type, cp->normalized, 0, data, c);
+                crUnpackSetClientPointerByIndex(index, cp->size, cp->type, cp->normalized, 0, data, c, 1 /*fRealPtr*/);
                 /*crDebug("crUnpackExtendLockArraysEXT: new cp(%i): en/l=%i(%i) p=%p size=%i type=0x%x n=%i str=%i pp=%p pstr=%i",
                         index, cp->enabled, cp->locked, cp->p, cp->size, cp->type, cp->normalized, cp->stride, cp->prevPtr, cp->prevStride);*/
             }
@@ -304,7 +304,11 @@ void crUnpackExtendUnlockArraysEXT(void)
         {
             /*crDebug("crUnpackExtendUnlockArraysEXT: old cp(%i): en/l=%i(%i) p=%p size=%i type=0x%x n=%i str=%i pp=%p pstr=%i",
                     i, cp->enabled, cp->locked, cp->p, cp->size, cp->type, cp->normalized, cp->stride, cp->prevPtr, cp->prevStride);*/
-            crUnpackSetClientPointerByIndex(i, cp->size, cp->type, cp->normalized, cp->prevStride, cp->prevPtr, c);
+            unsigned char *prevPtr = cp->prevPtr;
+            int fRealPtr = cp->fPrevRealPtr;
+            cp->prevPtr = NULL;
+            cp->fPrevRealPtr = 0;
+            crUnpackSetClientPointerByIndex(i, cp->size, cp->type, cp->normalized, cp->prevStride, prevPtr, c, cp->fPrevRealPtr);
             /*crDebug("crUnpackExtendUnlockArraysEXT: new cp(%i): en/l=%i(%i) p=%p size=%i type=0x%x n=%i str=%i pp=%p pstr=%i",
                     i, cp->enabled, cp->locked, cp->p, cp->size, cp->type, cp->normalized, cp->stride, cp->prevPtr, cp->prevStride);*/
         }

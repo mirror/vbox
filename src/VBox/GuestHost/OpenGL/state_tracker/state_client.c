@@ -72,12 +72,22 @@ void crStateClientDestroyBits (CRClientBits *c)
 #endif
 }
 
-static void crStateUnlockClientPointer(CRClientPointer* cp)
+static void crStateUnlockClientPointer(CRClientPointer* cp, int fFreePointer)
 {
     if (cp->locked)
     {
 #ifndef IN_GUEST
-        if (cp->p) crFree(cp->p);
+        if (cp->p && fFreePointer != 0)
+        {
+            if (cp->fRealPtr)
+            {
+                crFree(cp->p);
+                cp->fRealPtr = 0;
+            }
+            cp->p = NULL;
+        }
+#else
+        RT_NOREF(fFreePointer);
 #endif
         cp->locked = GL_FALSE;
     }
@@ -91,20 +101,20 @@ void crStateClientDestroy(CRContext *g)
     {
         unsigned int i;
 
-        crStateUnlockClientPointer(&c->array.v);
-        crStateUnlockClientPointer(&c->array.c);
-        crStateUnlockClientPointer(&c->array.f);
-        crStateUnlockClientPointer(&c->array.s);
-        crStateUnlockClientPointer(&c->array.e);
-        crStateUnlockClientPointer(&c->array.i);
-        crStateUnlockClientPointer(&c->array.n);
+        crStateUnlockClientPointer(&c->array.v, 1 /*fFreePointer*/);
+        crStateUnlockClientPointer(&c->array.c, 1 /*fFreePointer*/);
+        crStateUnlockClientPointer(&c->array.f, 1 /*fFreePointer*/);
+        crStateUnlockClientPointer(&c->array.s, 1 /*fFreePointer*/);
+        crStateUnlockClientPointer(&c->array.e, 1 /*fFreePointer*/);
+        crStateUnlockClientPointer(&c->array.i, 1 /*fFreePointer*/);
+        crStateUnlockClientPointer(&c->array.n, 1 /*fFreePointer*/);
         for (i = 0 ; i < CR_MAX_TEXTURE_UNITS ; i++)
         {
-            crStateUnlockClientPointer(&c->array.t[i]);
+            crStateUnlockClientPointer(&c->array.t[i], 1 /*fFreePointer*/);
         }
         for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
         {
-            crStateUnlockClientPointer(&c->array.a[i]);
+            crStateUnlockClientPointer(&c->array.a[i], 1 /*fFreePointer*/);
         }
     }
 #endif
@@ -151,6 +161,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.v.type = GL_FLOAT;
     c->array.v.stride = 0;
     c->array.v.enabled = 0;
+#ifndef IN_GUEST
+    c->array.v.fRealPtr = 0;
+#endif
 #ifdef CR_ARB_vertex_buffer_object
     c->array.v.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.v.buffer)
@@ -160,6 +173,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.v.locked = GL_FALSE;
     c->array.v.prevPtr = NULL;
     c->array.v.prevStride = 0;
+# ifndef IN_GUEST
+    c->array.v.fPrevRealPtr = 0;
+# endif
 #endif
 
     /* color array */
@@ -168,6 +184,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.c.type = GL_FLOAT;
     c->array.c.stride = 0;
     c->array.c.enabled = 0;
+#ifndef IN_GUEST
+    c->array.c.fRealPtr = 0;
+#endif
 #ifdef CR_ARB_vertex_buffer_object
     c->array.c.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.c.buffer)
@@ -177,6 +196,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.c.locked = GL_FALSE;
     c->array.c.prevPtr = NULL;
     c->array.c.prevStride = 0;
+# ifndef IN_GUEST
+    c->array.c.fPrevRealPtr = 0;
+# endif
 #endif
 
     /* fog array */
@@ -185,6 +207,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.f.type = GL_FLOAT;
     c->array.f.stride = 0;
     c->array.f.enabled = 0;
+#ifndef IN_GUEST
+    c->array.f.fRealPtr = 0;
+#endif
 #ifdef CR_ARB_vertex_buffer_object
     c->array.f.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.f.buffer)
@@ -194,6 +219,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.f.locked = GL_FALSE;
     c->array.f.prevPtr = NULL;
     c->array.f.prevStride = 0;
+# ifndef IN_GUEST
+    c->array.f.fPrevRealPtr = 0;
+# endif
 #endif
 
     /* secondary color array */
@@ -202,6 +230,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.s.type = GL_FLOAT;
     c->array.s.stride = 0;
     c->array.s.enabled = 0;
+#ifndef IN_GUEST
+    c->array.s.fRealPtr = 0;
+#endif
 #ifdef CR_ARB_vertex_buffer_object
     c->array.s.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.s.buffer)
@@ -211,6 +242,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.s.locked = GL_FALSE;
     c->array.s.prevPtr = NULL;
     c->array.s.prevStride = 0;
+# ifndef IN_GUEST
+    c->array.s.fPrevRealPtr = 0;
+# endif
 #endif
 
     /* edge flag array */
@@ -219,6 +253,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.e.type = GL_FLOAT;
     c->array.e.stride = 0;
     c->array.e.enabled = 0;
+#ifndef IN_GUEST
+    c->array.e.fRealPtr = 0;
+#endif
 #ifdef CR_ARB_vertex_buffer_object
     c->array.e.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.e.buffer)
@@ -228,6 +265,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.e.locked = GL_FALSE;
     c->array.e.prevPtr = NULL;
     c->array.e.prevStride = 0;
+# ifndef IN_GUEST
+    c->array.e.fPrevRealPtr = 0;
+# endif
 #endif
 
     /* color index array */
@@ -236,6 +276,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.i.type = GL_FLOAT;
     c->array.i.stride = 0;
     c->array.i.enabled = 0;
+#ifndef IN_GUEST
+    c->array.i.fRealPtr = 0;
+#endif
 #ifdef CR_ARB_vertex_buffer_object
     c->array.i.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.i.buffer)
@@ -245,6 +288,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.i.locked = GL_FALSE;
     c->array.i.prevPtr = NULL;
     c->array.i.prevStride = 0;
+# ifndef IN_GUEST
+    c->array.i.fPrevRealPtr = 0;
+# endif
 #endif
 
     /* normal array */
@@ -253,6 +299,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.n.type = GL_FLOAT;
     c->array.n.stride = 0;
     c->array.n.enabled = 0;
+#ifndef IN_GUEST
+    c->array.n.fRealPtr = 0;
+#endif
 #ifdef CR_ARB_vertex_buffer_object
     c->array.n.buffer = ctx->bufferobject.arrayBuffer;
     if (c->array.n.buffer)
@@ -262,6 +311,9 @@ void crStateClientInit(CRContext *ctx)
     c->array.n.locked = GL_FALSE;
     c->array.n.prevPtr = NULL;
     c->array.n.prevStride = 0;
+# ifndef IN_GUEST
+    c->array.n.fPrevRealPtr = 0;
+# endif
 #endif
 
     /* texcoord arrays */
@@ -272,6 +324,9 @@ void crStateClientInit(CRContext *ctx)
         c->array.t[i].type = GL_FLOAT;
         c->array.t[i].stride = 0;
         c->array.t[i].enabled = 0;
+#ifndef IN_GUEST
+        c->array.t[i].fRealPtr = 0;
+#endif
 #ifdef CR_ARB_vertex_buffer_object
         c->array.t[i].buffer = ctx->bufferobject.arrayBuffer;
         if (c->array.t[i].buffer)
@@ -282,6 +337,9 @@ void crStateClientInit(CRContext *ctx)
         c->array.t[i].prevPtr = NULL;
         c->array.t[i].prevStride = 0;
 #endif
+# ifndef IN_GUEST
+        c->array.t[i].fPrevRealPtr = 0;
+# endif
     }
 
     /* generic vertex attributes */
@@ -291,6 +349,9 @@ void crStateClientInit(CRContext *ctx)
         c->array.a[i].type = GL_FLOAT;
         c->array.a[i].size = 4;
         c->array.a[i].stride = 0;
+# ifndef IN_GUEST
+        c->array.a[i].fRealPtr = 0;
+# endif
 #ifdef CR_ARB_vertex_buffer_object
         c->array.a[i].buffer = ctx->bufferobject.arrayBuffer;
         if (c->array.a[i].buffer)
@@ -300,6 +361,9 @@ void crStateClientInit(CRContext *ctx)
         c->array.a[i].locked = GL_FALSE;
         c->array.a[i].prevPtr = NULL;
         c->array.a[i].prevStride = 0;
+#  ifndef IN_GUEST
+        c->array.a[i].fPrevRealPtr = 0;
+#  endif
 #endif
     }
 #endif
@@ -585,22 +649,34 @@ void STATE_APIENTRY crStateDisableClientState (GLenum array)
 }
 
 static void
-crStateClientSetPointer(CRClientPointer *cp, GLint size, 
-                                                GLenum type, GLboolean normalized,
-                                                GLsizei stride, const GLvoid *pointer) 
+crStateClientSetPointer(CRClientPointer *cp, GLint size, GLenum type, GLboolean normalized, GLsizei stride,
+                        const GLvoid *pointer  CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     CRContext *g = GetCurrentContext();
 
 #ifdef CR_EXT_compiled_vertex_array
-    crStateUnlockClientPointer(cp);
+    crStateUnlockClientPointer(cp, 0 /*fFreePointer*/);
+# ifndef IN_GUEST
+    if (cp->prevPtr && cp->fPrevRealPtr)
+    {
+        crFree(cp->prevPtr);
+        cp->fPrevRealPtr = 0;
+    }
+# endif
     cp->prevPtr = cp->p;
     cp->prevStride = cp->stride;
+# ifndef IN_GUEST
+    cp->fPrevRealPtr = cp->fRealPtr;
+# endif
 #endif
 
     cp->p = (unsigned char *) pointer;
     cp->size = size;
     cp->type = type;
     cp->normalized = normalized;
+#ifndef IN_GUEST
+    cp->fRealPtr = fRealPtr;
+#endif
 
     /* Calculate the bytes per index for address calculation */
     cp->bytesPerIndex = size;
@@ -652,8 +728,7 @@ crStateClientSetPointer(CRClientPointer *cp, GLint size,
 #endif
 }
 
-void STATE_APIENTRY crStateVertexPointer(GLint size, GLenum type, 
-        GLsizei stride, const GLvoid *p) 
+void STATE_APIENTRY crStateVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -679,14 +754,13 @@ void STATE_APIENTRY crStateVertexPointer(GLint size, GLenum type,
         return;
     }
 
-    crStateClientSetPointer(&(c->array.v), size, type, GL_FALSE, stride, p);
+    crStateClientSetPointer(&(c->array.v), size, type, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->v, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateColorPointer(GLint size, GLenum type, 
-        GLsizei stride, const GLvoid *p) 
+void STATE_APIENTRY crStateColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -714,14 +788,13 @@ void STATE_APIENTRY crStateColorPointer(GLint size, GLenum type,
         return;
     }
 
-    crStateClientSetPointer(&(c->array.c), size, type, GL_TRUE, stride, p);
+    crStateClientSetPointer(&(c->array.c), size, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->c, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateSecondaryColorPointerEXT(GLint size,
-        GLenum type, GLsizei stride, const GLvoid *p)
+void STATE_APIENTRY crStateSecondaryColorPointerEXT(GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -764,14 +837,13 @@ void STATE_APIENTRY crStateSecondaryColorPointerEXT(GLint size,
         return;
     }
 
-    crStateClientSetPointer(&(c->array.s), size, type, GL_TRUE, stride, p);
+    crStateClientSetPointer(&(c->array.s), size, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->s, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateIndexPointer(GLenum type, GLsizei stride, 
-        const GLvoid *p) 
+void STATE_APIENTRY crStateIndexPointer(GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -792,14 +864,13 @@ void STATE_APIENTRY crStateIndexPointer(GLenum type, GLsizei stride,
         return;
     }
 
-    crStateClientSetPointer(&(c->array.i), 1, type, GL_TRUE, stride, p);
+    crStateClientSetPointer(&(c->array.i), 1, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->i, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateNormalPointer(GLenum type, GLsizei stride, 
-        const GLvoid *p) 
+void STATE_APIENTRY crStateNormalPointer(GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -821,14 +892,13 @@ void STATE_APIENTRY crStateNormalPointer(GLenum type, GLsizei stride,
         return;
     }
 
-    crStateClientSetPointer(&(c->array.n), 3, type, GL_TRUE, stride, p);
+    crStateClientSetPointer(&(c->array.n), 3, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->n, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateTexCoordPointer(GLint size, GLenum type, 
-        GLsizei stride, const GLvoid *p) 
+void STATE_APIENTRY crStateTexCoordPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -854,13 +924,13 @@ void STATE_APIENTRY crStateTexCoordPointer(GLint size, GLenum type,
         return;
     }
 
-    crStateClientSetPointer(&(c->array.t[c->curClientTextureUnit]), size, type, GL_FALSE, stride, p);
+    crStateClientSetPointer(&(c->array.t[c->curClientTextureUnit]), size, type, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->t[c->curClientTextureUnit], g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateEdgeFlagPointer(GLsizei stride, const GLvoid *p) 
+void STATE_APIENTRY crStateEdgeFlagPointer(GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -875,13 +945,13 @@ void STATE_APIENTRY crStateEdgeFlagPointer(GLsizei stride, const GLvoid *p)
         return;
     }
 
-    crStateClientSetPointer(&(c->array.e), 1, GL_UNSIGNED_BYTE, GL_FALSE, stride, p);
+    crStateClientSetPointer(&(c->array.e), 1, GL_UNSIGNED_BYTE, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->e, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateFogCoordPointerEXT(GLenum type, GLsizei stride, const GLvoid *p) 
+void STATE_APIENTRY crStateFogCoordPointerEXT(GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -904,14 +974,14 @@ void STATE_APIENTRY crStateFogCoordPointerEXT(GLenum type, GLsizei stride, const
         return;
     }
 
-    crStateClientSetPointer(&(c->array.f), 1, type, GL_FALSE, stride, p);
+    crStateClientSetPointer(&(c->array.f), 1, type, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->f, g->neg_bitid);
 }
 
 
-void STATE_APIENTRY crStateVertexAttribPointerNV(GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *p) 
+void STATE_APIENTRY crStateVertexAttribPointerNV(GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     GLboolean normalized = GL_FALSE;
     /* Extra error checking for NV arrays */
@@ -921,11 +991,12 @@ void STATE_APIENTRY crStateVertexAttribPointerNV(GLuint index, GLint size, GLenu
                                  "glVertexAttribPointerNV: invalid type: 0x%x", type);
         return;
     }
-    crStateVertexAttribPointerARB(index, size, type, normalized, stride, p);
+    crStateVertexAttribPointerARB(index, size, type, normalized, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
 }
 
 
-void STATE_APIENTRY crStateVertexAttribPointerARB(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *p) 
+void STATE_APIENTRY crStateVertexAttribPointerARB(GLuint index, GLint size, GLenum type, GLboolean normalized,
+                                                  GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -958,7 +1029,7 @@ void STATE_APIENTRY crStateVertexAttribPointerARB(GLuint index, GLint size, GLen
         return;
     }
 
-    crStateClientSetPointer(&(c->array.a[index]), size, type, normalized, stride, p);
+    crStateClientSetPointer(&(c->array.a[index]), size, type, normalized, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->a[index], g->neg_bitid);
@@ -1004,7 +1075,7 @@ void STATE_APIENTRY crStateGetVertexAttribPointervARB(GLuint index, GLenum pname
 ** Certainly not the most efficient method but it 
 ** lets me use the same glDrawArrays method.
 */
-void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, const GLvoid *p) 
+void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -1062,7 +1133,7 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
     cp->enabled = GL_TRUE;
 
 #ifdef CR_EXT_compiled_vertex_array
-    crStateUnlockClientPointer(cp);
+    crStateUnlockClientPointer(cp, 1 /*fFreePointer*/);
 #endif
 
     switch (format) 
@@ -1142,7 +1213,7 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
     cp->enabled = GL_TRUE;
     cp->stride = stride;
 #ifdef CR_EXT_compiled_vertex_array
-    crStateUnlockClientPointer(cp);
+    crStateUnlockClientPointer(cp, 1 /*fFreePointer*/);
 #endif
 
     switch (format) 
@@ -1193,7 +1264,7 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
     cp->enabled = GL_TRUE;
     cp->stride = stride;
 #ifdef CR_EXT_compiled_vertex_array
-    crStateUnlockClientPointer(cp);
+    crStateUnlockClientPointer(cp, 1 /*fFreePointer*/);
 #endif
 
     switch (format) 
@@ -1267,7 +1338,7 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
     cp->enabled = GL_TRUE;
     cp->stride = stride;
 #ifdef CR_EXT_compiled_vertex_array
-    crStateUnlockClientPointer(cp);
+    crStateUnlockClientPointer(cp, 1 /*fFreePointer*/);
 #endif
 
     switch (format) 
@@ -1463,7 +1534,7 @@ void STATE_APIENTRY crStatePopClientAttrib( void )
 
 static void crStateLockClientPointer(CRClientPointer* cp)
 {
-    crStateUnlockClientPointer(cp);
+    crStateUnlockClientPointer(cp, 1 /*fFreePointer*/);
     if (cp->enabled)
     {
         cp->locked = GL_TRUE;
@@ -1526,15 +1597,15 @@ void STATE_APIENTRY crStateUnlockArraysEXT()
 
     for (i=0; i<CRSTATECLIENT_MAX_VERTEXARRAYS; ++i)
     {
-        crStateUnlockClientPointer(crStateGetClientPointerByIndex(i, &c->array));
+        crStateUnlockClientPointer(crStateGetClientPointerByIndex(i, &c->array), 1 /*fFreePointer*/);
     }
 }
 
-void STATE_APIENTRY crStateVertexArrayRangeNV(GLsizei length, const GLvoid *pointer)
+void STATE_APIENTRY crStateVertexArrayRangeNV(GLsizei length, const GLvoid *pointer CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
   /* XXX todo */
     crWarning("crStateVertexArrayRangeNV not implemented");
-    (void)length; (void)pointer;
+    (void)length; (void)pointer CRVBOX_HOST_ONLY_PARAM((void)fRealPtr);
 }
 
 
@@ -1735,8 +1806,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.VertexPointer(to->array.v.size, to->array.v.type,
-                                                             to->array.v.stride, to->array.v.p);
+                diff_api.VertexPointer(to->array.v.size, to->array.v.type, to->array.v.stride, to->array.v.p CRVBOX_HOST_ONLY_PARAM(to->array.v.fRealPtr));
                 from->array.v.size = to->array.v.size;
                 from->array.v.type = to->array.v.type;
                 from->array.v.stride = to->array.v.stride;
@@ -1757,8 +1827,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.NormalPointer(to->array.n.type,
-                                                             to->array.n.stride, to->array.n.p);
+                diff_api.NormalPointer(to->array.n.type, to->array.n.stride, to->array.n.p CRVBOX_HOST_ONLY_PARAM(to->array.n.fRealPtr));
                 from->array.n.type = to->array.n.type;
                 from->array.n.stride = to->array.n.stride;
                 from->array.n.p = to->array.n.p;
@@ -1779,8 +1848,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.ColorPointer(to->array.c.size, to->array.c.type,
-                                                            to->array.c.stride, to->array.c.p);
+                diff_api.ColorPointer(to->array.c.size, to->array.c.type, to->array.c.stride, to->array.c.p CRVBOX_HOST_ONLY_PARAM(to->array.c.fRealPtr));
                 from->array.c.size = to->array.c.size;
                 from->array.c.type = to->array.c.type;
                 from->array.c.stride = to->array.c.stride;
@@ -1801,8 +1869,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.IndexPointer(to->array.i.type,
-                                                            to->array.i.stride, to->array.i.p);
+                diff_api.IndexPointer(to->array.i.type, to->array.i.stride, to->array.i.p CRVBOX_HOST_ONLY_PARAM(to->array.i.fRealPtr));
                 from->array.i.type = to->array.i.type;
                 from->array.i.stride = to->array.i.stride;
                 from->array.i.p = to->array.i.p;
@@ -1826,8 +1893,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                     }
                     diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
                     curClientTextureUnit = i;
-                    diff_api.TexCoordPointer(to->array.t[i].size, to->array.t[i].type,
-                                                                to->array.t[i].stride, to->array.t[i].p);
+                    diff_api.TexCoordPointer(to->array.t[i].size, to->array.t[i].type, to->array.t[i].stride, to->array.t[i].p CRVBOX_HOST_ONLY_PARAM(to->array.t[i].fRealPtr));
                     from->array.t[i].size = to->array.t[i].size;
                     from->array.t[i].type = to->array.t[i].type;
                     from->array.t[i].stride = to->array.t[i].stride;
@@ -1848,7 +1914,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.EdgeFlagPointer(to->array.e.stride, to->array.e.p);
+                diff_api.EdgeFlagPointer(to->array.e.stride, to->array.e.p CRVBOX_HOST_ONLY_PARAM(to->array.e.fRealPtr));
                 from->array.e.stride = to->array.e.stride;
                 from->array.e.p = to->array.e.p;
                 from->array.e.buffer = to->array.e.buffer;
@@ -1868,8 +1934,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.SecondaryColorPointerEXT(to->array.s.size, to->array.s.type,
-                                                                                    to->array.s.stride, to->array.s.p);
+                diff_api.SecondaryColorPointerEXT(to->array.s.size, to->array.s.type, to->array.s.stride, to->array.s.p CRVBOX_HOST_ONLY_PARAM(to->array.s.fRealPtr));
                 from->array.s.size = to->array.s.size;
                 from->array.s.type = to->array.s.type;
                 from->array.s.stride = to->array.s.stride;
@@ -1890,8 +1955,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.FogCoordPointerEXT(to->array.f.type,
-                                                                        to->array.f.stride, to->array.f.p);
+                diff_api.FogCoordPointerEXT(to->array.f.type, to->array.f.stride, to->array.f.p CRVBOX_HOST_ONLY_PARAM(to->array.f.fRealPtr));
                 from->array.f.type = to->array.f.type;
                 from->array.f.stride = to->array.f.stride;
                 from->array.f.p = to->array.f.p;
@@ -1915,11 +1979,8 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                         diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                         idHwArrayBuffer = idHwArrayBufferUsed;
                     }
-                    diff_api.VertexAttribPointerARB(i, to->array.a[i].size,
-                                                                                    to->array.a[i].type,
-                                                                                    to->array.a[i].normalized,
-                                                                                    to->array.a[i].stride,
-                                                                                    to->array.a[i].p);
+                    diff_api.VertexAttribPointerARB(i, to->array.a[i].size, to->array.a[i].type, to->array.a[i].normalized,
+                                                    to->array.a[i].stride, to->array.a[i].p CRVBOX_HOST_ONLY_PARAM(to->array.a[i].fRealPtr));
                     from->array.a[i].size = to->array.a[i].size;
                     from->array.a[i].type = to->array.a[i].type;
                     from->array.a[i].stride = to->array.a[i].stride;
@@ -2031,8 +2092,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.VertexPointer(to->array.v.size, to->array.v.type,
-                                                             to->array.v.stride, to->array.v.p);
+                diff_api.VertexPointer(to->array.v.size, to->array.v.type, to->array.v.stride, to->array.v.p CRVBOX_HOST_ONLY_PARAM(to->array.v.fRealPtr));
                 FILLDIRTY(cb->v);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2051,8 +2111,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.NormalPointer(to->array.n.type,
-                                                             to->array.n.stride, to->array.n.p);
+                diff_api.NormalPointer(to->array.n.type, to->array.n.stride, to->array.n.p CRVBOX_HOST_ONLY_PARAM(to->array.n.fRealPtr));
                 FILLDIRTY(cb->n);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2072,8 +2131,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.ColorPointer(to->array.c.size, to->array.c.type,
-                                                            to->array.c.stride, to->array.c.p);
+                diff_api.ColorPointer(to->array.c.size, to->array.c.type, to->array.c.stride, to->array.c.p CRVBOX_HOST_ONLY_PARAM(to->array.c.fRealPtr));
                 FILLDIRTY(cb->c);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2092,8 +2150,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.IndexPointer(to->array.i.type,
-                                                            to->array.i.stride, to->array.i.p);
+                diff_api.IndexPointer(to->array.i.type, to->array.i.stride, to->array.i.p CRVBOX_HOST_ONLY_PARAM(to->array.i.fRealPtr));
                 FILLDIRTY(cb->i);
                 FILLDIRTY(cb->dirty);
                 FILLDIRTY(cb->clientPointer);
@@ -2116,8 +2173,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     }
                     diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
                     curClientTextureUnit = i;
-                    diff_api.TexCoordPointer(to->array.t[i].size, to->array.t[i].type,
-                                                                to->array.t[i].stride, to->array.t[i].p);
+                    diff_api.TexCoordPointer(to->array.t[i].size, to->array.t[i].type, to->array.t[i].stride, to->array.t[i].p CRVBOX_HOST_ONLY_PARAM(to->array.t[i].fRealPtr));
                     FILLDIRTY(cb->t[i]);
                     FILLDIRTY(cb->clientPointer);
                     FILLDIRTY(cb->dirty);
@@ -2136,7 +2192,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.EdgeFlagPointer(to->array.e.stride, to->array.e.p);
+                diff_api.EdgeFlagPointer(to->array.e.stride, to->array.e.p CRVBOX_HOST_ONLY_PARAM(to->array.e.fRealPtr));
                 FILLDIRTY(cb->e);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2156,8 +2212,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.SecondaryColorPointerEXT(to->array.s.size, to->array.s.type,
-                                                                                    to->array.s.stride, to->array.s.p);
+                diff_api.SecondaryColorPointerEXT(to->array.s.size, to->array.s.type, to->array.s.stride, to->array.s.p CRVBOX_HOST_ONLY_PARAM(to->array.s.fRealPtr));
                 FILLDIRTY(cb->s);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2176,8 +2231,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.FogCoordPointerEXT(to->array.f.type,
-                                                                        to->array.f.stride, to->array.f.p);
+                diff_api.FogCoordPointerEXT(to->array.f.type, to->array.f.stride, to->array.f.p CRVBOX_HOST_ONLY_PARAM(to->array.f.fRealPtr));
                 FILLDIRTY(cb->f);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2200,11 +2254,8 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                         diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                         idHwArrayBuffer = idHwArrayBufferUsed;
                     }
-                    diff_api.VertexAttribPointerARB(i, to->array.a[i].size,
-                                                                                    to->array.a[i].type,
-                                                                                    to->array.a[i].normalized,
-                                                                                    to->array.a[i].stride,
-                                                                                    to->array.a[i].p);
+                    diff_api.VertexAttribPointerARB(i, to->array.a[i].size, to->array.a[i].type, to->array.a[i].normalized,
+                                                    to->array.a[i].stride, to->array.a[i].p  CRVBOX_HOST_ONLY_PARAM(to->array.a[i].fRealPtr));
                     FILLDIRTY(cb->a[i]);
                     FILLDIRTY(cb->clientPointer);
                     FILLDIRTY(cb->dirty);
