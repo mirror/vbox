@@ -305,10 +305,10 @@ void crUnpackExtendUnlockArraysEXT(void)
             /*crDebug("crUnpackExtendUnlockArraysEXT: old cp(%i): en/l=%i(%i) p=%p size=%i type=0x%x n=%i str=%i pp=%p pstr=%i",
                     i, cp->enabled, cp->locked, cp->p, cp->size, cp->type, cp->normalized, cp->stride, cp->prevPtr, cp->prevStride);*/
             unsigned char *prevPtr = cp->prevPtr;
-            int fRealPtr = cp->fPrevRealPtr;
+            int fPrevRealPtr = cp->fPrevRealPtr;
             cp->prevPtr = NULL;
             cp->fPrevRealPtr = 0;
-            crUnpackSetClientPointerByIndex(i, cp->size, cp->type, cp->normalized, cp->prevStride, prevPtr, c, cp->fPrevRealPtr);
+            crUnpackSetClientPointerByIndex(i, cp->size, cp->type, cp->normalized, cp->prevStride, prevPtr, c, fPrevRealPtr);
             /*crDebug("crUnpackExtendUnlockArraysEXT: new cp(%i): en/l=%i(%i) p=%p size=%i type=0x%x n=%i str=%i pp=%p pstr=%i",
                     i, cp->enabled, cp->locked, cp->p, cp->size, cp->type, cp->normalized, cp->stride, cp->prevPtr, cp->prevStride);*/
         }
