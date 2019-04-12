@@ -446,8 +446,15 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
  * @param   uAlignment      The alignment of the reserved memory; PAGE_SIZE, _2M or _4M.
  * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
  * @param   R0Process       The process to map the memory into.
+ * @param   offSub          Where in the object to start mapping. If non-zero
+ *                          the value must be page aligned and cbSub must be
+ *                          non-zero as well.
+ * @param   cbSub           The size of the part of the object to be mapped. If
+ *                          zero the entire object is mapped. The value must be
+ *                          page aligned.
  */
-DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process);
+DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMemToMap, RTR3PTR R3PtrFixed,
+                                        size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub);
 
 /**
  * Change the page level protection of one or more pages in a memory object.

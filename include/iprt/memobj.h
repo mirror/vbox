@@ -606,6 +606,52 @@ RTR0DECL(int) RTR0MemObjMapUserTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, 
                                    size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process, const char *pszTag);
 
 /**
+ * Maps a memory object into user virtual address space in the current process
+ * (default tag).
+ *
+ * @returns IPRT status code.
+ * @param   pMemObj         Where to store the ring-0 memory object handle of the mapping object.
+ * @param   MemObjToMap     The object to be map.
+ * @param   R3PtrFixed      Requested address. (RTR3PTR)-1 means any address. This must match the alignment.
+ * @param   uAlignment      The alignment of the reserved memory.
+ *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
+ * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
+ * @param   R0Process       The process to map the memory into. NIL_R0PROCESS is an alias for the current one.
+ * @param   offSub          Where in the object to start mapping. If non-zero
+ *                          the value must be page aligned and cbSub must be
+ *                          non-zero as well.
+ * @param   cbSub           The size of the part of the object to be mapped. If
+ *                          zero the entire object is mapped. The value must be
+ *                          page aligned.
+ */
+#define RTR0MemObjMapUserEx(pMemObj, MemObjToMap, R3PtrFixed, uAlignment, fProt, R0Process, offSub, cbSub) \
+    RTR0MemObjMapUserExTag((pMemObj), (MemObjToMap), (R3PtrFixed), (uAlignment), (fProt), (R0Process), \
+                           (offSub), (cbSub), RTMEM_TAG)
+
+/**
+ * Maps a memory object into user virtual address space in the current process
+ * (custom tag).
+ *
+ * @returns IPRT status code.
+ * @param   pMemObj         Where to store the ring-0 memory object handle of the mapping object.
+ * @param   MemObjToMap     The object to be map.
+ * @param   R3PtrFixed      Requested address. (RTR3PTR)-1 means any address. This must match the alignment.
+ * @param   uAlignment      The alignment of the reserved memory.
+ *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
+ * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
+ * @param   R0Process       The process to map the memory into. NIL_R0PROCESS is an alias for the current one.
+ * @param   offSub          Where in the object to start mapping. If non-zero
+ *                          the value must be page aligned and cbSub must be
+ *                          non-zero as well.
+ * @param   cbSub           The size of the part of the object to be mapped. If
+ *                          zero the entire object is mapped. The value must be
+ *                          page aligned.
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+RTR0DECL(int) RTR0MemObjMapUserExTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR3PTR R3PtrFixed, size_t uAlignment,
+                                     unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub, const char *pszTag);
+
+/**
  * Change the page level protection of one or more pages in a memory object.
  *
  * @returns IPRT status code.

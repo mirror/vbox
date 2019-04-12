@@ -1738,6 +1738,7 @@
 # define RTR0MemObjMapKernelExTag                       RT_MANGLER(RTR0MemObjMapKernelExTag)   /* r0drv */
 # define RTR0MemObjMapKernelTag                         RT_MANGLER(RTR0MemObjMapKernelTag)     /* r0drv */
 # define RTR0MemObjMapUserTag                           RT_MANGLER(RTR0MemObjMapUserTag)       /* r0drv */
+# define RTR0MemObjMapUserExTag                         RT_MANGLER(RTR0MemObjMapUserExTag)     /* r0drv */
 # define RTR0MemObjProtect                              RT_MANGLER(RTR0MemObjProtect)          /* r0drv */
 # define RTR0MemObjReserveKernelTag                     RT_MANGLER(RTR0MemObjReserveKernelTag) /* r0drv */
 # define RTR0MemObjReserveUserTag                       RT_MANGLER(RTR0MemObjReserveUserTag)   /* r0drv */

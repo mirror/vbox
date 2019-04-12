@@ -729,6 +729,14 @@ RT_EXPORT_SYMBOL(RTR0MemObjMapKernelExTag);
 RTR0DECL(int) RTR0MemObjMapUserTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR3PTR R3PtrFixed,
                                    size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process, const char *pszTag)
 {
+    return RTR0MemObjMapUserExTag(pMemObj, MemObjToMap, R3PtrFixed, uAlignment, fProt, R0Process, 0, 0, pszTag);
+}
+RT_EXPORT_SYMBOL(RTR0MemObjMapUserTag);
+
+
+RTR0DECL(int) RTR0MemObjMapUserExTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR3PTR R3PtrFixed, size_t uAlignment,
+                                     unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub, const char *pszTag)
+{
     /* sanity checks. */
     PRTR0MEMOBJINTERNAL pMemToMap;
     PRTR0MEMOBJINTERNAL pNew;
@@ -748,14 +756,23 @@ RTR0DECL(int) RTR0MemObjMapUserTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, 
         AssertReturn(!(R3PtrFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
     AssertReturn(fProt != RTMEM_PROT_NONE, VERR_INVALID_PARAMETER);
     AssertReturn(!(fProt & ~(RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(offSub & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(offSub < pMemToMap->cb, VERR_INVALID_PARAMETER);
+    AssertReturn(!(cbSub & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(cbSub <= pMemToMap->cb, VERR_INVALID_PARAMETER);
+    AssertReturn((!offSub && !cbSub) || (offSub + cbSub) <= pMemToMap->cb, VERR_INVALID_PARAMETER);
     if (R0Process == NIL_RTR0PROCESS)
         R0Process = RTR0ProcHandleSelf();
     RT_ASSERT_PREEMPTIBLE();
 
     RT_NOREF_PV(pszTag);
 
+    /* adjust the request to simplify the native code. */
+    if (offSub == 0 && cbSub == pMemToMap->cb)
+        cbSub = 0;
+
     /* do the mapping. */
-    rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, R3PtrFixed, uAlignment, fProt, R0Process);
+    rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, R3PtrFixed, uAlignment, fProt, R0Process, offSub, cbSub);
     if (RT_SUCCESS(rc))
     {
         /* link it. */
@@ -775,7 +792,7 @@ RTR0DECL(int) RTR0MemObjMapUserTag(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, 
 
     return rc;
 }
-RT_EXPORT_SYMBOL(RTR0MemObjMapUserTag);
+RT_EXPORT_SYMBOL(RTR0MemObjMapUserExTag);
 
 
 RTR0DECL(int) RTR0MemObjProtect(RTR0MEMOBJ hMemObj, size_t offSub, size_t cbSub, uint32_t fProt)

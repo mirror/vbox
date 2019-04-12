@@ -892,6 +892,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
      */
     if (uAlignment > PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
+    Assert(!offSub || cbSub);
 
     IPRT_DARWIN_SAVE_EFL_AC();
 
@@ -958,7 +959,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
                          * Create the IPRT memory object.
                          */
                         PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_MAPPING,
-                                                                                        pv, cbSub);
+                                                                                        pv, cbSub ? cbSub : pMemToMap->cb);
                         if (pMemDarwin)
                         {
                             pMemDarwin->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
@@ -994,7 +995,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
 
 
 DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment,
-                                        unsigned fProt, RTR0PROCESS R0Process)
+                                        unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub)
 {
     RT_NOREF(fProt);
 
@@ -1004,6 +1005,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
     AssertReturn(R3PtrFixed == (RTR3PTR)-1, VERR_NOT_SUPPORTED);
     if (uAlignment > PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
+    Assert(!offSub || cbSub);
 
     IPRT_DARWIN_SAVE_EFL_AC();
 
@@ -1018,12 +1020,14 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
         IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->createMappingInTask((task_t)R0Process,
                                                                               0,
                                                                               kIOMapAnywhere | kIOMapDefaultCache,
-                                                                              0 /* offset */,
-                                                                              0 /* length */);
+                                                                              offSub,
+                                                                              cbSub);
 #else
         IOMemoryMap *pMemMap = pMemToMapDarwin->pMemDesc->map((task_t)R0Process,
                                                               0,
-                                                              kIOMapAnywhere | kIOMapDefaultCache);
+                                                              kIOMapAnywhere | kIOMapDefaultCache,
+                                                              offSub,
+                                                              cbSub);
 #endif
         if (pMemMap)
         {
@@ -1035,7 +1039,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
                  * Create the IPRT memory object.
                  */
                 PRTR0MEMOBJDARWIN pMemDarwin = (PRTR0MEMOBJDARWIN)rtR0MemObjNew(sizeof(*pMemDarwin), RTR0MEMOBJTYPE_MAPPING,
-                                                                                pv, pMemToMapDarwin->Core.cb);
+                                                                                pv, cbSub ? cbSub : pMemToMap->cb);
                 if (pMemDarwin)
                 {
                     pMemDarwin->Core.u.Mapping.R0Process = R0Process;

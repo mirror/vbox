@@ -498,7 +498,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
 
 
 DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment,
-                                        unsigned fProt, RTR0PROCESS R0Process)
+                                        unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub)
 {
     printf("NativeMapUser\n");
     return VERR_NOT_SUPPORTED;

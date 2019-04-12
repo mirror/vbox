@@ -650,6 +650,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
      */
     if (uAlignment > PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
+    Assert(!offSub || cbSub);
 
     int                rc;
     PRTR0MEMOBJFREEBSD pMemToMapFreeBSD = (PRTR0MEMOBJFREEBSD)pMemToMap;
@@ -710,7 +711,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
 
 
 DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment,
-                                        unsigned fProt, RTR0PROCESS R0Process)
+                                        unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub)
 {
     /*
      * Check for unsupported stuff.
@@ -718,6 +719,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
     if (uAlignment > PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
+    Assert(!offSub || cbSub);
 
     int                rc;
     PRTR0MEMOBJFREEBSD pMemToMapFreeBSD = (PRTR0MEMOBJFREEBSD)pMemToMap;
@@ -747,13 +749,16 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
     else
         AddrR3 = (vm_offset_t)R3PtrFixed;
 
+    if (cbSub == 0)
+        cbSub = pMemToMap->cb - offSub;
+
     /* Insert the pObject in the map. */
     vm_object_reference(pMemToMapFreeBSD->pObject);
     rc = vm_map_find(pProcMap,              /* Map to insert the object in */
                      pMemToMapFreeBSD->pObject, /* Object to map */
-                     0,                     /* Start offset in the object */
+                     offSub,                /* Start offset in the object */
                      &AddrR3,               /* Start address IN/OUT */
-                     pMemToMap->cb,         /* Size of the mapping */
+                     cbSub,                 /* Size of the mapping */
 #if __FreeBSD_version >= 1000055
                      0,                     /* Upper bound of the mapping */
 #endif
