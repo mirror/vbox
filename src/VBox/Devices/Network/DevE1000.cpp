@@ -2481,6 +2481,8 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
 # endif /* !E1K_WITH_RXD_CACHE */
         if (pDesc->u64BufAddr)
         {
+            uint16_t u16RxBufferSize = pThis->u16RxBSize; /* see @bugref{9427} */
+
             /* Update descriptor */
             pDesc->status        = status;
             pDesc->u16Checksum   = checksum;
@@ -2494,16 +2496,16 @@ static int e1kHandleRxPacket(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
              * e1kRegWriteRDT() never modifies RDH. It never touches already
              * fetched RxD cache entries either.
              */
-            if (cb > pThis->u16RxBSize)
+            if (cb > u16RxBufferSize)
             {
                 pDesc->status.fEOP = false;
                 e1kCsRxLeave(pThis);
-                e1kStoreRxFragment(pThis, pDesc, ptr, pThis->u16RxBSize);
+                e1kStoreRxFragment(pThis, pDesc, ptr, u16RxBufferSize);
                 rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
                 if (RT_UNLIKELY(rc != VINF_SUCCESS))
                     return rc;
-                ptr += pThis->u16RxBSize;
-                cb -= pThis->u16RxBSize;
+                ptr += u16RxBufferSize;
+                cb -= u16RxBufferSize;
             }
             else
             {
@@ -3157,6 +3159,8 @@ static int e1kRegWriteRCTL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uin
     unsigned cbRxBuf = 2048 >> GET_BITS_V(value, RCTL, BSIZE);
     if (value & RCTL_BSEX)
         cbRxBuf *= 16;
+    if (cbRxBuf > E1K_MAX_RX_PKT_SIZE)
+        cbRxBuf = E1K_MAX_RX_PKT_SIZE;
     if (cbRxBuf != pThis->u16RxBSize)
         E1kLog2(("%s e1kRegWriteRCTL: Setting receive buffer size to %d (old %d)\n",
                  pThis->szPrf, cbRxBuf, pThis->u16RxBSize));
