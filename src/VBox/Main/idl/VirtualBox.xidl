@@ -2817,15 +2817,15 @@
       <desc>
         Sets associated global extra data.
 
-        If you pass @c null or empty string as a key @a value, the given @a key
-        will be deleted.
+        If you pass @c null or an empty string as a key @a value, the given
+        @a key will be deleted.
 
         <note>
-          Key must contain only printable ASCII characters.
+          Key must contain printable (non-control) UTF-8 characters only.
         </note>
         <note>
           Before performing the actual data change, this method will ask all
-          registered event listener using the
+          registered event listeners using the
           <link to="IExtraDataCanChangeEvent"/>
           notification for a permission. If one of the listeners refuses the
           new value, the change will not be performed.
@@ -7333,11 +7333,11 @@ and "VAR" for unsetting. -->
         @a key will be deleted.
 
         <note>
-          Key must contain only printable ASCII characters.
+          Key must contain printable (non-control) UTF-8 characters only.
         </note>
         <note>
           Before performing the actual data change, this method will ask all
-          registered listeners using the
+          registered event listeners using the
           <link to="IExtraDataCanChangeEvent"/>
           notification for a permission. If one of the listeners refuses the
           new value, the change will not be performed.
