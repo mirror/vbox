@@ -82,6 +82,11 @@ public:
     /** Returns value type. */
     KFormValueType valueType() const { return m_enmValueType; }
 
+    /** Returns the row name as string. */
+    QString nameToString() const;
+    /** Returns the row value as string. */
+    QString valueToString() const;
+
 protected:
 
     /** Returns the number of children. */
@@ -201,6 +206,16 @@ UIFormEditorRow::~UIFormEditorRow()
     cleanup();
 }
 
+QString UIFormEditorRow::nameToString() const
+{
+    return m_cells.at(UIFormEditorDataType_Name)->text();
+}
+
+QString UIFormEditorRow::valueToString() const
+{
+    return m_cells.at(UIFormEditorDataType_Value)->text();
+}
+
 int UIFormEditorRow::childCount() const
 {
     /* Return cell count: */
@@ -306,8 +321,16 @@ Qt::ItemFlags UIFormEditorModel::flags(const QModelIndex &index) const
     /* Check index validness: */
     if (!index.isValid())
         return Qt::NoItemFlags;
-    /* Return wrong value: */
-    return Qt::NoItemFlags;
+    /* Switch for different columns: */
+    switch (index.column())
+    {
+        case UIFormEditorDataType_Name:
+            return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+        case UIFormEditorDataType_Value:
+            return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+        default:
+            return Qt::NoItemFlags;
+    }
 }
 
 int UIFormEditorModel::rowCount(const QModelIndex &) const
@@ -322,12 +345,19 @@ int UIFormEditorModel::columnCount(const QModelIndex &) const
 
 QVariant UIFormEditorModel::headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const
 {
-    Q_UNUSED(iSection);
-    Q_UNUSED(enmOrientation);
-    Q_UNUSED(iRole);
-
-    /* Return wrong value: */
-    return QVariant();
+    /* Check argument validness: */
+    if (iRole != Qt::DisplayRole || enmOrientation != Qt::Horizontal)
+        return QVariant();
+    /* Switch for different columns: */
+    switch (iSection)
+    {
+        case UIFormEditorDataType_Name:
+            return UIFormEditorWidget::tr("Name");
+        case UIFormEditorDataType_Value:
+            return UIFormEditorWidget::tr("Value");
+        default:
+            return QVariant();
+    }
 }
 
 bool UIFormEditorModel::setData(const QModelIndex &index, const QVariant &value, int iRole /* = Qt::EditRole */)
@@ -343,13 +373,47 @@ bool UIFormEditorModel::setData(const QModelIndex &index, const QVariant &value,
 
 QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
 {
-    Q_UNUSED(iRole);
-
     /* Check index validness: */
     if (!index.isValid())
         return QVariant();
-    /* Return wrong value: */
-    return QVariant();
+    /* Switch for different roles: */
+    switch (iRole)
+    {
+        /* Display role: */
+        case Qt::DisplayRole:
+        {
+            /* Switch for different columns: */
+            switch (index.column())
+            {
+                case UIFormEditorDataType_Name:
+                    return m_dataList[index.row()]->nameToString();
+                case UIFormEditorDataType_Value:
+                    return   m_dataList[index.row()]->valueType() != KFormValueType_Boolean
+                           ? m_dataList[index.row()]->valueToString()
+                           : QVariant();
+                default:
+                    return QVariant();
+            }
+        }
+        /* Alignment role: */
+        case Qt::TextAlignmentRole:
+        {
+            /* Switch for different columns: */
+            switch (index.column())
+            {
+                case UIFormEditorDataType_Name:
+                    return (int)(Qt::AlignLeft | Qt::AlignVCenter);
+                case UIFormEditorDataType_Value:
+                    return   m_dataList[index.row()]->valueType() != KFormValueType_Boolean
+                           ? (int)(Qt::AlignLeft | Qt::AlignVCenter)
+                           : (int)(Qt::AlignCenter);
+                default:
+                    return QVariant();
+            }
+        }
+        default:
+            return QVariant();
+    }
 }
 
 QITableView *UIFormEditorModel::parentTable() const
