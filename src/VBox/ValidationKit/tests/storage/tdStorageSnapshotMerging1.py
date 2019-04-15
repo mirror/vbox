@@ -182,7 +182,7 @@ class tdStorageSnapshot(vbox.TestDriver):                                      #
     def getSnapshotMedium(self, oSnapshot, sController):
         oVM = oSnapshot.machine;
         oMedium = self.getMedium(oVM, sController);
-        
+
         aoMediumChildren = self.oVBoxMgr.getArray(oMedium, 'children')
         if aoMediumChildren is None or len(aoMediumChildren) < 1:
             return None;
