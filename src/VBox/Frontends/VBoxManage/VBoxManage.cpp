@@ -203,6 +203,8 @@ HRESULT showProgress(ComPtr<IProgress> progress)
 {
     using namespace com;
 
+    AssertReturn(progress.isNotNull(), E_FAIL);
+
     BOOL fCompleted = FALSE;
     ULONG ulCurrentPercent = 0;
     ULONG ulLastPercent = 0;
