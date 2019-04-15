@@ -16,6 +16,7 @@
  */
 
 /* Qt includes: */
+#include <QDir>
 #include <QGridLayout>
 #include <QVBoxLayout>
 #include <QRegExpValidator>
@@ -46,6 +47,7 @@
 UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
     : UIWizardNewVDPage3(strDefaultName, strDefaultPath)
 {
+    /* Get default extension for new virtual-disk: */
     /* Create widgets: */
     QGridLayout *pMainLayout = new QGridLayout(this);
     {
@@ -55,9 +57,6 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
             QHBoxLayout *pLocationCntLayout = new QHBoxLayout(m_pLocationCnt);
             {
                 m_pLocationEditor = new QLineEdit(m_pLocationCnt);
-                {
-                    m_pLocationEditor->setText(m_strDefaultName);
-                }
                 m_pLocationOpenButton = new QIToolButton(m_pLocationCnt);
                 {
                     m_pLocationOpenButton->setAutoRaise(true);
@@ -173,6 +172,12 @@ UIWizardNewVDPageExpert::UIWizardNewVDPageExpert(const QString &strDefaultName, 
     registerField("mediumVariant", this, "mediumVariant");
     registerField("mediumPath", this, "mediumPath");
     registerField("mediumSize", this, "mediumSize");
+
+    /* Initialization of m_strDefaultExtension is done  here
+       since first m_formats should be populated and fields should be registered: */
+    m_strDefaultExtension = defaultExtension(mediumFormat());
+    if (m_pLocationEditor)
+        m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
 }
 
 void UIWizardNewVDPageExpert::sltMediumFormatChanged()
@@ -201,6 +206,16 @@ void UIWizardNewVDPageExpert::sltMediumFormatChanged()
 
     /* Compose virtual-disk extension: */
     m_strDefaultExtension = defaultExtension(mf);
+    /* Update m_pLocationEditor's text if necessary: */
+    if (!m_pLocationEditor->text().isEmpty() && !m_strDefaultExtension.isEmpty())
+    {
+        QFileInfo fileInfo(m_pLocationEditor->text());
+        if (fileInfo.completeSuffix() != m_strDefaultExtension)
+        {
+            QString strNewFilePath = QString("%1/%2.%3").arg(fileInfo.absoluteDir().absolutePath()).arg(fileInfo.baseName()).arg(m_strDefaultExtension);
+            m_pLocationEditor->setText(strNewFilePath);
+        }
+    }
 
     /* Broadcast complete-change: */
     completeChanged();

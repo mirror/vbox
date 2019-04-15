@@ -127,18 +127,27 @@ QString UIWizardNewVDPage3::toFileName(const QString &strName, const QString &st
 }
 
 /* static */
-QString UIWizardNewVDPage3::absoluteFilePath(const QString &strFileName, const QString &strDefaultPath)
+QString UIWizardNewVDPage3::absoluteFilePath(const QString &strFileName, const QString &strPath)
 {
     /* Wrap file-info around received file name: */
     QFileInfo fileInfo(strFileName);
     /* If path-info is relative or there is no path-info at all: */
     if (fileInfo.fileName() == strFileName || fileInfo.isRelative())
     {
-        /* Resolve path on the basis of default path we have: */
-        fileInfo = QFileInfo(strDefaultPath, strFileName);
+        /* Resolve path on the basis of  path we have: */
+        fileInfo = QFileInfo(strPath, strFileName);
     }
     /* Return full absolute hard disk file path: */
     return QDir::toNativeSeparators(fileInfo.absoluteFilePath());
+}
+
+/*static */
+QString UIWizardNewVDPage3::absoluteFilePath(const QString &strFileName, const QString &strPath, const QString &strExtension)
+{
+    QString strFilePath = absoluteFilePath(strFileName, strPath);
+    if (QFileInfo(strFilePath).suffix().isEmpty())
+        strFilePath += QString(".%1").arg(strExtension);
+    return strFilePath;
 }
 
 /* static */
@@ -266,7 +275,7 @@ void UIWizardNewVDPageBasic3::initializePage()
     /* Get default extension for new virtual-disk: */
     m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
     /* Set default name as text for location editor: */
-    m_pLocationEditor->setText(m_strDefaultName);
+    m_pLocationEditor->setText(absoluteFilePath(m_strDefaultName, m_strDefaultPath, m_strDefaultExtension));
 }
 
 bool UIWizardNewVDPageBasic3::isComplete() const
