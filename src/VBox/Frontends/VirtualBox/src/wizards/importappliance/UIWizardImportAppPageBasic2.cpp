@@ -69,6 +69,16 @@ UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileN
             pMainLayout->addWidget(m_pApplianceWidget);
         }
 
+        /* Create form editor widget: */
+        m_pFormEditor = new UIFormEditorWidget(this);
+        if (m_pFormEditor)
+        {
+            m_pFormEditor->hide();
+
+            /* Add into layout: */
+            pMainLayout->addWidget(m_pFormEditor);
+        }
+
         /* Create certificate label: */
         m_pCertLabel = new QLabel("<cert label>", this);
         if (m_pCertLabel)

@@ -684,6 +684,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic3.h \
 	src/wizards/exportappliance/UIWizardExportAppPageExpert.h \
 	src/wizards/importappliance/UIApplianceUnverifiedCertificateViewer.h \
+	src/wizards/importappliance/UIFormEditorWidget.h \
 	src/wizards/importappliance/UIWizardImportApp.h \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.h \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
@@ -939,6 +940,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/widgets/UIMenuToolBar.cpp \
 	src/widgets/UITabBar.cpp \
 	src/widgets/graphics/UIGraphicsScrollBar.cpp \
+	src/wizards/importappliance/UIFormEditorWidget.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
 
@@ -1112,6 +1114,7 @@ VirtualBox_SOURCES = \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp \
 	src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp \
 	src/wizards/importappliance/UIApplianceUnverifiedCertificateViewer.cpp \
+	src/wizards/importappliance/UIFormEditorWidget.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \

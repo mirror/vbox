@@ -22,6 +22,7 @@
 #endif
 
 /* GUI includes: */
+#include "UIFormEditorWidget.h"
 #include "UIWizardImportAppDefs.h"
 #include "UIWizardPage.h"
 
@@ -41,7 +42,9 @@ protected:
     ImportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
 
     /** Holds the appliance widget instance. */
-    ImportAppliancePointer m_pApplianceWidget;
+    ImportAppliancePointer     m_pApplianceWidget;
+    /** Holds the Form Editor widget instance. */
+    UIFormEditorWidgetPointer  m_pFormEditor;
 };
 
 /** UIWizardPage extension for 2nd page of the Import Appliance wizard, extends UIWizardImportAppPage2 as well. */
