@@ -2148,7 +2148,7 @@ HRESULT VirtualBox::setExtraData(const com::Utf8Str &aKey,
         for (size_t i = 0; i < strKey.length(); ++i)
         {
             char ch = strKey[i];
-            if (!RTLocCIsPrint(ch))
+            if (RT_C_IS_CNTRL(ch))
                 return E_INVALIDARG;
         }
     }

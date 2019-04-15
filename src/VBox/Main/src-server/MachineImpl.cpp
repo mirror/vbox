@@ -4844,7 +4844,7 @@ HRESULT Machine::setExtraData(const com::Utf8Str &aKey, const com::Utf8Str &aVal
         for (size_t i = 0; i < aKey.length(); ++i)
         {
             char ch = aKey[i];
-            if (!RTLocCIsPrint(ch))
+            if (RT_C_IS_CNTRL(ch))
                 return E_INVALIDARG;
         }
     }
