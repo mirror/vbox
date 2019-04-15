@@ -30,6 +30,32 @@ class UIFormEditorView;
 class CVirtualSystemDescriptionForm;
 
 
+/** Class used to hold choice data. */
+class ChoiceData
+{
+public:
+
+    /** Constructs null choice data. */
+    ChoiceData() {}
+    /** Constructs choice data on the basis of passed @a choices and @a iSelectedChoice. */
+    ChoiceData(const QVector<QString> &choices, int iSelectedChoice)
+        : m_choices(choices), m_iSelectedChoice(iSelectedChoice) {}
+
+    /** Returns choice list. */
+    QVector<QString> choices() const { return m_choices; }
+    /** Returns current selected choice. */
+    int selectedChoice() const { return m_iSelectedChoice; }
+
+private:
+
+    /** Holds choice list. */
+    QVector<QString>  m_choices;
+    /** Holds current selected choice. */
+    int               m_iSelectedChoice;
+};
+Q_DECLARE_METATYPE(ChoiceData);
+
+
 /** QWidget subclass representing model/view Form Editor widget. */
 class UIFormEditorWidget : public QWidget
 {

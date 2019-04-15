@@ -47,6 +47,38 @@ enum UIFormEditorDataType
 };
 
 
+/** QComboBox extension used as Port editor. */
+class ChoiceEditor : public QComboBox
+{
+    Q_OBJECT;
+    Q_PROPERTY(ChoiceData choice READ choice WRITE setChoice USER true);
+
+public:
+
+    /** Constructs Port-editor passing @a pParent to the base-class. */
+    ChoiceEditor(QWidget *pParent = 0)
+        : QComboBox(pParent) {}
+
+private:
+
+    /** Defines the @a choice. */
+    void setChoice(ChoiceData choice)
+    {
+        addItems(choice.choices().toList());
+        setCurrentIndex(choice.selectedChoice());
+    }
+
+    /** Returns the choice. */
+    ChoiceData choice() const
+    {
+        QVector<QString> choices(count());
+        for (int i = 0; i < count(); ++i)
+            choices[i] = itemText(i);
+        return ChoiceData(choices, currentIndex());
+    }
+};
+
+
 /** QITableViewCell extension used as Form Editor table-view cell. */
 class UIFormEditorCell : public QITableViewCell
 {
@@ -86,6 +118,15 @@ public:
     QString nameToString() const;
     /** Returns the row value as string. */
     QString valueToString() const;
+
+    /** Returns value cast to bool. */
+    bool toBool() const;
+
+    /** Returns value cast to string. */
+    QString toString() const;
+
+    /** Returns value cast to choice. */
+    ChoiceData toChoice() const;
 
 protected:
 
@@ -214,6 +255,27 @@ QString UIFormEditorRow::nameToString() const
 QString UIFormEditorRow::valueToString() const
 {
     return m_cells.at(UIFormEditorDataType_Value)->text();
+}
+
+bool UIFormEditorRow::toBool() const
+{
+    AssertReturn(valueType() == KFormValueType_Boolean, false);
+    CBooleanFormValue comValue(m_comValue);
+    return comValue.GetSelected();
+}
+
+QString UIFormEditorRow::toString() const
+{
+    AssertReturn(valueType() == KFormValueType_String, QString());
+    CStringFormValue comValue(m_comValue);
+    return comValue.GetString();
+}
+
+ChoiceData UIFormEditorRow::toChoice() const
+{
+    AssertReturn(valueType() == KFormValueType_Choice, ChoiceData());
+    CChoiceFormValue comValue(m_comValue);
+    return ChoiceData(comValue.GetValues(), comValue.GetSelectedIndex());
 }
 
 int UIFormEditorRow::childCount() const
@@ -379,6 +441,22 @@ QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
     /* Switch for different roles: */
     switch (iRole)
     {
+        /* Checkstate role: */
+        case Qt::CheckStateRole:
+        {
+            /* Switch for different columns: */
+            switch (index.column())
+            {
+                case UIFormEditorDataType_Value:
+                    return   m_dataList[index.row()]->valueType() == KFormValueType_Boolean
+                           ? m_dataList[index.row()]->toBool()
+                           ? Qt::Checked
+                           : Qt::Unchecked
+                           : QVariant();
+                default:
+                    return QVariant();
+            }
+        }
         /* Display role: */
         case Qt::DisplayRole:
         {
@@ -391,6 +469,28 @@ QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
                     return   m_dataList[index.row()]->valueType() != KFormValueType_Boolean
                            ? m_dataList[index.row()]->valueToString()
                            : QVariant();
+                default:
+                    return QVariant();
+            }
+        }
+        /* Edit role: */
+        case Qt::EditRole:
+        {
+            /* Switch for different columns: */
+            switch (index.column())
+            {
+                case UIFormEditorDataType_Value:
+                {
+                    switch (m_dataList[index.row()]->valueType())
+                    {
+                        case KFormValueType_String:
+                            return QVariant::fromValue(m_dataList[index.row()]->toString());
+                        case KFormValueType_Choice:
+                            return QVariant::fromValue(m_dataList[index.row()]->toChoice());
+                        default:
+                            return QVariant();
+                    }
+                }
                 default:
                     return QVariant();
             }
@@ -483,6 +583,29 @@ void UIFormEditorWidget::prepare()
             m_pTableModel = new UIFormEditorModel(m_pTableView);
             if (m_pTableModel)
                 m_pTableView->setModel(m_pTableModel);
+
+            /* We certainly have abstract item delegate: */
+            QAbstractItemDelegate *pAbstractItemDelegate = m_pTableView->itemDelegate();
+            if (pAbstractItemDelegate)
+            {
+                /* But is this also styled item delegate? */
+                QStyledItemDelegate *pStyledItemDelegate = qobject_cast<QStyledItemDelegate*>(pAbstractItemDelegate);
+                if (pStyledItemDelegate)
+                {
+                    /* Create new item editor factory: */
+                    QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
+                    if (pNewItemEditorFactory)
+                    {
+                        /* Register ChoiceEditor as the ChoiceData editor: */
+                        int iChoiceId = qRegisterMetaType<ChoiceData>();
+                        QStandardItemEditorCreator<ChoiceEditor> *pChoiceEditorItemCreator = new QStandardItemEditorCreator<ChoiceEditor>();
+                        pNewItemEditorFactory->registerEditor((QVariant::Type)iChoiceId, pChoiceEditorItemCreator);
+
+                        /* Set newly created item editor factory for table delegate: */
+                        pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
+                    }
+                }
+            }
 
             /* Add into layout: */
             pLayout->addWidget(m_pTableView);
