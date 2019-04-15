@@ -25,7 +25,9 @@
 #include <QWidget>
 
 /* Forward declarations: */
+class UIFormEditorModel;
 class UIFormEditorView;
+class CVirtualSystemDescriptionForm;
 
 
 /** QWidget subclass representing model/view Form Editor widget. */
@@ -38,6 +40,9 @@ public:
     /** Constructs Form Editor widget passing @a pParent to the base-class. */
     UIFormEditorWidget(QWidget *pParent = 0);
 
+    /** Defines virtual system description @a comForm to be edited. */
+    void setVirtualSystemDescriptionForm(const CVirtualSystemDescriptionForm &comForm);
+
 private:
 
     /** Prepares all. */
@@ -45,6 +50,8 @@ private:
 
     /** Holds the table-view instance. */
     UIFormEditorView  *m_pTableView;
+    /** Holds the table-model instance. */
+    UIFormEditorModel *m_pTableModel;
 };
 
 /** Safe pointer to Form Editor widget. */
