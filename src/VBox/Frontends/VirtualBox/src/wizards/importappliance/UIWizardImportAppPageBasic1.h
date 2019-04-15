@@ -31,6 +31,7 @@
 #include "CCloudProfile.h"
 #include "CCloudProvider.h"
 #include "CCloudProviderManager.h"
+#include "CVirtualSystemDescriptionForm.h"
 
 /* Forward declarations: */
 class QLabel;
@@ -97,20 +98,22 @@ protected:
     QString profileName() const;
     /** Returns Cloud Profile object. */
     CCloudProfile profile() const;
-    /** Returns Cloud Client object. */
-    CCloudClient client() const;
+    /** Returns Virtual System Description Form object. */
+    CVirtualSystemDescriptionForm vsdForm() const;
 
     /** Holds whether default source should be Import from OCI. */
     bool  m_fImportFromOCIByDefault;
 
     /** Holds the Cloud Provider Manager reference. */
-    CCloudProviderManager  m_comCloudProviderManager;
+    CCloudProviderManager          m_comCloudProviderManager;
     /** Holds the Cloud Provider object reference. */
-    CCloudProvider         m_comCloudProvider;
+    CCloudProvider                 m_comCloudProvider;
     /** Holds the Cloud Profile object reference. */
-    CCloudProfile          m_comCloudProfile;
+    CCloudProfile                  m_comCloudProfile;
     /** Holds the Cloud Client object reference. */
-    CCloudClient           m_comCloudClient;
+    CCloudClient                   m_comCloudClient;
+    /** Holds the Virtual System Description Form object reference. */
+    CVirtualSystemDescriptionForm  m_comVSDForm;
 
     /** Holds the source layout instance. */
     QGridLayout *m_pSourceLayout;
@@ -148,7 +151,7 @@ class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAp
     Q_PROPERTY(QString source READ source WRITE setSource);
     Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
     Q_PROPERTY(CCloudProfile profile READ profile);
-    Q_PROPERTY(CCloudClient client READ client);
+    Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
 
 public:
 

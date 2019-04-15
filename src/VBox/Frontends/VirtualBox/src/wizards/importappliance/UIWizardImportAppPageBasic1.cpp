@@ -385,9 +385,9 @@ CCloudProfile UIWizardImportAppPage1::profile() const
     return m_comCloudProfile;
 }
 
-CCloudClient UIWizardImportAppPage1::client() const
+CVirtualSystemDescriptionForm UIWizardImportAppPage1::vsdForm() const
 {
-    return m_comCloudClient;
+    return m_comVSDForm;
 }
 
 
@@ -618,7 +618,7 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
     registerField("source", this, "source");
     registerField("isSourceCloudOne", this, "isSourceCloudOne");
     registerField("profile", this, "profile");
-    registerField("client", this, "client");
+    registerField("vsdForm", this, "vsdForm");
 }
 
 bool UIWizardImportAppPageBasic1::event(QEvent *pEvent)
@@ -722,22 +722,54 @@ bool UIWizardImportAppPageBasic1::isComplete() const
 
 bool UIWizardImportAppPageBasic1::validatePage()
 {
-    /* Get import appliance widget: */
-    ImportAppliancePointer pImportApplianceWidget = field("applianceWidget").value<ImportAppliancePointer>();
-    AssertMsg(!pImportApplianceWidget.isNull(), ("Appliance Widget is not set!\n"));
-
-    /* If file name was changed: */
-    if (m_pFileSelector->isModified())
+    if (isSourceCloudOne())
     {
-        /* Check if set file contains valid appliance: */
-        if (!pImportApplianceWidget->setFile(m_pFileSelector->path()))
+        CVirtualSystemDescriptionForm comForm;
+        CProgress comProgress = m_comCloudClient.GetExportLaunchDescriptionForm(comForm);
+        /* Show error message if necessary: */
+        if (!m_comCloudClient.isOk())
+        {
+            /// @todo add real error message
+            //msgCenter().cannotAcquireExportLaunchDescriptionForm(comCloudClient, this);
             return false;
-        /* Reset the modified bit afterwards: */
-        m_pFileSelector->resetModified();
-    }
+        }
+        else
+        {
+            /* Show "Acquire export form" progress: */
+            msgCenter().showModalProgressDialog(comProgress, UIWizardImportApp::tr("Acquire export form..."),
+                                                ":/progress_media_move_90px.png", this);
 
-    /* If we have a valid ovf proceed to the appliance settings page: */
-    return pImportApplianceWidget->isValid();
+            /* Show error message if necessary: */
+            if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            {
+                /// @todo add real error message
+                //msgCenter().cannotAcquireExportLaunchDescriptionForm(comProgress, this);
+                return false;
+            }
+            else
+                m_comVSDForm = comForm;
+        }
+        return true;
+    }
+    else
+    {
+        /* Get import appliance widget: */
+        ImportAppliancePointer pImportApplianceWidget = field("applianceWidget").value<ImportAppliancePointer>();
+        AssertMsg(!pImportApplianceWidget.isNull(), ("Appliance Widget is not set!\n"));
+
+        /* If file name was changed: */
+        if (m_pFileSelector->isModified())
+        {
+            /* Check if set file contains valid appliance: */
+            if (!pImportApplianceWidget->setFile(m_pFileSelector->path()))
+                return false;
+            /* Reset the modified bit afterwards: */
+            m_pFileSelector->resetModified();
+        }
+
+        /* If we have a valid ovf proceed to the appliance settings page: */
+        return pImportApplianceWidget->isValid();
+    }
 }
 
 void UIWizardImportAppPageBasic1::sltHandleSourceChange()
