@@ -126,6 +126,7 @@ UIFileManagerHostTable::UIFileManagerHostTable(UIActionPool *pActionPool, QWidge
     initializeFileTree();
     prepareToolbar();
     prepareActionConnections();
+    determinePathSeparator();
     retranslateUi();
 }
 
@@ -447,8 +448,12 @@ void UIFileManagerHostTable::determineDriveLetters()
     {
         if (UIPathOperations::doesPathStartWithDriveLetter(drive[i].filePath()))
             m_driveLetterList.push_back(drive[i].filePath());
-
     }
+}
+
+void UIFileManagerHostTable::determinePathSeparator()
+{
+    setPathSeparator(QDir::separator());
 }
 
 /* static */QString UIFileManagerHostTable::permissionString(QFileDevice::Permissions permissions)

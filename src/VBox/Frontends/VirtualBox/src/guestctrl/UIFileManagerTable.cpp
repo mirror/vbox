@@ -83,6 +83,7 @@ public:
 
     UIFileManagerBreadCrumbs(QWidget *pParent = 0);
     void setPath(const QString &strPath);
+    void setPathSeparator(const QChar &separator);
 
 protected:
 
@@ -91,6 +92,7 @@ protected:
 private:
 
     QString m_strPath;
+    QChar   m_pathSeparator;
 };
 
 
@@ -112,12 +114,14 @@ public:
     UIFileManagerNavigationWidget(QWidget *pParent = 0);
     void setPath(const QString &strLocation);
     void reset();
+    void setPathSeparator(const QChar &separator);
 
 private slots:
 
     void sltHandleSwitch();
     /* Makes sure that we switch to breadcrumbs widget as soon as the combo box popup is hidden. */
     void sltHandleHidePopup();
+    void sltHandlePathChange(const QString &strPath);
 
 private:
 
@@ -127,6 +131,7 @@ private:
     UIFileManagerBreadCrumbs     *m_pBreadCrumbs;
     UIFileManagerHistoryComboBox *m_pHistoryComboBox;
     QToolButton                  *m_pSwitchButton;
+    QChar                         m_pathSeparator;
 };
 
 
@@ -249,6 +254,7 @@ UIFileManagerNavigationWidget::UIFileManagerNavigationWidget(QWidget *pParent /*
     , m_pBreadCrumbs(0)
     , m_pHistoryComboBox(0)
     , m_pSwitchButton(0)
+    , m_pathSeparator('/')
 {
     prepare();
 }
@@ -260,11 +266,13 @@ void UIFileManagerNavigationWidget::setPath(const QString &strLocation)
 
     if (m_pHistoryComboBox)
     {
-        int itemIndex = m_pHistoryComboBox->findText(strLocation,
+        QString strNativeLocation(strLocation);
+        strNativeLocation.replace('/', m_pathSeparator);
+        int itemIndex = m_pHistoryComboBox->findText(strNativeLocation,
                                                       Qt::MatchExactly | Qt::MatchCaseSensitive);
         if (itemIndex == -1)
         {
-            m_pHistoryComboBox->insertItem(m_pHistoryComboBox->count(), strLocation);
+            m_pHistoryComboBox->insertItem(m_pHistoryComboBox->count(), strNativeLocation);
             itemIndex = m_pHistoryComboBox->count() - 1;
         }
         m_pHistoryComboBox->setCurrentIndex(itemIndex);
@@ -276,14 +284,21 @@ void UIFileManagerNavigationWidget::reset()
     if (m_pHistoryComboBox)
     {
         disconnect(m_pHistoryComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
-                   this, &UIFileManagerNavigationWidget::sigPathChanged);
+                   this, &UIFileManagerNavigationWidget::sltHandlePathChange);
         m_pHistoryComboBox->clear();
         connect(m_pHistoryComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
-                this, &UIFileManagerNavigationWidget::sigPathChanged);
+                this, &UIFileManagerNavigationWidget::sltHandlePathChange);
     }
 
     if (m_pBreadCrumbs)
         m_pBreadCrumbs->setPath(QString());
+}
+
+void UIFileManagerNavigationWidget::setPathSeparator(const QChar &separator)
+{
+    m_pathSeparator = separator;
+    if (m_pBreadCrumbs)
+        m_pBreadCrumbs->setPathSeparator(m_pathSeparator);
 }
 
 void UIFileManagerNavigationWidget::prepare()
@@ -304,11 +319,11 @@ void UIFileManagerNavigationWidget::prepare()
         {
             m_pBreadCrumbs->setIndent(0.5 * qApp->style()->pixelMetric(QStyle::PM_LayoutLeftMargin));
             connect(m_pBreadCrumbs, &UIFileManagerBreadCrumbs::linkActivated,
-                    this, &UIFileManagerNavigationWidget::sigPathChanged);
+                    this, &UIFileManagerNavigationWidget::sltHandlePathChange);
             connect(m_pHistoryComboBox, &UIFileManagerHistoryComboBox::sigHidePopup,
                     this, &UIFileManagerNavigationWidget::sltHandleHidePopup);
             connect(m_pHistoryComboBox, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::currentIndexChanged),
-                    this, &UIFileManagerNavigationWidget::sigPathChanged);
+                    this, &UIFileManagerNavigationWidget::sltHandlePathChange);
 
             m_pContainer->addWidget(m_pBreadCrumbs);
             m_pContainer->addWidget(m_pHistoryComboBox);
@@ -339,6 +354,13 @@ void UIFileManagerNavigationWidget::sltHandleHidePopup()
     m_pContainer->setCurrentIndex(0);
 }
 
+void UIFileManagerNavigationWidget::sltHandlePathChange(const QString &strPath)
+{
+    QString strNonNativePath(strPath);
+    strNonNativePath.replace(m_pathSeparator, '/');
+    emit sigPathChanged(strNonNativePath);
+}
+
 void UIFileManagerNavigationWidget::sltHandleSwitch()
 {
     if (m_pContainer->currentIndex() == 0)
@@ -360,6 +382,7 @@ void UIFileManagerNavigationWidget::sltHandleSwitch()
 
 UIFileManagerBreadCrumbs::UIFileManagerBreadCrumbs(QWidget *pParent /* = 0 */)
     :QLabel(pParent)
+    , m_pathSeparator('/')
 {
     float fFontMult = 1.2f;
     QFont mFont = font();
@@ -406,9 +429,8 @@ void UIFileManagerBreadCrumbs::setPath(const QString &strPath)
     int iWidth = 0;
     for (int i = folderList.size() - 1; i >= 0; --i)
     {
-        QString strFolder = UIPathOperations::removeTrailingDelimiters(folderList.at(i));
+        QString strFolder = UIPathOperations::removeTrailingDelimiters(folderList.at(i)).replace('/', m_pathSeparator);
         QString strWord = QString("<a href=\"%1\" style=\"color:black;text-decoration:none;\">%2</a>").arg(strPathUpto[i]).arg(strFolder);
-
         if (i < folderList.size() - 1)
         {
             iWidth += fontMetrics().width(" > ");
@@ -421,6 +443,11 @@ void UIFileManagerBreadCrumbs::setPath(const QString &strPath)
 
     }
     setText(strLabelText);
+}
+
+void UIFileManagerBreadCrumbs::setPathSeparator(const QChar &separator)
+{
+    m_pathSeparator = separator;
 }
 
 void UIFileManagerBreadCrumbs::resizeEvent(QResizeEvent *pEvent)
@@ -668,9 +695,10 @@ UIFileManagerTable::UIFileManagerTable(UIActionPool *pActionPool, QWidget *pPare
     , m_pModel(0)
     , m_pView(0)
     , m_pProxyModel(0)
+    , m_pNavigationWidget(0)
     , m_pMainLayout(0)
     , m_pWarningLabel(0)
-    , m_pNavigationWidget(0)
+    , m_pathSeparator('/')
 {
     prepareObjects();
 }
@@ -848,7 +876,8 @@ void UIFileManagerTable::populateStartDirectory(UICustomFileSystemItem *startIte
     {
         for (int i = 0; i < m_driveLetterList.size(); ++i)
         {
-            UICustomFileSystemItem* driveItem = new UICustomFileSystemItem(m_driveLetterList[i], startItem, KFsObjType_Directory);
+            UICustomFileSystemItem* driveItem = new UICustomFileSystemItem(UIPathOperations::removeTrailingDelimiters(m_driveLetterList[i]),
+                                                                           startItem, KFsObjType_Directory);
             driveItem->setPath(m_driveLetterList[i]);
             driveItem->setIsOpened(false);
             driveItem->setIsDriveItem(true);
@@ -1399,6 +1428,13 @@ UICustomFileSystemItem* UIFileManagerTable::rootItem()
     if (!m_pModel)
         return 0;
     return m_pModel->rootItem();
+}
+
+void UIFileManagerTable::setPathSeparator(const QChar &separator)
+{
+    m_pathSeparator = separator;
+    if (m_pNavigationWidget)
+        m_pNavigationWidget->setPathSeparator(m_pathSeparator);
 }
 
 bool UIFileManagerTable::event(QEvent *pEvent)

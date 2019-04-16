@@ -208,6 +208,7 @@ protected:
     /** For non-windows system does nothing and for windows systems populates m_driveLetterList with
      *  drive letters */
     virtual void     determineDriveLetters() = 0;
+    virtual void     determinePathSeparator() = 0;
     virtual void     prepareToolbar() = 0;
     virtual void     createFileViewContextMenu(const QWidget *pWidget, const QPoint &point) = 0;
     virtual bool     event(QEvent *pEvent) /* override */;
@@ -233,11 +234,13 @@ protected:
     CGuestFsObjInfo  guestFsObjectInfo(const QString& path, CGuestSession &comGuestSession) const;
     void             setSelectionDependentActionsEnabled(bool fIsEnabled);
     UICustomFileSystemItem*   rootItem();
+    void             setPathSeparator(const QChar &separator);
 
     QILabel                 *m_pLocationLabel;
     UIPropertiesDialog      *m_pPropertiesDialog;
     UIActionPool            *m_pActionPool;
     UIToolBar               *m_pToolBar;
+
     /** Stores the drive letters the file system has (for windows system). For non-windows
      *  systems this is empty and for windows system it should at least contain C:/ */
     QStringList              m_driveLetterList;
@@ -286,19 +289,18 @@ private:
       * uses m_searchLineUnmarkColor and m_searchLineMarkColor. */
     void            markUnmarkSearchLineEdit(bool fMark);
 
-    UICustomFileSystemModel      *m_pModel;
-    UIGuestControlFileView       *m_pView;
-    UICustomFileSystemProxyModel *m_pProxyModel;
+    UICustomFileSystemModel       *m_pModel;
+    UIGuestControlFileView        *m_pView;
+    UICustomFileSystemProxyModel  *m_pProxyModel;
+    /** Contains m_pBreadCrumbsWidget and m_pLocationComboBox. */
+    UIFileManagerNavigationWidget *m_pNavigationWidget;
 
     QGridLayout     *m_pMainLayout;
     QILineEdit      *m_pSearchLineEdit;
     QColor           m_searchLineUnmarkColor;
     QColor           m_searchLineMarkColor;
     QILabel         *m_pWarningLabel;
-
-    /** Contains m_pBreadCrumbsWidget and m_pLocationComboBox. */
-    UIFileManagerNavigationWidget           *m_pNavigationWidget;
-    //UIFileManagerBreadCrumbs *m_pBreadCrumbsWidget;
+    QChar            m_pathSeparator;
 
     friend class     UICustomFileSystemModel;
 };
