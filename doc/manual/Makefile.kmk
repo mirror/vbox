@@ -184,8 +184,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
  $(eval VBOX_MANUAL_XML_FILES_GENERATED_$$(lang) := \
  	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
-	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/overview_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
-	$$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
+ 	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/overview_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
+ 	$$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
  	$$(VBOX_PATH_MANUAL_OUTBASE)/$$(lang)/user_isomakercmd-man.xml))
 
  VBOX_SDKREF_XML_FILES = \
@@ -268,27 +268,27 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
  	$(VBOX_PATH_MANUAL_OUTBASE)/titlepage-htmlhelp.xsl \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
  	$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
-	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf) \
-	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm) \
-	$(PATH_STAGE_BIN)/UserManual.pdf \
-	$(PATH_STAGE_BIN)/VirtualBox.chm \
-	\
+ 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf) \
+ 	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm) \
+ 	$(PATH_STAGE_BIN)/UserManual.pdf \
+ 	$(PATH_STAGE_BIN)/VirtualBox.chm \
+ 	\
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/, \
-		$(VBOX_SDKREF_LATEX_FILES_TARGET) \
-		SDKRef.pdf \
-		) \
-    $(PATH_STAGE_BIN)/sdk/docs/SDKRef.pdf \
-	\
+ 		$(VBOX_SDKREF_LATEX_FILES_TARGET) \
+ 		SDKRef.pdf \
+ 		) \
+ 	$(PATH_STAGE_BIN)/sdk/docs/SDKRef.pdf \
+ 	\
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/, \
-		$(VBOX_ACCESSIBILITY_LATEX_FILES_TARGET) \
-		html-single/Accessibility.html \
-		Accessibility.pdf \
-		) \
-	$(PATH_STAGE_BIN)/Accessibility.html \
-	$(PATH_STAGE_BIN)/Accessibility.pdf \
-	\
-	$(VBOX_DOC_XIDL_SRC_TMP) \
-	$(VBOX_MANUAL_APIREF_TMP)
+ 		$(VBOX_ACCESSIBILITY_LATEX_FILES_TARGET) \
+ 		html-single/Accessibility.html \
+ 		Accessibility.pdf \
+ 		) \
+ 	$(PATH_STAGE_BIN)/Accessibility.html \
+ 	$(PATH_STAGE_BIN)/Accessibility.pdf \
+ 	\
+ 	$(VBOX_DOC_XIDL_SRC_TMP) \
+ 	$(VBOX_MANUAL_APIREF_TMP)
 
 endif # if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
 
