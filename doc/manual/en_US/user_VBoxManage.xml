@@ -2594,199 +2594,6 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
   </sect1>
 
-  <sect1 id="vboxmanage-clonevm">
-
-    <title>VBoxManage clonevm</title>
-
-    <para>
-      The <command>VBoxManage clonevm</command> command creates a clone
-      of an existing virtual machine (VM). The clone can be a full copy
-      of the VM or a linked copy of a VM.
-    </para>
-
-<screen>
-VBoxManage clonevm <replaceable>vm</replaceable> [ --basefolder <replaceable>basefolder</replaceable> ]
-[ --group <replaceable>group</replaceable>, ... ] [ --mode machine | machinechildren | all ]
-[ --name <replaceable>name</replaceable> ] [ --options link | keepallmacs | keepnatmacs | keepdisknames | keephwuuids ]
-[ --register ] [ --snapshot <replaceable>vm</replaceable> ] [ --uuid <replaceable>uuid</replaceable> ]
-</screen>
-
-    <para>
-      In addition to specifying the name of the VM to clone, which is
-      required, you can specify any of the following options:
-    </para>
-
-    <itemizedlist>
-
-      <listitem>
-        <para>
-          <option>--basefolder</option>
-          <replaceable>basefolder</replaceable> specifies the name of
-          the folder in which to save the configuration for the new VM.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <option>--groups <replaceable>group</replaceable>,
-          ...</option> assigns the clone to the specified group or
-          groups. If you specify more than one group, separate each
-          group name with a comma.
-        </para>
-
-        <para>
-          Note that each group is identified by a group ID that starts
-          with a slash character (<computeroutput>/</computeroutput>) so
-          that groups can be nested. By default, a clone is always
-          assigned membership to the <computeroutput>/</computeroutput>
-          group.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <option>--mode machine|machineandchildren|all</option>
-          specifies which of the following cloning modes to use:
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              <computeroutput>machine</computeroutput> mode clones the
-              current state of the existing VM without any snapshots.
-              This is the default mode.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              <computeroutput>machineandchildren</computeroutput> mode
-              clones the snapshot specified by by the
-              <option>--snapshot</option> option and all child
-              snapshots.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              <computeroutput>all</computeroutput> mode clones all
-              snapshots and the current state of the existing VM.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-      </listitem>
-
-      <listitem>
-        <para>
-          <option>--name <replaceable>name</replaceable></option>
-          specifies a new name for the new VM. The default value is
-          "<replaceable>name</replaceable> Clone", where
-          <replaceable>name</replaceable> is the original name of the
-          VM.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <option>--options</option> specifies how to create a new
-          clone.
-        </para>
-
-        <itemizedlist>
-
-          <listitem>
-            <para>
-              <option>--options link</option> creates a linked clone,
-              which can be cloned only from a snapshot.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              <option>--options keepallmacs</option> specifies that the
-              new clone reuses the MAC addresses of each virtual network
-              card from the existing VM.
-            </para>
-
-            <para>
-              If you do not specify this option or the <option>--options
-              keepnatmacs</option> option, the default behavior is to
-              reinitialize the MAC addresses of each virtual network
-              card.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              <option>--options keepnatmacs</option> specifies that the
-              new clone reuses the MAC addresses of each virtual network
-              card from the existing VM when the network type is NAT.
-            </para>
-
-            <para>
-              If you do not specify this option or the <option>--options
-              keepallmacs</option> option, the default behavior is to
-              reinitialize the MAC addresses of each virtual network
-              card.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              <option>--option keepdisknames</option> specifies that the
-              new clone reuses the disk image names from the existing
-              VM. By default, disk images are renamed. You can preserve
-              source hardware IDs by adding
-              <computeroutput>keephwuuids</computeroutput>.
-            </para>
-          </listitem>
-
-          <listitem>
-            <para>
-              <option>--option keephwuuids</option> specifies that the
-              new clone reuses the hardware IDs from the existing VM. By
-              default, new UUIDs are used.
-            </para>
-          </listitem>
-
-        </itemizedlist>
-      </listitem>
-
-      <listitem>
-        <para>
-          <option>--register</option> automatically registers the new
-          clone in this &product-name; installation. You can manually
-          register the new VM later by using the <command>VBoxManage
-          registervm</command> command. See
-          <xref linkend="vboxmanage-registervm" />.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <option>--snapshot <replaceable>vm</replaceable></option>
-          specifies the snapshot on which to base the new VM. By
-          default, the clone is created from the current state of the
-          specified VM.
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          <option>--uuid <replaceable>uuid</replaceable></option>
-          specifies the UUID for the new VM. Ensure that this ID is
-          unique for the &product-name; instance if you decide to
-          register this new VM. By default, &product-name; provides a
-          new UUID.
-        </para>
-      </listitem>
-
-    </itemizedlist>
-
-  </sect1>
-
   <sect1 id="vboxmanage-movevm">
 
     <title>VBoxManage movevm</title>
@@ -9190,18 +8997,17 @@ VBoxManage sharedfolder     remove &lt;uuid|vmname&gt;
 
   </sect1>
 
-  <xi:include href="user_man_VBoxManage-mediumio.xml"   xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <!-- TODO: Figure out how we can generate a file with the includes... The trouble is
+             that xpointer doesn't seem to allow including multiple elements.
 
-  <xi:include href="user_man_VBoxManage-debugvm.xml"    xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-  <xi:include href="user_man_VBoxManage-extpack.xml"    xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-  <xi:include href="user_man_VBoxManage-unattended.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-  <xi:include href="user_man_VBoxManage-snapshot.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-  <xi:include href="user_man_VBoxManage-cloudprofile.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
-
-  <xi:include href="user_man_VBoxManage-cloudlist.xml" xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
-
+             In the mean time, when adding new VBoxManage man pages to Config.kmk,
+             don't forget to add it here too.
+   -->
+  <xi:include href="user_man_VBoxManage-unattended.xml"     xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-snapshot.xml"       xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-clonevm.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-extpack.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-cloudprofile.xml"   xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-cloudlist.xml"      xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
+  <xi:include href="user_man_VBoxManage-debugvm.xml"        xpointer="element(/1)" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>
