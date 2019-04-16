@@ -298,6 +298,26 @@ void vbsf_iov_iter_revert(struct vbsf_iov_iter *iter, size_t cbRewind)
 }
 
 #endif /* 2.6.19 <= linux < 3.16.0 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
+
+/** This is for implementing cMaxPage on 3.16 which doesn't have it. */
+static ssize_t vbsf_iov_iter_get_pages_3_16(struct iov_iter *iter, struct page **papPages,
+                                            size_t cbMax, unsigned cMaxPages, size_t *poffPg0)
+{
+    if (!(iter->type & ITER_BVEC)) {
+        size_t const offPg0     = iter->iov_offset & PAGE_OFFSET_MASK;
+        size_t const cbMaxPages = ((size_t)cMaxPages << PAGE_SHIFT) - offPg0;
+        if (cbMax > cbMaxPages)
+            cbMax = cbMaxPages;
+    }
+    /* else: BVEC works a page at a time and shouldn't have much of a problem here. */
+    return iov_iter_get_pages(iter, papPages, cbMax, poffPg0);
+}
+# undef  iov_iter_get_pages
+# define iov_iter_get_pages(a_pIter, a_papPages, a_cbMax, a_cMaxPages, a_poffPg0) \
+    vbsf_iov_iter_get_pages_3_16(a_pIter, a_papPages, a_cbMax, a_cMaxPages, a_poffPg0)
+
+#endif /* 3.16.x */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
 
 static size_t copy_from_iter(uint8_t *pbDst, size_t cbToCopy, struct iov_iter *pSrcIter)
