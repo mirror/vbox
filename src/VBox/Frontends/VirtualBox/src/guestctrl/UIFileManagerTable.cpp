@@ -408,6 +408,10 @@ void UIFileManagerBreadCrumbs::setPath(const QString &strPath)
 
     const QChar separator('/');
     clear();
+
+    if (strPath.isEmpty())
+        return;
+
     QStringList folderList = UIPathOperations::pathTrail(strPath);
     folderList.push_front(separator);
 
