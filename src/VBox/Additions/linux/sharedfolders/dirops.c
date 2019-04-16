@@ -691,7 +691,7 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
             pReq->CreateParms.Handle = SHFL_HANDLE_NIL;
             pReq->CreateParms.CreateFlags = SHFL_CF_LOOKUP | SHFL_CF_ACT_FAIL_IF_NEW;
 
-            LogFunc(("Calling VbglR0SfHostReqCreate on %s\n", path->String.utf8));
+            SFLOG2(("vbsf_inode_lookup: Calling VbglR0SfHostReqCreate on %s\n", path->String.utf8));
             rc = VbglR0SfHostReqCreate(pSuperInfo->map.root, pReq);
             if (RT_SUCCESS(rc)) {
                 if (pReq->CreateParms.Result == SHFL_FILE_EXISTS) {
@@ -714,9 +714,13 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
                     dret = (struct dentry *)ERR_PTR(-EPROTO);
                 }
             } else if (rc == VERR_INVALID_NAME) {
+                SFLOGFLOW(("vbsf_inode_lookup: VERR_INVALID_NAME\n"));
                 dret = dentry; /* this can happen for names like 'foo*' on a Windows host */
+            } else if (rc == VERR_FILENAME_TOO_LONG) {
+                SFLOG(("vbsf_inode_lookup: VbglR0SfHostReqCreate failed on %s: VERR_FILENAME_TOO_LONG\n", path->String.utf8));
+                dret = (struct dentry *)ERR_PTR(-ENAMETOOLONG);
             } else {
-                LogFunc(("VbglR0SfHostReqCreate failed on %s: %Rrc\n", path->String.utf8, rc));
+                SFLOG(("vbsf_inode_lookup: VbglR0SfHostReqCreate failed on %s: %Rrc\n", path->String.utf8, rc));
                 dret = (struct dentry *)ERR_PTR(-EPROTO);
             }
             VbglR0PhysHeapFree(pReq);
@@ -730,12 +734,16 @@ static struct dentry *vbsf_inode_lookup(struct inode *parent, struct dentry *den
                 vbsf_d_add_inode(dentry, pInode);
                 dret = NULL;
             }
-        } else
+        } else {
+            SFLOGFLOW(("vbsf_inode_lookup: -ENOMEM (phys heap)\n"));
             dret = (struct dentry *)ERR_PTR(-ENOMEM);
+        }
         if (path)
             kfree(path);
-    } else
+    } else {
+        SFLOG(("vbsf_inode_lookup: vbsf_path_from_dentry failed: %d\n", rc));
         dret = (struct dentry *)ERR_PTR(rc);
+    }
     return dret;
 }
 
