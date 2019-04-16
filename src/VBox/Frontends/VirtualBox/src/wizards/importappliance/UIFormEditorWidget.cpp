@@ -17,6 +17,7 @@
 
 /* Qt includes: */
 #include <QComboBox>
+#include <QEvent>
 #include <QHeaderView>
 #include <QItemEditorFactory>
 #include <QStyledItemDelegate>
@@ -562,6 +563,31 @@ void UIFormEditorWidget::setVirtualSystemDescriptionForm(const CVirtualSystemDes
     AssertPtrReturnVoid(m_pTableModel);
     /// @todo add some check..
     m_pTableModel->setFormValues(comForm.GetValues());
+    adjustTable();
+}
+
+bool UIFormEditorWidget::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+    /* Process events for table only: */
+    if (pObject != m_pTableView)
+        return QWidget::eventFilter(pObject, pEvent);
+
+    /* Process different event-types: */
+    switch (pEvent->type())
+    {
+        case QEvent::Show:
+        case QEvent::Resize:
+        {
+            /* Adjust table: */
+            adjustTable();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QWidget::eventFilter(pObject, pEvent);
 }
 
 void UIFormEditorWidget::prepare()
@@ -570,6 +596,8 @@ void UIFormEditorWidget::prepare()
     QVBoxLayout *pLayout = new QVBoxLayout(this);
     if (pLayout)
     {
+        pLayout->setContentsMargins(0, 0, 0, 0);
+
         /* Create view: */
         m_pTableView = new UIFormEditorView(this);
         if (m_pTableView)
@@ -578,6 +606,7 @@ void UIFormEditorWidget::prepare()
             m_pTableView->verticalHeader()->hide();
             m_pTableView->verticalHeader()->setDefaultSectionSize((int)(m_pTableView->verticalHeader()->minimumSectionSize() * 1.33));
             m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+            m_pTableView->installEventFilter(this);
 
             /* Create model: */
             m_pTableModel = new UIFormEditorModel(m_pTableView);
@@ -611,6 +640,30 @@ void UIFormEditorWidget::prepare()
             pLayout->addWidget(m_pTableView);
         }
     }
+}
+
+void UIFormEditorWidget::adjustTable()
+{
+    m_pTableView->horizontalHeader()->setStretchLastSection(false);
+    /* If table is NOT empty: */
+    if (m_pTableModel->rowCount())
+    {
+        /* Resize table to contents size-hint and emit a spare place for first column: */
+        m_pTableView->resizeColumnsToContents();
+        const int iFullWidth = m_pTableView->viewport()->width();
+        const int iNameWidth = m_pTableView->horizontalHeader()->sectionSize(UIFormEditorDataType_Name);
+        const int iValueWidth = qMax(0, iFullWidth - iNameWidth);
+        m_pTableView->horizontalHeader()->resizeSection(UIFormEditorDataType_Value, iValueWidth);
+    }
+    /* If table is empty: */
+    else
+    {
+        /* Resize table columns to be equal in size: */
+        const int iFullWidth = m_pTableView->viewport()->width();
+        m_pTableView->horizontalHeader()->resizeSection(UIFormEditorDataType_Name, iFullWidth / 2);
+        m_pTableView->horizontalHeader()->resizeSection(UIFormEditorDataType_Value, iFullWidth / 2);
+    }
+    m_pTableView->horizontalHeader()->setStretchLastSection(true);
 }
 
 
