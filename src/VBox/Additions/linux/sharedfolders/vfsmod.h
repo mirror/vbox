@@ -149,7 +149,7 @@ struct vbsf_super_info {
     enum vbsf_cache_mode    enmCacheMode;
     /** Mount tag for VBoxService automounter.  @since 6.0 */
     char                    szTag[32];
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
     /** The backing device info structure. */
     struct backing_dev_info bdi;
 #endif
