@@ -648,6 +648,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_STORAGECONTROLLERCHANGEDEVENT,
     /** Main group, IStorageDeviceChangedEvent. */
     LOG_GROUP_MAIN_STORAGEDEVICECHANGEDEVENT,
+    /** Main group, IStringArray. */
+    LOG_GROUP_MAIN_STRINGARRAY,
     /** Main group, IStringFormValue. */
     LOG_GROUP_MAIN_STRINGFORMVALUE,
     /** Main group, ISystemProperties. */
@@ -1162,6 +1164,7 @@ typedef enum LOGGROUP
     "MAIN_STORAGECONTROLLER", \
     "MAIN_STORAGECONTROLLERCHANGEDEVENT", \
     "MAIN_STORAGEDEVICECHANGEDEVENT", \
+    "MAIN_STRINARRAY", \
     "MAIN_STRINGFORMVALUE", \
     "MAIN_SYSTEMPROPERTIES", \
     "MAIN_THREAD_TASK", \
