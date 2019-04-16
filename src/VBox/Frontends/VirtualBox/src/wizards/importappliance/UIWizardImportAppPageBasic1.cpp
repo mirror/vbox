@@ -277,6 +277,7 @@ void UIWizardImportAppPage1::populateAccountInstances()
             msgCenter().cannotCreateCloudClient(m_comCloudProfile);
         else
         {
+#if 0
             /* Read Cloud Client instances: */
             QVector<QString> vmNames;
             /*const QVector<QString> vmIDs =*/
@@ -298,6 +299,9 @@ void UIWizardImportAppPage1::populateAccountInstances()
                     }
                 }
             }
+#else  // XXX: uwe
+            msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
+#endif
         }
     }
 }

@@ -127,15 +127,30 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
 
+    ComPtr<IStringArray> pVMNamesHolder;
+    ComPtr<IStringArray> pVMIdsHolder;
     com::SafeArray<BSTR> arrayVMNames;
     com::SafeArray<BSTR> arrayVMIds;
+    ComPtr<IProgress> pProgress;
+
     RTPrintf("Getting a list of available cloud instances...\n");
     RTPrintf("Reply is in the form \'instance name\' = \'instance id\'\n");
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      ListInstances(CloudMachineState_Running,
-                                   ComSafeArrayAsOutParam(arrayVMNames),
-                                   ComSafeArrayAsOutParam(arrayVMIds)),
+                                   pVMNamesHolder.asOutParam(),
+                                   pVMIdsHolder.asOutParam(),
+                                   pProgress.asOutParam()),
                      RTEXITCODE_FAILURE);
+    showProgress(pProgress);
+    CHECK_PROGRESS_ERROR_RET(pProgress, ("Failed to list instances"), RTEXITCODE_FAILURE);
+
+    CHECK_ERROR2_RET(hrc,
+        pVMNamesHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMNames)),
+            RTEXITCODE_FAILURE);
+    CHECK_ERROR2_RET(hrc,
+        pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
+            RTEXITCODE_FAILURE);
+
     RTPrintf("List of available instances for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cIds = arrayVMIds.size();
@@ -147,11 +162,28 @@ static RTEXITCODE listCloudInstances(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT 
             value = arrayVMIds[k];
         RTPrintf("\t%ls = %ls\n", arrayVMNames[k], value.raw());
     }
+
+    pVMNamesHolder.setNull();
+    pVMIdsHolder.setNull();
+    arrayVMNames.setNull();
+    arrayVMIds.setNull();
+    pProgress.setNull();
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      ListInstances(CloudMachineState_Stopped,
-                                   ComSafeArrayAsOutParam(arrayVMNames),
-                                   ComSafeArrayAsOutParam(arrayVMIds)),
+                                   pVMNamesHolder.asOutParam(),
+                                   pVMIdsHolder.asOutParam(),
+                                   pProgress.asOutParam()),
                      RTEXITCODE_FAILURE);
+    showProgress(pProgress);
+    CHECK_PROGRESS_ERROR_RET(pProgress, ("Failed to list instances"), RTEXITCODE_FAILURE);
+
+    CHECK_ERROR2_RET(hrc,
+        pVMNamesHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMNames)),
+            RTEXITCODE_FAILURE);
+    CHECK_ERROR2_RET(hrc,
+        pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
+            RTEXITCODE_FAILURE);
+
     cNames = arrayVMNames.size();
     cIds = arrayVMIds.size();
     for (size_t k = 0; k < cNames; k++)
@@ -242,15 +274,31 @@ static RTEXITCODE listCloudImages(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCo
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
+
+    ComPtr<IStringArray> pVMNamesHolder;
+    ComPtr<IStringArray> pVMIdsHolder;
     com::SafeArray<BSTR> arrayVMNames;
     com::SafeArray<BSTR> arrayVMIds;
+    ComPtr<IProgress> pProgress;
+
     RTPrintf("Getting a list of available cloud images...\n");
     RTPrintf("Reply is in the form \'image name\' = \'image id\'\n");
     CHECK_ERROR2_RET(hrc, oCloudClient,
                      ListImages(CloudImageState_Available,
-                                ComSafeArrayAsOutParam(arrayVMNames),
-                                ComSafeArrayAsOutParam(arrayVMIds)),
+                                pVMNamesHolder.asOutParam(),
+                                pVMIdsHolder.asOutParam(),
+                                pProgress.asOutParam()),
                      RTEXITCODE_FAILURE);
+    showProgress(pProgress);
+    CHECK_PROGRESS_ERROR_RET(pProgress, ("Failed to list images"), RTEXITCODE_FAILURE);
+
+    CHECK_ERROR2_RET(hrc,
+        pVMNamesHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMNames)),
+            RTEXITCODE_FAILURE);
+    CHECK_ERROR2_RET(hrc,
+        pVMIdsHolder, COMGETTER(Values)(ComSafeArrayAsOutParam(arrayVMIds)),
+            RTEXITCODE_FAILURE);
+
     RTPrintf("List of available images for the cloud profile \'%ls\' \nand compartment \'%s\':\n",
              bstrProfileName.raw(), strCompartmentId.c_str());
     size_t cNames = arrayVMNames.size();

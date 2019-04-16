@@ -25536,6 +25536,25 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <!--
+  // Auxiliary containers
+  //////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface name="IStringArray" extends="$unknown"
+             uuid="3890b2c8-604d-11e9-92d3-53cb473db9fb"
+             wsmap="managed"
+             reservedMethods="4">
+    <desc>
+      When you need to return an array of strings asynchronously
+      (under a progress) you cannot use by-value out parameter
+      <tt>type=&quot;wstring&quot; safearray=&quot;yes&quot;
+      dir=&quot;out&quot;</tt>, hence this wrapper.
+    </desc>
+    <attribute name="values" type="wstring" safearray="yes" readonly="yes"/>
+  </interface>
+
+
+  <!--
   // IForm
   //////////////////////////////////////////////////////////////////////////
   -->
@@ -25683,7 +25702,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="07c04464-981c-4418-8fcf-5ad12aed7c38"
+    uuid="7acc426a-5f8f-11e9-9032-1b0da54759a8"
     wsmap="managed" reservedMethods="13" reservedAttributes="8"
     >
 
@@ -25735,11 +25754,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Returns the list of the instances in the Cloud.
       </desc>
       <param name="machineState" type="CloudMachineState" dir="in"/>
-      <param name="returnNames" type="wstring" safearray="yes" dir="out">
+      <param name="returnNames" type="IStringArray" dir="out">
         <desc>VM names.</desc>
       </param>
-      <param name="returnIds" type="wstring" safearray="yes" dir="return">
+      <param name="returnIds" type="IStringArray" dir="out">
         <desc>VM ids.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
       </param>
     </method>
 
@@ -25748,11 +25772,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Returns the list of the images in the Cloud.
       </desc>
       <param name="imageState" type="CloudImageState" dir="in"/>
-      <param name="returnNames" type="wstring" safearray="yes" dir="out">
+      <param name="returnNames" type="IStringArray" dir="out">
         <desc>Images names.</desc>
       </param>
-      <param name="returnIds" type="wstring" safearray="yes" dir="return">
+      <param name="returnIds" type="IStringArray" dir="out">
         <desc>Images ids.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>
+          Progress object to track the operation completion.
+        </desc>
       </param>
     </method>
 
