@@ -1368,7 +1368,7 @@ static int vbsf_inode_symlink(struct inode *parent, struct dentry *dentry, const
  */
 struct inode_operations vbsf_dir_iops = {
     .lookup         = vbsf_inode_lookup,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
     .atomic_open    = vbsf_inode_atomic_open,
 #endif
     .create         = vbsf_inode_create,

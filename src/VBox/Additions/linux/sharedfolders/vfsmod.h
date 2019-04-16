@@ -98,7 +98,8 @@ DECLINLINE(void) i_size_write(struct inode *pInode, loff_t cbNew)
 
 #endif /* < 2.6.0 */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0)
+#if  LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0) \
+  && (!defined(RHEL_MAJOR) || RHEL_MAJOR != 6)
 DECLINLINE(void) set_nlink(struct inode *pInode, unsigned int cLinks)
 {
     pInode->i_nlink = cLinks;

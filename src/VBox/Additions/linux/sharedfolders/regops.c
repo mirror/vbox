@@ -1415,6 +1415,9 @@ DECLINLINE(int) vbsf_lock_user_pages(uintptr_t uPtrFrom, size_t cPages, bool fWr
                                                    fWrite ? FOLL_WRITE | FOLL_FORCE : FOLL_FORCE);
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 6, 0)
     ssize_t cPagesLocked = get_user_pages_unlocked(uPtrFrom, cPages, fWrite, 1 /*force*/, papPages);
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 168) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+    ssize_t cPagesLocked = get_user_pages_unlocked(current, current->mm, uPtrFrom, cPages, papPages,
+                                                   fWrite ? FOLL_WRITE | FOLL_FORCE : FOLL_FORCE);
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
     ssize_t cPagesLocked = get_user_pages_unlocked(current, current->mm, uPtrFrom, cPages, fWrite, 1 /*force*/, papPages);
 # else
@@ -3697,6 +3700,11 @@ int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t po
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+
+# ifdef VBOX_UEK
+#  undef iov_iter /* HACK ALERT! Don't put anything needing vbsf_iov_iter after this fun! */
+# endif
+
 /**
  * This is needed to make open accept O_DIRECT as well as dealing with direct
  * I/O requests if we don't intercept them earlier.
@@ -3705,7 +3713,7 @@ int vbsf_write_begin(struct file *file, struct address_space *mapping, loff_t po
 static ssize_t vbsf_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
 static ssize_t vbsf_direct_IO(struct kiocb *iocb, struct iov_iter *iter, loff_t offset)
-# elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
+# elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) || defined(VBOX_UEK)
 static ssize_t vbsf_direct_IO(int rw, struct kiocb *iocb, struct iov_iter *iter, loff_t offset)
 # elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 6)
 static ssize_t vbsf_direct_IO(int rw, struct kiocb *iocb, const struct iovec *iov, loff_t offset, unsigned long nr_segs)
@@ -3726,6 +3734,7 @@ static int vbsf_direct_IO(int rw, struct inode *inode, struct kiobuf *buf, unsig
     TRACE();
     return -EINVAL;
 }
+
 #endif
 
 /**
