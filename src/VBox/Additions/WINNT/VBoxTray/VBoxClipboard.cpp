@@ -46,6 +46,11 @@ typedef FNREMOVECLIPBOARDFORMATLISTENER *PFNREMOVECLIPBOARDFORMATLISTENER;
 #define WM_CLIPBOARDUPDATE 0x031D
 #endif
 
+/** Sets announced clipboard formats from the host. */
+#define VBOX_WM_SHCLPB_SET_FORMATS      WM_USER
+/** Reads data from the clipboard and sends it to the host. */
+#define VBOX_WM_SHCLPB_READ_DATA        WM_USER + 1
+
 typedef struct _VBOXCLIPBOARDCONTEXT
 {
     const VBOXSERVICEENV *pEnv;
@@ -104,17 +109,19 @@ static bool vboxClipboardIsNewAPI(VBOXCLIPBOARDCONTEXT *pCtx)
 }
 
 
-static int vboxOpenClipboard(HWND hwnd)
+static int vboxOpenClipboard(HWND hWnd)
 {
     /* "OpenClipboard fails if another window has the clipboard open."
      * So try a few times and wait up to 1 second.
      */
     BOOL fOpened = FALSE;
 
+    LogFlowFunc(("hWnd=%p\n", hWnd));
+
     int i = 0;
     for (;;)
     {
-        if (OpenClipboard(hwnd))
+        if (OpenClipboard(hWnd))
         {
             fOpened = TRUE;
             break;
@@ -129,7 +136,7 @@ static int vboxOpenClipboard(HWND hwnd)
 
 #ifdef LOG_ENABLED
     if (i > 0)
-        LogFlowFunc(("%d times tried to open clipboard.\n", i + 1));
+        LogFlowFunc(("%d times tried to open clipboard\n", i + 1));
 #endif
 
     int rc;
@@ -137,9 +144,9 @@ static int vboxOpenClipboard(HWND hwnd)
         rc = VINF_SUCCESS;
     else
     {
-        const DWORD err = GetLastError();
-        LogFlowFunc(("error %d\n", err));
-        rc = RTErrConvertFromWin32(err);
+        const DWORD dwLastErr = GetLastError();
+        rc = RTErrConvertFromWin32(dwLastErr);
+        LogRel(("Clipboard: Failed to open clipboard! Error=%ld (%Rrc)\n", dwLastErr, rc));
     }
 
     return rc;
@@ -194,10 +201,6 @@ static int vboxClipboardChanged(PVBOXCLIPBOARDCONTEXT pCtx)
 
         CloseClipboard();
         rc = VbglR3ClipboardReportFormats(pCtx->u32ClientID, u32Formats);
-    }
-    else
-    {
-        LogFlow(("vboxClipboardChanged: error in open clipboard. hwnd: %x. err: %Rrc\n", pCtx->hwnd, rc));
     }
     return rc;
 }
@@ -529,16 +532,14 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                 EmptyClipboard();
                 CloseClipboard();
             }
-            else
-            {
-                LogFlowFunc(("WM_RENDERALLFORMATS: Failed to open clipboard! rc: %Rrc\n", vboxrc));
-            }
         } break;
 
-        case WM_USER:
+        case VBOX_WM_SHCLPB_SET_FORMATS:
         {
             /* Announce available formats. Do not insert data, they will be inserted in WM_RENDER*. */
             uint32_t u32Formats = (uint32_t)lParam;
+
+            LogFlowFunc(("VBOX_WM_SHCLPB_SET_FORMATS: u32Formats=0x%x\n", u32Formats));
 
             int vboxrc = vboxOpenClipboard(hwnd);
             if (RT_SUCCESS(vboxrc))
@@ -548,41 +549,31 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                 HANDLE hClip = NULL;
 
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
-                {
-                    LogFlowFunc(("WM_USER: VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT\n"));
                     hClip = SetClipboardData(CF_UNICODETEXT, NULL);
-                }
 
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
-                {
-                    LogFlowFunc(("WM_USER: VBOX_SHARED_CLIPBOARD_FMT_BITMAP\n"));
                     hClip = SetClipboardData(CF_DIB, NULL);
-                }
 
                 if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
                 {
                     UINT format = RegisterClipboardFormat ("HTML Format");
-                    LogFlowFunc(("WM_USER: VBOX_SHARED_CLIPBOARD_FMT_HTML 0x%04X\n", format));
                     if (format != 0)
-                    {
                         hClip = SetClipboardData(format, NULL);
-                    }
                 }
 
                 CloseClipboard();
-                LogFlowFunc(("WM_USER: hClip = %p, err = %ld\n", hClip, GetLastError ()));
-            }
-            else
-            {
-                LogFlowFunc(("WM_USER: Failed to open clipboard! error = %Rrc\n", vboxrc));
+
+                LogFlowFunc(("VBOX_WM_SHCLPB_SET_FORMATS: hClip=%p, lastErr=%ld\n", hClip, GetLastError()));
             }
         } break;
 
-        case WM_USER + 1:
+        case VBOX_WM_SHCLPB_READ_DATA:
         {
             /* Send data in the specified format to the host. */
             uint32_t u32Formats = (uint32_t)lParam;
             HANDLE hClip = NULL;
+
+            LogFlowFunc(("VBOX_WM_SHCLPB_READ_DATA: u32Formats=0x%x\n", u32Formats));
 
             int vboxrc = vboxOpenClipboard(hwnd);
             if (RT_SUCCESS(vboxrc))
@@ -596,7 +587,6 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                         LPVOID lp = GlobalLock(hClip);
                         if (lp != NULL)
                         {
-                            LogFlowFunc(("WM_USER + 1: CF_DIB\n"));
                             vboxrc = VbglR3ClipboardWriteData(pCtx->u32ClientID, VBOX_SHARED_CLIPBOARD_FMT_BITMAP,
                                                               lp, GlobalSize(hClip));
                             GlobalUnlock(hClip);
@@ -617,7 +607,6 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
 
                         if (uniString != NULL)
                         {
-                            LogFlowFunc(("WM_USER + 1: CF_UNICODETEXT\n"));
                             vboxrc = VbglR3ClipboardWriteData(pCtx->u32ClientID, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
                                                               uniString, (lstrlenW(uniString) + 1) * 2);
                             GlobalUnlock(hClip);
@@ -640,7 +629,6 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
 
                             if (lp != NULL)
                             {
-                                LogFlowFunc(("WM_USER + 1: CF_HTML\n"));
                                 vboxrc = VbglR3ClipboardWriteData(pCtx->u32ClientID, VBOX_SHARED_CLIPBOARD_FMT_HTML,
                                                                   lp, GlobalSize(hClip));
                                 GlobalUnlock(hClip);
@@ -654,10 +642,6 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                 }
 
                 CloseClipboard();
-            }
-            else
-            {
-                LogFlowFunc(("WM_USER: Failed to open clipboard! rc: %Rrc\n", vboxrc));
             }
 
             if (hClip == NULL)
@@ -856,19 +840,18 @@ DECLCALLBACK(int) VBoxClipboardWorker(void *pInstance, bool volatile *pfShutdown
             LogFlowFunc(("u32Msg=%RU32, u32Formats=0x%x\n", u32Msg, u32Formats));
             switch (u32Msg)
             {
-                /** @todo r=andy: Use a \#define for WM_USER (+1). */
                 case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS:
                 {
                     /* The host has announced available clipboard formats.
                      * Forward the information to the window, so it can later
                      * respond to WM_RENDERFORMAT message. */
-                    ::PostMessage(pCtx->hwnd, WM_USER, 0, u32Formats);
+                    ::PostMessage(pCtx->hwnd, VBOX_WM_SHCLPB_SET_FORMATS, 0, u32Formats);
                 } break;
 
                 case VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
                 {
                     /* The host needs data in the specified format. */
-                    ::PostMessage(pCtx->hwnd, WM_USER + 1, 0, u32Formats);
+                    ::PostMessage(pCtx->hwnd, VBOX_WM_SHCLPB_READ_DATA, 0, u32Formats);
                 } break;
 
                 case VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT:
