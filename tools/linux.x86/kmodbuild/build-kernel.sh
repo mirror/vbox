@@ -27,6 +27,34 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+#
+# /etc/apt/sources.list clues:
+#
+# # for gcc-4.8
+# deb http://deb.debian.org/debian/ oldstable main contrib non-free
+# deb-src http://deb.debian.org/debian/ oldstable main contrib non-free
+#
+# # for gcc-6
+# deb http://deb.debian.org/debian/ stable main contrib non-free
+# deb-src http://deb.debian.org/debian/ stable main contrib non-free
+#
+# # for gcc 3.4.x
+# deb [ allow-insecure=yes ] http://archive.debian.org/debian/ lenny main contrib non-free
+# deb-src [ allow-insecure=yes ] http://archive.debian.org/debian/ lenny main contrib non-free
+#
+# # for gcc 3.3.x
+# deb [ allow-insecure=yes ] http://archive.debian.org/debian/ etch main contrib non-free
+# deb-src [ allow-insecure=yes ] http://archive.debian.org/debian/ etch main contrib non-free
+#
+# # for gcc 3.2.x
+# deb [ allow-insecure=yes  arch=i386] http://archive.debian.org/debian/ woody main contrib non-free
+# deb-src [ allow-insecure=yes arch=i386 ] http://archive.debian.org/debian/ woody main contrib non-free
+#
+#
+# Clue for /etc/fstab:
+# overlay /mnt/bldlnx/amd64 overlay lowerdir=/mnt/big/virgin-lnx/,upperdir=/mnt/big/bldlnx/amd64,workdir=/mnt/big/workdir/bldlnx-amd64,noauto 0 0
+#
+
 if [ -z "${JOBS}" ]; then JOBS=42; fi
 
 #
