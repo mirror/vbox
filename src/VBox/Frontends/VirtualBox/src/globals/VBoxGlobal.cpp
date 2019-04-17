@@ -2984,8 +2984,8 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     pActionFileSelector->setData(QVariant::fromValue(UIMediumTarget(strControllerName, comCurrentAttachment.GetPort(),
                                                                     comCurrentAttachment.GetDevice(), enmMediumType,
                                                                     UIMediumTarget::UIMediumTargetType_WithFileDialog)));
-    pActionFileSelector->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a medium file...",
-                                                         "This is used for selecting an existing medium file"));
+    pActionFileSelector->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a disk file...",
+                                                         "This is used for selecting an existing disk file"));
 
 
     /* Insert separator: */
