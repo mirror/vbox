@@ -1659,6 +1659,13 @@ void UIMessageCenter::cannotAcquireCloudClientParameter(const CCloudClient &comC
           UIErrorString::formatErrorInfo(comClient));
 }
 
+void UIMessageCenter::cannotAcquireCloudClientParameter(const CProgress &comProgress, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire cloud client parameter."),
+          UIErrorString::formatErrorInfo(comProgress));
+}
+
 bool UIMessageCenter::confirmCloudProfileRemoval(const QString &strName, QWidget *pParent /* = 0 */) const
 {
     return questionBinary(pParent, MessageType_Question,

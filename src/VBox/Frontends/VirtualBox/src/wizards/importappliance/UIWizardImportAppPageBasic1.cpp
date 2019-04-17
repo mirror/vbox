@@ -37,6 +37,9 @@
 #include "UIWizardImportAppPageBasic1.h"
 #include "UIWizardImportAppPageBasic2.h"
 
+/* COM includes: */
+#include "CStringArray.h"
+
 
 /*********************************************************************************************************************************
 *   Class UIWizardImportAppPage1 implementation.                                                                                 *
@@ -277,31 +280,39 @@ void UIWizardImportAppPage1::populateAccountInstances()
             msgCenter().cannotCreateCloudClient(m_comCloudProfile);
         else
         {
-#if 0
-            /* Read Cloud Client instances: */
-            QVector<QString> vmNames;
-            /*const QVector<QString> vmIDs =*/
-            m_comCloudClient.ListInstances(KCloudMachineState_Running, vmNames);
+            /* Read Cloud Client VM instances: */
+            CStringArray comNames;
+            CStringArray comIDs;
+            CProgress comProgress = m_comCloudClient.ListInstances(KCloudMachineState_Running, comNames, comIDs);
+
             /* Show error message if necessary: */
             if (!m_comCloudClient.isOk())
                 msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
             else
             {
-                /* Push acquired names to list rows: */
-                for (int i = 0; i < vmNames.size(); ++i)
+                /* Show "Acquire cloud instances" progress: */
+                msgCenter().showModalProgressDialog(comProgress,
+                                                    UIWizardImportApp::tr("Acquire cloud instances..."),
+                                                    ":/progress_reading_appliance_90px.png");
+
+                /* Show error message if necessary: */
+                if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+                    msgCenter().cannotAcquireCloudClientParameter(comProgress);
+                else
                 {
-                    /* Create list item: */
-                    QListWidgetItem *pItem = new QListWidgetItem(vmNames.at(i), m_pAccountInstanceList);
-                    if (pItem)
+                    /* Push acquired names to list rows: */
+                    foreach (const QString &strName, comNames.GetValues())
                     {
-                        /* Make item non-editable: */
-                        pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
+                        /* Create list item: */
+                        QListWidgetItem *pItem = new QListWidgetItem(strName, m_pAccountInstanceList);
+                        if (pItem)
+                        {
+                            /* Make item non-editable: */
+                            pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
+                        }
                     }
                 }
             }
-#else  // XXX: uwe
-            msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
-#endif
         }
     }
 }
@@ -728,26 +739,27 @@ bool UIWizardImportAppPageBasic1::validatePage()
 {
     if (isSourceCloudOne())
     {
+        /* Read Cloud Client description form: */
         CVirtualSystemDescriptionForm comForm;
         CProgress comProgress = m_comCloudClient.GetExportLaunchDescriptionForm(comForm);
+
         /* Show error message if necessary: */
         if (!m_comCloudClient.isOk())
         {
-            /// @todo add real error message
-            //msgCenter().cannotAcquireExportLaunchDescriptionForm(comCloudClient, this);
+            msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
             return false;
         }
         else
         {
             /* Show "Acquire export form" progress: */
-            msgCenter().showModalProgressDialog(comProgress, UIWizardImportApp::tr("Acquire export form..."),
-                                                ":/progress_media_move_90px.png", this);
+            msgCenter().showModalProgressDialog(comProgress,
+                                                UIWizardImportApp::tr("Acquire export form..."),
+                                                ":/progress_reading_appliance_90px.png");
 
             /* Show error message if necessary: */
             if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
             {
-                /// @todo add real error message
-                //msgCenter().cannotAcquireExportLaunchDescriptionForm(comProgress, this);
+                msgCenter().cannotAcquireCloudClientParameter(m_comCloudClient);
                 return false;
             }
             else
