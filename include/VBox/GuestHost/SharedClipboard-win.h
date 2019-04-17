@@ -29,6 +29,7 @@
 # pragma once
 #endif
 
+#include <iprt/types.h>
 #include <iprt/win/windows.h>
 
 #ifndef WM_CLIPBOARDUPDATE
