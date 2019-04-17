@@ -670,21 +670,26 @@ RTDECL(int) RTPathGetCurrent(char *pszPath, size_t cchPath)
 {
     int rc;
 
-    /*
-     * GetCurrentDirectory may in some cases omit the drive letter, according
-     * to MSDN, thus the GetFullPathName call.
-     */
-    RTUTF16 wszCurPath[RTPATH_MAX];
-    if (GetCurrentDirectoryW(RTPATH_MAX, wszCurPath))
+    if (cchPath > 0)
     {
-        RTUTF16 wszFullPath[RTPATH_MAX];
-        if (GetFullPathNameW(wszCurPath, RTPATH_MAX, wszFullPath, NULL))
-            rc = RTUtf16ToUtf8Ex(&wszFullPath[0], RTSTR_MAX, &pszPath, cchPath, NULL);
+        /*
+         * GetCurrentDirectory may in some cases omit the drive letter, according
+         * to MSDN, thus the GetFullPathName call.
+         */
+        RTUTF16 wszCurPath[RTPATH_MAX];
+        if (GetCurrentDirectoryW(RTPATH_MAX, wszCurPath))
+        {
+            RTUTF16 wszFullPath[RTPATH_MAX];
+            if (GetFullPathNameW(wszCurPath, RTPATH_MAX, wszFullPath, NULL))
+                rc = RTUtf16ToUtf8Ex(&wszFullPath[0], RTSTR_MAX, &pszPath, cchPath, NULL);
+            else
+                rc = RTErrConvertFromWin32(GetLastError());
+        }
         else
             rc = RTErrConvertFromWin32(GetLastError());
     }
     else
-        rc = RTErrConvertFromWin32(GetLastError());
+        rc = VERR_BUFFER_OVERFLOW;
     return rc;
 }
 
@@ -723,17 +728,21 @@ RTDECL(int) RTPathSetCurrent(const char *pszPath)
 
 RTDECL(int) RTPathGetCurrentOnDrive(char chDrive, char *pszPath, size_t cbPath)
 {
-    WCHAR wszInput[4];
-    wszInput[0] = chDrive;
-    wszInput[1] = ':';
-    wszInput[2] = '\0';
-
     int rc;
-    RTUTF16 wszFullPath[RTPATH_MAX];
-    if (GetFullPathNameW(wszInput, RTPATH_MAX, wszFullPath, NULL))
-        rc = RTUtf16ToUtf8Ex(&wszFullPath[0], RTSTR_MAX, &pszPath, cbPath, NULL);
+    if (cbPath > 0)
+    {
+        WCHAR wszInput[4];
+        wszInput[0] = chDrive;
+        wszInput[1] = ':';
+        wszInput[2] = '\0';
+        RTUTF16 wszFullPath[RTPATH_MAX];
+        if (GetFullPathNameW(wszInput, RTPATH_MAX, wszFullPath, NULL))
+            rc = RTUtf16ToUtf8Ex(&wszFullPath[0], RTSTR_MAX, &pszPath, cbPath, NULL);
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+    }
     else
-        rc = RTErrConvertFromWin32(GetLastError());
+        rc = VERR_BUFFER_OVERFLOW;
     return rc;
 }
 

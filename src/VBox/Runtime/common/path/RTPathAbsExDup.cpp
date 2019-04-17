@@ -38,31 +38,34 @@
 
 RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath, uint32_t fFlags)
 {
-    char szPath[RTPATH_MAX];
-    size_t cbPath = sizeof(szPath);
-    int rc = RTPathAbsEx(pszBase, pszPath, fFlags, szPath, &cbPath);
-    if (RT_SUCCESS(rc))
-        return RTStrDup(szPath);
-
-    if (rc == VERR_BUFFER_OVERFLOW)
+    unsigned    cTries    = 16;
+    size_t      cbAbsPath = RTPATH_MAX / 2;
+    for (;;)
     {
-        size_t   cbPrevPath = sizeof(szPath);
-        uint32_t cTries = 8;
-        while (cTries-- > 0)
+        char  *pszAbsPath = RTStrAlloc(cbAbsPath);
+        if (pszAbsPath)
         {
-            cbPath     = RT_MAX(RT_ALIGN_Z(cbPath + 16, 64), cbPrevPath + 256);
-            cbPrevPath = cbPath;
-            char *pszAbsPath = (char *)RTStrAlloc(cbPath);
-            if (pszAbsPath)
+            size_t cbActual = cbAbsPath;
+            int rc = RTPathAbsEx(pszBase, pszPath, fFlags, pszAbsPath, &cbActual);
+            if (RT_SUCCESS(rc))
             {
-                rc = RTPathAbsEx(pszBase, pszPath, fFlags, pszAbsPath, &cbPath);
-                if (RT_SUCCESS(rc))
-                    return pszAbsPath;
-                RTStrFree(pszAbsPath);
+                if (cbActual < cbAbsPath / 2)
+                    RTStrRealloc(&pszAbsPath, cbActual + 1);
+                return pszAbsPath;
             }
-            else
+
+            RTStrFree(pszAbsPath);
+
+            if (rc != VERR_BUFFER_OVERFLOW)
                 break;
+
+            if (--cTries == 0)
+                break;
+
+            cbAbsPath = RT_MAX(RT_ALIGN_Z(cbActual + 16, 64), cbAbsPath + 256);
         }
+        else
+            break;
     }
     return NULL;
 }

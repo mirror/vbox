@@ -542,7 +542,7 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
         }
 
         cbFilter = cucFilter0 = 0;
-        pszAbsPath = RTPathAbsDup(pszPath);
+        pszAbsPath = RTPathAbsExDup(NULL, pszPath, RTPATHABS_F_ENSURE_TRAILING_SLASH);
     }
     else
     {
@@ -556,17 +556,16 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
             if (!pszTmp)
                 return VERR_NO_MEMORY;
             pszTmp[pszFilter - pszPath] = '\0';
-            pszAbsPath = RTPathAbsDup(pszTmp);
+            pszAbsPath = RTPathAbsExDup(NULL, pszTmp, RTPATHABS_F_ENSURE_TRAILING_SLASH);
             RTStrFree(pszTmp);
         }
         else
-            pszAbsPath = RTPathAbsDup(".");
+            pszAbsPath = RTPathAbsExDup(NULL, ".", RTPATHABS_F_ENSURE_TRAILING_SLASH);
         fDirSlash = true;
     }
     if (!pszAbsPath)
         return VERR_NO_MEMORY;
-
-
+    Assert(strchr(pszAbsPath, '\0')[-1] == RTPATH_SLASH);
 
     /*
      * Allocate and initialize the directory handle.
@@ -575,12 +574,11 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
      * thus the horrible ugliness here. Solaris uses d_name[1] for instance.
      */
     size_t const cchAbsPath      = strlen(pszAbsPath);
-    size_t const cchAbsPathExtra = !RTPATH_IS_SEP(pszAbsPath[cchAbsPath - 1]) ? 1 : 0; /* add trailing '/' if missing */
     size_t const cbDir           = rtDirNativeGetStructSize(pszAbsPath);
     size_t const cbAllocated     = cbDir
                                  + cucFilter0 * sizeof(RTUNICP)
                                  + cbFilter
-                                 + cchAbsPath + cchAbsPathExtra + 1 + 4;
+                                 + cchAbsPath + 1 + 4;
     PRTDIRINTERNAL pDir = (PRTDIRINTERNAL)RTMemAllocZ(cbAllocated);
     if (!pDir)
     {
@@ -626,11 +624,10 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
             pDir->pfnFilter = NULL;
             break;
     }
-    pDir->cchPath       = cchAbsPath + cchAbsPathExtra;
+    pDir->cchPath       = cchAbsPath;
     pDir->pszPath       = (char *)memcpy(pb, pszAbsPath, cchAbsPath);
-    pb[cchAbsPath]                   = RTPATH_SLASH;
-    pb[cchAbsPath + cchAbsPathExtra] = '\0';
-    Assert(pb - (uint8_t *)pDir + cchAbsPath + cchAbsPathExtra + 1 <= cbAllocated);
+    pb[cchAbsPath]      = '\0';
+    Assert(pb - (uint8_t *)pDir + cchAbsPath + 1 <= cbAllocated);
     pDir->pszName       = NULL;
     pDir->cchName       = 0;
     pDir->fFlags        = fFlags;

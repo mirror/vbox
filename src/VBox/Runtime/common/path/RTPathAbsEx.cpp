@@ -184,11 +184,18 @@ static int rtPathAbsExWithCwdOrBaseCommon(const char *pszBase, size_t cchBaseInP
     else
     {
         Assert(pBaseParsed->cComps > 1);
-        if (iLast >= 0 || (pParsed->fProps & RTPATH_PROP_DIR_SLASH))
+        if (   iLast >= 0
+            || (pParsed->fProps & RTPATH_PROP_DIR_SLASH)
+            || (fFlags & RTPATHABS_F_ENSURE_TRAILING_SLASH) )
             pBaseParsed->fProps |= RTPATH_PROP_DIR_SLASH;
         else
             pBaseParsed->fProps &= ~RTPATH_PROP_DIR_SLASH;
     }
+
+    /* Apply the trailing flash flag to the input path: */
+    if (   iLast >= 0
+        && (fFlags & RTPATHABS_F_ENSURE_TRAILING_SLASH))
+        pParsed->fProps |= RTPATH_PROP_DIR_SLASH;
 
     /*
      * Combine the two.  RTPathParsedReassemble can handle in place stuff, as
@@ -206,9 +213,13 @@ static int rtPathAbsExWithCwdOrBaseCommon(const char *pszBase, size_t cchBaseInP
         {
             rc = RTPathParsedReassemble(pszPath, pParsed, fFlags & RTPATH_STR_F_STYLE_MASK,
                                         &pszAbsPath[cchBaseInPlace], *pcbAbsPath - cchBaseInPlace);
-            *pcbAbsPath = cchBaseInPlace + pParsed->cchPath;
             if (RT_SUCCESS(rc))
+            {
+                *pcbAbsPath = cchBaseInPlace + pParsed->cchPath;
                 Assert(*pcbAbsPath == strlen(pszAbsPath));
+            }
+            else
+                *pcbAbsPath = cchBaseInPlace + pParsed->cchPath + 1;
         }
         else
             *pcbAbsPath = cchBaseInPlace;
@@ -218,10 +229,10 @@ static int rtPathAbsExWithCwdOrBaseCommon(const char *pszBase, size_t cchBaseInP
         if (iLast >= 0)
         {
             RTPathParsedReassemble(pszPath, pParsed, fFlags & RTPATH_STR_F_STYLE_MASK, pszAbsPath, 0);
-            *pcbAbsPath = pBaseParsed->cchPath + pParsed->cchPath;
+            *pcbAbsPath = pBaseParsed->cchPath + pParsed->cchPath + 1;
         }
         else
-            *pcbAbsPath = pBaseParsed->cchPath;
+            *pcbAbsPath = pBaseParsed->cchPath + 1;
     }
 
     return rc;
@@ -449,6 +460,13 @@ static int rtPathAbsExRootSlash(const char *pszBase, const char *pszPath, PRTPAT
     }
 
     /*
+     * Before we continue, ensure trailing slash if requested.
+     */
+    if (   (fFlags & RTPATHABS_F_ENSURE_TRAILING_SLASH)
+        && iLast > 0)
+        pParsed->fProps |= RTPATH_PROP_DIR_SLASH;
+
+    /*
      * DOS-style: Do we need to supply a drive letter or UNC root?
      */
     size_t cchRootPrefix = 0;
@@ -526,13 +544,13 @@ static int rtPathAbsExRootSlash(const char *pszBase, const char *pszPath, PRTPAT
                 if (rc == VERR_BUFFER_OVERFLOW)
                 {
                     int rc2 = RTPathParsedReassemble(pszPath, pParsed, fFlags & RTPATH_STR_F_STYLE_MASK, pszAbsPath, 0);
-                    Assert(rc2 == VERR_BUFFER_OVERFLOW); RT_NOREF(rc2);
+                    Assert(rc2 == VERR_BUFFER_OVERFLOW);
 
                     char *pszTmp = (char *)RTMemTmpAlloc(RTPATH_BIG_MAX);
                     if (pszTmp)
                     {
-                        rc = RTPathGetCurrentDrive(pszTmp, RTPATH_BIG_MAX);
-                        if (RT_SUCCESS(rc))
+                        rc2 = RTPathGetCurrentDrive(pszTmp, RTPATH_BIG_MAX);
+                        if (RT_SUCCESS(rc2))
                             *pcbAbsPath = strlen(pszTmp) + pParsed->cchPath + 1;
                         else
                             *pcbAbsPath = RT_MAX(*pcbAbsPath * 2, (size_t)RTPATH_BIG_MAX * 3 + pParsed->cchPath + 1);
@@ -569,6 +587,11 @@ static int rtPathAbsExAbsolute(const char *pszPath, PRTPATHPARSED pParsed, uint3
                 && pszPath[pParsed->aComps[i].off] == '.')
                 pParsed->aComps[i].cch = 0;
     }
+
+    if (   (fFlags & RTPATHABS_F_ENSURE_TRAILING_SLASH)
+        && pParsed->cComps > 1)
+        pParsed->fProps |= RTPATH_PROP_DIR_SLASH;
+
     int rc = RTPathParsedReassemble(pszPath, pParsed, fFlags & RTPATH_STR_F_STYLE_MASK, pszAbsPath, *pcbAbsPath);
     *pcbAbsPath = pParsed->cchPath + (rc == VERR_BUFFER_OVERFLOW);
     if (RT_SUCCESS(rc) && (pParsed->fProps & RTPATH_PROP_VOLUME))
@@ -588,7 +611,7 @@ RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, uint32_t fFlag
     AssertReturn(*pszPath != '\0', VERR_PATH_ZERO_LENGTH);
 
     AssertCompile(RTPATH_STR_F_STYLE_HOST == 0);
-    AssertReturn(   RTPATH_STR_F_IS_VALID(fFlags, RTPATHABS_F_STOP_AT_BASE | RTPATHABS_F_STOP_AT_CWD)
+    AssertReturn(   RTPATH_STR_F_IS_VALID(fFlags, RTPATHABS_F_STOP_AT_BASE | RTPATHABS_F_STOP_AT_CWD | RTPATHABS_F_ENSURE_TRAILING_SLASH)
                  && !(fFlags & RTPATH_STR_F_MIDDLE), VERR_INVALID_FLAGS);
     if ((fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STR_F_STYLE_HOST)
         fFlags |= RTPATH_STYLE;

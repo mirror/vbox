@@ -356,9 +356,11 @@ RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, uint32_t fFlag
  * @note The RTPATH_F_STR_XXX style flags also applies.
  * @{ */
 /** Treat specified base directory as a root that cannot be ascended beyond.  */
-#define RTPATHABS_F_STOP_AT_BASE    RT_BIT_32(16)
+#define RTPATHABS_F_STOP_AT_BASE            RT_BIT_32(16)
 /** Treat CWD as a root that cannot be ascended beyond.  */
-#define RTPATHABS_F_STOP_AT_CWD     RT_BIT_32(17)
+#define RTPATHABS_F_STOP_AT_CWD             RT_BIT_32(17)
+/** Ensure trailing slash in the result. */
+#define RTPATHABS_F_ENSURE_TRAILING_SLASH   RT_BIT_32(18)
 /** @} */
 
 /**

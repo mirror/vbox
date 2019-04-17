@@ -278,7 +278,7 @@ int main()
         int rc;
         const char *pcszOutput;
     }
-    s_aRTPathAbsExExTests[] =
+    s_aRTPathAbsExTests[] =
     {
         { RTPATH_STR_F_STYLE_HOST,  NULL, "", VERR_PATH_ZERO_LENGTH, NULL },
         { RTPATH_STR_F_STYLE_HOST,  NULL, ".", VINF_SUCCESS, "%p" },
@@ -336,21 +336,27 @@ int main()
         { RTPATH_STR_F_STYLE_UNIX,  "/MustDie", "/from_root/dir/..", VINF_SUCCESS, "/from_root" },
         { RTPATH_STR_F_STYLE_UNIX,  "/temp", "..", VINF_SUCCESS, "/" },
     };
-    for (unsigned i = 0; i < RT_ELEMENTS(s_aRTPathAbsExExTests); ++ i)
+
+    char *pszGuardedBuf = NULL;
+    rc = RTTestGuardedAlloc(hTest, RTPATH_MAX, 0, false /*fHead*/, (void **)&pszGuardedBuf);
+    if (RT_FAILURE(rc))
+        pszGuardedBuf = szPath;
+
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aRTPathAbsExTests); ++ i)
     {
-        if (RT_FAILURE(s_aRTPathAbsExExTests[i].rc))
+        if (RT_FAILURE(s_aRTPathAbsExTests[i].rc))
             RTTestDisableAssertions(hTest);
 
         size_t cbAbsPath = sizeof(szPath);
-        rc = RTPathAbsEx(s_aRTPathAbsExExTests[i].pcszInputBase,
-                         s_aRTPathAbsExExTests[i].pcszInputPath,
-                         s_aRTPathAbsExExTests[i].fFlags,
+        rc = RTPathAbsEx(s_aRTPathAbsExTests[i].pcszInputBase,
+                         s_aRTPathAbsExTests[i].pcszInputPath,
+                         s_aRTPathAbsExTests[i].fFlags,
                          szPath, &cbAbsPath);
 
-        if (RT_FAILURE(s_aRTPathAbsExExTests[i].rc))
+        if (RT_FAILURE(s_aRTPathAbsExTests[i].rc))
             RTTestRestoreAssertions(hTest);
 
-        if (rc != s_aRTPathAbsExExTests[i].rc)
+        if (rc != s_aRTPathAbsExTests[i].rc)
         {
             RTTestIFailed("#%u: unexpected result code!\n"
                           "        flags: %#x\n"
@@ -360,19 +366,19 @@ int main()
                           "           rc: %Rrc\n"
                           "  expected rc: %Rrc",
                           i,
-                          s_aRTPathAbsExExTests[i].fFlags,
-                          s_aRTPathAbsExExTests[i].pcszInputBase,
-                          s_aRTPathAbsExExTests[i].pcszInputPath,
+                          s_aRTPathAbsExTests[i].fFlags,
+                          s_aRTPathAbsExTests[i].pcszInputBase,
+                          s_aRTPathAbsExTests[i].pcszInputPath,
                           szPath, rc,
-                          s_aRTPathAbsExExTests[i].rc);
+                          s_aRTPathAbsExTests[i].rc);
             continue;
         }
 
         char szTmp[RTPATH_MAX];
         char *pszExpected = NULL;
-        if (s_aRTPathAbsExExTests[i].pcszOutput != NULL)
+        if (s_aRTPathAbsExTests[i].pcszOutput != NULL)
         {
-            if (s_aRTPathAbsExExTests[i].pcszOutput[0] == '%')
+            if (s_aRTPathAbsExTests[i].pcszOutput[0] == '%')
             {
                 RTTESTI_CHECK_RC(rc = RTPathGetCurrent(szTmp, sizeof(szTmp)), VINF_SUCCESS);
                 if (RT_FAILURE(rc))
@@ -380,23 +386,23 @@ int main()
 
                 pszExpected = szTmp;
 
-                if (s_aRTPathAbsExExTests[i].pcszOutput[1] == 'p')
+                if (s_aRTPathAbsExTests[i].pcszOutput[1] == 'p')
                 {
                     cch = strlen(szTmp);
-                    if (cch + strlen(s_aRTPathAbsExExTests[i].pcszOutput) - 2 <= sizeof(szTmp))
-                        strcpy(szTmp + cch, s_aRTPathAbsExExTests[i].pcszOutput + 2);
+                    if (cch + strlen(s_aRTPathAbsExTests[i].pcszOutput) - 2 <= sizeof(szTmp))
+                        strcpy(szTmp + cch, s_aRTPathAbsExTests[i].pcszOutput + 2);
                 }
 #if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
-                else if (s_aRTPathAbsExExTests[i].pcszOutput[1] == 'd')
+                else if (s_aRTPathAbsExTests[i].pcszOutput[1] == 'd')
                 {
-                    if (2 + strlen(s_aRTPathAbsExExTests[i].pcszOutput) - 2 <= sizeof(szTmp))
-                        strcpy(szTmp + 2, s_aRTPathAbsExExTests[i].pcszOutput + 2);
+                    if (2 + strlen(s_aRTPathAbsExTests[i].pcszOutput) - 2 <= sizeof(szTmp))
+                        strcpy(szTmp + 2, s_aRTPathAbsExTests[i].pcszOutput + 2);
                 }
 #endif
             }
             else
             {
-                strcpy(szTmp, s_aRTPathAbsExExTests[i].pcszOutput);
+                strcpy(szTmp, s_aRTPathAbsExTests[i].pcszOutput);
                 pszExpected = szTmp;
             }
 
@@ -411,15 +417,116 @@ int main()
                               "     expected: '%s' ('%s')\n"
                               "    cchResult: %#x, actual %#x",
                               i,
-                              s_aRTPathAbsExExTests[i].fFlags,
-                              s_aRTPathAbsExExTests[i].pcszInputBase,
-                              s_aRTPathAbsExExTests[i].pcszInputPath,
+                              s_aRTPathAbsExTests[i].fFlags,
+                              s_aRTPathAbsExTests[i].pcszInputBase,
+                              s_aRTPathAbsExTests[i].pcszInputPath,
                               szPath,
-                              pszExpected, s_aRTPathAbsExExTests[i].pcszOutput,
+                              pszExpected, s_aRTPathAbsExTests[i].pcszOutput,
                               cbAbsPath, strlen(szPath));
+                continue;
             }
+
+            if (RT_SUCCESS(s_aRTPathAbsExTests[i].rc))
+            {
+                /* Test the RTPATHABS_F_ENSURE_TRAILING_SLASH flag: */
+                cbAbsPath = sizeof(szPath);
+                rc = RTPathAbsEx(s_aRTPathAbsExTests[i].pcszInputBase,
+                                 s_aRTPathAbsExTests[i].pcszInputPath,
+                                 s_aRTPathAbsExTests[i].fFlags | RTPATHABS_F_ENSURE_TRAILING_SLASH,
+                                 szPath, &cbAbsPath);
+                char chSlash = (s_aRTPathAbsExTests[i].fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STR_F_STYLE_DOS  ? '\\'
+                             : (s_aRTPathAbsExTests[i].fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STR_F_STYLE_UNIX ? '/'
+                             : RTPATH_SLASH;
+                if (   RT_FAILURE(rc)
+                    || strlen(szPath) != cbAbsPath
+                    || szPath[cbAbsPath - 1] != chSlash)
+                   RTTestIFailed("#%u: Unexpected RTPATHABS_F_ENSURE_TRAILING_SLASH result: %Rrc\n"
+                                 "        flags: %#x | RTPATHABS_F_ENSURE_TRAILING_SLASH\n"
+                                 "   input base: '%s'\n"
+                                 "   input path: '%s'\n"
+                                 "       output: '%s' ('%c' vs '%c')\n"
+                                 "    cchResult: %#x, actual %#x",
+                                 i, rc,
+                                 s_aRTPathAbsExTests[i].fFlags,
+                                 s_aRTPathAbsExTests[i].pcszInputBase,
+                                 s_aRTPathAbsExTests[i].pcszInputPath,
+                                 szPath, szPath[cbAbsPath - 1], chSlash,
+                                 cbAbsPath, strlen(szPath));
+
+                /* Do overflow testing: */
+                size_t const cbNeeded = strlen(pszExpected) + 1;
+                for (size_t cbBuf = 0; cbBuf < cbNeeded + 64; cbBuf++)
+                {
+                    char *pszBuf = &pszGuardedBuf[RTPATH_MAX - cbBuf];
+                    memset(pszBuf, 0x33, cbBuf);
+                    cbAbsPath = cbBuf;
+                    rc = RTPathAbsEx(s_aRTPathAbsExTests[i].pcszInputBase, s_aRTPathAbsExTests[i].pcszInputPath,
+                                     s_aRTPathAbsExTests[i].fFlags, pszBuf, &cbAbsPath);
+                    if (   cbBuf < cbNeeded
+                        && (   rc != VERR_BUFFER_OVERFLOW
+                            || cbAbsPath < cbNeeded))
+                        RTTestIFailed("#%u: Unexpected overflow result: %Rrc%s\n"
+                                      "        flags: %#x\n"
+                                      "   input base: '%s'\n"
+                                      "   input path: '%s'\n"
+                                      "    cbBuf[in]: %#x\n"
+                                      "   cbBuf[out]: %#x\n"
+                                      "     cbNeeded: %#x\n",
+                                      i, rc, rc != VERR_BUFFER_OVERFLOW ? " - expected VERR_BUFFER_OVERFLOW" : "",
+                                      s_aRTPathAbsExTests[i].fFlags,
+                                      s_aRTPathAbsExTests[i].pcszInputBase,
+                                      s_aRTPathAbsExTests[i].pcszInputPath,
+                                      cbBuf,
+                                      cbAbsPath,
+                                      cbNeeded);
+                    else if (   cbBuf >= cbNeeded
+                             && (   rc != s_aRTPathAbsExTests[i].rc
+                                 || cbAbsPath != cbNeeded - 1
+                                 || strcmp(pszBuf, pszExpected)
+                                 || strlen(pszBuf) != cbAbsPath))
+                        RTTestIFailed("#%u: Unexpected result: %Rrc (expected %Rrc)\n"
+                                      "        flags: %#x\n"
+                                      "   input base: '%s'\n"
+                                      "   input path: '%s'\n"
+                                      "    cbBuf[in]: %#x\n"
+                                      "   cbBuf[out]: %#x\n"
+                                      "     cbNeeded: %#x\n",
+                                      i, rc, s_aRTPathAbsExTests[i].rc,
+                                      s_aRTPathAbsExTests[i].fFlags,
+                                      s_aRTPathAbsExTests[i].pcszInputBase,
+                                      s_aRTPathAbsExTests[i].pcszInputPath,
+                                      cbBuf,
+                                      cbAbsPath,
+                                      cbNeeded);
+
+                }
+            }
+
+            /* RTPathAbsExDup */
+            char *pszDup = RTPathAbsExDup(s_aRTPathAbsExTests[i].pcszInputBase,
+                                          s_aRTPathAbsExTests[i].pcszInputPath,
+                                          s_aRTPathAbsExTests[i].fFlags);
+            if (   (RT_SUCCESS(s_aRTPathAbsExTests[i].rc) ? pszDup == NULL : pszDup != NULL)
+                || RTStrCmp(pszDup, pszExpected))
+                RTTestIFailed("#%u: Unexpected RTPathAbsExDup result: %p%s\n"
+                              "        flags: %#x\n"
+                              "   input base: '%s'\n"
+                              "   input path: '%s'\n"
+                              "       output: '%s'\n"
+                              "     expected: '%s' ('%s')\n",
+                              i, pszDup,
+                              (RT_SUCCESS(s_aRTPathAbsExTests[i].rc) ? pszDup == NULL : pszDup != NULL) ? pszDup ? "NULL" : "!NULL" : "",
+                              s_aRTPathAbsExTests[i].fFlags,
+                              s_aRTPathAbsExTests[i].pcszInputBase,
+                              s_aRTPathAbsExTests[i].pcszInputPath,
+                              pszDup,
+                              pszExpected, s_aRTPathAbsExTests[i].pcszOutput);
+            RTStrFree(pszDup);
         }
     }
+
+    if (pszGuardedBuf != szPath)
+        RTTestGuardedFree(hTest, pszGuardedBuf);
 
 
     /*
