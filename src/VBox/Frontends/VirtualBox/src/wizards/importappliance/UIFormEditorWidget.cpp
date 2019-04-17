@@ -151,12 +151,18 @@ public:
 
     /** Returns value cast to bool. */
     bool toBool() const;
+    /** Defines @a fBool value. */
+    void setBool(bool fBool);
 
     /** Returns value cast to string. */
     QString toString() const;
+    /** Defines @a strString value. */
+    void setString(const QString &strString);
 
     /** Returns value cast to choice. */
     ChoiceData toChoice() const;
+    /** Defines @a choice value. */
+    void setChoice(ChoiceData choice);
 
 protected:
 
@@ -297,6 +303,29 @@ bool UIFormEditorRow::toBool() const
     return comValue.GetSelected();
 }
 
+void UIFormEditorRow::setBool(bool fBool)
+{
+    AssertReturnVoid(valueType() == KFormValueType_Boolean);
+    CBooleanFormValue comValue(m_comValue);
+    CProgress comProgress = comValue.SetSelected(fBool);
+
+    /* Show error message if necessary: */
+    if (!comValue.isOk())
+        msgCenter().cannotAssignFormValue(comValue);
+    else
+    {
+        /* Show "Acquire export form" progress: */
+        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value..."),
+                                            ":/progress_reading_appliance_90px.png");
+
+        /* Show error message if necessary: */
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAssignFormValue(comProgress);
+        else
+            updateValueCells();
+    }
+}
+
 QString UIFormEditorRow::toString() const
 {
     AssertReturn(valueType() == KFormValueType_String, QString());
@@ -304,11 +333,57 @@ QString UIFormEditorRow::toString() const
     return comValue.GetString();
 }
 
+void UIFormEditorRow::setString(const QString &strString)
+{
+    AssertReturnVoid(valueType() == KFormValueType_String);
+    CStringFormValue comValue(m_comValue);
+    CProgress comProgress = comValue.SetString(strString);
+
+    /* Show error message if necessary: */
+    if (!comValue.isOk())
+        msgCenter().cannotAssignFormValue(comValue);
+    else
+    {
+        /* Show "Acquire export form" progress: */
+        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value..."),
+                                            ":/progress_reading_appliance_90px.png");
+
+        /* Show error message if necessary: */
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAssignFormValue(comProgress);
+        else
+            updateValueCells();
+    }
+}
+
 ChoiceData UIFormEditorRow::toChoice() const
 {
     AssertReturn(valueType() == KFormValueType_Choice, ChoiceData());
     CChoiceFormValue comValue(m_comValue);
     return ChoiceData(comValue.GetValues(), comValue.GetSelectedIndex());
+}
+
+void UIFormEditorRow::setChoice(ChoiceData choice)
+{
+    AssertReturnVoid(valueType() == KFormValueType_Choice);
+    CChoiceFormValue comValue(m_comValue);
+    CProgress comProgress = comValue.SetSelectedIndex(choice.selectedChoice());
+
+    /* Show error message if necessary: */
+    if (!comValue.isOk())
+        msgCenter().cannotAssignFormValue(comValue);
+    else
+    {
+        /* Show "Acquire export form" progress: */
+        msgCenter().showModalProgressDialog(comProgress, UIFormEditorWidget::tr("Assign value..."),
+                                            ":/progress_reading_appliance_90px.png");
+
+        /* Show error message if necessary: */
+        if (!comProgress.isOk() || comProgress.GetResultCode() != 0)
+            msgCenter().cannotAssignFormValue(comProgress);
+        else
+            updateValueCells();
+    }
 }
 
 int UIFormEditorRow::childCount() const
@@ -471,13 +546,63 @@ QVariant UIFormEditorModel::headerData(int iSection, Qt::Orientation enmOrientat
 
 bool UIFormEditorModel::setData(const QModelIndex &index, const QVariant &value, int iRole /* = Qt::EditRole */)
 {
-    Q_UNUSED(value);
-
     /* Check index validness: */
-    if (!index.isValid() || iRole != Qt::EditRole)
+    if (!index.isValid())
         return false;
-    /* Return wrong value: */
-    return false;
+    /* Switch for different roles: */
+    switch (iRole)
+    {
+        /* Checkstate role: */
+        case Qt::CheckStateRole:
+        {
+            /* Switch for different columns: */
+            switch (index.column())
+            {
+                case UIFormEditorDataType_Value:
+                {
+                    if (m_dataList[index.row()]->valueType() == KFormValueType_Boolean)
+                    {
+                        const Qt::CheckState enmCheckState = static_cast<Qt::CheckState>(value.toInt());
+                        m_dataList[index.row()]->setBool(enmCheckState == Qt::Checked);
+                        emit dataChanged(index, index);
+                        return true;
+                    }
+                    else
+                        return false;
+                }
+                default:
+                    return false;
+            }
+        }
+        /* Edit role: */
+        case Qt::EditRole:
+        {
+            /* Switch for different columns: */
+            switch (index.column())
+            {
+                case UIFormEditorDataType_Value:
+                {
+                    switch (m_dataList[index.row()]->valueType())
+                    {
+                        case KFormValueType_String:
+                            m_dataList[index.row()]->setString(value.toString());
+                            emit dataChanged(index, index);
+                            return true;
+                        case KFormValueType_Choice:
+                            m_dataList[index.row()]->setChoice(value.value<ChoiceData>());
+                            emit dataChanged(index, index);
+                            return true;
+                        default:
+                            return false;
+                    }
+                }
+                default:
+                    return false;
+            }
+        }
+        default:
+            return false;
+    }
 }
 
 QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
