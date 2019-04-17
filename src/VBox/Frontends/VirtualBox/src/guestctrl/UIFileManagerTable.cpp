@@ -846,6 +846,8 @@ void UIFileManagerTable::changeLocation(const QModelIndex &index)
     {
         updateCurrentLocationEdit(item->path());
     }
+    setSelectionDependentActionsEnabled(false);
+
     /** @todo check if we really need this and if not remove it */
     //m_pModel->signalUpdate();
 }
