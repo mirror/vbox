@@ -341,6 +341,7 @@ enum
 static const RTGETOPTDEF g_aCmdOptions[] =
 {
     { "--dir",              'd', RTGETOPT_REQ_STRING  },
+    { "--relative-dir",     'r', RTGETOPT_REQ_NOTHING },
     { "--seconds",          's', RTGETOPT_REQ_UINT32  },
     { "--milliseconds",     'm', RTGETOPT_REQ_UINT64  },
 
@@ -495,6 +496,8 @@ static uint64_t     g_cbIoFile                  = _512M;
 /** Whether to be less strict with non-cache file handle. */
 static bool         g_fIgnoreNoCache            = false;
 
+/** Set if g_szDir and friends are path relative to CWD rather than absolute. */
+static bool         g_fRelativeDir              = false;
 /** The length of g_szDir. */
 static size_t       g_cchDir;
 /** The length of g_szEmptyDir. */
@@ -4302,6 +4305,7 @@ static void Usage(PRTSTREAM pStrm)
         switch (g_aCmdOptions[i].iShort)
         {
             case 'd':                           pszHelp = "The directory to use for testing.            default: CWD/fstestdir"; break;
+            case 'r':                           pszHelp = "Don't abspath test dir (good for deep dirs). default: disabled"; break;
             case 'e':                           pszHelp = "Enables all tests.                           default: -e"; break;
             case 'z':                           pszHelp = "Disables all tests.                          default: -e"; break;
             case 's':                           pszHelp = "Set benchmark duration in seconds.           default: 10 sec"; break;
@@ -4374,19 +4378,9 @@ int main(int argc, char *argv[])
     /*
      * Default values.
      */
-    rc = RTPathGetCurrent(g_szDir, sizeof(g_szDir) - FSPERF_MAX_NEEDED_PATH);
-    if (RT_SUCCESS(rc))
-        rc = RTPathAppend(g_szDir, sizeof(g_szDir) - FSPERF_MAX_NEEDED_PATH, "fstestdir-");
-    if (RT_SUCCESS(rc))
-    {
-        g_cchDir = strlen(g_szDir);
-        g_cchDir += RTStrPrintf(&g_szDir[g_cchDir], sizeof(g_szDir) - g_cchDir, "%u" RTPATH_SLASH_STR, RTProcSelf());
-    }
-    else
-    {
-        RTTestFailed(g_hTest, "RTPathGetCurrent (or RTPathAppend) failed: %Rrc\n", rc);
-        return RTTestSummaryAndDestroy(g_hTest);
-    }
+    char szDefaultDir[32];
+    const char *pszDir = szDefaultDir;
+    RTStrPrintf(szDefaultDir, sizeof(szDefaultDir), "fstestdir-%u" RTPATH_SLASH_STR, RTProcSelf());
 
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
@@ -4396,15 +4390,12 @@ int main(int argc, char *argv[])
         switch (rc)
         {
             case 'd':
-                rc = RTPathAbs(ValueUnion.psz, g_szDir, sizeof(g_szDir) - FSPERF_MAX_NEEDED_PATH);
-                if (RT_SUCCESS(rc))
-                {
-                    RTPathEnsureTrailingSeparator(g_szDir, sizeof(g_szDir));
-                    g_cchDir = strlen(g_szDir);
-                    break;
-                }
-                RTTestFailed(g_hTest, "RTPathAbs(%s) failed: %Rrc\n", ValueUnion.psz, rc);
-                return RTTestSummaryAndDestroy(g_hTest);
+                pszDir = ValueUnion.psz;
+                break;
+
+            case 'r':
+                g_fRelativeDir = true;
+                break;
 
             case 's':
                 if (ValueUnion.u32 == 0)
@@ -4616,6 +4607,21 @@ int main(int argc, char *argv[])
                 return RTGetOptPrintError(rc, &ValueUnion);
         }
     }
+
+    /*
+     * Populate g_szDir.
+     */
+    if (!g_fRelativeDir)
+        rc = RTPathAbs(pszDir, g_szDir, sizeof(g_szDir) - FSPERF_MAX_NEEDED_PATH);
+    else
+        rc = RTStrCopy(g_szDir, sizeof(g_szDir) - FSPERF_MAX_NEEDED_PATH, pszDir);
+    if (RT_FAILURE(rc))
+    {
+        RTTestFailed(g_hTest, "%s(%s) failed: %Rrc\n", g_fRelativeDir ? "RTStrCopy" : "RTAbsPath", pszDir, rc);
+        return RTTestSummaryAndDestroy(g_hTest);
+    }
+    RTPathEnsureTrailingSeparator(g_szDir, sizeof(g_szDir));
+    g_cchDir = strlen(g_szDir);
 
     /*
      * Create the test directory with an 'empty' subdirectory under it,
