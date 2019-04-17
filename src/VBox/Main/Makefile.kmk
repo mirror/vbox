@@ -290,6 +290,7 @@ VBoxAPIWrap_PCH_HDR       := $(PATH_SUB_CURRENT)/src-all/xpcom/VBoxAPIWrap-preco
 	Cloud%\
 	%FormValueWrap.cpp\
 	%FormWrap.cpp\
+	StringArrayWrap.cpp\
 	, $(notdir $(VBOX_MAIN_APIWRAPPER_GEN_SRCS)))) \
 	, $(VBOX_MAIN_APIWRAPPER_GEN_SRCS))
  VBoxAPIWrap_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
