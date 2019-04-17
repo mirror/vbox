@@ -706,6 +706,9 @@ typedef RTPATHPARSED *PRTPATHPARSED;
 /** Pointer to to a const parsed path result. */
 typedef RTPATHPARSED *PCRTPATHPARSED;
 
+/** Stupid hack for MSC and flexible arrays. */
+#define RTPATHPARSED_MIN_SIZE       (sizeof(uint16_t) * (6 + 4))
+
 
 /**
  * Parses the path.

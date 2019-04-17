@@ -169,7 +169,7 @@ RTDECL(int) RTDirRemoveRecursive(const char *pszPath, uint32_t fFlags)
         union
         {
             RTPATHPARSED    Parsed;
-            uint8_t         abParsed[RT_UOFFSETOF(RTPATHPARSED, aComps[1])];
+            uint8_t         abParsed[RTPATHPARSED_MIN_SIZE];
         } uBuf;
         RTPathParse(pszPath, &uBuf.Parsed, sizeof(uBuf), RTPATH_STR_F_STYLE_HOST);
         if (   uBuf.Parsed.cComps <= 1
