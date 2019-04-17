@@ -261,6 +261,20 @@ static const CUEKEYWORDDESC g_aCueKeywords[] =
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 
+
+/**
+ * Converts a MSF formatted address value read from the given buffer
+ * to an LBA number. MSF 00:00:00 equals LBA 0.
+ *
+ * @returns The LBA number.
+ * @param   pbBuf               The buffer to read the MSF formatted address
+ *                              from.
+ */
+DECLINLINE(uint32_t) cueMSF2LBA(const uint8_t *pbBuf)
+{
+    return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2];
+}
+
 /**
  * Ensures that the region list can hold up to the given number of tracks.
  *
@@ -836,7 +850,7 @@ static int cueParseIndex(PCUEIMAGE pThis, PCUETOKENIZER pTokenizer,
                 abMsf[2] = pToken->Type.Msf.u8Frame;
 
                 *pu8Index = (uint8_t)u64Index;
-                *pu64Lba  = scsiMSF2LBA(&abMsf[0]);
+                *pu64Lba  = cueMSF2LBA(&abMsf[0]);
                 cueTokenizerConsume(pTokenizer);
             }
             else
