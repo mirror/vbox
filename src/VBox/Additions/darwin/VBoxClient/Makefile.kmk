@@ -32,7 +32,7 @@ VBoxClient_SOURCES  = \
     VBoxClientClipboard.cpp \
     VBoxClientClipboardHostToGuest.cpp \
     VBoxClientClipboardGuestToHost.cpp \
-    $(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-helper.cpp
+    $(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp
 
 VBoxClient_LDFLAGS  = -framework IOKit -framework ApplicationServices
 VBoxClient_INST     = $(INST_ADDITIONS)

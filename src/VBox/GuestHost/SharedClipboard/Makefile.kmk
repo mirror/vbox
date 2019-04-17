@@ -32,12 +32,12 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
   	$(tstClipboardX11Smoke_0_OUTDIR)/tstClipboardX11Smoke.run
   tstClipboardX11_TEMPLATE = VBOXR3TSTEXE
   tstClipboardX11_DEFS     = VBOX_WITH_HGCM TESTCASE
-  tstClipboardX11_SOURCES  = x11-clipboard.cpp clipboard-helper.cpp
+  tstClipboardX11_SOURCES  = clipboard-x11.cpp clipboard-common.cpp
   tstClipboardX11_CLEAN    = $(tstClipboardX11_0_OUTDIR)/tstClipboardX11.run
 
   tstClipboardX11Smoke_TEMPLATE = VBOXR3TSTEXE
   tstClipboardX11Smoke_DEFS     = VBOX_WITH_HGCM SMOKETEST
-  tstClipboardX11Smoke_SOURCES  = x11-clipboard.cpp clipboard-helper.cpp
+  tstClipboardX11Smoke_SOURCES  = clipboard-x11.cpp clipboard-common.cpp
   tstClipboardX11Smoke_LIBPATH  = $(VBOX_LIBPATH_X11)
   tstClipboardX11Smoke_LIBS     = X11 Xt
   tstClipboardX11Smoke_CLEAN    = $(tstClipboardX11Smoke_0_OUTDIR)/tstClipboardX11Smoke.run
