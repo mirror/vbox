@@ -55,8 +55,10 @@
  * @param   cbBuf               Size of the buffer @a pszBuf points to.
  * @param   pDirEntry           The dir entry buffer.  (Shared to save stack.)
  * @param   pObjInfo            The object info buffer.  (ditto)
+ * @param   fFlags              RTDIRRMREC_F_XXX.
  */
-static int rtDirRemoveRecursiveSub(char *pszBuf, size_t cchDir, size_t cbBuf, PRTDIRENTRY pDirEntry, PRTFSOBJINFO pObjInfo)
+static int rtDirRemoveRecursiveSub(char *pszBuf, size_t cchDir, size_t cbBuf, PRTDIRENTRY pDirEntry, PRTFSOBJINFO pObjInfo,
+                                   uint32_t fFlags)
 {
     AssertReturn(RTPATH_IS_SLASH(pszBuf[cchDir - 1]), VERR_INTERNAL_ERROR_4);
 
@@ -64,7 +66,7 @@ static int rtDirRemoveRecursiveSub(char *pszBuf, size_t cchDir, size_t cbBuf, PR
      * Enumerate the directory content and dispose of it.
      */
     RTDIR hDir;
-    int rc = RTDirOpen(&hDir, pszBuf);
+    int rc = RTDirOpenFiltered(&hDir, pszBuf, RTDIRFILTER_NONE, fFlags & RTDIRRMREC_F_NO_ABS_PATH ? RTDIR_F_NO_ABS_PATH : 0);
     if (RT_FAILURE(rc))
         return rc;
     while (RT_SUCCESS(rc = RTDirRead(hDir, pDirEntry, NULL)))
@@ -103,7 +105,7 @@ static int rtDirRemoveRecursiveSub(char *pszBuf, size_t cchDir, size_t cbBuf, PR
                     size_t cchSubDir = cchDir + pDirEntry->cbName;
                     pszBuf[cchSubDir++] = '/';
                     pszBuf[cchSubDir]   = '\0';
-                    rc = rtDirRemoveRecursiveSub(pszBuf, cchSubDir, cbBuf, pDirEntry, pObjInfo);
+                    rc = rtDirRemoveRecursiveSub(pszBuf, cchSubDir, cbBuf, pDirEntry, pObjInfo, fFlags);
                     if (RT_SUCCESS(rc))
                     {
                         pszBuf[cchSubDir] = '\0';
@@ -152,14 +154,26 @@ RTDECL(int) RTDirRemoveRecursive(const char *pszPath, uint32_t fFlags)
      * Get an absolute path because this is easier to work with and
      * eliminates any races with changing CWD.
      */
-    /** @todo use RTPathReal here instead? */
-    int rc = RTPathAbs(pszPath, pszAbsPath, cbAbsPathBuf);
+    int rc;
+    if (!(fFlags & RTDIRRMREC_F_NO_ABS_PATH))
+        rc = RTPathAbs(pszPath, pszAbsPath, cbAbsPathBuf);
+    else if (*pszPath != '\0')
+        rc = RTStrCopy(pszAbsPath, cbAbsPathBuf, pszPath);
+    else
+        rc = VERR_PATH_ZERO_LENGTH;
     if (RT_SUCCESS(rc))
     {
         /*
          * This API is not permitted applied to the root of anything.
          */
-        if (RTPathCountComponents(pszAbsPath) <= 1)
+        union
+        {
+            RTPATHPARSED    Parsed;
+            uint8_t         abParsed[RT_UOFFSETOF(RTPATHPARSED, aComps[1])];
+        } uBuf;
+        RTPathParse(pszPath, &uBuf.Parsed, sizeof(uBuf), RTPATH_STR_F_STYLE_HOST);
+        if (   uBuf.Parsed.cComps <= 1
+            && (uBuf.Parsed.fProps & RTPATH_PROP_ROOT_SLASH))
             rc = VERR_ACCESS_DENIED;
         else
         {
@@ -190,7 +204,8 @@ RTDECL(int) RTDirRemoveRecursive(const char *pszPath, uint32_t fFlags)
                      * We're all set for the recursion now, so get going.
                      */
                     RTDIRENTRY SharedDirEntryBuf;
-                    rc = rtDirRemoveRecursiveSub(pszAbsPath, cchAbsPath, cbAbsPathBuf, &SharedDirEntryBuf, &SharedObjInfoBuf);
+                    rc = rtDirRemoveRecursiveSub(pszAbsPath, cchAbsPath, cbAbsPathBuf,
+                                                 &SharedDirEntryBuf, &SharedObjInfoBuf, fFlags);
 
                     /*
                      * Remove the specified directory if desired and removing the content was successful.

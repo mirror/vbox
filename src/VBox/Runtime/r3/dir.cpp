@@ -526,6 +526,9 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
      * The purpose of this exercise to have the abs path around
      * for querying extra information about the objects we list.
      * As a sideeffect we also validate the path here.
+     *
+     * Note! The RTDIR_F_NO_ABS_PATH mess is there purely for allowing us to
+     *       work around PATH_MAX using CWD on linux and other unixy systems.
      */
     char  *pszAbsPath;
     size_t cbFilter;                    /* includes '\0' (thus cb and not cch). */
@@ -541,7 +544,19 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
         }
 
         cbFilter = cucFilter0 = 0;
-        pszAbsPath = RTPathAbsExDup(NULL, pszPath, RTPATHABS_F_ENSURE_TRAILING_SLASH);
+        if (!(fFlags & RTDIR_F_NO_ABS_PATH))
+            pszAbsPath = RTPathAbsExDup(NULL, pszPath, RTPATHABS_F_ENSURE_TRAILING_SLASH);
+        else
+        {
+            size_t cchTmp = strlen(pszPath);
+            pszAbsPath = RTStrAlloc(cchTmp + 2);
+            if (pszAbsPath)
+            {
+                memcpy(pszAbsPath, pszPath, cchTmp);
+                pszAbsPath[cchTmp] = RTPATH_SLASH;
+                pszAbsPath[cchTmp + 1 - fDirSlash] = '\0';
+            }
+        }
     }
     else
     {
@@ -555,11 +570,21 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
             if (!pszTmp)
                 return VERR_NO_MEMORY;
             pszTmp[pszFilter - pszPath] = '\0';
-            pszAbsPath = RTPathAbsExDup(NULL, pszTmp, RTPATHABS_F_ENSURE_TRAILING_SLASH);
-            RTStrFree(pszTmp);
+            if (!(fFlags & RTDIR_F_NO_ABS_PATH))
+            {
+                pszAbsPath = RTPathAbsExDup(NULL, pszTmp, RTPATHABS_F_ENSURE_TRAILING_SLASH);
+                RTStrFree(pszTmp);
+            }
+            else
+            {
+                pszAbsPath = pszTmp;
+                RTPathEnsureTrailingSeparator(pszAbsPath, strlen(pszPath) + 1);
+            }
         }
-        else
+        else if (!(fFlags & RTDIR_F_NO_ABS_PATH))
             pszAbsPath = RTPathAbsExDup(NULL, ".", RTPATHABS_F_ENSURE_TRAILING_SLASH);
+        else
+            pszAbsPath = RTStrDup("." RTPATH_SLASH_STR);
         fDirSlash = true;
     }
     if (!pszAbsPath)

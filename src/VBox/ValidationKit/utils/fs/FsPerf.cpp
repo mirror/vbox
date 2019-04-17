@@ -1220,10 +1220,22 @@ void fsPerfRename(void)
 }
 
 
+/**
+ * Wrapper around RTDirOpen/RTDirOpenFiltered which takes g_fRelativeDir into
+ * account.
+ */
+DECL_FORCE_INLINE(int) fsPerfOpenDirWrap(PRTDIR phDir, const char *pszPath)
+{
+    if (!g_fRelativeDir)
+        return RTDirOpen(phDir, pszPath);
+    return RTDirOpenFiltered(phDir, pszPath, RTDIRFILTER_NONE, RTDIR_F_NO_ABS_PATH);
+}
+
+
 DECL_FORCE_INLINE(int) fsPerfOpenClose(const char *pszDir)
 {
     RTDIR hDir;
-    RTTESTI_CHECK_RC_RET(RTDirOpen(&hDir, pszDir), VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RC_RET(fsPerfOpenDirWrap(&hDir, pszDir), VINF_SUCCESS, rcCheck);
     RTTESTI_CHECK_RC(RTDirClose(hDir), VINF_SUCCESS);
     return VINF_SUCCESS;
 }
@@ -1237,15 +1249,15 @@ void vsPerfDirOpen(void)
     /*
      * Non-existing files.
      */
-    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InEmptyDir(RT_STR_TUPLE("no-such-file"))), VERR_FILE_NOT_FOUND);
-    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
-    RTTESTI_CHECK_RC(RTDirOpen(&hDir, InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(fsPerfOpenDirWrap(&hDir, InEmptyDir(RT_STR_TUPLE("no-such-file"))), VERR_FILE_NOT_FOUND);
+    RTTESTI_CHECK_RC(fsPerfOpenDirWrap(&hDir, InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(fsPerfOpenDirWrap(&hDir, InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
 
     /*
      * Check that open + close works.
      */
     g_szEmptyDir[g_cchEmptyDir] = '\0';
-    RTTESTI_CHECK_RC_RETV(RTDirOpen(&hDir, g_szEmptyDir), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(fsPerfOpenDirWrap(&hDir, g_szEmptyDir), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTDirClose(hDir), VINF_SUCCESS);
 
 
@@ -1266,7 +1278,7 @@ DECL_FORCE_INLINE(int) fsPerfEnumEmpty(void)
 {
     RTDIR hDir;
     g_szEmptyDir[g_cchEmptyDir] = '\0';
-    RTTESTI_CHECK_RC_RET(RTDirOpen(&hDir, g_szEmptyDir), VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RC_RET(fsPerfOpenDirWrap(&hDir, g_szEmptyDir), VINF_SUCCESS, rcCheck);
 
     RTDIRENTRY Entry;
     RTTESTI_CHECK_RC(RTDirRead(hDir, &Entry, NULL), VINF_SUCCESS);
@@ -1281,7 +1293,7 @@ DECL_FORCE_INLINE(int) fsPerfEnumEmpty(void)
 DECL_FORCE_INLINE(int) fsPerfEnumManyFiles(void)
 {
     RTDIR hDir;
-    RTTESTI_CHECK_RC_RET(RTDirOpen(&hDir, InDir(RT_STR_TUPLE("manyfiles"))), VINF_SUCCESS, rcCheck);
+    RTTESTI_CHECK_RC_RET(fsPerfOpenDirWrap(&hDir, InDir(RT_STR_TUPLE("manyfiles"))), VINF_SUCCESS, rcCheck);
     uint32_t cLeft = g_cManyFiles + 2;
     for (;;)
     {
@@ -1309,7 +1321,7 @@ void vsPerfDirEnum(void)
      * The empty directory.
      */
     g_szEmptyDir[g_cchEmptyDir] = '\0';
-    RTTESTI_CHECK_RC_RETV(RTDirOpen(&hDir, g_szEmptyDir), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(fsPerfOpenDirWrap(&hDir, g_szEmptyDir), VINF_SUCCESS);
 
     uint32_t   fDots = 0;
     RTDIRENTRY Entry;
@@ -1339,7 +1351,7 @@ void vsPerfDirEnum(void)
             ASMBitSet(pvBitmap, i);
 
         uint32_t cFiles = 0;
-        RTTESTI_CHECK_RC_RETV(RTDirOpen(&hDir, InDir(RT_STR_TUPLE("manyfiles"))), VINF_SUCCESS);
+        RTTESTI_CHECK_RC_RETV(fsPerfOpenDirWrap(&hDir, InDir(RT_STR_TUPLE("manyfiles"))), VINF_SUCCESS);
         for (;;)
         {
             int rc = RTDirRead(hDir, &Entry, NULL);
@@ -4688,7 +4700,7 @@ int main(int argc, char *argv[])
 
             /* Cleanup: */
             g_szDir[g_cchDir] = '\0';
-            rc = RTDirRemoveRecursive(g_szDir, RTDIRRMREC_F_CONTENT_AND_DIR);
+            rc = RTDirRemoveRecursive(g_szDir, RTDIRRMREC_F_CONTENT_AND_DIR | (g_fRelativeDir ? RTDIRRMREC_F_NO_ABS_PATH : 0));
             if (RT_FAILURE(rc))
                 RTTestFailed(g_hTest, "RTDirRemoveRecursive(%s,) -> %Rrc\n", g_szDir, rc);
         }

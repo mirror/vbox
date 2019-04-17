@@ -185,8 +185,10 @@ RTDECL(int) RTDirRemoveRecursive(const char *pszPath, uint32_t fFlags);
 #define RTDIRRMREC_F_CONTENT_AND_DIR    UINT32_C(0)
 /** Only delete the content of the directory, omit the directory it self. */
 #define RTDIRRMREC_F_CONTENT_ONLY       RT_BIT_32(0)
+/** Long path hack: Don't apply RTPathAbs to the path. */
+#define RTDIRRMREC_F_NO_ABS_PATH        RT_BIT_32(1)
 /** Mask of valid flags. */
-#define RTDIRRMREC_F_VALID_MASK         UINT32_C(0x00000001)
+#define RTDIRRMREC_F_VALID_MASK         UINT32_C(0x00000003)
 /** @} */
 
 /**
@@ -356,8 +358,10 @@ RTDECL(int) RTDirOpen(RTDIR *phDir, const char *pszPath);
 #define RTDIR_F_DENY_ASCENT     RT_BIT_32(1)
 /** Don't follow symbolic links in the final component. */
 #define RTDIR_F_NO_FOLLOW       RT_BIT_32(2)
+/** Long path hack: Don't apply RTPathAbs to the path. */
+#define RTDIR_F_NO_ABS_PATH     RT_BIT_32(3)
 /** Valid flag mask.   */
-#define RTDIR_F_VALID_MASK      UINT32_C(0x00000007)
+#define RTDIR_F_VALID_MASK      UINT32_C(0x0000000f)
 /** @} */
 
 /**
