@@ -298,7 +298,7 @@ void vbsf_iov_iter_revert(struct vbsf_iov_iter *iter, size_t cbRewind)
 }
 
 #endif /* 2.6.19 <= linux < 3.16.0 */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 35)
 
 /** This is for implementing cMaxPage on 3.16 which doesn't have it. */
 static ssize_t vbsf_iov_iter_get_pages_3_16(struct iov_iter *iter, struct page **papPages,
@@ -317,7 +317,7 @@ static ssize_t vbsf_iov_iter_get_pages_3_16(struct iov_iter *iter, struct page *
 # define iov_iter_get_pages(a_pIter, a_papPages, a_cbMax, a_cMaxPages, a_poffPg0) \
     vbsf_iov_iter_get_pages_3_16(a_pIter, a_papPages, a_cbMax, a_cMaxPages, a_poffPg0)
 
-#endif /* 3.16.x */
+#endif /* 3.16.0-3.16.34 */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) && LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
 
 static size_t copy_from_iter(uint8_t *pbDst, size_t cbToCopy, struct iov_iter *pSrcIter)
