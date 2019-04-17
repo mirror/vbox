@@ -34,6 +34,7 @@ VBoxSharedClipboard_SOURCES = \
 	VBoxSharedClipboardSvc.cpp
 VBoxSharedClipboard_SOURCES.win = \
 	VBoxClipboard-win.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-win.cpp \
 	VBoxSharedClipboardSvc.rc
 VBoxSharedClipboard_SOURCES.darwin = \
 	darwin.cpp \

@@ -32,6 +32,23 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
+/**
+ * Supported data formats for Shared Clipboard. Bit mask.
+ */
+/** Shared Clipboard format is an Unicode text. */
+#define VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT   UINT32_C(0x01)
+/** Shared Clipboard format is bitmap (BMP / DIB). */
+#define VBOX_SHARED_CLIPBOARD_FMT_BITMAP        UINT32_C(0x02)
+/** Shared Clipboard format is HTML. */
+#define VBOX_SHARED_CLIPBOARD_FMT_HTML          UINT32_C(0x04)
+
+/**
+ * The host messages for the guest.
+ */
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT        1
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA   2
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS     3
+
 enum
 {
     /** The number of milliseconds before the clipboard times out. */
@@ -45,6 +62,7 @@ enum
 /** Opaque data structure for the X11/VBox frontend/glue code. */
 struct _VBOXCLIPBOARDCONTEXT;
 typedef struct _VBOXCLIPBOARDCONTEXT VBOXCLIPBOARDCONTEXT;
+typedef struct _VBOXCLIPBOARDCONTEXT *PVBOXCLIPBOARDCONTEXT;
 
 /** Opaque data structure for the X11/VBox backend code. */
 struct _CLIPBACKEND;

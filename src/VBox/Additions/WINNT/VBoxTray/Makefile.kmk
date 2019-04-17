@@ -36,7 +36,6 @@ VBoxTray_SOURCES  = \
 	VBoxTray.cpp \
 	VBoxDispIf.cpp \
 	VBoxSeamless.cpp \
-	VBoxClipboard.cpp \
 	VBoxDisplay.cpp \
 	VBoxVRDP.cpp \
 	VBoxIPC.cpp \
@@ -45,6 +44,13 @@ VBoxTray_SOURCES  = \
 VBoxTray_USES.win = vboximportchecker
 VBoxTray_VBOX_IMPORT_CHECKER.win.x86 = nt4 #nt350
 VBoxTray_VBOX_IMPORT_CHECKER.win.amd64 = xp64
+ifdef VBOX_WITH_SHARED_CLIPBOARD
+ VBoxTray_DEFS     += \
+	VBOX_WITH_SHARED_CLIPBOARD
+ VBoxTray_SOURCES  += \
+	VBoxClipboard.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-win.cpp
+endif
 ifdef VBOX_WITH_DRAG_AND_DROP
  VBoxTray_DEFS     += \
 	VBOX_WITH_DRAG_AND_DROP \

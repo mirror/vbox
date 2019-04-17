@@ -42,13 +42,6 @@
 #define VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL 3
 
 /*
- * Supported data formats. Bit mask.
- */
-#define VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT   UINT32_C(0x01)
-#define VBOX_SHARED_CLIPBOARD_FMT_BITMAP        UINT32_C(0x02)
-#define VBOX_SHARED_CLIPBOARD_FMT_HTML          UINT32_C(0x04)
-
-/*
  * The service functions which are callable by host.
  */
 #define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE      1
@@ -66,13 +59,6 @@
 #define VBOX_SHARED_CLIPBOARD_FN_READ_DATA         3
 /* Send data in requested format to host. */
 #define VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA        4
-
-/*
- * The host messages for the guest.
- */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT        1
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA   2
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS     3
 
 /*
  * HGCM parameter structures.
