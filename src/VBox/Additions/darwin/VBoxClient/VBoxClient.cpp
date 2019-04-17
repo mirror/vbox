@@ -44,7 +44,9 @@ static PRTLOGGER            g_pLogger = NULL;
 
 static VBOXCLIENTSERVICE    g_aServices[] =
 {
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
     g_ClipboardService
+#endif
 };
 
 

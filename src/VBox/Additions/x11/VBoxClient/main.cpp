@@ -191,7 +191,10 @@ static void vboxClientSetSignalHandlers(void)
  */
 static void vboxClientUsage(const char *pcszFileName)
 {
-    RTPrintf("Usage: %s --clipboard|"
+    RTPrintf("Usage: %s "
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+             "--clipboard|"
+#endif
 #ifdef VBOX_WITH_DRAG_AND_DROP
              "--draganddrop|"
 #endif
@@ -204,7 +207,9 @@ static void vboxClientUsage(const char *pcszFileName)
              "[-d|--nodaemon]\n", pcszFileName);
     RTPrintf("Starts the VirtualBox DRM/X Window System guest services.\n\n");
     RTPrintf("Options:\n");
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
     RTPrintf("  --clipboard        starts the shared clipboard service\n");
+#endif
 #ifdef VBOX_WITH_DRAG_AND_DROP
     RTPrintf("  --draganddrop      starts the drag and drop service\n");
 #endif
@@ -287,12 +292,14 @@ int main(int argc, char *argv[])
         {
             fRespawn = false;
         }
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
         else if (!strcmp(argv[i], "--clipboard"))
         {
             if (g_pService)
                 return vbclSyntaxOnlyOneService();
             g_pService = VBClGetClipboardService();
         }
+#endif
         else if (!strcmp(argv[i], "--display"))
         {
             if (g_pService)
