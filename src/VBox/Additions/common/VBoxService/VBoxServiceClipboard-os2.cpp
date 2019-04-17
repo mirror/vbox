@@ -52,6 +52,7 @@
 #include <iprt/time.h>
 #include <iprt/utf16.h>
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include "VBoxServiceInternal.h"
 
