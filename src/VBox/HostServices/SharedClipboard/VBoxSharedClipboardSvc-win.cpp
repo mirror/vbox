@@ -102,22 +102,22 @@ static void vboxClipboardDump(const void *pv, size_t cb, uint32_t u32Format)
         LogFunc(("Invalid format %02X\n", u32Format));
 }
 #else  /* !LOG_ENABLED */
-# define vboxClipboardDump(__pv, __cb, __format) do { NOREF(__pv); NOREF(__cb); NOREF(__format); } while (0)
+#   define vboxClipboardDump(__pv, __cb, __format) do { NOREF(__pv); NOREF(__cb); NOREF(__format); } while (0)
 #endif /* !LOG_ENABLED */
 
 /** @todo Someone please explain the protocol wrt overflows...  */
-static void vboxClipboardGetData (uint32_t u32Format, const void *pvSrc, uint32_t cbSrc,
-                                  void *pvDst, uint32_t cbDst, uint32_t *pcbActualDst)
+static void vboxClipboardGetData(uint32_t u32Format, const void *pvSrc, uint32_t cbSrc,
+                                 void *pvDst, uint32_t cbDst, uint32_t *pcbActualDst)
 {
     LogFlow(("vboxClipboardGetData cbSrc = %d, cbDst = %d\n", cbSrc, cbDst));
 
-    if (   u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML
+    if (u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML
         && IsWindowsHTML((const char *)pvSrc))
     {
         /** @todo r=bird: Why the double conversion? */
         char *pszBuf = NULL;
         uint32_t cbBuf = 0;
-        int rc = ConvertCFHtmlToMime((const char*)pvSrc, cbSrc, &pszBuf, &cbBuf);
+        int rc = ConvertCFHtmlToMime((const char *)pvSrc, cbSrc, &pszBuf, &cbBuf);
         if (RT_SUCCESS(rc))
         {
             *pcbActualDst = cbBuf;
@@ -151,7 +151,7 @@ static void vboxClipboardGetData (uint32_t u32Format, const void *pvSrc, uint32_
     return;
 }
 
-static int vboxClipboardReadDataFromClient (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format)
+static int vboxClipboardReadDataFromClient(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format)
 {
     Assert(pCtx->pClient);
     Assert(pCtx->hRenderEvent);
@@ -159,9 +159,9 @@ static int vboxClipboardReadDataFromClient (VBOXCLIPBOARDCONTEXT *pCtx, uint32_t
 
     LogFlow(("vboxClipboardReadDataFromClient u32Format = %02X\n", u32Format));
 
-    ResetEvent (pCtx->hRenderEvent);
+    ResetEvent(pCtx->hRenderEvent);
 
-    vboxSvcClipboardReportMsg (pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, u32Format);
+    vboxSvcClipboardReportMsg(pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, u32Format);
 
     DWORD ret = WaitForSingleObject(pCtx->hRenderEvent, INFINITE);
     LogFlow(("vboxClipboardReadDataFromClient wait completed, ret 0x%08X, err %d\n",
@@ -474,7 +474,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
     return rc;
 }
 
-DECLCALLBACK(int) VBoxClipboardThread (RTTHREAD hThreadSelf, void *pvUser)
+DECLCALLBACK(int) VBoxClipboardThread(RTTHREAD hThreadSelf, void *pvUser)
 {
     RT_NOREF2(hThreadSelf, pvUser);
     /* Create a window and make it a clipboard viewer. */
@@ -507,10 +507,10 @@ DECLCALLBACK(int) VBoxClipboardThread (RTTHREAD hThreadSelf, void *pvUser)
     else
     {
         /* Create the window. */
-        pWinCtx->hWnd = CreateWindowEx (WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
-                                        s_szClipWndClassName, s_szClipWndClassName,
-                                        WS_POPUPWINDOW,
-                                        -200, -200, 100, 100, NULL, NULL, hInstance, NULL);
+        pWinCtx->hWnd = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
+                                       s_szClipWndClassName, s_szClipWndClassName,
+                                       WS_POPUPWINDOW,
+                                       -200, -200, 100, 100, NULL, NULL, hInstance, NULL);
         if (pWinCtx->hWnd == NULL)
         {
             Log(("Failed to create window\n"));
@@ -546,7 +546,7 @@ DECLCALLBACK(int) VBoxClipboardThread (RTTHREAD hThreadSelf, void *pvUser)
 
     if (atomWindowClass != 0)
     {
-        UnregisterClass (s_szClipWndClassName, hInstance);
+        UnregisterClass(s_szClipWndClassName, hInstance);
         atomWindowClass = 0;
     }
 
@@ -578,7 +578,7 @@ static int vboxClipboardSyncInternal(PVBOXCLIPBOARDCONTEXT pCtx)
 /*
  * Public platform dependent functions.
  */
-int vboxClipboardInit (void)
+int vboxClipboardInit(void)
 {
     int rc = VINF_SUCCESS;
 
@@ -589,35 +589,35 @@ int vboxClipboardInit (void)
 
     g_ctx.hRenderEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-    rc = RTThreadCreate (&g_ctx.hThread, VBoxClipboardThread, NULL, 65536,
-                         RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
+    rc = RTThreadCreate(&g_ctx.hThread, VBoxClipboardThread, NULL, 65536,
+                        RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
 
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
     {
-        CloseHandle (g_ctx.hRenderEvent);
+        CloseHandle(g_ctx.hRenderEvent);
     }
 
     return rc;
 }
 
-void vboxClipboardDestroy (void)
+void vboxClipboardDestroy(void)
 {
     Log(("vboxClipboardDestroy\n"));
 
     if (g_ctx.Win.hWnd)
     {
-        PostMessage (g_ctx.Win.hWnd, WM_CLOSE, 0, 0);
+        PostMessage(g_ctx.Win.hWnd, WM_CLOSE, 0, 0);
     }
 
-    CloseHandle (g_ctx.hRenderEvent);
+    CloseHandle(g_ctx.hRenderEvent);
 
     /* Wait for the window thread to terminate. */
-    RTThreadWait (g_ctx.hThread, RT_INDEFINITE_WAIT, NULL);
+    RTThreadWait(g_ctx.hThread, RT_INDEFINITE_WAIT, NULL);
 
     g_ctx.hThread = NIL_RTTHREAD;
 }
 
-int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
+int vboxClipboardConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
 {
     NOREF(fHeadless);
     Log(("vboxClipboardConnect\n"));
@@ -633,18 +633,18 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
     pClient->pCtx->pClient = pClient;
 
     /* Sync the host clipboard content with the client. */
-    vboxClipboardSync (pClient);
+    vboxClipboardSync(pClient);
 
     return VINF_SUCCESS;
 }
 
-int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
+int vboxClipboardSync(VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     /* Sync the host clipboard content with the client. */
     return vboxClipboardSyncInternal(pClient->pCtx);
 }
 
-void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
+void vboxClipboardDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     RT_NOREF1(pClient);
     Log(("vboxClipboardDisconnect\n"));
@@ -652,7 +652,7 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
     g_ctx.pClient = NULL;
 }
 
-void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
+void vboxClipboardFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
 {
     AssertPtrReturnVoid(pClient);
     AssertPtrReturnVoid(pClient->pCtx);
@@ -660,7 +660,7 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32
     /*
      * The guest announces formats. Forward to the window thread.
      */
-    PostMessage (pClient->pCtx->Win.hWnd, WM_USER, 0, u32Formats);
+    PostMessage(pClient->pCtx->Win.hWnd, WM_USER, 0, u32Formats);
 }
 
 int DumpHtml(const char *pszSrc, size_t cb)
@@ -693,7 +693,7 @@ int DumpHtml(const char *pszSrc, size_t cb)
     return rc;
 }
 
-int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual)
+int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual)
 {
     AssertPtrReturn(pClient,       VERR_INVALID_POINTER);
     AssertPtrReturn(pClient->pCtx, VERR_INVALID_POINTER);
@@ -714,18 +714,18 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
 
         if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
         {
-            hClip = GetClipboardData (CF_DIB);
+            hClip = GetClipboardData(CF_DIB);
 
             if (hClip != NULL)
             {
-                LPVOID lp = GlobalLock (hClip);
+                LPVOID lp = GlobalLock(hClip);
 
                 if (lp != NULL)
                 {
                     LogFunc(("CF_DIB\n"));
 
-                    vboxClipboardGetData (VBOX_SHARED_CLIPBOARD_FMT_BITMAP, lp, GlobalSize (hClip),
-                                          pv, cb, pcbActual);
+                    vboxClipboardGetData(VBOX_SHARED_CLIPBOARD_FMT_BITMAP, lp, GlobalSize(hClip),
+                                         pv, cb, pcbActual);
 
                     GlobalUnlock(hClip);
                 }
@@ -741,14 +741,14 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
 
             if (hClip != NULL)
             {
-                LPWSTR uniString = (LPWSTR)GlobalLock (hClip);
+                LPWSTR uniString = (LPWSTR)GlobalLock(hClip);
 
                 if (uniString != NULL)
                 {
                     LogFunc(("CF_UNICODETEXT\n"));
 
-                    vboxClipboardGetData (VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, uniString, (lstrlenW (uniString) + 1) * 2,
-                                          pv, cb, pcbActual);
+                    vboxClipboardGetData(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, uniString, (lstrlenW(uniString) + 1) * 2,
+                                         pv, cb, pcbActual);
 
                     GlobalUnlock(hClip);
                 }
@@ -760,24 +760,24 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
         }
         else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_HTML)
         {
-            UINT format = RegisterClipboardFormat ("HTML Format");
+            UINT format = RegisterClipboardFormat("HTML Format");
 
             if (format != 0)
             {
-                hClip = GetClipboardData (format);
+                hClip = GetClipboardData(format);
 
                 if (hClip != NULL)
                 {
-                    LPVOID lp = GlobalLock (hClip);
+                    LPVOID lp = GlobalLock(hClip);
 
                     if (lp != NULL)
                     {
                         LogFunc(("CF_HTML\n"));
 
-                        vboxClipboardGetData (VBOX_SHARED_CLIPBOARD_FMT_HTML, lp, GlobalSize (hClip),
-                                              pv, cb, pcbActual);
+                        vboxClipboardGetData(VBOX_SHARED_CLIPBOARD_FMT_HTML, lp, GlobalSize(hClip),
+                                             pv, cb, pcbActual);
                         LogRelFlowFunc(("Raw HTML clipboard data from host :"));
-                        DumpHtml((char*)pv, cb);
+                        DumpHtml((char *)pv, cb);
                         GlobalUnlock(hClip);
                     }
                     else
@@ -798,14 +798,14 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
     if (hClip == NULL)
     {
         /* Reply with empty data. */
-        vboxClipboardGetData (0, NULL, 0,
-                              pv, cb, pcbActual);
+        vboxClipboardGetData(0, NULL, 0,
+                             pv, cb, pcbActual);
     }
 
     return VINF_SUCCESS;
 }
 
-void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format)
+void vboxClipboardWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format)
 {
     LogFlow(("vboxClipboardWriteData\n"));
 
@@ -887,8 +887,8 @@ static int GetHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *p
  */
 static bool IsWindowsHTML(const char *pszSource)
 {
-    return RTStrStr(pszSource, "Version:") != NULL
-        && RTStrStr(pszSource, "StartHTML:") != NULL;
+    return    RTStrStr(pszSource, "Version:") != NULL
+           && RTStrStr(pszSource, "StartHTML:") != NULL;
 }
 
 
@@ -1036,7 +1036,7 @@ static int ConvertMimeToCFHTML(const char *pszSource, size_t cb, char **ppszOutp
     /* 157+2: */ "</body>\r\n"
     /* 166+2: */ "</html>\r\n";
     /* 175+2: */
-    AssertCompile(sizeof(s_szFormatSample) == 175+2+1);
+    AssertCompile(sizeof(s_szFormatSample) == 175 + 2 + 1);
 
     /* calculate parameters of CF_HTML header */
     size_t cchHeader      = sizeof(s_szFormatSample) - 1;

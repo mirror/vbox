@@ -120,8 +120,8 @@ static void testGetHostMsg(void)
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG,
                   2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
-    vboxSvcClipboardReportMsg (&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
-                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+    vboxSvcClipboardReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+                              VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
@@ -132,8 +132,8 @@ static void testGetHostMsg(void)
 
     RTTestISub("Testing FN_GET_HOST_MSG, one format, no waiting guest calls.");
     RT_ZERO(g_Client);
-    vboxSvcClipboardReportMsg (&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
-                               VBOX_SHARED_CLIPBOARD_FMT_HTML);
+    vboxSvcClipboardReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+                              VBOX_SHARED_CLIPBOARD_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
@@ -155,8 +155,8 @@ static void testGetHostMsg(void)
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG,
                   2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
-    vboxSvcClipboardReportMsg (&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
-                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT | VBOX_SHARED_CLIPBOARD_FMT_HTML);
+    vboxSvcClipboardReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+                              VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT | VBOX_SHARED_CLIPBOARD_FMT_HTML);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
@@ -173,8 +173,8 @@ static void testGetHostMsg(void)
 
     RTTestISub("Testing FN_GET_HOST_MSG, two formats, no waiting guest calls.");
     RT_ZERO(g_Client);
-    vboxSvcClipboardReportMsg (&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
-                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT | VBOX_SHARED_CLIPBOARD_FMT_HTML);
+    vboxSvcClipboardReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+                              VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT | VBOX_SHARED_CLIPBOARD_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
@@ -273,14 +273,14 @@ int main(int argc, char *argv[])
 }
 
 int vboxClipboardInit() { return VINF_SUCCESS; }
-void vboxClipboardDestroy() {}
-void vboxClipboardDisconnect(_VBOXCLIPBOARDCLIENTDATA*) { AssertFailed(); }
-int vboxClipboardConnect(_VBOXCLIPBOARDCLIENTDATA*, bool)
+void vboxClipboardDestroy() { }
+void vboxClipboardDisconnect(_VBOXCLIPBOARDCLIENTDATA *) { AssertFailed(); }
+int vboxClipboardConnect(_VBOXCLIPBOARDCLIENTDATA *, bool)
 { AssertFailed(); return VERR_WRONG_ORDER; }
-void vboxClipboardFormatAnnounce(_VBOXCLIPBOARDCLIENTDATA*, unsigned int)
+void vboxClipboardFormatAnnounce(_VBOXCLIPBOARDCLIENTDATA *, unsigned int)
 { AssertFailed(); }
-int vboxClipboardReadData(_VBOXCLIPBOARDCLIENTDATA*, unsigned int, void*, unsigned int, unsigned int*)
+int vboxClipboardReadData(_VBOXCLIPBOARDCLIENTDATA *, unsigned int, void *, unsigned int, unsigned int *)
 { AssertFailed(); return VERR_WRONG_ORDER; }
-void vboxClipboardWriteData(_VBOXCLIPBOARDCLIENTDATA*, void*, unsigned int, unsigned int) { AssertFailed(); }
-int vboxClipboardSync(_VBOXCLIPBOARDCLIENTDATA*)
+void vboxClipboardWriteData(_VBOXCLIPBOARDCLIENTDATA *, void *, unsigned int, unsigned int) { AssertFailed(); }
+int vboxClipboardSync(_VBOXCLIPBOARDCLIENTDATA *)
 { AssertFailed(); return VERR_WRONG_ORDER; }
