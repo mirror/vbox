@@ -245,6 +245,8 @@ static bool vboxSvcClipboardReturnMsg (VBOXCLIPBOARDCLIENTDATA *pClient, VBOXHGC
 
 void vboxSvcClipboardReportMsg (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg, uint32_t u32Formats)
 {
+    AssertPtrReturnVoid(pClient);
+
     if (VBoxSvcClipboardLock())
     {
         switch (u32Msg)

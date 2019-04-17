@@ -559,6 +559,11 @@ DECLCALLBACK(int) VBoxClipboardThread (RTTHREAD hThreadSelf, void *pvUser)
  */
 static int vboxClipboardSyncInternal(PVBOXCLIPBOARDCONTEXT pCtx)
 {
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    if (pCtx->pClient == NULL) /* If we don't have any client data (yet), bail out. */
+        return VINF_SUCCESS;
+
     uint32_t uFormats;
     int rc = VBoxClipboardWinGetFormats(&pCtx->Win, &uFormats);
     if (RT_SUCCESS(rc))
