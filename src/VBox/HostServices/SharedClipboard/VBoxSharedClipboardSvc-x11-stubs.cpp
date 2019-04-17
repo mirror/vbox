@@ -133,4 +133,3 @@ void vboxClipboardWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t
     LogFlowFunc(("called, returning.\n"));
 }
 
-
