@@ -114,10 +114,13 @@ class UIFormEditorCell : public QITableViewCell
 public:
 
     /** Constructs table cell on the basis of certain @a strText, passing @a pParent to the base-class. */
-    UIFormEditorCell(QITableViewRow *pParent, const QString &strText);
+    UIFormEditorCell(QITableViewRow *pParent, const QString &strText = QString());
 
     /** Returns the cell text. */
     virtual QString text() const /* override */ { return m_strText; }
+
+    /** Defines the cell @a strText. */
+    void setText(const QString &strText) { m_strText = strText; }
 
 private:
 
@@ -168,6 +171,9 @@ private:
     void prepare();
     /** Cleanups all. */
     void cleanup();
+
+    /** Updates value cells. */
+    void updateValueCells();
 
     /** Holds the row value. */
     CFormValue  m_comValue;
@@ -250,7 +256,7 @@ protected:
 *   Class UIFormEditorCell implementation.                                                                                       *
 *********************************************************************************************************************************/
 
-UIFormEditorCell::UIFormEditorCell(QITableViewRow *pParent, const QString &strText)
+UIFormEditorCell::UIFormEditorCell(QITableViewRow *pParent, const QString &strText /* = QString() */)
     : QITableViewCell(pParent)
     , m_strText(strText)
 {
@@ -323,34 +329,15 @@ void UIFormEditorRow::prepare()
 {
     /* Cache value type: */
     m_enmValueType = m_comValue.GetType();
+    /// @todo check for errors
 
     /* Create cells on the basis of variables we have: */
     m_cells.resize(UIFormEditorDataType_Max);
-    m_cells[UIFormEditorDataType_Name] = new UIFormEditorCell(this, m_comValue.GetLabel());
-    switch (m_enmValueType)
-    {
-        case KFormValueType_Boolean:
-        {
-            CBooleanFormValue comValue(m_comValue);
-            m_cells[UIFormEditorDataType_Value] = new UIFormEditorCell(this, comValue.GetSelected() ? "True" : "False");
-            break;
-        }
-        case KFormValueType_String:
-        {
-            CStringFormValue comValue(m_comValue);
-            m_cells[UIFormEditorDataType_Value] = new UIFormEditorCell(this, comValue.GetString());
-            break;
-        }
-        case KFormValueType_Choice:
-        {
-            CChoiceFormValue comValue(m_comValue);
-            const QVector<QString> values = comValue.GetValues();
-            m_cells[UIFormEditorDataType_Value] = new UIFormEditorCell(this, values.at(comValue.GetSelectedIndex()));
-            break;
-        }
-        default:
-            break;
-    }
+    const QString strName = m_comValue.GetLabel();
+    /// @todo check for errors
+    m_cells[UIFormEditorDataType_Name] = new UIFormEditorCell(this, strName);
+    m_cells[UIFormEditorDataType_Value] = new UIFormEditorCell(this);
+    updateValueCells();
 }
 
 void UIFormEditorRow::cleanup()
@@ -358,6 +345,37 @@ void UIFormEditorRow::cleanup()
     /* Destroy cells: */
     qDeleteAll(m_cells);
     m_cells.clear();
+}
+
+void UIFormEditorRow::updateValueCells()
+{
+    switch (m_enmValueType)
+    {
+        case KFormValueType_Boolean:
+        {
+            CBooleanFormValue comValue(m_comValue);
+            m_cells[UIFormEditorDataType_Value]->setText(comValue.GetSelected() ? "True" : "False");
+            /// @todo check for errors
+            break;
+        }
+        case KFormValueType_String:
+        {
+            CStringFormValue comValue(m_comValue);
+            m_cells[UIFormEditorDataType_Value]->setText(comValue.GetString());
+            /// @todo check for errors
+            break;
+        }
+        case KFormValueType_Choice:
+        {
+            CChoiceFormValue comValue(m_comValue);
+            const QVector<QString> values = comValue.GetValues();
+            m_cells[UIFormEditorDataType_Value]->setText(values.at(comValue.GetSelectedIndex()));
+            /// @todo check for errors
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 
