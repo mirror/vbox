@@ -48,6 +48,32 @@ enum UIFormEditorDataType
 };
 
 
+/** Class used to hold choice data. */
+class ChoiceData
+{
+public:
+
+    /** Constructs null choice data. */
+    ChoiceData() {}
+    /** Constructs choice data on the basis of passed @a choices and @a iSelectedChoice. */
+    ChoiceData(const QVector<QString> &choices, int iSelectedChoice)
+        : m_choices(choices), m_iSelectedChoice(iSelectedChoice) {}
+
+    /** Returns choice list. */
+    QVector<QString> choices() const { return m_choices; }
+    /** Returns current selected choice. */
+    int selectedChoice() const { return m_iSelectedChoice; }
+
+private:
+
+    /** Holds choice list. */
+    QVector<QString>  m_choices;
+    /** Holds current selected choice. */
+    int               m_iSelectedChoice;
+};
+Q_DECLARE_METATYPE(ChoiceData);
+
+
 /** QComboBox extension used as Port editor. */
 class ChoiceEditor : public QComboBox
 {
@@ -390,7 +416,9 @@ Qt::ItemFlags UIFormEditorModel::flags(const QModelIndex &index) const
         case UIFormEditorDataType_Name:
             return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
         case UIFormEditorDataType_Value:
-            return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+            return   m_dataList[index.row()]->valueType() != KFormValueType_Boolean
+                   ? Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable
+                   : Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable;
         default:
             return Qt::NoItemFlags;
     }
