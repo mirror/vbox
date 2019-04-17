@@ -34,6 +34,7 @@
 
 #include <iprt/path.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/ldr.h>
 #include <iprt/log.h>
@@ -681,7 +682,13 @@ RTDECL(int) RTPathGetCurrent(char *pszPath, size_t cchPath)
         {
             RTUTF16 wszFullPath[RTPATH_MAX];
             if (GetFullPathNameW(wszCurPath, RTPATH_MAX, wszFullPath, NULL))
+            {
+                if (   wszFullPath[1] == ':'
+                    && RT_C_IS_LOWER(wszFullPath[0]))
+                    wszFullPath[0] = RT_C_TO_UPPER(wszFullPath[0]);
+
                 rc = RTUtf16ToUtf8Ex(&wszFullPath[0], RTSTR_MAX, &pszPath, cchPath, NULL);
+            }
             else
                 rc = RTErrConvertFromWin32(GetLastError());
         }

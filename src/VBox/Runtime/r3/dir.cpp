@@ -533,8 +533,6 @@ static int rtDirOpenCommon(RTDIR *phDir, const char *pszPath, const char *pszFil
     bool   fDirSlash = false;
     if (!pszFilter)
     {
-        /* Note! RTPathAbs currently strips trailing slashes, so we have
-           to inspect pszPath to figure it out. */
         if (*pszPath != '\0')
         {
             const char *pszLast = strchr(pszPath, '\0') - 1;
