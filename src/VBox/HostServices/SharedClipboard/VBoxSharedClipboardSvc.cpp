@@ -108,9 +108,6 @@ static uint32_t g_u32DelayedFormats = 0;
 /** Is the clipboard running in headless mode? */
 static bool g_fHeadless = false;
 
-static bool vboxSvcClipboardLock(void);
-static void vboxSvcClipboardUnlock(void);
-
 
 static void VBoxHGCMParmUInt32Set (VBOXHGCMSVCPARM *pParm, uint32_t u32)
 {
@@ -186,14 +183,14 @@ static void vboxSvcClipboardModeSet (uint32_t u32Mode)
     }
 }
 
-static bool vboxSvcClipboardLock (void)
+bool VBoxSvcClipboardLock(void)
 {
     return RT_SUCCESS(RTCritSectEnter (&critsect));
 }
 
-static void vboxSvcClipboardUnlock(void)
+void VBoxSvcClipboardUnlock(void)
 {
-    RTCritSectLeave (&critsect);
+    RTCritSectLeave(&critsect);
 }
 
 /* Set the HGCM parameters according to pending messages.
@@ -248,7 +245,7 @@ static bool vboxSvcClipboardReturnMsg (VBOXCLIPBOARDCLIENTDATA *pClient, VBOXHGC
 
 void vboxSvcClipboardReportMsg (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg, uint32_t u32Formats)
 {
-    if (vboxSvcClipboardLock ())
+    if (VBoxSvcClipboardLock())
     {
         switch (u32Msg)
         {
@@ -304,7 +301,7 @@ void vboxSvcClipboardReportMsg (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Ms
                 pClient->fAsync = false;
             }
 
-            vboxSvcClipboardUnlock ();
+            VBoxSvcClipboardUnlock();
 
             if (fMessageReturned)
             {
@@ -314,7 +311,7 @@ void vboxSvcClipboardReportMsg (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Ms
         }
         else
         {
-            vboxSvcClipboardUnlock ();
+            VBoxSvcClipboardUnlock();
         }
     }
 }
@@ -454,7 +451,7 @@ static DECLCALLBACK(void) svcCall (void *,
             else
             {
                 /* Atomically verify the client's state. */
-                if (vboxSvcClipboardLock ())
+                if (VBoxSvcClipboardLock())
                 {
                     bool fMessageReturned = vboxSvcClipboardReturnMsg (pClient, paParms);
 
@@ -475,7 +472,7 @@ static DECLCALLBACK(void) svcCall (void *,
                         LogRel2(("svcCall: async.\n"));
                     }
 
-                    vboxSvcClipboardUnlock ();
+                    VBoxSvcClipboardUnlock();
                 }
                 else
                 {
@@ -605,13 +602,13 @@ static DECLCALLBACK(void) svcCall (void *,
                          * information. */
                         if (rc == VINF_HGCM_ASYNC_EXECUTE)
                         {
-                            if (vboxSvcClipboardLock())
+                            if (VBoxSvcClipboardLock())
                             {
                                 pClient->asyncRead.callHandle = callHandle;
                                 pClient->asyncRead.paParms    = paParms;
                                 pClient->fReadPending         = true;
                                 fAsynchronousProcessing = true;
-                                vboxSvcClipboardUnlock();
+                                VBoxSvcClipboardUnlock();
                             }
                             else
                                 rc = VERR_NOT_SUPPORTED;
@@ -702,13 +699,13 @@ void vboxSvcClipboardCompleteReadData(VBOXCLIPBOARDCLIENTDATA *pClient, int rc, 
     VBOXHGCMCALLHANDLE callHandle = NULL;
     VBOXHGCMSVCPARM *paParms = NULL;
     bool fReadPending = false;
-    if (vboxSvcClipboardLock())  /* if not can we do anything useful? */
+    if (VBoxSvcClipboardLock())  /* if not can we do anything useful? */
     {
         callHandle   = pClient->asyncRead.callHandle;
         paParms      = pClient->asyncRead.paParms;
         fReadPending = pClient->fReadPending;
         pClient->fReadPending = false;
-        vboxSvcClipboardUnlock();
+        VBoxSvcClipboardUnlock();
     }
     if (fReadPending)
     {
