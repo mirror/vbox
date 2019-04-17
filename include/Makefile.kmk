@@ -110,7 +110,7 @@ VBOX_HDRS_OMIT := \
 		VBox/GuestHost/SharedClipboard-win.h \
 		VBox/usblib-win.h \
 		VBox/VBoxDrvCfg-win.h \
-		VBox/VBoxNetCfg-win.h
+		VBox/VBoxNetCfg-win.h \
 	,$(VBOX_HDRS_GCC_ONLY)) \
 	\
 	VBox/dbus-calls.h \
