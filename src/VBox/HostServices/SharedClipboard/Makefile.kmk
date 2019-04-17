@@ -33,22 +33,22 @@ VBoxSharedClipboard_INCS.win  = \
 VBoxSharedClipboard_SOURCES = \
 	VBoxSharedClipboardSvc.cpp
 VBoxSharedClipboard_SOURCES.win = \
-	VBoxClipboard-win.cpp \
+	VBoxSharedClipboardSvc-win.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-win.cpp \
 	VBoxSharedClipboardSvc.rc
 VBoxSharedClipboard_SOURCES.darwin = \
-	darwin.cpp \
+	VBoxSharedClipboardSvc-darwin.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-helper.cpp \
 	darwin-pasteboard.cpp
 if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo X11
  ifndef VBOX_HEADLESS
   VBoxSharedClipboard_SOURCES += \
-  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-helper.cpp \
-  	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/x11-clipboard.cpp \
-  	x11-clipboard.cpp
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-helper.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/x11-clipboard.cpp \
+	VBoxSharedClipboardSvc-x11.cpp
  else
   VBoxSharedClipboard_SOURCES += \
-  	x11-stub.cpp
+	VBoxSharedClipboardSvc-x11-stubs.cpp
  endif
 endif
 
@@ -79,7 +79,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  TESTING += $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
  tstClipboardX11-2_TEMPLATE = VBOXR3TSTEXE
  tstClipboardX11-2_DEFS     = VBOX_WITH_HGCM TESTCASE
- tstClipboardX11-2_SOURCES  = x11-clipboard.cpp
+ tstClipboardX11-2_SOURCES  = VBoxSharedClipboardSvc-x11.cpp
  tstClipboardX11-2_LIBS     = $(LIB_RUNTIME)
  tstClipboardX11-2_CLEANS   = $(tstClipboardX11-2_0_OUTDIR)/tstClipboardX11-2.run
 
