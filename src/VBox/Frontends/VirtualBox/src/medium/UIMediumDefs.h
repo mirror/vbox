@@ -91,6 +91,7 @@ struct UIMediumTarget
     {
         UIMediumTargetType_WithID,
         UIMediumTargetType_WithLocation,
+        UIMediumTargetType_WithFileDialog,
         UIMediumTargetType_CreateAdHocVISO,
         UIMediumTargetType_CreateFloppyDisk
     };
