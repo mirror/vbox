@@ -121,4 +121,6 @@ typedef struct _VBoxClipboardWriteData
 
 #pragma pack()
 
+bool VBoxSvcClipboardGetHeadless(void);
+
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h */

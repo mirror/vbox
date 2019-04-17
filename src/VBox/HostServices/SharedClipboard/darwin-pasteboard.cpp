@@ -31,6 +31,7 @@
 
 #include "VBox/log.h"
 #include "VBox/HostServices/VBoxClipboardSvc.h"
+#include "VBox/GuestHost/SharedClipboard.h"
 #include "VBox/GuestHost/clipboard-helper.h"
 
 

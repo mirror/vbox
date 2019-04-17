@@ -108,7 +108,6 @@ static uint32_t g_u32DelayedFormats = 0;
 /** Is the clipboard running in headless mode? */
 static bool g_fHeadless = false;
 
-static bool vboxSvcClipboardGetHeadless(void);
 static bool vboxSvcClipboardLock(void);
 static void vboxSvcClipboardUnlock(void);
 
@@ -165,8 +164,8 @@ uint32_t TestClipSvcGetMode(void)
 }
 #endif
 
-/** Getter for headless setting */
-static bool vboxSvcClipboardGetHeadless(void)
+/** Getter for headless setting. Also needed by testcase. */
+bool VBoxSvcClipboardGetHeadless(void)
 {
     return g_fHeadless;
 }
@@ -394,7 +393,7 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
 
     pClient->u32ClientID = u32ClientID;
 
-    rc = vboxClipboardConnect (pClient, vboxSvcClipboardGetHeadless());
+    rc = vboxClipboardConnect (pClient, VBoxSvcClipboardGetHeadless());
 
     if (RT_SUCCESS (rc))
     {
