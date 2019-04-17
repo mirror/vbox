@@ -100,9 +100,9 @@ static int vboxClipboardThread (RTTHREAD ThreadSelf, void *pvUser)
     {
         /* call this behind the lock because we don't know if the api is
            thread safe and in any case we're calling several methods. */
-        vboxSvcClipboardLock();
+        VBoxSvcClipboardLock();
         vboxClipboardChanged (pCtx);
-        vboxSvcClipboardUnlock();
+        VBoxSvcClipboardUnlock();
 
         /* Sleep for 200 msecs before next poll */
         RTThreadUserWait (ThreadSelf, 200);
@@ -175,7 +175,7 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
         return VERR_NOT_SUPPORTED;
     }
 
-    vboxSvcClipboardLock();
+    VBoxSvcClipboardLock();
 
     pClient->pCtx = &g_ctx;
     pClient->pCtx->pClient = pClient;
@@ -183,7 +183,7 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
     /* Initially sync the host clipboard content with the client. */
     int rc = vboxClipboardSync (pClient);
 
-    vboxSvcClipboardUnlock();
+    VBoxSvcClipboardUnlock();
     return rc;
 }
 
@@ -194,9 +194,9 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
 int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     /* Sync the host clipboard content with the client. */
-    vboxSvcClipboardLock();
+    VBoxSvcClipboardLock();
     int rc = vboxClipboardChanged (pClient->pCtx);
-    vboxSvcClipboardUnlock();
+    VBoxSvcClipboardUnlock();
 
     return rc;
 }
@@ -208,9 +208,9 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     Log (("vboxClipboardDisconnect\n"));
 
-    vboxSvcClipboardLock();
+    VBoxSvcClipboardLock();
     pClient->pCtx->pClient = NULL;
-    vboxSvcClipboardUnlock();
+    VBoxSvcClipboardUnlock();
 }
 
 /**
@@ -245,13 +245,13 @@ void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32
 int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
                            void *pv, uint32_t cb, uint32_t * pcbActual)
 {
-    vboxSvcClipboardLock();
+    VBoxSvcClipboardLock();
 
     /* Default to no data available. */
     *pcbActual = 0;
     int rc = readFromPasteboard (pClient->pCtx->pasteboard, u32Format, pv, cb, pcbActual);
 
-    vboxSvcClipboardUnlock();
+    VBoxSvcClipboardUnlock();
     return rc;
 }
 
@@ -266,9 +266,9 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
 void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient, void *pv,
                              uint32_t cb, uint32_t u32Format)
 {
-    vboxSvcClipboardLock();
+    VBoxSvcClipboardLock();
 
     writeToPasteboard (pClient->pCtx->pasteboard, pv, cb, u32Format);
 
-    vboxSvcClipboardUnlock();
+    VBoxSvcClipboardUnlock();
 }
