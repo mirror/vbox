@@ -32,6 +32,7 @@
 #include <iprt/dir.h>
 #include "internal/iprt.h"
 
+#include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
@@ -726,13 +727,25 @@ RTDECL(bool) RTDirIsValid(RTDIR hDir)
 
 RTDECL(int) RTDirFlushParent(const char *pszChild)
 {
-    char szPath[RTPATH_MAX];
-    int rc = RTStrCopy(szPath, sizeof(szPath), pszChild);
-    if (RT_SUCCESS(rc))
+    char        *pszPath;
+    char        *pszPathFree = NULL;
+    size_t const cchChild    = strlen(pszChild);
+    if (cchChild < RTPATH_MAX)
+        pszPath = (char *)alloca(cchChild);
+    else
     {
-        RTPathStripFilename(szPath);
-        rc = RTDirFlush(szPath);
+        pszPathFree = pszPath = (char *)RTMemTmpAlloc(cchChild + 1);
+        if (!pszPath)
+            return VERR_NO_TMP_MEMORY;
     }
+    memcpy(pszPath, pszChild, cchChild);
+    pszPath[cchChild] = '\0';
+    RTPathStripFilename(pszPath);
+
+    int rc = RTDirFlush(pszPath);
+
+    if (pszPathFree)
+        RTMemTmpFree(pszPathFree);
     return rc;
 }
 

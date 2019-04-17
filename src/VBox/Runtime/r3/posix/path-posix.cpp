@@ -42,6 +42,7 @@
 #include <iprt/path.h>
 #include <iprt/env.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
@@ -345,13 +346,41 @@ RTDECL(bool) RTPathExistsEx(const char *pszPath, uint32_t fFlags)
 
 RTDECL(int)  RTPathGetCurrent(char *pszPath, size_t cchPath)
 {
-    int rc;
+    /*
+     * Try with a reasonably sized buffer first.
+     */
     char szNativeCurDir[RTPATH_MAX];
     if (getcwd(szNativeCurDir, sizeof(szNativeCurDir)) != NULL)
-        rc = rtPathFromNativeCopy(pszPath, cchPath, szNativeCurDir, NULL);
-    else
-        rc = RTErrConvertFromErrno(errno);
-    return rc;
+        return rtPathFromNativeCopy(pszPath, cchPath, szNativeCurDir, NULL);
+
+    /*
+     * Retry a few times with really big buffers if we failed because CWD is unreasonably long.
+     */
+    int iErr = errno;
+    if (iErr != ERANGE)
+        return RTErrConvertFromErrno(iErr);
+
+    size_t cbNativeTmp = RTPATH_BIG_MAX;
+    for (;;)
+    {
+        char *pszNativeTmp = (char *)RTMemTmpAlloc(cbNativeTmp);
+        if (!pszNativeTmp)
+            return VERR_NO_TMP_MEMORY;
+        if (getcwd(pszNativeTmp, cbNativeTmp) != NULL)
+        {
+            int rc = rtPathFromNativeCopy(pszPath, cchPath, pszNativeTmp, NULL);
+            RTMemTmpFree(pszNativeTmp);
+            return rc;
+        }
+        iErr = errno;
+        RTMemTmpFree(pszNativeTmp);
+        if (iErr != ERANGE)
+            return RTErrConvertFromErrno(iErr);
+
+        cbNativeTmp += RTPATH_BIG_MAX;
+        if (cbNativeTmp > RTPATH_BIG_MAX * 4)
+            return VERR_FILENAME_TOO_LONG;
+    }
 }
 
 
