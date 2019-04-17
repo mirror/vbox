@@ -106,10 +106,11 @@ VBOX_HDRS_OMIT := \
 	VBox/VDEPlugSymDefs.h \
 	VBox/VBoxNetCmn-win.h \
 	$(if-expr "$(KBUILD_TARGET)" != "win", \
-		VBox/VBoxDrvCfg-win.h \
-		VBox/VBoxNetCfg-win.h \
-		VBox/usblib-win.h \
 		VBox/com/microatl.h \
+		VBox/GuestHost/SharedClipboard-win.h \
+		VBox/usblib-win.h \
+		VBox/VBoxDrvCfg-win.h \
+		VBox/VBoxNetCfg-win.h
 	,$(VBOX_HDRS_GCC_ONLY)) \
 	\
 	VBox/dbus-calls.h \
