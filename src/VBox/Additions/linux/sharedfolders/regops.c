@@ -1309,7 +1309,7 @@ DECLINLINE(void) vbsf_get_page(struct page *pPage)
 
 
 /** Companion to vbsf_lock_user_pages(). */
-DECLINLINE(void) vbsf_unlock_user_pages(struct page **papPages, size_t cPages, bool fSetDirty, bool fLockPgHack)
+static void vbsf_unlock_user_pages(struct page **papPages, size_t cPages, bool fSetDirty, bool fLockPgHack)
 {
     /* We don't mark kernel pages dirty: */
     if (fLockPgHack)
