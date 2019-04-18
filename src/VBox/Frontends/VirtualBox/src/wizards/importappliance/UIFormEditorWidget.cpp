@@ -58,6 +58,9 @@ public:
     /** Constructs choice data on the basis of passed @a choices and @a iSelectedChoice. */
     ChoiceData(const QVector<QString> &choices, int iSelectedChoice)
         : m_choices(choices), m_iSelectedChoice(iSelectedChoice) {}
+    /** Constructs choice data on the basis of another @a choice data. */
+    ChoiceData(const ChoiceData &choice)
+        : m_choices(choice.choices()), m_iSelectedChoice(choice.selectedChoice()) {}
 
     /** Returns choice list. */
     QVector<QString> choices() const { return m_choices; }
@@ -89,7 +92,7 @@ public:
 private:
 
     /** Defines the @a choice. */
-    void setChoice(ChoiceData choice)
+    void setChoice(const ChoiceData &choice)
     {
         addItems(choice.choices().toList());
         setCurrentIndex(choice.selectedChoice());
@@ -162,7 +165,7 @@ public:
     /** Returns value cast to choice. */
     ChoiceData toChoice() const;
     /** Defines @a choice value. */
-    void setChoice(ChoiceData choice);
+    void setChoice(const ChoiceData &choice);
 
 protected:
 
@@ -363,7 +366,7 @@ ChoiceData UIFormEditorRow::toChoice() const
     return ChoiceData(comValue.GetValues(), comValue.GetSelectedIndex());
 }
 
-void UIFormEditorRow::setChoice(ChoiceData choice)
+void UIFormEditorRow::setChoice(const ChoiceData &choice)
 {
     AssertReturnVoid(valueType() == KFormValueType_Choice);
     CChoiceFormValue comValue(m_comValue);
