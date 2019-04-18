@@ -170,6 +170,9 @@ public:
     /** Updates value cells. */
     void updateValueCells();
 
+    /** Check whether generation value is changed. */
+    bool isGenerationChanged() const;
+
 protected:
 
     /** Returns the number of children. */
@@ -189,6 +192,9 @@ private:
 
     /** Holds the value type. */
     KFormValueType  m_enmValueType;
+
+    /** Holds current generation value. */
+    int  m_iGeneration;
 
     /** Holds the cell instances. */
     QVector<UIFormEditorCell*>  m_cells;
@@ -237,6 +243,9 @@ private:
     /** Return the parent table-view reference. */
     QITableView *parentTable() const;
 
+    /** Updates row generation values. */
+    void updateGeneration();
+
     /** Holds the Form Editor row list. */
     QList<UIFormEditorRow*>  m_dataList;
 };
@@ -280,6 +289,7 @@ UIFormEditorRow::UIFormEditorRow(QITableView *pParent, const CFormValue &comValu
     : QITableViewRow(pParent)
     , m_comValue(comValue)
     , m_enmValueType(KFormValueType_Max)
+    , m_iGeneration(0)
 {
     prepare();
 }
@@ -395,6 +405,9 @@ void UIFormEditorRow::setChoice(const ChoiceData &choice)
 
 void UIFormEditorRow::updateValueCells()
 {
+    m_iGeneration = m_comValue.GetGeneration();
+    /// @todo check for errors
+
     switch (m_enmValueType)
     {
         case KFormValueType_Boolean:
@@ -415,13 +428,20 @@ void UIFormEditorRow::updateValueCells()
         {
             CChoiceFormValue comValue(m_comValue);
             const QVector<QString> values = comValue.GetValues();
-            m_cells[UIFormEditorDataType_Value]->setText(values.at(comValue.GetSelectedIndex()));
+            m_cells[UIFormEditorDataType_Value]->setText(values.isEmpty() ? QString() : values.at(comValue.GetSelectedIndex()));
             /// @todo check for errors
             break;
         }
         default:
             break;
     }
+}
+
+bool UIFormEditorRow::isGenerationChanged() const
+{
+    const int iGeneration = m_comValue.GetGeneration();
+    /// @todo check for errors
+    return m_iGeneration != iGeneration;
 }
 
 int UIFormEditorRow::childCount() const
@@ -572,6 +592,7 @@ bool UIFormEditorModel::setData(const QModelIndex &index, const QVariant &value,
                         const Qt::CheckState enmCheckState = static_cast<Qt::CheckState>(value.toInt());
                         m_dataList[index.row()]->setBool(enmCheckState == Qt::Checked);
                         emit dataChanged(index, index);
+                        updateGeneration();
                         return true;
                     }
                     else
@@ -594,10 +615,12 @@ bool UIFormEditorModel::setData(const QModelIndex &index, const QVariant &value,
                         case KFormValueType_String:
                             m_dataList[index.row()]->setString(value.toString());
                             emit dataChanged(index, index);
+                            updateGeneration();
                             return true;
                         case KFormValueType_Choice:
                             m_dataList[index.row()]->setChoice(value.value<ChoiceData>());
                             emit dataChanged(index, index);
+                            updateGeneration();
                             return true;
                         default:
                             return false;
@@ -698,6 +721,13 @@ QVariant UIFormEditorModel::data(const QModelIndex &index, int iRole) const
 QITableView *UIFormEditorModel::parentTable() const
 {
     return qobject_cast<QITableView*>(parent());
+}
+
+void UIFormEditorModel::updateGeneration()
+{
+    foreach (UIFormEditorRow *pRow, m_dataList)
+        if (pRow->isGenerationChanged())
+            pRow->updateValueCells();
 }
 
 
