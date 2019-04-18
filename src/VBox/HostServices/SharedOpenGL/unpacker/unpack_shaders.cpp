@@ -452,7 +452,7 @@ void crUnpackExtendGetAttribLocation(PCrUnpackerState pState)
     const char *name = DATA_POINTER(pState, 12, const char);
 
     size_t cchStr = CHECK_STRING_FROM_PTR_UPDATE_NO_RETURN(pState, name);
-    if (RT_UNLIKELY(cchStr == SIZE_MAX || packet_length != cchStr + 2 * sizeof(CRNetworkPointer)))
+    if (RT_UNLIKELY(cchStr == ~(size_t)0 || packet_length != cchStr + 2 * sizeof(CRNetworkPointer)))
     {
         crError("crUnpackExtendGetAttribLocation: packet_length is corrupt");
         return;
@@ -473,7 +473,7 @@ void crUnpackExtendGetUniformLocation(PCrUnpackerState pState)
     const char *name = DATA_POINTER(pState, 12, const char);
 
     size_t cchStr = CHECK_STRING_FROM_PTR_UPDATE_NO_RETURN(pState, name);
-    if (RT_UNLIKELY(cchStr == SIZE_MAX || packet_length != cchStr + 2 * sizeof(CRNetworkPointer)))
+    if (RT_UNLIKELY(cchStr == ~(size_t)0 || packet_length != cchStr + 2 * sizeof(CRNetworkPointer)))
     {
         crError("crUnpackExtendGetUniformLocation: packet_length is corrupt");
         return;
