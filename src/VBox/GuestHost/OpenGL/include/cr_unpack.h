@@ -125,7 +125,7 @@ DECLINLINE(size_t) crUnpackAcccessChkStrUpdate(PCrUnpackerState pState, const ch
     if (!pv)
     {
         pState->rcUnpack = VERR_BUFFER_OVERFLOW;
-        return SIZE_MAX;
+        return ~(size_t)0;
     }
 
     cchStr = (uint8_t *)pv - pState->pbUnpackData + 1;
@@ -140,7 +140,7 @@ DECLINLINE(size_t) crUnpackAcccessChkStrUpdate(PCrUnpackerState pState, const ch
     do \
     { \
         size_t cchStr = crUnpackAcccessChkStrUpdate((a_pState), (a_pszStr), &int_cbAccessVerified); \
-        if (RT_UNLIKELY(cchStr == SIZE_MAX)) \
+        if (RT_UNLIKELY(cchStr == ~(size_t)0)) \
             return; \
     } \
     while (0)
@@ -164,7 +164,7 @@ DECLINLINE(size_t) crUnpackAcccessChkStrUpdate(PCrUnpackerState pState, const ch
 #define INCR_DATA_PTR(a_pState, delta ) \
     do \
     { \
-        if (RT_UNLIKELY((a_pState)->cbUnpackDataLeft < (delta))) \
+        if (RT_UNLIKELY((a_pState)->cbUnpackDataLeft < (size_t)(delta))) \
         { \
           (a_pState)->rcUnpack = VERR_BUFFER_OVERFLOW; \
           return; \

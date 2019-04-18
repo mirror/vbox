@@ -8,16 +8,7 @@
 #include "unpack_extend.h"
 #include "unpacker.h"
 #include "cr_glstate.h"
-/**
- * \mainpage Unpacker 
- *
- * \section UnpackerIntroduction Introduction
- *
- * Chromium consists of all the top-level files in the cr
- * directory.  The unpacker module basically takes care of API dispatch,
- * and OpenGL state management.
- *
- */
+
 
 void crUnpackExtendVertexPointer(PCrUnpackerState pState)
 {

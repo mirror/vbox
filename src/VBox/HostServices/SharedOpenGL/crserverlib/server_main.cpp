@@ -45,16 +45,6 @@ HCRHGSMICMDCOMPLETION g_hCrHgsmiCompletion = NULL;
 PFNCRHGSMICMDCOMPLETION g_pfnCrHgsmiCompletion = NULL;
 #endif
 
-/**
- * \mainpage CrServerLib
- *
- * \section CrServerLibIntroduction Introduction
- *
- * Chromium consists of all the top-level files in the cr
- * directory.  The core module basically takes care of API dispatch,
- * and OpenGL state management.
- */
-
 
 /**
  * CRServer global data
