@@ -99,6 +99,7 @@ private:
     QProgressBar           *m_pProgressBar;
     QIToolButton           *m_pCancelButton;
     QILabel                *m_pStatusLabel;
+    QILabel                *m_pOperationDescriptionLabel;
 };
 
 
@@ -115,6 +116,7 @@ UIFileOperationProgressWidget::UIFileOperationProgressWidget(const CProgress &co
     , m_pProgressBar(0)
     , m_pCancelButton(0)
     , m_pStatusLabel(0)
+    , m_pOperationDescriptionLabel(0)
 {
     prepare();
     setFocusPolicy(Qt::ClickFocus);
@@ -199,13 +201,20 @@ void UIFileOperationProgressWidget::prepareWidgets()
         return;
     //m_pMainLayout->setSpacing(0);
 
+    m_pOperationDescriptionLabel = new QILabel;
+    if (m_pOperationDescriptionLabel)
+    {
+        m_pOperationDescriptionLabel->setContextMenuPolicy(Qt::NoContextMenu);
+        m_pMainLayout->addWidget(m_pOperationDescriptionLabel, 0, 0, 1, 3);
+    }
+
     m_pProgressBar = new QProgressBar;
     if (m_pProgressBar)
     {
         m_pProgressBar->setMinimum(0);
         m_pProgressBar->setMaximum(100);
         m_pProgressBar->setTextVisible(true);
-        m_pMainLayout->addWidget(m_pProgressBar, 0, 0, 1, 2);
+        m_pMainLayout->addWidget(m_pProgressBar, 1, 0, 1, 2);
     }
 
     m_pCancelButton = new QIToolButton;
@@ -215,14 +224,14 @@ void UIFileOperationProgressWidget::prepareWidgets()
         connect(m_pCancelButton, &QIToolButton::clicked, this, &UIFileOperationProgressWidget::sltCancelProgress);
         if (!m_comProgress.isNull() && !m_comProgress.GetCancelable())
             m_pCancelButton->setEnabled(false);
-        m_pMainLayout->addWidget(m_pCancelButton, 0, 2, 1, 1);
+        m_pMainLayout->addWidget(m_pCancelButton, 1, 2, 1, 1);
     }
 
     m_pStatusLabel = new QILabel;
     if (m_pStatusLabel)
     {
         m_pStatusLabel->setContextMenuPolicy(Qt::NoContextMenu);
-        m_pMainLayout->addWidget(m_pStatusLabel, 0, 3, 1, 1);
+        m_pMainLayout->addWidget(m_pStatusLabel, 1, 3, 1, 1);
     }
 
     setLayout(m_pMainLayout);
@@ -252,6 +261,10 @@ void UIFileOperationProgressWidget::sltHandleProgressPercentageChange(const QUui
 {
     Q_UNUSED(uProgressId);
     m_pProgressBar->setValue(iPercent);
+
+    if (m_pOperationDescriptionLabel)
+        m_pOperationDescriptionLabel->setText(m_comProgress.GetDescription());
+
 }
 
 void UIFileOperationProgressWidget::sltHandleProgressComplete(const QUuid &uProgressId)
