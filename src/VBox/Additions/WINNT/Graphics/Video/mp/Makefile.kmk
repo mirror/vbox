@@ -118,6 +118,7 @@ ifdef VBOX_WITH_WDDM
 	wddm/VBoxMPShgsmi.cpp \
  	wddm/VBoxMPCm.cpp \
  	wddm/VBoxMPCr.cpp \
+ 	wddm/VBoxMPSa.cpp \
  	wddm/VBoxMPMisc.cpp \
  	wddm/VBoxWddm.rc \
  	wddm/VBoxMPRegistry.cpp \
@@ -131,9 +132,6 @@ ifdef VBOX_WITH_WDDM
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
 
- VBoxWddm_SOURCES         += \
-	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/util/sortarray.cpp
-
  if defined(VBOX_WITH_CROGL)
    VBoxWddm_SOURCES       += \
 	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/util/vreg.cpp \
@@ -141,7 +139,6 @@ ifdef VBOX_WITH_WDDM
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_bounds.c \
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_visibleregion.c \
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer/pack_misc.c \
- 	$(VBOX_PATH_CROGL_GENFILES)/pack_bounds_swap.c \
  	$(VBOX_PATH_CROGL_GENFILES)/packer.c \
  	wddm/VBoxMPCrUtil.cpp
    VBoxWddm_DEFS          += VBOX_WITH_CROGL

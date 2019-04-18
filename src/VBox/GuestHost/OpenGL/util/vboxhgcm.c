@@ -31,7 +31,6 @@
 #include "cr_bufpool.h"
 #include "cr_mem.h"
 #include "cr_string.h"
-#include "cr_endian.h"
 #include "cr_threads.h"
 #include "net_internals.h"
 #include "cr_process.h"
@@ -1184,9 +1183,8 @@ static void crVBoxHGCMReceiveMessage(CRConnection *conn)
 /*
  * Called on host side only, to "accept" client connection
  */
-static void crVBoxHGCMAccept( CRConnection *conn, const char *hostname, unsigned short port )
+static void crVBoxHGCMAccept( CRConnection *conn)
 {
-    RT_NOREF(hostname, port);
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
     CRASSERT(conn && conn->pHostBuffer);
 #ifdef IN_GUEST
@@ -2066,7 +2064,7 @@ static void crVBoxHGSMIReceiveMessage(CRConnection *conn)
 /*
  * Called on host side only, to "accept" client connection
  */
-static void crVBoxHGSMIAccept( CRConnection *conn, const char *hostname, unsigned short port )
+static void crVBoxHGSMIAccept( CRConnection *conn)
 {
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
     CRASSERT(0);
@@ -2185,10 +2183,8 @@ static void crVBoxHGSMIHandleNewMessage( CRConnection *conn, CRMessage *msg, uns
 }
 #endif
 
-void crVBoxHGCMInit(CRNetReceiveFuncList *rfl, CRNetCloseFuncList *cfl, unsigned int mtu)
+void crVBoxHGCMInit(CRNetReceiveFuncList *rfl, CRNetCloseFuncList *cfl)
 {
-    (void) mtu;
-
     g_crvboxhgcm.recv_list = rfl;
     g_crvboxhgcm.close_list = cfl;
     if (g_crvboxhgcm.initialized)

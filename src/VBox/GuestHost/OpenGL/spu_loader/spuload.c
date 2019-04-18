@@ -5,7 +5,6 @@
  */
 
 #include "cr_mem.h"
-#include "cr_environment.h"
 #include "cr_string.h"
 #include "cr_dll.h"
 #include "cr_error.h"
@@ -119,7 +118,6 @@ SPU * crSPULoad( SPU *child, int id, char *name, char *dir, void *server )
         if (!the_spu->entry_point( &(the_spu->name), &(the_spu->super_name),
                                    &(the_spu->init), &(the_spu->self),
                                    &(the_spu->cleanup),
-                                   &(the_spu->options),
                                    &(the_spu->spu_flags)) )
         {
                 crError( "I found the SPU \"%s\", but loading it failed!", name );

@@ -81,7 +81,6 @@ struct context_info_t {
 
 typedef struct {
     int id;
-    int swap;
 
     /* config options */
     int emit_GATHER_POST_SWAPBUFFERS;

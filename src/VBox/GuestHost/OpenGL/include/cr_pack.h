@@ -11,7 +11,6 @@
 #include "cr_error.h"
 #include "cr_protocol.h"
 #include "cr_opcodes.h"
-#include "cr_endian.h"
 #include "state/cr_statetypes.h"
 #include "state/cr_currentpointers.h"
 #include "state/cr_client.h"
@@ -83,7 +82,6 @@ struct CRPackContext_t
     uint32_t u32CmdBlockState;
     GLvectorf bounds_min, bounds_max;
     int updateBBOX;
-    int swapping;
     CRPackBuffer *currentBuffer;
 #ifdef CHROMIUM_THREADSAFE
     CRmutex mutex;
@@ -121,7 +119,7 @@ extern uint32_t cr_packer_cmd_blocks_enabled;
 # define CR_UNLOCK_PACKER_CONTEXT(PC)
 #endif
 
-extern DECLEXPORT(CRPackContext *) crPackNewContext(int swapping);
+extern DECLEXPORT(CRPackContext *) crPackNewContext(void);
 extern DECLEXPORT(void) crPackDeleteContext(CRPackContext *pc);
 extern DECLEXPORT(void) crPackSetContext( CRPackContext *pc );
 extern DECLEXPORT(CRPackContext *) crPackGetContext( void );
@@ -163,7 +161,6 @@ extern DECLEXPORT(int) crPackCanHoldBoundedBuffer( CR_PACKER_CONTEXT_ARGDECL con
 #endif
 #ifndef IN_RING0
 extern DECLEXPORT(void) crWriteUnalignedDouble( void *buffer, double d );
-extern DECLEXPORT(void) crWriteSwappedDouble( void *buffer, double d );
 #endif
 
 extern DECLEXPORT(void) *crPackAlloc( CR_PACKER_CONTEXT_ARGDECL unsigned int len );

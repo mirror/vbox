@@ -109,7 +109,7 @@ for func_name in keys:
         print('\t%s' % (condition))
         print('\t{')
         print('\t\tcr_server.head_spu->dispatch_table.%s(%s);' % (func_name, apiutil.MakeCallStringForDispatcher(params) ))
-        print("\t\tcr_server.current.c.%s.%s%s = cr_unpackData;" % (name,type,array))
+        print("\t\tcr_server.current.c.%s.%s%s = cr_server.pUnpackerState->pbUnpackData;" % (name,type,array))
         print('\t}')
         print('}\n')
 

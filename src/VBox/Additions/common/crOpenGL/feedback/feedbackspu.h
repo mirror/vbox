@@ -17,7 +17,6 @@
 #endif
 
 #include "cr_spu.h"
-#include "cr_timer.h"
 #include "cr_glstate.h"
 
 typedef struct context_info_t ContextInfo;
@@ -50,8 +49,6 @@ typedef struct {
 extern feedbackSPU feedback_spu;
 
 extern SPUNamedFunctionTable _cr_feedback_table[];
-
-extern SPUOptions feedbackSPUOptions[];
 
 extern void feedbackspuGatherConfiguration( void );
 

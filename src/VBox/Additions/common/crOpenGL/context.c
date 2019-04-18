@@ -28,7 +28,6 @@
 #include "cr_spu.h"
 #include "cr_mem.h"
 #include "cr_string.h"
-#include "cr_environment.h"
 #include "stub.h"
 
 /**

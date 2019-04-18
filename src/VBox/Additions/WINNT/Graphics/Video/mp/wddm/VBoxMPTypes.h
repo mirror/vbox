@@ -35,13 +35,12 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #include "VBoxMPShgsmi.h"
 #include "VBoxMPVbva.h"
 #include "VBoxMPCr.h"
+#include "VBoxMPSa.h"
 #include "VBoxMPVModes.h"
 
 #ifdef VBOX_WITH_CROGL
 #include <cr_vreg.h>
 #endif
-
-#include <cr_sortarray.h>
 
 #if 0
 #include <iprt/avl.h>

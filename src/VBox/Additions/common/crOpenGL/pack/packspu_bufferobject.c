@@ -139,14 +139,8 @@ void PACKSPU_APIENTRY packspu_GenBuffersARB( GLsizei n, GLuint * buffer )
     {
         crError( "packspu_GenBuffersARB doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
     }
-    if (pack_spu.swap)
-    {
-        crPackGenBuffersARBSWAP( n, buffer, &writeback );
-    }
-    else
-    {
-        crPackGenBuffersARB( n, buffer, &writeback );
-    }
+
+    crPackGenBuffersARB( n, buffer, &writeback );
     packspuFlush( (void *) thread );
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 

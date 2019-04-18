@@ -5,7 +5,6 @@
  */
 
 #include "cr_spu.h"
-#include "cr_environment.h"
 #include "cr_string.h"
 #include "cr_error.h"
 #include "cr_mem.h"
@@ -72,14 +71,13 @@ static int feedbackSPUCleanup(void)
 
 int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
 	     SPUSelfDispatchFuncPtr *self, SPUCleanupFuncPtr *cleanup,
-	     SPUOptionsPtr *options, int *flags )
+	     int *flags )
 {
 	*name = "feedback";
 	*super = "passthrough";
 	*init = feedbackSPUInit;
 	*self = feedbackSPUSelfDispatch;
 	*cleanup = feedbackSPUCleanup;
-	*options = feedbackSPUOptions;
 	*flags = (SPU_NO_PACKER|SPU_NOT_TERMINAL|SPU_MAX_SERVERS_ZERO);
 
 	return 1;

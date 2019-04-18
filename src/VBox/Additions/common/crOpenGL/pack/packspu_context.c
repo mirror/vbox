@@ -68,7 +68,7 @@ ThreadInfo *packspuNewThread(
     CRASSERT(thread->netServer.conn);
     /* packer setup */
     CRASSERT(thread->packer == NULL);
-    thread->packer = crPackNewContext( pack_spu.swap );
+    thread->packer = crPackNewContext();
     CRASSERT(thread->packer);
     crPackInitBuffer( &(thread->buffer), crNetAlloc(thread->netServer.conn),
                 thread->netServer.conn->buffer_size, thread->netServer.conn->mtu );
@@ -356,10 +356,7 @@ packspu_VBoxCreateContext( GLint con, const char *dpyName, GLint visual, GLint s
     crPackSetContext( thread->packer );
 
     /* Pack the command */
-    if (pack_spu.swap)
-        crPackCreateContextSWAP( dpyName, visual, shareCtx, &serverCtx, &writeback );
-    else
-        crPackCreateContext( dpyName, visual, shareCtx, &serverCtx, &writeback );
+    crPackCreateContext( dpyName, visual, shareCtx, &serverCtx, &writeback );
 
     /* Flush buffer and get return value */
     packspuFlush(thread);
@@ -384,9 +381,6 @@ packspu_VBoxCreateContext( GLint con, const char *dpyName, GLint visual, GLint s
     else {
         CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
-        if (pack_spu.swap) {
-            serverCtx = (GLint) SWAP32(serverCtx);
-        }
         if (serverCtx < 0) {
 #ifdef CHROMIUM_THREADSAFE
             crUnlockMutex(&_PackMutex);
@@ -471,11 +465,7 @@ void PACKSPU_APIENTRY packspu_DestroyContext( GLint ctx )
             }
         }
 
-        if (pack_spu.swap)
-            crPackDestroyContextSWAP( context->serverCtx );
-        else
-            crPackDestroyContext( context->serverCtx );
-
+        crPackDestroyContext( context->serverCtx );
         crStateDestroyContext( context->clientState );
 
         context->clientState = NULL;
@@ -599,11 +589,7 @@ void PACKSPU_APIENTRY packspu_MakeCurrent( GLint window, GLint nativeWindow, GLi
         serverCtx = 0;
     }
 
-    if (pack_spu.swap)
-        crPackMakeCurrentSWAP( window, nativeWindow, serverCtx );
-    else
-        crPackMakeCurrent( window, nativeWindow, serverCtx );
-
+    crPackMakeCurrent( window, nativeWindow, serverCtx );
     if (serverCtx)
     {
         packspuInitStrings();

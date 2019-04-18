@@ -8,9 +8,10 @@
 #include "state/cr_statetypes.h"
 #include "state.h"
 #include "cr_error.h"
-#include "cr_environment.h"
 #include <stdarg.h>
 #include <stdio.h>
+
+#include <iprt/env.h>
 
 void crStateError( int line, const char *file, GLenum error, const char *format, ... )
 {
@@ -24,7 +25,7 @@ void crStateError( int line, const char *file, GLenum error, const char *format,
 	    g->error = error;
 
 #ifndef DEBUG_misha
-	if (crGetenv("CR_DEBUG"))
+	if (RTEnvExist("CR_DEBUG"))
 #endif
 	{
 		char *glerr;

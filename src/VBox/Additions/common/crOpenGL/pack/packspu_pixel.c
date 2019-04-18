@@ -329,10 +329,7 @@ void PACKSPU_APIENTRY packspu_ReadPixels( GLint x, GLint y, GLsizei width, GLsiz
 void PACKSPU_APIENTRY packspu_CopyPixels( GLint x, GLint y, GLsizei width, GLsizei height, GLenum type )
 {
     GET_THREAD(thread);
-    if (pack_spu.swap)
-        crPackCopyPixelsSWAP( x, y, width, height, type );
-    else
-        crPackCopyPixels( x, y, width, height, type );
+    crPackCopyPixels( x, y, width, height, type );
     /* XXX why flush here? */
     packspuFlush( (void *) thread );
 }
@@ -377,11 +374,7 @@ void PACKSPU_APIENTRY packspu_TexImage1D( GLenum target, GLint level, GLint inte
         packspu_ApplyUnpackState();
     }
 
-    if (pack_spu.swap)
-        crPackTexImage1DSWAP( target, level, internalformat, width, border, format, type, pixels, &(clientState->unpack) );
-    else
-        crPackTexImage1D( target, level, internalformat, width, border, format, type, pixels, &(clientState->unpack) );
-
+    crPackTexImage1D( target, level, internalformat, width, border, format, type, pixels, &(clientState->unpack) );
     if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
     {
         packspu_RestoreUnpackState();
@@ -410,11 +403,7 @@ void PACKSPU_APIENTRY packspu_TexImage2D( GLenum target, GLint level, GLint inte
         packspu_ApplyUnpackState();
     }
 
-    if (pack_spu.swap)
-        crPackTexImage2DSWAP( target, level, internalformat, width, height, border, format, type, pixels, &(clientState->unpack) );
-    else
-        crPackTexImage2D( target, level, internalformat, width, height, border, format, type, pixels, &(clientState->unpack) );
-
+    crPackTexImage2D( target, level, internalformat, width, height, border, format, type, pixels, &(clientState->unpack) );
     if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
     {
         packspu_RestoreUnpackState();
@@ -432,11 +421,7 @@ void PACKSPU_APIENTRY packspu_TexImage3DEXT( GLenum target, GLint level, GLenum 
         packspu_ApplyUnpackState();
     }
 
-    if (pack_spu.swap)
-        crPackTexImage3DEXTSWAP( target, level, internalformat, width, height, depth, border, format, type, pixels, &(clientState->unpack) );
-    else
-        crPackTexImage3DEXT( target, level, internalformat, width, height, depth, border, format, type, pixels, &(clientState->unpack) );
-
+    crPackTexImage3DEXT( target, level, internalformat, width, height, depth, border, format, type, pixels, &(clientState->unpack) );
     if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
     {
         packspu_RestoreUnpackState();
@@ -455,11 +440,7 @@ void PACKSPU_APIENTRY packspu_TexImage3D(GLenum target, GLint level, GLint inter
         packspu_ApplyUnpackState();
     }
 
-    if (pack_spu.swap)
-        crPackTexImage3DSWAP( target, level, internalformat, width, height, depth, border, format, type, pixels, &(clientState->unpack) );
-    else
-        crPackTexImage3D( target, level, internalformat, width, height, depth, border, format, type, pixels, &(clientState->unpack) );
-
+    crPackTexImage3D( target, level, internalformat, width, height, depth, border, format, type, pixels, &(clientState->unpack) );
     if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
     {
         packspu_RestoreUnpackState();
@@ -483,11 +464,7 @@ void PACKSPU_APIENTRY packspu_TexSubImage1D( GLenum target, GLint level, GLint x
         packspu_ApplyUnpackState();
     }
 
-    if (pack_spu.swap)
-        crPackTexSubImage1DSWAP( target, level, xoffset, width, format, type, pixels, &(clientState->unpack) );
-    else
-        crPackTexSubImage1D( target, level, xoffset, width, format, type, pixels, &(clientState->unpack) );
-
+    crPackTexSubImage1D( target, level, xoffset, width, format, type, pixels, &(clientState->unpack) );
     if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
     {
         packspu_RestoreUnpackState();
@@ -510,11 +487,7 @@ void PACKSPU_APIENTRY packspu_TexSubImage2D( GLenum target, GLint level, GLint x
         packspu_ApplyUnpackState();
     }
 
-    if (pack_spu.swap)
-        crPackTexSubImage2DSWAP( target, level, xoffset, yoffset, width, height, format, type, pixels, &(clientState->unpack) );
-    else
-        crPackTexSubImage2D( target, level, xoffset, yoffset, width, height, format, type, pixels, &(clientState->unpack) );
-
+    crPackTexSubImage2D( target, level, xoffset, yoffset, width, height, format, type, pixels, &(clientState->unpack) );
     if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
     {
         packspu_RestoreUnpackState();
@@ -532,11 +505,7 @@ void PACKSPU_APIENTRY packspu_TexSubImage3D( GLenum target, GLint level, GLint x
         packspu_ApplyUnpackState();
     }
 
-    if (pack_spu.swap)
-        crPackTexSubImage3DSWAP( target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels, &(clientState->unpack) );
-    else
-        crPackTexSubImage3D( target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels, &(clientState->unpack) );
-
+    crPackTexSubImage3D( target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels, &(clientState->unpack) );
     if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
     {
         packspu_RestoreUnpackState();
@@ -548,10 +517,7 @@ void PACKSPU_APIENTRY packspu_ZPixCR( GLsizei width, GLsizei height, GLenum form
 {
     GET_CONTEXT(ctx);
     CRClientState *clientState = &(ctx->clientState->client);
-    if (pack_spu.swap)
-        crPackZPixCRSWAP( width, height, format, type, ztype, zparm, length, pixels, &(clientState->unpack) );
-    else
-        crPackZPixCR( width, height, format, type, ztype, zparm, length, pixels, &(clientState->unpack) );
+    crPackZPixCR( width, height, format, type, ztype, zparm, length, pixels, &(clientState->unpack) );
 }
 
 void PACKSPU_APIENTRY packspu_GetTexImage (GLenum target, GLint level, GLenum format, GLenum type, GLvoid *pixels)
@@ -571,11 +537,7 @@ void PACKSPU_APIENTRY packspu_GetTexImage (GLenum target, GLint level, GLenum fo
         packspu_ApplyPackState();
     }
 
-    if (pack_spu.swap)
-        crPackGetTexImageSWAP( target, level, format, type, pixels, &(clientState->pack), &writeback );
-    else
-        crPackGetTexImage( target, level, format, type, pixels, &(clientState->pack), &writeback );
-
+    crPackGetTexImage( target, level, format, type, pixels, &(clientState->pack), &writeback );
     if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
     {
         packspu_RestorePackState();
@@ -600,15 +562,7 @@ void PACKSPU_APIENTRY packspu_GetCompressedTexImageARB( GLenum target, GLint lev
         packspu_ApplyPackState();
     }
 
-    if (pack_spu.swap)
-    {
-        crPackGetCompressedTexImageARBSWAP( target, level, img, &writeback );
-    }
-    else
-    {
-        crPackGetCompressedTexImageARB( target, level, img, &writeback );
-    }
-
+    crPackGetCompressedTexImageARB( target, level, img, &writeback );
     if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
     {
         packspu_RestorePackState();

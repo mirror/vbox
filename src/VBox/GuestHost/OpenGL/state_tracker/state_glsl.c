@@ -23,6 +23,8 @@
 #include "cr_mem.h"
 #include "cr_string.h"
 
+#include <stdio.h> /*sprintf*/
+
 static CRGLSLShader* crStateGetShaderObj(GLuint id)
 {
     CRContext *g = GetCurrentContext();

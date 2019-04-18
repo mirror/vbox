@@ -84,10 +84,7 @@ void PACKSPU_APIENTRY packspu_ChromiumParametervCR(GLenum target, GLenum type, G
             break;
     }
 
-    if (pack_spu.swap)
-        crPackChromiumParametervCRSWAP(target, type, count, values);
-    else
-        crPackChromiumParametervCR(target, type, count, values);
+    crPackChromiumParametervCR(target, type, count, values);
 
     if (fFlush)
         packspuFlush( (void *) thread );
@@ -130,23 +127,12 @@ void PACKSPU_APIENTRY packspu_Finish( void )
     GET_THREAD(thread);
     GLint writeback = CRPACKSPU_IS_WDDM_CRHGSMI() ? 1 : pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network;
 
-    if (pack_spu.swap)
-    {
-        crPackFinishSWAP();
-    }
-    else
-    {
-        crPackFinish();
-    }
-
+    crPackFinish();
     if (packspuSyncOnFlushes())
     {
         if (writeback)
         {
-            if (pack_spu.swap)
-                crPackWritebackSWAP(&writeback);
-            else
-                crPackWriteback(&writeback);
+            crPackWriteback(&writeback);
 
             packspuFlush( (void *) thread );
 
@@ -276,15 +262,7 @@ GLint PACKSPU_APIENTRY packspu_VBoxWindowCreate( GLint con, const char *dpyName,
     CRASSERT(crPackGetContext() == (curThread ? curThread->packer : NULL));
 
     crPackSetContext(thread->packer);
-
-    if (pack_spu.swap)
-    {
-        crPackWindowCreateSWAP( dpyName, visBits, &return_val, &writeback );
-    }
-    else
-    {
-        crPackWindowCreate( dpyName, visBits, &return_val, &writeback );
-    }
+    crPackWindowCreate( dpyName, visBits, &return_val, &writeback );
     packspuFlush(thread);
     if (!(thread->netServer.conn->actual_network))
     {
@@ -293,10 +271,6 @@ GLint PACKSPU_APIENTRY packspu_VBoxWindowCreate( GLint con, const char *dpyName,
     else
     {
         CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
-        if (pack_spu.swap)
-        {
-            return_val = (GLint) SWAP32(return_val);
-        }
         retVal = return_val;
     }
 
@@ -333,14 +307,7 @@ packspu_AreTexturesResident( GLsizei n, const GLuint * textures,
         crError( "packspu_AreTexturesResident doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
     }
 
-    if (pack_spu.swap)
-    {
-        crPackAreTexturesResidentSWAP( n, textures, residences, &return_val, &writeback );
-    }
-    else
-    {
-        crPackAreTexturesResident( n, textures, residences, &return_val, &writeback );
-    }
+    crPackAreTexturesResident( n, textures, residences, &return_val, &writeback );
     packspuFlush( (void *) thread );
 
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
@@ -372,14 +339,8 @@ packspu_AreProgramsResidentNV( GLsizei n, const GLuint * ids,
     {
         crError( "packspu_AreProgramsResidentNV doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
     }
-    if (pack_spu.swap)
-    {
-        crPackAreProgramsResidentNVSWAP( n, ids, residences, &return_val, &writeback );
-    }
-    else
-    {
-        crPackAreProgramsResidentNV( n, ids, residences, &return_val, &writeback );
-    }
+
+    crPackAreProgramsResidentNV( n, ids, residences, &return_val, &writeback );
     packspuFlush( (void *) thread );
 
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
@@ -402,15 +363,7 @@ void PACKSPU_APIENTRY packspu_GetPolygonStipple( GLubyte * mask )
     GET_THREAD(thread);
     int writeback = 1;
 
-    if (pack_spu.swap)
-    {
-        crPackGetPolygonStippleSWAP( mask, &writeback );
-    }
-    else
-    {
-        crPackGetPolygonStipple( mask, &writeback );
-    }
-
+    crPackGetPolygonStipple( mask, &writeback );
 #ifdef CR_ARB_pixel_buffer_object
     if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
 #endif
@@ -425,15 +378,7 @@ void PACKSPU_APIENTRY packspu_GetPixelMapfv( GLenum map, GLfloat * values )
     GET_THREAD(thread);
     int writeback = 1;
 
-    if (pack_spu.swap)
-    {
-        crPackGetPixelMapfvSWAP( map, values, &writeback );
-    }
-    else
-    {
-        crPackGetPixelMapfv( map, values, &writeback );
-    }
-
+    crPackGetPixelMapfv( map, values, &writeback );
 #ifdef CR_ARB_pixel_buffer_object
     if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
 #endif
@@ -448,14 +393,7 @@ void PACKSPU_APIENTRY packspu_GetPixelMapuiv( GLenum map, GLuint * values )
     GET_THREAD(thread);
     int writeback = 1;
 
-    if (pack_spu.swap)
-    {
-        crPackGetPixelMapuivSWAP( map, values, &writeback );
-    }
-    else
-    {
-        crPackGetPixelMapuiv( map, values, &writeback );
-    }
+    crPackGetPixelMapuiv( map, values, &writeback );
 
 #ifdef CR_ARB_pixel_buffer_object
     if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
@@ -471,15 +409,7 @@ void PACKSPU_APIENTRY packspu_GetPixelMapusv( GLenum map, GLushort * values )
     GET_THREAD(thread);
     int writeback = 1;
 
-    if (pack_spu.swap)
-    {
-        crPackGetPixelMapusvSWAP( map, values, &writeback );
-    }
-    else
-    {
-        crPackGetPixelMapusv( map, values, &writeback );
-    }
-
+    crPackGetPixelMapusv( map, values, &writeback );
 #ifdef CR_ARB_pixel_buffer_object
     if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
 #endif
@@ -557,23 +487,10 @@ GLenum PACKSPU_APIENTRY packspu_GetError( void )
     {
         crError( "packspu_GetError doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
     }
-    if (pack_spu.swap)
-    {
-        crPackGetErrorSWAP( &return_val, &writeback );
-    }
-    else
-    {
-        crPackGetError( &return_val, &writeback );
-    }
 
+    crPackGetError( &return_val, &writeback );
     packspuFlush( (void *) thread );
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
-
-    if (pack_spu.swap)
-    {
-        return_val = (GLenum) SWAP32(return_val);
-    }
-
     return return_val;
 }
 
@@ -618,7 +535,7 @@ GLint PACKSPU_APIENTRY packspu_VBoxPackSetInjectThread(struct VBOXUHGSMI *pHgsmi
         CRASSERT(thread->netServer.conn);
 
         CRASSERT(thread->packer == NULL);
-        thread->packer = crPackNewContext( pack_spu.swap );
+        thread->packer = crPackNewContext();
         CRASSERT(thread->packer);
         crPackInitBuffer(&(thread->buffer), crNetAlloc(thread->netServer.conn),
                          thread->netServer.conn->buffer_size, thread->netServer.conn->mtu);

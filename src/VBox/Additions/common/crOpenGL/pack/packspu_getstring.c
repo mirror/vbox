@@ -16,22 +16,22 @@ static GLubyte gpszExtensions[10000];
 #ifdef CR_OPENGL_VERSION_2_0
 static GLubyte gpszShadingVersion[255]="";
 #endif
+static uint32_t g_uOpenGlVersMaj = 0;
+static uint32_t g_uOpenGlVersMin = 0;
+
 
 static void GetString(GLenum name, GLubyte *pszStr)
 {
     GET_THREAD(thread);
     int writeback = 1;
 
-    if (pack_spu.swap)
-        crPackGetStringSWAP(name, pszStr, &writeback);
-    else
-        crPackGetString(name, pszStr, &writeback);
+    crPackGetString(name, pszStr, &writeback);
     packspuFlush( (void *) thread );
 
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 }
 
-static GLfloat
+static void
 GetVersionString(void)
 {
     static GLboolean fInitialized = GL_FALSE;
@@ -39,18 +39,19 @@ GetVersionString(void)
 
     if (!fInitialized)
     {
+        int iGlVersion = 0;
         GLubyte return_value[100];
 
         GetString(GL_VERSION, return_value);
         CRASSERT(crStrlen((char *)return_value) < 100);
 
-        version = crStrToFloat((char *) return_value);
-        version = crStateComputeVersion(version);
+        iGlVersion = crStrParseGlVersion((const char *) return_value);
+        g_uOpenGlVersMaj = CR_GLVERSION_GET_MAJOR(iGlVersion);
+        g_uOpenGlVersMin = CR_GLVERSION_GET_MINOR(iGlVersion);
+        crStateComputeVersion(&g_uOpenGlVersMaj, &g_uOpenGlVersMin);
 
         fInitialized = GL_TRUE;
     }
-
-    return version;
 }
 
 static const GLubyte *
@@ -64,14 +65,7 @@ GetExtensions(void)
         GET_THREAD(thread);
         int writeback = 1;
 
-        if (pack_spu.swap)
-        {
-            crPackGetStringSWAP( GL_EXTENSIONS, return_value, &writeback );
-        }
-        else
-        {
-            crPackGetString( GL_EXTENSIONS, return_value, &writeback );
-        }
+        crPackGetString( GL_EXTENSIONS, return_value, &writeback );
         packspuFlush( (void *) thread );
 
         CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
@@ -128,14 +122,13 @@ const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
 #endif
             {
                 char *oldlocale;
-                float version;
 
                 oldlocale = setlocale(LC_NUMERIC, NULL);
                 oldlocale = crStrdup(oldlocale);
                 setlocale(LC_NUMERIC, "C");
 
-                version = GetVersionString();
-                sprintf((char*)ctx->glVersion, "%.1f Chromium %s", version, CR_VERSION_STRING);
+                GetVersionString();
+                sprintf((char*)ctx->glVersion, "%u.%u Chromium %s", g_uOpenGlVersMaj, g_uOpenGlVersMin, CR_VERSION_STRING);
 
                 if (oldlocale)
                 {

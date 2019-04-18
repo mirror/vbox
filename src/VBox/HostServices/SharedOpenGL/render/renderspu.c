@@ -4,16 +4,16 @@
  * See the file LICENSE.txt for information on redistributing this software.
  */
 
-#include "cr_environment.h"
 #include "cr_string.h"
 #include "cr_error.h"
 #include "cr_mem.h"
 #include "cr_spu.h"
-#include "cr_environment.h"
 #include "renderspu.h"
 #include "cr_extstring.h"
 
 #include <iprt/asm.h>
+
+#include <stdio.h> /*sprintf*/
 
 uint32_t renderspuContextRelease(ContextInfo *context);
 uint32_t renderspuContextRetain(ContextInfo *context);
@@ -25,26 +25,10 @@ DoSync(void)
 
     out.header.type = CR_MESSAGE_OOB;
 
-    if (render_spu.is_swap_master)
-    {
-        int a;
+    crNetSend( render_spu.swap_conns[0], NULL, &out, sizeof(CRMessage));
 
-        for (a = 0; a < render_spu.num_swap_clients; a++)
-        {
-            crNetGetMessage( render_spu.swap_conns[a], &in );
-            crNetFree( render_spu.swap_conns[a], in);
-        }
-
-        for (a = 0; a < render_spu.num_swap_clients; a++)
-            crNetSend( render_spu.swap_conns[a], NULL, &out, sizeof(CRMessage));
-    }
-    else
-    {
-        crNetSend( render_spu.swap_conns[0], NULL, &out, sizeof(CRMessage));
-
-        crNetGetMessage( render_spu.swap_conns[0], &in );
-        crNetFree( render_spu.swap_conns[0], in);
-    }
+    crNetGetMessage( render_spu.swap_conns[0], &in );
+    crNetFree( render_spu.swap_conns[0], in);
 }
 
 
@@ -1360,9 +1344,6 @@ void RENDER_APIENTRY renderspuSwapBuffers( GLint window, GLint flags )
     if (render_spu.drawCursor)
         DrawCursor( render_spu.cursorX, render_spu.cursorY );
 
-    if (render_spu.swap_master_url)
-        DoSync();
-
     renderspu_SystemSwapBuffers( w, flags );
 }
 
@@ -1569,18 +1550,6 @@ renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
             {
                 switch (render_spu.server->clients[client_num]->conn->type)
                 {
-                    case CR_TCPIP:
-                        crDebug("Render SPU: AcceptClient from %s on %d",
-                            render_spu.server->clients[client_num]->conn->hostname, render_spu.gather_port);
-                        render_spu.gather_conns[client_num] =
-                                crNetAcceptClient("tcpip", NULL, port, 1024*1024,  1);
-                        break;
-
-                    case CR_GM:
-                        render_spu.gather_conns[client_num] =
-                                crNetAcceptClient("gm", NULL, port, 1024*1024,  1);
-                        break;
-
                     default:
                         crError("Render SPU: Unknown Network Type to Open Gather Connection");
                 }
@@ -1599,7 +1568,7 @@ renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
 
                 if (render_spu.gather_conns[client_num])
                 {
-                    crDebug("Render SPU: success! from %s", render_spu.gather_conns[client_num]->hostname);
+                    crDebug("Render SPU: success!");
                 }
             }
 
@@ -1628,10 +1597,6 @@ renderspuChromiumParametervCR(GLenum target, GLenum type, GLsizei count,
          * call to DoSync() we really want [this one, or the one
          * in SwapBuffers above] is not necessary -- karl
          */
-
-        if (render_spu.swap_master_url)
-            DoSync();
-
         for (client_num=0; client_num< render_spu.server->numClients; client_num++)
             crNetSend(render_spu.gather_conns[client_num], NULL, &pingback,
                                         sizeof(CRMessageHeader));

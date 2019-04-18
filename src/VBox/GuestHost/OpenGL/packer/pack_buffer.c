@@ -21,13 +21,6 @@ void crWriteUnalignedDouble( void *buffer, double d )
 	ui[1] = ((unsigned int *) &d)[1];
 }
 
-void crWriteSwappedDouble( void *buffer, double d )
-{
-	unsigned int *ui = (unsigned int *) buffer;
-	ui[0] = SWAP32(((unsigned int *) &d)[1]);
-	ui[1] = SWAP32(((unsigned int *) &d)[0]);
-}
-
 double crReadUnalignedDouble( const void *buffer )
 {
 	const unsigned int *ui = (unsigned int *) buffer;
@@ -374,11 +367,7 @@ crPackAppendBoundedBuffer( CR_PACKER_CONTEXT_ARGDECL const CRPackBuffer *src, co
         }
 	}
 
-	if (pc->swapping)
-		crPackBoundsInfoCRSWAP( CR_PACKER_CONTEXT_ARG bounds, payload, length, num_opcodes );
-	else
-		crPackBoundsInfoCR( CR_PACKER_CONTEXT_ARG bounds, payload, length, num_opcodes );
-
+	crPackBoundsInfoCR( CR_PACKER_CONTEXT_ARG bounds, payload, length, num_opcodes );
 	pc->buffer.holds_BeginEnd |= src->holds_BeginEnd;
 	pc->buffer.in_BeginEnd = src->in_BeginEnd;
 	pc->buffer.holds_List |= src->holds_List;
@@ -461,15 +450,7 @@ void *crPackAlloc( CR_PACKER_CONTEXT_ARGDECL unsigned int size )
 	 * LOW MEM         +------------------+
 	 */
 
-	if (pc->swapping)
-	{
-		*((unsigned int *) data_ptr) = SWAP32(size);
-		crDebug( "Just swapped the length, putting %d on the wire!", *((unsigned int *) data_ptr));
-	}
-	else
-	{
-		*((unsigned int *) data_ptr) = size;
-	}
+	*((unsigned int *) data_ptr) = size;
 #ifndef CHROMIUM_THREADSAFE
 	sanityCheckPointer = data_ptr + 4;
 #endif

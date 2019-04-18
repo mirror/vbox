@@ -13,11 +13,7 @@
 #define RENDER_APIENTRY __stdcall
 #define snprintf _snprintf
 #elif defined(DARWIN)
-# ifndef VBOX_WITH_COCOA_QT
-#  include <AGL/AGL.h>
-# else
-#  include "renderspu_cocoa_helper.h"
-# endif
+# include "renderspu_cocoa_helper.h"
 #define RENDER_APIENTRY
 #else
 #include <GL/glx.h>
@@ -46,26 +42,6 @@ AssertCompile(sizeof (Window) == sizeof (unsigned long));
 
 #define MAX_VISUALS 32
 
-#ifdef RT_OS_DARWIN
-# ifndef VBOX_WITH_COCOA_QT
-enum
-{
-    /* Event classes */
-    kEventClassVBox         = 'vbox',
-    /* Event kinds */
-    kEventVBoxShowWindow    = 'swin',
-    kEventVBoxHideWindow    = 'hwin',
-    kEventVBoxMoveWindow    = 'mwin',
-    kEventVBoxResizeWindow  = 'rwin',
-    kEventVBoxDisposeWindow = 'dwin',
-    kEventVBoxUpdateDock    = 'udck',
-    kEventVBoxUpdateContext = 'uctx',
-    kEventVBoxBoundsChanged = 'bchg'
-};
-pascal OSStatus windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData);
-# endif
-#endif /* RT_OS_DARWIN */
-
 /**
  * Visual info
  */
@@ -75,9 +51,6 @@ typedef struct {
 #if defined(WINDOWS)
 //    HDC device_context;
 #elif defined(DARWIN)
-# ifndef VBOX_WITH_COCOA_QT
-    WindowRef window;
-# endif
 #elif defined(GLX)
     Display *dpy;
     XVisualInfo *visual;
@@ -120,20 +93,9 @@ typedef struct WindowInfo {
     HDC redraw_device_context;
     HRGN hRgn;
 #elif defined(DARWIN)
-# ifndef VBOX_WITH_COCOA_QT
-    WindowRef window;
-    WindowRef nativeWindow; /**< for render_to_app_window */
-    WindowRef appWindow;
-    EventHandlerUPP event_handler;
-    GLint bufferName;
-    AGLContext dummyContext;
-    RgnHandle hVisibleRegion;
-    /* unsigned long context_ptr; */
-# else
     NativeNSViewRef window;
     NativeNSViewRef nativeWindow; /**< for render_to_app_window */
     NativeNSOpenGLContextRef *currentCtx;
-# endif
 #elif defined(GLX)
     Window window;
     Window nativeWindow;  /**< for render_to_app_window */
@@ -162,11 +124,7 @@ typedef struct _ContextInfo {
 #if defined(WINDOWS)
     HGLRC hRC;
 #elif defined(DARWIN)
-# ifndef VBOX_WITH_COCOA_QT
-    AGLContext context;
-# else
     NativeNSOpenGLContextRef context;
-# endif
 #elif defined(GLX)
     GLXContext context;
 #endif
@@ -287,9 +245,7 @@ typedef struct {
 
     CRHashTable *barrierHash;
 
-    int is_swap_master, num_swap_clients;
-    int swap_mtu;
-    char *swap_master_url;
+    int num_swap_clients;
     CRConnection **swap_conns;
 
     SPUDispatchTable blitterDispatch;
@@ -328,7 +284,6 @@ typedef struct {
 #endif
 
 #ifdef RT_OS_DARWIN
-# ifdef VBOX_WITH_COCOA_QT
     PFNDELETE_OBJECT pfnDeleteObject;
     PFNGET_ATTACHED_OBJECTS pfnGetAttachedObjects;
     PFNGET_HANDLE pfnGetHandle;
@@ -337,16 +292,6 @@ typedef struct {
     PFNGET_OBJECT_PARAMETERIV pfnGetObjectParameteriv;
 
     CR_GLSL_CACHE GlobalShaders;
-# else
-    RgnHandle hRootVisibleRegion;
-    RTSEMFASTMUTEX syncMutex;
-    EventHandlerUPP hParentEventHandler;
-    WindowGroupRef pParentGroup;
-    WindowGroupRef pMasterGroup;
-    GLint currentBufferName;
-    uint64_t uiDockUpdateTS;
-    bool fInit;
-# endif
 #endif /* RT_OS_DARWIN */
     /* If TRUE, render should tell window server to prevent artificial content
      * up-scaling when displayed on HiDPI monitor. */

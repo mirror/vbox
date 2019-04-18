@@ -19,7 +19,7 @@ DLLDATA(CRPackContext) cr_packer_globals;
 
 uint32_t cr_packer_cmd_blocks_enabled = 0;
 
-CRPackContext *crPackNewContext( int swapping )
+CRPackContext *crPackNewContext(void)
 {
 #ifdef CHROMIUM_THREADSAFE
     CRPackContext *pc = crCalloc(sizeof(CRPackContext));
@@ -31,7 +31,6 @@ CRPackContext *crPackNewContext( int swapping )
         crMemZero( pc, sizeof(CRPackContext));
 #endif
     pc->u32CmdBlockState = 0;
-    pc->swapping = swapping;
     pc->Flush = NULL;
     pc->SendHuge = NULL;
     pc->updateBBOX = 0;

@@ -12,12 +12,12 @@
 #include <stdio.h>
 #include <memory.h>
 
-#include "cr_environment.h"
 #include "cr_error.h"
 #include "cr_string.h"
 #include "renderspu.h"
 #include "cr_mem.h"
 
+#include <iprt/env.h>
 
 /* IAT patcher stuff */
 #define RVA2PTR(_t, _base, _off) ((_t*)(((uint8_t*)(_base)) + (_off)))
@@ -663,7 +663,7 @@ bSetupPixelFormatNormal( HDC hdc, GLbitfield visAttribs )
      * versions.
      */
 #ifdef VBOX_CR_SERVER_FORCE_WGL
-    if (crGetenv( "CR_WGL_DO_NOT_USE_GDI" ) != NULL)
+    if (RTEnvGet( "CR_WGL_DO_NOT_USE_GDI" ) != NULL)
     {
         pixelformat = render_spu.ws.wglChoosePixelFormat( hdc, ppfd );
         /* doing this twice is normal Win32 magic */

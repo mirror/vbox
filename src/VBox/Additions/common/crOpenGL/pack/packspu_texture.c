@@ -43,28 +43,13 @@ void PACKSPU_APIENTRY packspu_GenTextures( GLsizei n, GLuint * textures )
 {
     GET_THREAD(thread);
     int writeback = 1;
-    unsigned int i;
     if (!CRPACKSPU_IS_WDDM_CRHGSMI() && !(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
     {
         crError( "packspu_GenTextures doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
     }
-    if (pack_spu.swap)
-    {
-        crPackGenTexturesSWAP( n, textures, &writeback );
-    }
-    else
-    {
-        crPackGenTextures( n, textures, &writeback );
-    }
+
+    crPackGenTextures( n, textures, &writeback );
     packspuFlush( (void *) thread );
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
-    if (pack_spu.swap)
-    {
-        for (i = 0 ; i < (unsigned int) n ; i++)
-        {
-            textures[i] = SWAP32(textures[i]);
-        }
-    }
-
     crStateRegTextures(n, textures);
 }

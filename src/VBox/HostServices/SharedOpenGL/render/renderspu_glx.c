@@ -3,11 +3,6 @@
  *
  * See the file LICENSE.txt for information on redistributing this software.
  */
-#if 00 /*TEMPORARY*/
-#include <unistd.h>
-#include "cr_rand.h"
-#endif
-
 #include <GL/glx.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -17,13 +12,11 @@
 #include <sys/time.h>
 #include <stdio.h>
 
-#include "cr_environment.h"
 #include "cr_error.h"
 #include "cr_string.h"
 #include "cr_mem.h"
 #include "cr_process.h"
 #include "renderspu.h"
-
 
 /*
  * Stuff from MwmUtils.h
@@ -947,22 +940,7 @@ createWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
 
     flags = CWBorderPixel | CWColormap | CWEventMask | CWOverrideRedirect;
 
-    /* 
-     * We pass the VNC's desktop windowID via an environment variable.
-     * If we don't find one, we're not on a 3D-capable vncviewer, or
-     * if we do find one, then create the renderspu subwindow as a
-     * child of the vncviewer's desktop window. 
-     *
-     * This is purely for the replicateSPU.
-     *
-     * NOTE: This is crufty, and will do for now. FIXME.
-     */
-    vncWin = crStrToInt( crGetenv("CRVNCWINDOW") );
-    if (vncWin)
-        parent = (Window) vncWin;
-    else
-        parent = RootWindow(dpy, visual->visual->screen);
-
+    parent = RootWindow(dpy, visual->visual->screen);
     if (render_spu_parent_window_id>0)
     {
         crDebug("Render SPU: VBox parent window_id is: %x", render_spu_parent_window_id);
@@ -1987,19 +1965,6 @@ void
 renderspu_SystemSwapBuffers( WindowInfo *w, GLint flags )
 {
     CRASSERT(w);
-
-#if 00 /*TEMPORARY - FOR TESTING SWAP LOCK*/
-    if (1) {
-        /* random delay */
-        int k = crRandInt(1000 * 100, 750*1000);
-        static int first = 1;
-        if (first) {
-             crRandAutoSeed();
-             first = 0;
-        }
-        usleep(k);
-    }
-#endif
 
     /* render_to_app_window:
      * w->nativeWindow will only be non-zero if the

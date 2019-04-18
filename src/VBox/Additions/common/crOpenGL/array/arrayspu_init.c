@@ -11,8 +11,6 @@
 
 extern SPUNamedFunctionTable _cr_array_table[];
 
-extern SPUOptions arraySPUOptions[];
-
 static SPUFunctions array_functions = {
     NULL, /* CHILD COPY */
     NULL, /* DATA */
@@ -72,14 +70,13 @@ static int arraySPUCleanup(void)
 
 int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
          SPUSelfDispatchFuncPtr *self, SPUCleanupFuncPtr *cleanup,
-         SPUOptionsPtr *options, int *flags )
+         int *flags )
 {
     *name = "array";
     *super = "passthrough";
     *init = arraySPUInit;
     *self = arraySPUSelfDispatch;
     *cleanup = arraySPUCleanup;
-    *options = arraySPUOptions;
     *flags = (SPU_NO_PACKER|SPU_NOT_TERMINAL|SPU_MAX_SERVERS_ZERO);
 
     return 1;

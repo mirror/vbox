@@ -106,14 +106,8 @@ void PACKSPU_APIENTRY packspu_GenFramebuffersEXT( GLsizei n, GLuint * framebuffe
     {
         crError( "packspu_GenFramebuffersEXT doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
     }
-    if (pack_spu.swap)
-    {
-        crPackGenFramebuffersEXTSWAP( n, framebuffers, &writeback );
-    }
-    else
-    {
-        crPackGenFramebuffersEXT( n, framebuffers, &writeback );
-    }
+
+    crPackGenFramebuffersEXT( n, framebuffers, &writeback );
     packspuFlush( (void *) thread );
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
@@ -128,14 +122,8 @@ void PACKSPU_APIENTRY packspu_GenRenderbuffersEXT( GLsizei n, GLuint * renderbuf
     {
         crError( "packspu_GenRenderbuffersEXT doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
     }
-    if (pack_spu.swap)
-    {
-        crPackGenRenderbuffersEXTSWAP( n, renderbuffers, &writeback );
-    }
-    else
-    {
-        crPackGenRenderbuffersEXT( n, renderbuffers, &writeback );
-    }
+
+    crPackGenRenderbuffersEXT( n, renderbuffers, &writeback );
     packspuFlush( (void *) thread );
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 

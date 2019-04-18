@@ -32,21 +32,9 @@ GLuint PACKSPU_APIENTRY packspu_CreateProgram(void)
     {
         crError("packspu_CreateProgram doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!");
     }
-    if (pack_spu.swap)
-    {
-        crPackCreateProgramSWAP(&return_val, &writeback);
-    }
-    else
-    {
-        crPackCreateProgram(&return_val, &writeback);
-    }
+    crPackCreateProgram(&return_val, &writeback);
     packspuFlush((void *) thread);
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
-    if (pack_spu.swap)
-    {
-        return_val = (GLuint) SWAP32(return_val);
-    }
-
     crStateCreateProgram(return_val);
 
     return return_val;
@@ -61,20 +49,10 @@ static GLint packspu_GetUniformLocationUncached(GLuint program, const char * nam
     {
         crError("packspu_GetUniformLocation doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!");
     }
-    if (pack_spu.swap)
-    {
-        crPackGetUniformLocationSWAP(program, name, &return_val, &writeback);
-    }
-    else
-    {
-        crPackGetUniformLocation(program, name, &return_val, &writeback);
-    }
+
+    crPackGetUniformLocation(program, name, &return_val, &writeback);
     packspuFlush((void *) thread);
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
-    if (pack_spu.swap)
-    {
-        return_val = (GLint) SWAP32(return_val);
-    }
     return return_val;
 }
 
@@ -123,20 +101,10 @@ static GLint PACKSPU_APIENTRY packspu_GetAttribLocationUnchached( GLuint program
     {
         crError( "packspu_GetAttribLocation doesn't work when there's no actual network involved!\nTry using the simplequery SPU in your chain!" );
     }
-    if (pack_spu.swap)
-    {
-        crPackGetAttribLocationSWAP( program, name, &return_val, &writeback );
-    }
-    else
-    {
-        crPackGetAttribLocation( program, name, &return_val, &writeback );
-    }
+
+    crPackGetAttribLocation( program, name, &return_val, &writeback );
     packspuFlush( (void *) thread );
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
-    if (pack_spu.swap)
-    {
-        return_val = (GLint) SWAP32(return_val);
-    }
     return return_val;
 }
 

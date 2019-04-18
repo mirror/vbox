@@ -91,7 +91,6 @@ typedef struct {
                         /* glProgramLocalParameterARB, glProgramParameterNV */
 } CRServerProgram;
 
-void crServerSetVBoxConfiguration();
 void crServerSetVBoxConfigurationHGCM();
 void crServerInitDispatch(void);
 void crServerReturnValue( const void *payload, unsigned int payload_len );
@@ -106,8 +105,6 @@ void crServerApplyBaseProjection( const CRmatrix *baseProj );
 void crServerApplyViewMatrix( const CRmatrix *view );
 void crServerSetOutputBounds( const CRMuralInfo *mural, int extNum );
 void crServerComputeViewportBounds( const CRViewportState *v, CRMuralInfo *mural );
-
-GLboolean crServerInitializeBucketing(CRMuralInfo *mural);
 
 void crComputeOverlapGeom(double *quads, int nquad, CRPoly ***res);
 void crComputeKnockoutGeom(double *quads, int nquad, int my_quad_idx, CRPoly **res);

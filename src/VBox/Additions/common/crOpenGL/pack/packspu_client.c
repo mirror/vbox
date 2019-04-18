@@ -14,11 +14,8 @@ void PACKSPU_APIENTRY packspu_FogCoordPointerEXT( GLenum type, GLsizei stride, c
 {
 #if CR_ARB_vertex_buffer_object
     GET_CONTEXT(ctx);
-    if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
-        if (pack_spu.swap)
-            crPackFogCoordPointerEXTSWAP( type, stride, pointer );
-        else
-            crPackFogCoordPointerEXT( type, stride, pointer );
+   if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
+        crPackFogCoordPointerEXT( type, stride, pointer );
     }
 #endif
     crStateFogCoordPointerEXT( type, stride, pointer );
@@ -29,10 +26,7 @@ void PACKSPU_APIENTRY packspu_ColorPointer( GLint size, GLenum type, GLsizei str
 #if CR_ARB_vertex_buffer_object
     GET_CONTEXT(ctx);
     if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
-        if (pack_spu.swap)
-            crPackColorPointerSWAP( size, type, stride, pointer );
-        else
-            crPackColorPointer( size, type, stride, pointer );
+        crPackColorPointer( size, type, stride, pointer );
     }
 #endif
     crStateColorPointer( size, type, stride, pointer );
@@ -43,10 +37,7 @@ void PACKSPU_APIENTRY packspu_SecondaryColorPointerEXT( GLint size, GLenum type,
 #if CR_ARB_vertex_buffer_object
     GET_CONTEXT(ctx);
     if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
-        if (pack_spu.swap)
-            crPackSecondaryColorPointerEXTSWAP( size, type, stride, pointer );
-        else
-            crPackSecondaryColorPointerEXT( size, type, stride, pointer );
+        crPackSecondaryColorPointerEXT( size, type, stride, pointer );
     }
 #endif
     crStateSecondaryColorPointerEXT( size, type, stride, pointer );
@@ -58,10 +49,7 @@ void PACKSPU_APIENTRY packspu_VertexPointer( GLint size, GLenum type, GLsizei st
     GET_CONTEXT(ctx);
     CRASSERT(ctx->clientState->extensions.ARB_vertex_buffer_object);
     if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
-        if (pack_spu.swap)
-            crPackVertexPointerSWAP( size, type, stride, pointer );
-        else
-            crPackVertexPointer( size, type, stride, pointer );
+        crPackVertexPointer( size, type, stride, pointer );
     }
 #endif
     crStateVertexPointer( size, type, stride, pointer );
@@ -72,10 +60,7 @@ void PACKSPU_APIENTRY packspu_TexCoordPointer( GLint size, GLenum type, GLsizei 
 #if CR_ARB_vertex_buffer_object
     GET_CONTEXT(ctx);
     if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
-        if (pack_spu.swap)
-            crPackTexCoordPointerSWAP( size, type, stride, pointer );
-        else
-            crPackTexCoordPointer( size, type, stride, pointer );
+        crPackTexCoordPointer( size, type, stride, pointer );
     }
 #endif
     crStateTexCoordPointer( size, type, stride, pointer );
@@ -86,10 +71,7 @@ void PACKSPU_APIENTRY packspu_NormalPointer( GLenum type, GLsizei stride, const 
 #if CR_ARB_vertex_buffer_object
     GET_CONTEXT(ctx);
     if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
-        if (pack_spu.swap)
-            crPackNormalPointerSWAP( type, stride, pointer );
-        else
-            crPackNormalPointer( type, stride, pointer );
+        crPackNormalPointer( type, stride, pointer );
     }
 #endif
     crStateNormalPointer( type, stride, pointer );
@@ -100,10 +82,7 @@ void PACKSPU_APIENTRY packspu_EdgeFlagPointer( GLsizei stride, const GLvoid *poi
 #if CR_ARB_vertex_buffer_object
     GET_CONTEXT(ctx);
     if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
-        if (pack_spu.swap)
-            crPackEdgeFlagPointerSWAP( stride, pointer );
-        else
-            crPackEdgeFlagPointer( stride, pointer );
+        crPackEdgeFlagPointer( stride, pointer );
     }
 #endif
     crStateEdgeFlagPointer( stride, pointer );
@@ -114,10 +93,7 @@ void PACKSPU_APIENTRY packspu_VertexAttribPointerARB( GLuint index, GLint size, 
 #if CR_ARB_vertex_buffer_object
     GET_CONTEXT(ctx);
     if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
-        if (pack_spu.swap)
-            crPackVertexAttribPointerARBSWAP( index, size, type, normalized, stride, pointer );
-        else
-            crPackVertexAttribPointerARB( index, size, type, normalized, stride, pointer );
+        crPackVertexAttribPointerARB( index, size, type, normalized, stride, pointer );
     }
 #endif
     crStateVertexAttribPointerARB( index, size, type, normalized, stride, pointer );
@@ -128,10 +104,7 @@ void PACKSPU_APIENTRY packspu_VertexAttribPointerNV( GLuint index, GLint size, G
 #if CR_ARB_vertex_buffer_object
     GET_CONTEXT(ctx);
     if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
-        if (pack_spu.swap)
-            crPackVertexAttribPointerNVSWAP( index, size, type, stride, pointer );
-        else
-            crPackVertexAttribPointerNV( index, size, type, stride, pointer );
+        crPackVertexAttribPointerNV( index, size, type, stride, pointer );
     }
 #endif
     crStateVertexAttribPointerNV( index, size, type, stride, pointer );
@@ -142,10 +115,7 @@ void PACKSPU_APIENTRY packspu_IndexPointer( GLenum type, GLsizei stride, const G
 #if CR_ARB_vertex_buffer_object
     GET_CONTEXT(ctx);
     if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
-        if (pack_spu.swap)
-            crPackIndexPointerSWAP( type, stride, pointer );
-        else
-            crPackIndexPointer( type, stride, pointer );
+        crPackIndexPointer( type, stride, pointer );
     }
 #endif
     crStateIndexPointer(type, stride, pointer);
@@ -161,10 +131,7 @@ void PACKSPU_APIENTRY packspu_InterleavedArrays( GLenum format, GLsizei stride, 
 #if CR_ARB_vertex_buffer_object
     GET_CONTEXT(ctx);
     if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
-        if (pack_spu.swap)
-            crPackInterleavedArraysSWAP( format, stride, pointer );
-        else
-            crPackInterleavedArrays( format, stride, pointer );
+        crPackInterleavedArrays( format, stride, pointer );
     }
 #endif
 
@@ -379,10 +346,7 @@ packspu_ArrayElement( GLint index )
             packspuZvaEnable(ctx, aAttrib, cZvaValues, &RestoreCtx);
 
         /* Send the DrawArrays command over the wire */
-        if (pack_spu.swap)
-            crPackArrayElementSWAP( index );
-        else
-            crPackArrayElement( index );
+        crPackArrayElement( index );
 
         if (cZvaValues)
             packspuZvaDisable(&RestoreCtx);
@@ -399,10 +363,7 @@ packspu_ArrayElement( GLint index )
             packspuZvaEnable(ctx, aAttrib, cZvaValues, &RestoreCtx);
 #endif
 
-        if (pack_spu.swap)
-            crPackExpandArrayElementSWAP( index, clientState, cZvaValues ? aAttrib : NULL );
-        else
-            crPackExpandArrayElement( index, clientState, cZvaValues ? aAttrib : NULL );
+        crPackExpandArrayElement( index, clientState, cZvaValues ? aAttrib : NULL );
 
 #ifdef CR_FORCE_ZVA_SERVER_ARRAY
         if (cZvaValues && cZvaValues < UINT32_MAX/2)
@@ -528,10 +489,7 @@ packspu_DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *ind
         }
 
         /* Send the DrawArrays command over the wire */
-        if (pack_spu.swap)
-            crPackDrawElementsSWAP( mode, count, type, indices );
-        else
-            crPackDrawElements( mode, count, type, indices );
+        crPackDrawElements( mode, count, type, indices );
 
         if (cZvaValues)
             packspuZvaDisable(&RestoreCtx);
@@ -548,14 +506,9 @@ packspu_DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *ind
             packspuZvaEnable(ctx, aAttrib, cZvaValues, &RestoreCtx);
 #endif
 
-        if (pack_spu.swap)
-            crPackExpandDrawElementsSWAP( mode, count, type, indices, clientState, cZvaValues ? aAttrib : NULL );
-        else
-        {
-            //packspu_Begin(mode);
-            crPackExpandDrawElements( mode, count, type, indices, clientState, cZvaValues ? aAttrib : NULL );
-            //packspu_End();
-        }
+        //packspu_Begin(mode);
+        crPackExpandDrawElements( mode, count, type, indices, clientState, cZvaValues ? aAttrib : NULL );
+        //packspu_End();
 
 #ifdef CR_FORCE_ZVA_SERVER_ARRAY
         if (cZvaValues && cZvaValues < UINT32_MAX/2)
@@ -614,10 +567,7 @@ packspu_DrawRangeElements( GLenum mode, GLuint start, GLuint end, GLsizei count,
         }
 
         /* Send the DrawRangeElements command over the wire */
-        if (pack_spu.swap)
-            crPackDrawRangeElementsSWAP( mode, start, end, count, type, indices );
-        else
-            crPackDrawRangeElements( mode, start, end, count, type, indices );
+        crPackDrawRangeElements( mode, start, end, count, type, indices );
 
         if (cZvaValues)
             packspuZvaDisable(&RestoreCtx);
@@ -633,12 +583,7 @@ packspu_DrawRangeElements( GLenum mode, GLuint start, GLuint end, GLsizei count,
             packspuZvaEnable(ctx, aAttrib, cZvaValues, &RestoreCtx);
 #endif
 
-        if (pack_spu.swap)
-            crPackExpandDrawRangeElementsSWAP( mode, start, end, count, type, indices, clientState, cZvaValues ? aAttrib : NULL );
-        else
-        {
-            crPackExpandDrawRangeElements( mode, start, end, count, type, indices, clientState, cZvaValues ? aAttrib : NULL );
-        }
+        crPackExpandDrawRangeElements( mode, start, end, count, type, indices, clientState, cZvaValues ? aAttrib : NULL );
 
 #ifdef CR_FORCE_ZVA_SERVER_ARRAY
         if (cZvaValues && cZvaValues < UINT32_MAX/2)
@@ -708,10 +653,7 @@ packspu_DrawArrays( GLenum mode, GLint first, GLsizei count )
         }
 
         /* Send the DrawArrays command over the wire */
-        if (pack_spu.swap)
-            crPackDrawArraysSWAP( mode, first, count );
-        else
-            crPackDrawArrays( mode, first, count );
+        crPackDrawArrays( mode, first, count );
 
         if (cZvaValues)
             packspuZvaDisable(&RestoreCtx);
@@ -728,10 +670,7 @@ packspu_DrawArrays( GLenum mode, GLint first, GLsizei count )
             packspuZvaEnable(ctx, aAttrib, cZvaValues, &RestoreCtx);
 #endif
 
-        if (pack_spu.swap)
-            crPackExpandDrawArraysSWAP( mode, first, count, clientState, cZvaValues ? aAttrib : NULL );
-        else
-            crPackExpandDrawArrays( mode, first, count, clientState, cZvaValues ? aAttrib : NULL );
+        crPackExpandDrawArrays( mode, first, count, clientState, cZvaValues ? aAttrib : NULL );
 
 #ifdef CR_FORCE_ZVA_SERVER_ARRAY
         if (cZvaValues && cZvaValues < UINT32_MAX/2)
@@ -808,11 +747,7 @@ void PACKSPU_APIENTRY packspu_Enable( GLenum cap )
     if (cap!=GL_LIGHT_MODEL_TWO_SIDE)
     {
         crStateEnable(cap);
-
-        if (pack_spu.swap)
-            crPackEnableSWAP(cap);
-        else
-            crPackEnable(cap);
+        crPackEnable(cap);
     }
     else
     {
@@ -833,11 +768,7 @@ void PACKSPU_APIENTRY packspu_Disable( GLenum cap )
     if (cap!=GL_LIGHT_MODEL_TWO_SIDE)
     {
         crStateDisable(cap);
-
-        if (pack_spu.swap)
-            crPackDisableSWAP(cap);
-        else
-            crPackDisable(cap);
+        crPackDisable(cap);
     }
     else
     {

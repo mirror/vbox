@@ -10,18 +10,18 @@
 #include "cr_mem.h"
 #include "cr_string.h"
 #include "cr_net.h"
-#include "cr_environment.h"
 #include "cr_process.h"
-#include "cr_rand.h"
 #include "cr_netserver.h"
 #include "stub.h"
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
+#include <stdio.h> /*swprintf*/
 #include <iprt/initterm.h>
 #include <iprt/thread.h>
 #include <iprt/errcore.h>
 #include <iprt/asm.h>
+#include <iprt/env.h>
 #ifndef WINDOWS
 # include <sys/types.h>
 # include <unistd.h>
@@ -600,142 +600,8 @@ static void stubInitVars(void)
 }
 
 
-#if 0 /* unused */
-
-/**
- * Return a free port number for the mothership to use, or -1 if we
- * can't find one.
- */
-static int
-GenerateMothershipPort(void)
-{
-    const int MAX_PORT = 10100;
-    unsigned short port;
-
-    /* generate initial port number randomly */
-    crRandAutoSeed();
-    port = (unsigned short) crRandInt(10001, MAX_PORT);
-
-#ifdef WINDOWS
-    /* XXX should implement a free port check here */
-    return port;
-#else
-    /*
-     * See if this port number really is free, try another if needed.
-     */
-    {
-        struct sockaddr_in servaddr;
-        int so_reuseaddr = 1;
-        int sock, k;
-
-        /* create socket */
-        sock = socket(AF_INET, SOCK_STREAM, 0);
-        CRASSERT(sock > 2);
-
-        /* deallocate socket/port when we exit */
-        k = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-                                     (char *) &so_reuseaddr, sizeof(so_reuseaddr));
-        CRASSERT(k == 0);
-
-        /* initialize the servaddr struct */
-        crMemset(&servaddr, 0, sizeof(servaddr) );
-        servaddr.sin_family = AF_INET;
-        servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-        while (port < MAX_PORT) {
-            /* Bind to the given port number, return -1 if we fail */
-            servaddr.sin_port = htons((unsigned short) port);
-            k = bind(sock, (struct sockaddr *) &servaddr, sizeof(servaddr));
-            if (k) {
-                /* failed to create port. try next one. */
-                port++;
-            }
-            else {
-                /* free the socket/port now so mothership can make it */
-                close(sock);
-                return port;
-            }
-        }
-    }
-#endif /* WINDOWS */
-    return -1;
-}
-
-
-/**
- * Try to determine which mothership configuration to use for this program.
- */
-static char **
-LookupMothershipConfig(const char *procName)
-{
-    const int procNameLen = crStrlen(procName);
-    FILE *f;
-    const char *home;
-    char configPath[1000];
-
-    /* first, check if the CR_CONFIG env var is set */
-    {
-        const char *conf = crGetenv("CR_CONFIG");
-        if (conf && crStrlen(conf) > 0)
-            return crStrSplit(conf, " ");
-    }
-
-    /* second, look up config name from config file */
-    home = crGetenv("HOME");
-    if (home)
-        sprintf(configPath, "%s/%s", home, CONFIG_LOOKUP_FILE);
-    else
-        crStrcpy(configPath, CONFIG_LOOKUP_FILE); /* from current dir */
-    /* Check if the CR_CONFIG_PATH env var is set. */
-    {
-        const char *conf = crGetenv("CR_CONFIG_PATH");
-        if (conf)
-            crStrcpy(configPath, conf); /* from env var */
-    }
-
-    f = fopen(configPath, "r");
-    if (!f) {
-        return NULL;
-    }
-
-    while (!feof(f)) {
-        char line[1000];
-        char **args;
-        fgets(line, 999, f);
-        line[crStrlen(line) - 1] = 0; /* remove trailing newline */
-        if (crStrncmp(line, procName, procNameLen) == 0 &&
-            (line[procNameLen] == ' ' || line[procNameLen] == '\t'))
-        {
-            crWarning("Using Chromium configuration for %s from %s",
-                                procName, configPath);
-            args = crStrSplit(line + procNameLen + 1, " ");
-            return args;
-        }
-    }
-    fclose(f);
-    return NULL;
-}
-
-
-static int Mothership_Awake = 0;
-
-
-/**
- * Signal handler to determine when mothership is ready.
- */
-static void
-MothershipPhoneHome(int signo)
-{
-    crDebug("Got signal %d: mothership is awake!", signo);
-    Mothership_Awake = 1;
-}
-
-#endif /* 0 */
-
 static void stubSetDefaultConfigurationOptions(void)
 {
-    unsigned char key[16]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-
     stub.appDrawCursor = 0;
     stub.minChromiumWindowWidth = 0;
     stub.minChromiumWindowHeight = 0;
@@ -751,10 +617,6 @@ static void stubSetDefaultConfigurationOptions(void)
     stub.trackWindowVisibleRgn = 1;
     stub.matchChromiumWindowCount = 0;
     stub.spu_dir = NULL;
-    crNetSetRank(0);
-    crNetSetContextRange(32, 35);
-    crNetSetNodeRange("iam0", "iamvis20");
-    crNetSetKey(key,sizeof(key));
     stub.force_pbuffers = 0;
 
 #ifdef WINDOWS
@@ -962,7 +824,7 @@ stubInitLocked(void)
 #endif
 
     /** @todo check if it'd be of any use on other than guests, no use for windows */
-    app_id = crGetenv( "CR_APPLICATION_ID_NUMBER" );
+    app_id = RTEnvGet( "CR_APPLICATION_ID_NUMBER" );
 
     crNetInit( NULL, NULL );
 
@@ -1346,7 +1208,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         crInitMutex(&stub_init_mutex);
 
 #ifdef VDBG_VEHANDLER
-        env = crGetenv("CR_DBG_VEH_ENABLE");
+        env = RTEnvGet("CR_DBG_VEH_ENABLE");
         g_VBoxVehEnable = crStrParseI32(env,
 # ifdef DEBUG_misha
                 1
@@ -1361,7 +1223,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
             size_t cProcName;
             size_t cChars;
 
-            env = crGetenv("CR_DBG_VEH_FLAGS");
+            env = RTEnvGet("CR_DBG_VEH_FLAGS");
             g_VBoxVehFlags = crStrParseI32(env,
                     0
 # ifdef DEBUG_misha
@@ -1371,7 +1233,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 # endif
                     );
 
-            env = crGetenv("CR_DBG_VEH_DUMP_DIR");
+            env = RTEnvGet("CR_DBG_VEH_DUMP_DIR");
             if (!env)
                 env = VBOXMD_DUMP_DIR_DEFAULT;
 
@@ -1409,7 +1271,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
             /* sanity */
             g_aszwVBoxMdFilePrefix[g_cVBoxMdFilePrefixLen] = L'\0';
 
-            env = crGetenv("CR_DBG_VEH_DUMP_TYPE");
+            env = RTEnvGet("CR_DBG_VEH_DUMP_TYPE");
 
             g_enmVBoxMdDumpType = crStrParseI32(env,
                     MiniDumpNormal

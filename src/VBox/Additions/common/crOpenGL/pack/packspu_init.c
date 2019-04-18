@@ -134,18 +134,15 @@ packSPUCleanup(void)
     return 1;
 }
 
-extern SPUOptions packSPUOptions[];
-
 int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
          SPUSelfDispatchFuncPtr *self, SPUCleanupFuncPtr *cleanup,
-         SPUOptionsPtr *options, int *flags )
+         int *flags )
 {
     *name = "pack";
     *super = NULL;
     *init = packSPUInit;
     *self = packSPUSelfDispatch;
     *cleanup = packSPUCleanup;
-    *options = packSPUOptions;
     *flags = (SPU_HAS_PACKER|SPU_IS_TERMINAL|SPU_MAX_SERVERS_ONE);
 
     return 1;

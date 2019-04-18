@@ -24,11 +24,12 @@
 #include <iprt/assert.h>
 #include <iprt/buildconfig.h>
 
+
 #include <VBox/log.h>
+#include <iprt/env.h>
 
 #ifdef RT_OS_WINDOWS
 # include <iprt/win/windows.h>
-# include "cr_environment.h"
 # include "cr_error.h"
 # include "VBox/VBoxGuestLib.h"
 # include "iprt/initterm.h"
@@ -99,7 +100,7 @@ DECLEXPORT(void) crError(const char *pszFormat, ...)
 #ifdef WINDOWS
     /* Log last error on windows. */
     dwLastErr = GetLastError();
-    if (dwLastErr != 0 && crGetenv("CR_WINDOWS_ERRORS") != NULL)
+    if (dwLastErr != 0 && RTEnvGet("CR_WINDOWS_ERRORS") != NULL)
     {
         LPTSTR pszWindowsMessage;
 
