@@ -159,7 +159,7 @@ DECLINLINE(size_t) crUnpackAcccessChkStrUpdate(PCrUnpackerState pState, const ch
 #define READ_NETWORK_POINTER(a_pState, offset ) (uint8_t *)crUnpackAccessChk((a_pState), int_cbAccessVerified, (offset), 0)
 #define DATA_POINTER(a_pState, offset, type )   ((type *) (crUnpackAccessChk((a_pState), int_cbAccessVerified, (offset), 0)) )
 
-#define DATA_POINTER_CHECK(a_pState, offset )   ((offset) < (a_pState)->cbUnpackDataLeft)
+#define DATA_POINTER_CHECK(a_pState, offset )   ((size_t)(offset) < (a_pState)->cbUnpackDataLeft)
 
 #define INCR_DATA_PTR(a_pState, delta ) \
     do \
