@@ -2978,6 +2978,11 @@ APICBOTHCBDECL(int) apicWriteMmio(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
  */
 static void apicSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
 {
+#ifdef IN_RING3
+    /* IRQ state should be loaded as-is by "LoadExec". Changes can be made from LoadDone. */
+    Assert(pVCpu->pVMR3->enmVMState != VMSTATE_LOADING || PDMR3HasLoadedState(pVCpu->pVMR3));
+#endif
+
     switch (enmType)
     {
         case PDMAPICIRQ_HARDWARE:
@@ -3034,6 +3039,11 @@ static void apicSetInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
  */
 VMM_INT_DECL(void) apicClearInterruptFF(PVMCPU pVCpu, PDMAPICIRQ enmType)
 {
+#ifdef IN_RING3
+    /* IRQ state should be loaded as-is by "LoadExec". Changes can be made from LoadDone. */
+    Assert(pVCpu->pVMR3->enmVMState != VMSTATE_LOADING || PDMR3HasLoadedState(pVCpu->pVMR3));
+#endif
+
     /* NMI/SMI can't be cleared. */
     switch (enmType)
     {

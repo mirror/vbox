@@ -810,6 +810,8 @@ static DECLCALLBACK(int) picLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         SSMR3GetU8(pSSM, &pThis->aPics[i].init4);
         SSMR3GetU8(pSSM, &pThis->aPics[i].elcr);
     }
+
+    /* Note! PDM will restore the VMCPU_FF_INTERRUPT_PIC state. */
     return VINF_SUCCESS;
 }
 
