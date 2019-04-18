@@ -22,10 +22,13 @@ void crUnpackPixelMapfv(PCrUnpackerState pState)
     if (nodata)
     {
         /* This is valid, see glPixelMap description for GL_PIXEL_UNPACK_BUFFER values is treated as a byte offset. */
+        CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, sizeof( int ) + 12, GLfloat);
         values = (GLfloat*) (uintptr_t) READ_DATA(pState,sizeof(int) + 12, GLint);
     }
     else
     {
+        CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, sizeof( int ) + 16, GLfloat);
+
         values = DATA_POINTER(pState, sizeof( int ) + 16, GLfloat );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, values, mapsize, GLfloat);
     }
@@ -49,10 +52,13 @@ void crUnpackPixelMapuiv(PCrUnpackerState pState)
     if (nodata)
     {
         /* This is valid, see glPixelMap description for GL_PIXEL_UNPACK_BUFFER values is treated as a byte offset. */
+        CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, sizeof( int ) + 12, GLfloat);
         values = (GLuint*) (uintptr_t) READ_DATA(pState,sizeof(int) + 12, GLint);
     }
     else
     {
+        CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, sizeof( int ) + 16, GLfloat);
+
         values = DATA_POINTER(pState, sizeof( int ) + 16, GLuint );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, values, mapsize, GLuint);
     }
@@ -76,10 +82,13 @@ void crUnpackPixelMapusv(PCrUnpackerState pState)
     if (nodata)
     {
         /* This is valid, see glPixelMap description for GL_PIXEL_UNPACK_BUFFER values is treated as a byte offset. */
+        CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, sizeof( int ) + 12, GLfloat);
         values = (GLushort*) (uintptr_t) READ_DATA(pState, sizeof(int) + 12, GLint);
     }
     else
     {
+        CHECK_BUFFER_SIZE_STATIC_UPDATE_LAST(pState, sizeof( int ) + 16, GLfloat);
+
         values = DATA_POINTER(pState, sizeof( int ) + 16, GLushort );
         CHECK_ARRAY_SIZE_FROM_PTR_UPDATE_LAST(pState, values, mapsize, GLushort);
     }

@@ -8,7 +8,7 @@
 
 void crUnpackCallLists(PCrUnpackerState pState)
 {
-    CHECK_BUFFER_SIZE_STATIC_LAST(pState, 4, GLenum);
+    CHECK_BUFFER_SIZE_STATIC_LAST(pState, sizeof( int ) + 4, GLenum);
 
     GLint n = READ_DATA(pState, sizeof( int ) + 0, GLint );
     GLenum type = READ_DATA(pState, sizeof( int ) + 4, GLenum );
