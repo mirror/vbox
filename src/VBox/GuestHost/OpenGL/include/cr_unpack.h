@@ -100,7 +100,7 @@ DECLINLINE(const void *) crUnpackAccessChk(PCCrUnpackerState pState, size_t cbAc
 #define CHECK_BUFFER_SIZE_STATIC_UPDATE(a_pState, a_cbAccess) \
     do \
     { \
-        if (RT_UNLIKELY((a_pState)->cbUnpackDataLeft < (a_cbAccess))) \
+        if (RT_UNLIKELY((a_pState)->cbUnpackDataLeft < (size_t)(a_cbAccess))) \
         { \
             (a_pState)->rcUnpack = VERR_BUFFER_OVERFLOW; \
             return; \
