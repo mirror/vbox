@@ -301,7 +301,7 @@ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # the X11 gang
 endif
 
 LIBRARIES += VBoxOGLTest
-VBoxOGLTest_TEMPLATE = VBOXR3
+VBoxOGLTest_TEMPLATE = VBOXR3NP
 ifneq ($(KBUILD_TARGET),darwin)
   VBoxOGLTest_SOURCES = OpenGLTest/OpenGLTest.cpp
 endif
