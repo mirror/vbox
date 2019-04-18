@@ -167,6 +167,9 @@ public:
     /** Defines @a choice value. */
     void setChoice(const ChoiceData &choice);
 
+    /** Updates value cells. */
+    void updateValueCells();
+
 protected:
 
     /** Returns the number of children. */
@@ -180,9 +183,6 @@ private:
     void prepare();
     /** Cleanups all. */
     void cleanup();
-
-    /** Updates value cells. */
-    void updateValueCells();
 
     /** Holds the row value. */
     CFormValue  m_comValue;
@@ -368,6 +368,10 @@ ChoiceData UIFormEditorRow::toChoice() const
 
 void UIFormEditorRow::setChoice(const ChoiceData &choice)
 {
+    /* Do nothing for empty choices: */
+    if (choice.selectedChoice() == -1)
+        return;
+
     AssertReturnVoid(valueType() == KFormValueType_Choice);
     CChoiceFormValue comValue(m_comValue);
     CProgress comProgress = comValue.SetSelectedIndex(choice.selectedChoice());
@@ -386,6 +390,37 @@ void UIFormEditorRow::setChoice(const ChoiceData &choice)
             msgCenter().cannotAssignFormValue(comProgress);
         else
             updateValueCells();
+    }
+}
+
+void UIFormEditorRow::updateValueCells()
+{
+    switch (m_enmValueType)
+    {
+        case KFormValueType_Boolean:
+        {
+            CBooleanFormValue comValue(m_comValue);
+            m_cells[UIFormEditorDataType_Value]->setText(comValue.GetSelected() ? "True" : "False");
+            /// @todo check for errors
+            break;
+        }
+        case KFormValueType_String:
+        {
+            CStringFormValue comValue(m_comValue);
+            m_cells[UIFormEditorDataType_Value]->setText(comValue.GetString());
+            /// @todo check for errors
+            break;
+        }
+        case KFormValueType_Choice:
+        {
+            CChoiceFormValue comValue(m_comValue);
+            const QVector<QString> values = comValue.GetValues();
+            m_cells[UIFormEditorDataType_Value]->setText(values.at(comValue.GetSelectedIndex()));
+            /// @todo check for errors
+            break;
+        }
+        default:
+            break;
     }
 }
 
@@ -423,37 +458,6 @@ void UIFormEditorRow::cleanup()
     /* Destroy cells: */
     qDeleteAll(m_cells);
     m_cells.clear();
-}
-
-void UIFormEditorRow::updateValueCells()
-{
-    switch (m_enmValueType)
-    {
-        case KFormValueType_Boolean:
-        {
-            CBooleanFormValue comValue(m_comValue);
-            m_cells[UIFormEditorDataType_Value]->setText(comValue.GetSelected() ? "True" : "False");
-            /// @todo check for errors
-            break;
-        }
-        case KFormValueType_String:
-        {
-            CStringFormValue comValue(m_comValue);
-            m_cells[UIFormEditorDataType_Value]->setText(comValue.GetString());
-            /// @todo check for errors
-            break;
-        }
-        case KFormValueType_Choice:
-        {
-            CChoiceFormValue comValue(m_comValue);
-            const QVector<QString> values = comValue.GetValues();
-            m_cells[UIFormEditorDataType_Value]->setText(values.at(comValue.GetSelectedIndex()));
-            /// @todo check for errors
-            break;
-        }
-        default:
-            break;
-    }
 }
 
 
