@@ -9910,6 +9910,10 @@ HRESULT Machine::i_saveSettings(bool *pfNeedsGlobalSaveSettings,
     AssertReturn(!i_isSnapshotMachine(),
                  E_FAIL);
 
+    if (!mData->mAccessible)
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("The machine is not accessible, so cannot save settings"));
+
     HRESULT rc = S_OK;
     bool fNeedsWrite = false;
 
