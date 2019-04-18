@@ -754,7 +754,7 @@ RTDECL(int) RTDirFlushParent(const char *pszChild)
     char        *pszPathFree = NULL;
     size_t const cchChild    = strlen(pszChild);
     if (cchChild < RTPATH_MAX)
-        pszPath = (char *)alloca(cchChild);
+        pszPath = (char *)alloca(cchChild + 1);
     else
     {
         pszPathFree = pszPath = (char *)RTMemTmpAlloc(cchChild + 1);
