@@ -22,6 +22,7 @@
 /render/renderspu_cocoa_helper.h:          --no-external-copyright --convert-tabs --strip-trailing-blanks
 
 /*.c:                                      --external-copyright --no-convert-tabs --no-strip-trailing-blanks
+/*.cpp:                                    --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 /crserverlib/server_framebuffer.c:         --no-external-copyright --convert-tabs --strip-trailing-blanks
 /crserverlib/server_getshaders.c:          --no-external-copyright --convert-tabs --strip-trailing-blanks
 /crserverlib/server_glsl.c:                --no-external-copyright --convert-tabs --strip-trailing-blanks
