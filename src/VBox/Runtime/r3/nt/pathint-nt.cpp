@@ -275,16 +275,50 @@ static int rtNtPathToNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir, 
     /*
      * Straighten out all .. and uncessary . references and convert slashes.
      */
-    char szPath[RTPATH_MAX];
-    int rc = RTPathAbs(pszPath, &szPath[cchPrefix - cchSkip], sizeof(szPath) - (cchPrefix - cchSkip));
-    if (RT_FAILURE(rc))
+    char    szAbsPathBuf[RTPATH_MAX];
+    size_t  cbAbsPath      = sizeof(szAbsPathBuf) - (cchPrefix - cchSkip);
+    char   *pszAbsPath     = szAbsPathBuf;
+    char   *pszAbsPathFree = NULL;
+    int rc = RTPathAbsEx(NULL, pszPath, RTPATH_STR_F_STYLE_DOS, &pszAbsPath[cchPrefix - cchSkip], &cbAbsPath);
+    if (RT_SUCCESS(rc))
+    { /* likely */ }
+    else if (rc == VERR_BUFFER_OVERFLOW)
+    {
+        unsigned cTries       = 8;
+        size_t   cbAbsPathBuf = RTPATH_MAX;
+        for (;;)
+        {
+            cbAbsPathBuf = RT_MAX(RT_ALIGN_Z((cchPrefix - cchSkip) + cbAbsPath + 32, 64), cbAbsPathBuf + 256);
+            if (cTries == 1)
+                cbAbsPathBuf = RT_MAX(cbAbsPathBuf, RTPATH_BIG_MAX * 2);
+            pszAbsPathFree = pszAbsPath = (char *)RTMemTmpAlloc(cbAbsPathBuf);
+            if (!pszAbsPath)
+                return VERR_NO_TMP_MEMORY;
+
+            cbAbsPath = cbAbsPathBuf - (cchPrefix - cchSkip);
+            rc = RTPathAbsEx(NULL, pszPath, RTPATH_STR_F_STYLE_DOS, &pszAbsPath[cchPrefix - cchSkip], &cbAbsPath);
+            if (RT_SUCCESS(rc))
+                break;
+            RTMemTmpFree(pszAbsPathFree);
+            pszAbsPathFree = NULL;
+            if (rc != VERR_BUFFER_OVERFLOW)
+                return rc;
+            if (--cTries == 0)
+                return VERR_FILENAME_TOO_LONG;
+        }
+    }
+    else
         return rc;
 
     /*
      * Add prefix and convert it to UTF16.
      */
-    memcpy(szPath, pszPrefix, cchPrefix);
-    return rtNtPathUtf8ToUniStr(pNtName, phRootDir, szPath);
+    memcpy(pszAbsPath, pszPrefix, cchPrefix);
+    rc = rtNtPathUtf8ToUniStr(pNtName, phRootDir, pszAbsPath);
+
+    if (pszAbsPathFree)
+        RTMemTmpFree(pszAbsPathFree);
+    return rc;
 }
 
 
@@ -405,39 +439,97 @@ RTDECL(int) RTNtPathFromWinUtf16Ex(struct _UNICODE_STRING *pNtName, HANDLE *phRo
     /*
      * Straighten out all .. and unnecessary . references and convert slashes.
      */
-    char   szAbsPath[RTPATH_MAX];
+    /* UTF-16 -> UTF-8 (relative path) */
     char   szRelPath[RTPATH_MAX];
+    char  *pszRelPathFree = NULL;
     char  *pszRelPath = szRelPath;
     size_t cchRelPath;
     rc = RTUtf16ToUtf8Ex(pwszWinPath, cwcWinPath, &pszRelPath, sizeof(szRelPath), &cchRelPath);
     if (RT_SUCCESS(rc))
-        rc = RTPathAbs(szRelPath, &szAbsPath[cchPrefix - cchSkip], sizeof(szAbsPath) - (cchPrefix - cchSkip));
+    { /* likely */ }
+    else if (rc == VERR_BUFFER_OVERFLOW)
+    {
+        pszRelPath = NULL;
+        rc = RTUtf16ToUtf8Ex(pwszWinPath, cwcWinPath, &pszRelPath, 0, &cchRelPath);
+        if (RT_SUCCESS(rc))
+            pszRelPathFree = pszRelPath;
+    }
     if (RT_SUCCESS(rc))
     {
-        /*
-         * Add prefix
-         */
-        memcpy(szAbsPath, pszPrefix, cchPrefix);
-
-        /*
-         * Remove trailing '.' that is used to specify no extension in the Win32/DOS world.
-         */
-        size_t cchAbsPath = strlen(szAbsPath);
-        if (   cchAbsPath > 2
-            && szAbsPath[cchAbsPath - 1] == '.')
+        /* Relative -> Absolute. */
+        char   szAbsPathBuf[RTPATH_MAX];
+        char  *pszAbsPathFree = NULL;
+        char  *pszAbsPath     = szAbsPathBuf;
+        size_t cbAbsPath      = sizeof(szAbsPathBuf) - (cchPrefix - cchSkip);
+        rc = RTPathAbsEx(NULL, szRelPath, RTPATH_STR_F_STYLE_DOS, &pszAbsPath[cchPrefix - cchSkip], &cbAbsPath);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else if (rc == VERR_BUFFER_OVERFLOW)
         {
-            char const ch = szAbsPath[cchAbsPath - 2];
-            if (   ch != '/'
-                && ch != '\\'
-                && ch != ':'
-                && ch != '.')
-                szAbsPath[--cchAbsPath] = '\0';
-        }
+            unsigned cTries = 8;
+            size_t   cbAbsPathBuf = RTPATH_MAX;
+            for (;;)
+            {
+                cbAbsPathBuf = RT_MAX(RT_ALIGN_Z((cchPrefix - cchSkip) + cbAbsPath + 32, 64), cbAbsPathBuf + 256);
+                if (cTries == 1)
+                    cbAbsPathBuf = RT_MAX(cbAbsPathBuf, RTPATH_BIG_MAX * 2);
+                pszAbsPathFree = pszAbsPath = (char *)RTMemTmpAlloc(cbAbsPathBuf);
+                if (!pszAbsPath)
+                {
+                    rc = VERR_NO_TMP_MEMORY;
+                    break;
+                }
 
-        /*
-         * Finally convert to UNICODE_STRING.
-         */
-        return rtNtPathUtf8ToUniStr(pNtName, phRootDir, szAbsPath);
+                cbAbsPath = cbAbsPathBuf - (cchPrefix - cchSkip);
+                rc = RTPathAbsEx(NULL, szRelPath, RTPATH_STR_F_STYLE_DOS, &pszAbsPath[cchPrefix - cchSkip], &cbAbsPath);
+                if (RT_SUCCESS(rc))
+                    break;
+
+                RTMemTmpFree(pszAbsPathFree);
+                pszAbsPathFree = NULL;
+                if (rc != VERR_BUFFER_OVERFLOW)
+                    break;
+                if (--cTries == 0)
+                {
+                    rc = VERR_FILENAME_TOO_LONG;
+                    break;
+                }
+            }
+
+        }
+        if (pszRelPathFree)
+            RTStrFree(pszRelPathFree);
+
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Add prefix
+             */
+            memcpy(pszAbsPath, pszPrefix, cchPrefix);
+
+            /*
+             * Remove trailing '.' that is used to specify no extension in the Win32/DOS world.
+             */
+            size_t cchAbsPath = strlen(pszAbsPath);
+            if (   cchAbsPath > 2
+                && pszAbsPath[cchAbsPath - 1] == '.')
+            {
+                char const ch = pszAbsPath[cchAbsPath - 2];
+                if (   ch != '/'
+                    && ch != '\\'
+                    && ch != ':'
+                    && ch != '.')
+                    pszAbsPath[--cchAbsPath] = '\0';
+            }
+
+            /*
+             * Finally convert to UNICODE_STRING.
+             */
+            rc = rtNtPathUtf8ToUniStr(pNtName, phRootDir, pszAbsPath);
+
+            if (pszAbsPathFree)
+                RTMemTmpFree(pszAbsPathFree);
+        }
     }
     return rc;
 }
