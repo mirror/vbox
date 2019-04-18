@@ -23,6 +23,7 @@
 
 /*.c:                                      --external-copyright --no-convert-tabs --no-strip-trailing-blanks
 /*.cpp:                                    --external-copyright --no-convert-tabs --no-strip-trailing-blanks
+/crserver/crservice.cpp:                   --no-external-copyright --convert-tabs --strip-trailing-blanks
 /crserverlib/server_framebuffer.c:         --no-external-copyright --convert-tabs --strip-trailing-blanks
 /crserverlib/server_getshaders.c:          --no-external-copyright --convert-tabs --strip-trailing-blanks
 /crserverlib/server_glsl.c:                --no-external-copyright --convert-tabs --strip-trailing-blanks
