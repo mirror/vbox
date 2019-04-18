@@ -86,8 +86,15 @@ RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, size_t cbName, uint3
     if ((fMode & RTFS_DOS_NT_REPARSE_POINT) && uReparseTag == RTFSMODE_SYMLINK_REPARSE_TAG)
         fMode = (fMode & ~RTFS_TYPE_MASK) | RTFS_TYPE_SYMLINK;
 
-    /* writable? */
-    if (!(fMode & RTFS_DOS_READONLY))
+    /*
+     * Writable?
+     *
+     * Note! We ignore the read-only flag on directories as windows seems to
+     *       use it for purposes other than writability (@ticketref{18345}):
+     *       https://support.microsoft.com/en-gb/help/326549/you-cannot-view-or-change-the-read-only-or-the-system-attributes-of-fo
+     *
+     */
+    if ((fMode & (RTFS_DOS_DIRECTORY | RTFS_DOS_READONLY)) != RTFS_DOS_READONLY)
         fMode |= RTFS_UNIX_IWUSR | RTFS_UNIX_IWGRP | RTFS_UNIX_IWOTH;
     return fMode;
 }
