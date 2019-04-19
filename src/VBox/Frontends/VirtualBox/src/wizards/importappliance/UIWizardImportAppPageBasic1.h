@@ -125,6 +125,10 @@ protected:
     /** Holds the stacked layout instance. */
     QStackedLayout *m_pStackedLayout;
 
+    /** Holds the local container layout instance. */
+    QGridLayout             *m_pLocalContainerLayout;
+    /** Holds the file label instance. */
+    QLabel                  *m_pFileLabel;
     /** Holds the file selector instance. */
     UIEmptyFilePathSelector *m_pFileSelector;
 

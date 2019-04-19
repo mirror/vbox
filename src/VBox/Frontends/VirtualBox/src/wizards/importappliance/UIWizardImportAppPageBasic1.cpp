@@ -51,6 +51,8 @@ UIWizardImportAppPage1::UIWizardImportAppPage1(bool fImportFromOCIByDefault)
     , m_pSourceLabel(0)
     , m_pSourceComboBox(0)
     , m_pStackedLayout(0)
+    , m_pLocalContainerLayout(0)
+    , m_pFileLabel(0)
     , m_pFileSelector(0)
     , m_pCloudContainerLayout(0)
     , m_pAccountLabel(0)
@@ -468,27 +470,35 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
             if (pLocalContainer)
             {
                 /* Create local container layout: */
-                QVBoxLayout *pLocalContainerLayout = new QVBoxLayout(pLocalContainer);
-                if (pLocalContainerLayout)
+                m_pLocalContainerLayout = new QGridLayout(pLocalContainer);
+                if (m_pLocalContainerLayout)
                 {
-                    pLocalContainerLayout->setContentsMargins(0, 0, 0, 0);
-                    pLocalContainerLayout->setSpacing(0);
+                    m_pLocalContainerLayout->setContentsMargins(0, 0, 0, 0);
+                    m_pLocalContainerLayout->setColumnStretch(0, 0);
+                    m_pLocalContainerLayout->setColumnStretch(1, 1);
+                    m_pLocalContainerLayout->setRowStretch(2, 1);
+
+                    /* Create file label: */
+                    m_pFileLabel = new QLabel;
+                    if (m_pFileLabel)
+                    {
+                        /* Add into layout: */
+                        m_pLocalContainerLayout->addWidget(m_pFileLabel, 0, 0, Qt::AlignRight);
+                    }
 
                     /* Create file-path selector: */
                     m_pFileSelector = new UIEmptyFilePathSelector(this);
                     if (m_pFileSelector)
                     {
+                        m_pFileLabel->setBuddy(m_pFileSelector);
                         m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
                         m_pFileSelector->setMode(UIEmptyFilePathSelector::Mode_File_Open);
                         m_pFileSelector->setButtonPosition(UIEmptyFilePathSelector::RightPosition);
                         m_pFileSelector->setEditable(true);
 
                         /* Add into layout: */
-                        pLocalContainerLayout->addWidget(m_pFileSelector);
+                        m_pLocalContainerLayout->addWidget(m_pFileSelector, 0, 1);
                     }
-
-                    /* Add stretch: */
-                    pLocalContainerLayout->addStretch();
                 }
 
                 /* Add into layout: */
@@ -681,17 +691,19 @@ void UIWizardImportAppPageBasic1::retranslateUi()
             m_pSourceComboBox->setItemData(i, UIWizardImportApp::tr("Import from cloud service provider."), Qt::ToolTipRole);
         }
 
-    /* Translate file selector: */
+    /* Translate local stuff: */
+    m_pFileLabel->setText(UIWizardImportApp::tr("&File:"));
     m_pFileSelector->setChooseButtonToolTip(UIWizardImportApp::tr("Choose a virtual appliance file to import..."));
     m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Please choose a virtual appliance file to import"));
     m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
 
-    /* Translate Account labels: */
+    /* Translate cloud stuff: */
     m_pAccountLabel->setText(UIWizardImportApp::tr("&Account:"));
     m_pAccountInstanceLabel->setText(UIWizardImportApp::tr("&Machines:"));
 
     /* Adjust label widths: */
     QList<QWidget*> labels;
+    labels << m_pFileLabel;
     labels << m_pSourceLabel;
     labels << m_pAccountLabel;
     labels << m_pAccountInstanceLabel;
@@ -699,6 +711,7 @@ void UIWizardImportAppPageBasic1::retranslateUi()
     foreach (QWidget *pLabel, labels)
         iMaxWidth = qMax(iMaxWidth, pLabel->minimumSizeHint().width());
     m_pSourceLayout->setColumnMinimumWidth(0, iMaxWidth);
+    m_pLocalContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
     m_pCloudContainerLayout->setColumnMinimumWidth(0, iMaxWidth);
 
     /* Update page appearance: */
