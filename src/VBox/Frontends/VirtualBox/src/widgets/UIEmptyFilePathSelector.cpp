@@ -110,6 +110,7 @@ void UIEmptyFilePathSelector::setEditable (bool aOn)
     if (aOn)
     {
         mPathWgt = mLineEdit = new QILineEdit (this);
+        setFocusProxy(mLineEdit);
         connect (mLineEdit, SIGNAL (textChanged (const QString&)),
                  this, SLOT (textChanged (const QString&)));
     }
