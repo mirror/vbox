@@ -506,7 +506,7 @@ void UIFormEditorModel::setFormValues(const CFormValueVector &values)
     endRemoveRows();
 
     /* Add new lines: */
-    beginInsertRows(QModelIndex(), 0, values.size());
+    beginInsertRows(QModelIndex(), 0, values.size() - 1);
     foreach (const CFormValue &comValue, values)
         m_dataList << new UIFormEditorRow(parentTable(), comValue);
     endInsertRows();
