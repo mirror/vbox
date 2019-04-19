@@ -415,18 +415,21 @@ CVirtualSystemDescriptionForm UIWizardImportAppPage1::vsdForm() const
 
 UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDefault)
     : UIWizardImportAppPage1(fImportFromOCIByDefault)
-    , m_pLabel(0)
+    , m_pLabelMain(0)
+    , m_pLabelDescription(0)
 {
     /* Create main layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     if (pMainLayout)
     {
-        /* Create label: */
-        m_pLabel = new QIRichTextLabel(this);
-        if (m_pLabel)
+        /* Create main label: */
+        m_pLabelMain = new QIRichTextLabel(this);
+        if (m_pLabelMain)
         {
+            m_pLabelMain->hide();
+
             /* Add into layout: */
-            pMainLayout->addWidget(m_pLabel);
+            pMainLayout->addWidget(m_pLabelMain);
         }
 
         /* Create source layout: */
@@ -445,7 +448,6 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
                 /* Add into layout: */
                 m_pSourceLayout->addWidget(m_pSourceLabel, 0, 0, Qt::AlignRight);
             }
-
             /* Create source selector: */
             m_pSourceComboBox = new QIComboBox(this);
             if (m_pSourceComboBox)
@@ -455,6 +457,14 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
 
                 /* Add into layout: */
                 m_pSourceLayout->addWidget(m_pSourceComboBox, 0, 1);
+            }
+
+            /* Create description label: */
+            m_pLabelDescription = new QIRichTextLabel(this);
+            if (m_pLabelDescription)
+            {
+                /* Add into layout: */
+                m_pSourceLayout->addWidget(m_pLabelDescription, 1, 0, 1, 2);
             }
 
             /* Add into layout: */
@@ -672,10 +682,10 @@ void UIWizardImportAppPageBasic1::retranslateUi()
     /* Translate page: */
     setTitle(UIWizardImportApp::tr("Appliance to import"));
 
-    /* Translate label: */
-    m_pLabel->setText(UIWizardImportApp::tr("<p>VirtualBox currently supports importing appliances "
-                                            "saved in the Open Virtualization Format (OVF). "
-                                            "To continue, select the file to import below.</p>"));
+    /* Translate main label: */
+    m_pLabelMain->setText(UIWizardImportApp::tr("Please choose the source to import appliance from.  This can be a "
+                                                "local file system to import OVF archive or one of known  cloud "
+                                                "service providers to import cloud VM from."));
 
     /* Translate source label: */
     m_pSourceLabel->setText(tr("&Source:"));
@@ -800,6 +810,30 @@ bool UIWizardImportAppPageBasic1::validatePage()
 
         /* If we have a valid ovf proceed to the appliance settings page: */
         return pImportApplianceWidget->isValid();
+    }
+}
+
+void UIWizardImportAppPageBasic1::updatePageAppearance()
+{
+    /* Call to base-class: */
+    UIWizardImportAppPage1::updatePageAppearance();
+
+    /* Update page appearance according to chosen storage-type: */
+    if (isSourceCloudOne())
+    {
+        m_pLabelDescription->setText(UIWizardImportApp::
+                                     tr("<p>Please choose one of cloud service accounts you have registered to import virtual "
+                                        "machine from.  Corresponding machines list will be updated.  To continue, "
+                                        "select one of machines to import below.</p>"));
+        m_pAccountInstanceList->setFocus();
+    }
+    else
+    {
+        m_pLabelDescription->setText(UIWizardImportApp::
+                                     tr("<p>Please choose a file to import the virtual appliance from.  VirtualBox currently "
+                                        "supports importing appliances saved in the Open Virtualization Format (OVF).  "
+                                        "To continue, select the file to import below.</p>"));
+        m_pFileSelector->setFocus();
     }
 }
 
