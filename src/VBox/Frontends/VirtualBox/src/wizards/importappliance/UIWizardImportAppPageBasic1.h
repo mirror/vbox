@@ -96,6 +96,8 @@ protected:
     QUuid sourceId() const;
     /** Returns profile name. */
     QString profileName() const;
+    /** Returns machine ID. */
+    QString machineId() const;
     /** Returns Cloud Profile object. */
     CCloudProfile profile() const;
     /** Returns Virtual System Description Form object. */
@@ -156,6 +158,7 @@ class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAp
     Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
     Q_PROPERTY(CCloudProfile profile READ profile);
     Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
+    Q_PROPERTY(QString machineId READ machineId);
 
 public:
 

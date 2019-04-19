@@ -304,16 +304,21 @@ void UIWizardImportAppPage1::populateAccountInstances()
                 else
                 {
                     /* Push acquired names to list rows: */
-                    foreach (const QString &strName, comNames.GetValues())
+                    const QVector<QString> &names = comNames.GetValues();
+                    const QVector<QString> &ids = comIDs.GetValues();
+                    for (int i = 0; i < names.size(); ++i)
                     {
                         /* Create list item: */
-                        QListWidgetItem *pItem = new QListWidgetItem(strName, m_pAccountInstanceList);
+                        QListWidgetItem *pItem = new QListWidgetItem(names.at(i), m_pAccountInstanceList);
                         if (pItem)
                         {
-                            /* Make item non-editable: */
                             pItem->setFlags(pItem->flags() & ~Qt::ItemIsEditable);
+                            pItem->setData(Qt::UserRole, ids.at(i));
                         }
                     }
+                    /* Choose the 1st one by default if possible: */
+                    if (m_pAccountInstanceList->count())
+                        m_pAccountInstanceList->setCurrentRow(0);
                 }
             }
         }
@@ -396,6 +401,12 @@ QString UIWizardImportAppPage1::profileName() const
 {
     const int iIndex = m_pAccountComboBox->currentIndex();
     return m_pAccountComboBox->itemData(iIndex, AccountData_ProfileName).toString();
+}
+
+QString UIWizardImportAppPage1::machineId() const
+{
+    QListWidgetItem *pItem = m_pAccountInstanceList->currentItem();
+    return pItem ? pItem->data(Qt::UserRole).toString() : QString();
 }
 
 CCloudProfile UIWizardImportAppPage1::profile() const
@@ -649,12 +660,15 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1(bool fImportFromOCIByDe
             this, &UIWizardImportAppPageBasic1::sltHandleAccountComboChange);
     connect(m_pAccountToolButton, &QIToolButton::clicked,
             this, &UIWizardImportAppPageBasic1::sltHandleAccountButtonClick);
+    connect(m_pAccountInstanceList, &QListWidget::currentRowChanged,
+            this, &UIWizardImportAppPageBasic1::completeChanged);
 
     /* Register fields: */
     registerField("source", this, "source");
     registerField("isSourceCloudOne", this, "isSourceCloudOne");
     registerField("profile", this, "profile");
     registerField("vsdForm", this, "vsdForm");
+    registerField("machineId", this, "machineId");
 }
 
 bool UIWizardImportAppPageBasic1::event(QEvent *pEvent)
@@ -753,7 +767,8 @@ bool UIWizardImportAppPageBasic1::isComplete() const
                       && QFile::exists(m_pFileSelector->path()))
                   || (   fCSP
                       && !m_comCloudProfile.isNull()
-                      && !m_comCloudClient.isNull());
+                      && !m_comCloudClient.isNull()
+                      && !machineId().isNull());
     }
 
     return fResult;
