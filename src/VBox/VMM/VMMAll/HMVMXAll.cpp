@@ -715,7 +715,8 @@ VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
                  * handle the CPU state right after a switch from real to protected mode
                  * (all sorts of RPL & DPL assumptions).
                  */
-                if (pVCpu->hm.s.vmx.fWasInRealMode)
+                PCVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
+                if (pVmcsInfo->fWasInRealMode)
                 {
                     if (!CPUMIsGuestInV86ModeEx(pCtx))
                     {
@@ -857,23 +858,19 @@ VMM_INT_DECL(bool) HMCanExecuteVmxGuest(PVMCPU pVCpu, PCCPUMCTX pCtx)
 
 
 /**
- * Gets the permission bits for the specified MSR in the specified MSR bitmap.
+ * Gets the read and write permission bits for an MSR in an MSR bitmap.
  *
- * @returns VBox status code.
+ * @returns VMXMSRPM_XXX - the MSR permission.
  * @param   pvMsrBitmap     Pointer to the MSR bitmap.
- * @param   idMsr           The MSR.
- * @param   penmRead        Where to store the read permissions. Optional, can be
- *                          NULL.
- * @param   penmWrite       Where to store the write permissions. Optional, can be
- *                          NULL.
+ * @param   idMsr           The MSR to get permissions for.
+ *
+ * @sa      hmR0VmxSetMsrPermission.
  */
-VMM_INT_DECL(int) HMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
-                                        PVMXMSREXITWRITE penmWrite)
+VMM_INT_DECL(uint32_t) HMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr)
 {
-    AssertPtrReturn(pvMsrBitmap, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pvMsrBitmap, VMXMSRPM_EXIT_RD | VMXMSRPM_EXIT_WR);
 
-    int32_t iBit;
-    uint8_t const *pbMsrBitmap = (uint8_t *)pvMsrBitmap;
+    uint8_t const * const pbMsrBitmap = (uint8_t const * const)pvMsrBitmap;
 
     /*
      * MSR Layout:
@@ -884,52 +881,54 @@ VMM_INT_DECL(int) HMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr,
      * 0xc00 - 0xfff    0xc0000000 - 0xc0001fff    High MSR write bits.
      *
      * A bit corresponding to an MSR within the above range causes a VM-exit
-     * if the bit is 1 on executions of RDMSR/WRMSR.
-     *
-     * If an MSR falls out of the MSR range, it always cause a VM-exit.
+     * if the bit is 1 on executions of RDMSR/WRMSR.  If an MSR falls out of
+     * the MSR range, it always cause a VM-exit.
      *
      * See Intel spec. 24.6.9 "MSR-Bitmap Address".
      */
-    if (idMsr <= 0x00001fff)
-        iBit = idMsr;
-    else if (   idMsr >= 0xc0000000
-             && idMsr <= 0xc0001fff)
+    uint32_t const offBitmapRead  = 0;
+    uint32_t const offBitmapWrite = 0x800;
+    uint32_t       offMsr;
+    uint32_t       iBit;
+    if (idMsr <= UINT32_C(0x00001fff))
     {
-        iBit = (idMsr - 0xc0000000);
-        pbMsrBitmap += 0x400;
+        offMsr = 0;
+        iBit   = idMsr;
+    }
+    else if (idMsr - UINT32_C(0xc0000000) <= UINT32_C(0x00001fff))
+    {
+        offMsr = 0x400;
+        iBit   = idMsr - UINT32_C(0xc0000000);
     }
     else
     {
-        if (penmRead)
-            *penmRead = VMXMSREXIT_INTERCEPT_READ;
-        if (penmWrite)
-            *penmWrite = VMXMSREXIT_INTERCEPT_WRITE;
-        Log(("CPUMVmxGetMsrPermission: Warning! Out of range MSR %#RX32\n", idMsr));
-        return VINF_SUCCESS;
+        LogFunc(("Warning! Out of range MSR %#RX32\n", idMsr));
+        return VMXMSRPM_EXIT_RD | VMXMSRPM_EXIT_WR;
     }
 
-    /* Validate the MSR bit position. */
-    Assert(iBit <= 0x1fff);
+    /*
+     * Get the MSR read permissions.
+     */
+    uint32_t fRet;
+    uint32_t const offMsrRead = offBitmapRead + offMsr;
+    Assert(offMsrRead + (iBit >> 3) < offBitmapWrite);
+    if (ASMBitTest(pbMsrBitmap + offMsrRead, iBit))
+        fRet = VMXMSRPM_EXIT_RD;
+    else
+        fRet = VMXMSRPM_ALLOW_RD;
 
-    /* Get the MSR read permissions. */
-    if (penmRead)
-    {
-        if (ASMBitTest(pbMsrBitmap, iBit))
-            *penmRead = VMXMSREXIT_INTERCEPT_READ;
-        else
-            *penmRead = VMXMSREXIT_PASSTHRU_READ;
-    }
+    /*
+     * Get the MSR write permissions.
+     */
+    uint32_t const offMsrWrite = offBitmapWrite + offMsr;
+    Assert(offMsrWrite + (iBit >> 3) < X86_PAGE_4K_SIZE);
+    if (ASMBitTest(pbMsrBitmap + offMsrWrite, iBit))
+        fRet |= VMXMSRPM_EXIT_WR;
+    else
+        fRet |= VMXMSRPM_ALLOW_WR;
 
-    /* Get the MSR write permissions. */
-    if (penmWrite)
-    {
-        if (ASMBitTest(pbMsrBitmap + 0x800, iBit))
-            *penmWrite = VMXMSREXIT_INTERCEPT_WRITE;
-        else
-            *penmWrite = VMXMSREXIT_PASSTHRU_WRITE;
-    }
-
-    return VINF_SUCCESS;
+    Assert(VMXMSRPM_IS_FLAG_VALID(fRet));
+    return fRet;
 }
 
 
@@ -942,8 +941,7 @@ VMM_INT_DECL(int) HMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr,
  * @param   uPort           The I/O port being accessed.
  * @param   cbAccess        The size of the I/O access in bytes (1, 2 or 4 bytes).
  */
-VMM_INT_DECL(bool) HMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
-                                                uint8_t cbAccess)
+VMM_INT_DECL(bool) HMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort, uint8_t cbAccess)
 {
     Assert(cbAccess == 1 || cbAccess == 2 || cbAccess == 4);
 
@@ -1016,8 +1014,9 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
     LogRel(("fNmiUnblockingIret         = %RTbool\n",   pCtx->hwvirt.vmx.fNmiUnblockingIret));
     LogRel(("uFirstPauseLoopTick        = %RX64\n",     pCtx->hwvirt.vmx.uFirstPauseLoopTick));
     LogRel(("uPrevPauseTick             = %RX64\n",     pCtx->hwvirt.vmx.uPrevPauseTick));
-    LogRel(("uVmentryTick               = %RX64\n",     pCtx->hwvirt.vmx.uVmentryTick));
+    LogRel(("uEntryTick                 = %RX64\n",     pCtx->hwvirt.vmx.uEntryTick));
     LogRel(("offVirtApicWrite           = %#RX16\n",    pCtx->hwvirt.vmx.offVirtApicWrite));
+    LogRel(("fVirtNmiBlocking           = %RTbool\n",   pCtx->hwvirt.vmx.fVirtNmiBlocking));
     LogRel(("VMCS cache:\n"));
 
     const char *pszPrefix = "  ";
@@ -1241,4 +1240,95 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
     NOREF(pVCpu);
 #endif /* !IN_RC */
 }
+
+
+/**
+ * Gets the active (in use) VMCS info. object for the specified VCPU.
+ *
+ * This is either the guest or nested-guest VMCS and need not necessarily pertain to
+ * the "current" VMCS (in the VMX definition of the term). For instance, if the
+ * VM-entry failed due to an invalid-guest state, we may have "cleared" the VMCS
+ * while returning to ring-3. The VMCS info. object for that VMCS would still be
+ * active and returned so that we could dump the VMCS fields to ring-3 for
+ * diagnostics. This function is thus only used to distinguish between the
+ * nested-guest or guest VMCS.
+ *
+ * @returns The active VMCS information.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ *
+ * @thread  EMT.
+ * @remarks This function may be called with preemption or interrupts disabled!
+ */
+VMM_INT_DECL(PVMXVMCSINFO) hmGetVmxActiveVmcsInfo(PVMCPU pVCpu)
+{
+    if (!pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs)
+        return &pVCpu->hm.s.vmx.VmcsInfo;
+    return &pVCpu->hm.s.vmx.VmcsInfoNstGst;
+}
+
+
+/**
+ * Converts a VMX event type into an appropriate TRPM event type.
+ *
+ * @returns TRPM event.
+ * @param   uIntInfo    The VMX event.
+ */
+VMM_INT_DECL(TRPMEVENT) HMVmxEventToTrpmEventType(uint32_t uIntInfo)
+{
+    TRPMEVENT enmTrapType;
+    uint8_t const uType   = VMX_ENTRY_INT_INFO_TYPE(uIntInfo);
+    uint8_t const uVector = VMX_ENTRY_INT_INFO_VECTOR(uIntInfo);
+
+    switch (uType)
+    {
+        case VMX_ENTRY_INT_INFO_TYPE_EXT_INT:
+           enmTrapType = TRPM_HARDWARE_INT;
+           break;
+
+        case VMX_ENTRY_INT_INFO_TYPE_NMI:
+        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:
+            enmTrapType = TRPM_TRAP;
+            break;
+
+        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:  /* INT1 (ICEBP). */
+            Assert(uVector == X86_XCPT_DB); NOREF(uVector);
+            enmTrapType = TRPM_SOFTWARE_INT;
+            break;
+
+        case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:       /* INT3 (#BP) and INTO (#OF) */
+            Assert(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF); NOREF(uVector);
+            enmTrapType = TRPM_SOFTWARE_INT;
+            break;
+
+        case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
+            enmTrapType = TRPM_SOFTWARE_INT;
+            break;
+
+        case VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT:   /* Shouldn't really happen. */
+        default:
+            AssertMsgFailed(("Invalid trap type %#x\n", uType));
+            enmTrapType = TRPM_32BIT_HACK;
+            break;
+    }
+
+    return enmTrapType;
+}
+
+
+#ifndef IN_RC
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * Notification callback for when a VM-exit happens outside VMX R0 code (e.g. in
+ * IEM).
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pCtx    Pointer to the guest-CPU context.
+ */
+VMM_INT_DECL(void) HMNotifyVmxNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    NOREF(pCtx);
+    pVCpu->hm.s.vmx.fMergedNstGstCtls = false;
+}
+# endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
+#endif /* IN_RC */
 

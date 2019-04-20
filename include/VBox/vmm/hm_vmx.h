@@ -1054,34 +1054,34 @@ typedef const VMXEXITINSTRINFO *PCVMXEXITINSTRINFO;
 #define VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR                       (4)
 /** @} */
 
-/**
- * VMX MSR-bitmap read permissions.
- */
-typedef enum VMXMSREXITREAD
-{
-    /** Reading this MSR causes a VM-exit. */
-    VMXMSREXIT_INTERCEPT_READ = 1,
-    /** Reading this MSR doesn't cause a VM-exit. */
-    VMXMSREXIT_PASSTHRU_READ
-} VMXMSREXITREAD;
-/** Pointer to MSR-bitmap read permissions. */
-typedef VMXMSREXITREAD* PVMXMSREXITREAD;
+
+/** @name VMXMSRPM_XXX - VMX MSR-bitmap permissions.
+ * These are not in accordance to the Intel spec. but used internally by VirtualBox.
+ * @{ */
+/** Guest software reads of this MSR must not cause a VM-exit. */
+#define VMXMSRPM_ALLOW_RD                                       RT_BIT(0)
+/** Guest software reads of this MSR must cause a VM-exit. */
+#define VMXMSRPM_EXIT_RD                                        RT_BIT(1)
+/** Guest software writes to this MSR must not cause a VM-exit. */
+#define VMXMSRPM_ALLOW_WR                                       RT_BIT(2)
+/** Guest software writes to this MSR must cause a VM-exit. */
+#define VMXMSRPM_EXIT_WR                                        RT_BIT(3)
+/** Mask of valid MSR read permissions. */
+#define VMXMSRPM_RD_MASK                                        (VMXMSRPM_ALLOW_RD | VMXMSRPM_EXIT_RD)
+/** Mask of valid MSR write permissions. */
+#define VMXMSRPM_WR_MASK                                        (VMXMSRPM_ALLOW_WR | VMXMSRPM_EXIT_WR)
+/** Mask of valid MSR permissions. */
+#define VMXMSRPM_MASK                                           (VMXMSRPM_RD_MASK  | VMXMSRPM_WR_MASK)
+/** */
+/** Gets whether the MSR permission is valid or not.  */
+#define VMXMSRPM_IS_FLAG_VALID(a_Msrpm)                         (    (a_Msrpm) != 0 \
+                                                                 && ((a_Msrpm) & ~VMXMSRPM_MASK) == 0 \
+                                                                 && ((a_Msrpm) & VMXMSRPM_RD_MASK) != VMXMSRPM_RD_MASK \
+                                                                 && ((a_Msrpm) & VMXMSRPM_WR_MASK) != VMXMSRPM_WR_MASK)
+/** @} */
 
 /**
- * VMX MSR-bitmap write permissions.
- */
-typedef enum VMXMSREXITWRITE
-{
-    /** Writing to this MSR causes a VM-exit. */
-    VMXMSREXIT_INTERCEPT_WRITE = 3,
-    /** Writing to this MSR does not cause a VM-exit. */
-    VMXMSREXIT_PASSTHRU_WRITE
-} VMXMSREXITWRITE;
-/** Pointer to MSR-bitmap write permissions. */
-typedef VMXMSREXITWRITE* PVMXMSREXITWRITE;
-
-/**
- * VMX MSR autoload/store element.
+ * VMX MSR autoload/store slot.
  * In accordance to the VT-x spec.
  */
 typedef struct VMXAUTOMSR
@@ -2140,8 +2140,15 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_PROC_CTLS2_CONCEAL_FROM_PT                          RT_BIT(19)
 /** Enables XSAVES/XRSTORS instructions. */
 #define VMX_PROC_CTLS2_XSAVES_XRSTORS                           RT_BIT(20)
+/** Enables supervisor/user mode based EPT execute permission for linear
+ *  addresses. */
+#define VMX_PROC_CTLS2_MODE_BASED_EPT_PERM                      RT_BIT(22)
+/** Enables EPT permissions to be specified at granularity of 128 bytes. */
+#define VMX_PROC_CTLS2_SPPTP                                    RT_BIT(23)
 /** Use TSC scaling. */
 #define VMX_PROC_CTLS2_TSC_SCALING                              RT_BIT(25)
+/** Enables consulting ENCLV-exiting bitmap when executing ENCLV. */
+#define VMX_PROC_CTLS2_ENCLV_EXIT                               RT_BIT(28)
 
 /** Bit fields for MSR_IA32_VMX_PROCBASED_CTLS2 and Secondary processor-based
  *  VM-execution controls field in the VMCS. */
@@ -2187,17 +2194,28 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS2_CONCEAL_FROM_PT_MASK                  UINT32_C(0x00080000)
 #define VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT                  20
 #define VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_MASK                   UINT32_C(0x00100000)
-#define VMX_BF_PROC_CTLS2_UNDEF_21_24_SHIFT                     21
-#define VMX_BF_PROC_CTLS2_UNDEF_21_24_MASK                      UINT32_C(0x01e00000)
+#define VMX_BF_PROC_CTLS2_UNDEF_21_SHIFT                        21
+#define VMX_BF_PROC_CTLS2_UNDEF_21_MASK                         UINT32_C(0x00200000)
+#define VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_SHIFT             22
+#define VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_MASK              UINT32_C(0x00400000)
+#define VMX_BF_PROC_CTLS2_SPPTP_SHIFT                           23
+#define VMX_BF_PROC_CTLS2_SPPTP_MASK                            UINT32_C(0x00800000)
+#define VMX_BF_PROC_CTLS2_UNDEF_24_SHIFT                        24
+#define VMX_BF_PROC_CTLS2_UNDEF_24_MASK                         UINT32_C(0x01000000)
 #define VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT                     25
 #define VMX_BF_PROC_CTLS2_TSC_SCALING_MASK                      UINT32_C(0x02000000)
-#define VMX_BF_PROC_CTLS2_UNDEF_26_31_SHIFT                     26
-#define VMX_BF_PROC_CTLS2_UNDEF_26_31_MASK                      UINT32_C(0xfc000000)
+#define VMX_BF_PROC_CTLS2_UNDEF_26_27_SHIFT                     26
+#define VMX_BF_PROC_CTLS2_UNDEF_26_27_MASK                      UINT32_C(0x0c000000)
+#define VMX_BF_PROC_CTLS2_ENCLV_EXIT_SHIFT                      28
+#define VMX_BF_PROC_CTLS2_ENCLV_EXIT_MASK                       UINT32_C(0x10000000)
+#define VMX_BF_PROC_CTLS2_UNDEF_29_31_SHIFT                     29
+#define VMX_BF_PROC_CTLS2_UNDEF_29_31_MASK                      UINT32_C(0xe0000000)
+
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
                             (VIRT_APIC_ACCESS, EPT, DESC_TABLE_EXIT, RDTSCP, VIRT_X2APIC_MODE, VPID, WBINVD_EXIT,
                              UNRESTRICTED_GUEST, APIC_REG_VIRT, VIRT_INT_DELIVERY, PAUSE_LOOP_EXIT, RDRAND_EXIT, INVPCID, VMFUNC,
-                             VMCS_SHADOWING, ENCLS_EXIT, RDSEED_EXIT, PML, EPT_VE, CONCEAL_FROM_PT, XSAVES_XRSTORS, UNDEF_21_24,
-                             TSC_SCALING, UNDEF_26_31));
+                             VMCS_SHADOWING, ENCLS_EXIT, RDSEED_EXIT, PML, EPT_VE, CONCEAL_FROM_PT, XSAVES_XRSTORS, UNDEF_21,
+                             MODE_BASED_EPT_PERM, SPPTP, UNDEF_24, TSC_SCALING, UNDEF_26_27, ENCLV_EXIT, UNDEF_29_31));
 /** @} */
 
 
@@ -3186,6 +3204,11 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
 #define VMX_V_VMCS_LAUNCH_STATE_CURRENT                         RT_BIT(2)
 /** VMCS launch state launched. */
 #define VMX_V_VMCS_LAUNCH_STATE_LAUNCHED                        RT_BIT(3)
+/** The mask of valid VMCS launch states. */
+#define VMX_V_VMCS_LAUNCH_STATE_MASK                            (  VMX_V_VMCS_LAUNCH_STATE_CLEAR \
+                                                                 | VMX_V_VMCS_LAUNCH_STATE_ACTIVE \
+                                                                 | VMX_V_VMCS_LAUNCH_STATE_CURRENT \
+                                                                 | VMX_V_VMCS_LAUNCH_STATE_LAUNCHED)
 /** @} */
 
 /** CR0 bits set here must always be set when in VMX operation. */
@@ -4097,8 +4120,7 @@ AssertCompileSize(VMXVDIAG, 4);
  * These are not HM all-context API functions, those are to be placed in hm.h.
  * @{
  */
-VMM_INT_DECL(int)   HMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr, PVMXMSREXITREAD penmRead,
-                                          PVMXMSREXITWRITE penmWrite);
+VMM_INT_DECL(uint32_t)  HMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
 VMM_INT_DECL(bool)  HMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
                                                uint8_t cbAccess);
 /** @} */

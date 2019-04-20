@@ -4674,27 +4674,6 @@ DECLINLINE(int) hmR0SvmRunGuest(PVMCPU pVCpu, RTHCPHYS HCPhysVmcb)
 
 
 /**
- * Undoes the TSC offset applied for an SVM nested-guest and returns the TSC
- * value for the guest.
- *
- * @returns The TSC offset after undoing any nested-guest TSC offset.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   uTicks      The nested-guest TSC.
- *
- * @note    If you make any changes to this function, please check if
- *          hmR0SvmNstGstUndoTscOffset() needs adjusting.
- *
- * @sa      HMApplySvmNstGstTscOffset().
- */
-DECLINLINE(uint64_t) hmR0SvmNstGstUndoTscOffset(PVMCPU pVCpu, uint64_t uTicks)
-{
-    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
-    Assert(pVmcbNstGstCache->fCacheValid);
-    return uTicks - pVmcbNstGstCache->u64TSCOffset;
-}
-
-
-/**
  * Performs some essential restoration of state after running guest (or
  * nested-guest) code in AMD-V.
  *
@@ -4726,7 +4705,7 @@ static void hmR0SvmPostRunGuest(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient, int r
         else
         {
             /* The nested-guest VMCB TSC offset shall eventually be restored on #VMEXIT via HMNotifySvmNstGstVmexit(). */
-            uint64_t const uGstTsc = hmR0SvmNstGstUndoTscOffset(pVCpu, uHostTsc + pVmcbCtrl->u64TSCOffset);
+            uint64_t const uGstTsc = HMRemoveSvmNstGstTscOffset(pVCpu, uHostTsc + pVmcbCtrl->u64TSCOffset);
             TMCpuTickSetLastSeen(pVCpu, uGstTsc);
         }
 #endif
@@ -6378,7 +6357,6 @@ HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
     if (rcStrict != VINF_SUCCESS)
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHltToR3);
     return VBOXSTRICTRC_VAL(rcStrict);;
@@ -6418,7 +6396,6 @@ HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMonitor);
     return VBOXSTRICTRC_TODO(rcStrict);
 }
 
@@ -6454,7 +6431,6 @@ HMSVM_EXIT_DECL hmR0SvmExitMwait(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
     }
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMwait);
     return VBOXSTRICTRC_TODO(rcStrict);
 }
 

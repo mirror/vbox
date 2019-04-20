@@ -109,7 +109,7 @@ static struct
                 /** Host CR4 value (set by ring-0 VMX init) */
                 uint64_t                    u64HostCr4;
                 /** Host EFER value (set by ring-0 VMX init) */
-                uint64_t                    u64HostEfer;
+                uint64_t                    u64HostMsrEfer;
                 /** Host SMM monitor control (used for logging/diagnostics) */
                 uint64_t                    u64HostSmmMonitorCtl;
                 /** Last instruction error. */
@@ -365,8 +365,8 @@ static int hmR0InitIntel(void)
     if (RT_SUCCESS(g_HmR0.rcInit))
     {
         /* Read CR4 and EFER for logging/diagnostic purposes. */
-        g_HmR0.hwvirt.u.vmx.u64HostCr4  = ASMGetCR4();
-        g_HmR0.hwvirt.u.vmx.u64HostEfer = ASMRdMsr(MSR_K6_EFER);
+        g_HmR0.hwvirt.u.vmx.u64HostCr4     = ASMGetCR4();
+        g_HmR0.hwvirt.u.vmx.u64HostMsrEfer = ASMRdMsr(MSR_K6_EFER);
 
         /* Get VMX MSRs for determining VMX features we can ultimately use. */
         SUPR0GetHwvirtMsrs(&g_HmR0.hwvirt.Msrs, SUPVTCAPS_VT_X, false /* fForce */);
@@ -1173,7 +1173,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
         pVM->hm.s.vmx.fUsePreemptTimer     &= g_HmR0.hwvirt.u.vmx.fUsePreemptTimer; /* Can be overridden by CFGM see HMR3Init(). */
         pVM->hm.s.vmx.cPreemptTimerShift    = g_HmR0.hwvirt.u.vmx.cPreemptTimerShift;
         pVM->hm.s.vmx.u64HostCr4            = g_HmR0.hwvirt.u.vmx.u64HostCr4;
-        pVM->hm.s.vmx.u64HostEfer           = g_HmR0.hwvirt.u.vmx.u64HostEfer;
+        pVM->hm.s.vmx.u64HostMsrEfer        = g_HmR0.hwvirt.u.vmx.u64HostMsrEfer;
         pVM->hm.s.vmx.u64HostSmmMonitorCtl  = g_HmR0.hwvirt.u.vmx.u64HostSmmMonitorCtl;
         HMGetVmxMsrsFromHwvirtMsrs(&g_HmR0.hwvirt.Msrs, &pVM->hm.s.vmx.Msrs);
     }

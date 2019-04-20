@@ -157,6 +157,7 @@ VMM_INT_DECL(void)              HMGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs
  * found in CPUM.
  * @{ */
 VMM_INT_DECL(bool)              HMCanExecuteVmxGuest(PVMCPU pVCpu, PCCPUMCTX pCtx);
+VMM_INT_DECL(TRPMEVENT)         HMVmxEventToTrpmEventType(uint32_t uIntInfo);
 /** @} */
 
 /** @name All-context SVM helpers.
@@ -180,12 +181,16 @@ VMM_INT_DECL(bool)              HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM
 VMM_INT_DECL(bool)              HMIsLongModeAllowed(PVM pVM);
 VMM_INT_DECL(bool)              HMIsNestedPagingActive(PVM pVM);
 VMM_INT_DECL(bool)              HMIsMsrBitmapActive(PVM pVM);
+# ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+VMM_INT_DECL(void)              HMNotifyVmxNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx);
+# endif
 /** @} */
 
 /** @name R0, R3 SVM handlers.
  * @{ */
 VMM_INT_DECL(bool)              HMIsSvmVGifActive(PVM pVM);
 VMM_INT_DECL(uint64_t)          HMApplySvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks);
+VMM_INT_DECL(uint64_t)          HMRemoveSvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 VMM_INT_DECL(void)              HMNotifySvmNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx);
 # endif
@@ -211,6 +216,7 @@ VMM_INT_DECL(int)               HMHCMaybeMovTprSvmHypercall(PVMCPU pVCpu);
  * @{ */
 # define HMIsSvmVGifActive(pVM)                                       false
 # define HMApplySvmNstGstTscOffset(pVCpu, uTicks)                     (uTicks)
+# define HMRemoveSvmNstGstTscOffset(pVCpu, uTicks)                    (uTicks)
 # define HMNotifySvmNstGstVmexit(pVCpu, pCtx)                         do { } while (0)
 # define HMIsSubjectToSvmErratum170(puFamily, puModel, puStepping)    false
 # define HMHCMaybeMovTprSvmHypercall(pVCpu)                           do { } while (0)
@@ -266,7 +272,6 @@ VMMR3DECL(bool)                 HMR3IsUXActive(PUVM pUVM);
 VMMR3DECL(bool)                 HMR3IsSvmEnabled(PUVM pUVM);
 VMMR3DECL(bool)                 HMR3IsVmxEnabled(PUVM pUVM);
 
-VMMR3_INT_DECL(bool)            HMR3IsEventPending(PVMCPU pVCpu);
 VMMR3_INT_DECL(int)             HMR3Init(PVM pVM);
 VMMR3_INT_DECL(int)             HMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3_INT_DECL(void)            HMR3Relocate(PVM pVM);

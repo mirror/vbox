@@ -677,9 +677,9 @@ ENDPROC VMXClearVmcs
 ; * @returns VBox status code.
 ; * @param   HCPhysVmcs     Physical address of VMCS structure.
 ; */
-;DECLASM(int) VMXActivateVmcs(RTHCPHYS HCPhysVmcs);
+;DECLASM(int) VMXLoadVmcs(RTHCPHYS HCPhysVmcs);
 ALIGNCODE(16)
-BEGINPROC VMXActivateVmcs
+BEGINPROC VMXLoadVmcs
 %ifdef RT_ARCH_AMD64
     xor     rax, rax
  %ifdef ASM_CALL64_GCC
@@ -699,7 +699,7 @@ BEGINPROC VMXActivateVmcs
     add     rsp, 8
 %endif
     ret
-ENDPROC VMXActivateVmcs
+ENDPROC VMXLoadVmcs
 
 
 ;/**
@@ -708,8 +708,8 @@ ENDPROC VMXActivateVmcs
 ; * @returns VBox status code.
 ; * @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - Address that will receive the current pointer.
 ; */
-;DECLASM(int) VMXGetActivatedVmcs(RTHCPHYS *pVMCS);
-BEGINPROC VMXGetActivatedVmcs
+;DECLASM(int) VMXGetCurrentVmcs(RTHCPHYS *pVMCS);
+BEGINPROC VMXGetCurrentVmcs
 %ifdef RT_OS_OS2
     mov     eax, VERR_NOT_SUPPORTED
     ret
@@ -727,7 +727,7 @@ BEGINPROC VMXGetActivatedVmcs
 .the_end:
     ret
 %endif
-ENDPROC VMXGetActivatedVmcs
+ENDPROC VMXGetCurrentVmcs
 
 ;/**
 ; * Invalidate a page using INVEPT.
@@ -866,7 +866,7 @@ ENDPROC SVMR0InvlpgA
 ; Wrapper around vmx.pfnStartVM that preserves host XMM registers and
 ; load the guest ones when necessary.
 ;
-; @cproto       DECLASM(int) HMR0VMXStartVMhmR0DumpDescriptorM(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSBATCHCACHE pCache,
+; @cproto       DECLASM(int) HMR0VMXStartVMhmR0DumpDescriptorM(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCACHE pCache,
 ;                                                              PVM pVM, PVMCPU pVCpu, PFNHMVMXSTARTVM pfnStartVM);
 ;
 ; @returns      eax
@@ -1301,7 +1301,7 @@ ENDPROC   hmR0SVMRunWrapXMM
     ; Note! If we get here as a result of invalid VMCS pointer, all the following
     ; vmread's will fail (only eflags.cf=1 will be set) but that shouldn't cause any
     ; trouble only just less efficient.
-    mov     ecx, [ss:xDX + VMXVMCSBATCHCACHE.Read.cValidEntries]
+    mov     ecx, [ss:xDX + VMXVMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0      ; Can't happen
     je      %%no_cached_read32
     jmp     %%cached_read32
@@ -1309,9 +1309,9 @@ ENDPROC   hmR0SVMRunWrapXMM
 ALIGN(16)
 %%cached_read32:
     dec     xCX
-    mov     eax, [ss:xDX + VMXVMCSBATCHCACHE.Read.aField + xCX * 4]
+    mov     eax, [ss:xDX + VMXVMCSCACHE.Read.aField + xCX * 4]
     ; Note! This leaves the high 32 bits of the cache entry unmodified!!
-    vmread  [ss:xDX + VMXVMCSBATCHCACHE.Read.aFieldVal + xCX * 8], xAX
+    vmread  [ss:xDX + VMXVMCSCACHE.Read.aFieldVal + xCX * 8], xAX
     cmp     xCX, 0
     jnz     %%cached_read32
 %%no_cached_read32:
@@ -1427,7 +1427,7 @@ BEGINPROC VMXR0StartVM32
     MYPUSHSEGS xAX, ax
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    mov     ecx, [xBX + VMXVMCSBATCHCACHE.Write.cValidEntries]
+    mov     ecx, [xBX + VMXVMCSCACHE.Write.cValidEntries]
     cmp     ecx, 0
     je      .no_cached_writes
     mov     edx, ecx
@@ -1436,13 +1436,13 @@ BEGINPROC VMXR0StartVM32
 
 ALIGN(16)
 .cached_write:
-    mov     eax, [xBX + VMXVMCSBATCHCACHE.Write.aField + xCX * 4]
-    vmwrite xAX, [xBX + VMXVMCSBATCHCACHE.Write.aFieldVal + xCX * 8]
+    mov     eax, [xBX + VMXVMCSCACHE.Write.aField + xCX * 4]
+    vmwrite xAX, [xBX + VMXVMCSCACHE.Write.aFieldVal + xCX * 8]
     inc     xCX
     cmp     xCX, xDX
     jl     .cached_write
 
-    mov     dword [xBX + VMXVMCSBATCHCACHE.Write.cValidEntries], 0
+    mov     dword [xBX + VMXVMCSCACHE.Write.cValidEntries], 0
 .no_cached_writes:
 
     ; Save the pVmcsCache pointer.
@@ -1628,7 +1628,7 @@ ENDPROC VMXR0StartVM32
     ; Note! If we get here as a result of invalid VMCS pointer, all the following
     ; vmread's will fail (only eflags.cf=1 will be set) but that shouldn't cause any
     ; trouble only just less efficient.
-    mov     ecx, [xDX + VMXVMCSBATCHCACHE.Read.cValidEntries]
+    mov     ecx, [xDX + VMXVMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0      ; Can't happen
     je      %%no_cached_read64
     jmp     %%cached_read64
@@ -1636,8 +1636,8 @@ ENDPROC VMXR0StartVM32
 ALIGN(16)
 %%cached_read64:
     dec     xCX
-    mov     eax, [xDX + VMXVMCSBATCHCACHE.Read.aField + xCX * 4]
-    vmread  [xDX + VMXVMCSBATCHCACHE.Read.aFieldVal + xCX * 8], xAX
+    mov     eax, [xDX + VMXVMCSCACHE.Read.aField + xCX * 4]
+    vmread  [xDX + VMXVMCSCACHE.Read.aFieldVal + xCX * 8], xAX
     cmp     xCX, 0
     jnz     %%cached_read64
 %%no_cached_read64:
@@ -1736,7 +1736,7 @@ BEGINPROC VMXR0StartVM64
     MYPUSHSEGS xAX, ax
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    mov     ecx, [xBX + VMXVMCSBATCHCACHE.Write.cValidEntries]
+    mov     ecx, [xBX + VMXVMCSCACHE.Write.cValidEntries]
     cmp     ecx, 0
     je      .no_cached_writes
     mov     edx, ecx
@@ -1745,13 +1745,13 @@ BEGINPROC VMXR0StartVM64
 
 ALIGN(16)
 .cached_write:
-    mov     eax, [xBX + VMXVMCSBATCHCACHE.Write.aField + xCX * 4]
-    vmwrite xAX, [xBX + VMXVMCSBATCHCACHE.Write.aFieldVal + xCX * 8]
+    mov     eax, [xBX + VMXVMCSCACHE.Write.aField + xCX * 4]
+    vmwrite xAX, [xBX + VMXVMCSCACHE.Write.aFieldVal + xCX * 8]
     inc     xCX
     cmp     xCX, xDX
     jl     .cached_write
 
-    mov     dword [xBX + VMXVMCSBATCHCACHE.Write.cValidEntries], 0
+    mov     dword [xBX + VMXVMCSCACHE.Write.cValidEntries], 0
 .no_cached_writes:
 
     ; Save the pVmcsCache pointer.

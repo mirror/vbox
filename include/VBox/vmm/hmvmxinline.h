@@ -401,9 +401,9 @@ success:
  * @param   HCPhysVmcs       Physical address of VMCS structure.
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS)
-DECLASM(int) VMXActivateVmcs(RTHCPHYS HCPhysVmcs);
+DECLASM(int) VMXLoadVmcs(RTHCPHYS HCPhysVmcs);
 #else
-DECLINLINE(int) VMXActivateVmcs(RTHCPHYS HCPhysVmcs)
+DECLINLINE(int) VMXLoadVmcs(RTHCPHYS HCPhysVmcs)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     int rc = VINF_SUCCESS;
@@ -457,7 +457,7 @@ success:
  * @param   pHCPhysVmcs    Where to store the physical address of the current
  *                         VMCS.
  */
-DECLASM(int) VMXGetActivatedVmcs(RTHCPHYS *pHCPhysVmcs);
+DECLASM(int) VMXGetCurrentVmcs(RTHCPHYS *pHCPhysVmcs);
 
 
 /**
@@ -561,7 +561,7 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t uFieldEnc, uint64_t u64Va
 
 #if ARCH_BITS == 32
 # define VMXWriteVmcsHstN                       VMXWriteVmcs32
-# define VMXWriteVmcsGstN(uFieldEnc, u64Val)     VMXWriteVmcs64Ex(pVCpu, uFieldEnc, u64Val)
+# define VMXWriteVmcsGstN(uFieldEnc, u64Val)    VMXWriteVmcs64Ex(pVCpu, uFieldEnc, u64Val)
 #else  /* ARCH_BITS == 64 */
 # define VMXWriteVmcsHstN                       VMXWriteVmcs64
 # define VMXWriteVmcsGstN                       VMXWriteVmcs64

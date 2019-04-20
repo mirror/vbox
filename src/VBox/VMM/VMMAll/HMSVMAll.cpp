@@ -203,10 +203,7 @@ VMM_INT_DECL(bool) HMIsSvmVGifActive(PVM pVM)
  *          nested-guest VMCB. The latter may have been modified for executing
  *          using hardware-assisted SVM.
  *
- * @note    If you make any changes to this function, please check if
- *          hmR0SvmNstGstUndoTscOffset() needs adjusting.
- *
- * @sa      CPUMApplyNestedGuestTscOffset(), hmR0SvmNstGstUndoTscOffset().
+ * @sa      CPUMRemoveNestedGuestTscOffset, HMRemoveSvmNstGstTscOffset.
  */
 VMM_INT_DECL(uint64_t) HMApplySvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks)
 {
@@ -215,6 +212,30 @@ VMM_INT_DECL(uint64_t) HMApplySvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks)
     PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
     Assert(pVmcbNstGstCache->fCacheValid);
     return uTicks + pVmcbNstGstCache->u64TSCOffset;
+}
+
+
+/**
+ * Removes the TSC offset of an SVM nested-guest if any and returns the new TSC
+ * value for the guest.
+ *
+ * @returns The TSC offset after removing any nested-guest TSC offset.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   uTicks      The nested-guest TSC.
+ *
+ * @remarks This function looks at the VMCB cache rather than directly at the
+ *          nested-guest VMCB. The latter may have been modified for executing
+ *          using hardware-assisted SVM.
+ *
+ * @sa      CPUMApplyNestedGuestTscOffset, HMApplySvmNstGstTscOffset.
+ */
+VMM_INT_DECL(uint64_t) HMRemoveSvmNstGstTscOffset(PVMCPU pVCpu, uint64_t uTicks)
+{
+    PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx)); RT_NOREF(pCtx);
+    PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
+    Assert(pVmcbNstGstCache->fCacheValid);
+    return uTicks - pVmcbNstGstCache->u64TSCOffset;
 }
 
 

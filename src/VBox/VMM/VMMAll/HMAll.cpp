@@ -798,7 +798,10 @@ VMM_INT_DECL(void) HMHCChangedPagingMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmShado
      * extra careful if/when the guest switches back to protected mode.
      */
     if (enmGuestMode == PGMMODE_REAL)
-        pVCpu->hm.s.vmx.fWasInRealMode = true;
+    {
+        PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
+        pVmcsInfo->fWasInRealMode = true;
+    }
 
 # ifdef IN_RING0
     /*
@@ -813,7 +816,7 @@ VMM_INT_DECL(void) HMHCChangedPagingMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmShado
         if (pVM->hm.s.svm.fSupported)
             fChanged |= HM_CHANGED_SVM_GUEST_XCPT_INTERCEPTS;
         else
-            fChanged |= HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS | HM_CHANGED_VMX_ENTRY_CTLS | HM_CHANGED_VMX_EXIT_CTLS;
+            fChanged |= HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS | HM_CHANGED_VMX_ENTRY_EXIT_CTLS;
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, fChanged);
     }
 # endif

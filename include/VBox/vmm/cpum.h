@@ -1467,6 +1467,7 @@ VMM_INT_DECL(uint8_t)   CPUMGetGuestSvmVirtIntrVector(PCCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmExitRestoreHostState(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(void)      CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr);
 VMM_INT_DECL(uint64_t)  CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
+VMM_INT_DECL(uint64_t)  CPUMRemoveNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxPhysIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxVirtIntrEnabled(PVMCPU pVCpu, PCCPUMCTX pCtx);
 /** @} */

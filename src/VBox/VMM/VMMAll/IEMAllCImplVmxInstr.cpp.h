@@ -162,30 +162,6 @@
         return VERR_VMX_VMEXIT_FAILED; \
     } while (0)
 
-/** Enables/disables IEM-only EM execution policy in and from ring-3.   */
-# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcStrictRet) \
-    do { \
-        Log(("%s: Enabling IEM-only EM execution policy!\n", (a_pszLogPrefix))); \
-        int rcSched = EMR3SetExecutionPolicy((a_pVCpu)->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true); \
-        if (rcSched != VINF_SUCCESS) \
-            iemSetPassUpStatus(pVCpu, rcSched); \
-        return (a_rcStrictRet); \
-    } while (0)
-
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcStrictRet) \
-    do { \
-        Log(("%s: Disabling IEM-only EM execution policy!\n", (a_pszLogPrefix))); \
-        int rcSched = EMR3SetExecutionPolicy((a_pVCpu)->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false); \
-        if (rcSched != VINF_SUCCESS) \
-            iemSetPassUpStatus(pVCpu, rcSched); \
-        return (a_rcStrictRet); \
-    } while (0)
-# else
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcStrictRet)   do { return (a_rcRet); } while (0)
-#  define IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE_RET(a_pVCpu, a_pszLogPrefix, a_rcStrictRet)  do { return (a_rcRet); } while (0)
-# endif
-
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
@@ -1645,7 +1621,7 @@ IEM_STATIC uint32_t iemVmxCalcPreemptTimer(PVMCPU pVCpu)
      * Assume the following:
      * PreemptTimerShift = 5
      * VmcsPreemptTimer  = 2 (i.e. need to decrement by 1 every 2 * RT_BIT(5) = 20000 TSC ticks)
-     * VmentryTick       = 50000 (TSC at time of VM-entry)
+     * EntryTick         = 50000 (TSC at time of VM-entry)
      *
      * CurTick   Delta    PreemptTimerVal
      * ----------------------------------
@@ -1669,8 +1645,8 @@ IEM_STATIC uint32_t iemVmxCalcPreemptTimer(PVMCPU pVCpu)
      */
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
     uint64_t const uCurTick        = TMCpuTickGetNoCheck(pVCpu);
-    uint64_t const uVmentryTick    = pVCpu->cpum.GstCtx.hwvirt.vmx.uVmentryTick;
-    uint64_t const uDelta          = uCurTick - uVmentryTick;
+    uint64_t const uEntryTick      = pVCpu->cpum.GstCtx.hwvirt.vmx.uEntryTick;
+    uint64_t const uDelta          = uCurTick - uEntryTick;
     uint32_t const uVmcsPreemptVal = pVmcs->u32PreemptTimer;
     uint32_t const uPreemptTimer   = uVmcsPreemptVal
                                    - ASMDivU64ByU32RetU32(uDelta, uVmcsPreemptVal * RT_BIT(VMX_V_PREEMPT_TIMER_SHIFT));
@@ -1912,7 +1888,7 @@ IEM_STATIC void iemVmxVmexitSaveGuestState(PVMCPU pVCpu, uint32_t uExitReason)
 
 
 /**
- * Saves the guest MSRs into the VM-exit auto-store MSRs area as part of VM-exit.
+ * Saves the guest MSRs into the VM-exit MSR-store area as part of VM-exit.
  *
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -1947,7 +1923,7 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
     else
         IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStoreCount);
 
-    PVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea);
+    PVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrStoreArea);
     Assert(pMsr);
     for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
     {
@@ -1979,14 +1955,14 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
         }
     }
 
-    RTGCPHYS const GCPhysAutoMsrArea = pVmcs->u64AddrExitMsrStore.u;
-    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysAutoMsrArea,
-                                      pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea), cMsrs * sizeof(VMXAUTOMSR));
+    RTGCPHYS const GCPhysVmExitMsrStoreArea = pVmcs->u64AddrExitMsrStore.u;
+    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmExitMsrStoreArea,
+                                      pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrStoreArea), cMsrs * sizeof(VMXAUTOMSR));
     if (RT_SUCCESS(rc))
     { /* likely */ }
     else
     {
-        AssertMsgFailed(("VM-exit: Failed to write MSR auto-store area at %#RGp, rc=%Rrc\n", GCPhysAutoMsrArea, rc));
+        AssertMsgFailed(("VM-exit: Failed to write MSR auto-store area at %#RGp, rc=%Rrc\n", GCPhysVmExitMsrStoreArea, rc));
         IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStorePtrWritePhys);
     }
 
@@ -2255,7 +2231,7 @@ IEM_STATIC int iemVmxVmexitCheckHostPdptes(PVMCPU pVCpu, uint32_t uExitReason)
 
 
 /**
- * Loads the host MSRs from the VM-exit auto-load MSRs area as part of VM-exit.
+ * Loads the host MSRs from the VM-exit MSR-load area as part of VM-exit.
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -2290,13 +2266,12 @@ IEM_STATIC int iemVmxVmexitLoadHostAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
     else
         IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrLoadCount);
 
-    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea));
-    RTGCPHYS const GCPhysAutoMsrArea = pVmcs->u64AddrExitMsrLoad.u;
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea),
-                                     GCPhysAutoMsrArea, cMsrs * sizeof(VMXAUTOMSR));
+    RTGCPHYS const GCPhysVmExitMsrLoadArea = pVmcs->u64AddrExitMsrLoad.u;
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrLoadArea),
+                                     GCPhysVmExitMsrLoadArea, cMsrs * sizeof(VMXAUTOMSR));
     if (RT_SUCCESS(rc))
     {
-        PCVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea);
+        PCVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrLoadArea);
         Assert(pMsr);
         for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
         {
@@ -2330,7 +2305,7 @@ IEM_STATIC int iemVmxVmexitLoadHostAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
     }
     else
     {
-        AssertMsgFailed(("VM-exit: Failed to read MSR auto-load area at %#RGp, rc=%Rrc\n", GCPhysAutoMsrArea, rc));
+        AssertMsgFailed(("VM-exit: Failed to read MSR auto-load area at %#RGp, rc=%Rrc\n", GCPhysVmExitMsrLoadArea, rc));
         IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrLoadPtrReadPhys);
     }
 
@@ -2895,8 +2870,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     /* We're no longer in nested-guest execution mode. */
     pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = false;
 
-    /* Revert any IEM-only nested-guest execution policy if it was set earlier, otherwise return rcStrict. */
-    IEM_VMX_R3_EXECPOLICY_IEM_ALL_DISABLE_RET(pVCpu, "VM-exit", rcStrict);
+#  if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+    /* Revert any IEM-only nested-guest execution policy, otherwise return rcStrict. */
+    Log(("vmexit: Disabling IEM-only EM execution policy!\n"));
+    int rcSched = EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, false);
+    if (rcSched != VINF_SUCCESS)
+        iemSetPassUpStatus(pVCpu, rcSched);
+#  endif
+    return VINF_SUCCESS;
 # endif
 }
 
@@ -4311,12 +4292,21 @@ DECLINLINE(uint16_t) iemVmxVirtApicClearPendingWrite(PVMCPU pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   offReg      The offset of the register being read.
  */
-DECLINLINE(uint32_t) iemVmxVirtApicReadRaw32(PVMCPU pVCpu, uint16_t offReg)
+IEM_STATIC uint32_t iemVmxVirtApicReadRaw32(PVMCPU pVCpu, uint16_t offReg)
 {
-    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
-    uint8_t  const *pbVirtApic = (const uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
-    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
-    uint32_t const uReg = *(const uint32_t *)(pbVirtApic + offReg);
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    uint32_t uReg;
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uReg));
+    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &uReg, GCPhysVirtApic + offReg, sizeof(uReg));
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("Failed to read %u bytes at offset %#x of the virtual-APIC page at %#RGp\n", sizeof(uReg), offReg,
+                         GCPhysVirtApic));
+        uReg = 0;
+    }
     return uReg;
 }
 
@@ -4328,12 +4318,21 @@ DECLINLINE(uint32_t) iemVmxVirtApicReadRaw32(PVMCPU pVCpu, uint16_t offReg)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   offReg      The offset of the register being read.
  */
-DECLINLINE(uint64_t) iemVmxVirtApicReadRaw64(PVMCPU pVCpu, uint16_t offReg)
+IEM_STATIC uint64_t iemVmxVirtApicReadRaw64(PVMCPU pVCpu, uint16_t offReg)
 {
-    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
-    uint8_t  const *pbVirtApic = (const uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
-    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
-    uint64_t const uReg = *(const uint64_t *)(pbVirtApic + offReg);
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+
+    uint64_t uReg;
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uReg));
+    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &uReg, GCPhysVirtApic + offReg, sizeof(uReg));
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("Failed to read %u bytes at offset %#x of the virtual-APIC page at %#RGp\n", sizeof(uReg), offReg,
+                         GCPhysVirtApic));
+        uReg = 0;
+    }
     return uReg;
 }
 
@@ -4345,12 +4344,18 @@ DECLINLINE(uint64_t) iemVmxVirtApicReadRaw64(PVMCPU pVCpu, uint16_t offReg)
  * @param   offReg      The offset of the register being written.
  * @param   uReg        The register value to write.
  */
-DECLINLINE(void) iemVmxVirtApicWriteRaw32(PVMCPU pVCpu, uint16_t offReg, uint32_t uReg)
+IEM_STATIC void iemVmxVirtApicWriteRaw32(PVMCPU pVCpu, uint16_t offReg, uint32_t uReg)
 {
-    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
-    uint8_t *pbVirtApic = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
-    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
-    *(uint32_t *)(pbVirtApic + offReg) = uReg;
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uReg));
+    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic + offReg, &uReg, sizeof(uReg));
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("Failed to write %u bytes at offset %#x of the virtual-APIC page at %#RGp\n", sizeof(uReg), offReg,
+                         GCPhysVirtApic));
+    }
 }
 
 
@@ -4361,12 +4366,18 @@ DECLINLINE(void) iemVmxVirtApicWriteRaw32(PVMCPU pVCpu, uint16_t offReg, uint32_
  * @param   offReg      The offset of the register being written.
  * @param   uReg        The register value to write.
  */
-DECLINLINE(void) iemVmxVirtApicWriteRaw64(PVMCPU pVCpu, uint16_t offReg, uint64_t uReg)
+IEM_STATIC void iemVmxVirtApicWriteRaw64(PVMCPU pVCpu, uint16_t offReg, uint64_t uReg)
 {
-    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uint32_t));
-    uint8_t *pbVirtApic = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
-    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
-    *(uint64_t *)(pbVirtApic + offReg) = uReg;
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(offReg <= VMX_V_VIRT_APIC_SIZE - sizeof(uReg));
+    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic + offReg, &uReg, sizeof(uReg));
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("Failed to write %u bytes at offset %#x of the virtual-APIC page at %#RGp\n", sizeof(uReg), offReg,
+                         GCPhysVirtApic));
+    }
 }
 
 
@@ -4379,13 +4390,30 @@ DECLINLINE(void) iemVmxVirtApicWriteRaw64(PVMCPU pVCpu, uint16_t offReg, uint64_
  *
  * @remarks This is based on our APIC device code.
  */
-DECLINLINE(void) iemVmxVirtApicSetVector(PVMCPU pVCpu, uint16_t offReg, uint8_t uVector)
+IEM_STATIC void iemVmxVirtApicSetVectorInReg(PVMCPU pVCpu, uint16_t offReg, uint8_t uVector)
 {
-    Assert(offReg == XAPIC_OFF_ISR0 || offReg == XAPIC_OFF_TMR0 || offReg == XAPIC_OFF_IRR0);
-    uint8_t       *pbBitmap     = ((uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage)) + offReg;
-    uint16_t const offVector    = (uVector & UINT32_C(0xe0)) >> 1;
-    uint16_t const idxVectorBit = uVector & UINT32_C(0x1f);
-    ASMAtomicBitSet(pbBitmap + offVector, idxVectorBit);
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    uint32_t uReg;
+    uint16_t const offVector      = (uVector & UINT32_C(0xe0)) >> 1;
+    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &uReg, GCPhysVirtApic + offReg + offVector, sizeof(uReg));
+    if (RT_SUCCESS(rc))
+    {
+        uint16_t const idxVectorBit = uVector & UINT32_C(0x1f);
+        uReg |= RT_BIT(idxVectorBit);
+        rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic + offReg + offVector, &uReg, sizeof(uReg));
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("Failed to set vector %#x in 256-bit register at %#x of the virtual-APIC page at %#RGp\n",
+                             uVector, offReg, GCPhysVirtApic));
+        }
+    }
+    else
+    {
+        AssertMsgFailed(("Failed to get vector %#x in 256-bit register at %#x of the virtual-APIC page at %#RGp\n",
+                         uVector, offReg, GCPhysVirtApic));
+    }
 }
 
 
@@ -4398,13 +4426,30 @@ DECLINLINE(void) iemVmxVirtApicSetVector(PVMCPU pVCpu, uint16_t offReg, uint8_t 
  *
  * @remarks This is based on our APIC device code.
  */
-DECLINLINE(void) iemVmxVirtApicClearVector(PVMCPU pVCpu, uint16_t offReg, uint8_t uVector)
+IEM_STATIC void iemVmxVirtApicClearVectorInReg(PVMCPU pVCpu, uint16_t offReg, uint8_t uVector)
 {
-    Assert(offReg == XAPIC_OFF_ISR0 || offReg == XAPIC_OFF_TMR0 || offReg == XAPIC_OFF_IRR0);
-    uint8_t       *pbBitmap     = ((uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage)) + offReg;
-    uint16_t const offVector    = (uVector & UINT32_C(0xe0)) >> 1;
-    uint16_t const idxVectorBit = uVector & UINT32_C(0x1f);
-    ASMAtomicBitClear(pbBitmap + offVector, idxVectorBit);
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    uint32_t uReg;
+    uint16_t const offVector      = (uVector & UINT32_C(0xe0)) >> 1;
+    RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &uReg, GCPhysVirtApic + offReg + offVector, sizeof(uReg));
+    if (RT_SUCCESS(rc))
+    {
+        uint16_t const idxVectorBit = uVector & UINT32_C(0x1f);
+        uReg &= ~RT_BIT(idxVectorBit);
+        rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic + offReg + offVector, &uReg, sizeof(uReg));
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("Failed to clear vector %#x in 256-bit register at %#x of the virtual-APIC page at %#RGp\n",
+                             uVector, offReg, GCPhysVirtApic));
+        }
+    }
+    else
+    {
+        AssertMsgFailed(("Failed to get vector %#x in 256-bit register at %#x of the virtual-APIC page at %#RGp\n",
+                         uVector, offReg, GCPhysVirtApic));
+    }
 }
 
 
@@ -4832,6 +4877,7 @@ static int iemVmxVirtApicGetHighestSetBitInReg(PVMCPU pVCpu, uint16_t offReg, ui
 {
     Assert(offReg < XAPIC_OFF_END + 4);
     Assert(pidxHighestBit);
+    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs));
 
     /*
      * There are 8 contiguous fragments (of 16-bytes each) in the sparse register.
@@ -5006,7 +5052,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxEoiVirtualization(PVMCPU pVCpu)
     Log2(("eoi_virt: uRvi=%#x uSvi=%#x\n", uRvi, uSvi));
 
     uint8_t uVector = uSvi;
-    iemVmxVirtApicClearVector(pVCpu, XAPIC_OFF_ISR0, uVector);
+    iemVmxVirtApicClearVectorInReg(pVCpu, XAPIC_OFF_ISR0, uVector);
 
     uVector = 0;
     iemVmxVirtApicGetHighestSetBitInReg(pVCpu, XAPIC_OFF_ISR0, &uVector);
@@ -5047,7 +5093,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxSelfIpiVirtualization(PVMCPU pVCpu)
      */
     uint8_t const uVector = iemVmxVirtApicReadRaw32(pVCpu, XAPIC_OFF_ICR_LO);
     Log2(("self_ipi_virt: uVector=%#x\n", uVector));
-    iemVmxVirtApicSetVector(pVCpu, XAPIC_OFF_IRR0, uVector);
+    iemVmxVirtApicSetVectorInReg(pVCpu, XAPIC_OFF_IRR0, uVector);
     uint8_t const uRvi = RT_LO_U8(pVmcs->u16GuestIntStatus);
     uint8_t const uSvi = RT_HI_U8(pVmcs->u16GuestIntStatus);
     if (uVector > uRvi)
@@ -6651,27 +6697,29 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPU pVCpu, const char *pszInstr)
         else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVirtApicPage);
 
-        /* Read the Virtual-APIC page. */
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage));
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage),
-                                         GCPhysVirtApic, VMX_V_VIRT_APIC_PAGES);
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys);
-
         /* TPR threshold without virtual-interrupt delivery. */
         if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
             &&  (pVmcs->u32TprThreshold & ~VMX_TPR_THRESHOLD_MASK))
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_TprThresholdRsvd);
 
         /* TPR threshold and VTPR. */
-        uint8_t const *pbVirtApic = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVirtApicPage);
-        uint8_t const  u8VTpr     = *(pbVirtApic + XAPIC_OFF_TPR);
         if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
-            && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
-            && RT_BF_GET(pVmcs->u32TprThreshold, VMX_BF_TPR_THRESHOLD_TPR) > ((u8VTpr >> 4) & UINT32_C(0xf)) /* Bits 4:7 */)
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_TprThresholdVTpr);
+            && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
+        {
+            /* Read the VTPR from the virtual-APIC page. */
+            uint8_t u8VTpr;
+            int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &u8VTpr, GCPhysVirtApic + XAPIC_OFF_TPR, sizeof(u8VTpr));
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys);
+
+            /* Bits 3:0 of the TPR-threshold must not be greater than bits 7:4 of VTPR. */
+            if ((uint8_t)RT_BF_GET(pVmcs->u32TprThreshold, VMX_BF_TPR_THRESHOLD_TPR) <= (u8VTpr & 0xf0))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_TprThresholdVTpr);
+        }
     }
     else
     {
@@ -7008,7 +7056,7 @@ IEM_STATIC void iemVmxVmentryLoadGuestSegRegs(PVMCPU pVCpu)
 
 
 /**
- * Loads the guest MSRs from the VM-entry auto-load MSRs as part of VM-entry.
+ * Loads the guest MSRs from the VM-entry MSR-load area as part of VM-entry.
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -7046,12 +7094,12 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrLoadCount);
     }
 
-    RTGCPHYS const GCPhysAutoMsrArea = pVmcs->u64AddrEntryMsrLoad.u;
-    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea),
-                                     GCPhysAutoMsrArea, cMsrs * sizeof(VMXAUTOMSR));
+    RTGCPHYS const GCPhysVmEntryMsrLoadArea = pVmcs->u64AddrEntryMsrLoad.u;
+    int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pEntryMsrLoadArea),
+                                     GCPhysVmEntryMsrLoadArea, cMsrs * sizeof(VMXAUTOMSR));
     if (RT_SUCCESS(rc))
     {
-        PCVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pAutoMsrArea);
+        PCVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pEntryMsrLoadArea);
         Assert(pMsr);
         for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
         {
@@ -7088,7 +7136,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPU pVCpu, const char *pszInstr
     }
     else
     {
-        AssertMsgFailed(("%s: Failed to read MSR auto-load area at %#RGp, rc=%Rrc\n", pszInstr, GCPhysAutoMsrArea, rc));
+        AssertMsgFailed(("%s: Failed to read MSR auto-load area at %#RGp, rc=%Rrc\n", pszInstr, GCPhysVmEntryMsrLoadArea, rc));
         IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrLoadPtrReadPhys);
     }
 
@@ -7297,11 +7345,11 @@ IEM_STATIC void iemVmxVmentrySetupPreemptTimer(PVMCPU pVCpu, const char *pszInst
     Assert(pVmcs);
     if (pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
     {
-        uint64_t const uVmentryTick = TMCpuTickGetNoCheck(pVCpu);
-        pVCpu->cpum.GstCtx.hwvirt.vmx.uVmentryTick = uVmentryTick;
+        uint64_t const uEntryTick = TMCpuTickGetNoCheck(pVCpu);
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uEntryTick = uEntryTick;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER);
 
-        Log(("%s: VM-entry set up VMX-preemption timer at %#RX64\n", pszInstr, uVmentryTick));
+        Log(("%s: VM-entry set up VMX-preemption timer at %#RX64\n", pszInstr, uEntryTick));
     }
     else
         Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
@@ -7339,15 +7387,23 @@ IEM_STATIC int iemVmxVmentryInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo
            enmTrapType = TRPM_HARDWARE_INT;
            break;
 
+        case VMX_ENTRY_INT_INFO_TYPE_NMI:
+        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:
+            enmTrapType = TRPM_TRAP;
+            break;
+
         case VMX_ENTRY_INT_INFO_TYPE_SW_INT:
             enmTrapType = TRPM_SOFTWARE_INT;
             break;
 
-        case VMX_ENTRY_INT_INFO_TYPE_NMI:
-        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:  /* ICEBP. */
         case VMX_ENTRY_INT_INFO_TYPE_SW_XCPT:       /* #BP and #OF */
-        case VMX_ENTRY_INT_INFO_TYPE_HW_XCPT:
-            enmTrapType = TRPM_TRAP;
+            Assert(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
+            enmTrapType = TRPM_SOFTWARE_INT;
+            break;
+
+        case VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT:  /* #DB (INT1/ICEBP). */
+            Assert(uVector == X86_XCPT_DB);
+            enmTrapType = TRPM_SOFTWARE_INT;
             break;
 
         default:
@@ -7362,18 +7418,11 @@ IEM_STATIC int iemVmxVmentryInjectTrpmEvent(PVMCPU pVCpu, uint32_t uEntryIntInfo
     if (fErrCodeValid)
         TRPMSetErrorCode(pVCpu, uErrCode);
 
-    if (   uType   == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
-        && uVector == X86_XCPT_PF)
+    if (   enmTrapType == TRPM_TRAP
+        && uVector     == X86_XCPT_PF)
         TRPMSetFaultAddress(pVCpu, GCPtrFaultAddress);
-    else if (   uType == VMX_ENTRY_INT_INFO_TYPE_SW_INT
-             || uType == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT
-             || uType == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
-    {
-        AssertMsg(   uType == VMX_IDT_VECTORING_INFO_TYPE_SW_INT
-                  || (uVector == X86_XCPT_BP || uVector == X86_XCPT_OF),
-                  ("Invalid vector: uVector=%#x uVectorType=%#x\n", uVector, uType));
+    else if (enmTrapType == TRPM_SOFTWARE_INT)
         TRPMSetInstrLength(pVCpu, cbInstr);
-    }
 
     return VINF_SUCCESS;
 }
@@ -7708,7 +7757,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
                                 if (RT_SUCCESS(rcStrict))
                                 {
                                     /* Reschedule to IEM-only execution of the nested-guest or return VINF_SUCCESS. */
-                                    IEM_VMX_R3_EXECPOLICY_IEM_ALL_ENABLE_RET(pVCpu, pszInstr, VINF_SUCCESS);
+# if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
+                                    Log(("%s: Enabling IEM-only EM execution policy!\n", pszInstr));
+                                    int rcSched = EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
+                                    if (rcSched != VINF_SUCCESS)
+                                        iemSetPassUpStatus(pVCpu, rcSched);
+# endif
+                                    return VINF_SUCCESS;
                                 }
 
                                 Log(("%s: VM-entry event injection failed. rc=%Rrc\n", pszInstr, VBOXSTRICTRC_VAL(rcStrict)));
@@ -7756,25 +7811,10 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PVMCPU pVCpu, uint32_t uExitReaso
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
         Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap));
+        uint32_t fMsrpm = HMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr);
         if (uExitReason == VMX_EXIT_RDMSR)
-        {
-            VMXMSREXITREAD enmRead;
-            int rc = HMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, &enmRead,
-                                             NULL /* penmWrite */);
-            AssertRC(rc);
-            if (enmRead == VMXMSREXIT_INTERCEPT_READ)
-                return true;
-        }
-        else
-        {
-            VMXMSREXITWRITE enmWrite;
-            int rc = HMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), idMsr, NULL /* penmRead */,
-                                             &enmWrite);
-            AssertRC(rc);
-            if (enmWrite == VMXMSREXIT_INTERCEPT_WRITE)
-                return true;
-        }
-        return false;
+            return RT_BOOL(fMsrpm & VMXMSRPM_EXIT_RD);
+        return RT_BOOL(fMsrpm & VMXMSRPM_EXIT_WR);
     }
 
     /* Without MSR bitmaps, all MSR accesses are intercepted. */

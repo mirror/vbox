@@ -3009,14 +3009,14 @@ VMM_INT_DECL(void) CPUMSvmVmRunSaveHostState(PCPUMCTX pCtx, uint8_t cbInstr)
 
 
 /**
- * Applies the TSC offset of a nested-guest if any and returns the new TSC
- * value for the guest (or nested-guest).
+ * Applies the TSC offset of a nested-guest if any and returns the TSC value for the
+ * nested-guest.
  *
  * @returns The TSC offset after applying any nested-guest TSC offset.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   uTicks      The guest TSC.
  *
- * @sa      HMApplySvmNstGstTscOffset.
+ * @sa      CPUMRemoveNestedGuestTscOffset.
  */
 VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks)
 {
@@ -3032,12 +3032,52 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTic
 
     if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
     {
+        /** @todo r=bird: Bake HMApplySvmNstGstTscOffset into HMHasGuestSvmVmcbCached to save a call. */
         if (!HMHasGuestSvmVmcbCached(pVCpu))
         {
             PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
             return uTicks + pVmcb->ctrl.u64TSCOffset;
         }
         return HMApplySvmNstGstTscOffset(pVCpu, uTicks);
+    }
+#else
+    RT_NOREF(pVCpu);
+#endif
+    return uTicks;
+}
+
+
+/**
+ * Removes the TSC offset of a nested-guest if any and returns the TSC value for the
+ * guest.
+ *
+ * @returns The TSC offset after removing any nested-guest TSC offset.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   uTicks      The nested-guest TSC.
+ *
+ * @sa      CPUMApplyNestedGuestTscOffset.
+ */
+VMM_INT_DECL(uint64_t) CPUMRemoveNestedGuestTscOffset(PVMCPU pVCpu, uint64_t uTicks)
+{
+#ifndef IN_RC
+    PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    if (CPUMIsGuestInVmxNonRootMode(pCtx))
+    {
+        PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+        if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TSC_OFFSETTING)
+            return uTicks - pVmcs->u64TscOffset.u;
+        return uTicks;
+    }
+
+    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+    {
+        /** @todo r=bird: Bake HMApplySvmNstGstTscOffset into HMRemoveSvmNstGstTscOffset to save a call. */
+        if (!HMHasGuestSvmVmcbCached(pVCpu))
+        {
+            PCSVMVMCB pVmcb = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
+            return uTicks - pVmcb->ctrl.u64TSCOffset;
+        }
+        return HMRemoveSvmNstGstTscOffset(pVCpu, uTicks);
     }
 #else
     RT_NOREF(pVCpu);

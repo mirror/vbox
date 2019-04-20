@@ -733,11 +733,8 @@ static int hmR3InitFinalizeR3(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestBP,            "/HM/CPU%d/Exit/Trap/Gst/#BP", "Guest #BP (breakpoint) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestXF,            "/HM/CPU%d/Exit/Trap/Gst/#XF", "Guest #XF (extended math fault, SIMD FPU) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestXcpUnk,        "/HM/CPU%d/Exit/Trap/Gst/Other", "Other guest exceptions.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitHlt,                "/HM/CPU%d/Exit/Instr/Hlt", "HLT instruction.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdmsr,              "/HM/CPU%d/Exit/Instr/Rdmsr", "RDMSR instruction.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitWrmsr,              "/HM/CPU%d/Exit/Instr/Wrmsr", "WRMSR instruction.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitMwait,              "/HM/CPU%d/Exit/Instr/Mwait", "MWAIT instruction.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitMonitor,            "/HM/CPU%d/Exit/Instr/Monitor", "MONITOR instruction.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitRdmsr,              "/HM/CPU%d/Exit/Instr/Rdmsr", "MSR read.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitWrmsr,              "/HM/CPU%d/Exit/Instr/Wrmsr", "MSR write.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxWrite,           "/HM/CPU%d/Exit/Instr/DR-Write", "Debug register write.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitDRxRead,            "/HM/CPU%d/Exit/Instr/DR-Read", "Debug register read.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR0Read,            "/HM/CPU%d/Exit/Instr/CR-Read/CR0", "CR0 read.");
@@ -752,18 +749,12 @@ static int hmR3InitFinalizeR3(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitCR8Write,           "/HM/CPU%d/Exit/Instr/CR-Write/CR8", "CR8 write.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitClts,               "/HM/CPU%d/Exit/Instr/CLTS", "CLTS instruction.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitLmsw,               "/HM/CPU%d/Exit/Instr/LMSW", "LMSW instruction.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitCli,                "/HM/CPU%d/Exit/Instr/Cli", "CLI instruction.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitSti,                "/HM/CPU%d/Exit/Instr/Sti", "STI instruction.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitPushf,              "/HM/CPU%d/Exit/Instr/Pushf", "PUSHF instruction.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitPopf,               "/HM/CPU%d/Exit/Instr/Popf", "POPF instruction.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIret,               "/HM/CPU%d/Exit/Instr/Iret", "IRET instruction.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitInt,                "/HM/CPU%d/Exit/Instr/Int", "INT instruction.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitXdtrAccess,         "/HM/CPU%d/Exit/Instr/XdtrAccess", "GDTR, IDTR, LDTR access.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOWrite,            "/HM/CPU%d/Exit/IO/Write", "I/O write.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIORead,             "/HM/CPU%d/Exit/IO/Read", "I/O read.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOStringWrite,      "/HM/CPU%d/Exit/IO/WriteString", "String I/O write.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOStringRead,       "/HM/CPU%d/Exit/IO/ReadString", "String I/O read.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIntWindow,          "/HM/CPU%d/Exit/IntWindow", "Interrupt-window exit. Guest is ready to receive interrupts again.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOWrite,            "/HM/CPU%d/Exit/Instr/IO/Write", "I/O write.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIORead,             "/HM/CPU%d/Exit/Instr/IO/Read", "I/O read.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOStringWrite,      "/HM/CPU%d/Exit/Instr/IO/WriteString", "String I/O write.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIOStringRead,       "/HM/CPU%d/Exit/Instr/IO/ReadString", "String I/O read.");
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitIntWindow,          "/HM/CPU%d/Exit/IntWindow", "Interrupt-window exit. Guest is ready to receive interrupts.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitExtInt,             "/HM/CPU%d/Exit/ExtInt", "Physical maskable interrupt (host).");
 #endif
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitHostNmiInGC,        "/HM/CPU%d/Exit/HostNmiInGC", "Host NMI received while in guest context.");
@@ -771,7 +762,6 @@ static int hmR3InitFinalizeR3(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitPreemptTimer,       "/HM/CPU%d/Exit/PreemptTimer", "VMX-preemption timer expired.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitTprBelowThreshold,  "/HM/CPU%d/Exit/TprBelowThreshold", "TPR lowered below threshold by the guest.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitTaskSwitch,         "/HM/CPU%d/Exit/TaskSwitch", "Task switch.");
-        HM_REG_COUNTER(&pVCpu->hm.s.StatExitMtf,                "/HM/CPU%d/Exit/MonitorTrapFlag", "Monitor Trap Flag.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitApicAccess,         "/HM/CPU%d/Exit/ApicAccess", "APIC access. Guest attempted to access memory at a physical address on the APIC-access page.");
 
         HM_REG_COUNTER(&pVCpu->hm.s.StatSwitchTprMaskedIrq,     "/HM/CPU%d/Switch/TprMaskedIrq", "PDMGetInterrupt() signals TPR masks pending Irq.");
@@ -960,7 +950,7 @@ static int hmR3InitFinalizeR3(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        PVMXVMCSBATCHCACHE pVmcsCache = &pVCpu->hm.s.vmx.VmcsBatchCache;
+        PVMXVMCSCACHE pVmcsCache = &pVCpu->hm.s.vmx.VmcsCache;
         strcpy((char *)pVmcsCache->aMagic, "VMCSCACHE Magic");
         pVmcsCache->uMagic = UINT64_C(0xdeadbeefdeadbeef);
     }
@@ -1492,7 +1482,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     LogRel(("HM: Using VT-x implementation 2.0\n"));
     LogRel(("HM: Max resume loops                  = %u\n", pVM->hm.s.cMaxResumeLoops));
     LogRel(("HM: Host CR4                          = %#RX64\n", pVM->hm.s.vmx.u64HostCr4));
-    LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.vmx.u64HostEfer));
+    LogRel(("HM: Host EFER                         = %#RX64\n", pVM->hm.s.vmx.u64HostMsrEfer));
     LogRel(("HM: MSR_IA32_SMM_MONITOR_CTL          = %#RX64\n", pVM->hm.s.vmx.u64HostSmmMonitorCtl));
 
     hmR3VmxReportFeatCtlMsr(pVM->hm.s.vmx.Msrs.u64FeatCtrl);
@@ -1526,9 +1516,22 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     LogRel(("HM: APIC-access page physaddr         = %#RHp\n",  pVM->hm.s.vmx.HCPhysApicAccess));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        LogRel(("HM: VCPU%3d: MSR bitmap physaddr      = %#RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
-        LogRel(("HM: VCPU%3d: VMCS physaddr            = %#RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
+        PCVMXVMCSINFO pVmcsInfo = &pVM->aCpus[i].hm.s.vmx.VmcsInfo;
+        LogRel(("HM: VCPU%3d: MSR bitmap physaddr      = %#RHp\n", i, pVmcsInfo->HCPhysMsrBitmap));
+        LogRel(("HM: VCPU%3d: VMCS physaddr            = %#RHp\n", i, pVmcsInfo->HCPhysVmcs));
     }
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (pVM->cpum.ro.GuestFeatures.fVmx)
+    {
+        LogRel(("HM: Nested-guest:\n"));
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        {
+            PCVMXVMCSINFO pVmcsInfoNstGst = &pVM->aCpus[i].hm.s.vmx.VmcsInfoNstGst;
+            LogRel(("HM: VCPU%3d:   MSR bitmap physaddr    = %#RHp\n", i, pVmcsInfoNstGst->HCPhysMsrBitmap));
+            LogRel(("HM: VCPU%3d:   VMCS physaddr          = %#RHp\n", i, pVmcsInfoNstGst->HCPhysVmcs));
+        }
+    }
+#endif
 
     /*
      * EPT and unrestricted guest execution are determined in HMR3Init, verify the sanity of that.
@@ -1680,7 +1683,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     /** @todo this needs to be fixed properly!! */
     else if (CPUMR3GetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
     {
-        if (pVM->hm.s.vmx.u64HostEfer & MSR_K6_EFER_NXE)
+        if (pVM->hm.s.vmx.u64HostMsrEfer & MSR_K6_EFER_NXE)
             CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
         else
             LogRel(("HM: NX not enabled on the host, unavailable to PAE guest\n"));
@@ -1973,12 +1976,20 @@ static int hmR3TermCPU(PVM pVM)
             pVCpu->hm.s.paStatInjectedIrqs   = NULL;
             pVCpu->hm.s.paStatInjectedIrqsR0 = NIL_RTR0PTR;
         }
+# if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
+        if (pVCpu->hm.s.paStatNestedExitReason)
+        {
+            MMHyperFree(pVM, pVCpu->hm.s.paStatNestedExitReason);
+            pVCpu->hm.s.paStatNestedExitReason   = NULL;
+            pVCpu->hm.s.paStatNestedExitReasonR0 = NIL_RTR0PTR;
+        }
+# endif
 #endif
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-        memset(pVCpu->hm.s.vmx.VmcsBatchCache.aMagic, 0, sizeof(pVCpu->hm.s.vmx.VmcsBatchCache.aMagic));
-        pVCpu->hm.s.vmx.VmcsBatchCache.uMagic = 0;
-        pVCpu->hm.s.vmx.VmcsBatchCache.uPos = 0xffffffff;
+        memset(pVCpu->hm.s.vmx.VmcsCache.aMagic, 0, sizeof(pVCpu->hm.s.vmx.VmcsCache.aMagic));
+        pVCpu->hm.s.vmx.VmcsCache.uMagic = 0;
+        pVCpu->hm.s.vmx.VmcsCache.uPos = 0xffffffff;
 #endif
     }
     return 0;
@@ -1994,18 +2005,25 @@ static int hmR3TermCPU(PVM pVM)
  */
 VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
 {
-    /* Sync. entire state on VM reset R0-reentry. It's safe to reset
+    /* Sync. entire state on VM reset ring-0 re-entry. It's safe to reset
        the HM flags here, all other EMTs are in ring-3. See VMR3Reset(). */
     pVCpu->hm.s.fCtxChanged |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
 
-    pVCpu->hm.s.fActive               = false;
-    pVCpu->hm.s.Event.fPending        = false;
-    pVCpu->hm.s.vmx.fWasInRealMode    = true;
-    pVCpu->hm.s.vmx.u64MsrApicBase    = 0;
-    pVCpu->hm.s.vmx.fSwitchedTo64on32 = false;
+    pVCpu->hm.s.fActive                        = false;
+    pVCpu->hm.s.Event.fPending                 = false;
+    pVCpu->hm.s.vmx.u64GstMsrApicBase          = 0;
+    pVCpu->hm.s.vmx.VmcsInfo.fSwitchedTo64on32 = false;
+    pVCpu->hm.s.vmx.VmcsInfo.fWasInRealMode    = true;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    if (pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fVmx)
+    {
+        pVCpu->hm.s.vmx.VmcsInfoNstGst.fSwitchedTo64on32 = false;
+        pVCpu->hm.s.vmx.VmcsInfoNstGst.fWasInRealMode    = true;
+    }
+#endif
 
     /* Reset the contents of the read cache. */
-    PVMXVMCSBATCHCACHE pVmcsCache = &pVCpu->hm.s.vmx.VmcsBatchCache;
+    PVMXVMCSCACHE pVmcsCache = &pVCpu->hm.s.vmx.VmcsCache;
     for (unsigned j = 0; j < pVmcsCache->Read.cValidEntries; j++)
         pVmcsCache->Read.aFieldVal[j] = 0;
 
@@ -2846,19 +2864,6 @@ VMMR3DECL(bool) HMR3IsUXActive(PUVM pUVM)
 
 
 /**
- * Checks if internal events are pending. In that case we are not allowed to dispatch interrupts.
- *
- * @returns true if an internal event is pending, otherwise false.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMR3_INT_DECL(bool) HMR3IsEventPending(PVMCPU pVCpu)
-{
-    return HMIsEnabled(pVCpu->pVMR3)
-        && pVCpu->hm.s.Event.fPending;
-}
-
-
-/**
  * Checks if the VMX-preemption timer is being used.
  *
  * @returns true if the VMX-preemption timer is being used, otherwise false.
@@ -2883,7 +2888,9 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 {
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU        pVCpu = &pVM->aCpus[i];
+        PCVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
+        bool const    fNstGstVmcsActive = pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs;
         switch (iStatusCode)
         {
             /** @todo r=ramshankar: Are all EMTs out of ring-0 at this point!? If not, we
@@ -2892,16 +2899,20 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 break;
 
             case VERR_VMX_INVALID_VMCS_PTR:
+            {
                 LogRel(("HM: VERR_VMX_INVALID_VMCS_PTR:\n"));
-                LogRel(("HM: CPU[%u] Current pointer      %#RGp vs %#RGp\n", i, pVCpu->hm.s.vmx.LastError.u64VmcsPhys,
-                                                                                pVCpu->hm.s.vmx.HCPhysVmcs));
+                LogRel(("HM: CPU[%u] %s VMCS active\n", i, fNstGstVmcsActive ? "Nested-guest" : "Guest"));
+                LogRel(("HM: CPU[%u] Current pointer      %#RHp vs %#RHp\n", i, pVCpu->hm.s.vmx.LastError.HCPhysCurrentVmcs,
+                                                                                pVmcsInfo->HCPhysVmcs));
                 LogRel(("HM: CPU[%u] Current VMCS version %#x\n", i, pVCpu->hm.s.vmx.LastError.u32VmcsRev));
                 LogRel(("HM: CPU[%u] Entered Host Cpu     %u\n",  i, pVCpu->hm.s.vmx.LastError.idEnteredCpu));
                 LogRel(("HM: CPU[%u] Current Host Cpu     %u\n",  i, pVCpu->hm.s.vmx.LastError.idCurrentCpu));
                 break;
+            }
 
             case VERR_VMX_UNABLE_TO_START_VM:
                 LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM:\n"));
+                LogRel(("HM: CPU[%u] %s VMCS active\n", i, fNstGstVmcsActive ? "Nested-guest" : "Guest"));
                 LogRel(("HM: CPU[%u] Instruction error    %#x\n", i, pVCpu->hm.s.vmx.LastError.u32InstrError));
                 LogRel(("HM: CPU[%u] Exit reason          %#x\n", i, pVCpu->hm.s.vmx.LastError.u32ExitReason));
 
@@ -2913,18 +2924,18 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 }
                 else if (pVCpu->hm.s.vmx.LastError.u32InstrError == VMXINSTRERR_VMENTRY_INVALID_CTLS)
                 {
-                    LogRel(("HM: CPU[%u] PinCtls          %#RX32\n", i, pVCpu->hm.s.vmx.Ctls.u32PinCtls));
+                    LogRel(("HM: CPU[%u] PinCtls              %#RX32\n", i, pVmcsInfo->u32PinCtls));
                     {
-                        uint32_t const u32Val = pVCpu->hm.s.vmx.Ctls.u32PinCtls;
+                        uint32_t const u32Val = pVmcsInfo->u32PinCtls;
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PIN_CTLS_EXT_INT_EXIT );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PIN_CTLS_NMI_EXIT     );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PIN_CTLS_VIRT_NMI     );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PIN_CTLS_PREEMPT_TIMER);
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PIN_CTLS_POSTED_INT   );
                     }
-                    LogRel(("HM: CPU[%u] ProcCtls         %#RX32\n", i, pVCpu->hm.s.vmx.Ctls.u32ProcCtls));
+                    LogRel(("HM: CPU[%u] ProcCtls             %#RX32\n", i, pVmcsInfo->u32ProcCtls));
                     {
-                        uint32_t const u32Val = pVCpu->hm.s.vmx.Ctls.u32ProcCtls;
+                        uint32_t const u32Val = pVmcsInfo->u32ProcCtls;
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS_INT_WINDOW_EXIT   );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS_USE_TSC_OFFSETTING);
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS_HLT_EXIT          );
@@ -2947,9 +2958,9 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS_PAUSE_EXIT        );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS_USE_SECONDARY_CTLS);
                     }
-                    LogRel(("HM: CPU[%u] ProcCtls2        %#RX32\n", i, pVCpu->hm.s.vmx.Ctls.u32ProcCtls2));
+                    LogRel(("HM: CPU[%u] ProcCtls2            %#RX32\n", i, pVmcsInfo->u32ProcCtls2));
                     {
-                        uint32_t const u32Val = pVCpu->hm.s.vmx.Ctls.u32ProcCtls2;
+                        uint32_t const u32Val = pVmcsInfo->u32ProcCtls2;
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_VIRT_APIC_ACCESS  );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_EPT               );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_DESC_TABLE_EXIT   );
@@ -2973,9 +2984,9 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_XSAVES_XRSTORS    );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_PROC_CTLS2_TSC_SCALING       );
                     }
-                    LogRel(("HM: CPU[%u] EntryCtls        %#RX32\n", i, pVCpu->hm.s.vmx.Ctls.u32EntryCtls));
+                    LogRel(("HM: CPU[%u] EntryCtls            %#RX32\n", i, pVmcsInfo->u32EntryCtls));
                     {
-                        uint32_t const u32Val = pVCpu->hm.s.vmx.Ctls.u32EntryCtls;
+                        uint32_t const u32Val = pVmcsInfo->u32EntryCtls;
                         HMVMX_LOGREL_FEAT(u32Val, VMX_ENTRY_CTLS_LOAD_DEBUG         );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_ENTRY_CTLS_IA32E_MODE_GUEST   );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_ENTRY_CTLS_ENTRY_TO_SMM       );
@@ -2984,9 +2995,9 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                         HMVMX_LOGREL_FEAT(u32Val, VMX_ENTRY_CTLS_LOAD_PAT_MSR       );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_ENTRY_CTLS_LOAD_EFER_MSR      );
                     }
-                    LogRel(("HM: CPU[%u] ExitCtls         %#RX32\n", i, pVCpu->hm.s.vmx.Ctls.u32ExitCtls));
+                    LogRel(("HM: CPU[%u] ExitCtls             %#RX32\n", i, pVmcsInfo->u32ExitCtls));
                     {
-                        uint32_t const u32Val = pVCpu->hm.s.vmx.Ctls.u32ExitCtls;
+                        uint32_t const u32Val = pVmcsInfo->u32ExitCtls;
                         HMVMX_LOGREL_FEAT(u32Val, VMX_EXIT_CTLS_SAVE_DEBUG            );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_EXIT_CTLS_HOST_ADDR_SPACE_SIZE  );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_EXIT_CTLS_LOAD_PERF_MSR         );
@@ -2997,10 +3008,13 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                         HMVMX_LOGREL_FEAT(u32Val, VMX_EXIT_CTLS_LOAD_EFER_MSR         );
                         HMVMX_LOGREL_FEAT(u32Val, VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER    );
                     }
-                    LogRel(("HM: CPU[%u] HCPhysMsrBitmap  %#RHp\n",  i, pVCpu->hm.s.vmx.HCPhysMsrBitmap));
-                    LogRel(("HM: CPU[%u] HCPhysGuestMsr   %#RHp\n",  i, pVCpu->hm.s.vmx.HCPhysGuestMsr));
-                    LogRel(("HM: CPU[%u] HCPhysHostMsr    %#RHp\n",  i, pVCpu->hm.s.vmx.HCPhysHostMsr));
-                    LogRel(("HM: CPU[%u] cMsrs            %u\n",     i, pVCpu->hm.s.vmx.cMsrs));
+                    LogRel(("HM: CPU[%u] HCPhysMsrBitmap      %#RHp\n",  i, pVmcsInfo->HCPhysMsrBitmap));
+                    LogRel(("HM: CPU[%u] HCPhysGuestMsrLoad   %#RHp\n",  i, pVmcsInfo->HCPhysGuestMsrLoad));
+                    LogRel(("HM: CPU[%u] HCPhysGuestMsrStore  %#RHp\n",  i, pVmcsInfo->HCPhysGuestMsrStore));
+                    LogRel(("HM: CPU[%u] HCPhysHostMsrLoad    %#RHp\n",  i, pVmcsInfo->HCPhysHostMsrLoad));
+                    LogRel(("HM: CPU[%u] cEntryMsrLoad        %u\n",     i, pVmcsInfo->cEntryMsrLoad));
+                    LogRel(("HM: CPU[%u] cExitMsrStore        %u\n",     i, pVmcsInfo->cExitMsrStore));
+                    LogRel(("HM: CPU[%u] cExitMsrLoad         %u\n",     i, pVmcsInfo->cExitMsrLoad));
                 }
                 /** @todo Log VM-entry event injection control fields
                  *        VMX_VMCS_CTRL_ENTRY_IRQ_INFO, VMX_VMCS_CTRL_ENTRY_EXCEPTION_ERRCODE
@@ -3248,17 +3262,21 @@ static DECLCALLBACK(void) hmR3Info(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
         pHlp->pfnPrintf(pHlp, "  rcLastExitToR3     = %Rrc\n", pVCpu->hm.s.rcLastExitToR3);
         if (pVM->hm.s.vmx.fSupported)
         {
-            bool const fRealOnV86Active = pVCpu->hm.s.vmx.RealMode.fRealOnV86Active;
+            PCVMXVMCSINFO pVmcsInfo         = hmGetVmxActiveVmcsInfo(pVCpu);
+            bool const    fRealOnV86Active  = pVmcsInfo->RealMode.fRealOnV86Active;
+            bool const    fNstGstVmcsActive = pVCpu->hm.s.vmx.fSwitchedToNstGstVmcs;
+
+            pHlp->pfnPrintf(pHlp, "  %s VMCS active\n", fNstGstVmcsActive ? "Nested-guest" :" Guest");
             pHlp->pfnPrintf(pHlp, "  Real-on-v86 active = %RTbool\n", fRealOnV86Active);
             if (fRealOnV86Active)
             {
-                pHlp->pfnPrintf(pHlp, "    EFlags  = %#x\n", pVCpu->hm.s.vmx.RealMode.Eflags.u32);
-                pHlp->pfnPrintf(pHlp, "    Attr CS = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrCS.u);
-                pHlp->pfnPrintf(pHlp, "    Attr SS = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrSS.u);
-                pHlp->pfnPrintf(pHlp, "    Attr DS = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrDS.u);
-                pHlp->pfnPrintf(pHlp, "    Attr ES = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrES.u);
-                pHlp->pfnPrintf(pHlp, "    Attr FS = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrFS.u);
-                pHlp->pfnPrintf(pHlp, "    Attr GS = %#x\n", pVCpu->hm.s.vmx.RealMode.AttrGS.u);
+                pHlp->pfnPrintf(pHlp, "    EFlags  = %#x\n", pVmcsInfo->RealMode.Eflags.u32);
+                pHlp->pfnPrintf(pHlp, "    Attr CS = %#x\n", pVmcsInfo->RealMode.AttrCS.u);
+                pHlp->pfnPrintf(pHlp, "    Attr SS = %#x\n", pVmcsInfo->RealMode.AttrSS.u);
+                pHlp->pfnPrintf(pHlp, "    Attr DS = %#x\n", pVmcsInfo->RealMode.AttrDS.u);
+                pHlp->pfnPrintf(pHlp, "    Attr ES = %#x\n", pVmcsInfo->RealMode.AttrES.u);
+                pHlp->pfnPrintf(pHlp, "    Attr FS = %#x\n", pVmcsInfo->RealMode.AttrFS.u);
+                pHlp->pfnPrintf(pHlp, "    Attr GS = %#x\n", pVmcsInfo->RealMode.AttrGS.u);
             }
         }
     }
