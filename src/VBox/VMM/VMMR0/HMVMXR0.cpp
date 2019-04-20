@@ -7070,6 +7070,7 @@ static void hmR0VmxFixUnusableSegRegAttr(PVMCPU pVCpu, PCPUMSELREG pSelReg, uint
                idxSel, uAttr, pSelReg->Attr.u, pSelReg->Sel, pSelReg->u64Base, pSelReg->u32Limit));
 # endif
     VMMRZCallRing3Enable(pVCpu);
+    NOREF(uAttr);
 #endif
     RT_NOREF2(pVCpu, idxSel);
 }
