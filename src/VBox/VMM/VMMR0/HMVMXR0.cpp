@@ -2740,10 +2740,12 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
  * Sets up the virtual-APIC page address for the VMCS.
  *
  * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
-DECLINLINE(int) hmR0VmxSetupVmcsVirtApicAddr(PCVMXVMCSINFO pVmcsInfo)
+DECLINLINE(int) hmR0VmxSetupVmcsVirtApicAddr(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
+    NOREF(pVCpu);
     RTHCPHYS const HCPhysVirtApic = pVmcsInfo->HCPhysVirtApic;
     Assert(HCPhysVirtApic != NIL_RTHCPHYS);
     Assert(!(HCPhysVirtApic & 0xfff));                       /* Bits 11:0 MBZ. */
@@ -2755,10 +2757,12 @@ DECLINLINE(int) hmR0VmxSetupVmcsVirtApicAddr(PCVMXVMCSINFO pVmcsInfo)
  * Sets up the MSR-bitmap address for the VMCS.
  *
  * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
-DECLINLINE(int) hmR0VmxSetupVmcsMsrBitmapAddr(PCVMXVMCSINFO pVmcsInfo)
+DECLINLINE(int) hmR0VmxSetupVmcsMsrBitmapAddr(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
+    NOREF(pVCpu);
     RTHCPHYS const HCPhysMsrBitmap = pVmcsInfo->HCPhysMsrBitmap;
     Assert(HCPhysMsrBitmap != NIL_RTHCPHYS);
     Assert(!(HCPhysMsrBitmap & 0xfff));                      /* Bits 11:0 MBZ. */
@@ -2785,10 +2789,12 @@ DECLINLINE(int) hmR0VmxSetupVmcsApicAccessAddr(PVMCPU pVCpu)
  * Sets up the VMCS link pointer for the VMCS.
  *
  * @returns VBox status code.
- * @param   pVmcsInfo       The VMCS info. object.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object.
  */
-DECLINLINE(int) hmR0VmxSetupVmcsLinkPtr(PVMXVMCSINFO pVmcsInfo)
+DECLINLINE(int) hmR0VmxSetupVmcsLinkPtr(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
+    NOREF(pVCpu);
     uint64_t const u64VmcsLinkPtr = pVmcsInfo->u64VmcsLinkPtr;
     Assert(u64VmcsLinkPtr == UINT64_C(0xffffffffffffffff));  /* Bits 63:0 MB1. */
     return VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, u64VmcsLinkPtr);
@@ -2800,10 +2806,12 @@ DECLINLINE(int) hmR0VmxSetupVmcsLinkPtr(PVMXVMCSINFO pVmcsInfo)
  * in the VMCS.
  *
  * @returns VBox status code.
- * @param   pVmcsInfo       The VMCS info. object.
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object.
  */
-DECLINLINE(int) hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(PVMXVMCSINFO pVmcsInfo)
+DECLINLINE(int) hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
+    NOREF(pVCpu);
     RTHCPHYS const HCPhysGuestMsrLoad = pVmcsInfo->HCPhysGuestMsrLoad;
     Assert(HCPhysGuestMsrLoad != NIL_RTHCPHYS);
     Assert(!(HCPhysGuestMsrLoad & 0xf));                     /* Bits 3:0 MBZ. */
@@ -3089,7 +3097,7 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
                                                              /* CR8 writes cause a VM-exit based on TPR threshold. */
         Assert(!(fVal & VMX_PROC_CTLS_CR8_STORE_EXIT));
         Assert(!(fVal & VMX_PROC_CTLS_CR8_LOAD_EXIT));
-        int rc = hmR0VmxSetupVmcsVirtApicAddr(pVmcsInfo);
+        int rc = hmR0VmxSetupVmcsVirtApicAddr(pVCpu, pVmcsInfo);
         AssertRCReturn(rc, rc);
     }
     else
@@ -3107,7 +3115,7 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
     if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
         fVal |= VMX_PROC_CTLS_USE_MSR_BITMAPS;
-        int rc = hmR0VmxSetupVmcsMsrBitmapAddr(pVmcsInfo);
+        int rc = hmR0VmxSetupVmcsMsrBitmapAddr(pVCpu, pVmcsInfo);
         AssertRCReturn(rc, rc);
     }
 
@@ -3160,11 +3168,11 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 static int hmR0VmxSetupVmcsMiscCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     /* Set the auto-load/store MSR area addresses in the VMCS. */
-    int rc = hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(pVmcsInfo);
+    int rc = hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(pVCpu, pVmcsInfo);
     if (RT_SUCCESS(rc))
     {
         /* Set the VMCS link pointer in the VMCS. */
-        rc = hmR0VmxSetupVmcsLinkPtr(pVmcsInfo);
+        rc = hmR0VmxSetupVmcsLinkPtr(pVCpu, pVmcsInfo);
         if (RT_SUCCESS(rc))
         {
             /* Set the CR0/CR4 guest/host mask. */
@@ -3627,7 +3635,46 @@ static bool hmR0VmxIs32BitSwitcherSafe(PCCPUMCTX pCtx)
     /* All good, bases are 32-bit. */
     return true;
 }
-# endif
+# endif /* VBOX_ENABLE_64_BITS_GUESTS */
+
+# ifdef VBOX_STRICT
+static bool hmR0VmxIsValidWriteField(uint32_t idxField)
+{
+    switch (idxField)
+    {
+        case VMX_VMCS_GUEST_RIP:
+        case VMX_VMCS_GUEST_RSP:
+        case VMX_VMCS_GUEST_SYSENTER_EIP:
+        case VMX_VMCS_GUEST_SYSENTER_ESP:
+        case VMX_VMCS_GUEST_GDTR_BASE:
+        case VMX_VMCS_GUEST_IDTR_BASE:
+        case VMX_VMCS_GUEST_CS_BASE:
+        case VMX_VMCS_GUEST_DS_BASE:
+        case VMX_VMCS_GUEST_ES_BASE:
+        case VMX_VMCS_GUEST_FS_BASE:
+        case VMX_VMCS_GUEST_GS_BASE:
+        case VMX_VMCS_GUEST_SS_BASE:
+        case VMX_VMCS_GUEST_LDTR_BASE:
+        case VMX_VMCS_GUEST_TR_BASE:
+        case VMX_VMCS_GUEST_CR3:
+            return true;
+    }
+    return false;
+}
+
+static bool hmR0VmxIsValidReadField(uint32_t idxField)
+{
+    switch (idxField)
+    {
+        /* Read-only fields. */
+        case VMX_VMCS_RO_EXIT_QUALIFICATION:
+            return true;
+    }
+    /* Remaining readable fields should also be writable. */
+    return hmR0VmxIsValidWriteField(idxField);
+}
+# endif /* VBOX_STRICT */
+
 
 /**
  * Executes the specified handler in 64-bit mode.
@@ -5929,7 +5976,7 @@ static int hmR0VmxSelectVMRunHandler(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         {
             if (pVmcsInfo->pfnStartVM != VMXR0StartVM32)
                 Log4Func(("Selected 32-bit switcher\n"));
-            pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
+            pVmcsInfo->pfnStartVM = VMXR0StartVM32;
         }
         else
         {
@@ -6209,47 +6256,9 @@ static void hmR0VmxReportWorldSwitchError(PVMCPU pVCpu, int rcVMRun, PVMXTRANSIE
 
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-#ifndef VMX_USE_CACHED_VMCS_ACCESSES
-# error "VMX_USE_CACHED_VMCS_ACCESSES not defined when it should be!"
-#endif
-#ifdef VBOX_STRICT
-static bool hmR0VmxIsValidWriteField(uint32_t idxField)
-{
-    switch (idxField)
-    {
-        case VMX_VMCS_GUEST_RIP:
-        case VMX_VMCS_GUEST_RSP:
-        case VMX_VMCS_GUEST_SYSENTER_EIP:
-        case VMX_VMCS_GUEST_SYSENTER_ESP:
-        case VMX_VMCS_GUEST_GDTR_BASE:
-        case VMX_VMCS_GUEST_IDTR_BASE:
-        case VMX_VMCS_GUEST_CS_BASE:
-        case VMX_VMCS_GUEST_DS_BASE:
-        case VMX_VMCS_GUEST_ES_BASE:
-        case VMX_VMCS_GUEST_FS_BASE:
-        case VMX_VMCS_GUEST_GS_BASE:
-        case VMX_VMCS_GUEST_SS_BASE:
-        case VMX_VMCS_GUEST_LDTR_BASE:
-        case VMX_VMCS_GUEST_TR_BASE:
-        case VMX_VMCS_GUEST_CR3:
-            return true;
-    }
-    return false;
-}
-
-static bool hmR0VmxIsValidReadField(uint32_t idxField)
-{
-    switch (idxField)
-    {
-        /* Read-only fields. */
-        case VMX_VMCS_RO_EXIT_QUALIFICATION:
-            return true;
-    }
-    /* Remaining readable fields should also be writable. */
-    return hmR0VmxIsValidWriteField(idxField);
-}
-#endif /* VBOX_STRICT */
-
+# ifndef VMX_USE_CACHED_VMCS_ACCESSES
+#  error "VMX_USE_CACHED_VMCS_ACCESSES not defined when it should be!"
+# endif
 
 /**
  * Initialize the VMCS-Read cache.
