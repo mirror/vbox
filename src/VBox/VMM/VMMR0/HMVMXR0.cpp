@@ -1542,6 +1542,7 @@ DECLINLINE(bool) hmR0VmxIsMsrBitSet(const void *pvMsrBitmap, uint16_t offMsr, in
  * VMX execution of the nested-guest, only if nested-guest is also not intercepting
  * the read/write access of this MSR.
  *
+ * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcsInfo       The VMCS info. object.
  * @param   fIsNstGstVmcs   Whether this is a nested-guest VMCS.
  * @param   idMsr           The MSR value.
@@ -2141,6 +2142,7 @@ static void hmR0VmxCheckHostEferMsr(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
  * VMCS are correct.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVmcsInfo   The VMCS info. object.
  */
 static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
@@ -2900,7 +2902,6 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcsInfo       The VMCS info. object.
- * @param   fIsNstGstVmcs   Whether this is a nested-guest VMCS.
  */
 static int hmR0VmxSetupVmcsPinCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
@@ -2954,7 +2955,6 @@ static int hmR0VmxSetupVmcsPinCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcsInfo       The VMCS info. object.
- * @param   fIsNstGstVmcs   Whether this is a nested-guest VMCS.
  */
 static int hmR0VmxSetupVmcsProcCtls2(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
@@ -3048,7 +3048,6 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcsInfo       The VMCS info. object.
- * @param   fIsNstGstVmcs   Whether this is a nested-guest VMCS.
  */
 static int hmR0VmxSetupVmcsProcCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
@@ -5859,8 +5858,8 @@ static int hmR0VmxExportGuestMsrs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
  * Selects up the appropriate function to run guest code.
  *
  * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pVmcsInfo   The VMCS info. object.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmxTransient   The VMX-transient structure.
  *
  * @remarks No-long-jump zone!!!
  */
@@ -7118,7 +7117,6 @@ static int hmR0VmxImportGuestSegReg(PVMCPU pVCpu, uint8_t iSegReg)
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pSelReg     Pointer to the segment selector.
  *
  * @remarks Called with interrupts and/or preemption disabled, try not to assert and
  *          do not log!
@@ -7152,7 +7150,6 @@ static int hmR0VmxImportGuestLdtr(PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pSelReg     Pointer to the segment selector.
  *
  * @remarks Called with interrupts and/or preemption disabled, try not to assert and
  *          do not log!
@@ -7773,7 +7770,7 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
     uint32_t u32IntInfo = uVector | VMX_EXIT_INT_INFO_VALID;
     if (enmTrpmEvent == TRPM_TRAP)
     {
-        /** @todo r=ramshankar: TRPM currently offers no way to determine a #DB that was
+        /** @todo r=ramshankar: TRPM currently offers no way to determine a \#DB that was
          *        generated using INT1 (ICEBP). */
         switch (uVector)
         {
@@ -8596,7 +8593,6 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
  * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pVmcsInfo       The VMCS info. object.
  * @param   pVmxTransient   The VMX-transient structure.
  * @param   pfIntrState     Where to store the VT-x guest-interruptibility state.
  */
