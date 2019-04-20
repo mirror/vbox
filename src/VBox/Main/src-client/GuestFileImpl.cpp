@@ -1075,6 +1075,12 @@ int GuestFile::i_waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
     return vrc;
 }
 
+/**
+ * Undocumented, use with great care.
+ *
+ * @note Similar code in GuestProcess::i_waitForStatusChange() and
+ *       GuestSession::i_waitForStatusChange().
+ */
 int GuestFile::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
                                      FileStatus_T *pFileStatus, int *prcGuest)
 {
@@ -1115,6 +1121,18 @@ int GuestFile::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS
         if (prcGuest)
             *prcGuest = (int)lGuestRc;
     }
+    /* waitForEvent may also return VERR_GSTCTL_GUEST_ERROR like we do above, so make prcGuest is set. */
+    /** @todo r=bird: Andy, you seem to have forgotten this scenario.  Showed up occasionally when
+     * using the wrong password with a copyto command in a debug  build on windows, error info
+     * contained "Unknown Status -858993460 (0xcccccccc)".  As you know windows fills the stack frames
+     * with 0xcccccccc in debug builds to highlight use of uninitialized data, so that's what happened
+     * here.  It's actually good you didn't initialize lGuest, as it would be heck to find otherwise.
+     *
+     * I'm still not very impressed with the error managment or the usuefullness of the documentation
+     * in this code, though the latter is getting better! */
+    else if (vrc == VERR_GSTCTL_GUEST_ERROR && prcGuest)
+        *prcGuest = pEvent->GuestResult();
+    Assert(vrc != VERR_GSTCTL_GUEST_ERROR || !prcGuest || *prcGuest != (int)0xcccccccc);
 
     return vrc;
 }
