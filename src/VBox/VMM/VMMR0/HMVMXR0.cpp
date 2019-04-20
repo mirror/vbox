@@ -914,6 +914,7 @@ static void hmR0VmxUpdateErrorRecord(PVMCPU pVCpu, int rc)
 }
 
 
+#ifdef VBOX_STRICT
 /**
  * Reads the VM-entry interruption-information field from the VMCS into the VMX
  * transient structure.
@@ -931,7 +932,6 @@ DECLINLINE(int) hmR0VmxReadEntryIntInfoVmcs(PVMXTRANSIENT pVmxTransient)
 }
 
 
-#ifdef VBOX_STRICT
 /**
  * Reads the VM-entry exception error code field from the VMCS into
  * the VMX transient structure.
