@@ -14679,9 +14679,6 @@ HMVMX_EXIT_DECL hmR0VmxExitEptViolation(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
 
 /** @} */
 
-/** @name VM-exit exception handlers.
- * @{
- */
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= VM-exit exception handlers =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
@@ -15124,8 +15121,6 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowPFEM);
     return rc;
 }
-
-/** @} */
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
 /** @name VMX instruction handlers.
