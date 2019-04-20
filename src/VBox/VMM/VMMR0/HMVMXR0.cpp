@@ -352,7 +352,7 @@ DECLINLINE(VBOXSTRICTRC)           hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRA
 
 static int  hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64_t fWhat);
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
-static int  hmR0VmxInitVmcsReadCache(PVMCPU pVCpu);
+static void hmR0VmxInitVmcsReadCache(PVMCPU pVCpu);
 #endif
 
 /** @name VM-exit handlers.
@@ -7528,7 +7528,13 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                      *        remove when we drop 32-bit host w/ 64-bit host support, see
                      *        @bugref{9180#c39}. */
                     rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR0,              &u32Val);
-                    rc |= VMXReadVmcsHstN(VMX_VMCS_CTRL_CR0_READ_SHADOW, &u64Shadow);
+#if HC_ARCH_BITS == 32
+                    uint32_t u32Shadow;
+                    rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, &u32Shadow);
+                    u64Shadow = u32Shadow;
+#else
+                    rc |= VMXReadVmcs64(VMX_VMCS_CTRL_CR0_READ_SHADOW, &u64Shadow);
+#endif
                     VMXLOCAL_BREAK_RC(rc);
                     u64Val = u32Val;
                     u64Val = (u64Val    & ~pVmcsInfo->u64Cr0Mask)
@@ -7544,7 +7550,13 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                      *        remove when we drop 32-bit host w/ 64-bit host support, see
                      *        @bugref{9180#c39}. */
                     rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR4,              &u32Val);
-                    rc |= VMXReadVmcsHstN(VMX_VMCS_CTRL_CR4_READ_SHADOW, &u64Shadow);
+#if HC_ARCH_BITS == 32
+                    uint32_t u32Shadow;
+                    rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, &u32Shadow);
+                    u64Shadow = u32Shadow;
+#else
+                    rc |= VMXReadVmcs64(VMX_VMCS_CTRL_CR4_READ_SHADOW, &u64Shadow);
+#endif
                     VMXLOCAL_BREAK_RC(rc);
                     u64Val = u32Val;
                     u64Val = (u64Val    & ~pVmcsInfo->u64Cr4Mask)
