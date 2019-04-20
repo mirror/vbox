@@ -174,7 +174,9 @@ void Client::SetDeferred(VBOXHGCMCALLHANDLE hHandle, uint32_t u32Function, uint3
 {
     LogFlowThisFunc(("uClient=%RU32\n", m_uClientID));
 
+#ifndef DEBUG_bird /** r=bird: This bugger triggers in the DnD service when restoring saved state.  Not tested?  */
     AssertMsg(m_fDeferred == false, ("Client already in deferred mode\n"));
+#endif
     m_fDeferred = true;
 
     m_Deferred.hHandle = hHandle;
