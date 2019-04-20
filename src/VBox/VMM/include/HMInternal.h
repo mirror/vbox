@@ -851,7 +851,6 @@ AssertCompileSizeAlignment(VMXVMCSINFO, 8);
 AssertCompileMemberAlignment(VMXVMCSINFO, fVmcsState, 8);
 AssertCompileMemberAlignment(VMXVMCSINFO, u32PinCtls, 8);
 AssertCompileMemberAlignment(VMXVMCSINFO, u64VmcsLinkPtr, 8);
-AssertCompileMemberAlignment(VMXVMCSINFO, pvMsrBitmap, 8);
 
 /**
  * HM VMCPU Instance data.
