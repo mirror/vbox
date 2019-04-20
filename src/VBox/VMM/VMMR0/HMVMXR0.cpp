@@ -2745,7 +2745,7 @@ static int hmR0VmxSetupTaggedTlb(PVM pVM)
  */
 DECLINLINE(int) hmR0VmxSetupVmcsVirtApicAddr(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
-    NOREF(pVCpu);
+    NOREF(pVCpu); /* Used implicitly by VMXWriteVmcs64 on 32-bit hosts. */
     RTHCPHYS const HCPhysVirtApic = pVmcsInfo->HCPhysVirtApic;
     Assert(HCPhysVirtApic != NIL_RTHCPHYS);
     Assert(!(HCPhysVirtApic & 0xfff));                       /* Bits 11:0 MBZ. */
@@ -2757,10 +2757,12 @@ DECLINLINE(int) hmR0VmxSetupVmcsVirtApicAddr(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsIn
  * Sets up the MSR-bitmap address for the VMCS.
  *
  * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
-DECLINLINE(int) hmR0VmxSetupVmcsMsrBitmapAddr(PCVMXVMCSINFO pVmcsInfo)
+DECLINLINE(int) hmR0VmxSetupVmcsMsrBitmapAddr(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
+    NOREF(pVCpu); /* Used implicitly by VMXWriteVmcs64 on 32-bit hosts. */
     RTHCPHYS const HCPhysMsrBitmap = pVmcsInfo->HCPhysMsrBitmap;
     Assert(HCPhysMsrBitmap != NIL_RTHCPHYS);
     Assert(!(HCPhysMsrBitmap & 0xfff));                      /* Bits 11:0 MBZ. */
@@ -2787,10 +2789,12 @@ DECLINLINE(int) hmR0VmxSetupVmcsApicAccessAddr(PVMCPU pVCpu)
  * Sets up the VMCS link pointer for the VMCS.
  *
  * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
-DECLINLINE(int) hmR0VmxSetupVmcsLinkPtr(PVMXVMCSINFO pVmcsInfo)
+DECLINLINE(int) hmR0VmxSetupVmcsLinkPtr(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
+    NOREF(pVCpu); /* Used implicitly by VMXWriteVmcs64 on 32-bit hosts. */
     uint64_t const u64VmcsLinkPtr = pVmcsInfo->u64VmcsLinkPtr;
     Assert(u64VmcsLinkPtr == UINT64_C(0xffffffffffffffff));  /* Bits 63:0 MB1. */
     return VMXWriteVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, u64VmcsLinkPtr);
@@ -2802,10 +2806,13 @@ DECLINLINE(int) hmR0VmxSetupVmcsLinkPtr(PVMXVMCSINFO pVmcsInfo)
  * in the VMCS.
  *
  * @returns VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
-DECLINLINE(int) hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(PVMXVMCSINFO pVmcsInfo)
+DECLINLINE(int) hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
+    NOREF(pVCpu); /* Used implicitly by VMXWriteVmcs64 on 32-bit hosts. */
+
     RTHCPHYS const HCPhysGuestMsrLoad = pVmcsInfo->HCPhysGuestMsrLoad;
     Assert(HCPhysGuestMsrLoad != NIL_RTHCPHYS);
     Assert(!(HCPhysGuestMsrLoad & 0xf));                     /* Bits 3:0 MBZ. */
@@ -3109,7 +3116,7 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
     if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
     {
         fVal |= VMX_PROC_CTLS_USE_MSR_BITMAPS;
-        int rc = hmR0VmxSetupVmcsMsrBitmapAddr(pVmcsInfo);
+        int rc = hmR0VmxSetupVmcsMsrBitmapAddr(pVCpu, pVmcsInfo);
         AssertRCReturn(rc, rc);
     }
 
@@ -3162,11 +3169,11 @@ static int hmR0VmxSetupVmcsProcCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 static int hmR0VmxSetupVmcsMiscCtls(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     /* Set the auto-load/store MSR area addresses in the VMCS. */
-    int rc = hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(pVmcsInfo);
+    int rc = hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(pVCpu, pVmcsInfo);
     if (RT_SUCCESS(rc))
     {
         /* Set the VMCS link pointer in the VMCS. */
-        rc = hmR0VmxSetupVmcsLinkPtr(pVmcsInfo);
+        rc = hmR0VmxSetupVmcsLinkPtr(pVCpu, pVmcsInfo);
         if (RT_SUCCESS(rc))
         {
             /* Set the CR0/CR4 guest/host mask. */
@@ -3238,14 +3245,14 @@ static int hmR0VmxSetupVmcsXcptBitmap(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 static int hmR0VmxSetupVmcsCtlsNested(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    int rc = hmR0VmxSetupVmcsLinkPtr(pVmcsInfo);
+    int rc = hmR0VmxSetupVmcsLinkPtr(pVCpu, pVmcsInfo);
     if (RT_SUCCESS(rc))
     {
-        rc = hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(pVmcsInfo);
+        rc = hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(pVCpu, pVmcsInfo);
         if (RT_SUCCESS(rc))
         {
             if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
-                rc = hmR0VmxSetupVmcsMsrBitmapAddr(pVmcsInfo);
+                rc = hmR0VmxSetupVmcsMsrBitmapAddr(pVCpu, pVmcsInfo);
             if (RT_SUCCESS(rc))
             {
                 if (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
