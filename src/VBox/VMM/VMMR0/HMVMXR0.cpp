@@ -3723,6 +3723,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCAC
 {
     NOREF(fResume);
 
+    PVMXVMCSINFO   pVmcsInfo     = hmGetVmxActiveVmcsInfo(pVCpu);
     PCHMPHYSCPU    pHostCpu      = hmR0GetCurrentCpu();
     RTHCPHYS const HCPhysCpuPage = pHostCpu->HCPhysMemObj;
 
@@ -3747,8 +3748,8 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCAC
     uint32_t aParam[10];
     aParam[0] = RT_LO_U32(HCPhysCpuPage);                               /* Param 1: VMXON physical address - Lo. */
     aParam[1] = RT_HI_U32(HCPhysCpuPage);                               /* Param 1: VMXON physical address - Hi. */
-    aParam[2] = RT_LO_U32(pVCpu->hm.s.vmx.HCPhysVmcs);                  /* Param 2: VMCS physical address - Lo. */
-    aParam[3] = RT_HI_U32(pVCpu->hm.s.vmx.HCPhysVmcs);                  /* Param 2: VMCS physical address - Hi. */
+    aParam[2] = RT_LO_U32(pVmcsInfo->HCPhysVmcs);                       /* Param 2: VMCS physical address - Lo. */
+    aParam[3] = RT_HI_U32(pVmcsInfo->HCPhysVmcs);                       /* Param 2: VMCS physical address - Hi. */
     aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VmcsCache);
     aParam[5] = 0;
     aParam[6] = VM_RC_ADDR(pVM, pVM);
@@ -3770,16 +3771,16 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMXVMCSCAC
 
 #if defined(DEBUG) && defined(VMX_USE_CACHED_VMCS_ACCESSES)
     AssertMsg(pCache->TestIn.HCPhysCpuPage == HCPhysCpuPage, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysCpuPage, HCPhysCpuPage));
-    AssertMsg(pCache->TestIn.HCPhysVmcs    == pVCpu->hm.s.vmx.HCPhysVmcs, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVmcs,
-                                                                           pVCpu->hm.s.vmx.HCPhysVmcs));
-    AssertMsg(pCache->TestIn.HCPhysVmcs    == pCache->TestOut.HCPhysVmcs, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVmcs,
-                                                                           pCache->TestOut.HCPhysVmcs));
-    AssertMsg(pCache->TestIn.pCache        == pCache->TestOut.pCache, ("%RGv vs %RGv\n", pCache->TestIn.pCache,
-                                                                       pCache->TestOut.pCache));
-    AssertMsg(pCache->TestIn.pCache        == VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VmcsCache),
+    AssertMsg(pCache->TestIn.HCPhysVmcs == pVmcsInfo->HCPhysVmcs,      ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVmcs,
+                                                                        pVmcsInfo->HCPhysVmcs));
+    AssertMsg(pCache->TestIn.HCPhysVmcs == pCache->TestOut.HCPhysVmcs, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVmcs,
+                                                                        pCache->TestOut.HCPhysVmcs));
+    AssertMsg(pCache->TestIn.pCache     == pCache->TestOut.pCache,     ("%RGv vs %RGv\n", pCache->TestIn.pCache,
+                                                                        pCache->TestOut.pCache));
+    AssertMsg(pCache->TestIn.pCache     == VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VmcsCache),
               ("%RGv vs %RGv\n", pCache->TestIn.pCache, VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VmcsCache)));
-    AssertMsg(pCache->TestIn.pCtx          == pCache->TestOut.pCtx, ("%RGv vs %RGv\n", pCache->TestIn.pCtx,
-                                                                     pCache->TestOut.pCtx));
+    AssertMsg(pCache->TestIn.pCtx       == pCache->TestOut.pCtx,       ("%RGv vs %RGv\n", pCache->TestIn.pCtx,
+                                                                        pCache->TestOut.pCtx));
     Assert(!(pCache->TestOut.eflags & X86_EFL_IF));
 #endif
     NOREF(pCtx);
