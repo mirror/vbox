@@ -725,9 +725,16 @@ QITableView *UIFormEditorModel::parentTable() const
 
 void UIFormEditorModel::updateGeneration()
 {
-    foreach (UIFormEditorRow *pRow, m_dataList)
+    for (int i = 0; i < m_dataList.size(); ++i)
+    {
+        UIFormEditorRow *pRow = m_dataList.at(i);
         if (pRow->isGenerationChanged())
+        {
             pRow->updateValueCells();
+            const QModelIndex changedIndex = index(i, 1);
+            emit dataChanged(changedIndex, changedIndex);
+        }
+    }
 }
 
 
