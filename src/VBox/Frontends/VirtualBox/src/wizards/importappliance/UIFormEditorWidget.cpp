@@ -20,6 +20,7 @@
 #include <QEvent>
 #include <QHeaderView>
 #include <QItemEditorFactory>
+#include <QSortFilterProxyModel>
 #include <QStyledItemDelegate>
 #include <QVBoxLayout>
 
@@ -152,6 +153,9 @@ public:
     /** Returns the row value as string. */
     QString valueToString() const;
 
+    /** Returns whether the row is visible. */
+    bool isVisible() const;
+
     /** Returns value cast to bool. */
     bool toBool() const;
     /** Defines @a fBool value. */
@@ -221,6 +225,9 @@ public:
     /** Returns the child item with @a iIndex. */
     QITableViewRow *childItem(int iIndex) const;
 
+    /** Returns the index of the item in the model specified by the given @a iRow, @a iColumn and @a parentIdx. */
+    virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const /* override */;
+
     /** Returns flags for item with certain @a index. */
     Qt::ItemFlags flags(const QModelIndex &index) const;
 
@@ -270,6 +277,23 @@ protected:
 };
 
 
+/** QSortFilterProxyModel subclass used as the Form Editor proxy-model. */
+class UIFormEditorProxyModel : public QSortFilterProxyModel
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs the Form Editor proxy-model passing @a pParent to the base-class. */
+    UIFormEditorProxyModel(QObject *pParent = 0);
+
+protected:
+
+    /** Returns whether item in the row indicated by the given @a iSourceRow and @a srcParenIdx should be included in the model. */
+    virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &srcParenIdx) const /* override */;
+};
+
+
 /*********************************************************************************************************************************
 *   Class UIFormEditorCell implementation.                                                                                       *
 *********************************************************************************************************************************/
@@ -307,6 +331,11 @@ QString UIFormEditorRow::nameToString() const
 QString UIFormEditorRow::valueToString() const
 {
     return m_cells.at(UIFormEditorDataType_Value)->text();
+}
+
+bool UIFormEditorRow::isVisible() const
+{
+    return m_comValue.GetVisible();
 }
 
 bool UIFormEditorRow::toBool() const
@@ -523,6 +552,17 @@ QITableViewRow *UIFormEditorModel::childItem(int iIndex) const
     AssertReturn(iIndex >= 0 && iIndex < m_dataList.size(), 0);
     /* Return corresponding row: */
     return m_dataList[iIndex];
+}
+
+QModelIndex UIFormEditorModel::index(int iRow, int iColumn, const QModelIndex &parentIdx /* = QModelIndex() */) const
+{
+    /* No index for unknown items: */
+    if (!hasIndex(iRow, iColumn, parentIdx))
+        return QModelIndex();
+
+    /* Provide index users with packed item pointer: */
+    UIFormEditorRow *pItem = iRow >= 0 && iRow < m_dataList.size() ? m_dataList.at(iRow) : 0;
+    return pItem ? createIndex(iRow, iColumn, pItem) : QModelIndex();
 }
 
 Qt::ItemFlags UIFormEditorModel::flags(const QModelIndex &index) const
@@ -762,6 +802,31 @@ QITableViewRow *UIFormEditorView::childItem(int iIndex) const
 
 
 /*********************************************************************************************************************************
+*   Class UIFormEditorProxyModel implementation.                                                                                 *
+*********************************************************************************************************************************/
+
+UIFormEditorProxyModel::UIFormEditorProxyModel(QObject *pParent /* = 0 */)
+    : QSortFilterProxyModel(pParent)
+{
+}
+
+bool UIFormEditorProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const
+{
+    /* Acquire actual index of source model: */
+    QModelIndex i = sourceModel()->index(iSourceRow, 0, sourceParent);
+    if (i.isValid())
+    {
+        /* Get packed item pointer: */
+        UIFormEditorRow *pItem = static_cast<UIFormEditorRow*>(i.internalPointer());
+        /* Filter invisible items: */
+        if (!pItem->isVisible())
+            return false;
+    }
+    return true;
+}
+
+
+/*********************************************************************************************************************************
 *   Class UIFormEditorWidget implementation.                                                                                     *
 *********************************************************************************************************************************/
 
@@ -826,7 +891,15 @@ void UIFormEditorWidget::prepare()
             /* Create model: */
             m_pTableModel = new UIFormEditorModel(m_pTableView);
             if (m_pTableModel)
-                m_pTableView->setModel(m_pTableModel);
+            {
+                /* Create proxy-model: */
+                UIFormEditorProxyModel *pProxyModel = new UIFormEditorProxyModel(m_pTableView);
+                if (pProxyModel)
+                {
+                    pProxyModel->setSourceModel(m_pTableModel);
+                    m_pTableView->setModel(pProxyModel);
+                }
+            }
 
             /* We certainly have abstract item delegate: */
             QAbstractItemDelegate *pAbstractItemDelegate = m_pTableView->itemDelegate();
