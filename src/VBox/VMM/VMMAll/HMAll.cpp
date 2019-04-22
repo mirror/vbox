@@ -830,8 +830,8 @@ VMM_INT_DECL(void) HMHCChangedPagingMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmShado
 /**
  * Gets VMX MSRs from the provided hardware-virtualization MSRs struct.
  *
- * This abstraction exists to allow insultation of the support driver from including
- * VMX structures from HM headers.
+ * This abstraction exists to insulate the support driver from including VMX
+ * structures from HM headers.
  *
  * @param   pHwvirtMsrs     The hardware-virtualization MSRs.
  * @param   pVmxMsrs        Where to store the VMX MSRs.
@@ -865,8 +865,8 @@ VMM_INT_DECL(void) HMGetVmxMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pHwvirtMsrs, PVMXM
 /**
  * Gets SVM MSRs from the provided hardware-virtualization MSRs struct.
  *
- * This abstraction exists to allow insultation of the support driver from including
- * SVM structures from HM headers.
+ * This abstraction exists to insulate the support driver from including SVM
+ * structures from HM headers.
  *
  * @param   pHwvirtMsrs     The hardware-virtualization MSRs.
  * @param   pSvmMsrs        Where to store the SVM MSRs.
