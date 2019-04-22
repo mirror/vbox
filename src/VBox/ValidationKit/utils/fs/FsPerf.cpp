@@ -2869,7 +2869,7 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 
             RTTESTI_CHECK_RC(RTFileRead(hFile1, pbBuf, cbMaxRead, NULL), VERR_EOF);
 
-            /* Repeat using native APIs in case IPRT or other layers hid status codes: */
+            /* Repeat using native APIs in case IPRT or other layers hide status codes: */
 #if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
             RTTESTI_CHECK_RC(RTFileSeek(hFile1, cbFile - off, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
 # ifdef RT_OS_OS2
@@ -2878,14 +2878,24 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             RTTESTI_CHECK_MSG(orc == NO_ERROR, ("orc=%u, expected 0\n", orc));
             RTTESTI_CHECK_MSG(cbActual2 == off, ("%#x vs %#x\n", cbActual2, off));
 # else
-            IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+            IO_STATUS_BLOCK const IosVirgin = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+            IO_STATUS_BLOCK       Ios       = RTNT_IO_STATUS_BLOCK_INITIALIZER;
             NTSTATUS rcNt = NtReadFile((HANDLE)RTFileToNative(hFile1), NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/,
                                        &Ios, pbBuf, (ULONG)cbMaxRead, NULL /*poffFile*/, NULL /*Key*/);
             if (off == 0)
+            {
                 RTTESTI_CHECK_MSG(rcNt == STATUS_END_OF_FILE, ("rcNt=%#x, expected %#x\n", rcNt, STATUS_END_OF_FILE));
+                RTTESTI_CHECK_MSG(Ios.Status == IosVirgin.Status /*slow?*/ || Ios.Status == STATUS_END_OF_FILE /*fastio?*/,
+                                  ("%#x vs %x/%#x; off=%#x\n", Ios.Status, IosVirgin.Status, STATUS_END_OF_FILE, off));
+                RTTESTI_CHECK_MSG(Ios.Information == IosVirgin.Information /*slow*/ || Ios.Information == 0 /*fastio?*/,
+                                  ("%#zx vs %zx/0; off=%#x\n", Ios.Information, IosVirgin.Information, off));
+            }
             else
+            {
                 RTTESTI_CHECK_MSG(rcNt == STATUS_SUCCESS, ("rcNt=%#x, expected 0 (off=%#x cbMaxRead=%#zx)\n", rcNt, off, cbMaxRead));
-            RTTESTI_CHECK_MSG(Ios.Information == off, ("%#zx vs %#x\n", Ios.Information, off));
+                RTTESTI_CHECK_MSG(Ios.Status == STATUS_SUCCESS, ("%#x; off=%#x\n", Ios.Status, off));
+                RTTESTI_CHECK_MSG(Ios.Information == off, ("%#zx vs %#x\n", Ios.Information, off));
+            }
 # endif
 
 # ifdef RT_OS_OS2
@@ -2928,10 +2938,30 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             RTTESTI_CHECK_MSG(orc == NO_ERROR, ("orc=%u, expected 0\n", orc));
             RTTESTI_CHECK_MSG(cbActual2 == 0, ("%#x vs %#x\n", cbActual2, off));
 # else
-            IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+            IO_STATUS_BLOCK const IosVirgin = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+            IO_STATUS_BLOCK       Ios       = RTNT_IO_STATUS_BLOCK_INITIALIZER;
             NTSTATUS rcNt = NtReadFile((HANDLE)RTFileToNative(hFile1), NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/,
                                        &Ios, pbBuf, (ULONG)cbMaxRead, NULL /*poffFile*/, NULL /*Key*/);
             RTTESTI_CHECK_MSG(rcNt == STATUS_END_OF_FILE, ("rcNt=%#x, expected %#x\n", rcNt, STATUS_END_OF_FILE));
+            RTTESTI_CHECK_MSG(Ios.Status == IosVirgin.Status /*slow?*/ || Ios.Status == STATUS_END_OF_FILE /*fastio?*/,
+                              ("%#x vs %x/%#x; off=%#x\n", Ios.Status, IosVirgin.Status, STATUS_END_OF_FILE, off));
+            RTTESTI_CHECK_MSG(Ios.Information == IosVirgin.Information /*slow*/ || Ios.Information == 0 /*fastio?*/,
+                              ("%#zx vs %zx/0; off=%#x\n", Ios.Information, IosVirgin.Information, off));
+
+            /* Need to work with sector size on uncached, but might be worth it for non-fastio path. */
+            uint32_t cbSector = 0x1000;
+            uint32_t off2     = off * cbSector + (cbFile & (cbSector - 1) ? cbSector - (cbFile & (cbSector - 1)) : 0);
+            RTTESTI_CHECK_RC(RTFileSeek(hFileNoCache, cbFile + off2, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+            size_t const cbMaxRead2 = RT_ALIGN_Z(cbMaxRead, cbSector);
+            RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+            rcNt = NtReadFile((HANDLE)RTFileToNative(hFileNoCache), NULL /*hEvent*/, NULL /*ApcRoutine*/, NULL /*ApcContext*/,
+                              &Ios, pbBuf, (ULONG)cbMaxRead2, NULL /*poffFile*/, NULL /*Key*/);
+            RTTESTI_CHECK_MSG(rcNt == STATUS_END_OF_FILE,
+                              ("rcNt=%#x, expected %#x; off2=%x cbMaxRead2=%#x\n", rcNt, STATUS_END_OF_FILE, off2, cbMaxRead2));
+            RTTESTI_CHECK_MSG(Ios.Status == IosVirgin.Status /*slow?*/,
+                              ("%#x vs %x; off2=%#x cbMaxRead2=%#x\n", Ios.Status, IosVirgin.Status, off2, cbMaxRead2));
+            RTTESTI_CHECK_MSG(Ios.Information == IosVirgin.Information /*slow*/,
+                              ("%#zx vs %zx; off2=%#x cbMaxRead2=%#x\n", Ios.Information, IosVirgin.Information, off2, cbMaxRead2));
 # endif
 #endif
         }
@@ -2981,11 +3011,14 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
     RTTESTI_CHECK(Ios.Status == STATUS_SUCCESS);
     RTTESTI_CHECK(Ios.Information == 0);
 
+    IO_STATUS_BLOCK const IosVirgin = RTNT_IO_STATUS_BLOCK_INITIALIZER;
     RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
     rcNt = NtReadFile((HANDLE)RTFileToNative(hFile1), NULL, NULL, NULL, &Ios, pbBuf, 1, NULL, NULL);
     RTTESTI_CHECK_MSG(rcNt == STATUS_END_OF_FILE, ("rcNt=%#x", rcNt));
-    RTTESTI_CHECK(Ios.Status == STATUS_END_OF_FILE);
-    RTTESTI_CHECK(Ios.Information == 0);
+    RTTESTI_CHECK_MSG(Ios.Status == IosVirgin.Status /*slow?*/ || Ios.Status == STATUS_END_OF_FILE /*fastio?*/,
+                      ("%#x vs %x/%#x\n", Ios.Status, IosVirgin.Status, STATUS_END_OF_FILE));
+    RTTESTI_CHECK_MSG(Ios.Information == IosVirgin.Information /*slow*/ || Ios.Information == 0 /*fastio?*/,
+                      ("%#zx vs %zx/0\n", Ios.Information, IosVirgin.Information));
 # else
     ssize_t cbRead = read((int)RTFileToNative(hFile1), pbBuf, 0);
     RTTESTI_CHECK(cbRead == 0);
