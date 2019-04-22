@@ -668,14 +668,6 @@ renderspu_SystemInitVisual( VisualInfo *visual )
     int screen;
 
     CRASSERT(visual);
-
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa) {
-        /* A dummy visual - being non null is enough.  */
-        visual->visual =(XVisualInfo *) "os";
-        return GL_TRUE;
-    }
-#endif
     
     dpyName = renderspuGetDisplayName();
     if (!dpyName)
@@ -860,11 +852,6 @@ createWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
     CRASSERT(visual);
     window->visual = visual;
     window->nativeWindow = 0;
-
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa)
-        return GL_TRUE;
-#endif
 
     dpy = visual->dpy;
 
@@ -1161,35 +1148,25 @@ renderspu_SystemDestroyWindow( WindowInfo *window )
     CRASSERT(window);
     CRASSERT(window->visual);
 
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa) 
-    {
-        crFree(window->buffer);
-        window->buffer = NULL;
-    }
-    else
-#endif
-    {
-        if (window->visual->visAttribs & CR_PBUFFER_BIT) {
+    if (window->visual->visAttribs & CR_PBUFFER_BIT) {
 #ifdef GLX_VERSION_1_3
-            render_spu.ws.glXDestroyPbuffer(window->visual->dpy, window->window);
+        render_spu.ws.glXDestroyPbuffer(window->visual->dpy, window->window);
 #endif
-        }
-        else {
-            /* The value window->nativeWindow will only be non-NULL if the
-             * render_to_app_window option is set to true.  In this case, we
-             * don't want to do anything, since we're not responsible for this
-             * window.  I know...personal responsibility and all...
-             */
-            if (!window->nativeWindow) {
-                if (window->BltInfo.Base.id != CR_RENDER_WINCMD_ID)
-                {
-                    int rc = renderspuWinCmdSubmit(CR_RENDER_WINCMD_TYPE_WIN_ON_DESTROY, window);
-                    AssertRC(rc);
-                }
-                XDestroyWindow(window->visual->dpy, window->window);
-                XSync(window->visual->dpy, 0);
+    }
+    else {
+        /* The value window->nativeWindow will only be non-NULL if the
+         * render_to_app_window option is set to true.  In this case, we
+         * don't want to do anything, since we're not responsible for this
+         * window.  I know...personal responsibility and all...
+         */
+        if (!window->nativeWindow) {
+            if (window->BltInfo.Base.id != CR_RENDER_WINCMD_ID)
+            {
+                int rc = renderspuWinCmdSubmit(CR_RENDER_WINCMD_TYPE_WIN_ON_DESTROY, window);
+                AssertRC(rc);
             }
+            XDestroyWindow(window->visual->dpy, window->window);
+            XSync(window->visual->dpy, 0);
         }
     }
     window->visual = NULL;
@@ -1211,18 +1188,6 @@ renderspu_SystemCreateContext( VisualInfo *visual, ContextInfo *context, Context
     if (sharedContext != NULL) {
         sharedSystemContext = sharedContext->context;
     }
-
-
-
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa) {
-        context->context = (GLXContext) render_spu.OSMesaCreateContext(OSMESA_RGB, 0);
-        if (context->context)
-            return GL_TRUE;
-        else
-            return GL_FALSE;
-    }
-#endif
 
 #ifdef  GLX_VERSION_1_3
     if (visual->visAttribs & CR_PBUFFER_BIT) {
@@ -1379,43 +1344,13 @@ renderspu_RecreateContext( ContextInfo *context, int newVisualID )
 void
 renderspu_SystemDestroyContext( ContextInfo *context )
 {
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa) 
-    {
-        render_spu.OSMesaDestroyContext( (OSMesaContext) context->context );
-    }
-    else
-#endif
-    {
 #if 0
-        /* XXX disable for now - causes segfaults w/ NVIDIA's driver */
-        render_spu.ws.glXDestroyContext( context->visual->dpy, context->context );
+    /* XXX disable for now - causes segfaults w/ NVIDIA's driver */
+    render_spu.ws.glXDestroyContext( context->visual->dpy, context->context );
 #endif
-    }
     context->visual = NULL;
     context->context = 0;
 }
-
-
-#ifdef USE_OSMESA
-static void
-check_buffer_size( WindowInfo *window )
-{
-    if (window->BltInfo.width != window->in_buffer_width
-        || window->BltInfo.height != window->in_buffer_height
-        || ! window->buffer) {
-        crFree(window->buffer);
-
-        window->buffer = crCalloc(window->BltInfo.width * window->BltInfo.height
-                                                            * 4 * sizeof (GLubyte));
-        
-        window->in_buffer_width = window->BltInfo.width;
-        window->in_buffer_height = window->BltInfo.height;
-
-        crDebug("Render SPU: dimensions changed to %d x %d", window->BltInfo.width, window->BltInfo.height);
-    }
-}
-#endif
 
 
 void
@@ -1427,16 +1362,6 @@ renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow,
     CRASSERT(render_spu.ws.glXMakeCurrent);
 
     /*crDebug("%s nativeWindow=0x%x", __FUNCTION__, (int) nativeWindow);*/
-
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa) {
-        check_buffer_size(window);
-        render_spu.OSMesaMakeCurrent( (OSMesaContext) context->context, 
-                                                                    window->buffer, GL_UNSIGNED_BYTE,
-                                                                    window->BltInfo.width, window->BltInfo.height);
-        return;
-    }
-#endif
 
     nativeWindow = 0;
 
@@ -1617,15 +1542,6 @@ renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow,
 void
 renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h )
 {
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa) {
-        window->BltInfo.width = w;
-        window->BltInfo.height = h;
-        check_buffer_size(window);
-        return;
-    }
-#endif
-
     CRASSERT(window);
     CRASSERT(window->visual);
     if (window->visual->visAttribs & CR_PBUFFER_BIT)
@@ -1729,14 +1645,6 @@ void
 renderspu_SystemGetWindowGeometry( WindowInfo *window,
                                    GLint *x, GLint *y, GLint *w, GLint *h )
 {
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa) {
-        *w = window->BltInfo.width;
-        *h = window->BltInfo.height;
-        return;
-    }
-#endif
-
     CRASSERT(window);
     CRASSERT(window->visual);
     CRASSERT(window->window);
@@ -1780,14 +1688,7 @@ renderspu_SystemGetWindowGeometry( WindowInfo *window,
 void
 renderspu_SystemGetMaxWindowSize( WindowInfo *window, GLint *w, GLint *h )
 {
-     int scrn;
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa) {
-        *w = 2048;
-        *h = 2048;
-        return;
-    }
-#endif
+    int scrn;
 
     CRASSERT(window);
     CRASSERT(window->visual);
@@ -1802,11 +1703,6 @@ renderspu_SystemGetMaxWindowSize( WindowInfo *window, GLint *w, GLint *h )
 void
 renderspu_SystemWindowPosition( WindowInfo *window, GLint x, GLint y )
 {
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa)
-        return;
-#endif
-
     CRASSERT(window);
     CRASSERT(window->visual);
     if ((window->visual->visAttribs & CR_PBUFFER_BIT) == 0)
@@ -1825,11 +1721,6 @@ GLboolean renderspu_SystemWindowNeedEmptyPresent(WindowInfo *window)
 void
 renderspu_SystemWindowVisibleRegion( WindowInfo *window, GLint cRects, const GLint *pRects )
 {
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa)
-        return;
-#endif
-
     CRASSERT(window);
     CRASSERT(window->visual);
     if ((window->visual->visAttribs & CR_PBUFFER_BIT) == 0)
@@ -1878,11 +1769,6 @@ renderspu_SystemWindowVisibleRegion( WindowInfo *window, GLint cRects, const GLi
 void
 renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
 {
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa)
-        return;
-#endif
-
     if (window->visual->dpy && window->window &&
             (window->visual->visAttribs & CR_PBUFFER_BIT) == 0)
     {

@@ -103,12 +103,6 @@ typedef struct WindowInfo {
 #endif
     int nvSwapGroup;
 
-#ifdef USE_OSMESA
-    GLubyte *buffer;    /**< for rendering to off screen buffer.  */
-    int in_buffer_width;
-    int in_buffer_height;
-#endif
-
 } WindowInfo;
 
 /**
@@ -252,19 +246,6 @@ typedef struct {
     CRHashTable *blitterTable;
 
     PFNVCRSERVER_CLIENT_CALLOUT pfnClientCallout;
-
-#ifdef USE_OSMESA
-    /** Off screen rendering hooks.  */
-    int use_osmesa;
-
-    OSMesaContext (*OSMesaCreateContext)( GLenum format, OSMesaContext sharelist );
-    GLboolean (* OSMesaMakeCurrent)( OSMesaContext ctx,
-                     GLubyte *buffer,
-                     GLenum type,
-                     GLsizei width,
-                     GLsizei height );
-    void (*OSMesaDestroyContext)( OSMesaContext ctx );
-#endif
 
 #if defined(GLX)
     RTTHREAD hWinCmdThread;

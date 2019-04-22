@@ -223,15 +223,6 @@ renderSPUInit( int id, SPU *child, SPU *self,
         crError("renderspu_SystemInit failed rc %d", rc);
         return NULL;
     }
-#ifdef USE_OSMESA
-    if (render_spu.use_osmesa) {
-        if (!crLoadOSMesa(&render_spu.OSMesaCreateContext,
-                          &render_spu.OSMesaMakeCurrent,
-                          &render_spu.OSMesaDestroyContext)) {
-            crError("Unable to load OSMesa library");
-        }
-    }
-#endif
 
     rc = renderspuDefaultCtxInit();
     if (!RT_SUCCESS(rc))
