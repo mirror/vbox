@@ -615,7 +615,7 @@ static const char * const g_apszVmxInstrErrors[HMVMX_INSTR_ERROR_MAX + 1] =
  * @returns The static CR0 guest/host mask.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
-DECL_FORCE_INLINE(uint64_t) hmR0VmxGetFixedCr0Mask(PVMCPU pVCpu)
+DECL_FORCE_INLINE(uint64_t) hmR0VmxGetFixedCr0Mask(PCVMCPU pVCpu)
 {
     /*
      * Modifications to CR0 bits that VT-x ignores saving/restoring (CD, ET, NW) and
@@ -644,7 +644,7 @@ DECL_FORCE_INLINE(uint64_t) hmR0VmxGetFixedCr0Mask(PVMCPU pVCpu)
  * @returns The static CR4 guest/host mask.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
-DECL_FORCE_INLINE(uint64_t) hmR0VmxGetFixedCr4Mask(PVMCPU pVCpu)
+DECL_FORCE_INLINE(uint64_t) hmR0VmxGetFixedCr4Mask(PCVMCPU pVCpu)
 {
     /*
      * We need to look at the host features here (for e.g. OSXSAVE, PCID) because
@@ -1146,17 +1146,17 @@ static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage
     }
 
     /* Paranoid: Disable interrupts as, in theory, interrupt handlers might mess with CR4. */
-    RTCCUINTREG fEFlags = ASMIntDisableFlags();
+    RTCCUINTREG const fEFlags = ASMIntDisableFlags();
 
     /* Enable the VMX bit in CR4 if necessary. */
-    RTCCUINTREG uOldCr4 = SUPR0ChangeCR4(X86_CR4_VMXE, RTCCUINTREG_MAX);
+    RTCCUINTREG const uOldCr4 = SUPR0ChangeCR4(X86_CR4_VMXE, RTCCUINTREG_MAX);
 
     /* Enter VMX root mode. */
     int rc = VMXEnable(HCPhysCpuPage);
     if (RT_FAILURE(rc))
     {
         if (!(uOldCr4 & X86_CR4_VMXE))
-            SUPR0ChangeCR4(0, ~X86_CR4_VMXE);
+            SUPR0ChangeCR4(0 /* fOrMask */, ~X86_CR4_VMXE);
 
         if (pVM)
             pVM->hm.s.vmx.HCPhysVmxEnableError = HCPhysCpuPage;
@@ -1178,17 +1178,17 @@ static int hmR0VmxLeaveRootMode(void)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* Paranoid: Disable interrupts as, in theory, interrupts handlers might mess with CR4. */
-    RTCCUINTREG fEFlags = ASMIntDisableFlags();
+    RTCCUINTREG const fEFlags = ASMIntDisableFlags();
 
     /* If we're for some reason not in VMX root mode, then don't leave it. */
-    RTCCUINTREG uHostCR4 = ASMGetCR4();
+    RTCCUINTREG const uHostCR4 = ASMGetCR4();
 
     int rc;
     if (uHostCR4 & X86_CR4_VMXE)
     {
         /* Exit VMX root mode and clear the VMX bit in CR4. */
         VMXDisable();
-        SUPR0ChangeCR4(0, ~X86_CR4_VMXE);
+        SUPR0ChangeCR4(0 /* fOrMask */, ~X86_CR4_VMXE);
         rc = VINF_SUCCESS;
     }
     else
@@ -1864,7 +1864,7 @@ static bool hmR0VmxIsAutoLoadGuestMsr(PCVMXVMCSINFO pVmcsInfo, uint32_t idMsr)
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0VmxUpdateAutoLoadHostMsrs(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxUpdateAutoLoadHostMsrs(PCVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
     PVMXAUTOMSR pHostMsrLoad = (PVMXAUTOMSR)pVmcsInfo->pvHostMsrLoad;
     uint32_t const cMsrs     = pVmcsInfo->cExitMsrLoad;
@@ -1926,7 +1926,7 @@ static void hmR0VmxLazySaveHostMsrs(PVMCPU pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   idMsr       The MSR to check.
  */
-static bool hmR0VmxIsLazyGuestMsr(PVMCPU pVCpu, uint32_t idMsr)
+static bool hmR0VmxIsLazyGuestMsr(PCVMCPU pVCpu, uint32_t idMsr)
 {
     NOREF(pVCpu);
 #if HC_ARCH_BITS == 64
@@ -2117,7 +2117,7 @@ static int hmR0VmxCheckVmcsCtls(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
-static void hmR0VmxCheckHostEferMsr(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxCheckHostEferMsr(PCVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -4163,13 +4163,13 @@ static int hmR0VmxExportHostMsrs(PVMCPU pVCpu)
  * @remarks Requires EFER, CR4.
  * @remarks No-long-jump zone!!!
  */
-static bool hmR0VmxShouldSwapEferMsr(PVMCPU pVCpu)
+static bool hmR0VmxShouldSwapEferMsr(PCVMCPU pVCpu)
 {
 #ifdef HMVMX_ALWAYS_SWAP_EFER
     RT_NOREF(pVCpu);
     return true;
 #else
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+    PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
     /* For 32-bit hosts running 64-bit guests, we always swap EFER MSR in the world-switcher. Nothing to do here. */
     if (CPUMIsGuestInLongModeEx(pCtx))
@@ -6500,7 +6500,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu, PVMXTRANSIEN
     bool         fParavirtTsc;
     uint64_t     uTscOffset;
     PVM          pVM = pVCpu->CTX_SUFF(pVM);
-    PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);;
+    PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
 
     if (pVM->hm.s.vmx.fUsePreemptTimer)
     {
@@ -9860,7 +9860,7 @@ static int hmR0VmxMapHCApicAccessPage(PVMCPU pVCpu)
  * @param   pVmcsInfoNstGst     The nested-guest VMCS info. object.
  * @param   pVmcsInfoGst        The guest VMCS info. object.
  */
-static void hmR0VmxMergeMsrBitmapNested(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfoNstGst, PCVMXVMCSINFO pVmcsInfoGst)
+static void hmR0VmxMergeMsrBitmapNested(PCVMCPU pVCpu, PVMXVMCSINFO pVmcsInfoNstGst, PCVMXVMCSINFO pVmcsInfoGst)
 {
     uint64_t const *pu64MsrBitmapNstGst = (uint64_t const *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap);
     uint64_t const *pu64MsrBitmapGst    = (uint64_t const *)pVmcsInfoGst->pvMsrBitmap;
@@ -12800,7 +12800,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     int rc = hmR0VmxReadExitIntInfoVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
-    uint32_t uIntType = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
+    uint32_t const uIntType = VMX_EXIT_INT_INFO_TYPE(pVmxTransient->uExitIntInfo);
     Assert(   !(pVmcsInfo->u32ExitCtls & VMX_EXIT_CTLS_ACK_EXT_INT)
            && uIntType != VMX_EXIT_INT_INFO_TYPE_EXT_INT);
     Assert(VMX_EXIT_INT_INFO_IS_VALID(pVmxTransient->uExitIntInfo));
@@ -12833,8 +12833,8 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         return rcStrictRc1;
     }
 
-    uint32_t uExitIntInfo = pVmxTransient->uExitIntInfo;
-    uint32_t uVector      = VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo);
+    uint32_t const uExitIntInfo = pVmxTransient->uExitIntInfo;
+    uint32_t const uVector      = VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo);
     switch (uIntType)
     {
         case VMX_EXIT_INT_INFO_TYPE_PRIV_SW_XCPT:  /* Privileged software exception. (#DB from ICEBP) */
@@ -14769,8 +14769,9 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
 
     /* Refer Intel spec. Table 27-1. "Exit Qualifications for debug exceptions" for the format. */
-    uint64_t uDR6 = X86_DR6_INIT_VAL;
-    uDR6         |= (pVmxTransient->uExitQual & (X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B2 | X86_DR6_B3 | X86_DR6_BD | X86_DR6_BS));
+    uint64_t const uDR6 = X86_DR6_INIT_VAL
+                        | (pVmxTransient->uExitQual & (  X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B2 | X86_DR6_B3
+                                                       | X86_DR6_BD | X86_DR6_BS));
 
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     rc = DBGFRZTrap01Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx), uDR6, pVCpu->hm.s.fSingleInstruction);
@@ -14780,7 +14781,7 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         /*
          * The exception was for the guest.  Update DR6, DR7.GD and
          * IA32_DEBUGCTL.LBR before forwarding it.
-         * (See Intel spec. 27.1 "Architectural State before a VM-Exit".)
+         * See Intel spec. 27.1 "Architectural State before a VM-Exit".
          */
         VMMRZCallRing3Disable(pVCpu);
         HM_DISABLE_PREEMPT(pVCpu);
