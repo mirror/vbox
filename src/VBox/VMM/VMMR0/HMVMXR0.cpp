@@ -2614,7 +2614,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PHMPHYSCPU pHostCpu, PVMCPU pVCpu)
  *
  * @remarks Called with interrupts disabled.
  */
-DECLINLINE(void) hmR0VmxFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxFlushTaggedTlb(PHMPHYSCPU pHostCpu, PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
 #ifdef HMVMX_ALWAYS_FLUSH_TLB
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
@@ -7138,7 +7138,6 @@ static int hmR0VmxImportGuestLdtr(PVMCPU pVCpu)
     rc    |= VMXReadVmcs32(VMX_VMCS32_GUEST_LDTR_LIMIT,         &u32Limit);
     rc    |= VMXReadVmcs32(VMX_VMCS32_GUEST_LDTR_ACCESS_RIGHTS, &u32Attr);
     rc    |= VMXReadVmcsGstN(VMX_VMCS_GUEST_LDTR_BASE,          &u64Base);
-
     if (RT_SUCCESS(rc))
     {
         pVCpu->cpum.GstCtx.ldtr.Sel      = u32Sel;
@@ -7272,12 +7271,7 @@ static int hmR0VmxImportGuestIntrState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
         if (!u32Val)
         {
             if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-            {
-                rc  = hmR0VmxImportGuestRip(pVCpu);
-                rc |= hmR0VmxImportGuestRFlags(pVCpu, pVmcsInfo);
-                AssertRCReturn(rc, rc);
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-            }
 
             if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS))
                 VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_BLOCK_NMIS);
@@ -7295,9 +7289,7 @@ static int hmR0VmxImportGuestIntrState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
             {
                 if (u32Val & (  VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS
                               | VMX_VMCS_GUEST_INT_STATE_BLOCK_STI))
-                {
                     EMSetInhibitInterruptsPC(pVCpu, pVCpu->cpum.GstCtx.rip);
-                }
                 else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
                     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
 
