@@ -229,21 +229,20 @@ public:
     virtual QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIdx = QModelIndex()) const /* override */;
 
     /** Returns flags for item with certain @a index. */
-    Qt::ItemFlags flags(const QModelIndex &index) const;
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const /* override */;
 
     /** Returns row count of certain @a parent. */
-    int rowCount(const QModelIndex &parent = QModelIndex()) const;
-
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const /* override */;
     /** Returns column count of certain @a parent. */
-    int columnCount(const QModelIndex &parent = QModelIndex()) const;
+    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const /* override */;
 
     /** Returns header data for @a iSection, @a enmOrientation and @a iRole specified. */
-    QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const;
+    virtual QVariant headerData(int iSection, Qt::Orientation enmOrientation, int iRole) const /* override */;
 
     /** Defines the @a iRole data for item with @a index as @a value. */
-    bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole);
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole = Qt::EditRole) /* override */;
     /** Returns the @a iRole data for item with @a index. */
-    QVariant data(const QModelIndex &index, int iRole) const;
+    virtual QVariant data(const QModelIndex &index, int iRole) const /* override */;
 
 private:
 
@@ -255,6 +254,23 @@ private:
 
     /** Holds the Form Editor row list. */
     QList<UIFormEditorRow*>  m_dataList;
+};
+
+
+/** QSortFilterProxyModel subclass used as the Form Editor proxy-model. */
+class UIFormEditorProxyModel : public QSortFilterProxyModel
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs the Form Editor proxy-model passing @a pParent to the base-class. */
+    UIFormEditorProxyModel(QObject *pParent = 0);
+
+protected:
+
+    /** Returns whether item in the row indicated by the given @a iSourceRow and @a srcParenIdx should be included in the model. */
+    virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &srcParenIdx) const /* override */;
 };
 
 
@@ -274,23 +290,6 @@ protected:
     virtual int childCount() const /* override */;
     /** Returns the child item with @a iIndex. */
     virtual QITableViewRow *childItem(int iIndex) const /* override */;
-};
-
-
-/** QSortFilterProxyModel subclass used as the Form Editor proxy-model. */
-class UIFormEditorProxyModel : public QSortFilterProxyModel
-{
-    Q_OBJECT;
-
-public:
-
-    /** Constructs the Form Editor proxy-model passing @a pParent to the base-class. */
-    UIFormEditorProxyModel(QObject *pParent = 0);
-
-protected:
-
-    /** Returns whether item in the row indicated by the given @a iSourceRow and @a srcParenIdx should be included in the model. */
-    virtual bool filterAcceptsRow(int iSourceRow, const QModelIndex &srcParenIdx) const /* override */;
 };
 
 
@@ -779,29 +778,6 @@ void UIFormEditorModel::updateGeneration()
 
 
 /*********************************************************************************************************************************
-*   Class UIFormEditorView implementation.                                                                                       *
-*********************************************************************************************************************************/
-
-UIFormEditorView::UIFormEditorView(QWidget * /* pParent = 0 */)
-{
-}
-
-int UIFormEditorView::childCount() const
-{
-    /* Redirect request to model: */
-    AssertPtrReturn(model(), 0);
-    return qobject_cast<UIFormEditorModel*>(model())->childCount();
-}
-
-QITableViewRow *UIFormEditorView::childItem(int iIndex) const
-{
-    /* Redirect request to model: */
-    AssertPtrReturn(model(), 0);
-    return qobject_cast<UIFormEditorModel*>(model())->childItem(iIndex);
-}
-
-
-/*********************************************************************************************************************************
 *   Class UIFormEditorProxyModel implementation.                                                                                 *
 *********************************************************************************************************************************/
 
@@ -823,6 +799,29 @@ bool UIFormEditorProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex 
             return false;
     }
     return true;
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIFormEditorView implementation.                                                                                       *
+*********************************************************************************************************************************/
+
+UIFormEditorView::UIFormEditorView(QWidget * /* pParent = 0 */)
+{
+}
+
+int UIFormEditorView::childCount() const
+{
+    /* Redirect request to model: */
+    AssertPtrReturn(model(), 0);
+    return qobject_cast<UIFormEditorModel*>(model())->childCount();
+}
+
+QITableViewRow *UIFormEditorView::childItem(int iIndex) const
+{
+    /* Redirect request to model: */
+    AssertPtrReturn(model(), 0);
+    return qobject_cast<UIFormEditorModel*>(model())->childItem(iIndex);
 }
 
 
