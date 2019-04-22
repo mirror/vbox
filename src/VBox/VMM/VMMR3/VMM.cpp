@@ -1646,7 +1646,7 @@ static DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     PCCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     if (CPUMIsGuestInVmxNonRootMode(pCtx))
-        return VBOXSTRICTRC_TODO(IEMExecVmxVmexitInitIpi(pVCpu));
+        return VBOXSTRICTRC_TODO(IEMExecVmxVmexit(pVCpu, VMX_EXIT_INIT_SIGNAL));
 #endif
 
     /** @todo Figure out how to handle a SVM nested-guest intercepts here for INIT

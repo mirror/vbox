@@ -3071,23 +3071,6 @@ IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t c
 
 
 /**
- * VMX VM-exit handler for VM-exits due to Monitor-Trap Flag (MTF).
- *
- * @returns Strict VBox status code.
- * @param   pVCpu   The cross context virtual CPU structure.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitMtf(PVMCPU pVCpu)
-{
-    /*
-     * The MTF VM-exit can occur even when the MTF VM-execution control is
-     * not set (e.g. when VM-entry injects an MTF pending event), so do not
-     * check for the intercept here.
-     */
-    return iemVmxVmexit(pVCpu, VMX_EXIT_MTF);
-}
-
-
-/**
  * VMX VM-exit handler for VM-exits due to INVLPG.
  *
  * @returns Strict VBox status code.
@@ -3920,42 +3903,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector)
 {
     iemVmxVmcsSetExitQual(pVCpu, uVector);
     return iemVmxVmexit(pVCpu, VMX_EXIT_SIPI);
-}
-
-
-/**
- * VMX VM-exit handler for VM-exits due to init-IPIs (INIT).
- *
- * @returns VBox strict status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitInitIpi(PVMCPU pVCpu)
-{
-    return iemVmxVmexit(pVCpu, VMX_EXIT_INIT_SIGNAL);
-}
-
-
-/**
- * VMX VM-exit handler for interrupt-window VM-exits.
- *
- * @returns VBox strict status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitIntWindow(PVMCPU pVCpu)
-{
-    return iemVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW);
-}
-
-
-/**
- * VMX VM-exit handler for NMI-window VM-exits.
- *
- * @returns VBox strict status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- */
-IEM_STATIC VBOXSTRICTRC iemVmxVmexitNmiWindow(PVMCPU pVCpu)
-{
-    return iemVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW);
 }
 
 

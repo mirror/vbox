@@ -1068,7 +1068,7 @@ typedef const VMXEXITINSTRINFO *PCVMXEXITINSTRINFO;
 #define VMXMSRPM_EXIT_WR                                        RT_BIT(3)
 /** Guest software reads or writes of this MSR must not cause a VM-exit. */
 #define VMXMSRPM_ALLOW_RD_WR                                    (VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR)
-/** Guest software reads and writes of this MSR must cause a VM-exit. */
+/** Guest software reads or writes of this MSR must cause a VM-exit. */
 #define VMXMSRPM_EXIT_RD_WR                                     (VMXMSRPM_EXIT_RD  | VMXMSRPM_EXIT_WR)
 /** Mask of valid MSR read permissions. */
 #define VMXMSRPM_RD_MASK                                        (VMXMSRPM_ALLOW_RD | VMXMSRPM_EXIT_RD)

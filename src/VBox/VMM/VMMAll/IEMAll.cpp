@@ -985,10 +985,7 @@ IEM_STATIC VBOXSTRICTRC     iemVmxVmexitPreemptTimer(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitNmi(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitInitIpi(PVMCPU pVCpu);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitIntWindow(PVMCPU pVCpu);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitNmiWindow(PVMCPU pVCpu);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitMtf(PVMCPU pVCpu);
+IEM_STATIC VBOXSTRICTRC     iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess, size_t cbAccess, void *pvData, uint32_t fAccess);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess, uint32_t fAccess);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMsrRead(PVMCPU pVCpu, uint32_t idMsr, uint64_t *pu64Value);
@@ -14065,7 +14062,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
         /* MTF takes priority over VMX-preemption timer. */
         else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
         {
-            rcStrict = iemVmxVmexitMtf(pVCpu);
+            rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_MTF);
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
         }
@@ -14084,7 +14081,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, bool fExecuteInhibit, con
         /* NMI-window VM-exit. */
         else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW))
         {
-            rcStrict = iemVmxVmexitNmiWindow(pVCpu);
+            rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW);
             Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW));
         }
     }
@@ -15912,63 +15909,21 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVec
 
 
 /**
- * Interface for HM and EM to emulate VM-exit due to init-IPI (INIT).
+ * Interface for HM and EM to emulate a VM-exit.
+ *
+ * If a specialized version of a VM-exit handler exists, that must be used instead.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   uExitReason     The VM-exit reason.
  * @thread  EMT(pVCpu)
- */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInitIpi(PVMCPU pVCpu)
-{
-    VBOXSTRICTRC rcStrict = iemVmxVmexitInitIpi(pVCpu);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
-    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
-}
-
-
-/**
- * Interface for HM and EM to emulate VM-exits for interrupt-windows.
  *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @thread  EMT(pVCpu)
+ * @remarks It is the responsibility of the caller to ensure VM-exit qualification
+ *          is updated prior to calling this function!
  */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitIntWindow(PVMCPU pVCpu)
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
 {
-    VBOXSTRICTRC rcStrict = iemVmxVmexitIntWindow(pVCpu);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
-    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
-}
-
-
-/**
- * Interface for HM and EM to emulate VM-exits for NMI-windows.
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @thread  EMT(pVCpu)
- */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitNmiWindow(PVMCPU pVCpu)
-{
-    VBOXSTRICTRC rcStrict = iemVmxVmexitNmiWindow(pVCpu);
-    if (pVCpu->iem.s.cActiveMappings)
-        iemMemRollback(pVCpu);
-    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
-}
-
-
-/**
- * Interface for HM and EM to emulate VM-exits Monitor-Trap Flag (MTF).
- *
- * @returns Strict VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @thread  EMT(pVCpu)
- */
-VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitMtf(PVMCPU pVCpu)
-{
-    VBOXSTRICTRC rcStrict = iemVmxVmexitMtf(pVCpu);
+    VBOXSTRICTRC rcStrict = iemVmxVmexit(pVCpu, uExitReason);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
