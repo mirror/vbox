@@ -7528,7 +7528,7 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                     /** @todo r=ramshankar: We only read 32-bits here for legacy/convenience reasons,
                      *        remove when we drop 32-bit host w/ 64-bit host support, see
                      *        @bugref{9180#c39}. */
-                    rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR0,              &u32Val);
+                    rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR0, &u32Val);
 #if HC_ARCH_BITS == 32
                     uint32_t u32Shadow;
                     rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR0_READ_SHADOW, &u32Shadow);
@@ -7550,7 +7550,7 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                     /** @todo r=ramshankar: We only read 32-bits here for legacy/convenience reasons,
                      *        remove when we drop 32-bit host w/ 64-bit host support, see
                      *        @bugref{9180#c39}. */
-                    rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR4,              &u32Val);
+                    rc  = VMXReadVmcs32(VMX_VMCS_GUEST_CR4, &u32Val);
 #if HC_ARCH_BITS == 32
                     uint32_t u32Shadow;
                     rc |= VMXReadVmcs32(VMX_VMCS_CTRL_CR4_READ_SHADOW, &u32Shadow);
