@@ -56,24 +56,38 @@ public:
 
     /** Constructs null choice data. */
     ChoiceData() {}
-    /** Constructs choice data on the basis of passed @a choices and @a iSelectedChoice. */
-    ChoiceData(const QVector<QString> &choices, int iSelectedChoice)
-        : m_choices(choices), m_iSelectedChoice(iSelectedChoice) {}
+    /** Constructs choice data on the basis of passed @a values and @a iSelectedIndex. */
+    ChoiceData(const QVector<QString> &values, int iSelectedIndex)
+        : m_values(values), m_iSelectedIndex(iSelectedIndex) {}
     /** Constructs choice data on the basis of another @a choice data. */
     ChoiceData(const ChoiceData &choice)
-        : m_choices(choice.choices()), m_iSelectedChoice(choice.selectedChoice()) {}
+        : m_values(choice.values()), m_iSelectedIndex(choice.selectedIndex()) {}
 
-    /** Returns choice list. */
-    QVector<QString> choices() const { return m_choices; }
-    /** Returns current selected choice. */
-    int selectedChoice() const { return m_iSelectedChoice; }
+    /** Assigns values of @a other choice to this one. */
+    ChoiceData &operator=(const ChoiceData &other)
+    {
+        m_values = other.values();
+        m_iSelectedIndex = other.selectedIndex();
+        return *this;
+    }
+
+    /** Returns values vector. */
+    QVector<QString> values() const { return m_values; }
+    /** Returns selected index. */
+    int selectedIndex() const { return m_iSelectedIndex; }
+    /** Returns selected value. */
+    QString selectedValue() const
+    {
+        return   m_iSelectedIndex >= 0 && m_iSelectedIndex < m_values.size()
+               ? m_values.at(m_iSelectedIndex) : QString();
+    }
 
 private:
 
-    /** Holds choice list. */
-    QVector<QString>  m_choices;
-    /** Holds current selected choice. */
-    int               m_iSelectedChoice;
+    /** Holds values vector. */
+    QVector<QString>  m_values;
+    /** Holds selected index. */
+    int               m_iSelectedIndex;
 };
 Q_DECLARE_METATYPE(ChoiceData);
 
@@ -95,8 +109,8 @@ private:
     /** Defines the @a choice. */
     void setChoice(const ChoiceData &choice)
     {
-        addItems(choice.choices().toList());
-        setCurrentIndex(choice.selectedChoice());
+        addItems(choice.values().toList());
+        setCurrentIndex(choice.selectedIndex());
     }
 
     /** Returns the choice. */
@@ -414,12 +428,12 @@ ChoiceData UIFormEditorRow::toChoice() const
 void UIFormEditorRow::setChoice(const ChoiceData &choice)
 {
     /* Do nothing for empty choices: */
-    if (choice.selectedChoice() == -1)
+    if (choice.selectedIndex() == -1)
         return;
 
     AssertReturnVoid(valueType() == KFormValueType_Choice);
     CChoiceFormValue comValue(m_comValue);
-    CProgress comProgress = comValue.SetSelectedIndex(choice.selectedChoice());
+    CProgress comProgress = comValue.SetSelectedIndex(choice.selectedIndex());
 
     /* Show error message if necessary: */
     if (!comValue.isOk())
@@ -467,9 +481,7 @@ void UIFormEditorRow::updateValueCells()
             const QVector<QString> values = comValue.GetValues();
             const int iSelectedIndex = comValue.GetSelectedIndex();
             m_choice = ChoiceData(values, iSelectedIndex);
-            m_cells[UIFormEditorDataType_Value]->setText(  !m_choice.choices().isEmpty()
-                                                         ? m_choice.choices().at(m_choice.selectedChoice())
-                                                         : QString());
+            m_cells[UIFormEditorDataType_Value]->setText(m_choice.selectedValue());
             /// @todo check for errors
             break;
         }
