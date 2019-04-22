@@ -200,6 +200,13 @@ private:
     /** Holds current generation value. */
     int  m_iGeneration;
 
+    /** Holds cached bool value. */
+    bool        m_fBool;
+    /** Holds cached string value. */
+    QString     m_strString;
+    /** Holds cached choice value. */
+    ChoiceData  m_choice;
+
     /** Holds the cell instances. */
     QVector<UIFormEditorCell*>  m_cells;
 };
@@ -313,6 +320,9 @@ UIFormEditorRow::UIFormEditorRow(QITableView *pParent, const CFormValue &comValu
     , m_comValue(comValue)
     , m_enmValueType(KFormValueType_Max)
     , m_iGeneration(0)
+    , m_fBool(false)
+    , m_strString(QString())
+    , m_choice(ChoiceData())
 {
     prepare();
 }
@@ -340,8 +350,7 @@ bool UIFormEditorRow::isVisible() const
 bool UIFormEditorRow::toBool() const
 {
     AssertReturn(valueType() == KFormValueType_Boolean, false);
-    CBooleanFormValue comValue(m_comValue);
-    return comValue.GetSelected();
+    return m_fBool;
 }
 
 void UIFormEditorRow::setBool(bool fBool)
@@ -370,8 +379,7 @@ void UIFormEditorRow::setBool(bool fBool)
 QString UIFormEditorRow::toString() const
 {
     AssertReturn(valueType() == KFormValueType_String, QString());
-    CStringFormValue comValue(m_comValue);
-    return comValue.GetString();
+    return m_strString;
 }
 
 void UIFormEditorRow::setString(const QString &strString)
@@ -400,8 +408,7 @@ void UIFormEditorRow::setString(const QString &strString)
 ChoiceData UIFormEditorRow::toChoice() const
 {
     AssertReturn(valueType() == KFormValueType_Choice, ChoiceData());
-    CChoiceFormValue comValue(m_comValue);
-    return ChoiceData(comValue.GetValues(), comValue.GetSelectedIndex());
+    return m_choice;
 }
 
 void UIFormEditorRow::setChoice(const ChoiceData &choice)
@@ -441,14 +448,16 @@ void UIFormEditorRow::updateValueCells()
         case KFormValueType_Boolean:
         {
             CBooleanFormValue comValue(m_comValue);
-            m_cells[UIFormEditorDataType_Value]->setText(comValue.GetSelected() ? "True" : "False");
+            m_fBool = comValue.GetSelected();
+            m_cells[UIFormEditorDataType_Value]->setText(m_fBool ? "True" : "False");
             /// @todo check for errors
             break;
         }
         case KFormValueType_String:
         {
             CStringFormValue comValue(m_comValue);
-            m_cells[UIFormEditorDataType_Value]->setText(comValue.GetString());
+            m_strString = comValue.GetString();
+            m_cells[UIFormEditorDataType_Value]->setText(m_strString);
             /// @todo check for errors
             break;
         }
@@ -456,7 +465,11 @@ void UIFormEditorRow::updateValueCells()
         {
             CChoiceFormValue comValue(m_comValue);
             const QVector<QString> values = comValue.GetValues();
-            m_cells[UIFormEditorDataType_Value]->setText(values.isEmpty() ? QString() : values.at(comValue.GetSelectedIndex()));
+            const int iSelectedIndex = comValue.GetSelectedIndex();
+            m_choice = ChoiceData(values, iSelectedIndex);
+            m_cells[UIFormEditorDataType_Value]->setText(  !m_choice.choices().isEmpty()
+                                                         ? m_choice.choices().at(m_choice.selectedChoice())
+                                                         : QString());
             /// @todo check for errors
             break;
         }
