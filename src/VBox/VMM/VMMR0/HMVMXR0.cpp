@@ -1714,7 +1714,7 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient,
         /* Set the guest to read/write this MSR without causing VM-exits. */
         if (   fSetReadWrite
             && (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS))
-            hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, idMsr, VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
+            hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, idMsr, VMXMSRPM_ALLOW_RD_WR);
 
         fAdded = true;
     }
@@ -2199,8 +2199,7 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
             }
             else
             {
-                AssertMsgReturnVoid((fMsrpm &  (VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR))
-                                            == (VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR),
+                AssertMsgReturnVoid((fMsrpm & VMXMSRPM_ALLOW_RD_WR) == VMXMSRPM_ALLOW_RD_WR,
                                     ("u32Msr=%#RX32 cMsrs=%u No passthru read/write!\n", pGuestMsrLoad->u32Msr, cMsrs));
             }
         }
@@ -2849,19 +2848,19 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
      * VM-exits; they are loaded/stored automatically using fields in the VMCS.
      */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SYSENTER_CS,  VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
-    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SYSENTER_ESP, VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
-    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SYSENTER_EIP, VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
-    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_GS_BASE,        VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
-    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_FS_BASE,        VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
+    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SYSENTER_CS,  VMXMSRPM_ALLOW_RD_WR);
+    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SYSENTER_ESP, VMXMSRPM_ALLOW_RD_WR);
+    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SYSENTER_EIP, VMXMSRPM_ALLOW_RD_WR);
+    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_GS_BASE,        VMXMSRPM_ALLOW_RD_WR);
+    hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_FS_BASE,        VMXMSRPM_ALLOW_RD_WR);
 
 #ifdef VBOX_STRICT
     /** @todo NSTVMX: Remove this later. */
     uint32_t fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, MSR_IA32_SYSENTER_CS);
-    Assert((fMsrpm & (VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR)) == (VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR));
+    Assert((fMsrpm & VMXMSRPM_ALLOW_RD_WR) == VMXMSRPM_ALLOW_RD_WR);
 
     fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, MSR_K8_GS_BASE);
-    Assert((fMsrpm & (VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR)) == (VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR));
+    Assert((fMsrpm & VMXMSRPM_ALLOW_RD_WR) == VMXMSRPM_ALLOW_RD_WR);
 #endif
 
     /*
@@ -2874,11 +2873,11 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
      * auto-load/store MSR area.
      */
     if (pVM->cpum.ro.GuestFeatures.fIbpb)
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_PRED_CMD,  VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_PRED_CMD,  VMXMSRPM_ALLOW_RD_WR);
     if (pVM->cpum.ro.GuestFeatures.fFlushCmd)
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_FLUSH_CMD, VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_FLUSH_CMD, VMXMSRPM_ALLOW_RD_WR);
     if (pVM->cpum.ro.GuestFeatures.fIbrs)
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SPEC_CTRL, VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SPEC_CTRL, VMXMSRPM_ALLOW_RD_WR);
 
     /*
      * IA32_EFER MSR is always intercepted, see @bugref{9180#c37}.
@@ -2891,14 +2890,14 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
      */
     if (pVM->hm.s.fAllow64BitGuests)
     {
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_LSTAR,          VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K6_STAR,           VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_SF_MASK,        VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
-        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_KERNEL_GS_BASE, VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_LSTAR,          VMXMSRPM_ALLOW_RD_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K6_STAR,           VMXMSRPM_ALLOW_RD_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_SF_MASK,        VMXMSRPM_ALLOW_RD_WR);
+        hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_KERNEL_GS_BASE, VMXMSRPM_ALLOW_RD_WR);
 
 # ifdef VBOX_STRICT
         fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, MSR_K8_GS_BASE);
-        Assert((fMsrpm & (VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR)) == (VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR));
+        Assert((fMsrpm & VMXMSRPM_ALLOW_RD_WR) == VMXMSRPM_ALLOW_RD_WR);
 # endif
     }
 #endif
@@ -13776,16 +13775,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                 case MSR_K8_FS_BASE:
                 case MSR_K8_GS_BASE:
                 {
-                    uint32_t fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, idMsr);
-                    Assert(fMsrpm == (VMXMSRPM_ALLOW_RD | VMXMSRPM_ALLOW_WR));
-
-                    uint32_t u32Proc;
-                    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Proc);
-                    AssertRC(rc);
-                    Assert(u32Proc == pVmcsInfo->u32ProcCtls);
-                    Assert(u32Proc & VMX_PROC_CTLS_USE_MSR_BITMAPS);
-
-                    AssertMsgFailed(("Unexpected WRMSR for an MSR in the VMCS. ecx=%#RX32 fMsrpm=%#RX32\n", idMsr, fMsrpm));
+                    AssertMsgFailed(("Unexpected WRMSR for an MSR in the VMCS. ecx=%#RX32\n", idMsr));
                     HMVMX_UNEXPECTED_EXIT_RET(pVCpu, pVmxTransient);
                 }
 
