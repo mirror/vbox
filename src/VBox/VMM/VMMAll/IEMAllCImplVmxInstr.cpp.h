@@ -455,7 +455,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
  *
  * @remarks This takes into account the CPU features exposed to the guest.
  */
-IEM_STATIC bool iemVmxIsVmcsFieldValid(PVMCPU pVCpu, uint64_t u64FieldEnc)
+IEM_STATIC bool iemVmxIsVmcsFieldValid(PCVMCPU pVCpu, uint64_t u64FieldEnc)
 {
     uint32_t const uFieldEncHi = RT_HI_U32(u64FieldEnc);
     uint32_t const uFieldEncLo = RT_LO_U32(u64FieldEnc);
@@ -1130,7 +1130,7 @@ DECL_FORCE_INLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   uMsrCount       The MSR area count to check.
  */
-DECL_FORCE_INLINE(bool) iemVmxIsAutoMsrCountValid(PVMCPU pVCpu, uint32_t uMsrCount)
+DECL_FORCE_INLINE(bool) iemVmxIsAutoMsrCountValid(PCVMCPU pVCpu, uint32_t uMsrCount)
 {
     uint64_t const u64VmxMiscMsr      = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Misc;
     uint32_t const cMaxSupportedMsrs  = VMX_MISC_MAX_MSRS(u64VmxMiscMsr);
@@ -3045,7 +3045,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPU pVCpu, uint32_t uExitR
  * @param   u16Port     The I/O port being accessed by the instruction.
  * @param   cbAccess    The size of the I/O access in bytes (1, 2 or 4 bytes).
  */
-IEM_STATIC bool iemVmxIsIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess)
+IEM_STATIC bool iemVmxIsIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -4960,7 +4960,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxTprVirtualization(PVMCPU pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   uVector     The interrupt that was acknowledged using an EOI.
  */
-IEM_STATIC bool iemVmxIsEoiInterceptSet(PVMCPU pVCpu, uint8_t uVector)
+IEM_STATIC bool iemVmxIsEoiInterceptSet(PCVMCPU pVCpu, uint8_t uVector)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -7746,7 +7746,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
  *                          VMX_EXIT_WRMSR).
  * @param   idMsr           The MSR.
  */
-IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PVMCPU pVCpu, uint32_t uExitReason, uint32_t idMsr)
+IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint32_t idMsr)
 {
     Assert(IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
     Assert(   uExitReason == VMX_EXIT_RDMSR
@@ -7779,7 +7779,7 @@ IEM_STATIC bool iemVmxIsRdmsrWrmsrInterceptSet(PVMCPU pVCpu, uint32_t uExitReaso
  * @param   uExitReason     The VM-exit reason (VMX_EXIT_VMREAD or
  *                          VMX_EXIT_VMREAD).
  */
-IEM_STATIC bool iemVmxIsVmreadVmwriteInterceptSet(PVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc)
+IEM_STATIC bool iemVmxIsVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc)
 {
     Assert(IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
     Assert(   uExitReason == VMX_EXIT_VMREAD
