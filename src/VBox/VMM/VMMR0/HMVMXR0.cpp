@@ -4804,7 +4804,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
 
             /* Commit the CR0 and related fields to the guest VMCS. */
-            int rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR0, u64GuestCr0);
+            int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0, u64GuestCr0);   /** @todo Fix to 64-bit when we drop 32-bit. */
             rc    |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR0_READ_SHADOW, u64ShadowCr0);
             if (uProcCtls != pVmcsInfo->u32ProcCtls)
                 rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, uProcCtls);
@@ -4833,7 +4833,7 @@ static int hmR0VmxExportGuestCR0(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
 
             /* Commit the CR0 and CR0 read shadow to the nested-guest VMCS. */
-            int rc = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR0,            u64GuestCr0);
+            int rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0, u64GuestCr0);   /** @todo NSTVMX: Fix to 64-bit when we drop 32-bit. */
             rc    |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR0_READ_SHADOW, u64ShadowCr0);
             AssertRCReturn(rc, rc);
 
@@ -5061,7 +5061,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
         u64GuestCr4 &= fZapCr4;
 
         /* Commit the CR4 and CR4 read shadow to the guest VMCS. */
-        rc  = VMXWriteVmcsGstN(VMX_VMCS_GUEST_CR4, u64GuestCr4);
+        rc  = VMXWriteVmcs32(VMX_VMCS_GUEST_CR4, u64GuestCr4);  /** @todo Fix to 64-bit when we drop 32-bit. */
         rc |= VMXWriteVmcsHstN(VMX_VMCS_CTRL_CR4_READ_SHADOW, u64ShadowCr4);
         AssertRCReturn(rc, rc);
 
@@ -6439,6 +6439,7 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
         default:
         {
             AssertMsgFailed(("VMXWriteVmcs64Ex: Invalid field %#RX32 (pVCpu=%p u64Val=%#RX64)\n", idxField, pVCpu, u64Val));
+            pVCpu->hm.s.u32HMError = idxField;
             rc = VERR_INVALID_PARAMETER;
             break;
         }
