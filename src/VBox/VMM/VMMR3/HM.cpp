@@ -2637,7 +2637,7 @@ VMMR3_INT_DECL(int) HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu)
  * @param   pVM         The cross context VM structure.
  * @param   pCtx        VM execution context.
  */
-VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
+VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCCPUMCTX pCtx)
 {
     /*
      * The VMM device heap is a requirement for emulating real-mode or protected-mode without paging
@@ -2719,7 +2719,7 @@ VMMR3_INT_DECL(void) HMR3NotifyDebugEventChangedPerCpu(PVM pVM, PVMCPU pVCpu)
  * @returns true if hardware acceleration is being used, otherwise false.
  * @param   pVCpu        The cross context virtual CPU structure.
  */
-VMMR3_INT_DECL(bool) HMR3IsActive(PVMCPU pVCpu)
+VMMR3_INT_DECL(bool) HMR3IsActive(PCVMCPU pVCpu)
 {
     return pVCpu->hm.s.fActive;
 }
