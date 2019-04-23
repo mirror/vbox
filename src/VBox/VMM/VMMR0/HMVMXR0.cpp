@@ -2854,15 +2854,6 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
     hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_GS_BASE,        VMXMSRPM_ALLOW_RD_WR);
     hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_FS_BASE,        VMXMSRPM_ALLOW_RD_WR);
 
-#ifdef VBOX_STRICT
-    /** @todo NSTVMX: Remove this later. */
-    uint32_t fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, MSR_IA32_SYSENTER_CS);
-    Assert((fMsrpm & VMXMSRPM_ALLOW_RD_WR) == VMXMSRPM_ALLOW_RD_WR);
-
-    fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, MSR_K8_GS_BASE);
-    Assert((fMsrpm & VMXMSRPM_ALLOW_RD_WR) == VMXMSRPM_ALLOW_RD_WR);
-#endif
-
     /*
      * The IA32_PRED_CMD and IA32_FLUSH_CMD MSRs are write-only and has no state
      * associated with then. We never need to intercept access (writes need to be
@@ -2879,10 +2870,6 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
     if (pVM->cpum.ro.GuestFeatures.fIbrs)
         hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_IA32_SPEC_CTRL, VMXMSRPM_ALLOW_RD_WR);
 
-    /*
-     * IA32_EFER MSR is always intercepted, see @bugref{9180#c37}.
-     */
-
 #if HC_ARCH_BITS == 64
     /*
      * Allow full read/write access for the following MSRs (mandatory for VT-x)
@@ -2894,12 +2881,16 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
         hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K6_STAR,           VMXMSRPM_ALLOW_RD_WR);
         hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_SF_MASK,        VMXMSRPM_ALLOW_RD_WR);
         hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, MSR_K8_KERNEL_GS_BASE, VMXMSRPM_ALLOW_RD_WR);
-
-# ifdef VBOX_STRICT
-        fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, MSR_K8_GS_BASE);
-        Assert((fMsrpm & VMXMSRPM_ALLOW_RD_WR) == VMXMSRPM_ALLOW_RD_WR);
-# endif
     }
+#endif
+
+    /*
+     * IA32_EFER MSR is always intercepted, see @bugref{9180#c37}.
+     */
+#ifdef VBOX_STRICT
+    Assert(pVmcsInfo->pvMsrBitmap);
+    uint32_t const fMsrpmEfer = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, MSR_K6_EFER);
+    Assert(fMsrpmEfer == VMXMSRPM_EXIT_RD_WR);
 #endif
 }
 
@@ -4926,7 +4917,6 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPU pVCpu, PVMXTRANSIENT pVmx
                  * guest is using paging or we have unrestricted guest execution to handle
                  * the guest when it's not using paging.
                  */
-                HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
                 GCPhysGuestCR3 = pCtx->cr3;
             }
             else
@@ -7575,6 +7565,7 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                             && CPUMIsGuestPagingEnabledEx(pCtx)))
                     {
                         rc = VMXReadVmcsGstN(VMX_VMCS_GUEST_CR3, &u64Val);
+                        VMXLOCAL_BREAK_RC(rc);
                         if (pCtx->cr3 != u64Val)
                         {
                             pCtx->cr3 = u64Val;
