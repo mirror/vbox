@@ -7331,7 +7331,7 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
     uint64_t u64Val;
     uint32_t u32Val;
 
-    STAM_PROFILE_ADV_START(& pVCpu->hm.s.StatImportGuestState, x);
+    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatImportGuestState, x);
 
     /*
      * We disable interrupts to make the updating of the state and in particular
@@ -7495,6 +7495,7 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                 PCVMXAUTOMSR   pMsr  = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
                 uint32_t const cMsrs = pVmcsInfo->cExitMsrStore;
                 Assert(cMsrs == 0 || pMsr != NULL);
+                Assert(cMsrs <= VMX_MISC_MAX_MSRS(pVM->hm.s.vmx.Msrs.u64Misc));
                 for (uint32_t i = 0; i < cMsrs; i++, pMsr++)
                 {
                     switch (pMsr->u32Msr)
