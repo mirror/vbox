@@ -5245,14 +5245,14 @@ HRESULT Console::i_onParallelPortChange(IParallelPort *aParallelPort)
 /**
  * Called by IInternalSessionControl::OnStorageControllerChange().
  */
-HRESULT Console::i_onStorageControllerChange()
+HRESULT Console::i_onStorageControllerChange(const Guid &aMachineId, const Utf8Str &aControllerName)
 {
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    fireStorageControllerChangedEvent(mEventSource);
+    fireStorageControllerChangedEvent(mEventSource, Bstr(aMachineId.toString()).raw(), Bstr(aControllerName).raw());
 
     LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
     return S_OK;

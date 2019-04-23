@@ -92,7 +92,7 @@ private:
     HRESULT onAudioAdapterChange(const ComPtr<IAudioAdapter> &aAudioAdapter);
     HRESULT onSerialPortChange(const ComPtr<ISerialPort> &aSerialPort);
     HRESULT onParallelPortChange(const ComPtr<IParallelPort> &aParallelPort);
-    HRESULT onStorageControllerChange();
+    HRESULT onStorageControllerChange(const Guid &aMachineId, const com::Utf8Str& aControllerName);
     HRESULT onMediumChange(const ComPtr<IMediumAttachment> &aMediumAttachment,
                            BOOL aForce);
     HRESULT onStorageDeviceChange(const ComPtr<IMediumAttachment> &aMediumAttachment,

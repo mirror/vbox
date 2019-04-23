@@ -4177,8 +4177,13 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
     mParent->i_unmarkRegistryModified(i_getId());
     mParent->i_saveModifiedRegistries();
 
-    if (aM)
-        mParent->i_onMediumConfigChanged(aM);
+    if (SUCCEEDED(rc))
+    {
+        if (fIndirect && medium != aM)
+            mParent->i_onMediumConfigChanged(medium);
+        mParent->i_onStorageDeviceChanged(attachment, FALSE, fSilent);
+    }
+
     return rc;
 }
 
@@ -4262,6 +4267,9 @@ HRESULT Machine::detachDevice(const com::Utf8Str &aName, LONG aControllerPort,
     mParent->i_unmarkRegistryModified(i_getId());
     mParent->i_saveModifiedRegistries();
 
+    if (SUCCEEDED(rc))
+        mParent->i_onStorageDeviceChanged(pAttach, TRUE, fSilent);
+
     return rc;
 }
 
@@ -4333,6 +4341,8 @@ HRESULT Machine::passthroughDevice(const com::Utf8Str &aName, LONG aControllerPo
     attLock.release();
     alock.release();
     rc = i_onStorageDeviceChange(pAttach, FALSE /* aRemove */, FALSE /* aSilent */);
+    if (SUCCEEDED(rc))
+        mParent->i_onStorageDeviceChanged(pAttach, FALSE, FALSE);
 
     return rc;
 }
@@ -6042,7 +6052,7 @@ HRESULT Machine::addStorageController(const com::Utf8Str &aName,
 
     /* inform the direct session if any */
     alock.release();
-    i_onStorageControllerChange();
+    i_onStorageControllerChange(i_getId(), aName);
 
     return S_OK;
 }
@@ -6129,7 +6139,7 @@ HRESULT Machine::setStorageControllerBootable(const com::Utf8Str &aName, BOOL aB
     {
         /* inform the direct session if any */
         alock.release();
-        i_onStorageControllerChange();
+        i_onStorageControllerChange(i_getId(), aName);
     }
 
     return rc;
@@ -6182,7 +6192,7 @@ HRESULT Machine::removeStorageController(const com::Utf8Str &aName)
 
     /* inform the direct session if any */
     alock.release();
-    i_onStorageControllerChange();
+    i_onStorageControllerChange(i_getId(), aName);
 
     return S_OK;
 }
@@ -11840,7 +11850,16 @@ void Machine::i_rollback(bool aNotify)
                 that->i_onParallelPortChange(parallelPorts[slot]);
 
         if (flModifications & IsModified_Storage)
-            that->i_onStorageControllerChange();
+        {
+            for (StorageControllerList::const_iterator
+                 it = mStorageControllers->begin();
+                 it != mStorageControllers->end();
+                 ++it)
+            {
+                that->i_onStorageControllerChange(that->i_getId(), (*it)->i_getName());
+            }
+        }
+
 
 #if 0
         if (flModifications & IsModified_BandwidthControl)
@@ -14023,7 +14042,7 @@ HRESULT SessionMachine::i_onParallelPortChange(IParallelPort *parallelPort)
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::i_onStorageControllerChange()
+HRESULT SessionMachine::i_onStorageControllerChange(const Guid &aMachineId, const Utf8Str &aControllerName)
 {
     LogFlowThisFunc(("\n"));
 
@@ -14037,11 +14056,13 @@ HRESULT SessionMachine::i_onStorageControllerChange()
             directControl = mData->mSession.mDirectControl;
     }
 
+    mParent->i_onStorageControllerChanged(aMachineId, aControllerName);
+
     /* ignore notifications sent after #OnSessionEnd() is called */
     if (!directControl)
         return S_OK;
 
-    return directControl->OnStorageControllerChange();
+    return directControl->OnStorageControllerChange(Bstr(aMachineId.toString()).raw(), Bstr(aControllerName).raw());
 }
 
 /**
@@ -14320,8 +14341,6 @@ HRESULT SessionMachine::i_onStorageDeviceChange(IMediumAttachment *aAttachment, 
         if (mData->mSession.mLockType == LockType_VM)
             directControl = mData->mSession.mDirectControl;
     }
-
-    mParent->i_onStorageDeviceChanged(aAttachment, aRemove, aSilent);
 
     /* ignore notifications sent after #OnSessionEnd() is called */
     if (!directControl)

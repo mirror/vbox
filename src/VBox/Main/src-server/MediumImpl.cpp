@@ -2381,12 +2381,11 @@ HRESULT Medium::close(AutoCaller &aAutoCaller)
 
     Guid uId = i_getId();
     DeviceType_T devType = i_getDeviceType();
-    bool wasCreated = m->state != MediumState_NotCreated;
     MultiResult mrc = i_close(aAutoCaller);
 
     pVirtualBox->i_saveModifiedRegistries();
 
-    if (SUCCEEDED(mrc) && wasCreated)
+    if (SUCCEEDED(mrc))
         pVirtualBox->i_onMediumRegistered(uId, devType, FALSE);
 
     return mrc;
@@ -8452,8 +8451,6 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
             // in asynchronous mode, save settings now
             m->pVirtualBox->i_saveModifiedRegistries();
         }
-        if (task.NotifyAboutChanges())
-            m->pVirtualBox->i_onMediumRegistered(m->id, m->devType, TRUE);
     }
     else
     {
@@ -8464,6 +8461,9 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
         if (fGenerateUuid)
             unconst(m->id).clear();
     }
+
+    if (task.NotifyAboutChanges() && SUCCEEDED(rc))
+        m->pVirtualBox->i_onMediumConfigChanged(this);
 
     return rc;
 }
@@ -8690,10 +8690,7 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
      * unlock the medium. */
 
     if (task.NotifyAboutChanges() && SUCCEEDED(mrc))
-    {
-        m->pVirtualBox->i_onMediumRegistered(pTarget->i_getId(), pTarget->i_getDeviceType(), TRUE);
         m->pVirtualBox->i_onMediumConfigChanged(this);
-    }
 
     return mrc;
 }

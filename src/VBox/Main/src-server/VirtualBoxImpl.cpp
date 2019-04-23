@@ -3019,6 +3019,32 @@ void VirtualBox::i_onMediumChanged(IMediumAttachment *aMediumAttachment)
     i_postEvent(new MediumChangedEventStruct(this, aMediumAttachment));
 }
 
+/** Event for onStorageControllerChanged() */
+struct StorageControllerChangedEventStruct : public VirtualBox::CallbackEvent
+{
+    StorageControllerChangedEventStruct(VirtualBox *aVB, const Guid &aMachineId,
+                                        const com::Utf8Str &aControllerName)
+        : CallbackEvent(aVB, VBoxEventType_OnStorageControllerChanged)
+        , mMachineId(aMachineId.toUtf16()), mControllerName(aControllerName)
+    {}
+
+    virtual HRESULT prepareEventDesc(IEventSource *aSource, VBoxEventDesc &aEvDesc)
+    {
+        return aEvDesc.init(aSource, VBoxEventType_OnStorageControllerChanged, mMachineId.raw(), mControllerName.raw());
+    }
+
+    Bstr mMachineId;
+    Bstr mControllerName;
+};
+
+/**
+ *  @note Doesn't lock any object.
+ */
+void VirtualBox::i_onStorageControllerChanged(const Guid &aMachineId, const com::Utf8Str &aControllerName)
+{
+    i_postEvent(new StorageControllerChangedEventStruct(this, aMachineId, aControllerName));
+}
+
 /** Event for onStorageDeviceChanged() */
 struct StorageDeviceChangedEventStruct : public VirtualBox::CallbackEvent
 {

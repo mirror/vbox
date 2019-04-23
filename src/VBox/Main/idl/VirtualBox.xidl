@@ -21094,6 +21094,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
+      <param name="machineId" type="uuid" mod="string" dir="in">
+        <desc>The id of the machine containing the storage controller.</desc>
+      </param>
+      <param name="controllerName" type="wstring" dir="in">
+        <desc>The name of the storage controller.</desc>
+      </param>
     </method>
 
     <method name="onMediumChange">
@@ -24232,15 +24238,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IStorageControllerChangedEvent" extends="IEvent"
-    uuid="715212BF-DA59-426E-8230-3831FAA52C56"
+    uuid="6BB335CC-1C58-440C-BB7B-3A1397284C7B"
     wsmap="managed" autogen="VBoxEvent" id="OnStorageControllerChanged"
     >
     <desc>
       Notification when a
-      <link to="IMachine::mediumAttachments">medium attachment</link>
+      <link to="IMachine::storageControllers">storage controllers</link>
       changes.
     </desc>
-    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="machinId" type="uuid" mod="string" readonly="yes">
+      <desc>
+        The id of the machine containing the storage controller.
+      </desc>
+    </attribute>
+    <attribute name="controllerName" type="wstring" readonly="yes">
+      <desc>
+        The name of the storage controller.
+      </desc>
+    </attribute>
   </interface>
 
   <interface

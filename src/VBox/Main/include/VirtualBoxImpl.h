@@ -155,6 +155,7 @@ public:
     void i_onMediumRegistered(const Guid &aMediumId, const DeviceType_T aDevType, const BOOL aRegistered);
     void i_onMediumConfigChanged(IMedium *aMedium);
     void i_onMediumChanged(IMediumAttachment* aMediumAttachment);
+    void i_onStorageControllerChanged(const Guid &aMachineId, const com::Utf8Str &aControllerName);
     void i_onStorageDeviceChanged(IMediumAttachment* aStorageDevice, const BOOL fRemoved, const BOOL fSilent);
     void i_onMachineStateChange(const Guid &aId, MachineState_T aState);
     void i_onMachineDataChange(const Guid &aId, BOOL aTemporary = FALSE);

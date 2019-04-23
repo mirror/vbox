@@ -333,7 +333,7 @@ HRESULT StorageController::setName(const com::Utf8Str &aName)
         m->pParent->i_setModified(Machine::IsModified_Storage);
         alock.release();
 
-        m->pParent->i_onStorageControllerChange();
+        m->pParent->i_onStorageControllerChange(m->pParent->i_getId(), aName);
     }
 
     return S_OK;
@@ -434,7 +434,7 @@ HRESULT StorageController::setControllerType(StorageControllerType_T aController
         m->pParent->i_setModified(Machine::IsModified_Storage);
         mlock.release();
 
-        m->pParent->i_onStorageControllerChange();
+        m->pParent->i_onStorageControllerChange(m->pParent->i_getId(), m->bd->strName);
     }
 
     return S_OK;
@@ -575,7 +575,7 @@ HRESULT StorageController::setPortCount(ULONG aPortCount)
         m->pParent->i_setModified(Machine::IsModified_Storage);
         mlock.release();
 
-        m->pParent->i_onStorageControllerChange();
+        m->pParent->i_onStorageControllerChange(m->pParent->i_getId(), m->bd->strName);
     }
 
     return S_OK;
@@ -608,7 +608,7 @@ HRESULT StorageController::setInstance(ULONG aInstance)
         m->pParent->i_setModified(Machine::IsModified_Storage);
         mlock.release();
 
-        m->pParent->i_onStorageControllerChange();
+        m->pParent->i_onStorageControllerChange(m->pParent->i_getId(), m->bd->strName);
     }
 
     return S_OK;
@@ -641,7 +641,7 @@ HRESULT StorageController::setUseHostIOCache(BOOL fUseHostIOCache)
         m->pParent->i_setModified(Machine::IsModified_Storage);
         mlock.release();
 
-        m->pParent->i_onStorageControllerChange();
+        m->pParent->i_onStorageControllerChange(m->pParent->i_getId(), m->bd->strName);
     }
 
     return S_OK;
