@@ -7349,8 +7349,9 @@ ifeq ($(KBUILD_TARGET),darwin)
  TEMPLATE_VBOXCROGLR3HOSTDLL_OBJCFLAGS       = $(TEMPLATE_VBOXR3NP_OBJCFLAGS) -Wno-deprecated-declarations
 else ifeq ($(KBUILD_TARGET),win)
  #   -wd4055: renderspu.c(1553) : warning C4055: 'type cast' : from data pointer 'const GLvoid *' to function pointer 'PFNVCRSERVER_CLIENT_CALLOUT'
+ #   -wd4305: renderspu_wgl.c(1118) : warning C4305: 'type cast' : truncation from 'uint64_t' to 'void *'
  TEMPLATE_VBOXCROGLR3HOSTDLL_CFLAGS          = $(TEMPLATE_$(TEMPLATE_VBOXCROGLR3HOSTDLL_EXTENDS)_CFLAGS) \
-  -wd4055
+  -wd4055 -wd4305
 endif
 
 #
