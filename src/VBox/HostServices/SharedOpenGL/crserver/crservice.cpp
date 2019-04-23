@@ -159,7 +159,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
 {
     int rc = VINF_SUCCESS;
 
-    NOREF(pvClient);
+    RT_NOREF(u32ClientID, pvClient);
 
     Log(("SHARED_CROPENGL svcSaveState: u32ClientID = %d\n", u32ClientID));
 
@@ -209,7 +209,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
 
 static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    RT_NOREF(pvClient, uVersion);
+    RT_NOREF(u32ClientID, pvClient, uVersion);
     int rc = VINF_SUCCESS;
 
     Log(("SHARED_CROPENGL svcLoadState: u32ClientID = %d\n", u32ClientID));
