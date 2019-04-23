@@ -628,7 +628,6 @@ HRESULT Appliance::createVirtualSystemDescriptions(ULONG aRequested, ULONG *aCre
 
     HRESULT rc = S_OK;
     uint32_t lQuantity = aRequested;
-    uint32_t oldSize = m->virtualSystemDescriptions.size();
     uint32_t i=0;
 
     if (lQuantity < 1)
