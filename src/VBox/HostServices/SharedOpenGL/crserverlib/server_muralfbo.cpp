@@ -50,6 +50,8 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
 
 static void crServerCheckMuralGeometryCB(unsigned long key, void *data1, void *data2)
 {
+    RT_NOREF(key);
+
     CRMuralInfo *pMI = (CRMuralInfo*) data1;
 
     if (!pMI->fRedirected || pMI == data2)
@@ -313,6 +315,8 @@ end:
 
 static void crVBoxServerMuralFbCleanCB(unsigned long key, void *data1, void *data2)
 {
+    RT_NOREF(key);
+
     CRMuralInfo *pMI = (CRMuralInfo*) data1;
     HCR_FRAMEBUFFER hFb = (HCR_FRAMEBUFFER)data2;
     uint32_t i;
@@ -329,6 +333,8 @@ static void crVBoxServerMuralFbCleanCB(unsigned long key, void *data1, void *dat
 
 static void crVBoxServerMuralFbSetCB(unsigned long key, void *data1, void *data2)
 {
+    RT_NOREF(key);
+
     CRMuralInfo *pMI = (CRMuralInfo*) data1;
     HCR_FRAMEBUFFER hFb = (HCR_FRAMEBUFFER)data2;
     uint32_t i;
@@ -656,6 +662,7 @@ static GLboolean crServerIntersectRect(CRrecti *a, CRrecti *b, CRrecti *rect)
 
 DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable)
 {
+    RT_NOREF(fEnable);
 }
 
 DECLEXPORT(void) crServerVBoxScreenshotRelease(CR_SCREENSHOT *pScreenshot)
@@ -818,8 +825,8 @@ GLint crServerMuralFBOIdxFromBufferName(CRMuralInfo *mural, GLenum buffer)
 void crServerMuralFBOSwapBuffers(CRMuralInfo *mural)
 {
     CRContext *ctx = crStateGetCurrent();
-    GLuint iOldCurDrawBuffer = mural->iCurDrawBuffer;
-    GLuint iOldCurReadBuffer = mural->iCurReadBuffer;
+    GLint iOldCurDrawBuffer = mural->iCurDrawBuffer;
+    GLint iOldCurReadBuffer = mural->iCurReadBuffer;
     mural->iBbBuffer = ((mural->iBbBuffer + 1) % (mural->cBuffers));
     if (mural->iCurDrawBuffer >= 0)
         mural->iCurDrawBuffer = ((mural->iCurDrawBuffer + 1) % (mural->cBuffers));

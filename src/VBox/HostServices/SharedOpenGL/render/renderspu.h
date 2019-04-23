@@ -338,8 +338,8 @@ extern void renderspu_SystemGetMaxWindowSize( WindowInfo *window, GLint *w, GLin
 extern void renderspu_SystemWindowPosition( WindowInfo *window, GLint x, GLint y );
 extern void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, const GLint* pRects);
 extern GLboolean renderspu_SystemWindowNeedEmptyPresent(WindowInfo *window);
-extern int renderspu_SystemInit();
-extern int renderspu_SystemTerm();
+extern int renderspu_SystemInit(void);
+extern int renderspu_SystemTerm(void);
 extern void renderspu_SystemDefaultSharedContextChanged(ContextInfo *fromContext, ContextInfo *toContext);
 extern void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt );
 extern void renderspu_SystemMakeCurrent( WindowInfo *window, GLint windowInfor, ContextInfo *context );
@@ -350,7 +350,7 @@ uint32_t renderspu_SystemPostprocessFunctions(SPUNamedFunctionTable *aFunctions,
 extern void renderspu_GCWindow(void);
 extern int renderspuCreateFunctions( SPUNamedFunctionTable table[] );
 extern GLboolean renderspuVBoxCompositorSet( WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR * pCompositor);
-extern void renderspuVBoxCompositorClearAll();
+extern void renderspuVBoxCompositorClearAll(void);
 extern int renderspuVBoxCompositorLock(WindowInfo *window, const struct VBOXVR_SCR_COMPOSITOR **ppCompositor);
 extern int renderspuVBoxCompositorUnlock(WindowInfo *window);
 extern const struct VBOXVR_SCR_COMPOSITOR * renderspuVBoxCompositorAcquire( WindowInfo *window);
@@ -407,15 +407,15 @@ extern void RENDER_APIENTRY renderspuSwapBuffers( GLint window, GLint flags );
 
 extern uint32_t renderspuContextMarkDeletedAndRelease( ContextInfo *context );
 
-int renderspuDefaultCtxInit();
+int renderspuDefaultCtxInit(void);
 void renderspuCleanupBase(bool fDeleteTables);
 
-ContextInfo * renderspuDefaultSharedContextAcquire();
+ContextInfo * renderspuDefaultSharedContextAcquire(void);
 void renderspuDefaultSharedContextRelease(ContextInfo * pCtx);
 uint32_t renderspuContextRelease(ContextInfo *context);
 uint32_t renderspuContextRetain(ContextInfo *context);
 
-bool renderspuCalloutAvailable();
+bool renderspuCalloutAvailable(void);
 bool renderspuCalloutClient(PFNVCRSERVER_CLIENT_CALLOUT_CB pfnCb, void *pvCb);
 
 

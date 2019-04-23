@@ -293,6 +293,7 @@ void crUnpackExtendProgramStringARB(PCrUnpackerState pState)
 
 void crUnpackExtendGetProgramStringARB(PCrUnpackerState pState)
 {
+    RT_NOREF(pState);
 }
 
 void crUnpackExtendProgramEnvParameter4dvARB(PCrUnpackerState pState)

@@ -42,7 +42,6 @@ int crServerGetCurrentEye(void)
 void SERVER_DISPATCH_APIENTRY crServerDispatchLoadMatrixf( const GLfloat *m )
 {
     const GLenum matMode = cr_server.curClient->currentCtxInfo->pContext->transform.matrixMode;
-    const CRMuralInfo *mural = cr_server.curClient->currentMural;
 
     crStateLoadMatrixf( m );
 
@@ -59,7 +58,6 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchLoadMatrixf( const GLfloat *m )
 void SERVER_DISPATCH_APIENTRY crServerDispatchLoadMatrixd( const GLdouble *m )
 {
     const GLenum matMode = cr_server.curClient->currentCtxInfo->pContext->transform.matrixMode;
-    const CRMuralInfo *mural = cr_server.curClient->currentMural;
 
     crStateLoadMatrixd( m );
 
@@ -111,7 +109,6 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchMultMatrixd( const GLdouble *m )
 void SERVER_DISPATCH_APIENTRY crServerDispatchLoadIdentity( void )
 {
     const GLenum matMode = cr_server.curClient->currentCtxInfo->pContext->transform.matrixMode;
-    const CRMuralInfo *mural = cr_server.curClient->currentMural;
 
     crStateLoadIdentity();
 

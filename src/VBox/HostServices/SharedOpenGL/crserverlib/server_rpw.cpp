@@ -121,6 +121,8 @@ static void crServerRpwWorkerGetWorkLocked(CR_SERVER_RPW *pWorker, PRTLISTNODE p
 
 static DECLCALLBACK(int) crServerRpwWorkerThread(RTTHREAD ThreadSelf, void *pvUser)
 {
+    RT_NOREF(ThreadSelf);
+
     CR_SERVER_RPW *pWorker = (CR_SERVER_RPW *)pvUser;
     RTMSINTERVAL cWaitMillis = RT_INDEFINITE_WAIT;
     RTLISTNODE WorkList, GpuSubmittedList;
@@ -272,6 +274,8 @@ end:
 
 static int crServerRpwCtlNotify(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *pEntry)
 {
+    RT_NOREF(pEntry);
+
     int rc = RTSemEventSignal(pWorker->hSubmitEvent);
     if (RT_SUCCESS(rc))
     {
@@ -439,6 +443,8 @@ int crServerRpwInit(CR_SERVER_RPW *pWorker)
 
 int crServerRpwEntryResizeCleaned(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *pEntry, uint32_t width, uint32_t height)
 {
+    RT_NOREF(pWorker);
+
     CRContext *pContext;
     if (!width || !height)
     {

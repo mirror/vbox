@@ -93,7 +93,7 @@ DECLINLINE(const void *) crUnpackAccessChk(PCCrUnpackerState pState, size_t cbAc
         (a_pState)->rcUnpack = VERR_BUFFER_OVERFLOW; \
         return; \
     } \
-    size_t int_cbAccessVerified = (a_cbAccess)
+    size_t int_cbAccessVerified = (a_cbAccess); RT_NOREF(int_cbAccessVerified)
 
 #define CHECK_BUFFER_SIZE_STATIC_LAST(a_pState, a_offAccessLast, a_Type) CHECK_BUFFER_SIZE_STATIC(a_pState, (a_offAccessLast) + sizeof( a_Type ))
 

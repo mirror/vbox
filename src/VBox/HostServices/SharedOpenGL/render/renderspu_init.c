@@ -99,7 +99,7 @@ static DWORD WINAPI renderSPUWindowThreadProc(void* unused)
 }
 #endif
 
-int renderspuDefaultCtxInit()
+int renderspuDefaultCtxInit(void)
 {
     GLint defaultWin, defaultCtx;
     WindowInfo *windowInfo;
@@ -365,6 +365,8 @@ static void renderspuBlitterCleanupCB(unsigned long key, void *data1, void *data
 {
     WindowInfo *window = (WindowInfo *) data1;
     CRASSERT(window);
+
+    RT_NOREF(key, data2);
 
     renderspuVBoxPresentBlitterCleanup( window );
 }

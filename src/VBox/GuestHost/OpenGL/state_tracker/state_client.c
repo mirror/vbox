@@ -1084,6 +1084,10 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
     CRClientPointer *cp;
     unsigned char *base = (unsigned char *) p;
 
+#ifndef IN_GUEST
+    RT_NOREF(fRealPtr);
+#endif
+
     if (g->current.inBeginEnd)
     {
         crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glInterleavedArrays called in begin/end");
@@ -1578,7 +1582,7 @@ void STATE_APIENTRY crStateLockArraysEXT(GLint first, GLint count)
     }
 }
 
-void STATE_APIENTRY crStateUnlockArraysEXT()
+void STATE_APIENTRY crStateUnlockArraysEXT(void)
 {
     CRContext *g = GetCurrentContext();
     CRClientState *c = &(g->client);
@@ -1727,7 +1731,7 @@ GLuint crStateNeedDummyZeroVertexArray(CRContext *g, CRCurrentStatePointers *cur
             }
             else
             {
-                zvMax = ~0;
+                zvMax = ~UINT32_C(0);
                 break;
             }
         }

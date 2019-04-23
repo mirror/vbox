@@ -23,5 +23,5 @@ void SERVER_DISPATCH_APIENTRY
 crServerDispatchBoundsInfoCR( const CRrecti *bounds, const GLbyte *payload,
 															GLint len, GLint num_opcodes )
 {
-
+    RT_NOREF(bounds, payload, len, num_opcodes);
 }

@@ -1353,6 +1353,7 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
     return FALSE;
 
 #else  /* !IN_GUEST */
+    RT_NOREF(conn);
     crError("crVBoxHGCMDoConnect called on host side!");
     CRASSERT(FALSE);
     return FALSE;

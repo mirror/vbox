@@ -117,7 +117,7 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
 GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preloadWinID);
 GLint crServerMuralInit(CRMuralInfo *mural, GLboolean fGuestWindow, GLint visBits, GLint preloadWinID);
 void crServerMuralTerm(CRMuralInfo *mural);
-GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height);
+GLboolean crServerMuralSize(CRMuralInfo *mural, GLuint width, GLuint height);
 void crServerMuralPosition(CRMuralInfo *mural, GLint x, GLint y);
 void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *pRects );
 void crServerMuralShow( CRMuralInfo *mural, GLint state );

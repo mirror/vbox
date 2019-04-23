@@ -58,7 +58,7 @@ void crStateListsInit(CRContext *ctx)
 
 #define CRSTATE_SET_ENABLED(state, cap) CRSTATE_SET_CAP(state, diff_api.IsEnabled(cap), "%u")
 
-#define CRSTATE_SET_ENUM(state, cap) {GLenum _e=g->state; diff_api.GetIntegerv(cap, &_e); CRSTATE_SET_CAP(state, _e, "%#x");}
+#define CRSTATE_SET_ENUM(state, cap) {GLenum _e=g->state; diff_api.GetIntegerv(cap, (GLint *)&_e); CRSTATE_SET_CAP(state, _e, "%#x");}
 #define CRSTATE_SET_FLOAT(state, cap) {GLfloat _f=g->state; diff_api.GetFloatv(cap, &_f); CRSTATE_SET_CAP(state, _f, "%f");}
 #define CRSTATE_SET_INT(state, cap) {GLint _i=g->state; diff_api.GetIntegerv(cap, &_i); CRSTATE_SET_CAP(state, _i, "%i");}
 #define CRSTATE_SET_BOOL(state, cap) {GLboolean _b=g->state; diff_api.GetBooleanv(cap, &_b); CRSTATE_SET_CAP(state, _b, "%u");}
@@ -223,12 +223,12 @@ void STATE_APIENTRY crStateQueryHWState(GLuint fbFbo, GLuint bbFbo)
         if (CHECKDIRTY(sb->buffer.drawBuffer, negbitID))
         {
             GLuint buf = 0;
-            diff_api.GetIntegerv(GL_DRAW_BUFFER, &buf);
+            diff_api.GetIntegerv(GL_DRAW_BUFFER, (GLint *)&buf);
 
             if (buf == GL_COLOR_ATTACHMENT0_EXT && (bbFbo || fbFbo))
             {
                 GLuint binding = 0;
-                diff_api.GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &binding);
+                diff_api.GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, (GLint *)&binding);
                 if (!binding)
                 {
                     crWarning("HW state synch: GL_DRAW_FRAMEBUFFER_BINDING is NULL");
@@ -256,12 +256,12 @@ void STATE_APIENTRY crStateQueryHWState(GLuint fbFbo, GLuint bbFbo)
         if (CHECKDIRTY(sb->buffer.readBuffer, negbitID))
         {
             GLuint buf = 0;
-            diff_api.GetIntegerv(GL_READ_BUFFER, &buf);
+            diff_api.GetIntegerv(GL_READ_BUFFER, (GLint *)&buf);
 
             if (buf == GL_COLOR_ATTACHMENT0_EXT && (bbFbo || fbFbo))
             {
                 GLuint binding = 0;
-                diff_api.GetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &binding);
+                diff_api.GetIntegerv(GL_READ_FRAMEBUFFER_BINDING, (GLint *)&binding);
                 if (!binding)
                 {
                     crWarning("HW state synch: GL_READ_FRAMEBUFFER_BINDING is NULL");

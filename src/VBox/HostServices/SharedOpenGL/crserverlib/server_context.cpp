@@ -180,6 +180,7 @@ static void crServerCleanupMuralCtxUsageCB(unsigned long key, void *data1, void 
     CRMuralInfo *mural = (CRMuralInfo *) data1;
     CRContext *ctx = (CRContext *) data2;
 
+    RT_NOREF(key);
     CR_STATE_SHAREDOBJ_USAGE_CLEAR(mural, ctx);
 }
 
@@ -389,7 +390,7 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
 
     if (mural && mural->fRedirected  && crServerSupportRedirMuralFBO())
     {
-        GLuint id = crServerMuralFBOIdxFromBufferName(mural, ctx->buffer.drawBuffer);
+        GLint id = crServerMuralFBOIdxFromBufferName(mural, ctx->buffer.drawBuffer);
         if (id != mural->iCurDrawBuffer)
         {
             crDebug("DBO draw buffer changed on make current");
@@ -436,6 +437,8 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
 {
     CRMuralInfo *mural;
     CRContextInfo *ctxInfo = NULL;
+
+    RT_NOREF(nativeWindow);
 
     if (context >= 0 && window >= 0) {
         mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);

@@ -19,6 +19,8 @@ crServerDispatchWindowCreate(const char *dpyName, GLint visBits)
 
 GLint crServerMuralInit(CRMuralInfo *mural, GLboolean fGuestWindow, GLint visBits, GLint preloadWinID)
 {
+    RT_NOREF(fGuestWindow);
+
     CRMuralInfo *defaultMural;
     GLint dims[2];
     GLint windowID = -1;
@@ -236,6 +238,8 @@ void crServerMuralTerm(CRMuralInfo *mural)
 
 static void crServerCleanupCtxMuralRefsCB(unsigned long key, void *data1, void *data2)
 {
+    RT_NOREF(key);
+
     CRContextInfo *ctxInfo = (CRContextInfo *) data1;
     CRMuralInfo *mural = (CRMuralInfo *) data2;
 
@@ -335,7 +339,7 @@ crServerDispatchWindowDestroy( GLint window )
     crServerCheckAllMuralGeometry(NULL);
 }
 
-GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
+GLboolean crServerMuralSize(CRMuralInfo *mural, GLuint width, GLuint height)
 {
     if (mural->width == width && mural->height == height)
         return GL_FALSE;

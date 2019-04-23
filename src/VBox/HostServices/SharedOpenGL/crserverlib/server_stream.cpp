@@ -929,6 +929,8 @@ crServerSerializeRemoteStreams(void)
 int
 crServerRecv( CRConnection *conn, CRMessage *msg, unsigned int len )
 {
+    RT_NOREF(conn);
+
     CRMessage *pRealMsg;
     (void) len;
 

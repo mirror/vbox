@@ -14,12 +14,14 @@
 void * SERVER_DISPATCH_APIENTRY
 crServerDispatchMapBufferARB( GLenum target, GLenum access )
 {
+    RT_NOREF(target, access);
 	return NULL;
 }
 
 GLboolean SERVER_DISPATCH_APIENTRY
 crServerDispatchUnmapBufferARB( GLenum target )
 {
+    RT_NOREF(target);
 	return GL_FALSE;
 }
 
@@ -73,6 +75,8 @@ void SERVER_DISPATCH_APIENTRY
 crServerDispatchGetBufferSubDataARB(GLenum target, GLintptrARB offset, GLsizeiptrARB size, void * data)
 {
     void *b;
+
+    RT_NOREF(data);
 
     if (size <= 0 || size >= INT32_MAX / 2)
     {

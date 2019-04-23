@@ -342,7 +342,7 @@ void STATE_APIENTRY crStateMatrixMode(GLenum e)
     CRASSERT(t->currentStack->top == t->currentStack->stack + t->currentStack->depth);
 }
 
-void STATE_APIENTRY crStateLoadIdentity() 
+void STATE_APIENTRY crStateLoadIdentity(void) 
 {
     CRContext *g = GetCurrentContext();
     CRTransformState *t = &(g->transform);
@@ -365,7 +365,7 @@ void STATE_APIENTRY crStateLoadIdentity()
     DIRTY(tb->dirty, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStatePopMatrix() 
+void STATE_APIENTRY crStatePopMatrix(void) 
 {
     CRContext *g = GetCurrentContext();
     CRTransformState *t = &g->transform;
@@ -397,7 +397,7 @@ void STATE_APIENTRY crStatePopMatrix()
     DIRTY(tb->dirty, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStatePushMatrix() 
+void STATE_APIENTRY crStatePushMatrix(void) 
 {
     CRContext *g = GetCurrentContext();
     CRTransformState *t = &g->transform;

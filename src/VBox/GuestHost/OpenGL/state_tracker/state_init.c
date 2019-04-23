@@ -786,7 +786,7 @@ void crStateSetCurrent( CRContext *ctx )
     crStateSetCurrentEx( ctx, GL_FALSE );
 }
 
-void crStateCleanupCurrent()
+void crStateCleanupCurrent(void)
 {
     crStateSetCurrentEx( NULL, GL_TRUE );
 }

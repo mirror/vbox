@@ -182,6 +182,8 @@ crServerComputeViewportBounds(const CRViewportState *v, CRMuralInfo *mural)
 		extent->serialNo = serialNo++;
 	}
 	mural->viewportValidated = GL_TRUE;
+#else
+	RT_NOREF(v, mural);
 #endif
 }
 
@@ -220,7 +222,9 @@ crServerSetOutputBounds( const CRMuralInfo *mural, int extNum )
 
 		crServerApplyBaseProjection(&(extent->baseProjection));
 		cr_server.currentSerialNo = extent->serialNo;
-	}		
+	}
+#else
+	RT_NOREF(mural, extNum);
 #endif
 }
 
@@ -271,7 +275,6 @@ crServerApplyViewMatrix(const CRmatrix *view)
  */
 void SERVER_DISPATCH_APIENTRY crServerDispatchViewport( GLint x, GLint y, GLsizei width, GLsizei height )
 {
-	CRMuralInfo *mural = cr_server.curClient->currentMural;
 	CRContext *ctx = crStateGetCurrent();
 
 	if (ctx->viewport.viewportX != x ||

@@ -221,7 +221,6 @@ static int crFbBltGetContentsScaledDirect(HCR_FRAMEBUFFER hFb, const RTRECTSIZE 
     int32_t dstWidth = pDstRect->xRight - pDstRect->xLeft;
     int32_t dstHeight = pDstRect->yBottom - pDstRect->yTop;
 
-    RTPOINT DstPoint = {pDstRect->xLeft, pDstRect->yTop};
     float strX = ((float)dstWidth) / srcWidth;
     float strY = ((float)dstHeight) / srcHeight;
     bool fScale = (dstWidth != srcWidth || dstHeight != srcHeight);
@@ -471,6 +470,8 @@ static int crFbBltGetContentsScaledCPU(HCR_FRAMEBUFFER hFb, const RTRECTSIZE *pS
     RTMemFree(Img.pvData);
 
     return rc;
+#else
+    RT_NOREF(hFb, pSrcRectSize, pDstRect, cRects, pRects, pImg);
 #endif
 }
 
@@ -681,8 +682,6 @@ int CrFbBltGetContentsEx(HCR_FRAMEBUFFER hFb, const RTRECTSIZE *pSrcRectSize, co
 
 static void crFbBltPutContentsFbVram(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pSrc)
 {
-    const RTRECT *pCompRect = CrVrScrCompositorRectGet(&hFb->Compositor);
-
     CR_BLITTER_IMG FbImg;
 
     crFbImgFromFb(hFb, &FbImg);
@@ -757,7 +756,6 @@ static int crFbRegionsIsIntersectRects(HCR_FRAMEBUFFER hFb, uint32_t cRects, con
         return rc;
     }
 
-    bool fRegChanged = false;
     for (uint32_t i = 0; i < cCompRects; ++i)
     {
         const RTRECT *pCompRect = &pCompRects[i];
@@ -1267,6 +1265,7 @@ int CrFbEntryCreateForTexId(CR_FRAMEBUFFER *pFb, GLuint idTexture, uint32_t fFla
 
 void CrFbEntryAddRef(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry)
 {
+    RT_NOREF(pFb);
     ++hEntry->cRefs;
 }
 
@@ -1432,8 +1431,7 @@ int CrFbEntryRegionsSet(CR_FRAMEBUFFER *pFb, HCR_FRAMEBUFFER_ENTRY hEntry, const
         return VERR_INVALID_STATE;
     }
 
-    bool fChanged = 0;
-    VBOXVR_SCR_COMPOSITOR_ENTRY *pReplacedScrEntry = NULL;
+    bool fChanged = false;
     VBOXVR_SCR_COMPOSITOR_ENTRY *pNewEntry;
     bool fEntryWasInList;
 
@@ -1867,6 +1865,8 @@ static int crPMgrCheckInitWindowDisplays(uint32_t idScreen)
             return rc;
         }
     }
+#else
+    RT_NOREF(idScreen);
 #endif
     return VINF_SUCCESS;
 }
@@ -2080,7 +2080,7 @@ static int crPMgrFbDisconnectTarget(HCR_FRAMEBUFFER hFb, uint32_t i)
     uint32_t idFb = CrFbGetScreenInfo(hFb)->u32ViewIndex;
     CR_FB_INFO *pFbInfo = &g_CrPresenter.aFbInfos[idFb];
     CR_FBDISPLAY_INFO *pDpInfo = &g_CrPresenter.aDisplayInfos[i];
-    if (pDpInfo->iFb != idFb)
+    if (pDpInfo->iFb != (int32_t)idFb)
     {
         WARN(("target not connected"));
         Assert(!ASMBitTest(pFbInfo->aTargetMap, i));
@@ -2303,7 +2303,7 @@ static int crPMgrFbConnectTarget(HCR_FRAMEBUFFER hFb, uint32_t i)
     uint32_t idFb = CrFbGetScreenInfo(hFb)->u32ViewIndex;
     CR_FB_INFO *pFbInfo = &g_CrPresenter.aFbInfos[idFb];
     CR_FBDISPLAY_INFO *pDpInfo = &g_CrPresenter.aDisplayInfos[i];
-    if (pDpInfo->iFb == idFb)
+    if (pDpInfo->iFb == (int32_t)idFb)
     {
         WARN(("target not connected"));
         Assert(ASMBitTest(pFbInfo->aTargetMap, i));
@@ -2908,7 +2908,7 @@ int CrPMgrSaveState(PSSMHANDLE pSSM)
         CR_FRAMEBUFFER *hFb = CrPMgrFbGetEnabled(i);
         if (hFb)
         {
-            Assert(hFb->ScreenInfo.u32ViewIndex == i);
+            Assert(hFb->ScreenInfo.u32ViewIndex == (uint32_t)i);
             rc = SSMR3PutU32(pSSM, hFb->ScreenInfo.u32ViewIndex);
             AssertRCReturn(rc, rc);
 
@@ -2953,6 +2953,8 @@ int CrPMgrSaveState(PSSMHANDLE pSSM)
 
 int CrFbEntryLoadState(CR_FRAMEBUFFER *pFb, PSSMHANDLE pSSM, uint32_t version)
 {
+    RT_NOREF(version);
+
     uint32_t texture;
     int  rc = SSMR3GetU32(pSSM, &texture);
     AssertRCReturn(rc, rc);
@@ -2972,10 +2974,6 @@ int CrFbEntryLoadState(CR_FRAMEBUFFER *pFb, PSSMHANDLE pSSM, uint32_t version)
     }
 
     Assert(hEntry);
-
-    const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry = CrFbEntryGetCompositorEntry(hEntry);
-    CR_TEXDATA *pTexData = CrVrScrCompositorEntryTexGet(pEntry);
-    CR_FBTEX *pFbTex = PCR_FBTEX_FROM_TEX(pTexData);
 
     RTPOINT Point;
     rc = SSMR3GetS32(pSSM, &Point.x);

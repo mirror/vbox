@@ -19,14 +19,12 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPointerv( GLenum pname, GLvoid 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetVertexAttribPointervNV( GLuint index, GLenum pname, GLvoid ** pointer )
 {
 	crError( "glGetVertexAttribPointervNV isn't *ever* allowed to be on the wire!" );
-	(void) pname;
-	(void) pointer;
+	RT_NOREF(index, pname, pointer);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetVertexAttribPointervARB( GLuint index, GLenum pname, GLvoid ** pointer )
 {
 	crError( "glGetVertexAttribPointervNV isn't *ever* allowed to be on the wire!" );
-	(void) pname;
-	(void) pointer;
+	RT_NOREF(index, pname, pointer);
 }
 

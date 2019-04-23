@@ -646,6 +646,8 @@ int32_t crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t 
 
 extern DECLEXPORT(int32_t) crVBoxServerClientGetCapsLegacy(uint32_t u32ClientID, uint32_t *pu32Caps)
 {
+    RT_NOREF(u32ClientID);
+
     uint32_t u32Caps = cr_server.u32Caps;
     u32Caps &= ~CR_VBOX_CAP_CMDVBVA;
     *pu32Caps = u32Caps;
@@ -654,6 +656,8 @@ extern DECLEXPORT(int32_t) crVBoxServerClientGetCapsLegacy(uint32_t u32ClientID,
 
 extern DECLEXPORT(int32_t) crVBoxServerClientGetCapsNew(uint32_t u32ClientID, CR_CAPS_INFO *pInfo)
 {
+    RT_NOREF(u32ClientID);
+
     pInfo->u32Caps = cr_server.u32Caps;
     pInfo->u32CmdVbvaVersion = CR_CMDVBVA_VERSION;
     return VINF_SUCCESS;
@@ -789,6 +793,8 @@ static void crVBoxServerSaveCreateInfoFromCtxInfoCB(unsigned long key, void *dat
 
 static void crVBoxServerSyncTextureCB(unsigned long key, void *data1, void *data2)
 {
+    RT_NOREF(key);
+
     CRTextureObj *pTexture = (CRTextureObj *) data1;
     CRContext *pContext = (CRContext *) data2;
 
@@ -891,6 +897,8 @@ static void crVBoxServerBuildContextWindowMapWindowWalkerCB(unsigned long key, v
 
 static void crVBoxServerBuildContextUsedWindowMapCB(unsigned long key, void *data1, void *data2)
 {
+    RT_NOREF(key);
+
     CRContextInfo *pContextInfo = (CRContextInfo *)data1;
     PCRVBOX_CTXWND_CTXWALKER_CB pData = (PCRVBOX_CTXWND_CTXWALKER_CB)data2;
 
@@ -929,6 +937,8 @@ CRMuralInfo * crServerGetDummyMural(GLint visualBits)
 
 static void crVBoxServerBuildContextUnusedWindowMapCB(unsigned long key, void *data1, void *data2)
 {
+    RT_NOREF(key);
+
     CRContextInfo *pContextInfo = (CRContextInfo *)data1;
     PCRVBOX_CTXWND_CTXWALKER_CB pData = (PCRVBOX_CTXWND_CTXWALKER_CB)data2;
     CRMuralInfo * pMural = NULL;
@@ -2197,7 +2207,7 @@ static int32_t crVBoxServerLoadStatePerform(PSSMHANDLE pSSM, uint32_t version)
         {
             CRClient *pClient = cr_server.clients[i];
             CRClient client;
-            unsigned long ctxID=-1, winID=-1;
+            unsigned long ctxID = (unsigned long)-1, winID = (unsigned long)-1;
 
             rc = crServerLsrDataGetU32(&Reader, &ui);
             AssertLogRelRCReturn(rc, rc);
@@ -2330,6 +2340,8 @@ DECLEXPORT(void) crServerSetUnscaledHiDPI(bool fEnable)
 
 static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *data2)
 {
+    RT_NOREF(key);
+
     CRMuralInfo *pMI = (CRMuralInfo*) data1;
     int *sIndex = (int*) data2;
 
@@ -2705,13 +2717,12 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(VBOXCMDVBVA_CRCMD_CMD const RT_UN
             /** @todo Verify  */
             if (cParams == 1)
             {
-                CRVBOXHGSMIWRITE* pFnCmd = (CRVBOXHGSMIWRITE*)pHdr;
                 const VBOXCMDVBVA_CRCMD_BUFFER *pBuf = &pCmd->aBuffers[1];
                 /* Fetch parameters. */
                 uint32_t cbBuffer = pBuf->cbBuffer;
                 uint8_t *pBuffer  = VBOXCRHGSMI_PTR_SAFE(pBuf->offBuffer, cbBuffer, uint8_t);
 
-                if (cbHdr < sizeof (*pFnCmd))
+                if (cbHdr < sizeof (CRVBOXHGSMIWRITE))
                 {
                     WARN(("invalid write cmd buffer size!"));
                     rc = VERR_INVALID_PARAMETER;
@@ -2956,6 +2967,7 @@ static int32_t crVBoxServerCmdVbvaCrCmdProcess(VBOXCMDVBVA_CRCMD_CMD const RT_UN
 
 static DECLCALLBACK(int) crVBoxCrCmdEnable(HVBOXCRCMDSVR hSvr, VBOXCRCMD_SVRENABLE_INFO *pInfo)
 {
+    RT_NOREF(hSvr);
     Assert(!cr_server.fCrCmdEnabled);
     Assert(!cr_server.numClients);
 
@@ -2972,6 +2984,7 @@ static DECLCALLBACK(int) crVBoxCrCmdEnable(HVBOXCRCMDSVR hSvr, VBOXCRCMD_SVRENAB
 
 static DECLCALLBACK(int) crVBoxCrCmdDisable(HVBOXCRCMDSVR hSvr)
 {
+    RT_NOREF(hSvr);
     Assert(cr_server.fCrCmdEnabled);
 
     crVBoxServerRemoveAllClients();
@@ -2991,6 +3004,7 @@ static DECLCALLBACK(int) crVBoxCrCmdDisable(HVBOXCRCMDSVR hSvr)
 
 static DECLCALLBACK(int) crVBoxCrCmdHostCtl(HVBOXCRCMDSVR hSvr, uint8_t* pCmd, uint32_t cbCmd)
 {
+    RT_NOREF(hSvr);
     return crVBoxServerHostCtl((VBOXCRCMDCTL*)pCmd, cbCmd);
 }
 
@@ -3074,6 +3088,7 @@ static DECLCALLBACK(int) crVBoxCrCmdGuestCtl(HVBOXCRCMDSVR hSvr, uint8_t RT_UNTR
     /*
      * Toplevel input validation.
      */
+    RT_NOREF(hSvr);
     ASSERT_GUEST_LOGREL_RETURN(cbCmd >= sizeof(VBOXCMDVBVA_3DCTL), VERR_INVALID_PARAMETER);
     {
         VBOXCMDVBVA_3DCTL RT_UNTRUSTED_VOLATILE_GUEST *pCtl = (VBOXCMDVBVA_3DCTL RT_UNTRUSTED_VOLATILE_GUEST*)pbCmd;
@@ -3119,6 +3134,7 @@ static DECLCALLBACK(int) crVBoxCrCmdGuestCtl(HVBOXCRCMDSVR hSvr, uint8_t RT_UNTR
 
 static DECLCALLBACK(int) crVBoxCrCmdResize(HVBOXCRCMDSVR hSvr, const struct VBVAINFOSCREEN *pScreen, const uint32_t *pTargetMap)
 {
+    RT_NOREF(hSvr);
     CRASSERT(cr_server.fCrCmdEnabled);
     return CrPMgrResize(pScreen, NULL, pTargetMap);
 }
@@ -3151,6 +3167,8 @@ static int crVBoxCrCmdSaveClients(PSSMHANDLE pSSM)
 
 static int crVBoxCrCmdLoadClients(PSSMHANDLE pSSM, uint32_t u32Version)
 {
+    RT_NOREF(u32Version);
+
     uint32_t i;
     uint32_t u32;
     VBOXCMDVBVA_3DCTL_CONNECT Connect;
@@ -3181,6 +3199,8 @@ static int crVBoxCrCmdLoadClients(PSSMHANDLE pSSM, uint32_t u32Version)
 
 static DECLCALLBACK(int) crVBoxCrCmdSaveState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSSM)
 {
+    RT_NOREF(hSvr);
+
     int rc = VINF_SUCCESS;
 
     Assert(cr_server.fCrCmdEnabled);
@@ -3232,6 +3252,8 @@ static DECLCALLBACK(int) crVBoxCrCmdSaveState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSS
 
 static DECLCALLBACK(int) crVBoxCrCmdLoadState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSSM, uint32_t u32Version)
 {
+    RT_NOREF(hSvr);
+
     int rc = VINF_SUCCESS;
 
     char szBuf[2000];
@@ -3297,6 +3319,8 @@ static DECLCALLBACK(int) crVBoxCrCmdLoadState(HVBOXCRCMDSVR hSvr, PSSMHANDLE pSS
 static DECLCALLBACK(int8_t) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr,
                                            const VBOXCMDVBVA_HDR RT_UNTRUSTED_VOLATILE_GUEST *pCmd, uint32_t cbCmd)
 {
+    RT_NOREF(hSvr);
+
     uint8_t bOpcode = pCmd->u8OpCode;
     RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     ASSERT_GUEST_LOGREL_MSG_RETURN(   bOpcode == VBOXCMDVBVA_OPTYPE_CRCMD
@@ -3358,6 +3382,7 @@ static DECLCALLBACK(int8_t) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr,
 
 int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t cbCmd)
 {
+    RT_NOREF(cbCmd);
 
     int32_t rc;
     uint32_t cBuffers = pCmd->cBuffers;
@@ -3416,13 +3441,12 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
             /** @todo Verify  */
             if (cParams == 1)
             {
-                CRVBOXHGSMIWRITE* pFnCmd = (CRVBOXHGSMIWRITE*)pHdr;
                 VBOXVDMACMD_CHROMIUM_BUFFER *pBuf = &pCmd->aBuffers[1];
                 /* Fetch parameters. */
                 uint32_t cbBuffer = pBuf->cbBuffer;
                 uint8_t *pBuffer  = VBOXCRHGSMI_PTR_SAFE(pBuf->offBuffer, cbBuffer, uint8_t);
 
-                if (cbHdr < sizeof (*pFnCmd))
+                if (cbHdr < sizeof (CRVBOXHGSMIWRITE))
                 {
                     crWarning("invalid write cmd buffer size!");
                     rc = VERR_INVALID_PARAMETER;
@@ -3695,6 +3719,8 @@ static DECLCALLBACK(bool) crVBoxServerHasData(void)
 
 int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t cbCtl)
 {
+    RT_NOREF(cbCtl);
+
     int rc = VINF_SUCCESS;
 
     switch (pCtl->enmType)

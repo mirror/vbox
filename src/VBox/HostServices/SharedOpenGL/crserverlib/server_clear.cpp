@@ -161,9 +161,6 @@ uint64_t vboxCrFpsGetNumFrames(PVBOXCRFPS pFps)
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchClear( GLenum mask )
 {
-	CRMuralInfo *mural = cr_server.curClient->currentMural;
-	const RunQueue *q = cr_server.run_queue;
-
 	if (cr_server.only_swap_once)
 	{
 		/* NOTE: we only do the clear for the _last_ client in the list.

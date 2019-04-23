@@ -1280,6 +1280,7 @@ DECLEXPORT(GLint) STATE_APIENTRY crStateGetUniformLocation(GLuint program, const
 
     return result;
 #else
+    RT_NOREF(program, name);
     crWarning("crStateGetUniformLocation called on host side!!");
     return -1;
 #endif
@@ -1315,6 +1316,7 @@ DECLEXPORT(GLint) STATE_APIENTRY crStateGetAttribLocation(GLuint program, const 
 
     return result;
 #else
+    RT_NOREF(program, name);
     crWarning("crStateGetAttribLocation called on host side!!");
     return -1;
 #endif

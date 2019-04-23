@@ -242,7 +242,7 @@ uint32_t renderspuContextMarkDeletedAndRelease( ContextInfo *context )
     return renderspuContextRelease( context );
 }
 
-ContextInfo * renderspuDefaultSharedContextAcquire()
+ContextInfo * renderspuDefaultSharedContextAcquire(void)
 {
     ContextInfo * pCtx = render_spu.defaultSharedContext;
     if (!pCtx)
@@ -650,6 +650,8 @@ GLint renderspuWindowCreateEx( const char *dpyName, GLint visBits, GLint id )
 {
     WindowInfo *window;
 
+    RT_NOREF(dpyName);
+
     if (id <= 0)
     {
         id = (GLint)crHashtableAllocKeys(render_spu.windowTable, 1);
@@ -730,8 +732,8 @@ renderspuWindowSize( GLint win, GLint w, GLint h )
     CRASSERT(win >= 0);
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
-        if (w != window->BltInfo.width
-                || h != window->BltInfo.height)
+        if (   (GLuint)w != window->BltInfo.width
+            || (GLuint)h != window->BltInfo.height)
         {
             /* window is resized, compositor data is no longer valid
              * this set also ensures all redraw operations are done in the redraw thread
@@ -1062,6 +1064,8 @@ void renderspuVBoxPresentCompositionGeneric( WindowInfo *window, const struct VB
         bool fRedraw )
 {
     PCR_BLITTER pBlitter = renderspuVBoxPresentBlitterGetAndEnter(window, i32MakeCurrentUserData, fRedraw);
+
+    RT_NOREF(pChangedEntry);
     if (!pBlitter)
         return;
 
@@ -1110,10 +1114,12 @@ GLboolean renderspuVBoxCompositorSet( WindowInfo *window, const struct VBOXVR_SC
 static void renderspuVBoxCompositorClearAllCB(unsigned long key, void *data1, void *data2)
 {
     WindowInfo *window = (WindowInfo *) data1;
+    RT_NOREF(key, data2);
+
     renderspuVBoxCompositorSet(window, NULL);
 }
 
-void renderspuVBoxCompositorClearAll()
+void renderspuVBoxCompositorClearAll(void)
 {
     /* we need to clear window compositor, which is not that trivial though,
      * since the lock order used in presentation thread is compositor lock() -> hash table lock (aquired for id->window resolution)
@@ -1505,7 +1511,7 @@ renderspuChromiumParameterfCR(GLenum target, GLfloat value)
 #endif
 }
 
-bool renderspuCalloutAvailable()
+bool renderspuCalloutAvailable(void)
 {
     return render_spu.pfnClientCallout != NULL;
 }
@@ -1853,6 +1859,7 @@ renderspuGetString(GLenum pname)
 static void renderspuReparentWindowCB(unsigned long key, void *data1, void *data2)
 {
     WindowInfo *pWindow = (WindowInfo *)data1;
+    RT_NOREF(key, data2);
 
     renderspu_SystemReparentWindow(pWindow);
 }

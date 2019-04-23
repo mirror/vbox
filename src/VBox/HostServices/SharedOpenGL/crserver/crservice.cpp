@@ -1574,6 +1574,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 #include <iprt/win/windows.h>
 BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 {
+    RT_NOREF(hDLLInst);
     (void) lpvReserved;
 
     switch (fdwReason)

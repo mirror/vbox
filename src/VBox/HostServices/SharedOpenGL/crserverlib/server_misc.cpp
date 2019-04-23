@@ -23,6 +23,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchSelectBuffer( GLsizei size, GLuint
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetChromiumParametervCR(GLenum target, GLuint index, GLenum type, GLsizei count, GLvoid *values)
 {
+    RT_NOREF(values);
+
     GLubyte local_storage[4096];
     GLint bytes = 0;
     GLint cbType = 1; /* One byte by default. */
@@ -108,7 +110,6 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetChromiumParametervCR(GLenum tar
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParametervCR(GLenum target, GLenum type, GLsizei count, const GLvoid *values)
 {
-    CRMuralInfo *mural = cr_server.curClient->currentMural;
     static int gather_connect_count = 0;
 
     switch (target) {
@@ -1973,22 +1974,22 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchBegin(GLenum mode)
             GLint pid=-1;
             gl->GetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_PROGRAM_BINDING_ARB, &pid);
 
-            if (pid != ctx->program.currentVertexProgram->id)
+            if ((GLuint)pid != ctx->program.currentVertexProgram->id)
             {
                 crWarning("pid(%d) != ctx->program.currentVertexProgram->id(%d)", pid, ctx->program.currentVertexProgram->id);
             }
-            AssertRelease(pid == ctx->program.currentVertexProgram->id);
+            AssertRelease((GLuint)pid == ctx->program.currentVertexProgram->id);
         }
         else
         {
             GLint pid=-1;
 
             gl->GetIntegerv(GL_VERTEX_PROGRAM_BINDING_NV, &pid);
-            if (pid != ctx->program.currentVertexProgram->id)
+            if ((GLuint)pid != ctx->program.currentVertexProgram->id)
             {
                 crWarning("pid(%d) != ctx->program.currentVertexProgram->id(%d)", pid, ctx->program.currentVertexProgram->id);
             }
-            AssertRelease(pid == ctx->program.currentVertexProgram->id);
+            AssertRelease((GLuint)pid == ctx->program.currentVertexProgram->id);
         }
     }
     else if (ctx->glsl.activeProgram)
@@ -1997,11 +1998,11 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchBegin(GLenum mode)
 
         gl->GetIntegerv(GL_CURRENT_PROGRAM, &pid);
         //crDebug("pid %i, state: id %i, hwid %i", pid, ctx->glsl.activeProgram->id, ctx->glsl.activeProgram->hwid);
-        if (pid != ctx->glsl.activeProgram->hwid)
+        if ((GLuint)pid != ctx->glsl.activeProgram->hwid)
         {
             crWarning("pid(%d) != ctx->glsl.activeProgram->hwid(%d)", pid, ctx->glsl.activeProgram->hwid);
         }
-        AssertRelease(pid == ctx->glsl.activeProgram->hwid);
+        AssertRelease((GLuint)pid == ctx->glsl.activeProgram->hwid);
     }
 #endif
 
