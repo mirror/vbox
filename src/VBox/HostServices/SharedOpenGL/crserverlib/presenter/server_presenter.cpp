@@ -224,7 +224,7 @@ static int crFbBltGetContentsScaledDirect(HCR_FRAMEBUFFER hFb, const RTRECTSIZE 
     float strX = ((float)dstWidth) / srcWidth;
     float strY = ((float)dstHeight) / srcHeight;
     bool fScale = (dstWidth != srcWidth || dstHeight != srcHeight);
-    Assert(fScale);
+    Assert(fScale); RT_NOREF(fScale);
 
     /* 'List' contains the destination rectangles to be updated (in pDst coords). */
     VBoxVrListInit(&List);
