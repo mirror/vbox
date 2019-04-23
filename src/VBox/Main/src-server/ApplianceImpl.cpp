@@ -614,6 +614,64 @@ HRESULT Appliance::createVFSExplorer(const com::Utf8Str &aURI, ComPtr<IVFSExplor
     return rc;
 }
 
+
+/**
+ * Public method implementation.
+ * Add the "aRequested" numbers of new empty objects of VSD into the list
+ * "virtualSystemDescriptions".
+ * The parameter "aCreated" keeps the actual number of the added objects.
+ * In case of exception all added objects are removed from the list.
+ */
+HRESULT Appliance::createVirtualSystemDescriptions(ULONG aRequested, ULONG *aCreated)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+    uint32_t lQuantity = aRequested;
+    uint32_t oldSize = m->virtualSystemDescriptions.size();
+    uint32_t i=0;
+
+    if (lQuantity < 1)
+        return setError(E_FAIL, tr("The number of VirtualSystemDescription objects must be at least 1 or more."));
+    try
+    {
+        for (; i<lQuantity; ++i)
+        {
+            ComObjPtr<VirtualSystemDescription> opVSD;
+            rc = opVSD.createObject();
+            if (SUCCEEDED(rc))
+            {
+                rc = opVSD->init();
+                if (SUCCEEDED(rc))
+                    m->virtualSystemDescriptions.push_back(opVSD);
+                else
+                    break;
+            }
+            else
+                break;
+        }
+
+        if (i<lQuantity)
+            LogRel(("Number of created VirtualSystemDescription objects is less than requested"
+                    "(Requested %d, Created %d)",lQuantity, i));
+
+        *aCreated = i;
+    }
+    catch (HRESULT aRC)
+    {
+        for (; i>0; --i)
+        {
+            if (!m->virtualSystemDescriptions.empty())
+                m->virtualSystemDescriptions.pop_back();
+            else
+                break;
+        }
+        rc = aRC;
+    }
+
+    return rc;
+}
+
 /**
  * Public method implementation.
  */

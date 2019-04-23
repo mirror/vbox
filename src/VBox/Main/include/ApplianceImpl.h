@@ -101,6 +101,7 @@ private:
                            ComPtr<IProgress> &aProgress);
     HRESULT createVFSExplorer(const com::Utf8Str &aURI,
                               ComPtr<IVFSExplorer> &aExplorer);
+    HRESULT createVirtualSystemDescriptions(ULONG aRequested, ULONG *aCreated);
     HRESULT write(const com::Utf8Str &aFormat,
                   const std::vector<ExportOptions_T> &aOptions,
                   const com::Utf8Str &aPath,

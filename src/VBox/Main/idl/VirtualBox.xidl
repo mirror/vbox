@@ -3303,7 +3303,7 @@
     name="IAppliance" extends="$unknown"
     uuid="86a98347-7619-41aa-aece-b21ac5c1a7e6"
     wsmap="managed"
-    reservedMethods="8" reservedAttributes="8"
+    reservedMethods="7" reservedAttributes="8"
     >
     <desc>
         Represents a platform-independent appliance in OVF format. An instance of this is returned
@@ -3605,6 +3605,20 @@
 
       <param name="passwords" type="wstring" dir="in" safearray="yes">
         <desc>List of matching passwords.</desc>
+      </param>
+    </method>
+
+    <method name="createVirtualSystemDescriptions">
+      <desc>Creates a number of <link to="IVirtualSystemDescription" /> objects and store them
+      in the <link to="#virtualSystemDescriptions" /> array.
+      </desc>
+
+      <param name="requested" type="unsigned long" dir="in">
+        <desc>Requested number of new virtual system description objects</desc>
+      </param>
+
+      <param name="created" type="unsigned long" dir="return">
+        <desc>Actually created number of virtual system description objects</desc>
       </param>
     </method>
 
