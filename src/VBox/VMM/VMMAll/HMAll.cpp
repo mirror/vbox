@@ -741,36 +741,6 @@ VMM_INT_DECL(bool) HMSetSingleInstruction(PVM pVM, PVMCPU pVCpu, bool fEnable)
 }
 
 
-/**
- * Notifies HM that GIM provider wants to trap \#UD.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- */
-VMM_INT_DECL(void) HMTrapXcptUDForGIMEnable(PVMCPU pVCpu)
-{
-    pVCpu->hm.s.fGIMTrapXcptUD = true;
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fSupported)
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS);
-    else
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_SVM_GUEST_XCPT_INTERCEPTS);
-}
-
-
-/**
- * Notifies HM that GIM provider no longer wants to trap \#UD.
- *
- * @param   pVCpu   The cross context virtual CPU structure.
- */
-VMM_INT_DECL(void) HMTrapXcptUDForGIMDisable(PVMCPU pVCpu)
-{
-    pVCpu->hm.s.fGIMTrapXcptUD = false;
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fSupported)
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_VMX_GUEST_XCPT_INTERCEPTS);
-    else
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_SVM_GUEST_XCPT_INTERCEPTS);
-}
-
-
 #ifndef IN_RC
 /**
  * Notification callback which is called whenever there is a chance that a CR3
