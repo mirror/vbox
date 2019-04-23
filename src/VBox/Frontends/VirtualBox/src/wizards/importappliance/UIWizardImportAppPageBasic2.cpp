@@ -99,11 +99,20 @@ void UIWizardImportAppPageBasic2::retranslateUi()
     /* Translate page: */
     setTitle(UIWizardImportApp::tr("Appliance settings"));
 
-    /* Translate widgets: */
-    m_pLabel->setText(UIWizardImportApp::tr("These are the virtual machines contained in the appliance "
-                                            "and the suggested settings of the imported VirtualBox machines. "
-                                            "You can change many of the properties shown by double-clicking "
-                                            "on the items and disable others using the check boxes below."));
+    /* Translate the description label: */
+    const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
+    if (fIsSourceCloudOne)
+        m_pLabel->setText(UIWizardImportApp::tr("These are the the suggested settings of the cloud VM import "
+                                                "procedure, they are influencing the resulting local VM instance. "
+                                                "You can change many of the properties shown by double-clicking "
+                                                "on the items and disable others using the check boxes below."));
+    else
+        m_pLabel->setText(UIWizardImportApp::tr("These are the virtual machines contained in the appliance "
+                                                "and the suggested settings of the imported VirtualBox machines. "
+                                                "You can change many of the properties shown by double-clicking "
+                                                "on the items and disable others using the check boxes below."));
+
+    /* Translate the certificate label: */
     switch (m_enmCertText)
     {
         case kCertText_Unsigned:
