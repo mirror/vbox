@@ -8838,8 +8838,15 @@ and "VAR" for unsetting. -->
           but not saved.
         </note>
 
-        <result name="E_NOTIMPL">
-          This method is not implemented yet.
+        <result name="E_FAIL">
+          General error.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          The machine is in invalid state.
+        </result>
+        <result name="VBOX_E_OBJECT_IN_USE">
+          Some of the applied objects already exist. The method has been
+          called to already configured machine.
         </result>
       </desc>
       <param name="flags" type="wstring" dir="in">
