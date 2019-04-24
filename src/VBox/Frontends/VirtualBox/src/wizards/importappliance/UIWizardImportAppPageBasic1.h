@@ -74,6 +74,8 @@ protected:
     void populateAccountProperties();
     /** Populates account instances. */
     void populateAccountInstances();
+    /** Populates form properties. */
+    void populateFormProperties();
 
     /** Updates page appearance. */
     virtual void updatePageAppearance();
