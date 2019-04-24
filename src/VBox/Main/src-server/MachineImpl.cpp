@@ -15181,18 +15181,16 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     if (FAILED(rc)) return rc;
 
     /* Audio stuff. */
-    AudioCodecType_T audioCodec;
-    rc = osType->COMGETTER(RecommendedAudioCodec)(&audioCodec);
-    if (FAILED(rc)) return rc;
-
-    rc = mAudioAdapter->COMSETTER(AudioCodec)(audioCodec);
-    if (FAILED(rc)) return rc;
-
     AudioControllerType_T audioController;
     rc = osType->COMGETTER(RecommendedAudioController)(&audioController);
     if (FAILED(rc)) return rc;
-
     rc = mAudioAdapter->COMSETTER(AudioController)(audioController);
+    if (FAILED(rc)) return rc;
+
+    AudioCodecType_T audioCodec;
+    rc = osType->COMGETTER(RecommendedAudioCodec)(&audioCodec);
+    if (FAILED(rc)) return rc;
+    rc = mAudioAdapter->COMSETTER(AudioCodec)(audioCodec);
     if (FAILED(rc)) return rc;
 
     rc = mAudioAdapter->COMSETTER(Enabled)(true);
