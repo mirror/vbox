@@ -38,82 +38,43 @@ void vbsfHlpSleep(ULONG ulMillies)
 }
 
 /**
- * Convert VBox IRT file attributes to NT file attributes
+ * Converts VBox (IPRT) file mode to NT file attributes.
  *
  * @returns NT file attributes
- * @param   fMode       IRT file attributes
+ * @param   fIprtMode   IPRT file mode.
  *
  */
-uint32_t VBoxToNTFileAttributes(uint32_t fMode)
+uint32_t VBoxToNTFileAttributes(uint32_t fIprtMode)
 {
-    uint32_t FileAttributes = 0;
+    AssertCompile((RTFS_DOS_READONLY               >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_READONLY);
+    AssertCompile((RTFS_DOS_HIDDEN                 >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_HIDDEN);
+    AssertCompile((RTFS_DOS_SYSTEM                 >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_SYSTEM);
+    AssertCompile((RTFS_DOS_DIRECTORY              >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_DIRECTORY);
+    AssertCompile((RTFS_DOS_ARCHIVED               >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_ARCHIVE);
+    /* skipping:   RTFS_DOS_NT_DEVICE */
+    AssertCompile((RTFS_DOS_NT_NORMAL              >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_NORMAL);
+    AssertCompile((RTFS_DOS_NT_TEMPORARY           >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_TEMPORARY);
+    AssertCompile((RTFS_DOS_NT_SPARSE_FILE         >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_SPARSE_FILE);
+    AssertCompile((RTFS_DOS_NT_REPARSE_POINT       >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_REPARSE_POINT);
+    AssertCompile((RTFS_DOS_NT_COMPRESSED          >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_COMPRESSED);
+    /* skipping:   RTFS_DOS_NT_OFFLINE */
+    AssertCompile((RTFS_DOS_NT_NOT_CONTENT_INDEXED >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
+    AssertCompile((RTFS_DOS_NT_ENCRYPTED           >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_ENCRYPTED);
 
-    if (fMode & RTFS_DOS_READONLY)
-        FileAttributes |= FILE_ATTRIBUTE_READONLY;
-    if (fMode & RTFS_DOS_HIDDEN)
-        FileAttributes |= FILE_ATTRIBUTE_HIDDEN;
-    if (fMode & RTFS_DOS_SYSTEM)
-        FileAttributes |= FILE_ATTRIBUTE_SYSTEM;
-    if (fMode & RTFS_DOS_DIRECTORY)
-        FileAttributes |= FILE_ATTRIBUTE_DIRECTORY;
-    if (fMode & RTFS_DOS_ARCHIVED)
-        FileAttributes |= FILE_ATTRIBUTE_ARCHIVE;
-    if (fMode & RTFS_DOS_NT_TEMPORARY)
-        FileAttributes |= FILE_ATTRIBUTE_TEMPORARY;
-    if (fMode & RTFS_DOS_NT_SPARSE_FILE)
-        FileAttributes |= FILE_ATTRIBUTE_SPARSE_FILE;
-    if (fMode & RTFS_DOS_NT_REPARSE_POINT)
-        FileAttributes |= FILE_ATTRIBUTE_REPARSE_POINT;
-    if (fMode & RTFS_DOS_NT_COMPRESSED)
-        FileAttributes |= FILE_ATTRIBUTE_COMPRESSED;
-    /*    if (fMode & RTFS_DOS_NT_OFFLINE) */
-    if (fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED)
-        FileAttributes |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
-    if (fMode & RTFS_DOS_NT_ENCRYPTED)
-        FileAttributes |= FILE_ATTRIBUTE_ENCRYPTED;
-    if (fMode & RTFS_DOS_NT_NORMAL)
-        FileAttributes |= FILE_ATTRIBUTE_NORMAL;
-    return FileAttributes;
+    uint32_t fNtAttribs = (fIprtMode & (RTFS_DOS_MASK_NT & ~(RTFS_DOS_NT_OFFLINE | RTFS_DOS_NT_DEVICE)) >> RTFS_DOS_SHIFT);
+    return fNtAttribs ? fNtAttribs : FILE_ATTRIBUTE_NORMAL;
 }
 
 /**
- * Convert VBox IRT file attributes to NT file attributes
+ * Converts NT file attributes to VBox (IPRT) ones.
  *
- * @returns NT file attributes
- * @param   fMode       IRT file attributes
- *
+ * @returns IPRT file mode
+ * @param   fNtAttribs      NT file attributes
  */
-uint32_t NTToVBoxFileAttributes(uint32_t fMode)
+uint32_t NTToVBoxFileAttributes(uint32_t fNtAttribs)
 {
-    uint32_t FileAttributes = 0;
-
-    if (fMode & FILE_ATTRIBUTE_READONLY)
-        FileAttributes |= RTFS_DOS_READONLY;
-    if (fMode & FILE_ATTRIBUTE_HIDDEN)
-        FileAttributes |= RTFS_DOS_HIDDEN;
-    if (fMode & FILE_ATTRIBUTE_SYSTEM)
-        FileAttributes |= RTFS_DOS_SYSTEM;
-    if (fMode & FILE_ATTRIBUTE_DIRECTORY)
-        FileAttributes |= RTFS_DOS_DIRECTORY;
-    if (fMode & FILE_ATTRIBUTE_ARCHIVE)
-        FileAttributes |= RTFS_DOS_ARCHIVED;
-    if (fMode & FILE_ATTRIBUTE_TEMPORARY)
-        FileAttributes |= RTFS_DOS_NT_TEMPORARY;
-    if (fMode & FILE_ATTRIBUTE_SPARSE_FILE)
-        FileAttributes |= RTFS_DOS_NT_SPARSE_FILE;
-    if (fMode & FILE_ATTRIBUTE_REPARSE_POINT)
-        FileAttributes |= RTFS_DOS_NT_REPARSE_POINT;
-    if (fMode & FILE_ATTRIBUTE_COMPRESSED)
-        FileAttributes |= RTFS_DOS_NT_COMPRESSED;
-    if (fMode & FILE_ATTRIBUTE_NOT_CONTENT_INDEXED)
-        FileAttributes |= RTFS_DOS_NT_NOT_CONTENT_INDEXED;
-    if (fMode & FILE_ATTRIBUTE_ENCRYPTED)
-        FileAttributes |= RTFS_DOS_NT_ENCRYPTED;
-    if (fMode & FILE_ATTRIBUTE_NORMAL)
-    {
-        FileAttributes |= RTFS_DOS_NT_NORMAL;
-    }
-    return FileAttributes;
+    uint32_t fIprtMode = (fNtAttribs << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT;
+    return fIprtMode ? fIprtMode : RTFS_DOS_NT_NORMAL;
 }
 
 NTSTATUS vbsfHlpCreateDriveLetter(WCHAR Letter, UNICODE_STRING *pDeviceName)
@@ -138,13 +99,13 @@ NTSTATUS vbsfHlpDeleteDriveLetter(WCHAR Letter)
     return IoDeleteSymbolicLink(&driveName);
 }
 
-    /**
-     * Convert VBox error code to NT status code
-     *
-     * @returns NT status code
-     * @param   vboxRC          VBox error code
-     *
-     */
+/**
+ * Convert VBox error code to NT status code
+ *
+ * @returns NT status code
+ * @param   vboxRC          VBox error code
+ *
+ */
 NTSTATUS VBoxErrorToNTStatus(int vboxRC)
 {
     NTSTATUS Status;

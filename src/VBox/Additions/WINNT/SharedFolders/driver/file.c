@@ -260,6 +260,9 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
     if (!FlagOn(capFcb->FcbState, FCB_STATE_READCACHEING_ENABLED))
 #endif
     {
+/** @todo r=bird: How is this file size accurate given that the file resides
+ *        on the host and be grown/shrunk independently there?   Why is this
+ *        only done when FCB_STATE_READCACHEING_ENABLED is clear? */
         if (ByteOffset >= FileSize)
         {
             Log(("VBOXSF: vbsfReadInternal: EOF\n"));

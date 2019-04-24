@@ -31,24 +31,8 @@
 void     vbsfHlpSleep(ULONG ulMillies);
 NTSTATUS vbsfHlpCreateDriveLetter(WCHAR Letter, UNICODE_STRING *pDeviceName);
 NTSTATUS vbsfHlpDeleteDriveLetter(WCHAR Letter);
-
-/**
- * Convert VBox IRT file attributes to NT file attributes
- *
- * @returns NT file attributes
- * @param   fMode       IRT file attributes
- *
- */
-uint32_t VBoxToNTFileAttributes(uint32_t fMode);
-
-/**
- * Convert VBox IRT file attributes to NT file attributes
- *
- * @returns NT file attributes
- * @param   fMode       IRT file attributes
- *
- */
-uint32_t NTToVBoxFileAttributes(uint32_t fMode);
+uint32_t VBoxToNTFileAttributes(uint32_t fIprtMode);
+uint32_t NTToVBoxFileAttributes(uint32_t fNtAttribs);
 
 /**
  * Convert VBox error code to NT status code
