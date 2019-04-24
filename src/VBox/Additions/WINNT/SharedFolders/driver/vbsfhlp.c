@@ -61,7 +61,7 @@ uint32_t VBoxToNTFileAttributes(uint32_t fIprtMode)
     AssertCompile((RTFS_DOS_NT_NOT_CONTENT_INDEXED >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
     AssertCompile((RTFS_DOS_NT_ENCRYPTED           >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_ENCRYPTED);
 
-    uint32_t fNtAttribs = (fIprtMode & (RTFS_DOS_MASK_NT & ~(RTFS_DOS_NT_OFFLINE | RTFS_DOS_NT_DEVICE)) >> RTFS_DOS_SHIFT);
+    uint32_t fNtAttribs = (fIprtMode & (RTFS_DOS_MASK_NT & ~(RTFS_DOS_NT_OFFLINE | RTFS_DOS_NT_DEVICE))) >> RTFS_DOS_SHIFT;
     return fNtAttribs ? fNtAttribs : FILE_ATTRIBUTE_NORMAL;
 }
 
