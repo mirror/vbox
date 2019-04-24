@@ -69,6 +69,8 @@ typedef struct RTR0MEMOBJNT
     RTR0MEMOBJINTERNAL  Core;
     /** Used MmAllocatePagesForMdl(). */
     bool                fAllocatedPagesForMdl;
+    /** Set if this is sub-section of the parent. */
+    bool                fSubMapping;
     /** Pointer returned by MmSecureVirtualMemory */
     PVOID               pvSecureMem;
     /** The number of PMDLs (memory descriptor lists) in the array. */
@@ -183,21 +185,30 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
         case RTR0MEMOBJTYPE_MAPPING:
         {
-            Assert(pMemNt->cMdls == 0 && pMemNt->Core.pv);
             PRTR0MEMOBJNT pMemNtParent = (PRTR0MEMOBJNT)pMemNt->Core.uRel.Child.pParent;
             Assert(pMemNtParent);
+            Assert(pMemNt->Core.pv);
+            Assert((pMemNt->cMdls == 0 && !pMemNt->fSubMapping) || (pMemNt->cMdls == 1 && pMemNt->fSubMapping));
             if (pMemNtParent->cMdls)
             {
                 Assert(pMemNtParent->cMdls == 1 && pMemNtParent->apMdls[0]);
                 Assert(     pMemNt->Core.u.Mapping.R0Process == NIL_RTR0PROCESS
                        ||   pMemNt->Core.u.Mapping.R0Process == RTR0ProcHandleSelf());
-                MmUnmapLockedPages(pMemNt->Core.pv, pMemNtParent->apMdls[0]);
+                if (!pMemNt->cMdls)
+                    MmUnmapLockedPages(pMemNt->Core.pv, pMemNtParent->apMdls[0]);
+                else
+                {
+                    MmUnmapLockedPages(pMemNt->Core.pv, pMemNt->apMdls[0]);
+                    IoFreeMdl(pMemNt->apMdls[0]);
+                    pMemNt->apMdls[0] = NULL;
+                }
             }
             else
             {
                 Assert(     pMemNtParent->Core.enmType == RTR0MEMOBJTYPE_PHYS
                        &&   !pMemNtParent->Core.u.Phys.fAllocated);
                 Assert(pMemNt->Core.u.Mapping.R0Process == NIL_RTR0PROCESS);
+                Assert(!pMemNt->fSubMapping);
                 MmUnmapIoSpace(pMemNt->Core.pv, pMemNt->Core.cb);
             }
             pMemNt->Core.pv = NULL;
@@ -700,7 +711,7 @@ DECLHIDDEN(int) rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR 
  *                      If not nil, it's the current process.
  */
 static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
-                           unsigned fProt, RTR0PROCESS R0Process)
+                           unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub)
 {
     int rc = VERR_MAP_FAILED;
 
@@ -746,36 +757,62 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
             }
         }
 
+        /* Create a partial MDL if this is a sub-range request. */
+        PMDL pMdl;
+        if (!offSub && !cbSub)
+            pMdl = pMemNtToMap->apMdls[0];
+        else
+        {
+            pMdl = IoAllocateMdl(NULL, (ULONG)cbSub, FALSE, FALSE, NULL);
+            if (pMdl)
+                IoBuildPartialMdl(pMemNtToMap->apMdls[0], pMdl,
+                                  (uint8_t *)MmGetMdlVirtualAddress(pMemNtToMap->apMdls[0]) + offSub, (ULONG)cbSub);
+            else
+            {
+                IoFreeMdl(pMdl);
+                return VERR_NO_MEMORY;
+            }
+        }
+
         __try
         {
             /** @todo uAlignment */
             /** @todo How to set the protection on the pages? */
             void *pv;
             if (g_pfnrtMmMapLockedPagesSpecifyCache)
-                pv = g_pfnrtMmMapLockedPagesSpecifyCache(pMemNtToMap->apMdls[0],
+                pv = g_pfnrtMmMapLockedPagesSpecifyCache(pMdl,
                                                          R0Process == NIL_RTR0PROCESS ? KernelMode : UserMode,
                                                          MmCached,
                                                          pvFixed != (void *)-1 ? pvFixed : NULL,
                                                          FALSE /* no bug check on failure */,
                                                          NormalPagePriority);
             else
-                pv = MmMapLockedPages(pMemNtToMap->apMdls[0],
-                                      R0Process == NIL_RTR0PROCESS ? KernelMode : UserMode);
+                pv = MmMapLockedPages(pMdl, R0Process == NIL_RTR0PROCESS ? KernelMode : UserMode);
             if (pv)
             {
                 NOREF(fProt);
 
-                PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_MAPPING, pv,
-                                                                    pMemNtToMap->Core.cb);
+                PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(  !offSub && !cbSub
+                                                                    ? sizeof(*pMemNt) : RT_UOFFSETOF_DYN(RTR0MEMOBJNT, apMdls[1]),
+                                                                    RTR0MEMOBJTYPE_MAPPING, pv, pMemNtToMap->Core.cb);
                 if (pMemNt)
                 {
                     pMemNt->Core.u.Mapping.R0Process = R0Process;
+                    if (!offSub && !cbSub)
+                        pMemNt->fSubMapping = false;
+                    else
+                    {
+                        pMemNt->apMdls[0]   = pMdl;
+                        pMemNt->cMdls       = 1;
+                        pMemNt->fSubMapping = true;
+                    }
+
                     *ppMem = &pMemNt->Core;
                     return VINF_SUCCESS;
                 }
 
                 rc = VERR_NO_MEMORY;
-                MmUnmapLockedPages(pv, pMemNtToMap->apMdls[0]);
+                MmUnmapLockedPages(pv, pMdl);
             }
         }
         __except(EXCEPTION_EXECUTE_HANDLER)
@@ -798,6 +835,10 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
         /* cannot map phys mem to user space (yet). */
         if (R0Process != NIL_RTR0PROCESS)
             return VERR_NOT_SUPPORTED;
+
+        /* Cannot sub-mak these (yet). */
+        AssertMsgReturn(!offSub && !cbSub, ("%#zx %#zx\n", offSub, cbSub), VERR_NOT_SUPPORTED);
+
 
         /** @todo uAlignment */
         /** @todo How to set the protection on the pages? */
@@ -829,8 +870,7 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
 DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
                                           unsigned fProt, size_t offSub, size_t cbSub)
 {
-    AssertMsgReturn(!offSub && !cbSub, ("%#x %#x\n", offSub, cbSub), VERR_NOT_SUPPORTED);
-    return rtR0MemObjNtMap(ppMem, pMemToMap, pvFixed, uAlignment, fProt, NIL_RTR0PROCESS);
+    return rtR0MemObjNtMap(ppMem, pMemToMap, pvFixed, uAlignment, fProt, NIL_RTR0PROCESS, offSub, cbSub);
 }
 
 
@@ -838,8 +878,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ p
                                         unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub)
 {
     AssertReturn(R0Process == RTR0ProcHandleSelf(), VERR_NOT_SUPPORTED);
-    AssertMsgReturn(!offSub && !cbSub, ("%#zx %#zx\n", offSub, cbSub), VERR_NOT_SUPPORTED); /** @todo implement sub maps */
-    return rtR0MemObjNtMap(ppMem, pMemToMap, (void *)R3PtrFixed, uAlignment, fProt, R0Process);
+    return rtR0MemObjNtMap(ppMem, pMemToMap, (void *)R3PtrFixed, uAlignment, fProt, R0Process, offSub, cbSub);
 }
 
 
