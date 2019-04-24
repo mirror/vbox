@@ -38,6 +38,9 @@ protected:
     /** Constructs 2nd page base. */
     UIWizardImportAppPage2();
 
+    /** Populates form properties table. */
+    void populateFormPropertiesTable();
+
     /** Returns appliance widget instance. */
     ImportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
 
@@ -59,7 +62,10 @@ public:
       * @param  strFileName  Brings appliance file name. */
     UIWizardImportAppPageBasic2(const QString &strFileName);
 
-private:
+protected:
+
+    /** Allows to access 'field()' from base part. */
+    virtual QVariant fieldImp(const QString &strFieldName) const /* override */ { return UIWizardPage::field(strFieldName); }
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
@@ -75,6 +81,8 @@ private:
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
 
+private:
+
     /** Holds the label instance. */
     QIRichTextLabel *m_pLabel;
 
@@ -89,7 +97,7 @@ private:
     } m_enmCertText;
 
     /** Holds the "signed by" information. */
-    QString m_strSignedBy;
+    QString  m_strSignedBy;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_wizards_importappliance_UIWizardImportAppPageBasic2_h */

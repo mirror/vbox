@@ -41,6 +41,13 @@ UIWizardImportAppPage2::UIWizardImportAppPage2()
 {
 }
 
+void UIWizardImportAppPage2::populateFormPropertiesTable()
+{
+    CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
+    if (comForm.isNotNull())
+        m_pFormEditor->setVirtualSystemDescriptionForm(comForm);
+}
+
 
 /*********************************************************************************************************************************
 *   Class UIWizardImportAppPageBasic2 implementation.                                                                            *
@@ -156,7 +163,7 @@ void UIWizardImportAppPageBasic2::initializePage()
     m_pCertLabel->setVisible(!fIsSourceCloudOne);
 
     if (fIsSourceCloudOne)
-        m_pFormEditor->setVirtualSystemDescriptionForm(field("vsdForm").value<CVirtualSystemDescriptionForm>());
+        populateFormPropertiesTable();
     else
     {
         /* Acquire appliance: */
