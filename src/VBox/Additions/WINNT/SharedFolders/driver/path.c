@@ -283,10 +283,14 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
             }
 
             /* On POSIX systems, the "mkdir" command returns VERR_FILE_NOT_FOUND when
-               doing a recursive directory create. Handle this case. */
-            case VERR_FILE_NOT_FOUND:
+               doing a recursive directory create. Handle this case.
+
+               bird: We end up here on windows systems too if opening a dir that doesn't
+                     exists.  Thus, I've changed the SHFL_PATH_NOT_FOUND to SHFL_FILE_NOT_FOUND
+                     so that FsPerf is happy. */
+            case VERR_FILE_NOT_FOUND: /** @todo r=bird: this is a host bug, isn't it? */
             {
-                pCreateParms->Result = SHFL_PATH_NOT_FOUND;
+                pCreateParms->Result = SHFL_FILE_NOT_FOUND;
                 break;
             }
 
@@ -306,7 +310,7 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
     {
         case SHFL_PATH_NOT_FOUND:
         {
-            /* Path to object does not exist. */
+            /* Path to the object does not exist. */
             Log(("VBOXSF: vbsfProcessCreate: Path not found\n"));
             *pulCreateAction = FILE_DOES_NOT_EXIST;
             Status = STATUS_OBJECT_PATH_NOT_FOUND;
@@ -326,8 +330,6 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
             Log(("VBOXSF: vbsfProcessCreate: File not found but have a handle!\n"));
             Status = STATUS_UNSUCCESSFUL;
             goto failure;
-
-            break;
         }
 
         case SHFL_FILE_EXISTS:
