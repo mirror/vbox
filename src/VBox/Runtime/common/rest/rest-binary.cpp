@@ -681,6 +681,9 @@ RTCRestBinaryResponse::receiveHttpCallback(RTHTTP hHttp, void const *pvBuf, size
     memcpy(&pThis->m_pbData[(size_t)offContent], pvBuf, cbBuf);
     pThis->m_cbDownloaded = offContent + cbBuf;
 
+    /* we cap it at m_cbMaxDownload which is size_t so this cast is safe */
+    pThis->m_cbData = (size_t)pThis->m_cbDownloaded;
+
     RT_NOREF(hHttp);
     return VINF_SUCCESS;
 }
