@@ -60,8 +60,10 @@ public:
 
 protected:
 
-    /* Create VM stuff: */
+    /* Create a new VM: */
     bool createVM();
+    /* Configure the newly created VM: */
+    bool configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType);
 
     /* Who will be able to create virtual-machine: */
     friend class UIWizardNewVMPageBasic3;

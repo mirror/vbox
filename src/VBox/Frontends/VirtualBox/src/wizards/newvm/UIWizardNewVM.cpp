@@ -119,22 +119,29 @@ bool UIWizardNewVM::createVM()
             m_machine.SetExtraData(GUI_FirstRun, "yes");
     }
 
+    return configureVM(strTypeId, type);
+}
+
+bool UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
+{
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+
     /* RAM size: */
     m_machine.SetMemorySize(field("ram").toInt());
 
     /* Graphics Controller type: */
-    m_machine.SetGraphicsControllerType(type.GetRecommendedGraphicsController());
+    m_machine.SetGraphicsControllerType(comGuestType.GetRecommendedGraphicsController());
 
     /* VRAM size - select maximum between recommended and minimum for fullscreen: */
-    m_machine.SetVRAMSize(qMax(type.GetRecommendedVRAM(), (ULONG)(VBoxGlobal::requiredVideoMemory(strTypeId) / _1M)));
+    m_machine.SetVRAMSize(qMax(comGuestType.GetRecommendedVRAM(), (ULONG)(VBoxGlobal::requiredVideoMemory(strGuestTypeId) / _1M)));
 
     /* Selecting recommended chipset type: */
-    m_machine.SetChipsetType(type.GetRecommendedChipset());
+    m_machine.SetChipsetType(comGuestType.GetRecommendedChipset());
 
     /* Selecting recommended Audio Controller: */
-    m_machine.GetAudioAdapter().SetAudioController(type.GetRecommendedAudioController());
+    m_machine.GetAudioAdapter().SetAudioController(comGuestType.GetRecommendedAudioController());
     /* And the Audio Codec: */
-    m_machine.GetAudioAdapter().SetAudioCodec(type.GetRecommendedAudioCodec());
+    m_machine.GetAudioAdapter().SetAudioCodec(comGuestType.GetRecommendedAudioCodec());
     /* Enabling audio by default: */
     m_machine.GetAudioAdapter().SetEnabled(true);
     m_machine.GetAudioAdapter().SetEnabledOut(true);
@@ -142,7 +149,7 @@ bool UIWizardNewVM::createVM()
     /* Enable the OHCI and EHCI controller by default for new VMs. (new in 2.2): */
     CUSBDeviceFilters usbDeviceFilters = m_machine.GetUSBDeviceFilters();
     bool fOhciEnabled = false;
-    if (!usbDeviceFilters.isNull() && type.GetRecommendedUSB3() && m_machine.GetUSBProxyAvailable())
+    if (!usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB3() && m_machine.GetUSBProxyAvailable())
     {
         /* USB 3.0 is only available if the proper ExtPack is installed. */
         CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
@@ -154,7 +161,7 @@ bool UIWizardNewVM::createVM()
         }
     }
     if (   !fOhciEnabled
-        && !usbDeviceFilters.isNull() && type.GetRecommendedUSB() && m_machine.GetUSBProxyAvailable())
+        && !usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB() && m_machine.GetUSBProxyAvailable())
     {
         m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
         fOhciEnabled = true;
@@ -170,7 +177,7 @@ bool UIWizardNewVM::createVM()
 
     /* Create a floppy controller if recommended: */
     QString strFloppyName = getNextControllerName(KStorageBus_Floppy);
-    if (type.GetRecommendedFloppy())
+    if (comGuestType.GetRecommendedFloppy())
     {
         m_machine.AddStorageController(strFloppyName, KStorageBus_Floppy);
         CStorageController flpCtr = m_machine.GetStorageControllerByName(strFloppyName);
@@ -178,18 +185,18 @@ bool UIWizardNewVM::createVM()
     }
 
     /* Create recommended DVD storage controller: */
-    KStorageBus strDVDBus = type.GetRecommendedDVDStorageBus();
+    KStorageBus strDVDBus = comGuestType.GetRecommendedDVDStorageBus();
     QString strDVDName = getNextControllerName(strDVDBus);
     m_machine.AddStorageController(strDVDName, strDVDBus);
 
     /* Set recommended DVD storage controller type: */
     CStorageController dvdCtr = m_machine.GetStorageControllerByName(strDVDName);
-    KStorageControllerType dvdStorageControllerType = type.GetRecommendedDVDStorageController();
+    KStorageControllerType dvdStorageControllerType = comGuestType.GetRecommendedDVDStorageController();
     dvdCtr.SetControllerType(dvdStorageControllerType);
 
     /* Create recommended HD storage controller if it's not the same as the DVD controller: */
-    KStorageBus ctrHDBus = type.GetRecommendedHDStorageBus();
-    KStorageControllerType hdStorageControllerType = type.GetRecommendedHDStorageController();
+    KStorageBus ctrHDBus = comGuestType.GetRecommendedHDStorageBus();
+    KStorageControllerType hdStorageControllerType = comGuestType.GetRecommendedHDStorageController();
     CStorageController hdCtr;
     QString strHDName;
     if (ctrHDBus != strDVDBus || hdStorageControllerType != dvdStorageControllerType)
@@ -215,17 +222,17 @@ bool UIWizardNewVM::createVM()
         dvdCtr.SetPortCount(1);
 
     /* Turn on PAE, if recommended: */
-    m_machine.SetCPUProperty(KCPUPropertyType_PAE, type.GetRecommendedPAE());
+    m_machine.SetCPUProperty(KCPUPropertyType_PAE, comGuestType.GetRecommendedPAE());
 
     /* Set the recommended triple fault behavior: */
-    m_machine.SetCPUProperty(KCPUPropertyType_TripleFaultReset, type.GetRecommendedTFReset());
+    m_machine.SetCPUProperty(KCPUPropertyType_TripleFaultReset, comGuestType.GetRecommendedTFReset());
 
     /* Set recommended firmware type: */
-    KFirmwareType fwType = type.GetRecommendedFirmware();
+    KFirmwareType fwType = comGuestType.GetRecommendedFirmware();
     m_machine.SetFirmwareType(fwType);
 
     /* Set recommended human interface device types: */
-    if (type.GetRecommendedUSBHID())
+    if (comGuestType.GetRecommendedUSBHID())
     {
         m_machine.SetKeyboardHIDType(KKeyboardHIDType_USBKeyboard);
         m_machine.SetPointingHIDType(KPointingHIDType_USBMouse);
@@ -233,7 +240,7 @@ bool UIWizardNewVM::createVM()
             m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
     }
 
-    if (type.GetRecommendedUSBTablet())
+    if (comGuestType.GetRecommendedUSBTablet())
     {
         m_machine.SetPointingHIDType(KPointingHIDType_USBTablet);
         if (!fOhciEnabled && !usbDeviceFilters.isNull())
@@ -241,17 +248,17 @@ bool UIWizardNewVM::createVM()
     }
 
     /* Set HPET flag: */
-    m_machine.SetHPETEnabled(type.GetRecommendedHPET());
+    m_machine.SetHPETEnabled(comGuestType.GetRecommendedHPET());
 
     /* Set UTC flags: */
-    m_machine.SetRTCUseUTC(type.GetRecommendedRTCUseUTC());
+    m_machine.SetRTCUseUTC(comGuestType.GetRecommendedRTCUseUTC());
 
     /* Set graphic bits: */
-    if (type.GetRecommended2DVideoAcceleration())
-        m_machine.SetAccelerate2DVideoEnabled(type.GetRecommended2DVideoAcceleration());
+    if (comGuestType.GetRecommended2DVideoAcceleration())
+        m_machine.SetAccelerate2DVideoEnabled(comGuestType.GetRecommended2DVideoAcceleration());
 
-    if (type.GetRecommended3DAcceleration())
-        m_machine.SetAccelerate3DEnabled(type.GetRecommended3DAcceleration());
+    if (comGuestType.GetRecommended3DAcceleration())
+        m_machine.SetAccelerate3DEnabled(comGuestType.GetRecommended3DAcceleration());
 
     /* Register the VM prior to attaching hard disks: */
     vbox.RegisterMachine(m_machine);
@@ -289,7 +296,7 @@ bool UIWizardNewVM::createVM()
 
 
             /* Attach an empty floppy drive if recommended */
-            if (type.GetRecommendedFloppy()) {
+            if (comGuestType.GetRecommendedFloppy()) {
                 machine.AttachDevice(strFloppyName, 0, 0, KDeviceType_Floppy, CMedium());
                 if (!machine.isOk())
                     msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_Floppy, QString(),
