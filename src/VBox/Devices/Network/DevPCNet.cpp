@@ -2083,6 +2083,7 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
                 rmd.rmd1.lafm = !CSR_PROM(pThis) && is_ladr;
                 rmd.rmd1.bam  = !CSR_PROM(pThis) && is_bcast;
                 rmd.rmd2.mcnt = cbPacket;
+                rmd.rmd2.zeros = 0;
 
                 STAM_REL_COUNTER_ADD(&pThis->StatReceiveBytes, cbPacket);
             }
