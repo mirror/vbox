@@ -37,7 +37,7 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
     PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = VBoxMRxGetDeviceExtension(RxContext);
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
 
-    int vboxRC = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
 
     /* Various boolean flags. */
     struct
@@ -262,18 +262,18 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
 
         /* Call host. */
         Log(("VBOXSF: vbsfProcessCreate: VbglR0SfCreate called.\n"));
-        vboxRC = VbglR0SfCreate(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, ParsedPath, pCreateParms);
+        vrc = VbglR0SfCreate(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, ParsedPath, pCreateParms);
 
         vbsfFreeNonPagedMem(ParsedPath);
     }
 
-    Log(("VBOXSF: vbsfProcessCreate: VbglR0SfCreate returns vboxRC = %Rrc, Result = 0x%x\n",
-         vboxRC, pCreateParms->Result));
+    Log(("VBOXSF: vbsfProcessCreate: VbglR0SfCreate returns vrc = %Rrc, Result = 0x%x\n",
+         vrc, pCreateParms->Result));
 
-    if (RT_FAILURE(vboxRC))
+    if (RT_FAILURE(vrc))
     {
         /* Map some VBoxRC to STATUS codes expected by the system. */
-        switch (vboxRC)
+        switch (vrc)
         {
             case VERR_ALREADY_EXISTS:
             {
@@ -293,7 +293,7 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
             default:
             {
                 *pulCreateAction = FILE_DOES_NOT_EXIST;
-                Status = VBoxErrorToNTStatus(vboxRC);
+                Status = VBoxErrorToNTStatus(vrc);
                 goto failure;
             }
         }
@@ -662,7 +662,7 @@ NTSTATUS vbsfSetFileInfo(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
-    int vboxRC;
+    int vrc;
     PSHFLFSOBJINFO pSHFLFileInfo;
 
     uint8_t *pHGCMBuffer = NULL;
@@ -703,11 +703,11 @@ NTSTATUS vbsfSetFileInfo(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
     if (pInfo->FileAttributes && (SetAttrFlags & VBOX_FOBX_F_INFO_ATTRIBUTES) != 0)
         pSHFLFileInfo->Attr.fMode = NTToVBoxFileAttributes(pInfo->FileAttributes);
 
-    vboxRC = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                            SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
+    vrc = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+                         SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
 
-    if (vboxRC != VINF_SUCCESS)
-        Status = VBoxErrorToNTStatus(vboxRC);
+    if (vrc != VINF_SUCCESS)
+        Status = VBoxErrorToNTStatus(vrc);
 
     if (pHGCMBuffer)
         vbsfFreeNonPagedMem(pHGCMBuffer);
@@ -726,7 +726,7 @@ NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
-    int vboxRC;
+    int vrc;
 
     if (pVBoxFobx->hFile == SHFL_HANDLE_NIL)
     {
@@ -749,14 +749,14 @@ NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
                                  pVBoxFobx->SetFileInfoOnCloseFlags);
     }
 
-    vboxRC = VbglR0SfClose(&pDeviceExtension->hgcmClient,
-                           &pNetRootExtension->map,
-                           pVBoxFobx->hFile);
+    vrc = VbglR0SfClose(&pDeviceExtension->hgcmClient,
+                        &pNetRootExtension->map,
+                        pVBoxFobx->hFile);
 
     pVBoxFobx->hFile = SHFL_HANDLE_NIL;
 
-    if (vboxRC != VINF_SUCCESS)
-        Status = VBoxErrorToNTStatus(vboxRC);
+    if (vrc != VINF_SUCCESS)
+        Status = VBoxErrorToNTStatus(vrc);
 
     Log(("VBOXSF: vbsfCloseFileHandle: Returned 0x%08X\n", Status));
     return Status;
@@ -826,7 +826,7 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
 
     PUNICODE_STRING RemainingName = GET_ALREADY_PREFIXED_NAME_FROM_CONTEXT(RxContext);
 
-    int vboxRC;
+    int vrc;
     PSHFLSTRING ParsedPath = NULL;
 
     Log(("VBOXSF: vbsfRemove: Delete %.*ls. open count = %d\n",
@@ -842,19 +842,19 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
         return Status;
 
     /* Call host. */
-    vboxRC = VbglR0SfRemove(&pDeviceExtension->hgcmClient, &pNetRootExtension->map,
-                            ParsedPath,
-                            (pVBoxFobx->FileStandardInfo.Directory) ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE);
+    vrc = VbglR0SfRemove(&pDeviceExtension->hgcmClient, &pNetRootExtension->map,
+                         ParsedPath,
+                         (pVBoxFobx->FileStandardInfo.Directory) ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE);
 
     if (ParsedPath)
         vbsfFreeNonPagedMem(ParsedPath);
 
-    if (vboxRC == VINF_SUCCESS)
+    if (vrc == VINF_SUCCESS)
         SetFlag(capFobx->pSrvOpen->Flags, SRVOPEN_FLAG_FILE_DELETED);
 
-    Status = VBoxErrorToNTStatus(vboxRC);
-    if (vboxRC != VINF_SUCCESS)
-        Log(("VBOXSF: vbsfRemove: VbglR0SfRemove failed with %Rrc\n", vboxRC));
+    Status = VBoxErrorToNTStatus(vrc);
+    if (vrc != VINF_SUCCESS)
+        Log(("VBOXSF: vbsfRemove: VbglR0SfRemove failed with %Rrc\n", vrc));
 
     Log(("VBOXSF: vbsfRemove: Returned 0x%08X\n", Status));
     return Status;
@@ -878,7 +878,7 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
     PFILE_RENAME_INFORMATION RenameInformation = (PFILE_RENAME_INFORMATION)RxContext->Info.Buffer;
     PUNICODE_STRING RemainingName = GET_ALREADY_PREFIXED_NAME(pSrvOpen, capFcb);
 
-    int vboxRC;
+    int vrc;
     PSHFLSTRING SrcPath = 0, DestPath = 0;
     ULONG flags;
 
@@ -921,14 +921,14 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
         flags |= SHFL_RENAME_REPLACE_IF_EXISTS;
 
     Log(("VBOXSF: vbsfRename: Calling VbglR0SfRename\n"));
-    vboxRC = VbglR0SfRename(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, SrcPath, DestPath, flags);
+    vrc = VbglR0SfRename(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, SrcPath, DestPath, flags);
 
     vbsfFreeNonPagedMem(SrcPath);
     vbsfFreeNonPagedMem(DestPath);
 
-    Status = VBoxErrorToNTStatus(vboxRC);
-    if (vboxRC != VINF_SUCCESS)
-        Log(("VBOXSF: vbsfRename: VbglR0SfRename failed with %Rrc\n", vboxRC));
+    Status = VBoxErrorToNTStatus(vrc);
+    if (vrc != VINF_SUCCESS)
+        Log(("VBOXSF: vbsfRename: VbglR0SfRename failed with %Rrc\n", vrc));
 
     Log(("VBOXSF: vbsfRename: Returned 0x%08X\n", Status));
     return Status;

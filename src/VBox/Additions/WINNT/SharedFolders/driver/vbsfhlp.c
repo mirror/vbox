@@ -103,14 +103,14 @@ NTSTATUS vbsfHlpDeleteDriveLetter(WCHAR Letter)
  * Convert VBox error code to NT status code
  *
  * @returns NT status code
- * @param   vboxRC          VBox error code
+ * @param   vrc             VBox status code.
  *
  */
-NTSTATUS VBoxErrorToNTStatus(int vboxRC)
+NTSTATUS VBoxErrorToNTStatus(int vrc)
 {
     NTSTATUS Status;
 
-    switch (vboxRC)
+    switch (vrc)
     {
         case VINF_SUCCESS:
             Status = STATUS_SUCCESS;
@@ -191,7 +191,7 @@ NTSTATUS VBoxErrorToNTStatus(int vboxRC)
             /** @todo error handling */
             Status = STATUS_INVALID_PARAMETER;
             Log(("Unexpected vbox error %Rrc\n",
-                 vboxRC));
+                 vrc));
             break;
     }
     return Status;

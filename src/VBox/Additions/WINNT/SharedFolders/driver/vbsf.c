@@ -405,7 +405,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
     UNICODE_STRING UserModeDeviceName;
     PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = NULL;
     ULONG i;
-    int vboxRC;
+    int vrc;
     VBGLSFCLIENT hgcmClient;
 
     Log(("VBOXSF: DriverEntry: Driver object %p\n", DriverObject));
@@ -417,20 +417,20 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
     }
 
     /* Initialize VBox subsystem. */
-    vboxRC = VbglR0SfInit();
-    if (RT_FAILURE(vboxRC))
+    vrc = VbglR0SfInit();
+    if (RT_FAILURE(vrc))
     {
-        Log(("VBOXSF: DriverEntry: ERROR while initializing VBox subsystem (%Rrc)!\n", vboxRC));
+        Log(("VBOXSF: DriverEntry: ERROR while initializing VBox subsystem (%Rrc)!\n", vrc));
         return STATUS_UNSUCCESSFUL;
     }
 
     /* Connect the HGCM client */
     RT_ZERO(hgcmClient);
-    vboxRC = VbglR0SfConnect(&hgcmClient);
-    if (RT_FAILURE(vboxRC))
+    vrc = VbglR0SfConnect(&hgcmClient);
+    if (RT_FAILURE(vrc))
     {
         Log(("VBOXSF: DriverEntry: ERROR while connecting to host (%Rrc)!\n",
-             vboxRC));
+             vrc));
         VbglR0SfTerm();
         return STATUS_UNSUCCESSFUL;
     }
@@ -703,7 +703,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                     ULONG cbOut = LowIoContext->ParamsFor.IoCtl.OutputBufferLength;
                     uint8_t *pu8Out = (uint8_t *)LowIoContext->ParamsFor.IoCtl.pOutputBuffer;
 
-                    int vboxRC;
+                    int vrc;
                     SHFLMAPPING mappings[_MRX_MAX_DRIVE_LETTERS];
                     uint32_t cMappings = RT_ELEMENTS(mappings);
 
@@ -718,8 +718,8 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                         break;
                     }
 
-                    vboxRC = VbglR0SfQueryMappings(&pDeviceExtension->hgcmClient, mappings, &cMappings);
-                    if (vboxRC == VINF_SUCCESS)
+                    vrc = VbglR0SfQueryMappings(&pDeviceExtension->hgcmClient, mappings, &cMappings);
+                    if (vrc == VINF_SUCCESS)
                     {
                         __try
                         {
@@ -742,7 +742,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                     }
                     else
                     {
-                        Status = VBoxErrorToNTStatus(vboxRC);
+                        Status = VBoxErrorToNTStatus(vrc);
                         Log(("VBOXSF: MRxDevFcbXXXControlFile: IOCTL_MRX_VBOX_GETGLOBALLIST failed: 0x%08X\n",
                              Status));
                     }
@@ -845,7 +845,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                     ULONG cbRemoteName = LowIoContext->ParamsFor.IoCtl.OutputBufferLength;
                     PWCHAR pwcRemoteName = (PWCHAR)LowIoContext->ParamsFor.IoCtl.pOutputBuffer;
 
-                    int vboxRC;
+                    int vrc;
                     PSHFLSTRING pString;
 
                     Log(("VBOXSF: MRxDevFcbXXXControlFile: IOCTL_MRX_VBOX_GETGLOBALCONN\n"));
@@ -869,10 +869,10 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                         Log(("VBOXSF: MRxDevFcbXXXControlFile: IOCTL_MRX_VBOX_GETGLOBALCONN: Connection ID = %d\n",
                              *pu8ConnectId));
 
-                        vboxRC = VbglR0SfQueryMapName(&pDeviceExtension->hgcmClient,
-                                                      (*pu8ConnectId) & ~0x80 /** @todo fix properly */,
-                                                      pString, ShflStringSizeOfBuffer(pString));
-                        if (   vboxRC == VINF_SUCCESS
+                        vrc = VbglR0SfQueryMapName(&pDeviceExtension->hgcmClient,
+                                                   *pu8ConnectId & ~0x80 /** @todo fix properly */,
+                                                   pString, ShflStringSizeOfBuffer(pString));
+                        if (   vrc == VINF_SUCCESS
                             && pString->u16Length < cbRemoteName)
                         {
                             RtlCopyMemory(pwcRemoteName, pString->String.ucs2, pString->u16Length);

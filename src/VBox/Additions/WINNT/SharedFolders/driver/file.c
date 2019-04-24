@@ -237,7 +237,7 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
 
     PVOID pbUserBuffer = RxLowIoGetBufferAddress(RxContext);
 
-    int vboxRC;
+    int vrc;
 
 #ifdef LOG_ENABLED
     BOOLEAN AsyncIo = BooleanFlagOn(RxContext->Flags, RX_CONTEXT_FLAG_ASYNC_OPERATION);
@@ -292,11 +292,11 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
     ctx.pfnTransferBuffer = vbsfTransferBufferRead;
     ctx.pfnTransferPages = vbsfTransferPagesRead;
 
-    vboxRC = vbsfTransferCommon(&ctx);
+    vrc = vbsfTransferCommon(&ctx);
 
     ByteCount = ctx.cbData;
 
-    Status = VBoxErrorToNTStatus(vboxRC);
+    Status = VBoxErrorToNTStatus(vrc);
 
     if (Status != STATUS_SUCCESS)
     {
@@ -362,7 +362,7 @@ static NTSTATUS vbsfWriteInternal(IN PRX_CONTEXT RxContext)
 
     PVOID pbUserBuffer = RxLowIoGetBufferAddress(RxContext);
 
-    int vboxRC;
+    int vrc;
 
 #ifdef LOG_ENABLED
     BOOLEAN AsyncIo = BooleanFlagOn(RxContext->Flags, RX_CONTEXT_FLAG_ASYNC_OPERATION);
@@ -397,11 +397,11 @@ static NTSTATUS vbsfWriteInternal(IN PRX_CONTEXT RxContext)
     ctx.pfnTransferBuffer = vbsfTransferBufferWrite;
     ctx.pfnTransferPages = vbsfTransferPagesWrite;
 
-    vboxRC = vbsfTransferCommon(&ctx);
+    vrc = vbsfTransferCommon(&ctx);
 
     ByteCount = ctx.cbData;
 
-    Status = VBoxErrorToNTStatus(vboxRC);
+    Status = VBoxErrorToNTStatus(vrc);
 
     if (Status != STATUS_SUCCESS)
     {
@@ -461,7 +461,7 @@ NTSTATUS VBoxMRxLocks(IN PRX_CONTEXT RxContext)
 
     PLOWIO_CONTEXT LowIoContext = &RxContext->LowIoContext;
     uint32_t fu32Lock = 0;
-    int vboxRC;
+    int vrc;
 
     Log(("VBOXSF: MRxLocks: Operation %d\n",
          LowIoContext->Operation));
@@ -497,10 +497,10 @@ NTSTATUS VBoxMRxLocks(IN PRX_CONTEXT RxContext)
     else
         fu32Lock |= SHFL_LOCK_WAIT;
 
-    vboxRC = VbglR0SfLock(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                          LowIoContext->ParamsFor.Locks.ByteOffset, LowIoContext->ParamsFor.Locks.Length, fu32Lock);
+    vrc = VbglR0SfLock(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+                       LowIoContext->ParamsFor.Locks.ByteOffset, LowIoContext->ParamsFor.Locks.Length, fu32Lock);
 
-    Status = VBoxErrorToNTStatus(vboxRC);
+    Status = VBoxErrorToNTStatus(vrc);
 
     Log(("VBOXSF: MRxLocks: Returned 0x%08X\n", Status));
     return Status;
@@ -525,14 +525,14 @@ NTSTATUS VBoxMRxFlush (IN PRX_CONTEXT RxContext)
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
 
-    int vboxRC;
+    int vrc;
 
     Log(("VBOXSF: MRxFlush\n"));
 
     /* Do the actual flushing of file buffers */
-    vboxRC = VbglR0SfFlush(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile);
+    vrc = VbglR0SfFlush(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile);
 
-    Status = VBoxErrorToNTStatus(vboxRC);
+    Status = VBoxErrorToNTStatus(vrc);
 
     Log(("VBOXSF: MRxFlush: Returned 0x%08X\n", Status));
     return Status;
@@ -553,7 +553,7 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
 
     PSHFLFSOBJINFO pObjInfo;
     uint32_t cbBuffer;
-    int vboxRC;
+    int vrc;
 
     Log(("VBOXSF: vbsfSetEndOfFile: New size = %RX64 (%p), pNewAllocationSize = %p\n",
          pNewFileSize->QuadPart, pNewFileSize, pNewAllocationSize));
@@ -571,12 +571,12 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     RtlZeroMemory(pObjInfo, cbBuffer);
     pObjInfo->cbObject = pNewFileSize->QuadPart;
 
-    vboxRC = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                            SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer, (PSHFLDIRINFO)pObjInfo);
+    vrc = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+                         SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer, (PSHFLDIRINFO)pObjInfo);
 
-    Log(("VBOXSF: vbsfSetEndOfFile: VbglR0SfFsInfo returned %Rrc\n", vboxRC));
+    Log(("VBOXSF: vbsfSetEndOfFile: VbglR0SfFsInfo returned %Rrc\n", vrc));
 
-    Status = VBoxErrorToNTStatus(vboxRC);
+    Status = VBoxErrorToNTStatus(vrc);
     if (Status == STATUS_SUCCESS)
     {
         Log(("VBOXSF: vbsfSetEndOfFile: VbglR0SfFsInfo new allocation size = %RX64\n",

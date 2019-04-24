@@ -49,7 +49,7 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
     LONG *pLengthRemaining = (LONG *)&RxContext->Info.LengthRemaining;
 
     LONG cbToCopy;
-    int vboxRC;
+    int vrc;
     uint8_t *pHGCMBuffer;
     uint32_t index, fSFFlags, cFiles, u32BufSize;
     LONG cbHGCMBuffer;
@@ -177,12 +177,12 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
 
     Log(("VBOXSF: MrxQueryDirectory: CallDirInfo: File = 0x%08x, Flags = 0x%08x, Index = %d, u32BufSize = %d\n",
          pVBoxFobx->hFile, fSFFlags, index, u32BufSize));
-    vboxRC = VbglR0SfDirInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                             ParsedPath, fSFFlags, index, &u32BufSize, (PSHFLDIRINFO)pHGCMBuffer, &cFiles);
+    vrc = VbglR0SfDirInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+                          ParsedPath, fSFFlags, index, &u32BufSize, (PSHFLDIRINFO)pHGCMBuffer, &cFiles);
     Log(("VBOXSF: MrxQueryDirectory: u32BufSize after CallDirInfo = %d, rc = %Rrc\n",
-         u32BufSize, vboxRC));
+         u32BufSize, vrc));
 
-    switch (vboxRC)
+    switch (vrc)
     {
         case VINF_SUCCESS:
             /* Nothing to do here. */
@@ -221,9 +221,9 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
             break;
 
         default:
-            Status = VBoxErrorToNTStatus(vboxRC);
+            Status = VBoxErrorToNTStatus(vrc);
             Log(("VBOXSF: MrxQueryDirectory: Error %Rrc from CallDirInfo (cFiles=%d)!\n",
-                 vboxRC, cFiles));
+                 vrc, cFiles));
             break;
     }
 
@@ -554,7 +554,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
             PSHFLVOLINFO pShflVolInfo;
             uint32_t cbHGCMBuffer;
             uint8_t *pHGCMBuffer;
-            int vboxRC;
+            int vrc;
 
             Log(("VBOXSF: MrxQueryVolumeInfo: FileFsVolumeInformation\n"));
 
@@ -599,12 +599,12 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
                 break;
             }
 
-            vboxRC = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                                    SHFL_INFO_GET | SHFL_INFO_VOLUME, &cbHGCMBuffer, (PSHFLDIRINFO)pHGCMBuffer);
+            vrc = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+                                 SHFL_INFO_GET | SHFL_INFO_VOLUME, &cbHGCMBuffer, (PSHFLDIRINFO)pHGCMBuffer);
 
-            if (vboxRC != VINF_SUCCESS)
+            if (vrc != VINF_SUCCESS)
             {
-                Status = VBoxErrorToNTStatus(vboxRC);
+                Status = VBoxErrorToNTStatus(vrc);
                 vbsfFreeNonPagedMem(pHGCMBuffer);
                 break;
             }
@@ -730,7 +730,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
 
             uint32_t cbHGCMBuffer;
             uint8_t *pHGCMBuffer;
-            int vboxRC;
+            int vrc;
             PSHFLVOLINFO pShflVolInfo;
 
             LARGE_INTEGER TotalAllocationUnits;
@@ -772,12 +772,12 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
                 break;
             }
 
-            vboxRC = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                                    SHFL_INFO_GET | SHFL_INFO_VOLUME, &cbHGCMBuffer, (PSHFLDIRINFO)pHGCMBuffer);
+            vrc = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+                                 SHFL_INFO_GET | SHFL_INFO_VOLUME, &cbHGCMBuffer, (PSHFLDIRINFO)pHGCMBuffer);
 
-            if (vboxRC != VINF_SUCCESS)
+            if (vrc != VINF_SUCCESS)
             {
-                Status = VBoxErrorToNTStatus(vboxRC);
+                Status = VBoxErrorToNTStatus(vrc);
                 vbsfFreeNonPagedMem(pHGCMBuffer);
                 break;
             }
@@ -938,7 +938,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
     uint32_t cbInfoBuffer = RxContext->Info.Length;
     ULONG *pLengthRemaining = (PULONG) & RxContext->Info.LengthRemaining;
 
-    int vboxRC = 0;
+    int vrc = 0;
 
     ULONG cbToCopy = 0;
     uint8_t *pHGCMBuffer = 0;
@@ -1105,12 +1105,12 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
             return STATUS_INSUFFICIENT_RESOURCES;
 
         Assert(pVBoxFobx && pNetRootExtension && pDeviceExtension);
-        vboxRC = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                                SHFL_INFO_GET | SHFL_INFO_FILE, &cbHGCMBuffer, (PSHFLDIRINFO)pHGCMBuffer);
+        vrc = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+                             SHFL_INFO_GET | SHFL_INFO_FILE, &cbHGCMBuffer, (PSHFLDIRINFO)pHGCMBuffer);
 
-        if (vboxRC != VINF_SUCCESS)
+        if (vrc != VINF_SUCCESS)
         {
-            Status = VBoxErrorToNTStatus(vboxRC);
+            Status = VBoxErrorToNTStatus(vrc);
             goto end;
         }
 
@@ -1351,7 +1351,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
     FILE_INFORMATION_CLASS FunctionalityRequested = RxContext->Info.FileInformationClass;
     PVOID pInfoBuffer = (PVOID)RxContext->Info.Buffer;
 
-    int vboxRC;
+    int vrc;
 
     uint8_t *pHGCMBuffer = NULL;
     uint32_t cbBuffer = 0;
@@ -1436,12 +1436,12 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             }
 
             Assert(pVBoxFobx && pNetRootExtension && pDeviceExtension);
-            vboxRC = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                                    SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
+            vrc = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+                                 SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
 
-            if (vboxRC != VINF_SUCCESS)
+            if (vrc != VINF_SUCCESS)
             {
-                Status = VBoxErrorToNTStatus(vboxRC);
+                Status = VBoxErrorToNTStatus(vrc);
                 goto end;
             }
             else
