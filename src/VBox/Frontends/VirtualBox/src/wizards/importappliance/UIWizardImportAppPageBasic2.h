@@ -28,6 +28,7 @@
 
 /* Forward declarations: */
 class QLabel;
+class QStackedLayout;
 class QIRichTextLabel;
 
 /** UIWizardPageBase extension for 2nd page of the Import Appliance wizard. */
@@ -41,8 +42,14 @@ protected:
     /** Populates form properties table. */
     void populateFormPropertiesTable();
 
+    /** Updates page appearance. */
+    virtual void updatePageAppearance();
+
     /** Returns appliance widget instance. */
     ImportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
+
+    /** Holds the settings container layout instance. */
+    QStackedLayout *m_pSettingsCntLayout;
 
     /** Holds the appliance widget instance. */
     ImportAppliancePointer     m_pApplianceWidget;
@@ -80,6 +87,9 @@ protected:
 
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
+
+    /** Updates page appearance. */
+    virtual void updatePageAppearance() /* override */;
 
 private:
 

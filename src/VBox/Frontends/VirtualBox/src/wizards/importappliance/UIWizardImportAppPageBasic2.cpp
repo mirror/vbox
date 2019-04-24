@@ -18,6 +18,7 @@
 /* Qt includes: */
 #include <QLabel>
 #include <QPointer>
+#include <QStackedLayout>
 #include <QVBoxLayout>
 
 /* GUI includes: */
@@ -38,6 +39,7 @@
 *********************************************************************************************************************************/
 
 UIWizardImportAppPage2::UIWizardImportAppPage2()
+    : m_pSettingsCntLayout(0)
 {
 }
 
@@ -46,6 +48,15 @@ void UIWizardImportAppPage2::populateFormPropertiesTable()
     CVirtualSystemDescriptionForm comForm = fieldImp("vsdForm").value<CVirtualSystemDescriptionForm>();
     if (comForm.isNotNull())
         m_pFormEditor->setVirtualSystemDescriptionForm(comForm);
+}
+
+void UIWizardImportAppPage2::updatePageAppearance()
+{
+    /* Check whether there was cloud source selected: */
+    const bool fIsSourceCloudOne = fieldImp("isSourceCloudOne").toBool();
+
+    /* Update page appearance according to chosen source: */
+    m_pSettingsCntLayout->setCurrentIndex((int)fIsSourceCloudOne);
 }
 
 
@@ -68,30 +79,69 @@ UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileN
             pMainLayout->addWidget(m_pLabel);
         }
 
-        /* Create appliance widget: */
-        m_pApplianceWidget = new UIApplianceImportEditorWidget(this);
+        /* Create settings container layout: */
+        m_pSettingsCntLayout = new QStackedLayout;
+        if (m_pSettingsCntLayout)
         {
-            m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-            m_pApplianceWidget->setFile(strFileName);
+            /* Create appliance widget container: */
+            QWidget *pApplianceWidgetCnt = new QWidget(this);
+            if (pApplianceWidgetCnt)
+            {
+                /* Create appliance widget layout: */
+                QVBoxLayout *pApplianceWidgetLayout = new QVBoxLayout(pApplianceWidgetCnt);
+                if (pApplianceWidgetLayout)
+                {
+                    pApplianceWidgetLayout->setContentsMargins(0, 0, 0, 0);
+
+                    /* Create appliance widget: */
+                    m_pApplianceWidget = new UIApplianceImportEditorWidget(pApplianceWidgetCnt);
+                    if (m_pApplianceWidget)
+                    {
+                        m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+                        m_pApplianceWidget->setFile(strFileName);
+
+                        /* Add into layout: */
+                        pApplianceWidgetLayout->addWidget(m_pApplianceWidget);
+                    }
+
+                    /* Create certificate label: */
+                    m_pCertLabel = new QLabel(QString(), pApplianceWidgetCnt);
+                    if (m_pCertLabel)
+                    {
+                        /* Add into layout: */
+                        pApplianceWidgetLayout->addWidget(m_pCertLabel);
+                    }
+                }
+
+                /* Add into layout: */
+                m_pSettingsCntLayout->addWidget(pApplianceWidgetCnt);
+            }
+
+            /* Create form editor container: */
+            QWidget *pFormEditorCnt = new QWidget(this);
+            if (pFormEditorCnt)
+            {
+                /* Create form editor layout: */
+                QVBoxLayout *pFormEditorLayout = new QVBoxLayout(pFormEditorCnt);
+                if (pFormEditorLayout)
+                {
+                    pFormEditorLayout->setContentsMargins(0, 0, 0, 0);
+
+                    /* Create form editor widget: */
+                    m_pFormEditor = new UIFormEditorWidget(pFormEditorCnt);
+                    if (m_pFormEditor)
+                    {
+                        /* Add into layout: */
+                        pFormEditorLayout->addWidget(m_pFormEditor);
+                    }
+                }
+
+                /* Add into layout: */
+                m_pSettingsCntLayout->addWidget(pFormEditorCnt);
+            }
 
             /* Add into layout: */
-            pMainLayout->addWidget(m_pApplianceWidget);
-        }
-
-        /* Create form editor widget: */
-        m_pFormEditor = new UIFormEditorWidget(this);
-        if (m_pFormEditor)
-        {
-            /* Add into layout: */
-            pMainLayout->addWidget(m_pFormEditor);
-        }
-
-        /* Create certificate label: */
-        m_pCertLabel = new QLabel("<cert label>", this);
-        if (m_pCertLabel)
-        {
-            /* Add into layout: */
-            pMainLayout->addWidget(m_pCertLabel);
+            pMainLayout->addLayout(m_pSettingsCntLayout);
         }
     }
 
@@ -106,18 +156,8 @@ void UIWizardImportAppPageBasic2::retranslateUi()
     /* Translate page: */
     setTitle(UIWizardImportApp::tr("Appliance settings"));
 
-    /* Translate the description label: */
-    const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
-    if (fIsSourceCloudOne)
-        m_pLabel->setText(UIWizardImportApp::tr("These are the the suggested settings of the cloud VM import "
-                                                "procedure, they are influencing the resulting local VM instance. "
-                                                "You can change many of the properties shown by double-clicking "
-                                                "on the items and disable others using the check boxes below."));
-    else
-        m_pLabel->setText(UIWizardImportApp::tr("These are the virtual machines contained in the appliance "
-                                                "and the suggested settings of the imported VirtualBox machines. "
-                                                "You can change many of the properties shown by double-clicking "
-                                                "on the items and disable others using the check boxes below."));
+    /* Update page appearance: */
+    updatePageAppearance();
 
     /* Translate the certificate label: */
     switch (m_enmCertText)
@@ -154,13 +194,11 @@ void UIWizardImportAppPageBasic2::retranslateUi()
 
 void UIWizardImportAppPageBasic2::initializePage()
 {
+    /* Update widget visibility: */
+    updatePageAppearance();
+
     /* Check whether there was cloud source selected: */
     const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
-
-    /* Update widget visibility: */
-    m_pFormEditor->setVisible(fIsSourceCloudOne);
-    m_pApplianceWidget->setVisible(!fIsSourceCloudOne);
-    m_pCertLabel->setVisible(!fIsSourceCloudOne);
 
     if (fIsSourceCloudOne)
         populateFormPropertiesTable();
@@ -258,4 +296,29 @@ bool UIWizardImportAppPageBasic2::validatePage()
 
     /* Return result: */
     return fResult;
+}
+
+void UIWizardImportAppPageBasic2::updatePageAppearance()
+{
+    /* Call to base-class: */
+    UIWizardImportAppPage2::updatePageAppearance();
+
+    /* Check whether there was cloud source selected: */
+    const bool fIsSourceCloudOne = field("isSourceCloudOne").toBool();
+    if (fIsSourceCloudOne)
+    {
+        m_pLabel->setText(UIWizardImportApp::tr("These are the the suggested settings of the cloud VM import "
+                                                "procedure, they are influencing the resulting local VM instance. "
+                                                "You can change many of the properties shown by double-clicking "
+                                                "on the items and disable others using the check boxes below."));
+        m_pFormEditor->setFocus();
+    }
+    else
+    {
+        m_pLabel->setText(UIWizardImportApp::tr("These are the virtual machines contained in the appliance "
+                                                "and the suggested settings of the imported VirtualBox machines. "
+                                                "You can change many of the properties shown by double-clicking "
+                                                "on the items and disable others using the check boxes below."));
+        m_pApplianceWidget->setFocus();
+    }
 }
