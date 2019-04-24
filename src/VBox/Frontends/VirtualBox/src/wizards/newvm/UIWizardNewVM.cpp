@@ -119,7 +119,9 @@ bool UIWizardNewVM::createVM()
             m_machine.SetExtraData(GUI_FirstRun, "yes");
     }
 
-    return configureVM(strTypeId, type);
+    if (configureVM(strTypeId, type))
+        return attachDefaultDevices(type);
+    return false;
 }
 
 bool UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
@@ -267,64 +269,81 @@ bool UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
         msgCenter().cannotRegisterMachine(vbox, m_machine.GetName(), this);
         return false;
     }
+    return true;
+}
 
-    /* Attach default devices: */
+bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)
+{
+    bool success = false;
+    QUuid uMachineId = m_machine.GetId();
+    CSession session = vboxGlobal().openSession(uMachineId);
+    if (!session.isNull())
     {
-        bool success = false;
-        QUuid uMachineId = m_machine.GetId();
-        CSession session = vboxGlobal().openSession(uMachineId);
-        if (!session.isNull())
-        {
-            CMachine machine = session.GetMachine();
+        CMachine machine = session.GetMachine();
 
-            QUuid uId = field("virtualDiskId").toUuid();
-            /* Boot virtual hard drive: */
-            if (!uId.isNull())
+        QUuid uId = field("virtualDiskId").toUuid();
+        /* Boot virtual hard drive: */
+        if (!uId.isNull())
+        {
+            KStorageBus enmHDDBus = comGuestType.GetRecommendedHDStorageBus();
+            CStorageController comHDDController = m_machine.GetStorageControllerByInstance(enmHDDBus, 0);
+            if (!comHDDController.isNull())
             {
                 UIMedium vmedium = vboxGlobal().medium(uId);
                 CMedium medium = vmedium.medium();              /// @todo r=dj can this be cached somewhere?
-                machine.AttachDevice(strHDName, 0, 0, KDeviceType_HardDisk, medium);
+                machine.AttachDevice(comHDDController.GetName(), 0, 0, KDeviceType_HardDisk, medium);
                 if (!machine.isOk())
                     msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_HardDisk, field("virtualDiskLocation").toString(),
-                                                   StorageSlot(ctrHDBus, 0, 0), this);
+                                                   StorageSlot(enmHDDBus, 0, 0), this);
             }
+        }
 
-            /* Attach empty optical drive: */
-            machine.AttachDevice(strDVDName, 1, 0, KDeviceType_DVD, CMedium());
+        /* Attach empty optical drive: */
+        KStorageBus enmDVDBus = comGuestType.GetRecommendedDVDStorageBus();
+        CStorageController comDVDController = m_machine.GetStorageControllerByInstance(enmDVDBus, 0);
+        if (!comDVDController.isNull())
+        {
+            machine.AttachDevice(comDVDController.GetName(), 1, 0, KDeviceType_DVD, CMedium());
             if (!machine.isOk())
-                msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_DVD, QString(), StorageSlot(strDVDBus, 1, 0), this);
+                msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_DVD, QString(),
+                                               StorageSlot(enmDVDBus, 1, 0), this);
 
+        }
 
-            /* Attach an empty floppy drive if recommended */
-            if (comGuestType.GetRecommendedFloppy()) {
-                machine.AttachDevice(strFloppyName, 0, 0, KDeviceType_Floppy, CMedium());
+        /* Attach an empty floppy drive if recommended */
+        if (comGuestType.GetRecommendedFloppy()) {
+            CStorageController comFloppyController = m_machine.GetStorageControllerByInstance(KStorageBus_Floppy, 0);
+            if (!comFloppyController.isNull())
+            {
+                machine.AttachDevice(comFloppyController.GetName(), 0, 0, KDeviceType_Floppy, CMedium());
                 if (!machine.isOk())
                     msgCenter().cannotAttachDevice(machine, UIMediumDeviceType_Floppy, QString(),
                                                    StorageSlot(KStorageBus_Floppy, 0, 0), this);
             }
-
-            if (machine.isOk())
-            {
-                machine.SaveSettings();
-                if (machine.isOk())
-                    success = true;
-                else
-                    msgCenter().cannotSaveMachineSettings(machine, this);
-            }
-
-            session.UnlockMachine();
         }
-        if (!success)
+
+        if (machine.isOk())
         {
-            /* Unregister on failure */
-            QVector<CMedium> aMedia = m_machine.Unregister(KCleanupMode_UnregisterOnly);   /// @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
-            if (vbox.isOk())
-            {
-                CProgress progress = m_machine.DeleteConfig(aMedia);
-                progress.WaitForCompletion(-1);         /// @todo do this nicely with a progress dialog, this can delete lots of files
-            }
-            return false;
+            machine.SaveSettings();
+            if (machine.isOk())
+                success = true;
+            else
+                msgCenter().cannotSaveMachineSettings(machine, this);
         }
+
+        session.UnlockMachine();
+    }
+    if (!success)
+    {
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        /* Unregister on failure */
+        QVector<CMedium> aMedia = m_machine.Unregister(KCleanupMode_UnregisterOnly);   /// @todo replace with DetachAllReturnHardDisksOnly once a progress dialog is in place below
+        if (vbox.isOk())
+        {
+            CProgress progress = m_machine.DeleteConfig(aMedia);
+            progress.WaitForCompletion(-1);         /// @todo do this nicely with a progress dialog, this can delete lots of files
+        }
+        return false;
     }
 
     /* Ensure we don't try to delete a newly created virtual hard drive on success: */
