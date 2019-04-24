@@ -34,6 +34,11 @@ class UIWizardImportAppPageExpert : public UIWizardPage,
                                     public UIWizardImportAppPage2
 {
     Q_OBJECT;
+    Q_PROPERTY(QString source READ source WRITE setSource);
+    Q_PROPERTY(bool isSourceCloudOne READ isSourceCloudOne);
+    Q_PROPERTY(CCloudProfile profile READ profile);
+    Q_PROPERTY(CVirtualSystemDescriptionForm vsdForm READ vsdForm);
+    Q_PROPERTY(QString machineId READ machineId);
     Q_PROPERTY(ImportAppliancePointer applianceWidget READ applianceWidget);
 
 public:
@@ -42,12 +47,13 @@ public:
       * @param  strFileName  Brings appliance file name. */
     UIWizardImportAppPageExpert(bool fImportFromOCIByDefault, const QString &strFileName);
 
-private slots:
+protected:
 
-    /** Handles file-path change. */
-    void sltFilePathChangeHandler();
+    /** Allows to access 'field()' from base part. */
+    virtual QVariant fieldImp(const QString &strFieldName) const /* override */ { return UIWizardPage::field(strFieldName); }
 
-private:
+    /** Handle any Qt @a pEvent. */
+    virtual bool event(QEvent *pEvent) /* override */;
 
     /** Handles translation event. */
     virtual void retranslateUi() /* override */;
@@ -61,8 +67,26 @@ private:
     /** Performs page validation. */
     virtual bool validatePage() /* override */;
 
-    /** Holds the appliance container instance. */
-    QGroupBox *m_pApplianceCnt;
+    /** Updates page appearance. */
+    virtual void updatePageAppearance() /* override */;
+
+private slots:
+
+    /** Handles import source change. */
+    void sltHandleSourceChange();
+
+    /** Handles file-path change. */
+    void sltFilePathChangeHandler();
+
+    /** Handles change in account combo-box. */
+    void sltHandleAccountComboChange();
+    /** Handles account tool-button click. */
+    void sltHandleAccountButtonClick();
+
+private:
+
+    /** Holds the source container instance. */
+    QGroupBox *m_pCntSource;
     /** Holds the settings container instance. */
     QGroupBox *m_pSettingsCnt;
 };
