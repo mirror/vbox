@@ -2314,8 +2314,8 @@ void UIMachineSettingsStorage::getFromCache()
     if (m_pModelStorage->rowCount(m_pModelStorage->root()) > 0)
         m_pTreeStorage->setCurrentIndex(m_pModelStorage->index(0, 0, m_pModelStorage->root()));
 
-    /* Update action states: */
-    sltUpdateActionStates();
+    /* Fetch recent information: */
+    sltHandleCurrentItemChange();
 
     /* Polish page finally: */
     polishPage();
