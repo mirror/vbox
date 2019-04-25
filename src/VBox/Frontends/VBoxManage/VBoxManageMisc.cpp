@@ -280,16 +280,17 @@ RTEXITCODE handleCreateVM(HandlerArg *a)
                                         machine.asOutParam()));
 
         CHECK_ERROR_BREAK(machine, SaveSettings());
-        if (fRegister)
-        {
-            CHECK_ERROR_BREAK(a->virtualBox, RegisterMachine(machine));
-        }
         if (fDefault)
         {
             /* ApplyDefaults assumes the machine is already registered */
             CHECK_ERROR_BREAK(machine, ApplyDefaults(bstrDefaultFlags.raw()));
             CHECK_ERROR_BREAK(machine, SaveSettings());
         }
+        if (fRegister)
+        {
+            CHECK_ERROR_BREAK(a->virtualBox, RegisterMachine(machine));
+        }
+
         Bstr uuid;
         CHECK_ERROR_BREAK(machine, COMGETTER(Id)(uuid.asOutParam()));
         Bstr settingsFile;

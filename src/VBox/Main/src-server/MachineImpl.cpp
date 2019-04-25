@@ -15084,6 +15084,47 @@ HRESULT Machine::authenticateExternal(const std::vector<com::Utf8Str> &aAuthPara
     ReturnComNotImplemented();
 }
 
+com::Utf8Str Machine::i_controllerNameFromBusType(StorageBus_T aBusType)
+{
+    com::Utf8Str strControllerName = "Unknown";
+    switch (aBusType)
+    {
+        case StorageBus_IDE:
+        {
+            strControllerName = "IDE";
+            break;
+        }
+        case StorageBus_SATA:
+        {
+            strControllerName = "SATA";
+            break;
+        }
+        case StorageBus_SCSI:
+        {
+            strControllerName = "SCSI";
+            break;
+        }
+        case StorageBus_Floppy:
+        {
+            strControllerName = "Floppy";
+            break;
+        }
+        case StorageBus_SAS:
+        {
+            strControllerName = "SAS";
+            break;
+        }
+        case StorageBus_USB:
+        {
+            strControllerName = "USB";
+            break;
+        }
+        default:
+            break;
+    }
+    return strControllerName;
+}
+
 HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
 {
     /* it's assumed the machine already registered. If not, it's a problem of the caller */
@@ -15184,12 +15225,14 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     AudioControllerType_T audioController;
     rc = osType->COMGETTER(RecommendedAudioController)(&audioController);
     if (FAILED(rc)) return rc;
+
     rc = mAudioAdapter->COMSETTER(AudioController)(audioController);
     if (FAILED(rc)) return rc;
 
     AudioCodecType_T audioCodec;
     rc = osType->COMGETTER(RecommendedAudioCodec)(&audioCodec);
     if (FAILED(rc)) return rc;
+
     rc = mAudioAdapter->COMSETTER(AudioCodec)(audioCodec);
     if (FAILED(rc)) return rc;
 
@@ -15210,10 +15253,8 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     ComPtr<IStorageController> dvdController;
     Utf8Str strFloppyName, strDVDName, strHDName;
 
-    /* GUI auto generates these - not accesible here - so hardware, at least for now. */
-    strFloppyName = Bstr("Floppy 1").raw();
-    strDVDName = Bstr("DVD 1").raw();
-    strHDName = Bstr("HDD 1").raw();
+    /* GUI auto generates controller names using bus type. Do the same*/
+    strFloppyName = i_controllerNameFromBusType(StorageBus_Floppy);
 
     /* Floppy recommended? add one. */
     rc = osType->COMGETTER(RecommendedFloppy(&recommendedFloppy));
@@ -15233,6 +15274,8 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     rc = osType->COMGETTER(RecommendedDVDStorageBus)(&dvdStorageBusType);
     if (FAILED(rc)) return rc;
 
+    strDVDName = i_controllerNameFromBusType(dvdStorageBusType);
+
     rc = addStorageController(strDVDName,
                               dvdStorageBusType,
                               dvdController);
@@ -15248,6 +15291,8 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     rc = osType->COMGETTER(RecommendedHDStorageBus)(&hdStorageBusType);
     if (FAILED(rc)) return rc;
 
+    strHDName = i_controllerNameFromBusType(hdStorageBusType);
+
     if (hdStorageBusType != dvdStorageBusType && hdStorageControllerType != dvdStorageControllerType)
     {
        rc = addStorageController(strHDName,
@@ -15262,7 +15307,6 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     {
         /* The HD controller is the same as DVD: */
         hdController = dvdController;
-        strHDName = Bstr("DVD 1").raw();
     }
 
     /* Limit the AHCI port count if it's used because windows has trouble with

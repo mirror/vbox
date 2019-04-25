@@ -721,6 +721,8 @@ protected:
 
     Utf8Str i_getExtraData(const Utf8Str &strKey);
 
+    com::Utf8Str i_controllerNameFromBusType(StorageBus_T aBusType);
+
 #ifdef VBOX_WITH_GUEST_PROPS
     HRESULT i_getGuestPropertyFromService(const com::Utf8Str &aName, com::Utf8Str &aValue,
                                           LONG64 *aTimestamp, com::Utf8Str &aFlags) const;
