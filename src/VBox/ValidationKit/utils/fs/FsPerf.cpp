@@ -1415,18 +1415,21 @@ void fsPerfMkRmDir(void)
 
     /* Non-existing directories: */
     RTTESTI_CHECK_RC(RTDirRemove(InEmptyDir(RT_STR_TUPLE("no-such-dir"))), VERR_FILE_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirRemove(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR))), VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTDirRemove(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirRemove(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"  RTPATH_SLASH_STR))), FSPERF_VERR_PATH_NOT_FOUND);
     RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"  RTPATH_SLASH_STR))), VERR_PATH_NOT_FOUND);
+
     RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file")), 0755, 0), FSPERF_VERR_PATH_NOT_FOUND);
     RTTESTI_CHECK_RC(RTDirCreate(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file")), 0755, 0), VERR_PATH_NOT_FOUND);
-
-    /** @todo check what happens if non-final path component isn't a directory. unix
-     *        should return ENOTDIR and IPRT translates that to VERR_PATH_NOT_FOUND.
-     *        Curious what happens on windows. */
 
     /* Already existing directories and files: */
     RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE(".")), 0755, 0), VERR_ALREADY_EXISTS);
     RTTESTI_CHECK_RC(RTDirCreate(InEmptyDir(RT_STR_TUPLE("..")), 0755, 0), VERR_ALREADY_EXISTS);
+
+    RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE("known-file"))), VERR_NOT_A_DIRECTORY);
+    RTTESTI_CHECK_RC(RTDirRemove(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR))), VERR_NOT_A_DIRECTORY);
 
     /* Remove directory with subdirectories: */
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
@@ -1437,8 +1440,8 @@ void fsPerfMkRmDir(void)
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     int rc = RTDirRemove(InDir(RT_STR_TUPLE("..")));
 # ifdef RT_OS_WINDOWS
-    if (rc != VERR_DIR_NOT_EMPTY /*ntfs root*/ && rc != VERR_SHARING_VIOLATION /*ntfs weird*/)
-        RTTestIFailed("RTDirRemove(%s) -> %Rrc, expected VERR_DIR_NOT_EMPTY or VERR_SHARING_VIOLATION",  g_szDir, rc);
+    if (rc != VERR_DIR_NOT_EMPTY /*ntfs root*/ && rc != VERR_SHARING_VIOLATION /*ntfs weird*/ && rc != VERR_ACCESS_DENIED /*fat32 root*/)
+        RTTestIFailed("RTDirRemove(%s) -> %Rrc, expected VERR_DIR_NOT_EMPTY, VERR_SHARING_VIOLATION or VERR_ACCESS_DENIED",  g_szDir, rc);
 # else
     if (rc != VERR_DIR_NOT_EMPTY && rc != VERR_RESOURCE_BUSY /*IPRT/kLIBC fun*/)
         RTTestIFailed("RTDirRemove(%s) -> %Rrc, expected VERR_DIR_NOT_EMPTY or VERR_RESOURCE_BUSY",  g_szDir, rc);
@@ -1545,8 +1548,18 @@ void fsPerfRm(void)
 
     /* Non-existing files. */
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("no-such-file"))), VERR_FILE_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("no-such-file" RTPATH_SLASH_STR))), VERR_FILE_NOT_FOUND);
     RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file"))), FSPERF_VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTFileDelete(InEmptyDir(RT_STR_TUPLE("no-such-dir" RTPATH_SLASH_STR "no-such-file" RTPATH_SLASH_STR))), FSPERF_VERR_PATH_NOT_FOUND);
     RTTESTI_CHECK_RC(RTFileDelete(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file"))), VERR_PATH_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTFileDelete(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR "no-such-file" RTPATH_SLASH_STR))), VERR_PATH_NOT_FOUND);
+
+    /* Existing file but specified as if it was a directory: */
+#if defined(RT_OS_WINDOWS)
+    RTTESTI_CHECK_RC(RTFileDelete(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR ))), VERR_INVALID_NAME);
+#else
+    RTTESTI_CHECK_RC(RTFileDelete(InDir(RT_STR_TUPLE("known-file" RTPATH_SLASH_STR))), VERR_NOT_A_FILE); //??
+#endif
 
     /* Directories: */
 #if defined(RT_OS_WINDOWS)
