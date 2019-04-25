@@ -61,13 +61,13 @@ public:
 
     /* API: Medium-access stuff: */
     QList<QUuid> mediumIDs() const;
-    UIMedium medium(const QUuid &uMediumID);
-    void createMedium(const UIMedium &medium);
+    UIMedium medium(const QUuid &uMediumID) const;
+    void createMedium(const UIMedium &guiMedium);
     void deleteMedium(const QUuid &uMediumID);
 
     /* API: Medium-enumeration stuff: */
     bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
-    void enumerateMedia(const CMediumVector &mediaList = CMediumVector());
+    void enumerateMedia(const CMediumVector &inputMedia = CMediumVector());
     void refreshMedia();
 
 private slots:
@@ -88,22 +88,32 @@ private:
     virtual void retranslateUi() /* override */;
 
     /* Helpers: Medium-enumeration stuff: */
-    void createMediumEnumerationTask(const UIMedium &medium);
-    void addNullMediumToMap(UIMediumMap &media);
+    void createMediumEnumerationTask(const UIMedium &guiMedium);
+    void addNullMediumToMap(UIMediumMap &outputMedia);
     void addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia);
 
     /* Helpers: Medium re-caching stuff: */
-    void calculateCachedUsage(const QUuid &uMachineID, QList<QUuid> &previousUIMediumIDs, const bool fTakeIntoAccountCurrentStateOnly) const;
-    void calculateActualUsage(const QUuid &uMachineID, CMediumMap &currentCMediums, QList<QUuid> &currentCMediumIDs, const bool fTakeIntoAccountCurrentStateOnly) const;
-    void calculateActualUsage(const CSnapshot &snapshot, CMediumMap &currentCMediums, QList<QUuid> &currentCMediumIDs) const;
-    void calculateActualUsage(const CMachine &machine, CMediumMap &currentCMediums, QList<QUuid> &currentCMediumIDs) const;
+    void calculateCachedUsage(const QUuid &uMachineID,
+                              QList<QUuid> &previousUIMediumIDs,
+                              const bool fTakeIntoAccountCurrentStateOnly) const;
+    void calculateActualUsage(const QUuid &uMachineID,
+                              CMediumMap &currentCMediums,
+                              QList<QUuid> &currentCMediumIDs,
+                              const bool fTakeIntoAccountCurrentStateOnly) const;
+    void calculateActualUsage(const CSnapshot &comSnapshot,
+                              CMediumMap &currentCMediums,
+                              QList<QUuid> &currentCMediumIDs) const;
+    void calculateActualUsage(const CMachine &comMachine,
+                              CMediumMap &currentCMediums,
+                              QList<QUuid> &currentCMediumIDs) const;
     void recacheFromCachedUsage(const QList<QUuid> &previousUIMediumIDs);
-    void recacheFromActualUsage(const CMediumMap &currentCMediums, const QList<QUuid> &currentCMediumIDs);
+    void recacheFromActualUsage(const CMediumMap &currentCMediums,
+                                const QList<QUuid> &currentCMediumIDs);
 
     /* Variables: */
-    bool m_fMediumEnumerationInProgress;
-    QSet<UITask*> m_tasks;
-    UIMediumMap m_media;
+    bool  m_fMediumEnumerationInProgress;
+    QSet<UITask*>  m_tasks;
+    UIMediumMap  m_media;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIMediumEnumerator_h */
