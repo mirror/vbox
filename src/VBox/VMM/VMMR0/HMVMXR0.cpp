@@ -1255,7 +1255,7 @@ static void hmR0VmxPageFree(PRTR0MEMOBJ pMemObj, PRTR0PTR ppVirt, PRTHCPHYS pHCP
  */
 static void hmR0VmxInitVmcsInfo(PVMXVMCSINFO pVmcsInfo)
 {
-    RT_ZERO(*pVmcsInfo);
+    memset(pVmcsInfo, 0, sizeof(*pVmcsInfo));
 
     Assert(pVmcsInfo->hMemObjVmcs          == NIL_RTR0MEMOBJ);
     Assert(pVmcsInfo->hMemObjMsrBitmap     == NIL_RTR0MEMOBJ);
@@ -1550,6 +1550,7 @@ DECLINLINE(bool) hmR0VmxIsMsrBitSet(const void *pvMsrBitmap, uint16_t offMsr, in
  *                          include both a read -and- a write permission!
  *
  * @sa      HMGetVmxMsrPermission.
+ * @remarks Can be called with interrupts disabled.
  */
 static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstGstVmcs, uint32_t idMsr, uint32_t fMsrpm)
 {
@@ -1643,28 +1644,26 @@ static int hmR0VmxSetAutoLoadStoreMsrCount(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
 {
     /* Shouldn't ever happen but there -is- a number. We're well within the recommended 512. */
     uint32_t const cMaxSupportedMsrs = VMX_MISC_MAX_MSRS(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.u64Misc);
-    if (RT_UNLIKELY(cMsrs >= cMaxSupportedMsrs))
+    if (RT_LIKELY(cMsrs < cMaxSupportedMsrs))
     {
-        LogRel(("Auto-load/store MSR count exceeded! cMsrs=%u Supported=%u.\n", cMsrs, cMaxSupportedMsrs));
-        pVCpu->hm.s.u32HMError = VMX_UFC_INSUFFICIENT_GUEST_MSR_STORAGE;
-        return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
+        /* Commit the MSR counts to the VMCS and update the cache. */
+        if (pVmcsInfo->cEntryMsrLoad != cMsrs)
+        {
+            int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, cMsrs);
+            rc    |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, cMsrs);
+            rc    |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,  cMsrs);
+            AssertRCReturn(rc, rc);
+
+            pVmcsInfo->cEntryMsrLoad = cMsrs;
+            pVmcsInfo->cExitMsrStore = cMsrs;
+            pVmcsInfo->cExitMsrLoad  = cMsrs;
+        }
+        return VINF_SUCCESS;
     }
 
-    /* Commit the MSR counts to the VMCS and update the cache. */
-    int rc = VINF_SUCCESS;
-    if (pVmcsInfo->cEntryMsrLoad != cMsrs)
-        rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, cMsrs);
-    if (pVmcsInfo->cExitMsrStore != cMsrs)
-        rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, cMsrs);
-    if (pVmcsInfo->cExitMsrLoad != cMsrs)
-        rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,  cMsrs);
-    AssertRCReturn(rc, rc);
-
-    pVmcsInfo->cEntryMsrLoad = cMsrs;
-    pVmcsInfo->cExitMsrStore = cMsrs;
-    pVmcsInfo->cExitMsrLoad  = cMsrs;
-
-    return VINF_SUCCESS;
+    LogRel(("Auto-load/store MSR count exceeded! cMsrs=%u MaxSupported=%u\n", cMsrs, cMaxSupportedMsrs));
+    pVCpu->hm.s.u32HMError = VMX_UFC_INSUFFICIENT_GUEST_MSR_STORAGE;
+    return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
 }
 
 
@@ -1698,15 +1697,14 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient,
     /* Check if the MSR already exists in the VM-entry MSR-load area. */
     for (i = 0; i < cMsrs; i++)
     {
-        if (pGuestMsrLoad->u32Msr == idMsr)
+        if (pGuestMsrLoad[i].u32Msr == idMsr)
             break;
-        pGuestMsrLoad++;
     }
 
     bool fAdded = false;
     if (i == cMsrs)
     {
-        /* The MSR does not exist, bump the MSR coun to make room for the new MSR. */
+        /* The MSR does not exist, bump the MSR count to make room for the new MSR. */
         ++cMsrs;
         int rc = hmR0VmxSetAutoLoadStoreMsrCount(pVCpu, pVmcsInfo, cMsrs);
         AssertMsgRCReturn(rc, ("Insufficient space to add MSR to VM-entry MSR-load/store area %u\n", idMsr), rc);
@@ -1720,23 +1718,22 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient,
     }
 
     /* Update the MSR value for the newly added or already existing MSR. */
-    pGuestMsrLoad->u32Msr   = idMsr;
-    pGuestMsrLoad->u64Value = uGuestMsrValue;
+    pGuestMsrLoad[i].u32Msr   = idMsr;
+    pGuestMsrLoad[i].u64Value = uGuestMsrValue;
 
     /* Create the corresponding slot in the VM-exit MSR-store area if we use a different page. */
     if (hmR0VmxIsSeparateExitMsrStoreAreaVmcs(pVmcsInfo))
     {
         PVMXAUTOMSR pGuestMsrStore = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
-        pGuestMsrStore += i;
-        pGuestMsrStore->u32Msr   = idMsr;
-        pGuestMsrStore->u64Value = 0;
+        pGuestMsrStore[i].u32Msr   = idMsr;
+        pGuestMsrStore[i].u64Value = uGuestMsrValue;
     }
 
     /* Update the corresponding slot in the host MSR area. */
     PVMXAUTOMSR pHostMsr = (PVMXAUTOMSR)pVmcsInfo->pvHostMsrLoad;
-    Assert(pHostMsr != pVmcsInfo->pvGuestMsrLoad && pHostMsr != pVmcsInfo->pvGuestMsrStore);
-    pHostMsr += i;
-    pHostMsr->u32Msr = idMsr;
+    Assert(pHostMsr != pVmcsInfo->pvGuestMsrLoad);
+    Assert(pHostMsr != pVmcsInfo->pvGuestMsrStore);
+    pHostMsr[i].u32Msr = idMsr;
 
     /*
      * Only if the caller requests to update the host MSR value AND we've newly added the
@@ -1750,7 +1747,7 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient,
     {
         Assert(!VMMRZCallRing3IsEnabled(pVCpu));
         Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-        pHostMsr->u64Value = ASMRdMsr(pHostMsr->u32Msr);
+        pHostMsr[i].u64Value = ASMRdMsr(idMsr);
     }
     return VINF_SUCCESS;
 }
@@ -1772,52 +1769,44 @@ static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
     PVMXAUTOMSR  pGuestMsrLoad = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrLoad;
     uint32_t     cMsrs         = pVmcsInfo->cEntryMsrLoad;
 
-    bool const fSeparateExitMsrStorePage = hmR0VmxIsSeparateExitMsrStoreAreaVmcs(pVmcsInfo);
     for (uint32_t i = 0; i < cMsrs; i++)
     {
         /* Find the MSR. */
-        if (pGuestMsrLoad->u32Msr == idMsr)
+        if (pGuestMsrLoad[i].u32Msr == idMsr)
         {
-            /* If it's the last MSR, simply reduce the count. */
-            if (i == cMsrs - 1)
+            /*
+             * If it's the last MSR, we only need to reduce the MSR count.
+             * If it's -not- the last MSR, copy the last MSR in place of it and reduce the MSR count.
+             */
+            if (i < cMsrs - 1)
             {
-                --cMsrs;
-                break;
+                /* Remove it from the VM-entry MSR-load area. */
+                pGuestMsrLoad[i].u32Msr   = pGuestMsrLoad[cMsrs - 1].u32Msr;
+                pGuestMsrLoad[i].u64Value = pGuestMsrLoad[cMsrs - 1].u64Value;
+
+                /* Remove it from the VM-exit MSR-store area if it's in a different page. */
+                if (hmR0VmxIsSeparateExitMsrStoreAreaVmcs(pVmcsInfo))
+                {
+                    PVMXAUTOMSR pGuestMsrStore = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
+                    Assert(pGuestMsrStore[i].u32Msr == idMsr);
+                    pGuestMsrStore[i].u32Msr   = pGuestMsrStore[cMsrs - 1].u32Msr;
+                    pGuestMsrStore[i].u64Value = pGuestMsrStore[cMsrs - 1].u64Value;
+                }
+
+                /* Remove it from the VM-exit MSR-load area. */
+                PVMXAUTOMSR pHostMsr = (PVMXAUTOMSR)pVmcsInfo->pvHostMsrLoad;
+                Assert(pHostMsr[i].u32Msr == idMsr);
+                pHostMsr[i].u32Msr   = pHostMsr[cMsrs - 1].u32Msr;
+                pHostMsr[i].u64Value = pHostMsr[cMsrs - 1].u64Value;
             }
 
-            /* Remove it by copying the last MSR in place of it, and reducing the count. */
-            PVMXAUTOMSR pLastGuestMsrLoad = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrLoad;
-            pLastGuestMsrLoad            += cMsrs - 1;
-            pGuestMsrLoad->u32Msr         = pLastGuestMsrLoad->u32Msr;
-            pGuestMsrLoad->u64Value       = pLastGuestMsrLoad->u64Value;
-
-            /* Remove it from the VM-exit MSR-store area if we are using a different page. */
-            if (fSeparateExitMsrStorePage)
-            {
-                PVMXAUTOMSR pGuestMsrStore     = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
-                PVMXAUTOMSR pLastGuestMsrStore = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
-                pGuestMsrStore                += i;
-                pLastGuestMsrStore            += cMsrs - 1;
-                Assert(pGuestMsrStore->u32Msr == idMsr);
-                pGuestMsrStore->u32Msr         = pLastGuestMsrStore->u32Msr;
-                pGuestMsrStore->u64Value       = pLastGuestMsrStore->u64Value;
-            }
-
-            /* Remove it from the VM-exit MSR-load area. */
-            PVMXAUTOMSR pHostMsr      = (PVMXAUTOMSR)pVmcsInfo->pvHostMsrLoad;
-            PVMXAUTOMSR pLastHostMsr  = (PVMXAUTOMSR)pVmcsInfo->pvHostMsrLoad;
-            pHostMsr                 += i;
-            pLastHostMsr             += cMsrs - 1;
-            Assert(pHostMsr->u32Msr == idMsr);
-            pHostMsr->u32Msr          = pLastHostMsr->u32Msr;
-            pHostMsr->u64Value        = pLastHostMsr->u64Value;
+            /* Reduce the count to reflect the removed MSR and bail. */
             --cMsrs;
             break;
         }
-        pGuestMsrLoad++;
     }
 
-    /* Update the VMCS if the count changed (meaning the MSR was found). */
+    /* Update the VMCS if the count changed (meaning the MSR was found and removed). */
     if (cMsrs != pVmcsInfo->cEntryMsrLoad)
     {
         int rc = hmR0VmxSetAutoLoadStoreMsrCount(pVCpu, pVmcsInfo, cMsrs);
@@ -1844,13 +1833,14 @@ static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
  */
 static bool hmR0VmxIsAutoLoadGuestMsr(PCVMXVMCSINFO pVmcsInfo, uint32_t idMsr)
 {
-    PCVMXAUTOMSR   pGuestMsrLoad = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrLoad;
-    uint32_t const cMsrs         = pVmcsInfo->cEntryMsrLoad;
+    PCVMXAUTOMSR   pMsrs = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrLoad;
+    uint32_t const cMsrs = pVmcsInfo->cEntryMsrLoad;
+    Assert(pMsrs);
+    Assert(sizeof(*pMsrs) * cMsrs <= X86_PAGE_4K_SIZE);
     for (uint32_t i = 0; i < cMsrs; i++)
     {
-        if (pGuestMsrLoad->u32Msr == idMsr)
+        if (pMsrs[i].u32Msr == idMsr)
             return true;
-        pGuestMsrLoad++;
     }
     return false;
 }
@@ -1866,22 +1856,22 @@ static bool hmR0VmxIsAutoLoadGuestMsr(PCVMXVMCSINFO pVmcsInfo, uint32_t idMsr)
  */
 static void hmR0VmxUpdateAutoLoadHostMsrs(PCVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
     PVMXAUTOMSR pHostMsrLoad = (PVMXAUTOMSR)pVmcsInfo->pvHostMsrLoad;
     uint32_t const cMsrs     = pVmcsInfo->cExitMsrLoad;
-
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(pHostMsrLoad);
-
-    for (uint32_t i = 0; i < cMsrs; i++, pHostMsrLoad++)
+    Assert(sizeof(*pHostMsrLoad) * cMsrs <= X86_PAGE_4K_SIZE);
+    for (uint32_t i = 0; i < cMsrs; i++)
     {
         /*
          * Performance hack for the host EFER MSR. We use the cached value rather than re-read it.
          * Strict builds will catch mismatches in hmR0VmxCheckAutoLoadStoreMsrs(). See @bugref{7368}.
          */
-        if (pHostMsrLoad->u32Msr == MSR_K6_EFER)
-            pHostMsrLoad->u64Value = pVCpu->CTX_SUFF(pVM)->hm.s.vmx.u64HostMsrEfer;
+        if (pHostMsrLoad[i].u32Msr == MSR_K6_EFER)
+            pHostMsrLoad[i].u64Value = pVCpu->CTX_SUFF(pVM)->hm.s.vmx.u64HostMsrEfer;
         else
-            pHostMsrLoad->u64Value = ASMRdMsr(pHostMsrLoad->u32Msr);
+            pHostMsrLoad[i].u64Value = ASMRdMsr(pHostMsrLoad[i].u32Msr);
     }
 }
 
@@ -2148,23 +2138,26 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    /* Verify MSR counts in the VMCS are what we think it should be.  */
-    uint32_t cMsrs;
-    int rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, &cMsrs);
-    AssertRC(rc);
-    Assert(cMsrs == pVmcsInfo->cEntryMsrLoad);
+    /* Read the various MSR-area counts from the VMCS. */
+    uint32_t cEntryLoadMsrs;
+    uint32_t cExitStoreMsrs;
+    uint32_t cExitLoadMsrs;
+    int rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, &cEntryLoadMsrs);  AssertRC(rc);
+    rc     = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, &cExitStoreMsrs);  AssertRC(rc);
+    rc     = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,  &cExitLoadMsrs);   AssertRC(rc);
 
-    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, &cMsrs);
-    AssertRC(rc);
-    Assert(cMsrs == pVmcsInfo->cExitMsrStore);
-
-    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT, &cMsrs);
-    AssertRC(rc);
-    Assert(cMsrs == pVmcsInfo->cExitMsrLoad);
+    /* Verify all the MSR counts are the same. */
+    Assert(cEntryLoadMsrs == cExitStoreMsrs);
+    Assert(cExitStoreMsrs == cExitLoadMsrs);
+    uint32_t const cMsrs = cExitLoadMsrs;
 
     /* Verify the MSR counts do not exceed the maximum count supported by the hardware. */
     Assert(cMsrs < VMX_MISC_MAX_MSRS(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.u64Misc));
 
+    /* Verify the MSR counts are within the allocated page size. */
+    Assert(sizeof(VMXAUTOMSR) * cMsrs <= X86_PAGE_4K_SIZE);
+
+    /* Verify the relevant contents of the MSR areas match. */
     PCVMXAUTOMSR pGuestMsrLoad  = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrLoad;
     PCVMXAUTOMSR pGuestMsrStore = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
     PCVMXAUTOMSR pHostMsrLoad   = (PCVMXAUTOMSR)pVmcsInfo->pvHostMsrLoad;
@@ -2191,7 +2184,7 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
         /* Verify that the accesses are as expected in the MSR bitmap for auto-load/store MSRs. */
         if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
         {
-            uint32_t fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, pGuestMsrLoad->u32Msr);
+            uint32_t const fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, pGuestMsrLoad->u32Msr);
             if (pGuestMsrLoad->u32Msr == MSR_K6_EFER)
             {
                 AssertMsgReturnVoid((fMsrpm & VMXMSRPM_EXIT_RD), ("Passthru read for EFER MSR!?\n"));
@@ -2826,7 +2819,7 @@ DECLINLINE(int) hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(PVMCPU pVCpu, PVMXVMCSINFO
 
     int rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL, HCPhysGuestMsrLoad);
     rc    |= VMXWriteVmcs64(VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL, HCPhysGuestMsrStore);
-    rc    |= VMXWriteVmcs64(VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL, HCPhysHostMsrLoad);
+    rc    |= VMXWriteVmcs64(VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL,  HCPhysHostMsrLoad);
     AssertRCReturn(rc, rc);
     return VINF_SUCCESS;
 }
@@ -7481,30 +7474,31 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
 #endif
                 )
             {
-                PCVMXAUTOMSR   pMsr  = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
+                PCVMXAUTOMSR   pMsrs = (PCVMXAUTOMSR)pVmcsInfo->pvGuestMsrStore;
                 uint32_t const cMsrs = pVmcsInfo->cExitMsrStore;
-                Assert(cMsrs == 0 || pMsr != NULL);
+                Assert(pMsrs);
                 Assert(cMsrs <= VMX_MISC_MAX_MSRS(pVM->hm.s.vmx.Msrs.u64Misc));
-                for (uint32_t i = 0; i < cMsrs; i++, pMsr++)
+                Assert(sizeof(*pMsrs) * cMsrs <= X86_PAGE_4K_SIZE);
+                for (uint32_t i = 0; i < cMsrs; i++)
                 {
-                    switch (pMsr->u32Msr)
+                    uint32_t const idMsr = pMsrs[i].u32Msr;
+                    switch (idMsr)
                     {
+                        case MSR_K8_TSC_AUX:        CPUMSetGuestTscAux(pVCpu, pMsrs[i].u64Value);     break;
+                        case MSR_IA32_SPEC_CTRL:    CPUMSetGuestSpecCtrl(pVCpu, pMsrs[i].u64Value);   break;
+                        case MSR_K6_EFER:           /* Can't be changed without causing a VM-exit */  break;
 #if HC_ARCH_BITS == 32
-                        case MSR_K8_LSTAR:          pCtx->msrLSTAR        = pMsr->u64Value;          break;
-                        case MSR_K6_STAR:           pCtx->msrSTAR         = pMsr->u64Value;          break;
-                        case MSR_K8_SF_MASK:        pCtx->msrSFMASK       = pMsr->u64Value;          break;
-                        case MSR_K8_KERNEL_GS_BASE: pCtx->msrKERNELGSBASE = pMsr->u64Value;          break;
+                        case MSR_K8_LSTAR:          pCtx->msrLSTAR        = pMsrs[i].u64Value;        break;
+                        case MSR_K6_STAR:           pCtx->msrSTAR         = pMsrs[i].u64Value;        break;
+                        case MSR_K8_SF_MASK:        pCtx->msrSFMASK       = pMsrs[i].u64Value;        break;
+                        case MSR_K8_KERNEL_GS_BASE: pCtx->msrKERNELGSBASE = pMsrs[i].u64Value;        break;
 #endif
-                        case MSR_IA32_SPEC_CTRL:    CPUMSetGuestSpecCtrl(pVCpu, pMsr->u64Value);     break;
-                        case MSR_K8_TSC_AUX:        CPUMSetGuestTscAux(pVCpu, pMsr->u64Value);       break;
-                        case MSR_K6_EFER:           /* Can't be changed without causing a VM-exit */ break;
-
                         default:
                         {
-                            pVCpu->hm.s.u32HMError = pMsr->u32Msr;
+                            pCtx->fExtrn = 0;
+                            pVCpu->hm.s.u32HMError = pMsrs->u32Msr;
                             ASMSetFlags(fEFlags);
-                            AssertMsgFailed(("Unexpected MSR in auto-load/store area. idMsr=%#RX32 cMsrs=%u\n", pMsr->u32Msr,
-                                             cMsrs));
+                            AssertMsgFailed(("Unexpected MSR in auto-load/store area. idMsr=%#RX32 cMsrs=%u\n", idMsr, cMsrs));
                             return VERR_HM_UNEXPECTED_LD_ST_MSR;
                         }
                     }
