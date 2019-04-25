@@ -114,20 +114,21 @@ bool UIWizardNewVM::createVM()
          * 1. if we don't attach any virtual hard-drive
          * 2. or attach a new (empty) one.
          * Usually we are assigning extra-data values through UIExtraDataManager,
-         * but in that special case VM was not registered yet, so UIExtraDataManager is unaware of it. */
+         * but in that special case VM was not registered yet, so UIExtraDataManager is unaware of it: */
         if (field("virtualDiskId").toString().isNull() || !field("virtualDisk").value<CMedium>().isNull())
             m_machine.SetExtraData(GUI_FirstRun, "yes");
     }
 
-#if 1
-    /* Configure the newly created vm here in GUI by several calls to API. */
+#if 0
+    /* Configure the newly created vm here in GUI by several calls to API: */
     configureVM(strTypeId, type);
 #else
-    /* The newer and less tested way of configuring vms. */
+    /* The newer and less tested way of configuring vms: */
     m_machine.ApplyDefaults(QString());
-    /* Check (and correct if need be) RAM size. IMachine::applyDefaults may have overwritten the user setting. */
-    if (m_machine.GetMemorySize() != field("ram").toUInt())
-        m_machine.SetMemorySize(field("ram").toUInt());
+    /* correct the RAM size. IMachine::applyDefaults may have overwritten the user setting: */
+    m_machine.SetMemorySize(field("ram").toUInt());
+    /* Correct the VRAM size since API does not take fullscreen memory requirements into account: */
+    m_machine.SetVRAMSize(qMax(m_machine.GetVRAMSize(), (ULONG)(VBoxGlobal::requiredVideoMemory(strTypeId) / _1M)));
 #endif
 
     /* Register the VM prior to attaching hard disks: */
@@ -169,7 +170,7 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
     bool fOhciEnabled = false;
     if (!usbDeviceFilters.isNull() && comGuestType.GetRecommendedUSB3() && m_machine.GetUSBProxyAvailable())
     {
-        /* USB 3.0 is only available if the proper ExtPack is installed. */
+        /* USB 3.0 is only available if the proper ExtPack is installed: */
         CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
         if (manager.IsExtPackUsable(GUI_ExtPackName))
         {
