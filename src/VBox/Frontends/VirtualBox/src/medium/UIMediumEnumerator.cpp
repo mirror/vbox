@@ -19,16 +19,16 @@
 #include <QSet>
 
 /* GUI includes: */
+#include "VBoxGlobal.h"
 #include "UIMediumEnumerator.h"
 #include "UIThreadPool.h"
 #include "UIVirtualBoxEventHandler.h"
-#include "VBoxGlobal.h"
 
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMachine.h"
-#include "CSnapshot.h"
 #include "CMediumAttachment.h"
+#include "CSnapshot.h"
 
 
 template<class T> static QStringList toStringList(const QList<T> &list)
@@ -199,6 +199,13 @@ void UIMediumEnumerator::refreshMedia()
     /* Refresh all known media we have: */
     foreach (const QUuid &uMediumID, m_media.keys())
         m_media[uMediumID].refresh();
+}
+
+void UIMediumEnumerator::retranslateUi()
+{
+    /* Translating NULL UIMedium by recreating it: */
+    if (m_media.contains(UIMedium::nullID()))
+        m_media[UIMedium::nullID()] = UIMedium();
 }
 
 void UIMediumEnumerator::sltHandleMachineUpdate(const QUuid &uMachineID)
@@ -372,13 +379,6 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
         m_fMediumEnumerationInProgress = false;
         emit sigMediumEnumerationFinished();
     }
-}
-
-void UIMediumEnumerator::retranslateUi()
-{
-    /* Translating NULL uimedium by recreating it: */
-    if (m_media.contains(UIMedium::nullID()))
-        m_media[UIMedium::nullID()] = UIMedium();
 }
 
 void UIMediumEnumerator::createMediumEnumerationTask(const UIMedium &guiMedium)
