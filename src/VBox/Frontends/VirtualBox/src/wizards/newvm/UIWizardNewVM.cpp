@@ -126,8 +126,8 @@ bool UIWizardNewVM::createVM()
     /* The newer and less tested way of configuring vms. */
     m_machine.ApplyDefaults(QString());
     /* Check (and correct if need be) RAM size. IMachine::applyDefaults may have overwritten the user setting. */
-    if (m_machine.GetMemorySize() != field("ram").toInt())
-        m_machine.SetMemorySize(field("ram").toInt());
+    if (m_machine.GetMemorySize() != field("ram").toUInt())
+        m_machine.SetMemorySize(field("ram").toUInt());
 #endif
 
     /* Register the VM prior to attaching hard disks: */
