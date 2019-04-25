@@ -187,6 +187,10 @@ NTSTATUS VBoxErrorToNTStatus(int vrc)
             Status = STATUS_NOT_SUPPORTED;
             break;
 
+        case VERR_INVALID_NAME:
+            Status = STATUS_OBJECT_NAME_INVALID;
+            break;
+
         default:
             /** @todo error handling */
             Status = STATUS_INVALID_PARAMETER;
@@ -408,14 +412,14 @@ NTSTATUS vbsfShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *
     NTSTATUS Status = STATUS_SUCCESS;
 
     PSHFLSTRING pShflString;
-    ULONG ulShflStringSize;
+    ULONG cbShflString;
 
     /* Calculate length required for the SHFL structure: header + chars + nul. */
-    ulShflStringSize = SHFLSTRING_HEADER_SIZE + cb + sizeof(WCHAR);
-    pShflString = (PSHFLSTRING)vbsfAllocNonPagedMem(ulShflStringSize);
+    cbShflString = SHFLSTRING_HEADER_SIZE + cb + sizeof(WCHAR);
+    pShflString = (PSHFLSTRING)vbsfAllocNonPagedMem(cbShflString);
     if (pShflString)
     {
-        if (ShflStringInitBuffer(pShflString, ulShflStringSize))
+        if (ShflStringInitBuffer(pShflString, cbShflString))
         {
             if (pwc)
             {
@@ -427,6 +431,7 @@ NTSTATUS vbsfShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *
             }
             else
             {
+                /** @todo r=bird: vbsfAllocNonPagedMem already zero'ed it...   */
                 RtlZeroMemory(pShflString->String.ucs2, cb + sizeof(WCHAR));
                 pShflString->u16Length = 0; /* without terminating null */
                 AssertMsg(pShflString->u16Size >= sizeof(WCHAR),

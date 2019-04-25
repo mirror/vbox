@@ -397,6 +397,71 @@ static NTSTATUS VBoxMRXDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     return Status;
 }
 
+/**
+ * Intercepts IRP_MJ_CREATE to workaround a RDBSS quirk.
+ *
+ * Our RDBSS library will return STATUS_OBJECT_NAME_INVALID when FILE_NON_DIRECTORY_FILE
+ * is set and the path ends with a slash.  NTFS and FAT will fail with
+ * STATUS_OBJECT_NAME_NOT_FOUND if the final component does not exist or isn't a directory,
+ * STATUS_OBJECT_PATH_NOT_FOUND if some path component doesn't exist or isn't a directory,
+ * or STATUS_ACCESS_DENIED if the final component is a directory.
+ *
+ * So, our HACK is to drop the trailing slash and set an unused flag in the ShareAccess
+ * parameter to tell vbsfProcessCreate about it.
+ *
+ */
+static NTSTATUS VBoxHookMjCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+{
+    PMRX_VBOX_DEVICE_EXTENSION  pDevExt  = (PMRX_VBOX_DEVICE_EXTENSION)((PBYTE)pDevObj + sizeof(RDBSS_DEVICE_OBJECT));
+    PIO_STACK_LOCATION          pStack   = IoGetCurrentIrpStackLocation(pIrp);
+    PFILE_OBJECT                pFileObj = pStack->FileObject;
+    NTSTATUS                    rcNt;
+
+    Log(("VBOXSF: VBoxHookMjCreate: pDevObj %p, pDevExt %p, pFileObj %p, options %#x, attr %#x, share %#x, ealength %#x, secctx %p\n",
+         pDevObj, pDevObj->DeviceExtension, pFileObj, pStack->Parameters.Create.Options, pStack->Parameters.Create.FileAttributes,
+         pStack->Parameters.Create.ShareAccess, pStack->Parameters.Create.EaLength, pStack->Parameters.Create.SecurityContext));
+    if (pFileObj)
+        Log(("VBOXSF: VBoxHookMjCreate: FileName=%.*ls\n", pFileObj->FileName.Length / sizeof(WCHAR), pFileObj->FileName.Buffer));
+
+    /*
+     * Check if we need to apply the hack.  If we do, we grab a reference to
+     * the file object to be absolutely sure it's around for the cleanup work.
+     */
+    AssertMsg(!(pStack->Parameters.Create.ShareAccess & VBOX_MJ_CREATE_SLASH_HACK), ("%#x\n", pStack->Parameters.Create.ShareAccess));
+    if (   (pStack->Parameters.Create.Options & (FILE_NON_DIRECTORY_FILE | FILE_DIRECTORY_FILE)) == FILE_NON_DIRECTORY_FILE
+        && pFileObj
+        && pFileObj->FileName.Length > 18
+        && pFileObj->FileName.Buffer
+        && pFileObj->FileName.Buffer[pFileObj->FileName.Length / sizeof(WCHAR) - 1] == '\\'
+        && pFileObj->FileName.Buffer[pFileObj->FileName.Length / sizeof(WCHAR) - 2] != '\\')
+    {
+        NTSTATUS rcNtRef = ObReferenceObjectByPointer(pFileObj, (ACCESS_MASK)0, *IoFileObjectType, KernelMode);
+        pFileObj->FileName.Length -= 2;
+        pStack->Parameters.Create.ShareAccess |= VBOX_MJ_CREATE_SLASH_HACK; /* secret flag for vbsfProcessCreate */
+
+        rcNt = pDevExt->pfnRDBSSCreate(pDevObj, pIrp);
+
+        if (rcNt != STATUS_PENDING)
+            pStack->Parameters.Create.ShareAccess &= ~VBOX_MJ_CREATE_SLASH_HACK;
+        if (NT_SUCCESS(rcNtRef))
+        {
+            pFileObj->FileName.Length += 2;
+            ObDereferenceObject(pFileObj);
+        }
+
+        Log(("VBOXSF: VBoxHookMjCreate: returns %#x (hacked; rcNtRef=%#x)\n", rcNt, rcNtRef));
+    }
+    /*
+     * No hack needed.
+     */
+    else
+    {
+        rcNt = pDevExt->pfnRDBSSCreate(pDevObj, pIrp);
+        Log(("VBOXSF: VBoxHookMjCreate: returns %#x\n", rcNt));
+    }
+    return rcNt;
+}
+
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
                      IN PUNICODE_STRING RegistryPath)
 {
@@ -541,6 +606,13 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
          VBoxMRxDeviceObject, DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL], pDeviceExtension));
     pDeviceExtension->pfnRDBSSDeviceControl = DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL];
     DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = VBoxMRXDeviceControl;
+
+    /* Intercept IRP_MJ_CREATE to fix incorrect (wrt NTFS, FAT, ++) return
+     * codes for NtOpenFile("r:\\asdf\\", FILE_NON_DIRECTORY_FILE).
+     */
+    pDeviceExtension->pfnRDBSSCreate = DriverObject->MajorFunction[IRP_MJ_CREATE];
+    DriverObject->MajorFunction[IRP_MJ_CREATE] = VBoxHookMjCreate;
+
 
     /** @todo start the redirector here RxStartMiniRdr. */
 

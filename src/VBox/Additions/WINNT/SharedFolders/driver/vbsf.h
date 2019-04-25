@@ -69,8 +69,10 @@ typedef struct _MRX_VBOX_DEVICE_EXTENSION
     /* The HGCM client information. */
     VBGLSFCLIENT hgcmClient;
 
-    /* Saved pointer to the original IRP_MJ_DEVICE_CONTROL handler. */
+    /** Saved pointer to the original IRP_MJ_DEVICE_CONTROL handler. */
     NTSTATUS (* pfnRDBSSDeviceControl) (PDEVICE_OBJECT pDevObj, PIRP pIrp);
+    /** Saved pointer to the original IRP_MJ_CREATE handler. */
+    NTSTATUS (NTAPI * pfnRDBSSCreate)(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 
 } MRX_VBOX_DEVICE_EXTENSION, *PMRX_VBOX_DEVICE_EXTENSION;
 
@@ -119,6 +121,11 @@ typedef struct _MRX_VBOX_FOBX_
 
 #define VBoxMRxGetFileObjectExtension(pFobx)  \
         (((pFobx) == NULL) ? NULL : (PMRX_VBOX_FOBX)((pFobx)->Context))
+
+/** HACK ALERT: Special Create.ShareAccess indicating trailing slash for
+ * non-directory IRP_MJ_CREATE request.
+ * Set by VBoxHookMjCreate, used by VBoxMRxCreate. */
+#define VBOX_MJ_CREATE_SLASH_HACK   UINT16_C(0x0400)
 
 /*
  * Prototypes for the dispatch table routines.

@@ -48,6 +48,7 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
         ULONG NonDirectoryFile :1;
         ULONG DeleteOnClose :1;
         ULONG TemporaryFile :1;
+        ULONG SlashHack :1;
     } bf;
 
     ACCESS_MASK DesiredAccess;
@@ -111,8 +112,11 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
     if (FlagOn(capFcb->FcbState, FCB_STATE_TEMPORARY))
         bf.TemporaryFile = TRUE;
 
-    Log(("VBOXSF: vbsfProcessCreate: bf.TemporaryFile %d, bf.CreateDirectory %d, bf.DirectoryFile = %d\n",
-         (ULONG)bf.TemporaryFile, (ULONG)bf.CreateDirectory, (ULONG)bf.DirectoryFile));
+    bf.SlashHack = RxContext->CurrentIrpSp
+                && (RxContext->CurrentIrpSp->Parameters.Create.ShareAccess & VBOX_MJ_CREATE_SLASH_HACK);
+
+    Log(("VBOXSF: vbsfProcessCreate: bf.TemporaryFile %d, bf.CreateDirectory %d, bf.DirectoryFile = %d, bf.SlashHack = %d\n",
+         bf.TemporaryFile, bf.CreateDirectory, bf.DirectoryFile, bf.SlashHack));
 
     /* Check consistency in specified flags. */
     if (bf.TemporaryFile && bf.CreateDirectory) /* Directories with temporary flag set are not allowed! */
@@ -124,6 +128,7 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
 
     if (bf.DirectoryFile && bf.NonDirectoryFile)
     {
+        /** @todo r=bird: Check if FILE_DIRECTORY_FILE+FILE_NON_DIRECTORY_FILE really is illegal in all combinations... */
         Log(("VBOXSF: vbsfProcessCreate: Unsupported combination: dir && !dir\n"));
         Status = STATUS_INVALID_PARAMETER;
         goto failure;
@@ -251,10 +256,23 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
         PSHFLSTRING ParsedPath;
         Log(("VBOXSF: vbsfProcessCreate: RemainingName->Length = %d\n", RemainingName->Length));
 
-        Status = vbsfShflStringFromUnicodeAlloc(&ParsedPath, RemainingName->Buffer, RemainingName->Length);
-        if (Status != STATUS_SUCCESS)
+
+        if (!bf.SlashHack)
         {
-            goto failure;
+            Status = vbsfShflStringFromUnicodeAlloc(&ParsedPath, RemainingName->Buffer, RemainingName->Length);
+            if (Status != STATUS_SUCCESS)
+                goto failure;
+        }
+        else
+        {
+            /* Add back the slash we had to hide from RDBSS. */
+            Status = vbsfShflStringFromUnicodeAlloc(&ParsedPath, NULL, RemainingName->Length + sizeof(RTUTF16));
+            if (Status != STATUS_SUCCESS)
+                goto failure;
+            memcpy(ParsedPath->String.utf16, RemainingName->Buffer, RemainingName->Length);
+            ParsedPath->String.utf16[RemainingName->Length / sizeof(RTUTF16)] = '\\';
+            ParsedPath->String.utf16[RemainingName->Length / sizeof(RTUTF16) + 1] = '\0';
+            ParsedPath->u16Length = RemainingName->Length + sizeof(RTUTF16);
         }
 
         Log(("VBOXSF: ParsedPath: %.*ls\n",
