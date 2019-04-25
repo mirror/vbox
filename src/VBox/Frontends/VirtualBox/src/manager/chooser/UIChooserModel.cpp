@@ -636,7 +636,10 @@ void UIChooserModel::sltMachineRegistered(const QUuid &uId, const bool fRegister
 
         /* Make sure selected-item present, if possible: */
         if (!firstSelectedItem() && !navigationItems().isEmpty())
+        {
             setSelectedItem(navigationItems().first());
+            emit sigSelectionInvalidated();
+        }
         /* Make sure current-item present, if possible: */
         else if (!currentItem() && firstSelectedItem())
             setCurrentItem(firstSelectedItem());
@@ -686,7 +689,10 @@ void UIChooserModel::sltReloadMachine(const QUuid &uId)
     {
         /* Make sure at least one item selected after that: */
         if (!firstSelectedItem() && !navigationItems().isEmpty())
+        {
             setSelectedItem(navigationItems().first());
+            emit sigSelectionInvalidated();
+        }
     }
 
     /* Notify listeners about selection change: */
@@ -811,9 +817,6 @@ void UIChooserModel::sltUngroupSelectedGroup()
     /* Delete current group: */
     delete pCurrentNode;
 
-    /* Notify about selection invalidated: */
-    emit sigSelectionInvalidated();
-
     /* And update model: */
     updateNavigationItemList();
     updateLayout();
@@ -823,7 +826,10 @@ void UIChooserModel::sltUngroupSelectedGroup()
         setCurrentItem(firstSelectedItem());
     }
     else
+    {
         setSelectedItem(navigationItems().first());
+        emit sigSelectionInvalidated();
+    }
     saveGroupSettings();
 }
 
@@ -1266,7 +1272,10 @@ void UIChooserModel::loadLastSelectedItem()
     /* Load last selected-item (choose first if unable to load): */
     setSelectedItem(gEDataManager->selectorWindowLastItemChosen());
     if (!firstSelectedItem() && !navigationItems().isEmpty())
+    {
         setSelectedItem(navigationItems().first());
+        emit sigSelectionInvalidated();
+    }
 }
 
 void UIChooserModel::saveLastSelectedItem()
@@ -1484,7 +1493,10 @@ void UIChooserModel::removeItems(const QList<UIChooserItem*> &itemsToRemove)
     updateNavigationItemList();
     updateLayout();
     if (!navigationItems().isEmpty())
+    {
         setSelectedItem(navigationItems().first());
+        emit sigSelectionInvalidated();
+    }
     else
         clearSelectedItems();
     saveGroupSettings();
