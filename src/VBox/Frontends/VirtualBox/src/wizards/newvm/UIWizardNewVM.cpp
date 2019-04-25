@@ -119,12 +119,25 @@ bool UIWizardNewVM::createVM()
             m_machine.SetExtraData(GUI_FirstRun, "yes");
     }
 
-    if (configureVM(strTypeId, type))
-        return attachDefaultDevices(type);
-    return false;
+#if 1
+    /* Configure the newly created vm here in GUI by several calls to API. */
+    configureVM(strTypeId, type);
+#else
+    /* The newer and less tested way of configuring vms. */
+    m_machine.ApplyDefaults(QString());
+#endif
+
+    /* Register the VM prior to attaching hard disks: */
+    vbox.RegisterMachine(m_machine);
+    if (!vbox.isOk())
+    {
+        msgCenter().cannotRegisterMachine(vbox, m_machine.GetName(), this);
+        return false;
+    }
+    return attachDefaultDevices(type);
 }
 
-bool UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
+void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType)
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
@@ -261,15 +274,6 @@ bool UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
 
     if (comGuestType.GetRecommended3DAcceleration())
         m_machine.SetAccelerate3DEnabled(comGuestType.GetRecommended3DAcceleration());
-
-    /* Register the VM prior to attaching hard disks: */
-    vbox.RegisterMachine(m_machine);
-    if (!vbox.isOk())
-    {
-        msgCenter().cannotRegisterMachine(vbox, m_machine.GetName(), this);
-        return false;
-    }
-    return true;
 }
 
 bool UIWizardNewVM::attachDefaultDevices(const CGuestOSType &comGuestType)

@@ -63,7 +63,7 @@ protected:
     /* Creates a new VM: */
     bool createVM();
     /* Configures the newly created VM: */
-    bool configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType);
+    void configureVM(const QString &strGuestTypeId, const CGuestOSType &comGuestType);
     /* Attaches default devices: */
     bool attachDefaultDevices(const CGuestOSType &comGuestType);
 
