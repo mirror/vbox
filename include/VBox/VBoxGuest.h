@@ -377,7 +377,7 @@ AssertCompileSize(VBGLIOCHGCMDISCONNECT, 24 + 4);
  * @note Size is not encoded in the I/O control code.
  * @{
  */
-#define VBGL_IOCTL_IDC_HGCM_FAST_CALL               VBGL_IOCTL_CODE_SIZE(62, sizeof(VBGLIOCIDCHGCMFASTCALL))
+#define VBGL_IOCTL_IDC_HGCM_FAST_CALL               VBGL_IOCTL_CODE_SIZE(61, sizeof(VBGLIOCIDCHGCMFASTCALL))
 #define VBGL_IOCTL_IDC_HGCM_FAST_CALL_SIZE(a_cb)    (a_cb)
 #define VBGL_IOCTL_IDC_HGCM_FAST_CALL_SIZE_IN(a_cb) (a_cb)
 #define VBGL_IOCTL_IDC_HGCM_FAST_CALL_SIZE_OUT(a_cb) (a_cb)
