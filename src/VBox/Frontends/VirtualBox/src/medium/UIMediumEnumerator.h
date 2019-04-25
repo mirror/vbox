@@ -34,24 +34,28 @@
 class UITask;
 class UIThreadPool;
 
-/* Typedefs: */
+/** A map of CMedium objects ordered by their IDs. */
 typedef QMap<QUuid, CMedium> CMediumMap;
 
-/* Medium-enumerator prototype.
- * Manages access to medium information using thread-pool interface. */
+/** QObject extension operating as medium-enumeration object.
+  * Manages access to cached UIMedium information via public API.
+  * Updates cache on corresponding Main events using thread-pool interface. */
 class SHARED_LIBRARY_STUFF UIMediumEnumerator : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
 signals:
 
-    /* Notifiers: Medium-operations stuff: */
+    /** Notifies listeners about UIMedium with @a uMediumID created. */
     void sigMediumCreated(const QUuid &uMediumID);
+    /** Notifies listeners about UIMedium with @a uMediumID deleted. */
     void sigMediumDeleted(const QUuid &uMediumID);
 
-    /* Notifiers: Medium-enumeration stuff: */
+    /** Notifies listeners about consolidated medium-enumeration process has started. */
     void sigMediumEnumerationStarted();
+    /** Notifies listeners about UIMedium with @a uMediumID updated. */
     void sigMediumEnumerated(const QUuid &uMediumID);
+    /** Notifies listeners about consolidated medium-enumeration process has finished. */
     void sigMediumEnumerationFinished();
 
 public:
@@ -59,15 +63,25 @@ public:
     /** Constructs medium-enumerator object. */
     UIMediumEnumerator();
 
-    /* API: Medium-access stuff: */
+    /** Returns cached UIMedium ID list. */
     QList<QUuid> mediumIDs() const;
+    /** Returns a wrapper of cached UIMedium with specified @a uMediumID. */
     UIMedium medium(const QUuid &uMediumID) const;
+
+    /** Creates UIMedium thus caching it internally on the basis of passed @a guiMedium information. */
     void createMedium(const UIMedium &guiMedium);
+    /** Deletes UIMedium with specified @a uMediumID thus removing it from internal cache. */
     void deleteMedium(const QUuid &uMediumID);
 
-    /* API: Medium-enumeration stuff: */
+    /** Returns whether consolidated medium-enumeration process is in progress. */
     bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
+    /** Makes a request to enumerate specified @a inputMedia.
+      * @note  Empty list means that full/overall medium-enumeration is requested. */
     void enumerateMedia(const CMediumVector &inputMedia = CMediumVector());
+    /** Refresh all the lightweight UIMedium information for all the cached UIMedium(s).
+      * @note  Please note that this is a lightweight version, which doesn't perform
+      *        heavy state/accessibility checks thus doesn't require to be performed
+      *        by a worker COM-aware thread. */
     void refreshMedia();
 
 protected:
@@ -77,44 +91,69 @@ protected:
 
 private slots:
 
-    /** Handles machine-data-change and snapshot-change events. */
+    /** Handles machine-data-change and snapshot-change events for a machine with specified @a uMachineID. */
     void sltHandleMachineUpdate(const QUuid &uMachineID);
-    /** Handles machine-[un]registration events. */
+    /** Handles machine-[un]registration events for a machine with specified @a uMachineID.
+      * @param  fRegistered  Specifies whether the machine was registered or unregistered otherwise. */
     void sltHandleMachineRegistration(const QUuid &uMachineID, const bool fRegistered);
-    /** Handles snapshot-deleted events. */
+    /** Handles snapshot-deleted events for a machine with specified @a uMachineID and a snapshot with specified @a uSnapshotID. */
     void sltHandleSnapshotDeleted(const QUuid &uMachineID, const QUuid &uSnapshotID);
 
-    /* Handler: Medium-enumeration stuff: */
+    /** Handles medium-enumeration @a pTask complete signal. */
     void sltHandleMediumEnumerationTaskComplete(UITask *pTask);
 
 private:
 
-    /* Helpers: Medium-enumeration stuff: */
+    /** Creates medium-enumeration task for certain @a guiMedium. */
     void createMediumEnumerationTask(const UIMedium &guiMedium);
+    /** Adds NULL UIMedium to specified @a outputMedia map. */
     void addNullMediumToMap(UIMediumMap &outputMedia);
+    /** Adds @a inputMedia to specified @a outputMedia map. */
     void addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia);
 
-    /* Helpers: Medium re-caching stuff: */
+    /** Updates usage for machine with specified @a uMachineID on the basis of cached data.
+      * @param  previousUIMediumIDs               Brings UIMedium IDs used in cached data.
+      * @param  fTakeIntoAccountCurrentStateOnly  Brings whether we should take into accound current VM state only. */
     void calculateCachedUsage(const QUuid &uMachineID,
                               QList<QUuid> &previousUIMediumIDs,
                               const bool fTakeIntoAccountCurrentStateOnly) const;
+    /** Updates usage for machine with specified @a uMachineID on the basis of actual data.
+      * @param  currentCMediums                   Brings CMedium used in actual data.
+      * @param  currentCMediumIDs                 Brings CMedium IDs used in actual data.
+      * @param  fTakeIntoAccountCurrentStateOnly  Brings whether we should take into accound current VM state only. */
     void calculateActualUsage(const QUuid &uMachineID,
                               CMediumMap &currentCMediums,
                               QList<QUuid> &currentCMediumIDs,
                               const bool fTakeIntoAccountCurrentStateOnly) const;
+    /** Updates usage for machine specified by its @a comSnapshot reference on the basis of actual data.
+      * @param  currentCMediums                   Brings CMedium used in actual data.
+      * @param  currentCMediumIDs                 Brings CMedium IDs used in actual data. */
     void calculateActualUsage(const CSnapshot &comSnapshot,
                               CMediumMap &currentCMediums,
                               QList<QUuid> &currentCMediumIDs) const;
+    /** Updates usage for machine specified by own @a comMachine reference on the basis of actual data.
+      * @param  currentCMediums                   Brings CMedium used in actual data.
+      * @param  currentCMediumIDs                 Brings CMedium IDs used in actual data. */
     void calculateActualUsage(const CMachine &comMachine,
                               CMediumMap &currentCMediums,
                               QList<QUuid> &currentCMediumIDs) const;
+
+    /** Updates cache using known changes in cached data.
+      * @param  previousUIMediumIDs               Brings UIMedium IDs used in cached data. */
     void recacheFromCachedUsage(const QList<QUuid> &previousUIMediumIDs);
+    /** Updates cache using known changes in actual data.
+      * @param  currentCMediums                   Brings CMedium used in actual data.
+      * @param  currentCMediumIDs                 Brings CMedium IDs used in actual data. */
     void recacheFromActualUsage(const CMediumMap &currentCMediums,
                                 const QList<QUuid> &currentCMediumIDs);
 
-    /* Variables: */
+    /** Holds whether consolidated medium-enumeration process is in progress. */
     bool  m_fMediumEnumerationInProgress;
+
+    /** Holds a set of current medium-enumeration tasks. */
     QSet<UITask*>  m_tasks;
+
+    /** Holds a map of current cached (enumerated) media. */
     UIMediumMap  m_media;
 };
 

@@ -31,6 +31,9 @@
 #include "CSnapshot.h"
 
 
+/** Template function to convert a list of
+  * abstract objects to a human readable string list.
+  * @note T should have .toString() member implemented. */
 template<class T> static QStringList toStringList(const QList<T> &list)
 {
     QStringList l;
@@ -40,27 +43,35 @@ template<class T> static QStringList toStringList(const QList<T> &list)
 }
 
 
-/** UITask extension used for medium enumeration purposes. */
+/** UITask extension used for medium-enumeration purposes.
+  * @note Indeed property/setProperty API isn't thread-safe stuff.
+  *       This isn't dangerous for us since setter/getter API calls
+  *       are splitted in time by enumerator's logic, but latest Qt
+  *       versions prohibits property/setProperty API usage from
+  *       other than the GUI thread anyway so we will have to rework
+  *       that stuff to be thread-safe one day at least for Qt >= 5.11. */
 class UITaskMediumEnumeration : public UITask
 {
     Q_OBJECT;
 
 public:
 
-    /** Constructs @a medium enumeration task. */
+    /** Constructs @a medium-enumeration task. */
     UITaskMediumEnumeration(const UIMedium &medium)
         : UITask(UITask::Type_MediumEnumeration)
     {
         /* Store medium as property: */
+        /// @todo rework to thread-safe stuff one day
         setProperty("medium", QVariant::fromValue(medium));
     }
 
 private:
 
-    /** Contains medium enumeration task body. */
+    /** Contains medium-enumeration task body. */
     virtual void run() /* override */
     {
         /* Get medium: */
+        /// @todo rework to thread-safe stuff one day
         UIMedium guiMedium = property("medium").value<UIMedium>();
         /* Enumerate it: */
         guiMedium.blockAndQueryState();
@@ -69,6 +80,10 @@ private:
     }
 };
 
+
+/*********************************************************************************************************************************
+*   Class UIMediumEnumerator implementation.                                                                                     *
+*********************************************************************************************************************************/
 
 UIMediumEnumerator::UIMediumEnumerator()
     : m_fMediumEnumerationInProgress(false)
@@ -90,37 +105,38 @@ UIMediumEnumerator::UIMediumEnumerator()
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
             this, &UIMediumEnumerator::sltHandleMachineRegistration);
 
-    /* Listen for global thread-pool: */
+    /* Prepare global thread-pool listener: */
     connect(vboxGlobal().threadPool(), &UIThreadPool::sigTaskComplete,
             this, &UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete);
 }
 
 QList<QUuid> UIMediumEnumerator::mediumIDs() const
 {
-    /* Return keys of current medium-map: */
+    /* Return keys of current media map: */
     return m_media.keys();
 }
 
 UIMedium UIMediumEnumerator::medium(const QUuid &uMediumID) const
 {
-    /* Search through current medium-map for the medium with passed ID: */
+    /* Search through current media map
+     * for the UIMedium with passed ID: */
     if (m_media.contains(uMediumID))
         return m_media.value(uMediumID);
-    /* Return NULL medium otherwise: */
+    /* Return NULL UIMedium otherwise: */
     return UIMedium();
 }
 
 void UIMediumEnumerator::createMedium(const UIMedium &guiMedium)
 {
-    /* Get medium ID: */
+    /* Get UIMedium ID: */
     const QUuid uMediumID = guiMedium.id();
 
     /* Do not create UIMedium(s) with incorrect ID: */
     AssertReturnVoid(!uMediumID.isNull());
-    /* Make sure medium doesn't exists already: */
+    /* Make sure UIMedium doesn't exist already: */
     AssertReturnVoid(!m_media.contains(uMediumID));
 
-    /* Insert medium: */
+    /* Insert UIMedium: */
     m_media[uMediumID] = guiMedium;
     LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} created\n", uMediumID.toString().toUtf8().constData()));
 
@@ -132,10 +148,10 @@ void UIMediumEnumerator::deleteMedium(const QUuid &uMediumID)
 {
     /* Do not delete UIMedium(s) with incorrect ID: */
     AssertReturnVoid(!uMediumID.isNull());
-    /* Make sure medium still exists: */
+    /* Make sure UIMedium still exists: */
     AssertReturnVoid(m_media.contains(uMediumID));
 
-    /* Remove medium: */
+    /* Remove UIMedium: */
     m_media.remove(uMediumID);
     LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} deleted\n", uMediumID.toString().toUtf8().constData()));
 
@@ -148,11 +164,16 @@ void UIMediumEnumerator::enumerateMedia(const CMediumVector &inputMedia /* = CMe
     /* Make sure we are not already in progress: */
     AssertReturnVoid(!m_fMediumEnumerationInProgress);
 
-    /* Compose new map of all currently known media & their children.
-     * While composing we are using data from already existing media. */
+    /* Compose new map of currently cached media & their children.
+     * While composing we are using data from already cached media. */
     UIMediumMap media;
     addNullMediumToMap(media);
-    /* If @p mediaList is empty we start the media enumeration with all known media: */
+    /* If @p inputMedia is empty we start the media enumeration with all
+     * known hard disk media. Otherwise only passed inputMedia will be
+     * enumerated. But be aware we will enumerate all the optical/floppy
+     * media in any case to make them listed within the first run wizard
+     * for now. But I think later we can add proper enumeration call to
+     * the wizard instead and enumerate only inputMedia in 'else' case. */
     if (inputMedia.isEmpty())
     {
         addMediaToMap(vboxGlobal().virtualBox().GetHardDisks(), media);
@@ -167,8 +188,12 @@ void UIMediumEnumerator::enumerateMedia(const CMediumVector &inputMedia /* = CMe
         addMediaToMap(vboxGlobal().virtualBox().GetDVDImages(), media);
         addMediaToMap(inputMedia, media);
     }
+
+    /* VBoxGlobal is cleaning up, abort immediately: */
     if (VBoxGlobal::isCleaningUp())
-        return; /* VBoxGlobal is cleaning up, abort immediately. */
+        return;
+
+    /* Remember new media map: */
     m_media = media;
 
     /* Notify listener: */
@@ -176,7 +201,7 @@ void UIMediumEnumerator::enumerateMedia(const CMediumVector &inputMedia /* = CMe
     m_fMediumEnumerationInProgress = true;
     emit sigMediumEnumerationStarted();
 
-    /* Make sure we really have more than one medium (which is Null): */
+    /* Make sure we really have more than one UIMedium (which is NULL): */
     if (m_media.size() == 1)
     {
         /* Notify listener: */
@@ -185,7 +210,7 @@ void UIMediumEnumerator::enumerateMedia(const CMediumVector &inputMedia /* = CMe
         emit sigMediumEnumerationFinished();
     }
 
-    /* Start enumeration for UIMedium(s) with correct ID: */
+    /* Start enumeration for media with non-NULL ID: */
     foreach (const QUuid &uMediumID, m_media.keys())
         if (!uMediumID.isNull())
             createMediumEnumerationTask(m_media[uMediumID]);
@@ -196,7 +221,7 @@ void UIMediumEnumerator::refreshMedia()
     /* Make sure we are not already in progress: */
     AssertReturnVoid(!m_fMediumEnumerationInProgress);
 
-    /* Refresh all known media we have: */
+    /* Refresh all cached media we have: */
     foreach (const QUuid &uMediumID, m_media.keys())
         m_media[uMediumID].refresh();
 }
@@ -336,7 +361,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     /* UIMedium ID was changed to nullID: */
     if (uMediumID == UIMedium::nullID())
     {
-        /* Delete this medium: */
+        /* Delete this UIMedium: */
         m_media.remove(uMediumKey);
         LogRel2(("GUI: UIMediumEnumerator: Medium with key={%s} closed and deleted (after enumeration)\n",
                  uMediumKey.toString().toUtf8().constData()));
@@ -347,7 +372,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     /* UIMedium ID was changed to something proper: */
     else if (uMediumID != uMediumKey)
     {
-        /* We have to reinject enumerated medium: */
+        /* We have to reinject enumerated UIMedium: */
         m_media.remove(uMediumKey);
         m_media[uMediumID] = guiMedium;
         m_media[uMediumID].setKey(uMediumID);
@@ -362,7 +387,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     /* UIMedium ID was not changed: */
     else
     {
-        /* Just update enumerated medium: */
+        /* Just update enumerated UIMedium: */
         m_media[uMediumID] = guiMedium;
         LogRel2(("GUI: UIMediumEnumerator: Medium with key={%s} updated\n",
                  uMediumID.toString().toUtf8().constData()));
@@ -393,7 +418,7 @@ void UIMediumEnumerator::createMediumEnumerationTask(const UIMedium &guiMedium)
 
 void UIMediumEnumerator::addNullMediumToMap(UIMediumMap &media)
 {
-    /* Insert NULL uimedium to the passed uimedium map.
+    /* Insert NULL UIMedium to the passed media map.
      * Get existing one from the previous map if any. */
     const UIMedium guiMedium = m_media.contains(UIMedium::nullID())
                              ? m_media[UIMedium::nullID()]
@@ -403,38 +428,32 @@ void UIMediumEnumerator::addNullMediumToMap(UIMediumMap &media)
 
 void UIMediumEnumerator::addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia)
 {
-    /* Insert hard-disks to the passed uimedium map.
-     * Get existing one from the previous map if any. */
+    /* Iterate through passed inputMedia vector: */
     foreach (const CMedium &comMedium, inputMedia)
     {
         /* If VBoxGlobal is cleaning up, abort immediately: */
         if (VBoxGlobal::isCleaningUp())
             break;
 
-        /* Prepare uimedium on the basis of current medium: */
+        /* Insert UIMedium to the passed media map.
+         * Get existing one from the previous map if any.
+         * Create on the basis of comMedium otherwise. */
         const QUuid uMediumID = comMedium.GetId();
         const UIMedium guiMedium = m_media.contains(uMediumID)
                                  ? m_media.value(uMediumID)
                                  : UIMedium(comMedium, UIMediumDefs::mediumTypeToLocal(comMedium.GetDeviceType()));
-        /* Insert uimedium into map: */
         outputMedia.insert(guiMedium.id(), guiMedium);
 
-        /* Insert medium children into map too: */
+        /* Insert comMedium children into map as well: */
         addMediaToMap(comMedium.GetChildren(), outputMedia);
     }
 }
 
-/**
- * Calculates last known UIMedium <i>usage</i> based on cached data.
- * @param uMachineID describes the machine we are calculating <i>usage</i> for.
- * @param previousUIMediumIDs receives UIMedium IDs used in cached data.
- * @param fTakeIntoAccountCurrentStateOnly defines whether we should take into accound current VM state only.
- */
 void UIMediumEnumerator::calculateCachedUsage(const QUuid &uMachineID,
                                               QList<QUuid> &previousUIMediumIDs,
                                               const bool fTakeIntoAccountCurrentStateOnly) const
 {
-    /* For each the UIMedium ID cache have: */
+    /* For each the cached UIMedium we have: */
     foreach (const QUuid &uUIMediumID, mediumIDs())
     {
         /* Get corresponding UIMedium: */
@@ -450,13 +469,6 @@ void UIMediumEnumerator::calculateCachedUsage(const QUuid &uMachineID,
     }
 }
 
-/**
- * Calculates new CMedium <i>usage</i> based on actual data.
- * @param uMachineID describes the machine we are calculating <i>usage</i> for.
- * @param currentCMediums receives CMedium used in actual data.
- * @param currentCMediumIDs receives CMedium IDs used in actual data.
- * @param fTakeIntoAccountCurrentStateOnly defines whether we should take into accound current VM state only.
- */
 void UIMediumEnumerator::calculateActualUsage(const QUuid &uMachineID,
                                               CMediumMap &currentCMediums,
                                               QList<QUuid> &currentCMediumIDs,
@@ -478,12 +490,6 @@ void UIMediumEnumerator::calculateActualUsage(const QUuid &uMachineID,
     calculateActualUsage(comMachine, currentCMediums, currentCMediumIDs);
 }
 
-/**
- * Calculates new CMedium <i>usage</i> based on actual data.
- * @param snapshot is reference we are calculating <i>usage</i> for.
- * @param currentCMediums receives CMedium used in actual data.
- * @param currentCMediumIDs receives CMedium IDs used in actual data.
- */
 void UIMediumEnumerator::calculateActualUsage(const CSnapshot &comSnapshot,
                                               CMediumMap &currentCMediums,
                                               QList<QUuid> &currentCMediumIDs) const
@@ -500,12 +506,6 @@ void UIMediumEnumerator::calculateActualUsage(const CSnapshot &comSnapshot,
         calculateActualUsage(comChildSnapshot, currentCMediums, currentCMediumIDs);
 }
 
-/**
- * Calculates new CMedium <i>usage</i> based on actual data.
- * @param machine is reference we are calculating <i>usage</i> for.
- * @param currentCMediums receives CMedium used in actual data.
- * @param currentCMediumIDs receives CMedium IDs used in actual data.
- */
 void UIMediumEnumerator::calculateActualUsage(const CMachine &comMachine,
                                               CMediumMap &currentCMediums,
                                               QList<QUuid> &currentCMediumIDs) const
@@ -532,10 +532,6 @@ void UIMediumEnumerator::calculateActualUsage(const CMachine &comMachine,
     }
 }
 
-/**
- * Updates cache using known changes in cached data.
- * @param previousUIMediumIDs reflects UIMedium IDs used in cached data.
- */
 void UIMediumEnumerator::recacheFromCachedUsage(const QList<QUuid> &previousUIMediumIDs)
 {
     /* For each of previously used UIMedium ID: */
@@ -571,11 +567,6 @@ void UIMediumEnumerator::recacheFromCachedUsage(const QList<QUuid> &previousUIMe
     }
 }
 
-/**
- * Updates cache using known changes in actual data.
- * @param currentCMediums reflects CMedium used in actual data.
- * @param currentCMediumIDs reflects CMedium IDs used in actual data.
- */
 void UIMediumEnumerator::recacheFromActualUsage(const CMediumMap &currentCMediums,
                                                 const QList<QUuid> &currentCMediumIDs)
 {
