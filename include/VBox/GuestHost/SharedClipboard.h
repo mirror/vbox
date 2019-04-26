@@ -41,6 +41,10 @@
 #define VBOX_SHARED_CLIPBOARD_FMT_BITMAP        UINT32_C(0x02)
 /** Shared Clipboard format is HTML. */
 #define VBOX_SHARED_CLIPBOARD_FMT_HTML          UINT32_C(0x04)
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+/** Shared Clipboard format is an URI list. */
+#define VBOX_SHARED_CLIPBOARD_FMT_URI_LIST      UINT32_C(0x08)
+#endif
 
 /**
  * The host messages for the guest.

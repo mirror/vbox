@@ -40,15 +40,6 @@ VBoxClient_SOURCES = \
 	hostversion.cpp \
 	check3d.cpp
 
-ifdef VBOX_WITH_SHARED_CLIPBOARD
- VBoxClient_DEFS += \
-	VBOX_WITH_SHARED_CLIPBOARD
- VBoxClient_SOURCES += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
-	clipboard.cpp
-endif
-
 VBoxClient_SOURCES.linux = \
 	chk_stubs.c
 VBoxClient_LIBPATH = \
@@ -90,6 +81,7 @@ endif
 ifdef VBOX_WITH_GUEST_PROPS
 VBoxClient_DEFS += VBOX_WITH_GUEST_PROPS
 endif
+
 ifdef VBOX_WITH_DRAG_AND_DROP
 VBoxClient_DEFS += \
 	VBOX_WITH_DRAG_AND_DROP \
@@ -99,6 +91,38 @@ VBoxClient_SOURCES += \
 VBoxClient_LIBS     += \
 	$(VBOX_LIB_VBGL_R3) \
 	$(PATH_STAGE_LIB)/additions/VBoxDnDGuestR3Lib$(VBOX_SUFF_LIB)
+endif
+
+ifdef VBOX_WITH_SHARED_CLIPBOARD
+ VBoxClient_DEFS += \
+	VBOX_WITH_SHARED_CLIPBOARD \
+	$(if $(VBOX_WITH_SHARED_CLIPBOARD_URI_LIST),VBOX_WITH_SHARED_CLIPBOARD_URI_LIST,)
+ VBoxClient_SOURCES += \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
+	clipboard.cpp
+ ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+  ifdef VBOX_WITH_LIBFUSE
+   VBoxClient_SOURCES += \
+	clipboard-fuse.cpp
+   VBoxClient_LIBS += \
+	libfuse
+  endif
+  ifdef VBOX_WITH_LIBGVFS
+  VBoxClient_SOURCES += \
+	clipboard-gvfs.c
+  VBOX_VBOXCLIENT_GVFS_VER:=1.31.92
+  VBoxClient_INCS += \
+ 	gvfs-$(VBOX_VBOXCLIENT_GVFS_VER)/common \
+	gvfs-$(VBOX_VBOXCLIENT_GVFS_VER)/client \
+	gvfs-$(VBOX_VBOXCLIENT_GVFS_VER)/daemon \
+	/usr/lib/x86_64-linux-gnu/glib-2.0/include \
+	/usr/include/glib-2.0
+  VBoxClient_LIBS += \
+	libgio-2.0 \
+	libglib-2.0
+  endif
+ endif
 endif
 
 if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)

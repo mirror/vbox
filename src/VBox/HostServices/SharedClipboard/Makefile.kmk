@@ -26,7 +26,9 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 #
 DLLS += VBoxSharedClipboard
 VBoxSharedClipboard_TEMPLATE  = VBOXR3
-VBoxSharedClipboard_DEFS      = VBOX_WITH_HGCM
+VBoxSharedClipboard_DEFS      = \
+	VBOX_WITH_HGCM \
+	$(if $(VBOX_WITH_SHARED_CLIPBOARD_URI_LIST),VBOX_WITH_SHARED_CLIPBOARD_URI_LIST,)
 VBoxSharedClipboard_INCS.win  = \
 	$(VBOX_PATH_SDK)
 

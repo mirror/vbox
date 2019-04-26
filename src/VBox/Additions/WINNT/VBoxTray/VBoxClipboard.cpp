@@ -77,7 +77,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                uint32_t uFormats;
                int vboxrc = VBoxClipboardWinGetFormats(&pCtx->Win, &uFormats);
                if (RT_SUCCESS(vboxrc))
-                   vboxrc = VbglR3ClipboardReportFormats(pCtx->u32ClientID, uFormats);
+                   vboxrc = VbglR3ClipboardWriteFormats(pCtx->u32ClientID, uFormats);
            }
         }
         break;
@@ -127,7 +127,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                uint32_t uFormats;
                int vboxrc = VBoxClipboardWinGetFormats(pWinCtx, &uFormats);
                if (RT_SUCCESS(vboxrc))
-                   vboxrc = VbglR3ClipboardReportFormats(pCtx->u32ClientID, uFormats);
+                   vboxrc = VbglR3ClipboardWriteFormats(pCtx->u32ClientID, uFormats);
            }
 
            if (pWinCtx->hWndNextInChain)
@@ -385,6 +385,10 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                        hClip = SetClipboardData(format, NULL);
                }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+               if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+                   hClip = SetClipboardData(CF_HDROP, NULL);
+#endif
                VBoxClipboardWinClose();
 
                LogFlowFunc(("VBOX_WM_SHCLPB_SET_FORMATS: hClip=%p, lastErr=%ld\n", hClip, GetLastError()));
@@ -465,7 +469,26 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                        }
                    }
                }
-
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+               else if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+               {
+                   hClip = GetClipboardData(CF_HDROP);
+                   if (hClip)
+                   {
+                       HDROP hDrop = (HDROP)GlobalLock(hClip);
+                       if (hDrop)
+                       {
+                           vboxrc = VbglR3ClipboardWriteData(pCtx->u32ClientID, VBOX_SHARED_CLIPBOARD_FMT_URI_LIST,
+                                                             );
+                           GlobalUnlock(hClip);
+                       }
+                       else
+                       {
+                           hClip = NULL;
+                       }
+                   }
+               }
+#endif
                VBoxClipboardWinClose();
            }
 

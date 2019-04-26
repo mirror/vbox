@@ -31,7 +31,12 @@
 #include <iprt/assert.h>
 #include <iprt/thread.h>
 #include <iprt/ldr.h>
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# include <iprt/utf16.h>
+#endif
+
 #include <process.h>
+#include <shlobj.h> /* Needed for shell objects. */
 
 #include "VBoxClipboard.h"
 
@@ -111,7 +116,7 @@ static void vboxClipboardGetData(uint32_t u32Format, const void *pvSrc, uint32_t
 {
     LogFlow(("vboxClipboardGetData cbSrc = %d, cbDst = %d\n", cbSrc, cbDst));
 
-    if (u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML
+    if (   u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML
         && IsWindowsHTML((const char *)pvSrc))
     {
         /** @todo r=bird: Why the double conversion? */
@@ -133,6 +138,12 @@ static void vboxClipboardGetData(uint32_t u32Format, const void *pvSrc, uint32_t
         else
             *pcbActualDst = 0;
     }
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    if (u32Format == VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+    {
+        /* Convert data to URI list. */
+    }
+#endif
     else
     {
         *pcbActualDst = cbSrc;
@@ -282,7 +293,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
             UINT format = (UINT)wParam;
 
-            Log(("WM_RENDERFORMAT %d\n", format));
+            Log(("WM_RENDERFORMAT: Format %u\n", format));
 
             switch (format)
             {
@@ -297,16 +308,17 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                 default:
                     if (format >= 0xC000)
                     {
-                        TCHAR szFormatName[256];
-
-                        int cActual = GetClipboardFormatName(format, szFormatName, sizeof(szFormatName)/sizeof (TCHAR));
-
+                        TCHAR szFormatName[256]; /** @todo r=andy Unicode, 256 is enough? */
+                        int cActual = GetClipboardFormatName(format, szFormatName, sizeof(szFormatName) / sizeof (TCHAR));
                         if (cActual)
                         {
-                            if (strcmp (szFormatName, "HTML Format") == 0)
-                            {
+                            if (RTStrCmp(szFormatName, "HTML Format") == 0)
                                 u32Format |= VBOX_SHARED_CLIPBOARD_FMT_HTML;
-                            }
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+                            if (   RTStrCmp(szFormatName, CFSTR_FILEDESCRIPTOR) == 0
+                                || RTStrCmp(szFormatName, CFSTR_FILECONTENTS) == 0)
+                                u32Format |= VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
+#endif
                         }
                     }
                     break;
@@ -320,7 +332,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             }
             else
             {
-                int vboxrc = vboxClipboardReadDataFromClient (pCtx, u32Format);
+                int vboxrc = vboxClipboardReadDataFromClient(pCtx, u32Format);
 
                 LogFunc(("vboxClipboardReadDataFromClient vboxrc = %d, pv %p, cb %d, u32Format %d\n",
                           vboxrc, pCtx->pClient->data.pv, pCtx->pClient->data.cb, pCtx->pClient->data.u32Format));
@@ -330,15 +342,15 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                     && pCtx->pClient->data.cb > 0
                     && pCtx->pClient->data.u32Format == u32Format)
                 {
-                    HANDLE hMem = GlobalAlloc (GMEM_DDESHARE | GMEM_MOVEABLE, pCtx->pClient->data.cb);
+                    HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, pCtx->pClient->data.cb);
 
                     LogFunc(("hMem %p\n", hMem));
 
                     if (hMem)
                     {
-                        void *pMem = GlobalLock (hMem);
+                        void *pMem = GlobalLock(hMem);
 
-                        LogFunc(("pMem %p, GlobalSize %d\n", pMem, GlobalSize (hMem)));
+                        LogFunc(("pMem %p, GlobalSize %d\n", pMem, GlobalSize(hMem)));
 
                         if (pMem)
                         {
@@ -346,9 +358,9 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
                             if (pCtx->pClient->data.pv)
                             {
-                                memcpy (pMem, pCtx->pClient->data.pv, pCtx->pClient->data.cb);
+                                memcpy(pMem, pCtx->pClient->data.pv, pCtx->pClient->data.cb);
 
-                                RTMemFree (pCtx->pClient->data.pv);
+                                RTMemFree(pCtx->pClient->data.pv);
                                 pCtx->pClient->data.pv        = NULL;
                             }
 
@@ -356,12 +368,12 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                             pCtx->pClient->data.u32Format = 0;
 
                             /* The memory must be unlocked before inserting to the Clipboard. */
-                            GlobalUnlock (hMem);
+                            GlobalUnlock(hMem);
 
                             /* 'hMem' contains the host clipboard data.
                              * size is 'cb' and format is 'format'.
                              */
-                            HANDLE hClip = SetClipboardData (format, hMem);
+                            HANDLE hClip = SetClipboardData(format, hMem);
 
                             LogFunc(("vboxClipboardHostEvent hClip %p\n", hClip));
 
@@ -372,11 +384,11 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                             }
                         }
 
-                        GlobalFree (hMem);
+                        GlobalFree(hMem);
                     }
                 }
 
-                RTMemFree (pCtx->pClient->data.pv);
+                RTMemFree(pCtx->pClient->data.pv);
                 pCtx->pClient->data.pv        = NULL;
                 pCtx->pClient->data.cb        = 0;
                 pCtx->pClient->data.u32Format = 0;
@@ -445,6 +457,14 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                     }
                 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+                if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+                {
+                    UINT format = RegisterClipboardFormat(CFSTR_FILEDESCRIPTOR);
+                    if (format)
+                        hClip = SetClipboardData(format, NULL);
+                }
+#endif
                 VBoxClipboardWinClose();
 
                 LogFunc(("VBOX_CLIPBOARD_WM_SET_FORMATS: hClip=%p, lastErr=%ld\n", hClip, GetLastError ()));
@@ -589,7 +609,7 @@ int vboxClipboardInit(void)
 
     g_ctx.hRenderEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-    rc = RTThreadCreate(&g_ctx.hThread, VBoxClipboardThread, NULL, 65536,
+    rc = RTThreadCreate(&g_ctx.hThread, VBoxClipboardThread, NULL, _64K /* Stack size */,
                         RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
 
     if (RT_FAILURE(rc))
@@ -787,7 +807,171 @@ int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, 
                 }
             }
         }
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+        else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+        {
+    #if 0
+            UINT format = RegisterClipboardFormat(CFSTR_FILEDESCRIPTOR);
+            if (format)
+            {
+                hClip = GetClipboardData(format);
+                if (hClip != NULL)
+                {
+                    LPVOID lp = GlobalLock(hClip);
 
+                    if (lp != NULL)
+                    {
+                        LogFunc(("CF_HTML\n"));
+
+                        vboxClipboardGetData(VBOX_SHARED_CLIPBOARD_FMT_HTML, lp, GlobalSize(hClip),
+                                             pv, cb, pcbActual);
+                        LogRelFlowFunc(("Raw HTML clipboard data from host :"));
+                        DumpHtml((char *)pv, cb);
+                        GlobalUnlock(hClip);
+                    }
+                    else
+                    {
+                        hClip = NULL;
+                    }
+                }
+            }
+    #else
+            /* Convert to a string list, separated by \r\n. */
+            DROPFILES *pDropFiles = (DROPFILES *)hClip;
+            AssertPtr(pDropFiles);
+
+            /* Do we need to do Unicode stuff? */
+            const bool fUnicode = RT_BOOL(pDropFiles->fWide);
+
+            /* Get the offset of the file list. */
+            Assert(pDropFiles->pFiles >= sizeof(DROPFILES));
+
+            /* Note: This is *not* pDropFiles->pFiles! DragQueryFile only
+             *       will work with the plain storage medium pointer! */
+            HDROP hDrop = (HDROP)(hClip);
+
+            /* First, get the file count. */
+            /** @todo Does this work on Windows 2000 / NT4? */
+            char *pszFiles = NULL;
+            uint32_t cchFiles = 0;
+            UINT cFiles = DragQueryFile(hDrop, UINT32_MAX /* iFile */, NULL /* lpszFile */, 0 /* cchFile */);
+
+            LogRel(("DnD: Got %RU16 file(s), fUnicode=%RTbool\n", cFiles, fUnicode));
+
+            for (UINT i = 0; i < cFiles; i++)
+            {
+                UINT cchFile = DragQueryFile(hDrop, i /* File index */, NULL /* Query size first */, 0 /* cchFile */);
+                Assert(cchFile);
+
+                if (RT_FAILURE(rc))
+                    break;
+
+                char *pszFileUtf8 = NULL; /* UTF-8 version. */
+                UINT cchFileUtf8 = 0;
+                if (fUnicode)
+                {
+                    /* Allocate enough space (including terminator). */
+                    WCHAR *pwszFile = (WCHAR *)RTMemAlloc((cchFile + 1) * sizeof(WCHAR));
+                    if (pwszFile)
+                    {
+                        const UINT cwcFileUtf16 = DragQueryFileW(hDrop, i /* File index */,
+                                                                 pwszFile, cchFile + 1 /* Include terminator */);
+
+                        AssertMsg(cwcFileUtf16 == cchFile, ("cchFileUtf16 (%RU16) does not match cchFile (%RU16)\n",
+                                                            cwcFileUtf16, cchFile));
+                        RT_NOREF(cwcFileUtf16);
+
+                        rc = RTUtf16ToUtf8(pwszFile, &pszFileUtf8);
+                        if (RT_SUCCESS(rc))
+                        {
+                            cchFileUtf8 = (UINT)strlen(pszFileUtf8);
+                            Assert(cchFileUtf8);
+                        }
+
+                        RTMemFree(pwszFile);
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
+                else /* ANSI */
+                {
+                    /* Allocate enough space (including terminator). */
+                    pszFileUtf8 = (char *)RTMemAlloc((cchFile + 1) * sizeof(char));
+                    if (pszFileUtf8)
+                    {
+                        cchFileUtf8 = DragQueryFileA(hDrop, i /* File index */,
+                                                     pszFileUtf8, cchFile + 1 /* Include terminator */);
+
+                        AssertMsg(cchFileUtf8 == cchFile, ("cchFileUtf8 (%RU16) does not match cchFile (%RU16)\n",
+                                                           cchFileUtf8, cchFile));
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    LogFlowFunc(("\tFile: %s (cchFile=%RU16)\n", pszFileUtf8, cchFileUtf8));
+
+                    LogRel(("DnD: Adding guest file '%s'\n", pszFileUtf8));
+
+                    rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileUtf8, cchFileUtf8);
+                    if (RT_SUCCESS(rc))
+                        cchFiles += cchFileUtf8;
+                }
+                else
+                    LogRel(("DnD: Error handling file entry #%u, rc=%Rrc\n", i, rc));
+
+                if (pszFileUtf8)
+                    RTStrFree(pszFileUtf8);
+
+                if (RT_FAILURE(rc))
+                    break;
+
+                /* Add separation between filenames.
+                 * Note: Also do this for the last element of the list. */
+                rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, "\r\n", 2 /* Bytes */);
+                if (RT_SUCCESS(rc))
+                    cchFiles += 2; /* Include \r\n */
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                cchFiles += 1; /* Add string termination. */
+                uint32_t cbFiles = cchFiles * sizeof(char);
+
+                LogFlowFunc(("cFiles=%u, cchFiles=%RU32, cbFiles=%RU32, pszFiles=0x%p\n",
+                             cFiles, cchFiles, cbFiles, pszFiles));
+
+                /* Translate the list into URI elements. */
+                DnDURIList lstURI;
+                rc = lstURI.AppendNativePathsFromList(pszFiles, cbFiles,
+                                                      DNDURILIST_FLAGS_ABSOLUTE_PATHS);
+                if (RT_SUCCESS(rc))
+                {
+                    RTCString strRoot = lstURI.GetRootEntries();
+                    size_t cbRoot = strRoot.length() + 1; /* Include termination */
+
+                    mpvData = RTMemAlloc(cbRoot);
+                    if (mpvData)
+                    {
+                        memcpy(mpvData, strRoot.c_str(), cbRoot);
+                        mcbData = cbRoot;
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
+            }
+
+            LogFlowFunc(("Building CF_HDROP list rc=%Rrc, pszFiles=0x%p, cFiles=%RU16, cchFiles=%RU32\n",
+                         rc, pszFiles, cFiles, cchFiles));
+
+            if (pszFiles)
+                RTStrFree(pszFiles);
+            break;
+    #endif /* 0 */
+        }
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
         VBoxClipboardWinClose();
     }
     else
@@ -892,8 +1076,8 @@ static bool IsWindowsHTML(const char *pszSource)
 }
 
 
-/*
- * Converts clipboard data from CF_HTML format to mimie clipboard format
+/**
+ * Converts clipboard data from CF_HTML format to MIME clipboard format.
  *
  * Returns allocated buffer that contains html converted to text/html mime type
  *

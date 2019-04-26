@@ -38,6 +38,9 @@
 
 #define VBOX_CLIPBOARD_WNDCLASS_NAME        "VBoxSharedClipboardClass"
 
+#define VBOX_CLIPBOARD_WIN_REGFMT_HTML      "VBox HTML Format"
+#define VBOX_CLIPBOARD_WIN_REGFMT_URI_LIST  "VBox URI List"
+
 /** Default timeout (in ms) for passing down messages down the clipboard chain. */
 #define VBOX_CLIPBOARD_CBCHAIN_TIMEOUT_MS   5000
 

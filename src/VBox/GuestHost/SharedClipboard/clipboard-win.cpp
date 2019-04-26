@@ -302,6 +302,11 @@ int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, uint32_t *puFormats)
                     uFormats |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
                     break;
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+                case CF_HDROP:
+                    uFormats |= VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
+                    break;
+#endif
                 default:
                 {
                     if (uCurFormat >= 0xC000) /** @todo r=andy Find a define for this. */

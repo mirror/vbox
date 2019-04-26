@@ -4119,6 +4119,13 @@ ifdef VBOX_WITH_LIBOPUS
  SDK_VBOX_OPUS_LIBS ?= $(PATH_STAGE_LIB)/VBox-libopus$(VBOX_SUFF_LIB)
 endif
 
+ifdef VBOX_WITH_LIBFUSE
+ SDK_VBOX_FUSE               = .
+ SDK_VBOX_FUSE_DEFAULT_INCS := $(PATH_ROOT)/src/libs/libfuse-2.9.8/include
+ SDK_VBOX_FUSE_INCS         ?= $(SDK_VBOX_FUSE_DEFAULT_INCS)
+ SDK_VBOX_FUSE_LIBS         ?= $(PATH_STAGE_LIB)/VBox-libfuse$(VBOX_SUFF_LIB)
+endif
+
 #
 # Special SDK for the problematic NTDLL.LIB.
 #
