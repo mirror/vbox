@@ -571,7 +571,7 @@ VBGLR3DECL(int)     VbglR3ClipboardConnect(HGCMCLIENTID *pidClient);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnect(HGCMCLIENTID idClient);
 VBGLR3DECL(int)     VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg, uint32_t *pfFormats);
 VBGLR3DECL(int)     VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
-VBGLR3DECL(int)     VbglR3ClipboardWriteFormats(HGCMCLIENTID idClient, uint32_t fFormats);
+VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 VBGLR3DECL(int)     VbglR3ClipboardSendError(HGCMCLIENTID idClient, int rcErr);

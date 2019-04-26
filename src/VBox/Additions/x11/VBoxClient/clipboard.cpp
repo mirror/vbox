@@ -151,7 +151,7 @@ void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats)
 {
     RT_NOREF1(pCtx);
     LogRelFlowFunc(("u32Formats=%d\n", u32Formats));
-    int rc = VbglR3ClipboardWriteFormats(g_ctx.client, u32Formats);
+    int rc = VbglR3ClipboardReportFormats(g_ctx.client, u32Formats);
     LogRelFlowFunc(("rc=%Rrc\n", rc));
 }
 

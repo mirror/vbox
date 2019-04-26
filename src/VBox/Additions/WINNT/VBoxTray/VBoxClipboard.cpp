@@ -77,7 +77,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                uint32_t uFormats;
                int vboxrc = VBoxClipboardWinGetFormats(&pCtx->Win, &uFormats);
                if (RT_SUCCESS(vboxrc))
-                   vboxrc = VbglR3ClipboardWriteFormats(pCtx->u32ClientID, uFormats);
+                   vboxrc = VbglR3ClipboardReportFormats(pCtx->u32ClientID, uFormats);
            }
         }
         break;
@@ -127,7 +127,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                uint32_t uFormats;
                int vboxrc = VBoxClipboardWinGetFormats(pWinCtx, &uFormats);
                if (RT_SUCCESS(vboxrc))
-                   vboxrc = VbglR3ClipboardWriteFormats(pCtx->u32ClientID, uFormats);
+                   vboxrc = VbglR3ClipboardReportFormats(pCtx->u32ClientID, uFormats);
            }
 
            if (pWinCtx->hWndNextInChain)
