@@ -635,29 +635,6 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                     break;
                 }
 #endif /* VBOX_WS_MAC */
-#ifdef VBOX_WS_MAC
-                case QEvent::Enter:
-                {
-                    /* Disable mouse event compression if we enter the VM view.
-                     * So all mouse events are registered in the VM.
-                     * Only do this if the keyboard/mouse is grabbed
-                     * (this is when we have a valid event handler): */
-                    if (machineLogic()->keyboardHandler()->isKeyboardGrabbed())
-                        darwinSetMouseCoalescingEnabled(false);
-                    break;
-                }
-#endif /* VBOX_WS_MAC */
-                case QEvent::Leave:
-#ifdef VBOX_WS_MAC
-                {
-                    /* Enable mouse event compression if we leave the VM view.
-                     * This is necessary for having smooth resizing of the VM/other windows: */
-                    ::darwinSetMouseCoalescingEnabled(true);
-
-                    /* This event should be also processed using next 'case': */
-                }
-                RT_FALL_THRU();
-#endif /* VBOX_WS_MAC */
                 case QEvent::MouseMove:
                 {
 #ifdef VBOX_WS_MAC
@@ -738,15 +715,6 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                         m_pHoveredWindow = 0;
                     }
 
-                    /* Send a pointer-out-of-range event if necessary: */
-                    if (!pHoveredWidget &&
-                        uisession()->isMouseSupportsAbsolute() &&
-                        uisession()->isMouseIntegrated())
-                    {
-                        mouse().PutMouseEventAbsolute(0x7FFFFFFF, 0x7FFFFFFF, 0, 0, 0);
-                        break;
-                    }
-
                     /* This event should be also processed using next 'case': */
                 }
                 RT_FALL_THRU();
@@ -807,6 +775,25 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                         return true;
                     break;
                 }
+#ifdef VBOX_WS_MAC
+                case QEvent::Leave:
+                {
+                    /* Enable mouse event compression if we leave the VM view.
+                     * This is necessary for having smooth resizing of the VM/other windows: */
+                    ::darwinSetMouseCoalescingEnabled(true);
+                    break;
+                }
+                case QEvent::Enter:
+                {
+                    /* Disable mouse event compression if we enter the VM view.
+                     * So all mouse events are registered in the VM.
+                     * Only do this if the keyboard/mouse is grabbed
+                     * (this is when we have a valid event handler): */
+                    if (machineLogic()->keyboardHandler()->isKeyboardGrabbed())
+                        darwinSetMouseCoalescingEnabled(false);
+                    break;
+                }
+#endif /* VBOX_WS_MAC */
 #ifdef VBOX_WS_WIN
                 case QEvent::Resize:
                 {
