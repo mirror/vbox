@@ -228,18 +228,13 @@ NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext);
 
 void     vbsfNtCopyInfoToLegacy(PMRX_VBOX_FOBX pVBoxFobx, PCSHFLFSOBJINFO pInfo);
 
-
-
 NTSTATUS vbsfNtVBoxStatusToNt(int vrc);
-
 PVOID    vbsfNtAllocNonPagedMem(ULONG ulSize);
 void     vbsfNtFreeNonPagedMem(PVOID lpMem);
-
+NTSTATUS vbsfNtShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *pwc, uint16_t cb);
 #if defined(DEBUG) || defined(LOG_ENABLED)
 const char *vbsfNtMajorFunctionName(UCHAR MajorFunction, LONG MinorFunction);
 #endif
-
-NTSTATUS vbsfNtShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *pwc, uint16_t cb);
 
 /**
  * Converts VBox (IPRT) file mode to NT file attributes.
