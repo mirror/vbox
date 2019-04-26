@@ -23,8 +23,7 @@ static UNICODE_STRING g_UnicodeBackslash = { 2, 4, L"\\" };
 
 static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
                                   PUNICODE_STRING RemainingName,
-                                  FILE_BASIC_INFORMATION *pFileBasicInfo,
-                                  FILE_STANDARD_INFORMATION *pFileStandardInfo,
+                                  SHFLFSOBJINFO *pInfo,
                                   PVOID EaBuffer,
                                   ULONG EaLength,
                                   ULONG *pulCreateAction,
@@ -428,33 +427,7 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
     }
 
     *pHandle = pCreateParms->Handle;
-
-    /* Translate attributes */
-    pFileBasicInfo->FileAttributes = VBoxToNTFileAttributes(pCreateParms->Info.Attr.fMode);
-
-    /* Translate file times */
-    pFileBasicInfo->CreationTime.QuadPart = RTTimeSpecGetNtTime(&pCreateParms->Info.BirthTime); /* ridiculous name */
-    pFileBasicInfo->LastAccessTime.QuadPart = RTTimeSpecGetNtTime(&pCreateParms->Info.AccessTime);
-    pFileBasicInfo->LastWriteTime.QuadPart = RTTimeSpecGetNtTime(&pCreateParms->Info.ModificationTime);
-    pFileBasicInfo->ChangeTime.QuadPart = RTTimeSpecGetNtTime(&pCreateParms->Info.ChangeTime);
-
-    if (!FlagOn(pCreateParms->Info.Attr.fMode, RTFS_DOS_DIRECTORY))
-    {
-        pFileStandardInfo->AllocationSize.QuadPart = pCreateParms->Info.cbAllocated;
-        pFileStandardInfo->EndOfFile.QuadPart = pCreateParms->Info.cbObject;
-        pFileStandardInfo->Directory = FALSE;
-
-        Log(("VBOXSF: vbsfProcessCreate: AllocationSize = 0x%RX64, EndOfFile = 0x%RX64\n",
-             pCreateParms->Info.cbAllocated, pCreateParms->Info.cbObject));
-    }
-    else
-    {
-        pFileStandardInfo->AllocationSize.QuadPart = 0;
-        pFileStandardInfo->EndOfFile.QuadPart = 0;
-        pFileStandardInfo->Directory = TRUE;
-    }
-    pFileStandardInfo->NumberOfLinks = 0;
-    pFileStandardInfo->DeletePending = FALSE;
+    *pInfo = pCreateParms->Info;
 
     vbsfFreeNonPagedMem(pCreateParms);
 
@@ -488,8 +461,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     PMRX_SRV_OPEN SrvOpen = RxContext->pRelevantSrvOpen;
     PUNICODE_STRING RemainingName = GET_ALREADY_PREFIXED_NAME_FROM_CONTEXT(RxContext);
 
-    FILE_BASIC_INFORMATION FileBasicInfo;
-    FILE_STANDARD_INFORMATION FileStandardInfo;
+    SHFLFSOBJINFO Info = {0};
 
     ULONG CreateAction = FILE_CREATED;
     SHFLHANDLE Handle = SHFL_HANDLE_NIL;
@@ -530,12 +502,9 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
         goto Exit;
     }
 
-    FileBasicInfo.FileAttributes = FILE_ATTRIBUTE_NORMAL;
-
     Status = vbsfProcessCreate(RxContext,
                                RemainingName,
-                               &FileBasicInfo,
-                               &FileStandardInfo,
+                               &Info,
                                RxContext->Create.EaBuffer,
                                RxContext->Create.EaLength,
                                &CreateAction,
@@ -549,7 +518,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     }
 
     Log(("VBOXSF: MRxCreate: EOF is 0x%RX64 AllocSize is 0x%RX64\n",
-         FileStandardInfo.EndOfFile.QuadPart, FileStandardInfo.AllocationSize.QuadPart));
+         Info.cbObject, Info.cbAllocated));
 
     RxContext->pFobx = RxCreateNetFobx(RxContext, SrvOpen);
     if (!RxContext->pFobx)
@@ -566,17 +535,28 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
 
     if (capFcb->OpenCount == 0)
     {
-        FCB_INIT_PACKET InitPacket;
+        FCB_INIT_PACKET               InitPacket;
+        FILE_NETWORK_OPEN_INFORMATION Data;
+        ULONG                         NumberOfLinks = 0; /** @todo ?? */
+        Data.CreationTime.QuadPart   = RTTimeSpecGetNtTime(&Info.BirthTime);
+        Data.LastAccessTime.QuadPart = RTTimeSpecGetNtTime(&Info.AccessTime);
+        Data.LastWriteTime.QuadPart  = RTTimeSpecGetNtTime(&Info.ModificationTime);
+        Data.ChangeTime.QuadPart     = RTTimeSpecGetNtTime(&Info.ChangeTime);
+        Data.AllocationSize.QuadPart = Info.cbAllocated;
+        Data.EndOfFile.QuadPart      = Info.cbObject;
+        Data.FileAttributes          = VBoxToNTFileAttributes(Info.Attr.fMode);
         RxFormInitPacket(InitPacket,
-                         &FileBasicInfo.FileAttributes,
-                         &FileStandardInfo.NumberOfLinks,
-                         &FileBasicInfo.CreationTime,
-                         &FileBasicInfo.LastAccessTime,
-                         &FileBasicInfo.LastWriteTime,
-                         &FileBasicInfo.ChangeTime,
-                         &FileStandardInfo.AllocationSize,
-                         &FileStandardInfo.EndOfFile,
-                         &FileStandardInfo.EndOfFile);
+                         &Data.FileAttributes,
+                         &NumberOfLinks,
+                         &Data.CreationTime,
+                         &Data.LastAccessTime,
+                         &Data.LastWriteTime,
+                         &Data.ChangeTime,
+                         &Data.AllocationSize,
+                         &Data.EndOfFile,
+                         &Data.EndOfFile);
+        /** @todo r=bird: Use FileTypeDirectory/RDBSS_NTC_STORAGE_TYPE_DIRECTORY here
+         *        for directories? */
         RxFinishFcbInitialization(capFcb, RDBSS_STORAGE_NTC(FileTypeFile), &InitPacket);
     }
 
@@ -597,21 +577,18 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
         goto Exit;
     }
 
-    Log(("VBOXSF: MRxCreate: FileBasicInformation: CreationTime   %RX64\n", FileBasicInfo.CreationTime.QuadPart));
-    Log(("VBOXSF: MRxCreate: FileBasicInformation: LastAccessTime %RX64\n", FileBasicInfo.LastAccessTime.QuadPart));
-    Log(("VBOXSF: MRxCreate: FileBasicInformation: LastWriteTime  %RX64\n", FileBasicInfo.LastWriteTime.QuadPart));
-    Log(("VBOXSF: MRxCreate: FileBasicInformation: ChangeTime     %RX64\n", FileBasicInfo.ChangeTime.QuadPart));
-    Log(("VBOXSF: MRxCreate: FileBasicInformation: FileAttributes %RX32\n", FileBasicInfo.FileAttributes));
-
     pVBoxFobx->hFile = Handle;
     pVBoxFobx->pSrvCall = RxContext->Create.pSrvCall;
-    pVBoxFobx->FileStandardInfo = FileStandardInfo;
-    pVBoxFobx->FileBasicInfo = FileBasicInfo;
-    pVBoxFobx->fKeepCreationTime = FALSE;
-    pVBoxFobx->fKeepLastAccessTime = FALSE;
-    pVBoxFobx->fKeepLastWriteTime = FALSE;
-    pVBoxFobx->fKeepChangeTime = FALSE;
-    pVBoxFobx->SetFileInfoOnCloseFlags = 0;
+    pVBoxFobx->Info = Info;
+    vbsfNtCopyInfoToLegacy(pVBoxFobx, &Info);
+    Log(("VBOXSF: MRxCreate: FileBasicInformation: CreationTime   %RX64\n", pVBoxFobx->FileBasicInfo.CreationTime.QuadPart));
+    Log(("VBOXSF: MRxCreate: FileBasicInformation: LastAccessTime %RX64\n", pVBoxFobx->FileBasicInfo.LastAccessTime.QuadPart));
+    Log(("VBOXSF: MRxCreate: FileBasicInformation: LastWriteTime  %RX64\n", pVBoxFobx->FileBasicInfo.LastWriteTime.QuadPart));
+    Log(("VBOXSF: MRxCreate: FileBasicInformation: ChangeTime     %RX64\n", pVBoxFobx->FileBasicInfo.ChangeTime.QuadPart));
+    Log(("VBOXSF: MRxCreate: FileBasicInformation: FileAttributes %RX32\n", pVBoxFobx->FileBasicInfo.FileAttributes));
+    if (!(Info.Attr.fMode & RTFS_DOS_DIRECTORY))
+        Log(("VBOXSF: MRxCreate: AllocationSize = %#RX64, EndOfFile = %#RX64\n",
+             Info.cbAllocated, Info.cbObject));
 
     if (!RxIsFcbAcquiredExclusive(capFcb))
     {
@@ -674,11 +651,11 @@ NTSTATUS VBoxMRxForceClosed(IN PMRX_SRV_OPEN pSrvOpen)
     return STATUS_NOT_IMPLEMENTED;
 }
 
-NTSTATUS vbsfSetFileInfo(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
-                         PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
-                         PMRX_VBOX_FOBX pVBoxFobx,
-                         PFILE_BASIC_INFORMATION pInfo,
-                         BYTE SetAttrFlags)
+static NTSTATUS vbsfSetFileInfoOnClose(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
+                                       PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                                       PMRX_VBOX_FOBX pVBoxFobx,
+                                       PFILE_BASIC_INFORMATION pInfo,
+                                       BYTE SetAttrFlags)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -688,12 +665,12 @@ NTSTATUS vbsfSetFileInfo(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
     uint8_t *pHGCMBuffer = NULL;
     uint32_t cbBuffer = 0;
 
-    Log(("VBOXSF: vbsfSetFileInfo: SetAttrFlags 0x%02X\n", SetAttrFlags));
-    Log(("VBOXSF: vbsfSetFileInfo: FileBasicInformation: CreationTime   %RX64\n", pInfo->CreationTime.QuadPart));
-    Log(("VBOXSF: vbsfSetFileInfo: FileBasicInformation: LastAccessTime %RX64\n", pInfo->LastAccessTime.QuadPart));
-    Log(("VBOXSF: vbsfSetFileInfo: FileBasicInformation: LastWriteTime  %RX64\n", pInfo->LastWriteTime.QuadPart));
-    Log(("VBOXSF: vbsfSetFileInfo: FileBasicInformation: ChangeTime     %RX64\n", pInfo->ChangeTime.QuadPart));
-    Log(("VBOXSF: vbsfSetFileInfo: FileBasicInformation: FileAttributes %RX32\n", pInfo->FileAttributes));
+    Log(("VBOXSF: vbsfSetFileInfoOnClose: SetAttrFlags 0x%02X\n", SetAttrFlags));
+    Log(("VBOXSF: vbsfSetFileInfoOnClose: FileBasicInformation: CreationTime   %RX64\n", pInfo->CreationTime.QuadPart));
+    Log(("VBOXSF: vbsfSetFileInfoOnClose: FileBasicInformation: LastAccessTime %RX64\n", pInfo->LastAccessTime.QuadPart));
+    Log(("VBOXSF: vbsfSetFileInfoOnClose: FileBasicInformation: LastWriteTime  %RX64\n", pInfo->LastWriteTime.QuadPart));
+    Log(("VBOXSF: vbsfSetFileInfoOnClose: FileBasicInformation: ChangeTime     %RX64\n", pInfo->ChangeTime.QuadPart));
+    Log(("VBOXSF: vbsfSetFileInfoOnClose: FileBasicInformation: FileAttributes %RX32\n", pInfo->FileAttributes));
 
     if (SetAttrFlags == 0)
     {
@@ -720,7 +697,7 @@ NTSTATUS vbsfSetFileInfo(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
         RTTimeSpecSetNtTime(&pSHFLFileInfo->ModificationTime, pInfo->LastWriteTime.QuadPart);
     if (pInfo->ChangeTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_CHANGE_TIME) != 0)
         RTTimeSpecSetNtTime(&pSHFLFileInfo->ChangeTime, pInfo->ChangeTime.QuadPart);
-    if (pInfo->FileAttributes && (SetAttrFlags & VBOX_FOBX_F_INFO_ATTRIBUTES) != 0)
+    if (pInfo->FileAttributes && (SetAttrFlags & VBOX_FOBX_F_INFO_ATTRIBUTES) != 0) /// @todo r=bird: never ever set.
         pSHFLFileInfo->Attr.fMode = NTToVBoxFileAttributes(pInfo->FileAttributes);
 
     vrc = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
@@ -762,11 +739,11 @@ NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
         /* If the file timestamps were set by the user, then update them before closing the handle,
          * to cancel any effect of the file read/write operations on the host.
          */
-        Status = vbsfSetFileInfo(pDeviceExtension,
-                                 pNetRootExtension,
-                                 pVBoxFobx,
-                                 &pVBoxFobx->FileBasicInfo,
-                                 pVBoxFobx->SetFileInfoOnCloseFlags);
+        Status = vbsfSetFileInfoOnClose(pDeviceExtension,
+                                        pNetRootExtension,
+                                        pVBoxFobx,
+                                        &pVBoxFobx->FileBasicInfo,
+                                        pVBoxFobx->SetFileInfoOnCloseFlags);
     }
 
     vrc = VbglR0SfClose(&pDeviceExtension->hgcmClient,
@@ -864,7 +841,7 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
     /* Call host. */
     vrc = VbglR0SfRemove(&pDeviceExtension->hgcmClient, &pNetRootExtension->map,
                          ParsedPath,
-                         (pVBoxFobx->FileStandardInfo.Directory) ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE);
+                         pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE);
 
     if (ParsedPath)
         vbsfFreeNonPagedMem(ParsedPath);
@@ -936,7 +913,7 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
          SrcPath->u16Length / sizeof(WCHAR), &SrcPath->String.ucs2[0]));
 
     /* Call host. */
-    flags = pVBoxFobx->FileStandardInfo.Directory? SHFL_RENAME_DIR : SHFL_RENAME_FILE;
+    flags = pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY ? SHFL_RENAME_DIR : SHFL_RENAME_FILE;
     if (RenameInformation->ReplaceIfExists)
         flags |= SHFL_RENAME_REPLACE_IF_EXISTS;
 

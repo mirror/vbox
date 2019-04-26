@@ -33,8 +33,8 @@ VBoxSF_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxSF_LDFLAGS.amd64 = -Entry:DriverEntry
 VBoxSF_SOURCES     = \
 	file.c \
-	info.c \
-	vbsf.c \
+	info.cpp \
+	vbsf.cpp \
 	net.c \
 	path.c \
 	vbsfhlp.c \

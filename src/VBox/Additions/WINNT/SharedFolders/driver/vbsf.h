@@ -42,6 +42,11 @@
  */
 #include "vbsfhlp.h"
 #include "vbsfshared.h"
+#ifdef __cplusplus /* mixes code and variables */
+# include <VBox/VBoxGuestLibSharedFoldersInline.h>
+#endif
+
+RT_C_DECLS_BEGIN
 
 extern PRDBSS_DEVICE_OBJECT VBoxMRxDeviceObject;
 
@@ -75,6 +80,14 @@ typedef struct _MRX_VBOX_DEVICE_EXTENSION
     NTSTATUS (NTAPI * pfnRDBSSCreate)(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 
 } MRX_VBOX_DEVICE_EXTENSION, *PMRX_VBOX_DEVICE_EXTENSION;
+#ifdef RT_ARCH_AMD64
+AssertCompileMemberOffset(MRX_VBOX_DEVICE_EXTENSION, cLocalConnections, 8);
+AssertCompileMemberOffset(MRX_VBOX_DEVICE_EXTENSION, wszLocalConnectionName, 0x28);
+AssertCompileMemberOffset(MRX_VBOX_DEVICE_EXTENSION, mtxLocalCon, 0xF8);
+AssertCompileMemberSize(MRX_VBOX_DEVICE_EXTENSION, mtxLocalCon, 7 * 8);
+AssertCompileMemberOffset(MRX_VBOX_DEVICE_EXTENSION, hgcmClient, 0x130);
+AssertCompileMemberOffset(MRX_VBOX_DEVICE_EXTENSION, pfnRDBSSDeviceControl, 0x130 + 16);
+#endif
 
 /*
  * The shared folders NET_ROOT extension.
@@ -94,15 +107,22 @@ typedef struct _MRX_VBOX_NETROOT_EXTENSION
 #define VBOX_FOBX_F_INFO_CHANGE_TIME     0x08
 #define VBOX_FOBX_F_INFO_ATTRIBUTES      0x10
 
-/*
+/**
  * The shared folders file extension.
  */
-typedef struct _MRX_VBOX_FOBX_
+typedef struct MRX_VBOX_FOBX
 {
-    SHFLHANDLE hFile;
-    PMRX_SRV_CALL pSrvCall;
-    FILE_BASIC_INFORMATION FileBasicInfo;
-    FILE_STANDARD_INFORMATION FileStandardInfo;
+    /** The host file handle. */
+    SHFLHANDLE                  hFile;
+    PMRX_SRV_CALL               pSrvCall;
+    /** The RTTimeSystemNanoTS value when Info was retrieved, 0 to force update. */
+    uint64_t                    nsUpToDate;
+    /** Cached object info. */
+    SHFLFSOBJINFO               Info;
+    /** NT version of Info.
+     * @todo try eliminate  */
+    FILE_BASIC_INFORMATION      FileBasicInfo;
+
     BOOLEAN fKeepCreationTime;
     BOOLEAN fKeepLastAccessTime;
     BOOLEAN fKeepLastWriteTime;
@@ -214,5 +234,10 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext);
 NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
                              PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
                              PMRX_VBOX_FOBX pVBoxFobx);
+
+void     vbsfNtCopyInfoToLegacy(PMRX_VBOX_FOBX pVBoxFobx, PCSHFLFSOBJINFO pInfo);
+
+
+RT_C_DECLS_END
 
 #endif /* !GA_INCLUDED_SRC_WINNT_SharedFolders_driver_vbsf_h */

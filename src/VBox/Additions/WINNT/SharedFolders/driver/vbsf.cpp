@@ -18,7 +18,7 @@
 #include "vbsf.h"
 
 
-/*
+/**
  * The current state of the driver.
  */
 typedef enum _MRX_VBOX_STATE_
@@ -30,15 +30,28 @@ typedef enum _MRX_VBOX_STATE_
 
 static MRX_VBOX_STATE VBoxMRxState = MRX_VBOX_STARTABLE;
 
-/*
+/**
  * The VBoxSF dispatch table.
  */
 static struct _MINIRDR_DISPATCH VBoxMRxDispatch;
 
-/*
+/**
  * The VBoxSF device object.
  */
 PRDBSS_DEVICE_OBJECT VBoxMRxDeviceObject;
+
+uint64_t g_abPadding111[256] = {0};
+/** The shared folder service client structure. */
+VBGLSFCLIENT g_SfClient;
+/** VMMDEV_HVF_XXX (set during init). */
+uint32_t     g_fHostFeatures = 0;
+/** Last valid shared folders function number. */
+uint32_t     g_uSfLastFunction = SHFL_FN_SET_FILE_SIZE;
+/** Shared folders features (SHFL_FEATURE_XXX). */
+uint64_t     g_fSfFeatures = 0;
+uint64_t g_abPadding222[256] = {0};
+
+
 
 static NTSTATUS VBoxMRxFsdDispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
@@ -77,10 +90,7 @@ static void VBoxMRxUnload(IN PDRIVER_OBJECT DriverObject)
     {
         PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension;
         pDeviceExtension = (PMRX_VBOX_DEVICE_EXTENSION)((PBYTE)VBoxMRxDeviceObject + sizeof(RDBSS_DEVICE_OBJECT));
-        VbglR0SfDisconnect(&pDeviceExtension->hgcmClient);
     }
-
-    VbglR0SfTerm();
 
     if (VBoxMRxDeviceObject)
     {
@@ -115,6 +125,9 @@ static void VBoxMRxUnload(IN PDRIVER_OBJECT DriverObject)
         Log(("VBOXSF: MRxUnload: IoDeleteSymbolicLink Status 0x%08X\n", Status));
 
     RxUnload(DriverObject);
+
+    VbglR0SfDisconnect(&g_SfClient);
+    VbglR0SfTerm();
 
     Log(("VBOXSF: MRxUnload: VBoxSF.sys driver object %p unloaded\n", DriverObject));
 }
@@ -471,7 +484,6 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
     PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = NULL;
     ULONG i;
     int vrc;
-    VBGLSFCLIENT hgcmClient;
 
     Log(("VBOXSF: DriverEntry: Driver object %p\n", DriverObject));
 
@@ -490,8 +502,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
     }
 
     /* Connect the HGCM client */
-    RT_ZERO(hgcmClient);
-    vrc = VbglR0SfConnect(&hgcmClient);
+    vrc = VbglR0SfConnect(&g_SfClient);
     if (RT_FAILURE(vrc))
     {
         Log(("VBOXSF: DriverEntry: ERROR while connecting to host (%Rrc)!\n",
@@ -499,6 +510,16 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
         VbglR0SfTerm();
         return STATUS_UNSUCCESSFUL;
     }
+
+    vrc = VbglR0QueryHostFeatures(&g_fHostFeatures);
+    if (RT_FAILURE(vrc))
+    {
+        LogRel(("vboxsf: VbglR0QueryHostFeatures failed: vrc=%Rrc (ignored)\n", vrc));
+        g_fHostFeatures = 0;
+    }
+    VbglR0SfHostReqQueryFeaturesSimple(&g_fSfFeatures, &g_uSfLastFunction);
+    LogRel(("VBoxSF: g_fHostFeatures=%#x g_fSfFeatures=%#RX64 g_uSfLastFunction=%u\n",
+            g_fHostFeatures, g_fSfFeatures, g_uSfLastFunction));
 
     /* Init the driver object. */
     DriverObject->DriverUnload = VBoxMRxUnload;
@@ -597,7 +618,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
     }
 
     AssertPtr(pDeviceExtension);
-    pDeviceExtension->hgcmClient = hgcmClient;
+    pDeviceExtension->hgcmClient = g_SfClient;
 
     /* The redirector driver must intercept the IOCTL to avoid VBOXSVR name resolution
      * by other redirectors. These additional name resolutions cause long delays.
@@ -623,7 +644,7 @@ failure:
 
     Log(("VBOXSF: DriverEntry: Failure! Status = 0x%08X\n", Status));
 
-    VbglR0SfDisconnect(&hgcmClient);
+    VbglR0SfDisconnect(&g_SfClient);
     VbglR0SfTerm();
 
     if (VBoxMRxDeviceObject)
@@ -1435,7 +1456,11 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
                 {
                     PV_NET_ROOT VNetRoot = (PV_NET_ROOT)Fobx;
 
+#ifdef __cplusplus /* C version points at NET_ROOT, C++ points at MRX_NET_ROOT. Weird. */
+                    Status = RxFinalizeConnection((PNET_ROOT)VNetRoot->pNetRoot, VNetRoot, TRUE);
+#else
                     Status = RxFinalizeConnection(VNetRoot->NetRoot, VNetRoot, TRUE);
+#endif
                 }
                 else
                 {
@@ -1652,13 +1677,13 @@ NTSTATUS VBoxMRxSetSdInfo(IN OUT struct _RX_CONTEXT * RxContext)
 /*
  * WML stubs which are referenced by rdbsslib.
  */
-NTSTATUS WmlTinySystemControl(IN OUT PVOID pWmiLibInfo, IN PVOID pDevObj, IN PVOID pIrp)
+extern "C" NTSTATUS WmlTinySystemControl(IN OUT PVOID pWmiLibInfo, IN PVOID pDevObj, IN PVOID pIrp)
 {
     RT_NOREF(pWmiLibInfo, pDevObj, pIrp);
     return STATUS_WMI_GUID_NOT_FOUND;
 }
 
-ULONG WmlTrace(IN ULONG ulType, IN PVOID pTraceUuid, IN ULONG64 ullLogger, ...)
+extern "C" ULONG WmlTrace(IN ULONG ulType, IN PVOID pTraceUuid, IN ULONG64 ullLogger, ...)
 {
     RT_NOREF(ulType, pTraceUuid, ullLogger);
     return STATUS_SUCCESS;

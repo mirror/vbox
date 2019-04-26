@@ -1,9 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VirtualBox Windows Guest Shared Folders
- *
- * File System Driver query and set information routines
+ * VirtualBox Windows Guest Shared Folders FSD - Information Querying & Setting Routines.
  */
 
 /*
@@ -921,419 +918,349 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
     return Status;
 }
 
+void vbsfNtCopyInfoToLegacy(PMRX_VBOX_FOBX pVBoxFobx, PCSHFLFSOBJINFO pInfo)
+{
+    pVBoxFobx->FileBasicInfo.CreationTime.QuadPart   = RTTimeSpecGetNtTime(&pInfo->BirthTime);
+    pVBoxFobx->FileBasicInfo.LastAccessTime.QuadPart = RTTimeSpecGetNtTime(&pInfo->AccessTime);
+    pVBoxFobx->FileBasicInfo.LastWriteTime.QuadPart  = RTTimeSpecGetNtTime(&pInfo->ModificationTime);
+    pVBoxFobx->FileBasicInfo.ChangeTime.QuadPart     = RTTimeSpecGetNtTime(&pInfo->ChangeTime);
+    pVBoxFobx->FileBasicInfo.FileAttributes          = VBoxToNTFileAttributes(pInfo->Attr.fMode);
+}
+
+static void vbsfNtCopyInfo(PMRX_VBOX_FOBX pVBoxFobx, PSHFLFSOBJINFO pObjInfo, uint32_t fOverrides)
+{
+    if (pObjInfo->cbObject != pVBoxFobx->Info.cbObject)
+    {
+        /** @todo tell RDBSS about this? */
+    }
+
+    /* To simplify stuff, copy user timestamps to the input structure before copying. */
+    if (   pVBoxFobx->fKeepCreationTime
+        || pVBoxFobx->fKeepLastAccessTime
+        || pVBoxFobx->fKeepLastWriteTime
+        || pVBoxFobx->fKeepChangeTime)
+    {
+        if (pVBoxFobx->fKeepCreationTime   && !(fOverrides & VBOX_FOBX_F_INFO_CREATION_TIME))
+            pObjInfo->BirthTime         = pVBoxFobx->Info.BirthTime;
+        if (pVBoxFobx->fKeepLastAccessTime && !(fOverrides & VBOX_FOBX_F_INFO_LASTACCESS_TIME))
+            pObjInfo->AccessTime        = pVBoxFobx->Info.AccessTime;
+        if (pVBoxFobx->fKeepLastWriteTime  && !(fOverrides & VBOX_FOBX_F_INFO_LASTWRITE_TIME))
+            pObjInfo->ModificationTime  = pVBoxFobx->Info.ModificationTime;
+        if (pVBoxFobx->fKeepChangeTime     && !(fOverrides & VBOX_FOBX_F_INFO_CHANGE_TIME))
+            pObjInfo->ChangeTime        = pVBoxFobx->Info.ChangeTime;
+    }
+    pVBoxFobx->Info = *pObjInfo;
+
+    vbsfNtCopyInfoToLegacy(pVBoxFobx, pObjInfo);
+}
+
+
 NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
     RxCaptureFcb;
     RxCaptureFobx;
-
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = VBoxMRxGetDeviceExtension(RxContext);
+    NTSTATUS                    Status            = STATUS_SUCCESS;
+    //PMRX_VBOX_DEVICE_EXTENSION  pDeviceExtension  = VBoxMRxGetDeviceExtension(RxContext);
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
-    PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
+    PMRX_VBOX_FOBX              pVBoxFobx         = VBoxMRxGetFileObjectExtension(capFobx);
+    ULONG                       cbToCopy          = 0;
 
-    PUNICODE_STRING FileName = GET_ALREADY_PREFIXED_NAME_FROM_CONTEXT(RxContext);
-    FILE_INFORMATION_CLASS FunctionalityRequested = RxContext->Info.FileInformationClass;
-    PCHAR pInfoBuffer = (PCHAR)RxContext->Info.Buffer;
-    uint32_t cbInfoBuffer = RxContext->Info.Length;
-    ULONG *pLengthRemaining = (PULONG) & RxContext->Info.LengthRemaining;
+    Log(("VBOXSF: MrxQueryFileInfo: InfoBuffer = %p, Size = %d bytes, FileInformationClass = %d\n",
+         RxContext->Info.Buffer, RxContext->Info.Length, RxContext->Info.FileInformationClass));
 
-    int vrc = 0;
+    AssertReturn(pVBoxFobx, STATUS_INVALID_PARAMETER);
+    AssertReturn(RxContext->Info.Buffer, STATUS_INVALID_PARAMETER);
 
-    ULONG cbToCopy = 0;
-    uint8_t *pHGCMBuffer = 0;
-    uint32_t cbHGCMBuffer;
-    PSHFLFSOBJINFO pFileEntry = NULL;
+#define CHECK_SIZE_BREAK(a_RxContext, a_cbNeeded) \
+        /* IO_STACK_LOCATION::Parameters::SetFile::Length is signed, the RxContext bugger is LONG. See end of function for why. */ \
+        if ((ULONG)(a_RxContext)->Info.Length >= (a_cbNeeded)) \
+        { /*likely */ } \
+        else if (1) { Status = STATUS_BUFFER_TOO_SMALL; break; } else do { } while (0)
 
-    if (!pLengthRemaining)
+    switch (RxContext->Info.FileInformationClass)
     {
-        Log(("VBOXSF: MrxQueryFileInfo: length pointer is NULL!\n"));
-        return STATUS_INVALID_PARAMETER;
-    }
+        /*
+         * Queries we can satisfy without calling the host:
+         */
 
-    Log(("VBOXSF: MrxQueryFileInfo: InfoBuffer = %p, Size = %d bytes, LenRemain = %d bytes\n",
-         pInfoBuffer, cbInfoBuffer, *pLengthRemaining));
-
-    if (!pVBoxFobx)
-    {
-        Log(("VBOXSF: MrxQueryFileInfo: pVBoxFobx is NULL!\n"));
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    if (!pInfoBuffer)
-    {
-        Log(("VBOXSF: MrxQueryFileInfo: pInfoBuffer is NULL!\n"));
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    if (pVBoxFobx->FileStandardInfo.Directory == TRUE)
-    {
-        Log(("VBOXSF: MrxQueryFileInfo: Directory -> Copy info retrieved during the create call\n"));
-        Status = STATUS_SUCCESS;
-
-        switch (FunctionalityRequested)
+        case FileNamesInformation:
         {
-            case FileBasicInformation:
+            PFILE_NAMES_INFORMATION pInfo    = (PFILE_NAMES_INFORMATION)RxContext->Info.Buffer;
+            PUNICODE_STRING         FileName = GET_ALREADY_PREFIXED_NAME_FROM_CONTEXT(RxContext);
+            Log(("VBOXSF: MrxQueryFileInfo: FileNamesInformation\n"));
+
+            cbToCopy = RT_UOFFSETOF_DYN(FILE_NAMES_INFORMATION, FileName[FileName->Length / 2 + 1]);
+            CHECK_SIZE_BREAK(RxContext, cbToCopy);
+
+            pInfo->NextEntryOffset = 0;
+            pInfo->FileIndex       = 0;
+            pInfo->FileNameLength  = FileName->Length;
+
+            RtlCopyMemory(pInfo->FileName, FileName->Buffer, FileName->Length);
+            pInfo->FileName[FileName->Length] = 0;
+            break;
+        }
+
+        case FileInternalInformation:
+        {
+            PFILE_INTERNAL_INFORMATION pInfo = (PFILE_INTERNAL_INFORMATION)RxContext->Info.Buffer;
+            Log(("VBOXSF: MrxQueryFileInfo: FileInternalInformation\n"));
+
+            cbToCopy = sizeof(FILE_INTERNAL_INFORMATION);
+            CHECK_SIZE_BREAK(RxContext, cbToCopy);
+
+            /* A 8-byte file reference number for the file. */
+            pInfo->IndexNumber.QuadPart = (ULONG_PTR)capFcb;
+            break;
+        }
+
+        case FileEaInformation:
+        {
+            PFILE_EA_INFORMATION pInfo = (PFILE_EA_INFORMATION)RxContext->Info.Buffer;
+            Log(("VBOXSF: MrxQueryFileInfo: FileEaInformation\n"));
+
+            cbToCopy = sizeof(FILE_EA_INFORMATION);
+            CHECK_SIZE_BREAK(RxContext, cbToCopy);
+
+            pInfo->EaSize = 0;
+            break;
+        }
+
+        case FileStreamInformation:
+            Log(("VBOXSF: MrxQueryFileInfo: FileStreamInformation: not supported\n"));
+            Status = STATUS_INVALID_PARAMETER;
+            break;
+
+        case FileAlternateNameInformation:
+            Log(("VBOXSF: MrxQueryFileInfo: FileStreamInformation: not implemented\n"));
+            Status = STATUS_OBJECT_NAME_NOT_FOUND;
+            break;
+
+        case FileNumaNodeInformation:
+            Log(("VBOXSF: MrxQueryFileInfo: FileNumaNodeInformation: not supported\n"));
+            Status = STATUS_NO_SUCH_DEVICE; /* what's returned on a samba share */
+            break;
+
+        case FileStandardLinkInformation:
+            Log(("VBOXSF: MrxQueryFileInfo: FileStandardLinkInformation: not supported\n"));
+            Status = STATUS_NOT_SUPPORTED; /* what's returned on a samba share */
+            break;
+
+        /*
+         * Queries where we need info from the host.
+         *
+         * For directories we don't necessarily go to the host but use info from when we
+         * opened the them, why we do this is a little unclear as all the clues that r9630
+         * give is "fixes".
+         *
+         * Note! We verify the buffer size after talking to the host, assuming that there
+         *       won't be a problem and saving an extra switch statement.  IIRC the
+         *       NtQueryInformationFile code verfies the sizes too.
+         */
+        /** @todo r=bird: install a hack so we get FileAllInformation directly up here
+         *        rather than 5 individual queries.  We may end up going 3 times to
+         *        the host (depending on the TTL hack) to fetch the same info over
+         *        and over again. */
+        case FileEndOfFileInformation:
+        case FileAllocationInformation:
+        case FileBasicInformation:
+        case FileStandardInformation:
+        case FileNetworkOpenInformation:
+        case FileAttributeTagInformation:
+        case FileCompressionInformation:
+        {
+            /* Query the information if necessary. */
+            if (   !(pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY) /** @todo figure out why we don't return up-to-date info for directories! */
+                && (   !pVBoxFobx->nsUpToDate
+                    || pVBoxFobx->nsUpToDate - RTTimeSystemNanoTS() < RT_NS_100US /** @todo implement proper TTL */ ) )
             {
-                PFILE_BASIC_INFORMATION pInfo = (PFILE_BASIC_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileBasicInformation\n"));
+                int               vrc;
+                VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+                AssertBreakStmt(pReq, Status = STATUS_NO_MEMORY);
 
-                cbToCopy = sizeof(FILE_BASIC_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
+                vrc = VbglR0SfHostReqQueryObjInfo(pNetRootExtension->map.root, pReq, pVBoxFobx->hFile);
+                if (RT_SUCCESS(vrc))
+                    vbsfNtCopyInfo(pVBoxFobx, &pReq->ObjInfo, 0);
+                else
                 {
-                    *pInfo = pVBoxFobx->FileBasicInfo;
+                    Status = VBoxErrorToNTStatus(vrc);
+                    VbglR0PhysHeapFree(pReq);
+                    break;
+                }
+                VbglR0PhysHeapFree(pReq);
+            }
+
+            /* Copy it into the return buffer. */
+            switch (RxContext->Info.FileInformationClass)
+            {
+                case FileBasicInformation:
+                {
+                    PFILE_BASIC_INFORMATION pInfo = (PFILE_BASIC_INFORMATION)RxContext->Info.Buffer;
+                    Log(("VBOXSF: MrxQueryFileInfo: FileBasicInformation\n"));
+
+                    cbToCopy = sizeof(FILE_BASIC_INFORMATION);
+                    CHECK_SIZE_BREAK(RxContext, cbToCopy);
+
+                    pInfo->CreationTime.QuadPart   = RTTimeSpecGetNtTime(&pVBoxFobx->Info.BirthTime);
+                    pInfo->LastAccessTime.QuadPart = RTTimeSpecGetNtTime(&pVBoxFobx->Info.AccessTime);
+                    pInfo->LastWriteTime.QuadPart  = RTTimeSpecGetNtTime(&pVBoxFobx->Info.ModificationTime);
+                    pInfo->ChangeTime.QuadPart     = RTTimeSpecGetNtTime(&pVBoxFobx->Info.ChangeTime);
+                    pInfo->FileAttributes          = VBoxToNTFileAttributes(pVBoxFobx->Info.Attr.fMode);
                     Log(("VBOXSF: MrxQueryFileInfo: FileBasicInformation: File attributes: 0x%x\n",
                          pInfo->FileAttributes));
+                    break;
                 }
-                else
+
+                case FileStandardInformation:
                 {
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                }
-                break;
-            }
+                    PFILE_STANDARD_INFORMATION pInfo = (PFILE_STANDARD_INFORMATION)RxContext->Info.Buffer;
+                    Log(("VBOXSF: MrxQueryFileInfo: FileStandardInformation\n"));
 
-            case FileStandardInformation:
-            {
-                PFILE_STANDARD_INFORMATION pInfo = (PFILE_STANDARD_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileStandardInformation\n"));
+                    cbToCopy = sizeof(FILE_STANDARD_INFORMATION);
+                    CHECK_SIZE_BREAK(RxContext, cbToCopy);
 
-                cbToCopy = sizeof(FILE_STANDARD_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
-                    *pInfo = pVBoxFobx->FileStandardInfo;
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-
-            case FileNamesInformation:
-            {
-                PFILE_NAMES_INFORMATION pInfo = (PFILE_NAMES_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileNamesInformation\n"));
-
-                cbToCopy = sizeof(FILE_NAMES_INFORMATION);
-                /* And size in bytes of the WCHAR name. */
-                cbToCopy += FileName->Length;
-
-                if (*pLengthRemaining >= cbToCopy)
-                {
-                    RtlZeroMemory(pInfo, cbToCopy);
-
-                    pInfo->FileNameLength = FileName->Length;
-
-                    RtlCopyMemory(pInfo->FileName, FileName->Buffer, FileName->Length);
-                    pInfo->FileName[FileName->Length] = 0; /* FILE_NAMES_INFORMATION had space for the nul. */
-                }
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-
-            case FileInternalInformation:
-            {
-                PFILE_INTERNAL_INFORMATION pInfo = (PFILE_INTERNAL_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileInternalInformation\n"));
-
-                cbToCopy = sizeof(FILE_INTERNAL_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
-                {
-                    /* A 8-byte file reference number for the file. */
-                    pInfo->IndexNumber.QuadPart = (ULONG_PTR)capFcb;
-                }
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-            case FileEaInformation:
-            {
-                PFILE_EA_INFORMATION pInfo = (PFILE_EA_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileEaInformation\n"));
-
-                cbToCopy = sizeof(FILE_EA_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
-                {
-                    pInfo->EaSize = 0;
-                }
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-
-            case FileNetworkOpenInformation:
-            {
-                PFILE_NETWORK_OPEN_INFORMATION pInfo = (PFILE_NETWORK_OPEN_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileNetworkOpenInformation\n"));
-
-                cbToCopy = sizeof(FILE_NETWORK_OPEN_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
-                {
-                    pInfo->CreationTime   = pVBoxFobx->FileBasicInfo.CreationTime;
-                    pInfo->LastAccessTime = pVBoxFobx->FileBasicInfo.LastAccessTime;
-                    pInfo->LastWriteTime  = pVBoxFobx->FileBasicInfo.LastWriteTime;
-                    pInfo->ChangeTime     = pVBoxFobx->FileBasicInfo.ChangeTime;
-                    pInfo->AllocationSize.QuadPart = 0;
-                    pInfo->EndOfFile.QuadPart      = 0;
-                    pInfo->FileAttributes = pVBoxFobx->FileBasicInfo.FileAttributes;
-                }
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-
-            case FileStreamInformation:
-                Log(("VBOXSF: MrxQueryFileInfo: FileStreamInformation: not supported\n"));
-                Status = STATUS_INVALID_PARAMETER;
-                goto end;
-
-            default:
-                Log(("VBOXSF: MrxQueryFileInfo: Not supported FunctionalityRequested %d!\n",
-                     FunctionalityRequested));
-                Status = STATUS_INVALID_PARAMETER;
-                goto end;
-        }
-    }
-    else /* Entry is a file. */
-    {
-        cbHGCMBuffer = RT_MAX(cbInfoBuffer, PAGE_SIZE);
-        pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbHGCMBuffer);
-
-        if (!pHGCMBuffer)
-            return STATUS_INSUFFICIENT_RESOURCES;
-
-        Assert(pVBoxFobx && pNetRootExtension && pDeviceExtension);
-        vrc = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                             SHFL_INFO_GET | SHFL_INFO_FILE, &cbHGCMBuffer, (PSHFLDIRINFO)pHGCMBuffer);
-
-        if (vrc != VINF_SUCCESS)
-        {
-            Status = VBoxErrorToNTStatus(vrc);
-            goto end;
-        }
-
-        pFileEntry = (PSHFLFSOBJINFO)pHGCMBuffer;
-        Status = STATUS_SUCCESS;
-
-        switch (FunctionalityRequested)
-        {
-            case FileBasicInformation:
-            {
-                PFILE_BASIC_INFORMATION pInfo = (PFILE_BASIC_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileBasicInformation\n"));
-
-                cbToCopy = sizeof(FILE_BASIC_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
-                {
-                    pInfo->CreationTime.QuadPart   = RTTimeSpecGetNtTime(&pFileEntry->BirthTime); /* Ridiculous name. */
-                    pInfo->LastAccessTime.QuadPart = RTTimeSpecGetNtTime(&pFileEntry->AccessTime);
-                    pInfo->LastWriteTime.QuadPart  = RTTimeSpecGetNtTime(&pFileEntry->ModificationTime);
-                    pInfo->ChangeTime.QuadPart     = RTTimeSpecGetNtTime(&pFileEntry->ChangeTime);
-                    pInfo->FileAttributes          = VBoxToNTFileAttributes(pFileEntry->Attr.fMode);
-
-                    Log(("VBOXSF: MrxQueryFileInfo: FileBasicInformation: File attributes = 0x%x\n",
-                         pInfo->FileAttributes));
-                }
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-
-            case FileStandardInformation:
-            {
-                PFILE_STANDARD_INFORMATION pInfo = (PFILE_STANDARD_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileStandardInformation\n"));
-
-                cbToCopy = sizeof(FILE_STANDARD_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
-                {
-                    pInfo->AllocationSize.QuadPart = pFileEntry->cbAllocated;
-                    pInfo->EndOfFile.QuadPart      = pFileEntry->cbObject;
+                    /* Note! We didn't used to set allocation size and end-of-file for directories.
+                             NTFS reports these, though, so why shouldn't we. */
+                    pInfo->AllocationSize.QuadPart = pVBoxFobx->Info.cbAllocated;
+                    pInfo->EndOfFile.QuadPart      = pVBoxFobx->Info.cbObject;
                     pInfo->NumberOfLinks           = 1; /** @todo 0? */
                     pInfo->DeletePending           = FALSE;
-
-                    if (pFileEntry->Attr.fMode & RTFS_DOS_DIRECTORY)
-                        pInfo->Directory = TRUE;
-                    else
-                        pInfo->Directory = FALSE;
+                    pInfo->Directory               = pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY ? TRUE : FALSE;
+                    break;
                 }
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
 
-            case FileNamesInformation:
-            {
-                PFILE_NAMES_INFORMATION pInfo = (PFILE_NAMES_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileNamesInformation\n"));
-
-                cbToCopy = sizeof(FILE_NAMES_INFORMATION);
-                /* And size in bytes of the WCHAR name. */
-                cbToCopy += FileName->Length;
-
-                if (*pLengthRemaining >= cbToCopy)
+                case FileNetworkOpenInformation:
                 {
-                    RtlZeroMemory(pInfo, cbToCopy);
+                    PFILE_NETWORK_OPEN_INFORMATION pInfo = (PFILE_NETWORK_OPEN_INFORMATION)RxContext->Info.Buffer;
+                    Log(("VBOXSF: MrxQueryFileInfo: FileNetworkOpenInformation\n"));
 
-                    pInfo->FileNameLength = FileName->Length;
+                    cbToCopy = sizeof(FILE_NETWORK_OPEN_INFORMATION);
+                    CHECK_SIZE_BREAK(RxContext, cbToCopy);
 
-                    RtlCopyMemory(pInfo->FileName, FileName->Buffer, FileName->Length);
-                    pInfo->FileName[FileName->Length] = 0; /* FILE_NAMES_INFORMATION had space for the nul. */
+                    pInfo->CreationTime.QuadPart   = RTTimeSpecGetNtTime(&pVBoxFobx->Info.BirthTime);
+                    pInfo->LastAccessTime.QuadPart = RTTimeSpecGetNtTime(&pVBoxFobx->Info.AccessTime);
+                    pInfo->LastWriteTime.QuadPart  = RTTimeSpecGetNtTime(&pVBoxFobx->Info.ModificationTime);
+                    pInfo->ChangeTime.QuadPart     = RTTimeSpecGetNtTime(&pVBoxFobx->Info.ChangeTime);
+                    /* Note! We didn't used to set allocation size and end-of-file for directories.
+                             NTFS reports these, though, so why shouldn't we. */
+                    pInfo->AllocationSize.QuadPart = pVBoxFobx->Info.cbAllocated;
+                    pInfo->EndOfFile.QuadPart      = pVBoxFobx->Info.cbObject;
+                    pInfo->FileAttributes          = VBoxToNTFileAttributes(pVBoxFobx->Info.Attr.fMode);
+                    break;
                 }
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
 
-            case FileInternalInformation:
-            {
-                PFILE_INTERNAL_INFORMATION pInfo = (PFILE_INTERNAL_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileInternalInformation\n"));
-
-                cbToCopy = sizeof(FILE_INTERNAL_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
+                case FileEndOfFileInformation:
                 {
-                    /* A 8-byte file reference number for the file. */
-                    pInfo->IndexNumber.QuadPart = (ULONG_PTR)capFcb;
+                    PFILE_END_OF_FILE_INFORMATION pInfo = (PFILE_END_OF_FILE_INFORMATION)RxContext->Info.Buffer;
+                    Log(("VBOXSF: MrxQueryFileInfo: FileEndOfFileInformation\n"));
+
+                    cbToCopy = sizeof(FILE_END_OF_FILE_INFORMATION);
+                    CHECK_SIZE_BREAK(RxContext, cbToCopy);
+
+                    /* Note! We didn't used to set allocation size and end-of-file for directories.
+                             NTFS reports these, though, so why shouldn't we. */
+                    pInfo->EndOfFile.QuadPart      = pVBoxFobx->Info.cbObject;
+                    break;
                 }
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
 
-            case FileEaInformation:
-            {
-                PFILE_EA_INFORMATION pInfo = (PFILE_EA_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileEaInformation\n"));
-
-                cbToCopy = sizeof(FILE_EA_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
-                    pInfo->EaSize = 0;
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-
-            case FileAttributeTagInformation:
-            {
-                PFILE_ATTRIBUTE_TAG_INFORMATION pInfo = (PFILE_ATTRIBUTE_TAG_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileAttributeTagInformation\n"));
-
-                cbToCopy = sizeof(FILE_ATTRIBUTE_TAG_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
+                case FileAllocationInformation:
                 {
-                    pInfo->FileAttributes = VBoxToNTFileAttributes(pFileEntry->Attr.fMode);
-                    pInfo->ReparseTag = 0;
+                    PFILE_ALLOCATION_INFORMATION pInfo = (PFILE_ALLOCATION_INFORMATION)RxContext->Info.Buffer;
+                    Log(("VBOXSF: MrxQueryFileInfo: FileAllocationInformation\n"));
+
+                    cbToCopy = sizeof(FILE_ALLOCATION_INFORMATION);
+                    CHECK_SIZE_BREAK(RxContext, cbToCopy);
+
+                    /* Note! We didn't used to set allocation size and end-of-file for directories.
+                             NTFS reports these, though, so why shouldn't we. */
+                    pInfo->AllocationSize.QuadPart = pVBoxFobx->Info.cbAllocated;
+                    break;
                 }
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
 
-            case FileEndOfFileInformation:
-            {
-                PFILE_END_OF_FILE_INFORMATION pInfo = (PFILE_END_OF_FILE_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileEndOfFileInformation\n"));
-
-                cbToCopy = sizeof(FILE_END_OF_FILE_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
-                    pInfo->EndOfFile.QuadPart = pFileEntry->cbObject;
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-
-            case FileAllocationInformation:
-            {
-                PFILE_ALLOCATION_INFORMATION pInfo = (PFILE_ALLOCATION_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileAllocationInformation\n"));
-
-                cbToCopy = sizeof(FILE_ALLOCATION_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
-                    pInfo->AllocationSize.QuadPart = pFileEntry->cbAllocated;
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-
-            case FileNetworkOpenInformation:
-            {
-                PFILE_NETWORK_OPEN_INFORMATION pInfo = (PFILE_NETWORK_OPEN_INFORMATION)pInfoBuffer;
-                Log(("VBOXSF: MrxQueryFileInfo: FileNetworkOpenInformation\n"));
-
-                cbToCopy = sizeof(FILE_NETWORK_OPEN_INFORMATION);
-
-                if (*pLengthRemaining >= cbToCopy)
+                case FileAttributeTagInformation:
                 {
-                    pInfo->CreationTime.QuadPart   = RTTimeSpecGetNtTime(&pFileEntry->BirthTime); /* Ridiculous name. */
-                    pInfo->LastAccessTime.QuadPart = RTTimeSpecGetNtTime(&pFileEntry->AccessTime);
-                    pInfo->LastWriteTime.QuadPart  = RTTimeSpecGetNtTime(&pFileEntry->ModificationTime);
-                    pInfo->ChangeTime.QuadPart     = RTTimeSpecGetNtTime(&pFileEntry->ChangeTime);
-                    pInfo->AllocationSize.QuadPart = pFileEntry->cbAllocated;
-                    pInfo->EndOfFile.QuadPart      = pFileEntry->cbObject;
-                    pInfo->FileAttributes          = VBoxToNTFileAttributes(pFileEntry->Attr.fMode);
+                    PFILE_ATTRIBUTE_TAG_INFORMATION pInfo = (PFILE_ATTRIBUTE_TAG_INFORMATION)RxContext->Info.Buffer;
+                    Log(("VBOXSF: MrxQueryFileInfo: FileAttributeTagInformation\n"));
+
+                    cbToCopy = sizeof(FILE_ATTRIBUTE_TAG_INFORMATION);
+                    CHECK_SIZE_BREAK(RxContext, cbToCopy);
+
+                    pInfo->FileAttributes = VBoxToNTFileAttributes(pVBoxFobx->Info.Attr.fMode);
+                    pInfo->ReparseTag     = 0;
+                    break;
                 }
-                else
-                    Status = STATUS_BUFFER_TOO_SMALL;
-                break;
+
+                case FileCompressionInformation:
+                {
+                    //PFILE_COMPRESSION_INFO pInfo = (PFILE_COMPRESSION_INFO)RxContext->Info.Buffer;
+                    struct MY_FILE_COMPRESSION_INFO
+                    {
+                        LARGE_INTEGER   CompressedFileSize;
+                        WORD            CompressionFormat;
+                        UCHAR           CompressionUnitShift;
+                        UCHAR           ChunkShift;
+                        UCHAR           ClusterShift;
+                        UCHAR           Reserved[3];
+                    } *pInfo = (struct MY_FILE_COMPRESSION_INFO *)RxContext->Info.Buffer;
+                    Log(("VBOXSF: MrxQueryFileInfo: FileCompressionInformation\n"));
+
+                    cbToCopy = sizeof(*pInfo);
+                    CHECK_SIZE_BREAK(RxContext, cbToCopy);
+
+                    pInfo->CompressedFileSize.QuadPart = pVBoxFobx->Info.cbObject;
+                    pInfo->CompressionFormat           = 0;
+                    pInfo->CompressionUnitShift        = 0;
+                    pInfo->ChunkShift                  = 0;
+                    pInfo->ClusterShift                = 0;
+                    pInfo->Reserved[0]                 = 0;
+                    pInfo->Reserved[1]                 = 0;
+                    pInfo->Reserved[2]                 = 0;
+                    AssertCompile(sizeof(pInfo->Reserved) == 3);
+                    break;
+                }
+
+                default:
+                    AssertLogRelMsgFailed(("FileInformationClass=%d\n",
+                                           RxContext->Info.FileInformationClass));
+                    Status = STATUS_INTERNAL_ERROR;
+                    break;
             }
-
-            case FileStreamInformation:
-                Log(("VBOXSF: MrxQueryFileInfo: FileStreamInformation: not supported\n"));
-                Status = STATUS_INVALID_PARAMETER;
-                goto end;
-
-            default:
-                Log(("VBOXSF: MrxQueryFileInfo: Not supported FunctionalityRequested %d!\n",
-                     FunctionalityRequested));
-                Status = STATUS_INVALID_PARAMETER;
-                goto end;
+            break;
         }
+
+
+/** @todo Implement:
+ * FileHardLinkInformation: rcNt=0 (STATUS_SUCCESS) Ios.Status=0 (STATUS_SUCCESS) Ios.Information=0000000000000048
+ * FileProcessIdsUsingFileInformation: rcNt=0 (STATUS_SUCCESS) Ios.Status=0 (STATUS_SUCCESS) Ios.Information=0000000000000010
+ * FileNormalizedNameInformation: rcNt=0 (STATUS_SUCCESS) Ios.Status=0 (STATUS_SUCCESS) Ios.Information=00000000000000AA
+ * FileNetworkPhysicalNameInformation: rcNt=0xc000000d (STATUS_INVALID_PARAMETER) Ios={not modified}
+ * FileShortNameInformation?
+ * FileNetworkPhysicalNameInformation
+ */
+
+        /*
+         * Unsupported ones (STATUS_INVALID_PARAMETER is correct here if you
+         * go by what fat + ntfs return, however samba mounts generally returns
+         * STATUS_INVALID_INFO_CLASS except for pipe info - see queryfileinfo-1).
+         */
+        default:
+            Log(("VBOXSF: MrxQueryFileInfo: Not supported FileInformationClass: %d!\n",
+                 RxContext->Info.FileInformationClass));
+            Status = STATUS_INVALID_PARAMETER;
+            break;
+
     }
+#undef CHECK_SIZE_BREAK
 
-    if (Status == STATUS_SUCCESS)
-    {
-        if (*pLengthRemaining < cbToCopy)
-        {
-            /* This situation must be already taken into account by the above code. */
-            AssertMsgFailed(("VBOXSF: MrxQueryFileInfo: Length remaining is below 0! (%d - %d)!\n",
-                             *pLengthRemaining, cbToCopy));
-            Status = STATUS_BUFFER_TOO_SMALL;
-        }
-        else
-        {
-            pInfoBuffer += cbToCopy;
-            *pLengthRemaining -= cbToCopy;
-        }
-    }
+    /* Note! InformationToReturn doesn't seem to be used, instead Info.LengthRemaining should underflow
+             so it can be used together with RxContext->CurrentIrpSp->Parameters.QueryFile.Length
+             to calc the Ios.Information value.  This explain the weird LONG type choice.  */
+    RxContext->InformationToReturn   = cbToCopy;
+    RxContext->Info.LengthRemaining -= cbToCopy;
+    AssertStmt(RxContext->Info.LengthRemaining >= 0 || Status != STATUS_SUCCESS, Status = STATUS_BUFFER_TOO_SMALL);
 
-end:
-    if (Status == STATUS_BUFFER_TOO_SMALL)
-    {
-        Log(("VBOXSF: MrxQueryFileInfo: Buffer too small %d, required %d!\n",
-             *pLengthRemaining, cbToCopy));
-        RxContext->InformationToReturn = cbToCopy;
-    }
-
-    if (pHGCMBuffer)
-        vbsfFreeNonPagedMem(pHGCMBuffer);
-
-    if (Status == STATUS_SUCCESS)
-    {
-        Log(("VBOXSF: MrxQueryFileInfo: Remaining length = %d\n",
-             *pLengthRemaining));
-    }
-
-    Log(("VBOXSF: MrxQueryFileInfo: Returned 0x%08X\n", Status));
+    Log(("VBOXSF: MrxQueryFileInfo: Returns %#x, Remaining length = %d, cbToCopy = %u (%#x)\n",
+         Status, RxContext->Info.Length, cbToCopy));
     return Status;
 }
 
@@ -1365,6 +1292,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
         {
             PFILE_BASIC_INFORMATION pInfo = (PFILE_BASIC_INFORMATION)pInfoBuffer;
             PSHFLFSOBJINFO pSHFLFileInfo;
+            uint32_t fModified;
 
             Log(("VBOXSF: MRxSetFileInfo: FileBasicInformation: CreationTime   %RX64\n", pInfo->CreationTime.QuadPart));
             Log(("VBOXSF: MRxSetFileInfo: FileBasicInformation: LastAccessTime %RX64\n", pInfo->LastAccessTime.QuadPart));
@@ -1372,9 +1300,51 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             Log(("VBOXSF: MRxSetFileInfo: FileBasicInformation: ChangeTime     %RX64\n", pInfo->ChangeTime.QuadPart));
             Log(("VBOXSF: MRxSetFileInfo: FileBasicInformation: FileAttributes %RX32\n", pInfo->FileAttributes));
 
-            /* When setting file attributes, a value of -1 indicates to the server that it MUST NOT change this attribute
-             * for all subsequent operations on the same file handle.
+            /*
+             * Note! If a timestamp value is non-zero, the client disables implicit updating of
+             *       that timestamp via this handle when reading, writing and changing attributes.
+             *       The special -1 value is used to just disable implicit updating without
+             *       modifying the timestamp.  While the value is allowed for the CreationTime
+             *       field, it will be treated as zero.
+             *
+             *       More clues can be found here:
+             * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/16023025-8a78-492f-8b96-c873b042ac50
+             * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/d4bc551b-7aaf-4b4f-ba0e-3a75e7c528f0#Appendix_A_86
              */
+
+            /** @todo r=bird: The attempt at implementing the disable-timestamp-update
+             *        behaviour here needs a little adjusting.  I'll get to that later.
+             *
+             * Reminders:
+             *
+             *  1. Drop VBOX_FOBX_F_INFO_CREATION_TIME.
+             *
+             *  2. Drop unused VBOX_FOBX_F_INFO_ATTRIBUTES.
+             *
+             *  3. Only act on VBOX_FOBX_F_INFO_CHANGE_TIME if modified attributes or grown
+             *     the file (?) so we don't cancel out updates by other parties (like the
+             *     host).
+             *
+             *  4. Only act on VBOX_FOBX_F_INFO_LASTWRITE_TIME if we've written to the file.
+             *
+             *  5. Only act on VBOX_FOBX_F_INFO_LASTACCESS_TIME if we've read from the file
+             *     or done whatever else might modify the access time.
+             *
+             *  6. Don't bother calling the host if there are only zeros and -1 values.
+             *
+             *  7. Client application should probably be allowed to modify the timestamps
+             *     explicitly using this API after disabling updating, given the wording of
+             *     the footnote referenced above.
+             *
+             *  8. Extend the host interface to let the host handle this crap instead as it
+             *     can do a better job, like on windows it's done implicitly if we let -1
+             *     pass thru IPRT.
+             *
+             * One worry here is that we hide timestamp updates made by the host or other
+             * guest side processes.  This could account for some of the issues we've been
+             * having with the guest not noticing host side changes.
+             */
+
             if (pInfo->CreationTime.QuadPart == -1)
             {
                 pVBoxFobx->fKeepCreationTime = TRUE;
@@ -1398,11 +1368,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
 
             cbBuffer = sizeof(SHFLFSOBJINFO);
             pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbBuffer);
-            if (!pHGCMBuffer)
-            {
-                AssertFailed();
-                return STATUS_INSUFFICIENT_RESOURCES;
-            }
+            AssertReturn(pHGCMBuffer, STATUS_INSUFFICIENT_RESOURCES);
             RtlZeroMemory(pHGCMBuffer, cbBuffer);
             pSHFLFileInfo = (PSHFLFSOBJINFO)pHGCMBuffer;
 
@@ -1410,55 +1376,46 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
                  pVBoxFobx->fKeepCreationTime, pVBoxFobx->fKeepLastAccessTime, pVBoxFobx->fKeepLastWriteTime, pVBoxFobx->fKeepChangeTime));
 
             /* The properties, that need to be changed, are set to something other than zero */
+            fModified = 0;
             if (pInfo->CreationTime.QuadPart && !pVBoxFobx->fKeepCreationTime)
             {
                 RTTimeSpecSetNtTime(&pSHFLFileInfo->BirthTime, pInfo->CreationTime.QuadPart);
-                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_CREATION_TIME;
+                fModified |= VBOX_FOBX_F_INFO_CREATION_TIME;
             }
+            /** @todo FsPerf need to check what is supposed to happen if modified
+             *        against after -1 is specified.  */
             if (pInfo->LastAccessTime.QuadPart && !pVBoxFobx->fKeepLastAccessTime)
             {
                 RTTimeSpecSetNtTime(&pSHFLFileInfo->AccessTime, pInfo->LastAccessTime.QuadPart);
-                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
+                fModified |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
             }
             if (pInfo->LastWriteTime.QuadPart && !pVBoxFobx->fKeepLastWriteTime)
             {
                 RTTimeSpecSetNtTime(&pSHFLFileInfo->ModificationTime, pInfo->LastWriteTime.QuadPart);
-                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
+                fModified |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
             }
             if (pInfo->ChangeTime.QuadPart && !pVBoxFobx->fKeepChangeTime)
             {
                 RTTimeSpecSetNtTime(&pSHFLFileInfo->ChangeTime, pInfo->ChangeTime.QuadPart);
-                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_CHANGE_TIME;
+                fModified |= VBOX_FOBX_F_INFO_CHANGE_TIME;
             }
             if (pInfo->FileAttributes)
-            {
                 pSHFLFileInfo->Attr.fMode = NTToVBoxFileAttributes(pInfo->FileAttributes);
-            }
 
             Assert(pVBoxFobx && pNetRootExtension && pDeviceExtension);
             vrc = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
                                  SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
 
-            if (vrc != VINF_SUCCESS)
+            if (RT_SUCCESS(vrc))
+            {
+                vbsfNtCopyInfo(pVBoxFobx, pSHFLFileInfo, fModified);
+                pVBoxFobx->SetFileInfoOnCloseFlags |= fModified;
+            }
+            else
             {
                 Status = VBoxErrorToNTStatus(vrc);
                 goto end;
             }
-            else
-            {
-                /* Update our internal copy. Ignore zero fields! */
-                if (pInfo->CreationTime.QuadPart && !pVBoxFobx->fKeepCreationTime)
-                    pVBoxFobx->FileBasicInfo.CreationTime = pInfo->CreationTime;
-                if (pInfo->LastAccessTime.QuadPart && !pVBoxFobx->fKeepLastAccessTime)
-                    pVBoxFobx->FileBasicInfo.LastAccessTime = pInfo->LastAccessTime;
-                if (pInfo->LastWriteTime.QuadPart && !pVBoxFobx->fKeepLastWriteTime)
-                    pVBoxFobx->FileBasicInfo.LastWriteTime = pInfo->LastWriteTime;
-                if (pInfo->ChangeTime.QuadPart && !pVBoxFobx->fKeepChangeTime)
-                    pVBoxFobx->FileBasicInfo.ChangeTime = pInfo->ChangeTime;
-                if (pInfo->FileAttributes)
-                    pVBoxFobx->FileBasicInfo.FileAttributes = pInfo->FileAttributes;
-            }
-
             break;
         }
 

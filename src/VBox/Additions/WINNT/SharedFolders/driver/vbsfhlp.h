@@ -27,6 +27,7 @@
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLibSharedFolders.h>
 
+RT_C_DECLS_BEGIN
 
 void     vbsfHlpSleep(ULONG ulMillies);
 NTSTATUS vbsfHlpCreateDriveLetter(WCHAR Letter, UNICODE_STRING *pDeviceName);
@@ -43,6 +44,8 @@ PCHAR MajorFunctionString(UCHAR MajorFunction, LONG MinorFunction);
 #endif
 
 NTSTATUS vbsfShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *pwc, uint16_t cb);
+
+RT_C_DECLS_END
 
 #endif /* !GA_INCLUDED_SRC_WINNT_SharedFolders_driver_vbsfhlp_h */
 
