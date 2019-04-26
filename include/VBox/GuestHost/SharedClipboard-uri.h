@@ -24,8 +24,8 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-#ifndef VBOX_INCLUDED_GuestHost_SharedClipboard_URI_h
-#define VBOX_INCLUDED_GuestHost_SharedClipboard_URI_h
+#ifndef VBOX_INCLUDED_GuestHost_SharedClipboard_uri_h
+#define VBOX_INCLUDED_GuestHost_SharedClipboard_uri_h
 #ifndef RT_WITHOUT_PRAGMA_ONCE
 # pragma once
 #endif
@@ -315,5 +315,5 @@ protected:
     uint64_t                m_cbTotal;
 };
 
-#endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_URI_h */
+#endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_uri_h */
 
