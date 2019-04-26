@@ -15,69 +15,21 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include <iprt/nt/nt.h> /* includes ntifs.h and wdm.h */
-#include <iprt/win/ntdddisk.h>
 
-#include "vbsfhlp.h"
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
+#include "vbsf.h"
 #include <iprt/err.h>
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 #ifdef DEBUG
 static int s_iAllocRefCount = 0;
 #endif
 
-void vbsfHlpSleep(ULONG ulMillies)
-{
-    KEVENT event;
-    LARGE_INTEGER dueTime;
-
-    KeInitializeEvent(&event, NotificationEvent, FALSE);
-
-    dueTime.QuadPart = -10000 * (int)ulMillies;
-
-    KeWaitForSingleObject(&event, Executive, KernelMode, FALSE, &dueTime);
-}
-
-/**
- * Converts VBox (IPRT) file mode to NT file attributes.
- *
- * @returns NT file attributes
- * @param   fIprtMode   IPRT file mode.
- *
- */
-uint32_t VBoxToNTFileAttributes(uint32_t fIprtMode)
-{
-    AssertCompile((RTFS_DOS_READONLY               >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_READONLY);
-    AssertCompile((RTFS_DOS_HIDDEN                 >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_HIDDEN);
-    AssertCompile((RTFS_DOS_SYSTEM                 >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_SYSTEM);
-    AssertCompile((RTFS_DOS_DIRECTORY              >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_DIRECTORY);
-    AssertCompile((RTFS_DOS_ARCHIVED               >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_ARCHIVE);
-    /* skipping:   RTFS_DOS_NT_DEVICE */
-    AssertCompile((RTFS_DOS_NT_NORMAL              >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_NORMAL);
-    AssertCompile((RTFS_DOS_NT_TEMPORARY           >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_TEMPORARY);
-    AssertCompile((RTFS_DOS_NT_SPARSE_FILE         >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_SPARSE_FILE);
-    AssertCompile((RTFS_DOS_NT_REPARSE_POINT       >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_REPARSE_POINT);
-    AssertCompile((RTFS_DOS_NT_COMPRESSED          >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_COMPRESSED);
-    /* skipping:   RTFS_DOS_NT_OFFLINE */
-    AssertCompile((RTFS_DOS_NT_NOT_CONTENT_INDEXED >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
-    AssertCompile((RTFS_DOS_NT_ENCRYPTED           >> RTFS_DOS_SHIFT) == FILE_ATTRIBUTE_ENCRYPTED);
-
-    uint32_t fNtAttribs = (fIprtMode & (RTFS_DOS_MASK_NT & ~(RTFS_DOS_NT_OFFLINE | RTFS_DOS_NT_DEVICE | RTFS_DOS_NT_REPARSE_POINT)))
-                       >> RTFS_DOS_SHIFT;
-    return fNtAttribs ? fNtAttribs : FILE_ATTRIBUTE_NORMAL;
-}
-
-/**
- * Converts NT file attributes to VBox (IPRT) ones.
- *
- * @returns IPRT file mode
- * @param   fNtAttribs      NT file attributes
- */
-uint32_t NTToVBoxFileAttributes(uint32_t fNtAttribs)
-{
-    uint32_t fIprtMode = (fNtAttribs << RTFS_DOS_SHIFT) & RTFS_DOS_MASK_NT;
-    fIprtMode &= ~(RTFS_DOS_NT_OFFLINE | RTFS_DOS_NT_DEVICE | RTFS_DOS_NT_REPARSE_POINT);
-    return fIprtMode ? fIprtMode : RTFS_DOS_NT_NORMAL;
-}
 
 NTSTATUS vbsfHlpCreateDriveLetter(WCHAR Letter, UNICODE_STRING *pDeviceName)
 {

@@ -15,7 +15,12 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "vbsf.h"
+
 
 NTSTATUS VBoxMRxUpdateNetRootState(IN OUT PMRX_NET_ROOT pNetRoot)
 {

@@ -15,10 +15,17 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*********************************************************************************************************************************
+*   Header Files                                                                                                                 *
+*********************************************************************************************************************************/
 #include "vbsf.h"
 #include <iprt/err.h>
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /** Macro for copying a SHFLSTRING file name into a FILE_DIRECTORY_INFORMATION structure. */
 #define INIT_FILE_NAME(obj, str) \
     do { \
@@ -26,6 +33,7 @@
         (obj)->FileNameLength = cbLength; \
         RtlCopyMemory((obj)->FileName, &(str).String.ucs2[0], cbLength + 2); \
     } while (0)
+
 
 NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
 {
