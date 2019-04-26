@@ -479,6 +479,11 @@ void UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility(bool fV
     emit sigCloudProfileDetailsVisibilityChanged(fVisible);
 }
 
+void UICloudProfileManagerWidget::sltShowCloudProfileTryPage()
+{
+    vboxGlobal().openURL("https://myservices.us.oraclecloud.com/mycloud/signup");
+}
+
 void UICloudProfileManagerWidget::sltShowCloudProfileHelp()
 {
     vboxGlobal().openURL("https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm");
@@ -565,6 +570,7 @@ void UICloudProfileManagerWidget::prepareActions()
     addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Import));
     addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
     addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
+    addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_TryPage));
     addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help));
 
     /* Connect actions: */
@@ -576,6 +582,8 @@ void UICloudProfileManagerWidget::prepareActions()
             this, &UICloudProfileManagerWidget::sltRemoveCloudProfile);
     connect(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details), &QAction::toggled,
             this, &UICloudProfileManagerWidget::sltToggleCloudProfileDetailsVisibility);
+    connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_TryPage), &QAction::triggered,
+            this, &UICloudProfileManagerWidget::sltShowCloudProfileTryPage);
     connect(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help), &QAction::triggered,
             this, &UICloudProfileManagerWidget::sltShowCloudProfileHelp);
 }
@@ -622,6 +630,7 @@ void UICloudProfileManagerWidget::prepareToolBar()
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Remove));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_T_Details));
         m_pToolBar->addSeparator();
+        m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_TryPage));
         m_pToolBar->addAction(m_pActionPool->action(UIActionIndexST_M_Cloud_S_Help));
 
 #ifdef VBOX_WS_MAC

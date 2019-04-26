@@ -2616,6 +2616,48 @@ protected:
     }
 };
 
+/** Simple action extension, used as 'Try Page' action class. */
+class UIActionMenuSelectorCloudShowTryPage : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructs action passing @a pParent to the base-class. */
+    UIActionMenuSelectorCloudShowTryPage(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/cloud_profile_try_32px.png",          ":/cloud_profile_try_16px.png",
+                         ":/cloud_profile_try_disabled_32px.png", ":/cloud_profile_try_disabled_16px.png")
+    {
+        setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    }
+
+protected:
+
+    /** Returns shortcut extra-data ID. */
+    virtual QString shortcutExtraDataID() const /* override */
+    {
+        return QString("ShowCloudProfileTryPage");
+    }
+
+    /** Returns default shortcut. */
+    virtual QKeySequence defaultShortcut(UIActionPoolType) const /* override */
+    {
+        return QKeySequence("Ctrl+Shift+T");
+    }
+
+    /** Handles translation event. */
+    virtual void retranslateUi() /* override */
+    {
+        setIconText(QApplication::translate("UIActionPool", "Try"));
+        setName(QApplication::translate("UIActionPool", "&Try Oracle Cloud for Free..."));
+        setShortcutScope(QApplication::translate("UIActionPool", "Cloud Profile Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Try Oracle cloud for free"));
+        const QString strToolTip = QApplication::translate("UIActionPool", "Try Oracle Cloud for Free");
+        setToolTip(shortcut().isEmpty() ? strToolTip : QString("%1 (%2)").arg(strToolTip, shortcut().toString()));
+    }
+};
+
 /** Simple action extension, used as 'Show Help' action class. */
 class UIActionMenuSelectorCloudShowHelp : public UIActionSimple
 {
@@ -2789,6 +2831,7 @@ void UIActionPoolManager::preparePool()
     m_pool[UIActionIndexST_M_Cloud_S_Import] = new UIActionMenuSelectorCloudPerformImport(this);
     m_pool[UIActionIndexST_M_Cloud_S_Remove] = new UIActionMenuSelectorCloudPerformRemove(this);
     m_pool[UIActionIndexST_M_Cloud_T_Details] = new UIActionMenuSelectorCloudToggleProperties(this);
+    m_pool[UIActionIndexST_M_Cloud_S_TryPage] = new UIActionMenuSelectorCloudShowTryPage(this);
     m_pool[UIActionIndexST_M_Cloud_S_Help] = new UIActionMenuSelectorCloudShowHelp(this);
 
     /* 'Group' action groups: */
@@ -3359,6 +3402,8 @@ void UIActionPoolManager::updateMenuCloudWrapper(UIMenu *pMenu)
         fSeparator = false;
     }
 
+    /* 'Try Page' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_TryPage)) || fSeparator;
     /* 'Help' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexST_M_Cloud_S_Help)) || fSeparator;
 }

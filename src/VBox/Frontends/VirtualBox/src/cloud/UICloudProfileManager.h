@@ -103,6 +103,8 @@ private slots:
         /** Handles command to make cloud profile details @a fVisible. */
         void sltToggleCloudProfileDetailsVisibility(bool fVisible);
         /** Handles command to show cloud profile help. */
+        void sltShowCloudProfileTryPage();
+        /** Handles command to show cloud profile help. */
         void sltShowCloudProfileHelp();
     /** @} */
 

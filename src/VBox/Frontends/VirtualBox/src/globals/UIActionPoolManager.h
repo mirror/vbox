@@ -158,6 +158,7 @@ enum UIActionIndexST
     UIActionIndexST_M_Cloud_S_Import,
     UIActionIndexST_M_Cloud_S_Remove,
     UIActionIndexST_M_Cloud_T_Details,
+    UIActionIndexST_M_Cloud_S_TryPage,
     UIActionIndexST_M_Cloud_S_Help,
 
     /* Maximum index: */
