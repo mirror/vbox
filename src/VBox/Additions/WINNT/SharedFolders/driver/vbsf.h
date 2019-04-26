@@ -44,7 +44,7 @@
 #include "vbsfshared.h"
 #include <VBox/log.h>
 #include <VBox/VBoxGuestLibSharedFolders.h>
-#ifndef __cplusplus /* not for Win2kWorkarounds.c */
+#ifdef __cplusplus /* not for Win2kWorkarounds.c */
 # include <VBox/VBoxGuestLibSharedFoldersInline.h>
 #endif
 
