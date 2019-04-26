@@ -709,6 +709,10 @@ DECLHIDDEN(int) rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR 
  * @param   fProt       The desired page protection for the mapping.
  * @param   R0Process   If NIL_RTR0PROCESS map into system (kernel) memory.
  *                      If not nil, it's the current process.
+ * @param   offSub      Offset into @a pMemToMap to start mapping.
+ * @param   cbSub       The number of bytes to map from @a pMapToMem.  0 if
+ *                      we're to map everything. Non-zero if @a offSub is
+ *                      non-zero.
  */
 static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
                            unsigned fProt, RTR0PROCESS R0Process, size_t offSub, size_t cbSub)
