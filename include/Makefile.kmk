@@ -71,6 +71,7 @@ VBOX_HDRS_R3_ONLY := \
 	VBox/vscsi.h \
 	VBox/ExtPack/% \
 	VBox/GuestHost/SharedClipboard-win.h \
+	VBox/GuestHost/SharedClipboard-uri.h \
 	VBox/GuestHost/DragAndDrop.h \
 	VBox/HostServices/Service.h \
 	iprt/win/% \
