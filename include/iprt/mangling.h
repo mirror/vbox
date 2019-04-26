@@ -3809,6 +3809,7 @@
 # define RTMemSaferAllocZExTag                          RT_MANGLER(RTMemSaferAllocZExTag)
 # define RTMemSaferAllocZTag                            RT_MANGLER(RTMemSaferAllocZTag)
 # define RTMemSaferFree                                 RT_MANGLER(RTMemSaferFree)
+# define RTMemSaferGetSize                              RT_MANGLER(RTMemSaferGetSize)
 # define RTMemSaferReallocZExTag                        RT_MANGLER(RTMemSaferReallocZExTag)
 # define RTMemSaferReallocZTag                          RT_MANGLER(RTMemSaferReallocZTag)
 # define RTMemSaferScramble                             RT_MANGLER(RTMemSaferScramble)
