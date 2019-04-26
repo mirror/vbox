@@ -71,34 +71,23 @@ typedef struct _MRX_VBOX_DEVICE_EXTENSION
     PUNICODE_STRING wszLocalConnectionName[_MRX_MAX_DRIVE_LETTERS];
     FAST_MUTEX mtxLocalCon;
 
-    /* The HGCM client information. */
-    VBGLSFCLIENT hgcmClient;
-
     /** Saved pointer to the original IRP_MJ_DEVICE_CONTROL handler. */
     NTSTATUS (* pfnRDBSSDeviceControl) (PDEVICE_OBJECT pDevObj, PIRP pIrp);
     /** Saved pointer to the original IRP_MJ_CREATE handler. */
     NTSTATUS (NTAPI * pfnRDBSSCreate)(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 
 } MRX_VBOX_DEVICE_EXTENSION, *PMRX_VBOX_DEVICE_EXTENSION;
-#ifdef RT_ARCH_AMD64
-AssertCompileMemberOffset(MRX_VBOX_DEVICE_EXTENSION, cLocalConnections, 8);
-AssertCompileMemberOffset(MRX_VBOX_DEVICE_EXTENSION, wszLocalConnectionName, 0x28);
-AssertCompileMemberOffset(MRX_VBOX_DEVICE_EXTENSION, mtxLocalCon, 0xF8);
-AssertCompileMemberSize(MRX_VBOX_DEVICE_EXTENSION, mtxLocalCon, 7 * 8);
-AssertCompileMemberOffset(MRX_VBOX_DEVICE_EXTENSION, hgcmClient, 0x130);
-AssertCompileMemberOffset(MRX_VBOX_DEVICE_EXTENSION, pfnRDBSSDeviceControl, 0x130 + 16);
-#endif
 
 /*
  * The shared folders NET_ROOT extension.
  */
 typedef struct _MRX_VBOX_NETROOT_EXTENSION
 {
-    /* The pointert to HGCM client information in device extension. */
-    VBGLSFCLIENT *phgcmClient;
-
     /* The shared folder map handle of this netroot. */
     VBGLSFMAP map;
+    /** Simple initialized (mapped folder) indicator that works better with the
+     *  zero filled defaults than SHFL_ROOT_NIL.  */
+    bool        fInitialized;
 } MRX_VBOX_NETROOT_EXTENSION, *PMRX_VBOX_NETROOT_EXTENSION;
 
 #define VBOX_FOBX_F_INFO_CREATION_TIME   0x01
@@ -231,9 +220,6 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
                     IN PVOID pBuffer,
                     IN ULONG BufferLength);
 NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext);
-NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
-                             PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
-                             PMRX_VBOX_FOBX pVBoxFobx);
 
 void     vbsfNtCopyInfoToLegacy(PMRX_VBOX_FOBX pVBoxFobx, PCSHFLFSOBJINFO pInfo);
 

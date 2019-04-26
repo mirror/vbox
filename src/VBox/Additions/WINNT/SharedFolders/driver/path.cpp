@@ -33,7 +33,6 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
 
     RxCaptureFcb;
 
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = VBoxMRxGetDeviceExtension(RxContext);
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
 
     int vrc = VINF_SUCCESS;
@@ -279,7 +278,7 @@ static NTSTATUS vbsfProcessCreate(PRX_CONTEXT RxContext,
 
         /* Call host. */
         Log(("VBOXSF: vbsfProcessCreate: VbglR0SfCreate called.\n"));
-        vrc = VbglR0SfCreate(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, ParsedPath, pCreateParms);
+        vrc = VbglR0SfCreate(&g_SfClient, &pNetRootExtension->map, ParsedPath, pCreateParms);
 
         vbsfFreeNonPagedMem(ParsedPath);
     }
@@ -440,7 +439,7 @@ failure:
 
     if (pCreateParms && pCreateParms->Handle != SHFL_HANDLE_NIL)
     {
-        VbglR0SfClose(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pCreateParms->Handle);
+        VbglR0SfClose(&g_SfClient, &pNetRootExtension->map, pCreateParms->Handle);
         *pHandle = SHFL_HANDLE_NIL;
     }
 
@@ -533,6 +532,9 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
 
     RxContext->Create.ReturnedCreateInformation = CreateAction;
 
+    /* Initialize the FCB if this is the first open.
+       Note! The RxFinishFcbInitialization call expects node types as the 2nd parameter, but is for
+             some reason given enum RX_FILE_TYPE as type. */
     if (capFcb->OpenCount == 0)
     {
         FCB_INIT_PACKET               InitPacket;
@@ -555,9 +557,10 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
                          &Data.AllocationSize,
                          &Data.EndOfFile,
                          &Data.EndOfFile);
-        /** @todo r=bird: Use FileTypeDirectory/RDBSS_NTC_STORAGE_TYPE_DIRECTORY here
-         *        for directories? */
-        RxFinishFcbInitialization(capFcb, RDBSS_STORAGE_NTC(FileTypeFile), &InitPacket);
+        if (Info.Attr.fMode & RTFS_DOS_DIRECTORY)
+            RxFinishFcbInitialization(capFcb, (RX_FILE_TYPE)RDBSS_NTC_STORAGE_TYPE_DIRECTORY, &InitPacket);
+        else
+            RxFinishFcbInitialization(capFcb, (RX_FILE_TYPE)RDBSS_NTC_STORAGE_TYPE_FILE, &InitPacket);
     }
 
     SrvOpen->BufferingFlags = 0;
@@ -651,8 +654,7 @@ NTSTATUS VBoxMRxForceClosed(IN PMRX_SRV_OPEN pSrvOpen)
     return STATUS_NOT_IMPLEMENTED;
 }
 
-static NTSTATUS vbsfSetFileInfoOnClose(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
-                                       PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+static NTSTATUS vbsfSetFileInfoOnClose(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
                                        PMRX_VBOX_FOBX pVBoxFobx,
                                        PFILE_BASIC_INFORMATION pInfo,
                                        BYTE SetAttrFlags)
@@ -700,7 +702,7 @@ static NTSTATUS vbsfSetFileInfoOnClose(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtensi
     if (pInfo->FileAttributes && (SetAttrFlags & VBOX_FOBX_F_INFO_ATTRIBUTES) != 0) /// @todo r=bird: never ever set.
         pSHFLFileInfo->Attr.fMode = NTToVBoxFileAttributes(pInfo->FileAttributes);
 
-    vrc = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+    vrc = VbglR0SfFsInfo(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
                          SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
 
     if (vrc != VINF_SUCCESS)
@@ -717,9 +719,8 @@ static NTSTATUS vbsfSetFileInfoOnClose(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtensi
  * Closes an opened file handle of a MRX_VBOX_FOBX.
  * Updates file attributes if necessary.
  */
-NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
-                             PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
-                             PMRX_VBOX_FOBX pVBoxFobx)
+static NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                                    PMRX_VBOX_FOBX pVBoxFobx)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -739,14 +740,13 @@ NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
         /* If the file timestamps were set by the user, then update them before closing the handle,
          * to cancel any effect of the file read/write operations on the host.
          */
-        Status = vbsfSetFileInfoOnClose(pDeviceExtension,
-                                        pNetRootExtension,
+        Status = vbsfSetFileInfoOnClose(pNetRootExtension,
                                         pVBoxFobx,
                                         &pVBoxFobx->FileBasicInfo,
                                         pVBoxFobx->SetFileInfoOnCloseFlags);
     }
 
-    vrc = VbglR0SfClose(&pDeviceExtension->hgcmClient,
+    vrc = VbglR0SfClose(&g_SfClient,
                         &pNetRootExtension->map,
                         pVBoxFobx->hFile);
 
@@ -766,7 +766,6 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
     RxCaptureFcb;
     RxCaptureFobx;
 
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = VBoxMRxGetDeviceExtension(RxContext);
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
     PMRX_SRV_OPEN pSrvOpen = capFobx->pSrvOpen;
@@ -795,7 +794,7 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
 
     /* Close file */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfCloseFileHandle(pDeviceExtension, pNetRootExtension, pVBoxFobx);
+        vbsfCloseFileHandle(pNetRootExtension, pVBoxFobx);
 
     if (capFcb->FcbState & FCB_STATE_DELETE_ON_CLOSE)
     {
@@ -817,7 +816,6 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
     RxCaptureFcb;
     RxCaptureFobx;
 
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = VBoxMRxGetDeviceExtension(RxContext);
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
 
@@ -831,7 +829,7 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
 
     /* Close file first if not already done. */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfCloseFileHandle(pDeviceExtension, pNetRootExtension, pVBoxFobx);
+        vbsfCloseFileHandle(pNetRootExtension, pVBoxFobx);
 
     Log(("VBOXSF: vbsfRemove: RemainingName->Length %d\n", RemainingName->Length));
     Status = vbsfShflStringFromUnicodeAlloc(&ParsedPath, RemainingName->Buffer, RemainingName->Length);
@@ -839,7 +837,7 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
         return Status;
 
     /* Call host. */
-    vrc = VbglR0SfRemove(&pDeviceExtension->hgcmClient, &pNetRootExtension->map,
+    vrc = VbglR0SfRemove(&g_SfClient, &pNetRootExtension->map,
                          ParsedPath,
                          pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE);
 
@@ -867,7 +865,6 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
     RxCaptureFcb;
     RxCaptureFobx;
 
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = VBoxMRxGetDeviceExtension(RxContext);
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
     PMRX_SRV_OPEN pSrvOpen = capFobx->pSrvOpen;
@@ -888,7 +885,7 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
 
     /* Must close the file before renaming it! */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfCloseFileHandle(pDeviceExtension, pNetRootExtension, pVBoxFobx);
+        vbsfCloseFileHandle(pNetRootExtension, pVBoxFobx);
 
     /* Mark it as renamed, so we do nothing during close */
     SetFlag(pSrvOpen->Flags, SRVOPEN_FLAG_FILE_RENAMED);
@@ -918,7 +915,7 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
         flags |= SHFL_RENAME_REPLACE_IF_EXISTS;
 
     Log(("VBOXSF: vbsfRename: Calling VbglR0SfRename\n"));
-    vrc = VbglR0SfRename(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, SrcPath, DestPath, flags);
+    vrc = VbglR0SfRename(&g_SfClient, &pNetRootExtension->map, SrcPath, DestPath, flags);
 
     vbsfFreeNonPagedMem(SrcPath);
     vbsfFreeNonPagedMem(DestPath);

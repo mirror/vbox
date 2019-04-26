@@ -225,7 +225,6 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
     RxCaptureFcb;
     RxCaptureFobx;
 
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = VBoxMRxGetDeviceExtension(RxContext);
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
 
@@ -281,7 +280,7 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
         return STATUS_INVALID_PARAMETER;
     }
 
-    ctx.pClient = &pDeviceExtension->hgcmClient;
+    ctx.pClient = &g_SfClient;
     ctx.pMap    = &pNetRootExtension->map;
     ctx.hFile   = pVBoxFobx->hFile;
     ctx.offset  = (uint64_t)ByteOffset;
@@ -362,7 +361,6 @@ static NTSTATUS vbsfWriteInternal(IN PRX_CONTEXT RxContext)
     RxCaptureFcb;
     RxCaptureFobx;
 
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = VBoxMRxGetDeviceExtension(RxContext);
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
 
@@ -398,7 +396,7 @@ static NTSTATUS vbsfWriteInternal(IN PRX_CONTEXT RxContext)
         return STATUS_INVALID_PARAMETER;
     }
 
-    ctx.pClient = &pDeviceExtension->hgcmClient;
+    ctx.pClient = &g_SfClient;
     ctx.pMap    = &pNetRootExtension->map;
     ctx.hFile   = pVBoxFobx->hFile;
     ctx.offset  = (uint64_t)ByteOffset;
@@ -467,7 +465,6 @@ NTSTATUS VBoxMRxLocks(IN PRX_CONTEXT RxContext)
     RxCaptureFcb;
     RxCaptureFobx;
 
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = VBoxMRxGetDeviceExtension(RxContext);
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
 
@@ -509,7 +506,7 @@ NTSTATUS VBoxMRxLocks(IN PRX_CONTEXT RxContext)
     else
         fu32Lock |= SHFL_LOCK_WAIT;
 
-    vrc = VbglR0SfLock(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+    vrc = VbglR0SfLock(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
                        LowIoContext->ParamsFor.Locks.ByteOffset, LowIoContext->ParamsFor.Locks.Length, fu32Lock);
 
     Status = VBoxErrorToNTStatus(vrc);
@@ -533,7 +530,6 @@ NTSTATUS VBoxMRxFlush (IN PRX_CONTEXT RxContext)
     RxCaptureFcb;
     RxCaptureFobx;
 
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = VBoxMRxGetDeviceExtension(RxContext);
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
 
@@ -542,7 +538,7 @@ NTSTATUS VBoxMRxFlush (IN PRX_CONTEXT RxContext)
     Log(("VBOXSF: MRxFlush\n"));
 
     /* Do the actual flushing of file buffers */
-    vrc = VbglR0SfFlush(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile);
+    vrc = VbglR0SfFlush(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile);
 
     Status = VBoxErrorToNTStatus(vrc);
 
@@ -559,7 +555,6 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     RxCaptureFcb;
     RxCaptureFobx;
 
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = VBoxMRxGetDeviceExtension(RxContext);
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
 
@@ -570,7 +565,7 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     Log(("VBOXSF: vbsfSetEndOfFile: New size = %RX64 (%p), pNewAllocationSize = %p\n",
          pNewFileSize->QuadPart, pNewFileSize, pNewAllocationSize));
 
-    Assert(pVBoxFobx && pNetRootExtension && pDeviceExtension);
+    Assert(pVBoxFobx && pNetRootExtension);
 
     cbBuffer = sizeof(SHFLFSOBJINFO);
     pObjInfo = (SHFLFSOBJINFO *)vbsfAllocNonPagedMem(cbBuffer);
@@ -583,7 +578,7 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     RtlZeroMemory(pObjInfo, cbBuffer);
     pObjInfo->cbObject = pNewFileSize->QuadPart;
 
-    vrc = VbglR0SfFsInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+    vrc = VbglR0SfFsInfo(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
                          SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer, (PSHFLDIRINFO)pObjInfo);
 
     Log(("VBOXSF: vbsfSetEndOfFile: VbglR0SfFsInfo returned %Rrc\n", vrc));

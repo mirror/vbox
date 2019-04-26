@@ -32,12 +32,12 @@ VBoxSF_SDKS.amd64  = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
 VBoxSF_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxSF_LDFLAGS.amd64 = -Entry:DriverEntry
 VBoxSF_SOURCES     = \
-	file.c \
-	info.cpp \
 	vbsf.cpp \
-	net.c \
-	path.c \
-	vbsfhlp.c \
+	net.cpp \
+	file.cpp \
+	info.cpp \
+	path.cpp \
+	vbsfhlp.cpp \
  	VBoxSF.rc
 VBoxSF_SOURCES.x86 = \
 	Win2kWorkarounds.c \

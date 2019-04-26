@@ -40,7 +40,6 @@ static struct _MINIRDR_DISPATCH VBoxMRxDispatch;
  */
 PRDBSS_DEVICE_OBJECT VBoxMRxDeviceObject;
 
-uint64_t g_abPadding111[256] = {0};
 /** The shared folder service client structure. */
 VBGLSFCLIENT g_SfClient;
 /** VMMDEV_HVF_XXX (set during init). */
@@ -49,7 +48,6 @@ uint32_t     g_fHostFeatures = 0;
 uint32_t     g_uSfLastFunction = SHFL_FN_SET_FILE_SIZE;
 /** Shared folders features (SHFL_FEATURE_XXX). */
 uint64_t     g_fSfFeatures = 0;
-uint64_t g_abPadding222[256] = {0};
 
 
 
@@ -618,7 +616,6 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
     }
 
     AssertPtr(pDeviceExtension);
-    pDeviceExtension->hgcmClient = g_SfClient;
 
     /* The redirector driver must intercept the IOCTL to avoid VBOXSVR name resolution
      * by other redirectors. These additional name resolutions cause long delays.
@@ -811,7 +808,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                         break;
                     }
 
-                    vrc = VbglR0SfQueryMappings(&pDeviceExtension->hgcmClient, mappings, &cMappings);
+                    vrc = VbglR0SfQueryMappings(&g_SfClient, mappings, &cMappings);
                     if (vrc == VINF_SUCCESS)
                     {
                         __try
@@ -962,7 +959,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                         Log(("VBOXSF: MRxDevFcbXXXControlFile: IOCTL_MRX_VBOX_GETGLOBALCONN: Connection ID = %d\n",
                              *pu8ConnectId));
 
-                        vrc = VbglR0SfQueryMapName(&pDeviceExtension->hgcmClient,
+                        vrc = VbglR0SfQueryMapName(&g_SfClient,
                                                    *pu8ConnectId & ~0x80 /** @todo fix properly */,
                                                    pString, ShflStringSizeOfBuffer(pString));
                         if (   vrc == VINF_SUCCESS
