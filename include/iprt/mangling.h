@@ -1473,6 +1473,7 @@
 # define RTMemFree                                      RT_MANGLER(RTMemFree)
 # define RTMemFreeEx                                    RT_MANGLER(RTMemFreeEx)
 # define RTMemPageAllocTag                              RT_MANGLER(RTMemPageAllocTag)
+# define RTMemPageAllocExTag                            RT_MANGLER(RTMemPageAllocExTag)
 # define RTMemPageAllocZTag                             RT_MANGLER(RTMemPageAllocZTag)
 # define RTMemPageFree                                  RT_MANGLER(RTMemPageFree)
 # define RTMemPoolAlloc                                 RT_MANGLER(RTMemPoolAlloc)
