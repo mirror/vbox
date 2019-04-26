@@ -228,7 +228,7 @@ int vboxClipboardMain(void)
         {
             switch (Msg)
             {
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS:
+                case VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS:
                 {
                     /* The host has announced available clipboard formats.
                      * Save the information so that it is available for

@@ -694,7 +694,7 @@ DECLCALLBACK(int) VBoxClipboardWorker(void *pInstance, bool volatile *pfShutdown
             LogFlowFunc(("u32Msg=%RU32, u32Formats=0x%x\n", u32Msg, u32Formats));
             switch (u32Msg)
             {
-               case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS:
+               case VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS:
                {
                    /* The host has announced available clipboard formats.
                     * Forward the information to the window, so it can later

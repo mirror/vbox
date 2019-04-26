@@ -76,7 +76,7 @@ void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats)
 {
     LogRelFlowFunc(("called.  pCtx=%p, u32Formats=%02X\n", pCtx, u32Formats));
     vboxSvcClipboardReportMsg(pCtx->pClient,
-                              VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS,
+                              VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS,
                               u32Formats);
 }
 
@@ -148,7 +148,7 @@ int vboxClipboardSync(VBOXCLIPBOARDCLIENTDATA *pClient)
     /* Tell the guest we have no data in case X11 is not available.  If
      * there is data in the host clipboard it will automatically be sent to
      * the guest when the clipboard starts up. */
-    vboxSvcClipboardReportMsg(pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, 0);
+    vboxSvcClipboardReportMsg(pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, 0);
     /** @todo r=andy Check rc code. */
     return VINF_SUCCESS;
 }

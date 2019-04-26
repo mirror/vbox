@@ -228,7 +228,7 @@ static bool vboxSvcClipboardReturnMsg(VBOXCLIPBOARDCLIENTDATA *pClient, VBOXHGCM
     else if (pClient->fMsgFormats)
     {
         LogRelFlow(("vboxSvcClipboardReturnMsg: Formats %02X\n", pClient->u32AvailableFormats));
-        VBoxHGCMParmUInt32Set(&paParms[0], VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS);
+        VBoxHGCMParmUInt32Set(&paParms[0], VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS);
         VBoxHGCMParmUInt32Set(&paParms[1], pClient->u32AvailableFormats);
         pClient->fMsgFormats = false;
     }
@@ -269,7 +269,7 @@ void vboxSvcClipboardReportMsg(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg
                 pClient->u32RequestedFormat = u32Formats;
                 pClient->fMsgReadData = true;
             } break;
-            case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS:
+            case VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS:
             {
                 if (   vboxSvcClipboardMode () != VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST
                     && vboxSvcClipboardMode () != VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL)
@@ -580,7 +580,7 @@ static DECLCALLBACK(void) svcCall(void *,
                             LogRelFlow(("DATA: g_fDelayedAnnouncement = %d, g_u32DelayedFormats = 0x%x\n", g_fDelayedAnnouncement, g_u32DelayedFormats));
                             if (g_fDelayedAnnouncement)
                             {
-                                vboxSvcClipboardReportMsg (g_pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, g_u32DelayedFormats);
+                                vboxSvcClipboardReportMsg (g_pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, g_u32DelayedFormats);
                                 g_fDelayedAnnouncement = false;
                                 g_u32DelayedFormats = 0;
                             }
@@ -958,7 +958,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
                 }
                 else
                 {
-                    vboxSvcClipboardReportMsg (g_pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, u32Format);
+                    vboxSvcClipboardReportMsg (g_pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, u32Format);
                 }
             } break;
 

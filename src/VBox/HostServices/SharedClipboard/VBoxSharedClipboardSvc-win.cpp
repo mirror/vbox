@@ -590,7 +590,7 @@ static int vboxClipboardSyncInternal(PVBOXCLIPBOARDCONTEXT pCtx)
     uint32_t uFormats;
     int rc = VBoxClipboardWinGetFormats(&pCtx->Win, &uFormats);
     if (RT_SUCCESS(rc))
-        vboxSvcClipboardReportMsg(pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS, uFormats);
+        vboxSvcClipboardReportMsg(pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, uFormats);
 
     return rc;
 }
