@@ -27,31 +27,9 @@
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 #ifdef DEBUG
-static int s_iAllocRefCount = 0;
+static int volatile g_cAllocations = 0;
 #endif
 
-
-NTSTATUS vbsfHlpCreateDriveLetter(WCHAR Letter, UNICODE_STRING *pDeviceName)
-{
-    UNICODE_STRING driveName;
-    RtlInitUnicodeString(&driveName,L"\\??\\_:" );
-
-    /* Replace '_' with actual drive letter */
-    driveName.Buffer[driveName.Length/sizeof(WCHAR) - 2] = Letter;
-
-    return IoCreateSymbolicLink(&driveName, pDeviceName);
-}
-
-NTSTATUS vbsfHlpDeleteDriveLetter(WCHAR Letter)
-{
-    UNICODE_STRING driveName;
-    RtlInitUnicodeString(&driveName,L"\\??\\_:" );
-
-    /* Replace '_' with actual drive letter */
-    driveName.Buffer[driveName.Length/sizeof(WCHAR) - 2] = Letter;
-
-    return IoDeleteSymbolicLink(&driveName);
-}
 
 /**
  * Convert VBox error code to NT status code
@@ -60,7 +38,7 @@ NTSTATUS vbsfHlpDeleteDriveLetter(WCHAR Letter)
  * @param   vrc             VBox status code.
  *
  */
-NTSTATUS VBoxErrorToNTStatus(int vrc)
+NTSTATUS vbsfNtVBoxStatusToNt(int vrc)
 {
     NTSTATUS Status;
 
@@ -146,7 +124,6 @@ NTSTATUS VBoxErrorToNTStatus(int vrc)
             break;
 
         default:
-            /** @todo error handling */
             Status = STATUS_INVALID_PARAMETER;
             Log(("Unexpected vbox error %Rrc\n",
                  vrc));
@@ -155,81 +132,99 @@ NTSTATUS VBoxErrorToNTStatus(int vrc)
     return Status;
 }
 
-PVOID vbsfAllocNonPagedMem(ULONG ulSize)
+/**
+ * Wrapper around ExAllocatePoolWithTag.
+ */
+PVOID vbsfNtAllocNonPagedMem(ULONG cbMemory)
 {
-    PVOID pMemory = NULL;
-
-#ifdef DEBUG
-    s_iAllocRefCount = s_iAllocRefCount + 1;
-    Log(("vbsfAllocNonPagedMem: RefCnt after incrementing: %d\n", s_iAllocRefCount));
-#endif
-
     /* Tag is reversed (a.k.a "SHFL") to display correctly in debuggers, so search for "SHFL" */
-    pMemory = ExAllocatePoolWithTag(NonPagedPool, ulSize, 'LFHS');
-
+    PVOID pMemory = ExAllocatePoolWithTag(NonPagedPool, cbMemory, 'LFHS');
     if (NULL != pMemory)
     {
-        RtlZeroMemory(pMemory, ulSize);
+        RtlZeroMemory(pMemory, cbMemory);
 #ifdef DEBUG
-        Log(("vbsfAllocNonPagedMem: Allocated %d bytes of memory at %p.\n", ulSize, pMemory));
+        int const cAllocations = g_cAllocations += 1;
+        Log(("vbsfNtAllocNonPagedMem: Allocated %u bytes of memory at %p (g_iAllocRefCount=%d)\n", cbMemory, pMemory, cAllocations));
 #endif
     }
+#ifdef DEBUG
     else
-    {
-#ifdef DEBUG
-        Log(("vbsfAllocNonPagedMem: ERROR: Could not allocate %d bytes of memory!\n", ulSize));
+        Log(("vbsfNtAllocNonPagedMem: ERROR: Could not allocate %u bytes of memory!\n", cbMemory));
 #endif
-    }
-
     return pMemory;
 }
 
-void vbsfFreeNonPagedMem(PVOID lpMem)
+/**
+ * Wrapper around ExFreePoolWithTag.
+ */
+void vbsfNtFreeNonPagedMem(PVOID pvMemory)
 {
 #ifdef DEBUG
-    s_iAllocRefCount = s_iAllocRefCount - 1;
-    Log(("vbsfFreeNonPagedMem: RefCnt after decrementing: %d\n", s_iAllocRefCount));
+    int cAllocations = g_cAllocations -= 1;
+    Log(("vbsfNtFreeNonPagedMem: %p (g_cAllocations=%d)\n", pvMemory, cAllocations));
 #endif
+    AssertPtr(pvMemory);
 
-    Assert(lpMem);
-
-    /* MSDN: The ExFreePoolWithTag routine issues a bug check if the specified value for Tag does not match the tag value passed
-     to the routine that originally allocated the memory block. Otherwise, the behavior of this routine is identical to ExFreePool. */
-    ExFreePoolWithTag(lpMem, 'LFHS');
-    lpMem = NULL;
+    /* Tagged allocations must be freed using the same tag as used when allocating the memory. */
+    ExFreePoolWithTag(pvMemory, 'LFHS');
 }
 
-#if 0 //def DEBUG
-/**
- * Callback for RTLogFormatV which writes to the backdoor.
- * See PFNLOGOUTPUT() for details.
+/** Allocate and initialize a SHFLSTRING from a UNICODE string.
+ *
+ *  @param ppShflString Where to store the pointer to the allocated SHFLSTRING structure.
+ *                      The structure must be deallocated with vbsfNtFreeNonPagedMem.
+ *  @param pwc          The UNICODE string. If NULL then SHFL is only allocated.
+ *  @param cb           Size of the UNICODE string in bytes without the trailing nul.
+ *
+ *  @return Status code.
  */
-static DECLCALLBACK(size_t) rtLogBackdoorOutput(void *pv, const char *pachChars, size_t cbChars)
+NTSTATUS vbsfNtShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *pwc, uint16_t cb)
 {
-    RTLogWriteUser(pachChars, cbChars);
-    return cbChars;
+    NTSTATUS    Status;
+
+    /* Calculate length required for the SHFL structure: header + chars + nul. */
+    ULONG const cbShflString = SHFLSTRING_HEADER_SIZE + cb + sizeof(WCHAR);
+    PSHFLSTRING pShflString  = (PSHFLSTRING)vbsfNtAllocNonPagedMem(cbShflString);
+    if (pShflString)
+    {
+        if (ShflStringInitBuffer(pShflString, cbShflString))
+        {
+            if (pwc)
+            {
+                RtlCopyMemory(pShflString->String.ucs2, pwc, cb);
+                pShflString->String.ucs2[cb / sizeof(WCHAR)] = 0;
+                pShflString->u16Length = cb; /* without terminating null */
+                AssertMsg(pShflString->u16Length + sizeof(WCHAR) == pShflString->u16Size,
+                          ("u16Length %d, u16Size %d\n", pShflString->u16Length, pShflString->u16Size));
+            }
+            else
+            {
+                /** @todo r=bird: vbsfNtAllocNonPagedMem already zero'ed it...   */
+                RtlZeroMemory(pShflString->String.ucs2, cb + sizeof(WCHAR));
+                pShflString->u16Length = 0; /* without terminating null */
+                AssertMsg(pShflString->u16Size >= sizeof(WCHAR),
+                          ("u16Size %d\n", pShflString->u16Size));
+            }
+
+            *ppShflString = pShflString;
+            Status = STATUS_SUCCESS;
+        }
+        else
+        {
+            vbsfNtFreeNonPagedMem(pShflString);
+            Status = STATUS_INSUFFICIENT_RESOURCES;
+        }
+    }
+    else
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+
+    return Status;
 }
-
-int RTLogBackdoorPrintf1(const char *pszFormat, ...)
-{
-    va_list args;
-
-    LARGE_INTEGER time;
-
-    KeQueryTickCount(&time);
-
-    RTLogBackdoorPrintf("T=%RX64 ", time.QuadPart);
-    va_start(args, pszFormat);
-    RTLogFormatV(rtLogBackdoorOutput, NULL, pszFormat, args);
-    va_end(args);
-
-    return 0;
-}
-#endif
 
 #if defined(DEBUG) || defined(LOG_ENABLED)
 
-static PCHAR PnPMinorFunctionString(LONG MinorFunction)
+/** Debug routine for translating a minor PNP function to a string.  */
+static const char *vbsfNtMinorPnpFunctionName(LONG MinorFunction)
 {
     switch (MinorFunction)
     {
@@ -284,126 +279,44 @@ static PCHAR PnPMinorFunctionString(LONG MinorFunction)
     }
 }
 
-PCHAR MajorFunctionString(UCHAR MajorFunction, LONG MinorFunction)
+/** Debug routine for translating a major+minor IPR function to a string.  */
+const char *vbsfNtMajorFunctionName(UCHAR MajorFunction, LONG MinorFunction)
 {
     switch (MajorFunction)
     {
-        case IRP_MJ_CREATE:
-            return "IRP_MJ_CREATE";
-        case IRP_MJ_CREATE_NAMED_PIPE:
-            return "IRP_MJ_CREATE_NAMED_PIPE";
-        case IRP_MJ_CLOSE:
-            return "IRP_MJ_CLOSE";
-        case IRP_MJ_READ:
-            return "IRP_MJ_READ";
-        case IRP_MJ_WRITE:
-            return "IRP_MJ_WRITE";
-        case IRP_MJ_QUERY_INFORMATION:
-            return "IRP_MJ_QUERY_INFORMATION";
-        case IRP_MJ_SET_INFORMATION:
-            return "IRP_MJ_SET_INFORMATION";
-        case IRP_MJ_QUERY_EA:
-            return "IRP_MJ_QUERY_EA";
-        case IRP_MJ_SET_EA:
-            return "IRP_MJ_SET_EA";
-        case IRP_MJ_FLUSH_BUFFERS:
-            return "IRP_MJ_FLUSH_BUFFERS";
-        case IRP_MJ_QUERY_VOLUME_INFORMATION:
-            return "IRP_MJ_QUERY_VOLUME_INFORMATION";
-        case IRP_MJ_SET_VOLUME_INFORMATION:
-            return "IRP_MJ_SET_VOLUME_INFORMATION";
-        case IRP_MJ_DIRECTORY_CONTROL:
-            return "IRP_MJ_DIRECTORY_CONTROL";
-        case IRP_MJ_FILE_SYSTEM_CONTROL:
-            return "IRP_MJ_FILE_SYSTEM_CONTROL";
-        case IRP_MJ_DEVICE_CONTROL:
-            return "IRP_MJ_DEVICE_CONTROL";
-        case IRP_MJ_INTERNAL_DEVICE_CONTROL:
-            return "IRP_MJ_INTERNAL_DEVICE_CONTROL";
-        case IRP_MJ_SHUTDOWN:
-            return "IRP_MJ_SHUTDOWN";
-        case IRP_MJ_LOCK_CONTROL:
-            return "IRP_MJ_LOCK_CONTROL";
-        case IRP_MJ_CLEANUP:
-            return "IRP_MJ_CLEANUP";
-        case IRP_MJ_CREATE_MAILSLOT:
-            return "IRP_MJ_CREATE_MAILSLOT";
-        case IRP_MJ_QUERY_SECURITY:
-            return "IRP_MJ_QUERY_SECURITY";
-        case IRP_MJ_SET_SECURITY:
-            return "IRP_MJ_SET_SECURITY";
-        case IRP_MJ_POWER:
-            return "IRP_MJ_POWER";
-        case IRP_MJ_SYSTEM_CONTROL:
-            return "IRP_MJ_SYSTEM_CONTROL";
-        case IRP_MJ_DEVICE_CHANGE:
-            return "IRP_MJ_DEVICE_CHANGE";
-        case IRP_MJ_QUERY_QUOTA:
-            return "IRP_MJ_QUERY_QUOTA";
-        case IRP_MJ_SET_QUOTA:
-            return "IRP_MJ_SET_QUOTA";
+        RT_CASE_RET_STR(IRP_MJ_CREATE);
+        RT_CASE_RET_STR(IRP_MJ_CREATE_NAMED_PIPE);
+        RT_CASE_RET_STR(IRP_MJ_CLOSE);
+        RT_CASE_RET_STR(IRP_MJ_READ);
+        RT_CASE_RET_STR(IRP_MJ_WRITE);
+        RT_CASE_RET_STR(IRP_MJ_QUERY_INFORMATION);
+        RT_CASE_RET_STR(IRP_MJ_SET_INFORMATION);
+        RT_CASE_RET_STR(IRP_MJ_QUERY_EA);
+        RT_CASE_RET_STR(IRP_MJ_SET_EA);
+        RT_CASE_RET_STR(IRP_MJ_FLUSH_BUFFERS);
+        RT_CASE_RET_STR(IRP_MJ_QUERY_VOLUME_INFORMATION);
+        RT_CASE_RET_STR(IRP_MJ_SET_VOLUME_INFORMATION);
+        RT_CASE_RET_STR(IRP_MJ_DIRECTORY_CONTROL);
+        RT_CASE_RET_STR(IRP_MJ_FILE_SYSTEM_CONTROL);
+        RT_CASE_RET_STR(IRP_MJ_DEVICE_CONTROL);
+        RT_CASE_RET_STR(IRP_MJ_INTERNAL_DEVICE_CONTROL);
+        RT_CASE_RET_STR(IRP_MJ_SHUTDOWN);
+        RT_CASE_RET_STR(IRP_MJ_LOCK_CONTROL);
+        RT_CASE_RET_STR(IRP_MJ_CLEANUP);
+        RT_CASE_RET_STR(IRP_MJ_CREATE_MAILSLOT);
+        RT_CASE_RET_STR(IRP_MJ_QUERY_SECURITY);
+        RT_CASE_RET_STR(IRP_MJ_SET_SECURITY);
+        RT_CASE_RET_STR(IRP_MJ_POWER);
+        RT_CASE_RET_STR(IRP_MJ_SYSTEM_CONTROL);
+        RT_CASE_RET_STR(IRP_MJ_DEVICE_CHANGE);
+        RT_CASE_RET_STR(IRP_MJ_QUERY_QUOTA);
+        RT_CASE_RET_STR(IRP_MJ_SET_QUOTA);
         case IRP_MJ_PNP:
-            return PnPMinorFunctionString(MinorFunction);
-
+            return vbsfNtMinorPnpFunctionName(MinorFunction);
         default:
-            return "unknown_pnp_irp";
+            return "IRP_MJ_UNKNOWN";
     }
 }
 
 #endif /* DEBUG || LOG_ENABLED */
 
-/** Allocate and initialize a SHFLSTRING from a UNICODE string.
- *
- *  @param ppShflString Where to store the pointer to the allocated SHFLSTRING structure.
- *                      The structure must be deallocated with vbsfFreeNonPagedMem.
- *  @param pwc          The UNICODE string. If NULL then SHFL is only allocated.
- *  @param cb           Size of the UNICODE string in bytes without the trailing nul.
- *
- *  @return Status code.
- */
-NTSTATUS vbsfShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *pwc, uint16_t cb)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    PSHFLSTRING pShflString;
-    ULONG cbShflString;
-
-    /* Calculate length required for the SHFL structure: header + chars + nul. */
-    cbShflString = SHFLSTRING_HEADER_SIZE + cb + sizeof(WCHAR);
-    pShflString = (PSHFLSTRING)vbsfAllocNonPagedMem(cbShflString);
-    if (pShflString)
-    {
-        if (ShflStringInitBuffer(pShflString, cbShflString))
-        {
-            if (pwc)
-            {
-                RtlCopyMemory(pShflString->String.ucs2, pwc, cb);
-                pShflString->String.ucs2[cb / sizeof(WCHAR)] = 0;
-                pShflString->u16Length = cb; /* without terminating null */
-                AssertMsg(pShflString->u16Length + sizeof(WCHAR) == pShflString->u16Size,
-                          ("u16Length %d, u16Size %d\n", pShflString->u16Length, pShflString->u16Size));
-            }
-            else
-            {
-                /** @todo r=bird: vbsfAllocNonPagedMem already zero'ed it...   */
-                RtlZeroMemory(pShflString->String.ucs2, cb + sizeof(WCHAR));
-                pShflString->u16Length = 0; /* without terminating null */
-                AssertMsg(pShflString->u16Size >= sizeof(WCHAR),
-                          ("u16Size %d\n", pShflString->u16Size));
-            }
-
-            *ppShflString = pShflString;
-        }
-        else
-        {
-            vbsfFreeNonPagedMem(pShflString);
-            Status = STATUS_INSUFFICIENT_RESOURCES;
-        }
-    }
-    else
-    {
-        Status = STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    return Status;
-}

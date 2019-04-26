@@ -200,14 +200,14 @@ NTSTATUS VBoxMRxCreateVNetRoot(IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootConte
             Log(("VBOXSF: MRxCreateVNetRoot: Initialize netroot length = %d, name = %.*ls\n",
                  RootNameLength, RootNameLength / sizeof(WCHAR), pRootName));
 
-            Status = vbsfShflStringFromUnicodeAlloc(&ParsedPath, pRootName, (uint16_t)RootNameLength);
+            Status = vbsfNtShflStringFromUnicodeAlloc(&ParsedPath, pRootName, (uint16_t)RootNameLength);
             if (Status != STATUS_SUCCESS)
             {
                 goto l_Exit;
             }
 
             vrc = VbglR0SfMapFolder(&g_SfClient, ParsedPath, &pNetRootExtension->map);
-            vbsfFreeNonPagedMem(ParsedPath);
+            vbsfNtFreeNonPagedMem(ParsedPath);
             if (RT_SUCCESS(vrc))
             {
                 pNetRootExtension->fInitialized = true;

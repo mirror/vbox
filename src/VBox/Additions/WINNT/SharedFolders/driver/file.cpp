@@ -301,7 +301,7 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
 
     ByteCount = ctx.cbData;
 
-    Status = VBoxErrorToNTStatus(vrc);
+    Status = vbsfNtVBoxStatusToNt(vrc);
 
     if (Status != STATUS_SUCCESS)
     {
@@ -417,7 +417,7 @@ static NTSTATUS vbsfWriteInternal(IN PRX_CONTEXT RxContext)
 
     ByteCount = ctx.cbData;
 
-    Status = VBoxErrorToNTStatus(vrc);
+    Status = vbsfNtVBoxStatusToNt(vrc);
 
     if (Status != STATUS_SUCCESS)
     {
@@ -515,7 +515,7 @@ NTSTATUS VBoxMRxLocks(IN PRX_CONTEXT RxContext)
     vrc = VbglR0SfLock(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
                        LowIoContext->ParamsFor.Locks.ByteOffset, LowIoContext->ParamsFor.Locks.Length, fu32Lock);
 
-    Status = VBoxErrorToNTStatus(vrc);
+    Status = vbsfNtVBoxStatusToNt(vrc);
 
     Log(("VBOXSF: MRxLocks: Returned 0x%08X\n", Status));
     return Status;
@@ -546,13 +546,13 @@ NTSTATUS VBoxMRxFlush (IN PRX_CONTEXT RxContext)
     /* Do the actual flushing of file buffers */
     vrc = VbglR0SfFlush(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile);
 
-    Status = VBoxErrorToNTStatus(vrc);
+    Status = vbsfNtVBoxStatusToNt(vrc);
 
     Log(("VBOXSF: MRxFlush: Returned 0x%08X\n", Status));
     return Status;
 }
 
-NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
+NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
                           IN OUT PLARGE_INTEGER pNewFileSize,
                           OUT PLARGE_INTEGER pNewAllocationSize)
 {
@@ -568,13 +568,13 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     uint32_t cbBuffer;
     int vrc;
 
-    Log(("VBOXSF: vbsfSetEndOfFile: New size = %RX64 (%p), pNewAllocationSize = %p\n",
+    Log(("VBOXSF: vbsfNtSetEndOfFile: New size = %RX64 (%p), pNewAllocationSize = %p\n",
          pNewFileSize->QuadPart, pNewFileSize, pNewAllocationSize));
 
     Assert(pVBoxFobx && pNetRootExtension);
 
     cbBuffer = sizeof(SHFLFSOBJINFO);
-    pObjInfo = (SHFLFSOBJINFO *)vbsfAllocNonPagedMem(cbBuffer);
+    pObjInfo = (SHFLFSOBJINFO *)vbsfNtAllocNonPagedMem(cbBuffer);
     if (!pObjInfo)
     {
         AssertFailed();
@@ -587,12 +587,12 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     vrc = VbglR0SfFsInfo(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
                          SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer, (PSHFLDIRINFO)pObjInfo);
 
-    Log(("VBOXSF: vbsfSetEndOfFile: VbglR0SfFsInfo returned %Rrc\n", vrc));
+    Log(("VBOXSF: vbsfNtSetEndOfFile: VbglR0SfFsInfo returned %Rrc\n", vrc));
 
-    Status = VBoxErrorToNTStatus(vrc);
+    Status = vbsfNtVBoxStatusToNt(vrc);
     if (Status == STATUS_SUCCESS)
     {
-        Log(("VBOXSF: vbsfSetEndOfFile: VbglR0SfFsInfo new allocation size = %RX64\n",
+        Log(("VBOXSF: vbsfNtSetEndOfFile: VbglR0SfFsInfo new allocation size = %RX64\n",
              pObjInfo->cbAllocated));
 
         /* Return new allocation size */
@@ -600,9 +600,9 @@ NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     }
 
     if (pObjInfo)
-        vbsfFreeNonPagedMem(pObjInfo);
+        vbsfNtFreeNonPagedMem(pObjInfo);
 
-    Log(("VBOXSF: vbsfSetEndOfFile: Returned 0x%08X\n", Status));
+    Log(("VBOXSF: vbsfNtSetEndOfFile: Returned 0x%08X\n", Status));
     return Status;
 }
 
@@ -617,7 +617,7 @@ ULONG NTAPI VBoxMRxExtendStub(IN OUT struct _RX_CONTEXT * RxContext, IN OUT PLAR
 {
     RT_NOREF(RxContext);
 
-    /* Note: On Windows hosts vbsfSetEndOfFile returns ACCESS_DENIED if the file has been
+    /* Note: On Windows hosts vbsfNtSetEndOfFile returns ACCESS_DENIED if the file has been
      *       opened in APPEND mode. Writes to a file will extend it anyway, therefore it is
      *       better to not call the host at all and tell the caller that the file was extended.
      */

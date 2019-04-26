@@ -94,7 +94,7 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
     Log(("VBOXSF: MrxQueryDirectory: Allocating cbHGCMBuffer = %d\n",
          cbHGCMBuffer));
 
-    pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbHGCMBuffer);
+    pHGCMBuffer = (uint8_t *)vbsfNtAllocNonPagedMem(cbHGCMBuffer);
     if (!pHGCMBuffer)
     {
         AssertFailed();
@@ -133,7 +133,7 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
             ParsedPathSize += DirectoryName->Length + sizeof(WCHAR);
         Log(("VBOXSF: MrxQueryDirectory: ParsedPathSize = %d\n", ParsedPathSize));
 
-        ParsedPath = (PSHFLSTRING)vbsfAllocNonPagedMem(ParsedPathSize);
+        ParsedPath = (PSHFLSTRING)vbsfNtAllocNonPagedMem(ParsedPathSize);
         if (!ParsedPath)
         {
             Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -225,7 +225,7 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
             break;
 
         default:
-            Status = VBoxErrorToNTStatus(vrc);
+            Status = vbsfNtVBoxStatusToNt(vrc);
             Log(("VBOXSF: MrxQueryDirectory: Error %Rrc from CallDirInfo (cFiles=%d)!\n",
                  vrc, cFiles));
             break;
@@ -509,10 +509,10 @@ NTSTATUS VBoxMRxQueryDirectory(IN OUT PRX_CONTEXT RxContext)
 
 end:
     if (pHGCMBuffer)
-        vbsfFreeNonPagedMem(pHGCMBuffer);
+        vbsfNtFreeNonPagedMem(pHGCMBuffer);
 
     if (ParsedPath)
-        vbsfFreeNonPagedMem(ParsedPath);
+        vbsfNtFreeNonPagedMem(ParsedPath);
 
     Log(("VBOXSF: MrxQueryDirectory: Returned 0x%08X\n",
          Status));
@@ -595,7 +595,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
 
             /* Query serial number. */
             cbHGCMBuffer = sizeof(SHFLVOLINFO);
-            pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbHGCMBuffer);
+            pHGCMBuffer = (uint8_t *)vbsfNtAllocNonPagedMem(cbHGCMBuffer);
             if (!pHGCMBuffer)
             {
                 Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -607,14 +607,14 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
 
             if (vrc != VINF_SUCCESS)
             {
-                Status = VBoxErrorToNTStatus(vrc);
-                vbsfFreeNonPagedMem(pHGCMBuffer);
+                Status = vbsfNtVBoxStatusToNt(vrc);
+                vbsfNtFreeNonPagedMem(pHGCMBuffer);
                 break;
             }
 
             pShflVolInfo = (PSHFLVOLINFO)pHGCMBuffer;
             pInfo->VolumeSerialNumber = pShflVolInfo->ulSerial;
-            vbsfFreeNonPagedMem(pHGCMBuffer);
+            vbsfNtFreeNonPagedMem(pHGCMBuffer);
 
             pInfo->VolumeCreationTime.QuadPart = 0;
             pInfo->SupportsObjects = FALSE;
@@ -768,7 +768,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
             RtlZeroMemory(pInfoBuffer, cbToCopy);
 
             cbHGCMBuffer = sizeof(SHFLVOLINFO);
-            pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbHGCMBuffer);
+            pHGCMBuffer = (uint8_t *)vbsfNtAllocNonPagedMem(cbHGCMBuffer);
             if (!pHGCMBuffer)
             {
                 Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -780,8 +780,8 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
 
             if (vrc != VINF_SUCCESS)
             {
-                Status = VBoxErrorToNTStatus(vrc);
-                vbsfFreeNonPagedMem(pHGCMBuffer);
+                Status = vbsfNtVBoxStatusToNt(vrc);
+                vbsfNtFreeNonPagedMem(pHGCMBuffer);
                 break;
             }
 
@@ -813,7 +813,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
                 pSizeInfo->BytesPerSector           = BytesPerSector;
             }
 
-            vbsfFreeNonPagedMem(pHGCMBuffer);
+            vbsfNtFreeNonPagedMem(pHGCMBuffer);
 
             Status = STATUS_SUCCESS;
             break;
@@ -1088,7 +1088,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                     vbsfNtCopyInfo(pVBoxFobx, &pReq->ObjInfo, 0);
                 else
                 {
-                    Status = VBoxErrorToNTStatus(vrc);
+                    Status = vbsfNtVBoxStatusToNt(vrc);
                     VbglR0PhysHeapFree(pReq);
                     break;
                 }
@@ -1371,7 +1371,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             }
 
             cbBuffer = sizeof(SHFLFSOBJINFO);
-            pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbBuffer);
+            pHGCMBuffer = (uint8_t *)vbsfNtAllocNonPagedMem(cbBuffer);
             AssertReturn(pHGCMBuffer, STATUS_INSUFFICIENT_RESOURCES);
             RtlZeroMemory(pHGCMBuffer, cbBuffer);
             pSHFLFileInfo = (PSHFLFSOBJINFO)pHGCMBuffer;
@@ -1417,7 +1417,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             }
             else
             {
-                Status = VBoxErrorToNTStatus(vrc);
+                Status = vbsfNtVBoxStatusToNt(vrc);
                 goto end;
             }
             break;
@@ -1431,7 +1431,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
                  pInfo->DeleteFile));
 
             if (pInfo->DeleteFile && capFcb->OpenCount == 1)
-                Status = vbsfRemove(RxContext);
+                Status = vbsfNtRemove(RxContext);
             else
                 Status = STATUS_SUCCESS;
             break;
@@ -1468,7 +1468,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             {
                 /* Treat the request as a EndOfFile update. */
                 LARGE_INTEGER NewAllocationSize;
-                Status = vbsfSetEndOfFile(RxContext, &pInfo->AllocationSize, &NewAllocationSize);
+                Status = vbsfNtSetEndOfFile(RxContext, &pInfo->AllocationSize, &NewAllocationSize);
             }
 
             break;
@@ -1482,7 +1482,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             Log(("VBOXSF: MrxSetFileInfo: FileEndOfFileInformation: new EndOfFile 0x%RX64, FileSize = 0x%RX64\n",
                  pInfo->EndOfFile.QuadPart, capFcb->Header.FileSize.QuadPart));
 
-            Status = vbsfSetEndOfFile(RxContext, &pInfo->EndOfFile, &NewAllocationSize);
+            Status = vbsfNtSetEndOfFile(RxContext, &pInfo->EndOfFile, &NewAllocationSize);
 
             Log(("VBOXSF: MrxSetFileInfo: FileEndOfFileInformation: AllocSize = 0x%RX64, Status 0x%08X\n",
                  NewAllocationSize.QuadPart, Status));
@@ -1510,7 +1510,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
                  pInfo->ReplaceIfExists, pInfo->RootDirectory, pInfo->FileNameLength / sizeof(WCHAR), pInfo->FileName));
 #endif
 
-            Status = vbsfRename(RxContext, FileRenameInformation, pInfoBuffer, RxContext->Info.Length);
+            Status = vbsfNtRename(RxContext, FileRenameInformation, pInfoBuffer, RxContext->Info.Length);
             break;
         }
 
@@ -1523,7 +1523,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
 
 end:
     if (pHGCMBuffer)
-        vbsfFreeNonPagedMem(pHGCMBuffer);
+        vbsfNtFreeNonPagedMem(pHGCMBuffer);
 
     Log(("VBOXSF: MrxSetFileInfo: Returned 0x%08X\n", Status));
     return Status;

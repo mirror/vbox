@@ -75,7 +75,7 @@ static NTSTATUS VBoxMRxFsdDispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 #ifdef LOG_ENABLED
     PIO_STACK_LOCATION IrpSp = IoGetCurrentIrpStackLocation(Irp);
     Log(("VBOXSF: MRxFsdDispatch: major %d, minor %d: %s\n",
-         IrpSp->MajorFunction, IrpSp->MinorFunction, MajorFunctionString(IrpSp->MajorFunction, IrpSp->MinorFunction)));
+         IrpSp->MajorFunction, IrpSp->MinorFunction, vbsfNtMajorFunctionName(IrpSp->MajorFunction, IrpSp->MinorFunction)));
 #endif
 
     if (DeviceObject != (PDEVICE_OBJECT)VBoxMRxDeviceObject)
@@ -751,14 +751,14 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                 case IOCTL_MRX_VBOX_ADDCONN:
                 {
                     Log(("VBOXSF: MRxDevFcbXXXControlFile: IOCTL_MRX_VBOX_ADDCONN\n"));
-                    Status = vbsfCreateConnection(RxContext, &RxContext->PostRequest);
+                    Status = vbsfNtCreateConnection(RxContext, &RxContext->PostRequest);
                     break;
                 }
 
                 case IOCTL_MRX_VBOX_DELCONN:
                 {
                     Log(("VBOXSF: MRxDevFcbXXXControlFile: IOCTL_MRX_VBOX_DELCONN\n"));
-                    Status = vbsfDeleteConnection(RxContext, &RxContext->PostRequest);
+                    Status = vbsfNtDeleteConnection(RxContext, &RxContext->PostRequest);
                     break;
                 }
 
@@ -850,7 +850,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                     }
                     else
                     {
-                        Status = VBoxErrorToNTStatus(vrc);
+                        Status = vbsfNtVBoxStatusToNt(vrc);
                         Log(("VBOXSF: MRxDevFcbXXXControlFile: IOCTL_MRX_VBOX_GETGLOBALLIST failed: 0x%08X\n",
                              Status));
                     }
@@ -968,7 +968,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                     }
 
                     /* Allocate empty string where the host can store cbRemoteName bytes. */
-                    Status = vbsfShflStringFromUnicodeAlloc(&pString, NULL, (uint16_t)cbRemoteName);
+                    Status = vbsfNtShflStringFromUnicodeAlloc(&pString, NULL, (uint16_t)cbRemoteName);
                     if (Status != STATUS_SUCCESS)
                         break;
 
@@ -998,7 +998,7 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                         Status = STATUS_INVALID_PARAMETER;
                     }
 
-                    vbsfFreeNonPagedMem(pString);
+                    vbsfNtFreeNonPagedMem(pString);
 
                     break;
                 }
@@ -1271,7 +1271,7 @@ static HANDLE vbsfOpenConnectionHandle(PUNICODE_STRING ConnectionName, NTSTATUS 
     return Handle;
 }
 
-NTSTATUS vbsfCreateConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
+NTSTATUS vbsfNtCreateConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1286,11 +1286,11 @@ NTSTATUS vbsfCreateConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
 
     BOOLEAN fMutexAcquired = FALSE;
 
-    Log(("VBOXSF: vbsfCreateConnection\n"));
+    Log(("VBOXSF: vbsfNtCreateConnection\n"));
 
     if (!BooleanFlagOn(RxContext->Flags, RX_CONTEXT_FLAG_WAIT))
     {
-        Log(("VBOXSF: vbsfCreateConnection: post to file system process\n"));
+        Log(("VBOXSF: vbsfNtCreateConnection: post to file system process\n"));
         *PostToFsp = TRUE;
         return STATUS_PENDING;
     }
@@ -1305,13 +1305,13 @@ NTSTATUS vbsfCreateConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
 
     if (cbConnectName == 0 || !pwcConnectName)
     {
-        Log(("VBOXSF: vbsfCreateConnection: Connection name / length is invalid!\n"));
+        Log(("VBOXSF: vbsfNtCreateConnection: Connection name / length is invalid!\n"));
         return STATUS_INVALID_PARAMETER;
     }
 
     __try
     {
-        Log(("VBOXSF: vbsfCreateConnection: Name = %.*ls, Len = %d\n",
+        Log(("VBOXSF: vbsfNtCreateConnection: Name = %.*ls, Len = %d\n",
              cbConnectName / sizeof(WCHAR), pwcConnectName, cbConnectName));
 
         FileName.Buffer = pwcConnectName;
@@ -1346,7 +1346,7 @@ NTSTATUS vbsfCreateConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
 
                     if (idx >= RTL_NUMBER_OF(pDeviceExtension->cLocalConnections))
                     {
-                        Log(("VBOXSF: vbsfCreateConnection: Index 0x%x is invalid!\n",
+                        Log(("VBOXSF: vbsfNtCreateConnection: Index 0x%x is invalid!\n",
                              idx));
                         Status = STATUS_BAD_NETWORK_NAME;
                     }
@@ -1357,15 +1357,15 @@ NTSTATUS vbsfCreateConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
 
                         if (pDeviceExtension->wszLocalConnectionName[idx] != NULL)
                         {
-                            Log(("VBOXSF: vbsfCreateConnection: LocalConnectionName at index %d is NOT empty!\n",
+                            Log(("VBOXSF: vbsfNtCreateConnection: LocalConnectionName at index %d is NOT empty!\n",
                                  idx));
                         }
 
-                        pDeviceExtension->wszLocalConnectionName[idx] = (PUNICODE_STRING)vbsfAllocNonPagedMem(sizeof(UNICODE_STRING) + cbConnectName);
+                        pDeviceExtension->wszLocalConnectionName[idx] = (PUNICODE_STRING)vbsfNtAllocNonPagedMem(sizeof(UNICODE_STRING) + cbConnectName);
 
                         if (!pDeviceExtension->wszLocalConnectionName[idx])
                         {
-                            Log(("VBOXSF: vbsfCreateConnection: LocalConnectionName at index %d NOT allocated!\n",
+                            Log(("VBOXSF: vbsfNtCreateConnection: LocalConnectionName at index %d NOT allocated!\n",
                                  idx));
                             Status = STATUS_INSUFFICIENT_RESOURCES;
                         }
@@ -1378,7 +1378,7 @@ NTSTATUS vbsfCreateConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
                             pRemoteName->MaximumLength = pRemoteName->Length;
                             RtlCopyMemory(&pRemoteName->Buffer[0], pwc+2, pRemoteName->Length);
 
-                            Log(("VBOXSF: vbsfCreateConnection: RemoteName %.*ls, Len = %d\n",
+                            Log(("VBOXSF: vbsfNtCreateConnection: RemoteName %.*ls, Len = %d\n",
                                  pRemoteName->Length / sizeof(WCHAR), pRemoteName->Buffer, pRemoteName->Length));
 
                             pDeviceExtension->cLocalConnections[idx] = TRUE;
@@ -1391,13 +1391,13 @@ NTSTATUS vbsfCreateConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
             }
             else
             {
-                Log(("VBOXSF: vbsfCreateConnection: bad format\n"));
+                Log(("VBOXSF: vbsfNtCreateConnection: bad format\n"));
                 Status = STATUS_BAD_NETWORK_NAME;
             }
         }
         else
         {
-            Log(("VBOXSF: vbsfCreateConnection: connection was not found\n"));
+            Log(("VBOXSF: vbsfNtCreateConnection: connection was not found\n"));
             Status = STATUS_BAD_NETWORK_NAME;
         }
     }
@@ -1415,7 +1415,7 @@ NTSTATUS vbsfCreateConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
     return Status;
 }
 
-NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
+NTSTATUS vbsfNtDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
 {
     NTSTATUS Status;
     UNICODE_STRING FileName;
@@ -1427,11 +1427,11 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
 
     BOOLEAN fMutexAcquired = FALSE;
 
-    Log(("VBOXSF: vbsfDeleteConnection\n"));
+    Log(("VBOXSF: vbsfNtDeleteConnection\n"));
 
     if (!BooleanFlagOn(RxContext->Flags, RX_CONTEXT_FLAG_WAIT))
     {
-        Log(("VBOXSF: vbsfDeleteConnection: post to file system process\n"));
+        Log(("VBOXSF: vbsfNtDeleteConnection: post to file system process\n"));
         *PostToFsp = TRUE;
         return STATUS_PENDING;
     }
@@ -1446,7 +1446,7 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
 
     __try
     {
-        Log(("VBOXSF: vbsfDeleteConnection: pwcConnectName = %.*ls\n",
+        Log(("VBOXSF: vbsfNtDeleteConnection: pwcConnectName = %.*ls\n",
              cbConnectName / sizeof(WCHAR), pwcConnectName));
 
         FileName.Buffer = pwcConnectName;
@@ -1459,13 +1459,13 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
             PFILE_OBJECT pFileObject;
             Status = ObReferenceObjectByHandle(Handle, 0L, NULL, KernelMode, (PVOID *)&pFileObject, NULL);
 
-            Log(("VBOXSF: vbsfDeleteConnection: ObReferenceObjectByHandle Status 0x%08X\n",
+            Log(("VBOXSF: vbsfNtDeleteConnection: ObReferenceObjectByHandle Status 0x%08X\n",
                  Status));
 
             if (NT_SUCCESS(Status))
             {
                 PFOBX Fobx = (PFOBX)pFileObject->FsContext2;
-                Log(("VBOXSF: vbsfDeleteConnection: Fobx %p\n", Fobx));
+                Log(("VBOXSF: vbsfNtDeleteConnection: Fobx %p\n", Fobx));
 
                 if (Fobx && NodeType(Fobx) == RDBSS_NTC_V_NETROOT)
                 {
@@ -1479,7 +1479,7 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
                 }
                 else
                 {
-                    Log(("VBOXSF: vbsfDeleteConnection: wrong FsContext2\n"));
+                    Log(("VBOXSF: vbsfNtDeleteConnection: wrong FsContext2\n"));
                     Status = STATUS_INVALID_DEVICE_REQUEST;
                 }
 
@@ -1514,7 +1514,7 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
 
                         if (idx >= RTL_NUMBER_OF(pDeviceExtension->cLocalConnections))
                         {
-                            Log(("VBOXSF: vbsfDeleteConnection: Index 0x%x is invalid!\n",
+                            Log(("VBOXSF: vbsfNtDeleteConnection: Index 0x%x is invalid!\n",
                                  idx));
                             Status = STATUS_BAD_NETWORK_NAME;
                         }
@@ -1528,21 +1528,21 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
                             /* Free saved name */
                             if (pDeviceExtension->wszLocalConnectionName[idx])
                             {
-                                vbsfFreeNonPagedMem(pDeviceExtension->wszLocalConnectionName[idx]);
+                                vbsfNtFreeNonPagedMem(pDeviceExtension->wszLocalConnectionName[idx]);
                                 pDeviceExtension->wszLocalConnectionName[idx] = NULL;
                             }
 
                             ExReleaseFastMutex(&pDeviceExtension->mtxLocalCon);
                             fMutexAcquired = FALSE;
 
-                            Log(("VBOXSF: vbsfDeleteConnection: deleted index 0x%x\n",
+                            Log(("VBOXSF: vbsfNtDeleteConnection: deleted index 0x%x\n",
                                  idx));
                         }
                     }
                 }
                 else
                 {
-                    Log(("VBOXSF: vbsfCreateConnection: bad format\n"));
+                    Log(("VBOXSF: vbsfNtCreateConnection: bad format\n"));
                     Status = STATUS_BAD_NETWORK_NAME;
                 }
             }
@@ -1559,7 +1559,7 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
         fMutexAcquired = FALSE;
     }
 
-    Log(("VBOXSF: vbsfDeleteConnection: Status 0x%08X\n", Status));
+    Log(("VBOXSF: vbsfNtDeleteConnection: Status 0x%08X\n", Status));
     return Status;
 }
 

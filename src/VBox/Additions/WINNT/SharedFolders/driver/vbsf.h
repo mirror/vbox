@@ -212,36 +212,34 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext);
 /** @name Support functions and helpers
  * @{
  */
-NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext,
-                              OUT PBOOLEAN PostToFsp);
-NTSTATUS vbsfCreateConnection(IN PRX_CONTEXT RxContext,
-                              OUT PBOOLEAN PostToFsp);
+NTSTATUS vbsfNtDeleteConnection(IN PRX_CONTEXT RxContext,
+                                OUT PBOOLEAN PostToFsp);
+NTSTATUS vbsfNtCreateConnection(IN PRX_CONTEXT RxContext,
+                                OUT PBOOLEAN PostToFsp);
 
-NTSTATUS vbsfSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
-                          IN OUT PLARGE_INTEGER pNewFileSize,
-                          OUT PLARGE_INTEGER pNewAllocationSize);
-NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
-                    IN FILE_INFORMATION_CLASS FileInformationClass,
-                    IN PVOID pBuffer,
-                    IN ULONG BufferLength);
-NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext);
+NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
+                            IN OUT PLARGE_INTEGER pNewFileSize,
+                            OUT PLARGE_INTEGER pNewAllocationSize);
+NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
+                      IN FILE_INFORMATION_CLASS FileInformationClass,
+                      IN PVOID pBuffer,
+                      IN ULONG BufferLength);
+NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext);
 
 void     vbsfNtCopyInfoToLegacy(PMRX_VBOX_FOBX pVBoxFobx, PCSHFLFSOBJINFO pInfo);
 
 
 
-NTSTATUS vbsfHlpCreateDriveLetter(WCHAR Letter, UNICODE_STRING *pDeviceName);
-NTSTATUS vbsfHlpDeleteDriveLetter(WCHAR Letter);
-NTSTATUS VBoxErrorToNTStatus(int vrc);
+NTSTATUS vbsfNtVBoxStatusToNt(int vrc);
 
-PVOID    vbsfAllocNonPagedMem(ULONG ulSize);
-void     vbsfFreeNonPagedMem(PVOID lpMem);
+PVOID    vbsfNtAllocNonPagedMem(ULONG ulSize);
+void     vbsfNtFreeNonPagedMem(PVOID lpMem);
 
 #if defined(DEBUG) || defined(LOG_ENABLED)
-PCHAR MajorFunctionString(UCHAR MajorFunction, LONG MinorFunction);
+const char *vbsfNtMajorFunctionName(UCHAR MajorFunction, LONG MinorFunction);
 #endif
 
-NTSTATUS vbsfShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *pwc, uint16_t cb);
+NTSTATUS vbsfNtShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR *pwc, uint16_t cb);
 
 /**
  * Converts VBox (IPRT) file mode to NT file attributes.
