@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
@@ -863,9 +864,9 @@ NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext)
 }
 
 NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
-                    IN FILE_INFORMATION_CLASS FileInformationClass,
-                    IN PVOID pBuffer,
-                    IN ULONG BufferLength)
+                      IN FILE_INFORMATION_CLASS FileInformationClass,
+                      IN PVOID pBuffer,
+                      IN ULONG BufferLength)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
