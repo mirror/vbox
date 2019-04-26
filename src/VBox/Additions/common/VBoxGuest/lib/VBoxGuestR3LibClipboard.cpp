@@ -217,12 +217,14 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
 #endif
         rc = vbglR3ClipboardWriteDataRaw(idClient, fFormat, pv, cb);
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     if (RT_FAILURE(rc))
     {
         int rc2 = vbglR3ClipboardSendErrorInternal(idClient, rc);
         if (RT_FAILURE(rc2))
             LogFlowFunc(("Unable to send error (%Rrc) to host, rc=%Rrc\n", rc, rc2));
     }
+#endif
 
     return rc;
 }
