@@ -28,6 +28,10 @@ typedef enum _MRX_VBOX_STATE_
     MRX_VBOX_STARTED
 } MRX_VBOX_STATE, *PMRX_VBOX_STATE;
 
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
 static MRX_VBOX_STATE VBoxMRxState = MRX_VBOX_STARTABLE;
 
 /**
@@ -49,6 +53,13 @@ uint32_t     g_uSfLastFunction = SHFL_FN_SET_FILE_SIZE;
 /** Shared folders features (SHFL_FEATURE_XXX). */
 uint64_t     g_fSfFeatures = 0;
 
+
+/*********************************************************************************************************************************
+*   Exported Functions                                                                                                           *
+*********************************************************************************************************************************/
+RT_C_DECLS_BEGIN
+NTSTATUS _stdcall DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath);
+RT_C_DECLS_END
 
 
 static NTSTATUS VBoxMRxFsdDispatch(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
