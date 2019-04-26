@@ -56,8 +56,10 @@ signals:
     /** Notifies about snapshot with @a uSnapshotId was restored for the machine with @a uId. */
     void sigSnapshotRestore(const QUuid &uId, const QUuid &uSnapshotId);
 
-    /** Notifies about storage controller change. */
-    void sigStorageControllerChange();
+    /** Notifies about storage controller change.
+      * @param  uMachineId         Brings the ID of machine corresponding controller belongs to.
+      * @param  strControllerName  Brings the name of controller this event is related to. */
+    void sigStorageControllerChange(const QUuid &uMachineId, const QString &strControllerName);
     /** Notifies about storage device change.
       * @param  comAttachment  Brings corresponding attachment.
       * @param  fRemoved       Brings whether medium is removed or added.
@@ -225,8 +227,8 @@ void UIVirtualBoxEventHandlerProxy::prepareConnections()
     connect(m_pQtListener->getWrapped(), SIGNAL(sigSnapshotRestore(QUuid, QUuid)),
             this, SIGNAL(sigSnapshotRestore(QUuid, QUuid)),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigStorageControllerChange()),
-            this, SIGNAL(sigStorageControllerChange()),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigStorageControllerChange(QUuid, QString)),
+            this, SIGNAL(sigStorageControllerChange(QUuid, QString)),
             Qt::DirectConnection);
     connect(m_pQtListener->getWrapped(), SIGNAL(sigStorageDeviceChange(CMediumAttachment, bool, bool)),
             this, SIGNAL(sigStorageDeviceChange(CMediumAttachment, bool, bool)),
@@ -237,8 +239,8 @@ void UIVirtualBoxEventHandlerProxy::prepareConnections()
     connect(m_pQtListener->getWrapped(), SIGNAL(sigMediumConfigChange(CMedium)),
             this, SIGNAL(sigMediumConfigChange(CMedium)),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigMediumRegistered(const QUuid &, KDeviceType, bool)),
-            this, SIGNAL(sigMediumRegistered(const QUuid &, KDeviceType, bool)),
+    connect(m_pQtListener->getWrapped(), SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
+            this, SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
             Qt::DirectConnection);
 }
 
@@ -338,8 +340,8 @@ void UIVirtualBoxEventHandler::prepareConnections()
     connect(m_pProxy, SIGNAL(sigSnapshotRestore(QUuid, QUuid)),
             this, SIGNAL(sigSnapshotRestore(QUuid, QUuid)),
             Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigStorageControllerChange()),
-            this, SIGNAL(sigStorageControllerChange()),
+    connect(m_pProxy, SIGNAL(sigStorageControllerChange(QUuid, QString)),
+            this, SIGNAL(sigStorageControllerChange(QUuid, QString)),
             Qt::QueuedConnection);
     connect(m_pProxy, SIGNAL(sigStorageDeviceChange(CMediumAttachment, bool, bool)),
             this, SIGNAL(sigStorageDeviceChange(CMediumAttachment, bool, bool)),
@@ -350,8 +352,8 @@ void UIVirtualBoxEventHandler::prepareConnections()
     connect(m_pProxy, SIGNAL(sigMediumConfigChange(CMedium)),
             this, SIGNAL(sigMediumConfigChange(CMedium)),
             Qt::QueuedConnection);
-    connect(m_pProxy, SIGNAL(sigMediumRegistered(const QUuid &, KDeviceType, bool)),
-            this, SIGNAL(sigMediumRegistered(const QUuid &, KDeviceType, bool)),
+    connect(m_pProxy, SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
+            this, SIGNAL(sigMediumRegistered(QUuid, KDeviceType, bool)),
             Qt::QueuedConnection);
 }
 

@@ -306,7 +306,8 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         case KVBoxEventType_OnStorageControllerChanged:
         {
             CStorageControllerChangedEvent comEventSpecific(pEvent);
-            emit sigStorageControllerChange();
+            emit sigStorageControllerChange(comEventSpecific.GetMachinId(),
+                                            comEventSpecific.GetControllerName());
             break;
         }
         case KVBoxEventType_OnStorageDeviceChanged:

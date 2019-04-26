@@ -106,8 +106,10 @@ signals:
 
     /** @name VirtualBox Medium related signals
       * @{ */
-        /** Notifies about storage controller change. */
-        void sigStorageControllerChange();
+        /** Notifies about storage controller change.
+          * @param  uMachineId         Brings the ID of machine corresponding controller belongs to.
+          * @param  strControllerName  Brings the name of controller this event is related to. */
+        void sigStorageControllerChange(const QUuid &uMachineId, const QString &strControllerName);
         /** Notifies about storage device change.
           * @param  comAttachment  Brings corresponding attachment.
           * @param  fRemoved       Brings whether medium is removed or added.
