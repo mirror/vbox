@@ -41,7 +41,11 @@
 # endif
 #endif
 
+RT_C_DECLS_BEGIN
+
 #include <rx.h>
+
+RT_C_DECLS_END
 
 #ifdef _MSC_VER
 # pragma warning(pop)

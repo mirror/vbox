@@ -1718,6 +1718,7 @@ typedef enum _FILE_INFORMATION_CLASS
     FileNumaNodeInformation,
     FileStandardLinkInformation,
     FileRemoteProtocolInformation,
+    /* Defined with Windows 10: */
     FileRenameInformationBypassAccessCheck,
     FileLinkInformationBypassAccessCheck,
     FileVolumeNameInformation,
@@ -1725,6 +1726,19 @@ typedef enum _FILE_INFORMATION_CLASS
     FileIdExtdDirectoryInformation,
     FileReplaceCompletionInformation,
     FileHardLinkFullIdInformation,
+    FileIdExtdBothDirectoryInformation,
+    FileDispositionInformationEx,
+    FileRenameInformationEx,
+    FileRenameInformationExBypassAccessCheck,
+    FileDesiredStorageClassInformation,
+    FileStatInformation,
+    FileMemoryPartitionInformation,
+    FileStatLxInformation,
+    FileCaseSensitiveInformation,
+    FileLinkInformationEx,
+    FileLinkInformationExBypassAccessCheck,
+    FileStorageReserveIdInformation,
+    FileCaseSensitiveInformationForceAccessCheck,
     FileMaximumInformation
 } FILE_INFORMATION_CLASS;
 typedef FILE_INFORMATION_CLASS *PFILE_INFORMATION_CLASS;
