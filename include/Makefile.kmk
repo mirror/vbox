@@ -30,6 +30,7 @@ VBOX_HDRS_CPP_FEATURES := \
 	VBox/HostServices/Service.h \
 	VBox/GuestHost/GuestControl.h \
 	VBox/GuestHost/DragAndDrop.h \
+	VBox/GuestHost/SharedClipboard-uri.h \
 	VBox/dbus.h \
 	VBox/VBoxCrHgsmi.h \
 	VBox/VBoxGuestLibSharedFoldersInline.h \
