@@ -54,7 +54,7 @@
 /** Calls the host and waits (blocking) for an host event VBOX_SHARED_CLIPBOARD_HOST_MSG_*. */
 #define VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG      1
 /** Sends a list of available formats to host. */
-#define VBOX_SHARED_CLIPBOARD_FN_WRITE_FORMATS     2
+#define VBOX_SHARED_CLIPBOARD_FN_REPORT_FORMATS    2
 /** Reads data in specified format from host. */
 #define VBOX_SHARED_CLIPBOARD_FN_READ_DATA         3
 /** Writes data in requested format to host. */

@@ -483,7 +483,7 @@ static DECLCALLBACK(void) svcCall(void *,
             }
         } break;
 
-        case VBOX_SHARED_CLIPBOARD_FN_WRITE_FORMATS:
+        case VBOX_SHARED_CLIPBOARD_FN_REPORT_FORMATS:
         {
             /* The guest reports that some formats are available. */
             LogRel2(("svcCall: VBOX_SHARED_CLIPBOARD_FN_FORMATS\n"));
