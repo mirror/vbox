@@ -554,8 +554,7 @@ NTSTATUS VBoxMRxFlush (IN PRX_CONTEXT RxContext)
 }
 
 NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
-                          IN OUT PLARGE_INTEGER pNewFileSize,
-                          OUT PLARGE_INTEGER pNewAllocationSize)
+                            IN uint64_t cbNewFileSize)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -569,8 +568,8 @@ NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     uint32_t cbBuffer;
     int vrc;
 
-    Log(("VBOXSF: vbsfNtSetEndOfFile: New size = %RX64 (%p), pNewAllocationSize = %p\n",
-         pNewFileSize->QuadPart, pNewFileSize, pNewAllocationSize));
+    Log(("VBOXSF: vbsfNtSetEndOfFile: New size = %RX64\n",
+         cbNewFileSize));
 
     Assert(pVBoxFobx && pNetRootExtension);
 
@@ -583,7 +582,7 @@ NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
     }
 
     RtlZeroMemory(pObjInfo, cbBuffer);
-    pObjInfo->cbObject = pNewFileSize->QuadPart;
+    pObjInfo->cbObject = cbNewFileSize;
 
     vrc = VbglR0SfFsInfo(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
                          SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer, (PSHFLDIRINFO)pObjInfo);
@@ -596,8 +595,7 @@ NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
         Log(("VBOXSF: vbsfNtSetEndOfFile: VbglR0SfFsInfo new allocation size = %RX64\n",
              pObjInfo->cbAllocated));
 
-        /* Return new allocation size */
-        pNewAllocationSize->QuadPart = pObjInfo->cbAllocated;
+        /** @todo update the file stats! */
     }
 
     if (pObjInfo)

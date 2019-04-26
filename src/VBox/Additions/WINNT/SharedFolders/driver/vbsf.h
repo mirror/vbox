@@ -220,8 +220,7 @@ NTSTATUS vbsfNtCreateConnection(IN PRX_CONTEXT RxContext,
                                 OUT PBOOLEAN PostToFsp);
 
 NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
-                            IN OUT PLARGE_INTEGER pNewFileSize,
-                            OUT PLARGE_INTEGER pNewAllocationSize);
+                            IN uint64_t cbNewFileSize);
 NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
                       IN FILE_INFORMATION_CLASS FileInformationClass,
                       IN PVOID pBuffer,
