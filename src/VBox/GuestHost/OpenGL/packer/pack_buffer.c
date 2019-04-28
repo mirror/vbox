@@ -375,11 +375,6 @@ crPackAppendBoundedBuffer( CR_PACKER_CONTEXT_ARGDECL const CRPackBuffer *src, co
 }
 
 
-#ifndef CHROMIUM_THREADSAFE
-static unsigned char *sanityCheckPointer = NULL;
-#endif
-
-
 /*
  * Allocate space for a command that might be very large, such as
  * glTexImage2D or glBufferDataARB call.
@@ -451,9 +446,6 @@ void *crPackAlloc( CR_PACKER_CONTEXT_ARGDECL unsigned int size )
 	 */
 
 	*((unsigned int *) data_ptr) = size;
-#ifndef CHROMIUM_THREADSAFE
-	sanityCheckPointer = data_ptr + 4;
-#endif
 	return data_ptr + 4;
 }
 
@@ -468,10 +460,6 @@ void *crPackAlloc( CR_PACKER_CONTEXT_ARGDECL unsigned int size )
 void crHugePacket( CR_PACKER_CONTEXT_ARGDECL CROpcode opcode, void *packet )
 {
 	CR_GET_PACKER_CONTEXT(pc);
-#ifndef CHROMIUM_THREADSAFE
-	CRASSERT(sanityCheckPointer == packet);
-	sanityCheckPointer = NULL;
-#endif
 
 	if ( IS_BUFFERED( packet ) )
 		WRITE_OPCODE( pc, opcode );

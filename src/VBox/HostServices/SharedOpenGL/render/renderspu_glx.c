@@ -1571,11 +1571,7 @@ renderspu_SystemWindowSize( WindowInfo *window, GLint w, GLint h )
 
         if (window->BltInfo.width != w || window->BltInfo.height != h) {
             /* Only resize if the new dimensions really are different */
-#ifdef CHROMIUM_THREADSAFE
             ContextInfo *currentContext = (ContextInfo *) crGetTSD(&_RenderTSD);
-#else
-            ContextInfo *currentContext = render_spu.currentContext;
-#endif
             /* Can't resize pbuffers, so destroy it and make a new one */
             render_spu.ws.glXDestroyPbuffer(window->visual->dpy, window->window);
             window->BltInfo.width = w;

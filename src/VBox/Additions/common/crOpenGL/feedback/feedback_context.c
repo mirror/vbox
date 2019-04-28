@@ -35,10 +35,7 @@ feedbackspu_VBoxCreateContext( GLint con, const char *dpyName, GLint visual, GLi
 {
     GLint ctx, slot;
 
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&feedback_spu.mutex);
-#endif
-
     ctx = feedback_spu.child.VBoxCreateContext(con, dpyName, visual, shareCtx);
 
     /* find an empty context slot */
@@ -55,10 +52,7 @@ feedbackspu_VBoxCreateContext( GLint con, const char *dpyName, GLint visual, GLi
     feedback_spu.context[slot].clientState = crStateCreateContext(NULL, visual, NULL);
     feedback_spu.context[slot].clientCtx = ctx;
 
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&feedback_spu.mutex);
-#endif
-
     return ctx;
 }
 
@@ -71,9 +65,7 @@ feedbackspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
 void FEEDBACKSPU_APIENTRY
 feedbackspu_MakeCurrent( GLint window, GLint nativeWindow, GLint ctx )
 {
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&feedback_spu.mutex);
-#endif
     feedback_spu.child.MakeCurrent(window, nativeWindow, ctx);
 
     if (ctx) {
@@ -98,17 +90,13 @@ feedbackspu_MakeCurrent( GLint window, GLint nativeWindow, GLint ctx )
         crStateMakeCurrent(NULL);
     }
 
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&feedback_spu.mutex);
-#endif
 }
 
 void FEEDBACKSPU_APIENTRY
 feedbackspu_DestroyContext( GLint ctx )
 {
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&feedback_spu.mutex);
-#endif
     feedback_spu.child.DestroyContext(ctx);
 
     if (ctx) {
@@ -124,8 +112,6 @@ feedbackspu_DestroyContext( GLint ctx )
         feedback_spu.context[slot].clientCtx = 0;
     }
 
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&feedback_spu.mutex);
-#endif
 }
 

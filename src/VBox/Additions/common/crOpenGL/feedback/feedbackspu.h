@@ -41,9 +41,7 @@ typedef struct {
     int numContexts;
     ContextInfo context[CR_MAX_CONTEXTS];
 
-#ifdef CHROMIUM_THREADSAFE
     CRmutex mutex;
-#endif
 } feedbackSPU;
 
 extern feedbackSPU feedback_spu;

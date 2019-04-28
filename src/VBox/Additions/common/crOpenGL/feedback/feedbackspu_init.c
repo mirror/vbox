@@ -30,10 +30,7 @@ static SPUFunctions *feedbackSPUInit( int id, SPU *child, SPU *self,
 	(void) context_id;
 	(void) num_contexts;
 
-#ifdef CHROMIUM_THREADSAFE
     crInitMutex(&feedback_spu.mutex);
-#endif
-
 	feedback_spu.id = id;
 	feedback_spu.has_child = 0;
 	if (child)

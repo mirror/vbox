@@ -14,9 +14,7 @@
 #include "state/cr_statetypes.h"
 #include "state/cr_currentpointers.h"
 #include "state/cr_client.h"
-#ifdef CHROMIUM_THREADSAFE
 #include "cr_threads.h"
-#endif
 
 #include <iprt/types.h>
 
@@ -83,9 +81,7 @@ struct CRPackContext_t
     GLvectorf bounds_min, bounds_max;
     int updateBBOX;
     CRPackBuffer *currentBuffer;
-#ifdef CHROMIUM_THREADSAFE
     CRmutex mutex;
-#endif
     char *file;  /**< for debugging only */
     int line;    /**< for debugging only */
 };
@@ -96,17 +92,10 @@ struct CRPackContext_t
 # define CR_PACKER_CONTEXT_ARG
 # define CR_PACKER_CONTEXT_ARG_NOREF()  do {} while (0)
 # define CR_PACKER_CONTEXT_ARGCTX(C)
-# ifdef CHROMIUM_THREADSAFE
 extern CRtsd _PackerTSD;
-#  define CR_GET_PACKER_CONTEXT(C) CRPackContext *C = (CRPackContext *) crGetTSD(&_PackerTSD)
-#  define CR_LOCK_PACKER_CONTEXT(PC) crLockMutex(&((PC)->mutex))
-#  define CR_UNLOCK_PACKER_CONTEXT(PC) crUnlockMutex(&((PC)->mutex))
-# else
-extern DLLDATA(CRPackContext) cr_packer_globals;
-#  define CR_GET_PACKER_CONTEXT(C) CRPackContext *C = &cr_packer_globals
-#  define CR_LOCK_PACKER_CONTEXT(PC)
-#  define CR_UNLOCK_PACKER_CONTEXT(PC)
-# endif
+# define CR_GET_PACKER_CONTEXT(C) CRPackContext *C = (CRPackContext *) crGetTSD(&_PackerTSD)
+# define CR_LOCK_PACKER_CONTEXT(PC) crLockMutex(&((PC)->mutex))
+# define CR_UNLOCK_PACKER_CONTEXT(PC) crUnlockMutex(&((PC)->mutex))
 extern uint32_t cr_packer_cmd_blocks_enabled;
 #else /* if defined IN_RING0 */
 # define CR_PACKER_CONTEXT_ARGSINGLEDECL CRPackContext *_pCtx

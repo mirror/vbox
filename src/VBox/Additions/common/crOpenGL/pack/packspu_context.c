@@ -28,11 +28,7 @@ ThreadInfo *packspuNewThread(
     ThreadInfo *thread=NULL;
     int i;
 
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&_PackMutex);
-#else
-    CRASSERT(pack_spu.numThreads == 0);
-#endif
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
     CRASSERT(!CRPACKSPU_IS_WDDM_CRHGSMI() == !pHgsmi);
@@ -84,18 +80,14 @@ ThreadInfo *packspuNewThread(
     }
 
 
-#ifdef CHROMIUM_THREADSAFE
     if (!CRPACKSPU_IS_WDDM_CRHGSMI())
     {
         crSetTSD(&_PackTSD, thread);
     }
-#endif
 
     pack_spu.numThreads++;
 
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&_PackMutex);
-#endif
     return thread;
 }
 
@@ -198,9 +190,7 @@ packspu_VBoxConChromiumParameteriCR(GLint con, GLenum param, GLint value)
 
     CRASSERT(!curThread == !curPacker);
     CRASSERT(!curThread || !curPacker || curThread->packer == curPacker);
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&_PackMutex);
-#endif
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
     CRASSERT(!con == !CRPACKSPU_IS_WDDM_CRHGSMI());
@@ -234,10 +224,7 @@ packspu_VBoxConChromiumParameteriCR(GLint con, GLenum param, GLint value)
 
     packspu_ChromiumParameteriCR(param, value);
 
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&_PackMutex);
-#endif
-
     if (CRPACKSPU_IS_WDDM_CRHGSMI())
     {
         /* restore the packer context to the tls */
@@ -254,9 +241,7 @@ packspu_VBoxConChromiumParametervCR(GLint con, GLenum target, GLenum type, GLsiz
 
     CRASSERT(!curThread == !curPacker);
     CRASSERT(!curThread || !curPacker || curThread->packer == curPacker);
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&_PackMutex);
-#endif
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
     CRASSERT(!con == !CRPACKSPU_IS_WDDM_CRHGSMI());
@@ -290,10 +275,7 @@ packspu_VBoxConChromiumParametervCR(GLint con, GLenum target, GLenum type, GLsiz
 
     packspu_ChromiumParametervCR(target, type, count, values);
 
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&_PackMutex);
-#endif
-
     if (CRPACKSPU_IS_WDDM_CRHGSMI())
     {
         /* restore the packer context to the tls */
@@ -313,9 +295,7 @@ packspu_VBoxCreateContext( GLint con, const char *dpyName, GLint visual, GLint s
 
     CRASSERT(!curThread == !curPacker);
     CRASSERT(!curThread || !curPacker || curThread->packer == curPacker);
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&_PackMutex);
-#endif
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
     CRASSERT(!con == !CRPACKSPU_IS_WDDM_CRHGSMI());
@@ -382,9 +362,7 @@ packspu_VBoxCreateContext( GLint con, const char *dpyName, GLint visual, GLint s
         CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
 
         if (serverCtx < 0) {
-#ifdef CHROMIUM_THREADSAFE
             crUnlockMutex(&_PackMutex);
-#endif
             crWarning("Failure in packspu_CreateContext");
 
             if (CRPACKSPU_IS_WDDM_CRHGSMI())
@@ -419,10 +397,7 @@ packspu_VBoxCreateContext( GLint con, const char *dpyName, GLint visual, GLint s
     pack_spu.context[slot].clientState->bufferobject.retainBufferData = GL_TRUE;
     pack_spu.context[slot].serverCtx = serverCtx;
 
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&_PackMutex);
-#endif
-
     if (CRPACKSPU_IS_WDDM_CRHGSMI())
     {
         /* restore the packer context to the tls */

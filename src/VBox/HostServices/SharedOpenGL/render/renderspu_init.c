@@ -27,10 +27,7 @@ SPUFunctions render_functions = {
 
 RenderSPU render_spu;
 uint64_t render_spu_parent_window_id = 0;
-
-#ifdef CHROMIUM_THREADSAFE
 CRtsd _RenderTSD;
-#endif
 
 #ifdef RT_OS_WINDOWS
 static DWORD WINAPI renderSPUWindowThreadProc(void* unused)
@@ -150,10 +147,8 @@ renderSPUInit( int id, SPU *child, SPU *self,
 
     self->privatePtr = (void *) &render_spu;
 
-#ifdef CHROMIUM_THREADSAFE
     crDebug("Render SPU: thread-safe");
     crInitTSD(&_RenderTSD);
-#endif
 
     crMemZero(&render_spu, sizeof(render_spu));
 
@@ -497,10 +492,7 @@ static int renderSPUCleanup(void)
 
     crUnloadOpenGL();
 
-#ifdef CHROMIUM_THREADSAFE
     crFreeTSD(&_RenderTSD);
-#endif
-
     return 1;
 }
 

@@ -62,11 +62,8 @@ static CRmutex stub_init_mutex;
 /* NOTE: 'SPUDispatchTable glim' is declared in NULLfuncs.py now */
 /* NOTE: 'SPUDispatchTable stubThreadsafeDispatch' is declared in tsfuncs.c */
 Stub stub;
-#ifdef CHROMIUM_THREADSAFE
 static bool g_stubIsCurrentContextTSDInited;
 CRtsd g_stubCurrentContextTSD;
-#endif
-
 
 #ifndef VBOX_NO_NATIVEGL
 static void stubInitNativeDispatch( void )
@@ -391,17 +388,13 @@ static void stubSPUTearDown(void)
 
 static void stubSPUSafeTearDown(void)
 {
-#ifdef CHROMIUM_THREADSAFE
     CRmutex *mutex;
-#endif
 
     if (!stub_initialized) return;
     stub_initialized = 0;
 
-#ifdef CHROMIUM_THREADSAFE
     mutex = &stub.mutex;
     crLockMutex(mutex);
-#endif
     crDebug("stubSPUSafeTearDown");
 
 #ifdef WINDOWS
@@ -488,10 +481,8 @@ static void stubSPUSafeTearDown(void)
     crNetTearDown();
 #endif
 
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(mutex);
     crFreeMutex(mutex);
-#endif
     crMemset(&stub, 0, sizeof(stub));
 }
 
@@ -514,13 +505,11 @@ static void stubSignalHandler(int signo)
 }
 
 #ifndef RT_OS_WINDOWS
-# ifdef CHROMIUM_THREADSAFE
 static void stubThreadTlsDtor(void *pvValue)
 {
     ContextInfo *pCtx = (ContextInfo*)pvValue;
     VBoxTlsRefRelease(pCtx);
 }
-# endif
 #endif
 
 
@@ -531,9 +520,7 @@ static void stubInitVars(void)
 {
     WindowInfo *defaultWin;
 
-#ifdef CHROMIUM_THREADSAFE
     crInitMutex(&stub.mutex);
-#endif
 
     /* At the very least we want CR_RGB_BIT. */
     stub.haveNativeOpenGL = GL_FALSE;
@@ -558,13 +545,11 @@ static void stubInitVars(void)
     stub.freeContextNumber = MAGIC_CONTEXT_BASE;
     stub.contextTable = crAllocHashtable();
 #ifndef RT_OS_WINDOWS
-# ifdef CHROMIUM_THREADSAFE
     if (!g_stubIsCurrentContextTSDInited)
     {
         crInitTSDF(&g_stubCurrentContextTSD, stubThreadTlsDtor);
         g_stubIsCurrentContextTSDInited = true;
     }
-# endif
 #endif
     stubSetCurrentContext(NULL);
 
@@ -1201,10 +1186,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         Assert(hCrUtil);
         crDbgCmdSymLoadPrint("VBoxOGLcrutil.dll", hCrUtil);
 #endif
-#ifdef CHROMIUM_THREADSAFE
         crInitTSD(&g_stubCurrentContextTSD);
-#endif
-
         crInitMutex(&stub_init_mutex);
 
 #ifdef VDBG_VEHANDLER
@@ -1346,10 +1328,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 #endif
 
         stubSPUSafeTearDown();
-
-#ifdef CHROMIUM_THREADSAFE
         crFreeTSD(&g_stubCurrentContextTSD);
-#endif
 
 #ifdef VDBG_VEHANDLER
         if (g_VBoxVehEnable)

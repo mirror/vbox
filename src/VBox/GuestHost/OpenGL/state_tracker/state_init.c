@@ -11,12 +11,8 @@
 
 #include <iprt/asm.h>
 
-#ifdef CHROMIUM_THREADSAFE
 static bool __isContextTLSInited = false;
 CRtsd __contextTSD;
-#else
-CRContext *__currentContext = NULL;
-#endif
 
 CRStateBits *__currentBits = NULL;
 CRContext *g_pAvailableContexts[CR_MAX_CONTEXTS];
@@ -296,14 +292,12 @@ crStateSetSharedContext(CRContext *pCtx)
     gSharedState = pCtx->shared;
 }
 
-#ifdef CHROMIUM_THREADSAFE
-static void
-crStateFreeContext(CRContext *ctx);
+static void crStateFreeContext(CRContext *ctx);
+
 static DECLCALLBACK(void) crStateContextDtor(void *pvCtx)
 {
     crStateFreeContext((CRContext*)pvCtx);
 }
-#endif
 
 /*
  * Helper for crStateCreateContext, below.
@@ -333,9 +327,7 @@ crStateCreateContextId(int i, const CRLimitsState *limits, GLint visBits, CRCont
     ++g_cContexts;
     CRASSERT(g_cContexts < RT_ELEMENTS(g_pAvailableContexts));
     ctx->id = i;
-#ifdef CHROMIUM_THREADSAFE
     VBoxTlsRefInit(ctx, crStateContextDtor);
-#endif
     ctx->flush_func = NULL;
     for (j=0;j<CR_MAX_BITARRAY;j++){
         if (j == node32) {
@@ -473,14 +465,12 @@ crStateFreeContext(CRContext *ctx)
     crFree( ctx );
 }
 
-#ifdef CHROMIUM_THREADSAFE
-# ifndef RT_OS_WINDOWS
+#ifndef RT_OS_WINDOWS
 static void crStateThreadTlsDtor(void *pvValue)
 {
     CRContext *pCtx = (CRContext*)pvValue;
     VBoxTlsRefRelease(pCtx);
 }
-# endif
 #endif
 
 /*
@@ -512,7 +502,6 @@ void crStateInit(void)
         g_pAvailableContexts[i] = NULL;
     g_cContexts = 0;
 
-#ifdef CHROMIUM_THREADSAFE
     if (!__isContextTLSInited)
     {
 # ifndef RT_OS_WINDOWS
@@ -524,18 +513,12 @@ void crStateInit(void)
 # endif
         __isContextTLSInited = 1;
     }
-#endif
 
     if (defaultContext) {
         /* Free the default/NULL context.
          * Ensures context bits are reset */
-#ifdef CHROMIUM_THREADSAFE
         SetCurrentContext(NULL);
         VBoxTlsRefRelease(defaultContext);
-#else
-        crStateFreeContext(defaultContext);
-        __currentContext = NULL;
-#endif
     }
 
     /* Reset diff_api */
@@ -549,11 +532,7 @@ void crStateInit(void)
     defaultContext = crStateCreateContextId(0, NULL, CR_RGB_BIT, NULL);
     CRASSERT(g_pAvailableContexts[0] == defaultContext);
     CRASSERT(g_cContexts == 1);
-#ifdef CHROMIUM_THREADSAFE
     SetCurrentContext(defaultContext);
-#else
-    __currentContext = defaultContext;
-#endif
 }
 
 void crStateDestroy(void)
@@ -573,12 +552,8 @@ void crStateDestroy(void)
     {
         if (g_pAvailableContexts[i])
         {
-#ifdef CHROMIUM_THREADSAFE
             if (VBoxTlsRefIsFunctional(g_pAvailableContexts[i]))
                 VBoxTlsRefRelease(g_pAvailableContexts[i]);
-#else
-            crStateFreeContext(g_pAvailableContexts[i]);
-#endif
         }
     }
 
@@ -586,10 +561,8 @@ void crStateDestroy(void)
     defaultContext = NULL;
 
 
-#ifdef CHROMIUM_THREADSAFE
     crFreeTSD(&__contextTSD);
     __isContextTLSInited = 0;
-#endif
 }
 
 /*
@@ -691,16 +664,12 @@ void crStateDestroyContext( CRContext *ctx )
            we may not have one, aka the packspu */
         if (diff_api.AlphaFunc)
             crStateSwitchContext(current, defaultContext);
-#ifdef CHROMIUM_THREADSAFE
+
         SetCurrentContext(defaultContext);
-#else
-        __currentContext = defaultContext;
-#endif
         /* ensure matrix state is also current */
         crStateMatrixMode(defaultContext->transform.matrixMode);
     }
 
-#ifdef CHROMIUM_THREADSAFE
     VBoxTlsRefMarkDestroy(ctx);
 # ifdef IN_GUEST
     if (VBoxTlsRefCountGet(ctx) > 1 && ctx->shared == gSharedState)
@@ -711,9 +680,6 @@ void crStateDestroyContext( CRContext *ctx )
     }
 # endif
     VBoxTlsRefRelease(ctx);
-#else
-    crStateFreeContext(ctx);
-#endif
 }
 
 GLboolean crStateEnableDiffOnMakeCurrent(GLboolean fEnable)
@@ -743,11 +709,7 @@ void crStateMakeCurrent( CRContext *ctx )
             crStateSwitchContext( current, pLocalCtx );
     }
 
-#ifdef CHROMIUM_THREADSAFE
     SetCurrentContext(pLocalCtx);
-#else
-    __currentContext = pLocalCtx;
-#endif
 
     /* ensure matrix state is also current */
     crStateMatrixMode(pLocalCtx->transform.matrixMode);
@@ -768,12 +730,7 @@ static void crStateSetCurrentEx( CRContext *ctx, GLboolean fCleanupDefault )
     if (current == pLocalCtx)
         return; /* no-op */
 
-#ifdef CHROMIUM_THREADSAFE
     SetCurrentContext(pLocalCtx);
-#else
-    __currentContext = pLocalCtx;
-#endif
-
     if (pLocalCtx)
     {
         /* ensure matrix state is also current */

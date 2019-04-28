@@ -231,10 +231,6 @@ typedef struct {
 
     ContextInfo *defaultSharedContext;
 
-#ifndef CHROMIUM_THREADSAFE
-    ContextInfo *currentContext;
-#endif
-
     crOpenGLInterface ws;  /**< Window System interface */
 
     CRHashTable *barrierHash;
@@ -305,19 +301,11 @@ extern RenderSPU render_spu;
 /* @todo remove this hack */
 extern uint64_t render_spu_parent_window_id;
 
-#ifdef CHROMIUM_THREADSAFE
 extern CRtsd _RenderTSD;
 #define GET_CONTEXT_VAL() ((ContextInfo *) crGetTSD(&_RenderTSD))
 #define SET_CONTEXT_VAL(_v) do { \
         crSetTSD(&_RenderTSD, (_v)); \
     } while (0)
-#else
-#define GET_CONTEXT_VAL() (render_spu.currentContext)
-#define SET_CONTEXT_VAL(_v) do { \
-        render_spu.currentContext = (_v); \
-    } while (0)
-
-#endif
 
 #define GET_CONTEXT(T)  ContextInfo *T = GET_CONTEXT_VAL()
 

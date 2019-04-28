@@ -45,9 +45,7 @@ typedef struct CRContext CRContext;
 
 #include "spu_dispatch_table.h"
 
-#ifdef CHROMIUM_THREADSAFE
-# include <cr_threads.h>
-#endif
+#include "cr_threads.h"
 
 #include <iprt/cdefs.h>
 
@@ -131,7 +129,6 @@ typedef struct _CRSharedState {
 struct CRContext {
     int id;
 
-#ifdef CHROMIUM_THREADSAFE
     /* we keep reference counting of context's makeCurrent for different threads
      * this is primarily needed to avoid having an invalid memory reference in the TLS
      * when the context is assigned to more than one threads and then destroyed from
@@ -142,7 +139,6 @@ struct CRContext {
      * => Thread2 still refers to destroyed ctx1
      * */
     VBOXTLSREFDATA
-#endif
 
     CRbitvalue bitid[CR_MAX_BITARRAY];
     CRbitvalue neg_bitid[CR_MAX_BITARRAY];

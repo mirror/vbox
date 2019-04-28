@@ -494,7 +494,6 @@ GLenum PACKSPU_APIENTRY packspu_GetError( void )
     return return_val;
 }
 
-#ifdef CHROMIUM_THREADSAFE
 GLint PACKSPU_APIENTRY packspu_VBoxPackSetInjectThread(struct VBOXUHGSMI *pHgsmi)
 {
     GLint con = 0;
@@ -735,30 +734,6 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
     return TRUE;
 }
 #endif
-
-#else  /*ifdef CHROMIUM_THREADSAFE*/
-GLint PACKSPU_APIENTRY packspu_VBoxPackSetInjectThread(struct VBOXUHGSMI *pHgsmi)
-{
-}
-
-GLuint PACKSPU_APIENTRY packspu_VBoxPackGetInjectID(GLint con)
-{
-    return 0;
-}
-
-void PACKSPU_APIENTRY packspu_VBoxPackSetInjectID(GLuint id)
-{
-    (void) id;
-}
-
-void PACKSPU_APIENTRY packspu_VBoxPackAttachThread()
-{
-}
-
-void PACKSPU_APIENTRY packspu_VBoxPackDetachThread()
-{
-}
-#endif /*CHROMIUM_THREADSAFE*/
 
 void PACKSPU_APIENTRY packspu_VBoxPresentComposition(GLint win, const struct VBOXVR_SCR_COMPOSITOR * pCompositor,
                                                      const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry)

@@ -47,9 +47,7 @@ static struct {
 
     int                  num_clients; /* total number of clients (unused?) */
 
-#ifdef CHROMIUM_THREADSAFE
     CRmutex              mutex;
-#endif
 } cr_net;
 
 
@@ -133,9 +131,7 @@ CRConnection * crNetConnectToServer( const char *server, int mtu, int broker
     if (!crNetConnect( conn ))
     {
         crDebug("crNetConnectToServer() failed, freeing the connection");
-        #ifdef CHROMIUM_THREADSAFE
-            crFreeMutex( &conn->messageList.lock );
-        #endif
+        crFreeMutex( &conn->messageList.lock );
         conn->Disconnect(conn);
         crFree( conn );
         return NULL;
@@ -218,9 +214,7 @@ void
 crNetFreeConnection(CRConnection *conn)
 {
     conn->Disconnect(conn);
-    #ifdef CHROMIUM_THREADSAFE
-        crFreeMutex( &conn->messageList.lock );
-    #endif
+    crFreeMutex( &conn->messageList.lock );
     crFree(conn);
 }
 
@@ -243,9 +237,7 @@ void crNetInit( CRNetReceiveFunc recvFunc, CRNetCloseFunc closeFunc )
     {
         cr_net.use_hgcm    = 0;
         cr_net.num_clients = 0;
-#ifdef CHROMIUM_THREADSAFE
         crInitMutex(&cr_net.mutex);
-#endif
 
         cr_net.initialized = 1;
         cr_net.recv_list = NULL;
@@ -304,9 +296,7 @@ void crNetTearDown(void)
 
     if (!cr_net.initialized) return;
 
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&cr_net.mutex);
-#endif
 
     /* Note, other protocols used by chromium should free up stuff too,
      * but VBox doesn't use them, so no other checks.
@@ -328,10 +318,8 @@ void crNetTearDown(void)
 
     cr_net.initialized = 0;
 
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&cr_net.mutex);
     crFreeMutex(&cr_net.mutex);
-#endif
 }
 
 CRConnection** crNetDump( int* num )
@@ -379,10 +367,8 @@ crInitMessageList(CRMessageList *list)
 {
     list->head = list->tail = NULL;
     list->numMessages = 0;
-#ifdef CHROMIUM_THREADSAFE
     crInitMutex(&list->lock);
     crInitCondition(&list->nonEmpty);
-#endif
 }
 
 
@@ -399,9 +385,7 @@ crEnqueueMessage(CRMessageList *list, CRMessage *msg, unsigned int len,
 {
     CRMessageListNode *node;
 
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&list->lock);
-#endif
 
     node = (CRMessageListNode *) crAlloc(sizeof(CRMessageListNode));
     node->mesg = msg;
@@ -418,10 +402,8 @@ crEnqueueMessage(CRMessageList *list, CRMessage *msg, unsigned int len,
 
     list->numMessages++;
 
-#ifdef CHROMIUM_THREADSAFE
     crSignalCondition(&list->nonEmpty);
     crUnlockMutex(&list->lock);
-#endif
 }
 
 
@@ -436,9 +418,7 @@ crDequeueMessageNoBlock(CRMessageList *list, CRMessage **msg,
 {
     int retval;
 
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&list->lock);
-#endif
 
     if (list->head) {
         CRMessageListNode *node = list->head;
@@ -466,10 +446,7 @@ crDequeueMessageNoBlock(CRMessageList *list, CRMessage **msg,
         retval = 0;
     }
 
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&list->lock);
-#endif
-
     return retval;
 }
 
@@ -487,17 +464,11 @@ crDequeueMessage(CRMessageList *list, CRMessage **msg, unsigned int *len,
 {
     CRMessageListNode *node;
 
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&list->lock);
-#endif
 
-#ifdef CHROMIUM_THREADSAFE
     while (!list->head) {
         crWaitCondition(&list->nonEmpty, &list->lock);
     }
-#else
-    CRASSERT(list->head);
-#endif
 
     node = list->head;
 
@@ -517,10 +488,7 @@ crDequeueMessage(CRMessageList *list, CRMessage **msg, unsigned int *len,
     list->numMessages--;
 
     crFree(node);
-
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&list->lock);
-#endif
 }
 
 
@@ -652,9 +620,7 @@ int crNetConnect( CRConnection *conn )
 void crNetDisconnect( CRConnection *conn )
 {
     conn->Disconnect( conn );
-#ifdef CHROMIUM_THREADSAFE
     crFreeMutex( &conn->messageList.lock );
-#endif
     crFree( conn );
 }
 

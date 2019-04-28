@@ -28,7 +28,6 @@ extern CRStateBits *__currentBits;
 
 #define GetCurrentBits() __currentBits
 
-#ifdef CHROMIUM_THREADSAFE
 #include <cr_threads.h>
 
 extern CRtsd __contextTSD;
@@ -38,10 +37,6 @@ extern CRtsd __contextTSD;
  * it is placed here only to simplify things since some code besides state_init.c
  * (i.e. state_glsl.c) is using it */
 #define SetCurrentContext(_ctx) VBoxTlsRefSetCurrent(CRContext, &__contextTSD, _ctx)
-#else
-extern CRContext *__currentContext;
-#define GetCurrentContext() __currentContext
-#endif
 
 extern GLboolean g_bVBoxEnableDiffOnMakeCurrent;
 

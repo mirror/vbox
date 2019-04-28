@@ -465,11 +465,7 @@ void renderspuPerformMakeCurrent(WindowInfo *window, GLint nativeWindow, Context
 {
     if (window && context)
     {
-#ifdef CHROMIUM_THREADSAFE
         crSetTSD(&_RenderTSD, context);
-#else
-        render_spu.currentContext = context;
-#endif
         context->currentWindow = window;
 
         renderspu_SystemMakeCurrent( window, nativeWindow, context );
@@ -508,11 +504,7 @@ void renderspuPerformMakeCurrent(WindowInfo *window, GLint nativeWindow, Context
     else if (!window && !context)
     {
         renderspu_SystemMakeCurrent( NULL, 0, NULL );
-#ifdef CHROMIUM_THREADSAFE
         crSetTSD(&_RenderTSD, NULL);
-#else
-        render_spu.currentContext = NULL;
-#endif
     }
     else
     {

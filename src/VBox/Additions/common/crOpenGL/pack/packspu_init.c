@@ -21,10 +21,8 @@ SPUFunctions pack_functions = {
 
 PackSPU pack_spu;
 
-#ifdef CHROMIUM_THREADSAFE
 CRtsd _PackTSD;
 CRmutex _PackMutex;
-#endif
 
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
 # include <VBoxCrHgsmi.h>
@@ -58,14 +56,12 @@ packSPUInit( int id, SPU *child, SPU *self,
     (void) child;
     (void) self;
 
-#if defined(CHROMIUM_THREADSAFE) && !defined(WINDOWS)
+#if !defined(WINDOWS)
     crInitMutex(&_PackMutex);
 #endif
 
-#ifdef CHROMIUM_THREADSAFE
     crInitTSD(&_PackerTSD);
     crInitTSD(&_PackTSD);
-#endif
 
     pack_spu.id = id;
 
@@ -112,9 +108,7 @@ static int
 packSPUCleanup(void)
 {
     int i;
-#ifdef CHROMIUM_THREADSAFE
     crLockMutex(&_PackMutex);
-#endif
     for (i=0; i<MAX_THREADS; ++i)
     {
         if (pack_spu.thread[i].inUse && pack_spu.thread[i].packer)
@@ -123,14 +117,12 @@ packSPUCleanup(void)
         }
     }
 
-#ifdef CHROMIUM_THREADSAFE
     crFreeTSD(&_PackerTSD);
     crFreeTSD(&_PackTSD);
     crUnlockMutex(&_PackMutex);
-# ifndef WINDOWS
+#ifndef WINDOWS
     crFreeMutex(&_PackMutex);
-# endif
-#endif /* CHROMIUM_THREADSAFE */
+#endif
     return 1;
 }
 

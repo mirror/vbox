@@ -34,9 +34,7 @@
  * This function should be called from MakeCurrent().  It'll detect if
  * we're in a multi-thread situation, and do the right thing for dispatch.
  */
-#ifdef CHROMIUM_THREADSAFE
-    static void
-stubCheckMultithread( void )
+static void stubCheckMultithread( void )
 {
     static unsigned long knownID;
     static GLboolean firstCall = GL_TRUE;
@@ -54,7 +52,6 @@ stubCheckMultithread( void )
     crSPUCopyDispatchTable(&glim, &stubThreadsafeDispatch);
     }
 }
-#endif
 
 
 /**
@@ -65,7 +62,6 @@ stubSetDispatch( SPUDispatchTable *table )
 {
     CRASSERT(table);
 
-#ifdef CHROMIUM_THREADSAFE
     /* always set the per-thread dispatch pointer */
     crSetTSD(&stub.dispatchTSD, (void *) table);
     if (stub.threadSafe) {
@@ -74,7 +70,6 @@ stubSetDispatch( SPUDispatchTable *table )
      */
     }
     else
-#endif
     {
     /* Single thread mode - just install the caller's dispatch table */
     /* This conditional is an optimization to try to avoid unnecessary
@@ -467,12 +462,10 @@ stubDestroyContextLocked( ContextInfo *context )
     crHashtableDelete(stub.contextTable, contextId, NULL);
 }
 
-#ifdef CHROMIUM_THREADSAFE
 static DECLCALLBACK(void) stubContextDtor(void*pvContext)
 {
     stubContextFree((ContextInfo*)pvContext);
 }
-#endif
 
 /**
  * Allocate a new ContextInfo object, initialize it, put it into the
@@ -548,9 +541,7 @@ stubNewContext(char *dpyName, GLint visBits, ContextType type, unsigned long sha
     context->pHgsmi = pHgsmi;
 #endif
 
-#ifdef CHROMIUM_THREADSAFE
     VBoxTlsRefInit(context, stubContextDtor);
-#endif
 
 #if defined(GLX) || defined(DARWIN)
     context->share = (ContextInfo *)
@@ -1180,15 +1171,11 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
         return GL_TRUE;  /* OK */
     }
 
-#ifdef CHROMIUM_THREADSAFE
     stubCheckMultithread();
-#endif
 
     if (context->type == UNDECIDED) {
         /* Here's where we really create contexts */
-#ifdef CHROMIUM_THREADSAFE
         crLockMutex(&stub.mutex);
-#endif
 
         if (stubCheckUseChromium(window)) {
             GLint spuConnection = 0;
@@ -1219,18 +1206,14 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
              */
             if (!InstantiateNativeContext(window, context))
             {
-# ifdef CHROMIUM_THREADSAFE
                 crUnlockMutex(&stub.mutex);
-# endif
                 return 0; /* false */
             }
             context->type = NATIVE;
         }
 #endif /* !GLX */
 
-#ifdef CHROMIUM_THREADSAFE
         crUnlockMutex(&stub.mutex);
-#endif
     }
 
 
@@ -1407,19 +1390,12 @@ stubDestroyContext( unsigned long contextId )
     else
         crError("No context.");
 
-#ifdef CHROMIUM_THREADSAFE
     if (stubGetCurrentContext() == context) {
         stubSetCurrentContext(NULL);
     }
 
     VBoxTlsRefMarkDestroy(context);
     VBoxTlsRefRelease(context);
-#else
-    if (stubGetCurrentContext() == context) {
-        stubSetCurrentContext(NULL);
-    }
-    stubContextFree(context);
-#endif
     crHashtableUnlock(stub.contextTable);
     crHashtableUnlock(stub.windowTable);
 }
