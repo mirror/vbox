@@ -259,16 +259,19 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
     Log(("VBOXSF: vbsfReadInternal: ByteCount 0x%X, ByteOffset 0x%RX64, FileSize 0x%RX64\n",
          ByteCount, ByteOffset, FileSize));
 
-    /** @todo check if this is necessary. */
+/** @todo r=bird: This check is incorrect as we must let the host do these
+ * checks with up-to-date end-of-file data.  What we've got cached here is
+ * potentially out of date.  (This code is here because someone saw it in some
+ * sample, I suspect and didn't quite understand what it was all about.  The
+ * thing is that when FCB_STATE_READCACHING_ENABLED is set, the caller
+ * already checks and the sample probably wanted to cover its bases.  We,
+ * don't want to do that as already explained earlier.) */
 #ifdef FCB_STATE_READCACHING_ENABLED    /* Correct spelling for Vista 6001 SDK. */
     if (!FlagOn(capFcb->FcbState, FCB_STATE_READCACHING_ENABLED))
 #else
     if (!FlagOn(capFcb->FcbState, FCB_STATE_READCACHEING_ENABLED))
 #endif
     {
-/** @todo r=bird: How is this file size accurate given that the file resides
- *        on the host and be grown/shrunk independently there?   Why is this
- *        only done when FCB_STATE_READCACHEING_ENABLED is clear? */
         if (ByteOffset >= FileSize)
         {
             Log(("VBOXSF: vbsfReadInternal: EOF\n"));
@@ -311,6 +314,11 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
     }
 
     RxContext->InformationToReturn = ByteCount;
+
+/** @todo if we read past the end-of-file as we know it, or if we reached
+ * end-of-file earlier than we though, update the file size.  The
+ * RxLowIoReadShellCompletion() routine does not seem to do this for is and
+ * I (bird) couldn't find anyone else doing it either. */
 
     Log(("VBOXSF: vbsfReadInternal: Status = 0x%08X, ByteCount = 0x%X\n",
          Status, ByteCount));
@@ -550,58 +558,6 @@ NTSTATUS VBoxMRxFlush (IN PRX_CONTEXT RxContext)
     Status = vbsfNtVBoxStatusToNt(vrc);
 
     Log(("VBOXSF: MRxFlush: Returned 0x%08X\n", Status));
-    return Status;
-}
-
-NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
-                            IN uint64_t cbNewFileSize)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    RxCaptureFcb;
-    RxCaptureFobx;
-
-    PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
-    PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
-
-    PSHFLFSOBJINFO pObjInfo;
-    uint32_t cbBuffer;
-    int vrc;
-
-    Log(("VBOXSF: vbsfNtSetEndOfFile: New size = %RX64\n",
-         cbNewFileSize));
-
-    Assert(pVBoxFobx && pNetRootExtension);
-
-    cbBuffer = sizeof(SHFLFSOBJINFO);
-    pObjInfo = (SHFLFSOBJINFO *)vbsfNtAllocNonPagedMem(cbBuffer);
-    if (!pObjInfo)
-    {
-        AssertFailed();
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    RtlZeroMemory(pObjInfo, cbBuffer);
-    pObjInfo->cbObject = cbNewFileSize;
-
-    vrc = VbglR0SfFsInfo(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                         SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer, (PSHFLDIRINFO)pObjInfo);
-
-    Log(("VBOXSF: vbsfNtSetEndOfFile: VbglR0SfFsInfo returned %Rrc\n", vrc));
-
-    Status = vbsfNtVBoxStatusToNt(vrc);
-    if (Status == STATUS_SUCCESS)
-    {
-        Log(("VBOXSF: vbsfNtSetEndOfFile: VbglR0SfFsInfo new allocation size = %RX64\n",
-             pObjInfo->cbAllocated));
-
-        /** @todo update the file stats! */
-    }
-
-    if (pObjInfo)
-        vbsfNtFreeNonPagedMem(pObjInfo);
-
-    Log(("VBOXSF: vbsfNtSetEndOfFile: Returned 0x%08X\n", Status));
     return Status;
 }
 

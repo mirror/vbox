@@ -218,17 +218,10 @@ NTSTATUS vbsfNtDeleteConnection(IN PRX_CONTEXT RxContext,
                                 OUT PBOOLEAN PostToFsp);
 NTSTATUS vbsfNtCreateConnection(IN PRX_CONTEXT RxContext,
                                 OUT PBOOLEAN PostToFsp);
-
-NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext,
-                            IN uint64_t cbNewFileSize);
-NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
-                      IN FILE_INFORMATION_CLASS FileInformationClass,
-                      IN PVOID pBuffer,
-                      IN ULONG BufferLength);
+NTSTATUS vbsfNtCloseFileHandle(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                               PMRX_VBOX_FOBX pVBoxFobx);
 NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext);
-
 void     vbsfNtCopyInfoToLegacy(PMRX_VBOX_FOBX pVBoxFobx, PCSHFLFSOBJINFO pInfo);
-
 NTSTATUS vbsfNtVBoxStatusToNt(int vrc);
 PVOID    vbsfNtAllocNonPagedMem(ULONG ulSize);
 void     vbsfNtFreeNonPagedMem(PVOID lpMem);

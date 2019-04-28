@@ -723,12 +723,15 @@ static NTSTATUS vbsfSetFileInfoOnClose(PMRX_VBOX_NETROOT_EXTENSION pNetRootExten
     return Status;
 }
 
-/*
+/**
  * Closes an opened file handle of a MRX_VBOX_FOBX.
+ *
  * Updates file attributes if necessary.
+ *
+ * Used by VBoxMRxCloseSrvOpen, vbsfNtRemove and vbsfNtRename.
  */
-static NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
-                                    PMRX_VBOX_FOBX pVBoxFobx)
+NTSTATUS vbsfNtCloseFileHandle(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                               PMRX_VBOX_FOBX pVBoxFobx)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -802,7 +805,7 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
 
     /* Close file */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfCloseFileHandle(pNetRootExtension, pVBoxFobx);
+        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx);
 
     if (capFcb->FcbState & FCB_STATE_DELETE_ON_CLOSE)
     {
@@ -817,6 +820,9 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
     return Status;
 }
 
+/**
+ * Worker for vbsfNtSetBasicInfo and VBoxMRxCloseSrvOpen.
+ */
 NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -837,7 +843,7 @@ NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext)
 
     /* Close file first if not already done. */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfCloseFileHandle(pNetRootExtension, pVBoxFobx);
+        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx);
 
     Log(("VBOXSF: vbsfNtRemove: RemainingName->Length %d\n", RemainingName->Length));
     Status = vbsfNtShflStringFromUnicodeAlloc(&ParsedPath, RemainingName->Buffer, RemainingName->Length);
@@ -860,79 +866,6 @@ NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext)
         Log(("VBOXSF: vbsfNtRemove: VbglR0SfRemove failed with %Rrc\n", vrc));
 
     Log(("VBOXSF: vbsfNtRemove: Returned 0x%08X\n", Status));
-    return Status;
-}
-
-NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
-                      IN FILE_INFORMATION_CLASS FileInformationClass,
-                      IN PVOID pBuffer,
-                      IN ULONG BufferLength)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    RxCaptureFcb;
-    RxCaptureFobx;
-
-    PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
-    PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
-    PMRX_SRV_OPEN pSrvOpen = capFobx->pSrvOpen;
-
-    PFILE_RENAME_INFORMATION RenameInformation = (PFILE_RENAME_INFORMATION)RxContext->Info.Buffer;
-    PUNICODE_STRING RemainingName = GET_ALREADY_PREFIXED_NAME(pSrvOpen, capFcb);
-
-    int vrc;
-    PSHFLSTRING SrcPath = 0, DestPath = 0;
-    ULONG flags;
-
-    RT_NOREF(FileInformationClass, pBuffer, BufferLength);
-
-    Assert(FileInformationClass == FileRenameInformation);
-
-    Log(("VBOXSF: vbsfNtRename: FileName = %.*ls\n",
-         RenameInformation->FileNameLength / sizeof(WCHAR), &RenameInformation->FileName[0]));
-
-    /* Must close the file before renaming it! */
-    if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfCloseFileHandle(pNetRootExtension, pVBoxFobx);
-
-    /* Mark it as renamed, so we do nothing during close */
-    SetFlag(pSrvOpen->Flags, SRVOPEN_FLAG_FILE_RENAMED);
-
-    Log(("VBOXSF: vbsfNtRename: RenameInformation->FileNameLength = %d\n", RenameInformation->FileNameLength));
-    Status = vbsfNtShflStringFromUnicodeAlloc(&DestPath, RenameInformation->FileName, (uint16_t)RenameInformation->FileNameLength);
-    if (Status != STATUS_SUCCESS)
-        return Status;
-
-    Log(("VBOXSF: vbsfNtRename: Destination path = %.*ls\n",
-         DestPath->u16Length / sizeof(WCHAR), &DestPath->String.ucs2[0]));
-
-    Log(("VBOXSF: vbsfNtRename: RemainingName->Length = %d\n", RemainingName->Length));
-    Status = vbsfNtShflStringFromUnicodeAlloc(&SrcPath, RemainingName->Buffer, RemainingName->Length);
-    if (Status != STATUS_SUCCESS)
-    {
-        vbsfNtFreeNonPagedMem(DestPath);
-        return Status;
-    }
-
-    Log(("VBOXSF: vbsfNtRename: Source path = %.*ls\n",
-         SrcPath->u16Length / sizeof(WCHAR), &SrcPath->String.ucs2[0]));
-
-    /* Call host. */
-    flags = pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY ? SHFL_RENAME_DIR : SHFL_RENAME_FILE;
-    if (RenameInformation->ReplaceIfExists)
-        flags |= SHFL_RENAME_REPLACE_IF_EXISTS;
-
-    Log(("VBOXSF: vbsfNtRename: Calling VbglR0SfRename\n"));
-    vrc = VbglR0SfRename(&g_SfClient, &pNetRootExtension->map, SrcPath, DestPath, flags);
-
-    vbsfNtFreeNonPagedMem(SrcPath);
-    vbsfNtFreeNonPagedMem(DestPath);
-
-    Status = vbsfNtVBoxStatusToNt(vrc);
-    if (vrc != VINF_SUCCESS)
-        Log(("VBOXSF: vbsfNtRename: VbglR0SfRename failed with %Rrc\n", vrc));
-
-    Log(("VBOXSF: vbsfNtRename: Returned 0x%08X\n", Status));
     return Status;
 }
 
