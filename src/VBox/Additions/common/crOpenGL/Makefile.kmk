@@ -27,7 +27,6 @@ BLDDIRS += \
 if1of ($(KBUILD_TARGET), win linux solaris freebsd)
  DLLS += \
     VBoxOGL \
-    VBoxOGLarrayspu \
     VBoxOGLpassthroughspu \
     VBoxOGLpackspu \
     VBoxOGLfeedbackspu
@@ -35,7 +34,6 @@ endif
 
 VBOX_OGL_X86_GUEST_DLLS = \
      VBoxOGL-x86 \
-     VBoxOGLarrayspu-x86 \
      VBoxOGLpassthroughspu-x86 \
      VBoxOGLpackspu-x86 \
      VBoxOGLfeedbackspu-x86
@@ -447,55 +445,6 @@ $(VBOX_PATH_CROGL_GENFILES)/linux_exports.c: \
 endif
 
 #
-# VBoxOGLarrayspu
-#
-VBoxOGLarrayspu_TEMPLATE      = VBOXCROGLR3GUESTDLL
-VBoxOGLarrayspu_INCS          = \
-	array \
-	$(VBOX_GRAPHICS_INCS)
-if1of ($(KBUILD_TARGET), linux solaris freebsd)
- VBoxOGLarrayspu_INCS += \
-        $(VBOX_GL_INCS)
-endif
-if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLarrayspu_INSTTYPE.win = none
- VBoxOGLarrayspu_DEBUG_INSTTYPE.win = both
-endif
-VBoxOGLarrayspu_INCS.darwin  += $(PATH_OUT)/obj/VBoxOGL
-VBoxOGLarrayspu_INTERMEDIATES = \
-	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
-	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
-VBoxOGLarrayspu_SOURCES       = \
-	array/arrayspu.c \
-	array/arrayspu_config.c \
-	array/arrayspu_init.c
-VBoxOGLarrayspu_SOURCES.win   = \
-	array/arrayspu.def \
-	array/arrayspu.rc
-VBoxOGLarrayspu_LIBS          = \
-	$(VBOX_LIB_OGL_CRUTIL) \
-	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB)
-ifdef VBOX_WITH_CRHGSMI
-VBoxOGLarrayspu_DEFS.win   += VBOX_WITH_CRHGSMI
-endif
-ifdef VBOX_WITH_WDDM
-VBoxOGLarrayspu_DEFS.win   += VBOX_WITH_WDDM
-endif
-
-ifdef VBOX_WITH_WDDM
-#
-# VBoxOGLarrayspu-x86 - x86 version of VBoxOGLarrayspu built for amd64 build
-#
-VBoxOGLarrayspu-x86_EXTENDS = VBoxOGLarrayspu
-VBoxOGLarrayspu-x86_BLD_TRG_ARCH = x86
-VBoxOGLarrayspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
-	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB)
-VBoxOGLarrayspu-x86_DEFS = $(VBoxOGLarrayspu_DEFS) VBOX_WDDM_WOW64
-endif
-
-#
 # VBoxOGLpassthroughspu
 #
 VBoxOGLpassthroughspu_TEMPLATE    = VBOXCROGLR3GUESTDLL
@@ -669,7 +618,7 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
  VBoxOGLfeedbackspu_INSTTYPE.win = none
  VBoxOGLfeedbackspu_DEBUG_INSTTYPE.win = both
 endif
-VBoxOGLarrayspu_INTERMEDIATES = \
+VBoxOGLfeedbackspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_proto.h
 VBoxOGLfeedbackspu_SOURCES     = \
 	feedback/feedbackspu_config.c \

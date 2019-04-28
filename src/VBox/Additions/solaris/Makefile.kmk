@@ -173,7 +173,6 @@ SOLARIS_ADD_SYSLIBS = \
 	VBoxOGLcrutil.so \
 	VBoxOGLfeedbackspu.so \
 	VBoxOGLpassthroughspu.so \
-	VBoxOGLarrayspu.so \
 	VBoxOGLerrorspu.so \
 	VBoxOGLpackspu.so
 

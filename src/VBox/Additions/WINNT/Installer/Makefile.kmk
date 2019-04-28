@@ -101,7 +101,6 @@ DRIVER_FILES += \
 endif
 ifdef VBOX_WITH_CROGL
 DRIVER_FILES += \
-	$(PATH_STAGE_BIN)/additions/VBoxOGLarrayspu.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxOGLcrutil.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxOGLerrorspu.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxOGLpackspu.dll \
@@ -115,7 +114,6 @@ DRIVER_FILES += \
 	# Also include 32-bit DLLs on 64-bit guests to enable
 	# running 32-bit OpenGL apps on that.
 	DRIVER_FILES += \
-		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGLarrayspu.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGLcrutil.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGLerrorspu.dll \
 		$(VBOX_PATH_ADDITIONS.win.x86)/VBoxOGLpackspu.dll \
@@ -164,7 +162,6 @@ DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/wined3dwddm-x86.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxD3D9wddm-x86.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxOGL-x86.dll \
-	$(PATH_STAGE_BIN)/additions/VBoxOGLarrayspu-x86.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxOGLcrutil-x86.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxOGLerrorspu-x86.dll \
 	$(PATH_STAGE_BIN)/additions/VBoxOGLfeedbackspu-x86.dll \
