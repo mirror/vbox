@@ -14,7 +14,9 @@
 #include "state/cr_statetypes.h"
 #include "state/cr_currentpointers.h"
 #include "state/cr_client.h"
+#ifndef IN_RING0
 #include "cr_threads.h"
+#endif
 
 #include <iprt/types.h>
 
@@ -81,7 +83,9 @@ struct CRPackContext_t
     GLvectorf bounds_min, bounds_max;
     int updateBBOX;
     CRPackBuffer *currentBuffer;
+#ifndef IN_RING0
     CRmutex mutex;
+#endif
     char *file;  /**< for debugging only */
     int line;    /**< for debugging only */
 };
