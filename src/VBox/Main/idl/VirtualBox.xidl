@@ -2459,7 +2459,7 @@
       <param name="machine" type="IMachine" dir="in"/>
     </method>
 
-    <method name="findMachine">
+    <method name="findMachine" const="yes">
       <desc>
         Attempts to find a virtual machine given its name or UUID.
 
