@@ -177,6 +177,8 @@ bool UIMediumItem::isMediumModifiable() const
 {
     if (medium().isNull())
         return false;
+    if (m_enmDeviceType == UIMediumDeviceType_DVD || m_enmDeviceType == UIMediumDeviceType_Floppy)
+        return false;
     foreach (const QUuid &uMachineId, medium().curStateMachineIds())
     {
         CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uMachineId.toString());
