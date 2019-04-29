@@ -379,13 +379,13 @@ status_t VBoxClipboardService::_ServiceThread()
         {
             switch (u32Msg)
             {
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS:
+                case VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS:
                 {
                     /*
                      * The host has announced available clipboard formats. Forward
                      * the information to the handler.
                      */
-                    LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS u32Formats=%x\n", u32Formats));
+                    LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS u32Formats=%x\n", u32Formats));
                     BMessage msg(VBOX_GUEST_CLIPBOARD_HOST_MSG_FORMATS);
                     msg.AddInt32("Formats", (uint32)u32Formats);
                     Looper()->PostMessage(&msg, this);

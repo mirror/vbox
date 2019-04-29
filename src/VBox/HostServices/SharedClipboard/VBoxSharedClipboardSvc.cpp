@@ -44,7 +44,7 @@
  * VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT (unused),
  * VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA (request that the guest send the
  * contents of its clipboard to the host) and
- * VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS (to notify the guest that new
+ * VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS (to notify the guest that new
  * clipboard data is available).  If a host message is sent while the guest is
  * not waiting, it will be queued until the guest requests it.  At most one
  * host message of each type will be kept in the queue.  The host code only
