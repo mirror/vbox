@@ -3380,7 +3380,7 @@ void vmsvgaFIFOWatchdogTimer(PVGASTATE pThis)
     /* Caller already checked pThis->svga.fFIFOThreadSleeping, so we only have
        to recheck it before doing the signalling. */
     uint32_t RT_UNTRUSTED_VOLATILE_GUEST * const pFIFO = pThis->svga.pFIFOR3;
-    AssertReturnVoid(pThis->svga.pFIFOR3);
+    AssertReturnVoid(pFIFO);
     if (   vmsvgaFIFOHasWork(pFIFO, ASMAtomicReadU32(&pThis->svga.uLastCursorUpdateCount))
         && pThis->svga.fFIFOThreadSleeping)
     {
@@ -3530,7 +3530,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             STAM_REL_COUNTER_INC(&pSVGAState->StatFifoTodoWoken);
         cMsSleep = cMsMinSleep;
 
-        Log(("vmsvgaFIFOLoop: enabled=%d configured=%d busy=%d\n", pThis->svga.fEnabled, pThis->svga.fConfigured, pThis->svga.pFIFOR3[SVGA_FIFO_BUSY]));
+        Log(("vmsvgaFIFOLoop: enabled=%d configured=%d busy=%d\n", pThis->svga.fEnabled, pThis->svga.fConfigured, pFIFO[SVGA_FIFO_BUSY]));
         Log(("vmsvgaFIFOLoop: min  %x max  %x\n", pFIFO[SVGA_FIFO_MIN], pFIFO[SVGA_FIFO_MAX]));
         Log(("vmsvgaFIFOLoop: next %x stop %x\n", pFIFO[SVGA_FIFO_NEXT_CMD], pFIFO[SVGA_FIFO_STOP]));
 
@@ -4047,7 +4047,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             case SVGA_CMD_DEFINE_SCREEN:
             {
                 /* The size of this command is specified by the guest and depends on capabilities. */
-                Assert(pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] & SVGA_FIFO_CAP_SCREEN_OBJECT_2);
+                Assert(pFIFO[SVGA_FIFO_CAPABILITIES] & SVGA_FIFO_CAP_SCREEN_OBJECT_2);
 
                 SVGAFifoCmdDefineScreen *pCmd;
                 VMSVGAFIFO_GET_CMD_BUFFER_BREAK(pCmd, SVGAFifoCmdDefineScreen, sizeof(pCmd->screen.structSize));
@@ -5847,6 +5847,187 @@ static int vmsvgaR3StateInit(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState)
 }
 
 /**
+ * Initializes the host capabilities: registers and FIFO.
+ *
+ * @returns VBox status code.
+ * @param   pThis     The VGA instance.
+ */
+static void vmsvgaInitCaps(PVGASTATE pThis)
+{
+    /* Register caps. */
+    pThis->svga.u32RegCaps =  SVGA_CAP_GMR
+                            | SVGA_CAP_GMR2
+                            | SVGA_CAP_CURSOR
+                            | SVGA_CAP_CURSOR_BYPASS_2
+                            | SVGA_CAP_EXTENDED_FIFO
+                            | SVGA_CAP_IRQMASK
+                            | SVGA_CAP_PITCHLOCK
+                            | SVGA_CAP_TRACES
+                            | SVGA_CAP_SCREEN_OBJECT_2
+                            | SVGA_CAP_ALPHA_CURSOR;
+# ifdef VBOX_WITH_VMSVGA3D
+    pThis->svga.u32RegCaps |= SVGA_CAP_3D;
+# endif
+
+    /* Clear the FIFO. */
+    RT_BZERO(pThis->svga.pFIFOR3, pThis->svga.cbFIFO);
+
+    /* Setup FIFO capabilities. */
+    pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] =   SVGA_FIFO_CAP_FENCE
+                                                  | SVGA_FIFO_CAP_CURSOR_BYPASS_3
+                                                  | SVGA_FIFO_CAP_GMR2
+                                                  | SVGA_FIFO_CAP_3D_HWVERSION_REVISED
+                                                  | SVGA_FIFO_CAP_SCREEN_OBJECT_2
+                                                  | SVGA_FIFO_CAP_RESERVE
+                                                  | SVGA_FIFO_CAP_PITCHLOCK;
+
+    /* Valid with SVGA_FIFO_CAP_SCREEN_OBJECT_2 */
+    pThis->svga.pFIFOR3[SVGA_FIFO_CURSOR_SCREEN_ID] = SVGA_ID_INVALID;
+}
+
+# ifdef VBOX_WITH_VMSVGA3D
+/** Names for the vmsvga 3d capabilities, prefixed with format type hint char. */
+static const char * const g_apszVmSvgaDevCapNames[] =
+{
+    "x3D",                           /* = 0 */
+    "xMAX_LIGHTS",
+    "xMAX_TEXTURES",
+    "xMAX_CLIP_PLANES",
+    "xVERTEX_SHADER_VERSION",
+    "xVERTEX_SHADER",
+    "xFRAGMENT_SHADER_VERSION",
+    "xFRAGMENT_SHADER",
+    "xMAX_RENDER_TARGETS",
+    "xS23E8_TEXTURES",
+    "xS10E5_TEXTURES",
+    "xMAX_FIXED_VERTEXBLEND",
+    "xD16_BUFFER_FORMAT",
+    "xD24S8_BUFFER_FORMAT",
+    "xD24X8_BUFFER_FORMAT",
+    "xQUERY_TYPES",
+    "xTEXTURE_GRADIENT_SAMPLING",
+    "rMAX_POINT_SIZE",
+    "xMAX_SHADER_TEXTURES",
+    "xMAX_TEXTURE_WIDTH",
+    "xMAX_TEXTURE_HEIGHT",
+    "xMAX_VOLUME_EXTENT",
+    "xMAX_TEXTURE_REPEAT",
+    "xMAX_TEXTURE_ASPECT_RATIO",
+    "xMAX_TEXTURE_ANISOTROPY",
+    "xMAX_PRIMITIVE_COUNT",
+    "xMAX_VERTEX_INDEX",
+    "xMAX_VERTEX_SHADER_INSTRUCTIONS",
+    "xMAX_FRAGMENT_SHADER_INSTRUCTIONS",
+    "xMAX_VERTEX_SHADER_TEMPS",
+    "xMAX_FRAGMENT_SHADER_TEMPS",
+    "xTEXTURE_OPS",
+    "xSURFACEFMT_X8R8G8B8",
+    "xSURFACEFMT_A8R8G8B8",
+    "xSURFACEFMT_A2R10G10B10",
+    "xSURFACEFMT_X1R5G5B5",
+    "xSURFACEFMT_A1R5G5B5",
+    "xSURFACEFMT_A4R4G4B4",
+    "xSURFACEFMT_R5G6B5",
+    "xSURFACEFMT_LUMINANCE16",
+    "xSURFACEFMT_LUMINANCE8_ALPHA8",
+    "xSURFACEFMT_ALPHA8",
+    "xSURFACEFMT_LUMINANCE8",
+    "xSURFACEFMT_Z_D16",
+    "xSURFACEFMT_Z_D24S8",
+    "xSURFACEFMT_Z_D24X8",
+    "xSURFACEFMT_DXT1",
+    "xSURFACEFMT_DXT2",
+    "xSURFACEFMT_DXT3",
+    "xSURFACEFMT_DXT4",
+    "xSURFACEFMT_DXT5",
+    "xSURFACEFMT_BUMPX8L8V8U8",
+    "xSURFACEFMT_A2W10V10U10",
+    "xSURFACEFMT_BUMPU8V8",
+    "xSURFACEFMT_Q8W8V8U8",
+    "xSURFACEFMT_CxV8U8",
+    "xSURFACEFMT_R_S10E5",
+    "xSURFACEFMT_R_S23E8",
+    "xSURFACEFMT_RG_S10E5",
+    "xSURFACEFMT_RG_S23E8",
+    "xSURFACEFMT_ARGB_S10E5",
+    "xSURFACEFMT_ARGB_S23E8",
+    "xMISSING62",
+    "xMAX_VERTEX_SHADER_TEXTURES",
+    "xMAX_SIMULTANEOUS_RENDER_TARGETS",
+    "xSURFACEFMT_V16U16",
+    "xSURFACEFMT_G16R16",
+    "xSURFACEFMT_A16B16G16R16",
+    "xSURFACEFMT_UYVY",
+    "xSURFACEFMT_YUY2",
+    "xMULTISAMPLE_NONMASKABLESAMPLES",
+    "xMULTISAMPLE_MASKABLESAMPLES",
+    "xALPHATOCOVERAGE",
+    "xSUPERSAMPLE",
+    "xAUTOGENMIPMAPS",
+    "xSURFACEFMT_NV12",
+    "xSURFACEFMT_AYUV",
+    "xMAX_CONTEXT_IDS",
+    "xMAX_SURFACE_IDS",
+    "xSURFACEFMT_Z_DF16",
+    "xSURFACEFMT_Z_DF24",
+    "xSURFACEFMT_Z_D24S8_INT",
+    "xSURFACEFMT_BC4_UNORM",
+    "xSURFACEFMT_BC5_UNORM", /* 83 */
+};
+# endif
+
+/**
+ * Initializes the host 3D capabilities in FIFO.
+ *
+ * @returns VBox status code.
+ * @param   pThis     The VGA instance.
+ */
+static void vmsvgaInitFifo3DCaps(PVGASTATE pThis)
+{
+    /** @todo Probably query the capabilities once and cache in a memory buffer. */
+    bool              fSavedBuffering = RTLogRelSetBuffering(true);
+    SVGA3dCapsRecord *pCaps;
+    SVGA3dCapPair    *pData;
+    uint32_t          idxCap  = 0;
+
+    /* 3d hardware version; latest and greatest */
+    pThis->svga.pFIFOR3[SVGA_FIFO_3D_HWVERSION_REVISED] = SVGA3D_HWVERSION_CURRENT;
+    pThis->svga.pFIFOR3[SVGA_FIFO_3D_HWVERSION]         = SVGA3D_HWVERSION_CURRENT;
+
+    pCaps = (SVGA3dCapsRecord *)&pThis->svga.pFIFOR3[SVGA_FIFO_3D_CAPS];
+    pCaps->header.type   = SVGA3DCAPS_RECORD_DEVCAPS;
+    pData = (SVGA3dCapPair *)&pCaps->data;
+
+    /* Fill out all 3d capabilities. */
+    for (unsigned i = 0; i < SVGA3D_DEVCAP_MAX; i++)
+    {
+        uint32_t val = 0;
+
+        int rc = vmsvga3dQueryCaps(pThis, i, &val);
+        if (RT_SUCCESS(rc))
+        {
+            pData[idxCap][0] = i;
+            pData[idxCap][1] = val;
+            idxCap++;
+            if (g_apszVmSvgaDevCapNames[i][0] == 'x')
+                LogRel(("VMSVGA3d: cap[%u]=%#010x {%s}\n", i, val, &g_apszVmSvgaDevCapNames[i][1]));
+            else
+                LogRel(("VMSVGA3d: cap[%u]=%d.%04u {%s}\n", i, (int)*(float *)&val, (unsigned)(*(float *)&val * 10000) % 10000,
+                        &g_apszVmSvgaDevCapNames[i][1]));
+        }
+        else
+            LogRel(("VMSVGA3d: cap[%u]=failed rc=%Rrc! {%s}\n", i, rc, &g_apszVmSvgaDevCapNames[i][1]));
+    }
+    pCaps->header.length = (sizeof(pCaps->header) + idxCap * sizeof(SVGA3dCapPair)) / sizeof(uint32_t);
+    pCaps = (SVGA3dCapsRecord *)((uint32_t *)pCaps + pCaps->header.length);
+
+    /* Mark end of record array. */
+    pCaps->header.length = 0;
+
+    RTLogRelSetBuffering(fSavedBuffering);
+}
+
+/**
  * Resets the SVGA hardware state
  *
  * @returns VBox status code.
@@ -5876,20 +6057,13 @@ int vmsvgaReset(PPDMDEVINS pDevIns)
 
     RT_BZERO(pThis->svga.pbVgaFrameBufferR3, VMSVGA_VGA_FB_BACKUP_SIZE);
 
-    /* Register caps. */
-    pThis->svga.u32RegCaps = SVGA_CAP_GMR | SVGA_CAP_GMR2 | SVGA_CAP_CURSOR | SVGA_CAP_CURSOR_BYPASS_2 | SVGA_CAP_EXTENDED_FIFO | SVGA_CAP_IRQMASK | SVGA_CAP_PITCHLOCK | SVGA_CAP_TRACES | SVGA_CAP_SCREEN_OBJECT_2 | SVGA_CAP_ALPHA_CURSOR;
+    /* Initialize FIFO and register capabilities. */
+    vmsvgaInitCaps(pThis);
+
 # ifdef VBOX_WITH_VMSVGA3D
-    pThis->svga.u32RegCaps |= SVGA_CAP_3D;
+    if (pThis->svga.f3DEnabled)
+        vmsvgaInitFifo3DCaps(pThis);
 # endif
-
-    /* Clear the FIFO so that there's no leftover junk. */
-    RT_BZERO(pThis->svga.pFIFOR3, pThis->svga.cbFIFO);
-
-    /* Setup FIFO capabilities. */
-    pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] = SVGA_FIFO_CAP_FENCE | SVGA_FIFO_CAP_CURSOR_BYPASS_3 | SVGA_FIFO_CAP_GMR2 | SVGA_FIFO_CAP_3D_HWVERSION_REVISED | SVGA_FIFO_CAP_SCREEN_OBJECT_2 | SVGA_FIFO_CAP_RESERVE | SVGA_FIFO_CAP_PITCHLOCK;
-
-    /* Valid with SVGA_FIFO_CAP_SCREEN_OBJECT_2 */
-    pThis->svga.pFIFOR3[SVGA_FIFO_CURSOR_SCREEN_ID] = SVGA_ID_INVALID;
 
     /* VRAM tracking is enabled by default during bootup. */
     pThis->svga.fVRAMTracking = true;
@@ -6009,19 +6183,9 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
 
     pSVGAState = pThis->svga.pSvgaR3State;
 
-    /* Register caps. */
-    pThis->svga.u32RegCaps = SVGA_CAP_GMR | SVGA_CAP_GMR2 | SVGA_CAP_CURSOR | SVGA_CAP_CURSOR_BYPASS_2 | SVGA_CAP_EXTENDED_FIFO | SVGA_CAP_IRQMASK | SVGA_CAP_PITCHLOCK | SVGA_CAP_TRACES | SVGA_CAP_SCREEN_OBJECT_2 | SVGA_CAP_ALPHA_CURSOR;
-# ifdef VBOX_WITH_VMSVGA3D
-    pThis->svga.u32RegCaps |= SVGA_CAP_3D;
-# endif
+    /* Initialize FIFO and register capabilities. */
+    vmsvgaInitCaps(pThis);
 
-    /* Setup FIFO capabilities. */
-    pThis->svga.pFIFOR3[SVGA_FIFO_CAPABILITIES] = SVGA_FIFO_CAP_FENCE | SVGA_FIFO_CAP_CURSOR_BYPASS_3 | SVGA_FIFO_CAP_GMR2 | SVGA_FIFO_CAP_3D_HWVERSION_REVISED | SVGA_FIFO_CAP_SCREEN_OBJECT_2 | SVGA_FIFO_CAP_RESERVE | SVGA_FIFO_CAP_PITCHLOCK;
-
-    /* Valid with SVGA_FIFO_CAP_SCREEN_OBJECT_2 */
-    pThis->svga.pFIFOR3[SVGA_FIFO_CURSOR_SCREEN_ID] = SVGA_ID_INVALID;
-
-    pThis->svga.pFIFOR3[SVGA_FIFO_3D_HWVERSION] = pThis->svga.pFIFOR3[SVGA_FIFO_3D_HWVERSION_REVISED] = 0;    /* no 3d available. */
 # ifdef VBOX_WITH_VMSVGA3D
     if (pThis->svga.f3DEnabled)
     {
@@ -6266,98 +6430,6 @@ int vmsvgaInit(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
-# ifdef VBOX_WITH_VMSVGA3D
-/** Names for the vmsvga 3d capabilities, prefixed with format type hint char. */
-static const char * const g_apszVmSvgaDevCapNames[] =
-{
-    "x3D",                           /* = 0 */
-    "xMAX_LIGHTS",
-    "xMAX_TEXTURES",
-    "xMAX_CLIP_PLANES",
-    "xVERTEX_SHADER_VERSION",
-    "xVERTEX_SHADER",
-    "xFRAGMENT_SHADER_VERSION",
-    "xFRAGMENT_SHADER",
-    "xMAX_RENDER_TARGETS",
-    "xS23E8_TEXTURES",
-    "xS10E5_TEXTURES",
-    "xMAX_FIXED_VERTEXBLEND",
-    "xD16_BUFFER_FORMAT",
-    "xD24S8_BUFFER_FORMAT",
-    "xD24X8_BUFFER_FORMAT",
-    "xQUERY_TYPES",
-    "xTEXTURE_GRADIENT_SAMPLING",
-    "rMAX_POINT_SIZE",
-    "xMAX_SHADER_TEXTURES",
-    "xMAX_TEXTURE_WIDTH",
-    "xMAX_TEXTURE_HEIGHT",
-    "xMAX_VOLUME_EXTENT",
-    "xMAX_TEXTURE_REPEAT",
-    "xMAX_TEXTURE_ASPECT_RATIO",
-    "xMAX_TEXTURE_ANISOTROPY",
-    "xMAX_PRIMITIVE_COUNT",
-    "xMAX_VERTEX_INDEX",
-    "xMAX_VERTEX_SHADER_INSTRUCTIONS",
-    "xMAX_FRAGMENT_SHADER_INSTRUCTIONS",
-    "xMAX_VERTEX_SHADER_TEMPS",
-    "xMAX_FRAGMENT_SHADER_TEMPS",
-    "xTEXTURE_OPS",
-    "xSURFACEFMT_X8R8G8B8",
-    "xSURFACEFMT_A8R8G8B8",
-    "xSURFACEFMT_A2R10G10B10",
-    "xSURFACEFMT_X1R5G5B5",
-    "xSURFACEFMT_A1R5G5B5",
-    "xSURFACEFMT_A4R4G4B4",
-    "xSURFACEFMT_R5G6B5",
-    "xSURFACEFMT_LUMINANCE16",
-    "xSURFACEFMT_LUMINANCE8_ALPHA8",
-    "xSURFACEFMT_ALPHA8",
-    "xSURFACEFMT_LUMINANCE8",
-    "xSURFACEFMT_Z_D16",
-    "xSURFACEFMT_Z_D24S8",
-    "xSURFACEFMT_Z_D24X8",
-    "xSURFACEFMT_DXT1",
-    "xSURFACEFMT_DXT2",
-    "xSURFACEFMT_DXT3",
-    "xSURFACEFMT_DXT4",
-    "xSURFACEFMT_DXT5",
-    "xSURFACEFMT_BUMPX8L8V8U8",
-    "xSURFACEFMT_A2W10V10U10",
-    "xSURFACEFMT_BUMPU8V8",
-    "xSURFACEFMT_Q8W8V8U8",
-    "xSURFACEFMT_CxV8U8",
-    "xSURFACEFMT_R_S10E5",
-    "xSURFACEFMT_R_S23E8",
-    "xSURFACEFMT_RG_S10E5",
-    "xSURFACEFMT_RG_S23E8",
-    "xSURFACEFMT_ARGB_S10E5",
-    "xSURFACEFMT_ARGB_S23E8",
-    "xMISSING62",
-    "xMAX_VERTEX_SHADER_TEXTURES",
-    "xMAX_SIMULTANEOUS_RENDER_TARGETS",
-    "xSURFACEFMT_V16U16",
-    "xSURFACEFMT_G16R16",
-    "xSURFACEFMT_A16B16G16R16",
-    "xSURFACEFMT_UYVY",
-    "xSURFACEFMT_YUY2",
-    "xMULTISAMPLE_NONMASKABLESAMPLES",
-    "xMULTISAMPLE_MASKABLESAMPLES",
-    "xALPHATOCOVERAGE",
-    "xSUPERSAMPLE",
-    "xAUTOGENMIPMAPS",
-    "xSURFACEFMT_NV12",
-    "xSURFACEFMT_AYUV",
-    "xMAX_CONTEXT_IDS",
-    "xMAX_SURFACE_IDS",
-    "xSURFACEFMT_Z_DF16",
-    "xSURFACEFMT_Z_DF24",
-    "xSURFACEFMT_Z_D24S8_INT",
-    "xSURFACEFMT_BC4_UNORM",
-    "xSURFACEFMT_BC5_UNORM", /* 83 */
-};
-# endif
-
-
 /**
  * Power On notification.
  *
@@ -6376,46 +6448,8 @@ DECLCALLBACK(void) vmsvgaR3PowerOn(PPDMDEVINS pDevIns)
 
         if (RT_SUCCESS(rc))
         {
-            bool              fSavedBuffering = RTLogRelSetBuffering(true);
-            SVGA3dCapsRecord *pCaps;
-            SVGA3dCapPair    *pData;
-            uint32_t          idxCap  = 0;
-
-            /* 3d hardware version; latest and greatest */
-            pThis->svga.pFIFOR3[SVGA_FIFO_3D_HWVERSION_REVISED] = SVGA3D_HWVERSION_CURRENT;
-            pThis->svga.pFIFOR3[SVGA_FIFO_3D_HWVERSION]         = SVGA3D_HWVERSION_CURRENT;
-
-            pCaps = (SVGA3dCapsRecord *)&pThis->svga.pFIFOR3[SVGA_FIFO_3D_CAPS];
-            pCaps->header.type   = SVGA3DCAPS_RECORD_DEVCAPS;
-            pData = (SVGA3dCapPair *)&pCaps->data;
-
-            /* Fill out all 3d capabilities. */
-            for (unsigned i = 0; i < SVGA3D_DEVCAP_MAX; i++)
-            {
-                uint32_t val = 0;
-
-                rc = vmsvga3dQueryCaps(pThis, i, &val);
-                if (RT_SUCCESS(rc))
-                {
-                    pData[idxCap][0] = i;
-                    pData[idxCap][1] = val;
-                    idxCap++;
-                    if (g_apszVmSvgaDevCapNames[i][0] == 'x')
-                        LogRel(("VMSVGA3d: cap[%u]=%#010x {%s}\n", i, val, &g_apszVmSvgaDevCapNames[i][1]));
-                    else
-                        LogRel(("VMSVGA3d: cap[%u]=%d.%04u {%s}\n", i, (int)*(float *)&val, (unsigned)(*(float *)&val * 10000) % 10000,
-                                &g_apszVmSvgaDevCapNames[i][1]));
-                }
-                else
-                    LogRel(("VMSVGA3d: cap[%u]=failed rc=%Rrc! {%s}\n", i, rc, &g_apszVmSvgaDevCapNames[i][1]));
-            }
-            pCaps->header.length = (sizeof(pCaps->header) + idxCap * sizeof(SVGA3dCapPair)) / sizeof(uint32_t);
-            pCaps = (SVGA3dCapsRecord *)((uint32_t *)pCaps + pCaps->header.length);
-
-            /* Mark end of record array. */
-            pCaps->header.length = 0;
-
-            RTLogRelSetBuffering(fSavedBuffering);
+            /* Initialize FIFO 3D capabilities. */
+            vmsvgaInitFifo3DCaps(pThis);
         }
     }
 # else  /* !VBOX_WITH_VMSVGA3D */
