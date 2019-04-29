@@ -1694,6 +1694,8 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient,
     /* Paranoia. */
     Assert(pGuestMsrLoad);
 
+    LogFlowFunc(("pVCpu=%p idMsr=%#RX32 uGestMsrValue=%#RX64\n", pVCpu, idMsr, uGuestMsrValue));
+
     /* Check if the MSR already exists in the VM-entry MSR-load area. */
     for (i = 0; i < cMsrs; i++)
     {
@@ -1714,6 +1716,7 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient,
             && (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS))
             hmR0VmxSetMsrPermission(pVCpu, pVmcsInfo, fIsNstGstVmcs, idMsr, VMXMSRPM_ALLOW_RD_WR);
 
+        LogFlowFunc(("MSR added, cMsrs now %u\n", cMsrs));
         fAdded = true;
     }
 
@@ -1742,12 +1745,19 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient,
      *
      * We do this for performance reasons since reading MSRs may be quite expensive.
      */
-    if (   fAdded
-        && fUpdateHostMsr)
+    if (fAdded)
     {
-        Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-        Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-        pHostMsr[i].u64Value = ASMRdMsr(idMsr);
+        if (fUpdateHostMsr)
+        {
+            Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+            Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+            pHostMsr[i].u64Value = ASMRdMsr(idMsr);
+        }
+        else
+        {
+            /* Someone else can do the work. */
+            pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs = false;
+        }
     }
     return VINF_SUCCESS;
 }
@@ -1768,6 +1778,8 @@ static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransie
     bool const   fIsNstGstVmcs = pVmxTransient->fIsNestedGuest;
     PVMXAUTOMSR  pGuestMsrLoad = (PVMXAUTOMSR)pVmcsInfo->pvGuestMsrLoad;
     uint32_t     cMsrs         = pVmcsInfo->cEntryMsrLoad;
+
+    LogFlowFunc(("pVCpu=%p idMsr=%#RX32\n", pVCpu, idMsr));
 
     for (uint32_t i = 0; i < cMsrs; i++)
     {
@@ -1862,6 +1874,7 @@ static void hmR0VmxUpdateAutoLoadHostMsrs(PCVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo
     uint32_t const cMsrs     = pVmcsInfo->cExitMsrLoad;
     Assert(pHostMsrLoad);
     Assert(sizeof(*pHostMsrLoad) * cMsrs <= X86_PAGE_4K_SIZE);
+    LogFlowFunc(("pVCpu=%p cMsrs=%u\n", pVCpu, cMsrs));
     for (uint32_t i = 0; i < cMsrs; i++)
     {
         /*
@@ -10545,6 +10558,9 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
         if (!(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_RDTSC_EXIT))
         {
             hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_TSC_AUX);
+            /* NB: Because we call hmR0VmxAddAutoLoadStoreMsr with fUpdateHostMsr=true,
+             * it's safe even after hmR0VmxUpdateAutoLoadHostMsrs has already been done.
+             */
             int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, pVmxTransient, MSR_K8_TSC_AUX, CPUMGetGuestTscAux(pVCpu),
                                                 true /* fSetReadWrite */, true /* fUpdateHostMsr */);
             AssertRC(rc);
