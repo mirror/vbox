@@ -53,7 +53,7 @@ struct UIDataMediumOptions
 {
     /** Constructs data. */
     UIDataMediumOptions()
-        : m_enmType(KMediumType_Normal)
+        : m_enmMediumType(KMediumType_Normal)
         , m_strLocation(QString())
         , m_strDescription(QString())
         , m_uLogicalSize(0)
@@ -63,7 +63,7 @@ struct UIDataMediumOptions
     bool equal(const UIDataMediumOptions &other) const
     {
         return true
-               && (m_enmType == other.m_enmType)
+               && (m_enmMediumType == other.m_enmMediumType)
                && (m_strLocation == other.m_strLocation)
                && (m_strDescription == other.m_strDescription)
                && (m_uLogicalSize == other.m_uLogicalSize)
@@ -75,8 +75,8 @@ struct UIDataMediumOptions
     /** Returns whether the @a other passed data is different from this one. */
     bool operator!=(const UIDataMediumOptions &other) const { return !equal(other); }
 
-    /** Holds the type. */
-    KMediumType m_enmType;
+    /** Holds the medium type. */
+    KMediumType m_enmMediumType;
     /** Holds the location. */
     QString m_strLocation;
     /** Holds the description. */
@@ -122,7 +122,7 @@ struct UIDataMedium
     /** Constructs data. */
     UIDataMedium()
         : m_fValid(false)
-        , m_enmType(UIMediumDeviceType_Invalid)
+        , m_enmDeviceType(UIMediumDeviceType_Invalid)
         , m_enmVariant(KMediumVariant_Max)
         , m_fHasChildren(false)
         , m_options(UIDataMediumOptions())
@@ -132,7 +132,7 @@ struct UIDataMedium
     /** Constructs data with passed @enmType. */
     UIDataMedium(UIMediumDeviceType enmType)
         : m_fValid(false)
-        , m_enmType(enmType)
+        , m_enmDeviceType(enmType)
         , m_enmVariant(KMediumVariant_Max)
         , m_fHasChildren(false)
         , m_options(UIDataMediumOptions())
@@ -144,7 +144,7 @@ struct UIDataMedium
     {
         return true
                && (m_fValid == other.m_fValid)
-               && (m_enmType == other.m_enmType)
+               && (m_enmDeviceType == other.m_enmDeviceType)
                && (m_enmVariant == other.m_enmVariant)
                && (m_fHasChildren == other.m_fHasChildren)
                && (m_options == other.m_options)
@@ -160,7 +160,7 @@ struct UIDataMedium
     /** Holds whether data is valid. */
     bool m_fValid;
     /** Holds the medium type. */
-    UIMediumDeviceType m_enmType;
+    UIMediumDeviceType m_enmDeviceType;
     /** Holds the medium variant. */
     KMediumVariant m_enmVariant;
     /** Holds whether medium has children. */
@@ -203,6 +203,9 @@ public:
     const UIDataMedium &data() const { return m_newData; }
     /** Defines the @a data for passed @a enmType. */
     void setData(const UIDataMedium &data);
+    /** Enables/disables some of the medium editing widgets of the details tab. */
+    void enableDisableMediumModificationWidgets(bool fMediumIsModifiable);
+
 
 public slots:
 
@@ -354,4 +357,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIMediumDetailsWidget_h */
-

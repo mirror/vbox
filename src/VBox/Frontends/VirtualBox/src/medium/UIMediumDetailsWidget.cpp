@@ -82,6 +82,16 @@ void UIMediumDetailsWidget::setData(const UIDataMedium &data)
     loadDataForDetails();
 }
 
+void UIMediumDetailsWidget::enableDisableMediumModificationWidgets(bool fMediumIsModifiable)
+{
+    if (m_pComboBoxType)
+        m_pComboBoxType->setEnabled(fMediumIsModifiable);
+    if (m_pEditorLocation)
+        m_pEditorLocation->setEnabled(fMediumIsModifiable);
+    if (m_pEditorSize)
+        m_pEditorSize->setEnabled(fMediumIsModifiable);
+}
+
 void UIMediumDetailsWidget::setOptionsEnabled(bool fEnabled)
 {
     m_pTabWidget->widget(0)->setEnabled(fEnabled);
@@ -133,7 +143,7 @@ void UIMediumDetailsWidget::retranslateUi()
 
 void UIMediumDetailsWidget::sltTypeIndexChanged(int iIndex)
 {
-    m_newData.m_options.m_enmType = m_pComboBoxType->itemData(iIndex).value<KMediumType>();
+    m_newData.m_options.m_enmMediumType = m_pComboBoxType->itemData(iIndex).value<KMediumType>();
     revalidate(m_pErrorPaneType);
     updateButtonStates();
 }
@@ -619,13 +629,13 @@ void UIMediumDetailsWidget::loadDataForOptions()
     if (m_newData.m_fValid)
     {
         /* Populate type combo-box: */
-        switch (m_newData.m_enmType)
+        switch (m_newData.m_enmDeviceType)
         {
             case UIMediumDeviceType_HardDisk:
             {
                 /* No type changes for differencing disks: */
                 if (m_oldData.m_enmVariant & KMediumVariant_Diff)
-                    m_pComboBoxType->addItem(QString(), m_oldData.m_options.m_enmType);
+                    m_pComboBoxType->addItem(QString(), m_oldData.m_options.m_enmMediumType);
                 else
                 {
                     m_pComboBoxType->addItem(QString(), QVariant::fromValue(KMediumType_Normal));
@@ -663,7 +673,7 @@ void UIMediumDetailsWidget::loadDataForOptions()
 
     /* Choose the item with required type to be the current one: */
     for (int i = 0; i < m_pComboBoxType->count(); ++i)
-        if (m_pComboBoxType->itemData(i).value<KMediumType>() == m_newData.m_options.m_enmType)
+        if (m_pComboBoxType->itemData(i).value<KMediumType>() == m_newData.m_options.m_enmMediumType)
             m_pComboBoxType->setCurrentIndex(i);
     sltTypeIndexChanged(m_pComboBoxType->currentIndex());
 
@@ -680,7 +690,7 @@ void UIMediumDetailsWidget::loadDataForOptions()
 
     /* Load size: */
     const bool fEnableResize =    m_newData.m_fValid
-                               && m_newData.m_enmType == UIMediumDeviceType_HardDisk
+                               && m_newData.m_enmDeviceType == UIMediumDeviceType_HardDisk
                                && !(m_newData.m_enmVariant & KMediumVariant_Fixed);
     m_pLabelSize->setEnabled(fEnableResize);
     m_pEditorSize->setEnabled(fEnableResize);
@@ -694,17 +704,17 @@ void UIMediumDetailsWidget::loadDataForOptions()
 void UIMediumDetailsWidget::loadDataForDetails()
 {
     /* Get information-labels just to acquire their number: */
-    const QList<QLabel*> aLabels = m_aLabels.value(m_newData.m_enmType, QList<QLabel*>());
+    const QList<QLabel*> aLabels = m_aLabels.value(m_newData.m_enmDeviceType, QList<QLabel*>());
     /* Get information-fields just to acquire their number: */
-    const QList<QILabel*> aFields = m_aFields.value(m_newData.m_enmType, QList<QILabel*>());
+    const QList<QILabel*> aFields = m_aFields.value(m_newData.m_enmDeviceType, QList<QILabel*>());
     /* For each the label => update contents: */
     for (int i = 0; i < aLabels.size(); ++i)
-        infoLabel(m_newData.m_enmType, i)->setText(m_newData.m_details.m_aLabels.value(i, QString()));
+        infoLabel(m_newData.m_enmDeviceType, i)->setText(m_newData.m_details.m_aLabels.value(i, QString()));
     /* For each the field => update contents: */
     for (int i = 0; i < aFields.size(); ++i)
     {
-        infoField(m_newData.m_enmType, i)->setText(m_newData.m_details.m_aFields.value(i, QString()));
-        infoField(m_newData.m_enmType, i)->setEnabled(!infoField(m_newData.m_enmType, i)->text().trimmed().isEmpty());
+        infoField(m_newData.m_enmDeviceType, i)->setText(m_newData.m_details.m_aFields.value(i, QString()));
+        infoField(m_newData.m_enmDeviceType, i)->setEnabled(!infoField(m_newData.m_enmDeviceType, i)->text().trimmed().isEmpty());
     }
 }
 
@@ -845,4 +855,3 @@ QILabel *UIMediumDetailsWidget::infoField(UIMediumDeviceType enmType, int iIndex
     /* Return label for known index: */
     return aFields.value(iIndex, 0);
 }
-

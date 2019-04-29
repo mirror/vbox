@@ -173,6 +173,29 @@ bool UIMediumItem::operator<(const QTreeWidgetItem &other) const
     return uThisValue && uThatValue ? uThisValue < uThatValue : QTreeWidgetItem::operator<(other);
 }
 
+bool UIMediumItem::isMediumModifiable() const
+{
+    if (medium().isNull())
+        return false;
+    foreach (const QUuid &uMachineId, medium().curStateMachineIds())
+    {
+        CMachine comMachine = vboxGlobal().virtualBox().FindMachine(uMachineId.toString());
+        if (comMachine.isNull())
+            continue;
+        if (comMachine.GetState() != KMachineState_PoweredOff &&
+            comMachine.GetState() != KMachineState_Aborted)
+            return false;
+    }
+    return true;
+}
+
+bool UIMediumItem::isMediumAttachedTo(QUuid uId)
+{
+   if (medium().isNull())
+        return false;
+   return medium().curStateMachineIds().contains(uId);
+}
+
 QString UIMediumItem::defaultText() const
 {
     return tr("%1, %2: %3, %4: %5", "col.1 text, col.2 name: col.2 text, col.3 name: col.3 text")
@@ -196,17 +219,17 @@ void UIMediumItem::refresh()
     /* Gather medium data: */
     m_fValid =    !m_guiMedium.isNull()
                && m_guiMedium.state() != KMediumState_Inaccessible;
-    m_enmType = m_guiMedium.type();
+    m_enmDeviceType = m_guiMedium.type();
     m_enmVariant = m_guiMedium.mediumVariant();
     m_fHasChildren = m_guiMedium.hasChildren();
     /* Gather medium options data: */
-    m_options.m_enmType = m_guiMedium.mediumType();
+    m_options.m_enmMediumType = m_guiMedium.mediumType();
     m_options.m_strLocation = m_guiMedium.location();
     m_options.m_uLogicalSize = m_guiMedium.logicalSizeInBytes();
     m_options.m_strDescription = m_guiMedium.description();
     /* Gather medium details data: */
     m_details.m_aFields.clear();
-    switch (m_enmType)
+    switch (m_enmDeviceType)
     {
         case UIMediumDeviceType_HardDisk:
         {

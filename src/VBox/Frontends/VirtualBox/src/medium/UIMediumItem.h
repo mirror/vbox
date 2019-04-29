@@ -103,6 +103,12 @@ public:
 
     /** Returns whether <i>this</i> item is less than @a other one. */
     bool operator<(const QTreeWidgetItem &other) const;
+    /** Returns whether the medium can be modified. For
+      * simplicity's sake this returns false if one of the attached vms is not
+      * in PoweredOff or Aborted state. */
+    bool isMediumModifiable() const;
+    /** Returns true if the medium is attached to the vm with @p uId. */
+    bool isMediumAttachedTo(QUuid uId);
 
 protected:
 

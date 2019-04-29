@@ -161,6 +161,7 @@ private slots:
         void sltHandleMediumEnumerated(const QUuid &uMediumID);
         /** Handles VBoxGlobal::sigMediumEnumerationFinished signal. */
         void sltHandleMediumEnumerationFinish();
+        void sltHandleMachineStateChange(const QUuid &uId, const KMachineState state);
     /** @} */
 
     /** @name Menu/action stuff.

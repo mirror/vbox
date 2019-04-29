@@ -42,6 +42,7 @@
 #include "UIToolBar.h"
 #include "UIIconPool.h"
 #include "UIMedium.h"
+#include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -270,23 +271,23 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
 
     /* Try to assign new medium type: */
     if (   comMedium.isOk()
-        && newData.m_options.m_enmType != oldData.m_options.m_enmType)
+        && newData.m_options.m_enmMediumType != oldData.m_options.m_enmMediumType)
     {
         /* Check if we need to release medium first: */
         bool fDo = true;
         if (   pMediumItem->machineIds().size() > 1
-            || (   (   newData.m_options.m_enmType == KMediumType_Immutable
-                    || newData.m_options.m_enmType == KMediumType_MultiAttach)
+            || (   (   newData.m_options.m_enmMediumType == KMediumType_Immutable
+                    || newData.m_options.m_enmMediumType == KMediumType_MultiAttach)
                 && pMediumItem->machineIds().size() > 0))
             fDo = pMediumItem->release(true);
 
         if (fDo)
         {
-            comMedium.SetType(newData.m_options.m_enmType);
+            comMedium.SetType(newData.m_options.m_enmMediumType);
 
             /* Show error message if necessary: */
             if (!comMedium.isOk())
-                msgCenter().cannotChangeMediumType(comMedium, oldData.m_options.m_enmType, newData.m_options.m_enmType, this);
+                msgCenter().cannotChangeMediumType(comMedium, oldData.m_options.m_enmMediumType, newData.m_options.m_enmMediumType, this);
         }
     }
 
@@ -483,6 +484,20 @@ void UIMediumManagerWidget::sltHandleMediumEnumerationFinish()
     /* Re-fetch all current medium-items: */
     refetchCurrentMediumItems();
     refetchCurrentChosenMediumItem();
+}
+
+void UIMediumManagerWidget::sltHandleMachineStateChange(const QUuid &uId, const KMachineState state)
+{
+    UIMediumItem *pCurrentItem = currentMediumItem();
+    if (!pCurrentItem)
+        return;
+    /* If this machine is not using the current medium then we don't care about its state: */
+    if (!pCurrentItem->isMediumAttachedTo(uId))
+        return;
+    bool fMediumIsModifiable = true;
+    if (state != KMachineState_Aborted && state != KMachineState_PoweredOff)
+        fMediumIsModifiable = false;
+    m_pDetailsWidget->enableDisableMediumModificationWidgets(fMediumIsModifiable);
 }
 
 void UIMediumManagerWidget::sltAddMedium()
@@ -718,6 +733,10 @@ void UIMediumManagerWidget::prepare()
 
 void UIMediumManagerWidget::prepareConnections()
 {
+    /* Listen to vm state changed event so that we can disable/enable widgets related to the current medium if neds be: */
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+            this, &UIMediumManagerWidget::sltHandleMachineStateChange);
+
     /* Configure medium-processing connections: */
     connect(&vboxGlobal(), &VBoxGlobal::sigMediumCreated,
             this, &UIMediumManagerWidget::sltHandleMediumCreated);
@@ -1039,7 +1058,11 @@ void UIMediumManagerWidget::refetchCurrentMediumItem(UIMediumDeviceType type)
 
     /* Update details-widget: */
     if (m_pDetailsWidget)
+    {
         m_pDetailsWidget->setData(pMediumItem ? *pMediumItem : UIDataMedium(type));
+        if (pMediumItem)
+            m_pDetailsWidget->enableDisableMediumModificationWidgets(currentMediumItem()->isMediumModifiable());
+    }
 }
 
 void UIMediumManagerWidget::refetchCurrentChosenMediumItem()
@@ -1593,7 +1616,7 @@ void UIMediumManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterW
 
 
 /*********************************************************************************************************************************
-*   Class UIMediumManagerFactory implementation.                                                                                 *
+*   Class UIMediumManager implementation.                                                                                 *
 *********************************************************************************************************************************/
 
 UIMediumManager::UIMediumManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
