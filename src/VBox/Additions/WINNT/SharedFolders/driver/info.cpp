@@ -963,6 +963,9 @@ static void vbsfNtCopyInfo(PMRX_VBOX_FOBX pVBoxFobx, PSHFLFSOBJINFO pObjInfo, ui
 
 /**
  * Handle NtQueryInformationFile and similar requests.
+ *
+ * The RDBSS code has done various things before we get here wrt locking and
+ * request pre-processing.
  */
 NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
 {
@@ -973,8 +976,8 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
     PMRX_VBOX_FOBX              pVBoxFobx         = VBoxMRxGetFileObjectExtension(capFobx);
     ULONG                       cbToCopy          = 0;
 
-    Log(("VBOXSF: MrxQueryFileInfo: InfoBuffer = %p, Size = %d bytes, FileInformationClass = %d\n",
-         RxContext->Info.Buffer, RxContext->Info.Length, RxContext->Info.FileInformationClass));
+    Log(("VBOXSF: MrxQueryFileInfo: Buffer = %p, Length = %x (%d) bytes, FileInformationClass = %d\n",
+         RxContext->Info.Buffer, RxContext->Info.Length, RxContext->Info.Length, RxContext->Info.FileInformationClass));
 
     AssertReturn(pVBoxFobx, STATUS_INVALID_PARAMETER);
     AssertReturn(RxContext->Info.Buffer, STATUS_INVALID_PARAMETER);
@@ -1540,6 +1543,12 @@ static NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
 }
 
 
+/**
+ * Handle NtSetInformationFile and similar requests.
+ *
+ * The RDBSS code has done various things before we get here wrt locking and
+ * request pre-processing.
+ */
 NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
 {
     RxCaptureFcb;
@@ -1548,11 +1557,50 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
     PMRX_VBOX_FOBX              pVBoxFobx         = VBoxMRxGetFileObjectExtension(capFobx);
     NTSTATUS                    Status            = STATUS_SUCCESS;
 
-    Log(("VBOXSF: MrxSetFileInfo: Buffer=%p Length=%#x\n",
-         RxContext->Info.Buffer, RxContext->Info.Length));
+    Log(("VBOXSF: MrxSetFileInfo: Buffer = %p, Length = %#x (%d), FileInformationClass = %d\n",
+         RxContext->Info.Buffer, RxContext->Info.Length, RxContext->Info.Length, RxContext->Info.FileInformationClass));
+
+    /*
+     * The essence of the size validation table for NtSetInformationFile from w10 build 17763:
+     * UCHAR IoCheckQuerySetFileInformation[77]:
+     *     db 28h                  ; 4       FileBasicInformation,
+     *     db 18h                  ; 10      FileRenameInformation,
+     *     db 18h                  ; 11      FileLinkInformation,
+     *     db 1                    ; 13      FileDispositionInformation,
+     *     db 8                    ; 14      FilePositionInformation,
+     *     db 4                    ; 16      FileModeInformation,
+     *     db 8                    ; 19      FileAllocationInformation,
+     *     db 8                    ; 20      FileEndOfFileInformation,
+     *     db 8                    ; 23      FilePipeInformation,
+     *     db 10h                  ; 25      FilePipeRemoteInformation,
+     *     db 8                    ; 27      FileMailslotSetInformation,
+     *     db 48h                  ; 29      FileObjectIdInformation,
+     *     db 10h                  ; 30      FileCompletionInformation,                 - "reserved for system use"
+     *     db 18h                  ; 31      FileMoveClusterInformation,                - "reserved for system use"
+     *     db 38h                  ; 32      FileQuotaInformation,
+     *     db 10h                  ; 36      FileTrackingInformation,                   - "reserved for system use"
+     *     db 8                    ; 39      FileValidDataLengthInformation,
+     *     db 8                    ; 40      FileShortNameInformation,
+     *     db 4                    ; 41      FileIoCompletionNotificationInformation,   - "reserved for system use"
+     *     db 10h                  ; 42      FileIoStatusBlockRangeInformation,         - "reserved for system use"
+     *     db 4                    ; 43      FileIoPriorityHintInformation,
+     *     db 14h                  ; 44      FileSfioReserveInformation,                - "reserved for system use"
+     *     db 10h                  ; 61      FileReplaceCompletionInformation,
+     *     db 4                    ; 64      FileDispositionInformationEx,              - Adds posix semantics and stuff.
+     *     db 18h                  ; 65      FileRenameInformationEx,                   - Adds posix semantics and stuff.
+     *     db 8                    ; 67      FileDesiredStorageClassInformation,
+     *     db 10h                  ; 69      FileMemoryPartitionInformation,            - "reserved for system use", W10-1709
+     *     db 4                    ; 71      FileCaseSensitiveInformation,              - Per dir case sensitivity. (For linux?)
+     *     db 18h                  ; 72      FileLinkInformationEx,                     - Adds posix semantics and stuff.
+     *     db 4                    ; 74      FileStorageReserveIdInformation,
+     *     db 4                    ; 75      FileCaseSensitiveInformationForceAccessCheck, - for the i/o manager, w10-1809.
+     */
 
     switch (RxContext->Info.FileInformationClass)
     {
+        /*
+         * This is used to modify timestamps and attributes.
+         */
         case FileBasicInformation:
         {
             Assert(RxContext->Info.Length >= sizeof(FILE_BASIC_INFORMATION));
@@ -1560,6 +1608,39 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             break;
         }
 
+        /*
+         * This is used to rename a file.
+         */
+        case FileRenameInformation:
+        {
+#ifdef LOG_ENABLED
+            PFILE_RENAME_INFORMATION pInfo = (PFILE_RENAME_INFORMATION)RxContext->Info.Buffer;
+            Log(("VBOXSF: MrxSetFileInfo: FileRenameInformation: ReplaceIfExists = %d, RootDirectory = 0x%x = [%.*ls]\n",
+                 pInfo->ReplaceIfExists, pInfo->RootDirectory, pInfo->FileNameLength / sizeof(WCHAR), pInfo->FileName));
+#endif
+
+            Status = vbsfNtRename(RxContext, FileRenameInformation, RxContext->Info.Buffer, RxContext->Info.Length);
+            break;
+        }
+
+        /*
+         * This is presumably used for hardlinking purposes.  We don't support that.
+         */
+        case FileLinkInformation:
+        {
+#ifdef LOG_ENABLED
+            PFILE_LINK_INFORMATION pInfo = (PFILE_LINK_INFORMATION )RxContext->Info.Buffer;
+            Log(("VBOXSF: MrxSetFileInfo: FileLinkInformation: ReplaceIfExists = %d, RootDirectory = 0x%x = [%.*ls]. Not implemented!\n",
+                 pInfo->ReplaceIfExists, pInfo->RootDirectory, pInfo->FileNameLength / sizeof(WCHAR), pInfo->FileName));
+#endif
+
+            Status = STATUS_NOT_IMPLEMENTED;
+            break;
+        }
+
+        /*
+         * This is used to delete file.
+         */
         case FileDispositionInformation:
         {
             PFILE_DISPOSITION_INFORMATION pInfo = (PFILE_DISPOSITION_INFORMATION)RxContext->Info.Buffer;
@@ -1572,6 +1653,16 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
                 Status = STATUS_SUCCESS;
             break;
         }
+
+        /*
+         * The file position is handled by the RDBSS library (RxSetPositionInfo)
+         * and we should never see this request.
+         */
+        case FilePositionInformation:
+            AssertMsgFailed(("VBOXSF: MrxSetFileInfo: FilePositionInformation: CurrentByteOffset = 0x%RX64. Unsupported!\n",
+                             ((PFILE_POSITION_INFORMATION)RxContext->Info.Buffer)->CurrentByteOffset.QuadPart));
+            Status = STATUS_INTERNAL_ERROR;
+            break;
 
         /*
          * Change the allocation size, leaving the EOF alone unless the file shrinks.
@@ -1621,37 +1712,8 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             break;
         }
 
-        case FileLinkInformation:
-        {
-#ifdef LOG_ENABLED
-            PFILE_LINK_INFORMATION pInfo = (PFILE_LINK_INFORMATION )RxContext->Info.Buffer;
-            Log(("VBOXSF: MrxSetFileInfo: FileLinkInformation: ReplaceIfExists = %d, RootDirectory = 0x%x = [%.*ls]. Not implemented!\n",
-                 pInfo->ReplaceIfExists, pInfo->RootDirectory, pInfo->FileNameLength / sizeof(WCHAR), pInfo->FileName));
-#endif
-
-            Status = STATUS_NOT_IMPLEMENTED;
-            break;
-        }
-
-        case FileRenameInformation:
-        {
-#ifdef LOG_ENABLED
-            PFILE_RENAME_INFORMATION pInfo = (PFILE_RENAME_INFORMATION)RxContext->Info.Buffer;
-            Log(("VBOXSF: MrxSetFileInfo: FileRenameInformation: ReplaceIfExists = %d, RootDirectory = 0x%x = [%.*ls]\n",
-                 pInfo->ReplaceIfExists, pInfo->RootDirectory, pInfo->FileNameLength / sizeof(WCHAR), pInfo->FileName));
-#endif
-
-            Status = vbsfNtRename(RxContext, FileRenameInformation, RxContext->Info.Buffer, RxContext->Info.Length);
-            break;
-        }
-
-        /* The file position is handled by the RDBSS library (RxSetPositionInfo)
-           and we should never see this request. */
-        case FilePositionInformation:
-            AssertMsgFailed(("VBOXSF: MrxSetFileInfo: FilePositionInformation: CurrentByteOffset = 0x%RX64. Unsupported!\n",
-                             ((PFILE_POSITION_INFORMATION)RxContext->Info.Buffer)->CurrentByteOffset.QuadPart));
-            Status = STATUS_INVALID_PARAMETER;
-            break;
+        /// @todo FileModeInformation ?
+        /// @todo return access denied or something for FileValidDataLengthInformation?
 
         default:
             Log(("VBOXSF: MrxSetFileInfo: Not supported FileInformationClass: %d!\n",
