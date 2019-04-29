@@ -5974,7 +5974,6 @@ static const char * const g_apszVmSvgaDevCapNames[] =
     "xSURFACEFMT_BC4_UNORM",
     "xSURFACEFMT_BC5_UNORM", /* 83 */
 };
-# endif
 
 /**
  * Initializes the host 3D capabilities in FIFO.
@@ -6026,6 +6025,8 @@ static void vmsvgaInitFifo3DCaps(PVGASTATE pThis)
 
     RTLogRelSetBuffering(fSavedBuffering);
 }
+
+# endif
 
 /**
  * Resets the SVGA hardware state
