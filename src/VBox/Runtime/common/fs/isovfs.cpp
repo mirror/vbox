@@ -5704,9 +5704,12 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
 #ifdef LOG_ENABLED
                 rtFsIsoVolLogPrimarySupplementaryVolDesc(&Buf.SupVolDesc);
 #endif
-                if (cPrimaryVolDescs > 1)
+                if (cPrimaryVolDescs == 1)
+                    rc = rtFsIsoVolHandlePrimaryVolDesc(pThis, &Buf.PrimaryVolDesc, offVolDesc, &RootDir, &offRootDirRec, pErrInfo);
+                else if (cPrimaryVolDescs == 2)
+                    Log(("ISO9660: ignoring 2nd primary descriptor\n")); /* so we can read the w2k3 ifs kit */
+                else
                     return RTERRINFO_LOG_SET(pErrInfo, VERR_VFS_UNSUPPORTED_FORMAT, "More than one primary volume descriptor");
-                rc = rtFsIsoVolHandlePrimaryVolDesc(pThis, &Buf.PrimaryVolDesc, offVolDesc, &RootDir, &offRootDirRec, pErrInfo);
             }
             else if (Buf.VolDescHdr.bDescType == ISO9660VOLDESC_TYPE_SUPPLEMENTARY)
             {
