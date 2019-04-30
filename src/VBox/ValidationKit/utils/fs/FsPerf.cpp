@@ -704,6 +704,7 @@ static int FsPerfCommsWriteFile(const char *pszFilename, size_t cchFilename, con
 }
 
 
+#if 0 // currently unused
 /**
  * Creates a file under g_szCommsDir with the given content, then renames it
  * into g_szCommsSubDir.
@@ -731,6 +732,7 @@ static int FsPerfCommsWriteFileAndRename(const char *pszFilename, size_t cchFile
     }
     return rc;
 }
+#endif
 
 
 /**
