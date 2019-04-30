@@ -118,9 +118,9 @@ typedef struct VBSFNTFCBEXT
      * non-windows host systems or not.
      *
      * @{ */
-    MRX_VBOX_FOBX            *pFobxLastAccessTime;
-    MRX_VBOX_FOBX            *pFobxLastWriteTime;
-    MRX_VBOX_FOBX            *pFobxChangeTime;
+    PMRX_VBOX_FOBX            pFobxLastAccessTime;
+    PMRX_VBOX_FOBX            pFobxLastWriteTime;
+    PMRX_VBOX_FOBX            pFobxChangeTime;
     /** @} */
 } VBSFNTFCBEXT;
 /** Pointer to the VBox FCB extension data. */
