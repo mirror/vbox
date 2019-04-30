@@ -96,11 +96,43 @@ typedef struct _MRX_VBOX_NETROOT_EXTENSION
     bool        fInitialized;
 } MRX_VBOX_NETROOT_EXTENSION, *PMRX_VBOX_NETROOT_EXTENSION;
 
-#define VBOX_FOBX_F_INFO_CREATION_TIME   0x01
-#define VBOX_FOBX_F_INFO_LASTACCESS_TIME 0x02
-#define VBOX_FOBX_F_INFO_LASTWRITE_TIME  0x04
-#define VBOX_FOBX_F_INFO_CHANGE_TIME     0x08
-#define VBOX_FOBX_F_INFO_ATTRIBUTES      0x10
+
+/** Pointer to the VBox file object extension data. */
+typedef struct MRX_VBOX_FOBX *PMRX_VBOX_FOBX;
+
+/**
+ * VBox extension data to the file control block (FCB).
+ *
+ * @note To unix people, think of the FCB as the inode structure.  This is our
+ *       private addition to the inode info.
+ */
+typedef struct VBSFNTFCBEXT
+{
+    /** @name Pointers to file object extensions currently sitting on the given timestamps.
+     *
+     * The file object extensions pointed to have disabled implicit updating the
+     * respective timestamp due to a FileBasicInformation set request.  Should these
+     * timestamps be modified via any other file handle, these pointers will be
+     * updated or set to NULL to reflect this.  So, when the cleaning up a file
+     * object it can be more accurately determined whether to restore timestamps on
+     * non-windows host systems or not.
+     *
+     * @{ */
+    MRX_VBOX_FOBX            *pFobxLastAccessTime;
+    MRX_VBOX_FOBX            *pFobxLastWriteTime;
+    MRX_VBOX_FOBX            *pFobxChangeTime;
+    /** @} */
+} VBSFNTFCBEXT;
+/** Pointer to the VBox FCB extension data. */
+typedef VBSFNTFCBEXT *PVBSFNTFCBEXT;
+
+
+/** @name  VBOX_FOBX_F_INFO_XXX
+ * @{ */
+#define VBOX_FOBX_F_INFO_LASTACCESS_TIME UINT8_C(0x01)
+#define VBOX_FOBX_F_INFO_LASTWRITE_TIME  UINT8_C(0x02)
+#define VBOX_FOBX_F_INFO_CHANGE_TIME     UINT8_C(0x04)
+/** @} */
 
 /**
  * The shared folders file extension.
@@ -118,24 +150,24 @@ typedef struct MRX_VBOX_FOBX
      * @todo try eliminate  */
     FILE_BASIC_INFORMATION      FileBasicInfo;
 
-    BOOLEAN fKeepCreationTime;
-    BOOLEAN fKeepLastAccessTime;
-    BOOLEAN fKeepLastWriteTime;
-    BOOLEAN fKeepChangeTime;
-    BYTE SetFileInfoOnCloseFlags;
-} MRX_VBOX_FOBX, *PMRX_VBOX_FOBX;
+    /** VBOX_FOBX_F_INFO_XXX of timestamps which may need setting on close. */
+    uint8_t                     fTimestampsSetByUser;
+    /** VBOX_FOBX_F_INFO_XXX of timestamps which implicit updating is suppressed. */
+    uint8_t                     fTimestampsUpdatingSuppressed;
+    /** VBOX_FOBX_F_INFO_XXX of timestamps which may have implicitly update. */
+    uint8_t                     fTimestampsImplicitlyUpdated;
+} MRX_VBOX_FOBX;
 
 #define VBoxMRxGetDeviceExtension(RxContext) \
-        (PMRX_VBOX_DEVICE_EXTENSION)((PBYTE)(RxContext->RxDeviceObject) + sizeof(RDBSS_DEVICE_OBJECT))
+        ((PMRX_VBOX_DEVICE_EXTENSION)((PBYTE)(RxContext)->RxDeviceObject + sizeof(RDBSS_DEVICE_OBJECT)))
 
-#define VBoxMRxGetNetRootExtension(pNetRoot) \
-        (((pNetRoot) == NULL) ? NULL : (PMRX_VBOX_NETROOT_EXTENSION)((pNetRoot)->Context))
+#define VBoxMRxGetNetRootExtension(pNetRoot)    ((pNetRoot) != NULL ? (PMRX_VBOX_NETROOT_EXTENSION)(pNetRoot)->Context : NULL)
 
-#define VBoxMRxGetSrvOpenExtension(pSrvOpen)  \
-        (((pSrvOpen) == NULL) ? NULL : (PMRX_VBOX_SRV_OPEN)((pSrvOpen)->Context))
+#define VBoxMRxGetFcbExtension(pFcb)            ((pFcb)     != NULL ?                   (PVBSFNTFCBEXT)(pFcb)->Context : NULL)
 
-#define VBoxMRxGetFileObjectExtension(pFobx)  \
-        (((pFobx) == NULL) ? NULL : (PMRX_VBOX_FOBX)((pFobx)->Context))
+#define VBoxMRxGetSrvOpenExtension(pSrvOpen)    ((pSrvOpen) != NULL ?          (PMRX_VBOX_SRV_OPEN)(pSrvOpen)->Context : NULL)
+
+#define VBoxMRxGetFileObjectExtension(pFobx)    ((pFobx)    != NULL ?                 (PMRX_VBOX_FOBX)(pFobx)->Context : NULL)
 
 /** HACK ALERT: Special Create.ShareAccess indicating trailing slash for
  * non-directory IRP_MJ_CREATE request.
@@ -219,9 +251,9 @@ NTSTATUS vbsfNtDeleteConnection(IN PRX_CONTEXT RxContext,
 NTSTATUS vbsfNtCreateConnection(IN PRX_CONTEXT RxContext,
                                 OUT PBOOLEAN PostToFsp);
 NTSTATUS vbsfNtCloseFileHandle(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
-                               PMRX_VBOX_FOBX pVBoxFobx);
+                               PMRX_VBOX_FOBX pVBoxFobx,
+                               PVBSFNTFCBEXT pVBoxFcbx);
 NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext);
-void     vbsfNtCopyInfoToLegacy(PMRX_VBOX_FOBX pVBoxFobx, PCSHFLFSOBJINFO pInfo);
 NTSTATUS vbsfNtVBoxStatusToNt(int vrc);
 PVOID    vbsfNtAllocNonPagedMem(ULONG ulSize);
 void     vbsfNtFreeNonPagedMem(PVOID lpMem);
@@ -271,6 +303,19 @@ DECLINLINE(uint32_t) NTToVBoxFileAttributes(uint32_t fNtAttribs)
     fIprtMode &= ~(RTFS_DOS_NT_OFFLINE | RTFS_DOS_NT_DEVICE | RTFS_DOS_NT_REPARSE_POINT);
     return fIprtMode ? fIprtMode : RTFS_DOS_NT_NORMAL;
 }
+
+/**
+ * Helper for converting VBox object info to NT basic file info.
+ */
+DECLINLINE(void) vbsfNtBasicInfoFromVBoxObjInfo(FILE_BASIC_INFORMATION *pNtBasicInfo, PCSHFLFSOBJINFO pVBoxInfo)
+{
+    pNtBasicInfo->CreationTime.QuadPart   = RTTimeSpecGetNtTime(&pVBoxInfo->BirthTime);
+    pNtBasicInfo->LastAccessTime.QuadPart = RTTimeSpecGetNtTime(&pVBoxInfo->AccessTime);
+    pNtBasicInfo->LastWriteTime.QuadPart  = RTTimeSpecGetNtTime(&pVBoxInfo->ModificationTime);
+    pNtBasicInfo->ChangeTime.QuadPart     = RTTimeSpecGetNtTime(&pVBoxInfo->ChangeTime);
+    pNtBasicInfo->FileAttributes          = VBoxToNTFileAttributes(pVBoxInfo->Attr.fMode);
+}
+
 
 /** @} */
 

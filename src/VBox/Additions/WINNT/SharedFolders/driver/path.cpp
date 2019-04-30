@@ -591,7 +591,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     pVBoxFobx->hFile = Handle;
     pVBoxFobx->pSrvCall = RxContext->Create.pSrvCall;
     pVBoxFobx->Info = Info;
-    vbsfNtCopyInfoToLegacy(pVBoxFobx, &Info);
+    vbsfNtBasicInfoFromVBoxObjInfo(&pVBoxFobx->FileBasicInfo, &Info);
     Log(("VBOXSF: MRxCreate: FileBasicInformation: CreationTime   %RX64\n", pVBoxFobx->FileBasicInfo.CreationTime.QuadPart));
     Log(("VBOXSF: MRxCreate: FileBasicInformation: LastAccessTime %RX64\n", pVBoxFobx->FileBasicInfo.LastAccessTime.QuadPart));
     Log(("VBOXSF: MRxCreate: FileBasicInformation: LastWriteTime  %RX64\n", pVBoxFobx->FileBasicInfo.LastWriteTime.QuadPart));
@@ -662,67 +662,6 @@ NTSTATUS VBoxMRxForceClosed(IN PMRX_SRV_OPEN pSrvOpen)
     return STATUS_NOT_IMPLEMENTED;
 }
 
-static NTSTATUS vbsfSetFileInfoOnClose(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
-                                       PMRX_VBOX_FOBX pVBoxFobx,
-                                       PFILE_BASIC_INFORMATION pInfo,
-                                       BYTE SetAttrFlags)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    int vrc;
-    PSHFLFSOBJINFO pSHFLFileInfo;
-
-    uint8_t *pHGCMBuffer = NULL;
-    uint32_t cbBuffer = 0;
-
-    Log(("VBOXSF: vbsfSetFileInfoOnClose: SetAttrFlags 0x%02X\n", SetAttrFlags));
-    Log(("VBOXSF: vbsfSetFileInfoOnClose: FileBasicInformation: CreationTime   %RX64\n", pInfo->CreationTime.QuadPart));
-    Log(("VBOXSF: vbsfSetFileInfoOnClose: FileBasicInformation: LastAccessTime %RX64\n", pInfo->LastAccessTime.QuadPart));
-    Log(("VBOXSF: vbsfSetFileInfoOnClose: FileBasicInformation: LastWriteTime  %RX64\n", pInfo->LastWriteTime.QuadPart));
-    Log(("VBOXSF: vbsfSetFileInfoOnClose: FileBasicInformation: ChangeTime     %RX64\n", pInfo->ChangeTime.QuadPart));
-    Log(("VBOXSF: vbsfSetFileInfoOnClose: FileBasicInformation: FileAttributes %RX32\n", pInfo->FileAttributes));
-
-    if (SetAttrFlags == 0)
-    {
-        Log(("VBOXSF: vbsfSetFileInfo: nothing to set\n"));
-        return STATUS_SUCCESS;
-    }
-
-    cbBuffer = sizeof(SHFLFSOBJINFO);
-    pHGCMBuffer = (uint8_t *)vbsfNtAllocNonPagedMem(cbBuffer);
-    if (!pHGCMBuffer)
-    {
-        AssertFailed();
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-    RtlZeroMemory(pHGCMBuffer, cbBuffer);
-    pSHFLFileInfo = (PSHFLFSOBJINFO)pHGCMBuffer;
-
-    /* The properties, that need to be changed, are set to something other than zero */
-    if (pInfo->CreationTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_CREATION_TIME) != 0)
-        RTTimeSpecSetNtTime(&pSHFLFileInfo->BirthTime, pInfo->CreationTime.QuadPart);
-    if (pInfo->LastAccessTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_LASTACCESS_TIME) != 0)
-        RTTimeSpecSetNtTime(&pSHFLFileInfo->AccessTime, pInfo->LastAccessTime.QuadPart);
-    if (pInfo->LastWriteTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_LASTWRITE_TIME) != 0)
-        RTTimeSpecSetNtTime(&pSHFLFileInfo->ModificationTime, pInfo->LastWriteTime.QuadPart);
-    if (pInfo->ChangeTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_CHANGE_TIME) != 0)
-        RTTimeSpecSetNtTime(&pSHFLFileInfo->ChangeTime, pInfo->ChangeTime.QuadPart);
-    if (pInfo->FileAttributes && (SetAttrFlags & VBOX_FOBX_F_INFO_ATTRIBUTES) != 0) /// @todo r=bird: never ever set.
-        pSHFLFileInfo->Attr.fMode = NTToVBoxFileAttributes(pInfo->FileAttributes);
-
-    vrc = VbglR0SfFsInfo(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                         SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
-
-    if (vrc != VINF_SUCCESS)
-        Status = vbsfNtVBoxStatusToNt(vrc);
-
-    if (pHGCMBuffer)
-        vbsfNtFreeNonPagedMem(pHGCMBuffer);
-
-    Log(("VBOXSF: vbsfSetFileInfo: Returned 0x%08X\n", Status));
-    return Status;
-}
-
 /**
  * Closes an opened file handle of a MRX_VBOX_FOBX.
  *
@@ -731,42 +670,95 @@ static NTSTATUS vbsfSetFileInfoOnClose(PMRX_VBOX_NETROOT_EXTENSION pNetRootExten
  * Used by VBoxMRxCloseSrvOpen, vbsfNtRemove and vbsfNtRename.
  */
 NTSTATUS vbsfNtCloseFileHandle(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
-                               PMRX_VBOX_FOBX pVBoxFobx)
+                               PMRX_VBOX_FOBX pVBoxFobx,
+                               PVBSFNTFCBEXT pVBoxFcbx)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    int vrc;
-
     if (pVBoxFobx->hFile == SHFL_HANDLE_NIL)
     {
         Log(("VBOXSF: vbsfCloseFileHandle: SHFL_HANDLE_NIL\n"));
         return STATUS_SUCCESS;
     }
 
-    Log(("VBOXSF: vbsfCloseFileHandle: 0x%RX64, on close info 0x%02X\n",
-         pVBoxFobx->hFile, pVBoxFobx->SetFileInfoOnCloseFlags));
+    Log(("VBOXSF: vbsfCloseFileHandle: 0x%RX64, fTimestampsUpdatingSuppressed = %#x, fTimestampsImplicitlyUpdated = %#x\n",
+         pVBoxFobx->hFile, pVBoxFobx->fTimestampsUpdatingSuppressed, pVBoxFobx->fTimestampsImplicitlyUpdated));
 
-    if (pVBoxFobx->SetFileInfoOnCloseFlags)
+    /*
+     * We allocate a single request buffer for the timestamp updating and the closing
+     * to save time (at the risk of running out of heap, but whatever).
+     */
+    union MyCloseAndInfoReq
     {
-        /* If the file timestamps were set by the user, then update them before closing the handle,
-         * to cancel any effect of the file read/write operations on the host.
-         */
-        Status = vbsfSetFileInfoOnClose(pNetRootExtension,
-                                        pVBoxFobx,
-                                        &pVBoxFobx->FileBasicInfo,
-                                        pVBoxFobx->SetFileInfoOnCloseFlags);
+        VBOXSFCLOSEREQ   Close;
+        VBOXSFOBJINFOREQ Info;
+    } *pReq = (union MyCloseAndInfoReq *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
+        RT_ZERO(*pReq);
+    else
+        return STATUS_INSUFF_SERVER_RESOURCES;
+
+    /*
+     * Restore timestamp that we may implicitly been updated via this handle
+     * after the user explicitly set them or turn off implict updating (the -1 value).
+     *
+     * Note! We ignore the status of this operation.
+     */
+    Assert(pVBoxFcbx);
+    uint8_t fUpdateTs = pVBoxFobx->fTimestampsUpdatingSuppressed & pVBoxFobx->fTimestampsImplicitlyUpdated;
+    if (fUpdateTs)
+    {
+        /** @todo skip this if the host is windows and fTimestampsUpdatingSuppressed == fTimestampsSetByUser */
+        /** @todo pass -1 timestamps thru so we can always skip this on windows hosts! */
+        if (   (fUpdateTs & VBOX_FOBX_F_INFO_LASTACCESS_TIME)
+            && pVBoxFcbx->pFobxLastAccessTime == pVBoxFobx)
+            pReq->Info.ObjInfo.AccessTime        = pVBoxFobx->Info.AccessTime;
+        else
+            fUpdateTs &= ~VBOX_FOBX_F_INFO_LASTACCESS_TIME;
+
+        if (   (fUpdateTs & VBOX_FOBX_F_INFO_LASTWRITE_TIME)
+            && pVBoxFcbx->pFobxLastWriteTime  == pVBoxFobx)
+            pReq->Info.ObjInfo.ModificationTime  = pVBoxFobx->Info.ModificationTime;
+        else
+            fUpdateTs &= ~VBOX_FOBX_F_INFO_LASTWRITE_TIME;
+
+        if (   (fUpdateTs & VBOX_FOBX_F_INFO_CHANGE_TIME)
+            && pVBoxFcbx->pFobxChangeTime     == pVBoxFobx)
+            pReq->Info.ObjInfo.ChangeTime        = pVBoxFobx->Info.ChangeTime;
+        else
+            fUpdateTs &= ~VBOX_FOBX_F_INFO_CHANGE_TIME;
+        if (fUpdateTs)
+        {
+            Log(("VBOXSF: vbsfCloseFileHandle: Updating timestamp: %#x\n", fUpdateTs));
+            int vrc = VbglR0SfHostReqSetObjInfo(pNetRootExtension->map.root, &pReq->Info, pVBoxFobx->hFile);
+            if (RT_FAILURE(vrc))
+                Log(("VBOXSF: vbsfCloseFileHandle: VbglR0SfHostReqSetObjInfo failed for fUpdateTs=%#x: %Rrc\n", fUpdateTs, vrc));
+            RT_NOREF(vrc);
+        }
+        else
+            Log(("VBOXSF: vbsfCloseFileHandle: no timestamp needing updating\n"));
     }
 
-    vrc = VbglR0SfClose(&g_SfClient,
-                        &pNetRootExtension->map,
-                        pVBoxFobx->hFile);
+    /* This isn't strictly necessary, but best to keep things clean. */
+    pVBoxFobx->fTimestampsSetByUser          = 0;
+    pVBoxFobx->fTimestampsUpdatingSuppressed = 0;
+    pVBoxFobx->fTimestampsImplicitlyUpdated  = 0;
+    if (pVBoxFcbx->pFobxLastAccessTime == pVBoxFobx)
+        pVBoxFcbx->pFobxLastAccessTime = NULL;
+    if (pVBoxFcbx->pFobxLastWriteTime  == pVBoxFobx)
+        pVBoxFcbx->pFobxLastWriteTime  = NULL;
+    if (pVBoxFcbx->pFobxChangeTime     == pVBoxFobx)
+        pVBoxFcbx->pFobxChangeTime     = NULL;
+
+    /*
+     * Now close the handle.
+     */
+    int vrc = VbglR0SfHostReqClose(pNetRootExtension->map.root, &pReq->Close, pVBoxFobx->hFile);
 
     pVBoxFobx->hFile = SHFL_HANDLE_NIL;
 
-    if (vrc != VINF_SUCCESS)
-        Status = vbsfNtVBoxStatusToNt(vrc);
+    VbglR0PhysHeapFree(pReq);
 
-    Log(("VBOXSF: vbsfCloseFileHandle: Returned 0x%08X\n", Status));
+    NTSTATUS const Status = RT_SUCCESS(vrc) ? STATUS_SUCCESS : vbsfNtVBoxStatusToNt(vrc);
+    Log(("VBOXSF: vbsfCloseFileHandle: Returned 0x%08X (vrc=%Rrc)\n", Status, vrc));
     return Status;
 }
 
@@ -805,7 +797,7 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
 
     /* Close file */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx);
+        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx, VBoxMRxGetFcbExtension(capFcb));
 
     if (capFcb->FcbState & FCB_STATE_DELETE_ON_CLOSE)
     {
@@ -843,7 +835,7 @@ NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext)
 
     /* Close file first if not already done. */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx);
+        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx, VBoxMRxGetFcbExtension(capFcb));
 
     Log(("VBOXSF: vbsfNtRemove: RemainingName->Length %d\n", RemainingName->Length));
     Status = vbsfNtShflStringFromUnicodeAlloc(&ParsedPath, RemainingName->Buffer, RemainingName->Length);

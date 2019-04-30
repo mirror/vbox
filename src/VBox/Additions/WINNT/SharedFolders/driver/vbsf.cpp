@@ -154,12 +154,12 @@ static void vbsfInitMRxDispatch(void)
 
     ZeroAndInitializeNodeType(&VBoxMRxDispatch, RDBSS_NTC_MINIRDR_DISPATCH, sizeof(MINIRDR_DISPATCH));
 
-    VBoxMRxDispatch.MRxFlags = (RDBSS_MANAGE_NET_ROOT_EXTENSION | RDBSS_MANAGE_FOBX_EXTENSION);
+    VBoxMRxDispatch.MRxFlags = RDBSS_MANAGE_NET_ROOT_EXTENSION | RDBSS_MANAGE_FCB_EXTENSION | RDBSS_MANAGE_FOBX_EXTENSION;
 
     VBoxMRxDispatch.MRxSrvCallSize = 0;
     VBoxMRxDispatch.MRxNetRootSize = sizeof(MRX_VBOX_NETROOT_EXTENSION);
     VBoxMRxDispatch.MRxVNetRootSize = 0;
-    VBoxMRxDispatch.MRxFcbSize = 0;
+    VBoxMRxDispatch.MRxFcbSize = sizeof(VBSFNTFCBEXT);
     VBoxMRxDispatch.MRxSrvOpenSize = 0;
     VBoxMRxDispatch.MRxFobxSize = sizeof(MRX_VBOX_FOBX);
 

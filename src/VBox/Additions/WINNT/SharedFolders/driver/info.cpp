@@ -924,40 +924,63 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
     return Status;
 }
 
-void vbsfNtCopyInfoToLegacy(PMRX_VBOX_FOBX pVBoxFobx, PCSHFLFSOBJINFO pInfo)
+/**
+ * Updates the object info to the VBox file object extension data.
+ *
+ * @param   pVBoxFobx               The VBox file object extension data.
+ * @param   pObjInfo                The fresh data from the host.  Okay to modify.
+ * @param   pVBoxFcbx               The VBox FCB extension data.
+ * @param   fTimestampsToCopyAnyway VBOX_FOBX_F_INFO_XXX mask of timestamps to
+ *                                  copy regardless of their suppressed state.
+ *                                  This is used by the info setter function to
+ *                                  get current copies of newly modified and
+ *                                  suppressed fields.
+ */
+static void vbsfNtCopyInfo(PMRX_VBOX_FOBX pVBoxFobx, PSHFLFSOBJINFO pObjInfo,
+                           PVBSFNTFCBEXT pVBoxFcbx, uint8_t fTimestampsToCopyAnyway)
 {
-    pVBoxFobx->FileBasicInfo.CreationTime.QuadPart   = RTTimeSpecGetNtTime(&pInfo->BirthTime);
-    pVBoxFobx->FileBasicInfo.LastAccessTime.QuadPart = RTTimeSpecGetNtTime(&pInfo->AccessTime);
-    pVBoxFobx->FileBasicInfo.LastWriteTime.QuadPart  = RTTimeSpecGetNtTime(&pInfo->ModificationTime);
-    pVBoxFobx->FileBasicInfo.ChangeTime.QuadPart     = RTTimeSpecGetNtTime(&pInfo->ChangeTime);
-    pVBoxFobx->FileBasicInfo.FileAttributes          = VBoxToNTFileAttributes(pInfo->Attr.fMode);
-}
-
-static void vbsfNtCopyInfo(PMRX_VBOX_FOBX pVBoxFobx, PSHFLFSOBJINFO pObjInfo, uint32_t fOverrides)
-{
+    /*
+     * Check if the size changed.
+     */
     if (pObjInfo->cbObject != pVBoxFobx->Info.cbObject)
     {
-        /** @todo tell RDBSS about this? */
+        /** @todo Tell RDBSS about this?  Seems we have to tell the cache manager
+         *        ourselves, which sucks considering that RDBSS was supposed to
+         *        shield us from crap like that (see the MS sales brochure). */
     }
 
-    /* To simplify stuff, copy user timestamps to the input structure before copying. */
-    if (   pVBoxFobx->fKeepCreationTime
-        || pVBoxFobx->fKeepLastAccessTime
-        || pVBoxFobx->fKeepLastWriteTime
-        || pVBoxFobx->fKeepChangeTime)
+    /*
+     * Check if the modified timestamp changed and try guess if it was the host.
+     */
+    /** @todo use modification timestamp to detect host changes?  We do on linux. */
+
+    /*
+     * Copy the object info over.  To simplify preserving the value of timestamps
+     * which implict updating is currently disabled, copy them over to the source
+     * structure before preforming the copy.
+     */
+    Assert((pVBoxFobx->fTimestampsSetByUser & ~pVBoxFobx->fTimestampsUpdatingSuppressed) == 0);
+    uint8_t fCopyTs = pVBoxFobx->fTimestampsUpdatingSuppressed & ~fTimestampsToCopyAnyway;
+    if (fCopyTs)
     {
-        if (pVBoxFobx->fKeepCreationTime   && !(fOverrides & VBOX_FOBX_F_INFO_CREATION_TIME))
-            pObjInfo->BirthTime         = pVBoxFobx->Info.BirthTime;
-        if (pVBoxFobx->fKeepLastAccessTime && !(fOverrides & VBOX_FOBX_F_INFO_LASTACCESS_TIME))
+        if (  (fCopyTs & VBOX_FOBX_F_INFO_LASTACCESS_TIME)
+            && pVBoxFcbx->pFobxLastAccessTime == pVBoxFobx)
             pObjInfo->AccessTime        = pVBoxFobx->Info.AccessTime;
-        if (pVBoxFobx->fKeepLastWriteTime  && !(fOverrides & VBOX_FOBX_F_INFO_LASTWRITE_TIME))
+
+        if (   (fCopyTs & VBOX_FOBX_F_INFO_LASTWRITE_TIME)
+            && pVBoxFcbx->pFobxLastWriteTime  == pVBoxFobx)
             pObjInfo->ModificationTime  = pVBoxFobx->Info.ModificationTime;
-        if (pVBoxFobx->fKeepChangeTime     && !(fOverrides & VBOX_FOBX_F_INFO_CHANGE_TIME))
+
+        if (   (fCopyTs & VBOX_FOBX_F_INFO_CHANGE_TIME)
+            && pVBoxFcbx->pFobxChangeTime     == pVBoxFobx)
             pObjInfo->ChangeTime        = pVBoxFobx->Info.ChangeTime;
     }
     pVBoxFobx->Info = *pObjInfo;
 
-    vbsfNtCopyInfoToLegacy(pVBoxFobx, pObjInfo);
+    /*
+     * Try eliminate this one.
+     */
+    vbsfNtBasicInfoFromVBoxObjInfo(&pVBoxFobx->FileBasicInfo, pObjInfo);
 }
 
 
@@ -1085,13 +1108,15 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 && (   !pVBoxFobx->nsUpToDate
                     || pVBoxFobx->nsUpToDate - RTTimeSystemNanoTS() < RT_NS_100US /** @todo implement proper TTL */ ) )
             {
-                int               vrc;
+                PVBSFNTFCBEXT pVBoxFcbx = VBoxMRxGetFcbExtension(capFcb);
+                AssertReturn(pVBoxFcbx, STATUS_INTERNAL_ERROR);
+
                 VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
                 AssertBreakStmt(pReq, Status = STATUS_NO_MEMORY);
 
-                vrc = VbglR0SfHostReqQueryObjInfo(pNetRootExtension->map.root, pReq, pVBoxFobx->hFile);
+                int vrc = VbglR0SfHostReqQueryObjInfo(pNetRootExtension->map.root, pReq, pVBoxFobx->hFile);
                 if (RT_SUCCESS(vrc))
-                    vbsfNtCopyInfo(pVBoxFobx, &pReq->ObjInfo, 0);
+                    vbsfNtCopyInfo(pVBoxFobx, &pReq->ObjInfo, pVBoxFcbx, 0);
                 else
                 {
                     Status = vbsfNtVBoxStatusToNt(vrc);
@@ -1279,136 +1304,194 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
  * Worker for vbsfNtSetBasicInfo.
  */
 static NTSTATUS vbsfNtSetBasicInfo(PMRX_VBOX_FOBX pVBoxFobx, PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
-                                   PFILE_BASIC_INFORMATION pBasicInfo)
+                                   PVBSFNTFCBEXT pVBoxFcbx, PFILE_BASIC_INFORMATION pBasicInfo)
 {
-    PSHFLFSOBJINFO          pSHFLFileInfo;
-    uint8_t                *pHGCMBuffer = NULL;
-    uint32_t                cbBuffer = 0;
-    uint32_t                fModified;
-    int                     vrc;
-
     Log(("VBOXSF: MRxSetFileInfo: FileBasicInformation: CreationTime   %RX64\n", pBasicInfo->CreationTime.QuadPart));
     Log(("VBOXSF: MRxSetFileInfo: FileBasicInformation: LastAccessTime %RX64\n", pBasicInfo->LastAccessTime.QuadPart));
     Log(("VBOXSF: MRxSetFileInfo: FileBasicInformation: LastWriteTime  %RX64\n", pBasicInfo->LastWriteTime.QuadPart));
     Log(("VBOXSF: MRxSetFileInfo: FileBasicInformation: ChangeTime     %RX64\n", pBasicInfo->ChangeTime.QuadPart));
     Log(("VBOXSF: MRxSetFileInfo: FileBasicInformation: FileAttributes %RX32\n", pBasicInfo->FileAttributes));
-
-    /*
-     * Note! If a timestamp value is non-zero, the client disables implicit updating of
-     *       that timestamp via this handle when reading, writing and changing attributes.
-     *       The special -1 value is used to just disable implicit updating without
-     *       modifying the timestamp.  While the value is allowed for the CreationTime
-     *       field, it will be treated as zero.
-     *
-     *       More clues can be found here:
-     * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/16023025-8a78-492f-8b96-c873b042ac50
-     * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/d4bc551b-7aaf-4b4f-ba0e-3a75e7c528f0#Appendix_A_86
-     */
+    AssertReturn(pVBoxFobx, STATUS_INTERNAL_ERROR);
+    AssertReturn(pVBoxFcbx, STATUS_INTERNAL_ERROR);
+    AssertReturn(pNetRootExtension, STATUS_INTERNAL_ERROR);
 
     /** @todo r=bird: The attempt at implementing the disable-timestamp-update
      *        behaviour here needs a little adjusting.  I'll get to that later.
      *
      * Reminders:
      *
-     *  1. Drop VBOX_FOBX_F_INFO_CREATION_TIME.
+     *  X1. Drop VBOX_FOBX_F_INFO_CREATION_TIME.
      *
-     *  2. Drop unused VBOX_FOBX_F_INFO_ATTRIBUTES.
+     *  X2. Drop unused VBOX_FOBX_F_INFO_ATTRIBUTES.
      *
-     *  3. Only act on VBOX_FOBX_F_INFO_CHANGE_TIME if modified attributes or grown
+     *  X3. Only act on VBOX_FOBX_F_INFO_CHANGE_TIME if modified attributes or grown
      *     the file (?) so we don't cancel out updates by other parties (like the
      *     host).
      *
-     *  4. Only act on VBOX_FOBX_F_INFO_LASTWRITE_TIME if we've written to the file.
+     *  X4. Only act on VBOX_FOBX_F_INFO_LASTWRITE_TIME if we've written to the
+     *  file.
      *
-     *  5. Only act on VBOX_FOBX_F_INFO_LASTACCESS_TIME if we've read from the file
+     *  X5. Only act on VBOX_FOBX_F_INFO_LASTACCESS_TIME if we've read from the file
      *     or done whatever else might modify the access time.
      *
      *  6. Don't bother calling the host if there are only zeros and -1 values.
+     *  => Not done / better use it to update FCB info?
      *
-     *  7. Client application should probably be allowed to modify the timestamps
+     *  X7. Client application should probably be allowed to modify the timestamps
      *     explicitly using this API after disabling updating, given the wording of
      *     the footnote referenced above.
+     *  => Only verified via fastfat sample, need FsPerf test.
      *
      *  8. Extend the host interface to let the host handle this crap instead as it
      *     can do a better job, like on windows it's done implicitly if we let -1
      *     pass thru IPRT.
+     *  => We're actually better equipped to handle it than the host, given the
+     *     FCB/inode.  New plan is to detect windows host and let it implement -1,
+     *     but use the old stuff as fallback for non-windows hosts.
      *
      * One worry here is that we hide timestamp updates made by the host or other
      * guest side processes.  This could account for some of the issues we've been
      * having with the guest not noticing host side changes.
      */
 
-    if (pBasicInfo->CreationTime.QuadPart == -1)
-    {
-        pVBoxFobx->fKeepCreationTime = TRUE;
-        pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_CREATION_TIME;
-    }
-    if (pBasicInfo->LastAccessTime.QuadPart == -1)
-    {
-        pVBoxFobx->fKeepLastAccessTime = TRUE;
-        pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
-    }
-    if (pBasicInfo->LastWriteTime.QuadPart == -1)
-    {
-        pVBoxFobx->fKeepLastWriteTime = TRUE;
-        pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
-    }
-    if (pBasicInfo->ChangeTime.QuadPart == -1)
-    {
-        pVBoxFobx->fKeepChangeTime = TRUE;
-        pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_CHANGE_TIME;
-    }
 
-    cbBuffer = sizeof(SHFLFSOBJINFO);
-    pHGCMBuffer = (uint8_t *)vbsfNtAllocNonPagedMem(cbBuffer);
-    AssertReturn(pHGCMBuffer, STATUS_INSUFFICIENT_RESOURCES);
-    RtlZeroMemory(pHGCMBuffer, cbBuffer);
-    pSHFLFileInfo = (PSHFLFSOBJINFO)pHGCMBuffer;
+    /*
+     * The properties that need to be changed are set to something other
+     * than zero and -1.  (According to the fastfat sample code, -1 only
+     * disable implicit timestamp updating, not explicit thru this code.)
+     */
 
-    Log(("VBOXSF: MrxSetFileInfo: FileBasicInformation: keeps %d %d %d %d\n",
-         pVBoxFobx->fKeepCreationTime, pVBoxFobx->fKeepLastAccessTime, pVBoxFobx->fKeepLastWriteTime, pVBoxFobx->fKeepChangeTime));
+    /*
+     * In the host request, zero values are ignored.
+     *
+     * As for the NT request, the same is true but with a slight twist for the
+     * timestamp fields.  If a timestamp value is non-zero, the client disables
+     * implicit updating of that timestamp via this handle when reading, writing
+     * and * changing attributes.  The special -1 value is used to just disable
+     * implicit updating without modifying the timestamp.  While the value is
+     * allowed for the CreationTime field, it will be treated as zero.
+     *
+     * More clues to the NT behaviour can be found here:
+     * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/16023025-8a78-492f-8b96-c873b042ac50
+     * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/d4bc551b-7aaf-4b4f-ba0e-3a75e7c528f0#Appendix_A_86
+     *
+     * P.S. One of the reasons behind suppressing of timestamp updating after setting
+     *      them is likely related to the need of opening objects to modify them. There are
+     *      no utimes() or chmod() function in NT, on the futimes() and fchmod() variants.
+     */
+    VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
+        RT_ZERO(pReq->ObjInfo);
+    else
+        return STATUS_INSUFFICIENT_RESOURCES;
+    uint32_t fModified   = 0;
+    uint32_t fSuppressed = 0;
 
-    /* The properties, that need to be changed, are set to something other than zero */
-    fModified = 0;
-    if (pBasicInfo->CreationTime.QuadPart && !pVBoxFobx->fKeepCreationTime)
-    {
-        RTTimeSpecSetNtTime(&pSHFLFileInfo->BirthTime, pBasicInfo->CreationTime.QuadPart);
-        fModified |= VBOX_FOBX_F_INFO_CREATION_TIME;
-    }
     /** @todo FsPerf need to check what is supposed to happen if modified
-     *        against after -1 is specified.  */
-    if (pBasicInfo->LastAccessTime.QuadPart && !pVBoxFobx->fKeepLastAccessTime)
+     * against after -1 is specified.  As state above, fastfat will not suppress
+     * further setting of the timestamp like we used to do prior to revision
+     * r130337 or thereabouts. */
+
+    if (pBasicInfo->CreationTime.QuadPart && pBasicInfo->CreationTime.QuadPart != -1)
+        RTTimeSpecSetNtTime(&pReq->ObjInfo.BirthTime, pBasicInfo->CreationTime.QuadPart);
+
+    if (pBasicInfo->LastAccessTime.QuadPart)
     {
-        RTTimeSpecSetNtTime(&pSHFLFileInfo->AccessTime, pBasicInfo->LastAccessTime.QuadPart);
-        fModified |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
+        if (pBasicInfo->LastAccessTime.QuadPart != -1)
+        {
+            RTTimeSpecSetNtTime(&pReq->ObjInfo.AccessTime, pBasicInfo->LastAccessTime.QuadPart);
+            fModified |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
+        }
+        fSuppressed |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
     }
-    if (pBasicInfo->LastWriteTime.QuadPart && !pVBoxFobx->fKeepLastWriteTime)
+
+    if (pBasicInfo->LastWriteTime.QuadPart)
     {
-        RTTimeSpecSetNtTime(&pSHFLFileInfo->ModificationTime, pBasicInfo->LastWriteTime.QuadPart);
-        fModified |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
+        if (pBasicInfo->LastWriteTime.QuadPart != -1)
+        {
+            RTTimeSpecSetNtTime(&pReq->ObjInfo.ModificationTime, pBasicInfo->LastWriteTime.QuadPart);
+            fModified |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
+        }
+        fSuppressed |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
     }
-    if (pBasicInfo->ChangeTime.QuadPart && !pVBoxFobx->fKeepChangeTime)
+
+    if (pBasicInfo->ChangeTime.QuadPart)
     {
-        RTTimeSpecSetNtTime(&pSHFLFileInfo->ChangeTime, pBasicInfo->ChangeTime.QuadPart);
-        fModified |= VBOX_FOBX_F_INFO_CHANGE_TIME;
+        if (pBasicInfo->ChangeTime.QuadPart != -1)
+        {
+            RTTimeSpecSetNtTime(&pReq->ObjInfo.ChangeTime, pBasicInfo->ChangeTime.QuadPart);
+            fModified |= VBOX_FOBX_F_INFO_CHANGE_TIME;
+        }
+        fSuppressed |= VBOX_FOBX_F_INFO_CHANGE_TIME;
     }
+
     if (pBasicInfo->FileAttributes)
-        pSHFLFileInfo->Attr.fMode = NTToVBoxFileAttributes(pBasicInfo->FileAttributes);
+    {
+        pReq->ObjInfo.Attr.fMode = NTToVBoxFileAttributes(pBasicInfo->FileAttributes);
+        Assert(pReq->ObjInfo.Attr.fMode != 0);
+    }
 
-    Assert(pVBoxFobx && pNetRootExtension);
-    vrc = VbglR0SfFsInfo(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                         SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
-
+    /*
+     * Call the host to do the actual updating.
+     * Note! This may be a noop, but we want up-to-date info for any -1 timestamp.
+     */
+    int vrc = VbglR0SfHostReqSetObjInfo(pNetRootExtension->map.root, pReq, pVBoxFobx->hFile);
     NTSTATUS Status;
     if (RT_SUCCESS(vrc))
     {
-        vbsfNtCopyInfo(pVBoxFobx, pSHFLFileInfo, fModified);
-        pVBoxFobx->SetFileInfoOnCloseFlags |= fModified;
+        /*
+         * Update our timestamp state tracking both in the file object and the file
+         * control block extensions.
+         */
+        if (pBasicInfo->FileAttributes || fModified)
+        {
+            if (   pVBoxFcbx->pFobxChangeTime != pVBoxFobx
+                && !(pVBoxFobx->fTimestampsUpdatingSuppressed & VBOX_FOBX_F_INFO_CHANGE_TIME))
+                pVBoxFcbx->pFobxChangeTime = NULL;
+            pVBoxFobx->fTimestampsImplicitlyUpdated |= VBOX_FOBX_F_INFO_CHANGE_TIME;
+        }
+        pVBoxFobx->fTimestampsImplicitlyUpdated  &= ~fModified;
+        pVBoxFobx->fTimestampsSetByUser          |= fModified;
+        pVBoxFobx->fTimestampsUpdatingSuppressed |= fSuppressed;
+
+        if (fSuppressed)
+        {
+            if (fSuppressed & VBOX_FOBX_F_INFO_LASTACCESS_TIME)
+                pVBoxFcbx->pFobxLastAccessTime = pVBoxFobx;
+            if (fSuppressed & VBOX_FOBX_F_INFO_LASTWRITE_TIME)
+                pVBoxFcbx->pFobxLastWriteTime  = pVBoxFobx;
+            if (fSuppressed & VBOX_FOBX_F_INFO_CHANGE_TIME)
+                pVBoxFcbx->pFobxChangeTime     = pVBoxFobx;
+        }
+
+        vbsfNtCopyInfo(pVBoxFobx, &pReq->ObjInfo, pVBoxFcbx, fSuppressed);
+
+        /*
+         * Copy timestamps and attributes from the host into the return buffer to let
+         * RDBSS update the FCB data when we return.   Not sure if the FCB timestamps
+         * are ever used for anything, but caller doesn't check for -1 so there will
+         * be some funny/invalid timestamps in the FCB it ever does.  (I seriously
+         * doubt -1 is supposed to be there given that the FCB is shared and the -1
+         * only applies to a given FILE_OBJECT/HANDLE.)
+         */
+        if (pBasicInfo->FileAttributes)
+            pBasicInfo->FileAttributes          = (pBasicInfo->FileAttributes & FILE_ATTRIBUTE_TEMPORARY)
+                                                | VBoxToNTFileAttributes(pReq->ObjInfo.Attr.fMode);
+        if (pBasicInfo->CreationTime.QuadPart)
+            pBasicInfo->CreationTime.QuadPart   = RTTimeSpecGetNtTime(&pReq->ObjInfo.BirthTime);
+        if (pBasicInfo->LastAccessTime.QuadPart)
+            pBasicInfo->LastAccessTime.QuadPart = RTTimeSpecGetNtTime(&pReq->ObjInfo.AccessTime);
+        if (pBasicInfo->LastWriteTime.QuadPart)
+            pBasicInfo->LastWriteTime.QuadPart  = RTTimeSpecGetNtTime(&pReq->ObjInfo.ModificationTime);
+        if (pBasicInfo->ChangeTime.QuadPart)
+            pBasicInfo->ChangeTime.QuadPart     = RTTimeSpecGetNtTime(&pReq->ObjInfo.ChangeTime);
+
         Status = STATUS_SUCCESS;
     }
     else
         Status = vbsfNtVBoxStatusToNt(vrc);
-    vbsfNtFreeNonPagedMem(pHGCMBuffer);
+
+    VbglR0PhysHeapFree(pReq);
     return Status;
 }
 
@@ -1423,6 +1506,7 @@ static NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext, IN uin
     RxCaptureFobx;
 
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
+    PVBSFNTFCBEXT pVBoxFcbx = VBoxMRxGetFcbExtension(capFcb);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
 
     PSHFLFSOBJINFO pObjInfo;
@@ -1453,6 +1537,10 @@ static NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext, IN uin
     Status = vbsfNtVBoxStatusToNt(vrc);
     if (Status == STATUS_SUCCESS)
     {
+        pVBoxFobx->fTimestampsImplicitlyUpdated |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
+        if (pVBoxFcbx->pFobxLastWriteTime != pVBoxFobx)
+            pVBoxFcbx->pFobxLastWriteTime = NULL;
+
         Log(("VBOXSF: vbsfNtSetEndOfFile: VbglR0SfFsInfo new allocation size = %RX64\n",
              pObjInfo->cbAllocated));
 
@@ -1499,7 +1587,7 @@ static NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
 
     /* Must close the file before renaming it! */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx);
+        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx, VBoxMRxGetFcbExtension(capFcb));
 
     /* Mark it as renamed, so we do nothing during close */
     SetFlag(pSrvOpen->Flags, SRVOPEN_FLAG_FILE_RENAMED);
@@ -1547,7 +1635,8 @@ static NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
  * Handle NtSetInformationFile and similar requests.
  *
  * The RDBSS code has done various things before we get here wrt locking and
- * request pre-processing.
+ * request pre-processing.  It will normally acquire an exclusive lock, but not
+ * if this is related to a page file (FCB_STATE_PAGING_FILE set).
  */
 NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
 {
@@ -1595,16 +1684,25 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
      *     db 4                    ; 74      FileStorageReserveIdInformation,
      *     db 4                    ; 75      FileCaseSensitiveInformationForceAccessCheck, - for the i/o manager, w10-1809.
      */
-
     switch (RxContext->Info.FileInformationClass)
     {
         /*
          * This is used to modify timestamps and attributes.
+         *
+         * Upon successful return, RDBSS will ensure that FILE_ATTRIBUTE_DIRECTORY is set
+         * according to the FCB object type (see RxFinishFcbInitialization in path.cpp),
+         * and that the  FILE_ATTRIBUTE_TEMPORARY attribute is reflected in  FcbState
+         * (FCB_STATE_TEMPORARY) and the file object flags (FO_TEMPORARY_FILE).  It will
+         * also copy each non-zero timestamp into the FCB and set the corresponding
+         * FOBX_FLAG_USER_SET_xxxx flag in the FOBX.
+         *
+         * RDBSS behaviour is idential between 16299.0/w10 and 7600.16385.1/wnet.
          */
         case FileBasicInformation:
         {
             Assert(RxContext->Info.Length >= sizeof(FILE_BASIC_INFORMATION));
-            Status = vbsfNtSetBasicInfo(pVBoxFobx, pNetRootExtension, (PFILE_BASIC_INFORMATION)RxContext->Info.Buffer);
+            Status = vbsfNtSetBasicInfo(pVBoxFobx, pNetRootExtension, VBoxMRxGetFcbExtension(capFcb),
+                                        (PFILE_BASIC_INFORMATION)RxContext->Info.Buffer);
             break;
         }
 

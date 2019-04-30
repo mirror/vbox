@@ -233,6 +233,7 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
     RxCaptureFobx;
 
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
+    PVBSFNTFCBEXT pVBoxFcbx = VBoxMRxGetFcbExtension(capFcb);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
 
     PLOWIO_CONTEXT LowIoContext = &RxContext->LowIoContext;
@@ -307,11 +308,14 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
 
     Status = vbsfNtVBoxStatusToNt(vrc);
 
-    if (Status != STATUS_SUCCESS)
+    if (Status == STATUS_SUCCESS)
     {
-        /* Nothing read. */
-        ByteCount = 0;
+        pVBoxFobx->fTimestampsImplicitlyUpdated |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
+        if (pVBoxFcbx->pFobxLastAccessTime != pVBoxFobx)
+            pVBoxFcbx->pFobxLastAccessTime = NULL;
     }
+    else
+        ByteCount = 0; /* Nothing read. */
 
     RxContext->InformationToReturn = ByteCount;
 
@@ -377,6 +381,7 @@ static NTSTATUS vbsfWriteInternal(IN PRX_CONTEXT RxContext)
     RxCaptureFobx;
 
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
+    PVBSFNTFCBEXT pVBoxFcbx = VBoxMRxGetFcbExtension(capFcb);
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
 
     PLOWIO_CONTEXT LowIoContext  = &RxContext->LowIoContext;
@@ -428,11 +433,14 @@ static NTSTATUS vbsfWriteInternal(IN PRX_CONTEXT RxContext)
 
     Status = vbsfNtVBoxStatusToNt(vrc);
 
-    if (Status != STATUS_SUCCESS)
+    if (Status == STATUS_SUCCESS)
     {
-        /* Nothing written. */
-        ByteCount = 0;
+        pVBoxFobx->fTimestampsImplicitlyUpdated |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
+        if (pVBoxFcbx->pFobxLastWriteTime != pVBoxFobx)
+            pVBoxFcbx->pFobxLastWriteTime = NULL;
     }
+    else
+        ByteCount = 0; /* Nothing written. */
 
     RxContext->InformationToReturn = ByteCount;
 
