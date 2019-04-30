@@ -342,6 +342,8 @@ static const RTGETOPTDEF g_aCmdOptions[] =
 {
     { "--dir",              'd', RTGETOPT_REQ_STRING  },
     { "--relative-dir",     'r', RTGETOPT_REQ_NOTHING },
+    { "--comms-dir",        'c', RTGETOPT_REQ_STRING  },
+    { "--comms-slave",      'C', RTGETOPT_REQ_NOTHING },
     { "--seconds",          's', RTGETOPT_REQ_UINT32  },
     { "--milliseconds",     'm', RTGETOPT_REQ_UINT64  },
 
@@ -505,6 +507,11 @@ static size_t       g_cchEmptyDir;
 /** The length of g_szDeepDir. */
 static size_t       g_cchDeepDir;
 
+/** The length of g_szCommsDir. */
+static size_t       g_cchCommsDir;
+/** The length of g_szCommsSubDir. */
+static size_t       g_cchCommsSubDir;
+
 /** The test directory (absolute).  This will always have a trailing slash. */
 static char         g_szDir[FSPERF_MAX_PATH];
 /** The test directory (absolute), 2nd copy for use with InDir2().  */
@@ -514,6 +521,11 @@ static char         g_szEmptyDir[FSPERF_MAX_PATH];
 /** The deep test directory (absolute). This will always have a trailing slash. */
 static char         g_szDeepDir[FSPERF_MAX_PATH + _1K];
 
+/** The communcations directory.  This will always have a trailing slash. */
+static char         g_szCommsDir[FSPERF_MAX_PATH];
+/** The communcations subdirectory used for the actual communication.  This will
+ * always have a trailing slash. */
+static char         g_szCommsSubDir[FSPERF_MAX_PATH];
 
 /**
  * Yield the CPU and stuff before starting a test run.
@@ -615,6 +627,488 @@ DECLINLINE(char *) InDeepDir(const char *pszAppend, size_t cchAppend)
     memcpy(&g_szDeepDir[g_cchDeepDir], pszAppend, cchAppend);
     g_szDeepDir[g_cchDeepDir + cchAppend] = '\0';
     return &g_szDeepDir[0];
+}
+
+
+
+/*********************************************************************************************************************************
+*   Slave FsPerf Instance Interaction.                                                                                           *
+*********************************************************************************************************************************/
+
+/**
+ * Construct a path relative to the comms directory.
+ *
+ * @returns g_szCommsDir.
+ * @param   pszAppend           What to append.
+ * @param   cchAppend           How much to append.
+ */
+DECLINLINE(char *) InCommsDir(const char *pszAppend, size_t cchAppend)
+{
+    Assert(g_szCommsDir[g_cchCommsDir - 1] == RTPATH_SLASH);
+    memcpy(&g_szCommsDir[g_cchCommsDir], pszAppend, cchAppend);
+    g_szCommsDir[g_cchCommsDir + cchAppend] = '\0';
+    return &g_szCommsDir[0];
+}
+
+
+/**
+ * Construct a path relative to the comms sub-directory.
+ *
+ * @returns g_szCommsSubDir.
+ * @param   pszAppend           What to append.
+ * @param   cchAppend           How much to append.
+ */
+DECLINLINE(char *) InCommsSubDir(const char *pszAppend, size_t cchAppend)
+{
+    Assert(g_szCommsSubDir[g_cchCommsSubDir - 1] == RTPATH_SLASH);
+    memcpy(&g_szCommsSubDir[g_cchCommsSubDir], pszAppend, cchAppend);
+    g_szCommsSubDir[g_cchCommsSubDir + cchAppend] = '\0';
+    return &g_szCommsSubDir[0];
+}
+
+
+/**
+ * Creates a file under g_szCommsDir with the given content.
+ *
+ * Will modify g_szCommsDir to contain the given filename.
+ *
+ * @returns IPRT status code (fully bitched).
+ * @param   pszFilename         The filename.
+ * @param   cchFilename         The length of the filename.
+ * @param   pszContent          The file content.
+ * @param   cchContent          The length of the file content.
+ */
+static int FsPerfCommsWriteFile(const char *pszFilename, size_t cchFilename, const char *pszContent, size_t cchContent)
+{
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, InCommsDir(pszFilename, cchFilename),
+                        RTFILE_O_WRITE | RTFILE_O_DENY_NONE | RTFILE_O_CREATE_REPLACE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileWrite(hFile, pszContent, cchContent, NULL);
+        if (RT_FAILURE(rc))
+            RTMsgError("Error writing %#zx bytes to '%s': %Rrc", cchContent, g_szCommsDir, rc);
+
+        int rc2 = RTFileClose(hFile);
+        if (RT_FAILURE(rc2))
+        {
+            RTMsgError("Error closing to '%s': %Rrc", g_szCommsDir, rc);
+            rc = rc2;
+        }
+        if (RT_FAILURE(rc))
+            RTFileDelete(g_szCommsDir);
+    }
+    else
+        RTMsgError("Failed to create '%s': %Rrc", g_szCommsDir, rc);
+    return rc;
+}
+
+
+/**
+ * Creates a file under g_szCommsDir with the given content, then renames it
+ * into g_szCommsSubDir.
+ *
+ * Will modify g_szCommsSubDir to contain the final filename and g_szCommsDir to
+ * hold the temporary one.
+ *
+ * @returns IPRT status code (fully bitched).
+ * @param   pszFilename         The filename.
+ * @param   cchFilename         The length of the filename.
+ * @param   pszContent          The file content.
+ * @param   cchContent          The length of the file content.
+ */
+static int FsPerfCommsWriteFileAndRename(const char *pszFilename, size_t cchFilename, const char *pszContent, size_t cchContent)
+{
+    int rc = FsPerfCommsWriteFile(pszFilename, cchFilename, pszContent, cchContent);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileRename(g_szCommsDir, InCommsSubDir(pszFilename, cchFilename), RTPATHRENAME_FLAGS_REPLACE);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Error renaming '%s' to '%s': %Rrc", g_szCommsDir, g_szCommsSubDir, rc);
+            RTFileDelete(g_szCommsDir);
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Reads the given file from the comms subdir, ensuring that it is terminated by
+ * an EOF (0x1d) character.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_TRY_AGAIN if the file is incomplete.
+ * @retval  VERR_FILE_TOO_BIG if the file is considered too big.
+ * @retval  VERR_FILE_NOT_FOUND if not found.
+ *
+ * @param   iSeqNo        The sequence number.
+ * @param   pszSuffix     The filename suffix.
+ * @param   ppszContent   Where to return the content.
+ */
+static int FsPerfCommsReadFile(uint32_t iSeqNo, const char *pszSuffix, char **ppszContent)
+{
+    *ppszContent = NULL;
+
+    RTStrPrintf(&g_szCommsSubDir[g_cchCommsSubDir], sizeof(g_szCommsSubDir) - g_cchCommsSubDir, "%u%s", iSeqNo, pszSuffix);
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, g_szCommsSubDir, RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cbUsed  = 0;
+        size_t cbAlloc = 16; /// @todo _1K
+        char  *pszBuf  = (char *)RTMemAllocZ(cbAlloc);
+        for (;;)
+        {
+            /* Do buffer resizing. */
+            size_t cbMaxRead = cbAlloc - cbUsed - 1;
+            if (cbMaxRead < 8)
+            {
+                if (cbAlloc < _1M)
+                {
+                    cbAlloc *= 2;
+                    void *pvRealloced = RTMemRealloc(pszBuf, cbAlloc);
+                    if (!pvRealloced)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                    pszBuf = (char *)pvRealloced;
+                    RT_BZERO(&pszBuf[cbAlloc / 2], cbAlloc);
+                    cbMaxRead = cbAlloc - cbUsed - 1;
+                }
+                else
+                {
+                    RTMsgError("File '%s' is too big - giving up at 1MB", g_szCommsSubDir);
+                    rc = VERR_FILE_TOO_BIG;
+                    break;
+                }
+            }
+
+            /* Do the reading. */
+            size_t cbActual = 0;
+            rc = RTFileRead(hFile, &pszBuf[cbUsed], cbMaxRead, &cbActual);
+            if (RT_FAILURE(rc))
+            {
+                RTMsgError("Failed to read '%s': %Rrc", g_szCommsSubDir, rc);
+                break;
+            }
+
+            /* EOF? */
+            if (cbActual < cbMaxRead)
+                break;
+        }
+
+        RTFileClose(hFile);
+
+        /*
+         * Check if the file ends with the EOF marker.
+         */
+        if (   RT_SUCCESS(rc)
+            && (   cbUsed == 0
+                || pszBuf[cbUsed - 1] != 0x1a))
+            rc = VERR_TRY_AGAIN;
+
+        /*
+         * Return or free the content we've read.
+         */
+        if (RT_SUCCESS(rc))
+            *ppszContent = pszBuf;
+        else
+            RTMemFree(pszBuf);
+    }
+    else if (rc != VERR_FILE_NOT_FOUND && rc != VERR_SHARING_VIOLATION)
+        RTMsgError("Failed to open '%s': %Rrc", g_szCommsSubDir, rc);
+    return rc;
+}
+
+
+/**
+ * FsPerfCommsReadFile + renaming from the comms subdir to the comms dir.
+ *
+ * g_szCommsSubDir holds the original filename and g_szCommsDir the final
+ * filename on success.
+ */
+static int FsPerfCommsReadFileAndRename(uint32_t iSeqNo, const char *pszSuffix, const char *pszRenameSuffix, char **ppszContent)
+{
+    RTStrPrintf(&g_szCommsDir[g_cchCommsDir], sizeof(g_szCommsDir) - g_cchCommsDir, "%u%s", iSeqNo, pszRenameSuffix);
+    int rc = FsPerfCommsReadFile(iSeqNo, pszSuffix, ppszContent);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTFileRename(g_szCommsSubDir, g_szCommsDir, RTPATHRENAME_FLAGS_REPLACE);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("Error renaming '%s' to '%s': %Rrc", g_szCommsSubDir, g_szCommsDir, rc);
+            RTMemFree(*ppszContent);
+            *ppszContent = NULL;
+        }
+    }
+    return rc;
+}
+
+
+typedef struct FSPERFCOMMSSLAVESTATE
+{
+    uint32_t        iSeqNo;
+    bool            fTerminate;
+    RTEXITCODE      rcExit;
+    RTFILE          ahFiles[8];
+    char           *apszFilenames[8];
+    /** The current line number. */
+    uint32_t        iLineNo;
+    /** The current line content. */
+    const char     *pszLine;
+    /** Where to return extra error info text. */
+    RTERRINFOSTATIC ErrInfo;
+} FSPERFCOMMSSLAVESTATE;
+
+
+static void FsPerfSlaveStateInit(FSPERFCOMMSSLAVESTATE *pState)
+{
+    pState->iSeqNo     = 0;
+    pState->fTerminate = false;
+    pState->rcExit     = RTEXITCODE_SUCCESS;
+    unsigned i = RT_ELEMENTS(pState->ahFiles);
+    while (i-- > 0)
+    {
+        pState->ahFiles[i]       = NIL_RTFILE;
+        pState->apszFilenames[i] = NULL;
+    }
+    RTErrInfoInitStatic(&pState->ErrInfo);
+}
+
+
+static void FsPerfSlaveStateCleanup(FSPERFCOMMSSLAVESTATE *pState)
+{
+    unsigned i = RT_ELEMENTS(pState->ahFiles);
+    while (i-- > 0)
+    {
+        if (pState->ahFiles[i] != NIL_RTFILE)
+        {
+            RTFileClose(pState->ahFiles[i]);
+            pState->ahFiles[i] = NIL_RTFILE;
+        }
+        if (pState->apszFilenames[i] != NULL)
+        {
+            RTStrFree(pState->apszFilenames[i]);
+            pState->apszFilenames[i] = NULL;
+        }
+    }
+}
+
+
+static int FsPerfSlaveSyntax(FSPERFCOMMSSLAVESTATE *pState, const char *pszError, ...)
+{
+    va_list va;
+    va_start(va, pszError);
+    RTErrInfoSetF(&pState->ErrInfo.Core, VERR_PARSE_ERROR, "line %u: syntax error: %N", pState->iLineNo, pszError, &va);
+    va_end(va);
+    return VERR_PARSE_ERROR;
+}
+
+
+static int FsPerfSlaveHandleOpen(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs)
+{
+    RT_NOREF(pState, papszArgs, cArgs);
+    return VINF_SUCCESS;
+}
+
+
+static int FsPerfSlaveHandleClose(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs)
+{
+    /*
+     * Parse parameters.
+     */
+    if (cArgs != 1 + 1)
+        return FsPerfSlaveSyntax(pState, "The 'close' command takes 1 argument, not %u", cArgs);
+    uint32_t idxFile;
+    int rc = RTStrToUInt32Full(papszArgs[1], 0, &idxFile);
+    if (RT_FAILURE(rc))
+        return FsPerfSlaveSyntax(pState, "Invalid 'close' argument #1 (%Rrc): %s", rc, papszArgs[1]);
+    if (idxFile >= RT_ELEMENTS(pState->ahFiles))
+        return FsPerfSlaveSyntax(pState, "The 'close' argument idxFile is out of range: %u", idxFile);
+
+    /*
+     * Do it.
+     */
+    rc = RTFileClose(pState->ahFiles[idxFile]);
+    if (RT_SUCCESS(rc))
+        pState->ahFiles[idxFile] = NIL_RTFILE;
+
+    return rc;
+}
+
+
+/**
+ * Executes a script line.
+ */
+static int FsPerfSlaveExecuteLine(FSPERFCOMMSSLAVESTATE *pState, char *pszLine)
+{
+    /*
+     * Parse the command line using bourne shell quoting style.
+     */
+    char **papszArgs;
+    int    cArgs;
+    int rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszLine, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(&pState->ErrInfo.Core, rc, "Failed to parse line %u: %s", pState->iLineNo, pszLine);
+    if (cArgs <= 0)
+    {
+        RTGetOptArgvFree(papszArgs);
+        return RTErrInfoSetF(&pState->ErrInfo.Core, rc, "No command found on line %u: %s", pState->iLineNo, pszLine);
+    }
+
+    /*
+     * Execute the command.
+     */
+    static const struct
+    {
+        const char *pszCmd;
+        size_t      cchCmd;
+        int (*pfnHandler)(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs);
+    } s_aHandlers[] =
+    {
+        { RT_STR_TUPLE("open"),     FsPerfSlaveHandleOpen },
+        { RT_STR_TUPLE("close"),    FsPerfSlaveHandleClose },
+    };
+    const char * const pszCmd = papszArgs[0];
+    size_t       const cchCmd = strlen(pszCmd);
+    for (size_t i = 0; i < RT_ELEMENTS(s_aHandlers); i++)
+        if (   s_aHandlers[i].cchCmd == cchCmd
+            && memcmp(pszCmd, s_aHandlers[i].pszCmd, cchCmd) == 0)
+        {
+            rc = s_aHandlers[i].pfnHandler(pState, papszArgs, cArgs);
+            RTGetOptArgvFree(papszArgs);
+            return rc;
+        }
+
+    rc = RTErrInfoSetF(&pState->ErrInfo.Core, VERR_NOT_FOUND, "Command on line %u not found: %s", pState->iLineNo, pszLine);
+    RTGetOptArgvFree(papszArgs);
+    return rc;
+}
+
+
+/**
+ * Executes a script.
+ */
+static int FsPerfSlaveExecuteScript(FSPERFCOMMSSLAVESTATE *pState, char *pszContent)
+{
+    /*
+     * Validate the encoding.
+     */
+    int rc = RTStrValidateEncoding(pszContent);
+    if (RT_FAILURE(rc))
+        return RTErrInfoSetF(&pState->ErrInfo.Core, rc, "Invalid UTF-8 encoding");
+
+    /*
+     * Work the script content line by line.
+     */
+    pState->iLineNo = 0;
+    while (*pszContent != 0x1d && *pszContent != '\0')
+    {
+        pState->iLineNo++;
+
+        /* Figure the current line and move pszContent ahead: */
+        char *pszLine = RTStrStripL(pszContent);
+        char *pszEol  = strchr(pszLine, '\n');
+        if (pszEol)
+            pszContent = pszEol + 1;
+        else
+        {
+            pszEol = strchr(pszLine, 0x1d);
+            AssertStmt(pszEol, pszEol = strchr(pszLine, '\0'));
+            pszContent = pszEol;
+        }
+
+        /* Terminate and strip it: */
+        *pszEol = '\0';
+        pszLine = RTStrStrip(pszLine);
+
+        /* Skip empty lines and comment lines: */
+        if (*pszLine == '\0' || *pszLine == '#')
+            continue;
+
+        /* Execute the line: */
+        pState->pszLine = pszLine;
+        rc = FsPerfSlaveExecuteLine(pState, pszLine);
+        if (RT_FAILURE(rc))
+            break;
+    }
+    return rc;
+}
+
+
+/**
+ * Communication slave.
+ *
+ * @returns exit code.
+ */
+static int FsPerfCommsSlave(void)
+{
+    /*
+     * Make sure we've got a directory and create it and it's subdir.
+     */
+    if (g_cchCommsDir == 0)
+        return RTMsgError("no communcation directory was specified (-C)");
+
+    int rc = RTDirCreateFullPath(g_szCommsSubDir, 0775);
+    if (RT_FAILURE(rc))
+        return RTMsgError("Failed to create '%s': %Rrc", g_szCommsSubDir, rc);
+
+    /*
+     * Signal that we're here.
+     */
+    char szTmp[_4K];
+    rc = FsPerfCommsWriteFile(RT_STR_TUPLE("slave.pid"), szTmp, RTStrPrintf(szTmp, sizeof(szTmp), "%u\x1d", RTProcSelf()));
+    if (RT_FAILURE(rc))
+        return RTEXITCODE_FAILURE;
+
+    /*
+     * Processing loop.
+     */
+    FSPERFCOMMSSLAVESTATE State;
+    FsPerfSlaveStateInit(&State);
+    while (!State.fTerminate)
+    {
+        /*
+         * Try read the next command script.
+         */
+        char *pszContent = NULL;
+        rc = FsPerfCommsReadFileAndRename(State.iSeqNo, "-order.send", "-order.ack", &pszContent);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Execute it.
+             */
+            RTErrInfoInitStatic(&State.ErrInfo);
+            rc = FsPerfSlaveExecuteScript(&State, pszContent);
+
+            /*
+             * Write the result.
+             */
+            char   szResult[64];
+            size_t cchResult = RTStrPrintf(szResult, sizeof(szResult), "%u-order.done", State.iSeqNo);
+            size_t cchTmp    = RTStrPrintf(szTmp, sizeof(szTmp), "%d\n%s\x1d",
+                                           rc, RTErrInfoIsSet(&State.ErrInfo.Core) ? State.ErrInfo.Core.pszMsg : "");
+            FsPerfCommsWriteFile(szResult, cchResult, szTmp, cchTmp);
+            State.iSeqNo++;
+        }
+
+        /*
+         * Wait a little and check again.
+         */
+        if (rc == VERR_TRY_AGAIN || rc == VERR_SHARING_VIOLATION)
+            RTThreadSleep(8);
+        else
+            RTThreadSleep(64);
+    }
+
+    /*
+     * Remove the we're here indicator and quit.
+     */
+    RTFileDelete(InCommsDir(RT_STR_TUPLE("slave.pid")));
+    FsPerfSlaveStateCleanup(&State);
+    return State.rcExit;
 }
 
 
@@ -4440,6 +4934,8 @@ int main(int argc, char *argv[])
     const char *pszDir = szDefaultDir;
     RTStrPrintf(szDefaultDir, sizeof(szDefaultDir), "fstestdir-%u" RTPATH_SLASH_STR, RTProcSelf());
 
+    bool fCommsSlave = false;
+
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, g_aCmdOptions, RT_ELEMENTS(g_aCmdOptions), 1, 0 /* fFlags */);
@@ -4447,6 +4943,32 @@ int main(int argc, char *argv[])
     {
         switch (rc)
         {
+            case 'c':
+                if (!g_fRelativeDir)
+                    rc = RTPathAbs(ValueUnion.psz, g_szCommsDir, sizeof(g_szCommsDir) - 128);
+                else
+                    rc = RTStrCopy(g_szCommsDir, sizeof(g_szCommsDir) - 128, ValueUnion.psz);
+                if (RT_FAILURE(rc))
+                {
+                    RTTestFailed(g_hTest, "%s(%s) failed: %Rrc\n", g_fRelativeDir ? "RTStrCopy" : "RTAbsPath", pszDir, rc);
+                    return RTTestSummaryAndDestroy(g_hTest);
+                }
+                RTPathEnsureTrailingSeparator(g_szCommsDir, sizeof(g_szCommsDir));
+                g_cchCommsDir = strlen(g_szCommsDir);
+
+                rc = RTPathAppend(g_szCommsSubDir, sizeof(g_szCommsSubDir) - 128, "comms" RTPATH_SLASH_STR);
+                if (RT_FAILURE(rc))
+                {
+                    RTTestFailed(g_hTest, "RTPathAppend(%s,,'comms/') failed: %Rrc\n", g_szCommsDir, rc);
+                    return RTTestSummaryAndDestroy(g_hTest);
+                }
+                g_cchCommsSubDir = strlen(g_szCommsSubDir);
+                break;
+
+            case 'C':
+                fCommsSlave = true;
+                break;
+
             case 'd':
                 pszDir = ValueUnion.psz;
                 break;
@@ -4665,6 +5187,12 @@ int main(int argc, char *argv[])
                 return RTGetOptPrintError(rc, &ValueUnion);
         }
     }
+
+    /*
+     * If communcation slave, go do that and be done.
+     */
+    if (fCommsSlave)
+        return FsPerfCommsSlave();
 
     /*
      * Populate g_szDir.
