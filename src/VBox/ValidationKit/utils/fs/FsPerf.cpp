@@ -705,6 +705,8 @@ static int FsPerfCommsWriteFile(const char *pszFilename, size_t cchFilename, con
             RTMsgError("Error closing to '%s': %Rrc", g_szCommsDir, rc);
             rc = rc2;
         }
+        if (RT_SUCCESS(rc) && g_uVerbosity >= 3)
+            RTMsgInfo("comms: wrote '%s'\n", g_szCommsDir);
         if (RT_FAILURE(rc))
             RTFileDelete(g_szCommsDir);
     }
@@ -733,6 +735,8 @@ static int FsPerfCommsWriteFileAndRename(const char *pszFilename, size_t cchFile
     if (RT_SUCCESS(rc))
     {
         rc = RTFileRename(g_szCommsDir, InCommsSubDir(pszFilename, cchFilename), RTPATHRENAME_FLAGS_REPLACE);
+        if (RT_SUCCESS(rc) && g_uVerbosity >= 3)
+            RTMsgInfo("comms: placed '%s'\n", g_szCommsSubDir);
         if (RT_FAILURE(rc))
         {
             RTMsgError("Error renaming '%s' to '%s': %Rrc", g_szCommsDir, g_szCommsSubDir, rc);
@@ -937,10 +941,12 @@ static int FsPerfCommsSend(const char *pszScript)
                 }
 
                 /* Display or return the text? */
+                if (RT_SUCCESS(rc) && g_uVerbosity >= 2)
+                    RTMsgInfo("comms: order #%u: %Rrc%s%s\n",
+                              g_iSeqNoMaster - 1, rcRemote, *pszErrorText ? " - " : "", pszErrorText);
 
                 RTMemFree(pszContent);
                 return rcRemote;
-
             }
 
             if (rc == VERR_TRY_AGAIN)
@@ -949,6 +955,9 @@ static int FsPerfCommsSend(const char *pszScript)
             /* Check for timeout. */
             if (RTTimeMilliTS() - msStart > msTimeout)
             {
+                if (RT_SUCCESS(rc) && g_uVerbosity >= 2)
+                    RTMsgInfo("comms: timed out waiting for order #%u'\n", g_iSeqNoMaster - 1);
+
                 rc = RTFileDelete(InCommsSubDir(szSendNm, cchSendNm));
                 if (RT_SUCCESS(rc))
                 {
@@ -5482,6 +5491,27 @@ static void fsPerfRemote(void)
     RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 4096, NULL), VINF_SUCCESS);
     AssertCompile(RT_ELEMENTS(g_abPattern0) == 1);
     RTTESTI_CHECK(ASMMemIsAllU8(abBuf, 4096, g_abPattern0[0]));
+    RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
+
+    /*
+     * Append a little to it on the host and see that we can read it.
+     */
+    RTTESTI_CHECK_RC(FsPerfCommsSend("writepattern 0 4096 1 1024\n" FSPERF_EOF_STR), VINF_SUCCESS);
+    AssertCompile(RT_ELEMENTS(g_abPattern1) == 1);
+    RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1024, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK(ASMMemIsAllU8(abBuf, 1024, g_abPattern1[0]));
+    RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
+
+    /*
+     * Have the host truncate the file.
+     */
+    RTTESTI_CHECK_RC(FsPerfCommsSend("truncate 0 1024" FSPERF_EOF_STR), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
+    RTTESTI_CHECK_RC(RTFileSeek(hFile0, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1024, NULL), VINF_SUCCESS);
+    AssertCompile(RT_ELEMENTS(g_abPattern0) == 1);
+    RTTESTI_CHECK(ASMMemIsAllU8(abBuf, 4096, g_abPattern0[0]));
+    RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
 
     RTTESTI_CHECK_RC(RTFileClose(hFile0), VINF_SUCCESS);
 
