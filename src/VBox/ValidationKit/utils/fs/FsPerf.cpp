@@ -93,6 +93,11 @@
  * It greatly exceeds the RTPATH_MAX so we can push the limits on windows.  */
 #define FSPERF_MAX_PATH         (_32K)
 
+/** EOF marker character used by the master/slave comms.  */
+#define FSPERF_EOF              0x1a
+/** EOF marker character used by the master/slave comms, string version.  */
+#define FSPERF_EOF_STR          "\x1a"
+
 /** @def FSPERF_TEST_SENDFILE
  * Whether to enable the sendfile() tests. */
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
@@ -320,6 +325,8 @@ enum
     kCmdOpt_AddBlockSize,
     kCmdOpt_Copy,
     kCmdOpt_NoCopy,
+    kCmdOpt_Remote,
+    kCmdOpt_NoRemote,
 
     kCmdOpt_ShowDuration,
     kCmdOpt_NoShowDuration,
@@ -413,6 +420,8 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--add-block-size",   kCmdOpt_AddBlockSize,   RTGETOPT_REQ_UINT32 },
     { "--copy",             kCmdOpt_Copy,           RTGETOPT_REQ_NOTHING },
     { "--no-copy",          kCmdOpt_NoCopy,         RTGETOPT_REQ_NOTHING },
+    { "--remote",           kCmdOpt_Remote,         RTGETOPT_REQ_NOTHING },
+    { "--no-remote",        kCmdOpt_NoRemote,       RTGETOPT_REQ_NOTHING },
 
     { "--show-duration",        kCmdOpt_ShowDuration,       RTGETOPT_REQ_NOTHING },
     { "--no-show-duration",     kCmdOpt_NoShowDuration,     RTGETOPT_REQ_NOTHING },
@@ -470,6 +479,7 @@ static bool         g_fSeek      = true;
 static bool         g_fFSync     = true;
 static bool         g_fMMap      = true;
 static bool         g_fCopy      = true;
+static bool         g_fRemote    = true;
 /** @} */
 
 /** The length of each test run. */
@@ -651,7 +661,6 @@ DECLINLINE(char *) InCommsDir(const char *pszAppend, size_t cchAppend)
 }
 
 
-#if 0 // currently unused
 /**
  * Construct a path relative to the comms sub-directory.
  *
@@ -666,7 +675,6 @@ DECLINLINE(char *) InCommsSubDir(const char *pszAppend, size_t cchAppend)
     g_szCommsSubDir[g_cchCommsSubDir + cchAppend] = '\0';
     return &g_szCommsSubDir[0];
 }
-#endif
 
 
 /**
@@ -706,7 +714,6 @@ static int FsPerfCommsWriteFile(const char *pszFilename, size_t cchFilename, con
 }
 
 
-#if 0 // currently unused
 /**
  * Creates a file under g_szCommsDir with the given content, then renames it
  * into g_szCommsSubDir.
@@ -734,7 +741,6 @@ static int FsPerfCommsWriteFileAndRename(const char *pszFilename, size_t cchFile
     }
     return rc;
 }
-#endif
 
 
 /**
@@ -812,7 +818,7 @@ static int FsPerfCommsReadFile(uint32_t iSeqNo, const char *pszSuffix, char **pp
          */
         if (   RT_SUCCESS(rc)
             && (   cbUsed == 0
-                || pszBuf[cbUsed - 1] != 0x1a))
+                || pszBuf[cbUsed - 1] != FSPERF_EOF))
             rc = VERR_TRY_AGAIN;
 
         /*
@@ -852,6 +858,142 @@ static int FsPerfCommsReadFileAndRename(uint32_t iSeqNo, const char *pszSuffix, 
     return rc;
 }
 
+
+/** The comms master sequence number.   */
+static uint32_t g_iSeqNoMaster = 0;
+
+
+/**
+ * Sends a script to the remote comms slave.
+ *
+ * @returns IPRT status code giving the scripts execution status.
+ * @param   pszScript           The script.
+ */
+static int FsPerfCommsSend(const char *pszScript)
+{
+    /*
+     * Make sure the script is correctly terminated with an EOF control character.
+     */
+    size_t const cchScript = strlen(pszScript);
+    AssertReturn(cchScript > 0 && pszScript[cchScript - 1] == FSPERF_EOF, VERR_INVALID_PARAMETER);
+
+    /*
+     * Make sure the comms slave is running.
+     */
+    if (!RTFileExists(InCommsDir(RT_STR_TUPLE("slave.pid"))))
+        return VERR_PIPE_NOT_CONNECTED;
+
+    /*
+     * Format all the names we might want to check for.
+     */
+    char         szSendNm[32];
+    size_t const cchSendNm = RTStrPrintf(szSendNm, sizeof(szSendNm), "%u-order.send", g_iSeqNoMaster);
+
+    char         szAckNm[64];
+    size_t const cchAckNm  = RTStrPrintf(szAckNm, sizeof(szAckNm),   "%u-order.ack", g_iSeqNoMaster);
+
+    /*
+     * Produce the script file and submit it.
+     */
+    int rc = FsPerfCommsWriteFileAndRename(szSendNm, cchSendNm, pszScript, cchScript);
+    if (RT_SUCCESS(rc))
+    {
+        g_iSeqNoMaster++;
+
+        /*
+         * Wait for the result.
+         */
+        uint64_t const msTimeout = RT_MS_1MIN / 2;
+        uint64_t msStart         = RTTimeMilliTS();
+        uint32_t msSleepX4       = 4;
+        for (;;)
+        {
+            /* Try read the result file: */
+            char *pszContent = NULL;
+            rc = FsPerfCommsReadFile(g_iSeqNoMaster - 1, "-order.done", &pszContent);
+            if (RT_SUCCESS(rc))
+            {
+                /* Split the result content into status code and error text: */
+                char *pszErrorText = strchr(pszContent, '\n');
+                if (pszErrorText)
+                {
+                    *pszErrorText = '\0';
+                    pszErrorText++;
+                }
+                else
+                {
+                    char *pszEnd = strchr(pszContent, '\0');
+                    Assert(pszEnd[-1] == FSPERF_EOF);
+                    pszEnd[-1] = '\0';
+                }
+
+                /* Parse the status code: */
+                int32_t rcRemote = VERR_GENERAL_FAILURE;
+                rc = RTStrToInt32Full(pszContent, 0,  &rcRemote);
+                if (rc != VINF_SUCCESS)
+                {
+                    RTTestIFailed("FsPerfCommsSend: Failed to convert status code '%s'", pszContent);
+                    rcRemote = VERR_GENERAL_FAILURE;
+                }
+
+                /* Display or return the text? */
+
+                RTMemFree(pszContent);
+                return rcRemote;
+
+            }
+
+            if (rc == VERR_TRY_AGAIN)
+                msSleepX4 = 4;
+
+            /* Check for timeout. */
+            if (RTTimeMilliTS() - msStart > msTimeout)
+            {
+                rc = RTFileDelete(InCommsSubDir(szSendNm, cchSendNm));
+                if (RT_SUCCESS(rc))
+                {
+                    g_iSeqNoMaster--;
+                    rc = VERR_TIMEOUT;
+                }
+                else if (RTFileExists(InCommsDir(szAckNm, cchAckNm)))
+                    rc = VERR_PIPE_BUSY;
+                else
+                    rc = VERR_PIPE_IO_ERROR;
+                break;
+            }
+
+            /* Sleep a little while. */
+            msSleepX4++;
+            RTThreadSleep(msSleepX4 / 4);
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Shuts down the comms slave if it exists.
+ */
+static void FsPerfCommsShutdownSlave(void)
+{
+    static bool s_fAlreadyShutdown = false;
+    if (g_szCommsDir[0] != '\0' && !s_fAlreadyShutdown)
+    {
+        s_fAlreadyShutdown = true;
+        FsPerfCommsSend("exit" FSPERF_EOF_STR);
+
+        g_szCommsDir[g_cchCommsDir] = '\0';
+        int rc = RTDirRemoveRecursive(g_szCommsDir, RTDIRRMREC_F_CONTENT_AND_DIR | (g_fRelativeDir ? RTDIRRMREC_F_NO_ABS_PATH : 0));
+        if (RT_FAILURE(rc))
+            RTTestFailed(g_hTest, "RTDirRemoveRecursive(%s,) -> %Rrc\n", g_szCommsDir, rc);
+    }
+}
+
+
+
+/*********************************************************************************************************************************
+*   Comms Slave                                                                                                                  *
+*********************************************************************************************************************************/
 
 typedef struct FSPERFCOMMSSLAVESTATE
 {
@@ -1211,7 +1353,7 @@ static int FsPerfSlaveHandleWritePattern(FSPERFCOMMSSLAVESTATE *pState, char **p
         }
 
         offFile   += cbThisWrite;
-        cbToWrite += cbThisWrite;
+        cbToWrite -= cbThisWrite;
     }
 
     RTMemTmpFree(pbBuf);
@@ -1476,7 +1618,7 @@ static int FsPerfSlaveExecuteScript(FSPERFCOMMSSLAVESTATE *pState, char *pszCont
      * Work the script content line by line.
      */
     pState->iLineNo = 0;
-    while (*pszContent != 0x1a && *pszContent != '\0')
+    while (*pszContent != FSPERF_EOF && *pszContent != '\0')
     {
         pState->iLineNo++;
 
@@ -1487,7 +1629,7 @@ static int FsPerfSlaveExecuteScript(FSPERFCOMMSSLAVESTATE *pState, char *pszCont
             pszContent = pszEol + 1;
         else
         {
-            pszEol = strchr(pszLine, 0x1a);
+            pszEol = strchr(pszLine, FSPERF_EOF);
             AssertStmt(pszEol, pszEol = strchr(pszLine, '\0'));
             pszContent = pszEol;
         }
@@ -1531,7 +1673,8 @@ static int FsPerfCommsSlave(void)
      * Signal that we're here.
      */
     char szTmp[_4K];
-    rc = FsPerfCommsWriteFile(RT_STR_TUPLE("slave.pid"), szTmp, RTStrPrintf(szTmp, sizeof(szTmp), "%u\x1a", RTProcSelf()));
+    rc = FsPerfCommsWriteFile(RT_STR_TUPLE("slave.pid"), szTmp, RTStrPrintf(szTmp, sizeof(szTmp),
+                                                                            "%u" FSPERF_EOF_STR, RTProcSelf()));
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
@@ -1561,9 +1704,9 @@ static int FsPerfCommsSlave(void)
              */
             char   szResult[64];
             size_t cchResult = RTStrPrintf(szResult, sizeof(szResult), "%u-order.done", State.iSeqNo);
-            size_t cchTmp    = RTStrPrintf(szTmp, sizeof(szTmp), "%d\n%s\x1a",
+            size_t cchTmp    = RTStrPrintf(szTmp, sizeof(szTmp), "%d\n%s" FSPERF_EOF_STR,
                                            rc, RTErrInfoIsSet(&State.ErrInfo.Core) ? State.ErrInfo.Core.pszMsg : "");
-            FsPerfCommsWriteFile(szResult, cchResult, szTmp, cchTmp);
+            FsPerfCommsWriteFileAndRename(szResult, cchResult, szTmp, cchTmp);
             State.iSeqNo++;
 
             msSleep = 1;
@@ -5318,6 +5461,34 @@ static void fsPerfCopy(void)
 }
 
 
+static void fsPerfRemote(void)
+{
+    RTTestISub("remote");
+    uint8_t abBuf[16384];
+
+
+    /*
+     * Create a file on the remote end and check that we can immediately see it.
+     */
+    RTTESTI_CHECK_RC_RETV(FsPerfCommsSend("reset\n"
+                                          "open         0 'file30' 'w' 'ca'\n"
+                                          "writepattern 0 0 0 4096\n" FSPERF_EOF_STR), VINF_SUCCESS);
+
+    RTFILEACTION enmActuallyTaken = RTFILEACTION_END;
+    RTFILE       hFile0 = NIL_RTFILE;
+    RTTESTI_CHECK_RC(RTFileOpenEx(InDir(RT_STR_TUPLE("file30")), RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
+                                  &hFile0, &enmActuallyTaken), VINF_SUCCESS);
+    RTTESTI_CHECK(enmActuallyTaken == RTFILEACTION_OPENED);
+    RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 4096, NULL), VINF_SUCCESS);
+    AssertCompile(RT_ELEMENTS(g_abPattern0) == 1);
+    RTTESTI_CHECK(ASMMemIsAllU8(abBuf, 4096, g_abPattern0[0]));
+
+    RTTESTI_CHECK_RC(RTFileClose(hFile0), VINF_SUCCESS);
+
+}
+
+
+
 /**
  * Display the usage to @a pStrm.
  */
@@ -5500,6 +5671,7 @@ int main(int argc, char *argv[])
                 g_fFSync     = true;
                 g_fMMap      = true;
                 g_fCopy      = true;
+                g_fRemote    = true;
                 break;
 
             case 'z':
@@ -5532,6 +5704,7 @@ int main(int argc, char *argv[])
                 g_fFSync     = false;
                 g_fMMap      = false;
                 g_fCopy      = false;
+                g_fRemote    = false;
                 break;
 
 #define CASE_OPT(a_Stem) \
@@ -5566,6 +5739,7 @@ int main(int argc, char *argv[])
             CASE_OPT(MMap);
             CASE_OPT(IgnoreNoCache);
             CASE_OPT(Copy);
+            CASE_OPT(Remote);
 
             CASE_OPT(ShowDuration);
             CASE_OPT(ShowIterations);
@@ -5753,9 +5927,15 @@ int main(int argc, char *argv[])
                     fsPerfIo();
                 if (g_fCopy)
                     fsPerfCopy();
+                if (g_fRemote && g_szCommsDir[0] != '\0')
+                    fsPerfRemote();
             }
 
-            /* Cleanup: */
+            /*
+             * Cleanup:
+             */
+            FsPerfCommsShutdownSlave();
+
             g_szDir[g_cchDir] = '\0';
             rc = RTDirRemoveRecursive(g_szDir, RTDIRRMREC_F_CONTENT_AND_DIR | (g_fRelativeDir ? RTDIRRMREC_F_NO_ABS_PATH : 0));
             if (RT_FAILURE(rc))
@@ -5766,6 +5946,8 @@ int main(int argc, char *argv[])
     }
     else
         RTTestFailed(g_hTest, "Test directory already exists: %s\n", g_szDir);
+
+    FsPerfCommsShutdownSlave();
 
     return RTTestSummaryAndDestroy(g_hTest);
 }
