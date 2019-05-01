@@ -651,6 +651,7 @@ DECLINLINE(char *) InCommsDir(const char *pszAppend, size_t cchAppend)
 }
 
 
+#if 0 // currently unused
 /**
  * Construct a path relative to the comms sub-directory.
  *
@@ -665,6 +666,7 @@ DECLINLINE(char *) InCommsSubDir(const char *pszAppend, size_t cchAppend)
     g_szCommsSubDir[g_cchCommsSubDir + cchAppend] = '\0';
     return &g_szCommsSubDir[0];
 }
+#endif
 
 
 /**
@@ -737,7 +739,7 @@ static int FsPerfCommsWriteFileAndRename(const char *pszFilename, size_t cchFile
 
 /**
  * Reads the given file from the comms subdir, ensuring that it is terminated by
- * an EOF (0x1d) character.
+ * an EOF (0x1a) character.
  *
  * @returns IPRT status code.
  * @retval  VERR_TRY_AGAIN if the file is incomplete.
@@ -758,7 +760,7 @@ static int FsPerfCommsReadFile(uint32_t iSeqNo, const char *pszSuffix, char **pp
     if (RT_SUCCESS(rc))
     {
         size_t cbUsed  = 0;
-        size_t cbAlloc = 16; /// @todo _1K
+        size_t cbAlloc = 1024;
         char  *pszBuf  = (char *)RTMemAllocZ(cbAlloc);
         for (;;)
         {
@@ -790,7 +792,9 @@ static int FsPerfCommsReadFile(uint32_t iSeqNo, const char *pszSuffix, char **pp
             /* Do the reading. */
             size_t cbActual = 0;
             rc = RTFileRead(hFile, &pszBuf[cbUsed], cbMaxRead, &cbActual);
-            if (RT_FAILURE(rc))
+            if (RT_SUCCESS(rc))
+                cbUsed += cbActual;
+            else
             {
                 RTMsgError("Failed to read '%s': %Rrc", g_szCommsSubDir, rc);
                 break;
@@ -856,6 +860,9 @@ typedef struct FSPERFCOMMSSLAVESTATE
     RTEXITCODE      rcExit;
     RTFILE          ahFiles[8];
     char           *apszFilenames[8];
+
+    /** The current command. */
+    const char     *pszCommand;
     /** The current line number. */
     uint32_t        iLineNo;
     /** The current line content. */
@@ -899,45 +906,501 @@ static void FsPerfSlaveStateCleanup(FSPERFCOMMSSLAVESTATE *pState)
 }
 
 
+/** Helper reporting a error. */
+static int FsPerfSlaveError(FSPERFCOMMSSLAVESTATE *pState, int rc, const char *pszError, ...)
+{
+    va_list va;
+    va_start(va, pszError);
+    RTErrInfoSetF(&pState->ErrInfo.Core, VERR_PARSE_ERROR, "line %u: %s: error: %N",
+                  pState->iLineNo, pState->pszCommand, pszError, &va);
+    va_end(va);
+    return rc;
+}
+
+
+/** Helper reporting a syntax error. */
 static int FsPerfSlaveSyntax(FSPERFCOMMSSLAVESTATE *pState, const char *pszError, ...)
 {
     va_list va;
     va_start(va, pszError);
-    RTErrInfoSetF(&pState->ErrInfo.Core, VERR_PARSE_ERROR, "line %u: syntax error: %N", pState->iLineNo, pszError, &va);
+    RTErrInfoSetF(&pState->ErrInfo.Core, VERR_PARSE_ERROR, "line %u: %s: syntax error: %N",
+                  pState->iLineNo, pState->pszCommand, pszError, &va);
     va_end(va);
     return VERR_PARSE_ERROR;
 }
 
 
-static int FsPerfSlaveHandleOpen(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs)
+/** Helper for parsing an unsigned 64-bit integer argument. */
+static int FsPerfSlaveParseU64(FSPERFCOMMSSLAVESTATE *pState, const char *pszArg, const char *pszName,
+                               unsigned uBase, uint64_t uMin, uint64_t uLast, uint64_t *puValue)
 {
-    RT_NOREF(pState, papszArgs, cArgs);
+    *puValue = uMin;
+    uint64_t uValue;
+    int rc = RTStrToUInt64Full(pszArg, uBase, &uValue);
+    if (RT_FAILURE(rc))
+        return FsPerfSlaveSyntax(pState, "invalid %s: %s (RTStrToUInt64Full -> %Rrc)", pszName, pszArg, rc);
+    if (uValue < uMin || uValue > uLast)
+        return FsPerfSlaveSyntax(pState, "%s is out of range: %u, valid range %u..%u", pszName, uValue, uMin, uLast);
+    *puValue = uValue;
     return VINF_SUCCESS;
 }
 
 
+/** Helper for parsing an unsigned 32-bit integer argument. */
+static int FsPerfSlaveParseU32(FSPERFCOMMSSLAVESTATE *pState, const char *pszArg, const char *pszName,
+                               unsigned uBase, uint32_t uMin, uint32_t uLast, uint32_t *puValue)
+{
+    *puValue = uMin;
+    uint32_t uValue;
+    int rc = RTStrToUInt32Full(pszArg, uBase, &uValue);
+    if (RT_FAILURE(rc))
+        return FsPerfSlaveSyntax(pState, "invalid %s: %s (RTStrToUInt32Full -> %Rrc)", pszName, pszArg, rc);
+    if (uValue < uMin || uValue > uLast)
+        return FsPerfSlaveSyntax(pState, "%s is out of range: %u, valid range %u..%u", pszName, uValue, uMin, uLast);
+    *puValue = uValue;
+    return VINF_SUCCESS;
+}
+
+
+/** Helper for parsing a file handle index argument.   */
+static int FsPerfSlaveParseFileIdx(FSPERFCOMMSSLAVESTATE *pState, const char *pszArg, uint32_t *pidxFile)
+{
+    return FsPerfSlaveParseU32(pState, pszArg, "file index", 0, 0, RT_ELEMENTS(pState->ahFiles) - 1, pidxFile);
+}
+
+
+/**
+ * 'open {idxFile} {filename} {access} {disposition} [sharing] [mode]'
+ */
+static int FsPerfSlaveHandleOpen(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs)
+{
+    /*
+     * Parse parameters.
+     */
+    if (cArgs > 1 + 6 || cArgs < 1 + 4)
+        return FsPerfSlaveSyntax(pState, "takes four to six arguments, not %u", cArgs);
+
+    uint32_t idxFile;
+    int rc = FsPerfSlaveParseFileIdx(pState, papszArgs[1], &idxFile);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    const char *pszFilename = papszArgs[2];
+
+    uint64_t fOpen = 0;
+    rc = RTFileModeToFlagsEx(papszArgs[3], papszArgs[4], papszArgs[5], &fOpen);
+    if (RT_FAILURE(rc))
+        return FsPerfSlaveSyntax(pState, "failed to parse access (%s), disposition (%s) and sharing (%s): %Rrc",
+                                 papszArgs[3], papszArgs[4], papszArgs[5] ? papszArgs[5] : "", rc);
+
+    uint32_t uMode = 0660;
+    if (cArgs >= 1 + 6)
+    {
+        rc = FsPerfSlaveParseU32(pState, papszArgs[6], "mode", 8, 0, 0777, &uMode);
+        if (RT_FAILURE(rc))
+            return rc;
+        fOpen |= uMode << RTFILE_O_CREATE_MODE_SHIFT;
+    }
+
+    /*
+     * Is there already a file assigned to the file handle index?
+     */
+    if (pState->ahFiles[idxFile] != NIL_RTFILE)
+        return FsPerfSlaveError(pState, VERR_RESOURCE_BUSY, "handle #%u is already in use for '%s'",
+                                idxFile, pState->apszFilenames[idxFile]);
+
+    /*
+     * Check the filename length.
+     */
+    size_t const cchFilename = strlen(pszFilename);
+    if (g_cchDir + cchFilename >= sizeof(g_szDir))
+        return FsPerfSlaveError(pState, VERR_FILENAME_TOO_LONG, "'%.*s%s'", g_cchDir, g_szDir, pszFilename);
+
+    /*
+     * Duplicate the name and execute the command.
+     */
+    char *pszDup = RTStrDup(pszFilename);
+    if (!pszDup)
+        return FsPerfSlaveError(pState, VERR_NO_STR_MEMORY, "out of memory");
+
+    RTFILE hFile = NIL_RTFILE;
+    rc = RTFileOpen(&hFile, InDir(pszFilename, cchFilename), fOpen);
+    if (RT_SUCCESS(rc))
+    {
+        pState->ahFiles[idxFile]       = hFile;
+        pState->apszFilenames[idxFile] = pszDup;
+    }
+    else
+    {
+        RTStrFree(pszDup);
+        rc = FsPerfSlaveError(pState, rc, "%s: %Rrc", pszFilename, rc);
+    }
+    return rc;
+}
+
+
+/**
+ * 'close {idxFile}'
+ */
 static int FsPerfSlaveHandleClose(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs)
 {
     /*
      * Parse parameters.
      */
-    if (cArgs != 1 + 1)
-        return FsPerfSlaveSyntax(pState, "The 'close' command takes 1 argument, not %u", cArgs);
+    if (cArgs > 1 + 1)
+        return FsPerfSlaveSyntax(pState, "takes exactly one argument, not %u", cArgs);
+
     uint32_t idxFile;
-    int rc = RTStrToUInt32Full(papszArgs[1], 0, &idxFile);
+    int rc = FsPerfSlaveParseFileIdx(pState, papszArgs[1], &idxFile);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Do it.
+         */
+        rc = RTFileClose(pState->ahFiles[idxFile]);
+        if (RT_SUCCESS(rc))
+        {
+            pState->ahFiles[idxFile] = NIL_RTFILE;
+            RTStrFree(pState->apszFilenames[idxFile]);
+            pState->apszFilenames[idxFile] = NULL;
+        }
+    }
+    return rc;
+}
+
+/** @name Patterns for 'writepattern'
+ * @{ */
+static uint8_t const g_abPattern0[]  = { 0xf0 };
+static uint8_t const g_abPattern1[]  = { 0xf1 };
+static uint8_t const g_abPattern2[]  = { 0xf2 };
+static uint8_t const g_abPattern3[]  = { 0xf3 };
+static uint8_t const g_abPattern4[]  = { 0xf4 };
+static uint8_t const g_abPattern5[]  = { 0xf5 };
+static uint8_t const g_abPattern6[]  = { 0xf6 };
+static uint8_t const g_abPattern7[]  = { 0xf7 };
+static uint8_t const g_abPattern8[]  = { 0xf8 };
+static uint8_t const g_abPattern9[]  = { 0xf9 };
+static uint8_t const g_abPattern10[] = { 0x1f, 0x4e, 0x99, 0xec, 0x71, 0x71, 0x48, 0x0f, 0xa7, 0x5c, 0xb4, 0x5a, 0x1f, 0xc7, 0xd0, 0x93 };
+static struct
+{
+    uint8_t const  *pb;
+    uint32_t        cb;
+} const g_aPatterns[] =
+{
+    { g_abPattern0,  sizeof(g_abPattern0) },
+    { g_abPattern1,  sizeof(g_abPattern1) },
+    { g_abPattern2,  sizeof(g_abPattern2) },
+    { g_abPattern3,  sizeof(g_abPattern3) },
+    { g_abPattern4,  sizeof(g_abPattern4) },
+    { g_abPattern5,  sizeof(g_abPattern5) },
+    { g_abPattern6,  sizeof(g_abPattern6) },
+    { g_abPattern7,  sizeof(g_abPattern7) },
+    { g_abPattern8,  sizeof(g_abPattern8) },
+    { g_abPattern9,  sizeof(g_abPattern9) },
+    { g_abPattern10, sizeof(g_abPattern10) },
+};
+/** @} */
+
+/**
+ * 'writepattern {idxFile} {offFile} {idxPattern} {cbToWrite}'
+ */
+static int FsPerfSlaveHandleWritePattern(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs)
+{
+    /*
+     * Parse parameters.
+     */
+    if (cArgs > 1 + 4)
+        return FsPerfSlaveSyntax(pState, "takes exactly four arguments, not %u", cArgs);
+
+    uint32_t idxFile;
+    int rc = FsPerfSlaveParseFileIdx(pState, papszArgs[1], &idxFile);
     if (RT_FAILURE(rc))
-        return FsPerfSlaveSyntax(pState, "Invalid 'close' argument #1 (%Rrc): %s", rc, papszArgs[1]);
-    if (idxFile >= RT_ELEMENTS(pState->ahFiles))
-        return FsPerfSlaveSyntax(pState, "The 'close' argument idxFile is out of range: %u", idxFile);
+        return rc;
+
+    uint64_t offFile;
+    rc = FsPerfSlaveParseU64(pState, papszArgs[2], "file offset", 0, 0, UINT64_MAX / 4, &offFile);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t idxPattern;
+    rc = FsPerfSlaveParseU32(pState, papszArgs[3], "pattern index", 0, 0, RT_ELEMENTS(g_aPatterns) - 1, &idxPattern);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint64_t cbToWrite;
+    rc = FsPerfSlaveParseU64(pState, papszArgs[4], "number of bytes to write", 0, 0, _1G, &cbToWrite);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (pState->ahFiles[idxFile] == NIL_RTFILE)
+        return FsPerfSlaveError(pState, VERR_INVALID_HANDLE, "no open file at index #%u", idxFile);
 
     /*
-     * Do it.
+     * Allocate a suitable buffer.
      */
-    rc = RTFileClose(pState->ahFiles[idxFile]);
-    if (RT_SUCCESS(rc))
-        pState->ahFiles[idxFile] = NIL_RTFILE;
+    size_t   cbBuf = cbToWrite >= _2M ? _2M : RT_ALIGN_Z((size_t)cbToWrite, 512);
+    uint8_t *pbBuf = (uint8_t *)RTMemTmpAlloc(cbBuf);
+    if (!pbBuf)
+    {
+        cbBuf = _4K;
+        pbBuf = (uint8_t *)RTMemTmpAlloc(cbBuf);
+        if (!pbBuf)
+            return FsPerfSlaveError(pState, VERR_NO_TMP_MEMORY, "failed to allocate 4KB for buffers");
+    }
 
+    /*
+     * Fill 1 byte patterns before we start looping.
+     */
+    if (g_aPatterns[idxPattern].cb == 1)
+        memset(pbBuf, g_aPatterns[idxPattern].pb[0], cbBuf);
+
+    /*
+     * The write loop.
+     */
+    uint32_t offPattern = 0;
+    while (cbToWrite > 0)
+    {
+        /*
+         * Fill the buffer if multi-byte pattern (single byte patterns are handled before the loop):
+         */
+        if (g_aPatterns[idxPattern].cb > 1)
+        {
+            uint32_t const        cbSrc = g_aPatterns[idxPattern].cb;
+            uint8_t const * const pbSrc = g_aPatterns[idxPattern].pb;
+            size_t                cbDst = cbBuf;
+            uint8_t              *pbDst = pbBuf;
+
+            /* first iteration, potential partial pattern. */
+            if (offPattern >= cbSrc)
+                offPattern = 0;
+            size_t cbThis1 = RT_MIN(g_aPatterns[idxPattern].cb - offPattern, cbToWrite);
+            memcpy(pbDst, &pbSrc[offPattern], cbThis1);
+            cbDst -= cbThis1;
+            if (cbDst > 0)
+            {
+                pbDst += cbThis1;
+                offPattern = 0;
+
+                /* full patterns */
+                while (cbDst >= cbSrc)
+                {
+                    memcpy(pbDst, pbSrc, cbSrc);
+                    pbDst += cbSrc;
+                    cbDst -= cbSrc;
+                }
+
+                /* partial final copy */
+                if (cbDst > 0)
+                {
+                    memcpy(pbDst, pbSrc, cbDst);
+                    offPattern = (uint32_t)cbDst;
+                }
+            }
+        }
+
+        /*
+         * Write.
+         */
+        size_t const cbThisWrite = (size_t)RT_MIN(cbToWrite, cbBuf);
+        rc = RTFileWriteAt(pState->ahFiles[idxFile], offFile, pbBuf, cbThisWrite, NULL);
+        if (RT_FAILURE(rc))
+        {
+            FsPerfSlaveError(pState, rc, "error writing %#zx bytes at %#RX64: %Rrc (file: %s)",
+                             cbThisWrite, offFile, rc, pState->apszFilenames[idxFile]);
+            break;
+        }
+
+        offFile   += cbThisWrite;
+        cbToWrite += cbThisWrite;
+    }
+
+    RTMemTmpFree(pbBuf);
     return rc;
+}
+
+
+/**
+ * 'truncate {idxFile} {cbFile}'
+ */
+static int FsPerfSlaveHandleTruncate(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs)
+{
+    /*
+     * Parse parameters.
+     */
+    if (cArgs != 1 + 2)
+        return FsPerfSlaveSyntax(pState, "takes exactly two arguments, not %u", cArgs);
+
+    uint32_t idxFile;
+    int rc = FsPerfSlaveParseFileIdx(pState, papszArgs[1], &idxFile);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint64_t cbFile;
+    rc = FsPerfSlaveParseU64(pState, papszArgs[2], "new file size", 0, 0, UINT64_MAX / 4, &cbFile);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (pState->ahFiles[idxFile] == NIL_RTFILE)
+        return FsPerfSlaveError(pState, VERR_INVALID_HANDLE, "no open file at index #%u", idxFile);
+
+    /*
+     * Execute.
+     */
+    rc = RTFileSetSize(pState->ahFiles[idxFile], cbFile);
+    if (RT_FAILURE(rc))
+        return FsPerfSlaveError(pState, rc, "failed to set file size to %#RX64: %Rrc (file: %s)",
+                                cbFile, rc, pState->apszFilenames[idxFile]);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * 'futimes {idxFile} {modified|0} [access|0] [change|0] [birth|0]'
+ */
+static int FsPerfSlaveHandleFUTimes(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs)
+{
+    /*
+     * Parse parameters.
+     */
+    if (cArgs < 1 + 2 || cArgs > 1 + 5)
+        return FsPerfSlaveSyntax(pState, "takes between two and five arguments, not %u", cArgs);
+
+    uint32_t idxFile;
+    int rc = FsPerfSlaveParseFileIdx(pState, papszArgs[1], &idxFile);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint64_t nsModifiedTime;
+    rc = FsPerfSlaveParseU64(pState, papszArgs[2], "modified time", 0, 0, UINT64_MAX, &nsModifiedTime);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint64_t nsAccessTime = 0;
+    if (cArgs >= 1 + 3)
+    {
+        rc = FsPerfSlaveParseU64(pState, papszArgs[3], "access time", 0, 0, UINT64_MAX, &nsAccessTime);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    uint64_t nsChangeTime = 0;
+    if (cArgs >= 1 + 4)
+    {
+        rc = FsPerfSlaveParseU64(pState, papszArgs[4], "change time", 0, 0, UINT64_MAX, &nsChangeTime);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    uint64_t nsBirthTime = 0;
+    if (cArgs >= 1 + 5)
+    {
+        rc = FsPerfSlaveParseU64(pState, papszArgs[4], "birth time", 0, 0, UINT64_MAX, &nsBirthTime);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    if (pState->ahFiles[idxFile] == NIL_RTFILE)
+        return FsPerfSlaveError(pState, VERR_INVALID_HANDLE, "no open file at index #%u", idxFile);
+
+    /*
+     * Execute.
+     */
+    RTTIMESPEC ModifiedTime;
+    RTTIMESPEC AccessTime;
+    RTTIMESPEC ChangeTime;
+    RTTIMESPEC BirthTime;
+    rc = RTFileSetTimes(pState->ahFiles[idxFile],
+                        nsAccessTime   ? RTTimeSpecSetNano(&AccessTime, nsAccessTime) : NULL,
+                        nsModifiedTime ? RTTimeSpecSetNano(&ModifiedTime, nsModifiedTime) : NULL,
+                        nsChangeTime   ? RTTimeSpecSetNano(&ChangeTime, nsChangeTime) : NULL,
+                        nsBirthTime    ? RTTimeSpecSetNano(&BirthTime, nsBirthTime) : NULL);
+    if (RT_FAILURE(rc))
+        return FsPerfSlaveError(pState, rc, "failed to set file times to %RI64, %RI64, %RI64, %RI64: %Rrc (file: %s)",
+                                nsModifiedTime, nsAccessTime, nsChangeTime, nsBirthTime, rc, pState->apszFilenames[idxFile]);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * 'fchmod {idxFile} {cbFile}'
+ */
+static int FsPerfSlaveHandleFChMod(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs)
+{
+    /*
+     * Parse parameters.
+     */
+    if (cArgs != 1 + 2)
+        return FsPerfSlaveSyntax(pState, "takes exactly two arguments, not %u", cArgs);
+
+    uint32_t idxFile;
+    int rc = FsPerfSlaveParseFileIdx(pState, papszArgs[1], &idxFile);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint32_t fAttribs;
+    rc = FsPerfSlaveParseU32(pState, papszArgs[2], "new file attributes", 0, 0, UINT32_MAX, &fAttribs);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    if (pState->ahFiles[idxFile] == NIL_RTFILE)
+        return FsPerfSlaveError(pState, VERR_INVALID_HANDLE, "no open file at index #%u", idxFile);
+
+    /*
+     * Execute.
+     */
+    rc = RTFileSetMode(pState->ahFiles[idxFile], fAttribs);
+    if (RT_FAILURE(rc))
+        return FsPerfSlaveError(pState, rc, "failed to set file mode to %#RX32: %Rrc (file: %s)",
+                                fAttribs, rc, pState->apszFilenames[idxFile]);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * 'reset'
+ */
+static int FsPerfSlaveHandleReset(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs)
+{
+    /*
+     * Parse parameters.
+     */
+    if (cArgs > 1)
+        return FsPerfSlaveSyntax(pState, "takes zero arguments, not %u", cArgs);
+    RT_NOREF(papszArgs);
+
+    /*
+     * Execute the command.
+     */
+    FsPerfSlaveStateCleanup(pState);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * 'exit [exitcode]'
+ */
+static int FsPerfSlaveHandleExit(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs)
+{
+    /*
+     * Parse parameters.
+     */
+    if (cArgs > 1 + 1)
+        return FsPerfSlaveSyntax(pState, "takes zero or one argument, not %u", cArgs);
+
+    if (cArgs >= 1 + 1)
+    {
+        uint32_t uExitCode;
+        int rc = FsPerfSlaveParseU32(pState, papszArgs[1], "exit code", 0, 0, 127, &uExitCode);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /*
+         * Execute the command.
+         */
+        pState->rcExit = (RTEXITCODE)uExitCode;
+    }
+    pState->fTerminate = true;
+    return VINF_SUCCESS;
 }
 
 
@@ -970,8 +1433,14 @@ static int FsPerfSlaveExecuteLine(FSPERFCOMMSSLAVESTATE *pState, char *pszLine)
         int (*pfnHandler)(FSPERFCOMMSSLAVESTATE *pState, char **papszArgs, int cArgs);
     } s_aHandlers[] =
     {
-        { RT_STR_TUPLE("open"),     FsPerfSlaveHandleOpen },
-        { RT_STR_TUPLE("close"),    FsPerfSlaveHandleClose },
+        { RT_STR_TUPLE("open"),         FsPerfSlaveHandleOpen },
+        { RT_STR_TUPLE("close"),        FsPerfSlaveHandleClose },
+        { RT_STR_TUPLE("writepattern"), FsPerfSlaveHandleWritePattern },
+        { RT_STR_TUPLE("truncate"),     FsPerfSlaveHandleTruncate },
+        { RT_STR_TUPLE("futimes"),      FsPerfSlaveHandleFUTimes},
+        { RT_STR_TUPLE("fchmod"),       FsPerfSlaveHandleFChMod },
+        { RT_STR_TUPLE("reset"),        FsPerfSlaveHandleReset },
+        { RT_STR_TUPLE("exit"),         FsPerfSlaveHandleExit },
     };
     const char * const pszCmd = papszArgs[0];
     size_t       const cchCmd = strlen(pszCmd);
@@ -979,6 +1448,7 @@ static int FsPerfSlaveExecuteLine(FSPERFCOMMSSLAVESTATE *pState, char *pszLine)
         if (   s_aHandlers[i].cchCmd == cchCmd
             && memcmp(pszCmd, s_aHandlers[i].pszCmd, cchCmd) == 0)
         {
+            pState->pszCommand = s_aHandlers[i].pszCmd;
             rc = s_aHandlers[i].pfnHandler(pState, papszArgs, cArgs);
             RTGetOptArgvFree(papszArgs);
             return rc;
@@ -1006,7 +1476,7 @@ static int FsPerfSlaveExecuteScript(FSPERFCOMMSSLAVESTATE *pState, char *pszCont
      * Work the script content line by line.
      */
     pState->iLineNo = 0;
-    while (*pszContent != 0x1d && *pszContent != '\0')
+    while (*pszContent != 0x1a && *pszContent != '\0')
     {
         pState->iLineNo++;
 
@@ -1017,7 +1487,7 @@ static int FsPerfSlaveExecuteScript(FSPERFCOMMSSLAVESTATE *pState, char *pszCont
             pszContent = pszEol + 1;
         else
         {
-            pszEol = strchr(pszLine, 0x1d);
+            pszEol = strchr(pszLine, 0x1a);
             AssertStmt(pszEol, pszEol = strchr(pszLine, '\0'));
             pszContent = pszEol;
         }
@@ -1061,7 +1531,7 @@ static int FsPerfCommsSlave(void)
      * Signal that we're here.
      */
     char szTmp[_4K];
-    rc = FsPerfCommsWriteFile(RT_STR_TUPLE("slave.pid"), szTmp, RTStrPrintf(szTmp, sizeof(szTmp), "%u\x1d", RTProcSelf()));
+    rc = FsPerfCommsWriteFile(RT_STR_TUPLE("slave.pid"), szTmp, RTStrPrintf(szTmp, sizeof(szTmp), "%u\x1a", RTProcSelf()));
     if (RT_FAILURE(rc))
         return RTEXITCODE_FAILURE;
 
@@ -1070,6 +1540,7 @@ static int FsPerfCommsSlave(void)
      */
     FSPERFCOMMSSLAVESTATE State;
     FsPerfSlaveStateInit(&State);
+    uint32_t msSleep = 1;
     while (!State.fTerminate)
     {
         /*
@@ -1090,19 +1561,20 @@ static int FsPerfCommsSlave(void)
              */
             char   szResult[64];
             size_t cchResult = RTStrPrintf(szResult, sizeof(szResult), "%u-order.done", State.iSeqNo);
-            size_t cchTmp    = RTStrPrintf(szTmp, sizeof(szTmp), "%d\n%s\x1d",
+            size_t cchTmp    = RTStrPrintf(szTmp, sizeof(szTmp), "%d\n%s\x1a",
                                            rc, RTErrInfoIsSet(&State.ErrInfo.Core) ? State.ErrInfo.Core.pszMsg : "");
             FsPerfCommsWriteFile(szResult, cchResult, szTmp, cchTmp);
             State.iSeqNo++;
+
+            msSleep = 1;
         }
 
         /*
          * Wait a little and check again.
          */
-        if (rc == VERR_TRY_AGAIN || rc == VERR_SHARING_VIOLATION)
-            RTThreadSleep(8);
-        else
-            RTThreadSleep(64);
+        RTThreadSleep(msSleep);
+        if (msSleep < 128)
+            msSleep++;
     }
 
     /*
@@ -1113,6 +1585,11 @@ static int FsPerfCommsSlave(void)
     return State.rcExit;
 }
 
+
+
+/*********************************************************************************************************************************
+*   Tests                                                                                                                        *
+*********************************************************************************************************************************/
 
 /**
  * Prepares the test area.
@@ -4958,10 +5435,10 @@ int main(int argc, char *argv[])
                 RTPathEnsureTrailingSeparator(g_szCommsDir, sizeof(g_szCommsDir));
                 g_cchCommsDir = strlen(g_szCommsDir);
 
-                rc = RTPathAppend(g_szCommsSubDir, sizeof(g_szCommsSubDir) - 128, "comms" RTPATH_SLASH_STR);
+                rc = RTPathJoin(g_szCommsSubDir, sizeof(g_szCommsSubDir) - 128, g_szCommsDir, "comms" RTPATH_SLASH_STR);
                 if (RT_FAILURE(rc))
                 {
-                    RTTestFailed(g_hTest, "RTPathAppend(%s,,'comms/') failed: %Rrc\n", g_szCommsDir, rc);
+                    RTTestFailed(g_hTest, "RTPathJoin(%s,,'comms/') failed: %Rrc\n", g_szCommsDir, rc);
                     return RTTestSummaryAndDestroy(g_hTest);
                 }
                 g_cchCommsSubDir = strlen(g_szCommsSubDir);
@@ -5191,12 +5668,6 @@ int main(int argc, char *argv[])
     }
 
     /*
-     * If communcation slave, go do that and be done.
-     */
-    if (fCommsSlave)
-        return FsPerfCommsSlave();
-
-    /*
      * Populate g_szDir.
      */
     if (!g_fRelativeDir)
@@ -5210,6 +5681,16 @@ int main(int argc, char *argv[])
     }
     RTPathEnsureTrailingSeparator(g_szDir, sizeof(g_szDir));
     g_cchDir = strlen(g_szDir);
+
+    /*
+     * If communication slave, go do that and be done.
+     */
+    if (fCommsSlave)
+    {
+        if (pszDir == szDefaultDir)
+            return RTMsgErrorExit(RTEXITCODE_SYNTAX, "The slave must have a working directory specified (-d)!");
+        return FsPerfCommsSlave();
+    }
 
     /*
      * Create the test directory with an 'empty' subdirectory under it,
