@@ -248,10 +248,9 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
 
 #ifdef LOG_ENABLED
     BOOLEAN AsyncIo = BooleanFlagOn(RxContext->Flags, RX_CONTEXT_FLAG_ASYNC_OPERATION);
-#endif
     LONGLONG FileSize;
-
     RxGetFileSizeWithLock((PFCB)capFcb, &FileSize);
+#endif
 
     Log(("VBOXSF: vbsfReadInternal: AsyncIo = %d, Fcb->FileSize = 0x%RX64\n",
          AsyncIo, capFcb->Header.FileSize.QuadPart));
@@ -260,36 +259,8 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
     Log(("VBOXSF: vbsfReadInternal: ByteCount 0x%X, ByteOffset 0x%RX64, FileSize 0x%RX64\n",
          ByteCount, ByteOffset, FileSize));
 
-/** @todo r=bird: This check is incorrect as we must let the host do these
- * checks with up-to-date end-of-file data.  What we've got cached here is
- * potentially out of date.  (This code is here because someone saw it in some
- * sample, I suspect and didn't quite understand what it was all about.  The
- * thing is that when FCB_STATE_READCACHING_ENABLED is set, the caller
- * already checks and the sample probably wanted to cover its bases.  We,
- * don't want to do that as already explained earlier.) */
-#ifdef FCB_STATE_READCACHING_ENABLED    /* Correct spelling for Vista 6001 SDK. */
-    if (!FlagOn(capFcb->FcbState, FCB_STATE_READCACHING_ENABLED))
-#else
-    if (!FlagOn(capFcb->FcbState, FCB_STATE_READCACHEING_ENABLED))
-#endif
-    {
-        if (ByteOffset >= FileSize)
-        {
-            Log(("VBOXSF: vbsfReadInternal: EOF\n"));
-            return STATUS_END_OF_FILE;
-        }
-
-        if (ByteCount > FileSize - ByteOffset)
-            ByteCount = (ULONG)(FileSize - ByteOffset);
-    }
-
-    /** @todo read 0 bytes == always success? */
-    if (   !BufferMdl
-        || ByteCount == 0)
-    {
-        AssertFailed();
-        return STATUS_INVALID_PARAMETER;
-    }
+    AssertReturn(BufferMdl, STATUS_INVALID_PARAMETER);
+    Assert(ByteCount > 0); /* ASSUME this is taken care of elsewhere already. */
 
     ctx.pClient = &g_SfClient;
     ctx.pMap    = &pNetRootExtension->map;
