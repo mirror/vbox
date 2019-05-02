@@ -226,7 +226,6 @@ static int vbsfTransferCommon(VBSFTRANSFERCTX *pCtx)
 
 static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
     VBSFTRANSFERCTX ctx;
 
     RxCaptureFcb;
@@ -239,12 +238,8 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
     PLOWIO_CONTEXT LowIoContext = &RxContext->LowIoContext;
 
     PMDL BufferMdl = LowIoContext->ParamsFor.ReadWrite.Buffer;
-    uint32_t ByteCount = LowIoContext->ParamsFor.ReadWrite.ByteCount;
-    RXVBO ByteOffset = LowIoContext->ParamsFor.ReadWrite.ByteOffset;
 
     PVOID pbUserBuffer = RxLowIoGetBufferAddress(RxContext);
-
-    int vrc;
 
 #ifdef LOG_ENABLED
     BOOLEAN AsyncIo = BooleanFlagOn(RxContext->Flags, RX_CONTEXT_FLAG_ASYNC_OPERATION);
@@ -257,46 +252,61 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
     Log(("VBOXSF: vbsfReadInternal: UserBuffer %p, BufferMdl %p\n",
          pbUserBuffer, BufferMdl));
     Log(("VBOXSF: vbsfReadInternal: ByteCount 0x%X, ByteOffset 0x%RX64, FileSize 0x%RX64\n",
-         ByteCount, ByteOffset, FileSize));
+         LowIoContext->ParamsFor.ReadWrite.ByteCount, LowIoContext->ParamsFor.ReadWrite.ByteOffset, FileSize));
 
     AssertReturn(BufferMdl, STATUS_INVALID_PARAMETER);
-    Assert(ByteCount > 0); /* ASSUME this is taken care of elsewhere already. */
+    Assert(LowIoContext->ParamsFor.ReadWrite.ByteCount > 0); /* ASSUME this is taken care of elsewhere already. */
 
     ctx.pClient = &g_SfClient;
     ctx.pMap    = &pNetRootExtension->map;
     ctx.hFile   = pVBoxFobx->hFile;
-    ctx.offset  = (uint64_t)ByteOffset;
-    ctx.cbData  = ByteCount;
+    ctx.offset  = LowIoContext->ParamsFor.ReadWrite.ByteOffset;
+    ctx.cbData  = LowIoContext->ParamsFor.ReadWrite.ByteCount;
     ctx.pMdl    = BufferMdl;
     ctx.pBuffer = (uint8_t *)pbUserBuffer;
     ctx.fLocked = true;
     ctx.pfnTransferBuffer = vbsfTransferBufferRead;
     ctx.pfnTransferPages = vbsfTransferPagesRead;
 
-    vrc = vbsfTransferCommon(&ctx);
+    int vrc = vbsfTransferCommon(&ctx);
 
-    ByteCount = ctx.cbData;
-
-    Status = vbsfNtVBoxStatusToNt(vrc);
-
-    if (Status == STATUS_SUCCESS)
+    NTSTATUS Status;
+    if (RT_SUCCESS(vrc))
     {
         pVBoxFobx->fTimestampsImplicitlyUpdated |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
         if (pVBoxFcbx->pFobxLastAccessTime != pVBoxFobx)
             pVBoxFcbx->pFobxLastAccessTime = NULL;
+        Status = STATUS_SUCCESS;
+
+        /*
+         * See if we've reached the EOF early or read beyond what we thought were the EOF.
+         *
+         * Note! We don't dare do this (yet) if we're in paging I/O as we then hold the
+         *       PagingIoResource in shared mode and would probably deadlock in the
+         *       updating code when taking the lock in exclusive mode.
+         */
+        if (RxContext->LowIoContext.Resource != capFcb->Header.PagingIoResource)
+        {
+            LONGLONG const offEndOfRead = LowIoContext->ParamsFor.ReadWrite.ByteOffset + ctx.cbData;
+            LONGLONG       cbFileRdbss;
+            RxGetFileSizeWithLock((PFCB)capFcb, &cbFileRdbss);
+            if (   offEndOfRead < cbFileRdbss
+                && ctx.cbData < LowIoContext->ParamsFor.ReadWrite.ByteCount /* hit EOF */)
+                vbsfNtUpdateFcbSize(RxContext->pFobx->AssociatedFileObject, capFcb, pVBoxFobx, offEndOfRead, cbFileRdbss, -1);
+            else if (offEndOfRead > cbFileRdbss)
+                vbsfNtQueryAndUpdateFcbSize(pNetRootExtension, RxContext->pFobx->AssociatedFileObject, pVBoxFobx, capFcb, pVBoxFcbx);
+        }
     }
     else
-        ByteCount = 0; /* Nothing read. */
+    {
+        ctx.cbData = 0; /* Nothing read. */
+        Status = vbsfNtVBoxStatusToNt(vrc);
+    }
 
-    RxContext->InformationToReturn = ByteCount;
-
-/** @todo if we read past the end-of-file as we know it, or if we reached
- * end-of-file earlier than we though, update the file size.  The
- * RxLowIoReadShellCompletion() routine does not seem to do this for is and
- * I (bird) couldn't find anyone else doing it either. */
+    RxContext->InformationToReturn = ctx.cbData;
 
     Log(("VBOXSF: vbsfReadInternal: Status = 0x%08X, ByteCount = 0x%X\n",
-         Status, ByteCount));
+         Status, ctx.cbData));
 
     return Status;
 }
@@ -316,6 +326,22 @@ static VOID vbsfReadWorker(VOID *pv)
     RxLowIoCompletion(RxContext);
 }
 
+/**
+ * Read stuff from a file.
+ *
+ * Prior to calling us, RDBSS will have:
+ *  - Called CcFlushCache() for uncached accesses.
+ *  - For non-paging access the Fcb.Header.Resource lock in shared mode in one
+ *    way or another (ExAcquireResourceSharedLite,
+ *    ExAcquireSharedWaitForExclusive).
+ *  - For paging the FCB isn't, but the Fcb.Header.PagingResource is taken
+ *    in shared mode (ExAcquireResourceSharedLite).
+ *
+ * Upon completion, it will update the file pointer if applicable.  There are no
+ * EOF checks and corresponding file size updating like in the write case, so
+ * that's something we have to do ourselves it seems since the library relies on
+ * the size information to be accurate in a few places (set EOF, cached reads).
+ */
 NTSTATUS VBoxMRxRead(IN PRX_CONTEXT RxContext)
 {
     NTSTATUS Status;

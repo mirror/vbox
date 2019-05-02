@@ -144,7 +144,8 @@ typedef struct MRX_VBOX_FOBX
     PMRX_SRV_CALL               pSrvCall;
     /** The RTTimeSystemNanoTS value when Info was retrieved, 0 to force update. */
     uint64_t                    nsUpToDate;
-    /** Cached object info. */
+    /** Cached object info.
+     * @todo Consider moving it to VBSFNTFCBEXT.  Better fit than on "handle". */
     SHFLFSOBJINFO               Info;
     /** NT version of Info.
      * @todo try eliminate  */
@@ -261,6 +262,11 @@ NTSTATUS vbsfNtShflStringFromUnicodeAlloc(PSHFLSTRING *ppShflString, const WCHAR
 #if defined(DEBUG) || defined(LOG_ENABLED)
 const char *vbsfNtMajorFunctionName(UCHAR MajorFunction, LONG MinorFunction);
 #endif
+
+void     vbsfNtUpdateFcbSize(PFILE_OBJECT pFileObj, PMRX_FCB pFcb, PMRX_VBOX_FOBX pVBoxFobX,
+                             LONGLONG cbFileNew, LONGLONG cbFileOld, LONGLONG cbAllocated);
+int      vbsfNtQueryAndUpdateFcbSize(PMRX_VBOX_NETROOT_EXTENSION pNetRootX, PFILE_OBJECT pFileObj,
+                                     PMRX_VBOX_FOBX pVBoxFobX, PMRX_FCB pFcb, PVBSFNTFCBEXT pVBoxFcbX);
 
 /**
  * Converts VBox (IPRT) file mode to NT file attributes.

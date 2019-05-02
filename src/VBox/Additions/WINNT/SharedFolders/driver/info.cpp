@@ -925,28 +925,151 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
 }
 
 /**
+ * Updates the FCBs copy of the file size.
+ *
+ * The RDBSS is using the file size from the FCB in a few places without giving
+ * us the chance to make sure that the value is up to date and properly
+ * reflecting the size of the actual file on the host.   Thus this mess to try
+ * keep the the size up to date where ever possible as well as some hacks to
+ * bypass RDBSS' use of the FCB file size.  (And no, we cannot just make the
+ * FCB_STATE_FILESIZECACHEING_ENABLED flag isn't set, because it was never
+ * implemented.)
+ *
+ * @param   pFileObj            The file object.
+ * @param   pFcb                The FCB.
+ * @param   pVBoxFobX           Out file object extension data.
+ * @param   cbFileNew           The new file size.
+ * @param   cbFileOld           The old file size from the FCB/RDBSS.
+ * @param   cbAllocated         The allocated size for the file, -1 if not
+ *                              available.
+ *
+ * @note    Will acquire the paging I/O resource lock in exclusive mode.  Caller
+ *          must not be holding it in shared mode.
+ */
+void vbsfNtUpdateFcbSize(PFILE_OBJECT pFileObj, PMRX_FCB pFcb, PMRX_VBOX_FOBX pVBoxFobX,
+                         LONGLONG cbFileNew, LONGLONG cbFileOld, LONGLONG cbAllocated)
+{
+    Assert(cbFileNew != cbFileOld);
+    Assert(cbFileNew >= 0);
+    Assert(   !ExIsResourceAcquiredSharedLite(pFcb->Header.PagingIoResource)
+           || ExIsResourceAcquiredExclusiveLite(pFcb->Header.PagingIoResource));
+
+    /*
+     * Lock the paging I/O resources before trying to modify the header variables.
+     *
+     * Note! RxAcquirePagingIoResource and RxReleasePagingIoResource are unsafe
+     *       macros in need of {} wrappers when used with if statements.
+     */
+    NTSTATUS rcNtLock = RxAcquirePagingIoResource(NULL, pFcb);
+
+    LONGLONG cbFileOldRecheck;
+    RxGetFileSizeWithLock((PFCB)pFcb, &cbFileOldRecheck);
+    if (cbFileOldRecheck == cbFileOld)
+    {
+        LONGLONG cbFileNewCopy = cbFileNew;
+        RxSetFileSizeWithLock((PFCB)pFcb, &cbFileNewCopy);
+
+        /* The valid data length is the same as the file size for us. */
+        if (pFcb->Header.ValidDataLength.QuadPart != cbFileNew)
+            pFcb->Header.ValidDataLength.QuadPart = cbFileNew;
+
+        /* The allocation size must be larger or equal to the file size says https://www.osronline.com/article.cfm%5Eid=167.htm . */
+        if (cbAllocated >= cbFileNew)
+        {
+            if (pFcb->Header.AllocationSize.QuadPart != cbAllocated)
+                pFcb->Header.AllocationSize.QuadPart = cbAllocated;
+        }
+        else if (pFcb->Header.AllocationSize.QuadPart < cbFileNew)
+            pFcb->Header.AllocationSize.QuadPart = cbFileNew;
+
+        /* Update our copy. */
+        pVBoxFobX->Info.cbObject = cbFileNew;
+        if (cbAllocated >= 0)
+            pVBoxFobX->Info.cbAllocated = cbAllocated;
+
+        /*
+         * Tell the cache manager if we can.
+         *
+         * According to the MSDN documentation, we must update the cache manager when
+         * the file size changes, allocation size increases, valid data length descreases,
+         * and when a non-cached I/O operation increases the valid data length.
+         */
+        SECTION_OBJECT_POINTERS *pSectPtrs = pFileObj->SectionObjectPointer;
+        if (pSectPtrs)
+        {
+            LARGE_INTEGER NewSize;
+            NewSize.QuadPart = cbFileNew;
+            if (   cbFileNew >= cbFileOld
+                || MmCanFileBeTruncated(pSectPtrs, &NewSize)) /** @todo do we need to check this? */
+            {
+                CC_FILE_SIZES FileSizes;
+                FileSizes.AllocationSize           = pFcb->Header.AllocationSize;
+                FileSizes.FileSize.QuadPart        = cbFileNew;
+                FileSizes.ValidDataLength.QuadPart = cbFileNew;
+
+                /* RDBSS leave the lock before calling CcSetFileSizes, so we do that too then.*/
+                if (NT_SUCCESS(rcNtLock))
+                {
+                    RxReleasePagingIoResource(NULL, pFcb);
+                }
+
+                __try
+                {
+                    CcSetFileSizes(pFileObj, &FileSizes);
+                }
+                __except(EXCEPTION_EXECUTE_HANDLER)
+                {
+#ifdef LOG_ENABLED
+                    NTSTATUS rcNt = GetExceptionCode();
+                    Log(("vbsfNtUpdateFcbSize: CcSetFileSizes -> %#x\n", rcNt));
+#endif
+                }
+                return;
+            }
+            /** @todo should we flag this so we can try again later? */
+        }
+    }
+    else
+        Log(("vbsfNtUpdateFcbSize: Seems we raced someone updating the file size: old size = %#RX64, new size = %#RX64, current size = %#RX64\n",
+             cbFileOld, cbFileNew, cbFileOldRecheck));
+
+    if (NT_SUCCESS(rcNtLock))
+    {
+        RxReleasePagingIoResource(NULL, pFcb);
+    }
+}
+
+
+/**
  * Updates the object info to the VBox file object extension data.
  *
- * @param   pVBoxFobx               The VBox file object extension data.
+ * @param   pVBoxFobX               The VBox file object extension data.
  * @param   pObjInfo                The fresh data from the host.  Okay to modify.
- * @param   pVBoxFcbx               The VBox FCB extension data.
+ * @param   pVBoxFcbX               The VBox FCB extension data.
  * @param   fTimestampsToCopyAnyway VBOX_FOBX_F_INFO_XXX mask of timestamps to
  *                                  copy regardless of their suppressed state.
  *                                  This is used by the info setter function to
  *                                  get current copies of newly modified and
  *                                  suppressed fields.
+ * @param   pFileObj                Pointer to the file object if we should
+ *                                  update the cache manager, otherwise NULL.
+ * @param   pFcb                    Pointer to the FCB if we should update its
+ *                                  copy of the file size, NULL if we should
+ *                                  leave it be.  Must be NULL when pFileObj is.
  */
-static void vbsfNtCopyInfo(PMRX_VBOX_FOBX pVBoxFobx, PSHFLFSOBJINFO pObjInfo,
-                           PVBSFNTFCBEXT pVBoxFcbx, uint8_t fTimestampsToCopyAnyway)
+static void vbsfNtCopyInfo(PMRX_VBOX_FOBX pVBoxFobX, PSHFLFSOBJINFO pObjInfo, PVBSFNTFCBEXT pVBoxFcbX,
+                           uint8_t fTimestampsToCopyAnyway, PFILE_OBJECT pFileObj, PMRX_FCB pFcb)
 {
     /*
-     * Check if the size changed.
+     * Check if the size changed because RDBSS and the cache manager have
+     * cached copies of the file and allocation sizes.
      */
-    if (pObjInfo->cbObject != pVBoxFobx->Info.cbObject)
+    if (pFcb && pFileObj)
     {
-        /** @todo Tell RDBSS about this?  Seems we have to tell the cache manager
-         *        ourselves, which sucks considering that RDBSS was supposed to
-         *        shield us from crap like that (see the MS sales brochure). */
+        LONGLONG cbFileRdbss;
+        RxGetFileSizeWithLock((PFCB)pFcb, &cbFileRdbss);
+        if (pObjInfo->cbObject != cbFileRdbss)
+            vbsfNtUpdateFcbSize(pFileObj, pFcb, pVBoxFobX, pObjInfo->cbObject, cbFileRdbss, pObjInfo->cbAllocated);
     }
 
     /*
@@ -959,36 +1082,65 @@ static void vbsfNtCopyInfo(PMRX_VBOX_FOBX pVBoxFobx, PSHFLFSOBJINFO pObjInfo,
      * which implict updating is currently disabled, copy them over to the source
      * structure before preforming the copy.
      */
-    Assert((pVBoxFobx->fTimestampsSetByUser & ~pVBoxFobx->fTimestampsUpdatingSuppressed) == 0);
-    uint8_t fCopyTs = pVBoxFobx->fTimestampsUpdatingSuppressed & ~fTimestampsToCopyAnyway;
+    Assert((pVBoxFobX->fTimestampsSetByUser & ~pVBoxFobX->fTimestampsUpdatingSuppressed) == 0);
+    uint8_t fCopyTs = pVBoxFobX->fTimestampsUpdatingSuppressed & ~fTimestampsToCopyAnyway;
     if (fCopyTs)
     {
         if (  (fCopyTs & VBOX_FOBX_F_INFO_LASTACCESS_TIME)
-            && pVBoxFcbx->pFobxLastAccessTime == pVBoxFobx)
-            pObjInfo->AccessTime        = pVBoxFobx->Info.AccessTime;
+            && pVBoxFcbX->pFobxLastAccessTime == pVBoxFobX)
+            pObjInfo->AccessTime        = pVBoxFobX->Info.AccessTime;
 
         if (   (fCopyTs & VBOX_FOBX_F_INFO_LASTWRITE_TIME)
-            && pVBoxFcbx->pFobxLastWriteTime  == pVBoxFobx)
-            pObjInfo->ModificationTime  = pVBoxFobx->Info.ModificationTime;
+            && pVBoxFcbX->pFobxLastWriteTime  == pVBoxFobX)
+            pObjInfo->ModificationTime  = pVBoxFobX->Info.ModificationTime;
 
         if (   (fCopyTs & VBOX_FOBX_F_INFO_CHANGE_TIME)
-            && pVBoxFcbx->pFobxChangeTime     == pVBoxFobx)
-            pObjInfo->ChangeTime        = pVBoxFobx->Info.ChangeTime;
+            && pVBoxFcbX->pFobxChangeTime     == pVBoxFobX)
+            pObjInfo->ChangeTime        = pVBoxFobX->Info.ChangeTime;
     }
-    pVBoxFobx->Info = *pObjInfo;
+    pVBoxFobX->Info = *pObjInfo;
 
     /*
      * Try eliminate this one.
      */
-    vbsfNtBasicInfoFromVBoxObjInfo(&pVBoxFobx->FileBasicInfo, pObjInfo);
+    vbsfNtBasicInfoFromVBoxObjInfo(&pVBoxFobX->FileBasicInfo, pObjInfo);
 }
 
+/**
+ * Queries the current file stats from the host and updates the RDBSS' copy of
+ * the file size if necessary.
+ *
+ * @returns IPRT status code
+ * @param   pNetRootX   Our net root extension data.
+ * @param   pFileObj    The file object.
+ * @param   pVBoxFobX   Our file object extension data.
+ * @param   pFcb        The FCB.
+ * @param   pVBoxFcbX   Our FCB extension data.
+ */
+int vbsfNtQueryAndUpdateFcbSize(PMRX_VBOX_NETROOT_EXTENSION pNetRootX, PFILE_OBJECT pFileObj,
+                                PMRX_VBOX_FOBX pVBoxFobX, PMRX_FCB pFcb, PVBSFNTFCBEXT pVBoxFcbX)
+{
+    VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    AssertReturn(pReq, VERR_NO_MEMORY);
+
+    int vrc = VbglR0SfHostReqQueryObjInfo(pNetRootX->map.root, pReq, pVBoxFobX->hFile);
+    if (RT_SUCCESS(vrc))
+        vbsfNtCopyInfo(pVBoxFobX, &pReq->ObjInfo, pVBoxFcbX, 0, pFileObj, pFcb);
+    else
+        AssertMsgFailed(("vrc=%Rrc\n", vrc));
+
+    VbglR0PhysHeapFree(pReq);
+    return vrc;
+}
 
 /**
  * Handle NtQueryInformationFile and similar requests.
  *
  * The RDBSS code has done various things before we get here wrt locking and
- * request pre-processing.
+ * request pre-processing.  Unless this is a paging file (FCB_STATE_PAGING_FILE)
+ * or FileNameInformation is being queried, the FCB is locked.  For all except
+ * for FileCompressionInformation, a shared FCB access (FCB.Header.Resource) is
+ * acquired, where as for FileCompressionInformation it is taken exclusively.
  */
 NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
 {
@@ -1116,7 +1268,8 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
 
                 int vrc = VbglR0SfHostReqQueryObjInfo(pNetRootExtension->map.root, pReq, pVBoxFobx->hFile);
                 if (RT_SUCCESS(vrc))
-                    vbsfNtCopyInfo(pVBoxFobx, &pReq->ObjInfo, pVBoxFcbx, 0);
+                    vbsfNtCopyInfo(pVBoxFobx, &pReq->ObjInfo, pVBoxFcbx, 0,          /* ASSUMES that PageingIoResource is not */
+                                   RxContext->pFobx->AssociatedFileObject, capFcb);  /* held in shared mode here! */
                 else
                 {
                     Status = vbsfNtVBoxStatusToNt(vrc);
@@ -1301,10 +1454,10 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
 }
 
 /**
- * Worker for vbsfNtSetBasicInfo.
+ * Worker for VBoxMRxSetFileInfo.
  */
-static NTSTATUS vbsfNtSetBasicInfo(PMRX_VBOX_FOBX pVBoxFobx, PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
-                                   PVBSFNTFCBEXT pVBoxFcbx, PFILE_BASIC_INFORMATION pBasicInfo)
+static NTSTATUS vbsfNtSetBasicInfo(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension, PFILE_OBJECT pFileObj, PMRX_VBOX_FOBX pVBoxFobx,
+                                   PMRX_FCB pFcb, PVBSFNTFCBEXT pVBoxFcbx, PFILE_BASIC_INFORMATION pBasicInfo)
 {
     Log(("VBOXSF: MRxSetFileInfo: FileBasicInformation: CreationTime   %RX64\n", pBasicInfo->CreationTime.QuadPart));
     Log(("VBOXSF: MRxSetFileInfo: FileBasicInformation: LastAccessTime %RX64\n", pBasicInfo->LastAccessTime.QuadPart));
@@ -1464,7 +1617,7 @@ static NTSTATUS vbsfNtSetBasicInfo(PMRX_VBOX_FOBX pVBoxFobx, PMRX_VBOX_NETROOT_E
                 pVBoxFcbx->pFobxChangeTime     = pVBoxFobx;
         }
 
-        vbsfNtCopyInfo(pVBoxFobx, &pReq->ObjInfo, pVBoxFcbx, fSuppressed);
+        vbsfNtCopyInfo(pVBoxFobx, &pReq->ObjInfo, pVBoxFcbx, fSuppressed, pFileObj, pFcb);
 
         /*
          * Copy timestamps and attributes from the host into the return buffer to let
@@ -1496,7 +1649,7 @@ static NTSTATUS vbsfNtSetBasicInfo(PMRX_VBOX_FOBX pVBoxFobx, PMRX_VBOX_NETROOT_E
 }
 
 /**
- * Worker for vbsfNtSetBasicInfo.
+ * Worker for VBoxMRxSetFileInfo.
  */
 static NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext, IN uint64_t cbNewFileSize)
 {
@@ -1555,7 +1708,7 @@ static NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext, IN uin
 }
 
 /**
- * Worker for vbsfNtSetBasicInfo.
+ * Worker for VBoxMRxSetFileInfo.
  */
 static NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
                              IN FILE_INFORMATION_CLASS FileInformationClass,
@@ -1635,8 +1788,8 @@ static NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
  * Handle NtSetInformationFile and similar requests.
  *
  * The RDBSS code has done various things before we get here wrt locking and
- * request pre-processing.  It will normally acquire an exclusive lock, but not
- * if this is related to a page file (FCB_STATE_PAGING_FILE set).
+ * request pre-processing.  It will normally acquire an exclusive FCB lock, but
+ * not if this is related to a page file (FCB_STATE_PAGING_FILE set).
  */
 NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
 {
@@ -1701,8 +1854,8 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
         case FileBasicInformation:
         {
             Assert(RxContext->Info.Length >= sizeof(FILE_BASIC_INFORMATION));
-            Status = vbsfNtSetBasicInfo(pVBoxFobx, pNetRootExtension, VBoxMRxGetFcbExtension(capFcb),
-                                        (PFILE_BASIC_INFORMATION)RxContext->Info.Buffer);
+            Status = vbsfNtSetBasicInfo(pNetRootExtension, RxContext->pFobx->AssociatedFileObject, pVBoxFobx, capFcb,
+                                        VBoxMRxGetFcbExtension(capFcb), (PFILE_BASIC_INFORMATION)RxContext->Info.Buffer);
             break;
         }
 
@@ -1830,3 +1983,4 @@ NTSTATUS VBoxMRxSetFileInfoAtCleanup(IN PRX_CONTEXT RxContext)
     Log(("VBOXSF: MRxSetFileInfoAtCleanup\n"));
     return STATUS_SUCCESS;
 }
+

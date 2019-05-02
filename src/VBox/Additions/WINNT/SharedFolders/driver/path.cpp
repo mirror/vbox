@@ -570,6 +570,14 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
         else
             RxFinishFcbInitialization(capFcb, (RX_FILE_TYPE)RDBSS_NTC_STORAGE_TYPE_FILE, &InitPacket);
     }
+    /*
+     * See if the size has changed and update the FCB if it has.
+     */
+    else
+    {
+        /** @todo Need to check RDBSS stack for locking semantics before updating
+         *        anything. */
+    }
 
     SrvOpen->BufferingFlags = 0;
 
