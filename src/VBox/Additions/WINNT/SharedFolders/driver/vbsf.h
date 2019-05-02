@@ -147,9 +147,6 @@ typedef struct MRX_VBOX_FOBX
     /** Cached object info.
      * @todo Consider moving it to VBSFNTFCBEXT.  Better fit than on "handle". */
     SHFLFSOBJINFO               Info;
-    /** NT version of Info.
-     * @todo try eliminate  */
-    FILE_BASIC_INFORMATION      FileBasicInfo;
 
     /** VBOX_FOBX_F_INFO_XXX of timestamps which may need setting on close. */
     uint8_t                     fTimestampsSetByUser;

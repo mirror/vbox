@@ -599,15 +599,16 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     pVBoxFobx->hFile = Handle;
     pVBoxFobx->pSrvCall = RxContext->Create.pSrvCall;
     pVBoxFobx->Info = Info;
-    vbsfNtBasicInfoFromVBoxObjInfo(&pVBoxFobx->FileBasicInfo, &Info);
-    Log(("VBOXSF: MRxCreate: FileBasicInformation: CreationTime   %RX64\n", pVBoxFobx->FileBasicInfo.CreationTime.QuadPart));
-    Log(("VBOXSF: MRxCreate: FileBasicInformation: LastAccessTime %RX64\n", pVBoxFobx->FileBasicInfo.LastAccessTime.QuadPart));
-    Log(("VBOXSF: MRxCreate: FileBasicInformation: LastWriteTime  %RX64\n", pVBoxFobx->FileBasicInfo.LastWriteTime.QuadPart));
-    Log(("VBOXSF: MRxCreate: FileBasicInformation: ChangeTime     %RX64\n", pVBoxFobx->FileBasicInfo.ChangeTime.QuadPart));
-    Log(("VBOXSF: MRxCreate: FileBasicInformation: FileAttributes %RX32\n", pVBoxFobx->FileBasicInfo.FileAttributes));
+    Log(("VBOXSF: MRxCreate: Info: BirthTime        %RI64\n", RTTimeSpecGetNano(&pVBoxFobx->Info.BirthTime)));
+    Log(("VBOXSF: MRxCreate: Info: ChangeTime       %RI64\n", RTTimeSpecGetNano(&pVBoxFobx->Info.ChangeTime)));
+    Log(("VBOXSF: MRxCreate: Info: ModificationTime %RI64\n", RTTimeSpecGetNano(&pVBoxFobx->Info.ModificationTime)));
+    Log(("VBOXSF: MRxCreate: Info: AccessTime       %RI64\n", RTTimeSpecGetNano(&pVBoxFobx->Info.AccessTime)));
+    Log(("VBOXSF: MRxCreate: Info: fMode            %#RX32\n", pVBoxFobx->Info.Attr.fMode));
     if (!(Info.Attr.fMode & RTFS_DOS_DIRECTORY))
-        Log(("VBOXSF: MRxCreate: AllocationSize = %#RX64, EndOfFile = %#RX64\n",
-             Info.cbAllocated, Info.cbObject));
+    {
+        Log(("VBOXSF: MRxCreate: Info: cbObject         %#RX64\n", pVBoxFobx->Info.cbObject));
+        Log(("VBOXSF: MRxCreate: Info: cbAllocated      %#RX64\n", pVBoxFobx->Info.cbAllocated));
+    }
 
     if (!RxIsFcbAcquiredExclusive(capFcb))
     {

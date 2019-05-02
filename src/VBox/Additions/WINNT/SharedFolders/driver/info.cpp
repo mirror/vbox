@@ -1099,11 +1099,6 @@ static void vbsfNtCopyInfo(PMRX_VBOX_FOBX pVBoxFobX, PSHFLFSOBJINFO pObjInfo, PV
             pObjInfo->ChangeTime        = pVBoxFobX->Info.ChangeTime;
     }
     pVBoxFobX->Info = *pObjInfo;
-
-    /*
-     * Try eliminate this one.
-     */
-    vbsfNtBasicInfoFromVBoxObjInfo(&pVBoxFobX->FileBasicInfo, pObjInfo);
 }
 
 /**
