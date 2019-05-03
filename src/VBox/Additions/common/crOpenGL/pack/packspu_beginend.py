@@ -35,7 +35,7 @@ void PACKSPU_APIENTRY packspu_Begin( GLenum mode )
     {
         GLboolean serverArrays = GL_FALSE;
         if (ctx->clientState->extensions.ARB_vertex_buffer_object)
-            serverArrays = crStateUseServerArrays();
+            serverArrays = crStateUseServerArrays(&pack_spu.StateTracker);
         if (serverArrays) {
             CRClientState *clientState = &(ctx->clientState->client);
             if (clientState->array.locked && !clientState->array.synced)

@@ -350,8 +350,8 @@ GLboolean crServerMuralSize(CRMuralInfo *mural, GLuint width, GLuint height)
     if (cr_server.curClient && cr_server.curClient->currentMural == mural
             && !mural->fRedirected)
     {
-        crStateGetCurrent()->buffer.width = mural->width;
-        crStateGetCurrent()->buffer.height = mural->height;
+        crStateGetCurrent(&cr_server.StateTracker)->buffer.width = mural->width;
+        crStateGetCurrent(&cr_server.StateTracker)->buffer.height = mural->height;
     }
 
     crServerCheckAllMuralGeometry(mural);

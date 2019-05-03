@@ -117,7 +117,7 @@ for func_name in keys:
                 unsigned int i = 0;
                 %s localparams;
                 localparams = (%s) crAlloc(__numValues(pname) * sizeof(*localparams));
-                crState%s(pname, localparams);
+                crState%s(&pack_spu.StateTracker, pname, localparams);
                 crPack%s(%s, &writeback);
                 packspuFlush( (void *) thread );
                 CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
@@ -135,7 +135,7 @@ for func_name in keys:
             else
 #endif
             {
-                crState%s(pname, params);
+                crState%s(&pack_spu.StateTracker, pname, params);
                 return;
             }
 
@@ -149,7 +149,7 @@ for func_name in keys:
 #ifdef DEBUG
         %s localparams;
         localparams = (%s) crAlloc(__numValues(pname) * sizeof(*localparams));
-        crState%s(index, pname, localparams);
+        crState%s(&pack_spu.StateTracker, index, pname, localparams);
         crPack%s(index, %s, &writeback);
         packspuFlush( (void *) thread );
         CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
@@ -163,7 +163,7 @@ for func_name in keys:
         }
         crFree(localparams);
 #else
-        crState%s(pname, params);
+        crState%s(&pack_spu.StateTracker, pname, params);
 #endif
         return;
     }

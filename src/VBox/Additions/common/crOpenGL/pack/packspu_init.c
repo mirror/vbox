@@ -6,7 +6,6 @@
 
 #include "cr_mem.h"
 #include "cr_spu.h"
-#include "cr_glstate.h"
 #include "packspu.h"
 #include "cr_packfunctions.h"
 #include <stdio.h>
@@ -20,6 +19,7 @@ SPUFunctions pack_functions = {
 };
 
 PackSPU pack_spu;
+DECLHIDDEN(PCRStateTracker) g_pStateTracker;
 
 CRtsd _PackTSD;
 CRmutex _PackMutex;
@@ -92,7 +92,8 @@ packSPUInit( int id, SPU *child, SPU *self,
     }
 
     packspuCreateFunctions();
-    crStateInit();
+    crStateInit(&pack_spu.StateTracker);
+    g_pStateTracker = &pack_spu.StateTracker;
 
     return &pack_functions;
 }

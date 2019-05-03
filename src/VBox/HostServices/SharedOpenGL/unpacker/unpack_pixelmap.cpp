@@ -16,7 +16,7 @@ void crUnpackPixelMapfv(PCrUnpackerState pState)
     int nodata = READ_DATA(pState, sizeof(int) + 8, int);
     GLfloat *values;
 
-    if (nodata && !crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    if (nodata && !crStateIsBufferBound(pState->pStateTracker, GL_PIXEL_UNPACK_BUFFER_ARB))
         return;
 
     if (nodata)
@@ -46,7 +46,7 @@ void crUnpackPixelMapuiv(PCrUnpackerState pState)
     int nodata = READ_DATA(pState, sizeof(int) + 8, int);
     GLuint *values;
 
-    if (nodata && !crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    if (nodata && !crStateIsBufferBound(pState->pStateTracker, GL_PIXEL_UNPACK_BUFFER_ARB))
         return;
 
     if (nodata)
@@ -76,7 +76,7 @@ void crUnpackPixelMapusv(PCrUnpackerState pState)
     int nodata = READ_DATA(pState, sizeof(int) + 8, int);
     GLushort *values;
 
-    if (nodata && !crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    if (nodata && !crStateIsBufferBound(pState->pStateTracker, GL_PIXEL_UNPACK_BUFFER_ARB))
         return;
 
     if (nodata)

@@ -375,7 +375,7 @@ void crStateClientInit(CRContext *ctx)
  * is client-side state, like vertex arrays.
  */
 
-void STATE_APIENTRY crStatePixelStoref (GLenum pname, GLfloat param)
+void STATE_APIENTRY crStatePixelStoref (PCRStateTracker pState, GLenum pname, GLfloat param)
 {
 
     /* The GL SPEC says I can do this on page 76. */
@@ -385,24 +385,24 @@ void STATE_APIENTRY crStatePixelStoref (GLenum pname, GLfloat param)
         case GL_PACK_LSB_FIRST:
         case GL_UNPACK_SWAP_BYTES:
         case GL_UNPACK_LSB_FIRST:
-            crStatePixelStorei( pname, param == 0.0f ? 0: 1 );
+            crStatePixelStorei(pState, pname, param == 0.0f ? 0: 1 );
             break;
         default:
-            crStatePixelStorei( pname, (GLint) param );
+            crStatePixelStorei(pState, pname, (GLint) param );
             break;
     }
 }
 
-void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
+void STATE_APIENTRY crStatePixelStorei (PCRStateTracker pState, GLenum pname, GLint param)
 {
-    CRContext *g    = GetCurrentContext();
+    CRContext *g    = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     if (g->current.inBeginEnd)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "PixelStore{if} called in Begin/End");
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION, "PixelStore{if} called in Begin/End");
         return;
     }
 
@@ -420,7 +420,7 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
         case GL_PACK_ROW_LENGTH:
             if (param < 0.0f) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Negative Row Length: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Negative Row Length: %f", param);
                 return;
             }
             c->pack.rowLength = param;
@@ -430,7 +430,7 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
         case GL_PACK_IMAGE_HEIGHT:
             if (param < 0.0f) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Negative Image Height: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Negative Image Height: %f", param);
                 return;
             }
             c->pack.imageHeight = param;
@@ -440,7 +440,7 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
         case GL_PACK_SKIP_IMAGES:
             if (param < 0.0f) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Negative Skip Images: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Negative Skip Images: %f", param);
                 return;
             }
             c->pack.skipImages = param;
@@ -449,7 +449,7 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
         case GL_PACK_SKIP_PIXELS:
             if (param < 0.0f) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Negative Skip Pixels: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Negative Skip Pixels: %f", param);
                 return;
             }
             c->pack.skipPixels = param;
@@ -458,7 +458,7 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
         case GL_PACK_SKIP_ROWS:
             if (param < 0.0f) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Negative Row Skip: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Negative Row Skip: %f", param);
                 return;
             }
             c->pack.skipRows = param;
@@ -470,7 +470,7 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
                     ((GLint) param) != 4 &&
                     ((GLint) param) != 8) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Invalid Alignment: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Invalid Alignment: %f", param);
                 return;
             }
             c->pack.alignment = param;
@@ -488,7 +488,7 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
         case GL_UNPACK_ROW_LENGTH:
             if (param < 0.0f) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Negative Row Length: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Negative Row Length: %f", param);
                 return;
             }
             c->unpack.rowLength = param;
@@ -498,7 +498,7 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
         case GL_UNPACK_IMAGE_HEIGHT:
             if (param < 0.0f) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Negative Image Height: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Negative Image Height: %f", param);
                 return;
             }
             c->unpack.imageHeight = param;
@@ -508,7 +508,7 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
         case GL_UNPACK_SKIP_IMAGES:
             if (param < 0.0f) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Negative Skip Images: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Negative Skip Images: %f", param);
                 return;
             }
             c->unpack.skipImages = param;
@@ -517,7 +517,7 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
         case GL_UNPACK_SKIP_PIXELS:
             if (param < 0.0f) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Negative Skip Pixels: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Negative Skip Pixels: %f", param);
                 return;
             }
             c->unpack.skipPixels = param;
@@ -526,7 +526,7 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
         case GL_UNPACK_SKIP_ROWS:
             if (param < 0.0f) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Negative Row Skip: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Negative Row Skip: %f", param);
                 return;
             }
             c->unpack.skipRows = param;
@@ -538,24 +538,24 @@ void STATE_APIENTRY crStatePixelStorei (GLenum pname, GLint param)
                     ((GLint) param) != 4 &&
                     ((GLint) param) != 8) 
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Invalid Alignment: %f", param);
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Invalid Alignment: %f", param);
                 return;
             }
             c->unpack.alignment = param;
             DIRTY(cb->unpack, g->neg_bitid);
             break;
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "Unknown glPixelStore Pname: %d", pname);
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "Unknown glPixelStore Pname: %d", pname);
             return;
     }
     DIRTY(cb->dirty, g->neg_bitid);
 }
 
 
-static void setClientState(CRClientState *c, CRClientBits *cb, 
-        CRbitvalue *neg_bitid, GLenum array, GLboolean state) 
+static void setClientState(CRContext *g, CRClientState *c, CRClientBits *cb, 
+                           CRbitvalue *neg_bitid, GLenum array, GLboolean state) 
 {
-    CRContext *g = GetCurrentContext();
+    PCRStateTracker pState = g->pStateTracker;
 
     switch (array) 
     {
@@ -611,48 +611,48 @@ static void setClientState(CRClientState *c, CRClientBits *cb,
                 c->array.s.enabled = state;
             }
             else {
-                crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "Invalid Enum passed to Enable/Disable Client State: SECONDARY_COLOR_ARRAY_EXT - EXT_secondary_color is not enabled." );
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "Invalid Enum passed to Enable/Disable Client State: SECONDARY_COLOR_ARRAY_EXT - EXT_secondary_color is not enabled." );
                 return;
             }
             break;
 #endif
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "Invalid Enum passed to Enable/Disable Client State: 0x%x", array );
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "Invalid Enum passed to Enable/Disable Client State: 0x%x", array );
             return;
     }
     DIRTY(cb->dirty, neg_bitid);
     DIRTY(cb->enableClientState, neg_bitid);
 }
 
-void STATE_APIENTRY crStateEnableClientState (GLenum array) 
+void STATE_APIENTRY crStateEnableClientState (PCRStateTracker pState, GLenum array) 
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     FLUSH();
 
-    setClientState(c, cb, g->neg_bitid, array, GL_TRUE);
+    setClientState(g, c, cb, g->neg_bitid, array, GL_TRUE);
 }
 
-void STATE_APIENTRY crStateDisableClientState (GLenum array) 
+void STATE_APIENTRY crStateDisableClientState (PCRStateTracker pState, GLenum array) 
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     FLUSH();
 
-    setClientState(c, cb, g->neg_bitid, array, GL_FALSE);
+    setClientState(g, c, cb, g->neg_bitid, array, GL_FALSE);
 }
 
 static void
-crStateClientSetPointer(CRClientPointer *cp, GLint size, GLenum type, GLboolean normalized, GLsizei stride,
+crStateClientSetPointer(CRContext *g, CRClientPointer *cp, GLint size, GLenum type, GLboolean normalized, GLsizei stride,
                         const GLvoid *pointer  CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
-    CRContext *g = GetCurrentContext();
+    PCRStateTracker pState = g->pStateTracker;
 
 #ifdef CR_EXT_compiled_vertex_array
     crStateUnlockClientPointer(cp, 0 /*fFreePointer*/);
@@ -700,7 +700,7 @@ crStateClientSetPointer(CRClientPointer *cp, GLint size, GLenum type, GLboolean 
             cp->bytesPerIndex *= sizeof(GLdouble);
             break;
         default:
-            crStateError( __LINE__, __FILE__, GL_INVALID_VALUE,
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                         "Unknown type of vertex array: %d", type );
             return;
     }
@@ -728,50 +728,50 @@ crStateClientSetPointer(CRClientPointer *cp, GLint size, GLenum type, GLboolean 
 #endif
 }
 
-void STATE_APIENTRY crStateVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
+void STATE_APIENTRY crStateVertexPointer(PCRStateTracker pState, GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     FLUSH();
 
     if (size != 2 && size != 3 && size != 4)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glVertexPointer: invalid size: %d", size);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glVertexPointer: invalid size: %d", size);
         return;
     }
     if (type != GL_SHORT && type != GL_INT &&
             type != GL_FLOAT && type != GL_DOUBLE)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glVertexPointer: invalid type: 0x%x", type);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glVertexPointer: invalid type: 0x%x", type);
         return;
     }
     if (stride < 0) 
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glVertexPointer: stride was negative: %d", stride);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glVertexPointer: stride was negative: %d", stride);
         return;
     }
 
-    crStateClientSetPointer(&(c->array.v), size, type, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
+    crStateClientSetPointer(g, &(c->array.v), size, type, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->v, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
+void STATE_APIENTRY crStateColorPointer(PCRStateTracker pState, GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     FLUSH();
 
     if (size != 3 && size != 4)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glColorPointer: invalid size: %d", size);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glColorPointer: invalid size: %d", size);
         return;
     }
     if (type != GL_BYTE && type != GL_UNSIGNED_BYTE &&
@@ -779,26 +779,26 @@ void STATE_APIENTRY crStateColorPointer(GLint size, GLenum type, GLsizei stride,
             type != GL_INT && type != GL_UNSIGNED_INT &&
             type != GL_FLOAT && type != GL_DOUBLE)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glColorPointer: invalid type: 0x%x", type);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glColorPointer: invalid type: 0x%x", type);
         return;
     }
     if (stride < 0) 
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glColorPointer: stride was negative: %d", stride);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glColorPointer: stride was negative: %d", stride);
         return;
     }
 
-    crStateClientSetPointer(&(c->array.c), size, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
+    crStateClientSetPointer(g, &(c->array.c), size, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->c, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateSecondaryColorPointerEXT(GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
+void STATE_APIENTRY crStateSecondaryColorPointerEXT(PCRStateTracker pState, GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     FLUSH();
@@ -820,7 +820,7 @@ void STATE_APIENTRY crStateSecondaryColorPointerEXT(GLint size, GLenum type, GLs
 
     if ((size != 3) && (size != 4))
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glSecondaryColorPointerEXT: invalid size: %d", size);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glSecondaryColorPointerEXT: invalid size: %d", size);
         return;
     }
     if (type != GL_BYTE && type != GL_UNSIGNED_BYTE &&
@@ -828,26 +828,26 @@ void STATE_APIENTRY crStateSecondaryColorPointerEXT(GLint size, GLenum type, GLs
             type != GL_INT && type != GL_UNSIGNED_INT &&
             type != GL_FLOAT && type != GL_DOUBLE)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glSecondaryColorPointerEXT: invalid type: 0x%x", type);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glSecondaryColorPointerEXT: invalid type: 0x%x", type);
         return;
     }
     if (stride < 0) 
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glSecondaryColorPointerEXT: stride was negative: %d", stride);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glSecondaryColorPointerEXT: stride was negative: %d", stride);
         return;
     }
 
-    crStateClientSetPointer(&(c->array.s), size, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
+    crStateClientSetPointer(g, &(c->array.s), size, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->s, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateIndexPointer(GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
+void STATE_APIENTRY crStateIndexPointer(PCRStateTracker pState, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     FLUSH();
@@ -855,26 +855,26 @@ void STATE_APIENTRY crStateIndexPointer(GLenum type, GLsizei stride, const GLvoi
     if (type != GL_SHORT && type != GL_INT && type != GL_UNSIGNED_BYTE &&
             type != GL_FLOAT && type != GL_DOUBLE)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glIndexPointer: invalid type: 0x%x", type);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glIndexPointer: invalid type: 0x%x", type);
         return;
     }
     if (stride < 0) 
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glIndexPointer: stride was negative: %d", stride);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glIndexPointer: stride was negative: %d", stride);
         return;
     }
 
-    crStateClientSetPointer(&(c->array.i), 1, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
+    crStateClientSetPointer(g, &(c->array.i), 1, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->i, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateNormalPointer(GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
+void STATE_APIENTRY crStateNormalPointer(PCRStateTracker pState, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     FLUSH();
@@ -883,79 +883,79 @@ void STATE_APIENTRY crStateNormalPointer(GLenum type, GLsizei stride, const GLvo
             type != GL_INT && type != GL_FLOAT &&
             type != GL_DOUBLE)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glNormalPointer: invalid type: 0x%x", type);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glNormalPointer: invalid type: 0x%x", type);
         return;
     }
     if (stride < 0) 
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glNormalPointer: stride was negative: %d", stride);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glNormalPointer: stride was negative: %d", stride);
         return;
     }
 
-    crStateClientSetPointer(&(c->array.n), 3, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
+    crStateClientSetPointer(g, &(c->array.n), 3, type, GL_TRUE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->n, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateTexCoordPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
+void STATE_APIENTRY crStateTexCoordPointer(PCRStateTracker pState, GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     FLUSH();
 
     if (size != 1 && size != 2 && size != 3 && size != 4)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glTexCoordPointer: invalid size: %d", size);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glTexCoordPointer: invalid size: %d", size);
         return;
     }
     if (type != GL_SHORT && type != GL_INT &&
             type != GL_FLOAT && type != GL_DOUBLE)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glTexCoordPointer: invalid type: 0x%x", type);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glTexCoordPointer: invalid type: 0x%x", type);
         return;
     }
     if (stride < 0) 
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glTexCoordPointer: stride was negative: %d", stride);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glTexCoordPointer: stride was negative: %d", stride);
         return;
     }
 
-    crStateClientSetPointer(&(c->array.t[c->curClientTextureUnit]), size, type, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
+    crStateClientSetPointer(g, &(c->array.t[c->curClientTextureUnit]), size, type, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->t[c->curClientTextureUnit], g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateEdgeFlagPointer(GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
+void STATE_APIENTRY crStateEdgeFlagPointer(PCRStateTracker pState, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     FLUSH();
 
     if (stride < 0) 
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glTexCoordPointer: stride was negative: %d", stride);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glTexCoordPointer: stride was negative: %d", stride);
         return;
     }
 
-    crStateClientSetPointer(&(c->array.e), 1, GL_UNSIGNED_BYTE, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
+    crStateClientSetPointer(g, &(c->array.e), 1, GL_UNSIGNED_BYTE, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->e, g->neg_bitid);
 }
 
-void STATE_APIENTRY crStateFogCoordPointerEXT(GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
+void STATE_APIENTRY crStateFogCoordPointerEXT(PCRStateTracker pState, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     FLUSH();
@@ -965,54 +965,54 @@ void STATE_APIENTRY crStateFogCoordPointerEXT(GLenum type, GLsizei stride, const
             type != GL_INT && type != GL_UNSIGNED_INT &&
             type != GL_FLOAT && type != GL_DOUBLE)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glFogCoordPointerEXT: invalid type: 0x%x", type);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glFogCoordPointerEXT: invalid type: 0x%x", type);
         return;
     }
     if (stride < 0) 
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glFogCoordPointerEXT: stride was negative: %d", stride);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glFogCoordPointerEXT: stride was negative: %d", stride);
         return;
     }
 
-    crStateClientSetPointer(&(c->array.f), 1, type, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
+    crStateClientSetPointer(g, &(c->array.f), 1, type, GL_FALSE, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->f, g->neg_bitid);
 }
 
 
-void STATE_APIENTRY crStateVertexAttribPointerNV(GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
+void STATE_APIENTRY crStateVertexAttribPointerNV(PCRStateTracker pState, GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
     GLboolean normalized = GL_FALSE;
     /* Extra error checking for NV arrays */
     if (type != GL_UNSIGNED_BYTE && type != GL_SHORT &&
             type != GL_FLOAT && type != GL_DOUBLE) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                  "glVertexAttribPointerNV: invalid type: 0x%x", type);
         return;
     }
-    crStateVertexAttribPointerARB(index, size, type, normalized, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
+    crStateVertexAttribPointerARB(pState, index, size, type, normalized, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
 }
 
 
-void STATE_APIENTRY crStateVertexAttribPointerARB(GLuint index, GLint size, GLenum type, GLboolean normalized,
+void STATE_APIENTRY crStateVertexAttribPointerARB(PCRStateTracker pState, GLuint index, GLint size, GLenum type, GLboolean normalized,
                                                   GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
 
     FLUSH();
 
     if (index >= CR_MAX_VERTEX_ATTRIBS)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glVertexAttribPointerARB: invalid index: %d", (int) index);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glVertexAttribPointerARB: invalid index: %d", (int) index);
         return;
     }
     if (size != 1 && size != 2 && size != 3 && size != 4)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glVertexAttribPointerARB: invalid size: %d", size);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glVertexAttribPointerARB: invalid size: %d", size);
         return;
     }
     if (type != GL_BYTE && type != GL_UNSIGNED_BYTE &&
@@ -1020,40 +1020,40 @@ void STATE_APIENTRY crStateVertexAttribPointerARB(GLuint index, GLint size, GLen
             type != GL_INT && type != GL_UNSIGNED_INT &&
             type != GL_FLOAT && type != GL_DOUBLE)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glVertexAttribPointerARB: invalid type: 0x%x", type);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glVertexAttribPointerARB: invalid type: 0x%x", type);
         return;
     }
     if (stride < 0) 
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glVertexAttribPointerARB: stride was negative: %d", stride);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE, "glVertexAttribPointerARB: stride was negative: %d", stride);
         return;
     }
 
-    crStateClientSetPointer(&(c->array.a[index]), size, type, normalized, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
+    crStateClientSetPointer(g, &(c->array.a[index]), size, type, normalized, stride, p CRVBOX_HOST_ONLY_PARAM(fRealPtr));
     DIRTY(cb->dirty, g->neg_bitid);
     DIRTY(cb->clientPointer, g->neg_bitid);
     DIRTY(cb->a[index], g->neg_bitid);
 }
 
 
-void STATE_APIENTRY crStateGetVertexAttribPointervNV(GLuint index, GLenum pname, GLvoid **pointer)
+void STATE_APIENTRY crStateGetVertexAttribPointervNV(PCRStateTracker pState, GLuint index, GLenum pname, GLvoid **pointer)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
 
     if (g->current.inBeginEnd) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION,
                                  "glGetVertexAttribPointervNV called in Begin/End");
         return;
     }
 
     if (index >= CR_MAX_VERTEX_ATTRIBS) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                  "glGetVertexAttribPointervNV(index)");
         return;
     }
 
     if (pname != GL_ATTRIB_ARRAY_POINTER_NV) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                  "glGetVertexAttribPointervNV(pname)");
         return;
     }
@@ -1062,9 +1062,9 @@ void STATE_APIENTRY crStateGetVertexAttribPointervNV(GLuint index, GLenum pname,
 }
 
 
-void STATE_APIENTRY crStateGetVertexAttribPointervARB(GLuint index, GLenum pname, GLvoid **pointer)
+void STATE_APIENTRY crStateGetVertexAttribPointervARB(PCRStateTracker pState, GLuint index, GLenum pname, GLvoid **pointer)
 {
-    crStateGetVertexAttribPointervNV(index, pname, pointer);
+    crStateGetVertexAttribPointervNV(pState, index, pname, pointer);
 }
 
 
@@ -1075,11 +1075,11 @@ void STATE_APIENTRY crStateGetVertexAttribPointervARB(GLuint index, GLenum pname
 ** Certainly not the most efficient method but it 
 ** lets me use the same glDrawArrays method.
 */
-void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
+void STATE_APIENTRY crStateInterleavedArrays(PCRStateTracker pState, GLenum format, GLsizei stride, const GLvoid *p CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
     CRClientPointer *cp;
     unsigned char *base = (unsigned char *) p;
@@ -1090,7 +1090,7 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
 
     if (g->current.inBeginEnd)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glInterleavedArrays called in begin/end");
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION, "glInterleavedArrays called in begin/end");
         return;
     }
 
@@ -1098,7 +1098,7 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
 
     if (stride < 0)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glInterleavedArrays: stride < 0: %d", stride);
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION, "glInterleavedArrays: stride < 0: %d", stride);
         return;
     }
 
@@ -1120,7 +1120,7 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
         case GL_V2F:
             break;
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glInterleavedArrays: Unrecognized format: %d", format);
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glInterleavedArrays: Unrecognized format: %d", format);
             return;
     }
 
@@ -1199,7 +1199,7 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
             cp->size = 2;
             break;
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glInterleavedArrays: Unrecognized format: %d", format);
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glInterleavedArrays: Unrecognized format: %d", format);
             return;
     }
 
@@ -1249,7 +1249,7 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
             cp->enabled = GL_FALSE;
             break;
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glInterleavedArrays: Unrecognized format: %d", format);
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glInterleavedArrays: Unrecognized format: %d", format);
             return;
     }
 
@@ -1330,7 +1330,7 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
             cp->enabled = GL_FALSE;
             break;
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glInterleavedArrays: Unrecognized format: %d", format);
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glInterleavedArrays: Unrecognized format: %d", format);
             return;
     }
 
@@ -1382,7 +1382,7 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
             cp->enabled = GL_FALSE;
             break;
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glInterleavedArrays: Unrecognized format: %d", format);
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "glInterleavedArrays: Unrecognized format: %d", format);
             return;
     }
 
@@ -1393,14 +1393,14 @@ void STATE_APIENTRY crStateInterleavedArrays(GLenum format, GLsizei stride, cons
     }   
 }
 
-void STATE_APIENTRY crStateGetPointerv(GLenum pname, GLvoid * * params) 
+void STATE_APIENTRY crStateGetPointerv(PCRStateTracker pState, GLenum pname, GLvoid * * params) 
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
 
     if (g->current.inBeginEnd)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION,
                 "GetPointerv called in begin/end");
         return;
     }
@@ -1436,7 +1436,7 @@ void STATE_APIENTRY crStateGetPointerv(GLenum pname, GLvoid * * params)
                 *params = (GLvoid *) c->array.s.p;
             }
             else {
-                crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "Invalid Enum passed to glGetPointerv: SECONDARY_COLOR_ARRAY_EXT - EXT_secondary_color is not enabled." );
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM, "Invalid Enum passed to glGetPointerv: SECONDARY_COLOR_ARRAY_EXT - EXT_secondary_color is not enabled." );
                 return;
             }
             break;
@@ -1446,26 +1446,26 @@ void STATE_APIENTRY crStateGetPointerv(GLenum pname, GLvoid * * params)
             /* do nothing - API switching should pick this up */
             break;
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION,
                     "glGetPointerv: invalid pname: %d", pname);
             return;
     }
 }
 
 
-void STATE_APIENTRY crStatePushClientAttrib( GLbitfield mask )
+void STATE_APIENTRY crStatePushClientAttrib(PCRStateTracker pState, GLbitfield mask )
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
 
     if (g->current.inBeginEnd) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION,
                                  "glPushClientAttrib called in Begin/End");
         return;
     }
 
     if (c->attribStackDepth == CR_MAX_CLIENT_ATTRIB_STACK_DEPTH - 1) {
-        crStateError(__LINE__, __FILE__, GL_STACK_OVERFLOW,
+        crStateError(pState, __LINE__, __FILE__, GL_STACK_OVERFLOW,
                                  "glPushClientAttrib called with a full stack!" );
         return;
     }
@@ -1488,22 +1488,22 @@ void STATE_APIENTRY crStatePushClientAttrib( GLbitfield mask )
 }
 
 
-void STATE_APIENTRY crStatePopClientAttrib( void )
+void STATE_APIENTRY crStatePopClientAttrib(PCRStateTracker pState)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRClientBits *cb = &(sb->client);
     CRbitvalue mask;
 
     if (g->current.inBeginEnd) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION,
                                  "glPopClientAttrib called in Begin/End");
         return;
     }
 
     if (c->attribStackDepth == 0) {
-        crStateError(__LINE__, __FILE__, GL_STACK_UNDERFLOW,
+        crStateError(pState, __LINE__, __FILE__, GL_STACK_UNDERFLOW,
                                  "glPopClientAttrib called with an empty stack!" );
         return;
     }
@@ -1550,9 +1550,9 @@ static GLboolean crStateCanLockClientPointer(CRClientPointer* cp)
     return !(cp->enabled && cp->buffer && cp->buffer->id);
 }
 
-void STATE_APIENTRY crStateLockArraysEXT(GLint first, GLint count)
+void STATE_APIENTRY crStateLockArraysEXT(PCRStateTracker pState, GLint first, GLint count)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
     int i;
 
@@ -1582,9 +1582,9 @@ void STATE_APIENTRY crStateLockArraysEXT(GLint first, GLint count)
     }
 }
 
-void STATE_APIENTRY crStateUnlockArraysEXT(void)
+void STATE_APIENTRY crStateUnlockArraysEXT(PCRStateTracker pState)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
     int i;
 
@@ -1605,18 +1605,19 @@ void STATE_APIENTRY crStateUnlockArraysEXT(void)
     }
 }
 
-void STATE_APIENTRY crStateVertexArrayRangeNV(GLsizei length, const GLvoid *pointer CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
+void STATE_APIENTRY crStateVertexArrayRangeNV(PCRStateTracker pState, GLsizei length, const GLvoid *pointer CRVBOX_HOST_ONLY_PARAM(int fRealPtr))
 {
   /* XXX todo */
     crWarning("crStateVertexArrayRangeNV not implemented");
-    (void)length; (void)pointer CRVBOX_HOST_ONLY_PARAM((void)fRealPtr);
+    RT_NOREF(pState); (void)length; (void)pointer CRVBOX_HOST_ONLY_PARAM((void)fRealPtr);
 }
 
 
-void STATE_APIENTRY crStateFlushVertexArrayRangeNV(void)
+void STATE_APIENTRY crStateFlushVertexArrayRangeNV(PCRStateTracker pState)
 {
   /* XXX todo */
     crWarning("crStateFlushVertexArrayRangeNV not implemented");
+    RT_NOREF(pState);
 }
 
 /*Returns if the given clientpointer could be used on server side directly*/
@@ -1649,10 +1650,10 @@ static void crStateDumpClientPointer(CRClientPointer *cp, const char *name, int 
  * Determine if the enabled arrays all live on the server
  * (via GL_ARB_vertex_buffer_object).
  */
-GLboolean crStateUseServerArrays(void)
+GLboolean crStateUseServerArrays(PCRStateTracker pState)
 {
 #if defined(CR_ARB_vertex_buffer_object) && !defined(CR_NO_SERVER_ARRAYS)
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRClientState *c = &(g->client);
     int i;
     GLboolean res;
@@ -1760,10 +1761,10 @@ GLuint crStateNeedDummyZeroVertexArray(CRContext *g, CRCurrentStatePointers *cur
  * packed and sent to the server.
  */
 GLboolean
-crStateUseServerArrayElements(void)
+crStateUseServerArrayElements(PCRStateTracker pState)
 {
 #ifdef CR_ARB_vertex_buffer_object
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     if (g->bufferobject.elementsBuffer &&
             g->bufferobject.elementsBuffer->id > 0)
         return GL_TRUE;
@@ -1780,6 +1781,7 @@ void
 crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                                     CRContext *fromCtx, CRContext *toCtx)
 {
+    PCRStateTracker pState = fromCtx->pStateTracker;
     CRClientState *from = &(fromCtx->client);
     const CRClientState *to = &(toCtx->client);
     GLint curClientTextureUnit = from->curClientTextureUnit;
@@ -1787,10 +1789,12 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
     GLint idHwArrayBuffer = CR_BUFFER_HWID(toCtx->bufferobject.arrayBuffer);
     const GLint idHwInitialBuffer = idHwArrayBuffer;
 
+    CRASSERT(fromCtx->pStateTracker == toCtx->pStateTracker);
+
 #ifdef DEBUG_misha
     {
         GLint tstHwBuffer = -1;
-        diff_api.GetIntegerv(GL_ARRAY_BUFFER_BINDING, &tstHwBuffer);
+        pState->diff_api.GetIntegerv(GL_ARRAY_BUFFER_BINDING, &tstHwBuffer);
         CRASSERT(idHwInitialBuffer == tstHwBuffer);
     }
 #endif
@@ -1807,10 +1811,10 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.v.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.VertexPointer(to->array.v.size, to->array.v.type, to->array.v.stride, to->array.v.p CRVBOX_HOST_ONLY_PARAM(to->array.v.fRealPtr));
+                pState->diff_api.VertexPointer(to->array.v.size, to->array.v.type, to->array.v.stride, to->array.v.p CRVBOX_HOST_ONLY_PARAM(to->array.v.fRealPtr));
                 from->array.v.size = to->array.v.size;
                 from->array.v.type = to->array.v.type;
                 from->array.v.stride = to->array.v.stride;
@@ -1828,10 +1832,10 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.n.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.NormalPointer(to->array.n.type, to->array.n.stride, to->array.n.p CRVBOX_HOST_ONLY_PARAM(to->array.n.fRealPtr));
+                pState->diff_api.NormalPointer(to->array.n.type, to->array.n.stride, to->array.n.p CRVBOX_HOST_ONLY_PARAM(to->array.n.fRealPtr));
                 from->array.n.type = to->array.n.type;
                 from->array.n.stride = to->array.n.stride;
                 from->array.n.p = to->array.n.p;
@@ -1849,10 +1853,10 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.c.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.ColorPointer(to->array.c.size, to->array.c.type, to->array.c.stride, to->array.c.p CRVBOX_HOST_ONLY_PARAM(to->array.c.fRealPtr));
+                pState->diff_api.ColorPointer(to->array.c.size, to->array.c.type, to->array.c.stride, to->array.c.p CRVBOX_HOST_ONLY_PARAM(to->array.c.fRealPtr));
                 from->array.c.size = to->array.c.size;
                 from->array.c.type = to->array.c.type;
                 from->array.c.stride = to->array.c.stride;
@@ -1870,10 +1874,10 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.i.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.IndexPointer(to->array.i.type, to->array.i.stride, to->array.i.p CRVBOX_HOST_ONLY_PARAM(to->array.i.fRealPtr));
+                pState->diff_api.IndexPointer(to->array.i.type, to->array.i.stride, to->array.i.p CRVBOX_HOST_ONLY_PARAM(to->array.i.fRealPtr));
                 from->array.i.type = to->array.i.type;
                 from->array.i.stride = to->array.i.stride;
                 from->array.i.p = to->array.i.p;
@@ -1892,12 +1896,12 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                     GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.t[i].buffer);
                     if (idHwArrayBufferUsed != idHwArrayBuffer)
                     {
-                        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                        pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                         idHwArrayBuffer = idHwArrayBufferUsed;
                     }
-                    diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
+                    pState->diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
                     curClientTextureUnit = i;
-                    diff_api.TexCoordPointer(to->array.t[i].size, to->array.t[i].type, to->array.t[i].stride, to->array.t[i].p CRVBOX_HOST_ONLY_PARAM(to->array.t[i].fRealPtr));
+                    pState->diff_api.TexCoordPointer(to->array.t[i].size, to->array.t[i].type, to->array.t[i].stride, to->array.t[i].p CRVBOX_HOST_ONLY_PARAM(to->array.t[i].fRealPtr));
                     from->array.t[i].size = to->array.t[i].size;
                     from->array.t[i].type = to->array.t[i].type;
                     from->array.t[i].stride = to->array.t[i].stride;
@@ -1915,10 +1919,10 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.e.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.EdgeFlagPointer(to->array.e.stride, to->array.e.p CRVBOX_HOST_ONLY_PARAM(to->array.e.fRealPtr));
+                pState->diff_api.EdgeFlagPointer(to->array.e.stride, to->array.e.p CRVBOX_HOST_ONLY_PARAM(to->array.e.fRealPtr));
                 from->array.e.stride = to->array.e.stride;
                 from->array.e.p = to->array.e.p;
                 from->array.e.buffer = to->array.e.buffer;
@@ -1935,10 +1939,10 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.s.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.SecondaryColorPointerEXT(to->array.s.size, to->array.s.type, to->array.s.stride, to->array.s.p CRVBOX_HOST_ONLY_PARAM(to->array.s.fRealPtr));
+                pState->diff_api.SecondaryColorPointerEXT(to->array.s.size, to->array.s.type, to->array.s.stride, to->array.s.p CRVBOX_HOST_ONLY_PARAM(to->array.s.fRealPtr));
                 from->array.s.size = to->array.s.size;
                 from->array.s.type = to->array.s.type;
                 from->array.s.stride = to->array.s.stride;
@@ -1956,10 +1960,10 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.f.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.FogCoordPointerEXT(to->array.f.type, to->array.f.stride, to->array.f.p CRVBOX_HOST_ONLY_PARAM(to->array.f.fRealPtr));
+                pState->diff_api.FogCoordPointerEXT(to->array.f.type, to->array.f.stride, to->array.f.p CRVBOX_HOST_ONLY_PARAM(to->array.f.fRealPtr));
                 from->array.f.type = to->array.f.type;
                 from->array.f.stride = to->array.f.stride;
                 from->array.f.p = to->array.f.p;
@@ -1980,11 +1984,11 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
                     GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.a[i].buffer);
                     if (idHwArrayBufferUsed != idHwArrayBuffer)
                     {
-                        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                        pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                         idHwArrayBuffer = idHwArrayBufferUsed;
                     }
-                    diff_api.VertexAttribPointerARB(i, to->array.a[i].size, to->array.a[i].type, to->array.a[i].normalized,
-                                                    to->array.a[i].stride, to->array.a[i].p CRVBOX_HOST_ONLY_PARAM(to->array.a[i].fRealPtr));
+                    pState->diff_api.VertexAttribPointerARB(i, to->array.a[i].size, to->array.a[i].type, to->array.a[i].normalized,
+                                                            to->array.a[i].stride, to->array.a[i].p CRVBOX_HOST_ONLY_PARAM(to->array.a[i].fRealPtr));
                     from->array.a[i].size = to->array.a[i].size;
                     from->array.a[i].type = to->array.a[i].type;
                     from->array.a[i].stride = to->array.a[i].stride;
@@ -2000,14 +2004,14 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
 
     if (idHwArrayBuffer != idHwInitialBuffer)
     {
-        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwInitialBuffer);
+        pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwInitialBuffer);
     }
 
     if (CHECKDIRTY(cb->enableClientState, bitID)) {
         /* update vertex array enable/disable flags */
         glAble able[2];
-        able[0] = diff_api.DisableClientState;
-        able[1] = diff_api.EnableClientState;
+        able[0] = pState->diff_api.DisableClientState;
+        able[1] = pState->diff_api.EnableClientState;
         if (from->array.v.enabled != to->array.v.enabled) {
             able[to->array.v.enabled](GL_VERTEX_ARRAY);
             from->array.v.enabled = to->array.v.enabled;
@@ -2026,7 +2030,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
         }
         for (i = 0; (unsigned int)i < toCtx->limits.maxTextureUnits; i++) {
             if (from->array.t[i].enabled != to->array.t[i].enabled) {
-                diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
+                pState->diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
                 curClientTextureUnit = i;
                 able[to->array.t[i].enabled](GL_TEXTURE_COORD_ARRAY);
                 from->array.t[i].enabled = to->array.t[i].enabled;
@@ -2047,9 +2051,9 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
         for (i = 0; (unsigned int)i < toCtx->limits.maxVertexProgramAttribs; i++) {
             if (from->array.a[i].enabled != to->array.a[i].enabled) {
                 if (to->array.a[i].enabled)
-                    diff_api.EnableVertexAttribArrayARB(i);
+                    pState->diff_api.EnableVertexAttribArrayARB(i);
                 else 
-                    diff_api.DisableVertexAttribArrayARB(i);
+                    pState->diff_api.DisableVertexAttribArrayARB(i);
                 from->array.a[i].enabled = to->array.a[i].enabled;
             }
         }
@@ -2058,7 +2062,7 @@ crStateClientDiff(CRClientBits *cb, CRbitvalue *bitID,
 
     if (to->curClientTextureUnit != curClientTextureUnit)
     {
-        diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + to->curClientTextureUnit);
+        pState->diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + to->curClientTextureUnit);
     }
 }
 
@@ -2067,6 +2071,7 @@ void
 crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                                         CRContext *fromCtx, CRContext *toCtx)
 {
+    PCRStateTracker pState = fromCtx->pStateTracker;
     const CRClientState *from = &(fromCtx->client);
     const CRClientState *to = &(toCtx->client);
     GLint curClientTextureUnit = from->curClientTextureUnit;
@@ -2074,10 +2079,12 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
     GLint idHwArrayBuffer = CR_BUFFER_HWID(toCtx->bufferobject.arrayBuffer);
     const GLint idHwInitialBuffer = idHwArrayBuffer;
 
+    CRASSERT(fromCtx->pStateTracker == toCtx->pStateTracker);
+
 #ifdef DEBUG_misha
     {
         GLint tstHwBuffer = -1;
-        diff_api.GetIntegerv(GL_ARRAY_BUFFER_BINDING, &tstHwBuffer);
+        pState->diff_api.GetIntegerv(GL_ARRAY_BUFFER_BINDING, &tstHwBuffer);
         CRASSERT(idHwInitialBuffer == tstHwBuffer);
     }
 #endif
@@ -2093,10 +2100,10 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.v.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.VertexPointer(to->array.v.size, to->array.v.type, to->array.v.stride, to->array.v.p CRVBOX_HOST_ONLY_PARAM(to->array.v.fRealPtr));
+                pState->diff_api.VertexPointer(to->array.v.size, to->array.v.type, to->array.v.stride, to->array.v.p CRVBOX_HOST_ONLY_PARAM(to->array.v.fRealPtr));
                 FILLDIRTY(cb->v);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2112,10 +2119,10 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.n.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.NormalPointer(to->array.n.type, to->array.n.stride, to->array.n.p CRVBOX_HOST_ONLY_PARAM(to->array.n.fRealPtr));
+                pState->diff_api.NormalPointer(to->array.n.type, to->array.n.stride, to->array.n.p CRVBOX_HOST_ONLY_PARAM(to->array.n.fRealPtr));
                 FILLDIRTY(cb->n);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2132,10 +2139,10 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.c.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.ColorPointer(to->array.c.size, to->array.c.type, to->array.c.stride, to->array.c.p CRVBOX_HOST_ONLY_PARAM(to->array.c.fRealPtr));
+                pState->diff_api.ColorPointer(to->array.c.size, to->array.c.type, to->array.c.stride, to->array.c.p CRVBOX_HOST_ONLY_PARAM(to->array.c.fRealPtr));
                 FILLDIRTY(cb->c);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2151,10 +2158,10 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.i.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.IndexPointer(to->array.i.type, to->array.i.stride, to->array.i.p CRVBOX_HOST_ONLY_PARAM(to->array.i.fRealPtr));
+                pState->diff_api.IndexPointer(to->array.i.type, to->array.i.stride, to->array.i.p CRVBOX_HOST_ONLY_PARAM(to->array.i.fRealPtr));
                 FILLDIRTY(cb->i);
                 FILLDIRTY(cb->dirty);
                 FILLDIRTY(cb->clientPointer);
@@ -2172,12 +2179,12 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.t[i].buffer);
                     if (idHwArrayBufferUsed != idHwArrayBuffer)
                     {
-                        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                        pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                         idHwArrayBuffer = idHwArrayBufferUsed;
                     }
-                    diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
+                    pState->diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
                     curClientTextureUnit = i;
-                    diff_api.TexCoordPointer(to->array.t[i].size, to->array.t[i].type, to->array.t[i].stride, to->array.t[i].p CRVBOX_HOST_ONLY_PARAM(to->array.t[i].fRealPtr));
+                    pState->diff_api.TexCoordPointer(to->array.t[i].size, to->array.t[i].type, to->array.t[i].stride, to->array.t[i].p CRVBOX_HOST_ONLY_PARAM(to->array.t[i].fRealPtr));
                     FILLDIRTY(cb->t[i]);
                     FILLDIRTY(cb->clientPointer);
                     FILLDIRTY(cb->dirty);
@@ -2193,10 +2200,10 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.e.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.EdgeFlagPointer(to->array.e.stride, to->array.e.p CRVBOX_HOST_ONLY_PARAM(to->array.e.fRealPtr));
+                pState->diff_api.EdgeFlagPointer(to->array.e.stride, to->array.e.p CRVBOX_HOST_ONLY_PARAM(to->array.e.fRealPtr));
                 FILLDIRTY(cb->e);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2213,10 +2220,10 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.s.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.SecondaryColorPointerEXT(to->array.s.size, to->array.s.type, to->array.s.stride, to->array.s.p CRVBOX_HOST_ONLY_PARAM(to->array.s.fRealPtr));
+                pState->diff_api.SecondaryColorPointerEXT(to->array.s.size, to->array.s.type, to->array.s.stride, to->array.s.p CRVBOX_HOST_ONLY_PARAM(to->array.s.fRealPtr));
                 FILLDIRTY(cb->s);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2232,10 +2239,10 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                 GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.f.buffer);
                 if (idHwArrayBufferUsed != idHwArrayBuffer)
                 {
-                    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                    pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                     idHwArrayBuffer = idHwArrayBufferUsed;
                 }
-                diff_api.FogCoordPointerEXT(to->array.f.type, to->array.f.stride, to->array.f.p CRVBOX_HOST_ONLY_PARAM(to->array.f.fRealPtr));
+                pState->diff_api.FogCoordPointerEXT(to->array.f.type, to->array.f.stride, to->array.f.p CRVBOX_HOST_ONLY_PARAM(to->array.f.fRealPtr));
                 FILLDIRTY(cb->f);
                 FILLDIRTY(cb->clientPointer);
                 FILLDIRTY(cb->dirty);
@@ -2255,11 +2262,11 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
                     GLint idHwArrayBufferUsed = CR_BUFFER_HWID(to->array.a[i].buffer);
                     if (idHwArrayBufferUsed != idHwArrayBuffer)
                     {
-                        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
+                        pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwArrayBufferUsed);
                         idHwArrayBuffer = idHwArrayBufferUsed;
                     }
-                    diff_api.VertexAttribPointerARB(i, to->array.a[i].size, to->array.a[i].type, to->array.a[i].normalized,
-                                                    to->array.a[i].stride, to->array.a[i].p  CRVBOX_HOST_ONLY_PARAM(to->array.a[i].fRealPtr));
+                    pState->diff_api.VertexAttribPointerARB(i, to->array.a[i].size, to->array.a[i].type, to->array.a[i].normalized,
+                                                            to->array.a[i].stride, to->array.a[i].p  CRVBOX_HOST_ONLY_PARAM(to->array.a[i].fRealPtr));
                     FILLDIRTY(cb->a[i]);
                     FILLDIRTY(cb->clientPointer);
                     FILLDIRTY(cb->dirty);
@@ -2272,14 +2279,14 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
 
     if (idHwArrayBuffer != idHwInitialBuffer)
     {
-        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwInitialBuffer);
+        pState->diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, idHwInitialBuffer);
     }
 
     if (CHECKDIRTY(cb->enableClientState, bitID)) {
         /* update vertex array enable/disable flags */
         glAble able[2];
-        able[0] = diff_api.DisableClientState;
-        able[1] = diff_api.EnableClientState;
+        able[0] = pState->diff_api.DisableClientState;
+        able[1] = pState->diff_api.EnableClientState;
         if (from->array.v.enabled != to->array.v.enabled) {
             able[to->array.v.enabled](GL_VERTEX_ARRAY);
             FILLDIRTY(cb->enableClientState);
@@ -2302,7 +2309,7 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
         }
         for (i = 0; (unsigned int)i < toCtx->limits.maxTextureUnits; i++) {
             if (from->array.t[i].enabled != to->array.t[i].enabled) {
-                diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
+                pState->diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + i);
                 curClientTextureUnit = i;
                 able[to->array.t[i].enabled](GL_TEXTURE_COORD_ARRAY);
                 FILLDIRTY(cb->enableClientState);
@@ -2327,9 +2334,9 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
         for (i = 0; (unsigned int)i < toCtx->limits.maxVertexProgramAttribs; i++) {
             if (from->array.a[i].enabled != to->array.a[i].enabled) {
                 if (to->array.a[i].enabled)
-                    diff_api.EnableVertexAttribArrayARB(i);
+                    pState->diff_api.EnableVertexAttribArrayARB(i);
                 else
-                    diff_api.DisableVertexAttribArrayARB(i);
+                    pState->diff_api.DisableVertexAttribArrayARB(i);
                 FILLDIRTY(cb->enableClientState);
                 FILLDIRTY(cb->dirty);
             }
@@ -2339,56 +2346,56 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
 
     if (to->curClientTextureUnit != curClientTextureUnit)
     {
-        diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + to->curClientTextureUnit);
+        pState->diff_api.ClientActiveTextureARB(GL_TEXTURE0_ARB + to->curClientTextureUnit);
     }
 
     if (CHECKDIRTY(cb->unpack, bitID))
     {
         if (from->unpack.rowLength != to->unpack.rowLength)
         {
-            diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, to->unpack.rowLength);
+            pState->diff_api.PixelStorei(GL_UNPACK_ROW_LENGTH, to->unpack.rowLength);
             FILLDIRTY(cb->unpack);
             FILLDIRTY(cb->dirty);
         }
         if (from->unpack.skipRows != to->unpack.skipRows)
         {
-            diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, to->unpack.skipRows);
+            pState->diff_api.PixelStorei(GL_UNPACK_SKIP_ROWS, to->unpack.skipRows);
             FILLDIRTY(cb->unpack);
             FILLDIRTY(cb->dirty);
         }
         if (from->unpack.skipPixels != to->unpack.skipPixels)
         {
-            diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, to->unpack.skipPixels);
+            pState->diff_api.PixelStorei(GL_UNPACK_SKIP_PIXELS, to->unpack.skipPixels);
             FILLDIRTY(cb->unpack);
             FILLDIRTY(cb->dirty);
         }
         if (from->unpack.alignment != to->unpack.alignment)
         {
-            diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, to->unpack.alignment);
+            pState->diff_api.PixelStorei(GL_UNPACK_ALIGNMENT, to->unpack.alignment);
             FILLDIRTY(cb->unpack);
             FILLDIRTY(cb->dirty);
         }
         if (from->unpack.imageHeight != to->unpack.imageHeight)
         {
-            diff_api.PixelStorei(GL_UNPACK_IMAGE_HEIGHT, to->unpack.imageHeight);
+            pState->diff_api.PixelStorei(GL_UNPACK_IMAGE_HEIGHT, to->unpack.imageHeight);
             FILLDIRTY(cb->unpack);
             FILLDIRTY(cb->dirty);
         }
         if (from->unpack.skipImages != to->unpack.skipImages)
         {
-            diff_api.PixelStorei(GL_UNPACK_SKIP_IMAGES, to->unpack.skipImages);
+            pState->diff_api.PixelStorei(GL_UNPACK_SKIP_IMAGES, to->unpack.skipImages);
             FILLDIRTY(cb->unpack);
             FILLDIRTY(cb->dirty);
         }
         if (from->unpack.swapBytes != to->unpack.swapBytes)
         {
-            diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, to->unpack.swapBytes);
+            pState->diff_api.PixelStorei(GL_UNPACK_SWAP_BYTES, to->unpack.swapBytes);
             FILLDIRTY(cb->unpack);
             FILLDIRTY(cb->dirty);
         }
         if (from->unpack.psLSBFirst != to->unpack.psLSBFirst)
         {
-            diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, to->unpack.psLSBFirst);
+            pState->diff_api.PixelStorei(GL_UNPACK_LSB_FIRST, to->unpack.psLSBFirst);
             FILLDIRTY(cb->unpack);
             FILLDIRTY(cb->dirty);
         }
@@ -2399,49 +2406,49 @@ crStateClientSwitch(CRClientBits *cb, CRbitvalue *bitID,
     {
         if (from->pack.rowLength != to->pack.rowLength)
         {
-            diff_api.PixelStorei(GL_PACK_ROW_LENGTH, to->pack.rowLength);
+            pState->diff_api.PixelStorei(GL_PACK_ROW_LENGTH, to->pack.rowLength);
             FILLDIRTY(cb->pack);
             FILLDIRTY(cb->dirty);
         }
         if (from->pack.skipRows != to->pack.skipRows)
         {
-            diff_api.PixelStorei(GL_PACK_SKIP_ROWS, to->pack.skipRows);
+            pState->diff_api.PixelStorei(GL_PACK_SKIP_ROWS, to->pack.skipRows);
             FILLDIRTY(cb->pack);
             FILLDIRTY(cb->dirty);
         }
         if (from->pack.skipPixels != to->pack.skipPixels)
         {
-            diff_api.PixelStorei(GL_PACK_SKIP_PIXELS, to->pack.skipPixels);
+            pState->diff_api.PixelStorei(GL_PACK_SKIP_PIXELS, to->pack.skipPixels);
             FILLDIRTY(cb->pack);
             FILLDIRTY(cb->dirty);
         }
         if (from->pack.alignment != to->pack.alignment)
         {
-            diff_api.PixelStorei(GL_PACK_ALIGNMENT, to->pack.alignment);
+            pState->diff_api.PixelStorei(GL_PACK_ALIGNMENT, to->pack.alignment);
             FILLDIRTY(cb->pack);
             FILLDIRTY(cb->dirty);
         }
         if (from->pack.imageHeight != to->pack.imageHeight)
         {
-            diff_api.PixelStorei(GL_PACK_IMAGE_HEIGHT, to->pack.imageHeight);
+            pState->diff_api.PixelStorei(GL_PACK_IMAGE_HEIGHT, to->pack.imageHeight);
             FILLDIRTY(cb->pack);
             FILLDIRTY(cb->dirty);
         }
         if (from->pack.skipImages != to->pack.skipImages)
         {
-            diff_api.PixelStorei(GL_PACK_SKIP_IMAGES, to->pack.skipImages);
+            pState->diff_api.PixelStorei(GL_PACK_SKIP_IMAGES, to->pack.skipImages);
             FILLDIRTY(cb->pack);
             FILLDIRTY(cb->dirty);
         }
         if (from->pack.swapBytes != to->pack.swapBytes)
         {
-            diff_api.PixelStorei(GL_PACK_SWAP_BYTES, to->pack.swapBytes);
+            pState->diff_api.PixelStorei(GL_PACK_SWAP_BYTES, to->pack.swapBytes);
             FILLDIRTY(cb->pack);
             FILLDIRTY(cb->dirty);
         }
         if (from->pack.psLSBFirst != to->pack.psLSBFirst)
         {
-            diff_api.PixelStorei(GL_PACK_LSB_FIRST, to->pack.psLSBFirst);
+            pState->diff_api.PixelStorei(GL_PACK_LSB_FIRST, to->pack.psLSBFirst);
             FILLDIRTY(cb->pack);
             FILLDIRTY(cb->dirty);
         }

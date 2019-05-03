@@ -43,7 +43,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchLoadMatrixf( const GLfloat *m )
 {
     const GLenum matMode = cr_server.curClient->currentCtxInfo->pContext->transform.matrixMode;
 
-    crStateLoadMatrixf( m );
+    crStateLoadMatrixf(&cr_server.StateTracker, m );
 
     if (matMode == GL_MODELVIEW && cr_server.viewOverride) {
         int eye = crServerGetCurrentEye();
@@ -59,7 +59,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchLoadMatrixd( const GLdouble *m )
 {
     const GLenum matMode = cr_server.curClient->currentCtxInfo->pContext->transform.matrixMode;
 
-    crStateLoadMatrixd( m );
+    crStateLoadMatrixd(&cr_server.StateTracker, m );
 
     if (matMode == GL_MODELVIEW && cr_server.viewOverride) {
         int eye = crServerGetCurrentEye();
@@ -78,11 +78,11 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchMultMatrixf( const GLfloat *m )
     if (matMode == GL_PROJECTION && cr_server.projectionOverride) {
         /* load the overriding projection matrix */
         int eye = crServerGetCurrentEye();
-        crStateLoadMatrix( &cr_server.projectionMatrix[eye] );
+        crStateLoadMatrix(&cr_server.StateTracker, &cr_server.projectionMatrix[eye] );
     }
     else {
         /* the usual case */
-        crStateMultMatrixf( m );
+        crStateMultMatrixf(&cr_server.StateTracker, m );
         cr_server.head_spu->dispatch_table.MultMatrixf( m );
     }
 }
@@ -95,11 +95,11 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchMultMatrixd( const GLdouble *m )
     if (matMode == GL_PROJECTION && cr_server.projectionOverride) {
         /* load the overriding projection matrix */
         int eye = crServerGetCurrentEye();
-        crStateLoadMatrix( &cr_server.projectionMatrix[eye] );
+        crStateLoadMatrix(&cr_server.StateTracker, &cr_server.projectionMatrix[eye] );
     }
     else {
         /* the usual case */
-        crStateMultMatrixd( m );
+        crStateMultMatrixd(&cr_server.StateTracker, m );
         cr_server.head_spu->dispatch_table.MultMatrixd( m );
     }
 }
@@ -110,7 +110,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchLoadIdentity( void )
 {
     const GLenum matMode = cr_server.curClient->currentCtxInfo->pContext->transform.matrixMode;
 
-    crStateLoadIdentity();
+    crStateLoadIdentity(&cr_server.StateTracker);
 
     if (matMode == GL_MODELVIEW && cr_server.viewOverride) {
         int eye = crServerGetCurrentEye();
@@ -321,7 +321,7 @@ crServerDispatchProgramStringARB(GLenum target, GLenum format, GLsizei len, cons
     }
 
     /* pass through */
-    crStateProgramStringARB(target, format, len, string);
+    crStateProgramStringARB(&cr_server.StateTracker, target, format, len, string);
     cr_server.head_spu->dispatch_table.ProgramStringARB(target, format, len, string);
 }
 
@@ -363,7 +363,7 @@ crServerDispatchLoadProgramNV(GLenum target, GLuint id, GLsizei len, const GLuby
     }
 
     /* pass through */
-    crStateLoadProgramNV(target, id, len, string);
+    crStateLoadProgramNV(&cr_server.StateTracker, target, id, len, string);
     cr_server.head_spu->dispatch_table.LoadProgramNV(target, id, len, string);
 }
 
@@ -380,7 +380,7 @@ crServerDispatchBindProgramARB(GLenum target, GLuint id)
     }
 
     /* pass through */
-    crStateBindProgramARB(target, id);
+    crStateBindProgramARB(&cr_server.StateTracker, target, id);
     cr_server.head_spu->dispatch_table.BindProgramARB(target, id);
 }
 
@@ -394,6 +394,6 @@ crServerDispatchBindProgramNV(GLenum target, GLuint id)
         cr_server.currentProgram = id;
     }
     /* pass through */
-    crStateBindProgramNV(target, id);
+    crStateBindProgramNV(&cr_server.StateTracker, target, id);
     cr_server.head_spu->dispatch_table.BindProgramNV(target, id);
 }

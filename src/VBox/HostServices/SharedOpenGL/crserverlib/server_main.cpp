@@ -50,6 +50,7 @@ PFNCRHGSMICMDCOMPLETION g_pfnCrHgsmiCompletion = NULL;
  * CRServer global data
  */
 CRServer cr_server;
+DECLHIDDEN(PCRStateTracker) g_pStateTracker;
 
 int tearingdown = 0; /* can't be static */
 
@@ -123,7 +124,7 @@ static void DeleteBarrierCallback( void *data )
 static void deleteContextInfoCallback( void *data )
 {
     CRContextInfo *c = (CRContextInfo *) data;
-    crStateDestroyContext(c->pContext);
+    crStateDestroyContext(&cr_server.StateTracker, c->pContext);
     if (c->CreateInfo.pszDpyName)
         crFree(c->CreateInfo.pszDpyName);
     crFree(c);
@@ -179,7 +180,7 @@ static void crServerTearDown( void )
         Assert(!cr_server.fCrCmdEnabled);
     }
 
-    crStateSetCurrent( NULL );
+    crStateSetCurrent(&cr_server.StateTracker, NULL);
 
     cr_server.curClient = NULL;
     cr_server.run_queue = NULL;
@@ -217,10 +218,10 @@ static void crServerTearDown( void )
     /* synchronize with reality */
     if (!fContextsDeleted)
     {
-        fOldEnableDiff = crStateEnableDiffOnMakeCurrent(GL_FALSE);
+        fOldEnableDiff = crStateEnableDiffOnMakeCurrent(&cr_server.StateTracker, GL_FALSE);
         if(cr_server.MainContextInfo.pContext)
-            crStateMakeCurrent(cr_server.MainContextInfo.pContext);
-        crStateEnableDiffOnMakeCurrent(fOldEnableDiff);
+            crStateMakeCurrent(&cr_server.StateTracker, cr_server.MainContextInfo.pContext);
+        crStateEnableDiffOnMakeCurrent(&cr_server.StateTracker, fOldEnableDiff);
     }
 
     /* Free vertex programs */
@@ -269,7 +270,7 @@ static void crServerTearDown( void )
     cr_server.head_spu = NULL;
 #endif
 
-    crStateDestroy();
+    crStateDestroy(&cr_server.StateTracker);
 
     crNetTearDown();
 
@@ -355,7 +356,8 @@ GLboolean crVBoxServerInit(void)
 
     cr_server.programTable = crAllocHashtable();
 
-    crStateInit();
+    crStateInit(&cr_server.StateTracker);
+    g_pStateTracker = &cr_server.StateTracker;
 
     crStateLimitsInit( &(cr_server.limits) );
 
@@ -392,13 +394,13 @@ GLboolean crVBoxServerInit(void)
 
     if (!cr_server.head_spu)
     {
-        crStateDestroy();
+        crStateDestroy(&cr_server.StateTracker);
         return GL_FALSE;
     }
 
     crServerInitDispatch();
     crServerInitTmpCtxDispatch();
-    crStateDiffAPI( &(cr_server.head_spu->dispatch_table) );
+    crStateDiffAPI(&cr_server.StateTracker, &(cr_server.head_spu->dispatch_table) );
 
 #ifdef VBOX_WITH_CRSERVER_DUMPER
     crMemset(&cr_server.Recorder, 0, sizeof (cr_server.Recorder));
@@ -409,7 +411,7 @@ GLboolean crVBoxServerInit(void)
 #endif
 
     /*Check for PBO support*/
-    if (crStateGetCurrent()->extensions.ARB_pixel_buffer_object)
+    if (crStateGetCurrent(&cr_server.StateTracker)->extensions.ARB_pixel_buffer_object)
     {
         cr_server.bUsePBOForReadback=GL_TRUE;
     }
@@ -1421,7 +1423,7 @@ static int32_t crVBoxServerSaveStatePerform(PSSMHANDLE pSSM)
     /* we need to save front & backbuffer data for each mural first create a context -> mural association */
     crVBoxServerBuildSaveStateGlobal(&Data);
 
-    rc = crStateSaveGlobals(pSSM);
+    rc = crStateSaveGlobals(&cr_server.StateTracker, pSSM);
     AssertRCReturn(rc, rc);
 
     Data.pSSM = pSSM;
@@ -2083,7 +2085,7 @@ static int32_t crVBoxServerLoadStatePerform(PSSMHANDLE pSSM, uint32_t version)
         cr_server.curClient = cr_server.clients[0];
     }
 
-    rc = crStateLoadGlobals(pSSM, version);
+    rc = crStateLoadGlobals(&cr_server.StateTracker, pSSM, version);
     AssertLogRelRCReturn(rc, rc);
 
     if (uiNumElems)
@@ -2603,7 +2605,7 @@ static void crVBoxServerDefaultContextClear()
     }
 
     cr_server.head_spu->dispatch_table.MakeCurrent(0, 0, 0);
-    crStateCleanupCurrent();
+    crStateCleanupCurrent(&cr_server.StateTracker);
 
     /* note: we need to clean all contexts, since otherwise renderspu leanup won't work,
      * i.e. renderspu would need to clean up its own internal windows, it won't be able to do that if
@@ -2611,7 +2613,7 @@ static void crVBoxServerDefaultContextClear()
     if (cr_server.MainContextInfo.SpuContext)
     {
         cr_server.head_spu->dispatch_table.DestroyContext(cr_server.MainContextInfo.SpuContext);
-        crStateDestroyContext(cr_server.MainContextInfo.pContext);
+        crStateDestroyContext(&cr_server.StateTracker, cr_server.MainContextInfo.pContext);
         if (cr_server.MainContextInfo.CreateInfo.pszDpyName)
             crFree(cr_server.MainContextInfo.CreateInfo.pszDpyName);
 
@@ -2629,7 +2631,7 @@ static void crVBoxServerDefaultContextClear()
     cr_server.currentNativeWindow = 0;
     cr_server.currentMural = NULL;
 
-    crStateDestroy();
+    crStateDestroy(&cr_server.StateTracker);
 //    crStateCleanupCurrent();
 
     if (CrBltIsInitialized(&cr_server.Blitter))
@@ -2650,8 +2652,8 @@ static void crVBoxServerDefaultContextSet()
     CRASSERT(!cr_server.MainContextInfo.SpuContext);
 
 //    crStateSetCurrent(NULL);
-    crStateInit();
-    crStateDiffAPI( &(cr_server.head_spu->dispatch_table) );
+    crStateInit(&cr_server.StateTracker);
+    crStateDiffAPI(&cr_server.StateTracker, &(cr_server.head_spu->dispatch_table) );
 
     CrPMgrEnable();
 }
@@ -3833,5 +3835,16 @@ int32_t crVBoxServerHgcmDisable(VBOXCRCMDCTL_HGCMDISABLE_DATA *pData)
 
     return VINF_SUCCESS;
 }
+
+void crVBoxServerDetachThread(void)
+{
+    crStateVBoxDetachThread(&cr_server.StateTracker);
+}
+
+void crVBoxServerAttachThread(void)
+{
+    crStateVBoxAttachThread(&cr_server.StateTracker);
+}
+
 
 #endif

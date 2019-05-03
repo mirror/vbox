@@ -422,7 +422,7 @@ crServerDispatchSwapBuffers( GLint window, GLint flags )
 	if (!cr_server.clients[0]->conn->actual_network && window == MAGIC_OFFSET)
 		window = 0;
 
-	ctx = crStateGetCurrent();
+	ctx = crStateGetCurrent(&cr_server.StateTracker);
 
 	CRASSERT(cr_server.curClient && cr_server.curClient->currentMural == mural);
 
@@ -448,7 +448,7 @@ crServerDispatchSwapBuffers( GLint window, GLint flags )
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchFlush(void)
 {
-    CRContext *ctx = crStateGetCurrent();
+    CRContext *ctx = crStateGetCurrent(&cr_server.StateTracker);
     cr_server.head_spu->dispatch_table.Flush();
 
     if (cr_server.curClient && cr_server.curClient->currentMural)
@@ -469,7 +469,7 @@ crServerDispatchFlush(void)
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchFinish(void)
 {
-    CRContext *ctx = crStateGetCurrent();
+    CRContext *ctx = crStateGetCurrent(&cr_server.StateTracker);
 
     cr_server.head_spu->dispatch_table.Finish();
 

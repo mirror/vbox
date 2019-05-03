@@ -37,7 +37,7 @@ crServerDispatchGenFramebuffersEXT(GLsizei n, GLuint *framebuffers)
 
     local_buffers = (GLuint *)crCalloc(n * sizeof(*local_buffers));
 
-    crStateGenFramebuffersEXT(n, local_buffers);
+    crStateGenFramebuffersEXT(&cr_server.StateTracker, n, local_buffers);
 
     crServerReturnValue(local_buffers, n * sizeof(*local_buffers));
     crFree(local_buffers);
@@ -57,7 +57,7 @@ crServerDispatchGenRenderbuffersEXT(GLsizei n, GLuint *renderbuffers)
 
     local_buffers = (GLuint *)crCalloc(n * sizeof(*local_buffers));
 
-    crStateGenRenderbuffersEXT(n, local_buffers);
+    crStateGenRenderbuffersEXT(&cr_server.StateTracker, n, local_buffers);
 
     crServerReturnValue(local_buffers, n * sizeof(*local_buffers));
     crFree(local_buffers);
@@ -65,20 +65,20 @@ crServerDispatchGenRenderbuffersEXT(GLsizei n, GLuint *renderbuffers)
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchFramebufferTexture1DEXT(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
 {
-    crStateFramebufferTexture1DEXT(target, attachment, textarget, texture, level);
-    cr_server.head_spu->dispatch_table.FramebufferTexture1DEXT(target, attachment, textarget, crStateGetTextureHWID(texture), level);
+    crStateFramebufferTexture1DEXT(&cr_server.StateTracker, target, attachment, textarget, texture, level);
+    cr_server.head_spu->dispatch_table.FramebufferTexture1DEXT(target, attachment, textarget, crStateGetTextureHWID(&cr_server.StateTracker, texture), level);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchFramebufferTexture2DEXT(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
 {
-    crStateFramebufferTexture2DEXT(target, attachment, textarget, texture, level);
-    cr_server.head_spu->dispatch_table.FramebufferTexture2DEXT(target, attachment, textarget, crStateGetTextureHWID(texture), level);
+    crStateFramebufferTexture2DEXT(&cr_server.StateTracker, target, attachment, textarget, texture, level);
+    cr_server.head_spu->dispatch_table.FramebufferTexture2DEXT(target, attachment, textarget, crStateGetTextureHWID(&cr_server.StateTracker, texture), level);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchFramebufferTexture3DEXT(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset)
 {
-    crStateFramebufferTexture3DEXT(target, attachment, textarget, texture, level, zoffset);
-    cr_server.head_spu->dispatch_table.FramebufferTexture3DEXT(target, attachment, textarget, crStateGetTextureHWID(texture), level, zoffset);
+    crStateFramebufferTexture3DEXT(&cr_server.StateTracker, target, attachment, textarget, texture, level, zoffset);
+    cr_server.head_spu->dispatch_table.FramebufferTexture3DEXT(target, attachment, textarget, crStateGetTextureHWID(&cr_server.StateTracker, texture), level, zoffset);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchBindFramebufferEXT(GLenum target, GLuint framebuffer)
@@ -86,11 +86,11 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchBindFramebufferEXT(GLenum target, 
 #ifdef DEBUG_misha
     GLint rfb = 0, dfb = 0;
 #endif
-        crStateBindFramebufferEXT(target, framebuffer);
+    crStateBindFramebufferEXT(&cr_server.StateTracker, target, framebuffer);
 
     if (0==framebuffer)
     {
-        CRContext *ctx = crStateGetCurrent();
+        CRContext *ctx = crStateGetCurrent(&cr_server.StateTracker);
         if (ctx->buffer.drawBuffer == GL_FRONT || ctx->buffer.drawBuffer == GL_FRONT_LEFT || ctx->buffer.drawBuffer == GL_FRONT_RIGHT)
             cr_server.curClient->currentMural->bFbDraw = GL_TRUE;
     }
@@ -148,22 +148,22 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchBindFramebufferEXT(GLenum target, 
     }
     else
     {
-        cr_server.head_spu->dispatch_table.BindFramebufferEXT(target, crStateGetFramebufferHWID(framebuffer));
+        cr_server.head_spu->dispatch_table.BindFramebufferEXT(target, crStateGetFramebufferHWID(&cr_server.StateTracker, framebuffer));
 #ifdef DEBUG_misha
         cr_server.head_spu->dispatch_table.GetIntegerv(GL_READ_FRAMEBUFFER_BINDING_EXT, &rfb);
         cr_server.head_spu->dispatch_table.GetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING_EXT, &dfb);
         if (GL_FRAMEBUFFER_EXT == target)
         {
-            Assert(rfb == crStateGetFramebufferHWID(framebuffer));
-            Assert(dfb == crStateGetFramebufferHWID(framebuffer));
+            Assert(rfb == crStateGetFramebufferHWID(&cr_server.StateTracker, framebuffer));
+            Assert(dfb == crStateGetFramebufferHWID(&cr_server.StateTracker, framebuffer));
         }
         else if (GL_READ_FRAMEBUFFER_EXT == target)
         {
-            Assert(rfb == crStateGetFramebufferHWID(framebuffer));
+            Assert(rfb == crStateGetFramebufferHWID(&cr_server.StateTracker, framebuffer));
         }
         else if (GL_DRAW_FRAMEBUFFER_EXT == target)
         {
-            Assert(dfb == crStateGetFramebufferHWID(framebuffer));
+            Assert(dfb == crStateGetFramebufferHWID(&cr_server.StateTracker, framebuffer));
         }
         else
         {
@@ -175,8 +175,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchBindFramebufferEXT(GLenum target, 
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchBindRenderbufferEXT(GLenum target, GLuint renderbuffer)
 {
-        crStateBindRenderbufferEXT(target, renderbuffer);
-        cr_server.head_spu->dispatch_table.BindRenderbufferEXT(target, crStateGetRenderbufferHWID(renderbuffer));
+        crStateBindRenderbufferEXT(&cr_server.StateTracker, target, renderbuffer);
+        cr_server.head_spu->dispatch_table.BindRenderbufferEXT(target, crStateGetRenderbufferHWID(&cr_server.StateTracker, renderbuffer));
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteFramebuffersEXT(GLsizei n, const GLuint * framebuffers)
@@ -187,7 +187,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteFramebuffersEXT(GLsizei n, c
         return;
     }
 
-    crStateDeleteFramebuffersEXT(n, framebuffers);
+    crStateDeleteFramebuffersEXT(&cr_server.StateTracker, n, framebuffers);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteRenderbuffersEXT(GLsizei n, const GLuint * renderbuffers)
@@ -198,14 +198,14 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteRenderbuffersEXT(GLsizei n, 
         return;
     }
 
-    crStateDeleteRenderbuffersEXT(n, renderbuffers);
+    crStateDeleteRenderbuffersEXT(&cr_server.StateTracker, n, renderbuffers);
 }
 
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchFramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)
 {
-        crStateFramebufferRenderbufferEXT(target, attachment, renderbuffertarget, renderbuffer);
-        cr_server.head_spu->dispatch_table.FramebufferRenderbufferEXT(target, attachment, renderbuffertarget, crStateGetRenderbufferHWID(renderbuffer));
+        crStateFramebufferRenderbufferEXT(&cr_server.StateTracker, target, attachment, renderbuffertarget, renderbuffer);
+        cr_server.head_spu->dispatch_table.FramebufferRenderbufferEXT(target, attachment, renderbuffertarget, crStateGetRenderbufferHWID(&cr_server.StateTracker, renderbuffer));
 }
 
 void SERVER_DISPATCH_APIENTRY
@@ -213,7 +213,7 @@ crServerDispatchGetFramebufferAttachmentParameterivEXT(GLenum target, GLenum att
 {
         GLint local_params[1];
         (void) params;
-        crStateGetFramebufferAttachmentParameterivEXT(target, attachment, pname, local_params);
+        crStateGetFramebufferAttachmentParameterivEXT(&cr_server.StateTracker, target, attachment, pname, local_params);
 
         crServerReturnValue(&(local_params[0]), 1*sizeof(GLint));
 }
@@ -222,7 +222,7 @@ GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsFramebufferEXT( GLuint fram
 {
     /* since GenFramebuffers/Renderbuffers issued to host ogl only on bind + some other ops, the host drivers may not know about them
      * so use state data*/
-    GLboolean retval = crStateIsFramebufferEXT(framebuffer);
+    GLboolean retval = crStateIsFramebufferEXT(&cr_server.StateTracker, framebuffer);
     crServerReturnValue( &retval, sizeof(retval) );
     return retval; /* WILL PROBABLY BE IGNORED */
 }
@@ -231,7 +231,7 @@ GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsRenderbufferEXT( GLuint ren
 {
     /* since GenFramebuffers/Renderbuffers issued to host ogl only on bind + some other ops, the host drivers may not know about them
      * so use state data*/
-    GLboolean retval = crStateIsRenderbufferEXT(renderbuffer);
+    GLboolean retval = crStateIsRenderbufferEXT(&cr_server.StateTracker, renderbuffer);
     crServerReturnValue( &retval, sizeof(retval) );
     return retval; /* WILL PROBABLY BE IGNORED */
 }

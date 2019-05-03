@@ -31,7 +31,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchShaderSource(GLuint shader, GLsize
 #ifdef DEBUG_misha
     GLenum err = cr_server.head_spu->dispatch_table.GetError();
 #endif
-    cr_server.head_spu->dispatch_table.ShaderSource(crStateGetShaderHWID(shader), count, string, length);
+    cr_server.head_spu->dispatch_table.ShaderSource(crStateGetShaderHWID(&cr_server.StateTracker, shader), count, string, length);
 #ifdef DEBUG_misha
     err = cr_server.head_spu->dispatch_table.GetError();
     CRASSERT(err == GL_NO_ERROR);
@@ -44,10 +44,10 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchCompileShader(GLuint shader)
 #ifdef DEBUG_misha
     GLint iCompileStatus = GL_FALSE;
 #endif
-    crStateCompileShader(shader);
-    cr_server.head_spu->dispatch_table.CompileShader(crStateGetShaderHWID(shader));
+    crStateCompileShader(&cr_server.StateTracker, shader);
+    cr_server.head_spu->dispatch_table.CompileShader(crStateGetShaderHWID(&cr_server.StateTracker, shader));
 #ifdef DEBUG_misha
-    cr_server.head_spu->dispatch_table.GetShaderiv(crStateGetShaderHWID(shader), GL_COMPILE_STATUS, &iCompileStatus);
+    cr_server.head_spu->dispatch_table.GetShaderiv(crStateGetShaderHWID(&cr_server.StateTracker, shader), GL_COMPILE_STATUS, &iCompileStatus);
     Assert(iCompileStatus == GL_TRUE);
 #endif
     CR_SERVER_DUMP_COMPILE_SHADER(shader);
@@ -55,8 +55,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchCompileShader(GLuint shader)
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteShader(GLuint shader)
 {
-    GLuint shaderHW = crStateGetShaderHWID(shader);
-    crStateDeleteShader(shader);
+    GLuint shaderHW = crStateGetShaderHWID(&cr_server.StateTracker, shader);
+    crStateDeleteShader(&cr_server.StateTracker, shader);
     if (shaderHW)
         cr_server.head_spu->dispatch_table.DeleteShader(shaderHW);
     else
@@ -65,33 +65,35 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteShader(GLuint shader)
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchAttachShader(GLuint program, GLuint shader)
 {
-    crStateAttachShader(program, shader);
-    cr_server.head_spu->dispatch_table.AttachShader(crStateGetProgramHWID(program), crStateGetShaderHWID(shader));
+    crStateAttachShader(&cr_server.StateTracker, program, shader);
+    cr_server.head_spu->dispatch_table.AttachShader(crStateGetProgramHWID(&cr_server.StateTracker, program),
+                                                    crStateGetShaderHWID(&cr_server.StateTracker, shader));
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDetachShader(GLuint program, GLuint shader)
 {
-    crStateDetachShader(program, shader);
-    cr_server.head_spu->dispatch_table.DetachShader(crStateGetProgramHWID(program), crStateGetShaderHWID(shader));
+    crStateDetachShader(&cr_server.StateTracker, program, shader);
+    cr_server.head_spu->dispatch_table.DetachShader(crStateGetProgramHWID(&cr_server.StateTracker, program),
+                                                    crStateGetShaderHWID(&cr_server.StateTracker, shader));
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchLinkProgram(GLuint program)
 {
-    crStateLinkProgram(program);
-    cr_server.head_spu->dispatch_table.LinkProgram(crStateGetProgramHWID(program));
+    crStateLinkProgram(&cr_server.StateTracker, program);
+    cr_server.head_spu->dispatch_table.LinkProgram(crStateGetProgramHWID(&cr_server.StateTracker, program));
     CR_SERVER_DUMP_LINK_PROGRAM(program);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchUseProgram(GLuint program)
 {
-    crStateUseProgram(program);
-    cr_server.head_spu->dispatch_table.UseProgram(crStateGetProgramHWID(program));
+    crStateUseProgram(&cr_server.StateTracker, program);
+    cr_server.head_spu->dispatch_table.UseProgram(crStateGetProgramHWID(&cr_server.StateTracker, program));
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteProgram(GLuint program)
 {
-    GLuint hwId = crStateGetProgramHWID(program);
-    crStateDeleteProgram(program);
+    GLuint hwId = crStateGetProgramHWID(&cr_server.StateTracker, program);
+    crStateDeleteProgram(&cr_server.StateTracker, program);
     if (hwId)
         cr_server.head_spu->dispatch_table.DeleteProgram(hwId);
     else
@@ -100,19 +102,19 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteProgram(GLuint program)
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchValidateProgram(GLuint program)
 {
-    crStateValidateProgram(program);
-    cr_server.head_spu->dispatch_table.ValidateProgram(crStateGetProgramHWID(program));
+    crStateValidateProgram(&cr_server.StateTracker, program);
+    cr_server.head_spu->dispatch_table.ValidateProgram(crStateGetProgramHWID(&cr_server.StateTracker, program));
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchBindAttribLocation(GLuint program, GLuint index, const char * name)
 {
-    crStateBindAttribLocation(program, index, name);
-    cr_server.head_spu->dispatch_table.BindAttribLocation(crStateGetProgramHWID(program), index, name);
+    crStateBindAttribLocation(&cr_server.StateTracker, program, index, name);
+    cr_server.head_spu->dispatch_table.BindAttribLocation(crStateGetProgramHWID(&cr_server.StateTracker, program), index, name);
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteObjectARB(VBoxGLhandleARB obj)
 {
-    GLuint hwid =  crStateDeleteObjectARB(obj);
+    GLuint hwid =  crStateDeleteObjectARB(&cr_server.StateTracker, obj);
 
     if (hwid)
         cr_server.head_spu->dispatch_table.DeleteObjectARB(hwid);
@@ -123,7 +125,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteObjectARB(VBoxGLhandleARB ob
 GLint SERVER_DISPATCH_APIENTRY crServerDispatchGetAttribLocation( GLuint program, const char * name )
 {
     GLint retval;
-    retval = cr_server.head_spu->dispatch_table.GetAttribLocation(crStateGetProgramHWID(program), name );
+    retval = cr_server.head_spu->dispatch_table.GetAttribLocation(crStateGetProgramHWID(&cr_server.StateTracker, program), name );
     crServerReturnValue( &retval, sizeof(retval) );
     return retval; /* WILL PROBABLY BE IGNORED */
 }
@@ -134,7 +136,7 @@ VBoxGLhandleARB SERVER_DISPATCH_APIENTRY crServerDispatchGetHandleARB( GLenum pn
     retval = cr_server.head_spu->dispatch_table.GetHandleARB(pname);
     if (pname==GL_PROGRAM_OBJECT_ARB)
     {
-        retval = crStateGLSLProgramHWIDtoID(retval);
+        retval = crStateGLSLProgramHWIDtoID(&cr_server.StateTracker, retval);
     }
     crServerReturnValue( &retval, sizeof(retval) );
     return retval; /* WILL PROBABLY BE IGNORED */
@@ -143,7 +145,7 @@ VBoxGLhandleARB SERVER_DISPATCH_APIENTRY crServerDispatchGetHandleARB( GLenum pn
 GLint SERVER_DISPATCH_APIENTRY crServerDispatchGetUniformLocation(GLuint program, const char * name)
 {
     GLint retval;
-    retval = cr_server.head_spu->dispatch_table.GetUniformLocation(crStateGetProgramHWID(program), name);
+    retval = cr_server.head_spu->dispatch_table.GetUniformLocation(crStateGetProgramHWID(&cr_server.StateTracker, program), name);
     crServerReturnValue( &retval, sizeof(retval) );
     return retval; /* WILL PROBABLY BE IGNORED */
 }
@@ -152,7 +154,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetProgramiv( GLuint program, GLen
 {
     GLint local_params[1] = {0};
     (void) params;
-    cr_server.head_spu->dispatch_table.GetProgramiv(crStateGetProgramHWID(program), pname, local_params);
+    cr_server.head_spu->dispatch_table.GetProgramiv(crStateGetProgramHWID(&cr_server.StateTracker, program), pname, local_params);
     crServerReturnValue( &(local_params[0]), 1*sizeof(GLint) );
 }
 
@@ -160,7 +162,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderiv( GLuint shader, GLenum
 {
     GLint local_params[1] = {0};
     (void) params;
-    cr_server.head_spu->dispatch_table.GetShaderiv( crStateGetShaderHWID(shader), pname, local_params );
+    cr_server.head_spu->dispatch_table.GetShaderiv( crStateGetShaderHWID(&cr_server.StateTracker, shader), pname, local_params );
     crServerReturnValue( &(local_params[0]), 1*sizeof(GLint) );
 }
 #endif /* #ifdef CR_OPENGL_VERSION_2_0 */
@@ -196,7 +198,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteProgramsARB(GLsizei n, const
     for (i = 0; i < n; i++) {
         pLocalProgs[i] = crServerTranslateProgramID(programs[i]);
     }
-    crStateDeleteProgramsARB(n, pLocalProgs);
+    crStateDeleteProgramsARB(&cr_server.StateTracker, n, pLocalProgs);
     cr_server.head_spu->dispatch_table.DeleteProgramsARB(n, pLocalProgs);
     crFree(pLocalProgs);
 }

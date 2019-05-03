@@ -62,7 +62,7 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
             crFree(pContextInfo);
             return -1;
         }
-        cr_server.MainContextInfo.pContext = crStateCreateContext(&cr_server.limits, visualBits, NULL);
+        cr_server.MainContextInfo.pContext = crStateCreateContext(&cr_server.StateTracker, &cr_server.limits, visualBits, NULL);
         CRASSERT(cr_server.MainContextInfo.pContext);
         cr_server.firstCallCreateContext = GL_FALSE;
         fFirst = GL_TRUE;
@@ -113,14 +113,14 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
                 CreateContext(dpyName, cr_server.MainContextInfo.CreateInfo.realVisualBits, cr_server.MainContextInfo.SpuContext);
         if (pContextInfo->SpuContext < 0) {
             crWarning("crServerDispatchCreateContext() failed.");
-            crStateEnableDiffOnMakeCurrent(GL_TRUE);
+            crStateEnableDiffOnMakeCurrent(&cr_server.StateTracker, GL_TRUE);
             cr_server.bUseMultipleContexts = GL_FALSE;
             if (!fFirst)
                 crError("creating shared context failed, while it is expected to work!");
         }
         else if (fFirst)
         {
-            crStateEnableDiffOnMakeCurrent(GL_FALSE);
+            crStateEnableDiffOnMakeCurrent(&cr_server.StateTracker, GL_FALSE);
         }
     }
     else
@@ -131,9 +131,9 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
     /* Now create a new state-tracker context and initialize the
      * dispatch function pointers.
      */
-    newCtx = crStateCreateContextEx(&cr_server.limits, visualBits, NULL, internalID);
+    newCtx = crStateCreateContextEx(&cr_server.StateTracker, &cr_server.limits, visualBits, NULL, internalID);
     if (newCtx) {
-        crStateSetCurrentPointers( newCtx, &(cr_server.current) );
+        crStateSetCurrentPointers(newCtx, &(cr_server.current) );
         crStateResetCurrentPointers(&(cr_server.current));
         retVal = preloadCtxID<0 ? (GLint)crHashtableAllocKeys( cr_server.contextTable, 1 ) : preloadCtxID;
 
@@ -213,7 +213,7 @@ crServerDispatchDestroyContext( GLint ctx )
     crHashtableWalk(cr_server.muralTable, crServerCleanupMuralCtxUsageCB, crCtx);
     crCtxInfo->currentMural = NULL;
     crHashtableDelete(cr_server.contextTable, ctx, NULL);
-    crStateDestroyContext( crCtx );
+    crStateDestroyContext(&cr_server.StateTracker, crCtx);
 
     if (crCtxInfo->CreateInfo.pszDpyName)
         crFree(crCtxInfo->CreateInfo.pszDpyName);
@@ -305,7 +305,7 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
      * crStateSwitchPrepare & crStateSwitchPostprocess are supposed to work around this problem
      * crStateSwitchPrepare restores the FBO state to its default values before the context window switch,
      * while crStateSwitchPostprocess restores it back to the original values */
-    oldCtx = crStateGetCurrent();
+    oldCtx = crStateGetCurrent(&cr_server.StateTracker);
     if (oldMural && oldMural->fRedirected && crServerSupportRedirMuralFBO())
     {
         idDrawFBO = CR_SERVER_FBO_FOR_IDX(oldMural, oldMural->iCurDrawBuffer);
@@ -334,10 +334,10 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
     }
 
     /* This is a hack to force updating the 'current' attribs */
-    crStateUpdateColorBits();
+    crStateUpdateColorBits(&cr_server.StateTracker);
 
     if (ctx)
-        crStateSetCurrentPointers( ctx, &(cr_server.current) );
+        crStateSetCurrentPointers(ctx, &(cr_server.current) );
 
     /* check if being made current for first time, update viewport */
 #if 0
@@ -386,7 +386,7 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
     }
 
     /* This used to be earlier, after crStateUpdateColorBits() call */
-    crStateMakeCurrent( ctx );
+    crStateMakeCurrent(&cr_server.StateTracker, ctx );
 
     if (mural && mural->fRedirected  && crServerSupportRedirMuralFBO())
     {

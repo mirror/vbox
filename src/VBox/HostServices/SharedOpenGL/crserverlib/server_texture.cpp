@@ -38,7 +38,7 @@
 
 #if defined(CR_ARB_pixel_buffer_object)
 # define CR_CHECKBUFFER(name, checkptr)                     \
-    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))   \
+    if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_UNPACK_BUFFER_ARB))   \
     {                                                       \
         CR_FIXPTR();                                        \
     }                                                       \
@@ -52,7 +52,7 @@
 
 #if defined(CR_ARB_pixel_buffer_object) && !defined(CR_STATE_NO_TEXTURE_IMAGE_STORE)
 # define CR_FINISHBUFFER()                                                                  \
-    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))                                   \
+    if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_UNPACK_BUFFER_ARB))          \
     {                                                                                       \
         if (!cr_server.head_spu->dispatch_table.UnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB)) \
         {                                                                                   \
@@ -63,105 +63,117 @@
 #define CR_FINISHBUFFER()
 #endif
 
-#define CR_FUNC_SUBIMAGE(name, def, call, ptrname)          \
-void SERVER_DISPATCH_APIENTRY                               \
-crServerDispatch##name def                                  \
-{                                                           \
-    const GLvoid *realptr = ptrname;                        \
-    CR_CHECKBUFFER(name, CR_CHECKPTR(name))                 \
-    crState##name call;                                     \
-    CR_FINISHBUFFER()                                       \
-    realptr = ptrname;                                      \
-    cr_server.head_spu->dispatch_table.name call;           \
+#define CR_FUNC_SUBIMAGE(name, def, state_call, call, ptrname)          \
+void SERVER_DISPATCH_APIENTRY                                           \
+crServerDispatch##name def                                              \
+{                                                                       \
+    const GLvoid *realptr = ptrname;                                    \
+    CR_CHECKBUFFER(name, CR_CHECKPTR(name))                             \
+    crState##name state_call;                                           \
+    CR_FINISHBUFFER()                                                   \
+    realptr = ptrname;                                                  \
+    cr_server.head_spu->dispatch_table.name call;                       \
 }
 
-#define CR_FUNC_IMAGE(name, def, call, ptrname)             \
-void SERVER_DISPATCH_APIENTRY                               \
-crServerDispatch##name def                                  \
-{                                                           \
-    const GLvoid *realptr = ptrname;                        \
-    CR_CHECKBUFFER(name, CR_NOTHING())                      \
-    crState##name call;                                     \
-    CR_FINISHBUFFER()                                       \
-    realptr = ptrname;                                      \
-    cr_server.head_spu->dispatch_table.name call;           \
+#define CR_FUNC_IMAGE(name, def, state_call, call, ptrname)             \
+void SERVER_DISPATCH_APIENTRY                                           \
+crServerDispatch##name def                                              \
+{                                                                       \
+    const GLvoid *realptr = ptrname;                                    \
+    CR_CHECKBUFFER(name, CR_NOTHING())                                  \
+    crState##name state_call;                                           \
+    CR_FINISHBUFFER()                                                   \
+    realptr = ptrname;                                                  \
+    cr_server.head_spu->dispatch_table.name call;                       \
 }
 
 #if defined(CR_ARB_texture_compression)
 CR_FUNC_SUBIMAGE(CompressedTexSubImage1DARB,
     (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLsizei imagesize, const GLvoid * data),
+    (&cr_server.StateTracker, target, level, xoffset, width, format, imagesize, realptr),
     (target, level, xoffset, width, format, imagesize, realptr), data)
 
 CR_FUNC_SUBIMAGE(CompressedTexSubImage2DARB,
     (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imagesize, const GLvoid * data),
+    (&cr_server.StateTracker, target, level, xoffset, yoffset, width, height, format, imagesize, realptr),
     (target, level, xoffset, yoffset, width, height, format, imagesize, realptr), data)
 
 CR_FUNC_SUBIMAGE(CompressedTexSubImage3DARB,
     (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLsizei imagesize, const GLvoid * data),
+    (&cr_server.StateTracker, target, level, xoffset, yoffset, zoffset, width, height, depth, format, imagesize, realptr),
     (target, level, xoffset, yoffset, zoffset, width, height, depth, format, imagesize, realptr), data)
 
 CR_FUNC_IMAGE(CompressedTexImage1DARB,
     (GLenum target, GLint level, GLenum internalFormat, GLsizei width, GLint border, GLsizei imagesize, const GLvoid * data),
+    (&cr_server.StateTracker, target, level, internalFormat, width, border, imagesize, realptr),
     (target, level, internalFormat, width, border, imagesize, realptr), data)
 
 CR_FUNC_IMAGE(CompressedTexImage2DARB,
     (GLenum target, GLint level, GLenum internalFormat, GLsizei width, GLsizei height, GLint border, GLsizei imagesize, const GLvoid * data),
+    (&cr_server.StateTracker, target, level, internalFormat, width, height, border, imagesize, realptr),
     (target, level, internalFormat, width, height, border, imagesize, realptr), data)
 
 CR_FUNC_IMAGE(CompressedTexImage3DARB,
     (GLenum target, GLint level, GLenum internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imagesize, const GLvoid * data),
+    (&cr_server.StateTracker, target, level, internalFormat, width, height, depth, border, imagesize, realptr),
     (target, level, internalFormat, width, height, depth, border, imagesize, realptr), data)
 #endif
 
 CR_FUNC_SUBIMAGE(TexSubImage1D,
     (GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid * pixels),
+    (&cr_server.StateTracker, target, level, xoffset, width, format, type, realptr),
     (target, level, xoffset, width, format, type, realptr), pixels)
 
 CR_FUNC_SUBIMAGE(TexSubImage2D,
     (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid * pixels),
+    (&cr_server.StateTracker, target, level, xoffset, yoffset, width, height, format, type, realptr),
     (target, level, xoffset, yoffset, width, height, format, type, realptr), pixels)
 
 CR_FUNC_SUBIMAGE(TexSubImage3D,
     (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const GLvoid * pixels),
+    (&cr_server.StateTracker, target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, realptr),
     (target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, realptr), pixels)
 
 CR_FUNC_IMAGE(TexImage1D,
     (GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid * pixels),
+    (&cr_server.StateTracker, target, level, internalFormat, width, border, format, type, realptr),
     (target, level, internalFormat, width, border, format, type, realptr), pixels)
 
 CR_FUNC_IMAGE(TexImage2D,
     (GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid * pixels),
+    (&cr_server.StateTracker, target, level, internalFormat, width, height, border, format, type, realptr),
     (target, level, internalFormat, width, height, border, format, type, realptr), pixels)
 
 CR_FUNC_IMAGE(TexImage3D,
     (GLenum target, GLint level, GLint internalFormat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const GLvoid * pixels),
+    (&cr_server.StateTracker, target, level, internalFormat, width, height, depth, border, format, type, realptr),
     (target, level, internalFormat, width, height, depth, border, format, type, realptr), pixels)
 
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchTexEnvf( GLenum target, GLenum pname, GLfloat param )
 {
-    crStateTexEnvf( target, pname, param );
+    crStateTexEnvf(&cr_server.StateTracker, target, pname, param );
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
         CR_GLERR_CHECK(cr_server.head_spu->dispatch_table.TexEnvf( target, pname, param ););
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchTexEnvfv( GLenum target, GLenum pname, const GLfloat * params )
 {
-    crStateTexEnvfv( target, pname, params );
+    crStateTexEnvfv(&cr_server.StateTracker, target, pname, params );
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
         CR_GLERR_CHECK(cr_server.head_spu->dispatch_table.TexEnvfv( target, pname, params ););
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchTexEnvi( GLenum target, GLenum pname, GLint param )
 {
-    crStateTexEnvi( target, pname, param );
+    crStateTexEnvi(&cr_server.StateTracker, target, pname, param );
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
         CR_GLERR_CHECK(cr_server.head_spu->dispatch_table.TexEnvi( target, pname, param ););
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchTexEnviv( GLenum target, GLenum pname, const GLint * params )
 {
-    crStateTexEnviv( target, pname, params );
+    crStateTexEnviv(&cr_server.StateTracker, target, pname, params );
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
         CR_GLERR_CHECK(cr_server.head_spu->dispatch_table.TexEnviv( target, pname, params ););
 }
@@ -174,7 +186,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnvfv( GLenum target, GLenum
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
         cr_server.head_spu->dispatch_table.GetTexEnvfv( target, pname, local_params );
     else
-        crStateGetTexEnvfv( target, pname, local_params );
+        crStateGetTexEnvfv(&cr_server.StateTracker, target, pname, local_params );
 
     cComponents = RT_MIN(crStateHlpComponentsCount(pname), RT_ELEMENTS(local_params));
     crServerReturnValue( &(local_params[0]), cComponents*sizeof (GLfloat) );
@@ -188,7 +200,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnviv( GLenum target, GLenum
     if (GL_POINT_SPRITE != target && pname != GL_COORD_REPLACE)
         cr_server.head_spu->dispatch_table.GetTexEnviv( target, pname, local_params );
     else
-        crStateGetTexEnviv( target, pname, local_params );
+        crStateGetTexEnviv(&cr_server.StateTracker, target, pname, local_params );
 
     cComponents = RT_MIN(crStateHlpComponentsCount(pname), RT_ELEMENTS(local_params));
     crServerReturnValue( &(local_params[0]), cComponents*sizeof (GLint) );
@@ -196,8 +208,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnviv( GLenum target, GLenum
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchBindTexture( GLenum target, GLuint texture )
 {
-    crStateBindTexture( target, texture );
-    cr_server.head_spu->dispatch_table.BindTexture(target, crStateGetTextureHWID(texture));
+    crStateBindTexture(&cr_server.StateTracker, target, texture );
+    cr_server.head_spu->dispatch_table.BindTexture(target, crStateGetTextureHWID(&cr_server.StateTracker, texture));
 }
 
 
@@ -222,7 +234,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteTextures( GLsizei n, const G
 
     for (i = 0; i < n; i++)
     {
-        newTextures[i] = crStateGetTextureHWID(textures[i]);
+        newTextures[i] = crStateGetTextureHWID(&cr_server.StateTracker, textures[i]);
     }
 
 //    for (i = 0; i < n; ++i)
@@ -231,7 +243,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteTextures( GLsizei n, const G
 //    }
 
 
-    crStateDeleteTextures(n, textures);
+    crStateDeleteTextures(&cr_server.StateTracker, n, textures);
     cr_server.head_spu->dispatch_table.DeleteTextures(n, newTextures);
     crFree(newTextures);
 }
@@ -256,11 +268,11 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchPrioritizeTextures( GLsizei n, con
         return;
     }
 
-    crStatePrioritizeTextures(n, textures, priorities);
+    crStatePrioritizeTextures(&cr_server.StateTracker, n, textures, priorities);
 
     for (i = 0; i < n; i++)
     {
-        newTextures[i] = crStateGetTextureHWID(textures[i]);
+        newTextures[i] = crStateGetTextureHWID(&cr_server.StateTracker, textures[i]);
     }
 
     cr_server.head_spu->dispatch_table.PrioritizeTextures(n, newTextures, priorities);
@@ -272,7 +284,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchPrioritizeTextures( GLsizei n, con
 GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsTexture( GLuint texture )
 {
     GLboolean retval;
-    retval = cr_server.head_spu->dispatch_table.IsTexture(crStateGetTextureHWID(texture));
+    retval = cr_server.head_spu->dispatch_table.IsTexture(crStateGetTextureHWID(&cr_server.StateTracker, texture));
     crServerReturnValue( &retval, sizeof(retval) );
     return retval; /* WILL PROBABLY BE IGNORED */
 }
@@ -312,7 +324,7 @@ crServerDispatchAreTexturesResident(GLsizei n, const GLuint *textures,
 
     for (i = 0; i < n; i++)
     {
-        textures2[i] = crStateGetTextureHWID(textures[i]);
+        textures2[i] = crStateGetTextureHWID(&cr_server.StateTracker, textures[i]);
     }
     retval = cr_server.head_spu->dispatch_table.AreTexturesResident(n, textures2, res);
 

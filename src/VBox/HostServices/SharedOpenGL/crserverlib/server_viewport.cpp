@@ -275,7 +275,7 @@ crServerApplyViewMatrix(const CRmatrix *view)
  */
 void SERVER_DISPATCH_APIENTRY crServerDispatchViewport( GLint x, GLint y, GLsizei width, GLsizei height )
 {
-	CRContext *ctx = crStateGetCurrent();
+	CRContext *ctx = crStateGetCurrent(&cr_server.StateTracker);
 
 	if (ctx->viewport.viewportX != x ||
 			ctx->viewport.viewportY != y ||
@@ -283,7 +283,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchViewport( GLint x, GLint y, GLsize
 			ctx->viewport.viewportH != height) {
 		 /* Note -- If there are tiles, this will be overridden in the 
 			* process of decoding the BoundsInfo packet, so no worries. */
-		 crStateViewport( x, y, width, height );
+		 crStateViewport(&cr_server.StateTracker, x, y, width, height );
 	}
 
 	/* always dispatch to be safe */

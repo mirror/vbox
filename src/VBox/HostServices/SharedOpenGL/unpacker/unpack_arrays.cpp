@@ -7,7 +7,6 @@
 #include "cr_error.h"
 #include "unpack_extend.h"
 #include "unpacker.h"
-#include "cr_glstate.h"
 
 
 void crUnpackExtendVertexPointer(PCrUnpackerState pState)
@@ -291,7 +290,7 @@ void crUnpackExtendLockArraysEXT(PCrUnpackerState pState)
     GLint count    = READ_DATA(pState, sizeof(int) + 8, GLint);
     int numenabled = READ_DATA(pState, sizeof(int) + 12, int);
 
-    CRContext *g = crStateGetCurrent();
+    CRContext *g = crStateGetCurrent(pState->pStateTracker);
     CRClientState *c = &g->client;
     CRClientPointer *cp;
     int i, index, offset;
@@ -363,7 +362,7 @@ void crUnpackExtendLockArraysEXT(PCrUnpackerState pState)
 void crUnpackExtendUnlockArraysEXT(PCrUnpackerState pState)
 {
     int i;
-    CRContext *g = crStateGetCurrent();
+    CRContext *g = crStateGetCurrent(pState->pStateTracker);
     CRClientState *c = &g->client;
     CRClientPointer *cp;
 

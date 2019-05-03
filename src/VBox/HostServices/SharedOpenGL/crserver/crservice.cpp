@@ -1581,7 +1581,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
     {
         case DLL_THREAD_ATTACH:
         {
-            crStateVBoxAttachThread();
+            crVBoxServerAttachThread();
             break;
         }
 
@@ -1590,7 +1590,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
          * DLL_THREAD_DETACH is not called for the thread doing DLL_PROCESS_DETACH according to msdn docs */
         case DLL_THREAD_DETACH:
         {
-            crStateVBoxDetachThread();
+            crVBoxServerDetachThread();
             break;
         }
 

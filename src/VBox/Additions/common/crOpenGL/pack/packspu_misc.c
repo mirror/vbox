@@ -97,7 +97,7 @@ GLboolean packspuSyncOnFlushes(void)
 #else
     GLint buffer;
 
-    crStateGetIntegerv(GL_DRAW_BUFFER, &buffer);
+    crStateGetIntegerv(&pack_spu.StateTracker, GL_DRAW_BUFFER, &buffer);
     /*Usually buffer==GL_BACK, so put this extra check to simplify boolean eval on runtime*/
     return  (buffer != GL_BACK)
             && (buffer == GL_FRONT_LEFT
@@ -115,7 +115,7 @@ void PACKSPU_APIENTRY packspu_DrawBuffer(GLenum mode)
 
     hadtoflush = packspuSyncOnFlushes();
 
-    crStateDrawBuffer(mode);
+    crStateDrawBuffer(&pack_spu.StateTracker, mode);
     crPackDrawBuffer(mode);
 
     if (hadtoflush && !packspuSyncOnFlushes())
@@ -196,13 +196,13 @@ void PACKSPU_APIENTRY packspu_Flush( void )
 
 void PACKSPU_APIENTRY packspu_NewList(GLuint list, GLenum mode)
 {
-    crStateNewList(list, mode);
+    crStateNewList(&pack_spu.StateTracker, list, mode);
     crPackNewList(list, mode);
 }
 
 void PACKSPU_APIENTRY packspu_EndList()
 {
-    crStateEndList();
+    crStateEndList(&pack_spu.StateTracker);
     crPackEndList();
 }
 
@@ -365,7 +365,7 @@ void PACKSPU_APIENTRY packspu_GetPolygonStipple( GLubyte * mask )
 
     crPackGetPolygonStipple( mask, &writeback );
 #ifdef CR_ARB_pixel_buffer_object
-    if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    if (!crStateIsBufferBound(&pack_spu.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
 #endif
     {
         packspuFlush( (void *) thread );
@@ -380,7 +380,7 @@ void PACKSPU_APIENTRY packspu_GetPixelMapfv( GLenum map, GLfloat * values )
 
     crPackGetPixelMapfv( map, values, &writeback );
 #ifdef CR_ARB_pixel_buffer_object
-    if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    if (!crStateIsBufferBound(&pack_spu.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
 #endif
     {
         packspuFlush( (void *) thread );
@@ -396,7 +396,7 @@ void PACKSPU_APIENTRY packspu_GetPixelMapuiv( GLenum map, GLuint * values )
     crPackGetPixelMapuiv( map, values, &writeback );
 
 #ifdef CR_ARB_pixel_buffer_object
-    if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    if (!crStateIsBufferBound(&pack_spu.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
 #endif
     {
         packspuFlush( (void *) thread );
@@ -411,7 +411,7 @@ void PACKSPU_APIENTRY packspu_GetPixelMapusv( GLenum map, GLushort * values )
 
     crPackGetPixelMapusv( map, values, &writeback );
 #ifdef CR_ARB_pixel_buffer_object
-    if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    if (!crStateIsBufferBound(&pack_spu.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
 #endif
     {
         packspuFlush( (void *) thread );
@@ -448,12 +448,12 @@ void PACKSPU_APIENTRY packspu_ChromiumParameteriCR(GLenum target, GLint value)
             packspuCheckZerroVertAttr(value);
             return;
         case GL_SHARE_CONTEXT_RESOURCES_CR:
-            crStateShareContext(value);
+            crStateShareContext(&pack_spu.StateTracker, value);
             break;
         case GL_RCUSAGE_TEXTURE_SET_CR:
         {
             Assert(value);
-            crStateSetTextureUsed(value, GL_TRUE);
+            crStateSetTextureUsed(&pack_spu.StateTracker, value, GL_TRUE);
             break;
         }
         case GL_RCUSAGE_TEXTURE_CLEAR_CR:
@@ -461,12 +461,12 @@ void PACKSPU_APIENTRY packspu_ChromiumParameteriCR(GLenum target, GLint value)
             Assert(value);
 #ifdef DEBUG
             {
-                CRContext *pCurState = crStateGetCurrent();
+                CRContext *pCurState = crStateGetCurrent(&pack_spu.StateTracker);
                 CRTextureObj *tobj = (CRTextureObj*)crHashtableSearch(pCurState->shared->textureTable, value);
                 Assert(tobj);
             }
 #endif
-            crStateSetTextureUsed(value, GL_FALSE);
+            crStateSetTextureUsed(&pack_spu.StateTracker, value, GL_FALSE);
             break;
         }
         default:
@@ -480,7 +480,7 @@ GLenum PACKSPU_APIENTRY packspu_GetError( void )
     GET_THREAD(thread);
     int writeback = 1;
     GLenum return_val = (GLenum) 0;
-    CRContext *pCurState = crStateGetCurrent();
+    CRContext *pCurState = crStateGetCurrent(&pack_spu.StateTracker);
     NOREF(pCurState); /* it's unused, but I don't know about side effects.. */
 
     if (!CRPACKSPU_IS_WDDM_CRHGSMI() && !(pack_spu.thread[pack_spu.idxThreadInUse].netServer.conn->actual_network))
@@ -619,7 +619,7 @@ void PACKSPU_APIENTRY packspu_VBoxAttachThread()
 
     crSetTSD(&_PackTSD, NULL);
 
-    crStateVBoxAttachThread();
+    crStateVBoxAttachThread(&pack_spu.StateTracker);
 }
 
 void PACKSPU_APIENTRY packspu_VBoxDetachThread()
@@ -700,7 +700,7 @@ void PACKSPU_APIENTRY packspu_VBoxDetachThread()
         }
     }
 
-    crStateVBoxDetachThread();
+    crStateVBoxDetachThread(&pack_spu.StateTracker);
 }
 
 #ifdef WINDOWS

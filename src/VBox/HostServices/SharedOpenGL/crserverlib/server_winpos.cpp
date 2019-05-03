@@ -8,7 +8,7 @@
  */
 static void crServerWindowPos( GLfloat x, GLfloat y, GLfloat z )
 {
-	crStateWindowPos3fARB(x, y, z);
+	crStateWindowPos3fARB(&cr_server.StateTracker, x, y, z);
 	cr_server.head_spu->dispatch_table.WindowPos3fARB(x, y, z);
 }
 

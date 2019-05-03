@@ -53,7 +53,7 @@ void crUnpackExtendDeleteQueriesARB(PCrUnpackerState pState)
     GLsizei n = READ_DATA(pState, 8, GLsizei );
     const GLuint *ids = DATA_POINTER(pState, 12, GLuint);
 
-    if (n <= 0 || n >= INT32_MAX / sizeof(GLint) / 4 || !DATA_POINTER_CHECK(pState, 12 + n * sizeof(GLuint)))
+    if (n < 0 || n >= INT32_MAX / sizeof(GLint) / 4 || !DATA_POINTER_CHECK(pState, 12 + n * sizeof(GLuint)))
     {
         crError("crUnpackExtendDeleteQueriesARB: parameter 'n' is out of range");
         return;

@@ -44,10 +44,10 @@ static SPUFunctions *feedbackSPUInit( int id, SPU *child, SPU *self,
 	feedbackspuGatherConfiguration();
 
 	/* create/init default state tracker */
-	crStateInit();
+	crStateInit(&feedback_spu.StateTracker);
 
-    feedback_spu.defaultctx = crStateCreateContext(NULL, 0, NULL);
-    crStateSetCurrent(feedback_spu.defaultctx);
+    feedback_spu.defaultctx = crStateCreateContext(&feedback_spu.StateTracker, NULL, 0, NULL);
+    crStateSetCurrent(&feedback_spu.StateTracker, feedback_spu.defaultctx);
 
     feedback_spu.numContexts = 0;
     crMemZero(feedback_spu.context, CR_MAX_CONTEXTS * sizeof(ContextInfo));

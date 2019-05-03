@@ -327,19 +327,19 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParameteriCR(GLenum target
 {
   switch (target) {
     case GL_SHARE_CONTEXT_RESOURCES_CR:
-        crStateShareContext(value);
+        crStateShareContext(&cr_server.StateTracker, value);
         break;
     case GL_RCUSAGE_TEXTURE_SET_CR:
-        crStateSetTextureUsed(value, GL_TRUE);
+        crStateSetTextureUsed(&cr_server.StateTracker, value, GL_TRUE);
         break;
     case GL_RCUSAGE_TEXTURE_CLEAR_CR:
-        crStateSetTextureUsed(value, GL_FALSE);
+        crStateSetTextureUsed(&cr_server.StateTracker, value, GL_FALSE);
         break;
     case GL_PIN_TEXTURE_SET_CR:
-        crStatePinTexture(value, GL_TRUE);
+        crStatePinTexture(&cr_server.StateTracker, value, GL_TRUE);
         break;
     case GL_PIN_TEXTURE_CLEAR_CR:
-        crStatePinTexture(value, GL_FALSE);
+        crStatePinTexture(&cr_server.StateTracker, value, GL_FALSE);
         break;
     case GL_SHARED_DISPLAY_LISTS_CR:
         cr_server.sharedDisplayLists = value;
@@ -501,7 +501,7 @@ crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
         {
             GLuint tID, fboID;
             GLenum status;
-            CRContext *ctx = crStateGetCurrent();
+            CRContext *ctx = crStateGetCurrent(&cr_server.StateTracker);
 
             gl->GenTextures(1, &tID);
             gl->BindTexture(target, tID);
@@ -600,7 +600,7 @@ crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
         {
             GLint dRow;
             GLuint pboId, sRow;
-            CRContext *ctx = crStateGetCurrent();
+            CRContext *ctx = crStateGetCurrent(&cr_server.StateTracker);
 
             gl->GenBuffersARB(1, &pboId);
             gl->BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pboId);
@@ -896,7 +896,7 @@ int crServerVBoxBlitterBlitCurrentCtx(GLint srcX0, GLint srcY0, GLint srcX1, GLi
     PCR_BLITTER pBlitter;
     CR_BLITTER_CONTEXT Ctx;
     CRMuralInfo *mural;
-    CRContext *ctx = crStateGetCurrent();
+    CRContext *ctx = crStateGetCurrent(&cr_server.StateTracker);
     PVBOXVR_TEXTURE pDrawTex, pReadTex;
     VBOXVR_TEXTURE DrawTex, ReadTex;
     int rc;
@@ -991,7 +991,7 @@ crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint 
                                    GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1,
                                    GLbitfield mask, GLenum filter)
 {
-    CRContext *ctx = crStateGetCurrent();
+    CRContext *ctx = crStateGetCurrent(&cr_server.StateTracker);
     bool fTryBlitter = false;
 #ifdef CR_CHECK_BLITS
 //    {
@@ -1273,9 +1273,9 @@ my_exit:
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchDrawBuffer( GLenum mode )
 {
-    crStateDrawBuffer( mode );
+    crStateDrawBuffer(&cr_server.StateTracker, mode );
 
-    if (!crStateGetCurrent()->framebufferobject.drawFB)
+    if (!crStateGetCurrent(&cr_server.StateTracker)->framebufferobject.drawFB)
     {
         if (mode == GL_FRONT || mode == GL_FRONT_LEFT || mode == GL_FRONT_RIGHT)
             cr_server.curClient->currentMural->bFbDraw = GL_TRUE;
@@ -1361,11 +1361,11 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDrawBuffers( GLsizei n, const GLen
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchReadBuffer( GLenum mode )
 {
-    crStateReadBuffer( mode );
+    crStateReadBuffer(&cr_server.StateTracker, mode );
 
     if (crServerIsRedirectedToFBO()
             && cr_server.curClient->currentMural->aidFBOs[0]
-            && !crStateGetCurrent()->framebufferobject.readFB)
+            && !crStateGetCurrent(&cr_server.StateTracker)->framebufferobject.readFB)
     {
         CRMuralInfo *mural = cr_server.curClient->currentMural;
         GLint iBufferNeeded = -1;
@@ -1432,7 +1432,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchReadBuffer( GLenum mode )
 GLenum SERVER_DISPATCH_APIENTRY crServerDispatchGetError( void )
 {
     GLenum retval, err;
-    CRContext *ctx = crStateGetCurrent();
+    CRContext *ctx = crStateGetCurrent(&cr_server.StateTracker);
     retval = ctx->error;
 
     err = cr_server.head_spu->dispatch_table.GetError();
@@ -1452,7 +1452,7 @@ GLenum SERVER_DISPATCH_APIENTRY crServerDispatchGetError( void )
 void SERVER_DISPATCH_APIENTRY
 crServerMakeTmpCtxCurrent( GLint window, GLint nativeWindow, GLint context )
 {
-    CRContext *pCtx = crStateGetCurrent();
+    CRContext *pCtx = crStateGetCurrent(&cr_server.StateTracker);
     CRContext *pCurCtx = NULL;
     GLuint idDrawFBO = 0, idReadFBO = 0;
     int fDoPrePostProcess = 0;
@@ -1889,7 +1889,7 @@ void crServerDumpFramesCheck()
 
 GLvoid crServerSpriteCoordReplEnable(GLboolean fEnable)
 {
-    CRContext *g = crStateGetCurrent();
+    CRContext *g = crStateGetCurrent(&cr_server.StateTracker);
     CRTextureState *t = &(g->texture);
     GLuint curTextureUnit = t->curTextureUnit;
     GLuint curTextureUnitRestore = curTextureUnit;
@@ -1947,10 +1947,10 @@ GLvoid SERVER_DISPATCH_APIENTRY crServerDispatchDrawElements(GLenum mode,  GLsiz
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchEnd( void )
 {
-    CRContext *g = crStateGetCurrent();
+    CRContext *g = crStateGetCurrent(&cr_server.StateTracker);
     GLenum mode = g->current.mode;
 
-    crStateEnd();
+    crStateEnd(&cr_server.StateTracker);
     cr_server.head_spu->dispatch_table.End();
 
     CR_SERVER_DUMP_DRAW_LEAVE();
@@ -1962,7 +1962,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchEnd( void )
 void SERVER_DISPATCH_APIENTRY crServerDispatchBegin(GLenum mode)
 {
 #ifdef DEBUG
-    CRContext *ctx = crStateGetCurrent();
+    CRContext *ctx = crStateGetCurrent(&cr_server.StateTracker);
     SPUDispatchTable *gl = &cr_server.head_spu->dispatch_table;
 
     if (ctx->program.vpProgramBinding)
@@ -2011,7 +2011,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchBegin(GLenum mode)
 
     CR_SERVER_DUMP_DRAW_ENTER();
 
-    crStateBegin(mode);
+    crStateBegin(&cr_server.StateTracker, mode);
     cr_server.head_spu->dispatch_table.Begin(mode);
 }
 

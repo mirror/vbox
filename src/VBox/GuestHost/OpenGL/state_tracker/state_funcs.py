@@ -33,25 +33,36 @@ print("""
 extern "C" {
 #endif
 
-#define STATE_UNUSED(x) ((void)x)""")
+#define STATE_UNUSED(x) ((void)x)
+
+/** Forward declaration of the stae tracker. */
+typedef struct CRStateTracker *PCRStateTracker;""")
 
 
 
 for func_name in apiutil.AllSpecials( "state" ):
 	return_type = apiutil.ReturnType(func_name)
 	params = apiutil.Parameters(func_name)
-	print('DECLEXPORT(%s) STATE_APIENTRY crState%s(%s);' % (return_type, func_name, apiutil.MakeDeclarationStringForDispatcher(params)))
+	if len(params) == 0:
+		print('DECLEXPORT(%s) STATE_APIENTRY crState%s(PCRStateTracker pState);' % (return_type, func_name))
+	else:
+		print('DECLEXPORT(%s) STATE_APIENTRY crState%s(PCRStateTracker pState, %s);' % (return_type, func_name, apiutil.MakeDeclarationStringForDispatcher(params)))
 
 for func_name in apiutil.AllSpecials( "state_feedback" ):
 	return_type = apiutil.ReturnType(func_name)
 	params = apiutil.Parameters(func_name)
-	print('DECLEXPORT(%s) STATE_APIENTRY crStateFeedback%s(%s);' % (return_type, func_name, apiutil.MakeDeclarationStringForDispatcher(params)))
+	if len(params) == 0:
+		print('DECLEXPORT(%s) STATE_APIENTRY crStateFeedback%s(PCRStateTracker pState);' % (return_type, func_name))
+	else:
+		print('DECLEXPORT(%s) STATE_APIENTRY crStateFeedback%s(PCRStateTracker pState, %s);' % (return_type, func_name, apiutil.MakeDeclarationStringForDispatcher(params)))
 
 for func_name in apiutil.AllSpecials( "state_select" ):
 	return_type = apiutil.ReturnType(func_name)
 	params = apiutil.Parameters(func_name)
-	print('DECLEXPORT(%s) STATE_APIENTRY crStateSelect%s(%s);' % (return_type, func_name, apiutil.MakeDeclarationStringForDispatcher(params)))
-
+	if len(params) == 0:
+		print('DECLEXPORT(%s) STATE_APIENTRY crStateSelect%s(PCRStateTracker pState);' % (return_type, func_name))
+	else:
+		print('DECLEXPORT(%s) STATE_APIENTRY crStateSelect%s(PCRStateTracker pState, %s);' % (return_type, func_name, apiutil.MakeDeclarationStringForDispatcher(params)))
 
 print("""
 #ifdef __cplusplus

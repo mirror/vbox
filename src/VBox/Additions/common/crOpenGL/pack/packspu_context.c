@@ -393,7 +393,7 @@ packspu_VBoxCreateContext( GLint con, const char *dpyName, GLint visual, GLint s
 
     /* Fill in the new context info */
     /* XXX fix-up sharedCtx param here */
-    pack_spu.context[slot].clientState = crStateCreateContext(NULL, visual, NULL);
+    pack_spu.context[slot].clientState = crStateCreateContext(&pack_spu.StateTracker, NULL, visual, NULL);
     pack_spu.context[slot].clientState->bufferobject.retainBufferData = GL_TRUE;
     pack_spu.context[slot].serverCtx = serverCtx;
 
@@ -441,7 +441,7 @@ void PACKSPU_APIENTRY packspu_DestroyContext( GLint ctx )
         }
 
         crPackDestroyContext( context->serverCtx );
-        crStateDestroyContext( context->clientState );
+        crStateDestroyContext(&pack_spu.StateTracker, context->clientState );
 
         context->clientState = NULL;
         context->serverCtx = 0;
@@ -462,7 +462,7 @@ void PACKSPU_APIENTRY packspu_DestroyContext( GLint ctx )
             crSetTSD(&_PackTSD, NULL);
             crPackSetContext(NULL);
         }
-        crStateMakeCurrent( NULL );
+        crStateMakeCurrent(&pack_spu.StateTracker, NULL);
     }
     else
     {
@@ -539,12 +539,12 @@ void PACKSPU_APIENTRY packspu_MakeCurrent( GLint window, GLint nativeWindow, GLi
             crPackSetContext( thread->packer );
         }
 
-        crStateMakeCurrent( newCtx->clientState );
+        crStateMakeCurrent(&pack_spu.StateTracker, newCtx->clientState );
         //crStateSetCurrentPointers(newCtx->clientState, &thread->packer->current);
         serverCtx = pack_spu.context[slot].serverCtx;
     }
     else {
-        crStateMakeCurrent( NULL );
+        crStateMakeCurrent(&pack_spu.StateTracker, NULL );
         if (CRPACKSPU_IS_WDDM_CRHGSMI())
         {
             thread = GET_THREAD_VAL();

@@ -138,8 +138,8 @@ DECLEXPORT(void) crStateClientDestroyBits(CRClientBits *c);
 DECLEXPORT(void) crStateClientInit(struct CRContext *g);
 DECLEXPORT(void) crStateClientDestroy(struct CRContext *g);
 
-DECLEXPORT(GLboolean) crStateUseServerArrays(void);
-DECLEXPORT(GLboolean) crStateUseServerArrayElements(void);
+DECLEXPORT(GLboolean) crStateUseServerArrays(PCRStateTracker pState);
+DECLEXPORT(GLboolean) crStateUseServerArrayElements(PCRStateTracker pState);
 DECLEXPORT(CRClientPointer*) crStateGetClientPointerByIndex(int index, CRVertexArrays *array);
 
 #ifdef __cplusplus

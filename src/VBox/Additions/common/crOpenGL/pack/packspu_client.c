@@ -18,7 +18,7 @@ void PACKSPU_APIENTRY packspu_FogCoordPointerEXT( GLenum type, GLsizei stride, c
         crPackFogCoordPointerEXT( type, stride, pointer );
     }
 #endif
-    crStateFogCoordPointerEXT( type, stride, pointer );
+    crStateFogCoordPointerEXT(&pack_spu.StateTracker, type, stride, pointer );
 }
 
 void PACKSPU_APIENTRY packspu_ColorPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
@@ -29,7 +29,7 @@ void PACKSPU_APIENTRY packspu_ColorPointer( GLint size, GLenum type, GLsizei str
         crPackColorPointer( size, type, stride, pointer );
     }
 #endif
-    crStateColorPointer( size, type, stride, pointer );
+    crStateColorPointer(&pack_spu.StateTracker, size, type, stride, pointer );
 }
 
 void PACKSPU_APIENTRY packspu_SecondaryColorPointerEXT( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
@@ -40,7 +40,7 @@ void PACKSPU_APIENTRY packspu_SecondaryColorPointerEXT( GLint size, GLenum type,
         crPackSecondaryColorPointerEXT( size, type, stride, pointer );
     }
 #endif
-    crStateSecondaryColorPointerEXT( size, type, stride, pointer );
+    crStateSecondaryColorPointerEXT(&pack_spu.StateTracker, size, type, stride, pointer );
 }
 
 void PACKSPU_APIENTRY packspu_VertexPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
@@ -52,7 +52,7 @@ void PACKSPU_APIENTRY packspu_VertexPointer( GLint size, GLenum type, GLsizei st
         crPackVertexPointer( size, type, stride, pointer );
     }
 #endif
-    crStateVertexPointer( size, type, stride, pointer );
+    crStateVertexPointer(&pack_spu.StateTracker, size, type, stride, pointer );
 }
 
 void PACKSPU_APIENTRY packspu_TexCoordPointer( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
@@ -63,7 +63,7 @@ void PACKSPU_APIENTRY packspu_TexCoordPointer( GLint size, GLenum type, GLsizei 
         crPackTexCoordPointer( size, type, stride, pointer );
     }
 #endif
-    crStateTexCoordPointer( size, type, stride, pointer );
+    crStateTexCoordPointer(&pack_spu.StateTracker, size, type, stride, pointer );
 }
 
 void PACKSPU_APIENTRY packspu_NormalPointer( GLenum type, GLsizei stride, const GLvoid *pointer )
@@ -74,7 +74,7 @@ void PACKSPU_APIENTRY packspu_NormalPointer( GLenum type, GLsizei stride, const 
         crPackNormalPointer( type, stride, pointer );
     }
 #endif
-    crStateNormalPointer( type, stride, pointer );
+    crStateNormalPointer(&pack_spu.StateTracker, type, stride, pointer );
 }
 
 void PACKSPU_APIENTRY packspu_EdgeFlagPointer( GLsizei stride, const GLvoid *pointer )
@@ -85,7 +85,7 @@ void PACKSPU_APIENTRY packspu_EdgeFlagPointer( GLsizei stride, const GLvoid *poi
         crPackEdgeFlagPointer( stride, pointer );
     }
 #endif
-    crStateEdgeFlagPointer( stride, pointer );
+    crStateEdgeFlagPointer(&pack_spu.StateTracker, stride, pointer );
 }
 
 void PACKSPU_APIENTRY packspu_VertexAttribPointerARB( GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer )
@@ -96,7 +96,7 @@ void PACKSPU_APIENTRY packspu_VertexAttribPointerARB( GLuint index, GLint size, 
         crPackVertexAttribPointerARB( index, size, type, normalized, stride, pointer );
     }
 #endif
-    crStateVertexAttribPointerARB( index, size, type, normalized, stride, pointer );
+    crStateVertexAttribPointerARB(&pack_spu.StateTracker, index, size, type, normalized, stride, pointer );
 }
 
 void PACKSPU_APIENTRY packspu_VertexAttribPointerNV( GLuint index, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer )
@@ -107,7 +107,7 @@ void PACKSPU_APIENTRY packspu_VertexAttribPointerNV( GLuint index, GLint size, G
         crPackVertexAttribPointerNV( index, size, type, stride, pointer );
     }
 #endif
-    crStateVertexAttribPointerNV( index, size, type, stride, pointer );
+    crStateVertexAttribPointerNV(&pack_spu.StateTracker, index, size, type, stride, pointer );
 }
 
 void PACKSPU_APIENTRY packspu_IndexPointer( GLenum type, GLsizei stride, const GLvoid *pointer )
@@ -118,12 +118,12 @@ void PACKSPU_APIENTRY packspu_IndexPointer( GLenum type, GLsizei stride, const G
         crPackIndexPointer( type, stride, pointer );
     }
 #endif
-    crStateIndexPointer(type, stride, pointer);
+    crStateIndexPointer(&pack_spu.StateTracker, type, stride, pointer);
 }
 
 void PACKSPU_APIENTRY packspu_GetPointerv( GLenum pname, GLvoid **params )
 {
-    crStateGetPointerv( pname, params );
+    crStateGetPointerv(&pack_spu.StateTracker, pname, params );
 }
 
 void PACKSPU_APIENTRY packspu_InterleavedArrays( GLenum format, GLsizei stride, const GLvoid *pointer )
@@ -137,7 +137,7 @@ void PACKSPU_APIENTRY packspu_InterleavedArrays( GLenum format, GLsizei stride, 
 
     /*crDebug("packspu_InterleavedArrays");*/
 
-    crStateInterleavedArrays( format, stride, pointer );
+    crStateInterleavedArrays(&pack_spu.StateTracker, format, stride, pointer );
 }
 
 #ifdef DEBUG_misha
@@ -218,7 +218,7 @@ static void packspuZvaEnable(ContextInfo *pCtx, const GLfloat *pValue, GLuint cV
 
 #ifdef DEBUG
     {
-        CRContext *pCurState = crStateGetCurrent();
+        CRContext *pCurState = crStateGetCurrent(&pack_spu.StateTracker);
 
         Assert(g == pCurState);
     }
@@ -281,7 +281,7 @@ static void packspuZvaDisable(CR_ZVA_RESTORE_CTX *pRestoreCtx)
 #ifdef DEBUG
     {
         CRContext *g = pRestoreCtx->pCtx->clientState;
-        CRContext *pCurState = crStateGetCurrent();
+        CRContext *pCurState = crStateGetCurrent(&pack_spu.StateTracker);
 
         Assert(g == pCurState);
 
@@ -318,7 +318,7 @@ packspu_ArrayElement( GLint index )
         /*crDebug("packspu_ArrayElement index:%i", index);*/
         if (ctx->clientState->extensions.ARB_vertex_buffer_object)
         {
-            serverArrays = crStateUseServerArrays();
+            serverArrays = crStateUseServerArrays(&pack_spu.StateTracker);
             if (ctx->fCheckZerroVertAttr)
                 cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
         }
@@ -394,11 +394,11 @@ packspu_DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *ind
     CRBufferObject *elementsBuffer;
     {
         GET_CONTEXT(ctx);
-        elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
+        elementsBuffer = crStateGetCurrent(&pack_spu.StateTracker)->bufferobject.elementsBuffer;
         /*crDebug("DrawElements count=%d, indices=%p", count, indices);*/
         if (ctx->clientState->extensions.ARB_vertex_buffer_object)
         {
-            serverArrays = crStateUseServerArrays();
+            serverArrays = crStateUseServerArrays(&pack_spu.StateTracker);
             if (ctx->fCheckZerroVertAttr)
                 cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
         }
@@ -451,7 +451,7 @@ packspu_DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *ind
 
         if ((max-min)<(GLuint)(2*count))
         {
-            crStateLockArraysEXT(min, max-min+1);
+            crStateLockArraysEXT(&pack_spu.StateTracker, min, max-min+1);
 
             serverArrays = crStateUseServerArrays();
             if (serverArrays)
@@ -460,7 +460,7 @@ packspu_DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *ind
             }
             else
             {
-                crStateUnlockArraysEXT();
+                crStateUnlockArraysEXT(&pack_spu.StateTracker);
             }
         }
     }
@@ -538,7 +538,7 @@ packspu_DrawRangeElements( GLenum mode, GLuint start, GLuint end, GLsizei count,
         /*crDebug("DrawRangeElements count=%d", count);*/
         if (ctx->clientState->extensions.ARB_vertex_buffer_object)
         {
-             serverArrays = crStateUseServerArrays();
+             serverArrays = crStateUseServerArrays(&pack_spu.StateTracker);
              if (ctx->fCheckZerroVertAttr)
                  cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
         }
@@ -607,7 +607,7 @@ packspu_DrawArrays( GLenum mode, GLint first, GLsizei count )
         /*crDebug("DrawArrays count=%d", count);*/
         if (ctx->clientState->extensions.ARB_vertex_buffer_object)
         {
-             serverArrays = crStateUseServerArrays();
+             serverArrays = crStateUseServerArrays(&pack_spu.StateTracker);
              if (ctx->fCheckZerroVertAttr)
                  cZvaValues = crStateNeedDummyZeroVertexArray(thread->currentContext->clientState, &thread->packer->current, aAttrib);
         }
@@ -616,15 +616,15 @@ packspu_DrawArrays( GLenum mode, GLint first, GLsizei count )
 # ifdef CR_USE_LOCKARRAYS
     if (!serverArrays && !ctx->clientState->client.array.locked && (count>3))
     {
-        crStateLockArraysEXT(first, count);
-        serverArrays = crStateUseServerArrays();
+        crStateLockArraysEXT(&pack_spu.StateTracker, first, count);
+        serverArrays = crStateUseServerArrays(&pack_spu.StateTracker);
         if (serverArrays)
         {
             lockedArrays = GL_TRUE;
         }
         else
         {
-            crStateUnlockArraysEXT();
+            crStateUnlockArraysEXT(&pack_spu.StateTracker);
         }
     }
 # endif
@@ -713,32 +713,32 @@ void PACKSPU_APIENTRY packspu_MultiDrawElementsEXT( GLenum mode, const GLsizei *
 
 void PACKSPU_APIENTRY packspu_EnableClientState( GLenum array )
 {
-    crStateEnableClientState(array);
+    crStateEnableClientState(&pack_spu.StateTracker, array);
     crPackEnableClientState(array);
 }
 
 void PACKSPU_APIENTRY packspu_DisableClientState( GLenum array )
 {
-    crStateDisableClientState(array);
+    crStateDisableClientState(&pack_spu.StateTracker, array);
     crPackDisableClientState(array);
 }
 
 void PACKSPU_APIENTRY packspu_ClientActiveTextureARB( GLenum texUnit )
 {
-    crStateClientActiveTextureARB(texUnit);
+    crStateClientActiveTextureARB(&pack_spu.StateTracker, texUnit);
     crPackClientActiveTextureARB(texUnit);
 }
 
 void PACKSPU_APIENTRY packspu_EnableVertexAttribArrayARB(GLuint index)
 {
-    crStateEnableVertexAttribArrayARB(index);
+    crStateEnableVertexAttribArrayARB(&pack_spu.StateTracker, index);
     crPackEnableVertexAttribArrayARB(index);
 }
 
 
 void PACKSPU_APIENTRY packspu_DisableVertexAttribArrayARB(GLuint index)
 {
-    crStateDisableVertexAttribArrayARB(index);
+    crStateDisableVertexAttribArrayARB(&pack_spu.StateTracker, index);
     crPackDisableVertexAttribArrayARB(index);
 }
 
@@ -746,7 +746,7 @@ void PACKSPU_APIENTRY packspu_Enable( GLenum cap )
 {
     if (cap!=GL_LIGHT_MODEL_TWO_SIDE)
     {
-        crStateEnable(cap);
+        crStateEnable(&pack_spu.StateTracker, cap);
         crPackEnable(cap);
     }
     else
@@ -757,7 +757,7 @@ void PACKSPU_APIENTRY packspu_Enable( GLenum cap )
             crWarning("glEnable(GL_LIGHT_MODEL_TWO_SIDE) converted to valid glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,1)");
             g_glmts1_warn=1;
         }
-        crStateLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
+        crStateLightModeli(&pack_spu.StateTracker, GL_LIGHT_MODEL_TWO_SIDE, 1);
         crPackLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
     }
 }
@@ -767,7 +767,7 @@ void PACKSPU_APIENTRY packspu_Disable( GLenum cap )
 {
     if (cap!=GL_LIGHT_MODEL_TWO_SIDE)
     {
-        crStateDisable(cap);
+        crStateDisable(&pack_spu.StateTracker, cap);
         crPackDisable(cap);
     }
     else
@@ -778,14 +778,14 @@ void PACKSPU_APIENTRY packspu_Disable( GLenum cap )
             crWarning("glDisable(GL_LIGHT_MODEL_TWO_SIDE) converted to valid glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)");
             g_glmts0_warn=1;
         }
-        crStateLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0);
+        crStateLightModeli(&pack_spu.StateTracker, GL_LIGHT_MODEL_TWO_SIDE, 0);
         crPackLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0);
     }
 }
 
 GLboolean PACKSPU_APIENTRY packspu_IsEnabled(GLenum cap)
 {
-    GLboolean res = crStateIsEnabled(cap);
+    GLboolean res = crStateIsEnabled(&pack_spu.StateTracker, cap);
 #ifdef DEBUG
     {
     	GET_THREAD(thread);
@@ -803,13 +803,13 @@ GLboolean PACKSPU_APIENTRY packspu_IsEnabled(GLenum cap)
 
 void PACKSPU_APIENTRY packspu_PushClientAttrib( GLbitfield mask )
 {
-    crStatePushClientAttrib(mask);
+    crStatePushClientAttrib(&pack_spu.StateTracker, mask);
     crPackPushClientAttrib(mask);
 }
 
 void PACKSPU_APIENTRY packspu_PopClientAttrib( void )
 {
-    crStatePopClientAttrib();
+    crStatePopClientAttrib(&pack_spu.StateTracker);
     crPackPopClientAttrib();
 }
 
@@ -817,7 +817,7 @@ void PACKSPU_APIENTRY packspu_LockArraysEXT(GLint first, GLint count)
 {
     if (first>=0 && count>0)
     {
-        crStateLockArraysEXT(first, count);
+        crStateLockArraysEXT(&pack_spu.StateTracker, first, count);
         /*Note: this is a workaround for quake3 based apps.
           It's modifying vertex data between glLockArraysEXT and glDrawElements calls,
           so we'd pass data to host right before the glDrawSomething or glBegin call.
@@ -837,5 +837,5 @@ void PACKSPU_APIENTRY packspu_UnlockArraysEXT()
         crPackUnlockArraysEXT();
     }
 
-    crStateUnlockArraysEXT();
+    crStateUnlockArraysEXT(&pack_spu.StateTracker);
 }

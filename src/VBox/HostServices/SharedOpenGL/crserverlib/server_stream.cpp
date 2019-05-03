@@ -579,6 +579,7 @@ static void crServerPendProcess(CRConnection *conn)
         UnpackerState.pWritebackPtr    = &cr_server.writeback_ptr;
         UnpackerState.pDispatchTbl     = &(cr_server.dispatch);
         UnpackerState.rcUnpack         = VINF_SUCCESS;
+        UnpackerState.pStateTracker    = &cr_server.StateTracker;
 
         cr_server.pUnpackerState = &UnpackerState;
         crUnpack(&UnpackerState);
@@ -694,6 +695,7 @@ crServerDispatchMessage(CRConnection *conn, CRMessage *msg, int cbMsg)
         UnpackerState.pWritebackPtr    = &cr_server.writeback_ptr;
         UnpackerState.pDispatchTbl     = &(cr_server.dispatch);
         UnpackerState.rcUnpack         = VINF_SUCCESS;
+        UnpackerState.pStateTracker    = &cr_server.StateTracker;
 
         cr_server.pUnpackerState = &UnpackerState;
         crUnpack(&UnpackerState);

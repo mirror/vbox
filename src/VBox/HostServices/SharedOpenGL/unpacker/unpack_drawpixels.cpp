@@ -21,7 +21,7 @@ void crUnpackDrawPixels(PCrUnpackerState pState)
     GLint noimagedata = READ_DATA(pState, sizeof( int ) + 16, GLint );
     GLvoid *pixels;
 
-    if (noimagedata && !crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    if (noimagedata && !crStateIsBufferBound(pState->pStateTracker, GL_PIXEL_UNPACK_BUFFER_ARB))
         return;
 
     if (noimagedata)
@@ -62,7 +62,7 @@ void crUnpackBitmap(PCrUnpackerState pState)
     GLuint noimagedata = READ_DATA(pState, sizeof( int ) + 24, GLuint );
     GLubyte *bitmap;
 
-    if (noimagedata && !crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    if (noimagedata && !crStateIsBufferBound(pState->pStateTracker, GL_PIXEL_UNPACK_BUFFER_ARB))
         return;
 
     if (noimagedata)

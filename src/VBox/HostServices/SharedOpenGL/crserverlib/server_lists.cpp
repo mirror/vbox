@@ -63,7 +63,7 @@ crServerDispatchNewList( GLuint list, GLenum mode )
         crWarning("using glNewList(GL_COMPILE_AND_EXECUTE) can confuse the crserver");
 
     list = TranslateListID( list );
-    crStateNewList( list, mode );
+    crStateNewList(&cr_server.StateTracker, list, mode );
     cr_server.head_spu->dispatch_table.NewList( list, mode );
 }
 
@@ -83,17 +83,17 @@ static void crServerQueryHWState()
         {
             fbFbo = bbFbo = 0;
         }
-        crStateQueryHWState(fbFbo, bbFbo);
+        crStateQueryHWState(&cr_server.StateTracker, fbFbo, bbFbo);
     }
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchEndList(void)
 {
-    CRContext *g = crStateGetCurrent();
+    CRContext *g = crStateGetCurrent(&cr_server.StateTracker);
     CRListsState *l = &(g->lists);
 
     cr_server.head_spu->dispatch_table.EndList();
-    crStateEndList();
+    crStateEndList(&cr_server.StateTracker);
 
 #ifndef IN_GUEST
     if (l->mode==GL_COMPILE)
@@ -271,6 +271,6 @@ GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsList( GLuint list )
 void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteLists( GLuint list, GLsizei range )
 {
     list = TranslateListID( list );
-    crStateDeleteLists( list, range );
+    crStateDeleteLists(&cr_server.StateTracker, list, range );
     cr_server.head_spu->dispatch_table.DeleteLists( list, range );
 }

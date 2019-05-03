@@ -32,7 +32,7 @@ crServerDispatchReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
     CRASSERT(bytes_per_row > 0);
 
 #ifdef CR_ARB_pixel_buffer_object
-    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
     {
         GLvoid *pbo_offset;
 

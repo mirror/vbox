@@ -12,6 +12,7 @@
 #include "cr_protocol.h"
 #include "cr_mem.h"
 #include "cr_opcodes.h"
+#include "cr_glstate.h"
 
 #include <iprt/types.h>
 
@@ -41,6 +42,8 @@ typedef struct CrUnpackerState
     /** Status code from the unpacker (mostly returns VERR_BUFFER_OVERFLOW
      * on error if one unpacker detected out of bounds buffer access). */
     int                         rcUnpack;
+    /** Attached state tracker. */
+    PCRStateTracker             pStateTracker;
 } CrUnpackerState;
 /** Pointer to an unpacker state. */
 typedef CrUnpackerState *PCrUnpackerState;

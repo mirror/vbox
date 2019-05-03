@@ -61,14 +61,14 @@ for index in range(len(funcs)):
         GLuint texid;
         CRASSERT(tablesize/sizeof(%s)==1);
         texid = (GLuint) *get_values;
-        *get_values = (%s) crStateTextureHWIDtoID(texid);
+        *get_values = (%s) crStateTextureHWIDtoID(&cr_server.StateTracker, texid);
     }
     else if (GL_CURRENT_PROGRAM==pname)
     {
         GLuint programid;
         CRASSERT(tablesize/sizeof(%s)==1);
         programid = (GLuint) *get_values;
-        *get_values = (%s) crStateGLSLProgramHWIDtoID(programid);
+        *get_values = (%s) crStateGLSLProgramHWIDtoID(&cr_server.StateTracker, programid);
     }
     else if (GL_FRAMEBUFFER_BINDING_EXT==pname
              ||GL_READ_FRAMEBUFFER_BINDING==pname)
@@ -84,7 +84,7 @@ for index in range(len(funcs)):
         }
         else
         {
-        	fboid = crStateFBOHWIDtoID(fboid);
+        	fboid = crStateFBOHWIDtoID(&cr_server.StateTracker, fboid);
         }
         *get_values = (%s) fboid;
     }
@@ -92,20 +92,20 @@ for index in range(len(funcs)):
     {
         if (crServerIsRedirectedToFBO()
             && CR_SERVER_FBO_FOR_IDX(cr_server.curClient->currentMural, cr_server.curClient->currentMural->iCurReadBuffer)
-            && !crStateGetCurrent()->framebufferobject.readFB)
+            && !crStateGetCurrent(&cr_server.StateTracker)->framebufferobject.readFB)
         {
-            *get_values = (%s) crStateGetCurrent()->buffer.readBuffer;
-            Assert(crStateGetCurrent()->buffer.readBuffer == GL_BACK || crStateGetCurrent()->buffer.readBuffer == GL_FRONT);
+            *get_values = (%s) crStateGetCurrent(&cr_server.StateTracker)->buffer.readBuffer;
+            Assert(crStateGetCurrent(&cr_server.StateTracker)->buffer.readBuffer == GL_BACK || crStateGetCurrent(&cr_server.StateTracker)->buffer.readBuffer == GL_FRONT);
         }
     }
     else if (GL_DRAW_BUFFER==pname)
     {
         if (crServerIsRedirectedToFBO()
             && CR_SERVER_FBO_FOR_IDX(cr_server.curClient->currentMural, cr_server.curClient->currentMural->iCurDrawBuffer)
-            && !crStateGetCurrent()->framebufferobject.drawFB)
+            && !crStateGetCurrent(&cr_server.StateTracker)->framebufferobject.drawFB)
         {
-            *get_values = (%s) crStateGetCurrent()->buffer.drawBuffer;
-            Assert(crStateGetCurrent()->buffer.drawBuffer == GL_BACK || crStateGetCurrent()->buffer.drawBuffer == GL_FRONT);
+            *get_values = (%s) crStateGetCurrent(&cr_server.StateTracker)->buffer.drawBuffer;
+            Assert(crStateGetCurrent(&cr_server.StateTracker)->buffer.drawBuffer == GL_BACK || crStateGetCurrent(&cr_server.StateTracker)->buffer.drawBuffer == GL_FRONT);
         }
     }
     else if (GL_RENDERBUFFER_BINDING_EXT==pname)
@@ -113,7 +113,7 @@ for index in range(len(funcs)):
         GLuint rbid;
         CRASSERT(tablesize/sizeof(%s)==1);
         rbid = (GLuint) *get_values;
-        *get_values = (%s) crStateRBOHWIDtoID(rbid);
+        *get_values = (%s) crStateRBOHWIDtoID(&cr_server.StateTracker, rbid);
     }
     else if (GL_ARRAY_BUFFER_BINDING_ARB==pname
              || GL_ELEMENT_ARRAY_BUFFER_BINDING_ARB==pname
@@ -130,7 +130,7 @@ for index in range(len(funcs)):
         GLuint bufid;
         CRASSERT(tablesize/sizeof(%s)==1);
         bufid = (GLuint) *get_values;
-        *get_values = (%s) crStateBufferHWIDtoID(bufid);
+        *get_values = (%s) crStateBufferHWIDtoID(&cr_server.StateTracker, bufid);
     }
     else if (GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS==pname)
     {

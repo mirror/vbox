@@ -974,9 +974,7 @@ DECLCALLBACK(void) crFbTexRelease(CR_TEXDATA *pTex)
         crHashtableDelete(g_CrPresenter.pFbTexMap, pTobj->id, NULL);
 
         crStateReleaseTexture(cr_server.MainContextInfo.pContext, pTobj);
-
-
-        crStateGlobalSharedRelease();
+        crStateGlobalSharedRelease(&cr_server.StateTracker);
     }
 
     crFbTexFree(pFbTex);
@@ -1025,7 +1023,7 @@ static CR_FBTEX* crFbTexAcquire(GLuint idTexture)
         return pFbTex;
     }
 
-    CRSharedState *pShared = crStateGlobalSharedAcquire();
+    CRSharedState *pShared = crStateGlobalSharedAcquire(&cr_server.StateTracker);
     if (!pShared)
     {
         WARN(("pShared is null!"));
@@ -1036,17 +1034,17 @@ static CR_FBTEX* crFbTexAcquire(GLuint idTexture)
     if (!pTobj)
     {
         LOG(("pTobj is null!"));
-        crStateGlobalSharedRelease();
+        crStateGlobalSharedRelease(&cr_server.StateTracker);
         return NULL;
     }
 
     Assert(pTobj->id == idTexture);
 
-    GLuint hwid = crStateGetTextureObjHWID(pTobj);
+    GLuint hwid = crStateGetTextureObjHWID(&cr_server.StateTracker, pTobj);
     if (!hwid)
     {
         WARN(("hwId is null!"));
-        crStateGlobalSharedRelease();
+        crStateGlobalSharedRelease(&cr_server.StateTracker);
         return NULL;
     }
 
@@ -1060,7 +1058,7 @@ static CR_FBTEX* crFbTexAcquire(GLuint idTexture)
     if (!pFbTex)
     {
         WARN(("crFbTexCreate failed!"));
-        crStateGlobalSharedRelease();
+        crStateGlobalSharedRelease(&cr_server.StateTracker);
         return NULL;
     }
 

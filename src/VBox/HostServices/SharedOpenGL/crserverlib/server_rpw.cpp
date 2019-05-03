@@ -469,7 +469,7 @@ int crServerRpwEntryResizeCleaned(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *p
 
     pContext = cr_server.currentCtxInfo->pContext;
 
-    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_UNPACK_BUFFER_ARB))
     {
         cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
     }
@@ -489,7 +489,7 @@ int crServerRpwEntryResizeCleaned(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *p
 
     pEntry->iTexDraw = -pEntry->iTexDraw;
 
-    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_UNPACK_BUFFER_ARB))
     {
         cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pContext->bufferobject.unpackBuffer->hwid);
     }
@@ -503,7 +503,7 @@ int crServerRpwEntryResizeCleaned(CR_SERVER_RPW *pWorker, CR_SERVER_RPW_ENTRY *p
             cr_server.head_spu->dispatch_table.BufferDataARB(GL_PIXEL_PACK_BUFFER_ARB, width*height*4, 0, GL_STREAM_READ_ARB);
         }
 
-        if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+        if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
         {
             cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, pContext->bufferobject.packBuffer->hwid);
         }

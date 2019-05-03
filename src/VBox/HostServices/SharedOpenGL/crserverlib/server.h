@@ -340,7 +340,7 @@ DECLINLINE(void) crServerCtxSwitchPrepare(CR_SERVER_CTX_SWITCH *pData, CRContext
     GLuint idDrawFBO, idReadFBO;
     CRContext *pCurCtx = pCurCtxInfo ? pCurCtxInfo->pContext : NULL;
 
-    CRASSERT(pCurCtx == crStateGetCurrent());
+    CRASSERT(pCurCtx == crStateGetCurrent(&cr_server.StateTracker));
 
     if (pCurrentMural)
     {

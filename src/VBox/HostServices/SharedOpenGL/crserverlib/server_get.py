@@ -137,7 +137,7 @@ for func_name in keys:
 
         if func_name in convert_bufferid:
             print('\tif (pname==GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB){')
-            print('\t\tlocal_params[0]=(%s)crStateBufferHWIDtoID((GLint)local_params[0]);' % (local_argtype))
+            print('\t\tlocal_params[0]=(%s)crStateBufferHWIDtoID(&cr_server.StateTracker, (GLint)local_params[0]);' % (local_argtype))
             print('\t}')
 
         if func_name in no_pnames:

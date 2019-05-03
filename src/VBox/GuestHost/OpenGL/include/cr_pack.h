@@ -11,6 +11,9 @@
 #include "cr_error.h"
 #include "cr_protocol.h"
 #include "cr_opcodes.h"
+#ifndef IN_RING0
+# include "cr_glstate.h"
+#endif
 #include "state/cr_statetypes.h"
 #include "state/cr_currentpointers.h"
 #include "state/cr_client.h"
@@ -97,6 +100,9 @@ struct CRPackContext_t
 # define CR_PACKER_CONTEXT_ARG_NOREF()  do {} while (0)
 # define CR_PACKER_CONTEXT_ARGCTX(C)
 extern CRtsd _PackerTSD;
+#ifndef IN_RING0
+extern DECLHIDDEN(PCRStateTracker) g_pStateTracker; /** Hack to make the state tracker available to pack_client.c which uses crStateGetCurrent(). */
+#endif
 # define CR_GET_PACKER_CONTEXT(C) CRPackContext *C = (CRPackContext *) crGetTSD(&_PackerTSD)
 # define CR_LOCK_PACKER_CONTEXT(PC) crLockMutex(&((PC)->mutex))
 # define CR_UNLOCK_PACKER_CONTEXT(PC) crUnlockMutex(&((PC)->mutex))

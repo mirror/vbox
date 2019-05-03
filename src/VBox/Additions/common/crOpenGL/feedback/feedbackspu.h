@@ -42,6 +42,9 @@ typedef struct {
     ContextInfo context[CR_MAX_CONTEXTS];
 
     CRmutex mutex;
+
+    /** The state tracker state. */
+    CRStateTracker StateTracker;
 } feedbackSPU;
 
 extern feedbackSPU feedback_spu;

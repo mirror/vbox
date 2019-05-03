@@ -45,7 +45,7 @@ crServerDispatchGenBuffersARB(GLsizei n, GLuint *buffers)
         return;
     }
 
-    crStateGenBuffersARB(n, local_buffers);
+    crStateGenBuffersARB(&cr_server.StateTracker, n, local_buffers);
 
     crServerReturnValue( local_buffers, n * sizeof(*local_buffers) );
     crFree( local_buffers );
@@ -59,7 +59,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteBuffersARB( GLsizei n, const
         return;
     }
 
-    crStateDeleteBuffersARB( n, buffer );
+    crStateDeleteBuffersARB(&cr_server.StateTracker, n, buffer );
 }
 
 void SERVER_DISPATCH_APIENTRY
@@ -100,8 +100,8 @@ crServerDispatchGetBufferSubDataARB(GLenum target, GLintptrARB offset, GLsizeipt
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchBindBufferARB(GLenum target, GLuint buffer)
 {
-    crStateBindBufferARB(target, buffer);
-    cr_server.head_spu->dispatch_table.BindBufferARB(target, crStateGetBufferHWID(buffer));
+    crStateBindBufferARB(&cr_server.StateTracker, target, buffer);
+    cr_server.head_spu->dispatch_table.BindBufferARB(target, crStateGetBufferHWID(&cr_server.StateTracker, buffer));
 }
 
 GLboolean SERVER_DISPATCH_APIENTRY
@@ -109,7 +109,7 @@ crServerDispatchIsBufferARB(GLuint buffer)
 {
     /* since GenBuffersARB issued to host ogl only on bind + some other ops, the host drivers may not know about them
      * so use state data*/
-    GLboolean retval = crStateIsBufferARB(buffer);
+    GLboolean retval = crStateIsBufferARB(&cr_server.StateTracker, buffer);
     crServerReturnValue( &retval, sizeof(retval) );
     return retval; /* WILL PROBABLY BE IGNORED */
 }

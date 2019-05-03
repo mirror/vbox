@@ -408,6 +408,9 @@ typedef struct {
     /* visBits -> dummy mural association */
     CRHashTable *dummyMuralTable;
 
+    /** State tracker state. */
+    CRStateTracker StateTracker;
+
     GLboolean fRootVrOn;
     VBOXVR_LIST RootVr;
     /* we need to translate Root Vr to each window coords, this one cpecifies the current translation point
@@ -592,6 +595,9 @@ extern DECLEXPORT(int32_t) crVBoxServerHgcmEnable(VBOXCRCMDCTL_HGCMENABLE_DATA *
 extern DECLEXPORT(int32_t) crVBoxServerHgcmDisable(VBOXCRCMDCTL_HGCMDISABLE_DATA *pData);
 
 extern int crVBoxServerHostCtl(VBOXCRCMDCTL *pCtl, uint32_t cbCtl);
+
+extern DECLEXPORT(void) crVBoxServerDetachThread(void);
+extern DECLEXPORT(void) crVBoxServerAttachThread(void);
 
 #ifdef __cplusplus
 }

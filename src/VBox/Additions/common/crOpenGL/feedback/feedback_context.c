@@ -49,7 +49,7 @@ feedbackspu_VBoxCreateContext( GLint con, const char *dpyName, GLint visual, GLi
         feedback_spu.numContexts++;
     }
 
-    feedback_spu.context[slot].clientState = crStateCreateContext(NULL, visual, NULL);
+    feedback_spu.context[slot].clientState = crStateCreateContext(&feedback_spu.StateTracker, NULL, visual, NULL);
     feedback_spu.context[slot].clientCtx = ctx;
 
     crUnlockMutex(&feedback_spu.mutex);
@@ -76,9 +76,9 @@ feedbackspu_MakeCurrent( GLint window, GLint nativeWindow, GLint ctx )
             if (feedback_spu.context[slot].clientCtx == ctx) break;
         CRASSERT(slot < feedback_spu.numContexts);
 
-        crStateMakeCurrent(feedback_spu.context[slot].clientState);
+        crStateMakeCurrent(&feedback_spu.StateTracker, feedback_spu.context[slot].clientState);
 
-        crStateGetIntegerv(GL_RENDER_MODE, &oldmode);
+        crStateGetIntegerv(&feedback_spu.StateTracker, GL_RENDER_MODE, &oldmode);
 
         if (oldmode!=feedback_spu.render_mode)
         {
@@ -87,7 +87,7 @@ feedbackspu_MakeCurrent( GLint window, GLint nativeWindow, GLint ctx )
     }
     else
     {
-        crStateMakeCurrent(NULL);
+        crStateMakeCurrent(&feedback_spu.StateTracker, NULL);
     }
 
     crUnlockMutex(&feedback_spu.mutex);
@@ -106,7 +106,7 @@ feedbackspu_DestroyContext( GLint ctx )
             if (feedback_spu.context[slot].clientCtx == ctx) break;
         CRASSERT(slot < feedback_spu.numContexts);
 
-        crStateDestroyContext(feedback_spu.context[slot].clientState);
+        crStateDestroyContext(&feedback_spu.StateTracker, feedback_spu.context[slot].clientState);
 
         feedback_spu.context[slot].clientState = NULL;
         feedback_spu.context[slot].clientCtx = 0;

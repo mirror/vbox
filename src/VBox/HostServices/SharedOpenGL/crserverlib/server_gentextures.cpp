@@ -30,7 +30,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGenTextures( GLsizei n, GLuint *te
         return;
     }
 
-    crStateGenTextures(n, local_textures);
+    crStateGenTextures(&cr_server.StateTracker, n, local_textures);
 
     crServerReturnValue(local_textures, n*sizeof(*local_textures));
     crFree( local_textures );
@@ -111,7 +111,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGenProgramsARB( GLsizei n, GLuint 
     for (i=0; i<n; ++i)
     {
         GLuint tID = crServerTranslateProgramID(local_progs[i]);
-        while (crStateIsProgramARB(tID))
+        while (crStateIsProgramARB(&cr_server.StateTracker, tID))
         {
             cr_server.head_spu->dispatch_table.GenProgramsARB(1, &tID);
             local_progs[i] = tID;
@@ -137,6 +137,6 @@ crServerDispatchCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat
         crServerDispatchTexImage2D(target, level, internalFormat, width, height, border, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
     }
 
-    crStateCopyTexImage2D(target, level, internalFormat, x, y, width, height, border);
+    crStateCopyTexImage2D(&cr_server.StateTracker, target, level, internalFormat, x, y, width, height, border);
     cr_server.head_spu->dispatch_table.CopyTexImage2D(target, level, internalFormat, x, y, width, height, border);
 }

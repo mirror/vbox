@@ -63,7 +63,7 @@ static GLint __sizeQuery( GLenum map )
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapfv( GLenum map, GLfloat *values )
 {
 #ifdef CR_ARB_pixel_buffer_object
-    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
     {
         GLvoid *pbo_offset;
 
@@ -90,7 +90,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapfv( GLenum map, GLfloat
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapuiv( GLenum map, GLuint *values )
 {
 #ifdef CR_ARB_pixel_buffer_object
-    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
     {
         GLvoid *pbo_offset;
 
@@ -117,7 +117,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapuiv( GLenum map, GLuint
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapusv( GLenum map, GLushort *values )
 {
 #ifdef CR_ARB_pixel_buffer_object
-    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
     {
         GLvoid *pbo_offset;
 

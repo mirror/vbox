@@ -148,7 +148,7 @@ const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
             else
 #endif
             {
-                return crStateGetString(name);
+                return crStateGetString(&pack_spu.StateTracker, name);
             }
         case GL_RENDERER:
 #ifdef WINDOWS
@@ -160,7 +160,7 @@ const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
             else
 #endif
             {
-                return crStateGetString(name);
+                return crStateGetString(&pack_spu.StateTracker, name);
             }
 
 #ifdef CR_OPENGL_VERSION_2_0
@@ -187,7 +187,7 @@ const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
             return ctx->pszRealRenderer;
 #endif
         default:
-            return crStateGetString(name);
+            return crStateGetString(&pack_spu.StateTracker, name);
     }
 }
 

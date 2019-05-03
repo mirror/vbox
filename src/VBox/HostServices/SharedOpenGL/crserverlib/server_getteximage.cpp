@@ -20,7 +20,7 @@ crServerDispatchGetTexImage(GLenum target, GLint level, GLenum format,
 
 
 #ifdef CR_ARB_pixel_buffer_object
-    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
     {
         GLvoid *pbo_offset;
 
@@ -103,7 +103,7 @@ crServerDispatchGetCompressedTexImageARB(GLenum target, GLint level,
     GLvoid *buffer=NULL;
 
 #ifdef CR_ARB_pixel_buffer_object
-    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
     {
         GLvoid *pbo_offset;
 
@@ -135,7 +135,7 @@ crServerDispatchGetCompressedTexImageARB(GLenum target, GLint level,
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetPolygonStipple( GLubyte * mask )
 {
 #ifdef CR_ARB_pixel_buffer_object
-    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    if (crStateIsBufferBound(&cr_server.StateTracker, GL_PIXEL_PACK_BUFFER_ARB))
     {
         GLvoid *pbo_offset;
 

@@ -108,6 +108,9 @@ typedef struct {
 
     int numContexts;
     ContextInfo context[CR_MAX_CONTEXTS];
+
+    /** State tracker state. */
+    CRStateTracker    StateTracker;
 } PackSPU;
 
 extern PackSPU pack_spu;

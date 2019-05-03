@@ -23,19 +23,19 @@
 
 void PACKSPU_APIENTRY packspu_ActiveTextureARB(GLenum texture)
 {
-    crStateActiveTextureARB(texture);
+    crStateActiveTextureARB(&pack_spu.StateTracker, texture);
     crPackActiveTextureARB(texture);
 }
 
 void PACKSPU_APIENTRY packspu_BindTexture(GLenum target, GLuint texture)
 {
-    crStateBindTexture(target, texture);
+    crStateBindTexture(&pack_spu.StateTracker, target, texture);
     crPackBindTexture(target, texture);
 }
 
 void PACKSPU_APIENTRY packspu_DeleteTextures(GLsizei n, const GLuint * textures)
 {
-    crStateDeleteTextures(n, textures);
+    crStateDeleteTextures(&pack_spu.StateTracker, n, textures);
     crPackDeleteTextures(n, textures);
 }
 
@@ -51,5 +51,5 @@ void PACKSPU_APIENTRY packspu_GenTextures( GLsizei n, GLuint * textures )
     crPackGenTextures( n, textures, &writeback );
     packspuFlush( (void *) thread );
     CRPACKSPU_WRITEBACK_WAIT(thread, writeback);
-    crStateRegTextures(n, textures);
+    crStateRegTextures(&pack_spu.StateTracker, n, textures);
 }

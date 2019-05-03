@@ -334,14 +334,14 @@ crStateGetTextureObjectAndImage(CRContext *g, GLenum texTarget, GLint level,
  * Return GL_TRUE if any errors, GL_FALSE if no errors.
  */
 static GLboolean
-ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
+ErrorCheckTexImage(PCRStateTracker pState, GLuint dims, GLenum target, GLint level,
                                      GLsizei width, GLsizei height, GLsizei depth, GLint border)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
 
     if (g->current.inBeginEnd)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION,
                                  "glTexImage%uD called in Begin/End", dims);
         return GL_TRUE;
     }
@@ -354,7 +354,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
         case GL_TEXTURE_1D:
         case GL_PROXY_TEXTURE_1D:
             if (dims != 1) {
-                crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                          "glTexImage(invalid target=0x%x)", target);
                 return GL_TRUE;
             }
@@ -362,7 +362,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
         case GL_TEXTURE_2D:
         case GL_PROXY_TEXTURE_2D:
             if (dims != 2) {
-                crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                          "glTexImage(invalid target=0x%x)", target);
                 return GL_TRUE;
             }
@@ -370,7 +370,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
         case GL_TEXTURE_3D:
         case GL_PROXY_TEXTURE_3D:
             if (dims != 3) {
-                crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                          "glTexImage(invalid target=0x%x)", target);
                 return GL_TRUE;
             }
@@ -379,7 +379,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
         case GL_TEXTURE_RECTANGLE_NV:
         case GL_PROXY_TEXTURE_RECTANGLE_NV:
             if (dims != 2 || !g->extensions.NV_texture_rectangle) {
-                crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                          "glTexImage2D(invalid target=0x%x)", target);
                 return GL_TRUE;
             }
@@ -394,14 +394,14 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
         case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB:
         case GL_PROXY_TEXTURE_CUBE_MAP_ARB:
             if (dims != 2 || !g->extensions.ARB_texture_cube_map) {
-                crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                          "glTexImage2D(invalid target=0x%x)", target);
                 return GL_TRUE;
             }
             break;
 #endif
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                      "glTexImage%uD(invalid target=0x%x)", dims, target);
             return GL_TRUE;
     }
@@ -411,7 +411,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
      */
     if (level < 0 || level > MaxTextureLevel(g, target)) {
         if (!IsProxyTarget(target))
-            crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                      "glTexImage%uD(level=%d)", dims, level);
         return GL_TRUE;
     }
@@ -421,7 +421,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
      */
     if (border != 0 && border != 1) {
         if (!IsProxyTarget(target))
-            crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                      "glTexImage%uD(border=%d)", dims, border);
         return GL_TRUE;
     }
@@ -429,7 +429,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
     if ((target == GL_PROXY_TEXTURE_RECTANGLE_NV ||
              target == GL_TEXTURE_RECTANGLE_NV) && border != 0) {
         if (!IsProxyTarget(target))
-            crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                      "glTexImage2D(border=%d)", border);
         return GL_TRUE;
     }
@@ -440,7 +440,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
     if (target == GL_PROXY_TEXTURE_1D || target == GL_TEXTURE_1D) {
         if (!isLegalSize(g, width - 2 * border, g->limits.maxTextureSize)) {
             if (!IsProxyTarget(target))
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                          "glTexImage1D(width=%d)", width);
             return GL_TRUE;
         }
@@ -449,7 +449,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
         if (!isLegalSize(g, width - 2 * border, g->limits.maxTextureSize) ||
                 !isLegalSize(g, height - 2 * border, g->limits.maxTextureSize)) {
             if (!IsProxyTarget(target))
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                          "glTexImage2D(width=%d, height=%d)", width, height);
             return GL_TRUE;
         }
@@ -459,7 +459,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
                 !isLegalSize(g, height - 2 * border, g->limits.max3DTextureSize) ||
                 !isLegalSize(g, depth - 2 * border, g->limits.max3DTextureSize)) {
             if (!IsProxyTarget(target))
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                          "glTexImage3D(width=%d, height=%d, depth=%d)",
                                          width, height, depth);
             return GL_TRUE;
@@ -470,7 +470,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
         if (width < 0 || width > (int) g->limits.maxRectTextureSize ||
                 height < 0 || height > (int) g->limits.maxRectTextureSize) {
             if (!IsProxyTarget(target))
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                          "glTexImage2D(width=%d, height=%d)", width, height);
             return GL_TRUE;
         }
@@ -481,7 +481,7 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
                 !isLegalSize(g, height - 2*border, g->limits.maxCubeMapTextureSize) ||
                 width != height) {
             if (!IsProxyTarget(target))
-                crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+                crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                          "glTexImage2D(width=%d, height=%d)", width, height);
             return GL_TRUE;
         }
@@ -498,23 +498,23 @@ ErrorCheckTexImage(GLuint dims, GLenum target, GLint level,
  * Return GL_TRUE if any errors, GL_FALSE if no errors.
  */
 static GLboolean
-ErrorCheckTexSubImage(GLuint dims, GLenum target, GLint level,
+ErrorCheckTexSubImage(PCRStateTracker pState, GLuint dims, GLenum target, GLint level,
                                             GLint xoffset, GLint yoffset, GLint zoffset,
                                             GLsizei width, GLsizei height, GLsizei depth)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureObj *tobj;
     CRTextureLevel *tl;
 
     if (g->current.inBeginEnd) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION,
                                  "glTexSubImage%uD called in Begin/End", dims);
         return GL_TRUE;
     }
 
     if (dims == 1) {
         if (target != GL_TEXTURE_1D) {
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                      "glTexSubImage1D(target=0x%x)", target);
             return GL_TRUE;
         }
@@ -528,14 +528,14 @@ ErrorCheckTexSubImage(GLuint dims, GLenum target, GLint level,
                 target != GL_TEXTURE_CUBE_MAP_POSITIVE_Z_ARB &&
                 target != GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB &&
                 target != GL_TEXTURE_RECTANGLE_NV) {
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                      "glTexSubImage2D(target=0x%x)", target);
             return GL_TRUE;
         }
     }
     else if (dims == 3) {
         if (target != GL_TEXTURE_3D) {
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                      "glTexSubImage3D(target=0x%x)", target);
             return GL_TRUE;
         }
@@ -543,33 +543,33 @@ ErrorCheckTexSubImage(GLuint dims, GLenum target, GLint level,
 
     /* test level */
     if (level < 0 || level > MaxTextureLevel(g, target)) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                  "glTexSubImage%uD(level=%d)", dims, level);
         return GL_TRUE;
     }
 
     crStateGetTextureObjectAndImage(g, target, level, &tobj, &tl);
     if (!tobj || !tl) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                  "glTexSubImage%uD(target or level)", dims);
         return GL_TRUE;
     }
 
     /* test x/y/zoffset and size */
     if (xoffset < -tl->border || xoffset + width > tl->width) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                  "glTexSubImage%uD(xoffset=%d + width=%d > %d)",
                                  dims, xoffset, width, tl->width);
         return GL_TRUE;
     }
     if (dims > 1 && (yoffset < -tl->border || yoffset + height > tl->height)) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                  "glTexSubImage%uD(yoffset=%d + height=%d > %d)",
                                  dims, yoffset, height, tl->height);
         return GL_TRUE;
     }
     if (dims > 2 && (zoffset < -tl->border || zoffset + depth > tl->depth)) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                                  "glTexSubImage%uD(zoffset=%d and/or depth=%d)",
                                  dims, zoffset, depth);
         return GL_TRUE;
@@ -582,18 +582,18 @@ ErrorCheckTexSubImage(GLuint dims, GLenum target, GLint level,
 
 
 void STATE_APIENTRY
-crStateTexImage1D(GLenum target, GLint level, GLint internalFormat,
+crStateTexImage1D(PCRStateTracker pState, GLenum target, GLint level, GLint internalFormat,
                                     GLsizei width, GLint border, GLenum format,
                                     GLenum type, const GLvoid * pixels)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureState *t = &(g->texture);
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     CRClientState *c = &(g->client);
 #endif
     CRTextureObj *tobj;
     CRTextureLevel *tl;
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
 #ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
     (void)pixels;
@@ -601,7 +601,7 @@ crStateTexImage1D(GLenum target, GLint level, GLint internalFormat,
 
     FLUSH();
 
-    if (ErrorCheckTexImage(1, target, level, width, 1, 1, border)) {
+    if (ErrorCheckTexImage(pState, 1, target, level, width, 1, 1, border)) {
         if (IsProxyTarget(target)) {
             /* clear all state, but don't generate error */
             crStateTextureInitTextureObj(g, &(t->proxy1D), 0, GL_TEXTURE_1D);
@@ -630,12 +630,12 @@ crStateTexImage1D(GLenum target, GLint level, GLint internalFormat,
         tl->img = (GLubyte *) crAlloc(tl->bytes);
         if (!tl->img)
         {
-            crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
+            crStateError(pState, __LINE__, __FILE__, GL_OUT_OF_MEMORY,
                          "glTexImage1D out of memory");
             return;
         }
         if (pixels)
-            crPixelCopy1D((GLvoid *) tl->img, format, type,
+            crPixelCopy1D(pState, (GLvoid *) tl->img, format, type,
                           pixels, format, type, width, &(c->unpack));
     }
 #endif
@@ -698,15 +698,15 @@ static void crStateNukeMipmaps(CRTextureObj *tobj)
 }
 
 void STATE_APIENTRY
-crStateCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
+crStateCopyTexImage2D(PCRStateTracker pState, GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureObj *tobj = NULL;
     CRTextureLevel *tl = NULL;
     (void)x; (void)y;
 
     if (level < 0 || level > MaxTextureLevel(g, target)) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_VALUE,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_VALUE,
                      "crStateCopyTexImage2D: invalid level: %d", level);
         return;
     }
@@ -717,7 +717,7 @@ crStateCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x
 
     if (tobj == NULL || tl == NULL)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                      "crStateCopyTexImage2D: invalid target: 0x%x", target);
         return;
     }
@@ -753,18 +753,18 @@ crStateCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x
 }
 
 void STATE_APIENTRY
-crStateTexImage2D(GLenum target, GLint level, GLint internalFormat,
+crStateTexImage2D(PCRStateTracker pState, GLenum target, GLint level, GLint internalFormat,
                   GLsizei width, GLsizei height, GLint border,
                   GLenum format, GLenum type, const GLvoid * pixels)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureState *t = &(g->texture);
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     CRClientState *c = &(g->client);
 #endif
     CRTextureObj *tobj = NULL;
     CRTextureLevel *tl = NULL;
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
     // Distributed textures are not used by VBox
     const int is_distrib = 0; // ((type == GL_TRUE) || (type == GL_FALSE));
@@ -775,7 +775,7 @@ crStateTexImage2D(GLenum target, GLint level, GLint internalFormat,
      * texture!  The user better provide correct parameters!!!
      */
     if (!is_distrib
-            && ErrorCheckTexImage(2, target, level, width, height, 1, border)) {
+            && ErrorCheckTexImage(pState, 2, target, level, width, height, 1, border)) {
         if (IsProxyTarget(target)) {
             /* clear all state, but don't generate error */
             crStateTextureInitTextureObj(g, &(t->proxy2D), 0, GL_TEXTURE_2D);
@@ -817,7 +817,7 @@ crStateTexImage2D(GLenum target, GLint level, GLint internalFormat,
         tl->img = (GLubyte *) crAlloc(tl->bytes);
         if (!tl->img)
         {
-            crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
+            crStateError(pState, __LINE__, __FILE__, GL_OUT_OF_MEMORY,
                          "glTexImage2D out of memory");
             return;
         }
@@ -891,26 +891,26 @@ crStateTexImage2D(GLenum target, GLint level, GLint internalFormat,
 
 #if defined( CR_OPENGL_VERSION_1_2 ) || defined( GL_EXT_texture3D )
 void STATE_APIENTRY
-crStateTexImage3D(GLenum target, GLint level,
+crStateTexImage3D(PCRStateTracker pState, GLenum target, GLint level,
                                     GLint internalFormat,
                                     GLsizei width, GLsizei height,
                                     GLsizei depth, GLint border,
                                     GLenum format, GLenum type, const GLvoid * pixels)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureState *t = &(g->texture);
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     CRClientState *c = &(g->client);
 #endif
     CRTextureObj *tobj = NULL;
     CRTextureLevel *tl = NULL;
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
     (void)pixels;
 
     FLUSH();
 
-    if (ErrorCheckTexImage(3, target, level, width, height, depth, border)) {
+    if (ErrorCheckTexImage(pState, 3, target, level, width, height, depth, border)) {
         if (IsProxyTarget(target)) {
             /* clear all state, but don't generate error */
             crStateTextureInitTextureObj(g, &(t->proxy3D), 0, GL_TEXTURE_3D);
@@ -939,7 +939,7 @@ crStateTexImage3D(GLenum target, GLint level,
         tl->img = (GLubyte *) crAlloc(tl->bytes);
         if (!tl->img)
         {
-            crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
+            crStateError(pState, __LINE__, __FILE__, GL_OUT_OF_MEMORY,
                          "glTexImage3D out of memory");
             return;
         }
@@ -978,29 +978,29 @@ crStateTexImage3D(GLenum target, GLint level,
 
 #ifdef GL_EXT_texture3D
 void STATE_APIENTRY
-crStateTexImage3DEXT(GLenum target, GLint level,
+crStateTexImage3DEXT(PCRStateTracker pState, GLenum target, GLint level,
                                          GLenum internalFormat,
                                          GLsizei width, GLsizei height, GLsizei depth,
                                          GLint border, GLenum format, GLenum type,
                                          const GLvoid * pixels)
 {
-    crStateTexImage3D(target, level, (GLint) internalFormat, width, height,
+    crStateTexImage3D(pState, target, level, (GLint) internalFormat, width, height,
                                         depth, border, format, type, pixels);
 }
 #endif /* GL_EXT_texture3D */
 
 
 void STATE_APIENTRY
-crStateTexSubImage1D(GLenum target, GLint level, GLint xoffset,
+crStateTexSubImage1D(PCRStateTracker pState, GLenum target, GLint level, GLint xoffset,
                                          GLsizei width, GLenum format,
                                          GLenum type, const GLvoid * pixels)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureState *t = &(g->texture);
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     CRClientState *c = &(g->client);
 #endif
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
     CRTextureUnit *unit = t->unit + t->curTextureUnit;
     CRTextureObj *tobj = unit->currentTexture1D;
@@ -1009,7 +1009,7 @@ crStateTexSubImage1D(GLenum target, GLint level, GLint xoffset,
 
     FLUSH();
 
-    if (ErrorCheckTexSubImage(1, target, level, xoffset, 0, 0,
+    if (ErrorCheckTexSubImage(pState, 1, target, level, xoffset, 0, 0,
                                                         width, 1, 1)) {
         return; /* GL error state already set */
     }
@@ -1024,7 +1024,7 @@ crStateTexSubImage1D(GLenum target, GLint level, GLint xoffset,
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     xoffset += tl->border;
 
-    crPixelCopy1D((void *) (tl->img + xoffset * tl->bytesPerPixel),
+    crPixelCopy1D(pState, (void *) (tl->img + xoffset * tl->bytesPerPixel),
                   tl->format, tl->type,
                   pixels, format, type, width, &(c->unpack));
 #endif
@@ -1046,12 +1046,12 @@ crStateTexSubImage1D(GLenum target, GLint level, GLint xoffset,
 
 
 void STATE_APIENTRY
-crStateTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
+crStateTexSubImage2D(PCRStateTracker pState, GLenum target, GLint level, GLint xoffset, GLint yoffset,
                      GLsizei width, GLsizei height,
                      GLenum format, GLenum type, const GLvoid * pixels)
 {
-    CRContext *g = GetCurrentContext();
-    CRStateBits *sb = GetCurrentBits();
+    CRContext *g = GetCurrentContext(pState);
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
     CRTextureObj *tobj;
     CRTextureLevel *tl;
@@ -1066,7 +1066,7 @@ crStateTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
 
     FLUSH();
 
-    if (ErrorCheckTexSubImage(2, target, level, xoffset, yoffset, 0,
+    if (ErrorCheckTexSubImage(pState, 2, target, level, xoffset, yoffset, 0,
                                                         width, height, 1)) {
         return; /* GL error state already set */
     }
@@ -1088,7 +1088,7 @@ crStateTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
 
     subimg = (GLubyte *) crAlloc(crImageSize(tl->format, tl->type, width, height));
 
-    crPixelCopy2D(width, height, subimg, tl->format, tl->type, NULL,    /* dst */
+    crPixelCopy2D(pState, width, height, subimg, tl->format, tl->type, NULL,    /* dst */
                   pixels, format, type, &(c->unpack));                  /* src */
 
     img = tl->img +
@@ -1126,8 +1126,8 @@ crStateTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
         GLint w,h;
         char *data;
 
-        diff_api.GetTexLevelParameteriv(target, level, GL_TEXTURE_WIDTH, &w);
-        diff_api.GetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &h);
+        pState->diff_api.GetTexLevelParameteriv(target, level, GL_TEXTURE_WIDTH, &w);
+        pState->diff_api.GetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &h);
 
         data = crAlloc(w*h*4);
         if (!data) crError("no memory!");
@@ -1140,14 +1140,14 @@ crStateTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
 
 #if defined( CR_OPENGL_VERSION_1_2 )
 void STATE_APIENTRY
-crStateTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
+crStateTexSubImage3D(PCRStateTracker pState, GLenum target, GLint level, GLint xoffset, GLint yoffset,
                                          GLint zoffset, GLsizei width, GLsizei height,
                                          GLsizei depth, GLenum format, GLenum type,
                                          const GLvoid * pixels)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureState *t = &(g->texture);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
     CRTextureUnit *unit = t->unit + t->curTextureUnit;
     CRTextureObj *tobj = unit->currentTexture3D;
@@ -1163,7 +1163,7 @@ crStateTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
 
     FLUSH();
 
-    if (ErrorCheckTexSubImage(3, target, level, xoffset, yoffset, zoffset,
+    if (ErrorCheckTexSubImage(pState, 3, target, level, xoffset, yoffset, zoffset,
                                                         width, height, depth)) {
         return; /* GL error state already set */
     }
@@ -1185,7 +1185,7 @@ crStateTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
         (GLubyte *)
         crAlloc(crTextureSize(tl->format, tl->type, width, height, depth));
 
-    crPixelCopy3D(width, height, depth, subimg, tl->format, tl->type, NULL,
+    crPixelCopy3D(pState, width, height, depth, subimg, tl->format, tl->type, NULL,
                   pixels, format, type, &(c->unpack));
 
     img = tl->img + xoffset * tl->bytesPerPixel +
@@ -1223,22 +1223,22 @@ crStateTexSubImage3D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
 
 
 void STATE_APIENTRY
-crStateCompressedTexImage1DARB(GLenum target, GLint level,
+crStateCompressedTexImage1DARB(PCRStateTracker pState, GLenum target, GLint level,
                                                              GLenum internalFormat, GLsizei width,
                                                              GLint border, GLsizei imageSize,
                                                              const GLvoid * data)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureState *t = &(g->texture);
     CRTextureObj *tobj;
     CRTextureLevel *tl;
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
     (void)data;
 
     FLUSH();
 
-    if (ErrorCheckTexImage(1, target, level, width, 1, 1, border)) {
+    if (ErrorCheckTexImage(pState, 1, target, level, width, 1, 1, border)) {
         if (IsProxyTarget(target)) {
             /* clear all state, but don't generate error */
             crStateTextureInitTextureObj(g, &(t->proxy1D), 0, GL_TEXTURE_1D);
@@ -1267,7 +1267,7 @@ crStateCompressedTexImage1DARB(GLenum target, GLint level,
         tl->img = (GLubyte *) crAlloc(tl->bytes);
         if (!tl->img)
         {
-            crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
+            crStateError(pState, __LINE__, __FILE__, GL_OUT_OF_MEMORY,
                          "glTexImage1D out of memory");
             return;
         }
@@ -1304,22 +1304,22 @@ crStateCompressedTexImage1DARB(GLenum target, GLint level,
 
 
 void STATE_APIENTRY
-crStateCompressedTexImage2DARB(GLenum target, GLint level,
+crStateCompressedTexImage2DARB(PCRStateTracker pState, GLenum target, GLint level,
                                GLenum internalFormat, GLsizei width,
                                GLsizei height, GLint border,
                                GLsizei imageSize, const GLvoid * data)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureState *t = &(g->texture);
     CRTextureObj *tobj = NULL;
     CRTextureLevel *tl = NULL;
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
     (void)data;
 
     FLUSH();
 
-    if (ErrorCheckTexImage(2, target, level, width, height, 1, border)) {
+    if (ErrorCheckTexImage(pState, 2, target, level, width, height, 1, border)) {
         if (IsProxyTarget(target)) {
             /* clear all state, but don't generate error */
             crStateTextureInitTextureObj(g, &(t->proxy2D), 0, GL_TEXTURE_2D);
@@ -1348,7 +1348,7 @@ crStateCompressedTexImage2DARB(GLenum target, GLint level,
         tl->img = (GLubyte *) crAlloc(tl->bytes);
         if (!tl->img)
         {
-            crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
+            crStateError(pState, __LINE__, __FILE__, GL_OUT_OF_MEMORY,
                          "glTexImage2D out of memory");
             return;
         }
@@ -1386,22 +1386,22 @@ crStateCompressedTexImage2DARB(GLenum target, GLint level,
 
 
 void STATE_APIENTRY
-crStateCompressedTexImage3DARB(GLenum target, GLint level,
+crStateCompressedTexImage3DARB(PCRStateTracker pState, GLenum target, GLint level,
                                                              GLenum internalFormat, GLsizei width,
                                                              GLsizei height, GLsizei depth, GLint border,
                                                              GLsizei imageSize, const GLvoid * data)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureState *t = &(g->texture);
     CRTextureObj *tobj = NULL;
     CRTextureLevel *tl = NULL;
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
     (void)data;
 
     FLUSH();
 
-    if (ErrorCheckTexImage(3, target, level, width, height, depth, border)) {
+    if (ErrorCheckTexImage(pState, 3, target, level, width, height, depth, border)) {
         if (IsProxyTarget(target)) {
             /* clear all state, but don't generate error */
             crStateTextureInitTextureObj(g, &(t->proxy3D), 0, GL_TEXTURE_3D);
@@ -1430,7 +1430,7 @@ crStateCompressedTexImage3DARB(GLenum target, GLint level,
         tl->img = (GLubyte *) crAlloc(tl->bytes);
         if (!tl->img)
         {
-            crStateError(__LINE__, __FILE__, GL_OUT_OF_MEMORY,
+            crStateError(pState, __LINE__, __FILE__, GL_OUT_OF_MEMORY,
                          "glCompressedTexImage3D out of memory");
             return;
         }
@@ -1468,13 +1468,13 @@ crStateCompressedTexImage3DARB(GLenum target, GLint level,
 
 
 void STATE_APIENTRY
-crStateCompressedTexSubImage1DARB(GLenum target, GLint level, GLint xoffset,
+crStateCompressedTexSubImage1DARB(PCRStateTracker pState, GLenum target, GLint level, GLint xoffset,
                                                                     GLsizei width, GLenum format,
                                                                     GLsizei imageSize, const GLvoid * data)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureState *t = &(g->texture);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
     CRTextureUnit *unit = t->unit + t->curTextureUnit;
     CRTextureObj *tobj = unit->currentTexture1D;
@@ -1483,7 +1483,7 @@ crStateCompressedTexSubImage1DARB(GLenum target, GLint level, GLint xoffset,
 
     FLUSH();
 
-    if (ErrorCheckTexSubImage(1, target, level, xoffset, 0, 0, width, 1, 1)) {
+    if (ErrorCheckTexSubImage(pState, 1, target, level, xoffset, 0, 0, width, 1, 1)) {
         return; /* GL error state already set */
     }
 
@@ -1525,14 +1525,14 @@ crStateCompressedTexSubImage1DARB(GLenum target, GLint level, GLint xoffset,
 
 
 void STATE_APIENTRY
-crStateCompressedTexSubImage2DARB(GLenum target, GLint level, GLint xoffset,
+crStateCompressedTexSubImage2DARB(PCRStateTracker pState, GLenum target, GLint level, GLint xoffset,
                                                                     GLint yoffset, GLsizei width,
                                                                     GLsizei height, GLenum format,
                                                                     GLsizei imageSize, const GLvoid * data)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureState *t = &(g->texture);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
     CRTextureUnit *unit = t->unit + t->curTextureUnit;
     CRTextureObj *tobj = unit->currentTexture2D;
@@ -1549,7 +1549,7 @@ crStateCompressedTexSubImage2DARB(GLenum target, GLint level, GLint xoffset,
     CRASSERT(tl->depth);
 #endif
 
-    if (ErrorCheckTexSubImage(2, target, level, xoffset, yoffset, 0,
+    if (ErrorCheckTexSubImage(pState, 2, target, level, xoffset, yoffset, 0,
                                                         width, height, 1)) {
         return; /* GL error state already set */
     }
@@ -1587,15 +1587,15 @@ crStateCompressedTexSubImage2DARB(GLenum target, GLint level, GLint xoffset,
 
 
 void STATE_APIENTRY
-crStateCompressedTexSubImage3DARB(GLenum target, GLint level, GLint xoffset,
+crStateCompressedTexSubImage3DARB(PCRStateTracker pState, GLenum target, GLint level, GLint xoffset,
                                                                     GLint yoffset, GLint zoffset, GLsizei width,
                                                                     GLsizei height, GLsizei depth,
                                                                     GLenum format, GLsizei imageSize,
                                                                     const GLvoid * data)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureState *t = &(g->texture);
-    CRStateBits *sb = GetCurrentBits();
+    CRStateBits *sb = GetCurrentBits(pState);
     CRTextureBits *tb = &(sb->texture);
     CRTextureUnit *unit = t->unit + t->curTextureUnit;
     CRTextureObj *tobj = unit->currentTexture3D;
@@ -1612,7 +1612,7 @@ crStateCompressedTexSubImage3DARB(GLenum target, GLint level, GLint xoffset,
     CRASSERT(tl->depth);
 #endif
 
-    if (ErrorCheckTexSubImage(3, target, level, xoffset, yoffset, zoffset,
+    if (ErrorCheckTexSubImage(pState, 3, target, level, xoffset, yoffset, zoffset,
                                                         width, height, depth)) {
         return; /* GL error state already set */
     }
@@ -1651,28 +1651,28 @@ crStateCompressedTexSubImage3DARB(GLenum target, GLint level, GLint xoffset,
 
 
 void STATE_APIENTRY
-crStateGetCompressedTexImageARB(GLenum target, GLint level, GLvoid * img)
+crStateGetCompressedTexImageARB(PCRStateTracker pState, GLenum target, GLint level, GLvoid * img)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
     CRTextureObj *tobj;
     CRTextureLevel *tl;
 
     if (g->current.inBeginEnd)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION,
                                  "glGetCompressedTexImage called in begin/end");
         return;
     }
 
     crStateGetTextureObjectAndImage(g, target, level, &tobj, &tl);
     if (!tobj || !tl) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                  "glGetCompressedTexImage(invalid target or level)");
         return;
     }
 
     if (!tl->compressed) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION,
                                  "glGetCompressedTexImage(not a compressed texture)");
         return;
     }
@@ -1687,16 +1687,16 @@ crStateGetCompressedTexImageARB(GLenum target, GLint level, GLvoid * img)
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     crMemcpy(img, tl->img, tl->bytes);
 #else
-    diff_api.GetCompressedTexImageARB(target, level, img);
+    pState->diff_api.GetCompressedTexImageARB(target, level, img);
 #endif
 }
 
 
 void STATE_APIENTRY
-crStateGetTexImage(GLenum target, GLint level, GLenum format,
+crStateGetTexImage(PCRStateTracker pState, GLenum target, GLint level, GLenum format,
                    GLenum type, GLvoid * pixels)
 {
-    CRContext *g = GetCurrentContext();
+    CRContext *g = GetCurrentContext(pState);
 #ifndef CR_STATE_NO_TEXTURE_IMAGE_STORE
     CRClientState *c = &(g->client);
 #endif
@@ -1705,14 +1705,14 @@ crStateGetTexImage(GLenum target, GLint level, GLenum format,
 
     if (g->current.inBeginEnd)
     {
-        crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_OPERATION,
                                  "glGetTexImage called in begin/end");
         return;
     }
 
     crStateGetTextureObjectAndImage(g, target, level, &tobj, &tl);
     if (!tobj || !tl) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+        crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                  "glGetTexImage(invalid target or level)");
         return;
     }
@@ -1741,7 +1741,7 @@ crStateGetTexImage(GLenum target, GLint level, GLenum format,
         case GL_LUMINANCE_ALPHA:
             break;
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                      "glGetTexImage called with bogus format: %d", format);
             return;
     }
@@ -1757,7 +1757,7 @@ crStateGetTexImage(GLenum target, GLint level, GLenum format,
         case GL_FLOAT:
             break;
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
+            crStateError(pState, __LINE__, __FILE__, GL_INVALID_ENUM,
                                      "glGetTexImage called with bogus type: %d", type);
             return;
     }
@@ -1766,17 +1766,17 @@ crStateGetTexImage(GLenum target, GLint level, GLenum format,
 #ifdef CR_OPENGL_VERSION_1_2
     if (target == GL_TEXTURE_3D)
     {
-        crPixelCopy3D(tl->width, tl->height, tl->depth, (GLvoid *) pixels, format,
+        crPixelCopy3D(pState, tl->width, tl->height, tl->depth, (GLvoid *) pixels, format,
                       type, NULL, (tl->img), format, type, &(c->pack));
     }
     else
 #endif
     if ((target == GL_TEXTURE_1D) || (target == GL_TEXTURE_2D))
     {
-        crPixelCopy2D(tl->width, tl->height, (GLvoid *) pixels, format, type, NULL, /* dst */
+        crPixelCopy2D(pState, tl->width, tl->height, (GLvoid *) pixels, format, type, NULL, /* dst */
                       tl->img, format, type, &(c->pack));                           /* src */
     }
 #else
-    diff_api.GetTexImage(target, level, format, type, pixels);
+    pState->diff_api.GetTexImage(target, level, format, type, pixels);
 #endif
 }
