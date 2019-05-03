@@ -2194,11 +2194,20 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
                             ("u32Msr=%#RX32 VMCS Value=%#RX64 ASMRdMsr=%#RX64 cMsrs=%u\n",
                              pHostMsrLoad->u32Msr, pHostMsrLoad->u64Value, u64Msr, cMsrs));
 
+        /* Verify that cached host EFER MSR matches what's loaded the CPU. */
+        bool const fIsEferMsr = RT_BOOL(pHostMsrLoad->u32Msr == MSR_K6_EFER);
+        if (fIsEferMsr)
+        {
+            AssertMsgReturnVoid(u64Msr == pVCpu->CTX_SUFF(pVM)->hm.s.vmx.u64HostMsrEfer,
+                                ("Cached=%#RX64 ASMRdMsr=%#RX64 cMsrs=%u\n",
+                                 pVCpu->CTX_SUFF(pVM)->hm.s.vmx.u64HostMsrEfer, u64Msr, cMsrs));
+        }
+
         /* Verify that the accesses are as expected in the MSR bitmap for auto-load/store MSRs. */
         if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
         {
             uint32_t const fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, pGuestMsrLoad->u32Msr);
-            if (pGuestMsrLoad->u32Msr == MSR_K6_EFER)
+            if (fIsEferMsr)
             {
                 AssertMsgReturnVoid((fMsrpm & VMXMSRPM_EXIT_RD), ("Passthru read for EFER MSR!?\n"));
                 AssertMsgReturnVoid((fMsrpm & VMXMSRPM_EXIT_WR), ("Passthru write for EFER MSR!?\n"));
@@ -7332,6 +7341,8 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
      *       neither are other host platforms.
      *
      *       Committing this temporarily as it prevents BSOD.
+     *
+     * Update: This is very likely a compiler optimization bug, see @bugref{9180}.
      */
 #ifdef RT_OS_WINDOWS
     if (pVM == 0 || pVM == (void *)(uintptr_t)-1)
@@ -10559,8 +10570,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
         {
             hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_TSC_AUX);
             /* NB: Because we call hmR0VmxAddAutoLoadStoreMsr with fUpdateHostMsr=true,
-             * it's safe even after hmR0VmxUpdateAutoLoadHostMsrs has already been done.
-             */
+               it's safe even after hmR0VmxUpdateAutoLoadHostMsrs has already been done. */
             int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, pVmxTransient, MSR_K8_TSC_AUX, CPUMGetGuestTscAux(pVCpu),
                                                 true /* fSetReadWrite */, true /* fUpdateHostMsr */);
             AssertRC(rc);
@@ -10570,6 +10580,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransien
     }
 
 #ifdef VBOX_STRICT
+    Assert(pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs);
     hmR0VmxCheckAutoLoadStoreMsrs(pVCpu, pVmcsInfo);
     hmR0VmxCheckHostEferMsr(pVCpu, pVmcsInfo);
     AssertRC(hmR0VmxCheckVmcsCtls(pVCpu, pVmcsInfo));
