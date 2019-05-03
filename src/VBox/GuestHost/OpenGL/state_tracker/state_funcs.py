@@ -20,6 +20,7 @@ print("""
 
 #include "chromium.h"
 #include "cr_error.h"
+#include "cr_statetypes.h"
 
 #include <iprt/cdefs.h>
 
@@ -33,10 +34,7 @@ print("""
 extern "C" {
 #endif
 
-#define STATE_UNUSED(x) ((void)x)
-
-/** Forward declaration of the stae tracker. */
-typedef struct CRStateTracker *PCRStateTracker;""")
+#define STATE_UNUSED(x) ((void)x)""")
 
 
 
