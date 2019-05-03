@@ -871,7 +871,7 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, uint8_t *pbMsrBitmap, uint32_t
     bool const  fInNestedGuestMode = CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx);
     uint16_t    offMsrpm;
     uint8_t     uMsrpmBit;
-    int rc = HMGetSvmMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
+    int rc = CPUMGetSvmMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
     AssertRC(rc);
 
     Assert(uMsrpmBit == 0 || uMsrpmBit == 2 || uMsrpmBit == 4 || uMsrpmBit == 6);
@@ -5144,7 +5144,7 @@ static bool hmR0SvmIsIoInterceptActive(void *pvIoBitmap, PSVMIOIOEXITINFO pIoExi
     const bool        fRep          = pIoExitInfo->n.u1Rep;
     const bool        fStrIo        = pIoExitInfo->n.u1Str;
 
-    return HMIsSvmIoInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep, fStrIo,
+    return CPUMIsSvmIoInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep, fStrIo,
                                       NULL /* pIoExitInfo */);
 }
 
@@ -5236,7 +5236,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
                 uint32_t const idMsr = pVCpu->cpum.GstCtx.ecx;
                 uint16_t offMsrpm;
                 uint8_t  uMsrpmBit;
-                int rc = HMGetSvmMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
+                int rc = CPUMGetSvmMsrpmOffsetAndBit(idMsr, &offMsrpm, &uMsrpmBit);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(uMsrpmBit == 0 || uMsrpmBit == 2 || uMsrpmBit == 4 || uMsrpmBit == 6);

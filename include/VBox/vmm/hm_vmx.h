@@ -4115,21 +4115,6 @@ AssertCompileSize(VMXVDIAG, 4);
 
 /** @} */
 
-
-/** @defgroup grp_hm_vmx_c    VMX C Helpers
- *
- * These are functions that strictly only implement VT-x functionality that is in
- * accordance to the VT-X spec. and thus fit to use by IEM/REM/HM.
- *
- * These are not HM all-context API functions, those are to be placed in hm.h.
- * @{
- */
-VMM_INT_DECL(uint32_t)  HMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
-VMM_INT_DECL(bool)  HMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
-                                               uint8_t cbAccess);
-/** @} */
-
-
 /** @} */
 
 #endif /* !VBOX_INCLUDED_vmm_hm_vmx_h */

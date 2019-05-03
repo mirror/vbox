@@ -3161,3 +3161,242 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM)
     return fMask;
 }
 
+
+/**
+ * Gets the read and write permission bits for an MSR in an MSR bitmap.
+ *
+ * @returns VMXMSRPM_XXX - the MSR permission.
+ * @param   pvMsrBitmap     Pointer to the MSR bitmap.
+ * @param   idMsr           The MSR to get permissions for.
+ *
+ * @sa      hmR0VmxSetMsrPermission.
+ */
+VMM_INT_DECL(uint32_t) CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr)
+{
+    AssertPtrReturn(pvMsrBitmap, VMXMSRPM_EXIT_RD | VMXMSRPM_EXIT_WR);
+
+    uint8_t const * const pbMsrBitmap = (uint8_t const * const)pvMsrBitmap;
+
+    /*
+     * MSR Layout:
+     *   Byte index            MSR range            Interpreted as
+     * 0x000 - 0x3ff    0x00000000 - 0x00001fff    Low MSR read bits.
+     * 0x400 - 0x7ff    0xc0000000 - 0xc0001fff    High MSR read bits.
+     * 0x800 - 0xbff    0x00000000 - 0x00001fff    Low MSR write bits.
+     * 0xc00 - 0xfff    0xc0000000 - 0xc0001fff    High MSR write bits.
+     *
+     * A bit corresponding to an MSR within the above range causes a VM-exit
+     * if the bit is 1 on executions of RDMSR/WRMSR.  If an MSR falls out of
+     * the MSR range, it always cause a VM-exit.
+     *
+     * See Intel spec. 24.6.9 "MSR-Bitmap Address".
+     */
+    uint32_t const offBitmapRead  = 0;
+    uint32_t const offBitmapWrite = 0x800;
+    uint32_t       offMsr;
+    uint32_t       iBit;
+    if (idMsr <= UINT32_C(0x00001fff))
+    {
+        offMsr = 0;
+        iBit   = idMsr;
+    }
+    else if (idMsr - UINT32_C(0xc0000000) <= UINT32_C(0x00001fff))
+    {
+        offMsr = 0x400;
+        iBit   = idMsr - UINT32_C(0xc0000000);
+    }
+    else
+    {
+        LogFunc(("Warning! Out of range MSR %#RX32\n", idMsr));
+        return VMXMSRPM_EXIT_RD | VMXMSRPM_EXIT_WR;
+    }
+
+    /*
+     * Get the MSR read permissions.
+     */
+    uint32_t fRet;
+    uint32_t const offMsrRead = offBitmapRead + offMsr;
+    Assert(offMsrRead + (iBit >> 3) < offBitmapWrite);
+    if (ASMBitTest(pbMsrBitmap + offMsrRead, iBit))
+        fRet = VMXMSRPM_EXIT_RD;
+    else
+        fRet = VMXMSRPM_ALLOW_RD;
+
+    /*
+     * Get the MSR write permissions.
+     */
+    uint32_t const offMsrWrite = offBitmapWrite + offMsr;
+    Assert(offMsrWrite + (iBit >> 3) < X86_PAGE_4K_SIZE);
+    if (ASMBitTest(pbMsrBitmap + offMsrWrite, iBit))
+        fRet |= VMXMSRPM_EXIT_WR;
+    else
+        fRet |= VMXMSRPM_ALLOW_WR;
+
+    Assert(VMXMSRPM_IS_FLAG_VALID(fRet));
+    return fRet;
+}
+
+
+/**
+ * Gets the permission bits for the specified I/O port from the given I/O bitmaps.
+ *
+ * @returns @c true if the I/O port access must cause a VM-exit, @c false otherwise.
+ * @param   pvIoBitmapA     Pointer to I/O bitmap A.
+ * @param   pvIoBitmapB     Pointer to I/O bitmap B.
+ * @param   uPort           The I/O port being accessed.
+ * @param   cbAccess        The size of the I/O access in bytes (1, 2 or 4 bytes).
+ */
+VMM_INT_DECL(bool) CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
+                                                uint8_t cbAccess)
+{
+    Assert(cbAccess == 1 || cbAccess == 2 || cbAccess == 4);
+
+    /*
+     * If the I/O port access wraps around the 16-bit port I/O space,
+     * we must cause a VM-exit.
+     *
+     * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
+     */
+    /** @todo r=ramshankar: Reading 1, 2, 4 bytes at ports 0xffff, 0xfffe and 0xfffc
+     *        respectively are valid and do not constitute a wrap around from what I
+     *        understand. Verify this later. */
+    uint32_t const uPortLast = uPort + cbAccess;
+    if (uPortLast > 0x10000)
+        return true;
+
+    /* Read the appropriate bit from the corresponding IO bitmap. */
+    void const *pvIoBitmap = uPort < 0x8000 ? pvIoBitmapA : pvIoBitmapB;
+    return ASMBitTest(pvIoBitmap, uPort);
+}
+
+
+/**
+ * Determines whether an IOIO intercept is active for the nested-guest or not.
+ *
+ * @param   pvIoBitmap      Pointer to the nested-guest IO bitmap.
+ * @param   u16Port         The IO port being accessed.
+ * @param   enmIoType       The type of IO access.
+ * @param   cbReg           The IO operand size in bytes.
+ * @param   cAddrSizeBits   The address size bits (for 16, 32 or 64).
+ * @param   iEffSeg         The effective segment number.
+ * @param   fRep            Whether this is a repeating IO instruction (REP prefix).
+ * @param   fStrIo          Whether this is a string IO instruction.
+ * @param   pIoExitInfo     Pointer to the SVMIOIOEXITINFO struct to be filled.
+ *                          Optional, can be NULL.
+ */
+VMM_INT_DECL(bool) CPUMIsSvmIoInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+                                              uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
+                                              PSVMIOIOEXITINFO pIoExitInfo)
+{
+    Assert(cAddrSizeBits == 16 || cAddrSizeBits == 32 || cAddrSizeBits == 64);
+    Assert(cbReg == 1 || cbReg == 2 || cbReg == 4 || cbReg == 8);
+
+    /*
+     * The IOPM layout:
+     * Each bit represents one 8-bit port. That makes a total of 0..65535 bits or
+     * two 4K pages.
+     *
+     * For IO instructions that access more than a single byte, the permission bits
+     * for all bytes are checked; if any bit is set to 1, the IO access is intercepted.
+     *
+     * Since it's possible to do a 32-bit IO access at port 65534 (accessing 4 bytes),
+     * we need 3 extra bits beyond the second 4K page.
+     */
+    static const uint16_t s_auSizeMasks[] = { 0, 1, 3, 0, 0xf, 0, 0, 0 };
+
+    uint16_t const offIopm   = u16Port >> 3;
+    uint16_t const fSizeMask = s_auSizeMasks[(cAddrSizeBits >> SVM_IOIO_OP_SIZE_SHIFT) & 7];
+    uint8_t  const cShift    = u16Port - (offIopm << 3);
+    uint16_t const fIopmMask = (1 << cShift) | (fSizeMask << cShift);
+
+    uint8_t const *pbIopm = (uint8_t *)pvIoBitmap;
+    Assert(pbIopm);
+    pbIopm += offIopm;
+    uint16_t const u16Iopm = *(uint16_t *)pbIopm;
+    if (u16Iopm & fIopmMask)
+    {
+        if (pIoExitInfo)
+        {
+            static const uint32_t s_auIoOpSize[] =
+            { SVM_IOIO_32_BIT_OP, SVM_IOIO_8_BIT_OP, SVM_IOIO_16_BIT_OP, 0, SVM_IOIO_32_BIT_OP, 0, 0, 0 };
+
+            static const uint32_t s_auIoAddrSize[] =
+            { 0, SVM_IOIO_16_BIT_ADDR, SVM_IOIO_32_BIT_ADDR, 0, SVM_IOIO_64_BIT_ADDR, 0, 0, 0 };
+
+            pIoExitInfo->u         = s_auIoOpSize[cbReg & 7];
+            pIoExitInfo->u        |= s_auIoAddrSize[(cAddrSizeBits >> 4) & 7];
+            pIoExitInfo->n.u1Str   = fStrIo;
+            pIoExitInfo->n.u1Rep   = fRep;
+            pIoExitInfo->n.u3Seg   = iEffSeg & 7;
+            pIoExitInfo->n.u1Type  = enmIoType;
+            pIoExitInfo->n.u16Port = u16Port;
+        }
+        return true;
+    }
+
+    /** @todo remove later (for debugging as VirtualBox always traps all IO
+     *        intercepts). */
+    AssertMsgFailed(("CPUMSvmIsIOInterceptActive: We expect an IO intercept here!\n"));
+    return false;
+}
+
+
+/**
+ * Gets the MSR permission bitmap byte and bit offset for the specified MSR.
+ *
+ * @returns VBox status code.
+ * @param   idMsr       The MSR being requested.
+ * @param   pbOffMsrpm  Where to store the byte offset in the MSR permission
+ *                      bitmap for @a idMsr.
+ * @param   puMsrpmBit  Where to store the bit offset starting at the byte
+ *                      returned in @a pbOffMsrpm.
+ */
+VMM_INT_DECL(int) CPUMGetSvmMsrpmOffsetAndBit(uint32_t idMsr, uint16_t *pbOffMsrpm, uint8_t *puMsrpmBit)
+{
+    Assert(pbOffMsrpm);
+    Assert(puMsrpmBit);
+
+    /*
+     * MSRPM Layout:
+     * Byte offset          MSR range
+     * 0x000  - 0x7ff       0x00000000 - 0x00001fff
+     * 0x800  - 0xfff       0xc0000000 - 0xc0001fff
+     * 0x1000 - 0x17ff      0xc0010000 - 0xc0011fff
+     * 0x1800 - 0x1fff              Reserved
+     *
+     * Each MSR is represented by 2 permission bits (read and write).
+     */
+    if (idMsr <= 0x00001fff)
+    {
+        /* Pentium-compatible MSRs. */
+        uint32_t const bitoffMsr = idMsr << 1;
+        *pbOffMsrpm = bitoffMsr >> 3;
+        *puMsrpmBit = bitoffMsr & 7;
+        return VINF_SUCCESS;
+    }
+
+    if (   idMsr >= 0xc0000000
+        && idMsr <= 0xc0001fff)
+    {
+        /* AMD Sixth Generation x86 Processor MSRs. */
+        uint32_t const bitoffMsr = (idMsr - 0xc0000000) << 1;
+        *pbOffMsrpm = 0x800 + (bitoffMsr >> 3);
+        *puMsrpmBit = bitoffMsr & 7;
+        return VINF_SUCCESS;
+    }
+
+    if (   idMsr >= 0xc0010000
+        && idMsr <= 0xc0011fff)
+    {
+        /* AMD Seventh and Eighth Generation Processor MSRs. */
+        uint32_t const bitoffMsr = (idMsr - 0xc0010000) << 1;
+        *pbOffMsrpm = 0x1000 + (bitoffMsr >> 3);
+        *puMsrpmBit = bitoffMsr & 7;
+        return VINF_SUCCESS;
+    }
+
+    *pbOffMsrpm = 0;
+    *puMsrpmBit = 0;
+    return VERR_OUT_OF_RANGE;
+}
+

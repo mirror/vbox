@@ -1549,7 +1549,7 @@ DECLINLINE(bool) hmR0VmxIsMsrBitSet(const void *pvMsrBitmap, uint16_t offMsr, in
  * @param   fMsrpm          The MSR permissions (see VMXMSRPM_XXX). This must
  *                          include both a read -and- a write permission!
  *
- * @sa      HMGetVmxMsrPermission.
+ * @sa      CPUMGetVmxMsrPermission.
  * @remarks Can be called with interrupts disabled.
  */
 static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstGstVmcs, uint32_t idMsr, uint32_t fMsrpm)
@@ -2206,7 +2206,7 @@ static void hmR0VmxCheckAutoLoadStoreMsrs(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo)
         /* Verify that the accesses are as expected in the MSR bitmap for auto-load/store MSRs. */
         if (pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
         {
-            uint32_t const fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, pGuestMsrLoad->u32Msr);
+            uint32_t const fMsrpm = CPUMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, pGuestMsrLoad->u32Msr);
             if (fIsEferMsr)
             {
                 AssertMsgReturnVoid((fMsrpm & VMXMSRPM_EXIT_RD), ("Passthru read for EFER MSR!?\n"));
@@ -2904,7 +2904,7 @@ static void hmR0VmxSetupVmcsMsrPermissions(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo,
      */
 #ifdef VBOX_STRICT
     Assert(pVmcsInfo->pvMsrBitmap);
-    uint32_t const fMsrpmEfer = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, MSR_K6_EFER);
+    uint32_t const fMsrpmEfer = CPUMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, MSR_K6_EFER);
     Assert(fMsrpmEfer == VMXMSRPM_EXIT_RD_WR);
 #endif
 }
@@ -10838,7 +10838,7 @@ static VBOXSTRICTRC hmR0VmxRunGuestCodeNormal(PVMCPU pVCpu, uint32_t *pcLoops)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pcLoops     Pointer to the number of executed loops.
  *
- * @sa      hmR0VmxRunGuestCodeNormal().
+ * @sa      hmR0VmxRunGuestCodeNormal.
  */
 static VBOXSTRICTRC hmR0VmxRunGuestCodeNested(PVMCPU pVCpu, uint32_t *pcLoops)
 {
@@ -13670,7 +13670,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         if (hmR0VmxIsLazyGuestMsr(pVCpu, idMsr))
         {
             Assert(pVmcsInfo->pvMsrBitmap);
-            uint32_t fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, idMsr);
+            uint32_t fMsrpm = CPUMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, idMsr);
             if (fMsrpm & VMXMSRPM_ALLOW_RD)
             {
                 AssertMsgFailed(("Unexpected RDMSR for a passthru lazy-restore MSR. ecx=%#RX32\n", idMsr));
@@ -13815,7 +13815,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                     if (hmR0VmxIsLazyGuestMsr(pVCpu, idMsr))
                     {
                         Assert(pVmcsInfo->pvMsrBitmap);
-                        uint32_t fMsrpm = HMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, idMsr);
+                        uint32_t fMsrpm = CPUMGetVmxMsrPermission(pVmcsInfo->pvMsrBitmap, idMsr);
                         if (fMsrpm & VMXMSRPM_ALLOW_WR)
                         {
                             AssertMsgFailed(("Unexpected WRMSR for passthru, lazy-restore MSR. ecx=%#RX32\n", idMsr));
@@ -14869,7 +14869,7 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 /**
  * Hacks its way around the lovely mesa driver's backdoor accesses.
  *
- * @sa hmR0SvmHandleMesaDrvGp
+ * @sa hmR0SvmHandleMesaDrvGp.
  */
 static int hmR0VmxHandleMesaDrvGp(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, PCPUMCTX pCtx)
 {
@@ -14889,7 +14889,7 @@ static int hmR0VmxHandleMesaDrvGp(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, PCP
  * backdoor port and magic numbers loaded in registers.
  *
  * @returns true if it is, false if it isn't.
- * @sa      hmR0SvmIsMesaDrvGp
+ * @sa      hmR0SvmIsMesaDrvGp.
  */
 DECLINLINE(bool) hmR0VmxIsMesaDrvGp(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, PCPUMCTX pCtx)
 {
