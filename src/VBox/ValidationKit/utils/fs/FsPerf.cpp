@@ -5481,7 +5481,7 @@ static void fsPerfRemote(void)
      */
     RTTESTI_CHECK_RC_RETV(FsPerfCommsSend("reset\n"
                                           "open         0 'file30' 'w' 'ca'\n"
-                                          "writepattern 0 0 0 4096\n" FSPERF_EOF_STR), VINF_SUCCESS);
+                                          "writepattern 0 0 0 4096" FSPERF_EOF_STR), VINF_SUCCESS);
 
     RTFILEACTION enmActuallyTaken = RTFILEACTION_END;
     RTFILE       hFile0 = NIL_RTFILE;
@@ -5496,7 +5496,7 @@ static void fsPerfRemote(void)
     /*
      * Append a little to it on the host and see that we can read it.
      */
-    RTTESTI_CHECK_RC(FsPerfCommsSend("writepattern 0 4096 1 1024\n" FSPERF_EOF_STR), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(FsPerfCommsSend("writepattern 0 4096 1 1024" FSPERF_EOF_STR), VINF_SUCCESS);
     AssertCompile(RT_ELEMENTS(g_abPattern1) == 1);
     RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1024, NULL), VINF_SUCCESS);
     RTTESTI_CHECK(ASMMemIsAllU8(abBuf, 1024, g_abPattern1[0]));
@@ -5513,8 +5513,43 @@ static void fsPerfRemote(void)
     RTTESTI_CHECK(ASMMemIsAllU8(abBuf, 4096, g_abPattern0[0]));
     RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
 
-    RTTESTI_CHECK_RC(RTFileClose(hFile0), VINF_SUCCESS);
+    /*
+     * Write a bunch of stuff to the file here, then truncate it to a given size,
+     * then have the host add more, finally test that we can successfully chop off
+     * what the host added by reissuing the same truncate call as before (issue of
+     * RDBSS using cached size to noop out set-eof-to-same-size).
+     */
+    memset(abBuf, 0xe9, sizeof(abBuf));
+    RTTESTI_CHECK_RC(RTFileSeek(hFile0, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileWrite(hFile0, abBuf, 16384, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 8000), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(FsPerfCommsSend("writepattern 0 8000 0 1000" FSPERF_EOF_STR), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 8000), VINF_SUCCESS);
+    uint64_t cbFile = 0;
+    RTTESTI_CHECK_RC(RTFileGetSize(hFile0, &cbFile), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(cbFile == 8000, ("cbFile=%u\n", cbFile));
+    RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
 
+    /* Same, but using RTFileRead to find out and RTFileWrite to define the size. */
+    RTTESTI_CHECK_RC(RTFileSeek(hFile0, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileWrite(hFile0, abBuf, 5000, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(FsPerfCommsSend("writepattern 0 5000 0 1000" FSPERF_EOF_STR), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 5000), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
+    RTTESTI_CHECK_RC(RTFileGetSize(hFile0, &cbFile), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(cbFile == 5000, ("cbFile=%u\n", cbFile));
+
+    /* Same, but host truncates rather than adding stuff. */
+    RTTESTI_CHECK_RC(RTFileSeek(hFile0, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileWrite(hFile0, abBuf, 16384, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 10000), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(FsPerfCommsSend("truncate 0 4000" FSPERF_EOF_STR), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileGetSize(hFile0, &cbFile), VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(cbFile == 4000, ("cbFile=%u\n", cbFile));
+    RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
+
+    RTTESTI_CHECK_RC(RTFileClose(hFile0), VINF_SUCCESS);
 }
 
 
