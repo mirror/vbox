@@ -219,8 +219,6 @@ typedef struct CRStateTracker
     GLboolean        fVBoxEnableDiffOnMakeCurrent;
     SPUDispatchTable diff_api;
 } CRStateTracker;
-/** Pointer to a state tracker state. */
-typedef CRStateTracker *PCRStateTracker;
 
 DECLEXPORT(void) crStateInit(PCRStateTracker pState);
 DECLEXPORT(void) crStateDestroy(PCRStateTracker pState);
