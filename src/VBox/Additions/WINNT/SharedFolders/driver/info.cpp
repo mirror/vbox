@@ -1802,24 +1802,24 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
     /*
      * The essence of the size validation table for NtSetInformationFile from w10 build 17763:
      * UCHAR IoCheckQuerySetFileInformation[77]:
-     *     db 28h                  ; 4       FileBasicInformation,
-     *     db 18h                  ; 10      FileRenameInformation,
-     *     db 18h                  ; 11      FileLinkInformation,
-     *     db 1                    ; 13      FileDispositionInformation,
-     *     db 8                    ; 14      FilePositionInformation,
+     *     db 28h                  ; 4       FileBasicInformation,                  w7
+     *     db 18h                  ; 10      FileRenameInformation,                 w7
+     *     db 18h                  ; 11      FileLinkInformation,                   w7
+     *     db 1                    ; 13      FileDispositionInformation,            w7
+     *     db 8                    ; 14      FilePositionInformation,               w7
      *     db 4                    ; 16      FileModeInformation,
-     *     db 8                    ; 19      FileAllocationInformation,
-     *     db 8                    ; 20      FileEndOfFileInformation,
-     *     db 8                    ; 23      FilePipeInformation,
-     *     db 10h                  ; 25      FilePipeRemoteInformation,
+     *     db 8                    ; 19      FileAllocationInformation,             w7
+     *     db 8                    ; 20      FileEndOfFileInformation,              w7
+     *     db 8                    ; 23      FilePipeInformation,                   w7
+     *     db 10h                  ; 25      FilePipeRemoteInformation,             w7
      *     db 8                    ; 27      FileMailslotSetInformation,
      *     db 48h                  ; 29      FileObjectIdInformation,
      *     db 10h                  ; 30      FileCompletionInformation,                 - "reserved for system use"
-     *     db 18h                  ; 31      FileMoveClusterInformation,                - "reserved for system use"
+     *     db 18h                  ; 31      FileMoveClusterInformation,            w7  - "reserved for system use"
      *     db 38h                  ; 32      FileQuotaInformation,
      *     db 10h                  ; 36      FileTrackingInformation,                   - "reserved for system use"
-     *     db 8                    ; 39      FileValidDataLengthInformation,
-     *     db 8                    ; 40      FileShortNameInformation,
+     *     db 8                    ; 39      FileValidDataLengthInformation,        w7
+     *     db 8                    ; 40      FileShortNameInformation,              w7
      *     db 4                    ; 41      FileIoCompletionNotificationInformation,   - "reserved for system use"
      *     db 10h                  ; 42      FileIoStatusBlockRangeInformation,         - "reserved for system use"
      *     db 4                    ; 43      FileIoPriorityHintInformation,
@@ -1833,6 +1833,11 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
      *     db 18h                  ; 72      FileLinkInformationEx,                     - Adds posix semantics and stuff.
      *     db 4                    ; 74      FileStorageReserveIdInformation,
      *     db 4                    ; 75      FileCaseSensitiveInformationForceAccessCheck, - for the i/o manager, w10-1809.
+     *
+     * Note! Using WDK 7600.16385.1/wnet, we're limited in what gets passed along, unknown
+     *       stuff will be rejected with STATUS_INVALID_PARAMETER and never get here.  OTOH,
+     *       the 10.00.16299.0 WDK will forward anything it doesn't know from what I can tell.
+     *       Not sure exactly when this changed.
      */
     switch ((int)RxContext->Info.FileInformationClass)
     {
