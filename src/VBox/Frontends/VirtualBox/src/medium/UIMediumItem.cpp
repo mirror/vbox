@@ -198,6 +198,52 @@ bool UIMediumItem::isMediumAttachedTo(QUuid uId)
    return medium().curStateMachineIds().contains(uId);
 }
 
+bool UIMediumItem::changeMediumType(KMediumType enmOldType, KMediumType enmNewType)
+{
+    QList<AttachmentCache> attachmentCacheList;
+    /* Cache the list of vms the medium is attached to. We will need this for the re-attachment: */
+    foreach (const QUuid &uMachineId, medium().curStateMachineIds())
+    {
+        const CMachine &comMachine = vboxGlobal().virtualBox().FindMachine(uMachineId.toString());
+        if (comMachine.isNull())
+            continue;
+        CMediumAttachmentVector attachments = comMachine.GetMediumAttachments();
+        foreach (const CMediumAttachment &attachment, attachments)
+        {
+            const CMedium& comMedium = attachment.GetMedium();
+            if (comMedium.isNull() || comMedium.GetId() != id())
+                continue;
+            AttachmentCache attachmentCache;
+            attachmentCache.m_uMachineId = uMachineId;
+            attachmentCache.m_strControllerName = attachment.GetController();
+            attachmentCache.m_port = attachment.GetPort();
+            attachmentCache.m_device = attachment.GetDevice();
+            attachmentCacheList << attachmentCache;
+        }
+    }
+
+    /* Detach the medium from all the vms it is already attached to: */
+    if (!release(true))
+        return false;
+
+    /* Search for corresponding medium: */
+    CMedium comMedium = vboxGlobal().medium(id()).medium();
+
+    /* Attempt to change medium type: */
+    comMedium.SetType(enmNewType);
+
+    /* Show error message if necessary: */
+    if (!comMedium.isOk() && parentTree())
+    {
+        msgCenter().cannotChangeMediumType(comMedium, enmOldType, enmNewType, treeWidget());
+        return false;
+    }
+    /* Reattach the medium to all the vms it was previously attached: */
+    foreach (const AttachmentCache &attachmentCache, attachmentCacheList)
+        attachTo(attachmentCache);
+    return true;
+}
+
 QString UIMediumItem::defaultText() const
 {
     return tr("%1, %2: %3, %4: %5", "col.1 text, col.2 name: col.2 text, col.3 name: col.3 text")
@@ -287,6 +333,41 @@ bool UIMediumItem::releaseFrom(const QUuid &uMachineId)
     if (releaseFrom(machine))
     {
         /* Save machine settings: */
+        machine.SaveSettings();
+        if (!machine.isOk())
+            msgCenter().cannotSaveMachineSettings(machine, treeWidget());
+        else
+            fSuccess = true;
+    }
+
+    /* Close session: */
+    session.UnlockMachine();
+
+    /* Return result: */
+    return fSuccess;
+}
+
+bool UIMediumItem::attachTo(const AttachmentCache &attachmentCache)
+{
+    CMedium comMedium = medium().medium();
+
+    if (comMedium.isNull())
+        return false;
+
+    /* Open session: */
+    CSession session = vboxGlobal().openSession(attachmentCache.m_uMachineId);
+    if (session.isNull())
+        return false;
+
+    /* Get machine: */
+    CMachine machine = session.GetMachine();
+
+    bool fSuccess = false;
+    machine.AttachDevice(attachmentCache.m_strControllerName, attachmentCache.m_port,
+                         attachmentCache.m_device, comMedium.GetDeviceType(), comMedium);
+
+    if (machine.isOk())
+    {
         machine.SaveSettings();
         if (!machine.isOk())
             msgCenter().cannotSaveMachineSettings(machine, treeWidget());

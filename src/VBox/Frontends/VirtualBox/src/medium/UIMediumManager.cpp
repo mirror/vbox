@@ -273,22 +273,7 @@ void UIMediumManagerWidget::sltApplyMediumDetailsChanges()
     if (   comMedium.isOk()
         && newData.m_options.m_enmMediumType != oldData.m_options.m_enmMediumType)
     {
-        /* Check if we need to release medium first: */
-        bool fDo = true;
-        if (   pMediumItem->machineIds().size() > 1
-            || (   (   newData.m_options.m_enmMediumType == KMediumType_Immutable
-                    || newData.m_options.m_enmMediumType == KMediumType_MultiAttach)
-                && pMediumItem->machineIds().size() > 0))
-            fDo = pMediumItem->release(true);
-
-        if (fDo)
-        {
-            comMedium.SetType(newData.m_options.m_enmMediumType);
-
-            /* Show error message if necessary: */
-            if (!comMedium.isOk())
-                msgCenter().cannotChangeMediumType(comMedium, oldData.m_options.m_enmMediumType, newData.m_options.m_enmMediumType, this);
-        }
+        pMediumItem->changeMediumType(oldData.m_options.m_enmMediumType, newData.m_options.m_enmMediumType);
     }
 
     /* Try to assign new medium location: */
