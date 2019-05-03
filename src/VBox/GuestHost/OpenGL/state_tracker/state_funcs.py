@@ -20,7 +20,7 @@ print("""
 
 #include "chromium.h"
 #include "cr_error.h"
-#include "cr_statetypes.h"
+#include "state/cr_statetypes.h"
 
 #include <iprt/cdefs.h>
 
