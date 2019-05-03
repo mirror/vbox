@@ -491,6 +491,105 @@ static NTSTATUS VBoxHookMjCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     return rcNt;
 }
 
+/**
+ * Intercepts IRP_MJ_SET_INFORMATION to workaround a RDBSS quirk in the
+ * FileEndOfFileInformation handling.
+ *
+ * We will add 4096 to the FileEndOfFileInformation function value and pick it
+ * up in VBoxMRxSetFileInfo after RxCommonSetInformation has done the necessary
+ * locking.  If we find that the desired file size matches the cached one, just
+ * issue the call directly, otherwise subtract 4096 and call the
+ * RxSetEndOfFileInfo worker.
+ */
+static NTSTATUS VBoxHookMjSetInformation(PDEVICE_OBJECT pDevObj, PIRP pIrp)
+{
+    PMRX_VBOX_DEVICE_EXTENSION  pDevExt  = (PMRX_VBOX_DEVICE_EXTENSION)((PBYTE)pDevObj + sizeof(RDBSS_DEVICE_OBJECT));
+    PIO_STACK_LOCATION          pStack   = IoGetCurrentIrpStackLocation(pIrp);
+    PFILE_OBJECT                pFileObj = pStack->FileObject;
+    NTSTATUS                    rcNt;
+
+    Log(("VBOXSF: VBoxHookMjSetInformation: pDevObj %p, pDevExt %p, pFileObj %p, FileInformationClass %d, Length %#x\n",
+         pDevObj, pDevObj->DeviceExtension, pFileObj, pStack->Parameters.SetFile.FileInformationClass, pStack->Parameters.SetFile.Length));
+    if (pFileObj)
+        Log2(("VBOXSF: VBoxHookMjSetInformation: FileName=%.*ls\n", pFileObj->FileName.Length / sizeof(WCHAR), pFileObj->FileName.Buffer));
+
+    /*
+     * Setting EOF info?
+     */
+    if (pStack->Parameters.SetFile.FileInformationClass == FileEndOfFileInformation)
+    {
+#if 0 /* This only works for more recent versions of the RDBSS library, not for the one we're using (WDK 7600.16385.1). */
+        pStack->Parameters.SetFile.FileInformationClass = (FILE_INFORMATION_CLASS)(FileEndOfFileInformation + 4096);
+        rcNt = pDevExt->pfnRDBSSSetInformation(pDevObj, pIrp);
+        Log(("VBOXSF: VBoxHookMjSetInformation: returns %#x (hacked)\n", rcNt));
+        return rcNt;
+#else
+        /*
+         * For the older WDK, we have to detect the same-size situation up front and hack
+         * it here instead of in VBoxMRxSetFileInfo.  This means we need to lock the FCB
+         * before modifying the Fcb.Header.FileSize value and ASSUME the locking is
+         * reentrant and nothing else happens during RDBSS dispatching wrt that...
+         */
+        PMRX_FCB pFcb = (PMRX_FCB)pFileObj->FsContext;
+        if (   (NODE_TYPE_CODE)pFcb->Header.NodeTypeCode == RDBSS_NTC_STORAGE_TYPE_FILE
+            && pIrp->AssociatedIrp.SystemBuffer != NULL
+            && pStack->Parameters.SetFile.Length >= sizeof(FILE_END_OF_FILE_INFORMATION))
+        {
+            LONGLONG cbFileNew = -42;
+            __try
+            {
+                cbFileNew = ((PFILE_END_OF_FILE_INFORMATION)pIrp->AssociatedIrp.SystemBuffer)->EndOfFile.QuadPart;
+            }
+            __except(EXCEPTION_EXECUTE_HANDLER)
+            {
+                cbFileNew = -42;
+            }
+            if (   cbFileNew >= 0
+                && pFcb->Header.FileSize.QuadPart == cbFileNew
+                && !(pFcb->FcbState & FCB_STATE_PAGING_FILE))
+            {
+                /* Now exclusivly lock the FCB like RxCommonSetInformation would do
+                   to reduce chances of races and of anyone else grabbing the value
+                   while it's incorrect on purpose. */
+                NTSTATUS rcNtLock = RxAcquireExclusiveFcb(NULL, (PFCB)pFcb);
+                if (NT_SUCCESS(rcNtLock))
+                {
+                    if (pFcb->Header.FileSize.QuadPart == cbFileNew)
+                    {
+                        int64_t const cbHackedSize = cbFileNew ? cbFileNew - 1 : 1;
+                        pFcb->Header.FileSize.QuadPart = cbHackedSize;
+                        rcNt = pDevExt->pfnRDBSSSetInformation(pDevObj, pIrp);
+                        if (   !NT_SUCCESS(rcNt)
+                            && pFcb->Header.FileSize.QuadPart == cbHackedSize)
+                            pFcb->Header.FileSize.QuadPart = cbFileNew;
+# ifdef VBOX_STRICT
+                        else
+                        {
+                            PMRX_FOBX pFobx = (PMRX_FOBX)pFileObj->FsContext2;
+                            PMRX_VBOX_FOBX pVBoxFobX = VBoxMRxGetFileObjectExtension(pFobx);
+                            Assert(   pFcb->Header.FileSize.QuadPart != cbHackedSize
+                                   || (pVBoxFobX && pVBoxFobX->Info.cbObject == cbHackedSize));
+                        }
+# endif
+                        RxReleaseFcb(NULL, pFcb);
+                        Log(("VBOXSF: VBoxHookMjSetInformation: returns %#x (hacked, cbFileNew=%#RX64)\n", rcNt, cbFileNew));
+                        return rcNt;
+                    }
+                    RxReleaseFcb(NULL, pFcb);
+                }
+            }
+        }
+#endif
+    }
+
+    /*
+     * No hack needed.
+     */
+    rcNt = pDevExt->pfnRDBSSSetInformation(pDevObj, pIrp);
+    Log(("VBOXSF: VBoxHookMjSetInformation: returns %#x\n", rcNt));
+    return rcNt;
+}
+
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
                      IN PUNICODE_STRING RegistryPath)
 {
@@ -648,6 +747,14 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
      */
     pDeviceExtension->pfnRDBSSCreate = DriverObject->MajorFunction[IRP_MJ_CREATE];
     DriverObject->MajorFunction[IRP_MJ_CREATE] = VBoxHookMjCreate;
+
+    /* Intercept IRP_MJ_SET_INFORMATION to ensure we call the host for all
+     * FileEndOfFileInformation requestes, even if the new size matches the
+     * old one.  We don't know if someone else might have modified the file
+     * size cached in the FCB since the last time we update it.
+     */
+    pDeviceExtension->pfnRDBSSSetInformation = DriverObject->MajorFunction[IRP_MJ_SET_INFORMATION];
+    DriverObject->MajorFunction[IRP_MJ_SET_INFORMATION] = VBoxHookMjSetInformation;
 
 
     /** @todo start the redirector here RxStartMiniRdr. */

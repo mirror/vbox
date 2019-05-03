@@ -22,6 +22,8 @@
 #include "vbsf.h"
 #include <iprt/err.h>
 
+extern "C" NTSTATUS NTAPI RxSetEndOfFileInfo(PRX_CONTEXT, PIRP, PFCB, PFOBX);
+
 
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
@@ -1832,7 +1834,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
      *     db 4                    ; 74      FileStorageReserveIdInformation,
      *     db 4                    ; 75      FileCaseSensitiveInformationForceAccessCheck, - for the i/o manager, w10-1809.
      */
-    switch (RxContext->Info.FileInformationClass)
+    switch ((int)RxContext->Info.FileInformationClass)
     {
         /*
          * This is used to modify timestamps and attributes.
@@ -1943,7 +1945,14 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
          * Note! RxSetEndOfFileInfo assumes that the old Header.FileSize value is up to date and
          *       will hide calls which does not change the size from us.  This is of course not
          *       the case for non-local file systems, as the server is the only which up-to-date
-         *       information.  Don't see an easy way of working around it, so ignoring it for now.
+         *       information.
+         *
+         *       We work around this either by modifying FCB.Header.FileSize slightly when it equals
+         *       the new size.  This is either done below in the FileEndOfFileInformation + 4096 case,
+         *       or when using older WDK libs in VBoxHookMjSetInformation.  The FCB is locked
+         *       exclusivly while we operate with the incorrect Header.FileSize value, which should
+         *       prevent anyone else from making use of it till it has been updated again.
+         *
          */
         case FileEndOfFileInformation:
         {
@@ -1957,6 +1966,53 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
                  Status));
             break;
         }
+
+#if 0 /* This only works for more recent versions of the RDBSS library, not for the one we're using (WDK 7600.16385.1). */
+        /*
+         * HACK ALERT! This is FileEndOfFileInformation after it passed thru
+         * VBoxHookMjSetInformation so we can twiddle the cached file size in
+         * the FCB to ensure the set EOF request always reaches the host.
+         *
+         * Note! We have to call thru RxSetEndOfFileInfo to benefit from its
+         *       update logic and avoid needing to replicate that code.
+         */
+        case FileEndOfFileInformation + 4096:
+        {
+            PFILE_END_OF_FILE_INFORMATION pInfo = (PFILE_END_OF_FILE_INFORMATION)RxContext->Info.Buffer;
+            Log(("VBOXSF: MrxSetFileInfo: FileEndOfFileInformation+4096: new EndOfFile 0x%RX64, FileSize = 0x%RX64\n",
+                 pInfo->EndOfFile.QuadPart, capFcb->Header.FileSize.QuadPart));
+
+            /* Undo the change from VBoxHookMjSetInformation:  */
+            Assert(RxContext->CurrentIrpSp);
+            RxContext->CurrentIrpSp->Parameters.SetFile.FileInformationClass = FileEndOfFileInformation;
+            RxContext->Info.FileInformationClass                             = FileEndOfFileInformation;
+
+            /* Tweak the size if necessary and forward the call. */
+            int64_t const cbOldSize = capFcb->Header.FileSize.QuadPart;
+            if (   pInfo->EndOfFile.QuadPart != cbOldSize
+                || !(capFcb->FcbState & FCB_STATE_PAGING_FILE))
+            {
+                Status = RxSetEndOfFileInfo(RxContext, RxContext->CurrentIrp, (PFCB)capFcb, (PFOBX)capFobx);
+                Log(("VBOXSF: MrxSetFileInfo: FileEndOfFileInformation+4096: Status 0x%08X\n",
+                     Status));
+            }
+            else
+            {
+                int64_t const cbHackedSize = cbOldSize ? cbOldSize - 1 : 1;
+                capFcb->Header.FileSize.QuadPart = cbHackedSize;
+                Status = RxSetEndOfFileInfo(RxContext, RxContext->CurrentIrp, (PFCB)capFcb, (PFOBX)capFobx);
+                if (   !NT_SUCCESS(Status)
+                    && capFcb->Header.FileSize.QuadPart == cbHackedSize)
+                    capFcb->Header.FileSize.QuadPart = cbOldSize;
+                else
+                    Assert(   capFcb->Header.FileSize.QuadPart != cbHackedSize
+                           || pVBoxFobx->Info.cbObject == cbHackedSize);
+                Log(("VBOXSF: MrxSetFileInfo: FileEndOfFileInformation+4096: Status 0x%08X (tweaked)\n",
+                     Status));
+            }
+            break;
+        }
+#endif
 
         /// @todo FileModeInformation ?
         /// @todo return access denied or something for FileValidDataLengthInformation?

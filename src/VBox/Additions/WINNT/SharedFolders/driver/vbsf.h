@@ -81,6 +81,8 @@ typedef struct _MRX_VBOX_DEVICE_EXTENSION
     NTSTATUS (* pfnRDBSSDeviceControl) (PDEVICE_OBJECT pDevObj, PIRP pIrp);
     /** Saved pointer to the original IRP_MJ_CREATE handler. */
     NTSTATUS (NTAPI * pfnRDBSSCreate)(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+    /** Saved pointer to the original IRP_MJ_SET_INFORMATION handler. */
+    NTSTATUS (NTAPI * pfnRDBSSSetInformation)(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 
 } MRX_VBOX_DEVICE_EXTENSION, *PMRX_VBOX_DEVICE_EXTENSION;
 
