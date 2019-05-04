@@ -1706,80 +1706,91 @@ static NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext, IN uin
 
 /**
  * Worker for VBoxMRxSetFileInfo.
+ *
+ * @todo Renaming files from the guest is _very_ expensive:
+ *           52175 ns/call on the host
+ *          844237 ns/call from the guest
  */
 static NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
-                             IN FILE_INFORMATION_CLASS FileInformationClass,
-                             IN PVOID pBuffer,
-                             IN ULONG BufferLength)
+                             IN PFILE_RENAME_INFORMATION pRenameInfo,
+                             IN ULONG cbInfo)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
     RxCaptureFcb;
     RxCaptureFobx;
-
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
-    PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
-    PMRX_SRV_OPEN pSrvOpen = capFobx->pSrvOpen;
+    PMRX_VBOX_FOBX              pVBoxFobx         = VBoxMRxGetFileObjectExtension(capFobx);
+    PMRX_SRV_OPEN               pSrvOpen          = capFobx->pSrvOpen;
 
-    PFILE_RENAME_INFORMATION RenameInformation = (PFILE_RENAME_INFORMATION)RxContext->Info.Buffer;
-    PUNICODE_STRING RemainingName = GET_ALREADY_PREFIXED_NAME(pSrvOpen, capFcb);
+    /* Make sure we've got valid buffer and filename sizes: */
+    AssertReturn(cbInfo >= RT_UOFFSETOF(FILE_RENAME_INFORMATION, FileName), STATUS_INFO_LENGTH_MISMATCH);
+    size_t const cbFilename = pRenameInfo->FileNameLength;
+    AssertReturn(cbFilename < _64K - 2, STATUS_INVALID_PARAMETER);
+    AssertReturn(cbInfo - RT_UOFFSETOF(FILE_RENAME_INFORMATION, FileName) >= cbFilename, STATUS_INFO_LENGTH_MISMATCH);
 
-    int vrc;
-    PSHFLSTRING SrcPath = 0, DestPath = 0;
-    ULONG flags;
-
-    RT_NOREF(FileInformationClass, pBuffer, BufferLength);
-
-    Assert(FileInformationClass == FileRenameInformation);
-
-    Log(("VBOXSF: vbsfNtRename: FileName = %.*ls\n",
-         RenameInformation->FileNameLength / sizeof(WCHAR), &RenameInformation->FileName[0]));
+    Log(("VBOXSF: vbsfNtRename: FileNameLength = %#x (%d), FileName = %.*ls\n",
+         cbFilename, cbFilename, cbFilename / sizeof(WCHAR), &pRenameInfo->FileName[0]));
 
     /* Must close the file before renaming it! */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx, VBoxMRxGetFcbExtension(capFcb));
-
-    /* Mark it as renamed, so we do nothing during close */
-    SetFlag(pSrvOpen->Flags, SRVOPEN_FLAG_FILE_RENAMED);
-
-    Log(("VBOXSF: vbsfNtRename: RenameInformation->FileNameLength = %d\n", RenameInformation->FileNameLength));
-    Status = vbsfNtShflStringFromUnicodeAlloc(&DestPath, RenameInformation->FileName, (uint16_t)RenameInformation->FileNameLength);
-    if (Status != STATUS_SUCCESS)
-        return Status;
-
-    Log(("VBOXSF: vbsfNtRename: Destination path = %.*ls\n",
-         DestPath->u16Length / sizeof(WCHAR), &DestPath->String.ucs2[0]));
-
-    Log(("VBOXSF: vbsfNtRename: RemainingName->Length = %d\n", RemainingName->Length));
-    Status = vbsfNtShflStringFromUnicodeAlloc(&SrcPath, RemainingName->Buffer, RemainingName->Length);
-    if (Status != STATUS_SUCCESS)
     {
-        vbsfNtFreeNonPagedMem(DestPath);
-        return Status;
+        Log(("VBOXSF: vbsfNtRename: Closing handle %#RX64...\n", pVBoxFobx->hFile));
+        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx, VBoxMRxGetFcbExtension(capFcb));
     }
 
-    Log(("VBOXSF: vbsfNtRename: Source path = %.*ls\n",
-         SrcPath->u16Length / sizeof(WCHAR), &SrcPath->String.ucs2[0]));
+    /* Mark it as renamed, so we do nothing during close. */
+    /** @todo r=bird: Isn't this a bit premature? */
+    SetFlag(pSrvOpen->Flags, SRVOPEN_FLAG_FILE_RENAMED);
 
-    /* Call host. */
-    flags = pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY ? SHFL_RENAME_DIR : SHFL_RENAME_FILE;
-    if (RenameInformation->ReplaceIfExists)
-        flags |= SHFL_RENAME_REPLACE_IF_EXISTS;
+    /*
+     * Allocate a request embedding the destination string.
+     */
+    NTSTATUS                   Status = STATUS_INSUFFICIENT_RESOURCES;
+    size_t const               cbReq  = RT_UOFFSETOF(VBOXSFRENAMEWITHSRCBUFREQ, StrDstPath.String) + cbFilename + sizeof(RTUTF16);
+    VBOXSFRENAMEWITHSRCBUFREQ *pReq   = (VBOXSFRENAMEWITHSRCBUFREQ *)VbglR0PhysHeapAlloc((uint32_t)cbReq);
+    if (pReq)
+    {
+        /* The destination path string. */
+        pReq->StrDstPath.u16Size   = (uint16_t)(cbFilename + sizeof(RTUTF16));
+        pReq->StrDstPath.u16Length = (uint16_t)cbFilename;
+        memcpy(&pReq->StrDstPath.String, pRenameInfo->FileName, cbFilename);
+        pReq->StrDstPath.String.utf16[cbFilename / sizeof(RTUTF16)] = '\0';
 
-    Log(("VBOXSF: vbsfNtRename: Calling VbglR0SfRename\n"));
-    vrc = VbglR0SfRename(&g_SfClient, &pNetRootExtension->map, SrcPath, DestPath, flags);
+        /* The source path string. */
+        PUNICODE_STRING pNtSrcPath   = GET_ALREADY_PREFIXED_NAME(pSrvOpen, capFcb);
+        uint16_t const  cbSrcPath    = pNtSrcPath->Length;
+        PSHFLSTRING     pShflSrcPath = (PSHFLSTRING)VbglR0PhysHeapAlloc(SHFLSTRING_HEADER_SIZE + cbSrcPath + sizeof(RTUTF16));
+        if (pShflSrcPath)
+        {
+            pShflSrcPath->u16Length = cbSrcPath;
+            pShflSrcPath->u16Size   = cbSrcPath + (uint16_t)sizeof(RTUTF16);
+            memcpy(&pShflSrcPath->String, pNtSrcPath->Buffer, cbSrcPath);
+            pShflSrcPath->String.utf16[cbSrcPath / sizeof(RTUTF16)] = '\0';
 
-    vbsfNtFreeNonPagedMem(SrcPath);
-    vbsfNtFreeNonPagedMem(DestPath);
+            /*
+             * Call the host.
+             */
+            uint32_t fRename = pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY ? SHFL_RENAME_DIR : SHFL_RENAME_FILE;
+            if (pRenameInfo->ReplaceIfExists)
+                fRename |= SHFL_RENAME_REPLACE_IF_EXISTS;
+            Log(("VBOXSF: vbsfNtRename: Calling VbglR0SfHostReqRenameWithSrcBuf fFlags=%#x SrcPath=%.*ls, DstPath=%.*ls\n",
+                 fRename, pShflSrcPath->u16Length / sizeof(RTUTF16), pShflSrcPath->String.utf16,
+                 pReq->StrDstPath.u16Size / sizeof(RTUTF16), pReq->StrDstPath.String.utf16));
+            int vrc = VbglR0SfHostReqRenameWithSrcBuf(pNetRootExtension->map.root, pReq, pShflSrcPath, fRename);
+            if (RT_SUCCESS(vrc))
+                Status = STATUS_SUCCESS;
+            else
+            {
+                Status = vbsfNtVBoxStatusToNt(vrc);
+                Log(("VBOXSF: vbsfNtRename: VbglR0SfRename failed with %Rrc (Status=%#x)\n", vrc, Status));
+            }
 
-    Status = vbsfNtVBoxStatusToNt(vrc);
-    if (vrc != VINF_SUCCESS)
-        Log(("VBOXSF: vbsfNtRename: VbglR0SfRename failed with %Rrc\n", vrc));
-
+            VbglR0PhysHeapFree(pShflSrcPath);
+        }
+        VbglR0PhysHeapFree(pReq);
+    }
     Log(("VBOXSF: vbsfNtRename: Returned 0x%08X\n", Status));
     return Status;
 }
-
 
 /**
  * Handle NtSetInformationFile and similar requests.
@@ -1872,7 +1883,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
                  pInfo->ReplaceIfExists, pInfo->RootDirectory, pInfo->FileNameLength / sizeof(WCHAR), pInfo->FileName));
 #endif
 
-            Status = vbsfNtRename(RxContext, FileRenameInformation, RxContext->Info.Buffer, RxContext->Info.Length);
+            Status = vbsfNtRename(RxContext, (PFILE_RENAME_INFORMATION)RxContext->Info.Buffer, RxContext->Info.Length);
             break;
         }
 
