@@ -457,6 +457,17 @@ failure:
     return Status;
 }
 
+/**
+ * Create/open a file, directory, ++.
+ *
+ * The RDBSS library will do a table lookup on the path passed in by the user
+ * and therefore share FCBs for objects with the same path.
+ *
+ * The FCB needs to be locked exclusively upon successful return, however it
+ * seems like it's not always locked when we get here (only older RDBSS library
+ * versions?), so we have to check this before returning.
+ *
+ */
 NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -540,6 +551,14 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
 
     RxContext->Create.ReturnedCreateInformation = CreateAction;
 
+    /*
+     * Make sure we've got the FCB locked exclusivly before updating it and returning.
+     * (bird: not entirely sure if this is needed for the W10 RDBSS, but cannot hurt.)
+     */
+    if (!RxIsFcbAcquiredExclusive(capFcb))
+        RxAcquireExclusiveFcbResourceInMRx(capFcb);
+
+
     /* Initialize the FCB if this is the first open.
        Note! The RxFinishFcbInitialization call expects node types as the 2nd parameter, but is for
              some reason given enum RX_FILE_TYPE as type. */
@@ -552,7 +571,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
         Data.LastAccessTime.QuadPart = RTTimeSpecGetNtTime(&Info.AccessTime);
         Data.LastWriteTime.QuadPart  = RTTimeSpecGetNtTime(&Info.ModificationTime);
         Data.ChangeTime.QuadPart     = RTTimeSpecGetNtTime(&Info.ChangeTime);
-        Data.AllocationSize.QuadPart = Info.cbAllocated;
+        Data.AllocationSize.QuadPart = Info.cbAllocated; /** @todo test sparse files.  CcSetFileSizes is documented to not want allocation size smaller than EOF offset. */
         Data.EndOfFile.QuadPart      = Info.cbObject;
         Data.FileAttributes          = VBoxToNTFileAttributes(Info.Attr.fMode);
         RxFormInitPacket(InitPacket,
@@ -569,14 +588,6 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
             RxFinishFcbInitialization(capFcb, (RX_FILE_TYPE)RDBSS_NTC_STORAGE_TYPE_DIRECTORY, &InitPacket);
         else
             RxFinishFcbInitialization(capFcb, (RX_FILE_TYPE)RDBSS_NTC_STORAGE_TYPE_FILE, &InitPacket);
-    }
-    /*
-     * See if the size has changed and update the FCB if it has.
-     */
-    else
-    {
-        /** @todo Need to check RDBSS stack for locking semantics before updating
-         *        anything. */
     }
 
     SrvOpen->BufferingFlags = 0;
@@ -599,6 +610,22 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     pVBoxFobx->hFile = Handle;
     pVBoxFobx->pSrvCall = RxContext->Create.pSrvCall;
     pVBoxFobx->Info = Info;
+
+    /*
+     * See if the size has changed and update the FCB if it has.
+     */
+    if (   capFcb->OpenCount > 0
+        && capFcb->Header.FileSize.QuadPart != Info.cbObject)
+    {
+        PFILE_OBJECT pFileObj = RxContext->CurrentIrpSp->FileObject;
+        Assert(pFileObj);
+        if (pFileObj)
+            vbsfNtUpdateFcbSize(pFileObj, capFcb, pVBoxFobx, Info.cbObject, capFcb->Header.FileSize.QuadPart, Info.cbAllocated);
+    }
+
+    /*
+     * Do logging.
+     */
     Log(("VBOXSF: MRxCreate: Info: BirthTime        %RI64\n", RTTimeSpecGetNano(&pVBoxFobx->Info.BirthTime)));
     Log(("VBOXSF: MRxCreate: Info: ChangeTime       %RI64\n", RTTimeSpecGetNano(&pVBoxFobx->Info.ChangeTime)));
     Log(("VBOXSF: MRxCreate: Info: ModificationTime %RI64\n", RTTimeSpecGetNano(&pVBoxFobx->Info.ModificationTime)));
@@ -608,11 +635,6 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     {
         Log(("VBOXSF: MRxCreate: Info: cbObject         %#RX64\n", pVBoxFobx->Info.cbObject));
         Log(("VBOXSF: MRxCreate: Info: cbAllocated      %#RX64\n", pVBoxFobx->Info.cbAllocated));
-    }
-
-    if (!RxIsFcbAcquiredExclusive(capFcb))
-    {
-        RxAcquireExclusiveFcbResourceInMRx(capFcb);
     }
 
     Log(("VBOXSF: MRxCreate: NetRoot is %p, Fcb is %p, SrvOpen is %p, Fobx is %p\n",
