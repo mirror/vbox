@@ -5549,6 +5549,50 @@ static void fsPerfRemote(void)
     RTTESTI_CHECK_MSG(cbFile == 4000, ("cbFile=%u\n", cbFile));
     RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
 
+    /*
+     * Test noticing remote size changes when opening a file.  Need to keep hFile0
+     * open here so we're sure to have an inode/FCB for the file in question.
+     */
+    memset(abBuf, 0xe7, sizeof(abBuf));
+    RTTESTI_CHECK_RC(RTFileSeek(hFile0, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileWrite(hFile0, abBuf, 12288, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 12288), VINF_SUCCESS);
+
+    RTTESTI_CHECK_RC(FsPerfCommsSend("writepattern 0 12288 2 4096" FSPERF_EOF_STR), VINF_SUCCESS);
+
+    enmActuallyTaken = RTFILEACTION_END;
+    RTFILE hFile1 = NIL_RTFILE;
+    RTTESTI_CHECK_RC(RTFileOpenEx(InDir(RT_STR_TUPLE("file30")), RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
+                                  &hFile1, &enmActuallyTaken), VINF_SUCCESS);
+    RTTESTI_CHECK(enmActuallyTaken == RTFILEACTION_OPENED);
+    AssertCompile(sizeof(abBuf) >= 16384);
+    RTTESTI_CHECK_RC(RTFileRead(hFile1, abBuf, 16384, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK(ASMMemIsAllU8(abBuf, 12288, 0xe7));
+    AssertCompile(RT_ELEMENTS(g_abPattern2) == 1);
+    RTTESTI_CHECK(ASMMemIsAllU8(&abBuf[12288], 4096, g_abPattern2[0]));
+    RTTESTI_CHECK_RC(RTFileRead(hFile1, abBuf, 1, NULL), VERR_EOF);
+    RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+
+    /* Same, but remote end truncates the file:  */
+    memset(abBuf, 0xe6, sizeof(abBuf));
+    RTTESTI_CHECK_RC(RTFileSeek(hFile0, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileWrite(hFile0, abBuf, 12288, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 12288), VINF_SUCCESS);
+
+    RTTESTI_CHECK_RC(FsPerfCommsSend("truncate 0 7500" FSPERF_EOF_STR), VINF_SUCCESS);
+
+    enmActuallyTaken = RTFILEACTION_END;
+    hFile1 = NIL_RTFILE;
+    RTTESTI_CHECK_RC(RTFileOpenEx(InDir(RT_STR_TUPLE("file30")), RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
+                                  &hFile1, &enmActuallyTaken), VINF_SUCCESS);
+    RTTESTI_CHECK(enmActuallyTaken == RTFILEACTION_OPENED);
+    RTTESTI_CHECK_RC(RTFileRead(hFile1, abBuf, 7500, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK(ASMMemIsAllU8(abBuf, 7500, 0xe6));
+    RTTESTI_CHECK_RC(RTFileRead(hFile1, abBuf, 1, NULL), VERR_EOF);
+    RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+
     RTTESTI_CHECK_RC(RTFileClose(hFile0), VINF_SUCCESS);
 }
 
