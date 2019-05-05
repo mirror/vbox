@@ -1148,7 +1148,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
     PMRX_VBOX_FOBX              pVBoxFobx         = VBoxMRxGetFileObjectExtension(capFobx);
     ULONG                       cbToCopy          = 0;
 
-    Log(("VBOXSF: MrxQueryFileInfo: Buffer = %p, Length = %x (%d) bytes, FileInformationClass = %d\n",
+    Log(("VBOXSF: VBoxMRxQueryFileInfo: Buffer = %p, Length = %x (%d) bytes, FileInformationClass = %d\n",
          RxContext->Info.Buffer, RxContext->Info.Length, RxContext->Info.Length, RxContext->Info.FileInformationClass));
 
     AssertReturn(pVBoxFobx, STATUS_INVALID_PARAMETER);
@@ -1170,7 +1170,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
         {
             PFILE_NAMES_INFORMATION pInfo    = (PFILE_NAMES_INFORMATION)RxContext->Info.Buffer;
             PUNICODE_STRING         FileName = GET_ALREADY_PREFIXED_NAME_FROM_CONTEXT(RxContext);
-            Log(("VBOXSF: MrxQueryFileInfo: FileNamesInformation\n"));
+            Log(("VBOXSF: VBoxMRxQueryFileInfo: FileNamesInformation\n"));
 
             cbToCopy = RT_UOFFSETOF_DYN(FILE_NAMES_INFORMATION, FileName[FileName->Length / 2 + 1]);
             CHECK_SIZE_BREAK(RxContext, cbToCopy);
@@ -1187,7 +1187,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
         case FileInternalInformation:
         {
             PFILE_INTERNAL_INFORMATION pInfo = (PFILE_INTERNAL_INFORMATION)RxContext->Info.Buffer;
-            Log(("VBOXSF: MrxQueryFileInfo: FileInternalInformation\n"));
+            Log(("VBOXSF: VBoxMRxQueryFileInfo: FileInternalInformation\n"));
 
             cbToCopy = sizeof(FILE_INTERNAL_INFORMATION);
             CHECK_SIZE_BREAK(RxContext, cbToCopy);
@@ -1200,7 +1200,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
         case FileEaInformation:
         {
             PFILE_EA_INFORMATION pInfo = (PFILE_EA_INFORMATION)RxContext->Info.Buffer;
-            Log(("VBOXSF: MrxQueryFileInfo: FileEaInformation\n"));
+            Log(("VBOXSF: VBoxMRxQueryFileInfo: FileEaInformation\n"));
 
             cbToCopy = sizeof(FILE_EA_INFORMATION);
             CHECK_SIZE_BREAK(RxContext, cbToCopy);
@@ -1210,22 +1210,22 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
         }
 
         case FileStreamInformation:
-            Log(("VBOXSF: MrxQueryFileInfo: FileStreamInformation: not supported\n"));
+            Log(("VBOXSF: VBoxMRxQueryFileInfo: FileStreamInformation: not supported\n"));
             Status = STATUS_INVALID_PARAMETER;
             break;
 
         case FileAlternateNameInformation:
-            Log(("VBOXSF: MrxQueryFileInfo: FileStreamInformation: not implemented\n"));
+            Log(("VBOXSF: VBoxMRxQueryFileInfo: FileStreamInformation: not implemented\n"));
             Status = STATUS_OBJECT_NAME_NOT_FOUND;
             break;
 
         case FileNumaNodeInformation:
-            Log(("VBOXSF: MrxQueryFileInfo: FileNumaNodeInformation: not supported\n"));
+            Log(("VBOXSF: VBoxMRxQueryFileInfo: FileNumaNodeInformation: not supported\n"));
             Status = STATUS_NO_SUCH_DEVICE; /* what's returned on a samba share */
             break;
 
         case FileStandardLinkInformation:
-            Log(("VBOXSF: MrxQueryFileInfo: FileStandardLinkInformation: not supported\n"));
+            Log(("VBOXSF: VBoxMRxQueryFileInfo: FileStandardLinkInformation: not supported\n"));
             Status = STATUS_NOT_SUPPORTED; /* what's returned on a samba share */
             break;
 
@@ -1282,7 +1282,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 case FileBasicInformation:
                 {
                     PFILE_BASIC_INFORMATION pInfo = (PFILE_BASIC_INFORMATION)RxContext->Info.Buffer;
-                    Log(("VBOXSF: MrxQueryFileInfo: FileBasicInformation\n"));
+                    Log(("VBOXSF: VBoxMRxQueryFileInfo: FileBasicInformation\n"));
 
                     cbToCopy = sizeof(FILE_BASIC_INFORMATION);
                     CHECK_SIZE_BREAK(RxContext, cbToCopy);
@@ -1292,7 +1292,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                     pInfo->LastWriteTime.QuadPart  = RTTimeSpecGetNtTime(&pVBoxFobx->Info.ModificationTime);
                     pInfo->ChangeTime.QuadPart     = RTTimeSpecGetNtTime(&pVBoxFobx->Info.ChangeTime);
                     pInfo->FileAttributes          = VBoxToNTFileAttributes(pVBoxFobx->Info.Attr.fMode);
-                    Log(("VBOXSF: MrxQueryFileInfo: FileBasicInformation: File attributes: 0x%x\n",
+                    Log(("VBOXSF: VBoxMRxQueryFileInfo: FileBasicInformation: File attributes: 0x%x\n",
                          pInfo->FileAttributes));
                     break;
                 }
@@ -1300,7 +1300,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 case FileStandardInformation:
                 {
                     PFILE_STANDARD_INFORMATION pInfo = (PFILE_STANDARD_INFORMATION)RxContext->Info.Buffer;
-                    Log(("VBOXSF: MrxQueryFileInfo: FileStandardInformation\n"));
+                    Log(("VBOXSF: VBoxMRxQueryFileInfo: FileStandardInformation\n"));
 
                     cbToCopy = sizeof(FILE_STANDARD_INFORMATION);
                     CHECK_SIZE_BREAK(RxContext, cbToCopy);
@@ -1318,7 +1318,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 case FileNetworkOpenInformation:
                 {
                     PFILE_NETWORK_OPEN_INFORMATION pInfo = (PFILE_NETWORK_OPEN_INFORMATION)RxContext->Info.Buffer;
-                    Log(("VBOXSF: MrxQueryFileInfo: FileNetworkOpenInformation\n"));
+                    Log(("VBOXSF: VBoxMRxQueryFileInfo: FileNetworkOpenInformation\n"));
 
                     cbToCopy = sizeof(FILE_NETWORK_OPEN_INFORMATION);
                     CHECK_SIZE_BREAK(RxContext, cbToCopy);
@@ -1338,7 +1338,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 case FileEndOfFileInformation:
                 {
                     PFILE_END_OF_FILE_INFORMATION pInfo = (PFILE_END_OF_FILE_INFORMATION)RxContext->Info.Buffer;
-                    Log(("VBOXSF: MrxQueryFileInfo: FileEndOfFileInformation\n"));
+                    Log(("VBOXSF: VBoxMRxQueryFileInfo: FileEndOfFileInformation\n"));
 
                     cbToCopy = sizeof(FILE_END_OF_FILE_INFORMATION);
                     CHECK_SIZE_BREAK(RxContext, cbToCopy);
@@ -1352,7 +1352,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 case FileAllocationInformation:
                 {
                     PFILE_ALLOCATION_INFORMATION pInfo = (PFILE_ALLOCATION_INFORMATION)RxContext->Info.Buffer;
-                    Log(("VBOXSF: MrxQueryFileInfo: FileAllocationInformation\n"));
+                    Log(("VBOXSF: VBoxMRxQueryFileInfo: FileAllocationInformation\n"));
 
                     cbToCopy = sizeof(FILE_ALLOCATION_INFORMATION);
                     CHECK_SIZE_BREAK(RxContext, cbToCopy);
@@ -1366,7 +1366,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                 case FileAttributeTagInformation:
                 {
                     PFILE_ATTRIBUTE_TAG_INFORMATION pInfo = (PFILE_ATTRIBUTE_TAG_INFORMATION)RxContext->Info.Buffer;
-                    Log(("VBOXSF: MrxQueryFileInfo: FileAttributeTagInformation\n"));
+                    Log(("VBOXSF: VBoxMRxQueryFileInfo: FileAttributeTagInformation\n"));
 
                     cbToCopy = sizeof(FILE_ATTRIBUTE_TAG_INFORMATION);
                     CHECK_SIZE_BREAK(RxContext, cbToCopy);
@@ -1388,7 +1388,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
                         UCHAR           ClusterShift;
                         UCHAR           Reserved[3];
                     } *pInfo = (struct MY_FILE_COMPRESSION_INFO *)RxContext->Info.Buffer;
-                    Log(("VBOXSF: MrxQueryFileInfo: FileCompressionInformation\n"));
+                    Log(("VBOXSF: VBoxMRxQueryFileInfo: FileCompressionInformation\n"));
 
                     cbToCopy = sizeof(*pInfo);
                     CHECK_SIZE_BREAK(RxContext, cbToCopy);
@@ -1419,6 +1419,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
  * FileHardLinkInformation: rcNt=0 (STATUS_SUCCESS) Ios.Status=0 (STATUS_SUCCESS) Ios.Information=0000000000000048
  * FileProcessIdsUsingFileInformation: rcNt=0 (STATUS_SUCCESS) Ios.Status=0 (STATUS_SUCCESS) Ios.Information=0000000000000010
  * FileNormalizedNameInformation: rcNt=0 (STATUS_SUCCESS) Ios.Status=0 (STATUS_SUCCESS) Ios.Information=00000000000000AA
+ *  => See during MoveFileEx call on W10.
  * FileNetworkPhysicalNameInformation: rcNt=0xc000000d (STATUS_INVALID_PARAMETER) Ios={not modified}
  * FileShortNameInformation?
  * FileNetworkPhysicalNameInformation
@@ -1430,7 +1431,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
          * STATUS_INVALID_INFO_CLASS except for pipe info - see queryfileinfo-1).
          */
         default:
-            Log(("VBOXSF: MrxQueryFileInfo: Not supported FileInformationClass: %d!\n",
+            Log(("VBOXSF: VBoxMRxQueryFileInfo: Not supported FileInformationClass: %d!\n",
                  RxContext->Info.FileInformationClass));
             Status = STATUS_INVALID_PARAMETER;
             break;
@@ -1445,7 +1446,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
     RxContext->Info.LengthRemaining -= cbToCopy;
     AssertStmt(RxContext->Info.LengthRemaining >= 0 || Status != STATUS_SUCCESS, Status = STATUS_BUFFER_TOO_SMALL);
 
-    Log(("VBOXSF: MrxQueryFileInfo: Returns %#x, Remaining length = %d, cbToCopy = %u (%#x)\n",
+    Log(("VBOXSF: VBoxMRxQueryFileInfo: Returns %#x, Remaining length = %d, cbToCopy = %u (%#x)\n",
          Status, RxContext->Info.Length, cbToCopy));
     return Status;
 }
@@ -1705,11 +1706,27 @@ static NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext, IN uin
 }
 
 /**
- * Worker for VBoxMRxSetFileInfo.
+ * Worker for VBoxMRxSetFileInfo handling FileRenameInformation.
  *
- * @todo Renaming files from the guest is _very_ expensive:
- *           52175 ns/call on the host
- *          844237 ns/call from the guest
+ * @note    Renaming files from the guest is _very_ expensive:
+ *              -  52175 ns/call on the host
+ *              - 844237 ns/call from the guest
+ *
+ *          The explanation for this is that RTPathRename translates to a
+ *          MoveFileEx call, which ends up doing a lot more than opening the
+ *          file and setting rename information on that handle (W10):
+ *              - Opens the file.
+ *              - Queries FileAllInformation.
+ *              - Tries to open the new filename (result: 0x00000000 but not
+ *                opened by our code - weird).
+ *              - Does IOCTL_REDIR_QUERY_PATH_EX on \vboxsvr\IPC$.
+ *              - Tries to open \vboxsvr\IPC$ (result: 0xc0000016)
+ *              - Opens the parent directory.
+ *              - Queries directory info with old name as filter.
+ *              - Closes parent directory handle.
+ *              - Finally does FileRenameInformation.
+ *              - Closes the handle to the renamed file.
+ *
  */
 static NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
                              IN PFILE_RENAME_INFORMATION pRenameInfo,
