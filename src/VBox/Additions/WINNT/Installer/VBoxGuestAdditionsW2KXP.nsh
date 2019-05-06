@@ -460,7 +460,7 @@ cropengl:
       WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Version" 2
       WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "DriverVersion" 1
       WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Flags" 1
-      WriteRegStr   HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Dll" "VBoxOGL.dll"
+      WriteRegStr   HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Dll" "VBoxOGL-x86.dll"
     ${EndIf}
     SetRegView 64
 !endif
@@ -520,55 +520,57 @@ Function ${un}W2K_UninstallInstDir
   Delete /REBOOTOK "$INSTDIR\VBoxService.exe" ; Deprecated, does not get installed anymore
 
 !if $%VBOX_WITH_WDDM% == "1"
-  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxWddm.cat"
-  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxWddm.sys"
-  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxWddm.inf"
+  Delete /REBOOTOK "$INSTDIR\VBoxWddm.cat"
+  Delete /REBOOTOK "$INSTDIR\VBoxWddm.sys"
+  Delete /REBOOTOK "$INSTDIR\VBoxWddm.inf"
   ; Obsolete files begin
-  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoWddm.cat"
-  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoWddm.sys"
-  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoWddm.inf"
-  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoW8.cat"
-  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoW8.sys"
-  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxVideoW8.inf"
+  Delete /REBOOTOK "$INSTDIR\VBoxVideoWddm.cat"
+  Delete /REBOOTOK "$INSTDIR\VBoxVideoWddm.sys"
+  Delete /REBOOTOK "$INSTDIR\VBoxVideoWddm.inf"
+  Delete /REBOOTOK "$INSTDIR\VBoxVideoW8.cat"
+  Delete /REBOOTOK "$INSTDIR\VBoxVideoW8.sys"
+  Delete /REBOOTOK "$INSTDIR\VBoxVideoW8.inf"
   ; Obsolete files end
-  Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxDispD3D.dll"
+  Delete /REBOOTOK "$INSTDIR\VBoxDispD3D.dll"
   !if $%VBOX_WITH_MESA3D% == "1"
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxNine.dll"
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxSVGA.dll"
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxICD.dll"
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxGL.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxNine.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxSVGA.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxICD.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxGL.dll"
   !endif
 
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLcrutil.dll"
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLerrorspu.dll"
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLpackspu.dll"
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu.dll"
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu.dll"
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGL.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxOGLcrutil.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxOGLarrayspu.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxOGLerrorspu.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxOGLpackspu.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxOGLpassthroughspu.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxOGLfeedbackspu.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxOGL.dll"
 
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxD3D9wddm.dll"
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\wined3dwddm.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxD3D9wddm.dll"
+    Delete /REBOOTOK "$INSTDIR\wined3dwddm.dll"
     ; Try to delete libWine in case it is there from old installation
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\libWine.dll"
+    Delete /REBOOTOK "$INSTDIR\libWine.dll"
 
   !if $%BUILD_TARGET_ARCH% == "amd64"
-    Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxDispD3D-x86.dll"
+    Delete /REBOOTOK "$INSTDIR\VBoxDispD3D-x86.dll"
     !if $%VBOX_WITH_MESA3D% == "1"
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxNine-x86.dll"
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxSVGA-x86.dll"
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxICD-x86.dll"
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxGL-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxNine-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxSVGA-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxICD-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxGL-x86.dll"
     !endif
 
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLcrutil-x86.dll"
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLerrorspu-x86.dll"
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLpackspu-x86.dll"
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLpassthroughspu-x86.dll"
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGLfeedbackspu-x86.dll"
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxOGL-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxOGLcrutil-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxOGLarrayspu-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxOGLerrorspu-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxOGLpackspu-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxOGLpassthroughspu-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxOGLfeedbackspu-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxOGL-x86.dll"
 
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\VBoxD3D9wddm-x86.dll"
-      Delete /REBOOTOK "$%PATH_OUT%\bin\additions\wined3dwddm-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\VBoxD3D9wddm-x86.dll"
+      Delete /REBOOTOK "$INSTDIR\wined3dwddm-x86.dll"
   !endif ; $%BUILD_TARGET_ARCH% == "amd64"
 !endif ; $%VBOX_WITH_WDDM% == "1"
 
@@ -626,11 +628,22 @@ Function ${un}W2K_Uninstall
   ; Obsolete files end
 
   Delete /REBOOTOK "$g_strSystemDir\VBoxDispD3D.dll"
+  !if $%BUILD_TARGET_ARCH% == "amd64"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxDispD3D-x86.dll"
+  !endif
+
   !if $%VBOX_WITH_MESA3D% == "1"
     Delete /REBOOTOK "$g_strSystemDir\VBoxNine.dll"
     Delete /REBOOTOK "$g_strSystemDir\VBoxSVGA.dll"
     Delete /REBOOTOK "$g_strSystemDir\VBoxICD.dll"
     Delete /REBOOTOK "$g_strSystemDir\VBoxGL.dll"
+
+    !if $%BUILD_TARGET_ARCH% == "amd64"
+      Delete /REBOOTOK "$g_strSysWow64\VBoxNine-x86.dll"
+      Delete /REBOOTOK "$g_strSysWow64\VBoxSVGA-x86.dll"
+      Delete /REBOOTOK "$g_strSysWow64\VBoxICD-x86.dll"
+      Delete /REBOOTOK "$g_strSysWow64\VBoxGL-x86.dll"
+    !endif
   !endif
 !endif ; $%VBOX_WITH_WDDM% == "1"
 
@@ -648,6 +661,7 @@ Function ${un}W2K_Uninstall
   ${EndIf}
 
   Delete /REBOOTOK "$g_strSystemDir\VBoxOGLcrutil.dll"
+  Delete /REBOOTOK "$g_strSystemDir\VBoxOGLarrayspu.dll"
   Delete /REBOOTOK "$g_strSystemDir\VBoxOGLerrorspu.dll"
   Delete /REBOOTOK "$g_strSystemDir\VBoxOGLpackspu.dll"
   Delete /REBOOTOK "$g_strSystemDir\VBoxOGLpassthroughspu.dll"
@@ -659,7 +673,9 @@ Function ${un}W2K_Uninstall
   Delete /REBOOTOK "$g_strSystemDir\libWine.dll"
   Delete /REBOOTOK "$g_strSystemDir\VBoxD3D8.dll"
   Delete /REBOOTOK "$g_strSystemDir\VBoxD3D9.dll"
+  Delete /REBOOTOK "$g_strSystemDir\VBoxD3D9wddm.dll"
   Delete /REBOOTOK "$g_strSystemDir\wined3d.dll"
+  Delete /REBOOTOK "$g_strSystemDir\wined3dwddm.dll"
   ; Update DLL cache
   ${If} ${FileExists} "$g_strSystemDir\dllcache\msd3d8.dll"
     Delete /REBOOTOK "$g_strSystemDir\dllcache\d3d8.dll"
@@ -681,18 +697,21 @@ Function ${un}W2K_Uninstall
 
   !if $%BUILD_TARGET_ARCH% == "amd64"
     ; Only 64-bit installer: Also remove 32-bit DLLs on 64-bit target arch in Wow64 node
-    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLcrutil.dll"
-    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLerrorspu.dll"
-    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLpackspu.dll"
-    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLpassthroughspu.dll"
-    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLfeedbackspu.dll"
-    Delete /REBOOTOK "$g_strSysWow64\VBoxOGL.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLcrutil-x86.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLarrayspu-x86.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLerrorspu-x86.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLpackspu-x86.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLpassthroughspu-x86.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLfeedbackspu-x86.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGL-x86.dll"
 
     ; Remove D3D stuff
     ; @todo add a feature flag to only remove if installed explicitly
     Delete /REBOOTOK "$g_strSysWow64\libWine.dll"
-    Delete /REBOOTOK "$g_strSysWow64\VBoxD3D8.dll"
-    Delete /REBOOTOK "$g_strSysWow64\VBoxD3D9.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxD3D8-x86.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxD3D9-x86.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxD3D9wddm-x86.dll"
+    Delete /REBOOTOK "$g_strSysWow64\wined3dwddm-x86.dll"
     Delete /REBOOTOK "$g_strSysWow64\wined3d.dll"
     ; Update DLL cache
     ${If} ${FileExists} "$g_strSysWow64\dllcache\msd3d8.dll"
