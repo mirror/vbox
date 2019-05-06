@@ -48,8 +48,12 @@ for index in range(len(funcs)):
     }
     """ % (types[index], types[index]))
     print('\t(void) params;')
+    print('\tif (tablesize == 0)')
+    print('\t{')
+    print('\t\tcrServerReturnValue(NULL, 0);')
+    print('\t\treturn;')
+    print('\t}')
     print('\tget_values = (%s *) crAlloc( tablesize );' % types[index])
-    print('\tif (tablesize>0)')
     print('\tcr_server.head_spu->dispatch_table.%s( pname, get_values );' % func_name)
     print("""
     if (GL_TEXTURE_BINDING_1D==pname
