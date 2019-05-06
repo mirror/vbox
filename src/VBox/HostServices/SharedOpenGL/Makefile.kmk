@@ -338,7 +338,7 @@ if (   defined(VBOX_WITH_QTGUI) \
    VBoxTestOGL_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
    if1of ($(KBUILD_TARGET), solaris linux freebsd)
     # must come after VBoxOGL2D, therefore don't set the arch-specific LIBS variable here!
-    VBoxTestOGL_LIBS += GL
+    VBoxTestOGL_LIBS += GL pthread
    endif
   endif
   # Don't let ld strip out explicitly linked libraries even when they are not needed.
