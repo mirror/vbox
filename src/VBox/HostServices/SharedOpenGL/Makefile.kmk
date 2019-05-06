@@ -334,7 +334,7 @@ if (   defined(VBOX_WITH_QTGUI) \
    VBoxTestOGL_LIBS.linux   += xcb
    VBoxTestOGL_LIBS.solaris += xcb
    VBoxTestOGL_LIBS.freebsd += xcb
-   VBoxTestOGL_LDFLAGS.darwin += -framework OpenGL
+   VBoxTestOGL_LDFLAGS.darwin += -framework OpenGL -framework IOKit
    VBoxTestOGL_LIBS.win       += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
    if1of ($(KBUILD_TARGET), solaris linux freebsd)
     # must come after VBoxOGL2D, therefore don't set the arch-specific LIBS variable here!
