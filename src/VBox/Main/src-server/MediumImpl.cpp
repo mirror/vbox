@@ -6858,7 +6858,7 @@ HRESULT Medium::i_preparationForMoving(const Utf8Str &aLocation)
 bool Medium::i_isMoveOperation(const ComObjPtr<Medium> &aTarget) const
 {
     RT_NOREF(aTarget);
-    return (m->fMoveThisMedium == true) ? true:false;
+    return (m->fMoveThisMedium == true) ? true:false; /** @todo r=bird: this is not an obfuscation contest! */
 }
 
 bool Medium::i_resetMoveOperationData()
@@ -9479,7 +9479,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
  */
 HRESULT Medium::i_taskMoveHandler(Medium::MoveTask &task)
 {
-
+    LogFlowFuncEnter();
     HRESULT rcOut = S_OK;
 
     /* pTarget is equal "this" in our case */
@@ -9497,6 +9497,7 @@ HRESULT Medium::i_taskMoveHandler(Medium::MoveTask &task)
         HRESULT rc = setError(VBOX_E_FILE_ERROR,
                               tr("Wrong preconditions for moving the medium %s"),
                               pTarget->m->strLocationFull.c_str());
+        LogFlowFunc(("LEAVE: rc=%Rhrc (early)\n", rc));
         return rc;
     }
 
@@ -9630,6 +9631,8 @@ HRESULT Medium::i_taskMoveHandler(Medium::MoveTask &task)
 
     if (task.NotifyAboutChanges() && SUCCEEDED(mrc))
         m->pVirtualBox->i_onMediumConfigChanged(this);
+
+    LogFlowFunc(("LEAVE: mrc=%Rhrc\n", mrc));
     return mrc;
 }
 
