@@ -15158,19 +15158,6 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     mHWData->mLongMode = osType->i_is64Bit()
                        ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
 
-    /* Apply network adapters defaults */
-    for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
-        mNetworkAdapters[slot]->i_applyDefaults(osType);
-
-    /* Apply serial port defaults */
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
-        mSerialPorts[slot]->i_applyDefaults(osType);
-
-    /* Apply parallel port defaults  - not OS dependent*/
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); ++slot)
-        mParallelPorts[slot]->i_applyDefaults();
-
-
     /* Let the OS type enable the X2APIC */
     mHWData->mX2APIC = osType->i_recommendedX2APIC();
 
@@ -15182,8 +15169,8 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
 
     /* Initialize default BIOS settings here */
     /* Hardware virtualization must be ON by default */
-    //mHWData->mAPIC = true;
-    //mHWData->mHWVirtExEnabled = true;
+    mHWData->mAPIC = true;
+    mHWData->mHWVirtExEnabled = true;
 
     rc = osType->COMGETTER(RecommendedRAM)(&mHWData->mMemorySize);
     if (FAILED(rc)) return rc;
@@ -15216,11 +15203,28 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     setRTCUseUTC(mRTCUseUTC);
     if (FAILED(rc)) return rc;
 
-    rc = osType->COMGETTER(RecommendedChipset)(&mHWData->mChipsetType);
+    ChipsetType_T enmChipsetType;
+    rc = osType->COMGETTER(RecommendedChipset)(&enmChipsetType);
+    if (FAILED(rc)) return rc;
+
+    rc = COMSETTER(ChipsetType)(enmChipsetType);
     if (FAILED(rc)) return rc;
 
     rc = osType->COMGETTER(RecommendedTFReset)(&mHWData->mTripleFaultReset);
     if (FAILED(rc)) return rc;
+
+    size_t mnet = mNetworkAdapters.size(); NOREF(mnet);
+    /* Apply network adapters defaults */
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
+        mNetworkAdapters[slot]->i_applyDefaults(osType);
+
+    /* Apply serial port defaults */
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
+        mSerialPorts[slot]->i_applyDefaults(osType);
+
+    /* Apply parallel port defaults  - not OS dependent*/
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); ++slot)
+        mParallelPorts[slot]->i_applyDefaults();
 
     /* Audio stuff. */
     AudioControllerType_T audioController;

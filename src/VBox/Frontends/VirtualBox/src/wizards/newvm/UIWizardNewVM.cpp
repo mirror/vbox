@@ -232,7 +232,7 @@ void UIWizardNewVM::configureVM(const QString &strGuestTypeId, const CGuestOSTyp
         strHDName = strDVDName;
     }
 
-    /* Liomit the AHCI port count if it's used because windows has trouble with
+    /* Limit the AHCI port count if it's used because windows has trouble with
        too many ports and other guest (OS X in particular) may take extra long
        to boot: */
     if (hdStorageControllerType == KStorageControllerType_IntelAhci)
