@@ -77,7 +77,7 @@ DECLHIDDEN(const SPUREG) g_FeedbackSpuReg =
     /** pfnInit. */
     feedbackSPUInit,
     /** pfnDispatch. */
-    feedbackSPUSelfDispatch, 
+    feedbackSPUSelfDispatch,
     /** pfnCleanup. */
     feedbackSPUCleanup
 };

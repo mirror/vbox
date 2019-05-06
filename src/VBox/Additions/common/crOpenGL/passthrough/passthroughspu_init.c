@@ -55,7 +55,7 @@ DECLHIDDEN(const SPUREG) g_PassthroughSpuReg =
     /** pfnInit. */
     passthroughSPUInit,
     /** pfnDispatch. */
-    passthroughSPUSelfDispatch, 
+    passthroughSPUSelfDispatch,
     /** pfnCleanup. */
     passthroughSPUCleanup
 };

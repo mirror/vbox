@@ -135,7 +135,7 @@ DECLHIDDEN(const SPUREG) g_PackSpuReg =
     /** pfnInit. */
     packSPUInit,
     /** pfnDispatch. */
-    packSPUSelfDispatch, 
+    packSPUSelfDispatch,
     /** pfnCleanup. */
     packSPUCleanup
 };
