@@ -439,6 +439,8 @@ class VBoxInstallerTestDriver(TestDriverBase):
             reporter.error('Unsupported host "%s".' % (sHost,));
         if fRc is False:
             reporter.testFailure('Installation error.');
+        elif fRc is not True:
+            reporter.log('Seems installation was skipped. Old version lurking behind? Not the fault of this build/test run!');
 
         #
         # Install the extension pack.
@@ -455,7 +457,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
         except:
             reporter.logXcpt('Unable to get disk free space. Ignored. Continuing.');
 
-        reporter.testDone();
+        reporter.testDone(fRc is None);
         return fRc;
 
     def _uninstallVBox(self, fIgnoreError = False):
