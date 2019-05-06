@@ -84,6 +84,14 @@ ifdef VBOX_WITH_XPCOM
  VBoxSharedCrOpenGL_LIBS += \
 	$(LIB_XPCOM)
 endif
+if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # the X11 gang
+ VBoxSharedCrOpenGL_LIBS += \
+	Xmu \
+	X11 \
+	Xext
+ VBoxSharedCrOpenGL_LIBPATH = \
+	$(VBOX_LIBPATH_X11)
+endif
 ifdef VBOX_WITH_CRHGSMI
 VBoxSharedCrOpenGL_DEFS += VBOX_WITH_CRHGSMI
 endif
@@ -280,14 +288,6 @@ endif
 ifdef VBOX_WITH_VDMA
 VBoxOGLrenderspu_DEFS += VBOX_WITH_VDMA
 endif
-if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # the X11 gang
- VBoxOGLrenderspu_LIBS += \
-	Xmu \
-	X11 \
-	Xext
- VBoxOGLrenderspu_LIBPATH = \
-	$(VBOX_LIBPATH_X11)
-endif
 
 LIBRARIES += VBoxOGLTest
 VBoxOGLTest_TEMPLATE = VBOXR3NP
@@ -319,9 +319,9 @@ if (   defined(VBOX_WITH_QTGUI) \
   VBoxTestOGL_SOURCES.win = OpenGLTest/VBoxTestOGL.rc
   VBoxTestOGL_LIBS = \
   	$(if $(VBOX_WITH_CROGL), \
-  	    $(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
   	    $(PATH_STAGE_LIB)/VBoxOGLhosterrorspu$(VBOX_SUFF_LIB) \
 	    $(PATH_STAGE_LIB)/VBoxOGLrenderspu$(VBOX_SUFF_LIB) \
+  	    $(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
   	    $(PATH_STAGE_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB),) \
   	$(if $(VBOX_WITH_VIDEOHWACCEL), $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB),) \
   	$(LIB_RUNTIME)
@@ -341,6 +341,14 @@ if (   defined(VBOX_WITH_QTGUI) \
     VBoxTestOGL_LIBS += GL pthread dl
    endif
   endif
+  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # the X11 gang
+   VBoxTestOGL_LIBS += \
+  	Xmu \
+  	X11 \
+  	Xext
+   VBoxTestOGL_LIBPATH = \
+	$(VBOX_LIBPATH_X11)
+endif
   # Don't let ld strip out explicitly linked libraries even when they are not needed.
   # This was causing some dynamic library loading problems in case of indirect dependencies
   # in systems where RUNPATH instead of RPATH is utilized.
