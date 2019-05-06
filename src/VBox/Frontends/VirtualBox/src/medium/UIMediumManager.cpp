@@ -1601,7 +1601,7 @@ void UIMediumManagerFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterW
 
 
 /*********************************************************************************************************************************
-*   Class UIMediumManager implementation.                                                                                 *
+*   Class UIMediumManager implementation.                                                                                        *
 *********************************************************************************************************************************/
 
 UIMediumManager::UIMediumManager(QWidget *pCenterWidget, UIActionPool *pActionPool)
