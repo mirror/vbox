@@ -21,6 +21,7 @@
 /* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UIMediumEnumerator.h"
+#include "UIMessageCenter.h"
 #include "UIThreadPool.h"
 #include "UIVirtualBoxEventHandler.h"
 
@@ -391,6 +392,72 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
     //       uMediumId.toString().toUtf8().constData());
     LogRel2(("GUI: UIMediumEnumerator: OnMediumRegistered event received, Medium ID = {%s}, Medium type = {%d}, Registered = {%d}\n",
              uMediumId.toString().toUtf8().constData(), enmMediumType, fRegistered));
+
+    /* New medium registered: */
+    if (fRegistered)
+    {
+        /* Make sure this medium isn't already cached: */
+        if (!medium(uMediumId).isNull())
+        {
+            LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} is cached already and will be enumerated!\n",
+                     uMediumId.toString().toUtf8().constData()));
+            /// @todo is this valid case?
+            AssertFailed();
+
+            /* Enumerate corresponding UIMedium: */
+            createMediumEnumerationTask(m_media.value(uMediumId));
+        }
+        else
+        {
+            /* Get VBox for temporary usage, it will cache the error info: */
+            CVirtualBox comVBox = vboxGlobal().virtualBox();
+            /* Open existing medium, this API can be used to open known medium as well, using ID as location for that: */
+            CMedium comMedium = comVBox.OpenMedium(uMediumId.toString(), enmMediumType, KAccessMode_ReadWrite, false);
+
+            /* Show error message if necessary: */
+            if (!comVBox.isOk())
+                msgCenter().cannotOpenKnownMedium(comVBox, uMediumId);
+            else
+            {
+                /* Create new UIMedium: */
+                const UIMedium guiMedium(comMedium, UIMediumDefs::mediumTypeToLocal(comMedium.GetDeviceType()));
+                const QUuid &uUIMediumKey = guiMedium.key();
+
+                /* Cache corresponding UIMedium: */
+                m_media.insert(uUIMediumKey, guiMedium);
+                LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} is now cached and will be enumerated..\n",
+                         uUIMediumKey.toString().toUtf8().constData()));
+
+                /* And notify listeners: */
+                emit sigMediumCreated(uUIMediumKey);
+
+                /* Enumerate corresponding UIMedium: */
+                createMediumEnumerationTask(m_media.value(uMediumId));
+            }
+        }
+    }
+    /* Old medium unregistered: */
+    else
+    {
+        /* Make sure this medium is still cached: */
+        if (medium(uMediumId).isNull())
+        {
+            LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} was not currently cached!\n",
+                     uMediumId.toString().toUtf8().constData()));
+            /// @todo is this a valid case?
+            AssertFailed();
+        }
+        else
+        {
+            /* Forget corresponding UIMedium: */
+            m_media.remove(uMediumId);
+            LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} is no more cached!\n",
+                     uMediumId.toString().toUtf8().constData()));
+
+            /* And notify listeners: */
+            emit sigMediumDeleted(uMediumId);
+        }
+    }
 }
 
 #endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
