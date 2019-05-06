@@ -325,7 +325,9 @@ class TestVm(object):
               or (self.aInfo is not None and (self.aInfo[g_iFlags] & g_kiNoRaw)):
                 self.asVirtModesSup = [sVirtMode for sVirtMode in self.asVirtModesSup if sVirtMode != 'raw'];
             # TEMPORARY HACK - START
-            sHostName = socket.getfqdn();
+            sHostName = os.environ.get("COMPUTERNAME", None);
+            if sHostName:   sHostName = sHostName.lower();
+            else:           sHostName = socket.getfqdn(); # Horribly slow on windows without IPv6 DNS/whatever.
             if sHostName.startswith('testboxpile1'):
                 self.asVirtModesSup = [sVirtMode for sVirtMode in self.asVirtModesSup if sVirtMode != 'raw'];
             # TEMPORARY HACK - END
