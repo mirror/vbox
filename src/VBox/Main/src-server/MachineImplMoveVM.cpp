@@ -1604,11 +1604,10 @@ bool MachineMoveVM::isMediumTypeSupportedForMoving(const ComPtr<IMedium> &pMediu
     if (fSupported && deviceType == DeviceType_DVD)
     {
         Utf8Str ext = bstrLocation;
-        ext.assignEx(RTPathSuffix(ext.c_str()));//returns extension with dot (".iso")
 
         //only ISO image is moved. Otherwise adding some information into log file
-        int equality = ext.compare(".iso", Utf8Str::CaseInsensitive);
-        if (equality != false)
+        bool fIso = ext.endsWith(".iso", Utf8Str::CaseInsensitive);
+        if (fIso == false)
         {
             LogRelFunc(("Skipping file %s. Only ISO images are supported for now.\n",
                          Utf8Str(bstrLocation.raw()).c_str()));
