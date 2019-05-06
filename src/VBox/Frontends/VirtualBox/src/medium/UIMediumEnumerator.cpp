@@ -92,6 +92,7 @@ UIMediumEnumerator::UIMediumEnumerator()
     qRegisterMetaType<UIMedium>();
 
     /* Prepare Main event handlers: */
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
             this, &UIMediumEnumerator::sltHandleMachineUpdate);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotTake,
@@ -104,6 +105,18 @@ UIMediumEnumerator::UIMediumEnumerator()
             this, &UIMediumEnumerator::sltHandleSnapshotDeleted);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
             this, &UIMediumEnumerator::sltHandleMachineRegistration);
+#else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigStorageControllerChange,
+            this, &UIMediumEnumerator::sltHandleStorageControllerChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigStorageDeviceChange,
+            this, &UIMediumEnumerator::sltHandleStorageDeviceChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMediumChange,
+            this, &UIMediumEnumerator::sltHandleMediumChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMediumConfigChange,
+            this, &UIMediumEnumerator::sltHandleMediumConfigChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMediumRegistered,
+            this, &UIMediumEnumerator::sltHandleMediumRegistered);
+#endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
     /* Prepare global thread-pool listener: */
     connect(vboxGlobal().threadPool(), &UIThreadPool::sigTaskComplete,
@@ -233,6 +246,8 @@ void UIMediumEnumerator::retranslateUi()
         m_media[UIMedium::nullID()] = UIMedium();
 }
 
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
+
 void UIMediumEnumerator::sltHandleMachineUpdate(const QUuid &uMachineID)
 {
     LogRel2(("GUI: UIMediumEnumerator: Machine (or snapshot) event received, ID = %s\n",
@@ -331,6 +346,54 @@ void UIMediumEnumerator::sltHandleSnapshotDeleted(const QUuid &uMachineID, const
     LogRel2(("GUI: UIMediumEnumerator: Snapshot-deleted event processed, Machine ID = {%s}, Snapshot ID = {%s}\n",
              uMachineID.toString().toUtf8().constData(), uSnapshotID.toString().toUtf8().constData()));
 }
+
+#else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
+
+void UIMediumEnumerator::sltHandleStorageControllerChange(const QUuid &uMachineId, const QString &strControllerName)
+{
+    //printf("OnStorageControllerChanged: machine-id=%s, controller-name=%s\n",
+    //       uMachineId.toString().toUtf8().constData(), strControllerName.toUtf8().constData());
+    LogRel2(("GUI: UIMediumEnumerator: OnStorageControllerChanged event received, Medium ID = {%s}, Controller Name = {%s}\n",
+             uMachineId.toString().toUtf8().constData(), strControllerName.toUtf8().constData()));
+}
+
+void UIMediumEnumerator::sltHandleStorageDeviceChange(CMediumAttachment comAttachment, bool fRemoved, bool fSilent)
+{
+    //printf("OnStorageDeviceChanged: removed=%d, silent=%d\n",
+    //       fRemoved, fSilent);
+    LogRel2(("GUI: UIMediumEnumerator: OnStorageDeviceChanged event received, Removed = {%d}, Silent = {%d}\n",
+             fRemoved, fSilent));
+
+    Q_UNUSED(comAttachment);
+}
+
+void UIMediumEnumerator::sltHandleMediumChange(CMediumAttachment comAttachment)
+{
+    //printf("OnMediumChanged\n");
+    LogRel2(("GUI: UIMediumEnumerator: OnMediumChanged event received\n"));
+
+    Q_UNUSED(comAttachment);
+}
+
+void UIMediumEnumerator::sltHandleMediumConfigChange(CMedium comMedium)
+{
+    //printf("OnMediumConfigChanged\n");
+    LogRel2(("GUI: UIMediumEnumerator: OnMediumConfigChanged event received\n"));
+
+    Q_UNUSED(comMedium);
+}
+
+void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDeviceType enmMediumType, bool fRegistered)
+{
+    //printf("OnMediumRegistered: medium-id=%s, medium-type=%d, registered=%d\n",
+    //       uMediumId.toString().toUtf8().constData(), enmMediumType, fRegistered);
+    //printf(" Medium to recache: %s\n",
+    //       uMediumId.toString().toUtf8().constData());
+    LogRel2(("GUI: UIMediumEnumerator: OnMediumRegistered event received, Medium ID = {%s}, Medium type = {%d}, Registered = {%d}\n",
+             uMediumId.toString().toUtf8().constData(), enmMediumType, fRegistered));
+}
+
+#endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
 void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
 {
@@ -448,6 +511,8 @@ void UIMediumEnumerator::addMediaToMap(const CMediumVector &inputMedia, UIMedium
         addMediaToMap(comMedium.GetChildren(), outputMedia);
     }
 }
+
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
 
 void UIMediumEnumerator::calculateCachedUsage(const QUuid &uMachineID,
                                               QList<QUuid> &previousUIMediumIDs,
@@ -594,6 +659,8 @@ void UIMediumEnumerator::recacheFromActualUsage(const CMediumMap &currentCMedium
         createMediumEnumerationTask(m_media[uCMediumID]);
     }
 }
+
+#endif /* !VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
 
 #include "UIMediumEnumerator.moc"

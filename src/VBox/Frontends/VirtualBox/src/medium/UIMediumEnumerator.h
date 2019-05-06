@@ -21,6 +21,8 @@
 # pragma once
 #endif
 
+//#define VBOX_GUI_WITH_NEW_MEDIA_EVENTS
+
 /* Qt includes: */
 #include <QObject>
 #include <QSet>
@@ -29,6 +31,12 @@
 #include "QIWithRetranslateUI.h"
 #include "UILibraryDefs.h"
 #include "UIMedium.h"
+
+/* COM includes: */
+#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
+# include "CMedium.h"
+# include "CMediumAttachment.h"
+#endif
 
 /* Forward declarations: */
 class UITask;
@@ -91,6 +99,7 @@ protected:
 
 private slots:
 
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /** Handles machine-data-change and snapshot-change events for a machine with specified @a uMachineID. */
     void sltHandleMachineUpdate(const QUuid &uMachineID);
     /** Handles machine-[un]registration events for a machine with specified @a uMachineID.
@@ -98,6 +107,26 @@ private slots:
     void sltHandleMachineRegistration(const QUuid &uMachineID, const bool fRegistered);
     /** Handles snapshot-deleted events for a machine with specified @a uMachineID and a snapshot with specified @a uSnapshotID. */
     void sltHandleSnapshotDeleted(const QUuid &uMachineID, const QUuid &uSnapshotID);
+#else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
+    /** Handles signal about storage controller change.
+      * @param  uMachineId         Brings the ID of machine corresponding controller belongs to.
+      * @param  strControllerName  Brings the name of controller this event is related to. */
+    void sltHandleStorageControllerChange(const QUuid &uMachineId, const QString &strControllerName);
+    /** Handles signal about storage device change.
+      * @param  comAttachment  Brings corresponding attachment.
+      * @param  fRemoved       Brings whether medium is removed or added.
+      * @param  fSilent        Brings whether this change has gone silent for guest. */
+    void sltHandleStorageDeviceChange(CMediumAttachment comAttachment, bool fRemoved, bool fSilent);
+    /** Handles signal about storage medium @a comAttachment state change. */
+    void sltHandleMediumChange(CMediumAttachment comAttachment);
+    /** Handles signal about storage @a comMedium config change. */
+    void sltHandleMediumConfigChange(CMedium comMedium);
+    /** Handles signal about storage medium is (un)registered.
+      * @param  uMediumId      Brings corresponding medium ID.
+      * @param  enmMediumType  Brings corresponding medium type.
+      * @param  fRegistered    Brings whether medium is registered or unregistered. */
+    void sltHandleMediumRegistered(const QUuid &uMediumId, KDeviceType enmMediumType, bool fRegistered);
+#endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
     /** Handles medium-enumeration @a pTask complete signal. */
     void sltHandleMediumEnumerationTaskComplete(UITask *pTask);
@@ -111,6 +140,7 @@ private:
     /** Adds @a inputMedia to specified @a outputMedia map. */
     void addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia);
 
+#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /** Updates usage for machine with specified @a uMachineID on the basis of cached data.
       * @param  previousUIMediumIDs               Brings UIMedium IDs used in cached data.
       * @param  fTakeIntoAccountCurrentStateOnly  Brings whether we should take into accound current VM state only. */
@@ -146,6 +176,7 @@ private:
       * @param  currentCMediumIDs                 Brings CMedium IDs used in actual data. */
     void recacheFromActualUsage(const CMediumMap &currentCMediums,
                                 const QList<QUuid> &currentCMediumIDs);
+#endif /* !VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
     /** Holds whether consolidated medium-enumeration process is in progress. */
     bool  m_fMediumEnumerationInProgress;
