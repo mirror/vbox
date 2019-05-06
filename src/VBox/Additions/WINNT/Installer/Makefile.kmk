@@ -210,6 +210,14 @@ OTHER_CLEAN += $(PATH_TARGET)/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH)-uninst.
 
 $(PATH_TARGET)/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH)-uninst.exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditions.nsi \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsCommon.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsExternal.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsLog.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsUninstall.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsUninstallOld.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsW2KXP.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsVista.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsNT4.nsh \
 		$(DRIVER_FILES) \
 		$(VBOX_WINDOWS_ADDITIONS_ICON_FILE) \
 		$(VBOX_NSIS_ICON_FILE) \
@@ -248,6 +256,14 @@ $(PATH_STAGE_BIN)/additions/VBoxWHQLFake.exe:
 
 $(PATH_STAGE_BIN)/additions/VBoxWindowsAdditions-$(KBUILD_TARGET_ARCH).exe: \
 		$(PATH_SUB_CURRENT)/VBoxGuestAdditions.nsi \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsCommon.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsExternal.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsLog.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsUninstall.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsUninstallOld.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsW2KXP.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsVista.nsh \
+		$(PATH_SUB_CURRENT)/VBoxGuestAdditionsNT4.nsh \
 		$(DRIVER_FILES) \
 		$(VBOX_WINDOWS_ADDITIONS_ICON_FILE) \
 		$(VBOX_NSIS_ICON_FILE) \
