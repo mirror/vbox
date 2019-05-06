@@ -1457,11 +1457,11 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
     return false;
 }
 
-void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumDeviceType, const QString &strLocation, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent /* = 0 */) const
 {
     /* Show the error: */
     error(pParent, MessageType_Error,
-          tr("Failed to open the disk image file <nobr><b>%1</b></nobr>.").arg(strLocation), UIErrorString::formatErrorInfo(vbox));
+          tr("Failed to open the disk image file <nobr><b>%1</b></nobr>.").arg(strLocation), UIErrorString::formatErrorInfo(comVBox));
 }
 
 void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent /* = 0*/) const

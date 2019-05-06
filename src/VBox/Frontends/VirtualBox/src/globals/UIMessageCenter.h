@@ -341,7 +341,7 @@ public:
     void cannotResizeHardDiskStorage(const CProgress &comProgress, const QString &strLocation, const QString &strSizeOld, const QString &strSizeNew, QWidget *pParent = 0) const;
     void cannotDetachDevice(const CMachine &machine, UIMediumDeviceType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0) const;
     bool cannotRemountMedium(const CMachine &machine, const UIMedium &medium, bool fMount, bool fRetry, QWidget *pParent = 0) const;
-    void cannotOpenMedium(const CVirtualBox &vbox, UIMediumDeviceType type, const QString &strLocation, QWidget *pParent = 0) const;
+    void cannotOpenMedium(const CVirtualBox &comVBox, const QString &strLocation, QWidget *pParent = 0) const;
     void cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent = 0) const;
 
     /* API: Host Network Manager warnings: */

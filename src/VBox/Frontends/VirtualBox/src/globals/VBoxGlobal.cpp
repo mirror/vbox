@@ -2635,7 +2635,7 @@ QUuid VBoxGlobal::openMedium(UIMediumDeviceType enmMediumType, QString strMedium
         return guiMedium.id();
     }
     else
-        msgCenter().cannotOpenMedium(comVBox, enmMediumType, strMediumLocation, pParent);
+        msgCenter().cannotOpenMedium(comVBox, strMediumLocation, pParent);
 
     return QUuid();
 }
