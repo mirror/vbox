@@ -622,7 +622,7 @@ GLenum crStateCleanHWErrorState(PCRStateTracker pState)
 
 void crStateSwitchPrepare(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO, GLuint idReadFBO)
 {
-    PCRStateTracker pState = toCtx->pStateTracker ? toCtx->pStateTracker : fromCtx->pStateTracker;
+    PCRStateTracker pState = toCtx ? toCtx->pStateTracker : fromCtx->pStateTracker;
 
     CRASSERT(pState);
     CRASSERT(!toCtx || !fromCtx || toCtx->pStateTracker == fromCtx->pStateTracker);
@@ -640,7 +640,7 @@ void crStateSwitchPrepare(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO
 
 void crStateSwitchPostprocess(CRContext *toCtx, CRContext *fromCtx, GLuint idDrawFBO, GLuint idReadFBO)
 {
-    PCRStateTracker pState = toCtx->pStateTracker ? toCtx->pStateTracker : fromCtx->pStateTracker;
+    PCRStateTracker pState = toCtx ? toCtx->pStateTracker : fromCtx->pStateTracker;
 
     CRASSERT(pState);
     CRASSERT(!toCtx || !fromCtx || toCtx->pStateTracker == fromCtx->pStateTracker);
