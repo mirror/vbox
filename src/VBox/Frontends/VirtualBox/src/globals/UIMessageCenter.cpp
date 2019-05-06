@@ -1464,6 +1464,27 @@ void UIMessageCenter::cannotOpenMedium(const CVirtualBox &comVBox, const QString
           tr("Failed to open the disk image file <nobr><b>%1</b></nobr>.").arg(strLocation), UIErrorString::formatErrorInfo(comVBox));
 }
 
+void UIMessageCenter::cannotOpenKnownMedium(const CVirtualBox &comVBox, const QUuid &uMediumId, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to open the medium with following ID: <nobr><b>%1</b></nobr>.").arg(uMediumId.toString()), UIErrorString::formatErrorInfo(comVBox));
+}
+
+void UIMessageCenter::cannotAcquireAttachmentMedium(const CMediumAttachment &comAttachment, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire attachment medium."), UIErrorString::formatErrorInfo(comAttachment));
+}
+
+void UIMessageCenter::cannotAcquireMediumAttribute(const CMedium &comMedium, QWidget *pParent /* = 0 */) const
+{
+    /* Show the error: */
+    error(pParent, MessageType_Error,
+          tr("Failed to acquire medium attribute."), UIErrorString::formatErrorInfo(comMedium));
+}
+
 void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent /* = 0*/) const
 {
     /* Show the error: */
