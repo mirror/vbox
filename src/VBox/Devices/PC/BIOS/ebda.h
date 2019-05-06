@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * PC BIOS - ???
+ * PC BIOS - EBDA (Extended BIOS Data Area) Definition
  */
 
 /*
