@@ -32,12 +32,27 @@ for func_name in keys:
 		print('{')
 		print('\tfeedback_spu.super.%s(%s);' % ( func_name, apiutil.MakeCallString(params) ))
 		print('}')
+		print('')
+		print('static %s FEEDBACKSPU_APIENTRY feedbackspu_FeedbackWrap%s(%s)' % ( return_type, func_name, apiutil.MakeDeclarationString(params) ))
+		print('{')
+		if len(params) == 0:
+			print('\tcrStateFeedback%s(&feedback_spu.StateTracker);' % ( func_name, ))
+		else:
+			print('\tcrStateFeedback%s(&feedback_spu.StateTracker, %s);' % ( func_name, apiutil.MakeCallString(params) ))
+		print('}')
+	if apiutil.FindSpecial( "select", func_name ):
+		print('static %s FEEDBACKSPU_APIENTRY feedbackspu_SelectWrap%s(%s)' % ( return_type, func_name, apiutil.MakeDeclarationString(params) ))
+		print('{')
+		if len(params) == 0:
+			print('\tcrStateSelect%s(&feedback_spu.StateTracker);' % ( func_name, ))
+		else:
+			print('\tcrStateSelect%s(&feedback_spu.StateTracker, %s);' % ( func_name, apiutil.MakeCallString(params) ))
+		print('}')
 
 
 
 print("""
 #define CHANGE(name, func) crSPUChangeInterface((void *)&(feedback_spu.self), (void *)feedback_spu.self.name, (void *)((SPUGenericFunction) func))
-#define CHANGESWAP(name, swapfunc, regfunc) crSPUChangeInterface( (void *)&(feedback_spu.self), (void *)feedback_spu.self.name, (void *)((SPUGenericFunction) (feedback_spu.swap ? swapfunc: regfunc )))
 
 static void __loadFeedbackAPI( void )
 {
@@ -46,7 +61,7 @@ for func_name in keys:
 	return_type = apiutil.ReturnType(func_name)
 	params = apiutil.Parameters(func_name)
 	if apiutil.FindSpecial( "feedback", func_name ):
-		print('\tCHANGE(%s, crStateFeedback%s);' % (func_name, func_name ))
+		print('\tCHANGE(%s, feedbackspu_FeedbackWrap%s);' % (func_name, func_name ))
 print("""
 }
 
@@ -55,7 +70,7 @@ static void __loadSelectAPI( void )
 """)
 for func_name in keys:
 	if apiutil.FindSpecial( "select", func_name ):
-		print('\tCHANGE(%s, crStateSelect%s);' % (func_name, func_name ))
+		print('\tCHANGE(%s, feedbackspu_SelectWrap%s);' % (func_name, func_name ))
 	elif apiutil.FindSpecial( "feedback", func_name ):
 		print('\tCHANGE(%s, feedbackspu_%s);' % (func_name, func_name ))
 print("""
