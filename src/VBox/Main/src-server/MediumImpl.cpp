@@ -339,11 +339,6 @@ private:
     bool mNotifyAboutChanges;
 };
 
-HRESULT Medium::Task::executeTask()
-{
-    return E_NOTIMPL;//ReturnComNotImplemented()
-}
-
 class Medium::CreateBaseTask : public Medium::Task
 {
 public:
@@ -363,7 +358,10 @@ public:
     MediumVariant_T mVariant;
 
 private:
-    HRESULT executeTask();
+    HRESULT executeTask()
+    {
+        return mMedium->i_taskCreateBaseHandler(*this);
+    }
 };
 
 class Medium::CreateDiffTask : public Medium::Task
@@ -402,7 +400,11 @@ public:
     MediumVariant_T mVariant;
 
 private:
-    HRESULT executeTask();
+    HRESULT executeTask()
+    {
+        return mMedium->i_taskCreateDiffHandler(*this);
+    }
+
     AutoCaller mTargetCaller;
     bool mfKeepMediumLockList;
 };
@@ -465,7 +467,11 @@ public:
     uint32_t midxDstImageSame;
 
 private:
-    HRESULT executeTask();
+    HRESULT executeTask()
+    {
+        return mMedium->i_taskCloneHandler(*this);
+    }
+
     AutoCaller mTargetCaller;
     AutoCaller mParentCaller;
     bool mfKeepSourceMediumLockList;
@@ -500,7 +506,11 @@ public:
     MediumVariant_T mVariant;
 
 private:
-    HRESULT executeTask();
+    HRESULT executeTask()
+    {
+        return mMedium->i_taskMoveHandler(*this);
+    }
+
     bool mfKeepMediumLockList;
 };
 
@@ -529,7 +539,11 @@ public:
     MediumLockList *mpMediumLockList;
 
 private:
-    HRESULT executeTask();
+    HRESULT executeTask()
+    {
+        return mMedium->i_taskCompactHandler(*this);
+    }
+
     bool mfKeepMediumLockList;
 };
 
@@ -561,7 +575,11 @@ public:
     MediumLockList *mpMediumLockList;
 
 private:
-    HRESULT executeTask();
+    HRESULT executeTask()
+    {
+        return mMedium->i_taskResizeHandler(*this);
+    }
+
     bool mfKeepMediumLockList;
 };
 
@@ -589,7 +607,11 @@ public:
     MediumLockList *mpMediumLockList;
 
 private:
-    HRESULT executeTask();
+    HRESULT executeTask()
+    {
+        return mMedium->i_taskResetHandler(*this);
+    }
+
     bool mfKeepMediumLockList;
 };
 
@@ -617,7 +639,11 @@ public:
     MediumLockList *mpMediumLockList;
 
 private:
-    HRESULT executeTask();
+    HRESULT executeTask()
+    {
+        return mMedium->i_taskDeleteHandler(*this);
+    }
+
     bool mfKeepMediumLockList;
 };
 
@@ -664,7 +690,11 @@ public:
     MediumLockList *mpMediumLockList;
 
 private:
-    HRESULT executeTask();
+    HRESULT executeTask()
+    {
+        return mMedium->i_taskMergeHandler(*this);
+    }
+
     AutoCaller mTargetCaller;
     AutoCaller mParentForTargetCaller;
     bool mfKeepMediumLockList;
@@ -731,7 +761,11 @@ public:
     PVDINTERFACEIO mpVfsIoIf; /**< Pointer to the VFS I/O stream to VD I/O interface wrapper. */
 
 private:
-    HRESULT executeTask();
+    HRESULT executeTask()
+    {
+        return mMedium->i_taskImportHandler(*this);
+    }
+
     AutoCaller mParentCaller;
     bool mfKeepTargetMediumLockList;
 };
@@ -783,98 +817,14 @@ public:
     PVDINTERFACE    mVDImageIfaces;
 
 private:
-    HRESULT executeTask();
+    HRESULT executeTask()
+    {
+        return mMedium->i_taskEncryptHandler(*this);
+    }
+
     AutoCaller mParentCaller;
 };
 
-/**
- * Implementation code for the "create base" task.
- */
-HRESULT Medium::CreateBaseTask::executeTask()
-{
-    return mMedium->i_taskCreateBaseHandler(*this);
-}
-
-/**
- * Implementation code for the "create diff" task.
- */
-HRESULT Medium::CreateDiffTask::executeTask()
-{
-    return mMedium->i_taskCreateDiffHandler(*this);
-}
-
-/**
- * Implementation code for the "clone" task.
- */
-HRESULT Medium::CloneTask::executeTask()
-{
-    return mMedium->i_taskCloneHandler(*this);
-}
-
-/**
- * Implementation code for the "move" task.
- */
-HRESULT Medium::MoveTask::executeTask()
-{
-    return mMedium->i_taskMoveHandler(*this);
-}
-
-/**
- * Implementation code for the "compact" task.
- */
-HRESULT Medium::CompactTask::executeTask()
-{
-    return mMedium->i_taskCompactHandler(*this);
-}
-
-/**
- * Implementation code for the "resize" task.
- */
-HRESULT Medium::ResizeTask::executeTask()
-{
-    return mMedium->i_taskResizeHandler(*this);
-}
-
-
-/**
- * Implementation code for the "reset" task.
- */
-HRESULT Medium::ResetTask::executeTask()
-{
-    return mMedium->i_taskResetHandler(*this);
-}
-
-/**
- * Implementation code for the "delete" task.
- */
-HRESULT Medium::DeleteTask::executeTask()
-{
-    return mMedium->i_taskDeleteHandler(*this);
-}
-
-/**
- * Implementation code for the "merge" task.
- */
-HRESULT Medium::MergeTask::executeTask()
-{
-    return mMedium->i_taskMergeHandler(*this);
-}
-
-/**
- * Implementation code for the "import" task.
- */
-HRESULT Medium::ImportTask::executeTask()
-{
-    return mMedium->i_taskImportHandler(*this);
-}
-
-/**
- * Implementation code for the "encrypt" task.
- */
-HRESULT Medium::EncryptTask::executeTask()
-{
-    return mMedium->i_taskEncryptHandler(*this);
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -9632,7 +9582,7 @@ HRESULT Medium::i_taskMoveHandler(Medium::MoveTask &task)
     if (task.NotifyAboutChanges() && SUCCEEDED(mrc))
         m->pVirtualBox->i_onMediumConfigChanged(this);
 
-    LogFlowFunc(("LEAVE: mrc=%Rhrc\n", mrc));
+    LogFlowFunc(("LEAVE: mrc=%Rhrc\n", (HRESULT)mrc));
     return mrc;
 }
 
