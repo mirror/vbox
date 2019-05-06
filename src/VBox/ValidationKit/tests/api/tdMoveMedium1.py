@@ -111,7 +111,7 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
         """
         reporter.testStart('medium moving')
 
-        try:
+        try: ## @todo r=bird: Bad 'ing style.
             oVM = self.oTstDrv.createTestVM('test-medium-move', 1, None, 4)
             assert oVM is not None
 
@@ -194,8 +194,6 @@ class SubTstDrvMoveMedium1(base.SubTestDriverBase):
                 fRc = self.checkLocation(sOrigLoc, aoMediumAttachments, asSnapFiles) and fRc
 
             fRc = oSession.close() and fRc
-
-            assert fRc is True
         except:
             reporter.errorXcpt()
 
