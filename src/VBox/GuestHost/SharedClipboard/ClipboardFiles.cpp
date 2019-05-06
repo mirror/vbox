@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * DnD - Directory handling.
+ * Shared Clipboard - Directory handling.
  */
 
 /*
- * Copyright (C) 2014-2019 Oracle Corporation
+ * Copyright (C) 2019 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,8 +19,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_GUEST_DND
-#include <VBox/GuestHost/DragAndDrop.h>
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <VBox/GuestHost/SharedClipboard-uri.h>
 
 #include <iprt/assert.h>
 #include <iprt/dir.h>
@@ -32,25 +32,26 @@
 
 #include <VBox/log.h>
 
-DnDDroppedFiles::DnDDroppedFiles(void)
+SharedClipboardDroppedFiles::SharedClipboardDroppedFiles(void)
     : m_fOpen(0)
     , m_hDir(NULL) { }
 
-DnDDroppedFiles::DnDDroppedFiles(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /* = DNDURIDROPPEDFILE_FLAGS_NONE */)
+SharedClipboardDroppedFiles::SharedClipboardDroppedFiles(const char *pszPath,
+                                                         SHAREDCLIPBOARDURIDROPPEDFILEFLAGS fFlags /* = SHAREDCLIPBOARDURIDROPPEDFILE_FLAGS_NONE */)
     : m_fOpen(0)
     , m_hDir(NULL)
 {
     OpenEx(pszPath, fFlags);
 }
 
-DnDDroppedFiles::~DnDDroppedFiles(void)
+SharedClipboardDroppedFiles::~SharedClipboardDroppedFiles(void)
 {
     /* Only make sure to not leak any handles and stuff, don't delete any
      * directories / files here. */
     closeInternal();
 }
 
-int DnDDroppedFiles::AddFile(const char *pszFile)
+int SharedClipboardDroppedFiles::AddFile(const char *pszFile)
 {
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
 
@@ -59,7 +60,7 @@ int DnDDroppedFiles::AddFile(const char *pszFile)
     return VINF_SUCCESS;
 }
 
-int DnDDroppedFiles::AddDir(const char *pszDir)
+int SharedClipboardDroppedFiles::AddDir(const char *pszDir)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_POINTER);
 
@@ -68,7 +69,7 @@ int DnDDroppedFiles::AddDir(const char *pszDir)
     return VINF_SUCCESS;
 }
 
-int DnDDroppedFiles::closeInternal(void)
+int SharedClipboardDroppedFiles::closeInternal(void)
 {
     int rc;
     if (this->m_hDir != NULL)
@@ -84,22 +85,22 @@ int DnDDroppedFiles::closeInternal(void)
     return rc;
 }
 
-int DnDDroppedFiles::Close(void)
+int SharedClipboardDroppedFiles::Close(void)
 {
     return closeInternal();
 }
 
-const char *DnDDroppedFiles::GetDirAbs(void) const
+const char *SharedClipboardDroppedFiles::GetDirAbs(void) const
 {
     return this->m_strPathAbs.c_str();
 }
 
-bool DnDDroppedFiles::IsOpen(void) const
+bool SharedClipboardDroppedFiles::IsOpen(void) const
 {
     return (this->m_hDir != NULL);
 }
 
-int DnDDroppedFiles::OpenEx(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /* = DNDURIDROPPEDFILE_FLAGS_NONE */)
+int SharedClipboardDroppedFiles::OpenEx(const char *pszPath, SHAREDCLIPBOARDURIDROPPEDFILEFLAGS fFlags /* = SHAREDCLIPBOARDURIDROPPEDFILE_FLAGS_NONE */)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
@@ -116,7 +117,7 @@ int DnDDroppedFiles::OpenEx(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /
          *        can be used. */
 
         /* Append our base drop directory. */
-        rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), "VirtualBox Dropped Files"); /** @todo Make this tag configurable? */
+        rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), "VirtualBox Shared Clipboard Files"); /** @todo Make this tag configurable? */
         if (RT_FAILURE(rc))
             break;
 
@@ -138,7 +139,7 @@ int DnDDroppedFiles::OpenEx(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /
             break;
         }
 
-        rc = DnDPathSanitizeFilename(pszTime, sizeof(pszTime));
+        rc = SharedClipboardPathSanitizeFilename(pszTime, sizeof(pszTime));
         if (RT_FAILURE(rc))
             break;
 
@@ -166,7 +167,7 @@ int DnDDroppedFiles::OpenEx(const char *pszPath, DNDURIDROPPEDFILEFLAGS fFlags /
     return rc;
 }
 
-int DnDDroppedFiles::OpenTemp(DNDURIDROPPEDFILEFLAGS fFlags /* = DNDURIDROPPEDFILE_FLAGS_NONE */)
+int SharedClipboardDroppedFiles::OpenTemp(SHAREDCLIBOARDURIDROPPEDFILEFLAGS fFlags /* = SHAREDCLIPBOARDURIDROPPEDFILE_FLAGS_NONE */)
 {
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
 
@@ -183,7 +184,7 @@ int DnDDroppedFiles::OpenTemp(DNDURIDROPPEDFILEFLAGS fFlags /* = DNDURIDROPPEDFI
     return rc;
 }
 
-int DnDDroppedFiles::Reset(bool fRemoveDropDir)
+int SharedClipboardDroppedFiles::Reset(bool fRemoveDropDir)
 {
     int rc = closeInternal();
     if (RT_SUCCESS(rc))
@@ -203,7 +204,7 @@ int DnDDroppedFiles::Reset(bool fRemoveDropDir)
     return rc;
 }
 
-int DnDDroppedFiles::Reopen(void)
+int SharedClipboardDroppedFiles::Reopen(void)
 {
     if (this->m_strPathAbs.isEmpty())
         return VERR_NOT_FOUND;
@@ -211,7 +212,7 @@ int DnDDroppedFiles::Reopen(void)
     return OpenEx(this->m_strPathAbs.c_str(), this->m_fOpen);
 }
 
-int DnDDroppedFiles::Rollback(void)
+int SharedClipboardDroppedFiles::Rollback(void)
 {
     if (this->m_strPathAbs.isEmpty())
         return VINF_SUCCESS;

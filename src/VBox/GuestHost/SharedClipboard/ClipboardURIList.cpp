@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * DnD - URI list class.
+ * Shared Clipboard - URI list class.
  */
 
 /*
- * Copyright (C) 2014-2019 Oracle Corporation
+ * Copyright (C) 2019 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,8 +19,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_GUEST_DND
-#include <VBox/GuestHost/DragAndDrop.h>
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <VBox/GuestHost/SharedClipboard-uri.h>
 
 #include <iprt/dir.h>
 #include <iprt/err.h>
@@ -34,18 +34,18 @@
 #include <VBox/log.h>
 
 
-DnDURIList::DnDURIList(void)
+SharedClipboardURIList::SharedClipboardURIList(void)
     : m_cTotal(0)
     , m_cbTotal(0)
 {
 }
 
-DnDURIList::~DnDURIList(void)
+SharedClipboardURIList::~SharedClipboardURIList(void)
 {
     Clear();
 }
 
-int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, DNDURILISTFLAGS fFlags)
+int SharedClipboardURIList::addEntry(const char *pcszSource, const char *pcszTarget, SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pcszSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pcszTarget, VERR_INVALID_POINTER);
@@ -61,11 +61,11 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, DNDURIL
             LogFlowFunc(("File '%s' -> '%s' (%RU64 bytes, file mode 0x%x)\n",
                          pcszSource, pcszTarget, (uint64_t)objInfo.cbObject, objInfo.Attr.fMode));
 
-            DnDURIObject *pObjFile = new DnDURIObject(DnDURIObject::Type_File, pcszSource, pcszTarget);
+            SharedClipboardURIObject *pObjFile = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File, pcszSource, pcszTarget);
             if (pObjFile)
             {
                 /** @todo Add a standard fOpen mode for this list. */
-                rc = pObjFile->Open(DnDURIObject::View_Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+                rc = pObjFile->Open(SharedClipboardURIObject::View_Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
                 if (RT_SUCCESS(rc))
                 {
                     m_lstTree.append(pObjFile);
@@ -73,7 +73,7 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, DNDURIL
                     m_cTotal++;
                     m_cbTotal += pObjFile->GetSize();
 
-                    if (!(fFlags & DNDURILIST_FLAGS_KEEP_OPEN)) /* Shall we keep the file open while being added to this list? */
+                    if (!(fFlags & SHAREDCLIPBOARDURILIST_FLAGS_KEEP_OPEN)) /* Shall we keep the file open while being added to this list? */
                         pObjFile->Close();
                 }
                 else
@@ -86,12 +86,12 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, DNDURIL
         {
             LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
 
-            DnDURIObject *pObjDir = new DnDURIObject(DnDURIObject::Type_Directory, pcszSource, pcszTarget);
+            SharedClipboardURIObject *pObjDir = new SharedClipboardURIObject(SharedClipboardURIObject::Type_Directory, pcszSource, pcszTarget);
             if (pObjDir)
             {
                 m_lstTree.append(pObjDir);
 
-                /** @todo Add DNDURILIST_FLAGS_KEEP_OPEN handling? */
+                /** @todo Add SHAREDCLIPBOARDURILIST_FLAGS_KEEP_OPEN handling? */
                 m_cTotal++;
             }
             else
@@ -106,9 +106,9 @@ int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, DNDURIL
     return rc;
 }
 
-int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
+int SharedClipboardURIList::appendPathRecursive(const char *pcszSrcPath,
                                     const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase,
-                                    DNDURILISTFLAGS fFlags)
+                                    SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pcszSrcPath, VERR_INVALID_POINTER);
     AssertPtrReturn(pcszDstBase, VERR_INVALID_POINTER);
@@ -191,7 +191,7 @@ int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
                             }
                             case RTFS_TYPE_SYMLINK:
                             {
-                                if (fFlags & DNDURILIST_FLAGS_RESOLVE_SYMLINKS)
+                                if (fFlags & SHAREDCLIPBOARDURILIST_FLAGS_RESOLVE_SYMLINKS)
                                 {
                                     char *pszSrc = RTPathRealDup(pcszDstBase);
                                     if (pszSrc)
@@ -238,7 +238,7 @@ int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
         }
         else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
         {
-            if (fFlags & DNDURILIST_FLAGS_RESOLVE_SYMLINKS)
+            if (fFlags & SHAREDCLIPBOARDURILIST_FLAGS_RESOLVE_SYMLINKS)
             {
                 char *pszSrc = RTPathRealDup(pcszSrcPath);
                 if (pszSrc)
@@ -274,7 +274,7 @@ int DnDURIList::appendPathRecursive(const char *pcszSrcPath,
     return rc;
 }
 
-int DnDURIList::AppendNativePath(const char *pszPath, DNDURILISTFLAGS fFlags)
+int SharedClipboardURIList::AppendNativePath(const char *pszPath, SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
 
@@ -302,8 +302,8 @@ int DnDURIList::AppendNativePath(const char *pszPath, DNDURILISTFLAGS fFlags)
     return rc;
 }
 
-int DnDURIList::AppendNativePathsFromList(const char *pszNativePaths, size_t cbNativePaths,
-                                          DNDURILISTFLAGS fFlags)
+int SharedClipboardURIList::AppendNativePathsFromList(const char *pszNativePaths, size_t cbNativePaths,
+                                          SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pszNativePaths, VERR_INVALID_POINTER);
     AssertReturn(cbNativePaths, VERR_INVALID_PARAMETER);
@@ -313,8 +313,8 @@ int DnDURIList::AppendNativePathsFromList(const char *pszNativePaths, size_t cbN
     return AppendNativePathsFromList(lstPaths, fFlags);
 }
 
-int DnDURIList::AppendNativePathsFromList(const RTCList<RTCString> &lstNativePaths,
-                                          DNDURILISTFLAGS fFlags)
+int SharedClipboardURIList::AppendNativePathsFromList(const RTCList<RTCString> &lstNativePaths,
+                                          SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     int rc = VINF_SUCCESS;
 
@@ -330,10 +330,10 @@ int DnDURIList::AppendNativePathsFromList(const RTCList<RTCString> &lstNativePat
     return rc;
 }
 
-int DnDURIList::AppendURIPath(const char *pszURI, DNDURILISTFLAGS fFlags)
+int SharedClipboardURIList::AppendURIPath(const char *pszURI, SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pszURI, VERR_INVALID_POINTER);
-    AssertReturn(!(fFlags & ~DNDURILIST_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~SHAREDCLIPBOARDURILIST_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
     /** @todo Check for string termination?  */
 
     RTURIPARSED Parsed;
@@ -379,7 +379,7 @@ int DnDURIList::AppendURIPath(const char *pszURI, DNDURILISTFLAGS fFlags)
             if (pszFileName)
             {
                 Assert(pszFileName >= pszSrcPath);
-                size_t cchDstBase = (fFlags & DNDURILIST_FLAGS_ABSOLUTE_PATHS)
+                size_t cchDstBase = (fFlags & SHAREDCLIPBOARDURILIST_FLAGS_ABSOLUTE_PATHS)
                                   ? 0 /* Use start of path as root. */
                                   : pszFileName - pszSrcPath;
                 char *pszDstPath = &pszSrcPath[cchDstBase];
@@ -403,8 +403,8 @@ int DnDURIList::AppendURIPath(const char *pszURI, DNDURILISTFLAGS fFlags)
     return rc;
 }
 
-int DnDURIList::AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPaths,
-                                       DNDURILISTFLAGS fFlags)
+int SharedClipboardURIList::AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPaths,
+                                       SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pszURIPaths, VERR_INVALID_POINTER);
     AssertReturn(cbURIPaths, VERR_INVALID_PARAMETER);
@@ -414,8 +414,8 @@ int DnDURIList::AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPath
     return AppendURIPathsFromList(lstPaths, fFlags);
 }
 
-int DnDURIList::AppendURIPathsFromList(const RTCList<RTCString> &lstURI,
-                                       DNDURILISTFLAGS fFlags)
+int SharedClipboardURIList::AppendURIPathsFromList(const RTCList<RTCString> &lstURI,
+                                       SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     int rc = VINF_SUCCESS;
 
@@ -432,13 +432,13 @@ int DnDURIList::AppendURIPathsFromList(const RTCList<RTCString> &lstURI,
     return rc;
 }
 
-void DnDURIList::Clear(void)
+void SharedClipboardURIList::Clear(void)
 {
     m_lstRoot.clear();
 
     for (size_t i = 0; i < m_lstTree.size(); i++)
     {
-        DnDURIObject *pCurObj = m_lstTree.at(i);
+        SharedClipboardURIObject *pCurObj = m_lstTree.at(i);
         AssertPtr(pCurObj);
         RTMemFree(pCurObj);
     }
@@ -448,12 +448,12 @@ void DnDURIList::Clear(void)
     m_cbTotal = 0;
 }
 
-void DnDURIList::RemoveFirst(void)
+void SharedClipboardURIList::RemoveFirst(void)
 {
     if (m_lstTree.isEmpty())
         return;
 
-    DnDURIObject *pCurObj = m_lstTree.first();
+    SharedClipboardURIObject *pCurObj = m_lstTree.first();
     AssertPtr(pCurObj);
 
     uint64_t cbSize = pCurObj->GetSize();
@@ -466,7 +466,7 @@ void DnDURIList::RemoveFirst(void)
     m_lstTree.removeFirst();
 }
 
-int DnDURIList::SetFromURIData(const void *pvData, size_t cbData, DNDURILISTFLAGS fFlags)
+int SharedClipboardURIList::SetFromURIData(const void *pvData, size_t cbData, SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     Assert(fFlags == 0); RT_NOREF1(fFlags);
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
@@ -493,7 +493,7 @@ int DnDURIList::SetFromURIData(const void *pvData, size_t cbData, DNDURILISTFLAG
 #endif
         if (pszFilePath)
         {
-            rc = DnDPathSanitize(pszFilePath, strlen(pszFilePath));
+            rc = SharedClipboardPathSanitize(pszFilePath, strlen(pszFilePath));
             if (RT_SUCCESS(rc))
             {
                 m_lstRoot.append(pszFilePath);
@@ -512,7 +512,7 @@ int DnDURIList::SetFromURIData(const void *pvData, size_t cbData, DNDURILISTFLAG
     return rc;
 }
 
-RTCString DnDURIList::GetRootEntries(const RTCString &strPathBase /* = "" */,
+RTCString SharedClipboardURIList::GetRootEntries(const RTCString &strPathBase /* = "" */,
                                    const RTCString &strSeparator /* = "\r\n" */) const
 {
     RTCString strRet;

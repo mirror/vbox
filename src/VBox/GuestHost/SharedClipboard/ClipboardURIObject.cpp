@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * DnD - URI object class. For handling creation/reading/writing to files and directories on host or guest side.
+ * Shared Clipboard - URI object class. For handling creation/reading/writing to files and directories on host or guest side.
  */
 
 /*
- * Copyright (C) 2014-2019 Oracle Corporation
+ * Copyright (C) 2019 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,8 +19,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_GUEST_DND
-#include <VBox/GuestHost/DragAndDrop.h>
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <VBox/GuestHost/SharedClipboard-uri.h>
 
 #include <iprt/dir.h>
 #include <iprt/err.h>
@@ -32,16 +32,16 @@
 #include <VBox/log.h>
 
 
-DnDURIObject::DnDURIObject(void)
+SharedClipboardURIObject::SharedClipboardURIObject(void)
     : m_enmType(Type_Unknown)
     , m_enmView(View_Unknown)
 {
     RT_ZERO(u);
 }
 
-DnDURIObject::DnDURIObject(Type enmType,
-                           const RTCString &strSrcPathAbs /* = 0 */,
-                           const RTCString &strDstPathAbs /* = 0 */)
+SharedClipboardURIObject::SharedClipboardURIObject(Type enmType,
+                                                   const RTCString &strSrcPathAbs /* = 0 */,
+                                                   const RTCString &strDstPathAbs /* = 0 */)
     : m_enmType(enmType)
     , m_enmView(View_Unknown)
     , m_strSrcPathAbs(strSrcPathAbs)
@@ -68,7 +68,7 @@ DnDURIObject::DnDURIObject(Type enmType,
     }
 }
 
-DnDURIObject::~DnDURIObject(void)
+SharedClipboardURIObject::~SharedClipboardURIObject(void)
 {
     closeInternal();
 }
@@ -77,7 +77,7 @@ DnDURIObject::~DnDURIObject(void)
  * Closes the object's internal handles (to files / ...).
  *
  */
-void DnDURIObject::closeInternal(void)
+void SharedClipboardURIObject::closeInternal(void)
 {
     LogFlowThisFuncEnter();
 
@@ -108,7 +108,7 @@ void DnDURIObject::closeInternal(void)
  * Closes the object.
  * This also closes the internal handles associated with the object (to files / ...).
  */
-void DnDURIObject::Close(void)
+void SharedClipboardURIObject::Close(void)
 {
     closeInternal();
 }
@@ -118,7 +118,7 @@ void DnDURIObject::Close(void)
  *
  * @return  File / directory mode.
  */
-RTFMODE DnDURIObject::GetMode(void) const
+RTFMODE SharedClipboardURIObject::GetMode(void) const
 {
     switch (m_enmType)
     {
@@ -139,11 +139,11 @@ RTFMODE DnDURIObject::GetMode(void) const
 /**
  * Returns the bytes already processed (read / written).
  *
- * Note: Only applies if the object is of type DnDURIObject::Type_File.
+ * Note: Only applies if the object is of type SharedClipboardURIObject::Type_File.
  *
  * @return  Bytes already processed (read / written).
  */
-uint64_t DnDURIObject::GetProcessed(void) const
+uint64_t SharedClipboardURIObject::GetProcessed(void) const
 {
     if (m_enmType == Type_File)
         return u.File.cbProcessed;
@@ -154,11 +154,11 @@ uint64_t DnDURIObject::GetProcessed(void) const
 /**
  * Returns the file's logical size (in bytes).
  *
- * Note: Only applies if the object is of type DnDURIObject::Type_File.
+ * Note: Only applies if the object is of type SharedClipboardURIObject::Type_File.
  *
  * @return  The file's logical size (in bytes).
  */
-uint64_t DnDURIObject::GetSize(void) const
+uint64_t SharedClipboardURIObject::GetSize(void) const
 {
     if (m_enmType == Type_File)
         return u.File.cbToProcess;
@@ -172,7 +172,7 @@ uint64_t DnDURIObject::GetSize(void) const
  *
  * @return  True if complete, False if not.
  */
-bool DnDURIObject::IsComplete(void) const
+bool SharedClipboardURIObject::IsComplete(void) const
 {
     bool fComplete;
 
@@ -198,7 +198,7 @@ bool DnDURIObject::IsComplete(void) const
 /**
  * Returns whether the object is in an open state or not.
  */
-bool DnDURIObject::IsOpen(void) const
+bool SharedClipboardURIObject::IsOpen(void) const
 {
     switch (m_enmType)
     {
@@ -218,11 +218,11 @@ bool DnDURIObject::IsOpen(void) const
  * @param   fOpen               File open flags to use.
  * @param   fMode               File mode to use.
  */
-int DnDURIObject::Open(View enmView, uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */)
+int SharedClipboardURIObject::Open(View enmView, uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */)
 {
     return OpenEx(  enmView == View_Source
                   ? m_strSrcPathAbs : m_strTgtPathAbs
-                  , enmView, fOpen, fMode, DNDURIOBJECT_FLAGS_NONE);
+                  , enmView, fOpen, fMode, SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE);
 }
 
 /**
@@ -233,12 +233,12 @@ int DnDURIObject::Open(View enmView, uint64_t fOpen /* = 0 */, RTFMODE fMode /* 
  * @param   enmView             View of the object.
  * @param   fOpen               Open mode to use; only valid for file objects.
  * @param   fMode               File mode to use; only valid for file objects.
- * @param   fFlags              Additional DnD URI object flags.
+ * @param   fFlags              Additional Shared Clipboard URI object flags.
  */
-int DnDURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
-                         uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */, DNDURIOBJECTFLAGS fFlags /* = DNDURIOBJECT_FLAGS_NONE */)
+int SharedClipboardURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
+                                     uint64_t fOpen /* = 0 */, RTFMODE fMode /* = 0 */, SHAREDCLIPBOARDURIOBJECTFLAGS fFlags /* = SHAREDCLIPBOARDURIOBJECT_FLAGS_NONE */)
 {
-    AssertReturn(!(fFlags & ~DNDURIOBJECT_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~SHAREDCLIPBOARDURIOBJECT_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
     RT_NOREF1(fFlags);
 
     int rc = VINF_SUCCESS;
@@ -327,7 +327,7 @@ int DnDURIObject::OpenEx(const RTCString &strPathAbs, View enmView,
  * @return  IPRT status code.
  * @param   enmView             View to use for querying information. Currently ignored.
  */
-int DnDURIObject::queryInfoInternal(View enmView)
+int SharedClipboardURIObject::queryInfoInternal(View enmView)
 {
     RT_NOREF(enmView);
 
@@ -359,7 +359,7 @@ int DnDURIObject::queryInfoInternal(View enmView)
  * @return  IPRT status code.
  * @param   enmView             View to use for querying information.
  */
-int DnDURIObject::QueryInfo(View enmView)
+int SharedClipboardURIObject::QueryInfo(View enmView)
 {
     return queryInfoInternal(enmView);
 }
@@ -373,10 +373,10 @@ int DnDURIObject::QueryInfo(View enmView)
  * @param   strBaseOld          Old base path to rebase from.
  * @param   strBaseNew          New base path to rebase to.
  *
- ** @todo Put this into an own class like DnDURIPath : public RTCString?
+ ** @todo Put this into an own class like SharedClipboardURIPath : public RTCString?
  */
 /* static */
-int DnDURIObject::RebaseURIPath(RTCString &strPathAbs,
+int SharedClipboardURIObject::RebaseURIPath(RTCString &strPathAbs,
                                 const RTCString &strBaseOld /* = "" */,
                                 const RTCString &strBaseNew /* = "" */)
 {
@@ -438,7 +438,7 @@ int DnDURIObject::RebaseURIPath(RTCString &strPathAbs,
  * @param   cbBuf               Size (in bytes) of the buffer.
  * @param   pcbRead             Pointer where to store how many bytes were read. Optional.
  */
-int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
+int SharedClipboardURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
 {
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
@@ -494,7 +494,7 @@ int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
 /**
  * Resets the object's state and closes all related handles.
  */
-void DnDURIObject::Reset(void)
+void SharedClipboardURIObject::Reset(void)
 {
     LogFlowThisFuncEnter();
 
@@ -511,12 +511,12 @@ void DnDURIObject::Reset(void)
 /**
  * Sets the bytes to process by the object.
  *
- * Note: Only applies if the object is of type DnDURIObject::Type_File.
+ * Note: Only applies if the object is of type SharedClipboardURIObject::Type_File.
  *
  * @return  IPRT return code.
  * @param   cbSize          Size (in bytes) to process.
  */
-int DnDURIObject::SetSize(uint64_t cbSize)
+int SharedClipboardURIObject::SetSize(uint64_t cbSize)
 {
     AssertReturn(m_enmType == Type_File, VERR_INVALID_PARAMETER);
 
@@ -534,7 +534,7 @@ int DnDURIObject::SetSize(uint64_t cbSize)
  * @param   cbBuf               Size (in bytes) of data to write.
  * @param   pcbWritten          Pointer where to store how many bytes were written. Optional.
  */
-int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
+int SharedClipboardURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);

@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * DnD - Path handling.
+ * Shared Clipboard - Path handling.
  */
 
 /*
- * Copyright (C) 2014-2019 Oracle Corporation
+ * Copyright (C) 2019 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,8 +19,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_GUEST_DND
-#include <VBox/GuestHost/DragAndDrop.h>
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
+#include <VBox/GuestHost/SharedClipboard-uri.h>
 
 #include <iprt/err.h>
 #include <iprt/path.h>
@@ -35,7 +35,7 @@
  * @param   pszPath             Path to sanitize.
  * @param   cbPath              Size (in bytes) of path to sanitize.
  */
-int DnDPathSanitizeFilename(char *pszPath, size_t cbPath)
+int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath)
 {
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
@@ -63,7 +63,7 @@ int DnDPathSanitizeFilename(char *pszPath, size_t cbPath)
     return rc;
 }
 
-int DnDPathSanitize(char *pszPath, size_t cbPath)
+int SharedClipboardPathSanitize(char *pszPath, size_t cbPath)
 {
     /** @todo */
     RT_NOREF2(pszPath, cbPath);
