@@ -85,7 +85,7 @@ int VBoxClipboardWinClose(void)
     int rc;
 
     const BOOL fRc = CloseClipboard();
-    if (RT_UNLIKELY(fRc))
+    if (RT_UNLIKELY(!fRc))
     {
         const DWORD dwLastErr = GetLastError();
         rc = RTErrConvertFromWin32(dwLastErr);
@@ -107,7 +107,7 @@ int VBoxClipboardWinClear(void)
     int rc;
 
     const BOOL fRc = EmptyClipboard();
-    if (RT_UNLIKELY(fRc))
+    if (RT_UNLIKELY(!fRc))
     {
         const DWORD dwLastErr = GetLastError();
         rc = RTErrConvertFromWin32(dwLastErr);
