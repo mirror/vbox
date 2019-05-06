@@ -1739,19 +1739,9 @@ static bool ataR3ReadSectorsSS(ATADevState *s)
     rc = ataR3ReadSectors(s, iLBA, s->CTX_SUFF(pbIOBuffer), cSectors, &fRedo);
     if (RT_SUCCESS(rc))
     {
-        /* When READ SECTORS etc. finishes, the address in the task
-         * file register points at the last sector read, not at the next
-         * sector that would be read. This ensures the registers always
-         * contain a valid sector address.
-         */
+        ataR3SetSector(s, iLBA + cSectors);
         if (s->cbElementaryTransfer == s->cbTotalTransfer)
-        {
             s->iSourceSink = ATAFN_SS_NULL;
-            ataR3SetSector(s, iLBA + cSectors - 1);
-        }
-        else
-            ataR3SetSector(s, iLBA + cSectors);
-        s->uATARegNSector -= cSectors;
         ataR3CmdOK(s, ATA_STAT_SEEK);
     }
     else
@@ -3969,6 +3959,7 @@ static bool ataR3InitDevParmSS(ATADevState *s)
     RTThreadSleep(pCtl->DelayIRQMillies);
     ataR3LockEnter(pCtl);
     ataR3CmdOK(s, ATA_STAT_SEEK);
+    ataHCSetIRQ(s);
     return false;
 }
 
@@ -3982,6 +3973,7 @@ static bool ataR3RecalibrateSS(ATADevState *s)
     RTThreadSleep(pCtl->DelayIRQMillies);
     ataR3LockEnter(pCtl);
     ataR3CmdOK(s, ATA_STAT_SEEK);
+    ataHCSetIRQ(s);
     return false;
 }
 
@@ -4364,19 +4356,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
  *     present or not and behaves the same. That means if Device 0 is selected,
  *     Device 1 responds to writes (except commands are not executed) but does
  *     not respond to reads. If Device 1 selected, normal behavior applies.
- *     See ATA-6 clause 9.16.2 and Table 15 in clause 7.1.
- *
- * Note: Task file register writes with BSY=1 and/or DRQ=1 are problematic.
- * Newer ATA/ATAPI specifications define that writes with BSY=0 and DRQ=1
- * are a "host malfunction" and ignored (see e.g. Table 15 in clause 7.1 of
- * the ATA-6 specification).
- *  However, the results of writes with BSY=1 are "indeterminate", with the
- * sole exception of writing the DEVICE RESET command (if supported). We
- * choose to ignore the writes when BSY=1.
- *
- * Note: Ignoring writes to the Device/Head register when BSY=1 or DRQ=1 has the
- * convenient side effect that the non-selected device (if any) is guaranteed
- * to have BSY=0 and DRQ=0.
+ *     See ATAPI-6 clause 9.16.2 and Table 15 in clause 7.1.
  */
 
 static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
@@ -4386,7 +4366,6 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
     switch (addr)
     {
         case 0:
-            Assert(0);  /* This handler is not used for the Data register! */
             break;
         case 1: /* feature register */
             /* NOTE: data is written to the two drives */
@@ -4430,11 +4409,6 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
             pCtl->aIfs[1].uATARegHCyl = val;
             break;
         case 6: /* drive/head */
-            if (pCtl->aIfs[pCtl->iAIOIf].uATARegStatus & ATA_STAT_DRQ)
-            {
-                Log(("DRQ=1, register write ignored!\n"));
-                break;
-            }
             pCtl->aIfs[0].uATARegSelect = (val & ~0x10) | 0xa0;
             pCtl->aIfs[1].uATARegSelect = (val | 0x10) | 0xa0;
             if (((val >> 4) & 1) != pCtl->iSelectedIf)
@@ -4491,12 +4465,6 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 }
 
 
-/*
- * Note: When the BSY bit is set, generally no other bits in the Status register
- * are valid and no other registers can be read. Newer ATA specs explicitly define
- * (e.g. clause 7.1, table 16 in ATA-6) that if any command block register is
- * read with BSY=1, the Status register contents are always returned instead.
- */
 static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
 {
     ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
@@ -4533,30 +4501,10 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
             return VINF_SUCCESS;
         }
     }
-
-    /*
-     * If the device is busy, the Status register is always read, but when reading the
-     * Status register proper, special semantics apply. See status register handling
-     * with interrupt clearing and yields below.
-     * NB: This can't happen for non-present devices as those never become busy.
-     */
-    if (RT_UNLIKELY(s->uATARegStatus & ATA_STAT_BUSY))
-    {
-        Assert(s->pDrvMedia);
-        if ((addr & 7) != 7)
-        {
-            *pu32 = s->uATARegStatus;
-            Log2(("%s: LUN#%d addr=%#x val=%#04x (BSY=1, returning status!)\n", __FUNCTION__, s->iLUN, addr, *pu32));
-            return VINF_SUCCESS;
-        }
-    }
-
     fHOB = !!(s->uATARegDevCtl & (1 << 7));
     switch (addr & 7)
     {
-        default:/* only to satisfy certain compilers, all cases are already handled */
         case 0: /* data register */
-            Assert(0);  /* This handler is not used for the Data register! */
             val = 0xff;
             break;
         case 1: /* error register */
@@ -4603,6 +4551,7 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
             else
                 val = s->uATARegSelect;
             break;
+        default:
         case 7: /* primary status */
         {
             if (!s->pDrvMedia)
