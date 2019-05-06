@@ -231,17 +231,17 @@ bool UIMediumItem::changeMediumType(KMediumType enmOldType, KMediumType enmNewTy
 
     /* Attempt to change medium type: */
     comMedium.SetType(enmNewType);
-
+    bool fSuccess = true;
     /* Show error message if necessary: */
     if (!comMedium.isOk() && parentTree())
     {
         msgCenter().cannotChangeMediumType(comMedium, enmOldType, enmNewType, treeWidget());
-        return false;
+        fSuccess = false;
     }
     /* Reattach the medium to all the vms it was previously attached: */
     foreach (const AttachmentCache &attachmentCache, attachmentCacheList)
         attachTo(attachmentCache);
-    return true;
+    return fSuccess;
 }
 
 QString UIMediumItem::defaultText() const
