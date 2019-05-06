@@ -28,11 +28,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#define LOG_GROUP RTLOGGROUP_PATH
 #include "internal/iprt.h"
 #include <iprt/path.h>
 
 #include <iprt/err.h>
 #include <iprt/ctype.h>
+#include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/string.h>
@@ -602,6 +604,8 @@ static int rtPathAbsExAbsolute(const char *pszPath, PRTPATHPARSED pParsed, uint3
 
 RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, uint32_t fFlags, char *pszAbsPath, size_t *pcbAbsPath)
 {
+    LogFlow(("RTPathAbsEx: pszBase=%s pszPath=%s fFlags=%#x\n", pszBase, pszPath, fFlags));
+
     /*
      * Some input validation.
      */
@@ -673,6 +677,7 @@ RTDECL(int) RTPathAbsEx(const char *pszBase, const char *pszPath, uint32_t fFlag
 
     if (pParsedFree)
         RTMemTmpFree(pParsedFree);
+    LogFlow(("RTPathAbsEx: returns %Rrc *pcbAbsPath=%#zx\n", rc, *pcbAbsPath));
     return rc;
 }
 
