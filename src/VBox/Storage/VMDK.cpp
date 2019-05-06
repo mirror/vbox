@@ -5167,6 +5167,41 @@ static int vmdkStreamReadSequential(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
  * @param   pszWhere        UTF-8 string to search in.
  * @param   pszWhat         UTF-8 string to search for.
  * @param   pszByWhat       UTF-8 string to replace the found string with.
+ *
+ * @note    r=bird: This is only used by vmdkRenameWorker().  The first use is
+ *          for updating the base name in the descriptor, the second is for
+ *          generating new filenames for extents.  This code borked when
+ *          RTPathAbs started correcting the driver letter case on windows,
+ *          when strstr failed because the pExtent->pszFullname was not
+ *          subjected to RTPathAbs but while pExtent->pszFullname was.  I fixed
+ *          this by apply RTPathAbs to the places it wasn't applied.
+ *
+ *          However, this highlights some undocumented ASSUMPTIONS as well as
+ *          terrible short commings of the approach.
+ *
+ *          Given the right filename, it may also screw up the descriptor.  Take
+ *          the descriptor text 'RW 2048 SPARSE "Test0.vmdk"' for instance,
+ *          we'll be asked to replace "Test0" with something, no problem.  No,
+ *          imagine 'RW 2048 SPARSE "SPARSE.vmdk"', 'RW 2048 SPARSE "RW.vmdk"'
+ *          or 'RW 2048 SPARSE "2048.vmdk"', and the strstr approach falls on
+ *          its bum.  The descriptor string must be parsed and reconstructed,
+ *          the lazy strstr approach doesn't cut it.
+ *
+ *          I'm also curious as to what would be the correct escaping of '"' in
+ *          the file name and how that is supposed to be handled, because it
+ *          needs to be or such names must be rejected in several places (maybe
+ *          they are, I didn't check).
+ *
+ *          When this function is used to replace the start of a path, I think
+ *          the assumption from the prep/setup code is that we kind of knows
+ *          what we're working on (I could be wrong).  However, using strstr
+ *          instead of strncmp/RTStrNICmp makes no sense and isn't future proof.
+ *          Especially on unix systems, weird stuff could happen if someone
+ *          unwittingly tinkers with the prep/setup code.  What should really be
+ *          done here is using a new RTPathStartEx function that (via flags)
+ *          allows matching partial final component and returns the length of
+ *          what it matched up (in case it skipped slashes and '.' components).
+ *
  */
 static char *vmdkStrReplace(const char *pszWhere, const char *pszWhat,
                             const char *pszByWhat)
@@ -5176,9 +5211,12 @@ static char *vmdkStrReplace(const char *pszWhere, const char *pszWhat,
     AssertPtr(pszByWhat);
     const char *pszFoundStr = strstr(pszWhere, pszWhat);
     if (!pszFoundStr)
+    {
+        LogFlowFunc(("Failed to find '%s' in '%s'!\n", pszWhat, pszWhere));
         return NULL;
-    size_t cFinal = strlen(pszWhere) + 1 + strlen(pszByWhat) - strlen(pszWhat);
-    char *pszNewStr = (char *)RTMemAlloc(cFinal);
+    }
+    size_t cbFinal = strlen(pszWhere) + 1 + strlen(pszByWhat) - strlen(pszWhat);
+    char *pszNewStr = (char *)RTMemAlloc(cbFinal);
     if (pszNewStr)
     {
         char *pszTmp = pszNewStr;
@@ -5375,6 +5413,8 @@ static DECLCALLBACK(int) vmdkCreate(const char *pszFilename, uint64_t cbSize,
  */
 static int vmdkRenameStatePrepare(PVMDKIMAGE pImage, PVMDKRENAMESTATE pRenameState, const char *pszFilename)
 {
+    AssertReturn(RTPathFilename(pszFilename) != NULL, VERR_INVALID_PARAMETER);
+
     int rc = VINF_SUCCESS;
 
     memset(&pRenameState->DescriptorCopy, 0, sizeof(pRenameState->DescriptorCopy));
@@ -5385,9 +5425,9 @@ static int vmdkRenameStatePrepare(PVMDKIMAGE pImage, PVMDKRENAMESTATE pRenameSta
      * with zeros. We actually save stuff when and if we change it.
      */
     pRenameState->cExtents     = pImage->cExtents;
-    pRenameState->apszOldName  = (char **)RTMemTmpAllocZ((pRenameState->cExtents + 1) * sizeof(char*));
-    pRenameState->apszNewName  = (char **)RTMemTmpAllocZ((pRenameState->cExtents + 1) * sizeof(char*));
-    pRenameState->apszNewLines = (char **)RTMemTmpAllocZ(pRenameState->cExtents * sizeof(char*));
+    pRenameState->apszOldName  = (char **)RTMemTmpAllocZ((pRenameState->cExtents + 1) * sizeof(char *));
+    pRenameState->apszNewName  = (char **)RTMemTmpAllocZ((pRenameState->cExtents + 1) * sizeof(char *));
+    pRenameState->apszNewLines = (char **)RTMemTmpAllocZ(pRenameState->cExtents * sizeof(char *));
     if (   pRenameState->apszOldName
         && pRenameState->apszNewName
         && pRenameState->apszNewLines)
@@ -5421,23 +5461,35 @@ static int vmdkRenameStatePrepare(PVMDKIMAGE pImage, PVMDKRENAMESTATE pRenameSta
         {
             /* Prepare both old and new base names used for string replacement. */
             pRenameState->pszNewBaseName = RTStrDup(RTPathFilename(pszFilename));
+            AssertReturn(pRenameState->pszNewBaseName, VERR_NO_STR_MEMORY);
             RTPathStripSuffix(pRenameState->pszNewBaseName);
+
             pRenameState->pszOldBaseName = RTStrDup(RTPathFilename(pImage->pszFilename));
+            AssertReturn(pRenameState->pszOldBaseName, VERR_NO_STR_MEMORY);
             RTPathStripSuffix(pRenameState->pszOldBaseName);
-            /* Prepare both old and new full names used for string replacement. */
-            pRenameState->pszNewFullName = RTStrDup(pszFilename);
+
+            /* Prepare both old and new full names used for string replacement.
+               Note! Must abspath the stuff here, so the strstr weirdness later in
+                     the renaming process get a match against abspath'ed extent paths.
+                     See RTPathAbsDup call in vmdkDescriptorReadSparse(). */
+            pRenameState->pszNewFullName = RTPathAbsDup(pszFilename);
+            AssertReturn(pRenameState->pszNewFullName, VERR_NO_STR_MEMORY);
             RTPathStripSuffix(pRenameState->pszNewFullName);
-            pRenameState->pszOldFullName = RTStrDup(pImage->pszFilename);
+
+            pRenameState->pszOldFullName = RTPathAbsDup(pImage->pszFilename);
+            AssertReturn(pRenameState->pszOldFullName, VERR_NO_STR_MEMORY);
             RTPathStripSuffix(pRenameState->pszOldFullName);
 
             /* Save the old name for easy access to the old descriptor file. */
             pRenameState->pszOldDescName = RTStrDup(pImage->pszFilename);
+            AssertReturn(pRenameState->pszOldDescName, VERR_NO_STR_MEMORY);
+
             /* Save old image name. */
             pRenameState->pszOldImageName = pImage->pszFilename;
         }
     }
     else
-        rc = VERR_NO_MEMORY;
+        rc = VERR_NO_TMP_MEMORY;
 
     return rc;
 }
