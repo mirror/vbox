@@ -48,8 +48,13 @@
 #include <VBox/version.h>
 #endif
 
-#ifdef VBOX_WITH_CROGL
+#ifdef VBOX_WITH_VIDEOHWACCEL
+#include <QGLWidget>
+#include <QApplication>
+#include <VBox/VBoxGL2D.h>
+#endif
 
+#ifdef VBOX_WITH_CROGL
 #include <cr_spu.h>
 
 static int vboxCheck3DAccelerationSupported()
@@ -69,10 +74,6 @@ static int vboxCheck3DAccelerationSupported()
 #endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-#include <QGLWidget>
-#include <QApplication>
-#include <VBox/VBoxGL2D.h>
-
 static int vboxCheck2DVideoAccelerationSupported()
 {
     LogRel(("Testing 2D Support:\n"));
