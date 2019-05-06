@@ -56,9 +56,7 @@ packSPUInit( int id, SPU *child, SPU *self,
     (void) child;
     (void) self;
 
-#if !defined(WINDOWS)
     crInitMutex(&_PackMutex);
-#endif
 
     crInitTSD(&_PackerTSD);
     crInitTSD(&_PackTSD);
@@ -121,22 +119,23 @@ packSPUCleanup(void)
     crFreeTSD(&_PackerTSD);
     crFreeTSD(&_PackTSD);
     crUnlockMutex(&_PackMutex);
-#ifndef WINDOWS
     crFreeMutex(&_PackMutex);
-#endif
+    crNetTearDown(); /** @todo Why here? */
     return 1;
 }
 
-int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
-         SPUSelfDispatchFuncPtr *self, SPUCleanupFuncPtr *cleanup,
-         int *flags )
-{
-    *name = "pack";
-    *super = NULL;
-    *init = packSPUInit;
-    *self = packSPUSelfDispatch;
-    *cleanup = packSPUCleanup;
-    *flags = (SPU_HAS_PACKER|SPU_IS_TERMINAL|SPU_MAX_SERVERS_ONE);
-
-    return 1;
-}
+DECLHIDDEN(const SPUREG) g_PackSpuReg =
+ {
+    /** pszName. */
+    "pack",
+    /** pszSuperName. */
+    NULL,
+    /** fFlags. */
+    SPU_HAS_PACKER | SPU_IS_TERMINAL | SPU_MAX_SERVERS_ONE,
+    /** pfnInit. */
+    packSPUInit,
+    /** pfnDispatch. */
+    packSPUSelfDispatch, 
+    /** pfnCleanup. */
+    packSPUCleanup
+};

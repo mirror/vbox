@@ -104,9 +104,6 @@ VBOX_FBSD_STRIP_BIN = \
 		components/VBoxSVCM.so \
 		components/VBoxC.so,) \
 	$(if $(VBOX_WITH_CROGL),\
-		VBoxOGLhostcrutil.so \
-		VBoxOGLhosterrorspu.so \
-		VBoxOGLrenderspu.so \
 		VBoxTestOGL \
 		VBoxSharedCrOpenGL.so,) \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \

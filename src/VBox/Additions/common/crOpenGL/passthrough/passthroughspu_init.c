@@ -44,16 +44,18 @@ passthroughSPUCleanup(void)
 }
 
 
-int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
-	     SPUSelfDispatchFuncPtr *self, SPUCleanupFuncPtr *cleanup,
-	     int *flags )
+DECLHIDDEN(const SPUREG) g_PassthroughSpuReg =
 {
-	*name = "passthrough";
-	*super = NULL;
-	*init = passthroughSPUInit;
-	*self = passthroughSPUSelfDispatch;
-	*cleanup = passthroughSPUCleanup;
-	*flags = (SPU_NO_PACKER|SPU_NOT_TERMINAL|SPU_MAX_SERVERS_ZERO);
-
-	return 1;
-}
+    /** pszName. */
+    "passthrough",
+    /** pszSuperName. */
+    NULL,
+    /** fFlags. */
+    SPU_NO_PACKER | SPU_NOT_TERMINAL | SPU_MAX_SERVERS_ZERO,
+    /** pfnInit. */
+    passthroughSPUInit,
+    /** pfnDispatch. */
+    passthroughSPUSelfDispatch, 
+    /** pfnCleanup. */
+    passthroughSPUCleanup
+};

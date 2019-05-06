@@ -410,7 +410,7 @@ bool renderspuCalloutClient(PFNVCRSERVER_CLIENT_CALLOUT_CB pfnCb, void *pvCb);
 #ifdef __cplusplus
 extern "C" {
 #endif
-DECLEXPORT(void) renderspuSetWindowId(uint64_t winId);
+DECLHIDDEN(void) renderspuSetWindowId(uint64_t winId);
 DECLEXPORT(void) renderspuReparentWindow(GLint window);
 DECLEXPORT(void) renderspuSetUnscaledHiDPI(bool fEnable);
 #ifdef __cplusplus

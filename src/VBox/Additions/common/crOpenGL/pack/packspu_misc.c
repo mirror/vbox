@@ -703,38 +703,6 @@ void PACKSPU_APIENTRY packspu_VBoxDetachThread()
     crStateVBoxDetachThread(&pack_spu.StateTracker);
 }
 
-#ifdef WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
-{
-    (void) lpvReserved;
-
-    switch (fdwReason)
-    {
-        case DLL_PROCESS_ATTACH:
-        {
-            crInitMutex(&_PackMutex);
-            break;
-        }
-
-        case DLL_PROCESS_DETACH:
-        {
-            crFreeMutex(&_PackMutex);
-            crNetTearDown();
-            break;
-        }
-
-        case DLL_THREAD_ATTACH:
-        case DLL_THREAD_DETACH:
-        default:
-            break;
-    }
-
-    return TRUE;
-}
-#endif
-
 void PACKSPU_APIENTRY packspu_VBoxPresentComposition(GLint win, const struct VBOXVR_SCR_COMPOSITOR * pCompositor,
                                                      const struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry)
 {

@@ -50,17 +50,13 @@
 
 #ifdef VBOX_WITH_CROGL
 
-extern "C"
-{
-  extern void * crSPULoad(void *, int, char *, char *, void *);
-  extern void crSPUUnloadChain(void *);
-}
-
+#include <cr_spu.h>
 
 static int vboxCheck3DAccelerationSupported()
 {
     LogRel(("Testing 3D Support:\n"));
-    void *spu = crSPULoad(NULL, 0, (char*)"render", NULL, NULL);
+    PCSPUREG aSpuRegs[] = { &g_RenderSpuReg, &g_ErrorSpuReg, NULL};
+    SPU *spu = crSPUInitFromReg(NULL, 0, "render", NULL, &aSpuRegs[0]);
     if (spu)
     {
         crSPUUnloadChain(spu);

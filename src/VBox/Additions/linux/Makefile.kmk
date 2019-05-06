@@ -124,11 +124,6 @@ VBOX_LNX_ADD_STRIP_SBIN += \
 
 ifdef VBOX_WITH_CROGL
 VBOX_LNX_ADD_STRIP_LIB += \
-	VBoxOGLcrutil.so \
-	VBoxOGLerrorspu.so \
-	VBoxOGLfeedbackspu.so \
-	VBoxOGLpackspu.so \
-	VBoxOGLpassthroughspu.so \
 	VBoxOGL.so \
 	VBoxEGL.so
 endif

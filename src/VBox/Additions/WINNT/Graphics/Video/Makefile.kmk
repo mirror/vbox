@@ -104,21 +104,11 @@ ifdef VBOX_WITH_WDDM
    VBoxWddm-inf_SOURCES += \
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGL.dll \
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxD3D9wddm.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/wined3dwddm.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLcrutil.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLerrorspu.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLfeedbackspu.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpackspu.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpassthroughspu.dll
+   	$(PATH_TARGET)/VBoxWddmCat.dir/wined3dwddm.dll
    VBoxWddm-inf_SOURCES.amd64 += \
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGL-x86.dll \
    	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxD3D9wddm-x86.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/wined3dwddm-x86.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLcrutil-x86.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLerrorspu-x86.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLfeedbackspu-x86.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpackspu-x86.dll \
-   	$(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpassthroughspu-x86.dll
+   	$(PATH_TARGET)/VBoxWddmCat.dir/wined3dwddm-x86.dll
   endif # VBOXWDDM_WITH_GL
  endif # VBOX_SIGN_ADDITIONS
 
@@ -182,21 +172,6 @@ ifdef VBOX_WITH_WDDM
   $(PATH_TARGET)/VBoxWddmCat.dir/wined3dwddm.dll: $(PATH_OBJ)/wined3dwddm/wined3dwddm.dll | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLcrutil.dll: $(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil.dll | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
-  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLerrorspu.dll: $(PATH_OBJ)/VBoxOGLerrorspu/VBoxOGLerrorspu.dll | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
-  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLfeedbackspu.dll: $(PATH_OBJ)/VBoxOGLfeedbackspu/VBoxOGLfeedbackspu.dll | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
-  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpackspu.dll: $(PATH_OBJ)/VBoxOGLpackspu/VBoxOGLpackspu.dll | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
-  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpassthroughspu.dll: $(PATH_OBJ)/VBoxOGLpassthroughspu/VBoxOGLpassthroughspu.dll | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
   ifeq ($(KBUILD_TARGET_ARCH),amd64)
    $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGL-x86.dll: $(PATH_OBJ)/VBoxOGL-x86/VBoxOGL-x86.dll | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
@@ -207,20 +182,6 @@ ifdef VBOX_WITH_WDDM
    $(PATH_TARGET)/VBoxWddmCat.dir/wined3dwddm-x86.dll: $(PATH_OBJ)/wined3dwddm-x86/wined3dwddm-x86.dll | $$(dir $$@)
 	$(INSTALL) -m 644 $< $(@D)
 
-   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLcrutil-x86.dll: $(PATH_OBJ)/VBoxOGLcrutil-x86/VBoxOGLcrutil-x86.dll | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
-   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLerrorspu-x86.dll: $(PATH_OBJ)/VBoxOGLerrorspu-x86/VBoxOGLerrorspu-x86.dll | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
-   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLfeedbackspu-x86.dll: $(PATH_OBJ)/VBoxOGLfeedbackspu-x86/VBoxOGLfeedbackspu-x86.dll | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
-   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpackspu-x86.dll: $(PATH_OBJ)/VBoxOGLpackspu-x86/VBoxOGLpackspu-x86.dll | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
-   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpassthroughspu-x86.dll: $(PATH_OBJ)/VBoxOGLpassthroughspu-x86/VBoxOGLpassthroughspu-x86.dll | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
   endif # ($(KBUILD_TARGET_ARCH), amd64)
  endif # VBOXWDDM_WITH_GL
 
@@ -241,21 +202,11 @@ ifdef VBOX_WITH_WDDM
 				$(PATH_TARGET)/VBoxWddmCat.dir/VBoxGL-x86.dll, ), ) \
 		$(if $(VBOXWDDM_WITH_GL),  $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGL.dll \
 					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxD3D9wddm.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/wined3dwddm.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLcrutil.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLerrorspu.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLfeedbackspu.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpackspu.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpassthroughspu.dll, ) \
+					   $(PATH_TARGET)/VBoxWddmCat.dir/wined3dwddm.dll, ) \
 		$(if $(VBOXWDDM_WITH_GL), $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", \
 					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGL-x86.dll \
 					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxD3D9wddm-x86.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/wined3dwddm-x86.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLcrutil-x86.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLerrorspu-x86.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLfeedbackspu-x86.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpackspu-x86.dll \
-					   $(PATH_TARGET)/VBoxWddmCat.dir/VBoxOGLpassthroughspu-x86.dll, ), )
+					   $(PATH_TARGET)/VBoxWddmCat.dir/wined3dwddm-x86.dll, ), )
 	$(call MSG_TOOL,Inf2Cat,VBoxWddm-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 

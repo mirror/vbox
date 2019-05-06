@@ -23,8 +23,8 @@ include $(KBUILD_PATH)/subheader.kmk
 # Target lists.
 #
 ifdef VBOX_WITH_MAIN
-DLLS      += VBoxSharedCrOpenGL	VBoxOGLrenderspu
-LIBRARIES += VBoxOGLcrserverlib	VBoxOGLcrunpacker
+DLLS      += VBoxSharedCrOpenGL
+LIBRARIES += VBoxOGLcrserverlib	VBoxOGLcrunpacker VBoxOGLrenderspu
 BLDDIRS   += \
 	$(VBOX_PATH_CROGL_GENFILES)/
 endif
@@ -71,19 +71,15 @@ VBoxSharedCrOpenGL_LIBS = \
 	$(PATH_STAGE_LIB)/VBoxOGLcrunpacker$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxOGLhostcrpacker$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
-	$(VBOX_LIB_OGL_HOSTCRUTIL) \
+	$(PATH_STAGE_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLrenderspu$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLhosterrorspu$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME) \
 	$(LIB_VMM)
 VBoxSharedCrOpenGL_LIBS.darwin = \
 	$(LIB_REM)
-ifeq ($(KBUILD_TARGET),win)
- VBoxSharedCrOpenGL_LIBS += \
-	$(PATH_OBJ)/VBoxOGLrenderspu/VBoxOGLrenderspu$(VBOX_SUFF_LIB)
-else
- VBoxSharedCrOpenGL_LIBS += \
-	$(PATH_STAGE_BIN)/VBoxOGLrenderspu$(VBOX_SUFF_DLL)
-endif
 ifdef VBOX_WITH_XPCOM
  VBoxSharedCrOpenGL_LIBS += \
 	$(LIB_XPCOM)
@@ -259,7 +255,7 @@ $(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h: \
 #
 # VBoxOGLrenderspu
 #
-VBoxOGLrenderspu_TEMPLATE = VBOXCROGLR3HOSTDLL
+VBoxOGLrenderspu_TEMPLATE = VBOXCROGLR3HOSTLIB
 VBoxOGLrenderspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
 	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
@@ -269,9 +265,7 @@ VBoxOGLrenderspu_SOURCES = \
 	render/renderspu_config.c \
 	render/renderspu_init.c
 VBoxOGLrenderspu_SOURCES.win     = \
-	render/renderspu_wgl.c \
-	render/render.def \
-	render/VBoxOGLrenderspu.rc
+	render/renderspu_wgl.c
 VBoxOGLrenderspu_SOURCES.linux   = render/renderspu_glx.c
 VBoxOGLrenderspu_SOURCES.solaris = render/renderspu_glx.c
 VBoxOGLrenderspu_SOURCES.freebsd = render/renderspu_glx.c
@@ -286,11 +280,6 @@ endif
 ifdef VBOX_WITH_VDMA
 VBoxOGLrenderspu_DEFS += VBOX_WITH_VDMA
 endif
-VBoxOGLrenderspu_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLrenderspu.dylib -framework IOKit
-VBoxOGLrenderspu_LIBS = \
-	$(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
-	$(VBOX_LIB_OGL_HOSTCRUTIL) \
-	$(LIB_RUNTIME)
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # the X11 gang
  VBoxOGLrenderspu_LIBS += \
 	Xmu \
@@ -320,12 +309,20 @@ if (   defined(VBOX_WITH_QTGUI) \
   endif
   PROGRAMS += VBoxTestOGL
   VBoxTestOGL_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQTGUI,VBOXQTGUIEXE),VBOXMAINEXE)
+  VBoxTestOGL_INCS     += $(VBOX_PATH_CROGL_INCLUDE) $(VBOX_PATH_CROGL_GENFILES)
+  VBoxTestOGL_DEFS.win         = _WIN32_WINNT=0x0500 WINDOWS=1
+  VBoxTestOGL_DEFS.linux       = Linux=1 _GNU_SOURCE
+  VBoxTestOGL_DEFS.solaris     = SunOS=1 _GNU_SOURCE #GLEXT_64_TYPES_DEFINED
+  VBoxTestOGL_DEFS.darwin      = DARWIN=1 GL_GLEXT_LEGACY _GNU_SOURCE
+  VBoxTestOGL_DEFS.freebsd     = FreeBSD=1 _GNU_SOURCE
   VBoxTestOGL_SOURCES = OpenGLTest/OpenGLTestApp.cpp
   VBoxTestOGL_SOURCES.win = OpenGLTest/VBoxTestOGL.rc
   VBoxTestOGL_LIBS = \
   	$(if $(VBOX_WITH_CROGL), \
   	    $(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
-  	    $(VBOX_LIB_OGL_HOSTCRUTIL),) \
+  	    $(PATH_STAGE_LIB)/VBoxOGLhosterrorspu$(VBOX_SUFF_LIB) \
+	    $(PATH_STAGE_LIB)/VBoxOGLrenderspu$(VBOX_SUFF_LIB) \
+  	    $(PATH_STAGE_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB),) \
   	$(if $(VBOX_WITH_VIDEOHWACCEL), $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB),) \
   	$(LIB_RUNTIME)
   VBoxTestOGL_DEFS += \

@@ -66,16 +66,18 @@ static int feedbackSPUCleanup(void)
 	return 1;
 }
 
-int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
-	     SPUSelfDispatchFuncPtr *self, SPUCleanupFuncPtr *cleanup,
-	     int *flags )
+DECLHIDDEN(const SPUREG) g_FeedbackSpuReg =
 {
-	*name = "feedback";
-	*super = "passthrough";
-	*init = feedbackSPUInit;
-	*self = feedbackSPUSelfDispatch;
-	*cleanup = feedbackSPUCleanup;
-	*flags = (SPU_NO_PACKER|SPU_NOT_TERMINAL|SPU_MAX_SERVERS_ZERO);
-
-	return 1;
-}
+    /** pszName. */
+    "feedback",
+    /** pszSuperName. */
+    "passthrough",
+    /** fFlags. */
+    SPU_NO_PACKER | SPU_NOT_TERMINAL | SPU_MAX_SERVERS_ZERO,
+    /** pfnInit. */
+    feedbackSPUInit,
+    /** pfnDispatch. */
+    feedbackSPUSelfDispatch, 
+    /** pfnCleanup. */
+    feedbackSPUCleanup
+};

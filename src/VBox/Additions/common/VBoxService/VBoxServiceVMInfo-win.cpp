@@ -1346,18 +1346,8 @@ int VGSvcVMInfoWinGetComponentVersions(uint32_t uClientID)
  /* On 64-bit we don't yet have the OpenGL DLLs in native format.
     So just enumerate the 32-bit files in the SYSWOW directory. */
 #ifdef RT_ARCH_AMD64
-        { szSysWowDir,  "VBoxOGLcrutil.dll" },
-        { szSysWowDir,  "VBoxOGLerrorspu.dll" },
-        { szSysWowDir,  "VBoxOGLpackspu.dll" },
-        { szSysWowDir,  "VBoxOGLpassthroughspu.dll" },
-        { szSysWowDir,  "VBoxOGLfeedbackspu.dll" },
-        { szSysWowDir,  "VBoxOGL.dll" },
+        { szSysWowDir,  "VBoxOGL-x86.dll" },
 #else  /* !RT_ARCH_AMD64 */
-        { szSysDir,     "VBoxOGLcrutil.dll" },
-        { szSysDir,     "VBoxOGLerrorspu.dll" },
-        { szSysDir,     "VBoxOGLpackspu.dll" },
-        { szSysDir,     "VBoxOGLpassthroughspu.dll" },
-        { szSysDir,     "VBoxOGLfeedbackspu.dll" },
         { szSysDir,     "VBoxOGL.dll" },
 #endif /* !RT_ARCH_AMD64 */
 

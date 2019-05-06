@@ -335,9 +335,6 @@ SOLARIS_STRIP_BINS = \
 	  VBoxKeyboard.so) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so,) \
 	$(if $(VBOX_WITH_CROGL),\
-	  VBoxOGLhostcrutil.so \
-	  VBoxOGLhosterrorspu.so \
-	  VBoxOGLrenderspu.so \
 	  VBoxSharedCrOpenGL.so) \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \

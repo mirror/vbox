@@ -75,6 +75,28 @@ typedef int (*SPULoadFunction)(char **, char **, void *, void *, void *, int *);
 #define SPU_MAX_SERVERS_ONE       0x4
 #define SPU_MAX_SERVERS_UNLIMITED 0x8
 
+/**
+ * SPU registration restructure.
+ */
+typedef struct SPUREG
+{
+    /** SPU name. */
+    const char             *pszName;
+    /** Name of the SPU super class. */
+    const char             *pszSuperName;
+    /** SPU flags. */
+    uint32_t               fFlags;
+    /** Init function. */
+    SPUInitFuncPtr         pfnInit;
+    /** Dispatch function. */
+    SPUSelfDispatchFuncPtr pfnDispatch; 
+    /** Cleanup function. */
+    SPUCleanupFuncPtr      pfnCleanup;
+} SPUREG;
+/** Pointer to a SPU registration structure. */
+typedef SPUREG *PSPUREG;
+/** Pointer to a const SPU registration structure. */
+typedef const SPUREG *PCSPUREG;
 
 /**
  * SPU descriptor
@@ -345,6 +367,9 @@ DECLEXPORT(SPU *) crSPULoad( SPU *child, int id, char *name, char *dir, void *se
 DECLEXPORT(SPU *) crSPULoadChain( int count, int *ids, char **names, char *dir, void *server );
 DECLEXPORT(void) crSPUUnloadChain(SPU *headSPU);
 
+DECLEXPORT(SPU *) crSPUInitFromReg(SPU *pSpuChild, int iId, const char *pszName, void *pvServer, PCSPUREG *papSpuReg);
+DECLEXPORT(SPU *) crSPUInitChainFromReg(int cSpus, int *paIds, const char * const *papszNames, void *server, PCSPUREG *papSpuReg);
+
 DECLEXPORT(void) crSPUInitDispatchTable( SPUDispatchTable *table );
 DECLEXPORT(void) crSPUCopyDispatchTable( SPUDispatchTable *dst, SPUDispatchTable *src );
 DECLEXPORT(void) crSPUChangeInterface( SPUDispatchTable *table, void *origFunc, void *newFunc );
@@ -375,6 +400,15 @@ crLoadOSMesa( OSMesaContext (**createContext)( GLenum format, OSMesaContext shar
               GLboolean (**makeCurrent)( OSMesaContext ctx, GLubyte *buffer,
                          GLenum type, GLsizei width, GLsizei height ),
               void (**destroyContext)( OSMesaContext ctx ));
+#endif
+
+extern DECLHIDDEN(const SPUREG) g_ErrorSpuReg;
+#ifdef IN_GUEST
+extern DECLHIDDEN(const SPUREG) g_FeedbackSpuReg;
+extern DECLHIDDEN(const SPUREG) g_PassthroughSpuReg;
+extern DECLHIDDEN(const SPUREG) g_PackSpuReg;
+#else
+extern DECLHIDDEN(const SPUREG) g_RenderSpuReg;
 #endif
 
 #ifdef __cplusplus

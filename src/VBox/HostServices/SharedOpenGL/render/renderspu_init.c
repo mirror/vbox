@@ -497,22 +497,24 @@ static int renderSPUCleanup(void)
 }
 
 
-int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
-         SPUSelfDispatchFuncPtr *self, SPUCleanupFuncPtr *cleanup,
-         int *flags )
-{
-    *name = "render";
-    *super = NULL;
-    *init = renderSPUInit;
-    *self = renderSPUSelfDispatch;
-    *cleanup = renderSPUCleanup;
-    *flags = (SPU_NO_PACKER|SPU_IS_TERMINAL|SPU_MAX_SERVERS_ZERO);
-
-    return 1;
-}
-
-DECLEXPORT(void) renderspuSetWindowId(uint64_t winId)
+DECLHIDDEN(void) renderspuSetWindowId(uint64_t winId)
 {
     render_spu_parent_window_id = winId;
     crDebug("Set new parent window %p (no actual reparent performed)", winId);
 }
+
+DECLHIDDEN(const SPUREG) g_RenderSpuReg =
+{
+    /** pszName. */
+    "render",
+    /** pszSuperName. */
+    NULL,
+    /** fFlags. */
+    SPU_NO_PACKER | SPU_IS_TERMINAL | SPU_MAX_SERVERS_ZERO,
+    /** pfnInit. */
+    renderSPUInit,
+    /** pfnDispatch. */
+    renderSPUSelfDispatch, 
+    /** pfnCleanup. */
+    renderSPUCleanup
+};

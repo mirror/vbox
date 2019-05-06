@@ -98,10 +98,6 @@ static bool crServerHasInsufficientCaps()
 void crServerSetVBoxConfigurationHGCM()
 {
     CRMuralInfo *defaultMural;
-
-    int spu_ids[1]     = {0};
-    char *spu_names[1] = {"render"};
-    char *spu_dir = NULL;
     int i;
     GLint dims[4];
     const char * env;
@@ -113,9 +109,9 @@ void crServerSetVBoxConfigurationHGCM()
 
     setDefaults();
     
-    /* Load the SPUs */    
-    cr_server.head_spu = crSPULoadChain(1, spu_ids, spu_names, spu_dir, &cr_server);
-
+    /* Load the SPUs */
+    PCSPUREG aSpuRegs[] = { &g_RenderSpuReg, &g_ErrorSpuReg, NULL};
+    cr_server.head_spu = crSPUInitFromReg(NULL, 0, "render", &cr_server, &aSpuRegs[0]);
     if (!cr_server.head_spu)
         return;
 

@@ -27,6 +27,8 @@
 # include <unistd.h>
 #endif
 
+#include "VBox/VBoxGuestLib.h"
+
 #ifdef VBOX_WITH_WDDM
 #include <d3d9types.h>
 #include <D3dumddi.h>
@@ -781,12 +783,10 @@ stubInitLocked(void)
      */
 
     char response[1024];
-    char **spuchain;
-    int num_spus;
-    int *spu_ids;
-    char **spu_names;
+    int aSpuIds[] = {0, 1};
+    const char *apszSpuNames[] = {"feedback", "pack"};
+    PCSPUREG apSpuReg[] = { &g_ErrorSpuReg, &g_FeedbackSpuReg, &g_PassthroughSpuReg,&g_PackSpuReg};
     const char *app_id;
-    int i;
     int disable_sync = 0;
 #if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
     HMODULE hVBoxD3D = NULL;
@@ -840,18 +840,6 @@ stubInitLocked(void)
     }
 #endif
 
-    strcpy(response, "2 0 feedback 1 pack");
-    spuchain = crStrSplit( response, " " );
-    num_spus = crStrToInt( spuchain[0] );
-    spu_ids = (int *) crAlloc( num_spus * sizeof( *spu_ids ) );
-    spu_names = (char **) crAlloc( num_spus * sizeof( *spu_names ) );
-    for (i = 0 ; i < num_spus ; i++)
-    {
-        spu_ids[i] = crStrToInt( spuchain[2*i+1] );
-        spu_names[i] = crStrdup( spuchain[2*i+2] );
-        crDebug( "SPU %d/%d: (%d) \"%s\"", i+1, num_spus, spu_ids[i], spu_names[i] );
-    }
-
     stubSetDefaultConfigurationOptions();
 
 #if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
@@ -875,13 +863,7 @@ stubInitLocked(void)
     }
 #endif
 
-    stub.spu = crSPULoadChain( num_spus, spu_ids, spu_names, stub.spu_dir, NULL );
-
-    crFree( spuchain );
-    crFree( spu_ids );
-    for (i = 0; i < num_spus; ++i)
-        crFree(spu_names[i]);
-    crFree( spu_names );
+    stub.spu = crSPUInitChainFromReg(RT_ELEMENTS(aSpuIds), &aSpuIds[0], &apszSpuNames[0], NULL, &apSpuReg[0]);
 
     // spu chain load failed somewhere
     if (!stub.spu) {
@@ -1181,11 +1163,11 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 
         GetModuleFileNameA(hDLLInst, aName, RT_ELEMENTS(aName));
         crDbgCmdSymLoadPrint(aName, hDLLInst);
-
-        hCrUtil = GetModuleHandleA("VBoxOGLcrutil.dll");
-        Assert(hCrUtil);
-        crDbgCmdSymLoadPrint("VBoxOGLcrutil.dll", hCrUtil);
 #endif
+
+        int rc = RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE); CRASSERT(rc==0);
+        rc = VbglR3Init();
+
         crInitTSD(&g_stubCurrentContextTSD);
         crInitMutex(&stub_init_mutex);
 
@@ -1334,6 +1316,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         if (g_VBoxVehEnable)
             vboxVDbgVEHandlerUnregister();
 #endif
+        VbglR3Term();
         break;
     }
 

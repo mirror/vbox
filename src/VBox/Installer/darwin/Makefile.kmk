@@ -390,15 +390,7 @@ if defined(VBOX_WITH_VRDP) && !defined(VBOX_WITH_EXTPACK_PUEL)
 endif
 ifdef VBOX_WITH_CROGL
  VBOX_DI_VBAPP_DYLIBS += \
- 	MacOS/VBoxOGLhostcrutil.dylib \
- 	MacOS/VBoxOGLhosterrorspu.dylib \
- 	MacOS/VBoxOGLrenderspu.dylib \
  	MacOS/VBoxSharedCrOpenGL.dylib
-
- ifdef VBOX_WITH_CR_DISPLAY_LISTS
-  VBOX_DI_VBAPP_DYLIBS += \
- 	MacOS/VBoxOGLexpandospu.dylib
- endif
 endif
 ifdef VBOX_WITH_DEBUGGER_GUI
  VBOX_DI_VBAPP_DYLIBS += \

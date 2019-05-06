@@ -167,9 +167,6 @@ VBOX_LNX_STRIP_BIN = \
 		components/VBoxSVCM.so \
 		components/VBoxC.so,) \
 	$(if $(VBOX_WITH_CROGL),\
-		VBoxOGLhostcrutil.so \
-		VBoxOGLhosterrorspu.so \
-		VBoxOGLrenderspu.so \
 		$(if $(VBOX_WITH_QTGUI),VBoxTestOGL,) \
 		VBoxSharedCrOpenGL.so,) \
 	$(if $(VBOX_WITH_VMSVGA3D),VBoxSVGA3D.so,) \
