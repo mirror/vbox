@@ -32,6 +32,10 @@
 #include <iprt/types.h>
 #include <iprt/win/windows.h>
 
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#  include <iprt/cpp/ministring.h> /* For RTCString. */
+# endif
+
 #ifndef WM_CLIPBOARDUPDATE
 # define WM_CLIPBOARDUPDATE 0x031D
 #endif
@@ -39,7 +43,6 @@
 #define VBOX_CLIPBOARD_WNDCLASS_NAME        "VBoxSharedClipboardClass"
 
 #define VBOX_CLIPBOARD_WIN_REGFMT_HTML      "VBox HTML Format"
-#define VBOX_CLIPBOARD_WIN_REGFMT_URI_LIST  "VBox URI List"
 
 /** Default timeout (in ms) for passing down messages down the clipboard chain. */
 #define VBOX_CLIPBOARD_CBCHAIN_TIMEOUT_MS   5000
@@ -99,5 +102,107 @@ int VBoxClipboardWinRemoveFromCBChain(PVBOXCLIPBOARDWINCTX pCtx);
 VOID CALLBACK VBoxClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult);
 int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, uint32_t *puFormats);
 
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+class VBoxClipboardWinDataObject : public IDataObject
+{
+public:
+
+    enum Status
+    {
+        Uninitialized = 0,
+        Initialized,
+        Dropping,
+        Dropped,
+        Aborted
+    };
+
+public:
+
+    VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
+    virtual ~VBoxClipboardWinDataObject(void);
+
+public: /* IUnknown methods. */
+
+    STDMETHOD(QueryInterface)(REFIID iid, void ** ppvObject);
+    STDMETHOD_(ULONG, AddRef)(void);
+    STDMETHOD_(ULONG, Release)(void);
+
+public: /* IDataObject methods. */
+
+    STDMETHOD(GetData)(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium);
+    STDMETHOD(GetDataHere)(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium);
+    STDMETHOD(QueryGetData)(LPFORMATETC pFormatEtc);
+    STDMETHOD(GetCanonicalFormatEtc)(LPFORMATETC pFormatEct,  LPFORMATETC pFormatEtcOut);
+    STDMETHOD(SetData)(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium, BOOL fRelease);
+    STDMETHOD(EnumFormatEtc)(DWORD dwDirection, IEnumFORMATETC **ppEnumFormatEtc);
+    STDMETHOD(DAdvise)(LPFORMATETC pFormatEtc, DWORD advf, IAdviseSink *pAdvSink, DWORD *pdwConnection);
+    STDMETHOD(DUnadvise)(DWORD dwConnection);
+    STDMETHOD(EnumDAdvise)(IEnumSTATDATA **ppEnumAdvise);
+
+public:
+
+    static const char* ClipboardFormatToString(CLIPFORMAT fmt);
+
+    int Abort(void);
+    void SetStatus(Status status);
+    int Signal(const RTCString &strFormat, const void *pvData, uint32_t cbData);
+
+protected:
+
+    bool LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
+    static HGLOBAL MemDup(HGLOBAL hMemSource);
+    void RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
+                        LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
+
+    Status      mStatus;
+    LONG        mRefCount;
+    ULONG       mcFormats;
+    LPFORMATETC mpFormatEtc;
+    LPSTGMEDIUM mpStgMedium;
+    RTSEMEVENT  mEventDropped;
+    RTCString   mstrFormat;
+    void       *mpvData;
+    uint32_t    mcbData;
+};
+
+class VBoxClipboardWinEnumFormatEtc : public IEnumFORMATETC
+{
+public:
+
+    VBoxClipboardWinEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG cFormats);
+    virtual ~VBoxClipboardWinEnumFormatEtc(void);
+
+public:
+
+    STDMETHOD(QueryInterface)(REFIID iid, void ** ppvObject);
+    STDMETHOD_(ULONG, AddRef)(void);
+    STDMETHOD_(ULONG, Release)(void);
+
+    STDMETHOD(Next)(ULONG cFormats, LPFORMATETC pFormatEtc, ULONG *pcFetched);
+    STDMETHOD(Skip)(ULONG cFormats);
+    STDMETHOD(Reset)(void);
+    STDMETHOD(Clone)(IEnumFORMATETC **ppEnumFormatEtc);
+
+public:
+
+    static void CopyFormat(LPFORMATETC pFormatDest, LPFORMATETC pFormatSource);
+    static HRESULT CreateEnumFormatEtc(UINT cFormats, LPFORMATETC pFormatEtc, IEnumFORMATETC **ppEnumFormatEtc);
+
+private:
+
+    LONG        m_lRefCount;
+    ULONG       m_nIndex;
+    ULONG       m_nNumFormats;
+    LPFORMATETC m_pFormatEtc;
+};
+
+#  if 0
+class VBoxClipboardWinStreamImpl : public IDataObject
+{
+
+};
+#  endif
+
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_win_h */
 

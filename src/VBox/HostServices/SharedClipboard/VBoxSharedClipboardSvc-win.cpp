@@ -24,13 +24,17 @@
 
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/GuestHost/SharedClipboard-win.h>
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# include <VBox/GuestHost/SharedClipboard-uri.h>
+#endif
 
 #include <iprt/alloc.h>
 #include <iprt/string.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/thread.h>
 #include <iprt/ldr.h>
+#include <iprt/semaphore.h>
+#include <iprt/thread.h>
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 # include <iprt/utf16.h>
 #endif
@@ -57,7 +61,7 @@ struct _VBOXCLIPBOARDCONTEXT
     /** Handle for window message handling thread. */
     RTTHREAD                 hThread;
     /** Event which gets triggered if the host clipboard needs to render its data. */
-    HANDLE                   hRenderEvent;
+    RTSEMEVENT               hRenderEvent;
     /** Structure for keeping and communicating with client data (from the guest). */
     PVBOXCLIPBOARDCLIENTDATA pClient;
     /** Windows-specific context data. */
@@ -114,7 +118,7 @@ static void vboxClipboardDump(const void *pv, size_t cb, uint32_t u32Format)
 static void vboxClipboardGetData(uint32_t u32Format, const void *pvSrc, uint32_t cbSrc,
                                  void *pvDst, uint32_t cbDst, uint32_t *pcbActualDst)
 {
-    LogFlow(("vboxClipboardGetData cbSrc = %d, cbDst = %d\n", cbSrc, cbDst));
+    LogFlowFunc(("cbSrc = %d, cbDst = %d\n", cbSrc, cbDst));
 
     if (   u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML
         && IsWindowsHTML((const char *)pvSrc))
@@ -138,12 +142,6 @@ static void vboxClipboardGetData(uint32_t u32Format, const void *pvSrc, uint32_t
         else
             *pcbActualDst = 0;
     }
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    if (u32Format == VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
-    {
-        /* Convert data to URI list. */
-    }
-#endif
     else
     {
         *pcbActualDst = cbSrc;
@@ -162,23 +160,17 @@ static void vboxClipboardGetData(uint32_t u32Format, const void *pvSrc, uint32_t
     return;
 }
 
-static int vboxClipboardReadDataFromClient(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format)
+static int vboxClipboardReadDataFromClient(VBOXCLIPBOARDCONTEXT *pCtx, VBOXCLIPBOARDFORMAT fFormat)
 {
     Assert(pCtx->pClient);
     Assert(pCtx->hRenderEvent);
     Assert(pCtx->pClient->data.pv == NULL && pCtx->pClient->data.cb == 0 && pCtx->pClient->data.u32Format == 0);
 
-    LogFlow(("vboxClipboardReadDataFromClient u32Format = %02X\n", u32Format));
+    LogFlowFunc(("fFormat=%02X\n", fFormat));
 
-    ResetEvent(pCtx->hRenderEvent);
+    vboxSvcClipboardReportMsg(pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, fFormat);
 
-    vboxSvcClipboardReportMsg(pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, u32Format);
-
-    DWORD ret = WaitForSingleObject(pCtx->hRenderEvent, INFINITE);
-    LogFlow(("vboxClipboardReadDataFromClient wait completed, ret 0x%08X, err %d\n",
-             ret, GetLastError())); NOREF(ret);
-
-    return VINF_SUCCESS;
+    return RTSemEventWait(pCtx->hRenderEvent, 30 * 1000 /* Timeout in ms */);
 }
 
 static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -192,7 +184,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
     {
         case WM_CLIPBOARDUPDATE:
         {
-            Log(("WM_CLIPBOARDUPDATE\n"));
+            LogFunc(("WM_CLIPBOARDUPDATE\n"));
 
             if (GetClipboardOwner() != hwnd)
             {
@@ -204,7 +196,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
         case WM_CHANGECBCHAIN:
         {
-            Log(("WM_CHANGECBCHAIN\n"));
+            LogFunc(("WM_CHANGECBCHAIN\n"));
 
             if (VBoxClipboardWinIsNewAPI(&pWinCtx->newAPI))
             {
@@ -239,7 +231,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
         case WM_DRAWCLIPBOARD:
         {
-            Log(("WM_DRAWCLIPBOARD\n"));
+            LogFunc(("WM_DRAWCLIPBOARD\n"));
 
             if (GetClipboardOwner() != hwnd)
             {
@@ -250,7 +242,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
             if (pWinCtx->hWndNextInChain)
             {
-                Log(("WM_DRAWCLIPBOARD next %p\n", pWinCtx->hWndNextInChain));
+                LogFunc(("WM_DRAWCLIPBOARD next %p\n", pWinCtx->hWndNextInChain));
                 /* Pass the message to next windows in the clipboard chain. */
                 DWORD_PTR dwResult;
                 rc = SendMessageTimeout(pWinCtx->hWndNextInChain, msg, wParam, lParam, 0, VBOX_CLIPBOARD_CBCHAIN_TIMEOUT_MS,
@@ -289,20 +281,20 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
         case WM_RENDERFORMAT:
         {
             /* Insert the requested clipboard format data into the clipboard. */
-            uint32_t u32Format = 0;
+            VBOXCLIPBOARDFORMAT fFormat = VBOX_SHARED_CLIPBOARD_FMT_NONE;
 
             UINT format = (UINT)wParam;
 
-            Log(("WM_RENDERFORMAT: Format %u\n", format));
+            LogFunc(("WM_RENDERFORMAT: Format %u\n", format));
 
             switch (format)
             {
                 case CF_UNICODETEXT:
-                    u32Format |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+                    fFormat |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
                     break;
 
                 case CF_DIB:
-                    u32Format |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
+                    fFormat |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
                     break;
 
                 default:
@@ -313,26 +305,27 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                         if (cActual)
                         {
                             if (RTStrCmp(szFormatName, "HTML Format") == 0)
-                                u32Format |= VBOX_SHARED_CLIPBOARD_FMT_HTML;
+                                fFormat |= VBOX_SHARED_CLIPBOARD_FMT_HTML;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
                             if (   RTStrCmp(szFormatName, CFSTR_FILEDESCRIPTOR) == 0
                                 || RTStrCmp(szFormatName, CFSTR_FILECONTENTS) == 0)
-                                u32Format |= VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
+                                fFormat |= VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
 #endif
                         }
                     }
                     break;
             }
 
-            if (u32Format == 0 || pCtx->pClient == NULL)
+            if (   fFormat       == VBOX_SHARED_CLIPBOARD_FMT_NONE
+                || pCtx->pClient == NULL)
             {
                 /* Unsupported clipboard format is requested. */
-                Log(("WM_RENDERFORMAT unsupported format requested or client is not active.\n"));
-                EmptyClipboard ();
+                LogFunc(("WM_RENDERFORMAT unsupported format requested or client is not active\n"));
+                EmptyClipboard();
             }
             else
             {
-                int vboxrc = vboxClipboardReadDataFromClient(pCtx, u32Format);
+                int vboxrc = vboxClipboardReadDataFromClient(pCtx, fFormat);
 
                 LogFunc(("vboxClipboardReadDataFromClient vboxrc = %d, pv %p, cb %d, u32Format %d\n",
                           vboxrc, pCtx->pClient->data.pv, pCtx->pClient->data.cb, pCtx->pClient->data.u32Format));
@@ -340,7 +333,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                 if (   RT_SUCCESS (vboxrc)
                     && pCtx->pClient->data.pv != NULL
                     && pCtx->pClient->data.cb > 0
-                    && pCtx->pClient->data.u32Format == u32Format)
+                    && pCtx->pClient->data.u32Format == fFormat)
                 {
                     HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, pCtx->pClient->data.cb);
 
@@ -354,7 +347,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
                         if (pMem)
                         {
-                            Log(("WM_RENDERFORMAT setting data\n"));
+                            LogFunc(("WM_RENDERFORMAT setting data\n"));
 
                             if (pCtx->pClient->data.pv)
                             {
@@ -400,7 +393,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
         case WM_RENDERALLFORMATS:
         {
-            Log(("WM_RENDERALLFORMATS\n"));
+            LogFunc(("WM_RENDERALLFORMATS\n"));
 
             /* Do nothing. The clipboard formats will be unavailable now, because the
              * windows is to be destroyed and therefore the guest side becomes inactive.
@@ -413,7 +406,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             }
             else
             {
-                LogFlow(("vboxClipboardWndProc: WM_RENDERALLFORMATS: error in open clipboard. hwnd: %x, rc: %Rrc\n", hwnd, vboxrc));
+                LogFlowFunc(("WM_RENDERALLFORMATS: error in open clipboard. hwnd: %x, rc: %Rrc\n", hwnd, vboxrc));
             }
         } break;
 
@@ -424,21 +417,21 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                 /* Host has pending formats message. Ignore the guest announcement,
                  * because host clipboard has more priority.
                  */
-                Log(("VBOX_CLIPBOARD_WM_SET_FORMATS ignored\n"));
+                LogFunc(("VBOX_CLIPBOARD_WM_SET_FORMATS ignored\n"));
                 break;
             }
 
             /* Announce available formats. Do not insert data, they will be inserted in WM_RENDER*. */
             uint32_t u32Formats = (uint32_t)lParam;
 
-            Log(("VBOX_CLIPBOARD_WM_SET_FORMATS: u32Formats=%02X\n", u32Formats));
+            LogFunc(("VBOX_CLIPBOARD_WM_SET_FORMATS: u32Formats=%02X\n", u32Formats));
 
             int vboxrc = VBoxClipboardWinOpen(hwnd);
             if (RT_SUCCESS(vboxrc))
             {
                 VBoxClipboardWinClear();
 
-                Log(("VBOX_CLIPBOARD_WM_SET_FORMATS emptied clipboard\n"));
+                LogFunc(("VBOX_CLIPBOARD_WM_SET_FORMATS emptied clipboard\n"));
 
                 HANDLE hClip = NULL;
 
@@ -485,22 +478,23 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
         default:
         {
-            Log(("WM_ %p\n", msg));
+            LogFunc(("WM_ %p\n", msg));
             rc = DefWindowProc(hwnd, msg, wParam, lParam);
         }
     }
 
-    Log(("WM_ rc %d\n", rc));
+    LogFunc(("WM_ rc %d\n", rc));
     return rc;
 }
 
 DECLCALLBACK(int) VBoxClipboardThread(RTTHREAD hThreadSelf, void *pvUser)
 {
-    RT_NOREF2(hThreadSelf, pvUser);
+    RT_NOREF(hThreadSelf, pvUser);
+
     /* Create a window and make it a clipboard viewer. */
     int rc = VINF_SUCCESS;
 
-    LogFlow(("VBoxClipboardThread\n"));
+    LogFlowFuncEnter();
 
     const PVBOXCLIPBOARDCONTEXT pCtx    = &g_ctx;
     const PVBOXCLIPBOARDWINCTX  pWinCtx = &pCtx->Win;
@@ -521,7 +515,7 @@ DECLCALLBACK(int) VBoxClipboardThread(RTTHREAD hThreadSelf, void *pvUser)
 
     if (atomWindowClass == 0)
     {
-        Log(("Failed to register window class\n"));
+        LogFunc(("Failed to register window class\n"));
         rc = VERR_NOT_SUPPORTED;
     }
     else
@@ -533,7 +527,7 @@ DECLCALLBACK(int) VBoxClipboardThread(RTTHREAD hThreadSelf, void *pvUser)
                                        -200, -200, 100, 100, NULL, NULL, hInstance, NULL);
         if (pWinCtx->hWnd == NULL)
         {
-            Log(("Failed to create window\n"));
+            LogFunc(("Failed to create window\n"));
             rc = VERR_NOT_SUPPORTED;
         }
         else
@@ -558,7 +552,7 @@ DECLCALLBACK(int) VBoxClipboardThread(RTTHREAD hThreadSelf, void *pvUser)
             * that should be identified in testing
             */
             Assert(msgret >= 0);
-            Log(("VBoxClipboardThread Message loop finished. GetMessage returned %d, message id: %d \n", msgret, msg.message));
+            LogFunc(("Message loop finished. GetMessage returned %d, message id: %d \n", msgret, msg.message));
         }
     }
 
@@ -577,21 +571,26 @@ DECLCALLBACK(int) VBoxClipboardThread(RTTHREAD hThreadSelf, void *pvUser)
  * Synchronizes the host and the guest clipboard formats by sending all supported host clipboard
  * formats to the guest.
  *
- * @returns VBox status code.
+ * @returns VBox status code, VINF_NO_CHANGE if no synchronization was required.
  * @param   pCtx                Clipboard context to synchronize.
  */
 static int vboxClipboardSyncInternal(PVBOXCLIPBOARDCONTEXT pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    if (pCtx->pClient == NULL) /* If we don't have any client data (yet), bail out. */
-        return VINF_SUCCESS;
+    int rc;
 
-    uint32_t uFormats;
-    int rc = VBoxClipboardWinGetFormats(&pCtx->Win, &uFormats);
-    if (RT_SUCCESS(rc))
-        vboxSvcClipboardReportMsg(pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, uFormats);
+    if (pCtx->pClient)
+    {
+        uint32_t uFormats;
+        rc = VBoxClipboardWinGetFormats(&pCtx->Win, &uFormats);
+        if (RT_SUCCESS(rc))
+            vboxSvcClipboardReportMsg(pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, uFormats);
+    }
+    else /* If we don't have any client data (yet), bail out. */
+        rc = VINF_NO_CHANGE;
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -600,47 +599,49 @@ static int vboxClipboardSyncInternal(PVBOXCLIPBOARDCONTEXT pCtx)
  */
 int vboxClipboardInit(void)
 {
-    int rc = VINF_SUCCESS;
-
-    RT_ZERO(g_ctx);
+    RT_ZERO(g_ctx); /* Be careful not messing up non-POD types! */
 
     /* Check that new Clipboard API is available. */
     VBoxClipboardWinCheckAndInitNewAPI(&g_ctx.Win.newAPI);
 
-    g_ctx.hRenderEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-    rc = RTThreadCreate(&g_ctx.hThread, VBoxClipboardThread, NULL, _64K /* Stack size */,
-                        RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
+    int rc = RTSemEventCreate(&g_ctx.hRenderEvent);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTThreadCreate(&g_ctx.hThread, VBoxClipboardThread, NULL, _64K /* Stack size */,
+                            RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
+    }
 
     if (RT_FAILURE(rc))
-    {
-        CloseHandle(g_ctx.hRenderEvent);
-    }
+        RTSemEventDestroy(g_ctx.hRenderEvent);
 
     return rc;
 }
 
 void vboxClipboardDestroy(void)
 {
-    Log(("vboxClipboardDestroy\n"));
+    LogFlowFuncEnter();
 
     if (g_ctx.Win.hWnd)
     {
         PostMessage(g_ctx.Win.hWnd, WM_CLOSE, 0, 0);
     }
 
-    CloseHandle(g_ctx.hRenderEvent);
+    int rc = RTSemEventDestroy(g_ctx.hRenderEvent);
+    AssertRC(rc);
 
     /* Wait for the window thread to terminate. */
-    RTThreadWait(g_ctx.hThread, RT_INDEFINITE_WAIT, NULL);
+    rc = RTThreadWait(g_ctx.hThread, 30 * 1000 /* Timeout in ms */, NULL);
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Waiting for window thread termination failed with rc=%Rrc\n", rc));
 
     g_ctx.hThread = NIL_RTTHREAD;
 }
 
 int vboxClipboardConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
 {
-    NOREF(fHeadless);
-    Log(("vboxClipboardConnect\n"));
+    RT_NOREF(fHeadless);
+
+    LogFlowFuncEnter();
 
     if (g_ctx.pClient != NULL)
     {
@@ -666,8 +667,9 @@ int vboxClipboardSync(VBOXCLIPBOARDCLIENTDATA *pClient)
 
 void vboxClipboardDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
 {
-    RT_NOREF1(pClient);
-    Log(("vboxClipboardDisconnect\n"));
+    RT_NOREF(pClient);
+
+    LogFlowFuncEnter();
 
     g_ctx.pClient = NULL;
 }
@@ -683,7 +685,8 @@ void vboxClipboardFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32F
     PostMessage(pClient->pCtx->Win.hWnd, WM_USER, 0, u32Formats);
 }
 
-int DumpHtml(const char *pszSrc, size_t cb)
+#ifdef VBOX_STRICT
+static int vboxClipboardDbgDumpHtml(const char *pszSrc, size_t cb)
 {
     size_t cchIgnored = 0;
     int rc = RTStrNLenEx(pszSrc, cb, &cchIgnored);
@@ -700,25 +703,26 @@ int DumpHtml(const char *pszSrc, size_t cb)
                         pszBuf[i] = ' ';
             }
             else
-                Log(("Error in copying string.\n"));
-            Log(("Removed \\r\\n: %s\n", pszBuf));
+                LogFunc(("Error in copying string\n"));
+            LogFunc(("Removed \\r\\n: %s\n", pszBuf));
             RTMemFree(pszBuf);
         }
         else
         {
             rc = VERR_NO_MEMORY;
-            Log(("Not enough memory to allocate buffer.\n"));
+            LogFunc(("Not enough memory to allocate buffer\n"));
         }
     }
     return rc;
 }
+#endif
 
 int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual)
 {
     AssertPtrReturn(pClient,       VERR_INVALID_POINTER);
     AssertPtrReturn(pClient->pCtx, VERR_INVALID_POINTER);
 
-    LogFlow(("vboxClipboardReadData: u32Format = %02X\n", u32Format));
+    LogFlowFunc(("u32Format=%02X\n", u32Format));
 
     HANDLE hClip = NULL;
 
@@ -730,12 +734,11 @@ int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, 
     int rc = VBoxClipboardWinOpen(pWinCtx->hWnd);
     if (RT_SUCCESS(rc))
     {
-        LogFunc(("Clipboard opened.\n"));
+        LogFunc(("Clipboard opened\n"));
 
         if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
         {
             hClip = GetClipboardData(CF_DIB);
-
             if (hClip != NULL)
             {
                 LPVOID lp = GlobalLock(hClip);
@@ -758,7 +761,6 @@ int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, 
         else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
         {
             hClip = GetClipboardData(CF_UNICODETEXT);
-
             if (hClip != NULL)
             {
                 LPWSTR uniString = (LPWSTR)GlobalLock(hClip);
@@ -781,23 +783,22 @@ int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, 
         else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_HTML)
         {
             UINT format = RegisterClipboardFormat("HTML Format");
-
             if (format != 0)
             {
                 hClip = GetClipboardData(format);
-
                 if (hClip != NULL)
                 {
                     LPVOID lp = GlobalLock(hClip);
-
                     if (lp != NULL)
                     {
                         LogFunc(("CF_HTML\n"));
 
                         vboxClipboardGetData(VBOX_SHARED_CLIPBOARD_FMT_HTML, lp, GlobalSize(hClip),
                                              pv, cb, pcbActual);
-                        LogRelFlowFunc(("Raw HTML clipboard data from host :"));
-                        DumpHtml((char *)pv, cb);
+#ifdef VBOX_STRICT
+                        LogFlowFunc(("Raw HTML clipboard data from host:"));
+                        vboxClipboardDbgDumpHtml((char *)pv, cb);
+#endif
                         GlobalUnlock(hClip);
                     }
                     else
@@ -810,188 +811,163 @@ int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
         else if (u32Format & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
         {
-    #if 0
-            UINT format = RegisterClipboardFormat(CFSTR_FILEDESCRIPTOR);
-            if (format)
+            hClip = GetClipboardData(CF_HDROP);
+            if (hClip != NULL)
             {
-                hClip = GetClipboardData(format);
-                if (hClip != NULL)
+                LPVOID lp = GlobalLock(hClip);
+                if (lp)
                 {
-                    LPVOID lp = GlobalLock(hClip);
+                    /* Convert to a string list, separated by \r\n. */
+                    DROPFILES *pDropFiles = (DROPFILES *)hClip;
+                    AssertPtr(pDropFiles);
 
-                    if (lp != NULL)
+                    /* Do we need to do Unicode stuff? */
+                    const bool fUnicode = RT_BOOL(pDropFiles->fWide);
+
+                    /* Get the offset of the file list. */
+                    Assert(pDropFiles->pFiles >= sizeof(DROPFILES));
+
+                    /* Note: This is *not* pDropFiles->pFiles! DragQueryFile only
+                     *       will work with the plain storage medium pointer! */
+                    HDROP hDrop = (HDROP)(hClip);
+
+                    /* First, get the file count. */
+                    /** @todo Does this work on Windows 2000 / NT4? */
+                    char *pszFiles = NULL;
+                    uint32_t cchFiles = 0;
+                    UINT cFiles = DragQueryFile(hDrop, UINT32_MAX /* iFile */, NULL /* lpszFile */, 0 /* cchFile */);
+
+                    LogRel(("Shared Clipboard: Got %RU16 file(s), fUnicode=%RTbool\n", cFiles, fUnicode));
+
+                    for (UINT i = 0; i < cFiles; i++)
                     {
-                        LogFunc(("CF_HTML\n"));
+                        UINT cchFile = DragQueryFile(hDrop, i /* File index */, NULL /* Query size first */, 0 /* cchFile */);
+                        Assert(cchFile);
 
-                        vboxClipboardGetData(VBOX_SHARED_CLIPBOARD_FMT_HTML, lp, GlobalSize(hClip),
-                                             pv, cb, pcbActual);
-                        LogRelFlowFunc(("Raw HTML clipboard data from host :"));
-                        DumpHtml((char *)pv, cb);
-                        GlobalUnlock(hClip);
-                    }
-                    else
-                    {
-                        hClip = NULL;
-                    }
-                }
-            }
-    #else
-            /* Convert to a string list, separated by \r\n. */
-            DROPFILES *pDropFiles = (DROPFILES *)hClip;
-            AssertPtr(pDropFiles);
+                        if (RT_FAILURE(rc))
+                            break;
 
-            /* Do we need to do Unicode stuff? */
-            const bool fUnicode = RT_BOOL(pDropFiles->fWide);
-
-            /* Get the offset of the file list. */
-            Assert(pDropFiles->pFiles >= sizeof(DROPFILES));
-
-            /* Note: This is *not* pDropFiles->pFiles! DragQueryFile only
-             *       will work with the plain storage medium pointer! */
-            HDROP hDrop = (HDROP)(hClip);
-
-            /* First, get the file count. */
-            /** @todo Does this work on Windows 2000 / NT4? */
-            char *pszFiles = NULL;
-            uint32_t cchFiles = 0;
-            UINT cFiles = DragQueryFile(hDrop, UINT32_MAX /* iFile */, NULL /* lpszFile */, 0 /* cchFile */);
-
-            LogRel(("DnD: Got %RU16 file(s), fUnicode=%RTbool\n", cFiles, fUnicode));
-
-            for (UINT i = 0; i < cFiles; i++)
-            {
-                UINT cchFile = DragQueryFile(hDrop, i /* File index */, NULL /* Query size first */, 0 /* cchFile */);
-                Assert(cchFile);
-
-                if (RT_FAILURE(rc))
-                    break;
-
-                char *pszFileUtf8 = NULL; /* UTF-8 version. */
-                UINT cchFileUtf8 = 0;
-                if (fUnicode)
-                {
-                    /* Allocate enough space (including terminator). */
-                    WCHAR *pwszFile = (WCHAR *)RTMemAlloc((cchFile + 1) * sizeof(WCHAR));
-                    if (pwszFile)
-                    {
-                        const UINT cwcFileUtf16 = DragQueryFileW(hDrop, i /* File index */,
-                                                                 pwszFile, cchFile + 1 /* Include terminator */);
-
-                        AssertMsg(cwcFileUtf16 == cchFile, ("cchFileUtf16 (%RU16) does not match cchFile (%RU16)\n",
-                                                            cwcFileUtf16, cchFile));
-                        RT_NOREF(cwcFileUtf16);
-
-                        rc = RTUtf16ToUtf8(pwszFile, &pszFileUtf8);
-                        if (RT_SUCCESS(rc))
+                        char *pszFileUtf8 = NULL; /* UTF-8 version. */
+                        UINT cchFileUtf8 = 0;
+                        if (fUnicode)
                         {
-                            cchFileUtf8 = (UINT)strlen(pszFileUtf8);
-                            Assert(cchFileUtf8);
+                            /* Allocate enough space (including terminator). */
+                            WCHAR *pwszFile = (WCHAR *)RTMemAlloc((cchFile + 1) * sizeof(WCHAR));
+                            if (pwszFile)
+                            {
+                                const UINT cwcFileUtf16 = DragQueryFileW(hDrop, i /* File index */,
+                                                                         pwszFile, cchFile + 1 /* Include terminator */);
+
+                                AssertMsg(cwcFileUtf16 == cchFile, ("cchFileUtf16 (%RU16) does not match cchFile (%RU16)\n",
+                                                                    cwcFileUtf16, cchFile));
+                                RT_NOREF(cwcFileUtf16);
+
+                                rc = RTUtf16ToUtf8(pwszFile, &pszFileUtf8);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    cchFileUtf8 = (UINT)strlen(pszFileUtf8);
+                                    Assert(cchFileUtf8);
+                                }
+
+                                RTMemFree(pwszFile);
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
+                        }
+                        else /* ANSI */
+                        {
+                            /* Allocate enough space (including terminator). */
+                            pszFileUtf8 = (char *)RTMemAlloc((cchFile + 1) * sizeof(char));
+                            if (pszFileUtf8)
+                            {
+                                cchFileUtf8 = DragQueryFileA(hDrop, i /* File index */,
+                                                             pszFileUtf8, cchFile + 1 /* Include terminator */);
+
+                                AssertMsg(cchFileUtf8 == cchFile, ("cchFileUtf8 (%RU16) does not match cchFile (%RU16)\n",
+                                                                   cchFileUtf8, cchFile));
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
                         }
 
-                        RTMemFree(pwszFile);
+                        if (RT_SUCCESS(rc))
+                        {
+                            LogFlowFunc(("\tFile: %s (cchFile=%RU16)\n", pszFileUtf8, cchFileUtf8));
+
+                            LogRel2(("Shared Clipboard: Adding host file '%s'\n", pszFileUtf8));
+
+                            rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileUtf8, cchFileUtf8);
+                            if (RT_SUCCESS(rc))
+                                cchFiles += cchFileUtf8;
+                        }
+                        else
+                            LogRel(("Shared Clipboard: Error handling file entry #%u, rc=%Rrc\n", i, rc));
+
+                        if (pszFileUtf8)
+                            RTStrFree(pszFileUtf8);
+
+                        if (RT_FAILURE(rc))
+                            break;
+
+                        /* Add separation between filenames.
+                         * Note: Also do this for the last element of the list. */
+                        rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, "\r\n", 2 /* Bytes */);
+                        if (RT_SUCCESS(rc))
+                            cchFiles += 2; /* Include \r\n */
                     }
-                    else
-                        rc = VERR_NO_MEMORY;
-                }
-                else /* ANSI */
-                {
-                    /* Allocate enough space (including terminator). */
-                    pszFileUtf8 = (char *)RTMemAlloc((cchFile + 1) * sizeof(char));
-                    if (pszFileUtf8)
-                    {
-                        cchFileUtf8 = DragQueryFileA(hDrop, i /* File index */,
-                                                     pszFileUtf8, cchFile + 1 /* Include terminator */);
 
-                        AssertMsg(cchFileUtf8 == cchFile, ("cchFileUtf8 (%RU16) does not match cchFile (%RU16)\n",
-                                                           cchFileUtf8, cchFile));
-                    }
-                    else
-                        rc = VERR_NO_MEMORY;
-                }
-
-                if (RT_SUCCESS(rc))
-                {
-                    LogFlowFunc(("\tFile: %s (cchFile=%RU16)\n", pszFileUtf8, cchFileUtf8));
-
-                    LogRel(("DnD: Adding guest file '%s'\n", pszFileUtf8));
-
-                    rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileUtf8, cchFileUtf8);
                     if (RT_SUCCESS(rc))
-                        cchFiles += cchFileUtf8;
-                }
-                else
-                    LogRel(("DnD: Error handling file entry #%u, rc=%Rrc\n", i, rc));
-
-                if (pszFileUtf8)
-                    RTStrFree(pszFileUtf8);
-
-                if (RT_FAILURE(rc))
-                    break;
-
-                /* Add separation between filenames.
-                 * Note: Also do this for the last element of the list. */
-                rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, "\r\n", 2 /* Bytes */);
-                if (RT_SUCCESS(rc))
-                    cchFiles += 2; /* Include \r\n */
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                cchFiles += 1; /* Add string termination. */
-                uint32_t cbFiles = cchFiles * sizeof(char);
-
-                LogFlowFunc(("cFiles=%u, cchFiles=%RU32, cbFiles=%RU32, pszFiles=0x%p\n",
-                             cFiles, cchFiles, cbFiles, pszFiles));
-
-                /* Translate the list into URI elements. */
-                DnDURIList lstURI;
-                rc = lstURI.AppendNativePathsFromList(pszFiles, cbFiles,
-                                                      DNDURILIST_FLAGS_ABSOLUTE_PATHS);
-                if (RT_SUCCESS(rc))
-                {
-                    RTCString strRoot = lstURI.GetRootEntries();
-                    size_t cbRoot = strRoot.length() + 1; /* Include termination */
-
-                    mpvData = RTMemAlloc(cbRoot);
-                    if (mpvData)
                     {
-                        memcpy(mpvData, strRoot.c_str(), cbRoot);
-                        mcbData = cbRoot;
+                        cchFiles += 1; /* Add string termination. */
+                        uint32_t cbFiles = cchFiles * sizeof(char);
+
+                        LogFlowFunc(("cFiles=%u, cchFiles=%RU32, cbFiles=%RU32, pszFiles=0x%p\n",
+                                     cFiles, cchFiles, cbFiles, pszFiles));
+
+                        /* Translate the list into URI elements. */
+                        SharedClipboardURIList lstURI;
+                        rc = lstURI.AppendNativePathsFromList(pszFiles, cbFiles,
+                                                              SHAREDCLIPBOARDURILIST_FLAGS_ABSOLUTE_PATHS);
+                        if (RT_SUCCESS(rc))
+                        {
+                            RTCString strRoot = lstURI.GetRootEntries();
+                            size_t cbRoot = strRoot.length() + 1; /* Include termination */
+
+                            if (cbRoot > cb) /** @todo Add overflow handling! */
+                                cbRoot = cb; /* Never copy more than the available buffer supplies. */
+
+                            memcpy(pv, strRoot.c_str(), cbRoot);
+
+                            *pcbActual = (uint32_t)cbRoot;
+                        }
                     }
-                    else
-                        rc = VERR_NO_MEMORY;
+
+                    LogFlowFunc(("Building CF_HDROP list rc=%Rrc, pszFiles=0x%p, cFiles=%RU16, cchFiles=%RU32\n",
+                                 rc, pszFiles, cFiles, cchFiles));
+
+                    if (pszFiles)
+                        RTStrFree(pszFiles);
+
+                    GlobalUnlock(hClip);
                 }
             }
-
-            LogFlowFunc(("Building CF_HDROP list rc=%Rrc, pszFiles=0x%p, cFiles=%RU16, cchFiles=%RU32\n",
-                         rc, pszFiles, cFiles, cchFiles));
-
-            if (pszFiles)
-                RTStrFree(pszFiles);
-            break;
-    #endif /* 0 */
         }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
         VBoxClipboardWinClose();
-    }
-    else
-    {
-        LogFunc(("vboxClipboardReadData: failed to open clipboard, rc: %Rrc\n", rc));
     }
 
     if (hClip == NULL)
     {
         /* Reply with empty data. */
-        vboxClipboardGetData(0, NULL, 0,
-                             pv, cb, pcbActual);
+        vboxClipboardGetData(0, NULL, 0, pv, cb, pcbActual);
     }
 
-    return VINF_SUCCESS;
+    return VINF_SUCCESS; /** @todo r=andy Return rc here? */
 }
 
 void vboxClipboardWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format)
 {
-    LogFlow(("vboxClipboardWriteData\n"));
+    LogFlowFuncEnter();
 
     /*
      * The guest returns data that was requested in the WM_RENDERFORMAT handler.
@@ -1031,7 +1007,11 @@ void vboxClipboardWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t
         }
     }
 
-    SetEvent(pClient->pCtx->hRenderEvent);
+    AssertPtr(pClient->pCtx);
+    int rc = RTSemEventSignal(pClient->pCtx->hRenderEvent);
+    AssertRC(rc);
+
+    /** @todo Return rc. */
 }
 
 
@@ -1126,7 +1106,7 @@ static int ConvertCFHtmlToMime(const char *pszSource, const uint32_t cch, char *
                 }
                 else
                 {
-                    LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment.\n"));
+                    LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment\n"));
                     rc = VERR_NO_MEMORY;
                 }
             }
@@ -1138,13 +1118,13 @@ static int ConvertCFHtmlToMime(const char *pszSource, const uint32_t cch, char *
         }
         else
         {
-            LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment. rc = %Rrc.\n", rc));
+            LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected EndFragment. rc = %Rrc\n", rc));
             rc = VERR_INVALID_PARAMETER;
         }
     }
     else
     {
-        LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected StartFragment. rc = %Rrc.\n", rc));
+        LogRelFlowFunc(("Error: Unknown CF_HTML format. Expected StartFragment. rc = %Rrc\n", rc));
         rc = VERR_INVALID_PARAMETER;
     }
 
@@ -1189,7 +1169,7 @@ static int ConvertMimeToCFHTML(const char *pszSource, size_t cb, char **ppszOutp
     int rc = RTStrNLenEx(pszSource, cb, &cchFragment);
     if (!RT_SUCCESS(rc))
     {
-        LogRelFlowFunc(("Error: invalid source fragment. rc = %Rrc.\n"));
+        LogRelFlowFunc(("Error: invalid source fragment. rc = %Rrc\n"));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1229,7 +1209,7 @@ static int ConvertMimeToCFHTML(const char *pszSource, size_t cb, char **ppszOutp
     pszResult = (char *)RTMemAlloc(offEndHtml + 1);
     if (pszResult == NULL)
     {
-        LogRelFlowFunc(("Error: Cannot allocate memory for result buffer. rc = %Rrc.\n"));
+        LogRelFlowFunc(("Error: Cannot allocate memory for result buffer. rc = %Rrc\n"));
         return VERR_NO_MEMORY;
     }
 
@@ -1258,3 +1238,4 @@ static int ConvertMimeToCFHTML(const char *pszSource, size_t cb, char **ppszOutp
 
     return VINF_SUCCESS;
 }
+

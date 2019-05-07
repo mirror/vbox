@@ -32,9 +32,17 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
+/** A single Shared Clipboard format. */
+typedef uint32_t VBOXCLIPBOARDFORMAT;
+
+/** Bit map of Shared Clipboard format. */
+typedef uint32_t VBOXCLIPBOARDFORMATS;
+
 /**
  * Supported data formats for Shared Clipboard. Bit mask.
  */
+/** No format set. */
+#define VBOX_SHARED_CLIPBOARD_FMT_NONE          0
 /** Shared Clipboard format is an Unicode text. */
 #define VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT   UINT32_C(0x01)
 /** Shared Clipboard format is bitmap (BMP / DIB). */

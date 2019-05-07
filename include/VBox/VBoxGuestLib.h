@@ -565,18 +565,44 @@ VBGLR3DECL(int)     VbglR3GetSessionId(uint64_t *pu64IdSession);
 
 /** @} */
 
-/** @name Shared clipboard
+# ifdef VBOX_WITH_SHARED_CLIPBOARD
+/** @name Shared Clipboard
  * @{ */
+/**
+ * Structure containing the context required for Shared Clipboard operations.
+ *
+ * Note: Do not change parameter order without also
+ *       adapting all structure initializers.
+ */
+typedef struct _VBGLR3GUESTCLIPBOARDCMDCTX
+{
+    /** @todo This struct could be handy if we want to implement
+     *        a second communication channel, e.g. via TCP/IP.
+     *        Use a union for the HGCM stuff then. */
+
+    /** HGCM client ID to use for communication. */
+    uint32_t uClientID;
+    /** The VM's current session ID. */
+    uint64_t uSessionID;
+    /** The transfer ID to use. */
+    uint32_t uTransferID;
+    /** Number of parameters retrieved for the current command. */
+    uint32_t uNumParms;
+    /** Max chunk size (in bytes) for data transfers. */
+    uint32_t cbMaxChunkSize;
+} VBGLR3GUESTCLIPBOARDCMDCTX, *PVBGLR3GUESTCLIPBOARDCMDCTX;
+
 VBGLR3DECL(int)     VbglR3ClipboardConnect(HGCMCLIENTID *pidClient);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnect(HGCMCLIENTID idClient);
 VBGLR3DECL(int)     VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pMsg, uint32_t *pfFormats);
 VBGLR3DECL(int)     VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
 VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb);
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 VBGLR3DECL(int)     VbglR3ClipboardSendError(HGCMCLIENTID idClient, int rcErr);
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#  endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 /** @} */
+# endif /* VBOX_WITH_SHARED_CLIPBOARD */
 
 /** @name Seamless mode
  * @{ */

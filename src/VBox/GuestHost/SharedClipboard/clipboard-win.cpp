@@ -21,7 +21,9 @@
 #include <iprt/ldr.h>
 #include <iprt/thread.h>
 
+#define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/log.h>
+
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/GuestHost/SharedClipboard-win.h>
 #include <VBox/GuestHost/clipboard-helper.h>
@@ -274,13 +276,7 @@ int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, uint32_t *puFormats)
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(puFormats, VERR_INVALID_POINTER);
 
-    if (!pCtx)
-    {
-        *puFormats = 0;
-        return VINF_SUCCESS;
-    }
-
-    uint32_t uFormats = 0;
+    uint32_t uFormats = VBOX_SHARED_CLIPBOARD_FMT_NONE;
 
     /* Query list of available formats and report to host. */
     int rc = VBoxClipboardWinOpen(pCtx->hWnd);
@@ -335,7 +331,10 @@ int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, uint32_t *puFormats)
         LogFunc(("Failed with rc=%Rrc\n", rc));
     }
     else
+    {
+        LogFlowFunc(("uFormats = 0x%08X\n", uFormats));
         *puFormats = uFormats;
+    }
 
     return rc;
 }

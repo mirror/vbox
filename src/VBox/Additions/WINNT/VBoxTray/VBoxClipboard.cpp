@@ -173,46 +173,56 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
         case WM_RENDERFORMAT:
         {
            /* Insert the requested clipboard format data into the clipboard. */
-           uint32_t u32Format = 0;
-           UINT format = (UINT)wParam;
+           uint32_t fFormat = VBOX_SHARED_CLIPBOARD_FMT_NONE;
 
-           LogFlowFunc(("WM_RENDERFORMAT, format = %x\n", format));
-           switch (format)
+           const UINT cfFormat = (UINT)wParam;
+           switch (cfFormat)
            {
               case CF_UNICODETEXT:
-                  u32Format |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+                  fFormat = VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
                   break;
 
               case CF_DIB:
-                  u32Format |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
+                  fFormat = VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
                   break;
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+              case CF_HDROP:
+                  fFormat = VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
+                  break;
+#endif
               default:
-                  if (format >= 0xC000)
+                  if (cfFormat >= 0xC000) /** @todo r=andy Explain. */
                   {
-                      TCHAR szFormatName[256];
+                      TCHAR szFormatName[256]; /** @todo r=andy Do we need Unicode support here as well? */
 
-                      int cActual = GetClipboardFormatName(format, szFormatName, sizeof(szFormatName) / sizeof(TCHAR));
+                      int cActual = GetClipboardFormatName(cfFormat, szFormatName, sizeof(szFormatName) / sizeof(TCHAR));
                       if (cActual)
                       {
                           if (strcmp(szFormatName, "HTML Format") == 0)
-                          {
-                              u32Format |= VBOX_SHARED_CLIPBOARD_FMT_HTML;
-                          }
+                              fFormat = VBOX_SHARED_CLIPBOARD_FMT_HTML;
                       }
                   }
                   break;
            }
 
-           if (u32Format == 0)
+           LogFunc(("WM_RENDERFORMAT: format=%u -> fFormat=0x%x\n", cfFormat, fFormat));
+
+           if (fFormat == VBOX_SHARED_CLIPBOARD_FMT_NONE)
            {
                /* Unsupported clipboard format is requested. */
-               LogFlowFunc(("Unsupported clipboard format requested: %ld\n", u32Format));
+               LogRel(("Clipboard: Unsupported clipboard format requested (0x%x)\n", fFormat));
                VBoxClipboardWinClear();
            }
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+           else if (fFormat == VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+           {
+
+           }
+#endif
            else
            {
-               const uint32_t cbPrealloc = 4096; /** @todo r=andy Make it dynamic for supporting larger text buffers! */
+               const uint32_t cbPrealloc = _4K;
                uint32_t cb = 0;
 
                /* Preallocate a buffer, most of small text transfers will fit into it. */
@@ -227,7 +237,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                    if (pMem)
                    {
                        /* Read the host data to the preallocated buffer. */
-                       int vboxrc = VbglR3ClipboardReadData(pCtx->u32ClientID, u32Format, pMem, cbPrealloc, &cb);
+                       int vboxrc = VbglR3ClipboardReadData(pCtx->u32ClientID, fFormat, pMem, cbPrealloc, &cb);
                        LogFlowFunc(("VbglR3ClipboardReadData returned with rc = %Rrc\n",  vboxrc));
 
                        if (RT_SUCCESS(vboxrc))
@@ -258,7 +268,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                                    {
                                        /* Read the host data to the preallocated buffer. */
                                        uint32_t cbNew = 0;
-                                       vboxrc = VbglR3ClipboardReadData(pCtx->u32ClientID, u32Format, pMem, cb, &cbNew);
+                                       vboxrc = VbglR3ClipboardReadData(pCtx->u32ClientID, fFormat, pMem, cb, &cbNew);
                                        LogFlowFunc(("VbglR3ClipboardReadData returned with rc = %Rrc, cb = %d, cbNew = %d\n", vboxrc, cb, cbNew));
 
                                        if (RT_SUCCESS(vboxrc) && cbNew <= cb)
@@ -286,7 +296,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                                /* Verify the size of returned text, the memory block for clipboard
                                 * must have the exact string size.
                                 */
-                               if (u32Format == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+                               if (fFormat == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
                                {
                                    size_t cbActual = 0;
                                    HRESULT hrc = StringCbLengthW((LPWSTR)pMem, cb, &cbActual);
@@ -318,7 +328,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                                {
                                    /* 'hMem' contains the host clipboard data.
                                     * size is 'cb' and format is 'format'. */
-                                   HANDLE hClip = SetClipboardData(format, hMem);
+                                   HANDLE hClip = SetClipboardData(cfFormat, hMem);
                                    LogFlowFunc(("WM_RENDERFORMAT hClip = %p\n", hClip));
 
                                    if (hClip)
@@ -361,9 +371,9 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
         case VBOX_CLIPBOARD_WM_SET_FORMATS:
         {
            /* Announce available formats. Do not insert data, they will be inserted in WM_RENDER*. */
-           uint32_t u32Formats = (uint32_t)lParam;
+           VBOXCLIPBOARDFORMATS fFormats = (uint32_t)lParam;
 
-           LogFlowFunc(("VBOX_WM_SHCLPB_SET_FORMATS: u32Formats=0x%x\n", u32Formats));
+           LogFlowFunc(("VBOX_WM_SHCLPB_SET_FORMATS: fFormats=0x%x\n", fFormats));
 
            int vboxrc = VBoxClipboardWinOpen(hwnd);
            if (RT_SUCCESS(vboxrc))
@@ -372,13 +382,13 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
 
                HANDLE hClip = NULL;
 
-               if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+               if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
                    hClip = SetClipboardData(CF_UNICODETEXT, NULL);
 
-               if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+               if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
                    hClip = SetClipboardData(CF_DIB, NULL);
 
-               if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
+               if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
                {
                    UINT format = RegisterClipboardFormat("HTML Format");
                    if (format != 0)
@@ -386,9 +396,15 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-               if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+               if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
                    hClip = SetClipboardData(CF_HDROP, NULL);
 #endif
+
+               /** @todo Implement more flexible clipboard precedence for supported formats. */
+
+               if (hClip == NULL)
+                   LogRel(("Clipboard: Unsupported format(s) from host (0x%x), ignoring\n", fFormats));
+
                VBoxClipboardWinClose();
 
                LogFlowFunc(("VBOX_WM_SHCLPB_SET_FORMATS: hClip=%p, lastErr=%ld\n", hClip, GetLastError()));
@@ -478,8 +494,8 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                        HDROP hDrop = (HDROP)GlobalLock(hClip);
                        if (hDrop)
                        {
-                           vboxrc = VbglR3ClipboardWriteData(pCtx->u32ClientID, VBOX_SHARED_CLIPBOARD_FMT_URI_LIST,
-                                                             );
+       /*                    vboxrc = VbglR3ClipboardWriteData(pCtx->u32ClientID, VBOX_SHARED_CLIPBOARD_FMT_URI_LIST,
+                                                             );*/
                            GlobalUnlock(hClip);
                        }
                        else
@@ -680,7 +696,7 @@ DECLCALLBACK(int) VBoxClipboardWorker(void *pInstance, bool volatile *pfShutdown
             if (rc == VERR_INTERRUPTED)
                 break;
 
-            LogFlowFunc(("Error getting host message, rc=%Rrc\n", rc));
+            LogFunc(("Error getting host message, rc=%Rrc\n", rc));
 
             if (*pfShutdown)
                 break;
@@ -700,23 +716,23 @@ DECLCALLBACK(int) VBoxClipboardWorker(void *pInstance, bool volatile *pfShutdown
                     * Forward the information to the window, so it can later
                     * respond to WM_RENDERFORMAT message. */
                    ::PostMessage(pWinCtx->hWnd, VBOX_CLIPBOARD_WM_SET_FORMATS, 0, u32Formats);
-               }
                    break;
+               }
 
                case VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
                {
                    /* The host needs data in the specified format. */
                    ::PostMessage(pWinCtx->hWnd, VBOX_CLIPBOARD_WM_READ_DATA, 0, u32Formats);
-               }
                    break;
+               }
 
                case VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT:
                {
                    /* The host is terminating. */
                    LogRel(("Clipboard: Terminating ...\n"));
                    ASMAtomicXchgBool(pfShutdown, true);
-               }
                    break;
+               }
 
                default:
                {
@@ -724,8 +740,8 @@ DECLCALLBACK(int) VBoxClipboardWorker(void *pInstance, bool volatile *pfShutdown
 
                    /* Wait a bit before retrying. */
                    RTThreadSleep(1000);
-               }
                    break;
+               }
             }
         }
 

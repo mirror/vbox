@@ -301,18 +301,18 @@ protected:
     /** List of all top-level file/directory entries.
      *  Note: All paths are kept internally as UNIX paths for
      *        easier conversion/handling!  */
-    RTCList<RTCString>      m_lstRoot;
+    RTCList<RTCString>                  m_lstRoot;
     /** List of all URI objects added. The list's content
      *  might vary depending on how the objects are being
      *  added (lazy or not). */
     RTCList<SharedClipboardURIObject *> m_lstTree;
     /** Total number of all URI objects. */
-    uint64_t                m_cTotal;
+    uint64_t                            m_cTotal;
     /** Total size of all URI objects, that is, the file
      *  size of all objects (in bytes).
      *  Note: Do *not* size_t here, as we also want to support large files
      *        on 32-bit guests. */
-    uint64_t                m_cbTotal;
+    uint64_t                            m_cbTotal;
 };
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_uri_h */
