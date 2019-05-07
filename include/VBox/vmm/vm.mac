@@ -100,7 +100,11 @@ struc VM
     .cCpus                  resd 1
     .uCpuExecutionCap       resd 1
     .cbSelf                 resd 1
+%ifdef VBOX_WITH_RAW_MODE
     .offVMCPU               resd 1
+%else
+    .u32Unused              resd 1
+%endif
     .pfnVMMRCToHostAsm      resd 1
     .pfnVMMRCToHostAsmNoReturn resd 1
     .bMainExecutionEngine   resb 1

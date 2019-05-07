@@ -526,6 +526,7 @@ MY_ASA_ASM_STUFF = \
 			$(DEFS.$(KBUILD_TARGET_ARCH)) \
 			$(DEFS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)) \
 			$(if $(VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI),VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI,) \
+                       $(VMM_COMMON_DEFS) \
 		) \
 		-f $(if $(eq $(KBUILD_TARGET),darwin),macho,elf) \
 		$(foreach inc,$(INCS) $(VBOX_PATH_VMM_SRC)/testcase $(VBOX_PATH_VMM_SRC)/include $(VBOX_VMM_TESTCASE_OUT_DIR)\
