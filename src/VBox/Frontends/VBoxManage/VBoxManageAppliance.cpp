@@ -370,7 +370,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
             strOvfFilename.append("/");
             strOvfFilename.append(mapArgsMapsPerVsys[ulCurVsys]["cloudinstanceid"]);
         }
-        else 
+        else
             return errorSyntax(USAGE_IMPORTAPPLIANCE, "Not enough arguments for import from the Cloud.");
 
         char *pszAbsFilePath;

@@ -94,7 +94,7 @@ HRESULT Appliance::read(const com::Utf8Str &aFile,
         i_parseURI(aFile, m->locInfo);
 
         // see if we can handle this file; for now we insist it has an ovf/ova extension
-        if (   m->locInfo.storageType == VFSType_File 
+        if (   m->locInfo.storageType == VFSType_File
             && !aFile.endsWith(".ovf", Utf8Str::CaseInsensitive)
             && !aFile.endsWith(".ova", Utf8Str::CaseInsensitive))
             return setError(VBOX_E_FILE_ERROR, tr("Appliance file must have .ovf or .ova extension"));
@@ -1162,7 +1162,7 @@ void Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aP
     catch (HRESULT aRc)
     {
         rc = aRc;
-    } 
+    }
     catch (...)
     {
         rc = setError(VBOX_E_OBJECT_NOT_FOUND,
@@ -1201,7 +1201,7 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
                                                  "contain unsupported characters.", __FUNCTION__));
         }
 
-        //Get information about the passed cloud instance    
+        //Get information about the passed cloud instance
         ComPtr<ICloudProviderManager> cpm;
         hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
         if (FAILED(hrc))
@@ -2368,7 +2368,7 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
     catch (HRESULT aRc)
     {
         rc = aRc;
-    } 
+    }
     catch (...)
     {
         rc = setError(VBOX_E_OBJECT_NOT_FOUND,
