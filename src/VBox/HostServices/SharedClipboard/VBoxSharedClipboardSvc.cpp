@@ -414,7 +414,7 @@ static DECLCALLBACK(void) svcCall(void *,
                                   VBOXHGCMSVCPARM paParms[],
                                   uint64_t tsArrival)
 {
-    RT_NOREF_PV(u32ClientID, tsArrival);
+    RT_NOREF(u32ClientID, tsArrival);
     int rc = VINF_SUCCESS;
 
     LogFunc(("u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n",
