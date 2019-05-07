@@ -365,7 +365,8 @@ void UIMediumEnumerator::sltHandleStorageDeviceChange(CMediumAttachment comAttac
     LogRel2(("GUI: UIMediumEnumerator: OnStorageDeviceChanged event received, Removed = {%d}, Silent = {%d}\n",
              fRemoved, fSilent));
 
-    Q_UNUSED(comAttachment);
+    /* Parse attachment: */
+    parseAttachment(comAttachment);
 }
 
 void UIMediumEnumerator::sltHandleMediumChange(CMediumAttachment comAttachment)
@@ -373,7 +374,8 @@ void UIMediumEnumerator::sltHandleMediumChange(CMediumAttachment comAttachment)
     //printf("OnMediumChanged\n");
     LogRel2(("GUI: UIMediumEnumerator: OnMediumChanged event received\n"));
 
-    Q_UNUSED(comAttachment);
+    /* Parse attachment: */
+    parseAttachment(comAttachment);
 }
 
 void UIMediumEnumerator::sltHandleMediumConfigChange(CMedium comMedium)
@@ -381,7 +383,8 @@ void UIMediumEnumerator::sltHandleMediumConfigChange(CMedium comMedium)
     //printf("OnMediumConfigChanged\n");
     LogRel2(("GUI: UIMediumEnumerator: OnMediumConfigChanged event received\n"));
 
-    Q_UNUSED(comMedium);
+    /* Parse medium: */
+    parseMedium(comMedium);
 }
 
 void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDeviceType enmMediumType, bool fRegistered)
@@ -727,7 +730,76 @@ void UIMediumEnumerator::recacheFromActualUsage(const CMediumMap &currentCMedium
     }
 }
 
-#endif /* !VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
+#else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
+
+void UIMediumEnumerator::parseAttachment(CMediumAttachment &comAttachment)
+{
+    /* Make sure attachment is valid: */
+    if (comAttachment.isNull())
+    {
+        LogRel2(("GUI: UIMediumEnumerator:  Attachment is NULL!\n"));
+        /// @todo is this possible case?
+        AssertFailed();
+    }
+    else
+    {
+        /* Acquire attachment medium: */
+        CMedium comMedium = comAttachment.GetMedium();
+        if (!comAttachment.isOk())
+        {
+            LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire attachment medium!\n"));
+            msgCenter().cannotAcquireAttachmentMedium(comAttachment);
+        }
+        else
+        {
+            /* Parse medium: */
+            parseMedium(comMedium);
+        }
+    }
+}
+
+void UIMediumEnumerator::parseMedium(CMedium &comMedium)
+{
+    /* Make sure medium is valid: */
+    if (comMedium.isNull())
+    {
+        LogRel2(("GUI: UIMediumEnumerator:  Medium is NULL!\n"));
+        /// @todo is this possible case?
+        AssertFailed();
+    }
+    else
+    {
+        /* Acquire medium ID: */
+        const QUuid uMediumId = comMedium.GetId();
+        if (!comMedium.isOk())
+        {
+            LogRel2(("GUI: UIMediumEnumerator:  Unable to acquire medium ID!\n"));
+            msgCenter().cannotAcquireMediumAttribute(comMedium);
+        }
+        else
+        {
+            //printf(" Medium to recache: %s\n", uMediumId.toString().toUtf8().constData());
+
+            /* Make sure this medium is already cached: */
+            if (medium(uMediumId).isNull())
+            {
+                LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} isn't cached yet!\n",
+                         uMediumId.toString().toUtf8().constData()));
+                /// @todo is this valid case?
+                AssertFailed();
+            }
+            else
+            {
+                /* Enumerate corresponding UIMedium: */
+                LogRel2(("GUI: UIMediumEnumerator:  Medium {%s} will be enumerated..\n",
+                         uMediumId.toString().toUtf8().constData()));
+                createMediumEnumerationTask(m_media.value(uMediumId));
+            }
+        }
+    }
+}
+
+#endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
 
 #include "UIMediumEnumerator.moc"

@@ -176,7 +176,12 @@ private:
       * @param  currentCMediumIDs                 Brings CMedium IDs used in actual data. */
     void recacheFromActualUsage(const CMediumMap &currentCMediums,
                                 const QList<QUuid> &currentCMediumIDs);
-#endif /* !VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
+#else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
+    /** Parses incoming @a comAttachment. */
+    void parseAttachment(CMediumAttachment &comAttachment);
+    /** Parses incoming @a comMedium. */
+    void parseMedium(CMedium &comMedium);
+#endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
     /** Holds whether consolidated medium-enumeration process is in progress. */
     bool  m_fMediumEnumerationInProgress;
