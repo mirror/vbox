@@ -44,10 +44,6 @@ endif
 # VBoxOGLcrutil
 #
 VBoxOGLcrutil_TEMPLATE      = VBOXCROGLR3GUESTLIB
-if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLcrutil_INSTTYPE.win = none
- VBoxOGLcrutil_DEBUG_INSTTYPE.win = both
-endif
 VBoxOGLcrutil_SDKS.win      = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 VBoxOGLcrutil_INTERMEDIATES = $(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h
 VBoxOGLcrutil_INCS += \

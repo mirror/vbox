@@ -2516,18 +2516,8 @@ ifdef VBOX_WITH_CROGL
   VBOX_PATH_CROGL_PYTHON_INCLUDE = $(VBOX_PATH_CROGL_GLAPI):$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/packer:$(PATH_ROOT)/src/VBox/HostServices/SharedOpenGL/crserverlib
  endif
 
- ifeq ($(KBUILD_TARGET),win)
-  VBOX_LIB_OGL_CRUTIL = $(PATH_OBJ)/VBoxOGLcrutil/VBoxOGLcrutil$(VBOX_SUFF_LIB)
-  VBOX_LIB_OGL_HOSTCRUTIL = $(PATH_OBJ)/VBoxOGLhostcrutil/VBoxOGLhostcrutil$(VBOX_SUFF_LIB)
-  ifeq ($(KBUILD_TARGET),x86)
-   VBOX_LIB_OGL_CRUTIL_X86      = $(VBOX_LIB_OGL_CRUTIL)
-  else
-   VBOX_LIB_OGL_CRUTIL_X86      = $(PATH_OBJ)/VBoxOGLcrutil-x86/VBoxOGLcrutil-x86$(VBOX_SUFF_LIB)
-  endif
- else
+ ifneq ($(KBUILD_TARGET),win)
   VBOX_LIB_OGL        = $(VBOX_PATH_ADDITIONS)/VBoxOGL$(VBOX_SUFF_DLL)
-  VBOX_LIB_OGL_CRUTIL = $(VBOX_PATH_ADDITIONS)/VBoxOGLcrutil$(VBOX_SUFF_DLL)
-  VBOX_LIB_OGL_HOSTCRUTIL = $(PATH_STAGE_BIN)/VBoxOGLhostcrutil$(VBOX_SUFF_DLL)
  endif
 
  if1of ($(KBUILD_TARGET), freebsd linux solaris)
