@@ -1230,8 +1230,8 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
 
         m->virtualSystemDescriptions.clear();//clear all for assurance before creating new
         std::vector<ComPtr<IVirtualSystemDescription> > vsdArray;
-        uint32_t requestedVSDnums = 1;
-        uint32_t newVSDnums = 0;
+        ULONG requestedVSDnums = 1;
+        ULONG newVSDnums = 0;
         hrc = createVirtualSystemDescriptions(requestedVSDnums, &newVSDnums);
         if (FAILED(hrc)) throw hrc;
         if (requestedVSDnums != newVSDnums)
