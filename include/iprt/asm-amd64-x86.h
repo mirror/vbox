@@ -80,8 +80,8 @@
 #  pragma intrinsic(__halt)
 # endif
 # if RT_INLINE_ASM_USES_INTRIN >= 15
-#  pragma intrinsic(__readeflags)
-#  pragma intrinsic(__writeeflags)
+/*#  pragma intrinsic(__readeflags)  - buggy intrinsics in VC++ 2010, reordering/optimizers issues
+#  pragma intrinsic(__writeeflags) */
 #  pragma intrinsic(__rdtscp)
 # endif
 #endif
@@ -551,7 +551,7 @@ DECLINLINE(uint32_t) ASMGetSegAttr(uint32_t uSel)
  * Get the [RE]FLAGS register.
  * @returns [RE]FLAGS.
  */
-#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
+#if RT_INLINE_ASM_EXTERNAL /*&& RT_INLINE_ASM_USES_INTRIN < 15 - buggy intrinsics in VC++ 2010, reordering/optimizers issues. */
 RT_ASM_DECL_PRAGMA_WATCOM(RTCCUINTREG) ASMGetFlags(void);
 #else
 DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
@@ -590,7 +590,7 @@ DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
  * Set the [RE]FLAGS register.
  * @param   uFlags      The new [RE]FLAGS value.
  */
-#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
+#if RT_INLINE_ASM_EXTERNAL /*&& RT_INLINE_ASM_USES_INTRIN < 15 - see __readeflags() above. */
 RT_ASM_DECL_PRAGMA_WATCOM(void) ASMSetFlags(RTCCUINTREG uFlags);
 #else
 DECLINLINE(void) ASMSetFlags(RTCCUINTREG uFlags)
@@ -629,7 +629,7 @@ DECLINLINE(void) ASMSetFlags(RTCCUINTREG uFlags)
  * @param   fAndEfl     Flags to keep (applied first).
  * @param   fOrEfl      Flags to be set.
  */
-#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
+#if RT_INLINE_ASM_EXTERNAL /*&& RT_INLINE_ASM_USES_INTRIN < 15 - buggy intrinsics in VC++ 2010, reordering/optimizers issues. */
 RT_ASM_DECL_PRAGMA_WATCOM(RTCCUINTREG) ASMChangeFlags(RTCCUINTREG fAndEfl, RTCCUINTREG fOrEfl);
 #else
 DECLINLINE(RTCCUINTREG) ASMChangeFlags(RTCCUINTREG fAndEfl, RTCCUINTREG fOrEfl)
@@ -696,7 +696,7 @@ DECLINLINE(RTCCUINTREG) ASMChangeFlags(RTCCUINTREG fAndEfl, RTCCUINTREG fOrEfl)
  * @returns Original value.
  * @param   fOrEfl      The flags to be set (ORed in).
  */
-#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
+#if RT_INLINE_ASM_EXTERNAL /*&& RT_INLINE_ASM_USES_INTRIN < 15 - buggy intrinsics in VC++ 2010, reordering/optimizers issues. */
 RT_ASM_DECL_PRAGMA_WATCOM(RTCCUINTREG) ASMAddFlags(RTCCUINTREG fOrEfl);
 #else
 DECLINLINE(RTCCUINTREG) ASMAddFlags(RTCCUINTREG fOrEfl)
@@ -751,7 +751,7 @@ DECLINLINE(RTCCUINTREG) ASMAddFlags(RTCCUINTREG fOrEfl)
  * @returns Original value.
  * @param   fAndEfl      The flags to keep.
  */
-#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
+#if RT_INLINE_ASM_EXTERNAL /*&& RT_INLINE_ASM_USES_INTRIN < 15 - buggy intrinsics in VC++ 2010, reordering/optimizers issues. */
 RT_ASM_DECL_PRAGMA_WATCOM(RTCCUINTREG) ASMClearFlags(RTCCUINTREG fAndEfl);
 #else
 DECLINLINE(RTCCUINTREG) ASMClearFlags(RTCCUINTREG fAndEfl)
