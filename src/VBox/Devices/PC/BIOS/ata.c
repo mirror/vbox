@@ -373,6 +373,58 @@ uint16_t ata_cmd_data_in(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t c
 // ATA/ATAPI driver : device detection
 // ---------------------------------------------------------------------------
 
+int ata_signature(uint16_t iobase1, uint8_t channel, uint8_t slave)
+{
+    int         dsk_type = DSK_TYPE_NONE;
+    uint8_t     sc, sn, st, cl, ch;
+
+    /*
+     * Wait for BSY=0 so that the signature can be read. We already determined that
+     * an ATA interface is present, and rely on the fact that for non-existent
+     * devices, the BSY bit will always be clear.
+     */
+    outb(iobase1+ATA_CB_DH, slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0);
+    do {
+        st = inb(iobase1+ATA_CB_STAT);
+    } while (st & ATA_CB_STAT_BSY);
+
+    /*
+     * Look for ATA/ATAPI signature. Fun Fact #1: If there's a Device 1 but no
+     * Device 0, Device 1 can't tell and does not respond for it. Accessing
+     * non-existent Device 0 behaves the same regardless of whether Device 1
+     * is present or not.
+     */
+    sc = inb(iobase1+ATA_CB_SC);
+    sn = inb(iobase1+ATA_CB_SN);
+    if ((sc == 1) && (sn == 1)) {
+        cl = inb(iobase1+ATA_CB_CL);
+        ch = inb(iobase1+ATA_CB_CH);
+
+        /*
+         * Fun fact #2: If Device 0 responds for Device 1, an ATA device generally
+         * returns the values of its own registers, while an ATAPI device returns
+         * zeros. In both cases, the Status register is read as zero.
+         */
+        if ((cl == 0x14) && (ch == 0xEB)) {
+            dsk_type = DSK_TYPE_ATAPI;
+            BX_DEBUG_ATA("ata%d-%d: ATAPI device\n", channel, slave);
+        } else if ((cl == 0) && (ch == 0)) {
+            if (st != 0) {
+                dsk_type = DSK_TYPE_ATA;
+                BX_DEBUG_ATA("ata%d-%d: ATA device\n", channel, slave);
+            } else {
+                BX_DEBUG_ATA("ata%d-%d: ATA master responding for slave\n", channel, slave);
+            }
+        } else {
+            dsk_type = DSK_TYPE_UNKNOWN;
+            BX_DEBUG_ATA("ata%d-%d: something else (%02X/%02X/%02X)\n", channel, slave, cl, ch, st);
+        }
+    } else  /* Possibly ATAPI Device 0 responding for Device 1. */
+        BX_DEBUG_ATA("ata%d-%d: bad sc/sn signature (%02X/%02X)\n", channel, slave, sc, sn);
+
+    return dsk_type;
+}
+
 void BIOSCALL ata_detect(void)
 {
     uint16_t        ebda_seg = read_word(0x0040,0x000E);
@@ -410,7 +462,6 @@ void BIOSCALL ata_detect(void)
     bios_dsk->channels[1].iobase2 = 0x370;
     bios_dsk->channels[1].irq     = 15;
 #endif
-#if 0   /// @todo - temporarily removed to avoid conflict with AHCI
 #if BX_MAX_ATA_INTERFACES > 2
     bios_dsk->channels[2].iface   = ATA_IFACE_ISA;
     bios_dsk->channels[2].iobase1 = 0x1e8;
@@ -423,9 +474,8 @@ void BIOSCALL ata_detect(void)
     bios_dsk->channels[3].iobase2 = 0x360;
     bios_dsk->channels[3].irq     = 11;
 #endif
-#endif
 #if BX_MAX_ATA_INTERFACES > 4
-#error Please fill the ATA interface informations
+#error Please fill the ATA interface information
 #endif
 
     // Device detection
@@ -433,8 +483,9 @@ void BIOSCALL ata_detect(void)
 
     for (device = 0; device < BX_MAX_ATA_DEVICES; device++) {
         uint16_t    iobase1, iobase2;
+        uint16_t    retries;
         uint8_t     channel, slave;
-        uint8_t     sc, sn, cl, ch, st;
+        uint8_t     st;
 
         channel = device / 2;
         slave = device % 2;
@@ -442,45 +493,62 @@ void BIOSCALL ata_detect(void)
         iobase1 = bios_dsk->channels[channel].iobase1;
         iobase2 = bios_dsk->channels[channel].iobase2;
 
-        // Disable interrupts
-        outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
+        /*
+         * Here we are in a tricky situation. We do not know if an ATA
+         * interface is even present at a given address. If it is present,
+         * we don't know if a device is present. We also need to consider
+         * the case of only a slave device being present, which does not
+         * respond for the missing master device. If a device is present,
+         * it may be still powering up or processing reset, which means it
+         * may be busy.
+         *
+         * If a device is busy, we can't reliably write any registers, and
+         * reads will return the Status register. If the Status register
+         * value is 0FFh, there might be no ATA controller at all, or it
+         * might be a busy drive. Fortunately we know that our own devices
+         * never return such a value when busy, and we use that knowledge
+         * to detect non-existent interfaces.
+         *
+         * We also know that our ATA interface will not return 0FFh even when
+         * no device is present on a given channel. This knowledge is handy
+         * when only a slave device exists because we won't read 0FFh and
+         * think there is no ATA interface at all.
+         */
 
-        // Look for device
-        outb(iobase1+ATA_CB_DH, slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0);
-        outb(iobase1+ATA_CB_SC, 0x55);
-        outb(iobase1+ATA_CB_SN, 0xaa);
-        outb(iobase1+ATA_CB_SC, 0xaa);
-        outb(iobase1+ATA_CB_SN, 0x55);
-        outb(iobase1+ATA_CB_SC, 0x55);
-        outb(iobase1+ATA_CB_SN, 0xaa);
+        st = inb(iobase1+ATA_CB_STAT);
+        BX_DEBUG_ATA("ata%d-%d: Status=%02X\n", channel, slave, st);
+        if (st == 0xff)
+            continue;
 
-        // If we found something
-        sc = inb(iobase1+ATA_CB_SC);
-        sn = inb(iobase1+ATA_CB_SN);
+        /*
+         * Perform a software reset by setting and clearing the SRST bit. This
+         * can be done at any time, and forces device signature into the task file
+         * registers. If present, both devices are reset at once, so we only do
+         * this once per channel.
+         */
+        if (!slave) {
+            outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN | ATA_CB_DC_SRST);
 
-        if ( (sc == 0x55) && (sn == 0xaa) ) {
-            bios_dsk->devices[device].type = DSK_TYPE_UNKNOWN;
-
-            // reset the channel
-            ata_reset(device);
-
-            // check for ATA or ATAPI
-            outb(iobase1+ATA_CB_DH, slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0);
-            sc = inb(iobase1+ATA_CB_SC);
-            sn = inb(iobase1+ATA_CB_SN);
-            if ((sc==0x01) && (sn==0x01)) {
-                cl = inb(iobase1+ATA_CB_CL);
-                ch = inb(iobase1+ATA_CB_CH);
+            /*
+             * Ensure reasonable SRST pulse width, but do not wait long for
+             * non-existent devices.
+             */
+            retries = 32;
+            while (--retries > 0) {
                 st = inb(iobase1+ATA_CB_STAT);
-
-                if ((cl==0x14) && (ch==0xeb)) {
-                    bios_dsk->devices[device].type = DSK_TYPE_ATAPI;
-                } else if ((cl==0x00) && (ch==0x00) && (st!=0x00)) {
-                    bios_dsk->devices[device].type = DSK_TYPE_ATA;
-                } else if ((cl==0xff) && (ch==0xff)) {
-                    bios_dsk->devices[device].type = DSK_TYPE_NONE;
-                }
+                if (st & ATA_CB_STAT_BSY)
+                    break;
             }
+
+            outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
+
+            /* After reset, device signature will be placed in registers. But
+             * executing any commands will overwrite it for Device 1. So that
+             * we don't have to reset twice, look for both Device 0 and Device 1
+             * signatures here right after reset.
+             */
+            bios_dsk->devices[device + 0].type = ata_signature(iobase1, channel, 0);
+            bios_dsk->devices[device + 1].type = ata_signature(iobase1, channel, 1);
         }
 
         // Enable interrupts
