@@ -675,13 +675,7 @@ void UIMediumManagerWidget::sltPerformTablesAdjustment()
 
 void UIMediumManagerWidget::sltHandlePerformSearch()
 {
-    if (!m_pSearchWidget || !m_pTabWidget)
-        return;
-
-    QITreeWidget *pTreeWidget = treeWidget(static_cast<UIMediumDeviceType>(m_pTabWidget->currentIndex()));
-    if (!pTreeWidget)
-        return;
-    m_pSearchWidget->search(pTreeWidget);
+    performSearch(true);
 }
 
 void UIMediumManagerWidget::prepare()
@@ -1266,6 +1260,9 @@ UIMediumItem* UIMediumManagerWidget::createMediumItem(const UIMedium &medium)
     /* Update tab-icons: */
     updateTabIcons(pMediumItem, Action_Add);
 
+    /* Reperform the medium search (don't jump to the found element): */
+    performSearch(false);
+
     /* Re-fetch medium-item if it is current one created: */
     if (pMediumItem == mediumItem(type))
         refetchCurrentMediumItem(type);
@@ -1384,6 +1381,9 @@ void UIMediumManagerWidget::deleteMediumItem(const QUuid &uMediumID)
     delete pMediumItem;
     LogRel2(("UIMediumManager: Medium-item with ID={%s} deleted.\n", uMediumID.toString().toUtf8().constData()));
 
+    /* Reperform the medium search (don't jump to the found element): */
+    performSearch(false);
+
     /* If there is no current medium-item now selected
      * we have to choose first-available medium-item as current one: */
     if (!pTreeWidget->currentItem())
@@ -1477,6 +1477,17 @@ void UIMediumManagerWidget::setCurrentItem(QITreeWidget *pTreeWidget, QTreeWidge
 
     /* Re-fetch currently chosen medium-item: */
     refetchCurrentChosenMediumItem();
+}
+
+void UIMediumManagerWidget::performSearch(bool fSelectNext)
+{
+    if (!m_pSearchWidget || !m_pTabWidget)
+        return;
+
+    QITreeWidget *pTreeWidget = treeWidget(static_cast<UIMediumDeviceType>(m_pTabWidget->currentIndex()));
+    if (!pTreeWidget)
+        return;
+    m_pSearchWidget->search(pTreeWidget, fSelectNext);
 }
 
 /* static */

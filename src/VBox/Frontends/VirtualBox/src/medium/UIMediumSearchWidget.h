@@ -55,7 +55,7 @@ public:
     UIMediumSearchWidget(QWidget *pParent = 0);
     SearchType searchType() const;
     QString searchTerm() const;
-    void    search(QITreeWidget* pTreeWidget);
+    void    search(QITreeWidget* pTreeWidget, bool fGotoNext = true);
 
  protected:
 

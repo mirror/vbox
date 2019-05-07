@@ -151,7 +151,7 @@ QString UIMediumSearchWidget::searchTerm() const
     return m_pSearchTermLineEdit->text();
 }
 
-void UIMediumSearchWidget::search(QITreeWidget* pTreeWidget)
+void UIMediumSearchWidget::search(QITreeWidget* pTreeWidget, bool fGotoNext /* = true */)
 {
     if (!pTreeWidget)
         return;
@@ -165,7 +165,8 @@ void UIMediumSearchWidget::search(QITreeWidget* pTreeWidget)
     if (!m_matchedItemList.isEmpty())
     {
         m_iScrollToIndex = -1;
-        goToNextPrevious(true);
+        if (fGotoNext)
+            goToNextPrevious(true);
     }
     else
         m_iScrollToIndex = -1;

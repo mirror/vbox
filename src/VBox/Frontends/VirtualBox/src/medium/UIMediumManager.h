@@ -285,6 +285,12 @@ private:
         void setCurrentItem(QITreeWidget *pTreeWidget, QTreeWidgetItem *pItem);
     /** @} */
 
+    /** @name Search stuff.
+      * @{ */
+        /** Calls  the UIMediumSearchWidget::search(..). */
+        void performSearch(bool fSelectNext);
+    /** @} */
+
     /** @name Helper stuff.
       * @{ */
         /** Returns tab index for passed UIMediumDeviceType. */
