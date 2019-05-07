@@ -33,6 +33,10 @@ typedef struct GVMMPERVCPU
     uint64_t volatile   u64HaltExpire;
     /** The event semaphore the EMT thread is blocking on. */
     RTSEMEVENTMULTI     HaltEventMulti;
+#ifdef VBOX_BUGREF_9217
+    /** The ring-3 mapping of the VMCPU structure. */
+    RTR0MEMOBJ          VMCpuMapObj;
+#endif
     /** The APIC ID of the CPU that EMT was scheduled on the last time we checked. */
     uint8_t             iCpuEmt;
 } GVMMPERVCPU;

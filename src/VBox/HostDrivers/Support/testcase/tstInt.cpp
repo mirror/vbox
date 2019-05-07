@@ -97,7 +97,9 @@ int main(int argc, char **argv)
                 AssertRelease(pVM->pVMR0 == CreateVMReq.pVMR0);
                 AssertRelease(pVM->pSession == pSession);
                 AssertRelease(pVM->cCpus == 1);
+#ifdef VBOX_WITH_RAW_MODE
                 AssertRelease(pVM->offVMCPU == RT_UOFFSETOF(VM, aCpus));
+#endif
                 pVM->enmVMState = VMSTATE_CREATED;
                 PVMR0 const pVMR0 = pVM->pVMR0;
 

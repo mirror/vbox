@@ -26,6 +26,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/gvm.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/hm.h>
@@ -457,8 +458,13 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
 static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+#ifdef VBOX_BUGREF_9217
+    PGVM   pGVM  = (PGVM)pDevIns->Internal.s.pVMR0;
+    PVMCPU pVCpu = &pGVM->aCpus[0];     /* for PIC we always deliver to CPU 0, MP use APIC */
+#else
     PVM    pVM   = pDevIns->Internal.s.pVMR0;
     PVMCPU pVCpu = &pVM->aCpus[0];      /* for PIC we always deliver to CPU 0, MP use APIC */
+#endif
     /** @todo r=ramshankar: Propagating rcRZ and make all callers handle it? */
     APICLocalInterrupt(pVCpu, 0 /* u8Pin */, 1 /* u8Level */, VINF_SUCCESS /* rcRZ */);
 }
@@ -468,8 +474,13 @@ static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) pdmR0PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
+#ifdef VBOX_BUGREF_9217
+    PGVM   pGVM  = (PGVM)pDevIns->Internal.s.pVMR0;
+    PVMCPU pVCpu = &pGVM->aCpus[0];     /* for PIC we always deliver to CPU 0, MP use APIC */
+#else
     PVM    pVM   = pDevIns->Internal.s.pVMR0;
     PVMCPU pVCpu = &pVM->aCpus[0];      /* for PIC we always deliver to CPU 0, MP use APIC */
+#endif
     /** @todo r=ramshankar: Propagating rcRZ and make all callers handle it? */
     APICLocalInterrupt(pVCpu, 0 /* u8Pin */, 0 /* u8Level */, VINF_SUCCESS /* rcRZ */);
 }

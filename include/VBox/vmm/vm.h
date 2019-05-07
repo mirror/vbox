@@ -31,6 +31,7 @@
 
 #ifndef VBOX_FOR_DTRACE_LIB
 # include <iprt/param.h>
+# include <VBox/param.h>
 # include <VBox/types.h>
 # include <VBox/vmm/cpum.h>
 # include <VBox/vmm/stam.h>
@@ -1197,18 +1198,31 @@ typedef struct VM
     /** CPU excution cap (1-100) */
     uint32_t                    uCpuExecutionCap;
 
+#ifdef VBOX_BUGREF_9217
+    /** Structure version number (TBD). */
+    uint32_t                    uStructVersion;
+    /** Size of the VM structure. */
+    uint32_t                    cbSelf;
+    /** Size of the VMCPU structure. */
+    uint32_t                    cbVCpu;
+#else
     /** Size of the VM structure including the VMCPU array. */
     uint32_t                    cbSelf;
+#endif
 
-    /** Offset to the VMCPU array starting from beginning of this structure. */
+#ifdef VBOX_WITH_RAW_MODE
+    /** Offset to the VMCPU array starting from beginning of this structure,
+     * for raw-mode assembly code. */
     uint32_t                    offVMCPU;
+#else
+    uint32_t                    u32Unused;
+#endif
 
     /**
      * VMMSwitcher assembly entry point returning to host context.
      *
      * Depending on how the host handles the rc status given in @a eax, this may
      * return and let the caller resume whatever it was doing prior to the call.
-     *
      *
      * @param   eax         The return code, register.
      * @remark  Assume interrupts disabled.
@@ -1324,7 +1338,11 @@ typedef struct VM
 
     /** Padding - the unions must be aligned on a 64 bytes boundary and the unions
      *  must start at the same offset on both 64-bit and 32-bit hosts. */
+#ifdef VBOX_BUGREF_9217
+    uint8_t                     abAlignment3[(HC_ARCH_BITS == 32 ? 24 : 0) + 32];
+#else
     uint8_t                     abAlignment3[(HC_ARCH_BITS == 32 ? 24 : 0) + 40];
+#endif
 
     /** CPUM part. */
     union
@@ -1567,23 +1585,41 @@ typedef struct VM
         uint8_t     padding[8];         /* multiple of 8 */
     } cfgm;
 
-    /** Padding for aligning the cpu array on a page boundary. */
-#if defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[3670];
-#elif defined(VBOX_WITH_REM) && !defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[1430];
-#elif !defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
-    uint8_t         abAlignment2[3926];
+#ifdef VBOX_BUGREF_9217
+    /** Padding for aligning the structure size on a page boundrary. */
+# if defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
+    uint8_t         abAlignment2[3670 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+# elif defined(VBOX_WITH_REM) && !defined(VBOX_WITH_RAW_MODE)
+    uint8_t         abAlignment2[1430 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+# elif !defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
+    uint8_t         abAlignment2[3926 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+# else
+    uint8_t         abAlignment2[1686 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+# endif
 #else
+    /** Padding for aligning the cpu array on a page boundary. */
+# if defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
+    uint8_t         abAlignment2[3670];
+# elif defined(VBOX_WITH_REM) && !defined(VBOX_WITH_RAW_MODE)
+    uint8_t         abAlignment2[1430];
+# elif !defined(VBOX_WITH_REM) && defined(VBOX_WITH_RAW_MODE)
+    uint8_t         abAlignment2[3926];
+# else
     uint8_t         abAlignment2[1686];
+# endif
 #endif
 
     /* ---- end small stuff ---- */
 
+#ifdef VBOX_BUGREF_9217
+    /** Array of VMCPU pointers. */
+    PVMCPUR3        apCpus[VMM_MAX_CPU_COUNT];
+#else
     /** VMCPU array for the configured number of virtual CPUs.
      * Must be aligned on a page boundary for TLB hit reasons as well as
      * alignment of VMCPU members. */
     VMCPU           aCpus[1];
+#endif
 } VM;
 
 

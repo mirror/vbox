@@ -23,9 +23,9 @@
 #include <VBox/rawpci.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/gmm.h>
-#include <VBox/vmm/gvm.h>
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/gvm.h>
 #include "PGMInline.h"
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -77,7 +77,11 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCp
      */
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
     AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
+#ifdef VBOX_BUGREF_9217
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, &pGVM->aCpus[idCpu]);
+#else
     PGM_LOCK_ASSERT_OWNER_EX(pVM, &pVM->aCpus[idCpu]);
+#endif
 
     /*
      * Check for error injection.
@@ -200,7 +204,11 @@ VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, PVM pVM, VMCPUID idCpu)
      */
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
     AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
+#ifdef VBOX_BUGREF_9217
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, &pGVM->aCpus[idCpu]);
+#else
     PGM_LOCK_ASSERT_OWNER_EX(pVM, &pVM->aCpus[idCpu]);
+#endif
 
     /*
      * Try allocate a full set of handy pages.
@@ -240,7 +248,11 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, PVM pVM, VMCPUID 
      */
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID); /* caller already checked this, but just to be sure. */
     AssertReturn(pGVM->aCpus[idCpu].hEMT == RTThreadNativeSelf(), VERR_NOT_OWNER);
+#ifdef VBOX_BUGREF_9217
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, &pGVM->aCpus[idCpu]);
+#else
     PGM_LOCK_ASSERT_OWNER_EX(pVM, &pVM->aCpus[idCpu]);
+#endif
     Assert(!pVM->pgm.s.cLargeHandyPages);
 
     /*

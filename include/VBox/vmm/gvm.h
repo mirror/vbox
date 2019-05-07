@@ -31,6 +31,9 @@
 #endif
 
 #include <VBox/types.h>
+#ifdef VBOX_BUGREF_9217
+# include <VBox/vmm/vm.h>
+#endif
 #include <iprt/thread.h>
 #include <iprt/assertcompile.h>
 
@@ -40,10 +43,22 @@
  * @{
  */
 
+#if defined(VBOX_BUGREF_9217) && defined(__cplusplus)
+typedef struct GVMCPU : public VMCPU
+#else
 typedef struct GVMCPU
+#endif
 {
+#if defined(VBOX_BUGREF_9217) && !defined(__cplusplus)
+    VMCPU           s;
+#endif
+
     /** VCPU id (0 - (pVM->cCpus - 1). */
+#ifdef VBOX_BUGREF_9217
+    VMCPUID         idCpuSafe;
+#else
     VMCPUID         idCpu;
+#endif
     /** Padding. */
     uint32_t        uPadding;
 
@@ -52,13 +67,19 @@ typedef struct GVMCPU
 
     /** Pointer to the global (ring-0) VM structure this CPU belongs to. */
     PGVM            pGVM;
+#ifndef VBOX_BUGREF_9217
     /** Pointer to the corresponding cross context CPU structure. */
     PVMCPU          pVCpu;
     /** Pointer to the corresponding cross context VM structure. */
     PVM             pVM;
+#endif
 
     /** Padding so gvmm starts on a 64 byte boundrary. */
+#ifdef VBOX_BUGREF_9217
+    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 48 : 40];
+#else
     uint8_t         abPadding[HC_ARCH_BITS == 32 ? 4*4 + 24 : 24];
+#endif
 
     /** The GVMM per vcpu data. */
     union
@@ -79,13 +100,31 @@ typedef struct GVMCPU
         uint8_t             padding[64];
     } nem;
 #endif
+
+#ifdef VBOX_BUGREF_9217
+    /** Padding the structure size to page boundrary. */
+# ifdef VBOX_WITH_NEM_R0
+    uint8_t                 abPadding2[3904];
+# else
+    uint8_t                 abPadding2[3840];
+# endif
+#endif
+
 } GVMCPU;
-AssertCompileMemberOffset(GVMCPU, gvmm,   64);
-#ifdef VBOX_WITH_NEM_R0
-AssertCompileMemberOffset(GVMCPU, nem,    64 + 64);
-AssertCompileSize(        GVMCPU,         64 + 64 + 64);
+#ifdef VBOX_BUGREF_9217
+AssertCompileMemberAlignment(GVMCPU, gvmm,   64);
+# ifdef VBOX_WITH_NEM_R0
+AssertCompileMemberAlignment(GVMCPU, nem,    64);
+# endif
+AssertCompileSizeAlignment(GVMCPU,           4096);
 #else
-AssertCompileSize(        GVMCPU,         64 + 64);
+AssertCompileMemberOffset(GVMCPU, gvmm,      64);
+# ifdef VBOX_WITH_NEM_R0
+AssertCompileMemberOffset(GVMCPU, nem,       64 + 64);
+AssertCompileSize(        GVMCPU,            64 + 64 + 64);
+# else
+AssertCompileSize(        GVMCPU,            64 + 64);
+# endif
 #endif
 
 /** @} */
@@ -104,23 +143,45 @@ AssertCompileSize(        GVMCPU,         64 + 64);
  * Unlike VM, there are no special alignment restrictions here. The
  * paddings are checked by compile time assertions.
  */
+#ifdef VBOX_BUGREF_9217
+typedef struct GVM : public VM
+#else
 typedef struct GVM
+#endif
 {
     /** Magic / eye-catcher (GVM_MAGIC). */
     uint32_t        u32Magic;
     /** The global VM handle for this VM. */
+#ifdef VBOX_BUGREF_9217
+    uint32_t        hSelfSafe;
+#else
     uint32_t        hSelf;
+#endif
+#ifndef VBOX_BUGREF_9217
     /** The ring-0 mapping of the VM structure. */
     PVM             pVM;
+#endif
     /** The ring-3 mapping of the VM structure. */
     PVMR3           pVMR3;
     /** The support driver session the VM is associated with. */
+#ifdef VBOX_BUGREF_9217
+    PSUPDRVSESSION  pSessionSafe;
+#else
     PSUPDRVSESSION  pSession;
+#endif
     /** Number of Virtual CPUs, i.e. how many entries there are in aCpus.
      * Same same as VM::cCpus. */
+#ifdef VBOX_BUGREF_9217
+    uint32_t        cCpusSafe;
+#else
     uint32_t        cCpus;
+#endif
     /** Padding so gvmm starts on a 64 byte boundrary.   */
+#ifdef VBOX_BUGREF_9217
+    uint8_t         abPadding[HC_ARCH_BITS == 32 ? 12 + 28 + 4 : 28 + 8];
+#else
     uint8_t         abPadding[HC_ARCH_BITS == 32 ? 12 + 28 : 28];
+#endif
 
     /** The GVMM per vm data. */
     union
@@ -160,18 +221,38 @@ typedef struct GVM
         uint8_t             padding[64];
     } rawpci;
 
+#ifdef VBOX_BUGREF_9217
+    /** Padding so aCpus starts on a page boundrary.  */
+# ifdef VBOX_WITH_NEM_R0
+    uint8_t         abPadding2[4096 - 64 - 256 - 512 - 256 - 64];
+# else
+    uint8_t         abPadding2[4096 - 64 - 256 - 512 - 64];
+# endif
+#endif
+
     /** GVMCPU array for the configured number of virtual CPUs. */
     GVMCPU          aCpus[1];
 } GVM;
-AssertCompileMemberOffset(GVM, gvmm,   64);
-AssertCompileMemberOffset(GVM, gmm,    64 + 256);
-#ifdef VBOX_WITH_NEM_R0
-AssertCompileMemberOffset(GVM, nem,    64 + 256 + 512);
-AssertCompileMemberOffset(GVM, rawpci, 64 + 256 + 512 + 256);
-AssertCompileMemberOffset(GVM, aCpus,  64 + 256 + 512 + 256 + 64);
+#ifdef VBOX_BUGREF_9217
+AssertCompileMemberAlignment(GVM, gvmm,     64);
+AssertCompileMemberAlignment(GVM, gmm,      64);
+# ifdef VBOX_WITH_NEM_R0
+AssertCompileMemberAlignment(GVM, nem,      64);
+# endif
+AssertCompileMemberAlignment(GVM, rawpci,   64);
+AssertCompileMemberAlignment(GVM, aCpus,    4096);
+AssertCompileSizeAlignment(GVM,             4096);
 #else
-AssertCompileMemberOffset(GVM, rawpci, 64 + 256 + 512);
-AssertCompileMemberOffset(GVM, aCpus,  64 + 256 + 512 + 64);
+AssertCompileMemberOffset(GVM, gvmm,        64);
+AssertCompileMemberOffset(GVM, gmm,         64 + 256);
+# ifdef VBOX_WITH_NEM_R0
+AssertCompileMemberOffset(GVM, nem,         64 + 256 + 512);
+AssertCompileMemberOffset(GVM, rawpci,      64 + 256 + 512 + 256);
+AssertCompileMemberOffset(GVM, aCpus,       64 + 256 + 512 + 256 + 64);
+# else
+AssertCompileMemberOffset(GVM, rawpci,      64 + 256 + 512);
+AssertCompileMemberOffset(GVM, aCpus,       64 + 256 + 512 + 64);
+# endif
 #endif
 
 /** The GVM::u32Magic value (Wayne Shorter). */

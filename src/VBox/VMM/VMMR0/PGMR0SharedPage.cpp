@@ -24,6 +24,7 @@
 #include <VBox/vmm/gmm.h>
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/gvm.h>
 #include "PGMInline.h"
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -49,7 +50,11 @@
  */
 VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PCRTGCPTR64 paRegionsGCPtrs)
 {
+#ifdef VBOX_BUGREF_9217
+    PVMCPU              pVCpu         = &pGVM->aCpus[idCpu];
+#else
     PVMCPU              pVCpu         = &pVM->aCpus[idCpu];
+#endif
     int                 rc            = VINF_SUCCESS;
     bool                fFlushTLBs    = false;
     bool                fFlushRemTLBs = false;
@@ -161,8 +166,13 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
         PGM_INVL_ALL_VCPU_TLBS(pVM);
 
     if (fFlushRemTLBs)
+#ifdef VBOX_BUGREF_9217
+        for (VMCPUID idCurCpu = 0; idCurCpu < pGVM->cCpus; idCurCpu++)
+            CPUMSetChangedFlags(&pGVM->aCpus[idCurCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+#else
         for (VMCPUID idCurCpu = 0; idCurCpu < pVM->cCpus; idCurCpu++)
             CPUMSetChangedFlags(&pVM->aCpus[idCurCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+#endif
 
     return rc;
 }

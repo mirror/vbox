@@ -23,6 +23,7 @@
 #include <VBox/vmm/cpum.h>
 #include "CPUMInternal.h"
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/gvm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/vmm/hm.h>
@@ -333,8 +334,14 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
     uint32_t u32DR7 = ASMGetDR7();
     if (u32DR7 & X86_DR7_ENABLED_MASK)
     {
+#ifdef VBOX_BUGREF_9217
+        PGVM pGVM = (PGVM)pVM;
+        for (VMCPUID i = 0; i < pGVM->cCpusSafe; i++)
+            pGVM->aCpus[i].cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HOST;
+#else
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
             pVM->aCpus[i].cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HOST;
+#endif
         Log(("CPUMR0Init: host uses debug registers (dr7=%x)\n", u32DR7));
     }
 

@@ -592,7 +592,9 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
         AssertRelease(pVM->cCpus == cCpus);
         AssertRelease(pVM->uCpuExecutionCap == 100);
+#ifdef VBOX_WITH_RAW_MODE
         AssertRelease(pVM->offVMCPU == RT_UOFFSETOF(VM, aCpus));
+#endif
         AssertCompileMemberAlignment(VM, cpum, 64);
         AssertCompileMemberAlignment(VM, tm, 64);
         AssertCompileMemberAlignment(VM, aCpus, PAGE_SIZE);
