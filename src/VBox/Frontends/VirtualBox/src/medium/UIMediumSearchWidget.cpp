@@ -248,8 +248,6 @@ void UIMediumSearchWidget::goToNextPrevious(bool fNext)
 
 void UIMediumSearchWidget::sltShowNextMatchingItem()
 {
-    if (m_matchedItemList.isEmpty())
-        return;
     goToNextPrevious(true);
 }
 
