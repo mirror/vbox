@@ -15203,6 +15203,7 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     setRTCUseUTC(mRTCUseUTC);
     if (FAILED(rc)) return rc;
 
+    /* the setter does more than just the assignment, so use it */
     ChipsetType_T enmChipsetType;
     rc = osType->COMGETTER(RecommendedChipset)(&enmChipsetType);
     if (FAILED(rc)) return rc;
@@ -15213,7 +15214,6 @@ HRESULT Machine::applyDefaults(const com::Utf8Str &aFlags)
     rc = osType->COMGETTER(RecommendedTFReset)(&mHWData->mTripleFaultReset);
     if (FAILED(rc)) return rc;
 
-    size_t mnet = mNetworkAdapters.size(); NOREF(mnet);
     /* Apply network adapters defaults */
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
         mNetworkAdapters[slot]->i_applyDefaults(osType);
