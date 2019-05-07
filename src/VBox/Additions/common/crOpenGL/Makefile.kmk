@@ -488,6 +488,7 @@ ifdef VBOX_WITH_WDDM
 #
 VBoxOGLpassthroughspu-x86_EXTENDS = VBoxOGLpassthroughspu
 VBoxOGLpassthroughspu-x86_BLD_TRG_ARCH = x86
+VBoxOGLpassthroughspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86)
 VBoxOGLpassthroughspu-x86_DEFS = $(VBoxOGLpassthroughspu_DEFS) VBOX_WDDM_WOW64
 endif
 
