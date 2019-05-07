@@ -206,7 +206,6 @@ public:
     /** Enables/disables some of the medium editing widgets of the details tab. */
     void enableDisableMediumModificationWidgets(bool fMediumIsModifiable);
 
-
 public slots:
 
     /** Defines whether the options tab is @a fEnabled. */

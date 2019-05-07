@@ -90,6 +90,8 @@ void UIMediumDetailsWidget::enableDisableMediumModificationWidgets(bool fMediumI
         m_pEditorLocation->setEnabled(fMediumIsModifiable);
     if (m_pEditorSize)
         m_pEditorSize->setEnabled(fMediumIsModifiable);
+    if (m_pEditorDescription)
+        m_pEditorDescription->setEnabled(fMediumIsModifiable);
 }
 
 void UIMediumDetailsWidget::setOptionsEnabled(bool fEnabled)
