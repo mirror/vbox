@@ -46,8 +46,13 @@
  */
 DECLINLINE(bool) dbgfR3IsHMA(PUVM pUVM, RTGCUINTPTR FlatPtr)
 {
+#ifdef VBOX_WITH_RAW_MODE
     return VM_IS_RAW_MODE_ENABLED(pUVM->pVM)
         && MMHyperIsInsideArea(pUVM->pVM, FlatPtr);
+#else
+    RT_NOREF(pUVM, FlatPtr);
+    return false;
+#endif
 }
 
 

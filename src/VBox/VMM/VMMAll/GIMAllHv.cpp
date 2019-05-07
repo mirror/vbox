@@ -1371,9 +1371,13 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
  */
 VMM_INT_DECL(bool) gimHvShouldTrapXcptUD(PVMCPU pVCpu)
 {
+#ifdef VBOX_WITH_RAW_MODE
     if (   VM_IS_RAW_MODE_ENABLED(pVCpu->CTX_SUFF(pVM))
         && gimHvAreHypercallsEnabled(pVCpu))
         return true;
+#else
+    RT_NOREF(pVCpu);
+#endif
     return false;
 }
 
