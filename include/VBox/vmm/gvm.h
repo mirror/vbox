@@ -66,7 +66,7 @@ typedef struct GVMCPU
     RTNATIVETHREAD  hEMT;
 
     /** Pointer to the global (ring-0) VM structure this CPU belongs to. */
-    PGVM            pGVM;
+    R0PTRTYPE(PGVM) pGVM;
 #ifndef VBOX_BUGREF_9217
     /** Pointer to the corresponding cross context CPU structure. */
     PVMCPU          pVCpu;
@@ -94,7 +94,7 @@ typedef struct GVMCPU
     /** The NEM per vcpu data. */
     union
     {
-# ifdef VMM_INCLUDED_SRC_include_NEMInternal_h
+# if defined(VMM_INCLUDED_SRC_include_NEMInternal_h) && defined(IN_RING0)
         struct NEMR0PERVCPU s;
 # endif
         uint8_t             padding[64];
@@ -205,7 +205,7 @@ typedef struct GVM
     /** The NEM per vcpu data. */
     union
     {
-# ifdef VMM_INCLUDED_SRC_include_NEMInternal_h
+# if defined(VMM_INCLUDED_SRC_include_NEMInternal_h) && defined(IN_RING0)
         struct NEMR0PERVM   s;
 # endif
         uint8_t             padding[256];

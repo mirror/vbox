@@ -23,6 +23,9 @@
 #include <VBox/vmm/vmm.h>
 #include "VMMInternal.h"
 #include <VBox/vmm/vm.h>
+#ifdef IN_RING0
+# include <VBox/vmm/gvm.h>
+#endif
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/vmcpuset.h>
 #include <VBox/param.h>
@@ -202,6 +205,12 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
 #elif defined(IN_RING0)
     if (pVM->cCpus == 1)
         return 0;
+# ifdef VBOX_BUGREF_9217
+    PGVM          pGVM  = (PGVM)pVM;
+    VMCPUID const cCpus = pGVM->cCpusSafe;
+# else
+    VMCPUID const cCpus = pVM->cCpus;
+# endif
 
     /* Search first by host cpu id (most common case)
      * and then by native thread id (page fusion case).
@@ -214,9 +223,13 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
         RTCPUID idHostCpu = RTMpCpuId();
 
         /** @todo optimize for large number of VCPUs when that becomes more common. */
-        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
         {
+# ifdef VBOX_BUGREF_9217
+            PVMCPU pVCpu = &pGVM->aCpus[idCpu];
+# else
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
+# endif
 
             if (pVCpu->idHostCpu == idHostCpu)
                 return pVCpu->idCpu;
@@ -227,9 +240,13 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
     RTNATIVETHREAD hThread = RTThreadNativeSelf();
 
     /** @todo optimize for large number of VCPUs when that becomes more common. */
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
     {
+# ifdef VBOX_BUGREF_9217
+        PVMCPU pVCpu = &pGVM->aCpus[idCpu];
+# else
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
+# endif
 
         if (pVCpu->hNativeThreadR0 == hThread)
             return pVCpu->idCpu;
@@ -258,11 +275,25 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
     if (idCpu == NIL_VMCPUID)
         return NULL;
     Assert(idCpu < pVM->cCpus);
+# ifdef VBOX_BUGREF_9217
+    return pVM->apCpus[idCpu];
+# else
     return &pVM->aCpus[idCpu];
+# endif
 
 #elif defined(IN_RING0)
+# ifdef VBOX_BUGREF_9217
+    PGVM          pGVM  = (PGVM)pVM;
+    VMCPUID const cCpus = pGVM->cCpusSafe;
+# else
+    VMCPUID const cCpus = pVM->cCpus;
+# endif
     if (pVM->cCpus == 1)
+# ifdef VBOX_BUGREF_9217
+        return &pGVM->aCpus[0];
+# else
         return &pVM->aCpus[0];
+# endif
 
     /*
      * Search first by host cpu id (most common case)
@@ -276,10 +307,13 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
         RTCPUID idHostCpu = RTMpCpuId();
 
         /** @todo optimize for large number of VCPUs when that becomes more common. */
-        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
         {
+# ifdef VBOX_BUGREF_9217
+            PVMCPU pVCpu = &pGVM->aCpus[idCpu];
+# else
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
+# endif
             if (pVCpu->idHostCpu == idHostCpu)
                 return pVCpu;
         }
@@ -290,17 +324,21 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
 
     /** @todo optimize for large number of VCPUs when that becomes more common.
      * Use a map like GIP does that's indexed by the host CPU index.  */
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < cCpus; idCpu++)
     {
+# ifdef VBOX_BUGREF_9217
+        PVMCPU pVCpu = &pGVM->aCpus[idCpu];
+# else
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
+# endif
         if (pVCpu->hNativeThreadR0 == hThread)
             return pVCpu;
     }
     return NULL;
 
 #else /* RC: Always EMT(0) */
-    return &pVM->aCpus[0];
+    RT_NOREF(pVM);
+    return &g_VCpu0;
 #endif /* IN_RING0 */
 }
 
@@ -315,7 +353,18 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
 VMMDECL(PVMCPU) VMMGetCpu0(PVM pVM)
 {
     Assert(pVM->cCpus == 1);
+#ifdef VBOX_BUGREF_9217
+# ifdef IN_RING3
+    return pVM->apCpus[0];
+# elif defined(IN_RING0)
+    return &((PGVM)pVM)->aCpus[0];
+# else /* RC  */
+    RT_NOREF(pVM);
+    return &g_VCpu0;
+# endif
+#else
     return &pVM->aCpus[0];
+#endif
 }
 
 
@@ -331,7 +380,19 @@ VMMDECL(PVMCPU) VMMGetCpu0(PVM pVM)
 VMMDECL(PVMCPU) VMMGetCpuById(PVM pVM, RTCPUID idCpu)
 {
     AssertReturn(idCpu < pVM->cCpus, NULL);
+#ifdef VBOX_BUGREF_9217
+# ifdef IN_RING3
+    return pVM->apCpus[idCpu];
+# elif defined(IN_RING0)
+    return &((PGVM)pVM)->aCpus[0];
+# else /* RC  */
+    RT_NOREF(pVM, idCpu);
+    Assert(idCpu == 0);
+    return &g_VCpu0;
+# endif
+#else
     return &pVM->aCpus[idCpu];
+#endif
 }
 
 

@@ -971,6 +971,7 @@ $(PATH_TARGET)/undef-rc.run: $$(VMMRC_1_TARGET)
 			-e 's/ *U //' \
 			\
 			-e '/^g_VM\>/d'\
+			-e '/^g_VCpu0\>/d'\
 			-e '/^g_CPUM\>/d'\
 			-e '/^g_Logger\>/d'\
 			-e '/^g_RelLogger\>/d'\

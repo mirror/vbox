@@ -314,6 +314,7 @@ typedef struct VMCPU
 
 
 #ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSizeAlignment(VMCPU, 4096);
 
 /** @name Operations on VMCPU::enmState
  * @{ */
@@ -1631,6 +1632,12 @@ RT_C_DECLS_BEGIN
  * globals which we should avoid using.
  */
 extern DECLIMPORT(VM)   g_VM;
+
+/** The VMCPU structure for virtual CPU \#0.
+ * This is imported from the VMMRCBuiltin module, i.e. it's a one of those magic
+ * globals which we should avoid using.
+ */
+extern DECLIMPORT(VMCPU) g_VCpu0;
 
 RT_C_DECLS_END
 #endif

@@ -19,6 +19,7 @@ LIBRARY VMMRCBuiltin.rc
 EXPORTS
     ; data
     g_VM                            DATA
+    g_VCpu0                         DATA
     g_CPUM                          DATA
     g_TRPM                          DATA
     g_TRPMCPU                       DATA

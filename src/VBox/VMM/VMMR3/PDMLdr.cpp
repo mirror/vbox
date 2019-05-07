@@ -361,6 +361,8 @@ static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModul
         int rc = VINF_SUCCESS;
         if (!strcmp(pszSymbol, "g_VM"))
             *pValue = pVM->pVMRC;
+        else if (!strcmp(pszSymbol, "g_VCpu0"))
+            *pValue = pVM->pVMRC + pVM->offVMCPU;
         else if (!strcmp(pszSymbol, "g_CPUM"))
             *pValue = VM_RC_ADDR(pVM, &pVM->cpum);
         else if (   !strncmp(pszSymbol, "g_TRPM", 6)
