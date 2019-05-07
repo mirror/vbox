@@ -3626,7 +3626,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="425d0e49-eb9c-43e8-bb0d-be7f78fd3b47"
+    uuid="48875667-19f6-4329-a208-735adf9a47ee"
     >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -3681,6 +3681,8 @@
     <const name="CloudOCISubnet" value="34" />
     <const name="CloudKeepObject" value="35" />
     <const name="CloudLaunchInstance" value="36" />
+    <const name="CloudInstanceId" value="37" />
+    <const name="CloudImageId" value="38" />
   </enum>
 
   <enum
@@ -25739,7 +25741,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   <interface
     name="ICloudClient" extends="$unknown"
     uuid="7acc426a-5f8f-11e9-9032-1b0da54759a8"
-    wsmap="managed" reservedMethods="13" reservedAttributes="8"
+    wsmap="managed" reservedMethods="11" reservedAttributes="8"
     >
 
     <method name="getExportLaunchParameters" const="yes">
@@ -25818,6 +25820,36 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>
           Progress object to track the operation completion.
         </desc>
+      </param>
+    </method>
+
+    <method name="getInstanceInfo" const="yes">
+      <desc>
+        Returns the information about an instance in the Cloud.
+      </desc>
+      <param name="instanceId" type="wstring" dir="in">
+        <desc>What to search for. This is the instance ID.</desc>
+      </param>
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>VirtualSystemDescription object which is describing a machine</desc>
+      </param>
+    </method>
+
+    <method name="importInstance">
+      <desc>
+        Import an existing instance with passed id to the local host.
+      </desc>
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>VirtualSystemDescription object which is describing a machine and all required parameters.</desc>
+      </param>
+      <param name="uid" type="wstring" dir="in">
+        <desc>the UUID of instance imported from the Cloud.</desc>
+      </param>
+      <param name="virtualBox" type="IVirtualBox" dir="in">
+        <desc>Reference to the server-side API root object.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="in">
+        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 

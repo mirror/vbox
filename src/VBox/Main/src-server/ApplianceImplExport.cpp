@@ -652,7 +652,7 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
     /* Parse all necessary info out of the URI */
     i_parseURI(aPath, m->locInfo);
 
-    if (m->locInfo.storageType == VFSType_Cloud)//(isCloudDestination(aPath))
+    if (m->locInfo.storageType == VFSType_Cloud)
     {
         rc = S_OK;
         ComObjPtr<Progress> progress;
@@ -2241,7 +2241,7 @@ HRESULT Appliance::i_writeFSOVA(TaskOVF *pTask, AutoWriteLockBase &writeLock)
  * uploaded image into internal OCI image format and launch an
  * instance with this image in the OCI Compute service.
  */
-HRESULT Appliance::i_writeFSCloud(TaskCloud *pTask)
+HRESULT Appliance::i_exportCloudImpl(TaskCloud *pTask)
 {
     LogFlowFuncEnter();
 
@@ -2249,7 +2249,7 @@ HRESULT Appliance::i_writeFSCloud(TaskCloud *pTask)
     ComPtr<ICloudProviderManager> cpm;
     hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("Cloud: Cloud provider manager object wasn't found"));
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%: Cloud provider manager object wasn't found", __FUNCTION__));
 
     Utf8Str strProviderName = pTask->locInfo.strProvider;
     ComPtr<ICloudProvider> cloudProvider;
@@ -2257,7 +2257,7 @@ HRESULT Appliance::i_writeFSCloud(TaskCloud *pTask)
     hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), cloudProvider.asOutParam());
 
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("Cloud: Cloud provider object wasn't found"));
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found", __FUNCTION__));
 
     ComPtr<IVirtualSystemDescription> vsd = m->virtualSystemDescriptions.front();
 
@@ -2278,18 +2278,16 @@ HRESULT Appliance::i_writeFSCloud(TaskCloud *pTask)
 
     Utf8Str profileName(aVBoxValues[0]);
     if (profileName.isEmpty())
-        return setErrorVrc(VBOX_E_OBJECT_NOT_FOUND, tr("Cloud: Cloud user profile name wasn't found"));
+        return setErrorVrc(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud user profile name wasn't found", __FUNCTION__));
 
     hrc = cloudProvider->GetProfileByName(aVBoxValues[0], cloudProfile.asOutParam());
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("Cloud: Cloud profile object wasn't found"));
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud profile object wasn't found", __FUNCTION__));
 
     ComObjPtr<ICloudClient> cloudClient;
     hrc = cloudProfile->CreateCloudClient(cloudClient.asOutParam());
     if (FAILED(hrc))
-        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("Cloud: Cloud client object wasn't found"));
-
-    LogRel(("Appliance::i_writeFSCloud(): calling CloudClient::ExportLaunchVM\n"));
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found", __FUNCTION__));
 
     if (m->virtualSystemDescriptions.size() == 1)
     {

@@ -1103,9 +1103,7 @@ HRESULT Appliance::i_setUpProgress(ComObjPtr<Progress> &pProgress,
             break;
         }
         case ExportCloud:
-            cOperations = 1 + 9;//7
-            ulTotalOperationsWeight = 100*cOperations;
-            m->ulWeightForXmlOperation = 100;
+        case ImportCloud:
             break;
     }
     Log(("Setting up progress object: ulTotalMB = %d, cDisks = %d, => cOperations = %d, ulTotalOperationsWeight = %d, m->ulWeightForXmlOperation = %d\n",
@@ -1339,7 +1337,7 @@ DECLCALLBACK(int) Appliance::TaskOPC::updateProgress(unsigned uPercent, void *pv
  * @thread  pTask       The task.
  */
 /* static */
-void Appliance::i_exportCloudThreadTask(TaskCloud *pTask)
+void Appliance::i_importOrExportCloudThreadTask(TaskCloud *pTask)
 {
     LogFlowFuncEnter();
     AssertReturnVoid(pTask);
@@ -1350,9 +1348,14 @@ void Appliance::i_exportCloudThreadTask(TaskCloud *pTask)
     switch (pTask->taskType)
     {
         case TaskCloud::Export:
-            pTask->rc = pAppliance->i_writeFSCloud(pTask);
+            pTask->rc = pAppliance->i_exportCloudImpl(pTask);
             break;
-
+        case TaskCloud::Import:
+            pTask->rc = pAppliance->i_importCloudImpl(pTask);
+            break;
+        case TaskCloud::ReadData:
+            pTask->rc = pAppliance->i_gettingCloudData(pTask);
+            break;
         default:
             AssertFailed();
             pTask->rc = E_FAIL;
@@ -1410,27 +1413,27 @@ void i_parseURI(Utf8Str strUri, LocationInfo &locInfo)
         throw E_NOTIMPL;
 
     /* Not necessary on a file based URI */
-    if (locInfo.storageType != VFSType_File)
-    {
-        size_t uppos = strUri.find("@"); /* username:password combo */
-        if (uppos != Utf8Str::npos)
-        {
-            locInfo.strUsername = strUri.substr(0, uppos);
-            strUri = strUri.substr(uppos + 1);
-            size_t upos = locInfo.strUsername.find(":");
-            if (upos != Utf8Str::npos)
-            {
-                locInfo.strPassword = locInfo.strUsername.substr(upos + 1);
-                locInfo.strUsername = locInfo.strUsername.substr(0, upos);
-            }
-        }
-        size_t hpos = strUri.find("/"); /* hostname part */
-        if (hpos != Utf8Str::npos)
-        {
-            locInfo.strHostname = strUri.substr(0, hpos);
-            strUri = strUri.substr(hpos);
-        }
-    }
+//  if (locInfo.storageType != VFSType_File)
+//  {
+//      size_t uppos = strUri.find("@"); /* username:password combo */
+//      if (uppos != Utf8Str::npos)
+//      {
+//          locInfo.strUsername = strUri.substr(0, uppos);
+//          strUri = strUri.substr(uppos + 1);
+//          size_t upos = locInfo.strUsername.find(":");
+//          if (upos != Utf8Str::npos)
+//          {
+//              locInfo.strPassword = locInfo.strUsername.substr(upos + 1);
+//              locInfo.strUsername = locInfo.strUsername.substr(0, upos);
+//          }
+//      }
+//      size_t hpos = strUri.find("/"); /* hostname part */
+//      if (hpos != Utf8Str::npos)
+//      {
+//          locInfo.strHostname = strUri.substr(0, hpos);
+//          strUri = strUri.substr(hpos);
+//      }
+//  }
 
     locInfo.strPath = strUri;
 }

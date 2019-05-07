@@ -87,16 +87,18 @@ HRESULT Appliance::read(const com::Utf8Str &aFile,
         m->pReader = NULL;
     }
 
-    // see if we can handle this file; for now we insist it has an ovf/ova extension
-    if (   !aFile.endsWith(".ovf", Utf8Str::CaseInsensitive)
-        && !aFile.endsWith(".ova", Utf8Str::CaseInsensitive))
-        return setError(VBOX_E_FILE_ERROR, tr("Appliance file must have .ovf or .ova extension"));
-
     ComObjPtr<Progress> progress;
     try
     {
         /* Parse all necessary info out of the URI */
         i_parseURI(aFile, m->locInfo);
+
+        // see if we can handle this file; for now we insist it has an ovf/ova extension
+        if (   m->locInfo.storageType == VFSType_File 
+            && !aFile.endsWith(".ovf", Utf8Str::CaseInsensitive)
+            && !aFile.endsWith(".ova", Utf8Str::CaseInsensitive))
+            return setError(VBOX_E_FILE_ERROR, tr("Appliance file must have .ovf or .ova extension"));
+
         i_readImpl(m->locInfo, progress);
     }
     catch (HRESULT aRC)
@@ -789,7 +791,8 @@ HRESULT Appliance::importMachines(const std::vector<ImportOptions_T> &aOptions,
     if (!i_isApplianceIdle())
         return E_ACCESSDENIED;
 
-    if (!m->pReader)
+    //check for the local import only. For import from the Cloud m->pReader is always NULL.
+    if (m->locInfo.storageType == VFSType_File && !m->pReader)
         return setError(E_FAIL,
                         tr("Cannot import machines without reading it first (call read() before i_importMachines())"));
 
@@ -1120,6 +1123,12 @@ void Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aP
         rc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
                              bstrDesc.raw(),
                              TRUE /* aCancelable */);
+
+    else if (aLocInfo.storageType == VFSType_Cloud)
+        /* 1 operation only for now */
+        rc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
+                             "Getting cloud instance information...",
+                             TRUE /* aCancelable */);
     else
         /* 4/5 is downloading, 1/5 is reading */
         rc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
@@ -1133,19 +1142,344 @@ void Appliance::i_readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aP
     if (FAILED(rc)) throw rc;
 
     /* Initialize our worker task */
-    TaskOVF *task = NULL;
+    TaskOVF *ovfTask = NULL;
+    TaskCloud *cloudTask = NULL;
     try
     {
-        task = new TaskOVF(this, TaskOVF::Read, aLocInfo, aProgress);
+        if (aLocInfo.storageType == VFSType_File)
+        {
+            ovfTask = new TaskOVF(this, TaskOVF::Read, aLocInfo, aProgress);
+            rc = ovfTask->createThread();
+            if (FAILED(rc)) throw rc;
+        }
+        else if (aLocInfo.storageType == VFSType_Cloud)
+        {
+            cloudTask = new TaskCloud(this, TaskCloud::ReadData, aLocInfo, aProgress);
+            rc = cloudTask->createThread();
+            if (FAILED(rc)) throw rc;
+        }
     }
+    catch (HRESULT aRc)
+    {
+        rc = aRc;
+    } 
     catch (...)
     {
-        throw setError(VBOX_E_OBJECT_NOT_FOUND,
-                       tr("Could not create TaskOVF object for reading the OVF from disk"));
+        rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                      tr("Could not create a task object for reading the Appliance data"));
     }
 
-    rc = task->createThread();
-    if (FAILED(rc)) throw rc;
+    if (FAILED(rc))
+    {
+        if (ovfTask)
+            delete ovfTask;
+        if (cloudTask)
+            delete cloudTask;
+        throw rc;
+    }
+}
+
+HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
+{
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", this));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hrc = S_OK;
+
+    try
+    {
+        Utf8Str strBasename(pTask->locInfo.strPath);
+        RTCList<RTCString, RTCString *> parts = strBasename.split("/");
+        if (parts.size() != 2)//profile + instance id
+        {
+            return setErrorVrc(VERR_MISMATCH, tr("%s: The profile name or instance id are absent or"
+                                                 "contain unsupported characters.", __FUNCTION__));
+        }
+
+        //Get information about the passed cloud instance    
+        ComPtr<ICloudProviderManager> cpm;
+        hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
+        if (FAILED(hrc))
+            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider manager object wasn't found", __FUNCTION__));
+
+        Utf8Str strProviderName = pTask->locInfo.strProvider;
+        ComPtr<ICloudProvider> cloudProvider;
+        ComPtr<ICloudProfile> cloudProfile;
+        hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), cloudProvider.asOutParam());
+
+        if (FAILED(hrc))
+            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found", __FUNCTION__));
+
+        Utf8Str profileName(parts.at(0));//profile
+        if (profileName.isEmpty())
+            return setErrorVrc(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud user profile name wasn't found", __FUNCTION__));
+
+        hrc = cloudProvider->GetProfileByName(Bstr(parts.at(0)).raw(), cloudProfile.asOutParam());
+        if (FAILED(hrc))
+            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud profile object wasn't found", __FUNCTION__));
+
+        ComObjPtr<ICloudClient> cloudClient;
+        hrc = cloudProfile->CreateCloudClient(cloudClient.asOutParam());
+        if (FAILED(hrc))
+            return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found", __FUNCTION__));
+
+        m->virtualSystemDescriptions.clear();//clear all for assurance before creating new
+        std::vector<ComPtr<IVirtualSystemDescription> > vsdArray;
+        uint32_t requestedVSDnums = 1;
+        uint32_t newVSDnums = 0;
+        hrc = createVirtualSystemDescriptions(requestedVSDnums, &newVSDnums);
+        if (FAILED(hrc)) throw hrc;
+        if (requestedVSDnums != newVSDnums)
+            throw setErrorVrc(VERR_MISMATCH, tr("%s: Requested and created numbers of VSD are differ.", __FUNCTION__));
+
+        hrc = getVirtualSystemDescriptions(vsdArray);
+        if (FAILED(hrc)) throw hrc;
+        ComPtr<IVirtualSystemDescription> instanceDescription = vsdArray[0];
+
+        LogRel(("%s: calling CloudClient::GetInstanceInfo()\n", __FUNCTION__));
+        hrc = cloudClient->GetInstanceInfo(Bstr(parts.at(1)).raw(), instanceDescription);//instance id
+        if (FAILED(hrc)) throw hrc;
+
+        // set cloud profile
+        instanceDescription->AddDescription(VirtualSystemDescriptionType_CloudProfileName,
+                             Bstr(profileName).raw(),
+                             Bstr(profileName).raw());
+        // set name
+        Utf8Str strSetting = "cloud VM (";
+        strSetting.append(parts.at(1)).append(")");
+        // set description
+        strSetting = "VM with id ";
+        strSetting.append(parts.at(1)).append(" imported from the cloud provider ").append(strProviderName);
+
+        // description
+        instanceDescription->AddDescription(VirtualSystemDescriptionType_Description,
+                             Bstr(strSetting).raw(),
+                             Bstr(strSetting).raw());
+    }
+    catch (HRESULT arc)
+    {
+        LogFlowFunc(("arc=%Rhrc\n", arc));
+        hrc = arc;
+    }
+
+    LogFlowFunc(("rc=%Rhrc\n", hrc));
+    LogFlowFuncLeave();
+
+    return hrc;
+}
+
+/**
+ * Actual worker code for import from the Cloud
+ *
+ * @param pTask
+ * @return
+ */
+HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
+{
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", this));
+
+    /* Change the appliance state so we can safely leave the lock while doing
+     * time-consuming operations; also the below method calls do all kinds of
+     * locking which conflicts with the appliance object lock. */
+    AutoWriteLock writeLock(this COMMA_LOCKVAL_SRC_POS);
+    /* Check if the appliance is currently busy. */
+    if (!i_isApplianceIdle())
+        return E_ACCESSDENIED;
+    /* Set the internal state to importing. */
+    m->state = Data::ApplianceImporting;
+
+    HRESULT hrc = S_OK;
+
+    /* Clear the list of imported machines, if any */
+    m->llGuidsMachinesCreated.clear();
+
+    /*
+     * Actual code for the cloud import
+     *
+    */
+
+    ComPtr<ICloudProviderManager> cpm;
+    hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
+    if (FAILED(hrc))
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider manager object wasn't found", __FUNCTION__));
+
+    Utf8Str strProviderName = pTask->locInfo.strProvider;
+    ComPtr<ICloudProvider> cloudProvider;
+    ComPtr<ICloudProfile> cloudProfile;
+    hrc = cpm->GetProviderByShortName(Bstr(strProviderName.c_str()).raw(), cloudProvider.asOutParam());
+
+    if (FAILED(hrc))
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found", __FUNCTION__));
+
+    ComPtr<IVirtualSystemDescription> vsd = m->virtualSystemDescriptions.front();
+
+    com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
+    com::SafeArray<BSTR> aRefs;
+    com::SafeArray<BSTR> aOvfValues;
+    com::SafeArray<BSTR> aVBoxValues;
+    com::SafeArray<BSTR> aExtraConfigValues;
+
+    hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_CloudProfileName,
+                             ComSafeArrayAsOutParam(retTypes),
+                             ComSafeArrayAsOutParam(aRefs),
+                             ComSafeArrayAsOutParam(aOvfValues),
+                             ComSafeArrayAsOutParam(aVBoxValues),
+                             ComSafeArrayAsOutParam(aExtraConfigValues));
+    if (FAILED(hrc))
+        return hrc;
+
+    Utf8Str profileName(aVBoxValues[0]);
+    if (profileName.isEmpty())
+        return setErrorVrc(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud user profile name wasn't found", __FUNCTION__));
+
+    hrc = cloudProvider->GetProfileByName(aVBoxValues[0], cloudProfile.asOutParam());
+    if (FAILED(hrc))
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud profile object wasn't found", __FUNCTION__));
+
+    ComObjPtr<ICloudClient> cloudClient;
+    hrc = cloudProfile->CreateCloudClient(cloudClient.asOutParam());
+    if (FAILED(hrc))
+        return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found", __FUNCTION__));
+
+    if (m->virtualSystemDescriptions.size() == 1)
+    {
+        do
+        {
+            ComPtr<IVirtualBox> VBox(mVirtualBox);
+            retTypes.setNull();
+            aRefs.setNull();
+            aOvfValues.setNull();
+            aVBoxValues.setNull();
+            aExtraConfigValues.setNull();
+            hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_CloudInstanceId,
+                                            ComSafeArrayAsOutParam(retTypes),
+                                            ComSafeArrayAsOutParam(aRefs),
+                                            ComSafeArrayAsOutParam(aOvfValues),
+                                            ComSafeArrayAsOutParam(aVBoxValues),
+                                            ComSafeArrayAsOutParam(aExtraConfigValues));
+            if (FAILED(hrc))
+                break;
+
+            ComPtr<IProgress> pProgress;
+            pTask->pProgress.queryInterfaceTo(pProgress.asOutParam());
+
+            LogRel(("%s: calling CloudClient::ImportInstance\n", __FUNCTION__));
+            hrc = cloudClient->ImportInstance(m->virtualSystemDescriptions.front(),
+                                              aVBoxValues[0],
+                                              VBox,
+                                              pProgress);
+            Bstr instId(aVBoxValues[0]);
+            Utf8Str strInsId(instId);
+            if (FAILED(hrc))
+            {
+                hrc = setError(hrc, "%s: Import cloud instance \'%s\' failed\n", __FUNCTION__, strInsId.c_str());
+                break;
+            }
+
+            Utf8Str vsdData;
+
+            retTypes.setNull();
+            aRefs.setNull();
+            aOvfValues.setNull();
+            aVBoxValues.setNull();
+            aExtraConfigValues.setNull();
+            hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_CPU,
+                                            ComSafeArrayAsOutParam(retTypes),
+                                            ComSafeArrayAsOutParam(aRefs),
+                                            ComSafeArrayAsOutParam(aOvfValues),
+                                            ComSafeArrayAsOutParam(aVBoxValues),
+                                            ComSafeArrayAsOutParam(aExtraConfigValues));
+            if (FAILED(hrc))
+                break;
+            vsdData = aVBoxValues[0];
+            if (vsdData.isEmpty())
+                LogRel(("%s: Number of CPUs wasn't found\n", __FUNCTION__));
+            else
+                LogRel(("%s: Number of CPUs is %s\n", __FUNCTION__, vsdData.c_str()));
+
+            retTypes.setNull();
+            aRefs.setNull();
+            aOvfValues.setNull();
+            aVBoxValues.setNull();
+            aExtraConfigValues.setNull();
+            hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_Memory,
+                                            ComSafeArrayAsOutParam(retTypes),
+                                            ComSafeArrayAsOutParam(aRefs),
+                                            ComSafeArrayAsOutParam(aOvfValues),
+                                            ComSafeArrayAsOutParam(aVBoxValues),
+                                            ComSafeArrayAsOutParam(aExtraConfigValues));
+            if (FAILED(hrc))
+                break;
+            vsdData = aVBoxValues[0];
+            if (vsdData.isEmpty())
+                LogRel(("%s: Size of RAM wasn't found\n", __FUNCTION__));
+            else
+                LogRel(("%s: Size of RAM is %sMB\n", __FUNCTION__, vsdData.c_str()));
+
+            retTypes.setNull();
+            aRefs.setNull();
+            aOvfValues.setNull();
+            aVBoxValues.setNull();
+            aExtraConfigValues.setNull();
+            hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_OS,
+                                            ComSafeArrayAsOutParam(retTypes),
+                                            ComSafeArrayAsOutParam(aRefs),
+                                            ComSafeArrayAsOutParam(aOvfValues),
+                                            ComSafeArrayAsOutParam(aVBoxValues),
+                                            ComSafeArrayAsOutParam(aExtraConfigValues));
+            if (FAILED(hrc))
+                break;
+            vsdData = aVBoxValues[0];
+            if (vsdData.isEmpty())
+                LogRel(("%s: OS type wasn't found", __FUNCTION__));
+            else
+                LogRel(("%s: OS type is %s\n", __FUNCTION__, vsdData.c_str()));
+
+            retTypes.setNull();
+            aRefs.setNull();
+            aOvfValues.setNull();
+            aVBoxValues.setNull();
+            aExtraConfigValues.setNull();
+            hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_Name,
+                                            ComSafeArrayAsOutParam(retTypes),
+                                            ComSafeArrayAsOutParam(aRefs),
+                                            ComSafeArrayAsOutParam(aOvfValues),
+                                            ComSafeArrayAsOutParam(aVBoxValues),
+                                            ComSafeArrayAsOutParam(aExtraConfigValues));
+            if (FAILED(hrc))
+                break;
+            vsdData = aVBoxValues[0];
+            if (vsdData.isEmpty())
+                LogRel(("%s: VM name wasn't found", __FUNCTION__));
+            else
+                LogRel(("%s: VM name is %s\n", __FUNCTION__, vsdData.c_str()));
+        } while (0);
+    }
+    else
+        hrc = setErrorVrc(VERR_MISMATCH, tr("Import from Cloud isn't supported for more than one VM instance."));
+
+    if (FAILED(hrc))
+    {
+        //some roll-back actions
+    }
+    else
+    {
+        //continue and create new VM using data from VSD and downloaded image as base image
+        //The downloaded image should be converted to VDI/VMDK if it has another format
+    }
+
+    /* Reset the state so others can call methods again */
+    m->state = Data::ApplianceIdle;
+
+    LogFlowFunc(("rc=%Rhrc\n", hrc));
+    LogFlowFuncLeave();
+    return hrc;
 }
 
 /**
@@ -1980,29 +2314,75 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
     SetUpProgressMode mode;
     if (locInfo.storageType == VFSType_File)
         mode = ImportFile;
+    else if (locInfo.storageType == VFSType_Cloud)
+        mode = ImportCloud;
     else
         mode = ImportS3;
 
-    rc = i_setUpProgress(progress,
-                         BstrFmt(tr("Importing appliance '%s'"), locInfo.strPath.c_str()),
-                         mode);
-    if (FAILED(rc)) throw rc;
-
     /* Initialize our worker task */
-    TaskOVF* task = NULL;
+    TaskOVF* ovfTask = NULL;
+    TaskCloud* cloudTask = NULL;
     try
     {
-        task = new TaskOVF(this, TaskOVF::Import, locInfo, progress);
+        if (mode == ImportFile)
+        {
+            rc = i_setUpProgress(progress,
+                                 BstrFmt(tr("Importing appliance '%s'"), locInfo.strPath.c_str()),
+                                 mode);
+            if (FAILED(rc)) throw rc;
+
+            ovfTask = new TaskOVF(this, TaskOVF::Import, locInfo, progress);
+            rc = ovfTask->createThread();
+        }
+        else if (mode == ImportCloud)
+        {
+            /*
+             1. Create a custom imaghe from the instance
+             2. Import the custom image into the Object Storage (OCI format - TAR file with QCOW2 image and JSON file)
+             3. Download the object from the Object Storage
+             4. Open the object, extract QCOW2 image and convert one QCOW2->VDI
+             5. Create VM with user settings and attach the converted image to VM
+             6. Lauch VM.
+            */
+            progress.createObject();
+            if (locInfo.strProvider.equals("OCI"))
+            {
+                progress->init(mVirtualBox, static_cast<IAppliance*>(this),
+                             Bstr("Importing VM from Cloud...").raw(),
+                             TRUE /* aCancelable */,
+                             6, // ULONG cOperations,
+                             750, // ULONG ulTotalOperationsWeight,
+                             Bstr("Importing VM from Cloud...").raw(), // aFirstOperationDescription
+                             10); // ULONG ulFirstOperationWeight
+            }
+            else
+                return setErrorVrc(VBOX_E_NOT_SUPPORTED,
+                                   tr("Only \"OCI\" cloud provider is supported for now. \"%s\" isn't supported."),
+                                   locInfo.strProvider.c_str());
+
+            cloudTask = new TaskCloud(this, TaskCloud::Import, locInfo, progress);
+            rc = cloudTask->createThread();
+            if (FAILED(rc)) throw rc;
+        }
     }
-    catch(...)
+    catch (HRESULT aRc)
     {
-        delete task;
-        throw rc = setError(VBOX_E_OBJECT_NOT_FOUND,
-                            tr("Could not create TaskOVF object for importing OVF data into VirtualBox"));
+        rc = aRc;
+    } 
+    catch (...)
+    {
+        rc = setError(VBOX_E_OBJECT_NOT_FOUND,
+                            tr("Could not create a task object for importing appliance into VirtualBox"));
     }
 
-    rc = task->createThread();
-    if (FAILED(rc)) throw rc;
+    if (FAILED(rc))
+    {
+        if (ovfTask)
+            delete ovfTask;
+        if (cloudTask)
+            delete cloudTask;
+        throw rc;
+    }
 
     return rc;
 }

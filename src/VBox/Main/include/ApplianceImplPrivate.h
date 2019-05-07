@@ -338,7 +338,9 @@ class Appliance::TaskCloud : public ThreadTask
 public:
     enum TaskType
     {
-        Export
+        Export,
+        Import,
+        ReadData
     };
 
     TaskCloud(Appliance *aThat,
@@ -352,7 +354,13 @@ public:
         pProgress(aProgress),
         rc(S_OK)
     {
-        m_strTaskName = "CloudExpt";
+        switch (taskType)
+        {
+            case TaskCloud::Export:    m_strTaskName = "CloudExpt"; break;
+            case TaskCloud::Import:    m_strTaskName = "CloudImpt"; break;
+            case TaskCloud::ReadData:  m_strTaskName = "CloudRead"; break;
+            default:                   m_strTaskName = "CloudTask"; break;
+        }
     }
 
     ~TaskCloud()
@@ -370,7 +378,7 @@ public:
 
     void handler()
     {
-        Appliance::i_exportCloudThreadTask(this);
+        Appliance::i_importOrExportCloudThreadTask(this);
     }
 };
 

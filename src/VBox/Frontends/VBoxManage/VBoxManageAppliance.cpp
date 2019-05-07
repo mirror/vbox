@@ -145,12 +145,22 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
 #endif
     { "--disk",                 'D', RTGETOPT_REQ_STRING },
     { "--options",              'O', RTGETOPT_REQ_STRING },
+
+    { "--cloud",                'j', RTGETOPT_REQ_NOTHING},
+    { "--cloudprofile",         'k', RTGETOPT_REQ_STRING },
+    { "--cloudinstanceid",      'l', RTGETOPT_REQ_STRING }
 };
+
+enum
+{
+    NOT_SET, LOCAL, CLOUD
+} actionType;
 
 RTEXITCODE handleImportAppliance(HandlerArg *arg)
 {
     HRESULT rc = S_OK;
-
+    bool fCloud = false; // the default
+    actionType = NOT_SET;
     Utf8Str strOvfFilename;
     bool fExecute = true;                  // if true, then we actually do the import
     com::SafeArray<ImportOptions_T> options;
@@ -181,60 +191,68 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                 break;
 
             case 's':   // --vsys
+                if (fCloud == false && actionType == NOT_SET)
+                    actionType = LOCAL;
+
+                if (actionType != LOCAL)
+                    return errorSyntax(USAGE_EXPORTAPPLIANCE,
+                                       "Option \"%s\" can't be used together with \"--cloud\" argument.",
+                                       GetState.pDef->pszLong);
+
                 ulCurVsys = ValueUnion.u32;
                 ulCurUnit = (uint32_t)-1;
                 break;
 
             case 'o':   // --ostype
-                if (ulCurVsys == (uint32_t)-1)
-                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
+                    return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["ostype"] = ValueUnion.psz;
                 break;
 
             case 'V':   // --vmname
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["vmname"] = ValueUnion.psz;
                 break;
 
             case 'S':   // --settingsfile
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["settingsfile"] = ValueUnion.psz;
                 break;
 
             case 'p':   // --basefolder
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["basefolder"] = ValueUnion.psz;
                 break;
 
             case 'g':   // --group
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["group"] = ValueUnion.psz;
                 break;
 
             case 'd':   // --description
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["description"] = ValueUnion.psz;
                 break;
 
             case 'L':   // --eula
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["eula"] = ValueUnion.psz;
                 break;
 
             case 'm':   // --memory
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["memory"] = ValueUnion.psz;
                 break;
 
             case 'c':   // --cpus
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 mapArgsMapsPerVsys[ulCurVsys]["cpus"] = ValueUnion.psz;
                 break;
@@ -244,7 +262,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                 break;
 
             case 'x':   // --ignore
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 if (ulCurUnit == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --unit argument.", GetState.pDef->pszLong);
@@ -252,7 +270,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                 break;
 
             case 'T':   // --scsitype
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 if (ulCurUnit == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --unit argument.", GetState.pDef->pszLong);
@@ -260,7 +278,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                 break;
 
             case 'C':   // --controller
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 if (ulCurUnit == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --unit argument.", GetState.pDef->pszLong);
@@ -268,7 +286,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                 break;
 
             case 'D':   // --disk
-                if (ulCurVsys == (uint32_t)-1)
+                if (actionType == LOCAL && ulCurVsys == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                 if (ulCurUnit == (uint32_t)-1)
                     return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --unit argument.", GetState.pDef->pszLong);
@@ -278,6 +296,37 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
             case 'O':   // --options
                 if (RT_FAILURE(parseImportOptions(ValueUnion.psz, &options)))
                     return errorArgument("Invalid import options '%s'\n", ValueUnion.psz);
+                break;
+
+                /*--cloud and --vsys are orthogonal, only one must be presented*/
+            case 'j':   // --cloud
+                if (fCloud == false && actionType == NOT_SET)
+                {
+                    fCloud = true;
+                    actionType = CLOUD;
+                }
+
+                if (actionType != CLOUD)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                       "Option \"%s\" can't be used together with \"--vsys\" argument.",
+                                       GetState.pDef->pszLong);
+
+                ulCurVsys = 0;
+                break;
+
+                /* Cloud export settings */
+            case 'k':   // --cloudprofile
+                if (actionType != CLOUD)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                       GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["cloudprofile"] = ValueUnion.psz;
+                break;
+
+            case 'l':   // --cloudinstanceid
+                if (actionType != CLOUD)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                       GetState.pDef->pszLong);
+                mapArgsMapsPerVsys[ulCurVsys]["cloudinstanceid"] = ValueUnion.psz;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -304,7 +353,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
         }
     }
 
-    if (strOvfFilename.isEmpty())
+    if (actionType == LOCAL && strOvfFilename.isEmpty())
         return errorSyntax(USAGE_IMPORTAPPLIANCE, "Not enough arguments for \"import\" command.");
 
     do
@@ -312,13 +361,27 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
         ComPtr<IAppliance> pAppliance;
         CHECK_ERROR_BREAK(arg->virtualBox, CreateAppliance(pAppliance.asOutParam()));
 
+        //in the case of Cloud, append the instance id here because later it's harder to do
+        if (actionType == CLOUD &&
+            mapArgsMapsPerVsys[ulCurVsys]["cloudprofile"].isNotEmpty() &&
+            mapArgsMapsPerVsys[ulCurVsys]["cloudinstanceid"].isNotEmpty())
+        {
+            strOvfFilename.append(mapArgsMapsPerVsys[ulCurVsys]["cloudprofile"]);
+            strOvfFilename.append("/");
+            strOvfFilename.append(mapArgsMapsPerVsys[ulCurVsys]["cloudinstanceid"]);
+        }
+        else 
+            return errorSyntax(USAGE_IMPORTAPPLIANCE, "Not enough arguments for import from the Cloud.");
+
         char *pszAbsFilePath;
         if (strOvfFilename.startsWith("S3://", RTCString::CaseInsensitive) ||
             strOvfFilename.startsWith("SunCloud://", RTCString::CaseInsensitive) ||
-            strOvfFilename.startsWith("webdav://", RTCString::CaseInsensitive))
+            strOvfFilename.startsWith("webdav://", RTCString::CaseInsensitive) ||
+            strOvfFilename.startsWith("OCI://", RTCString::CaseInsensitive))
             pszAbsFilePath = RTStrDup(strOvfFilename.c_str());
         else
             pszAbsFilePath = RTPathAbsDup(strOvfFilename.c_str());
+
         ComPtr<IProgress> progressRead;
         CHECK_ERROR_BREAK(pAppliance, Read(Bstr(pszAbsFilePath).raw(),
                                            progressRead.asOutParam()));
@@ -329,43 +392,6 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
 
         Bstr path; /* fetch the path, there is stuff like username/password removed if any */
         CHECK_ERROR_BREAK(pAppliance, COMGETTER(Path)(path.asOutParam()));
-        // call interpret(); this can yield both warnings and errors, so we need
-        // to tinker with the error info a bit
-        RTStrmPrintf(g_pStdErr, "Interpreting %ls...\n", path.raw());
-        rc = pAppliance->Interpret();
-        com::ErrorInfo info0(pAppliance, COM_IIDOF(IAppliance));
-
-        com::SafeArray<BSTR> aWarnings;
-        if (SUCCEEDED(pAppliance->GetWarnings(ComSafeArrayAsOutParam(aWarnings))))
-        {
-            size_t cWarnings = aWarnings.size();
-            for (unsigned i = 0; i < cWarnings; ++i)
-            {
-                Bstr bstrWarning(aWarnings[i]);
-                RTMsgWarning("%ls.", bstrWarning.raw());
-            }
-        }
-
-        if (FAILED(rc))     // during interpret, after printing warnings
-        {
-            com::GluePrintErrorInfo(info0);
-            com::GluePrintErrorContext("Interpret", __FILE__, __LINE__);
-            break;
-        }
-
-        RTStrmPrintf(g_pStdErr, "OK.\n");
-
-        // fetch all disks
-        com::SafeArray<BSTR> retDisks;
-        CHECK_ERROR_BREAK(pAppliance,
-                          COMGETTER(Disks)(ComSafeArrayAsOutParam(retDisks)));
-        if (retDisks.size() > 0)
-        {
-            RTPrintf("Disks:\n");
-            for (unsigned i = 0; i < retDisks.size(); i++)
-                RTPrintf("  %ls\n", retDisks[i]);
-            RTPrintf("\n");
-        }
 
         // fetch virtual system descriptions
         com::SafeIfaceArray<IVirtualSystemDescription> aVirtualSystemDescriptions;
@@ -374,18 +400,59 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
 
         size_t cVirtualSystemDescriptions = aVirtualSystemDescriptions.size();
 
-        // match command line arguments with virtual system descriptions;
-        // this is only to sort out invalid indices at this time
-        ArgsMapsMap::const_iterator it;
-        for (it = mapArgsMapsPerVsys.begin();
-             it != mapArgsMapsPerVsys.end();
-             ++it)
+        if (actionType == LOCAL)
         {
-            uint32_t ulVsys = it->first;
-            if (ulVsys >= cVirtualSystemDescriptions)
-                return errorSyntax(USAGE_IMPORTAPPLIANCE,
-                                   "Invalid index %RI32 with -vsys option; the OVF contains only %zu virtual system(s).",
-                                   ulVsys, cVirtualSystemDescriptions);
+            // call interpret(); this can yield both warnings and errors, so we need
+            // to tinker with the error info a bit
+            RTStrmPrintf(g_pStdErr, "Interpreting %ls...\n", path.raw());
+            rc = pAppliance->Interpret();
+            com::ErrorInfo info0(pAppliance, COM_IIDOF(IAppliance));
+
+            com::SafeArray<BSTR> aWarnings;
+            if (SUCCEEDED(pAppliance->GetWarnings(ComSafeArrayAsOutParam(aWarnings))))
+            {
+                size_t cWarnings = aWarnings.size();
+                for (unsigned i = 0; i < cWarnings; ++i)
+                {
+                    Bstr bstrWarning(aWarnings[i]);
+                    RTMsgWarning("%ls.", bstrWarning.raw());
+                }
+            }
+
+            if (FAILED(rc))     // during interpret, after printing warnings
+            {
+                com::GluePrintErrorInfo(info0);
+                com::GluePrintErrorContext("Interpret", __FILE__, __LINE__);
+                break;
+            }
+
+            RTStrmPrintf(g_pStdErr, "OK.\n");
+
+            // fetch all disks
+            com::SafeArray<BSTR> retDisks;
+            CHECK_ERROR_BREAK(pAppliance,
+                              COMGETTER(Disks)(ComSafeArrayAsOutParam(retDisks)));
+            if (retDisks.size() > 0)
+            {
+                RTPrintf("Disks:\n");
+                for (unsigned i = 0; i < retDisks.size(); i++)
+                    RTPrintf("  %ls\n", retDisks[i]);
+                RTPrintf("\n");
+            }
+
+            // match command line arguments with virtual system descriptions;
+            // this is only to sort out invalid indices at this time
+            ArgsMapsMap::const_iterator it;
+            for (it = mapArgsMapsPerVsys.begin();
+                 it != mapArgsMapsPerVsys.end();
+                 ++it)
+            {
+                uint32_t ulVsys = it->first;
+                if (ulVsys >= cVirtualSystemDescriptions)
+                    return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                       "Invalid index %RI32 with -vsys option; the OVF contains only %zu virtual system(s).",
+                                       ulVsys, cVirtualSystemDescriptions);
+            }
         }
 
         uint32_t cLicensesInTheWay = 0;
@@ -919,6 +986,8 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                         case VirtualSystemDescriptionType_CloudOCISubnet:
                         case VirtualSystemDescriptionType_CloudKeepObject:
                         case VirtualSystemDescriptionType_CloudLaunchInstance:
+                        case VirtualSystemDescriptionType_CloudInstanceId:
+                        case VirtualSystemDescriptionType_CloudImageId:
                         case VirtualSystemDescriptionType_Miscellaneous:
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;
@@ -1040,11 +1109,6 @@ static const RTGETOPTDEF g_aExportOptions[] =
     { "--cloudlaunchinstance",  'L', RTGETOPT_REQ_STRING },
 };
 
-enum
-{
-    NOT_SET, LOCAL, CLOUD
-} exportType;
-
 RTEXITCODE handleExportAppliance(HandlerArg *a)
 {
     HRESULT rc = S_OK;
@@ -1053,7 +1117,7 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
     Utf8Str strOvfFormat("ovf-1.0"); // the default export version
     bool fManifest = false; // the default
     bool fCloud = false; // the default
-    exportType = NOT_SET;
+    actionType = NOT_SET;
     bool fExportISOImages = false; // the default
     com::SafeArray<ExportOptions_T> options;
     std::list< ComPtr<IMachine> > llMachines;
@@ -1108,10 +1172,10 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                     break;
 
                 case 's':   // --vsys
-                    if (fCloud == false && exportType == NOT_SET)
-                        exportType = LOCAL;
+                    if (fCloud == false && actionType == NOT_SET)
+                        actionType = LOCAL;
 
-                    if (exportType != LOCAL)
+                    if (actionType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE,
                                            "Option \"%s\" can't be used together with \"--cloud\" argument.",
                                            GetState.pDef->pszLong);
@@ -1120,56 +1184,56 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                     break;
 
                 case 'V':   // --vmname
-                    if (exportType == NOT_SET || ulCurVsys == (uint32_t)-1)
+                    if (actionType == NOT_SET || ulCurVsys == (uint32_t)-1)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys or --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["vmname"] = ValueUnion.psz;
                     break;
 
                 case 'p':   // --product
-                    if (exportType != LOCAL)
+                    if (actionType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["product"] = ValueUnion.psz;
                     break;
 
                 case 'P':   // --producturl
-                    if (exportType != LOCAL)
+                    if (actionType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["producturl"] = ValueUnion.psz;
                     break;
 
                 case 'n':   // --vendor
-                    if (exportType != LOCAL)
+                    if (actionType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["vendor"] = ValueUnion.psz;
                     break;
 
                 case 'N':   // --vendorurl
-                    if (exportType != LOCAL)
+                    if (actionType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["vendorurl"] = ValueUnion.psz;
                     break;
 
                 case 'v':   // --version
-                    if (exportType != LOCAL)
+                    if (actionType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["version"] = ValueUnion.psz;
                     break;
 
                 case 'd':   // --description
-                    if (exportType != LOCAL)
+                    if (actionType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["description"] = ValueUnion.psz;
                     break;
 
                 case 'e':   // --eula
-                    if (exportType != LOCAL)
+                    if (actionType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["eula"] = ValueUnion.psz;
                     break;
 
                 case 'E':   // --eulafile
-                    if (exportType != LOCAL)
+                    if (actionType != LOCAL)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["eulafile"] = ValueUnion.psz;
                     break;
@@ -1181,13 +1245,13 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
 
                     /*--cloud and --vsys are orthogonal, only one must be presented*/
                 case 'C':   // --cloud
-                    if (fCloud == false && exportType == NOT_SET)
+                    if (fCloud == false && actionType == NOT_SET)
                     {
                         fCloud = true;
-                        exportType = CLOUD;
+                        actionType = CLOUD;
                     }
 
-                    if (exportType != CLOUD)
+                    if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE,
                                            "Option \"%s\" can't be used together with \"--vsys\" argument.",
                                            GetState.pDef->pszLong);
@@ -1197,70 +1261,70 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
 
                     /* Cloud export settings */
                 case 'S':   // --cloudshape
-                    if (exportType != CLOUD)
+                    if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["cloudshape"] = ValueUnion.psz;
                     break;
 
                 case 'D':   // --clouddomain
-                    if (exportType != CLOUD)
+                    if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["clouddomain"] = ValueUnion.psz;
                     break;
 
                 case 'R':   // --clouddisksize
-                    if (exportType != CLOUD)
+                    if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["clouddisksize"] = ValueUnion.psz;
                     break;
 
                 case 'B':   // --cloudbucket
-                    if (exportType != CLOUD)
+                    if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["cloudbucket"] = ValueUnion.psz;
                     break;
 
                 case 'Q':   // --cloudocivcn
-                    if (exportType != CLOUD)
+                    if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["cloudocivcn"] = ValueUnion.psz;
                     break;
 
                 case 'A':   // --cloudpublicip
-                    if (exportType != CLOUD)
+                    if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["cloudpublicip"] = ValueUnion.psz;
                     break;
 
                 case 'F':   // --cloudprofile
-                    if (exportType != CLOUD)
+                    if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["cloudprofile"] = ValueUnion.psz;
                     break;
 
                 case 'T':   // --cloudocisubnet
-                    if (exportType != CLOUD)
+                    if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["cloudocisubnet"] = ValueUnion.psz;
                     break;
 
                 case 'K':   // --cloudkeepobject
-                    if (exportType != CLOUD)
+                    if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["cloudkeepobject"] = ValueUnion.psz;
                     break;
 
                 case 'L':   // --cloudlaunchinstance
-                    if (exportType != CLOUD)
+                    if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["cloudlaunchinstance"] = ValueUnion.psz;
