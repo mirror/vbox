@@ -353,6 +353,8 @@ static DECLCALLBACK(int) svcUnload(void *)
  */
 static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvClient)
 {
+    RT_NOREF(u32ClientID);
+
     VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
 
     LogFunc(("u32ClientID = %d\n", u32ClientID));
@@ -412,7 +414,7 @@ static DECLCALLBACK(void) svcCall(void *,
                                   VBOXHGCMSVCPARM paParms[],
                                   uint64_t tsArrival)
 {
-    RT_NOREF_PV(tsArrival);
+    RT_NOREF_PV(u32ClientID, tsArrival);
     int rc = VINF_SUCCESS;
 
     LogFunc(("u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n",
@@ -793,6 +795,8 @@ static SSMFIELD const g_aClipboardClientDataFields[] =
 
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
+    RT_NOREF(u32ClientID);
+
 #ifndef UNIT_TEST
     /*
      * When the state will be restored, pending requests will be reissued
@@ -863,7 +867,7 @@ typedef struct CLIPSAVEDSTATEDATA
 static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
 {
 #ifndef UNIT_TEST
-    RT_NOREF(uVersion);
+    RT_NOREF(u32ClientID, uVersion);
 
     LogFunc(("u32ClientID = %d\n", u32ClientID));
 
