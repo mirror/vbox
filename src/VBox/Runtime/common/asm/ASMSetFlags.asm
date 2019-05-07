@@ -1,3 +1,4 @@
+; $Id$
 ;; @file
 ; IPRT - ASMSetFlags().
 ;
@@ -34,8 +35,25 @@ BEGINCODE
 ;;
 ; @param rcx  eflags
 BEGINPROC_EXPORTED ASMSetFlags
+%if    ARCH_BITS == 64
+ %ifdef ASM_CALL64_GCC
+        push    rdi
+ %else
         push    rcx
+ %endif
         popfq
+%elif  ARCH_BITS == 32
+        push    dword [esp + 4]
+        popfd
+%elif  ARCH_BITS == 16
+        push    bp
+        mov     bp, sp
+        push    word [bp + 2 + 2]
+        popf
+        leave
+%else
+ %error ARCH_BITS
+%endif
         ret
 ENDPROC ASMSetFlags
 

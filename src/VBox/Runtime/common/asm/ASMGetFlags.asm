@@ -1,3 +1,4 @@
+; $Id$
 ;; @file
 ; IPRT - ASMGetFlags().
 ;
@@ -31,8 +32,12 @@
 BEGINCODE
 
 BEGINPROC_EXPORTED ASMGetFlags
+%if    ARCH_BITS == 32
+        pushfd
+%else
         pushf
-        pop     rax
+%endif
+        pop     xAX
         ret
 ENDPROC ASMGetFlags
 
