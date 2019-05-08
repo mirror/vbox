@@ -162,7 +162,7 @@ VBoxService_SOURCES.win  += \
 	VBoxService-win.rc \
 	VBoxService-win.cpp
 
-VBoxService_SOURCES.os2   = \
+VBoxService_SOURCES.os2  += \
 	VBoxService-os2.def
 
 VBoxService_LDFLAGS.darwin = -framework IOKit
