@@ -56,6 +56,11 @@ ifdef VBOX_WITH_GUEST_CONTROL
 VBOX_WITH_VBOXSERVICE_CONTROL       := 1
 endif
 
+# Shared Clipboard.
+ifdef VBOX_WITH_SHARED_CLIPBOARD
+VBOX_WITH_VBOXSERVICE_CLIPBOARD     := 1
+endif
+
 #
 # VBoxService
 #
@@ -87,12 +92,6 @@ VBoxService_DEFS         += \
 VBoxService_DEFS.win     += _WIN32_WINNT=0x0501
 VBoxService_DEFS.os2      = VBOX_WITH_HGCM
 
-ifdef VBOX_WITH_SHARED_CLIPBOARD
- VBoxService_DEFS.os2    += VBOX_WITH_VBOXSERVICE_CLIPBOARD VBOX_WITH_SHARED_CLIPBOARD
- VBoxService_SOURCES.os2 += \
-	VBoxServiceClipboard-os2.cpp
-endif
-
 VBoxService_SOURCES       = \
 	VBoxService.cpp \
 	VBoxServiceUtils.cpp \
@@ -101,6 +100,12 @@ VBoxService_SOURCES       = \
 ifdef VBOX_WITH_VBOXSERVICE_TIMESYNC
 VBoxService_SOURCES      += \
 	VBoxServiceTimeSync.cpp
+endif
+
+ifdef VBOX_WITH_VBOXSERVICE_CLIPBOARD
+ VBoxService_DEFS.os2    += VBOX_WITH_VBOXSERVICE_CLIPBOARD VBOX_WITH_SHARED_CLIPBOARD
+ VBoxService_SOURCES.os2 += \
+	VBoxServiceClipboard-os2.cpp
 endif
 
 ifdef VBOX_WITH_VBOXSERVICE_TOOLBOX
