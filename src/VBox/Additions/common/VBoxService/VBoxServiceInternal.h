@@ -166,7 +166,9 @@ extern unsigned     g_cVerbosity;
 extern char         g_szLogFile[RTPATH_MAX + 128];
 extern uint32_t     g_DefaultInterval;
 extern VBOXSERVICE  g_TimeSync;
+#ifdef VBOX_WITH_VBOXSERVICE_CLIPBOARD
 extern VBOXSERVICE  g_Clipboard;
+#endif
 extern VBOXSERVICE  g_Control;
 extern VBOXSERVICE  g_VMInfo;
 extern VBOXSERVICE  g_CpuHotPlug;
