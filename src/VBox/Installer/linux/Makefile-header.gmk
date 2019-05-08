@@ -173,7 +173,11 @@ else # neq($(KERNELRELEASE),)
  KERN_VER := $(KERNELRELEASE)
 
  ifeq ($(KERN_DIR),)
-  KERN_DIR := /lib/modules/$(KERN_VER)/build
+  ifneq ($(srctree),)
+   KERN_DIR := $(srctree)
+  else
+   KERN_DIR := /lib/modules/$(KERN_VER)/build
+  endif
  endif
 endif # neq($(KERNELRELEASE),)
 
