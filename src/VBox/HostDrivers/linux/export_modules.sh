@@ -154,13 +154,13 @@ for f in $FILES_VBOXDRV_BIN; do
     install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxdrv/`echo $f|cut -d'>' -f2`"
 done
 if [ -n "$VBOX_WITH_HARDENING" ]; then
-    sed -e "s;-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" \
-        -e "s;-DIPRT_WITH_EFLAGS_AC_PRESERVING;;g" \
+    sed -e "s;VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" \
+        -e "s;IPRT_WITH_EFLAGS_AC_PRESERVING;;g" \
         < $PATH_VBOXDRV/linux/Makefile > $PATH_TMP/vboxdrv/Makefile
 else
-    sed -e "s;-DVBOX_WITH_HARDENING;;g" \
-        -e "s;-DVBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" \
-        -e "s;-DIPRT_WITH_EFLAGS_AC_PRESERVING;;g" \
+    sed -e "s;VBOX_WITH_HARDENING;;g" \
+        -e "s;VBOX_WITH_EFLAGS_AC_SET_IN_VBOXDRV;;g" \
+        -e "s;IPRT_WITH_EFLAGS_AC_PRESERVING;;g" \
         < $PATH_VBOXDRV/linux/Makefile > $PATH_TMP/vboxdrv/Makefile
 fi
 
@@ -172,7 +172,7 @@ done
 if [ -n "$VBOX_WITH_HARDENING" ]; then
     cat                                   $PATH_VBOXNET/linux/Makefile > $PATH_TMP/vboxnetflt/Makefile
 else
-    sed -e "s;-DVBOX_WITH_HARDENING;;g" < $PATH_VBOXNET/linux/Makefile > $PATH_TMP/vboxnetflt/Makefile
+    sed -e "s;VBOX_WITH_HARDENING;;g" < $PATH_VBOXNET/linux/Makefile > $PATH_TMP/vboxnetflt/Makefile
 fi
 
 # vboxnetadp (VirtualBox network adapter kernel module)
@@ -183,7 +183,7 @@ done
 if [ -n "$VBOX_WITH_HARDENING" ]; then
     cat                                   $PATH_VBOXADP/linux/Makefile > $PATH_TMP/vboxnetadp/Makefile
 else
-    sed -e "s;-DVBOX_WITH_HARDENING;;g" < $PATH_VBOXADP/linux/Makefile > $PATH_TMP/vboxnetadp/Makefile
+    sed -e "s;VBOX_WITH_HARDENING;;g" < $PATH_VBOXADP/linux/Makefile > $PATH_TMP/vboxnetadp/Makefile
 fi
 
 # vboxpci (VirtualBox host PCI access kernel module)
@@ -194,7 +194,7 @@ done
 if [ -n "$VBOX_WITH_HARDENING" ]; then
     cat                                   $PATH_VBOXPCI/linux/Makefile > $PATH_TMP/vboxpci/Makefile
 else
-    sed -e "s;-DVBOX_WITH_HARDENING;;g" < $PATH_VBOXPCI/linux/Makefile > $PATH_TMP/vboxpci/Makefile
+    sed -e "s;VBOX_WITH_HARDENING;;g" < $PATH_VBOXPCI/linux/Makefile > $PATH_TMP/vboxpci/Makefile
 fi
 
 install -D -m 0644 $PATH_LINUX/Makefile $PATH_TMP/Makefile

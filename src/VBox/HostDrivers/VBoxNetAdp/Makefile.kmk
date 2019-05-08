@@ -175,7 +175,7 @@ $$(VBoxNetAdp-src_0_OUTDIR)/Makefile: \
 		| $$(dir $$@)
 	$(QUIET)$(RM) -f -- $@
  ifndef VBOX_WITH_HARDENING
-	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
+	$(QUIET)$(SED) -e "s;VBOX_WITH_HARDENING;;g" --output $@ $<
  else
 	$(QUIET)$(CP) -f $< $@
  endif
@@ -207,7 +207,7 @@ $$(VBoxNetAdp-src_0_OUTDIR)/Makefile: \
 		| $$(dir $$@)
 	$(QUIET)$(RM) -f -- $@
  ifndef VBOX_WITH_HARDENING
-	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
+	$(QUIET)$(SED) -e "s;VBOX_WITH_HARDENING;;g" --output $@ $<
  else
 	$(QUIET)$(CP) -f $< $@
  endif
