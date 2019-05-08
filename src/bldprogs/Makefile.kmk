@@ -18,7 +18,9 @@
 SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
-BLDPROGS += bin2c biossums filesplitter VBoxCmp
+ifneq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),solaris.sparc64)
+ BLDPROGS += bin2c biossums filesplitter VBoxCmp
+endif
 
 bin2c_TEMPLATE = VBoxBldProg
 bin2c_SOURCES = bin2c.c
@@ -72,7 +74,9 @@ BLDPROGS.win += VBoxCheckImports
 VBoxCheckImports_TEMPLATE = VBoxBldProg
 VBoxCheckImports_SOURCES  = VBoxCheckImports.cpp
 
-BLDPROGS += VBoxDef2LazyLoad
+ifneq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),solaris.sparc64)
+ BLDPROGS += VBoxDef2LazyLoad
+endif
 VBoxDef2LazyLoad_TEMPLATE = VBoxBldProg
 VBoxDef2LazyLoad_SOURCES  = VBoxDef2LazyLoad.cpp
 
