@@ -85,7 +85,13 @@ VBoxService_DEFS         += \
 VBoxService_DEFS         += \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
 VBoxService_DEFS.win     += _WIN32_WINNT=0x0501
-VBoxService_DEFS.os2      = VBOX_WITH_HGCM VBOX_WITH_VBOXSERVICE_CLIPBOARD
+VBoxService_DEFS.os2      = VBOX_WITH_HGCM
+
+ifdef VBOX_WITH_SHARED_CLIPBOARD
+ VBoxService_DEFS.os2    += VBOX_WITH_VBOXSERVICE_CLIPBOARD VBOX_WITH_SHARED_CLIPBOARD
+ VBoxService_SOURCES.os2 += \
+	VBoxServiceClipboard-os2.cpp
+endif
 
 VBoxService_SOURCES       = \
 	VBoxService.cpp \
@@ -152,8 +158,7 @@ VBoxService_SOURCES.win  += \
 	VBoxService-win.cpp
 
 VBoxService_SOURCES.os2   = \
-	VBoxService-os2.def \
-	VBoxServiceClipboard-os2.cpp
+	VBoxService-os2.def
 
 VBoxService_LDFLAGS.darwin = -framework IOKit
 
