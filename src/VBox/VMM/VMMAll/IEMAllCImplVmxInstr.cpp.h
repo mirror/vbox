@@ -169,22 +169,15 @@
 /** @todo NSTVMX: The following VM-exit intercepts are pending:
  *  VMX_EXIT_IO_SMI
  *  VMX_EXIT_SMI
- *  VMX_EXIT_INT_WINDOW
- *  VMX_EXIT_NMI_WINDOW
  *  VMX_EXIT_GETSEC
  *  VMX_EXIT_RSM
- *  VMX_EXIT_MTF
  *  VMX_EXIT_MONITOR (APIC access VM-exit caused by MONITOR pending)
- *  VMX_EXIT_ERR_MACHINE_CHECK
- *  VMX_EXIT_TPR_BELOW_THRESHOLD
+ *  VMX_EXIT_ERR_MACHINE_CHECK (we never need to raise this?)
  *  VMX_EXIT_APIC_ACCESS
- *  VMX_EXIT_VIRTUALIZED_EOI
  *  VMX_EXIT_EPT_VIOLATION
  *  VMX_EXIT_EPT_MISCONFIG
  *  VMX_EXIT_INVEPT
- *  VMX_EXIT_PREEMPT_TIMER
  *  VMX_EXIT_INVVPID
- *  VMX_EXIT_APIC_WRITE
  *  VMX_EXIT_RDRAND
  *  VMX_EXIT_VMFUNC
  *  VMX_EXIT_ENCLS
@@ -1083,7 +1076,7 @@ DECL_FORCE_INLINE(void) iemVmxVmcsSetExitInstrInfo(PVMCPU pVCpu, uint32_t uExitI
  */
 DECL_FORCE_INLINE(void) iemVmxVmSucceed(PVMCPU pVCpu)
 {
-    return CPUMSetGuestVmxVmSucceed(IEM_GET_CTX(pVCpu));
+    return CPUMSetGuestVmxVmSucceed(&pVCpu->cpum.GstCtx);
 }
 
 
@@ -1094,7 +1087,7 @@ DECL_FORCE_INLINE(void) iemVmxVmSucceed(PVMCPU pVCpu)
  */
 DECL_FORCE_INLINE(void) iemVmxVmFailInvalid(PVMCPU pVCpu)
 {
-    return CPUMSetGuestVmxVmFailInvalid(IEM_GET_CTX(pVCpu));
+    return CPUMSetGuestVmxVmFailInvalid(&pVCpu->cpum.GstCtx);
 }
 
 
@@ -1106,7 +1099,7 @@ DECL_FORCE_INLINE(void) iemVmxVmFailInvalid(PVMCPU pVCpu)
  */
 DECL_FORCE_INLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 {
-    return CPUMSetGuestVmxVmFailValid(IEM_GET_CTX(pVCpu), enmInsErr);
+    return CPUMSetGuestVmxVmFailValid(&pVCpu->cpum.GstCtx, enmInsErr);
 }
 
 
@@ -1118,7 +1111,7 @@ DECL_FORCE_INLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
  */
 DECL_FORCE_INLINE(void) iemVmxVmFail(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
 {
-    return CPUMSetGuestVmxVmFail(IEM_GET_CTX(pVCpu), enmInsErr);
+    return CPUMSetGuestVmxVmFail(&pVCpu->cpum.GstCtx, enmInsErr);
 }
 
 
@@ -2775,7 +2768,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     /* Update the VM-exit reason, the other relevant data fields are expected to be updated by the caller already. */
     pVmcs->u32RoExitReason = uExitReason;
     Log3(("vmexit: uExitReason=%#RX32 uExitQual=%#RX64 cs:rip=%04x:%#RX64\n", uExitReason, pVmcs->u64RoExitQual,
-          IEM_GET_CTX(pVCpu)->cs.Sel,  IEM_GET_CTX(pVCpu)->rip));
+          pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
 
     /*
      * Clear IDT-vectoring information fields if the VM-exit was not triggered during delivery of an event.
