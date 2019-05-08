@@ -23,25 +23,25 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
-ifneq ($(KBUILD_EXTMOD),)
+ifneq ($(KERNELRELEASE),)
 
-# Building from kBuild (make -C <kernel_directory> M=`pwd`).
-# KBUILD_EXTMOD is set to $(M) in this case.
+# Building from kBuild (make -C <kernel_directory> M=`pwd`),
+# or inside a kernel source tree.
 
 obj-m = vboxdrv/
-ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxnetflt/Makefile),)
+ifneq ($(wildcard $(CURDIR)/vboxnetflt/Makefile),)
  obj-m += vboxnetflt/
 endif
-ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxnetadp/Makefile),)
+ifneq ($(wildcard $(CURDIR)/vboxnetadp/Makefile),)
  obj-m += vboxnetadp/
 endif
-ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxpci/Makefile),)
+ifneq ($(wildcard $(CURDIR)/vboxpci/Makefile),)
  obj-m += vboxpci/
 endif
 
-else # ! KBUILD_EXTMOD
+else # ! KERNELRELEASE
 
-# convenience Makefile without KBUILD_EXTMOD
+# convenience Makefile without KERNELRELEASE
 
 KBUILD_VERBOSE ?=
 KERN_VER ?= $(shell uname -r)
@@ -146,4 +146,4 @@ load: unload
 		fi; \
 	done
 
-endif # ! KBUILD_EXTMOD
+endif # ! KERNELRELEASE

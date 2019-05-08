@@ -14,14 +14,14 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-ifneq ($(KBUILD_EXTMOD),)
+ifneq ($(KERNELRELEASE),)
 
-# Building from kBuild (make -C <kernel_directory> M=`pwd`).
-# KBUILD_EXTMOD is set to $(M) in this case.
+# Building from kBuild (make -C <kernel_directory> M=`pwd`)
+# or inside a kernel source tree.
 
 obj-m = vboxguest/ vboxsf/ vboxvideo/
 
-else # ! KBUILD_EXTMOD
+else # ! KERNELRELEASE
 
 KBUILD_VERBOSE =
  ifeq ($(KBUILD_VERBOSE),)
@@ -107,4 +107,4 @@ load:
 
 .PHONY: vboxguest vboxsf vboxvideo all install clean check load
 
-endif # ! KBUILD_EXTMOD
+endif # ! KERNELRELEASE
