@@ -3271,6 +3271,38 @@ VMM_INT_DECL(bool) CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void co
 
 
 /**
+ * Checks whether the given I/O access should cause a nested-guest VM-exit.
+ *
+ * @returns @c true if set, @c false otherwise.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   u16Port     The I/O port being accessed.
+ * @param   cbAccess    The size of the I/O access in bytes (1, 2 or 4 bytes).
+ */
+VMM_INT_DECL(bool) CPUMIsGuestVmxIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess)
+{
+#ifndef IN_RC
+    PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_UNCOND_IO_EXIT))
+        return true;
+
+    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_USE_IO_BITMAPS))
+    {
+        uint8_t const *pbIoBitmapA = (uint8_t const *)pCtx->hwvirt.vmx.CTX_SUFF(pvIoBitmap);
+        uint8_t const *pbIoBitmapB = (uint8_t const *)pCtx->hwvirt.vmx.CTX_SUFF(pvIoBitmap) + VMX_V_IO_BITMAP_A_SIZE;
+        Assert(pbIoBitmapA);
+        Assert(pbIoBitmapB);
+        return CPUMGetVmxIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, u16Port, cbAccess);
+    }
+
+    return false;
+#else
+    RT_NOREF3(pVCpu, u16Port, cbAccess);
+    return false;
+#endif
+}
+
+
+/**
  * Determines whether an IOIO intercept is active for the nested-guest or not.
  *
  * @param   pvIoBitmap      Pointer to the nested-guest IO bitmap.
