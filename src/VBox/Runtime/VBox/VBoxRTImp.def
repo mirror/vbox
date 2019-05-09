@@ -1375,6 +1375,7 @@ EXPORTS
     RTMemSaferAllocZExTag
     RTMemSaferAllocZTag
     RTMemSaferFree
+    RTMemSaferGetSize
     RTMemSaferReallocZExTag
     RTMemSaferReallocZTag
     RTMemSaferScramble
