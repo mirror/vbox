@@ -67,14 +67,13 @@ VBoxSharedCrOpenGL_SOURCES.win = \
 VBoxSharedCrOpenGL_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSharedCrOpenGL.dylib -framework IOKit
 VBoxSharedCrOpenGL_LIBS = \
 	$(PATH_STAGE_LIB)/VBoxOGLcrserverlib$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLrenderspu$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLhosterrorspu$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxOGLhostcrstate$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxOGLcrunpacker$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxOGLhostcrpacker$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxOGLhostcrutil$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/VBoxOGLrenderspu$(VBOX_SUFF_LIB) \
-	$(PATH_STAGE_LIB)/VBoxOGLhosterrorspu$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME) \
 	$(LIB_VMM)
