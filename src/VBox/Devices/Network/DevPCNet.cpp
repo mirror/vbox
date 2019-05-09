@@ -1603,10 +1603,15 @@ static void pcnetInit(PPCNETSTATE pThis)
     CSR_CRST(pThis) = CSR_CRBC(pThis) = CSR_NRST(pThis) = CSR_NRBC(pThis) = 0;
     CSR_CXST(pThis) = CSR_CXBC(pThis) = CSR_NXST(pThis) = CSR_NXBC(pThis) = 0;
 
-    LogRel(("PCnet#%d: Init: ss32=%d GCRDRA=%#010x[%d] GCTDRA=%#010x[%d]%s\n",
-            PCNET_INST_NR, BCR_SSIZE32(pThis),
+    LogRel(("PCnet#%d: Init: SWSTYLE=%d GCRDRA=%#010x[%d] GCTDRA=%#010x[%d]%s\n",
+            PCNET_INST_NR, BCR_SWSTYLE(pThis),
             pThis->GCRDRA, CSR_RCVRL(pThis), pThis->GCTDRA, CSR_XMTRL(pThis),
             !pThis->fSignalRxMiss ? " (CSR0_MISS disabled)" : ""));
+
+    if (pThis->GCRDRA & (pThis->iLog2DescSize - 1))
+        LogRel(("PCnet#%d: Warning: Misaligned RDRA\n", PCNET_INST_NR));
+    if (pThis->GCTDRA & (pThis->iLog2DescSize - 1))
+        LogRel(("PCnet#%d: Warning: Misaligned TDRA\n", PCNET_INST_NR));
 
     pThis->aCSR[0] |=  0x0101;       /* Initialization done */
     pThis->aCSR[0] &= ~0x0004;       /* clear STOP bit */
@@ -3032,6 +3037,8 @@ static int pcnetCSRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
             else
                 pThis->GCRDRA = (pThis->GCRDRA & 0x0000ffff) | ((val & 0x0000ffff) << 16);
             Log(("#%d: WRITE CSR%d, %#06x => GCRDRA=%08x (alt init)\n", PCNET_INST_NR, u32RAP, val, pThis->GCRDRA));
+            if (pThis->GCRDRA & (pThis->iLog2DescSize - 1))
+                LogRel(("PCnet#%d: Warning: Misaligned RDRA (GCRDRA=%#010x)\n", PCNET_INST_NR, pThis->GCRDRA));
             break;
 
         /*
@@ -3050,6 +3057,8 @@ static int pcnetCSRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
             else
                 pThis->GCTDRA = (pThis->GCTDRA & 0x0000ffff) | ((val & 0x0000ffff) << 16);
             Log(("#%d: WRITE CSR%d, %#06x => GCTDRA=%08x (alt init)\n", PCNET_INST_NR, u32RAP, val, pThis->GCTDRA));
+            if (pThis->GCTDRA & (pThis->iLog2DescSize - 1))
+                LogRel(("PCnet#%d: Warning: Misaligned TDRA (GCTDRA=%#010x)\n", PCNET_INST_NR, pThis->GCTDRA));
             break;
 
         case 58: /* Software Style */
