@@ -569,6 +569,29 @@ def copyFileSimple(sFileSrc, sFileDst):
     __installShUtilHacks(shutil);
     return shutil.copyfile(sFileSrc, sFileDst);
 
+
+def getDiskUsage(sPath):
+    """
+    Get free space of a partition that corresponds to specified sPath in MB.
+
+    Returns partition free space value in MB.
+    """
+    if platform.system() == 'Windows':
+        oCTypeFreeSpace = ctypes.c_ulonglong(0);
+        ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(sPath), None, None,
+                                                   ctypes.pointer(oCTypeFreeSpace));
+        cbFreeSpace = oCTypeFreeSpace.value;
+    else:
+        oStats = os.statvfs(sPath); # pylint: disable=E1101
+        cbFreeSpace = long(oStats.f_frsize) * oStats.f_bfree;
+
+    # Convert to MB
+    cMbFreeSpace = long(cbFreeSpace) / (1024 * 1024);
+
+    return cMbFreeSpace;
+
+
+
 #
 # SubProcess.
 #
@@ -1692,6 +1715,24 @@ def getObjectTypeName(oObject):
         return '__type__-throws-exception';
 
 
+def chmodPlusX(sFile):
+    """
+    Makes the specified file or directory executable.
+    Returns success indicator, no exceptions.
+
+    Note! Symbolic links are followed and the target will be changed.
+    """
+    try:
+        oStat = os.stat(sFile);
+    except:
+        return False;
+    try:
+        os.chmod(sFile, oStat.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH);
+    except:
+        return False;
+    return True;
+
+
 #
 # TestSuite stuff.
 #
@@ -1766,10 +1807,6 @@ def stricmp(sFirst, sSecond):
     return 1;
 
 
-#
-# Misc.
-#
-
 def versionCompare(sVer1, sVer2):
     """
     Compares to version strings in a fashion similar to RTStrVersionCompare.
@@ -1833,23 +1870,9 @@ def hasNonAsciiCharacters(sText):
     return False;
 
 
-def chmodPlusX(sFile):
-    """
-    Makes the specified file or directory executable.
-    Returns success indicator, no exceptions.
-
-    Note! Symbolic links are followed and the target will be changed.
-    """
-    try:
-        oStat = os.stat(sFile);
-    except:
-        return False;
-    try:
-        os.chmod(sFile, oStat.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH);
-    except:
-        return False;
-    return True;
-
+#
+# Unpacking.
+#
 
 def unpackZipFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
     # type: (string, string, (string) -> None, (string) -> None, (string) -> bool) -> list[string]
@@ -2039,25 +2062,61 @@ def unpackFile(sArchive, sDstDir, fnLog, fnError = None, fnFilter = None):
     return [];
 
 
-def getDiskUsage(sPath):
+#
+# Misc.
+#
+def areBytesEqual(oLeft, oRight):
     """
-    Get free space of a partition that corresponds to specified sPath in MB.
+    Compares two byte arrays, strings or whatnot.
 
-    Returns partition free space value in MB.
+    returns true / false accordingly.
     """
-    if platform.system() == 'Windows':
-        oCTypeFreeSpace = ctypes.c_ulonglong(0);
-        ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(sPath), None, None,
-                                                   ctypes.pointer(oCTypeFreeSpace));
-        cbFreeSpace = oCTypeFreeSpace.value;
+
+    # If both are None, consider them equal (bogus?):
+    if oLeft is None and oRight is None:
+        return True;
+
+    # If just one is None, they can't match:
+    if oLeft is None or oRight is None:
+        return False;
+
+    # If both have the same type, use the compare operator of the class:
+    if type(oLeft) is type(oRight):
+        return oLeft == oRight;
+
+    # On the offchance that they're both strings, but of different types.
+    if isString(oLeft) and isString(oRight):
+        return oLeft == oRight;
+
+    # Convert strings to byte arrays:
+    if sys.version_info[0] >= 3:
+        if isString(oLeft):
+            try:    oLeft = bytes(oLeft, 'utf-8');
+            except: pass;
+        if isString(oRight):
+            try:    oRight = bytes(oRight, 'utf-8');
+            except: pass;
     else:
-        oStats = os.statvfs(sPath); # pylint: disable=E1101
-        cbFreeSpace = long(oStats.f_frsize) * oStats.f_bfree;
+        if isString(oLeft):
+            try:    oLeft = bytearray(oLeft, 'utf-8');
+            except: pass;
+        if isString(oRight):
+            try:    oRight = bytearray(oRight, 'utf-8');
+            except: pass;
 
-    # Convert to MB
-    cMbFreeSpace = long(cbFreeSpace) / (1024 * 1024);
+    # Check if we now have the same type for both:
+    if type(oLeft) is type(oRight):
+        return oLeft == oRight;
 
-    return cMbFreeSpace;
+    # Do item by item comparison:
+    if len(oLeft) != len(oRight):
+        return False;
+    i = len(oLeft);
+    while i > 0:
+        i = i - 1;
+        if oLeft[i] != oRight[i]:
+            return False;
+    return True;
 
 
 #
@@ -2090,6 +2149,22 @@ class BuildCategoryDataTestCase(unittest.TestCase):
         self.assertEqual(hasNonAsciiCharacters(u'\u0081 \u0100'), True);
         self.assertEqual(hasNonAsciiCharacters(b'\x20\x20\x20'), False);
         self.assertEqual(hasNonAsciiCharacters(b'\x20\x81\x20'), True);
+
+    def testAreBytesEqual(self):
+        self.assertEqual(areBytesEqual(None, None), True);
+        self.assertEqual(areBytesEqual(None, ''), False);
+        self.assertEqual(areBytesEqual('', ''), True);
+        self.assertEqual(areBytesEqual('1', '1'), True);
+        self.assertEqual(areBytesEqual('12345', '1234'), False);
+        self.assertEqual(areBytesEqual('1234', '1234'), True);
+        self.assertEqual(areBytesEqual('1234', b'1234'), True);
+        self.assertEqual(areBytesEqual(b'1234', b'1234'), True);
+        self.assertEqual(areBytesEqual(b'1234', '1234'), True);
+        self.assertEqual(areBytesEqual(b'1234', bytearray([0x31,0x32,0x33,0x34])), True);
+        self.assertEqual(areBytesEqual('1234', bytearray([0x31,0x32,0x33,0x34])), True);
+        self.assertEqual(areBytesEqual(bytearray([0x31,0x32,0x33,0x34]), bytearray([0x31,0x32,0x33,0x34])), True);
+        self.assertEqual(areBytesEqual(bytearray([0x31,0x32,0x33,0x34]), '1224'), False);
+        self.assertEqual(areBytesEqual(bytearray([0x31,0x32,0x33,0x34]), bytearray([0x31,0x32,0x32,0x34])), False);
 
 if __name__ == '__main__':
     unittest.main();

@@ -65,6 +65,7 @@ from testdriver import base;
 from testdriver import vbox;
 from testdriver import vboxcon;
 from testdriver import vboxwrappers;
+from common     import utils;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
@@ -382,7 +383,8 @@ class tdTestFileReadWrite(tdTestGuestCtrlBase):
         self.sDisposition = sDisposition;
         self.sSharingMode = sSharingMode;
         self.lCreationMode = lCreationMode;
-        self.cbOffset = cbOffset;
+        self.cbOffset = cbOffset; ## r=bird: Wrong prefix. Just 'off' will suffice, alternatively 'offFile'.
+                                  ##         'cbOffset' looks like sizeof(offFile), which is probably 8 bytes these days. :-)
         self.cbToReadWrite = cbToReadWrite;
         self.aBuf = aBuf;
 
@@ -2998,17 +3000,17 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     ## @todo Test timeouts.
                     aBufRead = curFile.read(curTest.cbToReadWrite, 30 * 1000);
                     if  curRes.cbProcessed > 0 \
-                    and curRes.cbProcessed is not len(aBufRead):
-                        reporter.error('Test #%d failed: Read buffer length does not match: Got %d, expected %d' \
+                    and curRes.cbProcessed != len(aBufRead):
+                        reporter.error('Test #%d failed: Read buffer length does not match: Got %d, expected %d'
                                        % (i, len(aBufRead), curRes.cbProcessed));
                         fRc2 = False;
                     if fRc2:
                         if  curRes.aBuf is not None \
-                        and bytes(curRes.aBuf) != bytes(aBufRead):
-                            reporter.error('Test #%d failed: Got buffer:\n"%s" (%d bytes)\nExpected buffer:\n"%s" (%d bytes)' \
+                        and not utils.areBytesEqual(curRes.aBuf, aBufRead):
+                            reporter.error('Test #%d failed: Got buffer:\n"%s" (%d bytes)\nExpected buffer:\n"%s" (%d bytes)'
                                            % (i, map(hex, map(ord, aBufRead)), len(aBufRead),
                                               map(hex, map(ord, curRes.aBuf)), len(curRes.aBuf)));
-                            reporter.error('Test #%d failed: Got buffer:\n"%s"\nExpected buffer:\n"%s"' \
+                            reporter.error('Test #%d failed: Got buffer:\n"%s"\nExpected buffer:\n"%s"'
                                            % (i, aBufRead, curRes.aBuf));
                             fRc2 = False;
                 # Test final offset.
