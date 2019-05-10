@@ -4128,8 +4128,13 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
     PDMCritSectEnter(&pThis->CritSect, VERR_INTERNAL_ERROR); /* Take it here so we know why we're hanging... */
 
     pHlp->pfnPrintf(pHlp,
-                    "CSR0=%#06x:\n",
-                    pThis->aCSR[0]);
+                    "CSR0=%#06x: INIT=%d STRT=%d STOP=%d TDMD=%d TXON=%d RXON=%d IENA=%d INTR=%d IDON=%d TINT=%d RINT=%d MERR=%d\n"
+                    "              MISS=%d CERR=%d BABL=%d ERR=%d\n",
+                    pThis->aCSR[0],
+                    !!(pThis->aCSR[0] & RT_BIT(0)), !!(pThis->aCSR[0] & RT_BIT(1)), !!(pThis->aCSR[0] & RT_BIT(2)), !!(pThis->aCSR[0] & RT_BIT(3)), !!(pThis->aCSR[0] & RT_BIT(4)),
+                    !!(pThis->aCSR[0] & RT_BIT(5)), !!(pThis->aCSR[0] & RT_BIT(6)), !!(pThis->aCSR[0] & RT_BIT(7)), !!(pThis->aCSR[0] & RT_BIT(8)), !!(pThis->aCSR[0] & RT_BIT(9)),
+                    !!(pThis->aCSR[0] & RT_BIT(10)), !!(pThis->aCSR[0] & RT_BIT(11)), !!(pThis->aCSR[0] & RT_BIT(12)), !!(pThis->aCSR[0] & RT_BIT(13)),
+                    !!(pThis->aCSR[0] & RT_BIT(14)), !!(pThis->aCSR[0] & RT_BIT(15)));
 
     pHlp->pfnPrintf(pHlp,
                     "CSR1=%#06x:\n",
@@ -4205,8 +4210,8 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                     pThis->aCSR[58] & 0x7f,
                     (pThis->aCSR[58] & 0x7f) == 0 ? "C-LANCE / PCnet-ISA"
                     : (pThis->aCSR[58] & 0x7f) == 1 ? "ILACC"
-                    : (pThis->aCSR[58] & 0x7f) == 2 ? "PCnet-PCI II"
-                    : (pThis->aCSR[58] & 0x7f) == 3 ? "PCnet-PCI II controller"
+                    : (pThis->aCSR[58] & 0x7f) == 2 ? "PCnet-32"
+                    : (pThis->aCSR[58] & 0x7f) == 3 ? "PCnet-PCI II"
                     : "!!reserved!!",
                     !!(pThis->aCSR[58] & RT_BIT(8)), !!(pThis->aCSR[58] & RT_BIT(9)), !!(pThis->aCSR[58] & RT_BIT(10)));
 
