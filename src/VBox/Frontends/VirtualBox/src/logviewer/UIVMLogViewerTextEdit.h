@@ -68,16 +68,12 @@ public:
     void setCurrentVerticalScrollBarValue(int value);
     void setCurrentFont(QFont font);
 
-    void setSearchResultOverlayShowHide(bool fShow);
-    void setSearchMatchCount(int iMatchCount);
-
 protected:
 
     virtual void contextMenuEvent(QContextMenuEvent *pEvent) /* override */;
     virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
     virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
     virtual void leaveEvent(QEvent * pEvent) /* override */;
-    virtual void paintEvent(QPaintEvent *pEvent) /* override */;
     virtual void retranslateUi() /* override */;
 
 private slots:
@@ -116,9 +112,7 @@ private:
     QString      m_strBackgroungText;
     friend class UILineNumberArea;
     bool         m_bHasContextMenu;
-    bool         m_fShowSearchResultOverlay;
-    int          m_iMatchCount;
-};
+ };
 
 
 

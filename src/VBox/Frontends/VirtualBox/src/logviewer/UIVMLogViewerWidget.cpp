@@ -309,9 +309,6 @@ void UIVMLogViewerWidget::sltHandleSearchUpdated()
 {
     if (!m_pSearchPanel || !currentLogPage())
         return;
-    for (int i = 0; i < m_logPageList.size(); ++i)
-        if (UIVMLogPage *pPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]))
-            pPage->setSearchMatchCount(m_pSearchPanel->matchCount());
 }
 
 void UIVMLogViewerWidget::sltTabIndexChange(int tabIndex)
@@ -766,8 +763,6 @@ void UIVMLogViewerWidget::createLogPage(const QString &strFileName, const QStrin
             pLogPage->setTextEditTextAsHtml(strLogContent);
             pLogPage->markForError();
         }
-        pLogPage->setSearchResultOverlayShowHide(m_pSearchPanel->isVisible());
-        pLogPage->setSearchMatchCount(m_pSearchPanel->matchCount());
         pLogPage->setScrollBarMarkingsVector(m_pSearchPanel->matchLocationVector());
     }
 }
@@ -871,13 +866,6 @@ void UIVMLogViewerWidget::hidePanel(UIDialogPanel* panel)
     }
     m_visiblePanelsList.removeOne(panel);
     manageEscapeShortCut();
-    /* Hide the search result overlay on the text edit: */
-    if (panel == m_pSearchPanel)
-    {
-        for (int i = 0; i < m_logPageList.size(); ++i)
-            if (UIVMLogPage *pPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]))
-                pPage->setSearchResultOverlayShowHide(false);
-    }
 }
 
 void UIVMLogViewerWidget::showPanel(UIDialogPanel* panel)
@@ -892,14 +880,6 @@ void UIVMLogViewerWidget::showPanel(UIDialogPanel* panel)
     }
     m_visiblePanelsList.push_back(panel);
     manageEscapeShortCut();
-
-    /* Show the search result overlay on the text edit: */
-    if (panel == m_pSearchPanel)
-    {
-        for (int i = 0; i < m_logPageList.size(); ++i)
-            if (UIVMLogPage *pPage = qobject_cast<UIVMLogPage*>(m_logPageList[i]))
-                pPage->setSearchResultOverlayShowHide(true);
-    }
 }
 
 void UIVMLogViewerWidget::manageEscapeShortCut()
