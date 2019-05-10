@@ -41,6 +41,7 @@ public:
     UISearchLineEdit(QWidget *pParent = 0);
     void setMatchCount(int iMatchCount);
     void setScroolToIndex(int iScrollToIndex);
+    void reset();
 
 protected:
 

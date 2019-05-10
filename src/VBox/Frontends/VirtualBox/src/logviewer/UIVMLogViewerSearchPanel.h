@@ -33,6 +33,7 @@ class QHBoxLayout;
 class QLabel;
 class QWidget;
 class QIToolButton;
+class UISearchLineEdit;
 class UIVMLogViewerSearchField;
 class UIVMLogViewerWidget;
 
@@ -58,7 +59,7 @@ public:
     const QVector<float> &matchLocationVector() const;
     virtual QString panelName() const /* override */;
     /** Returns the number of the matches to the current search. */
-    int marchCount() const;
+    int matchCount() const;
 
 protected:
 
@@ -102,8 +103,9 @@ private:
     QTextDocument::FindFlags constructFindFlags(SearchDirection eDirection) const;
     /** Searches the whole document and return the number of matches to the current search term. */
     int countMatches(QTextDocument *pDocument, const QString &searchString) const;
+    void setMatchCount(int iCount);
     /** Holds the instance of search-editor we create. */
-    UIVMLogViewerSearchField *m_pSearchEditor;
+    UISearchLineEdit *m_pSearchEditor;
 
     QIToolButton *m_pNextButton;
     QIToolButton *m_pPreviousButton;
@@ -113,9 +115,10 @@ private:
     QCheckBox    *m_pHighlightAllCheckBox;
 
     /** Holds the position where we start the next search. */
-    int          m_iSearchPosition;
+    int          m_iSearchCursorPosition;
     /** Holds the number of the matches for the string. 0 for no matches. */
     int          m_iMatchCount;
+
     /** Stores relative positions of the lines of the matches. The values are [0,1]
         0 being the first line 1 being the last. */
     QVector<float> m_matchLocationVector;

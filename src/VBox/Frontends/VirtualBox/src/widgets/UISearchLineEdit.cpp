@@ -82,6 +82,14 @@ void UISearchLineEdit::setScroolToIndex(int iScrollToIndex)
     repaint();
 }
 
+void UISearchLineEdit::reset()
+{
+    clear();
+    m_iMatchCount = 0;
+    m_iScrollToIndex = 0;
+    colorBackground(false);
+}
+
 void UISearchLineEdit::colorBackground(bool fWarning)
 {
     QPalette mPalette = palette();

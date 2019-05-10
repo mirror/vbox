@@ -31,6 +31,7 @@
 /* GUI includes: */
 #include "QIToolButton.h"
 #include "UIIconPool.h"
+#include "UISearchLineEdit.h"
 #include "UIVMLogPage.h"
 #include "UIVMLogViewerSearchPanel.h"
 #include "UIVMLogViewerWidget.h"
@@ -69,6 +70,7 @@ public:
 private:
     /* Private member vars */
     QBrush m_baseBrush;
+
 };
 
 UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogViewerWidget *pViewer)
@@ -79,7 +81,7 @@ UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogView
     , m_pCaseSensitiveCheckBox(0)
     , m_pMatchWholeWordCheckBox(0)
     , m_pHighlightAllCheckBox(0)
-    , m_iSearchPosition(0)
+    , m_iSearchCursorPosition(0)
     , m_iMatchCount(0)
 {
     /* Prepare: */
@@ -88,7 +90,7 @@ UIVMLogViewerSearchPanel::UIVMLogViewerSearchPanel(QWidget *pParent, UIVMLogView
 
 void UIVMLogViewerSearchPanel::refresh()
 {
-    m_iSearchPosition = 0;
+    m_iSearchCursorPosition = 0;
     /* We start the search from the end of the doc. assuming log's end is more interesting: */
     search(BackwardSearch, true);
     emit sigHighlightingUpdated();
@@ -96,9 +98,11 @@ void UIVMLogViewerSearchPanel::refresh()
 
 void UIVMLogViewerSearchPanel::reset()
 {
-    m_iSearchPosition = 0;
+    m_iSearchCursorPosition = 0;
     m_matchLocationVector.clear();
-    m_iMatchCount = 0;
+    setMatchCount(0);
+    if (m_pSearchEditor)
+        m_pSearchEditor->reset();
 }
 
 const QVector<float> &UIVMLogViewerSearchPanel::matchLocationVector() const
@@ -111,7 +115,7 @@ QString UIVMLogViewerSearchPanel::panelName() const
     return "SearchPanel";
 }
 
-int UIVMLogViewerSearchPanel::marchCount() const
+int UIVMLogViewerSearchPanel::matchCount() const
 {
     return m_iMatchCount;
 }
@@ -140,7 +144,7 @@ void UIVMLogViewerSearchPanel::sltSearchTextChanged(const QString &strSearchStri
     if (!strSearchString.isEmpty())
     {
         /* Reset the position to force the search restart from the document's end: */
-        m_iSearchPosition = 0;
+        m_iSearchCursorPosition = 0;
         search(BackwardSearch, true);
         emit sigHighlightingUpdated();
         return;
@@ -160,8 +164,8 @@ void UIVMLogViewerSearchPanel::sltSearchTextChanged(const QString &strSearchStri
         cursor.setPosition(cursor.anchor());
         pBrowser->setTextCursor(cursor);
     }
-    m_iSearchPosition = -1;
-    m_iMatchCount = 0;
+    m_iSearchCursorPosition = -1;
+    setMatchCount(0);
     emit sigSearchUpdated();
     clearHighlighting();
 }
@@ -215,7 +219,7 @@ void UIVMLogViewerSearchPanel::prepareWidgets()
 #endif
 
         /* Create search-editor: */
-        m_pSearchEditor = new UIVMLogViewerSearchField(0 /* parent */);
+        m_pSearchEditor = new UISearchLineEdit(0 /* parent */);
         if (m_pSearchEditor)
         {
             m_pSearchEditor->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
@@ -408,6 +412,7 @@ void UIVMLogViewerSearchPanel::showEvent(QShowEvent *pEvent)
         m_pSearchEditor->setFocus();
         /* Select all the text: */
         m_pSearchEditor->selectAll();
+        m_pSearchEditor->setMatchCount(m_iMatchCount);
     }
 }
 
@@ -423,7 +428,7 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
         return;
 
     const QString &searchString = m_pSearchEditor->text();
-    m_iMatchCount = countMatches(pDocument, searchString);
+    setMatchCount(countMatches(pDocument, searchString));
     emit sigSearchUpdated();
 
     if (searchString.isEmpty())
@@ -442,7 +447,7 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
         m_matchLocationVector.clear();
 
     QTextCursor resultCursor(pDocument);
-    int startPosition = m_iSearchPosition;
+    int startPosition = m_iSearchCursorPosition;
     if (direction == BackwardSearch)
         startPosition -= searchString.length();
     resultCursor = pDocument->find(searchString, startPosition, constructFindFlags(direction));
@@ -459,7 +464,7 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
         /* Wrap the search */
         if (direction == ForwardSearch)
         {
-            m_iSearchPosition = startCursor.position();
+            m_iSearchCursorPosition = startCursor.position();
             search(ForwardSearch, false);
             return;
         }
@@ -467,13 +472,13 @@ void UIVMLogViewerSearchPanel::search(SearchDirection direction, bool highlight)
         {
             /* Set the search position away from the end position to be
                able to find the string at the end of the document: */
-            m_iSearchPosition = endCursor.position() + searchString.length();
+            m_iSearchCursorPosition = endCursor.position() + searchString.length();
             search(BackwardSearch, false);
             return;
         }
     }
     pTextEdit->setTextCursor(resultCursor);
-    m_iSearchPosition = resultCursor.position();
+    m_iSearchCursorPosition = resultCursor.position();
 }
 
 void UIVMLogViewerSearchPanel::findNext()
@@ -547,6 +552,15 @@ int UIVMLogViewerSearchPanel::countMatches(QTextDocument *pDocument, const QStri
             ++count;
     }
     return count;
+}
+
+void UIVMLogViewerSearchPanel::setMatchCount(int iCount)
+{
+    if (m_iMatchCount == iCount)
+        return;
+    m_iMatchCount = iCount;
+    if (m_pSearchEditor)
+        m_pSearchEditor->setMatchCount(iCount);
 }
 
 QTextDocument::FindFlags UIVMLogViewerSearchPanel::constructFindFlags(SearchDirection eDirection) const
