@@ -2098,10 +2098,10 @@ def areBytesEqual(oLeft, oRight):
             except: pass;
     else:
         if isString(oLeft):
-            try:    oLeft = bytearray(oLeft, 'utf-8');
+            try:    oLeft = bytearray(oLeft, 'utf-8');      # pylint: disable=redefined-variable-type
             except: pass;
         if isString(oRight):
-            try:    oRight = bytearray(oRight, 'utf-8');
+            try:    oRight = bytearray(oRight, 'utf-8');    # pylint: disable=redefined-variable-type
             except: pass;
 
     # Check if we now have the same type for both:
