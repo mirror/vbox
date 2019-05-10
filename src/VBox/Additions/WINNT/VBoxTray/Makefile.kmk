@@ -80,14 +80,6 @@ ifdef VBOX_WITH_GUEST_PROPS
 	VBoxHostVersion.cpp \
 	VBoxLA.cpp
 endif
-## Now handled by VBoxService.
-#ifdef VBOX_WITH_SHARED_FOLDERS
-# VBoxTray_DEFS     += VBOX_WITH_SHARED_FOLDERS
-# VBoxTray_SOURCES  += \
-#	VBoxSharedFolders.cpp
-# VBoxTray_LIBS.win += \
-#	mpr.lib
-#endif
 ifdef VBOX_WITH_WDDM
  VBoxTray_DEFS   += VBOX_WITH_WDDM
  # VBoxTray_DEFS   += LOG_ENABLED
