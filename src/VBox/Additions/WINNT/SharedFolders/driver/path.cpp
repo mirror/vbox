@@ -694,11 +694,30 @@ NTSTATUS VBoxMRxForceClosed(IN PMRX_SRV_OPEN pSrvOpen)
 }
 
 /**
+ * Ensures the FCBx doesn't have dangling pointers to @a pVBoxFobx.
+ *
+ * This isn't strictly speaking needed, as nobody currently dereference these
+ * pointers, however better keeping things neath and tidy.
+ */
+DECLINLINE(void) vbsfNtCleanupFcbxTimestampRefsOnClose(PMRX_VBOX_FOBX pVBoxFobx, PVBSFNTFCBEXT pVBoxFcbx)
+{
+    pVBoxFobx->fTimestampsSetByUser          = 0;
+    pVBoxFobx->fTimestampsUpdatingSuppressed = 0;
+    pVBoxFobx->fTimestampsImplicitlyUpdated  = 0;
+    if (pVBoxFcbx->pFobxLastAccessTime == pVBoxFobx)
+        pVBoxFcbx->pFobxLastAccessTime = NULL;
+    if (pVBoxFcbx->pFobxLastWriteTime  == pVBoxFobx)
+        pVBoxFcbx->pFobxLastWriteTime  = NULL;
+    if (pVBoxFcbx->pFobxChangeTime     == pVBoxFobx)
+        pVBoxFcbx->pFobxChangeTime     = NULL;
+}
+
+/**
  * Closes an opened file handle of a MRX_VBOX_FOBX.
  *
  * Updates file attributes if necessary.
  *
- * Used by VBoxMRxCloseSrvOpen, vbsfNtRemove and vbsfNtRename.
+ * Used by VBoxMRxCloseSrvOpen and vbsfNtRename.
  */
 NTSTATUS vbsfNtCloseFileHandle(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
                                PMRX_VBOX_FOBX pVBoxFobx,
@@ -768,16 +787,7 @@ NTSTATUS vbsfNtCloseFileHandle(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
             Log(("VBOXSF: vbsfCloseFileHandle: no timestamp needing updating\n"));
     }
 
-    /* This isn't strictly necessary, but best to keep things clean. */
-    pVBoxFobx->fTimestampsSetByUser          = 0;
-    pVBoxFobx->fTimestampsUpdatingSuppressed = 0;
-    pVBoxFobx->fTimestampsImplicitlyUpdated  = 0;
-    if (pVBoxFcbx->pFobxLastAccessTime == pVBoxFobx)
-        pVBoxFcbx->pFobxLastAccessTime = NULL;
-    if (pVBoxFcbx->pFobxLastWriteTime  == pVBoxFobx)
-        pVBoxFcbx->pFobxLastWriteTime  = NULL;
-    if (pVBoxFcbx->pFobxChangeTime     == pVBoxFobx)
-        pVBoxFcbx->pFobxChangeTime     = NULL;
+    vbsfNtCleanupFcbxTimestampRefsOnClose(pVBoxFobx, pVBoxFcbx);
 
     /*
      * Now close the handle.
@@ -793,10 +803,11 @@ NTSTATUS vbsfNtCloseFileHandle(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
     return Status;
 }
 
+/**
+ * @note We don't collapse opens, this is called whenever a handle is closed.
+ */
 NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
     RxCaptureFcb;
     RxCaptureFobx;
 
@@ -804,15 +815,15 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
     PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
     PMRX_SRV_OPEN pSrvOpen = capFobx->pSrvOpen;
 
-    PUNICODE_STRING RemainingName = NULL;
 
     Log(("VBOXSF: MRxCloseSrvOpen: capFcb = %p, capFobx = %p, pVBoxFobx = %p, pSrvOpen = %p\n",
           capFcb, capFobx, pVBoxFobx, pSrvOpen));
 
-    RemainingName = pSrvOpen->pAlreadyPrefixedName;
-
+#ifdef LOG_ENABLED
+    PUNICODE_STRING pRemainingName = pSrvOpen->pAlreadyPrefixedName;
     Log(("VBOXSF: MRxCloseSrvOpen: Remaining name = %.*ls, Len = %d\n",
-         RemainingName->Length / sizeof(WCHAR), RemainingName->Buffer, RemainingName->Length));
+         pRemainingName->Length / sizeof(WCHAR), pRemainingName->Buffer, pRemainingName->Length));
+#endif
 
     if (!pVBoxFobx)
         return STATUS_INVALID_PARAMETER;
@@ -826,69 +837,125 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
         return STATUS_SUCCESS;
     }
 
-    /* Close file */
-    if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx, VBoxMRxGetFcbExtension(capFcb));
-
+    /*
+     * Remove file or directory if delete action is pending and the this is the last open handle.
+     */
+    NTSTATUS Status = STATUS_SUCCESS;
     if (capFcb->FcbState & FCB_STATE_DELETE_ON_CLOSE)
     {
         Log(("VBOXSF: MRxCloseSrvOpen: Delete on close. Open count = %d\n",
              capFcb->OpenCount));
 
-        /* Remove file or directory if delete action is pending. */
         if (capFcb->OpenCount == 0)
             Status = vbsfNtRemove(RxContext);
     }
+
+    /*
+     * Close file if we still have a handle to it.
+     */
+    if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
+        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx, VBoxMRxGetFcbExtension(capFcb));
 
     return Status;
 }
 
 /**
  * Worker for vbsfNtSetBasicInfo and VBoxMRxCloseSrvOpen.
+ *
+ * Only called by vbsfNtSetBasicInfo if there is exactly one open handle.  And
+ * VBoxMRxCloseSrvOpen calls it when the last handle is being closed.
  */
 NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
     RxCaptureFcb;
     RxCaptureFobx;
-
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
-    PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
-
-    PUNICODE_STRING RemainingName = GET_ALREADY_PREFIXED_NAME_FROM_CONTEXT(RxContext);
-
-    int vrc;
-    PSHFLSTRING ParsedPath = NULL;
+    PMRX_VBOX_FOBX              pVBoxFobx         = VBoxMRxGetFileObjectExtension(capFobx);
+    PUNICODE_STRING             pRemainingName    = GET_ALREADY_PREFIXED_NAME_FROM_CONTEXT(RxContext);
+    uint16_t                    cwcRemainingName  = pRemainingName->Length / sizeof(WCHAR);
 
     Log(("VBOXSF: vbsfNtRemove: Delete %.*ls. open count = %d\n",
-         RemainingName->Length / sizeof(WCHAR), RemainingName->Buffer, capFcb->OpenCount));
+         cwcRemainingName, pRemainingName->Buffer, capFcb->OpenCount));
+    Assert(RxIsFcbAcquiredExclusive(capFcb));
 
-    /* Close file first if not already done. */
+    /*
+     * We allocate a single request buffer for the closing and deletion to save time.
+     */
+    AssertCompile(sizeof(VBOXSFCLOSEREQ) <= sizeof(VBOXSFREMOVEREQ));
+    AssertReturn((cwcRemainingName + 1) * sizeof(RTUTF16) < _64K, STATUS_NAME_TOO_LONG);
+    size_t cbReq = RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String) + (cwcRemainingName + 1) * sizeof(RTUTF16);
+    union MyCloseAndRemoveReq
+    {
+        VBOXSFCLOSEREQ  Close;
+        VBOXSFREMOVEREQ Remove;
+    } *pReq = (union MyCloseAndRemoveReq *)VbglR0PhysHeapAlloc((uint32_t)cbReq);
+    if (pReq)
+        RT_ZERO(*pReq);
+    else
+        return STATUS_INSUFFICIENT_RESOURCES;
+/** @todo Create a function that combines closing and removing since that is
+ * usually what NT guests will be doing.  Should in theory speed up deletion by 33%. */
+
+    /*
+     * Close file first if not already done.  We dont use vbsfNtCloseFileHandle here
+     * as we got our own request buffer and have no need to update any file info.
+     */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-        vbsfNtCloseFileHandle(pNetRootExtension, pVBoxFobx, VBoxMRxGetFcbExtension(capFcb));
+    {
+        int vrcClose = VbglR0SfHostReqClose(pNetRootExtension->map.root, &pReq->Close, pVBoxFobx->hFile);
+        pVBoxFobx->hFile = SHFL_HANDLE_NIL;
+        if (RT_FAILURE(vrcClose))
+            Log(("VBOXSF: vbsfNtRemove: Closing the handle failed! vrcClose %Rrc, hFile %#RX64 (probably)\n",
+                 vrcClose, pReq->Close.Parms.u64Handle.u.value64));
+    }
 
-    Log(("VBOXSF: vbsfNtRemove: RemainingName->Length %d\n", RemainingName->Length));
-    Status = vbsfNtShflStringFromUnicodeAlloc(&ParsedPath, RemainingName->Buffer, RemainingName->Length);
-    if (Status != STATUS_SUCCESS)
-        return Status;
+    /*
+     * Try remove the file.  The path to the file/whatever string is
+     * embedded in the request buffer, so we have to assemble it ourselves here.
+     */
+    uint16_t cwcToCopy = pRemainingName->Length / sizeof(WCHAR);
+    AssertMsg(cwcToCopy == cwcRemainingName, ("%#x, was %#x; FCB exclusivity: %d\n", cwcToCopy, cwcRemainingName, RxIsFcbAcquiredExclusive(capFcb)));
+    if (cwcToCopy <= cwcRemainingName)
+    { /* Extremely likely... */ }
+    else
+    {
+        VbglR0PhysHeapFree(pReq);
+        AssertLogRelMsgFailed(("File scheduled for removal was renamed?!?: %#x from %#x; FCB exclusivity: %d\n",
+                               cwcToCopy, cwcRemainingName, RxIsFcbAcquiredExclusive(capFcb)));
+        cwcRemainingName = cwcToCopy;
+        AssertReturn((cwcRemainingName + 1) * sizeof(RTUTF16) < _64K, STATUS_NAME_TOO_LONG);
+        cbReq = RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String) + (cwcRemainingName + 1) * sizeof(RTUTF16);
+        pReq = (union MyCloseAndRemoveReq *)VbglR0PhysHeapAlloc((uint32_t)cbReq);
+        if (pReq)
+            RT_ZERO(*pReq);
+        else
+            return STATUS_INSUFFICIENT_RESOURCES;
+        AssertMsgReturnStmt(cwcToCopy == pRemainingName->Length / sizeof(WCHAR),
+                            ("%#x, now %#x;\n", cwcToCopy == pRemainingName->Length / sizeof(WCHAR)),
+                            VbglR0PhysHeapFree(pReq), STATUS_INTERNAL_ERROR);
+    }
 
-    /* Call host. */
-    vrc = VbglR0SfRemove(&g_SfClient, &pNetRootExtension->map,
-                         ParsedPath,
-                         pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE);
-
-    if (ParsedPath)
-        vbsfNtFreeNonPagedMem(ParsedPath);
-
-    if (vrc == VINF_SUCCESS)
+    memcpy(&pReq->Remove.StrPath.String, pRemainingName->Buffer, cwcToCopy * sizeof(RTUTF16));
+    pReq->Remove.StrPath.String.utf16[cwcToCopy] = '\0';
+    pReq->Remove.StrPath.u16Length = cwcToCopy * 2;
+    pReq->Remove.StrPath.u16Size   = cwcToCopy * 2 + (uint16_t)sizeof(RTUTF16);
+    int vrc = VbglR0SfHostReqRemove(pNetRootExtension->map.root, &pReq->Remove,
+                                    pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE);
+    NTSTATUS Status;
+    if (RT_SUCCESS(vrc))
+    {
         SetFlag(capFobx->pSrvOpen->Flags, SRVOPEN_FLAG_FILE_DELETED);
-
-    Status = vbsfNtVBoxStatusToNt(vrc);
-    if (vrc != VINF_SUCCESS)
+        vbsfNtCleanupFcbxTimestampRefsOnClose(pVBoxFobx, VBoxMRxGetFcbExtension(capFcb));
+        Status = STATUS_SUCCESS;
+    }
+    else
+    {
         Log(("VBOXSF: vbsfNtRemove: VbglR0SfRemove failed with %Rrc\n", vrc));
+        Status = vbsfNtVBoxStatusToNt(vrc);
+    }
+    VbglR0PhysHeapFree(pReq);
 
-    Log(("VBOXSF: vbsfNtRemove: Returned 0x%08X\n", Status));
+    Log(("VBOXSF: vbsfNtRemove: Returned %#010X (%Rrc)\n", Status, vrc));
     return Status;
 }
 
