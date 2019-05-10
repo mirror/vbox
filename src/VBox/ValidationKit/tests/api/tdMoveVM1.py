@@ -80,7 +80,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         Execute the sub-testcase.
         """
         reporter.log('ValidationKit folder is "%s"' % (g_ksValidationKitDir,))
-        return  self.testVMMove()
+        return self.testVMMove()
 
     #
     # Test execution helpers.
@@ -243,10 +243,18 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
     def checkAPIVersion(self):
         return self.oTstDrv.fpApiVer >= 5.3;
 
+    @staticmethod
+    def __safeListDir(sDir):
+        """ Wrapper around os.listdir that returns empty array instead of exceptions. """
+        try:
+            return os.listdir(sDir);
+        except:
+            return [];
+
     def __getStatesFiles(self, oMachine, fPrint = False):
         asStateFilesList = set()
         sFolder = oMachine.snapshotFolder
-        for sFile in os.listdir(sFolder):
+        for sFile in self.__safeListDir(sFolder):
             if sFile.endswith(".sav"):
                 sFullPath = os.path.join(sFolder, sFile)
                 asStateFilesList.add(sFullPath)
@@ -257,7 +265,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
     def __getSnapshotsFiles(self, oMachine, fPrint = False):
         asSnapshotsFilesList = set()
         sFolder = oMachine.snapshotFolder
-        for sFile in os.listdir(sFolder):
+        for sFile in self.__safeListDir(sFolder):
             if sFile.endswith(".sav") is False:
                 sFullPath = os.path.join(sFolder, sFile)
                 asSnapshotsFilesList.add(sFullPath)
@@ -268,7 +276,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
     def __getLogFiles(self, oMachine, fPrint = False):
         asLogFilesList = set()
         sFolder = oMachine.logFolder
-        for sFile in os.listdir(sFolder):
+        for sFile in self.__safeListDir(sFolder):
             if sFile.endswith(".log"):
                 sFullPath = os.path.join(sFolder, sFile)
                 asLogFilesList.add(sFullPath)
@@ -353,7 +361,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
 
         fRes = oSession.saveSettings()
         if fRes is False:
-            reporter.log('3d scenario: Couldn\'t save machine settings')
+            reporter.log('3rd scenario: Couldn\'t save machine settings')
 
         return fRc
 
@@ -586,7 +594,9 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
         #
         # 7. There are shareable disk and immutable disk attached to the VM.
 
-        try:
+        try: ## @todo r=bird: Would be nice to use sub-tests here for each scenario, however
+             ##               this try/catch as well as lots of return points makes that very hard.
+             ##               Big try/catch stuff like this should be avoided.
             # Create test machine.
             oMachine = self.createTestMachine()
             if oMachine is None:
@@ -613,6 +623,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             # There are no any snapshots and logs.
             # In this case only VM setting file should be moved (.vbox file)
             #
+            reporter.log("Scenario #1:");
             for s in self.asImagesNames:
                 reporter.log('"%s"' % (s,))
                 dsReferenceFiles['StandardImage'].add(os.path.join(sOrigLoc, s))
@@ -641,8 +652,9 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             # All disks attached to VM are located inside the VM's folder.
             # There are no any snapshots and logs.
             #
+            reporter.log("Scenario #2:");
             sOldLoc = sNewLoc + oMachine.name + os.sep
-            sNewLoc = os.path.join(sOrigLoc, 'moveFolder_2d_scenario')
+            sNewLoc = os.path.join(sOrigLoc, 'moveFolder_2nd_scenario')
             os.mkdir(sNewLoc, 0o775)
 
             fRc = self.__testScenario_2(oSession, oMachine, sNewLoc, sOldLoc)
@@ -654,8 +666,9 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             #
             # There are snapshots.
             #
+            reporter.log("Scenario #3:");
             sOldLoc = sNewLoc + oMachine.name + os.sep
-            sNewLoc = os.path.join(sOrigLoc, 'moveFolder_3d_scenario')
+            sNewLoc = os.path.join(sOrigLoc, 'moveFolder_3rd_scenario')
             os.mkdir(sNewLoc, 0o775)
 
             fRc = self.__testScenario_3(oSession, oMachine, sNewLoc)
@@ -670,6 +683,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             # Here we run VM, next stop it in the "save" state.
             # And next move VM
             #
+            reporter.log("Scenario #4:");
             sOldLoc = sNewLoc + oMachine.name + os.sep
             sNewLoc = os.path.join(sOrigLoc, 'moveFolder_4th_scenario')
             os.mkdir(sNewLoc, 0o775)
@@ -691,6 +705,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             # There is an ISO image (.iso) attached to the VM.
             # Prerequisites - there is IDE Controller and there are no any images attached to it.
             #
+            reporter.log("Scenario #5:");
             sOldLoc = sNewLoc + os.sep + oMachine.name
             sNewLoc = os.path.join(sOrigLoc, 'moveFolder_5th_scenario')
             os.mkdir(sNewLoc, 0o775)
@@ -704,6 +719,7 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             # There is a floppy image (.img) attached to the VM.
             # Prerequisites - there is Floppy Controller and there are no any images attached to it.
             #
+            reporter.log("Scenario #6:");
             sOldLoc = sNewLoc + os.sep + oMachine.name
             sNewLoc = os.path.join(sOrigLoc, 'moveFolder_6th_scenario')
             os.mkdir(sNewLoc, 0o775)
@@ -711,14 +727,15 @@ class SubTstDrvMoveVM1(base.SubTestDriverBase):
             if fRc is False:
                 return reporter.testDone()[1] == 0
 
-#           #
-#           # 7. case:
-#           #
-#           # There are shareable disk and immutable disk attached to the VM.
-#           #
-#           fRc = fRc and oSession.saveSettings()
-#           if fRc is False:
-#               reporter.log('Couldn\'t save machine settings')
+#            #
+#            # 7. case:
+#            #
+#            # There are shareable disk and immutable disk attached to the VM.
+#            #
+#            reporter.log("Scenario #7:");
+#            fRc = fRc and oSession.saveSettings()
+#            if fRc is False:
+#                reporter.log('Couldn\'t save machine settings')
 #
 
             assert fRc is True
