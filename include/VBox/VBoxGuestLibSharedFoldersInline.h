@@ -699,6 +699,58 @@ DECLINLINE(int) VbglR0SfHostReqRemove(SHFLROOT idRoot, VBOXSFREMOVEREQ *pReq, ui
     return vrc;
 }
 
+#ifdef __cplusplus
+
+/** Request structure for VbglR0SfHostReqCloseAndRemove.  */
+typedef struct VBOXSFCLOSEANDREMOVEREQ
+{
+    VBGLIOCIDCHGCMFASTCALL      Hdr;
+    VMMDevHGCMCall              Call;
+    VBoxSFParmCloseAndRemove    Parms;
+    SHFLSTRING                  StrPath;
+} VBOXSFCLOSEANDREMOVEREQ;
+
+/**
+ * SHFL_FN_CLOSE_AND_REMOVE request.
+ */
+DECLINLINE(int) VbglR0SfHostReqCloseAndRemove(SHFLROOT idRoot, VBOXSFCLOSEANDREMOVEREQ *pReq, uint32_t fFlags, SHFLHANDLE hToClose)
+{
+    uint32_t const cbReq = RT_UOFFSETOF(VBOXSFCLOSEANDREMOVEREQ, StrPath.String)
+                         + (g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS ? pReq->StrPath.u16Size : 0);
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_CLOSE_AND_REMOVE, SHFL_CPARMS_CLOSE_AND_REMOVE, cbReq);
+
+    pReq->Parms.id32Root.type                   = VMMDevHGCMParmType_32bit;
+    pReq->Parms.id32Root.u.value32              = idRoot;
+
+    if (g_fHostFeatures & VMMDEV_HVF_HGCM_EMBEDDED_BUFFERS)
+    {
+        pReq->Parms.pStrPath.type               = VMMDevHGCMParmType_Embedded;
+        pReq->Parms.pStrPath.u.Embedded.cbData  = SHFLSTRING_HEADER_SIZE + pReq->StrPath.u16Size;
+        pReq->Parms.pStrPath.u.Embedded.offData = RT_UOFFSETOF(VBOXSFCLOSEANDREMOVEREQ, StrPath) - sizeof(VBGLIOCIDCHGCMFASTCALL);
+        pReq->Parms.pStrPath.u.Embedded.fFlags  = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
+    }
+    else
+    {
+        pReq->Parms.pStrPath.type               = VMMDevHGCMParmType_LinAddr_In;
+        pReq->Parms.pStrPath.u.LinAddr.cb       = SHFLSTRING_HEADER_SIZE + pReq->StrPath.u16Size;
+        pReq->Parms.pStrPath.u.LinAddr.uAddr    = (uintptr_t)&pReq->StrPath;
+    }
+
+    pReq->Parms.f32Flags.type                   = VMMDevHGCMParmType_32bit;
+    pReq->Parms.f32Flags.u.value32              = fFlags;
+
+    pReq->Parms.u64Handle.type                  = VMMDevHGCMParmType_64bit;
+    pReq->Parms.u64Handle.u.value64             = hToClose;
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, cbReq);
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
+
+#endif /* __cplusplus */
+
 
 /** Request structure for VbglR0SfHostReqRenameWithSrcContig and
  *  VbglR0SfHostReqRenameWithSrcBuf. */
