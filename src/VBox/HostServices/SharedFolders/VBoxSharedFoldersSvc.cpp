@@ -85,6 +85,8 @@ static STAMPROFILE g_StatInformationGetVolume;
 static STAMPROFILE g_StatInformationGetVolumeFail;
 static STAMPROFILE g_StatRemove;
 static STAMPROFILE g_StatRemoveFail;
+static STAMPROFILE g_StatCloseAndRemove;
+static STAMPROFILE g_StatCloseAndRemoveFail;
 static STAMPROFILE g_StatRename;
 static STAMPROFILE g_StatRenameFail;
 static STAMPROFILE g_StatFlush;
@@ -1213,41 +1215,46 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             Log(("SharedFolders host service: svcCall: SHFL_FN_REMOVE\n"));
 
             /* Verify parameter count and types. */
-            if (cParms != SHFL_CPARMS_REMOVE)
-            {
-                rc = VERR_INVALID_PARAMETER;
-            }
-            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT   /* root */
-                     || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR   /* path */
-                     || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT /* flags */
-                    )
-            {
-                rc = VERR_INVALID_PARAMETER;
-            }
-            else
-            {
-                /* Fetch parameters. */
-                SHFLROOT  root          = (SHFLROOT)paParms[0].u.uint32;
-                SHFLSTRING *pPath       = (SHFLSTRING *)paParms[1].u.pointer.addr;
-                uint32_t cbPath         = paParms[1].u.pointer.size;
-                uint32_t flags          = paParms[2].u.uint32;
+            ASSERT_GUEST_STMT_BREAK(cParms == SHFL_CPARMS_REMOVE, rc = VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_STMT_BREAK(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* root */
+            ASSERT_GUEST_STMT_BREAK(paParms[1].type == VBOX_HGCM_SVC_PARM_PTR,   rc = VERR_WRONG_PARAMETER_TYPE); /* path */
+            PCSHFLSTRING pStrPath = (PCSHFLSTRING)paParms[1].u.pointer.addr;
+            ASSERT_GUEST_STMT_BREAK(ShflStringIsValidIn(pStrPath, paParms[1].u.pointer.size,
+                                                        RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8)),
+                                    rc = VERR_INVALID_PARAMETER);
+            ASSERT_GUEST_STMT_BREAK(paParms[2].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* flags */
+            uint32_t const fFlags = paParms[2].u.uint32;
+            ASSERT_GUEST_STMT_BREAK(!(fFlags & ~(SHFL_REMOVE_FILE | SHFL_REMOVE_DIR | SHFL_REMOVE_SYMLINK)),
+                                    rc = VERR_INVALID_FLAGS);
 
-                /* Verify parameters values. */
-                if (!ShflStringIsValidIn(pPath, cbPath, RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8)))
-                {
-                    rc = VERR_INVALID_PARAMETER;
-                }
-                else
-                {
-                    /* Execute the function. */
-                    rc = vbsfRemove (pClient, root, pPath, cbPath, flags);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /* Update parameters.*/
-                        ; /* none */
-                    }
-                }
-            }
+            /* Execute the function. */
+            rc = vbsfRemove(pClient, paParms[0].u.uint32, pStrPath, paParms[1].u.pointer.size, fFlags, SHFL_HANDLE_NIL);
+            break;
+        }
+
+        case SHFL_FN_CLOSE_AND_REMOVE:
+        {
+            pStat     = &g_StatCloseAndRemove;
+            pStatFail = &g_StatCloseAndRemoveFail;
+            Log(("SharedFolders host service: svcCall: SHFL_FN_CLOSE_AND_REMOVE\n"));
+
+            /* Verify parameter count and types. */
+            ASSERT_GUEST_STMT_BREAK(cParms == SHFL_CPARMS_CLOSE_AND_REMOVE, rc = VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_STMT_BREAK(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* root */
+            ASSERT_GUEST_STMT_BREAK(paParms[1].type == VBOX_HGCM_SVC_PARM_PTR,   rc = VERR_WRONG_PARAMETER_TYPE); /* path */
+            PCSHFLSTRING pStrPath = (PCSHFLSTRING)paParms[1].u.pointer.addr;
+            ASSERT_GUEST_STMT_BREAK(ShflStringIsValidIn(pStrPath, paParms[1].u.pointer.size,
+                                                        RT_BOOL(pClient->fu32Flags & SHFL_CF_UTF8)),
+                                    rc = VERR_INVALID_PARAMETER);
+            ASSERT_GUEST_STMT_BREAK(paParms[2].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* flags */
+            uint32_t const fFlags = paParms[2].u.uint32;
+            ASSERT_GUEST_STMT_BREAK(!(fFlags & ~(SHFL_REMOVE_FILE | SHFL_REMOVE_DIR | SHFL_REMOVE_SYMLINK)),
+                                    rc = VERR_INVALID_FLAGS);
+            SHFLHANDLE const hToClose = paParms[3].u.uint64;
+            ASSERT_GUEST_STMT_BREAK(hToClose != SHFL_HANDLE_ROOT, rc = VERR_INVALID_HANDLE);
+
+            /* Execute the function. */
+            rc = vbsfRemove(pClient, paParms[0].u.uint32, pStrPath, paParms[1].u.pointer.size, fFlags, hToClose);
             break;
         }
 
@@ -1859,6 +1866,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatInformationGetVolumeFail,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_INFORMATION/GET/VOLUME failures",   "/HGCM/VBoxSharedFolders/FnInformationGetVolumeFail");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatRemove,                    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_REMOVE successes",                  "/HGCM/VBoxSharedFolders/FnRemove");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatRemoveFail,                STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_REMOVE failures",                   "/HGCM/VBoxSharedFolders/FnRemoveFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatCloseAndRemove,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_CLOSE_AND_REMOVE successes",        "/HGCM/VBoxSharedFolders/FnCloseAndRemove");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatCloseAndRemoveFail,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_CLOSE_AND_REMOVE failures",         "/HGCM/VBoxSharedFolders/FnCloseAndRemoveFail");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatRename,                    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_RENAME successes",                  "/HGCM/VBoxSharedFolders/FnRename");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatRenameFail,                STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_RENAME failures",                   "/HGCM/VBoxSharedFolders/FnRenameFail");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatFlush,                     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_FLUSH successes",                   "/HGCM/VBoxSharedFolders/FnFlush");

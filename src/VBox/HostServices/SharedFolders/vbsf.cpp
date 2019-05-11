@@ -2180,49 +2180,51 @@ void testRemove(RTTEST hTest)
     /* Add tests as required... */
 }
 #endif
-int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32_t cbPath, uint32_t flags)
+int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, PCSHFLSTRING pPath, uint32_t cbPath, uint32_t flags, SHFLHANDLE hToClose)
 {
-    int rc = VINF_SUCCESS;
 
     /* Validate input */
-    if (   flags & ~(SHFL_REMOVE_FILE|SHFL_REMOVE_DIR|SHFL_REMOVE_SYMLINK)
-        || cbPath == 0
-        || pPath == 0)
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    Assert(pPath);
+    AssertReturn(pPath->u16Size > 0, VERR_INVALID_PARAMETER);
 
-    /* Build a host full path for the given path
-     * and convert ucs2 to utf8 if necessary.
+    /*
+     * Close the handle if specified.
      */
-    char *pszFullPath = NULL;
-
-    rc = vbsfBuildFullPath(pClient, root, pPath, cbPath, &pszFullPath, NULL);
+    int rc = VINF_SUCCESS;
+    if (hToClose != SHFL_HANDLE_NIL)
+        rc = vbsfClose(pClient, root, hToClose);
     if (RT_SUCCESS(rc))
     {
-        /* is the guest allowed to write to this share? */
-        bool fWritable;
-        rc = vbsfMappingsQueryWritable(pClient, root, &fWritable);
-        if (RT_FAILURE(rc) || !fWritable)
-            rc = VERR_WRITE_PROTECT;
-
+        /*
+         * Build a host full path for the given path and convert ucs2 to utf8 if necessary.
+         */
+        char *pszFullPath = NULL;
+        rc = vbsfBuildFullPath(pClient, root, pPath, cbPath, &pszFullPath, NULL);
         if (RT_SUCCESS(rc))
         {
-            if (flags & SHFL_REMOVE_SYMLINK)
-                rc = RTSymlinkDelete(pszFullPath, 0);
-            else if (flags & SHFL_REMOVE_FILE)
-                rc = RTFileDelete(pszFullPath);
+            /*
+             * Is the guest allowed to write to this share?
+             */
+            bool fWritable;
+            rc = vbsfMappingsQueryWritable(pClient, root, &fWritable);
+            if (RT_SUCCESS(rc) && fWritable)
+            {
+                /*
+                 * Do the removal/deletion according to the type flags.
+                 */
+                if (flags & SHFL_REMOVE_SYMLINK)
+                    rc = RTSymlinkDelete(pszFullPath, 0);
+                else if (flags & SHFL_REMOVE_FILE)
+                    rc = RTFileDelete(pszFullPath);
+                else
+                    rc = RTDirRemove(pszFullPath);
+            }
             else
-                rc = RTDirRemove(pszFullPath);
-        }
+                rc = VERR_WRITE_PROTECT;
 
-#ifndef DEBUG_dmik
-        // VERR_ACCESS_DENIED for example?
-        // Assert(rc == VINF_SUCCESS || rc == VERR_DIR_NOT_EMPTY);
-#endif
-        /* free the path string */
-        vbsfFreeFullPath(pszFullPath);
+            /* free the path string */
+            vbsfFreeFullPath(pszFullPath);
+        }
     }
     return rc;
 }

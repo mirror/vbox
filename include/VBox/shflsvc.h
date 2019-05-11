@@ -147,8 +147,12 @@
 /** Copies part of a file to another.
  * @since VBox 6.0.6  */
 #define SHFL_FN_COPY_FILE_PART      (27)
+/** Close handle to (optional) and remove object by path.
+ * This function is tailored for Windows guests.
+ * @since VBox 6.0.8  */
+#define SHFL_FN_CLOSE_AND_REMOVE    (28)
 /** The last function number. */
-#define SHFL_FN_LAST                SHFL_FN_COPY_FILE_PART
+#define SHFL_FN_LAST                SHFL_FN_CLOSE_AND_REMOVE
 /** @} */
 
 
@@ -1776,6 +1780,28 @@ typedef struct _VBoxSFRemove
 } VBoxSFRemove;
 
 #define SHFL_CPARMS_REMOVE  (3)
+/** @} */
+
+
+/** @name SHFL_FN_CLOSE_AND_REMOVE
+ * Extends SHFL_FN_REMOVE with a 4th handle parameter that can be nil.
+ * @{
+ */
+/** SHFL_FN_CLOSE_AND_REMOVE parameters. */
+typedef struct VBoxSFParmCloseAndRemove
+#ifdef __cplusplus
+    : public VBoxSFParmRemove
+#endif
+{
+#ifndef __cplusplus
+    VBoxSFParmRemove      Core;
+#endif
+    /** value64, in: SHFLHANDLE to the object to be removed & close, optional. */
+    HGCMFunctionParameter u64Handle;
+} VBoxSFParmCloseAndRemove;
+/** Number of parameters */
+#define SHFL_CPARMS_CLOSE_AND_REMOVE    (4)
+AssertCompileSize(VBoxSFParmCloseAndRemove, SHFL_CPARMS_CLOSE_AND_REMOVE * sizeof(HGCMFunctionParameter));
 /** @} */
 
 
