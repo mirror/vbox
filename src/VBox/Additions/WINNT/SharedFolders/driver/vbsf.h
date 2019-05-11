@@ -55,6 +55,7 @@ RT_C_DECLS_BEGIN
  * Global data.
  */
 extern PRDBSS_DEVICE_OBJECT VBoxMRxDeviceObject;
+extern uint32_t             g_uSfLastFunction;
 
 /**
  * Maximum drive letters (A - Z).

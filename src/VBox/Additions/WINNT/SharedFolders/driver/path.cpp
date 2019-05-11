@@ -872,76 +872,84 @@ NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext)
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
     PMRX_VBOX_FOBX              pVBoxFobx         = VBoxMRxGetFileObjectExtension(capFobx);
     PUNICODE_STRING             pRemainingName    = GET_ALREADY_PREFIXED_NAME_FROM_CONTEXT(RxContext);
-    uint16_t                    cwcRemainingName  = pRemainingName->Length / sizeof(WCHAR);
+    uint16_t const              cwcRemainingName  = pRemainingName->Length / sizeof(WCHAR);
 
     Log(("VBOXSF: vbsfNtRemove: Delete %.*ls. open count = %d\n",
          cwcRemainingName, pRemainingName->Buffer, capFcb->OpenCount));
     Assert(RxIsFcbAcquiredExclusive(capFcb));
 
     /*
-     * We allocate a single request buffer for the closing and deletion to save time.
+     * We've got function that does both deletion and handle closing starting with 6.0.8,
+     * this saves us a host call when just deleting the file/dir.
      */
-    AssertCompile(sizeof(VBOXSFCLOSEREQ) <= sizeof(VBOXSFREMOVEREQ));
-    AssertReturn((cwcRemainingName + 1) * sizeof(RTUTF16) < _64K, STATUS_NAME_TOO_LONG);
-    size_t cbReq = RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String) + (cwcRemainingName + 1) * sizeof(RTUTF16);
-    union MyCloseAndRemoveReq
+    uint32_t const  fRemove = pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE;
+    NTSTATUS        Status;
+    int             vrc;
+    if (g_uSfLastFunction >= SHFL_FN_CLOSE_AND_REMOVE)
     {
-        VBOXSFCLOSEREQ  Close;
-        VBOXSFREMOVEREQ Remove;
-    } *pReq = (union MyCloseAndRemoveReq *)VbglR0PhysHeapAlloc((uint32_t)cbReq);
-    if (pReq)
-        RT_ZERO(*pReq);
-    else
-        return STATUS_INSUFFICIENT_RESOURCES;
-/** @todo Create a function that combines closing and removing since that is
- * usually what NT guests will be doing.  Should in theory speed up deletion by 33%. */
-
-    /*
-     * Close file first if not already done.  We dont use vbsfNtCloseFileHandle here
-     * as we got our own request buffer and have no need to update any file info.
-     */
-    if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
-    {
-        int vrcClose = VbglR0SfHostReqClose(pNetRootExtension->map.root, &pReq->Close, pVBoxFobx->hFile);
-        pVBoxFobx->hFile = SHFL_HANDLE_NIL;
-        if (RT_FAILURE(vrcClose))
-            Log(("VBOXSF: vbsfNtRemove: Closing the handle failed! vrcClose %Rrc, hFile %#RX64 (probably)\n",
-                 vrcClose, pReq->Close.Parms.u64Handle.u.value64));
-    }
-
-    /*
-     * Try remove the file.  The path to the file/whatever string is
-     * embedded in the request buffer, so we have to assemble it ourselves here.
-     */
-    uint16_t cwcToCopy = pRemainingName->Length / sizeof(WCHAR);
-    AssertMsg(cwcToCopy == cwcRemainingName, ("%#x, was %#x; FCB exclusivity: %d\n", cwcToCopy, cwcRemainingName, RxIsFcbAcquiredExclusive(capFcb)));
-    if (cwcToCopy <= cwcRemainingName)
-    { /* Extremely likely... */ }
-    else
-    {
-        VbglR0PhysHeapFree(pReq);
-        AssertLogRelMsgFailed(("File scheduled for removal was renamed?!?: %#x from %#x; FCB exclusivity: %d\n",
-                               cwcToCopy, cwcRemainingName, RxIsFcbAcquiredExclusive(capFcb)));
-        cwcRemainingName = cwcToCopy;
-        AssertReturn((cwcRemainingName + 1) * sizeof(RTUTF16) < _64K, STATUS_NAME_TOO_LONG);
-        cbReq = RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String) + (cwcRemainingName + 1) * sizeof(RTUTF16);
-        pReq = (union MyCloseAndRemoveReq *)VbglR0PhysHeapAlloc((uint32_t)cbReq);
+        size_t const cbReq = RT_UOFFSETOF(VBOXSFCLOSEANDREMOVEREQ, StrPath.String) + (cwcRemainingName + 1) * sizeof(RTUTF16);
+        VBOXSFCLOSEANDREMOVEREQ *pReq = (VBOXSFCLOSEANDREMOVEREQ *)VbglR0PhysHeapAlloc((uint32_t)cbReq);
         if (pReq)
             RT_ZERO(*pReq);
         else
             return STATUS_INSUFFICIENT_RESOURCES;
-        AssertMsgReturnStmt(cwcToCopy == pRemainingName->Length / sizeof(WCHAR),
-                            ("%#x, now %#x;\n", cwcToCopy == pRemainingName->Length / sizeof(WCHAR)),
+
+        memcpy(&pReq->StrPath.String, pRemainingName->Buffer, cwcRemainingName * sizeof(RTUTF16));
+        pReq->StrPath.String.utf16[cwcRemainingName] = '\0';
+        pReq->StrPath.u16Length = cwcRemainingName * 2;
+        pReq->StrPath.u16Size   = cwcRemainingName * 2 + (uint16_t)sizeof(RTUTF16);
+        vrc = VbglR0SfHostReqCloseAndRemove(pNetRootExtension->map.root, pReq, fRemove, pVBoxFobx->hFile);
+        pVBoxFobx->hFile = SHFL_HANDLE_NIL;
+
+        VbglR0PhysHeapFree(pReq);
+    }
+    else
+    {
+        /*
+         * We allocate a single request buffer for the closing and deletion to save time.
+         */
+        AssertCompile(sizeof(VBOXSFCLOSEREQ) <= sizeof(VBOXSFREMOVEREQ));
+        AssertReturn((cwcRemainingName + 1) * sizeof(RTUTF16) < _64K, STATUS_NAME_TOO_LONG);
+        size_t cbReq = RT_UOFFSETOF(VBOXSFREMOVEREQ, StrPath.String) + (cwcRemainingName + 1) * sizeof(RTUTF16);
+        union MyCloseAndRemoveReq
+        {
+            VBOXSFCLOSEREQ  Close;
+            VBOXSFREMOVEREQ Remove;
+        } *pReq = (union MyCloseAndRemoveReq *)VbglR0PhysHeapAlloc((uint32_t)cbReq);
+        if (pReq)
+            RT_ZERO(*pReq);
+        else
+            return STATUS_INSUFFICIENT_RESOURCES;
+
+        /*
+         * Close file first if not already done.  We dont use vbsfNtCloseFileHandle here
+         * as we got our own request buffer and have no need to update any file info.
+         */
+        if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
+        {
+            int vrcClose = VbglR0SfHostReqClose(pNetRootExtension->map.root, &pReq->Close, pVBoxFobx->hFile);
+            pVBoxFobx->hFile = SHFL_HANDLE_NIL;
+            if (RT_FAILURE(vrcClose))
+                Log(("VBOXSF: vbsfNtRemove: Closing the handle failed! vrcClose %Rrc, hFile %#RX64 (probably)\n",
+                     vrcClose, pReq->Close.Parms.u64Handle.u.value64));
+        }
+
+        /*
+         * Try remove the file.
+         */
+        uint16_t const cwcToCopy = pRemainingName->Length / sizeof(WCHAR);
+        AssertMsgReturnStmt(cwcToCopy == cwcRemainingName,
+                            ("%#x, was %#x; FCB exclusivity: %d\n", cwcToCopy, cwcRemainingName, RxIsFcbAcquiredExclusive(capFcb)),
                             VbglR0PhysHeapFree(pReq), STATUS_INTERNAL_ERROR);
+        memcpy(&pReq->Remove.StrPath.String, pRemainingName->Buffer, cwcToCopy * sizeof(RTUTF16));
+        pReq->Remove.StrPath.String.utf16[cwcToCopy] = '\0';
+        pReq->Remove.StrPath.u16Length = cwcToCopy * 2;
+        pReq->Remove.StrPath.u16Size   = cwcToCopy * 2 + (uint16_t)sizeof(RTUTF16);
+        vrc = VbglR0SfHostReqRemove(pNetRootExtension->map.root, &pReq->Remove, fRemove);
+
+        VbglR0PhysHeapFree(pReq);
     }
 
-    memcpy(&pReq->Remove.StrPath.String, pRemainingName->Buffer, cwcToCopy * sizeof(RTUTF16));
-    pReq->Remove.StrPath.String.utf16[cwcToCopy] = '\0';
-    pReq->Remove.StrPath.u16Length = cwcToCopy * 2;
-    pReq->Remove.StrPath.u16Size   = cwcToCopy * 2 + (uint16_t)sizeof(RTUTF16);
-    int vrc = VbglR0SfHostReqRemove(pNetRootExtension->map.root, &pReq->Remove,
-                                    pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY ? SHFL_REMOVE_DIR : SHFL_REMOVE_FILE);
-    NTSTATUS Status;
     if (RT_SUCCESS(vrc))
     {
         SetFlag(capFobx->pSrvOpen->Flags, SRVOPEN_FLAG_FILE_DELETED);
@@ -953,7 +961,6 @@ NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext)
         Log(("VBOXSF: vbsfNtRemove: VbglR0SfRemove failed with %Rrc\n", vrc));
         Status = vbsfNtVBoxStatusToNt(vrc);
     }
-    VbglR0PhysHeapFree(pReq);
 
     Log(("VBOXSF: vbsfNtRemove: Returned %#010X (%Rrc)\n", Status, vrc));
     return Status;
