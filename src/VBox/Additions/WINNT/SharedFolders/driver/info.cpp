@@ -521,6 +521,150 @@ end:
     return Status;
 }
 
+/**
+ * Updates VBSFNTFCBEXT::VolInfo.
+ */
+static NTSTATUS vbsfNtUpdateFcbVolInfo(PVBSFNTFCBEXT pVBoxFcbX, PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                                       PMRX_VBOX_FOBX pVBoxFobx)
+{
+    NTSTATUS          rcNt;
+    VBOXSFVOLINFOREQ *pReq = (VBOXSFVOLINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
+    {
+        int vrc = VbglR0SfHostReqQueryVolInfo(pNetRootExtension->map.root, pReq, pVBoxFobx->hFile);
+        if (RT_SUCCESS(vrc))
+        {
+            pVBoxFcbX->VolInfo           = pReq->VolInfo;
+            pVBoxFcbX->nsVolInfoUpToDate = RTTimeSystemNanoTS();
+            rcNt = STATUS_SUCCESS;
+        }
+        else
+            rcNt = vbsfNtVBoxStatusToNt(vrc);
+        VbglR0PhysHeapFree(pReq);
+    }
+    else
+        rcNt = STATUS_INSUFFICIENT_RESOURCES;
+    return rcNt;
+}
+
+
+/**
+ * Handles NtQueryVolumeInformationFile / FileFsVolumeInformation
+ */
+static NTSTATUS vbsfNtQueryVolumeInfo(IN OUT PRX_CONTEXT pRxContext,
+                                      PFILE_FS_VOLUME_INFORMATION pInfo,
+                                      ULONG cbInfo,
+                                      PMRX_NET_ROOT pNetRoot,
+                                      PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                                      PMRX_VBOX_FOBX pVBoxFobx,
+                                      PVBSFNTFCBEXT pVBoxFcbX)
+{
+    /*
+     * NtQueryVolumeInformationFile should've checked the minimum buffer size
+     * but just in case.
+     */
+    AssertReturnStmt(cbInfo >= RT_UOFFSETOF(FILE_FS_VOLUME_INFORMATION, VolumeLabel),
+                     pRxContext->InformationToReturn = RT_UOFFSETOF(FILE_FS_VOLUME_INFORMATION, VolumeLabel),
+                     STATUS_BUFFER_TOO_SMALL);
+
+    /*
+     * Get up-to-date serial number.
+     *
+     * If we have a unixy host, we'll get additional unix attributes and the
+     * serial number is the same as INodeIdDevice.
+     *
+     * Note! Because it's possible that the host has mount points within the
+     *       shared folder as well as symbolic links pointing out files or
+     *       directories outside the tree, we cannot just cache the serial
+     *       number in the net root extension data and skip querying it here.
+     *
+     *       OTOH, only we don't report inode info from the host, so the only
+     *       thing the serial number can be used for is to cache/whatever
+     *       volume space information.  So, we should probably provide a
+     *       shortcut here via mount option, registry and guest properties.
+     */
+    /** @todo Make See OTOH above wrt. one serial per net root.   */
+    uint64_t nsNow = RTTimeSystemNanoTS();
+    if (   pVBoxFobx->Info.Attr.enmAdditional == SHFLFSOBJATTRADD_UNIX
+        && pVBoxFobx->Info.Attr.u.Unix.INodeIdDevice != 0
+        && pVBoxFobx->nsUpToDate - nsNow < RT_NS_100US /** @todo implement proper TTL */)
+        pInfo->VolumeSerialNumber = pVBoxFobx->Info.Attr.u.Unix.INodeIdDevice;
+    else if (pVBoxFcbX->nsVolInfoUpToDate - nsNow < RT_NS_100MS /** @todo implement proper volume info TTL */ )
+        pInfo->VolumeSerialNumber = pVBoxFcbX->VolInfo.ulSerial;
+    else
+    {
+        /* Must fetch the info. */
+        NTSTATUS Status = vbsfNtUpdateFcbVolInfo(pVBoxFcbX, pNetRootExtension, pVBoxFobx);
+        if (NT_SUCCESS(Status))
+            pInfo->VolumeSerialNumber = pVBoxFcbX->VolInfo.ulSerial;
+        else
+            return Status;
+    }
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsVolumeInformation: VolumeSerialNumber=%#010RX32\n", pInfo->VolumeSerialNumber));
+
+    /*
+     * Fill in the static info.
+     */
+    pInfo->VolumeCreationTime.QuadPart  = 0;
+    pInfo->SupportsObjects              = FALSE;
+
+    /*
+     * The volume label.
+     *
+     * We may get queries with insufficient buffer space for the whole (or any)
+     * volume label.  In those cases we're to return STATUS_BUFFER_OVERFLOW,
+     * return the returned number of bytes in Ios.Information and set the
+     * VolumeLabelLength to the actual length (rather than the returned).  At
+     * least this is was FAT and NTFS does (however, it is not what the NulMrx
+     * sample from the 6.1.6001.18002 does).
+     *
+     * Note! VolumeLabelLength is a byte count.
+     * Note! NTFS does not include a terminator, so neither do we.
+     */
+    uint32_t const cbShareName  = pNetRoot->pNetRootName->Length
+                                - pNetRoot->pSrvCall->pSrvCallName->Length
+                                - sizeof(WCHAR) /* Remove the leading backslash. */;
+    uint32_t const cbVolLabel   = VBOX_VOLNAME_PREFIX_SIZE + cbShareName;
+    pInfo->VolumeLabelLength    = cbVolLabel;
+
+    WCHAR const   *pwcShareName = &pNetRoot->pNetRootName->Buffer[pNetRoot->pSrvCall->pSrvCallName->Length / sizeof(WCHAR) + 1];
+    uint32_t       cbCopied     = RT_UOFFSETOF(FILE_FS_VOLUME_INFORMATION, VolumeLabel);
+    NTSTATUS       Status;
+    if (cbInfo >= cbCopied + cbVolLabel)
+    {
+        memcpy(pInfo->VolumeLabel, VBOX_VOLNAME_PREFIX, VBOX_VOLNAME_PREFIX_SIZE);
+        memcpy(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)], pwcShareName, cbShareName);
+        cbCopied += cbVolLabel;
+        Status = STATUS_SUCCESS;
+        Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsVolumeInformation: full result (%#x)\n", cbCopied));
+    }
+    else
+    {
+        if (cbInfo > cbCopied)
+        {
+            uint32_t cbLeft = cbInfo - cbCopied;
+            memcpy(pInfo->VolumeLabel, VBOX_VOLNAME_PREFIX, RT_MIN(cbLeft, VBOX_VOLNAME_PREFIX_SIZE));
+            if (cbLeft > VBOX_VOLNAME_PREFIX_SIZE)
+                memcpy(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)], pwcShareName, cbShareName);
+            Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsVolumeInformation: partial result (%#x, needed %#x)\n",
+                 cbCopied, cbCopied + cbVolLabel));
+            cbCopied = cbInfo;
+        }
+        else
+            Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsVolumeInformation: partial result no label (%#x, needed %#x)\n",
+                 cbCopied, cbCopied + cbVolLabel));
+        Status = STATUS_BUFFER_OVERFLOW;
+    }
+
+    /*
+     * Update the return length in the context.
+     */
+    pRxContext->Info.LengthRemaining = cbInfo - cbCopied;
+    pRxContext->InformationToReturn  = cbCopied; /* whatever */
+
+    return Status;
+}
+
 NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
 {
     NTSTATUS Status;
@@ -548,113 +692,13 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
     {
         case FileFsVolumeInformation:
         {
-            PFILE_FS_VOLUME_INFORMATION pInfo = (PFILE_FS_VOLUME_INFORMATION)pInfoBuffer;
+            AssertReturn(pVBoxFobx, STATUS_INVALID_PARAMETER);
+            Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsVolumeInformation\n"));
 
-            PMRX_NET_ROOT pNetRoot = capFcb->pNetRoot;
-            PMRX_SRV_CALL pSrvCall = pNetRoot->pSrvCall;
-
-            PWCHAR pRootName;
-            ULONG cbRootName;
-
-            PSHFLVOLINFO pShflVolInfo;
-            uint32_t cbHGCMBuffer;
-            uint8_t *pHGCMBuffer;
-            int vrc;
-
-            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsVolumeInformation\n"));
-
-            if (!pVBoxFobx)
-            {
-                Log(("VBOXSF: MrxQueryVolumeInfo: pVBoxFobx is NULL!\n"));
-                Status = STATUS_INVALID_PARAMETER;
-                break;
-            }
-
-            cbRootName = pNetRoot->pNetRootName->Length - pSrvCall->pSrvCallName->Length;
-            cbRootName -= sizeof(WCHAR); /* Remove the leading backslash. */
-            pRootName = pNetRoot->pNetRootName->Buffer + (pSrvCall->pSrvCallName->Length / sizeof(WCHAR));
-            pRootName++; /* Remove the leading backslash. */
-
-            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsVolumeInformation: Root name = %.*ls, %d bytes\n",
-                 cbRootName / sizeof(WCHAR), pRootName, cbRootName));
-
-            cbToCopy = FIELD_OFFSET(FILE_FS_VOLUME_INFORMATION, VolumeLabel);
-
-            cbString  = VBOX_VOLNAME_PREFIX_SIZE;
-            cbString += cbRootName;
-            cbString += sizeof(WCHAR);
-
-            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsVolumeInformation: cbToCopy %d, cbString %d\n",
-                 cbToCopy, cbString));
-
-            if (cbInfoBuffer < cbToCopy)
-            {
-                Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-
-            RtlZeroMemory(pInfo, cbToCopy);
-
-            /* Query serial number. */
-            cbHGCMBuffer = sizeof(SHFLVOLINFO);
-            pHGCMBuffer = (uint8_t *)vbsfNtAllocNonPagedMem(cbHGCMBuffer);
-            if (!pHGCMBuffer)
-            {
-                Status = STATUS_INSUFFICIENT_RESOURCES;
-                break;
-            }
-
-            vrc = VbglR0SfFsInfo(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                                 SHFL_INFO_GET | SHFL_INFO_VOLUME, &cbHGCMBuffer, (PSHFLDIRINFO)pHGCMBuffer);
-
-            if (vrc != VINF_SUCCESS)
-            {
-                Status = vbsfNtVBoxStatusToNt(vrc);
-                vbsfNtFreeNonPagedMem(pHGCMBuffer);
-                break;
-            }
-
-            pShflVolInfo = (PSHFLVOLINFO)pHGCMBuffer;
-            pInfo->VolumeSerialNumber = pShflVolInfo->ulSerial;
-            vbsfNtFreeNonPagedMem(pHGCMBuffer);
-
-            pInfo->VolumeCreationTime.QuadPart = 0;
-            pInfo->SupportsObjects = FALSE;
-
-            if (cbInfoBuffer >= cbToCopy + cbString)
-            {
-                RtlCopyMemory(&pInfo->VolumeLabel[0],
-                              VBOX_VOLNAME_PREFIX,
-                              VBOX_VOLNAME_PREFIX_SIZE);
-                RtlCopyMemory(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)],
-                              pRootName,
-                              cbRootName);
-                pInfo->VolumeLabel[cbString / sizeof(WCHAR) -  1] = 0;
-            }
-            else
-            {
-                cbString = cbInfoBuffer - cbToCopy;
-
-                RtlCopyMemory(&pInfo->VolumeLabel[0],
-                              VBOX_VOLNAME_PREFIX,
-                              RT_MIN(cbString, VBOX_VOLNAME_PREFIX_SIZE));
-                if (cbString > VBOX_VOLNAME_PREFIX_SIZE)
-                {
-                    RtlCopyMemory(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)],
-                                  pRootName,
-                                  cbString - VBOX_VOLNAME_PREFIX_SIZE);
-                }
-            }
-
-            pInfo->VolumeLabelLength = cbString;
-
-            cbToCopy += cbString;
-
-            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsVolumeInformation: VolumeLabelLength %d\n",
-                 pInfo->VolumeLabelLength));
-
-            Status = STATUS_SUCCESS;
-            break;
+            Status = vbsfNtQueryVolumeInfo(RxContext, (PFILE_FS_VOLUME_INFORMATION)RxContext->Info.Buffer,
+                                           RxContext->Info.Length, capFcb->pNetRoot, pNetRootExtension, pVBoxFobx,
+                                           VBoxMRxGetFcbExtension(capFcb));
+            return Status;
         }
 
         case FileFsLabelInformation:
@@ -1746,6 +1790,8 @@ static NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
 
     Log(("VBOXSF: vbsfNtRename: FileNameLength = %#x (%d), FileName = %.*ls\n",
          cbFilename, cbFilename, cbFilename / sizeof(WCHAR), &pRenameInfo->FileName[0]));
+
+/** @todo Add new function that also closes the handle, like for remove, saving a host call. */
 
     /* Must close the file before renaming it! */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)

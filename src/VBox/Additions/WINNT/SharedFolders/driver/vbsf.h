@@ -125,6 +125,14 @@ typedef struct VBSFNTFCBEXT
     PMRX_VBOX_FOBX            pFobxLastWriteTime;
     PMRX_VBOX_FOBX            pFobxChangeTime;
     /** @} */
+
+    /** @name Cached volume info.
+     * @{ */
+    /** The RTTimeSystemNanoTS value when VolInfo was retrieved, 0 to force update. */
+    uint64_t                  nsVolInfoUpToDate;
+    /** Volume information. */
+    SHFLVOLINFO               VolInfo;
+    /** @} */
 } VBSFNTFCBEXT;
 /** Pointer to the VBox FCB extension data. */
 typedef VBSFNTFCBEXT *PVBSFNTFCBEXT;
