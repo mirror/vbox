@@ -3007,9 +3007,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     if fRc2:
                         if  curRes.aBuf is not None \
                         and not utils.areBytesEqual(curRes.aBuf, aBufRead):
-                            reporter.error('Test #%d failed: Got buffer:\n"%s" (%d bytes)\nExpected buffer:\n"%s" (%d bytes)'
-                                           % (i, map(hex, map(ord, aBufRead)), len(aBufRead),
-                                              map(hex, map(ord, curRes.aBuf)), len(curRes.aBuf)));
+                            reporter.error('Test #%d failed: Got buffer:\n"%s" (%d bytes, type %s)\n'
+                                           'Expected buffer:\n"%s" (%d bytes, type %s)'
+                                           % (i, map(hex, map(ord, aBufRead)), len(aBufRead), type(aBufRead),
+                                              map(hex, map(ord, curRes.aBuf)), len(curRes.aBuf), type(curRes.aBuf),));
                             reporter.error('Test #%d failed: Got buffer:\n"%s"\nExpected buffer:\n"%s"'
                                            % (i, aBufRead, curRes.aBuf));
                             fRc2 = False;
