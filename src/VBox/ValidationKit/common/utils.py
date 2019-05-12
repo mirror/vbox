@@ -2082,10 +2082,12 @@ def areBytesEqual(oLeft, oRight):
 
     # If both have the same type, use the compare operator of the class:
     if type(oLeft) is type(oRight):
+        #print('same type: %s' % (oLeft == oRight,));
         return oLeft == oRight;
 
     # On the offchance that they're both strings, but of different types.
     if isString(oLeft) and isString(oRight):
+        #print('string compare: %s' % (oLeft == oRight,));
         return oLeft == oRight;
 
     # Convert strings to byte arrays:
@@ -2106,15 +2108,27 @@ def areBytesEqual(oLeft, oRight):
 
     # Check if we now have the same type for both:
     if type(oLeft) is type(oRight):
+        #print('same type now: %s' % (oLeft == oRight,));
         return oLeft == oRight;
 
     # Do item by item comparison:
     if len(oLeft) != len(oRight):
+        #print('different length: %s vs %s' % (len(oLeft), len(oRight)));
         return False;
     i = len(oLeft);
     while i > 0:
         i = i - 1;
-        if oLeft[i] != oRight[i]:
+
+        iElmLeft = oLeft[i];
+        if not isinstance(iElmLeft, int) and not isinstance(iElmLeft, long):
+            iElmLeft = ord(iElmLeft);
+
+        iElmRight = oRight[i];
+        if not isinstance(iElmRight, int) and not isinstance(iElmRight, long):
+            iElmRight = ord(iElmRight);
+
+        if iElmLeft != iElmRight:
+            #print('element %d differs: %x %x' % (i, iElmLeft, iElmRight,));
             return False;
     return True;
 
@@ -2124,6 +2138,7 @@ def areBytesEqual(oLeft, oRight):
 #
 
 # pylint: disable=C0111
+# pylint: disable=undefined-variable
 class BuildCategoryDataTestCase(unittest.TestCase):
     def testIntervalSeconds(self):
         self.assertEqual(parseIntervalSeconds(formatIntervalSeconds(3600)), (3600, None));
@@ -2162,9 +2177,20 @@ class BuildCategoryDataTestCase(unittest.TestCase):
         self.assertEqual(areBytesEqual(b'1234', '1234'), True);
         self.assertEqual(areBytesEqual(b'1234', bytearray([0x31,0x32,0x33,0x34])), True);
         self.assertEqual(areBytesEqual('1234', bytearray([0x31,0x32,0x33,0x34])), True);
+        self.assertEqual(areBytesEqual(u'1234', bytearray([0x31,0x32,0x33,0x34])), True);
         self.assertEqual(areBytesEqual(bytearray([0x31,0x32,0x33,0x34]), bytearray([0x31,0x32,0x33,0x34])), True);
         self.assertEqual(areBytesEqual(bytearray([0x31,0x32,0x33,0x34]), '1224'), False);
         self.assertEqual(areBytesEqual(bytearray([0x31,0x32,0x33,0x34]), bytearray([0x31,0x32,0x32,0x34])), False);
+        if sys.version_info[0] >= 3:
+            pass;
+        else:
+            self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1),
+                                           bytearray([0x31,0x32,0x32,0x34])), False);
+            self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1),
+                                           buffer(bytearray([0x31,0x32,0x33,0x34,0x34]), 0, 4)), True);
+            self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1), b'1234'), True);
+            self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1),  '1234'), True);
+            self.assertEqual(areBytesEqual(buffer(bytearray([0x30,0x31,0x32,0x33,0x34]), 1), u'1234'), True);
 
 if __name__ == '__main__':
     unittest.main();
