@@ -702,74 +702,9 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
         }
 
         case FileFsLabelInformation:
-        {
-            PFILE_FS_LABEL_INFORMATION pInfo = (PFILE_FS_LABEL_INFORMATION)pInfoBuffer;
-
-            PMRX_NET_ROOT pNetRoot = capFcb->pNetRoot;
-            PMRX_SRV_CALL pSrvCall = pNetRoot->pSrvCall;
-
-            PWCHAR pRootName;
-            ULONG cbRootName;
-
-            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsLabelInformation\n"));
-
-            cbRootName = pNetRoot->pNetRootName->Length - pSrvCall->pSrvCallName->Length;
-            cbRootName -= sizeof(WCHAR); /* Remove the leading backslash. */
-            pRootName = pNetRoot->pNetRootName->Buffer + (pSrvCall->pSrvCallName->Length / sizeof(WCHAR));
-            pRootName++; /* Remove the leading backslash. */
-
-            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsLabelInformation: Root name = %.*ls, %d bytes\n",
-                 cbRootName / sizeof(WCHAR), pRootName, cbRootName));
-
-            cbToCopy = FIELD_OFFSET(FILE_FS_LABEL_INFORMATION, VolumeLabel);
-
-            cbString  = VBOX_VOLNAME_PREFIX_SIZE;
-            cbString += cbRootName;
-            cbString += sizeof(WCHAR);
-
-            if (cbInfoBuffer < cbToCopy)
-            {
-                Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-
-            RtlZeroMemory(pInfo, cbToCopy);
-
-            if (cbInfoBuffer >= cbToCopy + cbString)
-            {
-                RtlCopyMemory(&pInfo->VolumeLabel[0],
-                              VBOX_VOLNAME_PREFIX,
-                              VBOX_VOLNAME_PREFIX_SIZE);
-                RtlCopyMemory(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)],
-                              pRootName,
-                              cbRootName);
-                pInfo->VolumeLabel[cbString / sizeof(WCHAR) -  1] = 0;
-            }
-            else
-            {
-                cbString = cbInfoBuffer - cbToCopy;
-
-                RtlCopyMemory(&pInfo->VolumeLabel[0],
-                              VBOX_VOLNAME_PREFIX,
-                              RT_MIN(cbString, VBOX_VOLNAME_PREFIX_SIZE));
-                if (cbString > VBOX_VOLNAME_PREFIX_SIZE)
-                {
-                    RtlCopyMemory(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)],
-                                  pRootName,
-                                  cbString - VBOX_VOLNAME_PREFIX_SIZE);
-                }
-            }
-
-            pInfo->VolumeLabelLength = cbString;
-
-            cbToCopy += cbString;
-
-            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsLabelInformation: VolumeLabelLength %d\n",
-                 pInfo->VolumeLabelLength));
-
-            Status = STATUS_SUCCESS;
+            AssertFailed(/* Only for setting, not for querying. */);
+            Status = STATUS_INVALID_INFO_CLASS;
             break;
-        }
 
         case FileFsFullSizeInformation:
         case FileFsSizeInformation:
