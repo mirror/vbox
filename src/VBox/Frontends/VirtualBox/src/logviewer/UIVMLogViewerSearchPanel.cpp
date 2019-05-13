@@ -26,6 +26,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
+#include <QScrollBar>
 #include <QTextBlock>
 
 /* GUI includes: */
@@ -493,7 +494,7 @@ void UIVMLogViewerSearchPanel::findAll(QTextDocument *pDocument, const QString &
         return;
     QTextCursor cursor(pDocument);
     QTextDocument::FindFlags flags = constructFindFlags(ForwardSearch);
-    int lineCount = pDocument->lineCount();
+    int blockCount = pDocument->blockCount();
     while (!cursor.isNull() && !cursor.atEnd())
     {
         cursor = pDocument->find(searchString, cursor, flags);
@@ -503,8 +504,8 @@ void UIVMLogViewerSearchPanel::findAll(QTextDocument *pDocument, const QString &
             m_matchedCursorPosition << cursor.position() - searchString.length();
             /* The following assumes we have single line blocks only: */
             int cursorLine = pDocument->findBlock(cursor.position()).blockNumber();
-            if (lineCount != 0)
-                m_matchLocationVector.push_back(cursorLine / static_cast<float>(lineCount));
+            if (blockCount != 0)
+                m_matchLocationVector.push_back(cursorLine / static_cast<float>(blockCount));
         }
     }
 }
@@ -522,7 +523,8 @@ void UIVMLogViewerSearchPanel::selectMatch(int iMatchIndex, const QString &searc
     /* Move the cursor to the beginning of the matched string: */
     cursor.setPosition(m_matchedCursorPosition.at(iMatchIndex), QTextCursor::MoveAnchor);
     /* Move the cursor to the end of the matched string while keeping the anchor at the begining thus selecting the text: */
-    cursor.setPosition(m_matchedCursorPosition.at(iMatchIndex)+searchString.length(), QTextCursor::KeepAnchor);
+    cursor.setPosition(m_matchedCursorPosition.at(iMatchIndex) + searchString.length(), QTextCursor::KeepAnchor);
+    textEdit()->ensureCursorVisible();
     textEdit()->setTextCursor(cursor);
     return;
 }
