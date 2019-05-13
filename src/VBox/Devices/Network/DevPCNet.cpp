@@ -815,17 +815,16 @@ DECLINLINE(void) pcnetTmdStorePassHost(PPCNETSTATE pThis, TMD *tmd, RTGCPHYS32 a
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
         ((uint32_t*)tmd)[1] |=  0x80000000;
-        pcnetPhysWrite(pThis, addr, (void*)tmd, 16);
+        pcnetPhysWrite(pThis, addr, (void*)tmd, 12);
         ((uint32_t*)tmd)[1] &= ~0x80000000;
         pcnetPhysWrite(pThis, addr+7, (uint8_t*)tmd + 7, 1);
     }
     else
     {
-        uint32_t xda[4];
+        uint32_t xda[3];
         xda[0] = ((uint32_t *)tmd)[2];
         xda[1] = ((uint32_t *)tmd)[1];
         xda[2] = ((uint32_t *)tmd)[0];
-        xda[3] = ((uint32_t *)tmd)[3];
         xda[1] |=  0x80000000;
         pcnetPhysWrite(pThis, addr, (void*)&xda[0], sizeof(xda));
         xda[1] &= ~0x80000000;
@@ -912,17 +911,16 @@ DECLINLINE(void) pcnetRmdStorePassHost(PPCNETSTATE pThis, RMD *rmd, RTGCPHYS32 a
     else if (RT_LIKELY(BCR_SWSTYLE(pThis) != 3))
     {
         ((uint32_t*)rmd)[1] |=  0x80000000;
-        pcnetPhysWrite(pThis, addr, (void*)rmd, 16);
+        pcnetPhysWrite(pThis, addr, (void*)rmd, 12);
         ((uint32_t*)rmd)[1] &= ~0x80000000;
         pcnetPhysWrite(pThis, addr+7, (uint8_t*)rmd + 7, 1);
     }
     else
     {
-        uint32_t rda[4];
+        uint32_t rda[3];
         rda[0] = ((uint32_t *)rmd)[2];
         rda[1] = ((uint32_t *)rmd)[1];
         rda[2] = ((uint32_t *)rmd)[0];
-        rda[3] = ((uint32_t *)rmd)[3];
         rda[1] |=  0x80000000;
         pcnetPhysWrite(pThis, addr, (void*)&rda[0], sizeof(rda));
         rda[1] &= ~0x80000000;
