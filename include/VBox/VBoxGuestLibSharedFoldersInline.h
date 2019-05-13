@@ -699,7 +699,6 @@ DECLINLINE(int) VbglR0SfHostReqRemove(SHFLROOT idRoot, VBOXSFREMOVEREQ *pReq, ui
     return vrc;
 }
 
-#ifdef __cplusplus
 
 /** Request structure for VbglR0SfHostReqCloseAndRemove.  */
 typedef struct VBOXSFCLOSEANDREMOVEREQ
@@ -748,8 +747,6 @@ DECLINLINE(int) VbglR0SfHostReqCloseAndRemove(SHFLROOT idRoot, VBOXSFCLOSEANDREM
         vrc = pReq->Call.header.result;
     return vrc;
 }
-
-#endif /* __cplusplus */
 
 
 /** Request structure for VbglR0SfHostReqRenameWithSrcContig and
