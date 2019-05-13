@@ -38,7 +38,7 @@
 #include <iprt/uri.h>
 #include <iprt/utf16.h>
 
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 #include <VBox/log.h>
 
 VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
