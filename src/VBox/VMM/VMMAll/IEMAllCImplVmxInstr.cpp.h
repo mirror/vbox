@@ -659,7 +659,7 @@ IEM_STATIC bool iemVmxIsVmcsFieldValid(PCVMCPU pVCpu, uint64_t u64FieldEnc)
         /* Read-only data fields. */
         case VMX_VMCS_RO_EXIT_QUALIFICATION:
         case VMX_VMCS_RO_IO_RCX:
-        case VMX_VMCS_RO_IO_RSX:
+        case VMX_VMCS_RO_IO_RSI:
         case VMX_VMCS_RO_IO_RDI:
         case VMX_VMCS_RO_IO_RIP:
         case VMX_VMCS_RO_GUEST_LINEAR_ADDR:               return true;
@@ -1088,18 +1088,6 @@ DECL_FORCE_INLINE(void) iemVmxVmSucceed(PVMCPU pVCpu)
 DECL_FORCE_INLINE(void) iemVmxVmFailInvalid(PVMCPU pVCpu)
 {
     return CPUMSetGuestVmxVmFailInvalid(&pVCpu->cpum.GstCtx);
-}
-
-
-/**
- * Implements VMFailValid for VMX instruction failure.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   enmInsErr   The VM instruction error.
- */
-DECL_FORCE_INLINE(void) iemVmxVmFailValid(PVMCPU pVCpu, VMXINSTRERR enmInsErr)
-{
-    return CPUMSetGuestVmxVmFailValid(&pVCpu->cpum.GstCtx, enmInsErr);
 }
 
 
@@ -2784,6 +2772,12 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
         /* else: Caller would have updated IDT-vectoring information already, see iemVmxVmexitEvent(). */
     }
 
+    /* The following VMCS fields are unsupported since we don't injecting SMIs into a guest. */
+    Assert(pVmcs->u64RoIoRcx.u == 0);
+    Assert(pVmcs->u64RoIoRsi.u == 0);
+    Assert(pVmcs->u64RoIoRdi.u == 0);
+    Assert(pVmcs->u64RoIoRip.u == 0);
+
     /*
      * Save the guest state back into the VMCS.
      * We only need to save the state when the VM-entry was successful.
@@ -2885,7 +2879,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pExitInfo       Pointer to the VM-exit instruction information struct.
  */
-DECLINLINE(VBOXSTRICTRC) iemVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
+IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
 {
     /*
      * For instructions where any of the following fields are not applicable:

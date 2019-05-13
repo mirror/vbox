@@ -1838,7 +1838,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
  */
 #define VMX_VMCS_RO_EXIT_QUALIFICATION                          0x6400
 #define VMX_VMCS_RO_IO_RCX                                      0x6402
-#define VMX_VMCS_RO_IO_RSX                                      0x6404
+#define VMX_VMCS_RO_IO_RSI                                      0x6404
 #define VMX_VMCS_RO_IO_RDI                                      0x6406
 #define VMX_VMCS_RO_IO_RIP                                      0x6408
 #define VMX_VMCS_RO_GUEST_LINEAR_ADDR                           0x640a
@@ -2832,8 +2832,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_QUAL_TASK_SWITCH_, UINT64_C(0), UINT64_M
 /** @name Exit qualification for I/O instructions.
  * @{
  */
-/** 0-2:   IO operation width. */
-#define VMX_EXIT_QUAL_IO_WIDTH(a)                               ((a) & 7)
+/** 0-2:   IO operation size 0(=1 byte), 1(=2 bytes) and 3(=4 bytes). */
+#define VMX_EXIT_QUAL_IO_SIZE(a)                                ((a) & 7)
 /** 3:     IO operation direction. */
 #define VMX_EXIT_QUAL_IO_DIRECTION(a)                           (((a) >> 3) & 1)
 /** 4:     String IO operation (INS / OUTS). */

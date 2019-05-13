@@ -7614,6 +7614,67 @@ static int hmR0VmxImportGuestState(PVMCPU pVCpu, PCVMXVMCSINFO pVmcsInfo, uint64
                         }
                     }
                 }
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+# if 0
+                /** @todo NSTVMX: We handle each of these fields individually by passing it to IEM
+                 *        VM-exit handlers. We might handle it differently when using the fast path. */
+                /*
+                 * The hardware virtualization state currently consists of VMCS fields that may be
+                 * modified by execution of the nested-guest (that are not part of the general
+                 * guest state) and is visible to guest software. Hence, it is technically part of
+                 * the guest-CPU state when executing a nested-guest.
+                 */
+                if (   (fWhat & CPUMCTX_EXTRN_HWVIRT)
+                    && CPUMIsGuestInVmxNonRootMode(pCtx))
+                {
+                    PVMXVVMCS pGstVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+                    rc  = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_REASON,        &pGstVmcs->u32RoExitReason);
+                    rc |= VMXReadVmcsGstN(VMX_VMCS_RO_EXIT_QUALIFICATION, &pGstVmcs->u64RoExitQual.u);
+                    VMXLOCAL_BREAK_RC(rc);
+
+                    /*
+                     * VM-entry can fail due to invalid-guest state, machine-check events and
+                     * MSR loading failures. Other than VM-exit reason and VM-exit qualification
+                     * all other VMCS fields are left unmodified on VM-entry failure.
+                     *
+                     * See Intel spec. 26.7 "VM-entry Failures During Or After Loading Guest State".
+                     */
+                    bool const fEntryFailed = VMX_EXIT_REASON_HAS_ENTRY_FAILED(pGstVmcs->u32RoExitReason);
+                    if (!fEntryFailed)
+                    {
+                        /*
+                         * Some notes on VMCS fields that may need importing when the fast path
+                         * is implemented. Currently we fully emulate VMLAUNCH/VMRESUME in IEM.
+                         *
+                         * Requires fixing up when using hardware-assisted VMX:
+                         *   - VM-exit interruption info: Shouldn't reflect host interrupts/NMIs.
+                         *   - VM-exit interruption error code: Cleared to 0 when not appropriate.
+                         *   - IDT-vectoring info: Think about this.
+                         *   - IDT-vectoring error code: Think about this.
+                         *
+                         * Emulated:
+                         *   - Guest-interruptiblity state: Derived from FFs and RIP.
+                         *   - Guest pending debug exceptions: Derived from DR6.
+                         *   - Guest activity state: Emulated from EM state.
+                         *   - Guest PDPTEs: Currently all 0s since we don't support nested EPT.
+                         *   - Entry-interrupt info: Emulated, cleared to 0.
+                         */
+                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO,       &pGstVmcs->u32RoExitIntInfo);
+                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE, &pGstVmcs->u32RoExitIntErrCode);
+                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_IDT_VECTORING_INFO,           &pGstVmcs->u32RoIdtVectoringInfo);
+                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_IDT_VECTORING_ERROR_CODE,     &pGstVmcs->u32RoIdtVectoringErrCode);
+                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INSTR_LENGTH,            &pGstVmcs->u32RoExitInstrLen);
+                        rc |= VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INSTR_INFO,              &pGstVmcs->u32RoExitIntInfo);
+                        rc |= VMXReadVmcs64(VMX_VMCS64_RO_GUEST_PHYS_ADDR_FULL,         &pGstVmcs->u64RoGuestPhysAddr.u);
+                        rc |= VMXReadVmcsGstN(VMX_VMCS_RO_GUEST_LINEAR_ADDR,            &pGstVmcs->u64RoGuestLinearAddr.u);
+                        /** @todo NSTVMX: Save and adjust preemption timer value. */
+                    }
+
+                    VMXLOCAL_BREAK_RC(rc);
+                }
+# endif
+#endif
             }
         } while (0);
 
@@ -10668,6 +10729,9 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
     /*
      * Check if VMLAUNCH/VMRESUME succeeded.
      * If this failed, we cause a guru meditation and cease further execution.
+     *
+     * However, if we are executing a nested-guest we might fail if we use the
+     * fast path rather than fully emulating VMLAUNCH/VMRESUME instruction in IEM.
      */
     if (RT_LIKELY(rcVMRun == VINF_SUCCESS))
     {
@@ -10733,6 +10797,25 @@ static void hmR0VmxPostRunGuest(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient, int r
             return;
         }
     }
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    else if (pVmxTransient->fIsNestedGuest)
+    {
+# if 0
+        /*
+         * Copy the VM-instruction error field to the guest VMCS.
+         */
+        /** @todo NSTVMX: Verify we're using the fast path. */
+        uint32_t u32RoVmInstrError;
+        rc = VMXReadVmcs32(VMX_VMCS32_RO_VM_INSTR_ERROR, &u32RoVmInstrError);
+        AssertRCReturn(rc, rc);
+        PVMXVVMCS pGstVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+        pGstVmcs->u32RoVmInstrError = u32RoVmInstrError;
+        /** @todo NSTVMX: Advance guest RIP and other fast path related restoration.  */
+# else
+        AssertMsgFailed(("VMLAUNCH/VMRESUME failed but shouldn't happen when VMLAUNCH/VMRESUME was emulated in IEM!\n"));
+# endif
+    }
+#endif
     else
         Log4Func(("VM-entry failure: rcVMRun=%Rrc fVMEntryFailed=%RTbool\n", rcVMRun, pVmxTransient->fVMEntryFailed));
 
@@ -12432,12 +12515,48 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExit(PVMCPU pVCpu, PVMXTRANSIENT pVmxTrans
  */
 DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
+    VBOXSTRICTRC   rcStrict = VINF_SUCCESS;
     uint32_t const rcReason = pVmxTransient->uExitReason;
     switch (rcReason)
     {
         case VMX_EXIT_EPT_MISCONFIG:
+            rcStrict = hmR0VmxExitEptMisconfig(pVCpu, pVmxTransient);
+            break;
+
         case VMX_EXIT_EPT_VIOLATION:
+            rcStrict = hmR0VmxExitEptViolation(pVCpu, pVmxTransient);
+            break;
+
         case VMX_EXIT_IO_INSTR:
+        {
+            int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+            AssertRCReturn(rc, rc);
+
+            uint32_t const uIOPort = VMX_EXIT_QUAL_IO_PORT(pVmxTransient->uExitQual);
+            uint8_t  const uIOSize = VMX_EXIT_QUAL_IO_SIZE(pVmxTransient->uExitQual);
+            AssertReturn(uIOSize <= 3 && uIOSize != 2, VERR_VMX_IPE_1);
+
+            /* Size of the I/O accesses in bytes. */
+            static uint32_t const s_aIOSizes[4] = { 1, 2, 0, 4 };
+            uint8_t const cbAccess = s_aIOSizes[uIOSize];
+
+            if (CPUMIsGuestVmxIoInterceptSet(pVCpu, uIOPort, cbAccess))
+            {
+                rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                AssertRCReturn(rc, rc);
+
+                VMXVEXITINFO ExitInfo;
+                RT_ZERO(ExitInfo);
+                ExitInfo.uReason = pVmxTransient->uExitReason;
+                ExitInfo.cbInstr = pVmxTransient->cbInstr;
+                ExitInfo.u64Qual = pVmxTransient->uExitQual;
+                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+            }
+            else
+                rcStrict = hmR0VmxExitIoInstr(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_CPUID:
         case VMX_EXIT_RDTSC:
         case VMX_EXIT_RDTSCP:
@@ -12502,7 +12621,8 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         default:
             return hmR0VmxExitErrUndefined(pVCpu, pVmxTransient);
     }
-#undef VMEXIT_CALL_RET
+
+    return rcStrict;
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 
@@ -14082,13 +14202,13 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
     AssertRCReturn(rc, rc);
 
     /* Refer Intel spec. 27-5. "Exit Qualifications for I/O Instructions" for the format. */
-    uint32_t uIOPort      = VMX_EXIT_QUAL_IO_PORT(pVmxTransient->uExitQual);
-    uint8_t  uIOWidth     = VMX_EXIT_QUAL_IO_WIDTH(pVmxTransient->uExitQual);
-    bool     fIOWrite     = (VMX_EXIT_QUAL_IO_DIRECTION(pVmxTransient->uExitQual) == VMX_EXIT_QUAL_IO_DIRECTION_OUT);
-    bool     fIOString    = VMX_EXIT_QUAL_IO_IS_STRING(pVmxTransient->uExitQual);
-    bool     fGstStepping = RT_BOOL(pCtx->eflags.Bits.u1TF);
-    bool     fDbgStepping = pVCpu->hm.s.fSingleInstruction;
-    AssertReturn(uIOWidth <= 3 && uIOWidth != 2, VERR_VMX_IPE_1);
+    uint32_t const uIOPort      = VMX_EXIT_QUAL_IO_PORT(pVmxTransient->uExitQual);
+    uint8_t  const uIOSize      = VMX_EXIT_QUAL_IO_SIZE(pVmxTransient->uExitQual);
+    bool     const fIOWrite     = (VMX_EXIT_QUAL_IO_DIRECTION(pVmxTransient->uExitQual) == VMX_EXIT_QUAL_IO_DIRECTION_OUT);
+    bool     const fIOString    = VMX_EXIT_QUAL_IO_IS_STRING(pVmxTransient->uExitQual);
+    bool     const fGstStepping = RT_BOOL(pCtx->eflags.Bits.u1TF);
+    bool     const fDbgStepping = pVCpu->hm.s.fSingleInstruction;
+    AssertReturn(uIOSize <= 3 && uIOSize != 2, VERR_VMX_IPE_1);
 
     /*
      * Update exit history to see if this exit can be optimized.
@@ -14111,7 +14231,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         /* I/O operation lookup arrays. */
         static uint32_t const s_aIOSizes[4] = { 1, 2, 0, 4 };                    /* Size of the I/O accesses. */
         static uint32_t const s_aIOOpAnd[4] = { 0xff, 0xffff, 0, 0xffffffff };   /* AND masks for saving result in AL/AX/EAX. */
-        uint32_t const cbValue  = s_aIOSizes[uIOWidth];
+        uint32_t const cbValue  = s_aIOSizes[uIOSize];
         uint32_t const cbInstr  = pVmxTransient->cbInstr;
         bool fUpdateRipAlready  = false; /* ugly hack, should be temporary. */
         PVM pVM                 = pVCpu->CTX_SUFF(pVM);
@@ -14160,7 +14280,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
              * IN/OUT - I/O instruction.
              */
             Log4Func(("cs:rip=%04x:%08RX64 %#06x/%u %c\n", pCtx->cs.Sel, pCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
-            uint32_t const uAndVal = s_aIOOpAnd[uIOWidth];
+            uint32_t const uAndVal = s_aIOOpAnd[uIOSize];
             Assert(!VMX_EXIT_QUAL_IO_IS_REP(pVmxTransient->uExitQual));
             if (fIOWrite)
             {
@@ -14287,7 +14407,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
         Log4(("IOExit/%u: %04x:%08RX64: %s%s%s %#x LB %u -> EMHistoryExec\n",
               pVCpu->idCpu, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip,
               VMX_EXIT_QUAL_IO_IS_REP(pVmxTransient->uExitQual) ? "REP " : "",
-              fIOWrite ? "OUT" : "IN", fIOString ? "S" : "", uIOPort, uIOWidth));
+              fIOWrite ? "OUT" : "IN", fIOString ? "S" : "", uIOPort, uIOSize));
 
         rcStrict = EMHistoryExec(pVCpu, pExitRec, 0);
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);

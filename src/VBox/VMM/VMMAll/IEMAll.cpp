@@ -981,11 +981,6 @@ IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTaskSwitch(PVMCPU pVCpu, IEMTASKSWITCH e
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_t fFlags, uint32_t uErrCode, uint64_t uCr2, uint8_t cbInstr);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitEventDoubleFault(PVMCPU pVCpu);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitTripleFault(PVMCPU pVCpu);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitPreemptTimer(PVMCPU pVCpu);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitExtInt(PVMCPU pVCpu, uint8_t uVector, bool fIntPending);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitNmi(PVMCPU pVCpu);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVector);
-IEM_STATIC VBOXSTRICTRC     iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMem(PVMCPU pVCpu, uint16_t offAccess, size_t cbAccess, void *pvData, uint32_t fAccess);
 IEM_STATIC VBOXSTRICTRC     iemVmxVmexitApicAccess(PVMCPU pVCpu, uint16_t offAccess, uint32_t fAccess);
 IEM_STATIC VBOXSTRICTRC     iemVmxVirtApicAccessMsrRead(PVMCPU pVCpu, uint32_t idMsr, uint64_t *pu64Value);
@@ -15924,6 +15919,47 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitStartupIpi(PVMCPU pVCpu, uint8_t uVec
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
 {
     VBOXSTRICTRC rcStrict = iemVmxVmexit(pVCpu, uExitReason);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to emulate a VM-exit due to an instruction.
+ *
+ * This is meant to be used for those instructions that VMX provides additional
+ * decoding information beyond just the instruction length!
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pExitInfo   Pointer to the VM-exit information struct.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
+{
+    VBOXSTRICTRC rcStrict = iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to emulate a VM-exit due to an instruction.
+ *
+ * This is meant to be used for those instructions that VMX provides only the
+ * instruction length.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pExitInfo   The VM-exit reason.
+ * @param   cbInstr     The instruction length in bytes.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitReason, uint8_t cbInstr)
+{
+    VBOXSTRICTRC rcStrict = iemVmxVmexitInstr(pVCpu, uExitReason, cbInstr);
     if (pVCpu->iem.s.cActiveMappings)
         iemMemRollback(pVCpu);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
