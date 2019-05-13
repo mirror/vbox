@@ -12536,10 +12536,8 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
             uint8_t  const uIOSize = VMX_EXIT_QUAL_IO_SIZE(pVmxTransient->uExitQual);
             AssertReturn(uIOSize <= 3 && uIOSize != 2, VERR_VMX_IPE_1);
 
-            /* Size of the I/O accesses in bytes. */
-            static uint32_t const s_aIOSizes[4] = { 1, 2, 0, 4 };
+            static uint32_t const s_aIOSizes[4] = { 1, 2, 0, 4 };   /* Size of the I/O accesses in bytes. */
             uint8_t const cbAccess = s_aIOSizes[uIOSize];
-
             if (CPUMIsGuestVmxIoInterceptSet(pVCpu, uIOPort, cbAccess))
             {
                 rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -14228,9 +14226,9 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
                                                     pVCpu->cpum.GstCtx.rip + pVCpu->cpum.GstCtx.cs.u64Base);
     if (!pExitRec)
     {
-        /* I/O operation lookup arrays. */
-        static uint32_t const s_aIOSizes[4] = { 1, 2, 0, 4 };                    /* Size of the I/O accesses. */
+        static uint32_t const s_aIOSizes[4] = { 1, 2, 0, 4 };                    /* Size of the I/O accesses in bytes. */
         static uint32_t const s_aIOOpAnd[4] = { 0xff, 0xffff, 0, 0xffffffff };   /* AND masks for saving result in AL/AX/EAX. */
+
         uint32_t const cbValue  = s_aIOSizes[uIOSize];
         uint32_t const cbInstr  = pVmxTransient->cbInstr;
         bool fUpdateRipAlready  = false; /* ugly hack, should be temporary. */
