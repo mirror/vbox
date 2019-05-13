@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #include "vbsf.h"
 #include <iprt/err.h>
+#include <iprt/asm.h>
 
 extern "C" NTSTATUS NTAPI RxSetEndOfFileInfo(PRX_CONTEXT, PIRP, PFCB, PFOBX);
 
@@ -534,8 +535,40 @@ static NTSTATUS vbsfNtUpdateFcbVolInfo(PVBSFNTFCBEXT pVBoxFcbX, PMRX_VBOX_NETROO
         int vrc = VbglR0SfHostReqQueryVolInfo(pNetRootExtension->map.root, pReq, pVBoxFobx->hFile);
         if (RT_SUCCESS(vrc))
         {
-            pVBoxFcbX->VolInfo           = pReq->VolInfo;
+            /* Make the units compatible with NT before assigning. */
+            if (pReq->VolInfo.ulBytesPerSector != 0)
+            {
+                if (pReq->VolInfo.ulBytesPerAllocationUnit > pReq->VolInfo.ulBytesPerSector)
+                {
+                    uint32_t cSectorsPerUnit = pReq->VolInfo.ulBytesPerAllocationUnit / pReq->VolInfo.ulBytesPerSector;
+                    pReq->VolInfo.ulBytesPerAllocationUnit = pReq->VolInfo.ulBytesPerSector * cSectorsPerUnit;
+                }
+                else if (pReq->VolInfo.ulBytesPerAllocationUnit < pReq->VolInfo.ulBytesPerSector)
+                    pReq->VolInfo.ulBytesPerAllocationUnit = pReq->VolInfo.ulBytesPerSector;
+            }
+            else if (pReq->VolInfo.ulBytesPerAllocationUnit == 0)
+                pReq->VolInfo.ulBytesPerSector = pReq->VolInfo.ulBytesPerAllocationUnit = 512;
+            else
+                pReq->VolInfo.ulBytesPerSector = pReq->VolInfo.ulBytesPerAllocationUnit;
+
+            /* Copy the info assigning: */
+            ASMCompilerBarrier();
+            pVBoxFcbX->VolInfo.ullTotalAllocationBytes       = pReq->VolInfo.ullTotalAllocationBytes;
+            pVBoxFcbX->VolInfo.ullAvailableAllocationBytes   = pReq->VolInfo.ullAvailableAllocationBytes;
+            pVBoxFcbX->VolInfo.ulBytesPerAllocationUnit      = pReq->VolInfo.ulBytesPerAllocationUnit;
+            pVBoxFcbX->VolInfo.ulBytesPerSector              = pReq->VolInfo.ulBytesPerSector;
+            pVBoxFcbX->VolInfo.ulSerial                      = pReq->VolInfo.ulSerial;
+            pVBoxFcbX->VolInfo.fsProperties.cbMaxComponent   = pReq->VolInfo.fsProperties.cbMaxComponent;
+            pVBoxFcbX->VolInfo.fsProperties.fRemote          = pReq->VolInfo.fsProperties.fRemote;
+            pVBoxFcbX->VolInfo.fsProperties.fCaseSensitive   = pReq->VolInfo.fsProperties.fCaseSensitive;
+            pVBoxFcbX->VolInfo.fsProperties.fReadOnly        = pReq->VolInfo.fsProperties.fReadOnly;
+            pVBoxFcbX->VolInfo.fsProperties.fSupportsUnicode = pReq->VolInfo.fsProperties.fSupportsUnicode;
+            pVBoxFcbX->VolInfo.fsProperties.fCompressed      = pReq->VolInfo.fsProperties.fCompressed;
+            pVBoxFcbX->VolInfo.fsProperties.fFileCompression = pReq->VolInfo.fsProperties.fFileCompression;
+            ASMWriteFence();
             pVBoxFcbX->nsVolInfoUpToDate = RTTimeSystemNanoTS();
+            ASMWriteFence();
+
             rcNt = STATUS_SUCCESS;
         }
         else
@@ -551,13 +584,13 @@ static NTSTATUS vbsfNtUpdateFcbVolInfo(PVBSFNTFCBEXT pVBoxFcbX, PMRX_VBOX_NETROO
 /**
  * Handles NtQueryVolumeInformationFile / FileFsVolumeInformation
  */
-static NTSTATUS vbsfNtQueryVolumeInfo(IN OUT PRX_CONTEXT pRxContext,
-                                      PFILE_FS_VOLUME_INFORMATION pInfo,
-                                      ULONG cbInfo,
-                                      PMRX_NET_ROOT pNetRoot,
-                                      PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
-                                      PMRX_VBOX_FOBX pVBoxFobx,
-                                      PVBSFNTFCBEXT pVBoxFcbX)
+static NTSTATUS vbsfNtQueryFsVolumeInfo(IN OUT PRX_CONTEXT pRxContext,
+                                        PFILE_FS_VOLUME_INFORMATION pInfo,
+                                        ULONG cbInfo,
+                                        PMRX_NET_ROOT pNetRoot,
+                                        PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                                        PMRX_VBOX_FOBX pVBoxFobx,
+                                        PVBSFNTFCBEXT pVBoxFcbX)
 {
     /*
      * NtQueryVolumeInformationFile should've checked the minimum buffer size
@@ -665,6 +698,149 @@ static NTSTATUS vbsfNtQueryVolumeInfo(IN OUT PRX_CONTEXT pRxContext,
     return Status;
 }
 
+/**
+ * Handles NtQueryVolumeInformationFile / FileFsSizeInformation
+ *
+ * @note Almost identical to vbsfNtQueryFsFullSizeInfo.
+ */
+static NTSTATUS vbsfNtQueryFsSizeInfo(IN OUT PRX_CONTEXT pRxContext,
+                                      PFILE_FS_SIZE_INFORMATION pInfo,
+                                      ULONG cbInfo,
+                                      PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                                      PMRX_VBOX_FOBX pVBoxFobx,
+                                      PVBSFNTFCBEXT pVBoxFcbX)
+{
+    /*
+     * NtQueryVolumeInformationFile should've checked the minimum buffer size
+     * but just in case.
+     */
+    AssertReturnStmt(cbInfo >= sizeof(FILE_FS_SIZE_INFORMATION),
+                     pRxContext->InformationToReturn = sizeof(FILE_FS_SIZE_INFORMATION),
+                     STATUS_BUFFER_TOO_SMALL);
+
+    /*
+     * Get up-to-date information.
+     * For the time being we always re-query this information from the host.
+     */
+    /** @todo don't requery this if it happens with XXXX ns of a _different_ info
+     *        request to the same handle. */
+    {
+        /* Must fetch the info. */
+        NTSTATUS Status = vbsfNtUpdateFcbVolInfo(pVBoxFcbX, pNetRootExtension, pVBoxFobx);
+        if (NT_SUCCESS(Status))
+        { /* likely */ }
+        else
+            return Status;
+    }
+
+    /* Make a copy of the info for paranoid reasons: */
+    SHFLVOLINFO VolInfoCopy;
+    memcpy(&VolInfoCopy, (void *)&pVBoxFcbX->VolInfo, sizeof(VolInfoCopy));
+    ASMCompilerBarrier();
+
+    /*
+     * Produce the requested data.
+     */
+    pInfo->BytesPerSector                    = RT_MIN(VolInfoCopy.ulBytesPerSector, 1);
+    pInfo->SectorsPerAllocationUnit          = VolInfoCopy.ulBytesPerAllocationUnit / pInfo->BytesPerSector;
+    AssertReturn(pInfo->SectorsPerAllocationUnit > 0, STATUS_INTERNAL_ERROR);
+    pInfo->TotalAllocationUnits.QuadPart     = pVBoxFcbX->VolInfo.ullTotalAllocationBytes
+                                             / VolInfoCopy.ulBytesPerAllocationUnit;
+    pInfo->AvailableAllocationUnits.QuadPart = pVBoxFcbX->VolInfo.ullAvailableAllocationBytes
+                                             / VolInfoCopy.ulBytesPerAllocationUnit;
+
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsSizeInformation: BytesPerSector           = %#010RX32\n",
+         pInfo->BytesPerSector));
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsSizeInformation: SectorsPerAllocationUnit = %#010RX32\n",
+         pInfo->SectorsPerAllocationUnit));
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsSizeInformation: TotalAllocationUnits     = %#018RX32\n",
+         pInfo->TotalAllocationUnits.QuadPart));
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsSizeInformation: AvailableAllocationUnits = %#018RX32\n",
+         pInfo->AvailableAllocationUnits.QuadPart));
+
+    /*
+     * Update the return length in the context.
+     */
+    pRxContext->Info.LengthRemaining = cbInfo - sizeof(*pInfo);
+    pRxContext->InformationToReturn  = sizeof(*pInfo); /* whatever */
+    return STATUS_SUCCESS;
+}
+
+/**
+ * Handles NtQueryVolumeInformationFile / FileFsFullSizeInformation
+ *
+ * @note Almost identical to vbsfNtQueryFsSizeInfo.
+ */
+static NTSTATUS vbsfNtQueryFsFullSizeInfo(IN OUT PRX_CONTEXT pRxContext,
+                                          PFILE_FS_FULL_SIZE_INFORMATION pInfo,
+                                          ULONG cbInfo,
+                                          PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                                          PMRX_VBOX_FOBX pVBoxFobx,
+                                          PVBSFNTFCBEXT pVBoxFcbX)
+{
+    /*
+     * NtQueryVolumeInformationFile should've checked the minimum buffer size
+     * but just in case.
+     */
+    AssertReturnStmt(cbInfo >= sizeof(FILE_FS_SIZE_INFORMATION),
+                     pRxContext->InformationToReturn = sizeof(FILE_FS_SIZE_INFORMATION),
+                     STATUS_BUFFER_TOO_SMALL);
+
+    /*
+     * Get up-to-date information.
+     * For the time being we always re-query this information from the host.
+     */
+    /** @todo don't requery this if it happens with XXXX ns of a _different_ info
+     *        request to the same handle. */
+    {
+        /* Must fetch the info. */
+        NTSTATUS Status = vbsfNtUpdateFcbVolInfo(pVBoxFcbX, pNetRootExtension, pVBoxFobx);
+        if (NT_SUCCESS(Status))
+        { /* likely */ }
+        else
+            return Status;
+    }
+
+    /* Make a copy of the info for paranoid reasons: */
+    SHFLVOLINFO VolInfoCopy;
+    memcpy(&VolInfoCopy, (void *)&pVBoxFcbX->VolInfo, sizeof(VolInfoCopy));
+    ASMCompilerBarrier();
+
+    /*
+     * Produce the requested data.
+     */
+    pInfo->BytesPerSector                          = RT_MIN(VolInfoCopy.ulBytesPerSector, 1);
+    pInfo->SectorsPerAllocationUnit                = VolInfoCopy.ulBytesPerAllocationUnit / pInfo->BytesPerSector;
+    AssertReturn(pInfo->SectorsPerAllocationUnit > 0, STATUS_INTERNAL_ERROR);
+    pInfo->TotalAllocationUnits.QuadPart           = pVBoxFcbX->VolInfo.ullTotalAllocationBytes
+                                                   / VolInfoCopy.ulBytesPerAllocationUnit;
+    pInfo->ActualAvailableAllocationUnits.QuadPart = pVBoxFcbX->VolInfo.ullAvailableAllocationBytes
+                                                   / VolInfoCopy.ulBytesPerAllocationUnit;
+    pInfo->CallerAvailableAllocationUnits.QuadPart = pInfo->ActualAvailableAllocationUnits.QuadPart;
+
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsFullSizeInformation: BytesPerSector                 = %#010RX32\n",
+         pInfo->BytesPerSector));
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsFullSizeInformation: SectorsPerAllocationUnit       = %#010RX32\n",
+         pInfo->SectorsPerAllocationUnit));
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsFullSizeInformation: TotalAllocationUnits           = %#018RX32\n",
+         pInfo->TotalAllocationUnits.QuadPart));
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsFullSizeInformation: ActualAvailableAllocationUnits = %#018RX32\n",
+         pInfo->ActualAvailableAllocationUnits.QuadPart));
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsFullSizeInformation: CallerAvailableAllocationUnits = %#018RX32\n",
+         pInfo->CallerAvailableAllocationUnits.QuadPart));
+
+    /*
+     * Update the return length in the context.
+     */
+    pRxContext->Info.LengthRemaining = cbInfo - sizeof(*pInfo);
+    pRxContext->InformationToReturn  = sizeof(*pInfo); /* whatever */
+    return STATUS_SUCCESS;
+}
+
+
+/**
+ * Handles NtQueryVolumeInformationFile and similar.
+ */
 NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
 {
     NTSTATUS Status;
@@ -691,114 +867,33 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
     switch (FsInformationClass)
     {
         case FileFsVolumeInformation:
-        {
-            AssertReturn(pVBoxFobx, STATUS_INVALID_PARAMETER);
             Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsVolumeInformation\n"));
-
-            Status = vbsfNtQueryVolumeInfo(RxContext, (PFILE_FS_VOLUME_INFORMATION)RxContext->Info.Buffer,
-                                           RxContext->Info.Length, capFcb->pNetRoot, pNetRootExtension, pVBoxFobx,
-                                           VBoxMRxGetFcbExtension(capFcb));
+            AssertReturn(pVBoxFobx, STATUS_INVALID_PARAMETER);
+            Status = vbsfNtQueryFsVolumeInfo(RxContext, (PFILE_FS_VOLUME_INFORMATION)RxContext->Info.Buffer,
+                                             RxContext->Info.Length, capFcb->pNetRoot, pNetRootExtension, pVBoxFobx,
+                                             VBoxMRxGetFcbExtension(capFcb));
             return Status;
-        }
 
         case FileFsLabelInformation:
             AssertFailed(/* Only for setting, not for querying. */);
             Status = STATUS_INVALID_INFO_CLASS;
             break;
 
-        case FileFsFullSizeInformation:
         case FileFsSizeInformation:
-        {
-            PFILE_FS_FULL_SIZE_INFORMATION pFullSizeInfo = (PFILE_FS_FULL_SIZE_INFORMATION)pInfoBuffer;
-            PFILE_FS_SIZE_INFORMATION pSizeInfo = (PFILE_FS_SIZE_INFORMATION)pInfoBuffer;
+            Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsSizeInformation\n"));
+            AssertReturn(pVBoxFobx, STATUS_INVALID_PARAMETER);
+            Status = vbsfNtQueryFsSizeInfo(RxContext, (PFILE_FS_SIZE_INFORMATION)RxContext->Info.Buffer,
+                                           RxContext->Info.Length, pNetRootExtension, pVBoxFobx,
+                                           VBoxMRxGetFcbExtension(capFcb));
+            return Status;
 
-            uint32_t cbHGCMBuffer;
-            uint8_t *pHGCMBuffer;
-            int vrc;
-            PSHFLVOLINFO pShflVolInfo;
-
-            LARGE_INTEGER TotalAllocationUnits;
-            LARGE_INTEGER AvailableAllocationUnits;
-            ULONG         SectorsPerAllocationUnit;
-            ULONG         BytesPerSector;
-
-            if (FsInformationClass == FileFsFullSizeInformation)
-            {
-                Log(("VBOXSF: MrxQueryVolumeInfo: FileFsFullSizeInformation\n"));
-                cbToCopy = sizeof(FILE_FS_FULL_SIZE_INFORMATION);
-            }
-            else
-            {
-                Log(("VBOXSF: MrxQueryVolumeInfo: FileFsSizeInformation\n"));
-                cbToCopy = sizeof(FILE_FS_SIZE_INFORMATION);
-            }
-
-            if (!pVBoxFobx)
-            {
-                Log(("VBOXSF: MrxQueryVolumeInfo: pVBoxFobx is NULL!\n"));
-                Status = STATUS_INVALID_PARAMETER;
-                break;
-            }
-
-            if (cbInfoBuffer < cbToCopy)
-            {
-                Status = STATUS_BUFFER_TOO_SMALL;
-                break;
-            }
-
-            RtlZeroMemory(pInfoBuffer, cbToCopy);
-
-            cbHGCMBuffer = sizeof(SHFLVOLINFO);
-            pHGCMBuffer = (uint8_t *)vbsfNtAllocNonPagedMem(cbHGCMBuffer);
-            if (!pHGCMBuffer)
-            {
-                Status = STATUS_INSUFFICIENT_RESOURCES;
-                break;
-            }
-
-            vrc = VbglR0SfFsInfo(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                                 SHFL_INFO_GET | SHFL_INFO_VOLUME, &cbHGCMBuffer, (PSHFLDIRINFO)pHGCMBuffer);
-
-            if (vrc != VINF_SUCCESS)
-            {
-                Status = vbsfNtVBoxStatusToNt(vrc);
-                vbsfNtFreeNonPagedMem(pHGCMBuffer);
-                break;
-            }
-
-            pShflVolInfo = (PSHFLVOLINFO)pHGCMBuffer;
-
-            TotalAllocationUnits.QuadPart     = pShflVolInfo->ullTotalAllocationBytes / pShflVolInfo->ulBytesPerAllocationUnit;
-            AvailableAllocationUnits.QuadPart = pShflVolInfo->ullAvailableAllocationBytes / pShflVolInfo->ulBytesPerAllocationUnit;
-            SectorsPerAllocationUnit          = pShflVolInfo->ulBytesPerAllocationUnit / pShflVolInfo->ulBytesPerSector;
-            BytesPerSector                    = pShflVolInfo->ulBytesPerSector;
-
-            Log(("VBOXSF: MrxQueryVolumeInfo: TotalAllocationUnits     0x%RX64\n", TotalAllocationUnits.QuadPart));
-            Log(("VBOXSF: MrxQueryVolumeInfo: AvailableAllocationUnits 0x%RX64\n", AvailableAllocationUnits.QuadPart));
-            Log(("VBOXSF: MrxQueryVolumeInfo: SectorsPerAllocationUnit 0x%X\n", SectorsPerAllocationUnit));
-            Log(("VBOXSF: MrxQueryVolumeInfo: BytesPerSector           0x%X\n", BytesPerSector));
-
-            if (FsInformationClass == FileFsFullSizeInformation)
-            {
-                pFullSizeInfo->TotalAllocationUnits           = TotalAllocationUnits;
-                pFullSizeInfo->CallerAvailableAllocationUnits = AvailableAllocationUnits;
-                pFullSizeInfo->ActualAvailableAllocationUnits = AvailableAllocationUnits;
-                pFullSizeInfo->SectorsPerAllocationUnit       = SectorsPerAllocationUnit;
-                pFullSizeInfo->BytesPerSector                 = BytesPerSector;
-            }
-            else
-            {
-                pSizeInfo->TotalAllocationUnits     = TotalAllocationUnits;
-                pSizeInfo->AvailableAllocationUnits = AvailableAllocationUnits;
-                pSizeInfo->SectorsPerAllocationUnit = SectorsPerAllocationUnit;
-                pSizeInfo->BytesPerSector           = BytesPerSector;
-            }
-
-            vbsfNtFreeNonPagedMem(pHGCMBuffer);
-
-            Status = STATUS_SUCCESS;
-            break;
-        }
+        case FileFsFullSizeInformation:
+            Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsFullSizeInformation\n"));
+            AssertReturn(pVBoxFobx, STATUS_INVALID_PARAMETER);
+            Status = vbsfNtQueryFsFullSizeInfo(RxContext, (PFILE_FS_FULL_SIZE_INFORMATION)RxContext->Info.Buffer,
+                                               RxContext->Info.Length, pNetRootExtension, pVBoxFobx,
+                                               VBoxMRxGetFcbExtension(capFcb));
+            return Status;
 
         case FileFsDeviceInformation:
         {

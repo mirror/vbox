@@ -121,17 +121,17 @@ typedef struct VBSFNTFCBEXT
      * non-windows host systems or not.
      *
      * @{ */
-    PMRX_VBOX_FOBX            pFobxLastAccessTime;
-    PMRX_VBOX_FOBX            pFobxLastWriteTime;
-    PMRX_VBOX_FOBX            pFobxChangeTime;
+    PMRX_VBOX_FOBX              pFobxLastAccessTime;
+    PMRX_VBOX_FOBX              pFobxLastWriteTime;
+    PMRX_VBOX_FOBX              pFobxChangeTime;
     /** @} */
 
     /** @name Cached volume info.
      * @{ */
     /** The RTTimeSystemNanoTS value when VolInfo was retrieved, 0 to force update. */
-    uint64_t                  nsVolInfoUpToDate;
+    uint64_t volatile           nsVolInfoUpToDate;
     /** Volume information. */
-    SHFLVOLINFO               VolInfo;
+    SHFLVOLINFO volatile        VolInfo;
     /** @} */
 } VBSFNTFCBEXT;
 /** Pointer to the VBox FCB extension data. */
