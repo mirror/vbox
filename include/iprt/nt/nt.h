@@ -1608,6 +1608,37 @@ typedef enum _FSINFOCLASS
 typedef FS_INFORMATION_CLASS *PFS_INFORMATION_CLASS;
 NTSYSAPI NTSTATUS NTAPI NtQueryVolumeInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, ULONG, FS_INFORMATION_CLASS);
 
+typedef struct _FILE_DIRECTORY_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    ULONG           FileIndex;
+    LARGE_INTEGER   CreationTime;
+    LARGE_INTEGER   LastAccessTime;
+    LARGE_INTEGER   LastWriteTime;
+    LARGE_INTEGER   ChangeTime;
+    LARGE_INTEGER   EndOfFile;
+    LARGE_INTEGER   AllocationSize;
+    ULONG           FileAttributes;
+    ULONG           FileNameLength;
+    WCHAR           FileName[1];
+} FILE_DIRECTORY_INFORMATION;
+typedef FILE_DIRECTORY_INFORMATION *PFILE_DIRECTORY_INFORMATION;
+typedef struct _FILE_FULL_DIR_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    ULONG           FileIndex;
+    LARGE_INTEGER   CreationTime;
+    LARGE_INTEGER   LastAccessTime;
+    LARGE_INTEGER   LastWriteTime;
+    LARGE_INTEGER   ChangeTime;
+    LARGE_INTEGER   EndOfFile;
+    LARGE_INTEGER   AllocationSize;
+    ULONG           FileAttributes;
+    ULONG           FileNameLength;
+    ULONG           EaSize;
+    WCHAR           FileName[1];
+} FILE_FULL_DIR_INFORMATION;
+typedef FILE_FULL_DIR_INFORMATION *PFILE_FULL_DIR_INFORMATION;
 typedef struct _FILE_BOTH_DIR_INFORMATION
 {
     ULONG           NextEntryOffset;    /**< 0x00: */
@@ -1650,6 +1681,215 @@ typedef struct _FILE_NAME_INFORMATION
     WCHAR           FileName[1];
 } FILE_NAME_INFORMATION;
 typedef FILE_NAME_INFORMATION *PFILE_NAME_INFORMATION;
+typedef FILE_NAME_INFORMATION FILE_NETWORK_PHYSICAL_NAME_INFORMATION;
+typedef FILE_NETWORK_PHYSICAL_NAME_INFORMATION *PFILE_NETWORK_PHYSICAL_NAME_INFORMATION;
+typedef struct _FILE_INTERNAL_INFORMATION
+{
+    LARGE_INTEGER   IndexNumber;
+} FILE_INTERNAL_INFORMATION;
+typedef FILE_INTERNAL_INFORMATION *PFILE_INTERNAL_INFORMATION;
+typedef struct _FILE_EA_INFORMATION
+{
+    ULONG           EaSize;
+} FILE_EA_INFORMATION;
+typedef FILE_EA_INFORMATION *PFILE_EA_INFORMATION;
+typedef struct _FILE_ACCESS_INFORMATION
+{
+    ACCESS_MASK     AccessFlags;
+} FILE_ACCESS_INFORMATION;
+typedef FILE_ACCESS_INFORMATION *PFILE_ACCESS_INFORMATION;
+typedef struct _FILE_RENAME_INFORMATION
+{
+    union
+    {
+        BOOLEAN     ReplaceIfExists;
+        ULONG       Flags;
+    };
+    HANDLE          RootDirectory;
+    ULONG           FileNameLength;
+    WCHAR           FileName[1];
+} FILE_RENAME_INFORMATION;
+typedef FILE_RENAME_INFORMATION *PFILE_RENAME_INFORMATION;
+typedef struct _FILE_LINK_INFORMATION
+{
+    union
+    {
+        BOOLEAN     ReplaceIfExists;
+        ULONG       Flags;
+    };
+    HANDLE          RootDirectory;
+    ULONG           FileNameLength;
+    WCHAR           FileName[1];
+} FILE_LINK_INFORMATION;
+typedef FILE_LINK_INFORMATION *PFILE_LINK_INFORMATION;
+typedef struct _FILE_NAMES_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    ULONG           FileIndex;
+    ULONG           FileNameLength;
+    WCHAR           FileName[1];
+} FILE_NAMES_INFORMATION;
+typedef FILE_NAMES_INFORMATION *PFILE_NAMES_INFORMATION;
+typedef struct _FILE_DISPOSITION_INFORMATION
+{
+    BOOLEAN         DeleteFile;
+} FILE_DISPOSITION_INFORMATION;
+typedef FILE_DISPOSITION_INFORMATION *PFILE_DISPOSITION_INFORMATION;
+typedef struct _FILE_POSITION_INFORMATION
+{
+    LARGE_INTEGER   CurrentByteOffset;
+} FILE_POSITION_INFORMATION;
+typedef FILE_POSITION_INFORMATION *PFILE_POSITION_INFORMATION;
+typedef struct _FILE_FULL_EA_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    UCHAR           Flags;
+    UCHAR           EaNameLength;
+    USHORT          EaValueLength;
+    CHAR            EaName[1];
+} FILE_FULL_EA_INFORMATION;
+typedef FILE_FULL_EA_INFORMATION *PFILE_FULL_EA_INFORMATION;
+typedef struct _FILE_MODE_INFORMATION
+{
+    ULONG           Mode;
+} FILE_MODE_INFORMATION;
+typedef FILE_MODE_INFORMATION *PFILE_MODE_INFORMATION;
+typedef struct _FILE_ALIGNMENT_INFORMATION
+{
+    ULONG           AlignmentRequirement;
+} FILE_ALIGNMENT_INFORMATION;
+typedef FILE_ALIGNMENT_INFORMATION *PFILE_ALIGNMENT_INFORMATION;
+typedef struct _FILE_ALL_INFORMATION
+{
+    FILE_BASIC_INFORMATION      BasicInformation;
+    FILE_STANDARD_INFORMATION   StandardInformation;
+    FILE_INTERNAL_INFORMATION   InternalInformation;
+    FILE_EA_INFORMATION         EaInformation;
+    FILE_ACCESS_INFORMATION     AccessInformation;
+    FILE_POSITION_INFORMATION   PositionInformation;
+    FILE_MODE_INFORMATION       ModeInformation;
+    FILE_ALIGNMENT_INFORMATION  AlignmentInformation;
+    FILE_NAME_INFORMATION       NameInformation;
+} FILE_ALL_INFORMATION;
+typedef FILE_ALL_INFORMATION *PFILE_ALL_INFORMATION;
+typedef struct _FILE_ALLOCATION_INFORMATION
+{
+    LARGE_INTEGER   AllocationSize;
+} FILE_ALLOCATION_INFORMATION;
+typedef FILE_ALLOCATION_INFORMATION *PFILE_ALLOCATION_INFORMATION;
+typedef struct _FILE_END_OF_FILE_INFORMATION
+{
+    LARGE_INTEGER   EndOfFile;
+} FILE_END_OF_FILE_INFORMATION;
+typedef FILE_END_OF_FILE_INFORMATION *PFILE_END_OF_FILE_INFORMATION;
+typedef struct _FILE_STREAM_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    ULONG           StreamNameLength;
+    LARGE_INTEGER   StreamSize;
+    LARGE_INTEGER   StreamAllocationSize;
+    WCHAR           StreamName[1];
+} FILE_STREAM_INFORMATION;
+typedef FILE_STREAM_INFORMATION *PFILE_STREAM_INFORMATION;
+typedef struct _FILE_PIPE_INFORMATION
+{
+    ULONG           ReadMode;
+    ULONG           CompletionMode;
+} FILE_PIPE_INFORMATION;
+typedef FILE_PIPE_INFORMATION *PFILE_PIPE_INFORMATION;
+
+typedef struct _FILE_PIPE_LOCAL_INFORMATION
+{
+    ULONG           NamedPipeType;
+    ULONG           NamedPipeConfiguration;
+    ULONG           MaximumInstances;
+    ULONG           CurrentInstances;
+    ULONG           InboundQuota;
+    ULONG           ReadDataAvailable;
+    ULONG           OutboundQuota;
+    ULONG           WriteQuotaAvailable;
+    ULONG           NamedPipeState;
+    ULONG           NamedPipeEnd;
+} FILE_PIPE_LOCAL_INFORMATION;
+typedef FILE_PIPE_LOCAL_INFORMATION *PFILE_PIPE_LOCAL_INFORMATION;
+
+typedef struct _FILE_PIPE_REMOTE_INFORMATION
+{
+    LARGE_INTEGER   CollectDataTime;
+    ULONG           MaximumCollectionCount;
+} FILE_PIPE_REMOTE_INFORMATION;
+typedef FILE_PIPE_REMOTE_INFORMATION *PFILE_PIPE_REMOTE_INFORMATION;
+typedef struct _FILE_MAILSLOT_QUERY_INFORMATION
+{
+    ULONG           MaximumMessageSize;
+    ULONG           MailslotQuota;
+    ULONG           NextMessageSize;
+    ULONG           MessagesAvailable;
+    LARGE_INTEGER   ReadTimeout;
+} FILE_MAILSLOT_QUERY_INFORMATION;
+typedef FILE_MAILSLOT_QUERY_INFORMATION *PFILE_MAILSLOT_QUERY_INFORMATION;
+typedef struct _FILE_MAILSLOT_SET_INFORMATION
+{
+    PLARGE_INTEGER  ReadTimeout;
+} FILE_MAILSLOT_SET_INFORMATION;
+typedef FILE_MAILSLOT_SET_INFORMATION *PFILE_MAILSLOT_SET_INFORMATION;
+typedef struct _FILE_COMPRESSION_INFORMATION
+{
+    LARGE_INTEGER   CompressedFileSize;
+    USHORT          CompressionFormat;
+    UCHAR           CompressionUnitShift;
+    UCHAR           ChunkShift;
+    UCHAR           ClusterShift;
+    UCHAR           Reserved[3];
+} FILE_COMPRESSION_INFORMATION;
+typedef FILE_COMPRESSION_INFORMATION *PFILE_COMPRESSION_INFORMATION;
+typedef struct _FILE_OBJECTID_INFORMATION
+{
+    LONGLONG        FileReference;
+    UCHAR           ObjectId[16];
+    union
+    {
+        struct
+        {
+            UCHAR   BirthVolumeId[16];
+            UCHAR   BirthObjectId[16];
+            UCHAR   DomainId[16];
+        };
+        UCHAR       ExtendedInfo[48];
+    };
+} FILE_OBJECTID_INFORMATION;
+typedef FILE_OBJECTID_INFORMATION *PFILE_OBJECTID_INFORMATION;
+typedef struct _FILE_COMPLETION_INFORMATION
+{
+    HANDLE          Port;
+    PVOID           Key;
+} FILE_COMPLETION_INFORMATION;
+typedef FILE_COMPLETION_INFORMATION *PFILE_COMPLETION_INFORMATION;
+typedef struct _FILE_MOVE_CLUSTER_INFORMATION
+{
+    ULONG           ClusterCount;
+    HANDLE          RootDirectory;
+    ULONG           FileNameLength;
+    WCHAR           FileName[1];
+} FILE_MOVE_CLUSTER_INFORMATION;
+typedef FILE_MOVE_CLUSTER_INFORMATION *PFILE_MOVE_CLUSTER_INFORMATION;
+typedef struct _FILE_QUOTA_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    ULONG           SidLength;
+    LARGE_INTEGER   ChangeTime;
+    LARGE_INTEGER   QuotaUsed;
+    LARGE_INTEGER   QuotaThreshold;
+    LARGE_INTEGER   QuotaLimit;
+    SID             Sid;
+} FILE_QUOTA_INFORMATION;
+typedef FILE_QUOTA_INFORMATION *PFILE_QUOTA_INFORMATION;
+typedef struct _FILE_REPARSE_POINT_INFORMATION
+{
+    LONGLONG        FileReference;
+    ULONG           Tag;
+} FILE_REPARSE_POINT_INFORMATION;
+typedef FILE_REPARSE_POINT_INFORMATION *PFILE_REPARSE_POINT_INFORMATION;
 typedef struct _FILE_NETWORK_OPEN_INFORMATION
 {
     LARGE_INTEGER   CreationTime;
@@ -1661,6 +1901,298 @@ typedef struct _FILE_NETWORK_OPEN_INFORMATION
     ULONG           FileAttributes;
 } FILE_NETWORK_OPEN_INFORMATION;
 typedef FILE_NETWORK_OPEN_INFORMATION *PFILE_NETWORK_OPEN_INFORMATION;
+typedef struct _FILE_ATTRIBUTE_TAG_INFORMATION
+{
+    ULONG           FileAttributes;
+    ULONG           ReparseTag;
+} FILE_ATTRIBUTE_TAG_INFORMATION;
+typedef FILE_ATTRIBUTE_TAG_INFORMATION *PFILE_ATTRIBUTE_TAG_INFORMATION;
+typedef struct _FILE_TRACKING_INFORMATION
+{
+    HANDLE          DestinationFile;
+    ULONG           ObjectInformationLength;
+    CHAR            ObjectInformation[1];
+} FILE_TRACKING_INFORMATION;
+typedef FILE_TRACKING_INFORMATION *PFILE_TRACKING_INFORMATION;
+typedef struct _FILE_ID_BOTH_DIR_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    ULONG           FileIndex;
+    LARGE_INTEGER   CreationTime;
+    LARGE_INTEGER   LastAccessTime;
+    LARGE_INTEGER   LastWriteTime;
+    LARGE_INTEGER   ChangeTime;
+    LARGE_INTEGER   EndOfFile;
+    LARGE_INTEGER   AllocationSize;
+    ULONG           FileAttributes;
+    ULONG           FileNameLength;
+    ULONG           EaSize;
+    CCHAR           ShortNameLength;
+    WCHAR           ShortName[12];
+    LARGE_INTEGER   FileId;
+    WCHAR           FileName[1];
+} FILE_ID_BOTH_DIR_INFORMATION;
+typedef FILE_ID_BOTH_DIR_INFORMATION *PFILE_ID_BOTH_DIR_INFORMATION;
+typedef struct _FILE_ID_FULL_DIR_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    ULONG           FileIndex;
+    LARGE_INTEGER   CreationTime;
+    LARGE_INTEGER   LastAccessTime;
+    LARGE_INTEGER   LastWriteTime;
+    LARGE_INTEGER   ChangeTime;
+    LARGE_INTEGER   EndOfFile;
+    LARGE_INTEGER   AllocationSize;
+    ULONG           FileAttributes;
+    ULONG           FileNameLength;
+    ULONG           EaSize;
+    LARGE_INTEGER   FileId;
+    WCHAR           FileName[1];
+} FILE_ID_FULL_DIR_INFORMATION;
+typedef FILE_ID_FULL_DIR_INFORMATION *PFILE_ID_FULL_DIR_INFORMATION;
+typedef struct _FILE_VALID_DATA_LENGTH_INFORMATION
+{
+    LARGE_INTEGER   ValidDataLength;
+} FILE_VALID_DATA_LENGTH_INFORMATION;
+typedef FILE_VALID_DATA_LENGTH_INFORMATION *PFILE_VALID_DATA_LENGTH_INFORMATION;
+typedef struct _FILE_IO_COMPLETION_NOTIFICATION_INFORMATION
+{
+    ULONG           Flags;
+} FILE_IO_COMPLETION_NOTIFICATION_INFORMATION;
+typedef FILE_IO_COMPLETION_NOTIFICATION_INFORMATION *PFILE_IO_COMPLETION_NOTIFICATION_INFORMATION;
+typedef enum _IO_PRIORITY_HINT
+{
+    IoPriorityVeryLow = 0,
+    IoPriorityLow,
+    IoPriorityNormal,
+    IoPriorityHigh,
+    IoPriorityCritical,
+    MaxIoPriorityTypes
+} IO_PRIORITY_HINT;
+AssertCompileSize(IO_PRIORITY_HINT, sizeof(int));
+typedef struct _FILE_IO_PRIORITY_HINT_INFORMATION
+{
+    IO_PRIORITY_HINT    PriorityHint;
+} FILE_IO_PRIORITY_HINT_INFORMATION;
+typedef FILE_IO_PRIORITY_HINT_INFORMATION *PFILE_IO_PRIORITY_HINT_INFORMATION;
+typedef struct _FILE_SFIO_RESERVE_INFORMATION
+{
+    ULONG           RequestsPerPeriod;
+    ULONG           Period;
+    BOOLEAN         RetryFailures;
+    BOOLEAN         Discardable;
+    ULONG           RequestSize;
+    ULONG           NumOutstandingRequests;
+} FILE_SFIO_RESERVE_INFORMATION;
+typedef FILE_SFIO_RESERVE_INFORMATION *PFILE_SFIO_RESERVE_INFORMATION;
+typedef struct _FILE_SFIO_VOLUME_INFORMATION
+{
+    ULONG           MaximumRequestsPerPeriod;
+    ULONG           MinimumPeriod;
+    ULONG           MinimumTransferSize;
+} FILE_SFIO_VOLUME_INFORMATION;
+typedef FILE_SFIO_VOLUME_INFORMATION *PFILE_SFIO_VOLUME_INFORMATION;
+typedef struct _FILE_LINK_ENTRY_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    LONGLONG        ParentFileId;
+    ULONG           FileNameLength;
+    WCHAR           FileName[1];
+} FILE_LINK_ENTRY_INFORMATION;
+typedef FILE_LINK_ENTRY_INFORMATION *PFILE_LINK_ENTRY_INFORMATION;
+typedef struct _FILE_LINKS_INFORMATION
+{
+    ULONG                       BytesNeeded;
+    ULONG                       EntriesReturned;
+    FILE_LINK_ENTRY_INFORMATION Entry;
+} FILE_LINKS_INFORMATION;
+typedef FILE_LINKS_INFORMATION *PFILE_LINKS_INFORMATION;
+typedef struct _FILE_PROCESS_IDS_USING_FILE_INFORMATION
+{
+    ULONG           NumberOfProcessIdsInList;
+    ULONG_PTR       ProcessIdList[1];
+} FILE_PROCESS_IDS_USING_FILE_INFORMATION;
+typedef FILE_PROCESS_IDS_USING_FILE_INFORMATION *PFILE_PROCESS_IDS_USING_FILE_INFORMATION;
+typedef struct _FILE_ID_GLOBAL_TX_DIR_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    ULONG           FileIndex;
+    LARGE_INTEGER   CreationTime;
+    LARGE_INTEGER   LastAccessTime;
+    LARGE_INTEGER   LastWriteTime;
+    LARGE_INTEGER   ChangeTime;
+    LARGE_INTEGER   EndOfFile;
+    LARGE_INTEGER   AllocationSize;
+    ULONG           FileAttributes;
+    ULONG           FileNameLength;
+    LARGE_INTEGER   FileId;
+    GUID            LockingTransactionId;
+    ULONG           TxInfoFlags;
+    WCHAR           FileName[1];
+} FILE_ID_GLOBAL_TX_DIR_INFORMATION;
+typedef FILE_ID_GLOBAL_TX_DIR_INFORMATION *PFILE_ID_GLOBAL_TX_DIR_INFORMATION;
+typedef struct _FILE_IS_REMOTE_DEVICE_INFORMATION
+{
+    BOOLEAN         IsRemote;
+} FILE_IS_REMOTE_DEVICE_INFORMATION;
+typedef FILE_IS_REMOTE_DEVICE_INFORMATION *PFILE_IS_REMOTE_DEVICE_INFORMATION;
+typedef struct _FILE_NUMA_NODE_INFORMATION
+{
+    USHORT          NodeNumber;
+} FILE_NUMA_NODE_INFORMATION;
+typedef FILE_NUMA_NODE_INFORMATION *PFILE_NUMA_NODE_INFORMATION;
+typedef struct _FILE_STANDARD_LINK_INFORMATION
+{
+    ULONG           NumberOfAccessibleLinks;
+    ULONG           TotalNumberOfLinks;
+    BOOLEAN         DeletePending;
+    BOOLEAN         Directory;
+} FILE_STANDARD_LINK_INFORMATION;
+typedef FILE_STANDARD_LINK_INFORMATION *PFILE_STANDARD_LINK_INFORMATION;
+typedef struct _FILE_REMOTE_PROTOCOL_INFORMATION
+{
+    USHORT          StructureVersion;
+    USHORT          StructureSize;
+    ULONG           Protocol;
+    USHORT          ProtocolMajorVersion;
+    USHORT          ProtocolMinorVersion;
+    USHORT          ProtocolRevision;
+    USHORT          Reserved;
+    ULONG           Flags;
+    struct
+    {
+        ULONG       Reserved[8];
+    }               GenericReserved;
+    struct
+    {
+        ULONG       Reserved[16];
+    }               ProtocolSpecificReserved;
+} FILE_REMOTE_PROTOCOL_INFORMATION;
+typedef FILE_REMOTE_PROTOCOL_INFORMATION *PFILE_REMOTE_PROTOCOL_INFORMATION;
+typedef struct _FILE_VOLUME_NAME_INFORMATION
+{
+    ULONG           DeviceNameLength;
+    WCHAR           DeviceName[1];
+} FILE_VOLUME_NAME_INFORMATION;
+typedef FILE_VOLUME_NAME_INFORMATION *PFILE_VOLUME_NAME_INFORMATION;
+# ifndef FILE_INVALID_FILE_ID
+typedef struct _FILE_ID_128
+{
+    BYTE            Identifier[16];
+} FILE_ID_128;
+typedef FILE_ID_128 *PFILE_ID_128;
+# endif
+typedef struct _FILE_ID_EXTD_DIR_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    ULONG           FileIndex;
+    LARGE_INTEGER   CreationTime;
+    LARGE_INTEGER   LastAccessTime;
+    LARGE_INTEGER   LastWriteTime;
+    LARGE_INTEGER   ChangeTime;
+    LARGE_INTEGER   EndOfFile;
+    LARGE_INTEGER   AllocationSize;
+    ULONG           FileAttributes;
+    ULONG           FileNameLength;
+    ULONG           EaSize;
+    ULONG           ReparsePointTag;
+    FILE_ID_128     FileId;
+    WCHAR           FileName[1];
+} FILE_ID_EXTD_DIR_INFORMATION;
+typedef FILE_ID_EXTD_DIR_INFORMATION *PFILE_ID_EXTD_DIR_INFORMATION;
+typedef struct _FILE_ID_EXTD_BOTH_DIR_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    ULONG           FileIndex;
+    LARGE_INTEGER   CreationTime;
+    LARGE_INTEGER   LastAccessTime;
+    LARGE_INTEGER   LastWriteTime;
+    LARGE_INTEGER   ChangeTime;
+    LARGE_INTEGER   EndOfFile;
+    LARGE_INTEGER   AllocationSize;
+    ULONG           FileAttributes;
+    ULONG           FileNameLength;
+    ULONG           EaSize;
+    ULONG           ReparsePointTag;
+    FILE_ID_128     FileId;
+    CCHAR           ShortNameLength;
+    WCHAR           ShortName[12];
+    WCHAR           FileName[1];
+} FILE_ID_EXTD_BOTH_DIR_INFORMATION;
+typedef FILE_ID_EXTD_BOTH_DIR_INFORMATION *PFILE_ID_EXTD_BOTH_DIR_INFORMATION;
+typedef struct _FILE_ID_INFORMATION
+{
+    ULONGLONG       VolumeSerialNumber;
+    FILE_ID_128     FileId;
+} FILE_ID_INFORMATION;
+typedef FILE_ID_INFORMATION *PFILE_ID_INFORMATION;
+typedef struct _FILE_LINK_ENTRY_FULL_ID_INFORMATION
+{
+    ULONG           NextEntryOffset;
+    FILE_ID_128     ParentFileId;
+    ULONG           FileNameLength;
+    WCHAR           FileName[1];
+} FILE_LINK_ENTRY_FULL_ID_INFORMATION;
+typedef FILE_LINK_ENTRY_FULL_ID_INFORMATION *PFILE_LINK_ENTRY_FULL_ID_INFORMATION;
+typedef struct _FILE_LINKS_FULL_ID_INFORMATION {
+    ULONG                                   BytesNeeded;
+    ULONG                                   EntriesReturned;
+    FILE_LINK_ENTRY_FULL_ID_INFORMATION     Entry;
+} FILE_LINKS_FULL_ID_INFORMATION;
+typedef FILE_LINKS_FULL_ID_INFORMATION *PFILE_LINKS_FULL_ID_INFORMATION;
+typedef struct _FILE_DISPOSITION_INFORMATION_EX
+{
+    ULONG           Flags;
+} FILE_DISPOSITION_INFORMATION_EX;
+typedef FILE_DISPOSITION_INFORMATION_EX *PFILE_DISPOSITION_INFORMATION_EX;
+typedef struct _FILE_DESIRED_STORAGE_CLASS_INFORMATION
+{
+    /*FILE_STORAGE_TIER_CLASS*/ ULONG   Class;
+    ULONG                               Flags;
+} FILE_DESIRED_STORAGE_CLASS_INFORMATION;
+typedef FILE_DESIRED_STORAGE_CLASS_INFORMATION *PFILE_DESIRED_STORAGE_CLASS_INFORMATION;
+typedef struct _FILE_STAT_INFORMATION
+{
+    LARGE_INTEGER   FileId;
+    LARGE_INTEGER   CreationTime;
+    LARGE_INTEGER   LastAccessTime;
+    LARGE_INTEGER   LastWriteTime;
+    LARGE_INTEGER   ChangeTime;
+    LARGE_INTEGER   AllocationSize;
+    LARGE_INTEGER   EndOfFile;
+    ULONG           FileAttributes;
+    ULONG           ReparseTag;
+    ULONG           NumberOfLinks;
+    ACCESS_MASK     EffectiveAccess;
+} FILE_STAT_INFORMATION;
+typedef FILE_STAT_INFORMATION *PFILE_STAT_INFORMATION;
+typedef struct _FILE_STAT_LX_INFORMATION
+{
+    LARGE_INTEGER   FileId;
+    LARGE_INTEGER   CreationTime;
+    LARGE_INTEGER   LastAccessTime;
+    LARGE_INTEGER   LastWriteTime;
+    LARGE_INTEGER   ChangeTime;
+    LARGE_INTEGER   AllocationSize;
+    LARGE_INTEGER   EndOfFile;
+    ULONG           FileAttributes;
+    ULONG           ReparseTag;
+    ULONG           NumberOfLinks;
+    ACCESS_MASK     EffectiveAccess;
+    ULONG           LxFlags;
+    ULONG           LxUid;
+    ULONG           LxGid;
+    ULONG           LxMode;
+    ULONG           LxDeviceIdMajor;
+    ULONG           LxDeviceIdMinor;
+} FILE_STAT_LX_INFORMATION;
+typedef FILE_STAT_LX_INFORMATION *PFILE_STAT_LX_INFORMATION;
+typedef struct _FILE_CASE_SENSITIVE_INFORMATION
+{
+    ULONG           Flags;
+} FILE_CASE_SENSITIVE_INFORMATION;
+typedef FILE_CASE_SENSITIVE_INFORMATION *PFILE_CASE_SENSITIVE_INFORMATION;
+
 typedef enum _FILE_INFORMATION_CLASS
 {
     FileDirectoryInformation = 1,
