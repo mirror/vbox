@@ -1789,13 +1789,13 @@ typedef struct _VBoxSFRemove
  */
 /** SHFL_FN_CLOSE_AND_REMOVE parameters. */
 typedef struct VBoxSFParmCloseAndRemove
-#ifdef __cplusplus
-    : public VBoxSFParmRemove
-#endif
 {
-#ifndef __cplusplus
-    VBoxSFParmRemove      Core;
-#endif
+    /** value32, in: SHFLROOT of the mapping the path is relative to. */
+    HGCMFunctionParameter id32Root;
+    /** pointer, in: Points to SHFLSTRING buffer. */
+    HGCMFunctionParameter pStrPath;
+    /** value32, in: SHFL_REMOVE_XXX */
+    HGCMFunctionParameter f32Flags;
     /** value64, in: SHFLHANDLE to the object to be removed & close, optional. */
     HGCMFunctionParameter u64Handle;
 } VBoxSFParmCloseAndRemove;
