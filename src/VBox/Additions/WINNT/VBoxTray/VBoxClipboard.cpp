@@ -28,9 +28,23 @@
 
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/GuestHost/SharedClipboard-win.h>
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# include <VBox/GuestHost/SharedClipboard-uri.h>
+#endif
 #include <strsafe.h>
 
 #include <VBox/log.h>
+
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+/** !!! HACK ALERT !!! Dynamically resolve functions! */
+#ifdef _WIN32_IE
+#undef _WIN32_IE
+#define _WIN32_IE 0x0501
+#endif
+#include <iprt/win/shlobj.h>
+#include <iprt/win/shlwapi.h>
+#endif
 
 
 /*********************************************************************************************************************************
@@ -57,6 +71,7 @@ static VBOXCLIPBOARDCONTEXT g_Ctx = { NULL };
 static char s_szClipWndClassName[] = VBOX_CLIPBOARD_WNDCLASS_NAME;
 
 
+
 static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     AssertPtr(pCtx);
@@ -69,15 +84,15 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
     {
         case WM_CLIPBOARDUPDATE:
         {
-           Log(("WM_CLIPBOARDUPDATE\n"));
-
            if (GetClipboardOwner() != hwnd)
            {
+               Log(("WM_CLIPBOARDUPDATE\n"));
+
                /* Clipboard was updated by another application. */
-               uint32_t uFormats;
-               int vboxrc = VBoxClipboardWinGetFormats(&pCtx->Win, &uFormats);
+               VBOXCLIPBOARDFORMATS fFormats;
+               int vboxrc = VBoxClipboardWinGetFormats(&pCtx->Win, &fFormats);
                if (RT_SUCCESS(vboxrc))
-                   vboxrc = VbglR3ClipboardReportFormats(pCtx->u32ClientID, uFormats);
+                   vboxrc = VbglR3ClipboardReportFormats(pCtx->u32ClientID, fFormats);
            }
         }
         break;
@@ -118,253 +133,213 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
 
         case WM_DRAWCLIPBOARD:
         {
-           LogFlowFunc(("WM_DRAWCLIPBOARD, hwnd %p\n", pWinCtx->hWnd));
+            LogFlowFunc(("WM_DRAWCLIPBOARD, hwnd %p\n", pWinCtx->hWnd));
 
-           if (GetClipboardOwner() != hwnd)
-           {
+            if (GetClipboardOwner() != hwnd)
+            {
                /* Clipboard was updated by another application. */
                /* WM_DRAWCLIPBOARD always expects a return code of 0, so don't change "rc" here. */
-               uint32_t uFormats;
-               int vboxrc = VBoxClipboardWinGetFormats(pWinCtx, &uFormats);
+               VBOXCLIPBOARDFORMATS fFormats;
+               int vboxrc = VBoxClipboardWinGetFormats(pWinCtx, &fFormats);
                if (RT_SUCCESS(vboxrc))
-                   vboxrc = VbglR3ClipboardReportFormats(pCtx->u32ClientID, uFormats);
-           }
+                   vboxrc = VbglR3ClipboardReportFormats(pCtx->u32ClientID, fFormats);
+            }
 
-           if (pWinCtx->hWndNextInChain)
-           {
+            if (pWinCtx->hWndNextInChain)
+            {
                /* Pass the message to next windows in the clipboard chain. */
                SendMessageTimeout(pWinCtx->hWndNextInChain, msg, wParam, lParam, 0, VBOX_CLIPBOARD_CBCHAIN_TIMEOUT_MS, NULL);
-           }
+            }
         }
         break;
 
         case WM_TIMER:
         {
-           if (VBoxClipboardWinIsNewAPI(&pWinCtx->newAPI))
-               break;
+            if (VBoxClipboardWinIsNewAPI(&pWinCtx->newAPI))
+                break;
 
-           HWND hViewer = GetClipboardViewer();
+            HWND hViewer = GetClipboardViewer();
 
-           /* Re-register ourselves in the clipboard chain if our last ping
+            /* Re-register ourselves in the clipboard chain if our last ping
             * timed out or there seems to be no valid chain. */
-           if (!hViewer || pWinCtx->oldAPI.fCBChainPingInProcess)
-           {
-               VBoxClipboardWinRemoveFromCBChain(pWinCtx);
-               VBoxClipboardWinAddToCBChain(pWinCtx);
-           }
+            if (!hViewer || pWinCtx->oldAPI.fCBChainPingInProcess)
+            {
+                VBoxClipboardWinRemoveFromCBChain(pWinCtx);
+                VBoxClipboardWinAddToCBChain(pWinCtx);
+            }
 
-           /* Start a new ping by passing a dummy WM_CHANGECBCHAIN to be
+            /* Start a new ping by passing a dummy WM_CHANGECBCHAIN to be
             * processed by ourselves to the chain. */
-           pWinCtx->oldAPI.fCBChainPingInProcess = TRUE;
+            pWinCtx->oldAPI.fCBChainPingInProcess = TRUE;
 
-           hViewer = GetClipboardViewer();
-           if (hViewer)
-               SendMessageCallback(hViewer, WM_CHANGECBCHAIN, (WPARAM)pWinCtx->hWndNextInChain, (LPARAM)pWinCtx->hWndNextInChain,
-                                   VBoxClipboardWinChainPingProc, (ULONG_PTR)pWinCtx);
+            hViewer = GetClipboardViewer();
+            if (hViewer)
+                SendMessageCallback(hViewer, WM_CHANGECBCHAIN, (WPARAM)pWinCtx->hWndNextInChain, (LPARAM)pWinCtx->hWndNextInChain,
+                                    VBoxClipboardWinChainPingProc, (ULONG_PTR)pWinCtx);
         }
         break;
 
         case WM_CLOSE:
         {
-           /* Do nothing. Ignore the message. */
+            /* Do nothing. Ignore the message. */
         }
         break;
 
         case WM_RENDERFORMAT:
         {
-           /* Insert the requested clipboard format data into the clipboard. */
-           uint32_t fFormat = VBOX_SHARED_CLIPBOARD_FMT_NONE;
+            LogFunc(("WM_RENDERFORMAT\n"));
 
-           const UINT cfFormat = (UINT)wParam;
-           switch (cfFormat)
-           {
-              case CF_UNICODETEXT:
-                  fFormat = VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
-                  break;
+            /* Insert the requested clipboard format data into the clipboard. */
+            const UINT cfFormat = (UINT)wParam;
 
-              case CF_DIB:
-                  fFormat = VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
-                  break;
+            const VBOXCLIPBOARDFORMAT fFormat = VBoxClipboardWinClipboardFormatToVBox(cfFormat);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-              case CF_HDROP:
-                  fFormat = VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
-                  break;
-#endif
-              default:
-                  if (cfFormat >= 0xC000) /** @todo r=andy Explain. */
-                  {
-                      TCHAR szFormatName[256]; /** @todo r=andy Do we need Unicode support here as well? */
+            LogFunc(("WM_RENDERFORMAT: cfFormat=%u -> fFormat=0x%x\n", cfFormat, fFormat));
 
-                      int cActual = GetClipboardFormatName(cfFormat, szFormatName, sizeof(szFormatName) / sizeof(TCHAR));
-                      if (cActual)
-                      {
-                          if (strcmp(szFormatName, "HTML Format") == 0)
-                              fFormat = VBOX_SHARED_CLIPBOARD_FMT_HTML;
-                      }
-                  }
-                  break;
-           }
+            if (fFormat != VBOX_SHARED_CLIPBOARD_FMT_NONE)
+            {
+                const uint32_t cbPrealloc = _4K;
+                uint32_t cb = 0;
 
-           LogFunc(("WM_RENDERFORMAT: format=%u -> fFormat=0x%x\n", cfFormat, fFormat));
+                /* Preallocate a buffer, most of small text transfers will fit into it. */
+                HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, cbPrealloc);
+                LogFlowFunc(("Preallocated handle hMem = %p\n", hMem));
 
-           if (fFormat == VBOX_SHARED_CLIPBOARD_FMT_NONE)
-           {
-               /* Unsupported clipboard format is requested. */
-               LogRel(("Clipboard: Unsupported clipboard format requested (0x%x)\n", fFormat));
-               VBoxClipboardWinClear();
-           }
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-           else if (fFormat == VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
-           {
+                if (hMem)
+                {
+                    void *pMem = GlobalLock(hMem);
+                    LogFlowFunc(("Locked pMem = %p, GlobalSize = %ld\n", pMem, GlobalSize(hMem)));
 
-           }
-#endif
-           else
-           {
-               const uint32_t cbPrealloc = _4K;
-               uint32_t cb = 0;
+                    if (pMem)
+                    {
+                        /* Read the host data to the preallocated buffer. */
+                        int vboxrc = VbglR3ClipboardReadData(pCtx->u32ClientID, fFormat, pMem, cbPrealloc, &cb);
+                        LogFlowFunc(("VbglR3ClipboardReadData returned with rc = %Rrc\n",  vboxrc));
 
-               /* Preallocate a buffer, most of small text transfers will fit into it. */
-               HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, cbPrealloc);
-               LogFlowFunc(("Preallocated handle hMem = %p\n", hMem));
+                        if (RT_SUCCESS(vboxrc))
+                        {
+                            if (cb == 0)
+                            {
+                                /* 0 bytes returned means the clipboard is empty.
+                                 * Deallocate the memory and set hMem to NULL to get to
+                                 * the clipboard empty code path. */
+                                GlobalUnlock(hMem);
+                                GlobalFree(hMem);
+                                hMem = NULL;
+                            }
+                            else if (cb > cbPrealloc)
+                            {
+                                GlobalUnlock(hMem);
 
-               if (hMem)
-               {
-                   void *pMem = GlobalLock(hMem);
-                   LogFlowFunc(("Locked pMem = %p, GlobalSize = %ld\n", pMem, GlobalSize(hMem)));
+                                /* The preallocated buffer is too small, adjust the size. */
+                                hMem = GlobalReAlloc(hMem, cb, 0);
+                                LogFlowFunc(("Reallocated hMem = %p\n", hMem));
 
-                   if (pMem)
-                   {
-                       /* Read the host data to the preallocated buffer. */
-                       int vboxrc = VbglR3ClipboardReadData(pCtx->u32ClientID, fFormat, pMem, cbPrealloc, &cb);
-                       LogFlowFunc(("VbglR3ClipboardReadData returned with rc = %Rrc\n",  vboxrc));
+                                if (hMem)
+                                {
+                                    pMem = GlobalLock(hMem);
+                                    LogFlowFunc(("Locked pMem = %p, GlobalSize = %ld\n", pMem, GlobalSize(hMem)));
 
-                       if (RT_SUCCESS(vboxrc))
-                       {
-                           if (cb == 0)
-                           {
-                               /* 0 bytes returned means the clipboard is empty.
-                                * Deallocate the memory and set hMem to NULL to get to
-                                * the clipboard empty code path. */
-                               GlobalUnlock(hMem);
-                               GlobalFree(hMem);
-                               hMem = NULL;
-                           }
-                           else if (cb > cbPrealloc)
-                           {
-                               GlobalUnlock(hMem);
+                                    if (pMem)
+                                    {
+                                        /* Read the host data to the preallocated buffer. */
+                                        uint32_t cbNew = 0;
+                                        vboxrc = VbglR3ClipboardReadData(pCtx->u32ClientID, fFormat, pMem, cb, &cbNew);
+                                        LogFlowFunc(("VbglR3ClipboardReadData returned with rc = %Rrc, cb = %d, cbNew = %d\n",
+                                                     vboxrc, cb, cbNew));
 
-                               /* The preallocated buffer is too small, adjust the size. */
-                               hMem = GlobalReAlloc(hMem, cb, 0);
-                               LogFlowFunc(("Reallocated hMem = %p\n", hMem));
+                                        if (RT_SUCCESS(vboxrc)
+                                            && cbNew <= cb)
+                                        {
+                                            cb = cbNew;
+                                        }
+                                        else
+                                        {
+                                            GlobalUnlock(hMem);
+                                            GlobalFree(hMem);
+                                            hMem = NULL;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        GlobalFree(hMem);
+                                        hMem = NULL;
+                                    }
+                                }
+                            }
 
-                               if (hMem)
-                               {
-                                   pMem = GlobalLock(hMem);
-                                   LogFlowFunc(("Locked pMem = %p, GlobalSize = %ld\n", pMem, GlobalSize(hMem)));
+                            if (hMem)
+                            {
+                                /* pMem is the address of the data. cb is the size of returned data. */
+                                /* Verify the size of returned text, the memory block for clipboard
+                                 * must have the exact string size.
+                                 */
+                                if (fFormat == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+                                {
+                                    size_t cbActual = 0;
+                                    HRESULT hrc = StringCbLengthW((LPWSTR)pMem, cb, &cbActual);
+                                    if (FAILED(hrc))
+                                    {
+                                        /* Discard invalid data. */
+                                        GlobalUnlock(hMem);
+                                        GlobalFree(hMem);
+                                        hMem = NULL;
+                                    }
+                                    else
+                                    {
+                                        /* cbActual is the number of bytes, excluding those used
+                                         * for the terminating null character.
+                                         */
+                                        cb = (uint32_t)(cbActual + 2);
+                                    }
+                                }
+                            }
 
-                                   if (pMem)
-                                   {
-                                       /* Read the host data to the preallocated buffer. */
-                                       uint32_t cbNew = 0;
-                                       vboxrc = VbglR3ClipboardReadData(pCtx->u32ClientID, fFormat, pMem, cb, &cbNew);
-                                       LogFlowFunc(("VbglR3ClipboardReadData returned with rc = %Rrc, cb = %d, cbNew = %d\n", vboxrc, cb, cbNew));
+                            if (hMem)
+                            {
+                                GlobalUnlock(hMem);
 
-                                       if (RT_SUCCESS(vboxrc) && cbNew <= cb)
-                                       {
-                                           cb = cbNew;
-                                       }
-                                       else
-                                       {
-                                           GlobalUnlock(hMem);
-                                           GlobalFree(hMem);
-                                           hMem = NULL;
-                                       }
-                                   }
-                                   else
-                                   {
-                                       GlobalFree(hMem);
-                                       hMem = NULL;
-                                   }
-                               }
-                           }
+                                hMem = GlobalReAlloc(hMem, cb, 0);
+                                LogFlowFunc(("Reallocated hMem = %p\n", hMem));
 
-                           if (hMem)
-                           {
-                               /* pMem is the address of the data. cb is the size of returned data. */
-                               /* Verify the size of returned text, the memory block for clipboard
-                                * must have the exact string size.
-                                */
-                               if (fFormat == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
-                               {
-                                   size_t cbActual = 0;
-                                   HRESULT hrc = StringCbLengthW((LPWSTR)pMem, cb, &cbActual);
-                                   if (FAILED(hrc))
-                                   {
-                                       /* Discard invalid data. */
-                                       GlobalUnlock(hMem);
-                                       GlobalFree(hMem);
-                                       hMem = NULL;
-                                   }
-                                   else
-                                   {
-                                       /* cbActual is the number of bytes, excluding those used
-                                        * for the terminating null character.
-                                        */
-                                       cb = (uint32_t)(cbActual + 2);
-                                   }
-                               }
-                           }
+                                if (hMem)
+                                {
+                                    /* 'hMem' contains the host clipboard data.
+                                     * size is 'cb' and format is 'format'. */
+                                    HANDLE hClip = SetClipboardData(cfFormat, hMem);
+                                    LogFlowFunc(("WM_RENDERFORMAT hClip = %p\n", hClip));
 
-                           if (hMem)
-                           {
-                               GlobalUnlock(hMem);
+                                    if (hClip)
+                                    {
+                                        /* The hMem ownership has gone to the system. Finish the processing. */
+                                        break;
+                                    }
 
-                               hMem = GlobalReAlloc(hMem, cb, 0);
-                               LogFlowFunc(("Reallocated hMem = %p\n", hMem));
-
-                               if (hMem)
-                               {
-                                   /* 'hMem' contains the host clipboard data.
-                                    * size is 'cb' and format is 'format'. */
-                                   HANDLE hClip = SetClipboardData(cfFormat, hMem);
-                                   LogFlowFunc(("WM_RENDERFORMAT hClip = %p\n", hClip));
-
-                                   if (hClip)
-                                   {
-                                       /* The hMem ownership has gone to the system. Finish the processing. */
-                                       break;
-                                   }
-
-                                   /* Cleanup follows. */
-                               }
-                           }
-                       }
-                       if (hMem)
-                           GlobalUnlock(hMem);
-                   }
-                   if (hMem)
-                       GlobalFree(hMem);
-               }
-
-               /* Something went wrong. */
-               VBoxClipboardWinClear();
-           }
+                                    /* Cleanup follows. */
+                                }
+                            }
+                        }
+                        if (hMem)
+                            GlobalUnlock(hMem);
+                    }
+                    if (hMem)
+                        GlobalFree(hMem);
+                }
+            }
         }
         break;
 
         case WM_RENDERALLFORMATS:
         {
-           /* Do nothing. The clipboard formats will be unavailable now, because the
+            /* Do nothing. The clipboard formats will be unavailable now, because the
             * windows is to be destroyed and therefore the guest side becomes inactive.
             */
-           int vboxrc = VBoxClipboardWinOpen(hwnd);
-           if (RT_SUCCESS(vboxrc))
-           {
+            int vboxrc = VBoxClipboardWinOpen(hwnd);
+            if (RT_SUCCESS(vboxrc))
+            {
                VBoxClipboardWinClear();
                VBoxClipboardWinClose();
-           }
+            }
         }
         break;
 
@@ -373,56 +348,89 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
            /* Announce available formats. Do not insert data, they will be inserted in WM_RENDER*. */
            VBOXCLIPBOARDFORMATS fFormats = (uint32_t)lParam;
 
-           LogFlowFunc(("VBOX_WM_SHCLPB_SET_FORMATS: fFormats=0x%x\n", fFormats));
+           LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: fFormats=0x%x\n", fFormats));
 
            int vboxrc = VBoxClipboardWinOpen(hwnd);
            if (RT_SUCCESS(vboxrc))
            {
                VBoxClipboardWinClear();
 
-               HANDLE hClip = NULL;
+               HANDLE hClip    = NULL;
+               UINT   cfFormat = 0;
+
+               /** @todo r=andy Only one clipboard format can be set at once, at least on Windows. */
 
                if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
-                   hClip = SetClipboardData(CF_UNICODETEXT, NULL);
-
-               if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
-                   hClip = SetClipboardData(CF_DIB, NULL);
-
-               if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
                {
-                   UINT format = RegisterClipboardFormat("HTML Format");
-                   if (format != 0)
-                       hClip = SetClipboardData(format, NULL);
+                   LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: CF_UNICODETEXT\n"));
+                   hClip = SetClipboardData(CF_UNICODETEXT, NULL);
+               }
+
+               else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+               {
+                   LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: CF_DIB\n"));
+                   hClip = SetClipboardData(CF_DIB, NULL);
+               }
+
+               else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
+               {
+                   LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: VBOX_CLIPBOARD_WIN_REGFMT_HTML\n"));
+                   cfFormat = RegisterClipboardFormat(VBOX_CLIPBOARD_WIN_REGFMT_HTML);
+                   if (cfFormat != 0)
+                       hClip = SetClipboardData(cfFormat, NULL);
                }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-               if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
-                   hClip = SetClipboardData(CF_HDROP, NULL);
+               else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+               {
+                   LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: VBOX_CLIPBOARD_WIN_REGFMT_URI_LIST\n"));
+                   if (pWinCtx->URI.pDataObj == NULL) /* Only allow one transfer at a time. */
+                   {
+                       pWinCtx->URI.pDataObj = new VBoxClipboardWinDataObject(/* No additional formats needed right now */);
+                       if (pWinCtx->URI.pDataObj)
+                       {
+                           int vboxrc = pWinCtx->URI.pDataObj->Init(pCtx->u32ClientID);
+                           if (RT_SUCCESS(vboxrc))
+                           {
+                               VBoxClipboardWinClose();
+                               /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
+
+                               /** @todo There is a potential race between VBoxClipboardWinClose() and OleSetClipboard(),
+                                *        where another application could own the clipboard (open), and thus the call to
+                                *        OleSetClipboard() will fail. Needs fixing. */
+
+                               HRESULT hr = OleSetClipboard(pWinCtx->URI.pDataObj);
+                               if (FAILED(hr))
+                                   LogRel(("Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
+                           }
+                       }
+                   }
+               }
 #endif
+               else
+                   LogRel(("Clipboard: Unsupported format(s) (0x%x), skipping\n", fFormats));
 
                /** @todo Implement more flexible clipboard precedence for supported formats. */
 
-               if (hClip == NULL)
-                   LogRel(("Clipboard: Unsupported format(s) from host (0x%x), ignoring\n", fFormats));
-
                VBoxClipboardWinClose();
+               /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
 
-               LogFlowFunc(("VBOX_WM_SHCLPB_SET_FORMATS: hClip=%p, lastErr=%ld\n", hClip, GetLastError()));
+               LogFunc(("VBOX_WM_SHCLPB_SET_FORMATS: cfFormat=%u, lastErr=%ld\n", cfFormat, GetLastError()));
            }
         }
         break;
 
         case VBOX_CLIPBOARD_WM_READ_DATA:
         {
-           /* Send data in the specified format to the host. */
-           uint32_t u32Formats = (uint32_t)lParam;
-           HANDLE hClip = NULL;
+            /* Send data in the specified format to the host. */
+            uint32_t u32Formats = (uint32_t)lParam;
+            HANDLE hClip = NULL;
 
-           LogFlowFunc(("VBOX_WM_SHCLPB_READ_DATA: u32Formats=0x%x\n", u32Formats));
+            LogFlowFunc(("VBOX_WM_SHCLPB_READ_DATA: u32Formats=0x%x\n", u32Formats));
 
-           int vboxrc = VBoxClipboardWinOpen(hwnd);
-           if (RT_SUCCESS(vboxrc))
-           {
+            int vboxrc = VBoxClipboardWinOpen(hwnd);
+            if (RT_SUCCESS(vboxrc))
+            {
                if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
                {
                    hClip = GetClipboardData(CF_DIB);
@@ -464,7 +472,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
                }
                else if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
                {
-                   UINT format = RegisterClipboardFormat("HTML Format");
+                   UINT format = RegisterClipboardFormat(VBOX_CLIPBOARD_WIN_REGFMT_HTML);
                    if (format != 0)
                    {
                        hClip = GetClipboardData(format);
@@ -488,40 +496,44 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
                else if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
                {
-                   hClip = GetClipboardData(CF_HDROP);
-                   if (hClip)
+                   UINT format = RegisterClipboardFormat(VBOX_CLIPBOARD_WIN_REGFMT_URI_LIST);
+                   if (format != 0)
                    {
-                       HDROP hDrop = (HDROP)GlobalLock(hClip);
-                       if (hDrop)
+                       hClip = GetClipboardData(format);
+                       if (hClip)
                        {
-       /*                    vboxrc = VbglR3ClipboardWriteData(pCtx->u32ClientID, VBOX_SHARED_CLIPBOARD_FMT_URI_LIST,
-                                                             );*/
-                           GlobalUnlock(hClip);
-                       }
-                       else
-                       {
-                           hClip = NULL;
+                           HDROP hDrop = (HDROP)GlobalLock(hClip);
+                           if (hDrop)
+                           {
+            /*                    vboxrc = VbglR3ClipboardWriteData(pCtx->u32ClientID, VBOX_SHARED_CLIPBOARD_FMT_URI_LIST,
+                                                                 );*/
+                               GlobalUnlock(hClip);
+                           }
+                           else
+                           {
+                               hClip = NULL;
+                           }
                        }
                    }
                }
 #endif
                VBoxClipboardWinClose();
-           }
+            }
 
-           if (hClip == NULL)
-           {
+            if (hClip == NULL)
+            {
                /* Requested clipboard format is not available, send empty data. */
-               VbglR3ClipboardWriteData(pCtx->u32ClientID, 0, NULL, 0);
-           }
+               VbglR3ClipboardWriteData(pCtx->u32ClientID, VBOX_SHARED_CLIPBOARD_FMT_NONE, NULL, 0);
+            }
         }
         break;
 
         case WM_DESTROY:
         {
-           VBoxClipboardWinRemoveFromCBChain(pWinCtx);
-           if (pWinCtx->oldAPI.timerRefresh)
+            VBoxClipboardWinRemoveFromCBChain(pWinCtx);
+            if (pWinCtx->oldAPI.timerRefresh)
                KillTimer(pWinCtx->hWnd, 0);
-           /*
+            /*
             * don't need to call PostQuitMessage cause
             * the VBoxTray already finished a message loop
             */
@@ -530,7 +542,7 @@ static LRESULT vboxClipboardProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UI
 
         default:
         {
-           rc = DefWindowProc(hwnd, msg, wParam, lParam);
+            rc = DefWindowProc(hwnd, msg, wParam, lParam);
         }
         break;
     }
@@ -641,6 +653,17 @@ DECLCALLBACK(int) VBoxClipboardInit(const PVBOXSERVICEENV pEnv, void **ppInstanc
         LogRel(("Clipboard: Clipboard has been disabled for a remote session\n"));
         return VERR_NOT_SUPPORTED;
     }
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    HRESULT hr = OleInitialize(NULL);
+    if (FAILED(hr))
+    {
+        LogRel(("Clipboard: Initializing OLE failed (%Rhrc) -- file transfers unavailable\n"));
+        /* Not critical, the rest of the clipboard might work. */
+    }
+    else
+        LogRel(("Clipboard: Initialized OLE\n"));
+#endif
 
     RT_BZERO(pCtx, sizeof(VBOXCLIPBOARDCONTEXT));
 
@@ -781,6 +804,11 @@ DECLCALLBACK(void) VBoxClipboardDestroy(void *pInstance)
 
     vboxClipboardDestroy(pCtx);
     RT_BZERO(pCtx, sizeof(VBOXCLIPBOARDCONTEXT));
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST_ASF
+    OleSetClipboard(NULL); /* Make sure to flush the clipboard on destruction. */
+    OleUninitialize();
+#endif
 
     return;
 }

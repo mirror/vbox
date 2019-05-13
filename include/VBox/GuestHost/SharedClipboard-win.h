@@ -32,17 +32,25 @@
 #include <iprt/types.h>
 #include <iprt/win/windows.h>
 
+#include <VBox/GuestHost/SharedClipboard.h>
+
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 #  include <iprt/cpp/ministring.h> /* For RTCString. */
+#  include <oleidl.h>
 # endif
 
 #ifndef WM_CLIPBOARDUPDATE
 # define WM_CLIPBOARDUPDATE 0x031D
 #endif
 
-#define VBOX_CLIPBOARD_WNDCLASS_NAME        "VBoxSharedClipboardClass"
+#define VBOX_CLIPBOARD_WNDCLASS_NAME         "VBoxSharedClipboardClass"
 
-#define VBOX_CLIPBOARD_WIN_REGFMT_HTML      "VBox HTML Format"
+/** See: https://docs.microsoft.com/en-us/windows/desktop/dataxchg/html-clipboard-format
+ *       Do *not* change the name, as this will break compatbility with other (legacy) applications! */
+#define VBOX_CLIPBOARD_WIN_REGFMT_HTML       "HTML Format"
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#  define VBOX_CLIPBOARD_WIN_REGFMT_URI_LIST "VBoxURIList"
+#endif
 
 /** Default timeout (in ms) for passing down messages down the clipboard chain. */
 #define VBOX_CLIPBOARD_CBCHAIN_TIMEOUT_MS   5000
@@ -80,6 +88,20 @@ typedef struct VBOXCLIPBOARDWINAPIOLD
     bool                   fCBChainPingInProcess;
 } VBOXCLIPBOARDWINAPIOLD, *PVBOXCLIPBOARDWINAPIOLD;
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+class VBoxClipboardWinDataObject;
+
+/**
+ * Structure for keeping URI clipboard information around.
+ */
+typedef struct _VBOXCLIPBOARDWINURI
+{
+    UINT cfFileGroupDescriptor;
+    UINT cfFileContents;
+    VBoxClipboardWinDataObject *pDataObj;
+} VBOXCLIPBOARDWINURI, *PVBOXCLIPBOARDWINURI;
+#endif
+
 typedef struct VBOXCLIPBOARDWINCTX
 {
     /** Window handle of our (invisible) clipbaord window. */
@@ -90,6 +112,10 @@ typedef struct VBOXCLIPBOARDWINCTX
     VBOXCLIPBOARDWINAPINEW newAPI;
     /** Structure for maintaining the old clipboard API. */
     VBOXCLIPBOARDWINAPIOLD oldAPI;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    /** Structure for keeping URI clipboard information around. */
+    VBOXCLIPBOARDWINURI    URI;
+#endif
 } VBOXCLIPBOARDWINCTX, *PVBOXCLIPBOARDWINCTX;
 
 int VBoxClipboardWinOpen(HWND hWnd);
@@ -100,20 +126,31 @@ bool VBoxClipboardWinIsNewAPI(PVBOXCLIPBOARDWINAPINEW pAPI);
 int VBoxClipboardWinAddToCBChain(PVBOXCLIPBOARDWINCTX pCtx);
 int VBoxClipboardWinRemoveFromCBChain(PVBOXCLIPBOARDWINCTX pCtx);
 VOID CALLBACK VBoxClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult);
-int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, uint32_t *puFormats);
+VBOXCLIPBOARDFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat);
+int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, PVBOXCLIPBOARDFORMAT pfFormats);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-class VBoxClipboardWinDataObject : public IDataObject
+class SharedClipboardURIList;
+class FILEGROUPDESCRIPTOR;
+
+class VBoxClipboardWinDataObject : public IDataObject //, public IDataObjectAsyncCapability
 {
 public:
 
     enum Status
     {
         Uninitialized = 0,
-        Initialized,
-        Dropping,
-        Dropped,
-        Aborted
+        Initialized
+    };
+
+    enum FormatIndex
+    {
+        /** File descriptor, ANSI version. */
+        FormatIndex_FileDescriptorA = 0,
+        /** File descriptor, Unicode version. */
+        FormatIndex_FileDescriptorW,
+        /** File contents. */
+        FormatIndex_FileContents
     };
 
 public:
@@ -139,19 +176,30 @@ public: /* IDataObject methods. */
     STDMETHOD(DUnadvise)(DWORD dwConnection);
     STDMETHOD(EnumDAdvise)(IEnumSTATDATA **ppEnumAdvise);
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_WIN_ASYNC
+public: /* IDataObjectAsyncCapability methods. */
+
+    STDMETHOD(EndOperation)(HRESULT hResult, IBindCtx* pbcReserved, DWORD dwEffects);
+    STDMETHOD(GetAsyncMode)(BOOL* pfIsOpAsync);
+    STDMETHOD(InOperation)(BOOL* pfInAsyncOp);
+    STDMETHOD(SetAsyncMode)(BOOL fDoOpAsync);
+    STDMETHOD(StartOperation)(IBindCtx* pbcReserved);
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_WIN_ASYNC */
+
 public:
 
+    int Init(uint32_t idClient);
     static const char* ClipboardFormatToString(CLIPFORMAT fmt);
-
-    int Abort(void);
-    void SetStatus(Status status);
-    int Signal(const RTCString &strFormat, const void *pvData, uint32_t cbData);
 
 protected:
 
-    bool LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
-    static HGLOBAL MemDup(HGLOBAL hMemSource);
-    void RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
+    static int Thread(RTTHREAD hThread, void *pvUser);
+
+    int copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal);
+    int createFileGroupDescriptor(const SharedClipboardURIList &URIList, HGLOBAL *phGlobal);
+
+    bool lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
+    void registerFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
 
     Status      mStatus;
@@ -159,10 +207,9 @@ protected:
     ULONG       mcFormats;
     LPFORMATETC mpFormatEtc;
     LPSTGMEDIUM mpStgMedium;
-    RTSEMEVENT  mEventDropped;
-    RTCString   mstrFormat;
-    void       *mpvData;
-    uint32_t    mcbData;
+    /** The HGCM client ID for the URI data transfers. */
+    uint32_t    muClientID;
+    IStream    *mpStream;
 };
 
 class VBoxClipboardWinEnumFormatEtc : public IEnumFORMATETC
@@ -172,11 +219,13 @@ public:
     VBoxClipboardWinEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG cFormats);
     virtual ~VBoxClipboardWinEnumFormatEtc(void);
 
-public:
+public: /* IUnknown methods. */
 
     STDMETHOD(QueryInterface)(REFIID iid, void ** ppvObject);
     STDMETHOD_(ULONG, AddRef)(void);
     STDMETHOD_(ULONG, Release)(void);
+
+public: /* IEnumFORMATETC methods. */
 
     STDMETHOD(Next)(ULONG cFormats, LPFORMATETC pFormatEtc, ULONG *pcFetched);
     STDMETHOD(Skip)(ULONG cFormats);
@@ -196,12 +245,45 @@ private:
     LPFORMATETC m_pFormatEtc;
 };
 
-#  if 0
-class VBoxClipboardWinStreamImpl : public IDataObject
+/**
+ * Own IStream implementation to implement file-based clipboard operations
+ * through HGCM. Needed on Windows hosts and guests.
+ */
+class VBoxClipboardWinStreamImpl : public IStream
 {
+public:
 
+    VBoxClipboardWinStreamImpl(void);
+    virtual ~VBoxClipboardWinStreamImpl(void);
+
+public: /* IUnknown methods. */
+
+    STDMETHOD(QueryInterface)(REFIID iid, void ** ppvObject);
+    STDMETHOD_(ULONG, AddRef)(void);
+    STDMETHOD_(ULONG, Release)(void);
+
+public: /* IStream methods. */
+
+    STDMETHOD(Clone)(IStream** ppStream);
+    STDMETHOD(Commit)(DWORD dwFrags);
+    STDMETHOD(CopyTo)(IStream* pDestStream, ULARGE_INTEGER nBytesToCopy, ULARGE_INTEGER* nBytesRead, ULARGE_INTEGER* nBytesWritten);
+    STDMETHOD(LockRegion)(ULARGE_INTEGER nStart, ULARGE_INTEGER nBytes,DWORD dwFlags);
+    STDMETHOD(Read)(void* pvBuffer, ULONG nBytesToRead, ULONG* nBytesRead);
+    STDMETHOD(Revert)(void);
+    STDMETHOD(Seek)(LARGE_INTEGER nMove, DWORD dwOrigin, ULARGE_INTEGER* nNewPos);
+    STDMETHOD(SetSize)(ULARGE_INTEGER nNewSize);
+    STDMETHOD(Stat)(STATSTG* statstg, DWORD dwFlags);
+    STDMETHOD(UnlockRegion)(ULARGE_INTEGER nStart, ULARGE_INTEGER nBytes, DWORD dwFlags);
+    STDMETHOD(Write)(const void* pvBuffer, ULONG nBytesToRead, ULONG* nBytesRead);
+
+public: /* Own methods. */
+
+    static HRESULT Create(IStream **ppStream);
+
+private:
+
+    LONG        m_lRefCount;
 };
-#  endif
 
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_win_h */

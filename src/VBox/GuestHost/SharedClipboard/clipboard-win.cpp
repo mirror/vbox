@@ -86,11 +86,17 @@ int VBoxClipboardWinClose(void)
 {
     int rc;
 
+    LogFlowFuncEnter();
+
     const BOOL fRc = CloseClipboard();
     if (RT_UNLIKELY(!fRc))
     {
         const DWORD dwLastErr = GetLastError();
-        rc = RTErrConvertFromWin32(dwLastErr);
+        if (dwLastErr == ERROR_CLIPBOARD_NOT_OPEN)
+            rc = VERR_INVALID_STATE;
+        else
+            rc = RTErrConvertFromWin32(dwLastErr);
+
         LogFunc(("Failed with %Rrc (0x%x)\n", rc, dwLastErr));
     }
     else
@@ -108,11 +114,17 @@ int VBoxClipboardWinClear(void)
 {
     int rc;
 
+    LogFlowFuncEnter();
+
     const BOOL fRc = EmptyClipboard();
     if (RT_UNLIKELY(!fRc))
     {
         const DWORD dwLastErr = GetLastError();
-        rc = RTErrConvertFromWin32(dwLastErr);
+        if (dwLastErr == ERROR_CLIPBOARD_NOT_OPEN)
+            rc = VERR_INVALID_STATE;
+        else
+            rc = RTErrConvertFromWin32(dwLastErr);
+
         LogFunc(("Failed with %Rrc (0x%x)\n", rc, dwLastErr));
     }
     else
@@ -264,63 +276,65 @@ VOID CALLBACK VBoxClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwDa
     pCtx->oldAPI.fCBChainPingInProcess = FALSE;
 }
 
+VBOXCLIPBOARDFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat)
+{
+    /* Insert the requested clipboard format data into the clipboard. */
+    VBOXCLIPBOARDFORMAT vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_NONE;
+
+    switch (uFormat)
+    {
+      case CF_UNICODETEXT:
+          vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+          break;
+
+      case CF_DIB:
+          vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
+          break;
+
+      default:
+          if (uFormat >= 0xC000) /** Formats registered with RegisterClipboardFormat() start at this index. */
+          {
+              TCHAR szFormatName[256]; /** @todo r=andy Do we need Unicode support here as well? */
+              int cActual = GetClipboardFormatName(uFormat, szFormatName, sizeof(szFormatName) / sizeof(TCHAR));
+              if (cActual)
+              {
+                  LogFunc(("szFormatName=%s\n", szFormatName));
+
+                  if (RTStrCmp(szFormatName, VBOX_CLIPBOARD_WIN_REGFMT_HTML) == 0)
+                      vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_HTML;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+                  else if (RTStrCmp(szFormatName, VBOX_CLIPBOARD_WIN_REGFMT_URI_LIST) == 0)
+                      vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
+#endif
+              }
+          }
+          break;
+    }
+
+    return vboxFormat;
+}
+
 /**
  * Retrieves all supported clipboard formats of a specific clipboard.
  *
  * @returns VBox status code.
  * @param   pCtx                Windows clipboard context to retrieve formats for.
- * @param   puFormats           Where to store the retrieved formats of type VBOX_SHARED_CLIPBOARD_FMT_ (bitmask).
+ * @param   pfFormats           Where to store the retrieved formats of type VBOX_SHARED_CLIPBOARD_FMT_ (bitmask).
  */
-int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, uint32_t *puFormats)
+int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, PVBOXCLIPBOARDFORMATS pfFormats)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertPtrReturn(puFormats, VERR_INVALID_POINTER);
+    AssertPtrReturn(pfFormats, VERR_INVALID_POINTER);
 
-    uint32_t uFormats = VBOX_SHARED_CLIPBOARD_FMT_NONE;
+    VBOXCLIPBOARDFORMATS fFormats = VBOX_SHARED_CLIPBOARD_FMT_NONE;
 
     /* Query list of available formats and report to host. */
     int rc = VBoxClipboardWinOpen(pCtx->hWnd);
     if (RT_SUCCESS(rc))
     {
-        UINT uCurFormat = 0;
+        UINT uCurFormat = 0; /* Must be set to zero for EnumClipboardFormats(). */
         while ((uCurFormat = EnumClipboardFormats(uCurFormat)) != 0)
-        {
-            LogFlowFunc(("uFormat = 0x%08X\n", uCurFormat));
-            switch (uCurFormat)
-            {
-                case CF_UNICODETEXT:
-                case CF_TEXT:
-                    uFormats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
-                    break;
-
-                case CF_DIB:
-                case CF_BITMAP:
-                    uFormats |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
-                    break;
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-                case CF_HDROP:
-                    uFormats |= VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
-                    break;
-#endif
-                default:
-                {
-                    if (uCurFormat >= 0xC000) /** @todo r=andy Find a define for this. */
-                    {
-                        TCHAR szFormatName[256]; /** @todo r=andy Is this enough? */
-                        int cActual = GetClipboardFormatName(uCurFormat, szFormatName, sizeof(szFormatName)/sizeof (TCHAR));
-                        if (cActual)
-                        {
-                            if (strcmp (szFormatName, "HTML Format") == 0)
-                            {
-                                uFormats |= VBOX_SHARED_CLIPBOARD_FMT_HTML;
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-        }
+            fFormats |= VBoxClipboardWinClipboardFormatToVBox(uCurFormat);
 
         int rc2 = VBoxClipboardWinClose();
         AssertRC(rc2);
@@ -332,8 +346,8 @@ int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, uint32_t *puFormats)
     }
     else
     {
-        LogFlowFunc(("uFormats = 0x%08X\n", uFormats));
-        *puFormats = uFormats;
+        LogFlowFunc(("pfFormats=0x%08X\n", pfFormats));
+        *pfFormats = fFormats;
     }
 
     return rc;

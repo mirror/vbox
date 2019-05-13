@@ -21,29 +21,36 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/GuestHost/SharedClipboard-win.h>
+#include <VBox/GuestHost/SharedClipboard-uri.h>
+
+/** !!! HACK ALERT !!! Dynamically resolve functions! */
+#ifdef _WIN32_IE
+#undef _WIN32_IE
+#define _WIN32_IE 0x0501
+#endif
 
 #include <iprt/win/windows.h>
-#include <new> /* For bad_alloc. */
 #include <iprt/win/shlobj.h>
+#include <iprt/win/shlwapi.h>
 
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
 #include <iprt/uri.h>
 #include <iprt/utf16.h>
 
+#include <VBox/err.h>
 #include <VBox/log.h>
 
 VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
-    : mStatus(Uninitialized),
-      mRefCount(1),
-      mcFormats(0),
-      mpvData(NULL),
-      mcbData(0)
+    : mStatus(Uninitialized)
+    , mRefCount(0)
+    , mcFormats(0)
+    , muClientID(0)
 {
     HRESULT hr;
 
-    ULONG cFixedFormats = 1;
-    ULONG cAllFormats   = cFormats + cFixedFormats;
+    const ULONG cFixedFormats = 3; /* CFSTR_FILEDESCRIPTORA + CFSTR_FILEDESCRIPTORW + CFSTR_FILECONTENTS */
+    const ULONG cAllFormats   = cFormats + cFixedFormats;
 
     try
     {
@@ -51,6 +58,21 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc, L
         RT_BZERO(mpFormatEtc, sizeof(FORMATETC) * cAllFormats);
         mpStgMedium = new STGMEDIUM[cAllFormats];
         RT_BZERO(mpStgMedium, sizeof(STGMEDIUM) * cAllFormats);
+
+        /** @todo Do we need CFSTR_FILENAME / CFSTR_SHELLIDLIST here? */
+
+        /*
+         * Register fixed formats.
+         */
+
+        /* IStream interface, implemented in ClipboardStreamImpl-win.cpp. */
+        registerFormat(&mpFormatEtc[FormatIndex_FileDescriptorA],
+                       RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA));
+        registerFormat(&mpFormatEtc[FormatIndex_FileDescriptorW],
+                       RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW));
+        registerFormat(&mpFormatEtc[FormatIndex_FileContents],
+                       RegisterClipboardFormat(CFSTR_FILECONTENTS),
+                       TYMED_ISTREAM, 0 /* lIndex */);
 
         /*
          * Registration of dynamic formats needed?
@@ -65,8 +87,8 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc, L
             {
                 LogFlowFunc(("Format %RU32: cfFormat=%RI16, tyMed=%RU32, dwAspect=%RU32\n",
                              i, pFormatEtc[i].cfFormat, pFormatEtc[i].tymed, pFormatEtc[i].dwAspect));
-                mpFormatEtc[i] = pFormatEtc[i];
-                mpStgMedium[i] = pStgMed[i];
+                mpFormatEtc[cFixedFormats + i] = pFormatEtc[i];
+                mpStgMedium[cFixedFormats + i] = pStgMed[i];
             }
         }
 
@@ -79,51 +101,23 @@ VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(LPFORMATETC pFormatEtc, L
 
     if (SUCCEEDED(hr))
     {
-        int rc2 = RTSemEventCreate(&mEventDropped);
-        AssertRC(rc2);
-
-        /*
-         * Register fixed formats.
-         */
-#if 0
-        /* CF_HDROP. */
-        RegisterFormat(&mpFormatEtc[cFormats], CF_HDROP);
-        mpStgMedium[cFormats++].tymed = TYMED_HGLOBAL;
-
-        /* IStream. */
-        RegisterFormat(&mpFormatEtc[cFormats++],
-                       RegisterClipboardFormat(CFSTR_FILEDESCRIPTOR));
-        RegisterFormat(&mpFormatEtc[cFormats++],
-                       RegisterClipboardFormat(CFSTR_FILECONTENTS),
-                       TYMED_ISTREAM, 0 /* lIndex */);
-
-        /* Required for e.g. Windows Media Player. */
-        RegisterFormat(&mpFormatEtc[cFormats++],
-                       RegisterClipboardFormat(CFSTR_FILENAME));
-        RegisterFormat(&mpFormatEtc[cFormats++],
-                       RegisterClipboardFormat(CFSTR_FILENAMEW));
-        RegisterFormat(&mpFormatEtc[cFormats++],
-                       RegisterClipboardFormat(CFSTR_SHELLIDLIST));
-        RegisterFormat(&mpFormatEtc[cFormats++],
-                       RegisterClipboardFormat(CFSTR_SHELLIDLISTOFFSET));
-#endif
-        mcFormats = cFormats;
+        mcFormats = cAllFormats;
         mStatus   = Initialized;
     }
 
-    LogFlowFunc(("cFormats=%RU32, hr=%Rhrc\n", cFormats, hr));
+    LogFlowFunc(("cAllFormats=%RU32, hr=%Rhrc\n", cAllFormats, hr));
 }
 
 VBoxClipboardWinDataObject::~VBoxClipboardWinDataObject(void)
 {
+    if (mpStream)
+        mpStream->Release();
+
     if (mpFormatEtc)
         delete[] mpFormatEtc;
 
     if (mpStgMedium)
         delete[] mpStgMedium;
-
-    if (mpvData)
-        RTMemFree(mpvData);
 
     LogFlowFunc(("mRefCount=%RI32\n", mRefCount));
 }
@@ -134,12 +128,15 @@ VBoxClipboardWinDataObject::~VBoxClipboardWinDataObject(void)
 
 STDMETHODIMP_(ULONG) VBoxClipboardWinDataObject::AddRef(void)
 {
-    return InterlockedIncrement(&mRefCount);
+    LONG lCount = InterlockedIncrement(&mRefCount);
+    LogFlowFunc(("lCount=%RI32\n", lCount));
+    return lCount;
 }
 
 STDMETHODIMP_(ULONG) VBoxClipboardWinDataObject::Release(void)
 {
     LONG lCount = InterlockedDecrement(&mRefCount);
+    LogFlowFunc(("lCount=%RI32\n", mRefCount));
     if (lCount == 0)
     {
         delete this;
@@ -165,6 +162,99 @@ STDMETHODIMP VBoxClipboardWinDataObject::QueryInterface(REFIID iid, void **ppvOb
     return E_NOINTERFACE;
 }
 
+int VBoxClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal)
+{
+    AssertPtrReturn(phGlobal, VERR_INVALID_POINTER);
+
+    HGLOBAL hGlobal = GlobalAlloc(fFlags, cbData);
+    if (!hGlobal)
+        return VERR_NO_MEMORY;
+
+    void *pvAlloc = GlobalLock(hGlobal);
+    if (pvAlloc)
+    {
+        CopyMemory(pvAlloc, pvData, cbData);
+        GlobalUnlock(hGlobal);
+
+        *phGlobal = hGlobal;
+
+        return VINF_SUCCESS;
+    }
+
+    GlobalFree(hGlobal);
+    return VERR_ACCESS_DENIED;
+}
+
+int VBoxClipboardWinDataObject::createFileGroupDescriptor(const SharedClipboardURIList &URIList, HGLOBAL *phGlobal)
+{
+//    AssertReturn(URIList.GetRootCount(), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phGlobal, VERR_INVALID_POINTER);
+
+    int rc;
+
+    const size_t cItems = 2;  URIList.GetRootCount();
+    const size_t cbFGD  = sizeof(FILEGROUPDESCRIPTOR) + sizeof(FILEDESCRIPTOR) * (cItems - 1);
+
+    LogFunc(("cItmes=%zu\n", cItems));
+
+    FILEGROUPDESCRIPTOR *pFGD = (FILEGROUPDESCRIPTOR *)RTMemAlloc(cbFGD);
+    if (pFGD)
+    {
+        pFGD->cItems = (UINT)cItems;
+
+
+        FILEDESCRIPTOR *pFD = &pFGD->fgd[0];
+        RT_BZERO(pFD, sizeof(FILEDESCRIPTOR));
+
+        RTStrPrintf(pFD->cFileName, sizeof(pFD->cFileName), "barbaz.txt\n");
+
+    #if 1
+        pFD->dwFlags          = FD_ATTRIBUTES | FD_FILESIZE | FD_PROGRESSUI;
+        pFD->dwFileAttributes = FILE_ATTRIBUTE_NORMAL; // FILE_ATTRIBUTE_DIRECTORY;
+
+        uint64_t cbSize = _1M;
+
+        pFD->nFileSizeHigh    = RT_HI_U32(cbSize);
+        pFD->nFileSizeLow     = RT_LO_U32(cbSize);
+    #else
+        pFD->dwFlags = FD_ATTRIBUTES | FD_CREATETIME | FD_ACCESSTIME | FD_WRITESTIME | FD_FILESIZE;
+        pFD->dwFileAttributes =
+        pFD->ftCreationTime   =
+        pFD->ftLastAccessTime =
+        pFD->ftLastWriteTime  =
+        pFD->nFileSizeHigh    =
+        pFD->nFileSizeLow     =
+    #endif
+
+
+
+        pFD = &pFGD->fgd[1];
+        RT_BZERO(pFD, sizeof(FILEDESCRIPTOR));
+
+        RTStrPrintf(pFD->cFileName, sizeof(pFD->cFileName), "barbaz_dir\n");
+
+    #if 1
+        pFD->dwFlags          = FD_ATTRIBUTES | FD_PROGRESSUI;
+        pFD->dwFileAttributes = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_DIRECTORY;
+    #else
+        pFD->dwFlags = FD_ATTRIBUTES | FD_CREATETIME | FD_ACCESSTIME | FD_WRITESTIME | FD_FILESIZE;
+        pFD->dwFileAttributes =
+        pFD->ftCreationTime   =
+        pFD->ftLastAccessTime =
+        pFD->ftLastWriteTime  =
+        pFD->nFileSizeHigh    =
+        pFD->nFileSizeLow     =
+    #endif
+
+
+        rc = copyToHGlobal(pFGD, cbFGD, GMEM_MOVEABLE, phGlobal);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
 /**
  * Retrieves the data stored in this object and store the result in
  * pMedium.
@@ -179,11 +269,13 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
     AssertPtrReturn(pFormatEtc, DV_E_FORMATETC);
     AssertPtrReturn(pMedium, DV_E_FORMATETC);
 
+    LogFlowFuncEnter();
+
     ULONG lIndex;
-    if (!LookupFormatEtc(pFormatEtc, &lIndex)) /* Format supported? */
+    if (!lookupFormatEtc(pFormatEtc, &lIndex)) /* Format supported? */
         return DV_E_FORMATETC;
     if (lIndex >= mcFormats) /* Paranoia. */
-        return DV_E_FORMATETC;
+        return DV_E_LINDEX;
 
     LPFORMATETC pThisFormat = &mpFormatEtc[lIndex];
     AssertPtr(pThisFormat);
@@ -195,230 +287,71 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
 
     HRESULT hr = DV_E_FORMATETC; /* Play safe. */
 
-    LogFlowFunc(("mStatus=%ld\n", mStatus));
-    if (mStatus == Dropping)
+    LogRel3(("Clipboard: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32 -> lIndex=%u\n",
+             pThisFormat->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
+             pThisFormat->tymed, pThisFormat->dwAspect, lIndex));
+
+    /*
+     * Initialize default values.
+     */
+    pMedium->tymed          = pThisFormat->tymed;
+    pMedium->pUnkForRelease = NULL; /* Caller is responsible for deleting the data. */
+
+    switch (lIndex)
     {
-        LogRel2(("Clipboard: Waiting for drop event ...\n"));
-        int rc2 = RTSemEventWait(mEventDropped, RT_INDEFINITE_WAIT);
-        LogFlowFunc(("rc2=%Rrc, mStatus=%ld\n", rc2, mStatus)); RT_NOREF(rc2);
-    }
-
-    if (mStatus == Dropped)
-    {
-        LogRel2(("Clipboard: Drop event received\n"));
-        LogRel3(("Clipboard: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
-                 pThisFormat->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
-                 pThisFormat->tymed, pThisFormat->dwAspect));
-        LogRel3(("Clipboard: Got strFormat=%s, pvData=%p, cbData=%RU32\n",
-                  mstrFormat.c_str(), mpvData, mcbData));
-
-        /*
-         * Initialize default values.
-         */
-        pMedium->tymed          = pThisFormat->tymed;
-        pMedium->pUnkForRelease = NULL;
-
-        /*
-         * URI list handling.
-         */
-        if (mstrFormat.equalsIgnoreCase("text/uri-list"))
+        case FormatIndex_FileDescriptorA:
         {
-            int rc = VINF_SUCCESS;
+            LogFlowFunc(("FormatIndex_FileDescriptorA\n"));
 
-            RTCList<RTCString> lstFilesURI = RTCString((char*)mpvData, mcbData).split("\r\n");
-            RTCList<RTCString> lstFiles;
-            for (size_t i = 0; i < lstFilesURI.size(); i++)
+            SharedClipboardURIList mURIList;
+           // mURIList.AppendURIPath()
+
+            HGLOBAL hGlobal;
+            int rc = createFileGroupDescriptor(mURIList, &hGlobal);
+            if (RT_SUCCESS(rc))
             {
-                char *pszFilePath = RTUriFilePath(lstFilesURI.at(i).c_str());
-                if (pszFilePath)
-                {
-                    lstFiles.append(pszFilePath);
-                    RTStrFree(pszFilePath);
-                }
-                else /* Unable to parse -- refuse entire request. */
-                {
-                    lstFiles.clear();
-                    rc = VERR_INVALID_PARAMETER;
-                    break;
-                }
-            }
-
-            size_t cFiles = lstFiles.size();
-            if (   RT_SUCCESS(rc)
-                && cFiles)
-            {
-#ifdef DEBUG
-                LogFlowFunc(("Files (%zu)\n", cFiles));
-                for (size_t i = 0; i < cFiles; i++)
-                    LogFlowFunc(("\tFile: %s\n", lstFiles.at(i).c_str()));
-#endif
-
-#if 0
-                if (   (pFormatEtc->tymed & TYMED_ISTREAM)
-                    && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                    && (pFormatEtc->cfFormat == CF_FILECONTENTS))
-                {
-
-                }
-                else if  (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                          && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                          && (pFormatEtc->cfFormat == CF_FILEDESCRIPTOR))
-                {
-
-                }
-                else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                         && (pFormatEtc->cfFormat == CF_PREFERREDDROPEFFECT))
-                {
-                    HGLOBAL hData = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE | GMEM_ZEROINIT, sizeof(DWORD));
-                    DWORD *pdwEffect = (DWORD *)GlobalLock(hData);
-                    AssertPtr(pdwEffect);
-                    *pdwEffect = DROPEFFECT_COPY;
-                    GlobalUnlock(hData);
-
-                    pMedium->hGlobal = hData;
-                    pMedium->tymed = TYMED_HGLOBAL;
-                }
-                else
-#endif
-                if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                    && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                    && (pFormatEtc->cfFormat == CF_TEXT))
-                {
-                    pMedium->hGlobal = GlobalAlloc(GHND, mcbData + 1);
-                    if (pMedium->hGlobal)
-                    {
-                        char *pcDst  = (char *)GlobalLock(pMedium->hGlobal);
-                        memcpy(pcDst, mpvData, mcbData);
-                        pcDst[mcbData] = '\0';
-                        GlobalUnlock(pMedium->hGlobal);
-
-                        hr = S_OK;
-                    }
-                }
-                else if (   (pFormatEtc->tymed & TYMED_HGLOBAL)
-                         && (pFormatEtc->dwAspect == DVASPECT_CONTENT)
-                         && (pFormatEtc->cfFormat == CF_HDROP))
-                {
-                    size_t cchFiles = 0; /* Number of ASCII characters. */
-                    for (size_t i = 0; i < cFiles; i++)
-                    {
-                        cchFiles += strlen(lstFiles.at(i).c_str());
-                        cchFiles += 1; /* Terminating '\0'. */
-                    }
-
-                    size_t cbBuf = sizeof(DROPFILES) + ((cchFiles + 1) * sizeof(RTUTF16));
-                    DROPFILES *pBuf = (DROPFILES *)RTMemAllocZ(cbBuf);
-                    if (pBuf)
-                    {
-                        pBuf->pFiles = sizeof(DROPFILES);
-                        pBuf->fWide = 1; /* We use unicode. Always. */
-
-                        uint8_t *pCurFile = (uint8_t *)pBuf + pBuf->pFiles;
-                        AssertPtr(pCurFile);
-
-                        for (size_t i = 0; i < cFiles && RT_SUCCESS(rc); i++)
-                        {
-                            size_t cchCurFile;
-                            PRTUTF16 pwszFile;
-                            rc = RTStrToUtf16(lstFiles.at(i).c_str(), &pwszFile);
-                            if (RT_SUCCESS(rc))
-                            {
-                                cchCurFile = RTUtf16Len(pwszFile);
-                                Assert(cchCurFile);
-                                memcpy(pCurFile, pwszFile, cchCurFile * sizeof(RTUTF16));
-                                RTUtf16Free(pwszFile);
-                            }
-                            else
-                                break;
-
-                            pCurFile += cchCurFile * sizeof(RTUTF16);
-
-                            /* Terminate current file name. */
-                            *pCurFile = L'\0';
-                            pCurFile += sizeof(RTUTF16);
-                        }
-
-                        if (RT_SUCCESS(rc))
-                        {
-                            *pCurFile = L'\0'; /* Final list terminator. */
-
-                            pMedium->tymed = TYMED_HGLOBAL;
-                            pMedium->pUnkForRelease = NULL;
-                            pMedium->hGlobal = GlobalAlloc(  GMEM_ZEROINIT
-                                                           | GMEM_MOVEABLE
-                                                           | GMEM_DDESHARE, cbBuf);
-                            if (pMedium->hGlobal)
-                            {
-                                LPVOID pMem = GlobalLock(pMedium->hGlobal);
-                                if (pMem)
-                                {
-                                    memcpy(pMem, pBuf, cbBuf);
-                                    GlobalUnlock(pMedium->hGlobal);
-
-                                    hr = S_OK;
-                                }
-                            }
-                        }
-
-                        RTMemFree(pBuf);
-                    }
-                    else
-                        rc = VERR_NO_MEMORY;
-                }
-            }
-
-            if (RT_FAILURE(rc))
-                hr = DV_E_FORMATETC;
-        }
-        /*
-         * Plain text handling.
-         */
-        else if (   mstrFormat.equalsIgnoreCase("text/plain")
-                 || mstrFormat.equalsIgnoreCase("text/html")
-                 || mstrFormat.equalsIgnoreCase("text/plain;charset=utf-8")
-                 || mstrFormat.equalsIgnoreCase("text/plain;charset=utf-16")
-                 || mstrFormat.equalsIgnoreCase("text/richtext")
-                 || mstrFormat.equalsIgnoreCase("UTF8_STRING")
-                 || mstrFormat.equalsIgnoreCase("TEXT")
-                 || mstrFormat.equalsIgnoreCase("STRING"))
-        {
-            pMedium->hGlobal = GlobalAlloc(GHND, mcbData + 1);
-            if (pMedium->hGlobal)
-            {
-                char *pcDst  = (char *)GlobalLock(pMedium->hGlobal);
-                memcpy(pcDst, mpvData, mcbData);
-                pcDst[mcbData] = '\0';
-                GlobalUnlock(pMedium->hGlobal);
+                pMedium->tymed   = TYMED_HGLOBAL;
+                pMedium->hGlobal = hGlobal;
 
                 hr = S_OK;
             }
+            break;
         }
-        else
-            LogRel(("Clipboard: Error: Format '%s' not implemented\n", mstrFormat.c_str()));
+
+        case FormatIndex_FileDescriptorW:
+            LogFlowFunc(("FormatIndex_FileDescriptorW\n"));
+            break;
+
+        case FormatIndex_FileContents:
+        {
+            LogFlowFunc(("FormatIndex_FileContents\n"));
+
+            hr = VBoxClipboardWinStreamImpl::Create(&mpStream);
+            if (SUCCEEDED(hr))
+            {
+                /* Hand over the stream to the caller. */
+                pMedium->tymed          = TYMED_ISTREAM;
+                pMedium->pstm           = mpStream;
+            }
+
+            break;
+        }
+
+        default:
+            break;
     }
 
     /* Error handling; at least return some basic data. */
     if (FAILED(hr))
     {
-        LogFlowFunc(("Copying medium ...\n"));
-        switch (pThisMedium->tymed)
-        {
-
-        case TYMED_HGLOBAL:
-            pMedium->hGlobal = (HGLOBAL)OleDuplicateData(pThisMedium->hGlobal,
-                                                         pThisFormat->cfFormat, NULL);
-            break;
-
-        default:
-            break;
-        }
+        LogFunc(("Failed; copying medium ...\n"));
 
         pMedium->tymed          = pThisFormat->tymed;
         pMedium->pUnkForRelease = NULL;
     }
 
     if (hr == DV_E_FORMATETC)
-        LogRel(("Clipboard: Error handling format '%s' (%RU32 bytes)\n", mstrFormat.c_str(), mcbData));
+        LogRel(("Clipboard: Error handling format\n"));
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
@@ -436,7 +369,7 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetDataHere(LPFORMATETC pFormatEtc, LPS
 {
     RT_NOREF(pFormatEtc, pMedium);
     LogFlowFunc(("\n"));
-    return DATA_E_FORMATETC;
+    return E_NOTIMPL;
 }
 
 /**
@@ -449,7 +382,7 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetDataHere(LPFORMATETC pFormatEtc, LPS
 STDMETHODIMP VBoxClipboardWinDataObject::QueryGetData(LPFORMATETC pFormatEtc)
 {
     LogFlowFunc(("\n"));
-    return (LookupFormatEtc(pFormatEtc, NULL /* puIndex */)) ? S_OK : DV_E_FORMATETC;
+    return (lookupFormatEtc(pFormatEtc, NULL /* puIndex */)) ? S_OK : DV_E_FORMATETC;
 }
 
 STDMETHODIMP VBoxClipboardWinDataObject::GetCanonicalFormatEtc(LPFORMATETC pFormatEtc, LPFORMATETC pFormatEtcOut)
@@ -465,6 +398,8 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetCanonicalFormatEtc(LPFORMATETC pForm
 STDMETHODIMP VBoxClipboardWinDataObject::SetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium, BOOL fRelease)
 {
     RT_NOREF(pFormatEtc, pMedium, fRelease);
+    LogFlowFunc(("\n"));
+
     return E_NOTIMPL;
 }
 
@@ -500,15 +435,52 @@ STDMETHODIMP VBoxClipboardWinDataObject::EnumDAdvise(IEnumSTATDATA **ppEnumAdvis
     return OLE_E_ADVISENOTSUPPORTED;
 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_WIN_ASYNC
+/*
+ * IDataObjectAsyncCapability methods.
+ */
+
+STDMETHODIMP VBoxClipboardWinDataObject::EndOperation(HRESULT hResult, IBindCtx* pbcReserved, DWORD dwEffects)
+{
+     RT_NOREF(hResult, pbcReserved, dwEffects);
+     return E_NOTIMPL;
+}
+
+STDMETHODIMP VBoxClipboardWinDataObject::GetAsyncMode(BOOL* pfIsOpAsync)
+{
+     RT_NOREF(pfIsOpAsync);
+     return E_NOTIMPL;
+}
+
+STDMETHODIMP VBoxClipboardWinDataObject::InOperation(BOOL* pfInAsyncOp)
+{
+     RT_NOREF(pfInAsyncOp);
+     return E_NOTIMPL;
+}
+
+STDMETHODIMP VBoxClipboardWinDataObject::SetAsyncMode(BOOL fDoOpAsync)
+{
+     RT_NOREF(fDoOpAsync);
+     return E_NOTIMPL;
+}
+
+STDMETHODIMP VBoxClipboardWinDataObject::StartOperation(IBindCtx* pbcReserved)
+{
+     RT_NOREF(pbcReserved);
+     return E_NOTIMPL;
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_WIN_ASYNC */
+
 /*
  * Own stuff.
  */
 
-int VBoxClipboardWinDataObject::Abort(void)
+int VBoxClipboardWinDataObject::Init(uint32_t idClient)
 {
-    LogFlowFunc(("Aborting ...\n"));
-    mStatus = Aborted;
-    return RTSemEventSignal(mEventDropped);
+    muClientID = idClient;
+
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
 }
 
 /* static */
@@ -594,7 +566,7 @@ const char* VBoxClipboardWinDataObject::ClipboardFormatToString(CLIPFORMAT fmt)
     return "unknown";
 }
 
-bool VBoxClipboardWinDataObject::LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex)
+bool VBoxClipboardWinDataObject::lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex)
 {
     AssertReturn(pFormatEtc, false);
     /* puIndex is optional. */
@@ -621,28 +593,9 @@ bool VBoxClipboardWinDataObject::LookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *
     return false;
 }
 
-/* static */
-HGLOBAL VBoxClipboardWinDataObject::MemDup(HGLOBAL hMemSource)
-{
-    DWORD dwLen    = GlobalSize(hMemSource);
-    AssertReturn(dwLen, NULL);
-    PVOID pvSource = GlobalLock(hMemSource);
-    if (pvSource)
-    {
-        PVOID pvDest = GlobalAlloc(GMEM_FIXED, dwLen);
-        if (pvDest)
-            memcpy(pvDest, pvSource, dwLen);
-
-        GlobalUnlock(hMemSource);
-        return pvDest;
-    }
-
-    return NULL;
-}
-
-void VBoxClipboardWinDataObject::RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat,
-                                       TYMED tyMed, LONG lIndex, DWORD dwAspect,
-                                       DVTARGETDEVICE *pTargetDevice)
+void VBoxClipboardWinDataObject::registerFormat(LPFORMATETC pFormatEtc, CLIPFORMAT clipFormat,
+                                                TYMED tyMed, LONG lIndex, DWORD dwAspect,
+                                                DVTARGETDEVICE *pTargetDevice)
 {
     AssertPtr(pFormatEtc);
 
@@ -654,52 +607,5 @@ void VBoxClipboardWinDataObject::RegisterFormat(LPFORMATETC pFormatEtc, CLIPFORM
 
     LogFlowFunc(("Registered format=%ld, sFormat=%s\n",
                  pFormatEtc->cfFormat, VBoxClipboardWinDataObject::ClipboardFormatToString(pFormatEtc->cfFormat)));
-}
-
-void VBoxClipboardWinDataObject::SetStatus(Status status)
-{
-    LogFlowFunc(("Setting status to %ld\n", status));
-    mStatus = status;
-}
-
-int VBoxClipboardWinDataObject::Signal(const RTCString &strFormat,
-                              const void *pvData, uint32_t cbData)
-{
-    int rc;
-
-    if (cbData)
-    {
-        mpvData = RTMemAlloc(cbData);
-        if (mpvData)
-        {
-            memcpy(mpvData, pvData, cbData);
-            mcbData = cbData;
-            rc = VINF_SUCCESS;
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-    else
-        rc = VINF_SUCCESS;
-
-    if (RT_SUCCESS(rc))
-    {
-        mStatus    = Dropped;
-        mstrFormat = strFormat;
-    }
-    else
-    {
-        mStatus = Aborted;
-    }
-
-    /* Signal in any case. */
-    LogRel2(("Clipboard: Signalling drop event\n"));
-
-    int rc2 = RTSemEventSignal(mEventDropped);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
-
-    LogFunc(("mStatus=%RU32, rc=%Rrc\n", mStatus, rc));
-    return rc;
 }
 

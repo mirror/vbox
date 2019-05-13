@@ -34,9 +34,13 @@
 
 /** A single Shared Clipboard format. */
 typedef uint32_t VBOXCLIPBOARDFORMAT;
+/** Pointer to a single Shared Clipboard format. */
+typedef VBOXCLIPBOARDFORMAT *PVBOXCLIPBOARDFORMAT;
 
 /** Bit map of Shared Clipboard format. */
 typedef uint32_t VBOXCLIPBOARDFORMATS;
+/** Pointer to a bit map of Shared Clipboard format. */
+typedef VBOXCLIPBOARDFORMATS *PVBOXCLIPBOARDFORMATS;
 
 /**
  * Supported data formats for Shared Clipboard. Bit mask.
