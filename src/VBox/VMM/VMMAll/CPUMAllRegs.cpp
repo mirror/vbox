@@ -3303,7 +3303,7 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, 
 
 
 /**
- * Determines whether an IOIO intercept is active for the nested-guest or not.
+ * Determines whether the given I/O access should cause a nested-guest \#VMEXIT.
  *
  * @param   pvIoBitmap      Pointer to the nested-guest IO bitmap.
  * @param   u16Port         The IO port being accessed.
@@ -3316,9 +3316,9 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxIoInterceptSet(PVMCPU pVCpu, uint16_t u16Port, 
  * @param   pIoExitInfo     Pointer to the SVMIOIOEXITINFO struct to be filled.
  *                          Optional, can be NULL.
  */
-VMM_INT_DECL(bool) CPUMIsSvmIoInterceptActive(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
-                                              uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
-                                              PSVMIOIOEXITINFO pIoExitInfo)
+VMM_INT_DECL(bool) CPUMIsSvmIoInterceptSet(void *pvIoBitmap, uint16_t u16Port, SVMIOIOTYPE enmIoType, uint8_t cbReg,
+                                           uint8_t cAddrSizeBits, uint8_t iEffSeg, bool fRep, bool fStrIo,
+                                           PSVMIOIOEXITINFO pIoExitInfo)
 {
     Assert(cAddrSizeBits == 16 || cAddrSizeBits == 32 || cAddrSizeBits == 64);
     Assert(cbReg == 1 || cbReg == 2 || cbReg == 4 || cbReg == 8);

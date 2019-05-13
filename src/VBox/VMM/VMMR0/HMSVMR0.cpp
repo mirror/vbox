@@ -5129,12 +5129,12 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPU pVCpu)
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
- * Determines whether an IOIO intercept is active for the nested-guest or not.
+ * Determines whether the given I/O access should cause a nested-guest \#VMEXIT.
  *
  * @param   pvIoBitmap      Pointer to the nested-guest IO bitmap.
  * @param   pIoExitInfo     Pointer to the SVMIOIOEXITINFO.
  */
-static bool hmR0SvmIsIoInterceptActive(void *pvIoBitmap, PSVMIOIOEXITINFO pIoExitInfo)
+static bool hmR0SvmIsIoInterceptSet(void *pvIoBitmap, PSVMIOIOEXITINFO pIoExitInfo)
 {
     const uint16_t    u16Port       = pIoExitInfo->n.u16Port;
     const SVMIOIOTYPE enmIoType     = (SVMIOIOTYPE)pIoExitInfo->n.u1Type;
@@ -5144,8 +5144,8 @@ static bool hmR0SvmIsIoInterceptActive(void *pvIoBitmap, PSVMIOIOEXITINFO pIoExi
     const bool        fRep          = pIoExitInfo->n.u1Rep;
     const bool        fStrIo        = pIoExitInfo->n.u1Str;
 
-    return CPUMIsSvmIoInterceptActive(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep, fStrIo,
-                                      NULL /* pIoExitInfo */);
+    return CPUMIsSvmIoInterceptSet(pvIoBitmap, u16Port, enmIoType, cbReg, cAddrSizeBits, iEffSeg, fRep, fStrIo,
+                                   NULL /* pIoExitInfo */);
 }
 
 
@@ -5273,7 +5273,7 @@ static int hmR0SvmHandleExitNested(PVMCPU pVCpu, PSVMTRANSIENT pSvmTransient)
                 void *pvIoBitmap = pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pvIoBitmap);
                 SVMIOIOEXITINFO IoExitInfo;
                 IoExitInfo.u = pVmcbNstGst->ctrl.u64ExitInfo1;
-                bool const fIntercept = hmR0SvmIsIoInterceptActive(pvIoBitmap, &IoExitInfo);
+                bool const fIntercept = hmR0SvmIsIoInterceptSet(pvIoBitmap, &IoExitInfo);
                 if (fIntercept)
                     NST_GST_VMEXIT_CALL_RET(pVCpu, uExitCode, uExitInfo1, uExitInfo2);
             }
