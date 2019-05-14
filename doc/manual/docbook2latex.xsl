@@ -187,6 +187,7 @@
   <xsl:apply-templates />
 
   <xsl:text>
+\end{sloppypar}
 \end{document}
   </xsl:text>
 
@@ -217,6 +218,9 @@
 \hyphenation{VirtualBox}
 
 \begin{document}
+% bird/2018-05-14: Use sloppypar so we don't push path names and other long words
+%                  thru the right margin.  TODO: Find better solution? microtype?
+\begin{sloppypar}
 % \maketitle
 %\begin{titlepage}
 \thispagestyle{empty}
@@ -673,7 +677,13 @@
     <xsl:text>}</xsl:text>
   </xsl:template>
 
-  <xsl:template match="computeroutput | code | literal">
+  <xsl:template match="computeroutput | code">
+    <xsl:text>\texttt{</xsl:text>
+    <xsl:apply-templates />
+    <xsl:text>}</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="literal | filename">
     <xsl:text>\texttt{</xsl:text>
     <xsl:apply-templates />
     <xsl:text>}</xsl:text>
