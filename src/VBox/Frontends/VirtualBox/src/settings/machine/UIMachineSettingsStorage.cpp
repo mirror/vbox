@@ -316,6 +316,9 @@ UIIconPoolStorageSettings::UIIconPoolStorageSettings()
     m_names.insert(SCSIControllerNormal,     ":/scsi_16px.png");
     m_names.insert(SCSIControllerExpand,     ":/scsi_expand_16px.png");
     m_names.insert(SCSIControllerCollapse,   ":/scsi_collapse_16px.png");
+    m_names.insert(SASControllerNormal,      ":/sata_16px.png");
+    m_names.insert(SASControllerExpand,      ":/sata_expand_16px.png");
+    m_names.insert(SASControllerCollapse,    ":/sata_collapse_16px.png");
     m_names.insert(USBControllerNormal,      ":/usb_16px.png");
     m_names.insert(USBControllerExpand,      ":/usb_expand_16px.png");
     m_names.insert(USBControllerCollapse,    ":/usb_collapse_16px.png");
@@ -398,7 +401,7 @@ AbstractControllerType::AbstractControllerType (KStorageBus aBusType, KStorageCo
                 mPixmaps [i] = (PixmapType)(FloppyControllerNormal + i);
                 break;
             case KStorageBus_SAS:
-                mPixmaps [i] = (PixmapType)(SATAControllerNormal + i);
+                mPixmaps [i] = (PixmapType)(SASControllerNormal + i);
                 break;
             case KStorageBus_USB:
                 mPixmaps [i] = (PixmapType)(USBControllerNormal + i);
