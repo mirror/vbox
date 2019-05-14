@@ -12580,7 +12580,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
             int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
             AssertRCReturn(rc, rc);
             if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
-                rcStrict = IEMExecVmxVmexitInstr(pVCpu, VMX_EXIT_RDTSC, pVmxTransient->cbInstr);
+                rcStrict = IEMExecVmxVmexitInstr(pVCpu, VMX_EXIT_RDTSCP, pVmxTransient->cbInstr);
             else
                 rcStrict = hmR0VmxExitRdtsc(pVCpu, pVmxTransient);
             break;
