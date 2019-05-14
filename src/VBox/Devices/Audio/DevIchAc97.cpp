@@ -1214,7 +1214,8 @@ static int ichac97R3StreamRead(PAC97STATE pThis, PAC97STREAM pSrcStream, PAUDMIX
 
         RTCircBufReleaseReadBlock(pCircBuf, cbWritten);
 
-        if (RT_FAILURE(rc))
+        if (   !cbWritten /* Nothing written? */
+            || RT_FAILURE(rc))
             break;
 
         Assert(cbLeft  >= cbWritten);
@@ -1549,7 +1550,7 @@ static void ichac97R3StreamUpdate(PAC97STATE pThis, PAC97STREAM pStream, bool fI
             if (cbToReadFromStream)
             {
                 /* Read (guest output) data and write it to the stream's sink. */
-                rc2 = ichac97R3StreamRead(pThis, pStream, pSink, cbToReadFromStream, NULL);
+                rc2 = ichac97R3StreamRead(pThis, pStream, pSink, cbToReadFromStream, NULL /* pcbRead */);
                 AssertRC(rc2);
             }
 # ifdef VBOX_WITH_AUDIO_AC97_ASYNC_IO

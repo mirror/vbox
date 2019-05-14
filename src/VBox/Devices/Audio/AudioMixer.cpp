@@ -778,15 +778,14 @@ int AudioMixerSinkCtl(PAUDMIXSINK pSink, AUDMIXSINKCMD enmSinkCmd)
         }
 
         default:
-            rc = VERR_NOT_IMPLEMENTED;
+            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
             break;
     }
 
-#ifdef LOG_ENABLED
     char *pszStatus = dbgAudioMixerSinkStatusToStr(pSink->fStatus);
-    LogFlowFunc(("[%s] enmCmd=%d, fStatus=%s, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pszStatus, rc));
+    LogRel2(("Mixer: Set new status of sink '%s' to %s\n", pSink->pszName, pszStatus));
+    LogFlowFunc(("[%s] enmCmd=%RU32, fStatus=%s, rc=%Rrc\n", pSink->pszName, enmSinkCmd, pszStatus, rc));
     RTStrFree(pszStatus);
-#endif
 
     int rc2 = RTCritSectLeave(&pSink->CritSect);
     AssertRC(rc2);
@@ -2011,10 +2010,8 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
     AssertMsg(pSink->enmDir == AUDMIXSINKDIR_OUTPUT,
               ("%s: Can't write to a sink which is not an output sink\n", pSink->pszName));
 
-    Assert(cbBuf <= AudioMixBufFreeBytes(&pSink->MixBuf));
-
     uint32_t cbWritten = 0;
-    uint32_t cbToWrite = cbBuf;
+    uint32_t cbToWrite = RT_MIN(AudioMixBufFreeBytes(&pSink->MixBuf), cbBuf);
     while (cbToWrite)
     {
         /* First, write the data to the mixer sink's own mixing buffer.
@@ -2031,7 +2028,7 @@ int AudioMixerSinkWrite(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, ui
         cbWritten += cbWrittenChunk;
     }
 
-    Assert(cbWritten == cbBuf);
+    Log3Func(("[%s] cbBuf=%RU32 -> cbWritten=%RU32\n", pSink->pszName, cbBuf, cbWritten));
 
     /* Update the sink's last written time stamp. */
     pSink->tsLastReadWrittenNs = RTTimeNanoTS();
