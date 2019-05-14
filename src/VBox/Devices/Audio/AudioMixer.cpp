@@ -110,9 +110,9 @@ static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream);
 /**
  * Converts a mixer sink status to a string.
  *
- * @returns Stringified mixer sink flags. Must be free'd with RTStrFree().
+ * @returns Stringified mixer sink status flags. Must be free'd with RTStrFree().
  *          "NONE" if no flags set.
- * @param   fFlags              Mixer sink flags to convert.
+ * @param   fStatus             Mixer sink status to convert.
  */
 static char *dbgAudioMixerSinkStatusToStr(AUDMIXSINKSTS fStatus)
 {
