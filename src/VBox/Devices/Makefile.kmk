@@ -1418,7 +1418,11 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
  #
  INSTALLS += VBoxExtPackPuelInsRoms
  VBoxExtPackPuelInsRoms_TEMPLATE = VBoxInsExtPackPuel
- VBoxExtPackPuelInsRoms_SOURCES = PC/PXE/PXE-Intel.rom=>PXE-Intel.rom
+ ifdef PXE_EXPERIMENTAL_BUILD_SETUP
+  VBoxExtPackPuelInsRoms_SOURCES = $(PATH_OUT)/obj/NetBiosBin/NetBiosBin.rom=>PXE-Intel.rom
+ else
+  VBoxExtPackPuelInsRoms_SOURCES = PC/PXE/PXE-Intel.rom=>PXE-Intel.rom
+ endif
 endif # VBOX_WITH_EXTPACK_PUEL
 
 
