@@ -453,14 +453,15 @@ KStorageControllerType AbstractControllerType::firstType() const
 {
     switch (mBusType)
     {
-        case KStorageBus_IDE:    return KStorageControllerType_PIIX3;
-        case KStorageBus_SATA:   return KStorageControllerType_IntelAhci;
-        case KStorageBus_SCSI:   return KStorageControllerType_LsiLogic;
-        case KStorageBus_Floppy: return KStorageControllerType_I82078;
-        case KStorageBus_SAS:    return KStorageControllerType_LsiLogicSas;
-        case KStorageBus_USB:    return KStorageControllerType_USB;
-        case KStorageBus_PCIe:   return KStorageControllerType_NVMe;
-        default:                 AssertFailedReturn(KStorageControllerType_Null);
+        case KStorageBus_IDE:        return KStorageControllerType_PIIX3;
+        case KStorageBus_SATA:       return KStorageControllerType_IntelAhci;
+        case KStorageBus_SCSI:       return KStorageControllerType_LsiLogic;
+        case KStorageBus_Floppy:     return KStorageControllerType_I82078;
+        case KStorageBus_SAS:        return KStorageControllerType_LsiLogicSas;
+        case KStorageBus_USB:        return KStorageControllerType_USB;
+        case KStorageBus_PCIe:       return KStorageControllerType_NVMe;
+        case KStorageBus_VirtioSCSI: return KStorageControllerType_VirtioSCSI;
+        default:                     AssertFailedReturn(KStorageControllerType_Null);
     }
 }
 
@@ -468,32 +469,16 @@ uint AbstractControllerType::typeAmount() const
 {
     switch (mBusType)
     {
-        case KStorageBus_IDE:    return 3;
-        case KStorageBus_SATA:   return 1;
-        case KStorageBus_SCSI:   return 2;
-        case KStorageBus_Floppy: return 1;
-        case KStorageBus_SAS:    return 1;
-        case KStorageBus_USB:    return 1;
-        case KStorageBus_PCIe:   return 1;
-        default:                 AssertFailedReturn(0);
+        case KStorageBus_IDE:        return 3;
+        case KStorageBus_SATA:       return 1;
+        case KStorageBus_SCSI:       return 2;
+        case KStorageBus_Floppy:     return 1;
+        case KStorageBus_SAS:        return 1;
+        case KStorageBus_USB:        return 1;
+        case KStorageBus_PCIe:       return 1;
+        case KStorageBus_VirtioSCSI: return 1;
+        default:                     AssertFailedReturn(0);
     }
-}
-
-
-/* virtio-scsi Controller Type */
-VirtioSCSIStorageControllerType::VirtioSCSIStorageControllerType (KStorageControllerType aSubType)
-    : AbstractControllerType (KStorageBus_VirtioSCSI, aSubType)
-{
-}
-
-KStorageControllerType VirtioSCSIStorageControllerType::first() const
-{
-    return KStorageControllerType_VirtioSCSI;
-}
-
-uint VirtioSCSIStorageControllerType::size() const
-{
-    return 1;
 }
 
 
@@ -659,7 +644,7 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
             mCtrType = new AbstractControllerType(KStorageBus_PCIe, aControllerType);
             break;
         case KStorageBus_VirtioSCSI:
-            mCtrType = new VirtioSCSIStorageControllerType (aControllerType);
+            mCtrType = new AbstractControllerType(KStorageBus_VirtioSCSI, aControllerType);
             break;
 
         default:

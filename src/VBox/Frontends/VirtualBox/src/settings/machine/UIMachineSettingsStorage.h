@@ -167,19 +167,6 @@ private:
     QList<PixmapType> mPixmaps;
 };
 
-/* virtio-scsi Controller Type */
-class SHARED_LIBRARY_STUFF VirtioSCSIStorageControllerType : public AbstractControllerType
-{
-public:
-
-    VirtioSCSIStorageControllerType (KStorageControllerType aSubType);
-
-private:
-
-    KStorageControllerType first() const;
-    uint size() const;
-};
-
 /* Abstract Item */
 class SHARED_LIBRARY_STUFF AbstractItem : public QITreeViewItem
 {
