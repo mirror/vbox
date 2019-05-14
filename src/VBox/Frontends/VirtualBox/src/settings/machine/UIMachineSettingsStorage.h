@@ -152,10 +152,10 @@ public:
 
     DeviceTypeList deviceTypeList() const;
 
-protected:
+private:
 
-    KStorageControllerType first() const;
-    uint size() const;
+    KStorageControllerType firstType() const;
+    uint typeAmount() const;
 
     KStorageBus mBusType;
     KStorageControllerType mCtrType;

@@ -421,7 +421,7 @@ KStorageControllerType AbstractControllerType::ctrType() const
 ControllerTypeList AbstractControllerType::ctrTypes() const
 {
     ControllerTypeList result;
-    for (uint i = first(); i < first() + size(); ++ i)
+    for (uint i = firstType(); i < firstType() + typeAmount(); ++i)
         result << (KStorageControllerType) i;
     return result;
 }
@@ -441,7 +441,7 @@ DeviceTypeList AbstractControllerType::deviceTypeList() const
     return vboxGlobal().virtualBox().GetSystemProperties().GetDeviceTypesForStorageBus (mBusType).toList();
 }
 
-KStorageControllerType AbstractControllerType::first() const
+KStorageControllerType AbstractControllerType::firstType() const
 {
     switch (mBusType)
     {
@@ -456,7 +456,7 @@ KStorageControllerType AbstractControllerType::first() const
     }
 }
 
-uint AbstractControllerType::size() const
+uint AbstractControllerType::typeAmount() const
 {
     switch (mBusType)
     {
