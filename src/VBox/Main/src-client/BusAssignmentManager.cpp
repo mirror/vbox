@@ -71,6 +71,7 @@ static const DeviceAssignmentRule aGenericRules[] =
     {"buslogic",      0, 21, 0,  1},
     {"lsilogicsas",   0, 22, 0,  1},
     {"nvme",          0, 14, 0,  1},
+    {"virtio-scsi",   0, 15, 0,  1},
 
     /* USB controllers */
     {"usb-ohci",      0,  6,  0, 0},
@@ -203,7 +204,7 @@ static const DeviceAssignmentRule aIch9Rules[] =
     {"nic",           2, 30, 0,   0},
     {"nic",           2, 31, 0,   0},
 
-    /* Storage controller #2 (NVMe) */
+    /* Storage controller #2 (NVMe, virtio-scsi) */
     {"nvme",          3,  0, 0,   0},
     {"nvme",          3,  1, 0,   0},
     {"nvme",          3,  2, 0,   0},
@@ -211,6 +212,13 @@ static const DeviceAssignmentRule aIch9Rules[] =
     {"nvme",          3,  4, 0,   0},
     {"nvme",          3,  5, 0,   0},
     {"nvme",          3,  6, 0,   0},
+    {"virtio-scsi",   3,  7, 0,   0},
+    {"virtio-scsi",   3,  8, 0,   0},
+    {"virtio-scsi",   3,  9, 0,   0},
+    {"virtio-scsi",   3, 10, 0,   0},
+    {"virtio-scsi",   3, 11, 0,   0},
+    {"virtio-scsi",   3, 12, 0,   0},
+    {"virtio-scsi",   3, 13, 0,   0},
 
     { NULL,          -1, -1, -1,  0}
 };
@@ -225,7 +233,8 @@ static const DeviceAliasRule aDeviceAliases[] =
     {"lsilogic",    "storage"},
     {"buslogic",    "storage"},
     {"lsilogicsas", "storage"},
-    {"nvme",        "storage"}
+    {"nvme",        "storage"},
+    {"virtio-scsi", "storage"}
 };
 
 struct BusAssignmentManager::State

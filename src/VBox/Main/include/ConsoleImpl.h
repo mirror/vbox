@@ -983,7 +983,9 @@ private:
         cLedUsb     = 8,
         iLedNvme    = iLedUsb + cLedUsb,
         cLedNvme    = 30,
-        cLedStorage = cLedFloppy + cLedIde + cLedSata + cLedScsi + cLedSas + cLedUsb + cLedNvme
+        iLedVirtio  = iLedNvme + cLedNvme,
+        cLedVirtio  = 16,
+        cLedStorage = cLedFloppy + cLedIde + cLedSata + cLedScsi + cLedSas + cLedUsb + cLedNvme + cLedVirtio
     };
     DeviceType_T maStorageDevType[cLedStorage];
     PPDMLED      mapStorageLeds[cLedStorage];

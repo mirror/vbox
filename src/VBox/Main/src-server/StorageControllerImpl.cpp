@@ -95,7 +95,7 @@ HRESULT StorageController::init(Machine *aParent,
 
     ComAssertRet(aParent && !aName.isEmpty(), E_INVALIDARG);
     if (   (aStorageBus <= StorageBus_Null)
-        || (aStorageBus >  StorageBus_PCIe))
+        || (aStorageBus >  StorageBus_VirtioSCSI))
         return setError(E_INVALIDARG,
                         tr("Invalid storage connection type"));
 
@@ -161,6 +161,10 @@ HRESULT StorageController::init(Machine *aParent,
         case StorageBus_PCIe:
             m->bd->ulPortCount = 1;
             m->bd->controllerType = StorageControllerType_NVMe;
+            break;
+        case StorageBus_VirtioSCSI:
+            m->bd->ulPortCount = 1;
+            m->bd->controllerType = StorageControllerType_VirtioSCSI;
             break;
         case StorageBus_Null: break; /* Shut up MSC. */
 #ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
@@ -414,6 +418,12 @@ HRESULT StorageController::setControllerType(StorageControllerType_T aController
                 rc = E_INVALIDARG;
             break;
         }
+        case StorageBus_VirtioSCSI:
+        {
+            if (aControllerType != StorageControllerType_VirtioSCSI)
+                rc = E_INVALIDARG;
+            break;
+        }
         default:
             AssertMsgFailed(("Invalid controller type %d\n", m->bd->storageBus));
             rc = E_INVALIDARG;
@@ -559,6 +569,17 @@ HRESULT StorageController::setPortCount(ULONG aPortCount)
                 return setError(E_INVALIDARG,
                                 tr("Invalid port count: %lu (must be in range [%lu, %lu])"),
                                 aPortCount, 1, 255);
+            break;
+        }
+        case StorageBus_VirtioSCSI:
+        {
+            /*
+             * virtio-scsi supports 256 targets (with 16384 LUNs each).
+             */
+            if (aPortCount < 1 || aPortCount > 256)
+                return setError(E_INVALIDARG,
+                                tr("Invalid port count: %lu (must be in range [%lu, %lu])"),
+                                aPortCount, 1, 256);
             break;
         }
         default:

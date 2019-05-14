@@ -410,7 +410,9 @@ SettingsVersion_T ConfigFileBase::parseVersion(const Utf8Str &strVersion, const 
                 sv = SettingsVersion_v1_16;
             else if (ulMinor == 17)
                 sv = SettingsVersion_v1_17;
-            else if (ulMinor > 17)
+            else if (ulMinor == 18)
+                sv = SettingsVersion_v1_18;
+            else if (ulMinor > 18)
                 sv = SettingsVersion_Future;
         }
         else if (ulMajor > 1)
@@ -1039,6 +1041,10 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.17";
             break;
 
+        case SettingsVersion_v1_18:
+            pcszVersion = "1.18";
+            break;
+
         default:
             // catch human error: the assertion below will trigger in debug
             // or dbgopt builds, so hopefully this will get noticed sooner in
@@ -1061,8 +1067,8 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
                 // for "forgotten settings" this may not be the best choice,
                 // but as it's an omission of someone who changed this file
                 // it's the only generic possibility.
-                pcszVersion = "1.17";
-                m->sv = SettingsVersion_v1_17;
+                pcszVersion = "1.18";
+                m->sv = SettingsVersion_v1_18;
             }
             break;
     }
@@ -5034,6 +5040,11 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
             sctl.storageBus = StorageBus_PCIe;
             sctl.controllerType = StorageControllerType_NVMe;
         }
+        else if (strType == "VirtioSCSI")
+        {
+            sctl.storageBus = StorageBus_VirtioSCSI;
+            sctl.controllerType = StorageControllerType_VirtioSCSI;
+        }
         else
             throw ConfigFileError(this, pelmController, N_("Invalid value '%s' for StorageController/@type attribute"), strType.c_str());
 
@@ -6867,6 +6878,7 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
             case StorageControllerType_LsiLogicSas: pcszType = "LsiLogicSas"; break;
             case StorageControllerType_USB: pcszType = "USB"; break;
             case StorageControllerType_NVMe: pcszType = "NVMe"; break;
+            case StorageControllerType_VirtioSCSI: pcszType = "VirtioSCSI"; break;
             default: /*case StorageControllerType_PIIX3:*/ pcszType = "PIIX3"; break;
         }
         pelmController->setAttribute("type", pcszType);
@@ -7359,6 +7371,23 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
+    if (m->sv < SettingsVersion_v1_18)
+    {
+        // VirtualBox 6.1 adds a virtio-scsi storage controller.
+        for (StorageControllersList::const_iterator it = hardwareMachine.storage.llStorageControllers.begin();
+             it != hardwareMachine.storage.llStorageControllers.end();
+             ++it)
+        {
+            const StorageController &sctl = *it;
+
+            if (sctl.controllerType == StorageControllerType_VirtioSCSI)
+            {
+                m->sv = SettingsVersion_v1_18;
+                return;
+            }
+        }
+    }
+
     if (m->sv < SettingsVersion_v1_17)
     {
         if (machineUserData.enmVMPriority != VMProcPriority_Default)

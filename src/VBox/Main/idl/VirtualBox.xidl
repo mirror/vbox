@@ -601,6 +601,12 @@
           Machine changes: nested hardware virtualization, UART type selection.
       -->
     </const>
+    <const name="v1_18" value="20">
+      <desc>Settings version "1.18", written by VirtualBox 6.1.x.</desc>
+      <!--
+          Machine changes: nested hardware virtualization, UART type selection.
+      -->
+    </const>
 
     <const name="Future" value="99999">
       <desc>Settings version greater than "1.15", written by a future VirtualBox version.</desc>
@@ -21713,7 +21719,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="StorageBus"
-    uuid="21371490-8542-4b5a-a74d-ee9ac2d45a90"
+    uuid="f9510869-7d07-46ba-96a6-6728fbf4adee"
     >
     <desc>
       The bus type of the storage controller (IDE, SATA, SCSI, SAS or Floppy);
@@ -21729,11 +21735,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="SAS"       value="5"/>
     <const name="USB"       value="6"/>
     <const name="PCIe"      value="7"/>
+    <const name="VirtioSCSI" value="8"/>
   </enum>
 
   <enum
     name="StorageControllerType"
-    uuid="9427f309-82e7-468f-9964-abfefc4d3058"
+    uuid="a77d457d-66a3-4368-b24c-293d0f562a9f"
     >
     <desc>
       The exact variant of storage controller hardware presented
@@ -21772,6 +21779,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="NVMe"          value="10">
       <desc>An NVMe storage controller.</desc>
+    </const>
+    <const name="VirtioSCSI"    value="11">
+      <desc>Virtio SCSI storage controller.</desc>
     </const>
   </enum>
 
