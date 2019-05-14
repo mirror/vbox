@@ -303,6 +303,10 @@
           </xsl:variable>
           <xsl:value-of select="$tmp + 1"/>
         </xsl:when>
+        <xsl:when test="self::preface"><xsl:text>0</xsl:text></xsl:when>
+        <xsl:when test="self::chapter"><xsl:text>0</xsl:text></xsl:when>
+        <xsl:when test="self::appendix"><xsl:text>0</xsl:text></xsl:when>
+        <xsl:when test="self::article"><xsl:text>0</xsl:text></xsl:when>
         <xsl:otherwise>
           <xsl:message terminate="yes">get-section-level was called on non-section element: <xsl:value-of select="."/> </xsl:message>
         </xsl:otherwise>
