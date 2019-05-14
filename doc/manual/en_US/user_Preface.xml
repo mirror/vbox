@@ -16,7 +16,7 @@
     and configure virtual machines.
   </para>
 
-  <sect1 id="user-preface-audience">
+  <simplesect id="user-preface-audience">
 
     <title>Audience</title>
 
@@ -27,9 +27,9 @@
       platforms.
     </para>
 
-  </sect1>
+  </simplesect>
 
-  <sect1 id="user-preface-reldocs">
+  <simplesect id="user-preface-reldocs">
 
     <title>Related Documents</title>
 
@@ -38,12 +38,12 @@
     </para>
 
     <para>
-      <ulink url="&otn-doc-tab;">&otn-doc-tab;</ulink>
+      <ulink url="&otn-doc-tab;" />
     </para>
 
-  </sect1>
+  </simplesect>
 
-  <sect1 id="user-preface-convs">
+  <simplesect id="user-preface-convs">
 
     <title>Conventions</title>
 
@@ -79,30 +79,9 @@
 
     </itemizedlist>
 
-  </sect1>
+  </simplesect>
 
-  <sect1 id="user-preface-accessibility-statement">
-
-    <title>Documentation Accessibility</title>
-
-<!-- Oracle accessibility statement -->
-
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-    href="../common/oracle-accessibility-en.xml"
-    xpointer="xpointer(simplesect/title/following-sibling::node())" />
-
-  </sect1>
-
-  <sect1 id="user-preface-support-statement">
-
-    <title>Access to Oracle Support</title>
-
-<!-- Oracle Support statement -->
-
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-    href="../common/oracle-support-en.xml"
-    xpointer="xpointer(simplesect/title/following-sibling::node())" />
-
-  </sect1>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../common/oracle-accessibility-en.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../common/oracle-support-en.xml"/>
 
 </preface>
