@@ -6612,6 +6612,13 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fRdTscP)
         return iemRaiseUndefinedOpcode(pVCpu);
 
+    if (    IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+        && !IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_RDTSCP))
+    {
+        Log(("rdtscp: Not enabled for VMX non-root mode -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pVCpu);
+    }
+
     if (pVCpu->iem.s.uCpl != 0)
     {
         IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
@@ -6623,7 +6630,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtscp)
     }
 
     if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
-        && IEM_VMX_IS_PROCCTLS2_SET(pVCpu, VMX_PROC_CTLS2_RDTSCP))
+        && IEM_VMX_IS_PROCCTLS_SET(pVCpu, VMX_PROC_CTLS_RDTSC_EXIT))
     {
         Log(("rdtscp: Guest intercept -> VM-exit\n"));
         IEM_VMX_VMEXIT_INSTR_RET(pVCpu, VMX_EXIT_RDTSCP, cbInstr);
