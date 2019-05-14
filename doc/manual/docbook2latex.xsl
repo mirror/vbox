@@ -695,6 +695,12 @@
     <xsl:text>}</xsl:text>
   </xsl:template>
 
+  <xsl:template match="lineannotation">
+    <xsl:text>\textit{</xsl:text>
+    <xsl:apply-templates />
+    <xsl:text>}</xsl:text>
+  </xsl:template>
+
   <xsl:template match="ulink">
     <xsl:text>\url{</xsl:text>
     <xsl:apply-templates />
