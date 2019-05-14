@@ -44,9 +44,11 @@ VBoxSharedClipboard_SOURCES.darwin = \
 	darwin-pasteboard.cpp
 ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
  VBoxSharedClipboard_SOURCES += \
+	VBoxSharedClipboardSvc-uri.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardCache.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIList.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIObject.cpp \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIObject.cpp
 endif
 if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo X11
  ifndef VBOX_HEADLESS

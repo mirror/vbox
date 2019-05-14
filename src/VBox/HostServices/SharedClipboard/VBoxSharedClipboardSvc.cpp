@@ -85,6 +85,9 @@
 #include <VBox/vmm/ssm.h>
 
 #include "VBoxClipboard.h"
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# include "VBoxSharedClipboardSvc-uri.h"
+#endif
 
 
 /*********************************************************************************************************************************
@@ -199,14 +202,14 @@ void VBoxSvcClipboardUnlock(void)
 static bool vboxSvcClipboardReturnMsg(VBOXCLIPBOARDCLIENTDATA *pClient, VBOXHGCMSVCPARM paParms[])
 {
     /* Message priority is taken into account. */
-    if (pClient->fMsgQuit)
+    if (pClient->fHostMsgQuit)
     {
         LogFlowFunc(("vboxSvcClipboardReturnMsg: Quit\n"));
         VBoxHGCMParmUInt32Set(&paParms[0], VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT);
         VBoxHGCMParmUInt32Set(&paParms[1], 0);
-        pClient->fMsgQuit = false;
+        pClient->fHostMsgQuit = false;
     }
-    else if (pClient->fMsgReadData)
+    else if (pClient->fHostMsgReadData)
     {
         uint32_t fFormat = 0;
 
@@ -217,20 +220,27 @@ static bool vboxSvcClipboardReturnMsg(VBOXCLIPBOARDCLIENTDATA *pClient, VBOXHGCM
             fFormat = VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
         else if (pClient->u32RequestedFormat & VBOX_SHARED_CLIPBOARD_FMT_HTML)
             fFormat = VBOX_SHARED_CLIPBOARD_FMT_HTML;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+        else if (pClient->u32RequestedFormat & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+            fFormat = VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
+#endif
         else
-            AssertStmt(pClient->u32RequestedFormat == 0, pClient->u32RequestedFormat = 0);
+        {
+            LogRel2(("Clipboard: Unsupported format from guest (0x%x), skipping\n", fFormat));
+            pClient->u32RequestedFormat = 0;
+        }
         pClient->u32RequestedFormat &= ~fFormat;
         VBoxHGCMParmUInt32Set(&paParms[0], VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
         VBoxHGCMParmUInt32Set(&paParms[1], fFormat);
         if (pClient->u32RequestedFormat == 0)
-            pClient->fMsgReadData = false;
+            pClient->fHostMsgReadData = false;
     }
-    else if (pClient->fMsgFormats)
+    else if (pClient->fHostMsgFormats)
     {
         LogFlowFunc(("vboxSvcClipboardReturnMsg: Formats %02X\n", pClient->u32AvailableFormats));
         VBoxHGCMParmUInt32Set(&paParms[0], VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS);
         VBoxHGCMParmUInt32Set(&paParms[1], pClient->u32AvailableFormats);
-        pClient->fMsgFormats = false;
+        pClient->fHostMsgFormats = false;
     }
     else
     {
@@ -254,7 +264,7 @@ void vboxSvcClipboardReportMsg(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT:
             {
                 LogFlowFunc(("Quit\n"));
-                pClient->fMsgQuit = true;
+                pClient->fHostMsgQuit = true;
             } break;
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
             {
@@ -267,7 +277,7 @@ void vboxSvcClipboardReportMsg(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg
 
                 LogFlowFunc(("ReadData %02X\n", u32Formats));
                 pClient->u32RequestedFormat = u32Formats;
-                pClient->fMsgReadData = true;
+                pClient->fHostMsgReadData = true;
             } break;
             case VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS:
             {
@@ -280,7 +290,7 @@ void vboxSvcClipboardReportMsg(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg
 
                 LogFlowFunc(("Formats %02X\n", u32Formats));
                 pClient->u32AvailableFormats = u32Formats;
-                pClient->fMsgFormats = true;
+                pClient->fHostMsgFormats = true;
             } break;
             default:
             {
@@ -682,7 +692,12 @@ static DECLCALLBACK(void) svcCall(void *,
 
         default:
         {
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+            rc = vboxClipboardSvcURIHandler(u32ClientID, pvClient, u32Function, cParms, paParms, tsArrival,
+                                            &fAsynchronousProcessing);
+#else
             rc = VERR_NOT_IMPLEMENTED;
+#endif
         }
     }
 
@@ -771,7 +786,11 @@ static DECLCALLBACK(int) svcHostCall(void *,
         } break;
 
         default:
-            break;
+        {
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+            rc = vboxClipboardSvcURIHostHandler(u32Function, cParms, paParms);
+#endif
+        } break;
     }
 
     LogFlowFunc(("svcHostCall: rc = %Rrc\n", rc));
@@ -785,9 +804,9 @@ static DECLCALLBACK(int) svcHostCall(void *,
 static SSMFIELD const g_aClipboardClientDataFields[] =
 {
     SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, u32ClientID),  /* for validation purposes */
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fMsgQuit),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fMsgReadData),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fMsgFormats),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fHostMsgQuit),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fHostMsgReadData),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fHostMsgFormats),
     SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, u32RequestedFormat),
     SSMFIELD_ENTRY_TERM()
 };
@@ -842,9 +861,9 @@ typedef struct CLIPSAVEDSTATEDATA
 
     bool fAsync: 1; /* Guest is waiting for a message. */
 
-    bool fMsgQuit: 1;
-    bool fMsgReadData: 1;
-    bool fMsgFormats: 1;
+    bool fHostMsgQuit: 1;
+    bool fHostMsgReadData: 1;
+    bool fHostMsgFormats: 1;
 
     struct
     {
@@ -917,9 +936,9 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
                               &s_aClipSavedStateDataFields30[0], NULL);
         AssertRCReturn(rc, rc);
 
-        pClient->fMsgQuit           = savedState.fMsgQuit;
-        pClient->fMsgReadData       = savedState.fMsgReadData;
-        pClient->fMsgFormats        = savedState.fMsgFormats;
+        pClient->fHostMsgQuit       = savedState.fHostMsgQuit;
+        pClient->fHostMsgReadData   = savedState.fHostMsgReadData;
+        pClient->fHostMsgFormats    = savedState.fHostMsgFormats;
         pClient->u32RequestedFormat = savedState.u32RequestedFormat;
     }
     else

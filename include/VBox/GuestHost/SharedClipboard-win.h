@@ -36,6 +36,7 @@
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 #  include <iprt/cpp/ministring.h> /* For RTCString. */
+#  include <iprt/win/shlobj.h> /* For DROPFILES and friends. */
 #  include <oleidl.h>
 # endif
 
@@ -48,9 +49,6 @@
 /** See: https://docs.microsoft.com/en-us/windows/desktop/dataxchg/html-clipboard-format
  *       Do *not* change the name, as this will break compatbility with other (legacy) applications! */
 #define VBOX_CLIPBOARD_WIN_REGFMT_HTML       "HTML Format"
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-#  define VBOX_CLIPBOARD_WIN_REGFMT_URI_LIST "VBoxURIList"
-#endif
 
 /** Default timeout (in ms) for passing down messages down the clipboard chain. */
 #define VBOX_CLIPBOARD_CBCHAIN_TIMEOUT_MS   5000
@@ -126,12 +124,24 @@ bool VBoxClipboardWinIsNewAPI(PVBOXCLIPBOARDWINAPINEW pAPI);
 int VBoxClipboardWinAddToCBChain(PVBOXCLIPBOARDWINCTX pCtx);
 int VBoxClipboardWinRemoveFromCBChain(PVBOXCLIPBOARDWINCTX pCtx);
 VOID CALLBACK VBoxClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult);
+
 VBOXCLIPBOARDFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat);
 int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, PVBOXCLIPBOARDFORMAT pfFormats);
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, void **ppvData, size_t *pcbData);
+#endif
+
+int VBoxClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue);
+bool VBoxClipboardWinIsCFHTML(const char *pszSource);
+int VBoxClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
+int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
+
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 class SharedClipboardURIList;
+#  ifndef FILEGROUPDESCRIPTOR
 class FILEGROUPDESCRIPTOR;
+#  endif
 
 class VBoxClipboardWinDataObject : public IDataObject //, public IDataObjectAsyncCapability
 {

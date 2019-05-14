@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Shared Clipboard - Directory handling.
+ * Shared Clipboard - Cache handling.
  */
 
 /*
@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/GuestHost/SharedClipboard-uri.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/dir.h>
 #include <iprt/err.h>
@@ -32,26 +33,82 @@
 
 #include <VBox/log.h>
 
-SharedClipboardDroppedFiles::SharedClipboardDroppedFiles(void)
-    : m_fOpen(0)
-    , m_hDir(NULL) { }
-
-SharedClipboardDroppedFiles::SharedClipboardDroppedFiles(const char *pszPath,
-                                                         SHAREDCLIPBOARDURIDROPPEDFILEFLAGS fFlags /* = SHAREDCLIPBOARDURIDROPPEDFILE_FLAGS_NONE */)
-    : m_fOpen(0)
+SharedClipboardCache::SharedClipboardCache(void)
+    : m_cRefs(0)
+    , m_fOpen(0)
     , m_hDir(NULL)
 {
-    OpenEx(pszPath, fFlags);
+    int rc = initInternal();
+    if (RT_FAILURE(rc))
+        throw rc;
 }
 
-SharedClipboardDroppedFiles::~SharedClipboardDroppedFiles(void)
+SharedClipboardCache::SharedClipboardCache(const char *pszPath,
+                                           SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDCLIPBOARDCACHE_FLAGS_NONE */)
+    : m_cRefs(0)
+    , m_fOpen(0)
+    , m_hDir(NULL)
+{
+    int rc = initInternal();
+    if (RT_SUCCESS(rc))
+        rc = OpenEx(pszPath, fFlags);
+
+    if (RT_FAILURE(rc))
+        throw rc;
+}
+
+SharedClipboardCache::~SharedClipboardCache(void)
 {
     /* Only make sure to not leak any handles and stuff, don't delete any
      * directories / files here. */
     closeInternal();
+
+    int rc = destroyInternal();
+    AssertRC(rc);
 }
 
-int SharedClipboardDroppedFiles::AddFile(const char *pszFile)
+/**
+ * Adds a reference to a Shared Clipboard cache.
+ *
+ * @returns New reference count.
+ */
+uint16_t SharedClipboardCache::AddRef(void)
+{
+    return ASMAtomicIncU16(&m_cRefs);
+}
+
+/**
+ * Removes a reference from a Shared Clipboard cache.
+ *
+ * @returns New reference count.
+ */
+uint16_t SharedClipboardCache::Release(void)
+{
+    Assert(m_cRefs);
+    return ASMAtomicDecU16(&m_cRefs);
+}
+
+/**
+ * Locks a Shared Clipboard cache.
+ *
+ * @returns VBox status code.
+ */
+int SharedClipboardCache::Lock(void)
+{
+    return RTCritSectEnter(&m_CritSect);
+}
+
+/**
+ * Unlocks a Shared Clipboard cache.
+ *
+ * @returns VBox status code.
+ */
+int SharedClipboardCache::Unlock(void)
+{
+    return RTCritSectLeave(&m_CritSect);
+}
+
+int SharedClipboardCache::AddFile(const char *pszFile)
 {
     AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
 
@@ -60,7 +117,7 @@ int SharedClipboardDroppedFiles::AddFile(const char *pszFile)
     return VINF_SUCCESS;
 }
 
-int SharedClipboardDroppedFiles::AddDir(const char *pszDir)
+int SharedClipboardCache::AddDir(const char *pszDir)
 {
     AssertPtrReturn(pszDir, VERR_INVALID_POINTER);
 
@@ -69,7 +126,17 @@ int SharedClipboardDroppedFiles::AddDir(const char *pszDir)
     return VINF_SUCCESS;
 }
 
-int SharedClipboardDroppedFiles::closeInternal(void)
+int SharedClipboardCache::initInternal(void)
+{
+    return RTCritSectInit(&m_CritSect);
+}
+
+int SharedClipboardCache::destroyInternal(void)
+{
+    return RTCritSectDelete(&m_CritSect);
+}
+
+int SharedClipboardCache::closeInternal(void)
 {
     int rc;
     if (this->m_hDir != NULL)
@@ -85,22 +152,22 @@ int SharedClipboardDroppedFiles::closeInternal(void)
     return rc;
 }
 
-int SharedClipboardDroppedFiles::Close(void)
+int SharedClipboardCache::Close(void)
 {
     return closeInternal();
 }
 
-const char *SharedClipboardDroppedFiles::GetDirAbs(void) const
+const char *SharedClipboardCache::GetDirAbs(void) const
 {
     return this->m_strPathAbs.c_str();
 }
 
-bool SharedClipboardDroppedFiles::IsOpen(void) const
+bool SharedClipboardCache::IsOpen(void) const
 {
     return (this->m_hDir != NULL);
 }
 
-int SharedClipboardDroppedFiles::OpenEx(const char *pszPath, SHAREDCLIPBOARDURIDROPPEDFILEFLAGS fFlags /* = SHAREDCLIPBOARDURIDROPPEDFILE_FLAGS_NONE */)
+int SharedClipboardCache::OpenEx(const char *pszPath, SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDCLIPBOARDCACHE_FLAGS_NONE */)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
@@ -167,7 +234,7 @@ int SharedClipboardDroppedFiles::OpenEx(const char *pszPath, SHAREDCLIPBOARDURID
     return rc;
 }
 
-int SharedClipboardDroppedFiles::OpenTemp(SHAREDCLIBOARDURIDROPPEDFILEFLAGS fFlags /* = SHAREDCLIPBOARDURIDROPPEDFILE_FLAGS_NONE */)
+int SharedClipboardCache::OpenTemp(SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDCLIPBOARDCACHE_FLAGS_NONE */)
 {
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
 
@@ -184,7 +251,7 @@ int SharedClipboardDroppedFiles::OpenTemp(SHAREDCLIBOARDURIDROPPEDFILEFLAGS fFla
     return rc;
 }
 
-int SharedClipboardDroppedFiles::Reset(bool fRemoveDropDir)
+int SharedClipboardCache::Reset(bool fRemoveDropDir)
 {
     int rc = closeInternal();
     if (RT_SUCCESS(rc))
@@ -204,7 +271,7 @@ int SharedClipboardDroppedFiles::Reset(bool fRemoveDropDir)
     return rc;
 }
 
-int SharedClipboardDroppedFiles::Reopen(void)
+int SharedClipboardCache::Reopen(void)
 {
     if (this->m_strPathAbs.isEmpty())
         return VERR_NOT_FOUND;
@@ -212,7 +279,7 @@ int SharedClipboardDroppedFiles::Reopen(void)
     return OpenEx(this->m_strPathAbs.c_str(), this->m_fOpen);
 }
 
-int SharedClipboardDroppedFiles::Rollback(void)
+int SharedClipboardCache::Rollback(void)
 {
     if (this->m_strPathAbs.isEmpty())
         return VINF_SUCCESS;

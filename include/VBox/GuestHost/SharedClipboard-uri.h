@@ -31,42 +31,49 @@
 #endif
 
 #include <iprt/assert.h>
+#include <iprt/critsect.h>
 #include <iprt/fs.h>
 
 #include <iprt/cpp/list.h>
 #include <iprt/cpp/ministring.h>
 
-/** SharedClipboardDroppedFiles flags. */
-typedef uint32_t SHAREDCLIPBOARDDROPPEDFILEFLAGS;
+/** SharedClipboardCache flags. */
+typedef uint32_t SHAREDCLIPBOARDCACHEFLAGS;
 
 /** No flags specified. */
-#define SHAREDCLIPBOARDDROPPEDFILE_FLAGS_NONE                   0
+#define SHAREDCLIPBOARDCACHE_FLAGS_NONE     0
 
 /**
- * Class for maintaining a "dropped files" directory
+ * Class for maintaining a Shared Clipboard cache
  * on the host or guest. This will contain all received files & directories
- * for a single Shared Clipboard "paste" operation.
+ * for a single Shared Clipboard operation.
  *
  * In case of a failed Shared Clipboard operation this class can also
  * perform a gentle rollback if required.
  */
-class SharedClipboardDroppedFiles
+class SharedClipboardCache
 {
 
 public:
 
-    SharedClipboardDroppedFiles(void);
-    SharedClipboardDroppedFiles(const char *pszPath, SHAREDCLIPBOARDDROPPEDFILEFLAGS fFlags = SHAREDCLIPBOARDDROPPEDFILE_FLAGS_NONE);
-    virtual ~SharedClipboardDroppedFiles(void);
+    SharedClipboardCache(void);
+    SharedClipboardCache(const char *pszPath, SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
+    virtual ~SharedClipboardCache(void);
 
 public:
+
+    uint16_t AddRef(void);
+    uint16_t Release(void);
+
+    int Lock(void);
+    int Unlock(void);
 
     int AddFile(const char *pszFile);
     int AddDir(const char *pszDir);
     int Close(void);
     bool IsOpen(void) const;
-    int OpenEx(const char *pszPath, SHAREDCLIPBOARDDROPPEDFILEFLAGS fFlags = SHAREDCLIPBOARDDROPPEDFILE_FLAGS_NONE);
-    int OpenTemp(SHAREDCLIPBOARDDROPPEDFILEFLAGS fFlags = SHAREDCLIPBOARDDROPPEDFILE_FLAGS_NONE);
+    int OpenEx(const char *pszPath, SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
+    int OpenTemp(SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
     const char *GetDirAbs(void) const;
     int Reopen(void);
     int Reset(bool fDeleteContent);
@@ -74,10 +81,16 @@ public:
 
 protected:
 
+    int initInternal(void);
+    int destroyInternal(void);
     int closeInternal(void);
 
 protected:
 
+    /** Number of references to this instance. */
+    volatile uint16_t            m_cRefs;
+    /** Critical section for serializing access. */
+    RTCRITSECT                   m_CritSect;
     /** Open flags. */
     uint32_t                     m_fOpen;
     /** Directory handle for drop directory. */
@@ -90,7 +103,7 @@ protected:
     RTCList<RTCString>           m_lstFiles;
 };
 
-int SharedClipboardSanitizeFilename(char *pszPath, size_t cbPath);
+int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath);
 int SharedClipboardPathSanitize(char *pszPath, size_t cbPath);
 
 /** SharedClipboardURIObject flags. */

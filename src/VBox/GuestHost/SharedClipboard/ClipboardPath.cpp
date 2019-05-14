@@ -63,10 +63,18 @@ int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath)
     return rc;
 }
 
+/**
+ * Sanitizes a given path regarding invalid / unhandled characters.
+ * Currently not implemented.
+ *
+ * @returns VBox status code.
+ * @param   pszPath             Path to sanitize. UTF-8.
+ * @param   cbPath              Size (in bytes) of the path to sanitize.
+ */
 int SharedClipboardPathSanitize(char *pszPath, size_t cbPath)
 {
     /** @todo */
-    RT_NOREF2(pszPath, cbPath);
+    RT_NOREF(pszPath, cbPath);
     return VINF_SUCCESS;
 }
 
