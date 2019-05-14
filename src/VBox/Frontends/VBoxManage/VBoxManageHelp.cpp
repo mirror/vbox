@@ -928,10 +928,10 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
         RTStrmPrintf(pStrm,
                            "%s storagectl %s      <uuid|vmname>\n"
                      "                            --name <name>\n"
-                     "                            [--add ide|sata|scsi|floppy|sas|usb|pcie]\n"
+                     "                            [--add ide|sata|scsi|floppy|sas|usb|pcie|virtio]\n"
                      "                            [--controller LSILogic|LSILogicSAS|BusLogic|\n"
                      "                                          IntelAHCI|PIIX3|PIIX4|ICH6|I82078|\n"
-                     "                            [             USB|NVMe]\n"
+                     "                            [             USB|NVMe|VirtIO]\n"
                      "                            [--portcount <1-n>]\n"
                      "                            [--hostiocache on|off]\n"
                      "                            [--bootable on|off]\n"

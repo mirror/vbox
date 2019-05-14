@@ -699,6 +699,14 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf("Maximum NVMe Port count:         %u\n", ulValue);
     systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_PCIe, &ulValue);
     RTPrintf("Maximum Devices per NVMe Port:   %u\n", ulValue);
+    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_VirtioSCSI, &ulValue);
+    RTPrintf("Maximum virtio-scsi PIIX3 Controllers:  %u\n", ulValue);
+    systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_VirtioSCSI, &ulValue);
+    RTPrintf("Maximum virtio-scsi ICH9 Controllers:   %u\n", ulValue);
+    systemProperties->GetMaxPortCountForStorageBus(StorageBus_VirtioSCSI, &ulValue);
+    RTPrintf("Maximum virtio-scsi Port count:         %u\n", ulValue);
+    systemProperties->GetMaxDevicesPerPortForStorageBus(StorageBus_VirtioSCSI, &ulValue);
+    RTPrintf("Maximum Devices per virtio-scsi Port:   %u\n", ulValue);
     systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_PIIX3, StorageBus_Floppy, &ulValue);
     RTPrintf("Maximum PIIX3 Floppy Controllers:%u\n", ulValue);
     systemProperties->GetMaxInstancesOfStorageBus(ChipsetType_ICH9, StorageBus_Floppy, &ulValue);
