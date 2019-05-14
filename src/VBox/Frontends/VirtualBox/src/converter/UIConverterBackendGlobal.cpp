@@ -404,6 +404,38 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
             result.device = iDevice;
             break;
         }
+        case 9:
+        {
+            KStorageBus bus = KStorageBus_PCIe;
+            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus);
+            LONG iPort = regExp.cap(1).toInt();
+            LONG iDevice = 0;
+            if (iPort < 0 || iPort > iMaxPort)
+            {
+                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
+                break;
+            }
+            result.bus = bus;
+            result.port = iPort;
+            result.device = iDevice;
+            break;
+        }
+        case 10:
+        {
+            KStorageBus bus = KStorageBus_VirtioSCSI;
+            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus);
+            LONG iPort = regExp.cap(1).toInt();
+            LONG iDevice = 0;
+            if (iPort < 0 || iPort > iMaxPort)
+            {
+                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
+                break;
+            }
+            result.bus = bus;
+            result.port = iPort;
+            result.device = iDevice;
+            break;
+        }
         default:
         {
             AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
