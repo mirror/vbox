@@ -166,17 +166,17 @@ UITextTable UIDetailsGenerator::generateMachineInformationSystem(CMachine &comMa
             case KFirmwareType_EFI32:
             case KFirmwareType_EFI64:
             case KFirmwareType_EFIDUAL:
-                {
-                    table << UITextTableLine(QApplication::translate("UIDetails", "EFI", "details (system)"),
-                                             QApplication::translate("UIDetails", "Enabled", "details (system/EFI)"));
-                    break;
-                }
+            {
+                table << UITextTableLine(QApplication::translate("UIDetails", "EFI", "details (system)"),
+                                         QApplication::translate("UIDetails", "Enabled", "details (system/EFI)"));
+                break;
+            }
             default:
-                {
-                    // For NLS purpose:
-                    QApplication::translate("UIDetails", "Disabled", "details (system/EFI)");
-                    break;
-                }
+            {
+                // For NLS purpose:
+                QApplication::translate("UIDetails", "Disabled", "details (system/EFI)");
+                break;
+            }
         }
     }
 
@@ -517,52 +517,52 @@ UITextTable UIDetailsGenerator::generateMachineInformationNetwork(CMachine &comM
         switch (enmType)
         {
             case KNetworkAttachmentType_Bridged:
-                {
-                    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter)
-                        strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Bridged Adapter, %1", "details (network)")
-                                                                      .arg(comAdapter.GetBridgedInterface()));
-                    break;
-                }
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter)
+                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Bridged Adapter, %1", "details (network)")
+                                                                  .arg(comAdapter.GetBridgedInterface()));
+                break;
+            }
             case KNetworkAttachmentType_Internal:
-                {
-                    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork)
-                        strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Internal Network, '%1'", "details (network)")
-                                                                      .arg(comAdapter.GetInternalNetwork()));
-                    break;
-                }
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork)
+                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Internal Network, '%1'", "details (network)")
+                                                                  .arg(comAdapter.GetInternalNetwork()));
+                break;
+            }
             case KNetworkAttachmentType_HostOnly:
-                {
-                    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter)
-                        strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Host-only Adapter, '%1'", "details (network)")
-                                                                      .arg(comAdapter.GetHostOnlyInterface()));
-                    break;
-                }
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter)
+                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Host-only Adapter, '%1'", "details (network)")
+                                                                  .arg(comAdapter.GetHostOnlyInterface()));
+                break;
+            }
             case KNetworkAttachmentType_Generic:
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver)
                 {
-                    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver)
-                    {
-                        const QString strGenericDriverProperties(summarizeGenericProperties(comAdapter));
-                        strAttachmentType = strGenericDriverProperties.isNull() ?
-                            strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1'", "details (network)")
-                                                      .arg(comAdapter.GetGenericDriver())) :
-                            strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1' { %2 }", "details (network)")
-                                                      .arg(comAdapter.GetGenericDriver(), strGenericDriverProperties));
-                    }
-                    break;
+                    const QString strGenericDriverProperties(summarizeGenericProperties(comAdapter));
+                    strAttachmentType = strGenericDriverProperties.isNull() ?
+                        strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1'", "details (network)")
+                                                  .arg(comAdapter.GetGenericDriver())) :
+                        strAttachmentTemplate.arg(QApplication::translate("UIDetails", "Generic Driver, '%1' { %2 }", "details (network)")
+                                                  .arg(comAdapter.GetGenericDriver(), strGenericDriverProperties));
                 }
+                break;
+            }
             case KNetworkAttachmentType_NATNetwork:
-                {
-                    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT)
-                        strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "NAT Network, '%1'", "details (network)")
-                                                                      .arg(comAdapter.GetNATNetwork()));
-                    break;
-                }
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT)
+                    strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "NAT Network, '%1'", "details (network)")
+                                                                  .arg(comAdapter.GetNATNetwork()));
+                break;
+            }
             default:
-                {
-                    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached)
-                        strAttachmentType = strAttachmentTemplate.arg(gpConverter->toString(enmType));
-                    break;
-                }
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NotAttached)
+                    strAttachmentType = strAttachmentTemplate.arg(gpConverter->toString(enmType));
+                break;
+            }
         }
         if (!strAttachmentType.isNull())
             table << UITextTableLine(QApplication::translate("UIDetails", "Adapter %1", "details (network)").arg(comAdapter.GetSlot() + 1), strAttachmentType);
@@ -604,35 +604,35 @@ UITextTable UIDetailsGenerator::generateMachineInformationSerial(CMachine &comMa
         switch (enmMode)
         {
             case KPortMode_HostPipe:
-                {
-                    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe)
-                        strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
-                    break;
-                }
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostPipe)
+                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                break;
+            }
             case KPortMode_HostDevice:
-                {
-                    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice)
-                        strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
-                    break;
-                }
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_HostDevice)
+                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                break;
+            }
             case KPortMode_RawFile:
-                {
-                    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile)
-                        strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
-                    break;
-                }
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_RawFile)
+                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                break;
+            }
             case KPortMode_TCP:
-                {
-                    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP)
-                        strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
-                    break;
-                }
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_TCP)
+                    strModeType = strModeTemplate + QString("%1 (%2)").arg(gpConverter->toString(enmMode)).arg(QDir::toNativeSeparators(comPort.GetPath()));
+                break;
+            }
             default:
-                {
-                    if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected)
-                        strModeType = strModeTemplate + gpConverter->toString(enmMode);
-                    break;
-                }
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeSerial_Disconnected)
+                    strModeType = strModeTemplate + gpConverter->toString(enmMode);
+                break;
+            }
         }
         if (!strModeType.isNull())
             table << UITextTableLine(QApplication::translate("UIDetails", "Port %1", "details (serial)").arg(comPort.GetSlot() + 1), strModeType);
