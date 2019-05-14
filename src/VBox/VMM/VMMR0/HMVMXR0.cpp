@@ -12595,8 +12595,45 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_MONITOR:
         case VMX_EXIT_TASK_SWITCH:
         case VMX_EXIT_PREEMPT_TIMER:
+
         case VMX_EXIT_RDMSR:
+        {
+            uint32_t fMsrpm;
+            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
+                fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
+            else
+                fMsrpm = VMXMSRPM_EXIT_RD;
+
+            if (fMsrpm & VMXMSRPM_EXIT_RD)
+            {
+                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                AssertRCReturn(rc, rc);
+                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
+            }
+            else
+                rcStrict = hmR0VmxExitRdmsr(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_WRMSR:
+        {
+            uint32_t fMsrpm;
+            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
+                fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
+            else
+                fMsrpm = VMXMSRPM_EXIT_WR;
+
+            if (fMsrpm & VMXMSRPM_EXIT_WR)
+            {
+                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                AssertRCReturn(rc, rc);
+                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
+            }
+            else
+                rcStrict = hmR0VmxExitWrmsr(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_VMCALL:
         case VMX_EXIT_MOV_DRX:
         case VMX_EXIT_HLT:
