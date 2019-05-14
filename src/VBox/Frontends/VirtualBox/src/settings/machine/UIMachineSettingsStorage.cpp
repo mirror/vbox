@@ -2824,7 +2824,9 @@ void UIMachineSettingsStorage::sltGetInformation()
             case AbstractItem::Type_ControllerItem:
             {
                 /* Getting Controller Name: */
-                mLeName->setText(m_pModelStorage->data(index, StorageModel::R_CtrName).toString());
+                const QString strCtrName = m_pModelStorage->data(index, StorageModel::R_CtrName).toString();
+                if (mLeName->text() != strCtrName)
+                    mLeName->setText(strCtrName);
 
                 /* Getting Controller Sub type: */
                 mCbType->clear();
