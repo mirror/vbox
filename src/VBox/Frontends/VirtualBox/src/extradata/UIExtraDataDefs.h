@@ -701,6 +701,7 @@ public:
         DetailsElementOptionTypeNetwork_InternalNetwork = RT_BIT(3),
         DetailsElementOptionTypeNetwork_HostOnlyAdapter = RT_BIT(4),
         DetailsElementOptionTypeNetwork_GenericDriver   = RT_BIT(5),
+        DetailsElementOptionTypeNetwork_NATNetwork      = RT_BIT(6),
         DetailsElementOptionTypeNetwork_Default         = 0xFFFF
     };
     Q_ENUM(DetailsElementOptionTypeNetwork);

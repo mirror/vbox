@@ -516,6 +516,12 @@ UITextTable UIDetailsGenerator::generateMachineInformationNetwork(CMachine &comM
         QString strAttachmentType;
         switch (enmType)
         {
+            case KNetworkAttachmentType_NAT:
+            {
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT)
+                    strAttachmentType = strAttachmentTemplate.arg(gpConverter->toString(enmType));
+                break;
+            }
             case KNetworkAttachmentType_Bridged:
             {
                 if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter)
@@ -552,7 +558,7 @@ UITextTable UIDetailsGenerator::generateMachineInformationNetwork(CMachine &comM
             }
             case KNetworkAttachmentType_NATNetwork:
             {
-                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT)
+                if (fOptions & UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork)
                     strAttachmentType = strAttachmentTemplate.arg(QApplication::translate("UIDetails", "NAT Network, '%1'", "details (network)")
                                                                   .arg(comAdapter.GetNATNetwork()));
                 break;
