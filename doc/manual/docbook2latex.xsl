@@ -282,6 +282,34 @@
     </xsl:choose>
   </xsl:template>
 
+  <!-- Determins the section depth, returning a number 1,2,3,4,5,6,7,... -->
+  <xsl:template name="get-section-level">
+    <xsl:param name="a_Node" select=".."/>
+    <xsl:for-each select="$a_Node"> <!-- makes it current -->
+      <xsl:choose>
+        <xsl:when test="self::sect1"><xsl:text>1</xsl:text></xsl:when>
+        <xsl:when test="self::sect2"><xsl:text>2</xsl:text></xsl:when>
+        <xsl:when test="self::sect3"><xsl:text>3</xsl:text></xsl:when>
+        <xsl:when test="self::sect4"><xsl:text>4</xsl:text></xsl:when>
+        <xsl:when test="self::sect5"><xsl:text>5</xsl:text></xsl:when>
+        <xsl:when test="self::section">
+          <xsl:value-of select="count(ancestor::section) + 1"/>
+        </xsl:when>
+        <xsl:when test="self::simplesect">
+          <xsl:variable name="tmp">
+            <xsl:call-template name="get-section-level">
+              <xsl:with-param name="a_Node" select="parent::*"/>
+            </xsl:call-template>
+          </xsl:variable>
+          <xsl:value-of select="$tmp + 1"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:message terminate="yes">get-section-level was called on non-section element: <xsl:value-of select="."/> </xsl:message>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
+  </xsl:template>
+
   <!--
     Inserts \hypertarget{@id} that can be referenced via the /A "nameddest=@id"
     command line or #nameddest=@id URL parameter.
@@ -400,6 +428,38 @@
           <xsl:with-param name="texcmd">\section*</xsl:with-param>
         </xsl:call-template>
       </xsl:when>
+
+      <xsl:when test="parent::simplesect">
+        <xsl:if test="../@role">
+          <xsl:message terminate="yes">Role not allowed with simplesect: <xsl:value-of select="../@role"/></xsl:message>
+        </xsl:if>
+        <xsl:variable name="level">
+          <xsl:call-template name="get-section-level">
+            <xsl:with-param name="a_Node" select=".."/>
+          </xsl:call-template>
+        </xsl:variable>
+        <xsl:choose>
+          <xsl:when test="$level = 1">
+            <xsl:call-template name="title-wrapper"><xsl:with-param name="texcmd">\section*</xsl:with-param></xsl:call-template>
+          </xsl:when>
+          <xsl:when test="$level = 2">
+            <xsl:call-template name="title-wrapper"><xsl:with-param name="texcmd">\subsection*</xsl:with-param></xsl:call-template>
+          </xsl:when>
+          <xsl:when test="$level = 3">
+            <xsl:call-template name="title-wrapper"><xsl:with-param name="texcmd">\subsubsection*</xsl:with-param></xsl:call-template>
+          </xsl:when>
+          <xsl:when test="$level = 4">
+            <xsl:call-template name="title-wrapper"><xsl:with-param name="texcmd">\paragraph*</xsl:with-param></xsl:call-template>
+          </xsl:when>
+          <xsl:when test="$level = 5">
+            <xsl:call-template name="title-wrapper"><xsl:with-param name="texcmd">\subparagraph*</xsl:with-param></xsl:call-template>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:message terminate="yes">Unsupported simplesect/title depth: <xsl:value-of select="$level"/></xsl:message>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:when>
+
     </xsl:choose>
     <xsl:if test="$refid">
       <xsl:value-of select="concat('&#x0a;\label{', $refid, '}')" />
