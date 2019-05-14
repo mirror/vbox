@@ -111,6 +111,8 @@ enum PixmapType
     SATAControllerAddDis,
     SCSIControllerAddEn,
     SCSIControllerAddDis,
+    SASControllerAddEn,
+    SASControllerAddDis,
     USBControllerAddEn,
     USBControllerAddDis,
     NVMeControllerAddEn,

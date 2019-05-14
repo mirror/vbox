@@ -338,6 +338,8 @@ UIIconPoolStorageSettings::UIIconPoolStorageSettings()
     m_names.insert(SATAControllerAddDis,     ":/sata_add_disabled_16px.png");
     m_names.insert(SCSIControllerAddEn,      ":/scsi_add_16px.png");
     m_names.insert(SCSIControllerAddDis,     ":/scsi_add_disabled_16px.png");
+    m_names.insert(SASControllerAddEn,       ":/sata_add_16px.png");
+    m_names.insert(SASControllerAddDis,      ":/sata_add_disabled_16px.png");
     m_names.insert(USBControllerAddEn,       ":/usb_add_16px.png");
     m_names.insert(USBControllerAddDis,      ":/usb_add_disabled_16px.png");
     m_names.insert(NVMeControllerAddEn,      ":/ide_add_16px.png");
@@ -3520,7 +3522,7 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
         AssertPtrReturnVoid(m_pActionAddControllerSAS);
         {
             /* Configure action: */
-            m_pActionAddControllerSAS->setIcon(iconPool()->icon(SATAControllerAddEn, SATAControllerAddDis));
+            m_pActionAddControllerSAS->setIcon(iconPool()->icon(SASControllerAddEn, SASControllerAddDis));
         }
 
         /* Create 'Add USB Controller' action: */
