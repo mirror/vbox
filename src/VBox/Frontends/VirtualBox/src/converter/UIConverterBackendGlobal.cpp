@@ -272,166 +272,99 @@ template<> QString toString(const StorageSlot &storageSlot)
 /* StorageSlot <= QString: */
 template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
 {
-    QHash<int, QString> list;
-    list[0] = QApplication::translate("VBoxGlobal", "IDE Primary Master", "StorageSlot");
-    list[1] = QApplication::translate("VBoxGlobal", "IDE Primary Slave", "StorageSlot");
-    list[2] = QApplication::translate("VBoxGlobal", "IDE Secondary Master", "StorageSlot");
-    list[3] = QApplication::translate("VBoxGlobal", "IDE Secondary Slave", "StorageSlot");
-    list[4] = QApplication::translate("VBoxGlobal", "SATA Port %1", "StorageSlot");
-    list[5] = QApplication::translate("VBoxGlobal", "SCSI Port %1", "StorageSlot");
-    list[6] = QApplication::translate("VBoxGlobal", "SAS Port %1", "StorageSlot");
-    list[7] = QApplication::translate("VBoxGlobal", "Floppy Device %1", "StorageSlot");
-    list[8] = QApplication::translate("VBoxGlobal", "USB Port %1", "StorageSlot");
-    list[9] = QApplication::translate("VBoxGlobal", "NVMe Port %1", "StorageSlot");
-    list[10] = QApplication::translate("VBoxGlobal", "virtio-scsi Port %1", "StorageSlot");
-    int index = -1;
+    /* Prepare a hash of known port templates: */
+    QHash<int, QString> templates;
+    templates[0] = QApplication::translate("VBoxGlobal", "IDE Primary Master", "StorageSlot");
+    templates[1] = QApplication::translate("VBoxGlobal", "IDE Primary Slave", "StorageSlot");
+    templates[2] = QApplication::translate("VBoxGlobal", "IDE Secondary Master", "StorageSlot");
+    templates[3] = QApplication::translate("VBoxGlobal", "IDE Secondary Slave", "StorageSlot");
+    templates[4] = QApplication::translate("VBoxGlobal", "SATA Port %1", "StorageSlot");
+    templates[5] = QApplication::translate("VBoxGlobal", "SCSI Port %1", "StorageSlot");
+    templates[6] = QApplication::translate("VBoxGlobal", "SAS Port %1", "StorageSlot");
+    templates[7] = QApplication::translate("VBoxGlobal", "Floppy Device %1", "StorageSlot");
+    templates[8] = QApplication::translate("VBoxGlobal", "USB Port %1", "StorageSlot");
+    templates[9] = QApplication::translate("VBoxGlobal", "NVMe Port %1", "StorageSlot");
+    templates[10] = QApplication::translate("VBoxGlobal", "virtio-scsi Port %1", "StorageSlot");
+
+    /* Search for a template index strStorageSlot corresponds to: */
+    int iIndex = -1;
     QRegExp regExp;
-    for (int i = 0; i < list.size(); ++i)
+    for (int i = 0; i < templates.size(); ++i)
     {
-        regExp = QRegExp(i >= 0 && i <= 3 ? list[i] : list[i].arg("(\\d+)"));
+        regExp = QRegExp(i >= 0 && i <= 3 ? templates.value(i) : templates.value(i).arg("(\\d+)"));
         if (regExp.indexIn(strStorageSlot) != -1)
         {
-            index = i;
+            iIndex = i;
             break;
         }
     }
 
+    /* Compose result: */
     StorageSlot result;
-    switch (index)
+
+    /* First we determine bus type: */
+    switch (iIndex)
+    {
+        case 0:
+        case 1:
+        case 2:
+        case 3:  result.bus = KStorageBus_IDE; break;
+        case 4:  result.bus = KStorageBus_SATA; break;
+        case 5:  result.bus = KStorageBus_SCSI; break;
+        case 6:  result.bus = KStorageBus_SAS; break;
+        case 7:  result.bus = KStorageBus_Floppy; break;
+        case 8:  result.bus = KStorageBus_USB; break;
+        case 9:  result.bus = KStorageBus_PCIe; break;
+        case 10: result.bus = KStorageBus_VirtioSCSI; break;
+        default: AssertMsgFailed(("No storage bus for text='%s'", strStorageSlot.toUtf8().constData())); break;
+    }
+
+    /* Second we determine port/device pair: */
+    switch (iIndex)
     {
         case 0:
         case 1:
         case 2:
         case 3:
         {
-            KStorageBus bus = KStorageBus_IDE;
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus);
-            int iMaxDevice = vboxGlobal().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(bus);
-            LONG iPort = index / iMaxPort;
-            LONG iDevice = index % iMaxPort;
+            if (result.bus == KStorageBus_Null)
+                break;
+            const int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(result.bus);
+            const int iMaxDevice = vboxGlobal().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(result.bus);
+            const LONG iPort = iIndex / iMaxPort;
+            const LONG iDevice = iIndex % iMaxPort;
             if (iPort < 0 || iPort > iMaxPort)
             {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
+                AssertMsgFailed(("No storage port for text='%s'", strStorageSlot.toUtf8().constData()));
                 break;
             }
             if (iDevice < 0 || iDevice > iMaxDevice)
             {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
+                AssertMsgFailed(("No storage device for text='%s'", strStorageSlot.toUtf8().constData()));
                 break;
             }
-            result.bus = bus;
             result.port = iPort;
             result.device = iDevice;
             break;
         }
         case 4:
-        {
-            KStorageBus bus = KStorageBus_SATA;
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus);
-            LONG iPort = regExp.cap(1).toInt();
-            LONG iDevice = 0;
-            if (iPort < 0 || iPort > iMaxPort)
-            {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
-                break;
-            }
-            result.bus = bus;
-            result.port = iPort;
-            result.device = iDevice;
-            break;
-        }
         case 5:
-        {
-            KStorageBus bus = KStorageBus_SCSI;
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus);
-            LONG iPort = regExp.cap(1).toInt();
-            LONG iDevice = 0;
-            if (iPort < 0 || iPort > iMaxPort)
-            {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
-                break;
-            }
-            result.bus = bus;
-            result.port = iPort;
-            result.device = iDevice;
-            break;
-        }
         case 6:
-        {
-            KStorageBus bus = KStorageBus_SAS;
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus);
-            LONG iPort = regExp.cap(1).toInt();
-            LONG iDevice = 0;
-            if (iPort < 0 || iPort > iMaxPort)
-            {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
-                break;
-            }
-            result.bus = bus;
-            result.port = iPort;
-            result.device = iDevice;
-            break;
-        }
         case 7:
-        {
-            KStorageBus bus = KStorageBus_Floppy;
-            int iMaxDevice = vboxGlobal().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(bus);
-            LONG iPort = 0;
-            LONG iDevice = regExp.cap(1).toInt();
-            if (iDevice < 0 || iDevice > iMaxDevice)
-            {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
-                break;
-            }
-            result.bus = bus;
-            result.port = iPort;
-            result.device = iDevice;
-            break;
-        }
         case 8:
-        {
-            KStorageBus bus = KStorageBus_USB;
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus);
-            LONG iPort = regExp.cap(1).toInt();
-            LONG iDevice = 0;
-            if (iPort < 0 || iPort > iMaxPort)
-            {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
-                break;
-            }
-            result.bus = bus;
-            result.port = iPort;
-            result.device = iDevice;
-            break;
-        }
         case 9:
-        {
-            KStorageBus bus = KStorageBus_PCIe;
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus);
-            LONG iPort = regExp.cap(1).toInt();
-            LONG iDevice = 0;
-            if (iPort < 0 || iPort > iMaxPort)
-            {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
-                break;
-            }
-            result.bus = bus;
-            result.port = iPort;
-            result.device = iDevice;
-            break;
-        }
         case 10:
         {
-            KStorageBus bus = KStorageBus_VirtioSCSI;
-            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus);
-            LONG iPort = regExp.cap(1).toInt();
-            LONG iDevice = 0;
+            if (result.bus == KStorageBus_Null)
+                break;
+            const int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(result.bus);
+            const LONG iPort = regExp.cap(1).toInt();
+            const LONG iDevice = 0;
             if (iPort < 0 || iPort > iMaxPort)
             {
-                AssertMsgFailed(("No storage slot for text='%s'", strStorageSlot.toUtf8().constData()));
+                AssertMsgFailed(("No storage port for text='%s'", strStorageSlot.toUtf8().constData()));
                 break;
             }
-            result.bus = bus;
             result.port = iPort;
             result.device = iDevice;
             break;
@@ -442,6 +375,8 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
             break;
         }
     }
+
+    /* Return result: */
     return result;
 }
 
