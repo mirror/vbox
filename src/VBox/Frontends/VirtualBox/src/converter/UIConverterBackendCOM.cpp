@@ -571,15 +571,15 @@ template<> QString toString(const KStorageBus &bus)
 {
     switch (bus)
     {
-        case KStorageBus_IDE:    return QApplication::translate("VBoxGlobal", "IDE", "StorageBus");
-        case KStorageBus_SATA:   return QApplication::translate("VBoxGlobal", "SATA", "StorageBus");
-        case KStorageBus_SCSI:   return QApplication::translate("VBoxGlobal", "SCSI", "StorageBus");
-        case KStorageBus_Floppy: return QApplication::translate("VBoxGlobal", "Floppy", "StorageBus");
-        case KStorageBus_SAS:    return QApplication::translate("VBoxGlobal", "SAS", "StorageBus");
-        case KStorageBus_USB:    return QApplication::translate("VBoxGlobal", "USB", "StorageBus");
-        case KStorageBus_PCIe:   return QApplication::translate("VBoxGlobal", "PCIe", "StorageBus");
+        case KStorageBus_IDE:        return QApplication::translate("VBoxGlobal", "IDE", "StorageBus");
+        case KStorageBus_SATA:       return QApplication::translate("VBoxGlobal", "SATA", "StorageBus");
+        case KStorageBus_SCSI:       return QApplication::translate("VBoxGlobal", "SCSI", "StorageBus");
+        case KStorageBus_Floppy:     return QApplication::translate("VBoxGlobal", "Floppy", "StorageBus");
+        case KStorageBus_SAS:        return QApplication::translate("VBoxGlobal", "SAS", "StorageBus");
+        case KStorageBus_USB:        return QApplication::translate("VBoxGlobal", "USB", "StorageBus");
+        case KStorageBus_PCIe:       return QApplication::translate("VBoxGlobal", "PCIe", "StorageBus");
         case KStorageBus_VirtioSCSI: return QApplication::translate("VBoxGlobal", "virtio-scsi", "StorageBus");
-        default: AssertMsgFailed(("No text for %d", bus)); break;
+        default:                     AssertMsgFailed(("No text for %d", bus)); break;
     }
     return QString();
 }
