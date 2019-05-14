@@ -441,123 +441,34 @@ DeviceTypeList AbstractControllerType::deviceTypeList() const
     return vboxGlobal().virtualBox().GetSystemProperties().GetDeviceTypesForStorageBus (mBusType).toList();
 }
 
-
-/* IDE Controller Type */
-IDEControllerType::IDEControllerType (KStorageControllerType aSubType)
-    : AbstractControllerType (KStorageBus_IDE, aSubType)
+KStorageControllerType AbstractControllerType::first() const
 {
+    switch (mBusType)
+    {
+        case KStorageBus_IDE:    return KStorageControllerType_PIIX3;
+        case KStorageBus_SATA:   return KStorageControllerType_IntelAhci;
+        case KStorageBus_SCSI:   return KStorageControllerType_LsiLogic;
+        case KStorageBus_Floppy: return KStorageControllerType_I82078;
+        case KStorageBus_SAS:    return KStorageControllerType_LsiLogicSas;
+        case KStorageBus_USB:    return KStorageControllerType_USB;
+        case KStorageBus_PCIe:   return KStorageControllerType_NVMe;
+        default:                 AssertFailedReturn(KStorageControllerType_Null);
+    }
 }
 
-KStorageControllerType IDEControllerType::first() const
+uint AbstractControllerType::size() const
 {
-    return KStorageControllerType_PIIX3;
-}
-
-uint IDEControllerType::size() const
-{
-    return 3;
-}
-
-
-/* SATA Controller Type */
-SATAControllerType::SATAControllerType (KStorageControllerType aSubType)
-    : AbstractControllerType (KStorageBus_SATA, aSubType)
-{
-}
-
-KStorageControllerType SATAControllerType::first() const
-{
-    return KStorageControllerType_IntelAhci;
-}
-
-uint SATAControllerType::size() const
-{
-    return 1;
-}
-
-
-/* SCSI Controller Type */
-SCSIControllerType::SCSIControllerType (KStorageControllerType aSubType)
-    : AbstractControllerType (KStorageBus_SCSI, aSubType)
-{
-}
-
-KStorageControllerType SCSIControllerType::first() const
-{
-    return KStorageControllerType_LsiLogic;
-}
-
-uint SCSIControllerType::size() const
-{
-    return 2;
-}
-
-
-/* Floppy Controller Type */
-FloppyControllerType::FloppyControllerType (KStorageControllerType aSubType)
-    : AbstractControllerType (KStorageBus_Floppy, aSubType)
-{
-}
-
-KStorageControllerType FloppyControllerType::first() const
-{
-    return KStorageControllerType_I82078;
-}
-
-uint FloppyControllerType::size() const
-{
-    return 1;
-}
-
-
-/* SAS Controller Type */
-SASControllerType::SASControllerType (KStorageControllerType aSubType)
-    : AbstractControllerType (KStorageBus_SAS, aSubType)
-{
-}
-
-KStorageControllerType SASControllerType::first() const
-{
-    return KStorageControllerType_LsiLogicSas;
-}
-
-uint SASControllerType::size() const
-{
-    return 1;
-}
-
-
-/* USB Controller Type */
-USBStorageControllerType::USBStorageControllerType (KStorageControllerType aSubType)
-    : AbstractControllerType (KStorageBus_USB, aSubType)
-{
-}
-
-KStorageControllerType USBStorageControllerType::first() const
-{
-    return KStorageControllerType_USB;
-}
-
-uint USBStorageControllerType::size() const
-{
-    return 1;
-}
-
-
-/* NVMe Controller Type */
-NVMeStorageControllerType::NVMeStorageControllerType (KStorageControllerType aSubType)
-    : AbstractControllerType (KStorageBus_PCIe, aSubType)
-{
-}
-
-KStorageControllerType NVMeStorageControllerType::first() const
-{
-    return KStorageControllerType_NVMe;
-}
-
-uint NVMeStorageControllerType::size() const
-{
-    return 1;
+    switch (mBusType)
+    {
+        case KStorageBus_IDE:    return 3;
+        case KStorageBus_SATA:   return 1;
+        case KStorageBus_SCSI:   return 2;
+        case KStorageBus_Floppy: return 1;
+        case KStorageBus_SAS:    return 1;
+        case KStorageBus_USB:    return 1;
+        case KStorageBus_PCIe:   return 1;
+        default:                 AssertFailedReturn(0);
+    }
 }
 
 
@@ -702,25 +613,25 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
     switch (aBusType)
     {
         case KStorageBus_IDE:
-            mCtrType = new IDEControllerType (aControllerType);
+            mCtrType = new AbstractControllerType(KStorageBus_IDE, aControllerType);
             break;
         case KStorageBus_SATA:
-            mCtrType = new SATAControllerType (aControllerType);
+            mCtrType = new AbstractControllerType(KStorageBus_SATA, aControllerType);
             break;
         case KStorageBus_SCSI:
-            mCtrType = new SCSIControllerType (aControllerType);
+            mCtrType = new AbstractControllerType(KStorageBus_SCSI, aControllerType);
             break;
         case KStorageBus_Floppy:
-            mCtrType = new FloppyControllerType (aControllerType);
+            mCtrType = new AbstractControllerType(KStorageBus_Floppy, aControllerType);
             break;
         case KStorageBus_SAS:
-            mCtrType = new SASControllerType (aControllerType);
+            mCtrType = new AbstractControllerType(KStorageBus_SAS, aControllerType);
             break;
         case KStorageBus_USB:
-            mCtrType = new USBStorageControllerType (aControllerType);
+            mCtrType = new AbstractControllerType(KStorageBus_USB, aControllerType);
             break;
         case KStorageBus_PCIe:
-            mCtrType = new NVMeStorageControllerType (aControllerType);
+            mCtrType = new AbstractControllerType(KStorageBus_PCIe, aControllerType);
             break;
 
         default:
