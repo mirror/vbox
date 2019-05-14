@@ -761,7 +761,21 @@
     <xsl:text>}</xsl:text>
   </xsl:template>
 
-  <xsl:template match="ulink">
+  <xsl:template match="ulink[@url!='' and not(text())]">
+    <xsl:text>\url{</xsl:text>
+    <xsl:value-of select="@url"/>
+    <xsl:text>}</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="ulink[@url!='' and text()]">
+    <xsl:text>\href{</xsl:text>
+    <xsl:value-of select="@url"/>
+    <xsl:text>}{</xsl:text>
+    <xsl:apply-templates />
+    <xsl:text>}</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="ulink[(@url='' or not(@url)) and text()]">
     <xsl:text>\url{</xsl:text>
     <xsl:apply-templates />
     <xsl:text>}</xsl:text>
