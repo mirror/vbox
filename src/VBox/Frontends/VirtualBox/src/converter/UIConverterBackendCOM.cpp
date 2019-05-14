@@ -578,6 +578,7 @@ template<> QString toString(const KStorageBus &bus)
         case KStorageBus_SAS:    return QApplication::translate("VBoxGlobal", "SAS", "StorageBus");
         case KStorageBus_USB:    return QApplication::translate("VBoxGlobal", "USB", "StorageBus");
         case KStorageBus_PCIe:   return QApplication::translate("VBoxGlobal", "PCIe", "StorageBus");
+        case KStorageBus_VirtioSCSI: return QApplication::translate("VBoxGlobal", "virtio-scsi", "StorageBus");
         default: AssertMsgFailed(("No text for %d", bus)); break;
     }
     return QString();
@@ -598,6 +599,7 @@ template<> QString toString(const KStorageControllerType &type)
         case KStorageControllerType_LsiLogicSas: return QApplication::translate("VBoxGlobal", "LsiLogic SAS", "StorageControllerType");
         case KStorageControllerType_USB:         return QApplication::translate("VBoxGlobal", "USB", "StorageControllerType");
         case KStorageControllerType_NVMe:        return QApplication::translate("VBoxGlobal", "NVMe", "StorageControllerType");
+        case KStorageControllerType_VirtioSCSI:  return QApplication::translate("VBoxGlobal", "virtio-scsi", "StorageControllerType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -617,6 +619,7 @@ template<> KStorageControllerType fromString<KStorageControllerType>(const QStri
     list.insert(QApplication::translate("VBoxGlobal", "LsiLogic SAS", "StorageControllerType"), KStorageControllerType_LsiLogicSas);
     list.insert(QApplication::translate("VBoxGlobal", "USB", "StorageControllerType"),          KStorageControllerType_USB);
     list.insert(QApplication::translate("VBoxGlobal", "NVMe", "StorageControllerType"),         KStorageControllerType_NVMe);
+    list.insert(QApplication::translate("VBoxGlobal", "virtio-scsi", "StorageControllerType"),  KStorageControllerType_VirtioSCSI);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));

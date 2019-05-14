@@ -322,6 +322,9 @@ UIIconPoolStorageSettings::UIIconPoolStorageSettings()
     m_names.insert(NVMeControllerNormal,     ":/ide_16px.png");
     m_names.insert(NVMeControllerExpand,     ":/ide_expand_16px.png");
     m_names.insert(NVMeControllerCollapse,   ":/ide_collapse_16px.png");
+    m_names.insert(VirtioSCSIControllerNormal, ":/scsi_16px.png");
+    m_names.insert(VirtioSCSIControllerExpand, ":/scsi_expand_16px.png");
+    m_names.insert(VirtioSCSIControllerCollapse, ":/scsi_collapse_16px.png");
     m_names.insert(FloppyControllerNormal,   ":/floppy_16px.png");
     m_names.insert(FloppyControllerExpand,   ":/floppy_expand_16px.png");
     m_names.insert(FloppyControllerCollapse, ":/floppy_collapse_16px.png");
@@ -336,6 +339,8 @@ UIIconPoolStorageSettings::UIIconPoolStorageSettings()
     m_names.insert(USBControllerAddDis,      ":/usb_add_disabled_16px.png");
     m_names.insert(NVMeControllerAddEn,      ":/ide_add_16px.png");
     m_names.insert(NVMeControllerAddDis,     ":/ide_add_disabled_16px.png");
+    m_names.insert(VirtioSCSIControllerAddEn, ":/scsi_add_16px.png");
+    m_names.insert(VirtioSCSIControllerAddDis, ":/scsi_add_disabled_16px.png");
     m_names.insert(FloppyControllerAddEn,    ":/floppy_add_16px.png");
     m_names.insert(FloppyControllerAddDis,   ":/floppy_add_disabled_16px.png");
     /* Specific attachment file-names: */
@@ -400,6 +405,9 @@ AbstractControllerType::AbstractControllerType (KStorageBus aBusType, KStorageCo
                 break;
             case KStorageBus_PCIe:
                 mPixmaps [i] = (PixmapType)(NVMeControllerNormal + i);
+                break;
+            case KStorageBus_VirtioSCSI:
+                mPixmaps [i] = (PixmapType)(VirtioSCSIControllerNormal + i);
                 break;
             default:
                 break;
@@ -469,6 +477,23 @@ uint AbstractControllerType::typeAmount() const
         case KStorageBus_PCIe:   return 1;
         default:                 AssertFailedReturn(0);
     }
+}
+
+
+/* virtio-scsi Controller Type */
+VirtioSCSIStorageControllerType::VirtioSCSIStorageControllerType (KStorageControllerType aSubType)
+    : AbstractControllerType (KStorageBus_VirtioSCSI, aSubType)
+{
+}
+
+KStorageControllerType VirtioSCSIStorageControllerType::first() const
+{
+    return KStorageControllerType_VirtioSCSI;
+}
+
+uint VirtioSCSIStorageControllerType::size() const
+{
+    return 1;
 }
 
 
@@ -632,6 +657,9 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
             break;
         case KStorageBus_PCIe:
             mCtrType = new AbstractControllerType(KStorageBus_PCIe, aControllerType);
+            break;
+        case KStorageBus_VirtioSCSI:
+            mCtrType = new VirtioSCSIStorageControllerType (aControllerType);
             break;
 
         default:
@@ -1279,6 +1307,12 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_PCIe) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_PCIe));
+        }
+        case R_IsMoreVirtioSCSIControllersPossible:
+        {
+            return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
+                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_VirtioSCSI) <
+                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_VirtioSCSI));
         }
         case R_IsMoreAttachmentsPossible:
         {
@@ -2046,7 +2080,7 @@ private:
 UIMachineSettingsStorage::UIMachineSettingsStorage()
     : m_pModelStorage(0)
     , m_pActionAddController(0), m_pActionRemoveController(0)
-    , m_pActionAddControllerIDE(0), m_pActionAddControllerSATA(0), m_pActionAddControllerSCSI(0), m_pActionAddControllerSAS(0), m_pActionAddControllerFloppy(0), m_pActionAddControllerUSB(0), m_pActionAddControllerNVMe(0)
+    , m_pActionAddControllerIDE(0), m_pActionAddControllerSATA(0), m_pActionAddControllerSCSI(0), m_pActionAddControllerSAS(0), m_pActionAddControllerFloppy(0), m_pActionAddControllerUSB(0), m_pActionAddControllerNVMe(0), m_pActionAddControllerVirtioSCSI(0)
     , m_pActionAddAttachment(0), m_pActionRemoveAttachment(0)
     , m_pActionAddAttachmentHD(0), m_pActionAddAttachmentCD(0), m_pActionAddAttachmentFD(0)
     , m_pMediumIdHolder(new UIMediumIDHolder(this))
@@ -2425,6 +2459,7 @@ void UIMachineSettingsStorage::retranslateUi()
     m_pActionAddControllerFloppy->setText(tr("Add Floppy Controller"));
     m_pActionAddControllerUSB->setText(tr("Add USB Controller"));
     m_pActionAddControllerNVMe->setText(tr("Add NVMe Controller"));
+    m_pActionAddControllerVirtioSCSI->setText(tr("Add virtio-scsi Controller"));
     m_pActionRemoveController->setText(tr("Remove Controller"));
     m_pActionAddAttachment->setText(tr("Add Attachment"));
     m_pActionAddAttachmentHD->setText(tr("Add Hard Disk"));
@@ -2586,6 +2621,7 @@ void UIMachineSettingsStorage::sltAddController()
     menu.addAction(m_pActionAddControllerFloppy);
     menu.addAction(m_pActionAddControllerUSB);
     menu.addAction(m_pActionAddControllerNVMe);
+    menu.addAction(m_pActionAddControllerVirtioSCSI);
     menu.exec(QCursor::pos());
 }
 
@@ -2622,6 +2658,11 @@ void UIMachineSettingsStorage::sltAddControllerUSB()
 void UIMachineSettingsStorage::sltAddControllerNVMe()
 {
     addControllerWrapper(generateUniqueControllerName("NVMe"), KStorageBus_PCIe, KStorageControllerType_NVMe);
+}
+
+void UIMachineSettingsStorage::sltAddControllerVirtioSCSI()
+{
+    addControllerWrapper(generateUniqueControllerName("VirtIO"), KStorageBus_VirtioSCSI, KStorageControllerType_VirtioSCSI);
 }
 
 void UIMachineSettingsStorage::sltRemoveController()
@@ -3063,6 +3104,7 @@ void UIMachineSettingsStorage::sltUpdateActionStates()
     const bool fSASPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreSASControllersPossible).toBool();
     const bool fUSBPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreUSBControllersPossible).toBool();
     const bool fNVMePossible = m_pModelStorage->data(index, StorageModel::R_IsMoreNVMeControllersPossible).toBool();
+    const bool fVirtioSCSIPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreVirtioSCSIControllersPossible).toBool();
 
     const bool fController = m_pModelStorage->data(index, StorageModel::R_IsController).toBool();
     const bool fAttachment = m_pModelStorage->data(index, StorageModel::R_IsAttachment).toBool();
@@ -3070,7 +3112,7 @@ void UIMachineSettingsStorage::sltUpdateActionStates()
     const bool fIsAttachmentHotPluggable = m_pModelStorage->data(index, StorageModel::R_AttIsHotPluggable).toBool();
 
     /* Configure "add controller" actions: */
-    m_pActionAddController->setEnabled(fIDEPossible || fSATAPossible || fSCSIPossible || fFloppyPossible || fSASPossible || fUSBPossible || fNVMePossible);
+    m_pActionAddController->setEnabled(fIDEPossible || fSATAPossible || fSCSIPossible || fFloppyPossible || fSASPossible || fUSBPossible || fNVMePossible || fVirtioSCSIPossible);
     m_pActionAddControllerIDE->setEnabled(fIDEPossible);
     m_pActionAddControllerSATA->setEnabled(fSATAPossible);
     m_pActionAddControllerSCSI->setEnabled(fSCSIPossible);
@@ -3078,6 +3120,7 @@ void UIMachineSettingsStorage::sltUpdateActionStates()
     m_pActionAddControllerSAS->setEnabled(fSASPossible);
     m_pActionAddControllerUSB->setEnabled(fUSBPossible);
     m_pActionAddControllerNVMe->setEnabled(fNVMePossible);
+    m_pActionAddControllerVirtioSCSI->setEnabled(fVirtioSCSIPossible);
 
     /* Configure "add attachment" actions: */
     m_pActionAddAttachment->setEnabled(fController && fAttachmentsPossible);
@@ -3508,6 +3551,14 @@ void UIMachineSettingsStorage::prepareStorageToolbar()
             m_pActionAddControllerNVMe->setIcon(iconPool()->icon(NVMeControllerAddEn, NVMeControllerAddDis));
         }
 
+        /* Create 'Add virtio-scsi Controller' action: */
+        m_pActionAddControllerVirtioSCSI = new QAction(this);
+        AssertPtrReturnVoid(m_pActionAddControllerVirtioSCSI);
+        {
+            /* Configure action: */
+            m_pActionAddControllerVirtioSCSI->setIcon(iconPool()->icon(VirtioSCSIControllerAddEn, VirtioSCSIControllerAddDis));
+        }
+
         /* Create 'Remove Controller' action: */
         m_pActionRemoveController = new QAction(this);
         AssertPtrReturnVoid(m_pActionRemoveController);
@@ -3644,6 +3695,7 @@ void UIMachineSettingsStorage::prepareConnections()
     connect(m_pActionAddControllerSAS, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerSAS()));
     connect(m_pActionAddControllerUSB, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerUSB()));
     connect(m_pActionAddControllerNVMe, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerNVMe()));
+    connect(m_pActionAddControllerVirtioSCSI, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerVirtioSCSI()));
     connect(m_pActionRemoveController, SIGNAL(triggered(bool)), this, SLOT(sltRemoveController()));
     connect(m_pActionAddAttachment, SIGNAL(triggered(bool)), this, SLOT(sltAddAttachment()));
     connect(m_pActionAddAttachmentHD, SIGNAL(triggered(bool)), this, SLOT(sltAddAttachmentHD()));
@@ -3705,6 +3757,9 @@ void UIMachineSettingsStorage::addControllerWrapper(const QString &strName, KSto
             break;
         case KStorageBus_PCIe:
             Assert(m_pModelStorage->data(index, StorageModel::R_IsMoreNVMeControllersPossible).toBool());
+            break;
+        case KStorageBus_VirtioSCSI:
+            Assert(m_pModelStorage->data(index, StorageModel::R_IsMoreVirtioSCSIControllersPossible).toBool());
             break;
         default:
             break;
@@ -3990,7 +4045,8 @@ bool UIMachineSettingsStorage::createStorageController(const UISettingsCacheMach
             if (   fSuccess
                 && (   newControllerData.m_controllerBus == KStorageBus_SATA
                     || newControllerData.m_controllerBus == KStorageBus_SAS
-                    || newControllerData.m_controllerBus == KStorageBus_PCIe))
+                    || newControllerData.m_controllerBus == KStorageBus_PCIe
+                    || newControllerData.m_controllerBus == KStorageBus_VirtioSCSI))
             {
                 ULONG uNewPortCount = newControllerData.m_uPortCount;
                 if (fSuccess)
@@ -4069,7 +4125,8 @@ bool UIMachineSettingsStorage::updateStorageController(const UISettingsCacheMach
                 && newControllerData.m_uPortCount != oldControllerData.m_uPortCount
                 && (   newControllerData.m_controllerBus == KStorageBus_SATA
                     || newControllerData.m_controllerBus == KStorageBus_SAS
-                    || newControllerData.m_controllerBus == KStorageBus_PCIe))
+                    || newControllerData.m_controllerBus == KStorageBus_PCIe
+                    || newControllerData.m_controllerBus == KStorageBus_VirtioSCSI))
             {
                 ULONG uNewPortCount = newControllerData.m_uPortCount;
                 if (fSuccess)

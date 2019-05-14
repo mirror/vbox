@@ -95,6 +95,9 @@ enum PixmapType
     NVMeControllerNormal,
     NVMeControllerExpand,
     NVMeControllerCollapse,
+    VirtioSCSIControllerNormal,
+    VirtioSCSIControllerExpand,
+    VirtioSCSIControllerCollapse,
     FloppyControllerNormal,
     FloppyControllerExpand,
     FloppyControllerCollapse,
@@ -109,6 +112,8 @@ enum PixmapType
     USBControllerAddDis,
     NVMeControllerAddEn,
     NVMeControllerAddDis,
+    VirtioSCSIControllerAddEn,
+    VirtioSCSIControllerAddDis,
     FloppyControllerAddEn,
     FloppyControllerAddDis,
 
@@ -160,6 +165,19 @@ private:
     KStorageBus mBusType;
     KStorageControllerType mCtrType;
     QList<PixmapType> mPixmaps;
+};
+
+/* virtio-scsi Controller Type */
+class SHARED_LIBRARY_STUFF VirtioSCSIStorageControllerType : public AbstractControllerType
+{
+public:
+
+    VirtioSCSIStorageControllerType (KStorageControllerType aSubType);
+
+private:
+
+    KStorageControllerType first() const;
+    uint size() const;
 };
 
 /* Abstract Item */
@@ -379,6 +397,7 @@ public:
         R_IsMoreSASControllersPossible,
         R_IsMoreUSBControllersPossible,
         R_IsMoreNVMeControllersPossible,
+        R_IsMoreVirtioSCSIControllersPossible,
         R_IsMoreAttachmentsPossible,
 
         R_CtrOldName,
@@ -586,6 +605,8 @@ private slots:
     void sltAddControllerUSB();
     /** Handles command to add NVMe controller. */
     void sltAddControllerNVMe();
+    /** Handles command to add virtio-scsi controller. */
+    void sltAddControllerVirtioSCSI();
     /** Handles command to remove controller. */
     void sltRemoveController();
 
@@ -732,6 +753,8 @@ private:
     QAction *m_pActionAddControllerUSB;
     /** Holds the 'Add NVMe Controller' action instance. */
     QAction *m_pActionAddControllerNVMe;
+    /** Holds the 'Add virtio-scsi Controller' action instance. */
+    QAction *m_pActionAddControllerVirtioSCSI;
     /** Holds the 'Add Attachment' action instance. */
     QAction *m_pActionAddAttachment;
     /** Holds the 'Remove Attachment' action instance. */

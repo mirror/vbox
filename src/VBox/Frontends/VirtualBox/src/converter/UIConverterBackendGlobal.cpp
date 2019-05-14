@@ -244,6 +244,22 @@ template<> QString toString(const StorageSlot &storageSlot)
             strResult = QApplication::translate("VBoxGlobal", "NVMe Port %1", "StorageSlot").arg(storageSlot.port);
             break;
         }
+        case KStorageBus_VirtioSCSI:
+        {
+            int iMaxPort = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(storageSlot.bus);
+            if (storageSlot.port < 0 || storageSlot.port > iMaxPort)
+            {
+                AssertMsgFailed(("No text for bus=%d & port=%d", storageSlot.bus, storageSlot.port));
+                break;
+            }
+            if (storageSlot.device != 0)
+            {
+                AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
+                break;
+            }
+            strResult = QApplication::translate("VBoxGlobal", "virtio-scsi Port %1", "StorageSlot").arg(storageSlot.port);
+            break;
+        }
         default:
         {
             AssertMsgFailed(("No text for bus=%d & port=%d & device=%d", storageSlot.bus, storageSlot.port, storageSlot.device));
@@ -266,6 +282,8 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
     list[6] = QApplication::translate("VBoxGlobal", "SAS Port %1", "StorageSlot");
     list[7] = QApplication::translate("VBoxGlobal", "Floppy Device %1", "StorageSlot");
     list[8] = QApplication::translate("VBoxGlobal", "USB Port %1", "StorageSlot");
+    list[9] = QApplication::translate("VBoxGlobal", "NVMe Port %1", "StorageSlot");
+    list[10] = QApplication::translate("VBoxGlobal", "virtio-scsi Port %1", "StorageSlot");
     int index = -1;
     QRegExp regExp;
     for (int i = 0; i < list.size(); ++i)
