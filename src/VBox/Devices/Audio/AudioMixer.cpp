@@ -107,7 +107,6 @@ static void audioMixerStreamDestroyInternal(PAUDMIXSTREAM pStream);
 static int audioMixerStreamUpdateStatus(PAUDMIXSTREAM pMixStream);
 
 
-#ifdef LOG_ENABLED
 /**
  * Converts a mixer sink status to a string.
  *
@@ -155,7 +154,6 @@ static char *dbgAudioMixerSinkStatusToStr(AUDMIXSINKSTS fStatus)
 
     return pszFlags;
 }
-#endif /* DEBUG */
 
 /**
  * Creates an audio sink and attaches it to the given mixer.
