@@ -143,7 +143,13 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_RecentListFD;
     /** @} */
 
-    /** @name Settings: VISO Creator
+    /** @name Settings: Network
+      * @{ */
+        /** Holds the list of restricted network attachment types. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedNetworkAttachmentTypes;
+    /** @} */
+
+    /** @name VISO Creator
       * @{ */
         /** Holds recent folder for VISO creation content. */
         SHARED_LIBRARY_STUFF extern const char *GUI_VISOCreator_RecentFolder;

@@ -771,7 +771,8 @@ void UIFileManagerTable::prepareObjects()
         if (pHorizontalHeader)
         {
             pHorizontalHeader->setHighlightSections(false);
-            pHorizontalHeader->setSectionResizeMode(QHeaderView::Stretch);
+            pHorizontalHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
+            pHorizontalHeader->setStretchLastSection(true);
         }
 
         m_pView->setModel(m_pProxyModel);

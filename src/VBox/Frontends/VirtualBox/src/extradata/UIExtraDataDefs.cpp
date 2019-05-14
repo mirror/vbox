@@ -76,6 +76,9 @@ const char *UIExtraDataDefs::GUI_RecentListHD = "GUI/RecentListHD";
 const char *UIExtraDataDefs::GUI_RecentListCD = "GUI/RecentListCD";
 const char *UIExtraDataDefs::GUI_RecentListFD = "GUI/RecentListFD";
 
+/* Settings: Network: */
+const char *UIExtraDataDefs::GUI_RestrictedNetworkAttachmentTypes = "GUI/RestrictedNetworkAttachmentTypes";
+
 /* VISO Creator: */
 const char *UIExtraDataDefs::GUI_VISOCreator_RecentFolder   = "GUI/VISOCreator/RecentFolder";
 const char *UIExtraDataDefs::GUI_VISOCreator_DialogGeometry = "GUI/VISOCreator/DialogGeometry";

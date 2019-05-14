@@ -23,6 +23,7 @@
 #include "UIIconPool.h"
 #include "UIMachineSettingsNetwork.h"
 #include "UIErrorString.h"
+#include "UIExtraDataManager.h"
 #include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -756,6 +757,20 @@ void UIMachineSettingsNetwork::prepareValidation()
     connect(m_pMACEditor, SIGNAL(textChanged(const QString &)), m_pParent, SLOT(revalidate()));
 }
 
+UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork toInternalNetworkAdapterEnum(KNetworkAttachmentType comEnum)
+{
+    switch (comEnum)
+    {
+        case KNetworkAttachmentType_NAT:        return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NAT;
+        case KNetworkAttachmentType_Bridged:    return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_BridgetAdapter;
+        case KNetworkAttachmentType_Internal:   return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_InternalNetwork;
+        case KNetworkAttachmentType_HostOnly:   return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter;
+        case KNetworkAttachmentType_Generic:    return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver;
+        case KNetworkAttachmentType_NATNetwork: return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork;
+        default:                                return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid;
+    }
+}
+
 void UIMachineSettingsNetwork::populateComboboxes()
 {
     /* Attachment type: */
@@ -767,35 +782,24 @@ void UIMachineSettingsNetwork::populateComboboxes()
         m_pAttachmentTypeComboBox->clear();
 
         /* Populate attachments: */
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork enmRestrictedNetworkAttachmentTypes =
+            gEDataManager->restrictedNetworkAttachmentTypes();
         int iAttachmentTypeIndex = 0;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(KNetworkAttachmentType_Null));
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_Null);
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
-        ++iAttachmentTypeIndex;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(KNetworkAttachmentType_NAT));
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_NAT);
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
-        ++iAttachmentTypeIndex;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(KNetworkAttachmentType_NATNetwork));
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_NATNetwork);
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
-        ++iAttachmentTypeIndex;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(KNetworkAttachmentType_Bridged));
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_Bridged);
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
-        ++iAttachmentTypeIndex;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(KNetworkAttachmentType_Internal));
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_Internal);
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
-        ++iAttachmentTypeIndex;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(KNetworkAttachmentType_HostOnly));
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_HostOnly);
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
-        ++iAttachmentTypeIndex;
-        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(KNetworkAttachmentType_Generic));
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_Generic);
-        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
-        ++iAttachmentTypeIndex;
+        /* We want some hardcoded order, so prepare a list of enum values: */
+        QList<KNetworkAttachmentType> attachmentTypes  = QList<KNetworkAttachmentType>() << KNetworkAttachmentType_Null
+                                                      << KNetworkAttachmentType_NAT << KNetworkAttachmentType_NATNetwork
+                                                      << KNetworkAttachmentType_Bridged << KNetworkAttachmentType_Internal
+                                                      << KNetworkAttachmentType_HostOnly << KNetworkAttachmentType_Generic;
+        for (int i = 0; i < attachmentTypes.size(); ++i)
+        {
+            const KNetworkAttachmentType enmType = attachmentTypes.at(i);
+            if (enmRestrictedNetworkAttachmentTypes & toInternalNetworkAdapterEnum(enmType))
+                continue;
+            m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(enmType));
+            m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, enmType);
+            m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
+            ++iAttachmentTypeIndex;
+        }
 
         /* Restore the previously selected attachment type: */
         m_pAttachmentTypeComboBox->setCurrentIndex(iCurrentAttachment == -1 ? 0 : iCurrentAttachment);
@@ -1638,4 +1642,3 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
 }
 
 # include "UIMachineSettingsNetwork.moc"
-

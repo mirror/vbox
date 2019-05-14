@@ -289,6 +289,12 @@ public:
         void setRecentListOfFloppyDisks(const QStringList &value);
     /** @} */
 
+    /** @name Settings: Network
+      * @{ */
+        /** Returns the list of restricted network attachment types. */
+        UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork restrictedNetworkAttachmentTypes();
+    /** @} */
+
     /** @name VISO Creator
       * @{ */
         /** Returns recent folder for VISO creation content. */

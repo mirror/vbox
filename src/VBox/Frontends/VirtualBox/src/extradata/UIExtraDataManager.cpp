@@ -1959,6 +1959,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD
            << GUI_VISOCreator_RecentFolder << GUI_VISOCreator_DialogGeometry
            << GUI_RecentListHD << GUI_RecentListCD << GUI_RecentListFD
+           << GUI_RestrictedNetworkAttachmentTypes
            << GUI_LastSelectorWindowPosition << GUI_SplitterSizes
            << GUI_Toolbar << GUI_Toolbar_Text
            << GUI_Toolbar_MachineTools_Order << GUI_Toolbar_GlobalTools_Order
@@ -2661,6 +2662,23 @@ void UIExtraDataManager::setRecentListOfOpticalDisks(const QStringList &value)
 void UIExtraDataManager::setRecentListOfFloppyDisks(const QStringList &value)
 {
     setExtraDataStringList(GUI_RecentListFD, value);
+}
+
+UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork UIExtraDataManager::restrictedNetworkAttachmentTypes()
+{
+    /* Prepare result: */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork enmResult =
+        UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid;
+    /* Get restricted network attachment types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedNetworkAttachmentTypes))
+    {
+        const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork enmValue =
+            gpConverter->fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(strValue);
+        if (enmValue != UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid && !(enmResult & enmValue))
+            enmResult = static_cast<UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork>(enmResult | enmValue);
+    }
+    /* Return result: */
+    return enmResult;
 }
 
 QString UIExtraDataManager::visoCreatorRecentFolder()
