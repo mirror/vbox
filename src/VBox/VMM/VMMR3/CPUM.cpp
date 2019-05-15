@@ -1524,7 +1524,6 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
      *   - True Processor-based VM-execution controls.
      *   - True VM-entry VM-execution controls.
      *   - True VM-exit VM-execution controls.
-     *   - EPT/VPID capabilities.
      */
 
     /* Feature control. */
@@ -1690,6 +1689,25 @@ static void cpumR3InitVmxGuestMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PCCPUMFEATUR
     /* VMCS Enumeration. */
     pGuestVmxMsrs->u64VmcsEnum = VMX_V_VMCS_MAX_INDEX << VMX_BF_VMCS_ENUM_HIGHEST_IDX_SHIFT;
 
+    /* VPID and EPT Capabilities. */
+    {
+        /*
+         * INVVPID instruction always causes a VM-exit unconditionally, so we are free to fake
+         * and emulate any INVVPID flush type. However, it only makes sense to expose the types
+         * when INVVPID instruction is supported just to be more compatible with guest
+         * hypervisors that may make assumptions by only looking at this MSR even though they
+         * are technically supposed to refer to bit 37 of MSR_IA32_VMX_PROC_CTLS2 first.
+         *
+         * See Intel spec. 25.1.2 "Instructions That Cause VM Exits Unconditionally".
+         * See Intel spec. 30.3 "VMX Instructions".
+         */
+        uint8_t const fVpid = pGuestFeatures->fVmxVpid;
+        pGuestVmxMsrs->u64EptVpidCaps = RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID,                           fVpid)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX,                fVpid & 1)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID_ALL_CTX,                   fVpid & 1)
+                                      | RT_BF_MAKE(VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS, fVpid & 1);
+    }
+
     /* VM Functions. */
     if (pGuestFeatures->fVmxVmFunc)
         pGuestVmxMsrs->u64VmFunc = RT_BF_MAKE(VMX_BF_VMFUNC_EPTP_SWITCHING, 1);
@@ -1844,7 +1862,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxDescTableExit         = 1;
     EmuFeat.fVmxRdtscp                = 1;
     EmuFeat.fVmxVirtX2ApicMode        = 0;
-    EmuFeat.fVmxVpid                  = 0;
+    EmuFeat.fVmxVpid                  = 0;  /** @todo NSTVMX: enable this. */
     EmuFeat.fVmxWbinvdExit            = 1;
     EmuFeat.fVmxUnrestrictedGuest     = 0;
     EmuFeat.fVmxApicRegVirt           = 0;
