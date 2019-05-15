@@ -2198,7 +2198,7 @@ static const struct
 #undef E
 };
 
-void fsPerfNtQueryInfoFileWorker(HANDLE hNtFile1)
+void fsPerfNtQueryInfoFileWorker(HANDLE hNtFile1, uint32_t fType)
 {
     /** @todo may run out of buffer for really long paths? */
     union
@@ -2344,6 +2344,7 @@ void fsPerfNtQueryInfoFileWorker(HANDLE hNtFile1)
                                  && enmClass == FileNetworkPhysicalNameInformation)
                             )
                             RTTestIFailed("%s/%#x: %#x, expected STATUS_BUFFER_OVERFLOW", pszClass, cbBuf, rcNt);
+                        /** @todo check name and length fields   */
                     }
                     else
                     {
@@ -2383,17 +2384,20 @@ void fsPerfNtQueryInfoFileWorker(HANDLE hNtFile1)
                                || enmClass == FileStatInformation
                                || enmClass == FileCaseSensitiveInformation
                                || enmClass == FileStorageReserveIdInformation
-                               || enmClass == FileCaseSensitiveInformationForceAccessCheck))
+                               || enmClass == FileCaseSensitiveInformationForceAccessCheck)
+                               || (   fType == RTFS_TYPE_DIRECTORY
+                                   && (enmClass == FileSfioReserveInformation || enmClass == FileStatLxInformation)))
                     )
                 RTTestIFailed("%s/%#x: %#x", pszClass, cbBuf, rcNt);
-            if (Ios.Status != VirginIos.Status || Ios.Information != VirginIos.Information)
+            if (   (Ios.Status != VirginIos.Status || Ios.Information != VirginIos.Information)
+                && !(   fType == RTFS_TYPE_DIRECTORY /* NTFS/W10-17763 */
+                    && Ios.Status == rcNt && Ios.Information == 0) )
                 RTTestIFailed("%s/%#x: I/O status block was modified: %#x %#zx", pszClass, cbBuf, Ios.Status, Ios.Information);
             if (!ASMMemIsAllU8(&uBuf, sizeof(uBuf), 0xff))
                 RTTestIFailed("%s/%#x: Buffer was touched in failure case!", pszClass, cbBuf);
         }
     }
 }
-
 
 void fsPerfNtQueryInfoFile(void)
 {
@@ -2402,21 +2406,281 @@ void fsPerfNtQueryInfoFile(void)
     /* On a regular file: */
     RTFILE hFile1;
     RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file2qif")),
-                                     RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_WRITE), VINF_SUCCESS);
-    fsPerfNtQueryInfoFileWorker((HANDLE)RTFileToNative(hFile1));
+                                     RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE), VINF_SUCCESS);
+    fsPerfNtQueryInfoFileWorker((HANDLE)RTFileToNative(hFile1), RTFS_TYPE_FILE);
     RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
 
     /* On a directory: */
     HANDLE hDir1 = INVALID_HANDLE_VALUE;
-    RTTESTI_CHECK_RC(RTNtPathOpenDir(InDir(RT_STR_TUPLE("")), GENERIC_READ,
-                                     FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                     FILE_OPEN, 0, &hDir1, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTNtPathOpenDir(InDir(RT_STR_TUPLE("")), GENERIC_READ | SYNCHRONIZE | FILE_SYNCHRONOUS_IO_NONALERT,
+                                          FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                          FILE_OPEN, 0, &hDir1, NULL), VINF_SUCCESS);
+    fsPerfNtQueryInfoFileWorker(hDir1, RTFS_TYPE_DIRECTORY);
+    RTTESTI_CHECK(CloseHandle(hDir1) == TRUE);
 }
 
 
+/**
+ * Nt(Query|Set)VolumeInformationFile) information class info.
+ */
+static const struct
+{
+    const char *pszName;
+    int         enmValue;
+    bool        fQuery;
+    bool        fSet;
+    uint8_t     cbMin;
+} g_aNtQueryVolInfoFileClasses[] =
+{
+#define E(a_enmValue, a_fQuery, a_fSet, a_cbMin) \
+        { #a_enmValue, a_enmValue, a_fQuery, a_fSet, a_cbMin }
+    { "invalid0", 0, false, false, 0 },
+    E(FileFsVolumeInformation,                      1, 0, sizeof(FILE_FS_VOLUME_INFORMATION)),
+    E(FileFsLabelInformation,                       0, 1, sizeof(FILE_FS_LABEL_INFORMATION)),
+    E(FileFsSizeInformation,                        1, 0, sizeof(FILE_FS_SIZE_INFORMATION)),
+    E(FileFsDeviceInformation,                      1, 0, sizeof(FILE_FS_DEVICE_INFORMATION)),
+    E(FileFsAttributeInformation,                   1, 0, sizeof(FILE_FS_ATTRIBUTE_INFORMATION)),
+    E(FileFsControlInformation,                     1, 1, sizeof(FILE_FS_CONTROL_INFORMATION)),
+    E(FileFsFullSizeInformation,                    1, 0, sizeof(FILE_FS_FULL_SIZE_INFORMATION)),
+    E(FileFsObjectIdInformation,                    1, 1, sizeof(FILE_FS_OBJECTID_INFORMATION)),
+    E(FileFsDriverPathInformation,                  1, 0, sizeof(FILE_FS_DRIVER_PATH_INFORMATION)),
+    E(FileFsVolumeFlagsInformation,                 1, 1, sizeof(FILE_FS_VOLUME_FLAGS_INFORMATION)),
+    E(FileFsSectorSizeInformation,                  1, 0, sizeof(FILE_FS_SECTOR_SIZE_INFORMATION)),
+    E(FileFsDataCopyInformation,                    1, 0, sizeof(FILE_FS_DATA_COPY_INFORMATION)),
+    E(FileFsMetadataSizeInformation,                1, 0, sizeof(FILE_FS_METADATA_SIZE_INFORMATION)),
+    E(FileFsFullSizeInformationEx,                  1, 0, sizeof(FILE_FS_FULL_SIZE_INFORMATION_EX)),
+#undef E
+};
+
+void fsPerfNtQueryVolInfoFileWorker(HANDLE hNtFile1, uint32_t fType)
+{
+    char const chType = fType == RTFS_TYPE_DIRECTORY ? 'd' : 'r';
+    union
+    {
+        uint8_t                                     ab[4096];
+        FILE_FS_VOLUME_INFORMATION                  Vol;
+        FILE_FS_LABEL_INFORMATION                   Label;
+        FILE_FS_SIZE_INFORMATION                    Size;
+        FILE_FS_DEVICE_INFORMATION                  Dev;
+        FILE_FS_ATTRIBUTE_INFORMATION               Attrib;
+        FILE_FS_CONTROL_INFORMATION                 Ctrl;
+        FILE_FS_FULL_SIZE_INFORMATION               FullSize;
+        FILE_FS_OBJECTID_INFORMATION                ObjId;
+        FILE_FS_DRIVER_PATH_INFORMATION             DrvPath;
+        FILE_FS_VOLUME_FLAGS_INFORMATION            VolFlags;
+        FILE_FS_SECTOR_SIZE_INFORMATION             SectorSize;
+        FILE_FS_DATA_COPY_INFORMATION               DataCopy;
+        FILE_FS_METADATA_SIZE_INFORMATION           Metadata;
+        FILE_FS_FULL_SIZE_INFORMATION_EX            FullSizeEx;
+    } uBuf;
+
+    IO_STATUS_BLOCK const VirginIos = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aNtQueryVolInfoFileClasses); i++)
+    {
+        FS_INFORMATION_CLASS const enmClass = (FS_INFORMATION_CLASS)g_aNtQueryVolInfoFileClasses[i].enmValue;
+        const char * const         pszClass = g_aNtQueryVolInfoFileClasses[i].pszName;
+
+        memset(&uBuf, 0xff, sizeof(uBuf));
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        ULONG           cbBuf = sizeof(uBuf);
+        NTSTATUS rcNt = NtQueryVolumeInformationFile(hNtFile1, &Ios, &uBuf, cbBuf, enmClass);
+        if (g_uVerbosity > 3)
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "%+34s/%#04x/%c: rcNt=%#x Ios.Status=%#x Info=%#zx\n",
+                          pszClass, cbBuf, chType, rcNt, Ios.Status, Ios.Information);
+        if (NT_SUCCESS(rcNt))
+        {
+            if (Ios.Status == VirginIos.Status || Ios.Information == VirginIos.Information)
+                RTTestIFailed("%s/%#x/%c: I/O status block was not modified: %#x %#zx",
+                              pszClass, cbBuf, chType, Ios.Status, Ios.Information);
+            else if (!g_aNtQueryVolInfoFileClasses[i].fQuery)
+                RTTestIFailed("%s/%#x/%c: This isn't supposed to be queriable! (rcNt=%#x)", pszClass, cbBuf, chType, rcNt);
+            else
+            {
+                ULONG const cbActualMin = Ios.Information;
+                ULONG      *pcbName = NULL;
+                ULONG       offName = 0;
+
+                switch (enmClass)
+                {
+                    case FileFsVolumeInformation:
+                        pcbName = &uBuf.Vol.VolumeLabelLength;
+                        offName = RT_UOFFSETOF(FILE_FS_VOLUME_INFORMATION, VolumeLabel);
+                        if (RT_UOFFSETOF_DYN(FILE_FS_VOLUME_INFORMATION,
+                                             VolumeLabel[uBuf.Vol.VolumeLabelLength / sizeof(WCHAR)]) != cbActualMin)
+                            RTTestIFailed("%s/%#x/%c: Wrong VolumeLabelLength=%#x vs cbActual=%#x",
+                                          pszClass, cbActualMin, chType, uBuf.Vol.VolumeLabelLength, cbActualMin);
+                        if (uBuf.Vol.VolumeLabel[uBuf.Vol.VolumeLabelLength  / sizeof(WCHAR) - 1] == '\0')
+                            RTTestIFailed("%s/%#x/%c: Zero terminated name!", pszClass, cbActualMin, chType);
+                        if (g_uVerbosity > 1)
+                            RTTestIPrintf(RTTESTLVL_ALWAYS, "%+34s/%#04x/%c: VolumeLabelLength=%#x VolumeLabel='%.*ls'\n",
+                                          pszClass, cbActualMin, chType, uBuf.Vol.VolumeLabelLength,
+                                          uBuf.Vol.VolumeLabelLength / sizeof(WCHAR), uBuf.Vol.VolumeLabel);
+                        break;
+
+                    case FileFsAttributeInformation:
+                        pcbName = &uBuf.Attrib.FileSystemNameLength;
+                        offName = RT_UOFFSETOF(FILE_FS_ATTRIBUTE_INFORMATION, FileSystemName);
+                        if (RT_UOFFSETOF_DYN(FILE_FS_ATTRIBUTE_INFORMATION,
+                                             FileSystemName[uBuf.Attrib.FileSystemNameLength / sizeof(WCHAR)]) != cbActualMin)
+                            RTTestIFailed("%s/%#x/%c: Wrong FileSystemNameLength=%#x vs cbActual=%#x",
+                                          pszClass, cbActualMin, chType, uBuf.Attrib.FileSystemNameLength, cbActualMin);
+                        if (uBuf.Attrib.FileSystemName[uBuf.Attrib.FileSystemNameLength  / sizeof(WCHAR) - 1] == '\0')
+                            RTTestIFailed("%s/%#x/%c: Zero terminated name!", pszClass, cbActualMin, chType);
+                        if (g_uVerbosity > 1)
+                            RTTestIPrintf(RTTESTLVL_ALWAYS, "%+34s/%#04x/%c: FileSystemNameLength=%#x FileSystemName='%.*ls' Attribs=%#x MaxCompName=%#x\n",
+                                          pszClass, cbActualMin, chType, uBuf.Attrib.FileSystemNameLength,
+                                          uBuf.Attrib.FileSystemNameLength / sizeof(WCHAR), uBuf.Attrib.FileSystemName,
+                                          uBuf.Attrib.FileSystemAttributes, uBuf.Attrib.MaximumComponentNameLength);
+                        break;
+
+                    case FileFsDriverPathInformation:
+                        pcbName = &uBuf.DrvPath.DriverNameLength;
+                        offName = RT_UOFFSETOF(FILE_FS_DRIVER_PATH_INFORMATION, DriverName);
+                        if (RT_UOFFSETOF_DYN(FILE_FS_DRIVER_PATH_INFORMATION,
+                                             DriverName[uBuf.DrvPath.DriverNameLength / sizeof(WCHAR)]) != cbActualMin)
+                            RTTestIFailed("%s/%#x/%c: Wrong DriverNameLength=%#x vs cbActual=%#x",
+                                          pszClass, cbActualMin, chType, uBuf.DrvPath.DriverNameLength, cbActualMin);
+                        if (uBuf.DrvPath.DriverName[uBuf.DrvPath.DriverNameLength  / sizeof(WCHAR) - 1] == '\0')
+                            RTTestIFailed("%s/%#x/%c: Zero terminated name!", pszClass, cbActualMin, chType);
+                        if (g_uVerbosity > 1)
+                            RTTestIPrintf(RTTESTLVL_ALWAYS, "%+34s/%#04x/%c: DriverNameLength=%#x DriverName='%.*ls'\n",
+                                          pszClass, cbActualMin, chType, uBuf.DrvPath.DriverNameLength,
+                                          uBuf.DrvPath.DriverNameLength / sizeof(WCHAR), uBuf.DrvPath.DriverName);
+                        break;
+
+                    case FileFsSectorSizeInformation:
+                        if (g_uVerbosity > 1)
+                            RTTestIPrintf(RTTESTLVL_ALWAYS, "%+34s/%#04x/%c: Flags=%#x log=%#x atomic=%#x perf=%#x eff=%#x offSec=%#x offPart=%#x\n",
+                                          pszClass, cbActualMin, chType, uBuf.SectorSize.Flags,
+                                          uBuf.SectorSize.LogicalBytesPerSector,
+                                          uBuf.SectorSize.PhysicalBytesPerSectorForAtomicity,
+                                          uBuf.SectorSize.PhysicalBytesPerSectorForPerformance,
+                                          uBuf.SectorSize.FileSystemEffectivePhysicalBytesPerSectorForAtomicity,
+                                          uBuf.SectorSize.ByteOffsetForSectorAlignment,
+                                          uBuf.SectorSize.ByteOffsetForPartitionAlignment);
+                        break;
+
+                    default:
+                        if (g_uVerbosity > 2)
+                            RTTestIPrintf(RTTESTLVL_ALWAYS, "%+34s/%#04x/%c:\n", pszClass, cbActualMin, chType);
+                        break;
+                }
+                ULONG const cbName = pcbName ? *pcbName : 0;
+                uint8_t     abNameCopy[4096];
+                RT_ZERO(abNameCopy);
+                if (pcbName)
+                    memcpy(abNameCopy, &uBuf.ab[offName], cbName);
+
+                ULONG const cbMin  = g_aNtQueryVolInfoFileClasses[i].cbMin;
+                ULONG const cbMax  = RT_MIN(cbActualMin + 64, sizeof(uBuf));
+                for (cbBuf = 0; cbBuf < cbMax; cbBuf++)
+                {
+                    memset(&uBuf, 0xfe, sizeof(uBuf));
+                    RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+                    rcNt = NtQueryVolumeInformationFile(hNtFile1, &Ios, &uBuf, cbBuf, enmClass);
+                    if (!ASMMemIsAllU8(&uBuf.ab[cbBuf], sizeof(uBuf) - cbBuf, 0xfe))
+                        RTTestIFailed("%s/%#x/%c: Touched memory beyond end of buffer (rcNt=%#x)", pszClass, cbBuf, chType, rcNt);
+                    if (cbBuf < cbMin)
+                    {
+                        if (rcNt != STATUS_INFO_LENGTH_MISMATCH)
+                            RTTestIFailed("%s/%#x/%c: %#x, expected STATUS_INFO_LENGTH_MISMATCH", pszClass, cbBuf, chType, rcNt);
+                        if (Ios.Status != VirginIos.Status || Ios.Information != VirginIos.Information)
+                            RTTestIFailed("%s/%#x/%c: I/O status block was modified (STATUS_INFO_LENGTH_MISMATCH): %#x %#zx",
+                                          pszClass, cbBuf, chType, Ios.Status, Ios.Information);
+                    }
+                    else if (cbBuf < cbActualMin)
+                    {
+                        if (rcNt != STATUS_BUFFER_OVERFLOW)
+                            RTTestIFailed("%s/%#x/%c: %#x, expected STATUS_BUFFER_OVERFLOW", pszClass, cbBuf, chType, rcNt);
+                        if (pcbName)
+                        {
+                            size_t const cbNameAlt = offName < cbBuf ? cbBuf - offName : 0;
+                            if (   *pcbName != cbName
+                                && !(   *pcbName == cbNameAlt
+                                     && (enmClass == FileFsAttributeInformation /*NTFS,FAT*/)))
+                                RTTestIFailed("%s/%#x/%c: Wrong name length: %#x, expected %#x (or %#x)",
+                                              pszClass, cbBuf, chType, *pcbName, cbName, cbNameAlt);
+                            if (memcmp(abNameCopy, &uBuf.ab[offName], cbNameAlt) != 0)
+                                RTTestIFailed("%s/%#x/%c: Wrong partial name: %.*Rhxs",
+                                              pszClass, cbBuf, chType, cbNameAlt, &uBuf.ab[offName]);
+                        }
+                        if (Ios.Information != cbBuf)
+                            RTTestIFailed("%s/%#x/%c: Ios.Information = %#x, expected %#x",
+                                          pszClass, cbBuf, chType, Ios.Information, cbBuf);
+                    }
+                    else
+                    {
+                        if (   !ASMMemIsAllU8(&uBuf.ab[cbActualMin], sizeof(uBuf) - cbActualMin, 0xfe)
+                            && enmClass != FileStorageReserveIdInformation /* NTFS bug? */ )
+                            RTTestIFailed("%s/%#x/%c: Touched memory beyond returned length (cbActualMin=%#x, rcNt=%#x)",
+                                          pszClass, cbBuf, chType, cbActualMin, rcNt);
+                        if (pcbName && *pcbName != cbName)
+                            RTTestIFailed("%s/%#x/%c: Wrong name length: %#x, expected %#x",
+                                          pszClass, cbBuf, chType, *pcbName, cbName);
+                        if (pcbName && memcmp(abNameCopy, &uBuf.ab[offName], cbName) != 0)
+                            RTTestIFailed("%s/%#x/%c: Wrong name: %.*Rhxs",
+                                          pszClass, cbBuf, chType, cbName, &uBuf.ab[offName]);
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (!g_aNtQueryVolInfoFileClasses[i].fQuery)
+            {
+                if (rcNt != STATUS_INVALID_INFO_CLASS)
+                    RTTestIFailed("%s/%#x/%c: %#x, expected STATUS_INVALID_INFO_CLASS", pszClass, cbBuf, chType, rcNt);
+            }
+            else if (   rcNt != STATUS_INVALID_INFO_CLASS
+                     && rcNt != STATUS_INVALID_PARAMETER
+                     && !(rcNt == STATUS_ACCESS_DENIED && enmClass == FileFsControlInformation /* RDR2/W10 */)
+                     && !(rcNt == STATUS_OBJECT_NAME_NOT_FOUND && enmClass == FileFsObjectIdInformation /* RDR2/W10 */)
+                    )
+                RTTestIFailed("%s/%#x/%c: %#x", pszClass, cbBuf, chType, rcNt);
+            if (   (Ios.Status != VirginIos.Status || Ios.Information != VirginIos.Information)
+                && !(   Ios.Status == 0 && Ios.Information == 0
+                     && fType == RTFS_TYPE_DIRECTORY
+                     && (   enmClass == FileFsObjectIdInformation      /* RDR2+NTFS on W10 */
+                         || enmClass == FileFsControlInformation       /* RDR2 on W10 */
+                         || enmClass == FileFsVolumeFlagsInformation   /* RDR2+NTFS on W10 */
+                         || enmClass == FileFsDataCopyInformation      /* RDR2 on W10 */
+                         || enmClass == FileFsMetadataSizeInformation  /* RDR2+NTFS on W10 */
+                         || enmClass == FileFsFullSizeInformationEx    /* RDR2 on W10 */
+                         ) )
+               )
+                RTTestIFailed("%s/%#x/%c: I/O status block was modified: %#x %#zx (rcNt=%#x)",
+                              pszClass, cbBuf, chType, Ios.Status, Ios.Information, rcNt);
+            if (!ASMMemIsAllU8(&uBuf, sizeof(uBuf), 0xff))
+                RTTestIFailed("%s/%#x/%c: Buffer was touched in failure case!", pszClass, cbBuf, chType);
+        }
+    }
+    RT_NOREF(fType);
+}
+
 void fsPerfNtQueryVolInfoFile(void)
 {
-    /** @todo */
+    RTTestISub("NtQueryVolumeInformationFile");
+
+    /* On a regular file: */
+    RTFILE hFile1;
+    RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file2qvif")),
+                                     RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE), VINF_SUCCESS);
+    fsPerfNtQueryVolInfoFileWorker((HANDLE)RTFileToNative(hFile1), RTFS_TYPE_FILE);
+    RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
+
+    /* On a directory: */
+    HANDLE hDir1 = INVALID_HANDLE_VALUE;
+    RTTESTI_CHECK_RC_RETV(RTNtPathOpenDir(InDir(RT_STR_TUPLE("")), GENERIC_READ | SYNCHRONIZE | FILE_SYNCHRONOUS_IO_NONALERT,
+                                          FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                          FILE_OPEN, 0, &hDir1, NULL), VINF_SUCCESS);
+    fsPerfNtQueryVolInfoFileWorker(hDir1, RTFS_TYPE_DIRECTORY);
+    RTTESTI_CHECK(CloseHandle(hDir1) == TRUE);
+
+    /* On a regular file opened for reading: */
+    RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file2qvif")),
+                                     RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_READ), VINF_SUCCESS);
+    fsPerfNtQueryVolInfoFileWorker((HANDLE)RTFileToNative(hFile1), RTFS_TYPE_FILE);
+    RTTESTI_CHECK_RC(RTFileClose(hFile1), VINF_SUCCESS);
 }
 
 #endif /* RT_OS_WINDOWS */

@@ -196,6 +196,27 @@
 #  define FORCEINLINE static __inline
 # endif
 
+# define _FSINFOCLASS                   OutdatedWdm_FSINFOCLASS
+# define FS_INFORMATION_CLASS           OutdatedWdm_FS_INFORMATION_CLASS
+# define PFS_INFORMATION_CLASS          OutdatedWdm_PFS_INFORMATION_CLASS
+# define FileFsVolumeInformation        OutdatedWdm_FileFsVolumeInformation
+# define FileFsLabelInformation         OutdatedWdm_FileFsLabelInformation
+# define FileFsSizeInformation          OutdatedWdm_FileFsSizeInformation
+# define FileFsDeviceInformation        OutdatedWdm_FileFsDeviceInformation
+# define FileFsAttributeInformation     OutdatedWdm_FileFsAttributeInformation
+# define FileFsControlInformation       OutdatedWdm_FileFsControlInformation
+# define FileFsFullSizeInformation      OutdatedWdm_FileFsFullSizeInformation
+# define FileFsObjectIdInformation      OutdatedWdm_FileFsObjectIdInformation
+# define FileFsDriverPathInformation    OutdatedWdm_FileFsDriverPathInformation
+# define FileFsVolumeFlagsInformation   OutdatedWdm_FileFsVolumeFlagsInformation
+# define FileFsSectorSizeInformation    OutdatedWdm_FileFsSectorSizeInformation
+# define FileFsDataCopyInformation      OutdatedWdm_FileFsDataCopyInformation
+# define FileFsMetadataSizeInformation  OutdatedWdm_FileFsMetadataSizeInformation
+# define FileFsFullSizeInformationEx    OutdatedWdm_FileFsFullSizeInformationEx
+# define FileFsMaximumInformation       OutdatedWdm_FileFsMaximumInformation
+# define NtQueryVolumeInformationFile   OutdatedWdm_NtQueryVolumeInformationFile
+# define NtSetVolumeInformationFile     OutdatedWdm_NtSetVolumeInformationFile
+
 # pragma warning(push)
 # ifdef RT_ARCH_X86
 #  define _InterlockedAddLargeStatistic  _InterlockedAddLargeStatistic_StupidDDKVsCompilerCrap
@@ -215,6 +236,27 @@
 #  undef _InterlockedAddLargeStatistic
 # endif
 # pragma warning(pop)
+
+# undef _FSINFOCLASS
+# undef FS_INFORMATION_CLASS
+# undef PFS_INFORMATION_CLASS
+# undef FileFsVolumeInformation
+# undef FileFsLabelInformation
+# undef FileFsSizeInformation
+# undef FileFsDeviceInformation
+# undef FileFsAttributeInformation
+# undef FileFsControlInformation
+# undef FileFsFullSizeInformation
+# undef FileFsObjectIdInformation
+# undef FileFsDriverPathInformation
+# undef FileFsVolumeFlagsInformation
+# undef FileFsSectorSizeInformation
+# undef FileFsDataCopyInformation
+# undef FileFsMetadataSizeInformation
+# undef FileFsFullSizeInformationEx
+# undef FileFsMaximumInformation
+# undef NtQueryVolumeInformationFile
+# undef NtSetVolumeInformationFile
 
 # define IPRT_NT_NEED_API_GROUP_NTIFS
 #endif
@@ -1552,17 +1594,6 @@ NTSYSAPI NTSTATUS NTAPI NtMapViewOfSection(HANDLE, HANDLE, PVOID *, ULONG, SIZE_
 NTSYSAPI NTSTATUS NTAPI NtFlushVirtualMemory(HANDLE, PVOID *, PSIZE_T, PIO_STATUS_BLOCK);
 NTSYSAPI NTSTATUS NTAPI NtUnmapViewOfSection(HANDLE, PVOID);
 
-#ifdef IPRT_NT_USE_WINTERNL
-typedef struct _FILE_FS_ATTRIBUTE_INFORMATION
-{
-    ULONG   FileSystemAttributes;
-    LONG    MaximumComponentNameLength;
-    ULONG   FileSystemNameLength;
-    WCHAR   FileSystemName[1];
-} FILE_FS_ATTRIBUTE_INFORMATION;
-typedef FILE_FS_ATTRIBUTE_INFORMATION *PFILE_FS_ATTRIBUTE_INFORMATION;
-
-#endif
 NTSYSAPI NTSTATUS NTAPI NtOpenProcess(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PCLIENT_ID);
 NTSYSAPI NTSTATUS NTAPI ZwOpenProcess(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PCLIENT_ID);
 NTSYSAPI NTSTATUS NTAPI NtOpenThread(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PCLIENT_ID);
@@ -1580,6 +1611,21 @@ NTSYSAPI NTSTATUS NTAPI ZwOpenProcessToken(HANDLE, ACCESS_MASK, PHANDLE);
 NTSYSAPI NTSTATUS NTAPI ZwOpenThreadToken(HANDLE, ACCESS_MASK, BOOLEAN, PHANDLE);
 
 #ifdef IPRT_NT_USE_WINTERNL
+typedef struct _FILE_FS_VOLUME_INFORMATION
+{
+    LARGE_INTEGER   VolumeCreationTime;
+    ULONG           VolumeSerialNumber;
+    ULONG           VolumeLabelLength;
+    BOOLEAN         SupportsObjects;
+    WCHAR           VolumeLabel[1];
+} FILE_FS_VOLUME_INFORMATION;
+typedef FILE_FS_VOLUME_INFORMATION *PFILE_FS_VOLUME_INFORMATION;
+typedef struct _FILE_FS_LABEL_INFORMATION
+{
+    ULONG           VolumeLabelLength;
+    WCHAR           VolumeLabel[1];
+} FILE_FS_LABEL_INFORMATION;
+typedef FILE_FS_LABEL_INFORMATION *PFILE_FS_LABEL_INFORMATION;
 typedef struct _FILE_FS_SIZE_INFORMATION
 {
     LARGE_INTEGER   TotalAllocationUnits;
@@ -1588,6 +1634,110 @@ typedef struct _FILE_FS_SIZE_INFORMATION
     ULONG           BytesPerSector;
 } FILE_FS_SIZE_INFORMATION;
 typedef FILE_FS_SIZE_INFORMATION *PFILE_FS_SIZE_INFORMATION;
+typedef struct _FILE_FS_DEVICE_INFORMATION
+{
+    DEVICE_TYPE     DeviceType;
+    ULONG           Characteristics;
+} FILE_FS_DEVICE_INFORMATION;
+typedef FILE_FS_DEVICE_INFORMATION *PFILE_FS_DEVICE_INFORMATION;
+typedef struct _FILE_FS_ATTRIBUTE_INFORMATION
+{
+    ULONG           FileSystemAttributes;
+    LONG            MaximumComponentNameLength;
+    ULONG           FileSystemNameLength;
+    WCHAR           FileSystemName[1];
+} FILE_FS_ATTRIBUTE_INFORMATION;
+typedef FILE_FS_ATTRIBUTE_INFORMATION *PFILE_FS_ATTRIBUTE_INFORMATION;
+typedef struct _FILE_FS_CONTROL_INFORMATION
+{
+    LARGE_INTEGER   FreeSpaceStartFiltering;
+    LARGE_INTEGER   FreeSpaceThreshold;
+    LARGE_INTEGER   FreeSpaceStopFiltering;
+    LARGE_INTEGER   DefaultQuotaThreshold;
+    LARGE_INTEGER   DefaultQuotaLimit;
+    ULONG           FileSystemControlFlags;
+} FILE_FS_CONTROL_INFORMATION;
+typedef FILE_FS_CONTROL_INFORMATION *PFILE_FS_CONTROL_INFORMATION;
+typedef struct _FILE_FS_FULL_SIZE_INFORMATION
+{
+    LARGE_INTEGER   TotalAllocationUnits;
+    LARGE_INTEGER   CallerAvailableAllocationUnits;
+    LARGE_INTEGER   ActualAvailableAllocationUnits;
+    ULONG           SectorsPerAllocationUnit;
+    ULONG           BytesPerSector;
+} FILE_FS_FULL_SIZE_INFORMATION;
+typedef FILE_FS_FULL_SIZE_INFORMATION *PFILE_FS_FULL_SIZE_INFORMATION;
+typedef struct _FILE_FS_OBJECTID_INFORMATION
+{
+    UCHAR           ObjectId[16];
+    UCHAR           ExtendedInfo[48];
+} FILE_FS_OBJECTID_INFORMATION;
+typedef FILE_FS_OBJECTID_INFORMATION *PFILE_FS_OBJECTID_INFORMATION;
+typedef struct _FILE_FS_DRIVER_PATH_INFORMATION
+{
+    BOOLEAN         DriverInPath;
+    ULONG           DriverNameLength;
+    WCHAR           DriverName[1];
+} FILE_FS_DRIVER_PATH_INFORMATION;
+typedef FILE_FS_DRIVER_PATH_INFORMATION *PFILE_FS_DRIVER_PATH_INFORMATION;
+typedef struct _FILE_FS_VOLUME_FLAGS_INFORMATION
+{
+    ULONG           Flags;
+} FILE_FS_VOLUME_FLAGS_INFORMATION;
+typedef FILE_FS_VOLUME_FLAGS_INFORMATION *PFILE_FS_VOLUME_FLAGS_INFORMATION;
+#endif
+#if !defined(SSINFO_OFFSET_UNKNOWN) || defined(IPRT_NT_USE_WINTERNL)
+typedef struct _FILE_FS_SECTOR_SIZE_INFORMATION
+{
+    ULONG           LogicalBytesPerSector;
+    ULONG           PhysicalBytesPerSectorForAtomicity;
+    ULONG           PhysicalBytesPerSectorForPerformance;
+    ULONG           FileSystemEffectivePhysicalBytesPerSectorForAtomicity;
+    ULONG           Flags;
+    ULONG           ByteOffsetForSectorAlignment;
+    ULONG           ByteOffsetForPartitionAlignment;
+} FILE_FS_SECTOR_SIZE_INFORMATION;
+typedef FILE_FS_SECTOR_SIZE_INFORMATION *PFILE_FS_SECTOR_SIZE_INFORMATION;
+# ifndef SSINFO_OFFSET_UNKNOWN
+#  define SSINFO_OFFSET_UNKNOWN                     0xffffffffUL
+#  define SSINFO_FLAGS_ALIGNED_DEVICE               1UL
+#  define SSINFO_FLAGS_PARTITION_ALIGNED_ON_DEVICE  2UL
+#  define SSINFO_FLAGS_NO_SEEK_PENALTY              4UL
+#  define SSINFO_FLAGS_TRIM_ENABLED                 8UL
+#  define SSINFO_FLAGS_BYTE_ADDRESSABLE             16UL
+# endif
+#endif
+#ifdef IPRT_NT_USE_WINTERNL
+typedef struct _FILE_FS_DATA_COPY_INFORMATION
+{
+    ULONG           NumberOfCopies;
+} FILE_FS_DATA_COPY_INFORMATION;
+typedef FILE_FS_DATA_COPY_INFORMATION *PFILE_FS_DATA_COPY_INFORMATION;
+typedef struct _FILE_FS_METADATA_SIZE_INFORMATION
+{
+    LARGE_INTEGER   TotalMetadataAllocationUnits;
+    ULONG           SectorsPerAllocationUnit;
+    ULONG           BytesPerSector;
+} FILE_FS_METADATA_SIZE_INFORMATION;
+typedef FILE_FS_METADATA_SIZE_INFORMATION *PFILE_FS_METADATA_SIZE_INFORMATION;
+typedef struct _FILE_FS_FULL_SIZE_INFORMATION_EX
+{
+    ULONGLONG       ActualTotalAllocationUnits;
+    ULONGLONG       ActualAvailableAllocationUnits;
+    ULONGLONG       ActualPoolUnavailableAllocationUnits;
+    ULONGLONG       CallerTotalAllocationUnits;
+    ULONGLONG       CallerAvailableAllocationUnits;
+    ULONGLONG       CallerPoolUnavailableAllocationUnits;
+    ULONGLONG       UsedAllocationUnits;
+    ULONGLONG       TotalReservedAllocationUnits;
+    ULONGLONG       VolumeStorageReserveAllocationUnits;
+    ULONGLONG       AvailableCommittedAllocationUnits;
+    ULONGLONG       PoolAvailableAllocationUnits;
+    ULONG           SectorsPerAllocationUnit;
+    ULONG           BytesPerSector;
+} FILE_FS_FULL_SIZE_INFORMATION_EX;
+typedef FILE_FS_FULL_SIZE_INFORMATION_EX *PFILE_FS_FULL_SIZE_INFORMATION_EX;
+#endif /* IPRT_NT_USE_WINTERNL */
 
 typedef enum _FSINFOCLASS
 {
@@ -1603,11 +1753,15 @@ typedef enum _FSINFOCLASS
     FileFsVolumeFlagsInformation,
     FileFsSectorSizeInformation,
     FileFsDataCopyInformation,
+    FileFsMetadataSizeInformation,
+    FileFsFullSizeInformationEx,
     FileFsMaximumInformation
 } FS_INFORMATION_CLASS;
 typedef FS_INFORMATION_CLASS *PFS_INFORMATION_CLASS;
 NTSYSAPI NTSTATUS NTAPI NtQueryVolumeInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, ULONG, FS_INFORMATION_CLASS);
+NTSYSAPI NTSTATUS NTAPI NtSetVolumeInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, ULONG, FS_INFORMATION_CLASS);
 
+#ifdef IPRT_NT_USE_WINTERNL
 typedef struct _FILE_DIRECTORY_INFORMATION
 {
     ULONG           NextEntryOffset;
