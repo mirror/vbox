@@ -2102,7 +2102,10 @@ typedef struct OHCIBUF
 static bool ohciR3BufInit(POHCIBUF pBuf, uint32_t cbp, uint32_t be)
 {
     if (RT_UNLIKELY(be < cbp))
+    {
+        LogRelMax(10, ("OHCI#%d: cbp=%#010x be=%#010x\n", cbp, be));
         return false;
+    }
 
     if (!cbp || !be)
     {
