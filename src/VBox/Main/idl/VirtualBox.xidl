@@ -25750,8 +25750,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="ICloudClient" extends="$unknown"
-    uuid="e5205e46-6a8c-11e9-bcca-1fb241d260c7"
-    wsmap="managed" reservedMethods="11" reservedAttributes="8"
+    uuid="6d4dfab6-7718-11e9-9775-1f99c815d0b3"
+    wsmap="managed" reservedMethods="16" reservedAttributes="8"
     >
 
     <method name="getExportLaunchParameters" const="yes">
@@ -25817,6 +25817,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="progress" type="IProgress" dir="return">
         <desc>
           Progress object to track the operation completion.
+        </desc>
+      </param>
+    </method>
+
+    <method name="getImportDescriptionForm">
+      <desc>
+        Returns a form for editing the virtual system description for
+        import from OCI.
+      </desc>
+      <param name="description" type="IVirtualSystemDescription" dir="in">
+        <desc>
+          Virtual system description to be edited.
+        </desc>
+      </param>
+      <param name="form" type="IVirtualSystemDescriptionForm" dir="return">
+        <desc>
+          An IForm instance for editing the virtual system description.
         </desc>
       </param>
     </method>
