@@ -2095,15 +2095,16 @@ typedef struct OHCIBUF
  * Sets up a OHCI transport buffer.
  *
  * @returns Flags whether the buffer could be initialised successfully.
+ * @param   pThis   The OHCI instance.
  * @param   pBuf    Ohci buffer.
  * @param   cbp     Current buffer pointer. 32-bit physical address.
  * @param   be      Last byte in buffer (BufferEnd). 32-bit physical address.
  */
-static bool ohciR3BufInit(POHCIBUF pBuf, uint32_t cbp, uint32_t be)
+static bool ohciR3BufInit(POHCI pThis, POHCIBUF pBuf, uint32_t cbp, uint32_t be)
 {
     if (RT_UNLIKELY(be < cbp))
     {
-        LogRelMax(10, ("OHCI#%d: cbp=%#010x be=%#010x\n", cbp, be));
+        LogRelMax(10, ("OHCI#%d: cbp=%#010x be=%#010x\n", pThis->pDevInsR3->iInstance, cbp, be));
         return false;
     }
 
@@ -2682,7 +2683,7 @@ static void ohciR3RhXferCompleteGeneralURB(POHCI pThis, PVUSBURB pUrb, POHCIED p
          * Setup a ohci transfer buffer and calc the new cbp value.
          */
         OHCIBUF Buf;
-        if (!ohciR3BufInit(&Buf, pTd->cbp, pTd->be))
+        if (!ohciR3BufInit(pThis, &Buf, pTd->cbp, pTd->be))
         {
             ohciR3RaiseUnrecoverableError(pThis, 1);
             return;
@@ -2977,7 +2978,7 @@ static bool ohciR3ServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uin
     OHCITD Td;
     ohciR3ReadTd(pThis, TdAddr, &Td);
     OHCIBUF Buf;
-    if (!ohciR3BufInit(&Buf, Td.cbp, Td.be))
+    if (!ohciR3BufInit(pThis, &Buf, Td.cbp, Td.be))
     {
         ohciR3RaiseUnrecoverableError(pThis, 3);
         return false;
@@ -3118,7 +3119,7 @@ static bool ohciR3ServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED 
 
     /* read the head */
     ohciR3ReadTd(pThis, TdAddr, &Head.Td);
-    if (!ohciR3BufInit(&Head.Buf, Head.Td.cbp, Head.Td.be))
+    if (!ohciR3BufInit(pThis, &Head.Buf, Head.Td.cbp, Head.Td.be))
     {
         ohciR3RaiseUnrecoverableError(pThis, 6);
         return false;
@@ -3140,7 +3141,7 @@ static bool ohciR3ServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED 
         pCur->pNext = NULL;
         pCur->TdAddr = pTail->Td.NextTD & ED_PTR_MASK;
         ohciR3ReadTd(pThis, pCur->TdAddr, &pCur->Td);
-        if (!ohciR3BufInit(&pCur->Buf, pCur->Td.cbp, pCur->Td.be))
+        if (!ohciR3BufInit(pThis, &pCur->Buf, pCur->Td.cbp, pCur->Td.be))
         {
             ohciR3RaiseUnrecoverableError(pThis, 7);
             return false;
