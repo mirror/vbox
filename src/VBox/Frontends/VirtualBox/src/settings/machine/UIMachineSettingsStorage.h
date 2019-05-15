@@ -50,9 +50,11 @@ typedef UISettingsCachePool<UIDataSettingsMachineStorage, UISettingsCacheMachine
 /* Internal Types */
 typedef QList <StorageSlot> SlotsList;
 typedef QList <KDeviceType> DeviceTypeList;
+typedef QList <KStorageBus> ControllerBusList;
 typedef QList <KStorageControllerType> ControllerTypeList;
 Q_DECLARE_METATYPE (SlotsList);
 Q_DECLARE_METATYPE (DeviceTypeList);
+Q_DECLARE_METATYPE (ControllerBusList);
 Q_DECLARE_METATYPE (ControllerTypeList);
 
 
@@ -154,22 +156,28 @@ public:
     virtual ~AbstractControllerType() {}
 
     KStorageBus busType() const;
+    ControllerBusList busTypes() const;
     KStorageControllerType ctrType() const;
     ControllerTypeList ctrTypes() const;
     PixmapType pixmap(ItemState aState) const;
 
+    void setCtrBusType(KStorageBus enmCtrBusType);
     void setCtrType (KStorageControllerType aCtrType);
 
     DeviceTypeList deviceTypeList() const;
 
 private:
 
-    KStorageControllerType firstType() const;
-    uint typeAmount() const;
+    void updateBusInfo();
+    void updateTypeInfo();
+    void updatePixmaps();
 
     KStorageBus mBusType;
     KStorageControllerType mCtrType;
-    QList<PixmapType> mPixmaps;
+
+    ControllerBusList   m_buses;
+    ControllerTypeList  m_types;
+    QList<PixmapType>   m_pixmaps;
 };
 
 /* Abstract Item */
