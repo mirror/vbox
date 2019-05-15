@@ -130,6 +130,17 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmread_PtrMap                    , "PtrMap"                    ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmread_RealOrV86Mode             , "RealOrV86Mode"             ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmread_VmxRoot                   , "VmxRoot"                   ),
+    /* INVVPID. */
+    VMXV_DIAG_DESC(kVmxVDiag_Invvpid_Cpl                      , "Cpl"                       ),
+    VMXV_DIAG_DESC(kVmxVDiag_Invvpid_DescRsvd                 , "DescRsvd"                  ),
+    VMXV_DIAG_DESC(kVmxVDiag_Invvpid_LongModeCS               , "LongModeCS"                ),
+    VMXV_DIAG_DESC(kVmxVDiag_Invvpid_RealOrV86Mode            , "RealOrV86Mode"             ),
+    VMXV_DIAG_DESC(kVmxVDiag_Invvpid_TypeInvalid              , "TypeInvalid"               ),
+    VMXV_DIAG_DESC(kVmxVDiag_Invvpid_Type0InvalidAddr         , "Type0InvalidAddr"          ),
+    VMXV_DIAG_DESC(kVmxVDiag_Invvpid_Type0InvalidVpid         , "Type0InvalidVpid"          ),
+    VMXV_DIAG_DESC(kVmxVDiag_Invvpid_Type1InvalidVpid         , "Type1InvalidVpid"          ),
+    VMXV_DIAG_DESC(kVmxVDiag_Invvpid_Type3InvalidVpid         , "Type3InvalidVpid"          ),
+    VMXV_DIAG_DESC(kVmxVDiag_Invvpid_VmxRoot                  , "VmxRoot"                   ),
     /* VMLAUNCH/VMRESUME. */
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_AddrApicAccess           , "AddrApicAccess"            ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic , "AddrApicAccessEqVirtApic"  ),

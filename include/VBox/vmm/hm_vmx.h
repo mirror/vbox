@@ -854,6 +854,7 @@ typedef union
         uint32_t    uReserved2  : 14;
     } StrIo;
 
+    /** INVEPT, INVPCID, INVVPID information. */
     struct
     {
         /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
@@ -972,6 +973,7 @@ typedef union
         uint32_t    u19Def0         : 20;
     } RdrandRdseed;
 
+    /** VMREAD, VMWRITE information. */
     struct
     {
         /** Scaling; 0=no scaling, 1=scale-by-2, 2=scale-by-4, 3=scale-by-8. */
@@ -1476,7 +1478,6 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
 
 
 /** @name VMX MSR - Miscellaneous data.
- * Bit fields for MSR_IA32_VMX_MISC.
  * @{
  */
 /** Whether VM-exit stores EFER.LMA into the "IA32e mode guest" field. */
@@ -1493,6 +1494,8 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
 #define VMX_MISC_MAX_MSRS(a_MiscMsr)                            (512 * (RT_BF_GET((a_MiscMsr), VMX_BF_MISC_MAX_MSRS) + 1))
 /** Maximum CR3-target count supported by the CPU. */
 #define VMX_MISC_CR3_TARGET_COUNT(a_MiscMsr)                    (((a) >> 16) & 0xff)
+
+/** Bit fields for MSR_IA32_VMX_MISC.  */
 /** Relationship between the preemption timer and tsc. */
 #define VMX_BF_MISC_PREEMPT_TIMER_TSC_SHIFT                     0
 #define VMX_BF_MISC_PREEMPT_TIMER_TSC_MASK                      UINT64_C(0x000000000000001f)
@@ -1576,21 +1579,91 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMFUNC_, UINT64_C(0), UINT64_MAX,
 /** @name VMX MSR - EPT/VPID capabilities.
  * @{
  */
+/** Supports execute-only translations by EPT. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY                    RT_BIT_64(0)
+/** Supports page-walk length of 4. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_PAGE_WALK_LENGTH_4            RT_BIT_64(6)
+/** Supports EPT paging-structure memory type to be uncacheable. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC                        RT_BIT_64(8)
+/** Supports EPT paging structure memory type to be write-back. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB                        RT_BIT_64(14)
+/** Supports EPT PDE to map a 2 MB page. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_PDE_2M                        RT_BIT_64(16)
+/** Supports EPT PDPTE to map a 1 GB page. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_PDPTE_1G                      RT_BIT_64(17)
+/** Supports INVEPT instruction. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT                        RT_BIT_64(20)
+/** Supports accessed and dirty flags for EPT. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_EPT_ACCESS_DIRTY              RT_BIT_64(21)
+/** Supports single-context INVEPT type. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT         RT_BIT_64(25)
+/** Supports all-context INVEPT type. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS           RT_BIT_64(26)
+/** Supports INVVPID instruction. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID                       RT_BIT_64(32)
+/** Supports individual-address INVVPID type. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR            RT_BIT_64(40)
+/** Supports single-context INVVPID type. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT        RT_BIT_64(41)
+/** Supports all-context INVVPID type. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS          RT_BIT_64(42)
+/** Supports singe-context-retaining-globals INVVPID type. */
 #define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS  RT_BIT_64(43)
+
+/** Bit fields for MSR_IA32_VMX_EPT_VPID_CAP. */
+#define VMX_BF_EPT_VPID_CAP_RWX_X_ONLY_SHIFT                    0
+#define VMX_BF_EPT_VPID_CAP_RWX_X_ONLY_MASK                     UINT64_C(0x0000000000000001)
+#define VMX_BF_EPT_VPID_CAP_RSVD_1_5_SHIFT                      1
+#define VMX_BF_EPT_VPID_CAP_RSVD_1_5_MASK                       UINT64_C(0x000000000000003e)
+#define VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4_SHIFT            6
+#define VMX_BF_EPT_VPID_CAP_PAGE_WALK_LENGTH_4_MASK             UINT64_C(0x0000000000000040)
+#define VMX_BF_EPT_VPID_CAP_RSVD_7_SHIFT                        7
+#define VMX_BF_EPT_VPID_CAP_RSVD_7_MASK                         UINT64_C(0x0000000000000080)
+#define VMX_BF_EPT_VPID_CAP_EMT_UC_SHIFT                        8
+#define VMX_BF_EPT_VPID_CAP_EMT_UC_MASK                         UINT64_C(0x0000000000000100)
+#define VMX_BF_EPT_VPID_CAP_RSVD_9_13_SHIFT                     9
+#define VMX_BF_EPT_VPID_CAP_RSVD_9_13_MASK                      UINT64_C(0x0000000000003e00)
+#define VMX_BF_EPT_VPID_CAP_EMT_WB_SHIFT                        14
+#define VMX_BF_EPT_VPID_CAP_EMT_WB_MASK                         UINT64_C(0x0000000000004000)
+#define VMX_BF_EPT_VPID_CAP_RSVD_15_SHIFT                       15
+#define VMX_BF_EPT_VPID_CAP_RSVD_15_MASK                        UINT64_C(0x0000000000008000)
+#define VMX_BF_EPT_VPID_CAP_PDE_2M_SHIFT                        16
+#define VMX_BF_EPT_VPID_CAP_PDE_2M_MASK                         UINT64_C(0x0000000000010000)
+#define VMX_BF_EPT_VPID_CAP_PDPTE_1G_SHIFT                      17
+#define VMX_BF_EPT_VPID_CAP_PDPTE_1G_MASK                       UINT64_C(0x0000000000020000)
+#define VMX_BF_EPT_VPID_CAP_RSVD_18_19_SHIFT                    18
+#define VMX_BF_EPT_VPID_CAP_RSVD_18_19_MASK                     UINT64_C(0x00000000000c0000)
+#define VMX_BF_EPT_VPID_CAP_INVEPT_SHIFT                        20
+#define VMX_BF_EPT_VPID_CAP_INVEPT_MASK                         UINT64_C(0x0000000000100000)
+#define VMX_BF_EPT_VPID_CAP_EPT_ACCESS_DIRTY_SHIFT              21
+#define VMX_BF_EPT_VPID_CAP_EPT_ACCESS_DIRTY_MASK               UINT64_C(0x0000000000200000)
+#define VMX_BF_EPT_VPID_CAP_RSVD_22_24_SHIFT                    22
+#define VMX_BF_EPT_VPID_CAP_RSVD_22_24_MASK                     UINT64_C(0x0000000001c00000)
+#define VMX_BF_EPT_VPID_CAP_INVEPT_SINGLE_CTX_SHIFT             25
+#define VMX_BF_EPT_VPID_CAP_INVEPT_SINGLE_CTX_MASK              UINT64_C(0x0000000002000000)
+#define VMX_BF_EPT_VPID_CAP_INVEPT_ALL_CTX_SHIFT                26
+#define VMX_BF_EPT_VPID_CAP_INVEPT_ALL_CTX_MASK                 UINT64_C(0x0000000004000000)
+#define VMX_BF_EPT_VPID_CAP_RSVD_27_31_SHIFT                    27
+#define VMX_BF_EPT_VPID_CAP_RSVD_27_31_MASK                     UINT64_C(0x00000000f8000000)
+#define VMX_BF_EPT_VPID_CAP_INVVPID_SHIFT                       32
+#define VMX_BF_EPT_VPID_CAP_INVVPID_MASK                        UINT64_C(0x0000000100000000)
+#define VMX_BF_EPT_VPID_CAP_RSVD_33_39_SHIFT                    33
+#define VMX_BF_EPT_VPID_CAP_RSVD_33_39_MASK                     UINT64_C(0x000000fe00000000)
+#define VMX_BF_EPT_VPID_CAP_INVVPID_INDIV_ADDR_SHIFT            40
+#define VMX_BF_EPT_VPID_CAP_INVVPID_INDIV_ADDR_MASK             UINT64_C(0x0000010000000000)
+#define VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_SHIFT            41
+#define VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_MASK             UINT64_C(0x0000020000000000)
+#define VMX_BF_EPT_VPID_CAP_INVVPID_ALL_CTX_SHIFT               42
+#define VMX_BF_EPT_VPID_CAP_INVVPID_ALL_CTX_MASK                UINT64_C(0x0000040000000000)
+#define VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS_SHIFT 43
+#define VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS_MASK  UINT64_C(0x0000080000000000)
+#define VMX_BF_EPT_VPID_CAP_RSVD_44_63_SHIFT                    44
+#define VMX_BF_EPT_VPID_CAP_RSVD_44_63_MASK                     UINT64_C(0xfffff00000000000)
+RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EPT_VPID_CAP_, UINT64_C(0), UINT64_MAX,
+                            (RWX_X_ONLY, RSVD_1_5, PAGE_WALK_LENGTH_4, RSVD_7, EMT_UC, RSVD_9_13, EMT_WB, RSVD_15, PDE_2M,
+                             PDPTE_1G, RSVD_18_19, INVEPT, EPT_ACCESS_DIRTY, RSVD_22_24, INVEPT_SINGLE_CTX,
+                             INVEPT_ALL_CTX, RSVD_27_31, INVVPID, RSVD_33_39, INVVPID_INDIV_ADDR, INVVPID_SINGLE_CTX,
+                             INVVPID_ALL_CTX, INVVPID_SINGLE_CTX_RETAIN_GLOBALS, RSVD_44_63));
 /** @} */
 
 
@@ -3880,6 +3953,17 @@ typedef enum
     kVmxVDiag_Vmread_PtrMap,
     kVmxVDiag_Vmread_RealOrV86Mode,
     kVmxVDiag_Vmread_VmxRoot,
+    /* INVVPID. */
+    kVmxVDiag_Invvpid_Cpl,
+    kVmxVDiag_Invvpid_DescRsvd,
+    kVmxVDiag_Invvpid_LongModeCS,
+    kVmxVDiag_Invvpid_RealOrV86Mode,
+    kVmxVDiag_Invvpid_TypeInvalid,
+    kVmxVDiag_Invvpid_Type0InvalidAddr,
+    kVmxVDiag_Invvpid_Type0InvalidVpid,
+    kVmxVDiag_Invvpid_Type1InvalidVpid,
+    kVmxVDiag_Invvpid_Type3InvalidVpid,
+    kVmxVDiag_Invvpid_VmxRoot,
     /* VMLAUNCH/VMRESUME. */
     kVmxVDiag_Vmentry_AddrApicAccess,
     kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic,
