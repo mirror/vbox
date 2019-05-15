@@ -303,8 +303,51 @@ FNIEMOP_STUB(iemOp_phminposuw_Vdq_Wdq);
 
 /** Opcode 0x66 0x0f 0x38 0x80. */
 FNIEMOP_STUB(iemOp_invept_Gy_Mdq);
+
 /** Opcode 0x66 0x0f 0x38 0x81. */
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+FNIEMOP_DEF(iemOp_invvpid_Gy_Mdq)
+{
+    IEMOP_MNEMONIC(invvpid, "invvpid Gy,Mdq");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEMOP_HLP_IN_VMX_OPERATION("invvpid", kVmxVDiag_Invvpid);
+    IEMOP_HLP_VMX_INSTR("invvpid", kVmxVDiag_Invvpid);
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        /* Register, memory. */
+        if (pVCpu->iem.s.enmEffOpSize == IEMMODE_64BIT)
+        {
+            IEM_MC_BEGIN(3, 0);
+            IEM_MC_ARG(uint8_t,  iEffSeg,          0);
+            IEM_MC_ARG(RTGCPTR,  GCPtrInvvpidDesc, 1);
+            IEM_MC_ARG(uint64_t, uInvvpidType,     2);
+            IEM_MC_FETCH_GREG_U64(uInvvpidType, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrInvvpidDesc, bRm, 0);
+            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_CALL_CIMPL_3(iemCImpl_invvpid, iEffSeg, GCPtrInvvpidDesc, uInvvpidType);
+            IEM_MC_END();
+        }
+        else
+        {
+            IEM_MC_BEGIN(3, 0);
+            IEM_MC_ARG(uint8_t,  iEffSeg,          0);
+            IEM_MC_ARG(RTGCPTR,  GCPtrInvvpidDesc, 1);
+            IEM_MC_ARG(uint32_t, uInvvpidType,     2);
+            IEM_MC_FETCH_GREG_U32(uInvvpidType, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
+            IEM_MC_CALC_RM_EFF_ADDR(GCPtrInvvpidDesc, bRm, 0);
+            IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
+            IEM_MC_CALL_CIMPL_3(iemCImpl_invvpid, iEffSeg, GCPtrInvvpidDesc, uInvvpidType);
+            IEM_MC_END();
+        }
+    }
+    Log(("iemOp_invvpid_Gy_Mdq: invalid encoding -> #UD\n"));
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+#else
 FNIEMOP_STUB(iemOp_invvpid_Gy_Mdq);
+#endif
+
 /** Opcode 0x66 0x0f 0x38 0x82. */
 FNIEMOP_DEF(iemOp_invpcid_Gy_Mdq)
 {

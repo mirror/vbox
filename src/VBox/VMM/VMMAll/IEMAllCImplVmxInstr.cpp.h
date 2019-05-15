@@ -177,7 +177,6 @@
  *  VMX_EXIT_EPT_VIOLATION
  *  VMX_EXIT_EPT_MISCONFIG
  *  VMX_EXIT_INVEPT
- *  VMX_EXIT_INVVPID
  *  VMX_EXIT_RDRAND
  *  VMX_EXIT_VMFUNC
  *  VMX_EXIT_ENCLS
@@ -2989,6 +2988,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrNeedsInfo(PVMCPU pVCpu, uint32_t uExitR
     {
         case VMX_EXIT_INVEPT:
         case VMX_EXIT_INVPCID:
+        case VMX_EXIT_INVVPID:
         case VMX_EXIT_LDTR_TR_ACCESS:
         case VMX_EXIT_GDTR_IDTR_ACCESS:
         case VMX_EXIT_VMCLEAR:
@@ -8511,6 +8511,173 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
 
 
 /**
+ * INVVPID instruction execution worker.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context virtual CPU structure.
+ * @param   cbInstr             The instruction length in bytes.
+ * @param   iEffSeg             The segment of the invvpid descriptor.
+ * @param   GCPtrInvvpidDesc    The address of invvpid descriptor.
+ * @param   uInvvpidType        The invalidation type.
+ * @param   pExitInfo           Pointer to the VM-exit information struct. Optional,
+ *                              can be NULL.
+ *
+ * @remarks Common VMX instruction checks are already expected to by the caller,
+ *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
+ */
+IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPTR GCPtrInvvpidDesc,
+                                      uint64_t uInvvpidType, PCVMXVEXITINFO pExitInfo)
+{
+    /* Check if INVVPID instruction is supported, otherwise raise #UD. */
+    if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVpid)
+        return iemRaiseUndefinedOpcode(pVCpu);
+
+    /* Nested-guest intercept. */
+    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
+    {
+        if (pExitInfo)
+            return iemVmxVmexitInstrWithInfo(pVCpu, pExitInfo);
+        return iemVmxVmexitInstrNeedsInfo(pVCpu, VMX_EXIT_INVVPID, VMXINSTRID_NONE, cbInstr);
+    }
+
+    /* CPL. */
+    if (pVCpu->iem.s.uCpl != 0)
+    {
+        Log(("invvpid: CPL != 0 -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pVCpu);
+    }
+
+    /*
+     * Validate INVVPID invalidation type.
+     *
+     * Each of the types have a supported bit in IA32_VMX_EPT_VPID_CAP MSR.
+     * In theory, it's possible for a CPU to not support flushing individual addresses
+     * but all the other types or any other combination.
+     */
+    uint64_t const fCaps = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
+    uint8_t const fTypeIndivAddr              = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
+    uint8_t const fTypeSingleCtx              = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX);
+    uint8_t const fTypeAllCtx                 = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_ALL_CTX);
+    uint8_t const fTypeSingleCtxRetainGlobals = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS);
+    if (   (fTypeIndivAddr              && uInvvpidType == VMXTLBFLUSHVPID_INDIV_ADDR)
+        || (fTypeSingleCtx              && uInvvpidType == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
+        || (fTypeAllCtx                 && uInvvpidType == VMXTLBFLUSHVPID_ALL_CONTEXTS)
+        || (fTypeSingleCtxRetainGlobals && uInvvpidType == VMXTLBFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS))
+    { /* likely */ }
+    else
+    {
+        Log(("invvpid: invalid/unrecognized invvpid type %#x -> VMFail\n", uInvvpidType));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_TypeInvalid;
+        iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Fetch the invvpid descriptor from guest memory.
+     */
+    RTUINT128U uDesc;
+    VBOXSTRICTRC rcStrict = iemMemFetchDataU128(pVCpu, &uDesc, iEffSeg, GCPtrInvvpidDesc);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        /*
+         * Validate the descriptor.
+         */
+        if (uDesc.s.Lo > 0xfff)
+        {
+            Log(("invvpid: reserved bits set in invvpid descriptor %#RX64 -> #GP(0)\n", uDesc.s.Lo));
+            pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_DescRsvd;
+            iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
+            iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+
+        IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR3);
+        RTGCUINTPTR64 const GCPtrInvAddr = uDesc.s.Hi;
+        uint8_t       const uVpid        = uDesc.s.Lo & UINT64_C(0xfff);
+        uint64_t      const uCr3         = pVCpu->cpum.GstCtx.cr3;
+        switch (uInvvpidType)
+        {
+            case VMXTLBFLUSHVPID_INDIV_ADDR:
+            {
+                if (uVpid != 0)
+                {
+                    if (IEM_IS_CANONICAL(GCPtrInvAddr))
+                    {
+                        /* Invalidate mappings for the linear address tagged with VPID. */
+                        /** @todo PGM support for VPID? Currently just flush everything. */
+                        PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
+                        iemVmxVmSucceed(pVCpu);
+                    }
+                    else
+                    {
+                        Log(("invvpid: invalidation address %#RGP is not canonical -> VMFail\n", GCPtrInvAddr));
+                        pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_Type0InvalidAddr;
+                        iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
+                    }
+                }
+                else
+                {
+                    Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, uInvvpidType));
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_Type0InvalidVpid;
+                    iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
+                }
+                break;
+            }
+
+            case VMXTLBFLUSHVPID_SINGLE_CONTEXT:
+            {
+                if (uVpid != 0)
+                {
+                    /* Invalidate all mappings with VPID. */
+                    /** @todo PGM support for VPID? Currently just flush everything. */
+                    PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
+                    iemVmxVmSucceed(pVCpu);
+                }
+                else
+                {
+                    Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, uInvvpidType));
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_Type1InvalidVpid;
+                    iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
+                }
+                break;
+            }
+
+            case VMXTLBFLUSHVPID_ALL_CONTEXTS:
+            {
+                /* Invalidate all mappings with non-zero VPIDs. */
+                /** @todo PGM support for VPID? Currently just flush everything. */
+                PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
+                iemVmxVmSucceed(pVCpu);
+                break;
+            }
+
+            case VMXTLBFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS:
+            {
+                if (uVpid != 0)
+                {
+                    /* Invalidate all mappings with VPID except global translations. */
+                    /** @todo PGM support for VPID? Currently just flush everything. */
+                    PGMFlushTLB(pVCpu, uCr3, true /* fGlobal */);
+                    iemVmxVmSucceed(pVCpu);
+                }
+                else
+                {
+                    Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, uInvvpidType));
+                    pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_Type3InvalidVpid;
+                    iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
+                }
+                break;
+            }
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+    }
+    return rcStrict;
+}
+
+
+/**
  * VMXON instruction execution worker.
  *
  * @returns Strict VBox status code.
@@ -8893,6 +9060,15 @@ IEM_CIMPL_DEF_4(iemCImpl_vmread_mem_reg64, uint8_t, iEffSeg, IEMMODE, enmEffAddr
 IEM_CIMPL_DEF_4(iemCImpl_vmread_mem_reg32, uint8_t, iEffSeg, IEMMODE, enmEffAddrMode, RTGCPTR, GCPtrDst, uint32_t, u32FieldEnc)
 {
     return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrDst, u32FieldEnc, NULL /* pExitInfo */);
+}
+
+
+/**
+ * Implements 'INVVPID'.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_invvpid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvvpidDesc, uint64_t, uInvvpidType)
+{
+    return iemVmxInvvpid(pVCpu, cbInstr, iEffSeg, GCPtrInvvpidDesc, uInvvpidType, NULL /* pExitInfo */);
 }
 
 

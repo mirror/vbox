@@ -16192,6 +16192,34 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmxoff(PVMCPU pVCpu, uint8_t cbInstr)
 
 
 /**
+ * Interface for HM and EM to emulate the INVVPID instruction.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   pExitInfo       Pointer to the VM-exit information struct.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvvpid(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(pExitInfo->cbInstr, 4);
+    IEM_CTX_ASSERT(pVCpu, IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK | CPUMCTX_EXTRN_HM_VMX_MASK);
+    Assert(pExitInfo);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+
+    uint8_t const  iEffSeg          = pExitInfo->InstrInfo.Inv.iSegReg;
+    uint8_t const  cbInstr          = pExitInfo->cbInstr;
+    RTGCPTR const  GCPtrInvvpidDesc = pExitInfo->GCPtrEffAddr;
+    uint64_t const uInvvpidType     = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
+                                    ? iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.Inv.iReg2)
+                                    : iemGRegFetchU32(pVCpu, pExitInfo->InstrInfo.Inv.iReg2);
+    VBOXSTRICTRC rcStrict = iemVmxInvvpid(pVCpu, cbInstr, iEffSeg, GCPtrInvvpidDesc, uInvvpidType, pExitInfo);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
+
+/**
  * @callback_method_impl{FNPGMPHYSHANDLER, VMX APIC-access page accesses}
  *
  * @remarks The @a pvUser argument is currently unused.
