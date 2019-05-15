@@ -678,7 +678,10 @@ static NTSTATUS vbsfNtQueryFsVolumeInfo(IN OUT PRX_CONTEXT pRxContext,
             uint32_t cbLeft = cbInfo - cbCopied;
             memcpy(pInfo->VolumeLabel, VBOX_VOLNAME_PREFIX, RT_MIN(cbLeft, VBOX_VOLNAME_PREFIX_SIZE));
             if (cbLeft > VBOX_VOLNAME_PREFIX_SIZE)
-                memcpy(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)], pwcShareName, cbShareName);
+            {
+                cbLeft -= VBOX_VOLNAME_PREFIX_SIZE;
+                memcpy(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)], pwcShareName, RT_MIN(cbLeft, cbShareName));
+            }
             Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsVolumeInformation: partial result (%#x, needed %#x)\n",
                  cbCopied, cbCopied + cbVolLabel));
             cbCopied = cbInfo;
