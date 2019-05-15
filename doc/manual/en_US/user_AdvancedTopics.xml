@@ -4811,6 +4811,114 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 
     </sect2>
 
+    <sect2 id="restrict-network-attachments">
+
+      <title>Removing Certain Modes of Networking from the GUI</title>
+
+      <para>
+       It is possible to remove  networking modes from
+       &product-name; GUI. To achieve this:
+      </para>
+
+<screen>VBoxManage setextradata global GUI/RestrictedNetworkAttachmentTypes OPTION[,OPTION...]</screen>
+
+      <para>
+        where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords:
+      </para>
+
+      <variablelist>
+
+        <varlistentry>
+          <term>
+            <computeroutput>NAT</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Remove the <emphasis role="bold">NAT</emphasis> option
+              from the GUI.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>NATNetwork</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Remove the <emphasis role="bold">NAT network</emphasis> option
+              from the GUI.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>BridgetAdapter</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Remove the <emphasis role="bold">Bridged networking</emphasis> option
+              from the GUI.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>InternalNetwork</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Remove the <emphasis role="bold">Internal networking</emphasis> option
+              from the GUI.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>HostOnlyAdapter</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Remove the <emphasis role="bold">Host Only networking</emphasis> option
+              from the GUI.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>GenericDriver</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Remove the <emphasis role="bold">Generic networking</emphasis> option
+              from the GUI.
+            </para>
+          </listitem>
+        </varlistentry>
+
+      </variablelist>
+
+
+      <para>
+        This is a global setting. Any combination of the above is
+        allowed. To restore the default behavior, use
+      </para>
+
+<screen>VBoxManage setextradata global GUI/RestrictedNetworkAttachmentTypes</screen>
+
+
+    </sect2>
   </sect1>
 
   <sect1 id="vboxwebsrv-daemon">
