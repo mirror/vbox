@@ -530,6 +530,8 @@ end:
 
 /**
  * Updates VBSFNTFCBEXT::VolInfo.
+ *
+ * Currently no kind of FCB lock is normally held.
  */
 static NTSTATUS vbsfNtUpdateFcbVolInfo(PVBSFNTFCBEXT pVBoxFcbX, PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
                                        PMRX_VBOX_FOBX pVBoxFobx)
@@ -1118,6 +1120,11 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
     return Status;
 }
 
+
+/*********************************************************************************************************************************
+*   VBoxMRxQueryFileInfo                                                                                                         *
+*********************************************************************************************************************************/
+
 /**
  * Updates the FCBs copy of the file size.
  *
@@ -1642,6 +1649,11 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
          Status, RxContext->Info.Length, cbToCopy));
     return Status;
 }
+
+
+/*********************************************************************************************************************************
+*   VBoxMRxSetFileInfo                                                                                                           *
+*********************************************************************************************************************************/
 
 /**
  * Worker for VBoxMRxSetFileInfo.
@@ -2255,6 +2267,13 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
     return Status;
 }
 
+/**
+ * This is a no-op because we already set the file timestamps before closing,
+ * and generally the host takes care of this.
+ *
+ * RDBSS calls this if it things we might need to update file information as the
+ * file is closed.
+ */
 NTSTATUS VBoxMRxSetFileInfoAtCleanup(IN PRX_CONTEXT RxContext)
 {
     RT_NOREF(RxContext);

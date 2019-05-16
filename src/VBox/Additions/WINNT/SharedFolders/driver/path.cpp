@@ -470,22 +470,19 @@ failure:
  */
 NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
     RxCaptureFcb;
     RxCaptureFobx;
+    PMRX_NET_ROOT               pNetRoot          = capFcb->pNetRoot;
+    PMRX_SRV_OPEN               SrvOpen           = RxContext->pRelevantSrvOpen;
+    PUNICODE_STRING             RemainingName     = GET_ALREADY_PREFIXED_NAME_FROM_CONTEXT(RxContext);
+    PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
+    ULONG                       CreateAction      = FILE_CREATED;
+    SHFLHANDLE                  Handle            = SHFL_HANDLE_NIL;
+    SHFLFSOBJINFO               Info              = {0};
+    NTSTATUS                    Status            = STATUS_SUCCESS;
+    PMRX_VBOX_FOBX              pVBoxFobx;
 
-    PMRX_NET_ROOT pNetRoot = capFcb->pNetRoot;
-    PMRX_SRV_OPEN SrvOpen = RxContext->pRelevantSrvOpen;
-    PUNICODE_STRING RemainingName = GET_ALREADY_PREFIXED_NAME_FROM_CONTEXT(RxContext);
-
-    SHFLFSOBJINFO Info = {0};
-
-    ULONG CreateAction = FILE_CREATED;
-    SHFLHANDLE Handle = SHFL_HANDLE_NIL;
-    PMRX_VBOX_FOBX pVBoxFobx;
-
-    RT_NOREF(__C_Fobx); /* RxCaptureFobx */
+    RT_NOREF(capFobx); /* RxCaptureFobx */
 
     Log(("VBOXSF: MRxCreate: name ptr %p length=%d, SrvOpen->Flags 0x%08X\n",
          RemainingName, RemainingName->Length, SrvOpen->Flags));
@@ -498,17 +495,12 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
 #endif
 
     if (RemainingName->Length)
-    {
         Log(("VBOXSF: MRxCreate: Attempt to open %.*ls\n",
              RemainingName->Length/sizeof(WCHAR), RemainingName->Buffer));
-    }
-    else
+    else if (FlagOn(RxContext->Create.Flags, RX_CONTEXT_CREATE_FLAG_STRIPPED_TRAILING_BACKSLASH))
     {
-        if (FlagOn(RxContext->Create.Flags, RX_CONTEXT_CREATE_FLAG_STRIPPED_TRAILING_BACKSLASH))
-        {
-            Log(("VBOXSF: MRxCreate: Empty name -> Only backslash used\n"));
-            RemainingName = &g_UnicodeBackslash;
-        }
+        Log(("VBOXSF: MRxCreate: Empty name -> Only backslash used\n"));
+        RemainingName = &g_UnicodeBackslash;
     }
 
     if (   pNetRoot->Type != NET_ROOT_WILD
@@ -516,8 +508,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     {
         Log(("VBOXSF: MRxCreate: netroot type %d not supported\n",
              pNetRoot->Type));
-        Status = STATUS_NOT_IMPLEMENTED;
-        goto Exit;
+        return STATUS_NOT_IMPLEMENTED;
     }
 
     Status = vbsfProcessCreate(RxContext,
@@ -532,7 +523,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     {
         Log(("VBOXSF: MRxCreate: vbsfProcessCreate failed 0x%08X\n",
              Status));
-        goto Exit;
+        return Status;
     }
 
     Log(("VBOXSF: MRxCreate: EOF is 0x%RX64 AllocSize is 0x%RX64\n",
@@ -542,9 +533,14 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     if (!RxContext->pFobx)
     {
         Log(("VBOXSF: MRxCreate: RxCreateNetFobx failed\n"));
-        Status = STATUS_INSUFFICIENT_RESOURCES;
-        goto Exit;
+        VbglR0SfHostReqCloseSimple(pNetRootExtension->map.root, Handle);
+        return STATUS_INSUFFICIENT_RESOURCES;
     }
+    pVBoxFobx = VBoxMRxGetFileObjectExtension(RxContext->pFobx);
+    Log(("VBOXSF: MRxCreate: VBoxFobx = %p\n",
+         pVBoxFobx));
+    AssertReturnStmt(pVBoxFobx, VbglR0SfHostReqCloseSimple(pNetRootExtension->map.root, Handle), STATUS_INTERNAL_ERROR);
+
 
     Log(("VBOXSF: MRxCreate: CreateAction = 0x%08X\n",
          CreateAction));
@@ -594,19 +590,6 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
 
     RxContext->pFobx->OffsetOfNextEaToReturn = 1;
 
-    pVBoxFobx = VBoxMRxGetFileObjectExtension(RxContext->pFobx);
-
-    Log(("VBOXSF: MRxCreate: VBoxFobx = %p\n",
-         pVBoxFobx));
-
-    if (!pVBoxFobx)
-    {
-        Log(("VBOXSF: MRxCreate: no VBoxFobx!\n"));
-        AssertFailed();
-        Status = STATUS_INSUFFICIENT_RESOURCES;
-        goto Exit;
-    }
-
     pVBoxFobx->hFile = Handle;
     pVBoxFobx->pSrvCall = RxContext->Create.pSrvCall;
     pVBoxFobx->Info = Info;
@@ -642,7 +625,6 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     Log(("VBOXSF: MRxCreate: return 0x%08X\n",
          Status));
 
-Exit:
     return Status;
 }
 
