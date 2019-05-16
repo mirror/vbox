@@ -437,6 +437,20 @@ static NTSTATUS vbsfWriteInternal(IN PRX_CONTEXT RxContext)
         pVBoxFobx->fTimestampsImplicitlyUpdated |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
         if (pVBoxFcbx->pFobxLastWriteTime != pVBoxFobx)
             pVBoxFcbx->pFobxLastWriteTime = NULL;
+
+        /* Make sure our cached file size value is up to date: */
+        if (ctx.cbData > 0)
+        {
+            RTFOFF offEndOfWrite = LowIoContext->ParamsFor.ReadWrite.ByteOffset + ctx.cbData;
+            if (pVBoxFobx->Info.cbObject < offEndOfWrite)
+                pVBoxFobx->Info.cbObject = offEndOfWrite;
+
+            if (pVBoxFobx->Info.cbAllocated < offEndOfWrite)
+            {
+                pVBoxFobx->Info.cbAllocated = offEndOfWrite;
+                pVBoxFobx->nsUpToDate       = 0;
+            }
+        }
     }
     else
         ByteCount = 0; /* Nothing written. */

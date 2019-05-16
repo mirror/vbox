@@ -1208,6 +1208,7 @@ void vbsfNtUpdateFcbSize(PFILE_OBJECT pFileObj, PMRX_FCB pFcb, PMRX_VBOX_FOBX pV
                 FileSizes.FileSize.QuadPart        = cbFileNew;
                 FileSizes.ValidDataLength.QuadPart = cbFileNew;
 
+
                 /* RDBSS leave the lock before calling CcSetFileSizes, so we do that too then.*/
                 if (NT_SUCCESS(rcNtLock))
                 {
@@ -1224,11 +1225,17 @@ void vbsfNtUpdateFcbSize(PFILE_OBJECT pFileObj, PMRX_FCB pFcb, PMRX_VBOX_FOBX pV
                     NTSTATUS rcNt = GetExceptionCode();
                     Log(("vbsfNtUpdateFcbSize: CcSetFileSizes -> %#x\n", rcNt));
 #endif
+                    return;
                 }
+                Log2(("vbsfNtUpdateFcbSize: Updated Size+VDL from %#RX64 to %#RX64; Alloc %#RX64\n",
+                      cbFileOld, cbFileNew, FileSizes.AllocationSize));
                 return;
             }
             /** @todo should we flag this so we can try again later? */
         }
+
+        Log2(("vbsfNtUpdateFcbSize: Updated sizes: cb=%#RX64 VDL=%#RX64 Alloc=%#RX64 (old cb=#RX64)\n",
+              pFcb->Header.FileSize.QuadPart, pFcb->Header.ValidDataLength.QuadPart, pFcb->Header.AllocationSize.QuadPart, cbFileOld));
     }
     else
         Log(("vbsfNtUpdateFcbSize: Seems we raced someone updating the file size: old size = %#RX64, new size = %#RX64, current size = %#RX64\n",
@@ -1236,7 +1243,7 @@ void vbsfNtUpdateFcbSize(PFILE_OBJECT pFileObj, PMRX_FCB pFcb, PMRX_VBOX_FOBX pV
 
     if (NT_SUCCESS(rcNtLock))
     {
-        RxReleasePagingIoResource(NULL, pFcb);
+        RxReleasePagingIoResource(NULL, pFcb); /* requires {} */
     }
 }
 
@@ -2158,6 +2165,10 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
          * about adjusting EOF if the file shrinks.
          *
          * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/d4bc551b-7aaf-4b4f-ba0e-3a75e7c528f0#Appendix_A_83
+         *
+         * Note! The AllocationSize and FileSize could be set by RxSetAllocationInfo
+         *       before it calls us, so we must use our own copy of the file size here
+         *       when we try avoid calling the host!  (open+truncate test failure)
          */
         case FileAllocationInformation:
         {
@@ -2165,7 +2176,7 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             Log(("VBOXSF: MrxSetFileInfo: FileAllocationInformation: new AllocSize = 0x%RX64, FileSize = 0x%RX64\n",
                  pInfo->AllocationSize.QuadPart, capFcb->Header.FileSize.QuadPart));
 
-            if (pInfo->AllocationSize.QuadPart >= capFcb->Header.FileSize.QuadPart)
+            if (pInfo->AllocationSize.QuadPart >= pVBoxFobx->Info.cbObject)
                 Status = STATUS_SUCCESS;
             else
             {
