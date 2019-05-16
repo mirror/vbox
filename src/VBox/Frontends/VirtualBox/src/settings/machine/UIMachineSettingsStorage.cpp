@@ -1714,6 +1714,20 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                         }
                     }
 
+                    /* Lets make sure there is enough of place for all the remaining attachments: */
+                    const uint uMaxPortCount =
+                        (uint)vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(enmNewCtrBusType);
+                    const uint uMaxDevicePerPortCount =
+                        (uint)vboxGlobal().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(enmNewCtrBusType);
+                    const QList<QUuid> ids = pItemController->attachmentIDs();
+                    if (uMaxPortCount * uMaxDevicePerPortCount < (uint)ids.size())
+                    {
+                        if (!msgCenter().confirmStorageBusChangeWithExcessiveRemoval())
+                            return false;
+                        for (int i = uMaxPortCount * uMaxDevicePerPortCount; i < ids.size(); ++i)
+                            delAttachment(pItemController->id(), ids.at(i));
+                    }
+
                     pItemController->setCtrBusType(enmNewCtrBusType);
                     emit dataChanged(aIndex, aIndex);
                     return true;

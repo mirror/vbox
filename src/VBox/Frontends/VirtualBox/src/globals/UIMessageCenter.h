@@ -319,6 +319,7 @@ public:
     bool confirmSettingsReloading(QWidget *pParent = 0) const;
     int confirmRemovingOfLastDVDDevice(QWidget *pParent = 0) const;
     bool confirmStorageBusChangeWithOpticalRemoval(QWidget *pParent = 0) const;
+    bool confirmStorageBusChangeWithExcessiveRemoval(QWidget *pParent = 0) const;
     void cannotAttachDevice(const CMachine &machine, UIMediumDeviceType type, const QString &strLocation, const StorageSlot &storageSlot, QWidget *pParent = 0);
     bool warnAboutIncorrectPort(QWidget *pParent = 0) const;
     bool warnAboutIncorrectAddress(QWidget *pParent = 0) const;

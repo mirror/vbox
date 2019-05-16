@@ -1124,6 +1124,14 @@ bool UIMessageCenter::confirmStorageBusChangeWithOpticalRemoval(QWidget *pParent
                              "devices will be removed.</p>"));
 }
 
+bool UIMessageCenter::confirmStorageBusChangeWithExcessiveRemoval(QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>This controller has devices attached.  You have requested storage bus change to "
+                             "type which supports smaller amount of attached devices.</p><p>If you proceed "
+                             "excessive devices will be removed.</p>"));
+}
+
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumDeviceType enmType,
                                          const QString &strLocation, const StorageSlot &storageSlot,
                                          QWidget *pParent /* = 0*/)
