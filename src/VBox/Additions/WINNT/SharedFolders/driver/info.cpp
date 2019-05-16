@@ -2178,9 +2178,9 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
          *       must use our own cached file size value.  (Cause of broken test
          *       of opening w/ truncation.)
          *
-         * P.S.  When opening a file with the trunction flag set, it seems to be
-         *       the NT I/O manager doing the truncation after opening the file
-         *       as a separate setting FileAllocationInformation operation (no
+         * P.S.  When opening a file with the TRUNCATE_EXISTING disposition,
+         *       kernel32.dll translate it to FILE_OPEN and do the truncating
+         *       separately with a set FileAllocationInformation operation (no
          *       EOF or VDL setting).
          */
         case FileAllocationInformation:
