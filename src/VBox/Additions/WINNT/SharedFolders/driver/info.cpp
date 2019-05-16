@@ -20,8 +20,9 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "vbsf.h"
-#include <iprt/err.h>
 #include <iprt/asm.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
 
 extern "C" NTSTATUS NTAPI RxSetEndOfFileInfo(PRX_CONTEXT, PIRP, PFCB, PFOBX);
 
@@ -522,6 +523,11 @@ end:
     return Status;
 }
 
+
+/*********************************************************************************************************************************
+*   NtQueryVolumeInformationFile                                                                                                 *
+*********************************************************************************************************************************/
+
 /**
  * Updates VBSFNTFCBEXT::VolInfo.
  */
@@ -581,7 +587,6 @@ static NTSTATUS vbsfNtUpdateFcbVolInfo(PVBSFNTFCBEXT pVBoxFcbX, PMRX_VBOX_NETROO
         rcNt = STATUS_INSUFFICIENT_RESOURCES;
     return rcNt;
 }
-
 
 /**
  * Handles NtQueryVolumeInformationFile / FileFsVolumeInformation
@@ -698,7 +703,7 @@ static NTSTATUS vbsfNtQueryFsVolumeInfo(IN OUT PRX_CONTEXT pRxContext,
      * Update the return length in the context.
      */
     pRxContext->Info.LengthRemaining = cbInfo - cbCopied;
-    pRxContext->InformationToReturn  = cbCopied; /* whatever */
+    pRxContext->InformationToReturn  = cbCopied;
 
     return Status;
 }
@@ -764,7 +769,7 @@ static NTSTATUS vbsfNtQueryFsSizeInfo(IN OUT PRX_CONTEXT pRxContext,
      * Update the return length in the context.
      */
     pRxContext->Info.LengthRemaining = cbInfo - sizeof(*pInfo);
-    pRxContext->InformationToReturn  = sizeof(*pInfo); /* whatever */
+    pRxContext->InformationToReturn  = sizeof(*pInfo);
     return STATUS_SUCCESS;
 }
 
@@ -832,7 +837,7 @@ static NTSTATUS vbsfNtQueryFsFullSizeInfo(IN OUT PRX_CONTEXT pRxContext,
      * Update the return length in the context.
      */
     pRxContext->Info.LengthRemaining = cbInfo - sizeof(*pInfo);
-    pRxContext->InformationToReturn  = sizeof(*pInfo); /* whatever */
+    pRxContext->InformationToReturn  = sizeof(*pInfo);
     return STATUS_SUCCESS;
 }
 
@@ -862,7 +867,7 @@ static NTSTATUS vbsfNtQueryFsDeviceInfo(IN OUT PRX_CONTEXT pRxContext,
      * Update the return length in the context.
      */
     pRxContext->Info.LengthRemaining = cbInfo - sizeof(*pInfo);
-    pRxContext->InformationToReturn  = sizeof(*pInfo); /* whatever */
+    pRxContext->InformationToReturn  = sizeof(*pInfo);
     return STATUS_SUCCESS;
 }
 
@@ -934,7 +939,7 @@ static NTSTATUS vbsfNtQueryFsAttributeInfo(IN OUT PRX_CONTEXT pRxContext,
      * Update the return length in the context.
      */
     pRxContext->Info.LengthRemaining = cbInfo - cbStrCopied - RT_UOFFSETOF(FILE_FS_ATTRIBUTE_INFORMATION, FileSystemName);
-    pRxContext->InformationToReturn  = cbStrCopied + RT_UOFFSETOF(FILE_FS_ATTRIBUTE_INFORMATION, FileSystemName); /* whatever */
+    pRxContext->InformationToReturn  = cbStrCopied + RT_UOFFSETOF(FILE_FS_ATTRIBUTE_INFORMATION, FileSystemName);
     return cbInfo >= cbNeeded ? STATUS_SUCCESS : STATUS_BUFFER_OVERFLOW;
 }
 
@@ -983,21 +988,17 @@ static NTSTATUS vbsfNtQueryFsSectorSizeInfo(IN OUT PRX_CONTEXT pRxContext,
      * Update the return length in the context.
      */
     pRxContext->Info.LengthRemaining = cbInfo - sizeof(*pInfo);
-    pRxContext->InformationToReturn  = sizeof(*pInfo); /* whatever */
+    pRxContext->InformationToReturn  = sizeof(*pInfo);
     return STATUS_SUCCESS;
 }
 
 
-#include <iprt/mem.h>
 /**
  * Handles NtQueryVolumeInformationFile and similar.
  *
  * The RDBSS library does not do a whole lot for these queries.  No FCB locking.
- *
- *
  * The IO_STATUS_BLOCK updating differs too,  setting of Ios.Information is
- * limited to cbInitialBuf
- * - RxContext->Info.LengthRemaining.
+ * limited to cbInitialBuf - RxContext->Info.LengthRemaining.
  */
 NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
 {
@@ -1011,21 +1012,17 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
         "FileFsDataCopyInformation",   "FileFsMetadataSizeInformation", "FileFsFullSizeInformationEx",
     };
 #endif
-
-    NTSTATUS Status;
-
     RxCaptureFcb;
     RxCaptureFobx;
-
     PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
-    PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
+    PMRX_VBOX_FOBX              pVBoxFobx         = VBoxMRxGetFileObjectExtension(capFobx);
+    NTSTATUS                    Status;
 
-    Log(("VBOXSF: MrxQueryVolumeInfo: pInfoBuffer = %p, cbInfoBuffer = %d\n",
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: pInfoBuffer = %p, cbInfoBuffer = %d\n",
          RxContext->Info.Buffer, RxContext->Info.LengthRemaining));
-    Log(("VBOXSF: MrxQueryVolumeInfo: vboxFobx = %p, Handle = 0x%RX64\n",
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: vboxFobx = %p, Handle = 0x%RX64\n",
          pVBoxFobx, pVBoxFobx ? pVBoxFobx->hFile : 0));
 
-/** @todo Consolidate the tail code that updates LengthRemaining. */
     switch (RxContext->Info.FsInformationClass)
     {
         case FileFsVolumeInformation:
@@ -1034,7 +1031,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
             Status = vbsfNtQueryFsVolumeInfo(RxContext, (PFILE_FS_VOLUME_INFORMATION)RxContext->Info.Buffer,
                                              RxContext->Info.Length, capFcb->pNetRoot, pNetRootExtension, pVBoxFobx,
                                              VBoxMRxGetFcbExtension(capFcb));
-            return Status;
+            break;
 
         case FileFsSizeInformation:
             Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsSizeInformation\n"));
@@ -1042,7 +1039,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
             Status = vbsfNtQueryFsSizeInfo(RxContext, (PFILE_FS_SIZE_INFORMATION)RxContext->Info.Buffer,
                                            RxContext->Info.Length, pNetRootExtension, pVBoxFobx,
                                            VBoxMRxGetFcbExtension(capFcb));
-            return Status;
+            break;
 
         case FileFsFullSizeInformation:
             Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsFullSizeInformation\n"));
@@ -1050,14 +1047,14 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
             Status = vbsfNtQueryFsFullSizeInfo(RxContext, (PFILE_FS_FULL_SIZE_INFORMATION)RxContext->Info.Buffer,
                                                RxContext->Info.Length, pNetRootExtension, pVBoxFobx,
                                                VBoxMRxGetFcbExtension(capFcb));
-            return Status;
+            break;
 
         case FileFsDeviceInformation:
             Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsDeviceInformation\n"));
             AssertReturn(pVBoxFobx, STATUS_INVALID_PARAMETER);
             Status = vbsfNtQueryFsDeviceInfo(RxContext, (PFILE_FS_DEVICE_INFORMATION)RxContext->Info.Buffer,
                                              RxContext->Info.Length, capFcb->pNetRoot);
-            return Status;
+            break;
 
         case FileFsAttributeInformation:
             Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsAttributeInformation\n"));
@@ -1065,7 +1062,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
             Status = vbsfNtQueryFsAttributeInfo(RxContext, (PFILE_FS_ATTRIBUTE_INFORMATION)RxContext->Info.Buffer,
                                                 RxContext->Info.Length, pNetRootExtension, pVBoxFobx,
                                                 VBoxMRxGetFcbExtension(capFcb));
-            return Status;
+            break;
 
         case FileFsSectorSizeInformation:
             Log(("VBOXSF: VBoxMRxQueryVolumeInfo: FileFsSectorSizeInformation\n"));
@@ -1073,49 +1070,52 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
             Status = vbsfNtQueryFsSectorSizeInfo(RxContext, (PFILE_FS_SECTOR_SIZE_INFORMATION)RxContext->Info.Buffer,
                                                  RxContext->Info.Length, pNetRootExtension, pVBoxFobx,
                                                  VBoxMRxGetFcbExtension(capFcb));
-            return Status;
+            break;
 
         case FileFsLabelInformation:
             AssertFailed(/* Only for setting, not for querying. */);
             RT_FALL_THRU();
         default:
-        {
-            Log(("VBOXSF: MrxQueryVolumeInfo: Not supported FS_INFORMATION_CLASS value: %d (%s)!\n",
+            Log(("VBOXSF: VBoxMRxQueryVolumeInfo: Not supported FS_INFORMATION_CLASS value: %d (%s)!\n",
                  RxContext->Info.FsInformationClass,
                  (ULONG)RxContext->Info.FsInformationClass < RT_ELEMENTS(s_apszNames)
                  ? s_apszNames[RxContext->Info.FsInformationClass] : "??"));
-            /* Here is a weird issue I couldn't quite figure out.  When working directories, I
-               seem to get semi-random stuff back in the IO_STATUS_BLOCK.  Difference between
-               directories and files seemed to be the IRP_SYNCHRONOUS_API flag.  Poking around
-               a little bit more, the UserIosb seems to be a ring-0 stack address rather than
-               the usermode one and IopSynchronousApiServiceTail being used for copying it back
-               to user mode because the handle wasn't synchronous or something.
+            Status = STATUS_INVALID_PARAMETER;
+            RxContext->InformationToReturn = 0;
+            break;
+    }
 
-               So, the following is kludge to make the IOS values 0,0 like FAT does it.  The
-               real fix for this escapes me, but this should do the trick... */
-            PIRP pIrp = RxContext->CurrentIrp;
-            if (   pIrp
-                && (pIrp->Flags & IRP_SYNCHRONOUS_API)
-                && RTR0MemKernelIsValidAddr(pIrp->UserIosb))
-            {
-                Log9(("VBOXSF: MrxQueryVolumeInfo: IRP_SYNCHRONOUS_API hack: Setting UserIosb (%p) values to zero!\n", \
-                      pIrp->UserIosb));
-                __try
-                {
-                    pIrp->UserIosb->Status      = 0;
-                    pIrp->UserIosb->Information = 0;
-                }
-                __except(EXCEPTION_EXECUTE_HANDLER)
-                {
+    /* Here is a weird issue I couldn't quite figure out.  When working directories, I
+       seem to get semi-random stuff back in the IO_STATUS_BLOCK when returning failures
+       for unsupported classes.  The difference between directories and files seemed to
+       be the IRP_SYNCHRONOUS_API flag.  Poking around a little bit more, the UserIosb
+       seems to be a ring-0 stack address rather than the usermode one and
+       IopSynchronousApiServiceTail being used for copying it back to user mode because
+       the handle wasn't synchronous or something.
+
+       So, the following is kludge to make the IOS values 0,0 like FAT does it.  The
+       real fix for this escapes me, but this should do the trick for now... */
+    PIRP pIrp = RxContext->CurrentIrp;
+    if (   pIrp
+        && (pIrp->Flags & IRP_SYNCHRONOUS_API)
+        && RTR0MemKernelIsValidAddr(pIrp->UserIosb))
+    {
+        Log2(("VBOXSF: VBoxMRxQueryVolumeInfo: IRP_SYNCHRONOUS_API hack: Setting UserIosb (%p) values!\n", pIrp->UserIosb));
+        __try
+        {
+            pIrp->UserIosb->Status      = 0;
+            pIrp->UserIosb->Information = RxContext->InformationToReturn;
+        }
+        __except(EXCEPTION_EXECUTE_HANDLER)
+        {
 #ifdef LOG_ENABLED
-                    NTSTATUS rcNt = GetExceptionCode();
-                    Log(("VBOXSF: MrxQueryVolumeInfo: Oops %#x accessing %p\n", rcNt, pIrp->UserIosb));
+            NTSTATUS rcNt = GetExceptionCode();
+            Log(("VBOXSF: VBoxMRxQueryVolumeInfo: Oops %#x accessing %p\n", rcNt, pIrp->UserIosb));
 #endif
-                }
-            }
-            return STATUS_INVALID_PARAMETER;
         }
     }
+    Log(("VBOXSF: VBoxMRxQueryVolumeInfo: Returned %#010x\n", Status));
+    return Status;
 }
 
 /**
