@@ -277,6 +277,8 @@ static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
         if (pVBoxFcbx->pFobxLastAccessTime != pVBoxFobx)
             pVBoxFcbx->pFobxLastAccessTime = NULL;
         Status = STATUS_SUCCESS;
+        if (ctx.cbData == 0 && LowIoContext->ParamsFor.ReadWrite.ByteCount > 0)
+            Status = STATUS_END_OF_FILE;
 
         /*
          * See if we've reached the EOF early or read beyond what we thought were the EOF.
