@@ -2094,27 +2094,19 @@ typedef struct OHCIBUF
 /**
  * Sets up a OHCI transport buffer.
  *
- * @returns Flags whether the buffer could be initialised successfully.
- * @param   pThis   The OHCI instance.
- * @param   pBuf    Ohci buffer.
+ * @param   pBuf    OHCI buffer.
  * @param   cbp     Current buffer pointer. 32-bit physical address.
  * @param   be      Last byte in buffer (BufferEnd). 32-bit physical address.
  */
-static bool ohciR3BufInit(POHCI pThis, POHCIBUF pBuf, uint32_t cbp, uint32_t be)
+static void ohciR3BufInit(POHCIBUF pBuf, uint32_t cbp, uint32_t be)
 {
-    if (RT_UNLIKELY(be < cbp))
-    {
-        LogRelMax(10, ("OHCI#%d: cbp=%#010x be=%#010x\n", pThis->pDevInsR3->iInstance, cbp, be));
-        return false;
-    }
-
     if (!cbp || !be)
     {
         pBuf->cVecs = 0;
         pBuf->cbTotal = 0;
         Log2(("ohci: cbp=%#010x be=%#010x cbTotal=0 EMPTY\n", cbp, be));
     }
-    else if ((cbp & ~0xfff) == (be & ~0xfff))
+    else if ((cbp & ~0xfff) == (be & ~0xfff) && (cbp <= be))
     {
         pBuf->aVecs[0].Addr = cbp;
         pBuf->aVecs[0].cb = (be - cbp) + 1;
@@ -2132,8 +2124,6 @@ static bool ohciR3BufInit(POHCI pThis, POHCIBUF pBuf, uint32_t cbp, uint32_t be)
         pBuf->cbTotal = pBuf->aVecs[0].cb + pBuf->aVecs[1].cb;
         Log2(("ohci: cbp=%#010x be=%#010x cbTotal=%u PAGE FLIP\n", cbp, be, pBuf->cbTotal));
     }
-
-    return true;
 }
 
 /**
@@ -2683,11 +2673,7 @@ static void ohciR3RhXferCompleteGeneralURB(POHCI pThis, PVUSBURB pUrb, POHCIED p
          * Setup a ohci transfer buffer and calc the new cbp value.
          */
         OHCIBUF Buf;
-        if (!ohciR3BufInit(pThis, &Buf, pTd->cbp, pTd->be))
-        {
-            ohciR3RaiseUnrecoverableError(pThis, 1);
-            return;
-        }
+        ohciR3BufInit(&Buf, pTd->cbp, pTd->be);
         uint32_t NewCbp;
         if (cbLeft >= Buf.cbTotal)
             NewCbp = 0;
@@ -2716,7 +2702,7 @@ static void ohciR3RhXferCompleteGeneralURB(POHCI pThis, PVUSBURB pUrb, POHCIED p
                 || (   Buf.cVecs > 1
                     && Buf.aVecs[1].cb > (cbLeft - Buf.aVecs[0].cb)))
             {
-                ohciR3RaiseUnrecoverableError(pThis, 2);
+                ohciR3RaiseUnrecoverableError(pThis, 1);
                 return;
             }
 
@@ -2978,11 +2964,7 @@ static bool ohciR3ServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uin
     OHCITD Td;
     ohciR3ReadTd(pThis, TdAddr, &Td);
     OHCIBUF Buf;
-    if (!ohciR3BufInit(pThis, &Buf, Td.cbp, Td.be))
-    {
-        ohciR3RaiseUnrecoverableError(pThis, 3);
-        return false;
-    }
+    ohciR3BufInit(&Buf, Td.cbp, Td.be);
 
     *pNextTdAddr = Td.NextTD & ED_PTR_MASK;
 
@@ -3002,7 +2984,7 @@ static bool ohciR3ServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uin
                 case 0:             enmDir = VUSBDIRECTION_SETUP; break;
                 default:
                     Log(("ohciR3ServiceTd: Invalid direction!!!! Td.hwinfo=%#x Ed.hwdinfo=%#x\n", Td.hwinfo, pEd->hwinfo));
-                    ohciR3RaiseUnrecoverableError(pThis, 4);
+                    ohciR3RaiseUnrecoverableError(pThis, 2);
                     return false;
             }
             break;
@@ -3040,7 +3022,7 @@ static bool ohciR3ServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uin
             || (   Buf.cVecs > 1
                 && Buf.aVecs[1].cb > (pUrb->cbData - Buf.aVecs[0].cb)))
         {
-            ohciR3RaiseUnrecoverableError(pThis, 5);
+            ohciR3RaiseUnrecoverableError(pThis, 3);
             VUSBIRhFreeUrb(pThis->RootHub.pIRhConn, pUrb);
             return false;
         }
@@ -3119,11 +3101,7 @@ static bool ohciR3ServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED 
 
     /* read the head */
     ohciR3ReadTd(pThis, TdAddr, &Head.Td);
-    if (!ohciR3BufInit(pThis, &Head.Buf, Head.Td.cbp, Head.Td.be))
-    {
-        ohciR3RaiseUnrecoverableError(pThis, 6);
-        return false;
-    }
+    ohciR3BufInit(&Head.Buf, Head.Td.cbp, Head.Td.be);
     Head.TdAddr = TdAddr;
     Head.pNext = NULL;
 
@@ -3141,11 +3119,7 @@ static bool ohciR3ServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED 
         pCur->pNext = NULL;
         pCur->TdAddr = pTail->Td.NextTD & ED_PTR_MASK;
         ohciR3ReadTd(pThis, pCur->TdAddr, &pCur->Td);
-        if (!ohciR3BufInit(pThis, &pCur->Buf, pCur->Td.cbp, pCur->Td.be))
-        {
-            ohciR3RaiseUnrecoverableError(pThis, 7);
-            return false;
-        }
+        ohciR3BufInit(&pCur->Buf, pCur->Td.cbp, pCur->Td.be);
 
         /* Don't combine if the direction doesn't match up. There can't actually be
          * a mismatch for bulk/interrupt EPs unless the guest is buggy.
@@ -3179,7 +3153,7 @@ static bool ohciR3ServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED 
                 case TD_HWINFO_IN:  enmDir = VUSBDIRECTION_IN; break;
                 default:
                     Log(("ohciR3ServiceTdMultiple: Invalid direction!!!! Head.Td.hwinfo=%#x Ed.hwdinfo=%#x\n", Head.Td.hwinfo, pEd->hwinfo));
-                    ohciR3RaiseUnrecoverableError(pThis, 8);
+                    ohciR3RaiseUnrecoverableError(pThis, 4);
                     return false;
             }
             break;
@@ -3358,7 +3332,7 @@ static bool ohciR3ServiceIsochronousTd(POHCI pThis, POHCIITD pITd, uint32_t ITdA
         case ED_HWINFO_IN:  enmDir = VUSBDIRECTION_IN;  break;
         default:
             Log(("ohciR3ServiceIsochronousTd: Invalid direction!!!! Ed.hwdinfo=%#x\n", pEd->hwinfo));
-            ohciR3RaiseUnrecoverableError(pThis, 9);
+            ohciR3RaiseUnrecoverableError(pThis, 5);
             return false;
     }
 
@@ -3391,13 +3365,13 @@ static bool ohciR3ServiceIsochronousTd(POHCI pThis, POHCIITD pITd, uint32_t ITdA
         if (off < offPrev)
         {
             Log(("ITdAddr=%RX32 PSW%d.offset=%#x < offPrev=%#x!\n", ITdAddr, iR, off, offPrev)); /* => Unrecoverable Error*/
-            ohciR3RaiseUnrecoverableError(pThis, 10);
+            ohciR3RaiseUnrecoverableError(pThis, 6);
             return false;
         }
         if (((uint32_t)PSW >> ITD_PSW_CC_SHIFT) < (OHCI_CC_NOT_ACCESSED_0 >> TD_HWINFO_CC_SHIFT))
         {
             Log(("ITdAddr=%RX32 PSW%d.CC=%#x < 'Not Accessed'!\n", ITdAddr, iR, PSW >> ITD_PSW_CC_SHIFT)); /* => Unrecoverable Error*/
-            ohciR3RaiseUnrecoverableError(pThis, 11);
+            ohciR3RaiseUnrecoverableError(pThis, 7);
             return false;
         }
         offPrev = off;
@@ -3410,7 +3384,7 @@ static bool ohciR3ServiceIsochronousTd(POHCI pThis, POHCIITD pITd, uint32_t ITdA
     if (offEnd < offPrev)
     {
         Log(("ITdAddr=%RX32 offEnd=%#x < offPrev=%#x!\n", ITdAddr, offEnd, offPrev)); /* => Unrecoverable Error*/
-        ohciR3RaiseUnrecoverableError(pThis, 12);
+        ohciR3RaiseUnrecoverableError(pThis, 8);
         return false;
     }
     cbTotal += aPkts[cFrames - 1 - R].cb = offEnd - offPrev;
