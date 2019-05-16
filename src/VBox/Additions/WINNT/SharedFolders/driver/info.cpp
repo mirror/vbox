@@ -2166,9 +2166,22 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
          *
          * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/d4bc551b-7aaf-4b4f-ba0e-3a75e7c528f0#Appendix_A_83
          *
-         * Note! The AllocationSize and FileSize could be set by RxSetAllocationInfo
-         *       before it calls us, so we must use our own copy of the file size here
-         *       when we try avoid calling the host!  (open+truncate test failure)
+         * Note! The RDBSS caller, RxSetAllocationInfo, will always update the
+         *       AllocationSize field of the FCB header before calling us.  If
+         *       the change is perceived to be truncating the file (new alloc
+         *       size smaller than cached file size from header), the FileSize
+         *       and (probably also the) ValidateDataLength FCB fields will be
+         *       modified as well _before_ we're called.
+         *
+         *       Therefore, we cannot use the file size from the FCB to determin
+         *       whether it's okay to skip the EOF setting host call or not, we
+         *       must use our own cached file size value.  (Cause of broken test
+         *       of opening w/ truncation.)
+         *
+         * P.S.  When opening a file with the trunction flag set, it seems to be
+         *       the NT I/O manager doing the truncation after opening the file
+         *       as a separate setting FileAllocationInformation operation (no
+         *       EOF or VDL setting).
          */
         case FileAllocationInformation:
         {
