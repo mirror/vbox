@@ -708,6 +708,11 @@ KStorageBus ControllerItem::ctrBusType() const
     return mCtrType->busType();
 }
 
+ControllerBusList ControllerItem::ctrBusTypes() const
+{
+    return mCtrType->busTypes();
+}
+
 QString ControllerItem::oldCtrName() const
 {
     return mOldCtrName;
@@ -748,6 +753,11 @@ uint ControllerItem::maxPortCount()
 bool ControllerItem::ctrUseIoCache() const
 {
     return mUseIoCache;
+}
+
+void ControllerItem::setCtrBusType(KStorageBus enmCtrBusType)
+{
+    mCtrType->setCtrBusType(enmCtrBusType);
 }
 
 void ControllerItem::setCtrName (const QString &aCtrName)
@@ -1424,6 +1434,14 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                     result.setValue (static_cast <ControllerItem*> (item)->ctrBusType());
             return result;
         }
+        case R_CtrBusTypes:
+        {
+            QVariant result(QVariant::fromValue(ControllerBusList()));
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(aIndex.internalPointer()))
+                if (pItem->rtti() == AbstractItem::Type_ControllerItem)
+                    result.setValue(static_cast<ControllerItem*>(pItem)->ctrBusTypes());
+            return result;
+        }
         case R_CtrPortCount:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
@@ -1657,6 +1675,19 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                 {
                     static_cast <ControllerItem*> (item)->setCtrName (aValue.toString());
                     emit dataChanged (aIndex, aIndex);
+                    return true;
+                }
+            return false;
+        }
+        case R_CtrBusType:
+        {
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(aIndex.internalPointer()))
+                if (pItem->rtti() == AbstractItem::Type_ControllerItem)
+                {
+                    ControllerItem *pItemController = static_cast<ControllerItem*>(pItem);
+                    const KStorageBus enmNewCtrBusType = aValue.value<KStorageBus>();
+                    pItemController->setCtrBusType(enmNewCtrBusType);
+                    emit dataChanged(aIndex, aIndex);
                     return true;
                 }
             return false;

@@ -259,6 +259,7 @@ public:
    ~ControllerItem();
 
     KStorageBus ctrBusType() const;
+    ControllerBusList ctrBusTypes() const;
     QString oldCtrName() const;
     QString ctrName() const;
     KStorageControllerType ctrType() const;
@@ -267,6 +268,7 @@ public:
     uint maxPortCount();
     bool ctrUseIoCache() const;
 
+    void setCtrBusType(KStorageBus enmCtrBusType);
     void setCtrName (const QString &aCtrName);
     void setCtrType (KStorageControllerType aCtrType);
     void setPortCount (uint aPortCount);
@@ -406,6 +408,7 @@ public:
         R_CtrTypes,
         R_CtrDevices,
         R_CtrBusType,
+        R_CtrBusTypes,
         R_CtrPortCount,
         R_CtrMaxPortCount,
         R_CtrIoCache,
