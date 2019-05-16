@@ -297,6 +297,7 @@ template<> SHARED_LIBRARY_STUFF KAudioControllerType fromString<KAudioController
 template<> SHARED_LIBRARY_STUFF QString toString(const KAuthType &type);
 template<> SHARED_LIBRARY_STUFF KAuthType fromString<KAuthType>(const QString &strType);
 template<> SHARED_LIBRARY_STUFF QString toString(const KStorageBus &bus);
+template<> SHARED_LIBRARY_STUFF KStorageBus fromString<KStorageBus>(const QString &strType);
 template<> SHARED_LIBRARY_STUFF QString toString(const KStorageControllerType &type);
 template<> SHARED_LIBRARY_STUFF KStorageControllerType fromString<KStorageControllerType>(const QString &strType);
 template<> SHARED_LIBRARY_STUFF QString toString(const KChipsetType &type);

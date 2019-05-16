@@ -584,6 +584,25 @@ template<> QString toString(const KStorageBus &bus)
     return QString();
 }
 
+/* KStorageBus <= QString: */
+template<> KStorageBus fromString<KStorageBus>(const QString &strType)
+{
+    QHash<QString, KStorageBus> list;
+    list.insert(QApplication::translate("VBoxGlobal", "IDE", "StorageBus"),         KStorageBus_IDE);
+    list.insert(QApplication::translate("VBoxGlobal", "SATA", "StorageBus"),        KStorageBus_SATA);
+    list.insert(QApplication::translate("VBoxGlobal", "SCSI", "StorageBus"),        KStorageBus_SCSI);
+    list.insert(QApplication::translate("VBoxGlobal", "Floppy", "StorageBus"),      KStorageBus_Floppy);
+    list.insert(QApplication::translate("VBoxGlobal", "SAS", "StorageBus"),         KStorageBus_SAS);
+    list.insert(QApplication::translate("VBoxGlobal", "USB", "StorageBus"),         KStorageBus_USB);
+    list.insert(QApplication::translate("VBoxGlobal", "PCIe", "StorageBus"),        KStorageBus_PCIe);
+    list.insert(QApplication::translate("VBoxGlobal", "virtio-scsi", "StorageBus"), KStorageBus_VirtioSCSI);
+    if (!list.contains(strType))
+    {
+        AssertMsgFailed(("No value for '%s'", strType.toUtf8().constData()));
+    }
+    return list.value(strType, KStorageBus_Null);
+}
+
 /* QString <= KStorageControllerType: */
 template<> QString toString(const KStorageControllerType &type)
 {

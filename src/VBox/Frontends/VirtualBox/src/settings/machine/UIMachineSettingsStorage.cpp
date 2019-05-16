@@ -2610,6 +2610,8 @@ void UIMachineSettingsStorage::polishPage()
     mLsParameters->setEnabled(isMachineInValidMode());
     mLbName->setEnabled(isMachineOffline());
     mLeName->setEnabled(isMachineOffline());
+    mLbBus->setEnabled(isMachineOffline());
+    mCbBus->setEnabled(isMachineOffline());
     mLbType->setEnabled(isMachineOffline());
     mCbType->setEnabled(isMachineOffline());
     mLbPortCount->setEnabled(isMachineOffline());
@@ -2894,6 +2896,15 @@ void UIMachineSettingsStorage::sltGetInformation()
                 if (mLeName->text() != strCtrName)
                     mLeName->setText(strCtrName);
 
+                /* Getting Controller Bus type: */
+                mCbBus->clear();
+                const ControllerBusList controllerBusList(m_pModelStorage->data(index, StorageModel::R_CtrBusTypes).value<ControllerBusList>());
+                for (int i = 0; i < controllerBusList.size(); ++i)
+                    mCbBus->insertItem(mCbBus->count(), gpConverter->toString(controllerBusList[i]));
+                const KStorageBus enmBus = m_pModelStorage->data(index, StorageModel::R_CtrBusType).value<KStorageBus>();
+                const int iBusPos = mCbBus->findText(gpConverter->toString(enmBus));
+                mCbBus->setCurrentIndex(iBusPos == -1 ? 0 : iBusPos);
+
                 /* Getting Controller Sub type: */
                 mCbType->clear();
                 const ControllerTypeList controllerTypeList(m_pModelStorage->data(index, StorageModel::R_CtrTypes).value <ControllerTypeList>());
@@ -2903,7 +2914,6 @@ void UIMachineSettingsStorage::sltGetInformation()
                 const int iCtrPos = mCbType->findText(gpConverter->toString(enmType));
                 mCbType->setCurrentIndex(iCtrPos == -1 ? 0 : iCtrPos);
 
-                const KStorageBus enmBus = m_pModelStorage->data(index, StorageModel::R_CtrBusType).value <KStorageBus>();
                 mLbPortCount->setVisible(enmBus == KStorageBus_SATA || enmBus == KStorageBus_SAS);
                 mSbPortCount->setVisible(enmBus == KStorageBus_SATA || enmBus == KStorageBus_SAS);
                 const uint uPortCount = m_pModelStorage->data(index, StorageModel::R_CtrPortCount).toUInt();
@@ -3032,6 +3042,10 @@ void UIMachineSettingsStorage::sltSetInformation()
             /* Setting Controller Name: */
             if (pSdr == mLeName)
                 m_pModelStorage->setData(index, mLeName->text(), StorageModel::R_CtrName);
+            /* Setting Controller Bus-Type: */
+            else if (pSdr == mCbBus)
+                m_pModelStorage->setData(index, QVariant::fromValue(gpConverter->fromString<KStorageBus>(mCbBus->currentText())),
+                                         StorageModel::R_CtrBusType);
             /* Setting Controller Sub-Type: */
             else if (pSdr == mCbType)
                 m_pModelStorage->setData(index, QVariant::fromValue(gpConverter->fromString<KStorageControllerType>(mCbType->currentText())),
@@ -3826,6 +3840,7 @@ void UIMachineSettingsStorage::prepareConnections()
     connect(m_pMediumIdHolder, SIGNAL(sigChanged()), this, SLOT(sltSetInformation()));
     connect(mSbPortCount, SIGNAL(valueChanged(int)), this, SLOT(sltSetInformation()));
     connect(mLeName, SIGNAL(textEdited(const QString &)), this, SLOT(sltSetInformation()));
+    connect(mCbBus, SIGNAL(activated(int)), this, SLOT(sltSetInformation()));
     connect(mCbType, SIGNAL(activated(int)), this, SLOT(sltSetInformation()));
     connect(mCbSlot, SIGNAL(activated(int)), this, SLOT(sltSetInformation()));
     connect(mCbIoCache, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
