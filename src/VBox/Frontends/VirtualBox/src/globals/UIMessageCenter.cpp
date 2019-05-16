@@ -1116,6 +1116,14 @@ int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) c
                           false /* ok button by default? */);
 }
 
+bool UIMessageCenter::confirmStorageBusChangeWithOpticalRemoval(QWidget *pParent /* = 0 */) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>This controller has optical devices attached.  You have requested storage bus "
+                             "change to type which doesn't support optical devices.</p><p>If you proceed optical "
+                             "devices will be removed.</p>"));
+}
+
 void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumDeviceType enmType,
                                          const QString &strLocation, const StorageSlot &storageSlot,
                                          QWidget *pParent /* = 0*/)

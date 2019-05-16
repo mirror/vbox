@@ -804,6 +804,19 @@ DeviceTypeList ControllerItem::ctrDeviceTypeList() const
      return mCtrType->deviceTypeList();
 }
 
+QList<QUuid> ControllerItem::attachmentIDs(KDeviceType enmType /* = KDeviceType_Null */) const
+{
+    QList<QUuid> ids;
+    foreach (AbstractItem *pItem, mAttachments)
+    {
+        AttachmentItem *pItemAttachment = static_cast<AttachmentItem*>(pItem);
+        if (   enmType == KDeviceType_Null
+            || pItemAttachment->attDeviceType() == enmType)
+            ids << pItem->id();
+    }
+    return ids;
+}
+
 AbstractItem::ItemType ControllerItem::rtti() const
 {
     return Type_ControllerItem;
@@ -1686,6 +1699,21 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                 {
                     ControllerItem *pItemController = static_cast<ControllerItem*>(pItem);
                     const KStorageBus enmNewCtrBusType = aValue.value<KStorageBus>();
+
+                    /* PCIe devices allows for hard-drives attachments only,
+                     * no optical devices. So, lets make sure that rule is fulfilled. */
+                    if (enmNewCtrBusType == KStorageBus_PCIe)
+                    {
+                        const QList<QUuid> opticalIds = pItemController->attachmentIDs(KDeviceType_DVD);
+                        if (!opticalIds.isEmpty())
+                        {
+                            if (!msgCenter().confirmStorageBusChangeWithOpticalRemoval())
+                                return false;
+                            foreach (const QUuid &uId, opticalIds)
+                                delAttachment(pItemController->id(), uId);
+                        }
+                    }
+
                     pItemController->setCtrBusType(enmNewCtrBusType);
                     emit dataChanged(aIndex, aIndex);
                     return true;

@@ -278,6 +278,8 @@ public:
     SlotsList ctrUsedSlots() const;
     DeviceTypeList ctrDeviceTypeList() const;
 
+    QList<QUuid> attachmentIDs(KDeviceType enmType = KDeviceType_Null) const;
+
     void setAttachments(const QList<AbstractItem*> &attachments) { mAttachments = attachments; }
 
 private:
