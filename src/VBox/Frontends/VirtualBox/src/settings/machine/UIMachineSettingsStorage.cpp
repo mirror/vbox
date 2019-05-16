@@ -1697,6 +1697,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *pItem = static_cast<AbstractItem*>(aIndex.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                 {
+                    /* Acquire controller item and requested storage bus type: */
                     ControllerItem *pItemController = static_cast<ControllerItem*>(pItem);
                     const KStorageBus enmNewCtrBusType = aValue.value<KStorageBus>();
 
@@ -1728,8 +1729,21 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                             delAttachment(pItemController->id(), ids.at(i));
                     }
 
+                    /* Push new controller type: */
                     pItemController->setCtrBusType(enmNewCtrBusType);
                     emit dataChanged(aIndex, aIndex);
+
+                    /* Make sure each of remaining attachments has valid slot: */
+                    foreach (AbstractItem *pChildItem, pItemController->attachments())
+                    {
+                        AttachmentItem *pChildItemAttachment = static_cast<AttachmentItem*>(pChildItem);
+                        const SlotsList availableSlots = pChildItemAttachment->attSlots();
+                        const StorageSlot currentSlot = pChildItemAttachment->attSlot();
+                        if (!availableSlots.isEmpty() && !availableSlots.contains(currentSlot))
+                            pChildItemAttachment->setAttSlot(availableSlots.first());
+                    }
+
+                    /* This means success: */
                     return true;
                 }
             return false;

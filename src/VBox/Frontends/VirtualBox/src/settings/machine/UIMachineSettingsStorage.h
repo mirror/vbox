@@ -280,6 +280,7 @@ public:
 
     QList<QUuid> attachmentIDs(KDeviceType enmType = KDeviceType_Null) const;
 
+    QList<AbstractItem*> attachments() const { return mAttachments; }
     void setAttachments(const QList<AbstractItem*> &attachments) { mAttachments = attachments; }
 
 private:
