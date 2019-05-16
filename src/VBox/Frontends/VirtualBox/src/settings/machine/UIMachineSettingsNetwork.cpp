@@ -121,6 +121,8 @@ struct UIDataSettingsMachineNetworkAdapter
     QString                           m_strMACAddress;
     /** Holds whether the network adapter is connected. */
     bool                              m_fCableConnected;
+    /** Holds the list of restricted network attachment types. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork m_enmRestrictedNetworkAttachmentTypes;
 };
 
 
@@ -219,6 +221,8 @@ private:
     QString m_strGenericDriverName;
     QString m_strNATNetworkName;
     UIPortForwardingDataList m_portForwardingRules;
+    /** Holds the list of restricted network attachment types. */
+    UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork m_enmRestrictedNetworkAttachmentTypes;
 };
 
 
@@ -303,6 +307,10 @@ void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMach
     m_portForwardingRules.clear();
     for (int i = 0; i < adapterCache.childCount(); ++i)
         m_portForwardingRules << adapterCache.child(i).base();
+    /* Cache the restricted metwork attachment types to avoid re-reading them from the extra data: */
+    m_enmRestrictedNetworkAttachmentTypes = oldAdapterData.m_enmRestrictedNetworkAttachmentTypes;
+    /* Re-apply language settings: */
+    retranslateUi();
 }
 
 void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetworkAdapter &adapterCache)
@@ -782,8 +790,6 @@ void UIMachineSettingsNetwork::populateComboboxes()
         m_pAttachmentTypeComboBox->clear();
 
         /* Populate attachments: */
-        const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork enmRestrictedNetworkAttachmentTypes =
-            gEDataManager->restrictedNetworkAttachmentTypes();
         int iAttachmentTypeIndex = 0;
         /* We want some hardcoded order, so prepare a list of enum values: */
         QList<KNetworkAttachmentType> attachmentTypes  = QList<KNetworkAttachmentType>() << KNetworkAttachmentType_Null
@@ -793,7 +799,7 @@ void UIMachineSettingsNetwork::populateComboboxes()
         for (int i = 0; i < attachmentTypes.size(); ++i)
         {
             const KNetworkAttachmentType enmType = attachmentTypes.at(i);
-            if (enmRestrictedNetworkAttachmentTypes & toInternalNetworkAdapterEnum(enmType))
+            if (m_enmRestrictedNetworkAttachmentTypes & toInternalNetworkAdapterEnum(enmType))
                 continue;
             m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(enmType));
             m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, enmType);
@@ -1035,6 +1041,9 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     /* Prepare old network data: */
     UIDataSettingsMachineNetwork oldNetworkData;
 
+    const UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork enmRestrictedNetworkAttachmentTypes =
+        gEDataManager->restrictedNetworkAttachmentTypes();
+
     /* For each network adapter: */
     for (int iSlot = 0; iSlot < m_pTabWidget->count(); ++iSlot)
     {
@@ -1059,6 +1068,7 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
             oldAdapterData.m_strMACAddress = comAdapter.GetMACAddress();
             oldAdapterData.m_strGenericProperties = loadGenericProperties(comAdapter);
             oldAdapterData.m_fCableConnected = comAdapter.GetCableConnected();
+            oldAdapterData.m_enmRestrictedNetworkAttachmentTypes = enmRestrictedNetworkAttachmentTypes;
             foreach (const QString &strRedirect, comAdapter.GetNATEngine().GetRedirects())
             {
                 /* Gather old forwarding data & cache key: */
