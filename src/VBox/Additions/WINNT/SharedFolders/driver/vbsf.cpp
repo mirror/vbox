@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include "vbsf.h"
+#include <iprt/initterm.h>
 
 
 /*********************************************************************************************************************************
@@ -145,7 +146,8 @@ static void VBoxMRxUnload(IN PDRIVER_OBJECT DriverObject)
     VbglR0SfDisconnect(&g_SfClient);
     VbglR0SfTerm();
 
-    Log(("VBOXSF: MRxUnload: VBoxSF.sys driver object %p unloaded\n", DriverObject));
+    Log(("VBOXSF: MRxUnload: VBoxSF.sys driver object %p almost unloaded, just RTR0Term left...\n", DriverObject));
+    RTR0Term(); /* No logging after this. */
 }
 
 static void vbsfInitMRxDispatch(void)
@@ -608,11 +610,22 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
         return STATUS_UNSUCCESSFUL;
     }
 
+    /*
+     * Initialize IPRT.
+     */
+    vrc = RTR0Init(0);
+    if (RT_FAILURE(vrc))
+    {
+        Log(("VBOXSF: DriverEntry: RTR0Init failed! %Rrc!\n", vrc));
+        return STATUS_UNSUCCESSFUL;
+    }
+
     /* Initialize VBox subsystem. */
     vrc = VbglR0SfInit();
     if (RT_FAILURE(vrc))
     {
         Log(("VBOXSF: DriverEntry: ERROR while initializing VBox subsystem (%Rrc)!\n", vrc));
+        RTR0Term();
         return STATUS_UNSUCCESSFUL;
     }
 
@@ -623,6 +636,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
         Log(("VBOXSF: DriverEntry: ERROR while connecting to host (%Rrc)!\n",
              vrc));
         VbglR0SfTerm();
+        RTR0Term();
         return STATUS_UNSUCCESSFUL;
     }
 
@@ -768,6 +782,7 @@ failure:
 
     VbglR0SfDisconnect(&g_SfClient);
     VbglR0SfTerm();
+    RTR0Term();
 
     if (VBoxMRxDeviceObject)
     {
