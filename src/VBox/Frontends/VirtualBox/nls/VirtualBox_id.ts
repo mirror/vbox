@@ -153,11 +153,11 @@
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver is either not loaded or not set up correctly. Please try setting it up again by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.&lt;br/&gt;&lt;br/&gt;If your system has EFI Secure Boot enabled you may also need to sign the kernel modules (vboxdrv, vboxnetflt, vboxnetadp, vboxpci) before you can load them. Please see your Linux system&apos;s documentation for more information.</source>
-        <translation type="unfinished"></translation>
+        <translation>Driver VirtualBox untuk kernel Linux tidak dimuat atau tidak disiapkan dengan benar. Silakan coba siapkan ulang modul dengan menjalankan&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;sebagai root. Bila EFI Secure Boot difungsikan, Anda mungkin juga perlu menandatangani modul-modul kernel tersebut (vboxdrv, vboxnetflt, vboxnetadp, vboxpci) sebelum Anda dapat memuat mereka. Harap lihat dokumentasi sistem Linux Anda untuk informasi lebih lanjut.</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you are not mixing builds of VirtualBox from different sources.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modul kernel VirtualBox tidak cocok dengan versi VirtualBox ini. Instalasi VirtualBox sepertinya tak sukses. Menjalankan &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;mungkin memperbaiki hal ini. Pastikan bahwa Anda tak mencampur build VirtualBox dari sumber-sumber yang berbeda.</translation>
     </message>
 </context>
 <context>
@@ -1752,7 +1752,7 @@
     </message>
     <message>
         <source>Delete selected file object(s)</source>
-        <translation>Hapus objek-objek berkas yang dipilih</translation>
+        <translation>Hapus objek berkas yang dipilih</translation>
     </message>
     <message>
         <source>Delete Selected File Object(s)</source>
@@ -1760,7 +1760,7 @@
     </message>
     <message>
         <source>Refresh</source>
-        <translation>Refresh</translation>
+        <translation>Segarkan</translation>
     </message>
     <message>
         <source>Rename</source>
@@ -2168,7 +2168,7 @@
     </message>
     <message>
         <source>Display the virtual machine guest process control window</source>
-        <translation type="vanished">Kendali Proses Guest...</translation>
+        <translation type="vanished">Tampilkan jendela kendali proses guest mesin virtual</translation>
     </message>
     <message>
         <source>&amp;Recording</source>
@@ -2263,11 +2263,11 @@
     </message>
     <message>
         <source>E&amp;xport to OCI...</source>
-        <translation type="unfinished"></translation>
+        <translation>E&amp;kspor ke OCI...</translation>
     </message>
     <message>
         <source>Export selected virtual machine to OCI</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekspor mesin virtual yang dipilih ke OCI</translation>
     </message>
     <message>
         <source>S&amp;earch</source>
@@ -2299,19 +2299,19 @@
     </message>
     <message>
         <source>Try</source>
-        <translation type="unfinished"></translation>
+        <translation>Coba</translation>
     </message>
     <message>
         <source>&amp;Try Oracle Cloud for Free...</source>
-        <translation type="unfinished"></translation>
+        <translation>Coba Oracle Cloud Gra&amp;tis...</translation>
     </message>
     <message>
         <source>Try Oracle cloud for free</source>
-        <translation type="unfinished"></translation>
+        <translation>Coba Oracle cloud gratis</translation>
     </message>
     <message>
         <source>Try Oracle Cloud for Free</source>
-        <translation type="unfinished"></translation>
+        <translation>Coba Oracle Cloud Gratis</translation>
     </message>
     <message>
         <source>Guest Control Terminal...</source>
@@ -4523,7 +4523,7 @@
     </message>
     <message>
         <source>&lt;b&gt;Hardlinks:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation>&lt;b&gt;Peranti:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Hardlink:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Mode:&lt;/b&gt; %1&lt;br/&gt;</source>
@@ -4555,7 +4555,7 @@
     </message>
     <message>
         <source>&lt;b&gt;Modified:&lt;/b&gt; %1&lt;br/&gt;</source>
-        <translation>&lt;b&gt;Ubah:&lt;/b&gt; %1&lt;br/&gt;</translation>
+        <translation>&lt;b&gt;Diubah:&lt;/b&gt; %1&lt;br/&gt;</translation>
     </message>
     <message>
         <source>&lt;b&gt;Access:&lt;/b&gt; %1&lt;br/&gt;</source>
@@ -11796,15 +11796,15 @@ a guest session</source>
     <name>UIMediumSearchWidget</name>
     <message>
         <source>Search By Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari Berdasarkan Nama</translation>
     </message>
     <message>
         <source>Search By UUID</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari Berdasarkan UUID</translation>
     </message>
     <message>
         <source>Select the search type</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih tipe pencarian</translation>
     </message>
 </context>
 <context>
@@ -11863,7 +11863,7 @@ a guest session</source>
     </message>
     <message>
         <source>Medium</source>
-        <translation type="unfinished"></translation>
+        <translation>Medium</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -11875,11 +11875,11 @@ a guest session</source>
     </message>
     <message>
         <source>Expand All</source>
-        <translation type="unfinished">Kembangkan Semua</translation>
+        <translation>Kembangkan Semua</translation>
     </message>
     <message>
         <source>Collapse All</source>
-        <translation type="unfinished">Kuncupkan Semua</translation>
+        <translation>Kuncupkan Semua</translation>
     </message>
     <message>
         <source>Optical Disk Selector</source>
@@ -13989,7 +13989,7 @@ a guest session</source>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the cloud profile &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>Gagal mendapatkan parameter klien cloud.</translation>
+        <translation>&lt;p&gt;Apakah Anda ingin menghapus profil cloud &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to import cloud profiles from external files?&lt;/p&gt;&lt;p&gt;VirtualBox cloud profiles will be overwritten and their data will be lost.&lt;/p&gt;</source>
@@ -14009,7 +14009,7 @@ a guest session</source>
     </message>
     <message>
         <source>Failed to disable recording for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Gagal memfungsikan perekaman bagi mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Gagal menonaktifkan perekaman bagi mesin virtual &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;This controller has optical devices attached.  You have requested storage bus change to type which doesn&apos;t support optical devices.&lt;/p&gt;&lt;p&gt;If you proceed optical devices will be removed.&lt;/p&gt;</source>
@@ -16357,15 +16357,19 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Go to the next bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Pergi ke markah selanjutnya</translation>
     </message>
     <message>
         <source>Go to the previous bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Pergi ke markah sebelumnya</translation>
     </message>
     <message>
         <source>Go to selected bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Pergi ke markah yang dipilih</translation>
+    </message>
+    <message>
+        <source>Matches Found</source>
+        <translation type="vanished">Kecocokan Ditemukan</translation>
     </message>
 </context>
 <context>
@@ -16522,7 +16526,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Close the pane</source>
-        <translation type="unfinished">Tutup panel</translation>
+        <translation>Tutup panel</translation>
     </message>
     <message>
         <source>Click to show/hide the tree view</source>
@@ -16530,11 +16534,11 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished"></translation>
+        <translation>Pembuat VISO</translation>
     </message>
     <message>
         <source>VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO</translation>
     </message>
     <message>
         <source>Add selected file objects to VISO</source>
@@ -16542,15 +16546,15 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">Tambah</translation>
+        <translation>Tambah</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished">Hapus</translation>
+        <translation>Hapus</translation>
     </message>
     <message>
         <source>New Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Direktori Baru</translation>
     </message>
     <message>
         <source>Reset VISO content.</source>
@@ -16558,15 +16562,23 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">Reset</translation>
+        <translation>Reset</translation>
     </message>
     <message>
         <source>Custom VISO options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Opsi VISO ubahan:</translation>
     </message>
     <message>
         <source>Remove current option.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hapus opsi saat ini.</translation>
+    </message>
+    <message>
+        <source>Host Browser</source>
+        <translation type="vanished">Peramban Host</translation>
+    </message>
+    <message>
+        <source>VISO Browser</source>
+        <translation type="vanished">Peramban VISO</translation>
     </message>
 </context>
 <context>
@@ -17652,7 +17664,7 @@ langkah ini dan memasang hard disk pada waktu lain menggunakan dialog Setting Me
     </message>
     <message>
         <source>Please choose a descriptive name for the new virtual machine and select the type of operating system you intend to install on it. The name you choose will be used throughout VirtualBox to identify this machine.</source>
-        <translation type="vanished">Harap pilih suatu nama yang deskriptif bagi mesin virtual baru dan pilih tipe sistem operasu yang hendak Anda pasang padanya. Nama yang Anda pilih akan dipakai di seluruh VirtualBox untuk mengidentifikasi mesin ini.</translation>
+        <translation type="vanished">Harap pilih suatu nama yang deskriptif bagi mesin virtual baru dan pilih tipe sistem operasi yang hendak Anda pasang padanya. Nama yang Anda pilih akan dipakai di seluruh VirtualBox untuk mengidentifikasi mesin ini.</translation>
     </message>
     <message>
         <source>Memory size</source>

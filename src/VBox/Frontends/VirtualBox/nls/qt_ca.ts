@@ -1,4 +1,6 @@
-<?xml version="1.0" ?><!DOCTYPE TS><TS language="ca" version="2.1">
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS>
+<TS version="2.1" language="ca">
 <context>
     <name>CloseButton</name>
     <message>
@@ -919,7 +921,7 @@ No s&apos;ha trobat el directori.
 Comproveu que el nom del directori es correcte.</translation>
     </message>
     <message>
-        <source>'%1' is write protected.
+        <source>&apos;%1&apos; is write protected.
 Do you want to delete it anyway?</source>
         <translation>&apos;%1&apos; està protegit contra escriptura.Voleu suprimir-lo igualment?</translation>
     </message>
@@ -1488,7 +1490,7 @@ Do you want to delete it anyway?</source>
     <name>QGuiApplication</name>
     <message>
         <source>QT_LAYOUT_DIRECTION</source>
-        <comment>Translate this string to the string 'LTR' in left-to-right languages or to 'RTL' in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
+        <comment>Translate this string to the string &apos;LTR&apos; in left-to-right languages or to &apos;RTL&apos; in right-to-left languages (such as Hebrew and Arabic) to get proper widget layout.</comment>
         <translation>QT_LAYOUT_DIRECTION</translation>
     </message>
 </context>
@@ -2779,32 +2781,32 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>mm</source>
-        <extracomment>Unit 'Millimeter'</extracomment>
+        <extracomment>Unit &apos;Millimeter&apos;</extracomment>
         <translation>mm</translation>
     </message>
     <message>
         <source>pt</source>
-        <extracomment>Unit 'Points'</extracomment>
+        <extracomment>Unit &apos;Points&apos;</extracomment>
         <translation>pt</translation>
     </message>
     <message>
         <source>in</source>
-        <extracomment>Unit 'Inch'</extracomment>
+        <extracomment>Unit &apos;Inch&apos;</extracomment>
         <translation>in</translation>
     </message>
     <message>
         <source>P̸</source>
-        <extracomment>Unit 'Pica'</extracomment>
+        <extracomment>Unit &apos;Pica&apos;</extracomment>
         <translation>P̸</translation>
     </message>
     <message>
         <source>DD</source>
-        <extracomment>Unit 'Didot'</extracomment>
+        <extracomment>Unit &apos;Didot&apos;</extracomment>
         <translation>DD</translation>
     </message>
     <message>
         <source>CC</source>
-        <extracomment>Unit 'Cicero'</extracomment>
+        <extracomment>Unit &apos;Cicero&apos;</extracomment>
         <translation>CC</translation>
     </message>
 </context>
@@ -2842,7 +2844,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>%1 x %2 in</source>
-        <extracomment>Page size in 'Inch'.</extracomment>
+        <extracomment>Page size in &apos;Inch&apos;.</extracomment>
         <translation>%1 x %2 in</translation>
     </message>
     <message>
@@ -3493,7 +3495,7 @@ Trieu un nom de fitxer diferent.</translation>
         <translation>Escriure un fitxer PDF</translation>
     </message>
     <message>
-        <source>Options 'Pages Per Sheet' and 'Page Set' cannot be used together.
+        <source>Options &apos;Pages Per Sheet&apos; and &apos;Page Set&apos; cannot be used together.
 Please turn one of those options off.</source>
         <translation>Les opcions &quot;Pàgines per full&quot; i &quot;Configuració de pàgina&quot; no es poden utilitzar conjuntament. Desactiveu una d&apos;aquestes opcions.</translation>
     </message>
@@ -5233,7 +5235,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Toggle Call/Hangup</source>
-        <extracomment>Button that will hang up if we're in call, or make a call if we're not.</extracomment>
+        <extracomment>Button that will hang up if we&apos;re in call, or make a call if we&apos;re not.</extracomment>
         <translation>Canviar entre trucada/conversa</translation>
     </message>
     <message>
@@ -5429,7 +5431,7 @@ Please turn one of those options off.</source>
     </message>
     <message>
         <source>Connection to proxy closed prematurely</source>
-        <translation>S&apos;ha tancat prematurament la connexió al servidor intermediari </translation>
+        <translation>S&apos;ha tancat prematurament la connexió al servidor intermediari&#xa0;</translation>
     </message>
     <message>
         <source>Proxy host not found</source>

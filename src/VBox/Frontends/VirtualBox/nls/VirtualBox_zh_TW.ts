@@ -26,7 +26,7 @@
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>None</translation>
+        <translation>alan@stable</translation>
     </message>
 </context>
 <context>
@@ -1676,7 +1676,7 @@
     </message>
     <message>
         <source>Tools</source>
-        <translation type="unfinished">工具</translation>
+        <translation>工具</translation>
     </message>
     <message>
         <source>E&amp;xport to OCI...</source>
@@ -2276,31 +2276,31 @@
     <name>UICustomFileSystemModel</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">名稱</translation>
+        <translation>名稱</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">大小</translation>
+        <translation>大小</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation type="unfinished">變更時間</translation>
+        <translation>變更時間</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation type="unfinished">擁有者</translation>
+        <translation>擁有者</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation type="unfinished">權限</translation>
+        <translation>權限</translation>
     </message>
     <message>
         <source>LocalPath</source>
-        <translation type="unfinished"></translation>
+        <translation>本機路徑</translation>
     </message>
     <message>
         <source>Path</source>
-        <translation type="unfinished">路徑</translation>
+        <translation>路徑</translation>
     </message>
     <message>
         <source>NewDirectory</source>
@@ -3185,11 +3185,11 @@
     </message>
     <message>
         <source>Show hidden objects</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示隱藏的物件</translation>
     </message>
     <message>
         <source>Show hidden files/directories</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示隱藏的檔案/目錄</translation>
     </message>
     <message>
         <source>Guest File System</source>
@@ -6770,15 +6770,15 @@ a guest session</source>
     <name>UIMediumSearchWidget</name>
     <message>
         <source>Search By Name</source>
-        <translation type="unfinished"></translation>
+        <translation>依名稱搜尋</translation>
     </message>
     <message>
         <source>Search By UUID</source>
-        <translation type="unfinished"></translation>
+        <translation>依 UUID 搜尋</translation>
     </message>
     <message>
         <source>Select the search type</source>
-        <translation type="unfinished"></translation>
+        <translation>選取搜尋類型</translation>
     </message>
 </context>
 <context>
@@ -6837,7 +6837,7 @@ a guest session</source>
     </message>
     <message>
         <source>Medium</source>
-        <translation type="unfinished"></translation>
+        <translation>中</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -6849,11 +6849,11 @@ a guest session</source>
     </message>
     <message>
         <source>Expand All</source>
-        <translation type="unfinished">全部展開</translation>
+        <translation>全部展開</translation>
     </message>
     <message>
         <source>Collapse All</source>
-        <translation type="unfinished">全部折疊</translation>
+        <translation>全部折疊</translation>
     </message>
     <message>
         <source>Optical Disk Selector</source>
@@ -9205,15 +9205,15 @@ a guest session</source>
     </message>
     <message>
         <source>Go to the next bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>移至下一個書籤</translation>
     </message>
     <message>
         <source>Go to the previous bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>移至上一個書籤</translation>
     </message>
     <message>
         <source>Go to selected bookmark</source>
-        <translation type="unfinished"></translation>
+        <translation>移至選取的書籤</translation>
     </message>
 </context>
 <context>
@@ -9244,83 +9244,83 @@ a guest session</source>
     <name>UIVisoCreator</name>
     <message>
         <source>Remove selected file objects from VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>從 VISO 中刪除選取的檔案物件</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished">名稱</translation>
+        <translation>名稱</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation type="unfinished">大小</translation>
+        <translation>大小</translation>
     </message>
     <message>
         <source>Change Time</source>
-        <translation type="unfinished">變更時間</translation>
+        <translation>變更時間</translation>
     </message>
     <message>
         <source>Owner</source>
-        <translation type="unfinished">擁有者</translation>
+        <translation>擁有者</translation>
     </message>
     <message>
         <source>Permissions</source>
-        <translation type="unfinished">權限</translation>
+        <translation>權限</translation>
     </message>
     <message>
         <source>Local Path</source>
-        <translation type="unfinished"></translation>
+        <translation>本地路徑</translation>
     </message>
     <message>
         <source>ISO Path</source>
-        <translation type="unfinished"></translation>
+        <translation>ISO 路徑</translation>
     </message>
     <message>
         <source>&amp;Options...</source>
-        <translation type="unfinished"></translation>
+        <translation>選項(&amp;O)...</translation>
     </message>
     <message>
         <source>Show Hidden Objects</source>
-        <translation type="unfinished"></translation>
+        <translation>顯示隱藏的物件</translation>
     </message>
     <message>
         <source>Create a new directory under the current location</source>
-        <translation type="unfinished"></translation>
+        <translation>在目前位置下建立新目錄</translation>
     </message>
     <message>
         <source>Rename the selected object</source>
-        <translation type="unfinished"></translation>
+        <translation>重新命名選取的物件</translation>
     </message>
     <message>
         <source>&amp;Configuration...</source>
-        <translation type="unfinished"></translation>
+        <translation>組態(&amp;C)...</translation>
     </message>
     <message>
         <source>VISO Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO 組態</translation>
     </message>
     <message>
         <source>Manage VISO Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>管理 VISO 組態</translation>
     </message>
     <message>
         <source>Dialog Options</source>
-        <translation type="unfinished"></translation>
+        <translation>對話方塊選項</translation>
     </message>
     <message>
         <source>Manage Dialog Options</source>
-        <translation type="unfinished"></translation>
+        <translation>管理對話方塊選項</translation>
     </message>
     <message>
         <source>VISO Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO 名稱:</translation>
     </message>
     <message>
         <source>Custom VISO options:</source>
-        <translation type="unfinished"></translation>
+        <translation>自訂 VISO 選項:</translation>
     </message>
     <message>
         <source>Close the pane</source>
-        <translation type="unfinished">關閉窗格</translation>
+        <translation>關閉窗格</translation>
     </message>
     <message>
         <source>Click to show/hide the tree view</source>
@@ -9328,11 +9328,11 @@ a guest session</source>
     </message>
     <message>
         <source>VISO Creator</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO 建立器</translation>
     </message>
     <message>
         <source>VISO</source>
-        <translation type="unfinished"></translation>
+        <translation>VISO</translation>
     </message>
     <message>
         <source>Add selected file objects to VISO</source>
@@ -9340,15 +9340,15 @@ a guest session</source>
     </message>
     <message>
         <source>Add</source>
-        <translation type="unfinished">加入</translation>
+        <translation>加入</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished">移除</translation>
+        <translation>移除</translation>
     </message>
     <message>
         <source>New Directory</source>
-        <translation type="unfinished"></translation>
+        <translation>新增目錄</translation>
     </message>
     <message>
         <source>Reset VISO content.</source>
@@ -9356,18 +9356,42 @@ a guest session</source>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished">重設</translation>
+        <translation>重設</translation>
     </message>
     <message>
         <source>Remove current option.</source>
-        <translation type="unfinished"></translation>
+        <translation>移除目前選項。</translation>
+    </message>
+    <message>
+        <source>VISO content</source>
+        <translation type="vanished">VISO 內容</translation>
+    </message>
+    <message>
+        <source>Host file system</source>
+        <translation type="vanished">主機檔案系統</translation>
+    </message>
+    <message>
+        <source>Reset ISO content.</source>
+        <translation type="vanished">重設 ISO 內容。</translation>
+    </message>
+    <message>
+        <source>Add selected file objects to ISO</source>
+        <translation type="vanished">將選取的檔案物件加入到 ISO</translation>
+    </message>
+    <message>
+        <source>Host Browser</source>
+        <translation type="vanished">主機瀏覽器</translation>
+    </message>
+    <message>
+        <source>VISO Browser</source>
+        <translation type="vanished">VISO 瀏覽器</translation>
     </message>
 </context>
 <context>
     <name>UIWelcomePane</name>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of application window contains global tools and lists all virtual machines and virtual machine groups on your computer. You can import, add and create new VMs using corresponding toolbar buttons. You can popup a tools of currently selected element using corresponding element button.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for more information and latest news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;歡迎使用 VirtualBox!&lt;/h3&gt;&lt;p&gt;這個應用程式視窗左部包含全域工具和列出在您電腦的所有虛擬機器及虛擬機器群組。 您可以使用相對應工具列匯入、加入和新建 VM。 能使用相對應元素按鈕快顯目前所選元素的工具。&lt;/p&gt;&lt;p&gt;按下 &lt;b&gt;%1&lt;/b&gt; 鍵可以取得即時說明，或訪問 &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 取得更多資訊和最新新聞。&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;歡迎使用 VirtualBox!&lt;/h3&gt;&lt;p&gt;這個應用程式視窗左部包含全域工具和列出在您電腦的所有虛擬機器及虛擬機器群組。 您可以使用相對應工具列按鈕匯入、加入和新建 VM，和使用相對應元素按鈕快顯目前所選元素的工具。&lt;/p&gt;&lt;p&gt;按下 &lt;b&gt;%1&lt;/b&gt; 鍵可以取得即時說明，或訪問 &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 取得更多資訊和最新新聞。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
