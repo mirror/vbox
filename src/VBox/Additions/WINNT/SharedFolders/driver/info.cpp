@@ -1881,59 +1881,45 @@ static NTSTATUS vbsfNtSetBasicInfo(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension
 /**
  * Worker for VBoxMRxSetFileInfo.
  */
-static NTSTATUS vbsfNtSetEndOfFile(IN OUT struct _RX_CONTEXT * RxContext, IN uint64_t cbNewFileSize)
+static NTSTATUS vbsfNtSetEndOfFile(PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension, PFILE_OBJECT pFileObj,
+                                   PMRX_VBOX_FOBX pVBoxFobX, PMRX_FCB pFcb, PVBSFNTFCBEXT pVBoxFcbX, uint64_t cbNewFileSize)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
+    Log(("VBOXSF: vbsfNtSetEndOfFile: New size = %RX64\n", cbNewFileSize));
 
-    RxCaptureFcb;
-    RxCaptureFobx;
-
-    PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
-    PVBSFNTFCBEXT pVBoxFcbx = VBoxMRxGetFcbExtension(capFcb);
-    PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
-
-    PSHFLFSOBJINFO pObjInfo;
-    uint32_t cbBuffer;
-    int vrc;
-
-    Log(("VBOXSF: vbsfNtSetEndOfFile: New size = %RX64\n",
-         cbNewFileSize));
-
-    Assert(pVBoxFobx && pNetRootExtension);
-
-    cbBuffer = sizeof(SHFLFSOBJINFO);
-    pObjInfo = (SHFLFSOBJINFO *)vbsfNtAllocNonPagedMem(cbBuffer);
-    if (!pObjInfo)
+    /*
+     * Allocate a request buffer and call the host with the new file size.
+     */
+    NTSTATUS          Status;
+    VBOXSFOBJINFOREQ *pReq = (VBOXSFOBJINFOREQ *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
     {
-        AssertFailed();
-        return STATUS_INSUFFICIENT_RESOURCES;
+        RT_ZERO(pReq->ObjInfo);
+        pReq->ObjInfo.cbObject = cbNewFileSize;
+        int vrc = VbglR0SfHostReqSetFileSizeOld(pNetRootExtension->map.root, pReq, pVBoxFobX->hFile);
+        if (RT_SUCCESS(vrc))
+        {
+            /*
+             * Update related data.
+             */
+            pVBoxFobX->fTimestampsImplicitlyUpdated |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
+            if (pVBoxFcbX->pFobxLastWriteTime != pVBoxFobX)
+                pVBoxFcbX->pFobxLastWriteTime = NULL;
+            vbsfNtCopyInfo(pVBoxFobX, &pReq->ObjInfo, pVBoxFcbX, 0, pFileObj, pFcb);
+            Log(("VBOXSF: vbsfNtSetEndOfFile: VbglR0SfHostReqSetFileSizeOld returns new allocation size = %RX64\n",
+                 pReq->ObjInfo.cbAllocated));
+            Status = STATUS_SUCCESS;
+        }
+        else
+        {
+            Log(("VBOXSF: vbsfNtSetEndOfFile: VbglR0SfHostReqSetFileSizeOld(%#RX64,%#RX64) failed %Rrc\n",
+                 pVBoxFobX->hFile, cbNewFileSize, vrc));
+            Status = vbsfNtVBoxStatusToNt(vrc);
+        }
+        VbglR0PhysHeapFree(pReq);
     }
-
-    RtlZeroMemory(pObjInfo, cbBuffer);
-    pObjInfo->cbObject = cbNewFileSize;
-
-    vrc = VbglR0SfFsInfo(&g_SfClient, &pNetRootExtension->map, pVBoxFobx->hFile,
-                         SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer, (PSHFLDIRINFO)pObjInfo);
-
-    Log(("VBOXSF: vbsfNtSetEndOfFile: VbglR0SfFsInfo returned %Rrc\n", vrc));
-
-    Status = vbsfNtVBoxStatusToNt(vrc);
-    if (Status == STATUS_SUCCESS)
-    {
-        pVBoxFobx->fTimestampsImplicitlyUpdated |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
-        if (pVBoxFcbx->pFobxLastWriteTime != pVBoxFobx)
-            pVBoxFcbx->pFobxLastWriteTime = NULL;
-
-        Log(("VBOXSF: vbsfNtSetEndOfFile: VbglR0SfFsInfo new allocation size = %RX64\n",
-             pObjInfo->cbAllocated));
-
-        /** @todo update the file stats! */
-    }
-
-    if (pObjInfo)
-        vbsfNtFreeNonPagedMem(pObjInfo);
-
-    Log(("VBOXSF: vbsfNtSetEndOfFile: Returned 0x%08X\n", Status));
+    else
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+    Log(("VBOXSF: vbsfNtSetEndOfFile: Returns %#010x\n", Status));
     return Status;
 }
 
@@ -2216,7 +2202,8 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             {
                 /** @todo get up to date EOF from host?  We may risk accidentally growing the
                  *        file here if the host (or someone else) truncated it. */
-                Status = vbsfNtSetEndOfFile(RxContext, pInfo->AllocationSize.QuadPart);
+                Status = vbsfNtSetEndOfFile(pNetRootExtension, RxContext->pFobx->AssociatedFileObject, pVBoxFobx,
+                                            capFcb, VBoxMRxGetFcbExtension(capFcb), pInfo->AllocationSize.QuadPart);
             }
             break;
         }
@@ -2244,7 +2231,8 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             Log(("VBOXSF: MrxSetFileInfo: FileEndOfFileInformation: new EndOfFile 0x%RX64, FileSize = 0x%RX64\n",
                  pInfo->EndOfFile.QuadPart, capFcb->Header.FileSize.QuadPart));
 
-            Status = vbsfNtSetEndOfFile(RxContext, pInfo->EndOfFile.QuadPart);
+            Status = vbsfNtSetEndOfFile(pNetRootExtension, RxContext->pFobx->AssociatedFileObject, pVBoxFobx,
+                                        capFcb, VBoxMRxGetFcbExtension(capFcb), pInfo->EndOfFile.QuadPart);
 
             Log(("VBOXSF: MrxSetFileInfo: FileEndOfFileInformation: Status 0x%08X\n",
                  Status));

@@ -583,6 +583,8 @@ DECLVBGL(int) VbglR0SfDirInfo(
     return rc;
 }
 
+# ifndef RT_OS_WINDOWS
+
 DECLVBGL(int) VbglR0SfFsInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                              uint32_t flags, uint32_t *pcbBuffer, PSHFLDIRINFO pBuffer)
 {
@@ -613,6 +615,8 @@ DECLVBGL(int) VbglR0SfFsInfo(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE 
     }
     return rc;
 }
+
+# endif /* !RT_OS_WINDOWS */
 
 DECLVBGL(int) VbglR0SfLock(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                            uint64_t offset, uint64_t cbSize, uint32_t fLock)
