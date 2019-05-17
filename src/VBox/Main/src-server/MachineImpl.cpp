@@ -4336,12 +4336,15 @@ HRESULT Machine::passthroughDevice(const com::Utf8Str &aName, LONG aControllerPo
         return setError(E_INVALIDARG,
                         tr("Setting passthrough rejected as the device attached to device slot %d on port %d of controller '%s' is not a DVD"),
                         aDevice, aControllerPort, aName.c_str());
+
+    bool fValueChanged = pAttach->i_getPassthrough() != (aPassthrough != 0);
+
     pAttach->i_updatePassthrough(!!aPassthrough);
 
     attLock.release();
     alock.release();
     rc = i_onStorageDeviceChange(pAttach, FALSE /* aRemove */, FALSE /* aSilent */);
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED(rc) && fValueChanged)
         mParent->i_onStorageDeviceChanged(pAttach, FALSE, FALSE);
 
     return rc;
@@ -6156,6 +6159,7 @@ HRESULT Machine::removeStorageController(const com::Utf8Str &aName)
     rc = i_getStorageControllerByName(aName, ctrl, true /* aSetError */);
     if (FAILED(rc)) return rc;
 
+    MediumAttachmentList llDetachedAttachments;
     {
         /* find all attached devices to the appropriate storage controller and detach them all */
         // make a temporary list because detachDevice invalidates iterators into
@@ -6176,10 +6180,20 @@ HRESULT Machine::removeStorageController(const com::Utf8Str &aName)
 
             if (pAttachTemp->i_getControllerName() == aName)
             {
+                llDetachedAttachments.push_back(pAttachTemp);
                 rc = i_detachDevice(pAttachTemp, alock, NULL);
                 if (FAILED(rc)) return rc;
             }
         }
+    }
+
+    /* send event about detached devices before removing parent controller */
+    for (MediumAttachmentList::const_iterator
+         it = llDetachedAttachments.begin();
+         it != llDetachedAttachments.end();
+         ++it)
+    {
+        mParent->i_onStorageDeviceChanged(*it, TRUE, FALSE);
     }
 
     /* We can remove it now. */

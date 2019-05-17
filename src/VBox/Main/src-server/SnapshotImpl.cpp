@@ -3233,7 +3233,7 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
                     }
                     else
                     {
-                        for (ComObjPtr<Medium> pTmpMedium = it->mpSource->i_getParent();
+                        for (ComObjPtr<Medium> pTmpMedium = it->mpSource;
                              pTmpMedium && pTmpMedium != it->mpTarget;
                              pTmpMedium = pTmpMedium->i_getParent())
                         {

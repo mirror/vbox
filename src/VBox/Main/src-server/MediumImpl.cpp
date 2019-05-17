@@ -2335,7 +2335,7 @@ HRESULT Medium::close(AutoCaller &aAutoCaller)
 
     pVirtualBox->i_saveModifiedRegistries();
 
-    if (SUCCEEDED(mrc))
+    if (SUCCEEDED(mrc) && uId.isValid() && !uId.isZero())
         pVirtualBox->i_onMediumRegistered(uId, devType, FALSE);
 
     return mrc;
@@ -8413,7 +8413,10 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
     }
 
     if (task.NotifyAboutChanges() && SUCCEEDED(rc))
+    {
         m->pVirtualBox->i_onMediumConfigChanged(this);
+        m->pVirtualBox->i_onMediumRegistered(m->id, m->devType, TRUE);
+    }
 
     return rc;
 }
@@ -8640,7 +8643,10 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
      * unlock the medium. */
 
     if (task.NotifyAboutChanges() && SUCCEEDED(mrc))
+    {
         m->pVirtualBox->i_onMediumConfigChanged(this);
+        m->pVirtualBox->i_onMediumRegistered(m->id, m->devType, TRUE);
+    }
 
     return mrc;
 }
@@ -9649,10 +9655,15 @@ HRESULT Medium::i_taskDeleteHandler(Medium::DeleteTask &task)
     m->state = MediumState_NotCreated;
 
     /* Reset UUID to prevent Create* from reusing it again */
+    com::Guid uOldId = m->id;
     unconst(m->id).clear();
 
-    if (task.NotifyAboutChanges() && SUCCEEDED(rc) && m->pParent.isNotNull())
-        m->pVirtualBox->i_onMediumConfigChanged(m->pParent);
+    if (task.NotifyAboutChanges() && SUCCEEDED(rc))
+    {
+        if (m->pParent.isNotNull())
+            m->pVirtualBox->i_onMediumConfigChanged(m->pParent);
+        m->pVirtualBox->i_onMediumRegistered(uOldId, m->devType, TRUE);
+    }
 
     return rc;
 }

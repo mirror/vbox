@@ -1977,7 +1977,9 @@ HRESULT VirtualBox::createMedium(const com::Utf8Str &aFormat,
     if (SUCCEEDED(rc))
     {
         medium.queryInterfaceTo(aMedium.asOutParam());
-        i_onMediumRegistered(medium->i_getId(), medium->i_getDeviceType(), TRUE);
+        com::Guid uMediumId = medium->i_getId();
+        if (uMediumId.isValid() && !uMediumId.isZero())
+            i_onMediumRegistered(uMediumId, medium->i_getDeviceType(), TRUE);
     }
 
     return rc;
