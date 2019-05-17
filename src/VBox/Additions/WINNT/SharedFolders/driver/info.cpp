@@ -2011,7 +2011,7 @@ static NTSTATUS vbsfNtRename(IN PRX_CONTEXT RxContext,
             else
             {
                 Status = vbsfNtVBoxStatusToNt(vrc);
-                Log(("VBOXSF: vbsfNtRename: VbglR0SfRename failed with %Rrc (Status=%#x)\n", vrc, Status));
+                Log(("VBOXSF: vbsfNtRename: VbglR0SfHostReqRenameWithSrcBuf failed with %Rrc (Status=%#x)\n", vrc, Status));
             }
 
             VbglR0PhysHeapFree(pShflSrcPath);

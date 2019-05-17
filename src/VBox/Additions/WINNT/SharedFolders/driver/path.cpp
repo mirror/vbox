@@ -29,73 +29,57 @@
 static UNICODE_STRING g_UnicodeBackslash = { 2, 4, L"\\" };
 
 
-static NTSTATUS vbsfNtCreateWorkerBail(NTSTATUS Status, VBOXSFCREATEREQ *pReq, PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension)
+/**
+ * Handles failure scenarios where we may have to close the handle.
+ */
+DECL_NO_INLINE(static, NTSTATUS) vbsfNtCreateWorkerBail(NTSTATUS Status, VBOXSFCREATEREQ *pReq,
+                                                        PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension)
 {
     Log(("VBOXSF: vbsfNtCreateWorker: Returns %#x (Handle was %#RX64)\n", Status, pReq->CreateParms.Handle));
-    AssertCompile(sizeof(VBOXSFCLOSEREQ) <= RT_UOFFSETOF(VBOXSFCREATEREQ, CreateParms));
-    VbglR0SfHostReqClose(pNetRootExtension->map.root, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
+    if (pReq->CreateParms.Handle != SHFL_HANDLE_NIL)
+    {
+        AssertCompile(sizeof(VBOXSFCLOSEREQ) <= RT_UOFFSETOF(VBOXSFCREATEREQ, CreateParms));
+        VbglR0SfHostReqClose(pNetRootExtension->map.root, (VBOXSFCLOSEREQ *)pReq, pReq->CreateParms.Handle);
+    }
     return Status;
 }
 
 
+/**
+ * Worker for VBoxMRxCreate that converts parameters and calls the host.
+ *
+ * The caller takes care of freeing the request buffer, so this function is free
+ * to just return at will.
+ */
 static NTSTATUS vbsfNtCreateWorker(PRX_CONTEXT RxContext, VBOXSFCREATEREQ *pReq, ULONG *pulCreateAction,
                                    PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension, PMRX_FCB pFcb)
 {
-    /* Mask out unsupported attribute bits. */
-    UCHAR       FileAttributes = (UCHAR)(RxContext->Create.NtCreateParameters.FileAttributes & ~FILE_ATTRIBUTE_NORMAL); /** @todo why UCHAR? */
-    FileAttributes &= (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_ARCHIVE);
-    if (FileAttributes == 0)
-        FileAttributes = FILE_ATTRIBUTE_NORMAL;
+    /*
+     * Check out the options.
+     */
+    ULONG const fOptions            = RxContext->Create.NtCreateParameters.CreateOptions & FILE_VALID_OPTION_FLAGS;
+    ULONG const CreateDisposition   = RxContext->Create.NtCreateParameters.Disposition;
+    bool const  fCreateDir          = (fOptions & FILE_DIRECTORY_FILE)
+                                   && (CreateDisposition == FILE_CREATE || CreateDisposition == FILE_OPEN_IF);
+    bool const  fTemporaryFile      = (RxContext->Create.NtCreateParameters.FileAttributes & FILE_ATTRIBUTE_TEMPORARY)
+                                   || (pFcb->FcbState & FCB_STATE_TEMPORARY);
 
-    ACCESS_MASK const DesiredAccess  = RxContext->Create.NtCreateParameters.DesiredAccess;
-    ULONG       const Options        = RxContext->Create.NtCreateParameters.CreateOptions & FILE_VALID_OPTION_FLAGS;
-    ULONG       const ShareAccess    = RxContext->Create.NtCreateParameters.ShareAccess;
-
-    /* Various boolean flags. */
-    struct
-    {
-        ULONG CreateDirectory :1;
-        ULONG OpenDirectory :1;
-        ULONG DirectoryFile :1;
-        ULONG NonDirectoryFile :1;
-        ULONG DeleteOnClose :1;
-        ULONG TemporaryFile :1;
-        ULONG SlashHack :1;
-    } bf;
-    RT_ZERO(bf);
-
-    bf.DirectoryFile = BooleanFlagOn(Options, FILE_DIRECTORY_FILE);
-    bf.NonDirectoryFile = BooleanFlagOn(Options, FILE_NON_DIRECTORY_FILE);
-    bf.DeleteOnClose = BooleanFlagOn(Options, FILE_DELETE_ON_CLOSE);
-    if (bf.DeleteOnClose)
-        Log(("VBOXSF: vbsfProcessCreate: Delete on close!\n"));
-
-    ULONG CreateDisposition = RxContext->Create.NtCreateParameters.Disposition;
-
-    bf.CreateDirectory = (bf.DirectoryFile && ((CreateDisposition == FILE_CREATE) || (CreateDisposition == FILE_OPEN_IF)));
-    bf.OpenDirectory = (bf.DirectoryFile && ((CreateDisposition == FILE_OPEN) || (CreateDisposition == FILE_OPEN_IF)));
-    bf.TemporaryFile = BooleanFlagOn(RxContext->Create.NtCreateParameters.FileAttributes, FILE_ATTRIBUTE_TEMPORARY);
-
-    if (FlagOn(pFcb->FcbState, FCB_STATE_TEMPORARY))
-        bf.TemporaryFile = TRUE;
-
-    bf.SlashHack = RxContext->CurrentIrpSp
-                && (RxContext->CurrentIrpSp->Parameters.Create.ShareAccess & VBOX_MJ_CREATE_SLASH_HACK);
-
-    Log(("VBOXSF: vbsfProcessCreate: bf.TemporaryFile %d, bf.CreateDirectory %d, bf.DirectoryFile = %d, bf.SlashHack = %d\n",
-         bf.TemporaryFile, bf.CreateDirectory, bf.DirectoryFile, bf.SlashHack));
+    Log(("VBOXSF: vbsfNtCreateWorker: fTemporaryFile %d, fCreateDir %d%s%s%s\n", fTemporaryFile, fCreateDir,
+         fOptions & FILE_DIRECTORY_FILE ? ", FILE_DIRECTORY_FILE" : "",
+         fOptions & FILE_NON_DIRECTORY_FILE ? ", FILE_NON_DIRECTORY_FILE" : "",
+         fOptions & FILE_DELETE_ON_CLOSE ? ", FILE_DELETE_ON_CLOSE" : ""));
 
     /* Check consistency in specified flags. */
-    if (bf.TemporaryFile && bf.CreateDirectory) /* Directories with temporary flag set are not allowed! */
+    if (fTemporaryFile && fCreateDir) /* Directories with temporary flag set are not allowed! */
     {
-        Log(("VBOXSF: vbsfProcessCreate: Not allowed: Temporary directories!\n"));
+        Log(("VBOXSF: vbsfNtCreateWorker: Not allowed: Temporary directories!\n"));
         return STATUS_INVALID_PARAMETER;
     }
 
-    if (bf.DirectoryFile && bf.NonDirectoryFile)
+    if ((fOptions & (FILE_DIRECTORY_FILE | FILE_NON_DIRECTORY_FILE)) == (FILE_DIRECTORY_FILE | FILE_NON_DIRECTORY_FILE))
     {
         /** @todo r=bird: Check if FILE_DIRECTORY_FILE+FILE_NON_DIRECTORY_FILE really is illegal in all combinations... */
-        Log(("VBOXSF: vbsfProcessCreate: Unsupported combination: dir && !dir\n"));
+        Log(("VBOXSF: vbsfNtCreateWorker: Unsupported combination: dir && !dir\n"));
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -109,16 +93,16 @@ static NTSTATUS vbsfNtCreateWorker(PRX_CONTEXT RxContext, VBOXSFCREATEREQ *pReq,
     /*
      * Directory.
      */
-    if (bf.DirectoryFile)
+    if (fOptions & FILE_DIRECTORY_FILE)
     {
         if (CreateDisposition != FILE_CREATE && CreateDisposition != FILE_OPEN && CreateDisposition != FILE_OPEN_IF)
         {
-            Log(("VBOXSF: vbsfProcessCreate: Invalid disposition 0x%08X for directory!\n",
+            Log(("VBOXSF: vbsfNtCreateWorker: Invalid disposition 0x%08X for directory!\n",
                  CreateDisposition));
             return STATUS_INVALID_PARAMETER;
         }
 
-        Log(("VBOXSF: vbsfProcessCreate: CreateFlags |= SHFL_CF_DIRECTORY\n"));
+        Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_DIRECTORY\n"));
         pReq->CreateParms.CreateFlags |= SHFL_CF_DIRECTORY;
     }
 
@@ -129,45 +113,46 @@ static NTSTATUS vbsfNtCreateWorker(PRX_CONTEXT RxContext, VBOXSFCREATEREQ *pReq,
     {
         case FILE_SUPERSEDE:
             pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_REPLACE_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW;
-            Log(("VBOXSF: vbsfProcessCreate: CreateFlags |= SHFL_CF_ACT_REPLACE_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW\n"));
+            Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACT_REPLACE_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW\n"));
             break;
 
         case FILE_OPEN:
             pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW;
-            Log(("VBOXSF: vbsfProcessCreate: CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW\n"));
+            Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW\n"));
             break;
 
         case FILE_CREATE:
             pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW;
-            Log(("VBOXSF: vbsfProcessCreate: CreateFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW\n"));
+            Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACT_FAIL_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW\n"));
             break;
 
         case FILE_OPEN_IF:
             pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW;
-            Log(("VBOXSF: vbsfProcessCreate: CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW\n"));
+            Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACT_OPEN_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW\n"));
             break;
 
         case FILE_OVERWRITE:
             pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW;
-            Log(("VBOXSF: vbsfProcessCreate: CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW\n"));
+            Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS | SHFL_CF_ACT_FAIL_IF_NEW\n"));
             break;
 
         case FILE_OVERWRITE_IF:
             pReq->CreateParms.CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW;
-            Log(("VBOXSF: vbsfProcessCreate: CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW\n"));
+            Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACT_OVERWRITE_IF_EXISTS | SHFL_CF_ACT_CREATE_IF_NEW\n"));
             break;
 
         default:
-            Log(("VBOXSF: vbsfProcessCreate: Unexpected create disposition: 0x%08X\n", CreateDisposition));
+            Log(("VBOXSF: vbsfNtCreateWorker: Unexpected create disposition: 0x%08X\n", CreateDisposition));
             return STATUS_INVALID_PARAMETER;
     }
 
     /*
      * Access mode.
      */
+    ACCESS_MASK const DesiredAccess = RxContext->Create.NtCreateParameters.DesiredAccess;
     if (DesiredAccess & FILE_READ_DATA)
     {
-        Log(("VBOXSF: vbsfProcessCreate: FILE_READ_DATA\n"));
+        Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACCESS_READ\n"));
         pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_READ;
     }
 
@@ -175,159 +160,196 @@ static NTSTATUS vbsfNtCreateWorker(PRX_CONTEXT RxContext, VBOXSFCREATEREQ *pReq,
        FILE_APPEND_DATA without FILE_WRITE_DATA means append only mode. */
     if (DesiredAccess & FILE_WRITE_DATA)
     {
-        Log(("VBOXSF: vbsfProcessCreate: FILE_WRITE_DATA\n"));
+        Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACCESS_WRITE\n"));
         pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_WRITE;
     }
     else if (DesiredAccess & FILE_APPEND_DATA)
     {
         /* Both write and append access flags are required for shared folders,
          * as on Windows FILE_APPEND_DATA implies write access. */
-        Log(("VBOXSF: vbsfProcessCreate: FILE_APPEND_DATA\n"));
+        Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACCESS_WRITE | SHFL_CF_ACCESS_APPEND\n"));
         pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_WRITE | SHFL_CF_ACCESS_APPEND;
     }
 
     if (DesiredAccess & FILE_READ_ATTRIBUTES)
+    {
+        Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACCESS_ATTR_READ\n"));
         pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_ATTR_READ;
+    }
     if (DesiredAccess & FILE_WRITE_ATTRIBUTES)
+    {
+        Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACCESS_ATTR_WRITE\n"));
         pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_ATTR_WRITE;
+    }
 
+    /*
+     * Sharing.
+     */
+    ULONG const ShareAccess = RxContext->Create.NtCreateParameters.ShareAccess;
     if (ShareAccess & (FILE_SHARE_READ | FILE_SHARE_WRITE))
+    {
+        Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACCESS_DENYNONE\n"));
         pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_DENYNONE;
+    }
     else if (ShareAccess & FILE_SHARE_READ)
+    {
+        Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACCESS_DENYWRITE\n"));
         pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_DENYWRITE;
+    }
     else if (ShareAccess & FILE_SHARE_WRITE)
+    {
+        Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACCESS_DENYREAD\n"));
         pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_DENYREAD;
+    }
     else
+    {
+        Log(("VBOXSF: vbsfNtCreateWorker: CreateFlags |= SHFL_CF_ACCESS_DENYALL\n"));
         pReq->CreateParms.CreateFlags |= SHFL_CF_ACCESS_DENYALL;
+    }
 
     /*
      * Set initial allocation size and attributes.
+     * There aren't too many attributes that need to be passed over.
      */
     pReq->CreateParms.Info.cbObject   = RxContext->Create.NtCreateParameters.AllocationSize.QuadPart;
-    pReq->CreateParms.Info.Attr.fMode = NTToVBoxFileAttributes(FileAttributes);
+    pReq->CreateParms.Info.Attr.fMode = NTToVBoxFileAttributes(  RxContext->Create.NtCreateParameters.FileAttributes
+                                                               & (  FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_HIDDEN
+                                                                  | FILE_ATTRIBUTE_SYSTEM   | FILE_ATTRIBUTE_ARCHIVE));
 
     /*
      * Call the host.
      */
-    Log(("VBOXSF: vbsfProcessCreate: Calling VbglR0SfHostReqCreate...\n"));
+    Log(("VBOXSF: vbsfNtCreateWorker: Calling VbglR0SfHostReqCreate(fCreate=%#RX32)...\n", pReq->CreateParms.CreateFlags));
     int vrc = VbglR0SfHostReqCreate(pNetRootExtension->map.root, pReq);
-    Log(("VBOXSF: vbsfProcessCreate: VbglR0SfCreate returns vrc = %Rrc, Result = 0x%x\n", vrc, pReq->CreateParms.Result));
+    Log(("VBOXSF: vbsfNtCreateWorker: VbglR0SfHostReqCreate returns vrc = %Rrc, Result = 0x%x\n", vrc, pReq->CreateParms.Result));
 
-    if (RT_FAILURE(vrc))
+    if (RT_SUCCESS(vrc))
     {
-        /* Map some VBoxRC to STATUS codes expected by the system. */
-        switch (vrc)
+        /*
+         * The request succeeded. Analyze host response,
+         */
+        switch (pReq->CreateParms.Result)
         {
-            case VERR_ALREADY_EXISTS:
-                Log(("VBOXSF: vbsfProcessCreate: VERR_ALREADY_EXISTS -> STATUS_OBJECT_NAME_COLLISION + FILE_EXISTS\n"));
-                *pulCreateAction = FILE_EXISTS;
-                return STATUS_OBJECT_NAME_COLLISION;
-
-            /* On POSIX systems, the "mkdir" command returns VERR_FILE_NOT_FOUND when
-               doing a recursive directory create. Handle this case.
-
-               bird: We end up here on windows systems too if opening a dir that doesn't
-                     exists.  Thus, I've changed the SHFL_PATH_NOT_FOUND to SHFL_FILE_NOT_FOUND
-                     so that FsPerf is happy. */
-            case VERR_FILE_NOT_FOUND: /** @todo r=bird: this is a host bug, isn't it? */
-                pReq->CreateParms.Result = SHFL_FILE_NOT_FOUND;
-                pReq->CreateParms.Handle = SHFL_HANDLE_NIL;
+            case SHFL_PATH_NOT_FOUND:
+                /* Path to the object does not exist. */
+                Log(("VBOXSF: vbsfNtCreateWorker: Path not found -> STATUS_OBJECT_PATH_NOT_FOUND + FILE_DOES_NOT_EXIST\n"));
                 *pulCreateAction = FILE_DOES_NOT_EXIST;
-                Log(("VBOXSF: vbsfProcessCreate: VERR_FILE_NOT_FOUND -> STATUS_OBJECT_NAME_NOT_FOUND + FILE_DOES_NOT_EXIST\n"));
-                return STATUS_OBJECT_NAME_NOT_FOUND;
+                return STATUS_OBJECT_PATH_NOT_FOUND;
 
-            default:
-            {
+            case SHFL_FILE_NOT_FOUND:
                 *pulCreateAction = FILE_DOES_NOT_EXIST;
-                NTSTATUS Status = vbsfNtVBoxStatusToNt(vrc);
-                Log(("VBOXSF: vbsfProcessCreate: %Rrc -> %#010x + FILE_DOES_NOT_EXIST\n", vrc, Status));
-                return Status;
-            }
-        }
-    }
-
-    /*
-     * The request succeeded. Analyze host response,
-     */
-    switch (pReq->CreateParms.Result)
-    {
-        case SHFL_PATH_NOT_FOUND:
-            /* Path to the object does not exist. */
-            Log(("VBOXSF: vbsfProcessCreate: Path not found -> STATUS_OBJECT_PATH_NOT_FOUND + FILE_DOES_NOT_EXIST\n"));
-            *pulCreateAction = FILE_DOES_NOT_EXIST;
-            return STATUS_OBJECT_PATH_NOT_FOUND;
-
-        case SHFL_FILE_NOT_FOUND:
-            *pulCreateAction = FILE_DOES_NOT_EXIST;
-            if (pReq->CreateParms.Handle == SHFL_HANDLE_NIL)
-            {
-                Log(("VBOXSF: vbsfProcessCreate: File not found -> STATUS_OBJECT_NAME_NOT_FOUND + FILE_DOES_NOT_EXIST\n"));
-                return STATUS_OBJECT_NAME_NOT_FOUND;
-            }
-            AssertMsgFailed(("VBOXSF: vbsfProcessCreate: WTF? File not found but have a handle!\n"));
-            return vbsfNtCreateWorkerBail(STATUS_UNSUCCESSFUL, pReq, pNetRootExtension);
-
-        case SHFL_FILE_EXISTS:
-            Log(("VBOXSF: vbsfProcessCreate: File exists, Handle = %#RX64\n", pReq->CreateParms.Handle));
-            if (pReq->CreateParms.Handle == SHFL_HANDLE_NIL)
-            {
-                *pulCreateAction = FILE_EXISTS;
-                if (CreateDisposition == FILE_CREATE)
+                if (pReq->CreateParms.Handle == SHFL_HANDLE_NIL)
                 {
-                    /* File was not opened because we requested a create. */
-                    Log(("VBOXSF: vbsfProcessCreate: File exists already, create failed -> STATUS_OBJECT_NAME_COLLISION\n"));
-                    return STATUS_OBJECT_NAME_COLLISION;
+                    Log(("VBOXSF: vbsfNtCreateWorker: File not found -> STATUS_OBJECT_NAME_NOT_FOUND + FILE_DOES_NOT_EXIST\n"));
+                    return STATUS_OBJECT_NAME_NOT_FOUND;
+                }
+                AssertMsgFailed(("VBOXSF: vbsfNtCreateWorker: WTF? File not found but have a handle!\n"));
+                return vbsfNtCreateWorkerBail(STATUS_UNSUCCESSFUL, pReq, pNetRootExtension);
+
+            case SHFL_FILE_EXISTS:
+                Log(("VBOXSF: vbsfNtCreateWorker: File exists, Handle = %#RX64\n", pReq->CreateParms.Handle));
+                if (pReq->CreateParms.Handle == SHFL_HANDLE_NIL)
+                {
+                    *pulCreateAction = FILE_EXISTS;
+                    if (CreateDisposition == FILE_CREATE)
+                    {
+                        /* File was not opened because we requested a create. */
+                        Log(("VBOXSF: vbsfNtCreateWorker: File exists already, create failed -> STATUS_OBJECT_NAME_COLLISION\n"));
+                        return STATUS_OBJECT_NAME_COLLISION;
+                    }
+
+                    /* Actually we should not go here, unless we have no rights to open the object. */
+                    Log(("VBOXSF: vbsfNtCreateWorker: Existing file was not opened! -> STATUS_ACCESS_DENIED\n"));
+                    return STATUS_ACCESS_DENIED;
                 }
 
-                /* Actually we should not go here, unless we have no rights to open the object. */
-                Log(("VBOXSF: vbsfProcessCreate: Existing file was not opened! -> STATUS_ACCESS_DENIED\n"));
-                return STATUS_ACCESS_DENIED;
-            }
+                /* An existing file was opened. */
+                *pulCreateAction = FILE_OPENED;
+                break;
 
-            /* An existing file was opened. */
-            *pulCreateAction = FILE_OPENED;
-            break;
+            case SHFL_FILE_CREATED:
+                Log(("VBOXSF: vbsfNtCreateWorker: File created (Handle=%#RX64) / FILE_CREATED\n", pReq->CreateParms.Handle));
+                /* A new file was created. */
+                Assert(pReq->CreateParms.Handle != SHFL_HANDLE_NIL);
+                *pulCreateAction = FILE_CREATED;
+                break;
 
-        case SHFL_FILE_CREATED:
-            /* A new file was created. */
-            Assert(pReq->CreateParms.Handle != SHFL_HANDLE_NIL);
-            *pulCreateAction = FILE_CREATED;
-            break;
+            case SHFL_FILE_REPLACED:
+                /* An existing file was replaced or overwritten. */
+                Assert(pReq->CreateParms.Handle != SHFL_HANDLE_NIL);
+                if (CreateDisposition == FILE_SUPERSEDE)
+                {
+                    Log(("VBOXSF: vbsfNtCreateWorker: File replaced (Handle=%#RX64) / FILE_SUPERSEDED\n", pReq->CreateParms.Handle));
+                    *pulCreateAction = FILE_SUPERSEDED;
+                }
+                else
+                {
+                    Log(("VBOXSF: vbsfNtCreateWorker: File replaced (Handle=%#RX64) / FILE_OVERWRITTEN\n", pReq->CreateParms.Handle));
+                    *pulCreateAction = FILE_OVERWRITTEN;
+                }
+                break;
 
-        case SHFL_FILE_REPLACED:
-            /* An existing file was replaced or overwritten. */
-            Assert(pReq->CreateParms.Handle != SHFL_HANDLE_NIL);
-            if (CreateDisposition == FILE_SUPERSEDE)
-                *pulCreateAction = FILE_SUPERSEDED;
-            else
-                *pulCreateAction = FILE_OVERWRITTEN;
-            break;
+            default:
+                Log(("VBOXSF: vbsfNtCreateWorker: Invalid CreateResult from host (0x%08X)\n", pReq->CreateParms.Result));
+                *pulCreateAction = FILE_DOES_NOT_EXIST;
+                return vbsfNtCreateWorkerBail(STATUS_OBJECT_PATH_NOT_FOUND, pReq, pNetRootExtension);
+        }
 
-        default:
-            Log(("VBOXSF: vbsfProcessCreate: Invalid CreateResult from host (0x%08X)\n",
-                 pReq->CreateParms.Result));
-            *pulCreateAction = FILE_DOES_NOT_EXIST;
-            return vbsfNtCreateWorkerBail(STATUS_OBJECT_PATH_NOT_FOUND, pReq, pNetRootExtension);
+        /*
+         * Check flags.
+         */
+        if (!(fOptions & FILE_NON_DIRECTORY_FILE) || !FlagOn(pReq->CreateParms.Info.Attr.fMode, RTFS_DOS_DIRECTORY))
+        { /* likely */ }
+        else
+        {
+            /* Caller wanted only a file, but the object is a directory. */
+            Log(("VBOXSF: vbsfNtCreateWorker: -> STATUS_FILE_IS_A_DIRECTORY!\n"));
+            return vbsfNtCreateWorkerBail(STATUS_FILE_IS_A_DIRECTORY, pReq, pNetRootExtension);
+        }
+
+        if (!(fOptions & FILE_DIRECTORY_FILE) || FlagOn(pReq->CreateParms.Info.Attr.fMode, RTFS_DOS_DIRECTORY))
+        { /* likely */ }
+        else
+        {
+            /* Caller wanted only a directory, but the object is not a directory. */
+            Log(("VBOXSF: vbsfNtCreateWorker: -> STATUS_NOT_A_DIRECTORY!\n"));
+            return vbsfNtCreateWorkerBail(STATUS_NOT_A_DIRECTORY, pReq, pNetRootExtension);
+        }
+
+        return STATUS_SUCCESS;
     }
 
     /*
-     * Check flags.
+     * Failed. Map some VBoxRC to STATUS codes expected by the system.
      */
-    if (bf.NonDirectoryFile && FlagOn(pReq->CreateParms.Info.Attr.fMode, RTFS_DOS_DIRECTORY))
+    switch (vrc)
     {
-        /* Caller wanted only a file, but the object is a directory. */
-        Log(("VBOXSF: vbsfProcessCreate: File is a directory!\n"));
-        return vbsfNtCreateWorkerBail(STATUS_FILE_IS_A_DIRECTORY, pReq, pNetRootExtension);
-    }
+        case VERR_ALREADY_EXISTS:
+            Log(("VBOXSF: vbsfNtCreateWorker: VERR_ALREADY_EXISTS -> STATUS_OBJECT_NAME_COLLISION + FILE_EXISTS\n"));
+            *pulCreateAction = FILE_EXISTS;
+            return STATUS_OBJECT_NAME_COLLISION;
 
-    if (bf.DirectoryFile && !FlagOn(pReq->CreateParms.Info.Attr.fMode, RTFS_DOS_DIRECTORY))
-    {
-        /* Caller wanted only a directory, but the object is not a directory. */
-        Log(("VBOXSF: vbsfProcessCreate: File is not a directory!\n"));
-        return vbsfNtCreateWorkerBail(STATUS_NOT_A_DIRECTORY, pReq, pNetRootExtension);
-    }
+        /* On POSIX systems, the "mkdir" command returns VERR_FILE_NOT_FOUND when
+           doing a recursive directory create. Handle this case.
 
-    return STATUS_SUCCESS;
+           bird: We end up here on windows systems too if opening a dir that doesn't
+                 exists.  Thus, I've changed the SHFL_PATH_NOT_FOUND to SHFL_FILE_NOT_FOUND
+                 so that FsPerf is happy. */
+        case VERR_FILE_NOT_FOUND: /** @todo r=bird: this is a host bug, isn't it? */
+            pReq->CreateParms.Result = SHFL_FILE_NOT_FOUND;
+            pReq->CreateParms.Handle = SHFL_HANDLE_NIL;
+            *pulCreateAction = FILE_DOES_NOT_EXIST;
+            Log(("VBOXSF: vbsfNtCreateWorker: VERR_FILE_NOT_FOUND -> STATUS_OBJECT_NAME_NOT_FOUND + FILE_DOES_NOT_EXIST\n"));
+            return STATUS_OBJECT_NAME_NOT_FOUND;
+
+        default:
+        {
+            *pulCreateAction = FILE_DOES_NOT_EXIST;
+            NTSTATUS Status = vbsfNtVBoxStatusToNt(vrc);
+            Log(("VBOXSF: vbsfNtCreateWorker: %Rrc -> %#010x + FILE_DOES_NOT_EXIST\n", vrc, Status));
+            return Status;
+        }
+    }
 }
 
 /**
@@ -353,11 +375,11 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     /*
      * Log stuff and make some small adjustments to empty paths and caching flags.
      */
-    Log(("VBOXSF: VBoxMRxCreate: FileAttributes = %#010x\n", RxContext->Create.NtCreateParameters.FileAttributes));
+    Log(("VBOXSF: VBoxMRxCreate:  CreateOptions = %#010x\n", RxContext->Create.NtCreateParameters.CreateOptions));
+    Log(("VBOXSF: VBoxMRxCreate:    Disposition = %#010x\n", RxContext->Create.NtCreateParameters.Disposition));
     Log(("VBOXSF: VBoxMRxCreate:  DesiredAccess = %#010x\n", RxContext->Create.NtCreateParameters.DesiredAccess));
     Log(("VBOXSF: VBoxMRxCreate:    ShareAccess = %#010x\n", RxContext->Create.NtCreateParameters.ShareAccess));
-    Log(("VBOXSF: VBoxMRxCreate:    Disposition = %#010x\n", RxContext->Create.NtCreateParameters.Disposition));
-    Log(("VBOXSF: VBoxMRxCreate:  CreateOptions = %#010x\n", RxContext->Create.NtCreateParameters.CreateOptions));
+    Log(("VBOXSF: VBoxMRxCreate: FileAttributes = %#010x\n", RxContext->Create.NtCreateParameters.FileAttributes));
     Log(("VBOXSF: VBoxMRxCreate: AllocationSize = %#RX64\n", RxContext->Create.NtCreateParameters.AllocationSize.QuadPart));
     Log(("VBOXSF: VBoxMRxCreate: name ptr %p length=%d, SrvOpen->Flags %#010x\n",
          RemainingName, RemainingName->Length, pSrvOpen->Flags));
@@ -561,7 +583,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
             }
             Log(("VBOXSF: VBoxMRxCreate: NetRoot is %p, Fcb is %p, pSrvOpen is %p, Fobx is %p\n",
                  pNetRoot, capFcb, pSrvOpen, RxContext->pFobx));
-            Log(("VBOXSF: VBoxMRxCreate: returns %#010x\n", Status));
+            Log(("VBOXSF: VBoxMRxCreate: returns STATUS_SUCCESS\n"));
         }
         else
         {
@@ -573,7 +595,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
         }
     }
     else
-        Log(("VBOXSF: VBoxMRxCreate: vbsfProcessCreate failed %#010x\n", Status));
+        Log(("VBOXSF: VBoxMRxCreate: vbsfNtCreateWorker failed %#010x\n", Status));
     VbglR0PhysHeapFree(pReq);
     return Status;
 }
@@ -890,7 +912,8 @@ NTSTATUS vbsfNtRemove(IN PRX_CONTEXT RxContext)
     }
     else
     {
-        Log(("VBOXSF: vbsfNtRemove: VbglR0SfRemove failed with %Rrc\n", vrc));
+        Log(("VBOXSF: vbsfNtRemove: %s failed with %Rrc\n",
+             g_uSfLastFunction >= SHFL_FN_CLOSE_AND_REMOVE ? "VbglR0SfHostReqCloseAndRemove" : "VbglR0SfHostReqRemove", vrc));
         Status = vbsfNtVBoxStatusToNt(vrc);
     }
 
