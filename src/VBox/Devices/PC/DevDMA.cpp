@@ -98,7 +98,6 @@
 /* Saved state versions. */
 #define DMA_SAVESTATE_OLD       1   /* The original saved state. */
 #define DMA_SAVESTATE_CURRENT   2   /* The new and improved saved state. */
-#define DMA_FIXES
 
 /* State information for a single DMA channel. */
 typedef struct {
@@ -266,6 +265,9 @@ PDMBOTHCBDECL(int) dmaWriteAddr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
                 ch->u16BaseCount = RT_MAKE_U16(ch->u16BaseCount, u32);
             else
                 ch->u16BaseAddr  = RT_MAKE_U16(ch->u16BaseAddr, u32);
+
+            ch->u16CurCount = 0;
+            ch->u16CurAddr  = ch->u16BaseAddr;
         }
         else
         {
@@ -275,18 +277,6 @@ PDMBOTHCBDECL(int) dmaWriteAddr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
             else
                 ch->u16BaseAddr  = RT_MAKE_U16(u32, RT_HIBYTE(ch->u16BaseAddr));
         }
-        /*
-         * Update the current count/address.
-         *
-         * NB: The current count actually counts from zero up, while the base count
-         * uses the the 8257 semantics and counts down. The guest never sees the
-         * current count directly.
-         */
-        if (is_count)
-            ch->u16CurCount = 0;
-        else
-            ch->u16CurAddr  = ch->u16BaseAddr;
-
         Log2(("dmaWriteAddr: port %#06x, chidx %d, data %#02x\n",
               port, chidx, u32));
     }
@@ -321,11 +311,7 @@ PDMBOTHCBDECL(int) dmaReadAddr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, 
         if (reg & 1)
             val = ch->u16BaseCount - ch->u16CurCount;
         else
-#ifdef DMA_FIXES
-            val = ch->u16CurAddr;
-#else
             val = ch->u16CurAddr + ch->u16CurCount * dir;
-#endif
 
         bptr = dmaReadBytePtr(dc);
         *pu32 = RT_LOBYTE(val >> (bptr * 8));
@@ -614,7 +600,6 @@ static void dmaRunChannel(DMAState *pThis, int ctlidx, int chidx)
     DMAControl  *dc = &pThis->DMAC[ctlidx];
     DMAChannel  *ch = &dc->ChState[chidx];
     uint32_t    start_cnt, end_cnt;
-    int         uDelta;
     int         opmode;
 
     opmode = (ch->u8Mode >> 6) & 3;
@@ -630,12 +615,7 @@ static void dmaRunChannel(DMAState *pThis, int ctlidx, int chidx)
      */
     end_cnt = ch->pfnXferHandler(pThis->pDevIns, ch->pvUser, (ctlidx * 4) + chidx,
                                  start_cnt, (ch->u16BaseCount + 1) << dc->is16bit);
-    uDelta = (end_cnt - start_cnt) >> dc->is16bit;
     ch->u16CurCount = end_cnt >> dc->is16bit;
-#ifdef DMA_FIXES    // Necessary, but currently upsets SB16.
-    int dir = IS_MODE_DEC(ch->u8Mode) ? -1 : 1;
-    ch->u16CurAddr += uDelta * dir;
-#endif
     /* Set the TC (Terminal Count) bit if transfer was completed. */
     if (ch->u16CurCount == ch->u16BaseCount + 1)
         switch (opmode)
@@ -643,18 +623,8 @@ static void dmaRunChannel(DMAState *pThis, int ctlidx, int chidx)
         case DMODE_DEMAND:
         case DMODE_SINGLE:
         case DMODE_BLOCK:
-            dc->u8Status |= RT_BIT(chidx);  /* Set the TC status bit. */
-            Log3(("TC set for DMA channel %d, auto-init %s\n", (ctlidx * 4) + chidx, IS_MODE_AI(ch->u8Mode) ? "on" : "off"));
-            if (IS_MODE_AI(ch->u8Mode))
-            {
-                /* Auto-init DMA, resets the current address/count. */
-#ifdef DMA_FIXES    // Necessary, but currently upsets SB16.
-                ch->u16CurAddr  = ch->u16BaseAddr;
-                ch->u16CurCount = 0;
-#endif
-            }
-            else
-                dc->u8Mask |= RT_BIT(chidx);    /* No auto-init, mask channel. */
+            dc->u8Status |= RT_BIT(chidx);
+            Log3(("TC set for DMA channel %d\n", (ctlidx * 4) + chidx));
             break;
         default:
             break;
@@ -684,7 +654,6 @@ static DECLCALLBACK(bool) dmaRun(PPDMDEVINS pDevIns)
         for (chidx = 0; chidx < 4; ++chidx)
         {
             mask = 1 << chidx;
-            /* Run channel if not masked and its DREQ is active. */
             if (!(dc->u8Mask & mask) && (dc->u8Status & (mask << 4)))
                 dmaRunChannel(pThis, ctlidx, chidx);
         }
