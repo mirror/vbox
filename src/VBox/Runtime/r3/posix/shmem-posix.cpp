@@ -213,6 +213,29 @@ RTDECL(int) RTShMemClose(RTSHMEM hShMem)
 }
 
 
+RTDECL(int) RTShMemDelete(const char *pszName)
+{
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+
+    size_t cchName = strlen(pszName);
+    AssertReturn(cchName, VERR_INVALID_PARAMETER);
+    AssertReturn(cchName < NAME_MAX - 1, VERR_INVALID_PARAMETER); /* account for the / we add later on. */
+    char *psz = NULL;
+
+    int rc = RTStrAllocEx(&psz, cchName + 2); /* '/' + terminator */
+    if (RT_SUCCESS(rc))
+    {
+        psz[0] = '/';
+        memcpy(&psz[1], pszName, cchName + 1);
+        if (shm_unlink(psz))
+            rc = RTErrConvertFromErrno(errno);
+        RTStrFree(psz);
+    }
+
+    return rc;
+}
+
+
 RTDECL(uint32_t) RTShMemRefCount(RTSHMEM hShMem)
 {
     PRTSHMEMINT pThis = hShMem;

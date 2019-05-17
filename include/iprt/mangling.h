@@ -1986,6 +1986,7 @@
 # define RTSha512t256ToString                           RT_MANGLER(RTSha512t256ToString)
 # define RTSha512t256Update                             RT_MANGLER(RTSha512t256Update)
 # define RTShMemClose                                   RT_MANGLER(RTShMemClose)
+# define RTShMemDelete                                  RT_MANGLER(RTShMemDelete)
 # define RTShMemMapRegion                               RT_MANGLER(RTShMemMapRegion)
 # define RTShMemOpen                                    RT_MANGLER(RTShMemOpen)
 # define RTShMemQuerySize                               RT_MANGLER(RTShMemQuerySize)

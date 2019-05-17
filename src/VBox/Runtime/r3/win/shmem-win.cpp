@@ -262,6 +262,15 @@ RTDECL(int) RTShMemClose(RTSHMEM hShMem)
 }
 
 
+RTDECL(int) RTShMemDelete(const char *pszName)
+{
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(*pszName != '\0', VERR_INVALID_PARAMETER);
+
+    return VERR_NOT_SUPPORTED;
+}
+
+
 RTDECL(uint32_t) RTShMemRefCount(RTSHMEM hShMem)
 {
     PRTSHMEMINT pThis = hShMem;

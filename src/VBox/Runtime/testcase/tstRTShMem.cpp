@@ -30,7 +30,7 @@
 *********************************************************************************************************************************/
 #include <iprt/shmem.h>
 
-#include <iprt/errcore.h>
+#include <iprt/err.h>
 #include <iprt/log.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
@@ -61,10 +61,17 @@ static void tstRTShMem1(void)
     RTTestISub("Basics");
 
     /* create and destroy. */
+    int rc = RTShMemOpen(&g_hShMem, "tstRTShMem-Share", RTSHMEM_O_F_CREATE_EXCL | RTSHMEM_O_F_READWRITE | RTSHMEM_O_F_MAYBE_EXEC,
+                         _512K, 0);
+    if (RT_FAILURE(rc))
+    {
+        RTTESTI_CHECK_RC_RETV(rc, VERR_ALREADY_EXISTS);
+        RTTESTI_CHECK_RC(RTShMemDelete("tstRTShMem-Share"), VINF_SUCCESS);
+        RTTESTI_CHECK_RC_RETV(RTShMemOpen(&g_hShMem, "tstRTShMem-Share", RTSHMEM_O_F_CREATE | RTSHMEM_O_F_READWRITE | RTSHMEM_O_F_MAYBE_EXEC,
+                                          _512K, 0),
+                              VINF_SUCCESS);
+    }
 
-    RTTESTI_CHECK_RC_RETV(RTShMemOpen(&g_hShMem, "tstRTShMem-Share", RTSHMEM_O_F_CREATE | RTSHMEM_O_F_READWRITE | RTSHMEM_O_F_MAYBE_EXEC,
-                                      _512K, 0),
-                          VINF_SUCCESS);
     RTTESTI_CHECK_RETV(g_hShMem != NIL_RTSHMEM);
 
     /* Query the size. */

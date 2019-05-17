@@ -86,6 +86,15 @@ RTDECL(int) RTShMemOpen(PRTSHMEM phShMem, const char *pszName, uint32_t fFlags, 
 RTDECL(int) RTShMemClose(RTSHMEM hShMem);
 
 /**
+ * Tries to delete a shared memory object with the given name.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if the platform does not support deleting the shared memory object by name.
+ * @param   pszName         Name of the shared memory object to delete.
+ */
+RTDECL(int) RTShMemDelete(const char *pszName);
+
+/**
  * Returns the number of references (i.e. mappings) held for the given shared memory object.
  *
  * @returns Reference count or 0 on invalid handle.
