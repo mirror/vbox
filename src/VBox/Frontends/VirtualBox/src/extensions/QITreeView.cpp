@@ -434,6 +434,17 @@ void QITreeView::mousePressEvent(QMouseEvent *pEvent)
         QTreeView::mousePressEvent(pEvent);
 }
 
+void QITreeView::mouseReleaseEvent(QMouseEvent *pEvent)
+{
+    /* Reject event initially: */
+    pEvent->setAccepted(false);
+    /* Notify listeners about event allowing them to handle it: */
+    emit mouseReleased(pEvent);
+    /* Call to base-class only if event was not yet accepted: */
+    if (!pEvent->isAccepted())
+        QTreeView::mouseReleaseEvent(pEvent);
+}
+
 void QITreeView::mouseDoubleClickEvent(QMouseEvent *pEvent)
 {
     /* Reject event initially: */
