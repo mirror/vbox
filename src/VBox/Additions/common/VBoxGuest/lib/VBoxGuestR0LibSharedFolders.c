@@ -99,6 +99,8 @@ DECLVBGL(void) VbglR0SfDisconnect(PVBGLSFCLIENT pClient)
 
 #if !defined(RT_OS_LINUX)
 
+# ifndef RT_OS_WINDOWS
+
 DECLVBGL(int) VbglR0SfSetUtf8(PVBGLSFCLIENT pClient)
 {
     int rc;
@@ -109,6 +111,8 @@ DECLVBGL(int) VbglR0SfSetUtf8(PVBGLSFCLIENT pClient)
 /*    Log(("VBOXSF: VbglR0SfSetUtf8: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
     return rc;
 }
+
+# endif /* !RT_OS_WINDOWS */
 
 /** @name       Deprecated VBGL shared folder helpers.
  *
@@ -217,6 +221,8 @@ DECLVBGL(int) VbglR0SfUnmapFolder(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap)
     return rc;
 }
 
+# if !defined(RT_OS_WINDOWS)
+
 DECLVBGL(int) VbglR0SfCreate(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pParsedPath, PSHFLCREATEPARMS pCreateParms)
 {
     /** @todo copy buffers to physical or mapped memory. */
@@ -258,6 +264,7 @@ DECLVBGL(int) VbglR0SfClose(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE H
 /*    Log(("VBOXSF: VbglR0SfClose: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
     return rc;
 }
+
 
 DECLVBGL(int) VbglR0SfRemove(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pParsedPath, uint32_t flags)
 {
@@ -307,6 +314,8 @@ DECLVBGL(int) VbglR0SfRename(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING
 /*    Log(("VBOXSF: VbglR0SfRename: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
     return rc;
 }
+
+# endif /* !RT_OS_WINDOWS */
 
 DECLVBGL(int) VbglR0SfRead(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                            uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer, bool fLocked)
@@ -631,6 +640,8 @@ DECLVBGL(int) VbglR0SfLock(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hF
     return rc;
 }
 
+# ifndef RT_OS_WINDOWS
+
 DECLVBGL(int) VbglR0SfReadLink(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, PSHFLSTRING pParsedPath, uint32_t cbBuffer, uint8_t *pBuffer)
 {
     int rc;
@@ -692,6 +703,8 @@ DECLVBGL(int) VbglR0SfSetSymlinks(PVBGLSFCLIENT pClient)
 /*    Log(("VBOXSF: VbglR0SfSetSymlinks: VbglR0HGCMCall rc = %#x, result = %#x\n", rc, data.callInfo.Hdr.rc)); */
     return rc;
 }
+
+# endif /* !RT_OS_WINDOWS */
 
 #endif /* !RT_OS_LINUX */
 
