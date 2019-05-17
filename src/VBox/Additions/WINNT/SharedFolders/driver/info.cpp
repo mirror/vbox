@@ -1268,6 +1268,9 @@ void vbsfNtUpdateFcbSize(PFILE_OBJECT pFileObj, PMRX_FCB pFcb, PMRX_VBOX_FOBX pV
 static void vbsfNtCopyInfo(PMRX_VBOX_FOBX pVBoxFobX, PSHFLFSOBJINFO pObjInfo, PVBSFNTFCBEXT pVBoxFcbX,
                            uint8_t fTimestampsToCopyAnyway, PFILE_OBJECT pFileObj, PMRX_FCB pFcb)
 {
+    LogFlow(("vbsfNtCopyInfo: hFile=%#RX64 pVBoxFobX=%p\n", pVBoxFobX->hFile, pVBoxFobX));
+    uint64_t const nsNow = RTTimeSystemNanoTS();
+
     /*
      * Check if the size changed because RDBSS and the cache manager have
      * cached copies of the file and allocation sizes.
@@ -1307,6 +1310,7 @@ static void vbsfNtCopyInfo(PMRX_VBOX_FOBX pVBoxFobX, PSHFLFSOBJINFO pObjInfo, PV
             pObjInfo->ChangeTime        = pVBoxFobX->Info.ChangeTime;
     }
     pVBoxFobX->Info = *pObjInfo;
+    pVBoxFobX->nsUpToDate = nsNow;
 }
 
 /**
@@ -1442,9 +1446,26 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
          * opened the them, why we do this is a little unclear as all the clues that r9630
          * give is "fixes".
          *
+         * The TTL here works around two issues in particular:
+         *
+         *  1. We don't want to go to the host three times during a
+         *     FileAllInformation query (RDBSS splits it up).
+         *
+         *  2. There are several filter drivers which will query info at the end of the
+         *     IRP_MJ_CREATE processing.  On a W10 guest here, FileFinder.sys (belived to
+         *     be related to the prefetcher) first queries FileStandardInformation, then
+         *     WdFilter.sys (Windows Defender) will query FileBasicInformation,
+         *     FileStandardInformation and (not relevant here) FileInternalInformation.
+         *     It would be complete waste of time to requery the data from the host for
+         *     each of the three queries.
+         *
+         * The current hardcoded 100us value was choosen by experimentation with FsPerf
+         * on a decent intel system (6700K).  This is however subject to the timer tick
+         * granularity on systems without KeQueryInterruptTimePrecise (i.e. pre win8).
+         *
          * Note! We verify the buffer size after talking to the host, assuming that there
          *       won't be a problem and saving an extra switch statement.  IIRC the
-         *       NtQueryInformationFile code verfies the sizes too.
+         *       NtQueryInformationFile code verifies the sizes too.
          */
         /** @todo r=bird: install a hack so we get FileAllInformation directly up here
          *        rather than 5 individual queries.  We may end up going 3 times to
@@ -1461,7 +1482,7 @@ NTSTATUS VBoxMRxQueryFileInfo(IN PRX_CONTEXT RxContext)
             /* Query the information if necessary. */
             if (   !(pVBoxFobx->Info.Attr.fMode & RTFS_DOS_DIRECTORY) /** @todo figure out why we don't return up-to-date info for directories! */
                 && (   !pVBoxFobx->nsUpToDate
-                    || pVBoxFobx->nsUpToDate - RTTimeSystemNanoTS() < RT_NS_100US /** @todo implement proper TTL */ ) )
+                    || RTTimeSystemNanoTS() - pVBoxFobx->nsUpToDate > RT_NS_100US /** @todo implement proper TTL */ ) )
             {
                 PVBSFNTFCBEXT pVBoxFcbx = VBoxMRxGetFcbExtension(capFcb);
                 AssertReturn(pVBoxFcbx, STATUS_INTERNAL_ERROR);

@@ -221,7 +221,8 @@ static NTSTATUS vbsfNtCreateWorker(PRX_CONTEXT RxContext, VBOXSFCREATEREQ *pReq,
      */
     Log(("VBOXSF: vbsfNtCreateWorker: Calling VbglR0SfHostReqCreate(fCreate=%#RX32)...\n", pReq->CreateParms.CreateFlags));
     int vrc = VbglR0SfHostReqCreate(pNetRootExtension->map.root, pReq);
-    Log(("VBOXSF: vbsfNtCreateWorker: VbglR0SfHostReqCreate returns vrc = %Rrc, Result = 0x%x\n", vrc, pReq->CreateParms.Result));
+    Log(("VBOXSF: vbsfNtCreateWorker: VbglR0SfHostReqCreate returns vrc = %Rrc, Result = 0x%x, Handle = %#RX64\n",
+         vrc, pReq->CreateParms.Result, pReq->CreateParms.Handle));
 
     if (RT_SUCCESS(vrc))
     {
@@ -501,9 +502,10 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
             /*
              * Initialize our file object extension data.
              */
-            pVBoxFobx->Info     = pReq->CreateParms.Info;
-            pVBoxFobx->hFile    = pReq->CreateParms.Handle;
-            pVBoxFobx->pSrvCall = RxContext->Create.pSrvCall;
+            pVBoxFobx->Info         = pReq->CreateParms.Info;
+            pVBoxFobx->nsUpToDate   = RTTimeSystemNanoTS();
+            pVBoxFobx->hFile        = pReq->CreateParms.Handle;
+            pVBoxFobx->pSrvCall     = RxContext->Create.pSrvCall;
 
             /* bird: Dunno what this really's about. */
             pFobx->OffsetOfNextEaToReturn = 1;
