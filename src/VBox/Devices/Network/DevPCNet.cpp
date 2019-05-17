@@ -3402,6 +3402,7 @@ static void pcnetR3HardReset(PPCNETSTATE pThis)
         checksum += pThis->aPROM[i];
     *(uint16_t *)&pThis->aPROM[12] = RT_H2LE_U16(checksum);
 
+    /* Many of the BCR values would normally be read from the EEPROM. */
     pThis->aBCR[BCR_MSRDA] = 0x0005;
     pThis->aBCR[BCR_MSWRA] = 0x0005;
     pThis->aBCR[BCR_MC   ] = 0x0002;
@@ -3418,6 +3419,7 @@ static void pcnetR3HardReset(PPCNETSTATE pThis)
     pThis->aBCR[BCR_SWS  ] = 0x0200;
     pThis->iLog2DescSize   = 3;
     pThis->aBCR[BCR_PLAT ] = 0xff06;
+    pThis->aBCR[BCR_MIICAS  ] = 0x20;   /* Auto-negotiation on. */
     pThis->aBCR[BCR_MIIADDR ] = 0;  /* Internal PHY on Am79C973 would be (0x1e << 5) */
     pThis->aBCR[BCR_PCIVID] = PCIDevGetVendorId(&pThis->PciDev);
     pThis->aBCR[BCR_PCISID] = PCIDevGetSubSystemId(&pThis->PciDev);
@@ -4230,6 +4232,20 @@ static DECLCALLBACK(void) pcnetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
                     "CSR124=%04RX32: RPA=%04x (Runt Packet Accept)\n",
                     pThis->aCSR[122], !!(pThis->aCSR[122] & RT_BIT(3)));
 
+    if (pThis->uDevType == DEV_AM79C973)
+    {
+        /* Print a bit of the MII state. */
+        pHlp->pfnPrintf(pHlp,
+                        "BCR32=%#06x: MIIILP=%d XPHYSP=%d XPHYFD=%d XPHYANE=%d XPHYRST=%d\n"
+                        "              DANAS=%d APDW=%u APEP=%d FMDC=%u MIIPD=%d ANTST=%d\n",
+                        pThis->aBCR[32],
+                        !!(pThis->aBCR[32] & RT_BIT( 1)), !!(pThis->aBCR[32] & RT_BIT( 3)), !!(pThis->aBCR[32] & RT_BIT( 4)),
+                        !!(pThis->aBCR[32] & RT_BIT( 5)), !!(pThis->aBCR[32] & RT_BIT( 6)), !!(pThis->aBCR[32] & RT_BIT( 7)),
+                        (pThis->aBCR[32] >> 8) & 0x7,
+                        !!(pThis->aBCR[32] & RT_BIT(11)),
+                        (pThis->aBCR[32] >> 12) & 0x3,
+                        !!(pThis->aBCR[32] & RT_BIT(14)), !!(pThis->aBCR[32] & RT_BIT(15)));
+    }
 
     /*
      * Dump the receive ring.
