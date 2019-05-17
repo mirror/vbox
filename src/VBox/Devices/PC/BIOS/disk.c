@@ -161,7 +161,12 @@ int edd_fill_dpt(dpt_t __far *dpt, bio_dsk_t __far *bios_dsk, uint8_t device)
             dpt->cylinders = bios_dsk->devices[device].pchs.cylinders;
             dpt->heads     = bios_dsk->devices[device].pchs.heads;
             dpt->spt       = bios_dsk->devices[device].pchs.spt;
+#if 1
             lba = bios_dsk->devices[device].sectors;
+#else
+            // Makes PC DOS 7.1 FDISK32 happy
+            lba = (uint32_t)dpt->cylinders * dpt->heads * dpt->spt;
+#endif
             dpt->sector_count1 = lba;
             dpt->sector_count2 = lba >> 32;
         }
@@ -394,10 +399,29 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         goto int13_success;
         break;
 
+#ifdef VBOX_WITH_SCSIz
+    case 0x06: /* identify SCSI devices */
+        if (VBOX_IS_SCSI_DEVICE(device)|| 1) {
+            BX_INFO("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
+            BX_INFO("%s: function %02xh detected SCSI drive\n", __func__, GET_AH());
+            SET_BH(0);
+            SET_BL(0);
+            SET_AL(0x80);
+            goto int13_success;
+        }
+        BX_INFO("%s no SCSI drives, returns fail\n", __func__);
+        goto int13_fail;
+        break;
+#endif
     case 0x08: /* read disk drive parameters */
 
         /* Get the logical geometry from internal table. */
+#if 0
+        /* Windows 3.1 FastDisk (wdctrl) insists on this */
+        nlc   = bios_dsk->devices[device].lchs.cylinders - 1;
+#else
         nlc   = bios_dsk->devices[device].lchs.cylinders;
+#endif
         nlh   = bios_dsk->devices[device].lchs.heads;
         nlspt = bios_dsk->devices[device].lchs.spt;
 

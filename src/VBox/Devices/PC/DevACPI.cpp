@@ -2113,7 +2113,6 @@ static int acpiR3UpdatePmHandlers(ACPIState *pThis, RTIOPORT NewIoPortBase)
 PDMBOTHCBDECL(int) acpiR3SMBusWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     ACPIState *pThis = (ACPIState *)pvUser;
-    DEVACPI_LOCK_R3(pThis);
 
     LogFunc(("Port=%#x u32=%#x cb=%u\n", Port, u32, cb));
     uint8_t off = Port & 0x000f;
@@ -2121,6 +2120,7 @@ PDMBOTHCBDECL(int) acpiR3SMBusWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
         || (cb != 2 && (off == SMBSLVEVT_OFF || off == SMBSLVDAT_OFF)))
         return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "cb=%d Port=%u u32=%#x\n", cb, Port, u32);
 
+    DEVACPI_LOCK_R3(pThis);
     switch (off)
     {
         case SMBHSTSTS_OFF:
@@ -2202,7 +2202,6 @@ PDMBOTHCBDECL(int) acpiR3SMBusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 {
     RT_NOREF1(pDevIns);
     ACPIState *pThis = (ACPIState *)pvUser;
-    DEVACPI_LOCK_R3(pThis);
 
     int rc = VINF_SUCCESS;
     LogFunc(("Port=%#x cb=%u\n", Port, cb));
@@ -2211,6 +2210,7 @@ PDMBOTHCBDECL(int) acpiR3SMBusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
         || (cb != 2 && (off == SMBSLVEVT_OFF || off == SMBSLVDAT_OFF)))
         return VERR_IOM_IOPORT_UNUSED;
 
+    DEVACPI_LOCK_R3(pThis);
     switch (off)
     {
         case SMBHSTSTS_OFF:

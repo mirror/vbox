@@ -46,7 +46,11 @@ DEFS += -DVBOX_WITH_AHCI
 	wasm -fo=.obj $(AFLAGS) $(DEFS) $(INCLS) $<
 
 vbxbios.rom : vbxbios.bin
+!if $(CPU) > 286
 	biossums $< $@
+!else
+	cp $< $@
+!endif
 
 vbxbios.bin : $(OBJS) $(__MAKEFILES__)
 	wlink name $@ system dos debug all option quiet &

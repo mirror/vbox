@@ -637,7 +637,7 @@ void BIOSCALL ata_detect(void)
                 else
                     fdpt = ebda_seg :> &EbdaData->fdpt1;
 
-#if 0
+#if 1
                 /* Place the FDPT outside of conventional memory. Needed for
                  * 286 XENIX 2.1.3/2.2.1 because it completely wipes out
                  * the EBDA and low memory. Hack!
