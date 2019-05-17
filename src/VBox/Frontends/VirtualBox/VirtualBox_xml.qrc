@@ -1,0 +1,5 @@
+<RCC>
+    <qresource suffix="/">
+        <file alias="us_layout.xml">xml/us_layout.xml</file>
+    </qresource>
+</RCC>

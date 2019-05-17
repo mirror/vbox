@@ -63,6 +63,7 @@
 #include "UIVMInformationDialog.h"
 #include "UIFileManagerDialog.h"
 #include "UIGuestProcessControlDialog.h"
+#include "UISoftKeyboardDialog.h"
 #ifdef VBOX_WS_MAC
 # include "DockIconPreview.h"
 # include "UIExtraDataManager.h"
@@ -848,6 +849,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pLogViewerDialog(0)
     , m_pFileManagerDialog(0)
     , m_pProcessControlDialog(0)
+    , m_pSoftKeyboardDialog(0)
 {
 }
 
@@ -1054,6 +1056,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_Settings));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_SoftKeyboard));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Mouse));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives));
@@ -1133,6 +1136,8 @@ void UIMachineLogic::prepareActionConnections()
     /* 'Input' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltShowKeyboardSettings()));
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_SoftKeyboard), SIGNAL(triggered()),
+            this, SLOT(sltShowSoftKeyboard()));
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD), SIGNAL(triggered()),
             this, SLOT(sltTypeCAD()));
 #ifdef VBOX_WS_X11
@@ -1592,6 +1597,43 @@ void UIMachineLogic::sltShowKeyboardSettings()
     showGlobalPreferences("#input", "m_pMachineTable");
 }
 
+void UIMachineLogic::sltShowSoftKeyboard()
+{
+    if (machine().isNull() || !activeMachineWindow())
+        return;
+
+    /* Create the soft keyboard only once: */
+    if (m_pSoftKeyboardDialog)
+        return;
+
+    QIManagerDialog *pSoftKeyboardDialog;
+    UISoftKeyboardDialogFactory dialogFactory(actionPool(), machine().GetName());
+    dialogFactory.prepare(pSoftKeyboardDialog, activeMachineWindow());
+    if (pSoftKeyboardDialog)
+    {
+        m_pSoftKeyboardDialog = pSoftKeyboardDialog;
+
+        /* Show instance: */
+        pSoftKeyboardDialog->show();
+        pSoftKeyboardDialog->setWindowState(pSoftKeyboardDialog->windowState() & ~Qt::WindowMinimized);
+        pSoftKeyboardDialog->activateWindow();
+        connect(pSoftKeyboardDialog, &QIManagerDialog::sigClose,
+                this, &UIMachineLogic::sltCloseSoftKeyboard);
+    }
+}
+
+void UIMachineLogic::sltCloseSoftKeyboard()
+{
+    QIManagerDialog* pDialog = qobject_cast<QIManagerDialog*>(sender());
+    if (m_pSoftKeyboardDialog != pDialog || !pDialog)
+        return;
+
+    /* Set the m_pSoftKeyboardDialog to NULL before closing the dialog. or we will have redundant deletes*/
+    m_pSoftKeyboardDialog = 0;
+    pDialog->close();
+    UISoftKeyboardDialogFactory().cleanup(pDialog);
+}
+
 void UIMachineLogic::sltToggleMouseIntegration(bool fEnabled)
 {
     /* Do not process if window(s) missed! */
@@ -1775,7 +1817,7 @@ void UIMachineLogic::sltShowFileManagerDialog()
     if (machine().isNull() || !activeMachineWindow())
         return;
 
-    /* Create a logviewer only if we don't have one already */
+    /* Create a file manager only if we don't have one already: */
     if (m_pFileManagerDialog)
         return;
 
@@ -1801,7 +1843,7 @@ void UIMachineLogic::sltCloseFileManagerDialog()
     if (m_pFileManagerDialog != pDialog || !pDialog)
         return;
 
-    /* Set the m_pLogViewerDialog to NULL before closing the dialog. or we will have redundant deletes*/
+    /* Set the m_pFileManagerDialog to NULL before closing the dialog. or we will have redundant deletes*/
     m_pFileManagerDialog = 0;
     pDialog->close();
     UIFileManagerDialogFactory().cleanup(pDialog);

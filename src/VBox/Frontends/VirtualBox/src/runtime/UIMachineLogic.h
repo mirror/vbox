@@ -264,6 +264,8 @@ private slots:
 
     /* "Machine" menu functionality: */
     void sltShowKeyboardSettings();
+    void sltShowSoftKeyboard();
+    void sltCloseSoftKeyboard();
     void sltToggleMouseIntegration(bool fEnabled);
     void sltTypeCAD();
 #ifdef VBOX_WS_X11
@@ -435,6 +437,7 @@ private:
     QIManagerDialog *m_pLogViewerDialog;
     QIManagerDialog *m_pFileManagerDialog;
     QIManagerDialog *m_pProcessControlDialog;
+    QIManagerDialog *m_pSoftKeyboardDialog;
 
     /* Friend classes: */
     friend class UIMachineWindow;

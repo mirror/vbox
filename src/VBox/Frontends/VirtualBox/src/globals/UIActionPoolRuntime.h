@@ -82,6 +82,7 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Input,
     UIActionIndexRT_M_Input_M_Keyboard,
     UIActionIndexRT_M_Input_M_Keyboard_S_Settings,
+    UIActionIndexRT_M_Input_M_Keyboard_S_SoftKeyboard,
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD,
 #ifdef VBOX_WS_X11
     UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS,

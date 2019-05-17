@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<layout>
+    <row>
+        <height>50</height>
+        <key>
+            <width>30</width>
+            <label>Key1</label>
+            <scancode>X11</scancode>
+        </key>
+    </row>
+</layout>
