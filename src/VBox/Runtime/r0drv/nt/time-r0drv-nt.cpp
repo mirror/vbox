@@ -83,7 +83,7 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
         /*
          * There is no KUSER_SHARED_DATA structure on NT 3.1, so we have no choice
          * but to use the tick count.  We must also avoid the KeQueryTickCount macro
-         * in the WDK, since NT 3.1 does have the KeTickCount data export either (see above).
+         * in the WDK, since NT 3.1 doesn't have the KeTickCount data export either (see above).
          */
         static ULONG volatile s_uTimeIncrement = 0;
         ULONG uTimeIncrement = s_uTimeIncrement;
