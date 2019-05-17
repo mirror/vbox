@@ -3221,12 +3221,28 @@ static int pcnetBCRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t val)
 static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
 {
     uint32_t val;
-    bool autoneg, duplex, fast;
+    bool autoneg, duplex, fast, isolate;
     STAM_COUNTER_INC(&pThis->StatMIIReads);
 
-    autoneg = (pThis->aBCR[BCR_MIICAS] & 0x20) != 0;
-    duplex  = (pThis->aBCR[BCR_MIICAS] & 0x10) != 0;
-    fast    = (pThis->aBCR[BCR_MIICAS] & 0x08) != 0;
+    /* If the DANAS (BCR32.7) bit is set, the MAC does not do any
+     * auto-negotiation and the PHY must be set up explicitly. DANAS
+     * effectively disables most other BCR32 bits.
+     */
+    if (pThis->aBCR[BCR_MIICAS] & 0x80)
+    {
+        /* PHY controls auto-negotiation. */
+        autoneg = duplex = fast = 1;
+    }
+    else
+    {
+        /* BCR32 controls auto-negotiation. */
+        autoneg = (pThis->aBCR[BCR_MIICAS] & 0x20) != 0;
+        duplex  = (pThis->aBCR[BCR_MIICAS] & 0x10) != 0;
+        fast    = (pThis->aBCR[BCR_MIICAS] & 0x08) != 0;
+    }
+
+    /* Electrically isolating the PHY mostly disables it. */
+    isolate = (pThis->aMII[0] & RT_BIT(10)) != 0;
 
     switch (miiaddr)
     {
@@ -3239,6 +3255,8 @@ static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
                 val |= 0x2000;  /* 100 Mbps */
             if (duplex) /* Full duplex forced */
                 val |= 0x0100;  /* Full duplex */
+            if (isolate)    /* PHY electrically isolated. */
+                val |= 0x0400;  /* Isolated */
             break;
 
         case 1:
@@ -3249,7 +3267,7 @@ static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
                 | 0x0008    /* Able to do auto-negotiation. */
                 | 0x0004    /* Link up. */
                 | 0x0001;   /* Extended Capability, i.e. registers 4+ valid. */
-            if (!pThis->fLinkUp || pThis->fLinkTempDown) {
+            if (!pThis->fLinkUp || pThis->fLinkTempDown || isolate) {
                 val &= ~(0x0020 | 0x0004);
                 pThis->cLinkDownReported++;
             }
@@ -3274,12 +3292,12 @@ static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
 
         case 2:
             /* PHY identifier 1. */
-            val = 0x22;     /* Am79C874 PHY */
+            val = 0x22;     /* Am79C874/AC101 PHY */
             break;
 
         case 3:
             /* PHY identifier 2. */
-            val = 0x561b;   /* Am79C874 PHY */
+            val = 0x561b;   /* Am79C874/AC101 PHY */
             break;
 
         case 4:
@@ -3295,7 +3313,7 @@ static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
 
         case 5:
             /* Link partner ability register. */
-            if (pThis->fLinkUp && !pThis->fLinkTempDown)
+            if (pThis->fLinkUp && !pThis->fLinkTempDown && !isolate)
                 val =   0x8000  /* Next page bit. */
                       | 0x4000  /* Link partner acked us. */
                       | 0x0400  /* Can do flow control. */
@@ -3310,10 +3328,37 @@ static uint32_t pcnetMIIReadU16(PPCNETSTATE pThis, uint32_t miiaddr)
 
         case 6:
             /* Auto negotiation expansion register. */
-            if (pThis->fLinkUp && !pThis->fLinkTempDown)
+            if (pThis->fLinkUp && !pThis->fLinkTempDown && !isolate)
                 val =   0x0008  /* Link partner supports npage. */
                       | 0x0004  /* Enable npage words. */
                       | 0x0001; /* Can do N-way auto-negotiation. */
+            else
+            {
+                val = 0;
+                pThis->cLinkDownReported++;
+            }
+            break;
+
+        case 18:
+            /* Diagnostic Register (FreeBSD pcn/ac101 driver reads this). */
+            if (pThis->fLinkUp && !pThis->fLinkTempDown && !isolate)
+            {
+                val =   0x0100  /* Receive PLL locked. */
+                      | 0x0200; /* Signal detected. */
+
+                if (autoneg)
+                {
+                    val |=   0x0400     /* 100Mbps rate. */
+                           | 0x0800;    /* Full duplex. */
+                }
+                else
+                {
+                    if (fast)
+                        val |= 0x0400;  /* 100Mbps rate. */
+                    if (duplex)
+                        val |= 0x0800;  /* Full duplex. */
+                }
+            }
             else
             {
                 val = 0;
