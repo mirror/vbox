@@ -81,11 +81,19 @@
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation>VirtualBox Linux jezgreni driver (vboxdrv), ili nije učitan, ili postoji problem s ovlastima s /dev/vboxdrv. Molimo reinstalirajte jezgreni modul izvršavanjem &lt;br/&gt;&lt;br/&gt;  &lt;font color=&apos;blue&apos;&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;kao root.</translation>
+        <translation type="vanished">VirtualBox Linux jezgreni driver (vboxdrv), ili nije učitan, ili postoji problem s ovlastima s /dev/vboxdrv. Molimo reinstalirajte jezgreni modul izvršavanjem &lt;br/&gt;&lt;br/&gt;  &lt;font color=&apos;blue&apos;&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;kao root.</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you do not mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation>Jezgreni moduli VirtualBoxa se ne podudaraju ovom verzijom VirtualBoxa. Instalacija VirtualBoxa očito nije uspješna. Izvršavanjem&lt;br/&gt;&lt;br/&gt;  &lt;font color=&apos;blue&apos;&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; bi to možda popravilo. Budite sigurni da ne pomiješate OSE verziju i PUEL verziju VirtualBoxa.</translation>
+        <translation type="vanished">Jezgreni moduli VirtualBoxa se ne podudaraju ovom verzijom VirtualBoxa. Instalacija VirtualBoxa očito nije uspješna. Izvršavanjem&lt;br/&gt;&lt;br/&gt;  &lt;font color=&apos;blue&apos;&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; bi to možda popravilo. Budite sigurni da ne pomiješate OSE verziju i PUEL verziju VirtualBoxa.</translation>
+    </message>
+    <message>
+        <source>The VirtualBox Linux kernel driver is either not loaded or not set up correctly. Please try setting it up again by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.&lt;br/&gt;&lt;br/&gt;If your system has EFI Secure Boot enabled you may also need to sign the kernel modules (vboxdrv, vboxnetflt, vboxnetadp, vboxpci) before you can load them. Please see your Linux system&apos;s documentation for more information.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The VirtualBox kernel modules do not match this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/sbin/vboxconfig&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;may correct this. Make sure that you are not mixing builds of VirtualBox from different sources.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1650,14 +1658,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Guest Process Control...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Display the virtual machine guest process control window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Recording</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1746,6 +1746,63 @@
     </message>
     <message>
         <source>Tools</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E&amp;xport to OCI...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export selected virtual machine to OCI</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;earch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search virtual machines with respect to a search term</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a new disk image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create a New Disk Image (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open the medium search pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Medium Search Pane (%1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Try</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Try Oracle Cloud for Free...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Try Oracle cloud for free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Try Oracle Cloud for Free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Control Terminal...</source>
+        <comment>debug action</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2053,17 +2110,17 @@
     </message>
 </context>
 <context>
-    <name>UIChooserItemGlobal</name>
+    <name>UIChooserAbstractModel</name>
     <message>
-        <source>Tools</source>
-        <translation type="unfinished"></translation>
+        <source>New group</source>
+        <translation type="unfinished">Nova grupa</translation>
     </message>
 </context>
 <context>
     <name>UIChooserItemGroup</name>
     <message>
         <source>Virtual Machine group</source>
-        <translation type="unfinished">Grupa Virtualnih Mašina</translation>
+        <translation type="obsolete">Grupa Virtualnih Mašina</translation>
     </message>
     <message>
         <source>Enter group</source>
@@ -2133,14 +2190,54 @@
     <name>UIChooserItemMachine</name>
     <message>
         <source>Virtual Machine</source>
-        <translation type="unfinished">Virtualna Mašina</translation>
+        <translation type="obsolete">Virtualna Mašina</translation>
     </message>
 </context>
 <context>
     <name>UIChooserModel</name>
     <message>
         <source>New group</source>
-        <translation type="unfinished">Nova grupa</translation>
+        <translation type="obsolete">Nova grupa</translation>
+    </message>
+</context>
+<context>
+    <name>UIChooserNodeGlobal</name>
+    <message>
+        <source>Tools</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIChooserNodeGroup</name>
+    <message>
+        <source>Virtual Machine group</source>
+        <translation type="unfinished">Grupa Virtualnih Mašina</translation>
+    </message>
+</context>
+<context>
+    <name>UIChooserNodeMachine</name>
+    <message>
+        <source>Virtual Machine</source>
+        <translation type="unfinished">Virtualna Mašina</translation>
+    </message>
+</context>
+<context>
+    <name>UIChooserSearchWidget</name>
+    <message>
+        <source>Navigate to the next item among the search results</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate to the previous item among the search results</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a search term to be used during virtual machine search</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the search widget</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2285,6 +2382,10 @@
     <message>
         <source>Path</source>
         <translation type="unfinished">Putanja</translation>
+    </message>
+    <message>
+        <source>NewDirectory</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2835,10 +2936,6 @@
 <context>
     <name>UIFDCreationDialog</name>
     <message>
-        <source>Create a Floppy Disk</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>File Path:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2865,6 +2962,10 @@
     <message>
         <source>360K</source>
         <translation type="unfinished">3D {360K?}</translation>
+    </message>
+    <message>
+        <source>Floppy Disk Creator</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2950,10 +3051,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Close the pane</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Password</source>
         <translation type="unfinished">Lozinka</translation>
     </message>
@@ -3010,10 +3107,6 @@
         <translation type="obsolete">Veličina</translation>
     </message>
     <message>
-        <source>No Guest Session</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Unknown</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3027,10 +3120,6 @@
     </message>
     <message>
         <source>Symbolic Link</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Guest System</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3146,10 +3235,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Host System</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;b&gt;Name:&lt;/b&gt; %1&lt;br/&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -3167,6 +3252,20 @@
     </message>
     <message>
         <source>Show hidden files/directories</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest File System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Host File System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No Guest Session
+Please use the Session Panel to start 
+a guest session</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3223,6 +3322,21 @@
     <message>
         <source>Holds the file path.</source>
         <translation>Sadržava putanju datoteke.</translation>
+    </message>
+</context>
+<context>
+    <name>UIFormEditorWidget</name>
+    <message>
+        <source>Assign value...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Value</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4353,10 +4467,6 @@
 <context>
     <name>UIGuestControlTreeWidget</name>
     <message>
-        <source>Close Session</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Terminate Process</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4368,6 +4478,18 @@
         <source>Collapse All</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Terminate Session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove All Terminated Sessions/Processes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Properties</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGuestProcessControlDialog</name>
@@ -4375,12 +4497,66 @@
         <source>%1 - Guest Control</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Zatvori</translation>
+    </message>
 </context>
 <context>
     <name>UIGuestProcessControlWidget</name>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Zatvori</translation>
+        <translation type="obsolete">Zatvori</translation>
+    </message>
+    <message>
+        <source>Session/Process ID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session Name/Process Command</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session/Process Status</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestProcessTreeItem</name>
+    <message>
+        <source>Process Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Process Id</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Process Status</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Executable Path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Arguments</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGuestSessionTreeItem</name>
+    <message>
+        <source>Session Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session Id</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Session Status</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5085,12 +5261,12 @@
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation>Driver Domaćina</translation>
+        <translation type="vanished">Driver Domaćina</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation>Kontroler</translation>
+        <translation type="vanished">Kontroler</translation>
     </message>
 </context>
 <context>
@@ -5098,57 +5274,57 @@
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation>Video Memorija</translation>
+        <translation type="vanished">Video Memorija</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation>Zasloni</translation>
+        <translation type="vanished">Zasloni</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation>Omogućeno</translation>
+        <translation type="vanished">Omogućeno</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (3D Acceleration)</comment>
-        <translation>Onemogućeno</translation>
+        <translation type="vanished">Onemogućeno</translation>
     </message>
     <message>
         <source>3D Acceleration</source>
         <comment>details report</comment>
-        <translation>3D Ubrzanje</translation>
+        <translation type="vanished">3D Ubrzanje</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation>Omogućeno</translation>
+        <translation type="vanished">Omogućeno</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (2D Video Acceleration)</comment>
-        <translation>Onemogućeno</translation>
+        <translation type="vanished">Onemogućeno</translation>
     </message>
     <message>
         <source>2D Video Acceleration</source>
         <comment>details report</comment>
-        <translation>2D Video Ubrzanje</translation>
+        <translation type="vanished">2D Video Ubrzanje</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Poslužiteljski Priključak Udaljene Radne Površine</translation>
+        <translation type="vanished">Poslužiteljski Priključak Udaljene Radne Površine</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Poslužitelj Udaljene Radne Površine</translation>
+        <translation type="vanished">Poslužitelj Udaljene Radne Površine</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Onemogućen</translation>
+        <translation type="vanished">Onemogućen</translation>
     </message>
 </context>
 <context>
@@ -5156,12 +5332,12 @@
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation>Naziv</translation>
+        <translation type="vanished">Naziv</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>Vrsta OS-a</translation>
+        <translation type="vanished">Vrsta OS-a</translation>
     </message>
 </context>
 <context>
@@ -5169,32 +5345,32 @@
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation>Premošćen adapter, %1</translation>
+        <translation type="vanished">Premošćen adapter, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Unutarnja mreža, &apos;%1&apos;</translation>
+        <translation type="vanished">Unutarnja mreža, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Samo-aomaćinov adapter, &apos;%1&apos;</translation>
+        <translation type="vanished">Samo-aomaćinov adapter, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Opća, &apos;%1&apos;</translation>
+        <translation type="vanished">Opća, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>NAT mreža, &apos;%1&apos;</translation>
+        <translation type="vanished">NAT mreža, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation>Adapter %1</translation>
+        <translation type="vanished">Adapter %1</translation>
     </message>
 </context>
 <context>
@@ -5286,7 +5462,7 @@
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation>Priključak %1</translation>
+        <translation type="vanished">Priključak %1</translation>
     </message>
 </context>
 <context>
@@ -5294,14 +5470,14 @@
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation>Dijeljene Mape</translation>
+        <translation type="vanished">Dijeljene Mape</translation>
     </message>
 </context>
 <context>
     <name>UIInformationDataStorage</name>
     <message>
         <source>(Optical Drive)</source>
-        <translation>(Optički Pogon)</translation>
+        <translation type="vanished">(Optički Pogon)</translation>
     </message>
 </context>
 <context>
@@ -5332,102 +5508,102 @@
     <message>
         <source>Enabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>Omogućen</translation>
+        <translation type="vanished">Omogućen</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (ACPI)</comment>
-        <translation>Onemogućen</translation>
+        <translation type="vanished">Onemogućen</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (I/O APIC)</comment>
-        <translation>Omogućen</translation>
+        <translation type="vanished">Omogućen</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (I/O APIC)</comment>
-        <translation>Onemogućen</translation>
+        <translation type="vanished">Onemogućen</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation>Omogućen</translation>
+        <translation type="vanished">Omogućen</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (PAE/NX)</comment>
-        <translation>Onemogućen</translation>
+        <translation type="vanished">Onemogućen</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation>Glavna Memorija</translation>
+        <translation type="vanished">Glavna Memorija</translation>
     </message>
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation>Procesor(i)</translation>
+        <translation type="vanished">Procesor(i)</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation>Granica Izvršavanja</translation>
+        <translation type="vanished">Granica Izvršavanja</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation>Redoslijed Pokretanja</translation>
+        <translation type="vanished">Redoslijed Pokretanja</translation>
     </message>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation>ACPI</translation>
+        <translation type="vanished">ACPI</translation>
     </message>
     <message>
         <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation>I/O APIC</translation>
+        <translation type="vanished">I/O APIC</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation>PAE/NX</translation>
+        <translation type="vanished">PAE/NX</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Omogućen</translation>
+        <translation type="vanished">Omogućen</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation>Onemogućen</translation>
+        <translation type="vanished">Onemogućen</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation type="vanished">VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation>Omogućeno</translation>
+        <translation type="vanished">Omogućeno</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (Nested Paging)</comment>
-        <translation>Onemogućeno</translation>
+        <translation type="vanished">Onemogućeno</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation>Ugniježđivanje Straničnih Podataka</translation>
+        <translation type="vanished">Ugniježđivanje Straničnih Podataka</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation>Sučelje Paravirtualizacije</translation>
+        <translation type="vanished">Sučelje Paravirtualizacije</translation>
     </message>
 </context>
 <context>
@@ -5435,17 +5611,17 @@
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation>Onemogućen</translation>
+        <translation type="vanished">Onemogućen</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation>Filtri Uređaja</translation>
+        <translation type="vanished">Filtri Uređaja</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation>%1 (%2 aktivan)</translation>
+        <translation type="vanished">%1 (%2 aktivan)</translation>
     </message>
 </context>
 <context>
@@ -6861,11 +7037,11 @@
     </message>
     <message>
         <source>Choose Virtual Hard Disk File...</source>
-        <translation>Odaberi Virtualnu Datoteku Tvrdog Diska...</translation>
+        <translation type="vanished">Odaberi Virtualnu Datoteku Tvrdog Diska...</translation>
     </message>
     <message>
         <source>Choose Virtual Optical Disk File...</source>
-        <translation>Odaberi Datoteku Virtualnog Optičkog Diska...</translation>
+        <translation type="vanished">Odaberi Datoteku Virtualnog Optičkog Diska...</translation>
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
@@ -6873,12 +7049,12 @@
     </message>
     <message>
         <source>Choose Virtual Floppy Disk File...</source>
-        <translation>Odaberi Datoteku Virtualnog Disketnog Diska...</translation>
+        <translation type="vanished">Odaberi Datoteku Virtualnog Disketnog Diska...</translation>
     </message>
     <message>
         <source>Choose disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation>Odaberi sliku diska...</translation>
+        <translation type="vanished">Odaberi sliku diska...</translation>
     </message>
     <message>
         <source>Add NVMe Controller</source>
@@ -6889,13 +7065,37 @@
         <translation>Ure&amp;đaji Pohrane</translation>
     </message>
     <message>
-        <source>Create a new floppy disk...</source>
-        <comment>This is used to create a new floppy disk</comment>
+        <source>&amp;Bus:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Create ad hoc VISO...</source>
-        <comment>This is used for optical media</comment>
+        <source>Selects the bus type of the storage controller currently selected in the Storage Tree.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose/Create a disk image...</source>
+        <comment>This is used for hard disks, optical media and floppies</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a disk file...</source>
+        <comment>This is used for selecting an existing disk file</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add virtio-scsi Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose Virtual Hard Disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose Virtual Optical Disk...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose Virtual Floppy Disk...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7797,6 +7997,21 @@
     </message>
 </context>
 <context>
+    <name>UIMediumSearchWidget</name>
+    <message>
+        <source>Search By Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search By UUID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select the search type</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIMediumSelector</name>
     <message>
         <source>&amp;Add...</source>
@@ -7849,6 +8064,42 @@
     <message>
         <source>Actual Size</source>
         <translation type="unfinished">Stvarna Veličina</translation>
+    </message>
+    <message>
+        <source>Medium</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Odustani</translation>
+    </message>
+    <message>
+        <source>Leave Empty</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expand All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapse All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Optical Disk Selector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Floppy Disk Selector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hard Disk Selector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual Medium Selector</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8331,11 +8582,11 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Namjeravate dodati virtualni tvrdi disk upravljaču &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Želite li napraviti novu, praznu datoteku za držanje sadržaja diska ili odabrati postojeću?&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Namjeravate dodati virtualni tvrdi disk upravljaču &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Želite li napraviti novu, praznu datoteku za držanje sadržaja diska ili odabrati postojeću?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Namjeravate dodati novi disketni pogon upravljaču &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Želite li odabrati virtualni disketni disk za stavljanje u pogon ili ostaviti ga praznim za sada?&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Namjeravate dodati novi disketni pogon upravljaču &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Želite li odabrati virtualni disketni disk za stavljanje u pogon ili ostaviti ga praznim za sada?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -8606,19 +8857,19 @@
     </message>
     <message>
         <source>Create &amp;new disk</source>
-        <translation>Napravi &amp;novi disk</translation>
+        <translation type="vanished">Napravi &amp;novi disk</translation>
     </message>
     <message>
         <source>&amp;Choose existing disk</source>
-        <translation>&amp;Odaberi postojeći disk</translation>
+        <translation type="vanished">&amp;Odaberi postojeći disk</translation>
     </message>
     <message>
         <source>Leave &amp;empty</source>
-        <translation>Ostavi &amp;prazno</translation>
+        <translation type="vanished">Ostavi &amp;prazno</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
-        <translation>&amp;Odaberi disk</translation>
+        <translation type="vanished">&amp;Odaberi disk</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
@@ -8784,7 +9035,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new optical drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual optical disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Namjeravate dodati novi optički pogon upravljaču &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Želite li odabrati virtualni optički disk za stavljanje u pogon ili ostaviti ga praznim za sad?&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Namjeravate dodati novi optički pogon upravljaču &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Želite li odabrati virtualni optički disk za stavljanje u pogon ili ostaviti ga praznim za sad?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the optical drive?&lt;/p&gt;&lt;p&gt;You will not be able to insert any optical disks or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
@@ -9126,6 +9377,30 @@
     </message>
     <message>
         <source>Failed to disable recording for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This controller has optical devices attached.  You have requested storage bus change to type which doesn&apos;t support optical devices.&lt;/p&gt;&lt;p&gt;If you proceed optical devices will be removed.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This controller has devices attached.  You have requested storage bus change to type which supports smaller amount of attached devices.&lt;/p&gt;&lt;p&gt;If you proceed excessive devices will be removed.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open the medium with following ID: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire attachment medium.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to acquire medium attribute.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to assign form value.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -10221,6 +10496,10 @@
         <source>&amp;Runtime Information</source>
         <translation>Informacija &amp;Slijeda Izvođenja</translation>
     </message>
+    <message>
+        <source>Guest Control &amp;Session Information</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIVMListView</name>
@@ -10336,18 +10615,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Goto the next bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Goto the previous bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Goto selected bookmark</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Log Viewer</source>
         <translation type="unfinished"></translation>
     </message>
@@ -10408,10 +10675,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Close the pane</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enter a search string here</source>
         <translation type="unfinished">Unesite niz znakova za pretraživanje ovdje</translation>
     </message>
@@ -10449,11 +10712,7 @@
     </message>
     <message>
         <source>String not found</source>
-        <translation type="unfinished">Niz znakova nije pronađen</translation>
-    </message>
-    <message>
-        <source>%1 Matches Found</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">Niz znakova nije pronađen</translation>
     </message>
     <message>
         <source>Filtered</source>
@@ -10474,6 +10733,18 @@
     <message>
         <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
         <translation type="unfinished">&lt;p&gt;Zapisne datoteke nisu pronađene. Pritisnite gumb &lt;b&gt;Osvježi&lt;/b&gt; za ponovno skeniranje zapisne mape &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Go to the next bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to the previous bookmark</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go to selected bookmark</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -10509,10 +10780,6 @@
 </context>
 <context>
     <name>UIVisoCreator</name>
-    <message>
-        <source>VISO content</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Remove selected file objects from VISO</source>
         <translation type="unfinished"></translation>
@@ -10554,15 +10821,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Host file system</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Create a new directory under the current location</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reset ISO content.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10594,11 +10853,51 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add selected file objects to ISO</source>
+        <source>Custom VISO options:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Custom VISO options:</source>
+        <source>Close the pane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Click to show/hide the tree view</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO Creator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add selected file objects to VISO</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove</source>
+        <translation type="unfinished">Ukloni</translation>
+    </message>
+    <message>
+        <source>New Directory</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset VISO content.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="unfinished">Resetiraj</translation>
+    </message>
+    <message>
+        <source>Remove current option.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -10729,15 +11028,15 @@
     </message>
     <message>
         <source>Disk image to copy</source>
-        <translation>Slika diska za kopiranje</translation>
+        <translation type="vanished">Slika diska za kopiranje</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual disk image file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Odaberite datoteku slike virtualnog diska koju želite kopirati ako već nije odabrana. Možete ili odabrati jednu s popisa ili koristiti ikonu mape pokraj popisa za odabir jedne.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;Odaberite datoteku slike virtualnog diska koju želite kopirati ako već nije odabrana. Možete ili odabrati jednu s popisa ili koristiti ikonu mape pokraj popisa za odabir jedne.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual disk image file to copy...</source>
-        <translation>Odaberite datoteku slike virtualnog diska za kopiranje...</translation>
+        <translation type="vanished">Odaberite datoteku slike virtualnog diska za kopiranje...</translation>
     </message>
     <message>
         <source>Disk image file type</source>
@@ -10786,7 +11085,7 @@
     </message>
     <message>
         <source>Disk image to &amp;copy</source>
-        <translation>Slika diska za &amp;kopiranje</translation>
+        <translation type="vanished">Slika diska za &amp;kopiranje</translation>
     </message>
     <message>
         <source>&amp;New disk image to create</source>
@@ -11284,7 +11583,7 @@
     </message>
     <message>
         <source>&lt;p&gt;VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF). To continue, select the file to import below.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox trenutno podržava uvoz aparata spremljenih u Open Virtualization Format (OVF). Za nastavak, odaberite datoteku za uvoz ispod.&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;p&gt;VirtualBox trenutno podržava uvoz aparata spremljenih u Open Virtualization Format (OVF). Za nastavak, odaberite datoteku za uvoz ispod.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
@@ -11340,6 +11639,69 @@
     </message>
     <message>
         <source>You can modify the base folder which will host all the virtual machines. Home folders can also be individually (per virtual machine) modified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire cloud instances...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acquire export form...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose the source to import appliance from.  This can be a local file system to import OVF archive or one of known  cloud service providers to import cloud VM from.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Local File System</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import from local file system.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import from cloud service provider.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;File:</source>
+        <translation type="unfinished">&amp;Datoteka:</translation>
+    </message>
+    <message>
+        <source>&amp;Account:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Machines:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose one of cloud service accounts you have registered to import virtual machine from.  Corresponding machines list will be updated.  To continue, select one of machines to import below.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Please choose a file to import the virtual appliance from.  VirtualBox currently supports importing appliances saved in the Open Virtualization Format (OVF).  To continue, select the file to import below.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>These are the the suggested settings of the cloud VM import procedure, they are influencing the resulting local VM instance. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished">Postavke</translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardImportAppPageBasic1</name>
+    <message>
+        <source>&amp;Source:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -13043,6 +13405,130 @@
         <source>Disconnected</source>
         <comment>serial port</comment>
         <translation type="unfinished">Odspojen</translation>
+    </message>
+    <message>
+        <source>virtio-scsi</source>
+        <comment>StorageBus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>virtio-scsi</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Undefined</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished">Pokrećem</translation>
+    </message>
+    <message>
+        <source>Started</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminating</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Terminated</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TimedOutKilled</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TimedOutAbnormally</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Down</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <comment>GuestSessionStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Undefined</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished">Pokrećem</translation>
+    </message>
+    <message>
+        <source>Started</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished">Pauzirano</translation>
+    </message>
+    <message>
+        <source>Terminating</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TerminatedNormally</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TerminatedSignal</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TerminatedAbnormally</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TimedOutKilled</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TimedOutAbnormally</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Down</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <comment>ProcessStatus</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>virtio-scsi Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT Network</source>
+        <translation type="unfinished">NAT Mreža</translation>
     </message>
 </context>
 <context>
