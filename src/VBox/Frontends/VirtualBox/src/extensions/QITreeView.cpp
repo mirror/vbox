@@ -17,6 +17,9 @@
 
 /* Qt includes: */
 #include <QAccessibleWidget>
+#include <QDragLeaveEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QSortFilterProxyModel>
@@ -454,6 +457,50 @@ void QITreeView::mouseDoubleClickEvent(QMouseEvent *pEvent)
     /* Call to base-class only if event was not yet accepted: */
     if (!pEvent->isAccepted())
         QTreeView::mouseDoubleClickEvent(pEvent);
+}
+
+void QITreeView::dragEnterEvent(QDragEnterEvent *pEvent)
+{
+    /* Reject event initially: */
+    pEvent->setAccepted(false);
+    /* Notify listeners about event allowing them to handle it: */
+    emit dragEntered(pEvent);
+    /* Call to base-class only if event was not yet accepted: */
+    if (!pEvent->isAccepted())
+        QTreeView::dragEnterEvent(pEvent);
+}
+
+void QITreeView::dragMoveEvent(QDragMoveEvent *pEvent)
+{
+    /* Reject event initially: */
+    pEvent->setAccepted(false);
+    /* Notify listeners about event allowing them to handle it: */
+    emit dragMoved(pEvent);
+    /* Call to base-class only if event was not yet accepted: */
+    if (!pEvent->isAccepted())
+        QTreeView::dragMoveEvent(pEvent);
+}
+
+void QITreeView::dragLeaveEvent(QDragLeaveEvent *pEvent)
+{
+    /* Reject event initially: */
+    pEvent->setAccepted(false);
+    /* Notify listeners about event allowing them to handle it: */
+    emit dragLeft(pEvent);
+    /* Call to base-class only if event was not yet accepted: */
+    if (!pEvent->isAccepted())
+        QTreeView::dragLeaveEvent(pEvent);
+}
+
+void QITreeView::dropEvent(QDropEvent *pEvent)
+{
+    /* Reject event initially: */
+    pEvent->setAccepted(false);
+    /* Notify listeners about event allowing them to handle it: */
+    emit dragDropped(pEvent);
+    /* Call to base-class only if event was not yet accepted: */
+    if (!pEvent->isAccepted())
+        QTreeView::dropEvent(pEvent);
 }
 
 void QITreeView::prepare()

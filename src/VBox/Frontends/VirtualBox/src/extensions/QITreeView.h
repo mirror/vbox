@@ -104,6 +104,15 @@ signals:
     /** Notifies listeners about mouse double-clicked @a pEvent. */
     void mouseDoubleClicked(QMouseEvent *pEvent);
 
+    /** Notifies listeners about mouse drag entered @a pEvent. */
+    void dragEntered(QDragEnterEvent *pEvent);
+    /** Notifies listeners about mouse drag moved @a pEvent. */
+    void dragMoved(QDragMoveEvent *pEvent);
+    /** Notifies listeners about mouse drag left @a pEvent. */
+    void dragLeft(QDragLeaveEvent *pEvent);
+    /** Notifies listeners about mouse drag dropped @a pEvent. */
+    void dragDropped(QDropEvent *pEvent);
+
 public:
 
     /** Constructs tree-view passing @a pParent to the base-class. */
@@ -138,6 +147,15 @@ protected:
     virtual void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
     /** Handles mouse double-click @a pEvent. */
     virtual void mouseDoubleClickEvent(QMouseEvent *pEvent) /* override */;
+
+    /** Handles mouse drag enter @a pEvent. */
+    virtual void dragEnterEvent(QDragEnterEvent *pEvent) /* override */;
+    /** Handles mouse drag move @a pEvent. */
+    virtual void dragMoveEvent(QDragMoveEvent *pEvent) /* override */;
+    /** Handles mouse drag leave @a pEvent. */
+    virtual void dragLeaveEvent(QDragLeaveEvent *pEvent) /* override */;
+    /** Handles mouse drop @a pEvent. */
+    virtual void dropEvent(QDropEvent *pEvent) /* override */;
 
 private:
 
