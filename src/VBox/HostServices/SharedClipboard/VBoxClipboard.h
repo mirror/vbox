@@ -26,10 +26,10 @@
 
 #include <VBox/GuestHost/SharedClipboard.h>
 
-typedef struct _VBOXCLIPBOARDCLIENTDATA
+typedef struct _VBOXCLIPBOARDSVCCTX
 {
-    struct _VBOXCLIPBOARDCLIENTDATA *pNext;
-    struct _VBOXCLIPBOARDCLIENTDATA *pPrev;
+    struct _VBOXCLIPBOARDSVCCTX *pNext;
+    struct _VBOXCLIPBOARDSVCCTX *pPrev;
 
     VBOXCLIPBOARDCONTEXT *pCtx;
 
