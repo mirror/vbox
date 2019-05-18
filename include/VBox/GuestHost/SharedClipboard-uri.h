@@ -88,7 +88,7 @@ protected:
 protected:
 
     /** Number of references to this instance. */
-    volatile uint16_t            m_cRefs;
+    volatile uint32_t            m_cRefs;
     /** Critical section for serializing access. */
     RTCRITSECT                   m_CritSect;
     /** Open flags. */

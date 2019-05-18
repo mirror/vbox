@@ -74,7 +74,7 @@ SharedClipboardCache::~SharedClipboardCache(void)
  */
 uint16_t SharedClipboardCache::AddRef(void)
 {
-    return ASMAtomicIncU16(&m_cRefs);
+    return ASMAtomicIncU32(&m_cRefs);
 }
 
 /**
@@ -85,7 +85,7 @@ uint16_t SharedClipboardCache::AddRef(void)
 uint16_t SharedClipboardCache::Release(void)
 {
     Assert(m_cRefs);
-    return ASMAtomicDecU16(&m_cRefs);
+    return ASMAtomicDecU32(&m_cRefs);
 }
 
 /**

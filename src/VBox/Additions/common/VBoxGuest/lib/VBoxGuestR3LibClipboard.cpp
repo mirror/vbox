@@ -498,7 +498,7 @@ static int vbglR3ClipboardSendURIData(HGCMCLIENTID idClient, const void *pvData,
     {
         /*
          * Send the (meta) data; in case of URIs it's the (non-recursive) file/directory
-         * URI list the host needs to know upfront to set up the drag'n drop operation.
+         * URI list the host needs to know upfront to set up the Shared Clipboard operation.
          */
         RTCString strRootDest = lstURI.GetRootEntries();
         if (strRootDest.isNotEmpty())

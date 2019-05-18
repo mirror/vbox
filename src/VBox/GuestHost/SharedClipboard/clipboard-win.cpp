@@ -593,16 +593,18 @@ int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char *
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
  * Converts a DROPFILES (HDROP) structure to a string list, separated by \r\n.
+ * Does not do any locking on the input data.
  *
  * @returns VBox status code.
  * @param   pDropFiles          Pointer to DROPFILES structure to convert.
- * @param   ppvData             Where to return the converted (allocated) data on success.
+ * @param   ppszData            Where to return the converted (allocated) data on success.
+ *                              Must be free'd by the caller with RTMemFree().
  * @param   pcbData             Size (in bytes) of the allocated data returned.
  */
-int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, void **ppvData, size_t *pcbData)
+int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **ppszbData, size_t *pcbData)
 {
     AssertPtrReturn(pDropFiles, VERR_INVALID_POINTER);
-    AssertPtrReturn(ppvData,    VERR_INVALID_POINTER);
+    AssertPtrReturn(ppszbData,  VERR_INVALID_POINTER);
     AssertPtrReturn(pcbData,    VERR_INVALID_POINTER);
 
     /* Do we need to do Unicode stuff? */
@@ -724,8 +726,8 @@ int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, void **ppvData,
             {
                 memcpy(pvData, strRoot.c_str(), cbRoot);
 
-                *ppvData = pvData;
-                *pcbData = cbRoot;
+                *ppszbData = (char *)pvData;
+                *pcbData   = cbRoot;
             }
             else
                 rc = VERR_NO_MEMORY;

@@ -69,7 +69,7 @@ typedef FNREMOVECLIPBOARDFORMATLISTENER *PFNREMOVECLIPBOARDFORMATLISTENER;
  * Structure for keeping function pointers for the new clipboard API.
  * If the new API is not available, those function pointer are NULL.
  */
-typedef struct VBOXCLIPBOARDWINAPINEW
+typedef struct _VBOXCLIPBOARDWINAPINEW
 {
     PFNADDCLIPBOARDFORMATLISTENER    pfnAddClipboardFormatListener;
     PFNREMOVECLIPBOARDFORMATLISTENER pfnRemoveClipboardFormatListener;
@@ -78,7 +78,7 @@ typedef struct VBOXCLIPBOARDWINAPINEW
 /**
  * Structure for keeping variables which are needed to drive the old clipboard API.
  */
-typedef struct VBOXCLIPBOARDWINAPIOLD
+typedef struct _VBOXCLIPBOARDWINAPIOLD
 {
     /** Timer ID for the refresh timer. */
     UINT                   timerRefresh;
@@ -90,17 +90,32 @@ typedef struct VBOXCLIPBOARDWINAPIOLD
 class VBoxClipboardWinDataObject;
 
 /**
+ * Structure for maintaining a single URI list transfer.
+ */
+typedef struct _VBOXCLIPBOARDWINURITRANSFER
+{
+    /** Pointer to data object to use for this transfer. */
+    VBoxClipboardWinDataObject *pDataObj;
+} VBOXCLIPBOARDWINURITRANSFER, *PVBOXCLIPBOARDWINURITRANSFER;
+
+/**
  * Structure for keeping URI clipboard information around.
  */
 typedef struct _VBOXCLIPBOARDWINURI
 {
-    UINT cfFileGroupDescriptor;
-    UINT cfFileContents;
-    VBoxClipboardWinDataObject *pDataObj;
+    /** Transfer data; at the moment we only support one transfer at a time.
+     *  Use a list or something lateron. */
+    VBOXCLIPBOARDWINURITRANSFER Transfer;
+    /** Number of concurrent transfers.
+     *  At the moment we only support only one transfer at a time. */
+    uint32_t                    cTransfers;
 } VBOXCLIPBOARDWINURI, *PVBOXCLIPBOARDWINURI;
 #endif
 
-typedef struct VBOXCLIPBOARDWINCTX
+/**
+ * Structure for maintaining a Shared Clipboard context on Windows platforms.
+ */
+typedef struct _VBOXCLIPBOARDWINCTX
 {
     /** Window handle of our (invisible) clipbaord window. */
     HWND                   hWnd;
@@ -129,7 +144,7 @@ VBOXCLIPBOARDFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat);
 int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, PVBOXCLIPBOARDFORMAT pfFormats);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, void **ppvData, size_t *pcbData);
+int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **ppszData, size_t *pcbData);
 #endif
 
 int VBoxClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue);

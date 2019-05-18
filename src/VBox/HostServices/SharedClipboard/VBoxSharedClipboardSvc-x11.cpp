@@ -506,15 +506,15 @@ int ClipStopX11(CLIPBACKEND *pBackend)
     return VINF_SUCCESS;
 }
 
-void ClipAnnounceFormatToX11(CLIPBACKEND *pBackend, uint32_t u32Formats)
+void ClipAnnounceFormatToX11(CLIPBACKEND *pBackend, VBOXCLIPBOARDFORMATS vboxFormats)
 {
-    pBackend->formats = u32Formats;
+    pBackend->formats = vboxFormats;
 }
 
-extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, uint32_t u32Format,
+extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, VBOXCLIPBOARDFORMAT vboxFormat,
                                   CLIPREADCBREQ *pReq)
 {
-    pBackend->readData.format = u32Format;
+    pBackend->readData.format = vboxFormat;
     pBackend->readData.pReq = pReq;
     return pBackend->readData.rc;
 }

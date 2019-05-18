@@ -98,9 +98,9 @@ extern int ClipStartX11(CLIPBACKEND *pBackend, bool grab = false);
 extern int ClipStartX11(CLIPBACKEND *pBackend, bool grab);
 #endif
 extern int ClipStopX11(CLIPBACKEND *pBackend);
-extern void ClipAnnounceFormatToX11(CLIPBACKEND *pBackend,
-                                    uint32_t u32Formats);
-extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, uint32_t u32Format,
+extern int ClipAnnounceFormatToX11(CLIPBACKEND *pBackend,
+                                   VBOXCLIPBOARDFORMATS vboxFormats);
+extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, VBOXCLIPBOARDFORMATS vboxFormat,
                                   CLIPREADCBREQ *pReq);
 
 /* APIs exported by the X11/VBox frontend */
@@ -113,4 +113,3 @@ extern void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
                                            CLIPREADCBREQ *pReq, void *pv,
                                            uint32_t cb);
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_h */
-

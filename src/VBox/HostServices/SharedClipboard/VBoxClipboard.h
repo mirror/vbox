@@ -48,12 +48,12 @@ typedef struct _VBOXCLIPBOARDSVCCTX
 
     struct {
         VBOXHGCMCALLHANDLE callHandle;
-        VBOXHGCMSVCPARM *paParms;
+        VBOXHGCMSVCPARM   *paParms;
     } async;
 
     struct {
         VBOXHGCMCALLHANDLE callHandle;
-        VBOXHGCMSVCPARM *paParms;
+        VBOXHGCMSVCPARM   *paParms;
     } asyncRead;
 
     struct {

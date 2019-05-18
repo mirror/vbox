@@ -102,7 +102,11 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-x11.cpp \
 	clipboard.cpp
  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-  ifdef VBOX_WITH_LIBFUSE
+ VBoxClient_SOURCES += \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIList.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardURIObject.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
+  ifdef VBOX_WITH_LIBFUSE_DISABLED
    VBoxClient_SOURCES += \
 	clipboard-fuse.cpp
    VBoxClient_LIBS += \
@@ -169,4 +173,3 @@ $$(tstSeamlessX11-auto_0_OUTDIR)/tstSeamlessX11-auto.run: \
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
