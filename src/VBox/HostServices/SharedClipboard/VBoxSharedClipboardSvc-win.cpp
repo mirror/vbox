@@ -561,7 +561,7 @@ static int vboxClipboardWinSyncInternal(PVBOXCLIPBOARDCONTEXT pCtx)
 /*
  * Public platform dependent functions.
  */
-int vboxClipboardInit(void)
+int VBoxClipboardSvcImplInit(void)
 {
     RT_ZERO(g_ctx); /* Be careful not messing up non-POD types! */
 
@@ -581,7 +581,7 @@ int vboxClipboardInit(void)
     return rc;
 }
 
-void vboxClipboardDestroy(void)
+void VBoxClipboardSvcImplDestroy(void)
 {
     LogFlowFuncEnter();
 
@@ -601,7 +601,7 @@ void vboxClipboardDestroy(void)
     g_ctx.hThread = NIL_RTTHREAD;
 }
 
-int vboxClipboardConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
+int VBoxClipboardSvcImplConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
 {
     RT_NOREF(fHeadless);
 
@@ -618,18 +618,18 @@ int vboxClipboardConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
     pClient->pCtx->pClient = pClient;
 
     /* Sync the host clipboard content with the client. */
-    vboxClipboardSync(pClient);
+    VBoxClipboardSvcImplSync(pClient);
 
     return VINF_SUCCESS;
 }
 
-int vboxClipboardSync(VBOXCLIPBOARDCLIENTDATA *pClient)
+int VBoxClipboardSvcImplSync(VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     /* Sync the host clipboard content with the client. */
     return vboxClipboardWinSyncInternal(pClient->pCtx);
 }
 
-void vboxClipboardDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
+void VBoxClipboardSvcImplDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     RT_NOREF(pClient);
 
@@ -638,7 +638,7 @@ void vboxClipboardDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
     g_ctx.pClient = NULL;
 }
 
-void vboxClipboardFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
+void VBoxClipboardSvcImplFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
 {
     AssertPtrReturnVoid(pClient);
     AssertPtrReturnVoid(pClient->pCtx);
@@ -681,7 +681,7 @@ static int vboxClipboardDbgDumpHtml(const char *pszSrc, size_t cb)
 }
 #endif
 
-int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual)
+int VBoxClipboardSvcImplReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual)
 {
     AssertPtrReturn(pClient,       VERR_INVALID_POINTER);
     AssertPtrReturn(pClient->pCtx, VERR_INVALID_POINTER);
@@ -815,7 +815,7 @@ int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, 
     return VINF_SUCCESS; /** @todo r=andy Return rc here? */
 }
 
-void vboxClipboardWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format)
+void VBoxClipboardSvcImplWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format)
 {
     LogFlowFuncEnter();
 

@@ -117,7 +117,7 @@ static int vboxClipboardThread(RTTHREAD ThreadSelf, void *pvUser)
  */
 
 /** Initialise the host side of the shared clipboard - called by the hgcm layer. */
-int vboxClipboardInit(void)
+int VBoxClipboardSvcImplInit(void)
 {
     Log(("vboxClipboardInit\n"));
 
@@ -138,7 +138,7 @@ int vboxClipboardInit(void)
 }
 
 /** Terminate the host side of the shared clipboard - called by the hgcm layer. */
-void vboxClipboardDestroy(void)
+void VBoxClipboardSvcImplDestroy(void)
 {
     Log(("vboxClipboardDestroy\n"));
 
@@ -166,7 +166,7 @@ void vboxClipboardDestroy(void)
  * @param   fHeadless Whether headless.
  * @returns RT status code
  */
-int vboxClipboardConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
+int VBoxClipboardSvcImplConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
 {
     NOREF(fHeadless);
     if (g_ctx.pClient != NULL)
@@ -181,7 +181,7 @@ int vboxClipboardConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
     pClient->pCtx->pClient = pClient;
 
     /* Initially sync the host clipboard content with the client. */
-    int rc = vboxClipboardSync(pClient);
+    int rc = VBoxClipboardSvcImplSync(pClient);
 
     VBoxSvcClipboardUnlock();
     return rc;
@@ -191,7 +191,7 @@ int vboxClipboardConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
-int vboxClipboardSync(VBOXCLIPBOARDCLIENTDATA *pClient)
+int VBoxClipboardSvcImplSync(VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     /* Sync the host clipboard content with the client. */
     VBoxSvcClipboardLock();
@@ -204,7 +204,7 @@ int vboxClipboardSync(VBOXCLIPBOARDCLIENTDATA *pClient)
 /**
  * Shut down the shared clipboard subsystem and "disconnect" the guest.
  */
-void vboxClipboardDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
+void VBoxClipboardSvcImplDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
 {
     Log(("vboxClipboardDisconnect\n"));
 
@@ -220,7 +220,7 @@ void vboxClipboardDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
  * @param pClient    Context data for the guest system
  * @param u32Formats Clipboard formats the guest is offering
  */
-void vboxClipboardFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
+void VBoxClipboardSvcImplFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
 {
     Log(("vboxClipboardFormatAnnounce u32Formats %02X\n", u32Formats));
     if (u32Formats == 0)
@@ -241,7 +241,7 @@ void vboxClipboardFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32F
  * @param cb        The size of the buffer to write the data to
  * @param pcbActual Where to write the actual size of the written data
  */
-int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
+int VBoxClipboardSvcImplReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
                           void *pv, uint32_t cb, uint32_t *pcbActual)
 {
     VBoxSvcClipboardLock();
@@ -262,7 +262,7 @@ int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
  * @param cb        The size of the data written
  * @param u32Format The format of the data written
  */
-void vboxClipboardWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format)
+void VBoxClipboardSvcImplWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format)
 {
     VBoxSvcClipboardLock();
 

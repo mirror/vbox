@@ -74,18 +74,17 @@ void vboxSvcClipboardReportMsg(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg
 void vboxSvcClipboardCompleteReadData(VBOXCLIPBOARDCLIENTDATA *pClient, int rc, uint32_t cbActual);
 
 /*
- * Platform dependent functions.
+ * Platform-dependent implementations.
  */
-int vboxClipboardInit(void);
-void vboxClipboardDestroy(void);
+int VBoxClipboardSvcImplInit(void);
+void VBoxClipboardSvcImplDestroy(void);
 
-int vboxClipboardConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless);
-void vboxClipboardDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient);
-void vboxClipboardFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats);
-int vboxClipboardReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual);
-void vboxClipboardWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format);
-
-int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient);
+int VBoxClipboardSvcImplConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless);
+void VBoxClipboardSvcImplDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient);
+void VBoxClipboardSvcImplFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats);
+int VBoxClipboardSvcImplReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual);
+void VBoxClipboardSvcImplWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format);
+int VBoxClipboardSvcImplSync(VBOXCLIPBOARDCLIENTDATA *pClient);
 
 /* Host unit testing interface */
 #ifdef UNIT_TEST

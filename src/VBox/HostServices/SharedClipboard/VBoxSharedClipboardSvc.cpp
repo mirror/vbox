@@ -336,7 +336,7 @@ static int svcInit(void)
     {
         vboxSvcClipboardModeSet(VBOX_SHARED_CLIPBOARD_MODE_OFF);
 
-        rc = vboxClipboardInit();
+        rc = VBoxClipboardSvcImplInit();
 
         /* Clean up on failure, because 'svnUnload' will not be called
          * if the 'svcInit' returns an error.
@@ -352,7 +352,7 @@ static int svcInit(void)
 
 static DECLCALLBACK(int) svcUnload(void *)
 {
-    vboxClipboardDestroy();
+    VBoxClipboardSvcImplDestroy();
     RTCritSectDelete(&critsect);
     return VINF_SUCCESS;
 }
@@ -373,7 +373,7 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
 
     vboxSvcClipboardCompleteReadData(pClient, VERR_NO_DATA, 0);
 
-    vboxClipboardDisconnect(pClient);
+    VBoxClipboardSvcImplDisconnect(pClient);
 
     memset(pClient, 0, sizeof(*pClient));
 
@@ -404,7 +404,7 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
 
     pClient->u32ClientID = u32ClientID;
 
-    rc = vboxClipboardConnect(pClient, VBoxSvcClipboardGetHeadless());
+    rc = VBoxClipboardSvcImplConnect(pClient, VBoxSvcClipboardGetHeadless());
 
     if (RT_SUCCESS(rc))
     {
@@ -533,7 +533,7 @@ static DECLCALLBACK(void) svcCall(void *,
                     }
                     else
                     {
-                        vboxClipboardFormatAnnounce (pClient, u32Formats);
+                        VBoxClipboardSvcImplFormatAnnounce (pClient, u32Formats);
                     }
                 }
             }
@@ -607,7 +607,7 @@ static DECLCALLBACK(void) svcCall(void *,
                             /* Release any other pending read, as we only
                              * support one pending read at one time. */
                             vboxSvcClipboardCompleteReadData(pClient, VERR_NO_DATA, 0);
-                            rc = vboxClipboardReadData (pClient, u32Format, pv, cb, &cbActual);
+                            rc = VBoxClipboardSvcImplReadData (pClient, u32Format, pv, cb, &cbActual);
                         }
 
                         /* Remember our read request until it is completed.
@@ -683,7 +683,7 @@ static DECLCALLBACK(void) svcCall(void *,
                         }
                         else
                         {
-                            vboxClipboardWriteData (pClient, pv, cb, u32Format);
+                            VBoxClipboardSvcImplWriteData (pClient, pv, cb, u32Format);
                         }
                     }
                 }
@@ -956,7 +956,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     }
 
     /* Actual host data are to be reported to guest (SYNC). */
-    vboxClipboardSync(pClient);
+    VBoxClipboardSvcImplSync(pClient);
 
 #else  /* UNIT_TEST*/
     RT_NOREF(u32ClientID, pvClient, pSSM, uVersion);
