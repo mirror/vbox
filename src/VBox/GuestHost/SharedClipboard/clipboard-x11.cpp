@@ -82,9 +82,9 @@ typedef enum _CLIPX11FORMATTARGET
     CLIPX11FORMATTARGET_TEXT,  /* Treat this as Utf8, but it may really be ascii */
     CLIPX11FORMATTARGET_UTF8,
     CLIPX11FORMATTARGET_BMP,
-    CLIPX11FORMATTARGET_HTML,
+    CLIPX11FORMATTARGET_HTML
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    CLIPX11FORMATTARGET_URI_LIST
+    , CLIPX11FORMATTARGET_URI_LIST
 #endif
 } CLIPX11FORMATTARGET;
 
@@ -176,7 +176,7 @@ static CLIPX11FORMATIDX clipGetFmtIdxFromAtom(CLIPBACKEND *pCtx, Atom atomFormat
 
 #ifdef TESTCASE
 /** Lookup the X11 format matching a given X11 atom text.
- * @returns the format on success, NIL_CLIPX11FORMAT on failure
+ * @returns the format on success, NIL_CLIPX11FORMATTARGET on failure
  * @param   widget a valid Xt widget
  */
 static CLIPX11FORMATIDX clipGetFmtIdxFromAtomText(const char *pcsz)
@@ -191,7 +191,7 @@ static CLIPX11FORMATIDX clipGetFmtIdxFromAtomText(const char *pcsz)
 /**
  * Enumerates supported X11 clipboard formats corresponding to a given VBox format.
  *
- * @returns the next matching X11 format in the list, or NIL_CLIPX11FORMAT if
+ * @returns the next matching X11 format in the list, or NIL_CLIPX11FORMATTARGET if
  *          there are no more
  * @param lastFmtIdx  The format index returned from the last call of this function.
  *                    Use CLIPX11FORMATIDX_NIL to start the enumeration.
@@ -414,8 +414,8 @@ static void clipReportEmptyX11CB(CLIPBACKEND *pCtx)
 static bool clipTestTextFormatConversion(CLIPBACKEND *pCtx)
 {
     bool success = true;
-    CLIPX11FORMAT targets[2];
-    CLIPX11FORMAT x11Format;
+    CLIPX11FORMATTARGET targets[2];
+    CLIPX11FORMATTARGET x11Format;
     targets[0] = clipGetFmtIdxFromAtomText("text/plain");
     targets[1] = clipGetFmtIdxFromAtomText("image/bmp");
     x11Format = clipGetTextFormatFromTargets(pCtx, targets, 2);
@@ -1755,7 +1755,7 @@ int  clipUTF16ToWinHTML(RTUTF16 *pwcBuf, size_t cb, char **ppszOut, uint32_t *pc
  * for the X11 clipboard contents. */
 struct _CLIPREADX11CBREQ
 {
-    /** @todo r=andy Why all those different CLIPX11FORMAT members? Shouldn't be one enough? */
+    /** @todo r=andy Why all those different CLIPX11FORMATTARGET members? Shouldn't be one enough? */
 
     /** The format VBox would like the data in */
     VBOXCLIPBOARDFORMAT mFormat;
@@ -2254,7 +2254,7 @@ Atom XInternAtom(Display *, const char *pcsz, int)
 }
 
 /* Take a request for the targets we are currently offering. */
-static CLIPX11FORMAT g_selTargets[10] = { 0 };
+static CLIPX11FORMATTARGET g_selTargets[10] = { 0 };
 static size_t g_cTargets = 0;
 
 void testRequestTargets(CLIPBACKEND* pCtx)
@@ -2269,7 +2269,7 @@ static const void *g_pSelData = NULL;
 static unsigned long g_cSelData = 0;
 static int g_selFormat = 0;
 
-void testRequestData(CLIPBACKEND *pCtx, CLIPX11FORMAT target, void *closure)
+void testRequestData(CLIPBACKEND *pCtx, CLIPX11FORMATTARGET target, void *closure)
 {
     RT_NOREF(pCtx);
     unsigned long count = 0;
