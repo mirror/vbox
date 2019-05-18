@@ -650,6 +650,14 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
     LogRel(("VBoxSF: g_fHostFeatures=%#x g_fSfFeatures=%#RX64 g_uSfLastFunction=%u\n",
             g_fHostFeatures, g_fSfFeatures, g_uSfLastFunction));
 
+    if (!VbglR0CanUsePhysPageList())
+    {
+        LogRel(("vboxsf: Host does not support physical page lists.  Refuses to load!\n"));
+        VbglR0SfTerm();
+        RTR0Term();
+        return STATUS_UNSUCCESSFUL;
+    }
+
     /* Init the driver object. */
     DriverObject->DriverUnload = VBoxMRxUnload;
     for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; i++)

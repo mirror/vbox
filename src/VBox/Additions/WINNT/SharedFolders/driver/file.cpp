@@ -27,6 +27,9 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** How many pages we should try transfer in one I/O request (read/write). */
+#define VBSF_MAX_IO_PAGES   RT_MIN(_16K / sizeof(RTGCPHYS64) /* => 8MB buffer */, VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT)
+
 /* How much data to transfer in one HGCM request. */
 #define VBSF_MAX_READ_WRITE_PAGES 256
 
@@ -42,25 +45,11 @@ typedef int FNVBSFTRANSFERPAGES(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHAND
 typedef FNVBSFTRANSFERPAGES *PFNVBSFTRANSFERPAGES;
 
 
-static int vbsfTransferBufferRead(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
-                                  uint64_t offset, uint32_t *pcbBuffer,
-                                  uint8_t *pBuffer, bool fLocked)
-{
-    return VbglR0SfRead(pClient, pMap, hFile, offset, pcbBuffer, pBuffer, fLocked);
-}
-
 static int vbsfTransferBufferWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
                                    uint64_t offset, uint32_t *pcbBuffer,
                                    uint8_t *pBuffer, bool fLocked)
 {
     return VbglR0SfWrite(pClient, pMap, hFile, offset, pcbBuffer, pBuffer, fLocked);
-}
-
-static int vbsfTransferPagesRead(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
-                                 uint64_t offset, uint32_t *pcbBuffer,
-                                 uint16_t offFirstPage, uint16_t cPages, RTGCPHYS64 *paPages)
-{
-    return VbglR0SfReadPageList(pClient, pMap, hFile, offset, pcbBuffer, offFirstPage, cPages, paPages);
 }
 
 static int vbsfTransferPagesWrite(PVBGLSFCLIENT pClient, PVBGLSFMAP pMap, SHFLHANDLE hFile,
@@ -224,103 +213,197 @@ static int vbsfTransferCommon(VBSFTRANSFERCTX *pCtx)
     return rc;
 }
 
-static NTSTATUS vbsfReadInternal(IN PRX_CONTEXT RxContext)
+/**
+ * Performs a read.
+ */
+static NTSTATUS vbsfNtReadWorker(PRX_CONTEXT RxContext)
 {
-    VBSFTRANSFERCTX ctx;
-
     RxCaptureFcb;
     RxCaptureFobx;
+    PMRX_VBOX_NETROOT_EXTENSION pNetRootX  = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
+    PVBSFNTFCBEXT               pVBoxFcbX  = VBoxMRxGetFcbExtension(capFcb);
+    PMRX_VBOX_FOBX              pVBoxFobX  = VBoxMRxGetFileObjectExtension(capFobx);
+    PMDL                        pBufferMdl = RxContext->LowIoContext.ParamsFor.ReadWrite.Buffer;
 
-    PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension = VBoxMRxGetNetRootExtension(capFcb->pNetRoot);
-    PVBSFNTFCBEXT pVBoxFcbx = VBoxMRxGetFcbExtension(capFcb);
-    PMRX_VBOX_FOBX pVBoxFobx = VBoxMRxGetFileObjectExtension(capFobx);
+    LogFlow(("vbsfNtReadWorker: hFile=%#RX64 offFile=%#RX64 cbToRead=%#x %s\n", pVBoxFobX->hFile,
+             RxContext->LowIoContext.ParamsFor.ReadWrite.ByteOffset, RxContext->LowIoContext.ParamsFor.ReadWrite.ByteCount,
+             RxContext->Flags, RX_CONTEXT_FLAG_ASYNC_OPERATION ? " async" : "sync"));
 
-    PLOWIO_CONTEXT LowIoContext = &RxContext->LowIoContext;
+    AssertReturn(pBufferMdl,  STATUS_INTERNAL_ERROR);
 
-    PMDL BufferMdl = LowIoContext->ParamsFor.ReadWrite.Buffer;
 
-    PVOID pbUserBuffer = RxLowIoGetBufferAddress(RxContext);
+    /*
+     * We should never get a zero byte request (RDBSS checks), but in case we
+     * do, it should succeed.
+     */
+    uint32_t cbRet  = 0;
+    uint32_t cbLeft = RxContext->LowIoContext.ParamsFor.ReadWrite.ByteCount;
+    AssertReturnStmt(cbLeft > 0, RxContext->InformationToReturn = 0, STATUS_SUCCESS);
 
-#ifdef LOG_ENABLED
-    BOOLEAN AsyncIo = BooleanFlagOn(RxContext->Flags, RX_CONTEXT_FLAG_ASYNC_OPERATION);
-    LONGLONG FileSize;
-    RxGetFileSizeWithLock((PFCB)capFcb, &FileSize);
-#endif
+    Assert(cbLeft <= MmGetMdlByteCount(pBufferMdl));
 
-    Log(("VBOXSF: vbsfReadInternal: AsyncIo = %d, Fcb->FileSize = 0x%RX64\n",
-         AsyncIo, capFcb->Header.FileSize.QuadPart));
-    Log(("VBOXSF: vbsfReadInternal: UserBuffer %p, BufferMdl %p\n",
-         pbUserBuffer, BufferMdl));
-    Log(("VBOXSF: vbsfReadInternal: ByteCount 0x%X, ByteOffset 0x%RX64, FileSize 0x%RX64\n",
-         LowIoContext->ParamsFor.ReadWrite.ByteCount, LowIoContext->ParamsFor.ReadWrite.ByteOffset, FileSize));
-
-    AssertReturn(BufferMdl, STATUS_INVALID_PARAMETER);
-    Assert(LowIoContext->ParamsFor.ReadWrite.ByteCount > 0); /* ASSUME this is taken care of elsewhere already. */
-
-    ctx.pClient = &g_SfClient;
-    ctx.pMap    = &pNetRootExtension->map;
-    ctx.hFile   = pVBoxFobx->hFile;
-    ctx.offset  = LowIoContext->ParamsFor.ReadWrite.ByteOffset;
-    ctx.cbData  = LowIoContext->ParamsFor.ReadWrite.ByteCount;
-    ctx.pMdl    = BufferMdl;
-    ctx.pBuffer = (uint8_t *)pbUserBuffer;
-    ctx.fLocked = true;
-    ctx.pfnTransferBuffer = vbsfTransferBufferRead;
-    ctx.pfnTransferPages = vbsfTransferPagesRead;
-
-    int vrc = vbsfTransferCommon(&ctx);
-
-    NTSTATUS Status;
-    if (RT_SUCCESS(vrc))
+    /*
+     * Allocate a request buffer.
+     */
+    uint32_t            cPagesLeft = ADDRESS_AND_SIZE_TO_SPAN_PAGES(MmGetMdlVirtualAddress(pBufferMdl), cbLeft);
+    uint32_t            cMaxPages  = RT_MIN(cPagesLeft, VBSF_MAX_IO_PAGES);
+    VBOXSFREADPGLSTREQ *pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ,
+                                                                                          PgLst.aPages[cMaxPages]));
+    while (!pReq && cMaxPages > 4)
     {
-        pVBoxFobx->fTimestampsImplicitlyUpdated |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
-        if (pVBoxFcbx->pFobxLastAccessTime != pVBoxFobx)
-            pVBoxFcbx->pFobxLastAccessTime = NULL;
-        Status = STATUS_SUCCESS;
-        if (ctx.cbData == 0 && LowIoContext->ParamsFor.ReadWrite.ByteCount > 0)
-            Status = STATUS_END_OF_FILE;
-
+        cMaxPages /= 2;
+        pReq = (VBOXSFREADPGLSTREQ *)VbglR0PhysHeapAlloc(RT_UOFFSETOF_DYN(VBOXSFREADPGLSTREQ, PgLst.aPages[cMaxPages]));
+    }
+    NTSTATUS rcNt = STATUS_SUCCESS;
+    if (pReq)
+    {
         /*
-         * See if we've reached the EOF early or read beyond what we thought were the EOF.
-         *
-         * Note! We don't dare do this (yet) if we're in paging I/O as we then hold the
-         *       PagingIoResource in shared mode and would probably deadlock in the
-         *       updating code when taking the lock in exclusive mode.
+         * The read loop.
          */
-        if (RxContext->LowIoContext.Resource != capFcb->Header.PagingIoResource)
+        RTFOFF      offFile = RxContext->LowIoContext.ParamsFor.ReadWrite.ByteOffset;
+        PPFN_NUMBER paPfns  = MmGetMdlPfnArray(pBufferMdl);
+        uint32_t    offPage = MmGetMdlByteOffset(pBufferMdl);
+        if (offPage < PAGE_SIZE)
+        { /* likely */ }
+        else
         {
-            LONGLONG const offEndOfRead = LowIoContext->ParamsFor.ReadWrite.ByteOffset + ctx.cbData;
-            LONGLONG       cbFileRdbss;
-            RxGetFileSizeWithLock((PFCB)capFcb, &cbFileRdbss);
-            if (   offEndOfRead < cbFileRdbss
-                && ctx.cbData < LowIoContext->ParamsFor.ReadWrite.ByteCount /* hit EOF */)
-                vbsfNtUpdateFcbSize(RxContext->pFobx->AssociatedFileObject, capFcb, pVBoxFobx, offEndOfRead, cbFileRdbss, -1);
-            else if (offEndOfRead > cbFileRdbss)
-                vbsfNtQueryAndUpdateFcbSize(pNetRootExtension, RxContext->pFobx->AssociatedFileObject, pVBoxFobx, capFcb, pVBoxFcbx);
+            paPfns  += offPage >> PAGE_SHIFT;
+            offPage &= PAGE_OFFSET_MASK;
         }
+
+        for (;;)
+        {
+            /*
+             * Figure out how much to process now and set up the page list for it.
+             */
+            uint32_t cPagesInChunk;
+            uint32_t cbChunk;
+            if (cPagesLeft <= cMaxPages)
+            {
+                cPagesInChunk = cPagesLeft;
+                cbChunk       = cbLeft;
+            }
+            else
+            {
+                cPagesInChunk = cMaxPages;
+                cbChunk       = (cMaxPages << PAGE_SHIFT) - offPage;
+            }
+
+            size_t iPage = cPagesInChunk;
+            while (iPage-- > 0)
+                pReq->PgLst.aPages[iPage] = (RTGCPHYS)paPfns[iPage] << PAGE_SHIFT;
+            pReq->PgLst.offFirstPage = offPage;
+
+            /*
+             * Issue the request and unlock the pages.
+             */
+            int vrc = VbglR0SfHostReqReadPgLst(pNetRootX->map.root, pReq, pVBoxFobX->hFile, offFile, cbChunk, cPagesInChunk);
+            if (RT_SUCCESS(vrc))
+            {
+                /*
+                 * Success, advance position and buffer.
+                 */
+                uint32_t cbActual = pReq->Parms.cb32Read.u.value32;
+                AssertStmt(cbActual <= cbChunk, cbActual = cbChunk);
+                cbRet   += cbActual;
+                offFile += cbActual;
+                cbLeft  -= cbActual;
+
+                /*
+                 * Update timestamp state (FCB is shared).
+                 */
+                pVBoxFobX->fTimestampsImplicitlyUpdated |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
+                if (pVBoxFcbX->pFobxLastAccessTime != pVBoxFobX)
+                    pVBoxFcbX->pFobxLastAccessTime = NULL;
+
+                /*
+                 * Are we done already?
+                 */
+                if (!cbLeft || cbActual < cbChunk)
+                {
+                    /*
+                     * Flag EOF.
+                     */
+                    if (cbActual != 0 || cbRet != 0)
+                    { /* typical */ }
+                    else
+                        rcNt = STATUS_END_OF_FILE;
+
+                    /*
+                     * See if we've reached the EOF early or read beyond what we thought were the EOF.
+                     *
+                     * Note! We don't dare do this (yet) if we're in paging I/O as we then hold the
+                     *       PagingIoResource in shared mode and would probably deadlock in the
+                     *       updating code when taking the lock in exclusive mode.
+                     */
+                    if (RxContext->LowIoContext.Resource != capFcb->Header.PagingIoResource)
+                    {
+                        LONGLONG cbFileRdbss;
+                        RxGetFileSizeWithLock((PFCB)capFcb, &cbFileRdbss);
+                        if (   offFile < cbFileRdbss
+                            && cbActual < cbChunk /* hit EOF */)
+                            vbsfNtUpdateFcbSize(RxContext->pFobx->AssociatedFileObject, capFcb, pVBoxFobX, offFile, cbFileRdbss, -1);
+                        else if (offFile > cbFileRdbss)
+                            vbsfNtQueryAndUpdateFcbSize(pNetRootX, RxContext->pFobx->AssociatedFileObject,
+                                                        pVBoxFobX, capFcb, pVBoxFcbX);
+                    }
+                    break;
+                }
+
+                /*
+                 * More to read, advance page related variables and loop.
+                 */
+                paPfns     += cPagesInChunk;
+                cPagesLeft -= cPagesInChunk;
+                offPage     = 0;
+            }
+            else if (vrc == VERR_NO_MEMORY && cMaxPages > 4)
+            {
+                /*
+                 * The host probably doesn't have enough heap to handle the
+                 * request, reduce the page count and retry.
+                 */
+                cMaxPages /= 4;
+                Assert(cMaxPages > 0);
+            }
+            else
+            {
+                /*
+                 * If we've successfully read stuff, return it rather than
+                 * the error.  (Not sure if this is such a great idea...)
+                 */
+                if (cbRet > 0)
+                    Log(("vbsfNtReadWorker: read at %#RX64 -> %Rrc; got cbRet=%#zx already\n", offFile, vrc, cbRet));
+                else
+                {
+                    rcNt = vbsfNtVBoxStatusToNt(vrc);
+                    Log(("vbsfNtReadWorker: read at %#RX64 -> %Rrc (rcNt=%#x)\n", offFile, vrc, rcNt));
+                }
+                break;
+            }
+
+        }
+
+        VbglR0PhysHeapFree(pReq);
     }
     else
-    {
-        ctx.cbData = 0; /* Nothing read. */
-        Status = vbsfNtVBoxStatusToNt(vrc);
-    }
-
-    RxContext->InformationToReturn = ctx.cbData;
-
-    Log(("VBOXSF: vbsfReadInternal: Status = 0x%08X, ByteCount = 0x%X\n",
-         Status, ctx.cbData));
-
-    return Status;
+        rcNt = STATUS_INSUFFICIENT_RESOURCES;
+    RxContext->InformationToReturn = cbRet;
+    LogFlow(("vbsfNtReadWorker: returns %#x cbRet=%#x @ %#RX64\n",
+             rcNt, cbRet, RxContext->LowIoContext.ParamsFor.ReadWrite.ByteOffset));
+    return rcNt;
 }
 
-
+/**
+ * Wrapper for RxDispatchToWorkerThread().
+ */
 static VOID vbsfReadWorker(VOID *pv)
 {
     PRX_CONTEXT RxContext = (PRX_CONTEXT)pv;
 
     Log(("VBOXSF: vbsfReadWorker: calling the worker\n"));
 
-    RxContext->IoStatusBlock.Status = vbsfReadInternal(RxContext);
+    RxContext->IoStatusBlock.Status = vbsfNtReadWorker(RxContext);
 
     Log(("VBOXSF: vbsfReadWorker: Status 0x%08X\n",
          RxContext->IoStatusBlock.Status));
@@ -348,17 +431,16 @@ NTSTATUS VBoxMRxRead(IN PRX_CONTEXT RxContext)
 {
     NTSTATUS Status;
 
-#if 0
-    if (   IoIsOperationSynchronous(RxContext->CurrentIrp)
-        /*&& IoGetRemainingStackSize() >= 1024 - not necessary, checked by RxFsdCommonDispatch already */)
+    /* If synchronous operation, keep it on this thread (RDBSS already checked
+       if we've got enough stack before calling us).   */
+    if (!(RxContext->Flags & RX_CONTEXT_FLAG_ASYNC_OPERATION))
     {
-        RxContext->IoStatusBlock.Status = Status = vbsfReadInternal(RxContext);
+        RxContext->IoStatusBlock.Status = Status = vbsfNtReadWorker(RxContext);
         Assert(Status != STATUS_PENDING);
 
         Log(("VBOXSF: MRxRead: vbsfReadInternal: Status %#08X\n", Status));
     }
     else
-#endif
     {
         Status = RxDispatchToWorkerThread(VBoxMRxDeviceObject, DelayedWorkQueue, vbsfReadWorker, RxContext);
 
