@@ -101,7 +101,7 @@ static uint32_t g_u32Mode;
 static PFNHGCMSVCEXT g_pfnExtension;
 static void *g_pvExtension;
 
-static VBOXCLIPBOARDCLIENTDATA *g_pClient;
+static PVBOXCLIPBOARDSVCCTX g_pClient;
 
 /* Serialization of data reading and format announcements from the RDP client. */
 static bool g_fReadingData = false;
@@ -199,7 +199,7 @@ void VBoxSvcClipboardUnlock(void)
 /* Set the HGCM parameters according to pending messages.
  * Executed under the clipboard lock.
  */
-static bool vboxSvcClipboardReturnMsg(VBOXCLIPBOARDCLIENTDATA *pClient, VBOXHGCMSVCPARM paParms[])
+static bool vboxSvcClipboardReturnMsg(PVBOXCLIPBOARDSVCCTX pSvcCtx, VBOXHGCMSVCPARM paParms[])
 {
     /* Message priority is taken into account. */
     if (pClient->fHostMsgQuit)
@@ -253,7 +253,7 @@ static bool vboxSvcClipboardReturnMsg(VBOXCLIPBOARDCLIENTDATA *pClient, VBOXHGCM
     return true;
 }
 
-void vboxSvcClipboardReportMsg(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg, uint32_t u32Formats)
+void vboxSvcClipboardReportMsg(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Msg, uint32_t u32Formats)
 {
     AssertPtrReturnVoid(pClient);
 
@@ -365,7 +365,7 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
 {
     RT_NOREF(u32ClientID);
 
-    VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
+    PVBOXCLIPBOARDSVCCTX pSvcCtx = (PVBOXCLIPBOARDSVCCTX)pvClient;
 
     LogFunc(("u32ClientID = %d\n", u32ClientID));
 
@@ -385,7 +385,7 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
 static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient, uint32_t fRequestor, bool fRestoring)
 {
     RT_NOREF(fRequestor, fRestoring);
-    VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
+    PVBOXCLIPBOARDSVCCTX pSvcCtx = (PVBOXCLIPBOARDSVCCTX)pvClient;
 
     int rc = VINF_SUCCESS;
 
@@ -430,7 +430,7 @@ static DECLCALLBACK(void) svcCall(void *,
     LogFunc(("u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n",
              u32ClientID, u32Function, cParms, paParms));
 
-    VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
+    PVBOXCLIPBOARDSVCCTX pSvcCtx = (PVBOXCLIPBOARDSVCCTX)pvClient;
 
     bool fAsynchronousProcessing = false;
 
@@ -712,7 +712,7 @@ static DECLCALLBACK(void) svcCall(void *,
 /** If the client in the guest is waiting for a read operation to complete
  * then complete it, otherwise return.  See the protocol description in the
  * shared clipboard module description. */
-void vboxSvcClipboardCompleteReadData(VBOXCLIPBOARDCLIENTDATA *pClient, int rc, uint32_t cbActual)
+void vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDSVCCTX pSvcCtx, int rc, uint32_t cbActual)
 {
     VBOXHGCMCALLHANDLE callHandle = NULL;
     VBOXHGCMSVCPARM *paParms = NULL;
@@ -803,11 +803,11 @@ static DECLCALLBACK(int) svcHostCall(void *,
  */
 static SSMFIELD const g_aClipboardClientDataFields[] =
 {
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, u32ClientID),  /* for validation purposes */
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fHostMsgQuit),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fHostMsgReadData),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, fHostMsgFormats),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTDATA, u32RequestedFormat),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDSVCCTX, u32ClientID),  /* for validation purposes */
+    SSMFIELD_ENTRY(VBOXCLIPBOARDSVCCTX, fHostMsgQuit),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDSVCCTX, fHostMsgReadData),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDSVCCTX, fHostMsgFormats),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDSVCCTX, u32RequestedFormat),
     SSMFIELD_ENTRY_TERM()
 };
 #endif
@@ -825,7 +825,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
      */
     LogFunc(("u32ClientID = %d\n", u32ClientID));
 
-    VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
+    PVBOXCLIPBOARDSVCCTX pSvcCtx = (PVBOXCLIPBOARDSVCCTX)pvClient;
 
     /* This field used to be the length. We're using it as a version field
        with the high bit set. */
@@ -890,7 +890,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
     LogFunc(("u32ClientID = %d\n", u32ClientID));
 
-    VBOXCLIPBOARDCLIENTDATA *pClient = (VBOXCLIPBOARDCLIENTDATA *)pvClient;
+    PVBOXCLIPBOARDSVCCTX pSvcCtx = (PVBOXCLIPBOARDSVCCTX)pvClient;
 
     /* Existing client can not be in async state yet. */
     Assert(!pClient->fAsync);
@@ -1052,7 +1052,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         {
             g_pHelpers = ptable->pHelpers;
 
-            ptable->cbClient = sizeof(VBOXCLIPBOARDCLIENTDATA);
+            ptable->cbClient = sizeof(VBOXCLIPBOARDSVCCTX);
 
             ptable->pfnUnload     = svcUnload;
             ptable->pfnConnect    = svcConnect;

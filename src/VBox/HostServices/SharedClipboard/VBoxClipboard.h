@@ -65,13 +65,13 @@ typedef struct _VBOXCLIPBOARDCLIENTDATA
     uint32_t u32AvailableFormats;
     uint32_t u32RequestedFormat;
 
-} VBOXCLIPBOARDCLIENTDATA, *PVBOXCLIPBOARDCLIENTDATA;
+} VBOXCLIPBOARDSVCCTX, *PVBOXCLIPBOARDSVCCTX;
 
 /*
  * The service functions. Locking is between the service thread and the platform dependent windows thread.
  */
-void vboxSvcClipboardReportMsg(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Msg, uint32_t u32Formats);
-void vboxSvcClipboardCompleteReadData(VBOXCLIPBOARDCLIENTDATA *pClient, int rc, uint32_t cbActual);
+void vboxSvcClipboardReportMsg(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Msg, uint32_t u32Formats);
+void vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDSVCCTX pSvcCtx, int rc, uint32_t cbActual);
 
 /*
  * Platform-dependent implementations.
@@ -79,12 +79,12 @@ void vboxSvcClipboardCompleteReadData(VBOXCLIPBOARDCLIENTDATA *pClient, int rc, 
 int VBoxClipboardSvcImplInit(void);
 void VBoxClipboardSvcImplDestroy(void);
 
-int VBoxClipboardSvcImplConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless);
-void VBoxClipboardSvcImplDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient);
-void VBoxClipboardSvcImplFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats);
-int VBoxClipboardSvcImplReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual);
-void VBoxClipboardSvcImplWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format);
-int VBoxClipboardSvcImplSync(VBOXCLIPBOARDCLIENTDATA *pClient);
+int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDSVCCTX pSvcCtx, bool fHeadless);
+void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDSVCCTX pSvcCtx);
+void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Formats);
+int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual);
+void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDSVCCTX pSvcCtx, void *pv, uint32_t cb, uint32_t u32Format);
+int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDSVCCTX pSvcCtx);
 
 /* Host unit testing interface */
 #ifdef UNIT_TEST

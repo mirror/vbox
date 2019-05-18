@@ -58,7 +58,7 @@ void VBoxClipboardSvcImplDestroy(void)
   * @param   fHeadless  Whether headless.
   * @returns RT status code
   */
-int VBoxClipboardSvcImplConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
+int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDSVCCTX pSvcCtx, bool fHeadless)
 {
     RT_NOREF(pClient, fHeadless);
     LogFlowFunc(("called, returning VINF_SUCCESS.\n"));
@@ -69,7 +69,7 @@ int VBoxClipboardSvcImplConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
-int VBoxClipboardSvcImplSync(VBOXCLIPBOARDCLIENTDATA * /* pClient */)
+int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDSVCCTX /* pClient */)
 {
     LogFlowFunc(("called, returning VINF_SUCCESS.\n"));
     return VINF_SUCCESS;
@@ -80,7 +80,7 @@ int VBoxClipboardSvcImplSync(VBOXCLIPBOARDCLIENTDATA * /* pClient */)
  *
  * @param   pClient    Structure containing context information about the guest system
  */
-void VBoxClipboardSvcImplDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
+void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDSVCCTX pSvcCtx)
 {
     RT_NOREF(pClient);
     LogFlowFunc(("called, returning.\n"));
@@ -93,7 +93,7 @@ void VBoxClipboardSvcImplDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
  * @param pClient    Context data for the guest system
  * @param u32Formats Clipboard formats the guest is offering
  */
-void VBoxClipboardSvcImplFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
+void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Formats)
 {
     RT_NOREF(pClient, u32Formats);
     LogFlowFunc(("called, returning.\n"));
@@ -108,7 +108,7 @@ void VBoxClipboardSvcImplFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32
  * @param cb        The size of the buffer to write the data to
  * @param pcbActual Where to write the actual size of the written data
  */
-int VBoxClipboardSvcImplReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
+int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Format,
                           void *pv, uint32_t cb, uint32_t *pcbActual)
 {
     RT_NOREF(pClient, u32Format, pv, cb);
@@ -126,7 +126,7 @@ int VBoxClipboardSvcImplReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32F
  * @param cb        The size of the data written
  * @param u32Format The format of the data written
  */
-void VBoxClipboardSvcImplWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb,
+void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDSVCCTX pSvcCtx, void *pv, uint32_t cb,
                             uint32_t u32Format)
 {
     RT_NOREF(pClient, pv, cb, u32Format);

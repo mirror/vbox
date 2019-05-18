@@ -43,7 +43,7 @@ struct _VBOXCLIPBOARDCONTEXT
     /** The reference to the current pasteboard */
     PasteboardRef pasteboard;
 
-    VBOXCLIPBOARDCLIENTDATA *pClient;
+    PVBOXCLIPBOARDSVCCTX pSvcCtx;
 };
 
 
@@ -166,7 +166,7 @@ void VBoxClipboardSvcImplDestroy(void)
  * @param   fHeadless Whether headless.
  * @returns RT status code
  */
-int VBoxClipboardSvcImplConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless)
+int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDSVCCTX pSvcCtx, bool fHeadless)
 {
     NOREF(fHeadless);
     if (g_ctx.pClient != NULL)
@@ -191,7 +191,7 @@ int VBoxClipboardSvcImplConnect(VBOXCLIPBOARDCLIENTDATA *pClient, bool fHeadless
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
-int VBoxClipboardSvcImplSync(VBOXCLIPBOARDCLIENTDATA *pClient)
+int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDSVCCTX pSvcCtx)
 {
     /* Sync the host clipboard content with the client. */
     VBoxSvcClipboardLock();
@@ -204,7 +204,7 @@ int VBoxClipboardSvcImplSync(VBOXCLIPBOARDCLIENTDATA *pClient)
 /**
  * Shut down the shared clipboard subsystem and "disconnect" the guest.
  */
-void VBoxClipboardSvcImplDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
+void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDSVCCTX pSvcCtx)
 {
     Log(("vboxClipboardDisconnect\n"));
 
@@ -220,7 +220,7 @@ void VBoxClipboardSvcImplDisconnect(VBOXCLIPBOARDCLIENTDATA *pClient)
  * @param pClient    Context data for the guest system
  * @param u32Formats Clipboard formats the guest is offering
  */
-void VBoxClipboardSvcImplFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Formats)
+void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Formats)
 {
     Log(("vboxClipboardFormatAnnounce u32Formats %02X\n", u32Formats));
     if (u32Formats == 0)
@@ -241,7 +241,7 @@ void VBoxClipboardSvcImplFormatAnnounce(VBOXCLIPBOARDCLIENTDATA *pClient, uint32
  * @param cb        The size of the buffer to write the data to
  * @param pcbActual Where to write the actual size of the written data
  */
-int VBoxClipboardSvcImplReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32Format,
+int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Format,
                           void *pv, uint32_t cb, uint32_t *pcbActual)
 {
     VBoxSvcClipboardLock();
@@ -262,7 +262,7 @@ int VBoxClipboardSvcImplReadData(VBOXCLIPBOARDCLIENTDATA *pClient, uint32_t u32F
  * @param cb        The size of the data written
  * @param u32Format The format of the data written
  */
-void VBoxClipboardSvcImplWriteData(VBOXCLIPBOARDCLIENTDATA *pClient, void *pv, uint32_t cb, uint32_t u32Format)
+void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDSVCCTX pSvcCtx, void *pv, uint32_t cb, uint32_t u32Format)
 {
     VBoxSvcClipboardLock();
 

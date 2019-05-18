@@ -25,7 +25,7 @@
 
 extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable);
 
-static VBOXCLIPBOARDCLIENTDATA g_Client;
+static VBOXCLIPBOARDSVCCTX g_Client;
 static VBOXHGCMSVCHELPERS g_Helpers = { NULL };
 
 /** Simple call handle structure for the guest call completion callback */
