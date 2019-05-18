@@ -52,6 +52,9 @@ static struct _MINIRDR_DISPATCH VBoxMRxDispatch;
  */
 PRDBSS_DEVICE_OBJECT VBoxMRxDeviceObject;
 
+/** Pointer to CcCoherencyFlushAndPurgeCache if present in ntoskrnl. */
+PFNCCCOHERENCYFLUSHANDPURGECACHE g_pfnCcCoherencyFlushAndPurgeCache;
+
 /** The shared folder service client structure. */
 VBGLSFCLIENT g_SfClient;
 /** VMMDEV_HVF_XXX (set during init). */
@@ -657,6 +660,11 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT  DriverObject,
         RTR0Term();
         return STATUS_UNSUCCESSFUL;
     }
+
+    /* Resolve newer kernel APIs we might want to use: */
+    UNICODE_STRING RoutineName;
+    RtlInitUnicodeString(&RoutineName, L"CcCoherencyFlushAndPurgeCache");
+    g_pfnCcCoherencyFlushAndPurgeCache = (PFNCCCOHERENCYFLUSHANDPURGECACHE)MmGetSystemRoutineAddress(&RoutineName);
 
     /* Init the driver object. */
     DriverObject->DriverUnload = VBoxMRxUnload;
