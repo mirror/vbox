@@ -127,8 +127,12 @@ static NTSTATUS vbsfNtReadWorker(PRX_CONTEXT RxContext)
             {
                 LARGE_INTEGER offFlush;
                 offFlush.QuadPart = offFile;
+                Assert(!RxContext->FcbPagingIoResourceAcquired);
+                BOOLEAN AcquiredFile = RxAcquirePagingIoResourceShared(NULL, capFcb, 1 /*fWait*/);
                 g_pfnCcCoherencyFlushAndPurgeCache(&RxContext->NonPagedFcb->SectionObjectPointers, &offFlush, cbChunk,
                                                    &RxContext->CurrentIrp->IoStatus, CC_FLUSH_AND_PURGE_NO_PURGE);
+                if (AcquiredFile)
+                {   RxReleasePagingIoResource(NULL, capFcb); /* requires {} */ }
             }
 
             /*
@@ -382,11 +386,13 @@ static NTSTATUS vbsfNtWriteWorker(PRX_CONTEXT RxContext)
                 && RxContext->NonPagedFcb != NULL
                 && RxContext->NonPagedFcb->SectionObjectPointers.DataSectionObject != NULL)
             {
-                /** @todo locking.   */
                 LARGE_INTEGER offFlush;
                 offFlush.QuadPart = offFile;
+                BOOLEAN fAcquiredLock = RxAcquirePagingIoResource(NULL, capFcb);
                 g_pfnCcCoherencyFlushAndPurgeCache(&RxContext->NonPagedFcb->SectionObjectPointers, &offFlush, cbChunk,
                                                    &RxContext->CurrentIrp->IoStatus, 0 /*fFlags*/);
+                if (fAcquiredLock)
+                {   RxReleasePagingIoResource(NULL, capFcb); /* requires {} */ }
             }
 
             /*

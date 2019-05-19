@@ -1161,7 +1161,7 @@ void vbsfNtUpdateFcbSize(PFILE_OBJECT pFileObj, PMRX_FCB pFcb, PMRX_VBOX_FOBX pV
      * Note! RxAcquirePagingIoResource and RxReleasePagingIoResource are unsafe
      *       macros in need of {} wrappers when used with if statements.
      */
-    NTSTATUS rcNtLock = RxAcquirePagingIoResource(NULL, pFcb);
+    BOOLEAN fAcquiredLock = RxAcquirePagingIoResource(NULL, pFcb);
 
     LONGLONG cbFileOldRecheck;
     RxGetFileSizeWithLock((PFCB)pFcb, &cbFileOldRecheck);
@@ -1210,10 +1210,8 @@ void vbsfNtUpdateFcbSize(PFILE_OBJECT pFileObj, PMRX_FCB pFcb, PMRX_VBOX_FOBX pV
 
 
                 /* RDBSS leave the lock before calling CcSetFileSizes, so we do that too then.*/
-                if (NT_SUCCESS(rcNtLock))
-                {
-                    RxReleasePagingIoResource(NULL, pFcb);
-                }
+                if (fAcquiredLock)
+                {   RxReleasePagingIoResource(NULL, pFcb); /* requires {} */ }
 
                 __try
                 {
@@ -1241,10 +1239,8 @@ void vbsfNtUpdateFcbSize(PFILE_OBJECT pFileObj, PMRX_FCB pFcb, PMRX_VBOX_FOBX pV
         Log(("vbsfNtUpdateFcbSize: Seems we raced someone updating the file size: old size = %#RX64, new size = %#RX64, current size = %#RX64\n",
              cbFileOld, cbFileNew, cbFileOldRecheck));
 
-    if (NT_SUCCESS(rcNtLock))
-    {
-        RxReleasePagingIoResource(NULL, pFcb); /* requires {} */
-    }
+    if (fAcquiredLock)
+    {   RxReleasePagingIoResource(NULL, pFcb); /* requires {} */ }
 }
 
 
