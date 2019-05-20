@@ -31,6 +31,71 @@
 #define VBSF_MAX_IO_PAGES   RT_MIN(_16K / sizeof(RTGCPHYS64) /* => 8MB buffer */, VMMDEV_MAX_HGCM_DATA_SIZE >> PAGE_SHIFT)
 
 
+
+
+/** @name Hacks for using the better CcCoherencyFlushAndPurgeCache when
+ *        available (>= Windows 7) and avoid flushing+puring twice.
+ *
+ * We change the cache flushing and purging related imports from  the write.obj
+ * and read.obj files in the rdbsslib.lib to import so these gets redirected
+ * here instead of going directly to ntoskrnl.  We will use
+ * CcCoherencyFlushAndPurgeCache when present, and on older systems there will
+ * be no change.  This does however save us from doing double flushing and
+ * purging on newer systems.
+ *
+ * See VBoxEditCoffLib and the Makefile.kmk for the rest of the puzzle.
+ *
+ * @{
+ */
+
+static VOID NTAPI vbsfNtReadCcFlushCache(PSECTION_OBJECT_POINTERS pSectObjPtrs, PLARGE_INTEGER poffFlush, ULONG cbFlush,
+                                         PIO_STATUS_BLOCK pIos)
+{
+    if (g_pfnCcCoherencyFlushAndPurgeCache)
+        g_pfnCcCoherencyFlushAndPurgeCache(pSectObjPtrs, poffFlush, cbFlush, pIos, CC_FLUSH_AND_PURGE_NO_PURGE);
+    else
+        CcFlushCache(pSectObjPtrs, poffFlush, cbFlush, pIos);
+}
+
+static VOID NTAPI vbsfNtWriteCcFlushCache(PSECTION_OBJECT_POINTERS pSectObjPtrs, PLARGE_INTEGER poffFlush, ULONG cbFlush,
+                                          PIO_STATUS_BLOCK pIos)
+{
+    if (g_pfnCcCoherencyFlushAndPurgeCache)
+        g_pfnCcCoherencyFlushAndPurgeCache(pSectObjPtrs, poffFlush, cbFlush, pIos, 0 /*fFlags*/);
+    else
+        CcFlushCache(pSectObjPtrs, poffFlush, cbFlush, pIos);
+}
+
+
+static BOOLEAN NTAPI vbsfNtWriteCcPurgeCacheSection(PSECTION_OBJECT_POINTERS pSectObjPtrs, PLARGE_INTEGER poffPurge,ULONG cbPurge,
+#if (NTDDI_VERSION >= NTDDI_VISTA)
+                                                    ULONG fUninitializeCacheMaps)
+#else
+                                                    BOOLEAN fUninitializeCacheMaps)
+#endif
+{
+#if (NTDDI_VERSION >= NTDDI_VISTA)
+    fUninitializeCacheMaps &= 0xff; /* Used to be BOOLEAN before Vista. */
+#endif
+    Assert(fUninitializeCacheMaps == 0);
+    BOOLEAN fRet;
+    if (g_pfnCcCoherencyFlushAndPurgeCache)
+        fRet = TRUE;
+    else
+        fRet = CcPurgeCacheSection(pSectObjPtrs, poffPurge, cbPurge, fUninitializeCacheMaps);
+    return fRet;
+}
+
+extern "C" {
+decltype(CcFlushCache)        *g_pfnRdFlushCache        = vbsfNtReadCcFlushCache;
+decltype(CcFlushCache)        *g_pfnWrFlushCache        = vbsfNtWriteCcFlushCache;
+decltype(CcPurgeCacheSection) *g_pfnWrPurgeCacheSection = vbsfNtWriteCcPurgeCacheSection;
+}
+
+/** @} */
+
+
+
 /**
  * Performs a read.
  *
@@ -114,6 +179,7 @@ static NTSTATUS vbsfNtReadWorker(PRX_CONTEXT RxContext)
                 pReq->PgLst.aPages[iPage] = (RTGCPHYS)paPfns[iPage] << PAGE_SHIFT;
             pReq->PgLst.offFirstPage = offPage;
 
+#if 0 /* Instead we hook into read.obj's import function pointers to do this more efficiently. */
             /*
              * Flush dirty cache content before we try read it from the host.  RDBSS calls
              * CcFlushCache before it calls us, I think, but CcCoherencyFlushAndPurgeCache
@@ -134,6 +200,7 @@ static NTSTATUS vbsfNtReadWorker(PRX_CONTEXT RxContext)
                 if (AcquiredFile)
                 {   RxReleasePagingIoResource(NULL, capFcb); /* requires {} */ }
             }
+#endif
 
             /*
              * Issue the request and unlock the pages.
@@ -376,6 +443,7 @@ static NTSTATUS vbsfNtWriteWorker(PRX_CONTEXT RxContext)
                 pReq->PgLst.aPages[iPage] = (RTGCPHYS)paPfns[iPage] << PAGE_SHIFT;
             pReq->PgLst.offFirstPage = offPage;
 
+#if 0 /* Instead we hook into write.obj's import function pointers to do this more efficiently. */
             /*
              * Flush and purge the cache range we're touching upon now, provided we can and
              * really needs to.  The CcCoherencyFlushAndPurgeCache API seems to work better
@@ -394,6 +462,7 @@ static NTSTATUS vbsfNtWriteWorker(PRX_CONTEXT RxContext)
                 if (fAcquiredLock)
                 {   RxReleasePagingIoResource(NULL, capFcb); /* requires {} */ }
             }
+#endif
 
             /*
              * Issue the request and unlock the pages.

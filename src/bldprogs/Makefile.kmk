@@ -80,6 +80,12 @@ endif
 VBoxDef2LazyLoad_TEMPLATE = VBoxBldProg
 VBoxDef2LazyLoad_SOURCES  = VBoxDef2LazyLoad.cpp
 
+ifeq ($(KBUILD_TARGET),win)
+ BLDPROGS += VBoxEditCoffLib
+endif
+VBoxEditCoffLib_TEMPLATE = VBoxBldProg
+VBoxEditCoffLib_SOURCES  = VBoxEditCoffLib.cpp
+
 # temp hack.
 VBoxCompilerPlugInsGcc.o VBoxCompilerPlugInsCommon.o VBoxCompilerPlugIns.o gccplugin: gccplugin$(SUFF_DLL)
 gccplugin$(SUFF_DLL): VBoxCompilerPlugInsGcc.cpp VBoxCompilerPlugInsCommon.cpp VBoxCompilerPlugIns.h

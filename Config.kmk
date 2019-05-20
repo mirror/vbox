@@ -2067,6 +2067,9 @@ VBOX_DEF_2_LAZY_LOAD ?= $(PATH_OBJ)/VBoxDef2LazyLoad/VBoxDef2LazyLoad$(HOSTSUFF_
 # VBoxCheckImports (checks what we imports from on windows)
 VBOX_CHECK_IMPORTS ?= $(PATH_OBJ)/VBoxCheckImports/VBoxCheckImports$(HOSTSUFF_EXE)
 
+# VBoxEditCoffLib (symbol name tweaking for VBoxSF on windows)
+VBOX_EDIT_COFF_LIB ?= $(PATH_OBJ)/VBoxEditCoffLib/VBoxEditCoffLib$(HOSTSUFF_EXE)
+
 # GNU tar if present.
 if1of ($(KBUILD_TARGET), linux os2 win)
  VBOX_GTAR ?= tar

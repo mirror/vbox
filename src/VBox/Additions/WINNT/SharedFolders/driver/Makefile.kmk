@@ -45,7 +45,7 @@ VBoxSF_SOURCES.x86 = \
 
 VBoxSF_LIBS.x86  = \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/rxce.lib \
-	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/rdbsslib.lib \
+	$(VBoxSF_0_OUTDIR)/rdbsslib.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/copysup.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/ntoskrnl.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.x86)/hal.lib \
@@ -54,7 +54,7 @@ VBoxSF_LIBS.x86  = \
 
 VBoxSF_LIBS.amd64  = \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.amd64)/rxce.lib \
-	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.amd64)/rdbsslib.lib \
+	$(VBoxSF_0_OUTDIR)/rdbsslib.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.amd64)/copysup.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.amd64)/ntoskrnl.lib \
 	$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.amd64)/hal.lib \
@@ -65,5 +65,27 @@ VBoxSF_LIBS = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
 
+VBoxSF_CLEAN = \
+	$(VBoxSF_0_OUTDIR)/rdbsslib.lib
+
+
 include $(FILE_KBUILD_SUB_FOOTER)
+
+ifeq ($(KBUILD_TARGET_ARCH),x86)
+$(VBoxSF_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib | $$(dir $$@) $(VBOX_EDIT_COFF_LIB)
+	$(VBOX_EDIT_COFF_LIB) --input "$<" --output "$@" \
+		--select "write.obj" \
+               --redefine-sym "__imp__CcFlushCache@16=_g_pfnWrFlushCache" \
+               --redefine-sym "__imp__CcPurgeCacheSection@16=_g_pfnWrPurgeCacheSection" \
+		--select "read.obj" \
+               --redefine-sym "__imp__CcFlushCache@16=_g_pfnRdFlushCache"
+else
+$(VBoxSF_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib | $$(dir $$@) $(VBOX_EDIT_COFF_LIB)
+	$(VBOX_EDIT_COFF_LIB) --input "$<" --output "$@" -v -v -v -v -v -v \
+		--select "write.obj" \
+               --redefine-sym "__imp_CcFlushCache=g_pfnWrFlushCache" \
+               --redefine-sym "__imp_CcPurgeCacheSection=g_pfnWrPurgeCacheSection" \
+		--select "read.obj" \
+               --redefine-sym "__imp_CcFlushCache=g_pfnRdFlushCache"
+endif
 
