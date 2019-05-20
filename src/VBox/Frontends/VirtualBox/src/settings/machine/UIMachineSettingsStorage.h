@@ -486,6 +486,9 @@ public:
 
     QModelIndex addAttachment (const QUuid &uCtrId, KDeviceType aDeviceType, const QUuid &uMediumId);
     void delAttachment (const QUuid &uCtrId, const QUuid &uAttId);
+    /** Moves attachment determined by @a uAttId
+      * from controller determined by @a uCtrOldId to one determined by @a uCtrNewId. */
+    void moveAttachment(const QUuid &uAttId, const QUuid &uCtrOldId, const QUuid &uCtrNewId);
 
     void setMachineId (const QUuid &uMachineId);
 

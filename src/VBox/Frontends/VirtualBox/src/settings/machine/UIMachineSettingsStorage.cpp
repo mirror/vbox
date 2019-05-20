@@ -1917,6 +1917,60 @@ void StorageModel::delAttachment (const QUuid &uCtrId, const QUuid &uAttId)
     }
 }
 
+void StorageModel::moveAttachment(const QUuid &uAttId, const QUuid &uCtrOldId, const QUuid &uCtrNewId)
+{
+    /* No known info about attachment device type and medium ID: */
+    KDeviceType enmDeviceType = KDeviceType_Null;
+    QUuid uMediumId;
+
+    /* First of all we are looking for old controller item: */
+    AbstractItem *pOldItem = mRootItem->childItemById(uCtrOldId);
+    if (pOldItem)
+    {
+        /* And acquire controller position: */
+        const int iOldCtrPosition = mRootItem->posOfChild(pOldItem);
+
+        /* Then we are looking for an attachment item: */
+        if (AbstractItem *pSubItem = pOldItem->childItemById(uAttId))
+        {
+            /* And make sure this is really an attachment: */
+            AttachmentItem *pSubItemAttachment = qobject_cast<AttachmentItem*>(pSubItem);
+            if (pSubItemAttachment)
+            {
+                /* This way we can acquire actual attachment device type and medium ID: */
+                enmDeviceType = pSubItemAttachment->attDeviceType();
+                uMediumId = pSubItemAttachment->attMediumId();
+
+                /* And delete atachment item finally: */
+                const int iAttPosition = pOldItem->posOfChild(pSubItem);
+                beginRemoveRows(index(iOldCtrPosition, 0, root()), iAttPosition, iAttPosition);
+                delete pSubItem;
+                endRemoveRows();
+            }
+        }
+    }
+
+    /* As the last step we are looking for new controller item: */
+    AbstractItem *pNewItem = mRootItem->childItemById(uCtrNewId);
+    if (pNewItem)
+    {
+        /* And acquire controller position: */
+        const int iNewCtrPosition = mRootItem->posOfChild(pNewItem);
+
+        /* Then we have to make sure moved attachment is valid: */
+        if (enmDeviceType != KDeviceType_Null && !uMediumId.isNull())
+        {
+            /* And create new attachment item finally: */
+            QModelIndex newCtrIndex = index(iNewCtrPosition, 0, root());
+            beginInsertRows(newCtrIndex, pNewItem->childCount(), pNewItem->childCount());
+            AttachmentItem *pItem = new AttachmentItem(pNewItem, enmDeviceType);
+            pItem->setAttIsHotPluggable(m_configurationAccessLevel != ConfigurationAccessLevel_Full);
+            pItem->setAttMediumId(uMediumId);
+            endInsertRows();
+        }
+    }
+}
+
 void StorageModel::setMachineId (const QUuid &uMachineId)
 {
     mRootItem->setMachineId (uMachineId);
