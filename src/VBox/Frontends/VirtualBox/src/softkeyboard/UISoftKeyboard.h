@@ -35,6 +35,7 @@
 
 /* Forward declarations: */
 class UISoftKeyboardKey;
+class UISoftKeyboardRow;
 class QHBoxLayout;
 class QVBoxLayout;
 class UIToolBar;
@@ -65,13 +66,16 @@ private:
     void saveSettings();
     void loadSettings();
     void parseLayout();
+    void updateLayout();
 
     QHBoxLayout   *m_pMainLayout;
-    QVBoxLayout   *m_pContainerLayout;
+    QWidget       *m_pContainerWidget;
     UIToolBar     *m_pToolBar;
     const bool    m_fShowToolbar;
     QString       m_strMachineName;
-    QVector<UISoftKeyboardKey*> m_keys;
+    QVector<UISoftKeyboardRow*> m_rows;
+    int           m_iTotalRowHeight;
+    int           m_iMaxRowWidth;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_softkeyboard_UISoftKeyboard_h */
