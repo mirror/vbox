@@ -1059,6 +1059,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/os2/rtProcInitExePath-os2.cpp \
 	r3/os2/sched-os2.cpp \
 	r3/os2/sems-os2.cpp \
+	r3/os2/serialport-os2.cpp \
 	r3/os2/systemmem-os2.cpp \
 	r3/os2/thread-os2.cpp \
 	r3/os2/time-os2.cpp \
