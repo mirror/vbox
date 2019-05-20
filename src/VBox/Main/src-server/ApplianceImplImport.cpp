@@ -1545,9 +1545,9 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 
         /* Put all VFS* declaration here because they are needed to be release by the corresponding
            RTVfs***Release functions in the case of exception */
-        RTVFSOBJ     hVfsObj;
-        RTVFSFSSTREAM hVfsFssObject;
-        RTVFSIOSTREAM hVfsIosCurr;
+        RTVFSOBJ     hVfsObj = NIL_RTVFSOBJ;
+        RTVFSFSSTREAM hVfsFssObject = NIL_RTVFSFSSTREAM;
+        RTVFSIOSTREAM hVfsIosCurr = NIL_RTVFSIOSTREAM;
 
         /* Continue and create new VM using data from VSD and downloaded object.
          * The downloaded images should be converted to VDI/VMDK if they have another format */
@@ -1760,7 +1760,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                         /* Read the file into a memory buffer */
                         void  *pvBuffered;
                         size_t cbBuffered;
-                        RTVFSFILE hVfsDstFile;
+                        RTVFSFILE hVfsDstFile = NIL_RTVFSFILE;
                         try
                         {
                             vrc = RTVfsIoStrmReadAll(hVfsIosCurr, &pvBuffered, &cbBuffered);
