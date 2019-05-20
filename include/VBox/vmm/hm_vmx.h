@@ -4189,6 +4189,7 @@ typedef enum
     kVmxVDiag_Vmexit_MsrLoadRsvd,
     kVmxVDiag_Vmexit_MsrStore,
     kVmxVDiag_Vmexit_MsrStoreCount,
+    kVmxVDiag_Vmexit_MsrStorePtrReadPhys,
     kVmxVDiag_Vmexit_MsrStorePtrWritePhys,
     kVmxVDiag_Vmexit_MsrStoreRing3,
     kVmxVDiag_Vmexit_MsrStoreRsvd,

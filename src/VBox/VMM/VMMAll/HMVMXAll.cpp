@@ -366,6 +366,7 @@ static const char * const g_apszVmxVDiagDesc[] =
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrLoadRsvd               , "MsrLoadRsvd"               ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStore                  , "MsrStore"                  ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStoreCount             , "MsrStoreCount"             ),
+    VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStorePtrReadPhys       , "MsrStorePtrReadPhys"       ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStorePtrWritePhys      , "MsrStorePtrWritePhys"      ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStoreRing3             , "MsrStoreRing3"             ),
     VMXV_DIAG_DESC(kVmxVDiag_Vmexit_MsrStoreRsvd              , "MsrStoreRsvd"              )
