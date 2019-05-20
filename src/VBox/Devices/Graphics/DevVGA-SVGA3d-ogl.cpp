@@ -4506,7 +4506,7 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
         {
             LogFunc(("create depth texture to be used as render target; surface id=%x type=%d format=%d -> create texture\n",
                      target.sid, pRenderTarget->surfaceFlags, pRenderTarget->format));
-            int rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pRenderTarget);
+            rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pRenderTarget);
             AssertRCReturn(rc, rc);
         }
 
@@ -4575,7 +4575,7 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
         if (pRenderTarget->oglId.texture == OPENGL_INVALID_ID)
         {
             Log(("vmsvga3dSetRenderTarget: create texture to be used as render target; surface id=%x type=%d format=%d -> create texture\n", target.sid, pRenderTarget->surfaceFlags, pRenderTarget->format));
-            int rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pRenderTarget);
+            rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pRenderTarget);
             AssertRCReturn(rc, rc);
         }
 
@@ -4832,7 +4832,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
 
             if (pContext->aSidActiveTextures[currentStage] != SVGA3D_INVALID_ID)
             {
-                int rc = vmsvga3dSurfaceFromSid(pState, pContext->aSidActiveTextures[currentStage], &pCurrentTextureSurface);
+                rc = vmsvga3dSurfaceFromSid(pState, pContext->aSidActiveTextures[currentStage], &pCurrentTextureSurface);
                 AssertRCReturn(rc, rc);
             }
             else
@@ -4907,7 +4907,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                 else
                 {
                     PVMSVGA3DSURFACE pSurface;
-                    int rc = vmsvga3dSurfaceFromSid(pState, sid, &pSurface);
+                    rc = vmsvga3dSurfaceFromSid(pState, sid, &pSurface);
                     AssertRCReturn(rc, rc);
 
                     Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture sid=%x (%d,%d) replacing sid=%x\n",
