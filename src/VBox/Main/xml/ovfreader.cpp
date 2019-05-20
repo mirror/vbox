@@ -34,6 +34,15 @@ using namespace ovf;
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Default Constructor.
+ * Should be used if you don't have an OVF file, but want to fill the data
+ * m_mapDisks, m_llVirtualSystems manually
+ */
+OVFReader::OVFReader()  
+{
+}
+
+/**
  * Constructor. This parses the given XML file out of the memory. Throws lots of exceptions
  * on XML or OVF invalidity.
  * @param pvBuf  the memory buffer to parse

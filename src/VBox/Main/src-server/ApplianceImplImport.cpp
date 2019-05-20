@@ -50,6 +50,7 @@
 
 #include "ApplianceImplPrivate.h"
 #include "CertificateImpl.h"
+#include "ovfreader.h"
 
 #include <VBox/param.h>
 #include <VBox/version.h>
@@ -1194,7 +1195,7 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
     try
     {
         Utf8Str strBasename(pTask->locInfo.strPath);
-        RTCList<RTCString, RTCString *> parts = strBasename.split("/");
+        RTCList<RTCString, RTCString *> parts = strBasename.split("/" );
         if (parts.size() != 2)//profile + instance id
         {
             return setErrorVrc(VERR_MISMATCH, tr("%s: The profile name or instance id are absent or"
@@ -1249,14 +1250,10 @@ HRESULT Appliance::i_gettingCloudData(TaskCloud *pTask)
         instanceDescription->AddDescription(VirtualSystemDescriptionType_CloudProfileName,
                              Bstr(profileName).raw(),
                              Bstr(profileName).raw());
-        // set name
-        Utf8Str strSetting = "cloud VM (";
-        strSetting.append(parts.at(1)).append(")");
-        // set description
-        strSetting = "VM with id ";
-        strSetting.append(parts.at(1)).append(" imported from the cloud provider ").append(strProviderName);
 
-        // description
+        Utf8StrFmt strSetting("VM with id %s imported from the cloud provider %s",
+                              parts.at(1).c_str(), strProviderName.c_str());
+        // set description
         instanceDescription->AddDescription(VirtualSystemDescriptionType_Description,
                              Bstr(strSetting).raw(),
                              Bstr(strSetting).raw());
@@ -1284,25 +1281,24 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
 
+    int vrc = VINF_SUCCESS;
+    HRESULT hrc = S_OK;
+    Utf8Str strLastActualErrorDesc("No errors");
+
     /* Change the appliance state so we can safely leave the lock while doing
      * time-consuming operations; also the below method calls do all kinds of
      * locking which conflicts with the appliance object lock. */
     AutoWriteLock writeLock(this COMMA_LOCKVAL_SRC_POS);
+
     /* Check if the appliance is currently busy. */
     if (!i_isApplianceIdle())
         return E_ACCESSDENIED;
     /* Set the internal state to importing. */
     m->state = Data::ApplianceImporting;
-
-    HRESULT hrc = S_OK;
+    writeLock.release();
 
     /* Clear the list of imported machines, if any */
     m->llGuidsMachinesCreated.clear();
-
-    /*
-     * Actual code for the cloud import
-     *
-    */
 
     ComPtr<ICloudProviderManager> cpm;
     hrc = mVirtualBox->COMGETTER(CloudProviderManager)(cpm.asOutParam());
@@ -1317,26 +1313,42 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     if (FAILED(hrc))
         return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud provider object wasn't found", __FUNCTION__));
 
+    /* Get the actual VSD, only one VSD object can be there for now so just call the function front() */
     ComPtr<IVirtualSystemDescription> vsd = m->virtualSystemDescriptions.front();
 
+    Utf8Str vsdData;
     com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
     com::SafeArray<BSTR> aRefs;
     com::SafeArray<BSTR> aOvfValues;
     com::SafeArray<BSTR> aVBoxValues;
     com::SafeArray<BSTR> aExtraConfigValues;
 
-    hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_CloudProfileName,
-                             ComSafeArrayAsOutParam(retTypes),
-                             ComSafeArrayAsOutParam(aRefs),
-                             ComSafeArrayAsOutParam(aOvfValues),
-                             ComSafeArrayAsOutParam(aVBoxValues),
-                             ComSafeArrayAsOutParam(aExtraConfigValues));
-    if (FAILED(hrc))
-        return hrc;
+/*
+ * local #define  for better reading the code
+ * uses only the previously locally declared variable names
+ * set hrc as the result of operation
+ */
+#define GET_VSD_DESCRIPTION_BY_TYPE(aParamType) \
+    retTypes.setNull(); \
+    aRefs.setNull(); \
+    aOvfValues.setNull(); \
+    aVBoxValues.setNull(); \
+    aExtraConfigValues.setNull(); \
+    vsd->GetDescriptionByType(aParamType, \
+        ComSafeArrayAsOutParam(retTypes), \
+        ComSafeArrayAsOutParam(aRefs), \
+        ComSafeArrayAsOutParam(aOvfValues), \
+        ComSafeArrayAsOutParam(aVBoxValues), \
+        ComSafeArrayAsOutParam(aExtraConfigValues)); \
+
+
+    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudProfileName)
+    if (aVBoxValues.size() == 0)
+        return setErrorVrc(VERR_NOT_FOUND, tr("%s: Cloud user profile name wasn't found", __FUNCTION__));
 
     Utf8Str profileName(aVBoxValues[0]);
     if (profileName.isEmpty())
-        return setErrorVrc(VBOX_E_OBJECT_NOT_FOUND, tr("%s: Cloud user profile name wasn't found", __FUNCTION__));
+        return setErrorVrc(VERR_INVALID_STATE, tr("%s: Cloud user profile name is empty", __FUNCTION__));
 
     hrc = cloudProvider->GetProfileByName(aVBoxValues[0], cloudProfile.asOutParam());
     if (FAILED(hrc))
@@ -1347,131 +1359,631 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     if (FAILED(hrc))
         return setErrorVrc(VERR_COM_OBJECT_NOT_FOUND, tr("%s: Cloud client object wasn't found", __FUNCTION__));
 
+    ComPtr<IProgress> pProgress;
+    hrc = pTask->pProgress.queryInterfaceTo(pProgress.asOutParam());
+    if (FAILED(hrc))
+        return hrc;
+
+    Utf8Str strOsType;
+    ComPtr<IGuestOSType> pGuestOSType;
+    {
+        GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_OS)//aVBoxValues is set in this #define
+        if (aVBoxValues.size() != 0)
+            strOsType = aVBoxValues[0];
+        else
+            return setErrorVrc(VERR_NOT_FOUND, "%s: OS type wasn't found", __FUNCTION__);
+        LogRel(("%s: OS type is %s\n", __FUNCTION__, strOsType.c_str()));
+
+        /* Check the OS type and get the structure with the some default settings for this OS type */
+        uint32_t const idxOSType = Global::getOSTypeIndexFromId(strOsType.c_str());
+        VBOXOSTYPE guestOsType = idxOSType < Global::cOSTypes ? Global::sOSTypes[idxOSType].osType : VBOXOSTYPE_Unknown;
+        if (guestOsType == VBOXOSTYPE_Unknown)
+            return setErrorVrc(VERR_NOT_SUPPORTED, "%s: OS type is unknown", __FUNCTION__);
+
+        /* We can get some default settings from GuestOSType when it's needed */
+        mVirtualBox->GetGuestOSType(Bstr(strOsType).raw(), pGuestOSType.asOutParam());
+    }
+
+    /* Should be defined here because it's used later, at least when ComposeMachineFilename() is called */
+    Utf8Str strVMName("VM_exported_from_cloud");
+
     if (m->virtualSystemDescriptions.size() == 1)
     {
         do
         {
             ComPtr<IVirtualBox> VBox(mVirtualBox);
-            retTypes.setNull();
-            aRefs.setNull();
-            aOvfValues.setNull();
-            aVBoxValues.setNull();
-            aExtraConfigValues.setNull();
-            hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_CloudInstanceId,
-                                            ComSafeArrayAsOutParam(retTypes),
-                                            ComSafeArrayAsOutParam(aRefs),
-                                            ComSafeArrayAsOutParam(aOvfValues),
-                                            ComSafeArrayAsOutParam(aVBoxValues),
-                                            ComSafeArrayAsOutParam(aExtraConfigValues));
-            if (FAILED(hrc))
-                break;
 
-            ComPtr<IProgress> pProgress;
-            pTask->pProgress.queryInterfaceTo(pProgress.asOutParam());
+            {
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Name)//aVBoxValues is set in this #define
+                if (aVBoxValues.size() != 0)//paranoia but anyway...
+                    strVMName = aVBoxValues[0];
+                LogRel(("%s: VM name is %s\n", __FUNCTION__, strVMName.c_str()));
+            }
+
+//          i_searchUniqueVMName(strVMName);//internally calls setError() in the case of absent the registered VM with such name
+
+            ComPtr<IMachine> machine;
+            hrc = mVirtualBox->FindMachine(Bstr(strVMName.c_str()).raw(), machine.asOutParam()); 
+            if (SUCCEEDED(hrc))
+            {
+                //what to do? create a new name from the old one with some suffix?
+                com::Guid newId;
+                newId.create();
+                strVMName.append("__").append(newId.toString());
+                vsd->RemoveDescriptionByType(VirtualSystemDescriptionType_Name);
+                vsd->AddDescription(VirtualSystemDescriptionType_Name,
+                                    Bstr(strVMName).raw(),
+                                    Bstr(strVMName).raw());
+                //No check again because it would be weird if a VM with such unique name exists
+            }
+
+            Utf8Str strInsId;
+            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
+            if (aVBoxValues.size() == 0)
+            {
+                hrc = setErrorVrc(VERR_NOT_FOUND, "%s: Cloud Instance Id wasn't found", __FUNCTION__);          
+                break;
+            }
+            strInsId = aVBoxValues[0];
 
             LogRel(("%s: calling CloudClient::ImportInstance\n", __FUNCTION__));
+
+            /* Here it's strongly supposed that cloud import produces ONE object on the disk.
+               Because it much easier to manage one object in any case.
+               In the case when cloud import creates several object on the disk all of them
+               must be combined together into one object by cloud client.
+               The most simple way is to create a TAR archive. */
             hrc = cloudClient->ImportInstance(m->virtualSystemDescriptions.front(),
                                               aVBoxValues[0],
                                               VBox,
                                               pProgress);
-            Bstr instId(aVBoxValues[0]);
-            Utf8Str strInsId(instId);
+
+            hrc = S_OK;
             if (FAILED(hrc))
             {
-                hrc = setError(hrc, "%s: Import cloud instance \'%s\' failed\n", __FUNCTION__, strInsId.c_str());
+                strLastActualErrorDesc = Utf8StrFmt("%s: Cloud import (cloud phase) failed. "
+                        "Used cloud instance is \'%s\'\n", __FUNCTION__, strInsId.c_str());
+
+                LogRel((strLastActualErrorDesc.c_str()));
+                hrc = setError(hrc, strLastActualErrorDesc.c_str());
                 break;
             }
 
-            Utf8Str vsdData;
-
-            retTypes.setNull();
-            aRefs.setNull();
-            aOvfValues.setNull();
-            aVBoxValues.setNull();
-            aExtraConfigValues.setNull();
-            hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_CPU,
-                                            ComSafeArrayAsOutParam(retTypes),
-                                            ComSafeArrayAsOutParam(aRefs),
-                                            ComSafeArrayAsOutParam(aOvfValues),
-                                            ComSafeArrayAsOutParam(aVBoxValues),
-                                            ComSafeArrayAsOutParam(aExtraConfigValues));
-            if (FAILED(hrc))
-                break;
-            vsdData = aVBoxValues[0];
-            if (vsdData.isEmpty())
-                LogRel(("%s: Number of CPUs wasn't found\n", __FUNCTION__));
-            else
-                LogRel(("%s: Number of CPUs is %s\n", __FUNCTION__, vsdData.c_str()));
-
-            retTypes.setNull();
-            aRefs.setNull();
-            aOvfValues.setNull();
-            aVBoxValues.setNull();
-            aExtraConfigValues.setNull();
-            hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_Memory,
-                                            ComSafeArrayAsOutParam(retTypes),
-                                            ComSafeArrayAsOutParam(aRefs),
-                                            ComSafeArrayAsOutParam(aOvfValues),
-                                            ComSafeArrayAsOutParam(aVBoxValues),
-                                            ComSafeArrayAsOutParam(aExtraConfigValues));
-            if (FAILED(hrc))
-                break;
-            vsdData = aVBoxValues[0];
-            if (vsdData.isEmpty())
-                LogRel(("%s: Size of RAM wasn't found\n", __FUNCTION__));
-            else
-                LogRel(("%s: Size of RAM is %sMB\n", __FUNCTION__, vsdData.c_str()));
-
-            retTypes.setNull();
-            aRefs.setNull();
-            aOvfValues.setNull();
-            aVBoxValues.setNull();
-            aExtraConfigValues.setNull();
-            hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_OS,
-                                            ComSafeArrayAsOutParam(retTypes),
-                                            ComSafeArrayAsOutParam(aRefs),
-                                            ComSafeArrayAsOutParam(aOvfValues),
-                                            ComSafeArrayAsOutParam(aVBoxValues),
-                                            ComSafeArrayAsOutParam(aExtraConfigValues));
-            if (FAILED(hrc))
-                break;
-            vsdData = aVBoxValues[0];
-            if (vsdData.isEmpty())
-                LogRel(("%s: OS type wasn't found", __FUNCTION__));
-            else
-                LogRel(("%s: OS type is %s\n", __FUNCTION__, vsdData.c_str()));
-
-            retTypes.setNull();
-            aRefs.setNull();
-            aOvfValues.setNull();
-            aVBoxValues.setNull();
-            aExtraConfigValues.setNull();
-            hrc = vsd->GetDescriptionByType(VirtualSystemDescriptionType_Name,
-                                            ComSafeArrayAsOutParam(retTypes),
-                                            ComSafeArrayAsOutParam(aRefs),
-                                            ComSafeArrayAsOutParam(aOvfValues),
-                                            ComSafeArrayAsOutParam(aVBoxValues),
-                                            ComSafeArrayAsOutParam(aExtraConfigValues));
-            if (FAILED(hrc))
-                break;
-            vsdData = aVBoxValues[0];
-            if (vsdData.isEmpty())
-                LogRel(("%s: VM name wasn't found", __FUNCTION__));
-            else
-                LogRel(("%s: VM name is %s\n", __FUNCTION__, vsdData.c_str()));
         } while (0);
     }
     else
-        hrc = setErrorVrc(VERR_MISMATCH, tr("Import from Cloud isn't supported for more than one VM instance."));
+    {
+        vrc = VERR_NOT_SUPPORTED;
+        hrc = setErrorVrc(vrc, tr("Import from Cloud isn't supported for more than one VM instance."));
 
+        /* Reset the state so others can call methods again */
+        m->state = Data::ApplianceIdle;
+        return hrc;
+    }
+    
     if (FAILED(hrc))
     {
-        //some roll-back actions
+        HRESULT temp_hrc = hrc;//save the original result
+        Utf8Str generalRollBackErrorMessage("Rollback action for Import Cloud operation failed."
+                                            "Some leavings may exist on the local disk or in the Cloud.");
+        /* 
+         * Roll-back actions.
+         * we finish here if:
+         * 1. The getting the object form the Cloud has been failed.
+         * 2. Something is wrong with getting data from ComPtr<IVirtualSystemDescription> vsd.
+         * 3. More than 1 VirtualSystemDescription is presented in the list m->virtualSystemDescriptions.
+         * Maximum what we have there are:
+         * 1. The downloaded object, so just check the presence and delete it if one exists
+         * 2. Some leftovers in the Cloud. Also delete them too if it's possible.
+         *    Should they be deleted in the OCICloudClient::importInstance()?
+         *    Because deleting them here is not easy as it in the importInstance().
+         */
+
+        {
+            /* small explanation here, the image here points out to the whole downloaded object (not to the image only)
+             * filled during the first cloud import stage (in the ICloudClient::importInstance()) */
+            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
+            if (aVBoxValues.size() == 0)
+                hrc = setErrorVrc(VERR_NOT_FOUND, generalRollBackErrorMessage.c_str());
+            else
+            {
+                vsdData = aVBoxValues[0];
+                //try to delete the downloaded object
+                bool fExist = RTPathExists(vsdData.c_str());
+                if (fExist)
+                {
+                    vrc = RTFileDelete(vsdData.c_str());
+                    if (RT_FAILURE(vrc))
+                    {
+                        hrc = setErrorVrc(vrc, generalRollBackErrorMessage.c_str());
+                        LogRel(("%s: Rollback action - the object %s hasn't been deleted\n", __FUNCTION__, vsdData.c_str()));
+                    }
+                    else
+                        LogRel(("%s: Rollback action - the object %s has been deleted\n", __FUNCTION__, vsdData.c_str()));
+                }
+            }
+        }
+
+        {
+            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
+            if (aVBoxValues.size() == 0)
+                hrc = setErrorVrc(VERR_NOT_FOUND, generalRollBackErrorMessage.c_str());
+            else
+            {
+                vsdData = aVBoxValues[0];
+                //hrc = cloud.EliminateImportLeavings(aVBoxValues[0], pProgress);//future function
+                if (FAILED(hrc))
+                {
+                    hrc = setErrorVrc(VERR_INVALID_STATE, generalRollBackErrorMessage.c_str());
+                    LogRel(("%s: Rollback action - the leavings in the %s after import the "
+                            "instance %s may not have been deleted\n",
+                            __FUNCTION__, strProviderName.c_str(), vsdData.c_str()));
+                }
+                else
+                    LogRel(("%s: Rollback action - the leavings in the %s after import the "
+                            "instance %s have been deleted\n",
+                            __FUNCTION__, strProviderName.c_str(), vsdData.c_str()));
+            }
+        }
+
+        /* Because during the rollback phase the hrc may have the good result
+         * Thus we restore the original error in the case when the rollback phase was successful
+         * Otherwise we return not the original error but the last error in the rollback phase */
+        if (SUCCEEDED(hrc))
+            hrc = setError(temp_hrc, strLastActualErrorDesc.c_str());//restore the original result
     }
     else
     {
-        //continue and create new VM using data from VSD and downloaded image as base image
-        //The downloaded image should be converted to VDI/VMDK if it has another format
+
+        /* Small explanation here, the image here points out to the whole downloaded object (not to the image only)
+         * filled during the first cloud import stage (in the ICloudClient::importInstance()) */
+        GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
+        if (aVBoxValues.size() == 0)
+            throw setErrorVrc(VERR_NOT_FOUND, "%s: The description of the downloaded object wasn't found", __FUNCTION__);
+
+        Utf8Str strAbsSrcPath(aVBoxValues[0]);
+
+        /* Put all VFS* declaration here because they are needed to be release by the corresponding
+           RTVfs***Release functions in the case of exception */
+        RTVFSOBJ     hVfsObj;
+        RTVFSFSSTREAM hVfsFssObject;
+        RTVFSIOSTREAM hVfsIosCurr;
+
+        /* Continue and create new VM using data from VSD and downloaded object.
+         * The downloaded images should be converted to VDI/VMDK if they have another format */
+        try
+        {
+            Utf8Str strInstId("default cloud instance id");
+            {
+                GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
+                if (aVBoxValues.size() != 0)//paranoia but anyway...
+                    strInstId = aVBoxValues[0];
+                LogRel(("%s: Importing cloud instance %s\n", __FUNCTION__, strInstId.c_str()));
+            }
+
+            Utf8Str strGroup("/");//default VM group
+            Utf8Str strTargetFormat("VMDK");//default image format
+
+            /* Based on the VM name, create a target machine path. */
+            Bstr bstrSettingsFilename;
+            hrc = mVirtualBox->ComposeMachineFilename(Bstr(strVMName).raw(),
+                                                      Bstr(strGroup).raw(),
+                                                      NULL /* aCreateFlags */,
+                                                      NULL /* aBaseFolder */,
+                                                      bstrSettingsFilename.asOutParam());
+            if (FAILED(hrc)) throw hrc;
+
+            Utf8Str strMachineFolder(bstrSettingsFilename);
+            strMachineFolder.stripFilename();
+
+            /* Get the system properties. */
+            SystemProperties *pSysProps = mVirtualBox->i_getSystemProperties();
+
+            ComObjPtr<MediumFormat> trgFormat;
+            trgFormat = pSysProps->i_mediumFormatFromExtension(strTargetFormat);
+
+            /* Processing the downloaded object (prepare for the local import) */
+            RTVFSIOSTREAM hVfsIosSrc;
+            vrc = RTVfsIoStrmOpenNormal(strAbsSrcPath.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, &hVfsIosSrc);
+            if (RT_FAILURE(vrc))
+            {
+                strLastActualErrorDesc = Utf8StrFmt("Error opening '%s' for reading (%Rrc)\n", strAbsSrcPath.c_str(), vrc);
+                throw setErrorVrc(vrc, strLastActualErrorDesc.c_str());
+            }
+
+            vrc = RTZipTarFsStreamFromIoStream(hVfsIosSrc, 0 /*fFlags*/, &hVfsFssObject);
+            RTVfsIoStrmRelease(hVfsIosSrc);
+            if (RT_FAILURE(vrc))
+            {
+                strLastActualErrorDesc = Utf8StrFmt("Error reading the downloaded file '%s' (%Rrc)", strAbsSrcPath.c_str(), vrc);
+                throw setErrorVrc(vrc, strLastActualErrorDesc.c_str());
+            }
+
+            /* Create an empty ovf::OVFReader for manual filling it.
+             * It's not a normal usage case, but we try to re-use some OVF stuff to friend
+             * the cloud import with OVF import.
+             * In the standard case the ovf::OVFReader is created earlier.*/
+            m->pReader = new ovf::OVFReader();
+
+            /* Create a new virtual system and work directly on the list copy. */
+            m->pReader->m_llVirtualSystems.push_back(ovf::VirtualSystem());
+            ovf::VirtualSystem &vsys = m->pReader->m_llVirtualSystems.back();
+
+            /* Try to re-use some OVF stuff here */
+            {
+                vsys.strName = strVMName;
+                uint32_t cpus = 1;
+                {
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CPU)//aVBoxValues is set in this #define
+                    if (aVBoxValues.size() != 0)
+                    {
+                        vsdData = aVBoxValues[0];
+                        cpus = vsdData.toUInt32();
+                    }
+                    vsys.cCPUs = (uint16_t)cpus;
+                    LogRel(("%s: Number of CPUs is %s\n", __FUNCTION__, vsdData.c_str()));
+                }
+
+                ULONG memory;//Mb
+                pGuestOSType->COMGETTER(RecommendedRAM)(&memory);
+                {
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Memory)//aVBoxValues is set in this #define
+                    if (aVBoxValues.size() != 0)
+                    {
+                        vsdData = aVBoxValues[0];
+                        memory = vsdData.toUInt32();
+                    }
+                    vsys.ullMemorySize = memory;
+                    LogRel(("%s: Size of RAM is %sMB\n", __FUNCTION__, vsdData.c_str()));
+                }
+
+                {
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_Description)//aVBoxValues is set in this #define
+                    if (aVBoxValues.size() != 0)
+                    {
+                        vsdData = aVBoxValues[0];
+                        vsys.strDescription = vsdData;
+                    }
+                    LogRel(("%s: VM description \'%s\'\n", __FUNCTION__, vsdData.c_str()));
+                }
+
+                {
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_OS)//aVBoxValues is set in this #define
+                    if (aVBoxValues.size() != 0)
+                        strOsType = aVBoxValues[0];
+                    vsys.strTypeVBox = strOsType;      
+                    LogRel(("%s: OS type is %s\n", __FUNCTION__, strOsType.c_str()));
+                }
+
+                ovf::EthernetAdapter ea;
+                {
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_NetworkAdapter)//aVBoxValues is set in this #define
+                    if (aVBoxValues.size() != 0)
+                    {
+                        ea.strAdapterType = (Utf8Str)(aVBoxValues[0]);
+                        ea.strNetworkName = "NAT";//default
+                        vsys.llEthernetAdapters.push_back(ea);
+                        LogRel(("%s: Network adapter type is %s\n", __FUNCTION__, ea.strAdapterType.c_str()));
+                    }
+                    else
+                    {
+                        NetworkAdapterType_T defaultAdapterType = NetworkAdapterType_Am79C970A;
+                        pGuestOSType->COMGETTER(AdapterType)(&defaultAdapterType);
+                        Utf8StrFmt dat("%RU32", (uint32_t)defaultAdapterType);
+                        vsd->AddDescription(VirtualSystemDescriptionType_NetworkAdapter,
+                                            Bstr(dat).raw(),
+                                            Bstr(Utf8Str("NAT")).raw());
+                    }
+                }
+
+                ovf::HardDiskController hdc;
+                {
+                    //It's thought that SATA is supported by any OS types
+                    hdc.system = ovf::HardDiskController::SATA;
+                    hdc.idController = 0;
+
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskControllerSATA)//aVBoxValues is set in this #define
+                    if (aVBoxValues.size() != 0)
+                        hdc.strControllerType = (Utf8Str)(aVBoxValues[0]);
+                    else
+                        hdc.strControllerType = "AHCI";
+
+                    LogRel(("%s: Hard disk controller type is %s\n", __FUNCTION__, hdc.strControllerType.c_str()));
+                    vsys.mapControllers[hdc.idController] = hdc;
+
+                    if (aVBoxValues.size() == 0)
+                    {
+                        /* we should do it here because it'll be used later in the OVF logic (inside i_importMachines()) */
+                        vsd->AddDescription(VirtualSystemDescriptionType_HardDiskControllerSATA,
+                                            Bstr(hdc.strControllerType).raw(),
+                                            Bstr(hdc.strControllerType).raw());
+                    }
+                }
+
+                {
+                    GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_SoundCard)//aVBoxValues is set in this #define
+                    if (aVBoxValues.size() != 0)
+                        vsys.strSoundCardType  = (Utf8Str)(aVBoxValues[0]);
+                    else
+                    {
+                        AudioControllerType_T defaultAudioController;
+                        pGuestOSType->COMGETTER(RecommendedAudioController)(&defaultAudioController);
+                        vsys.strSoundCardType = Utf8StrFmt("%RU32", (uint32_t)defaultAudioController);//"ensoniq1371";//"AC97";
+                        vsd->AddDescription(VirtualSystemDescriptionType_SoundCard,
+                                            Bstr(vsys.strSoundCardType).raw(),
+                                            Bstr(vsys.strSoundCardType).raw());
+                    }
+
+                    LogRel(("%s: Sound card is %s\n", __FUNCTION__, vsys.strSoundCardType.c_str()));
+                }
+
+                vsys.fHasFloppyDrive = false;
+                vsys.fHasCdromDrive = false;
+                vsys.fHasUsbController = true;
+            }
+
+            unsigned currImageObjectNum = 0;
+            hrc = S_OK;
+            do
+            {
+                char *pszName = NULL;
+                RTVFSOBJTYPE enmType;
+                vrc = RTVfsFsStrmNext(hVfsFssObject, &pszName, &enmType, &hVfsObj);
+                if (RT_FAILURE(vrc))
+                {
+                    if (vrc != VERR_EOF)
+                    {
+                        hrc = setErrorVrc(vrc, tr("%s: Error reading '%s' (%Rrc)"), __FUNCTION__, strAbsSrcPath.c_str(), vrc);
+                        throw hrc;
+                    }
+                    break;
+                }
+
+                /* We only care about entries that are files. Get the I/O stream handle for them. */
+                if (   enmType  == RTVFSOBJTYPE_IO_STREAM
+                    || enmType  == RTVFSOBJTYPE_FILE)
+                {
+                    /* Find the suffix and check if this is a possibly interesting file. */
+                    char *pszSuffix = RTStrToLower(strrchr(pszName, '.'));
+
+                    /* Get the I/O stream. */
+                    hVfsIosCurr = RTVfsObjToIoStream(hVfsObj);
+                    Assert(hVfsIosCurr != NIL_RTVFSIOSTREAM);
+
+                    /* Get the source medium format */
+                    ComObjPtr<MediumFormat> srcFormat;
+                    srcFormat = pSysProps->i_mediumFormatFromExtension(pszSuffix + 1);
+
+                    /* unknown image format so just extract a file without any processing */
+                    if (srcFormat == NULL)
+                    {
+                        /* Read the file into a memory buffer */
+                        void  *pvBuffered;
+                        size_t cbBuffered;
+                        RTVFSFILE hVfsDstFile;
+                        try
+                        {
+                            vrc = RTVfsIoStrmReadAll(hVfsIosCurr, &pvBuffered, &cbBuffered);
+                            RTVfsIoStrmRelease(hVfsIosCurr);
+                            hVfsIosCurr = NIL_RTVFSIOSTREAM;
+                            if (RT_FAILURE(vrc))
+                                throw  setErrorVrc(vrc, tr("Could not read the file '%s' (%Rrc)"), strAbsSrcPath.c_str(), vrc);
+
+                            Utf8StrFmt strAbsDstPath("%s%s%s", strMachineFolder.c_str(), RTPATH_SLASH_STR, pszName);
+
+                            /* Simple logic - just try to get dir info, in case of absent try to create one.
+                               No deep errors analysis */
+                            RTFSOBJINFO dirInfo;
+                            vrc = RTPathQueryInfo(strMachineFolder.c_str(), &dirInfo, RTFSOBJATTRADD_NOTHING);
+                            if (RT_FAILURE(vrc))
+                            {
+                                if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
+                                {
+                                    vrc = RTDirCreate(strMachineFolder.c_str(), 0755, 0);
+                                    if (RT_FAILURE(vrc))
+                                        throw  setErrorVrc(vrc, tr("Could not create the directory '%s' (%Rrc)"),
+                                                           strMachineFolder.c_str(), vrc);
+                                }
+                                else
+                                    throw  setErrorVrc(vrc, tr("Error during getting info about the directory '%s' (%Rrc)"),
+                                                       strMachineFolder.c_str(), vrc);
+                            }
+
+                            /* Write the file on the disk */
+                            vrc = RTVfsFileOpenNormal(strAbsDstPath.c_str(),
+                                                      RTFILE_O_WRITE | RTFILE_O_DENY_ALL | RTFILE_O_CREATE,
+                                                      &hVfsDstFile);
+                            if (RT_FAILURE(vrc))
+                                throw  setErrorVrc(vrc, tr("Could not create the file '%s' (%Rrc)"), strAbsDstPath.c_str(), vrc);
+
+                            size_t cbWritten;
+                            RTVfsFileWrite(hVfsDstFile, pvBuffered, cbBuffered, &cbWritten);
+                            if (RT_FAILURE(vrc))
+                                throw  setErrorVrc(vrc, tr("Could not write into the file '%s' (%Rrc)"), strAbsDstPath.c_str(), vrc);
+                        }
+                        catch (HRESULT aRc)
+                        {
+                            hrc = aRc;
+                        }
+                        catch (...)
+                        {
+                            hrc = VERR_UNEXPECTED_EXCEPTION;
+                        }
+
+                        /* Don't forget to release all resources */
+                        RTVfsFileRelease(hVfsDstFile);
+                        RTVfsIoStrmReadAllFree(pvBuffered, cbBuffered);
+
+                        /*re-throw the error */
+                        if (FAILED(hrc))
+                            throw hrc;
+
+                    }
+                    else
+                    {
+                        /* Image format is supported by VBox so extract the file and try to convert
+                         * one to the default format (which is VMDK for now) */
+                        Utf8Str z(bstrSettingsFilename);
+                        Utf8StrFmt strAbsDstPath("%s_%d.%s",
+                                     z.stripSuffix().c_str(),
+                                     currImageObjectNum,
+                                     strTargetFormat.c_str());
+
+                        hrc = mVirtualBox->i_findHardDiskByLocation(strAbsDstPath, false, NULL);
+                        if (SUCCEEDED(hrc))
+                            throw setError(VERR_ALREADY_EXISTS, tr("The hard disk '%s' already exists."), strAbsDstPath.c_str());
+
+                        /* Create an IMedium object. */
+                        ComObjPtr<Medium> pTargetMedium;
+                        pTargetMedium.createObject();
+                        hrc = pTargetMedium->init(mVirtualBox,
+                                                 strTargetFormat,
+                                                 strAbsDstPath,
+                                                 Guid::Empty /* media registry: none yet */,
+                                                 DeviceType_HardDisk);
+                        if (FAILED(hrc))
+                            throw hrc;
+
+                        pTask->pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'",pszName)).raw(),
+                                                           200);
+                        ComObjPtr<Medium> nullParent;
+                        ComPtr<IProgress> pProgressImport;
+                        ComObjPtr<Progress> pProgressImportTmp;
+                        hrc = pProgressImportTmp.createObject();
+                        if (FAILED(hrc))
+                            throw hrc;
+
+                        hrc = pProgressImportTmp->init(mVirtualBox,
+                                                      static_cast<IAppliance*>(this),
+                                                      Utf8StrFmt(tr("Importing medium '%s'"),
+                                                                 pszName),
+                                                      TRUE);
+                        if (FAILED(hrc))
+                            throw hrc;
+
+                        pProgressImportTmp.queryInterfaceTo(pProgressImport.asOutParam());
+
+                        hrc = pTargetMedium->i_importFile(pszName,
+                                                          srcFormat,
+                                                          MediumVariant_Standard,
+                                                          hVfsIosCurr,
+                                                          nullParent,
+                                                          pProgressImportTmp,
+                                                          true /* aNotify */);
+                        RTVfsIoStrmRelease(hVfsIosCurr);
+                        hVfsIosCurr = NIL_RTVFSIOSTREAM;
+                        /* Now wait for the background import operation to complete;
+                         * this throws HRESULTs on error. */
+                        pTask->pProgress->WaitForOtherProgressCompletion(pProgressImport, 0 /* indefinite wait */);
+
+                        /* Try to re-use some OVF stuff here */
+                        {
+                            /* Small trick here.
+                             * We add new item into the actual VSD after successful conversion.
+                             * There is no need to delete any previous records describing the images in the VSD
+                             * because later in the code the search of the images in the VSD will use such records
+                             * with the actual image id (d.strDiskId = pTargetMedium->i_getId().toString()) which is
+                             * used as a key for m->pReader->m_mapDisks, vsys.mapVirtualDisks.
+                             * So all 3 objects are tied via the image id.
+                             * In the OVF case we already have all such records in the VSD after reading OVF
+                             * description file (read() and interpret() functions).*/
+                            ovf::DiskImage d;
+                            d.strDiskId = pTargetMedium->i_getId().toString();
+                            d.strHref = pTargetMedium->i_getLocationFull();
+                            d.strFormat = pTargetMedium->i_getFormat();
+                            d.iSize = pTargetMedium->i_getSize();
+                            d.ulSuggestedSizeMB = (uint32_t)(pTargetMedium->i_getSize()/_1M);
+
+                            m->pReader->m_mapDisks[d.strDiskId] = d;
+
+                            ComObjPtr<VirtualSystemDescription> vsdescThis = m->virtualSystemDescriptions.front();
+
+                            /* It's needed here to use the internal function i_addEntry() instead of the API function
+                             * addDescription() because we should pass the d.strDiskId for the proper handling this
+                             * disk later in the i_importMachineGeneric():
+                             * - find the line like this "if (vsdeHD->strRef == diCurrent.strDiskId)".
+                             *  if those code can be eliminated then addDescription() will be used. */
+                            vsdescThis->i_addEntry(VirtualSystemDescriptionType_HardDiskImage,
+                                                   d.strDiskId,
+                                                   d.strHref,
+                                                   d.strHref,
+                                                   d.ulSuggestedSizeMB);
+
+                            ovf::VirtualDisk vd;
+                            vd.idController = vsys.mapControllers[0].idController;
+                            vd.ulAddressOnParent = 0;
+                            vd.strDiskId = d.strDiskId;
+                            vsys.mapVirtualDisks[vd.strDiskId] = vd;
+
+                        }
+
+                        ++currImageObjectNum;
+                    }
+
+                    RTVfsIoStrmRelease(hVfsIosCurr);
+                    hVfsIosCurr = NIL_RTVFSIOSTREAM;
+                }
+
+                RTVfsObjRelease(hVfsObj);
+                hVfsObj = NIL_RTVFSOBJ;
+
+                RTStrFree(pszName);
+
+            } while (SUCCEEDED(hrc));
+
+            RTVfsFsStrmRelease(hVfsFssObject);
+            hVfsFssObject = NIL_RTVFSFSSTREAM;
+
+            pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating new VM '%s'", strVMName.c_str())).raw(), 50);
+            /* Create the import stack to comply OVF logic.
+             * Before we filled some other data structures which are needed by OVF logic too.*/
+            ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress, NIL_RTVFSFSSTREAM);
+            i_importMachines(stack);
+
+        }
+        catch (HRESULT aRc)
+        {
+            LogRel(("%s: Cloud import (local phase) - exception occured (%Rrc).\n", __FUNCTION__, aRc));
+            hrc = aRc;
+        }
+        catch (...)
+        {
+            hrc = VERR_UNRESOLVED_ERROR;
+            LogRel(("%s: Cloud import (local phase) - Unknown exception occured.\n", __FUNCTION__));
+        }
+
+        if (FAILED(hrc))
+        {
+            /* Try to free VFS stuff because some of them might not be released due to the exception */
+            if (hVfsIosCurr != NIL_RTVFSIOSTREAM)
+                RTVfsIoStrmRelease(hVfsIosCurr);
+            if (hVfsObj != NIL_RTVFSOBJ)
+                RTVfsObjRelease(hVfsObj);
+            if (hVfsFssObject != NIL_RTVFSFSSTREAM)
+                RTVfsFsStrmRelease(hVfsFssObject);
+
+            LogRel(("%s: Cloud import (local phase): original error was \'%s\'.\n", __FUNCTION__, strLastActualErrorDesc.c_str()));
+
+            /* What to do here?
+             * Delete or not the downloaded object? 
+             * For now: 
+             *  - check the list of imported images, detach them and next delete.
+             *  - check the registration of created VM and delete one.
+             *  - check some other leavings if they may exist and delete them too.
+             */
+
+            /* Small explanation here.
+             * After adding extracted files into the actual VSD the returned list will contain not only the
+             * record about the downloaded object but also the records about the extracted files from this object.
+             * It's needed to go through this list to find the record about the downloaded object. 
+             * But it was the first record added into the list, so aVBoxValues[0] should be correct here.
+             */
+            GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
+            if (aVBoxValues.size() != 0)
+                hrc = setError(hrc, "%s: Cloud import (local phase) failed. Find the root cause in the log file. "
+                                    "But the first phase was successful and the downloaded object was stored as \'%s\'\n",
+                                    __FUNCTION__, Utf8Str(aVBoxValues[0]).c_str());
+        }
     }
 
     /* Reset the state so others can call methods again */
@@ -2336,22 +2848,36 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
         }
         else if (mode == ImportCloud)
         {
-            /*
-             1. Create a custom imaghe from the instance
-             2. Import the custom image into the Object Storage (OCI format - TAR file with QCOW2 image and JSON file)
-             3. Download the object from the Object Storage
-             4. Open the object, extract QCOW2 image and convert one QCOW2->VDI
-             5. Create VM with user settings and attach the converted image to VM
-             6. Lauch VM.
-            */
             progress.createObject();
             if (locInfo.strProvider.equals("OCI"))
             {
+                /*
+                 * 1. Create a custom image from the instance 
+                 *  - 2 operations (starting and waiting)
+                 * 2. Import the custom image into the Object Storage (OCI format - TAR file with QCOW2 image and JSON file)
+                 *  - 2 operations (starting and waiting)
+                 * 3. Download the object from the Object Storage
+                 *  - 2 operations (starting and waiting)
+                 * 4. Open the object, extract QCOW2 image and convert one QCOW2->VDI
+                 *  - 1 operation (extracting and conversion are piped)
+                 * 5. Create VM with user settings and attach the converted image to VM
+                 *  - 1 operation.
+                 *  sum up = 2+2+2+1+1 = 8 op
+                */
+
+                /* 
+                 * See src/VBox/ExtPacks/Puel/OCI/OCICloudClient.h.
+                 * Weight of cloud import operations (1-3 items from above):
+                 * Total = 750 = 10+40+50+50+200x2+200.
+                 *  
+                 * Weight of local import operations (4-5 items from above): 
+                 * Total = 250 = 200 (extract and convert) + 50 (create VM, attach disks) 
+                 */
                 progress->init(mVirtualBox, static_cast<IAppliance*>(this),
                              Bstr("Importing VM from Cloud...").raw(),
                              TRUE /* aCancelable */,
-                             6, // ULONG cOperations,
-                             750, // ULONG ulTotalOperationsWeight,
+                             8, // ULONG cOperations,
+                             1000, // ULONG ulTotalOperationsWeight,
                              Bstr("Importing VM from Cloud...").raw(), // aFirstOperationDescription
                              10); // ULONG ulFirstOperationWeight
             }
@@ -3697,10 +4223,27 @@ l_skipped:
                 const ovf::VirtualDisk &ovfVdisk = itVDisk->second;
 
                 ComObjPtr<Medium> pTargetMedium;
-                i_importOneDiskImage(diCurrent,
-                                     vsdeTargetHD->strVBoxCurrent,
-                                     pTargetMedium,
-                                     stack);
+                if (stack.locInfo.storageType == VFSType_Cloud)
+                {
+                    //we have already all disks prepared (converted and registered in the VBox) 
+                    //and in the correct place (VM machine folder).
+                    //so what is needed is to get the disk uuid from VirtualDisk::strDiskId
+                    //and find the Medium object with this uuid.
+                    //next just attach the Medium object to new VM.
+                    //VirtualDisk::strDiskId is filled in the 
+
+                    Guid id(ovfVdisk.strDiskId);
+                    rc = mVirtualBox->i_findHardDiskById(id, false, &pTargetMedium);
+                    if (FAILED(rc))
+                        throw rc;
+                }
+                else
+                {
+                    i_importOneDiskImage(diCurrent,
+                                         vsdeTargetHD->strVBoxCurrent,
+                                         pTargetMedium,
+                                         stack);
+                }
 
                 // now use the new uuid to attach the medium to our new machine
                 ComPtr<IMachine> sMachine;

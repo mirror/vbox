@@ -663,6 +663,7 @@ struct VirtualSystem
 class OVFReader
 {
 public:
+    OVFReader();
     OVFReader(const void *pvBuf, size_t cbSize, const RTCString &path);
     OVFReader(const RTCString &path);
 
