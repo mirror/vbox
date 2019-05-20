@@ -2852,7 +2852,7 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
             if (locInfo.strProvider.equals("OCI"))
             {
                 /*
-                 * 1. Create a custom image from the instance 
+                 * 1. Create a custom image from the instance
                  *  - 2 operations (starting and waiting)
                  * 2. Import the custom image into the Object Storage (OCI format - TAR file with QCOW2 image and JSON file)
                  *  - 2 operations (starting and waiting)
@@ -2865,13 +2865,13 @@ HRESULT Appliance::i_importImpl(const LocationInfo &locInfo,
                  *  sum up = 2+2+2+1+1 = 8 op
                 */
 
-                /* 
+                /*
                  * See src/VBox/ExtPacks/Puel/OCI/OCICloudClient.h.
                  * Weight of cloud import operations (1-3 items from above):
                  * Total = 750 = 10+40+50+50+200x2+200.
-                 *  
-                 * Weight of local import operations (4-5 items from above): 
-                 * Total = 250 = 200 (extract and convert) + 50 (create VM, attach disks) 
+                 *
+                 * Weight of local import operations (4-5 items from above):
+                 * Total = 250 = 200 (extract and convert) + 50 (create VM, attach disks)
                  */
                 progress->init(mVirtualBox, static_cast<IAppliance*>(this),
                              Bstr("Importing VM from Cloud...").raw(),
@@ -4213,7 +4213,7 @@ l_skipped:
                 }
                 else
                 {
-                    /* just continue with normal files*/
+                    /* just continue with normal files */
                     ++oit;
                 }
 
@@ -4225,12 +4225,12 @@ l_skipped:
                 ComObjPtr<Medium> pTargetMedium;
                 if (stack.locInfo.storageType == VFSType_Cloud)
                 {
-                    //we have already all disks prepared (converted and registered in the VBox) 
-                    //and in the correct place (VM machine folder).
-                    //so what is needed is to get the disk uuid from VirtualDisk::strDiskId
-                    //and find the Medium object with this uuid.
-                    //next just attach the Medium object to new VM.
-                    //VirtualDisk::strDiskId is filled in the 
+                    /* We have already all disks prepared (converted and registered in the VBox)
+                     * and in the correct place (VM machine folder).
+                     * so what is needed is to get the disk uuid from VirtualDisk::strDiskId
+                     * and find the Medium object with this uuid.
+                     * next just attach the Medium object to new VM.
+                     * VirtualDisk::strDiskId is filled in the */
 
                     Guid id(ovfVdisk.strDiskId);
                     rc = mVirtualBox->i_findHardDiskById(id, false, &pTargetMedium);
