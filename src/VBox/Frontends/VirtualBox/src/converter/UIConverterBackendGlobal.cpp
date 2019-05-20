@@ -700,7 +700,7 @@ template<> UIExtraDataMetaDefs::RuntimeMenuInputActionType fromInternalString<UI
     QStringList keys;             QList<UIExtraDataMetaDefs::RuntimeMenuInputActionType> values;
     keys << "Keyboard";           values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_Keyboard;
     keys << "KeyboardSettings";   values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings;
-    keys << "SoftKeyboard";   values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_SoftKeyboard;
+    keys << "SoftKeyboard";       values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_SoftKeyboard;
     keys << "TypeCAD";            values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCAD;
 #ifdef VBOX_WS_X11
     keys << "TypeCABS";           values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS;
