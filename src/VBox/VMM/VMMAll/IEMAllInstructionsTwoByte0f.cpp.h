@@ -4346,30 +4346,28 @@ FNIEMOP_DEF(iemOp_vmread_Ey_Gy)
          */
         if (enmEffOpSize == IEMMODE_64BIT)
         {
-            IEM_MC_BEGIN(4, 0);
+            IEM_MC_BEGIN(3, 0);
             IEM_MC_ARG(uint8_t,       iEffSeg,                                          0);
-            IEM_MC_ARG_CONST(IEMMODE, enmEffAddrMode,/*=*/pVCpu->iem.s.enmEffAddrMode,  1);
-            IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         2);
-            IEM_MC_ARG(uint64_t,      u64Enc,                                           3);
+            IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         1);
+            IEM_MC_ARG(uint64_t,      u64Enc,                                           2);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrVal, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES();
             IEM_MC_FETCH_GREG_U64(u64Enc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-            IEM_MC_CALL_CIMPL_4(iemCImpl_vmread_mem_reg64, iEffSeg, enmEffAddrMode, GCPtrVal, u64Enc);
+            IEM_MC_CALL_CIMPL_3(iemCImpl_vmread_mem_reg64, iEffSeg, GCPtrVal, u64Enc);
             IEM_MC_END();
         }
         else
         {
-            IEM_MC_BEGIN(4, 0);
+            IEM_MC_BEGIN(3, 0);
             IEM_MC_ARG(uint8_t,       iEffSeg,                                          0);
-            IEM_MC_ARG_CONST(IEMMODE, enmEffAddrMode,/*=*/pVCpu->iem.s.enmEffAddrMode,  1);
-            IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         2);
-            IEM_MC_ARG(uint32_t,      u32Enc,                                           3);
+            IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         1);
+            IEM_MC_ARG(uint32_t,      u32Enc,                                           2);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrVal, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES();
             IEM_MC_FETCH_GREG_U32(u32Enc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-            IEM_MC_CALL_CIMPL_4(iemCImpl_vmread_mem_reg32, iEffSeg, enmEffAddrMode, GCPtrVal, u32Enc);
+            IEM_MC_CALL_CIMPL_3(iemCImpl_vmread_mem_reg32, iEffSeg, GCPtrVal, u32Enc);
             IEM_MC_END();
         }
     }
@@ -4428,30 +4426,28 @@ FNIEMOP_DEF(iemOp_vmwrite_Gy_Ey)
          */
         if (enmEffOpSize == IEMMODE_64BIT)
         {
-            IEM_MC_BEGIN(4, 0);
+            IEM_MC_BEGIN(3, 0);
             IEM_MC_ARG(uint8_t,       iEffSeg,                                          0);
-            IEM_MC_ARG_CONST(IEMMODE, enmEffAddrMode,/*=*/pVCpu->iem.s.enmEffAddrMode,  1);
-            IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         2);
-            IEM_MC_ARG(uint64_t,      u64Enc,                                           3);
+            IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         1);
+            IEM_MC_ARG(uint64_t,      u64Enc,                                           2);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrVal, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES();
             IEM_MC_FETCH_GREG_U64(u64Enc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-            IEM_MC_CALL_CIMPL_4(iemCImpl_vmwrite_mem, iEffSeg, enmEffAddrMode, GCPtrVal, u64Enc);
+            IEM_MC_CALL_CIMPL_3(iemCImpl_vmwrite_mem, iEffSeg, GCPtrVal, u64Enc);
             IEM_MC_END();
         }
         else
         {
-            IEM_MC_BEGIN(4, 0);
+            IEM_MC_BEGIN(3, 0);
             IEM_MC_ARG(uint8_t,       iEffSeg,                                          0);
-            IEM_MC_ARG_CONST(IEMMODE, enmEffAddrMode,/*=*/pVCpu->iem.s.enmEffAddrMode,  1);
-            IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         2);
-            IEM_MC_ARG(uint32_t,      u32Enc,                                           3);
+            IEM_MC_ARG(RTGCPTR,       GCPtrVal,                                         1);
+            IEM_MC_ARG(uint32_t,      u32Enc,                                           2);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrVal, bRm, 0);
             IEMOP_HLP_DONE_DECODING_NO_SIZE_OP_REPZ_OR_REPNZ_PREFIXES();
             IEM_MC_FETCH_GREG_U32(u32Enc, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pVCpu->iem.s.uRexReg);
             IEM_MC_ASSIGN(iEffSeg, pVCpu->iem.s.iEffSeg);
-            IEM_MC_CALL_CIMPL_4(iemCImpl_vmwrite_mem, iEffSeg, enmEffAddrMode, GCPtrVal, u32Enc);
+            IEM_MC_CALL_CIMPL_3(iemCImpl_vmwrite_mem, iEffSeg, GCPtrVal, u32Enc);
             IEM_MC_END();
         }
     }

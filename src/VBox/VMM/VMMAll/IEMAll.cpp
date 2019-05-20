@@ -15983,27 +15983,29 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmread(PVMCPU pVCpu, PCVMXVEXITINFO pEx
     iemInitExec(pVCpu, false /*fBypassHandlers*/);
 
     VBOXSTRICTRC   rcStrict;
-    uint8_t const  cbInstr   = pExitInfo->cbInstr;
-    uint32_t const uFieldEnc = iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg2);
+    uint8_t const  cbInstr       = pExitInfo->cbInstr;
+    bool const     fIs64BitMode  = RT_BOOL(pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT);
+    uint64_t const u64FieldEnc   = fIs64BitMode
+                                 ? iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg2)
+                                 : iemGRegFetchU32(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg2);
     if (pExitInfo->InstrInfo.VmreadVmwrite.fIsRegOperand)
     {
-        if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
+        if (fIs64BitMode)
         {
             uint64_t *pu64Dst = iemGRegRefU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg1);
-            rcStrict = iemVmxVmreadReg64(pVCpu, cbInstr, pu64Dst, uFieldEnc, pExitInfo);
+            rcStrict = iemVmxVmreadReg64(pVCpu, cbInstr, pu64Dst, u64FieldEnc, pExitInfo);
         }
         else
         {
             uint32_t *pu32Dst = iemGRegRefU32(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg1);
-            rcStrict = iemVmxVmreadReg32(pVCpu, cbInstr, pu32Dst, uFieldEnc, pExitInfo);
+            rcStrict = iemVmxVmreadReg32(pVCpu, cbInstr, pu32Dst, u64FieldEnc, pExitInfo);
         }
     }
     else
     {
-        RTGCPTR GCPtrDst       = pExitInfo->GCPtrEffAddr;
-        uint8_t iEffSeg        = pExitInfo->InstrInfo.VmreadVmwrite.iSegReg;
-        IEMMODE enmEffAddrMode = (IEMMODE)pExitInfo->InstrInfo.VmreadVmwrite.u3AddrSize;
-        rcStrict = iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrDst, uFieldEnc, pExitInfo);
+        RTGCPTR const GCPtrDst = pExitInfo->GCPtrEffAddr;
+        uint8_t const iEffSeg  = pExitInfo->InstrInfo.VmreadVmwrite.iSegReg;
+        rcStrict = iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, GCPtrDst, u64FieldEnc, pExitInfo);
     }
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
@@ -16028,22 +16030,21 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmwrite(PVMCPU pVCpu, PCVMXVEXITINFO pE
 
     uint64_t u64Val;
     uint8_t  iEffSeg;
-    IEMMODE  enmEffAddrMode;
     if (pExitInfo->InstrInfo.VmreadVmwrite.fIsRegOperand)
     {
-        u64Val         = iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg1);
-        iEffSeg        = UINT8_MAX;
-        enmEffAddrMode = UINT8_MAX;
+        u64Val  = iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg1);
+        iEffSeg = UINT8_MAX;
     }
     else
     {
-        u64Val         = pExitInfo->GCPtrEffAddr;
-        iEffSeg        = pExitInfo->InstrInfo.VmreadVmwrite.iSegReg;
-        enmEffAddrMode = (IEMMODE)pExitInfo->InstrInfo.VmreadVmwrite.u3AddrSize;
+        u64Val  = pExitInfo->GCPtrEffAddr;
+        iEffSeg = pExitInfo->InstrInfo.VmreadVmwrite.iSegReg;
     }
-    uint8_t const  cbInstr   = pExitInfo->cbInstr;
-    uint32_t const uFieldEnc = iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg2);
-    VBOXSTRICTRC rcStrict = iemVmxVmwrite(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, u64Val, uFieldEnc, pExitInfo);
+    uint8_t const  cbInstr     = pExitInfo->cbInstr;
+    uint64_t const u64FieldEnc = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
+                               ? iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg2)
+                               : iemGRegFetchU32(pVCpu, pExitInfo->InstrInfo.VmreadVmwrite.iReg2);
+    VBOXSTRICTRC rcStrict = iemVmxVmwrite(pVCpu, cbInstr, iEffSeg, u64Val, u64FieldEnc, pExitInfo);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }
@@ -16210,10 +16211,10 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvvpid(PVMCPU pVCpu, PCVMXVEXITINFO pE
     uint8_t const  iEffSeg          = pExitInfo->InstrInfo.Inv.iSegReg;
     uint8_t const  cbInstr          = pExitInfo->cbInstr;
     RTGCPTR const  GCPtrInvvpidDesc = pExitInfo->GCPtrEffAddr;
-    uint64_t const uInvvpidType     = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
+    uint64_t const u64InvvpidType   = pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT
                                     ? iemGRegFetchU64(pVCpu, pExitInfo->InstrInfo.Inv.iReg2)
                                     : iemGRegFetchU32(pVCpu, pExitInfo->InstrInfo.Inv.iReg2);
-    VBOXSTRICTRC rcStrict = iemVmxInvvpid(pVCpu, cbInstr, iEffSeg, GCPtrInvvpidDesc, uInvvpidType, pExitInfo);
+    VBOXSTRICTRC rcStrict = iemVmxInvvpid(pVCpu, cbInstr, iEffSeg, GCPtrInvvpidDesc, u64InvvpidType, pExitInfo);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
 }

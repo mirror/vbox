@@ -1903,7 +1903,32 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
     else
         IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStoreCount);
 
-    PVMXAUTOMSR pMsr = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrStoreArea);
+    /*
+     * Optimization if the guest hypervisor is using the same guest-physical page for both
+     * the VM-entry MSR-load area as well as the VM-exit MSR store area.
+     */
+    PVMXAUTOMSR    pMsrArea;
+    RTGCPHYS const GCPhysVmEntryMsrLoadArea = pVmcs->u64AddrEntryMsrLoad.u;
+    RTGCPHYS const GCPhysVmExitMsrStoreArea = pVmcs->u64AddrExitMsrStore.u;
+    if (GCPhysVmEntryMsrLoadArea == GCPhysVmExitMsrStoreArea)
+        pMsrArea = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pEntryMsrLoadArea);
+    else
+    {
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), (void *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrStoreArea),
+                                         GCPhysVmExitMsrStoreArea, cMsrs * sizeof(VMXAUTOMSR));
+        if (RT_SUCCESS(rc))
+            pMsrArea = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrStoreArea);
+        else
+        {
+            AssertMsgFailed(("VM-exit: Failed to read MSR auto-store area at %#RGp, rc=%Rrc\n", GCPhysVmExitMsrStoreArea, rc));
+            IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStorePtrReadPhys);
+        }
+    }
+
+    /*
+     * Update VM-exit MSR store area.
+     */
+    PVMXAUTOMSR pMsr = pMsrArea;
     Assert(pMsr);
     for (uint32_t idxMsr = 0; idxMsr < cMsrs; idxMsr++, pMsr++)
     {
@@ -1935,20 +1960,18 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPU pVCpu, uint32_t uExitReason)
         }
     }
 
-    RTGCPHYS const GCPhysVmExitMsrStoreArea = pVmcs->u64AddrExitMsrStore.u;
-    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmExitMsrStoreArea,
-                                      pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pExitMsrStoreArea), cMsrs * sizeof(VMXAUTOMSR));
+    /*
+     * Commit the VM-exit MSR store are to guest memory.
+     */
+    int rc = PGMPhysSimpleWriteGCPhys(pVCpu->CTX_SUFF(pVM), GCPhysVmExitMsrStoreArea, pMsrArea, cMsrs * sizeof(VMXAUTOMSR));
     if (RT_SUCCESS(rc))
-    { /* likely */ }
-    else
-    {
-        AssertMsgFailed(("VM-exit: Failed to write MSR auto-store area at %#RGp, rc=%Rrc\n", GCPhysVmExitMsrStoreArea, rc));
-        IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStorePtrWritePhys);
-    }
+        return VINF_SUCCESS;
 
     NOREF(uExitReason);
     NOREF(pszFailure);
-    return VINF_SUCCESS;
+
+    AssertMsgFailed(("VM-exit: Failed to write MSR auto-store area at %#RGp, rc=%Rrc\n", GCPhysVmExitMsrStoreArea, rc));
+    IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStorePtrWritePhys);
 }
 
 
@@ -2771,7 +2794,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
         /* else: Caller would have updated IDT-vectoring information already, see iemVmxVmexitEvent(). */
     }
 
-    /* The following VMCS fields are unsupported since we don't injecting SMIs into a guest. */
+    /* The following VMCS fields should always be zero since we don't support injecting SMIs into a guest. */
     Assert(pVmcs->u64RoIoRcx.u == 0);
     Assert(pVmcs->u64RoIoRsi.u == 0);
     Assert(pVmcs->u64RoIoRdi.u == 0);
@@ -2863,7 +2886,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     if (rcSched != VINF_SUCCESS)
         iemSetPassUpStatus(pVCpu, rcSched);
 #  endif
-    return VINF_SUCCESS;
+    return rcStrict;
 # endif
 }
 
@@ -3981,9 +4004,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
         ||  (fFlags & (IEM_XCPT_FLAGS_BP_INSTR | IEM_XCPT_FLAGS_OF_INSTR | IEM_XCPT_FLAGS_ICEBP_INSTR)))
     {
         fIsHwXcpt = true;
+
         /* NMIs have a dedicated VM-execution control for causing VM-exits. */
         if (uVector == X86_XCPT_NMI)
-            fIntercept = RT_BOOL(pVmcs->u32PinCtls & VMX_PIN_CTLS_NMI_EXIT);
+        {
+            if (pVmcs->u32PinCtls & VMX_PIN_CTLS_NMI_EXIT)
+                fIntercept = true;
+        }
         else
         {
             /* Page-faults are subject to masking using its error code. */
@@ -3996,7 +4023,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPU pVCpu, uint8_t uVector, uint32_
                     fXcptBitmap ^= RT_BIT(X86_XCPT_PF);
             }
 
-            /* Consult the exception bitmap for all hardware exceptions (except NMI). */
+            /* Consult the exception bitmap for all other hardware exceptions. */
+            Assert(uVector <= X86_XCPT_LAST);
             if (fXcptBitmap & RT_BIT(uVector))
                 fIntercept = true;
         }
@@ -7941,16 +7969,14 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadReg32(PVMCPU pVCpu, uint8_t cbInstr, uint32_
  * @param   cbInstr         The instruction length in bytes.
  * @param   iEffSeg         The effective segment register to use with @a u64Val.
  *                          Pass UINT8_MAX if it is a register access.
- * @param   enmEffAddrMode  The effective addressing mode (only used with memory
- *                          operand).
  * @param   GCPtrDst        The guest linear address to store the VMCS field's
  *                          value.
  * @param   u64FieldEnc     The VMCS field encoding.
  * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
  *                          be NULL.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, IEMMODE enmEffAddrMode,
-                                        RTGCPTR GCPtrDst, uint64_t u64FieldEnc, PCVMXVEXITINFO pExitInfo)
+IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPTR GCPtrDst, uint64_t u64FieldEnc,
+                                        PCVMXVEXITINFO pExitInfo)
 {
     uint64_t u64Dst;
     VBOXSTRICTRC rcStrict = iemVmxVmreadCommon(pVCpu, cbInstr, &u64Dst, u64FieldEnc, pExitInfo);
@@ -7958,14 +7984,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t i
     {
         /*
          * Write the VMCS field's value to the location specified in guest-memory.
-         *
-         * The pointer size depends on the address size (address-size prefix allowed).
-         * The operand size depends on IA-32e mode (operand-size prefix not allowed).
          */
-        static uint64_t const s_auAddrSizeMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
-        Assert(enmEffAddrMode < RT_ELEMENTS(s_auAddrSizeMasks));
-        GCPtrDst &= s_auAddrSizeMasks[enmEffAddrMode];
-
         if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
             rcStrict = iemMemStoreDataU64(pVCpu, iEffSeg, GCPtrDst, u64Dst);
         else
@@ -7994,8 +8013,6 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t i
  * @param   cbInstr         The instruction length in bytes.
  * @param   iEffSeg         The effective segment register to use with @a u64Val.
  *                          Pass UINT8_MAX if it is a register access.
- * @param   enmEffAddrMode  The effective addressing mode (only used with memory
- *                          operand).
  * @param   u64Val          The value to write (or guest linear address to the
  *                          value), @a iEffSeg will indicate if it's a memory
  *                          operand.
@@ -8003,8 +8020,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmreadMem(PVMCPU pVCpu, uint8_t cbInstr, uint8_t i
  * @param   pExitInfo       Pointer to the VM-exit information struct. Optional, can
  *                          be NULL.
  */
-IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, IEMMODE enmEffAddrMode, uint64_t u64Val,
-                                      uint64_t u64FieldEnc, PCVMXVEXITINFO pExitInfo)
+IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, uint64_t u64Val, uint64_t u64FieldEnc,
+                                      PCVMXVEXITINFO pExitInfo)
 {
     /* Nested-guest intercept. */
     if (   IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
@@ -8055,12 +8072,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmwrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     bool const fIsRegOperand = iEffSeg == UINT8_MAX;
     if (!fIsRegOperand)
     {
-        static uint64_t const s_auAddrSizeMasks[] = { UINT64_C(0xffff), UINT64_C(0xffffffff), UINT64_C(0xffffffffffffffff) };
-        Assert(enmEffAddrMode < RT_ELEMENTS(s_auAddrSizeMasks));
-        RTGCPTR const GCPtrVal = u64Val & s_auAddrSizeMasks[enmEffAddrMode];
-
         /* Read the value from the specified guest memory location. */
-        VBOXSTRICTRC rcStrict;
+        VBOXSTRICTRC  rcStrict;
+        RTGCPTR const GCPtrVal = u64Val;
         if (pVCpu->iem.s.enmCpuMode == IEMMODE_64BIT)
             rcStrict = iemMemFetchDataU64(pVCpu, &u64Val, iEffSeg, GCPtrVal);
         else
@@ -8518,7 +8532,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
  * @param   cbInstr             The instruction length in bytes.
  * @param   iEffSeg             The segment of the invvpid descriptor.
  * @param   GCPtrInvvpidDesc    The address of invvpid descriptor.
- * @param   uInvvpidType        The invalidation type.
+ * @param   u64InvvpidType      The invalidation type.
  * @param   pExitInfo           Pointer to the VM-exit information struct. Optional,
  *                              can be NULL.
  *
@@ -8526,7 +8540,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmptrld(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
  *          i.e. VMX operation, CR4.VMXE, Real/V86 mode, EFER/CS.L checks.
  */
 IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPTR GCPtrInvvpidDesc,
-                                      uint64_t uInvvpidType, PCVMXVEXITINFO pExitInfo)
+                                      uint64_t u64InvvpidType, PCVMXVEXITINFO pExitInfo)
 {
     /* Check if INVVPID instruction is supported, otherwise raise #UD. */
     if (!IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxVpid)
@@ -8550,23 +8564,26 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
     /*
      * Validate INVVPID invalidation type.
      *
-     * Each of the types have a supported bit in IA32_VMX_EPT_VPID_CAP MSR.
-     * In theory, it's possible for a CPU to not support flushing individual addresses
-     * but all the other types or any other combination.
+     * The instruction specifies exactly ONE of the supported invalidation types.
+     *
+     * Each of the types has a bit in IA32_VMX_EPT_VPID_CAP MSR specifying if it is
+     * supported. In theory, it's possible for a CPU to not support flushing individual
+     * addresses but all the other types or any other combination. We do not take any
+     * shortcuts here by  assuming the types we currently expose to the guest.
      */
     uint64_t const fCaps = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64EptVpidCaps;
     uint8_t const fTypeIndivAddr              = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_INDIV_ADDR);
     uint8_t const fTypeSingleCtx              = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX);
     uint8_t const fTypeAllCtx                 = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_ALL_CTX);
     uint8_t const fTypeSingleCtxRetainGlobals = RT_BF_GET(fCaps, VMX_BF_EPT_VPID_CAP_INVVPID_SINGLE_CTX_RETAIN_GLOBALS);
-    if (   (fTypeIndivAddr              && uInvvpidType == VMXTLBFLUSHVPID_INDIV_ADDR)
-        || (fTypeSingleCtx              && uInvvpidType == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
-        || (fTypeAllCtx                 && uInvvpidType == VMXTLBFLUSHVPID_ALL_CONTEXTS)
-        || (fTypeSingleCtxRetainGlobals && uInvvpidType == VMXTLBFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS))
+    if (   (fTypeIndivAddr              && u64InvvpidType == VMXTLBFLUSHVPID_INDIV_ADDR)
+        || (fTypeSingleCtx              && u64InvvpidType == VMXTLBFLUSHVPID_SINGLE_CONTEXT)
+        || (fTypeAllCtx                 && u64InvvpidType == VMXTLBFLUSHVPID_ALL_CONTEXTS)
+        || (fTypeSingleCtxRetainGlobals && u64InvvpidType == VMXTLBFLUSHVPID_SINGLE_CONTEXT_RETAIN_GLOBALS))
     { /* likely */ }
     else
     {
-        Log(("invvpid: invalid/unrecognized invvpid type %#x -> VMFail\n", uInvvpidType));
+        Log(("invvpid: invalid/unsupported invvpid type %#x -> VMFail\n", u64InvvpidType));
         pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_TypeInvalid;
         iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
         iemRegAddToRipAndClearRF(pVCpu, cbInstr);
@@ -8596,7 +8613,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
         RTGCUINTPTR64 const GCPtrInvAddr = uDesc.s.Hi;
         uint8_t       const uVpid        = uDesc.s.Lo & UINT64_C(0xfff);
         uint64_t      const uCr3         = pVCpu->cpum.GstCtx.cr3;
-        switch (uInvvpidType)
+        switch (u64InvvpidType)
         {
             case VMXTLBFLUSHVPID_INDIV_ADDR:
             {
@@ -8618,7 +8635,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
                 }
                 else
                 {
-                    Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, uInvvpidType));
+                    Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, u64InvvpidType));
                     pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_Type0InvalidVpid;
                     iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
                 }
@@ -8636,7 +8653,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
                 }
                 else
                 {
-                    Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, uInvvpidType));
+                    Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, u64InvvpidType));
                     pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_Type1InvalidVpid;
                     iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
                 }
@@ -8663,7 +8680,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxInvvpid(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iEf
                 }
                 else
                 {
-                    Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, uInvvpidType));
+                    Log(("invvpid: invalid VPID %#x for invalidation type %u -> VMFail\n", uVpid, u64InvvpidType));
                     pVCpu->cpum.GstCtx.hwvirt.vmx.enmDiag = kVmxVDiag_Invvpid_Type3InvalidVpid;
                     iemVmxVmFail(pVCpu, VMXINSTRERR_INVEPT_INVVPID_INVALID_OPERAND);
                 }
@@ -9013,17 +9030,16 @@ IEM_CIMPL_DEF_2(iemCImpl_vmclear, uint8_t, iEffSeg, RTGCPTR, GCPtrVmcs)
  */
 IEM_CIMPL_DEF_2(iemCImpl_vmwrite_reg, uint64_t, u64Val, uint64_t, u64FieldEnc)
 {
-    return iemVmxVmwrite(pVCpu, cbInstr, UINT8_MAX /* iEffSeg */, IEMMODE_64BIT /* N/A */, u64Val, u64FieldEnc,
-                         NULL /* pExitInfo */);
+    return iemVmxVmwrite(pVCpu, cbInstr, UINT8_MAX /* iEffSeg */, u64Val, u64FieldEnc, NULL /* pExitInfo */);
 }
 
 
 /**
  * Implements 'VMWRITE' memory.
  */
-IEM_CIMPL_DEF_4(iemCImpl_vmwrite_mem, uint8_t, iEffSeg, IEMMODE, enmEffAddrMode, RTGCPTR, GCPtrVal, uint32_t, u64FieldEnc)
+IEM_CIMPL_DEF_3(iemCImpl_vmwrite_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrVal, uint32_t, u64FieldEnc)
 {
-    return iemVmxVmwrite(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrVal, u64FieldEnc,  NULL /* pExitInfo */);
+    return iemVmxVmwrite(pVCpu, cbInstr, iEffSeg, GCPtrVal, u64FieldEnc,  NULL /* pExitInfo */);
 }
 
 
@@ -9048,18 +9064,18 @@ IEM_CIMPL_DEF_2(iemCImpl_vmread_reg32, uint32_t *, pu32Dst, uint32_t, u32FieldEn
 /**
  * Implements 'VMREAD' memory, 64-bit register.
  */
-IEM_CIMPL_DEF_4(iemCImpl_vmread_mem_reg64, uint8_t, iEffSeg, IEMMODE, enmEffAddrMode, RTGCPTR, GCPtrDst, uint32_t, u64FieldEnc)
+IEM_CIMPL_DEF_3(iemCImpl_vmread_mem_reg64, uint8_t, iEffSeg, RTGCPTR, GCPtrDst, uint32_t, u64FieldEnc)
 {
-    return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrDst, u64FieldEnc, NULL /* pExitInfo */);
+    return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, GCPtrDst, u64FieldEnc, NULL /* pExitInfo */);
 }
 
 
 /**
  * Implements 'VMREAD' memory, 32-bit register.
  */
-IEM_CIMPL_DEF_4(iemCImpl_vmread_mem_reg32, uint8_t, iEffSeg, IEMMODE, enmEffAddrMode, RTGCPTR, GCPtrDst, uint32_t, u32FieldEnc)
+IEM_CIMPL_DEF_3(iemCImpl_vmread_mem_reg32, uint8_t, iEffSeg, RTGCPTR, GCPtrDst, uint32_t, u32FieldEnc)
 {
-    return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, enmEffAddrMode, GCPtrDst, u32FieldEnc, NULL /* pExitInfo */);
+    return iemVmxVmreadMem(pVCpu, cbInstr, iEffSeg, GCPtrDst, u32FieldEnc, NULL /* pExitInfo */);
 }
 
 
