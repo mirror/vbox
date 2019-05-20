@@ -555,6 +555,11 @@ signals:
 
 public:
 
+    /** Holds the controller mime-type for the D&D system. */
+    static const QString ControllerMimeType;
+    /** Holds the attachment mime-type for the D&D system. */
+    static const QString AttachmentMimeType;
+
     /** Constructs Storage settings page. */
     UIMachineSettingsStorage();
     /** Destructs Storage settings page. */
@@ -675,6 +680,15 @@ private slots:
     void sltHandleMouseMove(QMouseEvent *pEvent);
     /** Handles mouse-click @a pEvent. */
     void sltHandleMouseClick(QMouseEvent *pEvent);
+    /** Handles mouse-release @a pEvent. */
+    void sltHandleMouseRelease(QMouseEvent *pEvent);
+
+    /** Handles drag-enter @a pEvent. */
+    void sltHandleDragEnter(QDragEnterEvent *pEvent);
+    /** Handles drag-move @a pEvent. */
+    void sltHandleDragMove(QDragMoveEvent *pEvent);
+    /** Handles drag-drop @a pEvent. */
+    void sltHandleDragDrop(QDropEvent *pEvent);
 
 private:
 
@@ -788,6 +802,9 @@ private:
     bool  m_fPolished;
     /** Holds whether the loading is in progress. */
     bool  m_fLoadingInProgress;
+
+    /** Holds the last mouse-press position. */
+    QPoint  m_mousePressPosition;
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineStorage *m_pCache;

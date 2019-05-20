@@ -16,9 +16,12 @@
  */
 
 /* Qt includes: */
+#include <QDrag>
+#include <QDragMoveEvent>
 #include <QHeaderView>
 #include <QItemEditorFactory>
 #include <QMenu>
+#include <QMimeData>
 #include <QMouseEvent>
 #include <QScrollBar>
 #include <QStylePainter>
@@ -1958,7 +1961,7 @@ void StorageModel::moveAttachment(const QUuid &uAttId, const QUuid &uCtrOldId, c
         const int iNewCtrPosition = mRootItem->posOfChild(pNewItem);
 
         /* Then we have to make sure moved attachment is valid: */
-        if (enmDeviceType != KDeviceType_Null && !uMediumId.isNull())
+        if (enmDeviceType != KDeviceType_Null)
         {
             /* And create new attachment item finally: */
             QModelIndex newCtrIndex = index(iNewCtrPosition, 0, root());
@@ -2244,6 +2247,10 @@ private:
     UIMediumDeviceType m_type;
 };
 
+
+/* static */
+const QString UIMachineSettingsStorage::ControllerMimeType = QString("application/virtualbox;value=StorageControllerID");
+const QString UIMachineSettingsStorage::AttachmentMimeType = QString("application/virtualbox;value=StorageAttachmentID");
 
 UIMachineSettingsStorage::UIMachineSettingsStorage()
     : m_pModelStorage(0)
@@ -3430,6 +3437,9 @@ void UIMachineSettingsStorage::sltHandleDrawItemBranches(QPainter *pPainter, con
 
 void UIMachineSettingsStorage::sltHandleMouseMove(QMouseEvent *pEvent)
 {
+    /* Make sure event is valid: */
+    AssertPtrReturnVoid(pEvent);
+
     const QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
     const QRect indexRect = m_pTreeStorage->visualRect(index);
 
@@ -3513,10 +3523,50 @@ void UIMachineSettingsStorage::sltHandleMouseMove(QMouseEvent *pEvent)
     /* Default tool-tip: */
     if (m_pModelStorage->data(index, StorageModel::R_ToolTipType).value<StorageModel::ToolTipType>() != StorageModel::DefaultToolTip)
         m_pModelStorage->setData(index, StorageModel::DefaultToolTip, StorageModel::R_ToolTipType);
+
+    /* Check whether we should initiate dragging: */
+    if (   !m_mousePressPosition.isNull()
+        && QLineF(pEvent->screenPos(), m_mousePressPosition).length() >= QApplication::startDragDistance())
+    {
+        /* Forget last mouse press position: */
+        m_mousePressPosition = QPoint();
+
+        /* Check what item we are hovering currently: */
+        QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
+        AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
+        /* And make sure this is attachment item, we are supporting dragging for this kind only: */
+        AttachmentItem *pItemAttachment = qobject_cast<AttachmentItem*>(pItem);
+        if (pItemAttachment)
+        {
+            /* Initialize dragging: */
+            QDrag *pDrag = new QDrag(this);
+            if (pDrag)
+            {
+                /* Assign pixmap: */
+                pDrag->setPixmap(pItem->pixmap());
+                /* Prepare mime: */
+                QMimeData *pMimeData = new QMimeData;
+                if (pMimeData)
+                {
+                    pMimeData->setData(ControllerMimeType, pItemAttachment->parent()->id().toString().toLatin1());
+                    pMimeData->setData(AttachmentMimeType, pItemAttachment->id().toString().toLatin1());
+                    pDrag->setMimeData(pMimeData);
+                }
+                /* Start dragging: */
+                pDrag->exec();
+            }
+        }
+    }
 }
 
 void UIMachineSettingsStorage::sltHandleMouseClick(QMouseEvent *pEvent)
 {
+    /* Make sure event is valid: */
+    AssertPtrReturnVoid(pEvent);
+
+    /* Remember last mouse press position: */
+    m_mousePressPosition = pEvent->globalPos();
+
     const QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
     const QRect indexRect = m_pTreeStorage->visualRect(index);
 
@@ -3576,6 +3626,78 @@ void UIMachineSettingsStorage::sltHandleMouseClick(QMouseEvent *pEvent)
     }
 }
 
+void UIMachineSettingsStorage::sltHandleMouseRelease(QMouseEvent *)
+{
+    /* Forget last mouse press position: */
+    m_mousePressPosition = QPoint();
+}
+
+void UIMachineSettingsStorage::sltHandleDragEnter(QDragEnterEvent *pEvent)
+{
+    /* Make sure event is valid: */
+    AssertPtrReturnVoid(pEvent);
+
+    /* Accept event but not the proposed action: */
+    pEvent->accept();
+}
+
+void UIMachineSettingsStorage::sltHandleDragMove(QDragMoveEvent *pEvent)
+{
+    /* Make sure event is valid: */
+    AssertPtrReturnVoid(pEvent);
+    /* And mime-data is set: */
+    const QMimeData *pMimeData = pEvent->mimeData();
+    AssertPtrReturnVoid(pMimeData);
+
+    /* Make sure mime-data format is valid: */
+    if (   !pMimeData->hasFormat(UIMachineSettingsStorage::ControllerMimeType)
+        || !pMimeData->hasFormat(UIMachineSettingsStorage::AttachmentMimeType))
+        return;
+
+    /* Get controller id: */
+    const QString strControllerId = pMimeData->data(UIMachineSettingsStorage::ControllerMimeType);
+
+    /* Check what item we are hovering currently: */
+    QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
+    AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
+    /* And make sure this is controller item, we are supporting dropping for this kind only: */
+    ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
+    if (!pItemController || pItemController->id().toString() == strControllerId)
+        return;
+    /* Also make sure there is enough place for new attachment: */
+    const KStorageBus enmBus = pItemController->ctrBusType();
+    const int uMaxPortCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(enmBus);
+    const int uMaxDevicePerPortCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(enmBus);
+    const SlotsList usedSlots = pItemController->ctrUsedSlots();
+    if (usedSlots.size() >= uMaxPortCount * uMaxDevicePerPortCount)
+        return;
+
+    /* Accept drag-enter event: */
+    pEvent->acceptProposedAction();
+}
+
+void UIMachineSettingsStorage::sltHandleDragDrop(QDropEvent *pEvent)
+{
+    /* Make sure event is valid: */
+    AssertPtrReturnVoid(pEvent);
+    /* And mime-data is set: */
+    const QMimeData *pMimeData = pEvent->mimeData();
+    AssertPtrReturnVoid(pMimeData);
+
+    /* Check what item we are hovering currently: */
+    QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
+    AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
+    /* And make sure this is controller item, we are supporting dropping for this kind only: */
+    ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
+    if (pItemController)
+    {
+        /* Get controller/attachment ids: */
+        const QString strControllerId = pMimeData->data(UIMachineSettingsStorage::ControllerMimeType);
+        const QString strAttachmentId = pMimeData->data(UIMachineSettingsStorage::AttachmentMimeType);
+        m_pModelStorage->moveAttachment(strAttachmentId, strControllerId, pItemController->id());
+    }
+}
+
 void UIMachineSettingsStorage::prepare()
 {
     /* Apply UI decorations: */
@@ -3632,6 +3754,7 @@ void UIMachineSettingsStorage::prepareStorageTree()
         /* Configure tree-view: */
         mLsLeftPane->setBuddy(m_pTreeStorage);
         m_pTreeStorage->setMouseTracking(true);
+        m_pTreeStorage->setAcceptDrops(true);
         m_pTreeStorage->setContextMenuPolicy(Qt::CustomContextMenu);
 
         /* Create storage model: */
@@ -3857,10 +3980,18 @@ void UIMachineSettingsStorage::prepareConnections()
              this, SLOT(sltHandleDrawItemBranches(QPainter *, const QRect &, const QModelIndex &)));
     connect(m_pTreeStorage, SIGNAL(mouseMoved(QMouseEvent *)),
              this, SLOT(sltHandleMouseMove(QMouseEvent *)));
-    connect(m_pTreeStorage, SIGNAL(mousePressed(QMouseEvent *)),
-             this, SLOT(sltHandleMouseClick(QMouseEvent *)));
+    connect(m_pTreeStorage, &QITreeView::mousePressed,
+            this, &UIMachineSettingsStorage::sltHandleMouseClick);
+    connect(m_pTreeStorage, &QITreeView::mouseReleased,
+            this, &UIMachineSettingsStorage::sltHandleMouseRelease);
     connect(m_pTreeStorage, SIGNAL(mouseDoubleClicked(QMouseEvent *)),
              this, SLOT(sltHandleMouseClick(QMouseEvent *)));
+    connect(m_pTreeStorage, &QITreeView::dragEntered,
+            this, &UIMachineSettingsStorage::sltHandleDragEnter);
+    connect(m_pTreeStorage, &QITreeView::dragMoved,
+            this, &UIMachineSettingsStorage::sltHandleDragMove);
+    connect(m_pTreeStorage, &QITreeView::dragDropped,
+            this, &UIMachineSettingsStorage::sltHandleDragDrop);
 
     /* Create model: */
     connect(m_pModelStorage, SIGNAL(rowsInserted(const QModelIndex &, int, int)),
