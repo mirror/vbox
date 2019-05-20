@@ -68,6 +68,7 @@ struct UIDataSettingsMachineNetworkAdapter
         , m_strNATNetworkName(QString())
         , m_strMACAddress(QString())
         , m_fCableConnected(false)
+        , m_enmRestrictedNetworkAttachmentTypes(UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
     {}
 
     /** Returns whether the @a other passed data is equal to this one. */
@@ -234,6 +235,7 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     : QIWithRetranslateUI<QWidget>(0)
     , m_pParent(pParent)
     , m_iSlot(-1)
+    , m_enmRestrictedNetworkAttachmentTypes(UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid)
 {
     /* Apply UI decorations: */
     Ui::UIMachineSettingsNetwork::setupUi(this);
@@ -309,8 +311,11 @@ void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMach
         m_portForwardingRules << adapterCache.child(i).base();
     /* Cache the restricted metwork attachment types to avoid re-reading them from the extra data: */
     m_enmRestrictedNetworkAttachmentTypes = oldAdapterData.m_enmRestrictedNetworkAttachmentTypes;
-    /* Re-apply language settings: */
-    retranslateUi();
+
+    /* Repopulate combo-boxes content: */
+    populateComboboxes();
+    /* Reapply attachment info: */
+    sltHandleAttachmentTypeChange();
 }
 
 void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetworkAdapter &adapterCache)
