@@ -942,11 +942,11 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
         LogRel(("  %sEPTP index                 = %#RX16\n",   pszPrefix, pVmcs->u16EptpIndex));
 
         /* 32-bit. */
-        LogRel(("  %sPinCtls                    = %#RX32\n",   pszPrefix, pVmcs->u32PinCtls));
-        LogRel(("  %sProcCtls                   = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls));
-        LogRel(("  %sProcCtls2                  = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls2));
-        LogRel(("  %sExitCtls                   = %#RX32\n",   pszPrefix, pVmcs->u32ExitCtls));
-        LogRel(("  %sEntryCtls                  = %#RX32\n",   pszPrefix, pVmcs->u32EntryCtls));
+        LogRel(("  %sPin ctls                   = %#RX32\n",   pszPrefix, pVmcs->u32PinCtls));
+        LogRel(("  %sProcessor ctls             = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls));
+        LogRel(("  %sSecondary processor ctls   = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls2));
+        LogRel(("  %sVM-exit ctls               = %#RX32\n",   pszPrefix, pVmcs->u32ExitCtls));
+        LogRel(("  %sVM-entry ctls              = %#RX32\n",   pszPrefix, pVmcs->u32EntryCtls));
         LogRel(("  %sException bitmap           = %#RX32\n",   pszPrefix, pVmcs->u32XcptBitmap));
         LogRel(("  %sPage-fault mask            = %#RX32\n",   pszPrefix, pVmcs->u32XcptPFMask));
         LogRel(("  %sPage-fault match           = %#RX32\n",   pszPrefix, pVmcs->u32XcptPFMatch));
@@ -965,7 +965,7 @@ VMM_INT_DECL(void) HMDumpHwvirtVmxState(PVMCPU pVCpu)
             LogRel(("    %sError-code valid           = %RTbool\n",  pszPrefix, VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(fInfo)));
         }
         LogRel(("  %sVM-entry xcpt error-code   = %#RX32\n",   pszPrefix, pVmcs->u32EntryXcptErrCode));
-        LogRel(("  %sVM-entry instruction len   = %u bytes\n", pszPrefix, pVmcs->u32EntryInstrLen));
+        LogRel(("  %sVM-entry instr length      = %u byte(s)\n", pszPrefix, pVmcs->u32EntryInstrLen));
         LogRel(("  %sTPR threshold              = %#RX32\n",   pszPrefix, pVmcs->u32TprThreshold));
         LogRel(("  %sPLE gap                    = %#RX32\n",   pszPrefix, pVmcs->u32PleGap));
         LogRel(("  %sPLE window                 = %#RX32\n",   pszPrefix, pVmcs->u32PleWindow));

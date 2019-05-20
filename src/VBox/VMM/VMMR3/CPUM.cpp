@@ -3789,11 +3789,11 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
         pHlp->pfnPrintf(pHlp, "  %sEPTP index                 = %#RX16\n",   pszPrefix, pVmcs->u16EptpIndex);
 
         /* 32-bit. */
-        pHlp->pfnPrintf(pHlp, "  %sPinCtls                    = %#RX32\n",   pszPrefix, pVmcs->u32PinCtls);
-        pHlp->pfnPrintf(pHlp, "  %sProcCtls                   = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls);
-        pHlp->pfnPrintf(pHlp, "  %sProcCtls2                  = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls2);
-        pHlp->pfnPrintf(pHlp, "  %sExitCtls                   = %#RX32\n",   pszPrefix, pVmcs->u32ExitCtls);
-        pHlp->pfnPrintf(pHlp, "  %sEntryCtls                  = %#RX32\n",   pszPrefix, pVmcs->u32EntryCtls);
+        pHlp->pfnPrintf(pHlp, "  %sPin ctls                   = %#RX32\n",   pszPrefix, pVmcs->u32PinCtls);
+        pHlp->pfnPrintf(pHlp, "  %sProcessor ctls             = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls);
+        pHlp->pfnPrintf(pHlp, "  %sSecondary processor ctls   = %#RX32\n",   pszPrefix, pVmcs->u32ProcCtls2);
+        pHlp->pfnPrintf(pHlp, "  %sVM-exit ctls               = %#RX32\n",   pszPrefix, pVmcs->u32ExitCtls);
+        pHlp->pfnPrintf(pHlp, "  %sVM-entry ctls              = %#RX32\n",   pszPrefix, pVmcs->u32EntryCtls);
         pHlp->pfnPrintf(pHlp, "  %sException bitmap           = %#RX32\n",   pszPrefix, pVmcs->u32XcptBitmap);
         pHlp->pfnPrintf(pHlp, "  %sPage-fault mask            = %#RX32\n",   pszPrefix, pVmcs->u32XcptPFMask);
         pHlp->pfnPrintf(pHlp, "  %sPage-fault match           = %#RX32\n",   pszPrefix, pVmcs->u32XcptPFMatch);
@@ -3812,7 +3812,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
             pHlp->pfnPrintf(pHlp, "    %sError-code valid           = %RTbool\n", pszPrefix, VMX_ENTRY_INT_INFO_IS_ERROR_CODE_VALID(fInfo));
         }
         pHlp->pfnPrintf(pHlp, "  %sVM-entry xcpt error-code   = %#RX32\n",   pszPrefix, pVmcs->u32EntryXcptErrCode);
-        pHlp->pfnPrintf(pHlp, "  %sVM-entry instruction len   = %u bytes\n", pszPrefix, pVmcs->u32EntryInstrLen);
+        pHlp->pfnPrintf(pHlp, "  %sVM-entry instr length      = %u byte(s)\n", pszPrefix, pVmcs->u32EntryInstrLen);
         pHlp->pfnPrintf(pHlp, "  %sTPR threshold              = %#RX32\n",   pszPrefix, pVmcs->u32TprThreshold);
         pHlp->pfnPrintf(pHlp, "  %sPLE gap                    = %#RX32\n",   pszPrefix, pVmcs->u32PleGap);
         pHlp->pfnPrintf(pHlp, "  %sPLE window                 = %#RX32\n",   pszPrefix, pVmcs->u32PleWindow);
