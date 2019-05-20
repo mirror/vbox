@@ -18,9 +18,7 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QFile>
-#include <QMenu>
 #include <QPushButton>
-#include <QSplitter>
 #include <QXmlStreamReader>
 #include <QVBoxLayout>
 
@@ -34,6 +32,24 @@
 #include "CGuest.h"
 #include "CEventSource.h"
 
+struct SoftKeyboardKey
+{
+    int      m_iWidth;
+    QString  m_strLabel;
+    LONG     m_scanCode;
+};
+
+struct SoftKeyboardRow
+{
+    int m_iHeight;
+    QList<SoftKeyboardKey> m_keys;
+};
+
+struct SoftKeyboardLayout
+{
+    QList<SoftKeyboardRow> m_rows;
+};
+
 /*********************************************************************************************************************************
 *   UIKeyboardLayoutReader definition.                                                                                  *
 *********************************************************************************************************************************/
@@ -43,12 +59,12 @@ class UIKeyboardLayoutReader
 
 public:
 
-    bool parseXMLFile(const QString &strFileName);
+    bool parseXMLFile(const QString &strFileName, SoftKeyboardLayout &layout);
 
 private:
 
-    bool parseRow();
-    bool parseKey();
+    bool parseRow(SoftKeyboardLayout &layout);
+    bool parseKey(SoftKeyboardRow &row);
     QXmlStreamReader m_xmlReader;
 };
 
@@ -63,14 +79,23 @@ class UISoftKeyboardKey : public QPushButton
 
 public:
 
-    UISoftKeyboardKey(QWidget *pParent);
+    UISoftKeyboardKey(QWidget *pParent = 0);
+    void setAspectRatio(float fRatio);
+
+protected:
+
+    virtual void resizeEvent(QResizeEvent *pEvent);
+
+private:
+
+    float m_fAspectRatio;
 };
 
 /*********************************************************************************************************************************
 *   UIKeyboardLayoutReader implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-bool UIKeyboardLayoutReader::parseXMLFile(const QString &strFileName)
+bool UIKeyboardLayoutReader::parseXMLFile(const QString &strFileName, SoftKeyboardLayout &layout)
 {
     QFile xmlFile(strFileName);
     if (!xmlFile.exists())
@@ -87,7 +112,7 @@ bool UIKeyboardLayoutReader::parseXMLFile(const QString &strFileName)
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "row")
-            parseRow();
+            parseRow(layout);
         else
             m_xmlReader.skipCurrentElement();
     }
@@ -95,30 +120,37 @@ bool UIKeyboardLayoutReader::parseXMLFile(const QString &strFileName)
     return true;
 }
 
-bool UIKeyboardLayoutReader::parseRow()
+bool UIKeyboardLayoutReader::parseRow(SoftKeyboardLayout &layout)
 {
+    layout.m_rows.append(SoftKeyboardRow());
+    SoftKeyboardRow &row = layout.m_rows.last();
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "key")
-            parseKey();
+            parseKey(row);
+        else if (m_xmlReader.name() == "height")
+            row.m_iHeight = m_xmlReader.readElementText().toInt();
         else
             m_xmlReader.skipCurrentElement();
     }
-
     return true;
 }
 
-bool UIKeyboardLayoutReader::parseKey()
+bool UIKeyboardLayoutReader::parseKey(SoftKeyboardRow &row)
 {
+    row.m_keys.append(SoftKeyboardKey());
+    SoftKeyboardKey &key = row.m_keys.last();
     while (m_xmlReader.readNextStartElement())
     {
-
-        // if (m_xmlReader.name() == "key")
-        //     parseKey();
-        // else
+        if (m_xmlReader.name() == "width")
+            key.m_iWidth = m_xmlReader.readElementText().toInt();
+        else if (m_xmlReader.name() == "label")
+            key.m_strLabel = m_xmlReader.readElementText();
+        else if (m_xmlReader.name() == "scancode")
+            key.m_scanCode = m_xmlReader.readElementText().toInt();
+        else
             m_xmlReader.skipCurrentElement();
     }
-
     return true;
 }
 
@@ -126,9 +158,23 @@ bool UIKeyboardLayoutReader::parseKey()
 *   UISoftKeyboardKey implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UISoftKeyboardKey::UISoftKeyboardKey(QWidget *pParent)
+UISoftKeyboardKey::UISoftKeyboardKey(QWidget *pParent /* = 0 */)
     :QPushButton(pParent)
+    , m_fAspectRatio(1.f)
 {
+}
+
+void UISoftKeyboardKey::setAspectRatio(float fRatio)
+{
+    m_fAspectRatio = fRatio;
+}
+
+void UISoftKeyboardKey::resizeEvent(QResizeEvent *pEvent)
+{
+    // QWidget::resize(qMin(pEvent->size().width(),pEvent->size().height()),
+    //                 qMin(pEvent->size().width(),pEvent->size().height()));
+
+    QPushButton::resizeEvent(pEvent);
 }
 
 /*********************************************************************************************************************************
@@ -140,12 +186,13 @@ UISoftKeyboard::UISoftKeyboard(EmbedTo /* enmEmbedding */,
                                bool fShowToolbar /* = false */)
     :QIWithRetranslateUI<QWidget>(pParent)
     , m_pMainLayout(0)
+    , m_pContainerLayout(0)
     , m_pToolBar(0)
     , m_fShowToolbar(fShowToolbar)
     , m_strMachineName(strMachineName)
 {
-    parseLayout();
     prepareObjects();
+    parseLayout();
     prepareConnections();
     prepareToolBar();
     loadSettings();
@@ -161,15 +208,33 @@ void UISoftKeyboard::retranslateUi()
 {
 }
 
+void UISoftKeyboard::resizeEvent(QResizeEvent *pEvent)
+{
+    QIWithRetranslateUI<QWidget>::resizeEvent(pEvent);
+}
+
 void UISoftKeyboard::prepareObjects()
 {
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     /* Create layout: */
-    m_pMainLayout = new QVBoxLayout(this);
+
+    m_pMainLayout = new QHBoxLayout(this);
     if (!m_pMainLayout)
         return;
+    QWidget *pContainerWidget = new QWidget;
+    if (!pContainerWidget)
+        return;
+    pContainerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    pContainerWidget->setStyleSheet("background-color:red;");
+
+    m_pMainLayout->addWidget(pContainerWidget);
+
+    m_pContainerLayout = new QVBoxLayout;
+    m_pContainerLayout->setSpacing(0);
+    pContainerWidget->setLayout(m_pContainerLayout);
 
     /* Configure layout: */
-    m_pMainLayout->setSpacing(0);
+
 }
 
 void UISoftKeyboard::prepareConnections()
@@ -190,9 +255,37 @@ void UISoftKeyboard::loadSettings()
 
 void UISoftKeyboard::parseLayout()
 {
+    if (!m_pContainerLayout)
+        return;
+
     UIKeyboardLayoutReader reader;
-    if (!reader.parseXMLFile(":/us_layout.xml"))
+    SoftKeyboardLayout layout;
+    if (!reader.parseXMLFile(":/us_layout.xml", layout))
+        return;
+
+    for (int i = 0; i < layout.m_rows.size(); ++i)
     {
+        QHBoxLayout *pRowLayout = new QHBoxLayout;
+        pRowLayout->setSpacing(0);
+        for (int j = 0; j < layout.m_rows[i].m_keys.size(); ++j)
+        {
+            UISoftKeyboardKey *pKey = new UISoftKeyboardKey;
+            pRowLayout->addWidget(pKey);
+            //m_pContainerLayout->addWidget(pKey, i, j);
+            //pKey->setFixedSize(layout.m_rows[i].m_keys[j].m_iWidth, layout.m_rows[i].m_iHeight);
+            pKey->setText(layout.m_rows[i].m_keys[j].m_strLabel);
+            //if (j != 3)
+
+
+            // else
+            //m_pContainerLayout->setColumnStretch(j, 0);
+            //m_pContainerLayout->addSpacing(2);
+            // QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
+            // m_pContainerLayout->addItem(pSpacer);
+        }
+        //pRowLayout->addStretch(1);
+        //m_pContainerLayout->setColumnStretch(layout.m_rows[i].m_keys.size()-1, 1);
+        m_pContainerLayout->addLayout(pRowLayout);
     }
 }
 

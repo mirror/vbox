@@ -3,9 +3,46 @@
     <row>
         <height>50</height>
         <key>
-            <width>30</width>
+            <width>50</width>
             <label>Key1</label>
             <scancode>X11</scancode>
         </key>
+        <key>
+            <width>150</width>
+            <label>Key2</label>
+            <scancode>X11</scancode>
+        </key>
+        <key>
+            <width>20</width>
+            <label>Key3</label>
+            <scancode>X11</scancode>
+        </key>
+        <key>
+            <width>50</width>
+            <label>Key4</label>
+            <scancode>X11</scancode>
+        </key>
+
     </row>
+
+    <row>
+        <height>30</height>
+        <key>
+            <width>150</width>
+            <label>Key2</label>
+            <scancode>X11</scancode>
+        </key>
+        <key>
+            <width>20</width>
+            <label>Key3</label>
+            <scancode>X11</scancode>
+        </key>
+        <key>
+            <width>50</width>
+            <label>Key4</label>
+            <scancode>X11</scancode>
+        </key>
+
+    </row>
+
 </layout>
