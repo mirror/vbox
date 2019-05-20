@@ -33,21 +33,40 @@
 
 
 
-/** @name Hacks for using the better CcCoherencyFlushAndPurgeCache when
- *        available (>= Windows 7) and avoid flushing+puring twice.
+/** @name HACK ALERT! Using the better CcCoherencyFlushAndPurgeCache when
+ *        available (>= Windows 7) and avoid flushing+purging cache twice.
  *
- * We change the cache flushing and purging related imports from  the write.obj
+ * We change the cache flushing and purging related imports from the write.obj
  * and read.obj files in the rdbsslib.lib to import so these gets redirected
  * here instead of going directly to ntoskrnl.  We will use
  * CcCoherencyFlushAndPurgeCache when present, and on older systems there will
  * be no change.  This does however save us from doing double flushing and
  * purging on newer systems.
  *
+ * If we don't use CcCoherencyFlushAndPurgeCache we end up not seeing newly
+ * written data in memory mappings, and similarlly not seeing data from freshly
+ * dirtied (but as yet unflushed) memory mapping pages when reading.  (Both
+ * these scenarios are tested by FsPerf --mmap.)
+ *
  * See VBoxEditCoffLib and the Makefile.kmk for the rest of the puzzle.
  *
+ * @todo investigate whether we could do it the same way as we do on linux,
+ *       where we iterrogate the cache and use cached data when memory mappings
+ *       are active.  Only troubles are:
+ *
+ *          1. Don't know how to find out whether we've got memory mappings.
+ *
+ *          2. Don't know how to detect dirty pages (we should only read
+ *             from dirty ones).
+ *
+ *       To really explore this, it would be best to introduce a caching mode
+ *       mount parameter (or something) analogous to what we have on linux.  In
+ *       the relaxed mode, we could get away with more as users could always
+ *       disable caching...
  * @{
  */
 
+/** For reads. */
 static VOID NTAPI vbsfNtReadCcFlushCache(PSECTION_OBJECT_POINTERS pSectObjPtrs, PLARGE_INTEGER poffFlush, ULONG cbFlush,
                                          PIO_STATUS_BLOCK pIos)
 {
@@ -57,6 +76,13 @@ static VOID NTAPI vbsfNtReadCcFlushCache(PSECTION_OBJECT_POINTERS pSectObjPtrs, 
         CcFlushCache(pSectObjPtrs, poffFlush, cbFlush, pIos);
 }
 
+
+/**
+ * For writes with mmapping/caching section, called before the purging.
+ *
+ * This does both flushing and puring when CcCoherencyFlushAndPurgeCache is
+ * available.
+ */
 static VOID NTAPI vbsfNtWriteCcFlushCache(PSECTION_OBJECT_POINTERS pSectObjPtrs, PLARGE_INTEGER poffFlush, ULONG cbFlush,
                                           PIO_STATUS_BLOCK pIos)
 {
@@ -67,6 +93,11 @@ static VOID NTAPI vbsfNtWriteCcFlushCache(PSECTION_OBJECT_POINTERS pSectObjPtrs,
 }
 
 
+/**
+ * For writes with mmapping/caching section, called to purge after flushing.
+ *
+ * We translate this to a no-op when CcCoherencyFlushAndPurgeCache is available.
+ */
 static BOOLEAN NTAPI vbsfNtWriteCcPurgeCacheSection(PSECTION_OBJECT_POINTERS pSectObjPtrs, PLARGE_INTEGER poffPurge,ULONG cbPurge,
 #if (NTDDI_VERSION >= NTDDI_VISTA)
                                                     ULONG fUninitializeCacheMaps)
@@ -87,8 +118,11 @@ static BOOLEAN NTAPI vbsfNtWriteCcPurgeCacheSection(PSECTION_OBJECT_POINTERS pSe
 }
 
 extern "C" {
+/** This is what read.obj gets instead of __imp_CcFlushCache. */
 decltype(CcFlushCache)        *g_pfnRdFlushCache        = vbsfNtReadCcFlushCache;
+/** This is what write.obj gets instead of __imp_CcFlushCache. */
 decltype(CcFlushCache)        *g_pfnWrFlushCache        = vbsfNtWriteCcFlushCache;
+/** This is what write.obj gets instead of __imp_CcPurgeCacheSection. */
 decltype(CcPurgeCacheSection) *g_pfnWrPurgeCacheSection = vbsfNtWriteCcPurgeCacheSection;
 }
 
