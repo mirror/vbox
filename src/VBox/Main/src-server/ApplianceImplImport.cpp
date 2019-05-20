@@ -1403,7 +1403,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
 //          i_searchUniqueVMName(strVMName);//internally calls setError() in the case of absent the registered VM with such name
 
             ComPtr<IMachine> machine;
-            hrc = mVirtualBox->FindMachine(Bstr(strVMName.c_str()).raw(), machine.asOutParam()); 
+            hrc = mVirtualBox->FindMachine(Bstr(strVMName.c_str()).raw(), machine.asOutParam());
             if (SUCCEEDED(hrc))
             {
                 //what to do? create a new name from the old one with some suffix?
@@ -1421,7 +1421,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_CloudInstanceId)//aVBoxValues is set in this #define
             if (aVBoxValues.size() == 0)
             {
-                hrc = setErrorVrc(VERR_NOT_FOUND, "%s: Cloud Instance Id wasn't found", __FUNCTION__);          
+                hrc = setErrorVrc(VERR_NOT_FOUND, "%s: Cloud Instance Id wasn't found", __FUNCTION__);
                 break;
             }
             strInsId = aVBoxValues[0];
@@ -1460,13 +1460,13 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
         m->state = Data::ApplianceIdle;
         return hrc;
     }
-    
+
     if (FAILED(hrc))
     {
         HRESULT temp_hrc = hrc;//save the original result
         Utf8Str generalRollBackErrorMessage("Rollback action for Import Cloud operation failed."
                                             "Some leavings may exist on the local disk or in the Cloud.");
-        /* 
+        /*
          * Roll-back actions.
          * we finish here if:
          * 1. The getting the object form the Cloud has been failed.
@@ -1651,7 +1651,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                     GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_OS)//aVBoxValues is set in this #define
                     if (aVBoxValues.size() != 0)
                         strOsType = aVBoxValues[0];
-                    vsys.strTypeVBox = strOsType;      
+                    vsys.strTypeVBox = strOsType;
                     LogRel(("%s: OS type is %s\n", __FUNCTION__, strOsType.c_str()));
                 }
 
@@ -1965,8 +1965,8 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             LogRel(("%s: Cloud import (local phase): original error was \'%s\'.\n", __FUNCTION__, strLastActualErrorDesc.c_str()));
 
             /* What to do here?
-             * Delete or not the downloaded object? 
-             * For now: 
+             * Delete or not the downloaded object?
+             * For now:
              *  - check the list of imported images, detach them and next delete.
              *  - check the registration of created VM and delete one.
              *  - check some other leavings if they may exist and delete them too.
@@ -1975,7 +1975,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
             /* Small explanation here.
              * After adding extracted files into the actual VSD the returned list will contain not only the
              * record about the downloaded object but also the records about the extracted files from this object.
-             * It's needed to go through this list to find the record about the downloaded object. 
+             * It's needed to go through this list to find the record about the downloaded object.
              * But it was the first record added into the list, so aVBoxValues[0] should be correct here.
              */
             GET_VSD_DESCRIPTION_BY_TYPE(VirtualSystemDescriptionType_HardDiskImage)//aVBoxValues is set in this #define
