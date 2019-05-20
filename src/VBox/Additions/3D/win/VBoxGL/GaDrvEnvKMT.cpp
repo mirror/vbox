@@ -1052,7 +1052,8 @@ GaDrvEnvKmt::gaEnvRegionDestroy(void *pvEnv,
 
 GaDrvEnvKmt::GaDrvEnvKmt()
     :
-    mContextTree(0)
+    mContextTree(0),
+    mSurfaceTree(0)
 {
     RT_ZERO(mKmtCallbacks);
     RT_ZERO(mHWInfo);
