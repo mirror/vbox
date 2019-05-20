@@ -586,7 +586,7 @@ ULONG RootItem::childCount (KStorageBus aBus) const
     ULONG result = 0;
     foreach (AbstractItem *item, mControllers)
     {
-        ControllerItem *ctrItem = static_cast <ControllerItem*> (item);
+        ControllerItem *ctrItem = qobject_cast<ControllerItem*>(item);
         if (ctrItem->ctrBusType() == aBus)
             ++ result;
     }
@@ -738,7 +738,7 @@ uint ControllerItem::portCount()
     /* Recalculate actual port count: */
     for (int i = 0; i < mAttachments.size(); ++i)
     {
-        AttachmentItem *pItem = static_cast<AttachmentItem*>(mAttachments[i]);
+        AttachmentItem *pItem = qobject_cast<AttachmentItem*>(mAttachments.at(i));
         if (mPortCount < (uint)pItem->attSlot().port + 1)
             mPortCount = (uint)pItem->attSlot().port + 1;
     }
@@ -795,7 +795,7 @@ SlotsList ControllerItem::ctrUsedSlots() const
 {
     SlotsList usedSlots;
     for (int i = 0; i < mAttachments.size(); ++ i)
-        usedSlots << static_cast <AttachmentItem*> (mAttachments [i])->attSlot();
+        usedSlots << qobject_cast<AttachmentItem*>(mAttachments.at(i))->attSlot();
     return usedSlots;
 }
 
@@ -809,7 +809,7 @@ QList<QUuid> ControllerItem::attachmentIDs(KDeviceType enmType /* = KDeviceType_
     QList<QUuid> ids;
     foreach (AbstractItem *pItem, mAttachments)
     {
-        AttachmentItem *pItemAttachment = static_cast<AttachmentItem*>(pItem);
+        AttachmentItem *pItemAttachment = qobject_cast<AttachmentItem*>(pItem);
         if (   enmType == KDeviceType_Null
             || pItemAttachment->attDeviceType() == enmType)
             ids << pItem->id();
@@ -901,7 +901,7 @@ StorageSlot AttachmentItem::attSlot() const
 
 SlotsList AttachmentItem::attSlots() const
 {
-    ControllerItem *ctr = static_cast<ControllerItem*>(m_pParentItem);
+    ControllerItem *ctr = qobject_cast<ControllerItem*>(m_pParentItem);
 
     /* Filter list from used slots */
     SlotsList allSlots (ctr->ctrAllSlots());
@@ -920,7 +920,7 @@ KDeviceType AttachmentItem::attDeviceType() const
 
 DeviceTypeList AttachmentItem::attDeviceTypes() const
 {
-    return static_cast<ControllerItem*>(m_pParentItem)->ctrDeviceTypeList();
+    return qobject_cast<ControllerItem*>(m_pParentItem)->ctrDeviceTypeList();
 }
 
 QUuid AttachmentItem::attMediumId() const
@@ -1263,7 +1263,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             {
                 ItemState state = State_DefaultItem;
                 if (hasChildren (aIndex))
-                    if (QTreeView *view = qobject_cast <QTreeView*> (QObject::parent()))
+                    if (QTreeView *view = qobject_cast<QTreeView*>(QObject::parent()))
                         state = view->isExpanded (aIndex) ? State_ExpandedItem : State_CollapsedItem;
                 return item->pixmap (state);
             }
@@ -1318,49 +1318,49 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         case R_IsMoreIDEControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
-                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_IDE) <
+                   (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_IDE) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_IDE));
         }
         case R_IsMoreSATAControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
-                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SATA) <
+                   (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SATA) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SATA));
         }
         case R_IsMoreSCSIControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
-                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SCSI) <
+                   (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SCSI) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SCSI));
         }
         case R_IsMoreFloppyControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
-                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_Floppy) <
+                   (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_Floppy) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_Floppy));
         }
         case R_IsMoreSASControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
-                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SAS) <
+                   (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SAS) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SAS));
         }
         case R_IsMoreUSBControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
-                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_USB) <
+                   (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_USB) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_USB));
         }
         case R_IsMoreNVMeControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
-                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_PCIe) <
+                   (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_PCIe) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_PCIe));
         }
         case R_IsMoreVirtioSCSIControllersPossible:
         {
             return (m_configurationAccessLevel == ConfigurationAccessLevel_Full) &&
-                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_VirtioSCSI) <
+                   (qobject_cast<RootItem*>(mRootItem)->childCount(KStorageBus_VirtioSCSI) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_VirtioSCSI));
         }
         case R_IsMoreAttachmentsPossible:
@@ -1369,7 +1369,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             {
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
                 {
-                    ControllerItem *ctr = static_cast <ControllerItem*> (item);
+                    ControllerItem *ctr = qobject_cast<ControllerItem*>(item);
                     CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
                     const bool fIsMoreAttachmentsPossible = (ULONG)rowCount(aIndex) <
                                                             (sp.GetMaxPortCountForStorageBus(ctr->ctrBusType()) *
@@ -1405,14 +1405,14 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
-                    return static_cast <ControllerItem*> (item)->oldCtrName();
+                    return qobject_cast<ControllerItem*>(item)->oldCtrName();
             return QString();
         }
         case R_CtrName:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
-                    return static_cast <ControllerItem*> (item)->ctrName();
+                    return qobject_cast<ControllerItem*>(item)->ctrName();
             return QString();
         }
         case R_CtrType:
@@ -1420,7 +1420,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             QVariant result (QVariant::fromValue (KStorageControllerType_Null));
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
-                    result.setValue (static_cast <ControllerItem*> (item)->ctrType());
+                    result.setValue (qobject_cast<ControllerItem*>(item)->ctrType());
             return result;
         }
         case R_CtrTypes:
@@ -1428,7 +1428,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             QVariant result (QVariant::fromValue (ControllerTypeList()));
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
-                    result.setValue (static_cast <ControllerItem*> (item)->ctrTypes());
+                    result.setValue (qobject_cast<ControllerItem*>(item)->ctrTypes());
             return result;
         }
         case R_CtrDevices:
@@ -1436,7 +1436,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             QVariant result (QVariant::fromValue (DeviceTypeList()));
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
-                    result.setValue (static_cast <ControllerItem*> (item)->ctrDeviceTypeList());
+                    result.setValue (qobject_cast<ControllerItem*>(item)->ctrDeviceTypeList());
             return result;
         }
         case R_CtrBusType:
@@ -1444,7 +1444,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             QVariant result (QVariant::fromValue (KStorageBus_Null));
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
-                    result.setValue (static_cast <ControllerItem*> (item)->ctrBusType());
+                    result.setValue (qobject_cast<ControllerItem*>(item)->ctrBusType());
             return result;
         }
         case R_CtrBusTypes:
@@ -1452,28 +1452,28 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             QVariant result(QVariant::fromValue(ControllerBusList()));
             if (AbstractItem *pItem = static_cast<AbstractItem*>(aIndex.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
-                    result.setValue(static_cast<ControllerItem*>(pItem)->ctrBusTypes());
+                    result.setValue(qobject_cast<ControllerItem*>(pItem)->ctrBusTypes());
             return result;
         }
         case R_CtrPortCount:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
-                    return static_cast <ControllerItem*> (item)->portCount();
+                    return qobject_cast<ControllerItem*>(item)->portCount();
             return 0;
         }
         case R_CtrMaxPortCount:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
-                    return static_cast <ControllerItem*> (item)->maxPortCount();
+                    return qobject_cast<ControllerItem*>(item)->maxPortCount();
             return 0;
         }
         case R_CtrIoCache:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
-                    return static_cast <ControllerItem*> (item)->ctrUseIoCache();
+                    return qobject_cast<ControllerItem*>(item)->ctrUseIoCache();
             return false;
         }
 
@@ -1482,7 +1482,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             QVariant result (QVariant::fromValue (StorageSlot()));
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    result.setValue (static_cast <AttachmentItem*> (item)->attSlot());
+                    result.setValue(qobject_cast<AttachmentItem*>(item)->attSlot());
             return result;
         }
         case R_AttSlots:
@@ -1490,7 +1490,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             QVariant result (QVariant::fromValue (SlotsList()));
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    result.setValue (static_cast <AttachmentItem*> (item)->attSlots());
+                    result.setValue(qobject_cast<AttachmentItem*>(item)->attSlots());
             return result;
         }
         case R_AttDevice:
@@ -1498,98 +1498,98 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             QVariant result (QVariant::fromValue (KDeviceType_Null));
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    result.setValue (static_cast <AttachmentItem*> (item)->attDeviceType());
+                    result.setValue(qobject_cast<AttachmentItem*>(item)->attDeviceType());
             return result;
         }
         case R_AttMediumId:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attMediumId();
+                    return qobject_cast<AttachmentItem*>(item)->attMediumId();
             return QUuid();
         }
         case R_AttIsHostDrive:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attIsHostDrive();
+                    return qobject_cast<AttachmentItem*>(item)->attIsHostDrive();
             return false;
         }
         case R_AttIsPassthrough:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attIsPassthrough();
+                    return qobject_cast<AttachmentItem*>(item)->attIsPassthrough();
             return false;
         }
         case R_AttIsTempEject:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attIsTempEject();
+                    return qobject_cast<AttachmentItem*>(item)->attIsTempEject();
             return false;
         }
         case R_AttIsNonRotational:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attIsNonRotational();
+                    return qobject_cast<AttachmentItem*>(item)->attIsNonRotational();
             return false;
         }
         case R_AttIsHotPluggable:
         {
             if (AbstractItem *item = static_cast<AbstractItem*>(aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast<AttachmentItem*>(item)->attIsHotPluggable();
+                    return qobject_cast<AttachmentItem*>(item)->attIsHotPluggable();
             return false;
         }
         case R_AttSize:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attSize();
+                    return qobject_cast<AttachmentItem*>(item)->attSize();
             return QString();
         }
         case R_AttLogicalSize:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attLogicalSize();
+                    return qobject_cast<AttachmentItem*>(item)->attLogicalSize();
             return QString();
         }
         case R_AttLocation:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attLocation();
+                    return qobject_cast<AttachmentItem*>(item)->attLocation();
             return QString();
         }
         case R_AttFormat:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attFormat();
+                    return qobject_cast<AttachmentItem*>(item)->attFormat();
             return QString();
         }
         case R_AttDetails:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attDetails();
+                    return qobject_cast<AttachmentItem*>(item)->attDetails();
             return QString();
         }
         case R_AttUsage:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast <AttachmentItem*> (item)->attUsage();
+                    return qobject_cast<AttachmentItem*>(item)->attUsage();
             return QString();
         }
         case R_AttEncryptionPasswordID:
         {
             if (AbstractItem *pItem = static_cast<AbstractItem*>(aIndex.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
-                    return static_cast<AttachmentItem*>(pItem)->attEncryptionPasswordID();
+                    return qobject_cast<AttachmentItem*>(pItem)->attEncryptionPasswordID();
             return QString();
         }
         case R_Margin:
@@ -1686,7 +1686,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
                 {
-                    static_cast <ControllerItem*> (item)->setCtrName (aValue.toString());
+                    qobject_cast<ControllerItem*>(item)->setCtrName(aValue.toString());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1698,7 +1698,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                 {
                     /* Acquire controller item and requested storage bus type: */
-                    ControllerItem *pItemController = static_cast<ControllerItem*>(pItem);
+                    ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
                     const KStorageBus enmNewCtrBusType = aValue.value<KStorageBus>();
 
                     /* PCIe devices allows for hard-drives attachments only,
@@ -1737,7 +1737,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                     /* Make sure each of remaining attachments has valid slot: */
                     foreach (AbstractItem *pChildItem, pItemController->attachments())
                     {
-                        AttachmentItem *pChildItemAttachment = static_cast<AttachmentItem*>(pChildItem);
+                        AttachmentItem *pChildItemAttachment = qobject_cast<AttachmentItem*>(pChildItem);
                         const SlotsList availableSlots = pChildItemAttachment->attSlots();
                         const StorageSlot currentSlot = pChildItemAttachment->attSlot();
                         if (!availableSlots.isEmpty() && !availableSlots.contains(currentSlot))
@@ -1754,7 +1754,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
                 {
-                    static_cast <ControllerItem*> (item)->setCtrType (aValue.value <KStorageControllerType>());
+                    qobject_cast<ControllerItem*>(item)->setCtrType(aValue.value<KStorageControllerType>());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1765,7 +1765,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
                 {
-                    static_cast <ControllerItem*> (item)->setPortCount (aValue.toUInt());
+                    qobject_cast<ControllerItem*>(item)->setPortCount(aValue.toUInt());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1776,7 +1776,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_ControllerItem)
                 {
-                    static_cast <ControllerItem*> (item)->setCtrUseIoCache (aValue.toBool());
+                    qobject_cast<ControllerItem*>(item)->setCtrUseIoCache(aValue.toBool());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1787,7 +1787,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
                 {
-                    static_cast <AttachmentItem*> (item)->setAttSlot (aValue.value <StorageSlot>());
+                    qobject_cast<AttachmentItem*>(item)->setAttSlot(aValue.value<StorageSlot>());
                     emit dataChanged (aIndex, aIndex);
                     sort();
                     return true;
@@ -1799,7 +1799,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
                 {
-                    static_cast <AttachmentItem*> (item)->setAttDevice (aValue.value <KDeviceType>());
+                    qobject_cast<AttachmentItem*>(item)->setAttDevice(aValue.value<KDeviceType>());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1810,7 +1810,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
                 {
-                    static_cast <AttachmentItem*> (item)->setAttMediumId (aValue.toUuid());
+                    qobject_cast<AttachmentItem*>(item)->setAttMediumId(aValue.toUuid());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1821,7 +1821,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
                 {
-                    static_cast <AttachmentItem*> (item)->setAttIsPassthrough (aValue.toBool());
+                    qobject_cast<AttachmentItem*>(item)->setAttIsPassthrough(aValue.toBool());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1832,7 +1832,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
                 {
-                    static_cast <AttachmentItem*> (item)->setAttIsTempEject (aValue.toBool());
+                    qobject_cast<AttachmentItem*>(item)->setAttIsTempEject(aValue.toBool());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1843,7 +1843,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
                 {
-                    static_cast <AttachmentItem*> (item)->setAttIsNonRotational (aValue.toBool());
+                    qobject_cast<AttachmentItem*>(item)->setAttIsNonRotational(aValue.toBool());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1854,7 +1854,7 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
             if (AbstractItem *item = static_cast<AbstractItem*>(aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
                 {
-                    static_cast<AttachmentItem*>(item)->setAttIsHotPluggable(aValue.toBool());
+                    qobject_cast<AttachmentItem*>(item)->setAttIsHotPluggable(aValue.toBool());
                     emit dataChanged(aIndex, aIndex);
                     return true;
                 }
@@ -1931,7 +1931,7 @@ void StorageModel::sort(int /* iColumn */, Qt::SortOrder order)
     {
         /* Get iterated controller item: */
         AbstractItem *pItemLevel1 = mRootItem->childItem(iItemLevel1Pos);
-        ControllerItem *pControllerItem = static_cast<ControllerItem*>(pItemLevel1);
+        ControllerItem *pControllerItem = qobject_cast<ControllerItem*>(pItemLevel1);
         /* Count of attachment items: */
         int iItemLevel2Count = pItemLevel1->childCount();
         /* Prepare empty list for sorted attachments: */
@@ -1941,7 +1941,7 @@ void StorageModel::sort(int /* iColumn */, Qt::SortOrder order)
         {
             /* Get iterated attachment item: */
             AbstractItem *pItemLevel2 = pItemLevel1->childItem(iItemLevel2Pos);
-            AttachmentItem *pAttachmentItem = static_cast<AttachmentItem*>(pItemLevel2);
+            AttachmentItem *pAttachmentItem = qobject_cast<AttachmentItem*>(pItemLevel2);
             /* Get iterated attachment storage slot: */
             StorageSlot attachmentSlot = pAttachmentItem->attSlot();
             int iInsertPosition = 0;
@@ -1949,7 +1949,7 @@ void StorageModel::sort(int /* iColumn */, Qt::SortOrder order)
             {
                 /* Get sorted attachment item: */
                 AbstractItem *pNewItemLevel2 = newAttachments[iInsertPosition];
-                AttachmentItem *pNewAttachmentItem = static_cast<AttachmentItem*>(pNewItemLevel2);
+                AttachmentItem *pNewAttachmentItem = qobject_cast<AttachmentItem*>(pNewItemLevel2);
                 /* Get sorted attachment storage slot: */
                 StorageSlot newAttachmentSlot = pNewAttachmentItem->attSlot();
                 /* Apply sorting rule: */
@@ -2028,7 +2028,7 @@ QMap<KStorageBus, int> StorageModel::currentControllerTypes() const
     for (int iStorageBusType = KStorageBus_IDE; iStorageBusType < KStorageBus_Max; ++iStorageBusType)
     {
         currentMap.insert((KStorageBus)iStorageBusType,
-                          static_cast<RootItem*>(mRootItem)->childCount((KStorageBus)iStorageBusType));
+                          qobject_cast<RootItem*>(mRootItem)->childCount((KStorageBus)iStorageBusType));
     }
     return currentMap;
 }
@@ -2064,7 +2064,7 @@ void StorageDelegate::paint (QPainter *aPainter, const QStyleOptionViewItem &aOp
     /* Initialize variables */
     QStyle::State state = aOption.state;
     QRect rect = aOption.rect;
-    const StorageModel *model = qobject_cast <const StorageModel*> (aIndex.model());
+    const StorageModel *model = qobject_cast<const StorageModel*>(aIndex.model());
     Assert (model);
 
     aPainter->save();
