@@ -3665,11 +3665,8 @@ void UIMachineSettingsStorage::sltHandleDragMove(QDragMoveEvent *pEvent)
     if (!pItemController || pItemController->id().toString() == strControllerId)
         return;
     /* Also make sure there is enough place for new attachment: */
-    const KStorageBus enmBus = pItemController->ctrBusType();
-    const int uMaxPortCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(enmBus);
-    const int uMaxDevicePerPortCount = vboxGlobal().virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus(enmBus);
-    const SlotsList usedSlots = pItemController->ctrUsedSlots();
-    if (usedSlots.size() >= uMaxPortCount * uMaxDevicePerPortCount)
+    const bool fIsMoreAttachmentsPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool();
+    if (!fIsMoreAttachmentsPossible)
         return;
 
     /* Accept drag-enter event: */
