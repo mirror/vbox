@@ -12544,19 +12544,20 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
 
                 bool const fVmxInsOutsInfo = pVM->cpum.ro.GuestFeatures.fVmxInsOutInfo;
                 bool const fIOString       = VMX_EXIT_QUAL_IO_IS_STRING(pVmxTransient->uExitQual);
-                if (   fVmxInsOutsInfo
-                    && fIOString)
+                if (fIOString)
                 {
-                    Assert(RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_INS_OUTS)); /* Paranoia. */
-                    rc  = hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
                     rc |= hmR0VmxReadGuestLinearAddrVmcs(pVCpu, pVmxTransient);
-                    AssertRCReturn(rc, rc);
+                    if (fVmxInsOutsInfo)
+                    {
+                        Assert(RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_INS_OUTS)); /* Paranoia. */
+                        rc |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
+                    }
+                    else
+                        pVmxTransient->ExitInstrInfo.u  = 0;
                 }
                 else
-                {
-                    pVmxTransient->ExitInstrInfo.u  = 0;
                     pVmxTransient->uGuestLinearAddr = 0;
-                }
+                AssertRCReturn(rc, rc);
 
                 VMXVEXITINFO ExitInfo;
                 RT_ZERO(ExitInfo);
