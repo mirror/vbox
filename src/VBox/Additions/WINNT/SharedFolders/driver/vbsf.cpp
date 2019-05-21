@@ -1626,226 +1626,179 @@ extern "C" ULONG WmlTrace(IN ULONG ulType, IN PVOID pTraceUuid, IN ULONG64 ullLo
 /**
  * The "main" function for a driver binary.
  */
-extern "C" NTSTATUS NTAPI DriverEntry(IN PDRIVER_OBJECT  DriverObject, IN PUNICODE_STRING RegistryPath)
+extern "C" NTSTATUS NTAPI DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
 {
-    NTSTATUS Status;
-    UNICODE_STRING VBoxMRxName;
-    UNICODE_STRING UserModeDeviceName;
-    PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension = NULL;
-    ULONG i;
-    int vrc;
-
     Log(("VBOXSF: DriverEntry: Driver object %p\n", DriverObject));
-
-    if (!DriverObject)
-    {
-        Log(("VBOXSF: DriverEntry: driver object is NULL.\n"));
-        return STATUS_UNSUCCESSFUL;
-    }
+    AssertLogRelReturn(DriverObject, STATUS_UNSUCCESSFUL);
 
     /*
-     * Initialize IPRT.
+     * Initialize IPRT and Vbgl.
      */
-    vrc = RTR0Init(0);
-    if (RT_FAILURE(vrc))
+    NTSTATUS rcNt = STATUS_UNSUCCESSFUL;
+    int vrc = RTR0Init(0);
+    if (RT_SUCCESS(vrc))
     {
-        Log(("VBOXSF: DriverEntry: RTR0Init failed! %Rrc!\n", vrc));
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    /* Initialize VBox subsystem. */
-    vrc = VbglR0SfInit();
-    if (RT_FAILURE(vrc))
-    {
-        Log(("VBOXSF: DriverEntry: ERROR while initializing VBox subsystem (%Rrc)!\n", vrc));
-        RTR0Term();
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    /* Connect the HGCM client */
-    vrc = VbglR0SfConnect(&g_SfClient);
-    if (RT_FAILURE(vrc))
-    {
-        Log(("VBOXSF: DriverEntry: ERROR while connecting to host (%Rrc)!\n",
-             vrc));
-        VbglR0SfTerm();
-        RTR0Term();
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    vrc = VbglR0QueryHostFeatures(&g_fHostFeatures);
-    if (RT_FAILURE(vrc))
-    {
-        LogRel(("vboxsf: VbglR0QueryHostFeatures failed: vrc=%Rrc (ignored)\n", vrc));
-        g_fHostFeatures = 0;
-    }
-    VbglR0SfHostReqQueryFeaturesSimple(&g_fSfFeatures, &g_uSfLastFunction);
-    LogRel(("VBoxSF: g_fHostFeatures=%#x g_fSfFeatures=%#RX64 g_uSfLastFunction=%u\n",
-            g_fHostFeatures, g_fSfFeatures, g_uSfLastFunction));
-
-    if (!VbglR0CanUsePhysPageList())
-    {
-        LogRel(("vboxsf: Host does not support physical page lists.  Refuses to load!\n"));
-        VbglR0SfTerm();
-        RTR0Term();
-        return STATUS_UNSUCCESSFUL;
-    }
-
-    /*
-     * Resolve newer kernel APIs we might want to use.
-     * Note! Because of http://www.osronline.com/article.cfm%5eid=494.htm we cannot
-     *       use MmGetSystemRoutineAddress here as it will crash on xpsp2.
-     */
-    RTDBGKRNLINFO hKrnlInfo;
-    int rc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0/*fFlags*/);
-    AssertLogRelRC(rc);
-    if (RT_SUCCESS(rc))
-    {
-        g_pfnCcCoherencyFlushAndPurgeCache
-            = (PFNCCCOHERENCYFLUSHANDPURGECACHE)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL, "CcCoherencyFlushAndPurgeCache");
-        RTR0DbgKrnlInfoRelease(hKrnlInfo);
-    }
-
-    /* Init the driver object. */
-    DriverObject->DriverUnload = VBoxMRxUnload;
-    for (i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; i++)
-    {
-        DriverObject->MajorFunction[i] = (PDRIVER_DISPATCH)VBoxMRxFsdDispatch;
-    }
-
-    /* Forward to RDBSS. */
-    Status = RxDriverEntry(DriverObject, RegistryPath);
-    if (Status != STATUS_SUCCESS)
-    {
-        Log(("VBOXSF: DriverEntry: RxDriverEntry failed: 0x%08X\n", Status));
-        goto failure;
-    }
-
-    __try
-    {
-        Log(("VBOXSF: DriverEntry: RxRegisterMinirdr: calling VBoxMRxDeviceObject %p\n",
-             VBoxMRxDeviceObject));
-
-        RtlInitUnicodeString(&VBoxMRxName, DD_MRX_VBOX_FS_DEVICE_NAME_U);
-
-        /* Don use RX_REGISTERMINI_FLAG_DONT_PROVIDE_UNCS or else
-         * UNC mappings don't work (including Windows explorer browsing).
-         */
-        Status = RxRegisterMinirdr(&VBoxMRxDeviceObject,
-                                   DriverObject,
-                                   &VBoxMRxDispatch,
-                                   RX_REGISTERMINI_FLAG_DONT_PROVIDE_MAILSLOTS,
-                                   &VBoxMRxName,
-                                   sizeof(MRX_VBOX_DEVICE_EXTENSION),
-                                   FILE_DEVICE_NETWORK_FILE_SYSTEM,
-                                   FILE_REMOTE_DEVICE);
-
-        Log(("VBOXSF: DriverEntry: RxRegisterMinirdr: returned 0x%08X VBoxMRxDeviceObject %p\n",
-             Status, VBoxMRxDeviceObject));
-
-        if (Status!=STATUS_SUCCESS)
+        vrc = VbglR0SfInit();
+        if (RT_SUCCESS(vrc))
         {
-            Log(("VBOXSF: DriverEntry: RxRegisterMinirdr failed: 0x%08X\n", Status ));
-            try_return((void)Status);
+            /*
+             * Connect to the shared folder service on the host.
+             */
+            vrc = VbglR0SfConnect(&g_SfClient);
+            if (RT_SUCCESS(vrc))
+            {
+                /*
+                 * Query the features and check that the host does page lists as we need those
+                 * for reading and writing.
+                 */
+                vrc = VbglR0QueryHostFeatures(&g_fHostFeatures);
+                if (RT_FAILURE(vrc))
+                {
+                    LogRel(("vboxsf: VbglR0QueryHostFeatures failed: vrc=%Rrc (ignored)\n", vrc));
+                    g_fHostFeatures = 0;
+                }
+                VbglR0SfHostReqQueryFeaturesSimple(&g_fSfFeatures, &g_uSfLastFunction);
+                LogRel(("VBoxSF: g_fHostFeatures=%#x g_fSfFeatures=%#RX64 g_uSfLastFunction=%u\n",
+                        g_fHostFeatures, g_fSfFeatures, g_uSfLastFunction));
+
+                if (VbglR0CanUsePhysPageList())
+                {
+                    /*
+                     * Resolve newer kernel APIs we might want to use.
+                     * Note! Because of http://www.osronline.com/article.cfm%5eid=494.htm we cannot
+                     *       use MmGetSystemRoutineAddress here as it will crash on xpsp2.
+                     */
+                    RTDBGKRNLINFO hKrnlInfo;
+                    int rc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0/*fFlags*/);
+                    AssertLogRelRC(rc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        g_pfnCcCoherencyFlushAndPurgeCache
+                            = (PFNCCCOHERENCYFLUSHANDPURGECACHE)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL,
+                                                                                         "CcCoherencyFlushAndPurgeCache");
+                        RTR0DbgKrnlInfoRelease(hKrnlInfo);
+                    }
+
+                    /*
+                     * Init the driver object.
+                     */
+                    DriverObject->DriverUnload = VBoxMRxUnload;
+                    for (size_t i = 0; i < IRP_MJ_MAXIMUM_FUNCTION; i++)
+                        DriverObject->MajorFunction[i] = (PDRIVER_DISPATCH)VBoxMRxFsdDispatch;
+
+                    /*
+                     * Do RDBSS driver entry processing.
+                     */
+                    rcNt = RxDriverEntry(DriverObject, RegistryPath);
+                    if (rcNt == STATUS_SUCCESS)
+                    {
+                        /*
+                         * Do the mini redirector registration.
+                         * Note! Don't use RX_REGISTERMINI_FLAG_DONT_PROVIDE_UNCS or else UNC
+                         *       mappings don't work (including Windows explorer browsing).
+                         */
+                        Log(("VBOXSF: DriverEntry: RxRegisterMinirdr: calling VBoxMRxDeviceObject %p\n", VBoxMRxDeviceObject));
+                        UNICODE_STRING VBoxMRxName;
+                        RtlInitUnicodeString(&VBoxMRxName, DD_MRX_VBOX_FS_DEVICE_NAME_U);
+                        rcNt = RxRegisterMinirdr(&VBoxMRxDeviceObject,
+                                                 DriverObject,
+                                                 &VBoxMRxDispatch,
+                                                 RX_REGISTERMINI_FLAG_DONT_PROVIDE_MAILSLOTS,
+                                                 &VBoxMRxName,
+                                                 sizeof(MRX_VBOX_DEVICE_EXTENSION),
+                                                 FILE_DEVICE_NETWORK_FILE_SYSTEM,
+                                                 FILE_REMOTE_DEVICE);
+                        Log(("VBOXSF: DriverEntry: RxRegisterMinirdr: returned 0x%08X VBoxMRxDeviceObject %p\n",
+                             rcNt, VBoxMRxDeviceObject));
+                        if (rcNt == STATUS_SUCCESS)
+                        {
+                            /*
+                             * Init the device extension.
+                             *
+                             * Note! The device extension actually points to fields in the RDBSS_DEVICE_OBJECT.
+                             *       Our space is past the end of that struct!!
+                             */
+                            PMRX_VBOX_DEVICE_EXTENSION pVBoxDevX = (PMRX_VBOX_DEVICE_EXTENSION)(  (PBYTE)VBoxMRxDeviceObject
+                                                                                                + sizeof(RDBSS_DEVICE_OBJECT));
+                            pVBoxDevX->pDeviceObject = VBoxMRxDeviceObject;
+                            for (size_t i = 0; i < RT_ELEMENTS(pVBoxDevX->cLocalConnections); i++)
+                                pVBoxDevX->cLocalConnections[i] = FALSE;
+
+                            /* Mutex for synchronizining our connection list */
+                            ExInitializeFastMutex(&pVBoxDevX->mtxLocalCon);
+
+                            /*
+                             * The device object has been created. Need to setup a symbolic link
+                             * in the Win32 name space for user mode applications.
+                             */
+                            UNICODE_STRING UserModeDeviceName;
+                            RtlInitUnicodeString(&UserModeDeviceName, DD_MRX_VBOX_USERMODE_SHADOW_DEV_NAME_U);
+                            Log(("VBOXSF: DriverEntry: Calling IoCreateSymbolicLink\n"));
+                            rcNt = IoCreateSymbolicLink(&UserModeDeviceName, &VBoxMRxName);
+                            if (rcNt == STATUS_SUCCESS)
+                            {
+                                Log(("VBOXSF: DriverEntry: Symbolic link created.\n"));
+
+                                /*
+                                 * Build the dispatch tables for the minirdr
+                                 */
+                                vbsfInitMRxDispatch();
+
+                                /*
+                                 * The redirector driver must intercept the IOCTL to avoid VBOXSVR name resolution
+                                 * by other redirectors. These additional name resolutions cause long delays.
+                                 */
+                                Log(("VBOXSF: DriverEntry: VBoxMRxDeviceObject = %p, rdbss %p, devext %p\n",
+                                     VBoxMRxDeviceObject, DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL], pVBoxDevX));
+                                pVBoxDevX->pfnRDBSSDeviceControl = DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL];
+                                DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = VBoxMRXDeviceControl;
+
+                                /*
+                                 * Intercept IRP_MJ_CREATE to fix incorrect (wrt NTFS, FAT, ++) return
+                                 * codes for NtOpenFile("r:\\asdf\\", FILE_NON_DIRECTORY_FILE).
+                                 */
+                                pVBoxDevX->pfnRDBSSCreate = DriverObject->MajorFunction[IRP_MJ_CREATE];
+                                DriverObject->MajorFunction[IRP_MJ_CREATE] = VBoxHookMjCreate;
+
+                                /*
+                                 * Intercept IRP_MJ_SET_INFORMATION to ensure we call the host for all
+                                 * FileEndOfFileInformation requestes, even if the new size matches the
+                                 * old one.  We don't know if someone else might have modified the file
+                                 * size cached in the FCB since the last time we update it.
+                                 */
+                                pVBoxDevX->pfnRDBSSSetInformation = DriverObject->MajorFunction[IRP_MJ_SET_INFORMATION];
+                                DriverObject->MajorFunction[IRP_MJ_SET_INFORMATION] = VBoxHookMjSetInformation;
+
+                                /** @todo start the redirector here RxStartMiniRdr. */
+
+                                Log(("VBOXSF: DriverEntry: Init successful!\n"));
+                                return STATUS_SUCCESS;
+                            }
+                            LogRel(("VBOXSF: DriverEntry: IoCreateSymbolicLink: %#x\n", rcNt));
+
+                            RxUnregisterMinirdr(VBoxMRxDeviceObject);
+                            VBoxMRxDeviceObject = NULL;
+                        }
+                        else
+                            LogRel(("VBOXSF: DriverEntry: RxRegisterMinirdr failed: %#x\n", rcNt));
+                    }
+                    else
+                        LogRel(("VBOXSF: DriverEntry: RxDriverEntry failed: 0x%08X\n", rcNt));
+                }
+                else
+                    LogRel(("VBOXSF: Host does not support physical page lists.  Refusing to load!\n"));
+                VbglR0SfDisconnect(&g_SfClient);
+            }
+            else
+                LogRel(("VBOXSF: DriverEntry: Failed to connect to the host: %Rrc!\n", vrc));
+            VbglR0SfTerm();
         }
-
-        /* Init the device extension.
-         * NOTE: the device extension actually points to fields
-         * in the RDBSS_DEVICE_OBJECT. Our space is past the end
-         * of this struct!!
-         */
-        pDeviceExtension = (PMRX_VBOX_DEVICE_EXTENSION)((PBYTE)VBoxMRxDeviceObject + sizeof(RDBSS_DEVICE_OBJECT));
-
-        pDeviceExtension->pDeviceObject = VBoxMRxDeviceObject;
-
-        for (i = 0; i < RT_ELEMENTS(pDeviceExtension->cLocalConnections); i++)
-        {
-            pDeviceExtension->cLocalConnections[i] = FALSE;
-        }
-
-        /* Mutex for synchronizining our connection list */
-        ExInitializeFastMutex(&pDeviceExtension->mtxLocalCon);
-
-        /* The device object has been created. Need to setup a symbolic
-         * link so that the device may be accessed from a Win32 user mode
-         * application.
-         */
-
-        RtlInitUnicodeString(&UserModeDeviceName, DD_MRX_VBOX_USERMODE_SHADOW_DEV_NAME_U);
-        Log(("VBOXSF: DriverEntry: Calling IoCreateSymbolicLink\n"));
-        Status = IoCreateSymbolicLink(&UserModeDeviceName, &VBoxMRxName);
-        if (Status != STATUS_SUCCESS)
-        {
-            Log(("VBOXSF: DriverEntry: IoCreateSymbolicLink: 0x%08X\n",
-                 Status));
-            try_return((void)Status);
-        }
-        Log(("VBOXSF: DriverEntry: Symbolic link created.\n"));
-
-        /*
-         * Build the dispatch tables for the minirdr
-         */
-        vbsfInitMRxDispatch();
-
-    try_exit:
-         ;
+        else
+            LogRel(("VBOXSF: DriverEntry: VbglR0SfInit! %Rrc!\n", vrc));
+        RTR0Term();
     }
-    __finally
-    {
-        ;
-    }
-
-    if (Status != STATUS_SUCCESS)
-    {
-        Log(("VBOXSF: DriverEntry: VBoxSF.sys failed to start with Status = 0x%08X\n",
-             Status));
-        goto failure;
-    }
-
-    AssertPtr(pDeviceExtension);
-
-    /* The redirector driver must intercept the IOCTL to avoid VBOXSVR name resolution
-     * by other redirectors. These additional name resolutions cause long delays.
-     */
-    Log(("VBOXSF: DriverEntry: VBoxMRxDeviceObject = %p, rdbss %p, devext %p\n",
-         VBoxMRxDeviceObject, DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL], pDeviceExtension));
-    pDeviceExtension->pfnRDBSSDeviceControl = DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL];
-    DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = VBoxMRXDeviceControl;
-
-    /* Intercept IRP_MJ_CREATE to fix incorrect (wrt NTFS, FAT, ++) return
-     * codes for NtOpenFile("r:\\asdf\\", FILE_NON_DIRECTORY_FILE).
-     */
-    pDeviceExtension->pfnRDBSSCreate = DriverObject->MajorFunction[IRP_MJ_CREATE];
-    DriverObject->MajorFunction[IRP_MJ_CREATE] = VBoxHookMjCreate;
-
-    /* Intercept IRP_MJ_SET_INFORMATION to ensure we call the host for all
-     * FileEndOfFileInformation requestes, even if the new size matches the
-     * old one.  We don't know if someone else might have modified the file
-     * size cached in the FCB since the last time we update it.
-     */
-    pDeviceExtension->pfnRDBSSSetInformation = DriverObject->MajorFunction[IRP_MJ_SET_INFORMATION];
-    DriverObject->MajorFunction[IRP_MJ_SET_INFORMATION] = VBoxHookMjSetInformation;
-
-
-    /** @todo start the redirector here RxStartMiniRdr. */
-
-    Log(("VBOXSF: DriverEntry: Init successful!\n"));
-    return STATUS_SUCCESS;
-
-failure:
-
-    Log(("VBOXSF: DriverEntry: Failure! Status = 0x%08X\n", Status));
-
-    VbglR0SfDisconnect(&g_SfClient);
-    VbglR0SfTerm();
-    RTR0Term();
-
-    if (VBoxMRxDeviceObject)
-    {
-        RxUnregisterMinirdr(VBoxMRxDeviceObject);
-        VBoxMRxDeviceObject = NULL;
-    }
-
-    return Status;
+    else
+        RTLogRelPrintf("VBOXSF: DriverEntry: RTR0Init failed! %Rrc!\n", vrc);
+    return rcNt;
 }
 
