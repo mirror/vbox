@@ -1438,7 +1438,6 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
                                               VBox,
                                               pProgress);
 
-            hrc = S_OK;
             if (FAILED(hrc))
             {
                 strLastActualErrorDesc = Utf8StrFmt("%s: Cloud import (cloud phase) failed. "
@@ -1453,8 +1452,7 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
     }
     else
     {
-        vrc = VERR_NOT_SUPPORTED;
-        hrc = setErrorVrc(vrc, tr("Import from Cloud isn't supported for more than one VM instance."));
+        hrc = setErrorVrc(VERR_NOT_SUPPORTED, tr("Import from Cloud isn't supported for more than one VM instance."));
 
         /* Reset the state so others can call methods again */
         m->state = Data::ApplianceIdle;
