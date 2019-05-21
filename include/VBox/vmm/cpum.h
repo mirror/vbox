@@ -146,6 +146,8 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_Intel_Core7_Skylake,
     kCpumMicroarch_Intel_Core7_KabyLake,
     kCpumMicroarch_Intel_Core7_CoffeeLake,
+    kCpumMicroarch_Intel_Core7_WhiskeyLake,
+    kCpumMicroarch_Intel_Core7_CascadeLake,
     kCpumMicroarch_Intel_Core7_CannonLake,
     kCpumMicroarch_Intel_Core7_IceLake,
     kCpumMicroarch_Intel_Core7_TigerLake,
@@ -1071,6 +1073,8 @@ typedef struct CPUMFEATURES
     uint32_t        fFlushCmd : 1;
     /** Supports IA32_ARCH_CAP. */
     uint32_t        fArchCap : 1;
+    /** Supports MD_CLEAR functionality (VERW, IA32_FLUSH_CMD). */
+    uint32_t        fMdsClear : 1;
     /** Supports PCID. */
     uint32_t        fPcid : 1;
     /** Supports INVPCID. */
@@ -1126,9 +1130,12 @@ typedef struct CPUMFEATURES
     /** MSR_IA32_ARCH_CAPABILITIES: RSB Override (bit 3).
      * @remarks Only safe use after CPUM ring-0 init! */
     uint32_t        fArchVmmNeedNotFlushL1d : 1;
+    /** MSR_IA32_ARCH_CAPABILITIES: MDS_NO (bit 4).
+     * @remarks Only safe use after CPUM ring-0 init! */
+    uint32_t        fArchMdsNo : 1;
 
     /** Alignment padding / reserved for future use. */
-    uint32_t        fPadding : 10;
+    uint32_t        fPadding : 8;
 
     /** SVM: Supports Nested-paging. */
     uint32_t        fSvmNestedPaging : 1;

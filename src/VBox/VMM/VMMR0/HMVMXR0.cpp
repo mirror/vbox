@@ -8933,6 +8933,8 @@ VMMR0DECL(int) VMXR0Enter(PVMCPU pVCpu)
          */
         if (pVCpu->CTX_SUFF(pVM)->hm.s.fL1dFlushOnSched)
             ASMWrMsr(MSR_IA32_FLUSH_CMD, MSR_IA32_FLUSH_CMD_F_L1D);
+        else if (pVCpu->CTX_SUFF(pVM)->hm.s.fMdsClearOnSched)
+            hmR0MdsClear();
     }
     return rc;
 }

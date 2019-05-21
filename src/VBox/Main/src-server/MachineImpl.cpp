@@ -197,6 +197,8 @@ Machine::HWData::HWData()
     mSpecCtrlByHost = false;
     mL1DFlushOnSched = true;
     mL1DFlushOnVMEntry = false;
+    mMDSClearOnSched = true;
+    mMDSClearOnVMEntry = false;
     mNestedHWVirt = false;
     mHPETEnabled = false;
     mCpuExecutionCap = 100; /* Maximum CPU execution cap by default. */
@@ -2035,6 +2037,14 @@ HRESULT Machine::getCPUProperty(CPUPropertyType_T aProperty, BOOL *aValue)
             *aValue = mHWData->mL1DFlushOnVMEntry;
             break;
 
+        case CPUPropertyType_MDSClearOnEMTScheduling:
+            *aValue = mHWData->mMDSClearOnSched;
+            break;
+
+        case CPUPropertyType_MDSClearOnVMEntry:
+            *aValue = mHWData->mMDSClearOnVMEntry;
+            break;
+
         default:
             return E_INVALIDARG;
     }
@@ -2124,6 +2134,18 @@ HRESULT Machine::setCPUProperty(CPUPropertyType_T aProperty, BOOL aValue)
             i_setModified(IsModified_MachineData);
             mHWData.backup();
             mHWData->mL1DFlushOnVMEntry = !!aValue;
+            break;
+
+        case CPUPropertyType_MDSClearOnEMTScheduling:
+            i_setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mMDSClearOnSched = !!aValue;
+            break;
+
+        case CPUPropertyType_MDSClearOnVMEntry:
+            i_setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mMDSClearOnVMEntry = !!aValue;
             break;
 
         default:
@@ -8884,6 +8906,8 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         mHWData->mSpecCtrlByHost              = data.fSpecCtrlByHost;
         mHWData->mL1DFlushOnSched             = data.fL1DFlushOnSched;
         mHWData->mL1DFlushOnVMEntry           = data.fL1DFlushOnVMEntry;
+        mHWData->mMDSClearOnSched             = data.fMDSClearOnSched;
+        mHWData->mMDSClearOnVMEntry           = data.fMDSClearOnVMEntry;
         mHWData->mNestedHWVirt                = data.fNestedHWVirt;
         mHWData->mCPUCount                    = data.cCPUs;
         mHWData->mCPUHotPlugEnabled           = data.fCpuHotPlug;
@@ -10211,6 +10235,8 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         data.fSpecCtrlByHost        = !!mHWData->mSpecCtrlByHost;
         data.fL1DFlushOnSched       = !!mHWData->mL1DFlushOnSched;
         data.fL1DFlushOnVMEntry     = !!mHWData->mL1DFlushOnVMEntry;
+        data.fMDSClearOnSched       = !!mHWData->mMDSClearOnSched;
+        data.fMDSClearOnVMEntry     = !!mHWData->mMDSClearOnVMEntry;
         data.fNestedHWVirt          = !!mHWData->mNestedHWVirt;
         data.cCPUs                  = mHWData->mCPUCount;
         data.fCpuHotPlug            = !!mHWData->mCPUHotPlugEnabled;

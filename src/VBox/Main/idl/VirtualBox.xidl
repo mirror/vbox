@@ -1079,6 +1079,23 @@
         is a real need to be paranoid.
       </desc>
     </const>
+    <const name="MDSClearOnEMTScheduling" value="13">
+      <desc>
+        If set and the host is affected by CVE-2018-12126, CVE-2018-12127, or
+        CVE-2018-12130, clears the relevant MDS buffers when the EMT is scheduled
+        to do ring-0 guest execution.  There could be a small performance penalty
+        for certain typs of workloads. For security reasons this setting will be
+        enabled by default.
+      </desc>
+    </const>
+    <const name="MDSClearOnVMEntry"     value="14">
+      <desc>
+        If set and the host is affected by CVE-2018-12126, CVE-2018-12127, or
+        CVE-2018-12130, clears the relevant MDS buffers on every VM entry.  This
+        setting may slow down workloads causing many VM exits, so it is only
+        recommended for situation where there is a real need to be paranoid.
+      </desc>
+    </const>
   </enum>
 
 

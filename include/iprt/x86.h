@@ -617,6 +617,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** ECX Bit 30 - SGX_LC - Supports SGX launch configuration. */
 #define X86_CPUID_STEXT_FEATURE_ECX_SGX_LC            RT_BIT_32(30)
 
+/** EDX Bit 10 - MD_CLEAR - Supports flushing MDS related buffers. */
+#define X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR          RT_BIT_32(10)
 /** EDX Bit 26 - IBRS & IBPB - Supports the IBRS flag in IA32_SPEC_CTRL and
  *  IBPB command in IA32_PRED_CMD. */
 #define X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB         RT_BIT_32(26)
@@ -1257,6 +1259,8 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Virtual machine monitors need not flush the level 1 data cache on VM entry.
  * This is also the case when MSR_IA32_ARCH_CAP_F_RDCL_NO is set. */
 #define MSR_IA32_ARCH_CAP_F_VMM_NEED_NOT_FLUSH_L1D RT_BIT_32(3)
+/** CPU does not suffer from MDS issues. */
+#define MSR_IA32_ARCH_CAP_F_MDS_NO          RT_BIT_32(4)
 
 /** Flush command register. */
 #define MSR_IA32_FLUSH_CMD                  UINT32_C(0x10b)

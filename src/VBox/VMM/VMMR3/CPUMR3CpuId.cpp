@@ -82,7 +82,7 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /* [23(0x17)] = */ kCpumMicroarch_Intel_Core2_Penryn,
     /* [24(0x18)] = */ kCpumMicroarch_Intel_Unknown,
     /* [25(0x19)] = */ kCpumMicroarch_Intel_Unknown,
-    /* [26(0x1a)] = */ kCpumMicroarch_Intel_Core7_Nehalem,
+    /* [26(0x1a)] = */ kCpumMicroarch_Intel_Core7_Nehalem, /* Nehalem-EP */
     /* [27(0x1b)] = */ kCpumMicroarch_Intel_Unknown,
     /* [28(0x1c)] = */ kCpumMicroarch_Intel_Atom_Bonnell, /* Diamonville, Pineview, */
     /* [29(0x1d)] = */ kCpumMicroarch_Intel_Core2_Penryn,
@@ -134,14 +134,14 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /* [75(0x4b)] = */ kCpumMicroarch_Intel_Unknown,
     /* [76(0x4c)] = */ kCpumMicroarch_Intel_Atom_Airmount,
     /* [77(0x4d)] = */ kCpumMicroarch_Intel_Atom_Silvermont,
-    /* [78(0x4e)] = */ kCpumMicroarch_Intel_Core7_Skylake,      /* unconfirmed */
-    /* [79(0x4f)] = */ kCpumMicroarch_Intel_Core7_Broadwell,    /* unconfirmed, Broadwell-E */
+    /* [78(0x4e)] = */ kCpumMicroarch_Intel_Core7_Skylake,
+    /* [79(0x4f)] = */ kCpumMicroarch_Intel_Core7_Broadwell,    /* Broadwell-E */
     /* [80(0x50)] = */ kCpumMicroarch_Intel_Unknown,
     /* [81(0x51)] = */ kCpumMicroarch_Intel_Unknown,
     /* [82(0x52)] = */ kCpumMicroarch_Intel_Unknown,
     /* [83(0x53)] = */ kCpumMicroarch_Intel_Unknown,
     /* [84(0x54)] = */ kCpumMicroarch_Intel_Unknown,
-    /* [85(0x55)] = */ kCpumMicroarch_Intel_Core7_Skylake,      /* server cpu */
+    /* [85(0x55)] = */ kCpumMicroarch_Intel_Core7_Skylake,      /* server cpu; skylake <= 4, cascade lake > 5 */
     /* [86(0x56)] = */ kCpumMicroarch_Intel_Core7_Broadwell,    /* Xeon D-1540, Broadwell-DE */
     /* [87(0x57)] = */ kCpumMicroarch_Intel_Phi_KnightsLanding,
     /* [88(0x58)] = */ kCpumMicroarch_Intel_Unknown,
@@ -166,14 +166,14 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /*[107(0x6b)] = */ kCpumMicroarch_Intel_Unknown,
     /*[108(0x6c)] = */ kCpumMicroarch_Intel_Unknown,
     /*[109(0x6d)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[110(0x6e)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[110(0x6e)] = */ kCpumMicroarch_Intel_Atom_Airmount,      /* or silvermount? */
     /*[111(0x6f)] = */ kCpumMicroarch_Intel_Unknown,
     /*[112(0x70)] = */ kCpumMicroarch_Intel_Unknown,
     /*[113(0x71)] = */ kCpumMicroarch_Intel_Unknown,
     /*[114(0x72)] = */ kCpumMicroarch_Intel_Unknown,
     /*[115(0x73)] = */ kCpumMicroarch_Intel_Unknown,
     /*[116(0x74)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[117(0x75)] = */ kCpumMicroarch_Intel_Unknown,
+    /*[117(0x75)] = */ kCpumMicroarch_Intel_Atom_Airmount,      /* or silvermount? */
     /*[118(0x76)] = */ kCpumMicroarch_Intel_Unknown,
     /*[119(0x77)] = */ kCpumMicroarch_Intel_Unknown,
     /*[120(0x78)] = */ kCpumMicroarch_Intel_Unknown,
@@ -198,7 +198,7 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /*[139(0x8b)] = */ kCpumMicroarch_Intel_Unknown,
     /*[140(0x8c)] = */ kCpumMicroarch_Intel_Unknown,
     /*[141(0x8d)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[142(0x8e)] = */ kCpumMicroarch_Intel_Core7_KabyLake, /* Stepping 0xA is CoffeeLake, 9 is KabyLake. */
+    /*[142(0x8e)] = */ kCpumMicroarch_Intel_Core7_KabyLake, /* Stepping >= 0xB is Whiskey Lake, 0xA is CoffeeLake. */
     /*[143(0x8f)] = */ kCpumMicroarch_Intel_Unknown,
     /*[144(0x90)] = */ kCpumMicroarch_Intel_Unknown,
     /*[145(0x91)] = */ kCpumMicroarch_Intel_Unknown,
@@ -214,7 +214,7 @@ static const CPUMMICROARCH g_aenmIntelFamily06[] =
     /*[155(0x9b)] = */ kCpumMicroarch_Intel_Unknown,
     /*[156(0x9c)] = */ kCpumMicroarch_Intel_Unknown,
     /*[157(0x9d)] = */ kCpumMicroarch_Intel_Unknown,
-    /*[158(0x9e)] = */ kCpumMicroarch_Intel_Core7_KabyLake, /* Stepping 0xA is CoffeeLake, 9 is KabyLake. */
+    /*[158(0x9e)] = */ kCpumMicroarch_Intel_Core7_KabyLake, /* Stepping >= 0xB is Whiskey Lake, 0xA is CoffeeLake. */
     /*[159(0x9f)] = */ kCpumMicroarch_Intel_Unknown,
 };
 AssertCompile(RT_ELEMENTS(g_aenmIntelFamily06) == 0x9f+1);
@@ -369,9 +369,17 @@ VMMR3DECL(CPUMMICROARCH) CPUMR3CpuIdDetermineMicroarchEx(CPUMCPUVENDOR enmVendor
                 if (bModel < RT_ELEMENTS(g_aenmIntelFamily06))
                 {
                     CPUMMICROARCH enmMicroArch = g_aenmIntelFamily06[bModel];
-                    if (   enmMicroArch == kCpumMicroarch_Intel_Core7_KabyLake
-                        && bStepping >= 0xa)
-                        enmMicroArch = kCpumMicroarch_Intel_Core7_CoffeeLake;
+                    if (enmMicroArch == kCpumMicroarch_Intel_Core7_KabyLake)
+                    {
+                        if (bStepping >= 0xa && bStepping <= 0xc)
+                            enmMicroArch = kCpumMicroarch_Intel_Core7_CoffeeLake;
+                        else if (bStepping >= 0xc)
+                            enmMicroArch = kCpumMicroarch_Intel_Core7_WhiskeyLake;
+                    }
+                    else if (   enmMicroArch == kCpumMicroarch_Intel_Core7_Skylake
+                             && bModel == 0x55
+                             && bStepping >= 5)
+                        enmMicroArch = kCpumMicroarch_Intel_Core7_CascadeLake;
                     return enmMicroArch;
                 }
                 return kCpumMicroarch_Intel_Atom_Unknown;
@@ -519,6 +527,8 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_Skylake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_KabyLake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_CoffeeLake);
+        CASE_RET_STR(kCpumMicroarch_Intel_Core7_WhiskeyLake);
+        CASE_RET_STR(kCpumMicroarch_Intel_Core7_CascadeLake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_CannonLake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_IceLake);
         CASE_RET_STR(kCpumMicroarch_Intel_Core7_TigerLake);
@@ -1892,6 +1902,7 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCCPU
             pFeatures->fStibp               = RT_BOOL(pSxfLeaf0->uEdx & X86_CPUID_STEXT_FEATURE_EDX_STIBP);
             pFeatures->fFlushCmd            = RT_BOOL(pSxfLeaf0->uEdx & X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD);
             pFeatures->fArchCap             = RT_BOOL(pSxfLeaf0->uEdx & X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP);
+            pFeatures->fMdsClear            = RT_BOOL(pSxfLeaf0->uEdx & X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR);
         }
 
         /* MWAIT/MONITOR leaf. */
@@ -2491,6 +2502,8 @@ typedef struct CPUMCPUIDCONFIG
     CPUMISAEXTCFG   enmPcid;
     CPUMISAEXTCFG   enmInvpcid;
     CPUMISAEXTCFG   enmFlushCmdMsr;
+    CPUMISAEXTCFG   enmMdsClear;
+    CPUMISAEXTCFG   enmArchCapMsr;
 
     CPUMISAEXTCFG   enmAbm;
     CPUMISAEXTCFG   enmSse4A;
@@ -3290,10 +3303,11 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                //| X86_CPUID_STEXT_FEATURE_ECX_PREFETCHWT1 - we do not do vector functions yet.
                                ;
                 pCurLeaf->uEdx &= 0
+                               | (pConfig->enmMdsClear ? X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR : 0)
                                //| X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB         RT_BIT(26)
                                //| X86_CPUID_STEXT_FEATURE_EDX_STIBP             RT_BIT(27)
                                | (pConfig->enmFlushCmdMsr ? X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD : 0)
-                               //| X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP           RT_BIT(29)
+                               | (pConfig->enmArchCapMsr ? X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP : 0)
                                ;
 
                 /* Mask out INVPCID unless FSGSBASE is exposed due to a bug in Windows 10 SMP guests, see @bugref{9089#c15}. */
@@ -3322,7 +3336,13 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                     PORTABLE_DISABLE_FEATURE_BIT(    1, pCurLeaf->uEbx, SHA,        X86_CPUID_STEXT_FEATURE_EBX_SHA);
                     PORTABLE_DISABLE_FEATURE_BIT(    1, pCurLeaf->uEcx, PREFETCHWT1, X86_CPUID_STEXT_FEATURE_ECX_PREFETCHWT1);
                     PORTABLE_DISABLE_FEATURE_BIT_CFG(3, pCurLeaf->uEdx, FLUSH_CMD,  X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD, pConfig->enmFlushCmdMsr);
+                    PORTABLE_DISABLE_FEATURE_BIT_CFG(3, pCurLeaf->uEdx, MD_CLEAR,   X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR, pConfig->enmMdsClear);
+                    PORTABLE_DISABLE_FEATURE_BIT_CFG(3, pCurLeaf->uEdx, ARCHCAP,    X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP, pConfig->enmArchCapMsr);
                 }
+
+                /* Dependencies. */
+                if (!(pCurLeaf->uEdx & X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD))
+                    pCurLeaf->uEdx &= ~X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR;
 
                 /* Force standard feature bits. */
                 if (pConfig->enmFsGsBase == CPUMISAEXTCFG_ENABLED_ALWAYS)
@@ -3337,6 +3357,10 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                     pCurLeaf->uEbx |= X86_CPUID_STEXT_FEATURE_EBX_INVPCID;
                 if (pConfig->enmFlushCmdMsr == CPUMISAEXTCFG_ENABLED_ALWAYS)
                     pCurLeaf->uEdx |= X86_CPUID_STEXT_FEATURE_EDX_FLUSH_CMD;
+                if (pConfig->enmMdsClear == CPUMISAEXTCFG_ENABLED_ALWAYS)
+                    pCurLeaf->uEdx |= X86_CPUID_STEXT_FEATURE_EDX_MD_CLEAR;
+                if (pConfig->enmArchCapMsr == CPUMISAEXTCFG_ENABLED_ALWAYS)
+                    pCurLeaf->uEdx |= X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP;
                 break;
             }
 
@@ -4314,6 +4338,19 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "FlushCmdMsr", &pConfig->enmFlushCmdMsr, CPUMISAEXTCFG_ENABLED_SUPPORTED);
     AssertLogRelRCReturn(rc, rc);
 
+    /** @cfgm{/CPUM/IsaExts/MdsClear, isaextcfg, true}
+     * Whether to advertise the VERW and MDS related IA32_FLUSH_CMD MSR bits to
+     * the guest.  Requires FlushCmdMsr to be present too.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "MdsClear", &pConfig->enmMdsClear, CPUMISAEXTCFG_ENABLED_SUPPORTED);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/IsaExts/ArchCapMSr, isaextcfg, true}
+     * Whether to expose the MSR_IA32_ARCH_CAPABILITIES MSR to the guest.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "ArchCapMsr", &pConfig->enmArchCapMsr, CPUMISAEXTCFG_ENABLED_SUPPORTED);
+    AssertLogRelRCReturn(rc, rc);
+
 
     /* AMD: */
 
@@ -4890,8 +4927,6 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
 
                 if (pVM->cpum.s.HostFeatures.fArchCap)
                 {
-                    pLeaf->uEdx |= X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP;
-
                     /* Install the architectural capabilities MSR. */
                     pMsrRange = cpumLookupMsrRange(pVM, MSR_IA32_ARCH_CAPABILITIES);
                     if (!pMsrRange)
@@ -5070,8 +5105,7 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
         case CPUMCPUIDFEATURE_SPEC_CTRL:
             pLeaf = cpumR3CpuIdGetExactLeaf(&pVM->cpum.s, UINT32_C(0x00000007), 0);
             if (pLeaf)
-                pLeaf->uEdx &= ~(  X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB | X86_CPUID_STEXT_FEATURE_EDX_STIBP
-                                 | X86_CPUID_STEXT_FEATURE_EDX_ARCHCAP);
+                pLeaf->uEdx &= ~(X86_CPUID_STEXT_FEATURE_EDX_IBRS_IBPB | X86_CPUID_STEXT_FEATURE_EDX_STIBP);
             pVM->cpum.s.GuestFeatures.fSpeculationControl = 0;
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled speculation control!\n"));
             break;
@@ -6386,6 +6420,7 @@ static DBGFREGSUBFIELD const g_aLeaf7Sub0EcxSubFields[] =
 /** CPUID(7,0).EDX field descriptions.   */
 static DBGFREGSUBFIELD const g_aLeaf7Sub0EdxSubFields[] =
 {
+    DBGFREGSUBFIELD_RO("MD_CLEAR\0"     "Supports MDS related buffer clearing",         10, 1, 0),
     DBGFREGSUBFIELD_RO("IBRS_IBPB\0"    "IA32_SPEC_CTRL.IBRS and IA32_PRED_CMD.IBPB",   26, 1, 0),
     DBGFREGSUBFIELD_RO("STIBP\0"        "Supports IA32_SPEC_CTRL.STIBP",                27, 1, 0),
     DBGFREGSUBFIELD_RO("FLUSH_CMD\0"    "Supports IA32_FLUSH_CMD",                      28, 1, 0),

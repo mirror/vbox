@@ -289,6 +289,8 @@ public:
         BOOL                mSpecCtrlByHost;
         BOOL                mL1DFlushOnSched;
         BOOL                mL1DFlushOnVMEntry;
+        BOOL                mMDSClearOnSched;
+        BOOL                mMDSClearOnVMEntry;
         BOOL                mNestedHWVirt;
         ULONG               mCPUCount;
         BOOL                mCPUHotPlugEnabled;
