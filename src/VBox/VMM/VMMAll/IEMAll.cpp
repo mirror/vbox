@@ -15933,7 +15933,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
  *
  * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pExitInfo   Pointer to the VM-exit information struct.
+ * @param   pExitInfo   Pointer to the VM-exit information.
  * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
@@ -15953,7 +15953,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInstrWithInfo(PVMCPU pVCpu, PCVMXVEXI
  *
  * @returns Strict VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pExitInfo   The VM-exit reason.
+ * @param   pExitInfo   Pointer to the VM-exit information.
  * @param   cbInstr     The instruction length in bytes.
  * @thread  EMT(pVCpu)
  */
@@ -15967,11 +15967,29 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitInstr(PVMCPU pVCpu, uint32_t uExitRea
 
 
 /**
+ * Interface for HM and EM to emulate a VM-exit due to a task switch.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
+ * @param   pExitInfo       Pointer to the VM-exit information.
+ * @param   pExitEventInfo  Pointer to the VM-exit event information.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitTaskSwitch(PVMCPU pVCpu, PVMXVEXITINFO pExitInfo, PVMXVEXITEVENTINFO pExitEventInfo)
+{
+    VBOXSTRICTRC rcStrict = iemVmxVmexitTaskSwitchWithInfo(pVCpu, pExitInfo, pExitEventInfo);
+    if (pVCpu->iem.s.cActiveMappings)
+        iemMemRollback(pVCpu);
+    return iemExecStatusCodeFiddling(pVCpu, rcStrict);
+}
+
+
+/**
  * Interface for HM and EM to emulate the VMREAD instruction.
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   pExitInfo       Pointer to the VM-exit information struct.
+ * @param   pExitInfo       Pointer to the VM-exit information.
  * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmread(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
@@ -16017,7 +16035,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmread(PVMCPU pVCpu, PCVMXVEXITINFO pEx
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   pExitInfo       Pointer to the VM-exit information struct.
+ * @param   pExitInfo       Pointer to the VM-exit information.
  * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmwrite(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
@@ -16055,7 +16073,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmwrite(PVMCPU pVCpu, PCVMXVEXITINFO pE
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   pExitInfo       Pointer to the VM-exit information struct.
+ * @param   pExitInfo       Pointer to the VM-exit information.
  * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrld(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
@@ -16080,7 +16098,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrld(PVMCPU pVCpu, PCVMXVEXITINFO pE
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   pExitInfo       Pointer to the VM-exit information struct.
+ * @param   pExitInfo       Pointer to the VM-exit information.
  * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrst(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
@@ -16105,7 +16123,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmptrst(PVMCPU pVCpu, PCVMXVEXITINFO pE
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   pExitInfo       Pointer to the VM-exit information struct.
+ * @param   pExitInfo       Pointer to the VM-exit information.
  * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmclear(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
@@ -16152,7 +16170,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmlaunchVmresume(PVMCPU pVCpu, uint8_t 
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   pExitInfo       Pointer to the VM-exit information struct.
+ * @param   pExitInfo       Pointer to the VM-exit information.
  * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmxon(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
@@ -16197,7 +16215,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedVmxoff(PVMCPU pVCpu, uint8_t cbInstr)
  *
  * @returns Strict VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
- * @param   pExitInfo       Pointer to the VM-exit information struct.
+ * @param   pExitInfo       Pointer to the VM-exit information.
  * @thread  EMT(pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvvpid(PVMCPU pVCpu, PCVMXVEXITINFO pExitInfo)
