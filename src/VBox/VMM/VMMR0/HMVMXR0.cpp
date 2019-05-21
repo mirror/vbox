@@ -9959,7 +9959,8 @@ static void hmR0VmxMergeMsrBitmapNested(PCVMCPU pVCpu, PVMXVMCSINFO pVmcsInfoNst
  * Merges the guest VMCS in to the nested-guest VMCS controls in preparation of
  * hardware-assisted VMX execution of the nested-guest.
  *
- * For a guest, we don't modify these controls once we set up the VMCS.
+ * For a guest, we don't modify these controls once we set up the VMCS and hence
+ * this function is never called.
  *
  * For nested-guests since the guest hypervisor provides these controls on every
  * nested-guest VM-entry and could potentially change them everytime we need to
