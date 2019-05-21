@@ -742,7 +742,7 @@ class SubTestDriverBase(object):
 
     def __init__(self, sName, oTstDrv):
         self.sName              = sName;
-        self.oTstDrv            = oTstDrv;
+        self.oTstDrv            = oTstDrv; # type: TestDriverBase
         self.asRsrcs            = [];
 
     def showUsage(self):
@@ -1052,7 +1052,7 @@ class TestDriverBase(object): # pylint: disable=R0902
 
     def waitForTasksSleepWorker(self, cMsTimeout):
         """
-        Overriable method that does the sleeping for waitForTask().
+        Overridable method that does the sleeping for waitForTask().
 
         cMsTimeout will not be larger than 1000, so there is normally no need
         to do any additional splitting up of the polling interval.
