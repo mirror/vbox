@@ -60,7 +60,7 @@ struct _VBOXCLIPBOARDCONTEXT
     /** Event which gets triggered if the host clipboard needs to render its data. */
     RTSEMEVENT               hRenderEvent;
     /** Structure for keeping and communicating with client data (from the guest). */
-    PVBOXCLIPBOARDSVCCTX     pSvcCtx;
+    PVBOXCLIPBOARDCLIENTDATA pClientData;
     /** Windows-specific context data. */
     VBOXCLIPBOARDWINCTX      Win;
 };
@@ -159,13 +159,13 @@ static void vboxClipboardGetData(uint32_t u32Format, const void *pvSrc, uint32_t
 
 static int vboxClipboardReadDataFromClient(VBOXCLIPBOARDCONTEXT *pCtx, VBOXCLIPBOARDFORMAT fFormat)
 {
-    Assert(pCtx->pSvcCtx);
+    Assert(pCtx->pClientData);
     Assert(pCtx->hRenderEvent);
-    Assert(pCtx->pSvcCtx->data.pv == NULL && pCtx->pSvcCtx->data.cb == 0 && pCtx->pSvcCtx->data.u32Format == 0);
+    Assert(pCtx->pClientData->data.pv == NULL && pCtx->pClientData->data.cb == 0 && pCtx->pClientData->data.u32Format == 0);
 
     LogFlowFunc(("fFormat=%02X\n", fFormat));
 
-    vboxSvcClipboardReportMsg(pCtx->pSvcCtx, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, fFormat);
+    vboxSvcClipboardReportMsg(pCtx->pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, fFormat);
 
     return RTSemEventWait(pCtx->hRenderEvent, 30 * 1000 /* Timeout in ms */);
 }
@@ -288,7 +288,7 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             LogFunc(("WM_RENDERFORMAT: cfFormat=%u -> fFormat=0x%x\n", cfFormat, fFormat));
 
             if (   fFormat       == VBOX_SHARED_CLIPBOARD_FMT_NONE
-                || pCtx->pSvcCtx == NULL)
+                || pCtx->pClientData == NULL)
             {
                 /* Unsupported clipboard format is requested. */
                 LogFunc(("WM_RENDERFORMAT unsupported format requested or client is not active\n"));
@@ -299,14 +299,14 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                 int rc = vboxClipboardReadDataFromClient(pCtx, fFormat);
 
                 LogFunc(("vboxClipboardReadDataFromClient rc = %Rrc, pv %p, cb %d, u32Format %d\n",
-                          rc, pCtx->pSvcCtx->data.pv, pCtx->pSvcCtx->data.cb, pCtx->pSvcCtx->data.u32Format));
+                          rc, pCtx->pClientData->data.pv, pCtx->pClientData->data.cb, pCtx->pClientData->data.u32Format));
 
                 if (   RT_SUCCESS (rc)
-                    && pCtx->pSvcCtx->data.pv != NULL
-                    && pCtx->pSvcCtx->data.cb > 0
-                    && pCtx->pSvcCtx->data.u32Format == fFormat)
+                    && pCtx->pClientData->data.pv != NULL
+                    && pCtx->pClientData->data.cb > 0
+                    && pCtx->pClientData->data.u32Format == fFormat)
                 {
-                    HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, pCtx->pSvcCtx->data.cb);
+                    HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, pCtx->pClientData->data.cb);
 
                     LogFunc(("hMem %p\n", hMem));
 
@@ -320,16 +320,16 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                         {
                             LogFunc(("WM_RENDERFORMAT setting data\n"));
 
-                            if (pCtx->pSvcCtx->data.pv)
+                            if (pCtx->pClientData->data.pv)
                             {
-                                memcpy(pMem, pCtx->pSvcCtx->data.pv, pCtx->pSvcCtx->data.cb);
+                                memcpy(pMem, pCtx->pClientData->data.pv, pCtx->pClientData->data.cb);
 
-                                RTMemFree(pCtx->pSvcCtx->data.pv);
-                                pCtx->pSvcCtx->data.pv        = NULL;
+                                RTMemFree(pCtx->pClientData->data.pv);
+                                pCtx->pClientData->data.pv        = NULL;
                             }
 
-                            pCtx->pSvcCtx->data.cb        = 0;
-                            pCtx->pSvcCtx->data.u32Format = 0;
+                            pCtx->pClientData->data.cb        = 0;
+                            pCtx->pClientData->data.u32Format = 0;
 
                             /* The memory must be unlocked before inserting to the Clipboard. */
                             GlobalUnlock(hMem);
@@ -352,10 +352,10 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                     }
                 }
 
-                RTMemFree(pCtx->pSvcCtx->data.pv);
-                pCtx->pSvcCtx->data.pv        = NULL;
-                pCtx->pSvcCtx->data.cb        = 0;
-                pCtx->pSvcCtx->data.u32Format = 0;
+                RTMemFree(pCtx->pClientData->data.pv);
+                pCtx->pClientData->data.pv        = NULL;
+                pCtx->pClientData->data.cb        = 0;
+                pCtx->pClientData->data.u32Format = 0;
 
                 /* Something went wrong. */
                 VBoxClipboardWinClear();
@@ -379,8 +379,8 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
         case VBOX_CLIPBOARD_WM_SET_FORMATS:
         {
-            if (   pCtx->pSvcCtx == NULL
-                || pCtx->pSvcCtx->fHostMsgFormats)
+            if (   pCtx->pClientData == NULL
+                || pCtx->pClientData->State.fHostMsgFormats)
             {
                 /* Host has pending formats message. Ignore the guest announcement,
                  * because host clipboard has more priority.
@@ -544,12 +544,12 @@ static int vboxClipboardWinSyncInternal(PVBOXCLIPBOARDCONTEXT pCtx)
 
     int rc;
 
-    if (pCtx->pSvcCtx)
+    if (pCtx->pClientData)
     {
         uint32_t uFormats;
         rc = VBoxClipboardWinGetFormats(&pCtx->Win, &uFormats);
         if (RT_SUCCESS(rc))
-            vboxSvcClipboardReportMsg(pCtx->pSvcCtx, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, uFormats);
+            vboxSvcClipboardReportMsg(pCtx->pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, uFormats);
     }
     else /* If we don't have any client data (yet), bail out. */
         rc = VINF_NO_CHANGE;
@@ -601,52 +601,52 @@ void VBoxClipboardSvcImplDestroy(void)
     g_ctx.hThread = NIL_RTTHREAD;
 }
 
-int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDSVCCTX pSvcCtx, bool fHeadless)
+int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENTDATA pClientData, bool fHeadless)
 {
     RT_NOREF(fHeadless);
 
     LogFlowFuncEnter();
 
-    if (g_ctx.pSvcCtx != NULL)
+    if (g_ctx.pClientData != NULL)
     {
         /* One client only. */
         return VERR_NOT_SUPPORTED;
     }
 
-    pSvcCtx->pCtx = &g_ctx;
+    pClientData->State.pCtx = &g_ctx;
 
-    pSvcCtx->pCtx->pSvcCtx = pSvcCtx;
+    pClientData->State.pCtx->pClientData = pClientData;
 
     /* Sync the host clipboard content with the client. */
-    VBoxClipboardSvcImplSync(pSvcCtx);
+    VBoxClipboardSvcImplSync(pClientData);
 
     return VINF_SUCCESS;
 }
 
-int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDSVCCTX pSvcCtx)
+int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA pClientData)
 {
     /* Sync the host clipboard content with the client. */
-    return vboxClipboardWinSyncInternal(pSvcCtx->pCtx);
+    return vboxClipboardWinSyncInternal(pClientData->State.pCtx);
 }
 
-void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDSVCCTX pSvcCtx)
+void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData)
 {
-    RT_NOREF(pSvcCtx);
+    RT_NOREF(pClientData);
 
     LogFlowFuncEnter();
 
-    g_ctx.pSvcCtx = NULL;
+    g_ctx.pClientData = NULL;
 }
 
-void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Formats)
+void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Formats)
 {
-    AssertPtrReturnVoid(pSvcCtx);
-    AssertPtrReturnVoid(pSvcCtx->pCtx);
+    AssertPtrReturnVoid(pClientData);
+    AssertPtrReturnVoid(pClientData->State.pCtx);
 
     /*
      * The guest announces formats. Forward to the window thread.
      */
-    PostMessage(pSvcCtx->pCtx->Win.hWnd, WM_USER, 0, u32Formats);
+    PostMessage(pClientData->State.pCtx->Win.hWnd, WM_USER, 0, u32Formats);
 }
 
 #ifdef VBOX_STRICT
@@ -681,16 +681,16 @@ static int vboxClipboardDbgDumpHtml(const char *pszSrc, size_t cb)
 }
 #endif
 
-int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual)
+int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual)
 {
-    AssertPtrReturn(pSvcCtx,       VERR_INVALID_POINTER);
-    AssertPtrReturn(pSvcCtx->pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pClientData,       VERR_INVALID_POINTER);
+    AssertPtrReturn(pClientData->State.pCtx, VERR_INVALID_POINTER);
 
     LogFlowFunc(("u32Format=%02X\n", u32Format));
 
     HANDLE hClip = NULL;
 
-    const PVBOXCLIPBOARDWINCTX pWinCtx = &pSvcCtx->pCtx->Win;
+    const PVBOXCLIPBOARDWINCTX pWinCtx = &pClientData->State.pCtx->Win;
 
     /*
      * The guest wants to read data in the given format.
@@ -815,14 +815,14 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Forma
     return VINF_SUCCESS; /** @todo r=andy Return rc here? */
 }
 
-void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDSVCCTX pSvcCtx, void *pv, uint32_t cb, uint32_t u32Format)
+void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv, uint32_t cb, uint32_t u32Format)
 {
     LogFlowFuncEnter();
 
     /*
      * The guest returns data that was requested in the WM_RENDERFORMAT handler.
      */
-    Assert(pSvcCtx->data.pv == NULL && pSvcCtx->data.cb == 0 && pSvcCtx->data.u32Format == 0);
+    Assert(pClientData->data.pv == NULL && pClientData->data.cb == 0 && pClientData->data.u32Format == 0);
 
     vboxClipboardDump(pv, cb, u32Format);
 
@@ -840,25 +840,25 @@ void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDSVCCTX pSvcCtx, void *pv, uint3
             {
                 if (pszResult != NULL && cbResult != 0)
                 {
-                    pSvcCtx->data.pv        = pszResult;
-                    pSvcCtx->data.cb        = cbResult;
-                    pSvcCtx->data.u32Format = u32Format;
+                    pClientData->data.pv        = pszResult;
+                    pClientData->data.cb        = cbResult;
+                    pClientData->data.u32Format = u32Format;
                 }
             }
         }
         else
         {
-            pSvcCtx->data.pv = RTMemDup(pv, cb);
-            if (pSvcCtx->data.pv)
+            pClientData->data.pv = RTMemDup(pv, cb);
+            if (pClientData->data.pv)
             {
-                pSvcCtx->data.cb = cb;
-                pSvcCtx->data.u32Format = u32Format;
+                pClientData->data.cb = cb;
+                pClientData->data.u32Format = u32Format;
             }
         }
     }
 
-    AssertPtr(pSvcCtx->pCtx);
-    int rc = RTSemEventSignal(pSvcCtx->pCtx->hRenderEvent);
+    AssertPtr(pClientData->State.pCtx);
+    int rc = RTSemEventSignal(pClientData->State.pCtx->hRenderEvent);
     AssertRC(rc);
 
     /** @todo Return rc. */

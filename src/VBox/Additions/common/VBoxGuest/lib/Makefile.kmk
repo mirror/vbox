@@ -110,6 +110,7 @@ VBoxGuestR3Lib_DEFS        = \
 	VBOX_WITH_HGCM \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD),VBOX_WITH_SHARED_CLIPBOARD,) \
+    $(if $(VBOX_WITH_SHARED_CLIPBOARD_URI_LIST),VBOX_WITH_SHARED_CLIPBOARD_URI_LIST,) \
 	$(if $(VBOX_WITH_SHARED_FOLDERS),VBOX_WITH_SHARED_FOLDERS,) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),VBOX_WITH_GUEST_CONTROL,)
 VBoxGuestR3Lib_SOURCES     = \
@@ -117,7 +118,6 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibAdditions.cpp \
 	VBoxGuestR3LibAutoLogon.cpp \
 	VBoxGuestR3LibBalloon.cpp \
-	VBoxGuestR3LibClipboard.cpp \
 	VBoxGuestR3LibCoreDump.cpp \
 	VBoxGuestR3LibCpuHotPlug.cpp \
 	VBoxGuestR3LibCredentials.cpp \
@@ -145,6 +145,10 @@ ifdef VBOX_WITH_GUEST_PROPS
  	VBoxGuestR3LibGuestProp.cpp \
  	VBoxGuestR3LibHostVersion.cpp
 endif
+ifdef VBOX_WITH_SHARED_CLIPBOARD
+ VBoxGuestR3Lib_SOURCES   += \
+	VBoxGuestR3LibClipboard.cpp
+endif
 ifdef VBOX_WITH_SHARED_FOLDERS
  VBoxGuestR3Lib_SOURCES   += \
  	VBoxGuestR3LibSharedFolders.cpp
@@ -159,10 +163,6 @@ ifdef VBOX_WITH_DRAG_AND_DROP
     $(if $(VBOX_WITH_DRAG_AND_DROP_GH),VBOX_WITH_DRAG_AND_DROP_GH,)
  VBoxGuestR3Lib_SOURCES   += \
  	VBoxGuestR3LibDragAndDrop.cpp
-endif
-ifdef VBOX_WITH_SHARED_CLIPBOARD
- VBoxGuestR3Lib_DEFS      += \
-	$(if $(VBOX_WITH_SHARED_CLIPBOARD_URI_LIST),VBOX_WITH_SHARED_CLIPBOARD_URI_LIST,)
 endif
 
 VBoxGuestR3LibAdditions.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)

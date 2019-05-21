@@ -251,12 +251,12 @@ int SharedClipboardCache::OpenTemp(SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDC
     return rc;
 }
 
-int SharedClipboardCache::Reset(bool fRemoveDropDir)
+int SharedClipboardCache::Reset(bool fDeleteContent)
 {
     int rc = closeInternal();
     if (RT_SUCCESS(rc))
     {
-        if (fRemoveDropDir)
+        if (fDeleteContent)
         {
             rc = Rollback();
         }

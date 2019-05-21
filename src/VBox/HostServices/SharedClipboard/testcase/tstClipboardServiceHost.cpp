@@ -25,7 +25,7 @@
 
 extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable);
 
-static VBOXCLIPBOARDSVCCTX g_Client;
+static VBOXCLIPBOARDCLIENTDATA g_Client;
 static VBOXHGCMSVCHELPERS g_Helpers = { NULL };
 
 /** Simple call handle structure for the guest call completion callback */
@@ -274,13 +274,13 @@ int main(int argc, char *argv[])
 
 int VBoxClipboardSvcImplInit() { return VINF_SUCCESS; }
 void VBoxClipboardSvcImplDestroy() { }
-void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDSVCCTX) { AssertFailed(); }
-int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDSVCCTX, bool)
+void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA) { AssertFailed(); }
+int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENTDATA, bool)
 { AssertFailed(); return VERR_WRONG_ORDER; }
-void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDSVCCTX, unsigned int)
+void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA, unsigned int)
 { AssertFailed(); }
-int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDSVCCTX, unsigned int, void *, unsigned int, unsigned int *)
+int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA, unsigned int, void *, unsigned int, unsigned int *)
 { AssertFailed(); return VERR_WRONG_ORDER; }
-void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDSVCCTX, void *, unsigned int, unsigned int) { AssertFailed(); }
-int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDSVCCTX)
+void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA, void *, unsigned int, unsigned int) { AssertFailed(); }
+int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA)
 { AssertFailed(); return VERR_WRONG_ORDER; }

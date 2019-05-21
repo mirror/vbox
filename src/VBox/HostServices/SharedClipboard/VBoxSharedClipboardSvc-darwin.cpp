@@ -43,7 +43,7 @@ struct _VBOXCLIPBOARDCONTEXT
     /** The reference to the current pasteboard */
     PasteboardRef pasteboard;
 
-    PVBOXCLIPBOARDSVCCTX pSvcCtx;
+    PVBOXCLIPBOARDCLIENTDATA pClientData;
 };
 
 
@@ -62,7 +62,7 @@ static VBOXCLIPBOARDCONTEXT g_ctx;
  */
 static int vboxClipboardChanged(VBOXCLIPBOARDCONTEXT *pCtx)
 {
-    if (pCtx->pSvcCtx == NULL)
+    if (pCtx->pClientData == NULL)
         return VINF_SUCCESS;
 
     uint32_t fFormats = 0;
@@ -71,7 +71,7 @@ static int vboxClipboardChanged(VBOXCLIPBOARDCONTEXT *pCtx)
     int rc = queryNewPasteboardFormats(pCtx->pasteboard, &fFormats, &fChanged);
     if (RT_SUCCESS(rc) && fChanged)
     {
-        vboxSvcClipboardReportMsg(pCtx->pSvcCtx, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, fFormats);
+        vboxSvcClipboardReportMsg(pCtx->pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, fFormats);
         Log(("vboxClipboardChanged fFormats %02X\n", fFormats));
     }
 
@@ -156,20 +156,20 @@ void VBoxClipboardSvcImplDestroy(void)
      */
     destroyPasteboard(&g_ctx.pasteboard);
     g_ctx.thread = NIL_RTTHREAD;
-    g_ctx.pSvcCtx = NULL;
+    g_ctx.pClientData = NULL;
 }
 
 /**
  * Enable the shared clipboard - called by the hgcm clipboard subsystem.
  *
- * @param   pSvcCtx Structure containing context information about the guest system
- * @param   fHeadless Whether headless.
+ * @param   pClientData Structure containing context information about the guest system
+ * @param   fHeadless   Whether headless.
  * @returns RT status code
  */
-int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDSVCCTX pSvcCtx, bool fHeadless)
+int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENTDATA pClientData, bool fHeadless)
 {
     NOREF(fHeadless);
-    if (g_ctx.pSvcCtx != NULL)
+    if (g_ctx.pClientData != NULL)
     {
         /* One client only. */
         return VERR_NOT_SUPPORTED;
@@ -177,11 +177,11 @@ int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDSVCCTX pSvcCtx, bool fHeadless)
 
     VBoxSvcClipboardLock();
 
-    pSvcCtx->pCtx = &g_ctx;
-    pSvcCtx->pCtx->pSvcCtx = pSvcCtx;
+    pClientData->State.pCtx = &g_ctx;
+    pClientData->State.pCtx->pClientData = pClientData;
 
     /* Initially sync the host clipboard content with the client. */
-    int rc = VBoxClipboardSvcImplSync(pSvcCtx);
+    int rc = VBoxClipboardSvcImplSync(pClientData);
 
     VBoxSvcClipboardUnlock();
     return rc;
@@ -191,11 +191,11 @@ int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDSVCCTX pSvcCtx, bool fHeadless)
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
-int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDSVCCTX pSvcCtx)
+int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA pClientData)
 {
     /* Sync the host clipboard content with the client. */
     VBoxSvcClipboardLock();
-    int rc = vboxClipboardChanged(pSvcCtx->pCtx);
+    int rc = vboxClipboardChanged(pClientData->State.pCtx);
     VBoxSvcClipboardUnlock();
 
     return rc;
@@ -204,12 +204,12 @@ int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDSVCCTX pSvcCtx)
 /**
  * Shut down the shared clipboard subsystem and "disconnect" the guest.
  */
-void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDSVCCTX pSvcCtx)
+void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData)
 {
     Log(("vboxClipboardDisconnect\n"));
 
     VBoxSvcClipboardLock();
-    pSvcCtx->pCtx->pSvcCtx = NULL;
+    pClientData->State.pCtx->pClientData = NULL;
     VBoxSvcClipboardUnlock();
 }
 
@@ -217,10 +217,10 @@ void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDSVCCTX pSvcCtx)
  * The guest is taking possession of the shared clipboard.  Called by the HGCM clipboard
  * subsystem.
  *
- * @param pSvcCtx    Context data for the guest system
- * @param u32Formats Clipboard formats the guest is offering
+ * @param pClientData    Context data for the guest system
+ * @param u32Formats     Clipboard formats the guest is offering
  */
-void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Formats)
+void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Formats)
 {
     Log(("vboxClipboardFormatAnnounce u32Formats %02X\n", u32Formats));
     if (u32Formats == 0)
@@ -229,26 +229,26 @@ void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u
         return;
     }
 
-    vboxSvcClipboardReportMsg(pSvcCtx, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, u32Formats);
+    vboxSvcClipboardReportMsg(pClientData, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, u32Formats);
 }
 
 /**
  * Called by the HGCM clipboard subsystem when the guest wants to read the host clipboard.
  *
- * @param pSvcCtx   Context information about the guest VM
- * @param u32Format The format that the guest would like to receive the data in
- * @param pv        Where to write the data to
- * @param cb        The size of the buffer to write the data to
- * @param pcbActual Where to write the actual size of the written data
+ * @param pClientData   Context information about the guest VM
+ * @param u32Format     The format that the guest would like to receive the data in
+ * @param pv            Where to write the data to
+ * @param cb            The size of the buffer to write the data to
+ * @param pcbActual     Where to write the actual size of the written data
  */
-int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Format,
+int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Format,
                           void *pv, uint32_t cb, uint32_t *pcbActual)
 {
     VBoxSvcClipboardLock();
 
     /* Default to no data available. */
     *pcbActual = 0;
-    int rc = readFromPasteboard(pSvcCtx->pCtx->pasteboard, u32Format, pv, cb, pcbActual);
+    int rc = readFromPasteboard(pClientData->State.pCtx->pasteboard, u32Format, pv, cb, pcbActual);
 
     VBoxSvcClipboardUnlock();
     return rc;
@@ -257,16 +257,16 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Forma
 /**
  * Called by the HGCM clipboard subsystem when we have requested data and that data arrives.
  *
- * @param pSvcCtx   Context information about the guest VM
- * @param pv        Buffer to which the data was written
- * @param cb        The size of the data written
- * @param u32Format The format of the data written
+ * @param pClientData   Context information about the guest VM
+ * @param pv            Buffer to which the data was written
+ * @param cb            The size of the data written
+ * @param u32Format     The format of the data written
  */
-void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDSVCCTX pSvcCtx, void *pv, uint32_t cb, uint32_t u32Format)
+void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv, uint32_t cb, uint32_t u32Format)
 {
     VBoxSvcClipboardLock();
 
-    writeToPasteboard(pSvcCtx->pCtx->pasteboard, pv, cb, u32Format);
+    writeToPasteboard(pClientData->State.pCtx->pasteboard, pv, cb, u32Format);
 
     VBoxSvcClipboardUnlock();
 }

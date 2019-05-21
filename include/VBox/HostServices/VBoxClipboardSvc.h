@@ -47,31 +47,58 @@
 #define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE      1
 /** Run headless on the host, i.e. do not touch the host clipboard. */
 #define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS  2
+/** Reports cancellation of the current operation to the guest. */
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_CANCEL        3
+/** Reports an error to the guest. */
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_ERROR         4
 
 /*
  * The service functions which are called by guest.
  */
 /** Calls the host and waits (blocking) for an host event VBOX_SHARED_CLIPBOARD_HOST_MSG_*. */
 #define VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG      1
-/** Sends a list of available formats to host. */
+/** Sends a list of available formats to the host. */
 #define VBOX_SHARED_CLIPBOARD_FN_REPORT_FORMATS    2
-/** Reads data in specified format from host. */
+/** Reads data in specified format from the host. */
 #define VBOX_SHARED_CLIPBOARD_FN_READ_DATA         3
-/** Writes data in requested format to host. */
+/** Writes data in requested format to the host. */
 #define VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA        4
-#define VBOX_SHARED_CLIPBOARD_FN_READ_DATA_CHUNK   5
-#define VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_CHUNK  6
-#define VBOX_SHARED_CLIPBOARD_FN_READ_DATA_HDR     7
-#define VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_HDR    8
+/** Reads the data header at the beginning of a (new) data transfer from the host.
+ *  New since URI handling was implemented. */
+#define VBOX_SHARED_CLIPBOARD_FN_READ_DATA_HDR     5
+/** Writes data in requested format to the host. */
+#define VBOX_SHARED_CLIPBOARD_FN_READ_DATA_CHUNK   6
+/** Writes the data header at the beginning of a (new) data transfer to the host.
+ *  New since URI handling was implemented. */
+#define VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_HDR    7
+/** Writes data in requested format to the host. */
+#define VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_CHUNK  8
+/** Reads a new directory entry from the host.
+ *  New since URI handling was implemented. */
 #define VBOX_SHARED_CLIPBOARD_FN_READ_DIR          9
+/** Writes a new directory entry to the host.
+ *  New since URI handling was implemented. */
 #define VBOX_SHARED_CLIPBOARD_FN_WRITE_DIR         10
+/** Reads a new file header entry from the host.
+ *  New since URI handling was implemented. */
 #define VBOX_SHARED_CLIPBOARD_FN_READ_FILE_HDR     11
+/** Writes a new file header entry to the host.
+     *  New since URI handling was implemented. */
 #define VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_HDR    12
+/** Reads a new file data chunk entry from the host.
+ *  New since URI handling was implemented. */
 #define VBOX_SHARED_CLIPBOARD_FN_READ_FILE_DATA    13
+/** Writes a new file data chunk entry to the host.
+ *  New since URI handling was implemented. */
 #define VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_DATA   14
+/** Reports cancellation of the current operation to the host.
+ *  New since URI handling was implemented. */
 #define VBOX_SHARED_CLIPBOARD_FN_WRITE_CANCEL      15
+/** Reports an error to the host.
+ *  New since URI handling was implemented. */
 #define VBOX_SHARED_CLIPBOARD_FN_WRITE_ERROR       16
 
+/** The maximum default chunk size for a single data transfer. */
 #define VBOX_SHARED_CLIPBOARD_MAX_CHUNK_SIZE       _64K
 
 /*
@@ -133,40 +160,7 @@ typedef struct _VBoxClipboardWriteData
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA 2
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-/**
- * Data header.
- */
-typedef struct _VBOXCLIPBOARDDATAHDR
-{
-    /** Data transfer flags. Not yet used and must be 0. */
-    uint32_t                    uFlags;
-    /** Screen ID where the data originates from. */
-    uint32_t                    uScreenId;
-    /** Total size (in bytes) to transfer. */
-    uint64_t                    cbTotal;
-    /** Meta data size (in bytes) to transfer.
-     *  This size also is part of cbTotal already. */
-    uint32_t                    cbMeta;
-    /** Meta format buffer. */
-    void                       *pvMetaFmt;
-    /** Size (in bytes) of meta format buffer. */
-    uint32_t                    cbMetaFmt;
-    /** Number of objects (files/directories) to transfer. */
-    uint64_t                    cObjects;
-    /** Compression type. Currently unused, so specify 0.
-     **@todo Add IPRT compression type enumeration as soon as it's available. */
-    uint32_t                    enmCompression;
-    /** Checksum type. Currently unused, so specify RTDIGESTTYPE_INVALID. */
-    RTDIGESTTYPE                enmChecksumType;
-    /** The actual checksum buffer for the entire data to be transferred,
-     *  based on enmChksumType. If RTDIGESTTYPE_INVALID is specified,
-     *  no checksum is being used and pvChecksum will be NULL. */
-    void                       *pvChecksum;
-    /** Size (in bytes) of checksum. */
-    uint32_t                    cbChecksum;
-} VBOXCLIPBOARDDATAHDR, *PVBOXCLIPBOARDDATAHDR;
-
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
  * Sends the header of an incoming (meta) data block.
  *
@@ -324,9 +318,145 @@ typedef struct _VBoxClipboardWriteErrorMsg
     /** The error code (IPRT-style). */
     HGCMFunctionParameter rc;           /* OUT uint32_t */
 } VBoxClipboardWriteErrorMsg;
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 #pragma pack()
+
+/** Builds a callback magic out of the function ID and the version
+ *  of the callback data. */
+#define VBOX_CLIPBOARD_CB_MAGIC_MAKE(uFn, uVer) \
+    RT_MAKE_U32(uVer, uFn)
+
+/*
+ * Callback magics.
+ */
+enum eVBoxClipboardCallbackMagics
+{
+    CB_MAGIC_CLIPBOARD_WRITE_DATA_HDR   = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_HDR, 0),
+    CB_MAGIC_CLIPBOARD_WRITE_DATA_CHUNK = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_CHUNK, 0),
+    CB_MAGIC_CLIPBOARD_WRITE_DIR        = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_DIR, 0),
+    CB_MAGIC_CLIPBOARD_WRITE_FILE_HDR   = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_HDR, 0),
+    CB_MAGIC_CLIPBOARD_WRITE_FILE_DATA  = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_DATA, 0),
+    CB_MAGIC_CLIPBOARD_WRITE_ERROR      = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_ERROR, 0)
+};
+
+typedef struct _VBOXCLIPBOARDCBHEADERDATA
+{
+    /** Magic number to identify the structure. */
+    uint32_t                    uMagic;
+    /** Context ID to identify callback data. */
+    uint32_t                    uContextID;
+} VBOXCLIPBOARDCBHEADERDATA, *PVBOXCLIPBOARDCBHEADERDATA;
+
+/**
+ * Data header.
+ */
+typedef struct _VBOXCLIPBOARDDATAHDR
+{
+    /** Data transfer flags. Not yet used and must be 0. */
+    uint32_t                    uFlags;
+    /** Screen ID where the data originates from. */
+    uint32_t                    uScreenId;
+    /** Total size (in bytes) to transfer. */
+    uint64_t                    cbTotal;
+    /** Meta data size (in bytes) to transfer.
+     *  This size also is part of cbTotal already. */
+    uint32_t                    cbMeta;
+    /** Meta format buffer. */
+    void                       *pvMetaFmt;
+    /** Size (in bytes) of meta format buffer. */
+    uint32_t                    cbMetaFmt;
+    /** Number of objects (files/directories) to transfer. */
+    uint64_t                    cObjects;
+    /** Compression type. Currently unused, so specify 0.
+     **@todo Add IPRT compression type enumeration as soon as it's available. */
+    uint32_t                    enmCompression;
+    /** Checksum type. Currently unused, so specify RTDIGESTTYPE_INVALID. */
+    RTDIGESTTYPE                enmChecksumType;
+    /** The actual checksum buffer for the entire data to be transferred,
+     *  based on enmChksumType. If RTDIGESTTYPE_INVALID is specified,
+     *  no checksum is being used and pvChecksum will be NULL. */
+    void                       *pvChecksum;
+    /** Size (in bytes) of checksum. */
+    uint32_t                    cbChecksum;
+} VBOXCLIPBOARDDATAHDR, *PVBOXCLIPBOARDDATAHDR;
+
+typedef struct _VBOXCLIPBOARDCBWRITEDATAHDRDATA
+{
+    /** Callback data header. */
+    VBOXCLIPBOARDCBHEADERDATA         hdr;
+    /** Actual header data. */
+    VBOXCLIPBOARDDATAHDR              data;
+} VBOXCLIPBOARDCBWRITEDATAHDRDATA, *PVBOXCLIPBOARDCBWRITEDATAHDRDATA;
+
+typedef struct VBOXCLIPBOARDSNDDATA
+{
+    /** Data block buffer. */
+    void                       *pvData;
+    /** Size (in bytes) of data block. */
+    uint32_t                    cbData;
+    /** (Rolling) Checksum. Not yet implemented. */
+    void                       *pvChecksum;
+    /** Size (in bytes) of checksum. Not yet implemented. */
+    uint32_t                    cbChecksum;
+} VBOXCLIPBOARDSNDDATA, *PVBOXCLIPBOARDSNDDATA;
+
+typedef struct VBOXCLIPBOARDCBSNDDATADATA
+{
+    /** Callback data header. */
+    VBOXCLIPBOARDCBHEADERDATA         hdr;
+    /** Actual data. */
+    VBOXCLIPBOARDSNDDATA              data;
+} VBOXCLIPBOARDCBDATADATA, *PVBOXCLIPBOARDCBSNDDATADATA;
+
+typedef struct _VBOXCLIPBOARDCBWRITEDIRDATA
+{
+    /** Callback data header. */
+    VBOXCLIPBOARDCBHEADERDATA   hdr;
+    /** Directory path. */
+    char                       *pszPath;
+    /** Size (in bytes) of path. */
+    uint32_t                    cbPath;
+    /** Directory creation mode. */
+    uint32_t                    fMode;
+} VBOXCLIPBOARDCBWRITEDIRDATA, *PVBOXCLIPBOARDCBWRITEDIRDATA;
+
+typedef struct _VBOXCLIPBOARDCBWRITEFILEHDRDATA
+{
+    /** Callback data header. */
+    VBOXCLIPBOARDCBHEADERDATA   hdr;
+    /** File path (name). */
+    char                       *pszFilePath;
+    /** Size (in bytes) of file path. */
+    uint32_t                    cbFilePath;
+    /** Total size (in bytes) of this file. */
+    uint64_t                    cbSize;
+    /** File (creation) mode. */
+    uint32_t                    fMode;
+    /** Additional flags. Not used at the moment. */
+    uint32_t                    fFlags;
+} VBOXCLIPBOARDCBWRITEFILEHDRDATA, *PVBOXCLIPBOARDCBWRITEFILEHDRDATA;
+
+typedef struct _VBOXCLIPBOARDCBWRITEFILEDATADATA
+{
+    /** Callback data header. */
+    VBOXCLIPBOARDCBHEADERDATA   hdr;
+    /** Current file data chunk. */
+    void                       *pvData;
+    /** Size (in bytes) of current data chunk. */
+    uint32_t                    cbData;
+    /** Checksum for current file data chunk. */
+    void                       *pvChecksum;
+    /** Size (in bytes) of current data chunk. */
+    uint32_t                    cbChecksum;
+} VBOXCLIPBOARDCBWRITEFILEDATADATA, *PVBOXCLIPBOARDCBWRITEFILEDATADATA;
+
+typedef struct _VBOXCLIPBOARDCBEVTERRORDATA
+{
+    /** Callback data header. */
+    VBOXCLIPBOARDCBHEADERDATA   hdr;
+    int32_t                     rc;
+} VBOXCLIPBOARDCBEVTERRORDATA, *PVBOXCLIPBOARDCBEVTERRORDATA;
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 bool VBoxSvcClipboardGetHeadless(void);
 bool VBoxSvcClipboardLock(void);

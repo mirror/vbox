@@ -54,13 +54,13 @@ void VBoxClipboardSvcImplDestroy(void)
 /**
   * Enable the shared clipboard - called by the hgcm clipboard subsystem.
   *
-  * @param   pSvcCtx    Structure containing context information about the guest system
-  * @param   fHeadless  Whether headless.
+  * @param   pClientData    Structure containing context information about the guest system
+  * @param   fHeadless      Whether headless.
   * @returns RT status code
   */
-int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDSVCCTX pSvcCtx, bool fHeadless)
+int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENTDATA pClientData, bool fHeadless)
 {
-    RT_NOREF(pSvcCtx, fHeadless);
+    RT_NOREF(pClientData, fHeadless);
     LogFlowFunc(("called, returning VINF_SUCCESS.\n"));
     return VINF_SUCCESS;
 }
@@ -69,7 +69,7 @@ int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDSVCCTX pSvcCtx, bool fHeadless)
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
-int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDSVCCTX /* pSvcCtx */)
+int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA /* pClientData */)
 {
     LogFlowFunc(("called, returning VINF_SUCCESS.\n"));
     return VINF_SUCCESS;
@@ -78,11 +78,11 @@ int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDSVCCTX /* pSvcCtx */)
 /**
  * Shut down the shared clipboard subsystem and "disconnect" the guest.
  *
- * @param   pSvcCtx    Structure containing context information about the guest system
+ * @param   pClientData    Structure containing context information about the guest system
  */
-void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDSVCCTX pSvcCtx)
+void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData)
 {
-    RT_NOREF(pSvcCtx);
+    RT_NOREF(pClientData);
     LogFlowFunc(("called, returning.\n"));
 }
 
@@ -90,28 +90,28 @@ void VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDSVCCTX pSvcCtx)
  * The guest is taking possession of the shared clipboard.  Called by the HGCM clipboard
  * subsystem.
  *
- * @param pSvcCtx    Context data for the guest system
+ * @param pClientData    Context data for the guest system
  * @param u32Formats Clipboard formats the guest is offering
  */
-void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Formats)
+void VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Formats)
 {
-    RT_NOREF(pSvcCtx, u32Formats);
+    RT_NOREF(pClientData, u32Formats);
     LogFlowFunc(("called, returning.\n"));
 }
 
 /**
  * Called by the HGCM clipboard subsystem when the guest wants to read the host clipboard.
  *
- * @param pSvcCtx   Context information about the guest VM
- * @param u32Format The format that the guest would like to receive the data in
- * @param pv        Where to write the data to
- * @param cb        The size of the buffer to write the data to
- * @param pcbActual Where to write the actual size of the written data
+ * @param pClientData   Context information about the guest VM
+ * @param u32Format     The format that the guest would like to receive the data in
+ * @param pv            Where to write the data to
+ * @param cb            The size of the buffer to write the data to
+ * @param pcbActual     Where to write the actual size of the written data
  */
-int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Format,
+int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Format,
                           void *pv, uint32_t cb, uint32_t *pcbActual)
 {
-    RT_NOREF(pSvcCtx, u32Format, pv, cb);
+    RT_NOREF(pClientData, u32Format, pv, cb);
     LogFlowFunc(("called, returning VINF_SUCCESS.\n"));
     /* No data available. */
     *pcbActual = 0;
@@ -121,15 +121,15 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDSVCCTX pSvcCtx, uint32_t u32Forma
 /**
  * Called by the HGCM clipboard subsystem when we have requested data and that data arrives.
  *
- * @param pSvcCtx   Context information about the guest VM
- * @param pv        Buffer to which the data was written
- * @param cb        The size of the data written
- * @param u32Format The format of the data written
+ * @param pClientData   Context information about the guest VM
+ * @param pv            Buffer to which the data was written
+ * @param cb            The size of the data written
+ * @param u32Format     The format of the data written
  */
-void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDSVCCTX pSvcCtx, void *pv, uint32_t cb,
+void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv, uint32_t cb,
                             uint32_t u32Format)
 {
-    RT_NOREF(pSvcCtx, pv, cb, u32Format);
+    RT_NOREF(pClientData, pv, cb, u32Format);
     LogFlowFunc(("called, returning.\n"));
 }
 
