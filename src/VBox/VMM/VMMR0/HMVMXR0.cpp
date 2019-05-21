@@ -12533,14 +12533,21 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
             if (CPUMIsGuestVmxIoInterceptSet(pVCpu, uIOPort, cbAccess))
             {
                 /*
-                 * INS/OUTS (String I/O) instructions gives us additional information
-                 * when the feature is supported (by the CPU and exposed to the guest).
+                 * IN/OUT instruction:
+                 *   - Provides VM-exit instruction length.
                  *
-                 * Instruction length is available for IN/OUT as well as INS/OUTS.
+                 * INS/OUTS instruction:
+                 *   - Provides VM-exit instruction length.
+                 *   - Provides Guest-linear address.
+                 *   - Optionally provides VM-exit instruction info (depends on CPU feature).
                  */
                 PVM pVM = pVCpu->CTX_SUFF(pVM);
                 rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
                 AssertRCReturn(rc, rc);
+
+                /* Make sure we don't use stale VMX-transient info. */
+                pVmxTransient->ExitInstrInfo.u  = 0;
+                pVmxTransient->uGuestLinearAddr = 0;
 
                 bool const fVmxInsOutsInfo = pVM->cpum.ro.GuestFeatures.fVmxInsOutInfo;
                 bool const fIOString       = VMX_EXIT_QUAL_IO_IS_STRING(pVmxTransient->uExitQual);
@@ -12552,11 +12559,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
                         Assert(RT_BF_GET(pVM->hm.s.vmx.Msrs.u64Basic, VMX_BF_BASIC_VMCS_INS_OUTS)); /* Paranoia. */
                         rc |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
                     }
-                    else
-                        pVmxTransient->ExitInstrInfo.u  = 0;
                 }
-                else
-                    pVmxTransient->uGuestLinearAddr = 0;
                 AssertRCReturn(rc, rc);
 
                 VMXVEXITINFO ExitInfo;
