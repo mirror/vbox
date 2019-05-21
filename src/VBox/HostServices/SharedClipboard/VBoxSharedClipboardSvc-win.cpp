@@ -42,7 +42,7 @@
 #include <process.h>
 #include <shlobj.h> /* Needed for shell objects. */
 
-#include "VBoxClipboard.h"
+#include "VBoxSharedClipboardSvc-internal.h"
 
 /** Static window class name. */
 static char s_szClipWndClassName[] = VBOX_CLIPBOARD_WNDCLASS_NAME;

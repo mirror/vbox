@@ -26,7 +26,7 @@
 #include <iprt/asm.h>
 #include <iprt/thread.h>
 
-#include "VBoxClipboard.h"
+#include "VBoxSharedClipboardSvc-internal.h"
 #include "darwin-pasteboard.h"
 
 

@@ -34,8 +34,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include "VBoxClipboard.h"
-
+#include "VBoxSharedClipboardSvc-internal.h"
 
 
 /** Initialise the host side of the shared clipboard - called by the hgcm layer. */
