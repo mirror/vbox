@@ -159,27 +159,29 @@ class tdCreateVMWithDefaults1(vbox.TestDriver):
         Test create VM with defaults.
         """
         if not self.importVBoxApi():
-            return False
+            return reporter.error('importVBoxApi');
 
-        aoGuestTypes = self.oVBoxMgr.getArray(self.oVBox, 'guestOSTypes')
-        if aoGuestTypes is None or len(aoGuestTypes) < 1:
-            return False;
-
-        reporter.testStart('create-vm-with-defaults')
-        fRc = True
+        # Get the guest OS types.
         try:
-            for oGuestType in aoGuestTypes:
-                reporter.testStart('Checking VM creation (%s)' % (oGuestType.id))
-                fRc = self.createVMWithDefaults(oGuestType.id)
-                reporter.testDone()
-                if not fRc:
-                    break
-
-            assert fRc is True
+            aoGuestTypes = self.oVBoxMgr.getArray(self.oVBox, 'guestOSTypes')
+            if aoGuestTypes is None or len(aoGuestTypes) < 1:
+                return reporter.error('No guest OS types');
         except:
-            reporter.errorXcpt()
+            return reporter.errorXcpt();
 
-        reporter.testDone('create-vm-with-defaults')
+        # Create VMs with defaults for each of the guest types.
+        reporter.testStart('Create VMs with defaults');
+        fRc = True
+        for oGuestType in aoGuestTypes:
+            try:
+                sGuestType = oGuestType.id;
+            except:
+                fRc = reporter.errorXcpt();
+            else:
+                reporter.testStart(sGuestType);
+                fRc = self.createVMWithDefaults(sGuestType) & fRc;
+                reporter.testDone();
+        reporter.testDone();
 
         return fRc
 
