@@ -961,16 +961,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
     def parseOption(self, asArgs, iArg):                                        # pylint: disable=R0912,R0915
         if asArgs[iArg] == '--add-guest-ctrl-tests':
             iArg += 1;
+            iNext = self.oTstDrv.requireMoreArgs(1, asArgs, iArg);
             if asArgs[iArg] == 'all': # Nice for debugging scripts.
                 self.asTests = self.asTestsDef;
-                return iArg + 1;
-
-            iNext = self.oTstDrv.requireMoreArgs(1, asArgs, iArg);
-            self.asTests = asArgs[iArg].split(':');
-            for s in self.asTests:
-                if s not in self.asTestsDef:
-                    raise base.InvalidOption('The "--add-guest-ctrl-tests" value "%s" is not valid; valid values are: %s' \
-                        % (s, ' '.join(self.asTestsDef)));
+            else:
+                self.asTests = asArgs[iArg].split(':');
+                for s in self.asTests:
+                    if s not in self.asTestsDef:
+                        raise base.InvalidOption('The "--add-guest-ctrl-tests" value "%s" is not valid; valid values are: %s'
+                                                 % (s, ' '.join(self.asTestsDef)));
             return iNext;
         return iArg;
 
