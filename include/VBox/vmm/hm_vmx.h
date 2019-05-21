@@ -3646,7 +3646,7 @@ typedef struct
     /** 0x288 - XSS-exiting bitmap.  */
     RTUINT64U       u64XssBitmap;
     /** 0x290 - ENCLS-exiting bitmap address.  */
-    RTUINT64U       u64AddrEnclsBitmap;
+    RTUINT64U       u64EnclsBitmap;
     /** 0x298 - Sub-page-permission-table pointer. */
     RTUINT64U       u64SpptPtr;
     /** 0x2a0 - TSC multiplier.  */

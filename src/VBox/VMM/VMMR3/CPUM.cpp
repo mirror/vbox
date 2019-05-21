@@ -442,7 +442,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64AddrVmwriteBitmap),
     SSMFIELD_ENTRY(       VMXVVMCS, u64AddrXcptVeInfo),
     SSMFIELD_ENTRY(       VMXVVMCS, u64XssBitmap),
-    SSMFIELD_ENTRY(       VMXVVMCS, u64AddrEnclsBitmap),
+    SSMFIELD_ENTRY(       VMXVVMCS, u64EnclsBitmap),
     SSMFIELD_ENTRY(       VMXVVMCS, u64SpptPtr),
     SSMFIELD_ENTRY(       VMXVVMCS, u64TscMultiplier),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved0),
@@ -3842,7 +3842,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
         pHlp->pfnPrintf(pHlp, "  %sVMWRITE-bitmap addr        = %#RX64\n",   pszPrefix, pVmcs->u64AddrVmwriteBitmap.u);
         pHlp->pfnPrintf(pHlp, "  %sVirt-Xcpt info addr        = %#RX64\n",   pszPrefix, pVmcs->u64AddrXcptVeInfo.u);
         pHlp->pfnPrintf(pHlp, "  %sXSS-bitmap                 = %#RX64\n",   pszPrefix, pVmcs->u64XssBitmap.u);
-        pHlp->pfnPrintf(pHlp, "  %sENCLS-exiting bitmap addr  = %#RX64\n",   pszPrefix, pVmcs->u64AddrEnclsBitmap.u);
+        pHlp->pfnPrintf(pHlp, "  %sENCLS-exiting bitmap       = %#RX64\n",   pszPrefix, pVmcs->u64EnclsBitmap.u);
         pHlp->pfnPrintf(pHlp, "  %sSPPT pointer               = %#RX64\n",   pszPrefix, pVmcs->u64SpptPtr.u);
         pHlp->pfnPrintf(pHlp, "  %sTSC multiplier             = %#RX64\n",   pszPrefix, pVmcs->u64TscMultiplier.u);
 
