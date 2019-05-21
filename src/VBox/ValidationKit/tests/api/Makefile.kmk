@@ -34,10 +34,14 @@ ValidationKitTestsApi_INST = $(INST_VALIDATIONKIT)tests/api/
 ValidationKitTestsApi_EXEC_SOURCES := \
 	$(PATH_SUB_CURRENT)/tdApi1.py \
 	$(PATH_SUB_CURRENT)/tdAppliance1.py \
+	$(PATH_SUB_CURRENT)/tdCreateVMWithDefaults1.py \
 	$(PATH_SUB_CURRENT)/tdMoveMedium1.py \
+	$(PATH_SUB_CURRENT)/tdMoveVM1.py \
 	$(PATH_SUB_CURRENT)/tdPython1.py \
-	$(PATH_SUB_CURRENT)/tdTreeDepth1.py \
-	$(PATH_SUB_CURRENT)/tdMoveVM1.py
+	$(PATH_SUB_CURRENT)/tdTreeDepth1.py
+
+VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(ValidationKitTestsSettings_EXEC_SOURCES)
+
 ifndef VBOX_OSE
  ValidationKitTestsApi_EXEC_SOURCES += \
  	$(PATH_SUB_CURRENT)/tdOCIExport1.py
