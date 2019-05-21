@@ -3347,7 +3347,7 @@ AssertCompile(RT_ALIGN_Z(VMX_V_AUTOMSR_AREA_SIZE, X86_PAGE_4K_SIZE) == VMX_V_AUT
 #define VMX_V_VMCS_MAX_INDEX                                    RT_BF_GET(VMX_VMCS64_CTRL_TSC_MULTIPLIER_HIGH, VMX_BF_VMCS_ENC_INDEX)
 
 /**
- * Virtual VM-Exit information.
+ * Virtual VM-exit information.
  *
  * This is a convenience structure that bundles some VM-exit information related
  * fields together.
@@ -3378,6 +3378,33 @@ typedef VMXVEXITINFO *PVMXVEXITINFO;
 /** Pointer to a const VMXVEXITINFO struct. */
 typedef const VMXVEXITINFO *PCVMXVEXITINFO;
 AssertCompileMemberAlignment(VMXVEXITINFO, u64Qual, 8);
+
+/**
+ * Virtual VM-exit information for events.
+ *
+ * This is a convenience structure that bundles some event-based VM-exit information
+ * related fields together that are not included in VMXVEXITINFO.
+ *
+ * This is kept as a separate structure and not included in VMXVEXITINFO, to make it
+ * easier to distinguish that IEM VM-exit handlers will set one or more of the
+ * following fields in the virtual VMCS. Including it in the VMXVEXITINFO will not
+ * make it ovbious which fields may get set (or cleared).
+ */
+typedef struct
+{
+    /** VM-exit interruption information. */
+    uint32_t                uExitIntInfo;
+    /** VM-exit interruption error code. */
+    uint32_t                uExitIntErrCode;
+    /** IDT-vectoring information. */
+    uint32_t                uIdtVectoringInfo;
+    /** IDT-vectoring error code. */
+    uint32_t                uIdtVectoringErrCode;
+} VMXVEXITEVENTINFO;
+/** Pointer to the VMXVEXITINFO2 struct. */
+typedef VMXVEXITEVENTINFO *PVMXVEXITEVENTINFO;
+/** Pointer to a const VMXVEXITINFO2 struct. */
+typedef const VMXVEXITEVENTINFO *PCVMXVEXITEVENTINFO;
 
 /**
  * Virtual VMCS.
