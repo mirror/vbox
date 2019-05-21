@@ -12714,7 +12714,6 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_TPR_BELOW_THRESHOLD:
         case VMX_EXIT_MWAIT:
         case VMX_EXIT_MONITOR:
-        case VMX_EXIT_TASK_SWITCH:
         case VMX_EXIT_PREEMPT_TIMER:
 
         case VMX_EXIT_RDMSR:
@@ -12752,6 +12751,34 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
             }
             else
                 rcStrict = hmR0VmxExitWrmsr(pVCpu, pVmxTransient);
+            break;
+        }
+
+        case VMX_EXIT_TASK_SWITCH:
+        {
+            int rc = hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+            rc    |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+            rc    |= hmR0VmxReadIdtVectoringInfoVmcs(pVmxTransient);
+            if (VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo))
+                rc |= hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
+            else
+            {
+                pVmxTransient->uIdtVectoringInfo      = 0;
+                pVmxTransient->uIdtVectoringErrorCode = 0;
+            }
+            AssertRCReturn(rc, rc);
+
+            VMXVEXITINFO ExitInfo;
+            RT_ZERO(ExitInfo);
+            ExitInfo.cbInstr = pVmxTransient->cbInstr;
+            ExitInfo.u64Qual = pVmxTransient->uExitQual;
+
+            VMXVEXITEVENTINFO ExitEventInfo;
+            RT_ZERO(ExitInfo);
+            ExitEventInfo.uIdtVectoringInfo    = pVmxTransient->uIdtVectoringInfo;
+            ExitEventInfo.uIdtVectoringErrCode = pVmxTransient->uIdtVectoringErrorCode;
+
+            rcStrict = IEMExecVmxVmexitTaskSwitch(pVCpu, &ExitInfo, &ExitEventInfo);
             break;
         }
 
