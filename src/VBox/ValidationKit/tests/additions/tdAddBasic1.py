@@ -50,6 +50,7 @@ from testdriver import vboxcon;
 # Sub test driver imports.
 sys.path.append(os.path.dirname(os.path.abspath(__file__))); # For sub-test drivers.
 from tdAddGuestCtrl import SubTstDrvAddGuestCtrl;
+#from tdAddSharedFolders1 import SubTstDrvAddSharedFolders1;
 
 
 class tdAddBasic1(vbox.TestDriver):                                         # pylint: disable=R0902
@@ -63,11 +64,12 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
     def __init__(self):
         vbox.TestDriver.__init__(self);
         self.oTestVmSet = self.oTestVmManager.getSmokeVmSet('nat');
-        self.asTestsDef = ['install', 'guestprops', 'stdguestprops', 'guestcontrol'];
+        self.asTestsDef = ['install', 'guestprops', 'stdguestprops', 'guestcontrol', 'sharedfolders'];
         self.asTests    = self.asTestsDef;
         self.asRsrcs    = None
 
         self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
+        #self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
 
     #
     # Overridden methods.
@@ -160,6 +162,12 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
             if not fSkip:
                 fRc, oTxsSession = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
             reporter.testDone(fSkip);
+
+            #fSkip = 'sharedfolders' not in self.asTests;
+            #reporter.testStart('Shared Folders');
+            #if not fSkip:
+            #    fRc, oTxsSession = self.aoSubTstDrvs[1].testIt(oTestVm, oSession, oTxsSession);
+            #reporter.testDone(fSkip or fRc is None);
 
             ## @todo Save and restore test.
 
