@@ -263,7 +263,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    21 */ RT_UOFFSETOF(VMXVVMCS, u64AddrXcptVeInfo),
         /*    22 */ RT_UOFFSETOF(VMXVVMCS, u64XssBitmap),
         /*    23 */ RT_UOFFSETOF(VMXVVMCS, u64AddrEnclsBitmap),
-        /*    24 */ UINT16_MAX,
+        /*    24 */ RT_UOFFSETOF(VMXVVMCS, u64SpptPtr),
         /*    25 */ RT_UOFFSETOF(VMXVVMCS, u64TscMultiplier)
     },
     /* VMX_VMCS_ENC_WIDTH_64BIT | VMX_VMCS_ENC_TYPE_VMEXIT_INFO: */

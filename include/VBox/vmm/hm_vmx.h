@@ -3647,10 +3647,12 @@ typedef struct
     RTUINT64U       u64XssBitmap;
     /** 0x290 - ENCLS-exiting bitmap address.  */
     RTUINT64U       u64AddrEnclsBitmap;
-    /** 0x298 - TSC multiplier.  */
+    /** 0x298 - Sub-page-permission-table pointer. */
+    RTUINT64U       u64SpptPtr;
+    /** 0x2a0 - TSC multiplier.  */
     RTUINT64U       u64TscMultiplier;
-    /** 0x2a0 - Reserved for future. */
-    RTUINT64U       au64Reserved0[16];
+    /** 0x2a8 - Reserved for future. */
+    RTUINT64U       au64Reserved0[15];
     /** @} */
 
     /** @name 64-bit Read-only Data fields.
