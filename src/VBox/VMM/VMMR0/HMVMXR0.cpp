@@ -12576,6 +12576,17 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
             break;
         }
 
+        case VMX_EXIT_HLT:
+        {
+            int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+            AssertRCReturn(rc, rc);
+            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_HLT_EXIT))
+                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
+            else
+                rcStrict = hmR0VmxExitHlt(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_RDTSC:
         {
             int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -12651,6 +12662,48 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
             break;
         }
 
+        case VMX_EXIT_INVLPG:
+        {
+            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
+            {
+                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                rc    |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+                AssertRCReturn(rc, rc);
+
+                VMXVEXITINFO ExitInfo;
+                RT_ZERO(ExitInfo);
+                ExitInfo.uReason   = uExitReason;
+                ExitInfo.cbInstr   = pVmxTransient->cbInstr;
+                ExitInfo.u64Qual   = pVmxTransient->uExitQual;
+                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+            }
+            else
+                rcStrict = hmR0VmxExitInvlpg(pVCpu, pVmxTransient);
+            break;
+        }
+
+        case VMX_EXIT_INVPCID:
+        {
+            if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
+            {
+                int rc  = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                rc     |= hmR0VmxReadExitQualVmcs(pVCpu, pVmxTransient);
+                rc     |= hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
+                AssertRCReturn(rc, rc);
+
+                VMXVEXITINFO ExitInfo;
+                RT_ZERO(ExitInfo);
+                ExitInfo.uReason   = uExitReason;
+                ExitInfo.cbInstr   = pVmxTransient->cbInstr;
+                ExitInfo.u64Qual   = pVmxTransient->uExitQual;
+                ExitInfo.InstrInfo = pVmxTransient->ExitInstrInfo;
+                rcStrict = IEMExecVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
+            }
+            else
+                rcStrict = hmR0VmxExitInvpcid(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_APIC_ACCESS:
         case VMX_EXIT_XCPT_OR_NMI:
         case VMX_EXIT_MOV_CRX:
@@ -12700,17 +12753,26 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
             break;
         }
 
+        case VMX_EXIT_WBINVD:
+        {
+            if (CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_WBINVD_EXIT))
+            {
+                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                AssertRCReturn(rc, rc);
+                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
+            }
+            else
+                rcStrict = hmR0VmxExitInvpcid(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_MOV_DRX:
-        case VMX_EXIT_HLT:
-        case VMX_EXIT_INVLPG:
         case VMX_EXIT_RSM:
         case VMX_EXIT_MTF:
         case VMX_EXIT_PAUSE:
         case VMX_EXIT_GDTR_IDTR_ACCESS:
         case VMX_EXIT_LDTR_TR_ACCESS:
-        case VMX_EXIT_WBINVD:
         case VMX_EXIT_RDRAND:
-        case VMX_EXIT_INVPCID:
         case VMX_EXIT_RDPMC:
         case VMX_EXIT_VMREAD:
         case VMX_EXIT_VMWRITE:
