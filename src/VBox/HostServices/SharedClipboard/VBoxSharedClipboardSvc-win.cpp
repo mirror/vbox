@@ -161,7 +161,7 @@ static int vboxClipboardReadDataFromClient(VBOXCLIPBOARDCONTEXT *pCtx, VBOXCLIPB
 {
     Assert(pCtx->pClientData);
     Assert(pCtx->hRenderEvent);
-    Assert(pCtx->pClientData->data.pv == NULL && pCtx->pClientData->data.cb == 0 && pCtx->pClientData->data.u32Format == 0);
+    Assert(pCtx->pClientData->State.data.pv == NULL && pCtx->pClientData->State.data.cb == 0 && pCtx->pClientData->State.data.u32Format == 0);
 
     LogFlowFunc(("fFormat=%02X\n", fFormat));
 
@@ -299,14 +299,14 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                 int rc = vboxClipboardReadDataFromClient(pCtx, fFormat);
 
                 LogFunc(("vboxClipboardReadDataFromClient rc = %Rrc, pv %p, cb %d, u32Format %d\n",
-                          rc, pCtx->pClientData->data.pv, pCtx->pClientData->data.cb, pCtx->pClientData->data.u32Format));
+                          rc, pCtx->pClientData->State.data.pv, pCtx->pClientData->State.data.cb, pCtx->pClientData->State.data.u32Format));
 
                 if (   RT_SUCCESS (rc)
-                    && pCtx->pClientData->data.pv != NULL
-                    && pCtx->pClientData->data.cb > 0
-                    && pCtx->pClientData->data.u32Format == fFormat)
+                    && pCtx->pClientData->State.data.pv != NULL
+                    && pCtx->pClientData->State.data.cb > 0
+                    && pCtx->pClientData->State.data.u32Format == fFormat)
                 {
-                    HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, pCtx->pClientData->data.cb);
+                    HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, pCtx->pClientData->State.data.cb);
 
                     LogFunc(("hMem %p\n", hMem));
 
@@ -320,16 +320,16 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                         {
                             LogFunc(("WM_RENDERFORMAT setting data\n"));
 
-                            if (pCtx->pClientData->data.pv)
+                            if (pCtx->pClientData->State.data.pv)
                             {
-                                memcpy(pMem, pCtx->pClientData->data.pv, pCtx->pClientData->data.cb);
+                                memcpy(pMem, pCtx->pClientData->State.data.pv, pCtx->pClientData->State.data.cb);
 
-                                RTMemFree(pCtx->pClientData->data.pv);
-                                pCtx->pClientData->data.pv        = NULL;
+                                RTMemFree(pCtx->pClientData->State.data.pv);
+                                pCtx->pClientData->State.data.pv        = NULL;
                             }
 
-                            pCtx->pClientData->data.cb        = 0;
-                            pCtx->pClientData->data.u32Format = 0;
+                            pCtx->pClientData->State.data.cb        = 0;
+                            pCtx->pClientData->State.data.u32Format = 0;
 
                             /* The memory must be unlocked before inserting to the Clipboard. */
                             GlobalUnlock(hMem);
@@ -352,10 +352,10 @@ static LRESULT CALLBACK vboxClipboardWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                     }
                 }
 
-                RTMemFree(pCtx->pClientData->data.pv);
-                pCtx->pClientData->data.pv        = NULL;
-                pCtx->pClientData->data.cb        = 0;
-                pCtx->pClientData->data.u32Format = 0;
+                RTMemFree(pCtx->pClientData->State.data.pv);
+                pCtx->pClientData->State.data.pv        = NULL;
+                pCtx->pClientData->State.data.cb        = 0;
+                pCtx->pClientData->State.data.u32Format = 0;
 
                 /* Something went wrong. */
                 VBoxClipboardWinClear();
@@ -683,7 +683,7 @@ static int vboxClipboardDbgDumpHtml(const char *pszSrc, size_t cb)
 
 int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual)
 {
-    AssertPtrReturn(pClientData,       VERR_INVALID_POINTER);
+    AssertPtrReturn(pClientData,             VERR_INVALID_POINTER);
     AssertPtrReturn(pClientData->State.pCtx, VERR_INVALID_POINTER);
 
     LogFlowFunc(("u32Format=%02X\n", u32Format));
@@ -822,7 +822,7 @@ void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *p
     /*
      * The guest returns data that was requested in the WM_RENDERFORMAT handler.
      */
-    Assert(pClientData->data.pv == NULL && pClientData->data.cb == 0 && pClientData->data.u32Format == 0);
+    Assert(pClientData->State.data.pv == NULL && pClientData->State.data.cb == 0 && pClientData->State.data.u32Format == 0);
 
     vboxClipboardDump(pv, cb, u32Format);
 
@@ -840,19 +840,19 @@ void VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *p
             {
                 if (pszResult != NULL && cbResult != 0)
                 {
-                    pClientData->data.pv        = pszResult;
-                    pClientData->data.cb        = cbResult;
-                    pClientData->data.u32Format = u32Format;
+                    pClientData->State.data.pv        = pszResult;
+                    pClientData->State.data.cb        = cbResult;
+                    pClientData->State.data.u32Format = u32Format;
                 }
             }
         }
         else
         {
-            pClientData->data.pv = RTMemDup(pv, cb);
-            if (pClientData->data.pv)
+            pClientData->State.data.pv = RTMemDup(pv, cb);
+            if (pClientData->State.data.pv)
             {
-                pClientData->data.cb = cb;
-                pClientData->data.u32Format = u32Format;
+                pClientData->State.data.cb = cb;
+                pClientData->State.data.u32Format = u32Format;
             }
         }
     }
