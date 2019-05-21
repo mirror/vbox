@@ -550,7 +550,7 @@ int main()
     RTPrintf(TEST_NAME ": TESTING\n");
     AssertRCReturn(rc, 1);
     rc = VBoxClipboardSvcImplConnect(&client, false);
-    CLIPBACKEND *pBackend = client.pCtx->pBackend;
+    CLIPBACKEND *pBackend = client.State.pCtx->pBackend;
     AssertRCReturn(rc, 1);
     VBoxClipboardSvcImplFormatAnnounce(&client,
                                 VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
@@ -560,8 +560,8 @@ int main()
         ++cErrors;
     }
     pBackend->readData.rc = VINF_SUCCESS;
-    client.asyncRead.callHandle = (VBOXHGCMCALLHANDLE)pBackend;
-    client.asyncRead.paParms = (VBOXHGCMSVCPARM *)&client;
+    client.State.asyncRead.callHandle = (VBOXHGCMCALLHANDLE)pBackend;
+    client.State.asyncRead.paParms = (VBOXHGCMSVCPARM *)&client;
     uint32_t u32Dummy;
     rc = VBoxClipboardSvcImplReadData(&client, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
                                &u32Dummy, 42, &u32Dummy);
@@ -585,7 +585,7 @@ int main()
         }
         else
         {
-            ClipCompleteDataRequestFromX11(client.pCtx, VERR_NO_DATA,
+            ClipCompleteDataRequestFromX11(client.State.pCtx, VERR_NO_DATA,
                                            pBackend->readData.pReq, NULL, 43);
             if (   pBackend->completeRead.rc != VERR_NO_DATA
                 || pBackend->completeRead.cbActual != 43)
@@ -603,7 +603,7 @@ int main()
     pBackend->writeData.cb = sizeof("testing");
     pBackend->writeData.format = 1234;
     pBackend->reportData.format = 4321;  /* XX this should be handled! */
-    rc = ClipRequestDataForX11(client.pCtx, 23, &pv, &cb);
+    rc = ClipRequestDataForX11(client.State.pCtx, 23, &pv, &cb);
     if (   rc != VINF_SUCCESS
         || strcmp((const char *)pv, "testing") != 0
         || cb != sizeof("testing"))
@@ -614,7 +614,7 @@ int main()
     else
         RTMemFree(pv);
     pBackend->writeData.timeout = true;
-    rc = ClipRequestDataForX11(client.pCtx, 23, &pv, &cb);
+    rc = ClipRequestDataForX11(client.State.pCtx, 23, &pv, &cb);
     if (rc != VERR_TIMEOUT)
     {
         RTPrintf("rc=%Rrc, expected VERR_TIMEOUT\n", rc);
@@ -623,7 +623,7 @@ int main()
     pBackend->writeData.pv = NULL;
     pBackend->writeData.cb = 0;
     pBackend->writeData.timeout = false;
-    rc = ClipRequestDataForX11(client.pCtx, 23, &pv, &cb);
+    rc = ClipRequestDataForX11(client.State.pCtx, 23, &pv, &cb);
     if (rc != VERR_NO_DATA)
     {
         RTPrintf("rc=%Rrc, expected VERR_NO_DATA\n", rc);
