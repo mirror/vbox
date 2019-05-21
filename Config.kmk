@@ -3664,6 +3664,8 @@ ifdef VBOX_SIGNING_MODE
    VBOX_SIGN_BUNDLE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
+	$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 14,--digest-algorithm sha256,) \
+	$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 16,--options 0x10000,--options runtime) \
 	--file-list - \
 	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
 	$(3) \
@@ -3681,6 +3683,7 @@ ifdef VBOX_SIGNING_MODE
    VBOX_SIGN_MACHO_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
+	$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 14,--digest-algorithm sha256,) \
 	--file-list - \
 	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
@@ -3703,6 +3706,7 @@ ifdef VBOX_SIGNING_MODE
    VBOX_SIGN_FILE_FN = $(call MSG_TOOL,SIGNTOOL,,$(1),$(2))$(NLTAB)$(VBOX_CODESIGN) \
 	--verbose=9 \
 	--force \
+	$(if-expr $(KBUILD_HOST_VERSION_MAJOR) <= 14,--digest-algorithm sha256,) \
 	--file-list - \
 	$(if-expr defined(VBOX_TSA_URL),--timestamp="$(VBOX_TSA_URL)") \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
