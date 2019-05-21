@@ -160,7 +160,6 @@ typedef struct _VBoxClipboardWriteData
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA 2
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
  * Sends the header of an incoming (meta) data block.
  *
@@ -320,6 +319,8 @@ typedef struct _VBoxClipboardWriteErrorMsg
 } VBoxClipboardWriteErrorMsg;
 
 #pragma pack()
+
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 
 /** Builds a callback magic out of the function ID and the version
  *  of the callback data. */
