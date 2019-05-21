@@ -18,13 +18,14 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QFile>
-#include <QPushButton>
+#include <QToolButton>
 #include <QXmlStreamReader>
 #include <QVBoxLayout>
 
 /* GUI includes: */
 #include "QIDialogButtonBox.h"
 #include "UIExtraDataManager.h"
+#include "UISession.h"
 #include "UISoftKeyboard.h"
 #include "VBoxGlobal.h"
 
@@ -37,6 +38,7 @@ struct SoftKeyboardKey
     int      m_iWidth;
     QString  m_strLabel;
     LONG     m_scanCode;
+    LONG     m_scanCodePrefix;
 };
 
 struct SoftKeyboardRow
@@ -73,24 +75,34 @@ private:
 *   UISoftKeyboardKey definition.                                                                                  *
 *********************************************************************************************************************************/
 
-class UISoftKeyboardKey : public QPushButton
+class UISoftKeyboardKey : public QToolButton
 {
     Q_OBJECT;
 
 public:
 
     UISoftKeyboardKey(QWidget *pParent = 0);
+
     void setWidth(int iWidth);
     int width() const;
-    void updateFontSize(float multiplier);
 
-protected:
+    void setScanCode(LONG scanCode);
+    LONG scanCode() const;
+
+    void setScanCodePrefix(LONG scanCode);
+    LONG scanCodePrefix() const;
+
+    QVector<LONG> scanCodeWithPrefix() const;
+
+    void updateFontSize(float multiplier);
 
 private:
 
-    int m_iWidth;
-    int m_iDefaultPixelSize;
-    int m_iDefaultPointSize;
+    int   m_iWidth;
+    int   m_iDefaultPixelSize;
+    int   m_iDefaultPointSize;
+    LONG  m_scanCode;
+    LONG  m_scanCodePrefix;
 };
 
 /*********************************************************************************************************************************
@@ -159,14 +171,35 @@ bool UIKeyboardLayoutReader::parseKey(SoftKeyboardRow &row)
 {
     row.m_keys.append(SoftKeyboardKey());
     SoftKeyboardKey &key = row.m_keys.last();
+    key.m_scanCode = 0;
+    key.m_scanCodePrefix = 0;
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "width")
             key.m_iWidth = m_xmlReader.readElementText().toInt();
         else if (m_xmlReader.name() == "label")
-            key.m_strLabel = m_xmlReader.readElementText();
+        {
+            if (key.m_strLabel.isEmpty())
+                key.m_strLabel = m_xmlReader.readElementText();
+            else
+                key.m_strLabel = QString("%1%2%3").arg(key.m_strLabel).arg("\n").arg(m_xmlReader.readElementText());
+        }
         else if (m_xmlReader.name() == "scancode")
-            key.m_scanCode = m_xmlReader.readElementText().toInt();
+        {
+            QString strCode = m_xmlReader.readElementText();
+            bool fOk = false;
+            key.m_scanCode = strCode.toInt(&fOk, 16);
+            if (!fOk)
+                key.m_scanCode = 0;
+        }
+        else if (m_xmlReader.name() == "scancodeprefix")
+        {
+            QString strCode = m_xmlReader.readElementText();
+            bool fOk = false;
+            key.m_scanCodePrefix = strCode.toInt(&fOk, 16);
+            if (!fOk)
+                key.m_scanCodePrefix = 0;
+        }
         else
             m_xmlReader.skipCurrentElement();
     }
@@ -178,7 +211,7 @@ bool UIKeyboardLayoutReader::parseKey(SoftKeyboardRow &row)
 *********************************************************************************************************************************/
 
 UISoftKeyboardKey::UISoftKeyboardKey(QWidget *pParent /* = 0 */)
-    :QPushButton(pParent)
+    :QToolButton(pParent)
     , m_iWidth(1)
 {
     m_iDefaultPointSize = font().pointSize();
@@ -193,6 +226,26 @@ void UISoftKeyboardKey::setWidth(int iWidth)
 int UISoftKeyboardKey::width() const
 {
     return m_iWidth;
+}
+
+void UISoftKeyboardKey::setScanCode(LONG scanCode)
+{
+    m_scanCode = scanCode;
+}
+
+LONG UISoftKeyboardKey::scanCode() const
+{
+    return m_scanCode;
+}
+
+void UISoftKeyboardKey::setScanCodePrefix(LONG scanCodePrefix)
+{
+    m_scanCodePrefix = scanCodePrefix;
+}
+
+LONG UISoftKeyboardKey::scanCodePrefix() const
+{
+    return m_scanCodePrefix;
 }
 
 void UISoftKeyboardKey::updateFontSize(float multiplier)
@@ -237,20 +290,26 @@ void UISoftKeyboardRow::updateLayout()
             continue;
         pKey->setVisible(true);
         pKey->updateFontSize(fMultiplier);
-        pKey->setGeometry(iX, 0, fMultiplier * pKey->width(), height());
+        int iKeyWidth = fMultiplier * pKey->width();
+        if (i != m_keys.size() - 1)
+            pKey->setGeometry(iX, 0, iKeyWidth, height());
+        else
+        {
+            pKey->setGeometry(iX, 0, width() - iX - 1, height());
+        }
         iX += fMultiplier * pKey->width();
     }
 }
-
 
 /*********************************************************************************************************************************
 *   UISoftKeyboard implementation.                                                                                  *
 *********************************************************************************************************************************/
 
-UISoftKeyboard::UISoftKeyboard(EmbedTo /* enmEmbedding */,
-                               QWidget *pParent, QString strMachineName /* = QString()*/,
+UISoftKeyboard::UISoftKeyboard(EmbedTo /* enmEmbedding */, QWidget *pParent,
+                               UISession *pSession, QString strMachineName /* = QString()*/,
                                bool fShowToolbar /* = false */)
     :QIWithRetranslateUI<QWidget>(pParent)
+    , m_pSession(pSession)
     , m_pMainLayout(0)
     , m_pContainerWidget(0)
     , m_pToolBar(0)
@@ -282,6 +341,39 @@ void UISoftKeyboard::resizeEvent(QResizeEvent *pEvent)
     updateLayout();
 }
 
+void UISoftKeyboard::sltHandleKeyPress()
+{
+    UISoftKeyboardKey *pKey = qobject_cast<UISoftKeyboardKey*>(sender());
+    if (!pKey)
+        return;
+    QVector<LONG> sequence;
+    if (pKey->scanCodePrefix() != 0)
+        sequence << pKey->scanCodePrefix();
+    sequence << pKey->scanCode();
+    keyboard().PutScancodes(sequence);
+    printf("sending for press: ");
+    for (int i = 0; i < sequence.size(); ++i)
+        printf("%#04x ", sequence[i]);
+    printf("\n");
+}
+
+void UISoftKeyboard::sltHandleKeyRelease()
+{
+    UISoftKeyboardKey *pKey = qobject_cast<UISoftKeyboardKey*>(sender());
+    if (!pKey)
+        return;
+
+    QVector<LONG> sequence;
+    if (pKey->scanCodePrefix() != 0)
+        sequence <<  pKey->scanCodePrefix();
+    sequence << (pKey->scanCode() | 0x80);
+    keyboard().PutScancodes(sequence);
+    printf("sending for release: ");
+    for (int i = 0; i < sequence.size(); ++i)
+        printf("%#04x ", sequence[i]);
+    printf("\n");
+}
+
 void UISoftKeyboard::prepareObjects()
 {
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
@@ -294,9 +386,6 @@ void UISoftKeyboard::prepareObjects()
     if (!m_pContainerWidget)
         return;
     m_pContainerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    //m_pContainerWidget->setStyleSheet("background-color:red;");
-    //m_pContainerWidget->setAutoFillBackground(false);
-
     m_pMainLayout->addWidget(m_pContainerWidget);
 }
 
@@ -331,11 +420,6 @@ void UISoftKeyboard::parseLayout()
     for (int i = 0; i < layout.m_rows.size(); ++i)
     {
         UISoftKeyboardRow *pNewRow = new UISoftKeyboardRow(m_pContainerWidget);
-        if ( i == 0)
-            pNewRow->setStyleSheet("background-color:yellow;");
-        else
-            pNewRow->setStyleSheet("background-color:green;");
-
         m_rows.push_back(pNewRow);
         pNewRow->m_iHeight = layout.m_rows[i].m_iHeight;
         m_iTotalRowHeight += layout.m_rows[i].m_iHeight;
@@ -344,42 +428,20 @@ void UISoftKeyboard::parseLayout()
         {
             pNewRow->m_iWidth += layout.m_rows[i].m_keys[j].m_iWidth;
             UISoftKeyboardKey *pKey = new UISoftKeyboardKey(pNewRow);
+            if (!pKey)
+                continue;
+            connect(pKey, &UISoftKeyboardKey::pressed, this, &UISoftKeyboard::sltHandleKeyPress);
+            connect(pKey, &UISoftKeyboardKey::released, this, &UISoftKeyboard::sltHandleKeyRelease);
             pNewRow->m_keys.append(pKey);
             pKey->setText(layout.m_rows[i].m_keys[j].m_strLabel);
             pKey->setWidth(layout.m_rows[i].m_keys[j].m_iWidth);
+            pKey->setScanCode(layout.m_rows[i].m_keys[j].m_scanCode);
+            pKey->setScanCodePrefix(layout.m_rows[i].m_keys[j].m_scanCodePrefix);
             pKey->hide();
         }
+        printf("row width %d %d\n", i, pNewRow->m_iWidth);
         m_iMaxRowWidth = qMax(m_iMaxRowWidth, pNewRow->m_iWidth);
     }
-    printf("total height %d %d\n", m_iTotalRowHeight, m_iMaxRowWidth);
-
-
-//     return;
-//     for (int i = 0; i < layout.m_rows.size(); ++i)
-//     {
-//         QHBoxLayout *pRowLayout = new QHBoxLayout;
-//         pRowLayout->setSpacing(0);
-//         for (int j = 0; j < layout.m_rows[i].m_keys.size(); ++j)
-//         {
-//             UISoftKeyboardKey *pKey = new UISoftKeyboardKey;
-//             pRowLayout->addWidget(pKey);
-
-//             //m_pContainerLayout->addWidget(pKey, i, j);
-//             //pKey->setFixedSize(layout.m_rows[i].m_keys[j].m_iWidth, layout.m_rows[i].m_iHeight);
-//             pKey->setText(layout.m_rows[i].m_keys[j].m_strLabel);
-//             //if (j != 3)
-
-
-//             // else
-//             //m_pContainerLayout->setColumnStretch(j, 0);
-//             //m_pContainerLayout->addSpacing(2);
-//             // QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-//             // m_pContainerLayout->addItem(pSpacer);
-//         }
-//         //pRowLayout->addStretch(1);
-//         //m_pContainerLayout->setColumnStretch(layout.m_rows[i].m_keys.size()-1, 1);
-//         m_pContainerLayout->addLayout(pRowLayout);
-//     }
 }
 
 void UISoftKeyboard::updateLayout()
@@ -404,18 +466,14 @@ void UISoftKeyboard::updateLayout()
         pRow->setGeometry(0, y, fMultiplier * pRow->m_iWidth, fMultiplier * pRow->m_iHeight);
         pRow->setVisible(true);
         y += fMultiplier * pRow->m_iHeight;
-        // pRow->setAutoFillBackground(true);
-        // pRow->raise();
-
-        pRow->updateLayout();
-
-        // m_pContainerWidget->lower();
-        // pRow->update();
-
+         pRow->updateLayout();
     }
     update();
-    /* Compute the size multiplier: */
+}
 
+CKeyboard& UISoftKeyboard::keyboard() const
+{
+    return m_pSession->keyboard();
 }
 
 #include "UISoftKeyboard.moc"

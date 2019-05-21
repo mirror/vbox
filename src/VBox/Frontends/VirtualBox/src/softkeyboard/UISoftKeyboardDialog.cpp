@@ -24,6 +24,7 @@
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
 #include "UIGuestControlConsole.h"
+#include "UISession.h"
 #include "UISoftKeyboardDialog.h"
 #include "UISoftKeyboard.h"
 #include "VBoxGlobal.h"
@@ -36,16 +37,17 @@
 *   Class UISoftKeyboardDialogFactory implementation.                                                                     *
 *********************************************************************************************************************************/
 
-UISoftKeyboardDialogFactory::UISoftKeyboardDialogFactory(UIActionPool *pActionPool /* = 0 */,
+UISoftKeyboardDialogFactory::UISoftKeyboardDialogFactory(UISession *pSession /* = 0 */, UIActionPool *pActionPool /* = 0 */,
                                                          const QString &strMachineName /* = QString() */)
-    : m_pActionPool(pActionPool)
+    : m_pSession(pSession)
+    , m_pActionPool(pActionPool)
     , m_strMachineName(strMachineName)
 {
 }
 
 void UISoftKeyboardDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCenterWidget)
 {
-    pDialog = new UISoftKeyboardDialog(pCenterWidget, m_pActionPool, m_strMachineName);
+    pDialog = new UISoftKeyboardDialog(pCenterWidget, m_pSession, m_pActionPool, m_strMachineName);
 }
 
 
@@ -54,9 +56,11 @@ void UISoftKeyboardDialogFactory::create(QIManagerDialog *&pDialog, QWidget *pCe
 *********************************************************************************************************************************/
 
 UISoftKeyboardDialog::UISoftKeyboardDialog(QWidget *pCenterWidget,
+                                           UISession *pSession,
                                            UIActionPool *pActionPool,
                                            const QString &strMachineName /* = QString() */)
     : QIWithRetranslateUI<QIManagerDialog>(pCenterWidget)
+    , m_pSession(pSession)
     , m_pActionPool(pActionPool)
     , m_strMachineName(strMachineName)
 {
@@ -79,7 +83,7 @@ void UISoftKeyboardDialog::configure()
 void UISoftKeyboardDialog::configureCentralWidget()
 {
     /* Create widget: */
-    UISoftKeyboard  *pSoftKeyboard = new UISoftKeyboard(EmbedTo_Dialog, 0, "");
+    UISoftKeyboard  *pSoftKeyboard = new UISoftKeyboard(EmbedTo_Dialog, 0, m_pSession, "");
 
     if (pSoftKeyboard)
     {

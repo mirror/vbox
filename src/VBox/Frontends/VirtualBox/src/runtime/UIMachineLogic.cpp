@@ -1607,7 +1607,7 @@ void UIMachineLogic::sltShowSoftKeyboard()
         return;
 
     QIManagerDialog *pSoftKeyboardDialog;
-    UISoftKeyboardDialogFactory dialogFactory(actionPool(), machine().GetName());
+    UISoftKeyboardDialogFactory dialogFactory(uisession(), actionPool(), machine().GetName());
     dialogFactory.prepare(pSoftKeyboardDialog, activeMachineWindow());
     if (pSoftKeyboardDialog)
     {

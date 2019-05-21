@@ -34,6 +34,7 @@
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class UISession;
 class UISoftKeyboardKey;
 class UISoftKeyboardRow;
 class QHBoxLayout;
@@ -47,7 +48,7 @@ class UISoftKeyboard : public QIWithRetranslateUI<QWidget>
 
 public:
 
-    UISoftKeyboard(EmbedTo enmEmbedding, QWidget *pParent,
+    UISoftKeyboard(EmbedTo enmEmbedding, QWidget *pParent, UISession *pSession,
                                 QString strMachineName = QString(), bool fShowToolbar = false);
     ~UISoftKeyboard();
 
@@ -58,6 +59,9 @@ protected:
 
 private slots:
 
+    void sltHandleKeyPress();
+    void sltHandleKeyRelease();
+
 private:
 
     void prepareObjects();
@@ -67,7 +71,9 @@ private:
     void loadSettings();
     void parseLayout();
     void updateLayout();
+    CKeyboard& keyboard() const;
 
+    UISession     *m_pSession;
     QHBoxLayout   *m_pMainLayout;
     QWidget       *m_pContainerWidget;
     UIToolBar     *m_pToolBar;
