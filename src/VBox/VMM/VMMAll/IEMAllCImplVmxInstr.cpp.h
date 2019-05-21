@@ -2170,10 +2170,10 @@ IEM_STATIC void iemVmxVmexitLoadHostSegRegs(PVMCPU pVCpu)
     pVCpu->cpum.GstCtx.tr.Attr.n.u1Granularity = 0;
 
     /* LDTR (Warning! do not touch the base and limits here). */
-    pVCpu->cpum.GstCtx.ldtr.Sel               = 0;
-    pVCpu->cpum.GstCtx.ldtr.ValidSel          = 0;
-    pVCpu->cpum.GstCtx.ldtr.fFlags            = CPUMSELREG_FLAGS_VALID;
-    pVCpu->cpum.GstCtx.ldtr.Attr.u            = X86DESCATTR_UNUSABLE;
+    pVCpu->cpum.GstCtx.ldtr.Sel                = 0;
+    pVCpu->cpum.GstCtx.ldtr.ValidSel           = 0;
+    pVCpu->cpum.GstCtx.ldtr.fFlags             = CPUMSELREG_FLAGS_VALID;
+    pVCpu->cpum.GstCtx.ldtr.Attr.u             = X86DESCATTR_UNUSABLE;
 
     /* GDTR. */
     Assert(X86_IS_CANONICAL(pVmcs->u64HostGdtrBase.u));
@@ -3575,17 +3575,17 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrStrIo(PVMCPU pVCpu, VMXINSTRID uInstrId
         uint64_t uGuestLinearAddr;
         if (uInstrId == VMXINSTRID_IO_INS)
         {
-            uDirection = VMX_EXIT_QUAL_IO_DIRECTION_IN;
+            uDirection       = VMX_EXIT_QUAL_IO_DIRECTION_IN;
             uGuestLinearAddr = pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base + (pVCpu->cpum.GstCtx.rdi & uAddrSizeMask);
         }
         else
         {
-            uDirection = VMX_EXIT_QUAL_IO_DIRECTION_OUT;
+            uDirection       = VMX_EXIT_QUAL_IO_DIRECTION_OUT;
             uGuestLinearAddr = pVCpu->cpum.GstCtx.aSRegs[iSegReg].u64Base + (pVCpu->cpum.GstCtx.rsi & uAddrSizeMask);
         }
 
         /*
-         * If the segment is ununsable, the guest-linear address in undefined.
+         * If the segment is unusable, the guest-linear address in undefined.
          * We shall clear it for consistency.
          *
          * See Intel spec. 27.2.1 "Basic VM-Exit Information".
@@ -4789,7 +4789,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVirtApicAccessMsrWrite(PVMCPU pVCpu, uint32_t idMs
  * Finds the most significant set bit in a virtual-APIC 256-bit sparse register.
  *
  * @returns VBox status code.
- * @retval  VINF_SUCCES when the highest set bit is found.
+ * @retval  VINF_SUCCESS when the highest set bit is found.
  * @retval  VERR_NOT_FOUND when no bit is set.
  *
  * @param   pVCpu           The cross context virtual CPU structure.
@@ -7614,7 +7614,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPU pVCpu, uint8_t cbInstr, VM
 
                     /*
                      * Blocking of NMIs need to be restored if VM-entry fails due to invalid-guest state.
-                     * So we save the the VMCPU_FF_BLOCK_NMI force-flag here so we can restore it on
+                     * So we save the VMCPU_FF_BLOCK_NMI force-flag here so we can restore it on
                      * VM-exit when required.
                      * See Intel spec. 26.7 "VM-entry Failures During or After Loading Guest State"
                      */
