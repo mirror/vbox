@@ -45,9 +45,11 @@ enum UIKeyState
 
 enum UIKeyType
 {
-    UIKeyType_SingleState,
-    UIKeyType_DualState,
-    UIKeyType_TriState,
+    UIKeyType_Ordinary,
+    /** e.g. CapsLock. Can be only in UIKeyState_NotPressed, UIKeyState_Locked, */
+    UIKeyType_Toggleable,
+    /** e.g. Shift Can be in all 3 states*/
+    UIKeyType_Modifier,
     UIKeyType_Max
 };
 
@@ -247,7 +249,7 @@ bool UIKeyboardLayoutReader::parseKey(SoftKeyboardRow &row)
     key.m_scanCode = 0;
     key.m_scanCodePrefix = 0;
     key.m_iSpaceAfter = 0;
-    key.m_enmType = UIKeyType_SingleState;
+    key.m_enmType = UIKeyType_Ordinary;
 
     while (m_xmlReader.readNextStartElement())
     {
@@ -279,10 +281,10 @@ bool UIKeyboardLayoutReader::parseKey(SoftKeyboardRow &row)
         else if (m_xmlReader.name() == "type")
         {
             QString strType = m_xmlReader.readElementText();
-            if (strType == "tristate")
-                key.m_enmType = UIKeyType_TriState;
-            else if (strType == "dualstate")
-                key.m_enmType = UIKeyType_DualState;
+            if (strType == "modifier")
+                key.m_enmType = UIKeyType_Modifier;
+            else if (strType == "toggleable")
+                key.m_enmType = UIKeyType_Toggleable;
         }
         else
             m_xmlReader.skipCurrentElement();
@@ -300,7 +302,7 @@ UISoftKeyboardKey::UISoftKeyboardKey(QWidget *pParent /* = 0 */)
     , m_iSpaceAfter(0)
     , m_scanCode(0)
     , m_scanCodePrefix(0)
-    , m_enmType(UIKeyType_SingleState)
+    , m_enmType(UIKeyType_Ordinary)
     , m_enmState(UIKeyState_NotPressed)
     , m_fScaleMultiplier(1.f)
 {
@@ -400,9 +402,8 @@ void UISoftKeyboardKey::paintEvent(QPaintEvent *pEvent)
 {
     QToolButton::paintEvent(pEvent);
 
-    if (m_enmType == UIKeyType_SingleState)
+    if (m_enmType == UIKeyType_Ordinary)
         return;
-
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
@@ -426,9 +427,9 @@ void UISoftKeyboardKey::paintEvent(QPaintEvent *pEvent)
 
 void UISoftKeyboardKey::updateState(bool fPressed)
 {
-    if (m_enmType == UIKeyType_SingleState)
+    if (m_enmType == UIKeyType_Ordinary)
         return;
-    if (m_enmType == UIKeyType_TriState)
+    if (m_enmType == UIKeyType_Modifier)
     {
         if (fPressed)
         {
@@ -445,7 +446,7 @@ void UISoftKeyboardKey::updateState(bool fPressed)
                 m_enmState = UIKeyState_NotPressed;
         }
     }
-    else if (m_enmType == UIKeyType_DualState)
+    else if (m_enmType == UIKeyType_Toggleable)
     {
         if (fPressed)
         {
@@ -565,7 +566,7 @@ void UISoftKeyboard::sltHandleKeyPress()
     UISoftKeyboardKey *pKey = qobject_cast<UISoftKeyboardKey*>(sender());
     if (!pKey)
         return;
-    if (pKey->type() != UIKeyType_SingleState)
+    if (pKey->type() == UIKeyType_Modifier)
         return;
 
     QVector<LONG> sequence;
@@ -590,8 +591,8 @@ void UISoftKeyboard::sltHandleKeyRelease()
     UISoftKeyboardKey *pKey = qobject_cast<UISoftKeyboardKey*>(sender());
     if (!pKey)
         return;
-
-    if (pKey->type() != UIKeyType_SingleState)
+    /* We only send the scan codes of Ordinary keys: */
+    if (pKey->type() == UIKeyType_Modifier)
         return;
 
     QVector<LONG> sequence;
@@ -603,8 +604,6 @@ void UISoftKeyboard::sltHandleKeyRelease()
     for (int i = m_pressedModifiers.size() - 1; i >= 0; --i)
     {
         UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
-        if (pModifier->type() == UIKeyType_DualState)
-            continue;
         if (pModifier->scanCodePrefix() != 0)
             sequence << pModifier->scanCodePrefix();
         sequence << (pModifier->scanCode() | 0x80);
@@ -619,7 +618,7 @@ void UISoftKeyboard::sltHandleModifierStateChange()
     UISoftKeyboardKey *pKey = qobject_cast<UISoftKeyboardKey*>(sender());
     if (!pKey)
         return;
-    if (pKey->type() == UIKeyType_SingleState)
+    if (pKey->type() != UIKeyType_Modifier)
         return;
     if (pKey->state() == UIKeyState_NotPressed)
     {

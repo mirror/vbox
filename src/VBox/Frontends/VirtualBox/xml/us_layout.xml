@@ -289,7 +289,7 @@
         <key>
             <width>70</width>
             <label>CapsLock</label>
-            <type>dualstate</type>
+            <type>toggleable</type>
             <position>30</position>
             <scancode>0x3a</scancode>
         </key>
@@ -373,7 +373,7 @@
         <key>
             <width>115</width>
             <label>Shift</label>
-            <type>tristate</type>
+            <type>modifier</type>
             <position>44</position>
             <scancode>0x2a</scancode>
         </key>
@@ -443,7 +443,7 @@
         <key>
             <width>115</width>
             <label>Shift</label>
-            <type>tristate</type>
+            <type>modifier</type>
             <position>57</position>
             <scancode>0x36</scancode>
         </key>
@@ -454,14 +454,14 @@
         <key>
             <width>90</width>
             <label>Ctrl</label>
-            <type>tristate</type>
+            <type>modifier</type>
             <position>58</position>
             <scancode>0x1d</scancode>
         </key>
         <key>
             <width>50</width>
             <label>Win</label>
-            <type>tristate</type>
+            <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5b</scancode>
         </key>
@@ -469,7 +469,7 @@
             <width>70</width>
             <position>60</position>
             <label>Alt</label>
-            <type>tristate</type>
+            <type>modifier</type>
             <scancode>0x38</scancode>
         </key>
         <key>
@@ -480,14 +480,14 @@
         <key>
             <width>70</width>
             <label>AltGr</label>
-            <type>tristate</type>
+            <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x38</scancode>
         </key>
         <key>
             <width>50</width>
             <label>Win</label>
-            <type>tristate</type>
+            <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5c</scancode>
         </key>
@@ -500,7 +500,7 @@
         <key>
             <width>90</width>
             <label>Ctrl</label>
-            <type>tristate</type>
+            <type>modifier</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x1d</scancode>
         </key>
