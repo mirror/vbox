@@ -9662,7 +9662,7 @@ HRESULT Medium::i_taskDeleteHandler(Medium::DeleteTask &task)
     {
         if (m->pParent.isNotNull())
             m->pVirtualBox->i_onMediumConfigChanged(m->pParent);
-        m->pVirtualBox->i_onMediumRegistered(uOldId, m->devType, TRUE);
+        m->pVirtualBox->i_onMediumRegistered(uOldId, m->devType, FALSE);
     }
 
     return rc;
