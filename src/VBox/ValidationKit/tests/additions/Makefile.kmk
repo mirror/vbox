@@ -33,7 +33,8 @@ ValidationKitTestsAdditions_TEMPLATE = VBoxValidationKitR3
 ValidationKitTestsAdditions_INST = $(INST_VALIDATIONKIT)tests/additions/
 ValidationKitTestsAdditions_EXEC_SOURCES := \
 	$(PATH_SUB_CURRENT)/tdAddBasic1.py \
-	$(PATH_SUB_CURRENT)/tdAddGuestCtrl.py
+	$(PATH_SUB_CURRENT)/tdAddGuestCtrl.py \
+	$(PATH_SUB_CURRENT)/tdAddSharedFolders1.py
 
 
 VBOX_VALIDATIONKIT_PYTHON_SOURCES += $(ValidationKitTestsAdditions_EXEC_SOURCES)

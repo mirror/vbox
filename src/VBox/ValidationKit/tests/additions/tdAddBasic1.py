@@ -34,6 +34,7 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import os;
 import sys;
+import uuid;
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -50,7 +51,7 @@ from testdriver import vboxcon;
 # Sub test driver imports.
 sys.path.append(os.path.dirname(os.path.abspath(__file__))); # For sub-test drivers.
 from tdAddGuestCtrl import SubTstDrvAddGuestCtrl;
-#from tdAddSharedFolders1 import SubTstDrvAddSharedFolders1;
+from tdAddSharedFolders1 import SubTstDrvAddSharedFolders1;
 
 
 class tdAddBasic1(vbox.TestDriver):                                         # pylint: disable=R0902
@@ -64,12 +65,12 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
     def __init__(self):
         vbox.TestDriver.__init__(self);
         self.oTestVmSet = self.oTestVmManager.getSmokeVmSet('nat');
-        self.asTestsDef = ['install', 'guestprops', 'stdguestprops', 'guestcontrol', 'sharedfolders'];
+        self.asTestsDef = ['install', 'guestprops', 'stdguestprops', 'guestcontrol', ]; #'sharedfolders'];
         self.asTests    = self.asTestsDef;
         self.asRsrcs    = None
 
         self.addSubTestDriver(SubTstDrvAddGuestCtrl(self));
-        #self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
+        self.addSubTestDriver(SubTstDrvAddSharedFolders1(self));
 
     #
     # Overridden methods.
@@ -116,6 +117,25 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
 
         eNic0AttachType = vboxcon.NetworkAttachmentType_NAT;
         sGaIso = self.getGuestAdditionsIso();
+
+        # On 6.0 we merge the GAs with the ValidationKit so we can get at FsPerf.
+        # Note! Not possible to do a dboule import as both images an '/OS2' dir.
+        #       So, using same dir as with unattended VISOs for the valkit.
+        if self.fpApiVer >= 6.0 and 'sharedfolders' in self.asTests:
+            sGaViso = os.path.join(self.sScratchPath, 'AdditionsAndValKit.viso');
+            ## @todo encode as bash cmd line:
+            sVisoContent = '--iprt-iso-maker-file-marker-bourne-sh %s ' \
+                           '--import-iso \'%s\' ' \
+                           '--push-iso \'%s\' ' \
+                           '/vboxvalidationkit=/ ' \
+                           '--pop ' \
+                          % (uuid.uuid4(), sGaIso, self.sVBoxValidationKitIso);
+            reporter.log2('Using VISO combining GAs and ValKit "%s": %s' % (sGaViso, sVisoContent));
+            oGaViso = open(sGaViso, 'w');
+            oGaViso.write(sVisoContent);
+            oGaViso.close();
+            sGaIso = sGaViso;
+
         return self.oTestVmSet.actionConfig(self, eNic0AttachType = eNic0AttachType, sDvdImage = sGaIso);
 
     def actionExecute(self):
@@ -163,11 +183,11 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
                 fRc, oTxsSession = self.aoSubTstDrvs[0].testIt(oTestVm, oSession, oTxsSession);
             reporter.testDone(fSkip);
 
-            #fSkip = 'sharedfolders' not in self.asTests;
-            #reporter.testStart('Shared Folders');
-            #if not fSkip:
-            #    fRc, oTxsSession = self.aoSubTstDrvs[1].testIt(oTestVm, oSession, oTxsSession);
-            #reporter.testDone(fSkip or fRc is None);
+            fSkip = 'sharedfolders' not in self.asTests and self.fpApiVer >= 6.0;
+            reporter.testStart('Shared Folders');
+            if not fSkip:
+                fRc, oTxsSession = self.aoSubTstDrvs[1].testIt(oTestVm, oSession, oTxsSession);
+            reporter.testDone(fSkip or fRc is None);
 
             ## @todo Save and restore test.
 

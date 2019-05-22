@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-VirtualBox Validation Kit - Shared Folders
+VirtualBox Validation Kit - Shared Folders #1.
 """
 
 __copyright__ = \
@@ -42,14 +42,7 @@ sys.path.append(g_ksValidationKitDir);
 # Validation Kit imports.
 from testdriver import reporter;
 from testdriver import base;
-from testdriver import vbox;
-from testdriver import vboxcon;
-from testdriver import vboxwrappers;
 from common     import utils;
-
-# Python 3 hacks:
-if sys.version_info[0] >= 3:
-    long = int      # pylint: disable=W0622,C0103
 
 
 class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
@@ -103,6 +96,7 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
         # that we use to check that it mounted correctly.
         #
         sSharedFolder1 = os.path.join(self.oTstDrv.sScratchPath, 'shfl1');
+        reporter.log2('Creating shared host folder "%s"...' % (sSharedFolder1,));
         if os.path.exists(sSharedFolder1):
             try:    shutil.rmtree(sSharedFolder1);
             except: return (reporter.errorXcpt('shutil.rmtree(%s)' % (sSharedFolder1,)), oTxsSession);
@@ -124,6 +118,7 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
         #
         reporter.testStart('Automount');
 
+        reporter.log2('Creating shared folder shfl1...');
         try:
             oConsole = oSession.o.console;
             oConsole.createSharedFolder('shfl1', sSharedFolder1, True, True, sMountPoint1);
@@ -136,15 +131,16 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
         msStart = base.timestampMilli();
         while True:
             fRc = oTxsSession.syncIsDir(sMountPoint1 + sGuestSlash + 'candle.dir');
+            reporter.log2('candle.dir check -> %s' % (fRc,));
             if fRc is not False:
                 break;
             if base.timestampMilli() - msStart > 30000:
                 reporter.error('Shared folder mounting timed out!');
                 break;
-            oTstDrv.sleep(1);
+            self.oTstDrv.sleep(1);
 
         reporter.testDone();
-        if fRc is not None:
+        if fRc is not True:
             return (False, oTxsSession); # skip the remainder if we cannot auto mount the folder.
 
         #
@@ -153,15 +149,43 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
         reporter.testStart('FsPerf');
         fSkip = 'fsperf' not in self.asTests;
         if fSkip is False:
-            cMbFree = utils.getDiskUsage(sSharedFolders1);
-            if cMbFree < 16:
+            cMbFree = utils.getDiskUsage(sSharedFolder1);
+            if cMbFree >= 16:
+                reporter.log2('Free space: %u MBs' % (cMbFree,));
+            else:
                 reporter.log('Skipping FsPerf because only %u MB free on %s' % (cMbFree, sSharedFolder1,));
                 fSkip = True;
         if fSkip is False:
-            asArgs = ['FsPerf', '-d', sMountPoint1 + sGuestSlash + 'fstestdir-1', ];
-            if oTestVm.sGuestOsType in []:
-                asArgs.append('--no-mmap'); # Fails on older than win7 (CcCoherencyFlushAndPurgeCache).
-            fRc = oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 10 * 60 * 1000, '${CDROM}/${OS/ARCH}/FsPerf${EXESUFF}', asArgs);
+            # Common arguments:
+            asArgs = ['FsPerf', '-d', sMountPoint1 + sGuestSlash + 'fstestdir-1', '-m200'];
+
+            # Skip mmap on older windows systems without CcCoherencyFlushAndPurgeCache (>= w7).
+            reporter.log2('oTestVm.sGuestOsType=%s' % (oTestVm.sGuestOsType,));
+            if oTestVm.sGuestOsType in [ 'WindowsNT3x', 'WindowsNT4', 'Windows2000', 'WindowsXP', 'WindowsXP_64',
+                                         'Windows2003', 'Windows2003_64', 'WindowsVista', 'WindowsVista_64',
+                                         'Windows2008', 'Windows2008_64']:
+                asArgs.append('--no-mmap');
+
+            # Configure I/O block sizes according to guest memory size:
+            cbMbRam = 128;
+            try:    cbMbRam = oSession.o.machine.memorySize;
+            except: reporter.errorXcpt();
+            reporter.log2('cbMbRam=%s' % (cbMbRam,));
+            asArgs.append('--set-block-size=1');
+            asArgs.append('--add-block-size=512');
+            asArgs.append('--add-block-size=4096');
+            asArgs.append('--add-block-size=16384');
+            asArgs.append('--add-block-size=65536');
+            asArgs.append('--add-block-size=1048576');       #   1 MiB
+            if cbMbRam >= 512:
+                asArgs.append('--add-block-size=33554432');  #  32 MiB
+            if cbMbRam >= 768:
+                asArgs.append('--add-block-size=134217728'); # 128 MiB
+
+            reporter.log2('Starting guest FsPerf (%s)...' % (asArgs,));
+            fRc = self.oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 10 * 60 * 1000,
+                                          '${CDROM}/vboxvalidationkit/${OS/ARCH}/FsPerf${EXESUFF}', asArgs);
+            reporter.log2('FsPerf -> %s' % (fRc,));
 
             sTestDir = os.path.join(sSharedFolder1, 'fstestdir-1');
             if os.path.exists(sTestDir):
