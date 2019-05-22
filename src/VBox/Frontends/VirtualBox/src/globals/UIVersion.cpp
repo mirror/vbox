@@ -115,7 +115,7 @@ UIVersion UIVersion::effectiveReleasedVersion() const
             version.setZ(version.z() - 1);
         /* If this version being developed on trunk (we use hardcoded one for now): */
         else
-            version.setZ(6); /* Current .z for 5.2.z */
+            version.setZ(8); /* Current .z for 6.0.z */
     }
 
     /* Finally, we just return that we have:  */
