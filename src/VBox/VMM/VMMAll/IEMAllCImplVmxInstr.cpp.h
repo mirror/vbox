@@ -3694,13 +3694,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrPause(PVMCPU pVCpu, uint8_t cbInstr)
     }
 
     if (fIntercept)
-    {
-        VMXVEXITINFO ExitInfo;
-        RT_ZERO(ExitInfo);
-        ExitInfo.uReason = VMX_EXIT_PAUSE;
-        ExitInfo.cbInstr = cbInstr;
-        return iemVmxVmexitInstrWithInfo(pVCpu, &ExitInfo);
-    }
+        return iemVmxVmexitInstr(pVCpu, VMX_EXIT_PAUSE, cbInstr);
 
     return VINF_VMX_INTERCEPT_NOT_ACTIVE;
 }
