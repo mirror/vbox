@@ -460,6 +460,7 @@ static const SSMFIELD g_aVmxHwvirtVmcs[] =
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestPdpte2),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestPdpte3),
     SSMFIELD_ENTRY(       VMXVVMCS, u64GuestBndcfgsMsr),
+    SSMFIELD_ENTRY(       VMXVVMCS, u64GuestRtitCtlMsr),
     SSMFIELD_ENTRY_IGNORE(VMXVVMCS, au64Reserved2),
 
     SSMFIELD_ENTRY(       VMXVVMCS, u64HostPatMsr),
@@ -3895,6 +3896,7 @@ static void  cpumR3InfoVmxVmcs(PCDBGFINFOHLP pHlp, PCVMXVVMCS pVmcs, const char 
         pHlp->pfnPrintf(pHlp, "  %sPDPTE 2                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestPdpte2.u);
         pHlp->pfnPrintf(pHlp, "  %sPDPTE 3                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestPdpte3.u);
         pHlp->pfnPrintf(pHlp, "  %sBNDCFGS                    = %#RX64\n",   pszPrefix, pVmcs->u64GuestBndcfgsMsr.u);
+        pHlp->pfnPrintf(pHlp, "  %sRTIT_CTL                   = %#RX64\n",   pszPrefix, pVmcs->u64GuestRtitCtlMsr.u);
 
         /* Natural width. */
         pHlp->pfnPrintf(pHlp, "  %scr0                        = %#RX64\n",   pszPrefix, pVmcs->u64GuestCr0.u);

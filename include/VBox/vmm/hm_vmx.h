@@ -212,7 +212,7 @@ AssertCompileSizeAlignment(VMXRESTOREHOST, 8);
 #define VMX_IGS_EFER_LMA_LME_MISMATCH                           515
 /** CS.Attr.P bit invalid. */
 #define VMX_IGS_CS_ATTR_P_INVALID                               516
-/** CS.Attr reserved bits not set to 0.  */
+/** CS.Attr reserved bits not set to 0. */
 #define VMX_IGS_CS_ATTR_RESERVED                                517
 /** CS.Attr.G bit invalid. */
 #define VMX_IGS_CS_ATTR_G_INVALID                               518
@@ -788,7 +788,7 @@ typedef enum
     VMXTLBFLUSHEPT_SINGLE_CONTEXT              = 1,
     /* Invalidate all contexts (all EPTs) */
     VMXTLBFLUSHEPT_ALL_CONTEXTS                = 2,
-    /** Unsupported by VirtualBox.   */
+    /** Unsupported by VirtualBox. */
     VMXTLBFLUSHEPT_NOT_SUPPORTED               = 0xbad0,
     /** Unsupported by CPU. */
     VMXTLBFLUSHEPT_NONE                        = 0xbad1
@@ -914,7 +914,7 @@ typedef union
         uint32_t    u3AddrSize      : 3;
         /** Always cleared to 0. */
         uint32_t    u1Cleared0      : 1;
-        /** Operand size; 0=16-bit, 1=32-bit, undefined for 64-bit.  */
+        /** Operand size; 0=16-bit, 1=32-bit, undefined for 64-bit. */
         uint32_t    uOperandSize    : 1;
         uint32_t    u3Undef0        : 3;
         /** The segment register (X86_SREG_XXX). */
@@ -968,7 +968,7 @@ typedef union
         /** Destination register (X86_GREG_XXX). */
         uint32_t    iReg1           : 4;
         uint32_t    u4Undef0        : 4;
-        /** Operand size; 0=16-bit, 1=32-bit, 2=64-bit, 3=unused.  */
+        /** Operand size; 0=16-bit, 1=32-bit, 2=64-bit, 3=unused. */
         uint32_t    u2OperandSize   : 2;
         uint32_t    u19Def0         : 20;
     } RdrandRdseed;
@@ -985,7 +985,7 @@ typedef union
         uint32_t    u3AddrSize      : 3;
         /** Memory or register operand. */
         uint32_t    fIsRegOperand   : 1;
-        /** Operand size; 0=16-bit, 1=32-bit, 2=64-bit, 3=unused.  */
+        /** Operand size; 0=16-bit, 1=32-bit, 2=64-bit, 3=unused. */
         uint32_t    u4Undef0        : 4;
         /** The segment register (X86_SREG_XXX). */
         uint32_t    iSegReg         : 3;
@@ -1016,7 +1016,7 @@ typedef union
         uint32_t    u3AddrSize      : 3;
         /** Memory/Register - Always cleared to 0 to indicate memory operand. */
         uint32_t    fIsRegOperand   : 1;
-        /** Operand size; 0=16-bit, 1=32-bit, 2=64-bit, 3=unused.  */
+        /** Operand size; 0=16-bit, 1=32-bit, 2=64-bit, 3=unused. */
         uint32_t    uOperandSize    : 2;
         uint32_t    u2Undef0        : 2;
         /** The segment register (X86_SREG_XXX). */
@@ -1079,7 +1079,7 @@ typedef const VMXEXITINSTRINFO *PCVMXEXITINSTRINFO;
 /** Mask of valid MSR permissions. */
 #define VMXMSRPM_MASK                                           (VMXMSRPM_RD_MASK  | VMXMSRPM_WR_MASK)
 /** */
-/** Gets whether the MSR permission is valid or not.  */
+/** Gets whether the MSR permission is valid or not. */
 #define VMXMSRPM_IS_FLAG_VALID(a_Msrpm)                         (    (a_Msrpm) != 0 \
                                                                  && ((a_Msrpm) & ~VMXMSRPM_MASK) == 0 \
                                                                  && ((a_Msrpm) & VMXMSRPM_RD_MASK) != VMXMSRPM_RD_MASK \
@@ -1330,14 +1330,22 @@ typedef const VMXMSRS *PCVMXMSRS;
 #define VMX_EXIT_RDSEED                                         61
 /** 62 - Page-modification log full. */
 #define VMX_EXIT_PML_FULL                                       62
-/** 63 - XSAVES - Guest software attempted to executed XSAVES and exiting was
+/** 63 - XSAVES. Guest software attempted to execute XSAVES and exiting was
  * enabled (XSAVES/XRSTORS was enabled too, of course). */
 #define VMX_EXIT_XSAVES                                         63
-/** 63 - XRSTORS - Guest software attempted to executed XRSTORS and exiting
+/** 64 - XRSTORS. Guest software attempted to execute XRSTORS and exiting
  * was enabled (XSAVES/XRSTORS was enabled too, of course). */
 #define VMX_EXIT_XRSTORS                                        64
+/** 66 - SPP-related event. Attempt to determine an access' sub-page write
+ *  permission encountered an SPP miss or misconfiguration. */
+#define VMX_EXIT_SPP_EVENT                                      66
+/* 67 - UMWAIT. Guest software attempted to execute UMWAIT and exiting was enabled. */
+#define VMX_EXIT_UMWAIT                                         67
+/** 68 - TPAUSE. Guest software attempted to execute TPAUSE and exiting was
+ *  enabled. */
+#define VMX_EXIT_TPAUSE                                         68
 /** The maximum exit value (inclusive). */
-#define VMX_EXIT_MAX                                            (VMX_EXIT_XRSTORS)
+#define VMX_EXIT_MAX                                            (VMX_EXIT_TPAUSE)
 /** @} */
 
 
@@ -1438,7 +1446,7 @@ AssertCompileSize(VMXABORT, 4);
 /** VMCS (and related regions) memory type - Write back. */
 #define VMX_BASIC_MEM_TYPE_WB                                   6
 
-/** Bit fields for MSR_IA32_VMX_BASIC.  */
+/** Bit fields for MSR_IA32_VMX_BASIC. */
 /** VMCS revision identifier used by the processor. */
 #define VMX_BF_BASIC_VMCS_ID_SHIFT                              0
 #define VMX_BF_BASIC_VMCS_ID_MASK                               UINT64_C(0x000000007fffffff)
@@ -1495,7 +1503,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
 /** Maximum CR3-target count supported by the CPU. */
 #define VMX_MISC_CR3_TARGET_COUNT(a_MiscMsr)                    (((a) >> 16) & 0xff)
 
-/** Bit fields for MSR_IA32_VMX_MISC.  */
+/** Bit fields for MSR_IA32_VMX_MISC. */
 /** Relationship between the preemption timer and tsc. */
 #define VMX_BF_MISC_PREEMPT_TIMER_TSC_SHIFT                     0
 #define VMX_BF_MISC_PREEMPT_TIMER_TSC_MASK                      UINT64_C(0x000000000000001f)
@@ -1508,7 +1516,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_BASIC_, UINT64_C(0), UINT64_MAX,
 /** Bits 9:13 is reserved and RAZ. */
 #define VMX_BF_MISC_RSVD_9_13_SHIFT                             9
 #define VMX_BF_MISC_RSVD_9_13_MASK                              UINT64_C(0x0000000000003e00)
-/** Whether Intel PT (Processor Trace) can be used in VMX operation.  */
+/** Whether Intel PT (Processor Trace) can be used in VMX operation. */
 #define VMX_BF_MISC_INTEL_PT_SHIFT                              14
 #define VMX_BF_MISC_INTEL_PT_MASK                               UINT64_C(0x0000000000004000)
 /** Whether RDMSR can be used to read IA32_SMBASE MSR in SMM. */
@@ -1547,13 +1555,13 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_MISC_, UINT64_C(0), UINT64_MAX,
  * Bit fields for MSR_IA32_VMX_VMCS_ENUM.
  * @{
  */
-/** Bit 0 is reserved and RAZ.  */
+/** Bit 0 is reserved and RAZ. */
 #define VMX_BF_VMCS_ENUM_RSVD_0_SHIFT                           0
 #define VMX_BF_VMCS_ENUM_RSVD_0_MASK                            UINT64_C(0x0000000000000001)
 /** Highest index value used in VMCS field encoding. */
 #define VMX_BF_VMCS_ENUM_HIGHEST_IDX_SHIFT                      1
 #define VMX_BF_VMCS_ENUM_HIGHEST_IDX_MASK                       UINT64_C(0x00000000000003fe)
-/** Bit 10:63 is reserved and RAZ.  */
+/** Bit 10:63 is reserved and RAZ. */
 #define VMX_BF_VMCS_ENUM_RSVD_10_63_SHIFT                       10
 #define VMX_BF_VMCS_ENUM_RSVD_10_63_MASK                        UINT64_C(0xfffffffffffffc00)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENUM_, UINT64_C(0), UINT64_MAX,
@@ -2214,16 +2222,21 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 /** Controls whether EPT-violations may cause \#VE instead of exits. */
 #define VMX_PROC_CTLS2_EPT_VE                                   RT_BIT(18)
 /** Conceal VMX non-root operation from Intel processor trace (PT). */
-#define VMX_PROC_CTLS2_CONCEAL_FROM_PT                          RT_BIT(19)
+#define VMX_PROC_CTLS2_CONCEAL_VMX_FROM_PT                      RT_BIT(19)
 /** Enables XSAVES/XRSTORS instructions. */
 #define VMX_PROC_CTLS2_XSAVES_XRSTORS                           RT_BIT(20)
 /** Enables supervisor/user mode based EPT execute permission for linear
  *  addresses. */
 #define VMX_PROC_CTLS2_MODE_BASED_EPT_PERM                      RT_BIT(22)
 /** Enables EPT permissions to be specified at granularity of 128 bytes. */
-#define VMX_PROC_CTLS2_SPPTP                                    RT_BIT(23)
+#define VMX_PROC_CTLS2_SPPTP_EPT                                RT_BIT(23)
+/** Intel PT output addresses are treated as guest-physical addresses and
+ *  translated using EPT. */
+#define VMX_PROC_CTLS2_PT_EPT                                   RT_BIT(24)
 /** Use TSC scaling. */
 #define VMX_PROC_CTLS2_TSC_SCALING                              RT_BIT(25)
+/** Enables TPAUSE, UMONITOR and UMWAIT instructions. */
+#define VMX_PROC_CTLS2_USER_WAIT_PAUSE                          RT_BIT(26)
 /** Enables consulting ENCLV-exiting bitmap when executing ENCLV. */
 #define VMX_PROC_CTLS2_ENCLV_EXIT                               RT_BIT(28)
 
@@ -2267,22 +2280,24 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_PROC_CTLS2_PML_MASK                              UINT32_C(0x00020000)
 #define VMX_BF_PROC_CTLS2_EPT_VE_SHIFT                          18
 #define VMX_BF_PROC_CTLS2_EPT_VE_MASK                           UINT32_C(0x00040000)
-#define VMX_BF_PROC_CTLS2_CONCEAL_FROM_PT_SHIFT                 19
-#define VMX_BF_PROC_CTLS2_CONCEAL_FROM_PT_MASK                  UINT32_C(0x00080000)
+#define VMX_BF_PROC_CTLS2_CONCEAL_VMX_FROM_PT_SHIFT             19
+#define VMX_BF_PROC_CTLS2_CONCEAL_VMX_FROM_PT_MASK              UINT32_C(0x00080000)
 #define VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_SHIFT                  20
 #define VMX_BF_PROC_CTLS2_XSAVES_XRSTORS_MASK                   UINT32_C(0x00100000)
 #define VMX_BF_PROC_CTLS2_UNDEF_21_SHIFT                        21
 #define VMX_BF_PROC_CTLS2_UNDEF_21_MASK                         UINT32_C(0x00200000)
 #define VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_SHIFT             22
 #define VMX_BF_PROC_CTLS2_MODE_BASED_EPT_PERM_MASK              UINT32_C(0x00400000)
-#define VMX_BF_PROC_CTLS2_SPPTP_SHIFT                           23
-#define VMX_BF_PROC_CTLS2_SPPTP_MASK                            UINT32_C(0x00800000)
-#define VMX_BF_PROC_CTLS2_UNDEF_24_SHIFT                        24
-#define VMX_BF_PROC_CTLS2_UNDEF_24_MASK                         UINT32_C(0x01000000)
+#define VMX_BF_PROC_CTLS2_SPPTP_EPT_SHIFT                       23
+#define VMX_BF_PROC_CTLS2_SPPTP_EPT_MASK                        UINT32_C(0x00800000)
+#define VMX_BF_PROC_CTLS2_PT_EPT_SHIFT                          24
+#define VMX_BF_PROC_CTLS2_PT_EPT_MASK                           UINT32_C(0x01000000)
 #define VMX_BF_PROC_CTLS2_TSC_SCALING_SHIFT                     25
 #define VMX_BF_PROC_CTLS2_TSC_SCALING_MASK                      UINT32_C(0x02000000)
-#define VMX_BF_PROC_CTLS2_UNDEF_26_27_SHIFT                     26
-#define VMX_BF_PROC_CTLS2_UNDEF_26_27_MASK                      UINT32_C(0x0c000000)
+#define VMX_BF_PROC_CTLS2_USER_WAIT_PAUSE_SHIFT                 26
+#define VMX_BF_PROC_CTLS2_USER_WAIT_PAUSE_MASK                  UINT32_C(0x04000000)
+#define VMX_BF_PROC_CTLS2_UNDEF_27_SHIFT                        27
+#define VMX_BF_PROC_CTLS2_UNDEF_27_MASK                         UINT32_C(0x08000000)
 #define VMX_BF_PROC_CTLS2_ENCLV_EXIT_SHIFT                      28
 #define VMX_BF_PROC_CTLS2_ENCLV_EXIT_MASK                       UINT32_C(0x10000000)
 #define VMX_BF_PROC_CTLS2_UNDEF_29_31_SHIFT                     29
@@ -2291,8 +2306,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS_, UINT32_C(0), UINT32_MAX,
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
                             (VIRT_APIC_ACCESS, EPT, DESC_TABLE_EXIT, RDTSCP, VIRT_X2APIC_MODE, VPID, WBINVD_EXIT,
                              UNRESTRICTED_GUEST, APIC_REG_VIRT, VIRT_INT_DELIVERY, PAUSE_LOOP_EXIT, RDRAND_EXIT, INVPCID, VMFUNC,
-                             VMCS_SHADOWING, ENCLS_EXIT, RDSEED_EXIT, PML, EPT_VE, CONCEAL_FROM_PT, XSAVES_XRSTORS, UNDEF_21,
-                             MODE_BASED_EPT_PERM, SPPTP, UNDEF_24, TSC_SCALING, UNDEF_26_27, ENCLV_EXIT, UNDEF_29_31));
+                             VMCS_SHADOWING, ENCLS_EXIT, RDSEED_EXIT, PML, EPT_VE, CONCEAL_VMX_FROM_PT, XSAVES_XRSTORS, UNDEF_21,
+                             MODE_BASED_EPT_PERM, SPPTP_EPT, PT_EPT, TSC_SCALING, USER_WAIT_PAUSE, UNDEF_27, ENCLV_EXIT,
+                             UNDEF_29_31));
 /** @} */
 
 
@@ -2317,7 +2333,9 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
 /** Whether the guest IA32_BNDCFGS MSR is loaded on VM-entry. */
 #define VMX_ENTRY_CTLS_LOAD_BNDCFGS_MSR                         RT_BIT(16)
 /** Whether to conceal VMX from Intel PT (Processor Trace). */
-#define VMX_ENTRY_CTLS_CONCEAL_VMX_PT                           RT_BIT(17)
+#define VMX_ENTRY_CTLS_CONCEAL_VMX_FROM_PT                      RT_BIT(17)
+/** Whether the guest IA32_RTIT MSR is loaded on VM-entry. */
+#define VMX_ENTRY_CTLS_LOAD_RTIT_CTL_MSR                        RT_BIT(18)
 /** Default1 class when true-capability MSRs are not supported. */
 #define VMX_ENTRY_CTLS_DEFAULT1                                 UINT32_C(0x000011ff)
 
@@ -2345,13 +2363,16 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_PROC_CTLS2_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_ENTRY_CTLS_LOAD_EFER_MSR_MASK                    UINT32_C(0x00008000)
 #define VMX_BF_ENTRY_CTLS_LOAD_BNDCFGS_MSR_SHIFT                16
 #define VMX_BF_ENTRY_CTLS_LOAD_BNDCFGS_MSR_MASK                 UINT32_C(0x00010000)
-#define VMX_BF_ENTRY_CTLS_CONCEAL_VMX_PT_SHIFT                  17
-#define VMX_BF_ENTRY_CTLS_CONCEAL_VMX_PT_MASK                   UINT32_C(0x00020000)
-#define VMX_BF_ENTRY_CTLS_UNDEF_18_31_SHIFT                     18
-#define VMX_BF_ENTRY_CTLS_UNDEF_18_31_MASK                      UINT32_C(0xfffc0000)
+#define VMX_BF_ENTRY_CTLS_CONCEAL_VMX_FROM_PT_SHIFT             17
+#define VMX_BF_ENTRY_CTLS_CONCEAL_VMX_FROM_PT_MASK              UINT32_C(0x00020000)
+#define VMX_BF_ENTRY_CTLS_LOAD_RTIT_CTL_MSR_SHIFT               18
+#define VMX_BF_ENTRY_CTLS_LOAD_RTIT_CTL_MSR_MASK                UINT32_C(0x00040000)
+#define VMX_BF_ENTRY_CTLS_UNDEF_19_31_SHIFT                     19
+#define VMX_BF_ENTRY_CTLS_UNDEF_19_31_MASK                      UINT32_C(0xfff80000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
                             (UNDEF_0_1, LOAD_DEBUG, UNDEF_3_8, IA32E_MODE_GUEST, ENTRY_SMM, DEACTIVATE_DUAL_MON, UNDEF_12,
-                             LOAD_PERF_MSR, LOAD_PAT_MSR, LOAD_EFER_MSR, LOAD_BNDCFGS_MSR, CONCEAL_VMX_PT, UNDEF_18_31));
+                             LOAD_PERF_MSR, LOAD_PAT_MSR, LOAD_EFER_MSR, LOAD_BNDCFGS_MSR, CONCEAL_VMX_FROM_PT,
+                             LOAD_RTIT_CTL_MSR, UNDEF_19_31));
 /** @} */
 
 
@@ -2379,7 +2400,11 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER                        RT_BIT(22)
 /** Whether IA32_BNDCFGS MSR is cleared on VM-exit. */
 #define VMX_EXIT_CTLS_CLEAR_BNDCFGS_MSR                         RT_BIT(23)
-/** Default1 class when true-capability MSRs are not supported.  */
+/** Whether to conceal VMX from Intel PT. */
+#define VMX_EXIT_CTLS_CONCEAL_VMX_FROM_PT                       RT_BIT(24)
+/** Whether IA32_RTIT_CTL MSR is cleared on VM-exit. */
+#define VMX_EXIT_CTLS_CLEAR_RTIT_CTL_MSR                        RT_BIT(25)
+/** Default1 class when true-capability MSRs are not supported. */
 #define VMX_EXIT_CTLS_DEFAULT1                                  UINT32_C(0x00036dff)
 
 /** Bit fields for MSR_IA32_VMX_EXIT_CTLS and VM-exit controls field in the
@@ -2412,12 +2437,18 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_CTLS_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_EXIT_CTLS_LOAD_EFER_MSR_MASK                     UINT32_C(0x00200000)
 #define VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_SHIFT               22
 #define VMX_BF_EXIT_CTLS_SAVE_PREEMPT_TIMER_MASK                UINT32_C(0x00400000)
-#define VMX_BF_EXIT_CTLS_UNDEF_23_31_SHIFT                      23
-#define VMX_BF_EXIT_CTLS_UNDEF_23_31_MASK                       UINT32_C(0xff800000)
+#define VMX_BF_EXIT_CTLS_CLEAR_BNDCFGS_MSR_SHIFT                23
+#define VMX_BF_EXIT_CTLS_CLEAR_BNDCFGS_MSR_MASK                 UINT32_C(0x00800000)
+#define VMX_BF_EXIT_CTLS_CONCEAL_VMX_FROM_PT_SHIFT              24
+#define VMX_BF_EXIT_CTLS_CONCEAL_VMX_FROM_PT_MASK               UINT32_C(0x01000000)
+#define VMX_BF_EXIT_CTLS_CLEAR_RTIT_CTL_MSR_SHIFT               25
+#define VMX_BF_EXIT_CTLS_CLEAR_RTIT_CTL_MSR_MASK                UINT32_C(0x02000000)
+#define VMX_BF_EXIT_CTLS_UNDEF_26_31_SHIFT                      26
+#define VMX_BF_EXIT_CTLS_UNDEF_26_31_MASK                       UINT32_C(0xfc000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_CTLS_, UINT32_C(0), UINT32_MAX,
                             (UNDEF_0_1, SAVE_DEBUG, UNDEF_3_8, HOST_ADDR_SPACE_SIZE, UNDEF_10_11, LOAD_PERF_MSR, UNDEF_13_14,
                              ACK_EXT_INT, UNDEF_16_17, SAVE_PAT_MSR, LOAD_PAT_MSR, SAVE_EFER_MSR, LOAD_EFER_MSR,
-                             SAVE_PREEMPT_TIMER, UNDEF_23_31));
+                             SAVE_PREEMPT_TIMER, CLEAR_BNDCFGS_MSR, CONCEAL_VMX_FROM_PT, CLEAR_RTIT_CTL_MSR, UNDEF_26_31));
 /** @} */
 
 
@@ -2483,13 +2514,13 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_EXIT_REASON_, UINT32_C(0), UINT32_MAX,
 /** The VM-entry interruption type (see VMX_ENTRY_INT_INFO_TYPE_XXX). */
 #define VMX_BF_ENTRY_INT_INFO_TYPE_SHIFT                        8
 #define VMX_BF_ENTRY_INT_INFO_TYPE_MASK                         UINT32_C(0x00000700)
-/** Whether this event has an error code.   */
+/** Whether this event has an error code. */
 #define VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID_SHIFT              11
 #define VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID_MASK               UINT32_C(0x00000800)
 /** Bits 12:30 are reserved and MBZ. */
 #define VMX_BF_ENTRY_INT_INFO_RSVD_12_30_SHIFT                  12
 #define VMX_BF_ENTRY_INT_INFO_RSVD_12_30_MASK                   UINT32_C(0x7ffff000)
-/** Whether this VM-entry interruption info is valid.  */
+/** Whether this VM-entry interruption info is valid. */
 #define VMX_BF_ENTRY_INT_INFO_VALID_SHIFT                       31
 #define VMX_BF_ENTRY_INT_INFO_VALID_MASK                        UINT32_C(0x80000000)
 RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_ENTRY_INT_INFO_, UINT32_C(0), UINT32_MAX,
@@ -2589,10 +2620,10 @@ typedef uint32_t VMXINSTRID;
 /** Whether the instruction's primary operand in the Mod R/M byte (bits 0:3) is a
  *  read or write. */
 #define VMXINSTRID_MODRM_PRIMARY_OP_W                           RT_BIT_32(30)
-/** Gets whether the instruction ID is valid or not.  */
+/** Gets whether the instruction ID is valid or not. */
 #define VMXINSTRID_IS_VALID(a)                                  (((a) >> 31) & 1)
 #define VMXINSTRID_IS_MODRM_PRIMARY_OP_W(a)                     (((a) >> 30) & 1)
-/** Gets the instruction ID.  */
+/** Gets the instruction ID. */
 #define VMXINSTRID_GET_ID(a)                                    ((a) & ~(VMXINSTRID_VALID | VMXINSTRID_MODRM_PRIMARY_OP_W))
 /** No instruction ID info. */
 #define VMXINSTRID_NONE                                         0
@@ -3022,7 +3053,7 @@ AssertCompileSize(VMXAPICACCESS, 4);
 #define VMX_BF_XDTR_INSINFO_UNDEF_2_6_SHIFT                     2
 #define VMX_BF_XDTR_INSINFO_UNDEF_2_6_MASK                      UINT32_C(0x0000007c)
 /** Address size, only 0(=16), 1(=32) and 2(=64) are defined.
- * @remarks anyone's guess why this is a 3 bit field...  */
+ * @remarks anyone's guess why this is a 3 bit field... */
 #define VMX_BF_XDTR_INSINFO_ADDR_SIZE_SHIFT                     7
 #define VMX_BF_XDTR_INSINFO_ADDR_SIZE_MASK                      UINT32_C(0x00000380)
 /** Bit 10 is defined as zero. */
@@ -3081,7 +3112,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_XDTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 #define VMX_BF_YYTR_INSINFO_REG1_SHIFT                          3
 #define VMX_BF_YYTR_INSINFO_REG1_MASK                           UINT32_C(0x00000078)
 /** Address size, only 0(=16), 1(=32) and 2(=64) are defined.
- * @remarks anyone's guess why this is a 3 bit field...  */
+ * @remarks anyone's guess why this is a 3 bit field... */
 #define VMX_BF_YYTR_INSINFO_ADDR_SIZE_SHIFT                     7
 #define VMX_BF_YYTR_INSINFO_ADDR_SIZE_MASK                      UINT32_C(0x00000380)
 /** Is VMX_YYTR_INSINFO_REG1_XXX valid (=1) or not (=0). */
@@ -3139,7 +3170,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_YYTR_INSINFO_, UINT32_C(0), UINT32_MAX,
 #define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_EN_BP                 RT_BIT_64(12)
 /** A debug exception would have been triggered by single-step execution mode. */
 #define VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS                    RT_BIT_64(14)
-/** A debug exception occurred inside an RTM region.   */
+/** A debug exception occurred inside an RTM region. */
 #define VMX_VMCS_GUEST_PENDING_DEBUG_RTM                        RT_BIT_64(16)
 /** Mask of valid bits. */
 #define VMX_VMCS_GUEST_PENDING_DEBUG_VALID_MASK                 (  VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BP0 \
@@ -3190,7 +3221,7 @@ typedef union
         uint32_t    fAccessType  : 1;
         /** The index. */
         uint32_t    u8Index      : 8;
-        /** The type; 0=control, 1=VM-exit info, 2=guest-state, 3=host-state.  */
+        /** The type; 0=control, 1=VM-exit info, 2=guest-state, 3=host-state. */
         uint32_t    u2Type       : 2;
         /** Reserved (MBZ). */
         uint32_t    u1Reserved0  : 1;
@@ -3296,7 +3327,7 @@ RT_BF_ASSERT_COMPILE_CHECKS(VMX_BF_VMCS_ENC_, UINT32_C(0), UINT32_MAX,
 #define VMX_V_CR4_FIXED0                                        (X86_CR4_VMXE)
 
 /** Virtual VMCS revision ID. Bump this arbitarily chosen identifier if incompatible
- *  changes to the layout of VMXVVMCS is done.  Bit 31 MBZ.  */
+ *  changes to the layout of VMXVVMCS is done. Bit 31 MBZ. */
 #define VMX_V_VMCS_REVISION_ID                                  UINT32_C(0x40000001)
 AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 
@@ -3306,7 +3337,7 @@ AssertCompile(!(VMX_V_VMCS_REVISION_ID & RT_BIT(31)));
 /** The size of the virtual VMCS region (in pages). */
 #define VMX_V_VMCS_PAGES                                        1
 
-/** The size of the Virtual-APIC page (in bytes).  */
+/** The size of the Virtual-APIC page (in bytes). */
 #define VMX_V_VIRT_APIC_SIZE                                    X86_PAGE_4K_SIZE
 /** The size of the Virtual-APIC page (in pages). */
 #define VMX_V_VIRT_APIC_PAGES                                   1
@@ -3429,7 +3460,7 @@ typedef const VMXVEXITEVENTINFO *PCVMXVEXITEVENTINFO;
 #pragma pack(1)
 typedef struct
 {
-    /** 0x0 - VMX VMCS revision identifier.  */
+    /** 0x0 - VMX VMCS revision identifier. */
     VMXVMCSREVID    u32VmcsRevId;
     /** 0x4 - VMX-abort indicator. */
     VMXABORT        enmVmxAbort;
@@ -3543,7 +3574,7 @@ typedef struct
 
     /** @name 32-bit Read-only Data fields.
      * @{ */
-    /** 0xec - VM-instruction error.  */
+    /** 0xec - VM-instruction error. */
     uint32_t        u32RoVmInstrError;
     /** 0xf0 - VM-exit reason. */
     uint32_t        u32RoExitReason;
@@ -3648,35 +3679,35 @@ typedef struct
     RTUINT64U       u64AddrVirtApic;
     /** 0x228 - APIC-access address. */
     RTUINT64U       u64AddrApicAccess;
-    /** 0x230 - Posted-interrupt descriptor address.  */
+    /** 0x230 - Posted-interrupt descriptor address. */
     RTUINT64U       u64AddrPostedIntDesc;
-    /** 0x238 - VM-functions control.  */
+    /** 0x238 - VM-functions control. */
     RTUINT64U       u64VmFuncCtls;
-    /** 0x240 - EPTP pointer.  */
+    /** 0x240 - EPTP pointer. */
     RTUINT64U       u64EptpPtr;
-    /** 0x248 - EOI-exit bitmap 0.  */
+    /** 0x248 - EOI-exit bitmap 0. */
     RTUINT64U       u64EoiExitBitmap0;
-    /** 0x250 - EOI-exit bitmap 1.  */
+    /** 0x250 - EOI-exit bitmap 1. */
     RTUINT64U       u64EoiExitBitmap1;
-    /** 0x258 - EOI-exit bitmap 2.  */
+    /** 0x258 - EOI-exit bitmap 2. */
     RTUINT64U       u64EoiExitBitmap2;
-    /** 0x260 - EOI-exit bitmap 3.  */
+    /** 0x260 - EOI-exit bitmap 3. */
     RTUINT64U       u64EoiExitBitmap3;
-    /** 0x268 - EPTP-list address.  */
+    /** 0x268 - EPTP-list address. */
     RTUINT64U       u64AddrEptpList;
-    /** 0x270 - VMREAD-bitmap address.  */
+    /** 0x270 - VMREAD-bitmap address. */
     RTUINT64U       u64AddrVmreadBitmap;
-    /** 0x278 - VMWRITE-bitmap address.  */
+    /** 0x278 - VMWRITE-bitmap address. */
     RTUINT64U       u64AddrVmwriteBitmap;
-    /** 0x280 - Virtualization-exception information address.  */
+    /** 0x280 - Virtualization-exception information address. */
     RTUINT64U       u64AddrXcptVeInfo;
-    /** 0x288 - XSS-exiting bitmap.  */
+    /** 0x288 - XSS-exiting bitmap. */
     RTUINT64U       u64XssBitmap;
-    /** 0x290 - ENCLS-exiting bitmap address.  */
+    /** 0x290 - ENCLS-exiting bitmap address. */
     RTUINT64U       u64EnclsBitmap;
     /** 0x298 - Sub-page-permission-table pointer. */
     RTUINT64U       u64SpptPtr;
-    /** 0x2a0 - TSC multiplier.  */
+    /** 0x2a0 - TSC multiplier. */
     RTUINT64U       u64TscMultiplier;
     /** 0x2a8 - Reserved for future. */
     RTUINT64U       au64Reserved0[15];
@@ -3712,8 +3743,10 @@ typedef struct
     RTUINT64U       u64GuestPdpte3;
     /** 0x3b0 - Guest Bounds-config MSR (Intel MPX - Memory Protection Extensions). */
     RTUINT64U       u64GuestBndcfgsMsr;
-    /** 0x3b8 - Reserved for future. */
-    RTUINT64U       au64Reserved2[16];
+    /** 0x3b8 - Guest RTIT control MSR (Intel Real Time Instruction Trace). */
+    RTUINT64U       u64GuestRtitCtlMsr;
+    /** 0x3c0 - Reserved for future. */
+    RTUINT64U       au64Reserved2[15];
     /** @} */
 
     /** @name 64-bit Host-state Fields.
@@ -3793,23 +3826,23 @@ typedef struct
     RTUINT64U       u64GuestLdtrBase;
     /** 0x710 - Guest TR base. */
     RTUINT64U       u64GuestTrBase;
-    /** 0x718 - Guest GDTR base.  */
+    /** 0x718 - Guest GDTR base. */
     RTUINT64U       u64GuestGdtrBase;
-    /** 0x720 - Guest IDTR base.  */
+    /** 0x720 - Guest IDTR base. */
     RTUINT64U       u64GuestIdtrBase;
-    /** 0x728 - Guest DR7.  */
+    /** 0x728 - Guest DR7. */
     RTUINT64U       u64GuestDr7;
-    /** 0x730 - Guest RSP.  */
+    /** 0x730 - Guest RSP. */
     RTUINT64U       u64GuestRsp;
-    /** 0x738 - Guest RIP.  */
+    /** 0x738 - Guest RIP. */
     RTUINT64U       u64GuestRip;
-    /** 0x740 - Guest RFLAGS.  */
+    /** 0x740 - Guest RFLAGS. */
     RTUINT64U       u64GuestRFlags;
-    /** 0x748 - Guest pending debug exception.  */
+    /** 0x748 - Guest pending debug exception. */
     RTUINT64U       u64GuestPendingDbgXcpt;
-    /** 0x750 - Guest SYSENTER ESP.  */
+    /** 0x750 - Guest SYSENTER ESP. */
     RTUINT64U       u64GuestSysenterEsp;
-    /** 0x758 - Guest SYSENTER EIP.  */
+    /** 0x758 - Guest SYSENTER EIP. */
     RTUINT64U       u64GuestSysenterEip;
     /** 0x760 - Reserved for future. */
     RTUINT64U       au64Reserved6[32];

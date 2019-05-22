@@ -112,10 +112,14 @@ static const char * const g_apszVmxExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(VMX_EXIT_RDSEED                 ,  61, "RDSEED instruction."),
     EXIT_REASON(VMX_EXIT_PML_FULL               ,  62, "Page-modification log full."),
     EXIT_REASON(VMX_EXIT_XSAVES                 ,  63, "XSAVES instruction."),
-    EXIT_REASON(VMX_EXIT_XRSTORS                ,  64, "XRSTORS instruction.")
+    EXIT_REASON(VMX_EXIT_XRSTORS                ,  64, "XRSTORS instruction."),
+    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_SPP_EVENT              ,  66, "SPP-related event."),
+    EXIT_REASON(VMX_EXIT_UMWAIT                 ,  67, "UMWAIT instruction."),
+    EXIT_REASON(VMX_EXIT_TPAUSE                 ,  68, "TPAUSE instruction.")
 };
 /** Array index of the last valid VT-x exit reason. */
-#define MAX_EXITREASON_VTX                         64
+#define MAX_EXITREASON_VTX                         68
 
 /** A partial list of \#EXIT reason descriptions for AMD-V, used to describe
  *  statistics and exit history.
