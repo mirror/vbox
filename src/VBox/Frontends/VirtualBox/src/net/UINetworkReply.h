@@ -81,8 +81,8 @@ public:
         LocationHeader,
     };
 
-    /** Constructs network-reply of the passed @a type for the passed @a url and @a requestHeaders. */
-    UINetworkReply(UINetworkRequestType type, const QUrl &url, const UserDictionary &requestHeaders);
+    /** Constructs network-reply of the passed @a type for the passed @a url, @a strTarget and @a requestHeaders. */
+    UINetworkReply(UINetworkRequestType type, const QUrl &url, const QString &strTarget, const UserDictionary &requestHeaders);
     /** Destructs reply. */
     ~UINetworkReply();
 

@@ -43,7 +43,7 @@ void UIDownloader::sltStartDownloading()
     m_state = UIDownloaderState_Downloading;
 
     /* Send GET request: */
-    createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << m_source);
+    createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << m_source, m_strTarget);
 }
 
 void UIDownloader::sltStartVerifying()

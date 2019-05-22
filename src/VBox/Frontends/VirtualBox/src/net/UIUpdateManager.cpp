@@ -310,7 +310,7 @@ void UIUpdateStepVirtualBox::sltStartStep()
     headers["User-Agent"] = strUserAgent;
     QUrl fullUrl(m_url);
     fullUrl.setQuery(url);
-    createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << fullUrl, headers);
+    createNetworkRequest(UINetworkRequestType_GET, QList<QUrl>() << fullUrl, QString(), headers);
 }
 
 /* static */

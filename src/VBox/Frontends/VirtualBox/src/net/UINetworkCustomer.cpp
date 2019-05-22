@@ -30,8 +30,9 @@ UINetworkCustomer::UINetworkCustomer(QObject *pParent /* = 0 */, bool fForceCall
 }
 
 void UINetworkCustomer::createNetworkRequest(UINetworkRequestType enmType, const QList<QUrl> urls,
+                                             const QString &strTarget /* = QString() */,
                                              const UserDictionary requestHeaders /* = UserDictionary() */)
 {
-    gNetworkManager->createNetworkRequest(enmType, urls, requestHeaders, this);
+    gNetworkManager->createNetworkRequest(enmType, urls, strTarget, requestHeaders, this);
 }
 
