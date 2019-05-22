@@ -461,6 +461,7 @@
         <key>
             <width>50</width>
             <label>Win</label>
+            <type>tristate</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5b</scancode>
         </key>
@@ -486,6 +487,7 @@
         <key>
             <width>50</width>
             <label>Win</label>
+            <type>tristate</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5c</scancode>
         </key>
