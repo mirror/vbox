@@ -1236,19 +1236,15 @@ VMM_INT_DECL(void) HMNotifyVmxNstGstVmexit(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     NOREF(pCtx);
 
-    /*
-     * Make sure we need to merge the nested-guest VMCS on next nested-guest
-     * VM entry (if we VM-exit in ring-0 and continue in ring-0 till the next
-     * nested-guest VM-entry).
-     */
-    pVCpu->hm.s.vmx.fMergedNstGstCtls = false;
-
-    CPUMImportGuestStateOnDemand(pVCpu, CPUMCTX_EXTRN_ALL);
+    /* There shouldn't be any externally kept state at this point. */
     AssertMsg(!(pVCpu->cpum.GstCtx.fExtrn & CPUMCTX_EXTRN_ALL),
               ("fExtrn=%#RX64 fExtrnMbz=%#RX64\n", pVCpu->cpum.GstCtx.fExtrn, CPUMCTX_EXTRN_ALL));
-    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 
-
+    /*
+     * Make sure we need to merge the guest VMCS controls with the nested-guest
+     * VMCS controls on the next nested-guest VM entry.
+     */
+    pVCpu->hm.s.vmx.fMergedNstGstCtls = false;
 }
 # endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
 #endif /* IN_RC */
