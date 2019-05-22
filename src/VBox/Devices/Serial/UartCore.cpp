@@ -1767,6 +1767,7 @@ DECLHIDDEN(void) uartR3Relocate(PUARTCORE pThis, RTGCINTPTR offDelta)
     pThis->pDevInsRC              = PDMDEVINS_2_RCPTR(pThis->pDevInsR3);
     pThis->pTimerRcvFifoTimeoutRC = TMTimerRCPtr(pThis->pTimerRcvFifoTimeoutR3);
     pThis->pTimerTxUnconnectedRC  = TMTimerRCPtr(pThis->pTimerTxUnconnectedR3);
+    pThis->pfnUartIrqReqRC       += offDelta;
 }
 
 
