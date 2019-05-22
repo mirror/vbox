@@ -12793,12 +12793,42 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
         case VMX_EXIT_APIC_ACCESS:
         case VMX_EXIT_XCPT_OR_NMI:
         case VMX_EXIT_MOV_CRX:
+
         case VMX_EXIT_EXT_INT:
+        {
+            /* We shouldn't direct physical interrupts to the nested-guest. */
+            rcStrict = hmR0VmxExitExtInt(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_INT_WINDOW:
         case VMX_EXIT_TPR_BELOW_THRESHOLD:
         case VMX_EXIT_MWAIT:
         case VMX_EXIT_MONITOR:
+
         case VMX_EXIT_PAUSE:
+        {
+            /* The CPU would have already performed the necessary CPL checks for PAUSE-loop exiting. */
+            /** @todo NSTVMX: Think about this more. Does the outer guest need to intercept
+             *        PAUSE when executing a nested-guest? If it does not, we would not need
+             *        to check for the intercepts here. Just call VM-exit... */
+            if (   CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_PAUSE_EXIT)
+                || CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_PAUSE_LOOP_EXIT))
+            {
+                int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+                AssertRCReturn(rc, rc);
+
+                VMXVEXITINFO ExitInfo;
+                RT_ZERO(ExitInfo);
+                ExitInfo.uReason = uExitReason;
+                ExitInfo.cbInstr = pVmxTransient->cbInstr;
+                rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
+            }
+            else
+                rcStrict = hmR0VmxExitPause(pVCpu, pVmxTransient);
+            break;
+        }
+
         case VMX_EXIT_PREEMPT_TIMER:
         case VMX_EXIT_MOV_DRX:
         case VMX_EXIT_GDTR_IDTR_ACCESS:
