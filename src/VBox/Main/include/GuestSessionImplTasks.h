@@ -46,7 +46,7 @@ struct GuestSessionFsSourceSpec
     GuestSessionFsSourceSpec()
         : enmType(FsObjType_Unknown)
         , enmPathStyle(PathStyle_Unknown)
-        , fDryRun(false) { }
+        , fDryRun(false) { } /** @todo r=bird: only half initialized. See comments in GuestSession::fileCopyToGuest(). */
 
     Utf8Str     strSource;
     Utf8Str     strFilter;
@@ -212,6 +212,7 @@ protected:
     int setProgress(ULONG uPercent);
     int setProgressSuccess(void);
     HRESULT setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg);
+    HRESULT setProgressErrorMsg(HRESULT hrc, int vrc, const char *pszFormat, ...);
 
     inline void setTaskDesc(const Utf8Str &strTaskDesc) throw()
     {
@@ -280,7 +281,7 @@ class GuestSessionTaskCopyFrom : public GuestSessionCopyTask
 {
 public:
 
-    GuestSessionTaskCopyFrom(GuestSession *pSession, GuestSessionFsSourceSet vecSrc, const Utf8Str &strDest);
+    GuestSessionTaskCopyFrom(GuestSession *pSession, GuestSessionFsSourceSet const &vecSrc, const Utf8Str &strDest);
     virtual ~GuestSessionTaskCopyFrom(void);
 
     HRESULT Init(const Utf8Str &strTaskDesc);
@@ -294,7 +295,7 @@ class GuestSessionTaskCopyTo : public GuestSessionCopyTask
 {
 public:
 
-    GuestSessionTaskCopyTo(GuestSession *pSession, GuestSessionFsSourceSet vecSrc, const Utf8Str &strDest);
+    GuestSessionTaskCopyTo(GuestSession *pSession, GuestSessionFsSourceSet const &vecSrc, const Utf8Str &strDest);
     virtual ~GuestSessionTaskCopyTo(void);
 
     HRESULT Init(const Utf8Str &strTaskDesc);
@@ -308,9 +309,8 @@ class GuestSessionTaskUpdateAdditions : public GuestSessionTask
 {
 public:
 
-    GuestSessionTaskUpdateAdditions(GuestSession *pSession,
-                               const Utf8Str &strSource, const ProcessArguments &aArguments,
-                               uint32_t fFlags);
+    GuestSessionTaskUpdateAdditions(GuestSession *pSession, const Utf8Str &strSource,
+                                    const ProcessArguments &aArguments, uint32_t fFlags);
     virtual ~GuestSessionTaskUpdateAdditions(void);
     int Run(void);
 

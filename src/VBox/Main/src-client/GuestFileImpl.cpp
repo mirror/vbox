@@ -395,40 +395,33 @@ int GuestFile::i_closeFile(int *prcGuest)
     return vrc;
 }
 
-/* static */
-Utf8Str GuestFile::i_guestErrorToString(int rcGuest)
+/* static */ const char *GuestFile::i_guestVrcToString(int rcGuest)
 {
-    Utf8Str strError;
-
     /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
     switch (rcGuest)
     {
-        case VERR_ACCESS_DENIED:
-            strError += Utf8StrFmt(tr("Access denied"));
-            break;
-
-        case VERR_ALREADY_EXISTS:
-            strError += Utf8StrFmt(tr("File already exists"));
-            break;
-
-        case VERR_FILE_NOT_FOUND:
-            strError += Utf8StrFmt(tr("File not found"));
-            break;
-
-        case VERR_NET_HOST_NOT_FOUND:
-            strError += Utf8StrFmt(tr("Host name not found"));
-            break;
-
-        case VERR_SHARING_VIOLATION:
-            strError += Utf8StrFmt(tr("Sharing violation"));
-            break;
-
-        default:
-            strError += Utf8StrFmt("%Rrc", rcGuest);
-            break;
+        case VERR_ACCESS_DENIED:        return tr("Access denied");
+        case VERR_ALREADY_EXISTS:       return tr("File already exists");
+        case VERR_FILE_NOT_FOUND:       return tr("File not found");
+        case VERR_NET_HOST_NOT_FOUND:   return tr("Host name not found");
+        case VERR_SHARING_VIOLATION:    return tr("Sharing violation");
+        default:                        return RTErrGetDefine(rcGuest);
     }
+}
 
-    return strError;
+/**
+ * @todo r=bird: This is an absolutely cryptic way of reporting errors.  You may convert
+ *               this to a const char * returning function for explaining rcGuest and
+ *               use that as part of a _proper_ error message.  This alone extremely
+ *               user unfriendly. E.g. which file is not found? One of the source files,
+ *               a destination file, what are you referring to?!?
+ *
+ *               I've addressed one of these that annoyed me, you can do the rest of them.
+ */
+/* static */ Utf8Str GuestFile::i_guestErrorToString(int rcGuest)
+{
+    /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
+    return i_guestVrcToString(rcGuest);
 }
 
 int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)

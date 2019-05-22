@@ -138,6 +138,18 @@ public:
                               const char *pcszComponent,
                               const char *aText,
                               va_list va);
+    HRESULT i_notifyCompleteBoth(HRESULT aResultCode,
+                                 int vrc,
+                                 const GUID &aIID,
+                                 const char *pcszComponent,
+                                 const char *aText,
+                                 ...);
+    HRESULT i_notifyCompleteBothV(HRESULT aResultCode,
+                                  int vrc,
+                                  const GUID &aIID,
+                                  const char *pcszComponent,
+                                  const char *aText,
+                                  va_list va);
 
     bool i_setCancelCallback(void (*pfnCallback)(void *), void *pvUser);
 

@@ -207,11 +207,41 @@ HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hr, const Utf8Str &strMsg)
         HRESULT hr2 = mProgress->i_notifyComplete(hr,
                                                   COM_IIDOF(IGuestSession),
                                                   GuestSession::getStaticComponentName(),
+                                                  /** @todo r=bird: i_notifyComplete takes a format string, so this is
+                                                   *        potentially risky business if a user input mentioned by the message
+                                                   *        text contains '%s'!  With code below for how to do this less
+                                                   *        painfully and with fewer string copies. */
                                                   strMsg.c_str());
         if (FAILED(hr2))
             return hr2;
     }
     return hr; /* Return original rc. */
+}
+
+HRESULT GuestSessionTask::setProgressErrorMsg(HRESULT hrc, int vrc, const char *pszFormat, ...)
+{
+    LogFlowFunc(("hrc=%Rhrc, vrc=%Rrc, pszFormat=%s\n", hrc, vrc, pszFormat));
+
+    /* The progress object is optional. */
+    if (!mProgress.isNull())
+    {
+        BOOL fCanceled;
+        BOOL fCompleted;
+        if (   SUCCEEDED(mProgress->COMGETTER(Canceled(&fCanceled)))
+            && !fCanceled
+            && SUCCEEDED(mProgress->COMGETTER(Completed(&fCompleted)))
+            && !fCompleted)
+        {
+            va_list va;
+            va_start(va, pszFormat);
+            HRESULT hrc2 = mProgress->i_notifyCompleteBothV(hrc, vrc, COM_IIDOF(IGuestSession),
+                                                            GuestSession::getStaticComponentName(), pszFormat, va);
+            va_end(va);
+            if (FAILED(hrc2))
+                hrc = hrc2;
+        }
+    }
+    return hrc;
 }
 
 /**
@@ -762,25 +792,14 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &s
     GuestFsObjData dstObjData;
     int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int rc = mSession->i_fsQueryInfo(strDest, TRUE /* fFollowSymlinks */, dstObjData, &rcGuest);
-    if (RT_FAILURE(rc))
+    if (rc == VERR_GSTCTL_GUEST_ERROR && rcGuest == VERR_FILE_NOT_FOUND) /* File might not exist on the guest yet. */
+        rc = VINF_SUCCESS;
+    else if (RT_FAILURE(rc))
     {
-        switch (rc)
-        {
-            case VERR_GSTCTL_GUEST_ERROR:
-                if (rcGuest == VERR_FILE_NOT_FOUND) /* File might not exist on the guest yet. */
-                {
-                    rc = VINF_SUCCESS;
-                }
-                else
-                   setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestFile::i_guestErrorToString(rcGuest));
-                break;
-
-            default:
-                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Destination file lookup for \"%s\" failed: %Rrc"),
-                                               strDest.c_str(), rc));
-                break;
-        }
+        setProgressErrorMsg(VBOX_E_IPRT_ERROR, rc == VERR_GSTCTL_GUEST_ERROR ? rcGuest : rc,
+                            GuestSession::tr("Destination file lookup for \"%s\" failed: %Rrc"),
+                            strDest.c_str(), rc == VERR_GSTCTL_GUEST_ERROR ? rcGuest : rc);
+        return rc;
     }
     else
     {
@@ -790,8 +809,14 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &s
             {
                 /* Build the final file name with destination path (on the host). */
                 char szDstPath[RTPATH_MAX];
+                /** @todo r=bird: WTF IS THIS SUPPOSED TO BE?!? Use RTStrCopy, memcpy, or similar!
+                 * Ever thought about modifying strDestFinal (it's 'Dst' not 'Dest' btw.)
+                 * directly?  There are any number of append and insert methods in the
+                 * RTCString/Utf8Str class for doing that! */
                 RTStrPrintf2(szDstPath, sizeof(szDstPath), "%s", strDest.c_str());
 
+                /** @todo r=bird: You're totally ignoring the guest slash-style here! Callers
+                 *        should have this info. */
                 if (   !strDest.endsWith("\\")
                     && !strDest.endsWith("/"))
                     RTStrCat(szDstPath, sizeof(szDstPath), "/");
@@ -847,22 +872,11 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &s
     rc = mSession->i_fileOpen(dstOpenInfo, dstFile, &rcGuest);
     if (RT_FAILURE(rc))
     {
-        switch (rc)
-        {
-            case VERR_GSTCTL_GUEST_ERROR:
-                setProgressErrorMsg(VBOX_E_IPRT_ERROR, GuestFile::i_guestErrorToString(rcGuest));
-                break;
-
-            default:
-                setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                    Utf8StrFmt(GuestSession::tr("Destination file \"%s\" could not be opened: %Rrc"),
-                                               strDestFinal.c_str(), rc));
-                break;
-        }
-    }
-
-    if (RT_FAILURE(rc))
+        setProgressErrorMsg(VBOX_E_IPRT_ERROR, rc == VERR_GSTCTL_GUEST_ERROR ? rcGuest : rc,
+                            GuestSession::tr("Destination file \"%s\" could not be opened: %Rrc"),
+                            strDestFinal.c_str(), rc == VERR_GSTCTL_GUEST_ERROR ? rcGuest : rc);
         return rc;
+    }
 
     char szSrcReal[RTPATH_MAX];
 
@@ -1382,8 +1396,9 @@ GuestSessionCopyTask::~GuestSessionCopyTask()
     Assert(mVecLists.empty());
 }
 
-GuestSessionTaskCopyFrom::GuestSessionTaskCopyFrom(GuestSession *pSession, GuestSessionFsSourceSet vecSrc, const Utf8Str &strDest)
-                                                   : GuestSessionCopyTask(pSession)
+GuestSessionTaskCopyFrom::GuestSessionTaskCopyFrom(GuestSession *pSession, GuestSessionFsSourceSet const &vecSrc,
+                                                   const Utf8Str &strDest)
+    : GuestSessionCopyTask(pSession)
 {
     m_strTaskName = "gctlCpyFrm";
 
@@ -1628,8 +1643,9 @@ int GuestSessionTaskCopyFrom::Run(void)
     return rc;
 }
 
-GuestSessionTaskCopyTo::GuestSessionTaskCopyTo(GuestSession *pSession, GuestSessionFsSourceSet vecSrc, const Utf8Str &strDest)
-                                               : GuestSessionCopyTask(pSession)
+GuestSessionTaskCopyTo::GuestSessionTaskCopyTo(GuestSession *pSession, GuestSessionFsSourceSet const &vecSrc,
+                                               const Utf8Str &strDest)
+    : GuestSessionCopyTask(pSession)
 {
     m_strTaskName = "gctlCpyTo";
 
@@ -1800,7 +1816,7 @@ int GuestSessionTaskCopyTo::Run(void)
         /* Create the root directory. */
         if (pList->mSourceSpec.enmType == FsObjType_Directory)
         {
-            fCopyIntoExisting = pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting;
+            fCopyIntoExisting = RT_BOOL(pList->mSourceSpec.Type.Dir.fCopyFlags & DirectoryCopyFlag_CopyIntoExisting);
             fFollowSymlinks   = pList->mSourceSpec.Type.Dir.fFollowSymlinks;
 
             if (pList->mSourceSpec.fDryRun == false)
@@ -1813,7 +1829,7 @@ int GuestSessionTaskCopyTo::Run(void)
         }
         else if (pList->mSourceSpec.enmType == FsObjType_File)
         {
-            fCopyIntoExisting = !RT_BOOL(pList->mSourceSpec.Type.File.fCopyFlags & FileCopyFlag_NoReplace);
+            fCopyIntoExisting = !(pList->mSourceSpec.Type.File.fCopyFlags & FileCopyFlag_NoReplace);
             fFollowSymlinks   = RT_BOOL(pList->mSourceSpec.Type.File.fCopyFlags & FileCopyFlag_FollowLinks);
         }
         else
@@ -1936,8 +1952,8 @@ int GuestSessionTaskUpdateAdditions::addProcessArguments(ProcessArguments &aArgu
 }
 
 int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTVFS hVfsIso,
-                                                Utf8Str const &strFileSource, const Utf8Str &strFileDest,
-                                                bool fOptional)
+                                                     Utf8Str const &strFileSource, const Utf8Str &strFileDest,
+                                                     bool fOptional)
 {
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertReturn(hVfsIso != NIL_RTVFS, VERR_INVALID_POINTER);

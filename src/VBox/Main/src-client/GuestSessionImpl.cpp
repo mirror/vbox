@@ -792,9 +792,14 @@ HRESULT GuestSession::i_copyToGuest(const GuestSessionFsSourceSet &SourceSet,
     LogFlowThisFuncEnter();
 
     /* Validate stuff. */
-    if (RT_UNLIKELY(SourceSet.size() == 0 || *(SourceSet[0].strSource.c_str()) == '\0')) /* At least one source must be present. */
-        return setError(E_INVALIDARG, tr("No source(s) specified"));
-    if (RT_UNLIKELY((strDestination.c_str()) == NULL || *(strDestination.c_str()) == '\0'))
+/** @todo r=bird: these validations are better left to the caller.  The first one in particular as there is only one
+ * of the four callers which supplies a user specified source set, making an assertion more appropriate and efficient
+ * here. */
+    if (RT_UNLIKELY(SourceSet.size() == 0)) /* At least one source must be present. */
+        return setError(E_INVALIDARG, tr("No sources specified"));
+    if (RT_UNLIKELY(SourceSet[0].strSource.isEmpty()))
+        return setError(E_INVALIDARG, tr("First source entry is empty"));
+    if (RT_UNLIKELY(strDestination.isEmpty()))
         return setError(E_INVALIDARG, tr("No destination specified"));
 
     try
@@ -3026,6 +3031,11 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
 
     GuestSessionFsSourceSet SourceSet;
 
+    /** @todo r=bird: The GuestSessionFsSourceSpec constructor does not zero the
+     *        members you aren't setting here and there are no hints about "input"
+     *        vs "task" members, so you have me worrying about using random stack by
+     *        accident somewhere...  For instance Type.File.phFile sure sounds like
+     *        an input field and thus a disaster waiting to happen. */
     GuestSessionFsSourceSpec source;
     source.strSource            = aSource;
     source.enmType              = FsObjType_File;
