@@ -2879,6 +2879,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPU pVCpu, uint32_t uExitReason)
     else
         Log3(("vmexit: Loading host-state failed. uExitReason=%u rc=%Rrc\n", uExitReason, VBOXSTRICTRC_VAL(rcStrict)));
 
+    /* Notify HM that we've completed the VM-exit. */
+    HMNotifyVmxNstGstVmexit(pVCpu, &pVCpu->cpum.GstCtx);
+
     /* We're no longer in nested-guest execution mode. */
     pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = false;
 
