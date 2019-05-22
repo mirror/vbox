@@ -146,14 +146,24 @@ void UIDownloaderAdditions::handleVerifiedObject(UINetworkReply *pReply)
     /* Serialize that buffer into the file: */
     while (true)
     {
-        /* Try to open file for writing: */
+        /* Make sure the file already exists.  If we reached
+         * this place, it's already written and checked. */
         QFile file(target());
-        if (file.open(QIODevice::WriteOnly))
+        bool fSuccess = false;
+        /* Check step. Try to open file for reading first. */
+        if (file.open(QIODevice::ReadOnly))
+            fSuccess = true;
+        /* Failsafe step. Try to open file for writing otherwise. */
+        if (!fSuccess && file.open(QIODevice::WriteOnly))
         {
             /* Write buffer into the file: */
             file.write(m_receivedData);
             file.close();
-
+            fSuccess = true;
+        }
+        /* If the file already exists or was just written: */
+        if (fSuccess)
+        {
             /* Warn the user about additions-image loaded and saved, propose to mount it: */
             if (msgCenter().proposeMountGuestAdditions(source().toString(), QDir::toNativeSeparators(target())))
                 emit sigDownloadFinished(target());

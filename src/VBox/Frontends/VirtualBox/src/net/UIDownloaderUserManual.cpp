@@ -89,14 +89,24 @@ void UIDownloaderUserManual::handleDownloadedObject(UINetworkReply *pReply)
     /* Serialize that buffer into the file: */
     while (true)
     {
-        /* Try to open file for writing: */
+        /* Make sure the file already exists.  If we reached
+         * this place, it's already written and checked. */
         QFile file(target());
-        if (file.open(QIODevice::WriteOnly))
+        bool fSuccess = false;
+        /* Check step. Try to open file for reading first. */
+        if (file.open(QIODevice::ReadOnly))
+            fSuccess = true;
+        /* Failsafe step. Try to open file for writing otherwise. */
+        if (!fSuccess && file.open(QIODevice::WriteOnly))
         {
             /* Write buffer into the file: */
             file.write(receivedData);
             file.close();
-
+            fSuccess = true;
+        }
+        /* If the file already exists or was just written: */
+        if (fSuccess)
+        {
             /* Warn the user about user-manual loaded and saved: */
             msgCenter().warnAboutUserManualDownloaded(source().toString(), QDir::toNativeSeparators(target()));
             /* Warn the listener about user-manual was downloaded: */
