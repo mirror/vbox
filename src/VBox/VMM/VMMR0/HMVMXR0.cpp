@@ -12817,11 +12817,6 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPU pVCpu, PVMXTRANSIENT pVm
             {
                 int rc = hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
                 AssertRCReturn(rc, rc);
-
-                VMXVEXITINFO ExitInfo;
-                RT_ZERO(ExitInfo);
-                ExitInfo.uReason = uExitReason;
-                ExitInfo.cbInstr = pVmxTransient->cbInstr;
                 rcStrict = IEMExecVmxVmexitInstr(pVCpu, uExitReason, pVmxTransient->cbInstr);
             }
             else
