@@ -167,6 +167,11 @@ RTR3DECL(void) RTHttpFreeResponseText(char *pszNotUtf8);
  * @param   ppvResponse     Where to store the HTTP response data.  Use
  *                          RTHttpFreeResponse to free.
  * @param   pcb             Size of the returned buffer.
+ *
+ * @note    There is a limit on how much this function allows to be downloaded,
+ *          given that the return requires a single heap allocation and all
+ *          that.  Currently 32 MB on 32-bit hosts and 64 MB on 64-bit hosts.
+ *          Use RTHttpGetFile or RTHttpSetDownloadCallback for larger transfers.
  */
 RTR3DECL(int) RTHttpGetBinary(RTHTTP hHttp, const char *pszUrl, void **ppvResponse, size_t *pcb);
 
