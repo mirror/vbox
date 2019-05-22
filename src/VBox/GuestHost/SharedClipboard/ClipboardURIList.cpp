@@ -61,7 +61,8 @@ int SharedClipboardURIList::addEntry(const char *pcszSource, const char *pcszTar
             LogFlowFunc(("File '%s' -> '%s' (%RU64 bytes, file mode 0x%x)\n",
                          pcszSource, pcszTarget, (uint64_t)objInfo.cbObject, objInfo.Attr.fMode));
 
-            SharedClipboardURIObject *pObjFile = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File, pcszSource, pcszTarget);
+            SharedClipboardURIObject *pObjFile = new SharedClipboardURIObject(SharedClipboardURIObject::Type_File,
+                                                                              pcszSource, pcszTarget);
             if (pObjFile)
             {
                 /** @todo Add a standard fOpen mode for this list. */
@@ -86,7 +87,8 @@ int SharedClipboardURIList::addEntry(const char *pcszSource, const char *pcszTar
         {
             LogFlowFunc(("Directory '%s' -> '%s' (file mode 0x%x)\n", pcszSource, pcszTarget, objInfo.Attr.fMode));
 
-            SharedClipboardURIObject *pObjDir = new SharedClipboardURIObject(SharedClipboardURIObject::Type_Directory, pcszSource, pcszTarget);
+            SharedClipboardURIObject *pObjDir = new SharedClipboardURIObject(SharedClipboardURIObject::Type_Directory,
+                                                                             pcszSource, pcszTarget);
             if (pObjDir)
             {
                 m_lstTree.append(pObjDir);
@@ -107,8 +109,8 @@ int SharedClipboardURIList::addEntry(const char *pcszSource, const char *pcszTar
 }
 
 int SharedClipboardURIList::appendPathRecursive(const char *pcszSrcPath,
-                                    const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase,
-                                    SHAREDCLIPBOARDURILISTFLAGS fFlags)
+                                                const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase,
+                                                SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pcszSrcPath, VERR_INVALID_POINTER);
     AssertPtrReturn(pcszDstBase, VERR_INVALID_POINTER);
@@ -303,7 +305,7 @@ int SharedClipboardURIList::AppendNativePath(const char *pszPath, SHAREDCLIPBOAR
 }
 
 int SharedClipboardURIList::AppendNativePathsFromList(const char *pszNativePaths, size_t cbNativePaths,
-                                          SHAREDCLIPBOARDURILISTFLAGS fFlags)
+                                                      SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pszNativePaths, VERR_INVALID_POINTER);
     AssertReturn(cbNativePaths, VERR_INVALID_PARAMETER);
@@ -314,7 +316,7 @@ int SharedClipboardURIList::AppendNativePathsFromList(const char *pszNativePaths
 }
 
 int SharedClipboardURIList::AppendNativePathsFromList(const RTCList<RTCString> &lstNativePaths,
-                                          SHAREDCLIPBOARDURILISTFLAGS fFlags)
+                                                      SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     int rc = VINF_SUCCESS;
 
@@ -404,7 +406,7 @@ int SharedClipboardURIList::AppendURIPath(const char *pszURI, SHAREDCLIPBOARDURI
 }
 
 int SharedClipboardURIList::AppendURIPathsFromList(const char *pszURIPaths, size_t cbURIPaths,
-                                       SHAREDCLIPBOARDURILISTFLAGS fFlags)
+                                                   SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     AssertPtrReturn(pszURIPaths, VERR_INVALID_POINTER);
     AssertReturn(cbURIPaths, VERR_INVALID_PARAMETER);
@@ -415,7 +417,7 @@ int SharedClipboardURIList::AppendURIPathsFromList(const char *pszURIPaths, size
 }
 
 int SharedClipboardURIList::AppendURIPathsFromList(const RTCList<RTCString> &lstURI,
-                                       SHAREDCLIPBOARDURILISTFLAGS fFlags)
+                                                   SHAREDCLIPBOARDURILISTFLAGS fFlags)
 {
     int rc = VINF_SUCCESS;
 
@@ -513,7 +515,7 @@ int SharedClipboardURIList::SetFromURIData(const void *pvData, size_t cbData, SH
 }
 
 RTCString SharedClipboardURIList::GetRootEntries(const RTCString &strPathBase /* = "" */,
-                                   const RTCString &strSeparator /* = "\r\n" */) const
+                                                 const RTCString &strSeparator /* = "\r\n" */) const
 {
     RTCString strRet;
     for (size_t i = 0; i < m_lstRoot.size(); i++)

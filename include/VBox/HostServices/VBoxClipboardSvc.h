@@ -201,17 +201,7 @@ typedef struct _VBoxClipboardWriteDataHdrMsg
     HGCMFunctionParameter cbChecksum;      /* OUT uint32_t */
 } VBoxClipboardWriteDataHdrMsg;
 
-typedef struct _VBOXCLIPBOARDWRITEDATACHUNK
-{
-    /** Data block buffer. */
-    void                       *pvData;
-    /** Size (in bytes) of data block. */
-    uint32_t                    cbData;
-    /** (Rolling) Checksum. Not yet implemented. */
-    void                       *pvChecksum;
-    /** Size (in bytes) of checksum. Not yet implemented. */
-    uint32_t                    cbChecksum;
-} VBOXCLIPBOARDWRITEDATACHUNK, *PVBOXCLIPBOARDWRITEDATACHUNK;
+#define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_HDR 12
 
 /**
  * Sends a (meta) data block to the host.
@@ -235,6 +225,8 @@ typedef struct _VBoxClipboardWriteDataChunkMsg
     HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
 } VBoxClipboardWriteDataChunkMsg;
 
+#define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_CHUNK 5
+
 /**
  * Sends a directory entry.
  *
@@ -254,6 +246,8 @@ typedef struct _VBoxClipboardWriteDirMsg
     /** Directory mode. */
     HGCMFunctionParameter fMode;        /* OUT uint32_t */
 } VBoxClipboardWriteDirMsg;
+
+#define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DIR 4
 
 /**
  * File header message, marking the start of transferring a new file.
@@ -279,6 +273,8 @@ typedef struct _VBoxClipboardWriteFileHdrMsg
     HGCMFunctionParameter cbTotal;      /* OUT uint64_t */
 } VBoxClipboardWriteFileHdrMsg;
 
+#define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_HDR 6
+
 /**
  * Sends data of a file entry.
  *
@@ -301,6 +297,8 @@ typedef struct _VBoxClipboardWriteFileDataMsg
     /** Size (in bytes) of curren data chunk checksum. */
     HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
 } VBoxClipboardWriteFileDataMsg;
+
+#define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_DATA 5
 
 /**
  * Sends an error event.
@@ -340,14 +338,6 @@ enum eVBoxClipboardCallbackMagics
     CB_MAGIC_CLIPBOARD_WRITE_ERROR      = VBOX_CLIPBOARD_CB_MAGIC_MAKE(VBOX_SHARED_CLIPBOARD_FN_WRITE_ERROR, 0)
 };
 
-typedef struct _VBOXCLIPBOARDCBHEADERDATA
-{
-    /** Magic number to identify the structure. */
-    uint32_t                    uMagic;
-    /** Context ID to identify callback data. */
-    uint32_t                    uContextID;
-} VBOXCLIPBOARDCBHEADERDATA, *PVBOXCLIPBOARDCBHEADERDATA;
-
 /**
  * Data header.
  */
@@ -381,15 +371,7 @@ typedef struct _VBOXCLIPBOARDDATAHDR
     uint32_t                    cbChecksum;
 } VBOXCLIPBOARDDATAHDR, *PVBOXCLIPBOARDDATAHDR;
 
-typedef struct _VBOXCLIPBOARDCBWRITEDATAHDRDATA
-{
-    /** Callback data header. */
-    VBOXCLIPBOARDCBHEADERDATA         hdr;
-    /** Actual header data. */
-    VBOXCLIPBOARDDATAHDR              data;
-} VBOXCLIPBOARDCBWRITEDATAHDRDATA, *PVBOXCLIPBOARDCBWRITEDATAHDRDATA;
-
-typedef struct VBOXCLIPBOARDSNDDATA
+typedef struct _VBOXCLIPBOARDDATACHUNK
 {
     /** Data block buffer. */
     void                       *pvData;
@@ -399,32 +381,20 @@ typedef struct VBOXCLIPBOARDSNDDATA
     void                       *pvChecksum;
     /** Size (in bytes) of checksum. Not yet implemented. */
     uint32_t                    cbChecksum;
-} VBOXCLIPBOARDSNDDATA, *PVBOXCLIPBOARDSNDDATA;
+} VBOXCLIPBOARDDATACHUNK, *PVBOXCLIPBOARDDATACHUNK;
 
-typedef struct VBOXCLIPBOARDCBSNDDATADATA
+typedef struct _VBOXCLIPBOARDDIRDATA
 {
-    /** Callback data header. */
-    VBOXCLIPBOARDCBHEADERDATA         hdr;
-    /** Actual data. */
-    VBOXCLIPBOARDSNDDATA              data;
-} VBOXCLIPBOARDCBDATADATA, *PVBOXCLIPBOARDCBSNDDATADATA;
-
-typedef struct _VBOXCLIPBOARDCBWRITEDIRDATA
-{
-    /** Callback data header. */
-    VBOXCLIPBOARDCBHEADERDATA   hdr;
     /** Directory path. */
     char                       *pszPath;
     /** Size (in bytes) of path. */
     uint32_t                    cbPath;
     /** Directory creation mode. */
     uint32_t                    fMode;
-} VBOXCLIPBOARDCBWRITEDIRDATA, *PVBOXCLIPBOARDCBWRITEDIRDATA;
+} VBOXCLIPBOARDDIRDATA, *PVBOXCLIPBOARDDIRDATA;
 
-typedef struct _VBOXCLIPBOARDCBWRITEFILEHDRDATA
+typedef struct _VBOXCLIPBOARDFILEHDR
 {
-    /** Callback data header. */
-    VBOXCLIPBOARDCBHEADERDATA   hdr;
     /** File path (name). */
     char                       *pszFilePath;
     /** Size (in bytes) of file path. */
@@ -435,12 +405,10 @@ typedef struct _VBOXCLIPBOARDCBWRITEFILEHDRDATA
     uint32_t                    fMode;
     /** Additional flags. Not used at the moment. */
     uint32_t                    fFlags;
-} VBOXCLIPBOARDCBWRITEFILEHDRDATA, *PVBOXCLIPBOARDCBWRITEFILEHDRDATA;
+} VBOXCLIPBOARDFILEHDR, *PVBOXCLIPBOARDFILEHDR;
 
-typedef struct _VBOXCLIPBOARDCBWRITEFILEDATADATA
+typedef struct _VBOXCLIPBOARDFILEDATA
 {
-    /** Callback data header. */
-    VBOXCLIPBOARDCBHEADERDATA   hdr;
     /** Current file data chunk. */
     void                       *pvData;
     /** Size (in bytes) of current data chunk. */
@@ -449,18 +417,22 @@ typedef struct _VBOXCLIPBOARDCBWRITEFILEDATADATA
     void                       *pvChecksum;
     /** Size (in bytes) of current data chunk. */
     uint32_t                    cbChecksum;
-} VBOXCLIPBOARDCBWRITEFILEDATADATA, *PVBOXCLIPBOARDCBWRITEFILEDATADATA;
+} VBOXCLIPBOARDFILEDATA, *PVBOXCLIPBOARDFILEDATA;
 
-typedef struct _VBOXCLIPBOARDCBEVTERRORDATA
+typedef struct _VBOXCLIPBOARDERRORDATA
 {
-    /** Callback data header. */
-    VBOXCLIPBOARDCBHEADERDATA   hdr;
     int32_t                     rc;
-} VBOXCLIPBOARDCBEVTERRORDATA, *PVBOXCLIPBOARDCBEVTERRORDATA;
+} VBOXCLIPBOARDERRORDATA, *PVBOXCLIPBOARDERRORDATA;
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 bool VBoxSvcClipboardGetHeadless(void);
 bool VBoxSvcClipboardLock(void);
 void VBoxSvcClipboardUnlock(void);
+
+bool VBoxSvcClipboardDataHdrIsValid(PVBOXCLIPBOARDDATAHDR pData);
+bool VBoxSvcClipboardDataChunkIsValid(PVBOXCLIPBOARDDATACHUNK pData);
+bool VBoxSvcClipboardDirDataIsValid(PVBOXCLIPBOARDDIRDATA pData);
+bool VBoxSvcClipboardFileHdrIsValid(PVBOXCLIPBOARDFILEHDR pFileHdr, PVBOXCLIPBOARDDATAHDR pDataHdr);
+bool VBoxSvcClipboardFileDataIsValid(PVBOXCLIPBOARDFILEDATA pData, PVBOXCLIPBOARDDATAHDR pDataHdr);
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h */

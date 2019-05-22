@@ -328,5 +328,28 @@ protected:
     uint64_t                            m_cbTotal;
 };
 
+/**
+ * Structure for keeping Shared Clipboard meta data.
+ *
+ * For URI transfers this represents a string list with the file object root entries in it.
+ */
+typedef struct _SHAREDCLIPBOARDMETADATA
+{
+    /** Actual meta data block. */
+    void  *pvMeta;
+    /** Total size (in bytes) of the allocated meta data block .*/
+    size_t cbMeta;
+    /** How many bytes are being used in the meta data block. */
+    size_t cbUsed;
+} SHAREDCLIPBOARDMETADATA, *PSHAREDCLIPBOARDMETADATA;
+
+int SharedClipboardMetaDataInit(PSHAREDCLIPBOARDMETADATA pMeta);
+void SharedClipboardMetaDataDestroy(PSHAREDCLIPBOARDMETADATA pMeta);
+int SharedClipboardMetaDataAdd(PSHAREDCLIPBOARDMETADATA pMeta, const void *pvDataAdd, uint32_t cbDataAdd);
+int SharedClipboardMetaDataResize(PSHAREDCLIPBOARDMETADATA pMeta, size_t cbNewSize);
+size_t SharedClipboardMetaDataGetUsed(PSHAREDCLIPBOARDMETADATA pMeta);
+size_t SharedClipboardMetaDataGetSize(PSHAREDCLIPBOARDMETADATA pMeta);
+const void *SharedClipboardMetaDataRaw(PSHAREDCLIPBOARDMETADATA pMeta);
+
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_uri_h */
 

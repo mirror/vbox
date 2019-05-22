@@ -374,7 +374,7 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
     vboxSvcClipboardCompleteReadData(pClientData, VERR_NO_DATA, 0);
 
 #ifdef VBOX_VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    vboxClipboardSvcURIDestroy(&pClientData->URI);
+    vboxClipboardSvcURITransferDestroy(&pClientData->Transfer);
 #endif
 
     VBoxClipboardSvcImplDisconnect(pClientData);
@@ -407,7 +407,13 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
     int rc = VBoxClipboardSvcImplConnect(pClientData, VBoxSvcClipboardGetHeadless());
 #ifdef VBOX_VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     if (RT_SUCCESS(rc))
-        rc = vboxClipboardSvcURICreate(&pClientData->URI);
+    {
+        rc = vboxClipboardSvcURITransferCreate(&pClientData->Transfer);
+        if (RT_SUCCESS(rc))
+        {
+            pClientData->cTransfers = 0;
+        }
+    }
 #endif
 
     if (RT_SUCCESS(rc))

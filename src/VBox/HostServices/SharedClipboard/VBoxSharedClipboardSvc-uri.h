@@ -21,8 +21,10 @@
 # pragma once
 #endif
 
-int vboxClipboardSvcURICreate(PVBOXCLIPBOARDCLIENTURIDATA pURIData);
-void vboxClipboardSvcURIDestroy(PVBOXCLIPBOARDCLIENTURIDATA pURIData);
+int vboxClipboardSvcURITransferCreate(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer);
+void vboxClipboardSvcURITransferDestroy(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer);
+void vboxClipboardSvcURITransferReset(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer);
+
 int vboxClipboardSvcURIHandler(uint32_t u32ClientID, void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival, bool *pfAsync);
 int vboxClipboardSvcURIHostHandler(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 

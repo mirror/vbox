@@ -21,6 +21,8 @@
 # pragma once
 #endif
 
+#include <iprt/list.h>
+
 #include <VBox/hgcmsvc.h>
 #include <VBox/log.h>
 
@@ -30,10 +32,34 @@
 #endif
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-typedef struct _VBOXCLIPBOARDCLIENTURIDATA
+/**
+ * Structure for handling a single URI object context.
+ */
+typedef struct _VBOXCLIPBOARDCLIENTURIOBJCTX
 {
-    SharedClipboardCache        Cache;
-} VBOXCLIPBOARDCLIENTURIDATA, *PVBOXCLIPBOARDCLIENTURIDATA;
+    /** Pointer to current object being processed. */
+    SharedClipboardURIObject      *pObj;
+} VBOXCLIPBOARDCLIENTURIOBJCTX, *PVBOXCLIPBOARDCLIENTURIOBJCTX;
+
+/**
+ * Structure for maintaining a single URI transfer.
+ * A transfer can contain one or multiple files / directories.
+ */
+typedef struct _VBOXCLIPBOARDCLIENTURITRANSFER
+{
+    /** Node for keeping this transfer in a RTList. */
+    RTLISTNODE                     Node;
+    /** The transfer's own (local) cache. */
+    SharedClipboardCache           Cache;
+    /** The transfer's URI list, containing the fs object root entries. */
+    SharedClipboardURIList         List;
+    /** Current object being handled. */
+    VBOXCLIPBOARDCLIENTURIOBJCTX   ObjCtx;
+    /** The transfer header, needed for verification and accounting. */
+    VBOXCLIPBOARDDATAHDR           Hdr;
+    /** Intermediate meta data object. */
+    SHAREDCLIPBOARDMETADATA        Meta;
+} VBOXCLIPBOARDCLIENTURITRANSFER, *PVBOXCLIPBOARDCLIENTURITRANSFER;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 /**
@@ -86,10 +112,16 @@ typedef struct _VBOXCLIPBOARDCLIENTSTATE
 typedef struct _VBOXCLIPBOARDCLIENTDATA
 {
     /** General client state data. */
-    VBOXCLIPBOARDCLIENTSTATE   State;
+    VBOXCLIPBOARDCLIENTSTATE       State;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    /** Data related to URI handling. */
-    VBOXCLIPBOARDCLIENTURIDATA URI;
+    /** List of concurrent transfers.
+     *  At the moment we only support one transfer at a time (per client). */
+    RTLISTANCHOR                   TransferList;
+    /** Data related to URI transfer handling. */
+    VBOXCLIPBOARDCLIENTURITRANSFER Transfer;
+    /** Number of concurrent transfers.
+     *  At the moment we only support one transfer at a time (per client). */
+    uint32_t                       cTransfers;
 #endif
 } VBOXCLIPBOARDCLIENTDATA, *PVBOXCLIPBOARDCLIENTDATA;
 
