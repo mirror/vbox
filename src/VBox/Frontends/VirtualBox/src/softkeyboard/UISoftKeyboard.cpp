@@ -124,9 +124,11 @@ public:
     void setType(UIKeyType enmType);
     UIKeyType type() const;
 
+    void setScaleMultiplier(float fMultiplier);
+
     UIKeyState state() const;
     QVector<LONG> scanCodeWithPrefix() const;
-    void updateFontSize(float multiplier);
+    void updateFontSize();
 
     void release();
 
@@ -149,6 +151,7 @@ private:
     UIKeyType m_enmType;
     UIKeyState m_enmState;
     QPalette     m_defaultPalette;
+    float     m_fScaleMultiplier;
 };
 
 /*********************************************************************************************************************************
@@ -299,6 +302,7 @@ UISoftKeyboardKey::UISoftKeyboardKey(QWidget *pParent /* = 0 */)
     , m_scanCodePrefix(0)
     , m_enmType(UIKeyType_SingleState)
     , m_enmState(UIKeyState_NotPressed)
+    , m_fScaleMultiplier(1.f)
 {
     m_iDefaultPointSize = font().pointSize();
     m_iDefaultPixelSize = font().pixelSize();
@@ -355,23 +359,28 @@ UIKeyType UISoftKeyboardKey::type() const
     return m_enmType;
 }
 
+void UISoftKeyboardKey::setScaleMultiplier(float fMultiplier)
+{
+    m_fScaleMultiplier = fMultiplier;
+}
+
 UIKeyState UISoftKeyboardKey::state() const
 {
     return m_enmState;
 }
 
-void UISoftKeyboardKey::updateFontSize(float multiplier)
+void UISoftKeyboardKey::updateFontSize()
 {
     if (m_iDefaultPointSize != -1)
     {
         QFont newFont = font();
-        newFont.setPointSize(multiplier * m_iDefaultPointSize);
+        newFont.setPointSize(m_fScaleMultiplier * m_iDefaultPointSize);
         setFont(newFont);
     }
     else
     {
         QFont newFont = font();
-        newFont.setPixelSize(multiplier * m_iDefaultPixelSize);
+        newFont.setPixelSize(m_fScaleMultiplier * m_iDefaultPixelSize);
         setFont(newFont);
     }
 }
@@ -408,8 +417,8 @@ void UISoftKeyboardKey::paintEvent(QPaintEvent *pEvent)
 
     int unitSize = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
 
-    float fRadius = 1.1 * unitSize;
-    float fSpace = unitSize;
+    float fRadius = m_fScaleMultiplier * 1.1 * unitSize;
+    float fSpace = m_fScaleMultiplier * unitSize;
     QRectF rectangle(fSpace, fSpace, fRadius, fRadius);
 
     painter.drawEllipse(rectangle);
@@ -417,6 +426,8 @@ void UISoftKeyboardKey::paintEvent(QPaintEvent *pEvent)
 
 void UISoftKeyboardKey::updateState(bool fPressed)
 {
+    if (m_enmType == UIKeyType_SingleState)
+        return;
     if (m_enmType == UIKeyType_TriState)
     {
         if (fPressed)
@@ -495,7 +506,8 @@ void UISoftKeyboardRow::updateLayout()
         if (!pKey)
             continue;
         pKey->setVisible(true);
-        pKey->updateFontSize(fMultiplier);
+        pKey->setScaleMultiplier(fMultiplier);
+        pKey->updateFontSize();
         int iKeyWidth = fMultiplier * pKey->width();
         if (i != m_keys.size() - 1)
             pKey->setGeometry(iX, 0, iKeyWidth, height());
@@ -591,6 +603,8 @@ void UISoftKeyboard::sltHandleKeyRelease()
     for (int i = m_pressedModifiers.size() - 1; i >= 0; --i)
     {
         UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
+        if (pModifier->type() == UIKeyType_DualState)
+            continue;
         if (pModifier->scanCodePrefix() != 0)
             sequence << pModifier->scanCodePrefix();
         sequence << (pModifier->scanCode() | 0x80);
