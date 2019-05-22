@@ -33,17 +33,36 @@
 #include "CGuest.h"
 #include "CEventSource.h"
 
+enum UIKeyState
+{
+    UIKeyState_NotPressed,
+    UIKeyState_Pressed,
+    UIKeyState_Locked,
+    UIKeyState_Max
+};
+
+enum UIKeyType
+{
+    UIKeyType_SingleState,
+    UIKeyType_DualState,
+    UIKeyType_TriState,
+    UIKeyType_Max
+};
+
 struct SoftKeyboardKey
 {
-    int      m_iWidth;
-    QString  m_strLabel;
-    LONG     m_scanCode;
-    LONG     m_scanCodePrefix;
+    int       m_iWidth;
+    QString   m_strLabel;
+    LONG      m_scanCode;
+    LONG      m_scanCodePrefix;
+    int       m_iSpaceAfter;
+    UIKeyType m_enmType;
 };
 
 struct SoftKeyboardRow
 {
     int m_iHeight;
+    int m_iStartingSpace;
     QList<SoftKeyboardKey> m_keys;
 };
 
@@ -66,6 +85,7 @@ public:
 private:
 
     bool parseRow(SoftKeyboardLayout &layout);
+    bool parseSpace(SoftKeyboardRow &row);
     bool parseKey(SoftKeyboardRow &row);
     QXmlStreamReader m_xmlReader;
 };
@@ -78,6 +98,10 @@ private:
 class UISoftKeyboardKey : public QToolButton
 {
     Q_OBJECT;
+
+signals:
+
+    void sigStateChanged();
 
 public:
 
@@ -92,17 +116,36 @@ public:
     void setScanCodePrefix(LONG scanCode);
     LONG scanCodePrefix() const;
 
-    QVector<LONG> scanCodeWithPrefix() const;
+    void setSpaceAfter(int iSpace);
+    int spaceAfter() const;
 
+    void setType(UIKeyType enmType);
+    UIKeyType type() const;
+
+    UIKeyState state() const;
+    QVector<LONG> scanCodeWithPrefix() const;
     void updateFontSize(float multiplier);
 
+    void release();
+
+protected:
+
+    virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
+
 private:
+
+    void updateState(bool fPressed);
+    void updateBackground();
 
     int   m_iWidth;
     int   m_iDefaultPixelSize;
     int   m_iDefaultPointSize;
+    int   m_iSpaceAfter;
     LONG  m_scanCode;
     LONG  m_scanCodePrefix;
+    UIKeyType m_enmType;
+    UIKeyState m_enmState;
+    QPalette     m_defaultPalette;
 };
 
 /*********************************************************************************************************************************
@@ -155,12 +198,36 @@ bool UIKeyboardLayoutReader::parseRow(SoftKeyboardLayout &layout)
 {
     layout.m_rows.append(SoftKeyboardRow());
     SoftKeyboardRow &row = layout.m_rows.last();
+    row.m_iHeight = 0;
+    row.m_iStartingSpace = 0;
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "key")
             parseKey(row);
+        else if (m_xmlReader.name() == "space")
+            parseSpace(row);
         else if (m_xmlReader.name() == "height")
             row.m_iHeight = m_xmlReader.readElementText().toInt();
+        else
+            m_xmlReader.skipCurrentElement();
+    }
+    return true;
+}
+
+bool UIKeyboardLayoutReader::parseSpace(SoftKeyboardRow &row)
+{
+    while (m_xmlReader.readNextStartElement())
+    {
+        if (m_xmlReader.name() == "width")
+        {
+            int iSpace = m_xmlReader.readElementText().toInt();
+            /* Find the key that comes before this space (if any): */
+            if (!row.m_keys.isEmpty())
+                row.m_keys.back().m_iSpaceAfter = iSpace;
+            /* If there are no keys yet, start the row with a space: */
+            else
+                row.m_iStartingSpace = iSpace;
+        }
         else
             m_xmlReader.skipCurrentElement();
     }
@@ -173,6 +240,9 @@ bool UIKeyboardLayoutReader::parseKey(SoftKeyboardRow &row)
     SoftKeyboardKey &key = row.m_keys.last();
     key.m_scanCode = 0;
     key.m_scanCodePrefix = 0;
+    key.m_iSpaceAfter = 0;
+    key.m_enmType = UIKeyType_SingleState;
+
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "width")
@@ -200,6 +270,14 @@ bool UIKeyboardLayoutReader::parseKey(SoftKeyboardRow &row)
             if (!fOk)
                 key.m_scanCodePrefix = 0;
         }
+        else if (m_xmlReader.name() == "type")
+        {
+            QString strType = m_xmlReader.readElementText();
+            if (strType == "tristate")
+                key.m_enmType = UIKeyType_TriState;
+            else if (strType == "dualstate")
+                key.m_enmType = UIKeyType_DualState;
+        }
         else
             m_xmlReader.skipCurrentElement();
     }
@@ -213,9 +291,15 @@ bool UIKeyboardLayoutReader::parseKey(SoftKeyboardRow &row)
 UISoftKeyboardKey::UISoftKeyboardKey(QWidget *pParent /* = 0 */)
     :QToolButton(pParent)
     , m_iWidth(1)
+    , m_iSpaceAfter(0)
+    , m_scanCode(0)
+    , m_scanCodePrefix(0)
+    , m_enmType(UIKeyType_SingleState)
+    , m_enmState(UIKeyState_NotPressed)
 {
     m_iDefaultPointSize = font().pointSize();
     m_iDefaultPixelSize = font().pixelSize();
+    m_defaultPalette = palette();
 }
 
 void UISoftKeyboardKey::setWidth(int iWidth)
@@ -248,6 +332,31 @@ LONG UISoftKeyboardKey::scanCodePrefix() const
     return m_scanCodePrefix;
 }
 
+void UISoftKeyboardKey::setSpaceAfter(int iSpace)
+{
+    m_iSpaceAfter = iSpace;
+}
+
+int UISoftKeyboardKey::spaceAfter() const
+{
+    return m_iSpaceAfter;
+}
+
+void UISoftKeyboardKey::setType(UIKeyType enmType)
+{
+    m_enmType = enmType;
+}
+
+UIKeyType UISoftKeyboardKey::type() const
+{
+    return m_enmType;
+}
+
+UIKeyState UISoftKeyboardKey::state() const
+{
+    return m_enmState;
+}
+
 void UISoftKeyboardKey::updateFontSize(float multiplier)
 {
     if (m_iDefaultPointSize != -1)
@@ -264,8 +373,88 @@ void UISoftKeyboardKey::updateFontSize(float multiplier)
     }
 }
 
-/*********************************************************************************************************************************
-*   UISoftKeyboardRow implementation.                                                                                  *
+void UISoftKeyboardKey::release()
+{
+    updateState(false);
+}
+
+void UISoftKeyboardKey::mousePressEvent(QMouseEvent *pEvent)
+{
+    QToolButton::mousePressEvent(pEvent);
+    updateState(true);
+}
+
+// void UISoftKeyboardKey::mouseReleaseEvent(QMouseEvent *pEvent)
+// {
+//     if (m_enmType == UIKeyType_SingleState)
+//     {
+//         QToolButton::mouseReleaseEvent(pEvent);
+//         setState(UIKeyState_NotPressed)
+//     }
+//     else
+//     {
+//         pEvent->accept();
+//     }
+
+// }
+
+void UISoftKeyboardKey::updateState(bool fPressed)
+{
+    if (m_enmType == UIKeyType_TriState)
+    {
+        if (fPressed)
+        {
+            if (m_enmState == UIKeyState_NotPressed)
+                m_enmState = UIKeyState_Pressed;
+            else if(m_enmState == UIKeyState_Pressed)
+                m_enmState = UIKeyState_Locked;
+            else
+                m_enmState = UIKeyState_NotPressed;
+        }
+        else
+        {
+            if(m_enmState == UIKeyState_Pressed)
+                m_enmState = UIKeyState_NotPressed;
+        }
+    }
+    else if (m_enmType == UIKeyType_DualState)
+    {
+        if (fPressed)
+        {
+            if (m_enmState == UIKeyState_NotPressed)
+                 m_enmState = UIKeyState_Pressed;
+            else
+                m_enmState = UIKeyState_NotPressed;
+        }
+    }
+    emit sigStateChanged();
+    updateBackground();
+}
+
+ void UISoftKeyboardKey::updateBackground()
+ {
+     if (m_enmState == UIKeyState_NotPressed)
+     {
+         setPalette(m_defaultPalette);
+         return;
+     }
+     QColor newColor;
+
+     if (m_enmState == UIKeyState_Pressed)
+         newColor = QColor(255, 0, 0);
+     else
+         newColor = QColor(0, 255, 0);
+
+     setAutoFillBackground(true);
+     QPalette currentPalette = palette();
+     currentPalette.setColor(QPalette::Button, newColor);
+     currentPalette.setColor(QPalette::ButtonText, newColor);
+     setPalette(currentPalette);
+     update();
+ }
+
+ /*********************************************************************************************************************************
+  *   UISoftKeyboardRow implementation.                                                                                  *
 *********************************************************************************************************************************/
 
 UISoftKeyboardRow::UISoftKeyboardRow(QWidget *pParent /* = 0 */)
@@ -298,6 +487,7 @@ void UISoftKeyboardRow::updateLayout()
             pKey->setGeometry(iX, 0, width() - iX - 1, height());
         }
         iX += fMultiplier * pKey->width();
+        iX += fMultiplier * pKey->spaceAfter();
     }
 }
 
@@ -346,15 +536,24 @@ void UISoftKeyboard::sltHandleKeyPress()
     UISoftKeyboardKey *pKey = qobject_cast<UISoftKeyboardKey*>(sender());
     if (!pKey)
         return;
+    if (pKey->type() != UIKeyType_SingleState)
+        return;
+
     QVector<LONG> sequence;
+
+    /* Add the pressed modifiers first: */
+    for (int i = 0; i < m_pressedModifiers.size(); ++i)
+    {
+        UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
+        if (pModifier->scanCodePrefix() != 0)
+            sequence << pModifier->scanCodePrefix();
+        sequence << pModifier->scanCode();
+    }
+
     if (pKey->scanCodePrefix() != 0)
         sequence << pKey->scanCodePrefix();
     sequence << pKey->scanCode();
     keyboard().PutScancodes(sequence);
-    printf("sending for press: ");
-    for (int i = 0; i < sequence.size(); ++i)
-        printf("%#04x ", sequence[i]);
-    printf("\n");
 }
 
 void UISoftKeyboard::sltHandleKeyRelease()
@@ -363,15 +562,43 @@ void UISoftKeyboard::sltHandleKeyRelease()
     if (!pKey)
         return;
 
+    if (pKey->type() != UIKeyType_SingleState)
+        return;
+
     QVector<LONG> sequence;
     if (pKey->scanCodePrefix() != 0)
         sequence <<  pKey->scanCodePrefix();
     sequence << (pKey->scanCode() | 0x80);
+
+    /* Add the pressed modifiers in the reverse order: */
+    for (int i = m_pressedModifiers.size() - 1; i >= 0; --i)
+    {
+        UISoftKeyboardKey *pModifier = m_pressedModifiers[i];
+        if (pModifier->scanCodePrefix() != 0)
+            sequence << pModifier->scanCodePrefix();
+        sequence << (pModifier->scanCode() | 0x80);
+        /* Release the pressed modifiers (if there are not locked): */
+        pModifier->release();
+    }
     keyboard().PutScancodes(sequence);
-    printf("sending for release: ");
-    for (int i = 0; i < sequence.size(); ++i)
-        printf("%#04x ", sequence[i]);
-    printf("\n");
+}
+
+void UISoftKeyboard::sltHandleModifierStateChange()
+{
+    UISoftKeyboardKey *pKey = qobject_cast<UISoftKeyboardKey*>(sender());
+    if (!pKey)
+        return;
+    if (pKey->type() == UIKeyType_SingleState)
+        return;
+    if (pKey->state() == UIKeyState_NotPressed)
+    {
+        m_pressedModifiers.removeOne(pKey);
+    }
+    else
+    {
+        if (!m_pressedModifiers.contains(pKey))
+            m_pressedModifiers.append(pKey);
+    }
 }
 
 void UISoftKeyboard::prepareObjects()
@@ -426,20 +653,24 @@ void UISoftKeyboard::parseLayout()
         pNewRow->m_iWidth = 0;
         for (int j = 0; j < layout.m_rows[i].m_keys.size(); ++j)
         {
-            pNewRow->m_iWidth += layout.m_rows[i].m_keys[j].m_iWidth;
+            const SoftKeyboardKey &key = layout.m_rows[i].m_keys[j];
+            pNewRow->m_iWidth += key.m_iWidth;
+            pNewRow->m_iWidth += key.m_iSpaceAfter;
             UISoftKeyboardKey *pKey = new UISoftKeyboardKey(pNewRow);
             if (!pKey)
                 continue;
             connect(pKey, &UISoftKeyboardKey::pressed, this, &UISoftKeyboard::sltHandleKeyPress);
             connect(pKey, &UISoftKeyboardKey::released, this, &UISoftKeyboard::sltHandleKeyRelease);
+            connect(pKey, &UISoftKeyboardKey::sigStateChanged, this, &UISoftKeyboard::sltHandleModifierStateChange);
             pNewRow->m_keys.append(pKey);
-            pKey->setText(layout.m_rows[i].m_keys[j].m_strLabel);
-            pKey->setWidth(layout.m_rows[i].m_keys[j].m_iWidth);
-            pKey->setScanCode(layout.m_rows[i].m_keys[j].m_scanCode);
-            pKey->setScanCodePrefix(layout.m_rows[i].m_keys[j].m_scanCodePrefix);
+            pKey->setText(key.m_strLabel);
+            pKey->setWidth(key.m_iWidth);
+            pKey->setScanCode(key.m_scanCode);
+            pKey->setScanCodePrefix(key.m_scanCodePrefix);
+            pKey->setSpaceAfter(key.m_iSpaceAfter);
+            pKey->setType(key.m_enmType);
             pKey->hide();
         }
-        printf("row width %d %d\n", i, pNewRow->m_iWidth);
         m_iMaxRowWidth = qMax(m_iMaxRowWidth, pNewRow->m_iWidth);
     }
 }

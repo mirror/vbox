@@ -61,6 +61,7 @@ private slots:
 
     void sltHandleKeyPress();
     void sltHandleKeyRelease();
+    void sltHandleModifierStateChange();
 
 private:
 
@@ -82,6 +83,7 @@ private:
     QVector<UISoftKeyboardRow*> m_rows;
     int           m_iTotalRowHeight;
     int           m_iMaxRowWidth;
+    QVector<UISoftKeyboardKey*> m_pressedModifiers;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_softkeyboard_UISoftKeyboard_h */

@@ -8,6 +8,9 @@
             <position>110</position>
             <scancode>0x01</scancode>
         </key>
+        <space>
+            <width>20</width>
+        </space>
         <key>
             <width>50</width>
             <label>F1</label>
@@ -26,6 +29,9 @@
             <position>114</position>
             <scancode>0x3d</scancode>
         </key>
+        <space>
+            <width>20</width>
+        </space>
         <key>
             <width>50</width>
             <label>F4</label>
@@ -44,6 +50,9 @@
             <position>117</position>
             <scancode>0x40</scancode>
         </key>
+        <space>
+            <width>20</width>
+        </space>
         <key>
             <width>50</width>
             <label>F7</label>
@@ -62,6 +71,9 @@
             <position>120</position>
             <scancode>0x43</scancode>
         </key>
+        <space>
+            <width>20</width>
+        </space>
         <key>
             <width>50</width>
             <label>F10</label>
@@ -277,6 +289,7 @@
         <key>
             <width>70</width>
             <label>CapsLock</label>
+            <type>dualstate</type>
             <position>30</position>
             <scancode>0x3a</scancode>
         </key>
@@ -360,6 +373,7 @@
         <key>
             <width>115</width>
             <label>Shift</label>
+            <type>tristate</type>
             <position>44</position>
             <scancode>0x2a</scancode>
         </key>
@@ -429,6 +443,7 @@
         <key>
             <width>115</width>
             <label>Shift</label>
+            <type>tristate</type>
             <position>57</position>
             <scancode>0x36</scancode>
         </key>
@@ -439,6 +454,7 @@
         <key>
             <width>90</width>
             <label>Ctrl</label>
+            <type>tristate</type>
             <position>58</position>
             <scancode>0x1d</scancode>
         </key>
@@ -452,6 +468,7 @@
             <width>70</width>
             <position>60</position>
             <label>Alt</label>
+            <type>tristate</type>
             <scancode>0x38</scancode>
         </key>
         <key>
@@ -462,6 +479,7 @@
         <key>
             <width>70</width>
             <label>AltGr</label>
+            <type>tristate</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x38</scancode>
         </key>
@@ -480,6 +498,7 @@
         <key>
             <width>90</width>
             <label>Ctrl</label>
+            <type>tristate</type>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x1d</scancode>
         </key>
