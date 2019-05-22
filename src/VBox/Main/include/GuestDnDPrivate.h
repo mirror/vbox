@@ -184,6 +184,9 @@ protected:
         if (cbSize == cbData)
             return VINF_SUCCESS;
 
+        if (cbSize > _32M) /* Meta data can be up to 32MB. */
+            return VERR_INVALID_PARAMETER;
+
         void *pvTmp = NULL;
         if (!cbData)
         {
