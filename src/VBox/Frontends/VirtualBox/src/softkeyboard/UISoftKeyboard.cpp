@@ -18,6 +18,8 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QFile>
+#include <QPainter>
+#include <QStyle>
 #include <QToolButton>
 #include <QXmlStreamReader>
 #include <QVBoxLayout>
@@ -131,6 +133,7 @@ public:
 protected:
 
     virtual void mousePressEvent(QMouseEvent *pEvent) /* override */;
+    virtual void paintEvent(QPaintEvent *pPaintEvent) /* override */;
 
 private:
 
@@ -384,19 +387,33 @@ void UISoftKeyboardKey::mousePressEvent(QMouseEvent *pEvent)
     updateState(true);
 }
 
-// void UISoftKeyboardKey::mouseReleaseEvent(QMouseEvent *pEvent)
-// {
-//     if (m_enmType == UIKeyType_SingleState)
-//     {
-//         QToolButton::mouseReleaseEvent(pEvent);
-//         setState(UIKeyState_NotPressed)
-//     }
-//     else
-//     {
-//         pEvent->accept();
-//     }
+void UISoftKeyboardKey::paintEvent(QPaintEvent *pEvent)
+{
+    QToolButton::paintEvent(pEvent);
 
-// }
+    if (m_enmType == UIKeyType_SingleState)
+        return;
+
+
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+
+    painter.setPen(QPen(QColor(50, 50, 50), 0.2f));
+    if (m_enmState == UIKeyState_NotPressed)
+        painter.setBrush(QColor(100, 100, 100));
+    else if (m_enmState == UIKeyState_Pressed)
+        painter.setBrush(QColor(20, 255, 42));
+    else
+        painter.setBrush(QColor(255, 7, 58));
+
+    int unitSize = qApp->style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
+
+    float fRadius = 1.1 * unitSize;
+    float fSpace = unitSize;
+    QRectF rectangle(fSpace, fSpace, fRadius, fRadius);
+
+    painter.drawEllipse(rectangle);
+}
 
 void UISoftKeyboardKey::updateState(bool fPressed)
 {
@@ -422,7 +439,7 @@ void UISoftKeyboardKey::updateState(bool fPressed)
         if (fPressed)
         {
             if (m_enmState == UIKeyState_NotPressed)
-                 m_enmState = UIKeyState_Pressed;
+                 m_enmState = UIKeyState_Locked;
             else
                 m_enmState = UIKeyState_NotPressed;
         }
@@ -441,14 +458,14 @@ void UISoftKeyboardKey::updateState(bool fPressed)
      QColor newColor;
 
      if (m_enmState == UIKeyState_Pressed)
-         newColor = QColor(255, 0, 0);
+         newColor = QColor(20, 255, 42);
      else
-         newColor = QColor(0, 255, 0);
+         newColor = QColor(255, 7, 58);
 
      setAutoFillBackground(true);
      QPalette currentPalette = palette();
      currentPalette.setColor(QPalette::Button, newColor);
-     currentPalette.setColor(QPalette::ButtonText, newColor);
+
      setPalette(currentPalette);
      update();
  }
