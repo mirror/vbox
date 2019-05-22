@@ -324,6 +324,9 @@ enum
     kCmdOpt_NoFSync,
     kCmdOpt_MMap,
     kCmdOpt_NoMMap,
+    kCmdOpt_MMapCoherency,
+    kCmdOpt_NoMMapCoherency,
+    kCmdOpt_MMapPlacement,
     kCmdOpt_IgnoreNoCache,
     kCmdOpt_NoIgnoreNoCache,
     kCmdOpt_IoFileSize,
@@ -342,6 +345,8 @@ enum
     kCmdOpt_ManyTreeFilesPerDir,
     kCmdOpt_ManyTreeSubdirsPerDir,
     kCmdOpt_ManyTreeDepth,
+
+    kCmdOpt_MaxBufferSize,
 
     kCmdOpt_End
 };
@@ -368,6 +373,8 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--files-per-dir",            kCmdOpt_ManyTreeFilesPerDir,    RTGETOPT_REQ_UINT32 },
     { "--subdirs-per-dir",          kCmdOpt_ManyTreeSubdirsPerDir,  RTGETOPT_REQ_UINT32 },
     { "--tree-depth",               kCmdOpt_ManyTreeDepth,          RTGETOPT_REQ_UINT32 },
+    { "--max-buffer-size",          kCmdOpt_MaxBufferSize,          RTGETOPT_REQ_UINT32 },
+    { "--mmap-placement",           kCmdOpt_MMapPlacement,          RTGETOPT_REQ_STRING },
 
     { "--open",                     kCmdOpt_Open,                   RTGETOPT_REQ_NOTHING },
     { "--no-open",                  kCmdOpt_NoOpen,                 RTGETOPT_REQ_NOTHING },
@@ -425,6 +432,8 @@ static const RTGETOPTDEF g_aCmdOptions[] =
     { "--no-fsync",                 kCmdOpt_NoFSync,                RTGETOPT_REQ_NOTHING },
     { "--mmap",                     kCmdOpt_MMap,                   RTGETOPT_REQ_NOTHING },
     { "--no-mmap",                  kCmdOpt_NoMMap,                 RTGETOPT_REQ_NOTHING },
+    { "--mmap-coherency",           kCmdOpt_MMapCoherency,          RTGETOPT_REQ_NOTHING },
+    { "--no-mmap-coherency",        kCmdOpt_NoMMapCoherency,        RTGETOPT_REQ_NOTHING },
     { "--ignore-no-cache",          kCmdOpt_IgnoreNoCache,          RTGETOPT_REQ_NOTHING },
     { "--no-ignore-no-cache",       kCmdOpt_NoIgnoreNoCache,        RTGETOPT_REQ_NOTHING },
     { "--io-file-size",             kCmdOpt_IoFileSize,             RTGETOPT_REQ_UINT64 },
@@ -459,6 +468,16 @@ static bool         g_fShowDuration = false;
 static bool         g_fShowIterations = false;
 /** Verbosity level. */
 static uint32_t     g_uVerbosity = 0;
+/** Max buffer size, UINT32_MAX for unlimited.
+ * This is for making sure we don't run into the MDL limit on windows, which
+ * a bit less than 64 MiB. */
+#if defined(RT_OS_WINDOWS)
+static uint32_t     g_cbMaxBuffer = _32M;
+#else
+static uint32_t     g_cbMaxBuffer = UINT32_MAX;
+#endif
+/** When to place the mmap test. */
+static int          g_iMMapPlacement = 0;
 
 /** @name Selected subtest
  * @{ */
@@ -494,6 +513,7 @@ static bool         g_fWritePerf            = true;
 static bool         g_fSeek                 = true;
 static bool         g_fFSync                = true;
 static bool         g_fMMap                 = true;
+static bool         g_fMMapCoherency        = true;
 static bool         g_fCopy                 = true;
 static bool         g_fRemote               = true;
 /** @} */
@@ -1305,8 +1325,9 @@ static int FsPerfSlaveHandleWritePattern(FSPERFCOMMSSLAVESTATE *pState, char **p
     /*
      * Allocate a suitable buffer.
      */
-    size_t   cbBuf = cbToWrite >= _2M ? _2M : RT_ALIGN_Z((size_t)cbToWrite, 512);
-    uint8_t *pbBuf = (uint8_t *)RTMemTmpAlloc(cbBuf);
+    size_t   cbMaxBuf = RT_MIN(_2M, g_cbMaxBuffer);
+    size_t   cbBuf    = cbToWrite >= cbMaxBuf ? cbMaxBuf : RT_ALIGN_Z((size_t)cbToWrite, 512);
+    uint8_t *pbBuf    = (uint8_t *)RTMemTmpAlloc(cbBuf);
     if (!pbBuf)
     {
         cbBuf = _4K;
@@ -2200,6 +2221,8 @@ static const struct
 
 void fsPerfNtQueryInfoFileWorker(HANDLE hNtFile1, uint32_t fType)
 {
+    char const chType = fType == RTFS_TYPE_DIRECTORY ? 'd' : 'r';
+
     /** @todo may run out of buffer for really long paths? */
     union
     {
@@ -2362,7 +2385,7 @@ void fsPerfNtQueryInfoFileWorker(HANDLE hNtFile1, uint32_t fType)
             if (!g_aNtQueryInfoFileClasses[i].fQuery)
             {
                 if (rcNt != STATUS_INVALID_INFO_CLASS)
-                    RTTestIFailed("%s/%#x: %#x, expected STATUS_INVALID_INFO_CLASS", pszClass, cbBuf, rcNt);
+                    RTTestIFailed("%s/%#x/%c: %#x, expected STATUS_INVALID_INFO_CLASS", pszClass, cbBuf, chType, rcNt);
             }
             else if (   rcNt != STATUS_INVALID_INFO_CLASS
                      && rcNt != STATUS_INVALID_PARAMETER
@@ -2387,14 +2410,16 @@ void fsPerfNtQueryInfoFileWorker(HANDLE hNtFile1, uint32_t fType)
                                || enmClass == FileCaseSensitiveInformationForceAccessCheck)
                                || (   fType == RTFS_TYPE_DIRECTORY
                                    && (enmClass == FileSfioReserveInformation || enmClass == FileStatLxInformation)))
+                     && !(rcNt == STATUS_INVALID_DEVICE_REQUEST && fType == RTFS_TYPE_FILE)
                     )
-                RTTestIFailed("%s/%#x: %#x", pszClass, cbBuf, rcNt);
+                RTTestIFailed("%s/%#x/%c: %#x", pszClass, cbBuf, chType, rcNt);
             if (   (Ios.Status != VirginIos.Status || Ios.Information != VirginIos.Information)
                 && !(   fType == RTFS_TYPE_DIRECTORY /* NTFS/W10-17763 */
                     && Ios.Status == rcNt && Ios.Information == 0) )
-                RTTestIFailed("%s/%#x: I/O status block was modified: %#x %#zx", pszClass, cbBuf, Ios.Status, Ios.Information);
+                RTTestIFailed("%s/%#x/%c: I/O status block was modified: %#x %#zx",
+                              pszClass, cbBuf, chType, Ios.Status, Ios.Information);
             if (!ASMMemIsAllU8(&uBuf, sizeof(uBuf), 0xff))
-                RTTestIFailed("%s/%#x: Buffer was touched in failure case!", pszClass, cbBuf);
+                RTTestIFailed("%s/%#x/%c: Buffer was touched in failure case!", pszClass, cbBuf, chType);
         }
     }
 }
@@ -3439,6 +3464,32 @@ void fsPerfChSize(void)
 }
 
 
+int fsPerfIoPrepFileWorker(RTFILE hFile1, uint64_t cbFile, uint8_t *pbBuf, size_t cbBuf)
+{
+    /*
+     * Fill the file with 0xf6 and insert offset markers with 1KB intervals.
+     */
+    RTTESTI_CHECK_RC_RET(RTFileSeek(hFile1, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS, rcCheck);
+    memset(pbBuf, 0xf6, cbBuf);
+    uint64_t cbLeft = cbFile;
+    uint64_t off = 0;
+    while (cbLeft > 0)
+    {
+        Assert(!(off   & (_1K - 1)));
+        Assert(!(cbBuf & (_1K - 1)));
+        for (size_t offBuf = 0; offBuf < cbBuf; offBuf += _1K, off += _1K)
+            *(uint64_t *)&pbBuf[offBuf] = off;
+
+        size_t cbToWrite = cbBuf;
+        if (cbToWrite > cbLeft)
+            cbToWrite = (size_t)cbLeft;
+
+        RTTESTI_CHECK_RC_RET(RTFileWrite(hFile1, pbBuf, cbToWrite, NULL), VINF_SUCCESS, rcCheck);
+        cbLeft -= cbToWrite;
+    }
+    return VINF_SUCCESS;
+}
+
 int fsPerfIoPrepFile(RTFILE hFile1, uint64_t cbFile, uint8_t **ppbFree)
 {
     /*
@@ -3452,7 +3503,7 @@ int fsPerfIoPrepFile(RTFILE hFile1, uint64_t cbFile, uint8_t **ppbFree)
      * Check that the space we searched across actually is zero filled.
      */
     RTTESTI_CHECK_RC_RET(RTFileSeek(hFile1, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS, rcCheck);
-    size_t   cbBuf = _1M;
+    size_t   cbBuf = RT_MIN(_1M, g_cbMaxBuffer);
     uint8_t *pbBuf = *ppbFree = (uint8_t *)RTMemAlloc(cbBuf);
     RTTESTI_CHECK_RET(pbBuf != NULL, VERR_NO_MEMORY);
     uint64_t cbLeft = cbFile;
@@ -3472,29 +3523,23 @@ int fsPerfIoPrepFile(RTFILE hFile1, uint64_t cbFile, uint8_t **ppbFree)
     /*
      * Fill the file with 0xf6 and insert offset markers with 1KB intervals.
      */
-    RTTESTI_CHECK_RC_RET(RTFileSeek(hFile1, 0, RTFILE_SEEK_BEGIN, NULL), VINF_SUCCESS, rcCheck);
-    memset(pbBuf, 0xf6, cbBuf);
-    cbLeft = cbFile;
-    uint64_t off = 0;
-    while (cbLeft > 0)
-    {
-        Assert(!(off   & (_1K - 1)));
-        Assert(!(cbBuf & (_1K - 1)));
-        for (size_t offBuf = 0; offBuf < cbBuf; offBuf += _1K, off += _1K)
-            *(uint64_t *)&pbBuf[offBuf] = off;
-
-        size_t cbToWrite = cbBuf;
-        if (cbToWrite > cbLeft)
-            cbToWrite = (size_t)cbLeft;
-
-        RTTESTI_CHECK_RC_RET(RTFileWrite(hFile1, pbBuf, cbToWrite, NULL), VINF_SUCCESS, rcCheck);
-
-        cbLeft -= cbToWrite;
-    }
-
-    return VINF_SUCCESS;
+    return fsPerfIoPrepFileWorker(hFile1, cbFile, pbBuf, cbBuf);
 }
 
+/**
+ * Used in relation to the mmap test when in non-default position.
+ */
+int fsPerfReinitFile(RTFILE hFile1, uint64_t cbFile)
+{
+    size_t   cbBuf = RT_MIN(_1M, g_cbMaxBuffer);
+    uint8_t *pbBuf = (uint8_t *)RTMemAlloc(cbBuf);
+    RTTESTI_CHECK_RET(pbBuf != NULL, VERR_NO_MEMORY);
+
+    int rc = fsPerfIoPrepFileWorker(hFile1, cbFile, pbBuf, cbBuf);
+
+    RTMemFree(pbBuf);
+    return rc;
+}
 
 /**
  * Checks the content read from the file fsPerfIoPrepFile() prepared.
@@ -3848,7 +3893,7 @@ static void fsPerfSendFile(RTFILE hFile1, uint64_t cbFile)
      * Allocate a buffer.
      */
     FSPERFSENDFILEARGS Args;
-    Args.cbBuf = RT_MIN(cbFileMax, _16M);
+    Args.cbBuf = RT_MIN(RT_MIN(cbFileMax, _16M), g_cbMaxBuffer);
     Args.pbBuf = (uint8_t *)RTMemAlloc(Args.cbBuf);
     while (!Args.pbBuf)
     {
@@ -4105,7 +4150,7 @@ static void fsPerfSpliceToPipe(RTFILE hFile1, uint64_t cbFile)
      * Allocate a buffer.
      */
     FSPERFSPLICEARGS Args;
-    Args.cbBuf = RT_MIN(cbFileMax, _16M);
+    Args.cbBuf = RT_MIN(RT_MIN(cbFileMax, _16M), g_cbMaxBuffer);
     Args.pbBuf = (uint8_t *)RTMemAlloc(Args.cbBuf);
     while (!Args.pbBuf)
     {
@@ -4329,7 +4374,7 @@ static void fsPerfSpliceToFile(RTFILE hFile1, uint64_t cbFile)
      * Allocate a buffer.
      */
     FSPERFSPLICEARGS Args;
-    Args.cbBuf = RT_MIN(cbFileMax, _16M);
+    Args.cbBuf = RT_MIN(RT_MIN(cbFileMax, _16M), g_cbMaxBuffer);
     Args.pbBuf = (uint8_t *)RTMemAlloc(Args.cbBuf);
     while (!Args.pbBuf)
     {
@@ -4522,8 +4567,9 @@ void fsPerfRead(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
     /*
      * Allocate a big buffer we can play around with.  Min size is 1MB.
      */
-    size_t   cbBuf = cbFile < _64M ? (size_t)cbFile : _64M;
-    uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBuf);
+    size_t   cbMaxBuf = RT_MIN(_64M, g_cbMaxBuffer);
+    size_t   cbBuf    = cbFile < cbMaxBuf ? (size_t)cbFile : cbMaxBuf;
+    uint8_t *pbBuf    = (uint8_t *)RTMemPageAlloc(cbBuf);
     while (!pbBuf)
     {
         cbBuf /= 2;
@@ -5013,8 +5059,9 @@ void fsPerfWrite(RTFILE hFile1, RTFILE hFileNoCache, RTFILE hFileWriteThru, uint
     /*
      * Allocate a big buffer we can play around with.  Min size is 1MB.
      */
-    size_t   cbBuf = cbFile < _64M ? (size_t)cbFile : _64M;
-    uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBuf);
+    size_t   cbMaxBuf = RT_MIN(_64M, g_cbMaxBuffer);
+    size_t   cbBuf    = cbFile < cbMaxBuf ? (size_t)cbFile : cbMaxBuf;
+    uint8_t *pbBuf    = (uint8_t *)RTMemPageAlloc(cbBuf);
     while (!pbBuf)
     {
         cbBuf /= 2;
@@ -5411,7 +5458,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             /* Write stuff to the first two megabytes.  In the COW case, we'll detect
                corruption of shared data during content checking of the RW iterations. */
             fsPerfFillWriteBuf(0, pbMapping, _2M, 0xf7);
-            if (enmState == kMMap_ReadWrite)
+            if (enmState == kMMap_ReadWrite && g_fMMapCoherency)
             {
                 /* For RW we can try read back from the file handle and check if we get
                    a match there first.  */
@@ -5426,10 +5473,13 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 # else
                 RTTESTI_CHECK(msync(pbMapping, _2M, MS_SYNC) == 0);
 # endif
+            }
 
-                /*
-                 * Time modifying and flushing a few different number of pages.
-                 */
+            /*
+             * Time modifying and flushing a few different number of pages.
+             */
+            if (enmState == kMMap_ReadWrite)
+            {
                 static size_t const s_acbFlush[] = { PAGE_SIZE, PAGE_SIZE * 2, PAGE_SIZE * 3, PAGE_SIZE * 8, PAGE_SIZE * 16, _2M };
                 for (unsigned iFlushSize = 0 ; iFlushSize < RT_ELEMENTS(s_acbFlush); iFlushSize++)
                 {
@@ -5450,7 +5500,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                      */
                     if (!g_fIgnoreNoCache || hFileNoCache != NIL_RTFILE)
                     {
-                        size_t   cbBuf = _2M;
+                        size_t   cbBuf = RT_MIN(_2M, g_cbMaxBuffer);
                         uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBuf);
                         if (!pbBuf)
                         {
@@ -5504,9 +5554,10 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
          * These should ideally be immediately visible in the mapping, at least
          * when not performed thru an no-cache handle.
          */
-        if (enmState == kMMap_ReadOnly || enmState == kMMap_ReadWrite)
+        if (   (enmState == kMMap_ReadOnly || enmState == kMMap_ReadWrite)
+            && g_fMMapCoherency)
         {
-            size_t   cbBuf = RT_MIN(_2M, cbMapping / 2);
+            size_t   cbBuf = RT_MIN(RT_MIN(_2M, cbMapping / 2), g_cbMaxBuffer);
             uint8_t *pbBuf = (uint8_t *)RTMemPageAlloc(cbBuf);
             if (!pbBuf)
             {
@@ -5736,6 +5787,12 @@ void fsPerfIo(void)
         if (g_fSeek)
             fsPerfIoSeek(hFile1, cbFile);
 
+        if (g_fMMap && g_iMMapPlacement < 0)
+        {
+            fsPerfMMap(hFile1, hFileNoCache, cbFile);
+            fsPerfReinitFile(hFile1, cbFile);
+        }
+
         if (g_fReadTests)
             fsPerfRead(hFile1, hFileNoCache, cbFile);
         if (g_fReadPerf)
@@ -5749,7 +5806,7 @@ void fsPerfIo(void)
         if (g_fSplice)
             fsPerfSpliceToPipe(hFile1, cbFile);
 #endif
-        if (g_fMMap)
+        if (g_fMMap && g_iMMapPlacement == 0)
             fsPerfMMap(hFile1, hFileNoCache, cbFile);
 
         /* This is destructive to the file content. */
@@ -5764,6 +5821,12 @@ void fsPerfIo(void)
 #endif
         if (g_fFSync)
             fsPerfFSync(hFile1, cbFile);
+
+        if (g_fMMap && g_iMMapPlacement > 0)
+        {
+            fsPerfReinitFile(hFile1, cbFile);
+            fsPerfMMap(hFile1, hFileNoCache, cbFile);
+        }
     }
 
     RTTESTI_CHECK_RC(RTFileSetSize(hFile1, 0), VINF_SUCCESS);
@@ -6231,6 +6294,12 @@ static void Usage(PRTSTREAM pStrm)
             case kCmdOpt_ManyTreeFilesPerDir:   pszHelp = "Count of files per directory in test tree.   default: 640"; break;
             case kCmdOpt_ManyTreeSubdirsPerDir: pszHelp = "Count of subdirs per directory in test tree. default: 16"; break;
             case kCmdOpt_ManyTreeDepth:         pszHelp = "Depth of test tree (not counting root).      default: 1"; break;
+#if defined(RT_OS_WINDOWS)
+            case kCmdOpt_MaxBufferSize:         pszHelp = "For avoiding the MDL limit on windows.       default: 32MiB"; break;
+#else
+            case kCmdOpt_MaxBufferSize:         pszHelp = "For avoiding the MDL limit on windows.       default: 0"; break;
+#endif
+            case kCmdOpt_MMapPlacement:         pszHelp = "When to do mmap testing (caching effects): first, between (default), last "; break;
             case kCmdOpt_IgnoreNoCache:         pszHelp = "Ignore error wrt no-cache handle.            default: --no-ignore-no-cache"; break;
             case kCmdOpt_NoIgnoreNoCache:       pszHelp = "Do not ignore error wrt no-cache handle.     default: --no-ignore-no-cache"; break;
             case kCmdOpt_IoFileSize:            pszHelp = "Size of file used for I/O tests.             default: 512 MB"; break;
@@ -6380,6 +6449,7 @@ int main(int argc, char *argv[])
                 g_fSeek                 = true;
                 g_fFSync                = true;
                 g_fMMap                 = true;
+                g_fMMapCoherency        = true;
                 g_fCopy                 = true;
                 g_fRemote               = true;
                 break;
@@ -6417,6 +6487,7 @@ int main(int argc, char *argv[])
                 g_fSeek                 = false;
                 g_fFSync                = false;
                 g_fMMap                 = false;
+                g_fMMapCoherency        = false;
                 g_fCopy                 = false;
                 g_fRemote               = false;
                 break;
@@ -6455,6 +6526,7 @@ int main(int argc, char *argv[])
             CASE_OPT(Seek);
             CASE_OPT(FSync);
             CASE_OPT(MMap);
+            CASE_OPT(MMapCoherency);
             CASE_OPT(IgnoreNoCache);
             CASE_OPT(Copy);
             CASE_OPT(Remote);
@@ -6502,6 +6574,18 @@ int main(int argc, char *argv[])
                 RTTestFailed(g_hTest, "Out of range --tree-depth value: %u (%#x)\n", ValueUnion.u32, ValueUnion.u32);
                 return RTTestSummaryAndDestroy(g_hTest);
 
+            case kCmdOpt_MaxBufferSize:
+                if (ValueUnion.u32 >= 4096)
+                    g_cbMaxBuffer = ValueUnion.u32;
+                else if (ValueUnion.u32 == 0)
+                    g_cbMaxBuffer = UINT32_MAX;
+                else
+                {
+                    RTTestFailed(g_hTest, "max buffer size is less than 4KB: %#x\n", ValueUnion.u32);
+                    return RTTestSummaryAndDestroy(g_hTest);
+                }
+                break;
+
             case kCmdOpt_IoFileSize:
                 if (ValueUnion.u64 == 0)
                     g_cbIoFile = _512M;
@@ -6533,6 +6617,23 @@ int main(int argc, char *argv[])
                     break;
                 }
                 return RTTestSummaryAndDestroy(g_hTest);
+
+            case kCmdOpt_MMapPlacement:
+                if (strcmp(ValueUnion.psz, "first") == 0)
+                    g_iMMapPlacement = -1;
+                else if (   strcmp(ValueUnion.psz, "between") == 0
+                         || strcmp(ValueUnion.psz, "default") == 0)
+                    g_iMMapPlacement = 0;
+                else if (strcmp(ValueUnion.psz, "last") == 0)
+                    g_iMMapPlacement = 1;
+                else
+                {
+                    RTTestFailed(g_hTest,
+                                 "Invalid --mmap-placment directive '%s'! Expected 'first', 'last', 'between' or 'default'.\n",
+                                 ValueUnion.psz);
+                    return RTTestSummaryAndDestroy(g_hTest);
+                }
+                break;
 
             case 'q':
                 g_uVerbosity = 0;
