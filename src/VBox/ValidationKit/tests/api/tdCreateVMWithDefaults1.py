@@ -41,58 +41,58 @@ g_ksValidationKitDir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.a
 sys.path.append(g_ksValidationKitDir)
 
 # Validation Kit imports.
+from testdriver import base
 from testdriver import reporter;
-from testdriver import vbox;
 from testdriver import vboxcon;
 
-class tdCreateVMWithDefaults1(vbox.TestDriver):
+class SubTstDrvCreateVMWithDefaults1(base.SubTestDriverBase):
     """
-    Create VM with defaults Test #1.
+    Sub-test driver for VM Move Test #1.
     """
 
-    def __init__(self):
-        vbox.TestDriver.__init__(self);
-        self.asRsrcs = None;
+    def __init__(self, oTstDrv):
+        base.SubTestDriverBase.__init__(self, 'move-vm', oTstDrv)
+        self.asRsrcs = []
 
-    def getResourceSet(self):
-        # Construct the resource list the first time it's queried.
-        if self.asRsrcs is None:
-            self.asRsrcs = [];
-        return self.asRsrcs;
-
-    def actionExecute(self):
+    def testIt(self):
         """
-        Execute the testcase.
+        Execute the sub-testcase.
         """
-        fRc = self.testCreateVMWithDefaults()
-        return fRc;
+        reporter.log('ValidationKit folder is "%s"' % (g_ksValidationKitDir,))
+        return self.testCreateVMWithDefaults()
 
     def createVMWithDefaults(self, sGuestType):
         sName = 'testvm_%s' % (sGuestType)
         # create VM manually, because the self.createTestVM() makes registration inside
         # the method, but IMachine::applyDefault() must be called before machine is registered
         try:
-            if self.fpApiVer >= 4.2: # Introduces grouping (third parameter, empty for now).
-                oVM = self.oVBox.createMachine("", sName, [], self.tryFindGuestOsId(sGuestType), "")
-            elif self.fpApiVer >= 4.0:
-                oVM = self.oVBox.createMachine("", sName, self.tryFindGuestOsId(sGuestType), "",
-                                               False)
-            elif self.fpApiVer >= 3.2:
-                oVM = self.oVBox.createMachine(sName, self.tryFindGuestOsId(sGuestType), "", "",
-                                               False)
+            if self.oTstDrv.fpApiVer >= 4.2: # Introduces grouping (third parameter, empty for now).
+                oVM = self.oTstDrv.oVBox.createMachine("", sName, [],
+                                                       self.oTstDrv.tryFindGuestOsId(sGuestType),
+                                                       "")
+            elif self.oTstDrv.fpApiVer >= 4.0:
+                oVM = self.oTstDrv.oVBox.createMachine("", sName,
+                                                       self.oTstDrv.tryFindGuestOsId(sGuestType),
+                                                       "", False)
+            elif self.oTstDrv.fpApiVer >= 3.2:
+                oVM = self.oTstDrv.oVBox.createMachine(sName,
+                                                       self.oTstDrv.tryFindGuestOsId(sGuestType),
+                                                       "", "", False)
             else:
-                oVM = self.oVBox.createMachine(sName, self.tryFindGuestOsId(sGuestType), "", "")
+                oVM = self.oTstDrv.oVBox.createMachine(sName,
+                                                       self.oTstDrv.tryFindGuestOsId(sGuestType),
+                                                       "", "")
             try:
                 oVM.saveSettings()
             except:
                 reporter.logXcpt()
-                if self.fpApiVer >= 4.0:
+                if self.oTstDrv.fpApiVer >= 4.0:
                     try:
-                        if self.fpApiVer >= 4.3:
+                        if self.oTstDrv.fpApiVer >= 4.3:
                             oProgress = oVM.deleteConfig([])
                         else:
                             oProgress = oVM.delete(None);
-                        self.waitOnProgress(oProgress)
+                        self.oTstDrv.waitOnProgress(oProgress)
                     except:
                         reporter.logXcpt()
                 else:
@@ -109,17 +109,17 @@ class tdCreateVMWithDefaults1(vbox.TestDriver):
         # apply settings
         fRc = True
         try:
-            if self.fpApiVer >= 6.1:
+            if self.oTstDrv.fpApiVer >= 6.1:
                 oVM.applyDefaults('')
                 oVM.saveSettings();
-            self.oVBox.registerMachine(oVM)
+            self.oTstDrv.oVBox.registerMachine(oVM)
         except:
             reporter.logXcpt()
             fRc = False
 
-        # some errors from applyDefaults can be observed only after further settings saving
-        # change and save the size of the VM RAM as simple setting change.
-        oSession = self.openSession(oVM)
+        # Some errors from applyDefaults can be observed only after further settings saving.
+        # Change and save the size of the VM RAM as simple setting change.
+        oSession = self.oTstDrv.openSession(oVM)
         if oSession is None:
             fRc = False
 
@@ -131,19 +131,19 @@ class tdCreateVMWithDefaults1(vbox.TestDriver):
                 reporter.logXcpt()
                 fRc = False
 
-        #delete VM
+        # delete VM
         try:
             oVM.unregister(vboxcon.CleanupMode_DetachAllReturnNone)
         except:
             reporter.logXcpt()
 
-        if self.fpApiVer >= 4.0:
+        if self.oTstDrv.fpApiVer >= 4.0:
             try:
-                if self.fpApiVer >= 4.3:
+                if self.oTstDrv.fpApiVer >= 4.3:
                     oProgress = oVM.deleteConfig([])
                 else:
                     oProgress = oVM.delete(None)
-                self.waitOnProgress(oProgress)
+                self.oTstDrv.waitOnProgress(oProgress)
 
             except:
                 reporter.logXcpt()
@@ -158,12 +158,12 @@ class tdCreateVMWithDefaults1(vbox.TestDriver):
         """
         Test create VM with defaults.
         """
-        if not self.importVBoxApi():
+        if not self.oTstDrv.importVBoxApi():
             return reporter.error('importVBoxApi');
 
         # Get the guest OS types.
         try:
-            aoGuestTypes = self.oVBoxMgr.getArray(self.oVBox, 'guestOSTypes')
+            aoGuestTypes = self.oTstDrv.oVBoxMgr.getArray(self.oTstDrv.oVBox, 'guestOSTypes')
             if aoGuestTypes is None or len(aoGuestTypes) < 1:
                 return reporter.error('No guest OS types');
         except:
@@ -186,4 +186,6 @@ class tdCreateVMWithDefaults1(vbox.TestDriver):
         return fRc
 
 if __name__ == '__main__':
-    sys.exit(tdCreateVMWithDefaults1().main(sys.argv))
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    from tdApi1 import tdApi1; # pylint: disable=relative-import
+    sys.exit(tdApi1([SubTstDrvCreateVMWithDefaults1]).main(sys.argv))
