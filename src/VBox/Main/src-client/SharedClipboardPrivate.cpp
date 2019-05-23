@@ -18,17 +18,14 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include "LoggingNew.h"
 
-#include "AutoCaller.h"
+#include <VMMDev.h>
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-# include "ConsoleImpl.h"
-# include "SharedClipboardPrivate.h"
+#include <VBox/err.h>
+#include <VBox/GuestHost/SharedClipboard-uri.h>
+#include <VBox/HostServices/VBoxClipboardSvc.h>
 
-# include <VMMDev.h>
-
-# include <VBox/err.h>
-# include <VBox/GuestHost/SharedClipboard-uri.h>
-# include <VBox/HostServices/VBoxClipboardSvc.h>
+#include "ConsoleImpl.h"
+#include "SharedClipboardPrivate.h"
 
 SharedClipboard* SharedClipboard::s_pInstance = NULL;
 
@@ -76,5 +73,4 @@ DECLCALLBACK(int) SharedClipboard::hostServiceCallback(void *pvExtension, uint32
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
