@@ -5440,13 +5440,9 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
     {
         switch (iCrReg)
         {
-            case 0:
-            case 4:
-            {
-                /* CR0/CR4 reads are subject to masking when in VMX non-root mode. */
-                crX = iemVmxGetMaskedCr0Cr4(pVCpu, iCrReg, crX);
-                break;
-            }
+            /* CR0/CR4 reads are subject to masking when in VMX non-root mode. */
+            case 0: crX = CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx); break;
+            case 4: crX = CPUMGetGuestVmxMaskedCr4(pVCpu, &pVCpu->cpum.GstCtx); break;
 
             case 3:
             {
@@ -5480,10 +5476,12 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
 {
     IEM_SVM_CHECK_READ_CR0_INTERCEPT(pVCpu, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
 
-    uint64_t u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-        u64GuestCr0 = iemVmxGetMaskedCr0Cr4(pVCpu, 0 /* iCrReg */, u64GuestCr0);
+    uint64_t const u64GuestCr0 = !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+                               ? pVCpu->cpum.GstCtx.cr0
+                               : CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx);
+#else
+    uint64_t const u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
 #endif
 
     switch (enmEffOpSize)
@@ -5524,10 +5522,12 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
 {
     IEM_SVM_CHECK_READ_CR0_INTERCEPT(pVCpu, 0 /* uExitInfo1 */, 0 /* uExitInfo2 */);
 
-    uint64_t u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-        u64GuestCr0 = iemVmxGetMaskedCr0Cr4(pVCpu, 0 /* iCrReg */, u64GuestCr0);
+    uint64_t const u64GuestCr0 = !IEM_VMX_IS_NON_ROOT_MODE(pVCpu)
+                               ? pVCpu->cpum.GstCtx.cr0
+                               : CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx);
+#else
+    uint64_t const u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
 #endif
 
     uint16_t u16Value;
