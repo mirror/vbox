@@ -3030,7 +3030,7 @@ static int hmR0VmxSetupVmcsProcCtls2(PVMCPU pVCpu, PVMXVMCSINFO pVmcsInfo)
         fVal |= VMX_PROC_CTLS2_RDTSCP;
 
     /* Enable Pause-Loop exiting. */
-    if (   pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT
+    if (   (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT)
         && pVM->hm.s.vmx.cPleGapTicks
         && pVM->hm.s.vmx.cPleWindowTicks)
     {
