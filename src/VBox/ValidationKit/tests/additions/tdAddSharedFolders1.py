@@ -53,8 +53,9 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
     def __init__(self, oTstDrv):
         base.SubTestDriverBase.__init__(self, 'add-shared-folders', oTstDrv);
 
-        self.asTestsDef = [ 'fsperf', ];
-        self.asTests    = self.asTestsDef;
+        self.asTestsDef  = [ 'fsperf', ];
+        self.asTests     = self.asTestsDef;
+        self.asExtraArgs = [];
 
     def parseOption(self, asArgs, iArg):
         if asArgs[iArg] == '--add-shared-folders-tests': # 'add' as in 'additions', not the verb.
@@ -69,12 +70,20 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
                         raise base.InvalidOption('The "--add-shared-folders-tests" value "%s" is not valid; valid values are: %s'
                                                  % (s, ' '.join(self.asTestsDef)));
             return iNext;
+        elif asArgs[iArg] == '--add-shared-folders-extra-arg':
+            iArg += 1;
+            iNext = self.oTstDrv.requireMoreArgs(1, asArgs, iArg);
+            self.asExtraArgs.append(asArgs[iArg]);
+            return iNext;
         return iArg;
 
     def showUsage(self):
         base.SubTestDriverBase.showUsage(self);
         reporter.log('  --add-shared-folders-tests <t1[:t2[:]]>');
         reporter.log('      Default: all  (%s)' % (':'.join(self.asTestsDef)));
+        reporter.log('  --add-shared-folders-extra-args <fsperf-arg>');
+        reporter.log('      Adds an extra FsPerf argument.  Can be repeated.');
+
         return True;
 
     def testIt(self, oTestVm, oSession, oTxsSession):
@@ -157,14 +166,14 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
                 fSkip = True;
         if fSkip is False:
             # Common arguments:
-            asArgs = ['FsPerf', '-d', sMountPoint1 + sGuestSlash + 'fstestdir-1', '-m200'];
+            asArgs = ['FsPerf', '-d', sMountPoint1 + sGuestSlash + 'fstestdir-1', '-s8'];
 
-            # Skip mmap on older windows systems without CcCoherencyFlushAndPurgeCache (>= w7).
+            # Skip part of mmap on older windows systems without CcCoherencyFlushAndPurgeCache (>= w7).
             reporter.log2('oTestVm.sGuestOsType=%s' % (oTestVm.sGuestOsType,));
-            if oTestVm.sGuestOsType in [ 'WindowsNT3x', 'WindowsNT4', 'Windows2000', 'WindowsXP', 'WindowsXP_64',
-                                         'Windows2003', 'Windows2003_64', 'WindowsVista', 'WindowsVista_64',
-                                         'Windows2008', 'Windows2008_64']:
-                asArgs.append('--no-mmap');
+            if   oTestVm.getNonCanonicalGuestOsType() \
+              in [ 'WindowsNT3x', 'WindowsNT4', 'Windows2000', 'WindowsXP', 'WindowsXP_64', 'Windows2003',
+                   'Windows2003_64', 'WindowsVista', 'WindowsVista_64', 'Windows2008', 'Windows2008_64']:
+                asArgs.append('--no-mmap-coherency');
 
             # Configure I/O block sizes according to guest memory size:
             cbMbRam = 128;
@@ -182,6 +191,7 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
             if cbMbRam >= 768:
                 asArgs.append('--add-block-size=134217728'); # 128 MiB
 
+            asArgs.extend(self.asExtraArgs);
             reporter.log2('Starting guest FsPerf (%s)...' % (asArgs,));
             fRc = self.oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 10 * 60 * 1000,
                                           '${CDROM}/vboxvalidationkit/${OS/ARCH}/FsPerf${EXESUFF}', asArgs);

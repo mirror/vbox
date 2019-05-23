@@ -29,8 +29,6 @@ terms and conditions of either the GPL or the CDDL or both.
 """
 __version__ = "$Revision$"
 
-# pylint: disable=unnecessary-semicolon
-
 # Standard Python imports.
 import os;
 import sys;
@@ -65,7 +63,7 @@ class tdAddBasic1(vbox.TestDriver):                                         # py
     def __init__(self):
         vbox.TestDriver.__init__(self);
         self.oTestVmSet = self.oTestVmManager.getSmokeVmSet('nat');
-        self.asTestsDef = ['install', 'guestprops', 'stdguestprops', 'guestcontrol', ]; #'sharedfolders'];
+        self.asTestsDef = ['install', 'guestprops', 'stdguestprops', 'guestcontrol', 'sharedfolders'];
         self.asTests    = self.asTestsDef;
         self.asRsrcs    = None
 
