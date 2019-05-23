@@ -2153,9 +2153,9 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PVMCPU pVCpu, PCCPUMCTX p
 DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     /*
-     * For each CR0 bit owned by the host, the corresponding bit is loaded from the
-     * CR0 read shadow. For each CR0 bit that is not owned by the host, the
-     * corresponding bit from the guest CR0 is loaded.
+     * For each CR0 bit owned by the host, the corresponding bit from the
+     * CR0 read shadow is loaded. For each CR0 bit that is not owned by the host,
+     * the corresponding bit from the guest CR0 is loaded.
      *
      * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
      */
@@ -2179,9 +2179,9 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PVMCPU pVCpu, PCCPUMCTX pCtx)
 DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PVMCPU pVCpu, PCCPUMCTX pCtx)
 {
     /*
-     * For each CR4 bit owned by the host, the corresponding bit is loaded from the
-     * CR4 read shadow. For each CR4 bit that is not owned by the host, the
-     * corresponding bit from the guest CR4 is loaded.
+     * For each CR4 bit owned by the host, the corresponding bit from the
+     * CR4 read shadow is loaded. For each CR4 bit that is not owned by the host,
+     * the corresponding bit from the guest CR4 is loaded.
      *
      * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
      */
