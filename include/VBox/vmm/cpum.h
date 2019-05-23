@@ -2143,6 +2143,58 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PVMCPU pVCpu, PCCPUMCTX p
     return pCtx->hwvirt.vmx.CTX_SUFF(pVmcs)->u64AddrApicAccess.u;
 }
 
+/**
+ * Gets the nested-guest CR0 subject to the guest/host mask and the read-shadow.
+ *
+ * @returns The nested-guest CR0.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ */
+DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    /*
+     * For each CR0 bit owned by the host, the corresponding bit is loaded from the
+     * CR0 read shadow. For each CR0 bit that is not owned by the host, the
+     * corresponding bit from the guest CR0 is loaded.
+     *
+     * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
+     */
+    RT_NOREF(pVCpu);
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(CPUMIsGuestInVmxRootMode(pCtx));
+    uint64_t const uGstCr0      = pCtx->cr0;
+    uint64_t const fGstHostMask = pVmcs->u64Cr0Mask.u;
+    uint64_t const fReadShadow  = pVmcs->u64Cr0ReadShadow.u;
+    return (fReadShadow & fGstHostMask) | (uGstCr0 & ~fGstHostMask);
+}
+
+/**
+ * Gets the nested-guest CR4 subject to the guest/host mask and the read-shadow.
+ *
+ * @returns The nested-guest CR4.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
+ * @param   pCtx        Pointer to the context.
+ */
+DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PVMCPU pVCpu, PCCPUMCTX pCtx)
+{
+    /*
+     * For each CR4 bit owned by the host, the corresponding bit is loaded from the
+     * CR4 read shadow. For each CR4 bit that is not owned by the host, the
+     * corresponding bit from the guest CR4 is loaded.
+     *
+     * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
+     */
+    RT_NOREF(pVCpu);
+    PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
+    Assert(pVmcs);
+    Assert(CPUMIsGuestInVmxRootMode(pCtx));
+    uint64_t const uGstCr4      = pCtx->cr4;
+    uint64_t const fGstHostMask = pVmcs->u64Cr4Mask.u;
+    uint64_t const fReadShadow  = pVmcs->u64Cr4ReadShadow.u;
+    return (fReadShadow & fGstHostMask) | (uGstCr4 & ~fGstHostMask);
+}
+
 # endif /* !IN_RC */
 
 #endif /* IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS */
