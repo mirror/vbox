@@ -353,6 +353,12 @@ class TestVm(object):
 
         return True;
 
+    def getNonCanonicalGuestOsType(self):
+        """
+        Gets the non-canonical OS type (self.sGuestOsType is canonical).
+        """
+        return self.aInfo[g_iGuestOsType];
+
     def getMissingResources(self, sTestRsrc):
         """
         Returns a list of missing resources (paths, stuff) that the VM needs.
