@@ -127,7 +127,7 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsg(HGCMCLIENTID idClient, uint32_t *pidMs
  */
 VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb)
 {
-    VBoxClipboardReadData Msg;
+    VBoxClipboardReadDataMsg Msg;
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_READ_DATA, 3);
     VbglHGCMParmUInt32Set(&Msg.format, fFormat);
@@ -151,6 +151,263 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
     return rc;
 }
 
+/**
+ * Reads the meta data header from the host.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pDataHdr            Where to store the read meta data header.
+ */
+static int vbglR3ClipboardReadMetaDataHdr(HGCMCLIENTID idClient, PVBOXDNDSNDDATAHDR pDataHdr)
+{
+    AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
+
+    VBOXDNDHGSENDDATAHDRMSG Msg;
+    RT_ZERO(Msg);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, HOST_DND_HG_SND_DATA_HDR, 12);
+    Msg.uContext.SetUInt32(0);
+    Msg.uFlags.SetUInt32(0);
+    Msg.uScreenId.SetUInt32(0);
+    Msg.cbTotal.SetUInt64(0);
+    Msg.cbMeta.SetUInt32(0);
+    Msg.pvMetaFmt.SetPtr(pDataHdr->pvMetaFmt, pDataHdr->cbMetaFmt);
+    Msg.cbMetaFmt.SetUInt32(0);
+    Msg.cObjects.SetUInt64(0);
+    Msg.enmCompression.SetUInt32(0);
+    Msg.enmChecksumType.SetUInt32(0);
+    Msg.pvChecksum.SetPtr(pDataHdr->pvChecksum, pDataHdr->cbChecksum);
+    Msg.cbChecksum.SetUInt32(0);
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        /* Msg.uContext not needed here. */
+        Msg.uFlags.GetUInt32(&pDataHdr->uFlags);
+        Msg.uScreenId.GetUInt32(&pDataHdr->uScreenId);
+        Msg.cbTotal.GetUInt64(&pDataHdr->cbTotal);
+        Msg.cbMeta.GetUInt32(&pDataHdr->cbMeta);
+        Msg.cbMetaFmt.GetUInt32(&pDataHdr->cbMetaFmt);
+        Msg.cObjects.GetUInt64(&pDataHdr->cObjects);
+        Msg.enmCompression.GetUInt32(&pDataHdr->enmCompression);
+        Msg.enmChecksumType.GetUInt32((uint32_t *)&pDataHdr->enmChecksumType);
+        Msg.cbChecksum.GetUInt32(&pDataHdr->cbChecksum);
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Helper function for reading the actual clipboard meta data from the host. Do not call directly.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pDataHdr            Where to store the data header data.
+ * @param   ppvData             Returns the received meta data. Needs to be free'd by the caller.
+ * @param   pcbData             Where to store the size (in bytes) of the received meta data.
+ */
+static int vbglR3ClipboardReadMetaDataLoop(HGCMCLIENTID idClient, PVBOXDNDSNDDATAHDR pDataHdr,
+                                           void **ppvData, uint64_t *pcbData)
+{
+    AssertPtrReturn(pDataHdr, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppvData,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pcbData,  VERR_INVALID_POINTER);
+
+    int rc;
+    uint32_t cbDataRecv;
+
+    LogFlowFuncEnter();
+
+    rc = vbglR3DnDHGRecvDataHdr(pCtx, pDataHdr);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    LogFlowFunc(("cbTotal=%RU64, cbMeta=%RU32, cObjects=%RU32\n", pDataHdr->cbTotal, pDataHdr->cbMeta, pDataHdr->cObjects));
+    if (pDataHdr->cbMeta)
+    {
+        uint64_t cbDataTmp = 0;
+        void    *pvDataTmp = RTMemAlloc(pDataHdr->cbMeta);
+        if (!pvDataTmp)
+            rc = VERR_NO_MEMORY;
+
+        if (RT_SUCCESS(rc))
+        {
+            uint8_t *pvDataOff = (uint8_t *)pvDataTmp;
+            while (cbDataTmp < pDataHdr->cbMeta)
+            {
+                rc = vbglR3DnDHGRecvDataRaw(pCtx, pDataHdr,
+                                            pvDataOff, RT_MIN(pDataHdr->cbMeta - cbDataTmp, pCtx->cbMaxChunkSize),
+                                            &cbDataRecv);
+                if (RT_SUCCESS(rc))
+                {
+                    LogFlowFunc(("cbDataRecv=%RU32, cbDataTmp=%RU64\n", cbDataRecv, cbDataTmp));
+                    Assert(cbDataTmp + cbDataRecv <= pDataHdr->cbMeta);
+                    cbDataTmp += cbDataRecv;
+                    pvDataOff += cbDataRecv;
+                }
+                else
+                    break;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                Assert(cbDataTmp == pDataHdr->cbMeta);
+
+                LogFlowFunc(("Received %RU64 bytes of data\n", cbDataTmp));
+
+                *ppvData = pvDataTmp;
+                *pcbData = cbDataTmp;
+            }
+            else
+                RTMemFree(pvDataTmp);
+        }
+    }
+    else
+    {
+        *ppvData = NULL;
+        *pcbData = 0;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Main function for reading the actual meta data from the host, extended version.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pEnmType            Where to store the meta data type. Optional.
+ * @param   ppvData             Returns the received meta data. Needs to be free'd by the caller.  Optional.
+ * @param   pcbData             Where to store the size (in bytes) of the received meta data. Optional.
+ */
+static int vbglR3ClipboardReadMetaDataMainEx(HGCMCLIENTID                 idClient,
+                                             VBGLR3GUESTDNDMETADATATYPE  *pEnmType,
+                                             void                       **ppvData,
+                                             uint32_t                    *pcbData)
+{
+    /* The rest is optional. */
+
+    VBOXDNDDATAHDR dataHdr;
+    RT_ZERO(dataHdr);
+
+    AssertMsg(pCtx->cbMaxChunkSize, ("Maximum chunk size must not be 0\n"));
+
+    dataHdr.cbMetaFmt = pCtx->cbMaxChunkSize;
+    dataHdr.pvMetaFmt = RTMemAlloc(dataHdr.cbMetaFmt);
+    if (!dataHdr.pvMetaFmt)
+        return VERR_NO_MEMORY;
+
+    DnDURIList lstURI;
+    DnDDroppedFiles droppedFiles;
+
+    void    *pvData = NULL;
+    uint64_t cbData = 0;
+
+    int rc = vbglR3DnDHGRecvDataLoop(pCtx, &dataHdr, &pvData, &cbData);
+    if (RT_SUCCESS(rc))
+    {
+        /**
+         * Check if this is an URI event. If so, let VbglR3 do all the actual
+         * data transfer + file/directory creation internally without letting
+         * the caller know.
+         *
+         * This keeps the actual (guest OS-)dependent client (like VBoxClient /
+         * VBoxTray) small by not having too much redundant code.
+         */
+        Assert(dataHdr.cbMetaFmt);
+        AssertPtr(dataHdr.pvMetaFmt);
+        if (DnDMIMEHasFileURLs((char *)dataHdr.pvMetaFmt, dataHdr.cbMetaFmt)) /* URI data. */
+        {
+            AssertPtr(pvData);
+            Assert(cbData);
+
+            rc = lstURI.SetFromURIData(pvData, cbData, 0 /* fFlags */);
+            if (RT_SUCCESS(rc))
+                rc = vbglR3DnDHGRecvURIData(pCtx, &dataHdr, &droppedFiles);
+
+            if (RT_SUCCESS(rc)) /** @todo Remove this block as soon as we hand in DnDURIList. */
+            {
+                if (pvData)
+                {
+                    /* Reuse data buffer to fill in the transformed URI file list. */
+                    RTMemFree(pvData);
+                    pvData = NULL;
+                }
+
+                RTCString strData = lstURI.GetRootEntries(droppedFiles.GetDirAbs());
+                Assert(!strData.isEmpty());
+
+                cbData = strData.length() + 1;
+                LogFlowFunc(("URI list has %zu bytes\n", cbData));
+
+                pvData = RTMemAlloc(cbData);
+                if (pvData)
+                {
+                    memcpy(pvData, strData.c_str(), cbData);
+
+                    if (pEnmType)
+                        *pEnmType = VBGLR3GUESTDNDMETADATATYPE_URI_LIST;
+                }
+                else
+                    rc =  VERR_NO_MEMORY;
+            }
+        }
+        else /* Raw data. */
+        {
+            if (pEnmType)
+                *pEnmType = VBGLR3GUESTDNDMETADATATYPE_RAW;
+        }
+    }
+
+    if (dataHdr.pvMetaFmt)
+        RTMemFree(dataHdr.pvMetaFmt);
+
+    if (RT_SUCCESS(rc))
+    {
+        if (   pvData
+            && cbData)
+        {
+            if (pcbData)
+                *pcbData = cbData;
+            if (ppvData)
+                *ppvData = pvData;
+            else
+                RTMemFree(pvData);
+        }
+    }
+    else if (   RT_FAILURE(rc)
+             && rc != VERR_CANCELLED)
+    {
+        if (pvData)
+            RTMemFree(pvData);
+
+        int rc2 = VbglR3DnDHGSendProgress(pCtx, DND_PROGRESS_ERROR, 100 /* Percent */, rc);
+        if (RT_FAILURE(rc2))
+            LogFlowFunc(("Unable to send progress error %Rrc to host: %Rrc\n", rc, rc2));
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Main function for reading the actual meta data from the host.
+ *
+ * @returns IPRT status code.
+ * @param   idClient            The client id returned by VbglR3ClipboardConnect().
+ * @param   pMeta               Where to store the actual meta data received from the host.
+ */
+static int vbglR3ClipboardReadMetaDataMain(HGCMCLIENTID idClient, PVBGLR3GUESTDNDMETADATA pMeta)
+{
+    AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
+
+    int rc = vbglR3ClipboardReadMetaDataMainEx(idClient,
+                                               &pMeta->enmType,
+                                               &pMeta->pvMeta,
+                                               &pMeta->cbMeta);
+    return rc;
+}
 
 /**
  * Reports (advertises) guest clipboard formats to the host.
@@ -161,7 +418,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
  */
 VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats)
 {
-    VBoxClipboardWriteFormats Msg;
+    VBoxClipboardWriteFormatsMsg Msg;
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_REPORT_FORMATS, 1);
     VbglHGCMParmUInt32Set(&Msg.formats, fFormats);
@@ -183,7 +440,7 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFo
  */
 static int vbglR3ClipboardWriteDataRaw(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb)
 {
-    VBoxClipboardWriteData Msg;
+    VBoxClipboardWriteDataMsg Msg;
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA, 2);
     VbglHGCMParmUInt32Set(&Msg.format, fFormat);
     VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);

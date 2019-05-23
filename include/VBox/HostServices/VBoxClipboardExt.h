@@ -30,11 +30,26 @@
 #endif
 
 #include <VBox/types.h>
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# include <VBox/GuestHost/SharedClipboard-uri.h>
+#endif
 
-#define VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK    (0)
-#define VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE (1)
-#define VBOX_CLIPBOARD_EXT_FN_DATA_READ       (2)
-#define VBOX_CLIPBOARD_EXT_FN_DATA_WRITE      (3)
+#define VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK         (0)
+#define VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE      (1)
+#define VBOX_CLIPBOARD_EXT_FN_DATA_READ            (2)
+#define VBOX_CLIPBOARD_EXT_FN_DATA_WRITE           (3)
+/** Registers a new clipboard area.
+ *  Uses the VBOXCLIPBOARDEXTAREAPARMS struct. */
+#define VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER        (4)
+/** Unregisters an existing clipboard area.
+ *  Uses the VBOXCLIPBOARDEXTAREAPARMS struct. */
+#define VBOX_CLIPBOARD_EXT_FN_AREA_UNREGISTER      (5)
+/** Attaches to an existing clipboard area.
+ *  Uses the VBOXCLIPBOARDEXTAREAPARMS struct. */
+#define VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH          (6)
+/** Detaches from an existing clipboard area.
+ *  Uses the VBOXCLIPBOARDEXTAREAPARMS struct. */
+#define VBOX_CLIPBOARD_EXT_FN_AREA_DETACH          (7)
 
 typedef DECLCALLBACK(int) VRDPCLIPBOARDEXTCALLBACK (uint32_t u32Function, uint32_t u32Format, void *pvData, uint32_t cbData);
 typedef VRDPCLIPBOARDEXTCALLBACK *PFNVRDPCLIPBOARDEXTCALLBACK;
@@ -44,10 +59,42 @@ typedef struct _VBOXCLIPBOARDEXTPARMS
     uint32_t   u32Format;
     union
     {
-        void                        *pvData;
+        void                       *pvData;
         PFNVRDPCLIPBOARDEXTCALLBACK pfnCallback;
     } u;
     uint32_t   cbData;
 } VBOXCLIPBOARDEXTPARMS;
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+typedef uint32_t VBOXCLIPBOARDEXTAREAREGISTETRFLAGS;
+/** No clipboard register area flags specified. */
+#define VBOXCLIPBOARDEXTAREA_REGISTER_FLAGS_NONE        0
+
+typedef uint32_t VBOXCLIPBOARDEXTAREAATTACHFLAGS;
+/** No clipboard attach area flags specified. */
+#define VBOXCLIPBOARDEXTAREA_ATTACH_FLAGS_NONE          0
+
+/**
+ * Structure for keeping clipboard area callback parameters.
+ */
+typedef struct _VBOXCLIPBOARDEXTAREAPARMS
+{
+    /** The clipboard area's ID. */
+    SHAREDCLIPBOARDAREAID uID;
+    union
+    {
+        struct
+        {
+            void                              *pvData;
+            uint32_t                           cbData;
+            VBOXCLIPBOARDEXTAREAREGISTETRFLAGS fFlags;
+        } fn_register;
+        struct
+        {
+            VBOXCLIPBOARDEXTAREAATTACHFLAGS    fFlags;
+        } fn_attach;
+    } u;
+} VBOXCLIPBOARDEXTAREAPARMS, *PVBOXCLIPBOARDEXTAREAPARMS;
+#endif
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardExt_h */

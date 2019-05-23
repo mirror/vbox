@@ -36,7 +36,8 @@
 SharedClipboardCache::SharedClipboardCache(void)
     : m_cRefs(0)
     , m_fOpen(0)
-    , m_hDir(NULL)
+    , m_hDir(NIL_RTDIR)
+    , m_uID(NIL_SHAREDCLIPBOARDAREAID)
 {
     int rc = initInternal();
     if (RT_FAILURE(rc))
@@ -44,10 +45,12 @@ SharedClipboardCache::SharedClipboardCache(void)
 }
 
 SharedClipboardCache::SharedClipboardCache(const char *pszPath,
+                                           SHAREDCLIPBOARDAREAID uID /* = NIL_SHAREDCLIPBOARDAREAID */,
                                            SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDCLIPBOARDCACHE_FLAGS_NONE */)
     : m_cRefs(0)
     , m_fOpen(0)
-    , m_hDir(NULL)
+    , m_hDir(NIL_RTDIR)
+    , m_uID(uID)
 {
     int rc = initInternal();
     if (RT_SUCCESS(rc))
@@ -139,22 +142,63 @@ int SharedClipboardCache::destroyInternal(void)
 int SharedClipboardCache::closeInternal(void)
 {
     int rc;
-    if (this->m_hDir != NULL)
+    if (this->m_hDir != NIL_RTDIR)
     {
         rc = RTDirClose(this->m_hDir);
         if (RT_SUCCESS(rc))
-            this->m_hDir = NULL;
+            this->m_hDir = NIL_RTDIR;
     }
     else
         rc = VINF_SUCCESS;
 
+    this->m_fOpen = SHAREDCLIPBOARDCACHE_FLAGS_NONE;
+    this->m_uID   = NIL_SHAREDCLIPBOARDAREAID;
+
     LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Construcuts the cache's base path.
+ *
+ * @returns VBox status code.
+ * @param   pszBase             Base path to use for the cache.
+ * @param   pszPath             Where to store the constructured cache base path.
+ * @param   cbPath              Size (in bytes) of the constructured cache base path.
+ */
+int SharedClipboardCache::pathConstruct(const char *pszBase, char *pszPath, size_t cbPath)
+{
+    RTStrPrintf(pszPath, cbPath, "%s", pszBase);
+
+    /** @todo On Windows we also could use the registry to override
+     *        this path, on Posix a dotfile and/or a guest property
+     *        can be used. */
+
+    /* Append our base cache directory. */
+    int rc = RTPathAppend(pszPath, sizeof(pszPath), "VirtualBox Shared Clipboards"); /** @todo Make this tag configurable? */
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Create it when necessary. */
+    if (!RTDirExists(pszPath))
+    {
+        rc = RTDirCreateFullPath(pszPath, RTFS_UNIX_IRWXU);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    rc = RTPathAppend(pszPath, sizeof(pszPath), "Clipboard");
     return rc;
 }
 
 int SharedClipboardCache::Close(void)
 {
     return closeInternal();
+}
+
+SHAREDCLIPBOARDAREAID SharedClipboardCache::GetAreaID(void) const
+{
+    return this->m_uID;
 }
 
 const char *SharedClipboardCache::GetDirAbs(void) const
@@ -167,74 +211,39 @@ bool SharedClipboardCache::IsOpen(void) const
     return (this->m_hDir != NULL);
 }
 
-int SharedClipboardCache::OpenEx(const char *pszPath, SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDCLIPBOARDCACHE_FLAGS_NONE */)
+int SharedClipboardCache::OpenEx(const char *pszPath,
+                                 SHAREDCLIPBOARDAREAID uID /* = NIL_SHAREDCLIPBOARDAREAID */,
+                                 SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDCLIPBOARDCACHE_FLAGS_NONE */)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
 
-    int rc;
-
-    do
+    char szCacheDir[RTPATH_MAX];
+    int rc = pathConstruct(pszPath, szCacheDir, sizeof(szCacheDir));
+    if (RT_SUCCESS(rc))
     {
-        char pszDropDir[RTPATH_MAX];
-        RTStrPrintf(pszDropDir, sizeof(pszDropDir), "%s", pszPath);
-
-        /** @todo On Windows we also could use the registry to override
-         *        this path, on Posix a dotfile and/or a guest property
-         *        can be used. */
-
-        /* Append our base drop directory. */
-        rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), "VirtualBox Shared Clipboard Files"); /** @todo Make this tag configurable? */
-        if (RT_FAILURE(rc))
-            break;
-
-        /* Create it when necessary. */
-        if (!RTDirExists(pszDropDir))
-        {
-            rc = RTDirCreateFullPath(pszDropDir, RTFS_UNIX_IRWXU);
-            if (RT_FAILURE(rc))
-                break;
-        }
-
-        /* The actually drop directory consist of the current time stamp and a
-         * unique number when necessary. */
-        char pszTime[64];
-        RTTIMESPEC time;
-        if (!RTTimeSpecToString(RTTimeNow(&time), pszTime, sizeof(pszTime)))
-        {
-            rc = VERR_BUFFER_OVERFLOW;
-            break;
-        }
-
-        rc = SharedClipboardPathSanitizeFilename(pszTime, sizeof(pszTime));
-        if (RT_FAILURE(rc))
-            break;
-
-        rc = RTPathAppend(pszDropDir, sizeof(pszDropDir), pszTime);
-        if (RT_FAILURE(rc))
-            break;
-
         /* Create it (only accessible by the current user) */
-        rc = RTDirCreateUniqueNumbered(pszDropDir, sizeof(pszDropDir), RTFS_UNIX_IRWXU, 3, '-');
+        rc = RTDirCreateUniqueNumbered(szCacheDir, sizeof(szCacheDir), RTFS_UNIX_IRWXU, 3, '-');
         if (RT_SUCCESS(rc))
         {
             RTDIR hDir;
-            rc = RTDirOpen(&hDir, pszDropDir);
+            rc = RTDirOpen(&hDir, szCacheDir);
             if (RT_SUCCESS(rc))
             {
                 this->m_hDir       = hDir;
-                this->m_strPathAbs = pszDropDir;
+                this->m_strPathAbs = szCacheDir;
                 this->m_fOpen      = fFlags;
+                this->m_uID        = uID;
             }
         }
-
-    } while (0);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-int SharedClipboardCache::OpenTemp(SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDCLIPBOARDCACHE_FLAGS_NONE */)
+int SharedClipboardCache::OpenTemp(SHAREDCLIPBOARDAREAID uID,
+                                   SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDCLIPBOARDCACHE_FLAGS_NONE */)
 {
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER); /* Flags not supported yet. */
 
@@ -246,7 +255,7 @@ int SharedClipboardCache::OpenTemp(SHAREDCLIPBOARDCACHEFLAGS fFlags /* = SHAREDC
     char szTemp[RTPATH_MAX];
     int rc = RTPathTemp(szTemp, sizeof(szTemp));
     if (RT_SUCCESS(rc))
-        rc = OpenEx(szTemp, fFlags);
+        rc = OpenEx(szTemp, uID, fFlags);
 
     return rc;
 }

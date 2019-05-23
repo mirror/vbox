@@ -44,13 +44,21 @@
 /*
  * The service functions which are callable by host.
  */
-#define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE      1
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE           1
 /** Run headless on the host, i.e. do not touch the host clipboard. */
-#define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS  2
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS       2
 /** Reports cancellation of the current operation to the guest. */
-#define VBOX_SHARED_CLIPBOARD_HOST_FN_CANCEL        3
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_CANCEL             3
 /** Reports an error to the guest. */
-#define VBOX_SHARED_CLIPBOARD_HOST_FN_ERROR         4
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_ERROR              4
+/** Reports that a new clipboard area has been registered. */
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_AREA_REGISTER      5
+/** Reports that a clipboard area has been unregistered. */
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_AREA_UNREGISTER    6
+/** Reports that a client (host / guest) has attached to a clipboard area. */
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_AREA_ATTACH        7
+/** Reports that a client (host / guest) has detached from a clipboard area. */
+#define VBOX_SHARED_CLIPBOARD_HOST_FN_AREA_DETACH        8
 
 /*
  * The service functions which are called by guest.
@@ -118,17 +126,17 @@ typedef struct _VBoxClipboardGetHostMsg
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_GET_HOST_MSG 2
 
-typedef struct _VBoxClipboardWriteFormats
+typedef struct _VBoxClipboardWriteFormatsMsg
 {
     VBGLIOCHGCMCALL hdr;
 
     /* VBOX_SHARED_CLIPBOARD_FMT_* */
     HGCMFunctionParameter formats; /* OUT uint32_t */
-} VBoxClipboardWriteFormats;
+} VBoxClipboardWriteFormatsMsg;
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_FORMATS 1
 
-typedef struct _VBoxClipboardReadData
+typedef struct _VBoxClipboardReadDataMsg
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -143,11 +151,11 @@ typedef struct _VBoxClipboardReadData
      */
     HGCMFunctionParameter size;   /* OUT uint32_t */
 
-} VBoxClipboardReadData;
+} VBoxClipboardReadDataMsg;
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA 3
 
-typedef struct _VBoxClipboardWriteData
+typedef struct _VBoxClipboardWriteDataMsg
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -156,17 +164,18 @@ typedef struct _VBoxClipboardWriteData
 
     /* Data.  */
     HGCMFunctionParameter ptr;    /* IN linear pointer. */
-} VBoxClipboardWriteData;
+} VBoxClipboardWriteDataMsg;
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA 2
 
 /**
- * Sends the header of an incoming (meta) data block.
+ * Reads / writes the (meta) data header.
  *
  * Used by:
- * XXX
+ * VBOX_SHARED_CLIPBOARD_FN_READ_DATA_HDR
+ * VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_HDR
  */
-typedef struct _VBoxClipboardWriteDataHdrMsg
+typedef struct _VBoxClipboardReadDataHdrMsg
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -199,17 +208,19 @@ typedef struct _VBoxClipboardWriteDataHdrMsg
     HGCMFunctionParameter pvChecksum;      /* OUT ptr */
     /** Size (in bytes) of checksum. */
     HGCMFunctionParameter cbChecksum;      /* OUT uint32_t */
-} VBoxClipboardWriteDataHdrMsg;
+} VBoxClipboardReadDataHdrMsg, VBoxClipboardWriteDataHdrMsg;
 
+#define VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_HDR  12
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_HDR 12
 
 /**
- * Sends a (meta) data block to the host.
+ * Reads / writes a (meta) data block.
  *
  * Used by:
- * GUEST_DND_GH_SND_DATA
+ * VBOX_SHARED_CLIPBOARD_FN_READ_DATA_CHUNK
+ * VBOX_SHARED_CLIPBOARD_FN_WRITE_DATA_CHUNK
  */
-typedef struct _VBoxClipboardWriteDataChunkMsg
+typedef struct _VBoxClipboardDataChunkMsg
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -223,17 +234,19 @@ typedef struct _VBoxClipboardWriteDataChunkMsg
     HGCMFunctionParameter pvChecksum;   /* OUT ptr */
     /** Size (in bytes) of checksum. */
     HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
-} VBoxClipboardWriteDataChunkMsg;
+} VBoxClipboardReadDataChunkMsg, VBoxClipboardWriteDataChunkMsg;
 
+#define VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_CHUNK  5
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA_CHUNK 5
 
 /**
- * Sends a directory entry.
+ * Reads / writes a directory entry.
  *
  * Used by:
- * XXX
+ * VBOX_SHARED_CLIPBOARD_FN_READ_DIR
+ * VBOX_SHARED_CLIPBOARD_FN_WRITE_DIR
  */
-typedef struct _VBoxClipboardWriteDirMsg
+typedef struct _VBoxClipboardDirMsg
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -245,17 +258,19 @@ typedef struct _VBoxClipboardWriteDirMsg
     HGCMFunctionParameter cbName;       /* OUT uint32_t */
     /** Directory mode. */
     HGCMFunctionParameter fMode;        /* OUT uint32_t */
-} VBoxClipboardWriteDirMsg;
+} VBoxClipboardReadDirMsg, VBoxClipboardWriteDirMsg;
 
+#define VBOX_SHARED_CLIPBOARD_CPARMS_READ_DIR  4
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DIR 4
 
 /**
  * File header message, marking the start of transferring a new file.
  *
  * Used by:
- * XXX
+ * VBOX_SHARED_CLIPBOARD_FN_READ_FILE_HDR
+ * VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_HDR
  */
-typedef struct _VBoxClipboardWriteFileHdrMsg
+typedef struct _VBoxClipboardFileHdrMsg
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -271,17 +286,19 @@ typedef struct _VBoxClipboardWriteFileHdrMsg
     HGCMFunctionParameter fMode;        /* OUT uint32_t */
     /** Total size (in bytes). */
     HGCMFunctionParameter cbTotal;      /* OUT uint64_t */
-} VBoxClipboardWriteFileHdrMsg;
+} VBoxClipboardWriteReadHdrMsg, VBoxClipboardWriteFileHdrMsg;
 
+#define VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_HDR  6
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_HDR 6
 
 /**
- * Sends data of a file entry.
+ * Reads / writes data of a file entry.
  *
  * Used by:
- * XXX
+ * VBOX_SHARED_CLIPBOARD_FN_READ_FILE_DATA
+ * VBOX_SHARED_CLIPBOARD_FN_WRITE_FILE_DATA
  */
-typedef struct _VBoxClipboardWriteFileDataMsg
+typedef struct _VBoxClipboardFileDataMsg
 {
     VBGLIOCHGCMCALL hdr;
 
@@ -298,15 +315,16 @@ typedef struct _VBoxClipboardWriteFileDataMsg
     HGCMFunctionParameter cbChecksum;   /* OUT uint32_t */
 } VBoxClipboardWriteFileDataMsg;
 
+#define VBOX_SHARED_CLIPBOARD_CPARMS_READ_FILE_DATA  5
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_FILE_DATA 5
 
 /**
  * Sends an error event.
  *
  * Used by:
- * XXX
+ * VBOX_SHARED_CLIPBOARD_FN_WRITE_ERROR
  */
-typedef struct _VBoxClipboardWriteErrorMsg
+typedef struct _VBoxClipboardErrorMsg
 {
     VBGLIOCHGCMCALL hdr;
 

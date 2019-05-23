@@ -21,6 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/HostServices/VBoxClipboardSvc.h>
+#include <VBox/HostServices/VBoxClipboardExt.h>
 
 #include <iprt/dir.h>
 #include <iprt/file.h>
@@ -28,6 +29,13 @@
 
 #include "VBoxSharedClipboardSvc-internal.h"
 #include "VBoxSharedClipboardSvc-uri.h"
+
+
+/*********************************************************************************************************************************
+*   Externals                                                                                                                    *
+*********************************************************************************************************************************/
+extern PFNHGCMSVCEXT g_pfnExtension;
+extern void *g_pvExtension;
 
 
 /**
@@ -39,6 +47,8 @@
 int vboxClipboardSvcURIObjCtxInit(PVBOXCLIPBOARDCLIENTURIOBJCTX pObjCtx)
 {
     AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
 
     pObjCtx->pObj = NULL;
 
@@ -53,6 +63,8 @@ int vboxClipboardSvcURIObjCtxInit(PVBOXCLIPBOARDCLIENTURIOBJCTX pObjCtx)
 void vboxClipboardSvcURIObjCtxUninit(PVBOXCLIPBOARDCLIENTURIOBJCTX pObjCtx)
 {
     AssertPtrReturnVoid(pObjCtx);
+
+    LogFlowFuncEnter();
 
     if (pObjCtx->pObj)
     {
@@ -121,10 +133,9 @@ void vboxClipboardSvcURITransferDestroy(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfe
 {
     AssertPtrReturnVoid(pTransfer);
 
-    vboxClipboardSvcURITransferReset(pTransfer);
+    LogFlowFuncEnter();
 
-    int rc2 = pTransfer->Cache.Close();
-    AssertRC(rc2);
+    vboxClipboardSvcURITransferReset(pTransfer);
 }
 
 /**
@@ -136,9 +147,28 @@ void vboxClipboardSvcURITransferReset(PVBOXCLIPBOARDCLIENTURITRANSFER pTransfer)
 {
     AssertPtrReturnVoid(pTransfer);
 
+    LogFlowFuncEnter();
+
     vboxClipboardSvcURIObjCtxUninit(&pTransfer->ObjCtx);
 
-    int rc2 = pTransfer->Cache.Rollback();
+    int rc2;
+
+    /* Do we need to detach from a previously attached clipboard area? */
+    const SHAREDCLIPBOARDAREAID uAreaID = pTransfer->Cache.GetAreaID();
+    if (uAreaID != NIL_SHAREDCLIPBOARDAREAID)
+    {
+        VBOXCLIPBOARDEXTAREAPARMS parms;
+        RT_ZERO(parms);
+        parms.uID = uAreaID;
+
+        rc2 = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
+        AssertRC(rc2);
+    }
+
+    rc2 = pTransfer->Cache.Rollback();
+    AssertRC(rc2);
+
+    rc2 = pTransfer->Cache.Close();
     AssertRC(rc2);
 
     SharedClipboardMetaDataDestroy(&pTransfer->Meta);
@@ -229,7 +259,34 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
         case VBOX_SHARED_CLIPBOARD_FN_READ_DATA_HDR:
         {
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_FN_READ_DATA_HDR\n"));
-            AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
+            if (cParms == VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA_HDR)
+            {
+                if (   RT_SUCCESS(rc)
+                    && g_pfnExtension)
+                {
+                    VBOXCLIPBOARDEXTAREAPARMS parms;
+                    RT_ZERO(parms);
+
+                    parms.uID = 0; /* 0 means most recent clipboard area. */
+
+                    /* The client now needs to attach to the most recent clipboard area
+                     * to keep a reference to it. The host does the actual book keeping / cleanup then. */
+                    rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH, &parms, sizeof(parms));
+                    if (RT_SUCCESS(rc))
+                    {
+
+                    }
+
+                    /* Do we need to detach again because we're done? */
+                    if (   RT_SUCCESS(rc))
+                    {
+                        RT_ZERO(parms);
+                        parms.uID = pTransfer->Cache.GetAreaID();
+
+                        rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
+                    }
+                }
+            }
             break;
         }
 
@@ -313,21 +370,26 @@ int vboxClipboardSvcURIHandler(uint32_t u32ClientID,
                     if (   RT_SUCCESS(rc)
                         && SharedClipboardMetaDataGetUsed(&pTransfer->Meta) == pTransfer->Hdr.cbMeta) /* Meta data transfer complete? */
                     {
-                        rc = pTransfer->List.SetFromURIData(SharedClipboardMetaDataRaw(&pTransfer->Meta),
-                                                            SharedClipboardMetaDataGetSize(&pTransfer->Meta),
-                                                            SHAREDCLIPBOARDURILIST_FLAGS_NONE);
+                              void  *pvMeta = SharedClipboardMetaDataMutableRaw(&pTransfer->Meta);
+                        const size_t cbMeta = SharedClipboardMetaDataGetSize(&pTransfer->Meta);
+
+                        rc = pTransfer->List.SetFromURIData(pvMeta, cbMeta, SHAREDCLIPBOARDURILIST_FLAGS_NONE);
+
+                        if (   RT_SUCCESS(rc)
+                            && g_pfnExtension)
+                        {
+                            VBOXCLIPBOARDEXTAREAPARMS parms;
+                            RT_ZERO(parms);
+
+                            parms.u.fn_register.pvData = pvMeta;
+                            parms.u.fn_register.cbData = cbMeta;
+
+                            /* As the meta data is now complete, register a new clipboard on the host side. */
+                            rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER, &parms, sizeof(parms));
+                        }
 
                         /* We're done processing the meta data, so just destroy it. */
                         SharedClipboardMetaDataDestroy(&pTransfer->Meta);
-
-                        /*
-                         * As we now have valid meta data, other parties can now acquire those and
-                         * request additional data as well.
-                         *
-                         * In case of file data, receiving and requesting now depends on the speed of
-                         * the actual source and target, i.e. the source might not be finished yet in receiving
-                         * the current object, while the target already requests (and maybe waits) for the data to arrive.
-                         */
                     }
                 }
             }

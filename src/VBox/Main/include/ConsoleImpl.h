@@ -765,7 +765,7 @@ private:
     static DECLCALLBACK(int) i_changeSerialPortAttachment(Console *pThis, PUVM pUVM,
                                                           ISerialPort *pSerialPort);
 
-    void i_changeClipboardMode(ClipboardMode_T aClipboardMode);
+    int i_changeClipboardMode(ClipboardMode_T aClipboardMode);
     int i_changeDnDMode(DnDMode_T aDnDMode);
 
 #ifdef VBOX_WITH_USB

@@ -22,6 +22,12 @@
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/GuestHost/SharedClipboard-uri.h>
 
+/**
+ * Initializes a clipboard meta data struct.
+ *
+ * @returns VBox status code.
+ * @param   pMeta               Meta data struct to initialize.
+ */
 int SharedClipboardMetaDataInit(PSHAREDCLIPBOARDMETADATA pMeta)
 {
     AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
@@ -35,6 +41,11 @@ int SharedClipboardMetaDataInit(PSHAREDCLIPBOARDMETADATA pMeta)
     return VINF_SUCCESS;
 }
 
+/**
+ * Destroys a clipboard meta data struct by free'ing all its data.
+ *
+ * @param   pMeta               Meta data struct to destroy.
+ */
 void SharedClipboardMetaDataDestroy(PSHAREDCLIPBOARDMETADATA pMeta)
 {
     AssertPtrReturnVoid(pMeta);
@@ -53,6 +64,12 @@ void SharedClipboardMetaDataDestroy(PSHAREDCLIPBOARDMETADATA pMeta)
     }
 }
 
+/**
+ * Adds new meta data to a meta data struct.
+ *
+ * @returns VBox status code.
+ * @param   pMeta               Meta data struct to add data to.
+ */
 int SharedClipboardMetaDataAdd(PSHAREDCLIPBOARDMETADATA pMeta, const void *pvDataAdd, uint32_t cbDataAdd)
 {
     AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
@@ -73,6 +90,14 @@ int SharedClipboardMetaDataAdd(PSHAREDCLIPBOARDMETADATA pMeta, const void *pvDat
     return cbDataAdd;
 }
 
+/**
+ * Resizes the data buffer of a meta data struct.
+ * Note: At the moment only supports growing the data buffer.
+ *
+ * @returns VBox status code.
+ * @param   pMeta               Meta data struct to resize.
+ * @param   cbNewSize           New size (in bytes) to use for resizing.
+ */
 int SharedClipboardMetaDataResize(PSHAREDCLIPBOARDMETADATA pMeta, size_t cbNewSize)
 {
     AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
@@ -85,6 +110,9 @@ int SharedClipboardMetaDataResize(PSHAREDCLIPBOARDMETADATA pMeta, size_t cbNewSi
 
     if (cbNewSize == pMeta->cbMeta)
         return VINF_SUCCESS;
+
+    if (cbNewSize > _32M) /* Meta data can be up to 32MB. */
+        return VERR_INVALID_PARAMETER;
 
     void *pvTmp = NULL;
     if (!pMeta->cbMeta)
@@ -109,18 +137,47 @@ int SharedClipboardMetaDataResize(PSHAREDCLIPBOARDMETADATA pMeta, size_t cbNewSi
     return VERR_NO_MEMORY;
 }
 
+/**
+ * Returns the actual used bytes of a meta data struct.
+ *
+ * @returns Actual used bytes of a meta data struct.
+ * @param   pMeta               Meta data struct to return used bytes for.
+ */
 size_t SharedClipboardMetaDataGetUsed(PSHAREDCLIPBOARDMETADATA pMeta)
 {
     AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
     return pMeta->cbUsed;
 }
 
+/**
+ * Returns the overall (allocated) size in bytes of a meta data struct.
+ *
+ * @returns Overall (allocated) size of a meta data struct.
+ * @param   pMeta               Meta data struct to return size for.
+ */
 size_t SharedClipboardMetaDataGetSize(PSHAREDCLIPBOARDMETADATA pMeta)
 {
     AssertPtrReturn(pMeta, VERR_INVALID_POINTER);
     return pMeta->cbMeta;
 }
 
+/**
+ * Returns the a mutable raw pointer to the actual meta data.
+ *
+ * @returns Mutable raw pointer to the actual meta data.
+ * @param   pMeta               Meta data struct to return mutable data pointer for.
+ */
+void *SharedClipboardMetaDataMutableRaw(PSHAREDCLIPBOARDMETADATA pMeta)
+{
+    return pMeta->pvMeta;
+}
+
+/**
+ * Returns the a const'ed raw pointer to the actual meta data.
+ *
+ * @returns Const'ed raw pointer to the actual meta data.
+ * @param   pMeta               Meta data struct to return const'ed data pointer for.
+ */
 const void *SharedClipboardMetaDataRaw(PSHAREDCLIPBOARDMETADATA pMeta)
 {
     return pMeta->pvMeta;

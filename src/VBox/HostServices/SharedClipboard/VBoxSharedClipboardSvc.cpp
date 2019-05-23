@@ -539,7 +539,7 @@ static DECLCALLBACK(void) svcCall(void *,
 
                         parms.u32Format = u32Formats;
 
-                        g_pfnExtension (g_pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof (parms));
+                        g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof (parms));
                     }
                     else
                     {
@@ -689,7 +689,7 @@ static DECLCALLBACK(void) svcCall(void *,
                             parms.u.pvData = pv;
                             parms.cbData = cb;
 
-                            g_pfnExtension (g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof (parms));
+                            g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof (parms));
                         }
                         else
                         {
@@ -774,10 +774,10 @@ static DECLCALLBACK(int) svcHostCall(void *,
             {
                 uint32_t u32Mode = VBOX_SHARED_CLIPBOARD_MODE_OFF;
 
-                rc = VBoxHGCMParmUInt32Get (&paParms[0], &u32Mode);
+                rc = VBoxHGCMParmUInt32Get(&paParms[0], &u32Mode);
 
                 /* The setter takes care of invalid values. */
-                vboxSvcClipboardModeSet (u32Mode);
+                vboxSvcClipboardModeSet(u32Mode);
             }
         } break;
 
@@ -788,11 +788,14 @@ static DECLCALLBACK(int) svcHostCall(void *,
             rc = VERR_INVALID_PARAMETER;
             if (cParms != 1)
                 break;
-            rc = VBoxHGCMParmUInt32Get (&paParms[0], &u32Headless);
+
+            rc = VBoxHGCMParmUInt32Get(&paParms[0], &u32Headless);
             if (RT_SUCCESS(rc))
                 LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, u32Headless=%u\n",
                             (unsigned) u32Headless));
+
             g_fHeadless = RT_BOOL(u32Headless);
+
         } break;
 
         default:

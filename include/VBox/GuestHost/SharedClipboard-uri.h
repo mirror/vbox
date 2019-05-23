@@ -37,6 +37,14 @@
 #include <iprt/cpp/list.h>
 #include <iprt/cpp/ministring.h>
 
+/** Clipboard area ID. A valid area is >= 1.
+ *  If 0 is specified, the last (most recent) area is meant.
+ *  Set to UINT32_MAX if not initialized. */
+typedef uint32_t SHAREDCLIPBOARDAREAID;
+
+/** Defines a non-initialized (nil) clipboard area. */
+#define NIL_SHAREDCLIPBOARDAREAID       UINT32_MAX
+
 /** SharedClipboardCache flags. */
 typedef uint32_t SHAREDCLIPBOARDCACHEFLAGS;
 
@@ -57,7 +65,8 @@ class SharedClipboardCache
 public:
 
     SharedClipboardCache(void);
-    SharedClipboardCache(const char *pszPath, SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
+    SharedClipboardCache(const char *pszPath, SHAREDCLIPBOARDAREAID uID = NIL_SHAREDCLIPBOARDAREAID,
+                         SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
     virtual ~SharedClipboardCache(void);
 
 public:
@@ -72,8 +81,11 @@ public:
     int AddDir(const char *pszDir);
     int Close(void);
     bool IsOpen(void) const;
-    int OpenEx(const char *pszPath, SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
-    int OpenTemp(SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
+    int OpenEx(const char *pszPath, SHAREDCLIPBOARDAREAID uID = NIL_SHAREDCLIPBOARDAREAID,
+               SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
+    int OpenTemp(SHAREDCLIPBOARDAREAID uID = NIL_SHAREDCLIPBOARDAREAID,
+                 SHAREDCLIPBOARDCACHEFLAGS fFlags = SHAREDCLIPBOARDCACHE_FLAGS_NONE);
+    SHAREDCLIPBOARDAREAID GetAreaID(void) const;
     const char *GetDirAbs(void) const;
     int Reopen(void);
     int Reset(bool fDeleteContent);
@@ -84,6 +96,7 @@ protected:
     int initInternal(void);
     int destroyInternal(void);
     int closeInternal(void);
+    int pathConstruct(const char *pszBase, char *pszPath, size_t cbPath);
 
 protected:
 
@@ -101,6 +114,8 @@ protected:
     RTCList<RTCString>           m_lstDirs;
     /** List for holding created files in the case of a rollback. */
     RTCList<RTCString>           m_lstFiles;
+    /** Associated clipboard area ID. */
+    SHAREDCLIPBOARDAREAID        m_uID;
 };
 
 int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath);
@@ -349,6 +364,7 @@ int SharedClipboardMetaDataAdd(PSHAREDCLIPBOARDMETADATA pMeta, const void *pvDat
 int SharedClipboardMetaDataResize(PSHAREDCLIPBOARDMETADATA pMeta, size_t cbNewSize);
 size_t SharedClipboardMetaDataGetUsed(PSHAREDCLIPBOARDMETADATA pMeta);
 size_t SharedClipboardMetaDataGetSize(PSHAREDCLIPBOARDMETADATA pMeta);
+void *SharedClipboardMetaDataMutableRaw(PSHAREDCLIPBOARDMETADATA pMeta);
 const void *SharedClipboardMetaDataRaw(PSHAREDCLIPBOARDMETADATA pMeta);
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_uri_h */

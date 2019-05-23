@@ -73,10 +73,13 @@
 #include <VBox/vmm/pdmdev.h> /* For PDMAPICMODE enum. */
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/version.h>
-#include <VBox/HostServices/VBoxClipboardSvc.h>
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+# include <VBox/HostServices/VBoxClipboardSvc.h>
+# include "SharedClipboardPrivate.h"
+#endif
 #ifdef VBOX_WITH_CROGL
 # include <VBox/HostServices/VBoxCrOpenGLSvc.h>
-#include <VBox/VBoxOGL.h>
+# include <VBox/VBoxOGL.h>
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
@@ -3074,37 +3077,47 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #endif /* VBOX_WITH_AUDIO_VALIDATIONKIT */
         }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
         /*
          * Shared Clipboard.
          */
         {
-            ClipboardMode_T mode = ClipboardMode_Disabled;
-            hrc = pMachine->COMGETTER(ClipboardMode)(&mode);                                H();
-
-            if (/* mode != ClipboardMode_Disabled */ true)
+            /* Load the service */
+            rc = pVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
+            if (RT_FAILURE(rc))
             {
-                /* Load the service */
-                rc = pVMMDev->hgcmLoadService("VBoxSharedClipboard", "VBoxSharedClipboard");
+                LogRel(("Shared clipboard is not available, rc=%Rrc\n", rc));
+                /* That is not a fatal failure. */
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+                HGCMSVCEXTHANDLE hDummy;
+                rc = HGCMHostRegisterServiceExtension(&hDummy, "VBoxSharedClipboard",
+                                                      &SharedClipboard::hostServiceCallback,
+                                                      SHAREDCLIPBOARDINST());
                 if (RT_FAILURE(rc))
-                {
-                    LogRel(("Shared clipboard is not available, rc=%Rrc\n", rc));
-                    /* That is not a fatal failure. */
-                    rc = VINF_SUCCESS;
-                }
-                else
+                    Log(("Cannot register VBoxSharedClipboard extension, rc=%Rrc\n", rc));
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+
+                if (RT_SUCCESS(rc))
                 {
                     LogRel(("Shared clipboard service loaded\n"));
 
-                    i_changeClipboardMode(mode);
+                    /* Set initial clipboard mode. */
+                    ClipboardMode_T mode = ClipboardMode_Disabled;
+                    hrc = pMachine->COMGETTER(ClipboardMode)(&mode); H();
+                    /* ignore rc, not fatal */ i_changeClipboardMode(mode);
 
                     /* Setup the service. */
                     VBOXHGCMSVCPARM parm;
                     HGCMSvcSetU32(&parm, !i_useHostClipboard());
-                    pVMMDev->hgcmHostCall("VBoxSharedClipboard",
-                                          VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
+                    SHAREDCLIPBOARDINST()->hostCall(VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
                 }
             }
         }
+#endif /* VBOX_WITH_SHARED_CLIPBOARD */
 
         /*
          * HGCM HostChannel.

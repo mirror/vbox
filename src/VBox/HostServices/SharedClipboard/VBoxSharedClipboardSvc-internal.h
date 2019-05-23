@@ -49,7 +49,8 @@ typedef struct _VBOXCLIPBOARDCLIENTURITRANSFER
 {
     /** Node for keeping this transfer in a RTList. */
     RTLISTNODE                     Node;
-    /** The transfer's own (local) cache. */
+    /** The transfer's own (local) cache.
+     *  The cache itself has a clipboard area ID assigned. */
     SharedClipboardCache           Cache;
     /** The transfer's URI list, containing the fs object root entries. */
     SharedClipboardURIList         List;
