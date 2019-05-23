@@ -194,7 +194,7 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
 
             asArgs.extend(self.asExtraArgs);
             reporter.log2('Starting guest FsPerf (%s)...' % (asArgs,));
-            fRc = self.oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 10 * 60 * 1000,
+            fRc = self.oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 30 * 60 * 1000,
                                           '${CDROM}/vboxvalidationkit/${OS/ARCH}/FsPerf${EXESUFF}', asArgs);
             reporter.log2('FsPerf -> %s' % (fRc,));
 
