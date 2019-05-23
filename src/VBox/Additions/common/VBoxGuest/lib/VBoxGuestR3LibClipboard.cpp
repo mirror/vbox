@@ -151,6 +151,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
     return rc;
 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
  * Reads the meta data header from the host.
  *
@@ -408,6 +409,7 @@ static int vbglR3ClipboardReadMetaDataMain(HGCMCLIENTID idClient, PVBGLR3GUESTDN
                                                &pMeta->cbMeta);
     return rc;
 }
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 /**
  * Reports (advertises) guest clipboard formats to the host.
