@@ -168,9 +168,22 @@ public:
 
     UISoftKeyboardRow(QWidget *pParent = 0);
     void updateLayout();
+    void setKeepAspectRatio(bool fKeepAspectRatio);
+
+    void setUnscaledWidth(int iWidth);
+    int unscaledWidth() const;
+
+    void setUnscaledHeight(int iWidth);
+    int unscaledHeight() const;
+
+    void addKey(UISoftKeyboardKey *pKey);
+
+private:
+
     int m_iWidth;
     int m_iHeight;
     QVector<UISoftKeyboardKey*> m_keys;
+    bool m_fKeepAspectRatio;
 };
 
 /*********************************************************************************************************************************
@@ -490,8 +503,38 @@ UISoftKeyboardRow::UISoftKeyboardRow(QWidget *pParent /* = 0 */)
     :QWidget(pParent)
     , m_iWidth(0)
     , m_iHeight(0)
-
+    , m_fKeepAspectRatio(false)
 {
+}
+
+void UISoftKeyboardRow::setKeepAspectRatio(bool fKeepAspectRatio)
+{
+    m_fKeepAspectRatio = fKeepAspectRatio;
+}
+
+void UISoftKeyboardRow::setUnscaledWidth(int iWidth)
+{
+    m_iWidth = iWidth;
+}
+
+int UISoftKeyboardRow::unscaledWidth() const
+{
+    return m_iWidth;
+}
+
+void UISoftKeyboardRow::setUnscaledHeight(int iHeight)
+{
+    m_iHeight = iHeight;
+}
+
+int UISoftKeyboardRow::unscaledHeight() const
+{
+    return m_iHeight;
+}
+
+void UISoftKeyboardRow::addKey(UISoftKeyboardKey *pKey)
+{
+    m_keys.append(pKey);
 }
 
 void UISoftKeyboardRow::updateLayout()
@@ -499,7 +542,12 @@ void UISoftKeyboardRow::updateLayout()
     if (m_iHeight == 0)
         return;
 
-    float fMultiplier = height() / (float)m_iHeight;
+
+    float fMultiplier = 1;
+    if (m_fKeepAspectRatio)
+        fMultiplier = height() / (float)m_iHeight;
+    else
+        fMultiplier = width() / (float)m_iWidth;
     int iX = 0;
     for (int i = 0; i < m_keys.size(); ++i)
     {
@@ -537,6 +585,7 @@ UISoftKeyboard::UISoftKeyboard(EmbedTo /* enmEmbedding */, QWidget *pParent,
     , m_strMachineName(strMachineName)
     , m_iTotalRowHeight(0)
     , m_iMaxRowWidth(0)
+    , m_fKeepAspectRatio(false)
 {
     prepareObjects();
     parseLayout();
@@ -677,21 +726,22 @@ void UISoftKeyboard::parseLayout()
     {
         UISoftKeyboardRow *pNewRow = new UISoftKeyboardRow(m_pContainerWidget);
         m_rows.push_back(pNewRow);
-        pNewRow->m_iHeight = layout.m_rows[i].m_iHeight;
+        pNewRow->setUnscaledHeight(layout.m_rows[i].m_iHeight);
+        pNewRow->setKeepAspectRatio(m_fKeepAspectRatio);
         m_iTotalRowHeight += layout.m_rows[i].m_iHeight;
-        pNewRow->m_iWidth = 0;
+        int iRowWidth = 0;
         for (int j = 0; j < layout.m_rows[i].m_keys.size(); ++j)
         {
             const SoftKeyboardKey &key = layout.m_rows[i].m_keys[j];
-            pNewRow->m_iWidth += key.m_iWidth;
-            pNewRow->m_iWidth += key.m_iSpaceAfter;
+            iRowWidth += key.m_iWidth;
+            iRowWidth += key.m_iSpaceAfter;
             UISoftKeyboardKey *pKey = new UISoftKeyboardKey(pNewRow);
             if (!pKey)
                 continue;
             connect(pKey, &UISoftKeyboardKey::pressed, this, &UISoftKeyboard::sltHandleKeyPress);
             connect(pKey, &UISoftKeyboardKey::released, this, &UISoftKeyboard::sltHandleKeyRelease);
             connect(pKey, &UISoftKeyboardKey::sigStateChanged, this, &UISoftKeyboard::sltHandleModifierStateChange);
-            pNewRow->m_keys.append(pKey);
+            pNewRow->addKey(pKey);
             pKey->setText(key.m_strLabel);
             pKey->setWidth(key.m_iWidth);
             pKey->setScanCode(key.m_scanCode);
@@ -700,7 +750,8 @@ void UISoftKeyboard::parseLayout()
             pKey->setType(key.m_enmType);
             pKey->hide();
         }
-        m_iMaxRowWidth = qMax(m_iMaxRowWidth, pNewRow->m_iWidth);
+        pNewRow->setUnscaledWidth(iRowWidth);
+        m_iMaxRowWidth = qMax(m_iMaxRowWidth, pNewRow->unscaledWidth());
     }
 }
 
@@ -712,10 +763,13 @@ void UISoftKeyboard::updateLayout()
     QSize containerSize(m_pContainerWidget->size());
     if (containerSize.width() == 0 || containerSize.height() == 0)
         return;
-    float fMultiplier = containerSize.width() / (float) m_iMaxRowWidth;
+
+    float fMultiplierX = containerSize.width() / (float) m_iMaxRowWidth;
+    float fMultiplierY = containerSize.height() / (float) m_iTotalRowHeight;
+    float fMultiplier = fMultiplierX;
 
     if (fMultiplier * m_iTotalRowHeight > containerSize.height())
-        fMultiplier = containerSize.height() / (float) m_iTotalRowHeight;
+        fMultiplier = fMultiplierY;
 
     int y = 0;
     int totalHeight = 0;
@@ -725,13 +779,26 @@ void UISoftKeyboard::updateLayout()
         UISoftKeyboardRow *pRow = m_rows[i];
         if (!pRow)
             continue;
-        pRow->setGeometry(0, y, fMultiplier * pRow->m_iWidth, fMultiplier * pRow->m_iHeight);
-        pRow->setVisible(true);
-        y += fMultiplier * pRow->m_iHeight;
-        totalWidth += fMultiplier * pRow->m_iWidth;
-        totalHeight += fMultiplier * pRow->m_iHeight;
+        if(m_fKeepAspectRatio)
+        {
+            pRow->setGeometry(0, y, fMultiplier * pRow->unscaledWidth(), fMultiplier * pRow->unscaledHeight());
+            pRow->setVisible(true);
+            y += fMultiplier * pRow->unscaledHeight();
+            totalWidth += fMultiplier * pRow->unscaledWidth();
+            totalHeight += fMultiplier * pRow->unscaledHeight();
+        }
+        else
+        {
+            pRow->setGeometry(0, y, fMultiplierX * pRow->unscaledWidth(), fMultiplierY * pRow->unscaledHeight());
+            pRow->setVisible(true);
+            y += fMultiplierY * pRow->unscaledHeight();
+            totalWidth += fMultiplierX * pRow->unscaledWidth();
+            totalHeight += fMultiplierY * pRow->unscaledHeight();
+        }
         pRow->updateLayout();
     }
+    if (m_rows.size() > 0)
+        printf("row 0 width %d\n", m_rows[0]->size().width());
 }
 
 CKeyboard& UISoftKeyboard::keyboard() const

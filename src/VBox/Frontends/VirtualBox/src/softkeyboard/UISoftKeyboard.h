@@ -84,6 +84,7 @@ private:
     int           m_iTotalRowHeight;
     int           m_iMaxRowWidth;
     QVector<UISoftKeyboardKey*> m_pressedModifiers;
+    bool          m_fKeepAspectRatio;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_softkeyboard_UISoftKeyboard_h */
