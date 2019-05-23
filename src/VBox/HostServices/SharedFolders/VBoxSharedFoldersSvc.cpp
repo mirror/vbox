@@ -39,7 +39,8 @@
 *********************************************************************************************************************************/
 #define SHFL_SAVED_STATE_VERSION_FOLDERNAME_UTF16       2
 #define SHFL_SAVED_STATE_VERSION_PRE_AUTO_MOUNT_POINT   3
-#define SHFL_SAVED_STATE_VERSION                        4
+#define SHFL_SAVED_STATE_VERSION_PRE_ERROR_STYLE        4
+#define SHFL_SAVED_STATE_VERSION                        5
 
 
 /*********************************************************************************************************************************
@@ -91,6 +92,7 @@ static STAMPROFILE g_StatRename;
 static STAMPROFILE g_StatRenameFail;
 static STAMPROFILE g_StatFlush;
 static STAMPROFILE g_StatFlushFail;
+static STAMPROFILE g_StatSetErrorStyle;
 static STAMPROFILE g_StatSetUtf8;
 static STAMPROFILE g_StatSetFileSize;
 static STAMPROFILE g_StatSetFileSizeFail;
@@ -169,6 +171,7 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
     Log(("SharedFolders host service: connected, u32ClientID = %u\n", u32ClientID));
 
     pClient->fHasMappingCounts = true;
+    pClient->enmErrorStyle = SHFLERRORSTYLE_NATIVE;
     return VINF_SUCCESS;
 }
 
@@ -256,16 +259,18 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     RT_NOREF(u32ClientID, uVersion);
     uint32_t        nrMappings;
     SHFLCLIENTDATA *pClient = (SHFLCLIENTDATA *)pvClient;
-    uint32_t        len, version;
+    uint32_t        len;
 
     Log(("SharedFolders host service: loading state, u32ClientID = %u\n", u32ClientID));
 
-    int rc = SSMR3GetU32(pSSM, &version);
+    uint32_t uShfVersion = 0;
+    int rc = SSMR3GetU32(pSSM, &uShfVersion);
     AssertRCReturn(rc, rc);
 
-    if (   version > SHFL_SAVED_STATE_VERSION
-        || version < SHFL_SAVED_STATE_VERSION_FOLDERNAME_UTF16)
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    if (   uShfVersion > SHFL_SAVED_STATE_VERSION
+        || uShfVersion < SHFL_SAVED_STATE_VERSION_FOLDERNAME_UTF16)
+        return SSMR3SetLoadError(pSSM, VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION, RT_SRC_POS,
+                                 "Unknown shared folders state version %u!", uShfVersion);
 
     rc = SSMR3GetU32(pSSM, &nrMappings);
     AssertRCReturn(rc, rc);
@@ -280,13 +285,22 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
         pClient->fHasMappingCounts = false;
     else if (len != sizeof(*pClient))
         return SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
-                                 "Saved SHFLCLIENTDATA size %u differs from current %u!\n", len, sizeof(*pClient));
+                                 "Saved SHFLCLIENTDATA size %u differs from current %u!", len, sizeof(*pClient));
 
     rc = SSMR3GetMem(pSSM, pClient, len);
     AssertRCReturn(rc, rc);
 
+    /* For older saved state, use the default native error style, otherwise
+       check that the restored value makes sense to us. */
+    if (uShfVersion <= SHFL_SAVED_STATE_VERSION_PRE_ERROR_STYLE)
+        pClient->enmErrorStyle = SHFLERRORSTYLE_NATIVE;
+    else if (   pClient->enmErrorStyle <= kShflErrorStyle_Invalid
+             || pClient->enmErrorStyle >= kShflErrorStyle_End)
+        return SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                 "Saved SHFLCLIENTDATA enmErrorStyle value %d is not known/valid!", pClient->enmErrorStyle);
+
     /* We don't actually (fully) restore the state; we simply check if the current state is as we it expect it to be. */
-    for (int i=0;i<SHFL_MAX_MAPPINGS;i++)
+    for (size_t i = 0; i < SHFL_MAX_MAPPINGS; i++)
     {
         /* Load the saved mapping description and try to find it in the mappings. */
         MAPPING mapping;
@@ -301,17 +315,16 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
         if (mapping.fValid)
         {
-            uint32_t cb;
-
             /* Load the host path name. */
+            uint32_t cb;
             rc = SSMR3GetU32(pSSM, &cb);
             AssertRCReturn(rc, rc);
 
             char *pszFolderName;
-            if (version == SHFL_SAVED_STATE_VERSION_FOLDERNAME_UTF16)
+            if (uShfVersion == SHFL_SAVED_STATE_VERSION_FOLDERNAME_UTF16) /* (See version range check above.) */
             {
                 AssertReturn(cb > SHFLSTRING_HEADER_SIZE && cb <= UINT16_MAX + SHFLSTRING_HEADER_SIZE && !(cb & 1),
-                             SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS, "Bad folder name size: %#x\n", cb));
+                             SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS, "Bad folder name size: %#x", cb));
                 PSHFLSTRING pFolderName = (PSHFLSTRING)RTMemAlloc(cb);
                 AssertReturn(pFolderName != NULL, VERR_NO_MEMORY);
 
@@ -319,7 +332,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
                 AssertRCReturn(rc, rc);
                 AssertReturn(pFolderName->u16Size < cb && pFolderName->u16Length < pFolderName->u16Size,
                              SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
-                                               "Bad folder name string: %#x/%#x cb=%#x\n",
+                                               "Bad folder name string: %#x/%#x cb=%#x",
                                                pFolderName->u16Size, pFolderName->u16Length, cb));
 
                 rc = RTUtf16ToUtf8(pFolderName->String.ucs2, &pszFolderName);
@@ -340,7 +353,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             rc = SSMR3GetU32(pSSM, &cb);
             AssertRCReturn(rc, rc);
             AssertReturn(cb > SHFLSTRING_HEADER_SIZE && cb <= UINT16_MAX + SHFLSTRING_HEADER_SIZE && !(cb & 1),
-                         SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS, "Bad map name size: %#x\n", cb));
+                         SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS, "Bad map name size: %#x", cb));
 
             PSHFLSTRING pMapName = (PSHFLSTRING)RTMemAlloc(cb);
             AssertReturn(pMapName != NULL, VERR_NO_MEMORY);
@@ -349,7 +362,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             AssertRCReturn(rc, rc);
             AssertReturn(pMapName->u16Size < cb && pMapName->u16Length < pMapName->u16Size,
                          SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
-                                           "Bad map name string: %#x/%#x cb=%#x\n",
+                                           "Bad map name string: %#x/%#x cb=%#x",
                                            pMapName->u16Size, pMapName->u16Length, cb));
 
             /* Load case sensitivity config. */
@@ -361,12 +374,12 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
             /* Load the auto mount point. */
             PSHFLSTRING pAutoMountPoint;
-            if (version > SHFL_SAVED_STATE_VERSION_PRE_AUTO_MOUNT_POINT)
+            if (uShfVersion > SHFL_SAVED_STATE_VERSION_PRE_AUTO_MOUNT_POINT)
             {
                 rc = SSMR3GetU32(pSSM, &cb);
                 AssertRCReturn(rc, rc);
                 AssertReturn(cb > SHFLSTRING_HEADER_SIZE && cb <= UINT16_MAX + SHFLSTRING_HEADER_SIZE && !(cb & 1),
-                             SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS, "Bad auto mount point size: %#x\n", cb));
+                             SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS, "Bad auto mount point size: %#x", cb));
 
                 pAutoMountPoint = (PSHFLSTRING)RTMemAlloc(cb);
                 AssertReturn(pAutoMountPoint != NULL, VERR_NO_MEMORY);
@@ -375,7 +388,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
                 AssertRCReturn(rc, rc);
                 AssertReturn(pAutoMountPoint->u16Size < cb && pAutoMountPoint->u16Length < pAutoMountPoint->u16Size,
                              SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
-                                               "Bad auto mount point string: %#x/%#x cb=%#x\n",
+                                               "Bad auto mount point string: %#x/%#x cb=%#x",
                                                pAutoMountPoint->u16Size, pAutoMountPoint->u16Length, cb));
 
             }
@@ -1568,6 +1581,24 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             break;
         }
 
+        case SHFL_FN_SET_ERROR_STYLE:
+        {
+            pStatFail = pStat = &g_StatSetErrorStyle;
+
+            /* Validate input: */
+            ASSERT_GUEST_STMT_BREAK(cParms == SHFL_CPARMS_SET_ERROR_STYLE, rc = VERR_WRONG_PARAMETER_COUNT);
+            ASSERT_GUEST_STMT_BREAK(paParms[0].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* enm32Style  */
+            ASSERT_GUEST_STMT_BREAK(   paParms[0].u.uint32 > (uint32_t)kShflErrorStyle_Invalid
+                                    && paParms[0].u.uint32 < (uint32_t)kShflErrorStyle_End, rc = VERR_WRONG_PARAMETER_TYPE);
+            ASSERT_GUEST_STMT_BREAK(paParms[1].type == VBOX_HGCM_SVC_PARM_32BIT, rc = VERR_WRONG_PARAMETER_TYPE); /* u32Reserved */
+            ASSERT_GUEST_STMT_BREAK(paParms[1].u.uint32 == 0, rc = VERR_WRONG_PARAMETER_TYPE);
+
+            /* Do the work: */
+            pClient->enmErrorStyle = (uint8_t)paParms[0].u.uint32;
+            rc = VINF_SUCCESS;
+            break;
+        }
+
         default:
         {
             pStatFail = pStat = &g_StatUnknown;
@@ -1872,6 +1903,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatRenameFail,                STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_RENAME failures",                   "/HGCM/VBoxSharedFolders/FnRenameFail");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatFlush,                     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_FLUSH successes",                   "/HGCM/VBoxSharedFolders/FnFlush");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatFlushFail,                 STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_FLUSH failures",                    "/HGCM/VBoxSharedFolders/FnFlushFail");
+             HGCMSvcHlpStamRegister(g_pHelpers, &g_StatSetErrorStyle,             STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_SET_ERROR_STYLE",                   "/HGCM/VBoxSharedFolders/FnSetErrorStyle");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatSetUtf8,                   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_SET_UTF8",                          "/HGCM/VBoxSharedFolders/FnSetUtf8");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatSymlink,                   STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_SYMLINK successes",                 "/HGCM/VBoxSharedFolders/FnSymlink");
              HGCMSvcHlpStamRegister(g_pHelpers, &g_StatSymlinkFail,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_CALLS, "SHFL_FN_SYMLINK failures",                  "/HGCM/VBoxSharedFolders/FnSymlinkFail");

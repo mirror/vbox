@@ -26,39 +26,35 @@
 
 #include <VBox/log.h>
 
-/**
- * Shared Folders client flags.
+/** Shared Folders client flags.
  * @{
  */
-
-/** Client has queried mappings at least once and, therefore,
- *  the service can process its other requests too.
- */
+/** Client has queried mappings at least once and, therefore, the service can
+ * process its other requests too. */
 #define SHFL_CF_MAPPINGS_QUERIED (0x00000001)
-
 /** Mappings have been changed since last query. */
 #define SHFL_CF_MAPPINGS_CHANGED (0x00000002)
-
 /** Client uses UTF8 encoding, if not set then unicode 16 bit (UCS2) is used. */
 #define SHFL_CF_UTF8             (0x00000004)
-
 /** Client both supports and wants to use symlinks. */
 #define SHFL_CF_SYMLINKS         (0x00000008)
-
 /** The call to SHFL_FN_WAIT_FOR_MAPPINGS_CHANGES will return immediately
  *  because of a SHFL_FN_CANCEL_MAPPINGS_CHANGES_WAITS call. */
 #define SHFL_CF_CANCEL_NEXT_WAIT (0x00000010)
-
 /** @} */
 
-typedef struct _SHFLCLIENTDATA
+/**
+ * @note This structure is dumped directly into the saved state, so care must be
+ *       taken when extending it!
+ */
+typedef struct SHFLCLIENTDATA
 {
     /** Client flags */
     uint32_t fu32Flags;
     /** Path delimiter. */
     RTUTF16  PathDelimiter;
-    /** Currently unused.   */
-    uint8_t  bPadding;
+    /** The error style, SHFLERRORSTYLE. */
+    uint8_t  enmErrorStyle;
     /** Set if the client has mapping usage counts.
      * This is for helping with saved state. */
     uint8_t  fHasMappingCounts;
