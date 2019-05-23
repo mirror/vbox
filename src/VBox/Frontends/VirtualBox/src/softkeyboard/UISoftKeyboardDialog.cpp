@@ -108,14 +108,14 @@ void UISoftKeyboardDialog::loadSettings()
 {
     const QRect desktopRect = gpDesktop->availableGeometry(this);
     int iDefaultWidth = desktopRect.width() / 2;
-    int iDefaultHeight = desktopRect.height() * 3 / 4;
+    int iDefaultHeight = 0.5 * iDefaultWidth;
 
     QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
     if (centerWidget())
         defaultGeometry.moveCenter(centerWidget()->geometry().center());
 
     /* Load geometry from extradata: */
-    QRect geometry = gEDataManager->guestProcessControlDialogGeometry(this, defaultGeometry);
+    QRect geometry = gEDataManager->softKeyboardDialogGeometry(this, defaultGeometry);
 
     /* Restore geometry: */
     LogRel2(("GUI: UISoftKeyboardDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
@@ -130,17 +130,17 @@ void UISoftKeyboardDialog::saveSettings() const
 #ifdef VBOX_WS_MAC
     /* darwinIsWindowMaximized expects a non-const QWidget*. thus const_cast: */
     QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
-    gEDataManager->setGuestProcessControlDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
+    gEDataManager->setSoftKeyboardDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
 #else /* !VBOX_WS_MAC */
-    gEDataManager->setGuestProcessControlDialogGeometry(saveGeometry, isMaximized());
+    gEDataManager->setSoftKeyboardDialogGeometry(saveGeometry, isMaximized());
 #endif /* !VBOX_WS_MAC */
-    LogRel2(("GUI: Guest Process Control Dialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
+    LogRel2(("GUI: Soft Keyboard Dialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
              saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
 }
 
 bool UISoftKeyboardDialog::shouldBeMaximized() const
 {
-    return gEDataManager->guestProcessControlDialogShouldBeMaximized();
+    return gEDataManager->softKeyboardDialogShouldBeMaximized();
 }
 
 void UISoftKeyboardDialog::sltSetCloseButtonShortCut(QKeySequence shortcut)

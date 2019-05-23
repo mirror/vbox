@@ -670,6 +670,13 @@ public:
         QStringList fileManagerVisiblePanels();
     /** @} */
 
+    /** @name Soft Keyboard
+      * @{ */
+        QRect softKeyboardDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry);
+        void setSoftKeyboardDialogGeometry(const QRect &geometry, bool fMaximized);
+        bool softKeyboardDialogShouldBeMaximized();
+    /** @} */
+
     /** @name File Manager options
       * @{ */
         void setFileManagerOptions(bool fListDirectoriesFirst,

@@ -635,14 +635,13 @@ void UISoftKeyboard::prepareObjects()
 {
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     /* Create layout: */
-
     m_pMainLayout = new QHBoxLayout(this);
     if (!m_pMainLayout)
         return;
     m_pContainerWidget = new QWidget;
     if (!m_pContainerWidget)
         return;
-    m_pContainerWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    //m_pContainerWidget->setStyleSheet("background-color:red;");
     m_pMainLayout->addWidget(m_pContainerWidget);
 }
 
@@ -719,6 +718,8 @@ void UISoftKeyboard::updateLayout()
         fMultiplier = containerSize.height() / (float) m_iTotalRowHeight;
 
     int y = 0;
+    int totalHeight = 0;
+    int totalWidth = 0;
     for (int i = 0; i < m_rows.size(); ++i)
     {
         UISoftKeyboardRow *pRow = m_rows[i];
@@ -727,9 +728,10 @@ void UISoftKeyboard::updateLayout()
         pRow->setGeometry(0, y, fMultiplier * pRow->m_iWidth, fMultiplier * pRow->m_iHeight);
         pRow->setVisible(true);
         y += fMultiplier * pRow->m_iHeight;
-         pRow->updateLayout();
+        totalWidth += fMultiplier * pRow->m_iWidth;
+        totalHeight += fMultiplier * pRow->m_iHeight;
+        pRow->updateLayout();
     }
-    update();
 }
 
 CKeyboard& UISoftKeyboard::keyboard() const

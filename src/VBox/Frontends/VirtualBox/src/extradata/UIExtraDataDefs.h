@@ -381,6 +381,11 @@ namespace UIExtraDataDefs
         extern const char *GUI_GuestControl_ProcessControlDialogGeometry;
     /** @} */
 
+    /** @name Soft Keyboard related data
+      * @{ */
+        extern const char *GUI_SoftKeyboard_DialogGeometry;
+    /** @} */
+
     /** @name File Manager options
       * @{ */
         extern const char *GUI_GuestControl_FileManagerOptions;

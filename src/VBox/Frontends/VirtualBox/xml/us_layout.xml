@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <layout>
     <row>
-        <height>50</height>
+        <height>40</height>
         <key>
             <width>50</width>
             <label>Esc</label>
@@ -94,7 +94,7 @@
         </key>
     </row>
     <row>
-        <height>50</height>
+        <height>40</height>
         <key>
             <width>50</width>
             <label>~</label>
@@ -194,7 +194,7 @@
         </key>
     </row>
     <row>
-        <height>50</height>
+        <height>40</height>
         <key>
             <width>70</width>
             <label>Tab</label>
@@ -285,7 +285,7 @@
     </row>
 
     <row>
-        <height>50</height>
+        <height>40</height>
         <key>
             <width>70</width>
             <label>CapsLock</label>
@@ -369,7 +369,7 @@
         </key>
     </row>
     <row>
-        <height>50</height>
+        <height>40</height>
         <key>
             <width>115</width>
             <label>Shift</label>
@@ -450,7 +450,7 @@
     </row>
 
     <row>
-        <height>50</height>
+        <height>40</height>
         <key>
             <width>90</width>
             <label>Ctrl</label>
