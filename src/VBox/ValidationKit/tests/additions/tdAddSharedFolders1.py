@@ -156,7 +156,6 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
         #
         # Run FsPerf inside the guest.
         #
-        reporter.testStart('FsPerf');
         fSkip = 'fsperf' not in self.asTests;
         if fSkip is False:
             cMbFree = utils.getDiskUsage(sSharedFolder1);
@@ -192,6 +191,16 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
             if cbMbRam >= 768:
                 asArgs.append('--add-block-size=134217728'); # 128 MiB
 
+            # Putting lots (10000) of files in a single directory causes issues on OS X
+            # (HFS+ presumably, though could be slow disks) and some linuxes (slow disks,
+            # maybe ext2/3?).  So, generally reduce the file count to 4096 everywhere
+            # since we're not here to test the host file systems, and 3072 on macs.
+            if utils.getHostOs() in [ 'darwin', ]:
+                asArgs.append('--many-files=3072');
+            elif utils.getHostOs() in [ 'linux', ]:
+                asArgs.append('--many-files=4096');
+
+            # Add the extra arguments from the command line and kick it off:
             asArgs.extend(self.asExtraArgs);
             reporter.log2('Starting guest FsPerf (%s)...' % (asArgs,));
             fRc = self.oTstDrv.txsRunTest(oTxsSession, 'FsPerf', 30 * 60 * 1000,
@@ -203,9 +212,9 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
                 fRc = reporter.errorXcpt('test directory lingers: %s' % (sTestDir,));
                 try:    shutil.rmtree(sTestDir);
                 except: fRc = reporter.errorXcpt('shutil.rmtree(%s)' % (sTestDir,));
-
-        reporter.testDone(fSkip or fRc is None);
-
+        else:
+            reporter.testStart('FsPerf');
+            reporter.testDone(fSkip or fRc is None);
 
         return (fRc, oTxsSession);
 
