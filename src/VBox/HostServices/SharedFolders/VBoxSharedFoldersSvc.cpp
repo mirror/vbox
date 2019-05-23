@@ -300,7 +300,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
                                  "Saved SHFLCLIENTDATA enmErrorStyle value %d is not known/valid!", pClient->enmErrorStyle);
 
     /* We don't actually (fully) restore the state; we simply check if the current state is as we it expect it to be. */
-    for (size_t i = 0; i < SHFL_MAX_MAPPINGS; i++)
+    for (SHFLROOT i = 0; i < SHFL_MAX_MAPPINGS; i++)
     {
         /* Load the saved mapping description and try to find it in the mappings. */
         MAPPING mapping;
@@ -403,7 +403,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             mapping.pAutoMountPoint = pAutoMountPoint;
 
             /* 'i' is the root handle of the saved mapping. */
-            rc = vbsfMappingLoaded (&mapping, i);
+            rc = vbsfMappingLoaded(&mapping, i);
             if (RT_FAILURE(rc))
             {
                 LogRel(("SharedFolders host service: %Rrc loading %d [%ls] -> [%s]\n",
