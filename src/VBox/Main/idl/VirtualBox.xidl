@@ -25624,10 +25624,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   //////////////////////////////////////////////////////////////////////////
   -->
   <enum name="FormValueType"
-        uuid="56ad9e8e-3e78-11e9-b661-bfeead3ff066">
+        uuid="43d794a0-7c98-11e9-a346-a36d5fa858a5">
     <const name="Boolean" value="0"/>
     <const name="String" value="1"/>
     <const name="Choice" value="2"/>
+    <const name="RangedInteger" value="3"/>
   </enum>
 
   <interface name="IFormValue" extends="$unknown"
@@ -25652,6 +25653,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
     <method name="setSelected">
       <param name="selected" type="boolean" dir="in"/>
+      <param name="progress" type="IProgress" dir="return"/>
+    </method>
+  </interface>
+
+  <interface name="IRangedIntegerFormValue" extends="IFormValue"
+             uuid="b31c4052-7bdc-11e9-8bc2-8ffdb8b19219"
+             wsmap="managed"
+             reservedMethods="4" reservedAttributes="4">
+    <attribute name="minimum" type="long" readonly="yes"/>
+    <attribute name="maximum" type="long" readonly="yes"/>
+    <method name="getInteger">
+      <param name="value" type="long" dir="return"/>
+    </method>
+    <method name="setInteger">
+      <param name="value" type="long" dir="in"/>
       <param name="progress" type="IProgress" dir="return"/>
     </method>
   </interface>
