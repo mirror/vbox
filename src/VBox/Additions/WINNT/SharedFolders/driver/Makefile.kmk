@@ -71,9 +71,11 @@ VBoxSF_CLEAN = \
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
+$(call KB_FN_AUTO_CMD_DEPS,$(VBoxSF_0_OUTDIR)/rdbsslib.lib)
 ifeq ($(KBUILD_TARGET_ARCH),x86)
 $(VBoxSF_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib | $$(dir $$@) $(VBOX_EDIT_COFF_LIB)
-	$(VBOX_EDIT_COFF_LIB) --input "$<" --output "$@" \
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(VBOX_EDIT_COFF_LIB) --input "$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib" --output "$@" \
 		--select "write.obj" \
                --redefine-sym "__imp__CcFlushCache@16=_g_pfnWrFlushCache" \
                --redefine-sym "__imp__CcPurgeCacheSection@16=_g_pfnWrPurgeCacheSection" \
@@ -81,7 +83,8 @@ $(VBoxSF_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_W2K3)_LIB.$(KBUIL
                --redefine-sym "__imp__CcFlushCache@16=_g_pfnRdFlushCache"
 else
 $(VBoxSF_0_OUTDIR)/rdbsslib.lib: $$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib | $$(dir $$@) $(VBOX_EDIT_COFF_LIB)
-	$(VBOX_EDIT_COFF_LIB) --input "$<" --output "$@" -v -v -v -v -v -v \
+	$(call KB_FN_AUTO_CMD_DEPS_COMMANDS)
+	$(VBOX_EDIT_COFF_LIB) --input "$(PATH_SDK_$(VBOX_WINDDK_GST_WLH)_LIB.$(KBUILD_TARGET_ARCH))/rdbsslib.lib" --output "$@" \
 		--select "write.obj" \
                --redefine-sym "__imp_CcFlushCache=g_pfnWrFlushCache" \
                --redefine-sym "__imp_CcPurgeCacheSection=g_pfnWrPurgeCacheSection" \
