@@ -287,7 +287,7 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*     8 */ RT_UOFFSETOF(VMXVVMCS, u64GuestPdpte3),
         /*     9 */ RT_UOFFSETOF(VMXVVMCS, u64GuestBndcfgsMsr),
         /*    10 */ RT_UOFFSETOF(VMXVVMCS, u64GuestRtitCtlMsr),
-        /* 11-18 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
+        /* 11-18 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX,
         /* 19-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCS_ENC_WIDTH_64BIT | VMX_VMCS_ENC_TYPE_HOST_STATE: */
@@ -1400,15 +1400,15 @@ IEM_STATIC VMXVDIAG iemVmxGetDiagVmexitPdpteRsvd(unsigned iPdpte)
 
 
 /**
- * Masks the nested-guest CR0/CR4 mask subjected to the corresponding guest/host
- * mask and the read-shadow (CR0/CR4 read).
+ * Gets the masked nested-guest CR0/CR4 subject to the corresponding guest/host mask
+ * and the CR0/CR4 read-shadow.
  *
- * @returns The masked CR0/CR4.
+ * @returns The masked nested-guest CR0/CR4.
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   iCrReg      The control register (either CR0 or CR4).
  * @param   uGuestCrX   The current guest CR0 or guest CR4.
  */
-IEM_STATIC uint64_t iemVmxMaskCr0CR4(PVMCPU pVCpu, uint8_t iCrReg, uint64_t uGuestCrX)
+IEM_STATIC uint64_t iemVmxGetMaskedCr0Cr4(PVMCPU pVCpu, uint8_t iCrReg, uint64_t uGuestCrX)
 {
     Assert(IEM_VMX_IS_NON_ROOT_MODE(pVCpu));
     Assert(iCrReg == 0 || iCrReg == 4);

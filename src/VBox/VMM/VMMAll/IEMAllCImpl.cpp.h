@@ -5444,7 +5444,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
             case 4:
             {
                 /* CR0/CR4 reads are subject to masking when in VMX non-root mode. */
-                crX = iemVmxMaskCr0CR4(pVCpu, iCrReg, crX);
+                crX = iemVmxGetMaskedCr0Cr4(pVCpu, iCrReg, crX);
                 break;
             }
 
@@ -5483,7 +5483,7 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_reg, uint8_t, iGReg, uint8_t, enmEffOpSize)
     uint64_t u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-        u64GuestCr0 = iemVmxMaskCr0CR4(pVCpu, 0 /* iCrReg */, u64GuestCr0);
+        u64GuestCr0 = iemVmxGetMaskedCr0Cr4(pVCpu, 0 /* iCrReg */, u64GuestCr0);
 #endif
 
     switch (enmEffOpSize)
@@ -5527,7 +5527,7 @@ IEM_CIMPL_DEF_2(iemCImpl_smsw_mem, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
     uint64_t u64GuestCr0 = pVCpu->cpum.GstCtx.cr0;
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
-        u64GuestCr0 = iemVmxMaskCr0CR4(pVCpu, 0 /* iCrReg */, u64GuestCr0);
+        u64GuestCr0 = iemVmxGetMaskedCr0Cr4(pVCpu, 0 /* iCrReg */, u64GuestCr0);
 #endif
 
     uint16_t u16Value;
