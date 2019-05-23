@@ -721,7 +721,6 @@ void UISoftKeyboard::parseLayout()
     m_iMaxRowWidth = 0;
     qDeleteAll(m_rows);
     m_rows.clear();
-
     for (int i = 0; i < layout.m_rows.size(); ++i)
     {
         UISoftKeyboardRow *pNewRow = new UISoftKeyboardRow(m_pContainerWidget);
@@ -797,8 +796,6 @@ void UISoftKeyboard::updateLayout()
         }
         pRow->updateLayout();
     }
-    if (m_rows.size() > 0)
-        printf("row 0 width %d\n", m_rows[0]->size().width());
 }
 
 CKeyboard& UISoftKeyboard::keyboard() const
