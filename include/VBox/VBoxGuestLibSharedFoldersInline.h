@@ -195,6 +195,50 @@ DECLINLINE(int) VbglR0SfHostReqSetSymlinksSimple(void)
 }
 
 
+/** Request structure for VbglR0SfHostReqSetErrorStyle.  */
+typedef struct VBOXSFSETERRORSTYLE
+{
+    VBGLIOCIDCHGCMFASTCALL  Hdr;
+    VMMDevHGCMCall          Call;
+    VBoxSFParmSetErrorStyle Parms;
+} VBOXSFSETERRORSTYLE;
+
+/**
+ * SHFL_FN_QUERY_FEATURES request.
+ */
+DECLINLINE(int) VbglR0SfHostReqSetErrorStyle(VBOXSFSETERRORSTYLE *pReq, SHFLERRORSTYLE enmStyle)
+{
+    VBGLIOCIDCHGCMFASTCALL_INIT(&pReq->Hdr, VbglR0PhysHeapGetPhysAddr(pReq), &pReq->Call, g_SfClient.idClient,
+                                SHFL_FN_SET_ERROR_STYLE, SHFL_CPARMS_SET_ERROR_STYLE, sizeof(*pReq));
+
+    pReq->Parms.u32Style.type           = VMMDevHGCMParmType_32bit;
+    pReq->Parms.u32Style.u.value32      = (uint32_t)enmStyle;
+
+    pReq->Parms.u32Reserved.type        = VMMDevHGCMParmType_32bit;
+    pReq->Parms.u32Reserved.u.value32   = 0;
+
+    int vrc = VbglR0HGCMFastCall(g_SfClient.handle, &pReq->Hdr, sizeof(*pReq));
+    if (RT_SUCCESS(vrc))
+        vrc = pReq->Call.header.result;
+    return vrc;
+}
+
+/**
+ * SHFL_FN_QUERY_FEATURES request, simplified version.
+ */
+DECLINLINE(int) VbglR0SfHostReqSetErrorStyleSimple(SHFLERRORSTYLE enmStyle)
+{
+    VBOXSFSETERRORSTYLE *pReq = (VBOXSFSETERRORSTYLE *)VbglR0PhysHeapAlloc(sizeof(*pReq));
+    if (pReq)
+    {
+        int rc = VbglR0SfHostReqSetErrorStyle(pReq, enmStyle);
+        VbglR0PhysHeapFree(pReq);
+        return rc;
+    }
+    return VERR_NO_MEMORY;
+}
+
+
 /** Request structure for VbglR0SfHostReqMapFolderWithBuf.  */
 typedef struct VBOXSFMAPFOLDERWITHBUFREQ
 {

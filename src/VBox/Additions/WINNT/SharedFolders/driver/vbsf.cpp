@@ -1664,14 +1664,24 @@ extern "C" NTSTATUS NTAPI DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICOD
                 if (VbglR0CanUsePhysPageList())
                 {
                     /*
+                     * Tell the host to return windows-style errors (non-fatal).
+                     */
+                    if (g_uSfLastFunction >= SHFL_FN_SET_ERROR_STYLE)
+                    {
+                        vrc = VbglR0SfHostReqSetErrorStyleSimple(kShflErrorStyle_Windows);
+                        if (RT_FAILURE(vrc))
+                            LogRel(("VBoxSF: VbglR0HostReqSetErrorStyleSimple(windows) failed: %Rrc\n", vrc));
+                    }
+
+                    /*
                      * Resolve newer kernel APIs we might want to use.
                      * Note! Because of http://www.osronline.com/article.cfm%5eid=494.htm we cannot
                      *       use MmGetSystemRoutineAddress here as it will crash on xpsp2.
                      */
                     RTDBGKRNLINFO hKrnlInfo;
-                    int rc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0/*fFlags*/);
-                    AssertLogRelRC(rc);
-                    if (RT_SUCCESS(rc))
+                    vrc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0/*fFlags*/);
+                    AssertLogRelRC(vrc);
+                    if (RT_SUCCESS(vrc))
                     {
                         g_pfnCcCoherencyFlushAndPurgeCache
                             = (PFNCCCOHERENCYFLUSHANDPURGECACHE)RTR0DbgKrnlInfoGetSymbol(hKrnlInfo, NULL,

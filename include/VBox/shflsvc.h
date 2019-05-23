@@ -2099,7 +2099,7 @@ typedef enum SHFLERRORSTYLE
 typedef struct VBoxSFParmSetErrorStyle
 {
     /** value32, in: The style, SHFLERRORSTYLE. */
-    HGCMFunctionParameter enm32Style;
+    HGCMFunctionParameter u32Style;
     /** value32, in: Reserved for the future, must be zero. */
     HGCMFunctionParameter u32Reserved;
 } VBoxSFParmSetErrorStyle;
