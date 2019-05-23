@@ -994,7 +994,8 @@ class VirtualTestSheriff(object): # pylint: disable=R0903
         ( True,  ktReason_Host_Modprobe_Failed,                     'Kernel driver not installed' ),
         ( True,  ktReason_OSInstall_Sata_no_BM,                     'PCHS=14128/14134/8224' ),
         ( True,  ktReason_Host_DoubleFreeHeap,                      'double free or corruption' ),
-        ( False, ktReason_Unknown_VM_Start_Error,                   'VMSetError: ' ),
+        ( True,  ktReason_Unknown_VM_Start_Error,                   'VMSetError: ' ),
+        ( True,  ktReason_Unknown_VM_Start_Error,                   'error: failed to open session for' ),
         ( False, ktReason_Unknown_VM_Runtime_Error,                 'Console: VM runtime error: fatal=true' ),
     ];
 
