@@ -98,7 +98,8 @@ class SubTstDrvAddSharedFolders1(base.SubTestDriverBase):
         # Skip the test if before 6.0
         #
         if self.oTstDrv.fpApiVer < 6.0:
-            return None;
+            reporter.log('Requires 6.0 or later (for now)');
+            return (None, oTxsSession);
 
         #
         # Create the host directory to share. Empty except for a 'candle.dir' subdir
